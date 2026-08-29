@@ -122,6 +122,25 @@ ELIDED_PATTERNS='(a){0}
 (()|$){0}b
 (()|^){0}[b]'
 #
+# [ART-SIZE]/D84 THE SECOND NAMED EXCEPTION, AND IT IS COMPARISON (A)'s ALONE.
+# The size term chooses the counter rung's unroll factor K from the artifact's
+# own emitted CODE size, so a pattern it acts on emits a DIFFERENT PROGRAM
+# REGION from the pre-module reference -- deliberately, and by a mechanism no
+# ruling had recorded when this gate was written. These are the two patterns in
+# the corpus it acts on.
+#
+# IT IS A SEPARATE LIST FROM `ELIDED_PATTERNS` ON PURPOSE. That list is wave
+# G's dead-capture elision, it is asserted EXACT on every axis, and folding a
+# second unrelated reason into it would make both claims unfalsifiable -- the
+# count would still match while meaning two different things. This one is
+# counted, reported per axis, and asserted in the two directions that are
+# actually true of it (below): it must fire SOMEWHERE (a stale list is a
+# failure) and it must fire NOWHERE under `--no-captures`, where no VM body is
+# emitted and the size term therefore cannot act.
+SIZETERM_TOTAL=0
+SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
+(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
+#
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
 # ASSERTED, NOT TRUSTED: exactly three stamp lines must be removed from each
@@ -372,6 +391,20 @@ KEEP="${KEEP:-0}"
 # is expected byte-identical against the unchanged `ac4917d` and is not merely
 # unmoved in principle.
 #
+# [ART-SIZE], 2026-08-29: `abi` 10 -> 11, (B) re-pinned to `b3cf716`.
+# **THE PIN MOVES WITH THE LAST SCAFFOLDING CHANGE OF THE `abi`, NOT THE
+# FIRST — RE-RUN THIS GATE AFTER EVERY src-TOUCHING COMMIT THAT FOLLOWS A
+# RE-PIN.** That sentence is here because this row broke it: the pin was set
+# to `60a51ed` (the shared-sites commit) and TWO more src commits then landed
+# — `5199823`, which gives every DFA artifact a `<PREFIX>_MAX_EMIT_BYTES`
+# line, and `b3cf716`, the declared-capacity floor. Within one `abi` the
+# emitted output is byte-exact whole-file, so the stale pin made (B) report
+# EVERY DFA-selected call-free pattern as differing: measured
+# `[default] (B) same=1268 differing=952`, while `[vm]` read 2225/0 because
+# VM artifacts had their four stamps BEFORE the pin. Caught by the r42 panel,
+# not by this gate's own run, which is the reason the rule is now written
+# where the pin is set rather than left to be re-derived.
+#
 # THE PIN IS THIS CHANGE'S LAST src-TOUCHING COMMIT, [OPT-K]'s note one
 # paragraph up having recorded why that matters in a multi-commit change:
 # `14d1feb` moved the `match_form` member's comment ABOVE the member (a
@@ -379,7 +412,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-14d1feb}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b3cf716}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -706,7 +739,7 @@ sweep() { # sweep <label> <extra pcrec args>
     # [DD-14.FB] the SECOND tally: the program region against the unchanged
     # pre-module pin. Kept in its own variables and printed on its own line so
     # the two claims never blur into one number.
-    local rsame=0 rdiff=0 relided=0 rcallbearing=0
+    local rsame=0 rdiff=0 relided=0 rcallbearing=0 rsizeterm=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -749,6 +782,9 @@ sweep() { # sweep <label> <extra pcrec args>
                 rsame=$((rsame + 1))
             elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
                 relided=$((relided + 1))
+            elif printf '%s\n' "$SIZE_TERM_REGION_MOVERS" | grep -qxF -- "$pat"; then
+                rsizeterm=$((rsizeterm + 1))
+                printf 'REGION MOVED (ruled, [ART-SIZE] size term chose K) %s\n' "$pat" >> "$WORKDIR/diff.$label"
             else
                 rdiff=$((rdiff + 1))
                 printf 'REGION DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
@@ -785,7 +821,14 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm call-bearing-in-population=$rcallbearing"
+    SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
+    # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
+    # the size term cannot act and this count must be ZERO. An axis-independent
+    # count would hide a size term that had started firing where it cannot.
+    if [ "$label" = "nocaptures" ] && [ "$rsizeterm" -ne 0 ]; then
+        bad "[nocaptures] (A) $rsizeterm pattern(s) moved for [ART-SIZE]'s reason on an axis that emits no VM body — the size term cannot act here, so this is a real region change wearing its name"
+    fi
     # BOTH DIRECTIONS ON THE NAMED EXCEPTION. `elided` counts the patterns that
     # differed AND are on the list; `nelide` is the list's own length. Equality
     # is what says the list is neither stale nor a filter: a listed pattern that
@@ -1134,6 +1177,16 @@ done
 
 linkage_axis
 elision_control
+
+# [ART-SIZE] THE NAMED EXCEPTION MUST FIRE. A list that has gone stale — the
+# size term narrowed, its threshold moved, or someone gated it differently —
+# would otherwise make this gate quietly weaker while every count still read
+# green. Exactly the direction `ELIDED_PATTERNS` asserts for wave G.
+if [ "${SIZETERM_TOTAL:-0}" -eq 0 ]; then
+    bad "[ART-SIZE] SIZE_TERM_REGION_MOVERS fired on NO axis: the two patterns it names no longer move their program region, so the list is stale and this gate is defending a claim that has changed. Re-derive it; do not delete it"
+else
+    ok "[ART-SIZE] the size term's named region movers fired ($SIZETERM_TOTAL across the axes) — the list is live, not a filter"
+fi
 
 echo
 echo "checks passed: $pass"

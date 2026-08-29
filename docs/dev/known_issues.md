@@ -3128,7 +3128,51 @@ showed no leak/UB on the retry path. The full `make test` battery was not
 run by this lane (box rule: one heavy suite at a time; flagged for the
 manager to run at merge).
 
-## K41 — OPEN (2026-08-28, found by the manager's [SEL-1] landing battery, tests/fuzz/run_capturediff_gate.sh) — a VM artifact for a deeply-nested, wide bounded-repeat pattern can exceed D45's gcc compile-time budget, and [SEL-1] is what UNHID it rather than caused it
+## K41 — RE-SCOPED, NOT CLOSED (2026-08-29, [ART-SIZE] STEP 2) — one witness is FIXED, the other is REFUSED and its mechanism belongs to [OPT-4]
+
+**[ART-SIZE]'S DISPOSITION, read this before the original entry below.** The
+emitted-size caps and the unroll ladder (D84; `docs/design/
+artifact_size_term.md`) change what both witnesses do, by DIFFERENT
+mechanisms, and the distinction is the point:
+
+- **Witness 1 is FIXED.** Its size IS counter-rung body replication, which is
+  exactly what the size term's ladder acts on: the term selects `K=1` and the
+  artifact goes from **2,004,449 bytes to 116,511** (comment-excluded
+  1,719,349 → 87,118), with gcc's own cost following it from 55.13 s to about
+  1 s. It compiles, it is no longer oversize, and it re-enters the fuzz gate's
+  ordinary accept/compare population.
+- **Witness 2 is REFUSED, not fixed.** Its size is its PREFILTER — 3,108
+  computed-goto states and 34,188 jump-table entries against only 552 VM nodes
+  — which `K` cannot touch (K=1 saves 8.7 %). Both caps refuse it: 670,650
+  code bytes against a 500,000 limit and 1,220,606 total against 1,000,000.
+  That is the correct outcome (it costs gcc **66.92 s at -O2**, 6.7× D45's
+  budget) but it is a REFUSAL, and the pattern that produced it is still a
+  pattern pcrec cannot compile.
+
+**So K41 is re-scoped rather than closed.** Its original fix direction — "a
+VM-side emitted-PROGRAM-SIZE cap in `src/core/limits.h`, refusing before
+emission" — is built, and the caps refuse just before the file is written
+rather than before emission (there is no pre-emission node count; see the
+design note's §2.2a). What remains open is witness 2's MECHANISM: the VM
+hybrid's inlined prefilter scaling with a bounded-repeat count, which is
+**[OPT-4]/K39's** to shrink. D84's own revisit clause says witness 2 should
+pass under the default caps once [OPT-4] lands, and that is the trigger to
+re-check this row and the gate pin below.
+
+**THE FUZZ-GATE PIN MOVES 2 → 0, AND NOT BECAUSE THE SHAPES DISAPPEARED.**
+`tests/fuzz/fuzz.py` classifies the oversize bucket by emitted `.c` size
+alone, so witness 1 leaves it by SHRINKING (116,511 bytes, an order of
+magnitude under the 1,000,000 classifier) and witness 2 leaves it by being
+REFUSED (there is no artifact to classify). Re-derive the coupled counts from
+a gate RUN rather than by arithmetic — witness 1 re-enters the accept/compare
+population and witness 2 does not — and note that a refusal needs its own
+bucket: `fuzz.py` gained `size_cap` on `state_cap`'s precedent, because a
+documented ceiling doing its job is not an accept/reject divergence and would
+otherwise be counted as one.
+
+---
+
+## K41 — the ORIGINAL entry (2026-08-28, found by the manager's [SEL-1] landing battery, tests/fuzz/run_capturediff_gate.sh) — a VM artifact for a deeply-nested, wide bounded-repeat pattern can exceed D45's gcc compile-time budget, and [SEL-1] is what UNHID it rather than caused it
 
 **Symptom, identified by the deterministic property (manager correction,
 2026-08-28): SIZE, not gcc's CPU-time outcome on a given box.** The VM

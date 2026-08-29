@@ -182,6 +182,60 @@ done
 echo
 
 # ---------------------------------------------------------------------------
+# Section 1b — [ART-SIZE]/D84: the three shapes above whose ACCEPTANCE MOVED.
+#
+# These COMPILED before the emitted-size caps landed and REFUSE now. That is
+# the intended reading of D84 ruling 2 ("a large byte count makes the artifact
+# unusable"; Frank: "I'd rather it FAIL and document how to handle oversized
+# results") — but an acceptance change has to be RECORDED, not discovered, so
+# each shape is pinned here with the size it used to produce. Section 1's loop
+# above already accepts a clean 'too large' refusal as a pass; this section is
+# what makes these three shapes' refusal EXPECTED rather than merely tolerated,
+# and what would fail loudly if a future change silently re-accepted them at a
+# megabyte-plus.
+#
+# All three are TABLE-dominated (their code is tens of KB), so it is the TOTAL
+# cap that refuses them and `--unroll` would not shrink them — which is exactly
+# what docs/spec/limits.md's "Handling an oversized artifact" tells a user, and
+# these are the shapes it is written about.
+#
+# THE SECOND CELL PER SHAPE IS THE OVERRIDE'S OWN TEST: raising the cap past
+# the measured size must re-accept the pattern. That is the only place the
+# raise-only override is exercised end to end, and it is the answer to "how do
+# I still get this artifact" being a real answer rather than a sentence.
+# ---------------------------------------------------------------------------
+size_moved=(
+    'a{0,25000}:1103367'
+    '[a-z]{0,30000}:1323371'
+    '(a|b){0,30000}:1333109'
+)
+for entry in "${size_moved[@]}"; do
+    pat="${entry%:*}"; was="${entry##*:}"
+    out="$WORKDIR/o.c"; rm -f "$out"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" "$pat" 2>&1)"
+    rc=$?
+    if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
+        ok "'$pat' refused by the total emitted-size cap (was $was bytes before [ART-SIZE]): $(printf '%s' "$log" | head -1 | cut -c1-90)"
+    elif [ "$rc" -eq 0 ]; then
+        bad "'$pat' was ACCEPTED — it emitted $was bytes before [ART-SIZE] and the total cap is meant to refuse it; if that is intended the pin here moves in the same commit"
+    else
+        bad "'$pat' exited $rc, expected the size-cap refusal: $log"
+    fi
+
+    # the override re-accepts it
+    rm -f "$out"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+        ok "'$pat' is re-accepted with --max-emit-bytes raised (the override works end to end)"
+    else
+        bad "'$pat' still refused with --max-emit-bytes=9000000 (rc $rc): $log"
+    fi
+done
+
+echo
+
+# ---------------------------------------------------------------------------
 # Section 2 — a real allocation failure is DIAGNOSED, not aborted.
 #
 # This is K7's third and worst measured consequence: "under a 2 GB

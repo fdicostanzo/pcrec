@@ -436,7 +436,99 @@ enum {
      * EMPTY; they are stated here so the next reader tunes a number rather
      * than rediscovering a rule. */
     PCREC_MAX_SPLICE_NODES = 512,
-    PCREC_MAX_SPLICE_TOTAL = 8192
+    PCREC_MAX_SPLICE_TOTAL = 8192,
+
+    /* [ART-SIZE] THE TWO EMITTED-SIZE CAPS (D84 and its addenda;
+     * docs/design/artifact_size_term.md §4). D45's consequence 1 has asked
+     * for a compiler-side size bound since 2026-08-15 — "the compile-time
+     * bound is the harness-side guard, the size bound is the compiler-side
+     * one, and they are different obligations" — and this is it.
+     *
+     * BOTH ARE IN BYTES OF EMITTED C SOURCE, COMMENT-EXCLUDED
+     * (tests/lib/size_count.sh's definition, the quantity
+     * docs/dev/artifact_size_log.tsv already logs). The `.o` a user links is
+     * ~17 % of that at r = 0.99 (the census's §5), so the numbers below are
+     * ~85 KB and ~170 KB of object code — quoted because a limit should read
+     * in the unit a user ships.
+     *
+     * BOTH ARE EMERGENCY FAILSAFES, NOT TUNED THRESHOLDS (D84 addendum 3,
+     * Frank: "we can adjust the number but it's really more of an emergency
+     * failsafe than a tuning"). A failsafe is judged by whether it fires on
+     * the right SHAPES, so centring one in its measured gap is NOT an
+     * improvement and the asymmetry below is not a defect: a proposal to move
+     * either needs a shape it fires or fails to fire on, not a better ratio.
+     * What a failsafe does owe is that nothing legitimate hits it silently —
+     * which is the refusal text, docs/spec/limits.md's "Handling an oversized
+     * artifact" section, and the ten-axis zero-refusal sweep, not a number.
+     *
+     * NEITHER IS DENIABLE and BOTH ARE OVERRIDABLE UPWARD (D84 ruling 1):
+     * `-fno-size-term` denies the K SELECTION and never reaches a cap — a
+     * safety refusal a flag turns off is not one — while
+     * `--max-emit-code-bytes=N` / `--max-emit-bytes=N` raise them, and the
+     * place a real build does that is the pattern-source file's `config`
+     * block, per target, beside the pattern (D84 addendum 3).
+     *
+     * WHY TWO CAPS AND NOT ONE. They bound different things because the size
+     * a user ships and the cost gcc pays are different quantities, MEASURED:
+     * a data-table entry costs gcc 0.905 us, a computed-goto jump-table entry
+     * 8.7 us, and a VM node 5.37 ms — a node is ~5,930x a table entry. So
+     * `a{1,31000}` is a 1,367,865-byte artifact that gcc compiles in 0.34 s
+     * (cheap to compile, too large to ship: the TOTAL cap refuses it, the
+     * CODE cap does not), while K41's second fuzz witness is 1,220,606 bytes
+     * of which 670,650 are CODE and costs gcc 66.92 s at -O2 (both refuse
+     * it). One cap would have to get one of those two answers wrong. */
+
+    /* CODE bytes: comment-excluded emitted bytes OUTSIDE table initializers.
+     * D45's half. Counted exactly by the emitter as it writes — never
+     * modelled, because a refusal must not inherit a fit's error.
+     *
+     * THE NUMBER (Frank, D84 addendum 2: "then 500k is fine"). It sits in a
+     * MEASURED EMPTY BAND: every artifact at or below 283,080 code bytes (the
+     * whole 2,487-pattern corpus, worst case) compiles in <= 71 % of D45's
+     * 10 s budget, and the next measured artifact up is the K41 witness at
+     * 670,650 code bytes and 669 % of it. 500,000 is 1.77x above the first
+     * and 1.34x below the second.
+     *
+     * WHAT IT DOES NOT BOUND, stated because a cap that oversells itself is
+     * worse than one that does not: gcc's cost is NOT a function of any count
+     * the compiler can produce, and the two K41 witnesses invert the ordering
+     * (670,650 code bytes at 66.92 s against 1,718,425 at 55.13 s) because
+     * witness 2's prefilter is one function carrying a 3,108-way computed-goto
+     * CFG. This is a measured SEPARATION with the cap in an empty band — the
+     * shape PCREC_MAX_VM_REPEAT_COPIES above was derived with — not a
+     * compile-cost oracle, and the population it cannot speak for is code
+     * bytes in (283 KB, 671 KB), empty today. */
+
+    /* TOTAL bytes: the whole comment-excluded artifact. Frank's Q4 half
+     * (D84 ruling 2) — "a large byte count makes the artifact unusable" — a
+     * concern in its own right and NOT a proxy for compile time. An EXACT
+     * post-emission check, refusing before the file is written, with no model
+     * on this axis at all (D84 addendum): a fixed number and a loud refusal,
+     * so the outcome is predictable by construction rather than by prediction.
+     *
+     * THE NUMBER. The corpus's largest artifact is 651,412 bytes and the next
+     * measured artifact up is `a{1,25000}` at 1,103,865 — a 1.69x gap.
+     * 1,000,000 is also what tests/fuzz/fuzz.py's K41_OVERSIZE_BYTES already
+     * calls oversize, so the compiler now agrees with its own fuzz gate;
+     * that threshold counts RAW `.c` bytes (comments included), so THIS cap
+     * is the stricter of the two and an artifact it admits is always one the
+     * gate admits. It stays BELOW tests/size/check_size_tripwire.sh's
+     * 1,400,000 B pin, so the tripwire remains an INDEPENDENT backstop rather
+     * than sharing a constant with the thing it checks. */
+
+    /* [ART-SIZE] The K SELECTION's trigger: the emitted size above which the
+     * size term evaluates the unroll ladder at all. Same unit as the caps.
+     *
+     * It sits in the corpus tail's widest multiplicative gap (1.64x, between
+     * 98,596 and 162,034 bytes), so no ordinary emitter or corpus movement
+     * flips a pattern across it, and it leaves the term a measured no-op on
+     * 2,480 of the corpus's 2,487 compiling patterns (99.72 %).
+     *
+     * NOT 131,072, which the first draft chose and which would have been a
+     * third name for PCREC_MAX_VM_NODES's value — and worse, for
+     * PCREC_MAX_VM_REPLICATION_PRODUCT, which is a literal ALIAS of it above.
+     * A number that means three unrelated things in two files is how a reader
+     * infers a shared derivation that does not exist. */
 };
 
 /* [ENG-ABS] THE ANCHORED MATCH-HERE MACHINE'S OWN STATE CEILING, and it is
@@ -514,6 +606,52 @@ enum {
  * cancel — the placement lesson of the [M6.2] repair slice. */
 #ifndef PCREC_ANCHORED_MAX_STATES
 #define PCREC_ANCHORED_MAX_STATES 4096
+#endif
+
+/* [ART-SIZE] THE TWO EMITTED-SIZE CAPS AND THE SIZE TERM'S THRESHOLD, as
+ * `#ifndef`-overridable MACROS rather than enum members.
+ *
+ * WHY OVERRIDABLE AT BUILD TIME, when the CLI overrides are raise-only.
+ * `cap-rescue` — the path where the materiality bar declines a K and a cap
+ * takes it anyway — has a NATURAL POPULATION OF ZERO: reaching it needs a
+ * pattern whose byte ratio exceeds the bar while some ladder K drops its CODE
+ * under the cap, and on replication-dominated patterns bytes and code move
+ * together, so a ratio above the bar keeps code above the cap. Five candidate
+ * shapes were probed and none reached it. Because the CLI overrides are
+ * RAISE-ONLY (deliberately: a raise-only flag cannot be used to manufacture a
+ * refusal on someone else's build), the path cannot be forced from outside
+ * either — which would leave a shipped branch no test can drive.
+ *
+ * So the structural check builds a REFERENCE COMPILER with a cap lowered at
+ * pcrec's own compile time and drives the branch through it. That is not a new
+ * surface: it is [ENG-ABS]'s precedent one lane over, whose overflow arm has
+ * the same empty natural population and whose check builds a reference
+ * compiler with `-DPCREC_ANCHORED_MAX_STATES=6`.
+ *
+ * A BUILD-TIME `-D`, NEVER A CLI VALUE. The distinction is the whole point:
+ * lowering a cap has to be something a person does to a compiler they built
+ * for a test, not something a caller can do to a compile, so the raise-only
+ * rule stays true for every user of a shipped pcrec.
+ *
+ * THE ONE NON-DEFAULT CONSUMER of these three macros is
+ * `tests/codegen/run_size_term.sh`. If a second appears, it wants a comment
+ * here saying why.
+ *
+ * MEASURED, so the next reader does not have to re-derive it: with
+ * `-DPCREC_MAX_VM_EMIT_CODE_BYTES=40000`, `((a)|ab){0,2047}c` reaches
+ * `cap-rescue` — its materiality bar declines K=1 (byte ratio 0.922) and the
+ * lowered code cap then takes it anyway. That is the witness the check drives.
+ *
+ * Units, derivations and the failsafe framing: see the block above and
+ * docs/design/artifact_size_term.md §4. */
+#ifndef PCREC_MAX_VM_EMIT_CODE_BYTES
+#define PCREC_MAX_VM_EMIT_CODE_BYTES 500000
+#endif
+#ifndef PCREC_MAX_EMIT_BYTES
+#define PCREC_MAX_EMIT_BYTES 1000000
+#endif
+#ifndef PCREC_SIZE_TERM_THRESHOLD
+#define PCREC_SIZE_TERM_THRESHOLD 120000
 #endif
 
 #endif /* PCREC_LIMITS_H */

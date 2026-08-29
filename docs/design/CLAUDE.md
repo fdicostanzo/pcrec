@@ -1459,5 +1459,68 @@ append-only or historical records.
   §7.7 declines a real 1.08×-1.33× improvement against the row's own
   materiality bar, and says so rather than taking it.
 
+- `artifact_size_term.md` — **[ART-SIZE] STEP 2**, the design note written
+  BEFORE the emitter (2026-08-28, lane artsize3), on `offset_k_skip.md`'s
+  model. **PANELED R40 (`../dev/reviews/2026-08-28-r40-artsize-term.md`, three
+  critics) and REVISED THREE TIMES; read §2.0 and §6.1 before any other
+  section** — the panel refuted the first version in three separate places and
+  each refutation is recorded where it bit:
+  (1) **the INSTRUMENT was blind** to the VM hybrid prefilter's computed-goto
+  machinery (`static const void *const rx_targets_N[…]`, `rx_s<N>:`), so K41's
+  SECOND witness read 118,240 B against an actual 1,220,606 B and **neither
+  mechanism engaged on an already-pinned oversize pattern** — the classifier's
+  own regexes were the population nobody counted (`../dev/learnings.md` §3);
+  (2) **the pre-emission node count the design assumed DOES NOT EXIST**
+  (`vm_count_slots` counts slot categories and returns void; `Vm.nodes` and
+  `nlabel` are emission-time; the pre-pass mutates state and can `ctx_fail`),
+  so the rule now DRY-EMITS the ladder from `compile.c:426` rather than
+  building a counting pre-pass that would be a third party to an agreement the
+  emitter's own header warns about; and (3) **"every K is answer-identical" is
+  FALSE on the give-up surface** — minimum step budget 89→110 across the
+  ladder, minimum backtrack frames 39 at K=1 against 28 at K=8 (descending K
+  RAISES the frame need), `RX_TRAIL_FRAMES` 62→51 and caller-read — so the
+  claim narrows to match results and captures and the new K sweep EXCLUDES
+  `budget`/`gu` cells by construction, stated rather than discovered.
+  **D84 then ruled the charter's one cap into TWO** (`../dev/decisions.md`),
+  both on comment-excluded emitted C SOURCE bytes with the `.o` (≈17 %) quoted
+  beside each: a CODE-BYTES cap (**500,000**, ≈85 KB `.o`, ruled by Frank in
+  addendum 2 — bytes OUTSIDE table initializers, exact and emitter-counted, no
+  model coefficients in any refusal) for D45's compile budget and a
+  TOTAL-BYTES cap (1,000,000, ≈170 KB `.o`) for usability, both EXACT
+  post-emission checks, both overridable upward (`--max-emit-code-bytes=` /
+  `--max-emit-bytes=`) and stamped, neither deniable;
+  **and the re-check then found the BLOCKER that makes the mechanism real**:
+  `ctx_fail` is a `longjmp` to the compile's single recovery point, so a
+  ladder trial cannot be "discarded" — measured, `(?:…(a|b){41}…){41}` six deep
+  compiles at K=8 and REFUSES at K=6, so the ladder as first written would have
+  broken a pattern that compiles today. The note now specifies a `trial` flag
+  under which the five size guards RETURN an over-budget result, with the
+  buffer-size EARLY ABORT as the first such guard (without it the ladder writes
+  55.4 MB on a worst-rung tower to select a 42,619-byte artifact) and a stated
+  AST re-publication invariant with its own sabotage row; `limits.md` gains a "Handling an oversized
+  artifact" section drafted in §4.6. The two caps exist because the note
+  measured a node at ~5,930x a data-table entry of gcc cost: `a{1,31000}` is
+  1.38 MB and compiles in 0.34 s while K41's witness 2 is 1.26 MB and costs
+  **66.92 s**. The two K41 witnesses are handled by DIFFERENT mechanisms —
+  witness 1's size is node replication (the K rule takes it 2,015,585 →
+  116,371 B, gcc 55.13 s → 1.02 s), witness 2's is its prefilter, which K
+  cannot touch, so both caps refuse it until **[OPT-4]/K39** shrinks the
+  mechanism — which moves K41's pinned fuzz-gate bucket 2 → 0 and exposes a
+  second finding: a size refusal would be counted as an accept/reject
+  DIVERGENCE, because `fuzz.py` diverts `state_cap` out of that bucket by
+  matching its diagnostic text and nothing matches `"pattern too large:"` —
+  the shipped replication-cap refusals have the same gap today. Also carries
+  the non-monotone K curve (in BYTES and in NODES), the measured decline of
+  all three of census §7's levers (the best is worth a corpus median 0.99 %),
+  and the identity gap found by reading the gate rather than trusting a
+  summary of it: `--unroll` is a VALUE axis, so no gate proves any K
+  answer-identical today and [CHK-2] (c) is where that is fixed.
+  Measurements: `artsize_impl/`.
+- `artsize_impl/` — the [ART-SIZE] STEP 2 lane's probes and archived outputs
+  (the corpus size measurement and its fit, the K curve, the gcc-cost
+  decorrelation run), kept separate from `../dev/artifact_size_census/`
+  (STEP 1's own census script) for the same never-confuse-the-lanes reason
+  `possessify_impl/` and its siblings are separate. See its own CLAUDE.md.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

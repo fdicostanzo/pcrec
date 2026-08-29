@@ -379,7 +379,29 @@ enum {
      * behave identically must not differ in their reflection surface over it.
      * What the emitter DID is reported by `<PREFIX>_DFA_MATCH`, which reads
      * `"search-filter"` under this flag and `"unwrapped"` otherwise. */
-    PCREC_NO_ANCHORED_DFA = 1u << 17
+    PCREC_NO_ANCHORED_DFA = 1u << 17,
+
+    /* [ART-SIZE] DENY THE SIZE TERM'S K SELECTION (D84; docs/design/
+     * artifact_size_term.md §7.2). Bit 17 is [ENG-ABS]'s.
+     *
+     * With this set the counter rung's K is PCREC_DEFAULT_UNROLL_K (or
+     * `unroll_k`) unconditionally: the emitted-size threshold is not tested
+     * and the unroll ladder is not evaluated, so the artifact is the one
+     * today's compiler emits. `<PREFIX>_UNROLL_K_WHY` reads `"denied"`, which
+     * is a DIFFERENT value from `"default"` on purpose — a check must be able
+     * to tell "the term was denied" from "the term ran and the artifact was
+     * below the threshold" (a distinction the first design's three-value
+     * stamp could not express).
+     *
+     * IT DOES NOT REACH EITHER EMITTED-SIZE CAP, and that is a ruling rather
+     * than an oversight (D84 ruling 1): a safety refusal a flag can turn off
+     * is not a safety refusal, and D45's consequence 1 is a compiler-side
+     * obligation. The caps are instead OVERRIDABLE UPWARD, raise-only, via
+     * `max_emit_code_bytes`/`max_emit_bytes` below. So a denied build can
+     * still be REFUSED for size — correctly: denying the term removes the
+     * mechanism that would have made the artifact smaller, it does not make a
+     * 2 MB artifact acceptable. */
+    PCREC_NO_SIZE_TERM = 1u << 18
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
@@ -499,6 +521,28 @@ typedef struct {
                                  0 = let the compiler size it (exactly, where
                                  the pattern's dynamic depth is statically
                                  bounded; the default otherwise). */
+    /* [ART-SIZE] THE TWO EMITTED-SIZE CAPS' RAISE-ONLY OVERRIDES (D84 ruling
+     * 1; src/core/limits.h carries the defaults and the derivations).
+     * 0 = the built-in PCREC_MAX_VM_EMIT_CODE_BYTES / PCREC_MAX_EMIT_BYTES.
+     *
+     * RAISE-ONLY: a value BELOW the built-in default is refused as a
+     * malformed option rather than honoured. A lower cap is not a use case
+     * this row has a measurement for, and — the reason that matters — a
+     * raise-only flag cannot be used to MANUFACTURE a refusal, so no caller
+     * can turn these into a way to make someone else's build fail.
+     *
+     * The effective values are STAMPED on every artifact
+     * (`<PREFIX>_MAX_EMIT_CODE_BYTES`, `<PREFIX>_MAX_EMIT_BYTES`), because a
+     * selection fact is unconditional (D81) and a reader of an artifact
+     * should be able to see which limits it was built under.
+     *
+     * WHERE A REAL BUILD SETS THESE is the pattern-source file's `config`
+     * block (D84 addendum 3, dd13_format/usecases_and_outline.md §2 wave 3):
+     * per target, declared beside the pattern, applied to everything built
+     * with that config, and visible to whoever reads the file next. The CLI
+     * flags serve the single-pattern case and the test harness. */
+    uint64_t    max_emit_code_bytes;
+    uint64_t    max_emit_bytes;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

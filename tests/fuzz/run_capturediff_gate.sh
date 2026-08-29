@@ -126,7 +126,27 @@ GATE_SUBJECTS=15
 # and would have gone on being silently compared like any ordinary pattern.
 # Pulling BOTH fully out of the accept/compare pipeline (not just recording
 # gcc's outcome for one of them) moves population, arithmetically: "both
-# accept" 183 -> 181 (183 - 2), "subject pairs compared" 2745 -> 2715
+# [ART-SIZE]/D84 (2026-08-29) MOVED FIVE OF THESE, and the reading matters
+# more than the numbers: the oversize bucket goes 2 -> 0 NOT because the two
+# witnesses stopped having their shapes, but because each leaves it a
+# DIFFERENT way. Witness 1 is FIXED — the unroll ladder selects K=1 and its
+# artifact drops from 2,004,449 bytes to 116,511, an order of magnitude under
+# the 1,000,000 classifier — so it RE-ENTERS the accept/compare population
+# ("both accept" 181 -> 182, "subject pairs compared" 2715 -> 2730 at 15
+# subjects each, and "oracle inconclusive" 0 -> 3, which is its own subjects
+# returning and is the one count that could not be predicted by arithmetic).
+# Witness 2 is REFUSED by both emitted-size caps, so there is no artifact to
+# classify at all, and it lands in the NEW "emitted-size cap" bucket pinned at
+# 1 below. That bucket exists because a documented ceiling doing its job is
+# not an accept/reject divergence: without it the refusal would count as
+# "pcrec-only reject" and read as an actionable finding on every run — the
+# same reason fuzz.py already diverts state_cap and engine_limit.
+# See docs/dev/known_issues.md K41's [ART-SIZE] disposition; the trigger to
+# revisit these pins is [OPT-4]/K39 shrinking witness 2's prefilter, after
+# which it should compile rather than refuse.
+#
+# The pre-[ART-SIZE] derivation, kept because it is what these numbers moved
+# FROM: "both accept" 183 -> 181 (183 - 2), "subject pairs compared" 2745 -> 2715
 # (2745 - 2*15), and "oracle inconclusive" 3 -> 0 -- the 3 inconclusive
 # hits the old design attributed to the newly-VM-compiled-but-still-compared
 # population turn out to belong entirely to these same two oversize
@@ -138,18 +158,19 @@ GATE_SUBJECTS=15
 declare -A EXPECT=(
     ["patterns generated"]=300
     ["module construct patterns"]=75
-    ["both accept"]=181
+    ["both accept"]=182
     ["both reject"]=117
     ["pcrec-only reject"]=0
     ["pcre2-only reject"]=0
     ["PCRE2 size-limit"]=0
     ["DFA state-cap"]=0
-    ["K41 oversize artifact"]=2
+    ["K41 oversize artifact"]=0
+    ["emitted-size cap"]=1
     ["gcc compile fails"]=0
     ["pcrec compile timeout"]=0
     ["oracle probe timeout"]=0
-    ["subject pairs compared"]=2715
-    ["oracle inconclusive"]=0
+    ["subject pairs compared"]=2730
+    ["oracle inconclusive"]=3
     ["pcrec step-budget exhausted"]=0
     ["pcrec frame-budget exhausted"]=0
     ["known PCRE2 optimizer quirk"]=0
@@ -208,7 +229,8 @@ echo "capturediff-gate: selected counts (expected -> actual)"
 drift=0
 for label in "patterns generated" "module construct patterns" "both accept" "both reject" \
              "pcrec-only reject" "pcre2-only reject" "PCRE2 size-limit" \
-             "DFA state-cap" "K41 oversize artifact" "gcc compile fails" \
+             "DFA state-cap" "K41 oversize artifact" "emitted-size cap" \
+             "gcc compile fails" \
              "pcrec compile timeout" \
              "oracle probe timeout" "subject pairs compared" \
              "oracle inconclusive" "pcrec step-budget exhausted" \

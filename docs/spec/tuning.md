@@ -810,6 +810,48 @@ comparison's control — a BYTE-IDENTITY claim against the older compiler
 would be false, which is D81 (selection facts are stamped
 unconditionally) rather than an oversight.
 
+### 2.16 `-fno-size-term` — `PCREC_NO_SIZE_TERM` (bit 18)
+
+
+**ANSWER-IDENTITY-preserving for match results and captures — and NOT for
+the give-up surface.** The axis changes which unroll factor `K` the
+counter rung is emitted at. `K` is that rung's chunking factor: the rung
+compiles a bounded repeat to `ceil(n/K)` body copies plus a trailed
+counter whose arithmetic makes the realized iteration count exact at any
+`K >= 1`, so the span and the capture slots are identical at every `K`.
+What is NOT identical is what the artifact GIVES UP on: measured on
+`((a)|ab){12}c`, the minimum `--step-budget` that completes runs 89 at
+`K=1` to 110 at `K=8`, the minimum `--backtrack-frames` is 39 at `K=1`
+against 28 at `K=8` (descending `K` RAISES the frame requirement), and
+`<PREFIX>_TRAIL_FRAMES` runs 62 down to 51. Under the DEFAULT budgets the
+answers are identical; see `limits.md` §7.
+
+**What it controls.** With the axis ON (the default), an artifact whose
+COUNTER rung is live and whose emitted size exceeds
+`PCREC_SIZE_TERM_THRESHOLD` has its `K` chosen by re-emitting a descending
+ladder and taking the smallest emitted node count, kept only if it saves
+at least 25 % of the bytes. Denying the axis leaves `K` at `--unroll=K`
+or `PCREC_DEFAULT_UNROLL_K`, which is what the compiler emitted before
+[ART-SIZE].
+
+**What it does NOT control: the two emitted-size caps.** `-fno-size-term`
+denies the SELECTION and never reaches
+`PCREC_MAX_VM_EMIT_CODE_BYTES`/`PCREC_MAX_EMIT_BYTES` — a safety refusal a
+flag can turn off is not one (D84 ruling 1). A denied build can therefore
+still be refused for size, and correctly: denying the term removes the
+mechanism that would have made the artifact smaller, it does not make an
+oversized artifact acceptable. To accept a larger artifact, RAISE a cap
+(`--max-emit-bytes=N`, `--max-emit-code-bytes=N`, raise-only) — see
+`limits.md` §8, "Handling an oversized artifact".
+
+**The stamp** is `<PREFIX>_UNROLL_K` (the chosen `K`) beside
+`<PREFIX>_UNROLL_K_WHY`, which has SEVEN values — `default`, `option`,
+`denied`, `size-model`, `size-model-declined`, `cap-rescue`,
+`capacity-declined` — because "the term did not run" has five
+distinguishable reasons and a check must be able to tell them apart. Both are unconditional on every VM artifact
+(D81).
+
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -999,3 +1041,4 @@ table only maps field to axis.
 `step_budget`, `work_budget` and `frame_capacity` are resource-bound
 fields, not strategy-selection tuning axes — `docs/spec/limits.md` is
 their home, not this document.
+

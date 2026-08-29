@@ -1307,7 +1307,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * this row writes on a VM artifact is that struct field, which is above
      * the region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 10,\n");
+    sb_puts(c,   "    .abi = 11,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -5157,6 +5157,24 @@ static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * engine-specific). So it is stamped on exactly the artifacts this emitter
      * writes `_match` for, and `rx_info.match_form` mirrors NULL elsewhere. */
     sb_printf(c, "#define %s_DFA_MATCH \"%s\"\n", upper, dfa_match_name(cx));
+    /* [ART-SIZE] THE TOTAL-BYTES CAP'S EFFECTIVE VALUE, on a DFA artifact too.
+     * The cap applies to whatever was emitted rather than to one engine, so by
+     * D81 the artifact must say which limit it was built under — a reader
+     * cannot otherwise tell an artifact that fitted from one built with a
+     * raised cap. The VM's own stamp block carries this plus the three
+     * VM-only ones (`_UNROLL_K`, `_UNROLL_K_WHY`, `_MAX_EMIT_CODE_BYTES`);
+     * a DFA artifact has no counter rung to have chosen a K for, so only this
+     * one is a fact about it.
+     *
+     * IT WAS MISSING UNTIL THE DELIVERY size_diff, and the gap is worth the
+     * comment: `docs/spec/match_api.md` §6.3 and `limits.md` §8 both already
+     * SAID this stamp was on both engines while the emitter put it on one, and
+     * what surfaced it was 1,185 corpus artifacts moving exactly 0 bytes in a
+     * change that was supposed to move every artifact. */
+    sb_printf(c, "#define %s_MAX_EMIT_BYTES %llu\n", upper,
+              cx->opt->max_emit_bytes
+                  ? (unsigned long long)cx->opt->max_emit_bytes
+                  : (unsigned long long)PCREC_MAX_EMIT_BYTES);
     sb_puts(c, "\n");
 }
 

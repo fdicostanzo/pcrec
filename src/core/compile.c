@@ -3,6 +3,8 @@
  * the Job/arena so the error path can clean up wholesale. */
 
 #include <ctype.h>
+#include <limits.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +46,136 @@ void pcrec_default_options(pcrec_options *opt)
     opt->prefix = "rx";
     opt->encoding = PCREC_ENC_BYTE;
     opt->header_name = NULL; /* self-contained .c by default */
+}
+
+/* [ART-SIZE] THE TWO EMITTED-SIZE QUANTITIES, measured on the finished
+ * buffer (docs/design/artifact_size_term.md §4).
+ *
+ * WHY A POST-EMISSION SCAN AND NOT AN ACCUMULATOR THREADED THROUGH THE
+ * EMITTER. Three reasons, in order of how much they matter:
+ *
+ * 1. It is the SAME DEFINITION the project already ships. tests/lib/
+ *    size_count.sh computes "total bytes minus comment bytes" with a flat
+ *    three-state tracker, and docs/dev/artifact_size_log.tsv logs it for
+ *    every corpus pattern. An accumulator would be a SECOND implementation
+ *    of a definition that already has one, and the two would drift — the
+ *    exact failure r40's F1 found when this row's own measuring instrument
+ *    disagreed with the artifact it was measuring.
+ * 2. The cap is a post-emission check by ruling (D84 addendum): the artifact
+ *    exists, the number is a fact about it, and the refusal happens before
+ *    the file is written. There is nothing to gain from knowing earlier.
+ * 3. An accumulator needs the emitter to mark every comment and every table
+ *    boundary — dozens of sites, each of which is a place a future emitter
+ *    change silently stops counting. This function reads the bytes that were
+ *    actually written, so a new table form or a new comment style cannot
+ *    escape it by forgetting to call something.
+ *
+ * The comment rule is size_count.sh's verbatim: a line whose first
+ * non-blank opens a block comment or a line comment is prose IN FULL, and a
+ * block opener that does not close on its own line runs to the line that
+ * closes it. The table rule is the note's §4.2: a line declaring
+ * `static const ... <name>[N]... = {` opens an initializer that runs to
+ * brace balance, and every byte of it — including a computed-goto jump
+ * table's — is TABLE, not code.
+ *
+ * `--emit-main`'s appended `main()` is NOT excluded here, and does not need
+ * to be: this runs on the emitter's own buffer, and cli/main.c appends
+ * `main()` to its OUTPUT after pcrec_compile has returned. A diagnostic flag
+ * therefore cannot move a refusal (the note's §4.2 requirement) by
+ * construction rather than by a rule someone has to remember. */
+typedef struct { size_t total, prose, tables; } EmitSize;
+
+static bool emit_size_table_open(const char *ln, size_t n)
+{
+    /* `static const <type...> <rx_name>[<digits>]... = {` — anchored on the
+     * right-hand `= {` and on the emitter's own `rx_` prefix rather than on a
+     * type spelling, because a type pattern is what F1's first instrument
+     * could not cross (`static const void *const`). */
+    static const char kw[] = "static const ";
+    const char *p = ln, *end = ln + n;
+    while (p < end && (*p == ' ' || *p == '\t')) p++;
+    if ((size_t)(end - p) < sizeof kw - 1) return false;
+    if (memcmp(p, kw, sizeof kw - 1) != 0) return false;
+    /* A dimension, then `= {` SOMEWHERE ON THE LINE — not necessarily at its
+     * end. The first cut of this required the line to END with `{`, which is
+     * true of the DFA's multi-line transition tables and FALSE of the
+     * computed-goto jump tables the emitter writes on ONE line
+     * (`static const void *const rx_targets_7[11] = { &&rx_s1, ... };`).
+     * That cut counted 548,024 bytes of jump table as CODE on K41's second
+     * witness — 1,218,674 instead of 670,650 — which is the same class of
+     * defect as r40's F1 (an instrument that cannot see one emitted form) and
+     * was caught the same way: by diffing this function against
+     * tests/lib/size_count.sh and the design note's own measurements before
+     * trusting it. */
+    const char *lb = NULL;
+    for (const char *q = p; q < end; q++) if (*q == '[') { lb = q; break; }
+    if (!lb) return false;
+    for (const char *q = lb; q + 1 < end; q++) {
+        if (*q != '=') continue;
+        const char *r = q + 1;
+        while (r < end && (*r == ' ' || *r == '\t')) r++;
+        if (r < end && *r == '{') return true;
+    }
+    return false;
+}
+
+static EmitSize emit_size_measure(const char *src, size_t len)
+{
+    EmitSize z = { 0, 0, 0 };
+    bool in_comment = false;
+    int  in_table = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t j = i;
+        while (j < len && src[j] != '\n') j++;
+        size_t lb = (j < len) ? (j - i + 1) : (j - i);  /* include the newline */
+        const char *ln = src + i;
+        size_t n = j - i;
+        z.total += lb;
+
+        const char *t = ln; size_t tn = n;
+        while (tn && (*t == ' ' || *t == '\t')) { t++; tn--; }
+
+        if (in_comment) {
+            z.prose += lb;
+            for (size_t k = 0; k + 1 < n; k++)
+                if (ln[k] == '*' && ln[k + 1] == '/') { in_comment = false; break; }
+        } else if (tn >= 2 && t[0] == '/' && t[1] == '*') {
+            z.prose += lb;
+            bool closed = false;
+            for (size_t k = (size_t)(t - ln) + 2; k + 1 < n; k++)
+                if (ln[k] == '*' && ln[k + 1] == '/') { closed = true; break; }
+            if (!closed) in_comment = true;
+        } else if (tn >= 2 && t[0] == '/' && t[1] == '/') {
+            z.prose += lb;
+        } else if (in_table) {
+            z.tables += lb;
+            for (size_t k = 0; k < n; k++) {
+                if (ln[k] == '{') in_table++;
+                else if (ln[k] == '}') in_table--;
+            }
+            if (in_table < 0) in_table = 0;
+        } else if (emit_size_table_open(ln, n)) {
+            z.tables += lb;
+            int d = 0;
+            for (size_t k = 0; k < n; k++) {
+                if (ln[k] == '{') d++;
+                else if (ln[k] == '}') d--;
+            }
+            in_table = d > 0 ? d : 0;
+        }
+        i = (j < len) ? j + 1 : j;
+    }
+    return z;
+}
+
+/* The two numbers the caps read. TOTAL is the artifact minus its comments
+ * (the size log's quantity); CODE is that minus its table initializers. */
+static size_t emit_size_total(const EmitSize *z) { return z->total - z->prose; }
+static size_t emit_size_code(const EmitSize *z)
+{
+    size_t t = z->total - z->prose;
+    return t > z->tables ? t - z->tables : 0;
 }
 
 static bool valid_prefix(const char *p)
@@ -183,7 +315,166 @@ static void build_anchored_dfa(Ctx *cx)
  * drops the prefilter together, in one step — see select_engine.c's
  * `forces_dfa_overflow` and its prefilter-derivation comment), so there is
  * nothing left for a third attempt to discover. */
-enum { COMPILE_MAX_ATTEMPTS = 2 };
+/* [ART-SIZE] THE UNROLL LADDER (D84; docs/design/artifact_size_term.md §3.3).
+ *
+ * The DEFAULT attempt already runs at K = PCREC_DEFAULT_UNROLL_K (8), so its
+ * figures are the ladder's K=8 entry and only the LOWER rungs need attempts of
+ * their own. Descending, because the term may only make an artifact smaller
+ * than the one today's compiler emits.
+ *
+ * IT IS EVALUATED, NEVER DESCENDED — and with the ladder at its two ENDPOINTS
+ * that distinction is what the set is chosen for rather than a property it
+ * needs. Both the node count and the byte count are NON-MONOTONE in K
+ * (measured: a 6-deep `{17}` tower emits 16,252,391 bytes at K=8 and
+ * 35,511,862 at K=6; K41's first witness has 3,234 nodes at K=4 against 3,248
+ * at K=3 — `vm_counter_copies`' mandatory `K + m%K` term is why), so a greedy
+ * DESCENT would stop at a local minimum. Evaluating the endpoints cannot.
+ *
+ * THE INTERIOR RUNGS EARN THEIR PLACE, MEASURED. A ladder of just the two
+ * endpoints [8,1] was proposed on the observation that the argmin is an
+ * endpoint on all 15 subjects of docs/design/artsize_impl/ksweep.tsv — and
+ * that turned out to be a property of fifteen hand-picked subjects rather than
+ * of the corpus. `tests/axes/run_ksweep.sh`'s interior-optimum report found
+ * three corpus patterns whose argmin is K=2 on its first run
+ * (`^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$` and two siblings), so dropping [6,4,3,2]
+ * would have cost real patterns their best K.
+ *
+ * That report is the standing CENSUS of whether the interior points earn their
+ * cost: the K-sweep gate emits the corpus at several K anyway, so it names any
+ * pattern whose argmin is interior, every run, for free.
+ *
+ * And their cost is bounded at the source rather than by shortening the set:
+ * the threshold below gates on CODE bytes, so the ladder runs only where K can
+ * act at all — measured at ~0.65 s of marginal compiler time on the worst
+ * pattern in the project, against a gcc compile it takes from 55 s to 1 s. */
+static const int SIZE_TERM_LADDER[] = { 6, 4, 3, 2, 1 };
+enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LADDER[0]) };
+
+/* [SEL-1] one retry for the DFA-overflow fallback, [ART-SIZE] one attempt per
+ * lower ladder rung plus one FINAL attempt that re-emits the chosen K.
+ * DERIVED from the ladder rather than hand-typed, so adding a rung cannot
+ * silently truncate the search. */
+enum { COMPILE_MAX_ATTEMPTS = 2 + SIZE_TERM_LADDER_N + 1 };
+
+/* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
+ * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
+ * retry decides the ENGINE and always resolves first (it is a property of the
+ * pattern, not of K); the ladder then runs on whatever engine that produced,
+ * and only when it is the VM. A ladder attempt's failure is never the
+ * compile's answer. */
+typedef enum { ST_DEFAULT = 0, ST_LADDER, ST_FINAL } SizeTermPhase;
+
+/* [ART-SIZE] THE LADDER'S DECISION (docs/design/artifact_size_term.md §3.3,
+ * §4.4). Entry 0 is the DEFAULT attempt (K = the built-in default); entries
+ * 1..n are the lower rungs, `ok[i]` false where that rung refused or hit its
+ * scratch bound.
+ *
+ * TWO STEPS, AND THE SECOND MUST NOT INHERIT THE FIRST'S VERDICT:
+ *
+ *  (1) the SELECTION picks `argmin nodes` — exact, no model in it (r40 S4:
+ *      an `argmin` over the fitted model is identically `argmin N`, because
+ *      the table term and the intercept are constant in K, so the model was
+ *      never doing work here) — and keeps it only if it saves at least 25 %
+ *      of the default's BYTES. That bar gates a THROUGHPUT preference: K=1
+ *      costs 1-3 % on single-level large counts, so a 3 % size win is not
+ *      worth taking.
+ *
+ *  (2) the CAPS then get the WHOLE ladder, bar bypassed. r40 S5: the bar is
+ *      in bytes and a cap is a refusal, so a declined bar must never strand a
+ *      pattern that some rung would have brought under a cap. Measured on
+ *      K41's second witness — byte ratio 0.913 declines the bar despite an
+ *      81 % node reduction. When step 2 takes a rung step 1 declined, that is
+ *      a `cap-rescue` and the artifact says so. */
+/* [ART-SIZE] THE DECLARED-CAPACITY FLOOR (§3.3a). A sentinel means NO BOUND
+ * and therefore compares as +infinity: `frame_capacity` -1 is unbounded and
+ * `subject_ceiling` 0 is unset, so a rung that declares a FINITE bound where
+ * the default declared none has LOWERED the artifact's capacity and reading
+ * either sentinel as zero would invert exactly that comparison. */
+static unsigned long long cap_or_inf(long long v)
+{
+    return v <= 0 ? ULLONG_MAX : (unsigned long long)v;
+}
+
+/* Rung `i` may be chosen only if the artifact it produced declares at least as
+ * much capacity as the DEFAULT attempt's did, on BOTH facts. */
+static bool size_term_capacity_holds(const long long *fc, const long long *sc, int i)
+{
+    return cap_or_inf(fc[i]) >= cap_or_inf(fc[0]) &&
+           cap_or_inf(sc[i]) >= cap_or_inf(sc[0]);
+}
+
+static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
+                             const size_t *code, const size_t *total,
+                             const long long *fc, const long long *sc, int n,
+                             unsigned long long cap_code,
+                             unsigned long long cap_total,
+                             int *out_k, bool *out_rescue, bool *out_capexcl)
+{
+    *out_rescue = false;
+    *out_capexcl = false;
+
+    /* THE CAPACITY FLOOR IS APPLIED FIRST, AND IT IS NOT A PREFERENCE.
+     * `K` is answer-identical in the LANGUAGE and not in the DEPTH an
+     * artifact reaches: a smaller K raises the per-iteration frame need, so
+     * the same default budgets carry a shorter subject (MEASURED:
+     * `^(a(?1)?b)$` stamps `subject_ceiling` 512 at the default K and 341 at
+     * K=1). A compiler-chosen K that turns a MATCH into a frames give-up is
+     * an answer change no flag asked for, and "fail and document" does not
+     * cover it — so such a rung is not a candidate at all, in step 1 OR in
+     * the cap rescue below. An explicit `--unroll=K` may still lower it;
+     * that is the caller's own choice and `docs/spec/limits.md` says so. */
+    /* WHICH rung the term WANTED, ignoring the floor. `*out_capexcl` says the
+     * floor was the BINDING reason for a decline — that the argmin the term
+     * would otherwise have taken is exactly the rung the floor removed — and
+     * not merely that some rung somewhere was excluded. Without that
+     * distinction the stamp would read `capacity-declined` on a pattern the
+     * materiality BAR declined, which is a different fact with a different
+     * remedy. */
+    int best_free = 0;
+    for (int i = 1; i < n; i++)
+        if (ok[i] && (nodes[i] < nodes[best_free] ||
+                      (nodes[i] == nodes[best_free] && k[i] > k[best_free])))
+            best_free = i;
+    *out_capexcl = best_free != 0 && !size_term_capacity_holds(fc, sc, best_free);
+
+    int best = 0;
+    for (int i = 1; i < n; i++)
+        if (ok[i] && size_term_capacity_holds(fc, sc, i) &&
+            (nodes[i] < nodes[best] ||
+             (nodes[i] == nodes[best] && k[i] > k[best])))
+            best = i;
+    /* the materiality bar, in bytes, against the default */
+    int sel = 0;
+    if (best != 0 && total[best] * 100 <= total[0] * 75) sel = best;
+
+    if (code[sel] <= cap_code && total[sel] <= cap_total) { *out_k = k[sel]; return; }
+
+    /* step 2: the caps get the whole ladder. Prefer the LARGEST K that fits,
+     * so a rescue gives up as little throughput as it can. The capacity floor
+     * still applies: a rescue that silently shortens the subject the artifact
+     * can carry trades one refusal for a wrong answer, which is the worse of
+     * the two. If nothing capacity-preserving fits, the pattern refuses at the
+     * cap and the diagnostic says so. */
+    /* ASCENDING INDEX IS DESCENDING K, and that is the whole bug this loop
+     * once had (r42 critic-sem S2). `k[]` is [default(8), 6, 4, 3, 2, 1]:
+     * index 0 is the LARGEST K, index n-1 the smallest. Walking i from n-1
+     * down to 0 therefore took the SMALLEST fitting K while this comment
+     * claimed the largest — measured on §5's witness under the 30,000-byte
+     * reference cap, the rescue chose K=1 (25,271 B) where K=3 (28,907) and
+     * K=2 (27,711) both fit, giving up throughput the cap never asked for. */
+    for (int i = 0; i < n; i++) {
+        if (!ok[i] || !size_term_capacity_holds(fc, sc, i)) continue;
+        if (code[i] <= cap_code && total[i] <= cap_total) {
+            *out_k = k[i];
+            *out_rescue = (i != sel);
+            return;
+        }
+    }
+    /* Nothing fits. Re-emit the DEFAULT so the refusal quotes the figures the
+     * caller's own options produce, not the last rung the ladder happened to
+     * try (r40 R3's condition: a trial's numbers are never the answer). */
+    *out_k = k[0];
+}
 
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out)
@@ -210,6 +501,48 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * register-allocated. */
     volatile bool dfa_disabled = false;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
+
+    /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
+     * way `overflow_why` is and for exactly the same reason: `job_cleanup`
+     * has already run `arena_free` on the attempt that produced these numbers,
+     * so a later attempt cannot read them off the dead one. Scalars that cross
+     * the `setjmp`/`longjmp` boundary are `volatile` (`-Wclobbered`, which
+     * `make strict` promotes, flags them otherwise); the arrays are not, since
+     * an array is never register-allocated.
+     *
+     * `st_k[i]`/`st_ok[i]`/`st_code[i]`/`st_total[i]` are the ladder's record,
+     * index 0 being the DEFAULT attempt's K and figures. */
+    volatile SizeTermPhase st_phase = ST_DEFAULT;
+    volatile int  st_idx = 0;          /* next ladder rung to try */
+    volatile int  st_final_k = 0;      /* the K the FINAL attempt re-emits */
+    volatile bool st_rescue = false;   /* the bar declined it; a cap took it */
+    /* [ART-SIZE] at least one rung was EXCLUDED BY THE CAPACITY FLOOR (§3.3a).
+     * Read only when the term ended on the default K, to tell "the bar said
+     * the saving was not worth it" from "every smaller K would have shortened
+     * the subject this artifact can carry" — two different declines that the
+     * one `size-model-declined` value used to spell identically. */
+    volatile bool st_capexcl = false;
+    int    st_k[SIZE_TERM_LADDER_N + 1];
+    bool   st_ok[SIZE_TERM_LADDER_N + 1];
+    size_t st_code[SIZE_TERM_LADDER_N + 1], st_total[SIZE_TERM_LADDER_N + 1];
+    size_t st_nodes[SIZE_TERM_LADDER_N + 1];
+    /* [ART-SIZE] the declared-capacity facts per attempt, the floor
+     * `size_term_choose` applies before anything else looks at size. */
+    long long st_fc[SIZE_TERM_LADDER_N + 1], st_sc[SIZE_TERM_LADDER_N + 1];
+    /* [ART-SIZE] The length of the `_UNROLL_K_WHY` string THIS attempt
+     * stamped. The size term's own verdict is part of the artifact (D81), so
+     * an attempt that has not yet made the decision stamps a different value —
+     * and therefore a different NUMBER OF BYTES — from the final one. That is
+     * the single legitimate way a re-emission at the same K can differ, and
+     * subtracting it is what keeps the identity check below EXACT rather than
+     * giving it a tolerance that would also hide a real leak. */
+    size_t st_whylen[SIZE_TERM_LADDER_N + 1];
+    memset(st_k, 0, sizeof st_k);
+    memset(st_ok, 0, sizeof st_ok);
+    memset(st_code, 0, sizeof st_code);
+    memset(st_total, 0, sizeof st_total);
+    memset(st_nodes, 0, sizeof st_nodes);
+    memset(st_whylen, 0, sizeof st_whylen);
 
     for (volatile int attempt = 0; attempt < COMPILE_MAX_ATTEMPTS; attempt++) {
         Ctx cx;
@@ -268,6 +601,58 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             return -1;
         }
 
+        /* [ART-SIZE] The K this attempt runs at, and the ladder's scratch
+         * bound. A LADDER attempt overrides `unroll_k` and arms the early
+         * abort; the DEFAULT and FINAL attempts leave both alone, so their
+         * artifacts are exactly what the caller asked for and their figures
+         * are what a refusal quotes.
+         *
+         * THE ABORT FACTOR IS 3, AND IT IS DERIVED. The bound is on RAW bytes
+         * (what a StrBuf knows) while the cap is on comment-excluded bytes, so
+         * aborting too early could discard a K that would in fact have fitted.
+         * Measured over the 2,487-artifact corpus, prose is at most 47.8 % of
+         * raw emitted bytes (median 43.7 %), so comment-excluded >= 0.52 x raw
+         * and raw > 1.92 x cap already implies over-cap. 3 x leaves margin for
+         * an emitted form more comment-heavy than anything measured: a trial
+         * aborted at 3 x cap would need its artifact to be TWO-THIRDS prose to
+         * have been viable. */
+        if (st_phase == ST_LADDER) {
+            defo.unroll_k = SIZE_TERM_LADDER[st_idx];
+            /* SATURATING, because this is a RAISE and a raise must never make
+             * a build fail that would have succeeded (`limits.md` §8's
+             * promise; r42 critic-sem S1). Unsaturated, `3 * cap` wraps in
+             * uint64 for any `--max-emit-bytes` above ULLONG_MAX/3: the bound
+             * became 2, every ladder trial aborted at its first append, and
+             * the term fell through to the default K where the CODE cap
+             * refused a pattern that compiles with no flag at all. The
+             * failure was invisible below the threshold and total below the
+             * wrap, which is why nothing caught it. */
+            const uint64_t st_cap = defo.max_emit_bytes
+                                  ? defo.max_emit_bytes
+                                  : (uint64_t)PCREC_MAX_EMIT_BYTES;
+            const uint64_t st_bound = st_cap > UINT64_MAX / 3u
+                                    ? UINT64_MAX : 3u * st_cap;
+            /* BOTH buffers, not just the C one (r42 critic-sem S3). The VM
+             * emitter builds its whole program into `job->vmsb` and splices
+             * it into `csb` with a single `sb_puts`, so arming `csb` alone
+             * let a trial construct the entire worst-rung body unbounded and
+             * caught it only on the final copy — the abort fired, but after
+             * the memory had already been spent, which is the opposite of
+             * what §2.2c claims for it. */
+            cx.job->csb.abort_over  = st_bound;
+            cx.job->vmsb.abort_over = st_bound;
+            /* THE THIRD BUFFER IN THE SAME STRUCT, armed for the reason S3
+             * exists rather than because it is expected to grow: the header
+             * is ~97 bytes on a typical artifact and a trial has never come
+             * close to the bound through it. "Small today" is exactly the
+             * assumption that left `vmsb` unarmed, and the caps already MEASURE
+             * `hsb` (it is part of the emitted size a caller must compile), so
+             * a buffer the caps count is a buffer the trial's bound covers. */
+            cx.job->hsb.abort_over  = st_bound;
+        } else if (st_phase == ST_FINAL) {
+            defo.unroll_k = st_final_k;
+        }
+
         if (setjmp(cx.jb)) {
             /* [SEL-1] Retry ONLY under `--engine=auto`, ONLY when
              * `-fprefilter` was not requested (both force forms stay
@@ -277,6 +662,37 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * was not itself the retry). Every other failure — including a
              * DFA overflow reached the same way under a force form, and
              * ANY failure on the retry attempt itself — reports normally. */
+            /* [ART-SIZE] A LADDER attempt's failure — for ANY reason: the
+             * node cap, the replication product, a repeat-copies refusal, the
+             * scratch abort, anything — means "this K is out", never the
+             * compile's answer. That is the whole of R1's blocker: the first
+             * design said a failing trial could be "discarded", which is false
+             * when `ctx_fail` is a `longjmp` to the one recovery point. It is
+             * discarded HERE, at that recovery point, which is the only place
+             * that can discard it. Measured witness, and now a test cell:
+             * `(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}` compiles at
+             * K=8 and refuses at K=6, so a ladder that let a trial's refusal
+             * escape would break a pattern that compiles today. */
+            if (st_phase == ST_LADDER) {
+                int final_k = 0; bool rescue = false, capexcl = false;
+                st_ok[st_idx + 1] = false;
+                st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
+                st_idx++;
+                job_cleanup(&cx);
+                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+                if (st_idx >= SIZE_TERM_LADDER_N) {
+                    size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
+                                     st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
+                                     defo.max_emit_code_bytes ? defo.max_emit_code_bytes
+                                                              : PCREC_MAX_VM_EMIT_CODE_BYTES,
+                                     defo.max_emit_bytes ? defo.max_emit_bytes
+                                                         : PCREC_MAX_EMIT_BYTES,
+                                     &final_k, &rescue, &capexcl);
+                    st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
+                    st_phase = ST_FINAL;
+                }
+                continue;
+            }
             bool retry = !dfa_disabled && cx.dfa_overflowed &&
                          defo.engine == PCREC_ENGINE_AUTO &&
                          !(defo.flags & PCREC_FORCE_PREFILTER);
@@ -497,15 +913,180 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "permanently UNSET (under a zero-count repeat, or reached "
                      "only through a call). Pass --engine=vm for the VM program");
 
+        /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
+         * (D81). SIX values, because the first design's three hid four
+         * reachable states behind "default" and a check could not tell "the
+         * term was denied" from "it ran and the artifact was below the
+         * threshold" from "it ran and the bar declined its K" (r40 S9, R5). */
+        cx.size_term_why =
+            defo.unroll_k > 0 && st_phase == ST_DEFAULT ? "option"
+          : (defo.flags & PCREC_NO_SIZE_TERM)           ? "denied"
+          : st_phase != ST_FINAL                        ? "default"
+          : st_rescue                                   ? "cap-rescue"
+          : st_final_k != st_k[0]                       ? "size-model"
+          : st_capexcl                                  ? "capacity-declined"
+          :                                               "size-model-declined";
+
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
 
+        /* [ART-SIZE] MEASURE, then let the phase machine decide (D84;
+         * docs/design/artifact_size_term.md §3.3, §4.4). The measurement is
+         * the same on every attempt; what differs is whether this attempt is
+         * allowed to ANSWER — a ladder rung's figures are a datum, never a
+         * refusal and never an artifact. */
+        size_t emit_tot, emit_code;
+        {
+            EmitSize zc = emit_size_measure(cx.job->csb.p, cx.job->csb.len);
+            if (defo.header_name && cx.job->hsb.len) {
+                EmitSize zh = emit_size_measure(cx.job->hsb.p, cx.job->hsb.len);
+                zc.total += zh.total; zc.prose += zh.prose; zc.tables += zh.tables;
+            }
+            emit_tot = emit_size_total(&zc);
+            emit_code = emit_size_code(&zc);
+        }
+        const unsigned long long cap_code = defo.max_emit_code_bytes
+                                          ? defo.max_emit_code_bytes
+                                          : (unsigned long long)PCREC_MAX_VM_EMIT_CODE_BYTES;
+        const unsigned long long cap_tot  = defo.max_emit_bytes
+                                          ? defo.max_emit_bytes
+                                          : (unsigned long long)PCREC_MAX_EMIT_BYTES;
 
-        /* [M4.7b/K7] Take into JOB-OWNED slots first, publish only once all three
-         * have succeeded. sb_take allocates only for a never-written buffer, so
-         * this is a path no emitter reaches — but "the compile path never aborts
-         * and never leaks" is a claim with no room for a path that almost never
-         * runs, and the ownership is one field each. */
+        if (st_phase == ST_DEFAULT) {
+            st_k[0] = defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K;
+            st_ok[0] = true; st_code[0] = emit_code; st_total[0] = emit_tot;
+            st_nodes[0] = cx.job->vm_emitted_nodes;
+            st_fc[0] = cx.job->vm_frame_capacity;
+            st_sc[0] = cx.job->vm_subject_ceiling;
+            st_whylen[0] = strlen(cx.size_term_why);
+            /* DOES THE TERM RUN? Every condition is a reason NOT to, and each
+             * is a separate sentence in the design: an explicit `--unroll=`
+             * is a value the caller chose and the term never overrides it; the
+             * deny flag is `-fno-size-term`; the DFA has no counter rung to
+             * unroll; and below the threshold the term is a measured no-op on
+             * 99.72 % of the corpus, which is what keeps it free. */
+            /* THE COUNTER-RUNG GATE, and it is not an optimisation — it is
+             * what keeps the term from charging for work it provably cannot
+             * do. `K` is the COUNTER rung's chunking factor and affects
+             * nothing else, so an artifact that never took that rung is
+             * byte-identical at every K and the ladder is five wasted
+             * pipeline runs.
+             *
+             * MEASURED, and this gate exists because the ladder without it
+             * caused a real regression: `(a|b){0,30000}` takes ~23 s to emit
+             * and its artifact is rungs 0x1 (CURSOR only, no COUNTER), so the
+             * ladder multiplied a 23 s compile into a 140 s one and pushed
+             * tests/resource's K7 shape past its 45 s CPU ceiling. The corpus
+             * sweep never caught it because that pattern lives in the resource
+             * suite, not in the `.rxt` corpus — a population nobody counted,
+             * which is this project's oldest lesson and was mine to relearn.
+             *
+             * AND THE THRESHOLD IS ON `emit_code`, NOT ON THE TOTAL, for the
+             * same reason one level up: `K` moves CODE and cannot move a table
+             * by a byte, so gating on total size runs the ladder on artifacts
+             * it provably cannot shrink. The corpus's largest artifacts are
+             * exactly that shape — `((a)|ab){4000}c` is 651,552 bytes of which
+             * only 32,440 are code — and the ladder on them was five wasted
+             * pipeline runs on the biggest patterns in the suite, which is
+             * what pushed tests/counterk and three identity checks over their
+             * CPU ceilings. Gating on code skips all of them and still runs
+             * the ladder on every pattern it can help (nested N=8: 283,212
+             * code bytes; K41 witness 1: 1,718,425). */
+            bool run = cx.job->fit.chosen == ENGM_VM &&
+                       defo.unroll_k == 0 &&
+                       !(defo.flags & PCREC_NO_SIZE_TERM) &&
+                       (cx.job->vm_rungs & 0x10u) != 0 &&
+                       emit_code > (size_t)PCREC_SIZE_TERM_THRESHOLD;
+            if (run) {
+                st_phase = ST_LADDER; st_idx = 0;
+                job_cleanup(&cx);
+                continue;
+            }
+            st_final_k = st_k[0];
+        } else if (st_phase == ST_LADDER) {
+            st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
+            st_ok[st_idx + 1] = true;
+            st_code[st_idx + 1] = emit_code; st_total[st_idx + 1] = emit_tot;
+            st_nodes[st_idx + 1] = cx.job->vm_emitted_nodes;
+            st_fc[st_idx + 1] = cx.job->vm_frame_capacity;
+            st_sc[st_idx + 1] = cx.job->vm_subject_ceiling;
+            st_whylen[st_idx + 1] = strlen(cx.size_term_why);
+            st_idx++;
+            if (st_idx < SIZE_TERM_LADDER_N) { job_cleanup(&cx); continue; }
+            {
+                int fk = 0; bool rescue = false, capexcl = false;
+                size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
+                                 st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
+                                 cap_code, cap_tot, &fk, &rescue, &capexcl);
+                st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
+            }
+            st_phase = ST_FINAL;
+            job_cleanup(&cx);
+            continue;
+        } else {
+            /* ST_FINAL — THE RE-EMISSION IDENTITY CONTROL (the manager's
+             * condition 2, and what replaces r40 R3's sabotage). The ladder
+             * chose this K from a DIFFERENT attempt's numbers; if re-emitting
+             * it now produces different bytes, then state leaked across
+             * attempts and every figure the ladder reasoned over is suspect.
+             * R3's own hazard — the emitter annotating the shared AST — cannot
+             * arise here, because each attempt re-parses and gets a FRESH AST;
+             * this check is what makes that a verified property rather than an
+             * argument. */
+            size_t wl = strlen(cx.size_term_why);
+            for (int i = 0; i <= SIZE_TERM_LADDER_N; i++) {
+                if (!st_ok[i] || st_k[i] != st_final_k) continue;
+                /* Exact, once the artifact's own verdict string is discounted
+                 * on both sides. THIS CHECK EARNED ITSELF ON ITS FIRST RUN:
+                 * un-adjusted it fired on K41 witness 1 with a 3-byte delta,
+                 * which is exactly strlen("size-model") - strlen("default") —
+                 * a ladder trial stamps `"default"` because the decision has
+                 * not been made yet, and the final attempt stamps the verdict.
+                 * A tolerance would have hidden that; subtracting the known
+                 * term explains it and leaves every other byte under guard.
+                 * Node count is compared UNADJUSTED, because no stamp can
+                 * move it — it is the quantity the ladder actually selects on. */
+                if (st_nodes[i] != (size_t)cx.job->vm_emitted_nodes ||
+                    st_code[i] - st_whylen[i] != emit_code - wl ||
+                    st_total[i] - st_whylen[i] != emit_tot - wl)
+                    ctx_fail(&cx, 0,
+                             "internal error: re-emitting at --unroll=%d gave "
+                             "%zu nodes %zu/%zu bytes, the ladder measured "
+                             "%zu nodes %zu/%zu -- state leaked across attempts",
+                             st_final_k, (size_t)cx.job->vm_emitted_nodes,
+                             emit_code - wl, emit_tot - wl,
+                             st_nodes[i], st_code[i] - st_whylen[i],
+                             st_total[i] - st_whylen[i]);
+                break;
+            }
+        }
+
+        /* THE CAPS REFUSE HERE, and only here: on the DEFAULT attempt when the
+         * term did not run, or on the FINAL attempt once the ladder has taken
+         * its best shot. Nothing is written past a cap (D84 addendum) and the
+         * figures quoted are the ones the caller's own artifact has. */
+        if (emit_code > cap_code)
+            ctx_fail(&cx, 0,
+                     /* NO `.o` figure: the ~17 % source-to-object ratio is
+                      * measured against TOTAL source, and quoting it against
+                      * CODE bytes would be a size derived for one role reused
+                      * in another — r39 finding S1 in miniature. This cap is
+                      * about compile TIME; the shipped-size number belongs on
+                      * the total cap below. */
+                     "pattern too large: %zu bytes of emitted code (limit "
+                     "%llu), which gcc cannot compile in reasonable time. "
+                     "A repeat's body is replicated and counts MULTIPLY "
+                     "through nesting -- lower a count, try --unroll=1, or "
+                     "raise --max-emit-code-bytes",
+                     emit_code, cap_code);
+        if (emit_tot > cap_tot)
+            ctx_fail(&cx, 0,
+                     "pattern too large: %zu bytes of emitted C source "
+                     "(limit %llu, ~%zu KB .o). Lower a repeat count, try "
+                     "--unroll=1, or raise --max-emit-bytes; see "
+                     "limits.md \"Handling an oversized artifact\"",
+                     emit_tot, cap_tot, emit_tot * 17 / 100 / 1024);
+
         cx.job->out_c  = sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;
@@ -515,9 +1096,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         job_cleanup(&cx);
         return 0;
     }
-    /* Unreachable: COMPILE_MAX_ATTEMPTS bounds the loop above and every path
-     * through it returns. Kept so the function has a well-defined value under
-     * a compiler that cannot see that. */
+    /* EXHAUSTION IS A DEFECT, AND IT MUST SAY SO (r42 critic-sem S8).
+     * `COMPILE_MAX_ATTEMPTS` is exactly tight — a DFA attempt, [SEL-1]'s
+     * overflow fallback, five ladder rungs and the FINAL re-emission use all
+     * eight — so a future rung, or a second retry, silently converts "one
+     * attempt too few" into a bare `-1` with `err->msg` still cleared from
+     * entry: a caller sees failure with no diagnostic at all, which is the
+     * one outcome this driver is built never to produce. Name it instead. */
+    if (err && err->msg[0] == 0)
+        snprintf(err->msg, sizeof err->msg,
+                 "internal error: compile attempts exhausted (%d) without a "
+                 "result -- the attempt budget is derived from the size-term "
+                 "ladder and no longer covers this driver's retries",
+                 COMPILE_MAX_ATTEMPTS);
     return -1;
 }
 

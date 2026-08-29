@@ -48,7 +48,16 @@ void  arena_free(Arena *a);
  * `StrBuf sb = {0}` locals that belong to no compile and have no pcrec_error to
  * fill, so an allocation failure there has nowhere to be reported and keeps the
  * abort. Attaching a Ctx is what upgrades a buffer from "abort" to "diagnose". */
-typedef struct { char *p; size_t len, cap; Ctx *cx; } StrBuf;
+/* [ART-SIZE] `abort_over` is the SIZE TERM's early-abort bound (D84;
+ * docs/design/artifact_size_term.md §2.2c), and it is a COST guard, never a
+ * cap decision. Nonzero only during a LADDER attempt: the ladder is measuring
+ * what K produces, and without a bound the worst rung writes tens of MB before
+ * anyone learns it is the worst (measured: a 6-deep `{17}` tower emits 35.5 MB
+ * at K=6 while K=1 answers in 42,619). When `len` passes it the attempt
+ * `ctx_fail`s, the driver records that K as out, and the next K starts with a
+ * fresh arena. The DEFAULT and FINAL attempts leave it 0 and always run to
+ * completion, because their figures are what a refusal quotes. */
+typedef struct { char *p; size_t len, cap; Ctx *cx; size_t abort_over; } StrBuf;
 
 void  sb_putc(StrBuf *sb, char c);
 void  sb_puts(StrBuf *sb, const char *s);
@@ -1290,6 +1299,43 @@ typedef struct {
      * allocation failure between two takes frees rather than strands them.
      * NULL at every other moment; see compile_driver's tail. */
     char *out_c, *out_h, *out_ir;
+    /* [ART-SIZE] The emitted VM node count this run produced — `Vm.nlabel`,
+     * published here at the end of `pcrec_emit_vm` because the size term's
+     * ladder needs it and `Vm` is emitter-local. It is the SAME number
+     * `--emit-ir`'s "program N labels" line prints, so the two cannot drift.
+     * 0 on a DFA artifact, which has no VM nodes. */
+    int vm_emitted_nodes;
+    /* [ART-SIZE] The rung bitmask this run emitted (`Vm.rungs`, the same value
+     * `<PREFIX>_VM_RUNGS` stamps). The size term reads ONE bit of it: the
+     * COUNTER rung's. `K` is the counter rung's chunking factor and affects
+     * NOTHING else, so a pattern whose artifact never took that rung cannot
+     * change size at any K, and running the ladder on it is provably wasted
+     * work. Bit 4 (0x10) — kept in step with emit_vm.c's `vm_rung_bit[]` by
+     * the same contract `<PREFIX>_VM_RUNGS`'s own block states. */
+    unsigned vm_rungs;
+    /* [ART-SIZE] THE ARTIFACT'S DECLARED CAPACITY, published for the size
+     * term's ladder the same way and for a sharper reason than the two above.
+     * These are the exact values `rx_info`'s `.frame_capacity` and
+     * `.subject_ceiling` carry (D44.1: what the artifact ENFORCES, learnable
+     * without triggering PCREC_ERR_FRAMES), captured per attempt.
+     *
+     * MEASURED, and this is why the fields exist: `K` is answer-identical in
+     * the LANGUAGE and NOT in the DEPTH an artifact reaches. `^(a(?1)?b)$`
+     * stamps `subject_ceiling` 512 at the default K and 341 at K=1 — a
+     * smaller K raises the per-iteration frame need, so the same default
+     * budgets carry a shorter subject. A compiler-chosen K that turns a
+     * MATCH into a frames give-up is an answer change no flag asked for, so
+     * `size_term_choose` treats a rung that would LOWER either number as not
+     * a candidate at all (docs/design/artifact_size_term.md §3.3a). An
+     * explicit `--unroll=K` may still lower it: that is the caller's own
+     * choice, and `docs/spec/limits.md` says so.
+     *
+     * Sentinels are the emitter's: `frame_capacity` -1 = unbounded,
+     * `subject_ceiling` 0 = unset/not applicable. BOTH mean "no bound" and
+     * therefore compare as +infinity, never as zero — a rung that declares a
+     * ceiling where the default declared none has LOWERED it. */
+    long long vm_frame_capacity;
+    long long vm_subject_ceiling;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -1407,6 +1453,13 @@ struct Ctx {
      *
      * NULL until `pcrec_parse_mods_init` runs. Every Ctx that can reach a
      * parser or a doorway port calls it — see that function. */
+    /* [ART-SIZE] What the size term decided, set by compile_driver before the
+     * FINAL emission and read by the stamp block (D81: a selection fact is
+     * stamped whether or not it fired, so `size_term_why` is never NULL on a
+     * VM artifact). It is computed in the DRIVER and not in the emitter
+     * because only the driver has seen the whole ladder — an emitter run knows
+     * its own K and nothing about the alternatives it was chosen over. */
+    const char          *size_term_why;
     ParseMods           *mods;
     /* THE RUNNING CAPTURE COUNT (MOD-0.1, design §18.1 as Frank resolved
      * it: there is NO scanner). Incremented at p_group_body's capturing-`(`

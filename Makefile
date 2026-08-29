@@ -251,6 +251,7 @@ test-codegen: all
 	    'bash tests/codegen/run_codegen_tests.sh' \
 	    'bash tests/codegen/run_dfa_stamps.sh' \
 	    'bash tests/codegen/run_offset_skip.sh' \
+	    'bash tests/codegen/run_size_term.sh' \
 	    'bash tests/codegen/run_trie_identity.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
@@ -1086,6 +1087,15 @@ test-axes: all
 	bash tests/axes/run_axes.sh
 	PROCS=$${PROCS:-$$(nproc)} bash tests/codegen/run_form_census.sh
 
+# [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a
+# `PCREC_(NO|FORCE)_*` bit, so `run_axes.sh` — which derives its list from
+# those bits — has never swept it, and until this target NO gate proved any K
+# answer-identical. Opt-in for the same reason test-axes is: one full corpus
+# run per rung. [CHK-2] item (c) folds value axes into the generic sweep; this
+# row is its named trigger and this target is the gate meanwhile.
+test-ksweep: all
+	bash tests/axes/run_ksweep.sh
+
 # The sabotage detection matrix (MECH-1): applies every encoded sabotage to a
 # pristine `git archive HEAD` copy, builds it there, runs the relevant suites
 # and prints which checks caught it. NOT part of `make test` — it builds the
@@ -1116,6 +1126,7 @@ clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
+        test-ksweep \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
