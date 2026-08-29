@@ -1307,7 +1307,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * this row writes on a VM artifact is that struct field, which is above
      * the region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 10,\n");
+    sb_puts(c,   "    .abi = 11,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *

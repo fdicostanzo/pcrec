@@ -317,6 +317,12 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
+# [ART-SIZE] 64 -> 67 (2026-08-29): bit 18's `size-term` axis. READ FROM A
+# RUN, not predicted — the estimate at ruling time was 65 and the actual is
+# 67, because the axis's two candidate rows carry three checks between them,
+# not one each. That gap is the reason this number is re-derived at every
+# landing rather than carried forward arithmetically.
+#
 # [manager landing, 2026-08-28 union battery] 53 -> 59: [OPT-K]'s bit 16 joined the
 # dump (six more named checks) and the check's own bound became unbounded; the
 # battery's make test and san both tripped this guard while every sub-script
@@ -335,16 +341,16 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 64 ]; then
+if [ "$axesn" -ne 67 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 64." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 67." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (64 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (67 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 64 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 67 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

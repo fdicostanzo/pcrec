@@ -156,10 +156,10 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `10`
-([ENG-ABS], the anchored match-here form; it read `6` when this note
-was written, `7` after [OPT-3], `8` after [ENG-FORM] and `9` after
-[OPT-K]).
+events but never stated the general rule; `rx_info.abi` is `11`
+([ART-SIZE], the size term's four stamps; it read `6` when this note
+was written, `7` after [OPT-3], `8` after [ENG-FORM], `9` after
+[OPT-K] and `10` after [ENG-ABS]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1567,10 +1567,12 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `10` on every artifact today ([ENG-ABS] bumped it
-  from 9, which was [OPT-K]'s offset-k candidate-start skip; `8` was
-  [ENG-FORM]'s opaque DFA state token and `7` [OPT-3]'s
-  pre-multiplied DFA transition table), and is not yet a
+- **`rx_info.abi` is `11` on every artifact today ([ART-SIZE] bumped it
+  from 10 by adding the size term's four stamps — `_UNROLL_K`,
+  `_UNROLL_K_WHY`, `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES`, §6.3;
+  `10` was [ENG-ABS]'s anchored match-here form, `9` [OPT-K]'s offset-k
+  candidate-start skip, `8` [ENG-FORM]'s opaque DFA state token and `7`
+  [OPT-3]'s pre-multiplied DFA transition table), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
@@ -2776,3 +2778,23 @@ rule). No struct offset moves — the two new stamps are `#define`s — and no
 DFA artifact's bytes move at all, the first `abi` bump of which that is
 true; the number versions the artifact FORMAT, not the VM, so it moves on
 both engines regardless.
+
+**[ART-SIZE] the size term's four macros**, on the `<PREFIX>_DFA_SCAN`
+precedent (a selection fact stamped whether or not it fired, D81) and
+VM-artifact-scoped for the first two, because a DFA artifact has no counter
+rung to have chosen a `K` for:
+
+- `<PREFIX>_UNROLL_K` — the unroll factor this artifact was emitted at.
+- `<PREFIX>_UNROLL_K_WHY` — SIX values, because "the term did not run" has
+  four distinguishable reasons and a check must tell them apart:
+  `"option"` (an explicit `--unroll=K`), `"denied"` (`-fno-size-term`),
+  `"default"` (the term ran and the artifact was below its threshold),
+  `"size-model"` (the ladder ran and its `K` was taken),
+  `"size-model-declined"` (the ladder ran and the materiality bar rejected
+  its `K`), `"cap-rescue"` (the bar declined a `K` and an emitted-size cap
+  took it anyway).
+- `<PREFIX>_MAX_EMIT_CODE_BYTES` and `<PREFIX>_MAX_EMIT_BYTES` — the
+  EFFECTIVE limits this artifact was built under, so a reader can tell an
+  artifact that fitted from one built with a raised cap without having the
+  command line. `_MAX_EMIT_BYTES` is on BOTH engines; the total-bytes cap
+  applies to whatever was emitted. See `limits.md` §8.
