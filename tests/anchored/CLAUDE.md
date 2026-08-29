@@ -36,6 +36,25 @@ bug by construction, with no question about which side is right and no
 external oracle needed. It is the same argument `tests/possessify/`'s
 differential makes for its own denied build, one row over.
 
+## Two sections, and §2 exists because §1 is blind to the capture array
+
+**§1** is the corpus sweep, captures OFF — every selecting pattern, every
+subject, every position. **§2** is eight NAMED captures-on witnesses with
+`RX_NCAPS >= 2`, added at the r41 close (finding S4) because §1 compiles both
+arms `--no-captures`, so `RX_NCAPS` is 1 on all of its cells and
+`_match_caps`'s DEAD-GROUP FILL loop is EMPTY there. The r41 critic planted one
+token (`rx_g < 1`) and measured the result: all four of
+`run_anchored_match.sh` §3's `grep` predicates still pass, §1's cells stay
+green, and `(?(DEFINE)(?<g>a))(?&g)b` hands the caller back its own
+uninitialised slot — spec §3.3 broken with every check in the tree green.
+Sabotage **S190** is that plant, adopted rather than rewritten; its canonical
+run is `anchdiff:9fail/5pass, anchoredmatch:1fail/15pass, corpus:0fail/26pass`,
+DETECTED by §2 alone.
+
+`RX_NCAPS >= 2` is READ OFF EACH WITNESS'S ARTIFACT and required, because a
+witness at 1 has an empty fill loop and would pass whatever the emitter did —
+the arm asserting its own non-vacuity rather than assuming it.
+
 ## Files
 
 - **`anchdiff_driver.c`** — the two-artifact driver. Both builds are linked
@@ -60,7 +79,11 @@ differential makes for its own denied build, one row over.
   all` AND selects the form; patterns that do not select it are COUNTED and
   skipped, because comparing a build against itself is this project's
   most-recorded check-design failure. The selected population is FLOORED (1150;
-  1213 measured 2026-08-29) for the reason `run_anchored_match.sh` §5 pins its
+  **1210** measured 2026-08-29 — it was 1,213 before [ENG-ABS]'s own 4,096
+  anchored-machine ceiling took three `counterk` 4000-count shapes into the
+  search-filter form, and **that three-pattern move is what caught the
+  ceiling's first derivation being over the captures-on population**) for the
+  reason `run_anchored_match.sh` §5 pins its
   census: a compiler that stopped selecting the form would make every
   comparison trivially equal and this file would report a large green number
   while measuring nothing.

@@ -197,7 +197,16 @@ is EXPECTED to time out"*, and neither would a separate arm.
   `<prefix>_search` and the structural check reads the artifact's shape — so
   this is the only arm in the tree that can be red for it. **A row on this arm
   is EXPECTED to score `corpus:0fail` and `anchoredmatch:0fail`**; that is the
-  arm working, not a half-detection.
+  arm working, not a half-detection. **TWO ROWS LIVE HERE and they see
+  different halves**: S189 (`prune=false` on the anchored machine — a wrong
+  LENGTH) is caught by §1's corpus sweep; S190 (the dead-group fill's loop
+  bounded at 1 — an UNWRITTEN capture slot) is caught by §2's captures-on arm
+  ALONE, because §1 compiles both arms `--no-captures` and the fill loop is
+  empty there. Canonical runs: S189 `anchdiff:2fail/5pass, corpus:0fail/26pass`
+  at `312612b`; S190 `anchdiff:9fail/5pass, anchoredmatch:1fail/15pass,
+  corpus:0fail/26pass` at `cf05077` — and S190's single `anchoredmatch` red is
+  §4b's reference-build-warnings check firing on gcc's complaint about the
+  plant's own dead loop, NOT a detection.
 - `trie` → `tests/codegen/run_trie_identity.sh` (the M2.8 differential check,
   default 500 patterns x 2 sweeps, plus 3 positive controls).
 - `reject` → `tests/reject/run_reject_tests.sh` (the "requires module 'X'"

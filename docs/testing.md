@@ -1107,8 +1107,11 @@ reservation does not.
     that CONTAINS that pattern and that cell — is **26 passed / 0 failed** and
     `run_anchored_match.sh` is **14 passed / 0 failed**. Landing figures:
     1,213 corpus patterns × 18 subjects, every position 0..n+1, all four
-    anchored entries plus the search control — **147,986 cells, 0
-    divergences**.
+    anchored entries plus the search control — **147,620 cells, 0
+    divergences**; plus §2, the captures-on arm added at the r41 close
+    (finding S4), 8 named `RX_NCAPS >= 2` witnesses over **976 cells**,
+    which is the only thing in the tree that can see `_match_caps`'s
+    dead-group fill (sabotage S190).
   - **THE OVERFLOW ARM'S POPULATION IS ZERO AND THAT IS MEASURED**, not
     assumed: the DFA caps are shared between the three machines and the
     MANDATORY pair is built first and is at least as large, so a corpus
