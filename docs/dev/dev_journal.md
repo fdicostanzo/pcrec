@@ -17667,3 +17667,29 @@ rungs' exits). Verified: the sanitizer axis on size_term.rxt 21/0, no
 LSan report; strict clean; test-codegen 5/5 scripts / 0 failed. The
 classifier blocked a combined heredoc-edit-plus-make command once; the
 edits went through the Edit tool. Battery relaunched on the fix commit.
+
+#### Forty-fourth session, part 11 — CLOSE: the battery on 36d5963 is GREEN; I-17 sent; worktrees retired (2026-08-29 ~13:5x EDT)
+
+Battery on 36d5963 (launched 10:02, DONE 13:37): strict clean; anchors
+189/200 resolve; `make -k -j12 test` checks 0 failed, 27/27 sections,
+cases 29 failed = the counterk load cell (solo 1,634/0); solo resource
+26/0, counterk 24/0; `make san` rc 0 / 0 report lines both axes (the
+LSan fix holds; 107 min — the tree gained the anchored and size-term
+suites); mech 189 rows / unexpected 0 / undetected 6 (S150-S153 S160 S178, expected) / unreached 0 / anomalies 0. The script's DONE line
+printed RED for "guard/FATAL/make-error lines=1" — the top-level
+`make: *** [Makefile:165: test] Error 1` the load cell always produces,
+which the solo stages clear; COVERAGE/FATAL lines 0. Verdict by hand:
+**GREEN**. [ART-SIZE] STEP 2 and [ENG-ABS]'s second mechanism are both
+battery-proven on main at abi 11. I-17 to the bench (pin 36d5963; what
+moved for the adapter; nothing moves on their 18 patterns; ONE
+consolidated worklist for the pcrecdev2 window Frank opens next
+session). Worktrees engabs/artsize3 retired, lane branches deleted, the
+watch cron deleted. Frank's closing rulings this stretch: D85 (the
+replacement/definition model as a predicate-scanned table — [DD-11]'s
+shape; `--list-definitions` as the fifth registry surface once the
+definitions are data), the exemplar findings file IS an .rxt (a `freq`
+data block a target's config references; the committed artifact is the
+analysis, never the exemplar; a FAMILY of analyses with a membership
+rule — each answers a named selection point's question, value measured
+first). wake.md rewritten. The session ends with a clean tree at the
+close commit; next session runs beside a live bench session.
