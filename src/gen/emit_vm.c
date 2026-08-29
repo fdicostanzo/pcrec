@@ -9775,4 +9775,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         st.why = job->fit.why;
         vm_render_listing(&v, &job->irsb, &st);
     }
+
+    /* [ART-SIZE] Publish the emitted node count for the size term's ladder
+     * (src/core/compile.c). It is `nlabel` — the same number `--emit-ir`'s
+     * "program N labels" line prints a few lines above — so the ladder and
+     * the listing can never disagree about how big a program this K
+     * produced. The ladder selects `argmin` over exactly this.
+     */
+    job->vm_emitted_nodes = v.nlabel;
 }

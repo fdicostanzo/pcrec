@@ -48,7 +48,16 @@ void  arena_free(Arena *a);
  * `StrBuf sb = {0}` locals that belong to no compile and have no pcrec_error to
  * fill, so an allocation failure there has nowhere to be reported and keeps the
  * abort. Attaching a Ctx is what upgrades a buffer from "abort" to "diagnose". */
-typedef struct { char *p; size_t len, cap; Ctx *cx; } StrBuf;
+/* [ART-SIZE] `abort_over` is the SIZE TERM's early-abort bound (D84;
+ * docs/design/artifact_size_term.md §2.2c), and it is a COST guard, never a
+ * cap decision. Nonzero only during a LADDER attempt: the ladder is measuring
+ * what K produces, and without a bound the worst rung writes tens of MB before
+ * anyone learns it is the worst (measured: a 6-deep `{17}` tower emits 35.5 MB
+ * at K=6 while K=1 answers in 42,619). When `len` passes it the attempt
+ * `ctx_fail`s, the driver records that K as out, and the next K starts with a
+ * fresh arena. The DEFAULT and FINAL attempts leave it 0 and always run to
+ * completion, because their figures are what a refusal quotes. */
+typedef struct { char *p; size_t len, cap; Ctx *cx; size_t abort_over; } StrBuf;
 
 void  sb_putc(StrBuf *sb, char c);
 void  sb_puts(StrBuf *sb, const char *s);
@@ -1259,6 +1268,12 @@ typedef struct {
      * allocation failure between two takes frees rather than strands them.
      * NULL at every other moment; see compile_driver's tail. */
     char *out_c, *out_h, *out_ir;
+    /* [ART-SIZE] The emitted VM node count this run produced — `Vm.nlabel`,
+     * published here at the end of `pcrec_emit_vm` because the size term's
+     * ladder needs it and `Vm` is emitter-local. It is the SAME number
+     * `--emit-ir`'s "program N labels" line prints, so the two cannot drift.
+     * 0 on a DFA artifact, which has no VM nodes. */
+    int vm_emitted_nodes;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
