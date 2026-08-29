@@ -62,6 +62,23 @@ reasons=()
 sizeref=0        # explicit-K refusals a SIZE limit explains (printed, not failed)
 capflips=0       # excluded cells whose pattern the TERM itself builds at K<8
 
+# THE INTERIOR CENSUS SCANS THE WHOLE CORPUS (r42, the S5 shape found in this
+# file too). It used to take `head -150` of `tests/*/*.rxt` — a 5 % prefix that
+# ALSO missed every nested directory (`tests/*/*/*.rxt`, where the d27 corpora
+# live), and the note then described its result as a full-corpus census, which
+# it was not. `KSWEEP_INTERIOR_N` still truncates for a quick local run; it is
+# UNSET by default, so `make test-ksweep` censuses the real population.
+ksweep_interior_population() {
+    local all
+    all="$(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt "$ROOT_DIR"/tests/*/*/*.rxt 2>/dev/null \
+           | sed 's/^pattern //' | LC_ALL=C sort -u)"
+    if [ -n "${KSWEEP_INTERIOR_N:-}" ]; then
+        printf '%s\n' "$all" | head -"$KSWEEP_INTERIOR_N"
+    else
+        printf '%s\n' "$all"
+    fi
+}
+
 # [K37] the interior-optimum report below invokes the compiler per pattern per
 # K; bound each one through gen_timeout.sh's `pcrec_run` rather than calling
 # the binary bare.
@@ -189,7 +206,7 @@ while IFS= read -r p; do
         echo "  INTERIOR OPTIMUM FOUND: pattern $p, K=$best_k ($best_n nodes)"
         inter=$((inter+1))
     fi
-done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | LC_ALL=C sort -u | head -"${KSWEEP_INTERIOR_N:-150}")
+done < <(ksweep_interior_population)
 if [ "$inter" -eq 0 ]; then
     echo "  none found — every sampled pattern's argmin is an ENDPOINT (K=1 or K=8)."
     echo "  Informational: this is the measurement that would justify dropping the"

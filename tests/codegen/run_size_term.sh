@@ -35,6 +35,20 @@ ok()  { printf 'PASS: %s\n' "$1"; pass=$((pass+1)); }
 bad() { printf 'FAIL: %s\n' "$1"; fail=$((fail+1)); }
 stamp() { grep -oE "^#define RX_$1 .*" "$2" 2>/dev/null | head -1 | sed "s/^#define RX_$1 //"; }
 
+# THE WHOLE CORPUS, NOT A PREFIX (r42 critic-sem S5). The ceiling scans below
+# used `head -400`, a fixed 20 % prefix that cut at `(?:a|ab)*+` — and 10 of
+# the 37 patterns the term acts on under a lowered threshold sit PAST the cut,
+# so a ceiling pinned at 0 was pinned over a fifth of its own population. Same
+# shape as the `m6read_samples` `head -n N` lesson. These scans are EMIT ONLY
+# (no gcc), which is what makes the full population affordable.
+# LC_ALL=C on the sort is K35, guarded here rather than inherited: under this
+# box's ambient en_US.UTF-8 a bare `sort -u` MERGES patterns that differ only
+# in punctuation — measured during r42 at 634 of 2,002 collapsed.
+corpus_patterns() {
+    grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt "$ROOT_DIR"/tests/*/*/*.rxt 2>/dev/null \
+        | sed 's/^pattern //' | LC_ALL=C sort -u
+}
+
 NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
 
 # --- 1. the stamps exist and are UNCONDITIONAL on every VM artifact (D81) ----
@@ -144,6 +158,17 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         else
             bad "the rescue and the default build chose the same K ($rk); this cell proves nothing"
         fi
+        # THE RESCUE MUST TAKE THE LARGEST FITTING K, PINNED (r42 critic-sem
+        # S2). "different from the default" was too weak a claim: the loop
+        # walked the ladder in the wrong direction for a release, taking the
+        # SMALLEST fitting K (1) where 3 and 2 both fit, and this cell stayed
+        # green throughout because 1 != 8. A rescue gives up as little
+        # throughput as it can or it is not the rescue the design describes.
+        if [ "$rk" = "3" ]; then
+            ok "the rescue took the LARGEST fitting K (3) — not merely a different one"
+        else
+            bad "the rescue took K=$rk; under this reference build K=3 fits (28,907 B) and K=2 fits (27,711 B), so the largest fitting rung is 3. A smaller K here means the ladder is being walked in the wrong direction"
+        fi
     else
         bad "the cap-rescue witness '$RESCUE' did not compile under the lowered-cap compiler"
     fi
@@ -161,7 +186,7 @@ while IFS= read -r p; do
     if pcrec_run "$PCREC" -p rx --features all -o "$WORK/nat.c" -- "$p" 2>/dev/null; then
         [ "$(stamp UNROLL_K_WHY "$WORK/nat.c" | tr -d '"')" = "cap-rescue" ] && nat=$((nat+1))
     fi
-done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | LC_ALL=C sort -u | head -400)
+done < <(corpus_patterns)
 if [ "$nat" -eq 0 ]; then
     ok "natural cap-rescue population is 0 (the ceiling holds; the branch is reachable only through a lowered-cap build)"
 else
@@ -256,11 +281,65 @@ while IFS= read -r p; do
     s1="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/n1.c" | grep -oE '[-0-9]+$')"
     [ -n "$s8" ] && [ -n "$s1" ] || continue
     [ "$s8" -gt 0 ] && { [ "$s1" -eq 0 ] || [ "$s1" -lt "$s8" ]; } && natcap=$((natcap+1))
-done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | LC_ALL=C sort -u | head -400)
+done < <(corpus_patterns)
 if [ "$natcap" -eq 0 ]; then
     ok "natural capacity-floor population is 0 (no corpus pattern has BOTH the counter rung and a K-sensitive declared capacity)"
 else
     bad "natural capacity-floor population is $natcap — a real pattern now reaches the floor; record the acceptance change, do not widen this pin"
+fi
+
+# --- 8. a RAISE must never make a build fail that would have succeeded ------
+# `limits.md` §8's promise, and it was briefly false (r42 critic-sem S1): the
+# ladder's scratch bound is `3 x cap` in uint64, and any --max-emit-bytes above
+# ULLONG_MAX/3 WRAPPED it to a tiny number. Every trial then aborted at its
+# first append, the term fell through to the default K, and the CODE cap
+# refused a pattern that compiles with no flag at all — a raise turning a
+# success into a failure, which is exactly what the raise-only rule exists to
+# prevent. The bound saturates now; this cell is the pin.
+HUGE=6148914691236517206      # ULLONG_MAX/3 + 1, the smallest wrapping value
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/nr.c" -- "$NEST8" 2>/dev/null
+base_k="$(stamp UNROLL_K "$WORK/nr.c")"
+if pcrec_run "$PCREC" -p rx --features all --max-emit-bytes=$HUGE -o "$WORK/hr.c" -- "$NEST8" 2>/dev/null; then
+    hk="$(stamp UNROLL_K "$WORK/hr.c")"
+    [ -n "$base_k" ] && [ "$hk" = "$base_k" ] \
+        && ok "--max-emit-bytes past ULLONG_MAX/3 compiles what the default compiles, at the same K ($hk) — the scratch bound saturates instead of wrapping" \
+        || bad "a raised cap changed the chosen K ($base_k -> $hk): the ladder's scratch bound is not saturating"
+else
+    bad "--max-emit-bytes=$HUGE REFUSED a pattern that compiles with no flag — a raise must never make a build fail that would have succeeded (limits.md §8)"
+fi
+
+# --- 9. the MATERIALITY BAR is pinned from BOTH sides -----------------------
+# The constant (75) was pinned by nothing (r42 critic-sem S6): at the shipped
+# threshold only two patterns in the whole tree run the ladder, so 60, 80 and
+# 85 all leave `make test` green. These two cells bracket it. They run under
+# §7's threshold-1000 reference compiler, because at the shipped threshold
+# neither witness reaches the ladder at all.
+#
+# WHAT THIS BRACKETS, STATED HONESTLY: measured over the whole corpus at
+# threshold 1000, the TAKEN ratios run 0.1715..0.6765 and the DECLINED ones
+# start at 1.0003 — there is no corpus pattern between 0.68 and 1.00, so these
+# cells bracket the bar to (0.6103, 1.0004] and no tighter. A bar of 60 fails
+# the first cell; a bar of 100 fails the second. Pinning 75 to the byte needs a
+# witness either side of 0.75, and the corpus has none.
+if [ -x "$REF2" ]; then
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bt.c" -- '((a)|ab){17}c' 2>/dev/null; then
+        w="$(stamp UNROLL_K_WHY "$WORK/bt.c" | tr -d '"')"
+        [ "$w" = "size-model" ] \
+            && ok "the bar TAKES a 0.61-ratio rung ('((a)|ab){17}c' -> size-model) — a materiality bar below ~61 % would decline it" \
+            || bad "the bar declined a 0.61-ratio rung (got '$w'); the materiality constant has moved below what §3.3's own selection table calls material"
+    else
+        bad "the bar's TAKEN witness did not compile under the threshold-1000 compiler"
+    fi
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bd.c" -- '(?:aa|a){8,12}+ab' 2>/dev/null; then
+        w="$(stamp UNROLL_K_WHY "$WORK/bd.c" | tr -d '"')"
+        case "$w" in
+            size-model-declined|capacity-declined)
+                ok "the bar DECLINES a 1.0004-ratio rung ('(?:aa|a){8,12}+ab' -> $w) — a bar at 100 % or above would take it" ;;
+            *)  bad "the bar took a rung that saves NOTHING (ratio 1.0004, got '$w'): the materiality constant is at or above 100 %, so the term is paying throughput for no bytes" ;;
+        esac
+    else
+        bad "the bar's DECLINED witness did not compile under the threshold-1000 compiler"
+    fi
 fi
 
 printf '\nchecks passed: %d\nchecks failed: %d\n' "$pass" "$fail"

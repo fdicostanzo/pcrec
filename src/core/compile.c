@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -454,7 +455,14 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
      * can carry trades one refusal for a wrong answer, which is the worse of
      * the two. If nothing capacity-preserving fits, the pattern refuses at the
      * cap and the diagnostic says so. */
-    for (int i = n - 1; i >= 0; i--) {
+    /* ASCENDING INDEX IS DESCENDING K, and that is the whole bug this loop
+     * once had (r42 critic-sem S2). `k[]` is [default(8), 6, 4, 3, 2, 1]:
+     * index 0 is the LARGEST K, index n-1 the smallest. Walking i from n-1
+     * down to 0 therefore took the SMALLEST fitting K while this comment
+     * claimed the largest — measured on §5's witness under the 30,000-byte
+     * reference cap, the rescue chose K=1 (25,271 B) where K=3 (28,907) and
+     * K=2 (27,711) both fit, giving up throughput the cap never asked for. */
+    for (int i = 0; i < n; i++) {
         if (!ok[i] || !size_term_capacity_holds(fc, sc, i)) continue;
         if (code[i] <= cap_code && total[i] <= cap_total) {
             *out_k = k[i];
@@ -610,9 +618,29 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * have been viable. */
         if (st_phase == ST_LADDER) {
             defo.unroll_k = SIZE_TERM_LADDER[st_idx];
-            cx.job->csb.abort_over = 3 * (defo.max_emit_bytes
-                                          ? defo.max_emit_bytes
-                                          : (uint64_t)PCREC_MAX_EMIT_BYTES);
+            /* SATURATING, because this is a RAISE and a raise must never make
+             * a build fail that would have succeeded (`limits.md` §8's
+             * promise; r42 critic-sem S1). Unsaturated, `3 * cap` wraps in
+             * uint64 for any `--max-emit-bytes` above ULLONG_MAX/3: the bound
+             * became 2, every ladder trial aborted at its first append, and
+             * the term fell through to the default K where the CODE cap
+             * refused a pattern that compiles with no flag at all. The
+             * failure was invisible below the threshold and total below the
+             * wrap, which is why nothing caught it. */
+            const uint64_t st_cap = defo.max_emit_bytes
+                                  ? defo.max_emit_bytes
+                                  : (uint64_t)PCREC_MAX_EMIT_BYTES;
+            const uint64_t st_bound = st_cap > UINT64_MAX / 3u
+                                    ? UINT64_MAX : 3u * st_cap;
+            /* BOTH buffers, not just the C one (r42 critic-sem S3). The VM
+             * emitter builds its whole program into `job->vmsb` and splices
+             * it into `csb` with a single `sb_puts`, so arming `csb` alone
+             * let a trial construct the entire worst-rung body unbounded and
+             * caught it only on the final copy — the abort fired, but after
+             * the memory had already been spent, which is the opposite of
+             * what §2.2c claims for it. */
+            cx.job->csb.abort_over  = st_bound;
+            cx.job->vmsb.abort_over = st_bound;
         } else if (st_phase == ST_FINAL) {
             defo.unroll_k = st_final_k;
         }
@@ -1060,9 +1088,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         job_cleanup(&cx);
         return 0;
     }
-    /* Unreachable: COMPILE_MAX_ATTEMPTS bounds the loop above and every path
-     * through it returns. Kept so the function has a well-defined value under
-     * a compiler that cannot see that. */
+    /* EXHAUSTION IS A DEFECT, AND IT MUST SAY SO (r42 critic-sem S8).
+     * `COMPILE_MAX_ATTEMPTS` is exactly tight — a DFA attempt, [SEL-1]'s
+     * overflow fallback, five ladder rungs and the FINAL re-emission use all
+     * eight — so a future rung, or a second retry, silently converts "one
+     * attempt too few" into a bare `-1` with `err->msg` still cleared from
+     * entry: a caller sees failure with no diagnostic at all, which is the
+     * one outcome this driver is built never to produce. Name it instead. */
+    if (err && err->msg[0] == 0)
+        snprintf(err->msg, sizeof err->msg,
+                 "internal error: compile attempts exhausted (%d) without a "
+                 "result -- the attempt budget is derived from the size-term "
+                 "ladder and no longer covers this driver's retries",
+                 COMPILE_MAX_ATTEMPTS);
     return -1;
 }
 

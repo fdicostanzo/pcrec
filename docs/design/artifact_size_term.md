@@ -362,7 +362,23 @@ that the answer is 30,826 bytes; the 6-deep one refuses twice on the way to
 
 **What shipped:** `StrBuf.abort_over`, checked in `sb_grow` — the ONE place a
 buffer's length grows, so no append path can miss it — armed only on a LADDER
-attempt. The DEFAULT and FINAL attempts leave it zero and always run to
+attempt.
+
+**AND ARMED ON BOTH BUFFERS, which the first version was not** (r42
+critic-sem S3). `sb_grow` really is the only place a length grows, but a
+`StrBuf` has to be ARMED to be checked, and the VM emitter builds its whole
+program into `job->vmsb` before splicing it into `job->csb` with a single
+`sb_puts`. With only `csb` armed, a trial constructed the entire worst-rung
+body unbounded and the abort fired on the copy — after the memory had already
+been spent, which is the opposite of what this section claims for it. The
+correct reading of the old sentence is that ONE CHECK SITE covers every append;
+it never followed that one ARMED buffer covers every allocation. MEASURED on
+the archived 6-deep `{17}` tower, both buffers armed against `csb` alone:
+
+| | peak RSS | wall |
+|---|---|---|
+| `csb` armed only (as first shipped) | 62 MB | 0.52 s |
+| **both armed (shipped now)** | **44 MB** | **0.23 s** | The DEFAULT and FINAL attempts leave it zero and always run to
 completion, because their figures are what a refusal quotes.
 
 **The factor is 3 and it is DERIVED, not chosen.** The bound is on RAW bytes
@@ -720,7 +736,37 @@ Three things this table settles:
    entries against 552 VM nodes — which `K` cannot touch at all (K=1 saves
    8.7 %), so the materiality bar correctly declines it and the cap takes it.
 3. **Separation is still wide**: selecting rows at 0.051–0.376, declining rows
-   at 0.913–1.000, nothing in between.
+   at 0.913–1.000, nothing in between — on THESE SUBJECTS.
+
+**RE-MEASURED OVER THE WHOLE CORPUS (r42 critic-sem S6), because "nothing in
+between" is a claim about a POPULATION and the rows above are a hand-picked
+table.** Under a threshold-1000 reference build, over all 2,772 corpus
+patterns (`LC_ALL=C sort -u`, emit only, `--engine=vm`), 39 reach the ladder
+and the ratio sets are:
+
+| verdict | ratios |
+|---|---|
+| taken (`size-model`) | 0.1715 … **0.6765** |
+| declined (`size-model-declined`) | **1.0003** … 1.0006 |
+
+so the separation survives the wider population: no corpus pattern lands
+between 0.68 and 1.00. **The r42 critic measured a continuum with mass at the
+bar (0.740/0.745/0.745 taken against 0.751/0.765/0.768/0.770 declined) and I
+could not reproduce it** — noted here as an open disagreement rather than
+resolved in my own favour. One candidate cause is on the record: that sweep's
+population was built with a bare `sort -u` under this box's `en_US.UTF-8`,
+which the manager measured collapsing 634 of 2,002 patterns (K35 again), so
+the two runs may not be over the same set.
+
+**What the bar's constant IS pinned to, either way.** The separation above is
+the reason 75 was never a tuned number, but until r42 it was pinned by
+NOTHING — at the shipped threshold only two patterns in the whole tree reach
+the ladder, so 60, 80 or 85 all leave `make test` green. `run_size_term.sh`
+§9 now brackets it from both sides under the threshold-1000 compiler: a
+0.6103 rung must be TAKEN and a 1.0004 rung must be DECLINED. That is a
+bracket of (0.6103, 1.0004] and no tighter, and the check says so in those
+words — pinning 75 to the byte would need a witness either side of 0.75, and
+the corpus has none.
 
 **Witness 2's mechanism is not this row's to fix.** The hybrid prefilter's
 inlined scan scaling with a bounded-repeat count is **[OPT-4]/K39**'s
@@ -2114,9 +2160,43 @@ arise — §2.2d), and a pre-emission node count (§2.2a).
   not the first, and the gate is re-run after every src-touching commit that
   follows a re-pin.** Re-pinned to `b3cf716` and re-run to zero.
 
-- **The byte-identity-against-explicit-`--unroll` control** (§6.2 control 4).
-  `run_size_term.sh` asserts the stamped `K` matches the artifact, which is
-  weaker than asserting the two builds are byte-identical.
+- **The capacity floor is VACUOUS on one artifact shape** (r42 critic-sem S4,
+  recorded rather than fixed). Both facts read "no bound" when
+  `subject_ceiling` is unset AND `frame_capacity` sits at the stamped default:
+  `cap_or_inf` maps both to +infinity, so every rung compares EQUAL and the
+  floor admits all of them. 22 corpus artifacts have that shape and exactly
+  ONE also has the counter rung
+  (`^(?:(\((?:[^()]|(?1)){1,9}\))(x(?1)y)){0}(?2)$`). No live defect — 0 of
+  the 121 artifacts whose `RX_FAST_FRAMES`/`TRAIL_FRAMES` move with `K` have
+  the blind shape — but §7b pins the population of patterns whose
+  `subject_ceiling` moves, which is a DIFFERENT quantity, and reads 0 for a
+  population that is 1. The blind shape and its own population are named here
+  so the next reader does not read §7b's 0 as covering it.
+
+- **The ladder selects on figures 3-12 B smaller than the caps check** (r42
+  critic-sem S7, recorded). A ladder trial stamps `_UNROLL_K_WHY "default"`
+  (7 characters) and the FINAL attempt stamps the verdict (up to 19, for
+  `size-model-declined`), so a rung's recorded size is short by the
+  difference. A rung within 12 bytes of a cap can therefore be selected and
+  then refuse at that cap. The identity control already subtracts each side's
+  why-length so it cannot fire on this; what is NOT done is adding the maximum
+  why-length to a trial's figures before the CAP comparison. One line, and it
+  is not taken during the r42 fix pass because it changes a selection outcome
+  in a 12-byte band and belongs with its own witness.
+
+- **The caps count the `.h` when the split form is requested** (r42 critic-sem
+  S9): ~97 bytes on a typical artifact, because `emit_size_measure` runs over
+  the header buffer too when `--header` is given. That is deliberate — the cap
+  is about what the caller must compile — and `docs/spec/limits.md` §8 says so.
+
+- ~~**The byte-identity-against-explicit-`--unroll` control**~~ (§6.2 control
+  4). **MEASURED CLOSED at r42** by critic-sem, which is the outcome this item
+  was recorded to invite: the artifact the term SHIPS is byte-identical to the
+  artifact an explicit `--unroll=<that K>` produces, on 7 of 7 patterns where
+  the term moves `K`. The claim `run_size_term.sh` makes from the stamp is
+  therefore not merely consistent with the stronger one — the stronger one
+  holds. The check still asserts the stamp rather than the bytes; what changed
+  is that the gap is now measured rather than open.
 - ~~**A full `make test-ksweep` over the whole corpus.**~~ **DONE at
   delivery** (2026-08-29, quiet box, all 22,114 cases per rung). It answered
   the interior-optimum question with EIGHTEEN patterns rather than the
