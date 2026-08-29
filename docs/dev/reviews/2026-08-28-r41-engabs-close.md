@@ -45,3 +45,40 @@ taskset -c 3, load1 0.5-3.6, both compilers built from source.
 
 **Bottom line:** no MET/NOT-MET flip, no wrong number; every headline
 reproduced within noise on independent tooling.
+
+## critic-sem — findings and triage
+
+Three artifacts per pattern linked under three prefixes (lane default,
+lane `-fno-anchored-dfa`, MAIN's abi-9 compiler — the third side the
+lane's own check does not have) + libpcre2 10.46 `pcre2_match` with
+PCRE2_ANCHORED at `startoffset = pos` (own ctypes binding); subjects
+as hex (NUL and high bytes real); caps poisoned before every call.
+Sets: 73 hand patterns × 32 subjects × every pos (16,060); 260
+GRAMMAR-GENERATED patterns × 76 subjects × every pos (100,620; seed
+41041; not the lane's list); 14 captures-on DFA patterns (1,246); 17
+stay-skip patterns on 1-4 KB subjects (30,991). **148,917 cells, 0
+disagreements on every axis** (length A/B/C, `_match_caps`, caps[0],
+caps[k≥1], untouched-on-failure, `_in` delegation, the `_search`
+control, vs libpcre2). The one non-zero column is `a\Kb` (19 cells), a
+VM artifact — spec'd consumed-length rule, identical on abi 9. Not a
+finding.
+
+| # | severity | finding | disposition |
+|---|---|---|---|
+| S1 | **GAP (battery risk)** | the row adds **+46 % COMPILER CPU** on tests/resource's shapes: `[a-z]{0,30000}` off 24.3 s → on 35.9 s, `a{0,25000}` 18.0 → 25.2, `a{0,20000}` 10.7 → 15.1 (taskset -c 3, /usr/bin/time; VM-routed shapes unchanged); K7_CPU = 45 s → headroom 20.7 s → 9.6 s; dfa.c:1249's own comment records this shape crossing that budget once before for the same class of reason; the note measures matcher runtime and artifact size, never pcrec's own CPU | ACCEPTED → PRE-MERGE: the optional machine is NOT BUILT above a measured state ceiling of its own — `PCREC_ANCHORED_MAX_STATES` (limits.h:466, today == the shared cap) set BELOW the mandatory pair's cap so the giant-state shapes take the stamped `search-filter` fallback (§5.2's arm, a selection outcome — the overflow-arm population moves 0 → N, pinned BY NAME); value derived from the corpus's largest unwrapped machine + headroom; K7 headroom re-measured; the note records pcrec's own CPU on those shapes both ways |
+| S2 | GAP | the same shape's artifact: 1,323,573 → **1,980,495 B** (1.496×), OVER the [ART-SIZE.1b] MAX_SIZE_BYTES pin (1,400,000) and invisible to the tripwire — the shape lives in a bash array in run_resource_tests.sh, not in the size log's 2,875 rows; §8's "not at risk" is true of the log's population and false of the tree; 1.496× exceeds §8.1's measured max ratio 1.450× | ACCEPTED → resolved by S1's ceiling (the shape falls back; artifact returns to its abi-9 size); §8 states the population caveat; tests/size/CLAUDE.md notes the resource shapes are outside the log |
+| S3 | NIT (measured refutation) | §8/§8.1 "the anchored machine is typically SMALLER (no self-loop → fewer merged states)": FALSE on 26/269 (9.7 %), max **2.000×** the forward table's entries (e.g. `$\|[^a]\z` 2 rows → 3; `\w\n\|c*?\Z\nx*?\|[a-c]a+\Bx?` 6 → 9) — the self-loop thread is what lets the minimizer MERGE states; removing it removes merges. The aggregate delta is explained by the shared class table + accept/seed tables. Upside: this is what makes §5.2's overflow arm REACHABLE rather than dead code | ACCEPTED → §8/§8.1 restated with the 26/269 / 2.0× numbers |
+| S4 | **GAP (check)** | `_match_caps`'s DEAD-GROUP FILL (`for (rx_g = 1; rx_g < RX_NCAPS; …) = PCREC_UNSET`) is covered only by `grep -q` in run_anchored_match.sh §3; `run_anchored_diff.sh` compiles BOTH arms `--no-captures` (:125,128) → RX_NCAPS 1 → the loop is empty on all 147,986 cells. PLANTED one token (`rx_g < 1`): all four grep predicates pass; `(?(DEFINE)(?<g>a))(?&g)b` on "ab" returns caps1 = [57005,48879] (the caller's poison) — spec §3.3 broken, every check green. The delivered code is CORRECT (the critic's own 1,246-cell captures-on set) | ACCEPTED → PRE-MERGE: a captures-on arm in run_anchored_diff.sh (or §3's witness as a RUN comparing the delivered array against the denied build), sabotage-validated with that one-token plant |
+| S5 | HOLDS | the identity argument: same length as search+filter, as abi 9, as libpcre2 anchored — the cell counts above | none |
+| S6 | NIT | §6's what-moves list omits that `RX_DFA_TABLE` can move to `mixed` (spec §6.3; `dfa_table_name`'s own comment anticipates it); check 8's difference set was measured on the DENIED build where the move is impossible; the DEFAULT build vs abi 9 measured by the critic: only `RX_DFA_MATCH` moves on 277/277, removed lines = exactly the old bodies + `.abi = 9,`; no `mixed` witness found | ACCEPTED → one sentence in §6 |
+| — | HOLDS | seeding at pos > 0 is mechanism 4 verbatim against the anchored machine's OWN tables, range guard hoisted above the seeded initializer (K27); `^`/`\A`/`(?m)^`/`\G` route to ENG_ATTEMPT (search-filter) so the anchored machine never holds a start assertion; `\b \B $ \z \Z (?m)$` at every pos incl. n on newline-laden subjects 0 divergences; dead-state exit after the accept probe so `$` scans to n; NULL/n=0/pos>n clean under asan+ubsan; `_search` BYTE-IDENTICAL 260/260 and answer-identical on every cell; `_in` = delegation; stamp vs `rx_info.match_form` 0 mismatches on 780 artifacts; hybrids carry no `RX_DFA_MATCH`; `cx->subset_elems` charged only in `intern()` and the anchored build is the last consumer, so nothing that compiles today can start failing | none |
+| — | overflow arm | could not drive it read-only (compile-time constant); no natural witness in the `[01]*1[01]{n}` family (anchored smaller there); reachable in principle by S3 | S1's ceiling gives it a real population |
+
+## Manager's disposition — MERGE AFTER ONE SHORT PRE-MERGE ROUND
+
+No correctness finding. Before merge (lane engabs, messaged 2026-08-29
+~00:2x): S1's own ceiling on the optional machine (the general form of
+the fix — a selection outcome, stamped, pinned by name; it also
+resolves S2), S4's captures-on differential arm with the one-token
+plant as its sabotage validation, S3/S6's prose. Then: merge, union
+battery, I-16 to the bench with the abi-10 pin.
