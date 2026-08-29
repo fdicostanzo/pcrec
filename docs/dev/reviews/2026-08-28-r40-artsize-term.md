@@ -115,3 +115,47 @@ not yet a MECHANISM (R1, R3).
 Fix order (critic): R1, R2, R4, R3, R5, R6. Manager: agreed; R1+R2 are
 ONE mechanism (result-returning size guards under a trial flag, with
 the buffer-size abort as the first such guard).
+
+## CLOSE — APPROVED FOR THE CODE PHASE at lane/artsize3 e72b57d (2026-08-29 ~00:1x EDT)
+
+Third revision pass applied R1-R6 and the ruled cap set: §2.2b the
+TRIAL flag under which the five size guards return `OVER(which,value)`
+instead of longjmp-ing (a trial's refusal is never the compile's
+answer; the ladder runs only after the default-K emission succeeded;
+R1's K=8-compiles/K=6-refuses witness is a .rxt cell in §9); the early
+abort as R1's first guard (6-deep ladder scratch 55.4 MB → ≈4.3 MB,
+bounded at |LADDER| × total cap = 6 MB — answers the arena question
+without per-trial reclaim); code bytes = comment-excluded bytes OUTSIDE
+table initializers, one exact accumulator, no coefficients in any
+refusal, `--emit-main`'s main() excluded; node cap DROPPED (500 KB code
+≈ 2,750 nodes, and the code cap catches witness 2 where a node cap
+cannot); corpus max code 283,083 (1.77× headroom under 500,000);
+witness 2 670,650 code / 1.25 MB total → refused by BOTH caps at every
+K; `a{1,25000}`/`a{1,31000}` 11,655 code each → admitted by the code
+cap, refused by the total cap (they differ by 264 KB of total and ZERO
+code — the cleanest case for the quantity); the AST re-publication
+invariant with its sabotage row (R3); `cap-rescue` (R5); the excluded
+give-up cells gated on same-code-where-both-give-up with the excluded
+population printed (R6); D84 addenda 2/3 (units + `.o` beside each
+constant; failsafe not tuning; the `.rxt` config as the override's
+home). The fuzz gate owes a `size_cap` bucket on `state_cap`'s
+precedent — a "pattern too large:" refusal otherwise lands in the
+DIVERGENCE bucket; the hunk fixes the two already-shipped
+replication-cap refusals too (counts: both-accept 181→182, pairs
+2,715→2,730, oracle-inconclusive read from a gate run).
+
+DISCREPANCY, recorded not resolved: the lane's code-byte figures
+(`a{1,31000}` 11,655; witness 2 670,650) do not reproduce critic-sem's
+(12,851; 1,248,680 — the critic counted the prefilter's computed-goto
+pointer tables as CODE; the lane counts every initializer as data,
+closest re-split 1,218,674). Every decision is identical under either
+reading; the note's definition (all initializers excluded) is the one
+the emitter counts exactly and is the definition of record. Blind band
+now 283-671 KB of code, empty today.
+
+SEQUENCING (manager): [ENG-ABS] (lane/engabs, r41) merges FIRST — it
+takes abi 10 and deny bit 17 (`-fno-anchored-dfa`), registry 59→64. The
+[ART-SIZE] code lands on top: abi 10→11, its deny flag at bit 18,
+registry 64→65; the lane starts the VM-side code now in its worktree and
+rebases onto main for the shared sites when signalled. The code phase
+is paneled at close (r42) on r41's shape.
