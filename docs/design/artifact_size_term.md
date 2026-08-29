@@ -66,7 +66,7 @@ tension that kicks in at some size."*
 9. **Both K41 witnesses are handled, by different mechanisms** (§4.8): witness
    1's size IS node replication, so the K rule takes it 2,015,585 → 116,371 B
    and gcc 55.13 s → 1.02 s; witness 2's is its PREFILTER, which K cannot touch,
-   so **both** caps refuse it (code 670,650; total 1,220,606). **K41's pinned
+   so **both** caps refuse it (code 664,529; total 1,220,606). **K41's pinned
    bucket moves 2 → 0**, one fixed
    and one refused — and witness 2 stays refused until **[OPT-4]/K39** shrinks
    the mechanism, which is that row's job, not this one's.
@@ -205,8 +205,8 @@ assumed**, at both ends of the range:
 
 An independent cross-check of the DEFINITION: census §6's own depth-aware
 five-bucket classifier puts witness 1 at program 1,657,633 + scaffold 60,792 +
-tables 924 = **1,719,349 non-prose bytes**, and this lane's flat tracker
-measures **1,719,349**. Two independently written classifiers, to the byte.
+tables 924 = **1,713,229 non-prose bytes**, and this lane's flat tracker
+measures **1,713,229**. Two independently written classifiers, to the byte.
 
 ### 2.2 The inputs, and the mechanism the ladder needs (F6/S1, R1, R2, R3)
 
@@ -277,13 +277,26 @@ copy (`overflow_why`, copied out precisely because `job_cleanup` has already
 
 ```
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}
-    K=8  COMPILES            (N = 118,098)
-    K=6  REFUSES  "pattern too large (VM exceeds 131072 emitted nodes)"
+    default    COMPILES  — the term picks K=1 (_UNROLL_K_WHY "size-model")
+    --unroll=6 REFUSES    "pattern too large (VM exceeds 131072 emitted nodes)"
+    --unroll=8 REFUSES    "pattern too large: 53,101,235 bytes of emitted code
+                           (limit 500000)"
 ```
+
+**RE-MEASURED AT DELIVERY (r42 M5), because the earlier illustration no longer
+reproduced.** It read "K=8 COMPILES (N = 118,098), K=6 REFUSES", which was true
+of the compiler as it stood when §2.2b was written — before the caps existed.
+Under the shipped caps, EXPLICIT `--unroll=8` on this tower is refused by the
+CODE cap, and the pattern compiles on the default only because the size term
+itself picks K=1. That change makes the point STRONGER rather than weaker: the
+default path's success now depends on the ladder running to completion, so a
+trial's refusal escaping would break a pattern that compiles today for exactly
+the reason this section gives.
 
 A ladder that let a trial's refusal escape would make a pattern that **compiles
 today** refuse, citing a limit its own artifact never reached, at a K the user
-never asked for. §9 row 9 pins it.
+never asked for. §9 row 9 pins it, and `tests/size/size_term.rxt`'s first block
+is the cell.
 
 **The retry composition, in one order.** [SEL-1]'s DFA-overflow retry decides
 the ENGINE and always resolves first — it is a property of the pattern, not of
@@ -295,6 +308,21 @@ rung the ladder happened to try.
 
 **`COMPILE_MAX_ATTEMPTS` is DERIVED** — `2 + SIZE_TERM_LADDER_N + 1`, from the
 ladder's own definition — so adding a rung cannot silently truncate the search.
+
+**ALL WITNESS BYTE FIGURES IN THIS NOTE WERE RE-MEASURED AT DELIVERY (r42
+M2)** and moved by a CONSTANT ≈6,121 bytes — 87,118 → 80,994, 1,718,425 →
+1,712,305, 670,650 → 664,529 — i.e. a fixed scaffolding block changed under
+them during the lane, not anything proportional to the pattern. The
+CLASSIFIER was never in doubt (witness 1's 7,467 labels reproduce exactly);
+only the bytes moved. The recipe now lives in a file rather than in a
+sentence: `docs/design/artsize_impl/probes/witness_figures.sh` prints all
+three quantities — `non-prose` (the size log's and the TOTAL cap's),
+`code` (the CODE cap's, tables excluded) and `raw` — for both K41 witnesses
+and the nested N=8 subject, so the next reader re-derives them instead of
+trusting a number whose command was never written down. Two independent
+re-measurements disagreeing with the note AND with each other is what an
+unarchived recipe buys, and §4.3b's "which quantity" lesson is the same
+mistake one level up.
 
 #### 2.2c The early abort (R2)
 
@@ -415,9 +443,9 @@ a corpus maximum of 1,471; witness 2 at 34,188 jump entries against 210):
 
 | case | actual B | predicted B | error |
 |---|---|---|---|
-| **witness 1**, K=8 | 1,719,349 | 1,320,831 | **−23.2 %** |
+| **witness 1**, K=8 | 1,713,229 | 1,320,831 | **−23.2 %** |
 | witness 1, K=4 | 776,115 | 584,135 | −24.7 % |
-| witness 1, K=1 | 87,118 | 75,775 | −13.0 % |
+| witness 1, K=1 | 80,994 | 75,775 | −13.0 % |
 | **witness 2**, K=8 | 1,220,606 | 1,113,382 | **−8.8 %** |
 | witness 2, K=1 | 1,114,780 | 1,035,587 | −7.1 % |
 
@@ -649,8 +677,8 @@ quantity; `code` is §4.2's. The byte ratio is what the materiality bar reads.
 | nested N=6 | 225,862 | 60,902 | **0.270** | 55,668 | 60,902 | **K=1** |
 | `((a)\|ab){0,2047}c` | 221,597 | 204,367 | 0.922 | 42,217 | 221,597 | K=8, unchanged |
 | nested N=4 | 162,034 | 60,902 | **0.376** | 55,668 | 60,902 | **K=1** |
-| **K41 witness 1** | 1,719,349 | 87,118 | **0.051** | 86,194 | 87,118 | **K=1** — gcc 55.13 s → 1.02 s |
-| **K41 witness 2** | 1,220,606 | 1,114,780 | 0.913 | 670,650 | 1,220,606 | bar declines; §4.4 step 4 finds **no ladder K under either cap** → **REFUSED** |
+| **K41 witness 1** | 1,713,229 | 80,994 | **0.051** | 80,070 | 80,994 | **K=1** — gcc 55.13 s → 1.02 s |
+| **K41 witness 2** | 1,220,606 | 1,114,780 | 0.913 | 664,529 | 1,220,606 | bar declines; §4.4 step 4 finds **no ladder K under either cap** → **REFUSED** |
 
 Every corpus row clears both caps by a wide margin — largest `code` 55,668
 against 500,000, largest `B` 651,412 against 1,000,000. Witness 2 is refused by
@@ -903,15 +931,15 @@ DFA's multi-line transition tables and FALSE of the computed-goto jump tables
 the emitter writes on ONE line
 (`static const void *const rx_targets_7[11] = { &&rx_s1, … };`). It counted
 **548,024 bytes of jump table as CODE** on K41's second witness — 1,218,674
-instead of 670,650. Same class as F1: an instrument that cannot see one emitted
+instead of 664,529. Same class as F1: an instrument that cannot see one emitted
 form, caught by diffing against `size_count.sh` and this note's own figures
 before shipping.
 
 **And it explains the r40 discrepancy.** The re-check reported witness 2 at
-**1,248,680** code bytes where this note says 670,650, and the manager closed
+**1,248,680** code bytes where this note says 664,529, and the manager closed
 it as "every decision identical under either reading". The cause is now
 concrete: 1,248,680 is within 2.5 % of the buggy 1,218,674 and nowhere near
-670,650, so the critic's instrument almost certainly had **the same one-line
+664,529, so the critic's instrument almost certainly had **the same one-line
 jump-table blind spot**. The note's definition — all initializers excluded — is
 the definition of record and is what the compiler implements.
 
@@ -938,12 +966,12 @@ Two boundary rules, both stated because each could otherwise move a refusal:
 | `a{1,25000}` | 1,103,865 | **11,655** | 0.24 s | 2 % |
 | `a{1,31000}` | 1,367,865 | **11,655** | 0.34 s | 3 % |
 | `((a)\|ab){4000}c` | 651,412 | **32,300** | 0.29 s | 3 % |
-| witness 1 **at K=1** | 87,118 | **86,194** | 1.02 s | 10 % |
+| witness 1 **at K=1** | 80,994 | **80,070** | 1.02 s | 10 % |
 | **nested N=8 — the corpus's worst** | 288,314 | **283,080** | 7.09 s | **71 %** |
 | `jfit` n800_k26 | 562,993 | **280,240** | 3.21 s | 32 % |
 | — *no measured artifact between 283 K and 671 K of code* — | | | | |
-| **K41 witness 2** | 1,220,606 | **670,650** | **66.92 s** | **669 %** |
-| **K41 witness 1** at K=8 | 1,719,349 | **1,718,425** | 55.13 s | 551 % |
+| **K41 witness 2** | 1,220,606 | **664,529** | **66.92 s** | **669 %** |
+| **K41 witness 1** at K=8 | 1,713,229 | **1,712,305** | 55.13 s | 551 % |
 
 **Everything at or below 283 KB of code costs ≤ 71 % of the budget; the next
 measured artifact up costs 669 %.** The band between is empty, and the two
@@ -957,13 +985,13 @@ The first version of this pass proposed a NODE cap at 2,000 for the D45 half.
 It is withdrawn, because **nodes are one mechanism and code bytes are the
 quantity**:
 
-- **Nodes are subsumed.** Witness 1's 7,467 nodes ARE 1,718,425 bytes of code —
+- **Nodes are subsumed.** Witness 1's 7,467 nodes ARE 1,712,305 bytes of code —
   a node cap and a code cap refuse it identically, and the code cap's number is
   the one D45's budget is actually about.
 - **Nodes miss the CFG-shaped cost.** K41 witness 2 has **552 nodes** — fewer
   than 168 corpus patterns — and costs gcc **66.92 s**. Its size is 3,108
   prefilter states, which are code and are not nodes. A node cap admits it; the
-  code cap refuses it at 670,650.
+  code cap refuses it at 664,529.
 - **Its blind band is stated** (below), where a node cap's blind spot was a
   whole mechanism.
 
@@ -977,8 +1005,8 @@ ordering inverts between the two witnesses:
 
 | | code bytes | gcc CPU |
 |---|---|---|
-| K41 witness 2 | 670,650 | **66.92 s** |
-| K41 witness 1 | 1,718,425 (2.56×) | **55.13 s** (18 % less) |
+| K41 witness 2 | 664,529 | **66.92 s** |
+| K41 witness 1 | 1,712,305 (2.56×) | **55.13 s** (18 % less) |
 
 Witness 2's prefilter is one function carrying a 3,108-way computed-goto CFG
 (peak RSS 1.9 GB against witness 1's 540 MB). No additive byte count reproduces
@@ -998,9 +1026,9 @@ budget — and **the population it cannot speak for is code bytes in
 exact quantity above:
 
 - **in the empty band**: **1.77×** above the corpus's worst (283,080) and
-  **1.34×** below the lowest artifact that blows the budget (670,650);
+  **1.34×** below the lowest artifact that blows the budget (664,529);
 - **refuses 0 of 2,487** corpus patterns on every axis (§4.6b);
-- **refuses** witness 1 at K=8 (1,718,425 — the K rule reduces it first) and
+- **refuses** witness 1 at K=8 (1,712,305 — the K rule reduces it first) and
   **witness 2 at every K on the ladder**;
 - **admits** `a{1,25000}` and `a{1,31000}` (11,655 each) — correctly: they are
   cheap for gcc, and it is the TOTAL cap that refuses them.
@@ -1046,9 +1074,9 @@ handling section, and §4.6b's zero-refusal sweep, not a better number.
 | artifact | code bytes | total bytes | code cap | total cap |
 |---|---|---|---|---|
 | every one of the 2,487 corpus patterns | max 283,083 | max 651,415 | **admits** | **admits** |
-| K41 witness 1, after the K rule picks K=1 | 86,194 | 87,118 | **admits** | **admits** |
-| K41 witness 1 at K=8 | 1,718,425 | 1,719,349 | refuses | refuses |
-| **K41 witness 2**, at every ladder K | 670,650 | 1,220,606 | **REFUSES** | **REFUSES** |
+| K41 witness 1, after the K rule picks K=1 | 80,070 | 80,994 | **admits** | **admits** |
+| K41 witness 1 at K=8 | 1,712,305 | 1,713,229 | refuses | refuses |
+| **K41 witness 2**, at every ladder K | 664,529 | 1,220,606 | **REFUSES** | **REFUSES** |
 | `a{1,25000}` | 11,655 | 1,103,865 | admits | **REFUSES** |
 | `a{1,31000}` | 11,655 | 1,367,865 | admits | **REFUSES** |
 
@@ -1072,7 +1100,7 @@ AFTER:
 | `(a|b){0,30000}` | resource K7 | 1,333,109 B | **REFUSED** (total cap) |
 | the other 8 K7 shapes | resource K7 | unchanged | unchanged (±7 B, the stamps) |
 | the K22 depth-15 `{0,2}` tower | `tests/vm` | compiled | **REFUSED** (code cap; 18,763,591 code bytes) |
-| **K41 witness 1** | fuzz gate | 1,719,349 B | **compiles at 87,118 B** — the K rule |
+| **K41 witness 1** | fuzz gate | 1,713,229 B | **compiles at 80,994 B** — the K rule |
 | **K41 witness 2** | fuzz gate | 1,220,606 B | **REFUSED** (both caps) |
 
 **The three resource shapes are the row's real acceptance cost**, and all three
@@ -1248,7 +1276,7 @@ lever that would pass:
 > --max-emit-bytes=N if that size is acceptable to you, or see
 > docs/spec/limits.md "Handling an oversized artifact".`
 
-> `pattern too large: the emitted matcher contains 670,650 bytes of CODE
+> `pattern too large: the emitted matcher contains 664,529 bytes of CODE
 > (limit 500,000; about 85 KB of .o), which gcc cannot compile in reasonable
 > time. A bounded repeat's body is replicated and repetition counts MULTIPLY
 > through nesting -- lower a count, reduce the nesting, or raise the limit with
@@ -1377,8 +1405,8 @@ gcc) and `run_capturediff_gate.sh` pins that bucket at **exactly 2**.
 
 | witness | route | after |
 |---|---|---|
-| 1 | the K rule selects K=1 | **87,118 B** — an order of magnitude under the classifier; it **re-enters the ordinary accept/compare pipeline** |
-| 2 | every ladder K is over BOTH caps (code 670,650 > 500,000 at K=8, and no lower K gets under; total 1,114,780 > 1,000,000 at its best) | **REFUSED** — no artifact exists to classify |
+| 1 | the K rule selects K=1 | **80,994 B** — an order of magnitude under the classifier; it **re-enters the ordinary accept/compare pipeline** |
+| 2 | every ladder K is over BOTH caps (code 664,529 > 500,000 at K=8, and no lower K gets under; total 1,114,780 > 1,000,000 at its best) | **REFUSED** — no artifact exists to classify |
 
 So the oversize bucket goes **2 → 0**. (critic-sem's S6 computed 2 → 1, which
 was right for the design as reviewed — before D84 added a cap that reaches
@@ -1776,6 +1804,7 @@ the mistake is the section's own subject.
 | 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (**bit 18** — [ENG-ABS] took 17), `docs/spec/tuning.md` §2.16 |
 | 3 | identity gate | `make test-axes` bit 18 by construction, **plus** `make test-ksweep` (§6.2) |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
+| — | *(and the D76 pin lesson this row re-learned: **the identity gate's `FILEPIN` moves with the LAST scaffolding change of the `abi`, not the first — re-run the gate after every src-touching commit that follows a re-pin.** Pinned at `60a51ed`, this row then shipped two more src commits; r42's critic-checks caught it and the run confirmed `[default] (B) differing=952`, every DFA-selected pattern, from the `_MAX_EMIT_BYTES` line added after the pin)* | |
 | 4 | structural check | `tests/codegen/run_size_term.sh` — reads the ARTIFACT: the emitted body-copy count against the stamped K, `_WHY` against which path ran, and the two effective caps against the flags. **It must handle the NO-COUNTER-RUNG case** (finding S3): where `vm_counter_fits` declines, the copy count is `count` and K is inert, so a check that asserts `ceil(count/K)` unconditionally fails on a correct artifact |
 | 5 | sabotage row | `tests/mech/` — the ladder reduced to a greedy descent (must be caught by the non-monotone subject, §3.1); the materiality bar removed; the cap's comparison inverted. **BUILT** as S191/S192/S193 on the new `sizeterm` and `resource` arms; see §11.3 for what each one's green arms mean |
 
@@ -1861,8 +1890,8 @@ prediction with a tolerance, so a 5× real gain on a 20× prediction cannot pass
 
 | # | subject | predicted | tolerance |
 |---|---|---|---|
-| 1 | **K41 witness 1** | K=1 selected; 1,719,349 → 87,118 B, ≤ 30 KB `.o`, ≤ 1.1 s gcc (census: 28,104 B, 1.015 s) | must not exceed either |
-| 1b | **K41 witness 2** | bar declines (byte ratio 0.913); no ladder K is under EITHER cap (code 670,650; total 1,114,780 at its best); **REFUSED** | exact — it must refuse, name measured-vs-cap and the levers (§4.6) |
+| 1 | **K41 witness 1** | K=1 selected; 1,713,229 → 80,994 B, ≤ 30 KB `.o`, ≤ 1.1 s gcc (census: 28,104 B, 1.015 s) | must not exceed either |
+| 1b | **K41 witness 2** | bar declines (byte ratio 0.913); no ladder K is under EITHER cap (code 664,529; total 1,114,780 at its best); **REFUSED** | exact — it must refuse, name measured-vs-cap and the levers (§4.6) |
 | 2 | nested N=8 / N=6 / N=4 | K=1 selected; comment-excluded 288,314 → 60,902 B (−78.9 %), 225,862 → 60,902 (−73.0 %), 162,034 → 60,902 (−62.4 %); `.o` 75–79 % smaller (census §8) | ±5 % on the byte figures |
 | 3 | the four declining patterns above the threshold | K unchanged at 8; **`.o` byte-identical**; source differs by exactly the new stamp lines AND the `abi` digit, on VM and DFA alike (§8, finding S8) | exact |
 | 4 | D82 zero cost | ≥ 4 declined patterns, both engines, **objdump 0 differing instructions** vs a `main`-built compiler | exact |
@@ -1903,7 +1932,7 @@ under bit 18.
    `PCREC_MAX_VM_NODES`), and the note's own costless fix was taken (§3.2).
 3b. **BOTH cap values are RULED and the question is CLOSED.** D84 addendum 2:
    the code-bytes cap is 500,000 (≈ 85 KB `.o`), inside the empty band between
-   the corpus's worst 283,080 and witness 2's 670,650. D84 addendum 3: the
+   the corpus's worst 283,080 and witness 2's 664,529. D84 addendum 3: the
    total-bytes cap stays at 1,000,000 — this lane's gap-centred 850,000 was
    offered and **not taken**, because *"it's really more of an emergency
    failsafe than a tuning"*. Recorded because it settles a whole class of
@@ -2050,6 +2079,19 @@ arise — §2.2d), and a pre-emission node count (§2.2a).
   every successful compile's path — and its header states that plainly: what
   it proves is a REACH fact plus the asymmetry that `tests/resource` §1b is
   the only place in the tree asserting a cap's TRUE side.
+- **The D76 pin, re-learned (r42 C1).** `run_recursion_identity.sh`'s
+  `FILEPIN` was set to `60a51ed`, this row's shared-sites commit — and then
+  two more src-touching commits landed (`5199823`, the DFA `_MAX_EMIT_BYTES`
+  stamp; `b3cf716`, the capacity floor). D76 says the pin is the commit that
+  introduced the CURRENT scaffolding, and within one `abi` the emitted output
+  is byte-exact whole-file, so the stale pin made comparison (B) report every
+  DFA-selected call-free pattern as differing: `[default] (B) same=1268
+  differing=952`, while `[vm]` read 2225/0 because VM artifacts had their
+  stamps before the pin. **The rule, stated so the next lane does not
+  re-derive it: the pin moves with the LAST scaffolding change of the `abi`,
+  not the first, and the gate is re-run after every src-touching commit that
+  follows a re-pin.** Re-pinned to `b3cf716` and re-run to zero.
+
 - **The byte-identity-against-explicit-`--unroll` control** (§6.2 control 4).
   `run_size_term.sh` asserts the stamped `K` matches the artifact, which is
   weaker than asserting the two builds are byte-identical.

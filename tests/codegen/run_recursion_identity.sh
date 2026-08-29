@@ -391,6 +391,20 @@ KEEP="${KEEP:-0}"
 # is expected byte-identical against the unchanged `ac4917d` and is not merely
 # unmoved in principle.
 #
+# [ART-SIZE], 2026-08-29: `abi` 10 -> 11, (B) re-pinned to `b3cf716`.
+# **THE PIN MOVES WITH THE LAST SCAFFOLDING CHANGE OF THE `abi`, NOT THE
+# FIRST — RE-RUN THIS GATE AFTER EVERY src-TOUCHING COMMIT THAT FOLLOWS A
+# RE-PIN.** That sentence is here because this row broke it: the pin was set
+# to `60a51ed` (the shared-sites commit) and TWO more src commits then landed
+# — `5199823`, which gives every DFA artifact a `<PREFIX>_MAX_EMIT_BYTES`
+# line, and `b3cf716`, the declared-capacity floor. Within one `abi` the
+# emitted output is byte-exact whole-file, so the stale pin made (B) report
+# EVERY DFA-selected call-free pattern as differing: measured
+# `[default] (B) same=1268 differing=952`, while `[vm]` read 2225/0 because
+# VM artifacts had their four stamps BEFORE the pin. Caught by the r42 panel,
+# not by this gate's own run, which is the reason the rule is now written
+# where the pin is set rather than left to be re-derived.
+#
 # THE PIN IS THIS CHANGE'S LAST src-TOUCHING COMMIT, [OPT-K]'s note one
 # paragraph up having recorded why that matters in a multi-commit change:
 # `14d1feb` moved the `match_form` member's comment ABOVE the member (a
@@ -398,7 +412,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-60a51ed}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b3cf716}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
