@@ -203,6 +203,8 @@ a finding about the check set):
 | S-C4 | treat `# pcre2-only` as an ordinary comment | (3) oracle skip count |
 | S-C5 | make `frames-buffer=` block-scoped rather than positional | (1) dump differential |
 | S-C6 | accept an unknown `features` name silently | (2) — a `perr` block flips |
+| S-C7 | make the composer bind a definition on a block that references none (e.g. treat a lexically-declared name as a file reference) | (1) dump differential — the closure size is reported and must be 0 for all 3,265 blocks |
+| S-C8 | assign a definition's re-based numbers starting at 1 instead of `ngroups+1` | (2) — `g` slots move on any composed cell; on the corpus it is vacuous, which is itself the finding S-C7 exists to report |
 
 **MEASURED — the base vocabulary is closed and small.** The complete set
 of first tokens over all 179 corpus files, with counts:
@@ -1250,32 +1252,44 @@ recorded as gaps, and that are already closed** (both worth stating so
   failure, `gp` out of range is a counted third state, `gp`
   self-activates when the artifact grows. Nothing in W1..W3 touches it.
 
-### 2.12 Diagnostics: the offset must come home
+### 2.12 Diagnostics: the offset must come home, and D87 makes that harder
 
-pcrec reports pattern offsets into the text it was given. Once the format
-expands, that text is not the text the user wrote. MEASURED, the
-collision refusal in §2.4 reads:
+pcrec reports pattern offsets into the text it was given. Once
+definitions are bound in, an offset no longer indexes any text the user
+wrote. MEASURED, the collision refusal §2.3.3's M2 row produces on both
+oracles reads:
 
 ```
 pcrec: two named subpatterns have the same name … (pattern offset 27)
 ```
 
-— offset 27 of a 45-byte expanded pattern the user wrote as a `pattern`
-line and a `name` line in two different places, possibly in two different
-files.
+— offset 27 of a 45-byte composed pattern the user wrote as a `pattern`
+line and a `name` line in two different places, possibly in two
+different files.
 
-**The obligation** (not the wording — D26 keeps that out of scope): the
-expander keeps a **span map** from byte ranges of the expanded text to
-the (file, line, offset-within-that-line's-text) they came from, and
-every diagnostic carrying an offset is rewritten through it. A refusal
-that lands inside an injected definition must name **that definition's
-own `file:line`**, not the referencing block's.
+**The obligation** (not the wording — D26 keeps that out of scope):
+every AST node that composition binds carries a **PROVENANCE** — the
+(file, line, offset-within-that-line's-pattern-text) it was parsed from
+— and every diagnostic carrying a position is reported through it. A
+refusal that lands inside an injected definition must name **that
+definition's own `file:line`**, not the referencing block's.
 
-This is small — the expansion is a concatenation, so the map is one
-interval per participating text — and it is the difference between a
-composable format and one whose errors are unreadable. It is also the
-one piece of machinery the format layer owes that has no analogue in
-today's harness, and §3 lists it as such.
+**Revision 1 called this a "span map" over concatenated text, and that
+is no longer the right shape.** Under D87 there is no concatenated text
+to map: the composer works on ASTs, so provenance is a FIELD ON THE NODE,
+carried from its parse. That is both simpler (no interval arithmetic) and
+strictly more capable — it survives passes that reorder or rewrite nodes,
+which a text map does not — and pcrec's AST already carries per-node
+data of exactly this kind (D62's parse-resolved modifier fields are the
+precedent for "the parse writes it on the node").
+
+Three diagnostics depend on it, and each is a place a composed build is
+otherwise unreadable: **rule 7(c)**'s duplicate-number error must name
+BOTH assigning sites, which may be in two files; a **piece-rule refusal**
+(§6.0) must name the definition, not the caller; and an ordinary compile
+error inside a bound definition must send the user to the library, not to
+their own line. It is the one piece of machinery this design owes that
+has no analogue in today's harness, and §3.2's H2 lists it as such.
 
 ### 2.13 The struct view: context naming IS struct naming (D87 rules 5, 6)
 
