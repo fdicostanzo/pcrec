@@ -5989,3 +5989,58 @@ pcrec option lines, so `pcrec --max-emit-bytes=N` inside a config
 raises the cap for every target built `with` that config — declared
 beside the pattern, per target, not a command-line habit. The CLI
 override exists for the single-pattern case and for the harness.
+
+## D85 — the REPLACEMENT (definition) model is a predicate-scanned TABLE on the forms model's shape; the core rx set is what remains after replacement (Frank, 2026-08-29 ~12:0x, forty-fourth session)
+
+**Context.** Frank asked whether the "rx replacement model" — a
+construct standing for another depending on options (`$` under `(?m)`;
+D66's assertion-family expansions `\b ≡ (?<=\w)(?!\w)|(?<!\w)(?=\w)`,
+`(?m)^ ≡ \A|(?<=\n)(?!\z)`, `\Z ≡ (?=\n?\z)`; the possessive-suffix
+desugaring; the NEWLINE convention) — could be `--list`ed. It cannot
+today because the replacements are code arms, not data ([DD-11]
+cross-note, 9591d14).
+
+**Ruling.** "I'd like the model for those replacements to be similar to
+the FORMS model, where it scans a table with a predicate. That table
+can be the rows we currently have, expanded, or its own. That model
+works because it's simple, it exposes the process, it's expandable, it
+aids testing, and it reduces the core rx set to its minimal set,
+thereby reducing the optimization surface." So [DD-11]'s definitions
+architecture is built on [ENG-FORM]'s shape (D82, `src/gen/emit_dfa.c`
+layer 1): for each replaceable construct an ORDERED list of rows
+`(predicate over the option scope → definition in CORE syntax)`, the
+first applicable row wins, the last row always applies (the identity —
+the construct IS core, or its option-independent form), and:
+
+1. **exposes the process** — `--list-definitions` walks the SAME table
+   the parser walks (the fifth registry surface; one derivation, two
+   readers — learnings §3), so the replacement in force for a construct
+   under a given option set is a printed fact, never a reading of code;
+2. **expandable** — a new option-dependent form is ONE row, and a new
+   construct that is definable in core syntax is a list, not an engine
+   change; [DD-13b]'s `name`/`lib` resolution and the [LIB] store read
+   the same table (a library definition is a row whose predicate is the
+   library's presence);
+3. **aids testing** — each row is a unit: a structural check that the
+   row's definition parses to core, a sabotage row per row (swap the
+   predicate, swap the definition), and the D66 `A == B` self-oracle
+   (the construct's own lowering vs its definition's) per row;
+4. **reduces the core rx set to its minimum** — every construct that IS
+   a replacement lowers to core constructs before the engines see it, so
+   the optimizer, the engine selectors and the emitters know only the
+   core set: the optimization surface shrinks to what cannot be
+   expressed as a replacement.
+
+**Where the table lives** is [DD-11]'s design question, with both
+options named by Frank: the registry rows (`RegRow`, D24) gain a
+definition list, or a separate table keyed by row. The design note
+measures both against D82's rule 4 (only constructs with ≥ 2 real forms
+get a list) and D62 (modifier state resolves at PARSE time onto the
+node — a replacement chosen by option scope is a parse-time act, like
+the possessive-suffix desugaring `parse.c` already performs).
+
+**Consequences / not built now.** [DD-11] stays not-started; this
+entry is its charter's shape. Revisit-when: [DD-11]'s design note
+opens, or [DD-13b]'s wave 1 needs `name` resolution before [DD-11]
+exists (then the table's first rows are library definitions and the
+option-scoped rows follow).
