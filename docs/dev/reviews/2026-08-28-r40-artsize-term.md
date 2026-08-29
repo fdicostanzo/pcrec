@@ -92,3 +92,26 @@ before refusing), S4 (the ladder is argmin N). Rulings for Frank: Q2
 counter-example). The lane HOLDS the code phase until the revision is
 re-read by the manager; a focused re-check by critic-sem on S1/S2/S5
 follows if the revision's mechanism moves.
+
+## critic-sem — FOCUSED RE-CHECK of the revised note (6808bdd; the mechanism moved to DRY EMISSION over the ladder)
+
+CLOSED: S2 (narrowing exact, table reproduced, D80 hunk named), S3
+(nothing assumes rung-before-K — each trial re-runs `vm_counter_fits`
+at its own K), S4 (`argmin N`, model confined to threshold + bar), S5
+(bar-bypassed ladder re-run; cap applied at the ladder-chosen K), S8,
+S9 (one value short — R5). S1 closed-with-caveat: dry emission is the
+right answer and the counting-pre-pass refutation is correct, but it is
+not yet a MECHANISM (R1, R3).
+
+| # | severity | finding | disposition |
+|---|---|---|---|
+| R1 | **BLOCKER (contract change)** | §2.2/§3.3 "a trial that `ctx_fail`s is discarded … can never turn a pattern that refuses today into one that compiles": a trial CANNOT be discarded — `ctx_fail` (compile.c:14-28) ends in `longjmp(cx->jb,1)` and internal.h:1469-1475 states the rule: ONE recovery point (`compile_driver`'s single `setjmp`), fallback = a one-shot retry of the whole pipeline ([SEL-1] paid exactly that a day ago). A trial's failure unwinds past the ladder, `arena_free`s, and returns THAT trial's diagnostic. MEASURED, in the direction the note does not guard: `(?:(?:(?:(?:(?:(?:a\|b){41}){41}){41}){41}){41}){41}` with `--engine=vm`: **K=8 COMPILES (N=118,098), K=6 REFUSES** ("VM exceeds 131072 emitted nodes") — under LADDER=[8,6,…] a pattern that compiles today refuses after the change, citing a limit its artifact never reached at a K the user never asked for | ACCEPTED → design work the note must carry: the emitter's size guards RETURN an over-budget RESULT when a `trial` flag is set (internal.h:1469's own prescribed shape — never a second `setjmp`); the ladder consumes the result; a trial's refusal is never the compile's answer; the K=8-compiles/K=6-refuses witness becomes a test cell |
+| R2 | **GAP** | the ladder's cost is bounded by its WORST rung, and K=6 is routinely the worst (`vm_counter_copies`' mandatory `K + m%K` term is non-monotone: m=16 → 8 copies at K=8, 10 at K=6). Measured: a 5-deep `{17}` tower K=8 **1.74 MB** / K=6 **3.12 MB**; 6-deep **16.2 MB** / **35.5 MB** — the ladder emits a 35 MB buffer to learn K=6 is bad, and the post-emission cap protects gcc, never pcrec's own time/memory; all trials allocate from one never-freed arena. "2.84 s worst in the project" is true of the corpus, not of the mechanism | ACCEPTED → an EARLY ABORT inside a trial once the scratch buffer passes the (code-bytes or total) cap — the buffer is already measured; with R1's result-returning guards this is the same mechanism; cost table re-measured on a worst-rung pattern; per-trial arena reclaim or a stated bound |
+| R3 | GAP | `pcrec_emit_vm` mutates the shared AST (:5691 `a->u.call.nonnullable`; :5726-5727 `a->u.call.save`/`.nsave` = pointers into THAT run's arena, K-dependent) and `job->enc_mask`; repeated emission is currently BENIGN only because every publisher precedes its readers within a run (`vm_publish_nonnull` :7582/7593 < `vm_count_slots` :7655; `vm_publish_saves` :7915 < `vm_cost` :2277 / `vm_splice` :5920) — a property nothing states and nothing checks (:1181 relies on the arena reading FALSE for an unpublished annotation — true on run 1 only) | ACCEPTED → the note states the invariant "every annotation the emitter writes is re-published by the same run before any reader consumes it", the code phase asserts it, and a sabotage (move `vm_publish_saves` after `vm_cost`) must turn §6.2 control 4 red |
+| R4 | CONTRACT-CHANGE (from the ruling) | with the D45 cap on CODE bytes (outside table initializers) at 500,000: `a{1,31000}` = 1,369,177 B total but **12,851 code bytes** → ADMITTED by the code cap (§4.3 said refused); K41 witness 2 = **1,248,680 code bytes** (its 3,111 prefilter states are computed-goto CODE, `RX_DFA_TABLE "none"`) → refused at every K; §4.3's three derivations (the fuzz gate's 1,000,000 raw, the corpus gap, tripwire independence) rest on RAW bytes and must be re-derived on code bytes; `--emit-main`'s appended `main()` is code the user never ships — define the quantity without it | ACCEPTED with the manager's clarification: the TOTAL-bytes cap (1,000,000, exact) STAYS beside the code cap — `a{1,31000}` is refused by IT (Frank's Q4: "a large byte count makes it unusable"), so Q4 is answered by the two-cap set, not reopened; (i) and (iii) stand |
+| R5 | NIT | §4.4 step 4 (cap rescue) takes a K after the bar declined it — stamps `size-model`/`-declined`, neither true | ACCEPTED → sixth value `cap-rescue` |
+| R6 | NIT | the give-up surface has NO gate after S2's exclusion | ACCEPTED → on excluded cells compare the give-up CODE where both K give up; the check records the excluded population's size |
+
+Fix order (critic): R1, R2, R4, R3, R5, R6. Manager: agreed; R1+R2 are
+ONE mechanism (result-returning size guards under a trial flag, with
+the buffer-size abort as the first such guard).
