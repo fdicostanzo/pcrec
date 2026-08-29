@@ -50,5 +50,15 @@ SAB_COUNT=1
 # Still targets `has_bref` ALONE: `has_call` and `cx->dfa_disabled` are
 # carried through UNCHANGED in `SAB_AFTER`, so this row's population stays
 # exactly "a backref-bearing pattern's prefilter turns on", not wider.
-SAB_BEFORE='        fit.prefilter = (has_bref || has_call || cx->dfa_disabled) ? false'
-SAB_AFTER='        fit.prefilter = (false || has_call || cx->dfa_disabled) ? false   /* SABOTAGE S102 */'
+# [OPT-4] 2026-08-29: ANCHOR RE-DERIVED FROM THE LIVE SOURCE. The [SEL-1]
+# rung split this expression over three lines — `cx->dfa_disabled` alone became
+# `(cx->dfa_disabled && !cx->prefilter_collapse_retry)`, because the fallback
+# now tries a count-collapsed prefilter before dropping the prefilter outright.
+# The sabotage is UNCHANGED in meaning: it still disables exactly one conjunct
+# and carries the rest through verbatim.
+SAB_BEFORE='        fit.prefilter = (has_bref || has_call ||
+                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                        ? false'
+SAB_AFTER='        fit.prefilter = (false || has_call ||   /* SABOTAGE S102 */
+                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                        ? false'

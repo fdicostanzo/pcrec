@@ -7003,7 +7003,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                  "  runtime-term length retreats: %lld%s\n",
               !v->mrl ? "none (-fno-length-prune)"
                       : v->mrl_win ? "min(subject_length, prefilter window end) -- D51 ruling 2"
-                                   : "the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end because the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6)",
+                                   : "the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which",
               v->nclamp, v->ndynskip,
               v->ndynskip ? "  <- an outer counter-derived term was DROPPED"
                             " (sound: it under-estimates), so this artifact"
