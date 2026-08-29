@@ -762,3 +762,177 @@ frequency cannot answer: equal means, different shapes), and its
 **value has not been measured**. D77 says wait. The family's grammar
 admits it as one new `data-kind` with its own body when it is earned;
 this note adds no production for it.
+
+### 2.11 Population accounting: the summary unit once includes and cells exist
+
+T-6 is the tension the requirements note flagged and no requirement
+anticipated: today the accounting unit is the FILE, because
+`tests/harness/run.sh` runs one worker per file
+(`tests/harness/run.sh:184-216`) and each worker prints its own summary.
+Includes break that, and configs break it a second way.
+
+**Three rules, each stated so a check can fail:**
+
+1. **The accounting unit is the INCLUDE CLOSURE, reported under the ENTRY
+   file's name.** A failure always prints its own `file:line` — the
+   fragment's, not the entry's — so a person can find it; the *tally* is
+   the entry's, so a run's totals do not depend on how a set is split
+   across files.
+2. **An entry file is a discovered file that is not included by any entry
+   in the run.** Discovery already excludes by directory
+   (`find … -not -path "*/known_fail/*"`), but a *directory* rule for
+   fragments would be exactly the role-by-filename convention the
+   position paper's §4 rejected for the sidecar. So: resolve includes
+   first, subtract the included set, and **report both numbers** —
+   `entry files: N` and `fragments spliced: M` — so a set that silently
+   stops being spliced is visible instead of merely smaller (K35). A file
+   named explicitly on the command line is always an entry, because the
+   user asked for it.
+3. **A cell is (block, config), and cells are counted.** Today
+   cells == blocks. Once `use` and `with` exist, a summary that counts
+   only cases hides its own denominator — the [DD-13c] lesson in one
+   line ("the [agreement] denominators were arithmetic over bucket sizes
+   … they are COUNTED at the comparison sites now").
+
+**The failure taxonomy grows from three to four.** R-RXT-9's three
+(pattern-compile failure, harness-level failure, ordinary case failure)
+gain **RESOLUTION failure**: an unresolved name, a duplicate name, a
+reference or include cycle, a duplicate target prefix, a config `from`
+cycle, an unreadable `@file:` path.
+
+- It is **reported separately** in the summary, so R-RXT-9's
+  separate-attributability obligation holds at the new boundary.
+- It is **scored as a pattern-compile failure for the block** — which is
+  what preserves the four `sr_refusals.rxt` `perr` blocks (§2.4): "this
+  pattern does not compile" is true whether the resolver or pcrec said
+  so, and a `perr` block must not care which.
+
+**Two accounting facts from today's format that the requirements note
+recorded as gaps, and that are already closed** (both worth stating so
+[DD-13b]'s design is not built on a stale premise):
+
+- **R-RXT-8's "expected give-up" gap is closed.** `gu <code>
+  "<subject>"` exists, is specified (`docs/spec/rxt_format.md`), and is
+  MEASURED at **23** uses; `engine vm` (5) and `budget` (3) are the
+  directives that reach the path. `subroutines_design.md` §10.3's "THE
+  HARNESS GAP: there is no way to EXPECT a give-up" is likewise closed.
+  pcrec-bench's `gave-up` outcome (its §4.4) therefore maps onto an
+  existing directive, not a new one.
+- **`gp`'s pending-VM bucket is the model R-RXT-5 asks a successor to
+  keep**, and this design keeps it untouched: `g` out of range is a hard
+  failure, `gp` out of range is a counted third state, `gp`
+  self-activates when the artifact grows. Nothing in W1..W3 touches it.
+
+### 2.12 Diagnostics: the offset must come home
+
+pcrec reports pattern offsets into the text it was given. Once the format
+expands, that text is not the text the user wrote. MEASURED, the
+collision refusal in §2.4 reads:
+
+```
+pcrec: two named subpatterns have the same name … (pattern offset 27)
+```
+
+— offset 27 of a 45-byte expanded pattern the user wrote as a `pattern`
+line and a `name` line in two different places, possibly in two different
+files.
+
+**The obligation** (not the wording — D26 keeps that out of scope): the
+expander keeps a **span map** from byte ranges of the expanded text to
+the (file, line, offset-within-that-line's-text) they came from, and
+every diagnostic carrying an offset is rewritten through it. A refusal
+that lands inside an injected definition must name **that definition's
+own `file:line`**, not the referencing block's.
+
+This is small — the expansion is a concatenation, so the map is one
+interval per participating text — and it is the difference between a
+composable format and one whose errors are unreadable. It is also the
+one piece of machinery the format layer owes that has no analogue in
+today's harness, and §3 lists it as such.
+
+---
+
+## 3. Migration
+
+### 3.1 The existing corpus: nothing changes
+
+**No existing line changes meaning, and no existing file changes at
+all.** §1.1 states this as INV-COMPAT with three independent checks and
+six sabotage rows; §2.4 shows the only construct that could have
+interacted — the 143 blocks carrying a by-name subroutine reference —
+is untouched, because 139 of them resolve lexically (so R = ∅ and the
+expansion is the identity) and the other four are `perr` blocks in a
+file with no definitions.
+
+The corpus is **179 files / 3,265 blocks / 26,691 expectation lines**
+(MEASURED 2026-08-29). The [DD-13a] census read 54 / 1,100 / 9,977 on
+2026-08-17; the corpus has grown 3.3× in twelve days, which is exactly
+why requirements.md §13 item 5 told the panel to re-run it rather than
+trust it. **AR-1's cost of getting this wrong has tripled since the
+requirement was written.**
+
+### 3.2 What the harness must gain
+
+In dependency order. Each item is a *change to the harness*, not to the
+format, and each is named so a lane brief can be written from it.
+
+| # | change | wave | touches |
+|---|---|---|---|
+| H1 | **A head parser**: parse file-level declarations and `config`/data blocks above the first `pattern`; hard-error on an unknown first token per context | W1 | `tests/harness/run.sh` |
+| H2 | **The resolver and expander**: L/R computation over a pattern's text, definition lookup, transitive closure, DEFINE-append, and the **span map** (§2.12) | W1 | new; shared by the harness and, later, `pcrec --source` |
+| H3 | **Cells**: run a block once per resolved config; report cells in the summary; the `perr` one-cell rule | W1 | `run.sh` summary + dispatch |
+| H4 | **`verify_rxt.py` reads the EXPANDED text.** The oracle must see what pcrec sees, which is what makes the expansion the splice-vs-linkage control by construction ([LIB]). python `re` has **no** subroutine call at all (CITED, `subroutines_design.md` §10.1: "not different semantics, an ABSENCE"), so **any block with R ≠ ∅ is `oracle pcre2` whether or not it says so** — a python oracle cannot check a composed pattern, and pretending otherwise would be a silent pass | W1 | `verify_rxt.py` |
+| H5 | **Include resolution + entry-set subtraction + closure accounting** (§2.11) | W2 | `run.sh` discovery |
+| H6 | **`@file:` subjects — and the DRIVER PROTOCOL CHANGE they force.** Today a subject travels as `argv[1]` (`t <subject> [startpos] [route]`), which can carry neither an embedded NUL nor a megabyte. The driver needs a form that names a path and reads it byte-exactly — the natural spelling is a leading sentinel on the existing argument (`t @<path> …`), which is additive and leaves every existing invocation untouched | W2 | `tests/harness/driver.c`, `run.sh` |
+| H7 | **`mc` find-all counting** against `match_api.md` §3.1's restart semantics | W2 | `driver.c` |
+| H8 | **`tag` well-formedness only** — the harness validates the *shape*, never the vocabulary | W2 | `run.sh` |
+| H9 | **Data-block parse + `--exemplar`-shaped hand-off to pcrec** (D83's flag takes the findings file, never the raw text) | W2 | `run.sh`, pcrec CLI |
+| H10 | **`use` / `variant` / `oracle` / testee configs** | W3 | `run.sh` + a non-pcrec adapter, which is pcrec-bench's, not pcrec's |
+
+**H4 deserves its own line in a brief**, because it is the one place a
+plausible implementation is silently wrong: handing python `re` the
+*unexpanded* text would make it compile the primary alone (the `(?&n)`
+raises `re.error`, so it would be skipped rather than mis-verified —
+but a *skip* that nobody counted is AR-3's failure mode exactly).
+
+### 3.3 What `--list-*` surfaces are affected
+
+- **No existing surface changes.** `--list-syntax`, `--list-axes` and
+  the other registry surfaces describe *constructs and axes*, and this
+  design adds no construct: `(?&name)`, `(?(DEFINE)…)` and the named-group
+  spellings are already registry rows, already `built` (MEASURED,
+  §2.3).
+- **`--list-definitions` is [DD-11]'s fifth registry surface** (D85), and
+  the format is one of its two readers, not its author. §4.2 states the
+  interface.
+- **New, and owed by this row when W1 lands**: a way to ask a *file* what
+  it declares — the targets, their prefixes, their configs and their
+  definitions — because a build system needs it and because a person
+  needs to check that a target list says what they think. It reads the
+  parsed file, so it has **one derivation and two readers** (learnings
+  §3): the same resolver the harness runs. It is named in §7 Q3 rather
+  than specified, because its consumer ([V-E]'s build integration) is not
+  real yet and D77 applies.
+
+### 3.4 The spec delta (D80: the contract changes in the same change)
+
+`docs/spec/rxt_format.md` is the contract, and a parser landing without
+its spec hunk is rejected on sight (D80; CLAUDE.md's situation index).
+The hunks, named so a reviewer can check them off:
+
+| # | hunk | wave |
+|---|---|---|
+| S1 | "The `.rxt` format" gains **HEAD and BODY**: the head's six declarations, the two head block kinds, and the rule that the head ends at the first `pattern` line | W1 |
+| S2 | A new section, **"Composition"**: EXPAND's six steps, the DEFINE-append rule with the numbering consequence, the four namespaces and the refuse-never-shadow rule, and the statement that a composed block's oracle is necessarily `pcre2` | W1 |
+| S3 | "How the harness evaluates a block" gains the **cell** notion and the `perr` one-cell rule; the summary's reported quantities grow (entry files, fragments, cells, resolution failures) | W1 |
+| S4 | The **subject** subsection gains `@file:"path"`, and states the escape asymmetry (quoted subjects decode escapes, file subjects do not) | W2 |
+| S5 | "The driver protocol" gains the `@<path>` argument form and its byte-exactness guarantee | W2 |
+| S6 | A new section, **"Data blocks"**: the family, the membership rule (`question`/`reader` required), `freq`'s body, and the provenance fields with the reason they are required | W2 |
+| S7 | The `oracle` line and `# pcre2-only`'s status as its alias | W3 |
+| S8 | `variant` and the declared-`unsupported` outcome | W3 |
+| S9 | `docs/spec/match_api.md` §6: **`rx_info.name`**, and the `abi` bump sentence — one of D76's four sites, all four in the same change | W1 |
+| S10 | `docs/spec/limits.md` "Handling an oversized artifact" item 1 already promises the `config` block; when W1 lands, that sentence stops being a forward reference and gains a pointer to S1 | W1 |
+| S11 | `docs/spec/cli.md`: `--source`, `--target <prefix>`, `--lib-path DIR` | W1 |
+
+`docs/guide/` is the human tier and points at these; it never restates
+them (D80).
