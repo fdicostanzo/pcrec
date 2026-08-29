@@ -120,7 +120,10 @@ the first `pattern` (so a D27 reader sees them at the top, U2).
 - `config <name>` — starts a CONFIG block (a block kind beside
   `pattern`), whose lines are pcrec-option lines already in the format
   (`flags`, `features`, `engine`, `budget`) plus `pcrec <raw flags>`
-  (e.g. `-fno-premul-table`, `--unroll=1`, `-march=…` via `cc`), and
+  (e.g. `-fno-premul-table`, `--unroll=1`, `-march=…` via `cc`; the
+  emitted-size limits' raise-only overrides `--max-emit-bytes=N` /
+  `--max-emit-code-bytes=N` belong HERE — per target, declared beside the
+  pattern, D84 addendum 3), and
   bench-facing `testee <engine>[/<version>]` + `option <k>=<v>` lines
   for a non-pcrec engine. `config <name> from <other>` inherits then
   overrides, in order — Frank's cascade, and the ONLY cascade in the
