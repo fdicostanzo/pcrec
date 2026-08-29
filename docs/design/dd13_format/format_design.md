@@ -1168,3 +1168,111 @@ with anything in §1.3 (MEASURED, §1.1: all four are 0 in the corpus).
 The one thing this note asserts is that when they land they should be
 **block-scoped and non-carrying**, like everything else in a pattern
 block — which is what the prior art already chose independently.
+
+---
+
+## 5. The attack list, the tensions, the anti-requirements, the OD ledger
+
+### 5.1 requirements.md §13 — the five claims it told the panel to attack
+
+**Attack 1 — "the DIALECT answer is absence-of-counterexample from a note
+that surveyed no generator that has tried."** The residual, in §13's own
+words: *"a panel with more time could try to construct a HYPOTHETICAL
+include/reference pattern and check whether it is even representable as
+'existing files unchanged, new top-level constructs added'."*
+
+**ANSWERED, and the premise has expired.** Two measurements:
+
+1. **The corpus now exercises cross-references.** MEASURED: **143**
+   blocks across 24 files carry a by-name subroutine reference, and 99
+   lines use `(?(DEFINE)`. The `recursion` module landed *after* the
+   requirements note was written; `(?&name)`, `(?P>name)`,
+   `\g<name>`, `\g'name'` and `(?(DEFINE)…)` are all registry rows and
+   all `built`. The generator that wrote them
+   (`tests/recursion/gen_corpus.py`, 33 files) needed **no format
+   extension** — because in-pattern composition rides `pattern`'s
+   verbatim-to-end-of-line text, and only *cross-file* composition needs
+   grammar. That is the actual mechanism behind R-GEN-1's finding, and it
+   is why the finding generalises rather than merely not having been
+   contradicted yet.
+2. **The head is virgin territory.** MEASURED: across all 179 files there
+   are **0** non-blank, non-comment lines before the first `pattern`
+   line. So "new top-level constructs added above the first `pattern`
+   line" is not merely compatible with the corpus — **it occupies space
+   the corpus has never used, in any file.** R-COMPAT-1 holds
+   *structurally*, not only by keyword absence (§1.1's second
+   measurement).
+
+The honest residual is narrower and is stated in §7 Q5: no *cross-file*
+generator exists yet, so the include-closure accounting rules (§2.11) are
+designed against a hypothetical population.
+
+**Attack 2 — "R-GEN-1's n=5 is flat: none of the five exercised
+cross-references, config sections or includes."** **PARTLY CONCEDED, and
+n is now 6 with the flatness broken on one axis.** The sixth is the
+`recursion` corpus above: cross-references, yes; config sections and
+includes, still no. **The concession matters and is not argued away**:
+`include` and `config` have no generator behind them anywhere in either
+repo, which is exactly why they are W2/W3 and why §7 Q5 names the
+measurement that would trigger them.
+
+**Attack 3 — "does bench actually need engine-neutral group
+identification, or does T-3 overstate it?"** **MEASURED, the tension is
+not live today**: the live `expectations.tsv` columns are
+`pattern subject regime expected start end nmatches method oracle` —
+**no capture columns at all**, over all 1,364 rows. And T-3's premise is
+weaker than stated for a second reason: the appended numbering is
+**PCRE2's own** for the same text (§2.3 MEASURED), not a pcrec
+convention, so an engine fed the same expanded pattern numbers it the
+same way. The mechanism for the case where it *does* bite —
+`variant … groups <name>=<n>` — exists in the grammar and is unexercised;
+§7 Q2 names its trigger rather than pretending it is proven.
+
+**Attack 4 — "check whether `--replace`'s CLI-only existence has already
+created an informal convention a manifest template field would be awkward
+to match."** **CHECKED DIRECTLY, and the premise is false: there is no
+`--replace`.** MEASURED — `grep -rn replace cli/ lib/pcrec.h
+docs/spec/cli.md` returns nothing, and `build/pcrec --help` names no
+replace or subst flag. So R-SUBST-1 is the free, unconstrained field the
+requirements note hoped it was, and §4.6 leaves it free.
+
+**Attack 5 — "re-run the census rather than trust it verbatim if material
+time has passed."** **RE-RUN.** 2026-08-17: 54 files / 1,100 blocks /
+9,977 expectation lines. 2026-08-29: **179 / 3,265 / 26,691** — 3.3×
+in twelve days. The note's own figures are updated throughout; **AR-1's
+cost of getting compatibility wrong has tripled since AR-1 was written**,
+which is an argument for the design's caution, not against it.
+
+### 5.2 The tensions
+
+| | resolution |
+|---|---|
+| **T-1** interface-vs-reference-only vs every-part-testable | **No new concept.** Target-ness and testability are **independent bits**: the harness compiles every block that has cases, as a **test** artifact, exactly as today; `target` is a file-level, build-only declaration that no pattern block carries. A reference-only definition with cases is therefore fully testable and ships nothing. No test-only surface is invented, so AR-2's no-dispatch rule is not even reached |
+| **T-2** canonical pattern vs declared per-library tweak | `variant <testee> <text>` is block-scoped, sits **beside** the pattern, and is checked against **the block's own expectations**. Structurally it cannot become a second pattern: a variant has no `name`, so it cannot be referenced and cannot be a target. Constraint 1 is mechanical; constraint 2 is a recorded review obligation the format does not pretend to check (§4.5) |
+| **T-3** appended numbering vs engine-neutral expectations | see Attack 3. Not live (measured); the numbering is PCRE2's own; `groups <name>=<n>` is the mechanism when it becomes live |
+| **T-4** non-carrying block state vs cascading options | **Two different constructs, so neither has to become the other.** Block reset is the default and is untouched; the cascade exists only inside `config … from`. MEASURED: `config` occurs 0 times in the corpus, so no existing file opts in |
+| **T-5** byte-exact subjects by reference | §2.8: bytes are the subject, no decoding, NUL-safe, local paths only. It forces a **driver-protocol change** (H6/S5) rather than being free, and this note says so rather than assuming `argv` will carry a megabyte with a NUL in it |
+| **T-6** per-file accounting vs includes | §2.11's three rules: closure is the unit, entry-set subtraction with **both counts reported**, cells counted. Plus a fourth failure taxonomy (resolution) that is *reported* separately but *scored* as a compile failure, which is what preserves the 384 `perr` blocks |
+
+### 5.3 The anti-requirements
+
+| | how it is honoured |
+|---|---|
+| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 21 candidates, 0 head lines in 179 files, R = ∅ for every non-`perr` block |
+| **AR-2** no dispatch in the common case | §2.3 step 6: with no references the expansion **is** the pattern text. §2.7's default: one unnamed block, no head → `target rx`, byte-for-byte today's compiler input. The format cannot add dispatch because in that case it adds nothing |
+| **AR-3** declared inapplicability ≠ failure ≠ silent pass | four separate, counted, printed states: `oracle none <reason>`, `variant … unsupported <reason>`, `gp`'s pending-vm bucket, and the resolution-failure taxonomy — each reported on its own line in the summary (§2.11) |
+| **AR-4** must not make D27 harder | the head is **bounded and above the first `pattern` line**, so a blinded author reading a block looks in exactly one other place; a fragment **may not declare file scope**, so a spliced block's meaning never depends on which file spliced it; and the one genuine cross-block dependency — a name a pattern references — is visible at the top of the file by construction |
+| **AR-5** no silent semantic fork | T-2 |
+| **AR-6** no pcrec-specific data in bench expectations | expectations stay spans and counts (`m`/`n`/`ms`/`ns`/`mc`); the verification method is a declared `oracle`, not an engine; group correspondence, when needed, is **by name** |
+| **AR-7** no structural violation via the format | a file declaring no targets emits nothing; a file declaring one target emits what `pcrec 'pattern'` emits; nothing routes a single pattern through multi-pattern machinery. The generator/finder split is untouched because the format never names a finder |
+
+### 5.4 The open-decision ledger
+
+| | disposition |
+|---|---|
+| **OD-1** where per-engine options live, and composition across includes | **file and block scope only** (Frank's ruling 4). Composition is the **per-option-kind** table in §2.6 — `features` unions, everything else is more-specific-wins, size caps are raise-only at every scope. The cascade Frank asked for lives in `config … from`, ordered, last wins; `include` stays pure splice, because making an include's *position* change a later block's meaning is the cross-file context AR-4 forbids |
+| **OD-2** the declared-tweak mechanism | `variant <testee> <text>` / `variant <testee> unsupported <reason>`, block-scoped (§4.5) |
+| **OD-3** config syntax unifying testees and build variants | **one block kind.** A build variant is a `config` with `pcrec` lines; a bench testee is a `config` with `testee` + `option` lines. R-BENCH-9's "one concept, two uses" is literal here — the same `config` grammar, differing only in which of its line kinds appear |
+| **OD-4** interface/reference-only marking; a test-only surface | **no marking, no surface** — T-1 |
+| **OD-5** PCRE2 desugar vs own spelling | **PCRE2's `(?&name)`** (Frank's ruling 2). Its two feared consequences are corrected by measurement: subroutine calls are **backtrackable**, not atomic, on 10.46, and the numbering shift is a function of *where the DEFINE block goes* — appended, it **is** D39.2's rule (§2.3, §0.3 D-c) |
+| **OD-6** the data block's spelling and namespace | **inline values, own namespace** (§2.10) |
