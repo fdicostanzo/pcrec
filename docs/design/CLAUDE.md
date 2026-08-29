@@ -1521,6 +1521,31 @@ append-only or historical records.
   decorrelation run), kept separate from `../dev/artifact_size_census/`
   (STEP 1's own census script) for the same never-confuse-the-lanes reason
   `possessify_impl/` and its siblings are separate. See its own CLAUDE.md.
+- `definitions_table.md` — **[DD-11] design note** (2026-08-29, lane dd11,
+  D85's own charter): the census D85 lacked — every option-dependent
+  replacement in the code today, construct by construct, with file:line and
+  a replacement-or-primitive verdict for each (4 replacements: `(?m)^`,
+  `(?m)$`, `\b`/`\B`, the possessive-suffix family; the possessive suffix is
+  the ONLY construct that already performs a full AST-level syntactic
+  substitution at parse time, and is this design's model). §2 confirms the
+  plan row's own irreducible-core list against the code and names which
+  `src/opt/` passes special-case a construct this row would replace. §3
+  RECOMMENDS Option A — `RegRow` gains a `definitions` field, NOT a
+  satellite table — on D24's own anti-duplication argument and the `family`
+  field's precedent, and surfaces a real type hazard: the predicate must
+  take an opaque `Ctx *` (`ExtPortFn`'s own shape), never `ParseMods *`,
+  which D62 wave A deliberately hid outside `src/parse/`. §4 oracle-verifies
+  every equivalence and REPRODUCES LIVE two already-documented python/PCRE2
+  divergences (`\Z`'s own python token is PCRE2's `\z`; python's own
+  `(?m)^` lacks the `!end_ok` carve-out, in the OPPOSITE direction from a
+  naive first guess) — and names the sharpest hazard as SEQUENCING, not
+  correctness: wiring the table into real compilation before M6.6's
+  exact-lookbehind lowering exists would silently trade D62's exact
+  field+fold for the DFA's lossy `A_LOOK`-erasure superset. §5 designs the
+  fifth registry surface on `--list-axes`'s own shape. §6 splits "the table
+  exists and answers truthfully" (safe now) from "the parser consumes a row
+  to build a substitute subtree" (gated on M6.6) as separate, gated
+  substeps. Unpaneled — this note is what triggers the D6 panel.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
