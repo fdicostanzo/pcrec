@@ -1274,6 +1274,14 @@ typedef struct {
      * `--emit-ir`'s "program N labels" line prints, so the two cannot drift.
      * 0 on a DFA artifact, which has no VM nodes. */
     int vm_emitted_nodes;
+    /* [ART-SIZE] The rung bitmask this run emitted (`Vm.rungs`, the same value
+     * `<PREFIX>_VM_RUNGS` stamps). The size term reads ONE bit of it: the
+     * COUNTER rung's. `K` is the counter rung's chunking factor and affects
+     * NOTHING else, so a pattern whose artifact never took that rung cannot
+     * change size at any K, and running the ladder on it is provably wasted
+     * work. Bit 4 (0x10) — kept in step with emit_vm.c's `vm_rung_bit[]` by
+     * the same contract `<PREFIX>_VM_RUNGS`'s own block states. */
+    unsigned vm_rungs;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full

@@ -167,6 +167,7 @@ static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
     { PCREC_NO_TIERED_ENTRY, "PCREC_NO_TIERED_ENTRY" },
     { PCREC_NO_PREMUL_TABLE, "PCREC_NO_PREMUL_TABLE" },
     { PCREC_NO_OFFSET_SKIP, "PCREC_NO_OFFSET_SKIP" },
+    { PCREC_NO_SIZE_TERM, "PCREC_NO_SIZE_TERM" },
 };
 #define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
 
@@ -294,6 +295,22 @@ static void emit_predicate_axes(StrBuf *sb)
                      "per A_REP: a bounded repeat, unrolled by --unroll=K (default PCREC_DEFAULT_UNROLL_K), below the replication cap");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, "", 0, "", "", "always (fallback) — literal replication (frames)");
+    }
+    /* [ART-SIZE] size-term — the UNROLL LADDER's selection, D84.
+     * `<PREFIX>_UNROLL_K_WHY` is the stamp, and it carries SIX values rather
+     * than the usual chosen/denied pair because "the term did not run" has
+     * four distinguishable reasons and a check must be able to tell them
+     * apart. The two candidate rows below are the axis's own shape (selected
+     * / denied); the stamp's other four values are reported by the artifact,
+     * not by this registry, because they describe WHY the selection declined
+     * rather than which candidate it picked. */
+    {
+        PredAxis p = { "size-term", NULL, "RX_UNROLL_K_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "size-model", "",
+                     V(PCREC_NO_SIZE_TERM), 0, "", "-fno-size-term",
+                     "per artifact: the counter rung is live and the emitted size is over PCREC_SIZE_TERM_THRESHOLD, so K is chosen by re-emitting the ladder and taking argmin nodes");
+        emit_pred_row(sb, &p, 2, "default", "",
+                     0, "", 0, "", "", "always (fallback) — K stays at --unroll=K or PCREC_DEFAULT_UNROLL_K");
     }
     /* length-prune — §2.4, RX_VM_PRUNES's own named pair */
     {

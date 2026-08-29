@@ -9807,4 +9807,5 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * produced. The ladder selects `argmin` over exactly this.
      */
     job->vm_emitted_nodes = v.nlabel;
+    job->vm_rungs = (unsigned)v.rungs;
 }

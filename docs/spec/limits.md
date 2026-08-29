@@ -312,12 +312,28 @@ buffer (§5).
 
 Being honest about the edge of this document's coverage:
 
-- **DFA state count and NFA state count are bounded (§3.3), but
-  compile TIME for an accepted pattern is not** — see §3.3 above; D45's
-  compile-timeout is a test-harness policy, and its own
-  load-sensitivity is an open, unrelated tracking row (`[TT-10]`,
-  `docs/dev/plan.md`), not a number this document can cite as a
-  contract.
+- **DFA state count and NFA state count are bounded (§3.3), and since
+  [ART-SIZE] the EMITTED SIZE is too (§8) — but compile TIME for an
+  accepted pattern is still not.** D45's compile-timeout remains a
+  test-harness policy, and its own load-sensitivity is an open,
+  unrelated tracking row (`[TT-10]`, `docs/dev/plan.md`), not a number
+  this document can cite as a contract. What §8's code-bytes cap gives
+  is a bound on the QUANTITY that predicts compile time within one
+  mechanism, not a bound on the time itself: the two K41 fuzz witnesses
+  invert the ordering (670,650 code bytes at 66.92 s against 1,718,425
+  at 55.13 s), so no emitted count the compiler can produce is a
+  compile-time oracle.
+- **The size term can change a tuned caller's BUDGET verdict.** Choosing
+  a different unroll `K` for the same pattern moves the give-up surface
+  even though it cannot move a match result: measured on
+  `((a)|ab){12}c`, the minimum `--step-budget` that completes runs 89 at
+  K=1 to 110 at K=8, the minimum `--backtrack-frames` is 39 at K=1
+  against 28 at K=8 (descending `K` RAISES the frame requirement), and
+  `<PREFIX>_TRAIL_FRAMES` — a macro §5 names as caller-read — runs 62
+  down to 51. Under the DEFAULT budgets the answers are identical; a
+  caller who has tuned a budget to the edge should re-check it after an
+  emitter change that moves `K`, and `<PREFIX>_UNROLL_K` on the artifact
+  is how they see which `K` they got.
 - **The step and work budgets are two counters, not one exhaustive
   accounting of "engine effort".** They cover backtrack resumptions and
   forward-only work respectively (§3.1); no single number bounds total
@@ -328,3 +344,75 @@ Being honest about the edge of this document's coverage:
   artifact (§2) — there is no recursion-depth COUNTER shipping today, so
   no number exists to state for it; D71 item 1 names this as a future
   `[V-H]` diagnostic-generation axis, not a gap in this document.
+
+---
+
+## 8. Emitted artifact size ([ART-SIZE], D84)
+
+pcrec bounds how large an artifact it will emit. Two limits, both in
+**bytes of emitted C source with comments excluded** — the `.o` you
+link is roughly **17 %** of that, so the numbers are quoted both ways:
+
+| limit | default | ≈ `.o` | what it bounds |
+|---|---|---|---|
+| `PCREC_MAX_VM_EMIT_CODE_BYTES` | 500,000 | ≈ 85 KB | bytes OUTSIDE table initializers — the part gcc must compile as control flow |
+| `PCREC_MAX_EMIT_BYTES` | 1,000,000 | ≈ 170 KB | the whole artifact |
+
+**Why two.** The size you ship and the cost gcc pays are different
+quantities. Measured: a data-table entry costs gcc 0.905 µs, a
+computed-goto jump-table entry 8.7 µs, and a VM node 5.37 ms — a node
+is ≈ 5,930× a table entry. So `a{1,31000}` emits 1,367,865 bytes that
+gcc compiles in **0.34 s** (cheap to compile, too large to ship: the
+total limit refuses it, the code limit does not), while a deeply nested
+bounded repeat can emit 670,650 bytes of code that costs gcc **66.92 s**
+(both refuse it). One limit would have to get one of those two answers
+wrong.
+
+**They are EMERGENCY FAILSAFES, not tuned thresholds** (D84 addendum 3).
+Nothing in pcrec's own 2,487-pattern corpus comes near either — the
+worst is 283,083 code bytes and 651,415 total, on every optimization
+axis — and both are checked AFTER emission and BEFORE anything is
+written, so an over-limit compile produces a refusal and no file.
+
+**Neither is deniable, both are overridable UPWARD.**
+`-fno-size-term` denies the unroll-ladder SELECTION and never reaches a
+limit: a safety refusal a flag turns off is not one. To accept a larger
+artifact, raise the limit — `--max-emit-code-bytes=N` /
+`--max-emit-bytes=N`, raise-only (a value below the default is refused,
+so these can never be used to make a build fail that would have
+succeeded). The effective values are stamped on every artifact as
+`<PREFIX>_MAX_EMIT_CODE_BYTES` and `<PREFIX>_MAX_EMIT_BYTES`.
+
+### Handling an oversized artifact
+
+pcrec REFUSES rather than emitting past either limit, and nothing is
+written when it refuses. Your options, in the order most callers want
+them:
+
+1. **Raise the limit** — `--max-emit-bytes=N` or
+   `--max-emit-code-bytes=N` if the size is acceptable to you. **For a
+   real build, put the override in the pattern-source file's `config`
+   block rather than on the command line**: it then applies per target,
+   beside the pattern, to everything built with that config, and it is
+   visible to whoever reads the file next. The CLI flags are for
+   one-off compiles and for the test harness.
+2. **Let the size term choose `K`, or force it.** `--unroll=1` emits one
+   body copy per counter-rung iteration and is the largest single size
+   lever for a replication-dominated pattern — measured 17× on the fuzz
+   gate's own witness. It costs 1–3 % throughput on single-level large
+   counts. It does NOT shrink a table- or prefilter-dominated artifact.
+3. **Change the engine or the output** where the pattern admits it.
+   `--no-captures` and `--engine=dfa` remove the VM body;
+   `--engine=vm` removes the hybrid DFA prefilter, which is most of the
+   size when the stamps say the artifact is table-dominated — at a large
+   cost on non-matching subjects.
+4. **Split or rewrite the pattern.** Repetition counts MULTIPLY through
+   nesting, so lowering one count INSIDE a nest is worth far more than
+   lowering an outer one.
+5. **Read the stamps to see which term produced the bytes.**
+   `<PREFIX>_UNROLL_K` and `<PREFIX>_UNROLL_K_WHY` (`default` /
+   `option` / `denied` / `size-model` / `size-model-declined` /
+   `cap-rescue`) plus `<PREFIX>_VM_RUNGS` for node replication;
+   `<PREFIX>_DFA_TABLE` and `<PREFIX>_VM_PREFILTER` for the prefilter
+   and its tables. A table-dominated artifact does not shrink with
+   `--unroll`, and option 2 will not help it.

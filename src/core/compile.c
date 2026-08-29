@@ -773,9 +773,25 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * deny flag is `-fno-size-term`; the DFA has no counter rung to
              * unroll; and below the threshold the term is a measured no-op on
              * 99.72 % of the corpus, which is what keeps it free. */
+            /* THE COUNTER-RUNG GATE, and it is not an optimisation — it is
+             * what keeps the term from charging for work it provably cannot
+             * do. `K` is the COUNTER rung's chunking factor and affects
+             * nothing else, so an artifact that never took that rung is
+             * byte-identical at every K and the ladder is five wasted
+             * pipeline runs.
+             *
+             * MEASURED, and this gate exists because the ladder without it
+             * caused a real regression: `(a|b){0,30000}` takes ~23 s to emit
+             * and its artifact is rungs 0x1 (CURSOR only, no COUNTER), so the
+             * ladder multiplied a 23 s compile into a 140 s one and pushed
+             * tests/resource's K7 shape past its 45 s CPU ceiling. The corpus
+             * sweep never caught it because that pattern lives in the resource
+             * suite, not in the `.rxt` corpus — a population nobody counted,
+             * which is this project's oldest lesson and was mine to relearn. */
             bool run = cx.job->fit.chosen == ENGM_VM &&
                        defo.unroll_k == 0 &&
                        !(defo.flags & PCREC_NO_SIZE_TERM) &&
+                       (cx.job->vm_rungs & 0x10u) != 0 &&
                        emit_tot > (size_t)PCREC_SIZE_TERM_THRESHOLD;
             if (run) {
                 st_phase = ST_LADDER; st_idx = 0;
