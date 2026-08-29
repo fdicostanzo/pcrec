@@ -5950,3 +5950,20 @@ prefilter term (r40 F1's refit) proves too wide to cap on — then the
 byte cap binds on the MEASURED emitted size at the end of emission (a
 post-check, exact, refusing before the file is written) and the model
 is advisory.
+
+**ADDENDUM (Frank, 2026-08-28 ~23:3x, same session): "I'd rather it FAIL
+and document how to handle oversized results."** The byte half of ruling
+2 takes the revisit clause NOW rather than later: the byte cap is an
+EXACT post-emission check on the MEASURED emitted size (refusing before
+the file is written; no model on the byte axis — the model stays for K
+selection and its threshold only), so the outcome is predictable by
+construction — a fixed number, a loud refusal — instead of by
+prediction. Predictability is discharged by DOCUMENTATION, not
+machinery: the refusal names the measured size, the cap, and the
+levers; `docs/spec/limits.md` gets the constant plus a "Handling an
+oversized artifact" section (raise the cap with `--max-emit-bytes=N` /
+`--max-emit-nodes=N` when the size is acceptable to you; let the size
+term choose K or force `--unroll=1`; `--engine`/`--no-captures` where
+the pattern admits it; split or rewrite the pattern; read the stamps to
+see which term produced the bytes), and [GUIDE-1] owes the use-case
+paragraph when it exists. Nothing is emitted silently past the cap.
