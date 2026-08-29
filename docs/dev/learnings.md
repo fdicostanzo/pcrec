@@ -108,7 +108,12 @@ distilled forms:
   gated on code, because those are table-dominated and `K` cannot shrink
   a table by a byte. Each wrong quantity sat one step from the right one
   and read correctly in every summary; each failed only on the
-  population where the two diverge.
+  population where the two diverge. The same row then made the POPULATION
+  version of the same mistake twice more — claiming "0 of 2,487 refused" from
+  the `.rxt` corpus while three `tests/resource` shapes moved, and "the argmin
+  is always an endpoint" from fifteen hand-picked subjects while the corpus
+  holds three interior ones. **Whether the quantity or the population: name
+  the set the claim is measured over, and ask what is outside it.**
 - Which of the branches I just added can no test see? What does this
   code compute that nothing observes? Which suite reads this FIELD of
   the output (offsets were the blind field twice of three)?

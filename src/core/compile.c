@@ -258,20 +258,23 @@ static void job_cleanup(Ctx *cx)
  * at K=3 — `vm_counter_copies`' mandatory `K + m%K` term is why), so a greedy
  * DESCENT would stop at a local minimum. Evaluating the endpoints cannot.
  *
- * THE INTERIOR RUNGS ARE KEPT, AND THEIR COST IS BOUNDED ELSEWHERE. Over the
- * 15 sweep subjects of docs/design/artsize_impl/ksweep.tsv the argmin happens
- * to be an ENDPOINT every time (K=1 where the term binds, K=8 where it does
- * not), which is an argument for a shorter ladder — but 15 subjects is not a
- * census, and what made the full ladder expensive was never its length: it was
- * running at all on artifacts K cannot shrink. The threshold below gates on
- * CODE bytes, which fixed that at the source, so the interior rungs cost only
- * the patterns the term can actually help.
+ * THE INTERIOR RUNGS EARN THEIR PLACE, MEASURED. A ladder of just the two
+ * endpoints [8,1] was proposed on the observation that the argmin is an
+ * endpoint on all 15 subjects of docs/design/artsize_impl/ksweep.tsv — and
+ * that turned out to be a property of fifteen hand-picked subjects rather than
+ * of the corpus. `tests/axes/run_ksweep.sh`'s interior-optimum report found
+ * three corpus patterns whose argmin is K=2 on its first run
+ * (`^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$` and two siblings), so dropping [6,4,3,2]
+ * would have cost real patterns their best K.
  *
- * WHETHER THEY EARN IT IS A MEASUREMENT, NOT A BET. The K-sweep identity gate
- * emits the corpus at several K anyway, so it reports an INTERIOR OPTIMUM if
- * it ever finds one — a pattern whose K=1 artifact is larger than some
- * interior K's. Informational today; a measured YES keeps these rungs and a
- * measured NO is the trigger to drop them. */
+ * That report is the standing CENSUS of whether the interior points earn their
+ * cost: the K-sweep gate emits the corpus at several K anyway, so it names any
+ * pattern whose argmin is interior, every run, for free.
+ *
+ * And their cost is bounded at the source rather than by shortening the set:
+ * the threshold below gates on CODE bytes, so the ladder runs only where K can
+ * act at all — measured at ~0.65 s of marginal compiler time on the worst
+ * pattern in the project, against a gcc compile it takes from 55 s to 1 s. */
 static const int SIZE_TERM_LADDER[] = { 6, 4, 3, 2, 1 };
 enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LADDER[0]) };
 

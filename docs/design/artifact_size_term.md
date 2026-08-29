@@ -459,6 +459,22 @@ endpoints."* This lane took it: 15 subjects × K ∈ {1,2,3,4,6,8,12,16,32}
 | `(a{10,20}){10,50}` | 70,596 | 72,878 | 77,468 | 79,795 | 91,513 | 88,988 | 107,242 | 125,338 |
 | `(ab){300}`, `a(b\|c)+d`, `\d{4}-\d{2}-\d{2}` | flat — byte-identical at every K | | | | | | | |
 
+**A fourth fact, added by the code phase and worth more than the other three
+put together: the ladder's INTERIOR rungs earn their place, measured.** A
+two-point ladder `[8,1]` was proposed on the strength of the table above —
+argmin is an endpoint on all 15 subjects — and that was a property of fifteen
+hand-picked subjects, not of the corpus. `tests/axes/run_ksweep.sh`'s
+interior-optimum report found **three corpus patterns whose argmin is K=2** on
+its first run (`^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$` and two siblings), so
+dropping `[6,4,3,2]` would have cost real patterns their best K. The report is
+now the standing census of that question: the sweep emits the corpus at several
+K anyway, so it names any interior argmin every run, for free.
+
+That is the third time this row measured a claim on a population it chose
+rather than one that exists (§4.3b's other two are quantities; this one is a
+population), and it is the reason the census is wired into a gate rather than
+left as a note.
+
 Three facts the rule is built on:
 
 1. **The curve is NON-MONOTONE.** N=8 is 195,443 B at K=3 and 163,386 B at
