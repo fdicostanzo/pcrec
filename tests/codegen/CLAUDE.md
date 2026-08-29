@@ -2000,3 +2000,44 @@ against the unchanged `ac4917d`. Demonstrated both directions again — see the
   DIFFERENT K from the default build, and the NATURAL cap-rescue population is
   pinned at 0 as a CEILING that fires if a real pattern ever lands in the band
   `docs/design/artifact_size_term.md` §4.2b calls empty.
+
+- **run_prefilter_collapse.sh** — [OPT-4]/K39's structural check (2026-08-29).
+  The count-collapsed hybrid prefilter, held to the ARTIFACT rather than to its
+  stamp. THE AXIS IS ANSWER-IDENTITY-PRESERVING (D46), which is exactly why it
+  needs this: the whole `.rxt` corpus, both oracles, `make test-axes` and every
+  differential agree whether or not the emitter got any of it right. Six
+  failure modes none of them can reach — the collapse silently stopping (§1
+  asserts count-independence on the DEFAULT artifact, with a failing-direction
+  control proving the equality is the collapse and not an artefact); the stamp
+  drifting from the machine (§2 compares `RX_VM_PREFILTER_LANG` against BYTES —
+  `"exact"` iff byte-identical to the `-fno-prefilter-collapse` build — over
+  seven witnesses chosen to land on named sides of the knee); the MRL ceiling
+  surviving a superset prefilter, which is a silent MATCH LOSS rather than a
+  size regression (§3, on every collapsed corpus artifact); the collapse
+  reaching the DFA ENGINE, where a superset IS a miscompile (§4's iff, both
+  directions, over 2,772 patterns); the population moving in EITHER direction
+  (§5); and the `_WHY` reason drifting from the outcome it explains (§2, §5,
+  and §1's ratio cell).
+  **THE CONTROLS DO NOT SHARE A SOURCE WITH WHAT THEY CONTROL** (learnings §3),
+  and §5 is where that costs real work. The claim it defends is that the knee
+  fires only where a COUNT made the machine big, so the obvious term — "does
+  the compiler think this pattern has a collapsible repeat" — is
+  `pcrec_has_collapsible_rep`, a CONJUNCT OF THE GATE UNDER TEST: a bug in it
+  would make the assertion agree with the defect. The replication factor is
+  therefore re-derived from the PATTERN TEXT by an awk scanner in this file,
+  which is itself pinned on 9 hand-checked patterns (an escaped brace, a brace
+  inside a class) before it is trusted, and carries a non-vacuity control
+  because a scanner answering ">= 2" for everything would make the assertion a
+  tautology.
+  **§5 BANDS ITS POPULATION ON BOTH SIDES, deliberately.** A floor catches the
+  knee that stopped separating; it does not catch the knee that started
+  collapsing everything — a budget of 0, a flipped comparison — which reads as
+  "more optimisation!" rather than as the sharper filter being thrown away
+  corpus-wide.
+  **THE COUNTS IN THIS FILE ARE NOT THE DESIGN NOTE'S, and neither is wrong.**
+  §5 sweeps every `pattern` line under `tests/` (`sort -u`, 2,772) and measures
+  20 collapsed of 1,263 hybrids; `docs/design/prefilter_count_independence.md`
+  §4 counts rows of `docs/dev/artifact_size_log.tsv` and says 23 (19 distinct
+  patterns). Two populations. No number is copied between them, and each check
+  floors its own — which is the whole of the K35 lesson applied to a number
+  that looks like it should be shared.

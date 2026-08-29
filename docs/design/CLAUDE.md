@@ -1531,11 +1531,26 @@ append-only or historical records.
   MEASURED budget that decides `exact` vs `count-collapsed` (the whole
   count-free hybrid population tops out at 20 NFA states, so 128 fires only
   where the count is the cause: 23 of 2,878 artifacts change), the
-  `RX_VM_PREFILTER_LANG` stamp with its deny/force pair, and — recorded rather
+  `RX_VM_PREFILTER_LANG` stamp with its `_WHY` companion and deny/force pair,
+  and — recorded rather
   than tidied away — the fact that collapsing UNCONDITIONALLY was refused on
   the measurement (96 of the 244 counted-repeat artifacts would GROW, and all
   244 would lose `prefilter-window`). §7 states the two costs it buys the size
-  win with, before any of it was built.
+  win with, before any of it was built, and STEP 3 fills them in MEASURED:
+  the named worst case runs 9.24 s / 99,601 VM attempts collapsed against
+  0.000011 s / 1 attempt exact, and §7 gained a third item because the
+  prediction was incomplete in the FAVOURABLE direction — on a subject the
+  prefilter rejects outright the collapsed artifact is faster, since the
+  smaller DFA scans quicker. §4 carries the bar swept at ten values (a
+  44-wide plateau, not a threshold) and cites the check that pins it; §8's
+  predictions are all held or beaten.
+- `opt4_impl/` — the [OPT-4] STEP 3 lane's probes: the nothing-moves survey
+  over pcrec-bench's own 18 patterns (54 emits, all byte-identical). Its
+  CLAUDE.md leads with the two traps this lane hit — comparing artifacts
+  emitted to different `-o FILE` paths (the `#include` line differs, so every
+  row reads as changed), and reading a timing number off this box without
+  interleaving (the same binary spans 20 % run to run, enough to fake a 2x
+  regression between two identical artifacts).
 - `artsize_impl/` — the [ART-SIZE] STEP 2 lane's probes and archived outputs
   (the corpus size measurement and its fit, the K curve, the gcc-cost
   decorrelation run), kept separate from `../dev/artifact_size_census/`

@@ -898,6 +898,41 @@ and — because a superset's span END is not an upper bound (`match_api.md`
 instead. Both cost match time on some subjects and both are recovered by
 `-fno-prefilter-collapse`, at an artifact size proportional to the count.
 
+**AND THE COSTS ARE MEASURED, NOT WAIVED** (2026-08-29, gcc 15 `-O2`, one
+box; every pair below returned the IDENTICAL answer — same match count, same
+span — which is the axis being answer-identity-preserving, D46). Read the
+first row before choosing the default for a latency-sensitive caller:
+
+| case | collapsed (default) | exact (`-fno-prefilter-collapse`) |
+|---|---|---|
+| **worst case**, `((a)\|b){0,400}c` on 100,000 `a` then `c` | 9.24 s, **99,601 VM attempts**, 38,776 B | 0.000011 s, **1 attempt**, 55,069 B |
+| `(ab){300}` find-all over 64 KB of `ab` | 0.266 s, 246 attempts/search, 34,699 B | 0.006 s, 109 attempts/search, 67,471 B |
+| `(ab){300}` find-all over 66 KB that never matches | 0.089 s, 66,001 attempts | 0.006 s, **0 attempts** |
+| `((a)\|ab){0,100}c` find-all over 64 KB that matches | 0.028 s, 1,300 attempts, 56,675 B | 0.019 s, 1,300 attempts, 64,817 B |
+| `((a)\|ab){0,100}c` over 64 KB that never matches | **0.000006 s** | 0.000016 s |
+
+**THE TWO COSTS ARE SEPARABLE AND THESE ROWS SEPARATE THEM.** Rows 2 and 3
+are a pattern whose artifact reads `<PREFIX>_VM_PRUNE_CEILING "none"` under
+BOTH languages, so their whole difference is the lost sharp start — the VM
+verifying candidates the exact machine would never have offered. Row 4 is the
+opposite control: the attempt count is IDENTICAL at 1,300, so its 1.5× is
+entirely the lost `"prefilter-window"` ceiling.
+
+**THE TRADE IS NOT ONE-DIRECTIONAL.** Row 5 is a subject the prefilter
+rejects outright under either language, and there the collapsed artifact is
+~2.7× FASTER, because the smaller DFA scans the subject quicker. A caller
+whose traffic is mostly non-matching may be better off at the default even
+where a matching subject would favour the exact machine.
+
+**The first row is the shape to worry about**: a long run of the repeat's
+body followed by the terminator, where the exact reverse machine names the
+true start and the collapsed one names 0. It is the case the design note
+predicted before the code was written
+(`docs/design/prefilter_count_independence.md` §7.1) and it is worse in
+practice than "quadratic where the exact prefilter is linear" reads on the
+page. `-fno-prefilter-collapse` is the recovery, and it recovers today's
+artifact byte for byte.
+
 **The stamp** is `<PREFIX>_VM_PREFILTER_LANG`, `"exact"` or
 `"count-collapsed"`, emitted exactly where `<PREFIX>_VM_PREFILTER` reads
 `"hybrid"` — an artifact with no prefilter names no language. It reports

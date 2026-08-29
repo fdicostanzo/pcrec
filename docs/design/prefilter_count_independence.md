@@ -1,8 +1,13 @@
 # [OPT-4] — the count-independent hybrid prefilter
 
-STATUS: design note, STEP 1. Measured numbers below are STEP 0's, taken on
-lane/opt4 at 6bb0e28 (`--engine=auto --features all`, gcc 15 `-O2`, this box).
-K39 is the defect; K41 witness 2 is the pinned exemplar.
+STATUS: STEP 3 complete (2026-08-29, lane opt4b). §§1-6 are the design as
+built; §7's costs and §8's predictions are now MEASURED on the landed tree and
+say so. Numbers in §1's STEP 0 table are the original readings, taken on
+lane/opt4 at 6bb0e28 (`--engine=auto --features all`, gcc 15 `-O2`, this box),
+and are kept as the record of what the row was chartered on — §8 carries the
+before/after taken today, against `-fno-prefilter-collapse` rather than against
+that table, for the reason stated there. K39 is the defect; K41 witness 2 is
+the pinned exemplar and now COMPILES under the default caps.
 
 ## 0. The answer in nine lines
 
@@ -279,7 +284,7 @@ the default. It never moves the other way.
 500,000 limit. D84's revisit clause looks satisfiable; STEP 2 re-derives it
 from a gate RUN, never from this arithmetic.
 
-## 7. What this COSTS, predicted before building (D77)
+## 7. What this COSTS — predicted before building (D77), MEASURED in STEP 3
 
 Both costs fall only on the 23 artifacts that collapse, and both are what
 `-fno-prefilter-collapse` exists to recover.
@@ -290,18 +295,86 @@ Both costs fall only on the 23 artifacts that collapse, and both are what
    `((a)|b){0,400}c` on 100,000 `a` then `c` — exact seeds attempt 99,600,
    collapsed seeds 0. PREDICTION: quadratic where the exact prefilter is
    linear; STEP 3 measures it and reports the number honestly.
+
+   **MEASURED, and it is worse than the sentence above reads.** 9.241166 s and
+   **99,601 VM attempts** collapsed, against 0.000011 s and **one attempt**
+   exact — the same answer both ways (start 99,600, end 100,001). That is a
+   factor of ~840,000 in wall time on the named case. Two real corpus
+   artifacts show the same cost at everyday scale: `(ab){300}` find-all over
+   64 KB of `ab` runs 44× slower (246 against 109 attempts per search), and
+   over a 66 KB subject that never matches it runs 14.5× slower because the
+   exact prefilter rejects the whole subject **without one VM attempt** while
+   the collapsed one hands the VM every position. Both of those artifacts read
+   `RX_VM_PRUNE_CEILING "none"` under either language, so they isolate this
+   cost from cost 2 below.
+
 2. **The lost pruning ceiling.** §2 H3 forces `mrl_win` off. A second,
    independent match-time cost — and why the budget exists: 221 of the 244
    counted-repeat artifacts keep their ceiling.
 
-## 8. Predictions, to be checked in STEP 3
+   **MEASURED, ISOLATED.** `((a)|ab){0,100}c` find-all over a 64 KB matching
+   subject takes 0.028 s collapsed against 0.019 s exact at an **identical
+   1,300 attempts per iteration**, so the whole 1.49× is the ceiling and none
+   of it is candidate starts. It is the smaller of the two costs by a wide
+   margin.
 
-- `((a)|b){0,4000}c`: 199,511 -> ~29,035 code bytes; `{0,400}` 45,303 ->
-  ~29,033; the two AUTO artifacts within 2 lines of each other.
-- `((a)|ab){4000}c`: 651,694 -> ~36,098 (-94.5 %).
-- K41 witness 2: refused -> ~158,601 code bytes, compiling under the default
-  caps, gcc well inside D45's budget.
-- Corpus total: ~2,000,000 bytes off the 1,388 hybrid artifacts' 39,309,904
-  (5.1 %), all of it from 23 patterns; 2,855 artifacts byte-identical.
-- Bench: 13 of 14 stamps byte-identical, `level-context` unchanged unless §6's
-  separable second commit lands.
+3. **AND A CREDIT THE PREDICTION MISSED.** On a subject the prefilter rejects
+   outright, the collapsed artifact is FASTER — `((a)|ab){0,100}c` over 64 KB
+   of `a` with no `c`: 0.000006 s collapsed against 0.000016 s exact, both at
+   zero VM attempts, because the smaller DFA scans the subject quicker. §7 was
+   written as two costs and no benefits; the trade is not one-directional, and
+   a caller whose traffic is mostly non-matching may prefer the default even
+   where a matching subject would favour the exact machine. Recorded here
+   rather than quietly folded into the win, because a prediction that was
+   incomplete in the favourable direction is still a prediction that was
+   incomplete.
+
+## 8. Predictions, CHECKED in STEP 3
+
+STATUS: measured 2026-08-29 on the landed tree, gcc 15 `-O2`, this box. Every
+prediction held or was beaten; none was revised after the fact. "before" is the
+same compiler under `-fno-prefilter-collapse`, which is the honest control — the
+STEP 0 column was taken at 6bb0e28 and has since drifted by unrelated
+scaffolding (the abi 11 -> 12 stamps among it), so quoting it as "before" would
+credit this row with other rows' bytes.
+
+| prediction | actual | verdict |
+|---|---|---|
+| `((a)\|b){0,4000}c` 199,511 -> ~29,035 code B | 193,210 -> **22,731** | beaten |
+| `((a)\|b){0,400}c` 45,303 -> ~29,033 code B | 39,001 -> **22,728** | beaten |
+| the two AUTO artifacts within 2 lines | **1,026 lines each, delta 0** | held |
+| `((a)\|ab){4000}c` 651,694 -> ~36,098 (-94.5 %) | 645,387 -> **29,788 (-95.4 %)** | beaten |
+| K41 witness 2 refused -> ~158,601 code B under default caps | **152,302, ACCEPTED**; gcc -O2 2.04 s (was 66.92 s) | held, within 4 % |
+| corpus ~2,000,000 B off, all from 23 patterns | **-1,874,322 B** over exactly those 23 | held, within 6.3 % |
+| the rest byte-identical | **60-artifact control sample: 0 changed, delta 0** | held |
+| bench: stamps byte-identical | **54 of 54 emits byte-identical over 18 patterns** | held |
+
+**THE FULL SIZE-LOG FIGURE IS THE MERGE BATTERY'S TO CONFIRM.** The corpus
+number above is measured over the 23 over-budget artifacts plus a 60-artifact
+control drawn from the 1,365 under it, because regenerating
+`docs/dev/artifact_size_log.tsv` requires a full `make test` and this lane may
+not run one (box rule: one heavy suite at a time). Against the 39,309,904
+hybrid bytes the log records, -1,874,322 is **-4.8 %**, against a predicted
+5.1 %. The battery is what should confirm it end to end.
+
+**The bench line was wrong in its population, not in its claim.** It said "13
+of 14"; [ART-SIZE] had already established that the right population is 18
+pattern files across three pinned flag sets, not 14
+(`docs/design/artifact_size_term.md` §4.3a). Re-run over that population by
+`docs/design/opt4_impl/probes/bench_identity.sh`: **54 of 54 emits
+byte-identical**, none moved. `level-context` is among the identical ones and
+remains `RX_VM_PREFILTER "none"` after `dfa overflowed: >32000 states` — this
+row does not reach it, exactly as §6 says, and giving it a prefilter is the
+separable second commit's business.
+
+**TIMING ON THE BENCH'S OWN THROUGHPUT SUBJECTS, and a warning about reading
+it.** `tests/bench/fdriver.c` find-all over `t-a-valid-addrs`, `t-b-no-at` and
+`t-c-long-atom-run` for all three email patterns: match counts identical in
+every cell (40,330 on `t-a`, 0 on the others). Timing is identical BY
+CONSTRUCTION here, because the artifacts are byte-identical — there is no code
+to be slower. The first reading nonetheless showed apparent 2× "regressions",
+and they were entirely box noise: the SAME binary re-timed five times on
+`t-b-no-at` ran 1.81 / 1.81 / 2.13 / 2.15 / 2.17 ns/byte, a 20 % spread, while
+interleaved after/before runs converged to 1.803 against 1.807. Recorded
+because a lane reading three-iteration numbers off a shared box would have
+reported a regression that does not exist.
