@@ -17814,3 +17814,49 @@ unplanned "(ironic)": the extender's spec — recipe per extension kind.
 
 Bench: pcrecdev2's three light lanes up; WINDOW OPEN ≥1 h out; its ask
 that opt4's compile+gcc loops HOLD during the window relayed to opt4.
+
+#### Forty-fifth session, part 3 — [DD-11] note MERGED, implementation opened; [DD-13b] r44 panel COMPILED (2 blockers, D61); a HOLD breach (~15:0x-15:1x EDT)
+
+**[DD-11]** revision 1 (c077981) re-checked and MERGED (3cb6721): census
+8 → 28 RegRow-backed replacement rows + 9 base-tier literal escapes with
+no row (ruled: minimal `RS_BASE` rows, [DD-11.4b]); the predicate is the
+TAG enum with one exhaustive-switch evaluator; the checks are the
+buildable ones (grep containment, option-matrix self-oracle with
+libpcre2 co-equal, `AKind` switch, the synthetic-`\w` row). Lane dd11
+now implements [DD-11.1] → [DD-11.4b] sequentially (plan 1d06cbb); the
+merge battery is mine, after the bench window.
+
+**[DD-13b] r44** (docs/dev/reviews/2026-08-29-r44-dd13b-format.md,
+f74a8e2). Frank's rulings during the panel: syntax/spelling is the
+manager's; `description` is a FIELD (a script summarizes a library), `#`
+comments are operational; multi-line values a la YAML → `description |`
+block scalar (compatible by construction: 0 leading-whitespace lines in
+the corpus). r44-grammar: the census 179/3,265/26,691 reproduced TO THE
+DIGIT with run.sh's own regexes; every ambiguity/collision attack failed.
+r44-consumers: the bench's bare `tags` list has no encoding (ruled: `tag`
+takes bare labels + pairs); §2.11 double-counts a file both named and
+included (ruled: count once, report); OUTCOME enum gaps; method vs
+oracle-engine conflated; the two resolutions (harness EXPAND vs pcrec's
+own `(?&name)` binding) must be stated as sequential. r44-sem, every
+cell on BOTH oracles (pcrec = libpcre2 on all — no compiler defect):
+TWO BLOCKERS — absolute numeric refs inside a relocated definition body
+INVERT a library's meaning (`(\d)\1` composed: rejects `5-77`, matches
+`5-75`); a caller's `(?J)` + a colliding name hands the library's
+private helper to the caller's group. And D61: the expansion inflates
+`ngroups`/`nnames` (a zero-group user pattern → ngroups 3; a library's
+private edit moves the user's RX_NCAPS), inverting D61's shipped
+promise — its revisit trigger "the first ref-bearing producer" is this.
+Plus the piece rule's true five-member class (`\K` ESCAPES the callee;
+lookbehind call sites are a SITE rule), no target build path in W1, no
+N-target output naming, no cycle/visited rule. FOR FRANK: refuse
+absolute refs; refuse name collisions loudly; D61 → composition slots
+above `ngroups`, [DD-14.G]'s bar restated, and PCREC performs the
+expansion in `--source` mode (the harness EXPAND is the A==B control).
+Manager-decided syntax: `features only`, caps max-wins, `-o <dir>` for N
+targets, a block's `name` joins L, H11 target build path.
+
+**HOLD BREACH (~14:56).** opt4 ran a harness section (tests/lookaround)
+during the bench's pinned window: load 1.6 → 9.4, the bench's cell 2
+lost an attempt. The section had ended by the time I checked; HOLD
+re-relayed with the forbidden SHAPES enumerated and an ack demanded;
+memory `pcrec-box-concurrency` rule 11. pcrecdev2 will re-run the cell.
