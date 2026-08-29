@@ -654,8 +654,11 @@ case10() {
     # mean something different per invocation.
     pcrec_run "$PCREC" --list-families --flavour pcre2 >/dev/null 2>"$d/ef4.txt"; rc=$?
     assert_eq "case10: --list-families with --flavour exits 1" "1" "$rc"
+    # [DD-11.2] wording updated: --list-definitions ALSO takes --flavour now
+    # (r43 K6 — it walks the same RegRows --list-syntax does), so it joins
+    # --list-syntax/--explain in this sentence.
     assert_contains "case10: ...and says where --flavour does apply" \
-        "$(cat "$d/ef4.txt")" "--flavour applies to --list-syntax and --explain only"
+        "$(cat "$d/ef4.txt")" "--flavour applies to --list-syntax, --list-definitions and --explain only"
 
     # [M6.6.2 wave F] A FORM ERROR IS THE DOORWAY'S ANSWER, NOT THE NAME'S
     # MODULE'S — and `--probe-ask` is the only channel that can see it.

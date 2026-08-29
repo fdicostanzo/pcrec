@@ -299,3 +299,72 @@ clean.
 §6 (`--list-axes`) and §7's `axes_registry_check.sh` bullet were added
 by [CHK-2] piece 1 (lane `chk2p1`), read from a live `build/pcrec` at
 this lane's own branch point; not re-verified against the commit above.
+
+## 9. `--list-definitions` — the replacement/definition table (the FIFTH surface, D85/[DD-11.2])
+
+`build/pcrec --list-definitions | grep -vc '^#'` — 24 rows today (as
+[DD-11.1]/[DD-11.4b] have populated the table so far; this number grows
+as the remaining census items land, see below), 7 columns:
+
+    #kind  selector  syntax  order  predicate  definition  applies
+
+| column | value set | stable? |
+|---|---|---|
+| `kind`/`selector`/`syntax` | the SAME three columns §2 prints for the owning row — reused through the SAME rendering helpers (`src/parse/syntax_dump.c`'s `kind_name`/`put_selector`/`put_str`), not a second independent rendering, which is what makes joining the two dumps on these columns safe rather than merely convenient | yes |
+| `order` | a positive integer, 1-based, dense per row (a row with N `definitions` entries uses 1..N) | yes |
+| `predicate` | the option-scope TAG's own name (`DEF_ALWAYS`, `DEF_MULTILINE`, `DEF_NOCAP`, `DEF_UCP`, `DEF_ENCODING_UTF8`, `DEF_NEWLINE_CONV`, `DEF_LIB_NAME_BOUND` — the closed enum `DefTag`, `src/core/internal.h`), never hand-authored prose — the predicate column and a stored callable were two derivations of one fact (r43's ruling), and the tag name is the one that survives | yes, closed vocabulary |
+| `definition` | the core-syntax TEXT for a `DEFK_STR` entry (itself a valid pcrec probe pattern, `syntax`'s own convention), or the literal text `<builder>` for a `DEFK_BUILDER` (operand-taking) entry — never a live evaluation | free text for `DEFK_STR`; `<builder>` is a fixed literal otherwise |
+| `applies` | `active` (this entry substitutes a different construct) or `identity` (restates the row's own primitive form) | yes as a vocabulary shape — **today every printed entry is `active`**; `identity` is a reserved value with no row using it yet (see the open item below) |
+
+**BOUNDARY, stated once here because it governs every column above**:
+this dump shares its source with the resolver it describes.
+`kind`/`selector`/`syntax`/`predicate`/`definition` are read live off
+the SAME `RegRow.definitions` arrays `pcrec_def_resolve`
+(`src/parse/definitions.c`) walks at option-resolution time — one
+derivation, two readers, `--list-definitions`'s own instance of the
+principle `--list-axes` (§6) and `--list-syntax` (§2) already state.
+**This dump therefore proves what the table THINKS its definitions
+are; it is not independent evidence that a definition string parses to
+core-only vocabulary, or that it MATCHES the same strings as the
+construct it stands for.** The first is
+`tests/registry/definitions_check.c`'s structural check (every
+`DEFK_STR` parses and every builder's output passes
+`pcrec_ast_all_core`, `src/parse/definitions.c`'s own exhaustive
+`AKind` switch); the second is [DD-11.3]'s option-matrix self-oracle,
+not yet built — see docs/design/definitions_table.md §3/§6 for both.
+`tests/registry/run_definitions_tests.sh`'s containment grep is a
+third, narrower claim: that the tag evaluator
+(`pcrec_def_tag_applies`) is reached from exactly one call site, so
+`predicate`'s values cannot be second-guessed by a hidden second
+evaluator anywhere in the tree.
+
+`--list-definitions` takes `--flavour` exactly as `--list-syntax` does
+(r43 K6, reversing the design note's first-pass "no"): it walks the
+same `RegRow`s, filtered identically, so an unfiltered dump would
+print a definition for a construct `--list-syntax --flavour=X` says
+does not exist under that flavour. It takes no pattern/`-o` — a syntax
+query, `cli.md` §1.
+
+**Not yet in this dump, and why**: the census in
+docs/design/definitions_table.md §1 names 28 RegRow-backed replacement
+rows plus 9 row-less base-tier literal escapes; [DD-11.1]/[DD-11.4b]
+have populated the class-escape family, `\b`/`\B`, `\R`, the bare `\N`
+row, the possessive-suffix family, and 6 of the 9 base-tier escapes (24
+entries across 18 rows, per the count above). Held pending two open
+design questions (the lane's own report to the manager): POSIX class
+names / `\c` / `\o` / `\N{U+` / `\Q...\E` / bare-`\x` / octal are all
+PARAMETERIZED BY TEXT AT THE OCCURRENCE, a shape neither `DEFK_STR`
+(fixed string) nor `DEFK_BUILDER` (AST-operand function) expresses; and
+`^`/`$`/the `(?n)`-scoped capturing-group row each need the
+`applies=identity` marking above, which `RegDef` has no field for yet
+(their non-multiline/non-nocap case is genuinely the row's own
+primitive form, not a substitution). Neither is `[DD-11.5]`'s
+wiring-into-real-compilation step, which stays gated on M6.6's exact
+one-byte-fixed-lookbehind lowering per the design note's own §4.
+
+**[DD-11.2] this pass**: `build/pcrec --list-definitions` read live at
+`8da2ecb`, `PROCS=4` not yet re-run against the new dump (`run_registry_
+tests.sh`'s guarded chain does not exercise this surface yet — see
+tests/registry/CLAUDE.md's note on `run_definitions_tests.sh`, still
+standalone pending the table's population settling); `make strict`
+clean.

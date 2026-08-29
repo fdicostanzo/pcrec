@@ -236,7 +236,7 @@ force-vs-deny distinction, and the byte-identity/engine-selecting split:
 
 ## 2. Listing surfaces
 
-Four TSV dumps, each a query taking no pattern and no `-o` (mixing either
+Five TSV dumps, each a query taking no pattern and no `-o` (mixing either
 in is refused, `cli/main.c:496-528`). The column CONTRACT itself — `#`
 comments, a header row naming every column, append-only columns, resolve
 by header name never position — is `docs/spec/table_contract.md`,
@@ -289,6 +289,26 @@ description. Reports what THIS BUILD thinks its own tuning machinery is
 — `registry.md` §6 states the boundary in full and points at the
 independent-side check. Takes no `--flavour` (the same reason
 `--list-families` doesn't: it is not a claim about PCRE2 syntax).
+
+### `--list-definitions`
+
+The replacement/definition table ([DD-11.2], D85, `docs/spec/registry.md`
+§9 — the fifth surface): one row per (row, definition-array entry),
+`kind`/`selector`/`syntax` matching the owning row's own `--list-syntax`
+line so the two dumps join, `order` (1-based, dense per row), `predicate`
+(the option-scope tag's own name — a closed vocabulary, never
+hand-authored prose), `definition` (the core-syntax substitution text, or
+the literal `<builder>` for an operand-taking entry), and `applies`
+(`active` or `identity` — every row today is `active`; see `registry.md`
+§9 for the two rows still pending a design ruling before they can print
+`identity`). Reports what the table THINKS a construct's substitution is
+— `registry.md` §9 states the boundary in full (it is not evidence the
+substitution parses cleanly or matches the same strings, which are
+separate checks). Takes `--flavour`, unlike `--list-verbs`/
+`--list-families`/`--list-axes`: it walks the same `RegRow`s
+`--list-syntax` does, so an unfiltered dump would print a definition for
+a construct `--list-syntax --flavour=X` says does not exist under that
+flavour.
 
 ### `--explain SYNTAX` / `--flavour NAME`
 

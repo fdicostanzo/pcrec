@@ -19,6 +19,7 @@ Every pcrec command whose output is a DATA TABLE:
 |---|---|---|
 | `--list-syntax` | the syntax construct registry (SR-1/D24) | conforming producer today |
 | `--list-verbs` | the (*VERB) name table | conforming producer today |
+| `--list-definitions` | the replacement/definition table (D85/[DD-11.2]) | conforming producer today |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.

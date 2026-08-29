@@ -3261,6 +3261,14 @@ extern const char *const PCREC_DEFAULT_FEATURES;
  * the only consumers today, and promoting one function into lib/pcrec.h later
  * is easy in a way that un-promoting it is not. */
 char *pcrec_syntax_tsv(unsigned flavours);
+/* [DD-11.2] `--list-definitions`, the fifth registry surface (D85,
+ * docs/design/definitions_table.md §5). Walks the same rows
+ * `pcrec_syntax_tsv` does, through the same rendering helpers
+ * (src/parse/syntax_dump.c), so the two dumps join on `kind`/`selector`/
+ * `syntax` by construction. Takes `--flavour` exactly like `pcrec_syntax_
+ * tsv` (r43 K6: an unfiltered dump would print a definition for a
+ * construct `--list-syntax --flavour=X` says does not exist). */
+char *pcrec_definitions_tsv(unsigned flavours);
 /* D65: the built-status derivation `pcrec_syntax_tsv`'s new column reads,
  * and the same function tests/registry/registry_check.c's defect assertion
  * calls directly — one derivation, two callers, so neither can drift from

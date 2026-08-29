@@ -1042,6 +1042,28 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   DUPNAMES decline) — the precise distinction a per-module summary always
   blurred, and the reason D65 ruled per-CONSTRUCT granularity.
 
+  **[DD-11.2] `pcrec_definitions_tsv` — `--list-definitions`, the FIFTH
+  registry surface (D85, docs/design/definitions_table.md §5).** Lives
+  here rather than in a new file, deliberately: it reuses `kind_name`/
+  `put_selector`/`put_str` DIRECTLY (private statics in this same TU), so
+  `kind`/`selector`/`syntax` cannot render differently from
+  `pcrec_syntax_tsv`'s own copy — the two dumps join on those columns by
+  construction, not by two independent renderings that happen to agree.
+  Walks the same `all_kinds` sweep, but PER `RegDef` ENTRY rather than
+  per row (a row with `definitions == NULL` contributes nothing); `order`
+  is the entry's own array position, never a stored field (`family`'s own
+  "one derivation" precedent). `predicate` reads `pcrec_def_tag_name`
+  (src/parse/definitions.c) — the tag's OWN name, never hand-authored
+  prose. `applies` prints `active` unconditionally today: every row the
+  table carries substitutes something, and `identity` (the row already IS
+  its own primitive form) is a reserved value with no row using it yet —
+  `^`/`$`/the `(?n)`-scoped capturing-group row each need it and are held
+  pending a `RegDef` field this design has not settled (see the lane's own
+  report to main, and registry.md §9's matching note). Takes `--flavour`
+  like `pcrec_syntax_tsv` (r43 K6): it walks the SAME rows, filtered
+  identically, so an unfiltered dump would print a definition for a
+  construct `--list-syntax --flavour=X` says does not exist.
+
 ## PARSE-1 — `p_alt` as a module callback (2026-08-11)
 
 Three defects made `p_alt` unusable as the callback D28/D29/D30 promise. All

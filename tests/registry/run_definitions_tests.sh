@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 # tests/registry/run_definitions_tests.sh — [DD-11.1]'s two required checks
-# (docs/design/definitions_table.md §3 items 1-2, as scoped by the manager's
-# brief for this substep's commit): the STRUCTURAL check (every definitions
-# entry's output is core-only vocabulary) and the CONTAINMENT check (the
-# tag evaluator has exactly one caller, in src/parse/definitions.c).
+# (docs/design/definitions_table.md §3 items 1-2): the STRUCTURAL check
+# (every definitions entry's output is core-only vocabulary) and the
+# CONTAINMENT check (the tag evaluator has exactly one caller, in
+# src/parse/definitions.c) — PLUS [DD-11.2]'s own gate (§3's own words:
+# "there is no separate dump-vs-parser check, because both read the same
+# tag-name table by construction" — the containment grep above IS that
+# gate) and `table_contract.md` HEADER-TRUTHFULNESS conformance for the
+# `--list-definitions` TSV itself.
 #
 # NOT YET WIRED into run_registry_tests.sh's guarded chain — that file's
 # PASS-count guards are measured off a live run and this check is landing
-# mid-stream ([DD-11.1] populates more rows in later commits: POSIX classes,
-# \c/\o/\N{U+, the 9 base-tier escapes, ^/$/(?n) — each pending its own open
-# design question, see the lane's report to main). Wiring belongs with
-# [DD-11.2]/[DD-11.3], which add the standing --list-definitions/self-oracle
-# surfaces this file's structural check is a precursor to. Run standalone
-# until then:
+# mid-stream ([DD-11.1] still holds POSIX classes, \c/\o/\N{U+/\Q...\E,
+# bare-\x/octal, and ^/$/(?n) pending two open design questions sent to
+# main). Wiring belongs with [DD-11.3]'s standing self-oracle, once the
+# table's population settles. Run standalone until then:
 #
 #   bash tests/registry/run_definitions_tests.sh
 #
-# Env: CC (default gcc), KEEP=1 to keep the built binary.
+# Env: CC (default gcc), KEEP=1 to keep the built binary, PCREC (default
+#   <repo-root>/build/pcrec — the --list-definitions binary this file's
+#   table-contract check drives).
 
 set -u
 
@@ -24,10 +28,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
+PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+
+. "$ROOT_DIR/tests/lib/table.sh"
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [K37] resolves TIMEOUT_BIN for this file's own bare compiler call below
 
 LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 if [ ! -f "$LIB" ]; then
     echo "definitions: $LIB not built — run 'make' first" >&2
+    exit 1
+fi
+if [ ! -x "$PCREC" ]; then
+    echo "definitions: $PCREC not built — run 'make' first" >&2
     exit 1
 fi
 
@@ -81,5 +93,40 @@ fi
 OUT="$WORKDIR/definitions_check.out"
 "$BIN" 2>&1 | tee "$OUT"
 [ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
+
+# ---- [DD-11.2] `--list-definitions`'s own table_contract.md conformance ---
+#
+# axes_registry_check.sh's own precedent for --list-axes: `table_check_
+# truthfulness` asserts every data row's field count matches its header's
+# declared count (rule 3's header, rule 1's TSV-per-record shape) — the
+# exact D65 incident (`docs/spec/table_contract.md`'s own "why this file
+# exists" paragraph) this file's own header would otherwise be exposed to.
+TSV="$WORKDIR/definitions.tsv"
+"$TIMEOUT_BIN" 60 "$PCREC" --list-definitions > "$TSV" 2>"$WORKDIR/definitions.err"   # [K37] bounded, axes_registry_check.sh's own --list-axes precedent
+if [ ! -s "$TSV" ]; then
+    echo "definitions: --list-definitions produced no output ($(cat "$WORKDIR/definitions.err"))" >&2
+    rc=1
+else
+    if table_check_truthfulness "$TSV" >"$WORKDIR/trutherr" 2>&1; then
+        echo "PASS: definitions: table_check_truthfulness — every row of --list-definitions' TSV matches its header's declared field count"
+    else
+        echo "definitions: table_check_truthfulness: $(cat "$WORKDIR/trutherr")" >&2
+        rc=1
+    fi
+    # No field may contain a TAB or a newline (table_contract.md rule 5;
+    # `--list-syntax`'s own tests/registry/ pin, applied here) — checked
+    # directly since `syntax_dump.c`'s `put_str` forbids neither and a
+    # `note`/`definition` field containing either would silently corrupt
+    # the wire format.
+    NDATA="$(grep -vc '^#' "$TSV")"
+    HDRCOLS="$(grep '^#' "$TSV" | tail -1 | sed 's/^#//' | awk -F'\t' '{print NF}')"
+    NWRONG="$(awk -F'\t' -v want="$HDRCOLS" '!/^#/ && NF != want' "$TSV" | wc -l)"
+    if [ "$NWRONG" -ne 0 ]; then
+        echo "definitions: $NWRONG row(s) do not have the header's $HDRCOLS fields" >&2
+        rc=1
+    else
+        echo "PASS: definitions: table_contract.md — $NDATA data rows, all $HDRCOLS-field, header is the last # line before the first data row"
+    fi
+fi
 
 exit $rc

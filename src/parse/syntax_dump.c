@@ -259,6 +259,94 @@ char *pcrec_syntax_tsv(unsigned flavours)
     return sb_take(&sb);
 }
 
+/* `--list-definitions` — [DD-11.2], the FIFTH registry surface (D85,
+ * docs/design/definitions_table.md §5). Walks the SAME `RegRow`s
+ * `pcrec_syntax_tsv` above prints, through the SAME `kind_name`/
+ * `put_selector`/`put_str` helpers, so `kind`/`selector`/`syntax` are
+ * guaranteed to join the two dumps rather than merely happening to agree —
+ * "the same three columns... so a reader can join the two dumps" is the
+ * note's own requirement, discharged by construction rather than by two
+ * independent renderings that could drift.
+ *
+ * A row with `definitions == NULL` contributes NOTHING — this dump is
+ * per-DEFINITION, not per-row, the same way `pcrec_axes_tsv` is per-
+ * CANDIDATE rather than per-axis. `order` is 1-based and DENSE per row (an
+ * N-entry array prints 1..N), read directly off the array position rather
+ * than carried as a second field on `RegDef` — one more instance of "one
+ * derivation" (the array's own order IS the fact).
+ *
+ * `predicate` is the tag's OWN NAME (`pcrec_def_tag_name`, definitions.c) —
+ * never hand-authored prose, per the r43 ruling folded into the design note:
+ * the predicate column and a stored callable were two derivations of one
+ * fact, and the tag name is the one that survives.
+ *
+ * `definition` is the DEFK_STR string verbatim, or the literal text
+ * `<builder>` for a DEFK_BUILDER entry — never a live evaluation, the same
+ * "proves what the compiler THINKS" boundary `--list-axes`'s own header
+ * states (axes_dump.c). `DEFK_END` never reaches this loop (it terminates
+ * the walk, same convention `pcrec_def_resolve` uses in definitions.c).
+ *
+ * `applies` is `active` for every entry printed today ('identity' is a
+ * RESERVED value, not yet reachable): every row currently in the table is
+ * an unconditional or option-gated SUBSTITUTION with no case where the row
+ * is already its own primitive form (`^`/`$`'s non-multiline case and the
+ * `(?n)`-scoped capturing-group row's non-nocap case both have a genuine
+ * identity case, and are held out of the table pending a ruling on how
+ * `RegDef` marks it — see the lane's own report). Printing `active`
+ * unconditionally is not a placeholder lie: it is exactly true of the
+ * table as populated, and the day an identity-bearing row lands, this
+ * comment and the constant string below are the one place that changes. */
+char *pcrec_definitions_tsv(unsigned flavours)
+{
+    StrBuf sb = {0};
+
+    sb_puts(&sb, "# pcrec definitions table (D85, docs/design/definitions_table.md). "
+                 "Empty field = none.\n"
+                 "# `kind`/`selector`/`syntax` are the SAME three columns "
+                 "--list-syntax prints for the owning row, so the two dumps "
+                 "join on them.\n"
+                 "# `order` is 1-based, dense per row (this row's Nth "
+                 "definitions-array entry).\n"
+                 "# `predicate` is the option-scope tag's OWN NAME (a closed, "
+                 "stable vocabulary a consumer may switch on), never "
+                 "hand-authored prose.\n"
+                 "# `definition` is the core-syntax TEXT for a string-kind "
+                 "entry, or the literal `<builder>` for an operand-taking "
+                 "one — never a live evaluation.\n"
+                 "# `applies` is `active` (this entry substitutes a "
+                 "different construct) or `identity` (restates the row's "
+                 "own primitive form) — every entry today is `active`.\n"
+                 "#kind\tselector\tsyntax\torder\tpredicate\tdefinition\tapplies\n");
+
+    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (!r->definitions) continue;
+            if (flavours && !(r->flavours & flavours)) continue;
+
+            int order = 0;
+            for (const RegDef *d = r->definitions; d->kind != DEFK_END; d++) {
+                order++;
+                sb_puts(&sb, kind_name(r->kind));      sb_putc(&sb, '\t');
+                put_selector(&sb, r->sel);              sb_putc(&sb, '\t');
+                put_str(&sb, r->syntax);                sb_putc(&sb, '\t');
+                sb_printf(&sb, "%d", order);            sb_putc(&sb, '\t');
+                sb_puts(&sb, pcrec_def_tag_name(d->tag)); sb_putc(&sb, '\t');
+                if (d->kind == DEFK_STR)
+                    put_str(&sb, d->str);
+                else
+                    sb_puts(&sb, "<builder>");
+                sb_putc(&sb, '\t');
+                sb_puts(&sb, "active");
+                sb_putc(&sb, '\n');
+            }
+        }
+    }
+    return sb_take(&sb);
+}
+
 /* `--list-verbs`. Q1 added fifty verb NAMES that no dump could show: they are
  * not RegRows, so `--list-syntax` cannot carry them and its format is frozen
  * (SR-4 generates a section of docs/pcre2_compliance.md from it, and the
