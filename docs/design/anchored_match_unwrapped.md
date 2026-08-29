@@ -474,9 +474,21 @@ the overflow arm was measured at ZERO reachable patterns — the caps are
 shared, the mandatory machines are built first and are at least as large, so
 nothing could reach it and the r41 critic could not drive it read-only.
 `tests/codegen/run_anchored_match.sh` §4a now brackets 4,096 from both sides
-on the ordinary build AND compiles one of the three in-corpus overflow
-patterns, so the arm has seven real members — four out-of-corpus, three in —
-where it had none.
+on the ordinary build, and the arm has **seven** real members — four
+out-of-corpus, three in — where it had none.
+
+**None of the seven is compiled by the check, and the reason is a measurement
+this round made twice.** §4a's first draft compiled the four resource shapes
+(11-25 s each) and one timed out under two concurrent invocations; its second
+compiled the cheapest in-corpus overflow pattern (6.5 s) and that timed out at
+load1 30 during this very round. Both times `pcrec_run`'s 60 s WALL bound
+first, and both times the section reported a REFUSAL for what was a TIMEOUT —
+which is [TT-10]'s load-sensitivity and, worse, a check that cannot tell its
+own breakage from its subject's. The 4,001/4,201 bracket costs under a second,
+pins the ceiling's VALUE to within 5 %, and every one of the seven follows
+from it arithmetically. The standing in-corpus pin is
+`run_anchored_diff.sh`'s compared population (1,210 of 1,213), a count the
+tree already pays for.
 
 ### 5.3 What the anchored form's `UnanchStart` is
 

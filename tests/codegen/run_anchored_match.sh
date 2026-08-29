@@ -313,13 +313,22 @@ fi
 #   optimises for. `run_anchored_diff.sh`'s compared population is the
 #   standing count of the other side (1,213 → 1,210).
 #
-# The FIRST of the three is compiled below as a real in-corpus witness (6.5 s;
-# the other two are 8 s and 13 s and buy nothing the first does not).
-ovf_corpus=0
-if ceil_case '((a)|ab){0,4000}c' search-filter n; then ovf_corpus=1; fi
-[ "$ovf_corpus" -eq 1 ] \
-    && ok "§4a the arm has a real IN-CORPUS witness: '((a)|ab){0,4000}c' takes the stamped fallback in an ordinary --no-captures build, so the overflow path is exercised by a pattern this tree actually holds and not only by a bracket built for it" \
-    || bad "§4a the in-corpus overflow witness '((a)|ab){0,4000}c' no longer reaches the arm — with it gone the arm's only corpus members are its two siblings, and a population that shrinks silently is the r41 S4 shape"
+# **NONE OF THE SEVEN IS COMPILED HERE, AND THAT IS THE SECOND TIME THIS
+# SECTION LEARNED IT.** The first draft compiled the four resource shapes
+# (11-25 s each) and one timed out under two concurrent invocations; the
+# second compiled the cheapest in-corpus one (6.5 s) and it timed out at
+# load1 30 during the r41 round itself. Both times `pcrec_run`'s 60 s WALL was
+# the binding constraint, both times the section reported "did NOT COMPILE" —
+# a REFUSAL — for something that was a TIMEOUT, and a check that cannot tell
+# its own breakage from its subject's is not a check ([TT-10]).
+#
+# THE BRACKET BELOW PINS THE CEILING'S VALUE TO WITHIN 5 %, and every one of
+# the seven follows from it arithmetically (the smallest is 8,001 states
+# against an upper bracket of 4,201). The standing IN-CORPUS pin is
+# `run_anchored_diff.sh`'s compared population, printed on every run: it is
+# 1,210 of 1,213 selectors, and it moves if those three shapes change form.
+# That is a count this tree already pays for, against a 6.5 s compile that
+# re-derives what the bracket has already established.
 
 #
 # BOTH SIDES ASSERT `RX_DFA_SCAN "unanchored"`, which is the non-vacuity: a
