@@ -2049,3 +2049,65 @@ the discriminator [DD-13] had to remove from two checks. The
 artifact is a TS-1 failure and a §5.3 breach, and it binds under `-D` exactly
 as without one. Inert without the `-D`, so what the check reads IS the default
 artifact's text.
+
+## [ENG-ABS] AXIS G — THE ANCHORED MATCH-HERE FORM (2026-08-29)
+
+`docs/design/anchored_match_unwrapped.md` is the note; what lives here is what
+the emitter had to grow, and the shape it grew in.
+
+**A SEVENTH AXIS, and the objects carry no emitter pointer.** The other six
+axes describe ONE MACHINE's form and are consumed by `DfaForm`. Axis G answers
+a question about an ENTRY POINT — which of the two shapes `<prefix>_match` and
+`<prefix>_match_caps` take — so `dfa_matches[]`'s objects are bare `DfaCand`s
+and the dispatch is one `if` in `pcrec_emit_dfa`. The two bodies are different
+enough (one has tables and a scan loop, the other is four lines around a call
+to `<prefix>_search`) that a shared skeleton would be a switch wearing a
+skeleton's clothes. `dfa_match_of` is the ONE selection, and it is what the
+`<PREFIX>_DFA_MATCH` stamp, `rx_info.match_form` and the dispatch all read —
+so the stamp names the body that was emitted rather than a second reading of
+the predicate that chose it.
+
+**A THIRD DIRECTION ON AXIS F, and it revealed a latent defect in the other
+two.** `dfa_dir_anchored` is `dfa_dir_forward`'s strings character for
+character apart from two: its range guard returns `-1` (this loop is the body
+of `<prefix>_match`, whose failure value is the entry's, not the search's
+found-count), and `prefilter_owns_start` is FALSE. The emitted `_match` body
+opens by binding `subject`, `subject_length` and `search_from` off the
+`rx_ctx`, which is what lets every direction string, seed initializer and bound
+expression be REUSED rather than respelled — and what makes mechanism 4's start
+dispatch provably the SAME emitted line reading the SAME byte.
+
+**FOUR EMITTERS SPELLED A MACHINE'S NAME AS A LITERAL** — `dir_fwd_skip`,
+`dir_rev_skip`, `dir_fwd_bound_accept` and `dir_rev_bound_accept` wrote
+`<p>_forward_*` / `<p>_reverse_*` while `emit_machine_tables` has always
+derived the tag from `dir->c.name`. Correct while forward and reverse were the
+only directions and their names were "forward" and "reverse"; from inside
+`<prefix>_match` they named tables that do not exist there, and the artifact
+did not compile. All four derive the name now, and both existing machines'
+emitted text is unchanged byte for byte. **The defect was found by the ANSWER
+differential, not by inspection** — which is the argument for building
+`tests/anchored/` before trusting the form.
+
+**AXIS B DECLINES BY DERIVATION, NOT BY A BRANCH.** A candidate-start
+prefilter CHOOSES WHERE THE SCAN BEGINS, which is sound for a search and wrong
+for a match-here. Nothing in the axis-B candidates knows the anchored machine
+exists: `anch_start()` builds the form's `UnanchStart` with `kind =
+DFA_PF_NONE` and `ofsk.nsel = 0` unconditionally, and every real candidate
+requires one of those to be non-trivial, so the ordinary walk selects the total
+fallback. The same function recomputes the position-view flags from the
+anchored machine ALONE, where the search pair shares the artifact-level OR of
+its two machines — strictly more accurate, and structurally incapable of moving
+an existing artifact's bytes because it is a different object.
+
+**`RX_DFA_TABLE`'s composition now spans THREE machines.** It is an
+artifact-level composition (spec §6.3), so leaving the anchored machine out
+would let the stamp say `"premultiplied"` about an artifact holding an indexed
+table.
+
+**THE STAMP IS NOT IN `pcrec_emit_dfa_scan_stamps`, and the placement is the
+fact.** That function is shared with the VM HYBRID, which inlines this file's
+scan as its prefilter — so everything it stamps is a fact about a DFA SCAN, and
+both artifact kinds have one. `<PREFIX>_DFA_MATCH` is a fact about the
+artifact's `<prefix>_match` ENTRY, and a hybrid's is the VM's own anchored
+body. It lives in `emit_dfa_stamps` (DFA-only) and `rx_info.match_form` is NULL
+wherever `fit.chosen != ENGM_DFA`.

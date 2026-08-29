@@ -359,8 +359,27 @@ KEEP="${KEEP:-0}"
 # emitted bytes again (`20383b6`, the offset-0 verify's own table), and within
 # one `abi` number the emitted output must be byte-exact whole-file — so the
 # pin follows the last src commit rather than the first.
+#
+# [ENG-ABS], 2026-08-29: `abi` 9 -> 10, (B) re-pinned to `14d1feb`. The
+# ANCHORED MATCH-HERE FORM (docs/design/anchored_match_unwrapped.md) gives
+# every DFA artifact a `<PREFIX>_DFA_MATCH` stamp line, every artifact of
+# EITHER engine an `rx_info.match_form` member, and an artifact that SELECTS
+# the form a file-scope `<prefix>_anchored_state` accessor block, a THIRD
+# machine's tables inside `<prefix>_match`, and rewritten `_match`/
+# `_match_caps` bodies. Like [OPT-3], [ENG-FORM] and [OPT-K] it moves emitted
+# PROGRAM bytes and not scaffolding only — but every byte it writes on a VM
+# artifact is that one struct member, which sits ABOVE `goto <p>_L0;`, so (A)
+# is expected byte-identical against the unchanged `ac4917d` and is not merely
+# unmoved in principle.
+#
+# THE PIN IS THIS CHANGE'S LAST src-TOUCHING COMMIT, [OPT-K]'s note one
+# paragraph up having recorded why that matters in a multi-commit change:
+# `14d1feb` moved the `match_form` member's comment ABOVE the member (a
+# measured 691 B per artifact of the size log's comment classifier), which is
+# emitted text, so the pin follows it rather than the commit that introduced
+# the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-20383b6}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-14d1feb}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

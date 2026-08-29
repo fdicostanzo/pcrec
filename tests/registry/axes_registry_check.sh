@@ -452,6 +452,16 @@ check_value_set "RX_DFA_PREFILTER" \
     "$(dump_stamp_vals RX_DFA_PREFILTER)" \
     ""
 
+# [ENG-ABS] axis G's stamp. THE ANCHOR CARRIES NO COUNT AND NO BACKTICK — the
+# first for the reason the paragraph above records, the second because these
+# anchors are double-quoted bash strings and a backtick in one is a command
+# substitution. "is on every DFA" is unique in match_api.md and survives a
+# value being added.
+check_value_set "RX_DFA_MATCH" \
+    "$(extract_md_table_values "$MATCHAPI" "is on every DFA")" \
+    "$(dump_stamp_vals RX_DFA_MATCH)" \
+    ""
+
 check_value_set "RX_VM_PREFILTER" \
     "$(extract_line_values "$MATCHAPI" 'RX_VM_PREFILTER')" \
     "$(dump_stamp_vals RX_VM_PREFILTER)" \

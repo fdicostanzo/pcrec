@@ -183,7 +183,7 @@ another's, `cli/main.c:517-523`'s own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — 40 rows today, 12 columns,
+`build/pcrec --list-axes | grep -vc '^#'` — 45 rows today, 12 columns,
 confirmed live this pass. Where the first three surfaces describe
 SYNTAX pcrec accepts, this one describes the compiler's own TUNING
 machinery: for every axis where `src/gen/emit_dfa.c` or
@@ -197,7 +197,7 @@ candidate of an axis always applies).
 
 | column | value set | stable? |
 |---|---|---|
-| `axis` | 17 values today: `table`, `prefilter`, `view`, `seed`, `accept`, `direction` (the six DFA layer-1 axes, `docs/design/emitter_form.md` §3) plus `possessify`, `revdet`, `counter`, `length-prune`, `vm-prefilter`, `altcls-merge`, `altcls-factor`, `atomic-discharge`, `splice-calls`, `tiered-entry`, `engine` (the eleven VM/engine-selection axes, `docs/spec/tuning.md` §2) | yes, but append-only — a new axis is a new value, never a renumbering |
+| `axis` | 18 values today: `table`, `prefilter`, `view`, `seed`, `accept`, `direction`, `match` (the seven DFA layer-1 axes, `docs/design/emitter_form.md` §3 and, for `match`, `docs/design/anchored_match_unwrapped.md` §5.1) plus `possessify`, `revdet`, `counter`, `length-prune`, `vm-prefilter`, `altcls-merge`, `altcls-factor`, `atomic-discharge`, `splice-calls`, `tiered-entry`, `engine` (the eleven VM/engine-selection axes, `docs/spec/tuning.md` §2) | yes, but append-only — a new axis is a new value, never a renumbering |
 | `order` | a positive integer, 1-based, dense per axis (an axis with N candidates uses 1..N) | yes |
 | `candidate` | free text, but always one axis's own stamp vocabulary where a stamp exists (§3's `built`-style closed sets, one per axis) | yes as a vocabulary shape, values are per-axis |
 | `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |

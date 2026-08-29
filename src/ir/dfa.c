@@ -895,6 +895,17 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         cx->dfa_overflowed = true;
         snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
                  "dfa overflowed: >%d states", d->maxstates);
+        /* [ENG-ABS] AN OPTIONAL MACHINE REPORTS RATHER THAN REFUSES, and this
+         * is the one line that makes the anchored MATCH-HERE form's cap
+         * overflow a SELECTION OUTCOME instead of a diagnostic
+         * (docs/design/anchored_match_unwrapped.md §5.2). It sits AFTER
+         * [SEL-1]'s record and BEFORE the `ctx_fail`, so both are unchanged
+         * character for character on every mandatory machine — which is what
+         * keeps `--engine=auto`'s retry contract untouched. The driver that
+         * asked for an optional machine is the one that knows
+         * `Ctx.dfa_overflowed` does not mean what it says here; it saves and
+         * restores that record around the build (src/core/compile.c). */
+        if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
                  "try --engine=vm)", d->maxstates);
     }
@@ -927,6 +938,13 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
                  "dfa overflowed: subset construction exceeds %lld "
                  "state-set elements (K7)", (long long)PCREC_MAX_SUBSET_ELEMS);
+        /* [ENG-ABS] Same one line as the state-count site above, for the same
+         * reason and with the same placement. Note that `cx->subset_elems` is
+         * a per-COMPILE budget and is NOT rolled back by the optional build's
+         * caller: the memory really was spent, and K7's bound is a claim about
+         * what the construction spends. Building the MANDATORY machines FIRST
+         * is what keeps this from refusing a pattern that compiles today. */
+        if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
                  "try --engine=vm)",
@@ -1105,8 +1123,13 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
 }
 
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
-                     int maxstates)
+                     int maxstates, int root, bool optional)
 {
+    /* [ENG-ABS] `optional` is placed on the MACHINE before anything can
+     * overflow, because `intern` is where it is read and `intern` is reachable
+     * from the very first `make_state` below. */
+    d->optional = optional;
+    d->overflowed = false;
     /* Hoisted once per machine, like `has_end` below and for the same reason.
      * The ALPHABET refinement has to happen before eqclasses returns, so
      * these cannot wait until the worklist. */
@@ -1183,7 +1206,13 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     Mach m = { prune, reverse, has_end, has_gst,
                { true, has_word, has_nl } };
 
-    int root = nfa->start;
+    /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the
+     * state `nfa_wrap_unanchored` installs — the start-anywhere self-loop. The
+     * anchored MATCH-HERE machine is this same construction rooted at
+     * `nfa->anch_start` instead, i.e. the pattern's own first state, which the
+     * wrap deliberately leaves addressable (src/ir/nfa.c). Nothing else in
+     * this file knows the difference: no `anchored` clause, no second closure,
+     * no special case — docs/design/anchored_match_unwrapped.md §2. */
     /* THE START STATES, and mechanism 4 is why there is more than one
      * (assertions_design.md §3.8). `s0` is the boundary context: there is no
      * byte on the far side at all — neither a word character nor a newline —
@@ -1239,6 +1268,11 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
+        /* [ENG-ABS] An OPTIONAL machine that hit a cap stops HERE. Without
+         * this the loop would still terminate — `d->n` stops growing once
+         * `intern` starts returning `PCREC_DFA_DEAD` — but it would walk out
+         * every remaining row of a machine nothing will emit. */
+        if (d->overflowed) return;
         for (int c = 0; c < d->ncls; c++) {
             if (d->st[si].tr[c] != -2) continue;
             uint8_t b = d->rep[c];

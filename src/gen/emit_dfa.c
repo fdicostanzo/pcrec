@@ -172,6 +172,19 @@ static void emit_feature_macros(StrBuf *sb)
  * than hoisting forty lines of start analysis to the top of the file. */
 static const char *dfa_scan_name(Ctx *cx);
 static const char *dfa_prefilter_name(Ctx *cx);
+/* [ENG-ABS] AXIS G's chosen object's name — the third fact with the same
+ * shape and the same reason for the forward declaration: the selection lives
+ * beside the candidate list far below, and THREE readers call it from above
+ * (the `<PREFIX>_DFA_MATCH` stamp, `rx_info.match_form`, and the dispatch that
+ * decides WHICH `<prefix>_match` body is written). One derivation, three
+ * readers, so the stamp cannot disagree with the emitted entry. */
+static const char *dfa_match_name(Ctx *cx);
+/* The same selection asked as a yes/no, for the two sites that need the
+ * ANSWER rather than the name (the entry dispatch, and `RX_DFA_TABLE`'s
+ * composition, which must include the anchored machine iff it was emitted).
+ * Spelling it once here is what stops a `strcmp(name, "unwrapped")` growing
+ * somewhere as a second reading of the same selection. */
+static bool dfa_match_is_unwrapped(Ctx *cx);
 
 /* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
  *
@@ -648,6 +661,30 @@ static void emit_rx_abi_types(StrBuf *sb)
         "                                           VM's \"none\"\n"
         "                                           (<PREFIX>_VM_PREFILTER) when\n"
         "                                           it is NULL. Never NULL. */\n"
+        /* [ENG-ABS] AXIS G's runtime mirror, appended after `prefilter` on the
+         * same terms and for the same reason (a consumer with no header). It
+         * is a fact about the artifact's `<prefix>_match` ENTRY, which is a
+         * different question from `scan`'s: NULL means "this artifact's
+         * anchored entry is not one this axis describes", which is every VM
+         * artifact INCLUDING a hybrid — a hybrid's `_match` is the VM's own
+         * anchored body, not a filtered search. */
+        /* THE COMMENT SITS ABOVE THE MEMBER, NOT AFTER IT, and that is a
+         * MEASURED choice rather than a style one. `tests/lib/size_count.sh`s
+         * comment classifier is LINE-BASED: it recognises a line that STARTS a
+         * block and tracks the block to its end, so a comment ABOVE a member
+         * costs zero counted bytes — while the continuation lines of a TRAILING
+         * multi-line comment do not start a block and are counted as CODE.
+         * Measured at this row: the trailing shape put +691 B of prose into
+         * every artifact in the corpus (2,875 of them), the above-the-member
+         * shape puts in 0. `scan` and `prefilter` above keep the trailing shape
+         * — changing them is not this row's to do, and the observation is
+         * recorded in docs/design/anchored_match_unwrapped.md §8 instead. */
+        "    /* [ENG-ABS] HOW <prefix>_match answers: \"unwrapped\" (its own\n"
+        "       anchored machine, run from ctx->pos) or \"search-filter\" (the\n"
+        "       unanchored search, with non-ctx->pos starts rejected),\n"
+        "       mirroring <PREFIX>_DFA_MATCH. NULL on every artifact whose\n"
+        "       _match this engine did not write. */\n"
+        "    const char           *match_form;\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -1244,7 +1281,33 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * program, and a hybrid's inlined `static <prefix>_prefilter` is emitted
      * ABOVE that `goto`. So (A) sees no DFA scan byte at all. Comparison (B)
      * compares WHOLE FILES and is re-pinned, in this same change, per D76. */
-    sb_puts(c,   "    .abi = 9,\n");
+    /* [ENG-ABS] abi 9 -> 10 (D76): the ANCHORED MATCH-HERE FORM
+     * (docs/design/anchored_match_unwrapped.md §6), and like [OPT-3],
+     * [ENG-FORM] and [OPT-K] it MOVES EMITTED PROGRAM BYTES rather than
+     * scaffolding alone. Saying which kind it is, is r37 A12's lesson; saying
+     * it PER ARTIFACT KIND is the rest of it, because `emit_info_def` is
+     * shared and the three kinds move by different amounts:
+     *
+     *  - An ENG_UNANCH DFA artifact that SELECTS the form gains a file-scope
+     *    `<prefix>_anchored_state` accessor block, a third machine's tables
+     *    inside `<prefix>_match`, and rewritten `_match`/`_match_caps` bodies
+     *    (the second now delegates to the first instead of to
+     *    `<prefix>_search`). `<prefix>_search` itself is untouched, byte for
+     *    byte, which is what makes the answer-identity gate a check of this
+     *    row alone.
+     *  - Every OTHER DFA artifact — ENG_ATTEMPT, the empty engine, an
+     *    anchored machine that overflowed a cap, and any build under
+     *    `-fno-anchored-dfa` — keeps both bodies character for character and
+     *    gains one `#define <PREFIX>_DFA_MATCH "search-filter"` line.
+     *  - Every artifact of EITHER engine gains one `rx_info` field
+     *    (`.match_form`, NULL on the VM side, hybrid included).
+     *
+     * COMPARISON (A) of run_recursion_identity.sh (`goto <p>_L0;` through
+     * `<p>_accept:`, the VM PROGRAM) is expected byte-identical: the only byte
+     * this row writes on a VM artifact is that struct field, which is above
+     * the region. Comparison (B) compares whole files and is re-pinned in this
+     * same change, per D76. */
+    sb_puts(c,   "    .abi = 10,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1322,7 +1385,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `<PREFIX>_DFA_PREFILTER` and its
                                            * `_OFFSETS` sibling are where what
                                            * the emitter DID is recorded. */
-                                          PCREC_NO_OFFSET_SKIP;
+                                          PCREC_NO_OFFSET_SKIP |
+                                          /* [ENG-ABS] the anchored match-here
+                                           * axis. It changes no answer (the
+                                           * identity argument is
+                                           * anchored_match_unwrapped.md §3),
+                                           * so it belongs to the mask for the
+                                           * mask's own reason;
+                                           * `<PREFIX>_DFA_MATCH` is where what
+                                           * the emitter DID is recorded. */
+                                          PCREC_NO_ANCHORED_DFA;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -1383,6 +1455,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         sb_puts(c, "    .scan = NULL,\n");
         sb_puts(c, "    .prefilter = \"none\",\n");
     }
+    /* [ENG-ABS] AXIS G's mirror, from the SAME `dfa_match_name` the macro is
+     * written from — one value written twice, never two computations of one
+     * fact.
+     *
+     * ITS GUARD IS NOT `pcrec_artifact_has_dfa_scan`, and the difference is
+     * the field's meaning. That predicate is "does this artifact CONTAIN a DFA
+     * scan", which is true of a VM HYBRID — but a hybrid's `<prefix>_match` is
+     * the VM's own anchored body, which this axis does not describe. The
+     * question here is "did the DFA emitter write this artifact's `_match`",
+     * i.e. `fit.chosen == ENGM_DFA`, and `emit_info_def` is shared with the VM
+     * emitter, which is why the test is spelled rather than assumed. */
+    if (cx->job->fit.chosen == ENGM_DFA)
+        sb_printf(c, "    .match_form = \"%s\",\n", dfa_match_name(cx));
+    else
+        sb_puts(c, "    .match_form = NULL,\n");
     sb_puts(c,   "};\n");
 }
 
@@ -2295,7 +2382,18 @@ static const char *dfa_table_name(Ctx *cx)
      * structural here rather than a convention this function keeps. */
     const char *f = dfa_repr_of(cx, &cx->job->dfa)->c.name;
     const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;
-    return strcmp(f, r) ? "mixed" : f;
+    if (strcmp(f, r)) return "mixed";
+    /* [ENG-ABS] THE COMPOSITION SPANS EVERY MACHINE THE ARTIFACT CARRIES, and
+     * after this row that is three rather than two whenever axis G selected
+     * `unwrapped`. `RX_DFA_TABLE` is an artifact-level composition (spec
+     * S6.3), so leaving the anchored machine out would let the stamp say
+     * "premultiplied" about an artifact holding an indexed table — the exact
+     * disagreement between a stamp and a body this file's rule exists to make
+     * impossible. It can move an artifact's value from a form name to
+     * `"mixed"`; the form census counts the populations. */
+    if (dfa_match_is_unwrapped(cx) &&
+        strcmp(f, dfa_repr_of(cx, &cx->job->adfa)->c.name)) return "mixed";
+    return f;
 }
 
 
@@ -2641,6 +2739,14 @@ struct DfaDir {
     const char *ind;          /* indent of the state declaration */
     const char *bind;         /* indent of the loop body */
     bool        reverse;      /* for emit_state_legend */
+    /* [ENG-ABS] Does a start-candidate PREFILTER own this machine's start
+     * state, so that the in-loop stay-skips must leave it alone? True on the
+     * SEARCH scan alone. It used to be spelled `dir->reverse ? -1 : d->s0` at
+     * the one call site, which read as "the reverse machine has no prefilter"
+     * and became wrong the moment a THIRD machine had none either: the
+     * anchored MATCH-HERE scan is forward and prefilter-free, and excluding
+     * its `s0` would deny it a skip for a reason that does not apply to it. */
+    bool        prefilter_owns_start;
     const char *tbl_hdr;      /* the table section's block comment */
     const char *acc_meaning;  /* what a 1 in the accept table means */
     const char *range_guard;  /* emitted beside the initializer, or NULL */
@@ -3490,9 +3596,17 @@ static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     const char *ind = f->dir->bind;
     sb_printf(c, "%s%s (%s == %d) {\n", ind, kw, f->dir->statev,
               f->repr->cell_of(K, f->d));
+    /* [ENG-ABS] THE TABLE NAME IS THE MACHINE'S, not the literal "forward".
+     * It was `%s_forward_stay%d` while forward and reverse were the only two
+     * directions and the forward one's name was "forward"; the anchored
+     * machine's stay tables are emitted as `<p>_anchored_stay<K>` by
+     * `emit_machine_tables` (which has always derived the tag from
+     * `dir->c.name`), so a hardcoded "forward" here emitted a reference to a
+     * table that does not exist in that function. Byte-for-byte unchanged on
+     * the forward machine, whose `c.name` IS "forward". */
     sb_printf(c, "%s    while (scan_position %s subject_length &&"
-                 " %s_forward_stay%d[subject[scan_position]]) scan_position++;\n",
-              ind, f->views ? "+ 1 <" : "<", f->p, K);
+                 " %s_%s_stay%d[subject[scan_position]]) scan_position++;\n",
+              ind, f->views ? "+ 1 <" : "<", f->p, f->dir->c.name, K);
     /* With the accept check ahead of us (the non-view order) the skipped
      * run's final position would otherwise go unrecorded; under a view the
      * check runs after the skip and already covers it. */
@@ -3509,9 +3623,13 @@ static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     sb_printf(c, "%s%s (%s == %d%s) {\n", ind, kw, f->dir->statev,
               f->repr->cell_of(K, f->d),
               f->views ? " && rewind_position + 1 < subject_length" : "");
+    /* Same rule as `dir_fwd_skip`'s: the table name is the machine's. Nothing
+     * but the reverse machine reaches this emitter today, so the text is
+     * unchanged; spelling it from `dir->c.name` is what stops the next
+     * direction re-learning [ENG-ABS]'s lesson. */
     sb_printf(c, "%s    while (rewind_position > search_from &&"
-                 " %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
-              ind, f->p, K);
+                 " %s_%s_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
+              ind, f->p, f->dir->c.name, K);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
         sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
     sb_printf(c, "%s}\n", ind);
@@ -3522,8 +3640,14 @@ static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
     /* `pos == n` is the position with NO next byte, where §3.6.2 makes the
      * accept SCALAR: out of subject is neither a word character nor a
      * newline, and the base accept already is that bit. */
-    sb_printf(c, "%s    if (%s_forward_accepts(%s_forward_is_accepting, %s)) %s = %s;\n",
-              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);
+    /* [ENG-ABS] THE MACHINE'S NAME, not the literal "forward" — `dir_fwd_skip`'s
+     * rule, and this emitter is SHARED by the forward scan and the anchored
+     * MATCH-HERE scan, so a hardcoded name here referred to the wrong
+     * machine's accept table from inside `<prefix>_match`. Byte-for-byte
+     * unchanged on the forward machine, whose `c.name` IS "forward". */
+    sb_printf(c, "%s    if (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
+              f->dir->bind, f->p, f->dir->c.name, f->p, f->dir->c.name,
+              f->src, f->dir->recv, f->dir->posv);
 }
 
 static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
@@ -3541,21 +3665,25 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
      * CONTEXT-INDEXED accept because the byte exists and is merely outside
      * the window. `startpos == 0` is out of subject to the left — non-word —
      * hence the scalar arm. */
+    /* Same rule as the forward site's: the machine's name, never the literal.
+     * Nothing but the reverse machine reaches this emitter today, so the text
+     * is unchanged. */
+    const char *m = f->dir->c.name;
     sb_printf(c, "%s    if (search_from"
-                 " ? %s_reverse_accepts_class(%s_reverse_is_accepting_by_class, %s,\n"
-                 "%s                          %s_reverse_byte_class[subject[search_from - 1]])\n"
-                 "%s                 : %s_reverse_accepts(%s_reverse_is_accepting, %s))"
+                 " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
+                 "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
+                 "%s                 : %s_%s_accepts(%s_%s_is_accepting, %s))"
                  " %s = %s;\n",
-              f->dir->bind, f->p, f->p, f->src,
-              f->dir->bind, f->p,
-              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);
+              f->dir->bind, f->p, m, f->p, m, f->src,
+              f->dir->bind, f->p, m,
+              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);
 }
 
 static const DfaDir dfa_dir_forward = {
     { "forward", 0, cand_always },
     "Forward", "FORWARD", "forward_state", "forward_view_state",
     "scan_position", "last_accept_position",
-    "    ", "        ", false,
+    "    ", "        ", false, true,
     "    /* ---- FORWARD TABLES: find where a match ENDS ------------------\n"
     "     * Byte class of every possible input byte. The pattern can only\n"
     "     * tell a few kinds of byte apart, so all 256 values fold into a\n"
@@ -3574,7 +3702,7 @@ static const DfaDir dfa_dir_reverse = {
     { "reverse", 0, cand_always },
     "Reverse", "REVERSE", "reverse_state", "reverse_view_state",
     "rewind_position", "match_start_position",
-    "        ", "            ", true,
+    "        ", "            ", true, false,
     "    /* ---- REVERSE TABLES: find where that match BEGINS -------------\n"
     "     * The same three-table shape, built from the pattern read right to\n"
     "     * left and walked backwards from the end the forward scan found.\n"
@@ -3587,6 +3715,102 @@ static const DfaDir dfa_dir_reverse = {
     "subject[rewind_position - 1]", "subject[--rewind_position]", "rewind_position--",
     dir_rev_skip, dir_rev_bound_accept,
 };
+
+/* [ENG-ABS] THE THIRD DIRECTION, and it is a direction in exactly axis F's
+ * sense: "how a scan spells its position, its bound, the answer it records and
+ * the byte it reads". It is FORWARD — every string below is the forward
+ * object's, character for character, with two exceptions — but it is not the
+ * forward SEARCH, and the difference is what it is rooted at:
+ * `Nfa.anch_start` rather than the start-anywhere self-loop, so it answers
+ * "where does the match that begins AT `search_from` end?" rather than "where
+ * does the first match at or after `search_from` end?"
+ * (docs/design/anchored_match_unwrapped.md §2, §3.3).
+ *
+ * THE TWO EXCEPTIONS.
+ *
+ *   - `range_guard` returns `-1`, not `0`: this machine's loop is the body of
+ *     `<prefix>_match`, whose failure value is the entry's (a length, or -1)
+ *     and not `<prefix>_search`'s found-count.
+ *   - `prefilter_owns_start` is FALSE. A candidate-start prefilter CHOOSES
+ *     WHERE THE SCAN BEGINS, which is sound for a search and wrong for a
+ *     match-here, where the start is the caller's. Nothing here has to say so:
+ *     `anch_start` hands this machine's form an `UnanchStart` whose `kind` is
+ *     `DFA_PF_NONE` and whose `ofsk.nsel` is 0, and every axis-B candidate
+ *     requires one of those to be non-trivial, so axis B's total fallback is
+ *     what the ordinary walk selects. The flag here is about the STAY skips,
+ *     which are a different mechanism and DO apply (§3.7).
+ *
+ * WHY THE VARIABLE NAMES ARE THE FORWARD SCAN'S. `<prefix>_match`'s emitted
+ * body opens by binding `subject`, `subject_length` and `search_from` from the
+ * `rx_ctx`, so every direction string, every seed initializer and every bound
+ * expression below is reused character for character rather than respelled —
+ * which is also what makes the seeded start dispatch provably the same line
+ * against the same byte (`subject[search_from - 1]`, §3.5). */
+static const DfaDir dfa_dir_anchored = {
+    { "anchored", 0, cand_always },
+    "Anchored", "ANCHORED", "anchored_state", "anchored_view_state",
+    "scan_position", "last_accept_position",
+    "    ", "        ", false, false,
+    "    /* ---- ANCHORED TABLES: does a match begin HERE, and where does\n"
+    "     * it end? Built from the same pattern as the forward scan above but\n"
+    "     * WITHOUT its start-anywhere self-loop, so a walk that dies has\n"
+    "     * proved there is no match at ctx->pos -- and a walk that accepts\n"
+    "     * has found one that begins there, so no backwards pass is needed.\n"
+    "     *\n",
+    "a match beginning at ctx->pos may end",
+    "    if (search_from > subject_length) return -1;\n",
+    "search_from", "subject[search_from - 1]",
+    "scan_position >= subject_length",
+    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
+    dir_fwd_skip, dir_fwd_bound_accept,
+};
+
+/* ---- AXIS G: WHICH FORM THE ANCHORED MATCH-HERE ENTRY TAKES -------------
+ *
+ * [ENG-ABS] (docs/design/anchored_match_unwrapped.md §5.1). Two objects, and
+ * the choice is per ARTIFACT rather than per machine — it is a question about
+ * an ENTRY POINT, which is why this axis has no `DfaForm` and its objects
+ * carry no emitter pointer: the two bodies are different enough (one has
+ * tables and a scan loop, the other is four lines around a call to
+ * `<prefix>_search`) that a shared skeleton would be a switch wearing a
+ * skeleton's clothes.
+ *
+ * `unwrapped` applies exactly when `Job.anchored_ok` is set — the artifact is
+ * this emitter's own (not a VM hybrid's inlined prefilter), it is ENG_UNANCH,
+ * and the anchored machine BUILT within the DFA caps — and when the artifact's
+ * engine is not the empty one, whose `<prefix>_search` is a single `return 0`
+ * and whose `_match` is correctly four lines around it.
+ *
+ * `-fno-anchored-dfa` is a `deny` FIELD on the first candidate, D82's shape:
+ * the flag removes the object and the ordinary walk selects the fallback.
+ * Nothing branches on the flag here. */
+typedef struct DfaMatch {
+    DfaCand c;
+} DfaMatch;
+
+static bool match_unwrapped_applies(const DfaSel *s)
+{
+    return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
+}
+
+static const DfaMatch dfa_matches[] = {
+    { { "unwrapped",     PCREC_NO_ANCHORED_DFA, match_unwrapped_applies } },
+    { { "search-filter", 0,                     cand_always             } },
+};
+
+/* THE ONE SELECTION, and the reason it takes a bare `Ctx` rather than a
+ * `DfaSel`: this axis's predicate asks nothing about a MACHINE. Passing a
+ * fabricated `d` would invite a later candidate to read it. */
+static const DfaMatch *dfa_match_of(Ctx *cx)
+{
+    DfaSel s = { cx, NULL, NULL, false };
+    return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
+}
+
+static const char *dfa_match_name(Ctx *cx) { return dfa_match_of(cx)->c.name; }
+
+static bool dfa_match_is_unwrapped(Ctx *cx)
+{ return dfa_match_of(cx) == &dfa_matches[0]; }
 
 /* ---- [CHK-2] `--list-axes`: READ-ONLY ACCESS TO THE SIX LAYER-1 LISTS ---
  *
@@ -3635,6 +3859,12 @@ size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_seeds); }
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_accs); }
+/* [ENG-ABS] axis G rides the SAME generic walk — its objects are `DfaCand`-
+ * headed like the other five lists, so `--list-axes` and the registry check
+ * see the new candidates and the new deny bit with no hand-copied
+ * restatement. */
+size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_matches); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
@@ -3650,6 +3880,14 @@ size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap)
     size_t k = 0;
     if (k < cap) { out[k].name = dfa_dir_forward.c.name; out[k].deny = dfa_dir_forward.c.deny; k++; }
     if (k < cap) { out[k].name = dfa_dir_reverse.c.name; out[k].deny = dfa_dir_reverse.c.deny; k++; }
+    /* [ENG-ABS] the third object. It is NOT "always" the way the other two
+     * are — an artifact carries it only where axis G selected `unwrapped` —
+     * but it is still a named object rather than a list entry, for axis F's
+     * own reason, and the dump's `applies` column says so in prose. `deny` is
+     * 0 here on purpose: the flag that removes this MACHINE is axis G's, on
+     * axis G's candidate, and reporting it twice would let a reader think two
+     * things can be denied independently. */
+    if (k < cap) { out[k].name = dfa_dir_anchored.c.name; out[k].deny = dfa_dir_anchored.c.deny; k++; }
     return k;
 }
 
@@ -3681,9 +3919,11 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->src     = us->viewsel ? dir->viewv : dir->statev;
     f->cand    = us->cand;
     f->ofsk    = &us->ofsk;
-    /* The forward machine never skips out of its own start state — the
-     * prefilter owns that position. */
-    f->nskip   = pick_skip_states(d, dir->reverse ? -1 : d->s0, f->skip);
+    /* The SEARCH scan never skips out of its own start state — the prefilter
+     * owns that position. The reverse machine and [ENG-ABS]'s anchored
+     * MATCH-HERE machine have no prefilter, so nothing owns theirs. */
+    f->nskip   = pick_skip_states(d, dir->prefilter_owns_start ? d->s0 : -1,
+                                  f->skip);
 }
 
 /* ---- THE TABLES, one path called twice ---------------------------------- */
@@ -3834,6 +4074,168 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                "        return 1;\n"
                "    }\n"
                "}\n");
+}
+
+/* ---- [ENG-ABS]: THE ANCHORED MATCH-HERE ENTRIES ------------------------- */
+
+/* THE ANCHORED MACHINE'S START ANALYSIS, and the point is how little of one
+ * it is (docs/design/anchored_match_unwrapped.md §5.3).
+ *
+ * `dfa_form_derive` reads an `UnanchStart` for three things: the prefilter
+ * verdict, the candidate set, and the position-view flags. The anchored
+ * machine HAS no start analysis — it does not search, its start is the
+ * caller's `ctx->pos` — so the value it is derived from is built here rather
+ * than borrowed:
+ *
+ *   - `kind` is `DFA_PF_NONE`, `cand` is empty and `ofsk.nsel` is 0,
+ *     UNCONDITIONALLY. That is the whole of why axis B selects its total
+ *     fallback for this machine, with no branch anywhere and no `applies`
+ *     clause that knows this machine exists: every real prefilter candidate
+ *     requires `kind != DFA_PF_NONE` or `ofsk.nsel > 0`. A candidate-start
+ *     skip CHOOSES WHERE THE SCAN BEGINS, which is sound for a search and
+ *     wrong for a match-here.
+ *   - the view flags are recomputed from THIS machine alone, where the search
+ *     pair shares the artifact-level OR of its two machines. Strictly the more
+ *     accurate derivation, and structurally incapable of moving an existing
+ *     artifact's bytes because it is a different object: nothing here is
+ *     written back into the caller's `UnanchStart`.
+ *
+ * Taking the caller's `us` as the BASE (rather than zeroing) keeps this
+ * function honest about what it does and does not override — a field added to
+ * `UnanchStart` tomorrow arrives here with the search's value rather than with
+ * a silent zero. */
+static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
+{
+    *o = *us;
+    o->kind = DFA_PF_NONE;
+    memset(&o->cand, 0, sizeof o->cand);
+    memset(&o->ofsk, 0, sizeof o->ofsk);
+    o->eol     = dfa_has_eolvar(ad);
+    o->endv    = dfa_has_endvar(ad);
+    o->viewsel = o->eol || o->endv;
+    o->views   = o->viewsel || ad->clsctx;
+    o->empty   = false;   /* the caller's candidate already excluded it */
+}
+
+/* THE MATCH-HERE BODY. `<prefix>_match` stops being a wrapper around
+ * `<prefix>_search` and becomes a scan of its own — the artifact's THIRD
+ * machine, run forward from `ctx->pos`, with no reverse pass and no
+ * candidate skip. The identity argument (this reports the same length the
+ * search-and-filter form reports, on every input) is
+ * docs/design/anchored_match_unwrapped.md §3; the four-line summary is:
+ *
+ *   1. The wrapped forward machine's state is THIS machine's state followed
+ *      by the threads of later starts, because the unanchored wrap's
+ *      self-loop is the LOWEST-priority branch and subset construction
+ *      preserves priority order.
+ *   2. D3's accept-pruning drops everything below an accepting thread, so the
+ *      instant a `ctx->pos` thread accepts, every later start is gone and the
+ *      two machines coincide for the rest of the scan.
+ *   3. Hence if this machine accepts anywhere, its LAST accept is the search's
+ *      last accept, and the reverse pass would report `ctx->pos` as the start
+ *      — the filter passes and both forms report the same length.
+ *   4. And if it never accepts, no accepting path from `ctx->pos` exists at
+ *      all (it could only have been pruned by an accept of its own), so the
+ *      reverse pass reports a later start and both forms report -1.
+ *
+ * THE LOCAL BINDINGS ARE THE MECHANISM, not tidiness: `subject`,
+ * `subject_length` and `search_from` are exactly the names `dfa_dir_anchored`
+ * spells its bound, its seed byte and its guard in, so mechanism 4's start
+ * dispatch here is the SAME emitted line as the forward scan's, reading the
+ * SAME byte (`subject[search_from - 1]`, which for this entry is
+ * `subject[ctx->pos - 1]`). */
+static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
+                                    const char *matchfn)
+{
+    sb_printf(c,
+        "/* [ENG-ABS] The anchored match-here entry, spec S3.2: a match at\n"
+        " * exactly ctx->pos, or -1. It runs the artifact's THIRD machine --\n"
+        " * the forward tables WITHOUT the start-anywhere self-loop -- from\n"
+        " * ctx->pos, so there is no later start to reject and no backwards\n"
+        " * pass to find a start with. A probe that fails stops at the first\n"
+        " * byte that cannot continue a match beginning here.\n"
+        " *\n"
+        " * D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
+        " * Unreachable on this engine -- a DFA artifact has no counter to\n"
+        " * exhaust -- and this body cannot produce one at all, which is why\n"
+        " * (unlike the search-and-filter form) it has no code to forward. */\n"
+        "ptrdiff_t %s(const rx_ctx *ctx)\n"
+        "{\n"
+        "    const unsigned char *subject = ctx->subject;\n"
+        "    size_t subject_length = ctx->len;\n"
+        "    size_t search_from = ctx->pos;\n",
+        matchfn);
+    emit_machine_tables(c, f);
+    sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
+               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
+               "    // scan, so the longest match wins; no reverse pass,\n"
+               "    // because the start is the caller's.\n"
+               "    size_t scan_position = search_from;\n"
+               "    size_t last_accept_position = (size_t)-1;\n");
+    emit_scan_loop(c, f);
+    sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
+               "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+               "}\n");
+}
+
+/* The capture-delivering sibling. It delegates to `<prefix>_match` rather than
+ * re-emitting the scan — one machine, one loop, one place a change lands.
+ *
+ * IT WRITES THE DEAD GROUPS ITSELF, and that is not optional. On the
+ * search-and-filter form those come from `emit_search_head`, which fills
+ * slots 1..NCAPS-1 with PCREC_UNSET at entry to `<prefix>_search` (wave G's
+ * dead-capture elision: a DFA artifact can promise groups it can never write,
+ * because PCRE2 counts them and reports them unset). This form never calls
+ * `<prefix>_search`, so the fill has to happen here or those slots would come
+ * back as whatever the caller's array held. `RX_NCAPS` is 1 on almost every
+ * DFA artifact and the loop then emits nothing at run time.
+ *
+ * `caps_out[0] == [ctx->pos, ctx->pos + length)` is spec S3.3's own sentence,
+ * true here BY CONSTRUCTION rather than by a filter that proved it. On every
+ * negative return `caps_out` is UNTOUCHED (A-8's rule) -- every write is
+ * below the early return. */
+static void emit_anchored_match_caps_def(StrBuf *c, const char *fn,
+                                         const char *matchfn, const char *upper)
+{
+    sb_printf(c,
+        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
+        "{\n"
+        "    ptrdiff_t rx_len = %s(ctx);\n"
+        "    if (rx_len < 0) return rx_len;\n"
+        "    if (capture_spans_out) {\n"
+        "        capture_spans_out[0][0] = (ptrdiff_t)ctx->pos;\n"
+        "        capture_spans_out[0][1] = (ptrdiff_t)ctx->pos + rx_len;\n"
+        "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n"
+        "            /* every group this artifact promises is reached only\n"
+        "               through a subroutine call or sits under a {0}, so no\n"
+        "               match can set it (PCRE2 reports the same) */\n"
+        "            capture_spans_out[rx_g][0] = PCREC_UNSET;\n"
+        "            capture_spans_out[rx_g][1] = PCREC_UNSET;\n"
+        "        }\n"
+        "    }\n"
+        "    return rx_len;\n"
+        "}\n",
+        fn, matchfn, upper);
+}
+
+/* THE ASSEMBLY, and the only place axis G's two forms are told apart.
+ *
+ * Layer 2 -- the anchored machine's state-accessor block -- goes at FILE
+ * SCOPE above the entry, exactly where `emit_unanchored` puts the search
+ * machines' blocks and for the same reason. */
+static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
+{
+    UnanchStart us, aus;
+    DfaForm anch;
+
+    unanch_start(cx, &us);
+    anch_start(&cx->job->adfa, &us, &aus);
+    dfa_form_derive(cx, &cx->job->adfa, &aus, &dfa_dir_anchored, &anch);
+
+    anch.repr->emit_token(c, &anch);
+    emit_anchored_match_def(c, &anch, g->matchfn);
+    sb_puts(c, "\n");
+    emit_anchored_match_caps_def(c, g->matchcapsfn, g->matchfn, g->upper);
 }
 
 /* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
@@ -4744,6 +5146,17 @@ static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
     sb_puts(c, "/* Engine: dfa */\n");
     pcrec_emit_engine_stamp(c, upper, "dfa");
     pcrec_emit_dfa_scan_stamps(cx, c, upper);
+    /* [ENG-ABS] AXIS G IS STAMPED HERE AND NOT IN `pcrec_emit_dfa_scan_stamps`,
+     * and the placement is the fact rather than a filing decision. That
+     * function is SHARED with the VM HYBRID, which inlines this file's scan as
+     * its prefilter — so everything it stamps is a fact about a DFA SCAN, and
+     * both artifact kinds have one. `<PREFIX>_DFA_MATCH` is a fact about the
+     * artifact's `<prefix>_match` ENTRY, and on a hybrid that entry is the VM's
+     * own anchored body, which this axis does not describe and whose value set
+     * it does not share (spec S6.3's (a)/(b) split rules the names
+     * engine-specific). So it is stamped on exactly the artifacts this emitter
+     * writes `_match` for, and `rx_info.match_form` mirrors NULL elsewhere. */
+    sb_printf(c, "#define %s_DFA_MATCH \"%s\"\n", upper, dfa_match_name(cx));
     sb_puts(c, "\n");
 }
 
@@ -4782,9 +5195,17 @@ void pcrec_emit_dfa(Ctx *cx)
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     sb_puts(c, "\n");
-    emit_match_def(c, g.matchfn, g.searchfn, g.upper);
-    sb_puts(c, "\n");
-    emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
+    /* [ENG-ABS] AXIS G, and this is its ONE dispatch. `dfa_match_of` is the
+     * same call `<PREFIX>_DFA_MATCH` and `rx_info.match_form` are written
+     * from, so the stamp names the body that was actually emitted rather than
+     * a second reading of the predicate that chose it. */
+    if (dfa_match_is_unwrapped(cx)) {
+        emit_anchored_entries(cx, c, &g);
+    } else {
+        emit_match_def(c, g.matchfn, g.searchfn, g.upper);
+        sb_puts(c, "\n");
+        emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
+    }
     sb_puts(c, "\n");
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     sb_puts(c, "\n");
