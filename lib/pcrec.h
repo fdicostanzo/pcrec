@@ -345,7 +345,41 @@ enum {
      * What the emitter DID is reported by `<PREFIX>_DFA_PREFILTER`
      * (`"offset-set"` / `"offset-set-bounded"`) and by
      * `<PREFIX>_DFA_PREFILTER_OFFSETS`, which names the chosen offsets. */
-    PCREC_NO_OFFSET_SKIP = 1u << 16
+    PCREC_NO_OFFSET_SKIP = 1u << 16,
+
+    /* [ENG-ABS] `-fno-anchored-dfa` — deny the UNWRAPPED anchored match-here
+     * machine on a DFA artifact.
+     *
+     * WHAT IT DENIES. `<prefix>_match` and `<prefix>_match_caps` promise a
+     * match at exactly `ctx->pos`. A DFA artifact used to reach that answer by
+     * running its ordinary UNANCHORED search and rejecting any match whose
+     * start is not `ctx->pos` — correct, but it pays a reverse pass it does
+     * not need (the start is known) and a failing probe can skim the rest of
+     * the subject hunting a later match the filter then discards. This axis
+     * emits a THIRD machine instead: the same subset construction over the
+     * same NFA, rooted at the pattern's own first state rather than at the
+     * start-anywhere self-loop, run forward from `ctx->pos` with no reverse
+     * pass and no candidate skip (docs/design/anchored_match_unwrapped.md).
+     *
+     * ANSWER-IDENTITY-preserving, and the argument is §3.3 of that note: the
+     * wrapped machine's state is the anchored machine's state followed by the
+     * threads of later starts, D3's accept-pruning cuts every later start out
+     * of the run the moment a `ctx->pos` thread accepts, and the reverse pass
+     * is exactly what distinguishes the two — which is the work this form does
+     * not have to do rather than work it skips.
+     *
+     * DENY-ONLY, `-fno-premul-table`'s shape: the compiler emits the form
+     * wherever the machine fits its caps, so there is nothing for a caller to
+     * ADDRESS and nothing to force. A pattern whose anchored machine overflows
+     * the DFA caps falls back to the search-and-filter form, which is a
+     * SELECTION OUTCOME and never a refusal.
+     *
+     * IT JOINS `emit_info_def`'s `strategy_denials` MASK (src/gen/emit_dfa.c)
+     * for that mask's own reason: it changes no answer, so two artifacts that
+     * behave identically must not differ in their reflection surface over it.
+     * What the emitter DID is reported by `<PREFIX>_DFA_MATCH`, which reads
+     * `"search-filter"` under this flag and `"unwrapped"` otherwise. */
+    PCREC_NO_ANCHORED_DFA = 1u << 17
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
