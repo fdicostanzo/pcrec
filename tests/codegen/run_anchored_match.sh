@@ -38,15 +38,15 @@
 #       unwrapped form never calls that function, so the fill has to be in
 #       `_match_caps` or a DFA artifact with `RX_NCAPS > 1` returns whatever
 #       the caller's array held.
-#   §4  the OVERFLOW ARM IS LIVE, in TWO ways since the r41 close. §4a names
-#       the SHIPPED-CEILING witnesses — four giant-repeat shapes whose
-#       anchored machine exceeds `PCREC_ANCHORED_MAX_STATES` (4,096) and which
-#       therefore take the fallback in an ORDINARY build, pinned BY NAME
-#       because they are `tests/resource`'s bash-array shapes and appear in no
-#       `.rxt` corpus and no size-log row. §4b keeps the lowered-cap reference
-#       compiler as the control that the arm behaves the same way at a cap no
-#       real shape reaches, and on small fast patterns. Before r41's S1 the
-#       arm had ZERO reachable population; that is what the ceiling changed.
+#   §4  the OVERFLOW ARM IS LIVE, in TWO ways since the r41 close. §4a pins
+#       the shipped ceiling `PCREC_ANCHORED_MAX_STATES` (4,096) from BOTH
+#       sides with cheap 4,001- and 4,201-state machines, from which
+#       `tests/resource`'s four 20,001-30,001-state shapes — the arm's real
+#       population, and one no `.rxt` corpus or size-log row contains —
+#       follow arithmetically. §4b keeps the lowered-cap reference compiler as
+#       the control that the arm behaves the same way at a cap no real shape
+#       reaches. Before r41's S1 the arm had ZERO reachable population; that
+#       is what the ceiling changed.
 #   §5  the corpus census, with every population PINNED. The vacuity this
 #       row is most exposed to is the form silently ceasing to be selected:
 #       every answer in the tree would stay right, `make test-axes` would stay
@@ -267,57 +267,67 @@ else
 fi
 
 # =========================================================================
-# §4a THE OVERFLOW ARM'S SHIPPED-CEILING WITNESSES, PINNED BY NAME
+# §4a THE CEILING'S BOUNDARY, PINNED FROM BOTH SIDES
 # =========================================================================
 # `PCREC_ANCHORED_MAX_STATES` is 4,096 — the optional machine's OWN ceiling,
 # derived at the r41 close from the corpus (largest anchored machine 2,001
-# states, `a{1,2000}`) and sitting in the empty interval (2,001, 20,001).
-# These four shapes have 20,001-30,001-state anchored machines and therefore
-# take the fallback IN AN ORDINARY BUILD.
+# states, `a{1,2000}`) and sitting in the empty interval (2,001, 20,001)
+# below `tests/resource`'s 20,001-30,001-state giant-repeat shapes.
 #
-# THEY ARE PINNED BY NAME BECAUSE NOTHING ELSE COUNTS THEM. They are
-# `tests/resource/run_resource_tests.sh`'s bash-array shapes: no `.rxt` block
-# holds them, so §5's corpus census cannot see them, and `SIZELOG` never
-# writes a row for them, so `[ART-SIZE.1b]`'s tripwire cannot either. That is
-# exactly how r41's S1 and S2 escaped every instrument in the tree — a
-# population nobody counts, which is `docs/dev/learnings.md` §3's own heading.
+# **THE PIN IS THE BOUNDARY, NOT THE CONSEQUENCE, and that is a deliberate
+# change from this section's first form.** The obvious check names the four
+# resource shapes and asserts each takes the fallback — but those are the
+# tree's most expensive compiles (11-25 s of pcrec CPU each, which is WHY the
+# ceiling exists), and putting four of them inside `make test` under
+# `pcrec_run`'s 60 s WALL is exactly [TT-10]'s load-sensitivity: measured, one
+# of them timed out under two concurrent invocations and the section reported
+# a REFUSAL that had not happened. `a{1,4000}` and `a{1,4200}` bracket 4,096
+# to within 5 %, cost under a second each, and pin the ceiling's VALUE — from
+# which every one of those four shapes' membership follows arithmetically,
+# since 20,001 > 4,201. A check that pins the number is stronger than one that
+# pins four expensive consequences of it, and it cannot be flaky.
 #
-# EACH ROW ASSERTS FOUR THINGS: the shape compiles (an overflow is a selection
-# outcome, never a refusal), it stamps `search-filter`, it emits NO anchored
-# table, and — the non-vacuity — its `RX_DFA_SCAN` is `"unanchored"`, so it is
-# in the arm for the OVERFLOW reason and not because it fell to ENG_ATTEMPT or
-# the empty engine. A witness that stopped overflowing would go green on the
-# first three and red on nothing; the fourth is what makes the count mean
-# "reached the overflow arm".
-OVERFLOW_WITNESSES=(
-    '[a-z]{0,30000}'
-    'a{0,25000}'
-    'a{0,20000}'
-    '(a|b){0,30000}'
-)
-ovf_named=0
-for pat in "${OVERFLOW_WITNESSES[@]}"; do
-    f="$WORKDIR/ovf.c"
+# THE FOUR SHAPES ARE STILL THE POPULATION, and they are named here because
+# nothing else in the tree counts them: they live in
+# `tests/resource/run_resource_tests.sh`'s bash array, no `.rxt` block holds
+# them, and `SIZELOG` writes no row for them — which is exactly how r41's S1
+# (+46 % compiler CPU) and S2 (an artifact over the size pin) escaped every
+# instrument here. `[a-z]{0,30000}`, `a{0,25000}`, `a{0,20000}`,
+# `(a|b){0,30000}`: 30,001 / 25,001 / 20,001 / 30,001 anchored states, all
+# above the upper bracket below. The design note's §7.2 carries their measured
+# CPU and size both ways.
+#
+# BOTH SIDES ASSERT `RX_DFA_SCAN "unanchored"`, which is the non-vacuity: a
+# witness that fell to the attempt or empty engine would reach `search-filter`
+# for a DIFFERENT reason and would say nothing about the ceiling.
+ceil_case() {   # ceil_case <pattern> <expected form> <expect table: y|n>
+    local pat="$1" want="$2" tbl="$3" f="$WORKDIR/ceil.c"
     if ! emit "$f" "$pat"; then
-        bad "§4a '$pat' did NOT COMPILE — an optional machine over its ceiling must be a selection outcome, never a refusal"
-        continue
+        bad "§4a '$pat' did NOT COMPILE — a machine over its ceiling is a selection outcome, never a refusal"
+        return 1
     fi
-    gs="$(stamp "$f")"; sc="$(grep -m1 '^#define RX_DFA_SCAN "' "$f" | cut -d'"' -f2)"
-    if [ "$gs" != search-filter ]; then
-        bad "§4a '$pat' stamps RX_DFA_MATCH \"$gs\" — its anchored machine is 20,001+ states against a 4,096 ceiling, so it must take the fallback. Either the ceiling moved or the machine shrank; re-derive both before re-pinning"
-        continue
+    local gs sc; gs="$(stamp "$f")"; sc="$(grep -m1 '^#define RX_DFA_SCAN "' "$f" | cut -d'"' -f2)"
+    [ "$sc" = unanchored ] \
+        || { bad "§4a '$pat' has RX_DFA_SCAN \"$sc\", not \"unanchored\" — it is not on the engine this ceiling governs, so it says nothing about the boundary"; return 1; }
+    [ "$gs" = "$want" ] \
+        || { bad "§4a '$pat' stamps RX_DFA_MATCH \"$gs\", expected \"$want\". Its anchored machine straddles PCREC_ANCHORED_MAX_STATES (4,096) on the '$want' side; if the ceiling moved, re-derive it from the corpus maximum rather than re-pinning this line"; return 1; }
+    if [ "$tbl" = y ]; then
+        has_anchored_tbl "$f" || { bad "§4a '$pat' stamps unwrapped with no anchored table"; return 1; }
+    else
+        has_anchored_tbl "$f" && { bad "§4a '$pat' took the fallback but still emitted an anchored table"; return 1; }
     fi
-    if [ "$sc" != unanchored ]; then
-        bad "§4a '$pat' is in the fallback with RX_DFA_SCAN \"$sc\", not \"unanchored\" — it reached search-filter for a DIFFERENT reason (the attempt or empty engine), so it is not an OVERFLOW witness and this arm has lost a member"
-        continue
-    fi
-    has_anchored_tbl "$f" \
-        && { bad "§4a '$pat' took the fallback but still emitted an anchored table"; continue; }
-    ovf_named=$((ovf_named + 1))
-done
-[ "$ovf_named" -eq 4 ] \
-    && ok "§4a all 4 NAMED shapes reach the OVERFLOW arm in an ordinary build: compiled, no diagnostic, RX_DFA_MATCH \"search-filter\" with RX_DFA_SCAN \"unanchored\", no anchored table. This population is 4 and is 0 without the ceiling" \
-    || bad "§4a only $ovf_named of 4 named shapes reach the overflow arm — before the ceiling this population was ZERO and the arm was dead code; a drop here restores that"
+    return 0
+}
+ceil_ok=0
+# 4,001 anchored states — UNDER the ceiling, keeps the form.
+ceil_case 'a{1,4000}'     unwrapped     y && ceil_ok=$((ceil_ok + 1))
+ceil_case '[a-c]{1,4000}' unwrapped     y && ceil_ok=$((ceil_ok + 1))
+# 4,201 anchored states — OVER it, takes the stamped fallback.
+ceil_case 'a{1,4200}'     search-filter n && ceil_ok=$((ceil_ok + 1))
+ceil_case '[a-c]{1,4200}' search-filter n && ceil_ok=$((ceil_ok + 1))
+[ "$ceil_ok" -eq 4 ] \
+    && ok "§4a the ceiling is bracketed from BOTH sides on the ordinary build: 4,001-state machines keep the unwrapped form, 4,201-state machines take the stamped search-filter fallback with no diagnostic and no anchored table. tests/resource's four shapes (20,001-30,001 states) are above the upper bracket and are the arm's real population" \
+    || bad "§4a only $ceil_ok of the 4 boundary cases held — the ceiling has moved outside (4,001, 4,201) or the fallback stopped being a selection outcome. Before the ceiling existed the overflow arm's population was ZERO and the arm was dead code"
 
 # =========================================================================
 # §4b THE SAME ARM AT A CAP NO REAL SHAPE REACHES
