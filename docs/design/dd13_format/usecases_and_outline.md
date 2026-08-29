@@ -438,3 +438,26 @@ one config pair. Rulings 3 and 8 in §5 are REPLACED by: **a target is a
 file-level `target <prefix> = <name> [with <config>…]` declaration;
 pattern blocks carry no build marker; the lone-unnamed-block file is
 `target rx` by default.** Item 6's "one `.c` per target" stands.
+
+**6.5 The exemplar-analysis findings file is an `.rxt` (Frank, at the
+close).** [ENG-PGO]'s D83 ruling has the analysis run OUTSIDE pcrec, once
+per exemplar file, delivering a FINDINGS FILE pcrec accepts. That file
+is this format: a `.rxt` whose content is a DATA block — a byte/char
+FREQUENCY TABLE (256 counts, the input the rarest-byte candidate-scan
+selection needs) — with no patterns in it. A user file brings it in with
+`include`/`lib` and a target references it through its config:
+
+```
+lib <rfc5322>
+include "exemplars/loglines.freq.rxt"     # emitted by the analyzer: `freq loglines` + 256 values
+config prod  freq loglines
+target email_prod = email with prod
+```
+
+So `freq <name>` is a block kind beside `pattern` and `config`, a `config`
+line `freq <name>` selects it (the option the compiler reads), and the
+same pattern built against two exemplars is two `target` lines. The
+table is data the harness never interprets beyond well-formedness; the
+analyzer is the only writer. Open (OD-6): inline values vs an `@file:`
+byte-exact reference for the block's body, and whether `freq` names
+share `config`'s namespace.

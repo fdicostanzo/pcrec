@@ -103,3 +103,23 @@ named). OD-4 is refined accordingly: reference-only marking is one
 end of this; the general form is per-pattern user sets, or a
 file-level target list, and the test surface of a non-target pattern
 is a separate question from its target-ness.
+
+## 2026-08-29 (forty-fourth session, at the close) — the exemplar-analysis findings file IS an .rxt
+
+Frank: "Further notes for rxt file format and exemplar analysis — the
+output of an exemplar analysis is an rxt file, i.e. one settable option
+in rxt is a char frequency table which can then be included as a data
+file into a pattern target entry."
+
+Reading, for [DD-13b] and [ENG-PGO] (D83 already rules the analysis runs
+OUTSIDE pcrec, once per file, delivering a FINDINGS FILE pcrec accepts):
+(1) the findings file's FORMAT is the .rxt dialect — no second file kind;
+(2) the format gains a DATA block kind — a byte/char FREQUENCY TABLE
+(the input the rarest-byte prefilter selection needs, [OPT-A]/D21's
+lead) — settable like any other option; (3) a user's pattern file
+`include`s/`lib`s the analyzer's .rxt and a TARGET entry (usecases_and_
+outline.md §6.4: `target <prefix> = <name> with <config>`) references
+the table through its config, so the same pattern can be built against
+several exemplars' tables (one target line each). OD-6: the data block's
+spelling (inline 256 values vs `@file:` byte-exact reference) and its
+name resolution (same namespace as `config`, or its own).
