@@ -14,57 +14,67 @@ tension that kicks in at some size."*
 
 ---
 
-## 0. The answer in ten lines
+## 0. The answer in twelve lines
 
-1. **The r40 panel refuted the first version of this note, and the refutation
-   is the most useful thing in it** (§2.0). The instrument that produced the
-   model was blind to the VM hybrid prefilter's computed-goto machinery, so
-   K41's SECOND witness — a real, already-pinned oversize pattern — was read
-   at 118,240 B when it is 1,220,606 B, and NEITHER mechanism engaged on it.
-   The classifier's own regexes were the population nobody counted.
-2. Emitted size is predicted by **four** counts, from the corrected
-   instrument: VM nodes `N`, prefilter DFA states `S`, data-table entries `E`,
-   and computed-goto **jump-table entries `J`** (§2.3). Median error 2.39 % over
-   2,487 corpus artifacts, 2.56 % on the population above 100 KB, and −8.8 %
-   and −23.2 % on the two K41 witnesses, which are 2–5× outside the fit range.
-3. **The size a user ships and the cost gcc pays are different quantities, and
-   the row needs both.** Measured: a data-table entry costs gcc **0.905 µs**, a
-   jump-table entry **8.7 µs**, and a VM node **5.37 ms** — a node is ~5,930×
-   a data entry (§4.1). `a{1,31000}` is a 1.37 MB artifact that compiles in
-   **0.34 s**; K41 witness 2 is 1.22 MB and costs **66.92 s**.
-4. So the cap binds on **CODE bytes** — total bytes minus the measured table
-   contribution — not on total bytes and not on nodes alone. Measured, that
-   quantity separates the whole population cleanly: everything at or below
-   320 KB of code costs ≤ 71 % of D45's budget, and the next measured point up
-   is 837 KB at **669 %** of it (§4.2).
-5. The **K rule**: above a threshold, the counter rung's `K` is chosen by
-   re-emitting over a descending ladder `[8,6,4,3,2,1]` and keeping the
-   smallest REALIZED artifact — evaluated, not descended, because the
-   size-vs-K curve is **NON-MONOTONE** (§3.1). `--unroll=K` remains an
-   explicit override the term never overrides.
-6. It reads REALIZED counts, not predictions, because **there is no
-   pre-emission node count in the compiler today** (§2.2, panel finding F6):
-   `vm_count_slots` counts slot categories and `nlabel` is an emission-time
-   counter. Since the emitter must walk to know `N`, the rule re-emits — which
-   also removes the model's error from the decision. Measured ladder cost:
-   **2.84 s** on the worst pattern in the project (which today costs gcc 55 s),
-   0.01 s on an ordinary one, and it runs on 0.28 % of the corpus (§3.3).
-7. **Threshold 120,000 B**, in the corpus's widest tail gap; a measured no-op
-   on **2,480 of 2,487** patterns (99.72 %). **Cap
-   `PCREC_MAX_VM_EMIT_CODE_BYTES = 500000`**, in the empty band between the
-   corpus's worst (284,035) and witness 2's (836,621).
-8. **Both K41 witnesses are now classified, by different mechanisms** (§3.3,
-   §4.3): witness 1's size IS node replication, so the K rule takes it to K=1
-   — 1,719,349 → 87,118 B, gcc 55.13 s → 1.02 s, no refusal. Witness 2's size
-   is its PREFILTER, which K cannot touch (K=1 saves 8.7 %), so it is
-   **REFUSED** by the cap — correctly, at 66.92 s against a 10 s budget.
-   **This moves K41's pinned fuzz-gate bucket from 2 to 0** (§4.7).
-9. **The three levers of census §7 are priced and all three are DECLINED**
-   (§5), on measurements. The largest is worth a corpus median of **0.99 %**.
-10. `abi` 9 → 10 (four sites), deny flag at **bit 17**, two new unconditional
-    stamps, and an identity gap this row found by reading the gate: `--unroll`
-    is a VALUE axis, so **no gate proves any K answer-identical today** (§6.2).
+1. **The r40 panel refuted the first version of this note three ways, and the
+   refutations are the most useful thing in it.** The instrument was blind to
+   the hybrid prefilter's computed-goto machinery, so a pinned oversize pattern
+   read 10× small and no mechanism engaged (§2.0, F1). The pre-emission node
+   count the design assumed **does not exist** (§2.2, S1/F6). And "every K is
+   answer-identical" is false on the give-up surface (§6.1, S2).
+2. Emitted size is described by **four** counts: VM nodes `N`, prefilter DFA
+   states `S`, data-table entries `E`, and computed-goto **jump-table entries
+   `J`** (§2.3). Median error 2.39 % over 2,487 corpus artifacts, 2.56 % above
+   100 KB, −8.8 % and −23.2 % on the two K41 witnesses.
+3. **The size a user ships and the cost gcc pays are different quantities.**
+   Measured: a data entry costs gcc **0.905 µs**, a jump entry **8.7 µs**, a VM
+   node **5.37 ms** — a node is ~5,930× a data entry. `a{1,31000}` is 1.38 MB
+   and compiles in **0.34 s**; K41 witness 2 is 1.26 MB and costs **66.92 s**.
+4. So D84 rules the charter's one cap into **two**: a **node cap** for D45's
+   compile budget, and a **byte cap** for usability — "a large byte count makes
+   the artifact unusable" — which is **not** a proxy for compile time (§4.0).
+5. The **byte cap reads no model**: an exact post-emission check on the measured
+   bytes, refusing **before the file is written** (D84 addendum). Predictable by
+   construction — a fixed number and a loud refusal — which is the half Frank
+   called worse than the size itself.
+6. The **K rule**: above a threshold, `K` is chosen by DRY-EMITTING the ladder
+   `[8,6,4,3,2,1]` and taking **`argmin N`, exact, with no model in it** (§3.3,
+   S4). Both `N` and bytes are **non-monotone in K**, so it is evaluated, never
+   descended.
+7. It dry-emits because **there is no pre-emission node count** — `vm_count_slots`
+   counts slot categories, `Vm.nodes` and `nlabel` are emission-time, and the
+   pre-pass mutates state and can fail. A counting pre-pass would be a third
+   party to an agreement the emitter's own header warns about; the emitter run
+   into a scratch buffer cannot drift from itself (§2.2). Measured cost:
+   **2.84 s** on the worst pattern in the project, 0.01 s on an ordinary one,
+   zero on the 99.72 % below the threshold.
+8. **A cap refuses only if NO K on the ladder is under it** (§4.4, S5). The
+   materiality bar is in bytes and the node cap in nodes, so without the
+   re-run a declined bar could strand a pattern a lower K rescues — measured on
+   witness 2, whose byte ratio 0.902 declines the bar despite an 81 % node
+   reduction.
+9. **Both K41 witnesses are handled, by different mechanisms** (§4.8): witness
+   1's size IS node replication, so the K rule takes it 2,015,585 → 116,371 B
+   and gcc 55.13 s → 1.02 s; witness 2's is its PREFILTER, which K cannot touch,
+   so the byte cap refuses it. **K41's pinned bucket moves 2 → 0**, one fixed
+   and one refused — and witness 2 stays refused until **[OPT-4]/K39** shrinks
+   the mechanism, which is that row's job, not this one's.
+10. **Thresholds and caps:** threshold **120,000 B** (AR10 — the first
+    version's 131,072 collided with a literal alias); node cap **2,000**; byte
+    cap **1,000,000**, the number `fuzz.py` already calls oversize, in the
+    1.87× gap between the corpus max and witness 2. **0 of 2,487** corpus
+    patterns refused by either.
+11. **The caps are NOT deniable but ARE overridable upward** (D84 ruling 1):
+    `--max-emit-nodes=N`, `--max-emit-bytes=N`, raise-only, effective values
+    stamped. Predictability is discharged by documentation — `limits.md` gains
+    a "Handling an oversized artifact" section, drafted in §4.6.
+12. **All three of census §7's levers are DECLINED** on measurements (§5; the
+    best is worth a corpus median of 0.99 %), and `--unroll` is a VALUE axis so
+    **no gate proves any K answer-identical today** — the new K sweep is that
+    gate, and it EXCLUDES `budget`/`gu` cells by construction because §6.1
+    measured them to be genuinely K-dependent (§6.2).
 
+---
 
 ## 1. The measured need
 
@@ -178,38 +188,66 @@ five-bucket classifier puts witness 1 at program 1,657,633 + scaffold 60,792 +
 tables 924 = **1,719,349 non-prose bytes**, and this lane's flat tracker
 measures **1,719,349**. Two independently written classifiers, to the byte.
 
-### 2.2 The inputs, and the one that does not exist (panel finding F6)
+### 2.2 The inputs, and the one that does not exist (panel findings F6/S1)
 
 | input | what it is | where it comes from |
 |---|---|---|
-| `N` | VM nodes — one per `rx_L<N>:` label | the emitter's `vm_label()`, `v->nlabel` |
+| `N` | VM nodes — one per `rx_L<N>:` label | **nowhere, before emission — see below** |
 | `S` | prefilter DFA states — one per `rx_s<N>:` label, the computed-goto form (`RX_DFA_SCAN "attempt"`, `RX_DFA_TABLE "none"`) | the DFA builder's state count |
 | `E` | declared entries in DATA tables (transition/accept/class) | `states × ncls`, already bounded by `PCREC_MAX_TABLE_ENTRIES` |
 | `J` | declared entries in POINTER tables (`static const void *const rx_targets_N[…]`) | `S × ncls` |
 
-**`N` is NOT available before emission, and the first version asserted that it
-was.** The panel checked: `vm_count_slots` (`emit_vm.c:2314`) accumulates slot
-CATEGORIES — `nguard_total`, `nlow_total`, capture and counter slots — not a
-node count; and `nlabel` is incremented by `vm_label()` **during** emission
-(`emit_vm.c:690`). There is no pre-emission node counter in the compiler.
+**`N` is NOT available before emission, and the first version asserted twice
+that it was.** critic-sem checked every candidate source and all four fail:
 
-**The design takes this as a constraint rather than building around it, and it
-comes out better for it.** Adding a counting walk that mirrors the emitter's
-structure would be a parallel mechanism with nothing keeping the two in sync —
-the failure this project has a standing rule against
-(`pcrec-general-mechanisms-not-special-cases`). Instead **the rule RE-EMITS**
-(§3.3): the emitter already writes into a `StrBuf`, so emitting a candidate `K`
-to a scratch buffer and reading `v->nlabel` and the realized byte counts is the
-same code path, not a second one.
+- `vm_count_slots` (`emit_vm.c:2314`) **returns void** and accumulates SLOT
+  categories (`nctr`/`nmark`/`nguard`/`nlow`) plus `maxcopies` — not nodes;
+- `Vm.nodes` (`:433`) is bumped only by `vm_charge` (`:692-696`) **during**
+  emission — `:2304` and `limits.h:218-220` both say so verbatim;
+- `v.nlabel` is incremented by `vm_label()` during emission (`:690`);
+- and the pre-pass **mutates `v`** and can `ctx_fail` on the replication
+  product (`:2610`), so it cannot simply be run six times for a ladder. It also
+  runs at `:7655`, ~200 lines after the `v.unroll_k` site at `:7461`.
 
-Two consequences, both good:
+**The two ways out, and why this note takes the second.**
 
-- **the selection consumes EXACT counts, not predictions** — the model's
-  13–23 % tail error never reaches the decision (§2.5);
-- **so does the cap** (§4.3).
+*(a) A new node-counting pre-pass.* It would have to mirror every decision the
+emitter makes — and `vm_counter_fits` (`:1034-1036`) reads `v->unroll_k`
+(finding S3), so rung choice is itself K-dependent, as are possessification,
+revdet, splice and the MRL guard. That makes a third party to the
+two-way agreement `vm_count_slots`' own header already warns about
+("a walk that must agree across `vm_count_slots`, `vm_cost_rep` and the
+emitter"). Nothing would keep it in sync, and its failure mode is a silently
+wrong count feeding a refusal.
 
-The model's remaining jobs are to be the note's reviewable cost function, to
-explain what drives size, and to serve the early refusal in §4.3.
+*(b) A DRY EMISSION — what this note specifies.* `pcrec_emit_vm` already
+declares its own `Vm` per call and writes into a `Ctx`-owned buffer, so a trial
+is *the emitter itself*, run into a scratch buffer with a different
+`opt->unroll_k`. It cannot drift from the emitter because it **is** the
+emitter, and it yields `N`, the realized bytes and the stamps exactly.
+
+**Where the selection therefore sits: `src/core/compile.c:426`**, the single
+call site (`if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);`) —
+NOT `emit_vm.c:7461`, which is inside one emitter run and ~200 lines before the
+pre-pass that would need re-running. §11 budgets this as the largest piece of
+the code phase: the emitter must become callable into a caller-chosen buffer,
+which is a refactor of its output plumbing, not a new analysis.
+
+**One behaviour this must NOT change.** A trial `K` can `ctx_fail` (the
+replication-product guard at `:2610`). The ladder runs **only after the
+default-K emission has already succeeded** and exceeded the threshold, so a
+failing trial is discarded as "this K is not viable" and can never turn a
+pattern that refuses today into one that compiles. The rule may only make an
+artifact smaller, never wider.
+
+**Cost, measured** (§3.3 has the table): 2.84 s on the worst pattern in the
+project, 0.01 s on an ordinary one, and zero on the 99.72 % of the corpus
+below the threshold. The figures are separate-process runs including parse, so
+the in-process cost is a bound, not an estimate.
+
+**Two consequences, both good:** the ladder consumes an EXACT `N`, and the
+caps consume exact realized counts — the model's 7–25 % tail error (§2.5)
+reaches neither.
 
 ### 2.3 The fit
 
@@ -316,24 +354,42 @@ Three facts the rule is built on:
    across all nine K values**. That is D82's zero-cost property, measured
    directly on the axis this row moves, before any code is written.
 
-### 3.1a The model ranks K correctly — evidence for the model, not the rule
+### 3.1a Why the ladder is `argmin N(K)` and not `argmin B̂` (finding S4)
 
-The first version made this section load-bearing: it argued the rule consumes a
-RANKING rather than an absolute prediction, so the model's absolute error did
-not matter. §2.2 has since removed the model from the decision path entirely —
-the rule re-emits and reads exact bytes — so this is now **evidence that the
-cost function in §2.3 describes the emitter correctly**, not a defence of the
-rule.
+The first version reported that the model picks the byte-optimal K on 15 of 15
+subjects and offered it as validation. **critic-sem showed the test cannot
+fail**: `E` is built from the AST and is constant in `K`, `S` and the intercept
+are constant in `K`, so
 
-Measured over §3.1's fifteen subjects on the ladder `[8,6,4,3,2,1]`, ties to
-the largest K: **the model picks the byte-optimal K on 15 of 15**, with
-absolute error at the chosen K running −6.9 % to +15.9 % over the fourteen VM
-subjects. A bias roughly constant across K for one pattern cannot change an
-argmin, which is why the ranking survives an error the absolute prediction does
-not.
+```
+    argmin_K B̂(K)  ≡  argmin_K N(K)      for any positive node coefficient
+```
 
-(The fifteenth subject, `\d{4}-\d{2}-\d{2}`, is a DFA artifact with `N = 0`;
-K is a no-op on it and it is included to show the rule leaves it alone.)
+The 15/15 therefore validates that **`N` ranks bytes**, which is worth knowing
+and is not nothing — but it is not evidence about the fitted model, and quoting
+it as such was the first version's error.
+
+**So the ladder is specified as `argmin N(K)`, exact, with no model in it** —
+and §2.2's dry emission supplies that `N` directly. What the fitted model of
+§2.3 remains load-bearing for is exactly two things, and they are both
+thresholds rather than choices:
+
+- the **threshold gate** (§3.2) — does this artifact deserve a ladder at all;
+- the **materiality bar** (§3.3) — is the best K's saving worth taking.
+
+Nothing else in the design reads `B̂`.
+
+**`N` is non-monotone in `K`, which is why the ladder is evaluated rather than
+descended** — measured on three families:
+
+| subject | K=8 | K=6 | K=4 | K=3 | K=2 | K=1 |
+|---|---|---|---|---|---|---|
+| K41 witness 1 | 7,467 | 6,407 | 3,234 | **3,248** | 1,364 | 313 |
+| nested, 4 levels | 2,936 | **2,960** | 1,592 | **1,952** | 990 | 530 |
+| K41 witness 2 | 552 | 552 | 558 | **566** | 387 | 105 |
+
+Every bolded cell is larger than the K to its left. A greedy descent stops at
+the first of them.
 
 ### 3.2 The threshold
 
@@ -367,22 +423,29 @@ At VM emission, with `K_opt` = `--unroll=`'s value if given, else
     if --unroll= was given explicitly    ->  keep it; the term does not run
     if realized bytes <= THRESHOLD       ->  keep it; the term does not run
     else:
-        for K_c in LADDER = [8,6,4,3,2,1] with K_c < K_opt:
-            re-emit to a scratch buffer, read realized bytes
-        K_best = argmin realized bytes , ties -> the LARGEST such K
+        for K_c in LADDER = [8,6,4,3,2,1]:
+            DRY-EMIT into a scratch buffer (§2.2); read exact N and bytes
+        K_best = argmin N(K_c) , ties -> the LARGEST such K
         if  bytes(K_best) <= MATERIALITY * bytes(K_opt):  keep K_best's emission
         else:                                             keep K_opt's
 ```
 
-- **It reads REALIZED bytes, not `B̂`** — §2.2: there is no pre-emission node
-  count, the emitter must walk anyway, and an exact number is strictly better
-  than a prediction with 7–25 % tail error. The model of §2.3 is what makes the
-  rule predictable and reviewable; it is not what the rule consumes.
-- **Evaluated, not descended.** The curve is non-monotone (§3.1), so a greedy
-  descent stops at a local minimum.
-- **Descending only**, so the term can only make an artifact smaller than
-  today's; **ties to the largest K**, preserving the throughput default.
-- **`MATERIALITY = 0.75`** — descend only for a ≥ 25 % saving.
+- **The ladder is `argmin N`, exact, with no model in it** (§3.1a, finding S4).
+  §2.2's dry emission supplies `N` directly; the fitted model is load-bearing
+  only for the THRESHOLD above and the MATERIALITY bar below.
+- **Evaluated, not descended.** Both `N` and bytes are non-monotone in K
+  (§3.1, §3.1a), so a greedy descent stops at a local minimum.
+- **Ties to the largest K**, preserving the throughput default.
+- **`MATERIALITY = 0.75`** — descend only for a ≥ 25 % byte saving. The bar is
+  in BYTES while the node cap is in NODES, which is the mismatch finding S5
+  exposed; §4.4's ladder re-run is what closes it.
+- **No `K_c <= K_opt` guard** (finding S10): the ladder runs only when
+  `--unroll=` was NOT given, so `K_opt` is always the default 8 and every
+  ladder value is already ≤ it. The guard the first version wrote was
+  unreachable; if it is kept in the code it is marked defensive, not load-bearing.
+- **A trial that `ctx_fail`s is discarded, not propagated** (§2.2): the ladder
+  runs only after the default-K emission succeeded, so it can never turn a
+  pattern that refuses today into one that compiles.
 
 **What it costs.** The ladder is up to five extra emissions, and only above the
 threshold (7 of 2,487 patterns). Measured, best of one run each:
@@ -473,14 +536,35 @@ resolve. **Tightening it below 120,000 B requires that measurement first.**
 
 ---
 
-## 4. The cap
+## 4. The two caps (D84)
+
+### 4.0 Why two, and what each is for
+
+Frank ruled the charter's single "hard emitted-size cap" into **two caps over
+one row** (D84 ruling 2), because this note's own measurements showed the
+question splits:
+
+| cap | bounds | because | binds on |
+|---|---|---|---|
+| **node cap** | `N`, the emitted VM node count | D45's compile budget — gcc's cost is superlinear in nodes and nearly linear in table bytes | the ladder-chosen K's exact `N` |
+| **byte cap** | the MEASURED emitted byte count | **usability** — "a large byte count makes the artifact unusable" (D84 ruling 2); *not* a proxy for compile time | the bytes actually written, at the end of emission |
+
+**The byte cap reads no model at all** (D84 ADDENDUM). It is an exact
+post-emission check: the emitter has finished, the byte count is a fact, and
+the refusal happens **before the file is written**. That is what makes the
+outcome predictable by construction — a fixed number and a loud refusal —
+rather than by prediction, which is the half Frank called worse than the size
+itself. The model of §2 survives only for K selection's threshold and
+materiality bar (§3.1a).
+
+**These are two different quantities on purpose, and the note says so rather
+than letting a reader assume one number.** The model predicts
+comment-EXCLUDED bytes (§2.1 — the quantity that tracks `.o`); the byte cap
+bounds the RAW emitted bytes, comments included, because that is what lands on
+the user's disk and what `tests/fuzz/fuzz.py` already measures. Reusing one for
+the other is the r39 S1 hazard, so they are never mixed.
 
 ### 4.1 Bytes, nodes and gcc cost are three different quantities — measured
-
-The obvious reading of D45's consequence 1 is "cap the emitted bytes". The
-first version refuted that and proposed a NODE cap instead. The panel then
-refuted the node cap, with K41's second witness. Both refutations are right,
-and together they say what the cap must actually bind on.
 
 **Measurement 1 — the per-unit gcc costs.** `gcc -O2 -c`, this box, under
 `scripts/watchdog`, `/usr/bin/time` rusage:
@@ -493,210 +577,267 @@ and together they say what the cap must actually bind on.
 
 A node costs gcc **≈ 5,930×** a data entry and **≈ 620×** a jump entry.
 (The first version quoted "0.0009 µs per table entry" — a ms/µs slip, panel
-finding F3. The corrected unit is 0.905 µs and the 5,930× ratio is unchanged.)
+finding F3. The corrected unit is 0.905 µs; the 5,930× ratio is unchanged.)
 
 **Measurement 2 — what that does to real artifacts:**
 
-| artifact | `.c` bytes | comment-excl. | N | S | E | J | gcc CPU |
+| artifact | raw `.c` bytes | N | S | E | J | gcc CPU | % of D45's 10 s |
 |---|---|---|---|---|---|---|---|
-| `a{1,31000}` | 1,380,303 | 1,367,865 | 0 | 0 | 248,520 | 0 | **0.34 s** |
-| `a{1,25000}` | 1,116,303 | 1,103,865 | 0 | 0 | 200,520 | 0 | 0.24 s |
-| `((a)\|ab){4000}c` | 675,586 | 651,412 | 80 | 0 | 128,544 | 0 | 0.29 s |
-| nested N=8 (corpus worst) | — | 288,314 | 1,471 | 0 | 844 | 0 | 7.09 s |
-| **K41 witness 2** | 1,261,948 | 1,220,606 | 552 | 3,108 | 320 | 34,188 | **66.92 s** |
-| **K41 witness 1** | 2,015,585 | 1,719,349 | 7,467 | 0 | 128 | 0 | **55.13 s** |
+| `a{1,31000}` | 1,380,303 | 0 | 0 | 248,520 | 0 | **0.34 s** | 3 % |
+| `a{1,25000}` | 1,116,303 | 0 | 0 | 200,520 | 0 | 0.24 s | 2 % |
+| `((a)\|ab){4000}c` | 675,586 | 80 | 0 | 128,544 | 0 | 0.29 s | 3 % |
+| nested N=8 (corpus worst) | — | 1,471 | 0 | 844 | 0 | 7.09 s | **71 %** |
+| **K41 witness 2** | 1,261,939 | 552 | 3,108 | 320 | 34,188 | **66.92 s** | **669 %** |
+| **K41 witness 1** | 2,015,585 | 7,467 | 0 | 128 | 0 | **55.13 s** | 551 % |
 
-**So a byte cap is wrong** (1.37 MB at 0.34 s and 1.22 MB at 66.92 s are the
-same size and 197× apart in cost) **and a node cap is wrong too** (witness 2
-has 552 nodes — fewer than 168 corpus patterns — and costs 6.7× the budget).
+**This is why the two caps are on different quantities.** A single byte cap
+would refuse `a{1,31000}` *for a compile-budget reason* it does not violate;
+a single node cap would admit witness 2 at 552 nodes. Under D84 both artifacts
+are still refused — but by the cap whose reason actually applies to each:
+`a{1,31000}` for being 1.38 MB to ship, witness 2 for both.
 
-**A correction to the panel's premise, which strengthens its finding.** The
-brief described witness 2 as compiling "inside the budget today, 7.8 CPU-s
-against 10 s". That figure is at the fuzz harness's `-O0` default. **At `-O2` —
-the level a user ships at, and the level every number in this note is measured
-at — it costs 66.92 s CPU and 1.9 GB peak RSS**, i.e. 669 % of D45's budget.
-K41's own entry records the same pattern for witness 1 (cheap at `-O0`, 52.9 s
-at `-O2`) and says so in those words: gcc's outcome is "a CONSEQUENCE on a
-given box", the artifact is the fact. So witness 2 is not a pattern the cap
-would be refusing gratuitously — it is over budget by 6.7×.
+**A correction to the brief's premise, which strengthens the case.** Witness 2
+was described as compiling "inside the budget today, 7.8 CPU-s against 10 s".
+That figure is the fuzz harness's **`-O0`** default. At **`-O2`** — the level a
+user ships at, and the level every number here is measured at — it costs
+**66.92 s CPU and 1.9 GB peak RSS**. K41's own entry records the same `-O0`/
+`-O2` split for witness 1 and says gcc's outcome is "a CONSEQUENCE on a given
+box"; the artifact is the fact.
 
-### 4.2 The quantity that does separate them: CODE bytes
+### 4.2 The node cap, and the honest limit of what it bounds
 
-Subtract the measured table contribution from the artifact:
+**`PCREC_MAX_VM_EMIT_NODES = 2000`**, on the exact `N` of the ladder-chosen
+emission.
 
-```
-    code_bytes  =  B  −  5.070 · E  −  11.184 · J        (clamped at 0)
-```
+Derived from the measured gcc-CPU-vs-`N` curve on the node-driven family
+(`E` held at 844): 262 → 0.59 s, 498 → 1.21 s, 793 → 2.33 s, 1,141 → 3.87 s,
+1,471 → **7.09 s**, and the census's 7,467 → 55.13 s. Log-log over those 20
+points gives `gcc_cpu ≈ 0.00054 · N^1.269`, **residuals −43.3 % … +18.3 %**
+(the full fitted population, including the three mixed `alt` points the first
+version omitted — panel finding F2). D45's 10 s budget is crossed at ~2,305
+nodes by the global fit and at **~1,929** anchored on the measured worst corpus
+point; the fit under-predicts at the top, so 2,000 is set from the anchored,
+lower number.
 
-That is "the bytes gcc has to compile as control flow", as opposed to the
-`.rodata` initialisers it emits nearly linearly. Measured, against gcc's own
-cost:
+- **Refuses 0 of 2,487** corpus patterns (max `N` = 1,471), re-measured across
+  the deny axes in §4.6.
+- After K selection the largest `N` left anywhere in the corpus is **445**, so
+  the cap sits 4.5× clear of anything shipped and the corpus's worst compile
+  drops from 71 % of budget to 11 %.
 
-| artifact | code bytes | gcc CPU | % of D45's 10 s |
-|---|---|---|---|
-| `a{1,25000}` | 87,229 | 0.24 s | 2 % |
-| witness 1 **at K=1** | 86,469 | 1.02 s | 10 % |
-| `a{1,31000}` | 107,869 | 0.34 s | 3 % |
-| `((a)\|ab){4000}c` | ~0 | 0.29 s | 3 % |
-| **nested N=8 — the corpus's worst** | **284,035** | 7.09 s | **71 %** |
-| `jfit` n800_k26 | 319,517 | 3.21 s | 32 % |
-| — *no measured artifact between 320 K and 837 K* — | | | |
-| **K41 witness 2** | **836,621** | 66.92 s | **669 %** |
-| **K41 witness 1** at K=8 | 1,718,700 | 55.13 s | 551 % |
+**What this cap does NOT bound, stated plainly.** gcc's cost is not a function
+of `N` alone, and the two witnesses prove it — the ordering inverts:
 
-**Everything at or below 320 KB of code costs ≤ 71 % of the budget; the next
-measured artifact up costs 669 %.** The band between them is empty.
-
-**Why this is a measured SEPARATION and not a predicted gcc COST — the thing
-the panel asked for and this note could not deliver.** The natural reading of
-D45's consequence 1 is a cap on predicted compile cost. That requires gcc's
-cost to be a function of counts the compiler can produce, and **measured, it is
-not** — the ordering inverts inside this very table:
-
-| | code bytes | gcc CPU |
+| | N | gcc CPU |
 |---|---|---|
-| K41 witness 2 | 836,621 | **66.92 s** |
-| K41 witness 1 | 1,718,700 (2.05× more) | **55.13 s** (18 % less) |
+| K41 witness 2 | 552 | **66.92 s** |
+| K41 witness 1 | 7,467 (13.5×) | **55.13 s** (18 % less) |
 
-Witness 1 has 2× the code and costs 18 % LESS. Witness 2's prefilter is a
-single function carrying a 3,108-way computed-goto CFG, and gcc's dataflow and
-register allocation on that shape cost more than twice the straight-line code
-elsewhere (peak RSS 1.9 GB against witness 1's 540 MB). No additive function of
-`N`, `S`, `E`, `J` — or of bytes — reproduces that, and a curve fitted through
-it would be fitting CFG shape it cannot see. The first version's own
-`gcc_cpu ≈ 0.00054 · N^1.269` had a −43 % residual (§4.6) and that was on the
-EASY, node-decorrelated population.
+Witness 2's prefilter is one function carrying a 3,108-way computed-goto CFG
+(peak RSS 1.9 GB against witness 1's 540 MB), and gcc's dataflow and register
+allocation on that shape cost more than an order of magnitude more node-count
+would elsewhere. **No additive function of `N`/`S`/`E`/`J` reproduces that**,
+which is why the node cap is presented as a bound on ONE mechanism —
+node replication, the one D45's founding incident is about — and not as a
+compile-cost oracle. The population it cannot speak for is prefilter-dominated
+artifacts, and **the byte cap is what catches those today** while [OPT-4]/K39
+owns shrinking them.
 
-So the cap is derived the way `PCREC_MAX_VM_REPEAT_COPIES` was (limits.h's own
-measured `((a)|b){0,N}c` curve): **from a measured separation between "every
-artifact anyone has built" and "the artifacts that blow the budget", with the
-cap placed in the empty band between them.** What that buys is a bound, not a
-prediction: it does not claim every admitted artifact is cheap, it claims every
-artifact measured at or below it compiled in ≤ 71 % of the budget, and it names
-the population it cannot speak for — anything with code bytes in
-(320 KB, 837 KB), which is empty today and would be the first thing to measure
-if one appeared.
+### 4.3 The byte cap — exact, post-emission, no model
 
-### 4.3 The cap, and where it fires
+**`PCREC_MAX_EMIT_BYTES = 1000000`**, on the measured raw emitted byte count
+(the `.c`, plus the `.h` sidecar in split form), checked when emission
+finishes and **before anything is written to disk**.
 
-**`PCREC_MAX_VM_EMIT_CODE_BYTES = 500000`**, on the REALIZED code-byte count of
-the selected emission.
+**Derivation — "what size is unusable to ship", not "what gcc can compile"**
+(D84 ruling 2's own framing):
 
-- **In the empty band**: 1.76× above the corpus's worst (284,035) and 1.67×
-  below the lowest refused artifact (836,621) — centred, so neither ordinary
-  corpus growth nor measurement noise moves a pattern across it.
-- **Refuses 0 of 2,487** corpus patterns; the largest code count among the
-  seven above the threshold is 57,439.
-- **Refuses K41 witness 2** (836,621 → 66.92 s) and would refuse witness 1 at
-  K=8 (1,718,700), which the K rule has already reduced to 86,469.
+- it is the number **pcrec already calls oversize**: `tests/fuzz/fuzz.py`'s
+  `K41_OVERSIZE_BYTES = 1_000_000`, on exactly this quantity (emitted `.c`
+  bytes, comment-included). The compiler now agrees with its own fuzz gate
+  instead of contradicting it;
+- it sits in a **measured gap**: the corpus's largest artifact is **675,586 B**
+  and the next measured artifact up is witness 2 at 1,261,939 B — a 1.87× gap,
+  with 1,000,000 at 1.48× the corpus max and 0.79× the witness;
+- it stays **below** `check_size_tripwire.sh`'s 1,400,000 B pin, so the
+  tripwire remains an independent backstop rather than sharing a constant with
+  the thing it checks (the check-design lesson: a control that shares a source
+  with what it controls stops being a control).
 
-Order:
+**What it refuses today, measured:**
+
+| artifact | raw bytes at the selected K | outcome |
+|---|---|---|
+| every one of the 2,487 corpus patterns | max 675,586 | **admitted** |
+| K41 witness 1 | K rule → K=1 → **116,371** | **admitted** (was 2,015,585) |
+| **K41 witness 2** | ladder's best is K=1 → **1,138,681** | **REFUSED** |
+| `a{1,25000}` / `a{1,31000}` | 1,116,303 / 1,380,303 | **REFUSED** |
+
+The last row is the intended reading of D84 Q4, not a side effect: those
+artifacts are cheap for gcc and too large to ship, and Frank ruled shipped size
+a concern in its own right. They are synthetic — no corpus pattern reaches
+them — and `--max-emit-bytes=N` is there for a caller who wants them anyway.
+
+### 4.4 Where the caps fire, and the ladder re-run (finding S5)
+
+The first version claimed the design "cannot ship an uncompilable artifact
+because step 1 has already taken the smallest K". **critic-sem refuted it**:
+when the materiality bar DECLINES, step 1 keeps `K_opt`, and the bar is in
+BYTES while the node cap is in NODES. Measured on witness 2 — K=1 is
+1,138,681 B / `N` = 105 against K=8's 1,261,939 B / `N` = 552, a byte ratio of
+**0.902** that declines the bar **despite an 81 % node reduction**. A shape
+with that ratio and `N(8) > 2,000` would be refused although a viable K exists.
+
+**The fix, and it applies to BOTH caps: a cap refuses only if NO K on the
+ladder is under it.**
 
 ```
-    1.  emit at K_opt                     -- happens anyway
-    2.  K selection (§3.3) if above the threshold  -- re-emission ladder
-    3.  code_bytes of the SELECTED emission
-    4.  if code_bytes > CAP  ->  ctx_fail, REFUSE
+    1.  emit at K_opt                                  (happens anyway)
+    2.  if realized bytes > THRESHOLD and no explicit --unroll:
+            ladder: dry-emit K in [8,6,4,3,2,1], take argmin N        (§3.1a)
+            keep it only if bytes(K_best) <= 0.75 * bytes(K_opt)      (the bar)
+    3.  let K_sel be the kept emission
+    4.  if N(K_sel) > node cap  OR  bytes(K_sel) > byte cap:
+            RE-RUN the ladder with the BAR BYPASSED
+            if some K has N <= node cap AND bytes <= byte cap  ->  take it
+            else                                               ->  REFUSE
+    5.  write the file
 ```
 
-- **The cap reads a realized count, never `B̂`.** §2.5 measured the model
-  under-predicting by up to 25 % at the tail; a refusal must not inherit that.
-  By step 3 the emission exists and the count is exact.
-- **K selection runs FIRST**, so the cap only ever sees what selection could
-  not reduce — which is what makes witness 1 compile and witness 2 refuse.
-- **An early refusal for the pathological case**: if the FIRST emission's
-  realized code bytes already exceed **2 × CAP**, the ladder is skipped and the
-  refusal is immediate. 2× is chosen because the largest K-descent saving
-  measured anywhere is 19.7× on witness 1 — so this shortcut can in principle
-  skip a pattern K would have rescued, and it is therefore set where no
-  measured artifact sits: no artifact in the corpus, the `jfit` grid or either
-  witness has code bytes between 836,621 and 1,718,700. **Stated as the
-  approximation it is**, not as a free optimisation.
-- **It cannot ship an uncompilable artifact**: the only outcomes at step 4 are
-  refuse and emit-the-smallest-K, and step 2 has already found that.
+- **The cap is applied at the ladder-chosen K, never a greedily-descended
+  one** — `N` is non-monotone in K too (§3.1a's table), so "descend until it
+  fits" would refuse patterns a lower K rescues.
+- **Step 4 can rescue a pattern step 2's bar declined.** That is deliberate:
+  the bar is a performance judgement, and a refusal outranks it.
+- **Nothing is emitted silently past either cap** (D84 addendum): the only
+  outcomes are a written artifact under both caps, or a refusal.
 
-### 4.4 The diagnostic
+### 4.5 The overrides (D84 ruling 1)
 
-Joining the family `emit_vm.c` already uses (`"pattern too large: …"`, two
-existing members, `ctx_fail(v->cx, 0, …)`):
+The caps are **NOT deniable** — `-fno-size-term` denies the K selection and
+never reaches either cap, because a safety refusal a flag turns off is not one.
+They **ARE overridable upward**:
 
-> `pattern too large: the emitted matcher would contain %lld bytes of code
-> (limit %d), which gcc cannot compile in reasonable time. A bounded repeat's
-> body is replicated and repetition counts MULTIPLY through nesting -- lower a
-> count, or reduce the nesting`
+| flag | option field | semantics |
+|---|---|---|
+| `--max-emit-nodes=N` | `pcrec_options.max_emit_nodes` | RAISE-ONLY; hard-ceilinged by `PCREC_MAX_VM_NODES` (131,072) |
+| `--max-emit-bytes=N` | `pcrec_options.max_emit_bytes` | RAISE-ONLY; no second ceiling — the artifact is the caller's to ship |
 
-**D26 tier:** pcrec's own wording; PCRE2 has no emitted C and therefore no
-analogous diagnostic, so there is nothing to match and no effort is spent
-trying. `docs/spec/limits.md` gains the constant and the refusal in the same
-change (D80).
+Both **effective values are STAMPED** as selection facts (D81, §7.1): a reader
+of any artifact can see which caps it was built under. A value below the
+default is refused as a malformed option rather than silently honoured — a
+lower cap is not a use case this row has a measurement for, and a
+raise-only flag cannot be used to make a refusal appear.
 
-### 4.5 The [SEL-1] interaction
+Rationale, from critic-sem and ruled by Frank: every other resource limit in
+pcrec has a per-compile override (`--step-budget`, `--work-budget`,
+`--backtrack-frames`; `limits.md` §3), this would be the first without one, its
+whole cost falls on the caller's own gcc on the caller's own box, and on the
+[SEL-1] fallback path "change the pattern" is not available to a caller whose
+pattern came from a config file.
+
+### 4.6 The diagnostic, and what a user sees BEFORE a 1.2 MB file appears
+
+D84's predictability half is discharged by **documentation and a loud
+refusal**, not by machinery. The refusal names the measured size, the cap, and
+the levers:
+
+> `pattern too large: the emitted matcher is 1,138,681 bytes (limit 1,000,000).
+> This artifact is 92% prefilter tables. Raise the limit with
+> --max-emit-bytes=N if that size is acceptable to you, or see
+> docs/spec/limits.md "Handling an oversized artifact".`
+
+and for the node cap:
+
+> `pattern too large: the emitted matcher would contain 2,447 nodes (limit
+> 2,000), which gcc cannot compile in reasonable time. A bounded repeat's body
+> is replicated and repetition counts MULTIPLY through nesting -- lower a
+> count, reduce the nesting, or raise the limit with --max-emit-nodes=N.`
+
+Both name **measured-vs-cap** and the lever that would pass. On the [SEL-1]
+fallback path the message additionally appends `RX_ENGINE_WHY`'s reason
+(§4.7), because otherwise it tells a user to lower a repeat count when the real
+story is a DFA overflow.
+
+**D26 tier:** pcrec's own wording; PCRE2 has no emitted C and so no analogous
+diagnostic — nothing to match, no effort spent.
+
+**`docs/spec/limits.md` gains a "Handling an oversized artifact" section**
+(a D80 hunk; [GUIDE-1] owes the use-case paragraph when it exists). Its text:
+
+> **Handling an oversized artifact.** pcrec refuses rather than emitting an
+> artifact past `PCREC_MAX_EMIT_BYTES` or `PCREC_MAX_VM_EMIT_NODES`. Nothing is
+> written when it refuses. Your options, in the order most callers want them:
+>
+> 1. **Raise the cap** — `--max-emit-bytes=N` or `--max-emit-nodes=N` if the
+>    size is acceptable to you. Both are raise-only; the node cap is ceilinged
+>    at `PCREC_MAX_VM_NODES`. The effective values are stamped on the artifact.
+> 2. **Let the size term choose `K`**, or force it: `--unroll=1` emits one body
+>    copy per counter-rung iteration and is the single largest size lever for a
+>    replication-dominated pattern (measured 17× on the fuzz gate's own
+>    witness). It costs 1–3 % throughput on single-level large counts.
+> 3. **Change the engine or the output** where the pattern admits it:
+>    `--engine=dfa` and `--no-captures` remove the VM body entirely;
+>    `--engine=vm` removes the hybrid prefilter, which is most of the size when
+>    the stamps say the artifact is table-dominated — at a large cost on
+>    non-matching subjects.
+> 4. **Split or rewrite the pattern.** Repetition counts MULTIPLY through
+>    nesting, so lowering one count inside a nest is worth more than lowering
+>    an outer one.
+> 5. **Read the stamps to see which term produced the bytes**: `RX_VM_RUNGS`
+>    and `RX_UNROLL_K`/`RX_UNROLL_K_WHY` for node replication,
+>    `RX_DFA_TABLE`/`RX_VM_PREFILTER` for the prefilter. A table-dominated
+>    artifact does not shrink with `--unroll`.
+
+`limits.md` §7's sentence that compile TIME is not a compiler-side contract is
+a **named spec hunk in this change** (finding S7): the node cap makes it one,
+in the units that predict it.
+
+### 4.7 The [SEL-1] interaction
 
 `auto` selects DFA → the DFA overflows `PCREC_MAX_DFA_STATES_TABLE` → [SEL-1]
-falls back to the VM → the VM's size trips the cap. **This is exactly K41's
-own story** (its entry: "[SEL-1] is what UNHID it rather than caused it"), and
-witness 1 is a live instance — its `RX_VM_PREFILTER` is `"none"` for precisely
-this reason.
+falls back to the VM → the VM's size trips a cap. **This is K41's own story**
+("[SEL-1] is what UNHID it rather than caused it"), and witness 1 is a live
+instance — its `RX_VM_PREFILTER` is `"none"` for exactly this reason.
 
-1. **The user must not be told the wrong story.** The diagnostic above names
-   repetition counts and nesting; after a DFA-overflow fallback the real story
-   is "this pattern needed a DFA, the DFA overflowed, and the VM fallback is
-   too large". So **when `RX_ENGINE_WHY`'s reason is a fallback, the cap's
-   diagnostic appends it.** Without that the message is actively misleading on
-   the path most likely to reach it.
-2. **The fallback cannot bypass the cap** — it is checked on the VM path
-   however that path was reached, and there is no third engine. The result is a
-   refusal, which is the correct outcome and is what D45's consequence 1 asks
-   for.
+1. **The user must not be told the wrong story.** When `RX_ENGINE_WHY`'s reason
+   is a fallback, the refusal appends it. Without that the message names
+   repetition counts on the path where the real cause is a DFA overflow.
+2. **The fallback cannot bypass either cap** — both are checked on the VM path
+   however it was reached, and there is no third engine. The result is a
+   refusal, which is what D45's consequence 1 and D84 both ask for.
 
-### 4.6 Three corrections carried from r40, recorded rather than absorbed
-
-- **F3 (unit).** The first version's "0.0009 µs per table entry" was a ms/µs
-  slip; the measured value is **0.905 µs/entry** (Δcpu 0.21 s over ΔE 232,000).
-  The 5,930× node-to-entry ratio it supported is unchanged — the slip was in
-  the printed unit, not in the ratio.
-- **F4 (population).** "DFA only … max 35.29 %" was the 4th-worst row; the
-  DFA maximum under the two-term model is **35.35 %** (`a\bb`), which is also
-  the global maximum. §2.4 now reports the four-term model's 33.65 %.
-- **F2 (residual range), and why the curve it belongs to is GONE.** The first
-  version quoted the gcc log-log fit's residuals as "−20 % … +18 %", omitting
-  the three mixed `alt` points that are in the fitted population; the true
-  range over those 20 points is **−43.3 % … +18.3 %**. That fit
-  (`gcc_cpu ≈ 0.00054 · N^1.269`) was the derivation of the NODE cap, and the
-  node cap is withdrawn — §4.2 derives the cap from a measured separation
-  between two populations instead of from an extrapolated curve, precisely
-  because a curve with a −43 % residual is not something a refusal should rest
-  on. The fit and its data stay in `artsize_impl/gccfit.tsv` as the evidence
-  for §4.1's per-unit costs, which is all they are now used for.
-
-### 4.7 What this does to K41's pinned bucket (panel item 4)
+### 4.8 What this does to K41's pinned bucket (findings S6 + F1)
 
 `tests/fuzz/fuzz.py` classifies "K41 oversize artifact" by emitted `.c` size
-alone (`K41_OVERSIZE_BYTES = 1_000_000`), and
-`tests/fuzz/run_capturediff_gate.sh` pins that bucket at **exactly 2** — the
-two witnesses. This design moves it to **0**, by two different routes:
+alone (`K41_OVERSIZE_BYTES = 1_000_000`) and
+`tests/fuzz/run_capturediff_gate.sh` pins that bucket at **exactly 2**.
 
-- **witness 1 leaves by shrinking**: the K rule takes it to 87,118 B, an order
-  of magnitude below the 1,000,000 B classifier;
-- **witness 2 leaves by refusing**: no artifact is emitted, so there is nothing
-  to classify.
+**critic-sem computed 2 → 1** — correctly, for the design as it then stood
+(no byte cap; witness 2 declined the bar and stayed). **With D84's byte cap the
+answer is 2 → 0**, and the two witnesses leave by different routes:
 
-K41's own text says a movement to 0 "means neither witness reaches its shape
-any more (K41 closed, or the generator/seed changed — **re-derive, do not
-silently widen**)". So the landing change owes, in the same commit: the bucket
-re-pinned to 0 with this note cited, the three counts K41 records as
-arithmetically coupled to it re-derived (both-accept 181, subject pairs 2,715,
-oracle-inconclusive 0 — witness 1 now re-enters the ordinary compare pipeline,
-witness 2 becomes a refusal), and **K41 itself closed or re-scoped**, since its
-stated fix direction ("a VM-side emitted-PROGRAM-SIZE cap in
-`src/core/limits.h`, refusing before emission") is what §4.3 builds.
+| witness | route | after |
+|---|---|---|
+| 1 | K rule selects K=1 | 116,371 B — an order of magnitude under the classifier, leaves the bucket, **re-enters the ordinary compare pipeline** |
+| 2 | ladder's best (K=1) is 1,138,681 B, still over the byte cap | **REFUSED** — no artifact to classify |
 
-**One honest wrinkle, flagged rather than buried:** §4.3 refuses *after* the
-selected emission, not "before emission" as K41's fix direction words it. The
-compiler still does its own work (0.04–3.4 s); what is never paid is gcc's
-(55–67 s). §2.2 explains why — there is no pre-emission node count to refuse
-on — and the early refusal at 2× CAP recovers the "before emission" property
-for the pathological case only.
+K41's own text says a move to 0 "means neither witness reaches its shape any
+more (K41 closed, or the generator/seed changed — **re-derive, do not silently
+widen**)". So the landing change owes, in the same commit:
+
+- the bucket re-pinned to **0**, with the reading above written into the pin's
+  EXPECT comment (it is not "K41 closed by disappearance" — one witness is
+  fixed and one is refused);
+- the three counts K41 records as arithmetically coupled re-derived —
+  **witness 1 now re-enters** the accept/compare population (both-accept
+  181 → 182, subject pairs 2,715 → 2,745 as its 30 pairs return), **witness 2
+  becomes a refusal** and is counted as one;
+- **K41 itself re-scoped, not simply closed**: witness 1 is fixed by this row;
+  witness 2 is refused, not fixed, and its mechanism — the VM hybrid's inlined
+  prefilter scaling with a bounded-repeat count — is **[OPT-4]/K39's** to
+  shrink. D84's revisit clause says witness 2 should pass under the default
+  byte cap once [OPT-4] lands, which is the trigger to re-check this pin.
 
 ---
 
@@ -800,27 +941,65 @@ not price that, and it is a cost, not a saving.
 
 ## 6. Identity
 
-### 6.1 The argument
+### 6.1 The argument, and the two places it is NARROWER than the first version claimed
 
-**Claim: for any K ≥ 1, the artifact's answer — span, capture slots, failure
-surface — is identical.**
+**Claim: for any K ≥ 1, the artifact's MATCH RESULTS — the span and the capture
+slots, on every subject, from every start position — are identical.**
 
-`K` is the counter rung's **chunking factor** and not a semantic choice. The
-rung compiles a bounded repeat to `ceil(n/K)` copies of the body plus an
-iteration counter whose arithmetic makes the realized iteration count exact
-for any K ≥ 1 (`emit_vm.c`, the counter rung; `docs/design/counterk_impl/
-counterk_design.md` §4.1). Varying K changes how many source-level copies the
-same loop is written as. It does not change:
+`K` is the counter rung's **chunking factor**. The rung compiles a bounded
+repeat to `ceil(n/K)` copies of the body plus an iteration counter whose
+arithmetic makes the realized iteration count exact for any K ≥ 1
+(`emit_vm.c`, the counter rung; `counterk_impl/counterk_design.md` §4.1).
+Varying K changes how many source-level copies the same loop is written as.
 
-- **which rung is selected** — rung selection runs before K is consulted, and
-  §3.1's stamps confirm it: the rung bits are identical across the ladder on
-  every subject measured;
-- **the choice points or their preference order** — one per body iteration
+**NARROWING 1 — the give-up and capacity surface is NOT invariant (finding
+S2).** The first version said "the step/work budgets charged — per iteration"
+and §0 said "every K is answer-identical". Both are refuted, measured on
+`((a)|ab){12}c` against `"ab"×12`:
+
+| K | 1 | 2 | 3 | 4 | 6 | 8 |
+|---|---|---|---|---|---|---|
+| minimum `--step-budget` that completes | 89 | 89 | 97 | 98 | 107 | 110 |
+| minimum `--backtrack-frames` | **39** | | | | | **28** |
+| `RX_TRAIL_FRAMES` in the emitted header | 62 | 56 | 54 | 53 | 52 | 51 |
+
+The rung is 0x10 at every K, so this is chunking, via the once-per-trip MRL
+guard (`:4245-4260`). Note the direction on frames: **descending K RAISES the
+frame requirement by 39 %**, so the size term can make a tuned caller's
+capacity verdict worse, not only better. And `RX_TRAIL_FRAMES` is a macro
+`match_api.md:1083` names as caller-read.
+
+**Answers under the DEFAULT budgets are identical** (checked). So the claim is
+exactly: *match results and captures are invariant; the give-up surface and the
+emitted capacities are not.* This is a caller-observable change and it gets a
+**D80 hunk in `limits.md`** recording that the size term may change a tuned
+caller's budget verdict.
+
+**NARROWING 2 — rung selection is NOT before K (finding S3).** The first
+version said "rung selection runs before K is consulted". False:
+`vm_counter_fits` (`:1034-1036`) reads `v->unroll_k`
+(`rmin >= K || (rmax - rmin) >= K`). Measured on `((a)|ab){3}c`: rung 0x10 at
+K=1,2,3 and **0x2 at K=4,8** (`RX_NSLOTS` 7→6, `RX_FAST_TRAIL` 17→13). It
+reaches the corpus: `^(?R){0,2}$` (`tests/recursion/d27/sr_depth.rxt:180`)
+flips 0x2↔0x10 between K=3 and K=2, with its `gu frames` answer holding at
+every K. §3.1's "identical at every K" subjects all had counts ≫ 8, which is
+why this lane saw no flip — a population artifact, not a property.
+
+So rung answer-identity under a changed K is **not** a consequence of "the rung
+was already chosen"; it is gated TODAY by `make test-axes`' `PCREC_NO_COUNTER`
+bit, which sweeps the corpus with the counter rung denied against the default
+build. That is the existing evidence, and §6.2's new K sweep extends it across
+the ladder.
+
+What K does NOT change, and these survive both narrowings:
+
+- **the choice points and their preference order** — one per body iteration
   either way;
-- **capture, trail or cut behaviour** — per iteration, not per chunk;
-- **the step/work budgets charged** — per iteration.
+- **capture, trail and cut behaviour** — per iteration, not per chunk;
+- **which quantifier is possessified, revdet'd or spliced** — those verdicts
+  read the AST, not K.
 
-### 6.2 The gate, and the GAP this row found
+### 6.2 The gate, the GAP this row found, and what the sweep must EXCLUDE
 
 **`make test-axes` does not cover `--unroll`.** `tests/axes/run_axes.sh`
 derives its axis registry mechanically from `lib/pcrec.h`:
@@ -829,51 +1008,50 @@ derives its axis registry mechanically from `lib/pcrec.h`:
     grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' lib/pcrec.h
 ```
 
-`--unroll=K` is a **value** axis (`pcrec_options.unroll_k`), not a deny/force
-bit, so it has never been swept. **The claim in §6.1 — that every K is
-answer-identical — is not proven by any gate today.** That is the check the
-row owes, and it was found by reading the script rather than trusting the
-brief's summary of it.
+`--unroll=K` is a **VALUE** axis (`pcrec_options.unroll_k`), not a deny/force
+bit, so it has never been swept. **The claim in §6.1 is not proven by any gate
+today** — found by reading the script rather than trusting a summary of it.
 
-Three controls, in the order they must land:
+Four controls, in the order they must land:
 
-1. **The K sweep (NEW, and the load-bearing one).** The corpus run at each
+1. **The K sweep (NEW, and the load-bearing one).** The corpus at each
    `K ∈ {1,2,3,4,6,8}`, answers compared case-by-case against the default
-   build. This proves §6.1 for the ladder the rule can actually choose from.
-   Without it the rule is selecting among values nobody has verified.
-2. **`-fno-size-term` (bit 17)** joins `make test-axes` **by construction** —
-   it is a `PCREC_NO_*` bit and the script's own `grep` finds it, sweeping the
-   whole `.rxt` corpus by answer against the default build.
+   build. **Its comparison is SPECIFIED, not discovered** (finding S2): it
+   compares under DEFAULT budgets, and it **excludes `budget` and `gu` cells by
+   construction** — because §6.1 measured those to be genuinely K-dependent, a
+   sweep that included them would fail on a TRUE property and the next person
+   would weaken the gate to make it green. The exclusion is written into the
+   check with §6.1's table as its citation, so it reads as a scoped claim and
+   not as an allowlist.
+2. **`-fno-size-term` (bit 17)** joins `make test-axes` by construction — it is
+   a `PCREC_NO_*` bit and the script's own `grep` finds it.
+3. **Zero cost where not selected (D82), proved as [OPT-K] §7.3 proved it, not
+   inferred**: at least four declined patterns spanning both engines, compiled
+   with this compiler and with one built from `main`, disassembled, requiring
+   **0 differing instructions**, with the source differing by exactly the
+   expected stamp and `abi` lines.
+4. **The control this row specifically owes.** For every pattern where the term
+   BINDS, the size-term build and an explicit `--unroll=<the K the ladder
+   chose>` build must be **byte-identical apart from the stamp lines**. This is
+   what proves the term only CHOOSES K and does nothing else — the check that
+   would catch a general mechanism degenerating into a special case.
+
 **AR3 — why the K sweep is a hand-written one-off, and what it waits for.**
-`--unroll` is a **VALUE** axis, not a `PCREC_(NO|FORCE)_*` predicate bit, and
-`src/parse/axes_dump.c` has no `kind=value` support — so the axis registry
-cannot describe it and `make test-axes` cannot derive it. [CHK-2] item (c),
-"test-axes-from-dump", is the row that would fix that, and it is **not built**.
-So: the K sweep ships NOW as a standalone check and is the gate; `--unroll` is
-registered as a value axis when [CHK-2] (c) is built, and **this row is that
-item's named trigger** (D77 — the measured need, recorded where the trigger
-fires rather than built ahead of it).
-
-3. **Zero cost where not selected (D82), proved as [OPT-K] §7.3 proved it,
-   not inferred**: at least four declined patterns spanning both engines,
-   compiled with this compiler and with one built from `main`, disassembled,
-   requiring **0 differing instructions**, with the source differing by exactly
-   the expected stamp and `abi` lines.
-
-**And one control this row specifically owes, from the census's own lesson.**
-For every pattern where the term BINDS, the size-term build and an explicit
-`--unroll=<the K the model chose>` build must be **byte-identical apart from
-the two stamp lines**. This is what proves the term only *chooses K* and does
-not quietly do anything else — the check that would catch a general mechanism
-degenerating into a special case.
+`--unroll` is a value axis and `src/parse/axes_dump.c` has no `kind=value`
+support, so the registry cannot describe it and `make test-axes` cannot derive
+it. [CHK-2] item (c), "test-axes-from-dump", is the row that would fix that and
+is **not built**. So the K sweep ships NOW as a standalone check and is the
+gate; `--unroll` is registered as a value axis when [CHK-2] (c) is built, and
+**this row is that item's named trigger** (D77).
 
 **What the controls do NOT prove: byte identity.** D81 makes selection stamps
 unconditional, so the `-fno-size-term` build differs from today's compiler by
-exactly the new stamp lines on every artifact. [OPT-K]'s r39 finding A1 was
-precisely a draft claiming byte identity that D81 made false; this note does
-not repeat it.
-
----
+exactly the new stamp lines **and the `abi` line** on **every artifact,
+DFA included** — `.abi = 9,` sits in the emitted BODY of every artifact
+(finding S8), so the bump moves every artifact by at least one byte. [OPT-K]'s
+r39 finding A1 was precisely a draft claiming byte identity that D81 made
+false; this note does not repeat it, and §8/§9 are written to agree with this
+paragraph rather than with the first version's "0 on DFA artifacts".
 
 ## 7. Stamps, flags, and the axis registry
 
@@ -881,26 +1059,44 @@ not repeat it.
 
 | stamp | value | on |
 |---|---|---|
-| `<PREFIX>_UNROLL_K` | the chosen K, an integer | **every VM artifact**, unconditionally |
-| `<PREFIX>_UNROLL_K_WHY` | `"default"` \| `"size-model"` \| `"option"` | **every VM artifact**, unconditionally |
+| `<PREFIX>_UNROLL_K` | the K this artifact was emitted at, an integer | **every VM artifact**, unconditionally |
+| `<PREFIX>_UNROLL_K_WHY` | see the five values below | **every VM artifact**, unconditionally |
+| `<PREFIX>_MAX_EMIT_NODES` | the EFFECTIVE node cap (default, or the `--max-emit-nodes=N` override) | **every VM artifact** |
+| `<PREFIX>_MAX_EMIT_BYTES` | the EFFECTIVE byte cap (default, or the `--max-emit-bytes=N` override) | **every artifact**, both engines — the byte cap is engine-independent |
 
-Unconditional is the point: D81 splits the D46 family so that a selection fact
-is stamped **whether or not it fired**, which is what makes the stamp readable
-as evidence rather than as a hint. `"default"` is a fact, not an absence.
+**`_UNROLL_K_WHY` has FIVE values, not three** (finding S9). The first
+version's `{default, size-model, option}` hid four reachable states behind
+`"default"`, so a check could not tell "the term never ran" from "it ran and
+declined" — which is exactly the distinction a structural check needs:
 
-VM artifacts only, matching `RX_VM_RUNGS` and `RX_VM_PREFILTER`: a DFA
-artifact has no counter rung, so there is no K to have selected. (D81's
-unconditional rule is about not conditioning a stamp on its own outcome, not
-about stamping VM facts on DFA artifacts.)
+| value | meaning |
+|---|---|
+| `option` | `--unroll=K` was given; the term did not run |
+| `denied` | `-fno-size-term`; the term was denied |
+| `default` | the term ran the threshold test and the artifact was BELOW it |
+| `size-model` | the ladder ran and its K was TAKEN |
+| `size-model-declined` | the ladder ran, and the materiality bar rejected its K |
 
-**Not stamped: the realized byte count.** An artifact cannot carry its own
-size — writing the number changes it. Recorded here because it is the obvious
-thing to ask for and the reason it is absent is not obvious.
+Unconditional is the point: D81 splits the D46 family so a selection fact is
+stamped **whether or not it fired**, which is what makes the stamp evidence
+rather than a hint.
 
-**`rx_info` mirror:** the chosen K is a compile-time selection fact with no
-run-time consumer — nothing in the match API's behaviour depends on it. It is
-NOT mirrored into `struct rx_info`. ([OPT-K]'s precedent stamps a sibling
-macro, not an `rx_info` field, for the same reason.)
+`_UNROLL_K` and `_UNROLL_K_WHY` are VM-only, matching `RX_VM_RUNGS` and
+`RX_VM_PREFILTER`: a DFA artifact has no counter rung, so there is no K to have
+selected. `_MAX_EMIT_BYTES` is on both engines because the byte cap applies to
+both.
+
+**Not stamped: the artifact's own size.** An artifact cannot carry its own byte
+count — writing the number changes it. (D84's addendum drops the
+`_EMIT_SIZE_PREDICTED` idea for the same reason it drops the model from the
+byte axis: the cap is exact and post-emission, so a predicted number on the
+artifact would be a second, weaker source for a fact the refusal already
+states exactly.)
+
+**`rx_info` mirror:** none. The chosen K and the effective caps are
+compile-time selection facts with no run-time consumer — nothing in the match
+API's behaviour depends on them. ([OPT-K]'s precedent stamps sibling macros,
+not `rx_info` fields, for the same reason.)
 
 ### 7.2 The deny flag
 
@@ -910,7 +1106,8 @@ tuning.md` gains a §2.15 in **§2.14**'s deny-only shape (`-fno-offset-skip`,
 bit 16 — the closest precedent, panel finding AR11), and §2's count moves
 from fourteen to fifteen.
 
-It denies **the K selection only**, never the cap (§10 Q2).
+It denies **the K selection only**, never either cap — D84 ruling 1, §4.5,
+where the raise-only overrides live.
 
 **The D80 spec hunks, complete** (panel findings AR1/AR2 — the first version's
 list was short by two):
@@ -936,11 +1133,11 @@ inverse of pinning a number and then making the code agree.
 
 | # | thing | this row's |
 |---|---|---|
-| 1 | stamp | `<PREFIX>_UNROLL_K` and `<PREFIX>_UNROLL_K_WHY` (§7.1) |
+| 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (five values), `_MAX_EMIT_NODES`, `_MAX_EMIT_BYTES` (§7.1) |
 | 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (bit 17), `docs/spec/tuning.md` §2.15 |
 | 3 | identity gate | `make test-axes` bit 17 by construction, **plus** the K sweep §6.2 owes |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
-| 4 | structural check | `tests/codegen/run_size_term.sh` — reads the ARTIFACT (the emitted body-copy count against the stamped K, and that the stamp's `_WHY` matches which path ran), never the stamp alone |
+| 4 | structural check | `tests/codegen/run_size_term.sh` — reads the ARTIFACT: the emitted body-copy count against the stamped K, `_WHY` against which path ran, and the two effective caps against the flags. **It must handle the NO-COUNTER-RUNG case** (finding S3): where `vm_counter_fits` declines, the copy count is `count` and K is inert, so a check that asserts `ceil(count/K)` unconditionally fails on a correct artifact |
 | 5 | sabotage row | `tests/mech/` — the ladder reduced to a greedy descent (must be caught by the non-monotone subject, §3.1); the materiality bar removed; the cap's comparison inverted |
 
 Sabotage row 1 is the one worth naming: a greedy descent passes every
@@ -983,9 +1180,19 @@ lines. D76 is explicit that emitted-scaffolding changes ARE a bump.
 sites 2 and 3.
 
 **Size estimate for the new scaffolding, before the fact** (r39 finding P3 —
-`abi` 7 overshot its own estimate sixfold): two `#define` lines, `_UNROLL_K`
-plus `_UNROLL_K_WHY`, **≈ 55 bytes** on every VM artifact and 0 on DFA
-artifacts. To be measured after and compared here.
+`abi` 7 overshot its own estimate sixfold), **corrected for finding S8**: the
+first version said "0 on DFA artifacts", which is wrong twice over. `.abi = 9,`
+sits in the emitted BODY of *every* artifact, DFA included, so the bump alone
+moves every artifact by ≥ 1 byte; and `_MAX_EMIT_BYTES` (§7.1) is stamped on
+both engines. The estimate is therefore:
+
+| artifact | added |
+|---|---|
+| VM | `_UNROLL_K` + `_UNROLL_K_WHY` + `_MAX_EMIT_NODES` + `_MAX_EMIT_BYTES` + the `abi` digit — **≈ 130 B** |
+| DFA | `_MAX_EMIT_BYTES` + the `abi` digit — **≈ 35 B** |
+
+To be measured after and compared here. §6.2 and §9 rows 3 and 5 are written to
+agree with this rather than with "byte-identical".
 
 ---
 
@@ -1003,14 +1210,16 @@ prediction with a tolerance, so a 5× real gain on a 20× prediction cannot pass
 | # | subject | predicted | tolerance |
 |---|---|---|---|
 | 1 | **K41 witness 1** | K=1 selected; 1,719,349 → 87,118 B, ≤ 30 KB `.o`, ≤ 1.1 s gcc (census: 28,104 B, 1.015 s) | must not exceed either |
-| 1b | **K41 witness 2** | K DECLINED (ratio 0.913); **REFUSED** by the cap at 836,621 code bytes | exact — it must refuse, and name the fallback reason (§4.5) |
+| 1b | **K41 witness 2** | bar declines (byte ratio 0.902); §4.4's ladder re-run finds no K under the byte cap (best is K=1 at 1,138,681 B); **REFUSED** | exact — it must refuse, name measured-vs-cap and the levers (§4.6) |
 | 2 | nested N=8 / N=6 / N=4 | K=1 selected; comment-excluded 288,314 → 60,902 B (−78.9 %), 225,862 → 60,902 (−73.0 %), 162,034 → 60,902 (−62.4 %); `.o` 75–79 % smaller (census §8) | ±5 % on the byte figures |
-| 3 | the four declining patterns above the threshold | K unchanged at 8; **`.o` byte-identical**; source differs by exactly the two stamp lines | exact |
+| 3 | the four declining patterns above the threshold | K unchanged at 8; **`.o` byte-identical**; source differs by exactly the new stamp lines AND the `abi` digit, on VM and DFA alike (§8, finding S8) | exact |
 | 4 | D82 zero cost | ≥ 4 declined patterns, both engines, **objdump 0 differing instructions** vs a `main`-built compiler | exact |
-| 5 | the corpus size log | regenerated on `main`; **exactly the 3 selecting patterns move**; every other row differs by exactly the stamp constant | exact |
-| 6 | the cap | 0 of 2,487 corpus patterns refused; largest corpus code count 57,439 against a 500,000 cap | exact |
-| 6b | **K41's fuzz-gate bucket** | 2 → **0**, re-pinned with the three coupled counts re-derived (§4.7) | exact |
+| 5 | the corpus size log | regenerated on `main`; **exactly the 3 selecting patterns move**, all downward; every other row differs by exactly the per-engine stamp+`abi` constant of §8 | exact |
+| 6 | the caps | 0 of 2,487 corpus patterns refused by EITHER cap, **re-measured across `--engine=vm` and every deny flag** (finding S11, §4.9); corpus max `N` 1,471 vs a 2,000 node cap, max raw bytes 675,586 vs a 1,000,000 byte cap | exact |
+| 6d | the overrides | `--max-emit-nodes=N` / `--max-emit-bytes=N` raise-only; a value below the default is refused as a malformed option; both effective values stamped | exact |
+| 6b | **K41's fuzz-gate bucket** | 2 → **0**, re-pinned with the reading in §4.8 and the coupled counts re-derived (witness 1 RE-ENTERS the compare population; witness 2 becomes a refusal) | exact |
 | 6c | the instrument | `measure.py`'s byte column agrees with `size_count.sh` on every pattern it is run against, both artifact forms | exact — the control §2.0 did without |
+| 8 | **the identity sweep's scope** | the K sweep is green with `budget`/`gu` cells EXCLUDED BY CONSTRUCTION and default budgets in force (§6.2 control 1); a run that includes them and passes means the exclusion was not wired | exact |
 | 7 | `abi` scaffolding | +55 B/VM artifact (§8's estimate) | measured and compared |
 
 **Answer identity**, before any of the above: §6.2's three controls plus the
@@ -1027,22 +1236,30 @@ under bit 17.
    in (0.38, 0.92) gives identical behaviour on today's corpus, so the corpus
    cannot choose within that range. 0.75 is a judgement inside a measured gap,
    not a measured number, and is stated as such.
-2. **The cap is not deniable** (§7.2). `-fno-size-term` denies the K
-   selection but not the refusal. This is a ruling — a safety refusal a flag
-   turns off is not one — with a real cost: a user who wants a 5-minute gcc
-   compile cannot have one, and their only recourse is to change the pattern.
-   Frank's call.
+2. **RULED — D84 ruling 1.** The caps are not deniable but ARE overridable
+   upward (`--max-emit-nodes=N`, `--max-emit-bytes=N`, raise-only, stamped);
+   §4.5 is written to that shape. The first version's cost objection is
+   answered by the override, not by the deny flag.
 3. **CLOSED by r40 AR10** — the threshold is 120,000, not 131,072; the
    collision was worse than the first version said
    (`PCREC_MAX_VM_REPLICATION_PRODUCT` is a literal alias of
    `PCREC_MAX_VM_NODES`), and the note's own costless fix was taken (§3.2).
-3b. **The cap's 500,000 sits in an EMPTY measured band** (§4.2): the highest
-   admitted artifact is 320 KB of code and the lowest refused is 837 KB, with
-   nothing measured between. So any value in roughly (330,000, 830,000) gives
-   identical behaviour on everything measured — 500,000 is centred in that
-   band, which is a judgement, not a measurement, and is stated as one. The
-   band is 2.6× wide; narrowing it needs an artifact nobody has written.
-4. **`a{1,25000}`-shaped artifacts are left alone** (1.10 MB comment-excluded, gcc 0.24 s).
+3b. **Both cap VALUES sit in measured gaps, which is a judgement inside a
+   measurement rather than a measurement.** The node cap's 2,000 comes from an
+   extrapolated budget crossing (~1,929 anchored, ~2,305 fitted) on a curve
+   whose residuals are −43.3 %…+18.3 %; the byte cap's 1,000,000 sits in the
+   1.87× gap between the corpus max (675,586) and witness 2 (1,261,939) and is
+   the number `fuzz.py` already uses. Anything in roughly (700,000, 1,100,000)
+   behaves identically on everything measured today.
+4. **RULED — D84 ruling 2 / Q4.** `a{1,25000}`-shaped artifacts are NO LONGER
+   left alone: shipped size is a concern in its own right, so the byte cap
+   refuses them (1.12 MB and 1.38 MB) even though gcc compiles them in under
+   half a second. **K41 witness 2 is the pinned counter-example** the ruling
+   names — 1.26 MB, 92 % prefilter, refused here and [OPT-4]/K39's to shrink.
+   The first version's framing of this population, retained because the
+   measurement behind it stands:
+
+4b. *(superseded framing)* **`a{1,25000}`-shaped artifacts** (1.10 MB comment-excluded, gcc 0.24 s).
    They are large for a user to ship and cheap for gcc to compile, so neither
    §3 nor §4 touches them: the K rule sees a K-insensitive `N` and the cap is
    not about bytes. If Frank's concern is the SHIPPED SIZE rather than the
@@ -1060,23 +1277,40 @@ under bit 17.
 
 ---
 
-## 11. What STEP 2's code phase builds
+## 11. What STEP 2's code phase builds, in cost order
 
-1. The realized-count instrumentation the selection and the cap both read
-   (§2.2): the emitter already knows which bytes it is writing into a table
-   literal, so `code_bytes` is an accumulator, not an analysis. The model of
-   §2.3 ships only as the early-refusal shortcut (§4.3) and as this note's
-   cost function; integer arithmetic, nothing rounding to zero at any corpus
-   magnitude (r39 S-D5).
-2. The K selection (§3.3) as a RE-EMISSION ladder at the one site that
-   resolves `v.unroll_k` (`emit_vm.c:7461`) — no counting walk, no second
-   traversal to keep in sync with the emitter.
-3. The code-byte cap (§4.3) and its diagnostic (§4.4), plus
-   `docs/spec/limits.md`.
-4. The two stamps (§7.1), the deny flag (§7.2), the registry re-pin (§7.3).
-5. The `abi` bump, four sites (§8).
-6. The checks: structural, sabotage, the K sweep, the byte-identity control
-   (§6.2, §7.4).
+**The largest piece is the plumbing, not the policy** (finding S1). The rule
+itself is a loop; making the emitter runnable more than once into a
+caller-chosen buffer is the work.
+
+1. **The dry-emission seam (§2.2) — the biggest item.** `pcrec_emit_vm` must be
+   callable repeatedly from `src/core/compile.c:426` into a scratch buffer,
+   with a fresh `Vm` per call and a trial `ctx_fail` caught and discarded
+   rather than propagated. That is a refactor of the emitter's output plumbing
+   and its failure path; everything else in this list depends on it. It is
+   NOT a new analysis, and deliberately so — a counting pre-pass would have to
+   mirror `vm_counter_fits`' K-dependence (S3), possessification, revdet,
+   splice and the MRL guard, with nothing keeping it in sync.
+2. **The K selection (§3.3)** at that call site: the ladder, `argmin N`, the
+   threshold gate and the materiality bar. Small, once (1) exists.
+3. **The two caps (§4)**: the node cap on the ladder-chosen `N`, the byte cap
+   as an exact post-emission check before the file is written, and §4.4's
+   ladder re-run with the bar bypassed — which is the part a reviewer should
+   read first, because it is what makes "cannot ship past a cap" true.
+4. **The overrides (§4.5)**: two `pcrec_options` fields, two CLI flags,
+   raise-only validation, the `PCREC_MAX_VM_NODES` ceiling on the node one.
+5. **The four stamps (§7.1)** including `_UNROLL_K_WHY`'s five states.
+6. **The deny flag (§7.2)**, bit 17, and the registry re-pin (§7.3).
+7. **The `abi` bump, four sites (§8).**
+8. **The checks (§6.2, §7.4)**: the K sweep with its specified exclusions, the
+   structural check including the no-counter-rung case, the sabotage rows, the
+   byte-identity-against-explicit-`--unroll` control.
+9. **The spec hunks (§7.2's table)**: `tuning.md` §2.15, `cli.md:218-224`,
+   `match_api.md` §6.3 and §6, `limits.md`'s constants, its §7 sentence
+   (finding S7) and its "Handling an oversized artifact" section (§4.6).
+10. **The K41 and fuzz-gate hunks (§4.8)**, re-derived, not widened.
 
 It does **not** build any of census §7's three levers (§5), per-quantifier K
-(§5.4, [ENG-CLAMP]'s), or any table-form change (§10 Q4).
+(§5.4, [ENG-CLAMP]'s), any prefilter-shrinking change ([OPT-4]/K39's — this
+row prices and refuses, it does not shrink), or any model on the byte axis
+(D84's addendum removed it).
