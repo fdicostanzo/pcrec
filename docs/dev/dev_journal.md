@@ -17480,3 +17480,53 @@ built: 1.031× / 0.482× / 363,305×). artsize3 released at 05:43 with the
 delivery sequence (full test → S191/S192/S193 canonical → full
 ksweep census → strict → size log if needed). The abi-10 pin goes to
 the bench as I-16.
+
+#### Forty-fourth session, part 7 — artsize3's delivery sequence: the ksweep census (18 interior optima), the five default-budget match→give-up flips and the capability-preserving constraint, the bench acceptance survey (nothing moves), I-16 sent (2026-08-29 ~07:4x EDT)
+
+I-16 to the bench (bb1f0ac in pcrec-bench, single-file `[inbox]`
+commit): pin 808740c / abi 10, the match-regime ledger (1.031× /
+0.482× / O(1) failing probes), what moved for the adapter (`RX_DFA_MATCH`,
+`rx_info.match_form`, bit 17, the 4,096 ceiling, `_search` untouched),
+the abi-11 heads-up (the two size caps as failsafes, the K ladder), three
+asks. ARTSIZE3's delivery sequence, once the box cleared at 05:43 —
+with a process finding first: the harness does NOT re-wake a lane when
+its background task completes; twice the sequence stalled until a
+manager ping (05:59 → 06:14, 06:14 → 06:33), so the remaining short
+stages ran FOREGROUND under gnutimeout (only the ksweep census
+backgrounded, pinged by the manager on its trailer) — the async rule's
+premise (a background task re-invokes the agent) held for the
+manager's own detached runs but not for this lane. The delivery: full
+test 27/27, 1,743 checks / 0, only the counterk load cell red (solo
+1,634/0), one resource K7 cell INCONCLUSIVE under the load guard;
+S191/S192/S193 canonical, all DETECTED — S191's red shows the greedy
+scan landing on K=4, the non-monotone curve appearing INSIDE the
+sabotage; S192's red is the only place in the tree where the
+materiality bar is observed declining; S193 flips all six resource §1b
+cells in both directions; strict clean; the quiet size log's diff
+unchanged (three values); THE BENCH ACCEPTANCE SURVEY (read-only, 18
+patterns × the bench's three pinned flag sets = 54 emits): 54 accept,
+0 refusals, 0 K movements, largest artifact 76,304 B, `level-context`
+22,905 B — nothing moves at abi 11 (I-17 will say so). THE KSWEEP
+CENSUS over the full corpus (22,114 cases × K ∈ {1,2,3,4,6,8}):
+answer-identical at every K; **18 patterns with an interior argmin,
+all K=2** (`((a{1,2}){1,2}){1,2}`, `((?:a{0,2}b)+c)`, `((ab)+c)+`, …) —
+§3.3's question answered YES by a census, after the "15/15 endpoints"
+claim on hand-picked subjects and a withdrawn [8,1] ladder; and the
+gate FAILED on FIVE BUDGET-BOUND cells under `--unroll=1`
+(tests/recursion/framebuffer.rxt:33/79/86, d27/sr_depth.rxt:28/30): a
+MATCH at default K (`match 0 684`) becomes a FRAMES GIVE-UP — r40 S2's
+contract change on the DEFAULT-budget surface, not a tuned caller's.
+The term never chooses K=1 on those today (far below the code
+threshold), but it CAN on any counter-rung pattern above it, and a
+compiler-chosen K that turns a match into a give-up is an answer change
+no flag asked for — outside "fail and document". RULED (manager): K
+selection must not lower the artifact's DECLARED capacity below the
+default-K artifact's (rx_info's compile-time frame facts); a K that
+would is not a candidate; the term declines when every smaller K
+would; the ksweep gate asserts ZERO default-budget flips on the subset
+where the TERM chose K < 8 (explicit-override flips stay printed as
+the excluded population — the caller's own choice); limits.md and the
+note's S2 narrowing say so with the five cells as witness. The lane's
+post-constraint full test found two of its own reds (a K37 unbounded
+compiler invocation in a new script; a stale sabotage anchor moved by
+the compile.c edit) — being fixed; delivery follows.
