@@ -40,7 +40,16 @@ SAB_HARNESS_TARGET="tests/lookaround/prefilter.rxt"
 SAB_DESC="v.mrl_win keeps the atomic conjunct but loses the lookaround one, so a lookaround-bearing CLAMPING artifact prunes to the window end of its lookaround-ERASED prefilter. Silent match loss in the DEFAULT engine on §5.5's 16 qualifying shapes -- '((?:a(?!q)|aq)(?:xy){0,4}q)' on \"aqq\" is (0,3) while the erasure anchored there ends at 2"
 SAB_DOC_FIGURE="MEASURED (single-row run at 8720029+waveE, tree b08a601): DETECTED -- harness corpus 31fail/22pass on tests/lookaround/prefilter.rxt, lookaround arm 0fail/5pass. THE LOOKAROUND ARM IS BLIND TO THIS ROW AND THE REASON IS ITS SUBJECT SET, not the sabotage: the arm sweeps its pcre2-only patterns over a SHARED 19-subject list drawn from the corpus's own alphabet, and not one of those subjects contains a \`q\`, so the hazard the (?*! block carries is never reached. The .rxt file is this row's detector and the arm is not -- recorded so nobody later reads the assignment as coverage. [M6.6-LOOKAROUND rule 1] in tests/codegen would also fire; codegen is NOT assigned here because design 9.3 puts this row on the behavioural pair and S141 is the codegen row."
 SAB_COUNT=1
+# [OPT-4] 2026-08-29: ANCHOR RE-DERIVED FROM THE LIVE SOURCE. `v.mrl_win`
+# gained a THIRD conjunct (`!job->fit.prefilter_collapsed`, K39) when the
+# count-collapsed prefilter landed, and this row's anchor was not re-derived at
+# the time, so `[SABANCHOR]` went red. The sabotage is UNCHANGED in meaning:
+# it still deletes the LOOKAROUND conjunct and only that one, so the collapsed
+# conjunct is carried through to SAB_AFTER rather than quietly dropped —
+# deleting two conjuncts would be a different, easier-to-detect row.
 SAB_BEFORE='    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
-                                   && !pcrec_has_lookaround(root);'
+                                   && !pcrec_has_lookaround(root)
+                                   && !job->fit.prefilter_collapsed;'
 SAB_AFTER='    /* SABOTAGE S140: the lookaround conjunct deleted (design §5.6(2)) */
-    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root);'
+    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
+                                   && !job->fit.prefilter_collapsed;'

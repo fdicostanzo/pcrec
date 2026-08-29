@@ -416,8 +416,10 @@ KEEP="${KEEP:-0}"
 # per-quantifier clamp reads `window_end` as a PARAMETER. So the number moves
 # and the emitted PROGRAM does not; measured at 116 identical region lines on
 # `((a)|b){0,4000}c`, and this gate is what says so corpus-wide. (B) moves
-# because every VM hybrid gains a `<PREFIX>_VM_PREFILTER_LANG` line and the
-# artifacts over the knee gain a smaller inlined prefilter. (No count is given
+# because every VM hybrid gains a `<PREFIX>_VM_PREFILTER_LANG` line, its
+# `<PREFIX>_VM_PREFILTER_LANG_WHY` companion (D81; added at `d4d439e`, which is
+# why the pin moved off `2ed6402`), and, on the artifacts over the knee, a
+# smaller inlined prefilter. (No count is given
 # here on purpose: how many artifacts collapse is a property of the POPULATION
 # being swept, and this gate's corpus is not the size log's 1,388 hybrids nor
 # `run_prefilter_collapse.sh` §5's 2,772 `pattern` lines. Each check floors its
@@ -430,7 +432,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2ed6402}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-d4d439e}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
