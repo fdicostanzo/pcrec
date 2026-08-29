@@ -272,6 +272,56 @@ prefilter_disabled`), so it is a **SEPARABLE SECOND COMMIT** built only after
 the size fix is green, and only if the manager wants it: it is a speed change
 on one bench row, not part of K39.
 
+**BUILT, STEP 3's second commit, and MEASURED.** The rung is one more attempt
+in the SAME retry loop around the SAME single `setjmp` — `dfa_disabled +
+prefilter_collapse_retry` first, then today's `dfa_disabled` alone if the
+COLLAPSED machine overflows too. Each rung is offered at most once, so the
+fallback is bounded at two extra builds however many caps a pattern overflows,
+and `-fno-prefilter-collapse` skips the new rung entirely (a caller who denied
+the axis is not given it by the back door — verified: the witness still stamps
+`RX_VM_PREFILTER "none"` under the flag).
+
+`level-context` before and after, `--features all`, find-all over the bench's
+own throughput subjects, match counts identical in every cell:
+
+| subject | before (no prefilter) | after (collapsed hybrid) | |
+|---|---|---|---|
+| `t-1024k-hit` | 10.75 ns/B | **4.56** | 2.36x |
+| `t-1024k-fail` | 11.13 | **3.30** | 3.37x |
+| `t-1024k-syslog` | 9.76 | **3.87** | 2.52x |
+| `t-256k-hit` | 15.90 | **6.69** | 2.38x |
+
+Confirmed against this box's noise by five interleaved rounds on
+`t-1024k-fail`: after 2.80-4.49, before 9.82-11.40 — the bands do not overlap
+(§8's warning about three-iteration readings applies, and this is what
+clearing it looks like).
+
+**THE COST IS SIZE, and it is the opposite sign to the rest of this row.**
+`level-context`'s artifact goes from 22,907 to 69,360 code bytes in the split
+`.c`+`.h` form (`artifact_size_term.md` §4.3a records the 22,905 that number
+continues), or 29,217 to 75,670 in the self-contained `-o -` form the bench
+probe measures — same event, two conventions, and the note gives both because
+the two documents quote different ones. It is a 3.0x artifact for a 2.4-3.4x
+throughput win, and the ONLY place in [OPT-4] where an artifact grows.
+Recorded plainly rather than netted against the corpus's -1,874,322: they are
+different trades on different patterns.
+
+**COMPILE TIME DOES NOT MOVE**, which is the part the cost bound's arithmetic
+would not tell you: 0.512 s against 0.509 s per compile (mean of five). The
+bound goes from one refused DFA build to two, but the second build is the
+COLLAPSED machine — 462 NFA states determinizing to 319 — next to an exact
+build that overflowed at more than 32,000. The extra rung is free on the case
+it exists for.
+
+**The stamps say which rung won.** `RX_ENGINE_WHY` still reads
+`"dfa overflowed: >32000 states at pattern offset 0"` — the engine choice's
+reason is unchanged — beside `RX_VM_PREFILTER "hybrid"`,
+`RX_VM_PREFILTER_LANG "count-collapsed"` and a `_LANG_WHY` of
+`"dfa overflow retry, exact nfa 462"`, which is its own value precisely so a
+reader can tell an artifact that GAINED a prefilter from one that merely
+shrank. `run_prefilter_collapse.sh` §6 asserts all three, with the deny flag's
+`"none"` as its non-vacuity control.
+
 **The [ART-SIZE] ladder (D84).** Independent by construction, and the reason is
 one sentence: the ladder chooses `K` for the VM's counter-rung body
 replication, and this changes only the DFA the prefilter is built from. They
@@ -347,7 +397,7 @@ credit this row with other rows' bytes.
 | K41 witness 2 refused -> ~158,601 code B under default caps | **152,302, ACCEPTED**; gcc -O2 2.04 s (was 66.92 s) | held, within 4 % |
 | corpus ~2,000,000 B off, all from 23 patterns | **-1,874,322 B** over exactly those 23 | held, within 6.3 % |
 | the rest byte-identical | **60-artifact control sample: 0 changed, delta 0** | held |
-| bench: stamps byte-identical | **54 of 54 emits byte-identical over 18 patterns** | held |
+| bench: stamps byte-identical | **54 of 54 emits byte-identical over 18 patterns** at the size fix; **52 of 54 after the [SEL-1] rung**, the two being `level-context` under the two flag sets that give it a prefilter | held, then deliberately broken by §6's own commit |
 
 **THE FULL SIZE-LOG FIGURE IS THE MERGE BATTERY'S TO CONFIRM.** The corpus
 number above is measured over the 23 over-budget artifacts plus a 60-artifact
@@ -363,9 +413,18 @@ pattern files across three pinned flag sets, not 14
 (`docs/design/artifact_size_term.md` §4.3a). Re-run over that population by
 `docs/design/opt4_impl/probes/bench_identity.sh`: **54 of 54 emits
 byte-identical**, none moved. `level-context` is among the identical ones and
-remains `RX_VM_PREFILTER "none"` after `dfa overflowed: >32000 states` — this
-row does not reach it, exactly as §6 says, and giving it a prefilter is the
-separable second commit's business.
+remains `RX_VM_PREFILTER "none"` after `dfa overflowed: >32000 states` — the
+SIZE fix does not reach it, exactly as §6 says.
+
+**AND THEN THE [SEL-1] RUNG MOVED IT, ON PURPOSE.** After STEP 3's second
+commit the same probe reads **52 of 54 byte-identical, 2 moved**, both of them
+`level-context` — under `--features all` and under
+`--features all --no-captures`, but NOT under `--features all --engine=vm`,
+where the prefilter is off by that flag's own side effect (R21 E-6) and there
+is nothing for the rung to do. That is the rung's entire intended footprint on
+the bench: one pattern, two flag sets, every other emit still identical to the
+byte. A probe reading 54 of 54 after the second commit would mean the rung had
+not fired.
 
 **TIMING ON THE BENCH'S OWN THROUGHPUT SUBJECTS, and a warning about reading
 it.** `tests/bench/fdriver.c` find-all over `t-a-valid-addrs`, `t-b-no-at` and

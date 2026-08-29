@@ -2034,6 +2034,16 @@ against the unchanged `ac4917d`. Demonstrated both directions again — see the
   collapsing everything — a budget of 0, a flipped comparison — which reads as
   "more optimisation!" rather than as the sharper filter being thrown away
   corpus-wide.
+  **§6 IS A DIFFERENT QUESTION FROM THE REST OF THE FILE** ([OPT-4]'s second
+  commit, the [SEL-1] rung). Every other cell compares two languages for ONE
+  artifact; §6 is about an artifact that did not previously EXIST. A pattern
+  whose DFA overflows a cap AS THE ENGINE used to fall to a VM artifact with
+  `RX_VM_PREFILTER "none"`, because rebuilding the prefilter would have been
+  the identical machine that just overflowed — true of the exact language,
+  false of the collapsed one. So the question is not "which language" but "a
+  prefilter at all", and the evidence is a different stamp plus the deny flag
+  returning the old outcome, which is the section's non-vacuity control: without
+  it the cells would pass on a compiler whose caps had simply been raised.
   **THE COUNTS IN THIS FILE ARE NOT THE DESIGN NOTE'S, and neither is wrong.**
   §5 sweeps every `pattern` line under `tests/` (`sort -u`, 2,772) and measures
   20 collapsed of 1,263 hybrids; `docs/design/prefilter_count_independence.md`

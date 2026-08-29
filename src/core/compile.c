@@ -356,7 +356,7 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * lower ladder rung plus one FINAL attempt that re-emits the chosen K.
  * DERIVED from the ladder rather than hand-typed, so adding a rung cannot
  * silently truncate the search. */
-enum { COMPILE_MAX_ATTEMPTS = 2 + SIZE_TERM_LADDER_N + 1 };
+enum { COMPILE_MAX_ATTEMPTS = 3 + SIZE_TERM_LADDER_N + 1 };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -502,6 +502,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * through. `overflow_why` needs no such mark; an array is never
      * register-allocated. */
     volatile bool dfa_disabled = false;
+    /* [OPT-4] the [SEL-1] ladder's middle rung (see `Ctx`'s field comment).
+     * `volatile` for the same `-Wclobbered` reason `dfa_disabled` is. */
+    volatile bool collapse_retry = false;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
@@ -584,6 +587,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * will not attempt (compile.c's build gate and select_engine.c's
          * prefilter derivation both skip it — see `forces_dfa_overflow`). */
         cx.dfa_disabled = dfa_disabled;
+        /* [OPT-4] the middle rung, seeded the same way and NEVER without
+         * `dfa_disabled` (the ladder below sets them together). */
+        cx.prefilter_collapse_retry = collapse_retry;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
@@ -695,13 +701,46 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 }
                 continue;
             }
-            bool retry = !dfa_disabled && cx.dfa_overflowed &&
-                         defo.engine == PCREC_ENGINE_AUTO &&
-                         !(defo.flags & PCREC_FORCE_PREFILTER);
-            if (retry) {
+            /* [SEL-1] + [OPT-4]: ONE retry ladder with TWO rungs, in the
+             * SAME attempt loop and around the SAME single `setjmp`. The
+             * eligibility test is shared — an auto-mode DFA overflow with no
+             * `-fprefilter` — and only what the next attempt is TOLD differs:
+             *
+             *   rung 1  dfa_disabled + prefilter_collapse_retry
+             *           the DFA stops being the ENGINE, but the prefilter
+             *           SURVIVES and is built from the count-collapsed
+             *           language. [OPT-4]: the premise that made rung 2 the
+             *           only option — "rebuilding it would be the identical
+             *           machine that just overflowed" — is false of that
+             *           language (design note §6).
+             *   rung 2  dfa_disabled alone
+             *           today's behaviour: no prefilter at all. Reached only
+             *           when the COLLAPSED machine overflows too, which is the
+             *           case rung 1 cannot help.
+             *
+             * `!dfa_disabled` on the first and `!collapse_retry` on the second
+             * are what make this a LADDER rather than a loop: each rung is
+             * offered at most once, so the whole fallback is bounded at two
+             * extra builds however many caps a pattern manages to overflow.
+             *
+             * Rung 1 is skipped outright when the axis is denied
+             * (`-fno-prefilter-collapse`), because taking it would build the
+             * collapsed machine for a caller who asked for exactly the
+             * opposite; such a caller falls straight to rung 2 and gets
+             * today's artifact. */
+            const bool ovf_eligible = cx.dfa_overflowed &&
+                                      defo.engine == PCREC_ENGINE_AUTO &&
+                                      !(defo.flags & PCREC_FORCE_PREFILTER);
+            const bool retry_collapse =
+                ovf_eligible && !dfa_disabled &&
+                !(defo.flags & PCREC_NO_PREFILTER_COLLAPSE);
+            const bool retry_drop =
+                ovf_eligible && !(dfa_disabled && !collapse_retry);
+            if (retry_collapse || retry_drop) {
                 memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
                 job_cleanup(&cx);
                 dfa_disabled = true;
+                collapse_retry = retry_collapse;
                 /* The refused build wrote its diagnostic into `err`; the
                  * retry is a fresh compile and must start with the same
                  * clean channel the first attempt had, or a successful
@@ -891,7 +930,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * determinization never runs on it. */
             const unsigned pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
-            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
+            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0
+                                || cx.prefilter_collapse_retry;
             const bool pfc_rep   = pcrec_has_collapsible_rep(root);
             const bool pfc_over  =
                 cx.job->nfa.n > PCREC_PREFILTER_EXACT_NFA_STATES;
@@ -947,7 +987,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * measurement never happened. */
             cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
             cx.job->fit.prefilter_lang_why =
-                  collapse              ? (pfc_over ? PFLW_OVER : PFLW_FORCED)
+                  collapse && cx.prefilter_collapse_retry ? PFLW_SEL1
+                : collapse              ? (pfc_over ? PFLW_OVER : PFLW_FORCED)
                 : !pfc_rep              ? PFLW_NO_REP
                 : (pfc_deny && pfc_over) ? PFLW_DENIED
                                         : PFLW_UNDER;

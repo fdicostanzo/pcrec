@@ -1289,6 +1289,16 @@ typedef struct {
      *   PFLW_FORCED   `-fprefilter-collapse` dropped the budget conjunct.
      *   PFLW_OVER     the measured exact NFA exceeded the budget. The default
      *                 reason for a collapse.
+     *   PFLW_SEL1     [SEL-1]'s retry took it: the DFA overflowed a cap as the
+     *                 ENGINE, and on the fallback compile the collapsed
+     *                 language is what stands between this pattern and no
+     *                 prefilter at all. DISTINCT from PFLW_OVER even though
+     *                 both collapse, and distinct from PFLW_FORCED even though
+     *                 both ignore the knee: this one says the artifact HAS a
+     *                 prefilter it would not have had before [OPT-4], which is
+     *                 the fact a reader of `RX_ENGINE_WHY "dfa overflowed"`
+     *                 needs in order to understand why the next line is not
+     *                 `RX_VM_PREFILTER "none"`.
      *
      * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed`, and that
      * is an INVARIANT a check can assert rather than a coincidence: both are
@@ -1313,7 +1323,8 @@ enum {
     PFLW_UNDER  = 2,
     /* everything from here collapses */
     PFLW_FORCED = 3,
-    PFLW_OVER   = 4
+    PFLW_OVER   = 4,
+    PFLW_SEL1   = 5
 };
 
 typedef struct {
@@ -1665,6 +1676,30 @@ struct Ctx {
      * forbids. See PCREC_DFA_OVERFLOW_WHY_LEN (limits.h) for the buffer's
      * sizing. */
     bool                 dfa_disabled;
+
+    /* [OPT-4] THE SECOND RUNG OF THE SAME RETRY, and the reason it is a
+     * separate bit rather than a widening of `dfa_disabled`.
+     *
+     * `dfa_disabled` means two things at once today: "the DFA may not be the
+     * ENGINE" and "do not build a prefilter DFA either". The second half rests
+     * on a premise `src/opt/select_engine.c` states in full — that rebuilding
+     * the prefilter would be the IDENTICAL construction that already
+     * overflowed, so it would cost a second refused build for nothing. With
+     * the count-collapsed language that premise stops holding: the collapsed
+     * machine is not that machine, it is a smaller one whose size is a
+     * function of the pattern's STRUCTURE alone. So the retry gains a rung
+     * BETWEEN "exact prefilter" and "no prefilter", and this bit is what
+     * distinguishes them.
+     *
+     * TRUE ONLY WHEN `dfa_disabled` IS TRUE. It is not an independent axis: it
+     * refines what the dfa-disabled retry does about the PREFILTER, and
+     * `compile_driver` sets both together. When set, the prefilter survives
+     * (`select_engine.c`'s silent-drop clause skips it) and
+     * `src/core/compile.c`'s build gate forces the collapsed language
+     * regardless of the knee — the knee is a SIZE heuristic and this rung is
+     * not about size, it is the last thing between this pattern and no
+     * prefilter at all. */
+    bool                 prefilter_collapse_retry;
     bool                 dfa_overflowed;
     char                 dfa_overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [DD-14 wave B+C] THE CALL GRAPH, or NULL for a call-free pattern.

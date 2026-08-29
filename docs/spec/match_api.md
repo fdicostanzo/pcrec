@@ -1891,7 +1891,11 @@ ONLY A CONSTRUCT.** Under `--engine=auto`, a DFA build that overflows a cap
 (state count, table entries, the K7 element budget — `docs/spec/tuning.md`
 §2.11) is a selection outcome rather than a refusal, and the artifact that
 falls back to the VM stamps that outcome the same way every other forcing
-reason is stamped: `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
+reason is stamped, and since [OPT-4] (2026-08-29) it can appear beside a
+`RX_VM_PREFILTER "hybrid"` rather than only beside `"none"` — the fallback's
+first rung rebuilds the prefilter from the count-collapsed language instead of
+dropping it, and `RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`
+is what says so (`tuning.md` §2.5, §2.17). `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
 offset 0"`. The offset is not tied to any one AST node (this reason is a
 property of the whole compile, not of a construct at a position) and reads
 0 by convention, the same position the underlying `ctx_fail` reports at. If

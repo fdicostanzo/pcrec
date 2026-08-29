@@ -8341,6 +8341,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                       job->fit.prefilter_nfa_states,
                       (int)PCREC_PREFILTER_EXACT_NFA_STATES);
             break;
+        case PFLW_SEL1:
+            /* The rung, not the knee. `RX_ENGINE_WHY` on this artifact reads
+             * "dfa overflowed: ..." and a reader would otherwise expect
+             * `RX_VM_PREFILTER "none"` beside it (that was the only outcome
+             * before [OPT-4]); this line is what explains the prefilter that
+             * is there instead. The measured NFA is carried too, because it is
+             * the EXACT machine's size and therefore the scale of what the
+             * collapse avoided. */
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"dfa overflow retry, exact nfa %u\"\n", v.up,
+                      job->fit.prefilter_nfa_states);
+            break;
         default:
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
                          " \"exact nfa %u <= %d\"\n", v.up,

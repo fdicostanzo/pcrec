@@ -261,7 +261,21 @@ requested, an auto-selected prefilter whose own DFA build OVERFLOWS a cap
 comes out `false` and the artifact stamps `RX_VM_PREFILTER "none"`, exactly
 as if `-fno-prefilter` had been passed, though `--emit-ir`'s `; prefilter`
 line does not claim that flag's credit (it reads the same `RX_ENGINE_WHY`
-overflow text §2.11 states, not `-fno-prefilter`). `-fprefilter` itself is
+overflow text §2.11 states, not `-fno-prefilter`).
+
+**[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**
+Before the prefilter is dropped, the fallback tries ONE more thing: building
+it from the count-collapsed language (§2.17). The ground for dropping it was
+that rebuilding would be the IDENTICAL machine that just overflowed — true of
+the pattern's own language, false of the collapsed superset, whose size is a
+function of the pattern's STRUCTURE alone. So an overflow witness can now come
+out `RX_VM_PREFILTER "hybrid"` with
+`RX_VM_PREFILTER_LANG "count-collapsed"` and
+`RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`, beside an
+`RX_ENGINE_WHY` that still names the overflow — which is what tells a reader
+which rung won. `RX_VM_PREFILTER "none"` remains the outcome when the
+COLLAPSED machine overflows too, and when `-fno-prefilter-collapse` is passed
+(a caller who denied the axis is not given it by the back door). `-fprefilter` itself is
 UNCHANGED — forcing the prefilter on a pattern whose DFA cannot be built
 still REFUSES with today's diagnostic (§2.11), because a caller who named
 the flag asked for the machine that overflows. See §2.11 for the mechanism
@@ -476,8 +490,16 @@ by this — both still refuse with today's diagnostic
 because a caller who named the engine explicitly asked for the machine that
 cannot be built, and that request stays do-or-die.
 
-**THE COST BOUND**: the fallback compile is at most ONE refused DFA build
-dearer than asking for `--engine=vm` directly. The overflowing build's own
+**THE COST BOUND** ([OPT-4], 2026-08-29: **at most TWO**, was one): the
+fallback compile is at most two refused DFA builds dearer than asking for
+`--engine=vm` directly, and the second is bounded by the first. The retry is
+now a two-rung ladder — build the prefilter from the count-collapsed language,
+and only if THAT overflows too, drop it (§2.5) — and the collapsed machine's
+NFA is strictly smaller than the exact one this compile already built, with a
+size that does not depend on any repeat count. A caller who passes
+`-fno-prefilter-collapse` skips the new rung entirely and keeps the original
+one-build bound. The sentence below describes the second rung, which is
+unchanged. The overflowing build's own
 cost is bounded by the K7 budget (`src/core/limits.h`'s `PCREC_MAX_SUBSET_
 ELEMS` entry: ~0.9 s / ~216 MB at the worst state-cap refusal measured
 there); `src/core/compile.c`'s retry never re-attempts that construction — it
@@ -950,6 +972,7 @@ condition as the line above:
 | `"exact nfa N <= B"` | the knee was consulted and the machine was within it, so the sharper language was kept |
 | `"no counted repeat"` | nothing to collapse: this pattern's collapsed language IS its exact one. The state `-fprefilter-collapse` is honoured but vacuous in |
 | `"denied, exact nfa N > B"` | `-fno-prefilter-collapse` kept the exact machine on a pattern that would have collapsed — so the reader is told both that the flag acted and, in `N`, what it cost |
+| `"dfa overflow retry, exact nfa N"` | [SEL-1]'s fallback took it (§4): this pattern's DFA overflowed a cap as the ENGINE, and on the retry the collapsed language is what stands between it and no prefilter at all. The BUDGET is not named because it was not consulted — this rung ignores the knee |
 
 **`"denied"` appears only where the denial CHANGED what was built.** A denied
 build below the knee, or of a pattern with nothing to collapse, stamps the

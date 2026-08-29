@@ -203,7 +203,7 @@ lang_witness() {  # lang_witness EXPECTED PATTERN
     why=$(stamp VM_PREFILTER_LANG_WHY "$a")
     dwhy=$(stamp VM_PREFILTER_LANG_WHY "$b")
     case "$want:$why" in
-      count-collapsed:"exact nfa "*" > "*|count-collapsed:forced) ok "[why] '$pat' stamps LANG \"count-collapsed\" with a collapsing reason: '$why'" ;;
+      count-collapsed:"exact nfa "*" > "*|count-collapsed:forced|count-collapsed:"dfa overflow retry, "*) ok "[why] '$pat' stamps LANG \"count-collapsed\" with a collapsing reason: '$why'" ;;
       exact:"exact nfa "*" <= "*|exact:"no counted repeat") ok "[why] '$pat' stamps LANG \"exact\" with a non-collapsing reason: '$why'" ;;
       *) bad "[why] '$pat' stamps LANG \"$want\" but LANG_WHY '$why' — the reason does not belong to the outcome, so the two lines disagree about the same decision" ;;
     esac
@@ -442,6 +442,9 @@ else
         # somewhere other than the build.
         case "$lang:$why" in
           count-collapsed:"exact nfa "*" > "*|count-collapsed:forced) : ;;
+          # [OPT-4]/[SEL-1] the DFA-overflow rung. A corpus pattern whose DFA
+          # overflows as the ENGINE reaches this and no other value.
+          count-collapsed:"dfa overflow retry, "*) : ;;
           exact:"exact nfa "*" <= "*|exact:"no counted repeat") : ;;
           *) n_why_bad=$((n_why_bad+1)); [ -z "$why_ex" ] && why_ex="$p ($lang / $why)" ;;
         esac
@@ -573,6 +576,62 @@ else
     else
         bad "[why] $n_budget_bad artifact(s) report a different budget from the first one seen (first: '$why_ex')"
     fi
+fi
+
+# ---------------------------------------------------------------------------
+# §6 THE [SEL-1] RUNG — a prefilter where there was none
+# ---------------------------------------------------------------------------
+# [OPT-4]'s second commit. Under `auto`, a pattern whose DFA overflows a cap AS
+# THE ENGINE used to fall to a VM artifact with `RX_VM_PREFILTER "none"`, on
+# the stated ground that rebuilding the prefilter would be the IDENTICAL
+# machine that just overflowed. That is true of the exact language and false of
+# the count-collapsed one, so `compile_driver`'s retry gains a middle rung.
+#
+# WHY THIS IS ITS OWN SECTION AND NOT A ROW IN §2. Every other cell in this
+# file compares two languages for ONE artifact. This one is about an artifact
+# that did not previously EXIST — the question is not "which language" but
+# "a prefilter at all" — and its evidence is a different stamp
+# (`RX_VM_PREFILTER`) plus the fact that the deny flag returns the old outcome.
+#
+# THE WITNESS is [SEL-1]/K40's own, the one docs/spec/tuning.md §4 pins the
+# fallback's behaviour on, so this section and that spec cannot drift.
+SEL1='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b'
+a="$WORK/sel1_auto.c"; b="$WORK/sel1_deny.c"
+if emit "$a" -- "$SEL1" && emit "$b" -fno-prefilter-collapse -- "$SEL1"; then
+    eng=$(stamp ENGINE "$a"); ewhy=$(stamp ENGINE_WHY "$a")
+    pf=$(stamp VM_PREFILTER "$a"); lang=$(stamp VM_PREFILTER_LANG "$a")
+    why=$(stamp VM_PREFILTER_LANG_WHY "$a")
+    pf_deny=$(stamp VM_PREFILTER "$b")
+    # (1) THE RUNG FIRED. The engine stamp must still report the overflow —
+    # that is what says WHICH rung won, and an artifact that had simply never
+    # overflowed would look identical without it.
+    case "$eng:$ewhy:$pf:$lang" in
+      vm:"dfa overflowed"*:hybrid:count-collapsed)
+        ok "[sel1] the overflow witness keeps a prefilter: RX_ENGINE_WHY '$ewhy' beside RX_VM_PREFILTER \"hybrid\" / \"count-collapsed\" — the rung ran and the artifact says so" ;;
+      vm:"dfa overflowed"*:none:*)
+        bad "[sel1] the overflow witness still stamps RX_VM_PREFILTER \"none\" — the collapse retry rung did not fire, or selection dropped the prefilter before it could" ;;
+      *)
+        bad "[sel1] the overflow witness stamps ENGINE '$eng' / WHY '$ewhy' / PREFILTER '$pf' / LANG '$lang' — this row has stopped testing the fallback it names" ;;
+    esac
+    # (2) THE REASON NAMES THE RUNG, not the knee. Both collapse, and a reader
+    # of "dfa overflowed" beside a hybrid needs to know which one explains it.
+    case "$why" in
+      "dfa overflow retry, "*)
+        ok "[sel1] RX_VM_PREFILTER_LANG_WHY names the rung rather than the budget: '$why'" ;;
+      *)
+        bad "[sel1] the overflow witness stamps LANG_WHY '$why'; the rung has its own value and the knee's must not stand in for it — a reader cannot otherwise tell an artifact that gained a prefilter from one that merely shrank" ;;
+    esac
+    # (3) THE DENY FLAG RETURNS THE OLD OUTCOME, which is this rung's control:
+    # without it, (1) would pass on a compiler that had stopped overflowing at
+    # all (a cap raised, the pattern lowered differently), and the section
+    # would be asserting something no fallback produces.
+    if [ "$pf_deny" = none ]; then
+        ok "[sel1] -fno-prefilter-collapse returns the pre-[OPT-4] outcome (RX_VM_PREFILTER \"none\") — so (1) is the rung acting, and the DFA really does still overflow here"
+    else
+        bad "[sel1] under -fno-prefilter-collapse the witness stamps RX_VM_PREFILTER '$pf_deny', expected 'none' — either the deny flag no longer reaches the rung, or this pattern's DFA no longer overflows and the whole section is vacuous"
+    fi
+else
+    bad "[sel1] the DFA-overflow witness does not compile — §6 has no subject"
 fi
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"

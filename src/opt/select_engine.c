@@ -773,8 +773,29 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * `PCREC_FORCE_PREFILTER` was NOT requested (force forms stay
          * do-or-die and never reach a retry at all), so `force_on` is
          * always false whenever `dfa_disabled` is true — this clause and
-         * `force_on`'s branch below are therefore never in tension. */
-        fit.prefilter = (has_bref || has_call || cx->dfa_disabled) ? false
+         * `force_on`'s branch below are therefore never in tension.
+         *
+         * [OPT-4] THE PREMISE ABOVE STOPPED BEING TRUE, AND THE EXCEPTION IS
+         * ONE CONJUNCT. "the IDENTICAL construction that already overflowed"
+         * is exactly right about the EXACT language and exactly wrong about
+         * the count-collapsed one (K39;
+         * docs/design/prefilter_count_independence.md §6): that machine's NFA
+         * is a function of the pattern's STRUCTURE alone, so it is not the
+         * machine that overflowed and rebuilding it is not the wasted second
+         * build this clause exists to prevent. `compile_driver` therefore
+         * tries ONE more rung before this one — `prefilter_collapse_retry`,
+         * set only together with `dfa_disabled` — and on that attempt the
+         * prefilter must SURVIVE selection to be built at all.
+         *
+         * The cost bound moves from one refused DFA build to at most two, and
+         * the second is bounded by the first: the collapsed NFA is strictly
+         * smaller than the exact one this compile already built, and its size
+         * does not depend on any count. `docs/spec/tuning.md` §4 states the
+         * new bound rather than leaving the old sentence to be read as still
+         * exact. */
+        fit.prefilter = (has_bref || has_call ||
+                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                        ? false
                        : force_on ? true
                        : force_off ? false
                        : (fit.chosen == ENGM_VM) &&

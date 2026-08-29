@@ -3158,7 +3158,15 @@ the same reason the backreference/call routes needed one ([M6.5.2]/[DD-14
 wave E]'s precedent): without it, a dropped auto-selected-prefilter's `;
 prefilter` line falsely named `--engine=vm`. Verified: the witness now
 compiles under `auto` (`RX_ENGINE "vm"`, `RX_ENGINE_WHY "dfa overflowed:
->32000 states..."`, `RX_VM_PREFILTER "none"`); `--engine=dfa` and
+>32000 states..."`, `RX_VM_PREFILTER "none"`
+— **`"none"` was true when this was written and is not any more: [OPT-4] STEP 3
+(2026-08-29) put a rung BEFORE the drop, so this same witness now stamps
+`RX_VM_PREFILTER "hybrid"` / `LANG "count-collapsed"` /
+`LANG_WHY "dfa overflow retry, exact nfa 462"` and runs 2.4-3.4x faster on the
+bench's throughput subjects. The rest of this entry is unaffected: the ENGINE
+fallback K40 describes is exactly what still happens, and the drop remains the
+outcome when the collapsed machine overflows too or when
+`-fno-prefilter-collapse` is passed. See docs/spec/tuning.md §2.5**); `--engine=dfa` and
 `--engine=vm -fprefilter` still refuse with the unchanged diagnostic;
 `tests/base/k18_cost_gates.rxt`'s fuzz-found witness (a DIFFERENT pattern
 that hits the same cap, with a live capture so the VM was already chosen
