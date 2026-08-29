@@ -17131,3 +17131,25 @@ corpus's exit kept and the tripwire's combined; `make test-size` stays
 standalone post-test; proven solo (corpus 0 failed, size-log rows
 2875, tripwire OK); the FINAL `make -k -j12 test` runs now for the
 26/26 trailer. Worktrees: none. Lanes: none.
+
+#### Forty-third session, part 8 — CLOSE: the final make test 26/26; [ART-SIZE.1b] CLOSED; no lanes, no worktrees, no cron (2026-08-28 ~22:0x EDT)
+
+`make -k -j12 test` on 4f0c634: sections ran 26/26 (the tripwire as
+test-corpus's tail: OK), checks failed 0 everywhere, rc 2 = the counterk
+load cell (29 cases; solo 1,634/0). Two properties for the record: under
+load the largest pattern times out and drops out of the size log (2,874
+rows / worst 465,750 B vs the quiet baseline 2,875 / 651,344 B) — the
+committed baseline is the quiet one, restored after the run; and `make
+test` regenerates a tracked file, so the tree is dirty after every run
+by design (commit after a quiet run or checkout). [ART-SIZE.1b] CLOSED
+and archived. State at close: main = this commit, abi 9, battery-proven
+(test/solo/mech/san/sweep on the union + this run); rows closed today:
+[OPT-K] [SEL-1] [CHK-2] [OPT-5] [ART-SIZE] STEP 1 [ART-SIZE.1b];
+opened: [ART-SIZE] STEP 2 (Frank's rulings in the row), [FREESTANDING]
+(boonies); measured: [OPT-2] STEP 2 → [ENG-ABS]'s gate met. Bench:
+I-14, I-15 sent. Lanes today: opt2m, sel1(+b), chk2p1, optk, three
+critics, artsize(+2), sizeratchet — all merged, all retired. wake.md
+rewritten. The day's yield in one line: a D6 panel found a miscompile
+before an emitter shipped, and the battery found eleven contract tests
+a fallback silently broke — neither visible to the lanes that wrote
+the code.
