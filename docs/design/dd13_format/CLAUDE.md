@@ -79,3 +79,4 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
 
 Maintenance: update this file when files are added/removed or change
 roles.
+- `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
