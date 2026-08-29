@@ -1859,58 +1859,68 @@ every composed pattern in §6.1 was **compiled by `build/pcrec` and run
 through `tests/harness/driver.c`** — the cells are measured, not
 asserted.
 
-### 6.0 A correction the position paper's §3a needs, and why it matters
+### 6.0 The PIECE RULE — five ways a definition can depend on its site
 
-**MEASURED: the position paper's §3a does not match.** Its library
-defines `email` as `^(?&local)@(?&domain)$` — *anchored* — and its user
-file writes `pattern From: (?&email)`. Composed:
+A library definition is a **piece**, and a piece can be written so that
+its meaning depends on where it is called. r44-sem enumerated the class
+and the first version had only one member of it. **There are five**, and
+they do not all have the same fix:
 
-```
-From: (?&email)(?(DEFINE)(?<email>^(?&local)@(?&domain)$)(?<local>…)(?<domain>…))
-  on "From: a@b.co"  ->  nomatch
-```
+| # | class | witness | fate |
+|---|---|---|---|
+| (i) | **absolute subject tests** — `^`, `$`, `\A`, `\z`, `\Z`, `\G` | the position paper's own §3a: `email` = `^(?&local)@(?&domain)$` called from `From: (?&email)` → **nomatch**. Controls: `x(?&e)…(?<e>a$)` on `"xa"` matches, `x(?&e)y…` on `"xay"` does not | **REFUSED at the [LIB] store by a scan** — a piece carries no subject anchor |
+| (ii) | **EDGE assertions reading the caller's text** — `\b`, `\B`, a lookbehind `(?<!…)` | `(?<e>\ba)` is nomatch on `xa` and match on `-a`: the callee reads the byte before the call site | **DOCUMENTED, not refused.** A piece may legitimately be edge-sensitive — "a word-boundary-anchored token" is a piece somebody means to write. The store records it; the caller sees it in the `description` |
+| (iii) | **match-span writers** — `\K` | `^x(?&g)$` with `g` = `a\Kb` on `xab` reports **(2,3)**: `\K` ESCAPES the callee and rewrites the CALLER's reported start | **REFUSED by the store scan.** A piece may not move its caller's span |
+| (iv) | **width-constrained CALL SITES** — a lookbehind caller | a definition legal everywhere else is a compile error from inside a lookbehind (libpcre2 err 125, "unbounded") | **A SITE RULE, not an authoring rule** — it is the caller's lookbehind that constrains, so it cannot be checked at the store; it is a refusal at the call site with the reason |
+| (v) | **absolute numeric references** — `\1`, `\g{1}`, `(?1)`, `(?(1)…)` | §2.3.3 M1: `(\d)\1` composed naively inverts | **DROPPED from the refusal list by D87.** Rule 7(i) RE-BASES them, measured to restore the piece's own meaning. The manager's recommendation to the panel was to refuse; Frank ruled the mechanism instead, and the rule is now that a piece's absolute references are LOCAL to the piece wherever it lands |
 
-**A subroutine call is not a wrapper: `^` and `$` inside a called body
-anchor to the SUBJECT, not to the call site.** Two controls:
+**So the [LIB] store's entry scan covers (i) and (iii) mechanically** —
+both are a lexical property of the definition's own text, checkable
+without knowing any caller. (ii) is documented rather than refused
+because refusing it would refuse patterns people mean. (iv) belongs to
+the call site. (v) needs nothing at all any more, and that is the
+clearest single consequence of D87 for [LIB]: the refusal list is
+**two** members long, not five, and the two that remain are the ones a
+piece has no business doing.
 
-```
-x(?&e)(?(DEFINE)(?<e>a$))   on "xa"   -> match 0 2
-x(?&e)y(?(DEFINE)(?<e>a$))  on "xay"  -> nomatch
-```
+**Whole-string matching is not what the anchors are for.** A caller who
+wants the whole subject writes their own `^…$`, or better uses the
+artifact's own anchored entry `<prefix>_match`
+(`docs/spec/match_api.md` §3.2), which exists precisely so a pattern
+need not be re-spelled to be matched whole.
 
-This is PCRE2's semantics, not a pcrec artefact, and it is the same fact
-`subroutines_design.md` §2.4 records for `(?R)`/`(?0)` ("'the whole
-pattern' INCLUDES the anchors"). **The design consequence is an
-authoring rule for [LIB], not a format mechanism:** a library definition
-is a **piece** and carries no subject anchors; whole-string matching is
-the caller's `^…$`, or better, the artifact's own anchored entry
-`<prefix>_match` (`docs/spec/match_api.md` §3.2), which exists precisely
-so a pattern need not be re-spelled to be matched whole. The format does
-not and cannot check this statically; what it does is make the failure
-loud in the ordinary way — the composing block's own `m` case goes red.
-
-§6.1 is the corrected file.
+**The format cannot check (i)-(iii) statically for an arbitrary
+pattern** — a `$` inside a callee is legal when the callee is the whole
+target — so what it does is make the failure loud in the ordinary way:
+the composing block's own `m` case goes red. The store scan is the
+place the rule becomes mechanical, and that is [LIB]'s to build.
 
 ### 6.1 A library and a user of it ([LIB], U4/U5, W1)
 
 `lib/rfc5322.rxt` — definitions are pieces, no anchors, no targets:
 
 ```
-# RFC 5322 address pieces. Definitions only; this file declares no targets.
-# Every definition is a PIECE: no subject anchors (§6.0).
+# Operational note: regenerate the tests with tools/gen_rfc5322.py.
+description |
+  RFC 5322 address pieces. Definitions only; this file declares no
+  targets, so `pcrec --source` on it emits nothing.
+  Every definition here is a PIECE: no subject anchors (§6.0 (i)).
 tag objective=subroutines
 
 pattern [A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*
 name local
+description The dot-atom local part, unquoted forms only.
 m "john.doe" 0 8
 n ".john"
 
 pattern (?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}
 name domain
+description A dotted host name with a 2+ letter TLD. No IP literals.
 m "example.com" 0 11
 
 pattern (?&local)@(?&domain)
 name email
+description An addr-spec: local part, @, domain. Unanchored.
 m "john.doe@example.com" 0 20
 n "john.doe@"
 ```
@@ -1920,31 +1930,39 @@ n "john.doe@"
 ```
 lib "lib/rfc5322.rxt"
 target mail = from_line
+  description The From:-line matcher the mail daemon links.
 
-pattern From: (?&email)
+pattern From: (?&from=email)
 name from_line
 m "From: a@b.co" 0 12
 ```
 
-**Hand-trace.** *`lib/rfc5322.rxt`*: head = one `tag`; body = three
-blocks. Blocks 1 and 2 have L = ∅, R = ∅, so EXPAND is the identity and
-they compile exactly as written. Block 3 has L = ∅ and
-R = {`local`, `domain`}; both resolve in this file; closure order is
-first-reference order — `local`, then `domain`; the emitted text is
-`(?&local)@(?&domain)` ++ the DEFINE block. R ≠ ∅ makes the block
-`oracle pcre2` (H4). No `target` line and more than one block, so
-**`pcrec --source lib/rfc5322.rxt` emits nothing** — a library ships
-nothing by itself (Frank §6.4).
+**Hand-trace.** *`lib/rfc5322.rxt`*: head = a `description` block scalar
+(three indented lines, ending at the non-indented `tag`) and one `tag`;
+body = three blocks, each with its own one-line `description`. Blocks 1
+and 2 declare no group and reference nothing, so composition binds
+nothing and they compile exactly as written. Block 3 references `local`
+and `domain`, both resolved in this file; the closure is those two, each
+bound with its groups re-based above `email`'s own `ngroups` (which is
+0). Being composed, the block's oracle is necessarily `pcre2` (H4). No
+`target` line and more than one block, so **`pcrec --source
+lib/rfc5322.rxt` emits nothing** — a library ships nothing by itself
+(Frank §6.4).
 
-*`mail.rxt`*: head = `lib` + `target`; body = one block. `target mail =
-from_line` forward-references a definition in the body — normal, the head
-precedes the body and resolution is a whole-file pass. The block has
-L = ∅, R = {`email`}; `email` is not defined in this file, so it resolves
-in the `lib` chain; its own text is then scanned in *rfc5322's* scope and
-adds `local`, `domain`. Closure order: `email`, `local`, `domain`.
+*`mail.rxt`*: head = `lib`, then `target` with an indented `description`
+attached to it (§1.2). `target mail = from_line` forward-references a
+definition in the body — normal: the head precedes the body and
+resolution is a whole-file pass. The block writes a **delivering call**,
+`(?&from=email)` (§1.5 B3), so the caller gets
+`struct { rx_span local, domain; } from;` and can read `r.from.domain`;
+an ordinary `(?&email)` would have been capture-transparent and free.
+`email` is not defined in this file, so it resolves in the `lib` chain;
+its own references are then resolved in *rfc5322's* scope — the caller
+could not satisfy them even by declaring `local` itself (§2.3.2).
 **The library's own five cases do not run here.** `pcrec --source
 mail.rxt -o mail.c` emits one artifact under prefix `mail`, with
-`rx_info.name == "from_line"`.
+`rx_info.name == "from_line"`, `ngroups` **0** (the primary declares no
+group of its own — D61) and the three delivered slots above it.
 
 **MEASURED — all six cells**, `build/pcrec -p rx --features all` +
 `driver.c`:
@@ -1958,9 +1976,15 @@ mail.rxt -o mail.c` emits one artifact under prefix `mail`, with
 | `from_line` m | `From: (?&email)(?(DEFINE)(?<email>…)(?<local>…)(?<domain>…))` | `From: a@b.co` | `match 0 12`, `RX_NCAPS 4` |
 | (a user's anchored form) | `^(?&email)$(?(DEFINE)…)` | `a@b.co` | `match 0 6`, `RX_NCAPS 4` |
 
-Note `RX_NCAPS` in the last two: 1 + three definition slots, all unset
-(§2.3). That is the observable cost of composition today, and §2.3 point
-3 states the constraint under which [DD-14.G]'s elision may reduce it.
+Two things to read off the last two rows. `RX_NCAPS` is 1 + three
+definition slots — but under D87/D61 those three sit **above `ngroups`**,
+which stays at the primary's own count, so the numbers a caller indexes
+by do not move (§2.3.1 rule (i)). And these cells are measured through
+the TEXTUAL control (`(?(DEFINE)…)` appended), which is legitimate here
+because this file is inside the control's valid population: no absolute
+numeric reference anywhere in it, and no name collision between caller
+and closure (§2.3.4). That is the control doing its job — agreeing with
+the composer on the population where both are defined.
 
 ### 6.2 A bench sub-bench as one file (U7/U8, W2+W3)
 
