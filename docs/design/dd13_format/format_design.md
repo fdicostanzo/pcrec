@@ -618,9 +618,9 @@ Frank's ruling 4: two scopes only (file-top, block); cascade only inside
   existing file opts into the second (MEASURED: `config` appears 0 times
   in the corpus).
 
-### 2.2 Names: four namespaces, and one rule for all of them
+### 2.2 Names: five namespaces, and one rule for all of them
 
-The format declares four kinds of name. Each is declared by exactly one
+The format declares five kinds of name. Each is declared by exactly one
 construct and referenced from exactly one kind of site, so a reference is
 never ambiguous about which namespace it is in:
 
@@ -640,8 +640,11 @@ rule 2) — and either can still be reached explicitly by its path. Two
 paths never merge, so a caller's `w` and a library's `w` coexist without
 either being renamed in the source the author wrote.
 
-**One rule governs all four: a duplicate declaration within the
-resolution scope is REFUSED BY NAME, never shadowed.** (Frank's §2 wave 1
+**One rule governs all five: a duplicate declaration within the
+resolution scope is REFUSED BY NAME, never shadowed** — with the single,
+ruled exception that a caller's own group OVERRIDES an injected
+definition rather than colliding with it (D87 rule 2, §2.3.2), because
+those are two different scopes and not one. (Frank's §2 wave 1
 ruling for definitions; extended to the other three because the reasons
 are the same and a parallel mechanism would be exactly what memory
 `pcrec-general-mechanisms-not-special-cases` forbids.) The resolution
@@ -964,7 +967,10 @@ had been written at that point.
   relative to the including file.
 - **What an included file may contain: pattern blocks and `include`
   lines. Nothing else.** No `lib`, `target`, `config`, `use`, `oracle`,
-  file-level `tag`, no data block. ARGUED from AR-4: a fragment that can
+  no file-level `tag` or `description`, no data block. A block-scoped
+  `tag` or `description` IS allowed, because it is a block line — which
+  is what lets a generator stamp each generated block with its own regime
+  and its own one-line summary (§4.5 item 4). ARGUED from AR-4: a fragment that can
   redefine file scope makes a block's meaning depend on which file
   spliced it, which is exactly the cross-file context a D27 author must
   not need. Nested `include` is allowed because a splice of a splice is
@@ -1131,6 +1137,19 @@ file-level or block-scoped, block wins.
 - **An absent oracle degrades to a labelled skip, never a silent pass and
   never a hard failure** (R-VG-3, the PC-3 discipline) — a stranger's
   clone without libpcre2 must still exit 0 with its skips named.
+- **`oracle` names the ENGINE, not the METHOD** (r44-consumers U3). The
+  verification METHOD — which R-BENCH-1 requires per case, and which
+  includes non-oracle methods such as the K23 region's
+  derived-law-plus-induction — is `tag method=<name>`, free-vocabulary
+  like every other tag. Folding the two would make a method with no
+  engine behind it unspellable and would put an engine enum where AR-6
+  requires engine-neutrality.
+- **A COMPOSED block's oracle is necessarily `pcre2`**, whether it says
+  so or not: python `re` has no subroutine call at all (CITED,
+  `subroutines_design.md` §10.1). And a composed block whose closure
+  falls outside the textual control's valid population (§2.3.4) has no
+  independent oracle at all — that is a counted, named skip and §7 Q7
+  is where its residual is argued.
 - **`oracle` never selects what pcrec compiles.** It selects what the
   expectation is checked against. The distinction matters for `variant`
   (§4.5): a testee's variant is checked against the *canonical*
@@ -1940,9 +1959,9 @@ files parse and never the meaning of the 179.
 
 ## 6. Worked files, in the final grammar
 
-Every example below parses under §1.3 by the hand-trace beside it, and
-every composed pattern in §6.1 was **compiled by `build/pcrec` and run
-through `tests/harness/driver.c`** — the cells are measured, not
+Every example below parses under §1.3 and §1.5 by the hand-trace beside
+it, and every composed pattern in §6.1 was **compiled by `build/pcrec`
+and run through `tests/harness/driver.c`** — the cells are measured, not
 asserted.
 
 ### 6.0 The PIECE RULE — five ways a definition can depend on its site
