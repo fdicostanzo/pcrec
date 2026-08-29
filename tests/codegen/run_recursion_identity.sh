@@ -421,13 +421,15 @@ KEEP="${KEEP:-0}"
 # why the pin moved off `2ed6402`), and, on the artifacts over the knee, a
 # smaller inlined prefilter.
 #
-# THE PIN MOVED AGAIN, to `fefcea1`, for [OPT-4] STEP 3's SECOND commit — the
-# [SEL-1] rung. That one changes no emitted TEXT for any artifact this gate
-# compares; it changes WHICH artifacts have a prefilter at all, on patterns
-# whose DFA overflows as the engine. The pin follows it because the rule one
-# paragraph down is "this change's last src-touching commit" and not "the last
-# commit that moved a byte here" — a pin derived from what a gate happens to
-# notice would need re-deriving every time someone checked whether it had. (No count is given
+# THE PIN MOVED AGAIN, to `6f8e9d3`, through [OPT-4] STEP 3's SECOND commit
+# (the [SEL-1] rung) and the follow-on that fixed the `--emit-ir` listing's
+# ceiling text. Neither changes the emitted TEXT of any artifact this gate
+# compares — the rung changes WHICH artifacts have a prefilter at all, on
+# patterns whose DFA overflows as the engine, and the listing is not emitted C.
+# The pin follows them anyway because the rule one paragraph down is "this
+# change's last src-touching commit" and not "the last commit that moved a byte
+# here": a pin derived from what a gate happens to notice would need
+# re-deriving every time someone checked whether it had. (No count is given
 # here on purpose: how many artifacts collapse is a property of the POPULATION
 # being swept, and this gate's corpus is not the size log's 1,388 hybrids nor
 # `run_prefilter_collapse.sh` §5's 2,772 `pattern` lines. Each check floors its
@@ -440,7 +442,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fefcea1}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6f8e9d3}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
