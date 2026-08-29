@@ -17191,3 +17191,76 @@ development and ONE full `make test` at delivery (the manager runs the
 union battery at merge; `battery_v2.sh` copied into this session's
 scratchpad `mgr/`); 10-minute stall-watchdog cron a5829291 up; Frank's
 keep-warm rule applies to artsize3 once it is held for the panel.
+
+#### Forty-fourth session, part 2 — the .rxt position paper; artsize3's note delivered and PANELED (r40: revision required); D84 (2026-08-28 ~23:2x EDT)
+
+THE .rxt FORMAT, on Frank's "use cases, then an outline, how it'd be
+used — I heard of a directory format but I'm not buying it": the
+manager's position paper docs/design/dd13_format/usecases_and_outline.md
+(6ea7f0f, then §6 follow-ups 8df684f / 8a2d242 / 90e2a05). Verdict:
+the flat file stays; ten line kinds in three demand-staged waves
+(`name`/`lib`/`(?&name)` composition; `include`/`@file:`/`mc`/`tag`
+sets; `config`/`variant`/`oracle` application); the DIRECTORY is a
+convention, the bench's sidecar is folded into `tag`/`variant`/`config`
+lines; two scopes only, cascade only inside `config … from`. Frank's
+same-evening refinements, all folded: `""` vs `<>` path spelling
+(local vs library path, the `-I` model); a target needs a NAME — first
+as `target [<prefix>]`, then §6.3 BOTH identities (the C prefix at
+link time, a new `rx_info.name` at runtime; an abi bump riding wave
+1), then §6.4 the cleaner cut: TARGETS ARE THEIR OWN FILE-LEVEL
+DECLARATIONS `target <prefix> = <name> [with <config>…]` — a pattern
+block carries no build marker; the same pattern under several configs
+(simd x86 / another cpu) is several target lines; a `lib`'d library's
+patterns are built under the USER's options; the lone-unnamed-block
+file is `target rx` by default. [LIB] blocks on this row ([DD-13b]).
+
+ARTSIZE3 DELIVERED the STEP 2 note (abb2a1f; 924 lines): a two-term
+size model (VM node count N, table entries E; median 2.4 % over 2,487
+artifacts), a K selection over N on a ladder (the size-vs-K curve is
+NON-MONOTONE), a NODE cap of 2,000 derived from D45 (a node costs gcc
+~5,930× a table entry — the witness at 55 s vs `a{1,31000}` at 0.34 s
+for 1.5× the bytes), all three census levers DECLINED on measurement
+(best 0.99 % median). r40 PANEL (three read-only critics; the reports
+came by MESSAGE — the harness refuses critics' file writes, and the
+final-report channel dropped every one of them, so each was asked to
+re-send; docs/dev/reviews/2026-08-28-r40-artsize-term.md, f4d5bf4):
+INSIDE the corpus every number reproduced to the digit; OUTSIDE it the
+design was wrong three independent ways, all before a line of emitter
+code — **F1** (critic-model, sonnet) the measurement instrument could
+not see the VM hybrid's `static const void *const rx_targets_N[11]`
+computed-goto jump tables nor its `rx_sN:` labels, so K41's SECOND
+fuzz-gate witness (1,214,333 B actual) was predicted at 118,240 B and
+NEITHER mechanism engages on a real, pinned oversize pattern — the
+hybrid form is in 1,262 of 2,487 corpus patterns, the corpus just
+never blows it up (the classifier's own regexes were the population
+nobody counted — check-design lesson, again); **S1** (critic-sem,
+opus) N does NOT exist before emission — `vm_count_slots` counts slots,
+`Vm.nodes` is charged during emission, the pre-pass mutates and can
+fail, and it runs 200 lines after the named site — so §11's code
+phase needs a node-counting pre-pass the note believed was free;
+**S2** K is NOT answer-identical on the give-up surface — measured
+minimum step budget 89→110 and `RX_TRAIL_FRAMES` 62→51 across K=1..8
+on `((a)|ab){12}c` (default-budget answers identical) — a D80
+contract change and a trap for the row's own new K-sweep gate; **S5**
+the materiality bar (bytes) can decline the descent that would have
+put a pattern under the cap (nodes) — the cap must re-run the ladder
+before refusing; **S4** the 15/15 ranking validation cannot fail (E is
+constant in K) — the ladder is argmin N, the model is load-bearing
+only for the threshold and the bar; **S6** the K41 bucket moves 2→1
+(w1 fixed by K=1, w2 declines); plus a ms/µs slip, an omitted residual
+range (−43 %), an un-archived fit script, two D80 hunks (cli.md's axis
+list, match_api §6.3's stamp bullet, limits.md §7's "compile time is
+not a contract"), `.abi` in every artifact's body, a stamp with four
+states behind one value, and the 131,072 threshold colliding with a
+constant that is ALSO aliased as PCREC_MAX_VM_REPLICATION_PRODUCT →
+120,000. Lane sent back with the full bar; holds the code phase.
+FRANK RULED Q2/Q4 → **D84** (07e695d): the cap is not deniable but
+OVERRIDABLE UPWARD (`--max-emit-nodes=N`, raise-only, ceilinged,
+stamped); and "a large byte count makes it unusable — also, the
+problem is unpredictable, which is worse" → shipped BYTES are their
+own concern: a SECOND, byte cap over the same model (`--max-emit-bytes`),
+predictability a stated requirement (refusal names predicted-vs-cap
+and the K/override that would pass; stamps; the size log), [OPT-4]
+owns shrinking witness 2's prefilter (K39). engabs: design note
+committed 22:2x, implementing since (emitter, structural check, form
+census, deny-flag diff); no report yet.
