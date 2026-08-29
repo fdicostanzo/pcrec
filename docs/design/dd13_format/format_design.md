@@ -344,6 +344,129 @@ D77 is honoured at the wave granularity, not the production granularity:
 each wave ships when its named consumer is real, and nothing in W2 or W3
 is built to be ready.
 
+### 1.5 The PATTERN-level extensions, and the one constraint they all obey
+
+D87 adds three things to the pattern language itself, not to the `.rxt`
+line grammar: a **numbered group**, a **scope prefix** on a subroutine
+call, and a **delivering-call declaration**. Frank ruled the semantics
+and left the spellings to the manager (r44, 14:5x). This section
+recommends one spelling each, names the alternatives, and gives the
+measurement that admits or rejects each candidate.
+
+**THE CONSTRAINT, and it is testable: no legal PCRE2 pattern may change
+meaning.** Every candidate is therefore checked by compiling it on
+libpcre2 10.46 — a candidate PCRE2 already accepts is disqualified, not
+merely disfavoured, because adopting it would silently re-interpret
+patterns that exist in the world.
+
+**MEASURED** (`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`,
+libpcre2 10.46; every row cross-checked on `build/pcrec --features all`,
+which agreed):
+
+| candidate | libpcre2 10.46 | verdict |
+|---|---|---|
+| `(?<3>a)` | refused — "subpattern name must start with a non-digit" | **free** |
+| `(?<name=3>a)` | refused — "syntax error in subpattern name" | **free** |
+| `(?3:a)` | refused — "missing closing parenthesis" | **free** |
+| `(?<3,name>a)` | refused | **free** |
+| `(?&^.w)` | refused — "subpattern name expected" | **free** |
+| `(?&caller.w)` | refused — "syntax error in subpattern name" | **free** |
+| `(?&from=email)` | refused — "syntax error in subpattern name" | **free** |
+| `(?&=email)` | refused — "subpattern name expected" | **free** |
+| `(?&&email)` | refused — "subpattern name expected" | **free** |
+| **`(?<from>&email)`** | **COMPILES — matches the literal `&email`** | **DISQUALIFIED** |
+
+The last row matters: `(?<from>&email)` was the leading shape for the
+delivering declaration, and it is an ordinary PCRE2 named group whose
+body is the two-character literal `&email`. On both oracles it matches
+the subject `&email` at (0,6). **Adopting it would change the meaning of
+a legal pattern**, which is the one thing the constraint forbids, so it
+is rejected on a measurement rather than on taste.
+
+#### B1 — the numbered group: **`(?<3>…)`, and `(?<name=3>…)` for both**
+
+RECOMMENDED. Names and numbers are two halves of one thing — a group's
+IDENTITY — so they belong in one bracket with one dispatch point, and the
+named-and-numbered form then falls out instead of needing a second
+syntax. A parser dispatches on the character after `(?<`: `=` or `!` is a
+lookbehind (unchanged), a digit is a number, a name character is a name
+followed by an optional `=<digits>`.
+
+- Alternative **`(?3:…)`** — closest to Frank's own shorthand `(3:abc)`,
+  and it reads as `(?:` with a number. Rejected only because it has no
+  natural named-and-numbered form, which would then need a third
+  spelling.
+- Alternative **`(?<3,name>…)`** — same bracket, comma separator.
+  Rejected because `=` reads as assignment and a comma reads as a list.
+
+#### B2 — the scope prefix: **`(?&^.name)`**, a PATH
+
+RECOMMENDED, with `^` as the reserved segment meaning "one scope up".
+D87 rule 3 asks for "a reserved scope word for the caller"; a WORD would
+occupy the name space and could collide with a call-site name, whereas
+**`^` is not a name character at all, so it can never collide**. It also
+makes the prefix a genuine path — `^.^.name` is two scopes up by
+construction, and downward paths are the delivering call's member names
+(`from.local`, §2.13), so one grammar serves both directions:
+
+```
+(?&name)          this scope's definition            (PCRE2's, unchanged)
+(?&^.name)        the CALLER's group `name`
+(?&from.local)    the delivered group `local` of the call site `from`
+```
+
+- Alternative **`(?&caller.name)`** — readable, and D87's own leading
+  shape. Rejected because `caller` is a legal call-site name, so a file
+  that names a delivering call `caller` would make the prefix ambiguous.
+- Only ONE level up has a named consumer today; `^.^.` is admitted by the
+  grammar rather than built for (D77).
+- The objection worth recording: `^` reads as an anchor everywhere else
+  in a pattern. It is unambiguous here (inside `(?&…)` there is no
+  anchor position) but a reader meets it in an unfamiliar role.
+
+#### B3 — the delivering call: **`(?&site=name)`, and `(?&=name)` for the default**
+
+RECOMMENDED. **One rule: an `=` in the call makes it delivering; the name
+to the left of it is the member, and an empty left side means the
+definition's own name.**
+
+```
+(?&email)          plain call, capture-transparent   (PCRE2's, unchanged)
+(?&=email)         delivering; member `email`
+(?&from=email)     delivering; member `from`
+```
+
+The assignment order (`member = source`) matches C, matches the path
+(`r.from.local`), and puts the site name where the struct member name
+goes. Both extended forms are refused by PCRE2 today (measured above).
+
+- Alternative **`(?<from>&email)`** — **DISQUALIFIED by measurement**: a
+  legal PCRE2 pattern today (above).
+- Alternative **`(?&&email)`** — free, and visually distinct, but it
+  needs a second form for the named case and "a reference to a
+  reference" means nothing.
+- The weak point, stated: `(?&=email)` reads slightly oddly for the
+  common case. The alternative — making the DEFAULT the bare `(?&email)`
+  and delivering implicit — was rejected because D87 rule 5 requires an
+  undeclared call to stay capture-transparent at zero cost, so delivery
+  must be something a site opts into visibly.
+
+#### The serialization: **`--emit-composed`**
+
+RECOMMENDED name, kept from D87's own placeholder. It writes the composed
+pattern with every group's number spelled explicitly in B1's form, and
+pcrec accepts what it writes (D87 rule 4, §2.3.4). Alternatives
+considered and not taken: `--emit-pattern` (says nothing about
+composition), `--emit-flat` (suggests inlining, which this is not — the
+call structure is preserved and only the numbers are made explicit).
+
+**Wave: all four are W1**, because composition is W1 and none of them is
+optional to it — B1 is what `--emit-composed` prints and what rule (c)'s
+collision error is about, B2 and B3 are how a definition reaches outside
+itself and how a caller reaches inside. B2's multi-level `^.^.` and B3's
+refusal cases are the parts with no consumer yet, and they are grammar,
+not machinery.
+
 ---
 
 ## 2. Semantics
@@ -973,6 +1096,107 @@ interval per participating text — and it is the difference between a
 composable format and one whose errors are unreadable. It is also the
 one piece of machinery the format layer owes that has no analogue in
 today's harness, and §3 lists it as such.
+
+### 2.13 The struct view: context naming IS struct naming (D87 rules 5, 6)
+
+**CITED, D87 rule 5.** With the feature that loads a match's results into
+a generated struct — one field per named group — **a scope prefix is a
+path and a struct is a path**, so the two are one mechanism seen from two
+sides. This subsection states the format's half; the feature's own row is
+**[V-I]** (plan.md:737, NAMED-RESULTS COPY HELPER — "an emitted
+`struct <prefix>_groups` with one span member per named group, plus a
+copier from the caps array"), which already cites D61 and
+`rx_group_entry.slot` as its substrate.
+
+**A delivering call gets an inline, in-place struct member named by the
+CALL SITE.**
+
+```c
+struct { rx_span local, domain; } from;    /* declared in place */
+```
+
+- **No named type per definition.** The member is declared inline at its
+  position, so the artifact stays self-contained and two libraries'
+  `email` cannot collide in a type namespace that does not exist.
+- **The reference prefix spells the member path**: `r.from.local` in C is
+  `(?&from.local)` in the pattern (§1.5 B2). One vocabulary.
+- **Per CALL SITE, not per definition.** A definition called twice needs
+  two site names — defaulting to the definition's own name, given
+  explicitly when that would repeat.
+- **Undeclared calls stay capture-transparent** (PCRE2's default, zero
+  cost). Delivery is opt-in per site; a file that declares none emits
+  exactly what it emits today.
+- **Delivered slots live ABOVE `ngroups`** — D61's reserved region,
+  §2.3.1 rule (i). `ngroups` and `nnames` remain the primary's own.
+
+**What is not deliverable, and its refusal.** A struct member is a
+finite, fixed-shape object, so what cannot be one cannot be delivered:
+
+| shape | why | outcome |
+|---|---|---|
+| a **recursive** definition (self- or mutually) | the nesting depth is a runtime fact; the member type would be infinite | a delivering declaration on it is a **refusal naming the recursion** |
+| a call **under a repeat** | one member, many activations; which one is delivered has no answer the format may pick | a **refusal naming the quantifier** |
+
+Iterated capture — "give me every iteration's value" — is a separate
+question and explicitly **out of this row** (D87 rule 5). The refusals
+above are not a policy against it; they are the honest answer while no
+mechanism for it exists.
+
+**Duplicate names within one scope path are ONE field, populated by the
+FIRST SET group of that name in number order** (D87 rule 6) — PCRE2's own
+`pcre2_substring_get_byname` rule, made structural rather than
+re-invented. The intended use is alternation branches populating one
+field:
+
+```
+(?<num>\d+)|0x(?<num>[0-9a-f]+)        ->  one member `num`
+```
+
+Two things this does NOT do, stated because both are natural misreadings:
+
+- **It does not merge across scope paths.** A caller's `w` and a
+  library's `w` are different paths, so they are different fields — which
+  is §2.3.2's lexical rule seen through the struct.
+- **It does not collapse the slot table.** Every duplicate keeps its own
+  assigned number and its own slot; numbering never merges. Only the
+  STRUCT VIEW merges, and it is a view.
+
+**Two call sites of one definition are DISTINCT C types.** Each member is
+declared inline at its own position, so `from` and `to` over the same
+`email` definition have no common type name; assigning one to the other
+needs `__typeof__`. That is acceptable because the target is
+gcc-dialect C by construction (CLAUDE.md: "generated code uses computed
+goto and other GNU C extensions") and it is **one sentence the spec
+owes**. A named typedef per definition is a later opt-in, not this row's.
+
+**Field order is assigned-number order.** The struct is the slot table
+seen through names, so there is **one derivation feeding three readers** —
+`RX_NCAPS`, the struct, and `--emit-composed` — which is learnings §3's
+rule applied where it matters most: three surfaces that must agree can
+disagree only if they are computed twice.
+
+**A library adding a delivered group changes the user's struct TYPE.**
+This is r44-sem's M5 ("a library's private edit moves the user's
+`RX_NCAPS`") in its honest, visible form: under D61 the caller's own
+`1..ngroups` are untouched, and the thing that moves is a type the
+compiler checks, not an index the caller computed. A recompile sees it.
+
+**What [DD-13b] hands [V-I]**, stated as the interface so that row does
+not have to re-derive it:
+
+1. the assigned-number table for the composed pattern (§2.3.1), from
+   which field order follows;
+2. a scope PATH per delivered group (call-site name, then the
+   definition's own name), from which the nesting follows;
+3. the first-set-wins merge rule for duplicate names within a path
+   (D87 rule 6);
+4. the two non-deliverable shapes and their refusals;
+5. the guarantee that delivered slots never intrude on `1..ngroups`.
+
+What [V-I] still owns: the C-keyword MANGLING rule its own row already
+flags (`(?<int>…)`, `(?<return>…)` are valid group names and invalid
+member names), the copier's signature, and whether the struct is an
+optional emission unit ([EMIT-SET] names it as one).
 
 ---
 
