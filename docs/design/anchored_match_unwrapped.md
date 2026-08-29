@@ -384,9 +384,24 @@ mirror.
 
 ### 5.2 OVERFLOW IS A SELECTION OUTCOME, NEVER A REFUSAL
 
-The anchored machine can exceed the DFA caps — the state cap
-(`PCREC_MAX_DFA_STATES_TABLE`, narrowed by `PCREC_MAX_TABLE_ENTRIES/ncls`)
-or the per-compile subset-element budget `PCREC_MAX_SUBSET_ELEMS`. A
+**THE OPTIONAL MACHINE HAS ITS OWN CEILING, LOWER THAN THE ENGINE'S, and it
+was added at the r41 close (finding S1) rather than designed in — the first
+form charged the optional machine the mandatory machines' budget, which is
+the paragraph after next.** `PCREC_ANCHORED_MAX_STATES` is **4,096**,
+DERIVED: over the whole `.rxt` corpus the anchored machine is min 1 / median
+2 / p99 67 / **max 2,001** states (`a{1,2000}`; next 1,001, 501, 501) across
+825 selecting artifacts, and `tests/resource`'s DFA-routed giant-repeat
+shapes are 20,001 / 25,001 / 30,001. The interval (2,001, 20,001) holds no
+machine this tree builds, and 4,096 sits inside it at **2.05× the corpus
+maximum** and **4.9× below the smallest resource shape**. It is a ceiling on
+STATES and inherits `PCREC_MAX_TABLE_ENTRIES`' narrowing for free, because
+`pcrec_build_dfa` applies that to whatever `maxstates` it is handed — one
+more argument to the existing mechanism rather than a second cap beside it.
+
+Below that ceiling the anchored machine can still exceed the DFA caps — the
+state cap (`PCREC_MAX_DFA_STATES_TABLE`, narrowed by
+`PCREC_MAX_TABLE_ENTRIES/ncls`) or the per-compile subset-element budget
+`PCREC_MAX_SUBSET_ELEMS` — and every path below is the same. A
 pattern that compiles today MUST NOT start failing because an OPTIONAL
 machine did not fit. So `pcrec_build_dfa` gains an `optional` flag, and
 `intern()`'s two "pattern too complex" sites gain ONE line each, placed
@@ -422,6 +437,26 @@ once instead of walking out its remaining rows.
 
 An overflowed anchored machine selects `search-filter`. **It is stamped, it
 is counted, and it is never a diagnostic** — see §9's pinned population.
+
+**WHY THE CEILING IS NOT OPTIONAL, MEASURED (r41 S1/S2).** Without it the
+optional machine was built for every DFA-routed pattern, however large, and
+`tests/resource`'s giant-repeat shapes paid for it in the two currencies §7
+and §8 do not measure: pcrec's OWN compile CPU and an artifact size the
+size log never sees. `[a-z]{0,30000}` went **24.5 s → 37.5 s** (+53 %) of
+compiler CPU against a `K7_CPU` budget of 45 s — headroom 20.5 s → 7.5 s —
+and its artifact went **1,336,143 → 1,995,889 B**, over `[ART-SIZE.1b]`'s
+1,400,000 B pin. Neither was visible to any instrument in the tree, and §7.2
+records why: nothing measured the compiler, and those shapes live in a bash
+array rather than in the `.rxt` corpus or the size log. With the ceiling both
+return to their abi-9 values (§7.2's table).
+
+**AND THE CEILING IS WHAT GIVES THIS ARM A POPULATION AT ALL.** Before it,
+the overflow arm was measured at ZERO reachable patterns — the caps are
+shared, the mandatory machines are built first and are at least as large, so
+nothing could reach it and the r41 critic could not drive it read-only.
+`tests/codegen/run_anchored_match.sh` §4a now brackets 4,096 from both sides
+on the ordinary build, and the four resource shapes are the arm's real
+members.
 
 ### 5.3 What the anchored form's `UnanchStart` is
 
@@ -490,6 +525,18 @@ that region. Comparison (B) compares whole files and is re-pinned here.
 - `ENG_ATTEMPT`, empty-engine, overflowed or `-fno-anchored-dfa` DFA
   artifact: the stamp line (`"search-filter"`) and the `rx_info` field. The
   bodies are unchanged character for character.
+- **`RX_DFA_TABLE` CAN ALSO MOVE, on an artifact that selects the form**, and
+  this list omitted it before r41's S6. The stamp is an artifact-level
+  composition over every machine the artifact carries (§5.1), so an anchored
+  machine whose representation differs from the search pair's takes the value
+  to `"mixed"` — which `dfa_table_name`'s own comment anticipates. **§9.1's
+  check 8 could not have seen it**: that difference set was measured on the
+  DENIED build, where no anchored machine exists and the move is impossible by
+  construction. The r41 critic measured the DEFAULT build against abi 9 over
+  277 artifacts and found only `RX_DFA_MATCH` moving — **no `"mixed"` witness
+  in the corpus** — so the value set is reachable in principle and unwitnessed
+  in fact, which is what `tests/codegen/run_form_census.sh`'s completeness
+  loop is for.
 - VM artifact, hybrid or not: the `rx_info` field only
   (`.match_form = NULL`). The hybrid does NOT stamp `<PREFIX>_DFA_MATCH` —
   its `_match` is the VM's own anchored body, not this emitter's — which is
@@ -614,6 +661,44 @@ measures ~3.6 ns — about 62 % is the harness's call/loop cost and ~38 % the
 pattern's own divergence work; O(1) holds, "flat 5.5 ns" is mostly the
 instrument.)
 
+### 7.2 pcrec's OWN COMPILE CPU — the axis nothing here measured (r41 S1)
+
+**§7 measures the MATCHER and §8 measures the ARTIFACT; until the r41 close
+nothing in this note measured the COMPILER**, and that is where this row's
+only real cost turned out to be. `taskset -c 3`, `/usr/bin/time`, user+sys,
+quiet box (load1 1.2-2.0), the four `tests/resource` shapes that route to the
+DFA:
+
+| shape | anchored states | abi 9 (main) | no ceiling | **with the 4,096 ceiling** |
+|---|---|---|---|---|
+| `[a-z]{0,30000}` | 30,001 | 24.5 s | 37.5 s (+53 %) | **23.7 s** |
+| `a{0,25000}` | 25,001 | 16.2 s | 25.2 s (+56 %) | **17.6 s** |
+| `a{0,20000}` | 20,001 | 10.9 s | 15.6 s (+43 %) | **10.2 s** |
+| `(a\|b){0,30000}` | 30,001 | 24.1 s | 35.0 s (+45 %) | **25.5 s** |
+| `a{1,2000}` (corpus max) | 2,001 | 0.1 s | 0.1 s | **0.2 s** |
+
+Artifact size on the same shapes (`.c`+`.h`, raw): `[a-z]{0,30000}` 1,336,143
+B at abi 9 → **1,995,889 B** with no ceiling → **1,336,560 B** with it. The
+middle column is over `[ART-SIZE.1b]`'s 1,400,000 B pin; the right one is
+abi 9 plus 417 B of stamp and mirror. Comment-excluded — the units the pin is
+in — the ceilinged artifact is 1,323,732 B against abi 9's 1,323,621 B.
+
+**THE CEILING RETURNS EVERY SHAPE TO WITHIN THE RUN-TO-RUN SPREAD OF ITS
+abi-9 NUMBER** (−3 %, +9 %, −6 %, +6 % against a spread of ±10 % between
+repeat runs of the same arm), and the worst shape's `K7_CPU` headroom goes
+**7.5 s → 19.5 s** against abi 9's own 20.5 s. What remains is the ~4,096
+states the optional build pays before it reports the overflow and stops,
+which is a bounded constant rather than a fraction of the machine.
+
+**NEITHER NUMBER WAS VISIBLE TO ANY INSTRUMENT IN THE TREE, and that is the
+finding rather than the fix.** Those four shapes live in a bash array in
+`tests/resource/run_resource_tests.sh`: no `.rxt` block holds them, so no
+corpus census counts them, and `SIZELOG` writes no row for them, so
+`[ART-SIZE.1b]`'s tripwire cannot see their size. A population nobody counts
+is `docs/dev/learnings.md` §3's own heading, met here in a place this lane
+did not think to look — the size log's 2,875 rows were checked and the tree's
+most expensive artifact was not among them.
+
 #### What this closes
 
 `[OPT-2]`'s lever (a) is discharged: the reverse pass is gone from the
@@ -632,10 +717,35 @@ p99 21,794 / max 97,789 B.
 
 The form adds ONE table set per selecting artifact — a 256-byte class table,
 a transition table (`n × ncls` cells), an accept table, and the view/seed
-tables the machine's own dimensions ask for. The anchored machine is
-typically SMALLER than the wrapped forward machine (no self-loop means fewer
-merged states), so the expected delta is well under a doubling of the
-artifact's table bytes.
+tables the machine's own dimensions ask for.
+
+**"THE ANCHORED MACHINE IS TYPICALLY SMALLER (no self-loop means fewer merged
+states)" IS WHAT THIS SECTION SAID BEFORE r41, AND IT IS FALSE ON ~10 % OF THE
+POPULATION — refuted with numbers by that panel's S3.** Measured over 269
+patterns: **26 of them (9.7 %) have an anchored machine LARGER than their
+forward one**, up to **2.000×** its table entries (`$|[^a]\z`, 2 rows → 3;
+`\w\n|c*?\Z\nx*?|[a-c]a+\Bx?`, 6 → 9). The reasoning was backwards: the
+start self-loop keeps a thread alive in every state, and that thread is part
+of what the MINIMIZER merges on — remove it and states that were equivalent
+stop being so. Fewer threads is not fewer states.
+
+The aggregate delta measured in §8.1 is therefore NOT explained by a smaller
+machine; it is explained by the class table, the accept table and the seed
+tables, which are per-machine regardless of state count. **And the refutation
+has an upside worth stating: it is what makes §5.2's overflow arm REACHABLE
+rather than dead code** — a machine that could only ever be smaller than one
+already inside the caps could never cross a ceiling of its own.
+
+**THE LOG'S POPULATION IS NOT THE TREE'S, and r41's S2 is what made that
+matter.** Every number in this section is over the size log's 2,875 rows —
+one per `.rxt` corpus pattern. `tests/resource/run_resource_tests.sh`'s
+giant-repeat shapes are NOT among them (they live in a bash array, and
+`SIZELOG` writes a row only for a corpus compile), and one of them is the
+largest artifact this tree produces: `[a-z]{0,30000}` at 1,336,143 B on
+abi 9, which the ceiling-less form took to 1,995,889 B — **over the
+1,400,000 B pin, with the tripwire structurally unable to see it**. §5.2's
+ceiling returns it; `tests/size/CLAUDE.md` carries the caveat so the next
+reader of "worst size 651,407 B" knows what population that is worst OF.
 
 The `[ART-SIZE.1b]` tripwire pins are `MAX_SIZE_BYTES = 1,400,000` and
 `MAX_GCC_CPU_S = 8.0`; the corpus max is 651,344 B on a VM artifact
