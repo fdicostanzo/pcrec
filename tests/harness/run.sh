@@ -553,12 +553,24 @@ flush_block() {
         printf -v _sz_cpu '%d.%03d' "$((_sz_cpu_ms / 1000))" "$((_sz_cpu_ms % 1000))"
         read -r _sz_load1 _ < /proc/loadavg
         _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h")"
+        # Pattern id is ROOT-RELATIVE, never absolute: a no-args (full
+        # corpus) run discovers files via `find "$ROOT_DIR/tests" ...`
+        # (absolute paths), while a targeted run's own argv is whatever
+        # the caller typed (often already relative) — without stripping
+        # $ROOT_DIR/ here, the SAME pattern would log under a DIFFERENT
+        # id depending on which invocation shape produced the row, which
+        # breaks scripts/size_diff's whole "compare the same pattern
+        # across two logs" premise the moment a log is regenerated from a
+        # different checkout path (a merge to main, a different worktree
+        # name). `${cur_file#$ROOT_DIR/}` no-ops (leaves cur_file
+        # unchanged) when it does not already start with `$ROOT_DIR/`, so
+        # this is safe for every existing call shape.
         # $_sz_row already carries FOUR tab-separated fields of its own
         # (engine, rungs, prefilter, bytes — size_count_row's own header)
         # as ONE argument here, so this format string has 5 %s for 5
         # arguments, not 8 — the logical row is 8 TSV columns wide.
         printf '%s\t%s\t%s\t%s\t%s\n' \
-            "$cur_file:$cur_pattern_line" "$_sz_row" "$_sz_cpu" "${_sz_wall:-}" "${_sz_load1:-0}" \
+            "${cur_file#$ROOT_DIR/}:$cur_pattern_line" "$_sz_row" "$_sz_cpu" "${_sz_wall:-}" "${_sz_load1:-0}" \
             >> "$SIZELOG"
         total_sizelog=$((total_sizelog + 1))
     fi

@@ -3543,8 +3543,59 @@ exactly.
 
 ### Baseline
 
-The first committed `docs/dev/artifact_size_log.tsv` is the full-corpus
-row count and the observed corpus-level max size/CPU, taken on the quiet
-box per this lane's own box-rules note; see the file's own header for the
-commit/date/row-count it was taken at, and this section's own git history
-for any pin adjustment made against that first real measurement.
+Taken on the quiet box (load1 0.13-0.20/12 cores) at commit `53588b9`,
+2026-08-29T00:36Z, `bash tests/size/run_size_log.sh` (no arguments — the
+full corpus), `PROCS=12`:
+
+```
+cases passed: 26659
+cases failed: 0
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 2875
+parallel: 177 of 177 file workers reported (PROCS=12)
+run_size_log.sh: wrote 2875 rows to docs/dev/artifact_size_log.tsv (commit 53588b9)
+```
+
+`check_size_tripwire.sh` against that log:
+
+```
+check_size_tripwire.sh: OK — 2875 rows (commit 53588b9), worst size
+651344 B ('tests/counterk/counterk.rxt:1807', pin 700000), worst gcc CPU
+5.475s ('tests/base/k18_cost_gates.rxt:103', pin 8.0s)
+```
+
+Every pin held on the first real measurement, no adjustment needed:
+
+- **Row count**: 2,875, self-consistent (header's `rows=2875` == 2,875 data
+  rows == `run.sh`'s own printed `size-log rows: 2875`), 91.7% above the
+  1,500-row `MIN_ROWS_FLOOR`. Higher than the `[ART-SIZE]` census's 2,488
+  compiled population — expected, not a discrepancy: the census DEDUPS
+  identical pattern text across the whole corpus (2,758 distinct patterns
+  in, 2,488 compiled), while this log counts every `.rxt` BLOCK the harness
+  actually compiles, including the same pattern text appearing in more than
+  one file/module (the census's own report names several such repeats,
+  e.g. the email specimen appearing in both `tests/base/` and its bench
+  copy).
+- **Size**: worst 651,344 B (`((a)|ab){4000}c`, the census's own largest
+  witness) against the 700,000 B pin — 93.0% of pin, 7.0% headroom. Matches
+  this lane's own manual measurement of the same pattern's split-form size
+  almost exactly (651,349 B, a 5-byte difference from a harness `mktemp`
+  working-directory artifact, not from the pattern or the definition).
+  `size_bytes` is deterministic given an unchanged emitter and pattern, so
+  this headroom is not "noise margin" the way the CPU pin's is — it only
+  moves on a real emitter or corpus change, which is the ratchet's whole
+  point.
+- **gcc CPU**: worst 5.475s (`tests/base/k18_cost_gates.rxt:103`) against
+  the 8.0s pin — 68.4% of pin, 31.6% headroom. Notably a DIFFERENT pattern
+  from the census's own worst-CPU pattern (the nested-repeat family at
+  6.995s isolated `-O2 -c`) — expected, since this log's compile shape
+  (`-O1`, compile+link with `driver.c`) is a different quantity from the
+  census's isolated `-O2 -c`, so which pattern is hardest to compile is not
+  guaranteed to match between the two; the row count and the size ceiling
+  are the two numbers that transfer across the two shapes, CPU-time
+  ranking does not.
+
+No pin was silently moved to make this pass — every number above is the
+first real measurement landing inside the pins this lane set from the
+census's own numbers before running the corpus once.
