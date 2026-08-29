@@ -745,6 +745,29 @@ for the term. The K-sweep gate now holds the line: an excluded give-up cell is
 allowed on an explicit `--unroll=`, and FAILS if its pattern is one the term
 itself builds at `K < 8`.
 
+**The gate's own trailer, on the delivery run** (`ksweep: PASS`, rc 0, all
+22,114 cases per rung):
+
+| figure | value |
+|---|---|
+| excluded (give-up/capacity) cells across the sweep | **5** |
+| ...of which belong to a pattern the TERM builds at `K < 8` | **0** — §8a rule 2, the assertion |
+| explicit-K refusals explained by a SIZE or NODE limit | **8** |
+| answer mismatches, any rung | **0** |
+
+All five exclusions are explicit-`--unroll=` flips — rule 1, the caller's own
+choice — and the assertion that none of them is the term's doing is what makes
+that sentence checkable rather than merely written down.
+
+**The eight refusals are the gate's second correction.** Its rule was "K must
+not change what compiles", and the delivery run failed on it: at explicit
+`--unroll=6` and `--unroll=8`, §11.3's R1 witness refuses (a node limit at K=6,
+the code cap at K=8) while the DEFAULT compiles it — because on the default the
+term picks K=1, which is the term's whole purpose. The rule was too strong.
+Refusals are now SPLIT by reason: a size or node limit an explicit K walks into
+is printed and counted, and any other refusal still fails, because that would
+be K changing what the compiler ACCEPTS.
+
 ### 3.4 Where K must NOT descend
 
 1. **An explicit `--unroll=K`.** The term never overrides a value the caller
