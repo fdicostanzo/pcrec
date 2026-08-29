@@ -1762,7 +1762,9 @@ repo, which is exactly why they are W2/W3 and why §7 Q5 names the
 measurement that would trigger them.
 
 **Attack 3 — "does bench actually need engine-neutral group
-identification, or does T-3 overstate it?"** **MEASURED, the tension is
+identification, or does T-3 overstate it?"** (This, and attack 2's
+concession, are the two residuals r44-consumers U11 asked be kept named
+rather than argued away; they are.) **MEASURED, the tension is
 not live today**: the live `expectations.tsv` columns are
 `pattern subject regime expected start end nmatches method oracle` —
 **no capture columns at all**, over all 1,364 rows. And T-3's premise is
@@ -1782,11 +1784,36 @@ replace or subst flag. So R-SUBST-1 is the free, unconstrained field the
 requirements note hoped it was, and §4.6 leaves it free.
 
 **Attack 5 — "re-run the census rather than trust it verbatim if material
-time has passed."** **RE-RUN.** 2026-08-17: 54 files / 1,100 blocks /
-9,977 expectation lines. 2026-08-29: **179 / 3,265 / 26,691** — 3.3×
-in twelve days. The note's own figures are updated throughout; **AR-1's
+time has passed."** **RE-RUN, and independently REPRODUCED.** 2026-08-17:
+54 files / 1,100 blocks / 9,977 expectation lines. 2026-08-29: **179 /
+3,265 / 26,691** — 3.3× in twelve days — and r44-grammar, running its own
+recognizer transcribed from `run.sh`'s 13 dispatch regexes rather than
+from this note, "reproduced [them] to the digit" (G1), along with 0 head
+lines, 0/32 keyword collisions and 636 `# pcre2-only` marks. **AR-1's
 cost of getting compatibility wrong has tripled since AR-1 was written**,
 which is an argument for the design's caution, not against it.
+
+The 26,691 is a **three-way partition**, not one of the three numbers
+`run.sh` prints (r44-grammar G2 corrected the first version's wording):
+**22,125** subject cases (`m`/`n`/`ms`/`ns`/`gu`) + **4,182** group-slot
+lines (`g`/`gp`) + **384** `perr` blocks. A `perr` block and a live `g`
+line each record independently, so the harness's `cases passed` +
+`cases failed` + `group cases pending-vm` is a different partition of
+the same population.
+
+**And two attacks the panel added.** r44-grammar tried four ambiguity
+attacks on §1's grammar and **all four failed** (G5): a `pattern` line
+inside a data block (the head-ender closes the block first); a
+`#pattern` comment (column-1 `#` is tested before dispatch); a config
+line whose value is a keyword (`rest-of-line` is never re-tokenized);
+and a keyword colliding with a VALUE, which is impossible by
+construction because dispatch is on the first token and values never
+occupy it. **That run is what makes §2.10's `analysis freq <name>`
+argument a demonstration rather than an assertion** (r44-consumers U11):
+the ambiguity it avoids was checked, not asserted. r44-grammar also
+confirmed (G6) that today's harness already hard-errors on any
+non-comment line before the first `pattern`, so a head changes which NEW
+files parse and never the meaning of the 179.
 
 ### 5.2 The tensions
 
