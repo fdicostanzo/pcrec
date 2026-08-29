@@ -5967,3 +5967,13 @@ term choose K or force `--unroll=1`; `--engine`/`--no-captures` where
 the pattern admits it; split or rewrite the pattern; read the stamps to
 see which term produced the bytes), and [GUIDE-1] owes the use-case
 paragraph when it exists. Nothing is emitted silently past the cap.
+
+**ADDENDUM 2 (Frank, 2026-08-28 ~23:4x): the code-bytes cap value.**
+Every size in this row is bytes of the EMITTED C SOURCE,
+comment-excluded (`size_count.sh`'s definition); the `.o` a user links
+is ≈ 17 % of that at r = 0.99 (census §5). On that clarification Frank
+ruled `PCREC_MAX_VM_EMIT_CODE_BYTES = 500000` ("then 500k is fine") —
+a judgement inside the measured empty band (corpus worst 284,035;
+witness 2 at 836,621), ≈ 85 KB of `.o`. The spec states the `.o`
+equivalence beside each constant so the limit reads in the unit a
+user ships.
