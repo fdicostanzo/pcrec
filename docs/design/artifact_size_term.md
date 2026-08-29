@@ -810,7 +810,33 @@ an identity sweep red for a reason nobody predicted.
 `--engine=vm` and each deny flag (emit only, no gcc), recording the maximum
 `N`, the maximum raw byte count, and how many patterns exceed either cap:
 
-<!-- AXSWEEP-TABLE -->
+| axis | max `N` | max raw bytes | over node cap (2,000) | over byte cap (1,000,000) | compiled / refused |
+|---|---|---|---|---|---|
+| default | 1,471 | 675,586 | **0** | **0** | 2,487 / 284 |
+| `--engine=vm` | 1,471 | 358,157 | **0** | **0** | 2,487 / 284 |
+| `-fno-counter` | **1,489** | 486,393 | **0** | **0** | 2,480 / **291** |
+| `-fno-possessify` | 1,471 | 675,586 | **0** | **0** | 2,487 / 284 |
+| `-fno-revdet` | 1,471 | 675,586 | **0** | **0** | 2,487 / 284 |
+| `-fno-length-prune` | 1,471 | 674,233 | **0** | **0** | 2,487 / 284 |
+| `-fno-splice-calls` | 1,471 | **675,589** | **0** | **0** | 2,487 / 284 |
+| `-fno-tiered-entry` | 1,471 | 670,610 | **0** | **0** | 2,487 / 284 |
+| `-fno-premul-table` | 1,471 | 427,480 | **0** | **0** | 2,487 / 284 |
+| `-fno-offset-skip` | 1,471 | 675,586 | **0** | **0** | 2,487 / 284 |
+
+**The claim holds on every axis, with margin.** The worst `N` anywhere is
+**1,489** against a 2,000 cap (1.34× headroom) and the worst raw byte count is
+**675,589** against 1,000,000 (1.48×). Two axis-specific facts worth recording:
+
+- **`-fno-counter` is the only axis that moves `N`** (1,471 → 1,489), which is
+  the expected direction — denying the counter rung restores literal
+  replication — and it also refuses **7 more patterns** (291 vs 284), because
+  without the rung they exceed `PCREC_MAX_VM_REPEAT_COPIES`. That is
+  pre-existing behaviour of the deny flag, not something this row introduces,
+  and it is the axis a future emitter change would push over the node cap
+  first.
+- **`--engine=vm` and `-fno-premul-table` roughly halve the worst artifact**
+  (358,157 and 427,480), because both remove prefilter tables — consistent with
+  §4.1's finding that the corpus's largest artifacts are table-dominated.
 
 **Method note, recorded rather than smoothed:** this sweep was started, killed
 after two axes and restarted. Another lane's `make mech` took the box to load1
@@ -819,8 +845,10 @@ after two axes and restarted. Another lane's `make mech` took the box to load1
 numbers would have been affected — they would not, since the sweep records
 COUNTS and not times, but a timing-sensitive suite was running and this one was
 adding to it. Killed with `scripts/safekill` by PID, requeued behind a
-`load1 < 8` check, and the two axes measured before the kill reproduce exactly
-in the completed run.
+`load1 < 8` check (it started at load1 7), and **the two axes measured before
+the kill reproduce exactly in the completed run** — default 1,471/675,586 and
+`--engine=vm` 1,471/358,157 — which is the check that the interruption cost
+nothing but time.
 
 ### 4.7 The [SEL-1] interaction
 
