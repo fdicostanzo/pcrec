@@ -17530,3 +17530,70 @@ note's S2 narrowing say so with the five cells as witness. The lane's
 post-constraint full test found two of its own reds (a K37 unbounded
 compiler invocation in a new script; a stale sabotage anchor moved by
 the compile.c edit) — being fixed; delivery follows.
+
+#### Forty-fourth session, part 8 — [ART-SIZE] STEP 2 DELIVERED (967a2f1) and PANELED (r42): the code holds under measurement; two one-line contract bugs, a stale FILEPIN, a loaded-run size log, an unpinned bar (2026-08-29 ~08:5x EDT)
+
+ARTSIZE3 DELIVERED 967a2f1 (52 commits; tree clean; full test 27/27,
+1,747 checks / 2 failed = its own K37 and SABANCHOR, fixed; only the
+counterk load cell red; strict clean; run_size_term 28/0; ksweep PASS
+22,114 cases × 6 rungs; seven departures from e72b57d all recorded;
+the capacity floor `capacity-declined` with a synthetic witness;
+bench survey 54/54; fuzz pins from a run; registry 67; abi 11;
+`--list-axes` 47 rows / 19 axes — corrected in the open from a
+from-memory 71/42 written under the paragraph arguing counts must be
+measured). r42 CLOSE PANEL (docs/dev/reviews/2026-08-29-r42-artsize-close.md):
+**critic-checks** — C1 the recursion identity gate's FILEPIN (60a51ed)
+was STALE: two later src commits (the `_MAX_EMIT_BYTES` stamp on every
+DFA artifact; the capacity fields) changed emitted bytes — the
+fourth-site miss recurring one lane later on the same site; CONFIRMED
+by the lane's own run (`[default] (B) differing=952`); re-pinned to
+b3cf716, three axes 0 differing, fourth finishing; the D76 lesson now
+in the gate's header ("the pin moves with the LAST scaffolding change
+of the abi, not the first"); C2 tuning.md's duplicate §2.15 (engabs's
+bit 17 and this row's bit 18) with a stale TODO → §2.16 in bit order;
+five HOLDS (registry/axes reproduced, D81 per engine, anchors
+189/200, K41 vs the shipped fuzz EXPECT array, size log +3 traced).
+**critic-meas** — everything HOLDS (witness 1 K=1 0.62 s / 30 MB,
+witness 2 refused to the byte, census exact, bench survey exact,
+`--list-axes` 47/19, and the COST STORY: no measurable delta below the
+threshold over 14 patterns × 150 compiles, +43 ms where the ladder
+fires = the note's table) except M1 — the delivered size log is a
+LOADED-RUN SUBSET: ff327c5's full `make test` regenerated it to 2,877
+rows, dropping the counterk load cell — wake.md's standing hazard,
+the report describing the previous commit; M2 a uniform +130 B on the
+three witness figures (a stamp/comment grew after measurement); M5
+§2.2b's R1 illustration stale under the caps; M6 the worst-rung
+tower's pattern unarchived. **critic-sem** — the identity and answer
+claims HOLD under its own measurement: the shipped artifact is
+BYTE-IDENTICAL to a separate `--unroll=<chosen K>` compile on 7/7
+patterns (§11.3's debt closed by measurement, not assertion);
+term-K vs `-fno-size-term` answers identical on 67,677 cells over 17
+patterns incl. every capture slot; capacity fields never lowered on
+all 37 term-moved patterns; the [SEL-1] composition honest on three
+constructed overflow patterns; caps exact to the byte three ways;
+refusal writes no file; the deny flag never reaches the caps; ZERO
+corpus patterns change acceptance across 2,002 emits (five changes,
+all the declared total-cap class). And it found: S1 (CONTRACT) `3 ×
+max_emit_bytes` overflows — a raise past ULLONG_MAX/3 wraps the
+scratch bound to 2, every trial aborts, and the code cap REFUSES a
+pattern that compiles with no flag, against limits.md's raise-only
+promise; S2 (CONTRACT) the cap rescue iterates K ASCENDING and takes
+the SMALLEST fitting K against its own "prefer the LARGEST" comment,
+and §5 pins only `rk != dk`; S3 the early abort is armed on the copy
+buffer (`csb`), not the emission buffer (`vmsb`) — a trial still builds
+a 35 MB body (the note's own 64 MB peak, read the other way); S5 the
+natural cap-rescue ceiling scans a fixed `head -400` prefix; S6 — the
+one-token bug nothing detects — MATERIALITY 75 is pinned by nothing
+(only two tree patterns run the ladder at the shipped threshold) and
+§3.3's "nothing in between 0.376 and 0.913" is FALSE on the shape
+family (a threshold-1000 sweep: a continuum with mass AT the bar,
+0.745 taken / 0.751 declined) — the "population you chose" mistake in
+the one place it still stood; S4 the floor is vacuous on one shape
+(unset ceiling + default frame capacity; one counter-rung artifact
+has it; no live defect); S7/S8/S9 nits (trial figures 3-12 B short of
+the final's; attempts exactly tight with a silent -1 on exhaustion;
+the caps count the .h in split form). Its own method note: a bare
+`sort -u` under en_US.UTF-8 merged 634 of 2,002 patterns — K35 again.
+ALL SENT to the lane in one round (~08:4x); merge after the fix commit
+and a focused re-check of S1/S2/S3/S6 by critic-sem; then the union
+battery; then I-17 (nothing moves on the bench).
