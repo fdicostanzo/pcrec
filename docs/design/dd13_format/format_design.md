@@ -202,25 +202,42 @@ Lexical rules, unchanged from today and binding on every new line kind:
 - A line kind is its first whitespace-delimited token. An unknown first
   token is a **hard error** (R-RXT-6's discipline generalised): never a
   silent no-op, never a comment.
-- No line continuation. No multi-line string. **No value in this format
-  spans a line** — §7 Q1 records why, and what prose does instead.
 - **Four lexical CONTEXTS, each with a closed vocabulary.** The format
   already has two — the file's own directives and a pattern block's
   case vocabulary (`m`/`n`/`g`/…). This design adds two more (`config`
   body, data-block body). A first token unknown *in its context* is a
   hard error that names the context ("`testee` is not a pattern-block
   directive"). Nothing is a keyword everywhere.
-- **A head block ends at the first line whose first token starts a new
-  head item or a pattern block** — one of `lib`, `include`, `target`,
-  `use`, `oracle`, `tag`, `config`, `freq`, `pattern`. Any *other* token
-  a block's own vocabulary does not define is a hard error naming the
-  block, so a typo inside a `config` body is loud rather than silently
-  ending it.
-- **Leading whitespace on a line inside a `config` or data block is
-  permitted and ignored** — a readability convention only, never
-  significant. MEASURED: **0** lines in the 179-file corpus begin with
-  whitespace (`grep -rhcE '^[[:space:]]+[^[:space:]]'` → 0), so this
-  cannot change the meaning of any existing line.
+- **IN THE HEAD, INDENTATION MEANS CONTINUATION.** A line indented by
+  one or more spaces continues the head declaration or block above it: a
+  `config` body, a data-block body, a `description` attached to a
+  `target` or a `lib`, and a block-scalar value's own lines are all the
+  same rule. A head construct therefore ends at the first non-indented
+  line, and a typo inside a `config` body is a hard error naming the
+  block rather than a silent block-ending.
+  **MEASURED, and this is what makes it free:** **0** lines in the
+  179-file corpus begin with whitespace
+  (`grep -rhcE '^[[:space:]]+[^[:space:]]'` → 0; independently reproduced
+  by r44-grammar's own recognizer run, G1), so no existing line's meaning
+  can change. This REPLACES the first version's "leading whitespace is
+  permitted and ignored"; Frank's `description` block scalar (r44, 15:1x)
+  needs continuation to mean something, and one rule serving every head
+  construct is better than a second mechanism beside it.
+- **A PATTERN BLOCK keeps today's shape: case lines are NOT indented**,
+  and a block ends at the next `pattern` line or end of file. This
+  asymmetry between head and body is deliberate and is the only one: the
+  body's shape is forced by R-COMPAT-1 (3,265 blocks depend on it) and
+  the head is new territory where indentation costs nothing. A generator
+  writing an included fragment writes pattern blocks only (§2.5), so it
+  never has to indent anything.
+- **One line, one value — with exactly ONE exception: the BLOCK SCALAR.**
+  A line kind whose value is prose may write `<kind> |` and continue on
+  indented lines, YAML's `|` form; newlines are preserved and the value
+  ends at the first non-indented line. The one-line form
+  `<kind> <text>` stays. **Only `description` uses it today**, and the
+  exception is stated as a property of the VALUE production rather than
+  of `description`, so a second prose field would inherit it rather than
+  invent it. Nothing else in the format spans a line.
 
 ### 1.3 The productions
 
@@ -243,7 +260,12 @@ file-subject = '@file:"' , path-chars , '"' ;                              (* W2
 path-ref    = '"' , path-chars , '"'                    (* local, C's "" *)
             | "<" , store-name , ">" ;                  (* library path, C's <> *)
 config-list = ident , { "," , [ ws ] , ident } ;
+tag-item    = tag-label | tag-pair ;                              (* U1 *)
+tag-label   = ? a bare label: no whitespace, no '=' ? ;
 tag-pair    = tag-key , "=" , tag-value ;   (* tag-value: no whitespace, no '=' *)
+prose-value = rest-of-line                        (* one-line form *)
+            | "|" , eol , { INDENT , rest-of-line , eol } ;  (* block scalar *)
+INDENT      = ? one or more spaces at the start of the line ? ;
 
 (* ---------- file ---------- *)
 file          = head , body ;
@@ -251,24 +273,29 @@ head          = { file-decl | config-block | data-block } ;
 body          = { pattern-block } ;
 
 (* ---------- head: file-level declarations ---------- *)
-file-decl =
-      "lib"     , ws , path-ref                                    (* W1 *)
-    | "include" , ws , path-ref                                    (* W2 *)
-    | "target"  , ws , ident , ws , "=" , ws , ident ,
-                  [ ws , "with" , ws , config-list ]               (* W1 *)
-    | "use"     , ws , config-list                                 (* W3 *)
-    | "oracle"  , ws , oracle-spec                                 (* W3 *)
-    | "tag"     , ws , tag-pair , { ws , tag-pair } ;              (* W2 *)
+file-decl   = decl-line , { INDENT , decl-attr , eol } ;   (* indented attrs *)
+decl-line =
+      "lib"        , ws , path-ref                                 (* W1 *)
+    | "include"    , ws , path-ref                                 (* W2 *)
+    | "target"     , ws , ident , ws , "=" , ws , ident ,
+                     [ ws , "with" , ws , config-list ]            (* W1 *)
+    | "use"        , ws , config-list                              (* W3 *)
+    | "oracle"     , ws , oracle-spec                              (* W3 *)
+    | "tag"        , ws , tag-item , { ws , tag-item }             (* W2 *)
+    | "description", ws , prose-value ;                            (* W1 *)
+
+decl-attr   = "description" , ws , prose-value ;   (* attaches to decl-line *)
 
 oracle-spec = "python" | "pcre2" | "none" , ws , rest-of-line ;    (* W3 *)
 
 (* ---------- head: config block ---------- *)
 config-block = "config" , ws , ident , [ ws , "from" , ws , config-list ] , eol ,
-               { config-line } ;
+               { INDENT , config-line , eol } ;   (* `from` is W1 — G3 *)
 config-line =
       "pcrec"    , ws , rest-of-line          (* raw pcrec flags        W1 *)
     | "flags"    , ws , letters               (* as a pattern block's   W1 *)
     | "features" , ws , module-list           (* as a pattern block's   W1 *)
+    | "encoding" , ws , ident                 (* D58's per-pattern axis M16 *)
     | "engine"   , ws , ( "vm" | "dfa" )      (* as a pattern block's   W1 *)
     | "budget"   , ws , budget-item           (* as a pattern block's   W1 *)
     | "analysis" , ws , data-kind , ws , ident  (* select a data block  W2 *)
@@ -278,10 +305,11 @@ config-line =
 engine-ref = ident , [ "/" , version-chars ] ;      (* e.g. pcre2/10.42 *)
 
 (* ---------- head: data block (the analysis FAMILY, §2.10) ---------- *)
-data-block = data-kind , ws , ident , eol , { data-line } ;
+data-block = data-kind , ws , ident , eol , { INDENT , data-line , eol } ;
 data-kind  = "freq" ;                    (* the family's only member    W2 *)
 data-line =
-      "question" , ws , rest-of-line     (* what this answers, required *)
+      "description" , ws , prose-value   (* the summarizing script's field *)
+    | "question" , ws , rest-of-line     (* what this answers, required *)
     | "reader"   , ws , rest-of-line     (* the selection point, required *)
     | "exemplar" , ws , rest-of-line     (* provenance, required *)
     | "bytes"    , ws , int              (* provenance, required *)
@@ -295,7 +323,7 @@ pattern-block = "pattern" , ws , rest-of-line , eol , { block-line } ;
 block-line =
     (* --- today's, unchanged --- *)
       "flags"    , ws , letters
-    | "features" , ws , module-list
+    | "features" , [ ws , "only" ] , ws , module-list  (* `only` is new: M14 *)
     | "engine"   , ws , "vm"
     | "budget"   , ws , budget-item
     | "frames-buffer=" , route
@@ -308,9 +336,11 @@ block-line =
     | "gp" , ws , slot , ws , span
     | "gu" , ws , giveup-code , ws , subject
     (* --- new --- *)
-    | "name"    , ws , ident                                       (* W1 *)
-    | "tag"     , ws , tag-pair , { ws , tag-pair }                (* W2 *)
-    | "mc"      , ws , subject , ws , int                          (* W2 *)
+    | "name"        , ws , ident                                   (* W1 *)
+    | "description" , ws , prose-value                             (* W1 *)
+    | "encoding"    , ws , ident        (* D58's per-pattern axis    W1 M16 *)
+    | "tag"         , ws , tag-item , { ws , tag-item }            (* W2 *)
+    | "mc"          , ws , subject , ws , int                      (* W2 *)
     | "oracle"  , ws , oracle-spec                                 (* W3 *)
     | "variant" , ws , ident , ws , variant-body ;                 (* W3 *)
 
@@ -319,16 +349,28 @@ variant-body = "unsupported" , ws , rest-of-line          (* a declared refusal 
 group-map    = ident , "=" , int , { "," , ident , "=" , int } ;
 ```
 
-**That is the whole grammar: six file-level declarations, two head block
-kinds, five new block-scoped lines.** Thirteen additions against
-thirteen existing line kinds — the format roughly doubles, once, and
-each addition answers a named consumer in `requirements.md`.
+**That is the whole grammar: seven file-level declarations, two head
+block kinds, seven new block-scoped lines** (`name`, `description`,
+`tag`, `mc`, `oracle`, `variant`, plus `encoding`; `features` gains an
+optional `only`). Sixteen additions against thirteen existing line
+kinds, plus §1.5's three pattern-level extensions — the format roughly
+doubles, once, and each addition answers a named consumer in
+`requirements.md` or a ruling.
+
+**`description` is a FIELD, not a comment** (Frank, r44 15:0x): *"we may
+want to summarize via script what a library or other rxt file has:
+therefore a description may be helpful outside of comments, which should
+be operational."* So it is machine-readable, it exists at file level,
+per definition block, per target and per data block, and `#` comments go
+back to being operational notes only. This **overturns §7 Q1's
+recommendation in the first version** — `NOTES.md` is no longer where a
+library's or a sub-bench's prose lives.
 
 ### 1.4 Which production earns which wave, and who is waiting
 
 | wave | productions | the consumer that earns it | blocked row |
 |---|---|---|---|
-| **W1** | `name`, `lib`, `target … [with]`, `config` with `pcrec`/`flags`/`features`/`engine`/`budget`; `(?&name)` file-scope resolution; `rx_info.name` | a file carrying several patterns that reference each other; a shipped library a user `lib`s and builds three targets from | **[LIB]** (all three parts), [DD-14]'s multi-pattern files |
+| **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget` **and `from`** (G3); AST composition (§2.3) with §1.5's three pattern-level extensions and `--emit-composed`; `rx_info.name`; **H11's target build path** (M9) | a file carrying several patterns that reference each other; a shipped library a user `lib`s and builds three targets from | **[LIB]** (all three parts), [DD-14]'s multi-pattern files |
 | **W2** | `include`, `@file:` subjects, `mc`, `tag`, the `freq` data block and `config`'s `analysis` line | a generated 1,364-row expectation set; a 1 MB subject; an exemplar findings file | **[ENG-PGO]** (the findings file — its plan row says "blocks on [DD-13b] wave 2/3"), the first in-format sub-bench |
 | **W3** | `use`, `oracle`, `variant`, `config`'s `testee`/`option` | a second engine in one file | **pcrec-bench** sub-benches with a non-pcrec testee |
 
@@ -339,6 +381,16 @@ instructs callers to "put the override in the pattern-source file's
 `config` block rather than on the command line". A spec that ships an
 instruction owes the mechanism. `config`'s wave-3 half (`testee`,
 `option`) stays wave 3 — it has no consumer until a second engine does.
+
+**`from` is W1** (r44-grammar G3): it was in the W1 production and
+unassigned in this table. It is unexercised (0 uses), but it is the only
+cascade the format has and `config … from` is how a build variant is
+spelled, so splitting it out of W1 would leave `config` half-built.
+
+**H11 is part of W1, not an afterthought** (r44-sem M9): the first
+version's H1-H10 never compiled or ran a `target … with <config>`, so
+the central new build declaration would have shipped with no test path.
+`target` and the thing that builds it land together (§3.2).
 
 D77 is honoured at the wave granularity, not the production granularity:
 each wave ships when its named consumer is real, and nothing in W2 or W3
