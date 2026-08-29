@@ -741,6 +741,19 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
         if (force_on && force_off)
             ctx_fail(cx, why_pos,
                      "-fprefilter and -fno-prefilter cannot both be requested");
+        /* [OPT-4] THE SAME REFUSAL FOR THE LANGUAGE PAIR, and it is here
+         * rather than in cli/main.c so the LIBRARY caller who sets both bits
+         * gets it too — the flag pair is `pcrec_options.flags`, not a CLI
+         * spelling. Placed beside its twin because it is the identical rule
+         * (a request with two contradictory halves is refused, never silently
+         * resolved to one of them), and the collapse decision itself lives at
+         * `src/core/compile.c`'s build gate, where the two bits are read: this
+         * site owes only the diagnostic. */
+        if ((cx->opt->flags & PCREC_FORCE_PREFILTER_COLLAPSE) &&
+            (cx->opt->flags & PCREC_NO_PREFILTER_COLLAPSE))
+            ctx_fail(cx, why_pos,
+                     "-fprefilter-collapse and -fno-prefilter-collapse cannot "
+                     "both be requested");
         if (force_on && fit.chosen != ENGM_VM)
             ctx_fail(cx, why_pos,
                      "-fprefilter requires the VM engine; this pattern "

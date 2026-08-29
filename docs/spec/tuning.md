@@ -852,6 +852,67 @@ distinguishable reasons and a check must be able to tell them apart. Both are un
 (D81).
 
 
+### 2.17 `-fno-prefilter-collapse` / `-fprefilter-collapse` — `PCREC_NO_PREFILTER_COLLAPSE` (bit 19) / `PCREC_FORCE_PREFILTER_COLLAPSE` (bit 20)
+
+
+**ANSWER-IDENTITY-preserving, in both directions and including the give-up
+surface.** The axis changes only the LANGUAGE the VM hybrid's inlined DFA
+recognises, and that DFA is a FILTER: what it owes the VM is a sound
+rejection and a lower bound on the match start, both of which a superset
+supplies, with the VM re-deriving the answer from every candidate it is
+handed (`§2.5`'s hybrid, and `match_api.md` §6.3's H1/H2/H3). The prefilter
+is answer-identity-preserving by D46's rule; this is a selection WITHIN it.
+
+**What it controls.** With the axis ON (the default), a hybrid prefilter
+whose exact NFA exceeds `PCREC_PREFILTER_EXACT_NFA_STATES` is built from a
+COUNT-COLLAPSED lowering: every `A_REP` with `rmin > 1` or `rmax > 1` is
+lowered as `X{min(rmin,1),}`. That is a superset — every word of `X{m,n}`
+is `k` copies of `X` with `m <= k <= n`, and `k >= min(m,1)` in both cases
+— whose proof never mentions `n`, so the resulting machine, and the
+artifact, stop scaling with the count. MEASURED (K39): `((a)|b){0,4000}c`
+drops from 199,511 to 29,077 code bytes and `((a)|ab){4000}c` from 651,694
+to 36,140, while `((a)|b){0,400}c` and `((a)|b){0,4000}c` come out within
+two bytes of each other.
+
+**THREE CONJUNCTS, AND THE FLAGS REACH ONLY ONE.** The collapse applies
+when (a) these machines' sole customer is the VM's prefilter — never when
+the DFA is the ENGINE, where a superset would be a miscompile; (b) the
+pattern has a counted repeat with replication factor `>= 2`, so there is
+something to collapse; and (c) the exact NFA is over the state budget.
+`-fno-prefilter-collapse` removes the candidate outright.
+`-fprefilter-collapse` drops conjunct (c) ALONE, so every counted repeat
+collapses and the emitted size becomes count-INDEPENDENT rather than
+count-bounded. Neither flag reaches (a) or (b) — those are correctness and
+vacuity, not policy. Requesting both is REFUSED
+("`-fprefilter-collapse` and `-fno-prefilter-collapse` cannot both be
+requested"); neither half is otherwise do-or-die, because forcing the
+collapse on a pattern with nothing to collapse is a request the compiler
+HONOURS (that pattern's collapsed language IS its exact language).
+
+**WHAT DENYING IT BUYS, stated because it is a real trade.** The exact
+prefilter is a SHARPER filter: it seeds the VM at the true leftmost start
+where the collapsed one seeds a lower bound the VM must walk forward from,
+and — because a superset's span END is not an upper bound (`match_api.md`
+§6.3, H3) — a collapsed artifact carries no
+`<PREFIX>_VM_PRUNE_CEILING "prefilter-window"`, reading `subject-end`
+instead. Both cost match time on some subjects and both are recovered by
+`-fno-prefilter-collapse`, at an artifact size proportional to the count.
+
+**The stamp** is `<PREFIX>_VM_PREFILTER_LANG`, `"exact"` or
+`"count-collapsed"`, emitted exactly where `<PREFIX>_VM_PREFILTER` reads
+`"hybrid"` — an artifact with no prefilter names no language. It reports
+what was BUILT, so a request that changed nothing stamps `"exact"`.
+
+**The budget** is `PCREC_PREFILTER_EXACT_NFA_STATES` (`src/core/limits.h`),
+compared against the exact forward machine's NFA state count. It is not a
+tuning knob but the point where two measured populations separate: over the
+1,388 corpus artifacts carrying a hybrid prefilter, the 1,144 with no
+counted repeat of factor `>= 2` top out at 20 NFA states, while the 244
+that carry one run to 24,005 — so the budget fires only where the COUNT is
+what made the machine big. See `limits.md` and
+`docs/design/prefilter_count_independence.md`.
+
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while

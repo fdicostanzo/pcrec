@@ -164,6 +164,21 @@ which is why it adds no ceiling of its own to the list above, and why the
 paragraph it follows still describes every way a state-count ceiling can
 refuse a pattern.
 
+**[OPT-4] (2026-08-29) A THIRD ENTRY IN THIS NEIGHBOURHOOD, AND IT IS NOT AN
+EXCEPTION TO ANY CEILING — it is a BUDGET that changes which machine gets
+built.** `PCREC_PREFILTER_EXACT_NFA_STATES` (128) is compared against the exact
+forward NFA's state count at the point the VM hybrid's prefilter is about to be
+determinized. Over it, the prefilter is rebuilt from the COUNT-COLLAPSED
+lowering (`docs/spec/tuning.md` §2.17) — a sound superset whose machine does
+not scale with a bounded repeat's count. **It refuses nothing and accepts
+nothing new by itself**, so it adds no row to the contract above; what it
+changes is the SIZE of an accepted artifact, and through that it interacts with
+§8's emitted-size caps in one direction only — a pattern refused there may
+become acceptable, never the reverse. MEASURED: K41's second fuzz-gate witness
+went from refused at 670,932 code bytes to 158,643, compiling in 1.94 s of gcc
+where the un-capped exact form took 49.25 s. The budget never applies where the
+DFA is the ENGINE, where the language must be exact.
+
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST
 HARNESS policy, not a caller-facing contract: every compile of

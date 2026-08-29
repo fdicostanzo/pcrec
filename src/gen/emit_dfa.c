@@ -1307,7 +1307,33 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * this row writes on a VM artifact is that struct field, which is above
      * the region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 11,\n");
+    /* [OPT-4] abi 11 -> 12 (D76): the PREFILTER'S LANGUAGE STAMP (K39;
+     * docs/design/prefilter_count_independence.md). SCAFFOLDING ONLY on every
+     * artifact that keeps the exact language, and a large PROGRAM-BYTE event
+     * on the few that do not — stating which kind it is, per artifact kind, is
+     * r37 A12's lesson:
+     *
+     *  - A DFA artifact gains NOTHING. Not one byte: the stamp is gated on
+     *    `fit.prefilter`, and a DFA artifact has no VM prefilter decision. It
+     *    moves here only because `.abi` is emitted by this shared function.
+     *  - A VM artifact with NO prefilter (`--engine=vm`, a backreference, a
+     *    linked call, [SEL-1]'s drop) likewise gains nothing but the version.
+     *  - A VM HYBRID gains one `#define <PREFIX>_VM_PREFILTER_LANG "exact"`
+     *    line and nothing else — 2,855 of the corpus's 2,878 artifacts.
+     *  - A VM HYBRID ABOVE `PCREC_PREFILTER_EXACT_NFA_STATES` gains that line
+     *    reading `"count-collapsed"`, a SMALLER inlined prefilter (different
+     *    tables, different state counts), and `<PREFIX>_VM_PRUNE_CEILING`
+     *    moving `"prefilter-window"` -> `"subject-end"` with the MRL clamp it
+     *    names. MEASURED at 23 corpus artifacts.
+     *
+     * COMPARISON (A) IS NOT EXPECTED BYTE-IDENTICAL ON THOSE 23, and that is
+     * the one thing here a reader must not mistake for a regression: dropping
+     * the `prefilter-window` ceiling changes the VM PROGRAM, which is exactly
+     * what `prog_region` compares. It IS expected byte-identical on every
+     * other artifact, which is the check that says the stamp is scaffolding.
+     * Comparison (B) compares whole files and is re-pinned in this same
+     * change, per D76. */
+    sb_puts(c,   "    .abi = 12,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1358,6 +1384,30 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
                                           PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
+                                          /* [OPT-4] the prefilter's LANGUAGE
+                                           * axis, on `PCREC_*_PREFILTER`'s own
+                                           * precedent one line up and for the
+                                           * mask's own reason: it selects a
+                                           * superset the VM verifies from, so
+                                           * it changes no answer, and
+                                           * `<PREFIX>_VM_PREFILTER_LANG` is
+                                           * where what the emitter DID is
+                                           * recorded.
+                                           *
+                                           * MEASURED as a defect before it was
+                                           * a comment: unmasked, passing
+                                           * `-fno-prefilter-collapse` moved 5
+                                           * bytes of `rx_info.flags` on EVERY
+                                           * artifact — including patterns with
+                                           * no counted repeat, where the flag
+                                           * cannot act at all — which is
+                                           * exactly the byte-identity property
+                                           * that makes the denied build usable
+                                           * as a ground truth. Caught by
+                                           * run_prefilter_collapse.sh §2 on
+                                           * its first run. */
+                                          PCREC_NO_PREFILTER_COLLAPSE |
+                                          PCREC_FORCE_PREFILTER_COLLAPSE |
                                           PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
                                           /* [OPT-1] the two-tier entry axis. It
                                            * changes no answer (the deep tier is

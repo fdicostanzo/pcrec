@@ -344,6 +344,24 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "none", "none",
                      0, "", 0, "", "", "always (fallback) — also the --engine=vm side effect (R21 E-6)");
     }
+    /* [OPT-4] prefilter-lang — §2.15, K39. A THIRD axis in the prefilter
+     * neighbourhood and a third question: "prefilter" is the DFA scan's own
+     * candidate-start filter, "vm-prefilter" is whether the VM runs a DFA
+     * ahead of its program at all, and this is WHICH LANGUAGE that DFA
+     * recognises. All three can be answered independently by one artifact.
+     * `RX_VM_PREFILTER_LANG` is emitted only where `RX_VM_PREFILTER` reads
+     * "hybrid", for the reason the `RX_DFA_*` pair is (there is no language to
+     * name where there is no machine). */
+    {
+        PredAxis p = { "prefilter-lang", NULL, "RX_VM_PREFILTER_LANG", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",
+                     V(PCREC_NO_PREFILTER_COLLAPSE), V(PCREC_FORCE_PREFILTER_COLLAPSE),
+                     "-fno-prefilter-collapse / -fprefilter-collapse",
+                     "these machines serve only as the VM's prefilter (the DFA is not the engine), a counted repeat with rmin > 1 or rmax > 1 exists, and the exact NFA is over PCREC_PREFILTER_EXACT_NFA_STATES — which -fprefilter-collapse drops: every X{m,n} then lowers as X{min(m,1),}");
+        emit_pred_row(sb, &p, 2, "exact", "exact",
+                     0, "", 0, "", "",
+                     "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse");
+    }
     /* altcls-merge — §2.6, RX_ALTCLS_MERGES is an ACTIVITY COUNT, not a
      * named value — stamp_value left empty on both rows for that reason. */
     {

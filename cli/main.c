@@ -288,6 +288,32 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_PREFILTER;
         else if (!no_more_opts && !strcmp(a, "-fprefilter"))
             opt.flags |= PCREC_FORCE_PREFILTER;
+        /* [OPT-4] THE PREFILTER'S LANGUAGE (K39), a SECOND force pair on the
+         * same axis's neighbourhood and for a different reason from the one
+         * above. `-fprefilter` decides WHETHER the hybrid runs; these decide
+         * what language its DFA recognises when it does.
+         *
+         * A PAIR RATHER THAN DENY-ONLY, and the two halves are not mirror
+         * images: `-fno-prefilter-collapse` restores the exact machine (the
+         * sharper start and the `prefilter-window` ceiling, at a size that
+         * scales with the count), while `-fprefilter-collapse` drops only the
+         * STATE-BUDGET conjunct — so every counted repeat collapses and the
+         * emitted size becomes count-INDEPENDENT rather than count-bounded.
+         * Neither reaches the two correctness conjuncts (the DFA is the
+         * engine; there is nothing to collapse), which is why neither can
+         * change an answer and why the pair is a `make test-axes` sweep
+         * subject rather than a semantic switch.
+         *
+         * NOT DO-OR-DIE, unlike `-fprefilter` above. Forcing the collapse on a
+         * pattern with no counted repeat is a request the compiler HONOURS —
+         * the collapsed language of such a pattern IS its exact language — so
+         * there is nothing to refuse; the artifact stamps `"exact"` because
+         * that is what was built. The conflict pair IS refused, in
+         * src/opt/select_engine.c beside the existing one. */
+        else if (!no_more_opts && !strcmp(a, "-fno-prefilter-collapse"))
+            opt.flags |= PCREC_NO_PREFILTER_COLLAPSE;
+        else if (!no_more_opts && !strcmp(a, "-fprefilter-collapse"))
+            opt.flags |= PCREC_FORCE_PREFILTER_COLLAPSE;
         /* [OPT-ALTCLS] D46's controllability half for src/opt/altcls.c.
          * BACK to the DENY-only family's shape (unlike the FORCE pair just
          * above): each mergeable/factorable alternation run is its own
