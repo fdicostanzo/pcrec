@@ -1131,9 +1131,18 @@ Includes break that, and configs break it a second way.
    position paper's §4 rejected for the sidecar. So: resolve includes
    first, subtract the included set, and **report both numbers** —
    `entry files: N` and `fragments spliced: M` — so a set that silently
-   stops being spliced is visible instead of merely smaller (K35). A file
-   named explicitly on the command line is always an entry, because the
-   user asked for it.
+   stops being spliced is visible instead of merely smaller (K35).
+
+   **A file both NAMED on the command line and included by another entry
+   in the same run is counted ONCE, under the includer's closure**, and
+   the summary says so: `named, absorbed into <entry>`. The first version
+   said "a file named explicitly is always an entry, because the user
+   asked for it", which **double-counts** it — the K35 shape this section
+   cites for its other rules, caught by r44-consumers U6 in the note's
+   own text. Counting once and REPORTING the absorption is better than
+   refusing the run: the user gets what they asked for (that file's cases
+   run), the population is right, and the line tells them why the file
+   does not appear as an entry of its own.
 3. **A cell is (block, config), and cells are counted.** Today
    cells == blocks. Once `use` and `with` exist, a summary that counts
    only cases hides its own denominator — the [DD-13c] lesson in one
@@ -1326,21 +1335,40 @@ format, and each is named so a lane brief can be written from it.
 | # | change | wave | touches |
 |---|---|---|---|
 | H1 | **A head parser**: parse file-level declarations and `config`/data blocks above the first `pattern`; hard-error on an unknown first token per context | W1 | `tests/harness/run.sh` |
-| H2 | **The resolver and expander**: L/R computation over a pattern's text, definition lookup, transitive closure, DEFINE-append, and the **span map** (§2.12) | W1 | new; shared by the harness and, later, `pcrec --source` |
+| H2 | **PCREC's composer** (D87 rule 1): file reference detection, definition lookup on D85's table, the visited-set closure, name qualification, number assignment and re-basing, and the **span map** (§2.12). This is PCREC code, not harness code — the first version put it in the harness | W1 | `src/`, reached by `--source` / `--lib-path` |
+| H2b | **The harness's textual EXPAND, as the ORACLE CONTROL** (§2.3.4): the DEFINE-append form, plus the VALIDITY TEST that decides whether the control may run at all — no absolute numeric reference in any body, no name collision between caller and closure. Outside that population the control is a counted, named skip, never a silent pass | W1 | `tests/harness/` |
+| H2c | **`--emit-composed` and its round trip**: pcrec writes the composed pattern with explicit numbers (§1.5), and the `A == B` control recompiles it and compares against the `--source` build | W1 | `src/`, `tests/harness/` |
 | H3 | **Cells**: run a block once per resolved config; report cells in the summary; the `perr` one-cell rule | W1 | `run.sh` summary + dispatch |
-| H4 | **`verify_rxt.py` reads the EXPANDED text.** The oracle must see what pcrec sees, which is what makes the expansion the splice-vs-linkage control by construction ([LIB]). python `re` has **no** subroutine call at all (CITED, `subroutines_design.md` §10.1: "not different semantics, an ABSENCE"), so **any block with R ≠ ∅ is `oracle pcre2` whether or not it says so** — a python oracle cannot check a composed pattern, and pretending otherwise would be a silent pass | W1 | `verify_rxt.py` |
+| H4 | **`verify_rxt.py` reads H2b's EXPANDED text**, not the source block. python `re` has **no** subroutine call at all (CITED, `subroutines_design.md` §10.1: "not different semantics, an ABSENCE"), so **any composed block is `oracle pcre2` whether or not it says so** — a python oracle cannot check a composed pattern, and pretending otherwise would be a silent pass | W1 | `verify_rxt.py` |
 | H5 | **Include resolution + entry-set subtraction + closure accounting** (§2.11) | W2 | `run.sh` discovery |
 | H6 | **`@file:` subjects — and the DRIVER PROTOCOL CHANGE they force.** Today a subject travels as `argv[1]` (`t <subject> [startpos] [route]`), which can carry neither an embedded NUL nor a megabyte. The driver needs a form that names a path and reads it byte-exactly — the natural spelling is a leading sentinel on the existing argument (`t @<path> …`), which is additive and leaves every existing invocation untouched | W2 | `tests/harness/driver.c`, `run.sh` |
 | H7 | **`mc` find-all counting** against `match_api.md` §3.1's restart semantics | W2 | `driver.c` |
 | H8 | **`tag` well-formedness only** — the harness validates the *shape*, never the vocabulary | W2 | `run.sh` |
 | H9 | **Data-block parse + `--exemplar`-shaped hand-off to pcrec** (D83's flag takes the findings file, never the raw text) | W2 | `run.sh`, pcrec CLI |
 | H10 | **`use` / `variant` / `oracle` / testee configs** | W3 | `run.sh` + a non-pcrec adapter, which is pcrec-bench's, not pcrec's |
+| **H11** | **THE TARGET BUILD PATH — W1 ships with it, not without it** (r44-sem M9). Nothing in H1-H10 compiled or ran a `target … with <config>`: `driver.c` hard-codes the prefix `rx` and `run.sh` passes `-p rx`, so the central new build declaration would have had no test path at all. The harness must BUILD every declared target and assert two things per target — the emitted symbols carry its **prefix**, and `rx_info.name` is the definition's `name` — with the driver taking the prefix (a `-D` prefix macro or a generated shim). It is also the only path that exercises §2.7's output naming and §2.13's struct | W1 | `tests/harness/run.sh`, `tests/harness/driver.c` |
 
 **H4 deserves its own line in a brief**, because it is the one place a
 plausible implementation is silently wrong: handing python `re` the
 *unexpanded* text would make it compile the primary alone (the `(?&n)`
 raises `re.error`, so it would be skipped rather than mis-verified —
 but a *skip* that nobody counted is AR-3's failure mode exactly).
+
+**H2 and H2b are SEQUENTIAL, not one derivation** (r44-consumers U9).
+Two resolutions run, in order, and confusing them is how a control ends
+up sharing a source with its subject:
+
+1. the FORMAT's cross-file resolution — which definitions are bound into
+   this pattern, with what numbers and what name qualification (H2, in
+   pcrec);
+2. pcrec's own intra-pattern `(?&name)` binding in `recursion`'s AST,
+   which runs on the resulting pattern exactly as it runs on any other.
+
+H2b's textual expansion is a THIRD, independent path to the same
+intended answer, written for the oracle. Its value is precisely that it
+does not share step 1's implementation — which is also why it must
+declare the population where it is valid rather than silently agreeing
+everywhere.
 
 ### 3.3 What `--list-*` surfaces are affected
 
