@@ -30,6 +30,12 @@ SAB_DOC_FIGURE="tests/reject/CLAUDE.md (pre-SR-2 shape): 2 reject checks, 0 corp
 SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
 SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
-SAB_BEFORE="ESC_SET('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0),
+# ANCHOR MOVED at [DD-11.1] (caught by scripts/m6read_check_sab_anchors.py on
+# the same branch): the class-escape rows gained a `definitions` array (D85,
+# docs/design/definitions_table.md) and the `\d` row now goes through
+# `ESC_SET_D`, a macro identical to `ESC_SET` plus one trailing argument
+# (`d_def`), rather than plain `ESC_SET`. The SABOTAGE is unchanged -- it
+# still deletes the row outright -- only the text it is spelled against moved.
+SAB_BEFORE="ESC_SET_D('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0, d_def),
 "
 SAB_AFTER=""

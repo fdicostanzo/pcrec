@@ -28,5 +28,9 @@ SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 0 hand-written, 1 iterated fail"
 SAB_REACH='"$PCREC" --list-syntax | cut -f1,2,3,4 | tr "\\t" "="'
 SAB_REACH_EXPECT="esc=s=\\s=classes"
 SAB_COUNT=1
-SAB_BEFORE="ESC_SET('s', \"\\\\s\", classes, ANY_ENGINE, \"any whitespace character\", QF_YES, \"set 6\", pcrec_cls_space_esc, 0),"
-SAB_AFTER="ESC_SET('s', \"zz\", classes, ANY_ENGINE, \"any whitespace character\", QF_YES, \"set 6\", pcrec_cls_space_esc, 0),"
+# ANCHOR MOVED at [DD-11.1] (caught by scripts/m6read_check_sab_anchors.py on
+# the same branch): see S15's identical note -- the `\s` row now goes
+# through `ESC_SET_D` (one trailing `s_def` argument) rather than `ESC_SET`.
+# The SABOTAGE is unchanged -- it still corrupts the `syntax` field only.
+SAB_BEFORE="ESC_SET_D('s', \"\\\\s\", classes, ANY_ENGINE, \"any whitespace character\", QF_YES, \"set 6\", pcrec_cls_space_esc, 0, s_def),"
+SAB_AFTER="ESC_SET_D('s', \"zz\", classes, ANY_ENGINE, \"any whitespace character\", QF_YES, \"set 6\", pcrec_cls_space_esc, 0, s_def),"

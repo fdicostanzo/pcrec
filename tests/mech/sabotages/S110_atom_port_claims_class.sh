@@ -37,5 +37,9 @@ SAB_COUNT=1
 # row anchors on now ends `..., NULL}`. The SABOTAGE is unchanged -- it still
 # points the digit rows' CLASS port at the ATOM producer -- only the text it
 # is spelled against moved.
-SAB_BEFORE='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}, NULL}'
-SAB_AFTER='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_brport_digit}, NULL}   /* SABOTAGE S110 */'
+# ANCHOR MOVED AGAIN at [DD-11.1] (caught by the same tripwire): `RegRow`
+# gained a `definitions` field (D85, docs/design/definitions_table.md), so
+# ESC_DIGIT's body now ends `..., NULL, NULL}` (one NULL for `family`, one
+# for `definitions`). The SABOTAGE is unchanged.
+SAB_BEFORE='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}, NULL, NULL}'
+SAB_AFTER='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_brport_digit}, NULL, NULL}   /* SABOTAGE S110 */'

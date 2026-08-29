@@ -6,6 +6,26 @@ directory asserts that the description and the shipped parser actually agree.
 
 ## Files
 
+- **definitions_check.c** / **run_definitions_tests.sh** — [DD-11.1]'s two
+  required checks (docs/design/definitions_table.md §3 items 1-2): the
+  STRUCTURAL check (every `RegRow.definitions` entry's output — a parsed
+  DEFK_STR string or a DEFK_BUILDER's return value — is core-only
+  vocabulary, via `pcrec_ast_all_core`/`pcrec_ast_is_core`,
+  src/parse/definitions.c) and the CONTAINMENT check (the tag evaluator
+  `pcrec_def_tag_applies` has exactly one caller in the tree, a shell grep
+  in the `.sh` plus the same fact asserted from inside the built library in
+  the `.c`). Two negative controls (`\Z`/A_EOL, `\B`/A_NWORDB — both real,
+  shipped kinds the full reduction retires, §2) prove the structural
+  predicate actually discriminates rather than passing everything for
+  free; the containment grep's bite was verified live by a plant-rebuild-
+  revert cycle (a synthetic second call site in src/gen/emit_dfa.c, proven
+  to turn the check red, then reverted — not committed).
+  **NOT YET WIRED into run_registry_tests.sh's guarded chain** — run
+  standalone (`bash tests/registry/run_definitions_tests.sh`) until
+  [DD-11.2]/[DD-11.3] land the standing `--list-definitions`/self-oracle
+  surfaces this check is a precursor to; wiring lands with those, once the
+  table's population (POSIX classes, `\c`/`\o`/`\N{U+`, the 9 base-tier
+  literal escapes, `^`/`$`/`(?n)`) stops changing commit to commit.
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output

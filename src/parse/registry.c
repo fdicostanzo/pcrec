@@ -213,6 +213,14 @@
  * the in-class answer must promise no module (R9/SPEC-classes-F1). */
 #define ESC_CLASS_INVALID(sel, syn, mod, eng, note, q, ce) \
     {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT, NULL, NULL}
+/* [DD-11.1] as ESC_CLASS_INVALID, but with a `definitions` array — `\R`'s
+ * only customer today (definitions_table.md §1: "the definitions table can
+ * carry an unbuilt row's definition as data before any producer exists";
+ * `\R` is module `misc`, currently UNBUILT). `\X`/`\C` stay plain
+ * ESC_CLASS_INVALID rows: neither stands for another core-syntax construct
+ * (§1's own exclusion list), so neither gets a `definitions` entry. */
+#define ESC_CLASS_INVALID_D(sel, syn, mod, eng, note, q, ce, def) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT, NULL, (def)}
 /* as ESC/GROUP, but the LEXICAL row kind (design §13.3): a tokenizer mode,
  * not an atom — no class port, no AST port when ports land. The macros force
  * QF_LEXICAL rather than take a `q`, because registry_check requires
@@ -376,6 +384,31 @@ static const RegDef v_def[] = { {DEFK_STR, DEF_ALWAYS, "[\\n\\x0b\\f\\r\\x85]", 
 static const RegDef V_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n\\x0b\\f\\r\\x85]", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
 static const RegDef bare_N_def[] = { {DEFK_STR, DEF_ALWAYS, "[^\\n]", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
 
+/* [DD-11.1] `\R`'s definition (definitions_table.md §1/§4): any Unicode
+ * newline sequence, atomic so the CRLF branch cannot be torn by backtracking
+ * — PCRE2's own definition, verified against libpcre2 10.46 (11/11 subjects
+ * agree, incl. "\r\n", "\r\r", empty). `\R` is module `misc`, UNBUILT today;
+ * the table carries the definition as data ahead of any producer. */
+static const RegDef R_def[] = {
+    {DEFK_STR, DEF_ALWAYS, "(?>\\r\\n|\\n|\\x0b|\\f|\\r|\\x85)", NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL},
+};
+
+/* [DD-11.1] `\b`/`\B`'s shared definition family (definitions_table.md §1/
+ * §4): unconditional (DEF_ALWAYS-only — neither has an identity case, since
+ * neither is in the reduced core set, §2), each referencing `\w` — itself
+ * now a real row (§3 item 5's un-parked recursion guard is [DD-11.4], not a
+ * blocker for populating these two). Verified against libpcre2 10.46 at
+ * docs/design/lookaround_design.md:1792-1793 (0 disagreements). */
+static const RegDef wordb_def[] = {
+    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL},
+};
+static const RegDef nwordb_def[] = {
+    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?=\\w)|(?<!\\w)(?!\\w))", NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL},
+};
+
 static const RegRow esc_rows[] = {
 ESC_SET_D('d', "\\d", classes, ANY_ENGINE, "any decimal digit", QF_YES, "set 10", pcrec_cls_digit_esc, 0, d_def),
 ESC_SET_D('D', "\\D", classes, ANY_ENGINE, "any character that is not a decimal digit", QF_YES, "set 246", pcrec_cls_digit_esc, 1, D_def),
@@ -415,7 +448,7 @@ ESC_SET_D('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical w
  * complement); its class port stays NONE — permanently invalid, err 171,
  * wording tier 3 (D33 §3). Longhand because it is the one row with a
  * producing aport and a class-invalid flag at once. */
-{RK_ESC, 'N', NULL, "\\N", M_classes, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "any character except newline (PCRE2 forbids it inside a class)", ROADMAP_PLANNED, QF_YES, "err 171", 0, NULL, {PORT_SET, false, 1, pcrec_cls_newline, NULL}, NO_PORT, NULL, NULL},
+{RK_ESC, 'N', NULL, "\\N", M_classes, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "any character except newline (PCRE2 forbids it inside a class)", ROADMAP_PLANNED, QF_YES, "err 171", 0, NULL, {PORT_SET, false, 1, pcrec_cls_newline, NULL}, NO_PORT, NULL, bare_N_def},
 /* THE SHORT TAIL IS WRITTEN FIRST ON PURPOSE. These two rows are the only
  * prefix-related tail pair in the table (`{` is a proper prefix of `{U+`), so
  * on `{U+...` text BOTH recognisers answer and rank is the only thing electing
@@ -472,11 +505,11 @@ ESC_SET_D('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical w
  "word boundary — but inside a class it is BASE syntax: backspace (0x08)",
  ROADMAP_PLANNED, QF_NO, "char 0x08", 0, NULL,
  {PORT_FN, false, 0, NULL, pcrec_asrtport_atom},
- {PORT_SCALAR, true, 0x08, NULL, NULL}, NULL, NULL},
+ {PORT_SCALAR, true, 0x08, NULL, NULL}, NULL, wordb_def},
 {RK_ESC, 'B', NULL, "\\B", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
  RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "not a word boundary",
  ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
- {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT, NULL, NULL},
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT, NULL, nwordb_def},
 /* [M6.2] WAVE A: the three rows module `assertions` PRODUCES. Longhand
  * rather than ESC_CLASS_INVALID for exactly one field — `aport` — and
  * every other field is byte-for-byte what the macro built, RF_CLASS_INVALID
@@ -645,7 +678,7 @@ ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number o
 ESC_LEXICAL('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E", "err 106"),
 ESC_LEXICAL('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q", "err 106"),
 
-ESC_CLASS_INVALID('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence", QF_YES, "err 107"),
+ESC_CLASS_INVALID_D('R', "\\R",    misc, ANY_ENGINE, "any Unicode newline sequence", QF_YES, "err 107", R_def),
 ESC_CLASS_INVALID('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster", QF_YES, "err 107"),
 ESC_CLASS_INVALID('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode", QF_YES, "err 107"),
 ESC('c', "\\cX",     misc, ANY_ENGINE, "control character: \\cX is X xor 0x40", QF_YES, "char 0x18"),

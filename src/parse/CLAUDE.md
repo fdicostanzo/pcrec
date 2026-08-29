@@ -128,6 +128,33 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (§2.4/§2.4a) and the FIRST-DECLARATION name rule (§3.4(c)) each keep one
   definition rather than growing a second copy across the module boundary.
 
+- **definitions.c** — [DD-11.1] `RegRow.definitions`'s ONE evaluator,
+  resolver, tag-namer and core-set structural predicate (D85,
+  docs/design/definitions_table.md). `pcrec_def_tag_applies` is the single
+  exhaustive no-default switch over `DefTag` (internal.h) — containment by
+  construction, checked by a grep in tests/registry/run_definitions_tests.sh
+  (assertions_design.md §8.4's precedent: this function must have exactly
+  one caller in the tree, `pcrec_def_resolve`, right below it in this same
+  file). `pcrec_ast_is_core`/`pcrec_ast_all_core` are the OTHER exhaustive
+  switch this file owns — over `AKind` rather than `DefTag` — answering
+  whether a node kind survives `docs/dev/plan.md`'s [DD-11] addendum (f)'s
+  full reduction; nothing on the compile path calls it, only
+  tests/registry/definitions_check.c's structural check, since wiring the
+  table into real AST construction is [DD-11.5], gated on M6.6's exact
+  one-byte-fixed-lookbehind lowering (definitions_table.md §4's DFA-erasure
+  hazard — read it before adding a call site here). The two DEFK_BUILDER
+  functions (`pcrec_def_build_atomic`, the possessive-suffix family's
+  shared `(?>...)` wrap; `pcrec_def_build_identity`, `(?n)`'s no-op) exist
+  for the same reason: today only the structural check invokes them.
+  `RegRow.definitions` itself is populated in registry.c per
+  definitions_table.md §1's census — see that file's own row-by-row
+  citations for which rows carry which tag/string, and docs/dev/plan.md's
+  [DD-11] row for what remains open (the `applies` active-vs-identity
+  distinction `--list-definitions` will need for `^`/`$`/the `(?n)`-scoped
+  capturing-group row; the parameterized-by-source-text shape `\c`/`\o`/
+  `\N{U+`/POSIX class names and `\Q...\E` need, which the current
+  DEFK_STR/DEFK_BUILDER split does not express).
+
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
   mod_verbs.c at MOD-0.4 — see its own entry below; declared in internal.h
