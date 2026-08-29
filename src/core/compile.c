@@ -46,6 +46,136 @@ void pcrec_default_options(pcrec_options *opt)
     opt->header_name = NULL; /* self-contained .c by default */
 }
 
+/* [ART-SIZE] THE TWO EMITTED-SIZE QUANTITIES, measured on the finished
+ * buffer (docs/design/artifact_size_term.md §4).
+ *
+ * WHY A POST-EMISSION SCAN AND NOT AN ACCUMULATOR THREADED THROUGH THE
+ * EMITTER. Three reasons, in order of how much they matter:
+ *
+ * 1. It is the SAME DEFINITION the project already ships. tests/lib/
+ *    size_count.sh computes "total bytes minus comment bytes" with a flat
+ *    three-state tracker, and docs/dev/artifact_size_log.tsv logs it for
+ *    every corpus pattern. An accumulator would be a SECOND implementation
+ *    of a definition that already has one, and the two would drift — the
+ *    exact failure r40's F1 found when this row's own measuring instrument
+ *    disagreed with the artifact it was measuring.
+ * 2. The cap is a post-emission check by ruling (D84 addendum): the artifact
+ *    exists, the number is a fact about it, and the refusal happens before
+ *    the file is written. There is nothing to gain from knowing earlier.
+ * 3. An accumulator needs the emitter to mark every comment and every table
+ *    boundary — dozens of sites, each of which is a place a future emitter
+ *    change silently stops counting. This function reads the bytes that were
+ *    actually written, so a new table form or a new comment style cannot
+ *    escape it by forgetting to call something.
+ *
+ * The comment rule is size_count.sh's verbatim: a line whose first
+ * non-blank opens a block comment or a line comment is prose IN FULL, and a
+ * block opener that does not close on its own line runs to the line that
+ * closes it. The table rule is the note's §4.2: a line declaring
+ * `static const ... <name>[N]... = {` opens an initializer that runs to
+ * brace balance, and every byte of it — including a computed-goto jump
+ * table's — is TABLE, not code.
+ *
+ * `--emit-main`'s appended `main()` is NOT excluded here, and does not need
+ * to be: this runs on the emitter's own buffer, and cli/main.c appends
+ * `main()` to its OUTPUT after pcrec_compile has returned. A diagnostic flag
+ * therefore cannot move a refusal (the note's §4.2 requirement) by
+ * construction rather than by a rule someone has to remember. */
+typedef struct { size_t total, prose, tables; } EmitSize;
+
+static bool emit_size_table_open(const char *ln, size_t n)
+{
+    /* `static const <type...> <rx_name>[<digits>]... = {` — anchored on the
+     * right-hand `= {` and on the emitter's own `rx_` prefix rather than on a
+     * type spelling, because a type pattern is what F1's first instrument
+     * could not cross (`static const void *const`). */
+    static const char kw[] = "static const ";
+    const char *p = ln, *end = ln + n;
+    while (p < end && (*p == ' ' || *p == '\t')) p++;
+    if ((size_t)(end - p) < sizeof kw - 1) return false;
+    if (memcmp(p, kw, sizeof kw - 1) != 0) return false;
+    /* A dimension, then `= {` SOMEWHERE ON THE LINE — not necessarily at its
+     * end. The first cut of this required the line to END with `{`, which is
+     * true of the DFA's multi-line transition tables and FALSE of the
+     * computed-goto jump tables the emitter writes on ONE line
+     * (`static const void *const rx_targets_7[11] = { &&rx_s1, ... };`).
+     * That cut counted 548,024 bytes of jump table as CODE on K41's second
+     * witness — 1,218,674 instead of 670,650 — which is the same class of
+     * defect as r40's F1 (an instrument that cannot see one emitted form) and
+     * was caught the same way: by diffing this function against
+     * tests/lib/size_count.sh and the design note's own measurements before
+     * trusting it. */
+    const char *lb = NULL;
+    for (const char *q = p; q < end; q++) if (*q == '[') { lb = q; break; }
+    if (!lb) return false;
+    for (const char *q = lb; q + 1 < end; q++) {
+        if (*q != '=') continue;
+        const char *r = q + 1;
+        while (r < end && (*r == ' ' || *r == '\t')) r++;
+        if (r < end && *r == '{') return true;
+    }
+    return false;
+}
+
+static EmitSize emit_size_measure(const char *src, size_t len)
+{
+    EmitSize z = { 0, 0, 0 };
+    bool in_comment = false;
+    int  in_table = 0;
+    size_t i = 0;
+    while (i < len) {
+        size_t j = i;
+        while (j < len && src[j] != '\n') j++;
+        size_t lb = (j < len) ? (j - i + 1) : (j - i);  /* include the newline */
+        const char *ln = src + i;
+        size_t n = j - i;
+        z.total += lb;
+
+        const char *t = ln; size_t tn = n;
+        while (tn && (*t == ' ' || *t == '\t')) { t++; tn--; }
+
+        if (in_comment) {
+            z.prose += lb;
+            for (size_t k = 0; k + 1 < n; k++)
+                if (ln[k] == '*' && ln[k + 1] == '/') { in_comment = false; break; }
+        } else if (tn >= 2 && t[0] == '/' && t[1] == '*') {
+            z.prose += lb;
+            bool closed = false;
+            for (size_t k = (size_t)(t - ln) + 2; k + 1 < n; k++)
+                if (ln[k] == '*' && ln[k + 1] == '/') { closed = true; break; }
+            if (!closed) in_comment = true;
+        } else if (tn >= 2 && t[0] == '/' && t[1] == '/') {
+            z.prose += lb;
+        } else if (in_table) {
+            z.tables += lb;
+            for (size_t k = 0; k < n; k++) {
+                if (ln[k] == '{') in_table++;
+                else if (ln[k] == '}') in_table--;
+            }
+            if (in_table < 0) in_table = 0;
+        } else if (emit_size_table_open(ln, n)) {
+            z.tables += lb;
+            int d = 0;
+            for (size_t k = 0; k < n; k++) {
+                if (ln[k] == '{') d++;
+                else if (ln[k] == '}') d--;
+            }
+            in_table = d > 0 ? d : 0;
+        }
+        i = (j < len) ? j + 1 : j;
+    }
+    return z;
+}
+
+/* The two numbers the caps read. TOTAL is the artifact minus its comments
+ * (the size log's quantity); CODE is that minus its table initializers. */
+static size_t emit_size_total(const EmitSize *z) { return z->total - z->prose; }
+static size_t emit_size_code(const EmitSize *z)
+{
+    size_t t = z->total - z->prose;
+    return t > z->tables ? t - z->tables : 0;
+}
+
 static bool valid_prefix(const char *p)
 {
     if (!p || !*p || strlen(p) > PCREC_MAX_PREFIX_LEN) return false;
@@ -425,6 +555,69 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
+
+        /* [ART-SIZE] THE TWO EMITTED-SIZE CAPS (D84; docs/design/
+         * artifact_size_term.md §4.4). Checked HERE — after emission, before
+         * a single byte reaches the caller — which is the ruled shape
+         * (D84 addendum): the artifact exists, so the number is a FACT about
+         * it rather than a prediction, and nothing is ever written past a cap.
+         *
+         * BOTH ENGINES, deliberately. The note scoped the code cap to VM
+         * artifacts back when it was a NODE cap; a cap on emitted CODE has no
+         * reason to care which emitter wrote the code, and a limit that
+         * applies to one engine only is the special case this project's
+         * standing rule is against. Measured, it costs nothing to generalise:
+         * the largest DFA artifact in the corpus carries 11,655 code bytes
+         * against a 500,000 limit.
+         *
+         * The header's bytes count toward the TOTAL (they are part of what the
+         * caller ships and what `size_count.sh` sums over the split form), and
+         * toward CODE by the same rule — the sidecar is declarations, so it
+         * contributes almost nothing either way, but leaving it out would make
+         * the same pattern measure two different sizes depending on whether
+         * `-o -` or `-o file.c` was asked for. */
+        {
+            EmitSize zc = emit_size_measure(cx.job->csb.p, cx.job->csb.len);
+            if (defo.header_name && cx.job->hsb.len) {
+                EmitSize zh = emit_size_measure(cx.job->hsb.p, cx.job->hsb.len);
+                zc.total += zh.total; zc.prose += zh.prose; zc.tables += zh.tables;
+            }
+            size_t tot = emit_size_total(&zc), code = emit_size_code(&zc);
+            uint64_t cap_code = defo.max_emit_code_bytes
+                              ? defo.max_emit_code_bytes
+                              : (uint64_t)PCREC_MAX_VM_EMIT_CODE_BYTES;
+            uint64_t cap_tot  = defo.max_emit_bytes
+                              ? defo.max_emit_bytes
+                              : (uint64_t)PCREC_MAX_EMIT_BYTES;
+            /* The diagnostic names MEASURED vs CAP and the lever that would
+             * pass — D84's predictability half, which is discharged by the
+             * refusal and by docs/spec/limits.md's "Handling an oversized
+             * artifact", not by machinery. Inside pcrec_error.msg's 256 bytes:
+             * this file's standing rule is that a diagnostic naming a fix and
+             * then TRUNCATED has not named it. */
+            if (code > cap_code)
+                ctx_fail(&cx, 0,
+                         /* NO `.o` figure here, deliberately: the ~17 %
+                          * source-to-object ratio is measured against TOTAL
+                          * source, and quoting it against CODE bytes would be
+                          * a size derived for one role reused in another —
+                          * the exact hygiene failure r39 finding S1 was
+                          * about. This cap is about COMPILE TIME anyway; the
+                          * shipped-size number belongs on the total cap. */
+                         "pattern too large: %zu bytes of emitted code (limit "
+                         "%llu), which gcc cannot compile in reasonable time. "
+                         "A repeat's body is replicated and counts MULTIPLY "
+                         "through nesting -- lower a count, try --unroll=1, or "
+                         "raise --max-emit-code-bytes",
+                         code, (unsigned long long)cap_code);
+            if (tot > cap_tot)
+                ctx_fail(&cx, 0,
+                         "pattern too large: %zu bytes of emitted C source "
+                         "(limit %llu, ~%zu KB .o). Lower a repeat count, try "
+                         "--unroll=1, or raise --max-emit-bytes; see "
+                         "limits.md \"Handling an oversized artifact\"",
+                         tot, (unsigned long long)cap_tot, tot * 17 / 100 / 1024);
+        }
 
 
         /* [M4.7b/K7] Take into JOB-OWNED slots first, publish only once all three
