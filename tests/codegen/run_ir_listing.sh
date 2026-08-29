@@ -333,11 +333,29 @@ fi
 # grow with the count: the hybrid's inlined DFA prefilter carries the bounded
 # repeat (869 → 1,994 lines for {0,400} → {0,4000} at 32890e2, before any of
 # today's scaffolding) — a pre-existing cost the old ceiling hid by slack
-# (K39, [OPT-4]). The auto sizes are PRINTED beside the verdict so the K39
-# number stays visible; the assertion is the rung's own claim.
-eg_auto_big="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 && wc -l < "$WORKDIR/endgame_auto.c" || echo '?')"
-eg_auto_small="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1 && wc -l < "$WORKDIR/endgame_auto_small.c" || echo '?')"
-echo "  [ENG-BREP] default-engine sizes (informational, K39): {0,400} $eg_auto_small lines, {0,4000} $eg_auto_big lines — the hybrid prefilter's DFA scales with the count"
+# (K39).
+#
+# **[OPT-4], 2026-08-29: THE AUTO SIZES ARE NOW ASSERTED, NOT PRINTED.** K39 is
+# fixed — above `PCREC_PREFILTER_EXACT_NFA_STATES` the hybrid's prefilter is
+# built from the count-collapsed language, so the DEFAULT artifact is
+# count-independent too and the informational line that stood here has a claim
+# to make. It is asserted on the SPLIT (`-o FILE`) artifact, which is a
+# different emitted shape from the self-contained one
+# `tests/codegen/run_prefilter_collapse.sh` §1 asserts on; that script also
+# carries this assertion's CONTROL (under `-fno-prefilter-collapse` the same
+# pair must DIVERGE), which is what stops either of them passing on a compiler
+# that had stopped emitting a prefilter at all.
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
+    eg_auto_big="$(wc -l < "$WORKDIR/endgame_auto.c")"
+    eg_auto_small="$(wc -l < "$WORKDIR/endgame_auto_small.c")"
+    eg_auto_delta=$(( eg_auto_big > eg_auto_small ? eg_auto_big - eg_auto_small : eg_auto_small - eg_auto_big ))
+    [ "$eg_auto_delta" -le 2 ] \
+        && ok "[K39] the DEFAULT artifact is count-independent too: {0,400} $eg_auto_small lines, {0,4000} $eg_auto_big (delta $eg_auto_delta) — the hybrid's prefilter takes the count-collapsed language above the knee ([OPT-4])" \
+        || bad "[K39] the DEFAULT artifact emitted $eg_auto_big lines for {0,4000} against $eg_auto_small for {0,400} (delta $eg_auto_delta > 2) — the hybrid's inlined prefilter is scaling with the count again"
+else
+    bad "[K39] '((a)|b){0,400}c' or '((a)|b){0,4000}c' does not compile at the DEFAULT engine"
+fi
 if pcrec_run "$PCREC" -p rx -fno-prefilter -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
    && pcrec_run "$PCREC" -p rx -fno-prefilter -o "$WORKDIR/endgame_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
     eg_lines="$(wc -l < "$WORKDIR/endgame.c")"; eg_small="$(wc -l < "$WORKDIR/endgame_small.c")"

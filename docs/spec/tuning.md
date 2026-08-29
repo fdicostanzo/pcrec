@@ -261,7 +261,21 @@ requested, an auto-selected prefilter whose own DFA build OVERFLOWS a cap
 comes out `false` and the artifact stamps `RX_VM_PREFILTER "none"`, exactly
 as if `-fno-prefilter` had been passed, though `--emit-ir`'s `; prefilter`
 line does not claim that flag's credit (it reads the same `RX_ENGINE_WHY`
-overflow text §2.11 states, not `-fno-prefilter`). `-fprefilter` itself is
+overflow text §2.11 states, not `-fno-prefilter`).
+
+**[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**
+Before the prefilter is dropped, the fallback tries ONE more thing: building
+it from the count-collapsed language (§2.17). The ground for dropping it was
+that rebuilding would be the IDENTICAL machine that just overflowed — true of
+the pattern's own language, false of the collapsed superset, whose size is a
+function of the pattern's STRUCTURE alone. So an overflow witness can now come
+out `RX_VM_PREFILTER "hybrid"` with
+`RX_VM_PREFILTER_LANG "count-collapsed"` and
+`RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`, beside an
+`RX_ENGINE_WHY` that still names the overflow — which is what tells a reader
+which rung won. `RX_VM_PREFILTER "none"` remains the outcome when the
+COLLAPSED machine overflows too, and when `-fno-prefilter-collapse` is passed
+(a caller who denied the axis is not given it by the back door). `-fprefilter` itself is
 UNCHANGED — forcing the prefilter on a pattern whose DFA cannot be built
 still REFUSES with today's diagnostic (§2.11), because a caller who named
 the flag asked for the machine that overflows. See §2.11 for the mechanism
@@ -476,8 +490,16 @@ by this — both still refuse with today's diagnostic
 because a caller who named the engine explicitly asked for the machine that
 cannot be built, and that request stays do-or-die.
 
-**THE COST BOUND**: the fallback compile is at most ONE refused DFA build
-dearer than asking for `--engine=vm` directly. The overflowing build's own
+**THE COST BOUND** ([OPT-4], 2026-08-29: **at most TWO**, was one): the
+fallback compile is at most two refused DFA builds dearer than asking for
+`--engine=vm` directly, and the second is bounded by the first. The retry is
+now a two-rung ladder — build the prefilter from the count-collapsed language,
+and only if THAT overflows too, drop it (§2.5) — and the collapsed machine's
+NFA is strictly smaller than the exact one this compile already built, with a
+size that does not depend on any repeat count. A caller who passes
+`-fno-prefilter-collapse` skips the new rung entirely and keeps the original
+one-build bound. The sentence below describes the second rung, which is
+unchanged. The overflowing build's own
 cost is bounded by the K7 budget (`src/core/limits.h`'s `PCREC_MAX_SUBSET_
 ELEMS` entry: ~0.9 s / ~216 MB at the worst state-cap refusal measured
 there); `src/core/compile.c`'s retry never re-attempts that construction — it
@@ -850,6 +872,133 @@ oversized artifact acceptable. To accept a larger artifact, RAISE a cap
 `capacity-declined` — because "the term did not run" has five
 distinguishable reasons and a check must be able to tell them apart. Both are unconditional on every VM artifact
 (D81).
+
+
+### 2.17 `-fno-prefilter-collapse` / `-fprefilter-collapse` — `PCREC_NO_PREFILTER_COLLAPSE` (bit 19) / `PCREC_FORCE_PREFILTER_COLLAPSE` (bit 20)
+
+
+**ANSWER-IDENTITY-preserving, in both directions and including the give-up
+surface.** The axis changes only the LANGUAGE the VM hybrid's inlined DFA
+recognises, and that DFA is a FILTER: what it owes the VM is a sound
+rejection and a lower bound on the match start, both of which a superset
+supplies, with the VM re-deriving the answer from every candidate it is
+handed (`§2.5`'s hybrid, and `match_api.md` §6.3's H1/H2/H3). The prefilter
+is answer-identity-preserving by D46's rule; this is a selection WITHIN it.
+
+**What it controls.** With the axis ON (the default), a hybrid prefilter
+whose exact NFA exceeds `PCREC_PREFILTER_EXACT_NFA_STATES` is built from a
+COUNT-COLLAPSED lowering: every `A_REP` with `rmin > 1` or `rmax > 1` is
+lowered as `X{min(rmin,1),}`. That is a superset — every word of `X{m,n}`
+is `k` copies of `X` with `m <= k <= n`, and `k >= min(m,1)` in both cases
+— whose proof never mentions `n`, so the resulting machine, and the
+artifact, stop scaling with the count. MEASURED (K39): `((a)|b){0,4000}c`
+drops from 199,511 to 29,077 code bytes and `((a)|ab){4000}c` from 651,694
+to 36,140, while `((a)|b){0,400}c` and `((a)|b){0,4000}c` come out within
+two bytes of each other.
+
+**THREE CONJUNCTS, AND THE FLAGS REACH ONLY ONE.** The collapse applies
+when (a) these machines' sole customer is the VM's prefilter — never when
+the DFA is the ENGINE, where a superset would be a miscompile; (b) the
+pattern has a counted repeat with replication factor `>= 2`, so there is
+something to collapse; and (c) the exact NFA is over the state budget.
+`-fno-prefilter-collapse` removes the candidate outright.
+`-fprefilter-collapse` drops conjunct (c) ALONE, so every counted repeat
+collapses and the emitted size becomes count-INDEPENDENT rather than
+count-bounded. Neither flag reaches (a) or (b) — those are correctness and
+vacuity, not policy. Requesting both is REFUSED
+("`-fprefilter-collapse` and `-fno-prefilter-collapse` cannot both be
+requested"); neither half is otherwise do-or-die, because forcing the
+collapse on a pattern with nothing to collapse is a request the compiler
+HONOURS (that pattern's collapsed language IS its exact language).
+
+**WHAT DENYING IT BUYS, stated because it is a real trade.** The exact
+prefilter is a SHARPER filter: it seeds the VM at the true leftmost start
+where the collapsed one seeds a lower bound the VM must walk forward from,
+and — because a superset's span END is not an upper bound (`match_api.md`
+§6.3, H3) — a collapsed artifact carries no
+`<PREFIX>_VM_PRUNE_CEILING "prefilter-window"`, reading `subject-end`
+instead. Both cost match time on some subjects and both are recovered by
+`-fno-prefilter-collapse`, at an artifact size proportional to the count.
+
+**AND THE COSTS ARE MEASURED, NOT WAIVED** (2026-08-29, gcc 15 `-O2`, one
+box; every pair below returned the IDENTICAL answer — same match count, same
+span — which is the axis being answer-identity-preserving, D46). Read the
+first row before choosing the default for a latency-sensitive caller:
+
+| case | collapsed (default) | exact (`-fno-prefilter-collapse`) |
+|---|---|---|
+| **worst case**, `((a)\|b){0,400}c` on 100,000 `a` then `c` | 9.24 s, **99,601 VM attempts**, 38,776 B | 0.000011 s, **1 attempt**, 55,069 B |
+| `(ab){300}` find-all over 64 KB of `ab` | 0.266 s, 246 attempts/search, 34,699 B | 0.006 s, 109 attempts/search, 67,471 B |
+| `(ab){300}` find-all over 66 KB that never matches | 0.089 s, 66,001 attempts | 0.006 s, **0 attempts** |
+| `((a)\|ab){0,100}c` find-all over 64 KB that matches | 0.028 s, 1,300 attempts, 56,675 B | 0.019 s, 1,300 attempts, 64,817 B |
+| `((a)\|ab){0,100}c` over 64 KB that never matches | **0.000006 s** | 0.000016 s |
+
+**THE TWO COSTS ARE SEPARABLE AND THESE ROWS SEPARATE THEM.** Rows 2 and 3
+are a pattern whose artifact reads `<PREFIX>_VM_PRUNE_CEILING "none"` under
+BOTH languages, so their whole difference is the lost sharp start — the VM
+verifying candidates the exact machine would never have offered. Row 4 is the
+opposite control: the attempt count is IDENTICAL at 1,300, so its 1.5× is
+entirely the lost `"prefilter-window"` ceiling.
+
+**THE TRADE IS NOT ONE-DIRECTIONAL.** Row 5 is a subject the prefilter
+rejects outright under either language, and there the collapsed artifact is
+~2.7× FASTER, because the smaller DFA scans the subject quicker. A caller
+whose traffic is mostly non-matching may be better off at the default even
+where a matching subject would favour the exact machine.
+
+**The first row is the shape to worry about**: a long run of the repeat's
+body followed by the terminator, where the exact reverse machine names the
+true start and the collapsed one names 0. It is the case the design note
+predicted before the code was written
+(`docs/design/prefilter_count_independence.md` §7.1) and it is worse in
+practice than "quadratic where the exact prefilter is linear" reads on the
+page. `-fno-prefilter-collapse` is the recovery, and it recovers today's
+artifact byte for byte.
+
+**The stamp** is `<PREFIX>_VM_PREFILTER_LANG`, `"exact"` or
+`"count-collapsed"`, emitted exactly where `<PREFIX>_VM_PREFILTER` reads
+`"hybrid"` — an artifact with no prefilter names no language. It reports
+what was BUILT, so a request that changed nothing stamps `"exact"`.
+
+**And `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`
+convention), because `"exact"` alone does not say which of three quite
+different situations produced it. FIVE values, emitted on the same
+condition as the line above:
+
+| value | meaning |
+|---|---|
+| `"exact nfa N > B"` | the measured exact forward NFA was `N` states against a budget of `B`, so the collapse fired. The default reason for `"count-collapsed"` |
+| `"forced"` | `-fprefilter-collapse` dropped the budget conjunct, and it was NECESSARY — an above-budget pattern compiled with that flag stamps the `>` form instead, because the flag changed nothing there |
+| `"exact nfa N <= B"` | the knee was consulted and the machine was within it, so the sharper language was kept |
+| `"no counted repeat"` | nothing to collapse: this pattern's collapsed language IS its exact one. The state `-fprefilter-collapse` is honoured but vacuous in |
+| `"denied, exact nfa N > B"` | `-fno-prefilter-collapse` kept the exact machine on a pattern that would have collapsed — so the reader is told both that the flag acted and, in `N`, what it cost |
+| `"dfa overflow retry, exact nfa N"` | [SEL-1]'s fallback took it (§4): this pattern's DFA overflowed a cap as the ENGINE, and on the retry the collapsed language is what stands between it and no prefilter at all. The BUDGET is not named because it was not consulted — this rung ignores the knee |
+
+**`"denied"` appears only where the denial CHANGED what was built.** A denied
+build below the knee, or of a pattern with nothing to collapse, stamps the
+same reason as the default build does — because `-fno-prefilter-collapse`
+recovers today's artifact **byte for byte** (above), and a reason string whose
+length moved on the mere presence of the flag would break that promise on
+every artifact the flag cannot act on. Same rule as the value line above: the
+artifact reports what was BUILT, never what was asked.
+
+The number is the measurement the decision was made on, not a remark
+about the budget, so a reader can see how close an artifact came to the
+other side of the knee without rebuilding it; `B` is printed from
+`PCREC_PREFILTER_EXACT_NFA_STATES` and follows it if it moves. The two
+lines are two readers of one derivation written at
+`src/core/compile.c`'s build gate, and the first three values above are
+exactly the ones that read `"count-collapsed"` / `"exact"` in the line
+above — never independently settable.
+
+**The budget** is `PCREC_PREFILTER_EXACT_NFA_STATES` (`src/core/limits.h`),
+compared against the exact forward machine's NFA state count. It is not a
+tuning knob but the point where two measured populations separate: over the
+1,388 corpus artifacts carrying a hybrid prefilter, the 1,144 with no
+counted repeat of factor `>= 2` top out at 20 NFA states, while the 244
+that carry one run to 24,005 — so the budget fires only where the COUNT is
+what made the machine big. See `limits.md` and
+`docs/design/prefilter_count_independence.md`.
 
 
 ## 3. The DFA side's own stamps

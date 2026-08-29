@@ -748,11 +748,23 @@ DID. `RX_ENGINE_WHY` stays VM-only too, and for a fact-shaped reason rather
 than an engine-shaped one: it names what FORCED the VM, and a DFA artifact was
 not forced — `rx_info.engine_why` is `NULL` there for the same reason.
 
-**ONE EMITTER FOR THE UNCONDITIONAL MACRO.** `pcrec_emit_engine_stamp`
-(`emit_dfa.c`, declared in `src/core/internal.h`) writes `<PREFIX>_ENGINE` for
-BOTH engines; `emit_vm.c` calls it with `"vm"`. Two `sb_printf`s spelling the
-same `#define` would be two chances for it to drift, and drift is exactly what
-an unconditional stamp exists to prevent. The PREFILTER stamps are deliberately
+**ONE EMITTER FOR THE UNCONDITIONAL MACROS** — plural since [OPT-4].
+`pcrec_emit_engine_stamp` (`emit_dfa.c`, declared in `src/core/internal.h`)
+writes `<PREFIX>_ENGINE` **and `<PREFIX>_ENGINE_SEL`** for BOTH engines;
+`emit_vm.c` calls it with `"vm"`. Two `sb_printf`s spelling the same `#define`
+would be two chances for it to drift, and drift is exactly what an
+unconditional stamp exists to prevent — so the second unconditional stamp rode
+this function rather than getting call sites of its own.
+
+`_ENGINE_SEL` is the engine decision as a CLOSED TOKEN where `_ENGINE_WHY` is
+prose (`selected` / `forced` / `overflowed-dfa` / `overflowed-prefilter` /
+`collapsed-prefilter`; `match_api.md` §6.3). The two are NOT a rewording of
+each other and the distinction is why the macro exists: a consumer cannot
+BUCKET on prose, and the last three values share one `_ENGINE_WHY` string
+(`"dfa overflowed: …"`) while differing in what SURVIVED the fallback. Its
+value comes from `pcrec_engine_sel_name(cx)`, one spelling of each token, off
+`EngineFit.engine_sel` — written once at `select_engine.c`'s single fit site,
+never parsed out of the prose. The PREFILTER stamps are deliberately
 NOT shared: their value sets are different vocabularies (`RX_VM_PREFILTER` is
 `"hybrid"`/`"none"`; the DFA's five are below), and a shared emitter for two
 vocabularies is only a switch. The VM name is also stamped in pcrec-bench's

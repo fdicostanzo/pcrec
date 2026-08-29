@@ -120,7 +120,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
-      test-stackdepth test-premul-table test-anchored-match
+      test-stackdepth test-premul-table test-anchored-match \
+      test-prefilter-collapse
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -279,6 +280,16 @@ test-anchored-match: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_anchored_match.sh' \
 	    'bash tests/anchored/run_anchored_diff.sh'
+
+# [OPT-4] the COUNT-COLLAPSED PREFILTER's own checks (K39; docs/design/
+# prefilter_count_independence.md). Its OWN section rather than a sixth script
+# in `test-codegen`'s group, on `test-premul-table`'s and `test-anchored-match`'s
+# measured argument: `make smoke` includes `test-codegen` and is already at its
+# 60s target, and this script sweeps the whole corpus (MEASURED 151 s). It IS
+# part of `make test`; only the smoke wrapper is spared it.
+test-prefilter-collapse: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-prefilter-collapse.ran"; fi
+	bash tests/codegen/run_prefilter_collapse.sh
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
 # honest artifact stamps, the capture oracle + the §3.7 differential, the
@@ -1135,5 +1146,6 @@ clean:
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-anchored-match \
+        test-prefilter-collapse \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

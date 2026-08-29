@@ -145,6 +145,34 @@ GATE_SUBJECTS=15
 # revisit these pins is [OPT-4]/K39 shrinking witness 2's prefilter, after
 # which it should compile rather than refuse.
 #
+# [OPT-4] (2026-08-29, K39) FIRED THAT TRIGGER, and the counts below are
+# RE-DERIVED FROM A RUN rather than from the arithmetic that predicted them.
+# Witness 2's cost was its PREFILTER — 3,423 exact NFA states against a budget
+# of 128 — so above the knee it is now built from the count-collapsed language
+# and the artifact goes from 671,039 code bytes (REFUSED by
+# PCREC_MAX_VM_EMIT_CODE_BYTES) to 152,302 ACCEPTED, with gcc -O2 falling from
+# 66.92 s to 2.04 s. It therefore leaves the "emitted-size cap" bucket the
+# THIRD way a pattern can leave it — not fixed by a smaller body (witness 1),
+# not refused (its own previous state), but compiled — and re-enters the
+# ordinary accept/compare population:
+#
+#     both accept              182 -> 183   (+1, witness 2)
+#     emitted-size cap           1 -> 0     (nothing left refusing at this seed)
+#     subject pairs compared  2730 -> 2745  (+15, its own 15 subjects)
+#     oracle inconclusive        3 -> 3     (unchanged — its subjects are conclusive)
+#
+# AND THE PART THAT IS NOT ARITHMETIC: with witness 2 back in the comparison
+# population, `content divergences` and `accept/reject divergences` are BOTH
+# still 0. The pattern this row exists to make compilable now answers
+# identically to PCRE2 on all 15 of its subjects, which is the evidence that
+# [OPT-4] made it smaller rather than making it wrong — a superset prefilter
+# that had broken H1 or H2 would surface here and nowhere else in the suite.
+#
+# "emitted-size cap" is pinned at 0 rather than deleted: the bucket and its
+# diversion still exist and still matter (a future seed, or a raised count,
+# will refill it), and a pin of 0 is the statement that at THIS seed nothing
+# currently refuses — which is a fact that can regress.
+#
 # The pre-[ART-SIZE] derivation, kept because it is what these numbers moved
 # FROM: "both accept" 183 -> 181 (183 - 2), "subject pairs compared" 2745 -> 2715
 # (2745 - 2*15), and "oracle inconclusive" 3 -> 0 -- the 3 inconclusive
@@ -158,18 +186,18 @@ GATE_SUBJECTS=15
 declare -A EXPECT=(
     ["patterns generated"]=300
     ["module construct patterns"]=75
-    ["both accept"]=182
+    ["both accept"]=183
     ["both reject"]=117
     ["pcrec-only reject"]=0
     ["pcre2-only reject"]=0
     ["PCRE2 size-limit"]=0
     ["DFA state-cap"]=0
     ["K41 oversize artifact"]=0
-    ["emitted-size cap"]=1
+    ["emitted-size cap"]=0
     ["gcc compile fails"]=0
     ["pcrec compile timeout"]=0
     ["oracle probe timeout"]=0
-    ["subject pairs compared"]=2730
+    ["subject pairs compared"]=2745
     ["oracle inconclusive"]=3
     ["pcrec step-budget exhausted"]=0
     ["pcrec frame-budget exhausted"]=0

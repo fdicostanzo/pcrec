@@ -1233,7 +1233,131 @@ typedef struct {
     const char *why;        /* the forcing construct, for the stamp and F7 */
     size_t      why_pos;    /* pattern offset of it */
     bool        prefilter;  /* §6: is a DFA prefilter emitted alongside */
+
+    /* [OPT-4] WHICH LANGUAGE THAT PREFILTER WAS BUILT FROM (K39;
+     * docs/design/prefilter_count_independence.md). False = the pattern's own
+     * (exact) language; true = the COUNT-COLLAPSED superset, every `A_REP`
+     * with `rmin > 1 || rmax > 1` lowered as `X{min(m,1),}`.
+     *
+     * IT IS NOT SET BY `pcrec_select_engine`, and that is the one thing to
+     * know about this field's home. Every other member here is a decision
+     * selection can make from the AST alone; this one is decided by MEASURING
+     * the exact machine (`src/core/compile.c`'s build gate compares `Nfa.n`
+     * against `PCREC_PREFILTER_EXACT_NFA_STATES`), because a prediction of
+     * that number would be a second statement of `compile_ast`'s own `A_REP`
+     * lowering and the two can drift (D24). It rides on `EngineFit` rather
+     * than on `Job` so that the emitter reads the prefilter's KIND and its
+     * LANGUAGE off one struct, in one place — `<PREFIX>_VM_PREFILTER` and
+     * `<PREFIX>_VM_PREFILTER_LANG` are two readers of one derivation (D81).
+     *
+     * ITS CONSUMERS ARE THREE AND THEY MUST AGREE: the stamp, the `--emit-ir`
+     * listing's `; prefilter` line, and `Vm.mrl_win` — where it joins
+     * `pcrec_has_atomic`/`pcrec_has_lookaround` as a third reason the span END
+     * is not an upper bound. R31 E3's finding applies unchanged: the lines
+     * that BUILD the ceiling read `mrl_win` itself, so flipping this field
+     * cannot leave a stamp disagreeing with a live clamp. */
+    bool        prefilter_collapsed;
+
+    /* [OPT-4] WHY THAT LANGUAGE, and the number the decision was made on
+     * (D81's `_WHY` convention; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
+     *
+     * FIVE VALUES, NOT THREE, and the reason is `_UNROLL_K_WHY`'s recorded
+     * one (emit_vm.c): a stamp that collapses reachable states into one is a
+     * hint rather than a fact, and a check cannot tell the collapsed states
+     * apart afterwards. The gate in `src/core/compile.c` has five outcomes and
+     * all five are reachable from the command line. Listed here in the ENUM's
+     * order, which is chosen for the invariant below and is NOT the gate's
+     * precedence order (the gate tests deny, then has-collapsible, then force,
+     * then the budget):
+     *
+     *   PFLW_DENIED   `-fno-prefilter-collapse` kept the exact machine on a
+     *                 pattern that WOULD have collapsed. Reported only where
+     *                 the denial changed what was built: below the knee, or
+     *                 with nothing to collapse, a denied build stamps the same
+     *                 reason as the default one, because
+     *                 `-fno-prefilter-collapse` owes byte-for-byte recovery of
+     *                 today's artifact and a reason that moved on the mere
+     *                 PRESENCE of the flag would break it.
+     *   PFLW_NO_REP   no collapsible `A_REP` exists, so the collapsed lowering
+     *                 IS the exact one and there is nothing to buy. This is
+     *                 the state `-fprefilter-collapse` is HONOURED but vacuous
+     *                 in, which is exactly why it may not share a value with
+     *                 PFLW_FORCED.
+     *   PFLW_UNDER    the measured exact NFA was within
+     *                 `PCREC_PREFILTER_EXACT_NFA_STATES`, so the sharper
+     *                 language was kept.
+     *   PFLW_FORCED   `-fprefilter-collapse` dropped the budget conjunct.
+     *   PFLW_OVER     the measured exact NFA exceeded the budget. The default
+     *                 reason for a collapse.
+     *   PFLW_SEL1     [SEL-1]'s retry took it: the DFA overflowed a cap as the
+     *                 ENGINE, and on the fallback compile the collapsed
+     *                 language is what stands between this pattern and no
+     *                 prefilter at all. DISTINCT from PFLW_OVER even though
+     *                 both collapse, and distinct from PFLW_FORCED even though
+     *                 both ignore the knee: this one says the artifact HAS a
+     *                 prefilter it would not have had before [OPT-4], which is
+     *                 the fact a reader of `RX_ENGINE_WHY "dfa overflowed"`
+     *                 needs in order to understand why the next line is not
+     *                 `RX_VM_PREFILTER "none"`.
+     *
+     * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed`, and that
+     * is an INVARIANT a check can assert rather than a coincidence: both are
+     * written at the single gate in `src/core/compile.c`, from the same
+     * conjuncts, in one place.
+     *
+     * `prefilter_nfa_states` is the EXACT forward NFA's state count as
+     * MEASURED (D24 — never predicted from the AST), and it is recorded on
+     * every path including the ones that did not collapse, because "42 <= 128"
+     * is the fact that says the knee was consulted and answered. It is 0 only
+     * where no NFA was built at all, i.e. where no prefilter exists and no
+     * stamp is emitted. */
+    unsigned    prefilter_nfa_states;
+    unsigned char prefilter_lang_why;
+
+    /* [OPT-4] HOW THIS ARTIFACT GOT ITS ENGINE, as a CLOSED VALUE SET
+     * (`<PREFIX>_ENGINE_SEL`, D81; bench O-8's ask).
+     *
+     * WHY IT EXISTS BESIDE `why`, WHICH ALREADY SAYS SOMETHING. `why` is
+     * PROSE — "capture group at pattern offset 18", "dfa overflowed: >32000
+     * states at pattern offset 0" — written to be read by a person and
+     * deliberately allowed to name an offset, a construct or a build outcome.
+     * A CONSUMER cannot bucket on it: telling "auto picked the VM" from "auto
+     * FELL BACK to the VM" means substring-matching English, and the
+     * comparative bench had to. This is the same decision as a token.
+     *
+     * ONE DERIVATION, TWO READERS (D81): both come off this struct, written
+     * once at `src/opt/select_engine.c`'s single `cx->job->fit = fit` site
+     * from the driver's own attempt record. The prose is not parsed to
+     * produce the token and the token is not re-derived to produce the prose.
+     *
+     * FIVE VALUES, and the last three are all "fell back" with different
+     * outcomes — which is exactly the distinction `why` cannot carry. */
+    unsigned char engine_sel;
 } EngineFit;
+
+/* [OPT-4] `EngineFit.engine_sel` — `<PREFIX>_ENGINE_SEL`'s closed value set.
+ * Ordered so `>= ESEL_OVERFLOWED_DFA` reads "a DFA build overflowed and this
+ * compile fell back", which is the bucket the bench actually wants. */
+enum {
+    ESEL_FORCED               = 0,  /* the caller named --engine=vm/dfa */
+    ESEL_SELECTED             = 1,  /* auto chose on the AST; nothing overflowed */
+    /* everything from here is a FALLBACK after a DFA build overflowed a cap */
+    ESEL_OVERFLOWED_DFA       = 2,  /* the DFA was to be the ENGINE; no prefilter survives */
+    ESEL_OVERFLOWED_PREFILTER = 3,  /* the VM was already chosen; its prefilter was dropped */
+    ESEL_COLLAPSED_PREFILTER  = 4   /* [OPT-4]'s rung: a prefilter SURVIVED, count-collapsed */
+};
+
+/* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that the two collapsing
+ * outcomes are the top two: see the invariant stated above. */
+enum {
+    PFLW_DENIED = 0,
+    PFLW_NO_REP = 1,
+    PFLW_UNDER  = 2,
+    /* everything from here collapses */
+    PFLW_FORCED = 3,
+    PFLW_OVER   = 4,
+    PFLW_SEL1   = 5
+};
 
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
@@ -1584,6 +1708,40 @@ struct Ctx {
      * forbids. See PCREC_DFA_OVERFLOW_WHY_LEN (limits.h) for the buffer's
      * sizing. */
     bool                 dfa_disabled;
+
+    /* [OPT-4] THE SECOND RUNG OF THE SAME RETRY, and the reason it is a
+     * separate bit rather than a widening of `dfa_disabled`.
+     *
+     * `dfa_disabled` means two things at once today: "the DFA may not be the
+     * ENGINE" and "do not build a prefilter DFA either". The second half rests
+     * on a premise `src/opt/select_engine.c` states in full — that rebuilding
+     * the prefilter would be the IDENTICAL construction that already
+     * overflowed, so it would cost a second refused build for nothing. With
+     * the count-collapsed language that premise stops holding: the collapsed
+     * machine is not that machine, it is a smaller one whose size is a
+     * function of the pattern's STRUCTURE alone. So the retry gains a rung
+     * BETWEEN "exact prefilter" and "no prefilter", and this bit is what
+     * distinguishes them.
+     *
+     * TRUE ONLY WHEN `dfa_disabled` IS TRUE. It is not an independent axis: it
+     * refines what the dfa-disabled retry does about the PREFILTER, and
+     * `compile_driver` sets both together. When set, the prefilter survives
+     * (`select_engine.c`'s silent-drop clause skips it) and
+     * `src/core/compile.c`'s build gate forces the collapsed language
+     * regardless of the knee — the knee is a SIZE heuristic and this rung is
+     * not about size, it is the last thing between this pattern and no
+     * prefilter at all. */
+    bool                 prefilter_collapse_retry;
+
+    /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
+     * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only
+     * when that is true. It is the one fact separating
+     * `ESEL_OVERFLOWED_DFA` from `ESEL_OVERFLOWED_PREFILTER`, and it cannot be
+     * recovered on the retry: by then the DFA is excluded from selection
+     * outright, so every fallback attempt reports `chosen == ENGM_VM` whatever
+     * the first attempt wanted. Recorded where it is still true, carried like
+     * `dfa_overflow_why` and for the same reason. */
+    bool                 dfa_was_engine;
     bool                 dfa_overflowed;
     char                 dfa_overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [DD-14 wave B+C] THE CALL GRAPH, or NULL for a call-free pattern.
@@ -3272,8 +3430,13 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
  * pcrec_parse_info instead: that one requires end-of-pattern and ctx_fails on
  * `)`. info may be NULL. */
 Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
+/* [OPT-4] `collapse` builds the COUNT-COLLAPSED language — every counted
+ * repeat lowered as `X{min(m,1),}` — and is true ONLY where this machine's
+ * sole customer is the VM hybrid's prefilter (docs/design/
+ * prefilter_count_independence.md §3). It also RESETS `nfa->n`, so the same
+ * `Nfa` can be measured exact and then rebuilt collapsed in place. */
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
-                     bool reverse);
+                     bool reverse, bool collapse);
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
 bool nfa_has_asserts(const Nfa *nfa);
 bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
@@ -3421,6 +3584,23 @@ bool pcrec_has_atomic(const Ast *a);                  /* src/opt/atomic.c */
  * independent check, against a silent match loss if it is wrong anywhere. */
 bool pcrec_has_lookaround(const Ast *a);              /* src/opt/atomic.c */
 
+/* [OPT-4] Does this tree carry an `A_REP` the count-collapse would CHANGE —
+ * one with `rmin > 1 || rmax > 1` (docs/design/prefilter_count_independence.md
+ * §3)? The third member of the family above, and declared beside them because
+ * it is the same question asked for the same consumer: which counted repeats
+ * make the prefilter's machine scale with a number the filter does not need.
+ *
+ * IT IS THE COLLAPSE'S OWN GUARD, SPELLED ONCE. `compile.c`'s build gate reads
+ * it to decide whether rebuilding is worth an NFA, and `emit_vm.c` never asks
+ * it at all — the artifact reports what was BUILT (`job->fit.prefilter_lang`),
+ * not what could have been, so there is no second derivation to disagree.
+ *
+ * It is ASKED OF THE POST-DISCHARGE TREE like its two neighbours, and for a
+ * sharper reason than symmetry: possessification rewrites `A_REP` nodes, and a
+ * predicate answering about the pre-pass tree could name a repeat the builder
+ * no longer sees. */
+bool pcrec_has_collapsible_rep(const Ast *a);         /* src/opt/atomic.c */
+
 /* Does any node in `a` carry `row` as its SR-8 producing stamp — i.e. did that
  * row's producer actually build something here?
  *
@@ -3541,7 +3721,9 @@ void pcrec_emit_abi_types(StrBuf *sb);
  * one emitter for both engines so the two can never spell it differently
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
  * (a)/(b) split). `engine` is "vm" or "dfa". */
-void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine);
+void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine,
+                             const char *sel);
+const char *pcrec_engine_sel_name(Ctx *cx);
 /* [DD-13c] `<PREFIX>_DFA_SCAN` + `<PREFIX>_DFA_PREFILTER`, the DFA scan's own
  * two selection facts, emitted from ONE place for the TWO artifact kinds that
  * CONTAIN a DFA scan: a DFA artifact, and a VM HYBRID (`fit.prefilter`), whose
