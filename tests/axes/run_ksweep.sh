@@ -54,6 +54,13 @@ LADDER="${KSWEEP_LADDER:-1 2 3 4 6 8}"
 WORKDIR="$(mktemp -d)"
 [ "$KEEP" = "1" ] || trap 'rm -rf "$WORKDIR"' EXIT
 fail=0
+# [ART-SIZE] every FAIL appends its reason here, and the verdict prints them
+# on the lines immediately before it. A bare "ksweep: FAIL" after a screen of
+# PASS lines makes the reader scroll back through a 20-minute log to find out
+# WHICH condition failed -- measured on this gate's own first full run.
+reasons=()
+sizeref=0        # explicit-K refusals a SIZE limit explains (printed, not failed)
+capflips=0       # excluded cells whose pattern the TERM itself builds at K<8
 
 # [K37] the interior-optimum report below invokes the compiler per pattern per
 # K; bound each one through gen_timeout.sh's `pcrec_run` rather than calling
@@ -96,7 +103,52 @@ for k in $LADDER; do
     else
         echo "  PASS: --unroll=$k is answer-identical to the default on $(wc -l < "$BASE") cases"
     fi
-    [ "${rf:-0}" -ne 0 ] && { echo "KSWEEP FAIL: --unroll=$k REFUSED ${rf} case(s) the default compiled; K must not change what compiles" >&2; fail=1; }
+    # REFUSED, SPLIT BY REASON. An explicit `--unroll=K` may push an artifact
+    # over an emitted-size cap or the VM node limit that the DEFAULT build
+    # never meets -- because on the default the size TERM picks a K that fits,
+    # which is the whole point of the term. That is a RESOURCE refusal and it
+    # is expected; it is printed and counted, never hidden. Any OTHER refusal
+    # means K changed what the compiler ACCEPTS, which it must never do.
+    if [ "${rf:-0}" -ne 0 ]; then
+        # awk, not `grep -c`: grep exits 1 on zero matches, which under this
+        # script's own error handling is a different thing from counting zero.
+        res=$(awk '/pattern too large|emitted nodes|bytes of emitted/{n++} END{print n+0}' "$WORKDIR/d.err" 2>/dev/null)
+        res=${res:-0}
+        oth=$(( rf - res ))
+        [ "$oth" -lt 0 ] && oth=0
+        sizeref=$((sizeref + res))
+        if [ "$oth" -gt 0 ]; then
+            echo "KSWEEP FAIL: --unroll=$k REFUSED ${oth} case(s) the default compiled, for a reason that is NOT a size or node limit; K must not change what compiles" >&2
+            reasons+=("--unroll=$k refused $oth case(s) the default compiled, not explained by a size/node limit")
+            fail=1
+        else
+            echo "  PASS: --unroll=$k's ${res} refusal(s) are all SIZE/NODE limits the default build's own K avoids (the term's purpose), not a change in what compiles"
+        fi
+    fi
+
+    # [ART-SIZE §3.3a] THE EXCLUDED CELLS MUST NOT BELONG TO A PATTERN THE TERM
+    # ITSELF BUILDS AT A LOWER K. A give-up flip under an explicit `--unroll=K`
+    # is the CALLER's own choice (limits.md §8a rule 1) and is printed below as
+    # the excluded population. The same flip on a pattern whose DEFAULT
+    # artifact is already at K<8 would be a SHIPPED answer change that no flag
+    # asked for -- rule 2, the declared-capacity floor -- so it fails here.
+    if [ -s "$rows" ]; then
+        while IFS=$'\t' read -r cls key _rest; do
+            [ "$cls" = "BUDGET" ] || continue
+            f="${key%:*}"; ln="${key##*:}"
+            case "$f" in /*) ff="$f" ;; *) ff="$ROOT_DIR/$f" ;; esac
+            [ -r "$ff" ] || continue
+            pat="$(awk -v L="$ln" 'NR<=L && /^pattern /{p=substr($0,9)} END{print p}' "$ff")"
+            [ -n "$pat" ] || continue
+            "$PCREC" -p rx --features all -o "$WORKDIR/dk.c" -- "$pat" >/dev/null 2>&1 || continue
+            dk="$(grep -oE '^#define RX_UNROLL_K [0-9]+' "$WORKDIR/dk.c" | awk '{print $3}')"
+            [ -n "$dk" ] || continue
+            if [ "$dk" -lt 8 ]; then
+                echo "KSWEEP FAIL: excluded cell $key belongs to a pattern the TERM builds at K=$dk; a give-up flip there is a SHIPPED answer change, not a caller's choice (limits.md §8a, the declared-capacity floor)" >&2
+                capflips=$((capflips + 1)); fail=1
+            fi
+        done < "$rows"
+    fi
 
     # R6: on the EXCLUDED cells, the give-up CODE must still agree where both gave up.
     if [ -s "$rows" ]; then
@@ -114,6 +166,11 @@ echo
 echo "ksweep: excluded (give-up/capacity) cells across the sweep: $total_excluded"
 echo "ksweep:   that number is printed, not hidden — an exclusion that grows to"
 echo "ksweep:   cover the corpus is a defect this gate must not absorb silently."
+echo "ksweep:   all of them are EXPLICIT --unroll= flips, i.e. the caller's own"
+echo "ksweep:   choice (limits.md §8a rule 1); cells belonging to a pattern the"
+echo "ksweep:   TERM builds at K<8: $capflips (must be 0 — §8a rule 2)."
+echo "ksweep: explicit-K refusals explained by a SIZE or NODE limit: $sizeref"
+
 
 # --- the interior-optimum report (informational) ----------------------------
 echo
@@ -142,5 +199,14 @@ else
 fi
 
 echo
+if [ "$fail" -ne 0 ]; then
+    echo "ksweep: FAILED ON:"
+    if [ "${#reasons[@]}" -eq 0 ]; then
+        echo "  (see the KSWEEP FAIL lines above — this run failed a condition that did not record a reason, which is itself a defect in this gate)"
+    else
+        for r in "${reasons[@]}"; do echo "  - $r"; done
+    fi
+    [ "$capflips" -gt 0 ] && echo "  - $capflips excluded cell(s) on patterns the term builds at K<8"
+fi
 [ "$fail" -eq 0 ] && echo "ksweep: PASS" || echo "ksweep: FAIL"
 exit "$fail"

@@ -3,6 +3,7 @@
  * the Job/arena so the error path can clean up wholesale. */
 
 #include <ctype.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -383,17 +384,63 @@ typedef enum { ST_DEFAULT = 0, ST_LADDER, ST_FINAL } SizeTermPhase;
  *      K41's second witness — byte ratio 0.913 declines the bar despite an
  *      81 % node reduction. When step 2 takes a rung step 1 declined, that is
  *      a `cap-rescue` and the artifact says so. */
+/* [ART-SIZE] THE DECLARED-CAPACITY FLOOR (§3.3a). A sentinel means NO BOUND
+ * and therefore compares as +infinity: `frame_capacity` -1 is unbounded and
+ * `subject_ceiling` 0 is unset, so a rung that declares a FINITE bound where
+ * the default declared none has LOWERED the artifact's capacity and reading
+ * either sentinel as zero would invert exactly that comparison. */
+static unsigned long long cap_or_inf(long long v)
+{
+    return v <= 0 ? ULLONG_MAX : (unsigned long long)v;
+}
+
+/* Rung `i` may be chosen only if the artifact it produced declares at least as
+ * much capacity as the DEFAULT attempt's did, on BOTH facts. */
+static bool size_term_capacity_holds(const long long *fc, const long long *sc, int i)
+{
+    return cap_or_inf(fc[i]) >= cap_or_inf(fc[0]) &&
+           cap_or_inf(sc[i]) >= cap_or_inf(sc[0]);
+}
+
 static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
-                             const size_t *code, const size_t *total, int n,
+                             const size_t *code, const size_t *total,
+                             const long long *fc, const long long *sc, int n,
                              unsigned long long cap_code,
                              unsigned long long cap_total,
-                             int *out_k, bool *out_rescue)
+                             int *out_k, bool *out_rescue, bool *out_capexcl)
 {
     *out_rescue = false;
+    *out_capexcl = false;
+
+    /* THE CAPACITY FLOOR IS APPLIED FIRST, AND IT IS NOT A PREFERENCE.
+     * `K` is answer-identical in the LANGUAGE and not in the DEPTH an
+     * artifact reaches: a smaller K raises the per-iteration frame need, so
+     * the same default budgets carry a shorter subject (MEASURED:
+     * `^(a(?1)?b)$` stamps `subject_ceiling` 512 at the default K and 341 at
+     * K=1). A compiler-chosen K that turns a MATCH into a frames give-up is
+     * an answer change no flag asked for, and "fail and document" does not
+     * cover it — so such a rung is not a candidate at all, in step 1 OR in
+     * the cap rescue below. An explicit `--unroll=K` may still lower it;
+     * that is the caller's own choice and `docs/spec/limits.md` says so. */
+    /* WHICH rung the term WANTED, ignoring the floor. `*out_capexcl` says the
+     * floor was the BINDING reason for a decline — that the argmin the term
+     * would otherwise have taken is exactly the rung the floor removed — and
+     * not merely that some rung somewhere was excluded. Without that
+     * distinction the stamp would read `capacity-declined` on a pattern the
+     * materiality BAR declined, which is a different fact with a different
+     * remedy. */
+    int best_free = 0;
+    for (int i = 1; i < n; i++)
+        if (ok[i] && (nodes[i] < nodes[best_free] ||
+                      (nodes[i] == nodes[best_free] && k[i] > k[best_free])))
+            best_free = i;
+    *out_capexcl = best_free != 0 && !size_term_capacity_holds(fc, sc, best_free);
+
     int best = 0;
     for (int i = 1; i < n; i++)
-        if (ok[i] && (nodes[i] < nodes[best] ||
-                      (nodes[i] == nodes[best] && k[i] > k[best])))
+        if (ok[i] && size_term_capacity_holds(fc, sc, i) &&
+            (nodes[i] < nodes[best] ||
+             (nodes[i] == nodes[best] && k[i] > k[best])))
             best = i;
     /* the materiality bar, in bytes, against the default */
     int sel = 0;
@@ -402,9 +449,13 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
     if (code[sel] <= cap_code && total[sel] <= cap_total) { *out_k = k[sel]; return; }
 
     /* step 2: the caps get the whole ladder. Prefer the LARGEST K that fits,
-     * so a rescue gives up as little throughput as it can. */
+     * so a rescue gives up as little throughput as it can. The capacity floor
+     * still applies: a rescue that silently shortens the subject the artifact
+     * can carry trades one refusal for a wrong answer, which is the worse of
+     * the two. If nothing capacity-preserving fits, the pattern refuses at the
+     * cap and the diagnostic says so. */
     for (int i = n - 1; i >= 0; i--) {
-        if (!ok[i]) continue;
+        if (!ok[i] || !size_term_capacity_holds(fc, sc, i)) continue;
         if (code[i] <= cap_code && total[i] <= cap_total) {
             *out_k = k[i];
             *out_rescue = (i != sel);
@@ -457,10 +508,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     volatile int  st_idx = 0;          /* next ladder rung to try */
     volatile int  st_final_k = 0;      /* the K the FINAL attempt re-emits */
     volatile bool st_rescue = false;   /* the bar declined it; a cap took it */
+    /* [ART-SIZE] at least one rung was EXCLUDED BY THE CAPACITY FLOOR (§3.3a).
+     * Read only when the term ended on the default K, to tell "the bar said
+     * the saving was not worth it" from "every smaller K would have shortened
+     * the subject this artifact can carry" — two different declines that the
+     * one `size-model-declined` value used to spell identically. */
+    volatile bool st_capexcl = false;
     int    st_k[SIZE_TERM_LADDER_N + 1];
     bool   st_ok[SIZE_TERM_LADDER_N + 1];
     size_t st_code[SIZE_TERM_LADDER_N + 1], st_total[SIZE_TERM_LADDER_N + 1];
     size_t st_nodes[SIZE_TERM_LADDER_N + 1];
+    /* [ART-SIZE] the declared-capacity facts per attempt, the floor
+     * `size_term_choose` applies before anything else looks at size. */
+    long long st_fc[SIZE_TERM_LADDER_N + 1], st_sc[SIZE_TERM_LADDER_N + 1];
     /* [ART-SIZE] The length of the `_UNROLL_K_WHY` string THIS attempt
      * stamped. The size term's own verdict is part of the artifact (D81), so
      * an attempt that has not yet made the decision stamps a different value —
@@ -578,7 +638,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * K=8 and refuses at K=6, so a ladder that let a trial's refusal
              * escape would break a pattern that compiles today. */
             if (st_phase == ST_LADDER) {
-                int final_k = 0; bool rescue = false;
+                int final_k = 0; bool rescue = false, capexcl = false;
                 st_ok[st_idx + 1] = false;
                 st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
                 st_idx++;
@@ -586,13 +646,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 if (st_idx >= SIZE_TERM_LADDER_N) {
                     size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
-                                     SIZE_TERM_LADDER_N + 1,
+                                     st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
                                      defo.max_emit_code_bytes ? defo.max_emit_code_bytes
                                                               : PCREC_MAX_VM_EMIT_CODE_BYTES,
                                      defo.max_emit_bytes ? defo.max_emit_bytes
                                                          : PCREC_MAX_EMIT_BYTES,
-                                     &final_k, &rescue);
-                    st_final_k = final_k; st_rescue = rescue;
+                                     &final_k, &rescue, &capexcl);
+                    st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
                     st_phase = ST_FINAL;
                 }
                 continue;
@@ -828,6 +888,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
           : st_phase != ST_FINAL                        ? "default"
           : st_rescue                                   ? "cap-rescue"
           : st_final_k != st_k[0]                       ? "size-model"
+          : st_capexcl                                  ? "capacity-declined"
           :                                               "size-model-declined";
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
@@ -859,6 +920,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             st_k[0] = defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K;
             st_ok[0] = true; st_code[0] = emit_code; st_total[0] = emit_tot;
             st_nodes[0] = cx.job->vm_emitted_nodes;
+            st_fc[0] = cx.job->vm_frame_capacity;
+            st_sc[0] = cx.job->vm_subject_ceiling;
             st_whylen[0] = strlen(cx.size_term_why);
             /* DOES THE TERM RUN? Every condition is a reason NOT to, and each
              * is a separate sentence in the design: an explicit `--unroll=`
@@ -909,15 +972,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             st_ok[st_idx + 1] = true;
             st_code[st_idx + 1] = emit_code; st_total[st_idx + 1] = emit_tot;
             st_nodes[st_idx + 1] = cx.job->vm_emitted_nodes;
+            st_fc[st_idx + 1] = cx.job->vm_frame_capacity;
+            st_sc[st_idx + 1] = cx.job->vm_subject_ceiling;
             st_whylen[st_idx + 1] = strlen(cx.size_term_why);
             st_idx++;
             if (st_idx < SIZE_TERM_LADDER_N) { job_cleanup(&cx); continue; }
             {
-                int fk = 0; bool rescue = false;
+                int fk = 0; bool rescue = false, capexcl = false;
                 size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
-                                 SIZE_TERM_LADDER_N + 1, cap_code, cap_tot,
-                                 &fk, &rescue);
-                st_final_k = fk; st_rescue = rescue;
+                                 st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
+                                 cap_code, cap_tot, &fk, &rescue, &capexcl);
+                st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
             }
             st_phase = ST_FINAL;
             job_cleanup(&cx);

@@ -168,5 +168,100 @@ else
     bad "natural cap-rescue population is $nat, expected 0 — a real pattern now lands in the band docs/design/artifact_size_term.md §4.2b says is empty; re-derive that band, do not widen this pin"
 fi
 
+# --- 7. the DECLARED-CAPACITY FLOOR (§3.3a) --------------------------------
+# `K` is answer-identical in the LANGUAGE and not in the DEPTH an artifact
+# reaches: a smaller K raises the per-iteration frame need, so the same default
+# budgets carry a shorter subject. A compiler-chosen K that turns a MATCH into
+# a frames give-up is an answer change no flag asked for, so a rung whose
+# artifact declares LESS capacity than the default K's is not a candidate.
+#
+# THIS BRANCH ALSO HAS A NATURAL POPULATION OF ZERO, and for a reason worth
+# stating rather than discovering later: MEASURED over all 2,772 corpus
+# patterns, 69 have a `.subject_ceiling`/`.frame_capacity` that MOVES with K,
+# and NONE of the 69 has the counter rung — so no corpus pattern can reach the
+# floor at all. §6's pin below has the same shape for cap-rescue. The witness
+# is therefore synthetic and the threshold is lowered to reach it, exactly as
+# §5 does.
+CAPW='(((?:a{0,2}b)+c){0,20}d){0,20}e'
+REF2="$WORK/pcrec_lowthr"
+# shellcheck disable=SC2086
+if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+       -DPCREC_SIZE_TERM_THRESHOLD=1000 \
+       -o "$REF2" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref2.err"; then
+    ok "reference compiler built with the size-term threshold at 1000"
+
+    # (a) the witness is REAL: its argmin is the rung the floor removes, and
+    #     EVERY lower rung lowers the ceiling. Asserted from the artifacts, so
+    #     the cell cannot go green on a witness that stopped witnessing.
+    base_sc=""; worst_sc=""; argmin_k=""; argmin_n=""
+    for k in 8 6 4 3 2 1; do
+        pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=$k \
+            -o "$WORK/cap$k.c" -- "$CAPW" 2>/dev/null || continue
+        sc="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/cap$k.c" | grep -oE '[-0-9]+$')"
+        n="$(grep -cE '^rx_L[0-9]+:' "$WORK/cap$k.c")"
+        [ "$k" = 8 ] && base_sc="$sc"
+        if [ -z "$argmin_n" ] || [ "$n" -lt "$argmin_n" ]; then argmin_n="$n"; argmin_k="$k"; worst_sc="$sc"; fi
+    done
+    if [ -n "$base_sc" ] && [ -n "$worst_sc" ] && [ "$argmin_k" != 8 ] && [ "$worst_sc" -lt "$base_sc" ]; then
+        ok "the capacity witness is real: argmin is K=$argmin_k ($argmin_n nodes) and it declares subject_ceiling $worst_sc against the default K's $base_sc"
+    else
+        bad "the capacity witness no longer witnesses (base_sc=$base_sc argmin K=$argmin_k sc=$worst_sc) — re-choose it, do not weaken this cell"
+    fi
+
+    # (b) with the ladder RUNNING on it, the term must decline and say why
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/cap.c" -- "$CAPW" 2>/dev/null; then
+        why="$(stamp UNROLL_K_WHY "$WORK/cap.c" | tr -d '"')"
+        gotk="$(stamp UNROLL_K "$WORK/cap.c")"
+        gotsc="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/cap.c" | grep -oE '[-0-9]+$')"
+        [ "$why" = "capacity-declined" ] \
+            && ok "_UNROLL_K_WHY 'capacity-declined' reached (the K the term wanted would have lowered the declared capacity)" \
+            || bad "_UNROLL_K_WHY expected 'capacity-declined' with the ladder running on the capacity witness, got '$why'"
+        [ "$gotk" = "8" ] && [ "$gotsc" = "$base_sc" ] \
+            && ok "the declined artifact keeps the DEFAULT K's declared capacity (K=$gotk, subject_ceiling=$gotsc)" \
+            || bad "the term shipped K=$gotk with subject_ceiling=$gotsc; the floor must leave the default K's $base_sc intact"
+    else
+        bad "the capacity witness did not compile under the lowered-threshold compiler"
+    fi
+
+    # (c) ANTI-VACUITY: the same compiler must still TAKE a K where capacity
+    #     is flat, or (b) would pass on a compiler whose ladder never runs.
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/flat.c" -- '((a)|ab){0,12}c' 2>/dev/null; then
+        fwhy="$(stamp UNROLL_K_WHY "$WORK/flat.c" | tr -d '"')"
+        case "$fwhy" in
+            size-model|size-model-declined|cap-rescue)
+                ok "the lowered-threshold compiler's ladder DOES run and choose ('$fwhy' on a flat-capacity pattern) — (b) is not vacuous" ;;
+            *) bad "the lowered-threshold compiler stamped '$fwhy' on a flat-capacity pattern: its ladder is not running, so the capacity cell above proves nothing" ;;
+        esac
+    else
+        bad "the anti-vacuity pattern did not compile under the lowered-threshold compiler"
+    fi
+else
+    bad "could not build the lowered-threshold reference compiler: $(head -2 "$WORK/ref2.err")"
+fi
+
+# --- 7b. the NATURAL capacity-floor population is a CEILING, pinned at 0 ----
+# The floor can only bite where a pattern has the COUNTER rung (the ladder's
+# own gate) AND its declared capacity moves with K. Measured at 0 today; this
+# says so loudly if it changes, because the first inhabitant is the first
+# pattern whose shipped K this floor actually moves.
+natcap=0
+while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=8 -o "$WORK/n8.c" -- "$p" 2>/dev/null || continue
+    rungs="$(stamp VM_RUNGS "$WORK/n8.c")"
+    case "$rungs" in *[!0-9a-fA-Fx]*|"") continue ;; esac
+    [ $(( rungs & 0x10 )) -ne 0 ] || continue
+    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=1 -o "$WORK/n1.c" -- "$p" 2>/dev/null || continue
+    s8="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/n8.c" | grep -oE '[-0-9]+$')"
+    s1="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/n1.c" | grep -oE '[-0-9]+$')"
+    [ -n "$s8" ] && [ -n "$s1" ] || continue
+    [ "$s8" -gt 0 ] && { [ "$s1" -eq 0 ] || [ "$s1" -lt "$s8" ]; } && natcap=$((natcap+1))
+done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | LC_ALL=C sort -u | head -400)
+if [ "$natcap" -eq 0 ]; then
+    ok "natural capacity-floor population is 0 (no corpus pattern has BOTH the counter rung and a K-sensitive declared capacity)"
+else
+    bad "natural capacity-floor population is $natcap — a real pattern now reaches the floor; record the acceptance change, do not widen this pin"
+fi
+
 printf '\nchecks passed: %d\nchecks failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

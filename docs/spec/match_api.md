@@ -2785,14 +2785,17 @@ VM-artifact-scoped for the first two, because a DFA artifact has no counter
 rung to have chosen a `K` for:
 
 - `<PREFIX>_UNROLL_K` — the unroll factor this artifact was emitted at.
-- `<PREFIX>_UNROLL_K_WHY` — SIX values, because "the term did not run" has
-  four distinguishable reasons and a check must tell them apart:
+- `<PREFIX>_UNROLL_K_WHY` — SEVEN values, because "the term did not run" has
+  five distinguishable reasons and a check must tell them apart:
   `"option"` (an explicit `--unroll=K`), `"denied"` (`-fno-size-term`),
   `"default"` (the term ran and the artifact was below its threshold),
   `"size-model"` (the ladder ran and its `K` was taken),
   `"size-model-declined"` (the ladder ran and the materiality bar rejected
   its `K`), `"cap-rescue"` (the bar declined a `K` and an emitted-size cap
-  took it anyway).
+  took it anyway), `"capacity-declined"` (the ladder ran and the `K` it
+  wanted would have LOWERED this artifact's declared capacity —
+  `.frame_capacity` or `.subject_ceiling` — below what the default `K`
+  declares, so it was not a candidate; see `limits.md` §8a).
 - `<PREFIX>_MAX_EMIT_CODE_BYTES` and `<PREFIX>_MAX_EMIT_BYTES` — the
   EFFECTIVE limits this artifact was built under, so a reader can tell an
   artifact that fitted from one built with a raised cap without having the

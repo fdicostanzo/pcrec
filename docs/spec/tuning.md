@@ -1039,9 +1039,9 @@ oversized artifact acceptable. To accept a larger artifact, RAISE a cap
 `limits.md` §8, "Handling an oversized artifact".
 
 **The stamp** is `<PREFIX>_UNROLL_K` (the chosen `K`) beside
-`<PREFIX>_UNROLL_K_WHY`, which has SIX values — `default`, `option`,
-`denied`, `size-model`, `size-model-declined`, `cap-rescue` — because
-"the term did not run" has four distinguishable reasons and a check must
-be able to tell them apart. Both are unconditional on every VM artifact
+`<PREFIX>_UNROLL_K_WHY`, which has SEVEN values — `default`, `option`,
+`denied`, `size-model`, `size-model-declined`, `cap-rescue`,
+`capacity-declined` — because "the term did not run" has five
+distinguishable reasons and a check must be able to tell them apart. Both are unconditional on every VM artifact
 (D81).
 

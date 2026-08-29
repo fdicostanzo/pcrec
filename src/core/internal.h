@@ -1313,6 +1313,29 @@ typedef struct {
      * work. Bit 4 (0x10) — kept in step with emit_vm.c's `vm_rung_bit[]` by
      * the same contract `<PREFIX>_VM_RUNGS`'s own block states. */
     unsigned vm_rungs;
+    /* [ART-SIZE] THE ARTIFACT'S DECLARED CAPACITY, published for the size
+     * term's ladder the same way and for a sharper reason than the two above.
+     * These are the exact values `rx_info`'s `.frame_capacity` and
+     * `.subject_ceiling` carry (D44.1: what the artifact ENFORCES, learnable
+     * without triggering PCREC_ERR_FRAMES), captured per attempt.
+     *
+     * MEASURED, and this is why the fields exist: `K` is answer-identical in
+     * the LANGUAGE and NOT in the DEPTH an artifact reaches. `^(a(?1)?b)$`
+     * stamps `subject_ceiling` 512 at the default K and 341 at K=1 — a
+     * smaller K raises the per-iteration frame need, so the same default
+     * budgets carry a shorter subject. A compiler-chosen K that turns a
+     * MATCH into a frames give-up is an answer change no flag asked for, so
+     * `size_term_choose` treats a rung that would LOWER either number as not
+     * a candidate at all (docs/design/artifact_size_term.md §3.3a). An
+     * explicit `--unroll=K` may still lower it: that is the caller's own
+     * choice, and `docs/spec/limits.md` says so.
+     *
+     * Sentinels are the emitter's: `frame_capacity` -1 = unbounded,
+     * `subject_ceiling` 0 = unset/not applicable. BOTH mean "no bound" and
+     * therefore compare as +infinity, never as zero — a rung that declares a
+     * ceiling where the default declared none has LOWERED it. */
+    long long vm_frame_capacity;
+    long long vm_subject_ceiling;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full

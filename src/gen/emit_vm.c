@@ -8273,7 +8273,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * is a hint, and `"default"` is a fact, not an absence.
      *
      * `_UNROLL_K_WHY` has SIX values (`option` / `denied` / `default` /
-     * `size-model` / `size-model-declined` / `cap-rescue`) because a check
+     * `size-model` / `size-model-declined` / `cap-rescue` /
+     * `capacity-declined`) because a check
      * must be able to tell them apart; three of them would collapse four
      * reachable states into one.
      *
@@ -9808,4 +9809,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      */
     job->vm_emitted_nodes = v.nlabel;
     job->vm_rungs = (unsigned)v.rungs;
+    /* [ART-SIZE] ...and the DECLARED CAPACITY this K produced, from the SAME
+     * two variables `pcrec_emit_info` was called with above rather than a
+     * second computation of them — so the ladder's capacity floor and the
+     * artifact's own `rx_info` can never disagree about what this attempt
+     * declared. See Job's own comment for what the ladder does with them. */
+    job->vm_frame_capacity  = (long long)bt_frames;
+    job->vm_subject_ceiling = (long long)ceiling;
 }

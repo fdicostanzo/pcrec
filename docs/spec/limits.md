@@ -436,7 +436,47 @@ Your options, in the order most callers want them:
 5. **Read the stamps to see which term produced the bytes.**
    `<PREFIX>_UNROLL_K` and `<PREFIX>_UNROLL_K_WHY` (`default` /
    `option` / `denied` / `size-model` / `size-model-declined` /
-   `cap-rescue`) plus `<PREFIX>_VM_RUNGS` for node replication;
+   `cap-rescue` / `capacity-declined`) plus `<PREFIX>_VM_RUNGS` for node
+   replication;
    `<PREFIX>_DFA_TABLE` and `<PREFIX>_VM_PREFILTER` for the prefilter
    and its tables. A table-dominated artifact does not shrink with
    `--unroll`, and option 2 will not help it.
+
+## 8a. `--unroll=K` and the depth an artifact reaches
+
+`K` is answer-identical in the LANGUAGE — an artifact built at any `K`
+accepts exactly the same strings, reports the same span and fills the same
+capture slots — and it is NOT answer-identical in the DEPTH an artifact
+reaches under the default capacities. A smaller `K` raises the per-iteration
+frame need, so the same `<PREFIX>_BT_FRAMES` carries a shorter subject
+before `PCREC_ERR_FRAMES`.
+
+The artifact says so itself. `rx_info`'s `.subject_ceiling` is the declared
+bound (§7's honest-ceiling rule) and it MOVES with `K`:
+
+| pattern | `--unroll=8` | `--unroll=1` |
+|---|---|---|
+| `^(a(?1)?b)$` | `subject_ceiling` 512 | **341** |
+| `((?1)?a)` | 512 | **341** |
+| `(((?:a{0,2}b)+c){0,20}d){0,20}e` | 43 | **23** |
+
+MEASURED consequence, and it is a real one: on a 684-byte subject, the five
+cells in `tests/recursion/framebuffer.rxt` and `tests/recursion/d27/
+sr_depth.rxt` that MATCH at the default `K` return a frames give-up under
+`--unroll=1`, with the DEFAULT budgets.
+
+**Two rules follow, and they point in opposite directions on purpose:**
+
+1. **An explicit `--unroll=K` MAY lower the depth this artifact reaches.**
+   That is the caller's own choice, it is visible in the stamped
+   `.subject_ceiling` before a single subject is run, and the remedies are
+   the ordinary ones — raise `frame_capacity` through the options, or use
+   `<PREFIX>_search_in` with a caller-supplied buffer (§7).
+2. **The size term NEVER lowers it.** A `K` the compiler chooses for you is
+   held to a floor: a rung whose artifact would declare LESS capacity than
+   the default `K`'s — on `.frame_capacity` or on `.subject_ceiling` — is not
+   a candidate, in the ordinary selection or in a cap rescue. When the `K`
+   the term wanted is the one the floor removes, the term declines and stamps
+   `<PREFIX>_UNROLL_K_WHY "capacity-declined"`. A compiler-chosen `K` that
+   turns a match into a give-up would be an answer change no flag asked for,
+   and §8's "refuse and document" does not cover it.
