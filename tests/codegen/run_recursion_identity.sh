@@ -405,6 +405,24 @@ KEEP="${KEEP:-0}"
 # not by this gate's own run, which is the reason the rule is now written
 # where the pin is set rather than left to be re-derived.
 #
+# [OPT-4], 2026-08-29: `abi` 11 -> 12, (B) re-pinned to `2ed6402`. THE
+# PREFILTER'S LANGUAGE STAMP (K39; docs/design/prefilter_count_independence.md).
+# **COMPARISON (A) IS EXPECTED BYTE-IDENTICAL AND THAT IS A REAL CHECK HERE,
+# NOT A FORMALITY, because the change looks like a program change and is not
+# one.** Above `PCREC_PREFILTER_EXACT_NFA_STATES` a VM hybrid's prefilter is
+# built from the count-collapsed language, which drops the artifact's
+# `prefilter-window` MRL ceiling — but `v.mrl_win`'s three readers all sit in
+# `<prefix>_search` and its retry recompute, ABOVE `prog_region`, and the
+# per-quantifier clamp reads `window_end` as a PARAMETER. So the number moves
+# and the emitted PROGRAM does not; measured at 116 identical region lines on
+# `((a)|b){0,4000}c`, and this gate is what says so corpus-wide. (B) moves
+# because every VM hybrid gains a `<PREFIX>_VM_PREFILTER_LANG` line and the
+# artifacts over the knee gain a smaller inlined prefilter. (No count is given
+# here on purpose: how many artifacts collapse is a property of the POPULATION
+# being swept, and this gate's corpus is not the size log's 1,388 hybrids nor
+# `run_prefilter_collapse.sh` §5's 2,772 `pattern` lines. Each check floors its
+# own.)
+#
 # THE PIN IS THIS CHANGE'S LAST src-TOUCHING COMMIT, [OPT-K]'s note one
 # paragraph up having recorded why that matters in a multi-commit change:
 # `14d1feb` moved the `match_form` member's comment ABOVE the member (a
@@ -412,7 +430,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b3cf716}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2ed6402}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
