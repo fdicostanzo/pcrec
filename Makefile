@@ -1109,7 +1109,8 @@ hooks:
 clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
 
-.PHONY: all test test-corpus test-cli test-reject test-registry test-parse \ test-ksweep
+.PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
+        test-ksweep \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
