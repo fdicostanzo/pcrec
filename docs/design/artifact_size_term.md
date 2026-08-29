@@ -1872,9 +1872,36 @@ arise — §2.2d), and a pre-emission node count (§2.2a).
   them, per the R31 C11 rule that the vocabulary is closed. All three pass
   `VALIDATE_ONLY=1` and the standing anchor tripwire
   (`scripts/m6read_check_sab_anchors.py`, 189 sabotages / 200 anchor sites).
-  Their `SAB_DOC_FIGURE`s carry PLACEHOLDERS with the predicted arm figures
-  until each is run canonically (`bash tests/mech/run_sabotage_matrix.sh
-  S19x`) on a quiet box.
+  All three were RUN CANONICALLY on a quiet box (2026-08-29, at `48e9a90`),
+  each solo, each DETECTED with `unexpected: 0` and `anomalies: 0`, and each
+  row's `SAB_DOC_FIGURE` carries its measured figures:
+
+  | row | arms | the red cell |
+  |---|---|---|
+  | S191 greedy descent | `sizeterm:1fail/21pass`, `corpus:0fail/21pass` | §3: "the size term chose a K the artifact does not carry: **4**" |
+  | S192 bar removed | `sizeterm:1fail/21pass`, `corpus:0fail/21pass` | §5: `_UNROLL_K_WHY` expected `cap-rescue`, got `size-model` |
+  | S193 cap inverted | `resource:7fail/19pass`, `sizeterm:17fail/3pass`, `corpus:21fail/0pass` | all six §1b cells, both directions, + §1's `a{65535}` |
+
+  **S191's measured K is a result, not a detail.** The greedy scan stops at
+  **K=4**, not at the ladder's first rung 6: K=6 does not beat the default on
+  that subject, so the plant lands two steps in. §3.1's non-monotone curve
+  turns up INSIDE the sabotage, which is the argument for an exhaustive
+  `argmin` restated as a measurement rather than a table.
+
+  **S192 cannot be reproduced by pointing a sabotaged binary at a clean
+  tree** — established while capturing its red cell. §5 builds its reference
+  compiler from the tree under test, so the plant has to be in the SOURCE;
+  a sabotaged binary against clean sources gets a clean reference compiler and
+  the cell passes. That is the sharpest statement available of how narrow this
+  mechanism's only witness is.
+
+  **S193's six §1b failures flip in BOTH directions**, which is the row's one
+  piece of information beyond reach: the three shapes are accepted where a
+  refusal is required, and each is then REFUSED at `--max-emit-bytes=9000000`
+  where the raised override must re-accept it — under an inverted comparison a
+  larger limit refuses more. The seventh red is §1's own `a{65535}` cell,
+  refused at 18,155 bytes against a 1,000,000 limit: the same inversion seen
+  from the small side.
 
   S191 is the one that matters and it is a SIZE-assertion detection by
   necessity: a greedy descent is ANSWER-IDENTICAL — `K` is the counter rung's
