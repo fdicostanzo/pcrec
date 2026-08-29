@@ -412,6 +412,9 @@ else
     # above), never on the compiler's own has-collapsible predicate.
     n_lowfac=0; n_hifac=0; n_coll_lowfac=0; n_why_bad=0; n_budget_bad=0
     lowfac_ex=""; why_ex=""; budget=""
+    # [OPT-4] `<PREFIX>_ENGINE_SEL`'s accounting (§7). Counted over EVERY
+    # artifact, not just the hybrids, because the stamp is unconditional.
+    n_art=0; n_sel_bad=0; n_sel_forced=0; n_sel_cross=0; sel_ex=""
     art="$WORK/sweep.c"
     exec 3< "$FACS"
     while IFS= read -r p; do
@@ -420,6 +423,26 @@ else
         eng=$(stamp ENGINE "$art")
         vmpf=$(stamp VM_PREFILTER "$art")
         lang=$(stamp VM_PREFILTER_LANG "$art")
+        # ---- §7 ENGINE_SEL, read BEFORE the engine/hybrid `continue`s below,
+        # because this stamp is on every artifact and those skip most of them.
+        n_art=$((n_art+1))
+        sel=$(stamp ENGINE_SEL "$art")
+        case "$sel" in
+          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter) ;;
+          *) n_sel_bad=$((n_sel_bad+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel')" ;;
+        esac
+        [ "$sel" = forced ] && { n_sel_forced=$((n_sel_forced+1)); [ -z "$sel_ex" ] && sel_ex="$p (forced at the default)"; }
+        # The cross-checks, each against a DIFFERENT macro than the one under
+        # test: a route that says a prefilter survived must have one, and a
+        # route that says one was dropped must not.
+        case "$sel" in
+          collapsed-prefilter)
+            { [ "$vmpf" = hybrid ] && [ "$lang" = count-collapsed ]; } || {
+                n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL collapsed-prefilter but PREFILTER '$vmpf' / LANG '$lang')"; } ;;
+          overflowed-dfa|overflowed-prefilter)
+            [ "$vmpf" = none ] || {
+                n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel' but PREFILTER '$vmpf')"; } ;;
+        esac
         if [ "$eng" = dfa ]; then
             [ -n "$lang" ] && { n_dfa_macro=$((n_dfa_macro+1)); [ -z "$bad_ex" ] && bad_ex="$p"; }
             continue
@@ -576,6 +599,29 @@ else
     else
         bad "[why] $n_budget_bad artifact(s) report a different budget from the first one seen (first: '$why_ex')"
     fi
+    # ----------------------------------------------------------------------
+    # §7 `RX_ENGINE_SEL`: the value set is CLOSED, and it agrees with the
+    #    stamps that would contradict it
+    # ----------------------------------------------------------------------
+    if [ "$n_sel_bad" -eq 0 ]; then
+        ok "[sel] all $n_art artifact(s) carry RX_ENGINE_SEL with one of the five documented values — the set is closed and the stamp is unconditional (D81)"
+    else
+        bad "[sel] $n_sel_bad artifact(s) carry no RX_ENGINE_SEL or an undocumented value (first: '$sel_ex') — a closed value set a consumer buckets on cannot grow a sixth value silently"
+    fi
+    # `forced` is the one value the COMMAND LINE decides, and this sweep never
+    # passes --engine=, so its population here must be zero. That is a real
+    # cross-check and not a formality: it is what fails if the route were ever
+    # derived from something other than the caller's own request.
+    if [ "$n_sel_forced" -eq 0 ]; then
+        ok "[sel] no artifact stamps \"forced\" over $n_art emits at the DEFAULT — the route reports the caller's request, and this sweep makes none"
+    else
+        bad "[sel] $n_sel_forced artifact(s) stamp RX_ENGINE_SEL \"forced\" with no --engine= on the command line (first: '$sel_ex')"
+    fi
+    if [ "$n_sel_cross" -eq 0 ]; then
+        ok "[sel] every route naming a prefilter outcome agrees with RX_VM_PREFILTER and RX_VM_PREFILTER_LANG — different macros, different write sites, same verdict"
+    else
+        bad "[sel] $n_sel_cross artifact(s) stamp a route contradicted by their own prefilter stamps (first: '$sel_ex') — the route names an outcome the artifact does not show"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -633,6 +679,36 @@ if emit "$a" -- "$SEL1" && emit "$b" -fno-prefilter-collapse -- "$SEL1"; then
 else
     bad "[sel1] the DFA-overflow witness does not compile — §6 has no subject"
 fi
+
+# ---------------------------------------------------------------------------
+# §7b THE FIVE ROUTES ARE EACH REACHABLE — the K35 half of a closed value set
+# ---------------------------------------------------------------------------
+# §7 asserts nothing OUTSIDE the set appears. It cannot see a value that has
+# quietly become unreachable, which reads as "cleaner!" and is how a bucket a
+# consumer depends on silently empties. Each row below drives ONE route through
+# the path that produces it, so a value that stops being reachable fails here.
+sel_witness() {  # sel_witness EXPECTED FLAGS... -- PATTERN
+    local want="$1"; shift
+    local o="$WORK/sel.c"
+    if ! emit "$o" "$@"; then
+        bad "[sel] the '$want' witness does not compile — that route has no subject"; return
+    fi
+    local got; got=$(stamp ENGINE_SEL "$o")
+    [ "$got" = "$want" ] \
+        && ok "[sel] route '$want' is reachable ($(stamp ENGINE "$o")/$(stamp VM_PREFILTER "$o"))" \
+        || bad "[sel] the '$want' witness stamps RX_ENGINE_SEL '$got' — that route is unreachable, or the ladder has been reordered"
+}
+SEL1_P='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b'
+sel_witness selected               -- 'abc'
+sel_witness forced   --engine=dfa  -- 'abc'
+# The DFA-overflow trio, all on witnesses whose overflow is a MEASURED property
+# of this tree (tuning.md §4's own [SEL-1] witness, and k18_cost_gates.rxt's).
+# `collapsed-prefilter` and `overflowed-dfa` are the SAME pattern with the axis
+# allowed and denied, which is what makes the pair a control rather than two
+# unrelated rows.
+sel_witness collapsed-prefilter                          -- "$SEL1_P"
+sel_witness overflowed-dfa       -fno-prefilter-collapse -- "$SEL1_P"
+sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

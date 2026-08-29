@@ -1886,6 +1886,36 @@ about the FACT rather than about the engine: it names the construct that
 FORCED the VM, and a DFA artifact was not forced — its `rx_info.engine_why`
 is `NULL` for the same reason, so the macro's absence mirrors the struct.
 
+**[OPT-4] (2026-08-29) `<PREFIX>_ENGINE_SEL` — the same decision as a TOKEN,
+and it is a different macro from `_ENGINE_WHY` on purpose.** `_ENGINE_WHY` is
+PROSE, written for a person and allowed to name an offset, a construct or a
+build outcome. A CONSUMER cannot bucket on it: telling "auto picked the VM"
+from "auto FELL BACK to the VM" means substring-matching English, which is what
+the comparative benchmark project was reduced to. `_ENGINE_SEL` is the same
+decision with a CLOSED value set, and — like `_ENGINE` and unlike `_ENGINE_WHY`
+— it is **UNCONDITIONAL on every artifact, both engines** (D81: a fact stamped
+only when it is interesting is a hint, and `"selected"` is a fact). Both are
+written from one derivation at `src/opt/select_engine.c`'s single fit site;
+neither is parsed to produce the other.
+
+| value | meaning |
+|---|---|
+| `"selected"` | `auto` chose on the AST and nothing overflowed. The common case, on both engines |
+| `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
+| `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
+| `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
+| `"collapsed-prefilter"` | `auto`, a DFA build overflowed, and the retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
+
+**THE LAST THREE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
+CANNOT CARRY** — they share one prose string (`"dfa overflowed: …"`) and differ
+in what SURVIVED. A consumer wanting only "did this compile fall back?" tests
+for the three; one wanting to know what it cost reads which.
+
+**It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for the
+same reason: nothing measured reads one yet (D77), and the trigger to add one
+is a named consumer rather than symmetry. `rx_info.engine_why` continues to
+mirror the PROSE.
+
 **[SEL-1] (2026-08-28) `RX_ENGINE_WHY` CAN ALSO NAME A BUILD OUTCOME, NOT
 ONLY A CONSTRUCT.** Under `--engine=auto`, a DFA build that overflows a cap
 (state count, table entries, the K7 element budget — `docs/spec/tuning.md`

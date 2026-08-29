@@ -1313,7 +1313,39 @@ typedef struct {
      * stamp is emitted. */
     unsigned    prefilter_nfa_states;
     unsigned char prefilter_lang_why;
+
+    /* [OPT-4] HOW THIS ARTIFACT GOT ITS ENGINE, as a CLOSED VALUE SET
+     * (`<PREFIX>_ENGINE_SEL`, D81; bench O-8's ask).
+     *
+     * WHY IT EXISTS BESIDE `why`, WHICH ALREADY SAYS SOMETHING. `why` is
+     * PROSE — "capture group at pattern offset 18", "dfa overflowed: >32000
+     * states at pattern offset 0" — written to be read by a person and
+     * deliberately allowed to name an offset, a construct or a build outcome.
+     * A CONSUMER cannot bucket on it: telling "auto picked the VM" from "auto
+     * FELL BACK to the VM" means substring-matching English, and the
+     * comparative bench had to. This is the same decision as a token.
+     *
+     * ONE DERIVATION, TWO READERS (D81): both come off this struct, written
+     * once at `src/opt/select_engine.c`'s single `cx->job->fit = fit` site
+     * from the driver's own attempt record. The prose is not parsed to
+     * produce the token and the token is not re-derived to produce the prose.
+     *
+     * FIVE VALUES, and the last three are all "fell back" with different
+     * outcomes — which is exactly the distinction `why` cannot carry. */
+    unsigned char engine_sel;
 } EngineFit;
+
+/* [OPT-4] `EngineFit.engine_sel` — `<PREFIX>_ENGINE_SEL`'s closed value set.
+ * Ordered so `>= ESEL_OVERFLOWED_DFA` reads "a DFA build overflowed and this
+ * compile fell back", which is the bucket the bench actually wants. */
+enum {
+    ESEL_FORCED               = 0,  /* the caller named --engine=vm/dfa */
+    ESEL_SELECTED             = 1,  /* auto chose on the AST; nothing overflowed */
+    /* everything from here is a FALLBACK after a DFA build overflowed a cap */
+    ESEL_OVERFLOWED_DFA       = 2,  /* the DFA was to be the ENGINE; no prefilter survives */
+    ESEL_OVERFLOWED_PREFILTER = 3,  /* the VM was already chosen; its prefilter was dropped */
+    ESEL_COLLAPSED_PREFILTER  = 4   /* [OPT-4]'s rung: a prefilter SURVIVED, count-collapsed */
+};
 
 /* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that the two collapsing
  * outcomes are the top two: see the invariant stated above. */
@@ -1700,6 +1732,16 @@ struct Ctx {
      * not about size, it is the last thing between this pattern and no
      * prefilter at all. */
     bool                 prefilter_collapse_retry;
+
+    /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
+     * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only
+     * when that is true. It is the one fact separating
+     * `ESEL_OVERFLOWED_DFA` from `ESEL_OVERFLOWED_PREFILTER`, and it cannot be
+     * recovered on the retry: by then the DFA is excluded from selection
+     * outright, so every fallback attempt reports `chosen == ENGM_VM` whatever
+     * the first attempt wanted. Recorded where it is still true, carried like
+     * `dfa_overflow_why` and for the same reason. */
+    bool                 dfa_was_engine;
     bool                 dfa_overflowed;
     char                 dfa_overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [DD-14 wave B+C] THE CALL GRAPH, or NULL for a call-free pattern.
@@ -3679,7 +3721,9 @@ void pcrec_emit_abi_types(StrBuf *sb);
  * one emitter for both engines so the two can never spell it differently
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
  * (a)/(b) split). `engine` is "vm" or "dfa". */
-void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine);
+void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine,
+                             const char *sel);
+const char *pcrec_engine_sel_name(Ctx *cx);
 /* [DD-13c] `<PREFIX>_DFA_SCAN` + `<PREFIX>_DFA_PREFILTER`, the DFA scan's own
  * two selection facts, emitted from ONE place for the TWO artifact kinds that
  * CONTAIN a DFA scan: a DFA artifact, and a VM HYBRID (`fit.prefilter`), whose

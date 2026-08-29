@@ -8227,7 +8227,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     else
         sb_printf(c, "/* Step steps_left: none (--fno-step-steps_left); backtrack "
                      "frames: %lld */\n", bt_frames);
-    pcrec_emit_engine_stamp(c, v.up, "vm");
+    pcrec_emit_engine_stamp(c, v.up, "vm", pcrec_engine_sel_name(cx));
     sb_puts(c, "#define ");
     sb_printf(c, "%s_ENGINE_WHY ", v.up);
     pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",

@@ -435,6 +435,39 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, "", 0, "", "--engine=dfa",
                      "auto: always, when no construct forces the VM; --engine=dfa REFUSES a pattern needing VM-only machinery (do-or-die)");
     }
+    /* [OPT-4] engine-route — §2.11's ROUTE, not its outcome, and a SEPARATE
+     * axis from `engine` above for the reason `prefilter-lang` is separate
+     * from `vm-prefilter`: it answers a different question about the same
+     * neighbourhood. `engine` says WHICH engine this artifact got;
+     * `RX_ENGINE_SEL` says HOW it got there, and the two are independent —
+     * `RX_ENGINE "vm"` is reached by four of the five routes below.
+     *
+     * THE VALUE SET IS CLOSED AND THE STAMP IS UNCONDITIONAL (D81), which is
+     * the whole point of it: `RX_ENGINE_WHY` already carries the reason as
+     * PROSE and a consumer cannot BUCKET on prose — telling "auto picked the
+     * VM" from "auto FELL BACK to the VM" meant substring-matching English,
+     * which is what the comparative bench was reduced to (its O-8). No flags:
+     * the route is an OUTCOME of `--engine=` and of build results, never a
+     * thing a bit requests, so the deny/force columns are empty exactly as
+     * `engine`'s are. */
+    {
+        PredAxis p = { "engine-route", NULL, "RX_ENGINE_SEL", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "forced", "forced",
+                     0, "", 0, "", "--engine=vm / --engine=dfa",
+                     "the caller named the engine, so auto selected nothing");
+        emit_pred_row(sb, &p, 2, "collapsed-prefilter", "collapsed-prefilter",
+                     0, "", 0, "", "",
+                     "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)");
+        emit_pred_row(sb, &p, 3, "overflowed-dfa", "overflowed-dfa",
+                     0, "", 0, "", "",
+                     "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)");
+        emit_pred_row(sb, &p, 4, "overflowed-prefilter", "overflowed-prefilter",
+                     0, "", 0, "", "",
+                     "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped");
+        emit_pred_row(sb, &p, 5, "selected", "selected",
+                     0, "", 0, "", "",
+                     "always (fallback) — auto chose on the AST and nothing overflowed");
+    }
 }
 #undef V
 

@@ -205,9 +205,35 @@ bool pcrec_artifact_has_dfa_scan(Ctx *cx)
     return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter;
 }
 
-void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine)
+/* [OPT-4] `<PREFIX>_ENGINE_SEL`'s value, from `EngineFit.engine_sel`. ONE
+ * spelling of each token, read by the stamp and by nothing else yet — when a
+ * second reader appears (an `rx_info` mirror, say) it calls this rather than
+ * re-listing the strings, which is the rule `dfa_scan_name` and friends above
+ * already follow. */
+const char *pcrec_engine_sel_name(Ctx *cx)
+{
+    switch (cx->job->fit.engine_sel) {
+    case ESEL_FORCED:               return "forced";
+    case ESEL_OVERFLOWED_DFA:       return "overflowed-dfa";
+    case ESEL_OVERFLOWED_PREFILTER: return "overflowed-prefilter";
+    case ESEL_COLLAPSED_PREFILTER:  return "collapsed-prefilter";
+    default:                        return "selected";
+    }
+}
+
+/* [OPT-4] `_ENGINE_SEL` rides THIS function rather than getting call sites of
+ * its own, for the reason stated above it: it is the second UNCONDITIONAL
+ * per-artifact stamp, on both engines, and two independent `sb_printf`s are
+ * two chances for the spelling to drift. It is emitted immediately after
+ * `_ENGINE` and BEFORE `_ENGINE_WHY` (which only the VM stamps), so the
+ * closed-value token and the prose sit together on the artifacts that have
+ * both and the token still appears alone on a DFA artifact — which is the
+ * whole point of it being unconditional. */
+void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine,
+                             const char *sel)
 {
     sb_printf(c, "#define %s_ENGINE \"%s\"\n", upper, engine);
+    sb_printf(c, "#define %s_ENGINE_SEL \"%s\"\n", upper, sel);
 }
 
 /* [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
@@ -5206,7 +5232,7 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     sb_puts(c, "/* Engine: dfa */\n");
-    pcrec_emit_engine_stamp(c, upper, "dfa");
+    pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
     pcrec_emit_dfa_scan_stamps(cx, c, upper);
     /* [ENG-ABS] AXIS G IS STAMPED HERE AND NOT IN `pcrec_emit_dfa_scan_stamps`,
      * and the placement is the fact rather than a filing decision. That

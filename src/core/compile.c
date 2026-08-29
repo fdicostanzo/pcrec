@@ -505,6 +505,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* [OPT-4] the [SEL-1] ladder's middle rung (see `Ctx`'s field comment).
      * `volatile` for the same `-Wclobbered` reason `dfa_disabled` is. */
     volatile bool collapse_retry = false;
+    /* [OPT-4] the failing attempt's ROLE for the DFA, for `<PREFIX>_ENGINE_SEL`
+     * (see `Ctx.dfa_was_engine`). Recorded where it is still knowable. */
+    volatile bool dfa_was_engine = false;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
@@ -590,6 +593,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         /* [OPT-4] the middle rung, seeded the same way and NEVER without
          * `dfa_disabled` (the ladder below sets them together). */
         cx.prefilter_collapse_retry = collapse_retry;
+        cx.dfa_was_engine = dfa_was_engine;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
@@ -738,6 +742,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 ovf_eligible && !(dfa_disabled && !collapse_retry);
             if (retry_collapse || retry_drop) {
                 memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
+                /* [OPT-4] READ BEFORE `job_cleanup`, and only on the FIRST
+                 * overflow: `dfa_disabled` false means this attempt still had
+                 * the DFA in selection, so `fit.chosen` is the role it was
+                 * about to play. On a later rung the DFA is excluded outright
+                 * and the answer would always be ENGM_VM — which is why this
+                 * is latched rather than recomputed. */
+                if (!dfa_disabled && cx.job)
+                    dfa_was_engine = cx.job->fit.chosen == ENGM_DFA;
                 job_cleanup(&cx);
                 dfa_disabled = true;
                 collapse_retry = retry_collapse;

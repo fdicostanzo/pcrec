@@ -802,6 +802,31 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
                          (cx->opt->engine != PCREC_ENGINE_VM);
     }
 
+    /* [OPT-4] `<PREFIX>_ENGINE_SEL`, derived HERE and nowhere else — the one
+     * site where the fit is final and the driver's attempt record is in hand
+     * (`internal.h`'s `ESEL_*`). `fit.why`'s prose and this token are two
+     * readers of one decision (D81); neither is parsed from the other.
+     *
+     * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER. `forced` first
+     * because a named engine means auto never selected anything; then "no
+     * overflow happened", which is the common case; then the three fallback
+     * outcomes, distinguished by what SURVIVED rather than by what failed.
+     *
+     * `ESEL_COLLAPSED_PREFILTER` carries `fit.prefilter` as a conjunct and
+     * that is not belt-and-braces: a pattern can reach the collapse rung and
+     * still end with no prefilter (a backreference or a linked call drops it
+     * through the clause above), and stamping "a prefilter survived" on an
+     * artifact that has none would be the stamp naming a decision the artifact
+     * did not take — the defect §2 of run_prefilter_collapse.sh exists to
+     * catch on the language stamp, through the same door. */
+    fit.engine_sel =
+          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
+        : !cx->dfa_disabled                           ? ESEL_SELECTED
+        : (cx->prefilter_collapse_retry && fit.prefilter)
+                                                      ? ESEL_COLLAPSED_PREFILTER
+        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
+                                                      : ESEL_OVERFLOWED_PREFILTER;
+
     cx->job->fit = fit;
 
     /* [ENG-BREP] the bounded-repeat ladder's analyses, run last and in the
