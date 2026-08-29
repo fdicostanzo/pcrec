@@ -29,6 +29,14 @@
 #
 # Full measured row: reject 1fail/486pass, registry 1fail/169pass
 # (+compliance-FAIL, the SR-4 drift detector), pc3 1fail/154pass.
+#
+# RE-ANCHORED 2026-08-29 (lane dd11b, found by `make test-codegen`'s
+# SABANCHOR check after [DD-11]'s DEFK_TEXTFN ruling landed): the `\o` row's
+# anchor drifted from `ESC(...)` to `ESC_D(..., o_def)` when it gained a
+# `RegRow.definitions` entry (D85) -- the SAB_ID/SAB_DESC/SAB_AFTER's
+# fabricated `\j` row is unchanged, only the anchor site's macro name and
+# trailing arg. Re-derived from the live source per this directory's
+# Conventions (never from `git show HEAD:<path>` alone).
 SAB_ID="S19-new-wrong-row"
 SAB_FILE="src/parse/registry.c"
 SAB_SUITES="reject registry pc3"
@@ -47,6 +55,6 @@ SAB_REACH='"$PCREC" --list-syntax | cut -f1,2,3,4 | tr "\\t" "="'
 SAB_REACH_EXPECT="esc=d=\\d=classes"
 SAB_REACH_POP="tests/reject/run_reject_tests.sh|COVERAGE CHANGED|1"
 SAB_COUNT=1
-SAB_BEFORE="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\"),"
-SAB_AFTER="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\"),
+SAB_BEFORE="ESC_D('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\", o_def),"
+SAB_AFTER="ESC_D('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\", o_def),
 ESC('j', \"\\\\j\", misc, ANY_ENGINE, \"fabricated: PCRE2 does not define this escape (MECH-1 sabotage for the SR-4 blind spot)\", QF_NO, \"err 103\"),"

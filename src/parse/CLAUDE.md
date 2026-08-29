@@ -169,16 +169,43 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 
   `RegRow.definitions` itself is populated in registry.c per
   definitions_table.md §1's census — see that file's own row-by-row
-  citations for which rows carry which tag/string, and docs/dev/plan.md's
-  [DD-11] row for what remains open: `^`, `$` and the plain capturing
-  group `(...)` each need a `DEF_IDENTITY`-bearing entry but have **no
-  `RegRow` at all** (confirmed by grep — they are base grammar with no
-  doorway, unlike the literal escapes), and giving them one is real new
-  architecture (a no-doorway `RegKind`, `RK_QUANTSUFFIX`'s own precedent,
-  or stretching an existing kind's doorway semantics) — open with the
-  manager as of this pass, see the lane's own report. `\x{...}` (braced
-  hex) stays a parse.c special case on purpose, no row — see the registry
-  section's own `RS_BASE` entry below.
+  citations for which rows carry which tag/string.
+
+  **`RK_BARE` (manager ruling, 2026-08-29) closed the gap the paragraph
+  above used to name as open.** `^`, `$` and the plain capturing group
+  `(...)` each needed a `DEF_IDENTITY`-bearing entry but had **no `RegRow`
+  at all** — confirmed by grep, base grammar with no doorway, unlike the
+  literal escapes. Rather than stretch an existing `RegKind`'s doorway
+  semantics, they got a NEW no-doorway `RegKind`, `RK_BARE`, on
+  `RK_QUANTSUFFIX`'s own precedent: consulted by the dumps and by this
+  file's definitions machinery, by nothing on the live parse path (`^`/`$`
+  still resolve in `p_atom`, the capturing group still in
+  `p_group_body` — no lookup added to either). `RK_COUNT` bumped; every
+  `RK_COUNT`-shaped guard in the tree re-measured from a live run rather
+  than computed by hand (see `tests/registry/CLAUDE.md`'s own entry and
+  `docs/spec/registry.md` §2/§9). Three rows, registry.c's `bare_rows[]`:
+  `^`'s `DEF_MULTILINE` entry substitutes `\A|(?<=\n)(?!\z)`, falling
+  through to `DEF_IDENTITY` (`A_BOL` genuinely is core, `\A`'s alias);
+  `$`'s `DEF_MULTILINE` entry substitutes `(?=\n)|\z`, falling through to
+  a REAL `DEFK_STR` substitution, `(?=\n?\z)` — **not** `DEF_IDENTITY`:
+  the structural check (`tests/registry/definitions_check.c`'s
+  `check_str_entry(owner, r->syntax)` extension) proved `A_EOL` is not
+  core under full reduction, since it aliases `\Z`, which itself reduces
+  to `(?=\n?\z)` — a correction to the original ruling's assumption,
+  reported to the manager and folded in here rather than silently fixed;
+  the plain capturing group's `DEF_NOCAP` entry is `DEFK_BUILDER`
+  (`pcrec_def_build_identity`, `(?n)`'s existing no-op builder, reused),
+  falling through to `DEF_IDENTITY` (an ordinary `A_CAP`).
+
+  The same ruling settled `\x{...}` (braced hex): a definitions row a
+  parse-time dispatch never consults costs no lookup on the base path
+  (this file's "no LOOKUP on the base path" rule, below, is about
+  dispatch — not about a table entry dispatch never reaches), so `\x{...}`
+  and bare `\xHH` are ONE construct with two spellings sharing ONE row —
+  the pre-existing bare-`\x` `RK_ESC`/`RS_BASE` row's `DEFK_TEXTFN`
+  template now names both forms, and `pcrec_def_text_hex` is the one
+  decode site for both. `parse.c`'s own braced-form diagnostic is
+  unmoved — still a base `\x` special case with no doorway (below).
 
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to

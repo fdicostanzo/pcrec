@@ -113,6 +113,7 @@ static const char *kind_name(RegKind k)
     case RK_VERB:         return "verb";
     case RK_CLASSBRACKET: return "classbracket";
     case RK_QUANTSUFFIX:  return "quantsuffix";
+    case RK_BARE:         return "bare";
     default:              return "?";
     }
 }
@@ -301,6 +302,17 @@ static void check_wellformed(void)
                         bad("%s row %zu (%s): the example is not this row's own "
                             "construct — it must contain the selector '%c' and "
                             "END with \"%s\"", kn, i, r->syntax, r->sel, end);
+                } else if (k == RK_BARE) {
+                    /* [DD-11.1] ALSO no doorway prefix — RK_QUANTSUFFIX's own
+                     * precedent, and the simplest instance of it: `^`/`$`/the
+                     * capturing-group row's `syntax` is the whole construct
+                     * (no carrier atom to look past for `^`/`$`; the group
+                     * row's carrier `a` is not itself part of the invariant
+                     * this row is checked against), so containing the
+                     * selector byte is the whole test. */
+                    if (!strchr(r->syntax, r->sel))
+                        bad("%s row %zu (%s): the example does not contain "
+                            "its own selector '%c'", kn, i, r->syntax, r->sel);
                 } else {
                 const char *pfx = k == RK_ESC ? "\\" : k == RK_GROUP ? "(?" : "[";
                 snprintf(needle, sizeof needle, "%s%c%s", pfx, r->sel, r->tail ? r->tail : "");
@@ -594,8 +606,13 @@ static void check_wellformed(void)
      * shape, now carrying a DEFK_TEXTFN definition since the value varies
      * with the operand digits. `\x{...}` (braced) stays a parse.c special
      * case per src/parse/CLAUDE.md's existing ruling — no row. */
-    if (total != 135) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 135. If you added or "
+    /* 135 -> 138 (manager ruling, 2026-08-29): the new no-doorway RK_BARE
+     * kind, RK_QUANTSUFFIX's own precedent a second time — `^`, `$`, and
+     * the plain capturing group `(...)`, each with no RegRow home before
+     * this (confirmed by grep: pure base grammar, no doorway at all,
+     * unlike the literal escapes). */
+    if (total != 138) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 138. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -1221,6 +1238,20 @@ static void check_table_to_parser(void)
         expect_msg(label, r->syntax, want);
     }
     covered[RK_QUANTSUFFIX] = true;
+
+    /* [DD-11.1] `^`/`$`/the plain capturing group. NOT a doorway either —
+     * base grammar, parsed directly in `p_atom`/`p_group_body` — and RS_BASE
+     * like `(?:...)`'s own row above (not RS_MODULE like the possessive
+     * suffixes): there is no diagnostic to verify, only that the row's own
+     * `syntax` claim of base-grammar support is true. */
+    rows = pcrec_registry(RK_BARE, &n);
+    for (size_t i = 0; i < n; i++) {
+        const RegRow *r = &rows[i];
+        snprintf(label, sizeof label,
+                 "bare %s: supported by the base grammar, as the row claims", r->syntax);
+        expect_compiles(label, r->syntax);
+    }
+    covered[RK_BARE] = true;
 
     /* verbs and class brackets: fixed messages, used verbatim — EXCEPT the
      * `(*` doorway's twelve INDEX rows ([M6.6.2] wave F), which are RD_MODULE
@@ -2758,7 +2789,7 @@ static void check_built_status_defects(void)
      * derived to PCREC_BUILT_DEFECT — the failure this check reports. See
      * `built_status_probe`'s non-doorway arm in src/parse/syntax_dump.c. */
     static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
-                                     RK_QUANTSUFFIX };
+                                     RK_QUANTSUFFIX, RK_BARE };
     unsigned mask_before = pcrec_enabled_mask();
     int checked = 0, built = 0, unbuilt = 0, na = 0, defects = 0;
 
@@ -2920,9 +2951,11 @@ static void check_built_status_defects(void)
      * `built`/`unbuilt` are untouched: no RS_MODULE row moved. */
     /* 134 = 106 + 16 + 12 -> 135 = 106 + 16 + 13: bare `\x`'s RS_BASE row
      * joins the n/a bucket, same as the other 6 fixed base-tier escapes. */
-    else if (checked != 135 || built != 106 || unbuilt != 16 || na != 13)
+    /* 135 = 106 + 16 + 13 -> 138 = 106 + 16 + 16: the 3 new RK_BARE rows
+     * join the n/a bucket, same as every other RS_BASE row. */
+    else if (checked != 138 || built != 106 || unbuilt != 16 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 135 = 106 + 16 + 13. Zero defects does NOT imply "
+            "%d n/a, expected 138 = 106 + 16 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3125,9 +3158,11 @@ static void check_families(void)
      * never grouped. */
     /* 96 -> 97: bare `\x`'s new RS_BASE row is another family of one
      * (family == NULL). */
-    if (families != 97 || multi != 12 || members_in_multi != 50)
+    /* 97 -> 100: the 3 new RK_BARE rows are each their own family
+     * (family == NULL). */
+    if (families != 100 || multi != 12 || members_in_multi != 50)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 97 / 12 / 50. The index "
+            "member, %d members in those -- expected 100 / 12 / 50. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {

@@ -1729,6 +1729,23 @@ typedef enum {
      * from one of those arrays at all, since iterating RK_COUNT over
      * registry.c would share a source with what it checks. */
     RK_QUANTSUFFIX,
+    /* [DD-11.1] manager ruling, 2026-08-29: `RK_QUANTSUFFIX`'s own precedent
+     * ("NOT A DOORWAY" — see its own comment above), applied a second time.
+     * `^`, `$` and the plain capturing group `(...)` are base grammar with
+     * NO doorway at all — parsed directly in `p_atom`/`p_group_body`,
+     * unlike the literal escapes (which route through the real `\`
+     * doorway even when answered before reaching the registry) — so they
+     * had NO `RegRow` home to attach `RegRow.definitions` (D85) to. Named
+     * `RK_BARE` rather than `RK_ANCHOR`: `(...)` is not an anchor, and the
+     * kind is for "a base-grammar construct with no doorway" generally,
+     * not for anchors specifically. Same discipline as `RK_QUANTSUFFIX`:
+     * `pcrec_registry_find`/`arbitrate` are NEVER called with it, the rows
+     * exist for the DUMP and for D85's definitions machinery, and every
+     * site enumerating `RegKind`s explicitly needs a new arm — grep
+     * `RK_QUANTSUFFIX` across the tree for the site list this addition
+     * used to find them all (docs/design/atomic_groups_design.md §7.4 is
+     * the precedent's own worked example of what "every site" means). */
+    RK_BARE,
     RK_COUNT
 } RegKind;
 

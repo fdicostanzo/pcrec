@@ -79,6 +79,10 @@ static const char *kind_name(RegKind k)
     /* [M6.4.2] the fifth kind, and the one that is NOT a doorway. This name is
      * a frozen column value in `--list-syntax`'s TSV: consumers key on it. */
     case RK_QUANTSUFFIX:  return "quant-suffix";
+    /* [DD-11.1] the sixth kind, ALSO not a doorway — RK_QUANTSUFFIX's own
+     * precedent, a second time (internal.h's comment on RK_BARE has the
+     * full ruling). Frozen column value, same as above. */
+    case RK_BARE:         return "bare";
     default:              return "?";
     }
 }
@@ -98,6 +102,10 @@ static const char *doorway_name(RegKind k)
      * the base tier a lookup on every quantifier. The word says so rather than
      * naming a place that does not exist. */
     case RK_QUANTSUFFIX:  return "a quantifier suffix (no doorway)";
+    /* [DD-11.1] `^`/`$`/plain `(` are parsed directly in `p_atom`/
+     * `p_group_body` (parse.c) — base grammar, no doorway, same shape as
+     * the possessive suffix above. */
+    case RK_BARE:         return "base grammar (no doorway)";
     default:              return "?";
     }
 }
@@ -162,7 +170,7 @@ static void put_expect(StrBuf *sb, const RegRow *r)
  * that iterated `RK_COUNT` over registry.c would share a source with the thing
  * it checks, which is this project's signature check-design failure. */
 static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
-                                     RK_QUANTSUFFIX };
+                                     RK_QUANTSUFFIX, RK_BARE };
 
 char *pcrec_syntax_tsv(unsigned flavours)
 {
@@ -315,7 +323,7 @@ char *pcrec_definitions_tsv(unsigned flavours)
                  "one — never a live evaluation.\n"
                  "# `applies` is `active` (this entry substitutes a "
                  "different construct) or `identity` (restates the row's "
-                 "own primitive form) — every entry today is `active`.\n"
+                 "own primitive form).\n"
                  "#kind\tselector\tsyntax\torder\tpredicate\tdefinition\tapplies\n");
 
     for (size_t k = 0; k < NELEMS(all_kinds); k++) {
@@ -667,6 +675,11 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
      * so the switch stays exhaustive and so a future attempt to route here
      * says so at the compiler rather than falling into EXT_NOT_MINE. */
     case RK_QUANTSUFFIX: break;
+    /* [DD-11.1] same unreachable-by-construction shape: `doorway_route`
+     * recognises `\`, `(?`, `(*`, `[` and can never produce RK_BARE either
+     * — there is no doorway for `^`/`$`/plain `(` any more than there is
+     * for the possessive suffix. */
+    case RK_BARE: break;
     default: break;
     }
     return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "",
@@ -867,6 +880,10 @@ static const char *doorway_word(RegKind k)
      * opener, so they never reach a quant-suffix row and never print this;
      * it exists so the mapping is total. */
     case RK_QUANTSUFFIX:  return "quant-suffix";
+    /* [DD-11.1] same shape: --probe-ask/--explain never reach a RK_BARE
+     * row either (no doorway to scan for), so the mapping is total for the
+     * same reason. */
+    case RK_BARE:         return "bare";
     default:              return "?";
     }
 }
@@ -1484,7 +1501,17 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
              * where `--explain` on base syntax must exit 1 saying "no construct
              * matches" (cli case11). MEASURED as an 11-check `make test`
              * failure before this line existed. */
-            if (listed && r->kind == RK_QUANTSUFFIX && qlen != slen)
+            /* [DD-11.1] RK_BARE joins the same exemption and for the same
+             * reason: the plain capturing-group row's `syntax` needs a
+             * CARRIER atom to be an executable probe (`(a)`, not bare `(`),
+             * so a naive prefix match would let `--explain 'a'` list it —
+             * measured the identical way RK_QUANTSUFFIX's carrier was.
+             * `^`/`$` have no carrier (their `syntax` IS the whole
+             * construct), so this clause is a no-op for them, but the rule
+             * keys on the KIND, matching RK_QUANTSUFFIX's own discipline,
+             * not on a per-row carrier flag. */
+            if (listed && (r->kind == RK_QUANTSUFFIX || r->kind == RK_BARE)
+                && qlen != slen)
                 listed = false;
             bool candidate = q.routed && r->kind == q.d.kind &&
                              r->sel != REG_SEL_ANY && r->sel == q.d.sel;

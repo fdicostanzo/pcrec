@@ -470,7 +470,7 @@ static const RegDef cx_def[] = {
     {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL},
 };
 static const RegDef bare_x_def[] = {
-    {DEFK_TEXTFN, DEF_ALWAYS, "\\xHH = byte HH (hex)", NULL, pcrec_def_text_hex},
+    {DEFK_TEXTFN, DEF_ALWAYS, "\\xHH or \\x{HHHH} = byte HH..HHHH (hex)", NULL, pcrec_def_text_hex},
     {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL},
 };
 static const RegDef o_def[] = {
@@ -824,16 +824,25 @@ ESC_BASE_D('n', "\\n", "linefeed, hex 0A", "char 0x0a", n_def),
 ESC_BASE_D('r', "\\r", "carriage return, hex 0D", "char 0x0d", r_def),
 ESC_BASE_D('t', "\\t", "tab, hex 09", "char 0x09", t_def),
 
-/* [DD-11.1] the 7th base-tier literal escape: bare `\x` (2 hex digits,
- * base tier, esc_char_value's own live rule — braced `\x{...}` stays a
- * parse.c special case, module unicode-props, UNBUILT; src/parse/
- * CLAUDE.md's registry section rules it out of the registry on purpose,
- * so it gets no row here). PARAMETERIZED, unlike the 6 fixed escapes
- * above — `definitions` carries a DEFK_TEXTFN, not a DEFK_STR. `syntax`
- * is an illustrative example (`\N{U+0041}`'s own convention), and
- * `class_expect` is measured against THAT example's literal text, same
- * as `\cX`'s "char 0x18" is measured against the literal `X`. */
-ESC_BASE_D('x', "\\x41", "hex, exactly 2 digits (bare \\x; \\x{...} requires module 'unicode-props')", "char 0x41", bare_x_def),
+/* [DD-11.1] the 7th base-tier literal escape: `\x`, ONE CONSTRUCT WITH TWO
+ * SPELLINGS (manager ruling, 2026-08-29, correcting the first pass's
+ * split): bare `\xHH` (exactly 2 hex digits, base tier, esc_char_value's
+ * own live rule) and braced `\x{HHHH}` (arbitrary-width hex, module
+ * unicode-props, UNBUILT — esc_char_value's own case for it stays exactly
+ * where it is, a parse.c special case naming the module by hand,
+ * src/parse/CLAUDE.md's registry section). The ruling: giving `\x{...}`
+ * its OWN row would be a lookup the base path never pays (the thing
+ * src/parse/CLAUDE.md's rule actually protects); a `definitions` row
+ * dispatch never consults costs no lookup, so the two spellings SHARE
+ * this one row and one `DEFK_TEXTFN` — `pcrec_def_text_hex` already
+ * decodes an ARBITRARY-length hex run (it loops until it runs out of
+ * digits or the value exceeds a byte), so no code change was needed
+ * there, only the row's own template/note naming both forms. `syntax`
+ * stays the bare-form illustrative example (`\N{U+0041}`'s own
+ * convention), and `class_expect` is measured against THAT example's
+ * literal text, same as `\cX`'s "char 0x18" is measured against the
+ * literal `X`. */
+ESC_BASE_D('x', "\\x41", "hex: bare \\xHH (exactly 2 digits) or braced \\x{HHHH} (\\x{...} requires module 'unicode-props')", "char 0x41", bare_x_def),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */
@@ -1419,6 +1428,91 @@ QUANTSUFFIX('?', "a?+",     "possessive `?` — `X?+` is PCRE2's own spelling of
 QUANTSUFFIX('{', "a{1,2}+", "possessive braces — `X{n,m}+` is `(?>X{n,m})`; also {n}+ {n,}+ {,n}+"),
 };
 
+/* ---- RK_BARE: base grammar with no doorway at all (manager ruling,
+ * 2026-08-29) ---------------------------------------------------------
+ *
+ * RK_QUANTSUFFIX's own precedent, a second time: `^`, `$` and the plain
+ * capturing group `(...)` are parsed directly in `p_atom`/`p_group_body`
+ * (parse.c) with NO doorway — unlike the literal escapes, which route
+ * through the real `\` doorway even when answered before reaching the
+ * registry. These rows are NEVER consulted by `pcrec_registry_find`/
+ * `arbitrate`; they exist for the DUMP and for D85's definitions
+ * machinery, on the same "the table stays complete" reasoning `(?:...)`'s
+ * own RS_BASE row above states.
+ *
+ * `^`/`$` each carry a two-entry `definitions` list: the REAL replacement
+ * under `(?m)` (D66/D85's census, verified against libpcre2 10.46,
+ * definitions_table.md §4) as the first entry, and an explicit
+ * `DEF_IDENTITY` as the trailing DEF_ALWAYS entry — outside `(?m)` each is
+ * ALREADY the exact alias its own `\A`/`\Z` sibling builds (D62), so there
+ * is nothing to substitute. The plain capturing group's two entries are
+ * `(?n)`'s builder (`pcrec_def_build_identity`, previously unused —
+ * `(...)` scoped by `(?n)` IS `(?:...)`, no `A_CAP` wrapper, D31's
+ * erasure) and, again, `DEF_IDENTITY` for the ordinary case (a capturing
+ * group with no `(?n)` in scope is already core, `A_CAP`).
+ *
+ * `quant`: measured live against both python `re` and pcrec (`^*`/`$*`
+ * are "nothing to repeat"/"quantifier does not follow a repeatable item"
+ * in both; `(a)*`/`(a)+` compile in both) — QF_NO for the two anchors,
+ * QF_YES for the group. `class_expect` is NULL for all three: RK_BARE is
+ * not class-reachable any more than RK_GROUP/RK_QUANTSUFFIX are (`^`/`$`
+ * have no meaning as class members at all — a literal `^`/`$` byte inside
+ * `[...]` is the base grammar's OWN existing bracket-negation/plain-byte
+ * handling, not a registry row); `check_wellformed`'s existing
+ * `reachable = (kind == RK_ESC || kind == RK_CLASSBRACKET)` rule already
+ * excludes RK_BARE with no edit needed. */
+static const RegDef bol_def[] = {
+    {DEFK_STR, DEF_MULTILINE, "\\A|(?<=\\n)(?!\\z)", NULL, NULL},
+    {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
+};
+/* NOTE the ASYMMETRY with bol_def, FOUND BY THE STRUCTURAL CHECK ITSELF
+ * (definitions_check.c's `check_str_entry(owner, r->syntax)` call for a
+ * DEF_IDENTITY entry — it parsed `$` under default mods, got A_EOL, and
+ * `pcrec_ast_is_core` (definitions_table.md §2's own ruling, already
+ * shipped in definitions.c) says A_EOL is NOT core: `$`'s non-multiline
+ * form is `\Z`'s own shipped alias, and `\Z` itself reduces FURTHER —
+ * `\Z ≡ (?=\n?\z)` — so bare `$` is not "already core" the way bare `^`
+ * (A_BOL, aliasing `\A`, which IS core) is. `^`'s census-§1 claim
+ * "already core" and `$`'s survive only until §2's full-reduction ruling
+ * is applied literally; `$` needed a SECOND real substitution instead of
+ * an identity entry once it was. Verified against libpcre2 already
+ * (definitions_table.md §4 / assertions_design.md: `x\Z` vs
+ * `x(?=\n?\z)`, 6/6 subjects agree). */
+static const RegDef eol_def[] = {
+    {DEFK_STR, DEF_MULTILINE, "(?=\\n)|\\z", NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?=\\n?\\z)", NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
+};
+static const RegDef cap_def[] = {
+    {DEFK_BUILDER, DEF_NOCAP, NULL, pcrec_def_build_identity, NULL},
+    {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
+};
+
+static const RegRow bare_rows[] = {
+{RK_BARE, '^', NULL, "^", 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE,
+ NULL, NULL, 0,
+ "start of subject, or after an internal newline under (?m) — D62's "
+ "field+fold lowering; already core (A_BOL, the same node \\A builds) "
+ "outside (?m)",
+ ROADMAP_NONE, QF_NO, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, bol_def},
+{RK_BARE, '$', NULL, "$", 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE,
+ NULL, NULL, 0,
+ "end of subject (or before a final newline), or before an internal "
+ "newline under (?m) — D62's field+fold lowering outside (?m) it aliases "
+ "\\Z (A_EOL), which is NOT core under full reduction (unlike ^/A_BOL) — "
+ "\\Z itself reduces to (?=\\n?\\z), so this row's DEF_ALWAYS entry is a "
+ "real substitution, not an identity",
+ ROADMAP_NONE, QF_NO, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, eol_def},
+{RK_BARE, '(', NULL, "(a)", 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE,
+ NULL, NULL, 0,
+ "a capturing group — already core (A_CAP) unless (?n) is scoped over "
+ "it, in which case it is (?:...)'s identity (D31's erasure: no A_CAP "
+ "wrapper)",
+ ROADMAP_NONE, QF_YES, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, cap_def},
+};
+
 /* ---- doorway 4's NAME set (FIX-2) ---------------------------------------
  *
  * The class-bracket doorway is NAME-keyed exactly as `(*` is, and it had the
@@ -1560,6 +1654,9 @@ const RegRow *pcrec_registry(RegKind k, size_t *n)
      * caught by tests/registry/registry_check.c reading the DUMP OUTPUT and by
      * its `check_table_to_parser` now iterating RK_COUNT, not by the compiler. */
     case RK_QUANTSUFFIX:  *n = sizeof quantsuffix_rows  / sizeof quantsuffix_rows[0];  return quantsuffix_rows;
+    /* [DD-11.1] the sixth kind, RK_QUANTSUFFIX's own precedent a second
+     * time (internal.h's comment on RK_BARE has the ruling). */
+    case RK_BARE:         *n = sizeof bare_rows         / sizeof bare_rows[0];         return bare_rows;
     default:              *n = 0;                                                      return NULL;
     }
 }

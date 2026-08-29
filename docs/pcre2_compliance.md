@@ -2123,7 +2123,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 135 rows from one declarative table (D24), rendered as 97 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 138 rows from one declarative table (D24), rendered as 100 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2178,7 +2178,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 135 rows 
 | after `\` | `\n` | `OK` | — | — | — | dfa|vm | linefeed, hex 0A |
 | after `\` | `\r` | `OK` | — | — | — | dfa|vm | carriage return, hex 0D |
 | after `\` | `\t` | `OK` | — | — | — | dfa|vm | tab, hex 09 |
-| after `\` | `\x41` | `OK` | — | — | — | dfa|vm | hex, exactly 2 digits (bare \x; \x{...} requires module 'unicode-props') |
+| after `\` | `\x41` | `OK` | — | — | — | dfa|vm | hex: bare \xHH (exactly 2 digits) or braced \x{HHHH} (\x{...} requires module 'unicode-props') |
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
 | after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead — also spelled `(*pla:a)`, `(*positive_lookahead:a)` |
 | after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead — also spelled `(*nla:a)`, `(*negative_lookahead:a)` |
@@ -2226,5 +2226,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 135 rows 
 | quant-suffix | `a++` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive `+` — `X++` is PCRE2's own spelling of `(?>X+)` |
 | quant-suffix | `a?+` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive `?` — `X?+` is PCRE2's own spelling of `(?>X?)` |
 | quant-suffix | `a{1,2}+` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive braces — `X{n,m}+` is `(?>X{n,m})`; also {n}+ {n,}+ {,n}+ |
+| bare | `^` | `OK` | — | — | — | dfa|vm | start of subject, or after an internal newline under (?m) — D62's field+fold lowering; already core (A_BOL, the same node \A builds) outside (?m) |
+| bare | `$` | `OK` | — | — | — | dfa|vm | end of subject (or before a final newline), or before an internal newline under (?m) — D62's field+fold lowering outside (?m) it aliases \Z (A_EOL), which is NOT core under full reduction (unlike ^/A_BOL) — \Z itself reduces to (?=\n?\z), so this row's DEF_ALWAYS entry is a real substitution, not an identity |
+| bare | `(a)` | `OK` | — | — | — | dfa|vm | a capturing group — already core (A_CAP) unless (?n) is scoped over it, in which case it is (?:...)'s identity (D31's erasure: no A_CAP wrapper) |
 
 <!-- END GENERATED -->

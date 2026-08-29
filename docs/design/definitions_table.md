@@ -36,7 +36,8 @@ syntax** | **code arm (file:line)** | **replacement or primitive, and why**.
 | `(?U)` ungreedy | `cx->mods->ungreedy` | n/a — inverts the quantifier's OWN default greediness, not a substitution | `src/parse/parse.c:1112/1114` | **parameter**, excluded with `.`/`(?i)`/`(?x)` (r43 C5) |
 | class escapes: `\d \D \s \S \w \W \h \H \v \V \N` (12 rows) + POSIX class names (1 row-family, 14 names) | `always` today; UTF/UCP is the chartered SECOND row once `unicode-props` ships a producer | today's byte definitions — e.g. `\w`'s `pcrec_cls_word_esc`; `\N`'s row is ALREADY `{PORT_SET, ..., pcrec_cls_newline, ...}`, i.e. today's byte set is already derived from D64's ONE newline definition | `src/parse/registry.c:350-364` (`ESC_SET` rows); `\N` at `:388`; POSIX at `mod_classes.c`'s `pcrec_clsport_posix` | **replacement family**, RULED IN by Frank — `cls_bits.inc` becomes a DERIVED artifact (one derivation from the definition strings), PC-4's libpcre2 re-measurement the control |
 | `\R` any Unicode newline sequence | `always` | `(?>\r\n\|\n\|\x0b\|\f\|\r\|\x85)` — verified against libpcre2 (11/11 subjects agree, incl. `"\r\n"`, `"\r\r"`, empty) | row `registry.c:618` (`ESC_CLASS_INVALID`, module `misc`, currently `unbuilt`) | **replacement**, RULED IN by Frank — a real registry row today, UNBUILT; the definitions table can carry an unbuilt row's definition as data before any producer exists |
-| literal escapes with a RegRow today: `\cX`, `\o{101}` (octal via `\o`), `\N{U+0041}`, `\Q…\E` | `always` today; encoding (a code point > 0x7f standing for a byte SEQUENCE under `--encoding=utf8`) is the chartered second row once [DD-12]/[M5] ships | e.g. `\cX ≡ X xor 0x40`, `\N{U+41} ≡ \x41` | `registry.c` (`\c`, `\o`, `\N{U+`, `\Q`/`\E` rows) | **replacement family**, RULED IN by Frank |
+| literal escapes with a RegRow today: `\cX`, `\o{101}` (octal via `\o`), `\N{U+0041}` | `always` today; encoding (a code point > 0x7f standing for a byte SEQUENCE under `--encoding=utf8`) is the chartered second row once [DD-12]/[M5] ships | e.g. `\cX ≡ X xor 0x40`, `\N{U+41} ≡ \x41` | `registry.c` (`\c`, `\o`, `\N{U+` rows) | **replacement family**, RULED IN by Frank |
+| `\Q…\E` | n/a | n/a — a delimiter pair the LEXER strips before any construct is recognised; never itself a construct with a core-syntax equivalent | `src/parse/parse.c`'s quoting skip (siblings of `p_alt`, not children — PARSE-1's own note) | **excluded, LEXICAL** (manager ruling, 2026-08-29) — same shape as `(?x)` below, not a fourth `DefKind`; corrects the first pass's bundling of this construct into the literal-escape replacement family above, which the manager's `DEFK_TEXTFN` ruling superseded |
 | literal escapes with NO RegRow today: `\a \e \f \n \r \t`, bare `\x` (hex), octal / `\0` | `always` today; same future encoding predicate | `\a≡\x07`, `\e≡\x1b` (both verified against libpcre2, 3/3 subjects) etc. | `src/parse/parse.c:356-384` (`esc_char_value`'s switch) — BASE-TIER, decoded directly, no doorway, no row | **replacement family**, RULED IN by Frank, but ARCHITECTURALLY DISTINCT — see the note after this table |
 | NEWLINE (`\n`, dot's complement, `(?m)` boundary tests) | none today (LF hardwired, D64); FUTURE: which newline convention is active | the LF byte class, `pcrec_cls_newline` | `src/core/internal.h:2224`; consumed at `src/ir/dfa.c:147`, `src/gen/emit_dfa.c:1991-1998` | **the working precedent for D85's whole model** — one definition, many consumers, option axis unbuilt |
 | `.` under `(?s)`, `(?i)` caseless | `cx->mods->dotall` / `cx->mods->caseless` | class bitmap widened at atom-construction time | `src/parse/parse.c:880-890`; `src/core/fold.c` | **parameter**, not a replacement — same shape as caseless folding (D23) |
@@ -58,6 +59,16 @@ as shipped exact-alias identities; `\z`, `\G`, `\K` as structural primitives).
 3 parameters (`(?s)`/`(?i)` share a shape, `(?U)`, `(?x)`) + 1 generation
 axis (encoding) — 4 total, corrected from the first pass's "8 primitives"
 (r43 C6: parameters are not primitives).
+
+**Correction (manager ruling, 2026-08-29, applied by lane `dd11b`):** the
+literal-escape family's "5 rows with a RegRow home" above double-counted
+`\Q…\E` as two rows (`\Q`, `\E`) in that bucket; the manager's ruling
+excludes `\Q…\E` entirely, as LEXICAL rather than as a replacement (see §1's
+own row for it, above) — the same shape as `(?x)`, not a fourth `DefKind`.
+The family therefore has **3** rows with a RegRow home today (`\cX`, `\o{}`,
+`\N{U+}`), not 5, and the totals line's `28` becomes **26**. The `9 further
+items with no RegRow` bucket is unaffected (it never included `\Q…\E`,
+which already had a row). This does not reopen §7's remaining open item.
 
 **Architectural note on the 9 base-tier literal escapes with no RegRow.**
 D24's own founding text draws the registry's boundary at NON-base

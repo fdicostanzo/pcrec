@@ -37,14 +37,31 @@ directory asserts that the description and the shipped parser actually agree.
   `DEFK_TEXTFN`, on their existing rows), and the 14-name POSIX class-name
   family (`DEFK_STR`, one entry per name — a FINITE set, unlike the
   `DEFK_TEXTFN` rows' unbounded operand space; byte ranges read directly
-  off `pcrec_cls_px_*`, cls_bits.inc, never guessed). A new `DEF_IDENTITY`
+  off `pcrec_cls_px_*`, cls_bits.inc, never guessed). A `DEF_IDENTITY`
   `RegDef` kind (the row's own primitive form, an EXPLICIT entry per the
-  manager's ruling — never inferred from an absent one) landed as
-  infrastructure but is not yet used by any row: `^`, `$` and the plain
-  capturing group `(...)` each need one but have **no `RegRow` at all**
-  (confirmed by grep, not a tag/kind gap) — open with the manager as of
-  this pass. Braced `\x{...}` stays a parse.c special case, no row,
-  unaffected by any of this.
+  manager's ruling — never inferred from an absent one) now has three
+  users, all on the new no-doorway `RK_BARE` kind (manager ruling,
+  2026-08-29, `RK_QUANTSUFFIX`'s own precedent): `^`, `$` and the plain
+  capturing group `(...)`, which had **no `RegRow` at all** before this
+  (confirmed by grep, not a tag/kind gap — base grammar with no doorway).
+  `^`'s non-multiline entry is `DEF_IDENTITY` (`A_BOL` genuinely is core,
+  `\A`'s alias); the capturing group's `(?n)`-scoped entry is
+  `DEFK_BUILDER` (`pcrec_def_build_identity`, `(?n)`'s existing no-op,
+  reused) falling through to `DEF_IDENTITY`. **`$`'s non-multiline entry
+  is deliberately NOT `DEF_IDENTITY`**: `sweep_definitions`'s
+  `DEF_IDENTITY` check (`check_str_entry(owner, r->syntax)`) FAILED on it,
+  proving `A_EOL` is not core under full reduction (it aliases `\Z`, which
+  itself reduces to `(?=\n?\z)`) — a correction to the original ruling's
+  assumption, folded in as a real `DEFK_STR` substitution instead. Braced
+  `\x{...}` still has no row of its own, but shares the pre-existing bare-
+  `\x` row's `DEFK_TEXTFN` entry (one construct, two spellings, per the
+  same `RK_BARE` ruling: a definitions row a parse-time dispatch never
+  consults costs no lookup on the base path) — `parse.c`'s braced-form
+  diagnostic is unmoved. `RK_COUNT` bumped for `RK_BARE`; every
+  `RK_COUNT`-shaped guard below (row/family/built-status counts,
+  `registry_check.c`'s `kinds[]` arrays, `pcre2_check.c`'s `kind_name`,
+  `compliance_section.py`, `run_cli_tests.sh` case10's noroute set)
+  re-measured from a live run rather than computed by hand.
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output
@@ -189,7 +206,7 @@ directory asserts that the description and the shipped parser actually agree.
 1. **Well-formedness** — no two rows claim one byte, catch-all rows come last,
    each row's `syntax` example really contains its selector byte, and the
    status/module/feature/engines/diagnostic fields are mutually consistent.
-   Plus an EXACT row count (128 at [DD-14]'s close — the figure is pinned in registry_check.c and moves with every module that adds rows; it was 100 at Q2/SR-9; this file said 68 until
+   Plus an EXACT row count (138 at [DD-11]'s `RK_BARE` addition — the figure is pinned in registry_check.c and moves with every module that adds rows; it was 128 at [DD-14]'s close, 100 at Q2/SR-9; this file said 68 until
    2026-08-11, which is the drift an exact count is supposed to prevent
    happening to its own documentation) so rows cannot be deleted silently — the
    same "TABLE SHRANK" guard tests/reject/ carries. Note what R8/C4-10 measured

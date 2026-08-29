@@ -262,6 +262,14 @@ static void sweep_definitions(void)
                         bad("definitions: %s: DEF_IDENTITY entry carries "
                             "str/builder/textfn data it must not have "
                             "(nothing to splice)", owner);
+                    /* The identity CLAIM itself, checked: the row's own
+                     * `syntax`, parsed under DEFAULT mods (no other tag
+                     * active — the state this entry fires under, since it
+                     * is always the list's trailing fallback), must
+                     * itself be core-only. This is what "already core, no
+                     * substitution" actually asserts, not just that the
+                     * entry carries no payload. */
+                    check_str_entry(owner, r->syntax);
                 }
             }
             if (!saw_end)

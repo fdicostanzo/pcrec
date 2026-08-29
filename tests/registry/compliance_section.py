@@ -428,10 +428,15 @@ def dump():
     # untouched (esc_char_value still decodes all six directly, no doorway).
     # 134 -> 135 (manager rulings, 2026-08-29): the 7th, bare `\x` (2 hex
     # digits) -- same RS_BASE shape, a DEFK_TEXTFN definition since the
-    # value varies with the operand. `\x{...}` (braced) stays a parse.c
-    # special case, no row (src/parse/CLAUDE.md's existing ruling).
-    if len(rows) != 135:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 135. "
+    # value varies with the operand. `\x{...}` (braced) folds into this
+    # SAME row as a second spelling (one DEFK_TEXTFN, no new row) rather
+    # than staying unrowed.
+    # 135 -> 138 (manager ruling, 2026-08-29): the new no-doorway RK_BARE
+    # kind (RK_QUANTSUFFIX's own precedent) -- `^`, `$`, the plain
+    # capturing group `(...)`, each with NO RegRow home before this
+    # (confirmed by grep: pure base grammar, no doorway at all).
+    if len(rows) != 138:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 138. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows
