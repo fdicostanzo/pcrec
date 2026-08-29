@@ -2323,6 +2323,82 @@ Ast *pcrec_ast_char(Ctx *cx, unsigned c);
  * them instead of a comment (R32 E8; sabotage row S116). */
 extern const unsigned char pcrec_ascii_fold[256];
 
+/* [DD-11.1] THE REPLACEMENT/DEFINITION TABLE (D85, docs/design/
+ * definitions_table.md, r43-revised). For a row whose construct stands for
+ * another construct expressible in CORE syntax (D85's own words) under some
+ * option scope, `RegRow.definitions` (below) points at a small `static
+ * const` array of `RegDef` rows: an ORDERED list, first-applicable-wins,
+ * terminated by `DEFK_END` rather than carrying a parallel count (the
+ * `family` field's own precedent: one new fact on the row, not a second
+ * home for its size). NULL for the ~100 rows with nothing to say — the
+ * D82-bound-3 shape `family` already has.
+ *
+ * THE PREDICATE IS A TAG, NOT A STORED CALLABLE (manager ruling, r43,
+ * folding K1/K2/K3/K9 of docs/dev/reviews/2026-08-29-r43-dd11-definitions.md).
+ * A stored `bool (*)(const Ctx *)` was measured NOT to close the gap it was
+ * meant to (K1: `Ctx.mods` already compiles as an opaque pointer everywhere,
+ * so there was no type hazard to avoid) and to WEAKEN containment instead
+ * (K2: a stored callable is reachable from any TU holding a `Ctx *`, which
+ * is every TU downstream of `src/parse` — the deref lives in the CALLEE, not
+ * in the type). `DefTag` is a CLOSED ENUM evaluated by exactly ONE
+ * exhaustive no-default `switch` in `src/parse/definitions.c`
+ * (`pcrec_def_tag_applies`, `mrl.c`'s discipline: a new tag with no arm is a
+ * compile error) — containment by CONSTRUCTION, checked by a grep (K2's
+ * fix) rather than asserted by a type that did not enforce it. */
+typedef enum {
+    DEF_ALWAYS,          /* the row's only entry, or its unconditional tail */
+    DEF_MULTILINE,       /* cx->mods->multiline true at the construct */
+    DEF_NOCAP,           /* cx->mods->nocap true at the construct */
+    DEF_UCP,             /* Unicode class semantics active — NO PRODUCER YET
+                          * (module unicode-props has no \w-shaped producer);
+                          * the evaluator answers false unconditionally until
+                          * one exists, which is sound (the row falls through
+                          * to its DEF_ALWAYS entry, today's byte behaviour) */
+    DEF_ENCODING_UTF8,   /* --encoding=utf8 — NO PRODUCER YET ([DD-12]/[M5]);
+                          * same false-until-built shape as DEF_UCP */
+    DEF_NEWLINE_CONV,    /* a non-LF newline convention is active — NO
+                          * PRODUCER YET (D64, parked); same shape */
+    DEF_LIB_NAME_BOUND   /* [LIB]/[DD-13b]: the name is bound in the
+                          * compile's definitions/library input — NO
+                          * PRODUCER YET; same shape */
+} DefTag;
+
+/* DEFK_END terminates a `definitions` array (no parallel count, see above).
+ * DEFK_STR is a bodyless construct's core-syntax TEXT, parsed and spliced at
+ * the occurrence — the SAME convention `RegRow.syntax` already uses ("a
+ * pattern that PROBES this construct" is itself a valid pcrec pattern), so
+ * `--list-definitions` prints it verbatim. DEFK_BUILDER is an OPERAND-taking
+ * construct (the possessive suffix, `(?n)`) whose definition needs the
+ * caller's own AST subtree spliced in, which no string convention here
+ * expresses without inventing a placeholder syntax nothing else uses. */
+typedef enum { DEFK_END, DEFK_STR, DEFK_BUILDER } DefKind;
+
+/* A DEFK_BUILDER's `builder` takes the body the construct would otherwise
+ * wrap or number, and returns the CORE-syntax equivalent — e.g. the
+ * possessive suffix's `body` is the already-built `A_REP` node and the
+ * builder wraps it in `A_ATOMIC`; `(?n)`'s `body` is the group's inner AST
+ * and the builder is the IDENTITY (no `A_CAP` wrapper — `(?:X)` never gets
+ * one either). [DD-11.5] is what would call these for REAL lowering; today
+ * they exist so the structural check (`pcrec_ast_all_core`) can invoke one
+ * in isolation and confirm its OUTPUT is core-set vocabulary. */
+typedef Ast *(*DefBuilderFn)(Ctx *cx, Ast *body);
+
+typedef struct RegDef {
+    DefKind      kind;
+    DefTag       tag;      /* meaningless when kind == DEFK_END */
+    const char  *str;      /* DEFK_STR only */
+    DefBuilderFn builder;  /* DEFK_BUILDER only */
+} RegDef;
+
+/* src/parse/definitions.c */
+bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx);
+const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw);
+const char *pcrec_def_tag_name(DefTag tag);
+bool pcrec_ast_is_core(AKind k);
+bool pcrec_ast_all_core(const Ast *a);
+Ast *pcrec_def_build_atomic(Ctx *cx, Ast *body);     /* the possessive family */
+Ast *pcrec_def_build_identity(Ctx *cx, Ast *body);   /* (?n) */
+
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
  * fact, and registry.c's M_* macros emit them as a pair so a row cannot carry
@@ -2515,6 +2591,13 @@ struct RegRow {
      * missing-field-initializer rather than a silent NULL that reads as a
      * claim ("this row is its own family") nobody wrote. */
     const char *family;
+
+    /* [DD-11.1] D85's replacement/definition table, NULL for a row with
+     * nothing to say (same shape and same reason as `family` above — see
+     * the type comment before `struct RegRow` for the placement rationale
+     * and the r43 predicate-representation ruling). LAST for the identical
+     * -Wextra reason `family` states. */
+    const RegDef *definitions;
 };
 
 /* [M6.4.2 / SR-8] The engines mask a node contributes to the pattern-wide AND.
