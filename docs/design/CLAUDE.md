@@ -1464,19 +1464,25 @@ append-only or historical records.
   RAISES the frame need), `RX_TRAIL_FRAMES` 62→51 and caller-read — so the
   claim narrows to match results and captures and the new K sweep EXCLUDES
   `budget`/`gu` cells by construction, stated rather than discovered.
-  **D84 then ruled the charter's one cap into TWO** (`../dev/decisions.md`):
-  a NODE cap (2,000) for D45's compile budget and a BYTE cap (1,000,000) for
-  usability, the byte cap an EXACT post-emission check with no model in it,
-  both overridable upward (`--max-emit-nodes=` / `--max-emit-bytes=`) and
-  stamped, neither deniable; `limits.md` gains a "Handling an oversized
+  **D84 then ruled the charter's one cap into TWO** (`../dev/decisions.md`),
+  both on comment-excluded emitted C SOURCE bytes with the `.o` (≈17 %) quoted
+  beside each: a CODE-BYTES cap (**500,000**, ≈85 KB `.o`, ruled by Frank in
+  addendum 2) for D45's compile budget and a TOTAL-BYTES cap (1,000,000,
+  ≈170 KB `.o`) for usability, the latter an EXACT post-emission check with no
+  model in it, both overridable upward (`--max-emit-code-bytes=` /
+  `--max-emit-bytes=`) and stamped, neither deniable; `limits.md` gains a "Handling an oversized
   artifact" section drafted in §4.6. The two caps exist because the note
   measured a node at ~5,930x a data-table entry of gcc cost: `a{1,31000}` is
   1.38 MB and compiles in 0.34 s while K41's witness 2 is 1.26 MB and costs
   **66.92 s**. The two K41 witnesses are handled by DIFFERENT mechanisms —
   witness 1's size is node replication (the K rule takes it 2,015,585 →
   116,371 B, gcc 55.13 s → 1.02 s), witness 2's is its prefilter, which K
-  cannot touch, so the byte cap refuses it until **[OPT-4]/K39** shrinks the
-  mechanism — which moves K41's pinned fuzz-gate bucket 2 → 0. Also carries
+  cannot touch, so both caps refuse it until **[OPT-4]/K39** shrinks the
+  mechanism — which moves K41's pinned fuzz-gate bucket 2 → 0 and exposes a
+  second finding: a size refusal would be counted as an accept/reject
+  DIVERGENCE, because `fuzz.py` diverts `state_cap` out of that bucket by
+  matching its diagnostic text and nothing matches `"pattern too large:"` —
+  the shipped replication-cap refusals have the same gap today. Also carries
   the non-monotone K curve (in BYTES and in NODES), the measured decline of
   all three of census §7's levers (the best is worth a corpus median 0.99 %),
   and the identity gap found by reading the gate rather than trusting a
