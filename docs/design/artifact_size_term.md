@@ -1714,9 +1714,19 @@ not `rx_info` fields, for the same reason.)
 
 `PCREC_NO_SIZE_TERM = 1u << 18` / `-fno-size-term`. **Bits 16 and 17 are taken** —
 [OPT-K]'s `PCREC_NO_OFFSET_SKIP` and [ENG-ABS]'s `PCREC_NO_ANCHORED_DFA`. `docs/spec/
-tuning.md` gains a §2.15 in **§2.14**'s deny-only shape (`-fno-offset-skip`,
-bit 16 — the closest precedent, panel finding AR11), and §2's count moves
-from fourteen to fifteen.
+tuning.md` gains a **§2.16** in **§2.14**'s deny-only shape
+(`-fno-offset-skip`, bit 16 — the closest precedent, panel finding AR11),
+placed in the §2 block in BIT order after [ENG-ABS]'s §2.15.
+
+**CORRECTED at delivery: there is no "§2's count" to move.** This paragraph
+used to promise that `tuning.md` §2's count moves "from fourteen to fifteen".
+`tuning.md` §2 carries no such count sentence and never did — the hunk
+described a document that does not exist, and writing one now would add a
+hand-maintained number in prose that goes stale the next time an axis lands
+(this row's own §7.3 is about exactly that failure, and `docs/dev/
+learnings.md` §3 records "a coverage count spelled in prose" as one of the
+day's lessons). The claim is withdrawn rather than satisfied. What DOES
+count the axes is `pcrec --list-axes` and the registry check that reads it.
 
 It denies **the K selection only**, never either cap — D84 ruling 1, §4.5,
 where the raise-only overrides live.
@@ -1726,7 +1736,7 @@ list was short by two):
 
 | # | file | hunk |
 |---|---|---|
-| 1 | `docs/spec/tuning.md` | new §2.15 in §2.14's deny-only shape; §2's count fourteen → fifteen |
+| 1 | `docs/spec/tuning.md` | new **§2.16** in §2.14's deny-only shape, in the §2 block in bit order (§2's "count" hunk withdrawn — see above, there is no such sentence) |
 | 2 | **`docs/spec/cli.md:218-224`** | the hand-enumerated `-fno-` axis list, which runs through `-fno-offset-skip` and must gain `-fno-size-term` |
 | 3 | **`docs/spec/match_api.md` §6.3** | a per-mechanism bullet for the two macros, on the `_DFA_SCAN`/`_DFA_PREFILTER` precedent at `match_api.md:1659-1720`, scoped VM-artifact-only |
 | 4 | `docs/spec/match_api.md` §6 | the `abi` sentences, 9 → 10 (§8) |
@@ -1763,7 +1773,7 @@ the mistake is the section's own subject.
 | # | thing | this row's |
 |---|---|---|
 | 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (**seven** values — §7.1 and the driver's own comment list them), `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES` (§7.1) |
-| 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (**bit 18** — [ENG-ABS] took 17), `docs/spec/tuning.md` §2.15 |
+| 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (**bit 18** — [ENG-ABS] took 17), `docs/spec/tuning.md` §2.16 |
 | 3 | identity gate | `make test-axes` bit 18 by construction, **plus** `make test-ksweep` (§6.2) |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
 | 4 | structural check | `tests/codegen/run_size_term.sh` — reads the ARTIFACT: the emitted body-copy count against the stamped K, `_WHY` against which path ran, and the two effective caps against the flags. **It must handle the NO-COUNTER-RUNG case** (finding S3): where `vm_counter_fits` declines, the copy count is `count` and K is inert, so a check that asserts `ceil(count/K)` unconditionally fails on a correct artifact |
@@ -1958,7 +1968,7 @@ plan: a reader comparing the shipped compiler against the note approved at
 | 6 | the deny flag at **bit 18** and the axis's two registry rows | `lib/pcrec.h`, `axes_dump.c` |
 | 7 | the `abi` bump 10 → 11, four D76 sites | four files |
 | 8 | the checks: `run_size_term.sh` (22), `run_ksweep.sh`, `size_term.rxt` (21 cases) | `tests/` |
-| 9 | the spec hunks: `limits.md` §8 + "Handling an oversized artifact", `tuning.md` §2.15, `cli.md`'s axis list, `match_api.md` §6.3 and §6 | `docs/spec/` |
+| 9 | the spec hunks: `limits.md` §8 + §8a + "Handling an oversized artifact", `tuning.md` §2.16, `cli.md`'s axis list, `match_api.md` §6.3 and §6 | `docs/spec/` |
 | 10 | the fuzz gate's `size_cap` bucket and its re-derived pins; K41 re-scoped | `tests/fuzz/`, `known_issues.md` |
 
 ### 11.2 The departures, each with the section that records it
