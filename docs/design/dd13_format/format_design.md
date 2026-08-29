@@ -1988,22 +1988,30 @@ the composer on the population where both are defined.
 
 ### 6.2 A bench sub-bench as one file (U7/U8, W2+W3)
 
-The live `bench/loglines/` sub-bench, in the format. Prose stays in
-`NOTES.md`; the generator stays beside its output; the directory stays a
-directory and no tool reads it as a schema.
+The live `bench/loglines/` sub-bench, in the format. The **objective is
+a field now**, not a `NOTES.md` paragraph (Frank's r44 ruling); the
+generator still stays beside its output; the directory stays a directory
+and no tool reads it as a schema.
 
 ```
-# bench/loglines/loglines.rxt — the log-line-search sub-bench.
-# Objective, description and the required-literal column: NOTES.md.
+# Operational: regenerate subjects with gen_subjects.py before editing.
+description |
+  Log-line search over mostly-FAILING text: what an engine pays to
+  establish that a chunk of log lines does NOT contain the shape an
+  operator is grepping for, at the sizes a log shipper hands a matcher
+  (256 B - 4 KB) and across a size sweep to 1 MB.
+  The set contains both cases the answer turns on: patterns whose match
+  requires a literal byte, and patterns built only from classes, which
+  no required-byte precheck can help.
 tag id=loglines version=0.1 objective=realworld
 tag short-search-max-bytes=4096
 oracle pcre2
+tag method=libpcre2-differential
 
 config pcrec
   pcrec --features all
 config pcre2
   testee pcre2/10.46
-
 config re2
   testee re2/2024-07-02
 use pcrec, pcre2, re2
@@ -2018,7 +2026,9 @@ only, no head** (§2.5):
 ```
 pattern \d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?
 name iso_ts
-tag regime=search-short tier=base hazard=none size=medium
+description ISO-8601 timestamp with optional fraction and zone.
+tag logs timestamp iso8601 tier-base
+tag regime=search_short tier=base hazard=none size=medium
 tag convention=perl-leftmost-first role=member
 variant re2 unsupported no per-engine spelling preserves the objective
 m @file:"../subjects/s-000.bin" 234 258
@@ -2028,21 +2038,33 @@ m @file:"../subjects/s-002.bin" 0 24
 
 pattern :
 name floor
-tag regime=search-short role=floor hazard=none size=tiny
+description The floor control: one literal byte, structural in every log format here.
+tag floor control one-literal
+tag regime=search_short role=floor hazard=none size=tiny
 m @file:"../subjects/s-000.bin" 24 25
 … 111 more
 ```
 
-**Hand-trace.** The entry file's head carries file-level `tag`s, an
-`oracle`, three `config` blocks (one with a `pcrec` line, two with
-`testee` lines), a `use` naming all three, and two `include`s. The
-fragments carry pattern blocks only; their `@file:` paths are relative
-**to the fragment** (§2.8), hence `../subjects/`. Each block is run as
+**Hand-trace.** The entry file's head carries a `description` block
+scalar (six indented lines, ending at the non-indented `tag`),
+file-level `tag`s, an `oracle` naming the ENGINE and a separate
+`tag method=…` naming the VERIFICATION METHOD (§4.5, r44-consumers U3),
+three `config` blocks (one with a `pcrec` line, two with `testee`
+lines), a `use` naming all three, and two `include`s. The fragments
+carry pattern blocks only; their `@file:` paths are relative **to the
+fragment** (§2.8), hence `../subjects/`. Each member block carries a
+`tag` line of **bare labels** — the sidecar's free `tags` list (U1) —
+beside a `tag` line of pairs, both accumulating. Each block runs as
 three cells (`use` enumerates, §2.6); the `variant … unsupported` line
 makes `re2`'s cell for `iso_ts` a declared, counted non-result rather
 than a wrong answer (bench §4.4). The tally is reported under
 `loglines.rxt` with `entry files: 1  fragments spliced: 2` (§2.11), and
 each failure still prints the fragment's own `file:line`.
+
+**Note what this file does NOT do: it composes nothing.** No block
+references a definition, so §2.3's machinery never runs and the textual
+control is not needed. A bench sub-bench is a flat corpus with a rich
+head — which is why it earns W2/W3 and not W1.
 
 **What this replaces**: `subbench.toml` (183 lines),
 `expectations.tsv` (1,364 rows), and eleven `patterns/*.rx` files —
