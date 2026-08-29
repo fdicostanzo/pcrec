@@ -13,13 +13,23 @@ import argparse, glob, os, re, subprocess, sys, random, time
 ROOT = "/home/duxevents/pcrec/worktrees/artsize3"
 PCREC = ROOT + "/build/pcrec"
 
-LABEL_RE = re.compile(r'^rx_L(\d+): __attribute__\(\(unused\)\);')
+# [r40 F1] EVERY label form and EVERY table form. The first cut of this file
+# matched only `rx_L<N>:` and only `static const <word-type>` arrays, which
+# made the VM HYBRID PREFILTER'S COMPUTED-GOTO MACHINERY INVISIBLE: its
+# `static const void *const rx_targets_N[11]` jump tables cannot be crossed by
+# a `\w`-only type pattern, and its `rx_s<N>:` state labels are not `rx_L`.
+# On K41's second witness that hid 3,108 tables and 3,108 labels and made the
+# model read 118,240 B for a 1,214,333 B artifact. The classifier's own
+# regexes were the population nobody counted.
+#
+# Anchored on the RIGHT-HAND side (`= {`) and on the emitter's own `rx_`
+# prefix rather than on a type spelling, so a new table element type cannot
+# silently drop out of the count again.
+LABEL_RE = re.compile(r'^(rx_[A-Za-z]+)(\d*): ')
 STAMP_RE = re.compile(r'^#define (RX_[A-Z0-9_]+) (.*)$')
-TABLE_OPEN_RE = re.compile(r'static const \w[\w ]* \w+\[[^\]]*\](\[[^\]]*\])? = \{')
-# The PRE-EMISSION table quantity: the DECLARED entry count of each emitted
-# array (states x ncls), which the emitter sizes before writing a byte -- not
-# the emitted text bytes, which would make the model circular.
-TABLE_DECL_RE = re.compile(r'static const (\w[\w ]*?) (\w+)((?:\[\d+\])+) = \{')
+TABLE_DECL_RE = re.compile(
+    r'static const\s+.*?\b(rx_\w+)\s*((?:\[\d+\])+)\s*=\s*\{')
+TABLE_OPEN_RE = TABLE_DECL_RE
 
 
 def scan(text):
@@ -27,9 +37,13 @@ def scan(text):
     total = 0
     prose = 0
     tables = 0
-    table_entries = 0
+    table_entries = 0      # entries in DATA tables (unsigned char/short/...)
+    jump_entries = 0       # entries in POINTER tables (computed-goto targets)
     table_arrays = 0
-    labels = 0
+    jump_arrays = 0
+    labels = 0          # rx_L<N>: -- VM nodes
+    slabels = 0         # rx_s<N>: -- hybrid-prefilter computed-goto states
+    olabels = 0         # every other rx_*: label (rx_fail, rx_done, ...)
     gotos = 0
     addr_taken = set()
     stamps = {}
@@ -63,13 +77,20 @@ def scan(text):
             if in_table <= 0:
                 in_table = 0
             continue
-        if TABLE_OPEN_RE.search(line):
+        md = TABLE_DECL_RE.search(line)
+        if md:
             tables += lb
-            md = TABLE_DECL_RE.search(line)
-            if md:
-                n = 1
-                for dim in re.findall(r'\[(\d+)\]', md.group(3)):
-                    n *= int(dim)
+            n = 1
+            for dim in re.findall(r'\[(\d+)\]', md.group(2)):
+                n *= int(dim)
+            # A POINTER table (`static const void *const rx_targets_7[11]`) is
+            # the hybrid prefilter's computed-goto jump table; a DATA table is
+            # a transition/accept/class array. Different gcc cost per entry
+            # (measured, note §2.6), so they are counted apart.
+            if '*' in line[:line.index(md.group(1))]:
+                jump_entries += n
+                jump_arrays += 1
+            else:
                 table_entries += n
                 table_arrays += 1
             d = line.count("{") - line.count("}")
@@ -77,7 +98,13 @@ def scan(text):
             continue
         m = LABEL_RE.match(s)
         if m:
-            labels += 1
+            fam = m.group(1)
+            if fam == "rx_L":
+                labels += 1
+            elif fam == "rx_s":
+                slabels += 1
+            else:
+                olabels += 1
         gotos += line.count("goto rx_L")
         for a in re.findall(r'&&rx_L(\d+)', line):
             addr_taken.add(a)
@@ -86,8 +113,9 @@ def scan(text):
             stamps[m.group(1)] = m.group(2).strip().strip('"')
     return dict(total=total, prose=prose, bytes=total - prose, tables=tables,
                 table_entries=table_entries, table_arrays=table_arrays,
-                labels=labels, gotos=gotos, addr_taken=len(addr_taken),
-                stamps=stamps)
+                jump_entries=jump_entries, jump_arrays=jump_arrays,
+                labels=labels, slabels=slabels, olabels=olabels,
+                gotos=gotos, addr_taken=len(addr_taken), stamps=stamps)
 
 
 def emit(pattern, extra=(), timeout=120):
@@ -131,7 +159,8 @@ def main():
 
     from concurrent.futures import ThreadPoolExecutor
     cols = ["idx", "bytes", "total", "prose", "tables", "table_entries",
-            "table_arrays", "labels", "gotos",
+            "table_arrays", "jump_entries", "jump_arrays",
+            "labels", "slabels", "olabels", "gotos",
             "addr_taken", "engine", "rungs", "prefilter", "dfa_table",
             "ncaps", "emit_s", "err", "pattern"]
     out = open(args.out, "w")
@@ -149,7 +178,9 @@ def main():
         return dict(idx=i, bytes=r["bytes"], total=r["total"], prose=r["prose"],
                     tables=r["tables"], table_entries=r["table_entries"],
                     table_arrays=r["table_arrays"],
-                    labels=r["labels"], gotos=r["gotos"],
+                    jump_entries=r["jump_entries"], jump_arrays=r["jump_arrays"],
+                    labels=r["labels"], slabels=r["slabels"],
+                    olabels=r["olabels"], gotos=r["gotos"],
                     addr_taken=r["addr_taken"],
                     engine=st.get("RX_ENGINE", ""), rungs=st.get("RX_VM_RUNGS", ""),
                     prefilter=st.get("RX_VM_PREFILTER", ""),
