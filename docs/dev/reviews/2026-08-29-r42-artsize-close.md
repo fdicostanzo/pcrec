@@ -151,3 +151,26 @@ final round (~09:0x): §3.3/§9 corrected, witnesses swapped, the
 axis-dependence stated, the sweep probe fixed and archived, the
 corrected interior census, hsb. Merge on that commit; no further
 panel round.
+
+## CLOSE — MERGED 6e37a4c (2026-08-29 ~09:1x) at lane/artsize3 cf13497
+
+Final round landed: §3.3 withdraws the separation claim and states the
+continuum with the critic's figures on both axes, naming its own
+delivered-vs-argmin quantity as the fourth "which quantity" instance —
+the first where the wrong quantity produced a REASSURING answer; §9's
+witnesses are `((a)|ab){4000}c` (taken, 0.7475) and `(?:aa|a){8,12}+b`
+(declined, 0.7548) under the `--engine=vm` threshold-1000 build, both
+stamps verified before pinning — 74 fails one cell, 76 the other
+(0.73 %); axis-dependence stated in §3.3 and §9's header;
+`probes/bar_ratio.sh` archived WITH its residual (reproduces the shape,
+not the values, mispredicts 2 of 37 — §3.3 cites the critic's
+instrument as the measurement of record); the interior census is
+**159** (147 K=2, 11 K=3, 1 K=4) over 2,772 — three of the ladder's four
+interior rungs earn their place, and §11.3 names the ksweep report's
+`head -150` and the ceilings' `head -400` as two sampling errors of one
+kind in one row; `hsb.abort_over` armed (a buffer the caps count is a
+buffer the trial's bound covers). run_size_term.sh 32/0,
+run_codegen_tests 106/0, strict clean. Merge: main's battery-regenerated
+size log (a loaded subset) discarded first — the standing hazard, on the
+manager's side this time — then `git merge` alone, clean. Union battery
+launched on 6e37a4c; I-17 after it.
