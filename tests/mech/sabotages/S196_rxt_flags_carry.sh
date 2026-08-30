@@ -16,7 +16,7 @@
 SAB_ID="S196-rxt-flags-carry"
 SAB_FILE="tests/harness/run.sh"
 SAB_SUITES="rxtsource harness"
-SAB_DESC="run.sh stops resetting cur_flags at a pattern line, so `flags i` leaks into every following block in the same file"
+SAB_DESC="run.sh stops resetting cur_flags at a pattern line, so 'flags i' leaks into every following block in the same file"
 SAB_REACH_POP="tests/base/caseless.rxt|^flags |1"
 SAB_COUNT=1
 SAB_BEFORE='            cur_is_perr=0

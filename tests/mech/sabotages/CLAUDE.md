@@ -3,7 +3,18 @@
 Each `S<NN>_<name>.sh` is a shell fragment `../run_sabotage_matrix.sh` SOURCES.
 It sets variables and nothing else: no command runs at source time, and a file
 that executes anything (a stray backtick inside a double-quoted field, the
-[M6.5.2] finding below) is a defect no anchor check can see.
+[M6.5.2] finding below) is a defect **that now HAS a check** — the driver's
+field validation scans each row's TEXT for an UNESCAPED backtick in a
+double-quoted field and FATALs ([DD-13b.W1.1]).
+
+It must read the TEXT and not the sourced value, and that is the whole trick:
+an unescaped backtick is CONSUMED by command substitution at source time and
+its span replaced by the output, so a value that still holds a backtick proves
+it was escaped and safe, while a value that lost one shows nothing at all —
+the defect destroys its own evidence. (A first version tested the value: it
+passed every broken row and flagged six correct ones.) A backslash-escaped
+backtick inside a double-quoted string is a literal backtick and is fine; most
+rows here already write it that way.
 
 The driver's own header is the normative field reference and
 `bash tests/mech/run_sabotage_matrix.sh --help` prints it. This file is the

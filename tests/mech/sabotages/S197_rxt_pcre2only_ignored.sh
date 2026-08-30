@@ -19,7 +19,7 @@
 SAB_ID="S197-rxt-pcre2only-ignored"
 SAB_FILE="tests/harness/verify_rxt.py"
 SAB_SUITES="rxtsource"
-SAB_DESC="verify_rxt.py stops recognising the `# pcre2-only` marker, so blocks that are correct for PCRE2 and not python-verifiable are checked against python anyway"
+SAB_DESC="verify_rxt.py stops recognising the '# pcre2-only' marker, so blocks that are correct for PCRE2 and not python-verifiable are checked against python anyway"
 SAB_REACH_POP="tests/lookaround/nonatomic_ahead.rxt|^# pcre2-only$|1"
 SAB_COUNT=1
 SAB_BEFORE="        if line.strip() == '# pcre2-only':"

@@ -614,6 +614,59 @@ run_one() {
             fi
         fi
 
+        # [DD-13b.W1.1] AN UNESCAPED BACKTICK IN A DOUBLE-QUOTED FIELD
+        # EXECUTES AT SOURCE TIME, and this directory's CLAUDE.md has
+        # called that "a defect no anchor check can see" since [M6.5.2].
+        # It can now: this IS the check.
+        #
+        # IT SCANS THE FILE'S TEXT, NOT THE SOURCED VALUE, and that is the
+        # whole reason it works. By the time the field is a shell
+        # variable, an unescaped backtick has ALREADY been consumed by
+        # command substitution and its span REPLACED BY THE OUTPUT — so a
+        # value that still contains a backtick is proof the backtick was
+        # ESCAPED and therefore safe, and a value that lost one shows
+        # nothing at all. The evidence is destroyed by the defect. (A
+        # first version of this check tested the value, passed everything
+        # that was broken, and flagged six rows that were correct.)
+        #
+        # The two failure modes differ and only one is loud: if the
+        # backticked text is not a command the row DIES and the matrix's
+        # "0 rows arrived" FATAL catches it; if it merely prints nothing
+        # the row LOADS with that span silently deleted, so a description
+        # loses the exact identifier it is about and every verdict still
+        # reads normal. Three rows landed that way in this step alone
+        # (S196/S197/S202, each losing the one word naming what it
+        # sabotages).
+        #
+        # ONLY UNESCAPED ONES: `\\\`` inside a double-quoted string is a
+        # literal backtick and is perfectly safe, which is how most of
+        # this directory already writes it.
+        _sab_bt="$(LC_ALL=C awk '
+            /^SAB_[A-Z_0-9]+="/ {
+                body = $0
+                sub(/^SAB_[A-Z_0-9]+="/, "", body)
+                n = length(body)
+                for (i = 1; i <= n; i++) {
+                    c = substr(body, i, 1)
+                    if (c == "\\") { i++; continue }
+                    if (c == "\"") break
+                    if (c == "`") { print FNR ": " $0; break }
+                }
+            }' "$sab_path")"
+        if [ -n "$_sab_bt" ]; then
+            echo "FATAL[$(basename "$sab_path")]: an UNESCAPED backtick in a" \
+                 "double-quoted field. In a double-quoted string that is" \
+                 "command substitution: it RUNS at source time and the" \
+                 "backticked span is replaced by its output — silently" \
+                 "deleting it from the field when the command prints" \
+                 "nothing, which is how a description loses the very" \
+                 "identifier it is about. Use a single quote, or escape it" \
+                 "as a backslash-backtick if a literal one is meant." >&2
+            echo "$_sab_bt" >&2
+            exit 2
+        fi
+        unset _sab_bt
+
         # [MECH-REACH] VALIDATE_ONLY: every FATAL above has now been
         # evaluated for this definition. Nothing below this line is a field
         # check, so this is the whole of what the mode can honestly assert --
