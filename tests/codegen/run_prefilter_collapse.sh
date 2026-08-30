@@ -278,7 +278,28 @@ lang_witness() {  # lang_witness EXPECTED PATTERN
     # the default; one that could not collapse must be byte-IDENTICAL to it —
     # a flag with nothing to act on moves no byte, which is the same promise
     # `-fno-prefilter-collapse` carries from the other side.
-    if cmp -s "$a" "$b"; then
+    # [OPT-4.1] `exact-nullable` HAS ITS OWN, STRONGER LEG, and the first draft
+    # got this wrong in a way worth recording: it asserted byte-IDENTITY, on
+    # the reasoning that a flag which changed no language moved no byte. But a
+    # DECLINE is a POLICY the artifact REPORTS — `_LANG_WHY` goes from
+    # `"exact"` to `"nullable collapsed language"` — so the two builds differ
+    # by exactly 22 bytes and the row went red on a correct compiler
+    # (MEASURED: `((a)|b){0,4000}` 298,389 vs 298,367; `((a)|b){0,3}` 49,363 vs
+    # 49,341). The right assertion is SHARPER than the one it replaces: the
+    # artifacts must differ in the `_LANG_WHY` LINE AND IN NOTHING ELSE — the
+    # flag reached a policy, said so, and moved no machine. Byte-identity could
+    # not have said the second half.
+    if [ "$want" = exact-nullable ]; then
+        local other; other=$(diff "$a" "$b" 2>/dev/null | grep -E '^[<>] ' \
+            | grep -vE '^[<>] #define RX_VM_PREFILTER_LANG_WHY ')
+        if cmp -s "$a" "$b"; then
+            bad "[lang] '$pat' is byte-identical to its default build — the collapse was declined and the artifact does not SAY so; a reader cannot tell this from a pattern with nothing to collapse"
+        elif [ -z "$other" ]; then
+            ok "[lang] '$pat' differs from its default build in the RX_VM_PREFILTER_LANG_WHY line and nothing else ($(wc -c < "$a") vs $(wc -c < "$b") bytes) — the flag reached a policy, reported it, and moved no machine"
+        else
+            bad "[lang] '$pat' differs from its default build OUTSIDE the LANG_WHY line — the declined collapse changed the emitted machine, which a decline must not do. First: $(printf '%s' "$other" | head -1 | cut -c1-90)"
+        fi
+    elif cmp -s "$a" "$b"; then
         if [ "$wlang" = exact ]; then
             ok "[lang] '$pat' stamps \"exact\" under -fprefilter-collapse and is byte-identical to its default build — the stamp agrees with the artifact"
         else
