@@ -18541,3 +18541,53 @@ for the codegen checks (dd054a8); final codegen/cli passes running at
 11:5x. Load peaked 9.5 during the corpus run (its gcc children), not a
 concurrency breach. A `packagekitd` burst at 11:13 was a system package
 operation, not ours.
+
+#### Forty-sixth session, part 5 (12:0x-12:1x EDT): [DD-13b.W1.1] DELIVERED and MERGED (c7cb1c3 → main cf86987); battery 4 launched 12:09
+
+w11's delivery (25 commits, 42 files, +4,728/−83): every §7.2 criterion
+MEASURED green — `make -j4` + `make strict` clean; C1 three-way
+byte-identical (179 / 3,265 / 22,125 rows; 8.2 s); C2 `make test-corpus`
+PROCS=4 **26,680 / 0**, 178/178 workers, size-log 2,878 (= 2,877 + the one
+row the pin's run lost to its distinct compile failure — a derivation,
+not drift); C3 **13,181 verified / 0 failed**, reconciling 13,181 +
+13,421 skipped + 89 = 26,691; C0a three views at 0; `test-rxtsource`
+43/0, `test-codegen` 5/5, `test-cli` 287/0; **all 11 sabotage rows
+S194-S204 DETECTED**. The §7.4 discovery over the 139 never-oracled
+files: ZERO corpus defects — 1,814 patterns python cannot compile, 28
+perr blocks python accepts, 5 genuine `\Z`/`(?m)^` divergences all in
+tests/assertions/ (the directory the spec already gives a replacement
+oracle) — §3.1.1's prediction exactly; no expectation edited. Three
+SHIPPED-code defects fixed on the way, none found by an existing check:
+run.sh let a typo'd `features` list pass QUIETLY on a `perr` block (the
+failure was recorded once per case; a perr block has no cases — found by
+building S199's witness); verify_rxt.py knew 10 of 14 line kinds; the
+oracle had NO time bound (`(a{1,3}){65}` never returns under python `re`
+— bounded per file via subprocess; SIGALRM cannot interrupt a C-level
+`re.search`). Two of its own rows scored UNDETECTED first (S199, S204 —
+empty populations; S204's was emptied BY the fix it guards: [MECH-REACH]
+in a row written against it), both re-ran DETECTED with witnesses. A
+check that did not exist now does: the unescaped-backtick-in-a-row
+defect tests/mech/sabotages/CLAUDE.md had called "no anchor check can
+see" — scanning TEXT not values; the lane's first naive grep matched
+nine rows and it rewrote twelve files before noticing it had turned safe
+`\`` into a literal `\'` — reverted; the right predicate finds exactly
+its three. Process error the lane recorded itself: editing run.sh WHILE
+test-corpus executed it — bash reads scripts incrementally, four workers
+resumed mid-token (174/178); clean re-run 26,680/0. **Do not edit a file
+a running suite is executing.** The own-oracle rule implemented as a
+DISCOVERED declaration (a directory carrying its own `verify_*.py`)
+selected exactly 17 files / 10,274 lines — the design note's
+independently measured verify_pcre2 coverage, with no number carried.
+
+Manager landing: `.lift` had been committed by the lane — untracked and
+gitignored (c7cb1c3); `docs/dev/lanes/` got its CLAUDE.md (cf86987).
+Merge fast-forward, no MERGE_HEAD. **Battery 4 launched 12:09:10 on
+cf86987** (battery_v4.sh re-pathed; setsid, PID 913851 verified sid==pid /
+ppid 1 / cwd; Monitor on the stage lines): build OK, strict, mech field
+validation **200 definitions valid** (189 + the 11 new rows), `make -k
+-j12 test` from 12:09:28; then solo stages, san (~109 min), full mech.
+Two read-only critics run beside it, zero box time (r46sem, opus: the
+parser's grammar vs the spec hunks, inputs outside the corpus alphabet,
+limits/D26, D80; r46chk, sonnet: shared sources, populations, the 11
+rows' reach, the deferrals, the own-oracle rule, the time bound).
+pcrecdev2 told; O-10 expected during the battery.
