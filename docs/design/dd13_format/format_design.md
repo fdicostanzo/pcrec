@@ -1062,6 +1062,8 @@ rather than a thing precedence did.
 
 ### 2.7 Targets, `rx_info.name`, and how many `.c` files come out
 
+> **D88 (2026-08-29, after this note landed):** one artifact per emitted file, ALWAYS — N targets are N files (`-o <dir>`), composition of artifacts is linking, never a multi-pattern translation unit; [V-E]/[EMIT-SET]'s "emission set" is a directory of per-artifact files plus a manifest header. This section's M10 rule is the general one.
+
 A **target** is a file-level declaration, never a block marker (Frank
 §6.4, which supersedes the paper's §2/§6.2/§6.3 block-scoped `target`):
 
