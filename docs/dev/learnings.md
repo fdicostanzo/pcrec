@@ -164,6 +164,44 @@ distilled forms:
   every merge because the axes it carries are not the ones a critic can
   build read-only. (Frank: "the san tests did their job.")
 
+- **A cited verification pins an OUTPUT, not the REASON for it, and a
+  GATED module keeps the refusal reproducing** (2026-08-30, lane w1,
+  `docs/spec/match_api.md`'s `nnames` comment). It read "0 until module
+  'named-groups' lands (still true as of this writing — verified:
+  `'(?<g>a)'` still refuses)". The module shipped twelve days earlier —
+  but it shipped GATED, off by default, so re-running the OFFERED
+  verification command still reproduced the OFFERED output, and a reader
+  who did the honest thing (re-ran it rather than trusting the prose) was
+  told a false sentence was current. The reason had moved from "the
+  construct does not exist" to "the module is not enabled for this
+  compile" with zero visible effect on the cited transcript. Generalizes
+  past this one sentence: any doc sentence of the shape "X until module M
+  lands/is built", or a "(verified: …)"/"measured: … refuses" tag beside a
+  module-gated construct, needs re-checking against BOTH `--list-syntax`'s
+  live `built` column AND whether the module is on by default — a shipped
+  module can be `built` and still refuse at the bare default, and only
+  the sentence's own wording says which reason applies. (The [SPEC-1.10]
+  sweep this row chartered found no second instance of the pattern in
+  `docs/spec/`/`lib/pcrec.h` — every other module-status sentence already
+  distinguishes "built" from "enabled" correctly, cross-checked live
+  against `--list-syntax`'s own column.)
+
+- **A MEASURED count welded by "so" to an untested inference rides in
+  under the MEASURED mark** (2026-08-30, two instances in one night).
+  (1) Lane w1: "`verify_pcre2.py` has zero Makefile hits, so it is dead"
+  — the grep was real, the conclusion false: the oracle is invoked one
+  layer below the Makefile (`tests/assertions/run_assertions_tests.sh:60`,
+  10,120 cells in battery 3's log); admin1's read-only Task D overturned
+  it, and `w1_impl.md` §0.1 now marks MEASURED and INFERRED separately.
+  (2) Lane admin1: "the coverage guard will read 79" — a prediction
+  filed beside measured rows; the number was right and the script it
+  counted died at line 500 (`$5` under `set -u`) on every pre-existing
+  call, so the run read 61 until the owed verification ran. In this tree
+  every module's oracle is invoked one layer down from the Makefile, and
+  a lane's number that was not READ from a run is a claim: the marking
+  rule is "measured: <command> → <number>" or "inferred", never a
+  measured premise and an inferred conclusion in one sentence.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three

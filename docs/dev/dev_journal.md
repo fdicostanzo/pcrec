@@ -18363,3 +18363,74 @@ below the Makefile; read `date` before labelling a journal entry (three
 labels tonight ran ~30 min fast). The panel-during-battery pattern —
 three critics + three re-checks, ~1 h 15 of wall, zero box time — is
 the shape to repeat: design work overlaps the box's busy hours.
+
+### 2026-08-30 — Forty-sixth session, part 1 (06:1x-06:3x EDT): wake, admin1 LANDED, W1.1 chartered
+
+Frank: "wake up but I'm not ready to go over questions. Proceed on other
+work or maintain idle context cron until then. Pcrecdev2 doing something."
+The open questions (I-19 gate shape, Q-W1, Q-W2, the Q7 residual, [OPT-A]
+STEP 0, D86 columns) stay parked; nothing that depends on them started.
+
+**The box at wake:** pcrecdev2's bounded re-run (the BD7 gate-shape test
+run on 36d5963, launched 05:22) was live — one `pcrec_driver` at 100 %;
+held everything until its `WINDOW_RUN_COMPLETE` at 06:17:07 (rc 0, 6/6
+cells measured on attempt 1, store 50). pcrecdev2: no window needed for
+~2 h ([B19]'s re-pin lane builds in a worktree), then a ~3.5 h abi-12
+sample window BEFORE my next battery. Its I-19 evidence is archived on
+its side (`docs/dev/measurements/2026-08-30-gate-shape-test-run.txt`:
+after-samples 1.81/2.00/3.81 %; the old 1-s gate would have failed
+pcrec-vm-in on one second at 11.88 % — a burst BD7's average absorbed).
+
+**lane/admin1 LANDED (b819512, fast-forward).** `git merge main` into the
+lane was clean (no file overlap). The owed verification (setsid script,
+PROCS=4) FOUND A DEFECT: `make -j4` rc 0, **test-registry rc 2** —
+`axes_registry_check.sh:500: $5: unbound variable`. [REG-SV]'s new
+emitter-source leg gave `check_value_set` an optional 5th argument read as
+`local src_label="$5"`, which dies under `set -u` on every pre-existing
+4-argument call; the script stopped at 61 checks against the predicted
+79. Fixed as `"${5-}"` (set-u safe; sidesteps the apostrophe-in-`${5:-}`
+problem the lane's own comment documents). Re-run: test-registry rc 0,
+axes_registry_check **79/0** (the prediction held once the crash was
+gone), 225/201/54 in the other sections; test-codegen **198/0**; `make
+strict` clean on main. [REG-SV] + [SPEC-1.10] → completed; registry 61
+rows / 21 axes; learnings §3 gained the "measured count welded to an
+inference" bullet with both instances (w1's dead-oracle inference,
+admin1's predicted 79 beside a crashing script). Worktree admin1 removed.
+
+**[DD-13b.W1.1] chartered** — lane w11, opus, `worktrees/w11` /
+`lane/w11` from 1ac1405, brief = `w1_impl.md` §7 verbatim (+ §3.0/§3.1.1
+N1 as the condition, §7.4's discovery-not-regression rule for item 6),
+under a HOLD with enumerated shapes until the bench's window closed
+(acked 06:17, LIFTED 06:2x after admin1's runs). Two lane finds in its
+first minutes: my `git worktree add` had run under a persisted `cd` into
+worktrees/admin1 and nested the worktree (the CLAUDE.md pitfall, third
+family member) — the lane moved it; and the brief named
+`tests/harness/verify_pcre2.py` where the live file is
+`tests/assertions/verify_pcre2.py` (corrected by message). Crons up:
+keepalive :09/:39, stall watchdog */10.
+
+#### Forty-sixth session, part 2 (06:4x-07:0x EDT): O-9 read; the [ENG-ABS] reach probe — DESIGN LIMIT; I-20 sent
+
+pcrecdev2's O-9 (bench/bounded@0.1's BEFORE at 36d5963; ledger
+`docs/dev/ledgers/2026-08-30-bounded-0.1-first-sample-36d5963.md` there)
+ranks six candidates: (1) an end-anchored DFA falling to `search-filter`
+(×37 on a subject, ×7 on the set); (2) `auto` choosing the counted DFA on
+the `{0,n}` class rungs where its own VM is ~6× faster; (3) the wasted DFA
+build to ×687 with eight labelled overflow points for [SEL-1.2]; (4) `auto`
+refusing `[a-z]{0,65535}` by the NFA cap before [SEL-1] can route (the VM
+builds it in 2.9 ms); (5) the VM's missing prefilter — abi 12's
+`_VM_PREFILTER_LANG` is what their AFTER measures; (6) `nest2-4`'s VM
+cliff, covered by auto. Six asks. Ask (ii) was a fact question, so a
+read-only sonnet probe (absprobe, on main's fresh binary, scratchpad
+outputs only) answered it: **DESIGN LIMIT** — `PCREC_ANCHORED_MAX_STATES
+= 4096` (limits.h:619; compile.c:279; emit_dfa.c:3880), documented in
+anchored_match_unwrapped.md §5.2 and limits.md, no runtime raise; the
+crossover ladder per skeleton × form is in `docs/dev/engabs_reach_probe.md`,
+with one new fact: the bench's `(?:BODY)\z` spelling HALVES the reachable
+count for `{0,n}` bodies (2047 vs 4095) and costs nothing for `{n,}`.
+Ask (i): a ceiling refusal is exit 1 + no artifact + the diagnostic; a
+fallback is exit 0 + `RX_ENGINE_SEL`/`_WHY`; [ENG-ABS]'s case moves only
+`RX_DFA_MATCH`. Ask (iv): pcrec prints no timing — the bench clocks the
+process. I-20 written to the bench inbox with those answers; (iii)/(vi)
+(bounded@0.2 rungs) and candidates 1/2/4 wait on Frank's D86
+optimization-column pick — proposed there as the three rows.

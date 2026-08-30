@@ -340,6 +340,37 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
+# [REG-SV] 73 -> 75 -> 79 (2026-08-30, PREDICTED both times — read from a
+# run before trusting it, this guard's own standing rule):
+#
+# 73 -> 75: `RX_UNROLL_K_WHY` gained its own check_value_set pair in
+# axes_registry_check.sh (+2; it had NONE before — the gap [REG-SV] was
+# opened to close, since both `size-term` rows stamped an empty
+# `stamp_value`). `RX_DFA_TABLE`'s check count was UNCHANGED (still the
+# same 2 PASS lines; its "mixed"/"none" exception is discharged, not
+# added — the two composite rows are new DUMP rows, not new CHECKS, and
+# Direction 1's per-row bit-macro loop is unaffected because neither
+# carries a deny/force lever). The `size-term` axis's own three Direction-1
+# checks (the PCREC_NO_SIZE_TERM bit match, its cli_flag pairing, its
+# tuning.md bit-heading check) were also UNCHANGED IN COUNT — same bit, same
+# flag, only moved from the row named "size-model" to the row correctly
+# named "denied" (axes_dump.c's own comment on the size-term block explains
+# why the old attribution was wrong: -fno-size-term makes the artifact
+# stamp "denied", never "size-model").
+#
+# 75 -> 79 (team-lead review, same day): the docs-vs-dump check above
+# compares two HAND-WRITTEN sources — a value added to the code that
+# actually WRITES a stamp and forgotten in both would still pass. Two more
+# check_value_set calls close that: `RX_UNROLL_K_WHY` against
+# src/core/compile.c's own `cx.size_term_why = ...` derivation chain (the
+# seven literals, independent of both the dump and match_api.md), and
+# `RX_DFA_TABLE`'s two composite values against `dfa_table_name()`'s own
+# `return "..."` statements in src/gen/emit_dfa.c (scoped to real returns,
+# not every quoted word in the function body — that function's own comment
+# names `"premultiplied"` as prose, which a naive whole-body grep would
+# misread as a value the function can produce). +4 (2 PASS lines each, both
+# calls, assuming both come back clean).
+#
 # [OPT-4] 67 -> 73 (2026-08-29, merged into lane/dd11 from main): bits
 # 19/20's `prefilter-lang`/`count-collapsed` axis — a two-bit force/deny
 # pair (`PCREC_NO_PREFILTER_COLLAPSE`/`PCREC_FORCE_PREFILTER_COLLAPSE`,
@@ -374,16 +405,16 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 73 ]; then
+if [ "$axesn" -ne 79 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 73." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 79." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (73 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (79 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 73 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 79 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

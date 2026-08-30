@@ -33,21 +33,39 @@
  *   "both"      — axis F, the scan direction: not a candidate list at all
  *                  (emitter_form.md §3's own words) — both objects are
  *                  ALWAYS emitted, once each, per machine.
- *   "predicate" — the eleven VM/engine-selection axes (`docs/spec/
+ *   "predicate" — the VM/engine-selection axes (`docs/spec/
  *                  tuning.md` §2.1-2.9, its coarse §2.11 engine axis) have
  *                  no candidate-list-as-data anywhere in the tree yet
  *                  (`[ENG-FORM]` relayered emit_dfa.c only — src/gen/
- *                  CLAUDE.md's own "SCOPE: emit_dfa.c first" note). Each is
- *                  represented here as the two-candidate shape the deny bit
- *                  already implies (the mechanism, and the denied
- *                  fallback), sourced from `lib/pcrec.h`'s own enum symbols
- *                  (never a hand-typed bit NUMBER) so a bit's numeric
- *                  position can move with no edit here; the CANDIDATE NAMES
- *                  and the one-line APPLIES text are hand-authored from
- *                  docs/spec/tuning.md §2's own prose, which is exactly the
- *                  "do NOT restructure the VM emitter to manufacture lists;
- *                  state the source" allowance the plan row gives this
- *                  piece.
+ *                  CLAUDE.md's own "SCOPE: emit_dfa.c first" note). Most are
+ *                  the two-candidate shape a deny bit implies (the
+ *                  mechanism, and the denied fallback); a stamp whose real
+ *                  value set is wider than "selected"/"denied" — because the
+ *                  artifact reports WHY a selection declined, or composes a
+ *                  fact from more than one machine, not because the
+ *                  emitter chose among named candidates — gets ONE ROW PER
+ *                  VALUE instead (`engine-route` was the first instance;
+ *                  `size-term`, below, and `table`'s two composite rows,
+ *                  [REG-SV], are two more). A row with no deny/force macro
+ *                  and no cli_flag is not reachable by any flag on its own —
+ *                  it is what the artifact reports having landed on, and its
+ *                  `applies` text says the condition in place of a lever.
+ *                  Names and applies text are hand-stated from
+ *                  `lib/pcrec.h`'s own enum symbols (never a hand-typed bit
+ *                  NUMBER, so a bit's numeric position can move with no edit
+ *                  here) and docs/spec/tuning.md §2's own prose, which is
+ *                  exactly the "do NOT restructure the VM emitter to
+ *                  manufacture lists; state the source" allowance the plan
+ *                  row gives this piece. A predicate-kind row may also
+ *                  attach to a `list`-kind axis (`table`'s `"none"`/
+ *                  `"mixed"` rows, order 3/4): those two values are
+ *                  ARTIFACT-LEVEL compositions of the forward and reverse
+ *                  machine's own per-machine choice (`RX_DFA_TABLE`,
+ *                  `dfa_table_name()`, src/gen/emit_dfa.c) and are never
+ *                  candidates the per-machine list itself could select on
+ *                  its own — see `emit_table_composite_rows` below, and
+ *                  `docs/spec/registry.md` §6 for why mixing kinds within
+ *                  one axis is the honest shape rather than a fifth kind.
  *
  * Wire format: docs/spec/table_contract.md (TSV, `#` comments, last `#`
  * line before data is the header, columns append-only). */
@@ -240,6 +258,33 @@ static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
     }
 }
 
+/* [REG-SV] `table`'s TWO COMPOSITE ROWS. `RX_DFA_TABLE`'s real value set is
+ * FOUR strings (`docs/spec/match_api.md` §6.3, the 2026-08-26 THIRD-machine
+ * paragraph), not the two `pcrec_dfa_axis_table_cands()` reports above:
+ * `dfa_table_name()` (src/gen/emit_dfa.c) answers `"none"` when the artifact
+ * has no scan to have a table at all (a proven-empty engine, or ENG_ATTEMPT's
+ * label-indexed dispatch, which has no transition table of this shape),
+ * `"mixed"` when the forward and reverse (and, since [ENG-ABS], the anchored)
+ * machines took DIFFERENT per-machine representations, and only otherwise
+ * the shared representation name — which is exactly `emit_dfa_list_axis`'s
+ * own two candidates above. `"none"`/`"mixed"` are therefore never a
+ * candidate the per-machine `table` axis could select on its own (this
+ * file's own header comment states the boundary); they are hand-stated
+ * outcome rows, order continuing from the list rows above, the same
+ * shape a `kind=predicate` row already has elsewhere in this dump. No
+ * deny/force/cli lever exists for either — nothing asks specifically for
+ * "no table" or "a mismatched pair" — so `applies` states the condition
+ * in prose, as the size-term outcome rows do. */
+static void emit_table_composite_rows(StrBuf *sb)
+{
+    axis_row(sb, "table", 3, "none", "predicate",
+             "RX_DFA_TABLE", "none", "", "", "", "", "",
+             "the artifact has no DFA scan-table at all: a proven-empty engine (dfa_engine_is_empty), or the ENG_ATTEMPT label-dispatch engine, which is asked first (src/gen/CLAUDE.md's [DD-13c] #5)");
+    axis_row(sb, "table", 4, "mixed", "predicate",
+             "RX_DFA_TABLE", "mixed", "", "", "", "", "",
+             "the artifact's own machines took DIFFERENT per-machine table representations (dfa_table_name(): forward vs. reverse, and since [ENG-ABS] the anchored machine, disagree) — a per-artifact composition, never a single machine's own selection");
+}
+
 /* ---- "predicate" axes: no candidate-list-as-data yet -------------------
  *
  * Sourced from lib/pcrec.h's own enum symbols (the `V()` macro below
@@ -307,21 +352,58 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, "", 0, "", "", "always (fallback) — literal replication (frames)");
     }
-    /* [ART-SIZE] size-term — the UNROLL LADDER's selection, D84.
-     * `<PREFIX>_UNROLL_K_WHY` is the stamp, and it carries SIX values rather
-     * than the usual chosen/denied pair because "the term did not run" has
-     * four distinguishable reasons and a check must be able to tell them
-     * apart. The two candidate rows below are the axis's own shape (selected
-     * / denied); the stamp's other four values are reported by the artifact,
-     * not by this registry, because they describe WHY the selection declined
-     * rather than which candidate it picked. */
+    /* [ART-SIZE]/[REG-SV] size-term — the UNROLL LADDER's selection, D84.
+     * `<PREFIX>_UNROLL_K_WHY` is the stamp, and it carries SEVEN values
+     * (docs/spec/match_api.md §6.3, docs/spec/tuning.md §2.16) — one row per
+     * value here, `engine-route`'s own shape, because five of the seven are
+     * OUTCOMES the artifact reports (why the ladder ran and what it landed
+     * on) rather than candidates this registry's usual deny-bit mechanism
+     * denies one at a time. The seven rows are written in the SAME priority
+     * order `src/core/compile.c`'s own derivation tests them in (the
+     * `cx.size_term_why = ... ? ... : ...` chain right before
+     * `pcrec_emit_vm`/`pcrec_emit_dfa`) — one derivation, two readers, never
+     * re-decided here — so row 7 is the chain's own unconditional fallthrough
+     * and the axis's own "last entry always applies" rule holds for this
+     * predicate axis too, not only for the `list`-kind ones.
+     *
+     * ONLY ROW 2 ("denied") CARRIES A LEVER: `PCREC_NO_SIZE_TERM`/
+     * `-fno-size-term` stops the ladder from running at all. That bit used
+     * to sit on the row named "size-model" (order 1 before this pass) —
+     * WRONG: denying the axis makes the artifact stamp `"denied"`, never
+     * `"size-model"`, which is the very drift [REG-SV] was opened to find
+     * (a hand-typed row whose stamp_value the emitter can never actually
+     * produce is worse than an empty one, because it reads as covered).
+     * Row 1 ("option") has a real lever too (`--unroll=K` on the command
+     * line) but it is a VALUE parameter rather than a `pcrec_options.flags`
+     * bit, so it has no `deny_macro`/`cli_flag` to report here — the same
+     * shape `engine`'s `--engine=` rows would be in if they had no coarse
+     * do-or-die special case; `applies` states the lever in prose instead,
+     * matching `deny_bit`/`force_bit`'s own empty-string convention for a
+     * fact this table's columns cannot carry. Rows 3-7 have no lever at
+     * all: nothing denies "the ladder chose K by argmin" specifically. */
     {
         PredAxis p = { "size-term", NULL, "RX_UNROLL_K_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "size-model", "",
+        emit_pred_row(sb, &p, 1, "option", "option",
+                     0, "", 0, "", "",
+                     "an explicit --unroll=K on the command line: the term never runs (compile.c: defo.unroll_k > 0 && st_phase == ST_DEFAULT)");
+        emit_pred_row(sb, &p, 2, "denied", "denied",
                      V(PCREC_NO_SIZE_TERM), 0, "", "-fno-size-term",
-                     "per artifact: the counter rung is live and the emitted size is over PCREC_SIZE_TERM_THRESHOLD, so K is chosen by re-emitting the ladder and taking argmin nodes");
-        emit_pred_row(sb, &p, 2, "default", "",
-                     0, "", 0, "", "", "always (fallback) — K stays at --unroll=K or PCREC_DEFAULT_UNROLL_K");
+                     "the axis is denied: K stays at --unroll=K or PCREC_DEFAULT_UNROLL_K");
+        emit_pred_row(sb, &p, 3, "default", "default",
+                     0, "", 0, "", "",
+                     "the counter rung is not live, or the emitted CODE size did not exceed PCREC_SIZE_TERM_THRESHOLD, so the ladder never ran");
+        emit_pred_row(sb, &p, 4, "cap-rescue", "cap-rescue",
+                     0, "", 0, "", "",
+                     "the ladder ran; the materiality bar declined its argmin K on bytes alone, but an emitted-size cap (--max-emit-bytes/--max-emit-code-bytes) took a smaller K anyway — natural corpus population 0 at the shipped caps (tests/codegen/run_size_term.sh §5/§6), reached only through a lowered-cap reference build");
+        emit_pred_row(sb, &p, 5, "size-model", "size-model",
+                     0, "", 0, "", "",
+                     "the ladder ran and its argmin K saved at least 25% of the default K's bytes, so the materiality bar took it");
+        emit_pred_row(sb, &p, 6, "capacity-declined", "capacity-declined",
+                     0, "", 0, "", "",
+                     "the ladder ran; the K it wanted would have lowered this artifact's declared capacity (.frame_capacity or .subject_ceiling, §3.3a) below the default K's, so that rung was excluded before the materiality bar was ever asked — natural corpus population 0 at the shipped threshold (tests/codegen/run_size_term.sh §7/§7b), reached only through a lowered-threshold reference build");
+        emit_pred_row(sb, &p, 7, "size-model-declined", "size-model-declined",
+                     0, "", 0, "", "",
+                     "always (fallback) — the ladder ran and the materiality bar rejected its argmin K on bytes alone, with no capacity exclusion in play");
     }
     /* length-prune — §2.4, RX_VM_PRUNES's own named pair */
     {
@@ -506,6 +588,7 @@ char *pcrec_axes_tsv(void)
         "deny_bit\tforce_macro\tforce_bit\tcli_flag\tapplies\n");
 
     emit_dfa_list_axis(&sb, "table", "list", pcrec_dfa_axis_table_cands);
+    emit_table_composite_rows(&sb);
     emit_dfa_list_axis(&sb, "prefilter", "list", pcrec_dfa_axis_prefilter_cands);
     emit_dfa_list_axis(&sb, "view", "list", pcrec_dfa_axis_view_cands);
     emit_dfa_list_axis(&sb, "seed", "list", pcrec_dfa_axis_seed_cands);

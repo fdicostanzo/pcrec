@@ -183,10 +183,11 @@ another's, `cli/main.c:517-523`'s own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — 54 rows / 21 axes at abi 12
-([OPT-4]'s merge, 2026-08-29, moved this from 47/19 at abi 11 — this
+`build/pcrec --list-axes | grep -vc '^#'` — 61 rows / 21 axes as of [REG-SV]
+(2026-08-30, moved this from 54/21 — five more `size-term` rows and two more
+`table` rows, no new axis name; see §6's own [REG-SV] paragraph below — this
 number moves with every axis landing, so it is stated as a live count
-rather than a number to trust), 12 columns, confirmed live this pass. Where the first three surfaces describe
+rather than a number to trust), 12 columns. Where the first three surfaces describe
 SYNTAX pcrec accepts, this one describes the compiler's own TUNING
 machinery: for every axis where `src/gen/emit_dfa.c` or
 `src/opt`/`select_engine.c` chooses among two or more emitted
@@ -204,7 +205,7 @@ candidate of an axis always applies).
 | `candidate` | free text, but always one axis's own stamp vocabulary where a stamp exists (§3's `built`-style closed sets, one per axis) | yes as a vocabulary shape, values are per-axis |
 | `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |
 | `stamp_macro` | the `#define` this candidate is reported through (e.g. `RX_DFA_TABLE`, `RX_VM_STRATS`), or empty when no such macro exists — axes `view`/`seed`/`accept`/`direction` have none (emitter-internal decisions with no observable trace), and a few `predicate` axes stamp an ACTIVITY COUNT rather than a named value (`RX_ALTCLS_MERGES`, `RX_VM_CALL_SPLICED`/`_LINKED`, `RX_FAST_FRAMES`) | yes as a vocabulary shape |
-| `stamp_value` | the value `stamp_macro` takes when this candidate is chosen — empty when `stamp_macro` is empty OR is a count rather than a name (D82: "the chosen object's name IS the stamp value" holds exactly where this column is non-empty) | free text, but always another column's own value when non-empty |
+| `stamp_value` | the value `stamp_macro` takes when this candidate is chosen — empty when `stamp_macro` is empty OR is a count rather than a name (D82: "the chosen object's name IS the stamp value" holds exactly where this column is non-empty). Where a macro's real value set is wider than a two-candidate mechanism/fallback pair — because the artifact reports WHY a selection landed where it did, or composes a fact from more than one machine — the axis carries ONE ROW PER VALUE instead (`engine-route` was the first instance; `size-term`'s seven rows and `table`'s two composite rows, [REG-SV], are two more), and a row with no lever of its own (empty `deny_macro`/`force_macro`/`cli_flag`) still carries its own real `stamp_value`, never an empty one standing in for "not a candidate" | free text, but always another column's own value when non-empty |
 | `deny_macro` / `deny_bit` | the `PCREC_NO_*` bit (`lib/pcrec.h`) that removes this candidate from the emitter's selection walk, empty when none exists. **Axis `prefilter`'s own missing deny flag is a documented FINDING** (`docs/design/emitter_form.md` §3: the DFA scan's own candidate-start filter has no `-fno-*` knob and no axis sweep), not an omission in this dump | yes |
 | `force_macro` / `force_bit` | the `PCREC_FORCE_*` bit that forces this candidate over auto-selection — populated on exactly one axis today (`vm-prefilter`, `PCREC_FORCE_PREFILTER`, `tuning.md` §2.5's one force pair), empty everywhere else | yes |
 | `cli_flag` | the `-f`/`-fno-`/`--engine=` spelling that reaches `deny_macro`/`force_macro`, empty for a candidate reached only as a fallback (no flag REQUESTS a fallback; it is what remains when nothing else applies) | free text (an existing CLI spelling, `cli.md` §1) |
@@ -234,6 +235,73 @@ never opens.
 `--list-axes` takes no `--flavour` (§5's own reason: it answers what
 THIS BUILD thinks its machinery is, never a claim about PCRE2 syntax)
 and no pattern/`-o` — a syntax query, `cli.md` §1.
+
+**[REG-SV] (2026-08-30) CLOSED A GAP `pcrec-bench` FOUND: two name-valued
+stamps had no `stamp_value` population on this surface at all.** The
+`size-term` axis's two rows both stamped an EMPTY `stamp_value` despite
+`RX_UNROLL_K_WHY` being name-valued with SEVEN real values
+(`docs/spec/match_api.md` §6.3) — so neither the registry check nor a
+consumer archiving this TSV (the bench's own `list_axes.tsv` adapter) could
+tell which of the seven an artifact had landed on from this surface alone.
+The `table` axis's two rows named only its per-MACHINE candidates
+(`premultiplied`/`indexed`), leaving `RX_DFA_TABLE`'s two ARTIFACT-LEVEL
+composite values (`none`, `mixed`) off this surface entirely, though the
+axis registry check already carried a NAMED, CITED exception for exactly
+that gap (§7's `axes_registry_check.sh` bullet, pre-[REG-SV] revision).
+
+Both are fixed the SAME way, one row per producible value — `engine-route`'s
+own shape (§6's `stamp_value` cell above states the general rule now) —
+rather than a `stamp_value` cell listing a set: the existing readers
+(`axes_registry_check.sh`'s `dump_stamp_vals`, one row = one value) already
+handle that shape with no new parser, where a listed-set cell would have
+needed one. `size-term` grew from 2 rows to 7 (`option`, `denied`,
+`default`, `cap-rescue`, `size-model`, `capacity-declined`,
+`size-model-declined`, in the SAME priority order `src/core/compile.c`'s own
+derivation tests them in — one derivation, two readers, never re-decided in
+the dump); `table` grew from 2 rows to 4 (`premultiplied`/`indexed` from the
+live per-machine list, unchanged, plus two hand-stated composite rows for
+`none`/`mixed`, order 3/4). The fix also CORRECTED a pre-existing
+mis-attribution found while reshaping `size-term`: the `PCREC_NO_SIZE_TERM`/
+`-fno-size-term` lever used to sit on the row named `"size-model"`, but
+denying the axis makes the artifact stamp `"denied"`, never `"size-model"`
+— a hand-typed row whose `stamp_value` the emitter can never actually
+produce, exactly the finding this whole row exists to catch, found inside
+its own fix. `axes_registry_check.sh`'s `RX_DFA_TABLE` exception is
+discharged (not merely narrowed) and its own comment says so; a new
+`RX_UNROLL_K_WHY` value-set check pair was added where none existed before.
+
+**Reachability, measured against a live `build/pcrec` under a HOLD that
+forbade a corpus sweep or a `-D`-rebuilt reference compiler (one call at a
+time, this build only):** `default` (`a(b|c)+d`, no flags), `option`
+(`a(b|c)+d --unroll=4`) and `denied` (`a(b|c)+d -fno-size-term`) are
+witnessed directly; `size-model` is witnessed by the nested-repeat pattern
+`tests/codegen/run_size_term.sh` already uses (`NEST8`) at the shipped
+threshold, with no flag needed. `cap-rescue` and `capacity-declined` are
+NOT reachable from any pattern-and-flags combination on a stock build —
+`tests/codegen/run_size_term.sh` §5/§6 and §7/§7b already measure and PIN
+their natural corpus population at exactly 0, reachable only through a
+reference compiler built with a lowered `PCREC_SIZE_TERM_THRESHOLD`/
+`PCREC_MAX_VM_EMIT_CODE_BYTES` at pcrec's OWN compile time (D84 ruling 1's
+raise-only CLI rule is what makes this true from outside, permanently, not
+only under this HOLD) — that script IS the witness for both, and it already
+runs under `make test-codegen`. `size-model-declined`'s natural
+reachability at the shipped threshold is UNCONFIRMED by this pass — no
+cited natural witness was found in `docs/design/artifact_size_term.md` or
+either spec document, and confirming one needs either a corpus sweep or the
+same `PCREC_SIZE_TERM_THRESHOLD`-lowered reference build `run_size_term.sh`
+already builds for its §9 materiality-bar cells, both forbidden under this
+HOLD's one-call, no-`cc` shape. Left as a named open item for whoever runs
+`make test-codegen`/`test-registry` after the HOLD lifts, not asserted
+either way here. `table`'s two composite values are BOTH witnessed directly
+on a stock build with no reference compiler: `none` on `\B\b` (a
+proven-empty engine, `RX_DFA_SCAN "empty"`) and `mixed` on
+`[01]*1[01]{13}` — `tests/codegen/run_form_census.sh`'s own synthetic
+witness for exactly this cell, chosen there because the corpus's own
+population is 0.
+
+No emitted scaffolding changed — this is a registry-surface change only,
+the dump's own text and the seven/four values it now enumerates were
+already true of the compiler before this pass, so there is no `abi` bump.
 
 ## 7. What the tests pin, and what they don't
 

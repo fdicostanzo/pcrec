@@ -22,7 +22,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-19: K2 (cosmetic), K28 (emitted dead-state-DFA
+  Open as of 2026-08-19: K28 (emitted dead-state-DFA
   artifact fails the harness's own -O1 -Werror GENCFLAGS —
   maybe-uninitialized caps in the `<prefix>_match` wrapper; found by the
   [M6.2] wave B corpus, pre-existing, own-slice fix scheduled before the
@@ -112,7 +112,13 @@ Append-only where noted; the restart/status-recovery record for the project.
   MOD-0.1's first slice: pcrec named a module for constructs its own
   compliance survey calls architecturally OUT-OF-SCOPE — now a ROADMAP_NEVER
   column per-row and per-VerbName, a no-promise diagnostic, and a
-  both-directions prose⇔column check). Failing regressions live in
+  both-directions prose⇔column check), and K2 (FIXED 2026-08-22 by module
+  `backrefs` shipping ([M6.5.2]), confirmed with a FIXED marker at
+  [SPEC-1.10] 2026-08-30 after the module landing had left the entry
+  looking orphaned: `\1` under `--features backrefs` now reads "refers to
+  capture group 1, but this pattern has 0" rather than the stale
+  "(backreference/octal)" wording; the gate-closed default message is
+  unchanged and was never the defect). Failing regressions live in
   tests/known_fail/ (excluded from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable
@@ -217,6 +223,7 @@ Append-only where noted; the restart/status-recovery record for the project.
 Maintenance: update this file when files are added/removed or their roles
 change.
 - `opt3_dfa_scan_measurement.md` — [OPT-3] STEP 1 (2026-08-26, lane srOpt3, measurement only, nothing under `src/`): attributes the DFA's per-byte cost between the candidate-start SKIP loop and the TRANSITION loop. The skip loop is NOT the loss — it is entered 190,651 times on `t-b` and skips ZERO bytes, because the byte that returns the machine to state 0 is consumed by the transition loop first, so it can only ever skip the 2nd..nth byte of a non-candidate run (real text's runs are length 1). All the cost is the transition loop at ~3.2 ns / 10.7 cycles per table step, LATENCY-bound on a 7-cycle address+load chain (2 independent streams run 1.97x faster). A 7x faster shufti skip makes all three bench subjects SLOWER. Recommends pre-multiplying the transition table by its stride: measured 1.27x on the bench's own row, answer-identical over 40,469 answer lines / 91 subjects, 1.465x -> 1.151x against PCRE2-JIT.
+- `engabs_reach_probe.md` — 2026-08-30 read-only probe answering bench O-9 ask (ii): `unwrapped` stops at `PCREC_ANCHORED_MAX_STATES` = 4096 by design (ladder per skeleton × form; the `\z` wrapper halves the reachable count for `{0,n}`); the refusal-vs-fallback stamp facts for ask (i).
 - `opt2_anchored_match_measurement.md` — [OPT-2] STEP 2 (2026-08-28, lane opt2m, measurement only, nothing under `src/`): REFUTES the plan row's hypothesis — comparing `rx_match` on `orig`'s plain DFA vs its `(?:orig)\z` DFA over the bench's 85 compliance subjects shows only 3.7% overhead (3.3% on matching subjects), not the 3.7x/2.15x gap it was meant to explain, because a `match`-regime subject IS the match end-to-end so the plain form also scans to the end. Instead, a cost-isolation patch deleting the `\z` artifact's reverse pass cuts the DFA-vs-VM gap on matching subjects from 2.08x behind to 1.05x (parity), and to 0.57x (43% AHEAD) on the 35 ordinary short valid-email subjects — the reverse pass is ~50% of DFA cost on every matching subject, because `rx_match` never needs the match START the reverse pass computes (`ctx->pos` already is it). Recommends `[ENG-ABS]`'s already-chartered unwrapped-forward-DFA anchored entry (not built here) as the lever, now with a second, independent forcing-function measurement behind it.
 - `spec_survey.md` — [SPEC-1] step 1 (2026-08-25, lane srSpec, read-only): the spec-coverage gap table (54 rows), the proposed docs/spec/ file set, the ordered [SPEC-1.n] lanes, and the STALE OR WRONG findings. A survey deliverable like chain_profile.md; superseded row by row as the lanes land.
 - `artifact_size_census.md` — [ART-SIZE] STEP 1 (2026-08-28, lane artsize, measurement only, nothing under `src/`/`tests/`): the census Frank's 2 MB-VM-artifact concern chartered. Over 2,772 corpus+bench patterns (2,488 compiled, 0 gcc timeouts/budget kills anywhere in the shipped corpus — median `.o` 6,760 B, p99 14,364 B), every top-20 outlier by `.o` and by gcc time is the SAME mechanism (a bounded/exact repeat over a >1-branch alternation forced onto the counter/frames rungs); a byte attribution (prose/tables/program/scaffold/main, validated to sum to the file size on all 2,488 artifacts) finds program+tables correlates with `.o` at r=0.99 while comments alone correlate at only r=0.43 — a size term should price program+tables, not source bytes. The 2 MB witness (the fuzz gate's seed-1 pattern) sits 3x above the corpus's own largest artifact and is NOT explained by any existing cap being near its boundary — `PCREC_MAX_VM_REPEAT_COPIES` (64) and `PCREC_MAX_VM_REPLICATION_PRODUCT` (131,072 nodes) sit at 47% and 5.7% respectively, both calibrated against runaway/exponential blowup rather than "cap-compliant and still 2 MB," which is exactly STEP 2's gap. Tension curves on the witness + top-5 corpus outliers find THREE separate levers: `--unroll=1` is free on nested-repeat patterns (75-79% smaller, no measured speed cost) and nearly useless on single-level large-count ones; `-fno-premul-table` is the well-behaved already-expected [OPT-3] trade; `--engine=vm` is the measured shape of "size vs performance" itself — shrinks `.o` to 4-9% of default on prefiltered patterns at up to a measured 359,000x throughput cost on the failing path, because the hybrid DFA prefilter IS the size and the speed at once. `docs/dev/artifact_size_census/census.py` (own CLAUDE.md) reproduces §2-§5.
