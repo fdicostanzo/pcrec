@@ -18072,3 +18072,52 @@ I-18 with the abi-12 pin; then wake.md.
 and waited for it to exit (22:49) — the handshake works because BOTH
 sides check by cwd. Lesson: "nothing of mine runs" is a `ps` fact, not
 a belief; run the grep before the message, every time.
+
+#### Forty-fifth session, part 9 — context reset at ~01:30; battery 3 survives it; the bench's gate data lands; bounded's class ladder measured at abi 12 (2026-08-30 ~01:3x-02:0x EDT)
+
+**The reset.** Frank cleared the context ("reset and keep going on plan
+items") with battery 3 running as a BACKGROUND TASK of the old context.
+It survived: the battery script (`mgr/battery_v4.sh` in the PREVIOUS
+context's scratchpad, `…/17704645-…/scratchpad/mgr/`, log
+`battery_opt4.log`) is a child of this session's own process, launched
+01:22 on main 4d12a81 / code 0f5a98f, stage 1 of 4 (`make -k -j12
+-Otarget test`) at 01:32. A one-shot waiter (until `BATTERY DONE` or
+the battery PID exits) is armed in THIS context; the keepalive cron
+re-created (bda6a6e1, :09/:39). wake.md's reset section did its job —
+orientation took six tool rounds, and nothing on the box was disturbed.
+
+**pcrecdev2's data for I-18's gate item** (its d39135f, received
+01:3x): over the six bounded records the three `inconclusive-load`
+cells have the same trial-spread profile as the three measured ones
+(medians 1.3-4.0 %, p90 6-19 %); the 80 rows over 50 % in ~9,000 are
+never trial 1 — each is ONE trial of five ~2.2× slower across every
+subject of a (pattern, regime) group, a burst on CPU 11's SMT sibling or
+a clock drop that DOES reach the pinned core and that the median of
+five absorbs (no ranking number moved). Its P2 spread-rule candidate:
+one trial > 1.5× its row median = tolerated, two or more = disagreeing,
+a cell over a small fraction of disagreeing rows = `inconclusive-spread`
+(0 of ~1,500 here); constants the panel's to measure. Acked with the
+battery ETA (2.5-3.5 h); forwarded to Frank via I-18's draft.
+
+**Bounded's class ladder at abi 12, MEASURED** (single `nice`d compiles
+on the loaded box — sizes and stamps exact, times not numbers), the
+first instalment of O-8's ask (v) "predictions on our own subjects":
+`[a-z]{0,256}` dfa 35,944 B; `{0,4096}` dfa 186,813; `{4096,}` dfa
+172,595; `{0,16384}` dfa 725,692 (the new `--warn-emit-bytes` warning
+fires: 724,532 > 250,000, 11,422 of code; ~8 s under load); `{0,16384}?`
+dfa 375,500 (the lazy form half the greedy); **`{0,32768}` — the row
+the bench predicted pcrec would REFUSE at the emit cap — compiles under
+B into a 32,075 B VM artifact, `_ENGINE_SEL collapsed-prefilter`, `_LANG
+count-collapsed`, `_LANG_WHY "dfa overflow retry, exact nfa 65538"`**;
+`{0,65535}` REFUSED by the NFA-state cap (131,072; K7's), not the emit
+cap — at every pin. So the ladder's first pcrec refusal is 65535, and
+32768 is the interesting AFTER cell. Also confirmed for I-18's 6(a)/6(b)
+answer: limits.md §8 is fixed (VM-only), registry.md §6 reads 54/21,
+the `table` axis still lacks `none`/`mixed`, and `RX_UNROLL_K_WHY`'s
+`stamp_value` is still empty (the ADMIN row). I-18 drafted in full to
+the scratchpad (`i18/I-18.md`) with pin/battery placeholders; it is
+committed to the bench's inbox only on GREEN.
+
+**Watchdog note (own mistake):** `scripts/watchdog -m 3000000` is a BYTE
+count (2,930 kB) — the suffix (`-m 3g`) is not optional in practice;
+four ladder rows were killed at 5-14 MB RSS before I read the header.
