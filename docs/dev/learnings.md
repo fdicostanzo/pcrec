@@ -164,6 +164,28 @@ distilled forms:
   every merge because the axes it carries are not the ones a critic can
   build read-only. (Frank: "the san tests did their job.")
 
+- **A cited verification pins an OUTPUT, not the REASON for it, and a
+  GATED module keeps the refusal reproducing** (2026-08-30, lane w1,
+  `docs/spec/match_api.md`'s `nnames` comment). It read "0 until module
+  'named-groups' lands (still true as of this writing — verified:
+  `'(?<g>a)'` still refuses)". The module shipped twelve days earlier —
+  but it shipped GATED, off by default, so re-running the OFFERED
+  verification command still reproduced the OFFERED output, and a reader
+  who did the honest thing (re-ran it rather than trusting the prose) was
+  told a false sentence was current. The reason had moved from "the
+  construct does not exist" to "the module is not enabled for this
+  compile" with zero visible effect on the cited transcript. Generalizes
+  past this one sentence: any doc sentence of the shape "X until module M
+  lands/is built", or a "(verified: …)"/"measured: … refuses" tag beside a
+  module-gated construct, needs re-checking against BOTH `--list-syntax`'s
+  live `built` column AND whether the module is on by default — a shipped
+  module can be `built` and still refuse at the bare default, and only
+  the sentence's own wording says which reason applies. (The [SPEC-1.10]
+  sweep this row chartered found no second instance of the pattern in
+  `docs/spec/`/`lib/pcrec.h` — every other module-status sentence already
+  distinguishes "built" from "enabled" correctly, cross-checked live
+  against `--list-syntax`'s own column.)
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
