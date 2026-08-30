@@ -1048,7 +1048,10 @@ alternation combine 0-ness identically. One walk answers for both languages.
 structure survives the collapse the rescue wins 2.2-4.6x, and where the
 collapsed language is nullable it LOSES 1.2-9.9x, because the filter admits a
 zero-length match at every position and can dismiss nothing. `-fprefilter`
-overrides the decline (do-or-die: its alternative is no prefilter, which is
-what that flag forbids); `-fprefilter-collapse` does not, because it chooses a
-LANGUAGE and not whether a filter exists. `docs/spec/tuning.md` §2.17 is the
+is do-or-die and is never silently dropped, and what that means differs by
+RUNG: on the SIZE rung it OVERRIDES the decline (its alternative there is no
+prefilter, which that flag forbids), while on the [SEL-1] rung it makes the
+rung ineligible so the decline is never reached and the compile REFUSES.
+`-fprefilter-collapse` overrides on neither, because it chooses a LANGUAGE and
+not whether a filter exists. `docs/spec/tuning.md` §2.17 is the
 contract.

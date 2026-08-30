@@ -789,10 +789,12 @@ survives to the gate is a pattern that already has a working exact prefilter
 and a caller asking for a collapsed one, and the right answer there is to keep
 what it has.
 
-`-fprefilter` is the one thing that overrides the decline, at BOTH sites, and
-the conjunct here is load-bearing rather than symmetric: on the SIZE rung the
-only prefilter that fits under the cap IS the collapsed one, so declining it
-for a caller who explicitly demanded a prefilter would REFUSE a pattern that
-compiles today — which is exactly what `docs/spec/limits.md` §3.3 promises
-does not happen. `src/opt/CLAUDE.md` carries the predicate's own entry;
+`-fprefilter` is the one thing that overrides the decline, and the conjunct
+here is load-bearing rather than symmetric: on the SIZE rung — the only rung
+that reaches this line under that flag — the only prefilter that fits under the
+cap IS the collapsed one, so declining it for a caller who explicitly demanded
+a prefilter would REFUSE a pattern that compiles today, which is exactly what
+`docs/spec/limits.md` §3.3 promises does not happen. On the [SEL-1] rung
+`-fprefilter` never gets here at all: it makes that rung ineligible in
+`compile_driver`, so the compile refuses earlier and for a different reason. `src/opt/CLAUDE.md` carries the predicate's own entry;
 `docs/spec/tuning.md` §2.17 is the contract.

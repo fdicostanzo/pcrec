@@ -201,8 +201,9 @@ pattern that compiles today stops compiling**, because dropping the prefilter
 is strictly smaller than collapsing it, so the size rung still rescues the
 compile. On the [SEL-1] rung the same decline leaves the pre-[OPT-4] artifact
 and `<PREFIX>_ENGINE_SEL` reads `"declined-nullable"`. `docs/spec/tuning.md`
-§2.17 carries the rule, the stamps and the flag interactions (`-fprefilter`
-overrides the decline; `-fprefilter-collapse` does not).
+§2.17 carries the rule, the stamps and the flag interactions — including
+what `-fprefilter` does, which differs by rung and is stated there per rung
+rather than summarised here.
 
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST
