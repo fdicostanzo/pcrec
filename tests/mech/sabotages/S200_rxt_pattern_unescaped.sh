@@ -19,8 +19,8 @@
 SAB_ID="S200-rxt-pattern-unescaped"
 SAB_FILE="src/parse/rxt_source.c"
 SAB_SUITES="rxtsource"
-SAB_DESC="--list-source emits a raw tab in the pattern column, so the three corpus blocks whose pattern contains a literal tab produce rows with 16 fields where the header declares 15, and every column after `pattern` shifts on exactly those rows"
-SAB_REACH="grep -cP '^pattern .*\\t' \"$TREE/tests/base/bounded_repeats.rxt\""
+SAB_DESC="--list-source emits a raw tab in the pattern column, so the three corpus blocks whose pattern contains a literal tab produce rows with 16 fields where the header declares 15, and every column after the pattern column shifts on exactly those rows"
+SAB_REACH='grep -cP "^pattern .*\\t" "$TREE/tests/base/bounded_repeats.rxt"' 
 SAB_REACH_EXPECT="2"
 SAB_REACH_POP="tests/modifiers/xxmode.rxt|^pattern .*	|1"
 SAB_COUNT=1
