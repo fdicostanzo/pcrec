@@ -876,3 +876,74 @@ every cell in the section would be telling me less, not more.
 size-rung cell ALONE, its non-nullable twin green — which is what says the
 plant removed a PREDICATE rather than the rung. `corpus:0fail/51pass` is the
 answer-identity this arm exists for.
+
+## 14. THE PREDICTIONS, CONFIRMED — **11 of 11, 0 MISMATCH**
+
+Every §6 prediction held, stated before anything was compiled and checked
+against literals in the script rather than against prose:
+
+| # | point | predicted | measured |
+|---|---|---|---|
+| 1-4 | `ctx-lazy-64/256/1024`, `ctx-greedy-256` | KEEP | `collapsed-prefilter` / `hybrid` / `count-collapsed`, exact nfa **174 / 558 / 2094 / 558** |
+| 5 | `level-context` | KEEP | same, exact nfa **462** |
+| 6-7 | `cls-upto-32768` plain + whole | DECLINE | `declined-nullable` / `none`, no `_LANG` macro |
+| 8 | `cls-upto-16384` whole | DECLINE | same |
+| 9 | `cls-lazy-16384` whole | DECLINE | same |
+| 10 | `nest2-64` whole | **KEEP** | `collapsed-prefilter` / `hybrid`, exact nfa **8258** |
+| 11 | `nest3-16` whole | **KEEP** | same, exact nfa **8466** |
+
+**The exact-NFA numbers match pcrec-bench's O-10 item 1 byte for byte**
+(174/175, 558/559, 2094/2095, 462/463, 8258, 8466 — the bench lists plain and
+`\z` forms, this table the form it predicted), which is an independent check
+that these are the same eleven artifacts the bench measured.
+
+**ROWS 10 AND 11 ARE THE ONES THAT MATTER**, because they are where the
+prediction disagreed with the brief and the measurement settles it: `minw` 1,
+not nullable, rescue KEPT. The manager has corrected I-21 with the bench
+accordingly — four forms move at the AFTER, not six.
+
+**A DETAIL WORTH REPORTING**: the four `\z` forms overflow by a DIFFERENT route
+than the plain ones. `RX_ENGINE_WHY` on `cls-upto-32768` plain reads
+`"dfa overflowed: >32000 states"`, while every whole-subject form reads
+`"dfa overflowed: subset construction exceeds 48000000 state-set elements
+(K7)"`. Both are the [SEL-1] rung and both reach this predicate; the routes
+into it are not identical, which is not something the plain forms alone would
+have shown.
+
+## 15. BENCH ASK (ii) — the byte counts, and my hypothesis REFUTED
+
+Reported for `cls-upto-32768` in both forms, under every counting rule pcrec
+can produce. **These are the DECLINED artifacts** — this row changed what that
+pattern compiles to, so they are the AFTER, not a re-measurement of the pin.
+
+| form | rule | raw `wc -c` | `size_count_bytes` |
+|---|---|---|---|
+| plain | self-contained (`-o -`) | 31,851 | 18,193 |
+| plain | split `.c` ALONE (`-o FILE`) | **20,699** | 11,883 |
+| plain | split `.c` + `.h` | 32,208 | 18,286 |
+| whole | self-contained | 32,115 | 18,398 |
+| whole | split `.c` ALONE | 20,963 | 12,088 |
+| whole | split `.c` + `.h` | 32,478 | 18,491 |
+
+**MY SPLIT-FILE HYPOTHESIS DOES NOT ACCOUNT FOR THE GAP, and I am reporting
+that rather than quietly dropping it.** I predicted the bench's 24,414 was the
+split `.c` alone, because 32,082 − 24,414 ≈ 7,668 sat close to the ~7,661 gap
+they reported. Measured, the self-contained→split-`.c` difference on this
+pattern is **11,152 bytes**, not ~7,661, and 24,414 matches none of the six
+readings above. The mechanism is real (the shared `PCREC_RX_ABI_H` block moves
+to the `.h`) and it is the largest single counting-rule difference here — but
+it is not, on these numbers, the explanation.
+
+**AND THE ARTIFACT CARRIES NO SIZE STAMP AT ALL.** The only byte-count macros
+in it are `RX_MAX_EMIT_CODE_BYTES 500000` and `RX_MAX_EMIT_BYTES 1000000` —
+the CAPS, not a measurement of this artifact — so the bench cannot have read
+24,414 off a stamp, which removes one candidate.
+
+**WHAT WOULD SETTLE IT**, stated so nobody re-derives it: the comparison must
+be made on the SAME artifact. At pin 96e44c2 this pattern compiled to a
+count-collapsed HYBRID; after [OPT-4.1] it is a declined VM artifact with no
+prefilter, so every number above is smaller than the pin's for a reason that
+has nothing to do with counting rules. The bench's 24,414 and our 32,075 should
+be re-compared either at the pin on both sides, or at the new pin on both
+sides — and the six rules above are what our side means by "bytes" in each
+case.
