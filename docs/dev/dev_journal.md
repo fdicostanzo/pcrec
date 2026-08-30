@@ -18121,3 +18121,23 @@ committed to the bench's inbox only on GREEN.
 **Watchdog note (own mistake):** `scripts/watchdog -m 3000000` is a BYTE
 count (2,930 kB) — the suffix (`-m 3g`) is not optional in practice;
 four ladder rows were killed at 5-14 MB RSS before I read the header.
+
+**Chartered (~02:2x, under the battery's HOLD, per the overnight plan):**
+FEATURE lane **w1** (opus, `worktrees/w1`, `lane/w1`) — [DD-13b.W1]
+design-first: deliverable 1 is `docs/design/dd13_format/w1_impl.md` (what
+lands where, the composer per D87, the check/sabotage plan, the D80 spec
+deltas, the lane-sized steps with merge points); it STOPS there for a D6
+panel before any code. ADMIN lane **admin1** (sonnet, `worktrees/admin1`,
+`lane/admin1`) — [REG-SV] (filed: the empty `stamp_value` on the
+name-valued `size-term` rows + the `table` axis's missing `none`/`mixed`
+outcomes; the general form — one derivation, two readers; witness
+reachability measured per value) and [SPEC-1.10]'s survey debt (F4's
+sabotage-row format, K2's status against main's binary). Both HOLD
+messages enumerate the forbidden SHAPES (no make of any kind, no gcc, no
+tests/ scripts, no sweeps/loops/background jobs) and the one allowed
+thing (edit/commit/read + ONE main-tree `build/pcrec` call on ONE
+pattern) and demand an ack on the first ping. [OPT-A] STEP 0 waits for a
+QUIET box (its measurements are worthless under the battery + the bench
+window). Crons: keepalive :09/:39, lane stall-watchdog every 10 min.
+Frank surfaced at ~01:5x with a remark, no ruling; nothing is blocked on
+him except the v1.4 gate shape (in I-18's draft).
