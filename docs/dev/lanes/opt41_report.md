@@ -947,3 +947,57 @@ has nothing to do with counting rules. The bench's 24,414 and our 32,075 should
 be re-compared either at the pin on both sides, or at the new pin on both
 sides — and the six rules above are what our side means by "bytes" in each
 case.
+
+## 16. THE D77 TRIGGER NUMBER (§8 item 10) — 69, and a caveat that changes the row
+
+**No code changed for this.** It is the count a FUTURE row (gating the DEFAULT
+exact prefilter on non-nullability) would be chartered on.
+
+| quantity | value |
+|---|---|
+| corpus patterns, deduped on bytes | 2,772 |
+| hybrids carrying an EXACT prefilter | 1,262 |
+| **oracle says NULLABLE — the trigger number** | **69** |
+| oracle says non-nullable | 733 |
+| oracle UNAVAILABLE (python cannot compile) | 460 |
+| **coverage** | **802 of 1,262 = 63.5 %** |
+| share of covered hybrids that are nullable | 8.6 % |
+
+The oracle is python3 `re` — `re.compile(pat).match("") is not None`, external
+to pcrec entirely. **The 460 uncovered are CONSTRUCTS python has no grammar
+for** (`(?*`, `\K`, `\g`, `(?1`, …), not a sampling accident, and they skew
+toward the VM-only end of the corpus — so 69 is a floor over a biased-low
+sample, and I am NOT extrapolating it to the full 1,262.
+
+### 16.1 THE CAVEAT, and it is the useful half of this census
+
+The structural cross-check found **264** hybrids stamping `RX_DFA_PREFILTER
+"none"` — far more than 69, exactly the strict-superset behaviour §8 item 10
+predicted (`!cand.usable` selects `none` as well as `start_acc`), and the
+disagreement list is mostly that direction: `\A`, `^`, `\b` and lookaround
+shapes that are NOT nullable and still have no usable candidate set.
+
+**But THREE disagreements go the other way, and they are the finding:**
+
+    ([ab]{0,4}$)   oracle_nullable=True   dfa_prefilter=byte-class-bounded
+    (a{0,4}$)      oracle_nullable=True   dfa_prefilter=memchr-bounded
+    (a{0,4})$      oracle_nullable=True   dfa_prefilter=memchr-bounded
+
+A language python calls nullable whose prefilter **still dismisses**. The
+`-bounded` forms are why: a `$`/`\Z`/`\z` view means the start state accepts
+only AT THE END, so the scan can still skip, and the filter earns its keep.
+
+**So a future row must NOT use `minw == 0` as its predicate.** That is this
+row's predicate, and it is right HERE — on a collapse RESCUE the alternative is
+no prefilter at all, so declining costs nothing and the shapes above never
+reach it (they are exact prefilters that were never in danger). Applied to the
+DEFAULT exact prefilter it would decline three filters that work. **The signal
+that separates them is the artifact's own `RX_DFA_PREFILTER`**, which already
+distinguishes `none` from the `-bounded` forms — the same second derivation
+§7 identifies for ask (iv), doing real work here rather than serving as a
+cross-check.
+
+That sharpens the D77 trigger: the number to charter on is not "69 nullable
+hybrids" but "nullable hybrids whose DFA prefilter is also `none`", which this
+census reports the ingredients for and which a future row should measure
+directly.
