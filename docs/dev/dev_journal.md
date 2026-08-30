@@ -18036,3 +18036,39 @@ opt4b on edit/commit HOLD; battery 3 after the bench's CLOSED. My
 10-minute mech ETA was wrong by 30 — the matrix runs rows in LEXICAL
 order (S180-S189 before S19, S2x…S9x last); read the row name against
 the sorted list before estimating.
+
+#### Forty-fifth session, part 8 — ruling B built and MERGED (0b89b23); [DD-11] MERGED (0f5a98f); union battery 3 waits on the bench's window (~22:5x-23:1x EDT)
+
+**[OPT-4] under B** (opt4b, 021b8d1, 8 commits): the knee DELETED and
+nothing replaces it — the caps are the only quantity that decides; two
+ladder rungs on one setjmp (CR_SEL1 state cap; CR_SIZECAP size cap,
+resetting the K ladder since the collapsed artifact's figures are not
+the exact one's); the K23 acceptance criterion reproduced before any
+code (13.34 s / `r=-2` → 0.00 s / `65,215 214,215`); `_LANG_WHY` five
+witness-driven values (`denied` dropped with a measurement: no artifact
+can carry it); the census deleted not neutered, the corpus sweep now
+asserting B itself; three A-era check props REVERTED so the hazards are
+real again; `--warn-emit-bytes` (250,000 default, 0 disables) advisory
+and deliberately NOT raise-only — a warning has no authority, so
+lowering it is the point; K39 re-scoped, K41 closed by the better
+mechanism (witness 2 rescued because its artifact was TOO BIG — what
+K41 was always about); §10a corrects its own §10: the CODE-cap trigger
+was inert, the TOTAL cap bites (`(a|b){0,30000}` 1,333,367 → 32,297);
+§10b answers Frank's exemplar question (the right language depends on
+the SUBJECTS, not the pattern — [ENG-PGO]'s profile is the missing
+term; flag and stamps exist, the pass would only choose the flag). Its
+process finds: the whole codegen group caught its own follow-ons a
+third time (unbounded `$PCREC` cli cells; S102/S165 anchors staled by
+`collapse_reason != CR_SEL1`). FILEPIN c275aef; abi 12.
+
+**Merges (git only, during the bench's window):** lane/opt4 → 0b89b23;
+lane/dd11 → 0f5a98f on top, no conflicts. Both lanes closed. ONE union
+battery (test → san → mech) on 0f5a98f after the bench's CLOSED; then
+I-18 with the abi-12 pin; then wake.md.
+
+**Pre-HOLD slip:** opt4b's `make test-recursion-identity` (started
+22:35) was still running when I told the bench the box was clear at
+22:45; the bench's verify-by-cwd caught it, I corrected within a minute
+and waited for it to exit (22:49) — the handshake works because BOTH
+sides check by cwd. Lesson: "nothing of mine runs" is a `ps` fact, not
+a belief; run the grep before the message, every time.
