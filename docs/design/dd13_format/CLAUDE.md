@@ -118,14 +118,82 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   / `(?&=name)` for a delivering call, `--emit-composed` for the
   serialization. Panel gate satisfied for this round; NO PARSER IS
   WRITTEN.
-- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, DESIGN-FIRST
-  deliverable 1 (2026-08-30, lane w1): NO CODE IS WRITTEN.** How wave 1 of
-  `format_design.md` lands: file by file, the composer, the check and
-  sabotage plan, the D80 spec deltas, four lane-sized steps with a merge
-  after each, and the manager's open questions. It marks a fourth claim
-  kind beside MEASURED/CITED/ARGUED — **DECIDED**, six points the format
-  note left to the implementer or where the tree contradicts it — and
-  four of the six make W1 smaller.
+- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2 (2026-08-30,
+  lane w1): post-panel (r45) and post-rulings. NO CODE IS WRITTEN.** How
+  wave 1 of `format_design.md` lands: file by file, the composer, the
+  check and sabotage plan, the D80 spec deltas, four lane-sized steps with
+  a merge after each, and the open questions. It marks a fourth claim kind
+  beside MEASURED/CITED/ARGUED — **DECIDED**, eight points the format note
+  left to the implementer or where the tree contradicts it.
+  **§0.4 is the finding-by-finding revision record for r45
+  (`../../dev/reviews/2026-08-30-r45-w1-impl.md`: 4 blockers, 6 must-fix)
+  — read it first.** The panel's verdict was that the SPINE stands (the
+  sub-parse on one `Ctx`, `A_REP{0,0}(A_CAP)` injection, re-basing by a
+  walk, and §2.9's provenance argument — r45sem: "the best section; its
+  PARSE-1 argument against format_design §2.12 should be adopted") and
+  that §2 was NOT buildable as written while §3 "would go green without
+  proving the composer". What revision 2 changed, mechanism by mechanism:
+  **B1 — delivery is a NAMED DEVIATION from PCRE2, not a free ride.**
+  `pcrec_has_live_capture`'s `A_CALL` arm returns false ("a subroutine
+  call is CAPTURE-TRANSPARENT") and its `A_REP` arm prunes
+  `rmin==rmax==0` — exactly the injection wrapper — so a composed pattern
+  whose captures all live in definitions looks capture-DEAD, the DFA takes
+  it, and every delivered slot reads `-1,-1`; and even on the VM the `W`
+  restore set puts the callee's captures back on return
+  (`internal.h:826-849`). PCRE2 agrees — `(?(DEFINE)(?<g>a))(?&g)` is
+  CAPTURECOUNT 1 with g1 UNSET — which is why delivery needs TWO named
+  mechanisms (a delivering-call live-capture arm, keyed on the CALL and
+  never on the wrapper's shape since `atomic.c`'s header forbids the
+  DEFINE-shaped special case; and exclusion of the callee's CAPTURE
+  indices alone from `W`, the capture-only version of which was refuted
+  twice). The two non-deliverable shapes become CALL-GRAPH activation
+  bounds rather than lexical repeat depth, which had refused every
+  delivering call.
+  **B2 — the re-basing walk corrupted caller-scope references**
+  (`(?&^.w)` in a definition targets a CALLER group; adding `base` sent it
+  into the definition's own space). The walk is keyed on the `PendingRef`,
+  caller-scope refs carry a discriminator written at `rc_name_call`, and
+  they resolve AFTER the walk. The same fix deletes revision 1's
+  `target == 0` carve-out, which was undecidable: the arena zeroes it,
+  `(?R)` sets 0 with no pending record, and a deferred cross-definition
+  call also reads 0.
+  **B3 — `--emit-composed` did not round-trip NAME binding**: explicit
+  numbers do not stop `pcrec_bref_resolve`'s name arm re-binding an
+  injected `(?&w)` over the whole composed text, which is M2's collision
+  reintroduced by the serializer. Injected by-name references now render
+  NUMERICALLY; the round-trip claim is restated in its weaker true form
+  (modifier leakage across a splice is live — a bare `(?i)` is never
+  restored — so each spliced wrapper carries an explicit modifier reset).
+  **B4 — `nnames` counting only the primary while `groups[]` held every
+  row broke a SHIPPED ABI contract** (`match_api.md:1349` documents
+  `nnames` as "entries in groups[]", and §6's caller bsearch walks a name
+  run): the sort key becomes (ref-is-NULL, name, number) so the primary's
+  rows are a genuine PREFIX, `nnames` keeps its meaning, and a NEW
+  `nentries` rides the abi bump.
+  On the CHECK side the blocker was that **C0 was empty-vs-empty and its
+  validating sabotage row had been silently replaced** — on the corpus the
+  composer is never invoked at all, so "closure size 0" is satisfied by a
+  composer that is absent. C0 splits into C0a (the invocation count is
+  itself asserted) and C0b (the composer's reported closure vs the
+  control's RE-DERIVED one — the control now re-derives, reversing
+  revision 1); format_design's S-C7 is restored; C1 becomes THREE-WAY via
+  `verify_rxt.py --dump`, since the seam ruling leaves the HEAD with only
+  one parser and the note now says so plainly; and a new W-8 takes its
+  expectation from libpcre2's CAPTURECOUNT/ovector, because W-2/W-5/W-7
+  compare the composer to itself and structurally cannot catch a wrong
+  assignment.
+  **MEASURED for revision 2:** the corpus is 179 files but run.sh
+  dispatches 178 — the odd one is `tests/known_fail/k34_leftrec_giveup.rxt`,
+  excluded by `run.sh:184-186`'s `-not -path "*/known_fail/*"` — and
+  **26,691 − its 11 expectation lines = 26,680, exactly the pinned clean
+  baseline**, so C1's and C2's denominators differ on purpose and the
+  relationship is derivable rather than a discrepancy. Also: 0 of 26,691
+  case lines precede a `pattern` line (so the `have_block` guard the
+  manager ruled is free, and its denominators reproduce the format note's
+  census to the digit from a third direction), and 3 corpus blocks carry a
+  literal tab in their pattern text — all three where the tab IS the thing
+  under test, which is what makes `--list-source`'s escape rule a
+  correctness constraint rather than plumbing.
   **Its three departures from `format_design.md` are the sections to read
   first, because each is forced by code the note did not cite:**
   (1) **the abi is 12, not 11** — the note's §2.7 says 11 at

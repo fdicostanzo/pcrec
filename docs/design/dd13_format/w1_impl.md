@@ -987,3 +987,510 @@ parser structurally; the `A == B` control recompiles the serialization
 and compares the emitted PROGRAM and `caps[0..ngroups_A]` — **not**
 `rx_info.ngroups`, which differs by design (B is handed text and counts
 every group in it; §2.3.4 point 3 and §4's S9b).
+
+---
+
+## 3. The check and sabotage plan
+
+Rewritten after r45chk, whose verdict was that revision 1's §3 "protects
+the corpus in one direction only… but it does not prove the composer:
+C0 is empty-vs-empty with its validating row deleted, W-2/W-5/W-7 compare
+the composer to itself, and every composition cell is written by the
+mechanism's author." Every one of those is answered below, and the two
+that cannot be fully answered are named as residuals rather than closed.
+
+Written against learnings §3 and memory `pcrec-check-design-lessons`:
+**a control must not share a source with what it controls; a population
+nobody counts is not a population; a witness that stopped reaching its
+site is a green check measuring nothing ([MECH-REACH]).**
+
+### 3.0 The two denominators, and why they differ
+
+**MEASURED, and this closes a discrepancy revision 1 would have shipped.**
+The corpus census counts every `.rxt` file; run.sh's own population
+excludes one:
+
+```
+census (all files)                179 files / 3,265 blocks / 26,691 lines
+tests/known_fail/k34_leftrec_giveup.rxt    1 file  /     3 blocks /     11 lines
+                                  ---------------------------------------------
+run.sh's population               178 files / 3,262 blocks / 26,680 lines
+```
+
+`run.sh:184-186` discovers with `-not -path "*/known_fail/*"`, so the
+known-fail ratchet's own file is never dispatched. **26,691 − 11 = 26,680,
+which is exactly the clean-corpus baseline below** — so the two
+denominators are not an inconsistency but a derivable relationship, and
+C2's denominator now has an independent derivation. Revision 1 would have
+asserted 179 in both checks and the second would have been wrong.
+
+**C1 asserts 179 / 3,265 / 26,691** (a parse differential can and should
+read every file). **C2 and C3 assert 178 / 3,262 / 26,680.**
+
+### 3.1 INV-COMPAT — that no existing file changes meaning
+
+**PINNED BASELINES (r45chk item 6), from battery 3's `make test` corpus
+section on code `0f5a98f`, main `4d12a81`** — the before-values, with
+their provenance line, so "unchanged" is a comparison and not a hope:
+
+| quantity | value | note |
+|---|---|---|
+| `cases passed:` | **26651** | |
+| `cases failed:` | **29** | all in `tests/counterk/counterk.rxt`'s `((a)\|ab){4000}c` LOAD cell; solo that file is 1,634/0 |
+| clean-corpus equivalent | **26,680 / 0** | = 26651 + 29; and = 26,691 − known_fail's 11 (§3.0) |
+| `pattern-compile failures (distinct):` | **1** | the same load cell; clean **0** |
+| `group cases pending-vm:` | **0** | |
+| `size-log rows:` | **2877** | |
+| parallel dispatch | **178 of 178 file workers** | §3.0 |
+| libpcre2 §1 pcre2-only sweep | **69 blocks / 6,693 cells / 0 disagreements** | |
+| libpcre2 §0 expansion table | **42 patterns / 2,646 cells** | |
+
+The 29 failures and the 1 distinct compile failure are a KNOWN load cell,
+not a red suite; they are pinned as-is so a comparison is exact rather
+than approximately right. A step that changes them must say why.
+
+**C1 — the parse differential, now THREE-WAY (r45chk F2).** Revision 1
+claimed C1 was a control because "the two are in different languages by
+different authors". True of the BODY; **false of the HEAD**, where the
+seam ruling gives W1 exactly one parser, so C1 would have compared pcrec
+to itself on W1.1's entire deliverable. The third parser already exists
+in the tree:
+
+| leg | source | covers |
+|---|---|---|
+| A | `pcrec --list-source` (§1.8) | head + body directives |
+| B | `run.sh --dump` | body: blocks, directives, expectations |
+| C | **`verify_rxt.py --dump`** (`parse_rxt`, `:113-182`, 10 kinds — python, a different author, already in the tree) | body: blocks, patterns, expectations |
+
+A==B on their overlap and B==C on theirs, byte-identical over 179 / 3,265.
+**The head still has no differential control and this note says so
+plainly** rather than implying one: what covers the head is (i) the
+grammar's own refusals, (ii) the field manifest below, and (iii) the fact
+that on the corpus the head is EMPTY, which C1's row-order comparison
+asserts.
+
+**C1's runtime is stated** (r45chk F12 asked): 179 `--list-source`
+invocations plus one bash pass and one python pass. Each `--list-source`
+is a parse with no compile, so this is bounded by the corpus's parse
+cost, not its compile cost — but the number is UNMEASURED until the
+binary exists, and §5 makes measuring it part of W1.1's acceptance rather
+than assuming it is small.
+
+**C1's FIELD MANIFEST (r45chk F3), because a differential can silently
+stop comparing.** Both dumps are new code by one author; a sabotage that
+drops one directive key from BOTH emitters leaves C1 byte-identical and
+the differential quietly stops covering that directive. So C1 asserts, in
+addition to byte-identity:
+
+- the exact directive-key list per block kind (the 15 columns of §1.8);
+- the exact field count per row (the header's own count — the table
+  contract's HEADER TRUTHFULNESS check, `table_contract.md`);
+- the exact TOTAL dump-line count, against the 179-file census.
+
+Row **S-C11** plants "delete `encoding` from both dump emitters" and must
+turn it red.
+
+**C2 — the answer re-run.** run.sh reports the same four numbers
+(`run.sh:1032-1044`), against the pinned baselines above. These are a
+DIFFERENT partition of the expectations than C3's (r44-grammar G2: a
+`perr` block and a live `g` line each record independently), and both
+partitions are asserted. This is the check that catches a parse that is
+faithful but routed differently.
+
+**C3 — the oracle re-run.** `verify_rxt.py` reports the same verified
+count and the same skip count. **The skip count is the load-bearing
+half**, because H4 adds a new reason to skip: if the structural
+composed-block test is loose, it skips blocks it should verify, and only
+the COUNT catches that. r45chk F13(d): the file prints a per-file line
+only `if skipped:` (`:387-388`) and no total, so **it gains a TOTAL
+line** — without which C3's "same skip count" has nothing to read.
+
+**C0 — REDESIGNED, because revision 1's version could not fail
+(r45chk F1, the blocker).** Revision 1 said "the composer reports the
+size of the closure it bound, and for the corpus that number is 0 in all
+3,265 blocks." But by DECIDED (6) the deferral flag is set only when
+`--source` supplied a definition set, and by §1.1 the harness calls
+`--list-source` only for a head-bearing file — MEASURED zero of 179. **So
+on the corpus the composer is never invoked at all, and "0" is satisfied
+by a composer that is absent, disabled, or hard-coded to return 0.**
+Empty-vs-empty. Redesigned into two checks whose numbers come from
+invocations that HAPPEN:
+
+- **C0a (corpus)** — the harness asserts `--list-source` was invoked
+  **exactly 0 times** across the run, and that the count of head-bearing
+  files is 0. That is a real assertion about a real quantity (the census),
+  and it fails if a future file grows a head without the rest of the
+  machinery.
+- **C0b (W1's fixtures)** — on every composed cell, the composer's
+  reported closure (size AND order) is compared against the control's
+  **RE-DERIVED** closure (DECIDED (8)). This is the comparison revision 1
+  did not have, because revision 1 had the control consume the composer's
+  report.
+
+**F12 — "discharged by construction" is a diff argument, so it gets a
+check.** run.sh's existing arm block (`:811-1015`) is **hash-pinned**: any
+change to it fails, so "the 13 arms are not touched" is asserted rather
+than asserted-in-prose. And format_design §1.1's **32-keyword census
+becomes a CHECK** rather than a one-time measurement — the appended arms
+change one thing (lines that previously hit the catch-all now parse), the
+census is what makes that safe, and a census can rot.
+
+**Where this is still weak, stated rather than buried.** C1's value on
+the 179 is largely "three parsers agree that nothing happened", because
+the corpus has no head and no composition. What protects the corpus is
+that its code path is unchanged, and the checks that say so are the hash
+pin, the census, and S-C7/S-C12. Every COMPOSITION check runs on
+fixtures W1 itself writes — the author-writes-the-population shape — and
+§3.2's answer is that the ORACLE is not W1's and §5's is that a D27
+BLINDED author writes the composition cells at step .3.
+
+### 3.2 The composer's checks
+
+**W-1 — the textual EXPAND control, with BOTH populations floored.**
+CITED, format_design §2.3.4: the control is valid where the append form
+means what the composer means — no absolute numeric reference in any
+body, no name collision between caller and closure. Outside it the
+control **does not run and says so**.
+
+Revision 1 counted and floored the INAPPLICABLE branch (right, and better
+than the format note). **r45chk F5: nothing floored the branch where the
+control actually RAN** — if every composed cell carried an absolute
+reference or a colliding name, W-1 would skip everything and go green
+having compared nothing (K35's shape). So:
+
+> **W-1 publishes a MANIFEST: N cells run, M cells skipped, each skip
+> with its reason. Both N and M are PINNED, and both are validated by a
+> PLANT** — one that should move a cell from run to skipped, one the
+> reverse. A run where N is 0, or where N+M ≠ the composed-cell count, is
+> red.
+
+The skip population has live witnesses by construction, and they are the
+two shapes that FORCED D87: M1's `dd` = `(\d)\1` (absolute reference) and
+M2's `(?J)` caller/closure collision. Both are already measured on both
+oracles.
+
+**W-1c — the `\12` octal cell (r45chk F11).** §2.2 argues `ncap` must be
+swapped because it is read DURING the parse for PCRE2's
+`\12`-is-a-backreference-iff-the-running-count-≥-12 rule
+(`internal.h:1603`) — a MEANING failure, where revision 1's S-W6 tested
+only renumbering. The cell: a caller with ≥ 12 groups binding a definition
+whose body contains `\12`, **answer from libpcre2**. Under a correct
+sub-parse the definition's `\12` is octal (its own running count is
+below 12); under a leaked `ncap` it becomes a backreference, and the two
+answers differ.
+
+**W-2 — `A == B` across `--emit-composed`, RE-SCOPED (r45chk F4).**
+Revision 1 called this a control; it recompiles the composer's own
+serialization, so it catches parser/serializer drift and **structurally
+cannot catch a wrong assignment**. Its claim is narrowed to exactly that,
+in its own text, so a later reader does not mistake it for an oracle. It
+compares the emitted PROGRAM and `caps[0..ngroups_A]`, explicitly NOT
+`rx_info.ngroups` (which differs by design, §2.10) — and the check says
+why in its own message so nobody "fixes" it. After B3 its population is
+whole except for S4's unrenderable spellings, which are a counted NAMED
+skip.
+
+**W-3 — the hand-verified M1/M2 cells.** Pinned answers, measured on both
+oracles, and the evidence D87 was ruled on. **They are not an independent
+oracle** and the check says so rather than presenting them as
+verification.
+
+**W-8 — NEW, and it is the one whose expectation comes from outside
+(r45chk F4).** On W-1's valid population, libpcre2's own
+`PCRE2_INFO_CAPTURECOUNT` and ovector are read for the textual EXPAND and
+compared against the composed artifact's `RX_NCAPS` and `caps`. The probe
+is already wired
+(`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`), the
+population is exactly where the two are comparable, and — this is the
+point — the expectation is derived from a different implementation of the
+regex language rather than from pcrec's assignment table. This is the
+check that can catch a wrong ASSIGNMENT, which W-2, W-5 and W-7 cannot.
+
+**W-4 — Q7's residual, unchanged and named.** On the two populations D87
+added mechanism for (absolute references, colliding names) no independent
+oracle checks the answer. Accepted for W1 with the ratified trigger — the
+first [LIB] entry that legitimately needs either — and W1's contribution
+is to make the uncovered population COUNTABLE: W-1's manifest prints how
+many cells were skipped and why, so the residual has a number.
+
+### 3.3 The one-derivation checks, re-scoped
+
+CITED, §2.7: the assignment table is the single source for `RX_NCAPS`,
+the `rx_group_entry` array and `--emit-composed`. **r45chk F4 is right
+that this makes most of these consistency checks INSIDE one derivation,
+not controls**, and revision 1 presented them as the latter. Re-scoped:
+
+| check | asserts | what it can and cannot catch |
+|---|---|---|
+| W-5 | `RX_NCAPS - 1` == the highest number in the emitted table | two renderings of ONE table agree. Catches a rendering bug; **cannot** catch a wrong assignment |
+| W-6 | every `rx_group_entry` with non-NULL `.ref` has `number > rx_info.ngroups` | **a genuine STRUCTURAL assertion** — D61's promise, checkable by grep on emitted text, failing loudly in the direction that matters (a delivered slot intruding on `1..ngroups`) |
+| **W-6b** | `nnames == count(.ref == NULL)` and `nentries == total rows` | **NEW (r45chk F6).** MEASURED: `grep -rn nnames tests/codegen/*.sh` returns NOTHING — `nnames` is asserted by nothing in the tree today, which is why revision 1's S-W5 had two named detectors that both could not see it |
+| W-7 | `--emit-composed`'s numbers re-parse to the same table | a real check **of B1's parser**, mislabelled in revision 1 as a table check |
+| **W-8** | libpcre2's CAPTURECOUNT + ovector vs the artifact | §3.2 — the only one whose expectation is external |
+
+W-6, W-6b and W-8 are the three that can fail for a reason outside the
+composer's own head. The others are kept because a rendering bug is real,
+but their claims are now the narrow true ones.
+
+### 3.4 The sabotage rows
+
+Each must turn a NAMED check red. Per r45chk F13 and
+`tests/mech/sabotages/CLAUDE.md`: **every row declares `SAB_REACH` /
+`SAB_REACH_EXPECT` / `SAB_REACH_POP`** (a row whose detector is a
+construct must declare its reach); the **`SAB_SUITES` arm is registered
+BEFORE the rows that need it** (a closed vocabulary, R31 C11); and **rows
+land in the SAME COMMIT as their code**, or the anchor tripwire (191
+sites) goes red.
+
+**Corpus rows** (format_design's S-C1..S-C8 plus W1's):
+
+| row | plant | caught by |
+|---|---|---|
+| S-C1 | drop the last `g` line of one block | C2 (count), C3 |
+| S-C2 | decode `\x41` as `x41` | C3 |
+| S-C3 | let `flags` carry to the next block | C1 (the value is in the dump) |
+| S-C4 | treat `# pcre2-only` as an ordinary comment | C3's skip count |
+| S-C5 | make `frames-buffer=` block-scoped rather than positional | **C2** — CORRECTED from format_design's "(1) dump differential", which cannot catch it: pcrec never parses `frames-buffer=`, so it appears in only one dump. run.sh captures `cur_route` at each case push (`:931,941,951,961,990`), so the counts move |
+| S-C6 | accept an unknown `features` name silently | C2 — a `perr` block flips |
+| **S-C7** | **RESTORED (r45chk F1)** — make the composer bind a definition on a block that references none (treat a lexically-declared name as a file reference) | **C0a** — the invocation count is no longer 0. Revision 1 silently replaced this row with a different S-C7 while claiming the format note's rows all still applied; the row that would have validated C0 was the one deleted |
+| S-C8 | assign a definition's re-based numbers from 1 instead of `base+1` | **nothing on the corpus** — no corpus file composes. Caught by W-1/W-8 on W1's fixtures. Stated so nobody reads the corpus's green as covering it |
+| **S-C9** | emit the `pattern` column unescaped | C1 — and the check must **NAME the three tab blocks** (§1.8), since three rows out of 3,265 is exactly the size of finding a summary swallows |
+| **S-C10** | `--list-source` reports the first `pattern` row's `line` wrong | **three cases, three DIFFERENT detectors** — see below |
+| **S-C11** | delete `encoding` from both dump emitters | C1's field manifest (§3.1) |
+| **S-C12** | make the head detector fire on a file whose first line is `pattern` | C1 and C2 — the row that guards the 179 (revision 1's mis-numbered S-C7) |
+
+**S-C10's three cases, because the ruling's stated detector covers one.**
+Verified by reading run.sh, not by argument:
+
+| case | what happens | detector |
+|---|---|---|
+| line **too early** | the loop starts on a head line; no arm matches | the catch-all hard error (`run.sh:1016-1021`) |
+| line **too late**, file with ONE block | the `pattern` line is skipped, `blocks_in_file` stays 0 | the **P-C2 floor** (`run.sh:1025`, "no pattern blocks parsed from file") — an existing check, better suited than the catch-all |
+| line **too late**, several blocks | the first block's cases push with `have_block=0`; the next `pattern` line's reset discards them | **the `have_block` guard** (§1.7) — a case line with no open block is now a hard error. **Before the guard this case was silent**, detected only by C2's count |
+
+The guard is what makes case 3 loud, which is why §1.7 measures it free
+rather than asserting it. C2's count remains the second detector.
+
+**A file with a head and NO `pattern` blocks** (the grammar permits it):
+run.sh runs zero blocks and the **P-C2 floor fires on its own**. The spec
+hunk states it, and states that "no pattern rows" and "the call failed"
+are DISTINCT observables (different exit status and stderr), so the two
+can never be confused.
+
+**Composer rows:**
+
+| row | plant | caught by |
+|---|---|---|
+| S-W1 | re-base `u.cap.no` but not `u.bref.refs` | W-1 on M1's `dd` cell — the measured M1 defect returning |
+| **S-W2** | accept `(?R)` inside a bound definition (or re-base its 0) | **a NAMED witness cell** — r45chk F7: neither M1 (`(\d)\1`) nor M2 (`(?&w)`) contains `(?R)`, so revision 1's detector had a **zero-member population** ([MECH-REACH]/S107 exactly). The row declares `SAB_REACH_EXPECT` on the refusal's text and covers **all four spellings** (`(?R)`, `(?0)`, `(?00)`, `\g<0>`/`\g'0'`) |
+| S-W3 | drop the `scope` predicate in the composer's re-resolution | W-1 on M2's `(?J)` cell |
+| **S-W3b** | drop the discriminator so a caller-scope `(?&^.w)` is re-based | a B2 witness cell: `d` = `(?&^.w)x` in `^(?<w>a)(?&d)$`, answer from libpcre2 via the textual control |
+| S-W4 | give the injected wrapper no number, shifting the definition's groups down one | W-1 (every composed cell's slots move) and W-7 |
+| S-W5 | count injected names in `nnames` | **W-6b** — re-homed (r45chk F6). Revision 1 homed it on "W-6 and the C1 dump": C1's dump is over `.rxt` files and cannot see an artifact field, and W-6 moves neither of its terms |
+| S-W6 | forget to restore one `RxtParseScope` field — specifically `ncap` | **W-1c**, the `\12` cell (meaning), plus the two-call-site numbering cell (renumbering). Revision 1 tested only the second |
+| S-W7 | make the closure a plain walk with no visited set | the reported closure size vs C0b's re-derivation; a self-recursive definition doubles, a mutual pair does not terminate |
+| **S-W8** | **REWRITTEN (r45chk F10)** — make the composer's REPORT disagree with the text | C0b. Revision 1 planted "let the control re-derive the closure", which under a correct composer AGREES — it planted independence and expected a red (S108's shape) |
+| **S-W9** | drop the delivering-call live-capture arm | a delivering cell's slots read `-1,-1` on a DFA-selected artifact — the B1(a) defect, which is what the arm exists to prevent |
+| **S-W10** | leave the callee's capture indices in `W` | a delivering cell's slots are wiped on return — B1(b) |
+
+### 3.5 The identity gate and the abi
+
+**D76's ritual at the four sites of §1.6, in one change** — and two
+corrections from r45chk:
+
+- **F8: the pin is per-ABI, not per-step.** `run_recursion_identity.sh:394-406`
+  states the rule and the [OPT-4] note records abi 12 moving its pin five
+  times inside one change. W1.3 and W1.4 both touch `emit_dfa.c` after
+  W1.2's pin. **So the gate re-runs, and the pin moves if any emitted
+  byte moved, at EVERY merge of the abi-13 change** (§5's exit criteria
+  for .2, .3 and .4, not .2 alone).
+- **F9: the gate is blind to the new field's VALUE.** (A) and (B) compare
+  artifacts from a corpus with no composed file, so Frank's §6.3 rule
+  ("no artifact ever carries a NULL name") is asserted by nothing. **A
+  structural assertion over the corpus's own emitted artifacts**: every
+  artifact's `rx_info.name` is non-NULL, and equals the prefix wherever
+  no block name exists.
+
+Comparison **(A)** is expected byte-identical (a stamped string above
+`goto <prefix>_L0;`); if it moves, the step changed the program and the
+step is wrong, not the gate. `make test-codegen` runs before delivering
+any step that touches the four sites.
+
+---
+
+## 4. The spec deltas (D80)
+
+W1's hunks land with the STEP that makes each observable, not all at the
+end. A parser landing without its spec hunk is rejected on sight.
+
+| hunk | file | lands with |
+|---|---|---|
+| **S1** HEAD and BODY; the four W1 head declarations; the head ends at the first `pattern`; the four lexical contexts; the block scalar as a property of the VALUE production | `rxt_format.md` | W1.1 |
+| **S1b** **`--list-source`'s table** (§1.8): the 15 columns, the `kind` vocabulary, the rxt-escape rule for columns 4/5/15, **sectionless with the `#section`-arrives-with-`freq` trigger sentence**, AS-WRITTEN, and `--list-source --resolved` named-and-unbuilt | `rxt_format.md` + `cli.md` | W1.1 |
+| **S3** the CELL notion, the `perr` one-cell rule, the summary's new quantities, **and the zero-`pattern`-block file's distinct observable** | `rxt_format.md` | W1.1 |
+| **S10** `limits.md`'s "Handling an oversized artifact" item 1 stops being a forward reference | `limits.md` | W1.1 |
+| **S11** `--source`, `--target`, `--lib-path`, `--emit-composed`, `--list-source`, and §1.5's output-naming rule | `cli.md` | W1.2 (`--emit-composed` with .3) |
+| **S9** `rx_info.name`; **`nentries`**; the `abi` 12→13 sentence | `match_api.md` §6 | W1.2 — one of D76's four sites |
+| **S9c** **NEW (B4)**: the `groups[]` SORT KEY becomes (ref-is-NULL, name, number); the primary's rows are a genuine PREFIX; §6's caller algorithm is unchanged over `groups[0..nnames)`; `nentries` is how a caller reaches injected rows | `match_api.md` §6 | W1.3 |
+| **S2** "Composition": the AST-level model, D87 rule 7(a)-(j), lexical-scope-wins with qualification, the visited-set closure, the five namespaces, **DECIDED (7)'s file-namespace rule and `(?&self)`**, and that a composed block's oracle is necessarily `pcre2` | `rxt_format.md` | W1.3 |
+| **S2b** the three pattern extensions with the "no legal PCRE2 pattern changes meaning" constraint and §1.4's measurement; the three registry rows | `docs/spec/` + `--list-syntax` | W1.3 |
+| **S9b** D61 made concrete by its first producer: `ngroups`/`nnames` are the PRIMARY's own; delivered slots occupy `ngroups+1 ..`; **the WRAPPER CONSUMES A SLOT, so the first delivered group is at `ngroups+2`** (Q-W1, r45sem's correction); `RX_NCAPS` may move across library versions while `1..ngroups` holds still; and the difference between `--source` composition and handing composed TEXT to plain `-p` | `match_api.md` §2/§5 | W1.3 |
+| **S2c** "Delivered results": the scope path, first-set-wins within a path, **the two non-deliverable shapes as CALL-GRAPH activation bounds**, and the `__typeof__` sentence | `rxt_format.md` | W1.4 |
+
+**Amendments to `format_design.md` itself**, in the same change (already
+partly landed at `9506e8d`):
+
+- §4.2 — the [DD-11] table is a **LISTING** interface (Q-W3, ruled);
+- §1.1 — S-C5's detector corrected to the answer re-run;
+- §2.7 — the stale `abi 11 / emit_dfa.c:1310`, now 12 → 13 with all four
+  sites line-cited;
+- **§2.12 — provenance is NOT a field on the node** (r45sem: adopt §2.9's
+  PARSE-1 argument);
+- **§2.3.3/§2.3.4 — the wrapper's number and the zero offset** (Q-W1,
+  pending Frank);
+- **§6.0 — piece-rule member (vi)**, `(?R)`/`(?0)` inside a definition
+  (Q-W2, pending Frank).
+
+`docs/guide/` gains one page — "compiling from a `.rxt` source" — and
+points at the spec without restating it (D80).
+
+---
+
+## 5. Steps and merge points
+
+Four steps, a merge after each. **r45gram 9's correction to the stated
+reason:** .2 precedes .3 not because of code dependencies (the composer
+sits inside `compile_driver`, which every `-p` invocation traverses) but
+because of **END-TO-END TESTABILITY** — a composed file has several blocks
+and therefore builds nothing without a `target`, so without .2 there is no
+way to RUN the composer through `--source` at all.
+
+### What can be measured BEFORE building (D77)
+
+Already measured, under the HOLD:
+
+- the three spellings are still free at `3372e1e` (§1.4) — the one
+  measurement that could have killed B1/B2/B3;
+- the abi is **12**, from three independent sites (§1.6);
+- **0** corpus files have a head; **0** lines begin with whitespace;
+- **0 of 26,691** case lines precede a `pattern` line, so the
+  `have_block` guard is free (§1.7);
+- the corpus is **179 files** but run.sh dispatches **178**, and
+  **26,691 − 11 = 26,680** reconciles the two exactly (§3.0);
+- **3** corpus blocks carry a literal tab in their pattern text, all
+  three where the tab is the thing under test (§1.8);
+- `rx_group_entry.ref` exists and is emitted `NULL` today
+  (`emit_dfa.c:1190-1191`);
+- `nnames` is asserted by **nothing** in `tests/codegen/*.sh` (§3.3).
+
+Not measurable before building, and named: whether the `RxtParseScope`
+list is complete (S-W6's row exists for that), and C1's runtime (W1.1's
+acceptance measures it rather than assuming it).
+
+### The steps
+
+**[DD-13b.W1.1] — the head grammar, `--list-source`, and the corpus
+identity proof.**
+Builds F1, F2's types, F3's `--source`/`--lib-path`/`--list-source`,
+F12's three block arms + `features only` + the `have_block` guard + the
+C1 dump, F14's structural skip + skip TOTAL + `--dump`. No composer, no
+targets, no abi change.
+Acceptance: C1 three-way byte-identical over **179 / 3,265 / 26,691**
+with the field manifest asserted; C2 and C3 equal to §3.1's pinned
+baselines over **178 / 3,262 / 26,680**; C0a reports 0 invocations;
+S-C1..S-C7, S-C9..S-C12 each turn their NAMED check red; the arm-block
+hash pin and the 32-keyword census run as checks; **C1's runtime
+measured and recorded**. `make strict` clean.
+Merge.
+
+**[DD-13b.W1.2] — targets, `rx_info.name`, `nentries`, the abi ritual,
+H11.**
+Builds `target … [with]`, `config` composition and `from`, the output
+naming rule, F11's `rx_info.name` + `nentries`, F13's prefix-taking
+driver, run.sh's target build path.
+Acceptance: N targets → N artifacts, N prefixes, one `rx_info.name`;
+§6.3's three-config file compiles three ways and the three agree on the
+block's cases (a free control); abi **13** at all four sites; F9's
+`.name` assertion over the corpus's artifacts; identity gate (A)
+byte-identical, **(B) re-pinned to this step's last src commit**;
+`make test-codegen` green.
+Merge.
+
+**[DD-13b.W1.3] — the composer, the three extensions, `--emit-composed`.**
+Builds F4-F7, F10's infrastructure, the sub-parse, re-basing, the
+`PendingRef` discriminator, qualification, the assignment table,
+provenance, the B4 sort key + S9c, H2b's control, H2c's round trip.
+Acceptance: W-1 (with its **N-run / M-skipped manifest pinned and
+plant-validated**), W-1c, W-2 (re-scoped), W-3, W-5, W-6, W-6b, W-7,
+**W-8 (libpcre2-derived)**; the M1/M2 cells reproduce their measured
+answers; C0b compares the composer's report against the control's
+re-derivation; S-W1..S-W8 each turn a NAMED check red with `SAB_REACH*`
+declared; C0a still reports 0 on the corpus; **the gate re-runs and the
+pin moves again**.
+Merge. **A D27-BLINDED author writes the composition cells at this
+step's merge** (r45chk's population list is the manager's, not the
+author's — they are handed the landed spec hunks and a cut extract of
+format_design §2.3 + D87 rule 7 + §6.0, never the axis list).
+**This is the step to schedule the focused re-check on.**
+
+**[DD-13b.W1.4] — delivery.**
+Builds B3's semantics end to end: F9's live-capture arm, F8's `W`
+exclusion, `scope` on injected groups, `.ref` populated, delivered slots
+above `ngroups`, and the two call-graph refusals.
+Acceptance: W-6 on every composed artifact; **S-W9 and S-W10 each turn a
+delivering cell red** (the two B1 mechanisms, each with a witness that
+reaches it); both refusals fire with the construct named, each with a
+reaching witness (a recursive definition with a delivering declaration; a
+delivering call at a site the graph says can activate twice); §6.1's
+`mail.rxt` builds with `rx_info.name == "from_line"`, `ngroups == 0`, and
+its delivered slots above — **the first at `ngroups+2`** (Q-W1);
+**the gate re-runs and the pin moves a third time**.
+Merge. [V-I] then has its interface (§2.8) and W1 is closed.
+
+---
+
+## 6. Open questions
+
+Eight points are marked **DECIDED** inline. Six are routine and need no
+ratification unless the manager disagrees: (1) W2/W3 keywords refused as
+"not in this build"; (2) module ownership B1→`named-groups`,
+B2/B3→`recursion`; (3) a `-D` prefix macro rather than a generated shim;
+(4) a structural, counted composed-block skip; (5) `kind` = the
+declaration name; and (7) a block's `name` lives in the FILE namespace
+with `(?&self)` for a self-call (the manager's ruling on r45sem S3).
+Two are rulings already received and recorded: (6) the deferral, and
+(8) the control re-derives the closure (r45chk F10).
+
+**Two questions remain, both Frank's, both parked with the manager:**
+
+**Q-W1 — the definition's wrapper takes an assigned number, so the
+control's derived offset is zero (§2.6).** r45sem ratified the mechanism
+("the mechanism argument is SOUND… an id space is a second key"; PCRE2
+parity CITED-true twice) and added the correction: **it IS
+caller-observable** — one permanently unset slot per definition, every
+delivered number shifted, so the first delivered group is at
+**`ngroups+2`**. Recommendation: adopt, with S9b stating the wrapper
+consumes a slot, and amend format_design §2.3.3/§2.3.4.
+
+**Q-W2 — `(?R)`/`(?0)`/`(?00)`/`\g<0>` inside a bound definition (§2.5).**
+Recommendation: **refuse for W1**, raised at the sub-parse (nothing later
+can distinguish it from M4's other zeros), covering all four spellings,
+and added to format_design §6.0 as piece-rule member (vi). r45sem's
+counter-reading is recorded and reserved: D87 rule 1's "absolute
+references are LOCAL" applies verbatim to 0, whose local meaning after
+injection is the wrapper, so re-basing 0 would be rule 7(i) executed
+consistently. **The reason to refuse is that the RULING is missing, not
+that the meaning is unclear.**
+
+**Two residuals, named rather than closed:**
+
+- **Q7 (ratified)** — on the two populations D87 added mechanism for, no
+  independent oracle checks the answer. W-1's manifest makes the
+  uncovered population countable; the trigger is the first [LIB] entry
+  that needs an absolute reference or a colliding name.
+- **The composition population is written by the mechanism's author.**
+  Every composition check runs on fixtures W1 writes. The mitigations are
+  real but partial: W-8's expectation comes from libpcre2, W-1's control
+  is a third independent path, and a **D27-blinded author** writes the
+  cells at .3's merge. It is the weakest joint in the plan and it is
+  better for the re-check to hit it than for step .3 to.
