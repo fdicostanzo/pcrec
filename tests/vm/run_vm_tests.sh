@@ -661,29 +661,16 @@ sel1_check_refuse() {   # sel1_check_refuse <label> [pcrec args...]
     fi
 }
 sel1_check_refuse "--engine=dfa (force)" --engine=dfa
-# [OPT-4] 2026-08-29 — THE WITNESS MOVED, NOT THE EXPECTATION. `-fprefilter`
-# is still do-or-die and still refuses on a DFA-cap overflow; what changed is
-# that under `--engine=vm -fprefilter` this pattern NO LONGER OVERFLOWS — the
-# count-collapsed prefilter determinizes to 319 states against the 32,000 cap
-# — so the cell compiled and proved nothing. A cell whose subject stopped
-# reaching the hazard is VACUOUS and reads exactly like a pass.
-# `-fno-prefilter-collapse` restores the hazard by denying the axis, which is
-# the same device tests/codegen/run_prefilter_collapse.sh §7b and
-# tests/prefilter/run_prefilter_tests.sh use for the identical reason.
-# `--engine=dfa` above needs no such help: the DFA is the ENGINE there, where
-# a superset would be a miscompile, so the collapse never applies and the
-# exact machine overflows as it always did.
-sel1_check_refuse "--engine=vm -fprefilter (force)" --engine=vm -fprefilter -fno-prefilter-collapse
-# ANTI-VACUITY for the row above: without the deny flag the same invocation
-# must COMPILE. If it ever refuses again, that row has stopped depending on
-# `-fno-prefilter-collapse` and is measuring something else.
-if pcrec_run "$PCREC" -p rx --engine=vm -fprefilter --features all \
-        -o "$WORKDIR/sel1_force_ok.c" -- "$SEL1_PAT" \
-        >/dev/null 2>"$WORKDIR/sel1_force_ok.err"; then
-    ok "[OPT-4] --engine=vm -fprefilter WITHOUT the deny flag compiles — the refusal above is the deny flag's, not the pattern's"
-else
-    bad "[OPT-4] --engine=vm -fprefilter compiled nothing even with the collapse allowed ($(head -1 "$WORKDIR/sel1_force_ok.err")) — the rung has stopped firing, or the row above no longer isolates the flag"
-fi
+# [OPT-4] 2026-08-29 — AND BACK AGAIN, WHICH IS WORTH ONE SENTENCE. Under the
+# knee this row went vacuous: the collapsed prefilter determinized to 319
+# states, the pattern stopped overflowing under `--engine=vm -fprefilter`, and
+# the cell had to deny the axis to keep its hazard. Frank's ruling B made the
+# exact language the default, so `-fprefilter` builds the exact machine, it
+# overflows as it always did, and the row is a plain do-or-die check again.
+# The force forms never reach a rung by construction — `compile_driver` only
+# retries under `--engine=auto` with no `-fprefilter` — so no flag is needed
+# here to keep the subject.
+sel1_check_refuse "--engine=vm -fprefilter (force)" --engine=vm -fprefilter
 
 # ANSWER IDENTITY: the auto fallback artifact and a plain --engine=vm build
 # of the same pattern must agree -- on a subject that matches and on one that
