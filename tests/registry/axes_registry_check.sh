@@ -23,11 +23,13 @@
 # two revisions covered the bit/flag/heading half and skipped the STAMP
 # VALUE half. "§6.3" is `docs/spec/match_api.md` §6.3 ("The compile-time
 # mirror: observability macros") — the D46 stamp family's own home, cited
-# by name throughout `docs/spec/tuning.md` for exactly this reason. Four
+# by name throughout `docs/spec/tuning.md` for exactly this reason. FIVE
 # stamp macros have a CLEAN, closed value-set stated there (a markdown
 # table for `RX_DFA_TABLE`/`RX_DFA_PREFILTER`, an unambiguous pair of
-# string literals in prose/code for `RX_VM_PREFILTER`/`RX_ENGINE`) and are
-# checked both directions with NO exception. The D46 family's NINE named
+# string literals in prose/code for `RX_VM_PREFILTER`/`RX_ENGINE`, and —
+# [REG-SV], 2026-08-30 — multi-line prose for `RX_UNROLL_K_WHY`, whose own
+# `extract_prose_values` extraction shape is documented at that function)
+# and are checked both directions with NO exception. The D46 family's NINE named
 # bit constants (`PCREC_VM_RUNG_*`/`_STRAT_*`/`_PRUNE_*`) are NOT declared
 # in `lib/pcrec.h` at all — match_api.md §6.3's own [ABI-NS] paragraph says
 # why: they are EMITTED-ARTIFACT text, in the shared `PCREC_RX_ABI_H` block
@@ -42,13 +44,18 @@
 # ever carry those three as a candidate's `stamp_value`; the six directly
 # controllable pairs (POSSESSIVE/BACKTRACKING, REVDET, COUNTER, CLAMPED/
 # UNCLAMPED) are checked in full both directions.
-# `RX_DFA_TABLE`'s own spec table also has a real, cited exception:
-# `"mixed"`/`"none"` are ARTIFACT-LEVEL COMPOSITIONS of the forward and
-# reverse machine's own per-machine choice (match_api.md §6.3: "the choice
-# is per machine... 'mixed' the forward and reverse machines took different
-# forms"), never a candidate this dump's per-MACHINE `table` axis could
-# select on its own — so only `"premultiplied"`/`"indexed"` are expected
-# back from the dump, and are.
+# `RX_DFA_TABLE`'s exception is DISCHARGED, not merely narrowed ([REG-SV],
+# 2026-08-30). `"mixed"`/`"none"` are ARTIFACT-LEVEL COMPOSITIONS of the
+# forward and reverse machine's own per-machine choice (match_api.md §6.3:
+# "the choice is per machine... 'mixed' the forward and reverse machines
+# took different forms") and were never a candidate this dump's per-MACHINE
+# `table` axis could select on its own — true when this exception was first
+# written and unchanged by this pass. What changed is that "never a
+# candidate" does not mean "never a ROW": `src/parse/axes_dump.c` now hand-
+# states both as `kind=predicate` rows attached to axis `table` (order 3/4,
+# `emit_table_composite_rows`), the same shape a predicate row already has
+# everywhere else in this dump, so the check below has no exception left to
+# carry for this macro either.
 #
 # Usage: bash tests/registry/axes_registry_check.sh
 # Env: PCREC (default build/pcrec), TUNING (default docs/spec/tuning.md —
@@ -395,6 +402,28 @@ extract_line_values() {
     grep -E "$pattern" "$file" | grep -oE '"[a-z]+"' | tr -d '"' | sort -u
 }
 
+# extract_prose_values FILE ANCHOR — every distinct lowercase (hyphens
+# allowed) `"quoted"` literal from the ANCHOR's own line through the next
+# blank line. [REG-SV]: `RX_UNROLL_K_WHY`'s SEVEN values
+# (docs/spec/match_api.md §6.3) are neither a markdown table
+# (extract_md_table_values) nor confined to one line carrying a literal
+# default-prefix `RX_...` artifact excerpt (extract_line_values, which
+# `RX_VM_PREFILTER`/`RX_ENGINE` both have and this macro does not —
+# match_api.md spells it `<PREFIX>_UNROLL_K_WHY` throughout) — they are
+# ordinary multi-line PROSE, one bullet, seven `` `"value"` `` code-spans
+# spread across it. ANCHOR ON THE MACRO NAME, NEVER A COUNT WORD ("SEVEN")
+# — this script's own standing lesson (see the RX_DFA_PREFILTER anchor note
+# above), stated here a fourth time because an eighth value landing must
+# not silently break the anchor that finds the other seven.
+extract_prose_values() {
+    local file="$1" anchor="$2"
+    awk -v anchor="$anchor" '
+        index($0, anchor) { found=1 }
+        found { print }
+        found && /^[ \t]*$/ { found=0 }
+    ' "$file" | grep -oE '"[a-z-]+"' | tr -d '"' | sort -u
+}
+
 # check_value_set MACRO SPEC_VALS DUMP_VALS EXCEPT — both directions for one
 # macro. EXCEPT (space-separated, may be empty) names spec values that are
 # NEVER expected back from the dump (a cited, structural exception — see
@@ -442,8 +471,15 @@ axes_rows_dump="$(awk -F'\t' $MAP '!/^#/ {
 check_value_set "RX_DFA_TABLE" \
     "$(extract_md_table_values "$MATCHAPI" "2026-08-26: a THIRD")" \
     "$(dump_stamp_vals RX_DFA_TABLE)" \
-    "mixed
-none"
+    ""
+# [REG-SV], 2026-08-30: NO MORE EXCEPTION HERE. "mixed"/"none" used to be a
+# cited exclusion from the spec->dump sweep only (this script's own header,
+# pre-[REG-SV] revision) — real spec values the dump could never produce as
+# a row, because the per-machine `table` axis has only two candidates. The
+# dump now carries them as two hand-stated composite rows (src/parse/
+# axes_dump.c's `emit_table_composite_rows`, axis `table` order 3/4), so the
+# exception is DISCHARGED rather than merely documented: both directions of
+# this check now cover the macro's whole four-value set with no exclusion.
 
 # THE ANCHOR CARRIES NO COUNT. It read "its five values are the whole set";
 # [OPT-K] added two values and correctly rewrote that sentence to "seven",
@@ -484,6 +520,17 @@ check_value_set "RX_VM_PREFILTER" \
 check_value_set "RX_ENGINE" \
     "$(extract_line_values "$MATCHAPI" '\<RX_ENGINE\>')" \
     "$(dump_stamp_vals RX_ENGINE)" \
+    ""
+
+# [REG-SV], 2026-08-30: `RX_UNROLL_K_WHY`'s seven-value set, previously
+# uncovered by this direction entirely (no call at all — the gap the
+# comparative bench found: the dump's two `size-term` rows both stamped an
+# EMPTY `stamp_value`, so there was nothing here to check against). See
+# `extract_prose_values`'s own header for why this macro needs a third
+# extraction shape.
+check_value_set "RX_UNROLL_K_WHY" \
+    "$(extract_prose_values "$MATCHAPI" '`<PREFIX>_UNROLL_K_WHY`')" \
+    "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
     ""
 
 # The nine D46 bit constants: NOT in lib/pcrec.h (they are emitted-artifact
