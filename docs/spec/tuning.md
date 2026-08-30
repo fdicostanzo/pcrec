@@ -897,6 +897,59 @@ ladder, when the exact machine cannot be built or its artifact cannot ship:
 | [SEL-1] | a DFA STATE cap overflowed, so the alternative is NO prefilter | `dfa overflow retry, exact nfa N` |
 | [OPT-4] | an emitted-size cap REFUSED the exact artifact, so the alternative is a REFUSAL | `size cap retry, exact N > cap` |
 
+**[OPT-4.1] (2026-08-30) A RUNG IS DECLINED WHEN THE COLLAPSED LANGUAGE IS
+NULLABLE, and this is the one condition under which neither rung above fires
+even though its trigger did.** If the collapsed language matches the EMPTY
+STRING — `[a-z]{0,32768}` collapses to `[a-z]*` — then it matches at every
+position, the filter can never dismiss one, and the artifact pays a scan whose
+every answer is "maybe". pcrec builds NO prefilter in that case:
+
+- on the **[SEL-1]** rung the artifact is the one that rung's absence would have
+  produced (`<PREFIX>_VM_PREFILTER "none"`), and `<PREFIX>_ENGINE_SEL` reads
+  **`"declined-nullable"`** — a value that exists precisely so this outcome can
+  be told apart from `"overflowed-dfa"`, where no rescue was available at all;
+- on the **[OPT-4] size** rung the artifact ships with no prefilter, which is
+  strictly SMALLER than the collapsed one, so the rung still rescues the compile
+  and nothing that compiles today stops compiling. `<PREFIX>_ENGINE_SEL` stays
+  `"selected"` there, as it already does when that rung collapses, and the
+  artifact's `<PREFIX>_VM_PREFILTER "none"` is what records the outcome;
+- under **`-fprefilter-collapse`** with no rung the prefilter is kept and built
+  from the EXACT language — the flag chooses a language, not whether a filter
+  exists — and the artifact stamps `_LANG "exact"` /
+  `_LANG_WHY "nullable collapsed language"`;
+- **`-fprefilter` is do-or-die and is never silently dropped, and what that
+  means differs by rung — stated per rung because the general sentence is
+  wrong on one of them.** On the **size** rung it OVERRIDES the decline: the
+  collapsed prefilter is built for a caller who demanded one, which is also
+  what keeps the promise above, since the only prefilter that fits under the
+  cap there IS the collapsed one. On the **[SEL-1]** rung it never reaches the
+  decline at all — `-fprefilter` makes that rung ineligible, so the compile
+  REFUSES rather than shipping a prefilter-less artifact for a caller who asked
+  for one. Either way the request is honoured or refused, never answered with
+  its opposite. `-fprefilter-collapse` does NOT override the decline on either
+  rung: it chooses a LANGUAGE for a filter, not whether one exists.
+
+MEASURED (pcrec-bench O-10, pin 96e44c2, three sets): where structure survives
+the collapse the rung is a 2.2-4.6x win (the `ctx` band, and `level-context`
+x4.60); where the collapsed language is nullable it was a 1.2-9.9x LOSS
+(`[a-z]{0,32768}`: search x3.57 slower, throughput 1.880 -> 6.899 ns/B,
+`t-digits-016k` x1.65 — a subject the filter was expected to dismiss and
+cannot). Nullability is what separates the two populations, and it is decided
+before any machine is built (`pcrec_minw(root) == 0`, `src/opt/mrl.c`).
+
+**A NAMED RESIDUAL, so a reader does not mistake this predicate for the whole
+question** (`docs/dev/decisions.md` D77 — build under measurement). Nullability
+is not the only reason a rescue can fail to pay. A WHOLE-SUBJECT-anchored form
+(`(?:P)\z`) whose plain form is DFA-selected is rescued only in the ANCHORED
+regime, so its collapsed prefilter can dismiss but is never reached by an
+unanchored search: pcrec-bench measured four such cells (`cls-upto-16384`,
+`cls-lazy-16384`, `nest2-64`, `nest3-16`, `\z` forms only) as FLAT, costing
++376…+4,560 bytes of `.so` for no movement in either direction. Two of those
+four are non-nullable and keep their rescue under the rule above; they are
+LEFT ALONE deliberately. **A measured FLAT is not a loss**, and a rung that
+buys nothing but bytes is revisited only if a LOSS appears — at which point the
+question is the anchored regime's reach, not this predicate.
+
 **THERE IS NO STATE-COUNT KNEE.** An earlier design collapsed whenever the
 exact NFA exceeded a measured budget; it was reversed on a corpus regression
 (`docs/design/prefilter_count_independence.md` §10a) and
@@ -906,7 +959,9 @@ decides.
 
 **WHAT THE TWO FLAGS DO.**
 
-- `-fprefilter-collapse` collapses wherever a collapsible repeat exists,
+- `-fprefilter-collapse` collapses wherever a collapsible repeat exists AND the
+  collapsed language is not nullable ([OPT-4.1] above; a nullable one is
+  declined and stamped, and the artifact keeps its exact prefilter),
   regardless of size or of any rung. It is the ONLY route to literal
   count-INDEPENDENCE, and it is where the costs tabulated below live.
   MEASURED (K39): under it `((a)|b){0,400}c` and `((a)|b){0,4000}c` emit the
@@ -926,6 +981,14 @@ when (b) the pattern has no collapsible counted repeat, in which case the
 collapsed lowering IS the exact one. `-fprefilter-collapse` on such a pattern
 is HONOURED and vacuous, and the artifact says so
 (`_LANG_WHY "no counted repeat"`).
+
+**[OPT-4.1] ADDS A THIRD CONJUNCT THAT IS PERFORMANCE RATHER THAN CORRECTNESS,
+AND ONE FLAG DOES REACH IT.** The nullability decline above is not a soundness
+rule — a nullable collapsed prefilter would still answer correctly, it would
+just never dismiss anything — so unlike the two conjuncts in this paragraph it
+is overridable, by `-fprefilter` and by `-fprefilter` alone. The distinction is
+worth keeping straight: no flag can make pcrec build a superset prefilter for
+the DFA ENGINE, and every flag can be told to build a useless one.
 
 **WHY THE EXACT LANGUAGE IS THE DEFAULT, stated because it is a real trade
 and the trade went the other way once.** The exact prefilter is a SHARPER
@@ -994,16 +1057,18 @@ default (design note §10a).
 what was BUILT, so a request that changed nothing stamps `"exact"`.
 
 **And `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`
-convention), because `"exact"` alone does not say which of three quite
-different situations produced it. FIVE values, emitted on the same
-condition as the line above:
+convention), because `"exact"` alone does not say which of several quite
+different situations produced it. SIX values, emitted on the same
+condition as the line above (the pre-ruling-B budget value `"exact nfa N > B"`
+is GONE with the knee it named — the emitter has not written it since ruling B,
+and this table carried it stale until [OPT-4.1] removed it):
 
 | value | meaning |
 |---|---|
-| `"exact nfa N > B"` | the measured exact forward NFA was `N` states against a budget of `B`, so the collapse fired. The default reason for `"count-collapsed"` |
-| `"forced"` | `-fprefilter-collapse` dropped the budget conjunct, and it was NECESSARY — an above-budget pattern compiled with that flag stamps the `>` form instead, because the flag changed nothing there |
+| `"forced"` | `-fprefilter-collapse`: the caller asked for the collapsed language on a pattern that had something to collapse, and no rung was involved |
 | `"exact"` | the pattern's own language — the DEFAULT outcome under ruling B |
 | `"no counted repeat"` | nothing to collapse: this pattern's collapsed language IS its exact one. The state `-fprefilter-collapse` is honoured but vacuous in, kept distinct from `"exact"` so a caller who passed the flag knows which of the two happened |
+| `"nullable collapsed language"` | [OPT-4.1]: there WAS something to collapse and the collapse was DECLINED, because the collapsed language matches the empty string and such a filter can never dismiss a position. Kept distinct from `"no counted repeat"` for that value's own reason — a caller who passed `-fprefilter-collapse` needs to know the flag reached a POLICY, not a vacuity. Reachable only where a prefilter still exists to stamp; on a ladder rung the same decline leaves none, and `<PREFIX>_ENGINE_SEL "declined-nullable"` is where that outcome is recorded instead |
 | `"dfa overflow retry, exact nfa N"` | [SEL-1]'s rung: this pattern's DFA overflowed a STATE cap and the collapsed language is what stands between it and no prefilter at all. `N` is the EXACT machine's size, i.e. the scale of what the collapse avoided |
 | `"size cap retry, exact N > cap"` | [OPT-4]'s rung: an emitted-size cap REFUSED the exact artifact. `N` and `cap` are EMITTED BYTES, not NFA states — that is the comparison that caused the retry, and a reader deciding whether to raise a cap instead needs it |
 

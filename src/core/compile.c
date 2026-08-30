@@ -1021,12 +1021,46 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const unsigned pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
-            const bool pfc_rep   = pcrec_has_collapsible_rep(root);
+            /* [OPT-4.1] READ, NOT RE-CALLED: `select_engine.c` derived this
+             * at the fit site and `fit.prefilter_declined_nullable` is built
+             * from the same value, so the two conjuncts cannot drift (they
+             * did — r47sel finding 1). */
+            const bool pfc_rep   = cx.job->fit.prefilter_has_collapsible_rep;
             const bool pfc_rung  = cx.collapse_reason != CR_NONE;
-            bool collapse = cx.job->fit.chosen != ENGM_DFA
-                         && !pfc_deny
-                         && pfc_rep
-                         && (pfc_force || pfc_rung);
+            /* [OPT-4.1] THE FOURTH CONJUNCT IS SPLIT OFF so the DECISION and
+             * the DECLINE are the same expression with one term negated, and
+             * the `_WHY` ladder below can branch on which of the two happened
+             * without re-walking anything (D81).
+             *
+             * A NULLABLE COLLAPSED LANGUAGE IS NOT WORTH BUILDING: it admits a
+             * zero-length match at every position, so the filter can never
+             * dismiss one (pcrec-bench O-10 item 3 measured 1.2-9.9x slower
+             * than no prefilter at all). `select_engine.c`'s own conjunct is
+             * what handles the RUNGS — there the decline drops the prefilter
+             * entirely, because the exact machine is what failed — so what
+             * reaches THIS line nullable is `-fprefilter-collapse` on a
+             * pattern that already has a working exact prefilter, and the
+             * right answer there is to keep it. */
+            const bool pfc_wanted = cx.job->fit.chosen != ENGM_DFA
+                                 && !pfc_deny
+                                 && pfc_rep
+                                 && (pfc_force || pfc_rung);
+            /* [OPT-4.1] `-fprefilter` OVERRIDES THE DECLINE HERE TOO, and this
+             * conjunct is what makes `limits.md` §3.3's promise true rather
+             * than nearly true: without it, `-fprefilter` on a pattern the
+             * SIZE rung is rescuing would decline the collapse, keep the exact
+             * prefilter that the cap already refused, and REFUSE a pattern
+             * that compiles today. `select_engine.c` states the rule (do-or-
+             * die: the decline's alternative is no prefilter, which is exactly
+             * what an explicit `-fprefilter` forbids); this is its second
+             * site, because the two sites decline different things — a
+             * PREFILTER there, a LANGUAGE here — and a request for a prefilter
+             * that only the collapsed language can supply is honoured, not
+             * silently answered with a refusal. */
+            const bool pfc_prefilter_forced =
+                (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
+            bool collapse = pfc_wanted && (pfc_prefilter_forced ||
+                                           !cx.job->fit.prefilter_lang_nullable);
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
              * from the SAME conjuncts (D81). The ladder branches on the
              * DECISION rather than re-walking them, which is what makes
@@ -1048,7 +1082,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             cx.job->fit.prefilter_sizecap_bytes = cx.size_cap_bytes;
             cx.job->fit.prefilter_sizecap_limit = cx.size_cap_limit;
             cx.job->fit.prefilter_lang_why =
-                  !collapse                        ? (pfc_rep ? PFLW_EXACT : PFLW_NO_REP)
+                  !collapse                        ? (pfc_wanted ? PFLW_NULLABLE
+                                                    : pfc_rep    ? PFLW_EXACT
+                                                                 : PFLW_NO_REP)
                 : cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP
                 : cx.collapse_reason == CR_SEL1    ? PFLW_SEL1
                                                    : PFLW_FORCED;

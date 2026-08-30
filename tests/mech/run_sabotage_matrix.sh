@@ -1117,6 +1117,34 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            pfcollapse)
+                # [OPT-4]/[OPT-4.1] tests/codegen/run_prefilter_collapse.sh —
+                # the count-collapsed hybrid prefilter and the nullability
+                # gate on its rescue, held to the ARTIFACT.
+                #
+                # ITS OWN ARM, for `sizeterm`'s reason in its strongest form:
+                # the axis is ANSWER-IDENTITY-PRESERVING BY CONSTRUCTION (D46
+                # — the prefilter is a FILTER, and a superset filter changes
+                # no answer), so the whole `.rxt` corpus, both oracles, every
+                # differential and `make test-axes` are green whether the
+                # collapse fires, does not fire, or fires where pcrec-bench
+                # MEASURED it costing 1.2-9.9x. **A ROW ON THIS ARM IS
+                # EXPECTED TO SCORE `corpus:0fail`**; that is the arm working.
+                #
+                # THE SCRAPE IS THIS SCRIPT'S OWN TRAILER FORMAT, not the
+                # `^checks passed:` shape every arm above uses — it prints
+                # `prefilter-collapse: N passed, M failed`. Reading it with the
+                # common pattern would leave both numbers empty and score
+                # `ERRfail/?pass`, which is an ANOMALY the row's author would
+                # have to diagnose from a log.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_prefilter_collapse.sh" \
+                    > "$work/pfcollapse.log" 2>&1
+                p="$(grep -m1 '^prefilter-collapse:' "$work/pfcollapse.log" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^prefilter-collapse:' "$work/pfcollapse.log" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+')"
+                suite_bits+=("pfcollapse:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             resource)
                 # [M4.7b]/[ART-SIZE] tests/resource/run_resource_tests.sh —
                 # the K7 budget pins AND (§1b) the emitted-size caps' REFUSAL

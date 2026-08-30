@@ -2059,3 +2059,49 @@ against the unchanged `ac4917d`. Demonstrated both directions again — see the
   bound the size, and a pattern whose exact artifact they refuse compiles via
   the size rung). Asserting only the first would be a claim about a flag nobody
   passes; asserting only the second would let the force flag rot.
+
+## [OPT-4.1] `run_prefilter_collapse.sh` gains §6b, and §6 becomes half of a pair
+
+The count-collapsed rescue is now GATED ON NON-NULLABILITY (`docs/spec/
+tuning.md` §2.17): pcrec does not build a collapsed prefilter whose language
+matches the empty string, because such a filter admits a zero-length match at
+every position and can therefore dismiss none of them. pcrec-bench measured
+that shape at 1.2-9.9x SLOWER than no prefilter at all (its O-10 item 3, pin
+96e44c2) against the 2.2-4.6x the same rung WINS where structure survives the
+collapse — and the rung could not tell the two populations apart.
+
+**§6 AND §6b ARE THE SAME MACHINE FOUR CHARACTERS APART**, which is the only
+form of control that carries information here. §6's witness is [SEL-1]/K40's
+own overflow pattern; §6b's is that pattern wrapped in `(?:...)?` — one
+epsilon in the NFA, the same DFA overflow, opposite sides of the predicate. §6
+fails if the gate OVER-fires (a compiler that declined everything takes its
+prefilter away); §6b fails if it UNDER-fires. Neither direction is safe alone,
+and a predicate wired to a constant fails exactly one of them.
+
+**THE EVIDENCE IS A DIFFERENT STAMP FROM §6's, NECESSARILY.** A declined
+artifact carries NO `RX_VM_PREFILTER_LANG` at all — `match_api.md` §6.3's iff
+makes the language macro conditional on there being a machine to name — so the
+decline is read off `RX_ENGINE_SEL "declined-nullable"`, whose value is
+written by `pcrec_engine_sel_name` in a different file from the `fit.prefilter`
+clause that took the decision, with the ABSENCE of the LANG macro checked
+beside it as the second, independent term.
+
+**§2 GAINED A THIRD EXPECTATION RATHER THAN A SECOND FUNCTION.**
+`lang_witness exact-nullable` shares `exact`'s LANGUAGE and its byte-identity
+leg (a flag that changed nothing moved no byte) and differs only in the `_WHY`
+line it requires — `"nullable collapsed language"`, which is what separates a
+flag that reached a POLICY from one that reached a vacuity. Its two witnesses
+are the `count-collapsed` rows above them minus one character.
+
+**AND `-fprefilter` OVERRIDES THE DECLINE, asserted in §6b(3).** It is
+do-or-die (D46/D47.3): the decline's alternative is NO prefilter, which is
+exactly what an explicit `-fprefilter` forbids, so a request this pass cannot
+honour must REFUSE rather than be silently answered with its opposite. The row
+accepts either a hybrid or a named refusal and reports which — what it fails
+on is a silent override. `-fprefilter-collapse` does NOT override it: that flag
+chooses a LANGUAGE for a prefilter, not whether one exists.
+
+Sabotage rows: S206 (predicate removed) and S207 (predicate inverted), on the
+new `pfcollapse` mech arm. Both are answer-identical, so their corpus arm is
+EXPECTED green — see `tests/mech/CLAUDE.md`'s own section for why that is the
+arm working rather than a half-detection.

@@ -1350,3 +1350,26 @@ it, and found those two calls still catch it.
 If they are ever folded into the derived loop as a tidy-up, `registry` loses the
 ability to see any message change at all and tests/reject/ becomes the sole
 guard. That would look like a simplification. It is not one.
+
+## [OPT-4.1] `RX_ENGINE_SEL` had NO value-set leg, and now has two (2026-08-30)
+
+`axes_registry_check.sh` cross-checks a stamp's documented value set against
+`--list-axes`' own rows, in both directions, for `RX_DFA_TABLE`,
+`RX_DFA_PREFILTER`, `RX_DFA_MATCH`, `RX_VM_PREFILTER`, `RX_ENGINE` and
+`RX_UNROLL_K_WHY`. **`RX_ENGINE_SEL` was not among them.** Its value set is a
+CLOSED vocabulary a consumer buckets on — that is the whole reason the macro
+exists, and the comparative bench asked for it by name (its O-8) — and until
+[OPT-4.1] it was checked in exactly one place: a hardcoded `case` list in
+`tests/codegen/run_prefilter_collapse.sh` §7, which shares no source with the
+dump OR the spec and so could not see either of them going stale.
+
+Two legs now, the shape `RX_DFA_TABLE` and `RX_UNROLL_K_WHY` already have:
+dump-vs-DOCS (`match_api.md` §6.3's own table, anchored on `the same decision
+as a TOKEN` — a phrase carrying no COUNT, per this file's thrice-learned rule)
+and dump-vs-CODE (`pcrec_engine_sel_name`'s own `return "..."` statements,
+whose `default:` arm returns `"selected"`, so the extraction covers the whole
+set including the fallback and needs no exception).
+
+The gap was found by walking into it: [OPT-4.1] added a sixth value
+(`"declined-nullable"`) and nothing in this directory would have noticed if
+the dump or the spec had been left behind.

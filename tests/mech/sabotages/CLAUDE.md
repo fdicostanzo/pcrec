@@ -36,7 +36,7 @@ directory's conventions and the traps that have actually been hit.
 |---|---|
 | `SAB_ID` | the row's identity in the matrix. Conventionally `S<NN>-<kebab-name>`; it is NOT the selector (see "Numbering" below) |
 | `SAB_FILE` | the file the edit lands in, repo-relative |
-| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `rxtsource` ([DD-13b.W1.1], registered with the arm and before S194-S203, which name it) |
+| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207, which name it); before it `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
 | `SAB_DESC` | one sentence: what the edit makes the compiler do wrong |
 | `SAB_BEFORE` / `SAB_AFTER` | the literal edit. `lib/replace.py` refuses unless BEFORE occurs exactly `SAB_COUNT` times and AFTER is present afterwards |
 
@@ -115,6 +115,19 @@ Check the highest existing id before numbering a block:
 [M6.5.2] did not, and drafted nineteen rows onto ids `S100`/`S101` that were
 already taken.
 
+**AND THAT COMMAND IS NOT SUFFICIENT WHEN LANES RUN CONCURRENTLY** ([OPT-4.1],
+2026-08-30). This lane DID run it, got `204`, and numbered `S205`/`S206` — and
+still collided, because another lane merging ahead of it had minted `S205` on
+a branch this worktree could not see. A worktree's `sabotages/` is the id space
+as of ITS branch point, not the id space. **In a multi-lane session the id
+range is the MANAGER's to arbitrate**: a lane numbers from the highest it can
+see, states the range in its handback, and renumbers on instruction (here to
+`S206`/`S207`, in one commit, with a SIMULTANEOUS substitution — bumping
+`S205 -> S206` and then `S206 -> S207` in two passes carries the first row all
+the way to `S207` and silently merges the pair). Nothing else in the tree is
+touched: a mention of the colliding id in `docs/dev/dev_journal.md` belonged to
+the OTHER lane's row and stayed put.
+
 ## Traps that have actually been hit
 
 - **A stale anchor certifies nothing, silently.** Seven rows' anchors had
@@ -144,6 +157,18 @@ already taken.
   when `fit.prefilter`'s clause went from one line to three — and both times
   the staleness surfaced only from running the whole codegen group, never from
   the scripts the change appeared to touch.
+- **`src/opt/select_engine.c`'s `fit.prefilter` CLAUSE MOVES EVERY TIME A
+  CONJUNCT IS ADDED, and S102/S165 span the whole of it.** [OPT-4.1]
+  (2026-08-30) broke the same two rows a THIRD time, adding the nullability
+  decline. Two rows, one multi-line expression, one predictable cause — so
+  this is no longer "a thing that happened twice", it is a STANDING
+  consequence of how those two anchors are written, and each row's header now
+  says so. **If you add a conjunct there, re-anchor S102 and S165 in the same
+  change and run the tripwire before you believe anything else.** Whether the
+  right long-term fix is to narrow both anchors to their own `has_bref` /
+  `has_call` token is an open question nobody has ruled; narrowing costs the
+  rows their "carries the rest through verbatim" property, which is what makes
+  them readable as one-conjunct disables.
 - **A re-anchor is not a re-point.** It certifies the EDIT still applies and
   says nothing about whether the POPULATION still reaches it. That is what the
   reach fields are for.

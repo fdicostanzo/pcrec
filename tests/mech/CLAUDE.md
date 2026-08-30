@@ -222,6 +222,18 @@ is EXPECTED to time out"*, and neither would a separate arm.
   ([ENG-ABS]'s precedent), because `cap-rescue`'s natural population is zero
   and the CLI overrides are raise-only — that cell is the tree's ONLY witness
   to the materiality bar declining at all, which is what S192 scores against.
+- `pfcollapse` → `tests/codegen/run_prefilter_collapse.sh`, [OPT-4]'s
+  count-collapsed hybrid prefilter and [OPT-4.1]'s nullability gate on its
+  rescue, held to the ARTIFACT. **ITS OWN ARM, and with the strongest form of
+  `sizeterm`'s reason in the tree**: the axis is ANSWER-IDENTITY-PRESERVING BY
+  CONSTRUCTION, not merely in practice — the prefilter is a FILTER whose
+  contract is soundness of REJECTION (`match_api.md` §6.3, H1/H2/H3), so its
+  presence, its absence and its LANGUAGE are all invisible to every answer
+  anywhere. **ROWS ON THIS ARM ARE EXPECTED TO SCORE `corpus:0fail`** (S206,
+  S207); that is the arm working. Its scrape reads this script's own trailer
+  (`prefilter-collapse: N passed, M failed`) rather than the `^checks passed:`
+  shape every other arm uses — a row that reads `ERRfail/?pass` here is a
+  scrape mismatch, not a defect in the tree.
 - `resource` → `tests/resource/run_resource_tests.sh`, the K7 budget pins and
   (§1b, [ART-SIZE]) the emitted-size caps' REFUSAL CONTRACT. Not foldable into
   `harness`, for the reason that script's own header gives: its assertions are
@@ -2129,3 +2141,58 @@ those are separate claims that expire separately. And S108's defence-in-depth
 rule ("a ONE-HUNK MUTATION CANNOT FALSIFY A DEFENCE-IN-DEPTH PAIR") applies to
 a TRIO of guards emitted from one function as readily as to two gates in
 different files — the second occurrence of that shape in this tree.
+
+## [OPT-4.1] S206-S207, and a PAIR whose two halves cost opposite things
+
+Two rows for the nullability gate on [OPT-4]'s count-collapsed rescue, running
+the new `pfcollapse` arm alongside `resource` and `harness`. Both plants are
+ONE TOKEN at the same site — `EngineFit.prefilter_lang_nullable`'s single
+derivation in `src/opt/select_engine.c` — and that is deliberate: the predicate
+has TWO readers (the `fit.prefilter` clause that drops the prefilter on a
+ladder RUNG, and `src/core/compile.c`'s build gate that declines the collapse
+under `-fprefilter-collapse`), so a plant at either reader would leave the
+other working and report a partial removal as a whole one.
+
+**THE PAIR IS NOT ONE ROW WRITTEN TWICE, because the two failures cost
+opposite things and only one instrument sees each.**
+
+- **S206 pins the predicate FALSE** — the shipped compiler of the day before
+  [OPT-4.1]. The rescue is built for a language that matches the empty string
+  at every position, so the filter can never dismiss one: pcrec-bench measured
+  that shape at 1.2-9.9x SLOWER than no prefilter at all (its O-10 item 3 at
+  pin 96e44c2; `[a-z]{0,32768}` x3.57 on search, 1.880 -> 6.899 ns/B). A
+  SLOWDOWN with every answer right.
+- **S207 INVERTS it.** The rescue is declined on exactly the patterns the
+  bench measured it WINNING 2.2-4.6x on (the ctx band, `level-context` x4.60)
+  and kept on the three it measured it losing on. A LOST OPTIMISATION with
+  every answer right.
+
+**A CHECK WRITTEN FOR EITHER DIRECTION ALONE PASSES THE OTHER**, which is why
+the witnesses are twins rather than unrelated patterns: `pfcollapse` §6's
+overflow witness and §6b's are the same pattern four characters apart
+(`(?:X)?`), and `resource`'s two size-rung cells are `(a|b){0,30000}` and
+`(a|b){1,30000}`. Each is the other's control in the only way that carries
+information — they share the machine and differ in the predicate.
+
+**CANONICAL RUNS (2026-08-30, at `412eb52`, one invocation per row):**
+
+    S206  reach:ok(1/1), pfcollapse:5fail/50pass, resource:1fail/28pass,
+          corpus:0fail/51pass                                      DETECTED
+    S207  reach:ok(2/2), pfcollapse:17fail/20pass, resource:2fail/27pass,
+          corpus:0fail/51pass                                      DETECTED
+
+**READ THE TWO ROWS AGAINST EACH OTHER, NOT ALONE — that is what the pair is
+for.** S206 removes the predicate, so only the NULLABLE size-rung cell moves
+(`resource:1fail`, its non-nullable twin GREEN). S207 inverts it, so the twin
+moves too (`resource:2fail`), and the inversion is loud in `pfcollapse` as
+well — 17 fails against 5 — because it breaks the winners and the losers at
+once. A single row could not have expressed that difference, and the 2-vs-1 is
+what says which of the two failures a future red is.
+
+**AND `corpus:0fail` IS THE EXPECTED READING ON BOTH.** Not a thin population:
+the prefilter is a FILTER, so a useless one, a missing one and an exact one
+are answer-identical by construction. The whole `.rxt` corpus, both oracles,
+`make test-axes`, every `*_diff.sh` and every byte-identity gate are green on
+both plants. That is the S68 shape (a sabotage that changes no answer) with
+the strongest available argument behind it — a proof rather than a
+measurement — and it is the whole reason `pfcollapse` is an arm.

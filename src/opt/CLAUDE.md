@@ -1016,3 +1016,42 @@ the LINKAGE instead of by a deletion, because deleting a call means copying its
 callee's `A_CAP` nodes into the tree.
 
 Maintenance: update this file when passes are added/removed.
+
+## [OPT-4.1] the nullability predicate — ONE derivation, THREE readers
+
+`select_engine.c`'s fit site writes `EngineFit.prefilter_lang_nullable` as
+`pcrec_minw(root) == 0` and nothing else in the tree computes that fact. Three
+sites read it: the `fit.prefilter` clause in this file (a collapse RUNG's
+rescue is DECLINED, and what stands in its place is no prefilter at all — on a
+rung the alternative to the collapsed machine is not the exact one, because
+the exact machine is what failed), `src/core/compile.c`'s build gate (under
+`-fprefilter-collapse` the collapse is declined and the EXACT prefilter is
+kept), and the `--emit-ir` listing's `; prefilter` line, which would otherwise
+name a FLAG the caller did not pass as the reason an artifact has none.
+
+**IT IS `src/opt/mrl.c`'s EXISTING WIDTH ANALYSIS AND NOT A SECOND WALK.**
+`pcrec_minw` already answers for the PREFILTER's lowering rather than for the
+pattern's semantics — `A_CAP`/`A_ATOMIC` transparent as `src/ir/nfa.c` lowers
+them, `A_LOOK` 0 as the prefilter lowers it (to epsilon), `A_CALL` off the
+callgraph fixpoint, which `compile.c` has already run by the time selection
+asks. Its documented direction is UNDER-estimation, so `minw == 0` may claim
+nullable where the true language is not, and that direction is the safe one
+here: declining a rescue costs a filter, never an answer.
+
+**AND THE COLLAPSED LANGUAGE'S NULLABILITY IS THE EXACT PATTERN'S**, which is
+why the field is not called `collapsed_lang_nullable`. The collapse rewrites
+`X{m,n}` as `X{min(m,1),}`, and `min(m,1) == 0` iff `m == 0`, so an `A_REP` is
+nullable on exactly the same condition before and after; concatenation and
+alternation combine 0-ness identically. One walk answers for both languages.
+
+**THE MEASURED NEED** is pcrec-bench O-10 item 3 at pin 96e44c2: where
+structure survives the collapse the rescue wins 2.2-4.6x, and where the
+collapsed language is nullable it LOSES 1.2-9.9x, because the filter admits a
+zero-length match at every position and can dismiss nothing. `-fprefilter`
+is do-or-die and is never silently dropped, and what that means differs by
+RUNG: on the SIZE rung it OVERRIDES the decline (its alternative there is no
+prefilter, which that flag forbids), while on the [SEL-1] rung it makes the
+rung ineligible so the decline is never reached and the compile REFUSES.
+`-fprefilter-collapse` overrides on neither, because it chooses a LANGUAGE and
+not whether a filter exists. `docs/spec/tuning.md` §2.17 is the
+contract.

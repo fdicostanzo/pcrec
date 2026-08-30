@@ -767,3 +767,34 @@ are not declared here and must not be: they are per-artifact emitted text whose
 layout three axes move (`has_linked_calls`, `--trace`, and the target's own
 type sizes), which is why the descriptor is opaque and the sizes are stamped
 and asserted rather than exported. See `src/gen/CLAUDE.md`'s [DD-14.FB] section.
+
+## [OPT-4.1] `compile.c`'s build gate: the collapse and its DECLINE are one expression
+
+The gate's four conjuncts were one `bool collapse`. They are now
+`pfc_wanted` (the DFA is not the engine, the axis is not denied, there is a
+collapsible repeat, and either the force flag or a ladder rung asked) and
+`collapse = pfc_wanted && (force_prefilter || !prefilter_lang_nullable)`. The split is what lets
+the `_LANG_WHY` ladder branch on WHICH of the two happened without re-walking
+anything (D81): `!collapse && pfc_wanted` is the decline and stamps
+`PFLW_NULLABLE`, `!collapse && !pfc_wanted` is the old `PFLW_EXACT`/
+`PFLW_NO_REP` pair.
+
+**WHAT REACHES THIS LINE NULLABLE IS ONLY `-fprefilter-collapse`.** On a
+ladder RUNG the decline happens one pass earlier, in `select_engine.c`'s
+`fit.prefilter` clause, where it drops the prefilter entirely — because on a
+rung the alternative to the collapsed machine is not the exact one, the exact
+one being what failed, so declining HERE would send the compile back through
+the construction that already overflowed and cost a third attempt. What
+survives to the gate is a pattern that already has a working exact prefilter
+and a caller asking for a collapsed one, and the right answer there is to keep
+what it has.
+
+`-fprefilter` is the one thing that overrides the decline, and the conjunct
+here is load-bearing rather than symmetric: on the SIZE rung — the only rung
+that reaches this line under that flag — the only prefilter that fits under the
+cap IS the collapsed one, so declining it for a caller who explicitly demanded
+a prefilter would REFUSE a pattern that compiles today, which is exactly what
+`docs/spec/limits.md` §3.3 promises does not happen. On the [SEL-1] rung
+`-fprefilter` never gets here at all: it makes that rung ineligible in
+`compile_driver`, so the compile refuses earlier and for a different reason. `src/opt/CLAUDE.md` carries the predicate's own entry;
+`docs/spec/tuning.md` §2.17 is the contract.

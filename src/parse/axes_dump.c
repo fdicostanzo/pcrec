@@ -438,7 +438,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * THE AXIS'S STAMP IS THE LANG MACRO, NOT ITS `_WHY` COMPANION, and the
      * distinction is this table's own: a row names the macro whose VALUE
      * SELECTS the candidate. `RX_VM_PREFILTER_LANG_WHY` says which conjunct
-     * decided, which is a different question and one with five answers
+     * decided, which is a different question and one with six answers
      * against this axis's two, so it would not fit a candidate column. It is
      * specified in docs/spec/tuning.md §2.17 beside the values below.
      * (`size-term` above is the other shape — there the `_WHY` macro IS the
@@ -522,7 +522,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * from `vm-prefilter`: it answers a different question about the same
      * neighbourhood. `engine` says WHICH engine this artifact got;
      * `RX_ENGINE_SEL` says HOW it got there, and the two are independent —
-     * `RX_ENGINE "vm"` is reached by four of the five routes below.
+     * `RX_ENGINE "vm"` is reached by EVERY one of the six routes below.
      *
      * THE VALUE SET IS CLOSED AND THE STAMP IS UNCONDITIONAL (D81), which is
      * the whole point of it: `RX_ENGINE_WHY` already carries the reason as
@@ -540,13 +540,16 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "collapsed-prefilter", "collapsed-prefilter",
                      0, "", 0, "", "",
                      "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)");
-        emit_pred_row(sb, &p, 3, "overflowed-dfa", "overflowed-dfa",
+        emit_pred_row(sb, &p, 3, "declined-nullable", "declined-nullable",
+                     0, "", 0, "", "",
+                     "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither");
+        emit_pred_row(sb, &p, 4, "overflowed-dfa", "overflowed-dfa",
                      0, "", 0, "", "",
                      "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)");
-        emit_pred_row(sb, &p, 4, "overflowed-prefilter", "overflowed-prefilter",
+        emit_pred_row(sb, &p, 5, "overflowed-prefilter", "overflowed-prefilter",
                      0, "", 0, "", "",
                      "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped");
-        emit_pred_row(sb, &p, 5, "selected", "selected",
+        emit_pred_row(sb, &p, 6, "selected", "selected",
                      0, "", 0, "", "",
                      "always (fallback) — auto chose on the AST and nothing overflowed");
     }

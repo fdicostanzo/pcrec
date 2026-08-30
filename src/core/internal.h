@@ -1259,6 +1259,74 @@ typedef struct {
      * cannot leave a stamp disagreeing with a live clamp. */
     bool        prefilter_collapsed;
 
+    /* [OPT-4.1] IS THE PREFILTER'S LANGUAGE NULLABLE — can it match the empty
+     * string? Written ONCE at `src/opt/select_engine.c`'s fit site as
+     * `pcrec_minw(root) == 0` and read by the two sites that can decline the
+     * count-collapsed rescue (D81: one derivation, N readers; the predicate is
+     * `src/opt/mrl.c`'s existing width analysis, never a second walk).
+     *
+     * WHY THE COLLAPSED LANGUAGE'S NULLABILITY IS THE EXACT PATTERN'S.
+     * The collapse rewrites `X{m,n}` as `X{min(m,1),}`, and `min(m,1) == 0`
+     * iff `m == 0`, so an `A_REP` is nullable on exactly the same condition
+     * before and after; concatenation and alternation combine 0-ness
+     * identically. One walk therefore answers for both languages, which is why
+     * this field is not "collapsed_lang_nullable".
+     *
+     * WHY `pcrec_minw` IS THE RIGHT WALK AND NOT AN APPROXIMATION OF ONE. It
+     * already answers for the PREFILTER's lowering rather than for the
+     * pattern's semantics: `A_CAP`/`A_ATOMIC` are transparent (as `src/ir/
+     * nfa.c` lowers them), `A_LOOK` is 0 (as the prefilter lowers it — to
+     * epsilon), and `A_CALL` reads the callgraph fixpoint, which
+     * `src/core/compile.c` has already run by the time selection asks. Its
+     * documented direction is UNDER-estimation, so `minw == 0` may claim
+     * nullable where the true language is not — and that direction is the safe
+     * one here: declining a rescue costs a filter, never an answer.
+     *
+     * WHAT IT DECIDES (the measured need, pcrec-bench O-10 item 3 at pin
+     * 96e44c2). A nullable prefilter language admits a zero-length match at
+     * EVERY position, so the filter can never dismiss one: the artifact pays a
+     * scan whose every answer is "maybe". Measured there at 1.2-9.9x SLOWER
+     * than the same pattern with no prefilter at all (`[a-z]{0,32768}`: search
+     * x3.57, throughput 1.880 -> 6.899 ns/B). The same fact is visible inside
+     * the artifact from the other end — a nullable language's start state
+     * ACCEPTS, so `src/gen/emit_dfa.c`'s `unanch_start` can select no
+     * candidate-byte skip and the inlined scan stamps `<PREFIX>_DFA_PREFILTER
+     * "none"` — which is a genuine second derivation of this predicate and not
+     * a restatement of it. */
+    bool        prefilter_lang_nullable;
+
+    /* [OPT-4.1] AND THE DECISION IT DROVE: a collapse RUNG asked for the
+     * count-collapsed prefilter and nullability declined it, so this artifact
+     * has NO prefilter. False on every other path, including the two rungs
+     * when the language is not nullable, and including a pattern that simply
+     * has no prefilter for one of the older reasons (a backreference, a linked
+     * call, `-fno-prefilter`).
+     *
+     * IT IS A SEPARATE FIELD FROM THE PREDICATE ABOVE because they answer
+     * different questions and three readers need the second one: the `_ENGINE_
+     * SEL` ladder (which stamps `"declined-nullable"` on the [SEL-1] rung),
+     * the `--emit-ir` listing's `; prefilter` line (which would otherwise name
+     * a FLAG the caller did not pass), and the `fit.prefilter` clause that
+     * makes the decision. A pattern can be nullable and keep an exact
+     * prefilter all day; that is the default and it is not this field. */
+    bool        prefilter_declined_nullable;
+
+    /* [OPT-4.1] IS THERE A COLLAPSIBLE `A_REP` AT ALL — an `rmin > 1` or
+     * `rmax > 1` the collapse would CHANGE? `pcrec_has_collapsible_rep(root)`
+     * (src/opt/atomic.c), derived ONCE at `src/opt/select_engine.c`'s fit site
+     * and read by BOTH conjuncts that need it: this pass's
+     * `prefilter_declined_nullable` and `src/core/compile.c`'s `pfc_wanted`.
+     *
+     * IT IS A FIELD RATHER THAN TWO CALLS BECAUSE THE TWO SITES MUST NOT BE
+     * ABLE TO DISAGREE, and they DID: the decline shipped without this
+     * conjunct while the build gate had it (r47sel finding 1). A nullable
+     * pattern that overflows the [SEL-1] cap with NO collapsible repeat then
+     * stamped `_ENGINE_SEL "declined-nullable"` — a rescue REFUSED — when the
+     * collapsed lowering IS the exact one and there was never a distinct
+     * rescue to refuse. `match_api.md`'s own value table warns against exactly
+     * that inversion, and the comparative bench buckets on this macro. */
+    bool        prefilter_has_collapsible_rep;
+
     /* [OPT-4] WHY THAT LANGUAGE (D81's `_WHY`; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
      *
      * FRANK'S RULING B (2026-08-29): the DEFAULT builds the EXACT prefilter and
@@ -1274,6 +1342,17 @@ typedef struct {
      *                 the state `-fprefilter-collapse` is HONOURED but vacuous
      *                 in, and a caller who passed the flag and got `exact`
      *                 needs to know which of the two happened.
+     *   PFLW_NULLABLE [OPT-4.1] there WAS something to collapse and the
+     *                 collapse was DECLINED, because the collapsed language is
+     *                 nullable and a nullable filter can never dismiss a
+     *                 position. Kept distinct from both values above for
+     *                 PFLW_NO_REP's own reason: a caller who passed
+     *                 `-fprefilter-collapse` and got `exact` needs to know
+     *                 that the flag reached a POLICY, not a vacuity.
+     *                 Reachable only where a prefilter still exists to stamp,
+     *                 i.e. under `-fprefilter-collapse`; on a RUNG the decline
+     *                 leaves no prefilter and therefore no macro at all (that
+     *                 outcome is `_ENGINE_SEL "declined-nullable"`).
      *   PFLW_FORCED   `-fprefilter-collapse`: collapse wherever a collapsible
      *                 repeat exists. The only route to literal
      *                 count-INDEPENDENCE now.
@@ -1324,7 +1403,7 @@ typedef struct {
      * once at `src/opt/select_engine.c`'s single `cx->job->fit = fit` site
      * from the driver's own attempt record.
      *
-     * FIVE VALUES, and the last three are all "fell back" with different
+     * SIX VALUES, and the last four are all "fell back" with different
      * outcomes — which is exactly the distinction `why` cannot carry. */
     unsigned char engine_sel;
 } EngineFit;
@@ -1338,18 +1417,33 @@ enum {
     /* everything from here is a FALLBACK after a DFA build overflowed a cap */
     ESEL_OVERFLOWED_DFA       = 2,  /* the DFA was to be the ENGINE; no prefilter survives */
     ESEL_OVERFLOWED_PREFILTER = 3,  /* the VM was already chosen; its prefilter was dropped */
-    ESEL_COLLAPSED_PREFILTER  = 4   /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
+    ESEL_COLLAPSED_PREFILTER  = 4,  /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
+    /* [OPT-4.1] the [SEL-1] rung OFFERED and DECLINED: the collapsed language
+     * is nullable, so the rescue would have shipped a filter that can never
+     * dismiss. No prefilter survives — the artifact is the pre-[OPT-4] one —
+     * and this value is the difference between "the collapsed machine
+     * overflowed too" (ESEL_OVERFLOWED_DFA) and "the collapse was refused on
+     * purpose". IT KEEPS THE ORDERING CLAIM ABOVE: it is reachable ONLY from
+     * the [SEL-1] rung, i.e. only after a DFA build overflowed a cap. The SIZE
+     * rung's own decline is not this value — nothing overflowed there and the
+     * route stays `"selected"`, exactly as it is when that rung collapses. */
+    ESEL_DECLINED_NULLABLE    = 5
 };
 
 /* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that everything from
  * `PFLW_FORCED` up is a collapsing outcome: see the invariant stated above. */
 enum {
-    PFLW_EXACT   = 0,
-    PFLW_NO_REP  = 1,
+    PFLW_EXACT    = 0,
+    PFLW_NO_REP   = 1,
+    /* [OPT-4.1] a NON-collapsing outcome, so it sits BELOW the boundary: the
+     * collapse was asked for and refused. Placing it above `PFLW_FORCED`
+     * would break the `>= PFLW_FORCED iff prefilter_collapsed` invariant the
+     * emitter's cross-check rides on. */
+    PFLW_NULLABLE = 2,
     /* everything from here collapses */
-    PFLW_FORCED  = 2,
-    PFLW_SEL1    = 3,
-    PFLW_SIZECAP = 4
+    PFLW_FORCED   = 3,
+    PFLW_SEL1     = 4,
+    PFLW_SIZECAP  = 5
 };
 
 /* [OPT-4] `Ctx.collapse_reason` — WHICH ladder attempt asked for the collapsed
