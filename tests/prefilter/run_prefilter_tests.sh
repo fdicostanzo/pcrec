@@ -353,8 +353,25 @@ check_refuse "force-on vs a LINKED subroutine call" \
 # must say why in terms of the OVERFLOW, never a flag.
 # ---------------------------------------------------------------------------
 SEL1_OVERFLOW_PAT='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b'
-check_listing_reason "auto-selected prefilter DFA overflow names the cap, not a flag" \
-    "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all
+# [OPT-4] 2026-08-29 — THE EXPECTATION MOVED, BY DESIGN, AND THE ORIGINAL
+# CLAIM MOVED WITH IT RATHER THAN BEING DROPPED.
+#
+# At the DEFAULT this witness no longer takes the "off" route at all:
+# [OPT-4]'s rung rebuilds the prefilter from the count-collapsed language
+# before the fallback drops it, so the listing reads the COUNT-COLLAPSED arm
+# (docs/design/prefilter_count_independence.md §6; docs/spec/tuning.md §2.5).
+# That is a designed behaviour change, so the first row's EXPECTATION moves.
+#
+# But this section's claim — "the off route names the CAP, never a flag the
+# caller did not pass" — is still worth asserting, and it is still REACHABLE:
+# `-fno-prefilter-collapse` skips the new rung, so the drop happens exactly as
+# before and the listing must still name the overflow. That row is the second
+# one below. Moving the expectation without preserving the claim would have
+# quietly deleted the [SEL-1] regression this section was written for.
+check_listing_reason "the DFA-overflow fallback now KEEPS a prefilter, count-collapsed ([OPT-4] §6)" \
+    "$SEL1_OVERFLOW_PAT" 'yes, COUNT-COLLAPSED' --features all
+check_listing_reason "...and under -fno-prefilter-collapse the route still names the CAP, not a flag" \
+    "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all -fno-prefilter-collapse
 check_listing_reason "...still names the cap under -fno-prefilter (already the reason, unrelated flag present)" \
     "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all -fno-prefilter
 # `-fprefilter` is the FORCE form and stays do-or-die: it REFUSES rather than
@@ -365,15 +382,45 @@ check_listing_reason "...still names the cap under -fno-prefilter (already the r
 # requires the VM engine..."), a real message but not this row's claim.
 # `--engine=vm` forces past that so the DFA-cap refusal is the one reached,
 # and its text does not contain the word "prefilter" at all.
+# [OPT-4] 2026-08-29 — THE WITNESS MOVED, NOT THE EXPECTATION. This cell's
+# claim is unchanged and still true: `-fprefilter` is do-or-die and REFUSES on
+# a DFA-cap overflow. What changed is that this pattern NO LONGER OVERFLOWS
+# under `--engine=vm -fprefilter` — the count-collapsed prefilter determinizes
+# to 319 states against the 32,000 cap — so the cell compiled and proved
+# nothing. A cell whose subject stopped reaching the hazard is VACUOUS, which
+# reads exactly like a pass.
+#
+# `-fno-prefilter-collapse` is what restores the hazard: it denies the axis, so
+# the EXACT machine is built and the cap is hit as before. That is the same
+# device tests/codegen/run_prefilter_collapse.sh §7b uses to keep the
+# `overflowed-prefilter` route reachable, and for the same reason.
+#
+# NOT `check_refuse` above, whose generic `grep -q 'prefilter'` control would
+# accidentally pass on the WRONG refusal here: `-fprefilter` with no `--engine`
+# hits the pattern's auto-selected DFA engine first ("-fprefilter requires the
+# VM engine..."), a real message but not this row's claim. `--engine=vm` forces
+# past that so the DFA-cap refusal is the one reached, and its text does not
+# contain the word "prefilter" at all.
 if pcrec_run "$PCREC" -p rx --features all --engine=vm -fprefilter \
+        -fno-prefilter-collapse \
         -o "$WORKDIR/sel1_refuse.c" -- "$SEL1_OVERFLOW_PAT" \
         >/dev/null 2>"$WORKDIR/sel1_refuse.err"; then
     bad "force-on vs a DFA-cap overflow: compiled; expected the force form to stay do-or-die"
 elif grep -q 'pattern too complex for the DFA engine (>32000 states; try --engine=vm)' \
         "$WORKDIR/sel1_refuse.err"; then
-    ok "force-on vs a DFA-cap overflow: still refuses with today's diagnostic, unchanged by [SEL-1]"
+    ok "force-on vs a DFA-cap overflow: still refuses with today's diagnostic, unchanged by [SEL-1]/[OPT-4]"
 else
     bad "force-on vs a DFA-cap overflow: refused, but not with the expected diagnostic: $(cat "$WORKDIR/sel1_refuse.err")"
+fi
+# AND THE ANTI-VACUITY ROW THE ABOVE NOW NEEDS: without the deny flag this
+# same invocation must COMPILE. If it ever refuses again, the cell above has
+# stopped depending on `-fno-prefilter-collapse` and is testing something else.
+if pcrec_run "$PCREC" -p rx --features all --engine=vm -fprefilter \
+        -o "$WORKDIR/sel1_ok.c" -- "$SEL1_OVERFLOW_PAT" \
+        >/dev/null 2>"$WORKDIR/sel1_ok.err"; then
+    ok "force-on WITHOUT the deny flag compiles — so the row above is measuring -fno-prefilter-collapse, not a pattern that always refuses"
+else
+    bad "force-on without -fno-prefilter-collapse also refused ($(head -1 "$WORKDIR/sel1_ok.err")) — the row above no longer isolates the deny flag, and [OPT-4]'s rung may have stopped firing here"
 fi
 
 echo

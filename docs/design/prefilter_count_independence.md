@@ -375,6 +375,31 @@ Both costs fall only on the 23 artifacts that collapse, and both are what
    of it is candidate starts. It is the smaller of the two costs by a wide
    margin.
 
+2b. **A THIRD COST THE PREDICTION MISSED ENTIRELY, and it is the one that
+   changes what a caller SEES.** The lost ceiling is not only slower: it moves
+   which patterns fit inside a **step budget**. `tests/mrl`'s K23 exemplar
+   `(a{10,20}){10,50}` on 100 `a`s plus a 16-byte trailing suffix, at
+   `--step-budget=64`:
+
+   | build | ceiling | answer |
+   |---|---|---|
+   | `-fno-prefilter-collapse` | `prefilter-window` | `0,100 90,100` |
+   | **default (collapsed)** | `subject-end` | **`r=-2`** (`PCREC_ERR_STEPS`) |
+   | `--engine=vm` | `subject-end` | `r=-2` |
+
+   At the default this artifact now behaves exactly like the `--engine=vm`
+   arm. **Answer identity is not violated** — D46's claim, and `make
+   test-axes`'s, is about an UNBOUNDED budget, and there the two agree — but
+   the step budget is a documented caller-visible robustness bound (DD-2/D22),
+   and this row changes which patterns fit inside a given one. A caller who set
+   a budget and got a match now gets `PCREC_ERR_STEPS` on the same pattern and
+   subject.
+
+   It was found by `tests/mrl/run_mrl_tests.sh` going red in the merge battery,
+   not by anything in §7 — the section had reasoned about match TIME and never
+   about budget REACHABILITY. §5 of that file now asserts all three rows above,
+   so the cost is pinned rather than merely described here.
+
 3. **AND A CREDIT THE PREDICTION MISSED.** On a subject the prefilter rejects
    outright, the collapsed artifact is FASTER — `((a)|ab){0,100}c` over 64 KB
    of `a` with no `c`: 0.000006 s collapsed against 0.000016 s exact, both at
@@ -550,3 +575,16 @@ that the match-time costs in §7 — the 840,000x worst case, the 44x on
 `(ab){300}` find-all — stop landing on artifacts that compile fine today. That
 is the whole trade, and it is Frank's to make: **-1,874,322 bytes and K39 closed,
 against no match-time regression on anything that compiles today.**
+
+**ONE FACT ARRIVED AFTER §10 WAS WRITTEN AND BELONGS IN THE RULING.** The merge
+battery turned up a cost §7 had not predicted and §10 therefore under-states:
+the lost pruning ceiling changes which patterns fit inside a **step budget**,
+not merely how fast they run (§7.2b). `(a{10,20}){10,50}` on 100 `a`s plus a
+16-byte suffix at `--step-budget=64` answered `0,100 90,100` before and returns
+`PCREC_ERR_STEPS` now. That is still answer-identity-preserving in D46's
+unbounded sense — and `make test-axes` is right to keep passing — but it is a
+caller-visible change of OUTCOME under a documented bound (DD-2/D22), on a
+pattern that compiles fine today. It is the same class of thing the
+cap-triggered alternative was proposed to avoid, and a stronger instance of it
+than any of the match-time numbers, because the caller does not get a slower
+answer: they get no answer.

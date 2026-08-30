@@ -204,15 +204,32 @@ echo
 # raise-only override is exercised end to end, and it is the answer to "how do
 # I still get this artifact" being a real answer rather than a sentence.
 # ---------------------------------------------------------------------------
+# [OPT-4] 2026-08-29 — THE THIRD SHAPE NEEDS `-fno-prefilter-collapse` NOW, AND
+# THE FOURTH FIELD SAYS SO. `(a|b){0,30000}`'s 1.33 MB was almost entirely its
+# hybrid PREFILTER's tables, and [OPT-4] rebuilds that from the count-collapsed
+# language: at the default the artifact is **32,279 bytes** in the split
+# `.c`+`.h` form this cell emits (43,433 self-contained) and compiles
+# cleanly, so the cell had no oversize subject left and the cap it exists to
+# test was never reached. That is a WITNESS going vacuous, not a cap that
+# stopped working — the other two shapes, whose bulk is the VM body rather than
+# a prefilter, still refuse at the default untouched.
+#
+# Denying the axis restores the exact machine and the refusal (MEASURED at
+# 1,333,300 bytes, against the 1,333,109 pinned here before the two new stamp
+# lines). The shape keeps its coverage of the ALTERNATION case, and the new
+# default outcome is pinned separately below so the size win is recorded rather
+# than merely absent.
 size_moved=(
-    'a{0,25000}:1103367'
-    '[a-z]{0,30000}:1323371'
-    '(a|b){0,30000}:1333109'
+    'a{0,25000}:1103367:'
+    '[a-z]{0,30000}:1323371:'
+    '(a|b){0,30000}:1333109:-fno-prefilter-collapse'
 )
 for entry in "${size_moved[@]}"; do
-    pat="${entry%:*}"; was="${entry##*:}"
+    pat="${entry%%:*}"; rest="${entry#*:}"
+    was="${rest%%:*}"; extra="${rest#*:}"
     out="$WORKDIR/o.c"; rm -f "$out"
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" "$pat" 2>&1)"
+    # shellcheck disable=SC2086
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$out" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
         ok "'$pat' refused by the total emitted-size cap (was $was bytes before [ART-SIZE]): $(printf '%s' "$log" | head -1 | cut -c1-90)"
@@ -224,7 +241,8 @@ for entry in "${size_moved[@]}"; do
 
     # the override re-accepts it
     rm -f "$out"
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
+    # shellcheck disable=SC2086
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 0 ]; then
         ok "'$pat' is re-accepted with --max-emit-bytes raised (the override works end to end)"
@@ -232,6 +250,26 @@ for entry in "${size_moved[@]}"; do
         bad "'$pat' still refused with --max-emit-bytes=9000000 (rc $rc): $log"
     fi
 done
+
+# [OPT-4] THE THIRD SHAPE'S NEW DEFAULT, PINNED FROM A RUN. Without this the
+# only record that `(a|b){0,30000}` stopped being oversize would be the
+# `-fno-prefilter-collapse` in its row above, which reads like a detail. It is
+# the largest single artifact this row shrinks outside the corpus, and if it
+# ever grows back past the cap the loop above would still pass (its own row
+# denies the axis) while a user's default build started refusing again.
+rm -f "$WORKDIR/o.c"
+if "$ROOT_DIR/scripts/watchdog" -l "sizecap-default (a|b){0,30000}" -s "$K7_SECS" \
+        -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" \
+        -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' >/dev/null 2>&1; then
+    sz=$(wc -c < "$WORKDIR/o.c")
+    if [ "$sz" -lt 200000 ]; then
+        ok "[OPT-4] '(a|b){0,30000}' now compiles at the DEFAULT in $sz bytes (was 1,333,109 and refused) — its size was its prefilter, and the count-collapsed one does not scale with the count"
+    else
+        bad "[OPT-4] '(a|b){0,30000}' compiled at the default but emitted $sz bytes, expected well under 200,000 — the collapse is not reaching this shape as it did at the landing"
+    fi
+else
+    bad "[OPT-4] '(a|b){0,30000}' no longer compiles at the DEFAULT — it did at the landing (32,279 bytes); the collapse has stopped firing on it, or a cap moved"
+fi
 
 echo
 
@@ -256,12 +294,12 @@ echo
 # under any plausible future budget, so this stays a positive control for the
 # allocator paths no matter how PCREC_MAX_SUBSET_ELEMS is retuned.
 # ---------------------------------------------------------------------------
-enomem_case() {
-    local vlim="$1" pat="$2"
+enomem_case() {   # enomem_case <vlimKB> <pattern> [pcrec flags...]
+    local vlim="$1" pat="$2"; shift 2
     local out="$WORKDIR/e.c"
     rm -f "$out"
     local log rc
-    log="$( (ulimit -v "$vlim"; exec "$TIMEOUT_BIN" -s KILL "$K7_SECS" "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"   # [K37]/[TT-6]: exec'd GNU-timeout bound, one line
+    log="$( (ulimit -v "$vlim"; exec "$TIMEOUT_BIN" -s KILL "$K7_SECS" "$PCREC" -p rx "$@" -o "$out" "$pat") 2>&1 )"   # [K37]/[TT-6]: exec'd GNU-timeout bound, one line
     rc=$?
     case $rc in
         0)   bad "under ${vlim}KB, '$pat' compiled — the limit did not bind, so this cell proved nothing. Lower it or pick a hungrier pattern" ;;
@@ -290,8 +328,21 @@ enomem_case() {
 # allocators — the DFA state array and its hash table, the arena behind the
 # interned state-sets, the emitter's string buffer — rather than proving one
 # call site works four times.
+#
+# [OPT-4] 2026-08-29 — THE SECOND SHAPE KEEPS ITS FLAG, and the flag is what
+# keeps this cell non-vacuous rather than a preference. `((a)|bc){0,4000}d` is
+# the one shape here whose demand was its PREFILTER, and [OPT-4] rebuilds that
+# from the count-collapsed language: MEASURED peak RSS **5 MB at the default**
+# against **112 MB with `-fno-prefilter-collapse`** (the comment's original
+# "needs 111 MB", reproduced). At the default the 60,000 KB limit no longer
+# binds, the compile succeeds, and the `0)` arm above scores that as the
+# failure it is. Denying the axis restores the exact machine, the 112 MB
+# demand, and therefore this row's coverage of the VM-route-plus-prefilter
+# allocators — which is the distinct thing it contributes to the four.
+# Re-witnessing with a different pattern would have kept the cell green while
+# quietly dropping that allocator path.
 enomem_case 100000 'a{9000}'                 # needs 175 MB
-enomem_case  60000 '((a)|bc){0,4000}d'       # needs 111 MB (VM route + prefilter)
+enomem_case  60000 '((a)|bc){0,4000}d' -fno-prefilter-collapse   # needs 112 MB (VM route + EXACT prefilter); 5 MB at the default since [OPT-4]
 enomem_case  80000 '[a-zA-Z0-9_.-]{9000}'    # needs 175 MB, wide alphabet
 enomem_case  60000 'a{8000}'                 # needs 140 MB
 
