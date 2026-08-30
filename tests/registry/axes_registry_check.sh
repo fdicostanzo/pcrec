@@ -497,7 +497,7 @@ check_value_set() {
     # if/then instead, preserving the exact pre-[REG-SV] wording byte for
     # byte (docs/testing.md:2986 quotes it verbatim as a sabotage-transcript
     # example and must not go stale).
-    local src_label="$5"
+    local src_label="${5-}"   # `${5-}` is set-u safe (unset -> empty); default set below
     [ -z "$src_label" ] && src_label="docs/spec/match_api.md §6.3's own value-set table"
     local v miss=""
     for v in $dump_vals; do
