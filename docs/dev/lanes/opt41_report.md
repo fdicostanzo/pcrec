@@ -82,8 +82,18 @@ is the live witness and its expectation is flipped accordingly (§5).
 (brief item 7). It is do-or-die (D46/D47.3): the decline's alternative is NO
 prefilter, which is exactly what an explicit `-fprefilter` forbids, so a
 request this pass cannot honour must REFUSE rather than be silently answered
-with its opposite. Implemented as `&& !force_on` on
-`fit.prefilter_declined_nullable`. `-fprefilter-collapse` does NOT override it:
+with its opposite. Implemented at BOTH sites: `&& !force_on` on
+`fit.prefilter_declined_nullable` in `select_engine.c`, and
+`(pfc_prefilter_forced || !nullable)` on the build gate's `collapse`.
+
+**THE SECOND SITE WAS A CORRECTNESS GAP FOUND ON REVIEW, not symmetry.**
+Without it, `-fprefilter` on a pattern the SIZE rung is rescuing would decline
+the collapse, keep the exact prefilter the cap already refused, and REFUSE a
+pattern that compiles today — falsifying the sentence this row's own
+`limits.md` hunk adds. INFERRED from the driver's `size_eligible` conjuncts
+(`collapse_reason != CR_SIZECAP` makes the third attempt unreachable); no test
+in the tree covers `-fprefilter` with an oversize nullable pattern, which is
+why it was a review finding rather than a red run. `-fprefilter-collapse` does NOT override it:
 that flag chooses a LANGUAGE for a prefilter, not whether one exists, and a
 caller who wants existence has `-fprefilter`. Both are specified in
 `docs/spec/tuning.md` §2.17.

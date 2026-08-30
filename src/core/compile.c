@@ -1041,7 +1041,22 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                  && !pfc_deny
                                  && pfc_rep
                                  && (pfc_force || pfc_rung);
-            bool collapse = pfc_wanted && !cx.job->fit.prefilter_lang_nullable;
+            /* [OPT-4.1] `-fprefilter` OVERRIDES THE DECLINE HERE TOO, and this
+             * conjunct is what makes `limits.md` §3.3's promise true rather
+             * than nearly true: without it, `-fprefilter` on a pattern the
+             * SIZE rung is rescuing would decline the collapse, keep the exact
+             * prefilter that the cap already refused, and REFUSE a pattern
+             * that compiles today. `select_engine.c` states the rule (do-or-
+             * die: the decline's alternative is no prefilter, which is exactly
+             * what an explicit `-fprefilter` forbids); this is its second
+             * site, because the two sites decline different things — a
+             * PREFILTER there, a LANGUAGE here — and a request for a prefilter
+             * that only the collapsed language can supply is honoured, not
+             * silently answered with a refusal. */
+            const bool pfc_prefilter_forced =
+                (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
+            bool collapse = pfc_wanted && (pfc_prefilter_forced ||
+                                           !cx.job->fit.prefilter_lang_nullable);
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
              * from the SAME conjuncts (D81). The ladder branches on the
              * DECISION rather than re-walking them, which is what makes

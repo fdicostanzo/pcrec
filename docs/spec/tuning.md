@@ -917,10 +917,14 @@ every answer is "maybe". pcrec builds NO prefilter in that case:
   from the EXACT language — the flag chooses a language, not whether a filter
   exists — and the artifact stamps `_LANG "exact"` /
   `_LANG_WHY "nullable collapsed language"`;
-- **`-fprefilter` OVERRIDES the decline** and is the only thing that does. It is
-  do-or-die: its alternative is no prefilter, which is exactly what an explicit
-  `-fprefilter` forbids, so a nullable collapsed prefilter is still built for a
-  caller who demanded one. `-fprefilter-collapse` does NOT override it.
+- **`-fprefilter` OVERRIDES the decline** and is the only thing that does, on
+  both rungs and under `-fprefilter-collapse` alike. It is do-or-die: its
+  alternative is no prefilter, which is exactly what an explicit `-fprefilter`
+  forbids, so a nullable collapsed prefilter is still built for a caller who
+  demanded one — and on the size rung that is what keeps the promise above,
+  since the only prefilter that fits under the cap there IS the collapsed one.
+  `-fprefilter-collapse` does NOT override it: it chooses a LANGUAGE for a
+  filter, not whether one exists.
 
 MEASURED (pcrec-bench O-10, pin 96e44c2, three sets): where structure survives
 the collapse the rung is a 2.2-4.6x win (the `ctx` band, and `level-context`
