@@ -24,7 +24,7 @@ tests/base/review_r2.rxt (passing). Note the original entry's scoping claim
 
 ---
 
-## K2 — OPEN, deferred to module 'backrefs' (found 2026-08-09, R4 critic pass)
+## K2 — FIXED 2026-08-22 by module 'backrefs' ([M6.5.2]); confirmed [SPEC-1.10], 2026-08-30 (found 2026-08-09, R4 critic pass)
 
 pcrec's diagnostic for `\1`..`\9` describes a PCRE2 behaviour that does not
 exist. It reads:
@@ -69,11 +69,39 @@ message becomes wrong ADVICE once module 'backrefs' exists, and because
 src/parse/registry.c's notes now state the correct semantics while parse.c still
 prints the old text — a divergence that must be resolved rather than forgotten.
 
-**Not fixed now on purpose:** SR-2's acceptance bar is byte-identical output
-across the corpus, and changing this string would break that proof for no
-correctness gain. **Fix with:** module 'backrefs' (or SR-6), splitting `\0` from
-`\1`..`\9`. No tests/known_fail/ repro: the current behaviour is a rejection,
-not a wrong match, so there is no failing regression to ratchet.
+**Not fixed then on purpose:** SR-2's acceptance bar was byte-identical output
+across the corpus, and changing this string earlier would have broken that
+proof for no correctness gain. **Fix with:** module 'backrefs' (or SR-6),
+splitting `\0` from `\1`..`\9`. No tests/known_fail/ repro: the behaviour was
+always a rejection, not a wrong match, so there was no failing regression to
+ratchet.
+
+**FIXED, confirmed [SPEC-1.10] 2026-08-30.** Module 'backrefs' shipped
+2026-08-22 ([M6.5.2]) with no FIXED marker on this entry — the drift
+`docs/dev/spec_survey.md`'s STALE-OR-WRONG #2 flagged. Re-measured against a
+live `build/pcrec`: the GATE-CLOSED default (no `--features`) is UNCHANGED —
+`build/pcrec -p rx -o /dev/null '\1'` still prints the identical
+`"\1 (backreference/octal) requires module 'backrefs' (pattern offset 0)"`
+text, which is correct and expected on its own terms (D26: "requires module
+'X' discharges the obligation in full", independent of what the message
+says once the module exists) and was never this entry's complaint. What the
+entry actually needed checked is the ENABLED case ("the message becomes
+wrong ADVICE once module 'backrefs' exists"), and it now reads correctly:
+
+    $ build/pcrec -p rx --features backrefs -o /dev/null '\1'
+    pcrec: \1 refers to capture group 1, but this pattern has 0 (pattern offset 0)
+
+No trace of the old "(backreference/octal)" wording; the message states the
+real PCRE2-115-class fact (a reference to a capture group that does not
+exist) rather than the Perl/PCRE1 octal-fallback behaviour that never
+applied. The `\0`/`\1..\9` split this entry called for is live too: under
+the same `--features backrefs`, `\1` refuses as above while `\0` proceeds
+PAST the parser entirely (not a backreference at all — the same compile
+attempt fails only later, at the output-write step, on an unrelated
+artifact of the `/dev/null` probe target, not on parsing or diagnosis).
+`src/parse/mod_backrefs.c`'s "THE OCTAL RULE IS FOUR ORDERED QUESTIONS"
+(`src/parse/CLAUDE.md`) is where that split lives structurally. No
+`tests/known_fail/` regression existed to flip.
 
 ---
 

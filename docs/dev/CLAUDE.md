@@ -22,7 +22,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-19: K2 (cosmetic), K28 (emitted dead-state-DFA
+  Open as of 2026-08-19: K28 (emitted dead-state-DFA
   artifact fails the harness's own -O1 -Werror GENCFLAGS —
   maybe-uninitialized caps in the `<prefix>_match` wrapper; found by the
   [M6.2] wave B corpus, pre-existing, own-slice fix scheduled before the
@@ -112,7 +112,13 @@ Append-only where noted; the restart/status-recovery record for the project.
   MOD-0.1's first slice: pcrec named a module for constructs its own
   compliance survey calls architecturally OUT-OF-SCOPE — now a ROADMAP_NEVER
   column per-row and per-VerbName, a no-promise diagnostic, and a
-  both-directions prose⇔column check). Failing regressions live in
+  both-directions prose⇔column check), and K2 (FIXED 2026-08-22 by module
+  `backrefs` shipping ([M6.5.2]), confirmed with a FIXED marker at
+  [SPEC-1.10] 2026-08-30 after the module landing had left the entry
+  looking orphaned: `\1` under `--features backrefs` now reads "refers to
+  capture group 1, but this pattern has 0" rather than the stale
+  "(backreference/octal)" wording; the gate-closed default message is
+  unchanged and was never the defect). Failing regressions live in
   tests/known_fail/ (excluded from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable

@@ -1480,6 +1480,44 @@ chain's mech "after" figure. This is box-exclusive, serialized-with-other-
 lanes work (docs/dev/plan.md's BOX RULE) and is the manager's run, not a
 lane's — see `docs/dev/tt8_mech.md` for the exact commands.
 
+### The sabotage-row format: PROCESS, not spec ([SPEC-1.10]/F4, 2026-08-30)
+
+`docs/dev/spec_survey.md`'s F4 row flagged the sabotage-row format (mech's
+mutation-testing rows: `SAB_ID`, `SAB_FILE`, `SAB_BEFORE`/`SAB_AFTER`,
+`SAB_SUITES`, `SAB_EXPECT`, the `[MECH-REACH]` fields above, ...) as
+UNSURVEYED and left its spec-vs-process classification open. Read
+(`tests/mech/CLAUDE.md`, `tests/mech/sabotages/CLAUDE.md`) and ruled here:
+**it stays PROCESS documentation, here and in the two `CLAUDE.md` files
+above — never docs/spec/.**
+
+The test here is docs/spec/CLAUDE.md's own charter: spec documents state
+how the SHIPPED TOOL works and how to USE it — a contract pcrec makes with
+a caller or a contributor writing tests AGAINST that tool's observable
+behaviour (which is exactly why `docs/spec/rxt_format.md` moved out of this
+file at [SPEC-1.6]: `.rxt` blocks state expectations about what `pcrec`
+compiles and what the compiled matcher answers, a caller-facing surface one
+level removed). A sabotage row states neither. `SAB_BEFORE`/`SAB_AFTER`
+edit **pcrec's own source** to prove a CHECK catches a planted defect —
+testing the tests, not the tool — and nothing about that mechanism is
+observable from a compiled artifact or a CLI invocation. It is exactly
+[F5]'s own precedent one row up in the same survey table (identity gates'
+GATE MECHANISM — pin commits, program-region-vs-whole-file — "stays in
+docs/testing.md/tests/codegen/CLAUDE.md as DEVDOC/contributor-process, not
+spec"): a project-internal QA convention, not a tool surface.
+
+**The format itself is not restated here.** `tests/mech/sabotages/CLAUDE.md`
+is the field reference (Required/Optional tables, the `[MECH-REACH]` fields,
+closed vocabularies, the numbering convention, and the traps that have
+actually been hit); `bash tests/mech/run_sabotage_matrix.sh --help` prints
+the driver's own normative field list, which is authoritative over any
+prose copy including this one. `tests/mech/CLAUDE.md` is the directory
+survey (what each file does, `SAB_EXPECT`'s contract, the suite-name
+vocabulary). This file's own `[MECH-REACH]` subsection below restates four
+of those fields inline for readers already mid-topic on reach checks — that
+restatement is a convenience for THIS narrative, not a second source of
+truth, and drifts should be fixed by deleting the copy here in favor of a
+pointer, not by editing both.
+
 ### D69 — the mech re-run policy is TIERED, and how to run it (2026-08-23)
 
 The full 118-row matrix costs ~60 min per run (`docs/dev/chain_profile.md`)
