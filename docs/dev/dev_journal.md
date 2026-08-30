@@ -18434,3 +18434,48 @@ fallback is exit 0 + `RX_ENGINE_SEL`/`_WHY`; [ENG-ABS]'s case moves only
 process. I-20 written to the bench inbox with those answers; (iii)/(vi)
 (bounded@0.2 rungs) and candidates 1/2/4 wait on Frank's D86
 optimization-column pick — proposed there as the three rows.
+
+#### Forty-sixth session, part 3 (07:0x-07:1x EDT): w11's unread LIFTs; execution started — C1 GREEN; lane STOPPED for the bench's abi-12 window
+
+**Lesson (memory `pcrec-lane-hold-lift-artifact`):** w11 delivered
+"CODE COMPLETE, NOTHING EXECUTED — the hold was never lifted" at 07:03:
+my two LIFT messages (06:24, 06:38, both "sent") were never read — a
+BUSY lane's inbox drains only when it goes idle. Re-sent at its idle
+plus a `.lift` artifact; it resumed at once. From now on a HOLD/LIFT and
+any mid-run ruling is a FILE the brief tells the lane to poll.
+
+**w11 executing (07:05-07:10):** `make -j4` clean; `make strict` clean;
+**C1 three-way BYTE-IDENTICAL on its first run** — leg A (179 ×
+`--list-source`, 0.74 s) == leg B (`run.sh --dump`, 7.32 s, the bash
+per-line loop over 46,381 lines) == leg C (`verify_rxt.py --dump`,
+0.17 s): 3,265 block rows + 22,125 case rows (26,691 − 384 perr − 4,182
+g/gp — the lane's own census bug, fixed with a reconciliation), and
+leg A shows 0 head-declaration rows (C0a's third view). **C1 runtime
+8.2 s** (§7.4 risk 1 closed; ~0.2 % of a corpus run). Three build-found
+defects fixed: a `-Wformat-truncation` in `rxt_fail`; four diagnostics
+repeating the path inside the sentence so the 256-byte msg truncated
+away the OTHER site's line number (found by reading real output — a
+learnings candidate); the census bug. Lane rulings this part: F1
+ratified (the four verify_rxt kinds are a parser gap — and the lane's
+own correction: tests/harness/CLAUDE.md had recorded it at [DD-14] as
+harmless BECAUSE nothing reached it, a wiring fact W1.1 expires —
+learnings line owed at merge); F2 ratified (`|` block scalar HEAD-only;
+body `description` one line; into S1 + a marked format_design §1.3
+correction); F3a/b accepted; S-C7 deferred with S-C8 (its only W1.1
+route is S-C12's plant); C2 (`make test-corpus` once, PROCS=4) ruled
+MANDATORY on the lane — it changed run.sh's arms and seam; the ten
+rows S194-S203 via the matrix's `ONLY` filter, one at a time.
+
+**07:10 — pcrecdev2's WINDOW REQUEST** ([B19] merged 87f86b1: the abi-12
+adapter; the abi-12 AFTER: bounded six cells ~2 h + email/loglines
+controls ~1.5 h, ≈10:45 close). w11 was mid item 6 (a single verify_rxt
+python process); worktree clean at ab770e3. Stopped the lane (TaskStop —
+the bench-status memory's rule; a busy lane cannot be held by message),
+verified zero processes with cwd in its worktree, acked. Stall watchdog
+torn down (no lane); keepalive stays. After CLOSED: resume w11 (a send to
+the stopped agent, else a fresh lane on lane/w11 from ab770e3 with the
+report + log as its restart), then its remaining steps, then the
+battery on the merge. O-10 preview from pcrecdev2: the size-cap rescue
+stamps `_ENGINE_SEL "selected"` — its only trace is `_LANG_WHY`'s "size
+cap retry" prefix; Frank's bucket misses it (a stamp-semantics finding
+for when he rules).
