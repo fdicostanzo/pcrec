@@ -1347,11 +1347,12 @@ struct rx_info {
                                        of --no-captures and of engine
                                        selection */
     int           nnames;          /* entries in groups[]: NAMED groups
-                                       only. 0 until module 'named-groups'
-                                       lands (still true as of this
-                                       writing — verified: '(?<g>a)' still
-                                       refuses "requires module
-                                       'named-groups'") */
+                                       only. 0 when the pattern text
+                                       declares no named group, and 0
+                                       when module 'named-groups' is not
+                                       ENABLED for this compile — which
+                                       are two different reasons, not one
+                                       (see the staleness note below) */
     unsigned      engine;          /* PCREC_ENGINE_DFA=1 /
                                        PCREC_ENGINE_VM=2 */
     int64_t       step_budget;     /* -1 = none */
@@ -1404,6 +1405,36 @@ struct rx_info {
                                             INCLUDED (§6.3) */
 };
 ```
+
+**[DD-13b.W1], 2026-08-30 — `nnames`'s comment was STALE, and the way it
+was stale is worth one paragraph.** It read *"0 until module
+'named-groups' lands (still true as of this writing — verified:
+`'(?<g>a)'` still refuses "requires module 'named-groups'")"*. Module
+`named-groups` shipped 2026-08-18 (`src/parse/mod_named_groups.c`,
+D79's five ruled modules), so the CLAIM has been false for twelve days —
+but **the quoted verification still reproduces its quoted output**, because
+the module is GATED and not enabled by default. MEASURED 2026-08-30:
+
+```
+$ build/pcrec -p rx -o - -- '(?<g>a)'
+pcrec: (?<...) requires module 'named-groups' (pattern offset 0)
+$ build/pcrec -p rx --features named-groups -o - -- '(?<g>a)'
+    ... static const rx_group_entry rx_group_names[] = {
+            { "g", 1, 1, NULL },
+    ... .ngroups = 1,
+        .nnames = 1,
+```
+
+So a reader who did the honest thing — re-ran the command the comment
+offers — would have been told the stale sentence was current. That is
+the failure mode `docs/dev/learnings.md` §3 names one level up from
+where it usually bites: not a check that shares a source with its
+subject, but a CITED MEASUREMENT that outlived the fact it was cited for
+while still reproducing. A verification command pins an OUTPUT; it does
+not pin the REASON for that output, and this comment's reason changed
+from "the module does not exist" to "the module is not on by default"
+with no visible effect. Corrected in the struct above by naming both
+reasons separately.
 
 **[ENG-ABS], 2026-08-29 — `match_form`.** Appended after `prefilter` on
 [DD-13c]'s own terms and for its own reason (a consumer with no
