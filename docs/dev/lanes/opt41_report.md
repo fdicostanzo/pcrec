@@ -452,3 +452,102 @@ replacing it — the question is what makes the ruling readable.
    rung stamping `"selected"` is not an [OPT-4.1] residual and must not be
    re-opened as one. This row's only interaction with it is that a DECLINED
    size rung is likewise `"selected"`, visible as `RX_VM_PREFILTER "none"`.
+
+---
+
+# PHASE 2 — MEASURED
+
+Everything below is MEASURED on the merged tree (lane/opt41 after
+`Merge branch 'main' into lane/opt41`, w11f included) unless it says otherwise.
+
+## 10. The merge, the build, and the first readings
+
+| item | result |
+|---|---|
+| `git merge main` | ONE conflict, `docs/dev/lanes/CLAUDE.md` — both lanes appended an entry to the same list. Resolved keeping BOTH, w11f's first (it merged to main first). `docs/spec/limits.md`, `tests/mech/run_sabotage_matrix.sh` and `tests/mech/sabotages/CLAUDE.md` auto-merged and were each READ afterwards rather than trusted: my `[OPT-4.1]` block, my `pfcollapse` arm and w11f's `rxtsource` arm are all intact and no conflict marker survives anywhere in the tree |
+| `make strict` (on the resolution, before committing it) | **rc 0** — "whole tree compiles clean with -Werror -Wshadow" |
+| `make -j4` | rc 0 |
+| `--list-axes` | 21 axes; `engine-route` carries `declined-nullable` at order 3 |
+
+## 11. THREE CORRECTIONS THE RUN FORCED, all mine rather than the compiler's
+
+### 11.1 §6b's witness was unusable twice over
+
+`(?:SEL1)?` — §6's pattern made nullable, which Phase 1 chose because the two
+would then differ by four characters — is not a witness at all:
+
+| probe | result |
+|---|---|
+| `(?:SEL1)?` default | REFUSED, 2,487,847 emitted bytes > 1,000,000 |
+| `(?:SEL1)?` `-fno-prefilter-collapse` | REFUSED, **2,487,847** — identical |
+| `(?:SEL1)?` `-fno-prefilter` | REFUSED, **2,487,847** — identical |
+| `(?:SEL1)?` `--max-emit-bytes=9000000` | compiles, and is a **DFA-ENGINE** artifact: `RX_ENGINE "dfa"`, `RX_ENGINE_SEL "selected"`, 2,500,874 B |
+
+The identical refusal with the prefilter denied AND with it off entirely says
+the size is the ENGINE BODY, not the prefilter — so no flag on this axis moves
+it — and the raised-cap probe says the artifact takes **no VM prefilter
+decision at all**. Neither is a defect in the predicate. **The lesson, recorded
+in the check's own header: a witness for this row must be chosen for its
+OUTCOME (a VM hybrid whose DFA overflowed), never by transforming a pattern
+that has that outcome — nullability is not a property you can bolt on and keep
+everything else fixed.**
+
+The replacement is a pair MEASURED at 0.04 s each:
+
+| pattern | SEL | PREFILTER | LANG | WHY | bytes |
+|---|---|---|---|---|---|
+| `(a\|b)*a(a\|b){15}` | `collapsed-prefilter` | `hybrid` | `count-collapsed` | `dfa overflow retry, exact nfa 20` | 47,152 |
+| `(?:(a\|b)*a(a\|b){15})?` | **`declined-nullable`** | `none` | *(absent)* | *(absent)* | 34,723 |
+
+One `?` apart, opposite sides of the predicate, and the declined artifact is
+12,429 bytes smaller. `(a|b)*a(a|b){15}` is the classic exponential-DFA shape:
+a 20-state NFA whose subset construction needs ~2^16 states, so it overflows
+the cap without a large count and without a slow build.
+
+### 11.2 §6b(3) was over-claiming, and the override lives elsewhere
+
+The arm asserted that `-fprefilter` overrides the nullability decline. MEASURED,
+it does not exercise that at all: `-fprefilter` makes `compile_driver`'s
+`ovf_eligible` false, so on the **[SEL-1] rung the decline is never REACHED** —
+the witness refuses with *"pattern too complex for the DFA engine (>32000
+states)"*, which is pre-existing [SEL-1] behaviour and would refuse identically
+with [OPT-4.1] reverted. The arm now asserts what it does show (a do-or-die
+request is honoured or refused, never silently dropped — S64's failure mode)
+and names where the override really lives.
+
+**The override is only reachable on the SIZE rung, and it is now asserted
+there** (`tests/resource/run_resource_tests.sh`), which is also the direct test
+of the correctness gap §2 records me fixing on review:
+
+| `(a\|b){0,30000}` | SEL | PREFILTER | LANG_WHY | bytes |
+|---|---|---|---|---|
+| default | `selected` | **`none`** | *(absent)* | 32,076 |
+| `-fprefilter` | `selected` | **`hybrid`** | `size cap retry, exact 1333437 > 1000000` | 43,773 |
+| `(a\|b){1,30000}` default (non-nullable twin) | `selected` | `hybrid` | `size cap retry, exact 1335175 > 1000000` | 46,006 |
+
+The first two rows are the same pattern, so they also measure `limits.md`
+§3.3's "dropping the prefilter is strictly smaller than collapsing it" on ONE
+pattern rather than across two: 32,076 against 43,773.
+
+### 11.3 `lang_witness`'s byte-identity leg was wrong for `exact-nullable`
+
+It asserted the `-fprefilter-collapse` build is byte-IDENTICAL to the default,
+on the reasoning that a flag which changed no language moved no byte. **A
+DECLINE is a policy the artifact REPORTS**, so `_LANG_WHY` goes from `"exact"`
+to `"nullable collapsed language"` and the builds differ by exactly 22 bytes.
+Both rows went red on a correct compiler (`((a)|b){0,4000}` 298,389 vs 298,367;
+`((a)|b){0,3}` 49,363 vs 49,341). The replacement is SHARPER than what it
+replaces: the artifacts must differ in the `_LANG_WHY` line **and in nothing
+else** — the flag reached a policy, said so, and moved no machine. Byte
+identity could not have expressed the second half.
+
+### 11.4 An operational trap, recorded because it cost a run
+
+The first `run_prefilter_collapse.sh` run died mid-sweep with
+`line 552: syntax error near unexpected token '('` on a line that had just
+executed successfully. **The script was not broken** (`bash -n` clean before
+and after): I EDITED IT WHILE IT WAS RUNNING, and bash reads a script lazily by
+BYTE OFFSET, so the edit shifted the file under the running interpreter. The
+`[sel]` results it had already produced are valid; everything after the edit is
+noise. Never edit a shell script while a run of it is in flight — re-run
+instead.
