@@ -164,20 +164,32 @@ which is why it adds no ceiling of its own to the list above, and why the
 paragraph it follows still describes every way a state-count ceiling can
 refuse a pattern.
 
-**[OPT-4] (2026-08-29) A THIRD ENTRY IN THIS NEIGHBOURHOOD, AND IT IS NOT AN
-EXCEPTION TO ANY CEILING — it is a BUDGET that changes which machine gets
-built.** `PCREC_PREFILTER_EXACT_NFA_STATES` (128) is compared against the exact
-forward NFA's state count at the point the VM hybrid's prefilter is about to be
-determinized. Over it, the prefilter is rebuilt from the COUNT-COLLAPSED
-lowering (`docs/spec/tuning.md` §2.17) — a sound superset whose machine does
-not scale with a bounded repeat's count. **It refuses nothing and accepts
-nothing new by itself**, so it adds no row to the contract above; what it
-changes is the SIZE of an accepted artifact, and through that it interacts with
-§8's emitted-size caps in one direction only — a pattern refused there may
-become acceptable, never the reverse. MEASURED: K41's second fuzz-gate witness
-went from refused at 670,932 code bytes to 158,643, compiling in 1.94 s of gcc
-where the un-capped exact form took 49.25 s. The budget never applies where the
-DFA is the ENGINE, where the language must be exact.
+**[OPT-4] (2026-08-29, as re-ruled) THE PREFILTER-LANGUAGE RETRY, AND IT IS NOT
+AN EXCEPTION TO ANY CEILING — it is what happens AFTER one fires.** An earlier
+design put a state BUDGET here (`PCREC_PREFILTER_EXACT_NFA_STATES`, 128) that
+chose the count-collapsed prefilter by measuring the pattern; Frank reversed it
+on a corpus regression and the constant is deleted
+(`docs/design/prefilter_count_independence.md` §10a).
+
+What remains is a RETRY, in `compile_driver`'s existing attempt ladder. When
+§8's emitted-size caps refuse an artifact, pcrec makes ONE more attempt with
+the VM hybrid's prefilter built from the count-collapsed lowering
+(`docs/spec/tuning.md` §2.17) — a sound superset whose machine does not scale
+with a bounded repeat's count — and refuses only if that is over the caps too.
+The [SEL-1] rung above it does the same thing for a DFA STATE cap, where the
+alternative is no prefilter at all rather than a refusal.
+
+**THIS IS THE ONE PLACE A CAP IN THIS DOCUMENT IS NOT THE LAST WORD**, and the
+contract is still exactly as stated: nothing is emitted past a cap, and a
+pattern is refused unless some attempt produces an artifact under it. The retry
+adds attempts, never headroom. MEASURED: K41's second fuzz-gate witness is
+refused at 670,952 code bytes under the exact language and ships at 152,259
+through the retry, stamping
+`RX_VM_PREFILTER_LANG_WHY "size cap retry, exact 670952 > 500000"`.
+
+`-fno-prefilter-collapse` denies both rungs, so a caller who would rather be
+refused than handed a superset prefilter can be. The retry never applies where
+the DFA is the ENGINE, where the language must be exact.
 
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST

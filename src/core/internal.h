@@ -1243,7 +1243,8 @@ typedef struct {
      * know about this field's home. Every other member here is a decision
      * selection can make from the AST alone; this one is decided by MEASURING
      * the exact machine (`src/core/compile.c`'s build gate compares `Nfa.n`
-     * against `PCREC_PREFILTER_EXACT_NFA_STATES`), because a prediction of
+     * — historically against a state budget, now only for the stamp), because
+     * a prediction of
      * that number would be a second statement of `compile_ast`'s own `A_REP`
      * lowering and the two can drift (D24). It rides on `EngineFit` rather
      * than on `Job` so that the emitter reads the prefilter's KIND and its

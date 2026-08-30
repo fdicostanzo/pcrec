@@ -6770,7 +6770,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     sb_printf(o, "; prefilter    %s\n", st->prefilter
               /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped
                * being true of every hybrid. Above
-               * PCREC_PREFILTER_EXACT_NFA_STATES the pair is built from the
+               * On a collapse RUNG (Frank's ruling B: a DFA state cap
+               * overflowed, or a size cap refused the exact artifact) — or
+               * under -fprefilter-collapse — the pair is built from the
                * count-collapsed lowering, so it hands the VM a CANDIDATE
                * window the VM verifies -- rejection sound, start a lower
                * bound, END not a bound, which is why the PRUNING line below
@@ -7568,7 +7570,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * because the two above already say everything it would have to say.
      * docs/design/prefilter_count_independence.md §2/§3.
      *
-     * Above `PCREC_PREFILTER_EXACT_NFA_STATES` the prefilter is built from the
+     * On a collapse rung, or under -fprefilter-collapse, the prefilter is built from the
      * COUNT-COLLAPSED lowering (`src/ir/nfa.c`'s `A_REP` arm, every counted
      * repeat as `X{min(m,1),}`), so it answers for a strict superset by the
      * one-line proof in §3. H1 (rejection) and H2 (the span START, re-asked on
@@ -8303,13 +8305,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * the axis (`"denied"`). A user reading a size they did not expect
          * needs to know which, and so does a check.
          *
-         * THE NUMBER IS IN THE STRING, and it is the measured exact forward
-         * NFA state count with the budget it was compared against — not a
-         * remark about the budget, the actual comparison, so a reader can see
-         * how close the artifact came to the other side of the knee without
-         * rebuilding it. The budget is printed from
-         * `PCREC_PREFILTER_EXACT_NFA_STATES` rather than spelled `128`, so the
-         * stamp stays true if the number ever moves.
+         * THE NUMBER IS IN THE STRING WHERE THERE IS ONE, and it is the
+         * measurement that CAUSED the rung — the exact NFA's size for the
+         * [SEL-1] rung, the refused artifact's bytes and the cap it exceeded
+         * for the size rung. Not a remark about a threshold: the actual
+         * comparison, so a reader can see what the collapse avoided, or decide
+         * to raise a cap instead, without rebuilding anything.
          *
          * NO SECOND DERIVATION HERE. Both halves come off `EngineFit`, written
          * once at `src/core/compile.c`'s gate; this site formats and does not

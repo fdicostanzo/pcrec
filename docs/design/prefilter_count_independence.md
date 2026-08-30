@@ -131,7 +131,15 @@ costs **6,798 – 7,447 bytes, flat**, against 23,100 (`{0,400}`), 177,306
 a possessive bound is `A_ATOMIC(A_REP(X))` and the atomic wrapper is already
 erased by the arm above it. There is no `{0,n}` special case anywhere.
 
-## 4. The selection — WHEN, and the number
+## 4. The selection — WHEN, and the number  **[REVERSED — see §10]**
+
+> **STATUS, 2026-08-29: THIS SECTION DESCRIBES A DECISION THAT WAS REVERSED.**
+> The knee it derives (`PCREC_PREFILTER_EXACT_NFA_STATES = 128`) no longer
+> exists in the source. It is kept, unedited below, because §10's ruling chain
+> is unreadable without it and because the sweep it contains is a real
+> measurement of a real distribution — what changed is not the numbers but what
+> they were used FOR. Under Frank's ruling B the default is the exact language
+> and the collapse is a ladder attempt; read §10 first.
 
 Collapsing unconditionally was considered and REFUSED on the measurement. The
 exact prefilter is a strictly better filter, and the corpus says most counted
@@ -221,7 +229,7 @@ knee. Above it the size is flat. K39's own check (`{0,400}` against
 `{0,4000}`, delta <= 2 lines) passes because both are above the knee at 2,405
 and 24,005 NFA states. `-fprefilter-collapse` reaches the literal form.
 
-## 5. Where it lives
+## 5. Where it lives  **[partly superseded — see §10]**
 
 - **`src/ir/nfa.c`** — `NB` gains a `collapse` bool and `case A_REP` reads
   `rmin`/`rmax` through it. ONE site, in the arm that owns the lowering.
@@ -575,6 +583,74 @@ that the match-time costs in §7 — the 840,000x worst case, the 44x on
 `(ab){300}` find-all — stop landing on artifacts that compile fine today. That
 is the whole trade, and it is Frank's to make: **-1,874,322 bytes and K39 closed,
 against no match-time regression on anything that compiles today.**
+
+### 10a. THE RULING CHAIN, and it is three steps because the second was measured
+
+**A (built, 2026-08-29 morning): the KNEE.** Collapse when the exact prefilter
+NFA exceeds `PCREC_PREFILTER_EXACT_NFA_STATES = 128` — §4's plateau, chosen on
+the distribution of the corpus's own hybrids. It bought -1,874,322 corpus code
+bytes and closed K39.
+
+**THE CORPUS REGRESSION that reversed it.** The merge battery on 7794de9 went
+red on a base-tier cell, not a benchmark:
+`tests/base/d27_k23_ambiguous_decomposition.rxt`'s `(a{1,3}){65}` collapsed at
+392 exact NFA states, lost `prefilter-window`, and on its broken-run subjects
+went from `0,100 90,100` in **0.00 s** to `PCREC_ERR_STEPS` after **13.34 s**;
+it also exhausted the VM budget under san. §7.2b had already found the shape of
+this on K23 at a 64-step budget and §10 had flagged it for the ruling — the
+battery found it on a pattern with no budget flag at all, which is the version
+that decides.
+
+**B (ruled, and built here): FALLBACK-ONLY.** The default builds the EXACT
+prefilter. The collapsed language is chosen only as an ATTEMPT in
+`compile_driver`'s ladder, when the exact machine cannot be built or its
+artifact cannot ship:
+
+| rung | trigger | `_LANG_WHY` |
+|---|---|---|
+| [SEL-1] | a DFA STATE cap overflowed | `dfa overflow retry, exact nfa N` |
+| [OPT-4] | an emitted-size cap REFUSED the exact artifact | `size cap retry, exact N > cap` |
+
+`-fprefilter-collapse` collapses wherever a collapsible repeat exists — the
+only route to literal count-independence, and the home of every cost §7
+measures. `-fno-prefilter-collapse` denies both rungs, which turns a rescue
+into a refusal and is now the main thing that flag buys a caller.
+
+**WHY THE ALTERNATIVE §10 MEASURED IS NOT WHAT LANDED.** §10 asked whether a
+CAP-TRIGGERED default would rescue any of the 23 and found ZERO, because
+`emit_size_code` excludes table initializers and a table-driven prefilter is
+almost all tables. Ruling B is cap-triggered on the TOTAL cap as well as the
+code one, which is the half that bites: `(a|b){0,30000}` is refused at
+1,333,367 total bytes and the rung ships 32,297. So the corpus delta under
+ruling B is not the 0 that §10 predicted for a code-cap-only trigger — it is
+whatever the total cap catches, which on this corpus is that shape and K41's
+witness 2. The measurement in §10 stands; what it was measuring was narrower
+than what was ruled.
+
+**WHAT B COSTS, plainly.** K39 is re-scoped rather than closed: at the default
+the artifact is count-BOUNDED (by the caps) and not count-independent. The
+-1,874,322 corpus bytes are not collected. What it buys is that no artifact
+which compiles today gets slower, loses its pruning ceiling, or falls out of a
+step budget — which is what the battery proved was not true of A.
+
+### 10b. Frank's other question: could the exemplar pass answer this per target?
+
+Asked 2026-08-29, recorded here rather than built (D77). **Yes, and it is the
+one place a per-pattern answer would be sound.** The whole difficulty above is
+that the right language depends on the SUBJECTS, not on the pattern: a
+collapsed prefilter is cheap when the repeat's body does not occur in long runs
+and ruinous when it does — that is exactly the `(a{1,3}){65}`-on-a-run-of-`a`s
+case, and exactly why a static knee on the pattern's own NFA could not get it
+right.
+
+D83/[ENG-PGO]'s analysis reads a subject profile, which is the missing term. A
+per-target `-fprefilter-collapse` chosen there — long runs at the repeat's body
+keep the exact prefilter, none present collapse it for size — would make the
+decision on the quantity that actually governs the cost, per target, with the
+profile as the evidence. It needs no new mechanism in this row: the flag and
+both stamps already exist, and the pass would only be choosing the flag.
+
+Not chartered. The measurement that would justify it is [ENG-PGO]'s to take.
 
 **ONE FACT ARRIVED AFTER §10 WAS WRITTEN AND BELONGS IN THE RULING.** The merge
 battery turned up a cost §7 had not predicted and §10 therefore under-states:
