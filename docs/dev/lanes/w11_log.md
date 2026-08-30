@@ -110,3 +110,8 @@ the sabotage rows as S194-S203 with a new `rxtsource` mech arm registered
 ahead of them.
 
 Nine commits, `da10212`..`e708753`.
+
+## Resume (2026-08-30, after the bench window 07:10-10:45)
+
+At `ab770e3`. Build green, `make strict` clean, C1 measured green three-way
+(8.2 s: legA 0.74 / legB 7.32 / legC 0.17). Resuming at item 6.
