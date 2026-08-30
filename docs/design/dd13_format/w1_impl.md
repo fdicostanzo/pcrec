@@ -1,6 +1,6 @@
 # [DD-13b.W1] Implementation note — wave 1 of the grown `.rxt` format
 
-**Status: REVISION 2.1, post-panel (r45), post-re-check and post-rulings. NO CODE IS
+**Status: REVISION 2.2, post-panel (r45), post-BOTH re-checks and post-rulings. NO CODE IS
 WRITTEN.** Revision 1 (`bf843a7`) went to a three-critic D6 panel
 (`docs/dev/reviews/2026-08-30-r45-w1-impl.md`): **4 blockers, 6 must-fix,
 and a verdict that the spine stands and §2 is not buildable as written.**
@@ -103,6 +103,18 @@ closed; go/no-go = charter .1 and .2, with N1 as the condition):
 | **N2** (SHOULD) — C1 asserts 179 where run.sh's no-arg branch yields 178 | §3.1: leg B is invoked through run.sh's `$@` branch (`:187-195`, no exclusion), with the manifest's total-line assertion as the backstop |
 | **N3** (SHOULD) — the arm-block hash pin sits inside the range W1.1 edits | §3.1: BEGIN/END marker comments delimit the protected region, the check hashes between them, and the update rule lives in the failure message |
 | **N4** (NOTE) — C0a conflated two kinds of fact | §3.1: W1's own invocation counter and the independent head-bearing-file census are named separately, with why neither alone suffices |
+
+**Revision 2.2** folds in the r45sem RE-CHECK (B2/B3/B4 and M1-M5, S1-S6
+all CLOSED; B1's DIAGNOSIS closed but its REMEDY refuted):
+
+| item | landed |
+|---|---|
+| **sem N1** (the remedy) — `W` is a per-REGION property while "delivering" is per CALL SITE, so excluding capture indices from `W` would exclude them for every other site of the same definition | **§2.8 rewritten again.** RULED (manager, architecture): **a delivering call is FORCED to `CALL_SPLICE`**, because `vm_splice` allocates `base = v->nsplice` FRESH PER SITE — so the exclusion is per-site by construction. §2.4's table gains a FOURTH changed row (`cg_eligibility` gains one input). The two refusals turn out to be the forcing's precondition |
+| **sem N2** — the restore is index-coupled | §2.8: the restore runs over the CALLEE REGION's own index space (`vm_region`, `emit_vm.c:6036-6046`); `vm_publish_saves`'s *"three readers, one write"* named; `vm_splice`'s overflow `ctx_fail` (`:5924-5932`) cited as the loud detector; and the trail-coherence argument — `vm_set` is trailed, so a dropped restore keeps the callee's value and is undone on backtrack |
+| **sem N3** — where the delivering bit lives | §2.4: ON the `A_CALL` node (a bare `const Ast *` walker cannot reach a memo), written EXPLICITLY on every call, because the arena zero is the unsound direction — `link`'s own situation and `link`'s own answer (`callgraph.c:246`, `:337`) |
+| **sem N4** — the sub-parse's pending list | §2.5: the list is CAPTURED into the scope record, not overwritten by the restore; the re-basing is TWO passes (a tree walk for `A_CAP`, a pass over the captured list) rather than one |
+| **sem N5** — the region start vs the first delivered group | §4's S9b: the region starts at `ngroups+1` with the wrapper there; the first delivered GROUP is at `ngroups+2`. Revision 2.1 said the second and implied the first |
+| **sem N6** — `match_api.md:1504` becomes reachable-false | §4's S9c, and noted as the SECOND instance of §1.6's staleness shape in one struct's docs |
 
 **What the panel could NOT refute, and is not re-argued below:** the
 sub-parse on one `Ctx`; injection as `A_REP{0,0}(A_CAP)`; re-basing by a
@@ -644,8 +656,24 @@ entries were wrong.
 | the caps slot layout | D61; `emit_dfa.c:392-395` | reused; delivered slots land above `ngroups` by arithmetic |
 | deferred offset-bearing refusals | `src/opt/postresolve.c` (`internal.h:3241`) | reused for the delivery refusals |
 | **`pcrec_has_live_capture`** | `src/opt/atomic.c:744-760` | **CHANGED — a delivering-call arm (§2.8)** |
-| **the `W` restore-set fixpoint** | `src/opt/callgraph.c`; `internal.h:826-849` | **CHANGED — a delivering call's callee capture indices are excluded (§2.8)** |
+| **`vm_splice`'s per-site save block** | `emit_vm.c:5915-5985`, `vm_region`'s restore `:6036-6046` | **CHANGED — a delivering site's delivered capture indices are omitted from ITS OWN save block (§2.8)** |
+| **`cg_eligibility`** | `src/opt/callgraph.c:446`, the link write at `:423` | **CHANGED — one input: a delivering site forces `CALL_SPLICE` (§2.8)** |
 | **the `groups[]` sort key** | `emit_dfa.c:1136`, `:1156-1166` | **CHANGED — (ref-is-NULL, name, number) (§2.7)** |
+
+**N3 — the "delivering" bit lives ON the `A_CALL` node, and is written
+EXPLICITLY on every call.** It cannot be a side table: `internal.h:3247`'s
+walkers are bare `const Ast *` descents with no context and no memo (the
+reason `callgraph.c` exists at all), so a predicate asked of a node must
+be answerable from the node. And the arena zero is **the unsound
+direction** — a flag defaulting to "not delivering" turns a missed write
+into a silently capture-transparent call, i.e. delivery that quietly does
+not happen, which no check downstream can distinguish from a site the
+author never declared. This is `link`'s own situation and gets `link`'s
+own answer: `callgraph.c:246` and `:337` record that *"the arena zeroes
+to `CALL_SPLICE`, which is the WRONG default"*, so wave B+C sets `link`
+on every node rather than relying on the zero. **The composer likewise
+sets the delivering bit on EVERY `A_CALL` — true and false alike —
+before selection runs**, so "never written" is not a reachable state.
 
 The three CHANGED rows are the honest form of revision 1's claim. Every
 alternative that would have created a parallel mechanism — a definition
@@ -678,6 +706,28 @@ recording that it was resolved and to what; the walk re-bases exactly
 those. A call with no pending record is `(?R)` (refused, below); a call
 whose pending record is still deferred is a file or caller-scope
 reference and is resolved AFTER the walk, at its final number.
+
+**N4 — the sub-parse's pending list must be CAPTURED, not merely
+restored, and revision 2.1 left that ambiguous.** §2.2 swaps
+`pending_refs`/`n_pending_refs` into the scope record and restores them
+afterwards. If the restore simply puts the CALLER's list back, the
+definition's own records — the very things this walk is keyed on — are
+gone by the time the walk runs. **So the scope record CAPTURES the
+definition's list head**: on leaving the sub-parse the caller's list is
+restored to `cx` *and* the definition's head is retained in the scope
+record, which the composer then owns.
+
+The walk is therefore **two passes over two structures, not one**:
+
+- a **tree walk** over the definition's subtree, re-basing `u.cap.no` on
+  every `A_CAP` (a group is a node and nothing else records it);
+- a **pass over the captured `PendingRef` list**, re-basing the resolved
+  `u.call.target` and `u.bref.refs[]` of exactly the references that
+  sub-parse resolved locally.
+
+Stating it as one walk hid the fact that the two need different
+iteration; stating it as two makes the `(?R)`/deferred cases fall out —
+they are simply not in the captured list.
 
 **`PendingRef` gains a scope discriminator** (r45sem B2), because
 `(?&^.w)` and `(?&w)` are the same node kind with the same field. The
@@ -868,15 +918,89 @@ are touched:**
    `DEFINE`-shaped special case would have been a parallel mechanism for
    two thirds of its own population."* One predicate, keyed on the fact
    that actually matters.
-2. **The callee's CAPTURE indices excluded from `W`** (the
-   `callgraph.c` fixpoint). Only the capture slots of the delivered
-   groups, and only for a delivering call — every other slot family
-   (`SLOT_GROUP<n>_PENDING`, `SLOT_CUT_MARK<n>`) stays in `W`, because
-   `internal.h:826-849` records that the capture-only version of `W` was
-   **refuted twice**, losing two matches and producing six false matches.
-   This is a targeted exclusion of a named subset, not a return to that
-   refuted rule, and the note says so because the failure mode is
-   recorded and expensive.
+2. **A delivering call is FORCED to `CALL_SPLICE`** — RULED (manager,
+   architecture, on r45sem's re-check), and revision 2.1's version of
+   this mechanism was NOT IMPLEMENTABLE as it was scoped.
+
+**Why the obvious form does not work, and it is a scoping mismatch rather
+than a bug.** Revision 2.1 said "the callee's capture indices excluded
+from `W`". **`W` is a per-REGION property; "delivering" is a per-CALL-SITE
+one** (D87 rule 5: *"Per CALL SITE, not per definition"*). CITED,
+`vm_publish_saves` (`emit_vm.c:5716-5735`):
+
+```c
+case A_CALL: {
+    int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+    ...
+    a->u.call.save  = v->rgn_w[i];
+    a->u.call.nsave = v->rgn_nw[i];
+```
+
+The index is the call's TARGET, so **every call site of one region is
+handed the same `W` array**. Excluding a delivered group's capture
+indices there would exclude them for every OTHER site of the same
+definition too — including non-delivering ones, which must stay
+capture-transparent. One definition called twice, delivering at one site
+and not the other, is precisely the case §2.13 exists for, and it is the
+case the exclusion cannot express.
+
+**The splice makes the exclusion per-site by construction.** CITED,
+`vm_splice` (`emit_vm.c:5915-5985`):
+
+```c
+const int base = v->nsplice;
+v->nsplice += a->u.call.nsave;
+```
+
+`base` is **fresh at each site**, so a spliced call's save slots are that
+site's own. Forcing a delivering call to `CALL_SPLICE` therefore puts the
+capture exclusion exactly where "delivering" lives, and no other site of
+the definition is touched.
+
+**Two things keep the forcing finite, and both are already rules of this
+design**: a recursive definition is non-deliverable (the first refusal
+below), so a forced splice can never be asked to inline a cycle; and the
+activation bound (≤ 1 along every path) is what bounds the splice's
+expansion. The forcing is thus safe *because* of the two refusals, which
+is worth stating — they were written for the struct's sake and turn out
+to be the splice's precondition as well.
+
+**`cg_eligibility` gains one input**: a site's delivering flag forces
+`CALL_SPLICE` for that node. Today `callgraph.c:423` writes the link from
+a per-REGION decision (`if (i >= 0 && cg->splice[i]) … = CALL_SPLICE`),
+so the per-site force is an override at that write, not a new pass.
+
+**N2 — the restore's INDEX SPACE, and why a dropped capture is coherent
+rather than merely absent.** The restore is emitted in `vm_region`
+(`emit_vm.c:6036-6046`) over `v->rgn_w[i][j]` — **the callee region's OWN
+index space**, not the caller's and not the lexical occurrence's
+(`internal.h:826-849`: *"THE INDICES ARE THE CALLEE REGION'S OWN … a
+restore written against the wrong indices is §5.3b's axis-C miscompile
+arriving by a second route"*). `vm_publish_saves`'s own header states the
+coupling this design must not break: *"Three readers, one write"* —
+`vm_call`'s save emission, `vm_region`'s restore emission, and
+`vm_cost`'s `2 * |W|` trail charge. **A change that drops an index from
+the save must drop it from all three**, and the loud detector already
+exists: `vm_splice`'s overflow `ctx_fail` (`emit_vm.c:5924-5932`), which
+names K27's class explicitly — *"the pre-pass and this walk disagreed
+about how many sites there are or how big `W` is … LOUD, because the
+alternative is an out-of-bounds write in EMITTED code."*
+
+And the omission is **trail-coherent**, which is the part that makes it
+safe rather than merely selective: the restore is a `vm_set`, and
+`vm_set` is TRAILED — the emitted comment says so, *"restore the caller's
+value, itself TRAILED so a retreat into this callee re-establishes the
+callee's own"*. So a delivered capture that is NOT restored keeps the
+callee's value after the return, and a later backtrack through the call
+undoes it exactly as it undoes every other trailed write. Delivery does
+not need a second undo mechanism; it needs one fewer restore.
+
+**Every other slot family stays in `W`** — `SLOT_GROUP<n>_PENDING`,
+`SLOT_CUT_MARK<n>` and the rest — because `internal.h:826-849` records
+that the capture-only version of `W` was **refuted twice** (two lost
+matches, six false matches). This is a targeted omission of a named
+subset at one site, not a return to that rule, and the note says so
+because the failure mode is recorded and expensive.
 
 **The two non-deliverable shapes, and M5/S1's correction.** Revision 1
 said "a call under a repeat" and checked lexical repeat depth. r45sem M5
@@ -1475,10 +1599,10 @@ end. A parser landing without its spec hunk is rejected on sight.
 | **S10** `limits.md`'s "Handling an oversized artifact" item 1 stops being a forward reference | `limits.md` | W1.1 |
 | **S11** `--source`, `--target`, `--lib-path`, `--emit-composed`, `--list-source`, and §1.5's output-naming rule | `cli.md` | W1.2 (`--emit-composed` with .3) |
 | **S9** `rx_info.name`; **`nentries`**; the `abi` 12→13 sentence | `match_api.md` §6 | W1.2 — one of D76's four sites |
-| **S9c** **NEW (B4)**: the `groups[]` SORT KEY becomes (ref-is-NULL, name, number); the primary's rows are a genuine PREFIX; §6's caller algorithm is unchanged over `groups[0..nnames)`; `nentries` is how a caller reaches injected rows | `match_api.md` §6 | W1.3 |
+| **S9c** **NEW (B4)**: the `groups[]` SORT KEY becomes (ref-is-NULL, name, number); the primary's rows are a genuine PREFIX; §6's caller algorithm is unchanged over `groups[0..nnames)`; `nentries` is how a caller reaches injected rows. **Plus N6**: `match_api.md:1504` says `groups`/`nnames` stay `NULL`/`0` *"for every pattern until module `named-groups` is enabled"* — under composition an injected definition's names populate `groups[]`, so that sentence becomes REACHABLE-FALSE and is corrected here. **It is the same staleness shape as the `nnames` comment §1.6 already fixes** — it too carries a live verification (`'(?<g>a)'` still refuses) that keeps reproducing while the claim it supports rots, because the module is GATED rather than absent. Two instances of one pattern, in one struct's documentation | `match_api.md` §6 | W1.3 |
 | **S2** "Composition": the AST-level model, D87 rule 7(a)-(j), lexical-scope-wins with qualification, the visited-set closure, the five namespaces, **DECIDED (7)'s file-namespace rule and `(?&self)`**, and that a composed block's oracle is necessarily `pcre2` | `rxt_format.md` | W1.3 |
 | **S2b** the three pattern extensions with the "no legal PCRE2 pattern changes meaning" constraint and §1.4's measurement; the three registry rows | `docs/spec/` + `--list-syntax` | W1.3 |
-| **S9b** D61 made concrete by its first producer: `ngroups`/`nnames` are the PRIMARY's own; delivered slots occupy `ngroups+1 ..`; **the WRAPPER CONSUMES A SLOT, so the first delivered group is at `ngroups+2`** (Q-W1, r45sem's correction); `RX_NCAPS` may move across library versions while `1..ngroups` holds still; and the difference between `--source` composition and handing composed TEXT to plain `-p` | `match_api.md` §2/§5 | W1.3 |
+| **S9b** D61 made concrete by its first producer: `ngroups`/`nnames` are the PRIMARY's own; **the delivered REGION starts at `ngroups+1`, and the definition's WRAPPER sits there, so the first delivered GROUP is at `ngroups+2`** (N5; Q-W1, r45sem's correction — the region's start and the first readable group are two different numbers and revision 2.1 conflated them in one sentence); `RX_NCAPS` may move across library versions while `1..ngroups` holds still; and the difference between `--source` composition and handing composed TEXT to plain `-p` | `match_api.md` §2/§5 | W1.3 |
 | **S2c** "Delivered results": the scope path, first-set-wins within a path, **the two non-deliverable shapes as CALL-GRAPH activation bounds**, and the `__typeof__` sentence | `rxt_format.md` | W1.4 |
 
 **Amendments to `format_design.md` itself**, in the same change (already
@@ -1648,3 +1772,95 @@ that the meaning is unclear.**
   is a third independent path, and a **D27-blinded author** writes the
   cells at .3's merge. It is the weakest joint in the plan and it is
   better for the re-check to hit it than for step .3 to.
+
+---
+
+## 7. [DD-13b.W1.1] — the step brief
+
+Written so the hold's lift starts CODE, not planning. W1.1 and W1.2 are
+CHARTERED (manager, on the r45 re-checks); .3 waits on Frank's
+Q-W1/Q-W2 and .4 on a one-critic re-check of §2.8 after this revision.
+This section is W1.1 only.
+
+### 7.1 Build order, and why it is this order
+
+Each item is landable and checkable before the next begins; nothing here
+touches the composer, `target`, `rx_info` or the abi.
+
+| # | build | why here |
+|---|---|---|
+| 1 | **`--list-source`'s TSV** (§1.8) and the `RxtSource` types — head grammar, the four W1 declarations, the four lexical contexts, block scalars, `config` cascade/composition, `target` PARSING (not building) | everything else in .1 reads its output. Landing the dump first means items 2-5 are written against a real artifact rather than a spec |
+| 2 | **the rxt-escape on columns 4/5/15** and its round trip | the three tab blocks (§1.8) are live in the corpus, so item 3's differential is WRONG without this — build it before the check that would silently pass |
+| 3 | **C1 leg A + the field manifest** — pcrec's own dump plus the key-list/field-count/total-line assertions | the manifest is what makes legs B and C comparable at all |
+| 4 | **run.sh: the three block arms, `features only`, the `have_block` guard, the BEGIN/END pin markers** (§1.7, N3) | the guard is measured free (0 of 26,691), and the markers must exist before the pin check can |
+| 5 | **C1 leg B** — `run.sh --dump`, invoked through the `$@` branch (N2) | needs item 4's arms to have something to dump |
+| 6 | **WIRE `verify_rxt.py`** — the `make test` target over a `find`-derived list with the short-list hard fail; then **C1 leg C** (`--dump`), the composed-block structural skip, and the skip TOTAL | **chk N1, the CONDITION on this step.** It is item 6 and not item 1 because the wiring's acceptance is a measurement (its verified/skip totals) that only exists once items 1-5 make the corpus dumpable |
+| 7 | **C0a, the hash pin, the 32-keyword census as checks**; the sabotage rows S-C1..S-C7, S-C9..S-C12 | the rows land in the SAME COMMIT as the code they detect (F13) |
+
+### 7.2 Acceptance — the numbers, all pinned before the step starts
+
+**Denominators (§3.0), and they differ on purpose:**
+
+- C1 asserts **179 files / 3,265 blocks / 26,691 expectation lines**;
+- C2 asserts **178 / 3,262 / 26,680** (run.sh excludes
+  `tests/known_fail/k34_leftrec_giveup.rxt`; 26,691 − its 11 = 26,680);
+- **C3 asserts verify_rxt's OWN discovery**, never either of the above.
+
+**Before-values, from battery 3 on code `0f5a98f` / main `4d12a81`:**
+
+| quantity | value |
+|---|---|
+| `cases passed:` / `cases failed:` | **26651 / 29** (the 29 are `tests/counterk/counterk.rxt`'s `((a)\|ab){4000}c` load cell; solo 1,634/0) |
+| clean-corpus equivalent | **26,680 / 0** |
+| `pattern-compile failures (distinct):` | **1** (same cell; clean **0**) |
+| `group cases pending-vm:` | **0** |
+| `size-log rows:` | **2877** |
+| parallel dispatch | **178 of 178 file workers** |
+| libpcre2 §1 / §0 | **69 blocks / 6,693 cells / 0 disagreements**; **42 patterns / 2,646 cells** |
+| verify_rxt verified / skipped | **OWED** — measurable only once item 6 wires it; part of this step's acceptance, not a pre-existing pin |
+
+**Measured facts this step must not move** (each already taken, §5):
+0 head-bearing files; 0 leading-whitespace lines; 0 of 26,691 case lines
+before a `pattern` line; 3 pattern lines carrying a literal tab; 0 of the
+32 candidate keywords in first-token position.
+
+**Green means, exactly:**
+
+1. C1 three-way byte-identical over 179/3,265, field manifest asserted,
+   leg B through the `$@` branch;
+2. C2 equal to the pins above over 178/3,262/26,680;
+3. C3 runs at all (it does not today), over its own discovery, with a
+   short list HARD FAILING, and its two totals pinned;
+4. C0a's two independent assertions both 0 (§3.1's N4 split);
+5. every sabotage row turns its NAMED check red — S-C1..S-C7, S-C9,
+   S-C10 (all three cases), S-C11, S-C12; **S-C8 is excluded and the
+   reason is written in the row**, not left to inference;
+6. the arm-block hash pin and the keyword census run as checks;
+7. **C1's runtime measured and recorded** — unmeasured today, and stated
+   as an output of this step rather than an assumption;
+8. `make strict` clean; the spec hunks S1, S1b, S3, S10 land in the same
+   change (D80).
+
+### 7.3 What W1.1 does NOT touch
+
+No composer, no `--emit-composed`, no delivery, no `target` BUILD path,
+no `rx_info` change, **no abi bump** — so the identity gate is untouched
+and comparison (A)/(B) are not in this step's exit criteria. The first
+abi movement is W1.2's, and from there the gate re-runs and the pin moves
+at every merge of the abi-13 change (F8).
+
+### 7.4 The two risks worth naming before starting
+
+- **C1's runtime is unknown.** 179 `--list-source` invocations plus a
+  bash pass plus a python pass. Each is a parse with no compile, so it is
+  bounded by parse cost — but if it lands badly the differential becomes
+  something a lane skips, which is worse than a slower check. Measure it
+  at item 3 and report before item 6.
+- **Item 6 is the step's only irreversible-feeling piece**: wiring a
+  previously-dead oracle over the whole corpus will, on its first run,
+  either be clean or reveal expectations that were never checked against
+  python `re` outside `tests/base`. **That is a discovery, not a
+  regression**, and it must be reported as one — 139 files have never
+  been through this oracle. If it produces failures, they are pre-existing
+  and the right response is a triage list for the manager, not a fix
+  inside W1.1.
