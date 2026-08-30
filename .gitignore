@@ -36,3 +36,7 @@ docs/design/subroutines_measurements/email_specimen/subjects/
 # `gen_throughput_subjects.py` reproduces and that
 # `tests/recursion/run_specimen_identity.sh` regenerates when it times them.
 docs/design/subroutines_measurements/email_specimen/throughput/
+
+# lane hold/lift artifacts (manager<->lane signalling files, never content)
+.lift
+.hold_ack
