@@ -501,6 +501,55 @@ subsection after `--list-axes`.
   pairing compared two different constructs and called the mismatch a
   finding). See `tests/registry/CLAUDE.md`'s own entry for the full
   mechanism and scoping record.
+
+  **FOLLOW-UP CLOSED, same day (r43-third-round, team-lead ruling):
+  both skipped populations JOIN THE SWEEP, no new mechanism.** 354
+  cells now, 101,244 A==B + 101,244 A==C comparisons, 0 disagreements.
+  The 14-name POSIX family gained a per-entry `RegDef.operand` field
+  (the name itself), read DIRECTLY by a new `operand_cells()` — bypassing
+  `pcrec_def_resolve`'s first-wins walk entirely rather than fixing it —
+  turning the 14 entries into 14 real `[[:name:]]` cells; `--list-
+  definitions`' `definition` column reads the same field
+  (`[[:alpha:]] ≡ [A-Za-z]` per entry, replacing the row's fixed example).
+  The 5 `DEFK_TEXTFN` rows join via a new `textfn_cells()`: Pattern B is
+  the decoded byte RE-SPELLED in a different escape family (`\cA` ->
+  `\x01`, `\o{101}` -> `\x41`, `\0`/`\012` -> `\x0a`), the byte read off
+  the textfn's OWN output AST bitmap (never a second decode
+  implementation) — for the 3 UNBUILT rows (`\c`, `\o{}`, `\N{U+`) pcrec
+  cannot compile the real spelling, so Pattern A becomes Pattern B
+  repeated (a tautology, never a REFUSED-A) and the real spelling travels
+  in a new FIFTH TSV column, `oracle_a`, read by the libpcre2 leg only.
+
+  **TWO REAL BUGS FOUND AND FIXED by the sweep's first real run, before
+  either skip existed to hide them.** (1) `pcrec_def_text_cx` (`\cX`)
+  XORed the raw operand byte with 0x40 without uppercasing it first —
+  measured directly against libpcre2 10.46: `\ca` decodes to CTRL-A
+  (0x01), never `'a' xor 0x40` (0x21). Fixed by uppercasing first
+  (`toupper`, `<ctype.h>`, matching `src/parse/mod_backrefs.c`'s own
+  idiom — the compiler's own internals, not emitted-artifact text, so the
+  `tolower()`-in-generated-code prohibition elsewhere in this tree does
+  not apply). Sabotage-validated live (reverted the fix): fires 9 of
+  101,244 A==C cells across three lowercase operands, reverted clean.
+  (2) A test-harness bug the sweep's own respelling exposed: a bare
+  SPACE (0x20) as an entire Pattern-B field broke `sscanf`'s field
+  parsing in `definitions_oracle_check.c` — a literal whitespace
+  character in a scanf FORMAT STRING matches any amount of whitespace,
+  including none, in the INPUT, so the format's own literal `\t` between
+  fields silently absorbed a lone-space field. Fixed by excluding 0x20
+  from the bare-`\x` row's literal-respelling branch (falls back to
+  `\xHH`, which is never bare whitespace on the wire).
+
+  **ONE STRUCTURAL BOUNDARY FOUND, flagged rather than silently decided
+  (DD-11.4's DEF_MULTILINE stand-in's own precedent):** `\N{U+dddd}`
+  only PARSES under PCRE2's UTF mode (measured: libpcre2 err 193 at
+  options=0), and this project's whole oracle is PINNED at options=0
+  (docs/pcre2_options.md's own standing constraint). So there is no way
+  to ask libpcre2 about this ONE row's real spelling at all under this
+  suite's testing discipline — structurally distinct from "pcrec hasn't
+  shipped a producer yet" (`\c`/`\o{}`, whose real spelling DOES compile
+  at options=0; only their decoded byte disagreed, bug (1) above). For
+  this row alone, `oracle_a` stays `-` (the built-row tautology shape)
+  with a NOTE explaining why, rather than a silent, uninformative "pass".
 - **[DD-11.4] The recursion guard, un-parked** — §3 item 5: the synthetic
   second `\w` row behind a never-true flag. No longer blocked on Unicode.
   **BUILT 2026-08-29 (lane dd11b):** `tests/registry/definitions_check.c`'s

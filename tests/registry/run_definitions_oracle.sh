@@ -14,6 +14,13 @@
 # for the A==C leg ONLY -- A==B needs no external oracle and is not
 # skippable; a box with no libpcre2 still gets the self-consistency half.
 #
+# cells.tsv is FIVE fields since the r43-third-round follow-up (2026-08-29,
+# the DEFK_TEXTFN rows and the POSIX class-name family joining the sweep):
+# id, pattern_a, pattern_b, oracle_a, description. This script only ever
+# reads the first three (pattern_a/pattern_b are what gets compiled below);
+# oracle_a is definitions_oracle_check.c's own field, read straight from
+# the TSV file it opens itself.
+#
 # Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default nproc/2),
 #   GENCFLAGS (SAN-1, default -O0 -std=gnu11), SANFLAGS (SAN-1)
 
@@ -111,7 +118,7 @@ one_cell() {
 }
 
 running=0
-while IFS=$'\t' read -r id pa pb _desc; do
+while IFS=$'\t' read -r id pa pb _oracle_a _desc; do
     one_cell "$id" "$pa" "$pb" &
     running=$((running + 1))
     if [ "$running" -ge "$JOBS" ]; then wait -n || true; running=$((running - 1)); fi

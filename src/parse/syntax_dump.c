@@ -299,6 +299,18 @@ char *pcrec_syntax_tsv(unsigned flavours)
  * print). `DEFK_END` never reaches this loop (it terminates the walk, same
  * convention `pcrec_def_resolve` uses in definitions.c).
  *
+ * An entry carrying `operand` (r43-third-round follow-up, team-lead ruling
+ * 2026-08-29 — today's only user is the 14-name POSIX class family) prints
+ * `[[:<operand>:]] ≡ <definition text>` instead of the row's fixed `syntax`
+ * example: the row's own `syntax` field is a single FIXED example
+ * ("[[:alpha:]]") that does not vary per entry, so printing it 14 times
+ * over would repeat the same construct while the `definition` column
+ * changed underneath it — a misleading table, not a partial one. The
+ * `[[:%s:]]` wrapper is this ONE row's own construct shape, hand-written
+ * here rather than derived, on the same "no measured need to generalise a
+ * one-user mechanism" reasoning definitions_oracle_gen.c's own comment
+ * states for its twin.
+ *
  * `applies` is `active` (a real substitution, including a DEFK_ROW chain —
  * chaining IS substituting, just by reference) or `identity` (DEF_IDENTITY:
  * the row restates its own primitive form, nothing to splice). */
@@ -356,6 +368,9 @@ char *pcrec_definitions_tsv(unsigned flavours)
                 else if (d->kind == DEFK_ROW) {
                     sb_puts(&sb, "= ");
                     put_str(&sb, d->str);
+                } else if (d->operand) {
+                    sb_printf(&sb, "[[:%s:]] \xe2\x89\xa1 %s",
+                              d->operand, d->str);
                 } else
                     put_str(&sb, d->str);
                 sb_putc(&sb, '\t');

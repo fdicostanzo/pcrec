@@ -2499,6 +2499,27 @@ typedef struct RegDef {
                             * DEFK_END). */
     DefBuilderFn builder;  /* DEFK_BUILDER only */
     DefTextFn    textfn;   /* DEFK_TEXTFN only */
+    /* DEFK_STR only, optional (NULL everywhere else): for a row whose
+     * ENTRIES are keyed by an OPERAND (a name) rather than by an
+     * option-scope tag -- the 14-name POSIX class family is today's only
+     * user (r43-third-round follow-up, team-lead ruling 2026-08-29) -- the
+     * entry's own name text ("alpha", "digit", ...). `pcrec_def_resolve`'s
+     * ordinary first-applicable-wins walk cannot select a NAMED entry
+     * (there is no DefTag for "alpha" vs "digit"), so this field exists
+     * for the TWO callers that need to pick a SPECIFIC entry rather than
+     * the walk's first answer: `--list-definitions` prints
+     * `[[:alpha:]] ≡ [A-Za-z]` per entry instead of the row's fixed
+     * `syntax` example, and [DD-11.3]'s self-oracle instantiates the row's
+     * real construct with the name (`[[:%s:]]`) to get 14 real cells
+     * instead of a first-wins skip. Appended at the END of the struct so
+     * every existing positional initializer in registry.c still COMPILES
+     * with this field defaulting to NULL (C's aggregate-init zero-fill
+     * rule) — but `-Wextra`'s `-Wmissing-field-initializers` still flags
+     * every 5-field literal, so `make strict` DID need every one updated
+     * to a trailing `, NULL` (a mechanical pass, 46 lines, no field values
+     * changed) — a lesson for the next field added here: "compiles" and
+     * "compiles clean under strict" are different claims. */
+    const char  *operand;
 } RegDef;
 
 /* src/parse/definitions.c */

@@ -9,11 +9,24 @@
  * Usage: definitions_oracle_check <cells.tsv> <results-dir>
  *        definitions_oracle_check --probe-oracle
  *
- * cells.tsv: <id>\t<pattern_a>\t<pattern_b>\t<description>, ids dense
- * from 0 (definitions_oracle_gen.c's own output).
+ * cells.tsv: <id>\t<pattern_a>\t<pattern_b>\t<oracle_a>\t<description>,
+ * ids dense from 0 (definitions_oracle_gen.c's own output).
  * results-dir: per id, a file `<id>` holding definitions_oracle_
  * driver.c's 2*DEFN_NSUBJ lines (`<idx>\ta <verdict>...` /
  * `<idx>\tb <verdict>...`, interleaved a-then-b per subject).
+ *
+ * `oracle_a` (r43-third-round follow-up, 2026-08-29, the DEFK_TEXTFN
+ * rows joining the sweep): `-` means "use Pattern A as-is for the A==C
+ * libpcre2 leg", every DEFK_STR/DEFK_BUILDER/DEF_IDENTITY/DEFK_ROW cell's
+ * value. A real pattern text OVERRIDES what libpcre2 compiles for A==C
+ * ONLY — Pattern A itself (what PCREC compiles, and what A==B compares)
+ * is unchanged. This exists for the three UNBUILT DEFK_TEXTFN rows (`\c`,
+ * `\o{}`, `\N{U+`): pcrec cannot compile their real spelling at all, so
+ * the generator sets Pattern A to Pattern B repeated (a harmless
+ * tautology for A==B) and puts the REAL spelling here instead, so A==C
+ * still asks the meaningful question — "the textfn's decode and
+ * libpcre2's agree on the byte" (the ruling's own words) — against a
+ * construct pcrec has not shipped yet.
  *
  * WHAT A==B COMPARES: the WHOLE-MATCH verdict (match span, or nomatch, or
  * a give-up) only — never the full capture vector. Pattern A and Pattern
@@ -122,13 +135,18 @@ int main(int argc, char **argv)
 
     while (fgets(line, sizeof line, cf)) {
         int id;
-        char pa[300], pb[300], desc[300];
-        if (sscanf(line, "%d\t%299[^\t]\t%299[^\t]\t%299[^\n]",
-                   &id, pa, pb, desc) != 4) {
+        char pa[300], pb[300], oracle_a[300], desc[300];
+        if (sscanf(line, "%d\t%299[^\t]\t%299[^\t]\t%299[^\t]\t%299[^\n]",
+                   &id, pa, pb, oracle_a, desc) != 5) {
             fail("unparseable cells.tsv line: %s", line);
             continue;
         }
         ncells++;
+        /* "-" means "use Pattern A as-is" -- see the file header. `ora`
+         * is what the A==C leg below actually hands libpcre2; Pattern A
+         * itself (`pa`) is untouched, still what pcrec compiled and still
+         * what A==B compares. */
+        const char *ora = (strcmp(oracle_a, "-") == 0) ? pa : oracle_a;
 
         char rpath[512];
         snprintf(rpath, sizeof rpath, "%s/%d", argv[2], id);
@@ -139,17 +157,18 @@ int main(int argc, char **argv)
             continue;
         }
 
-        /* libpcre2 on Pattern A ONLY (see file header) -- skipped entirely
-         * when the oracle did not load, per the A==B/A==C split above. */
+        /* libpcre2 on `ora` (Pattern A, or the `oracle_a` override -- see
+         * the file header) ONLY -- skipped entirely when the oracle did
+         * not load, per the A==B/A==C split above. */
         pcre2_code_8 *code = NULL;
         pcre2_match_data_8 *md = NULL;
         if (have_oracle) {
             int err = 0; PCRE2_SIZE eoff = 0;
-            code = abi.compile((PCRE2_SPTR)pa, strlen(pa), 0, &err, &eoff, NULL);
+            code = abi.compile((PCRE2_SPTR)ora, strlen(ora), 0, &err, &eoff, NULL);
             if (!code)
-                fail("cell %d '%s': Pattern A '%s' -- libpcre2 refuses "
+                fail("cell %d '%s': oracle pattern '%s' -- libpcre2 refuses "
                      "(err %d) a construct this table's own row already "
-                     "ships", id, desc, pa, err);
+                     "ships", id, desc, ora, err);
             md = code ? abi.match_data_create(2, NULL) : NULL;
         }
 

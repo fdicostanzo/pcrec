@@ -21,6 +21,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -232,11 +233,30 @@ Ast *pcrec_def_build_identity(Ctx *cx, Ast *body)
  * count before the definitions layer ever sees the operand). */
 
 /* \cX ≡ X xor 0x40 (registry.c's own row note, ESC('c', ...)). `operand`
- * is exactly the one byte X. */
+ * is exactly the one byte X.
+ *
+ * REAL BUG FOUND AND FIXED HERE (r43-third-round follow-up, 2026-08-29,
+ * [DD-11.3]'s DEFK_TEXTFN sweep's first real disagreement): PCRE2
+ * UPPERCASES a lower-case letter operand BEFORE the xor — measured
+ * directly against libpcre2 10.46 by the sweep itself, not read from
+ * documentation (D26): `\ca` compiles and MATCHES byte 0x01 (CTRL-A),
+ * never byte 0x21 ('a' xor 0x40 without uppercasing first). The
+ * pre-fix version xored the raw byte, so `\ca`/`\cm`/`\cz` (and every
+ * other lower-case operand) decoded to the WRONG byte — a genuine
+ * pending miscompile in an unbuilt row's own definition, caught before
+ * any producer ships it. Fixed by uppercasing ASCII letters only
+ * (`toupper` on a byte already known to be plain text, not emitted-
+ * artifact text — the `tolower()`-in-generated-code prohibition
+ * elsewhere in this tree does not apply to the COMPILER's own internals,
+ * src/parse/mod_backrefs.c's identical `toupper((unsigned char)c)` idiom
+ * is the precedent); a byte with no case (digits, punctuation) is
+ * unaffected by `toupper`, so the fix changes only the previously-wrong
+ * lower-case-letter cells. */
 Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx)
 {
     if (len != 1) return NULL;
-    return pcrec_ast_char(cx, (unsigned)((unsigned char)operand[0] ^ 0x40));
+    unsigned char x = (unsigned char)toupper((unsigned char)operand[0]);
+    return pcrec_ast_char(cx, (unsigned)(x ^ 0x40));
 }
 
 /* bare `\x` (2 hex digits, base tier, esc_char_value's own live rule) and

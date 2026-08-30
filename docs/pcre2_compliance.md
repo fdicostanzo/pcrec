@@ -2160,7 +2160,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 138 rows 
 | after `\` | `\R` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | any Unicode newline sequence |
 | after `\` | `\X` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | a Unicode extended grapheme cluster |
 | after `\` | `\C` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | one data unit (byte), even in UTF mode |
-| after `\` | `\cX` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | control character: \cX is X xor 0x40 |
+| after `\` | `\cX` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | control character: \cX is X (uppercased first) xor 0x40 |
 | after `\` | `\o{101}` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | character with the given octal code |
 | after `\` | `\0` | `REJECTED` | `built` | planned | `backrefs` | dfa|vm | octal escape \0dd — never a backreference (there is no group 0) |
 | after `\` | `\1` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 1 (PCRE2 error 115 if no such group) |
