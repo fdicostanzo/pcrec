@@ -18591,3 +18591,65 @@ parser's grammar vs the spec hunks, inputs outside the corpus alphabet,
 limits/D26, D80; r46chk, sonnet: shared sources, populations, the 11
 rows' reach, the deferrals, the own-oracle rule, the time bound).
 pcrecdev2 told; O-10 expected during the battery.
+
+#### Forty-sixth session, part 6 (13:0x-14:3x EDT): battery 4 san GREEN, mech running; w11f stage A green; O-10 read — [OPT-4] SPLITS; Frank: "1-2 opt4/5 agree"
+
+Battery 4 (cf86987): `make test` 1,901 checks / 0 failed (the 29 counterk
+cases = K32's load cell, cleared solo); **san rc 0, 0 report lines, 102
+min**; mech from 14:14 (PROCS=6). w11f (the r46 fix lane, sonnet): Phase
+1 coded under the `.lift` hold (19fe528), stage A green beside san —
+`make -j4`, strict, `test-rxtsource` 78/0 after two fixes of its own (a
+missed run.sh half of sem 14; a wrong expectation of its own), codegen
+5/5, cli 287/0; the rewritten escape fallback verified to run only when
+a control byte survives the unchanged fast path. Ruled sem 10: a blank
+line ENDS a `config` body (fixtured, spec sentence). Stage B (the corpus
+run + S205 via ONLY) after BATTERY DONE.
+
+**O-10** (pcrecdev2, a286628; the abi-12 AFTER, 18/18 cells): **[OPT-4]
+ruling B SPLITS.** Where structure survives the collapse it is the
+largest gain the bench has measured (ctx band 2.2-3.1×; level-context
+×4.60; the rescued fallback beats `--engine=vm` 2.2-4.6× — the forced VM
+has no prefilter, so `--engine=vm` has stopped being a stand-in for the
+[SEL-1] fallback). Where the collapsed language is NULLABLE it is a loss:
+`[a-z]{0,32768}` → `[a-z]*` admits everywhere — search ×3.57, throughput
+1.88 → 6.90 ns/B, digits ×1.65. And [OPT-5]'s premise moved: the counted
+DFA loses to pcrec's own VM on letter runs at EVERY rung from 256 (5.1×
+at 256) and wins on digits at every rung — the knee is the SUBJECT's, not
+the count's. Frank, 14:3x: "1-2 opt4/5 agree" → **[OPT-4.1]** (gate the
+rescue on non-nullability; one predicate; the K39 witnesses are
+themselves the nullable shape and need a non-nullable twin) chartered
+AHEAD of [OPT-5]; **[OPT-5] re-scoped mechanism-first**, prediction to
+the bench: letters → VM at every rung incl. 64/128, digits → DFA at
+every rung, no count crossover. I-21 written. Earlier in this part:
+[M4-QUOTING] added on Frank's ask ("compliance than need"; ADMIN after
+[LIM-1]); [DD-11] row updated to battery-proven (its .5/.6 wait on the
+exact one-byte-lookbehind DFA lowering — an engine item nothing
+schedules).
+
+**15:3x — FRANK'S PERF HOLD:** "hold on performance tests until further
+notice. i need to run some stuff on the linux box." No measurement
+windows (ours or the bench's [B22]/bounded@0.2) until he lifts it;
+[OPT-5]/[OPT-A] STEP 0s were not yet scheduled and stay unscheduled.
+Correctness runs continue (battery 4's mech tail, w11f stage B, opt41
+Phase 2 — stamps and counts, nothing timed); K32's load cell may read
+red under his workload — diagnosed solo as always. pcrecdev2 told.
+
+#### Forty-sixth session, part 7 (15:4x EDT): BATTERY 4 CLOSED GREEN-BY-DIAGNOSIS on cf86987 — [DD-13b.W1.1] is battery-proven
+
+DONE 15:46:59 (launched 12:09:10; 3 h 38). The DONE line reads RED by
+arithmetic on ONE guard line — the `make[1]: *** test-corpus Error 1`
+from the K32 counterk load cell (29 cases, cleared solo: red lines 0).
+Everything that measures the code is clean: `make test` **1,901 checks /
+0 failed**; strict clean; **san rc 0 / 0 report lines (102 min)**;
+**mech 200 rows / unexpected 0 / undetected 6 (S150-S153, S160, S178 —
+the expected six) / unreached 0 / anomalies 0** — the eleven W1.1 rows
+(S194-S204) all DETECTED inside the full matrix. No abi change, so pin
+96e44c2 stands; the bench told (their untimed [B20] make check may run).
+Frank's PERF HOLD (15:3x) remains in force — no measurement windows.
+
+Next: w11f stage B (its corpus INV-COMPAT run + its S205 escape row),
+then its review/merge; opt41 Phase 2 after it. NUMBERING COLLISION
+caught at this boundary: w11f minted S205 (the rxt-escape index-vs-value
+row) and opt41 independently minted S205/S206 (predicate removed /
+inverted) — w11f keeps S205; opt41 renumbers to S206/S207 before its
+Phase 2 (told by message; it is idle, so the message lands).
