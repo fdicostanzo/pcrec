@@ -759,3 +759,24 @@ would be an easy thing to claim credit for: `(a{1,3}){65}` has `minw` 65, so it
 is NOT nullable, the decline never fires on it, and it is budget-bound under
 `-fprefilter-collapse` exactly as it was before this row. Those two cells are
 ruling B's territory, not [OPT-4.1]'s.
+
+### 12.12 A bug in my own Phase-2 instrument, found by a cross-check
+
+`predict_check.sh`'s table used `|` as its field separator — and FIVE of the
+eleven patterns CONTAIN `|` (every `ctx` row's `(?:fail|abort|panic)`, and
+`level-context`). `IFS='|' read` split those patterns mid-alternation and
+shifted every later field, so the script would have compiled `\b(?:fail` and
+compared its stamps against the string `panic)\b.{0,64}?\b(?:disk`. It would
+have reported eleven MISMATCHes against a compiler that was right.
+
+**It was found by cross-checking the SCRIPT's expectations against the
+REPORT's §6 table** — two artifacts written separately, hours apart, which is
+the only reason the mismatch was visible at all. A single source would have
+been self-consistent and wrong. The separator is now `0x1f`, which no regex can
+contain; all eleven rows re-verified to parse into six fields with their
+patterns intact and their expectations identical to §6.
+
+This is the second delimiter collision in this lane (the first cost only a
+throwaway probe, where `IFS=':'` met `(?:`) and the third instrument bug found
+before it ran, after the misleading `$?` and the addendum placed below the
+verdict. All four were mine; none reached a measurement.
