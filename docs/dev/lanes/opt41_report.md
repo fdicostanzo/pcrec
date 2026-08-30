@@ -611,6 +611,17 @@ is deliberately NOT the full `make test-axes`** — that script's own header
 calls an `AXES`-scoped run "a QUICK check, not the delivered run" — and the
 report says so rather than letting a scoped run be read as the delivered one.
 
+**RULED (manager, 2026-08-30): the scoped pair IS this row's delivered
+answer-identity evidence, and the reason is recorded here so it does not
+become precedent by silence.** The predicate is read on exactly one axis's
+path (the collapse rescue); that axis's own deny/force pair IS swept over the
+whole corpus with span and every capture slot compared; and the other axes'
+interactions with this path were swept in full when [OPT-4] landed. A 14-pass
+sweep would re-prove axes this change cannot reach. **The standing condition:
+if the battery or the bench's AFTER ever contradicts answer-identity on ANY
+axis, the full sweep runs BEFORE diagnosis** — the scoped run is evidence for
+this change, never a substitute for the instrument.
+
 ### 12.5 `tests/codegen/run_prefilter_collapse.sh` — **58 passed, 0 failed**
 
 Every `[OPT-4.1]` row green, and the two the row was built for read:
@@ -705,3 +716,18 @@ MEASURED rather than approximate: `RX_ENGINE "vm"` is reachable by EVERY one of
 the six routes (`forced` via `--engine=vm`, `selected` via any capture-bearing
 pattern, and the four fallback routes always), which is a stronger statement of
 the two axes' independence than the "four of the five" it inherited.
+
+
+### 12.10 `make test-corpus` — **26,680 cases passed, 0 failed**
+
+`PROCS=4`, one run, the number the brief predicted exactly. The size log's
+tripwire passed inside it (`2878 rows … worst size 651,646 B … worst gcc CPU
+2.397 s`, both inside their pins), and `docs/dev/artifact_size_log.tsv` was
+restored with `git checkout` afterwards, so the tree is clean and the log is
+still the pinned one.
+
+**This is the answer-identity floor doing its job at its widest**: every one of
+those 26,680 cases would pass whether the collapse fires, does not fire, or
+fires where the bench measured it costing 1.2-9.9x. That it is green says the
+change is answer-preserving; it says nothing about whether the predicate is
+right, which is what §12.5's structural rows and the mech pair are for.
