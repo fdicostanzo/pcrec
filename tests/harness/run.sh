@@ -1403,9 +1403,20 @@ for file in "${files[@]}"; do
             # seam ruling removed. src/parse/rxt_source.c refuses `|` here
             # with that reason named, so the two parsers agree.
             blk_desc="${BASH_REMATCH[1]}"
+            # [DD-13b.W1.1 r46sem finding 14, FIXED] COMPARE THE TRIMMED
+            # VALUE, not the exact one -- ruled: a `|` with trailing
+            # whitespace is nobody's intended literal, so `description | `
+            # (one trailing space) is refused exactly like bare
+            # `description |`, matching src/parse/rxt_source.c's twin fix
+            # and tests/harness/verify_rxt.py's pre-existing
+            # `v.strip() == '|'`. The exact `[ = "|" ]` compare used to let
+            # the trailing-space form fall through and be accepted as the
+            # literal text "| " -- the one place THIS leg was looser than
+            # its siblings rather than in step with them.
+            blk_desc_trimmed="${blk_desc%"${blk_desc##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
                 record_fail "$file" "$lineno" "'description' line before any pattern block"
-            elif [ "$blk_desc" = "|" ]; then
+            elif [ "$blk_desc_trimmed" = "|" ]; then
                 record_fail "$file" "$lineno" \
                     "a pattern block's 'description' takes the one-line form only: the '|' block scalar is continuation, and a pattern block's lines are not indented (the head is where '|' belongs)"
             else

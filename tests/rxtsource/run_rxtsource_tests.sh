@@ -1143,10 +1143,13 @@ if [ $? -ne 0 ]; then
   $wt_out"
 else
     wt_with=$(printf '%s\n' "$wt_out" | awk -F'\t' '$1 == "target" { print $13 }')
-    if [ "$wt_with" = "a,b" ]; then
-        pass "sem21: 'target ... with a, b  ' dumps column 13 as 'a,b' — trailing whitespace trimmed"
+    # AS WRITTEN, never resolved (§1.8): only TRAILING whitespace after the
+    # whole list is trimmed, not the internal space after the comma -- the
+    # list is stored as the author wrote it, minus the two trailing spaces.
+    if [ "$wt_with" = "a, b" ]; then
+        pass "sem21: 'target ... with a, b  ' dumps column 13 as 'a, b' — trailing whitespace trimmed, internal spacing kept AS WRITTEN"
     else
-        fail "sem21: column 13 is '$wt_with', expected 'a,b' (trailing
+        fail "sem21: column 13 is '$wt_with', expected 'a, b' (trailing
   whitespace should be trimmed, matching every other token/list value)"
     fi
 fi
