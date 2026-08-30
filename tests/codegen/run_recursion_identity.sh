@@ -421,7 +421,12 @@ KEEP="${KEEP:-0}"
 # why the pin moved off `2ed6402`), and, on the artifacts over the knee, a
 # smaller inlined prefilter.
 #
-# THE PIN MOVED AGAIN, and it is now `82229fc` — [OPT-4]'s `<PREFIX>_ENGINE_SEL`
+# THE PIN MOVED AGAIN FOR FRANK'S RULING B (2026-08-29): `c275aef`, this
+# lane's last src-touching commit. Ruling B made the EXACT prefilter the
+# default and turned the collapse into a ladder attempt, so (B) moves on the
+# few artifacts whose `_LANG_WHY` value changed spelling and (A) does not move
+# at all — the language decision has never been in `prog_region`. The pin
+# before it was `82229fc` — [OPT-4]'s `<PREFIX>_ENGINE_SEL`
 # commit, which is the LAST scaffolding change of this row and the one that
 # matters most to (B). Unlike the two before it (the [SEL-1] rung, which moves
 # WHICH artifacts have a prefilter rather than any emitted text this gate
@@ -448,7 +453,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-82229fc}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c275aef}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
