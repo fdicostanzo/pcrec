@@ -191,6 +191,19 @@ through the retry, stamping
 refused than handed a superset prefilter can be. The retry never applies where
 the DFA is the ENGINE, where the language must be exact.
 
+**[OPT-4.1] (2026-08-30) AND IT DOES NOT APPLY WHERE THE COLLAPSED LANGUAGE IS
+NULLABLE**, which is the one case where the retry ships NO prefilter rather
+than a smaller one. A collapsed language that matches the empty string matches
+at every position, so the filter can never dismiss one; the retry then builds
+nothing, and the artifact — smaller still than the collapsed one — is what
+ships. **The contract above is unchanged in the direction that matters: no
+pattern that compiles today stops compiling**, because dropping the prefilter
+is strictly smaller than collapsing it, so the size rung still rescues the
+compile. On the [SEL-1] rung the same decline leaves the pre-[OPT-4] artifact
+and `<PREFIX>_ENGINE_SEL` reads `"declined-nullable"`. `docs/spec/tuning.md`
+§2.17 carries the rule, the stamps and the flag interactions (`-fprefilter`
+overrides the decline; `-fprefilter-collapse` does not).
+
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST
 HARNESS policy, not a caller-facing contract: every compile of

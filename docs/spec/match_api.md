@@ -1936,11 +1936,18 @@ neither is parsed to produce the other.
 | `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed, and the retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
+| `"declined-nullable"` | `auto`, a DFA build overflowed, the retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter could never dismiss a position. No prefilter survives, and the artifact is the one this compile produced before that retry existed (`tuning.md` §2.17, [OPT-4.1]) |
 
-**THE LAST THREE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
+**THE LAST FOUR ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
 CANNOT CARRY** — they share one prose string (`"dfa overflowed: …"`) and differ
 in what SURVIVED. A consumer wanting only "did this compile fall back?" tests
-for the three; one wanting to know what it cost reads which.
+for the four; one wanting to know what it cost reads which.
+
+**`"declined-nullable"` AND `"overflowed-dfa"` ARE NOT THE SAME OUTCOME**, and
+the difference is worth a value: both artifacts carry `<PREFIX>_VM_PREFILTER
+"none"`, but the first is a rescue that was REFUSED as useless and the second
+is one that was not available. A consumer measuring what the collapse rung buys
+must not count the first as a case where it had nothing to offer.
 
 **It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for the
 same reason: nothing measured reads one yet (D77), and the trigger to add one

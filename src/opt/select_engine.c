@@ -643,6 +643,14 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     {
         bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
         bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
+        /* [OPT-4.1] THE PREFILTER LANGUAGE'S NULLABILITY, derived ONCE here
+         * and read by this pass, by `src/core/compile.c`'s build gate and by
+         * the `--emit-ir` listing off `EngineFit` (D81). It is
+         * `src/opt/mrl.c`'s existing width analysis and not a second walk —
+         * `internal.h`'s field comment carries the argument that `minw == 0`
+         * answers for the PREFILTER's lowering, and that the collapsed
+         * language is nullable exactly when the exact one is. */
+        fit.prefilter_lang_nullable = pcrec_minw(root) == 0;
         /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
          * is a REFUSAL of `-fprefilter` rather than a silent override, on
          * D46's own do-or-die posture — a request the pattern cannot honour is
@@ -793,8 +801,41 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * does not depend on any count. `docs/spec/tuning.md` §4 states the
          * new bound rather than leaving the old sentence to be read as still
          * exact. */
+        /* [OPT-4.1] THE RESCUE IS GATED ON NON-NULLABILITY, and the gate is
+         * HERE rather than at the build gate that decides the LANGUAGE,
+         * because on a rung the alternative to the collapsed prefilter is not
+         * the exact one — the exact machine is what failed. Declining the
+         * collapse at the build gate would send the compile back through the
+         * construction that already overflowed (a third attempt, and the
+         * expensive one); declining the PREFILTER here costs nothing and lands
+         * exactly on the artifact the ladder produced before [OPT-4] existed.
+         *
+         * MEASURED NEED (pcrec-bench O-10 item 3, pin 96e44c2): the rescue is
+         * a 2.2-4.6x WIN on five of the bench's patterns and a 1.2-9.9x LOSS
+         * on three, and the rung cannot tell them apart. What separates them is
+         * this predicate: `[a-z]{0,32768}` collapses to `[a-z]*`, which admits
+         * a zero-length match at every position, so the filter can never
+         * dismiss one and the artifact pays a scan it cannot win.
+         *
+         * IT APPLIES TO BOTH RUNGS, not only to the measured one. On the SIZE
+         * rung the collapsed prefilter is there to make the artifact SHIP, and
+         * dropping it entirely ships something strictly smaller — so the
+         * uniform rule costs no pattern its compile and the size rung needs no
+         * exception. (`tuning.md` §2.17 states both.)
+         *
+         * `-fprefilter` OUTRANKS IT, which is the one asymmetry and it is
+         * do-or-die's (D46/D47.3): the decline's alternative is NO prefilter,
+         * and that is precisely what an explicit `-fprefilter` forbids — a
+         * request this pass cannot honour must REFUSE, never be silently
+         * answered with the opposite. `-fprefilter-collapse` does NOT outrank
+         * it: that flag chooses a LANGUAGE for a prefilter, not whether one
+         * exists, and a caller who wants existence has `-fprefilter`. */
+        fit.prefilter_declined_nullable =
+            cx->collapse_reason != CR_NONE && fit.prefilter_lang_nullable &&
+            !has_bref && !has_call && !force_on;
         fit.prefilter = (has_bref || has_call ||
-                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1))
+                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
+                         fit.prefilter_declined_nullable)
                         ? false
                        : force_on ? true
                        : force_off ? false
@@ -819,11 +860,25 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * artifact that has none would be the stamp naming a decision the artifact
      * did not take — the defect §2 of run_prefilter_collapse.sh exists to
      * catch on the language stamp, through the same door. */
+    /* [OPT-4.1] `ESEL_DECLINED_NULLABLE` SITS BETWEEN THE TWO, and it is the
+     * same shape as the arm above it: `ESEL_COLLAPSED_PREFILTER` says the rung
+     * ran and a prefilter survived, this says the rung ran and was DECLINED.
+     * Without it the declined artifact is byte-indistinguishable in its stamps
+     * from one whose COLLAPSED machine also overflowed — the two outcomes cost
+     * a consumer quite different things (one is a rescue that was not
+     * available, the other a rescue that was refused as useless), and the
+     * bench buckets on this macro precisely because it cannot bucket on prose.
+     * The conjunct is CR_SEL1's, not `collapse_reason != CR_NONE`: the SIZE
+     * rung reaches `ESEL_SELECTED` above and keeps it, declined or not, which
+     * is what keeps `>= ESEL_OVERFLOWED_DFA` meaning "a DFA build
+     * overflowed". */
     fit.engine_sel =
           cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
         : !cx->dfa_disabled                           ? ESEL_SELECTED
         : (cx->collapse_reason == CR_SEL1 && fit.prefilter)
                                                       ? ESEL_COLLAPSED_PREFILTER
+        : (cx->collapse_reason == CR_SEL1 && fit.prefilter_declined_nullable)
+                                                      ? ESEL_DECLINED_NULLABLE
         : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
                                                       : ESEL_OVERFLOWED_PREFILTER;
 

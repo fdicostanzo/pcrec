@@ -1023,10 +1023,25 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
             const bool pfc_rep   = pcrec_has_collapsible_rep(root);
             const bool pfc_rung  = cx.collapse_reason != CR_NONE;
-            bool collapse = cx.job->fit.chosen != ENGM_DFA
-                         && !pfc_deny
-                         && pfc_rep
-                         && (pfc_force || pfc_rung);
+            /* [OPT-4.1] THE FOURTH CONJUNCT IS SPLIT OFF so the DECISION and
+             * the DECLINE are the same expression with one term negated, and
+             * the `_WHY` ladder below can branch on which of the two happened
+             * without re-walking anything (D81).
+             *
+             * A NULLABLE COLLAPSED LANGUAGE IS NOT WORTH BUILDING: it admits a
+             * zero-length match at every position, so the filter can never
+             * dismiss one (pcrec-bench O-10 item 3 measured 1.2-9.9x slower
+             * than no prefilter at all). `select_engine.c`'s own conjunct is
+             * what handles the RUNGS — there the decline drops the prefilter
+             * entirely, because the exact machine is what failed — so what
+             * reaches THIS line nullable is `-fprefilter-collapse` on a
+             * pattern that already has a working exact prefilter, and the
+             * right answer there is to keep it. */
+            const bool pfc_wanted = cx.job->fit.chosen != ENGM_DFA
+                                 && !pfc_deny
+                                 && pfc_rep
+                                 && (pfc_force || pfc_rung);
+            bool collapse = pfc_wanted && !cx.job->fit.prefilter_lang_nullable;
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
              * from the SAME conjuncts (D81). The ladder branches on the
              * DECISION rather than re-walking them, which is what makes
@@ -1048,7 +1063,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             cx.job->fit.prefilter_sizecap_bytes = cx.size_cap_bytes;
             cx.job->fit.prefilter_sizecap_limit = cx.size_cap_limit;
             cx.job->fit.prefilter_lang_why =
-                  !collapse                        ? (pfc_rep ? PFLW_EXACT : PFLW_NO_REP)
+                  !collapse                        ? (pfc_wanted ? PFLW_NULLABLE
+                                                    : pfc_rep    ? PFLW_EXACT
+                                                                 : PFLW_NO_REP)
                 : cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP
                 : cx.collapse_reason == CR_SEL1    ? PFLW_SEL1
                                                    : PFLW_FORCED;

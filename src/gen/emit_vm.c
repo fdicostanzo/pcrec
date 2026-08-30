@@ -6646,6 +6646,13 @@ typedef struct {
      * machine that answers for a superset. Copied off `job->fit`, never
      * re-derived (K39; docs/design/prefilter_count_independence.md). */
     bool      prefilter_collapsed;
+    /* [OPT-4.1] was a collapse RUNG offered and DECLINED because the collapsed
+     * language is nullable? Read only by the listing's prefilter line, and for
+     * `has_bref`/`has_call`'s exact reason: without it that line names a FLAG
+     * the caller did not pass ("-fno-prefilter", or "--engine=vm") as the
+     * reason an artifact has no prefilter. Copied off `job->fit`, never
+     * re-derived. */
+    bool      prefilter_declined_nullable;
     /* [M6.5.2] does this artifact contain a backreference? Read only by the
      * listing's prefilter line, which without it names a FLAG the caller did
      * not pass as the reason a backref pattern has none. */
@@ -6802,6 +6809,24 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                 " no finite inlining either; no flag changes this, and"
                 " -fprefilter refuses. A SPLICED call is not a reason: its"
                 " callee is inlined EXACTLY (S8.3, S6.3)"
+              /* [OPT-4.1] tested AHEAD of the [SEL-1] arm and of the two flag
+               * routes, for the reason all three arms above it are: this is a
+               * FIFTH thing no flag explains, and it is the more specific fact
+               * where both apply. On the [SEL-1] rung `cx->dfa_disabled` is
+               * ALSO true, and the arm below would report the overflow — true,
+               * but it is the reason the rung was OFFERED, not the reason
+               * nothing came back from it. It is also the only arm that can
+               * fire with `dfa_disabled` FALSE (the size rung), where every
+               * arm below would name a flag the caller did not pass. */
+              : st->prefilter_declined_nullable
+              ? "NO (nullable collapsed language) -- a ladder rung offered the"
+                " count-collapsed prefilter ([OPT-4]) and it was DECLINED:"
+                " every X{m,n} lowers as X{min(m,1),}, and this pattern's"
+                " collapsed language matches the empty string, so the filter"
+                " could never dismiss a position and would cost a scan it"
+                " cannot win ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x)."
+                " -fprefilter overrides (do-or-die), -fprefilter-collapse does"
+                " not"
               /* [SEL-1] tested here, ahead of the two flag routes, for the
                * same reason has_bref/has_call are: this is a THIRD thing no
                * flag explains, and it must not be reported as one. */
@@ -8326,6 +8351,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * there was nothing to collapse, not that a rung declined. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
                          " \"no counted repeat\"\n", v.up);
+            break;
+        case PFLW_NULLABLE:
+            /* [OPT-4.1] DISTINCT FROM BOTH VALUES ABOVE for the reason they
+             * are distinct from each other: this artifact HAD something to
+             * collapse and the collapse was refused as useless, which is a
+             * POLICY a caller can read and act on (drop the flag, or reshape
+             * the pattern so something outside the repeat survives), where
+             * "no counted repeat" is a vacuity and "exact" is the default.
+             * The line appears only where a prefilter still exists — on a
+             * ladder rung the same decline leaves none, and the artifact says
+             * so through `<PREFIX>_ENGINE_SEL "declined-nullable"` instead. */
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"nullable collapsed language\"\n", v.up);
             break;
         case PFLW_FORCED:
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"forced\"\n", v.up);
@@ -9921,6 +9959,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         /* [OPT-4] off `fit`, the one derivation (D81) -- `prefn` says a
          * prefilter was emitted, this says which language it recognises. */
         st.prefilter_collapsed = job->fit.prefilter_collapsed;
+        /* [OPT-4.1] the same rule, one field over: the listing reports the
+         * decision `select_engine.c` took, it does not re-derive it. */
+        st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;
         st.has_bref  = (v.enc_mask &
                         (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)) != 0;
         /* [DD-14 wave E] NOT read off `enc_mask`, unlike its neighbour: a
