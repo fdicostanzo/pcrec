@@ -319,6 +319,41 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL
 size_rung_cell '(a|b){0,30000}' none   'alternation nullable'
 size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable'
 
+# [OPT-4.1] `-fprefilter` OVERRIDES THE DECLINE, AND THIS IS THE ONLY PLACE IN
+# THE TREE WHERE THAT IS REACHABLE. On the [SEL-1] rung `-fprefilter` makes
+# `compile_driver`'s `ovf_eligible` false, so that rung is never OFFERED and
+# the decline is never reached (tests/codegen/run_prefilter_collapse.sh §6b(3)
+# says so at its own site). On the SIZE rung it IS reached — and without the
+# override this pattern would REFUSE, because declining the collapse keeps the
+# exact prefilter that the cap already refused and `size_eligible`'s
+# `collapse_reason != CR_SIZECAP` makes a third attempt unreachable.
+#
+# SO THIS CELL IS `docs/spec/limits.md` §3.3's "no pattern that compiles today
+# stops compiling" MADE FALSIFIABLE. It was a review finding rather than a red
+# run — nothing covered `-fprefilter` on an oversize nullable pattern — which
+# is exactly why it gets a cell now.
+#
+# MEASURED 2026-08-30: the same pattern is 32,076 B / `PREFILTER "none"` at the
+# default and 43,773 B / `"hybrid"` / `count-collapsed` / `size cap retry,
+# exact 1333437 > 1000000` under `-fprefilter`. The default being SMALLER is
+# the same fact limits.md leans on, on ONE pattern rather than across two.
+rm -f "$WORKDIR/o.c"
+fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fprefilter -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
+if [ $? -eq 0 ]; then
+    fpsz=$(wc -c < "$WORKDIR/o.c")
+    fppf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
+    fpwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
+    if [ "$fppf" = hybrid ] && [ "${fpwhy#size cap retry}" != "$fpwhy" ]; then
+        ok "[OPT-4.1] '(a|b){0,30000}' under -fprefilter KEEPS the collapsed prefilter ($fpsz bytes, '$fpwhy') — the do-or-die request overrides the nullability decline, and the pattern still compiles"
+    elif [ "$fppf" = none ]; then
+        bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter stamps RX_VM_PREFILTER \"none\" — an explicit do-or-die request was silently answered with its opposite"
+    else
+        bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter stamps PREFILTER '$fppf' / LANG_WHY '$fpwhy', expected the size rung's collapsed prefilter"
+    fi
+else
+    bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter no longer COMPILES — this is limits.md §3.3's 'no pattern that compiles today stops compiling' going false: declining the collapse keeps the exact prefilter the cap refused, and the size rung has no third attempt: $(printf '%s' "$fplog" | head -1)"
+fi
+
 echo
 
 # ---------------------------------------------------------------------------

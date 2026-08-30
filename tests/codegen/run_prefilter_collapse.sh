@@ -603,19 +603,39 @@ fi
 # §6b [OPT-4.1] THE SAME RUNG, DECLINED — a prefilter that is NOT built
 # ---------------------------------------------------------------------------
 # §6 asserts the rung FIRES. This asserts it is REFUSED on the one shape where
-# firing costs rather than pays, and the two sections' witnesses are the SAME
-# PATTERN, wrapped: `(?:SEL1)?` has §6's machine plus one epsilon, and it is
-# nullable, so its count-collapsed language matches the empty string at every
-# position and can dismiss nothing. pcrec-bench O-10 measured that shape at
+# firing costs rather than pays. pcrec-bench O-10 measured that shape at
 # 1.2-9.9x SLOWER than the same artifact with no prefilter (`[a-z]{0,32768}`,
 # pin 96e44c2), which is the whole reason this section exists.
 #
-# EACH SECTION IS THE OTHER'S CONTROL, and that is not a figure of speech here:
-# §6 fails if the predicate over-fires (a compiler that declined everything
-# would take §6's prefilter away), this section fails if it under-fires, and
-# the witnesses differ by four characters, so neither can be explained by the
-# patterns being unrelated. What no single-direction check can see is a
-# predicate wired to a constant.
+# THIS SECTION CARRIES ITS OWN TWIN PAIR rather than borrowing §6's witness,
+# and the first draft DID borrow — `(?:SEL1)?`, §6's pattern made nullable by
+# four characters. MEASURED (2026-08-30), that witness is unusable for TWO
+# independent reasons, NEITHER of which is a defect in the predicate:
+#
+#   * it does not compile. `(?:SEL1)?` is refused at 2,487,847 emitted bytes
+#     against the 1,000,000 cap, IDENTICALLY under the default, under
+#     `-fno-prefilter-collapse` and under `-fno-prefilter` — so the size is
+#     the engine body, not the prefilter, and no flag on this axis moves it.
+#   * with the cap raised it is a DFA-ENGINE artifact (`RX_ENGINE "dfa"`,
+#     `RX_ENGINE_SEL "selected"`, 2,500,874 bytes), which takes NO VM
+#     prefilter decision at all. Wrapping a pattern to make it nullable
+#     changed which ENGINE it gets, so the witness could never have reached
+#     this predicate even at an unbounded cap.
+#
+# THE LESSON, and it is why the pair below is what it is: a witness for this
+# row must be chosen for its OUTCOME — a VM hybrid whose DFA overflowed — and
+# NOT by transforming a pattern that has that outcome. Nullability is not a
+# property you can bolt onto a witness and keep everything else fixed.
+#
+# EACH HALF IS THE OTHER'S CONTROL. `(a|b)*a(a|b){15}` is the classic
+# exponential-DFA shape — its subset construction needs ~2^16 states, so it
+# overflows the cap off a 20-state NFA, MEASURED at 0.04 s — and its collapsed
+# language still has to find an `a`; adding ONE `?` makes the whole pattern
+# nullable and nothing else about it moves. (0) fails if the predicate
+# over-fires, (1) if it under-fires, and the two patterns differ by three
+# characters, so neither result can be explained by their being unrelated
+# shapes. What no single-direction check can see is a predicate wired to a
+# constant.
 #
 # THE EVIDENCE IS A DIFFERENT STAMP FROM §6's, on purpose. §6 reads
 # `RX_VM_PREFILTER_LANG`, which a declined artifact does not carry AT ALL
@@ -623,8 +643,27 @@ fi
 # value is written by `pcrec_engine_sel_name` in a different file from the
 # `fit.prefilter` clause that took the decision, and the ABSENCE of the LANG
 # macro is checked beside it as the second, independent term.
-SEL1_NULL="(?:$SEL1)?"
-a="$WORK/sel1n_auto.c"; b="$WORK/sel1n_force.c"
+# MEASURED on this tree (2026-08-30): the control stamps `collapsed-prefilter`
+# / `hybrid` / `count-collapsed` / `dfa overflow retry, exact nfa 20` at 47,152
+# bytes; the nullable twin stamps `declined-nullable` / `none` at 34,723.
+SEL1N_CTL='(a|b)*a(a|b){15}'
+SEL1_NULL='(?:(a|b)*a(a|b){15})?'
+a="$WORK/sel1n_auto.c"; b="$WORK/sel1n_force.c"; ctl="$WORK/sel1n_ctl.c"
+# (0) THE CONTROL: the SAME SHAPE without the `?` must still be RESCUED. This
+# is what says the pair's overflow is real and the rung is available here — a
+# compiler that had stopped overflowing at all, or stopped offering the rung,
+# would make (1) pass for a reason that has nothing to do with nullability.
+if emit "$ctl" -- "$SEL1N_CTL"; then
+    ctl_pf=$(stamp VM_PREFILTER "$ctl"); ctl_sel=$(stamp ENGINE_SEL "$ctl")
+    ctl_lang=$(stamp VM_PREFILTER_LANG "$ctl")
+    if [ "$ctl_pf" = hybrid ] && [ "$ctl_sel" = collapsed-prefilter ] && [ "$ctl_lang" = count-collapsed ]; then
+        ok "[sel1n] the NON-nullable twin is rescued: SEL 'collapsed-prefilter' / PREFILTER \"hybrid\" / LANG \"count-collapsed\" — the overflow is real and the rung is available on this shape"
+    else
+        bad "[sel1n] the non-nullable twin stamps SEL '$ctl_sel' / PREFILTER '$ctl_pf' / LANG '$ctl_lang', expected the rescue — either this shape stopped overflowing (so the row below proves nothing) or the predicate is OVER-firing onto a language that is not nullable"
+    fi
+else
+    bad "[sel1n] the non-nullable twin does not compile — §6b has lost its control"
+fi
 if emit "$a" -- "$SEL1_NULL"; then
     eng=$(stamp ENGINE "$a"); ewhy=$(stamp ENGINE_WHY "$a")
     pf=$(stamp VM_PREFILTER "$a"); sel=$(stamp ENGINE_SEL "$a")
@@ -652,23 +691,34 @@ if emit "$a" -- "$SEL1_NULL"; then
     else
         bad "[sel1n] the declined artifact carries RX_VM_PREFILTER_LANG '$lang' beside RX_VM_PREFILTER '$pf' — the macro names a machine this artifact does not contain"
     fi
-    # (3) `-fprefilter` OVERRIDES THE DECLINE, which is the flag interaction
-    # tuning.md §2.17 states and the one direction a "decline is unconditional"
-    # implementation would get wrong. do-or-die: the decline's alternative is
-    # no prefilter, and that is exactly what an explicit -fprefilter forbids.
-    # NOTE the artifact this produces is the EXACT-language one (`-fprefilter`
-    # suppresses the overflow rung outright), so what is asserted is that a
-    # prefilter EXISTS, not which language it answers for.
+    # (3) `-fprefilter` IS NEVER SILENTLY ANSWERED WITH ITS OPPOSITE — and this
+    # comment says what the row does and does NOT demonstrate, because its
+    # first draft over-claimed.
+    #
+    # WHAT IT SHOWS: a do-or-die request either produces a prefilter or is
+    # REFUSED. Never an artifact stamping `RX_VM_PREFILTER "none"` on a compile
+    # that asked for one, which is the silent-honour failure S64 exists for.
+    #
+    # WHAT IT DOES NOT SHOW, MEASURED (2026-08-30): it is not the [OPT-4.1]
+    # OVERRIDE. `-fprefilter` makes `compile_driver`'s `ovf_eligible` false, so
+    # the [SEL-1] rung is never OFFERED and the decline is never reached — this
+    # witness refuses with "pattern too complex for the DFA engine (>32000
+    # states)", pre-existing [SEL-1] behaviour that would refuse the same way
+    # with [OPT-4.1] reverted. The override is only REACHABLE on the SIZE rung
+    # and is asserted where it is reachable: tests/resource's own `-fprefilter`
+    # cell, which MEASURED `(a|b){0,30000}` going from `PREFILTER "none"` to
+    # `"hybrid"` / `count-collapsed` / `size cap retry, exact 1333437 >
+    # 1000000`. Neither check covers the other and neither pretends to.
     if emit "$b" -fprefilter -- "$SEL1_NULL"; then
         pf_force=$(stamp VM_PREFILTER "$b")
         [ "$pf_force" = hybrid ] \
-            && ok "[sel1n] -fprefilter overrides the nullability decline (RX_VM_PREFILTER \"hybrid\") — a do-or-die request is refused or honoured, never silently answered with its opposite" \
-            || bad "[sel1n] under -fprefilter the nullable witness stamps RX_VM_PREFILTER '$pf_force', expected 'hybrid' — the decline is overriding an explicit request instead of yielding to it"
+            && ok "[sel1n] -fprefilter on the nullable witness yields a prefilter (RX_VM_PREFILTER \"hybrid\") — the request is honoured, not silently dropped" \
+            || bad "[sel1n] under -fprefilter the nullable witness stamps RX_VM_PREFILTER '$pf_force' — a do-or-die request was silently answered with its opposite (S64's failure mode; nothing else in the tree sees it)"
     else
         # A REFUSAL IS ALSO AN ACCEPTABLE do-or-die ANSWER and is reported as
         # such rather than as a pass: what must never happen is a silent
         # override, and a refusal is not one.
-        ok "[sel1n] -fprefilter on the nullable witness is REFUSED ($(head -1 "$b.err" | cut -c1-80)) — do-or-die honoured by refusing, which is not a silent override"
+        ok "[sel1n] -fprefilter on the nullable witness is REFUSED ($(head -1 "$b.err" | cut -c1-70)) — do-or-die honoured by refusing; NOT the [OPT-4.1] override, which tests/resource asserts on the size rung"
     fi
 else
     bad "[sel1n] the nullable DFA-overflow witness does not compile — §6b has no subject"
@@ -706,10 +756,13 @@ sel_witness overflowed-dfa       -fno-prefilter-collapse -- "$SEL1_P"
 # adding a fourth unrelated row: the same overflow, with the rescue TAKEN
 # (`collapsed-prefilter`), DENIED by a flag (`overflowed-dfa`) and DECLINED by
 # the language (`declined-nullable`). The first two are one pattern under two
-# flag settings; this one is the pattern's nullable twin at the DEFAULT, so the
+# flag settings; this one is a NULLABLE overflow witness at the DEFAULT, so the
 # value cannot be produced by a flag at all — which is exactly what makes it
-# the row that fails if the predicate is wired to a constant.
-sel_witness declined-nullable                            -- "(?:$SEL1_P)?"
+# the row that fails if the predicate is wired to a constant. It is §6b's
+# witness rather than a wrapped `$SEL1_P`: §6b's header carries the two
+# MEASURED reasons the wrapped form is unusable (it does not compile, and with
+# the cap raised it is a DFA artifact taking no VM prefilter decision at all).
+sel_witness declined-nullable                            -- '(?:(a|b)*a(a|b){15})?' 
 sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"
