@@ -18317,3 +18317,49 @@ was a check's own defect or a load artifact. THIS COMMIT IS THE PIN for
 the bench (abi 12; code 0f5a98f; the two check fixes 4990b32, the
 SANFLAGS fix 467c449). I-18 goes to the bench's inbox next, then
 "BATTERY 3 DONE" and its window.
+
+#### Forty-fifth session, CLOSE (post-reset part; 06:1x EDT 2026-08-30) — Frank: "If done close session and we'll go over open questions next session"
+
+**Closed state.** Battery 3 green-by-diagnosis; **pin 96e44c2 (abi 12)**
+sent as I-18 (bench c52a74e); the bench's window ran 05:22-~06:25 on
+36d5963's three inconclusive cells under BD7 (its [OPT-4] BEFORE + the
+gate-shape test run); it re-pins to 96e44c2 next ([B19]). [OPT-4]
+archived to plan_completed.md (090b924). **lane/w1 MERGED (e4c563f,
+docs only: w1_impl.md revision 2.4, its CLAUDE.md entry, four
+format_design.md corrections, match_api.md's nnames sentence)** — the
+[DD-13b.W1] design is on main; W1.1 starts CODE next session (a fresh
+worktree from main; w1_impl.md §7 is the step brief; the verify_rxt.py
+wiring is .1's condition). **lane/admin1 UNMERGED** (33588a4 [REG-SV] +
+e7fb479 [SPEC-1.10] + 7987656 Task C; worktrees/admin1 kept): its
+verification (`make -j4`, `PROCS=4 make test-registry` — the coverage
+guard's 79 is PREDICTED, read from the run — and `test-codegen`) never
+ran because the box was the battery's then the bench's; next session
+lifts the hold, verifies, merges. Lanes stopped; crons torn down;
+worktrees: admin1 only.
+
+**Open questions for Frank (next session):** (1) the bench's v1.4 gate
+shape (gate_shape_v14.md P1-P4; evidence: the six bounded records + the
+spread data; I-18 carries the durable copy) → I-19; (2) [DD-13b.W1]
+Q-W1 — the definition's wrapper takes an assigned number (first
+delivered group at ngroups+2; caller-visible via --emit-composed;
+recommend ADOPT); (3) Q-W2 — `(?R)`/`(?0)`/`(?00)`/`\g<0>` inside a
+bound definition: REFUSE for W1 with the reason "the ruling is missing,
+not the meaning" (the "0 is local → the wrapper" reading reserved); (4)
+the ratified Q7 trigger — absolute references and colliding names have
+NO external oracle (W-8 is valid only on W-1's population; a D27 author
+shares the oracles): a structural residual to acknowledge, not for .3
+to discharge; (5) [OPT-A] STEP 0's charter (the stack-frame 1 MB SIMD
+pair-scan measurement; opus; needs a quiet box) — the optimization
+column's next row; (6) D86 columns after W1.1 lands.
+
+**Lessons of this part** (journal-only unless noted): a `run_in_background`
+Bash is capped at 10 min and the PID is the process with sid==pid AND
+ppid==1 (memory, rule 7 third instance); `make san` is 109 min on this
+tree, not 46; a measured grep count welded by "so" to an untested
+inference rides in under the MEASURED mark (w1_impl.md §0.1's rule;
+admin1's learnings §3 paragraph on lane/admin1 gets the second instance
+at merge); in this tree every module's oracle is invoked one layer
+below the Makefile; read `date` before labelling a journal entry (three
+labels tonight ran ~30 min fast). The panel-during-battery pattern —
+three critics + three re-checks, ~1 h 15 of wall, zero box time — is
+the shape to repeat: design work overlaps the box's busy hours.
