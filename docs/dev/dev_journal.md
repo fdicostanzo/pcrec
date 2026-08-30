@@ -18408,3 +18408,29 @@ family member) — the lane moved it; and the brief named
 `tests/harness/verify_pcre2.py` where the live file is
 `tests/assertions/verify_pcre2.py` (corrected by message). Crons up:
 keepalive :09/:39, stall watchdog */10.
+
+#### Forty-sixth session, part 2 (06:4x-07:0x EDT): O-9 read; the [ENG-ABS] reach probe — DESIGN LIMIT; I-20 sent
+
+pcrecdev2's O-9 (bench/bounded@0.1's BEFORE at 36d5963; ledger
+`docs/dev/ledgers/2026-08-30-bounded-0.1-first-sample-36d5963.md` there)
+ranks six candidates: (1) an end-anchored DFA falling to `search-filter`
+(×37 on a subject, ×7 on the set); (2) `auto` choosing the counted DFA on
+the `{0,n}` class rungs where its own VM is ~6× faster; (3) the wasted DFA
+build to ×687 with eight labelled overflow points for [SEL-1.2]; (4) `auto`
+refusing `[a-z]{0,65535}` by the NFA cap before [SEL-1] can route (the VM
+builds it in 2.9 ms); (5) the VM's missing prefilter — abi 12's
+`_VM_PREFILTER_LANG` is what their AFTER measures; (6) `nest2-4`'s VM
+cliff, covered by auto. Six asks. Ask (ii) was a fact question, so a
+read-only sonnet probe (absprobe, on main's fresh binary, scratchpad
+outputs only) answered it: **DESIGN LIMIT** — `PCREC_ANCHORED_MAX_STATES
+= 4096` (limits.h:619; compile.c:279; emit_dfa.c:3880), documented in
+anchored_match_unwrapped.md §5.2 and limits.md, no runtime raise; the
+crossover ladder per skeleton × form is in `docs/dev/engabs_reach_probe.md`,
+with one new fact: the bench's `(?:BODY)\z` spelling HALVES the reachable
+count for `{0,n}` bodies (2047 vs 4095) and costs nothing for `{n,}`.
+Ask (i): a ceiling refusal is exit 1 + no artifact + the diagnostic; a
+fallback is exit 0 + `RX_ENGINE_SEL`/`_WHY`; [ENG-ABS]'s case moves only
+`RX_DFA_MATCH`. Ask (iv): pcrec prints no timing — the bench clocks the
+process. I-20 written to the bench inbox with those answers; (iii)/(vi)
+(bounded@0.2 rungs) and candidates 1/2/4 wait on Frank's D86
+optimization-column pick — proposed there as the three rows.
