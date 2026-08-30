@@ -1258,77 +1258,70 @@ typedef struct {
      * cannot leave a stamp disagreeing with a live clamp. */
     bool        prefilter_collapsed;
 
-    /* [OPT-4] WHY THAT LANGUAGE, and the number the decision was made on
-     * (D81's `_WHY` convention; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
+    /* [OPT-4] WHY THAT LANGUAGE (D81's `_WHY`; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
      *
-     * FIVE VALUES, NOT THREE, and the reason is `_UNROLL_K_WHY`'s recorded
-     * one (emit_vm.c): a stamp that collapses reachable states into one is a
-     * hint rather than a fact, and a check cannot tell the collapsed states
-     * apart afterwards. The gate in `src/core/compile.c` has five outcomes and
-     * all five are reachable from the command line. Listed here in the ENUM's
-     * order, which is chosen for the invariant below and is NOT the gate's
-     * precedence order (the gate tests deny, then has-collapsible, then force,
-     * then the budget):
+     * FRANK'S RULING B (2026-08-29): the DEFAULT builds the EXACT prefilter and
+     * the collapsed language is only ever a LADDER ATTEMPT — taken when the
+     * exact machine cannot be built or its artifact cannot be shipped, never
+     * because a state count crossed a knee. So every collapsing value below
+     * names the ATTEMPT that took it, and there is no budget value left to
+     * name: `PCREC_PREFILTER_EXACT_NFA_STATES` is gone.
      *
-     *   PFLW_DENIED   `-fno-prefilter-collapse` kept the exact machine on a
-     *                 pattern that WOULD have collapsed. Reported only where
-     *                 the denial changed what was built: below the knee, or
-     *                 with nothing to collapse, a denied build stamps the same
-     *                 reason as the default one, because
-     *                 `-fno-prefilter-collapse` owes byte-for-byte recovery of
-     *                 today's artifact and a reason that moved on the mere
-     *                 PRESENCE of the flag would break it.
-     *   PFLW_NO_REP   no collapsible `A_REP` exists, so the collapsed lowering
-     *                 IS the exact one and there is nothing to buy. This is
+     *   PFLW_EXACT    the pattern's own language. The default outcome.
+     *   PFLW_NO_REP   no collapsible `A_REP`, so the collapsed lowering IS the
+     *                 exact one. Kept distinct from PFLW_EXACT because it is
      *                 the state `-fprefilter-collapse` is HONOURED but vacuous
-     *                 in, which is exactly why it may not share a value with
-     *                 PFLW_FORCED.
-     *   PFLW_UNDER    the measured exact NFA was within
-     *                 `PCREC_PREFILTER_EXACT_NFA_STATES`, so the sharper
-     *                 language was kept.
-     *   PFLW_FORCED   `-fprefilter-collapse` dropped the budget conjunct.
-     *   PFLW_OVER     the measured exact NFA exceeded the budget. The default
-     *                 reason for a collapse.
-     *   PFLW_SEL1     [SEL-1]'s retry took it: the DFA overflowed a cap as the
-     *                 ENGINE, and on the fallback compile the collapsed
-     *                 language is what stands between this pattern and no
-     *                 prefilter at all. DISTINCT from PFLW_OVER even though
-     *                 both collapse, and distinct from PFLW_FORCED even though
-     *                 both ignore the knee: this one says the artifact HAS a
-     *                 prefilter it would not have had before [OPT-4], which is
-     *                 the fact a reader of `RX_ENGINE_WHY "dfa overflowed"`
-     *                 needs in order to understand why the next line is not
-     *                 `RX_VM_PREFILTER "none"`.
+     *                 in, and a caller who passed the flag and got `exact`
+     *                 needs to know which of the two happened.
+     *   PFLW_FORCED   `-fprefilter-collapse`: collapse wherever a collapsible
+     *                 repeat exists. The only route to literal
+     *                 count-INDEPENDENCE now.
+     *   PFLW_SEL1     the [SEL-1] rung: a DFA build overflowed a STATE cap and
+     *                 the collapsed language is what stands between this
+     *                 pattern and no prefilter at all.
+     *   PFLW_SIZECAP  the size rung: the EXACT artifact was refused by an
+     *                 emitted-size cap, and the collapsed prefilter is what
+     *                 makes it shippable. Frank's ruling B in one value.
      *
-     * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed`, and that
-     * is an INVARIANT a check can assert rather than a coincidence: both are
-     * written at the single gate in `src/core/compile.c`, from the same
-     * conjuncts, in one place.
+     * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed`, and it is
+     * STRUCTURAL rather than agreed: `src/core/compile.c`'s ladder branches on
+     * the decision it just made, not on a re-walk of the conjuncts.
      *
-     * `prefilter_nfa_states` is the EXACT forward NFA's state count as
-     * MEASURED (D24 — never predicted from the AST), and it is recorded on
-     * every path including the ones that did not collapse, because "42 <= 128"
-     * is the fact that says the knee was consulted and answered. It is 0 only
-     * where no NFA was built at all, i.e. where no prefilter exists and no
-     * stamp is emitted. */
+     * THERE IS NO `denied` VALUE, and its absence is a measurement rather than
+     * an oversight. Under ruling B `-fno-prefilter-collapse` denies the two
+     * ATTEMPTS; on a pattern whose exact build succeeds it changes nothing (so
+     * the honest stamp is whatever the default stamps — the byte-for-byte
+     * recovery rule), and on a pattern that needed an attempt it turns a
+     * compile into a REFUSAL or a prefilter into none, neither of which leaves
+     * an artifact carrying this macro. A value no witness can reach is a value
+     * that should not exist (the manager's "keep them witness-driven").
+     *
+     * `prefilter_nfa_states` is the EXACT forward NFA's size, MEASURED (D24),
+     * recorded on every path. It is no longer compared against anything — the
+     * knee is gone — but PFLW_SEL1 reports it, because the scale of the machine
+     * the collapse avoided is the fact a reader of that value wants. */
     unsigned    prefilter_nfa_states;
     unsigned char prefilter_lang_why;
+
+    /* [OPT-4] the emitted size that triggered PFLW_SIZECAP, and the cap it
+     * exceeded, carried so the stamp can quote the comparison that caused the
+     * retry. Zero on every other path. */
+    unsigned long long prefilter_sizecap_bytes;
+    unsigned long long prefilter_sizecap_limit;
 
     /* [OPT-4] HOW THIS ARTIFACT GOT ITS ENGINE, as a CLOSED VALUE SET
      * (`<PREFIX>_ENGINE_SEL`, D81; bench O-8's ask).
      *
      * WHY IT EXISTS BESIDE `why`, WHICH ALREADY SAYS SOMETHING. `why` is
      * PROSE — "capture group at pattern offset 18", "dfa overflowed: >32000
-     * states at pattern offset 0" — written to be read by a person and
-     * deliberately allowed to name an offset, a construct or a build outcome.
-     * A CONSUMER cannot bucket on it: telling "auto picked the VM" from "auto
+     * states at pattern offset 0" — written to be read by a person. A
+     * CONSUMER cannot bucket on it: telling "auto picked the VM" from "auto
      * FELL BACK to the VM" means substring-matching English, and the
      * comparative bench had to. This is the same decision as a token.
      *
      * ONE DERIVATION, TWO READERS (D81): both come off this struct, written
      * once at `src/opt/select_engine.c`'s single `cx->job->fit = fit` site
-     * from the driver's own attempt record. The prose is not parsed to
-     * produce the token and the token is not re-derived to produce the prose.
+     * from the driver's own attempt record.
      *
      * FIVE VALUES, and the last three are all "fell back" with different
      * outcomes — which is exactly the distinction `why` cannot carry. */
@@ -1344,21 +1337,29 @@ enum {
     /* everything from here is a FALLBACK after a DFA build overflowed a cap */
     ESEL_OVERFLOWED_DFA       = 2,  /* the DFA was to be the ENGINE; no prefilter survives */
     ESEL_OVERFLOWED_PREFILTER = 3,  /* the VM was already chosen; its prefilter was dropped */
-    ESEL_COLLAPSED_PREFILTER  = 4   /* [OPT-4]'s rung: a prefilter SURVIVED, count-collapsed */
+    ESEL_COLLAPSED_PREFILTER  = 4   /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
 };
 
-/* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that the two collapsing
- * outcomes are the top two: see the invariant stated above. */
+/* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that everything from
+ * `PFLW_FORCED` up is a collapsing outcome: see the invariant stated above. */
 enum {
-    PFLW_DENIED = 0,
-    PFLW_NO_REP = 1,
-    PFLW_UNDER  = 2,
+    PFLW_EXACT   = 0,
+    PFLW_NO_REP  = 1,
     /* everything from here collapses */
-    PFLW_FORCED = 3,
-    PFLW_OVER   = 4,
-    PFLW_SEL1   = 5
+    PFLW_FORCED  = 2,
+    PFLW_SEL1    = 3,
+    PFLW_SIZECAP = 4
 };
 
+/* [OPT-4] `Ctx.collapse_reason` — WHICH ladder attempt asked for the collapsed
+ * prefilter on this pass. `CR_NONE` on the default attempt and on every
+ * attempt that is not a collapse retry. Maps 1:1 onto the two `PFLW_*` rung
+ * values, which is the point: the driver decides, the stamp reports. */
+enum {
+    CR_NONE    = 0,
+    CR_SEL1    = 1,   /* a DFA state cap overflowed ([SEL-1]'s rung) */
+    CR_SIZECAP = 2    /* an emitted-size cap refused the exact artifact */
+};
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
     Nfa    nfa;      /* forward NFA (unanchored-wrapped for ENG_UNANCH) */
@@ -1709,29 +1710,27 @@ struct Ctx {
      * sizing. */
     bool                 dfa_disabled;
 
-    /* [OPT-4] THE SECOND RUNG OF THE SAME RETRY, and the reason it is a
-     * separate bit rather than a widening of `dfa_disabled`.
+    /* [OPT-4] WHY THIS ATTEMPT IS BUILDING THE COLLAPSED PREFILTER, or
+     * `CR_NONE` if it is not. Ruling B's whole selector: the collapse is never
+     * chosen by measuring the pattern, only by an ATTEMPT the driver decides to
+     * make after something has already failed.
      *
-     * `dfa_disabled` means two things at once today: "the DFA may not be the
-     * ENGINE" and "do not build a prefilter DFA either". The second half rests
-     * on a premise `src/opt/select_engine.c` states in full — that rebuilding
-     * the prefilter would be the IDENTICAL construction that already
-     * overflowed, so it would cost a second refused build for nothing. With
-     * the count-collapsed language that premise stops holding: the collapsed
-     * machine is not that machine, it is a smaller one whose size is a
-     * function of the pattern's STRUCTURE alone. So the retry gains a rung
-     * BETWEEN "exact prefilter" and "no prefilter", and this bit is what
-     * distinguishes them.
-     *
-     * TRUE ONLY WHEN `dfa_disabled` IS TRUE. It is not an independent axis: it
-     * refines what the dfa-disabled retry does about the PREFILTER, and
-     * `compile_driver` sets both together. When set, the prefilter survives
-     * (`select_engine.c`'s silent-drop clause skips it) and
-     * `src/core/compile.c`'s build gate forces the collapsed language
-     * regardless of the knee — the knee is a SIZE heuristic and this rung is
-     * not about size, it is the last thing between this pattern and no
-     * prefilter at all. */
-    bool                 prefilter_collapse_retry;
+     * ONE FIELD RATHER THAN A BOOL PER RUNG, because the two rungs differ only
+     * in what failed and what the stamp should say, and a second bool would be
+     * a second thing to keep in step with the first. `compile_driver` sets it;
+     * the build gate reads it as "force the collapse"; the `_LANG_WHY`
+     * derivation reads it for the reason. */
+    unsigned char        collapse_reason;   /* CR_* */
+
+    /* [OPT-4] set at the emitted-size cap's own `ctx_fail` sites, immediately
+     * before the refusal, so `compile_driver` can tell a size refusal from
+     * every other `ctx_fail` that arrives at the same `setjmp`. This is
+     * `dfa_overflowed`'s shape exactly, and for the same reason: there is ONE
+     * recovery point in this compiler, so a rung that wants to act on a
+     * particular failure has to label it where it happens. */
+    bool                 size_cap_refused;
+    unsigned long long   size_cap_bytes;    /* what the artifact measured */
+    unsigned long long   size_cap_limit;    /* what it exceeded */
 
     /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
      * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only

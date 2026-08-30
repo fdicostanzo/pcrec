@@ -8318,46 +8318,39 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * tests/codegen/run_prefilter_collapse.sh §2 asserts on the artifact
          * rather than on the predicate. */
         switch (job->fit.prefilter_lang_why) {
-        case PFLW_DENIED:
-            /* The number is carried here too, and this is the path that most
-             * needs it: `PFLW_DENIED` is reached only where the machine WAS
-             * over the knee, so the reader is being told both that the flag
-             * acted and how much it cost. */
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"denied, exact nfa %u > %d\"\n", v.up,
-                      job->fit.prefilter_nfa_states,
-                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
-            break;
         case PFLW_NO_REP:
+            /* Distinct from `"exact"` because it is the state
+             * `-fprefilter-collapse` is HONOURED but vacuous in: a caller who
+             * passed the flag and got the exact language needs to know that
+             * there was nothing to collapse, not that a rung declined. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
                          " \"no counted repeat\"\n", v.up);
             break;
         case PFLW_FORCED:
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"forced\"\n", v.up);
             break;
-        case PFLW_OVER:
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"exact nfa %u > %d\"\n", v.up,
-                      job->fit.prefilter_nfa_states,
-                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
-            break;
         case PFLW_SEL1:
-            /* The rung, not the knee. `RX_ENGINE_WHY` on this artifact reads
-             * "dfa overflowed: ..." and a reader would otherwise expect
-             * `RX_VM_PREFILTER "none"` beside it (that was the only outcome
-             * before [OPT-4]); this line is what explains the prefilter that
-             * is there instead. The measured NFA is carried too, because it is
-             * the EXACT machine's size and therefore the scale of what the
-             * collapse avoided. */
+            /* The [SEL-1] rung, not a budget. `RX_ENGINE_WHY` on this artifact
+             * reads "dfa overflowed: ..." and a reader would otherwise expect
+             * `RX_VM_PREFILTER "none"` beside it; this line explains the
+             * prefilter that is there instead. The measured NFA is the EXACT
+             * machine's, i.e. the scale of what the collapse avoided. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
                          " \"dfa overflow retry, exact nfa %u\"\n", v.up,
                       job->fit.prefilter_nfa_states);
             break;
-        default:
+        case PFLW_SIZECAP:
+            /* [OPT-4] RULING B'S OWN VALUE. The numbers are the EMITTED SIZE
+             * that was refused and the cap it exceeded — not NFA states —
+             * because that is the comparison that caused this retry, and a
+             * reader deciding whether to raise a cap instead needs it. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"exact nfa %u <= %d\"\n", v.up,
-                      job->fit.prefilter_nfa_states,
-                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+                         " \"size cap retry, exact %llu > %llu\"\n", v.up,
+                      job->fit.prefilter_sizecap_bytes,
+                      job->fit.prefilter_sizecap_limit);
+            break;
+        default:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"exact\"\n", v.up);
             break;
         }
     }

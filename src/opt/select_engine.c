@@ -783,7 +783,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * is a function of the pattern's STRUCTURE alone, so it is not the
          * machine that overflowed and rebuilding it is not the wasted second
          * build this clause exists to prevent. `compile_driver` therefore
-         * tries ONE more rung before this one — `prefilter_collapse_retry`,
+         * tries ONE more rung before this one — `collapse_reason == CR_SEL1`,
          * set only together with `dfa_disabled` — and on that attempt the
          * prefilter must SURVIVE selection to be built at all.
          *
@@ -794,7 +794,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * new bound rather than leaving the old sentence to be read as still
          * exact. */
         fit.prefilter = (has_bref || has_call ||
-                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1))
                         ? false
                        : force_on ? true
                        : force_off ? false
@@ -822,7 +822,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     fit.engine_sel =
           cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
         : !cx->dfa_disabled                           ? ESEL_SELECTED
-        : (cx->prefilter_collapse_retry && fit.prefilter)
+        : (cx->collapse_reason == CR_SEL1 && fit.prefilter)
                                                       ? ESEL_COLLAPSED_PREFILTER
         : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
                                                       : ESEL_OVERFLOWED_PREFILTER;
