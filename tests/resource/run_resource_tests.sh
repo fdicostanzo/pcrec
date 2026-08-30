@@ -257,10 +257,13 @@ done
 # the largest single artifact this row shrinks outside the corpus, and if it
 # ever grows back past the cap the loop above would still pass (its own row
 # denies the axis) while a user's default build started refusing again.
+# ONE LINE, like every other watchdog invocation in this file: [K37]'s check
+# is line-based (it looks for the bound on the SAME line as the compiler call),
+# so a continuation line carrying `"$PCREC"` alone reads as unbounded. Split
+# across lines this cell failed make test-codegen while being perfectly bounded.
 rm -f "$WORKDIR/o.c"
-if "$ROOT_DIR/scripts/watchdog" -l "sizecap-default (a|b){0,30000}" -s "$K7_SECS" \
-        -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" \
-        -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' >/dev/null 2>&1; then
+dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
+if [ $? -eq 0 ]; then
     sz=$(wc -c < "$WORKDIR/o.c")
     if [ "$sz" -lt 200000 ]; then
         ok "[OPT-4] '(a|b){0,30000}' now compiles at the DEFAULT in $sz bytes (was 1,333,109 and refused) — its size was its prefilter, and the count-collapsed one does not scale with the count"
@@ -268,7 +271,7 @@ if "$ROOT_DIR/scripts/watchdog" -l "sizecap-default (a|b){0,30000}" -s "$K7_SECS
         bad "[OPT-4] '(a|b){0,30000}' compiled at the default but emitted $sz bytes, expected well under 200,000 — the collapse is not reaching this shape as it did at the landing"
     fi
 else
-    bad "[OPT-4] '(a|b){0,30000}' no longer compiles at the DEFAULT — it did at the landing (32,279 bytes); the collapse has stopped firing on it, or a cap moved"
+    bad "[OPT-4] '(a|b){0,30000}' no longer compiles at the DEFAULT — it did at the landing (32,279 bytes); the collapse has stopped firing on it, or a cap moved: $(printf '%s' "$dflog" | head -1)"
 fi
 
 echo
