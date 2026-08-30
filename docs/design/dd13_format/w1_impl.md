@@ -1,410 +1,469 @@
 # [DD-13b.W1] Implementation note — wave 1 of the grown `.rxt` format
 
-**Status: DESIGN-FIRST DELIVERABLE 1. NO CODE IS WRITTEN.** The lane
-brief stops here for the manager's review and a critic panel. What
-follows is the plan a reviewer is meant to attack, not a record of work
-done.
+**Status: REVISION 2, post-panel (r45) and post-rulings. NO CODE IS
+WRITTEN.** Revision 1 (`bf843a7`) went to a three-critic D6 panel
+(`docs/dev/reviews/2026-08-30-r45-w1-impl.md`): **4 blockers, 6 must-fix,
+and a verdict that the spine stands and §2 is not buildable as written.**
+This revision is the answer. It stops here for a focused re-check before
+[DD-13b.W1.1] is chartered.
 
-Against: `format_design.md` (revision 2, the ratified note), D87, D88,
-D61, D85, D80, D76, D77, D26, and the r44 panel record
-(`docs/dev/reviews/2026-08-29-r44-dd13b-format.md`). Where this note
-DEPARTS from the format note it says so at the point of departure, with
-the code that forced it; those departures are collected in §6 for the
-manager, because two of them change a number the format note published.
+Against: `format_design.md` (revision 2), D87, D88, D61, D85, D80, D76,
+D77, D26, the r44 panel record, r45's findings and the manager's triage,
+and the manager's rulings of 2026-08-30 (the parser seam, `--list-source`,
+the `have_block` guard, and B4's sort key).
 
 ## 0. How to read this
 
 ### 0.1 Claim marking
 
-Same three kinds the format note uses (its §0.1), and for the same
-reason:
-
-- **MEASURED** — a command was run and its output is quoted. Every
-  measurement in this note was taken under the manager's HOLD, so the
-  population is small by construction: file reads, and **three single
-  compiles** of `/home/duxevents/pcrec/build/pcrec` at main `3372e1e`
-  (§1.6). No `make`, no sweep, no battery.
-- **CITED** — quoted from a ruling, a decision, a spec or the tree, with
-  its `file:line`.
-- **ARGUED** — reasoning from the above. The panel's natural target, and
-  marked so it is not mistaken for either of the others.
-
-A fourth mark appears in this note and not in the format note:
-
-- **DECIDED** — a point the format note left to the implementer, or one
-  where the tree contradicts the note. Each is flagged inline and
-  repeated in §6 so the manager can ratify or reverse it. There are
-  **six**, and four of them make W1 smaller.
+- **MEASURED** — a command was run and its output quoted. Everything here
+  was taken under the manager's HOLD: file reads, corpus greps, and
+  **five single compiles** of `build/pcrec` in total across both
+  revisions. No `make`, no sweep, no battery.
+- **CITED** — quoted from a ruling, decision, spec or the tree, with its
+  `file:line`.
+- **ARGUED** — reasoning from the above; the panel's natural target.
+- **DECIDED** — a point the format note left to the implementer, or where
+  the tree contradicts it. Each is flagged inline and collected in §6.
 
 ### 0.2 The design in one paragraph
 
-W1 splits the `.rxt` parser along the seam the format note already
-draws: **pcrec owns the HEAD grammar and the whole-file resolution, the
-harness keeps its BODY parser**, because pcrec must read the file anyway
-to resolve `lib`/`name`/`target`/`config` for `--source`, and a second
-implementation of the head in bash would be two derivations of one
-grammar (learnings §3). run.sh gains three block-scoped arms and one
-call out to `pcrec --list-source`; its thirteen existing arms are not
-touched, which is how INV-COMPAT is discharged by construction rather
-than by re-verification. **The composer is a sub-parse on one `Ctx`**:
-save the cursor and the numbering scope, parse the definition's own text
-in its own number space, restore, then re-base the subtree by a walk —
-which is D87 rule 7(i) executed literally. A bound definition is
-injected as `A_REP{0,0}( A_CAP{no} ( body ) )` — **the AST shape
-`(?(DEFINE)…)` already desugars to** (`mod_recursion.c:418`) — so
-`A_CALL.target` binds to it through `callgraph.c`'s existing
-number-to-`A_CAP` bind with no new mechanism and no new node kind. Two
-consequences fall out of that shape and both make the design better: the
-definition's wrapper takes an assigned number, so the composer and the
-harness's textual control agree slot for slot with **no derived offset**
-(§2.6, and it reverses a recommendation in the format note's §2.3.3);
-and provenance never becomes a field on `Ast`, because a sub-parse's
-offsets are already local to the definition's own text (§2.9, and it
-preserves PARSE-1, which the format note's §2.12 would have broken).
-`--emit-composed` is a **text splice driven by a position list**, not an
-AST serializer, so no second "AST → PCRE2 text" mechanism is created
-(§2.10).
+pcrec owns the `.rxt` **HEAD** grammar and the whole-file resolution;
+run.sh keeps its **BODY** parser and **gains no head arms at all** — for
+a head-bearing file it calls `--list-source` once and starts its existing
+per-line loop at the `line` column of the first `pattern` row, so the head
+is an untouched byte range whose boundary comes from the one head parser
+(manager's seam ruling). The composer is a **sub-parse on one `Ctx`**:
+save the cursor and the numbering scope, parse a definition in its own
+number space, re-base by a walk. A bound definition is injected as
+`A_REP{0,0}( A_CAP{no} ( body ) )` — the shape `(?(DEFINE)…)` already
+desugars to — so `callgraph.c`'s number-to-`A_CAP` bind is reused
+unchanged and **no new AST shape or node kind is added**. Provenance is a
+property of the sub-parse and of the assignment table, never a field on
+`Ast` (which `internal.h:3247` forbids). **Four things revision 1 got
+wrong and this revision names as mechanisms**: a delivering call must
+*defeat* two capture-transparency mechanisms rather than ride them (§2.8);
+the re-basing walk must not touch caller-scope references (§2.5);
+`--emit-composed` must render injected by-name references *numerically*
+or it re-creates the collision D87 exists to fix (§2.10); and `nnames`
+cannot mean "the primary's" while `groups[]` holds every row without
+breaking a shipped bsearch contract (§2.7).
 
 ### 0.3 What this note does not design
 
-- **The struct TYPE** — `struct { rx_span local, domain; } from;` is
-  [V-I]'s (plan.md:737). W1 delivers the SLOTS, the scope paths and the
-  two refusals; it emits no struct. §2.8 states the interface, which is
-  the format note's §2.13 list unchanged.
-- **W2 and W3 productions.** Nothing in `include`, `@file:`, `mc`,
-  `tag`, `freq`, `analysis`, `use`, `oracle`, `variant`, `testee`,
-  `option` is built, and the head parser REFUSES each by name with "not
-  in this build" (§1.3). D77 at wave granularity, per the format note's
-  §1.4.
-- **Diagnostic wording** — D26. This note says what must be refused and
-  what a refusal must NAME; it does not write the sentences.
-- **[LIB]'s store scan** — §6.0's two mechanical refusals (subject
-  anchors, `\K`) are the [LIB] row's, not W1's. W1 builds no store.
+- **The struct TYPE** — [V-I]'s (plan.md:737). W1 delivers slots, scope
+  paths and refusals; it emits no struct.
+- **W2/W3 productions** — refused by name as "not in this build" (§1.3).
+- **Diagnostic wording** — D26.
+- **[LIB]'s store scan** — §6.0's two mechanical refusals are [LIB]'s.
+
+### 0.4 Revision record — r45 finding by finding
+
+The panel's own numbering; the manager's dispositions are in the review's
+triage table. Where a finding changed a MECHANISM rather than a sentence,
+the section is named.
+
+| finding | landed |
+|---|---|
+| **sem B1** delivery is refuted by two measured mechanisms | **§2.8 rewritten.** Delivery is now a NAMED deviation from capture-transparency: a live-capture arm for a delivering call, and the callee's capture indices excluded from `W`. §2.4's reuse table says both are touched |
+| **sem B2** the walk corrupts caller-scope refs | **§2.5**: the walk is keyed on the `PendingRef`, and caller-scope refs are resolved AFTER it; §2.3 classifies B2 explicitly |
+| **sem B3** `--emit-composed` re-introduces by-name binding | **§2.10**: injected by-name references render NUMERICALLY; S4's unrenderable spellings are a counted, named skip |
+| **sem B4** `nnames` vs `groups[]` breaks the bsearch contract | **§2.7**, on the manager's ruling: sort key `(ref-is-NULL, name, number)` so the primary's rows are a genuine PREFIX; `nnames` stays the primary's; NEW `nentries` rides abi 13; §4 gains the §6 algorithm hunk |
+| **sem M1** restoring `first_cap_pos` is wrong | §2.2: a THIRD state from the scope stack, never "restore" |
+| **sem M2** the `mods` seed imposes the caller's flags | §2.2: seed from the DEFINITION block's own resolved `flags` |
+| **sem M3** one of three walkers named, and the wrong pass | §2.7: all three enumerated; the composer's re-resolution owns the rule |
+| **sem M4** `target == 0` cannot tell root from unresolved | §2.5: the carve-out is DELETED; the walk keys on the `PendingRef` |
+| **sem M5 / S1** the repeat walk refuses every delivering call | §2.8: the bound is a CALL-GRAPH property (activation ≤ 1 on every path), not lexical repeat depth |
+| **sem S2** the deferral loses leftmost-failure ordering | §2.3: ordered by (file, line, offset) from the scope stack |
+| **sem S3** "a block's own `name` joins the names its pattern declares" is unimplementable | §2.3, **DECIDED (7)**: the block's `name` is in the FILE namespace, not the pattern's |
+| **sem S4/S5/S6** the splice's insertion, modifier leakage, the round-trip claim | §2.10: `(?<name=N>` is a REPLACEMENT needing the header extent; an explicit modifier reset per spliced wrapper; the claim restated in its weaker true form |
+| **chk F1** C0 is empty-vs-empty and its row was deleted | **§3.1**: format_design's S-C7 restored as its own row; C0 redesigned so its number comes from an invocation that happens |
+| **chk F2** C1 is a differential on the half it does not need | §3.1: C1 is THREE-WAY — `verify_rxt.py --dump` joins it |
+| **chk F3** nothing sees the dump's coverage shrink | §3.1: a per-block field MANIFEST + S-C11 |
+| **chk F4** the one-derivation checks cannot fail | §3.3 re-scoped; W-8 added, its expectation from libpcre2 |
+| **chk F5** the control's APPLICABLE population has no floor | §3.2: an N-run / M-skipped manifest, both pinned, both plant-validated |
+| **chk F6** `nnames` is asserted by nothing | §3.3 W-6b; S-W5 re-homed |
+| **chk F7** S-W2's population is empty | §3.4: a `(?R)` witness with `SAB_REACH_EXPECT`, four spellings |
+| **chk F8** the FILEPIN rule is per-ABI, not per-step | §3.5 and §5: the gate re-runs and the pin moves at EVERY merge of the abi-13 change |
+| **chk F9** the gate is blind to `rx_info.name`'s VALUE | §3.5: a structural assertion over the corpus's artifacts |
+| **chk F10** S-W8 plants independence and expects a red | §2.3 **DECIDED (6) REWRITTEN** on the manager's ruling: the control RE-DERIVES; S-W8 becomes "make the report disagree with the text" |
+| **chk F11** `ncap`'s octal reason is untested | §3.2 W-1c: the `\12` cell, answer from libpcre2 |
+| **chk F12** "by construction" has no check | §3.1: run.sh's arm block is hash-pinned; the 32-keyword census becomes a CHECK |
+| **chk F13** mechanical gaps vs `tests/mech/sabotages/CLAUDE.md` | §3.4: `SAB_REACH*` on every row, the `SAB_SUITES` arm registered first, rows land with their code, `verify_rxt` gains a TOTAL |
+| **chk F14 / gram 3 / gram 4** citations | fixed: `compile.c:882`, `mod_backrefs.c:733-734`, `emit_dfa.c:1190-1191` |
+| **gram 1 / gram 2** the seam and `--list-source`'s contract | RESOLVED by the manager's rulings; §1.1 rewritten, new §1.8 |
+| **gram 5 / gram 9** `with c1,c2`; the step-order reason | one sentence each (§1.5, §5) |
+
+**What the panel could NOT refute, and is not re-argued below:** the
+sub-parse on one `Ctx`; injection as `A_REP{0,0}(A_CAP)`; re-basing by a
+walk; provenance on the scope stack (r45sem: "the best section; its
+PARSE-1 argument against format_design §2.12 should be adopted"); the
+abi's four sites (all verified, and format_design's "11 at :1310"
+confirmed stale on both value and line); §1.3's grammar as a complete
+restatement of format_design §1.4's W1 row; and the "what can be measured
+before building" discipline (r45chk: "the best D77 discipline in a lane
+note this round").
 
 ---
 
 ## 1. What lands where
 
-### 1.1 The seam: who parses the `.rxt` file
+### 1.1 The seam: who parses the `.rxt` file — RULED
 
-**CITED, the tree as it stands.** There are two `.rxt` parsers today and
-they are both the harness's:
+**CITED, the tree.** Two `.rxt` parsers exist today, both the harness's:
+`tests/harness/run.sh` (bash, 1051 lines; an `if/elif` chain of 13
+`[[ =~ ]]` arms at `:811-1021`, catch-all hard error at `:1016-1021`) and
+`tests/harness/verify_rxt.py` (python3, 418 lines; `parse_rxt` at
+`:113-182`, 10 kinds, the only place `# pcre2-only` means anything, at
+`:121`).
 
-| file | language | lines | what it parses |
-|---|---|---|---|
-| `tests/harness/run.sh` | bash | 1051 | the whole file; an `if/elif` chain of 13 `[[ =~ ]]` arms (`run.sh:811-1021`), catch-all hard error at `run.sh:1016-1021` |
-| `tests/harness/verify_rxt.py` | python3 | 418 | `parse_rxt` (`verify_rxt.py:113-182`), 10 kinds, its own oracle path; `# pcre2-only` has meaning HERE and nowhere else (`verify_rxt.py:121`) |
+**W1 adds a third, in pcrec**, because `--source` must resolve
+`lib`/`name`/`target`/`config` before it can compile anything. The head
+grammar therefore has ONE implementation. r45gram's blocker was that
+revision 1 never said how run.sh's per-line loop gets PAST head lines
+without hitting its unmodified catch-all. **The manager ruled it, and the
+ruling is the reason this section is now short:**
 
-**CITED, `run.sh:1016-1021` and r44-grammar G6:** any non-blank,
-non-`#` line before the first `pattern` is a hard error today, so a head
-cannot change the meaning of an existing file — it can only make new
-files parse.
+> For a file whose first non-comment line is not `pattern`, run.sh calls
+> `--list-source` ONCE, reads the `line` column of the FIRST `pattern`
+> row, and starts its existing per-line loop AT that line. The head is an
+> **untouched byte range** whose boundary comes from the one head parser.
+> run.sh gains **no head arms** and no head recogniser, shallow or
+> otherwise.
 
-**W1 adds a THIRD parser, in pcrec, and that is the design's first
-choice.** `--source <file.rxt>` must resolve `lib`, `name`, `target` and
-`config` before it can compile anything, so pcrec has to read the file.
-The alternative — the harness parses the head in bash and hands pcrec a
-flattened command line — was considered and rejected on two grounds:
+So the two readings r45gram named — (a) pre-scan, (b) ignore-arms — are
+resolved as neither: run.sh does not scan for the boundary and does not
+recognise head syntax; it is TOLD the boundary. That kills the drift
+hazard (b) would have created, and it makes the `line` column
+load-bearing, which is why it has its own sabotage row (§3.4 S-C10).
 
-1. `config c from a, b` (cascade), `with c1, c2` (MAX-WINS on caps,
-   later-wins per flag), block scalars and the four lexical contexts are
-   a dictionary problem, and bash has one associative array and no
-   nesting. **ARGUED**, but see the counter-case below.
-2. It puts the head grammar in the harness, where pcrec cannot see it —
-   and pcrec's `--source` would then need its own copy. Two
-   implementations of one grammar is the drift hazard learnings §3
-   exists to name.
+**MEASURED — the 179 files never make the call**, so their code path is
+byte-identical: every corpus file's first non-comment line is `pattern`
+(format_design §1.2's census; r44-grammar G1; re-confirmed here at §1.7).
 
-**So the split is: pcrec owns the HEAD; run.sh keeps the BODY.** And
-because a `target` names a block's `name` — a BODY line — pcrec must
-read the body too, at least as far as `pattern` / `name` / `description`
-/ `flags` / `features` / `encoding` / `engine` / `budget`. It ignores
-every expectation line (`m`, `n`, `ms`, `ns`, `g`, `gp`, `gu`, `perr`,
-`frames-buffer=`), which are the harness's business and no part of a
-compile.
-
-**This leaves the BODY grammar with two implementations, deliberately,
-and §3.1 is the control that keeps them honest.** That is a worse
-position than one implementation and a better one than three: the two
-are in different languages, written by different authors, and the
-differential over the 179-file corpus is a real control rather than a
-self-join (learnings §3's requirement on a control).
-
-**The counter-case, stated because a reviewer will raise it** (ARGUED):
-one could instead have run.sh read pcrec's dump for EVERYTHING and keep
-only its case-line parsing. That collapses the body to one
-implementation. It is rejected because it rewrites the parser
-R-COMPAT-1 protects, on the wave that must prove R-COMPAT-1 — the change
-and its own proof would share a source, which is precisely learnings
-§3's shape. If W2 or W3 wants that collapse later, INV-COMPAT will by
-then be a check with history rather than a promise.
+**What still has two implementations, deliberately: the BODY grammar** —
+run.sh's and pcrec's (which must read `pattern`/`name`/`description`/
+`flags`/`features`/`encoding`/`engine`/`budget` to find definitions and
+targets, and ignores every expectation line). That is a control, and
+r45chk's F2 is the correction revision 1 needed: it is a control for the
+BODY and **not for the HEAD**, where W1 has exactly one parser. §3.1's C1
+is now three-way and says which half each leg covers.
 
 ### 1.2 File by file
 
-| # | file | language | change |
+| # | file | lang | change |
 |---|---|---|---|
-| F1 | `src/parse/rxt_source.c` (**new**) | C | the HEAD grammar + the body's directive lines; the four lexical contexts; block scalars; `config` cascade and composition; `target` resolution; the definition set. Produces one `RxtSource` (arena-owned). |
-| F2 | `src/core/internal.h` | C | `RxtSource`, `RxtDef`, `RxtTarget`, `RxtConfig` declarations; `NamedGroup` gains `scope` (§2.7); `Ast.u.cap` gains `at` (§2.10); `Ctx` gains the composer's scope stack and assignment table (§2.2, §2.9) |
-| F3 | `cli/main.c` | C | `--source`, `--target <prefix>`, `--lib-path DIR`, `--emit-composed`, `--list-source`; `-o <dir>` semantics (§1.5). Today's option chain is `if/else strcmp` from `main.c:203`; `-o` writes exactly one `.c` + one `.h` (`main.c:740-786`) |
-| F4 | `src/core/compile.c` | C | one new call in `compile_driver` between `pcrec_parse` (`compile.c:874`) and `pcrec_altcls` (`compile.c:890`) — §2.1; `ctx_fail` (`compile.c:16-29`) consults the provenance scope — §2.9 |
-| F5 | `src/parse/mod_named_groups.c` | C | B1: `(?<3>…)` and `(?<name=3>…)`, dispatched after `(?<` — §1.4 |
-| F6 | `src/parse/mod_recursion.c` | C | B2 `(?&^.name)` and B3 `(?&site=name)` / `(?&=name)`, in `rc_name_call` (`mod_recursion.c:269`) — §1.4 |
-| F7 | `src/parse/registry.c` | C | three `RegRow`s for B1/B2/B3, so `--list-syntax` carries them (D24/D65; format note §3.3) |
-| F8 | `src/opt/postresolve.c` | C | the two delivery refusals (recursive definition; call under a repeat) — both need the call graph, which is what this file is for (`internal.h:3241`) |
-| F9 | `src/gen/emit_dfa.c` | C | `rx_info.name`; `.abi` 12 → 13 (`emit_dfa.c:1375`); `rx_group_entry.ref` populated for injected groups (`emit_dfa.c:1192` emits literal `NULL` today) |
-| F10 | `tests/harness/run.sh` | bash | three new block arms (`name`, `description`, `encoding`), `features only`; one `--list-source` call per file with a head; cells; H11's target build |
-| F11 | `tests/harness/driver.c` | C | the prefix stops being hard-coded (`driver.c:304`, `352-355` call `rx_*` literally) — H11 |
-| F12 | `tests/harness/verify_rxt.py` | python3 | the counted, named skip for a composed block (§1.7, H4) |
-| F13 | `docs/spec/*` | md | §4 |
+| F1 | `src/parse/rxt_source.c` (**new**) | C | the HEAD grammar + the body's directive lines; four lexical contexts; block scalars; `config` cascade and composition; `target` resolution; the definition set. Produces one arena-owned `RxtSource` |
+| F2 | `src/core/internal.h` | C | `RxtSource`/`RxtDef`/`RxtTarget`/`RxtConfig`; `NamedGroup` gains `scope`; `Ast.u.cap` gains `at` and the header extent (§2.10); `PendingRef` gains the scope discriminator (§2.5); `Ctx` gains the scope stack and the assignment table |
+| F3 | `cli/main.c` | C | `--source`, `--target`, `--lib-path`, `--emit-composed`, `--list-source`; `-o <dir>` (today `-o` writes one `.c` + one `.h`, `main.c:740-786`) |
+| F4 | `src/core/compile.c` | C | one call in `compile_driver` between `pcrec_parse` (**`compile.c:882`** — r45gram 3; `:874` is an encoding `ctx_fail`) and `pcrec_altcls` (`:890`); `ctx_fail` (`:16-29`) consults the provenance scope |
+| F5 | `src/parse/mod_named_groups.c` | C | B1's `(?<3>…)` / `(?<name=3>…)` |
+| F6 | `src/parse/mod_recursion.c` | C | B2's `(?&^.name)` and B3's `(?&site=name)` / `(?&=name)`, in `rc_name_call` (`:269`) |
+| F7 | `src/parse/registry.c` | C | three `RegRow`s so `--list-syntax` carries them (D24/D65) |
+| F8 | `src/opt/callgraph.c` | C | **NEW in revision 2**: the `W` fixpoint excludes a delivering call's callee capture indices (§2.8) |
+| F9 | `src/opt/atomic.c` | C | **NEW in revision 2**: `pcrec_has_live_capture` gains a delivering-call arm (§2.8) |
+| F10 | `src/opt/postresolve.c` | C | the delivery refusals, on a call-graph activation bound (§2.8) |
+| F11 | `src/gen/emit_dfa.c` | C | `rx_info.name`; `nentries`; the sort key; `.abi` 12→13 (`:1375`); `.ref` populated (emitted `NULL` today at **`:1190-1191`** — r45chk F14; the struct comment at `:602`) |
+| F12 | `tests/harness/run.sh` | bash | three block arms + `features only`; the `have_block` guard on the case arms; one `--list-source` call per head-bearing file; cells; H11's target build; the C1 dump |
+| F13 | `tests/harness/driver.c` | C | the prefix stops being hard-coded (`:304`, `:352-355`) |
+| F14 | `tests/harness/verify_rxt.py` | python3 | the composed-block skip, a skip TOTAL (F13d), and `--dump` (C1's third leg) |
+| F15 | `docs/spec/*` | md | §4 |
 
 ### 1.3 The grammar W1 accepts, and what it refuses
 
-W1 implements exactly the format note's §1.4 W1 row. Restated as the
-parser's dispatch, with the diagnostic each arm raises.
+Exactly format_design §1.4's W1 row. Head: `lib`, `target … [with]`,
+`description` (both forms), `config` (with `pcrec`/`flags`/`features`/
+`encoding`/`engine`/`budget` and `from`). Body: `name`, `description`,
+`encoding`, and `only` on `features`.
 
-**Head (file-level), four productions:**
+Refusals, by D26 tier; every one names the FILE, the LINE and the
+CONSTRUCT:
 
-```
-lib <path-ref>
-target <ident> = <ident> [with <ident>{, <ident>}]
-  description <prose>                    (indented attr)
-description <prose>                      (file-level; one-line or `|` block)
-config <ident> [from <ident>{, <ident>}]
-  pcrec <rest-of-line>
-  flags <letters>
-  features [only] <module-list>
-  encoding <ident>
-  engine vm|dfa
-  budget steps=N | frames=N
-```
-
-**Body (block-scoped), three new arms plus one modifier:**
-
-```
-name <ident>
-description <prose>
-encoding <ident>
-features only <module-list>      (`only` is new on an existing arm)
-```
-
-**Refusals, by tier (D26).** Every one names the FILE, the LINE and the
-CONSTRUCT; none of them reproduces a PCRE2 sentence.
-
-| situation | tier | what the refusal must name |
+| situation | tier | names |
 |---|---|---|
-| a W2/W3 keyword in the head (`include`, `use`, `oracle`, `tag`, `freq`, `testee`, `option`, `analysis`) | 3 | the keyword, and that it is **not in this build** — never "unknown", because it IS a real keyword of the format and a reader must not be sent to look for a typo |
-| an unknown first token in a context | 3 | the token AND the context ("`testee` is not a pattern-block directive") — format note §1.2's four-contexts rule |
-| a head line after the first `pattern` | 3 | the line and the head/body boundary |
-| a duplicate `config`/`target`-prefix/definition name in scope | 2 | **both** declaration sites (§2.2's namespace rule; "refused by name, never shadowed") |
-| a cycle in `config … from` | 3 | the cycle's members |
-| `target … = <name>` where `<name>` is no definition in scope | 2 | the name, and the `lib` chain that was searched |
-| `-o <file>` with N > 1 targets | 3 | the targets and the two ways to proceed (§1.5) |
-| a `lib` path that does not resolve | 3 | the path and the `--lib-path` list searched |
+| a W2/W3 keyword in the head | 3 | the keyword, and that it is **not in this build** |
+| an unknown first token in a context | 3 | the token AND the context |
+| a head line after the first `pattern` | 3 | the line and the boundary |
+| a duplicate `config`/prefix/definition name | 2 | **both** sites (§2.2's namespace rule) |
+| a `from` cycle | 3 | the cycle's members |
+| `target … = <name>` with no such definition | 2 | the name and the `lib` chain searched |
+| `-o <file>` with N > 1 targets | 3 | the targets and both ways forward |
+| an unresolvable `lib` path | 3 | the path and the `--lib-path` list |
 
-**DECIDED (1): a W2/W3 keyword is refused as "not in this build", not
-as "unknown".** The format note's §1.3 says a parser "may ship W1 alone
-and reject W2/W3 keywords with 'not in this build'"; it does not say it
-must. It must: the alternative sends a reader hunting a typo in a word
-that is in the spec, which is K14's shape (promising a namespace a name
-is not in — and here, the mirror: denying a name the namespace does
-contain).
+**DECIDED (1): a W2/W3 keyword is "not in this build", never "unknown".**
+The alternative sends a reader hunting a typo in a word that is in the
+spec — K14's shape mirrored.
 
 ### 1.4 The three pattern-level extensions
 
-**MEASURED, `build/pcrec` at main `3372e1e`, three single compiles**
-(this is the whole of §1.6's budget, and it is the measurement that
-matters most because the format note's own freeness table was taken on
-`lane/dd13b` BEFORE [DD-11] landed new parser rows):
+**MEASURED, `build/pcrec` at main `3372e1e`** (the format note's freeness
+table predates [DD-11]'s new parser rows, so it was re-taken):
 
 ```
 $ build/pcrec -p rx --features all -o - -- '(?<3>a)'
 pcrec: subpattern name expected (a name starts with a letter or '_',
        never a digit) (pattern offset 3)                        rc=1
 $ build/pcrec -p rx --features all -o - -- '(?&^.w)'
-pcrec: subpattern name expected (a name starts with a letter or '_',
-       never a digit) (pattern offset 0)                        rc=1
+pcrec: subpattern name expected (...never a digit) (offset 0)   rc=1
 $ build/pcrec -p rx --features all -o - -- '(?&from=email)'
 pcrec: invalid subpattern name (pattern offset 0)               rc=1
 ```
 
-All three are still refused, so B1/B2/B3 remain free at `3372e1e` and
-the format note's constraint ("no legal PCRE2 pattern may change
-meaning") still holds after [DD-11]. The refusal SITES are the useful
-part: each extension displaces exactly one existing refusal, and the
-offsets say which.
+All three still refused, so B1/B2/B3 remain free. Each displaces exactly
+one existing validator:
 
 | ext | spelling | doorway | displaces | module |
 |---|---|---|---|---|
-| B1 | `(?<3>…)`, `(?<name=3>…)` | `(?<` | the name-start validator, `mod_named_groups.c:187` region | **`named-groups`** |
-| B2 | `(?&^.name)` | `(?&` | the same validator reached through `rc_name_call` (`mod_recursion.c:269`) | **`recursion`** |
+| B1 | `(?<3>…)`, `(?<name=3>…)` | `(?<` | the name-start validator (`mod_named_groups.c:187` region) | **`named-groups`** |
+| B2 | `(?&^.name)` | `(?&` | the same validator via `rc_name_call` (`mod_recursion.c:269`) | **`recursion`** |
 | B3 | `(?&site=name)`, `(?&=name)` | `(?&` | "invalid subpattern name" on the `=` | **`recursion`** |
 
-**DECIDED (2): module ownership as tabled.** The format note leaves it
-open. B1 belongs to `named-groups` because a group's number and its name
-are two halves of one identity and `(?<` is that module's doorway; B2
-and B3 belong to `recursion` because `(?&` is its doorway and both are
-properties of a CALL. Each gets a `RegRow` (D24) so `--list-syntax`
-carries it, per the format note's §3.3 — three DIALECT rows, the shape
-`pcre2_compliance.md` already handles.
+**DECIDED (2): module ownership as tabled** — B1 to `named-groups`
+(a group's number and name are two halves of one identity, and `(?<` is
+that module's doorway), B2/B3 to `recursion` (both are properties of a
+CALL). Each gets a `RegRow` so `--list-syntax` carries it (format_design
+§3.3): three DIALECT rows, the shape `pcre2_compliance.md` already
+handles.
 
-**A consequence worth stating: `(?&^.name)` and `(?&site=name)` require
-module `recursion`, and `(?<3>…)` requires `named-groups`.** A file
-using composition therefore needs those modules enabled, which the
-harness already does per block via `features`. Nothing new; stated so a
-reviewer does not have to derive it.
+### 1.5 `config`, `target`, and how many `.c` files come out
 
-### 1.5 `config`, `from`, `target`, and how many `.c` files come out
+format_design §2.6 governs; the implementation notes are:
 
-**Scoping and precedence are the format note's §2.6 verbatim; the
-implementation notes are these:**
+- **`with c1, c2` and the per-kind table are TWO DIFFERENT MECHANISMS**
+  (r45gram 5, and revision 1 conflated them). `with c1, c2` composes
+  CONFIGS: `c1`'s lines, then `c2`'s, later wins — one flat
+  later-wins rule, no per-kind logic. The per-kind table (`features`
+  UNION unless `only`; `flags`/`encoding`/`engine`/`budget`
+  more-specific-wins; size caps MAX WINS) governs how the resulting
+  config composes against a BLOCK's own directives. Two levels, two
+  rules; conflating them would make `with` order-sensitive in exactly
+  the way r44-sem M15 rejected.
+- `config c from a, b` materialises ONCE at parse, so the `from` cycle
+  check is the visited set of the expansion walk, not a separate pass.
+- **`pcrec <raw>` is re-parsed by the CLI's own option parser**
+  (`main.c:203`'s chain factored into a function taking
+  `(argc, argv, pcrec_options*)`), so a flag cannot mean one thing on the
+  command line and another in a `config` block.
 
-- `config c from a, b` expands to `a`'s lines, then `b`'s, then `c`'s
-  own; **the expansion is materialised once at parse, not at each use**,
-  so a cycle is caught by a visited set on the same walk that expands
-  (one mechanism, not a separate cycle check).
-- `with c1, c2` composes into ONE option set. Per-kind composition:
-  `features` UNION unless the block wrote `features only`; `flags`,
-  `encoding`, `engine`, `budget` more-specific-wins; `pcrec <raw>`
-  accumulated, later-wins per flag; size caps **MAX WINS** (r44-sem M15
-  — max-wins is order-insensitive and the raise-only law
-  `docs/spec/limits.md` states then follows automatically instead of
-  being enforced by a refusal).
-- **`pcrec <raw>` is re-parsed by the CLI's own option parser, not by a
-  second one.** `cli/main.c:203`'s chain is factored into a function
-  taking `(argc, argv, pcrec_options*)` and `rxt_source.c` calls it with
-  the config line's tokens. One derivation, two readers — otherwise a
-  flag would mean one thing on the command line and another in a
-  `config` block, which is exactly the drift the situation index warns
-  about.
+Output naming (format_design §2.7, r44-sem M10, D88): `--target <p> -o
+out.c` → one pair; `-o <dir>` → `<dir>/<prefix>.c` + `.h` per target;
+`-o out.c` with N > 1 → refused. **D88 holds by construction** — each
+target is a separate `pcrec_compile()` call; there is no code path that
+could make a multi-artifact TU.
 
-**Output naming** (format note §2.7's table, r44-sem M10, D88):
+Compatibility default (Frank §6.4): no `target` and exactly one UNNAMED
+block ⇒ `target rx`. MEASURED (r44-sem M11): two corpus files qualify
+(`tests/mrl/11_motivating_shape_small.rxt`,
+`tests/base/d27_nested_min_boundary.rxt`). Nothing in `make test` invokes
+`--source`, so no existing run changes.
 
-| invocation | result |
-|---|---|
-| `--source f.rxt --target <prefix> -o out.c` | that one target → `out.c` + `out.h` |
-| `--source f.rxt -o <dir>` with N ≥ 1 targets | `<dir>/<prefix>.c` + `.h` per target |
-| `--source f.rxt -o out.c` with N > 1 targets | **refused**, naming the targets and both ways forward |
+### 1.6 `rx_info.name`, `nentries`, and the abi's FOUR sites
 
-`-o` today derives the `.h` path by replacing a trailing `.c`
-(`main.c:740-786`); the directory form derives both from the prefix.
-**D88 holds by construction**: each target is a separate
-`pcrec_compile()` call producing its own `.c`/`.h`. There is no
-multi-artifact translation unit and no code path that could create one.
+**CITED — format_design §2.7 is stale: the abi is 12, not 11.** Three
+sites agree, and r45gram 8 verified all four independently:
 
-**The compatibility default** (Frank §6.4): a file with no `target` and
-exactly one **unnamed** block is `target rx = <that block>`. MEASURED by
-the format note (r44-sem M11): **two** corpus files have exactly one
-block — `tests/mrl/11_motivating_shape_small.rxt` and
-`tests/base/d27_nested_min_boundary.rxt` — and would build as `target
-rx` under `--source`. Every other file builds nothing. Nothing in
-`make test` invokes `--source`, so this changes no existing run.
-
-### 1.6 `rx_info.name`, and the abi's FOUR sites
-
-**CITED, and the format note is stale here: the abi is 12, not 11.**
-The note's §2.7 says "currently **11**, MEASURED at
-`src/gen/emit_dfa.c:1310`". Three independent sources in the tree say
-12:
-
-```
-src/gen/emit_dfa.c:1375       sb_puts(c,   "    .abi = 12,\n");
-tests/codegen/run_codegen_tests.sh:2707   ABI_EXPECT=12
-docs/spec/match_api.md:159    ... `rx_info.abi` is `12` ([OPT-4], the
-                              prefilter-language stamp; ...)
-```
-
-[OPT-4] bumped 11 → 12 after the note was written. **So W1's bump is 12
-→ 13**, and the four D76 sites are, exactly:
-
-| # | site | what changes |
+| # | site | change |
 |---|---|---|
-| 1 | `src/gen/emit_dfa.c:1375` | `.abi = 12` → `13`, and the `rx_info` struct text at `emit_dfa.c:596-660` gains `const char *name;` |
-| 2 | `tests/codegen/run_codegen_tests.sh:2707` | `ABI_EXPECT=12` → `13`, and the `bad` message at :2709 gains the 12→13 clause (that message is the bump ledger) |
-| 3 | `docs/spec/match_api.md:159` **and** §6's struct block (~:1340) | the "`rx_info.abi` is `12`" sentence, and the new member with its NULL rule |
-| 4 | `tests/codegen/run_recursion_identity.sh:456` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c275aef}"` → this change's LAST src-touching commit |
+| 1 | `src/gen/emit_dfa.c:1375` | `.abi = 12` → `13`; the emitted `rx_info` struct text (`:596-660`) gains `const char *name` and `int nentries` |
+| 2 | `tests/codegen/run_codegen_tests.sh:2707` | `ABI_EXPECT=12` → `13`, and the bump ledger in the `bad` message at `:2709` |
+| 3 | `docs/spec/match_api.md:159` **and** §6's struct (~`:1340`) | the "`abi` is `12`" sentence, the two new members, and B4's §6 algorithm hunk |
+| 4 | `tests/codegen/run_recursion_identity.sh:456` | `FILEPIN="${…:-c275aef}"` → the abi-13 change's last src-touching commit |
 
-**Site 4 carries a rule that has already broken once and is written
-where the pin is set** (CITED, `run_recursion_identity.sh:394-406`,
-[ART-SIZE]): *"THE PIN MOVES WITH THE LAST SCAFFOLDING CHANGE OF THE
+**Site 4's rule is per-ABI, not per-step (r45chk F8).** The file states it
+at `:394-406`: *"THE PIN MOVES WITH THE LAST SCAFFOLDING CHANGE OF THE
 `abi`, NOT THE FIRST — RE-RUN THIS GATE AFTER EVERY src-TOUCHING COMMIT
-THAT FOLLOWS A RE-PIN."* A stale pin made (B) report 952 differing
-artifacts. W1's target step touches src more than once, so the pin is set
-**last**, and §5 puts it in the step's exit criteria rather than in its
-middle.
+THAT FOLLOWS A RE-PIN"*, and a stale pin once reported 952 falsely
+differing artifacts ([ART-SIZE]). W1.3 and W1.4 both touch
+`emit_dfa.c` after W1.2's pin, so **the gate re-runs and the pin moves at
+every merge of the abi-13 change** (§5).
 
-`rx_info.name` is the block's `name`, or the prefix when the block is
-unnamed, so **no artifact ever carries a NULL name** (Frank §6.3).
-Comparison (A) — the program region against `ac4917d` — is expected
-byte-identical, because a stamped string in `rx_info` sits above
-`goto <prefix>_L0;`, the same argument [ENG-ABS] made for `match_form`.
+`rx_info.name` is the block's `name`, or the prefix when unnamed, so no
+artifact carries a NULL name (Frank §6.3) — and r45chk F9 is right that
+nothing would have checked that, so §3.5 adds the assertion.
+Comparison (A) is expected byte-identical: a stamped string in `rx_info`
+sits above `goto <prefix>_L0;`, the argument [ENG-ABS] made for
+`match_form`.
 
-**A drive-by the spec hunk must fix** (CITED, `match_api.md:1345-1355`):
-the `nnames` comment still reads *"0 until module 'named-groups' lands
-(still true as of this writing — verified: `'(?<g>a)'` still refuses)"*.
-Module `named-groups` shipped 2026-08-18 (`src/parse/mod_named_groups.c`
-exists and populates `Ctx.named_groups`). W1 is editing that struct's
-doc for `name` and touching `nnames`'s meaning for composed artifacts
-(§2.7), so the stale sentence goes in the same hunk. It is not W1's bug,
-but leaving it beside a hunk that contradicts it would be.
+### 1.7 What the harness gains — and the guard
 
-### 1.7 What the harness gains, and what it does not
+- **No head arms** (§1.1). One `--list-source` call per head-bearing
+  file; MEASURED **zero** of the 179.
+- **run.sh's 13 existing arms are not touched**; three new block arms
+  (`name`, `description`, `encoding`) and `features only` append to the
+  chain, after `features` and before the catch-all (order matters —
+  `[[ =~ ]]` clobbers `BASH_REMATCH`, `run.sh:841-843`).
+- **The case arms gain the `have_block` guard they were missing** —
+  RULED. Today it is checked at only seven arms (`run.sh:844,855,866,880,
+  886,912` — the six directive arms — plus `:1007`'s `g`/`gp`); `m`, `n`,
+  `ms`, `ns`, `gu` and `perr` push unconditionally (`m` at `:922-931`),
+  and the EOF flush is gated (`[ "$have_block" = "1" ] && flush_block`,
+  `:1024`), so a case line with no open block was silently dropped rather
+  than refused. **MEASURED — the guard is free:**
 
-- **H1 is pcrec's, not run.sh's** (§1.1). run.sh calls
-  `pcrec --list-source <file>` **once per file, and only for a file whose
-  first non-comment line is not `pattern`** — MEASURED, that is **zero**
-  of the 179 corpus files (the format note's §1.2 census; independently
-  reproduced by r44-grammar G1, and re-confirmed for this note: `grep -rlE
-  '^[[:space:]]+[^[:space:]]' tests --include='*.rxt'` prints nothing).
-  So the corpus pays no new process.
-- **run.sh's 13 existing arms are not touched.** The three new arms
-  (`name`, `description`, `encoding`) and `features only` are appended to
-  the `if/elif` chain. Order matters in that chain because bash's
-  `[[ =~ ]]` clobbers `BASH_REMATCH` (`run.sh:841-843`); the new arms go
-  after `features` and before the catch-all.
-- **H3 cells**: a block runs once per resolved config. The `perr`
-  one-cell rule is a guard at the dispatch, not a filter afterwards —
-  MEASURED by the format note, re-running `perr` under a config's
-  `--features all` would silently change the meaning of **384** blocks.
-- **H11**: `driver.c` calls `rx_*` literally (`driver.c:304`, `352-355`)
-  and run.sh passes `-p rx` (`run.sh:441`) — two independent hard-codings
-  that must agree. **DECIDED (3): the driver takes the prefix as a `-D`
-  macro**, not a generated shim: `-DRXP=<prefix>` plus token pasting
-  keeps `driver.c` one file that compiles for any prefix, where a
-  generated shim adds a code generator to the harness whose output nobody
-  reviews. The default stays `rx`, so every existing invocation is
+  ```
+  $ find tests -name '*.rxt' -print0 | xargs -0 awk '
+      FNR==1 { files++; seen=0 }
+      /^pattern[ \t]/ { seen=1; pat++; next }
+      /^(m|n|ms|ns|gu|perr|g|gp)([ \t]|$)/ {
+          cases++; if (!seen) { print "VIOLATION " FILENAME ":" FNR; bad++ } }
+      END { printf "files %d  pattern %d  cases %d  pre-pattern %d\n",
+                   files, pat, cases, bad+0 }'
+  files 179  pattern 3265  cases 26691  pre-pattern 0
+  ```
+
+  Zero of 26,691, so the 179 files never take the new branch and
+  INV-COMPAT's argument is untouched. **The denominators are asserted
+  rather than assumed** (the [DD-13c] lesson §3.1 makes a requirement of;
+  a first run printing a bare `0` was discarded for exactly that reason),
+  and they **independently reproduce format_design §1.1's census to the
+  digit** — 179 / 3,265 / 26,691 — from a different direction, since the
+  awk was written from run.sh's arm list and not from that census. That
+  population has now been derived three ways (the note's own,
+  r44-grammar G1's recognizer, and this).
+  The guard is the GENERAL form of a guard seven arms already carry, not
+  a special case, and §3.4's S-C10 case 3 becomes harness-detected
+  because of it.
+- **H3 cells**: one run per resolved config; the `perr` one-cell rule is
+  a guard at dispatch, not a filter after (re-running `perr` under a
+  config's `--features all` would silently change **384** blocks).
+- **H11**: **DECIDED (3) — `driver.c` takes the prefix as a `-D` macro**,
+  not a generated shim (a shim adds a code generator to the harness whose
+  output nobody reviews). Default `rx`, so every existing invocation is
   unchanged.
-- **H4** (`verify_rxt.py`): python `re` has **no** subroutine call at all
-  (CITED, `subroutines_design.md` §10.1: "not different semantics, an
-  ABSENCE"), so a composed block cannot be python-verified. **DECIDED
-  (4): the skip is STRUCTURAL and COUNTED, never a caught `re.error`.**
-  `verify_rxt.py` skips a block when the file declares a `lib` or a
-  `name` AND the block's pattern carries a by-name subroutine reference,
-  reports it in the existing per-file skip line (`verify_rxt.py:388`),
-  and its skip counter (`:221`) rises. Catching `re.error` instead would
-  make a skip that nobody counted — AR-3's failure mode exactly, and the
-  one H4 was flagged for.
-  In W1 there is no `oracle` line (it is W3), so this structural test is
-  the ONLY thing that can route a composed block away from python.
-- **NOT built in W1**: H5 (`include`), H6 (`@file:` and the driver
-  protocol change), H7 (`mc`), H8 (`tag`), H9 (data blocks), H10
-  (`use`/`variant`/testees). D77 at wave granularity.
+- **H4**: **DECIDED (4) — the composed-block skip is STRUCTURAL and
+  COUNTED**, never a caught `re.error`. python `re` has no subroutine
+  call at all (CITED, `subroutines_design.md` §10.1: "not different
+  semantics, an ABSENCE"). `verify_rxt.py` skips when the file declares a
+  `lib` or a `name` and the block's pattern carries a by-name reference,
+  and — r45chk F13(d) — it gains a **TOTAL** skip line, since today it
+  prints a per-file line only `if skipped:` (`:387-388`) and C3 needs an
+  aggregate to compare.
+- **NOT built**: H5-H10 (`include`, `@file:`, `mc`, `tag`, data blocks,
+  `use`/`variant`/testees). D77 at wave granularity.
+
+**MEASURED — the corpus is 179 files but run.sh dispatches 178 workers,
+and the manager asked which one and why.** `run.sh:184-186` discovers with
+`find "$ROOT_DIR/tests" -name '*.rxt' -not -path "*/known_fail/*"`. The
+excluded file is exactly one:
+
+```
+$ find tests -name '*.rxt' -path '*/known_fail/*'
+tests/known_fail/k34_leftrec_giveup.rxt
+```
+
+So **179 files exist, 178 are dispatched, and the 179th is the known-fail
+ratchet's own file** — deliberately outside the corpus run (CLAUDE.md's
+"the known-fail ratchet"). Consequence for §3: **C1's and C2's
+denominators are different numbers on purpose** — C1 (a parse
+differential, which can and should read every file) asserts **179**,
+while C2 (the answer re-run, which is run.sh's own population) asserts
+**178 workers**. Revision 1 would have asserted 179 in both and the
+second would have been wrong. Both numbers are pinned in §3.1.
+
+### 1.8 `--list-source` — the output contract (RULED)
+
+r45gram 2 was right that revision 1 cited two incompatible uses and
+specified neither. The manager ruled the format; this section is it.
+
+**TSV under `docs/spec/table_contract.md`** — the house wire format:
+`\n` line ends, `#` comment lines, the LAST `#` line before data is the
+header, columns **append-only**, an empty field means "none", **no field
+contains a TAB**. **One row per declaration and per block, in FILE
+ORDER.**
+
+| # | column | on | value |
+|---|---|---|---|
+| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` |
+| 2 | `line` | all | 1-based first line of the declaration/block |
+| 3 | `name` | target, config, pattern | the target's PREFIX; the config's name; the block's `name` (empty if unnamed) |
+| 4 | `value` | lib, target, description | `lib`'s path-ref; `target`'s definition name; `description`'s text |
+| 5 | `pattern` | pattern | the block's pattern text |
+| 6 | `flags` | pattern, config | the letters |
+| 7 | `features` | pattern, config | the module list |
+| 8 | `features_only` | pattern | `1` if the block wrote `features only` |
+| 9 | `encoding` | pattern, config | the ident |
+| 10 | `engine` | pattern, config | `vm` \| `dfa` |
+| 11 | `budget_steps` | pattern, config | N |
+| 12 | `budget_frames` | pattern, config | N |
+| 13 | `with` | target | the config list |
+| 14 | `from` | config | the config list |
+| 15 | `pcrec` | config | the raw flag text |
+
+**DECIDED (5): `kind` carries the DECLARATION NAME, not a `head`/`pattern`
+supercategory** — one column instead of two (a `head` row still needs
+something to say which declaration it is), it matches `--list-syntax`'s
+own `kind` column, and **"is this a head row" needs no column at all**:
+the head ends at the first `pattern` line, so a head row is exactly one
+preceding the first `pattern` row. That is a property of the ORDER, which
+is what C1 compares — a column for it would be a second home for a fact
+the row order already carries, free to disagree with it.
+
+**SECTIONLESS for W1, with a named trigger.** The contract's `#section`
+mechanism exists for "one command, several tables, different columns" and
+is declined here on purpose: the head/body INTERLEAVING is what C1
+checks, and it is expressible only as row order in ONE stream — two
+sections would make "the head ends at the first `pattern` line"
+unrepresentable in the very output whose job is to prove it.
+Backwards-compatible-by-absence means adopting later is free, and the
+trigger is concrete: **W2's `freq` data block**, whose
+`row <offset> <16 counts>` cannot be a column here under any reading. The
+spec hunk says so (§4).
+
+**AS-WRITTEN, not resolved.** C1's job is to prove the two PARSERS agree;
+resolution is a third thing only pcrec does, so a resolved dump would
+compare pcrec's resolver against no counterpart — and would force a
+second resolver into run.sh, the duplication this seam exists to avoid.
+`--list-source --resolved` is NAMED and UNBUILT (D77).
+
+**THE TAB HAZARD, and it is live.** A `pattern` line is REST-OF-LINE
+verbatim, so a pattern may contain a literal tab; a `description` block
+scalar contains newlines by construction. MEASURED:
+
+```
+$ grep -rP '^pattern .*\t' tests --include='*.rxt' | wc -l      -> 3
+$ grep -rP '^pattern .*\t' tests --include='*.rxt' | cat -A
+tests/base/bounded_repeats.rxt:pattern a{^I1}$
+tests/base/bounded_repeats.rxt:pattern a{ 1^I,^I2 }$
+tests/modifiers/xxmode.rxt:pattern (?xx)[a^Ib]$
+```
+
+Three blocks, and **in every one the tab is the thing under test** — a
+tab inside a brace quantifier (so `a{\t1}` is a literal brace run, not a
+quantifier) and a tab inside a class under `(?xx)` (where extended mode
+strips class whitespace). Emitted raw, the field splits and every later
+column shifts on exactly those rows.
+
+**RULED: columns 4, 5 and 15 are escaped in the `.rxt` format's OWN
+subject-escape vocabulary** (`\t \n \r \\ \xNN`) — already specified in
+`rxt_format.md`, already implemented in `driver.c`'s `decode()`, already
+what a `.rxt` author knows. No second decoder is invented for the
+differential to drift across. Sabotage row S-C9 (§3.4).
+
+**A precedent and a divergence, worth stating because both dumps live in
+run.sh.** `RXTDUMP` (`run.sh:56-62`, `:484-490`) is an existing TSV dump —
+one line per CASE OUTCOME, for [CHK-2]'s axis sweep — and it handles the
+same hazard by **lossy squashing**: `flat_err="$(printf '%s' "$pcrec_err"
+| tr '\n\t' '  ')"`. That is correct THERE (it is diffed against itself
+across axes, so a squash that is applied identically on both sides loses
+nothing that matters) and would be **wrong here** (C1 is a
+cross-implementation differential, where a squash could hide exactly the
+disagreement being looked for). Two dumps, two disciplines, one script —
+so the note names both rather than letting a later reader assume the
+older one's rule.
 
 ---
 
 ## 2. The composer
 
-This is the design's centre. Everything above is grammar; this is the
-part that changes what pcrec compiles.
-
 ### 2.1 Where it runs
 
-**CITED, `src/core/compile.c`'s `compile_driver`** — the ordered stages
-of one compile attempt:
+**CITED, `compile_driver` (`src/core/compile.c`)** — the ordered stages,
+with r45gram 3's correction:
 
 ```
 compile.c:840  pcrec_parse_mods_init(&cx)
-compile.c:874  root = pcrec_parse(&cx)          <- returns a resolved tree
-        ...    << THE COMPOSER RUNS HERE >>
+compile.c:882  root = pcrec_parse(&cx)        <- (revision 1 said 874;
+        ...    << THE COMPOSER RUNS HERE >>       :874 is an encoding ctx_fail)
 compile.c:890  root = pcrec_altcls(&cx, root)
 compile.c:906  root = pcrec_discharge_atomic(&cx, root)
 compile.c:925  pcrec_callgraph_build(&cx, root)
@@ -413,803 +472,518 @@ compile.c:963  pcrec_postresolve(&cx, root)
 compile.c:1128 pcrec_emit_vm / pcrec_emit_dfa
 ```
 
-**After `pcrec_parse`, before `pcrec_altcls`.** Both bounds are forced,
-not chosen:
+**After `pcrec_parse`, before `pcrec_altcls`** — both bounds forced:
+after parse because the composer needs the caller's `ncap`,
+`named_groups` and resolved references; before `callgraph_build`
+absolutely, because that pass is the only writer of `u.call.body`, is
+driven from `u.call.target` over the FINAL tree, and `callgraph.c:20-57`
+records why (a `.body` captured earlier names a subtree `altcls` has
+rebuilt — "TWO DIFFERENT PROGRAMS FOR ONE GROUP"); before `altcls` so an
+injected definition gets the same optimization every other subtree gets.
 
-- **After parse**, because the composer needs the caller's `ncap`
-  (the re-basing base), its `named_groups` (lexical-scope-wins) and its
-  resolved `pending_refs` (which by-name calls did NOT resolve locally,
-  i.e. which are FILE references).
-- **Before `callgraph_build`**, absolutely: that pass is the only writer
-  of `A_CALL.u.call.body`, it is driven from `u.call.target` over the
-  FINAL tree, and `callgraph.c`'s header comment (`callgraph.c:20-57`)
-  records why — a `.body` captured earlier names a subtree `altcls` has
-  since rebuilt, which is "TWO DIFFERENT PROGRAMS FOR ONE GROUP".
-- **Before `altcls`** rather than after, so an injected definition gets
-  the same optimization every other subtree gets. Putting it after would
-  make a called body's emitted code differ from an inline one's for no
-  semantic reason — option (c) in `callgraph.c`'s own list of three, and
-  rejected there for the same reason.
-
-**ARGUED, and it is the one ordering risk:** the composer runs before
-`altcls`, and `altcls` rebuilds `A_CAP` nodes (`*r = *a; r->l = body;`).
-That is safe here precisely because the composer's output is expressed in
-`u.cap.no` and `u.call.target` — **numbers, which `altcls` copies** —
-and not in pointers. If a future version of the composer wanted to hold
-an `Ast*` to a definition, it would inherit `callgraph.c`'s staleness
-problem. §2.4 keeps it to numbers for exactly this reason.
+**The output is expressed in NUMBERS, not pointers** — `u.cap.no` and
+`u.call.target`, which `altcls` copies when it rebuilds a node. A future
+composer holding an `Ast*` would inherit `callgraph.c`'s staleness
+problem; §2.5 keeps it to numbers for that reason.
 
 ### 2.2 The sub-parse: one `Ctx`, one arena, a saved scope
 
-A definition lives in a different `pattern` line — a different STRING —
-from its caller. To bind it, pcrec must parse that string. The two
-candidate mechanisms:
+A definition lives in a different `pattern` line — a different STRING.
+Two candidate mechanisms: a second `Ctx` with its own arena plus a deep
+node-clone pass (a second place that must know every `AKind` and every
+D70 payload, going stale silently when a kind is added), or a **sub-parse
+on the SAME `Ctx`**. The tree makes the second cheap: `Arena arena` is a
+member of `Ctx` (`internal.h:1553`) and `pat`/`patlen`/`pos` are plain
+fields (`:1554-1556`) that `compile.c:576-577` simply assigns; and
+`pcrec_parse_mods_init` is documented IDEMPOTENT precisely because
+`--explain`/`--probe-ask` already build a bare `Ctx` and call a parser
+entry directly.
 
-- **(a) A second `Ctx` with its own arena, then deep-copy the nodes into
-  the caller's arena.** Needs a node-clone pass covering every `AKind`
-  and every payload in the D70 union — including `u.bref.refs` and
-  `u.call.save`, which are arena `const int *`. A clone pass is a second
-  place that must know the whole node vocabulary, and it goes stale
-  silently when a kind is added.
-- **(b) A SUB-PARSE on the SAME `Ctx`**: save the cursor and the
-  numbering scope, point `cx->pat`/`patlen`/`pos` at the definition's
-  text, call `pcrec_parse_info`, restore. One arena, one error channel,
-  one `mods` seed.
+**The scope that is swapped, and why each entry is load-bearing:**
 
-**(b), and the tree makes it cheap.** `Arena arena` is a member of `Ctx`
-(`internal.h:1553`), and `pat`/`patlen`/`pos` are plain fields
-(`internal.h:1554-1556`) that `compile.c:576-577` and `compile.c:1410-1411`
-simply assign. There is already a precedent for building a `Ctx` and
-calling a parser entry directly outside `compile_driver`: the
-`--explain`/`--probe-ask` surfaces do it (`pcrec_parse_mods_init`'s own
-comment, `parse.c` — *"`--explain`/`--probe-ask` build a bare Ctx and
-call a doorway directly"*), and `pcrec_parse_mods_init` is documented as
-IDEMPOTENT for that reason.
-
-**The scope that must be saved and restored — and each entry is
-load-bearing, not defensive:**
-
-| field | why it must be swapped |
+| field | why |
 |---|---|
-| `pat`, `patlen`, `pos` | the definition's own text is what is being parsed |
-| `ncap` | **the definition's groups must be numbered from 1 in its OWN space.** `ncap` is read DURING the parse — `internal.h:1603` records PCRE2's rule that `\12` is a backreference iff the RUNNING count ≥ 12, else octal. Parsing a definition with the caller's `ncap` already advanced would decide that rule differently and change what the definition MEANS. This is D87 rule 7(i)'s "preserving local order and gaps" enforced at the only place it can be. |
-| `named_groups`, `n_named_groups` | the definition's `(?&w)` must bind to the DEFINITION's `w` (D87 rule 2, lexical scope wins). Resolution is a walk of this list (`mod_backrefs.c:681-691`, first declaration wins), so the caller's list must not be visible |
-| `pending_refs`, `n_pending_refs` | `pcrec_parse_info` ends by calling `pcrec_bref_resolve` on the WHOLE list (`parse.c:1321`). Without swapping, a sub-parse would try to resolve the caller's not-yet-complete references against the definition's `ncap` |
-| `mods` | the caller's `(?i)`/`(?J)` must not reach into the definition. `pcrec_parse_mods_init` re-seeds from `cx->opt`, which is the file's config — the right seed |
-| `first_cap_pos`, `first_vmonly_pos` | these are diagnostic offsets into `cx->pat`; leaving a definition's offset behind would make a later `engine_why` stamp point into the wrong string |
+| `pat`, `patlen`, `pos` | the definition's own text is what is parsed |
+| `ncap` | **the definition's groups must number from 1 in its OWN space.** `ncap` is read DURING the parse — `internal.h:1603` records PCRE2's rule that `\12` is a backreference iff the RUNNING count ≥ 12, else octal — so parsing with the caller's count advanced would change what the definition MEANS. This is D87 rule 7(i)'s "preserving local order and gaps" enforced where it can be, and r45chk F11 is right that §3 must TEST the meaning failure and not only the renumbering one (§3.2 W-1c) |
+| `named_groups`, `n_named_groups` | the definition's `(?&w)` must bind to the DEFINITION's `w` (D87 rule 2); resolution walks this list (`mod_backrefs.c:683-687`, lowest number wins) |
+| `pending_refs`, `n_pending_refs` | `pcrec_parse_info` ends by resolving the WHOLE list (`parse.c:1321`); without swapping, a sub-parse would resolve the caller's incomplete list against the definition's `ncap` |
+| `mods` | **SEEDED FROM THE DEFINITION BLOCK'S OWN RESOLVED `flags`, not restored and not inherited** — r45sem M2. `pcrec_parse_mods_init` seeds `.caseless` from `cx->opt->flags`, which is the TARGET's options; format_design §2.6 makes `flags` block-scoped, so a definition block that wrote `flags i` must get it and one that did not must not. Blast radius: `flags i` |
 
-**A `RxtParseScope` struct holds exactly these, and one function saves
-and one restores.** ARGUED: the list is long enough that a reviewer
-should ask what happens when `Ctx` gains a field that belongs on it.
-The answer is a check, not vigilance — §3.4's S-W6 plants a forgotten
-swap and names the check that must catch it.
+**`first_cap_pos` / `first_vmonly_pos` are NOT restored — they take a
+THIRD state** (r45sem M1, and revision 1 had this wrong). These are
+diagnostic offsets into `cx->pat`. `forces_captures` walks the COMPOSED
+tree and then reads `cx->first_cap_pos`; if the only capture is inside a
+DEFINITION, a restore leaves `(size_t)-1` and `engine_why` stamps
+`18446744073709551615` — or, under `--engine=dfa`, `ctx_fail` reports
+it. `forces_registry` has the same hole with offset 0. So the fields
+become "unset / this pattern's offset / **a scope-stack reference**", and
+§2.9's stack is the supply for the third state: the diagnostic names the
+definition's `file:line` and its own local offset, which is the same
+answer §2.9 gives every other refusal.
+
+**A `RxtParseScope` holds these; one function saves and one restores.**
+The obvious question — what happens when `Ctx` gains a field that belongs
+on it — is answered by a check, not by vigilance: §3.4's S-W6 plants a
+forgotten swap and names the check that must catch it, and after F11 that
+check tests MEANING as well as numbering.
 
 ### 2.3 Which references are FILE references
 
-**CITED, format note §2.3.2, steps 1-4, and the tree agrees with the
-step order.** After `pcrec_parse` returns, `pcrec_bref_resolve` has
-already run and has either bound every by-name call or failed. So the
-composer cannot simply read a list of unresolved names — by then the
-compile has been refused with *"refers to a capture group named 'X',
-which this pattern does not declare"* (`mod_backrefs.c:707-725`).
+**DECIDED (6): under `--source`, `pcrec_bref_resolve` DEFERS an
+unresolved BY-NAME reference instead of failing, and the composer
+resolves it or re-raises.** By the time `pcrec_parse` returns, resolution
+has already run (`parse.c:1321`) and would have refused with *"refers to
+a capture group named 'X', which this pattern does not declare"*
+(**`mod_backrefs.c:733-734`** — r45gram 4; `:707-725` is the counts-back
+refusal). Running the composer earlier, inside `pcrec_parse_info`, was
+rejected: that is the ONE parse entry point, shared by `--count-groups`,
+`--explain` and the built-status probe (`parse.c:1318`), and making it
+composition-aware puts a file-level concern inside the parser. So a flag
+on `Ctx`, set only when `--source` supplied a definition set, defers.
+Numeric references are unaffected — a number cannot be a file reference.
 
-**DECIDED (5): under `--source`, `pcrec_bref_resolve` DEFERS an
-unresolved by-name reference instead of failing, and the composer
-resolves it or re-raises the original refusal.** Two candidate shapes
-were weighed:
+**The corpus refusal is preserved exactly.** MEASURED (format_design
+§2.4): four blocks reference an undeclared name, all `perr`, all in
+`tests/recursion/d27/sr_refusals.rxt`, a file with no `name` and no
+`lib`. With no definition set the flag is off and those four refuse
+today's refusal at today's offset.
 
-- run the composer BEFORE `pcrec_bref_resolve`, i.e. inside
-  `pcrec_parse_info`. Rejected: `pcrec_parse_info` is the one parse
-  entry point and is shared by `--count-groups`, `--explain` and the
-  built-status probe (its own comment says so, `parse.c:1315-1320`);
-  making it composition-aware puts a file-level concern inside the
-  parser.
-- defer. A single flag on `Ctx` (set only when `--source` supplied a
-  definition set) makes `pcrec_bref_resolve` leave an unresolved
-  **by-name** reference pending instead of calling `ctx_fail`. Numeric
-  refs are unaffected: a numeric reference out of range is still a local
-  error, because a number cannot be a file reference.
+**The deferral must keep leftmost-failure ordering** (r45sem S2).
+`mod_backrefs.c:655-658` states the rule — *"THE LEFTMOST FAILURE IS THE
+ONE REPORTED. The list is prepended, so it is in reverse source order"* —
+and it compares `pr->at`, a bare offset. Under composition `at` may be an
+offset into a DEFINITION's text, so bare offsets are no longer totally
+ordered. **The ordering key becomes (file, line, offset)**, all three
+available from §2.9's scope stack.
 
-**This preserves the refusal for the corpus exactly.** MEASURED by the
-format note (§2.4): four blocks reference an undeclared name, all in
-`tests/recursion/d27/sr_refusals.rxt`, all `perr`, in a file with no
-`name` and no `lib`. With no definition set the flag is off, the deferral
-never engages, and those four refuse today's refusal at today's offset.
+**The three reference classes, and B2 is now one of them** (r45sem B2 —
+revision 1 never classified it):
 
-Steps 2-4 are the format note's unchanged: resolve against the file's own
-`name`d blocks then its `lib`s in declaration order, transitively; a
-visited-set fixpoint with dedup (cycles ALLOWED — self- and mutual
-recursion compile and match on both oracles, r44-sem M8); and **a
-block's own `name` joins the names its pattern declares**, so a block
-named `x` calling `(?&x)` is calling itself and is not a request to
-inject a copy of itself.
+| class | spelling | resolved | re-based? |
+|---|---|---|---|
+| local | `(?&w)` where `w` is this pattern's own | during the sub-parse | YES, with the body |
+| **file** | `(?&email)` naming a definition | by the composer, after the walk | it IS the injected body's number |
+| **caller-scope** | **`(?&^.w)`** (B2) | by the composer, **AFTER the re-basing walk** | **NO — never** |
 
-**DECIDED (6): the closure's ORDER is depth-first, in first-reference
-order, dedup on first visit — and it is REPORTED, not re-derived.** The
-format note requires the harness's control to derive its offset "from the
-closure the composer reports, never re-derive it" (§2.3.4). Under §2.6
-the offset is zero, but the ORDER still has to agree for the numbers to
-line up, so the composer reports the ordered closure (via
-`--list-source` and in `--emit-composed`'s own output) and the control
-consumes it. A closure-SIZE or closure-ORDER mismatch is a failure in
-its own right, never a silently-passing comparison.
+**B2 is the one that bites**, and r45sem's example is exact: `d` =
+`(?&^.w)x` bound into `^(?<w>a)(?&d)$` (caller `ngroups` 1, base 2). The
+reference targets the CALLER's group 1; a walk that adds `base` makes it
+3, which is `d`'s own first group. The library would silently read its
+own group instead of its caller's. §2.5 is where this is prevented.
+
+Steps 2-4 otherwise stand: resolve against the file's own `name`d blocks
+then its `lib`s in declaration order, transitively; a **visited-set
+fixpoint with dedup** (cycles ALLOWED — self- and mutual recursion
+compile and match on both oracles, r44-sem M8).
+
+**DECIDED (7) — a block's own `name` is in the FILE namespace, not the
+pattern's.** r45sem S3 showed revision 1's phrasing ("a block's own
+`name` joins the names its pattern declares") is both ambiguous and
+unimplementable in the sub-parse: the names are swapped out, and `base`
+is not known until after. And it has no answer for a block named `x`
+whose pattern also declares `(?<x>…)`. So: **a `name` line names the
+block in the FILE's definition namespace and is never a name the pattern
+declares.** A block calling itself writes `(?&self)` — a reserved word
+in the call namespace, resolving to the enclosing block — and lexical
+scope wins inside, unchanged. This is the manager's ruling; the cost is
+one reserved word, and the benefit is that the two namespaces stop
+overlapping at exactly the point revision 1 could not describe.
+
+**DECIDED (8) — REWRITTEN on the manager's ruling (r45chk F10): the
+textual control RE-DERIVES the closure from its own text.** Revision 1
+had the control CONSUME the composer's reported closure and
+simultaneously called a closure mismatch "a failure in its own right" —
+with one derivation there is nothing to mismatch against, so S-W8
+("let the control re-derive") planted INDEPENDENCE and expected a red,
+which a correct composer would pass. Now: the control derives its own
+closure from the source text, the comparison against the composer's
+report is REAL, and **S-W8 becomes "make the composer's report disagree
+with the text"**. The composer still REPORTS its closure (order and
+size); what changed is that the report is now checked rather than
+trusted.
 
 ### 2.4 Injection: the shape already in the tree
 
-**A bound definition is injected as:**
+**A bound definition is injected as
+`A_REP{rmin=0, rmax=0}( A_CAP{no = base} ( body ) )`, concatenated onto
+the caller's root in closure order.** This is not a new shape — CITED,
+`mod_recursion.c:418-476` and its header at `:356-417`, quoting D71 item
+4: *"the `{0}` layout rule the R34 verifier forced already IS DEFINE's
+semantics"*; the port builds no special node, *"so no downstream pass
+(`callgraph.c`, `vm_count_slots`, `emit_vm.c`) needed a new line for
+it."*
 
-```
-A_REP{rmin=0, rmax=0, greedy}( A_CAP{no = base} ( <the definition's body> ) )
-```
+**An `A_CAP` wrapper is REQUIRED, not chosen.** CITED, `callgraph.c:162`
+and `:178`: the bind walks the final tree and matches *"the `A_CAP` whose
+`u.cap.no` matches"* the call's `u.call.target`; `target` is an `int`
+group number and is the durable fact, `.body` a cache the binder
+recomputes (`:22`). There is no other key. Setting `u.call.body` directly
+is rejected on `callgraph.c`'s own recorded reasoning (its founding bug,
+commit 513de65, detector S144).
 
-concatenated onto the caller's root, in closure order.
+**What W1 reuses — and, after r45sem B1, what it must CHANGE.** Revision
+1's table claimed six mechanisms reused and nothing touched; two of those
+entries were wrong.
 
-**This is not a new shape. It is what `(?(DEFINE)…)` already desugars
-to** — CITED, `mod_recursion.c:418-476` (`pcrec_rcport_define`) and its
-header at `:356-417`, quoting D71 item 4: *"the `{0}` layout rule the
-R34 verifier forced already IS DEFINE's semantics"*. The port builds no
-special node; it produces the same `A_REP{0,0}` that `(?:BODY){0}`
-produces, *"so no downstream pass (`callgraph.c`, `vm_count_slots`,
-`emit_vm.c`) needed a new line for it."*
-
-**Why an `A_CAP` wrapper is REQUIRED and not a choice.** CITED,
-`callgraph.c:162` and `:178`: the bind walks the final tree and matches
-*"the `A_CAP` whose `u.cap.no` matches"* the call's `u.call.target`.
-`A_CALL.target` is an `int` group number — it is the durable fact, and
-`.body` is a cache the binder recomputes (`callgraph.c:22`). So **a
-callable body must be an `A_CAP` with a number.** There is no other key.
-
-The alternative — the composer sets `u.call.body` directly and
-`callgraph.c` learns to accept a pre-bound edge — is rejected on
-`callgraph.c`'s own recorded reasoning: a pointer captured before
-`altcls`/`discharge_atomic` names a subtree that is no longer in the
-tree, which is `callgraph.c`'s founding bug (commit 513de65, detector
-S144).
-
-**So what W1 reuses, in full, and adds nothing beside:**
-
-| mechanism | where | what the composer does with it |
+| mechanism | where | W1 |
 |---|---|---|
-| `(?(DEFINE)…)`'s AST shape | `mod_recursion.c:418` | builds the same `A_REP{0,0}` wrapper |
-| `A_CAP.u.cap.no` | `internal.h:553`, `parse.c:839-864` | assigns the re-based number |
-| call binding by number | `callgraph.c:162,178` | unchanged; the injected `A_CAP` is found the ordinary way |
-| linkage / splice choice | `callgraph.c`'s `cg_eligibility` | unchanged. **The format pins the answer; the compiler chooses the linkage** (format note §2.3.5) |
-| `NamedGroup` list | `internal.h:1479`, `mod_named_groups.c:219` | the definition's names join it, scope-qualified (§2.7) |
-| `rx_group_entry.ref` | `emit_dfa.c:596-660`, emitted `NULL` at `:1192` | the scope path (§2.7) |
-| the caps slot layout | D61; `emit_dfa.c:392-395` | delivered slots land above `ngroups` by arithmetic, not by a new region |
-| deferred offset-bearing refusals | `src/opt/postresolve.c`, `internal.h:3238` | the two delivery refusals (§2.8) |
+| `(?(DEFINE)…)`'s AST shape | `mod_recursion.c:418` | reused unchanged |
+| `A_CAP.u.cap.no` | `internal.h:553`, `parse.c:839-864` | reused; the composer assigns the re-based number |
+| call binding by number | `callgraph.c:162,178` | reused unchanged |
+| splice/linkage choice | `callgraph.c`'s `cg_eligibility` | reused unchanged — *the format pins the answer; the compiler chooses the linkage* |
+| the caps slot layout | D61; `emit_dfa.c:392-395` | reused; delivered slots land above `ngroups` by arithmetic |
+| deferred offset-bearing refusals | `src/opt/postresolve.c` (`internal.h:3241`) | reused for the delivery refusals |
+| **`pcrec_has_live_capture`** | `src/opt/atomic.c:744-760` | **CHANGED — a delivering-call arm (§2.8)** |
+| **the `W` restore-set fixpoint** | `src/opt/callgraph.c`; `internal.h:826-849` | **CHANGED — a delivering call's callee capture indices are excluded (§2.8)** |
+| **the `groups[]` sort key** | `emit_dfa.c:1136`, `:1156-1166` | **CHANGED — (ref-is-NULL, name, number) (§2.7)** |
 
-**No parallel mechanism is added.** The memory rule
-(`pcrec-general-mechanisms-not-special-cases`) is satisfied not by
-assertion but because every alternative that would have created one —
-a definition id space beside group numbers, a pre-bound `.body` edge, a
-node-clone pass, an AST serializer — was rejected on a reason recorded
-in the tree.
+The three CHANGED rows are the honest form of revision 1's claim. Every
+alternative that would have created a parallel mechanism — a definition
+id space beside group numbers, a pre-bound `.body` edge, a node-clone
+pass, an AST serializer — is still rejected on a reason recorded in the
+tree; what revision 1 got wrong was not the reuse argument but the
+assumption that delivery needed no mechanism at all.
 
-### 2.5 Re-basing: one walk, three fields
+### 2.5 Re-basing: one walk, keyed on the `PendingRef`
 
-After the sub-parse returns a definition subtree that is resolved in its
-OWN number space (`1..k`), the composer walks it once and adds `base`
-to exactly three things:
+After the sub-parse returns a definition subtree resolved in its own
+number space (`1..k`), the composer walks it once and adds `base` to:
 
-| field | node kind | note |
+| field | node | note |
 |---|---|---|
-| `u.cap.no` | `A_CAP` | the group's assigned number |
-| `u.bref.refs[i]` | `A_BREF` | the resolved backreference targets; arena `const int *`, and this subtree's own — a definition is bound ONCE (dedup), so nothing else points at it |
-| `u.call.target` | `A_CALL` | except `target == 0`, which is `(?R)`/`(?0)` — the ROOT, and it must NOT be re-based |
+| `u.cap.no` | `A_CAP` | the assigned number |
+| `u.bref.refs[i]` | `A_BREF` | the resolved backreference targets — this subtree's own (a definition is bound ONCE, by dedup) |
+| `u.call.target` | `A_CALL` | **only for a LOCAL call** — see below |
 
-**The `target == 0` carve-out is the walk's one special case and it is
-real:** `callgraph.c:162` says the region list *"may begin with 0"* and
-that 0 is the root. A definition's `(?R)` means "this whole pattern",
-which after injection means the CALLER's root — which is almost
-certainly not what a library author meant. **This note refuses `(?R)`
-and `(?0)` inside a bound definition**, naming the construct and the
-definition's `file:line`, because both possible readings (the caller's
-root, the definition's own body) are defensible and the format may not
-pick one silently. That is the piece rule's shape — a construct whose
-meaning depends on the site — and it is a SIXTH member of §6.0's class
-that the format note does not list. It goes to the manager (§6).
+**The `target == 0` carve-out of revision 1 is DELETED** (r45sem M4).
+Revision 1 skipped `target == 0` as "the root". That is not decidable
+from the field: the arena zeroes it, `mod_recursion.c:41` and `:128` set
+`0` for `(?R)` **and queue no pending record at all**, and DECIDED (6)'s
+deferred cross-definition `(?&other)` also reads `0` when the walk runs.
+Three different situations, one value.
 
-**Relative forms need no re-basing.** CITED, D87 rule 7(g) and r44-sem's
-R0-R6: `(?-1)` and `\g{-1}` mean textual position, and relocation
-preserves the body's internal order.
+**So the walk is keyed on the `PendingRef`, not on the node's current
+value.** Every call the sub-parse resolved LOCALLY has a `PendingRef`
+recording that it was resolved and to what; the walk re-bases exactly
+those. A call with no pending record is `(?R)` (refused, below); a call
+whose pending record is still deferred is a file or caller-scope
+reference and is resolved AFTER the walk, at its final number.
 
-**MEASURED by the format note, and the arithmetic this design produces
-matches it.** M1's cell: library `dd` = `(\d)\1`, caller
-`^(\d)-(?&dd)$` whose `ngroups` is 1. Base for `dd` is 2 (the wrapper);
-`dd`'s own group 1 re-bases to 3; `\1` becomes `\3`. The composed
-pattern matches `5-77` and rejects `5-75` — the library's own meaning,
-restored. That is exactly the note's re-based row, and §2.6 explains why
-the number is 3 here and 2 in the note's own recommendation.
+**`PendingRef` gains a scope discriminator** (r45sem B2), because
+`(?&^.w)` and `(?&w)` are the same node kind with the same field. The
+discriminator is written where the spelling is parsed — `rc_name_call`
+(`mod_recursion.c:269`) sees the `^.` prefix — so it is a parse fact
+recorded at the one place that knows it, not an inference later. A
+caller-scope reference is then never re-based and is resolved against the
+CALLER's `named_groups` after the walk.
 
-### 2.6 The wrapper takes a number — and the control's offset becomes ZERO
+**Relative forms need no re-basing** (D87 rule 7(g); r44-sem R0-R6):
+`(?-1)` and `\g{-1}` mean textual position, and relocation preserves the
+body's internal order.
 
-**This reverses a RECOMMENDED choice in the format note's §2.3.3, and it
-is the most important thing in this note for a reviewer to check.**
+**`(?R)`, `(?0)`, `(?00)` and `\g<0>`/`\g'0'` inside a bound definition
+are REFUSED for W1** — Q-W2, parked for Frank with this recommendation.
+A definition's `(?R)` means "this whole pattern"; after injection the two
+readings (the caller's root; the definition's own body, i.e. its wrapper)
+are both defensible, and D87 chose mechanisms over silent defaults. The
+refusal is raised **at the sub-parse**, because nothing later can tell it
+from M4's other zeros. r45sem's counter-argument is recorded rather than
+buried: D87 rule 1's "absolute references are LOCAL to the pattern they
+are written in" applies verbatim to 0, whose local meaning after
+injection is the wrapper — so re-basing 0 would be rule 7(i) executed
+consistently. **The reason for refusing is that the RULING is missing,
+not that the meaning is unclear.** §6.0 gains this as piece-rule member
+(vi).
 
-The format note says: *"the composer assigns a definition's own groups
-the base `ngroups+1` and gives the definition itself no slot — so under
-the composer `dd`'s group 1 becomes 2, not 3"*, and §2.3.4 then builds a
-DERIVED OFFSET into the oracle control: *"a definition's group `k` is the
-composer's `ngroups + k` and the control's `ngroups + k + j`, where `j`
-is the number of definitions preceding it."*
+**MEASURED, and this design reproduces the fixed row.** M1's cell:
+library `dd` = `(\d)\1`, caller `^(\d)-(?&dd)$`, `ngroups` 1, base 2,
+`dd`'s own group 1 → 3, `\1` → `\3`; the composed pattern matches `5-77`
+and rejects `5-75` — the library's own meaning restored (format_design
+§2.3.3, both oracles).
 
-**That cannot be implemented without a parallel mechanism.** The
-argument, in one line: `A_CALL.target` is a group number and
-`callgraph.c` binds by matching `A_CAP.u.cap.no`, so a callable body
-must hold a number in the same space every other group is in. Giving
-definitions a separate id space means a second key, a second lookup in
-`callgraph.c`, and a second thing `--emit-composed` must spell.
+### 2.6 The wrapper takes a number — the control's offset is ZERO
 
-**So the wrapper takes the number `base`, and the definition's own
-groups take `base+1 .. base+k`.** The format note's own reason for
-denying the wrapper a number survives intact — *"§2.13's struct has no
-member for the definition itself"* — because that is a statement about
-the STRUCT VIEW, and the struct view is a view (D87 rule 6's own
-framing: "only the STRUCT VIEW merges"). A number is not a member. The
-wrapper gets a number, no struct member, and a `rx_group_entry` row whose
-`.ref` names its scope.
+**This reverses format_design §2.3.3's RECOMMENDED and deletes §2.3.4's
+derived offset `j`.** `A_CALL.target` is a group number and
+`callgraph.c:162,178` binds by matching `A_CAP.u.cap.no`, so a callable
+body must hold a number in the same space every other group is in; a
+separate id space is a second key in the binder. The format note's own
+reason for denying the wrapper a number survives — §2.13's struct has no
+member for the definition itself — because that is about the struct VIEW,
+and a number is not a member.
 
-**And this makes the control strictly better, which is the part worth
-arguing rather than merely reporting.** PCRE2's own left-to-right
-numbering of the textual append form spends exactly one number per
-definition on the `(?<name>…)` wrapper it requires. Under this design so
-does the composer. Therefore:
+So the wrapper takes `base` and the definition's own groups take
+`base+1 .. base+k`, and PCRE2's textual append spends one number per
+definition on its `(?<name>…)` wrapper exactly as the composer does:
 
 | | caller `(\d)` | wrapper `dd` | `dd`'s `(\d)` |
 |---|---|---|---|
 | textual control `…(?(DEFINE)(?<dd>(\d)\3))` | 1 | 2 | 3 |
 | the composer | 1 | 2 | 3 |
 
-**The offset is zero and the control compares slot for slot.** The
-format note's §2.3.4 identifies the derived offset as *"exactly the shape
-learnings §3 warns about — a control that 'obviously' compares equal,
-then quietly stops comparing the thing it names"*. This design deletes
-the offset rather than deriving it carefully, which is the better answer
-to the same hazard. What survives from §2.3.4 is the requirement that the
-composer REPORT its closure (order and size) and that a mismatch there be
-its own failure (§2.3, decision 6) — the control still must not
-re-derive the closure from its own text.
+**The offset is zero and the control compares slot for slot** — a better
+answer to the hazard format_design §2.3.4 names ("a control that
+obviously compares equal, then quietly stops comparing the thing it
+names") than deriving the offset carefully.
 
-**What a reviewer should attack:** whether `ngroups` then means what
-§2.7 says. It does — see below — but the two numbers now differ in a way
-the format note's arithmetic hid, and §4's S9b hunk is where a caller is
-told.
+**r45sem ratified the mechanism and added the correction this note owed:
+it IS caller-observable.** Each bound definition costs one permanently
+unset slot, and every delivered number shifts by one — **so the first
+delivered group is at `ngroups+2`, not `ngroups+1`**, and §4's S9b hunk
+must say the wrapper consumes a slot. Q-W1 goes to Frank with that
+attached. r45sem also confirmed PCRE2 parity twice: format_design's cells
+F/G/J, and `atomic.c`'s own 10.46 re-measurement that the DEFINE wrapper
+consumes a number.
 
-### 2.7 `ngroups`, `nnames`, `RX_NCAPS`, and one derivation
+### 2.7 `ngroups`, `nnames`, `nentries` — and the ABI contract
 
-**CITED, D61 and format note §2.7:** `rx_info.ngroups` and
-`rx_info.nnames` stay the PRIMARY's own on a composed artifact; the
-composition's delivered slots sit above.
+**CITED, D61 and format_design §2.7:** `ngroups`/`nnames` stay the
+PRIMARY's own; delivered slots sit above.
 
-**The implementation is a distinction between two counters that today
-are one.** `cx->ncap` is both "the primary's own group count" and "the
-highest assigned number", because until now nothing assigned a number
-out of order. After composition they differ:
+Two counters that are one today:
 
 ```
-cx->ncap_primary   the caller's own count, frozen when the sub-parse
-                   scope is first pushed          -> rx_info.ngroups
+cx->ncap_primary   the caller's own count, frozen at the first sub-parse
+                                                  -> rx_info.ngroups
 cx->ncap           the highest assigned number after composition
                                                   -> RX_NCAPS - 1
 ```
 
-`dfa_artifact_ncaps()` (`emit_dfa.c:392-395`) already reads
-`cx->ncap + 1`; it keeps doing exactly that and needs no change. The
-emitted `.ngroups` (`emit_dfa.c:1492`) changes from `cx->ncap` to
-`cx->ncap_primary`. On every non-composed compile the two are equal by
-construction, so **every artifact pcrec emits today is byte-identical**,
-which is what makes the identity gate's (A) comparison a real check of
-this change rather than a formality.
+`dfa_artifact_ncaps()` (`emit_dfa.c:392-395`) already reads `cx->ncap + 1`
+and needs no change; `.ngroups` (`emit_dfa.c:1492`) changes from
+`cx->ncap` to `cx->ncap_primary`. On every non-composed compile the two
+are equal by construction, so **every artifact pcrec emits today is
+byte-identical** — which is what makes identity gate (A) a real check of
+this change.
 
-**`nnames` and the name table.** `NamedGroup` gains one field:
+**B4 — revision 1's `nnames` rule broke a SHIPPED contract, and the
+manager ruled the fix.** `NamedGroup` gains `const char *scope` (NULL for
+the primary's own). Revision 1 then said `nnames` counts `scope == NULL`
+while `groups[]` holds every row. r45sem showed that is an ABI break:
+`emit_dfa.c:1156-1166` builds the array from ALL of `cx->named_groups`
+sorted by `(name, number)` and `:1493` emits `.nnames =
+cx->n_named_groups`, so today `nnames` IS the array length — and
+`match_api.md:1349` documents it as *"entries in groups[]"*, with
+`:1684-1695` giving the caller a bsearch that walks BACK to a name run's
+first row and FORWARD to the first row that participated. If injected
+rows sort AMONG the primary's while `nnames` counts only the primary's, a
+caller can miss its own name or land on a library's private group —
+**D87 rule 2 violated at the artifact tier**, one level below where the
+composer enforces it.
 
-```c
-const char *scope;   /* NULL for the primary's own groups; else the
-                        scope path this name was injected under */
-```
+**RULED (manager):**
 
-- `nnames` counts entries with `scope == NULL` — the primary's own,
-  per D61.
-- Every entry, injected or not, is emitted into the `rx_group_entry`
-  array. The injected ones fill `.ref` — **the column that already
-  exists for exactly this** (CITED, `emit_dfa.c:596-660`:
-  `const char *ref; /* NULL/empty for the primary's own groups */`,
-  emitted as literal `NULL` at `emit_dfa.c:1192` today). D61's "labeled
-  insertion path" reserved it; W1 is its first producer.
-- The sort key is unchanged: `(name, number)` (`ng_cmp_name`,
-  `emit_dfa.c:1136`), which the [M6.5-DUPNAMES] structural check reads
-  off the artifact. Injected rows sort in among the primary's by name;
-  they are distinguished by `.ref`, not by position, so that check is
-  unaffected.
+1. **The sort key becomes `(ref-is-NULL first, name, number)`**, so the
+   primary's rows are a genuine PREFIX of `groups[]`.
+2. **`nnames` keeps its meaning** — the primary's entries — and a caller
+   that ignores composition runs `match_api.md` §6's algorithm unchanged
+   over `groups[0..nnames)`, correctly, forever.
+3. **A NEW `int nentries`** (total rows) rides the abi-13 bump, for a
+   caller that wants the injected rows.
+4. The §6 algorithm hunk states it; **[M6.5-DUPNAMES]'s expectation moves
+   in the same change** — it reads the emitted rows' order off the
+   artifact and asserts non-decreasing `(name, number)`, which a new
+   leading key changes.
 
-**Name qualification (D87 rule 2) is the `scope` field doing its second
-job.** A caller's `(?&w)` must not bind to an injected `w`. Two things
-make that true and they are independent:
+**Name qualification, and the THREE walkers** (r45sem M3 — revision 1
+named one, and the wrong pass). `cx->named_groups` is walked by:
 
-1. By the time a definition is injected, its own internal `(?&w)` is
-   ALREADY resolved to a number — the sub-parse resolved it against the
-   definition's own `named_groups` (§2.2). Nothing later can re-bind it.
-2. The caller's own by-name resolution walks `cx->named_groups`, and the
-   composer writes injected entries with a non-NULL `scope`.
-   `pcrec_bref_resolve`'s walk skips them (a one-line predicate at
-   `mod_backrefs.c:681-691`), so a caller's `(?&w)` can never see one.
-   A caller reaches an injected group only through B2's explicit path,
-   which is the whole point of B2.
-
-**MEASURED by the format note (M2), and this design reproduces the fixed
-row:** library `outer` = `(?&w)`, `w` = `[a-z]+`; caller
-`(?J)^(?<w>Q)(?&outer)$` matches `Qabc` and rejects `QQ` — the library's
-own `w`, and `(?J)` becomes irrelevant because there is no duplicate to
-make legal.
-
-**One derivation, three readers** (D87 rule 5's last clause, and
-learnings §3): the ASSIGNMENT TABLE — an ordered list of
-`(number, scope, name-or-NULL, provenance)` built by the composer — is
-the single source for `RX_NCAPS`, for the `rx_group_entry` array, and
-for `--emit-composed`. None of the three re-derives it. §3.3 is the check
-that they agree.
-
-### 2.8 Delivery, and the two refusals
-
-**W1 delivers SLOTS and scope paths. It emits no struct** — that is
-[V-I]'s row (plan.md:737), and §0.3 says so.
-
-A delivering call `(?&from=email)` (B3) marks its call site. What the
-composer does with the mark:
-
-- the definition's injected groups get `scope = "from"` (or the
-  definition's own name for `(?&=email)`), which is the member path
-  §2.13 promises and the `.ref` column carries;
-- their numbers are already above `ngroups` by §2.5's arithmetic, so
-  D61's append-only promise holds by construction rather than by a check;
-- **an undeclared call changes nothing.** It stays capture-transparent
-  at zero cost (D87 rule 5), which is PCRE2's default and pcrec's, so a
-  file that declares no delivery emits exactly what it emits today.
-
-**Two shapes are refused** (CITED, D87 rule 5; format note §2.13):
-
-| shape | why | where the refusal lives |
+| walker | site | effect of injected rows |
 |---|---|---|
-| a delivering declaration on a **recursive** definition (self- or mutual) | the nesting depth is a runtime fact; the member type would be infinite | `src/opt/postresolve.c` — it needs the CALL GRAPH's cycle information, and `internal.h:3241` describes that file as the home for *"every rule that (a) must refuse a pattern AT A PATTERN OFFSET and (b) cannot be decided until the call graph exists"* |
-| a delivering call **under a repeat** | one member, many activations; which one is delivered has no answer the format may pick | same file — a walk carrying a repeat-depth counter, run in postresolve's existing **ascending pattern offset** order (`internal.h:3256`) so the leftmost site is named |
+| the `PEND_CALL` name arm | `mod_backrefs.c:683-687` | a caller's `(?&w)` could bind an injected `w` |
+| `br_name_run` (the `PEND_BREF` arm) | `mod_backrefs.c` | a caller's `\k<w>` could SEE an injected row |
+| `emit_info_def` | `emit_dfa.c:1160` | the artifact's name table |
 
-**Neither needs a new pass.** That is the point of putting them there:
-postresolve exists, it already walks in offset order, and it already has
-the graph.
+**The pass revision 1 named has already run** at injection time
+(`parse.c:1321`), so the rule cannot live there. It belongs to **the
+composer's re-resolution** (DECIDED (6)): when the composer resolves a
+deferred by-name reference, it walks only rows with `scope == NULL` for a
+caller's reference, and only the definition's own scope for a
+definition's. The artifact walker gets the scope through `.ref`.
 
-**Iterated capture is out of this row** (D87 rule 5). The refusals are
+**`rx_group_entry.ref` is the column this fills, and it already exists** —
+CITED, `emit_dfa.c:602`: `const char *ref; /* NULL/empty for the
+primary's own groups */`, emitted as literal `NULL` today at
+**`:1190-1191`**. D61's "labeled insertion path" reserved it; W1 is its
+first producer.
+
+**One derivation, three readers** (D87 rule 5; learnings §3): the
+ASSIGNMENT TABLE — ordered `(number, scope, name-or-NULL, provenance)` —
+is the single source for `RX_NCAPS`, the `rx_group_entry` array and
+`--emit-composed`. r45chk F4 is right that this makes W-5 and W-7
+consistency checks rather than controls, and §3.3 re-scopes them and adds
+one whose expectation comes from libpcre2.
+
+### 2.8 Delivery — a NAMED deviation, not a free ride
+
+**Revision 1 said "W1 delivers SLOTS" and r45sem refuted it with two
+measured mechanisms. Both are real, and together they mean a delivering
+call as revision 1 described it delivers NOTHING.**
+
+**(a) The pattern looks capture-DEAD, so the DFA takes it.** CITED,
+`src/opt/atomic.c`'s `pcrec_has_live_capture` (`:744-760`): the `A_CALL`
+arm returns **false** with no descent — its header says *"A subroutine
+call is CAPTURE-TRANSPARENT — the capture state after the call is exactly
+the state before it, whatever the call did"* — and the `A_REP` arm prunes
+`rmin == 0 && rmax == 0`, **which is exactly §2.4's injection wrapper**.
+So a composed pattern whose only captures live in definitions has no live
+capture anywhere, `forces_captures` (`select_engine.c`) permits the DFA,
+and `dfa_artifact_ncaps` promises pairs no match can set: every delivered
+slot reads `-1,-1`.
+
+**And PCRE2 agrees, which is why this is a deviation and not a bug.**
+CITED, the same header, MEASURED on 10.46: `(?(DEFINE)(?<g>a))(?&g)` has
+CAPTURECOUNT 1 and answers g1 **UNSET**. Delivery is a pcrec feature that
+PCRE2 does not have; it cannot fall out of reusing PCRE2's semantics.
+
+**(b) Even on the VM, the return WIPES them.** CITED,
+`internal.h:826-849`: `u.call.nsave`/`save` is `|W|`, *"the CALLEE
+REGION's SLOT WRITE SET: EVERY slot family any node in the callee's
+transitive body can write"*, restored on return, with **only slots 0 and
+1 excluded** (because `\K` is measured not to be restored). A delivering
+call's captures are inside `W` and are put back.
+
+**So delivery needs TWO named mechanisms, and §2.4's table now says both
+are touched:**
+
+1. **A live-capture arm for a DELIVERING call** (`src/opt/atomic.c`). A
+   delivering call reports live, so `forces_captures` keeps the VM. The
+   polarity is the safe one by that function's own rule — its header:
+   *"`true` ('something is live') keeps the VM… a walk that over-reports
+   costs an engine and never a wrong span. A walk that UNDER-reports puts
+   a writable group on an engine that cannot record it, which is a lost
+   capture."* We are moving from under-reporting to correct.
+   **It keys on the CALL being delivering, never on the wrapper's shape.**
+   That file's header explicitly warns against the alternative: *"a
+   `DEFINE`-shaped special case would have been a parallel mechanism for
+   two thirds of its own population."* One predicate, keyed on the fact
+   that actually matters.
+2. **The callee's CAPTURE indices excluded from `W`** (the
+   `callgraph.c` fixpoint). Only the capture slots of the delivered
+   groups, and only for a delivering call — every other slot family
+   (`SLOT_GROUP<n>_PENDING`, `SLOT_CUT_MARK<n>`) stays in `W`, because
+   `internal.h:826-849` records that the capture-only version of `W` was
+   **refuted twice**, losing two matches and producing six false matches.
+   This is a targeted exclusion of a named subset, not a return to that
+   refuted rule, and the note says so because the failure mode is
+   recorded and expensive.
+
+**The two non-deliverable shapes, and M5/S1's correction.** Revision 1
+said "a call under a repeat" and checked lexical repeat depth. r45sem M5
+showed that refuses EVERY delivering call, since every injected
+definition sits under `A_REP{0,0}` — and exempting the wrapper is exactly
+the DEFINE-shaped special case above. S1 added that `{1,1}` and `?` bound
+activations at ≤ 1 and are fine (`parse.c:1113` builds `A_REP`
+unconditionally).
+
+**RULED: the bound is a CALL-GRAPH property — activation ≤ 1 along every
+path — not lexical repeat depth.**
+
+| shape | why | where |
+|---|---|---|
+| a **recursive** definition (self- or mutual) | depth is a runtime fact; the member type would be infinite | `postresolve.c` — it needs the graph's cycle information, and `internal.h:3241` names that file as the home for rules that *"must refuse a pattern AT A PATTERN OFFSET"* and cannot be decided until the call graph exists |
+| a call whose site can activate **more than once** | one member, many activations; which one is delivered has no answer the format may pick | same file, same pass — and being a graph question it also catches a delivering call inside a definition reached from a repeated site, which a lexical walk would miss |
+
+Both run in postresolve's existing **ascending pattern offset** order
+(`internal.h:3256`), so the leftmost site is named.
+
+**Iterated capture is out of this row** (D87 rule 5). These refusals are
 the honest answer while no mechanism exists, not a policy against one.
 
-### 2.9 Provenance — and why it is NOT a field on the node
-
-**The format note's §2.12 says:** *"provenance is a FIELD ON THE NODE,
-carried from its parse"*, and calls the revision-1 span map the wrong
-shape.
-
-**CITED, and it contradicts a stated invariant of this compiler.**
-`internal.h:3247-3249`: *"a module's parse hook is the only place in this
-compiler that holds a pattern offset, and `Ast` carries no position of
-any kind (PARSE-1)"*. The same statement is repeated at
-`internal.h:734-737`. The established discipline is that a position which
-must survive to a later pass is an EXTRA SCALAR ON THE SPECIFIC NODE
-THAT NEEDS IT (`A_LOOK.u.look.at`, `internal.h:745`) or a scalar on `Ctx`
-(`first_cap_pos`, `first_vmonly_pos`) — never a generic node field.
-
-**A generic `Ast.prov` would be a parallel mechanism** on top of an
-invariant the tree states twice, and it would pay for every node in every
-compile to serve a feature only `--source` reaches.
-
-**DECIDED: provenance is a property of the SUB-PARSE and of the
-ASSIGNMENT TABLE, both of which have to exist anyway.**
-
-1. **A scope stack on `Ctx`.** Each sub-parse pushes
-   `(file, line, the pattern text's own base)`. `cx->pos` during a
-   sub-parse is ALREADY an offset into the definition's own text — that
-   is what swapping `pat`/`patlen`/`pos` means — so a refusal raised
-   inside a definition already carries the right offset. What the stack
-   adds is the FILE and LINE to report it against.
-2. **`ctx_fail` is the one reporting site** (`compile.c:16-29`, writes
-   `err->msg`/`pos`/`input` then `longjmp`s), so it is the one place that
-   consults the stack. `pcrec_error` (`lib/pcrec.h:611-615`) gains the
-   file/line the CLI prints beside the offset it already prints
-   (`main.c:774`). One change, one site.
-3. **Rule 7(c)'s duplicate-number error names BOTH sites** because the
-   assignment table (§2.7) records provenance per assignment. The two
-   sites may be in two files, and the table is where that is known —
-   not the AST, which by then holds only numbers.
-
-**This is strictly more capable than a node field for the case that
-matters** and strictly less machinery: an ordinary compile error inside a
-bound definition reports that definition's `file:line` and its own local
-offset, which is the obligation §2.12 states, and it does so without any
-node carrying anything.
-
-**One thing the node DOES gain, and it is `A_LOOK`'s precedent exactly:**
-`u.cap.at`, the pattern offset of a group's opening `(`. It is needed by
-`--emit-composed` (§2.10) and by rule 7(c)'s message. `parse.c:839-864`
-already has `apos` in hand at the assignment site — it is the value
-`first_cap_pos` is set from — so this is a store, not a computation.
-
-### 2.10 `--emit-composed` is a text splice, not a serializer
-
-**CITED, D87 rule 4:** the explicit-number spelling is a SERIALIZATION
-pcrec both emits and accepts, and the harness's `A == B` control
-recompiles it.
-
-**pcrec has no AST → pattern-text renderer**, and building one is the
-obvious reading of "emit the composed pattern". It would have to cover
-the entire language — every class, every quantifier, every assertion,
-every escape — and it would be a second answer to "what does this AST
-mean" for the parser to disagree with. That is learnings §3's drift
-hazard, and it is the same reason D87 rule 4 gives for refusing an
-external textual renumberer.
-
-**DECIDED: `--emit-composed` splices the ORIGINAL TEXTS, driven by a
-position list.** The composed pattern is:
-
-```
-<the caller's text, with `?<N>` inserted at each group's own `(` >
-(?(DEFINE)
-  <each definition's text, same insertion, wrapped `(?<name=N>…)` >
-  ... in closure order ...
-)
-```
-
-Every insertion point is a `u.cap.at` (§2.9) and every inserted number is
-an assignment-table entry (§2.7). Nothing is re-derived and no construct
-outside `(?<` is ever rendered — the rest of the pattern is the bytes the
-author wrote.
-
-**Three properties follow, and they are what make it a control:**
-
-- it **round-trips by construction** under D87 rule 7(j): what it writes
-  is a pattern whose groups are all explicitly numbered, and B1 is the
-  spelling that reads them back;
-- it cannot drift from the parser, because it emits no syntax the parser
-  did not just accept from the same bytes;
-- **the `A == B` check has teeth**: build A from `--source`, build B by
-  feeding `--emit-composed`'s output back through `--source`-less
-  `-p`, and compare. Note the two are NOT expected to agree on
-  `rx_info.ngroups` — B is handed text and counts every group in it,
-  which is exactly the difference §2.3.4 point 3 records and §4's S9b
-  states. They must agree on the emitted PROGRAM and on
-  `caps[0..ngroups_A]`. A check that compared `ngroups` would be red for
-  a correct build, and one that compared nothing would be green for a
-  broken one; §3.2 pins which.
-
----
-
-## 3. The check and sabotage plan
-
-Written against learnings §3 and memory `pcrec-check-design-lessons`:
-**a control must not share a source with what it controls; a population
-nobody counts is not a population; a witness that stopped reaching its
-site is a green check measuring nothing ([MECH-REACH]).** Every check
-below names its witness and asserts its denominator.
-
-### 3.1 INV-COMPAT — that no existing file changes meaning
-
-The format note's §1.1 asks for three independent checks. This design
-changes what two of them prove, and the change is in the honest
-direction, so it is stated plainly rather than claimed as a win.
-
-**C1 — the cross-implementation dump differential.** `pcrec
---list-source --dump` and a new `run.sh --dump` emit the same canonical,
-order-preserving serialisation — block index, `file:line`, pattern text,
-every directive with its value — over all 179 files, and the two dumps
-must be **byte-identical**. This is the control §1.1 asks for AND the
-control §1.1's own two-parser situation needs; the two are in different
-languages by different authors, which is what makes it a control.
-**Denominator asserted: 179 files, 3,265 blocks.** It does NOT cover
-expectation lines, which pcrec never parses — those are C2's and C3's.
-
-**C2 — the answer re-run.** run.sh over the corpus reports the same
-`cases passed:`, `cases failed:`, `pattern-compile failures (distinct):`
-and `group cases pending-vm:` (`run.sh:1032-1044`). These are a
-DIFFERENT partition of the 26,691 expectations than C3's — r44-grammar
-G2: a `perr` block and a live `g` line each record independently, and
-26,691 = passed + failed + pending-vm. Both partitions are asserted.
-**This is the check that catches a parse that is faithful but routed
-differently**, e.g. a block that starts running an extra cell.
-
-**C3 — the oracle re-run.** `verify_rxt.py` reports the same verified
-count and the same skip count. **The skip count is the load-bearing
-half**, because H4 adds a new reason to skip (§1.7): if the structural
-composed-block test is wrong in the loose direction it will skip blocks
-it should verify, and only the skip COUNT catches that. It must be
-unchanged at the corpus, since no corpus file declares a `lib` or a
-`name`.
-
-**C0 — the closure is empty, everywhere.** The composer reports the size
-of the closure it bound, and **for the corpus that number is 0 in all
-3,265 blocks**. §1.1's third clause, and the only one of the four that
-tests the composer at all on this population.
-
-**Where this design makes the proof CHEAPER, and where that is a
-weakness.** run.sh's 13 existing arms are not touched (§1.7), so C1's
-value on the corpus is largely "the two parsers agree that nothing
-happened". A reviewer should read that as: **C1 is a strong control for
-W1's own new files and a weak one for the 179.** What actually protects
-the 179 is that the code path they take is unchanged, and the check that
-says so is a diff — which is why S-C7 below plants a change that makes
-the head detection fire on a corpus file, since that is the only way the
-179 can move.
-
-**Sabotage rows.** The format note's S-C1..S-C8 all still apply, and each
-still names the check that must catch it. Two are re-homed and one is
-new:
-
-| row | plant | must be caught by |
-|---|---|---|
-| S-C1 | drop the last `g` line of one block | C2 (count), C3 |
-| S-C2 | decode `\x41` as `x41` | C3 |
-| S-C3 | let `flags` carry to the next block | C1 (run.sh's dump carries the value) |
-| S-C4 | treat `# pcre2-only` as an ordinary comment | C3's skip count |
-| S-C5 | make `frames-buffer=` block-scoped rather than positional | C2 — run.sh captures `cur_route` at each case push (`run.sh:931,941,…`), so a block-scoped version changes which route a case runs under. **NOT C1**: pcrec never parses `frames-buffer=`, so the dump cannot see it. The format note assigns this row to the dump differential; that is wrong under this design and the re-homing is the finding |
-| S-C6 | accept an unknown `features` name silently | C2 — a `perr` block flips |
-| S-C7 | make the head detector fire on a file whose first line is `pattern` | C1 and C2 — and this is the row that guards the 179 |
-| S-C8 | assign a definition's re-based numbers from 1 instead of `base+1` | C0 is vacuous here (closure 0 everywhere), which IS the finding: this row is caught by §3.2's W-composer checks and by nothing on the corpus. Stated so nobody reads the corpus's green as covering it |
-
-**S-C8 is the honest one and it should stay uncomfortable.** The corpus
-cannot test composition, because no corpus file composes. Every
-composition check runs on files W1 writes, which means the author of the
-mechanism is the author of its population — the exact shape learnings §3
-names. §3.2's answer is that the ORACLE is not W1's.
-
-### 3.2 The composer's checks
-
-**W-1 — the textual EXPAND control (H2b), and the population it is valid
-on.** CITED, format note §2.3.4: the control is valid where the append
-form means what the composer means — **no absolute numeric reference in
-any body, and no name collision between caller and closure**. Outside
-that population **the control does not run and says so** — a counted,
-NAMED skip, never a silent pass.
-
-Three things this design changes about it, all in the control's favour:
-
-1. the offset is **zero** (§2.6), so the comparison is slot for slot and
-   there is no arithmetic to get wrong;
-2. the closure ORDER and SIZE come from the composer's report, and a
-   mismatch is its own failure (§2.3 decision 6);
-3. the validity test runs on the composer's resolved closure, not on the
-   control's own reading of the text — so the control cannot decide it is
-   applicable on a population the composer disagrees about.
-
-**The skip population must be COUNTED and PRINTED, and it must be
-non-empty in the suite.** [MECH-REACH]'s lesson: a control whose
-inapplicable branch is never exercised has an untested branch. So W1's
-own test files must include at least one definition with an absolute
-numeric reference (M1's `dd` = `(\d)\1`) and one caller/closure name
-collision (M2's `(?J)` case) — both of which are the shapes that FORCED
-D87, so they are the right witnesses and they are already written down
-with their answers on both oracles.
-
-**W-2 — `A == B` across `--emit-composed`.** §2.10. Compares the emitted
-PROGRAM and `caps[0..ngroups_A]`; explicitly does NOT compare
-`rx_info.ngroups`, and the check states why in its own message so a
-future reader does not "fix" it.
-
-**W-3 — the hand-verified cells.** M1's four rows and M2's four rows
-(format note §2.3.3), which were measured on BOTH oracles and are the
-evidence D87 was ruled on. They become `.rxt` cases. They are not an
-independent oracle — they are pinned answers — and the check must say so
-rather than presenting them as verification.
-
-**W-4 — Q7's residual, unchanged and named.** CITED, format note §7.2
-Q7 and the manager's ratification: on the two populations D87 added
-mechanism for (absolute refs, colliding names) **no independent oracle
-checks the answer**. W1 accepts that with the named trigger — *the first
-[LIB] entry that legitimately needs an absolute reference or a colliding
-name* — and W1's contribution is to make the uncovered population
-COUNTABLE: the control prints how many cells it skipped and why, so the
-residual has a number instead of a description.
-
-### 3.3 The one-derivation checks
-
-Three surfaces read the assignment table (§2.7) and they can only
-disagree if something computes it twice:
-
-| check | asserts |
-|---|---|
-| W-5 | `RX_NCAPS - 1` equals the highest number in the emitted `rx_group_entry` array, or the table's max where no name exists |
-| W-6 | every `rx_group_entry` with non-NULL `.ref` has `number > rx_info.ngroups` — **D61's promise as a structural assertion on the artifact**, not as a claim in a note |
-| W-7 | `--emit-composed`'s explicit numbers, re-parsed, reproduce the same table |
-
-W-6 is the one to keep: it is a property of every composed artifact, it
-is checkable by grep on emitted text, and it fails loudly in the
-direction that matters (a delivered slot intruding on `1..ngroups`).
-
-### 3.4 The composer's sabotage rows
-
-Each must turn a named check red. A row no check catches is a finding
-about the check set, not about the row.
-
-| row | plant | must be caught by |
-|---|---|---|
-| S-W1 | re-base `u.cap.no` but not `u.bref.refs` | W-1 on M1's `dd` cell — the library's meaning inverts, which is the measured M1 defect returning |
-| S-W2 | re-base `u.call.target` including `target == 0` | W-3: a definition's `(?R)` silently becomes the caller's root. (Under §2.5's refusal this row instead plants "accept `(?R)` in a definition") |
-| S-W3 | drop the `scope` predicate in `pcrec_bref_resolve`'s walk | W-1 on M2's `(?J)` cell — the caller's `w` captures the library's call again |
-| S-W4 | give the injected wrapper no number and shift the definition's groups down by one | W-1 (every composed cell's slots move by one) and W-7 |
-| S-W5 | count injected names in `nnames` | W-6 and the C1 dump |
-| S-W6 | forget to restore one field in `RxtParseScope` — specifically `ncap` | a dedicated check: a file with a definition used at two call sites must produce the SAME numbers as one with a single site, and a two-definition file must not renumber the first when the second is bound. **This is the row with no natural detector**, which is why the check is written for it rather than hoped for |
-| S-W7 | make the closure a plain walk with no visited set | a self-recursive definition compiles twice as big / a mutually recursive pair does not terminate; the check asserts the REPORTED closure size, which is why §2.3 decision 6 requires it to be reported |
-| S-W8 | let the harness's control re-derive the closure from its own text | the control's closure-size comparison — the check that exists because §2.3.4 says the control must not do this |
-
-### 3.5 The identity gate and the abi
-
-**D76's ritual, at the four sites §1.6 lists, in ONE change.** Two
-lanes in one night have missed sites 2 and 3 (CLAUDE.md's situation
-index), so:
-
-- `make test-codegen` runs before delivering the target step;
-- comparison **(A)** (program region vs the unchanged `ac4917d`) is
-  expected **byte-identical** — `rx_info.name` is a stamped string above
-  `goto <prefix>_L0;`, the argument [ENG-ABS] made for `match_form`. If
-  (A) moves, something changed the program and the step is wrong, not
-  the gate;
-- comparison **(B)** is re-pinned to the step's **LAST** src-touching
-  commit, per the rule written at `run_recursion_identity.sh:394-406`.
-
----
-
-## 4. The spec deltas (D80)
-
-A parser landing without its spec hunk is rejected on sight. W1's hunks
-are the format note's §3.4 rows tagged W1, and they land with the STEP
-that makes each observable — not all at the end.
-
-| hunk | file | lands with |
-|---|---|---|
-| **S1** HEAD and BODY; the four W1 head declarations; the head ends at the first `pattern`; the four lexical contexts; the block scalar as a property of the VALUE production | `docs/spec/rxt_format.md` | W1.1 |
-| **S3** the CELL notion, the `perr` one-cell rule, and the summary's new quantities | `docs/spec/rxt_format.md` | W1.1 |
-| **S10** `limits.md`'s "Handling an oversized artifact" item 1 stops being a forward reference and points at S1 | `docs/spec/limits.md` | W1.1 |
-| **S11** `--source`, `--target <prefix>`, `--lib-path DIR`, `--emit-composed`, `--list-source`, and §1.5's output-naming rule | `docs/spec/cli.md` | W1.2 (`--emit-composed` with W1.3) |
-| **S9** `rx_info.name`; the `abi` 12 → 13 sentence; **and the stale `nnames` sentence** (§1.6) | `docs/spec/match_api.md` §6 | W1.2 — one of D76's four sites |
-| **S2** a new "Composition" section: the AST-level model, D87 rule 7(a)-(j), lexical-scope-wins with internal qualification, the visited-set closure, the five namespaces, and that a composed block's oracle is necessarily `pcre2` | `docs/spec/rxt_format.md` | W1.3 |
-| **S2b** the three pattern-language extensions with the "no legal PCRE2 pattern changes meaning" constraint and §1.4's measurement; the three registry rows | `docs/spec/` + `--list-syntax` | W1.3 |
-| **S9b** D61 made concrete by its first producer: `ngroups`/`nnames` are the PRIMARY's own; delivered slots occupy `ngroups+1..`; `RX_NCAPS` may move across library versions while `1..ngroups` holds still; and the difference between `--source` composition and handing composed TEXT to plain `-p` | `docs/spec/match_api.md` §2/§5 | W1.3 |
-| **S2c** "Delivered results": the scope path, first-set-wins for duplicate names in one path, the two non-deliverable shapes and their refusals, and the sentence that two call sites of one definition are distinct C types needing `__typeof__` | `docs/spec/rxt_format.md` | W1.4 |
-
-`docs/guide/` points at these and never restates them (D80). W1 adds one
-guide page — "compiling from a `.rxt` source" — with no edge cases.
-
----
-
-## 5. Steps and merge points
-
-Four steps, each with its own acceptance measurement and a merge after
-it. The order is forced twice: `target` before the composer (a composed
-file has several blocks and therefore builds nothing without a
-`target` — so without step .2 the composer has no way to be run at all),
-and the abi ritual on the step where `rx_info.name` first has a value a
-check can read (M9's complaint about H11, one level down).
-
-### What can be measured BEFORE building (D77)
-
-Already measured, in this note, under the HOLD:
-
-- the three spellings are still free at `3372e1e` (§1.4) — the one
-  measurement that could have killed B1/B2/B3;
-- the abi is **12**, from three independent sites (§1.6) — the format
-  note says 11;
-- **0** corpus files have a head, and **0** lines begin with whitespace,
-  so §1.2's continuation rule is free and step .1 cannot move the 179;
-- **0** of the 32 candidate keywords occur as a first token (format note
-  §1.1, r44-grammar G1);
-- `rx_group_entry.ref` exists and is emitted `NULL` today
-  (`emit_dfa.c:1192`), so §2.7 needs no new column.
-
-Not measurable before building, and named as such: whether the sub-parse
-scope list (§2.2) is complete. That is S-W6's row, and it is why the row
-gets a purpose-built check instead of a hoped-for detector.
-
-### The steps
-
-**[DD-13b.W1.1] — the head grammar, the source reader, and the corpus
-identity proof.**
-Builds: F1, F2 (the `Rxt*` types only), F3's `--source`/`--lib-path`/
-`--list-source`, F10's three block arms + `features only`, F12's
-structural skip. No composer, no targets, no abi change.
-Acceptance: C1 byte-identical over 179 files / 3,265 blocks; C2 and C3
-unchanged with both denominators asserted; S-C1..S-C7 each turn their
-named check red. `make strict` clean.
-Merge. **This is the natural first merge** — it is the whole of
-R-COMPAT-1's proof and it touches nothing a caller can observe.
-
-**[DD-13b.W1.2] — targets, `rx_info.name`, the abi ritual, H11.**
-Builds: `target … [with]`, `config` composition and `from`, the output
-naming rule and `-o <dir>`, F9's `rx_info.name`, F11's prefix-taking
-driver, run.sh's target build path.
-Acceptance: a target file builds N artifacts with N prefixes and one
-`rx_info.name`; §6.3's three-config worked file compiles three ways and
-the three agree on the block's cases (the format note calls that identity
-"a free control" and it is); the abi is 13 at **all four sites**;
-identity gate (A) byte-identical, (B) re-pinned to this step's LAST src
-commit; `make test-codegen` green.
-Merge.
-
-**[DD-13b.W1.3] — the composer, the three extensions, `--emit-composed`.**
-Builds: F4, F5, F6, F7, F8's infrastructure, the sub-parse, re-basing,
-qualification, injection, the assignment table, provenance, H2b's
-control, H2c's round trip.
-Acceptance: W-1 through W-7; the M1 and M2 cells reproduce the note's
-measured answers; the control's skip population is non-empty and
-counted; S-W1..S-W8 each turn a named check red; C0 still reports closure
-0 on all 3,265 corpus blocks.
-Merge. **This is the step to schedule the panel on**, not W1 as a whole.
-
-**[DD-13b.W1.4] — delivery.**
-Builds: B3's semantics end to end — `scope` on injected groups, `.ref`
-populated, delivered slots above `ngroups`, and F8's two refusals.
-Acceptance: W-6 on every composed artifact; both refusals fire with the
-construct named, and each has a witness that REACHES it (a recursive
-definition with a delivering declaration; a delivering call under `{2}`);
-`§6.1`'s `mail.rxt` worked file builds with `rx_info.name ==
-"from_line"`, `ngroups == 0`, and three delivered slots above it.
-Merge. [V-I] then has its interface (§2.8) and W1 is closed.
-
----
-
-## 6. Open questions for the manager
-
-Short, because the brief says to decide what I can. Six decisions are
-recorded inline and marked **DECIDED**; four of them are routine
-(1: refusal wording tier; 2: module ownership; 3: `-D` prefix over a
-generated shim; 4: a structural rather than exception-caught skip) and I
-do not need them re-ratified unless the manager disagrees. **Three
-things do need a ruling**, and the first two change a number the format
-note published.
-
-**Q-W1 — the definition's wrapper takes an assigned number, so the
-control's derived OFFSET is zero (§2.6). Format note §2.3.3's
-RECOMMENDED says it takes none and §2.3.4 builds an offset `j` on that.**
-`A_CALL.target` is a group number and `callgraph.c:162,178` binds by
-matching `A_CAP.u.cap.no`, so a callable body must hold a number in the
-same space as every other group; a separate id space would be a second
-key in the binder. Under my reading this is an implementation fact the
-note did not have, it makes the oracle control strictly better (no
-arithmetic to get wrong), and it changes `dd`'s composed group 1 from
-**2** to **3** — the number §2.3.3 spells out. **Recommendation: adopt,
-and amend §2.3.3/§2.3.4 in the format note.** This is arguably a
-semantics change (a caller can observe the numbering through
-`--emit-composed`), so it may be Frank's rather than the manager's.
-
-**Q-W2 — `(?R)` / `(?0)` inside a bound definition is a SIXTH member of
-§6.0's piece-rule class, and I propose to refuse it (§2.5).** A
-definition's `(?R)` means "this whole pattern"; after injection the only
-two readings are the caller's root and the definition's own body, and
-both are defensible. `callgraph.c:162` treats target 0 as the root, so
-the re-basing walk must either skip it (the caller's root — silently
-changing what a library meant) or rewrite it (the definition's body —
-inventing a meaning). §6.0 does not list this shape.
-**Recommendation: refuse, naming the construct and the definition's
-`file:line`, and add it to §6.0's class as member (vi) with fate
-"refused by the store scan" — it is a lexical property of the
-definition's own text, so it is checkable exactly where (i) and (iii)
-are.** Semantics; for Frank via the manager.
-
-**Q-W3 — the [DD-11] table is W1's LISTING interface, not its BINDING
-one, and the format note's §4.2 can be read either way.** D85 says a
-library definition is "a row whose predicate is the library's presence",
-and the tree already reserves `DEF_LIB_NAME_BOUND` with "NO PRODUCER
-YET — [LIB]/[DD-13b]" (`internal.h:2536`) and names `DEFK_TEXTFN` as
-what "[DD-13b]'s [LIB] name-bound rows reuse later"
-(`internal.h:2564-2577`). But `DefTextFn` is
-`Ast *(*)(const char *operand, size_t len, Ctx *cx)` and its contract is
-to return the core AST **spliced at the occurrence** — i.e. INLINING.
-Composition must produce a CALL: a call restores the callee's capture
-state on return and inlining does not (format note §2.3.5's first
-difference), and the splice/linkage choice is `cg_eligibility`'s with its
-`SLOT_SPLICE_SAVE` machinery. **So W1 adds no `DEF_LIB_NAME_BOUND`
-producer.** The composer resolves names itself, and
-`--list-definitions`'s "what did `lib` bring into scope" surface (format
-note §3.3) reads the composer's resolved set — one derivation, two
-readers. **Recommendation: confirm, and let §4.2 say "listing" where it
-today says "interface".** Syntax/architecture; the manager's.
-
-**Not asked, recorded as residuals:** Q7's uncovered population stands as
-ratified (§3.2 W-4) with its named trigger; the format note's stale
-`abi 11` and `emit_dfa.c:1310` (§1.6) and its S-C5 row assignment
-(§3.1) are corrections I will make in the same change rather than
-questions.
+### 2.9 Provenance — a property of the parse, not of the node
+
+**The format note's §2.12 says provenance is "a FIELD ON THE NODE". The
+tree forbids it.** CITED, `internal.h:3247`: *"a module's parse hook is
+the only place in this compiler that holds a pattern offset, and `Ast`
+carries no position of any kind (PARSE-1)"*. The discipline is that a
+position surviving to a later pass is an extra scalar on the SPECIFIC
+node that needs it — and `A_LOOK.u.look.at` (`internal.h:745`) exists for
+exactly that reason, its own comment saying *"IT EXISTS BECAUSE `Ast`
+CARRIES NO POSITION OF ANY KIND (PARSE-1's own note)"*. A generic
+`Ast.prov` would be a parallel mechanism on top of an invariant stated
+twice, paid for by every node in every compile.
+
+**So: provenance is a property of the SUB-PARSE and of the ASSIGNMENT
+TABLE**, both of which must exist anyway.
+
+1. **A scope stack on `Ctx`** — each sub-parse pushes `(file, line, the
+   text's own base)`. `cx->pos` during a sub-parse is ALREADY an offset
+   into the definition's own text, so a refusal raised inside a
+   definition already carries the right offset; the stack supplies the
+   file and line to report it against, and (r45sem M1) the third state
+   `first_cap_pos`/`first_vmonly_pos` now need.
+2. **`ctx_fail` is the one reporting site** (`compile.c:16-29`), so it is
+   the one place that consults the stack. `pcrec_error`
+   (`lib/pcrec.h:611-615`) gains the file/line the CLI prints beside the
+   offset it already prints (`main.c:774`).
+3. **Rule 7(c)'s duplicate-number error names BOTH sites** from the
+   assignment table, which records provenance per assignment. The two
+   sites may be in two files; the AST by then holds only numbers.
+
+r45sem: *"§2.9 the best section; its PARSE-1 argument against
+format_design §2.12 should be adopted."* The format note's §2.12 is
+amended in the same change (§4).
+
+**The node gains ONE thing**, and it is `A_LOOK`'s precedent exactly:
+`u.cap.at`, the offset of the group's opening `(` — plus, after r45sem
+S4, the **header's END offset** (§2.10 needs to REPLACE `(?<w>` and not
+merely insert into it). `parse.c:839-864` already has `apos` in hand at
+the assignment site.
+
+### 2.10 `--emit-composed` — a text splice, and what it cannot do
+
+**pcrec has no AST → pattern-text renderer**, and building one would have
+to cover the entire language and would be a second answer to "what does
+this AST mean" for the parser to disagree with — learnings §3's drift
+hazard, and D87 rule 4's own reason for refusing an external renumberer.
+
+**So `--emit-composed` splices the ORIGINAL TEXTS, driven by a position
+list**: the caller's text with each group's number made explicit, then
+`(?(DEFINE) … )` holding each definition's text, same treatment, in
+closure order. Every insertion point is a `u.cap.at` and every number an
+assignment-table entry.
+
+**r45sem found four things wrong with revision 1's version of this, and
+three change the mechanism.**
+
+**B3 — explicit numbers do NOT fix by-name binding, and revision 1's
+round-trip claim was false.** An injected definition's internal `(?&w)`
+is re-bound by `pcrec_bref_resolve`'s name arm over the WHOLE composed
+text (`mod_backrefs.c:683-687`, lowest number with that name) — which is
+M2's naive-append collision reintroduced by the serializer. Two
+libraries' `email` become two `(?<email=N>` wrappers in one text; without
+`(?J)` that is a loud refusal. **RULED: `--emit-composed` renders every
+by-name reference inside an injected definition NUMERICALLY** (`(?3)`,
+`\g{3}`), which the assignment table already knows. Where a spelling
+cannot be rendered numerically, it is a **counted, NAMED skip**, never a
+silent one.
+
+**S4 — the insertion is a REPLACEMENT of unknown length.** `?<N>` cannot
+simply be inserted into `(?<w>…)`, `(?'w'…)` or `(?P<w>…)`: the result
+must be `(?<name=N>…)`, which replaces the whole header. Hence the header
+END offset in §2.9. `(?|…)` (branch reset) is recognised and its
+alternatives' numbering follows D87 rule 7(e).
+
+**S5 — modifier leakage across the splice is LIVE.** A top-level bare
+`(?i)` is never restored (`internal.h:1557-1575`), so a definition
+spliced after one inherits it: python `re` agrees the hazard is real
+(`re.fullmatch('(?i)a(?:Q)','aq')` is a match), and the sub-parse's
+re-seeded `mods` (§2.2) would disagree with the serialization. `(?x)` is
+worse — `#` swallows the rest of the line. **Fix: an explicit modifier
+reset on each spliced wrapper**, so the serialization means what the
+composer meant.
+
+**S6 — "it cannot drift from the parser" is FALSE as stated**, and this
+note now says the weaker true thing: *the serializer emits no CONSTRUCT
+the parser did not just accept from the same bytes, but bytes accepted in
+one modifier context can mean something else in another (S5), so the
+round trip is guaranteed only with the modifier reset and the numeric
+rendering in place.* `\Q…\E` is a latent member of the same class and is
+named here rather than discovered later.
+
+**What survives, and it is the point of the mechanism:** no second
+"AST → PCRE2 text" renderer exists, so there is nothing to drift from the
+parser structurally; the `A == B` control recompiles the serialization
+and compares the emitted PROGRAM and `caps[0..ngroups_A]` — **not**
+`rx_info.ngroups`, which differs by design (B is handed text and counts
+every group in it; §2.3.4 point 3 and §4's S9b).
