@@ -18479,3 +18479,65 @@ battery on the merge. O-10 preview from pcrecdev2: the size-cap rescue
 stamps `_ENGINE_SEL "selected"` — its only trace is `_LANG_WHY`'s "size
 cap retry" prefix; Frank's bucket misses it (a stamp-semantics finding
 for when he rules).
+
+#### Forty-sixth session, part 4 (10:3x-12:0x EDT): Frank's rulings round — six questions, one at a time
+
+Frank, 10:36: "status and questions?", then "go through questions one at
+a time please" — and a correction to how I had described W1.1's result:
+"byte-identical" is the SEAM's identity proof (three parsers — pcrec's
+`--list-source`, run.sh's `--dump`, verify_rxt.py's `--dump` — agree on
+the whole corpus), not a corpus change; C2 (the harness's answers) was
+still owed at that point. Rulings, in order (durable in D89/D90, plan
+rows, K42, I-19):
+
+1. **Gate shape → I-19: BD7 RATIFIED** (the mpstat 5-s average); Frank's
+   (2)-(4) become the v1.4 spread rule.
+2. **Q-W1: ADOPT, narrowed (D89).** Frank asked whether PCRE2 assigns the
+   wrapper a number (yes — the DEFINE's `(?<name>…)` is numbered in
+   textual order; the composer matches it exactly, §2.6) and raised
+   PCRE2's capture-returning calls `(?&name(grouplist))` — measured: the
+   box's libpcre2 10.46 REFUSES the spelling ("syntax error in subpattern
+   name"), pcrec refuses it identically, the compliance doc carries it
+   OUT-OF-SCOPE ("revisit post-M4"). Walked the numbering with a worked
+   example (`(\d)(-)(?&dd(4))(?(DEFINE)(?<dd>(\d)))` → 1, 2, call = no
+   number, 3 = wrapper never set, 4 = dd's digit). Frank's verdict: the
+   assigned lib numbers are "basically unusable — you'd have to count
+   them out and know the order they were assigned"; he dislikes PCRE2's
+   grouplist numbering and put his own candidate on record
+   (`(?&dd(2))` = pull dd's LOCAL group 2 in as a new caller group at the
+   call site; `(?&dd(2)(1))`; `(?&dd(?<digit>2))`); accepted the wrapper
+   number WITHOUT the grouplist arguments (TBD); asked for the lib's
+   groups to be NON-CAPTURING when wrapped. My perspective, adopted: a
+   two-tier rule — `(?:…)`-rewrite when the lib does not reference the
+   group (PCRE2-identical text), HIDDEN above ngroups when it does
+   (backref/call target; the wrapper likewise), delivery by NAME only;
+   `ngroups` is the caller's. I had earlier mis-described W1's slots as
+   "per-site private" — corrected in the same exchange (the per-site
+   machinery is save/restore, not numbering). PCRE2 upgrade path: the box
+   is at the newest packaged PCRE2; newer only from GitHub, "a sub-repo
+   in the pcrec repo" — [PCRE2-UP], not started.
+3. **Q-W2: REFUSE for W1.**
+4. **Q7 residual: ACKNOWLEDGED** as structural → K42.
+5. **Optimization column: (b) the `{0,n}` class-count knee** — with
+   Frank's concern "we are getting a bunch of secret numbers … is there a
+   table internally of numbers that can be a --list target". Measured:
+   16 numeric limits in 8 files under 4 naming schemes, limits.md §3
+   hand-copied. → **[LIM-1] first** (`src/core/limits.def` X-macro,
+   `--list-limits`, the spec derived, a sabotage row for a bare define —
+   D90), **then [OPT-5]** with its knee born in the table.
+6. **Columns after W1.1**: feature W1.2 → W1.3 (the §2.6/§2.7/S9b
+   revision folded into its charter); admin LIM-1 (the size-cap rescue's
+   `_ENGINE_SEL "selected"` finding FOLDED IN); optimization OPT-5;
+   bounded@0.2's rungs go to the bench with OPT-5's charter.
+
+**w11 meanwhile** (artifacts): C2 `make test-corpus` DONE — 178/178
+workers at PROCS=4, size-log 2878 rows (the pin was 2877: one more row,
+the lane owes the reason); the ten sabotage rows S194-S203 (+S204 for
+the four-kinds gap) run one at a time via the matrix's ONLY filter, and
+found TWO real run.sh defects on the way (a typo'd `features` list passed
+quietly on a `perr` block — e642679; an unescaped backtick — a19566d, now
+a sabotage-validated check); `--list-source` routed through `pcrec_run`
+for the codegen checks (dd054a8); final codegen/cli passes running at
+11:5x. Load peaked 9.5 during the corpus run (its gcc children), not a
+concurrency breach. A `packagekitd` burst at 11:13 was a system package
+operation, not ours.
