@@ -36,10 +36,10 @@ directory asserts that the description and the shipped parser actually agree.
   parsed bare is not core; the containment grep's bite and the structural
   check's bite (a planted unclosed `\d` class, `"[0-9"`) were both verified
   live by plant-rebuild-revert cycles, never committed.
-  **NOT YET WIRED into run_registry_tests.sh's guarded chain** — run
-  standalone (`bash tests/registry/run_definitions_tests.sh`) until
-  [DD-11.3] lands the standing self-oracle this check is a precursor to.
-  Landed so far: the class-escape family, `\b`/`\B`, `\R`, bare `\N`, the
+  **NOW WIRED into run_registry_tests.sh's guarded chain** (graduated
+  from standalone, 2026-08-29, when [DD-11.3] below landed the standing
+  self-oracle this check was always a precursor to — its own population
+  needle guards against a deleted call, PC-4's own precedent). Landed so far: the class-escape family, `\b`/`\B`, `\R`, bare `\N`, the
   possessive-suffix family, 7 of the 9 base-tier literal escapes (`\a \e
   \f \n \r \t` and bare `\x`, via a new `DEFK_TEXTFN` `RegDef` kind for the
   operand-parameterized ones), `\c`/`\o{}`/octal `\0`/`\N{U+}` (also
@@ -80,6 +80,75 @@ directory asserts that the description and the shipped parser actually agree.
   `registry_check.c`'s `kinds[]` arrays, `pcre2_check.c`'s `kind_name`,
   `compliance_section.py`, `run_cli_tests.sh` case10's noroute set)
   re-measured from a live run rather than computed by hand.
+- **definitions_oracle_gen.c / definitions_oracle_driver.c /
+  definitions_oracle_check.c / definitions_oracle_subjects.h /
+  run_definitions_oracle.sh** — [DD-11.3]'s OPTION-MATRIX SELF-ORACLE
+  (definitions_table.md §3 item 4, the manager's brief), the STANDING
+  CHECK definitions_check.c's structural check names as its own precursor
+  and out-of-scope claim: does the table's resolved definition (Pattern
+  B) actually MATCH the same strings as the row's own shipped construct
+  (Pattern A) — A==B, no external oracle needed — AND does Pattern A
+  agree with libpcre2 (A==C). `run_pc4.sh`'s exact shape one table over
+  (a cell generator, a per-cell pcrec-compile-and-run sweep, a comparator
+  that also drives libpcre2 directly), with the two-prefix-one-TU linking
+  `tests/possessify/possdiff_driver.c` established.
+
+  `definitions_oracle_gen.c` links `libpcrec.a` and walks every row with
+  `definitions` through the REAL `pcrec_def_resolve`, under a Ctx whose
+  option state is reached by PARSING a real seed pattern (`"(?m)a"` /
+  `"(?n)a"` / `"a"`) rather than by poking `Ctx.mods` directly — that
+  field is INCOMPLETE outside `src/parse/` by design (D62), so this file
+  cannot dereference it even if it wanted to, and parsing a real seed
+  additionally exercises the option-SETTING mechanism itself
+  (`mod_modifiers.c`), which hand-setting a field would have bypassed. It
+  emits `(id, Pattern A, Pattern B, description)` cells as TSV; three
+  populations are deliberately SKIPPED and NOTED rather than compared:
+  `DEFK_TEXTFN` rows (no splice-ready text, needs byte-valued AST
+  introspection — a follow-on, distinct enough from the option-matrix
+  work to not block it), `PCREC_BUILT_NO` rows (`\R`: a real row with no
+  producer yet, D65's own classifier is the answer, never a guessed
+  module-name list — `PCREC_BUILT_NA` rows like `^`/the literal escapes
+  are NOT skipped, that status means "the question doesn't apply", not
+  "cannot compile"), and rows with more than one `DEF_ALWAYS` entry (the
+  14-name POSIX class-name family sharing one row and one fixed `syntax`
+  example — `pcrec_def_resolve`'s first-applicable-wins answer for it is
+  entry 1, "alnum", NOT the "alpha" its `syntax` field prints, so pairing
+  the two would silently compare two DIFFERENT constructs and call the
+  mismatch a finding; caught exactly this way on the sweep's first run,
+  before the skip was added. That family is covered elsewhere — this
+  file's own structural check, all 14 entries; PC-4, behaviourally
+  against libpcre2). `DEFK_BUILDER` templates are INSTANTIATED over the
+  manager's body set (`a`, `(a)`, `[ab]`, `a|b`, `\d+`) by splitting the
+  template on its `X ≡ X` shape and substituting each half — generic
+  across both shipped templates except the possessive-suffix family's,
+  whose `<quant>` placeholder names a per-row concrete quantifier the
+  template alone cannot supply (derived instead from the row's own
+  `syntax`, stripping the one-byte canonical body and the trailing `+`);
+  every body is wrapped in `(?:...)` before a suffix attaches, since a
+  possessive suffix attaches to an ATOM and `a|b`/`\d+` are not one
+  (found live: an unwrapped `a|b*+` is a different construct, an
+  alternation with a quantified last branch, not a quantified body).
+
+  `run_definitions_oracle.sh` compiles both patterns per cell with
+  `--features all` (module-gated constructs on both sides — `\b`, the
+  possessive suffix, `(?m)`/`(?n)`, and Pattern B's own use of gated
+  core syntax like lookaround's `(?=...)`), links them with
+  `definitions_oracle_driver.c` under fixed prefixes `pa`/`pb`, and runs
+  the shared subject battery (`definitions_oracle_subjects.h`, PC-4's
+  `pc4_subjects.h` precedent: 256 single bytes + curated multis chosen
+  for THIS table's population — newline placement, word-boundary
+  context, short alternated/quantified runs). `definitions_oracle_
+  check.c` reads the driver's per-cell output for A==B (whole-match
+  verdict only, never the full capture vector — Pattern A and Pattern B
+  can legitimately have different capture SHAPES, e.g. `(a)` vs `(?:a)`,
+  and still be the same construct under D85's own definition) and drives
+  libpcre2 directly on Pattern A for A==C, PC-4's `pc4_check.c` shape.
+  A==B is NOT skippable (no external oracle needed); A==C alone SKIPS
+  loudly without libpcre2. Sabotage-validated live: `\d`'s definition
+  string changed from `[0-9]` to `[0-8]` fires exactly 2 of 14,300 A==B
+  cells (the byte `9` and the multi-subject containing it), reverted
+  clean. Measured: 50 cells, 14,300 A==B + 14,300 A==C comparisons, 0
+  disagreements.
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output

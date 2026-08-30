@@ -377,4 +377,39 @@ if [ "$axesn" -ne 67 ]; then
     fi
     rc=1
 fi
+
+# ---- [DD-11.1]/[DD-11.3]: the definitions table's structural check and
+#      option-matrix self-oracle, D85's fifth registry surface -----------
+#
+# GRADUATED FROM STANDALONE (was run only via `bash tests/registry/
+# run_definitions_tests.sh`, per this directory's own CLAUDE.md note,
+# "until [DD-11.3] lands the standing self-oracle this check is a
+# precursor to") now that [DD-11.3] exists. The structural check proves
+# every definition parses to core-only vocabulary; the self-oracle proves
+# it MATCHES the same strings as the construct it stands for (A==B, no
+# external oracle needed) AND agrees with libpcre2 (A==C) — the two
+# things the structural check's own header names as OUT OF SCOPE.
+DEFOUT="$WORKDIR/definitions.out"
+bash "$SCRIPT_DIR/run_definitions_tests.sh" 2>&1 | tee "$DEFOUT"
+defrc=${PIPESTATUS[0]}
+if [ "$defrc" -ne 0 ]; then
+    rc=1
+elif ! grep -q "^PASS: definitions: table_contract.md" "$DEFOUT"; then
+    echo "registry: run_definitions_tests.sh ran but its own final PASS line" >&2
+    echo "registry:   is missing — a deleted call would leave every other" >&2
+    echo "registry:   line green" >&2
+    rc=1
+fi
+
+ORACLEOUT="$WORKDIR/definitions_oracle.out"
+bash "$SCRIPT_DIR/run_definitions_oracle.sh" 2>&1 | tee "$ORACLEOUT"
+oraclerc=${PIPESTATUS[0]}
+if [ "$oraclerc" -ne 0 ]; then
+    rc=1
+elif ! grep -qE "^definitions-oracle: [0-9]+ cells generated" "$ORACLEOUT"; then
+    echo "registry: run_definitions_oracle.sh ran but its own population" >&2
+    echo "registry:   line is missing or moved — the generator and this" >&2
+    echo "registry:   needle move in the same change or not at all" >&2
+    rc=1
+fi
 exit $rc

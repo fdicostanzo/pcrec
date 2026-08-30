@@ -482,6 +482,25 @@ subsection after `--list-axes`.
   the shipped lowering AND to libpcre2 (the co-equal legs). **Gate**: 0
   disagreements on both legs, reproducing `lookaround_design.md` §6's
   972-cell result as a standing check.
+  **BUILT 2026-08-29 (lane dd11b, `run_pc4.sh`'s own shape one table
+  over):** `tests/registry/definitions_oracle_{gen,driver,check}.c` +
+  `run_definitions_oracle.sh`, wired into `run_registry_tests.sh`'s
+  guarded chain alongside the (now also wired) structural check. 50
+  cells, 14,300 A==B + 14,300 A==C comparisons, 0 disagreements.
+  Sabotage-validated live (`\d`'s `[0-9]` -> `[0-8]`, reverted): 2 of
+  14,300 A==B cells fire, naming the exact byte and the subject
+  containing it. Three populations SKIPPED and NOTED rather than
+  compared, none silently: `DEFK_TEXTFN` rows (no splice-ready text,
+  needs byte-valued AST introspection — a real follow-on, not folded
+  into this landing); `PCREC_BUILT_NO` rows (`\R`: a real row with no
+  producer yet — D65's own classifier decides, never a guessed module
+  list); rows with more than one `DEF_ALWAYS` entry (the 14-name POSIX
+  family sharing one row and one fixed `syntax` example — found live,
+  before the skip existed: `pcrec_def_resolve`'s answer for it is
+  entry 1, "alnum", not the "alpha" its `syntax` prints, so the naive
+  pairing compared two different constructs and called the mismatch a
+  finding). See `tests/registry/CLAUDE.md`'s own entry for the full
+  mechanism and scoping record.
 - **[DD-11.4] The recursion guard, un-parked** — §3 item 5: the synthetic
   second `\w` row behind a never-true flag. No longer blocked on Unicode.
 - **[DD-11.4b] The 9 base-tier literal escapes** — new minimal `RS_BASE`

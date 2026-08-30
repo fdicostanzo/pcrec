@@ -27,7 +27,12 @@
  * bitmap back as a literal `\xHH`) that is a distinct enough sub-problem
  * from the option-matrix work this pass covers to be its own follow-on.
  *
- * SCOPE, second: the 14-name POSIX class-name family shares ONE row
+ * SCOPE, second: UNBUILT rows (`\R`, module `misc` -- a real row with no
+ * producer yet) are likewise skipped and noted: `pcrec_construct_built_
+ * status` (D65) says so, never a hand-guessed module-name list, and there
+ * is no shipped Pattern A to compile for one regardless of `--features`.
+ *
+ * SCOPE, third: the 14-name POSIX class-name family shares ONE row
  * (`[[:alpha:]]`'s row carries all 14 as separate DEF_ALWAYS entries,
  * selected by which NAME LITERAL appears in the probe text, never by
  * option state). `pcrec_def_resolve`'s first-applicable-wins walk over an
@@ -181,7 +186,9 @@ static void one_state(const RegRow *r, bool multiline, bool nocap)
      * returns — which is MORE faithful to "through the real tag
      * evaluator" than hand-setting a field would have been, since the
      * option-setting mechanism itself (mod_modifiers.c) is exercised too. */
-    const char *seed = multiline ? "(?m)a" : nocap ? "(?n)a" : "a";
+    /* volatile: read after a potential longjmp below (-Wclobbered,
+     * src/core/compile.c's [SEL-1] precedent for the identical warning). */
+    const char *volatile seed = multiline ? "(?m)a" : nocap ? "(?n)a" : "a";
     Ctx cx;
     pcrec_options defo;
     memset(&cx, 0, sizeof cx);
@@ -249,6 +256,69 @@ int main(void)
         for (size_t i = 0; i < n; i++) {
             const RegRow *r = &rows[i];
             if (!r->definitions) continue;
+
+            /* An UNBUILT row (e.g. \R, module `misc`: a real registry row
+             * with no producer yet, definitions_table.md's own "the table
+             * may carry an unbuilt row's definition as data before any
+             * producer exists" precedent) has no Pattern A to compile at
+             * all -- `--features all` opens the gate but the port still
+             * has nothing to say. Comparing against a construct that
+             * cannot be shipped is vacuous, not a finding; skip and note,
+             * DEFK_TEXTFN's own precedent. D65's own derived classifier
+             * (`pcrec_construct_built_status`) is the one true answer,
+             * never re-guessed from the module name.
+             *
+             * PCREC_BUILT_NA (base-tier rows: `^`, the literal escapes,
+             * the plain capturing group, ...) is NOT a reason to skip --
+             * it means "the built/unbuilt question does not apply", not
+             * "cannot compile"; base grammar is always available. Only a
+             * real PCREC_BUILT_NO stops this cell existing. */
+            PcrecBuiltStatus bstat = pcrec_construct_built_status(r);
+            if (bstat == PCREC_BUILT_NO) {
+                fprintf(stderr, "NOTE: %s: row is `unbuilt` -- no shipped "
+                        "Pattern A exists to compare against, skipping\n",
+                        r->syntax);
+                n_deferred++;
+                continue;
+            }
+            if (bstat == PCREC_BUILT_DEFECT) {
+                fprintf(stderr, "NOTE: %s: pcrec_construct_built_status "
+                        "reports DEFECT -- registry_check.c's own defect "
+                        "assertion owns this, skipping here\n", r->syntax);
+                n_deferred++;
+                continue;
+            }
+
+            /* The 14-name POSIX class-name family shares ONE row whose
+             * `syntax` is a FIXED example ("[[:alpha:]]") that does NOT
+             * correspond to entry[0] -- `pcrec_def_resolve`'s first-
+             * applicable-wins walk over an all-DEF_ALWAYS list returns
+             * entry[0] regardless of what the row's own printed example
+             * says, and entry[0] here is "alnum", not "alpha" (the
+             * array's own declared order, registry.c's `posix_def[]`).
+             * Pairing `r->syntax` with `pcrec_def_resolve`'s answer would
+             * therefore compare TWO DIFFERENT CONSTRUCTS (alpha vs
+             * alnum) and call the mismatch a finding -- caught exactly
+             * this way on the first run of this generator. Detected
+             * generically (more than one DEF_ALWAYS entry on one row,
+             * the shape no other row in the table has) rather than by
+             * naming this row specifically, and skipped for the same
+             * reason the file header already excludes the other 13
+             * names: no per-entry name field exists to construct a
+             * correct Pattern A from, and this family is covered
+             * elsewhere (structurally: definitions_check.c; behaviourally
+             * against libpcre2: PC-4's own POSIX sweep). */
+            int n_always = 0;
+            for (const RegDef *d = r->definitions; d->kind != DEFK_END; d++)
+                if (d->tag == DEF_ALWAYS) n_always++;
+            if (n_always > 1) {
+                fprintf(stderr, "NOTE: %s: %d DEF_ALWAYS entries on one row "
+                        "(a finite-name family sharing a fixed `syntax` "
+                        "example, POSIX's own shape) -- skipping, see file "
+                        "header\n", r->syntax, n_always);
+                n_deferred++;
+                continue;
+            }
 
             bool has_ml = false, has_nc = false;
             for (const RegDef *d = r->definitions; d->kind != DEFK_END; d++) {

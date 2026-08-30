@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# tests/registry/run_definitions_oracle.sh — [DD-11.3]'s option-matrix
+# self-oracle (definitions_table.md §3 item 4, the manager's brief): per
+# row, over the option matrix (multiline x nocap) through the REAL tag
+# evaluator, does the table's resolved definition (Pattern B) agree with
+# the row's own shipped construct (Pattern A) -- and does Pattern A agree
+# with libpcre2. run_pc4.sh's own shape, one table over: a cell generator
+# (definitions_oracle_gen, linking libpcrec.a), a per-cell pcrec-compile-
+# and-run sweep (two prefixes in one binary, possdiff_driver.c's shape),
+# and a comparator that also drives libpcre2 directly (definitions_oracle_
+# check.c, pc4_check.c's own shape).
+#
+# SKIPS LOUDLY without libpcre2 (probed FIRST, PC-3/PC-4's own convention)
+# for the A==C leg ONLY -- A==B needs no external oracle and is not
+# skippable; a box with no libpcre2 still gets the self-consistency half.
+#
+# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default nproc/2),
+#   GENCFLAGS (SAN-1, default -O0 -std=gnu11), SANFLAGS (SAN-1)
+
+set -u
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="registry"
+PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+CC="${CC:-gcc}"
+KEEP="${KEEP:-0}"
+GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
+if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
+SANFLAGS="${SANFLAGS:-}"
+ncpu="$(nproc 2>/dev/null || echo 2)"
+JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
+
+WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-definitions-oracle.XXXXXX")"
+cleanup() {
+    if [ "$KEEP" = "1" ]; then echo "run_definitions_oracle.sh: KEEP=1, kept: $WORKDIR" >&2
+    else rm -rf "$WORKDIR"; fi
+}
+trap cleanup EXIT
+
+# ---- build the generator and the comparator; the comparator doubles as
+#      the oracle probe for the A==C leg -------------------------------
+if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
+        -I "$ROOT_DIR/lib" -I "$ROOT_DIR/src" $SANFLAGS \
+        -o "$WORKDIR/gen" "$SCRIPT_DIR/definitions_oracle_gen.c" \
+        "$ROOT_DIR/build/libpcrec.a"; then
+    echo "FAIL: definitions-oracle: definitions_oracle_gen.c does not build" >&2
+    exit 1
+fi
+if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
+        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" $SANFLAGS \
+        -o "$WORKDIR/check" "$SCRIPT_DIR/definitions_oracle_check.c" -ldl; then
+    echo "FAIL: definitions-oracle: definitions_oracle_check.c does not build" >&2
+    exit 1
+fi
+have_oracle=1
+if ! "$WORKDIR/check" --probe-oracle; then
+    have_oracle=0
+    echo "SKIP: definitions-oracle: libpcre2-8 runtime not found — the A==C" >&2
+    echo "SKIP: definitions-oracle: leg (pcrec's own construct vs libpcre2)" >&2
+    echo "SKIP: definitions-oracle: did not run. A==B (the table's own" >&2
+    echo "SKIP: definitions-oracle: self-consistency) still does." >&2
+fi
+
+# ---- generate the cells ---------------------------------------------------
+CELLS="$WORKDIR/cells.tsv"
+if ! "$WORKDIR/gen" > "$CELLS" 2> "$WORKDIR/gen.log"; then
+    echo "FAIL: definitions-oracle: cell generator exited nonzero" >&2
+    cat "$WORKDIR/gen.log" >&2
+    exit 1
+fi
+cat "$WORKDIR/gen.log" >&2
+ncells=$(wc -l < "$CELLS")
+if [ "$ncells" -lt 1 ]; then
+    echo "FAIL: definitions-oracle: 0 cells generated — the table is" >&2
+    echo "FAIL: definitions-oracle: populated but nothing reached this sweep" >&2
+    exit 1
+fi
+
+# ---- the sweep: (pattern A, pattern B) -> pcrec -> gcc -> run -------------
+mkdir -p "$WORKDIR/results"
+one_cell() {
+    local id="$1" pa="$2" pb="$3"
+    local d="$WORKDIR/c$id"
+    mkdir -p "$d"
+    # --features all: both Pattern A (module-gated constructs like \b, \R,
+    # the possessive suffix, (?m)/(?n)) and Pattern B (their core-syntax
+    # substitutions, which can themselves use gated constructs like
+    # lookaround's (?=...)) need every module open, PC-4's own
+    # `--features classes` precedent one gate wider.
+    if ! pcrec_run "$PCREC" --features all -p pa -o "$d/pa.c" -- "$pa" \
+            > "$d/pa.log" 2>&1; then
+        echo "REFUSED-A" > "$WORKDIR/results/$id"
+        return 0
+    fi
+    if ! pcrec_run "$PCREC" --features all -p pb -o "$d/pb.c" -- "$pb" \
+            > "$d/pb.log" 2>&1; then
+        echo "REFUSED-B" > "$WORKDIR/results/$id"
+        return 0
+    fi
+    if ! gen_cc "definitions-oracle cell $id" "$CC" $GENCFLAGS \
+            -I "$d" -I "$SCRIPT_DIR" \
+            -o "$d/t" "$SCRIPT_DIR/definitions_oracle_driver.c" \
+            "$d/pa.c" "$d/pb.c"; then
+        printf '%s\n' "$GEN_CC_LOG" > "$d/cc.log"
+        echo "GCC-FAILED" > "$WORKDIR/results/$id"
+        return 0
+    fi
+    gen_run "definitions-oracle cell $id" "$d/t" > "$WORKDIR/results/$id"
+}
+
+running=0
+while IFS=$'\t' read -r id pa pb _desc; do
+    one_cell "$id" "$pa" "$pb" &
+    running=$((running + 1))
+    if [ "$running" -ge "$JOBS" ]; then wait -n || true; running=$((running - 1)); fi
+done < "$CELLS"
+wait
+
+# A cell whose result file says REFUSED-A/REFUSED-B/GCC-FAILED never
+# produced driver output for definitions_oracle_check.c to read — that is
+# a harness defect (both Pattern A and Pattern B are meant to be
+# ALWAYS-COMPILABLE core-syntax text) and must fail loudly rather than
+# silently shrinking the comparison.
+bad=0
+for f in "$WORKDIR"/results/*; do
+    head1=$(head -c 32 "$f")
+    case "$head1" in
+        REFUSED-A*|REFUSED-B*|GCC-FAILED*)
+            id="$(basename "$f")"
+            pa_pb=$(awk -F'\t' -v want="$id" '$1==want{print $2" / "$3}' "$CELLS")
+            echo "FAIL: definitions-oracle: cell $id ($pa_pb) did not" >&2
+            echo "FAIL: definitions-oracle:   compile/link/run: $head1" >&2
+            bad=$((bad + 1))
+            ;;
+    esac
+done
+if [ "$bad" -gt 0 ]; then
+    echo "FAIL: definitions-oracle: $bad of $ncells cells failed to" >&2
+    echo "FAIL: definitions-oracle: produce comparable output" >&2
+    exit 1
+fi
+
+# ---- the comparison --------------------------------------------------------
+echo "definitions-oracle: $ncells cells generated (oracle: $([ "$have_oracle" = 1 ] && echo available || echo unavailable))"
+"$WORKDIR/check" "$CELLS" "$WORKDIR/results"
+exit $?
