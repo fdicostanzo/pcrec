@@ -1544,6 +1544,18 @@ append-only or historical records.
   smaller DFA scans quicker. §4 carries the bar swept at ten values (a
   44-wide plateau, not a threshold) and cites the check that pins it; §8's
   predictions are all held or beaten.
+  **RULING B (2026-08-29) REVERSED ITS §4, and the note says so at the top of
+  that section rather than deleting it.** The knee this row was built on cost a
+  base-tier corpus cell its answer — `(a{1,3}){65}` went from 0.00 s to a
+  13.34 s step-budget exhaustion — so Frank re-ruled the default to
+  fallback-only: the EXACT prefilter by default, the collapsed one only as a
+  ladder attempt when a DFA state cap overflows or an emitted-size cap refuses
+  the artifact. §4 and §5 are marked as describing a REVERSED decision (their
+  measurements are real; what changed is what they were used for), §10a carries
+  the ruling chain, and §10b records Frank's follow-up — that D83/[ENG-PGO]'s
+  exemplar pass could decide this per target, which is the one place a
+  per-pattern answer would be sound, since the right language depends on the
+  SUBJECTS and not on the pattern.
 - `opt4_impl/` — the [OPT-4] STEP 3 lane's probes: the nothing-moves survey
   over pcrec-bench's own 18 patterns (54 emits, all byte-identical). Its
   CLAUDE.md leads with the two traps this lane hit — comparing artifacts
