@@ -384,6 +384,12 @@ extract_md_table_values() {
 # line matching PATTERN (extended regex). Used for the two macros whose
 # value set is a bare pair of string literals in prose/code rather than a
 # markdown table (`RX_VM_PREFILTER`, `RX_ENGINE`).
+#
+# PASS A WORD-BOUNDED PATTERN (`\<NAME\>`). This function harvests every
+# lowercase literal on a MATCHING LINE, so a pattern that also matches a
+# prefixed sibling (`RX_VM_PREFILTER_LANG`, `RX_ENGINE_WHY`, `RX_ENGINE_SEL`)
+# silently imports that macro's value set into this one's. Both call sites are
+# bounded; the unbounded one cost a red battery on 2026-08-29.
 extract_line_values() {
     local file="$1" pattern="$2"
     grep -E "$pattern" "$file" | grep -oE '"[a-z]+"' | tr -d '"' | sort -u
@@ -462,8 +468,16 @@ check_value_set "RX_DFA_MATCH" \
     "$(dump_stamp_vals RX_DFA_MATCH)" \
     ""
 
+# [OPT-4] THE PATTERN IS WORD-BOUNDED, as `RX_ENGINE`'s below always was.
+# The bare `RX_VM_PREFILTER` matched `RX_VM_PREFILTER_LANG` too — a DIFFERENT
+# macro with its OWN value set — and harvested its `"exact"` as one of this
+# macro's, so the check reported a spec value `--list-axes` names on no row.
+# The defect was in the extractor, not in the spec or the dump: `RX_ENGINE`'s
+# call site was already `\<...\>` for exactly this hazard (`RX_ENGINE_WHY`),
+# and this one had simply never had a prefixed sibling until 2026-08-29.
+# `RX_ENGINE_SEL` landed the same day and would have done the same thing here.
 check_value_set "RX_VM_PREFILTER" \
-    "$(extract_line_values "$MATCHAPI" 'RX_VM_PREFILTER')" \
+    "$(extract_line_values "$MATCHAPI" '\<RX_VM_PREFILTER\>')" \
     "$(dump_stamp_vals RX_VM_PREFILTER)" \
     ""
 

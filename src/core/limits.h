@@ -84,6 +84,48 @@ enum {
     PCREC_MAX_DFA_STATES_TABLE = 32000,   /* table engine; must fit in short */
     PCREC_MAX_TABLE_ENTRIES    = 2000000, /* states*ncls bound (~12 MB source) */
 
+    /* [OPT-4] (2026-08-29, K39) THE KNEE ABOVE WHICH THE HYBRID'S PREFILTER IS
+     * BUILT FROM THE COUNT-COLLAPSED LOWERING instead of the exact one
+     * (docs/design/prefilter_count_independence.md §4). It is compared against
+     * `Nfa.n` of the EXACT forward machine, at `compile.c`'s build gate, and
+     * only when that machine's sole customer is the VM's prefilter.
+     *
+     * IT IS NOT A TUNING KNOB, IT IS WHERE THE TWO POPULATIONS SEPARATE.
+     * MEASURED over the 1,388 corpus artifacts that carry `prefilter=hybrid`
+     * (docs/dev/artifact_size_log.tsv joined to the `pattern` line each row
+     * names): the 1,144 with NO counted repeat of replication factor >= 2 run
+     * 3 states minimum, 6 median, 10 at p90 and **20 at the maximum** — the
+     * whole population with nothing to collapse is under any budget in range,
+     * which is what makes this a rule about counts rather than about size. The
+     * 244 that DO carry one run 19 median and 107 at p90, so 128 sits above
+     * both distributions and fires only where the COUNT is what made the
+     * machine big: 23 artifacts at 128, and zero of them factor < 2.
+     *
+     * IT IS CHOSEN ON A PLATEAU, NOT ON A THRESHOLD, which is the reason to
+     * trust it. Swept at 64/96/112/120/128/144/160/192/256/512 the over-budget
+     * count runs 41/25/24/23/23/23/23/22/22/14 — FLAT at 23 for every value in
+     * 117..160, a 44-wide interval with this one near its middle, so no single
+     * added or removed corpus pattern tips the decision. The factor-< 2 column
+     * is zero at EVERY budget swept, not only at this one. The plateau's edges
+     * are the corpus's own gap: the counted-repeat artifacts between 64 and
+     * 128 all sit at or below 116 exact NFA states and the next one up is at
+     * 161. At this value the largest factor-> = 2 artifact still built from
+     * the exact language determinizes to a 42-state reverse DFA.
+     *
+     * THE NUMBER IS PINNED BY A CHECK, not only by this comment:
+     * tests/codegen/run_prefilter_collapse.sh §5 prints the census and asserts
+     * the two properties above (zero collapsed artifacts of factor < 2, with a
+     * non-vacuity control; and the collapsed population inside a band). Its
+     * population differs from this comment's, so its number is 20 rather than
+     * 23 — see that section's own note before reconciling them.
+     *
+     * WHY THE EXACT NFA IS BUILT AND MEASURED RATHER THAN PREDICTED FROM THE
+     * AST. A predictor would be a second statement of `compile_ast`'s own
+     * `A_REP` lowering, and the two can drift (D24). Building costs one NFA on
+     * the 23 artifacts over the knee; determinization, the expensive step,
+     * never runs on the machine that is discarded. */
+    PCREC_PREFILTER_EXACT_NFA_STATES = 128,
+
     /* [M4.7b] K7's SECOND half: how many NFA-state-list ELEMENTS the priority
      * subset construction may intern, summed over every machine one compile
      * builds (forward and reverse are charged together because both are live

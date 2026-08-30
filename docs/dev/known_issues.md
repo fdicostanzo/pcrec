@@ -3038,7 +3038,7 @@ undeclared `_re`/`_rv`) while the DFA and 1-char cells correctly stay
 green. `make test-codegen` and `make test-cli` green afterward
 (287/287 CLI cases, `make strict` clean).
 
-## K39 — OPEN (2026-08-26, found by the [ENG-BREP] size ceiling going red on the abi-6 tree) — the VM HYBRID's inlined DFA prefilter SCALES WITH A BOUNDED-REPEAT COUNT: `((a)|b){0,4000}c` emits 1,994 lines at the default vs 869 for `{0,400}`, while the VM body itself is count-independent (573 lines at any count with the prefilter off)
+## K39 — CLOSED 2026-08-29 ([OPT-4], lane opt4/opt4b) — the VM HYBRID's inlined DFA prefilter SCALES WITH A BOUNDED-REPEAT COUNT: `((a)|b){0,4000}c` emits 1,994 lines at the default vs 869 for `{0,400}`, while the VM body itself is count-independent (573 lines at any count with the prefilter off)
 
 **Symptom.** MEASURED at 32890e2 (before the day's scaffolding): default
 engine (auto = VM + hybrid prefilter) `{0,400}` 869 lines, `{0,4000}`
@@ -3067,6 +3067,49 @@ count-independent again and shrink compile time; the identity gates
 (answers unchanged; a prefilter is answer-identity-preserving by D46's
 rule) are the control. A loop item: charter from a bench row that shows
 the cost, per D77.
+
+---
+
+**CLOSED 2026-08-29 by [OPT-4], and this is what closed it.** The fix candidate
+above is what was built, in the second of its two forms: above a measured
+budget the hybrid's forward AND reverse machines are built from the
+count-collapsed lowering — every `A_REP` with `rmin > 1 || rmax > 1` as
+`X{min(rmin,1),}` — a superset whose soundness proof never mentions the count
+(`docs/design/prefilter_count_independence.md` §3). It acts on the LOWERING,
+upstream of both directions, because this issue's own one-line diagnosis
+undercounted the population: for `((a)|b){0,400}c` the `Sigma*` wrap absorbs
+the bound and only the REVERSE machine carries the count, while
+`foo((a)|b){0,1000}bar` carries it in both, so a fix confined to one direction
+would have missed half the corpus.
+
+**THE SYMPTOM, RE-MEASURED at the close.** This issue was filed on `{0,400}`
+against `{0,4000}` at 869 and 1,994 lines. At the default today both artifacts
+are **1,026 lines — delta 0** — and in bytes 22,728 against 22,731 code bytes,
+the three-byte difference being the literal `400` against `4000` in the emitted
+prose. With `-fno-prefilter-collapse` the same pair is 1,225 against 3,025
+lines, which is this issue's defect intact and is the control proving the
+equality above is the collapse rather than an artefact.
+
+**Held by a check, not by this entry.** `tests/codegen/run_prefilter_collapse.sh`
+asserts the count-independence on the DEFAULT artifact (the one a user gets)
+with its failing-direction control, the stamp against BYTES over seven
+witnesses, the H3 ceiling consequence on every collapsed corpus artifact, the
+macro's IFF over 2,772 patterns, and a form census that bands the population on
+both sides. 36 assertions, all green at d4d439e.
+
+**Costs, measured rather than waived** (`docs/spec/tuning.md` §2.17's table and
+the design note §7): the collapse buys size and compile time and it PAYS in
+candidate starts — the named worst case, `((a)|b){0,400}c` on 100,000 `a` then
+`c`, runs 9.24 s / 99,601 VM attempts collapsed against 0.000011 s / 1 attempt
+exact, same answer. `-fno-prefilter-collapse` recovers today's artifact byte
+for byte, and `-fprefilter-collapse` forces the collapse below the knee.
+
+**What this does NOT close.** The artifact is count-BOUNDED at the default, not
+literally count-independent: below `PCREC_PREFILTER_EXACT_NFA_STATES` an
+artifact keeps its exact prefilter and its size still moves with the count —
+but it is small there by the same measurement that set the knee, and
+`-fprefilter-collapse` reaches the literal form. The note's §4 says so in those
+words rather than claiming the stronger result.
 
 ## K40 — CLOSED 2026-08-28 (lane sel1) — under `--engine=auto`, a DFA build that overflows a cap REFUSES the whole compile instead of falling back to the VM, even when the pattern's own DFA-erasure is only being built as the VM's auto-selected PREFILTER MERGE-REVIEW LANDING FIX (manager, 2026-08-28, on f75a33f): the retry left the refused build's diagnostic in `err->msg`, so a successful fallback returned 0 beside "pattern too complex…" (library probe: rc=0, msg set); `compile_driver` now clears `err` on the retry path — probe rc=0, msg empty.
 
@@ -3115,7 +3158,15 @@ the same reason the backreference/call routes needed one ([M6.5.2]/[DD-14
 wave E]'s precedent): without it, a dropped auto-selected-prefilter's `;
 prefilter` line falsely named `--engine=vm`. Verified: the witness now
 compiles under `auto` (`RX_ENGINE "vm"`, `RX_ENGINE_WHY "dfa overflowed:
->32000 states..."`, `RX_VM_PREFILTER "none"`); `--engine=dfa` and
+>32000 states..."`, `RX_VM_PREFILTER "none"`
+— **`"none"` was true when this was written and is not any more: [OPT-4] STEP 3
+(2026-08-29) put a rung BEFORE the drop, so this same witness now stamps
+`RX_VM_PREFILTER "hybrid"` / `LANG "count-collapsed"` /
+`LANG_WHY "dfa overflow retry, exact nfa 462"` and runs 2.4-3.4x faster on the
+bench's throughput subjects. The rest of this entry is unaffected: the ENGINE
+fallback K40 describes is exactly what still happens, and the drop remains the
+outcome when the collapsed machine overflows too or when
+`-fno-prefilter-collapse` is passed. See docs/spec/tuning.md §2.5**); `--engine=dfa` and
 `--engine=vm -fprefilter` still refuse with the unchanged diagnostic;
 `tests/base/k18_cost_gates.rxt`'s fuzz-found witness (a DIFFERENT pattern
 that hits the same cap, with a live capture so the VM was already chosen
@@ -3128,7 +3179,7 @@ showed no leak/UB on the retry path. The full `make test` battery was not
 run by this lane (box rule: one heavy suite at a time; flagged for the
 manager to run at merge).
 
-## K41 — RE-SCOPED, NOT CLOSED (2026-08-29, [ART-SIZE] STEP 2) — one witness is FIXED, the other is REFUSED and its mechanism belongs to [OPT-4]
+## K41 — CLOSED 2026-08-29 ([OPT-4] STEP 3, lane opt4b) — both witnesses now compile under the DEFAULT caps; the entry below is the [ART-SIZE] disposition it was closed from
 
 **[ART-SIZE]'S DISPOSITION, read this before the original entry below.** The
 emitted-size caps and the unroll ladder (D84; `docs/design/
@@ -3149,7 +3200,51 @@ mechanisms, and the distinction is the point:
   budget) but it is a REFUSAL, and the pattern that produced it is still a
   pattern pcrec cannot compile.
 
-**So K41 is re-scoped rather than closed.** Its original fix direction — "a
+**RE-CHECKED AND CLOSED 2026-08-29 per this row's own revisit clause, from a
+gate RUN.** [OPT-4] shrank witness 2's prefilter, which is exactly the trigger
+the clause named, and the outcome is measured rather than predicted:
+
+- **Witness 2 is ACCEPTED under the DEFAULT caps.** Its exact forward NFA is
+  3,423 states against a budget of 128, so the prefilter is built from the
+  count-collapsed language and the artifact goes from **671,039 code bytes
+  (REFUSED)** to **152,302 ACCEPTED** — 189,701 total against the 1,000,000
+  limit — stamping `RX_ENGINE "vm"`,
+  `RX_VM_PREFILTER_LANG "count-collapsed"`,
+  `RX_VM_PREFILTER_LANG_WHY "exact nfa 3423 > 128"`. gcc `-O2 -c` falls from
+  **66.92 s to 2.04 s** (99 MB), comfortably inside D45's budget. The design
+  note predicted ~158,601 code bytes before the code existed; the actual is
+  within 4 %.
+- **The mechanism is confirmed, not merely correlated.** Compiling the same
+  witness with `-fno-prefilter-collapse` still REFUSES, with the identical
+  671,039-byte message. The prefilter was the cost, the collapse is what
+  removed it, and the deny flag reproduces the defect on demand.
+- **It is not just smaller, it is RIGHT.** With witness 2 back in the fuzz
+  gate's accept/compare population, `content divergences` and `accept/reject
+  divergences` are both still **0** across all 15 of its subjects. A superset
+  prefilter that had broken H1 (sound rejection) or H2 (start is a lower
+  bound) would surface there and essentially nowhere else in the suite.
+
+**THE GATE PINS MOVED, RE-DERIVED FROM A RUN** (not from the arithmetic that
+predicted them), and witness 2 leaves the oversize/refusal accounting by a
+THIRD route — not fixed by a smaller body like witness 1, not refused like its
+own previous state, but compiled: `both accept` 182 -> **183**,
+`emitted-size cap` 1 -> **0**, `subject pairs compared` 2730 -> **2745**,
+`oracle inconclusive` 3 -> **3** (unchanged). The `emitted-size cap` bucket is
+pinned at 0 rather than deleted: it and its diversion still exist and still
+matter, and a pin of 0 is the statement that at this fixed seed nothing
+currently refuses — a fact that can regress.
+
+**What remains true and is NOT closed by this.** Witness 1's shape (counter-rung
+body replication) is fixed by [ART-SIZE]'s ladder, not by this row, and the
+underlying VM lowering still replicates for nested bounded repeats — the caps
+are what stand between that and a gcc the user waits on. K41 is closed because
+both of its witnesses compile within the documented budgets, not because the
+lowering became cheap.
+
+---
+
+**The [ART-SIZE] disposition, kept because it is what the close was measured
+from.** K41 was re-scoped rather than closed at that point: Its original fix direction — "a
 VM-side emitted-PROGRAM-SIZE cap in `src/core/limits.h`, refusing before
 emission" — is built, and the caps refuse just before the file is written
 rather than before emission (there is no pre-emission node count; see the

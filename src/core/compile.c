@@ -356,7 +356,7 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * lower ladder rung plus one FINAL attempt that re-emits the chosen K.
  * DERIVED from the ladder rather than hand-typed, so adding a rung cannot
  * silently truncate the search. */
-enum { COMPILE_MAX_ATTEMPTS = 2 + SIZE_TERM_LADDER_N + 1 };
+enum { COMPILE_MAX_ATTEMPTS = 3 + SIZE_TERM_LADDER_N + 1 };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -502,6 +502,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * through. `overflow_why` needs no such mark; an array is never
      * register-allocated. */
     volatile bool dfa_disabled = false;
+    /* [OPT-4] the [SEL-1] ladder's middle rung (see `Ctx`'s field comment).
+     * `volatile` for the same `-Wclobbered` reason `dfa_disabled` is. */
+    volatile bool collapse_retry = false;
+    /* [OPT-4] the failing attempt's ROLE for the DFA, for `<PREFIX>_ENGINE_SEL`
+     * (see `Ctx.dfa_was_engine`). Recorded where it is still knowable. */
+    volatile bool dfa_was_engine = false;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
@@ -584,6 +590,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * will not attempt (compile.c's build gate and select_engine.c's
          * prefilter derivation both skip it — see `forces_dfa_overflow`). */
         cx.dfa_disabled = dfa_disabled;
+        /* [OPT-4] the middle rung, seeded the same way and NEVER without
+         * `dfa_disabled` (the ladder below sets them together). */
+        cx.prefilter_collapse_retry = collapse_retry;
+        cx.dfa_was_engine = dfa_was_engine;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
@@ -695,13 +705,54 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 }
                 continue;
             }
-            bool retry = !dfa_disabled && cx.dfa_overflowed &&
-                         defo.engine == PCREC_ENGINE_AUTO &&
-                         !(defo.flags & PCREC_FORCE_PREFILTER);
-            if (retry) {
+            /* [SEL-1] + [OPT-4]: ONE retry ladder with TWO rungs, in the
+             * SAME attempt loop and around the SAME single `setjmp`. The
+             * eligibility test is shared — an auto-mode DFA overflow with no
+             * `-fprefilter` — and only what the next attempt is TOLD differs:
+             *
+             *   rung 1  dfa_disabled + prefilter_collapse_retry
+             *           the DFA stops being the ENGINE, but the prefilter
+             *           SURVIVES and is built from the count-collapsed
+             *           language. [OPT-4]: the premise that made rung 2 the
+             *           only option — "rebuilding it would be the identical
+             *           machine that just overflowed" — is false of that
+             *           language (design note §6).
+             *   rung 2  dfa_disabled alone
+             *           today's behaviour: no prefilter at all. Reached only
+             *           when the COLLAPSED machine overflows too, which is the
+             *           case rung 1 cannot help.
+             *
+             * `!dfa_disabled` on the first and `!collapse_retry` on the second
+             * are what make this a LADDER rather than a loop: each rung is
+             * offered at most once, so the whole fallback is bounded at two
+             * extra builds however many caps a pattern manages to overflow.
+             *
+             * Rung 1 is skipped outright when the axis is denied
+             * (`-fno-prefilter-collapse`), because taking it would build the
+             * collapsed machine for a caller who asked for exactly the
+             * opposite; such a caller falls straight to rung 2 and gets
+             * today's artifact. */
+            const bool ovf_eligible = cx.dfa_overflowed &&
+                                      defo.engine == PCREC_ENGINE_AUTO &&
+                                      !(defo.flags & PCREC_FORCE_PREFILTER);
+            const bool retry_collapse =
+                ovf_eligible && !dfa_disabled &&
+                !(defo.flags & PCREC_NO_PREFILTER_COLLAPSE);
+            const bool retry_drop =
+                ovf_eligible && !(dfa_disabled && !collapse_retry);
+            if (retry_collapse || retry_drop) {
                 memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
+                /* [OPT-4] READ BEFORE `job_cleanup`, and only on the FIRST
+                 * overflow: `dfa_disabled` false means this attempt still had
+                 * the DFA in selection, so `fit.chosen` is the role it was
+                 * about to play. On a later rung the DFA is excluded outright
+                 * and the answer would always be ENGM_VM — which is why this
+                 * is latched rather than recomputed. */
+                if (!dfa_disabled && cx.job)
+                    dfa_was_engine = cx.job->fit.chosen == ENGM_DFA;
                 job_cleanup(&cx);
                 dfa_disabled = true;
+                collapse_retry = retry_collapse;
                 /* The refused build wrote its diagnostic into `err`; the
                  * retry is a fresh compile and must start with the same
                  * clean channel the first attempt had, or a successful
@@ -858,12 +909,109 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * second attempt at the PIPELINE with that automaton already known
          * to be unbuildable. */
         if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
-            pcrec_build_nfa(&cx, root, &cx.job->nfa, false);
+            pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
+            /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
+             * prefilter_count_independence.md §4). The decision sits HERE,
+             * between the exact build and everything downstream, because it
+             * needs a number only the exact build has and nothing after this
+             * point may see two machines.
+             *
+             * THE FIRST CONJUNCT IS THE WHOLE SAFETY ARGUMENT. `chosen !=
+             * ENGM_DFA` means these machines' ONLY customer is the VM's
+             * prefilter — a filter, which owes a sound rejection and a lower
+             * bound on the start and nothing else (§2 H1/H2, and `emit_vm.c`'s
+             * retry loop re-derives from every candidate it is handed). When
+             * the DFA is the ENGINE its machine IS the answer, and a superset
+             * would be a miscompile; that case never reaches this branch.
+             *
+             * THE SECOND ASKS WHETHER THERE IS ANYTHING TO COLLAPSE, so a
+             * pattern with no counted repeat never pays for a second build
+             * that would produce the identical machine. THE THIRD is the
+             * measured knee: below it the exact language is kept, because it
+             * is a strictly sharper filter and the artifact is small there
+             * anyway (limits.h states the two distributions the number sits
+             * between). `PCREC_FORCE_PREFILTER_COLLAPSE` drops the third
+             * conjunct — not the first two, which are correctness and not
+             * policy — which is what makes the emitted size count-INDEPENDENT
+             * rather than merely count-bounded, and what gives this axis its
+             * force half for `make test-axes`.
+             *
+             * The rebuild is into the SAME `Nfa`: `pcrec_build_nfa` resets
+             * `n` and `nst` reuses the Job-owned array, so the discarded exact
+             * machine costs no allocation and — the expensive half —
+             * determinization never runs on it. */
+            const unsigned pfc_flags = cx.opt->flags;
+            const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
+            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0
+                                || cx.prefilter_collapse_retry;
+            const bool pfc_rep   = pcrec_has_collapsible_rep(root);
+            const bool pfc_over  =
+                cx.job->nfa.n > PCREC_PREFILTER_EXACT_NFA_STATES;
+            bool collapse = cx.job->fit.chosen != ENGM_DFA
+                         && !pfc_deny
+                         && pfc_rep
+                         && (pfc_force || pfc_over);
+            /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
+             * from the SAME four conjuncts (D81; `internal.h`'s `PFLW_*`).
+             * The alternative — letting the emitter re-derive a reason from
+             * the flags — is the drift `EngineFit.prefilter_collapsed`'s own
+             * comment already rules out: a build that ASKED for the collapse
+             * and did not get it must report what was BUILT.
+             *
+             * THE LADDER BRANCHES ON `collapse` FIRST, rather than re-walking
+             * the conjuncts in the gate's order, and that is what makes
+             * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed` a
+             * STRUCTURAL invariant instead of a property two expressions have
+             * to keep agreeing on. It also covers the gate's first conjunct
+             * (`chosen != ENGM_DFA`) for free: a DFA artifact takes no VM
+             * prefilter decision, emits no stamp, and lands in the
+             * non-collapsing half rather than in a reason it never reached.
+             *
+             * `PFLW_FORCED` is reported only where the force flag was
+             * NECESSARY. An above-the-knee pattern compiled with
+             * `-fprefilter-collapse` stamps `PFLW_OVER`, because the flag
+             * changed nothing there and the artifact reports what was BUILT
+             * rather than what was asked — the same rule `prefilter_collapsed`
+             * follows on the vacuous-force case.
+             *
+             * `PFLW_DENIED` IS REPORTED ONLY WHERE THE DENIAL CHANGED WHAT
+             * WAS BUILT — that is, where the collapse would have fired but for
+             * the flag. This is not a nicety, it is the same defect [OPT-4]
+             * already fixed once at `emit_dfa.c`'s `strategy_denials` mask:
+             * `-fno-prefilter-collapse` promises to recover today's artifact
+             * BYTE-FOR-BYTE (docs/spec/tuning.md §2.17), and a reason string
+             * that changed length merely because the flag was PASSED would
+             * break that promise on every artifact the flag cannot act on.
+             * MEASURED as a defect before it was a comment: the first version
+             * of this ladder said `denied` unconditionally and moved 13 bytes
+             * on `((a)|b){0,3}c` and 11 on `a(b|c)+d`, caught by
+             * run_prefilter_collapse.sh §2's byte comparison.
+             *
+             * So a denied build below the knee stamps `"exact nfa 21 <= 128"`,
+             * exactly as the default build does, and only a denied build that
+             * was OVER the knee says so. It is the same rule as everywhere
+             * else in this change: the artifact reports what was BUILT, never
+             * what was asked.
+             *
+             * The exact NFA size is recorded on every path — including the
+             * paths that did not consult it — because a stamp that omits the
+             * number where it did not fire cannot be told from one where the
+             * measurement never happened. */
+            cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
+            cx.job->fit.prefilter_lang_why =
+                  collapse && cx.prefilter_collapse_retry ? PFLW_SEL1
+                : collapse              ? (pfc_over ? PFLW_OVER : PFLW_FORCED)
+                : !pfc_rep              ? PFLW_NO_REP
+                : (pfc_deny && pfc_over) ? PFLW_DENIED
+                                        : PFLW_UNDER;
+            if (collapse)
+                pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
+            cx.job->fit.prefilter_collapsed = collapse;
             if (!nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
                 /* D7 fast path: O(n) unanchored forward + reverse machines */
                 cx.job->engine = PCREC_ENG_UNANCH;
                 nfa_wrap_unanchored(&cx, &cx.job->nfa);
-                pcrec_build_nfa(&cx, root, &cx.job->rnfa, true);
+                pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                                 PCREC_MAX_DFA_STATES_TABLE,
                                 cx.job->nfa.start, false);

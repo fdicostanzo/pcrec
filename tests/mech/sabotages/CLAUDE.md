@@ -103,6 +103,28 @@ already taken.
   Copy anchors from `git show HEAD:<path>`, never from a live working-tree
   read, and never weaken the count check. The standing tripwire is
   `python3 scripts/m6read_check_sab_anchors.py`.
+- **…BUT `git show HEAD:` IS THE WRONG SOURCE WHEN YOU ARE THE ONE MOVING THE
+  LINE**, and the two rules above and below read as a contradiction until you
+  see which situation each is for. The rule above is for a re-anchor done on a
+  CLEAN tree: take the committed text so you cannot capture uncommitted noise.
+  When your own uncommitted change is what invalidated the anchor — you edited
+  the very expression a row anchors on — `git show HEAD:` hands you the text
+  you just replaced, and the anchor is stale the moment you commit.
+  `run_codegen_tests.sh`'s own `[SABANCHOR]` failure message says this in the
+  other direction ("never from `git show HEAD:<path>` alone once the working
+  tree has moved past HEAD"); both are right, for opposite trees. Re-derive
+  from whichever source is the text your change LEAVES BEHIND, then run the
+  tripwire.
+- **The tripwire checks that `SAB_BEFORE` is FINDABLE, not that `SAB_AFTER` is
+  VALID C.** Those are two claims and a re-anchor can break the second while
+  satisfying the first — re-indenting a multi-line `SAB_AFTER`, or dropping a
+  conjunct that moved into it, leaves the row resolving cleanly and failing to
+  build when it is finally applied. Apply the substitution to a scratch copy
+  and `gcc -fsyntax-only` it. [OPT-4] (2026-08-29) hit the anchor half of this
+  TWICE in one lane — S140 on `v.mrl_win`'s third conjunct, then S102/S165
+  when `fit.prefilter`'s clause went from one line to three — and both times
+  the staleness surfaced only from running the whole codegen group, never from
+  the scripts the change appeared to touch.
 - **A re-anchor is not a re-point.** It certifies the EDIT still applies and
   says nothing about whether the POPULATION still reaches it. That is what the
   reach fields are for.

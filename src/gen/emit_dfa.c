@@ -205,9 +205,35 @@ bool pcrec_artifact_has_dfa_scan(Ctx *cx)
     return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter;
 }
 
-void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine)
+/* [OPT-4] `<PREFIX>_ENGINE_SEL`'s value, from `EngineFit.engine_sel`. ONE
+ * spelling of each token, read by the stamp and by nothing else yet — when a
+ * second reader appears (an `rx_info` mirror, say) it calls this rather than
+ * re-listing the strings, which is the rule `dfa_scan_name` and friends above
+ * already follow. */
+const char *pcrec_engine_sel_name(Ctx *cx)
+{
+    switch (cx->job->fit.engine_sel) {
+    case ESEL_FORCED:               return "forced";
+    case ESEL_OVERFLOWED_DFA:       return "overflowed-dfa";
+    case ESEL_OVERFLOWED_PREFILTER: return "overflowed-prefilter";
+    case ESEL_COLLAPSED_PREFILTER:  return "collapsed-prefilter";
+    default:                        return "selected";
+    }
+}
+
+/* [OPT-4] `_ENGINE_SEL` rides THIS function rather than getting call sites of
+ * its own, for the reason stated above it: it is the second UNCONDITIONAL
+ * per-artifact stamp, on both engines, and two independent `sb_printf`s are
+ * two chances for the spelling to drift. It is emitted immediately after
+ * `_ENGINE` and BEFORE `_ENGINE_WHY` (which only the VM stamps), so the
+ * closed-value token and the prose sit together on the artifacts that have
+ * both and the token still appears alone on a DFA artifact — which is the
+ * whole point of it being unconditional. */
+void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine,
+                             const char *sel)
 {
     sb_printf(c, "#define %s_ENGINE \"%s\"\n", upper, engine);
+    sb_printf(c, "#define %s_ENGINE_SEL \"%s\"\n", upper, sel);
 }
 
 /* [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
@@ -1307,7 +1333,45 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * this row writes on a VM artifact is that struct field, which is above
      * the region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 11,\n");
+    /* [OPT-4] abi 11 -> 12 (D76): the PREFILTER'S LANGUAGE STAMP (K39;
+     * docs/design/prefilter_count_independence.md). SCAFFOLDING ONLY on every
+     * artifact that keeps the exact language, and a large PROGRAM-BYTE event
+     * on the few that do not — stating which kind it is, per artifact kind, is
+     * r37 A12's lesson:
+     *
+     *  - A DFA artifact gains NOTHING. Not one byte: the stamp is gated on
+     *    `fit.prefilter`, and a DFA artifact has no VM prefilter decision. It
+     *    moves here only because `.abi` is emitted by this shared function.
+     *  - A VM artifact with NO prefilter (`--engine=vm`, a backreference, a
+     *    linked call, [SEL-1]'s drop) likewise gains nothing but the version.
+     *  - A VM HYBRID gains TWO lines and nothing else — `#define
+     *    <PREFIX>_VM_PREFILTER_LANG "exact"` and its companion `#define
+     *    <PREFIX>_VM_PREFILTER_LANG_WHY "..."` (D81's `_WHY`, five values;
+     *    docs/spec/tuning.md §2.17) — on 2,855 of the corpus's 2,878
+     *    artifacts.
+     *  - A VM HYBRID ABOVE `PCREC_PREFILTER_EXACT_NFA_STATES` gains those two
+     *    lines reading `"count-collapsed"` / `"exact nfa N > 128"`, a SMALLER
+     *    inlined prefilter (different tables, different state counts), and
+     *    `<PREFIX>_VM_PRUNE_CEILING` moving `"prefilter-window"` ->
+     *    `"subject-end"` with the MRL clamp it names. MEASURED at 23 rows of
+     *    docs/dev/artifact_size_log.tsv (19 distinct patterns; the
+     *    2,772-pattern sweep in tests/codegen/run_prefilter_collapse.sh §5
+     *    counts 20 — the populations differ and each check floors its own).
+     *
+     * COMPARISON (A) IS STILL EXPECTED BYTE-IDENTICAL, INCLUDING ON THE
+     * COLLAPSED ARTIFACTS, and the reason is worth stating because the first
+     * draft of this comment predicted the opposite. Dropping the
+     * `prefilter-window` ceiling looks like a program change and is not one:
+     * `v.mrl_win` is read at three sites and all three — the stamp, the
+     * `--emit-ir` line, and the two `window_end = ...` BUILDERS — sit in
+     * `<prefix>_search` and its retry recompute, ABOVE `run_recursion_
+     * identity.sh`'s `prog_region` (`goto <p>_L0;` through `<p>_accept:`).
+     * The per-quantifier clamp reads `window_end` as a PARAMETER, so the
+     * number changes and the emitted program does not. MEASURED on
+     * `((a)|b){0,4000}c`: 116 region lines, byte-identical between the
+     * collapsed build and its `-fno-prefilter-collapse` twin. Comparison (B)
+     * compares whole files and is re-pinned in this same change, per D76. */
+    sb_puts(c,   "    .abi = 12,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1358,6 +1422,30 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
                                           PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
+                                          /* [OPT-4] the prefilter's LANGUAGE
+                                           * axis, on `PCREC_*_PREFILTER`'s own
+                                           * precedent one line up and for the
+                                           * mask's own reason: it selects a
+                                           * superset the VM verifies from, so
+                                           * it changes no answer, and
+                                           * `<PREFIX>_VM_PREFILTER_LANG` is
+                                           * where what the emitter DID is
+                                           * recorded.
+                                           *
+                                           * MEASURED as a defect before it was
+                                           * a comment: unmasked, passing
+                                           * `-fno-prefilter-collapse` moved 5
+                                           * bytes of `rx_info.flags` on EVERY
+                                           * artifact — including patterns with
+                                           * no counted repeat, where the flag
+                                           * cannot act at all — which is
+                                           * exactly the byte-identity property
+                                           * that makes the denied build usable
+                                           * as a ground truth. Caught by
+                                           * run_prefilter_collapse.sh §2 on
+                                           * its first run. */
+                                          PCREC_NO_PREFILTER_COLLAPSE |
+                                          PCREC_FORCE_PREFILTER_COLLAPSE |
                                           PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
                                           /* [OPT-1] the two-tier entry axis. It
                                            * changes no answer (the deep tier is
@@ -5144,7 +5232,7 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     sb_puts(c, "/* Engine: dfa */\n");
-    pcrec_emit_engine_stamp(c, upper, "dfa");
+    pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
     pcrec_emit_dfa_scan_stamps(cx, c, upper);
     /* [ENG-ABS] AXIS G IS STAMPED HERE AND NOT IN `pcrec_emit_dfa_scan_stamps`,
      * and the placement is the fact rather than a filing decision. That

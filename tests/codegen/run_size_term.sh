@@ -135,16 +135,43 @@ srcs=$(find "$ROOT_DIR/src" -name '*.c' | tr '\n' ' ')
 # shellcheck disable=SC2086
 # BOTH constants move, and that is not belt-and-braces. The size term's
 # threshold gates on CODE bytes, so lowering only the cap gives a compiler in
-# which the ladder never runs on the witness (its 42,344 code bytes are under
-# the shipped 120,000 threshold) and the pattern simply refuses at K=8. The
-# rescue needs the ladder to RUN and then be overruled, which is threshold
-# below the witness's code AND cap between its K=1 and K=8 code.
+# which the ladder never runs on the witness (its code is under the shipped
+# 120,000 threshold) and the pattern simply refuses at K=8. The rescue needs
+# the ladder to RUN and then be OVERRULED, which is threshold below the
+# witness's code AND cap between two of its ladder rungs.
+#
+# [OPT-4] 2026-08-29 — THE WITNESS CHANGED, AND WHY IT HAD TO. This cell used
+# `((a)|ab){0,2047}c` against a 30,000 cap. That pattern is one of the 23 whose
+# hybrid prefilter [OPT-4] rebuilds from the count-collapsed language, so its
+# artifact shrank at every K and the cell's whole calibration went with it: at
+# the new sizes the size model's own bar TAKES the rung (K1/K8 = 0.625, far
+# under the materiality constant), so `_UNROLL_K_WHY` reads `size-model` and
+# the cap is never asked. There is no threshold that restores `cap-rescue` for
+# that pattern — the bar takes it at every one.
+#
+# The new witness is `(?:aa|a){8,12}+b`, chosen so this cell stops being
+# COUPLED to the prefilter-language axis at all: it stamps
+# `RX_VM_PREFILTER_LANG "exact"` (`exact nfa 55 <= 128`), i.e. it sits below
+# [OPT-4]'s knee and its size cannot move when that knee or that lowering
+# changes. Picking a witness that the axis under some other row's control
+# cannot reach is the durable fix; re-deriving the constants against a
+# collapsed pattern would only have deferred this.
+#
+# It is deliberately the SAME pattern §9's materiality cell pins as the one the
+# bar DECLINES, and that makes the story here coherent rather than coincidental:
+# this cell's claim is literally "the bar declined this K; the lowered cap took
+# it anyway", so the two cells are the two halves of one witness's path. The
+# ladder is { 6, 4, 3, 2, 1 } and this pattern's code is NON-MONOTONIC in K
+# (K=6 is 35,427 B, LARGER than K=8's 35,157), which is what makes the
+# largest-fitting assertion below bite: at a 31,000 cap the walk rejects 6 and
+# takes 4 (30,347 B), and a ladder walked in the wrong direction would land on
+# 1 (28,502 B) while still being "different from the default".
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_SIZE_TERM_THRESHOLD=20000 \
-       -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+       -DPCREC_MAX_VM_EMIT_CODE_BYTES=31000 \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
-    ok "reference compiler built with the threshold at 20000 and the code cap at 30000"
-    RESCUE='((a)|ab){0,2047}c'
+    ok "reference compiler built with the threshold at 20000 and the code cap at 31000"
+    RESCUE='(?:aa|a){8,12}+b'
     if "$REF" -p rx --features all -o "$WORK/r.c" -- "$RESCUE" 2>/dev/null; then
         got="$(stamp UNROLL_K_WHY "$WORK/r.c" | tr -d '"')"
         [ "$got" = "cap-rescue" ] \
@@ -164,10 +191,10 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         # SMALLEST fitting K (1) where 3 and 2 both fit, and this cell stayed
         # green throughout because 1 != 8. A rescue gives up as little
         # throughput as it can or it is not the rescue the design describes.
-        if [ "$rk" = "3" ]; then
-            ok "the rescue took the LARGEST fitting K (3) — not merely a different one"
+        if [ "$rk" = "4" ]; then
+            ok "the rescue took the LARGEST fitting K (4) — not merely a different one"
         else
-            bad "the rescue took K=$rk; under this reference build K=3 fits (28,907 B) and K=2 fits (27,711 B), so the largest fitting rung is 3. A smaller K here means the ladder is being walked in the wrong direction"
+            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (35,427 B against the 31,000 cap) and rung 4 does (30,347 B), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
         fi
     else
         bad "the cap-rescue witness '$RESCUE' did not compile under the lowered-cap compiler"

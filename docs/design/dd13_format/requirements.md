@@ -1,5 +1,7 @@
 # [DD-13a] Requirements note — the unified pattern-source/test file format
 
+> **Census superseded (2026-08-29, [DD-13b]):** the figures below (54 files / 1,100 blocks / 9,977 expectation lines) are the 2026-08-17 census. The design note `format_design.md` §1.1 re-ran it on the same method: **179 files / 3,265 blocks / 26,691 expectation lines** (3.3×), independently reproduced to the digit by the r44 panel. The requirements are unchanged; the cost of AR-1 tripled.
+
 **Status: DRAFT, requirements-only.** This note enumerates what every named
 consumer of the future format NEEDS, evidenced against real corpora and
 ratified design/decision text. It does not propose grammar, syntax, or field

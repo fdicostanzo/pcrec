@@ -741,6 +741,19 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
         if (force_on && force_off)
             ctx_fail(cx, why_pos,
                      "-fprefilter and -fno-prefilter cannot both be requested");
+        /* [OPT-4] THE SAME REFUSAL FOR THE LANGUAGE PAIR, and it is here
+         * rather than in cli/main.c so the LIBRARY caller who sets both bits
+         * gets it too — the flag pair is `pcrec_options.flags`, not a CLI
+         * spelling. Placed beside its twin because it is the identical rule
+         * (a request with two contradictory halves is refused, never silently
+         * resolved to one of them), and the collapse decision itself lives at
+         * `src/core/compile.c`'s build gate, where the two bits are read: this
+         * site owes only the diagnostic. */
+        if ((cx->opt->flags & PCREC_FORCE_PREFILTER_COLLAPSE) &&
+            (cx->opt->flags & PCREC_NO_PREFILTER_COLLAPSE))
+            ctx_fail(cx, why_pos,
+                     "-fprefilter-collapse and -fno-prefilter-collapse cannot "
+                     "both be requested");
         if (force_on && fit.chosen != ENGM_VM)
             ctx_fail(cx, why_pos,
                      "-fprefilter requires the VM engine; this pattern "
@@ -760,13 +773,59 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * `PCREC_FORCE_PREFILTER` was NOT requested (force forms stay
          * do-or-die and never reach a retry at all), so `force_on` is
          * always false whenever `dfa_disabled` is true — this clause and
-         * `force_on`'s branch below are therefore never in tension. */
-        fit.prefilter = (has_bref || has_call || cx->dfa_disabled) ? false
+         * `force_on`'s branch below are therefore never in tension.
+         *
+         * [OPT-4] THE PREMISE ABOVE STOPPED BEING TRUE, AND THE EXCEPTION IS
+         * ONE CONJUNCT. "the IDENTICAL construction that already overflowed"
+         * is exactly right about the EXACT language and exactly wrong about
+         * the count-collapsed one (K39;
+         * docs/design/prefilter_count_independence.md §6): that machine's NFA
+         * is a function of the pattern's STRUCTURE alone, so it is not the
+         * machine that overflowed and rebuilding it is not the wasted second
+         * build this clause exists to prevent. `compile_driver` therefore
+         * tries ONE more rung before this one — `prefilter_collapse_retry`,
+         * set only together with `dfa_disabled` — and on that attempt the
+         * prefilter must SURVIVE selection to be built at all.
+         *
+         * The cost bound moves from one refused DFA build to at most two, and
+         * the second is bounded by the first: the collapsed NFA is strictly
+         * smaller than the exact one this compile already built, and its size
+         * does not depend on any count. `docs/spec/tuning.md` §4 states the
+         * new bound rather than leaving the old sentence to be read as still
+         * exact. */
+        fit.prefilter = (has_bref || has_call ||
+                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                        ? false
                        : force_on ? true
                        : force_off ? false
                        : (fit.chosen == ENGM_VM) &&
                          (cx->opt->engine != PCREC_ENGINE_VM);
     }
+
+    /* [OPT-4] `<PREFIX>_ENGINE_SEL`, derived HERE and nowhere else — the one
+     * site where the fit is final and the driver's attempt record is in hand
+     * (`internal.h`'s `ESEL_*`). `fit.why`'s prose and this token are two
+     * readers of one decision (D81); neither is parsed from the other.
+     *
+     * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER. `forced` first
+     * because a named engine means auto never selected anything; then "no
+     * overflow happened", which is the common case; then the three fallback
+     * outcomes, distinguished by what SURVIVED rather than by what failed.
+     *
+     * `ESEL_COLLAPSED_PREFILTER` carries `fit.prefilter` as a conjunct and
+     * that is not belt-and-braces: a pattern can reach the collapse rung and
+     * still end with no prefilter (a backreference or a linked call drops it
+     * through the clause above), and stamping "a prefilter survived" on an
+     * artifact that has none would be the stamp naming a decision the artifact
+     * did not take — the defect §2 of run_prefilter_collapse.sh exists to
+     * catch on the language stamp, through the same door. */
+    fit.engine_sel =
+          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
+        : !cx->dfa_disabled                           ? ESEL_SELECTED
+        : (cx->prefilter_collapse_retry && fit.prefilter)
+                                                      ? ESEL_COLLAPSED_PREFILTER
+        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
+                                                      : ESEL_OVERFLOWED_PREFILTER;
 
     cx->job->fit = fit;
 

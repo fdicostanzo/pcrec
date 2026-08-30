@@ -6082,3 +6082,143 @@ validation — three typed lanes is a planning shape, not three
 batteries at once. Milestones still open on Frank's word (skill §1);
 the model says WHICH KIND of row is proposed for each slot, not that
 the slots fill themselves.
+
+## D87 — COMPOSITION is an AST-level operation inside pcrec: assigned group numbers, lexical scope wins, a caller-scope prefix, delivery into an inline struct (Frank, 2026-08-29 ~15:2x-16:1x, forty-fifth session, ruling the [DD-13b] r44 panel's blockers)
+
+**Context.** The [DD-13b] design note composed patterns TEXTUALLY: `(?&name)`
+is PCRE2's subroutine call and the referenced definitions are appended
+as a `(?(DEFINE)…)` block at the end. r44-sem measured, on libpcre2 AND
+pcrec, that appending silently changes a library's meaning: an absolute
+numeric reference inside a relocated body (`(\d)\1`) re-targets into the
+caller's capture space (a piece that matched `77` and rejected `75`
+composes into one that rejects `5-77` and MATCHES `5-75`); a caller's
+`(?J)` plus a colliding name hands the library's private helper to the
+caller's group; and the expansion inflates `ngroups`/`nnames`, inverting
+D61's promise that slots above `ngroups` belong to composition producers.
+The manager recommended REFUSING absolute references and name
+collisions. Frank ruled differently, and further.
+
+**Rulings.**
+
+1. **Absolute numeric references are LOCAL to the pattern they are
+   written in; a group's number is an ASSIGNED property** — it defaults
+   to the group's position in its own pattern but can be otherwise in a
+   rewrite such as composition. So the composer RENUMBERS, it does not
+   refuse: `(\d)\1` in a library keeps meaning "this piece's own group 1"
+   wherever it lands. Consequence: composition cannot be the textual
+   DEFINE-append (PCRE2 numbers by position and has no way to say
+   otherwise); it is an AST-LEVEL OPERATION INSIDE PCREC — the group node
+   carries its assigned number, references bind to nodes, the slot layout
+   follows the assignments. This also answers "who expands": pcrec does
+   (`--source`/`--lib-path`, [LIB]'s resolver on D85's table), and the
+   harness's textual EXPAND survives only as an ORACLE CONTROL on the
+   population where it is valid (no absolute references, no collisions —
+   exactly what python/libpcre2 can check).
+
+2. **Names of local groups override incoming ones.** A caller's own
+   `(?<w>…)` wins over an injected definition `w` — the position paper's
+   "own groups win", restored. A library's internal `(?&w)` binds to the
+   library's `w` (lexical scope of the file that defines it), so injected
+   definitions are NAME-QUALIFIED internally by the composer; `(?J)`
+   shadowing cannot reach them. Lexical scope wins in both directions.
+
+3. **A syntax addition, a deliberate break from PCRE2: a subroutine call
+   may carry a PREFIX selecting a scope**, so a definition can reference
+   the CALLER's groups explicitly (spelling is the manager's — leading
+   shape `(?&<scope>.<name>)` with a reserved scope word for the caller;
+   names cannot contain `.` in PCRE2, so the separator is free).
+   Whether a prefix may also reference CALLED groups is settled by
+   ruling 5: yes, where the call is declared as delivering.
+
+4. **The explicit-number spelling is a SERIALIZATION pcrec both emits and
+   accepts, not the composition mechanism.** Frank considered ("doubtful")
+   composing outside pcrec via an explicit-number syntax and a textual
+   renumberer; rejected because the renumberer would need a second PCRE2
+   parser (every reference form — learnings §3's drift), the oracle could
+   not read the extended text, and the assigned-number concept must exist
+   in pcrec regardless. `--emit-composed` (name TBD) writes the composed
+   pattern with assigned numbers spelled out; the harness's A==B control
+   recompiles it. If a different front end ever needs composition, the
+   spelling is the interchange format.
+
+5. **Delivery into a struct: context naming IS struct naming.** With the
+   feature that loads results into a generated struct (one field per
+   named group), a scope prefix is a PATH and a struct is a path: a
+   definition's delivered groups appear as a NESTED, INLINE struct member
+   named by the CALL SITE (`struct { rx_span local, domain; } from;`),
+   declared in place — no named type per definition, so the artifact
+   stays self-contained and two libraries' `email` cannot collide; the
+   reference prefix spells the member path (`r.from.local` ⇔
+   `(?&from.local)`). Per CALL SITE, not per definition: a definition
+   called twice needs two names (defaulting to the definition's name;
+   given explicitly when that repeats). A call declared as delivering
+   gets the member and its slots above `ngroups` (D61's delivered
+   slots); an undeclared call stays capture-transparent (PCRE2's
+   default, zero cost). What cannot be a finite struct is not
+   deliverable: a recursive definition, a call under a repeat — a
+   delivering declaration on those is a refusal with the reason
+   (iterated capture is a separate question, out of this row). Two call
+   sites of one definition are DISTINCT C types (assignment needs
+   `__typeof__`; gcc-dialect target; one sentence in the spec); a named
+   typedef per definition is a later opt-in. Field order is
+   assigned-number order — the struct is the slot table seen through
+   names: one derivation for `RX_NCAPS`, the struct and `--emit-composed`.
+   A library adding a delivered group changes the user's struct TYPE —
+   the honest, visible version of r44-sem's "a library edit moves
+   RX_NCAPS".
+
+6. **Duplicate names within one scope path are ONE field, populated by
+   the FIRST SET group of that name in number order** — PCRE2's own
+   `pcre2_substring_get_byname` rule, made structural; alternation
+   branches populating one field is the intended use
+   (`(?<num>\d+)|0x(?<num>[0-9a-f]+)`). Scope paths differ, so a
+   caller's `w` and a library's `w` never merge. The raw slot table keeps
+   every duplicate as its own slot (numbering never collapses); only the
+   struct view merges.
+
+7. **Group-number assignment rules** (Frank's examples: `(3:abc)(1:xxx)(yyy)`
+   → 3, 1, 2; `(3:abc)(1:xxx)(yyy)(fff)` → error; shorthand, spelling
+   TBD):
+   (a) 0 is the whole match; `(0:…)` is an error.
+   (b) An implicit counter `c` starts at 1. An unnumbered group takes `c`
+       then `c += 1`. A numbered group `(N:…)` takes `N` and RESTARTS the
+       counter, `c := N+1`.
+   (c) A number assigned twice, by any mix of explicit and implicit
+       assignment, is a compile error naming both sites — never a silent
+       renumber.
+   (d) `ngroups` = the highest assigned number; `RX_NCAPS = ngroups+1`;
+       numbers in `1..ngroups` held by no group are REAL SLOTS THAT ARE
+       NEVER SET (`-1,-1`) — a caller's `caps[N]` is always in range.
+   (e) Branch reset `(?|…)` keeps its meaning: within one alternative
+       the rules apply; the same number in different alternatives is the
+       feature; explicit numbers are treated like implicit ones there.
+   (f) `\N`, `\g{N}`, `(?N)`, `(?(N)…)` bind to the ASSIGNED number. A
+       backreference/condition on an unassigned number behaves as an
+       unset group (PCRE2's rule); a CALL to an unassigned number is an
+       error (no body to call).
+   (g) Relative forms `(?-1)`, `\g{-1}` keep PCRE2's textual-position
+       meaning and survive relocation unchanged (r44-sem verified).
+   (h) Names are orthogonal to numbers (ruling 6).
+   (i) Composition assigns a definition's groups a base above the
+       caller's `ngroups`, preserving local order and gaps; explicit
+       local numbers are RE-BASED, never copied; the caller's numbers
+       are never touched.
+   (j) `--emit-composed` prints every group in explicit form; the
+       serialization round-trips under (a)-(d) without change.
+   Spelling constraint (manager): the extension lives in the `(?` space
+   so no legal PCRE2 pattern changes meaning — leading candidate
+   `(?<3>abc)` (a name cannot start with a digit in PCRE2, so it is
+   invalid today and free), `(?<name=3>…)` or similar for named-and-
+   numbered; the note settles it.
+
+**Open (Frank, TBD as of this entry):** nothing on the mechanism; the
+spelling of the prefix, the numbered group and the delivering-call
+declaration are the manager's per the 14:5x ruling. The struct-loading
+feature's own plan row is the consumer of ruling 5 and must cite this
+entry when it opens.
+
+**Supersedes** in the [DD-13b] note: §2.3's textual EXPAND as the
+producer (it is the control), §2.4's "impossible by construction"
+collision story, §0.3 D-a, and the [DD-14.G] constraint "elision may not
+change RX_NCAPS" (the bar is: emitted code byte-identical and slots
+`1..ngroups` identical; delivered slots live above).

@@ -6640,6 +6640,12 @@ typedef struct {
     long long budget, bt_frames, trail_frames, ceiling;
     int       nstate, nguard, nlow, nmark, ncaps;
     bool      has_budget, prefilter;
+    /* [OPT-4] was that prefilter built from the COUNT-COLLAPSED language?
+     * Read only by the listing's prefilter line, for the same reason the two
+     * fields below exist: without it the line says "an exact window" of a
+     * machine that answers for a superset. Copied off `job->fit`, never
+     * re-derived (K39; docs/design/prefilter_count_independence.md). */
+    bool      prefilter_collapsed;
     /* [M6.5.2] does this artifact contain a backreference? Read only by the
      * listing's prefilter line, which without it names a FLAG the caller did
      * not pass as the reason a backref pattern has none. */
@@ -6762,8 +6768,22 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * "NO (--engine=vm)" for a pattern compiled under `auto`, i.e. a
      * diagnostic naming a flag the caller did not pass. */
     sb_printf(o, "; prefilter    %s\n", st->prefilter
-              ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
-                " an exact window (S6.1); the VM never scans"
+              /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped
+               * being true of every hybrid. Above
+               * PCREC_PREFILTER_EXACT_NFA_STATES the pair is built from the
+               * count-collapsed lowering, so it hands the VM a CANDIDATE
+               * window the VM verifies -- rejection sound, start a lower
+               * bound, END not a bound, which is why the PRUNING line below
+               * reads "subject-end" on exactly these artifacts. */
+              ? (st->prefilter_collapsed
+                 ? "yes, COUNT-COLLAPSED -- the pair is built from the"
+                   " count-collapsed superset (every X{m,n} as X{min(m,1),},"
+                   " K39/[OPT-4]), so its rejection is sound and its span"
+                   " START is a lower bound the VM verifies from; its span END"
+                   " is NOT a bound, hence no prefilter-window ceiling."
+                   " -fno-prefilter-collapse restores the exact machine"
+                 : "yes -- the capture-erased forward+reverse DFA pair hands the VM"
+                   " an exact window (S6.1); the VM never scans")
               : st->has_bref
               ? "NO (backreference) -- the erased approximation is neither a"
                 " sound superset nor the true span (S7); no flag changes this"
@@ -6983,7 +7003,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                  "  runtime-term length retreats: %lld%s\n",
               !v->mrl ? "none (-fno-length-prune)"
                       : v->mrl_win ? "min(subject_length, prefilter window end) -- D51 ruling 2"
-                                   : "the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end because the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6)",
+                                   : "the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which",
               v->nclamp, v->ndynskip,
               v->ndynskip ? "  <- an outer counter-derived term was DROPPED"
                             " (sound: it under-estimates), so this artifact"
@@ -7543,8 +7563,39 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * asserts on BOTH sources for BOTH modules through one shared check.
      * S-LA13 is the row, and it sabotages the two BUILDERS while leaving the
      * stamp reading the flag. */
+    /* [OPT-4] AND THE THIRD CONJUNCT, WHICH ARRIVES AT THE SAME PLACE THROUGH
+     * A THIRD DOOR — and is a conjunct rather than a new mechanism precisely
+     * because the two above already say everything it would have to say.
+     * docs/design/prefilter_count_independence.md §2/§3.
+     *
+     * Above `PCREC_PREFILTER_EXACT_NFA_STATES` the prefilter is built from the
+     * COUNT-COLLAPSED lowering (`src/ir/nfa.c`'s `A_REP` arm, every counted
+     * repeat as `X{min(m,1),}`), so it answers for a strict superset by the
+     * one-line proof in §3. H1 (rejection) and H2 (the span START, re-asked on
+     * every retry) survive verbatim; the span END does not, for the SAME
+     * reason the atomic paragraph gives and with no new argument needed — the
+     * forward machine is a PRIORITY DFA reporting the leftmost-FIRST end, and
+     * enlarging the language can make an EARLIER branch win, which moves that
+     * end DOWN. `(?>a|ab)c|abcd` on "abcd" is the recorded witness of the
+     * shape (0,4 against an uncut twin ending at 3); the collapse reaches the
+     * identical hazard by enlarging the language rather than by uncutting it.
+     *
+     * THE FLAT PREDICATE IS DELIBERATE, exactly as it is for lookaround: a
+     * narrower "only when the collapse could move the end" test is a second
+     * analysis with no independent check, and its failure mode is silent match
+     * loss where the flat one's is a pruning ceiling the artifact rarely had —
+     * 221 of the corpus's 244 counted-repeat hybrid artifacts keep theirs,
+     * because they stay under the knee and are never collapsed at all.
+     *
+     * READ OFF `fit`, NOT RE-DERIVED. `pcrec_has_atomic`/`pcrec_has_lookaround`
+     * can be asked of the tree because erasure is unconditional; the collapse
+     * is a per-artifact SELECTION, so asking `pcrec_has_collapsible_rep(root)`
+     * here would be a second derivation that disagrees with the builder
+     * whenever the knee or a flag decided otherwise — the two-sources defect
+     * R31 E3 found in this very expression. */
     v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
-                                   && !pcrec_has_lookaround(root);
+                                   && !pcrec_has_lookaround(root)
+                                   && !job->fit.prefilter_collapsed;
     v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);
@@ -8176,7 +8227,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     else
         sb_printf(c, "/* Step steps_left: none (--fno-step-steps_left); backtrack "
                      "frames: %lld */\n", bt_frames);
-    pcrec_emit_engine_stamp(c, v.up, "vm");
+    pcrec_emit_engine_stamp(c, v.up, "vm", pcrec_engine_sel_name(cx));
     sb_puts(c, "#define ");
     sb_printf(c, "%s_ENGINE_WHY ", v.up);
     pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
@@ -8219,6 +8270,97 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * derived default when neither was passed). */
     sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
               job->fit.prefilter ? "hybrid" : "none");
+    /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
+     * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
+     * in this artifact; this says whether that scan recognises the pattern's
+     * own language or a count-collapsed SUPERSET of it — a distinction with
+     * two consequences a reader can see elsewhere in the same artifact (the
+     * table is smaller, and `RX_VM_PRUNE_CEILING` reads `subject-end`), and
+     * which nothing else in the stamp block states.
+     *
+     * GATED ON `fit.prefilter` FOR THE SAME REASON THE `RX_DFA_*` PAIR BELOW
+     * IS: with no prefilter there is no language to name, and an artifact that
+     * has never had one must not grow a macro describing it. So this line is
+     * emitted exactly where `RX_VM_PREFILTER` reads "hybrid", which
+     * tests/codegen/run_dfa_stamps.sh asserts both ways.
+     *
+     * ONE DERIVATION, TWO READERS (D81): `job->fit.prefilter_collapsed` is
+     * written once, at src/core/compile.c's build gate, and read here, at the
+     * `--emit-ir` listing's `; prefilter` line, and at `v.mrl_win`. It is not
+     * re-derived from the flags — a build that asked for the collapse and did
+     * not get it (no collapsible repeat, or the machine was already under the
+     * knee) must stamp `"exact"`, because the artifact reports what the
+     * emitter DID. */
+    if (job->fit.prefilter) {
+        sb_printf(c, "#define %s_VM_PREFILTER_LANG \"%s\"\n", v.up,
+                  job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
+        /* [OPT-4] AND WHY (D81's `_WHY` convention, `_UNROLL_K_WHY`'s shape).
+         * The LANG line above says which language was built; without this one
+         * an artifact stamping `"exact"` cannot be told apart into the three
+         * quite different situations that produce it — the knee was consulted
+         * and the machine was small (`"exact nfa 42 <= 128"`), there was
+         * nothing to collapse (`"no counted repeat"`), or the caller denied
+         * the axis (`"denied"`). A user reading a size they did not expect
+         * needs to know which, and so does a check.
+         *
+         * THE NUMBER IS IN THE STRING, and it is the measured exact forward
+         * NFA state count with the budget it was compared against — not a
+         * remark about the budget, the actual comparison, so a reader can see
+         * how close the artifact came to the other side of the knee without
+         * rebuilding it. The budget is printed from
+         * `PCREC_PREFILTER_EXACT_NFA_STATES` rather than spelled `128`, so the
+         * stamp stays true if the number ever moves.
+         *
+         * NO SECOND DERIVATION HERE. Both halves come off `EngineFit`, written
+         * once at `src/core/compile.c`'s gate; this site formats and does not
+         * decide. `prefilter_lang_why >= PFLW_FORCED` iff
+         * `prefilter_collapsed` (internal.h), which is the cross-check
+         * tests/codegen/run_prefilter_collapse.sh §2 asserts on the artifact
+         * rather than on the predicate. */
+        switch (job->fit.prefilter_lang_why) {
+        case PFLW_DENIED:
+            /* The number is carried here too, and this is the path that most
+             * needs it: `PFLW_DENIED` is reached only where the machine WAS
+             * over the knee, so the reader is being told both that the flag
+             * acted and how much it cost. */
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"denied, exact nfa %u > %d\"\n", v.up,
+                      job->fit.prefilter_nfa_states,
+                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+            break;
+        case PFLW_NO_REP:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"no counted repeat\"\n", v.up);
+            break;
+        case PFLW_FORCED:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"forced\"\n", v.up);
+            break;
+        case PFLW_OVER:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"exact nfa %u > %d\"\n", v.up,
+                      job->fit.prefilter_nfa_states,
+                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+            break;
+        case PFLW_SEL1:
+            /* The rung, not the knee. `RX_ENGINE_WHY` on this artifact reads
+             * "dfa overflowed: ..." and a reader would otherwise expect
+             * `RX_VM_PREFILTER "none"` beside it (that was the only outcome
+             * before [OPT-4]); this line is what explains the prefilter that
+             * is there instead. The measured NFA is carried too, because it is
+             * the EXACT machine's size and therefore the scale of what the
+             * collapse avoided. */
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"dfa overflow retry, exact nfa %u\"\n", v.up,
+                      job->fit.prefilter_nfa_states);
+            break;
+        default:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"exact nfa %u <= %d\"\n", v.up,
+                      job->fit.prefilter_nfa_states,
+                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+            break;
+        }
+    }
     /* [DD-13c] (r37 #6) A HYBRID ALSO STAMPS THE SCAN IT INLINES, and this is
      * the finding stated as code: `RX_VM_PREFILTER "hybrid"` says a DFA scan is
      * IN this artifact and then says nothing about it, while the scan in
@@ -9782,6 +9924,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         st.ncaps = ncaps;
         st.has_budget = has_budget;
         st.prefilter = prefn != NULL;
+        /* [OPT-4] off `fit`, the one derivation (D81) -- `prefn` says a
+         * prefilter was emitted, this says which language it recognises. */
+        st.prefilter_collapsed = job->fit.prefilter_collapsed;
         st.has_bref  = (v.enc_mask &
                         (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)) != 0;
         /* [DD-14 wave E] NOT read off `enc_mask`, unlike its neighbour: a

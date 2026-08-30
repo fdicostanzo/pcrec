@@ -156,10 +156,10 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `11`
-([ART-SIZE], the size term's four stamps; it read `6` when this note
+events but never stated the general rule; `rx_info.abi` is `12`
+([OPT-4], the prefilter-language stamp; it read `6` when this note
 was written, `7` after [OPT-3], `8` after [ENG-FORM], `9` after
-[OPT-K] and `10` after [ENG-ABS]).
+[OPT-K], `10` after [ENG-ABS] and `11` after [ART-SIZE]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1567,13 +1567,15 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `11` on every artifact today ([ART-SIZE] bumped it
-  from 10 by adding the size term's four stamps — `_UNROLL_K`,
-  `_UNROLL_K_WHY`, `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES`, §6.3;
-  `10` was [ENG-ABS]'s anchored match-here form, `9` [OPT-K]'s offset-k
-  candidate-start skip, `8` [ENG-FORM]'s opaque DFA state token and `7`
-  [OPT-3]'s pre-multiplied DFA transition table), and is not yet a
-  compatibility promise.** Being pre-v1 (§9), it is a layout version and
+- **`rx_info.abi` is `12` on every artifact today ([OPT-4] bumped it
+  from 11 by adding `<PREFIX>_VM_PREFILTER_LANG` and its companion
+  `<PREFIX>_VM_PREFILTER_LANG_WHY` to every VM HYBRID —
+  §6.3, and to no other artifact kind; `11` was [ART-SIZE]'s four size
+  stamps `_UNROLL_K`/`_UNROLL_K_WHY`/`_MAX_EMIT_CODE_BYTES`/
+  `_MAX_EMIT_BYTES`, `10` [ENG-ABS]'s anchored match-here form, `9`
+  [OPT-K]'s offset-k candidate-start skip, `8` [ENG-FORM]'s opaque DFA
+  state token and `7` [OPT-3]'s pre-multiplied DFA transition table),
+  and is not yet a compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
   inserted the four sizing fields after `subject_ceiling` and therefore
@@ -1769,6 +1771,38 @@ engine-scoped.**
     what candidate-start filter that scan itself carries. A hybrid answers
     both, and the answers are independent.
 
+  **[OPT-4], 2026-08-29: a FOURTH selection on the same neighbourhood,
+  `<PREFIX>_VM_PREFILTER_LANG`** — and it is a THIRD independent question,
+  not a refinement of either macro above. `_VM_PREFILTER` says whether the
+  VM runs a DFA ahead of its program; `_DFA_PREFILTER` says what
+  candidate-start filter that DFA's own scan carries; this says WHICH
+  LANGUAGE the DFA recognises. Two values:
+
+  | value | meaning |
+  |---|---|
+  | `"exact"` | the prefilter recognises the pattern's own language |
+  | `"count-collapsed"` | it recognises a count-collapsed SUPERSET: every `A_REP` with `rmin > 1` or `rmax > 1` lowered as `X{min(rmin,1),}`, so the machine does not scale with the count (`tuning.md` §2.17, K39) |
+
+  **ITS OWN IFF, AND IT IS A DIFFERENT ONE FROM THE `_DFA_*` FAMILY'S.**
+  This macro is on **every artifact with a VM PREFILTER DECISION that came
+  out `"hybrid"`** — i.e. exactly where `<PREFIX>_VM_PREFILTER` reads
+  `"hybrid"`, and on no DFA artifact at all, because a DFA artifact takes no
+  such decision. That is narrower than the `_DFA_*` family's "contains a DFA
+  scan", which a plain DFA artifact also satisfies.
+  `tests/codegen/run_dfa_stamps.sh` asserts it in both directions.
+
+  **WHAT A CONSUMER MAY CONCLUDE FROM `"count-collapsed"`, and what it may
+  not.** The prefilter is a FILTER and its contract is unchanged by the
+  value: its REJECTION is sound and its span START is a lower bound the VM
+  verifies from, so the artifact's ANSWERS are identical either way (the
+  axis is answer-identity-preserving, D46). What a superset cannot supply is
+  an upper bound on the match END, so a `"count-collapsed"` artifact always
+  reads `<PREFIX>_VM_PRUNE_CEILING "subject-end"` — the same consequence an
+  atomic group or a lookaround already has, arriving through a third door.
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and
+  for the same reason: nothing measured reads one yet (D77), and the trigger
+  to add one is a named consumer, not symmetry.
+
   **[OPT-3], 2026-08-26: a THIRD `_DFA_*` macro, `<PREFIX>_DFA_TABLE`**, on
   exactly the same footing and under exactly the same IFF — every artifact
   that CONTAINS a DFA scan, which is every DFA artifact and every VM hybrid,
@@ -1852,12 +1886,46 @@ about the FACT rather than about the engine: it names the construct that
 FORCED the VM, and a DFA artifact was not forced — its `rx_info.engine_why`
 is `NULL` for the same reason, so the macro's absence mirrors the struct.
 
+**[OPT-4] (2026-08-29) `<PREFIX>_ENGINE_SEL` — the same decision as a TOKEN,
+and it is a different macro from `_ENGINE_WHY` on purpose.** `_ENGINE_WHY` is
+PROSE, written for a person and allowed to name an offset, a construct or a
+build outcome. A CONSUMER cannot bucket on it: telling "auto picked the VM"
+from "auto FELL BACK to the VM" means substring-matching English, which is what
+the comparative benchmark project was reduced to. `_ENGINE_SEL` is the same
+decision with a CLOSED value set, and — like `_ENGINE` and unlike `_ENGINE_WHY`
+— it is **UNCONDITIONAL on every artifact, both engines** (D81: a fact stamped
+only when it is interesting is a hint, and `"selected"` is a fact). Both are
+written from one derivation at `src/opt/select_engine.c`'s single fit site;
+neither is parsed to produce the other.
+
+| value | meaning |
+|---|---|
+| `"selected"` | `auto` chose on the AST and nothing overflowed. The common case, on both engines |
+| `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
+| `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
+| `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
+| `"collapsed-prefilter"` | `auto`, a DFA build overflowed, and the retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
+
+**THE LAST THREE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
+CANNOT CARRY** — they share one prose string (`"dfa overflowed: …"`) and differ
+in what SURVIVED. A consumer wanting only "did this compile fall back?" tests
+for the three; one wanting to know what it cost reads which.
+
+**It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for the
+same reason: nothing measured reads one yet (D77), and the trigger to add one
+is a named consumer rather than symmetry. `rx_info.engine_why` continues to
+mirror the PROSE.
+
 **[SEL-1] (2026-08-28) `RX_ENGINE_WHY` CAN ALSO NAME A BUILD OUTCOME, NOT
 ONLY A CONSTRUCT.** Under `--engine=auto`, a DFA build that overflows a cap
 (state count, table entries, the K7 element budget — `docs/spec/tuning.md`
 §2.11) is a selection outcome rather than a refusal, and the artifact that
 falls back to the VM stamps that outcome the same way every other forcing
-reason is stamped: `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
+reason is stamped, and since [OPT-4] (2026-08-29) it can appear beside a
+`RX_VM_PREFILTER "hybrid"` rather than only beside `"none"` — the fallback's
+first rung rebuilds the prefilter from the count-collapsed language instead of
+dropping it, and `RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`
+is what says so (`tuning.md` §2.5, §2.17). `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
 offset 0"`. The offset is not tied to any one AST node (this reason is a
 property of the whole compile, not of a construct at a position) and reads
 0 by convention, the same position the underlying `ctx_fail` reports at. If
@@ -1907,6 +1975,13 @@ annotations below are this document's, not emitted text):
 #define RX_ENGINE          "vm"                    /* mirrors rx_info.engine */
 #define RX_ENGINE_WHY       "capture group at pattern offset 1"
 #define RX_VM_PREFILTER      "hybrid"               /* or "none" */
+#define RX_VM_PREFILTER_LANG "exact"                 /* or "count-collapsed";
+                                                        [OPT-4], emitted only
+                                                        where _VM_PREFILTER
+                                                        reads "hybrid" */
+#define RX_VM_PREFILTER_LANG_WHY "no counted repeat"  /* [OPT-4]: which of the
+                                                        five reasons produced
+                                                        the value above */
 #define RX_VM_RUNGS           0x1u   /* bitmask: which per-quantifier rungs
                                          this artifact actually uses —
                                          CURSOR/FRAMES_BOUNDED/
