@@ -219,10 +219,22 @@ A new `pfcollapse` arm (`run_prefilter_collapse.sh`; its scrape reads that
 script's own `prefilter-collapse: N passed, M failed` trailer, not the
 `^checks passed:` shape), registered BEFORE the rows that name it (R31 C11).
 
+**THE ROWS WERE RENUMBERED S205/S206 -> S206/S207** (manager, 2026-08-30):
+lane w11f, merging ahead of this one, had already minted `S205` on a branch
+this worktree could not see. The lane HAD run the directory's own
+highest-id command and got 204 — a worktree's `sabotages/` is the id space as
+of its branch point, not the id space — so the lesson is recorded in
+`tests/mech/sabotages/CLAUDE.md`'s Numbering section rather than left as a
+one-off: in a multi-lane session the id range is the manager's to arbitrate.
+The renumber was one SIMULTANEOUS substitution (two sequential passes would
+have carried the first row to `S207` and merged the pair), and the mention of
+`S205` in `docs/dev/dev_journal.md` was left alone — it is w11f's row, not
+this lane's.
+
 | row | plant | detectors | corpus |
 |---|---|---|---|
-| **S205** predicate REMOVED (`= false`) | the rescue is built again on nullable languages — the bench's 1.2-9.9x | `pfcollapse` §6b, §7b's `declined-nullable` witness, §2's two `exact-nullable` rows; `resource`'s nullable cell ALONE (its twin stays green, which is what says a PREDICATE was removed rather than the rung) | EXPECTED `0fail` |
-| **S206** predicate INVERTED (`!= 0`) | the rescue is declined on the 2.2-4.6x winners and kept on the losers | `pfcollapse` §6, §2's six `count-collapsed` rows, §7b's `collapsed-prefilter` witness; `resource`'s BOTH cells | EXPECTED `0fail` |
+| **S206** predicate REMOVED (`= false`) | the rescue is built again on nullable languages — the bench's 1.2-9.9x | `pfcollapse` §6b, §7b's `declined-nullable` witness, §2's two `exact-nullable` rows; `resource`'s nullable cell ALONE (its twin stays green, which is what says a PREDICATE was removed rather than the rung) | EXPECTED `0fail` |
+| **S207** predicate INVERTED (`!= 0`) | the rescue is declined on the 2.2-4.6x winners and kept on the losers | `pfcollapse` §6, §2's six `count-collapsed` rows, §7b's `collapsed-prefilter` witness; `resource`'s BOTH cells | EXPECTED `0fail` |
 
 Both plants are ONE TOKEN at the predicate's single derivation, deliberately —
 a plant at either READER would leave the other working and report a partial
@@ -367,7 +379,7 @@ run, then axes, then mech one row at a time, then the two sweeps above.
 6. `tests/registry/axes_registry_check.sh` — the two new `RX_ENGINE_SEL` legs
    against the LIVE dump (the extractors were dry-run in Phase 1; the dump side
    needs a binary).
-7. S205 and S206 one at a time through the matrix's ONLY filter, with
+7. S206 and S207 one at a time through the matrix's ONLY filter, with
    `VALIDATE_ONLY=1` first; their `SAB_DOC_FIGURE`s carry `PENDING PHASE 2` and
    are to be filled from the canonical runs.
 8. The eleven bench points compiled and their stamps checked against §6.

@@ -1,4 +1,4 @@
-# S205 (S-OPT41-1) — [OPT-4.1] THE NULLABILITY PREDICATE REMOVED: THE
+# S206 (S-OPT41-1) — [OPT-4.1] THE NULLABILITY PREDICATE REMOVED: THE
 # COUNT-COLLAPSED RESCUE IS BUILT AGAIN ON EVERY PATTERN THAT CANNOT USE IT,
 # AND EVERY ANSWER IN THE TREE IS STILL RIGHT.
 #
@@ -44,7 +44,7 @@
 # THE PLANT IS ONE TOKEN AND IT IS THE PREDICATE ITSELF, not one of its two
 # readers: a plant at either reader would leave the other one working and this
 # row would be reporting a partial removal as a whole one.
-SAB_ID="S205-nullable-predicate-removed"
+SAB_ID="S206-nullable-predicate-removed"
 SAB_FILE="src/opt/select_engine.c"
 SAB_SUITES="pfcollapse resource harness"
 SAB_HARNESS_TARGET="tests/base/bounded_repeats.rxt"
@@ -57,4 +57,4 @@ tests/codegen/run_prefilter_collapse.sh|\[sel1n\]|10
 tests/resource/run_resource_tests.sh|^size_rung_cell |2"
 SAB_COUNT=1
 SAB_BEFORE='        fit.prefilter_lang_nullable = pcrec_minw(root) == 0;'
-SAB_AFTER='        fit.prefilter_lang_nullable = false;   /* SABOTAGE S205 */'
+SAB_AFTER='        fit.prefilter_lang_nullable = false;   /* SABOTAGE S206 */'

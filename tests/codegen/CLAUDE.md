@@ -2101,7 +2101,7 @@ accepts either a hybrid or a named refusal and reports which — what it fails
 on is a silent override. `-fprefilter-collapse` does NOT override it: that flag
 chooses a LANGUAGE for a prefilter, not whether one exists.
 
-Sabotage rows: S205 (predicate removed) and S206 (predicate inverted), on the
+Sabotage rows: S206 (predicate removed) and S207 (predicate inverted), on the
 new `pfcollapse` mech arm. Both are answer-identical, so their corpus arm is
 EXPECTED green — see `tests/mech/CLAUDE.md`'s own section for why that is the
 arm working rather than a half-detection.

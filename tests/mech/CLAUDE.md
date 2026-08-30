@@ -229,8 +229,8 @@ is EXPECTED to time out"*, and neither would a separate arm.
   CONSTRUCTION, not merely in practice — the prefilter is a FILTER whose
   contract is soundness of REJECTION (`match_api.md` §6.3, H1/H2/H3), so its
   presence, its absence and its LANGUAGE are all invisible to every answer
-  anywhere. **ROWS ON THIS ARM ARE EXPECTED TO SCORE `corpus:0fail`** (S205,
-  S206); that is the arm working. Its scrape reads this script's own trailer
+  anywhere. **ROWS ON THIS ARM ARE EXPECTED TO SCORE `corpus:0fail`** (S206,
+  S207); that is the arm working. Its scrape reads this script's own trailer
   (`prefilter-collapse: N passed, M failed`) rather than the `^checks passed:`
   shape every other arm uses — a row that reads `ERRfail/?pass` here is a
   scrape mismatch, not a defect in the tree.
@@ -2142,7 +2142,7 @@ rule ("a ONE-HUNK MUTATION CANNOT FALSIFY A DEFENCE-IN-DEPTH PAIR") applies to
 a TRIO of guards emitted from one function as readily as to two gates in
 different files — the second occurrence of that shape in this tree.
 
-## [OPT-4.1] S205-S206, and a PAIR whose two halves cost opposite things
+## [OPT-4.1] S206-S207, and a PAIR whose two halves cost opposite things
 
 Two rows for the nullability gate on [OPT-4]'s count-collapsed rescue, running
 the new `pfcollapse` arm alongside `resource` and `harness`. Both plants are
@@ -2156,13 +2156,13 @@ other working and report a partial removal as a whole one.
 **THE PAIR IS NOT ONE ROW WRITTEN TWICE, because the two failures cost
 opposite things and only one instrument sees each.**
 
-- **S205 pins the predicate FALSE** — the shipped compiler of the day before
+- **S206 pins the predicate FALSE** — the shipped compiler of the day before
   [OPT-4.1]. The rescue is built for a language that matches the empty string
   at every position, so the filter can never dismiss one: pcrec-bench measured
   that shape at 1.2-9.9x SLOWER than no prefilter at all (its O-10 item 3 at
   pin 96e44c2; `[a-z]{0,32768}` x3.57 on search, 1.880 -> 6.899 ns/B). A
   SLOWDOWN with every answer right.
-- **S206 INVERTS it.** The rescue is declined on exactly the patterns the
+- **S207 INVERTS it.** The rescue is declined on exactly the patterns the
   bench measured it WINNING 2.2-4.6x on (the ctx band, `level-context` x4.60)
   and kept on the three it measured it losing on. A LOST OPTIMISATION with
   every answer right.
