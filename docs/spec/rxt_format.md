@@ -16,10 +16,84 @@ record, not contract, and stays in `docs/testing.md`.
 
 ## The `.rxt` format
 
-A `.rxt` file is a flat, line-oriented list of **pattern blocks**. Each block
-starts with a `pattern` line and is followed by zero or more expectation and
-directive lines that apply to that pattern, until the next `pattern` line or
-end of file.
+A `.rxt` file has a **HEAD** and a **BODY**. The body is a flat,
+line-oriented list of **pattern blocks**: each block starts with a
+`pattern` line and is followed by zero or more expectation and directive
+lines that apply to that pattern, until the next `pattern` line or end of
+file. The head is a list of file-level declarations.
+
+**The head ENDS at the first `pattern` line, and nothing file-level may
+appear after it.** That is the whole boundary rule, and everything below
+depends on it: a reader of any block needs to look in exactly one other
+place — the top of the file — and that place is bounded. A file whose
+first non-comment line is `pattern` has NO head, and behaves exactly as
+it did before the head existed. Every file in `tests/` is of that shape
+today.
+
+A file may have a head and NO pattern blocks (a pure library file is
+exactly that shape). That is legal, and it is a DISTINCT OBSERVABLE from
+a file the harness could not read: `tests/harness/run.sh` runs zero
+blocks and reports its existing "no pattern blocks parsed from file"
+failure, on its own exit status, while a file whose head does not PARSE
+is reported as a harness failure carrying pcrec's own diagnostic. The two
+can never be confused.
+
+### The head
+
+Four file-level declarations exist in this build:
+
+| declaration | means |
+|---|---|
+| `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **Recorded, not yet resolved** — resolving it against a search path is not built |
+| `target <prefix> = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **Parsed, not yet built** |
+| `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
+| `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes |
+
+A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
+`features`, `encoding`, `engine` and `budget` lines — the same
+productions a pattern block's own directives use, so the two cannot
+disagree about what `budget frames=` means.
+
+Keywords belonging to a later wave of this format (`include`, `tag`,
+`freq`, `use`, `oracle`, `analysis`, `testee`, `option`, `mc`, `variant`)
+are recognised and refused **by name, as NOT IN THIS BUILD** — never as
+unknown. They are real, spelled correctly, and simply not implemented
+here; reporting them as unknown would send a reader hunting a typo in a
+word they just read in the format's own documentation.
+
+### Lexical rules
+
+These bind on every line kind, old and new:
+
+- **Whole-line `#` comments only.** A `#` anywhere but column 1 is data.
+  The one comment with meaning is `# pcre2-only` immediately before a
+  `pattern` line (see "Oracle verification").
+- Blank lines are ignored.
+- **A line kind is its first whitespace-delimited token**, and an unknown
+  first token is a HARD ERROR — never a silent no-op, never a comment.
+- **Each CONTEXT has its own closed vocabulary**, and a token unknown *in
+  its context* is a hard error that NAMES the context. There are three:
+  the head, a `config` body, and a pattern block. Nothing is a keyword
+  everywhere — `pcrec` is a `config`-body line and not a block one;
+  `perr` is a block line and not a head one.
+- **IN THE HEAD, INDENTATION MEANS CONTINUATION.** A line indented by one
+  or more spaces or tabs continues the declaration above it: a `config`
+  body and a block scalar's own lines are the same rule. A head
+  construct ends at the first non-indented line.
+- **A PATTERN BLOCK's lines are NOT indented**, and a block ends at the
+  next `pattern` line or end of file. This asymmetry between head and
+  body is deliberate and is the only one: the body's shape is fixed by
+  compatibility with every existing file, and the head is new territory
+  where indentation costs nothing.
+- **One line, one value — with exactly one exception, the BLOCK SCALAR.**
+  A line whose value is prose may write `<kind> |` and continue on
+  indented lines; newlines are preserved and the value ends at the first
+  non-indented line. The exception is a property of the VALUE production
+  rather than of any one keyword, so a second prose field inherits it
+  rather than inventing it. **It is a HEAD form only**: a pattern block's
+  lines are not indented, so a block's `description` takes the one-line
+  form, and `|` there is refused by name.
+
 
 - Blank lines and lines starting with `#` are ignored. Comments are
   WHOLE-LINE ONLY — a `#` after case fields is not a comment, it makes the
@@ -93,6 +167,23 @@ end of file.
   bug, never a planned outcome a corpus block gets to expect. Scored
   against the driver's exit `3` plus its printed word, the one case kind
   that WANTS that exit — see "The driver protocol" below.
+- `name <ident>` — block-scoped: names the block. An `ident` is a PCRE2
+  group name AND a C identifier (first byte a letter or `_`, then letters,
+  digits or `_`), one rule, so a name that can be a group cannot fail to
+  be a symbol later. **The name is in the FILE namespace**, not the
+  pattern's group namespace, and must be unique within the file.
+- `description <text>` — block-scoped: a machine-readable prose field for
+  this block. One-line form only (see "Lexical rules" above).
+- `encoding <ident>` — block-scoped: the subject encoding for this
+  block's compile, passed as `--encoding=<ident>`. Per-block, never
+  global, exactly as the CLI option is per-compile: two blocks in one file
+  may use different encodings. Whether the named encoding is IMPLEMENTED
+  is pcrec's answer, not the harness's — `utf8` is refused until milestone
+  M5, and a block asking for it hears that from the compiler.
+- `features only <list>` — as `features`, except that the list REPLACES
+  what a `config` would otherwise contribute rather than being unioned
+  with it. Parsed and recorded in this build; it becomes operative when
+  `config` composition lands.
 - `engine vm` — block-scoped: forces `--engine=vm` for the current block's
   compile. Only `vm` is defined.
 - `budget steps=<n>` / `budget frames=<n>` — block-scoped: passes
@@ -164,6 +255,70 @@ m "colour" 0 6
 m "byte \x41 then newline\n" 5 6
 ```
 
+## `--list-source` — reading a `.rxt` file's structure
+
+`pcrec --list-source FILE` prints the file AS WRITTEN as a TSV under
+`docs/spec/table_contract.md`: one row per head declaration and per
+pattern block, **in FILE ORDER**. It takes no pattern and no `-o`, and it
+compiles nothing.
+
+**It is the SEAM.** pcrec owns the head grammar and is its only
+implementation; `tests/harness/run.sh` keeps its own body parser and
+gains no head arms at all. For a head-bearing file the harness calls this
+once, reads the `line` column of the FIRST `pattern` row, and starts its
+own per-line loop there — so the head is an untouched byte range whose
+boundary comes from the one head parser, and the two cannot drift.
+
+| # | column | on | value |
+|---|---|---|---|
+| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` |
+| 2 | `line` | all | 1-based first line of the declaration or block |
+| 3 | `name` | target, config, pattern | the target's PREFIX; the config's name; the block's `name` (empty if unnamed) |
+| 4 | `value` | lib, target, description, pattern | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description` |
+| 5 | `pattern` | pattern | the block's pattern text |
+| 6 | `flags` | pattern, config | the letters |
+| 7 | `features` | pattern, config | the module list |
+| 8 | `features_only` | pattern | `1` if the block wrote `features only` |
+| 9 | `encoding` | pattern, config | the ident |
+| 10 | `engine` | pattern, config | `vm` \| `dfa` |
+| 11 | `budget_steps` | pattern, config | N |
+| 12 | `budget_frames` | pattern, config | N |
+| 13 | `with` | target | the config list, as written |
+| 14 | `from` | config | the config list, as written |
+| 15 | `pcrec` | config | the raw flag text |
+
+**`kind` carries the DECLARATION NAME**, not a `head`/`body`
+supercategory. There is no column saying whether a row is a head row and
+there does not need to be: the head ends at the first `pattern` row, so a
+head row is exactly one preceding it. That is a property of the ORDER,
+and a column for it would be a second home for a fact the row order
+already carries — free to disagree with it.
+
+**Columns 4, 5 and 15 are ESCAPED** in the `.rxt` format's own subject
+escape vocabulary (`\t`, `\n`, `\r`, `\\`, `\xNN` — the table above under
+"`<subject>` is double-quoted text"). This is not decorative: a `pattern`
+line is rest-of-line VERBATIM and may contain a literal tab, and the
+corpus contains three such blocks today. No second escape vocabulary is
+invented — a `.rxt` author already knows this one, and
+`tests/harness/driver.c`'s decoder already implements it.
+
+**AS WRITTEN, never resolved.** `config` composition and the `with` /
+`from` cascades are VALIDATED (an unknown config name and a `from` cycle
+are both refused, naming the members) but NOT APPLIED here. The output
+reports what the file says, so that it can be compared against another
+parser of the same file; a resolved dump would report something only
+pcrec computes, against no counterpart. `--list-source --resolved` is
+named and unbuilt.
+
+**Sectionless**, and the trigger for that changing is concrete. The table
+contract's `#section` mechanism exists for one command emitting several
+tables with different columns; it is declined here because the head/body
+INTERLEAVING is exactly what a consumer of this output checks, and that
+is expressible only as row order in ONE stream. Adopting sections later
+is free (a stream with no `#section` line is a single anonymous section),
+and what would earn it is a data block whose rows cannot be columns of
+this table under any reading.
+
 ## Oracle verification
 
 Every corpus expectation must be independently verifiable, not merely
@@ -214,6 +369,17 @@ For each pattern block, `run.sh` (`tests/harness/run.sh`):
    from ordinary case failures.
 5. For each case, runs `<tmp>/t '<subject>' '<P>' '<route>'` and scores the
    result per "The driver protocol" below.
+
+Before any of that, for a file whose first non-comment line is not
+`pattern`, the harness makes ONE `pcrec --list-source` call and starts the
+loop above at the `line` column of the first `pattern` row (see
+"`--list-source`" below). The head is never parsed by the harness. Three
+outcomes are distinct and stay distinct: the call FAILS (a harness
+failure carrying pcrec's own diagnostic), the file has a head and no
+`pattern` rows (zero blocks run, and the existing "no pattern blocks
+parsed from file" failure fires on its own), or the loop starts at the
+body. MEASURED: no file in `tests/` is head-bearing, so no existing file
+makes the call.
 
 Failures print as `file:line: expected ... got ...` beside the pattern
 under test. The final summary reports total cases passed/failed, a

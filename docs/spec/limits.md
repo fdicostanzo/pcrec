@@ -486,6 +486,18 @@ Your options, in the order most callers want them:
    beside the pattern, to everything built with that config, and it is
    visible to whoever reads the file next. The CLI flags are for
    one-off compiles and for the test harness.
+
+   **The state of that instruction, stated exactly.** It shipped as a
+   forward reference — the sentence above named a mechanism that did not
+   exist. The `config` block now EXISTS in the `.rxt` format
+   (`docs/spec/rxt_format.md`, "The head") and pcrec parses it, including
+   the `pcrec <raw flags>` line these two overrides would ride. What is
+   NOT yet built is the path that COMPILES from a pattern-source file at
+   all — `--source` and `--target` — so today the instruction describes
+   where the override BELONGS rather than something a caller can run.
+   Until that lands, the CLI flags are the only way to raise either cap,
+   and this note is here so a caller reaching this page is told which of
+   the two it is instead of discovering it at the command line.
 2. **Let the size term choose `K`, or force it.** `--unroll=1` emits one
    body copy per counter-rung iteration and is the largest single size
    lever for a replication-dominated pattern — measured 17× on the fuzz

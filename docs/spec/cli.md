@@ -250,8 +250,9 @@ force-vs-deny distinction, and the byte-identity/engine-selecting split:
 
 ## 2. Listing surfaces
 
-Five TSV dumps, each a query taking no pattern and no `-o` (mixing either
-in is refused, `cli/main.c:496-528`). The column CONTRACT itself — `#`
+Six TSV dumps, each a query taking no pattern and no `-o` (mixing either
+in is refused). Five answer from pcrec's own registries; the sixth,
+`--list-source`, reads a FILE named by its own value. The column CONTRACT itself — `#`
 comments, a header row naming every column, append-only columns, resolve
 by header name never position — is `docs/spec/table_contract.md`,
 adopted by every table surface at birth; this section states only what
@@ -325,6 +326,28 @@ separate checks). Takes `--flavour`, unlike `--list-verbs`/
 `--list-syntax` does, so an unfiltered dump would print a definition for
 a construct `--list-syntax --flavour=X` says does not exist under that
 flavour.
+
+### `--list-source FILE`
+
+The `.rxt` SOURCE file named by the option's own value, AS WRITTEN: one
+row per head declaration and per pattern block, in FILE ORDER, fifteen
+columns. **The full column table, the `kind` vocabulary, the escaping
+rule and the "as written, never resolved" contract are
+`docs/spec/rxt_format.md`'s** — this section does not restate them.
+
+It takes its file as the option's VALUE rather than as the bare
+positional argument, because that slot belongs to the PATTERN: a query
+that quietly reinterpreted it would make `pcrec --list-source 'a(b|c)'`
+try to read a file named after a regex.
+
+Exit status distinguishes two outcomes a caller must not confuse: a file
+that PARSES but declares no pattern block prints its head rows and exits
+0 (a pure library file is exactly that shape), while a file whose head
+does not parse exits 1 with a diagnostic naming the file, the line and
+the construct.
+
+`--list-source --resolved` — the file with its `config` composition and
+`with`/`from` cascades APPLIED — is named here and is not built.
 
 ### `--explain SYNTAX` / `--flavour NAME`
 
