@@ -18653,3 +18653,19 @@ caught at this boundary: w11f minted S205 (the rxt-escape index-vs-value
 row) and opt41 independently minted S205/S206 (predicate removed /
 inverted) — w11f keeps S205; opt41 renumbers to S206/S207 before its
 Phase 2 (told by message; it is idle, so the message lands).
+
+#### Forty-sixth session, part 8 (16:2x EDT): lane/w11f MERGED — the r46 panel's findings closed measured
+
+w11f's stage B, all MEASURED on the merged tree: test-corpus 26,680/0
+(0 compile failures, 178/178, size-log 2,878); S205 solo DETECTED
+(reach 1/1; exactly the one ctrl_bytes check red; corpus untouched) with
+S203 as the unblunted control, also DETECTED; final test-rxtsource 78/0;
+stage A had already measured build/strict/codegen 5/5/cli 287/0. Merged
+into main (ort, clean). The r46 record: 1 blocker + 10 must-fixes fixed
+and fixture-proven; sem10 ruled (a blank line ends a config body);
+sem18/sem22 left with reasons; two Phase-1 bugs caught by the lane's own
+stage-A checks (run.sh's description arm missed by sem14's first fix; a
+wrong expectation in its own sem21 check) — recorded in
+docs/dev/lanes/w11f_report.md. Worktree retired. opt41's .lift follows
+on this merge; ONE battery covers both merges at opt41's landing
+(battery 3's two-lane precedent). Frank's perf hold unchanged.
