@@ -1064,7 +1064,14 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `verify_rxt.py`'s pre-existing stricter check); and an indented `#`
   inside a `config` body gets a diagnostic naming the actual rule
   ("comments must start in column 1", finding 11) instead of "'#' is not
-  a config-block directive". Witnesses: `tests/rxtsource/fixtures/*.rxtin`.
+  a config-block directive". **Finding 10 (RULED by the manager,
+  2026-08-30): `parse_prose` (the block-scalar production the head's
+  `description` uses) now stops at the FIRST non-indented line, blank or
+  not** — it used to treat an interior blank line as part of the value
+  (only trailing blanks were trimmed), disagreeing with `parse_config`'s
+  own `if (!line_indented(nx)) break;`, which format_design.md calls "the
+  same rule" as the block scalar's. Witnesses:
+  `tests/rxtsource/fixtures/*.rxtin`.
 
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
   axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the

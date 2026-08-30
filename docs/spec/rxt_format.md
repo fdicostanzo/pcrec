@@ -79,7 +79,12 @@ These bind on every line kind, old and new:
 - **IN THE HEAD, INDENTATION MEANS CONTINUATION.** A line indented by one
   or more spaces or tabs continues the declaration above it: a `config`
   body and a block scalar's own lines are the same rule. A head
-  construct ends at the first non-indented line.
+  construct ends at the first non-indented line — **including a blank
+  one** (r46sem finding 10, RULED): a blank line is not indented, so it
+  terminates a `config` body or a block scalar's continuation exactly as
+  any other non-indented line does, and a directive after it belongs to
+  the file, not to whatever the blank line's continuation would have
+  been.
 - **A PATTERN BLOCK's lines are NOT indented**, and a block ends at the
   next `pattern` line or end of file. This asymmetry between head and
   body is deliberate and is the only one: the body's shape is fixed by

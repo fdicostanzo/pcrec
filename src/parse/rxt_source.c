@@ -422,13 +422,22 @@ static int parse_prose(RxtP *p, RxtLines *L, size_t *i, const char *val,
         *out = arena_strdup(p->arena, val);
         return 0;
     }
+    /* [DD-13b.W1.1 r46sem finding 10, RULED by the manager 2026-08-30] A
+     * BLANK LINE ENDS THE CONTINUATION — for a block scalar exactly as it
+     * already did for a `config` body (`parse_config`'s own `if
+     * (!line_indented(nx)) break;`, unchanged): the body IS the indented
+     * continuation, a blank line is not indented, so it terminates like
+     * any other non-indented line. This used to stop at the first
+     * NON-indented, NON-blank line, treating an INTERIOR blank line as
+     * part of the value (only trailing blanks were trimmed) — a second,
+     * disagreeing answer to the same question format_design.md calls
+     * "the same rule". A directive after the blank line belongs to the
+     * FILE, not to whatever the blank line's continuation would have
+     * been. */
     size_t start = *i + 1;
     size_t end = start;
-    while (end < L->n && (line_indented(L->v[end]) ||
-                          L->v[end][0] == '\0'))
+    while (end < L->n && line_indented(L->v[end]))
         end++;
-    /* trailing blank lines belong to whatever follows, not to the value */
-    while (end > start && L->v[end - 1][0] == '\0') end--;
     if (end == start)
         return rxt_fail(p, *i + 1,
                         "block scalar '|' has no indented continuation lines "

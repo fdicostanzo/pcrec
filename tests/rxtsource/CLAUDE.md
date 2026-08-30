@@ -177,16 +177,29 @@ re-plants the "index confused with value" shape against the fixed code
 (the loop's POSITION substituted for the byte's own ordinal) and expects
 this section's ctrl_bytes check, and nothing else, to go red.
 
+**Finding 10 (RULED by the manager, 2026-08-30): a blank line ENDS a
+`config` body's continuation, exactly as it ends a block scalar's** — the
+body IS the indented continuation, a blank line is not indented, so it
+terminates like any other non-indented line, and a directive after it
+belongs to the file. `parse_prose` (the head's block-scalar production,
+shared with `description`) used to disagree with `parse_config`'s own
+body-ending rule, treating an interior blank line as part of the value;
+both now stop at the first non-indented line, blank or not.
+`blank_ends_config_body.rxtin` is the witness — a `config` body, a blank
+line, then a file-level `description` — checked three ways: leg A parses
+the config with only its pre-blank setting and the description as a
+separate row; the seam (`run.sh`) still calls `--list-source` exactly
+once and runs the one pattern block; leg C still refuses the head-bearing
+file by name (unaffected).
+
 Left at the manager's discretion, per the review's own triage (findings
-10, 18, 22 not fixed; findings 11, 12 fixed anyway, cheaply): a blank
-line's effect inside a `config` body vs. a block scalar (finding 10) is
-a genuine grammar-direction decision, not an implementation bug, and is
-left for a ruling; a NUL byte silently truncating leg A (finding 18) has
-no fix cheaper than a different line-splitting scheme entirely, for a
-population the review itself calls very-low-likelihood; the escape
-vocabulary being a stated SUBSET of the full subject-escape table
-(finding 22) is now documented in `docs/spec/rxt_format.md` rather than
-given a fixture, since nothing is wrong to detect.
+18, 22 not fixed; finding 11, 12 fixed anyway, cheaply): a NUL byte
+silently truncating leg A (finding 18) has no fix cheaper than a
+different line-splitting scheme entirely, for a population the review
+itself calls very-low-likelihood; the escape vocabulary being a stated
+SUBSET of the full subject-escape table (finding 22) is now documented in
+`docs/spec/rxt_format.md` rather than given a fixture, since nothing is
+wrong to detect.
 
 ## Maintenance
 

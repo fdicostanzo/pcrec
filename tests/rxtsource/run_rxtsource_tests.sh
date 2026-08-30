@@ -1180,6 +1180,54 @@ else
     pass "sem17: verify_rxt.py --dump did not crash with UnicodeDecodeError on an invalid-UTF-8 byte (exited for another reason, which is fine)"
 fi
 
+# --- sem10 (RULED 2026-08-30): a blank line ends a config body exactly
+# as it ends a block scalar. Three observables: leg A parses the head
+# correctly (config gets ONLY its pre-blank setting; the post-blank line
+# is a FILE-level description, not swallowed into the config); the seam
+# (run.sh) calls --list-source exactly once and runs the one pattern
+# block correctly; leg C still refuses the head-bearing file by name
+# (unaffected by this fix, asserted for completeness).
+BE="$FIXRUN/blank_ends_config_body.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$BE" > "$WORKDIR/be.tsv" 2>"$WORKDIR/be.err"; then
+    be_kinds=$(awk -F'\t' '!/^#/ { printf "%s ", $1 }' "$WORKDIR/be.tsv")
+    be_cfg_flags=$(awk -F'\t' '$1 == "config" { print $6 }' "$WORKDIR/be.tsv")
+    be_cfg_engine=$(awk -F'\t' '$1 == "config" { print $10 }' "$WORKDIR/be.tsv")
+    be_desc=$(awk -F'\t' '$1 == "description" { print $4 }' "$WORKDIR/be.tsv")
+    if [ "$be_kinds" = "config description pattern " ] && \
+       [ "$be_cfg_flags" = "i" ] && [ -z "$be_cfg_engine" ] && \
+       [ "$be_desc" = "this belongs to the FILE, not to config dev" ]; then
+        pass "sem10: a blank line ends the config body — 'config dev' has only 'flags i', and the description after the blank is a separate FILE-level row"
+    else
+        fail "sem10: blank-line-ends-config-body fixture parsed wrong.
+  kinds: '$be_kinds' (want 'config description pattern ')
+  config flags: '$be_cfg_flags' (want 'i'), config engine: '$be_cfg_engine' (want empty)
+  description: '$be_desc'"
+    fi
+else
+    fail "sem10: --list-source REJECTED the blank-line-ends-config-body fixture:
+$(cat "$WORKDIR/be.err")"
+fi
+: > "$CALLLOG"
+if PCREC="$WRAPDIR/pcrec" "$TIMEOUT_BIN" 300 bash "$RUNSH" "$BE" > "$WORKDIR/be.run" 2>&1; then
+    be_calls=$(grep -c -- '--list-source' "$CALLLOG" || true)
+    be_pass=$(awk '/^cases passed:/ { print $3 }' "$WORKDIR/be.run")
+    be_fail=$(awk '/^cases failed:/ { print $3 }' "$WORKDIR/be.run")
+    if [ "${be_fail:-1}" = "0" ] && [ "${be_pass:-0}" = "1" ] && [ "$be_calls" = "1" ]; then
+        pass "sem10: the seam — run.sh made exactly one --list-source call and ran the one pattern block, 1 pass / 0 fail"
+    else
+        fail "sem10: run.sh on the blank-ends-config-body fixture reported ${be_pass:-?} passed / ${be_fail:-?} failed / $be_calls --list-source call(s), expected 1 / 0 / 1:
+$(tail -20 "$WORKDIR/be.run")"
+    fi
+else
+    fail "sem10: run.sh FAILED on the blank-ends-config-body fixture:
+$(tail -30 "$WORKDIR/be.run")"
+fi
+if python3 "$VERIFY" --dump "$BE" > /dev/null 2>&1; then
+    fail "sem10: verify_rxt.py accepted a head-bearing file; it must refuse by name"
+else
+    pass "sem10: verify_rxt.py still refuses the head-bearing file by name (unaffected by this fix)"
+fi
+
 # ---------------------------------------------------------------------
 echo
 echo "== Summary =="
