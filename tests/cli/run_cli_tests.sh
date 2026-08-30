@@ -2124,7 +2124,7 @@ warn_out="$WORKDIR/warn.c"
 
 # (1) OVER the threshold: warns, and still compiles.
 rm -f "$warn_out"
-werr="$("$PCREC" -p rx -o "$warn_out" -- "$WARNBIG" 2>&1 >/dev/null)"; wrc=$?
+werr="$(pcrec_run "$PCREC" -p rx -o "$warn_out" -- "$WARNBIG" 2>&1 >/dev/null)"; wrc=$?
 if [ "$wrc" -ne 0 ]; then
     fail "--warn-emit-bytes: an oversize-but-accepted artifact was REFUSED (rc $wrc)" "$werr"
 elif [ ! -s "$warn_out" ]; then
@@ -2146,7 +2146,7 @@ fi
 
 # (2) UNDER the threshold: silent.
 rm -f "$warn_out"
-werr="$("$PCREC" -p rx -o "$warn_out" -- "$WARNSMALL" 2>&1 >/dev/null)"; wrc=$?
+werr="$(pcrec_run "$PCREC" -p rx -o "$warn_out" -- "$WARNSMALL" 2>&1 >/dev/null)"; wrc=$?
 if [ "$wrc" -eq 0 ] && ! printf '%s' "$werr" | grep -q 'warning: large artifact'; then
     pass "--warn-emit-bytes: a small artifact is silent"
 else
@@ -2156,7 +2156,7 @@ fi
 # (3) DISABLED with 0, on the SAME pattern that warned in (1) — which is what
 # makes this a control rather than a second small-artifact cell.
 rm -f "$warn_out"
-werr="$("$PCREC" -p rx --warn-emit-bytes=0 -o "$warn_out" -- "$WARNBIG" 2>&1 >/dev/null)"; wrc=$?
+werr="$(pcrec_run "$PCREC" -p rx --warn-emit-bytes=0 -o "$warn_out" -- "$WARNBIG" 2>&1 >/dev/null)"; wrc=$?
 if [ "$wrc" -eq 0 ] && [ -s "$warn_out" ] && ! printf '%s' "$werr" | grep -q 'warning: large artifact'; then
     pass "--warn-emit-bytes=0 disables the warning on the very artifact that triggers it at the default"
 else
@@ -2167,7 +2167,7 @@ fi
 # has no authority to fail anyone's build, so a project wanting earlier notice
 # must be able to tighten it.
 rm -f "$warn_out"
-werr="$("$PCREC" -p rx --warn-emit-bytes=1000 -o "$warn_out" -- "$WARNSMALL" 2>&1 >/dev/null)"; wrc=$?
+werr="$(pcrec_run "$PCREC" -p rx --warn-emit-bytes=1000 -o "$warn_out" -- "$WARNSMALL" 2>&1 >/dev/null)"; wrc=$?
 if [ "$wrc" -eq 0 ] && printf '%s' "$werr" | grep -q 'warning: large artifact'; then
     pass "--warn-emit-bytes is LOWERABLE (unlike the raise-only caps): 1000 warns on a small artifact and still compiles it"
 else
