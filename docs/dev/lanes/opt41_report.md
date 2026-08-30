@@ -551,3 +551,62 @@ BYTE OFFSET, so the edit shifted the file under the running interpreter. The
 `[sel]` results it had already produced are valid; everything after the edit is
 noise. Never edit a shell script while a run of it is in flight — re-run
 instead.
+
+## 12. Checks — measured
+
+### 12.1 `tests/registry/axes_registry_check.sh` — **83 passed, 0 failed**
+
+The four new `RX_ENGINE_SEL` legs all pass, in both directions:
+
+    PASS [RX_ENGINE_SEL] every dumped stamp_value (forced collapsed-prefilter
+         declined-nullable overflowed-dfa overflowed-prefilter selected) is in
+         docs/spec/match_api.md §6.3's own value-set table
+    PASS [RX_ENGINE_SEL] every table value appears in --list-axes' output
+    PASS [RX_ENGINE_SEL (pcrec_engine_sel_name)] both directions
+
+So the dump, the spec table and the emitter's own `return` statements agree on
+the six-value set — the leg that did not exist before this row.
+
+### 12.2 The mech field validation — both rows `FIELDS OK`
+
+`VALIDATE_ONLY=1 … S206` and `… S207` each print `FIELDS OK (definition parses
+and every field validation passes; NO tree built, NO suite run, NOTHING
+measured)`. Run before the rows themselves, as Phase 1 planned, because a
+renumbered row is exactly where a malformed field surfaces.
+
+### 12.3 The anchor tripwire — RED on arrival, and the cause is this row
+
+`python3 scripts/m6read_check_sab_anchors.py` reported **2 STALE ANCHORS**,
+`S102_prefilter_on_backref.sh` and `S165_prefilter_on_call.sh`, both against
+`src/opt/select_engine.c`: adding the nullability conjunct moved the multi-line
+`fit.prefilter` expression those two rows span in full.
+
+**This is the THIRD time those two rows have moved for this exact cause** —
+`tests/mech/sabotages/CLAUDE.md` already recorded [OPT-4] doing it twice — so
+it is promoted there from an anecdote to a standing rule with the action
+attached: if you add a conjunct to that clause, re-anchor S102 and S165 in the
+same change and run the tripwire before believing anything else.
+
+Re-derived from the text THIS change leaves behind (not `git show HEAD:` — the
+lane's own edit is what invalidated them, which is the case that file
+distinguishes). **Verified beyond the tripwire**, which only proves an anchor
+is FINDABLE: S102, S165, S206 and S207 were each applied to a scratch copy
+through `tests/mech/lib/replace.py` — the driver's own mechanism — and the
+result `gcc -fsyntax-only`'d. All four apply at exactly `SAB_COUNT` sites and
+produce compilable C. Tripwire now: **all anchors resolve, 203 sabotages / 214
+anchor sites**.
+
+### 12.4 The answer-identity floor: the PAIR, not the full sweep
+
+`make test-axes` is ~14 full corpus passes plus the form census
+(`docs/testing.md`, "Answer-identity sweep"). This row changes ONE axis, so the
+delivered acceptance is the deny/force pair that axis owns, run through the
+tree's own instrument rather than by hand:
+
+    AXES="-fno-prefilter-collapse -fprefilter-collapse" bash tests/axes/run_axes.sh
+
+three corpus passes (baseline + two axes) with `run_axes.sh`'s own RXTDUMP
+answer comparison, which compares span AND every capture slot per case. **This
+is deliberately NOT the full `make test-axes`** — that script's own header
+calls an `AXES`-scoped run "a QUICK check, not the delivered run" — and the
+report says so rather than letting a scoped run be read as the delivered one.
