@@ -18707,3 +18707,15 @@ predicate survived full structural induction). opt41 meanwhile:
 resource 29/0 with the -fprefilter override cell green (the
 review-found gap made falsifiable), and ask (ii) corroborated by
 accident — split `.c`/`.h` vs self-contained is the whole size gap.
+
+**17:3x — Frank, on my engine-axis battery proposal: RETRACTED.** "i
+don't want to add performance testing vm vs dfa to every test battery
+but the two should be part of the bench. last i saw our test battery
+was 3 hours and growing." Ruling recorded: the battery does NOT grow —
+no engine-axis stage (my proposal was identity, not timing, but the
+principle is the same: keep the battery lean; san 102 min + mech ~92
+dominate its 3.6 h and nothing gets added without a ruling). The
+engine identity sweep stays OPT-IN (test-axes' engine axis; run on
+engine-adjacent changes — the scoped-pair shape opt41 used today); the
+performance comparison stays the bench's, where pcrec-vm/vm-in are
+standing testees beside auto in every sample.
