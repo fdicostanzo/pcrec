@@ -425,6 +425,12 @@ flush_block() {
     # tiny budget, so `gu` has something to assert against without
     # inventing a new construct. Same "per-block, validated at parse time"
     # shape as flags/features above.
+    # [DD-13b.W1.1] `encoding` (D58's per-pattern axis, format_design's W1
+    # row). Per-COMPILE like every other directive here, never global: two
+    # blocks in one file may use different encodings. MEASURED free — no
+    # corpus block carries one today, so this appends nothing to any
+    # existing invocation.
+    [ -n "$cur_encoding" ] && pflags+=(--encoding="$cur_encoding")
     [ -n "$cur_engine" ] && pflags+=(--engine="$cur_engine")
     [ -n "$cur_stepbudget" ] && pflags+=(--step-budget="$cur_stepbudget")
     [ -n "$cur_framebudget" ] && pflags+=(--backtrack-frames="$cur_framebudget")
@@ -802,6 +808,10 @@ for file in "${files[@]}"; do
     cur_engine=""
     cur_stepbudget=""
     cur_framebudget=""
+    cur_name=""
+    cur_description=""
+    cur_encoding=""
+    cur_features_only=0
     cur_route="$RXTROUTE"
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     case_route=()
@@ -814,6 +824,20 @@ for file in "${files[@]}"; do
         [[ "$line" =~ ^[[:space:]]*$ ]] && continue
         [[ "$line" =~ ^# ]] && continue
 
+        # --- BEGIN PINNED 13-ARM REGION (w1 N3) ---
+        # [DD-13b.W1.1 / R-COMPAT-1] Everything between these two markers is
+        # the arm chain 3,265 existing blocks and 26,691 existing expectation
+        # lines are parsed by. It is HASH-PINNED by
+        # tests/rxtsource/run_rxtsource_tests.sh, so a change here cannot
+        # land unnoticed. The pin is over the TEXT BETWEEN THE MARKERS and
+        # not over a line range, deliberately: this very step edits inside
+        # the region (the `have_block` guard, `features only`), and a
+        # line-range hash would be broken by the change it exists to protect.
+        # New arms are appended AFTER the END marker; edits INSIDE the region
+        # are changes to the arms R-COMPAT-1 protects and are meant to move
+        # the hash, which is what forces a deliberate re-pin. The update rule
+        # lives in the check's own failure message, where a person looking at
+        # the failure will actually read it.
         if [[ "$line" =~ ^pattern\ (.*)$ ]]; then
             [ "$have_block" = "1" ] && flush_block
             blocks_in_file=$((blocks_in_file + 1))
@@ -825,6 +849,15 @@ for file in "${files[@]}"; do
             cur_engine=""
             cur_stepbudget=""
             cur_framebudget=""
+            # [DD-13b.W1.1] the three new block-scoped directives reset with
+            # the block exactly as the five above do — block-scoped means
+            # block-scoped, and a directive that carried to the next block
+            # would compile the following pattern under something nobody
+            # wrote (S-C3's shape, one directive over).
+            cur_name=""
+            cur_description=""
+            cur_encoding=""
+            cur_features_only=0
             # [DD-14.FB] the route resets with the block, like every other
             # directive here — and resets to RXTROUTE, not to "default", so
             # the env axis is a floor a block can raise rather than a setting
@@ -918,47 +951,85 @@ for file in "${files[@]}"; do
                 cur_route="$route_spec"
             fi
         elif [[ "$line" =~ ^perr[[:space:]]*$ ]]; then
-            cur_is_perr=1
+            # [DD-13b.W1.1] THE `have_block` GUARD, generalised. Six of the
+            # directive arms above already carried it and the CASE arms did
+            # not, so a case line with no open block was silently DROPPED
+            # rather than refused — the EOF flush is gated on have_block too,
+            # so those cases simply never ran and nothing counted them. This
+            # is the GENERAL form of a guard seven arms already had, not a
+            # new special case. MEASURED FREE: 0 of the corpus's 26,691 case
+            # lines precede a `pattern` line, so no existing file can reach
+            # any of these new branches. It is what makes S-C10's "line
+            # reported too late, several blocks" case LOUD instead of silent.
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'perr' line before any pattern block"
+            else
+                cur_is_perr=1
+            fi
         elif [[ "$line" =~ ^m[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
-            case_kind+=("m")
-            case_line+=("$lineno")
-            case_subject+=("${BASH_REMATCH[1]}")
-            case_start+=("${BASH_REMATCH[2]}")
-            case_end+=("${BASH_REMATCH[3]}")
-            case_startpos+=("0")
-            case_gspec+=("")
-            case_gucode+=("")
-            case_route+=("$cur_route")
+            # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
+            # above for why the case arms lacked it and what it makes loud).
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'m' line before any pattern block"
+            else
+                case_kind+=("m")
+                case_line+=("$lineno")
+                case_subject+=("${BASH_REMATCH[1]}")
+                case_start+=("${BASH_REMATCH[2]}")
+                case_end+=("${BASH_REMATCH[3]}")
+                case_startpos+=("0")
+                case_gspec+=("")
+                case_gucode+=("")
+                case_route+=("$cur_route")
+            fi
         elif [[ "$line" =~ ^n[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
-            case_kind+=("n")
-            case_line+=("$lineno")
-            case_subject+=("${BASH_REMATCH[1]}")
-            case_start+=("")
-            case_end+=("")
-            case_startpos+=("0")
-            case_gspec+=("")
-            case_gucode+=("")
-            case_route+=("$cur_route")
+            # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
+            # above for why the case arms lacked it and what it makes loud).
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'n' line before any pattern block"
+            else
+                case_kind+=("n")
+                case_line+=("$lineno")
+                case_subject+=("${BASH_REMATCH[1]}")
+                case_start+=("")
+                case_end+=("")
+                case_startpos+=("0")
+                case_gspec+=("")
+                case_gucode+=("")
+                case_route+=("$cur_route")
+            fi
         elif [[ "$line" =~ ^ms[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
-            case_kind+=("m")
-            case_line+=("$lineno")
-            case_startpos+=("${BASH_REMATCH[1]}")
-            case_subject+=("${BASH_REMATCH[2]}")
-            case_start+=("${BASH_REMATCH[3]}")
-            case_end+=("${BASH_REMATCH[4]}")
-            case_gspec+=("")
-            case_gucode+=("")
-            case_route+=("$cur_route")
+            # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
+            # above for why the case arms lacked it and what it makes loud).
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'ms' line before any pattern block"
+            else
+                case_kind+=("m")
+                case_line+=("$lineno")
+                case_startpos+=("${BASH_REMATCH[1]}")
+                case_subject+=("${BASH_REMATCH[2]}")
+                case_start+=("${BASH_REMATCH[3]}")
+                case_end+=("${BASH_REMATCH[4]}")
+                case_gspec+=("")
+                case_gucode+=("")
+                case_route+=("$cur_route")
+            fi
         elif [[ "$line" =~ ^ns[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
-            case_kind+=("n")
-            case_line+=("$lineno")
-            case_startpos+=("${BASH_REMATCH[1]}")
-            case_subject+=("${BASH_REMATCH[2]}")
-            case_start+=("")
-            case_end+=("")
-            case_gspec+=("")
-            case_gucode+=("")
-            case_route+=("$cur_route")
+            # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
+            # above for why the case arms lacked it and what it makes loud).
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'ns' line before any pattern block"
+            else
+                case_kind+=("n")
+                case_line+=("$lineno")
+                case_startpos+=("${BASH_REMATCH[1]}")
+                case_subject+=("${BASH_REMATCH[2]}")
+                case_start+=("")
+                case_end+=("")
+                case_gspec+=("")
+                case_gucode+=("")
+                case_route+=("$cur_route")
+            fi
         elif [[ "$line" =~ ^gu[[:space:]]+internal([[:space:]]|$) ]]; then
             # [DD-14 wave A commit 3] refused BY NAME, not by falling through
             # to the unparseable-line catch-all below: nothing may EXPECT an
@@ -979,15 +1050,21 @@ for file in "${files[@]}"; do
             # nothing in this wave's landing bar needs one, and D42.3's own
             # "getting the partition wrong costs a renumber, not more" spirit
             # says add the knob when a real cell needs it, not speculatively).
-            case_kind+=("gu")
-            case_line+=("$lineno")
-            case_subject+=("${BASH_REMATCH[2]}")
-            case_start+=("")
-            case_end+=("")
-            case_startpos+=("0")
-            case_gspec+=("")
-            case_gucode+=("${BASH_REMATCH[1]}")
-            case_route+=("$cur_route")
+            # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
+            # above for why the case arms lacked it and what it makes loud).
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'gu' line before any pattern block"
+            else
+                case_kind+=("gu")
+                case_line+=("$lineno")
+                case_subject+=("${BASH_REMATCH[2]}")
+                case_start+=("")
+                case_end+=("")
+                case_startpos+=("0")
+                case_gspec+=("")
+                case_gucode+=("${BASH_REMATCH[1]}")
+                case_route+=("$cur_route")
+            fi
         elif [[ "$line" =~ ^(gp|g)[[:space:]]+([0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]*$ ]]; then
             # [M4.5a] capture-group expectation attached to the MOST RECENT
             # m/ms case in this block. 'g' = LIVE (must be checkable now: a
@@ -1012,6 +1089,94 @@ for file in "${files[@]}"; do
                 gpend=0
                 [ "$gkind" = "gp" ] && gpend=1
                 case_gspec[$last_idx]="${case_gspec[$last_idx]}${gslot},${gstart},${gend},${gpend};"
+            fi
+        # --- END PINNED 13-ARM REGION ---
+        #
+        # [DD-13b.W1.1] W1's THREE NEW BLOCK ARMS plus `features only`,
+        # APPENDED here rather than inserted above, for two reasons. The
+        # region above is hash-pinned (see the BEGIN marker), and an
+        # `if/elif` chain is ORDER-SENSITIVE: `[[ =~ ]]` clobbers
+        # BASH_REMATCH, so every arm must capture before the next one runs,
+        # and appending is the only edit that cannot change which arm an
+        # EXISTING line reaches.
+        #
+        # WHY APPENDING IS SAFE, and it is a census rather than an argument:
+        # a line these arms newly parse is a line that previously hit the
+        # catch-all and was a HARD ERROR, so the only files whose meaning can
+        # change are files that do not parse today. The corpus's first-token
+        # census (asserted as a check in tests/rxtsource/) is what keeps that
+        # true — `name`, `description` and `encoding` appear as a first token
+        # in 0 of the corpus's lines.
+        elif [[ "$line" =~ ^features[[:space:]]+only[[:space:]]+([a-zA-Z0-9,_-]+)[[:space:]]*$ ]]; then
+            # [M14] `features only <list>`: the list REPLACES what a config
+            # would otherwise union in, rather than adding to it. W1.1 has no
+            # `config` in the body and therefore nothing to override — the
+            # flag is PARSED and RECORDED here so the dump can carry it and
+            # the two parsers agree about the line, and it becomes operative
+            # when W1.2 lands config composition. Its own arm rather than an
+            # optional group in the arm above: that one is inside the pinned
+            # region, and `only` is a real word a module could be called.
+            feat_list="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'features' line before any pattern block"
+            else
+                cur_features="$feat_list"
+                cur_features_only=1
+            fi
+        elif [[ "$line" =~ ^name[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*$ ]]; then
+            # [DD-13b.W1] the block's NAME — an `ident`, which is a PCRE2
+            # group name AND a C identifier, one rule so a name that can be a
+            # group cannot fail to be a symbol later. It is in the FILE
+            # namespace, not the pattern's (w1_impl DECIDED (7)).
+            #
+            # RECORDED, NOT USED, in W1.1: `rx_info.name` is W1.2's and the
+            # abi does not move in this step. The harness records it so the
+            # C1 dump carries it and so the two parsers are compared on a
+            # line one of them would otherwise never see. A DUPLICATE name is
+            # pcrec's refusal to make, not this loop's — a duplicate is a
+            # whole-FILE fact and this parser is the body's.
+            blk_name="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'name' line before any pattern block"
+            else
+                cur_name="$blk_name"
+            fi
+        elif [[ "$line" =~ ^description[[:space:]]+(.*)$ ]]; then
+            # [DD-13b.W1] `description` is a FIELD, not a comment (Frank,
+            # r44): machine-readable, so a script can summarize what a file
+            # holds, which is why it is not spelled `#`.
+            #
+            # THE ONE-LINE FORM ONLY. format_design §1.3 gives a block-line
+            # `description` the same `prose-value` the head's takes, which
+            # includes the `|` block scalar — but §1.2 says a pattern block's
+            # lines are NOT indented, and a block scalar IS indented
+            # continuation. Both cannot hold in the body, and the body's rule
+            # is the one 3,265 blocks depend on. So `|` is a head form, and
+            # this loop needs no continuation mechanism — which is also what
+            # keeps head-shaped parsing out of the harness, the thing the
+            # seam ruling removed. src/parse/rxt_source.c refuses `|` here
+            # with that reason named, so the two parsers agree.
+            blk_desc="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'description' line before any pattern block"
+            elif [ "$blk_desc" = "|" ]; then
+                record_fail "$file" "$lineno" \
+                    "a pattern block's 'description' takes the one-line form only: the '|' block scalar is continuation, and a pattern block's lines are not indented (the head is where '|' belongs)"
+            else
+                cur_description="$blk_desc"
+            fi
+        elif [[ "$line" =~ ^encoding[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*$ ]]; then
+            # [DD-13b.W1] D58's PER-PATTERN encoding axis reaching the corpus.
+            # Block-scoped like `flags`/`features`/`engine`/`budget`, and it
+            # routes to `--encoding=` in flush_block. WHETHER the named
+            # encoding is implemented is pcrec's refusal to make, not this
+            # loop's — `utf8` is refused until M5 and a block asking for it
+            # should hear that from the compiler, in the compiler's words.
+            blk_enc="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'encoding' line before any pattern block"
+            else
+                cur_encoding="$blk_enc"
             fi
         else
             # unparseable non-blank/non-comment lines are hard errors: a

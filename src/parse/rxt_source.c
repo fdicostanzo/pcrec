@@ -84,14 +84,30 @@ static const char *skip_ws(const char *s)
 }
 
 /* the value of a `<kind> <value>` line: everything after the kind token
- * and the whitespace behind it, with trailing whitespace removed.
- * REST-OF-LINE is verbatim for `pattern` only (§1.3's `rest-of-line`);
- * every other value is a token or a list, so trimming is safe and makes
- * `flags i` and `flags i ` one value rather than two. */
+ * and the whitespace behind it. REST-OF-LINE, so trailing bytes are KEPT
+ * — `pattern` and `description` are both rest-of-line productions
+ * (format_design §1.3), and a pattern's trailing space is data. */
 static const char *line_value(const char *line)
 {
     return skip_ws(line + tok_len(line));
 }
+
+/* THE SAME VALUE, TRAILING WHITESPACE REMOVED, for the kinds whose value
+ * is a TOKEN or a LIST rather than rest-of-line.
+ *
+ * This exists because the other parser accepts what this one would
+ * otherwise refuse. run.sh's directive arms all end `[[:space:]]*$`, so
+ * `flags i` and `flags i ` are one value there; without this they would
+ * be two here, and the two `.rxt` parsers would disagree about a line
+ * neither design document distinguishes. MEASURED: 0 corpus directive
+ * lines carry trailing whitespace, so the disagreement is unreachable
+ * today — which is exactly why it is worth fixing now rather than
+ * leaving the parsers to agree by luck of the corpus (three corpus files
+ * DO carry trailing whitespace on other lines, where it is data).
+ *
+ * Returns an arena copy; the value is not a suffix of the line once
+ * anything has been trimmed off its end. */
+static const char *value_trimmed(RxtP *p, const char *line);
 
 static int line_indented(const char *s)
 {
@@ -202,6 +218,14 @@ static char *arena_strndup(Arena *a, const char *s, size_t n)
 static char *arena_strdup(Arena *a, const char *s)
 {
     return arena_strndup(a, s, strlen(s));
+}
+
+static const char *value_trimmed(RxtP *p, const char *line)
+{
+    const char *v = line_value(line);
+    size_t n = strlen(v);
+    while (n && (v[n - 1] == ' ' || v[n - 1] == '\t')) n--;
+    return arena_strndup(p->arena, v, n);
 }
 
 /* an `ident` is a PCRE2 group name AND a C identifier (format_design
@@ -373,7 +397,7 @@ static int parse_prose(RxtP *p, RxtLines *L, size_t *i, const char *val,
 static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
                          int allow_only)
 {
-    const char *v = line_value(l);
+    const char *v = value_trimmed(p, l);
 
     if (tok_is(l, "flags")) {
         if (!*v) return rxt_fail(p, line, "'flags' needs its letters");
@@ -728,7 +752,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 continue;
             }
             if (tok_is(l, "lib")) {
-                const char *v = line_value(l);
+                const char *v = value_trimmed(&p, l);
                 /* a `path-ref` is C's own two spellings: "local" or
                  * <store>. The path is RECORDED, never opened — resolving
                  * it against a --lib-path list is [LIB]'s store scan. */
@@ -792,7 +816,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 continue;
 
             if (tok_is(l, "name")) {
-                const char *v = line_value(l);
+                const char *v = value_trimmed(&p, l);
                 if (!ident_ok(v)) {
                     rxt_fail(&p, line,
                              "'name' wants an identifier (got '%s')", v);
@@ -815,9 +839,37 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 continue;
             }
             if (tok_is(l, "description")) {
-                const char *text = NULL;
-                if (parse_prose(&p, &L, &i, line_value(l), &text) != 0) goto fail;
-                block->description = text;
+                /* THE ONE-LINE FORM ONLY, IN A BLOCK. format_design §1.3
+                 * gives a block-line `description` the same `prose-value`
+                 * the head's takes, which includes the `|` block scalar —
+                 * but §1.2's lexical rule says a PATTERN BLOCK's lines are
+                 * NOT indented, and a block scalar is defined as indented
+                 * continuation. The two cannot both hold in the body, and
+                 * the body's rule is the one 3,265 blocks depend on
+                 * (R-COMPAT-1), so it wins: `|` is a HEAD form.
+                 *
+                 * This also keeps the seam honest. run.sh's per-line loop
+                 * has no continuation mechanism, and giving the body one
+                 * would put head-shaped parsing back into the harness —
+                 * the exact thing §1.1's ruling removed. MEASURED free: 0
+                 * corpus lines are indented and 0 blocks carry a
+                 * `description`, so no existing file can reach either
+                 * reading. Raised for the manager rather than settled
+                 * silently; see the lane report. */
+                const char *v = line_value(l);
+                if (!strcmp(v, "|")) {
+                    rxt_fail(&p, line,
+                             "a pattern block's 'description' takes the "
+                             "one-line form only: the '|' block scalar is "
+                             "continuation, and a pattern block's lines are "
+                             "not indented (the head is where '|' belongs)");
+                    goto fail;
+                }
+                if (!*v) {
+                    rxt_fail(&p, line, "'description' needs its text");
+                    goto fail;
+                }
+                block->description = arena_strdup(&src->arena, v);
                 continue;
             }
             if (parse_setting(&p, block, line, l, 1) != 0) goto fail;
