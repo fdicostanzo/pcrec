@@ -6222,3 +6222,34 @@ producer (it is the control), §2.4's "impossible by construction"
 collision story, §0.3 D-a, and the [DD-14.G] constraint "elision may not
 change RX_NCAPS" (the bar is: emitted code byte-identical and slots
 `1..ngroups` identical; delivered slots live above).
+
+## D88 — ONE ARTIFACT PER EMITTED FILE, ALWAYS; composition of artifacts is LINKING, never a multi-pattern translation unit (Frank, 2026-08-29 ~21:5x, forty-fifth session)
+
+**Context.** The emitted-size caps (D84), the artifact size log and the
+new advisory size warning (`--warn-emit-bytes`, default 250,000) all
+measure ONE artifact — the `.c` + `.h` a single compile call emits (D58's
+per-call rule). Frank asked whether that accounting holds for sources
+with more than one artifact ([DD-13b]'s multi-target files) and whether
+[V-E]/[EMIT-SET]'s idea of "several patterns → one emitted unit" should
+instead be "different files, linked at build".
+
+**Ruling.** "Agree, record it as D88": every emitted file holds exactly
+ONE artifact — one pattern, one prefix, one `.c` + `.h` — and anything
+that needs more than one artifact gets more than one file, linked at
+build. Consequences:
+1. [DD-13b] §2.7 / r44 M10 stand as the general rule: N targets → `-o
+   <dir>` writes `<dir>/<prefix>.c` + `.h` per target; a single-file
+   `-o` with N > 1 targets is refused. There is no multi-artifact TU.
+2. [V-E] / [EMIT-SET]: an "emission set" is a DIRECTORY of per-artifact
+   files plus a manifest header, never a combined translation unit.
+   R-VE-3's content-addressed sharing of tables across artifacts is a
+   LINK-level concern (a shared object, if ever), deferred under D77
+   with no measured need.
+3. Caps, the size log, `--warn-emit-bytes` and the bench's `.so` unit
+   all remain per artifact and comparable; APPROACH's self-contained
+   artifact invariant and `-p` prefix isolation hold by construction.
+4. The harness's own drivers that link several prefixes into one binary
+   (tests/registry's definitions oracle, the atomic/lookaround
+   differentials) are the model: many artifacts, one link.
+Cross-notes: [DD-13b] §2.7, [V-E], [EMIT-SET], limits.md (the warning's
+unit).
