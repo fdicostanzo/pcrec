@@ -896,6 +896,64 @@ else
     pass "head/blockscalar: verify_rxt.py refuses it too — all three parsers agree"
 fi
 
+# --- the two rows that would otherwise have NO population ------------
+#
+# S199 and S204 both plant a silent ACCEPTANCE, and on the clean corpus
+# neither has anything to accept: MEASURED, all 59 distinct `features`
+# lists in the corpus are valid, and after W1.1 taught verify_rxt.py the
+# other four line kinds, no corpus line reaches its unknown-kind branch.
+# A detector with an empty population is a green check measuring nothing
+# — both rows scored UNDETECTED on their first run, which is exactly how
+# this was found. These two fixtures are their witnesses.
+
+# S199: an invalid `features` list must be a LOUD harness failure, never
+# a silently-passing `perr`. pcrec refuses an unknown module with exit 1,
+# which is what `perr` asserts — so without this validation the block
+# certifies the typo, not the pattern.
+BF="$FIXRUN/bad_features.rxt"
+if "$TIMEOUT_BIN" 300 bash "$RUNSH" "$BF" > "$WORKDIR/bf.run" 2>&1; then
+    fail "S199 witness: run.sh ACCEPTED a block with an invalid features list.
+  pcrec refuses an unknown module name with exit 1, which is exactly what
+  a \`perr\` block expects — so this block just passed while testing the
+  typo instead of the pattern."
+elif grep -q "not a valid enabled-set spec" "$WORKDIR/bf.run"; then
+    pass "S199 witness: run.sh fails loudly on an invalid features list, naming it"
+else
+    fail "S199 witness: run.sh failed on the invalid-features fixture, but not
+  with the named harness failure — the message is what tells an author
+  their module name is a typo rather than their pattern being wrong:
+$(tail -10 "$WORKDIR/bf.run")"
+fi
+
+# S204: a line kind no parser knows must be REFUSED by all three, never
+# swallowed. `tag` is a real keyword of a later wave, so this also checks
+# that "not in this build" and "unparseable" stay distinct answers.
+UK="$FIXRUN/unknown_kind.rxt"
+if "$TIMEOUT_BIN" 60 python3 "$VERIFY" "$UK" > "$WORKDIR/uk.py" 2>&1; then
+    fail "S204 witness: verify_rxt.py ACCEPTED a line kind it does not know.
+  A parser that swallows an unknown kind as a comment verifies nothing
+  and reports nothing, and subtracts from a total nobody compares."
+else
+    pass "S204 witness: verify_rxt.py refuses a line kind it does not know"
+fi
+if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$UK" > /dev/null 2>&1; then
+    fail "S204 witness: run.sh ACCEPTED an unknown line kind; its catch-all is
+  what makes a corrupted corpus loud instead of silently smaller"
+else
+    pass "S204 witness: run.sh refuses it through its catch-all"
+fi
+uk_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$UK" 2>&1)"
+if [ $? -eq 0 ]; then
+    fail "S204 witness: --list-source ACCEPTED a later-wave keyword"
+elif printf '%s' "$uk_out" | grep -q 'NOT IN THIS BUILD'; then
+    pass "S204 witness: --list-source refuses 'tag' as NOT IN THIS BUILD (a real keyword, not a typo)"
+else
+    fail "S204 witness: --list-source refused 'tag', but not as a later-wave
+  keyword. A reader told 'unknown' goes hunting a typo in a word that is
+  in the format's own documentation:
+  $uk_out"
+fi
+
 # verify_rxt refuses a HEAD-BEARING file by name rather than mis-parsing
 # it: the head has one parser, and a fourth would be one more thing to
 # keep in step. A loud refusal is the honest W1.1 answer.

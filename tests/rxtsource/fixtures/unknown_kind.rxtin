@@ -1,0 +1,13 @@
+# S204's WITNESS, and the reason it needs one is worth stating: after
+# W1.1 taught verify_rxt.py the corpus's other four line kinds, NO corpus
+# line reaches its unknown-kind branch any more. Fixing the gap is what
+# emptied the population of the row that guards it.
+#
+# `tag` is a real .rxt keyword of a LATER WAVE. All three parsers must
+# refuse it rather than swallow it: pcrec by name ("not in this build"),
+# run.sh through its catch-all hard error, verify_rxt.py by raising. A
+# parser that treats a kind it does not know as a comment verifies
+# nothing and says nothing, which is the quiet failure S204 plants.
+pattern a+
+tag beta
+m "aaa" 0 3

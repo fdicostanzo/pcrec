@@ -1,0 +1,15 @@
+# S199's WITNESS. Without it that row has an EMPTY population and scores
+# UNDETECTED: MEASURED, all 59 distinct `features` lists in the corpus
+# are valid, so a plant that makes run.sh silently ACCEPT an invalid one
+# has nothing to accept.
+#
+# The failure this pins is nastier than it looks. pcrec refuses an
+# unknown module name with exit 1 — which is exactly what a `perr` block
+# asserts. So a typo'd `features` line makes the block below PASS while
+# testing nothing about the pattern: it certifies that pcrec rejected a
+# FEATURES SPEC, not that it rejected the regex. run.sh must therefore
+# validate the list itself and fail LOUDLY, which is what this file
+# checks and what S199 removes.
+pattern (?<n>a)\k<n>
+features bogus_module_name
+perr

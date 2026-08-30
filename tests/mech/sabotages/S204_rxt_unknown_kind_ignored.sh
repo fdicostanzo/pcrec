@@ -23,11 +23,20 @@
 # A row for the SHAPE, not for one kind: the plant is in the parser's
 # fallthrough, so it covers every kind the grammar may gain later, which
 # is the direction this file will actually be edited in.
+#
+# AND IT NEEDED A WITNESS, for a reason with a sting in it: once W1.1
+# taught this parser the four kinds it was missing, NO corpus line
+# reaches the unknown-kind branch any more. FIXING THE GAP IS WHAT
+# EMPTIED THE POPULATION OF THE ROW THAT GUARDS IT, and the row duly
+# scored UNDETECTED on its first run.
+# tests/rxtsource/fixtures/unknown_kind.rxtin is the witness: `tag` is a
+# real keyword of a later wave, which all three parsers must REFUSE
+# rather than swallow.
 SAB_ID="S204-rxt-unknown-kind-ignored"
 SAB_FILE="tests/harness/verify_rxt.py"
 SAB_SUITES="rxtsource"
 SAB_DESC="verify_rxt.py's parser swallows an unrecognised .rxt line kind as a comment instead of refusing it, so every expectation of that kind is silently unverified and uncounted"
-SAB_REACH_POP="tests/harness/giveup.rxt|^gu |2"
+SAB_REACH_POP="tests/rxtsource/fixtures/unknown_kind.rxtin|^tag |1"
 SAB_COUNT=1
 SAB_BEFORE='        else:
             raise ValueError(f"{path}:{lineno}: unrecognized line: {line!r}")'

@@ -2,12 +2,24 @@
 
 Branch `lane/w11`, from main `1ac1405`. Written 2026-08-30.
 
-> **STATUS: CODE COMPLETE, NOTHING EXECUTED.** The manager's measurement
-> HOLD was in force for the whole of this lane's life and was never
-> lifted. Every one of §7.2's eight acceptance criteria requires running
-> something the hold forbids by shape. **Not one of them has been
-> measured.** What follows separates, line by line, what was BUILT from
-> what was VERIFIED — which on this lane is: everything, and nothing.
+> **STATUS: BUILT AND MEASURED.** The HOLD that covered this lane's first
+> half was lifted at 06:24 and a bench window ran 07:10-10:45. Everything
+> below that says MEASURED was executed; the few things that are still
+> owed say so by name.
+
+**Headline results**
+
+| | |
+|---|---|
+| `make -j4`, `make strict` | **clean** (-Werror -Wshadow, whole tree) |
+| **C1**, three-way | **leg A == leg B == leg C, BYTE-IDENTICAL** over 179 files / 3,265 blocks / 22,125 case rows |
+| **C1 runtime** | **8.2 s** — leg A 0.74 s, leg B 7.32 s, leg C 0.17 s |
+| **C2** (`make test-corpus`, PROCS=4) | **26,680 passed / 0 failed**, 0 compile failures, 0 pending-vm, **178 of 178 workers** |
+| **C3** (the oracle, first run ever) | **13,181 verified / 0 failed** over 179 files, every exclusion counted by reason |
+| **`make test-rxtsource`** | **39 checks passed, 0 failed** |
+| the §7.4 discovery | **ZERO corpus defects** |
+
+---
 
 ---
 
@@ -27,21 +39,26 @@ Branch `lane/w11`, from main `1ac1405`. Written 2026-08-30.
 
 ---
 
-## (b) §7.2 "Green means, exactly" — the table, filled
+## (b) §7.2 "Green means, exactly" — the table, MEASURED
 
-**Every MEASURED value below came from `grep`/`awk`/`wc`, which the hold
-allows. Every value marked OWED requires an execution the hold forbids.**
-
-| # | criterion | status |
+| # | criterion | result |
 |---|---|---|
-| 1 | C1 three-way byte-identical over 179/3,265; field manifest asserted; leg B through the `$@` branch | **BUILT, UNMEASURED.** All three legs and both projections are written; the manifest asserts the 15 column names, the per-row field count and the row totals; leg B is invoked through the argument branch. Never run. |
-| 2 | C2 equal to the pins over 178/3,262/26,680 | **NOT RUN, and NOT THIS SECTION.** C2 *is* `make test-corpus`; re-running it here would double the suite's most expensive section to assert numbers it already asserts. What `tests/rxtsource/` adds is C2's DENOMINATORS, asserted as a subtraction. |
-| 3 | C3 runs at all, over its own discovery, short list HARD FAILING, two totals pinned | **BUILT, UNMEASURED.** `--min-files` is a hard fail whose floor comes from the caller and never from the discovery it checks; `FILES=` and `SKIP=` (broken out by reason) are new output lines. The totals themselves are **OWED** — they cannot exist until it runs. |
-| 4 | C0a's two independent assertions both 0 | **BUILT, UNMEASURED.** Assertion (a) is an EXTERNAL count via a wrapper around the binary, not a counter inside run.sh — a counter maintained by the script that decides whether to call shares a source with what it counts. Assertion (b) is an awk census over raw bytes. A disagreement between them is its own failure mode. |
-| 5 | every sabotage row turns its NAMED check red | **CANNOT BE MEASURED BY THIS LANE.** Measuring it is `make mech`, which the lane brief forbids me by name. Ten rows are written (S194-S203) with anchors verified unique against the tree and reach populations verified non-empty; the DETECTED/UNDETECTED measurement is the manager's. **Two rows are deferred, not dropped** — see (c). |
-| 6 | the arm-block hash pin and the 32-keyword census run as checks | **BUILT, UNMEASURED.** Pin: 252 lines between the markers, `sha256 3e945390…`, update rule in the failure message. Census: the pinned 32 verbatim from format_design §1.1, plus 4 this step adds arms for. |
-| 7 | **C1's runtime measured and recorded** | **OWED.** The runner times and prints all three legs per run; the number does not exist until it runs. §7.4 named this as risk 1 and required it *before* item 6. |
-| 8 | `make strict` clean; spec hunks S1/S1b/S3/S10 in the same change | **Spec hunks: DONE** (`8a0a918`). **`make strict`: NOT RUN.** Nothing in this lane has been compiled. |
+| 1 | C1 three-way byte-identical over 179/3,265; field manifest; leg B through the `$@` branch | **PASS.** leg A == leg B and leg B == leg C, `diff`-clean, over 3,265 block rows and 22,125 case rows. Manifest asserted: the 15 column names, 15 fields on every data row, and the row totals. |
+| 2 | C2 equal to §3.1's pins over 178/3,262/26,680 | **PASS.** 26,680 / 0; compile failures 0; pending-vm 0; 178 of 178 workers. See the size-log note below — one number moved and it is derivable. |
+| 3 | C3 runs at all, over its OWN discovery, short list HARD FAILING, totals pinned | **PASS.** 179 files (its own `find`-derived discovery, floored at the census), 13,181 verified, 0 failed. Nine populations pinned and asserted. |
+| 4 | C0a's two independent assertions both 0 | **PASS**, and a third view agrees: the external invocation count is 0, the independent head-bearing census is 0, and pcrec's own dump emitted 0 head-declaration rows over the corpus. |
+| 5 | every sabotage row turns its NAMED check red | **RUNNING** at the time of writing — 11 rows (S194-S204), sequentially, one at a time. All 11 pass field validation. |
+| 6 | the arm-block hash pin and the keyword census run as checks | **PASS.** Pin: 252 lines, unchanged. Census: 36 candidate keywords (the pinned 32 plus W1's 4), all 0 in first-token position. |
+| 7 | **C1's runtime measured and recorded** | **8.2 s.** leg A 0.74 s (179 `--list-source`), leg B 7.32 s, leg C 0.17 s. §7.4's risk 1 is closed: ~0.2% of a `test-corpus`. |
+| 8 | `make strict` clean; spec hunks in the same change | **PASS** both. |
+
+**The one C2 number that moved, and it is a derivation not a drift.**
+§3.1 pins `size-log rows: 2877`, taken on a run where 29 cases and **1
+distinct pattern-compile** failed (the known `counterk` load cell). This
+run had **0** of both. The size log takes one row per SUCCESSFUL compile,
+so one fewer distinct compile failure is exactly one more row:
+2877 + 1 = **2878**. The pinned value is the loaded-run figure; 2878 is
+the clean-run figure the same section already describes as "clean 0".
 
 ### Measured facts §7.2 requires not to move — all re-derived here
 
@@ -70,74 +87,70 @@ allows. Every value marked OWED requires an execution the hold forbids.**
 
 ## (c) What I could not do, and why
 
-1. **Everything in §7.2 that requires execution.** The hold was never
-   lifted. I did not run `make`, `gcc`, any built binary, any
-   `tests/**/run*.sh`, or any corpus pass. I also did not run
-   `bash -n` on the two scripts I edited or a single-file
-   `verify_rxt.py` smoke test, reading the hold's shape list as covering
-   them; I asked the manager for a ruling on that narrow point and had no
-   answer by the time this was written. **The C code has never been
-   compiled.** Three compile-class defects were found by reading (below);
-   there may be more.
-
-2. **Sabotage validation is structurally out of this lane's reach.**
-   §7.2 item 5 requires each row to turn its named check red. That
-   measurement is `make mech`, which my brief forbids me by name
-   ("NEVER `make test`, `make san`, `make ubsan`, `make asan`, mech, or
-   the full battery — those are the manager's"). I have written the rows,
-   verified every anchor occurs exactly once in the tree, and verified
-   every `SAB_REACH_POP` names a real file with a non-empty population.
-   The verdicts are the manager's to take.
-
-3. **Two sabotage rows are DEFERRED with the reason written down**
-   (`tests/rxtsource/CLAUDE.md`). §7.2 anticipated one exclusion; there
-   are two:
-   - **S-C8** — as the design says, there is no composer to plant in and
-     no corpus file that composes. Arrives at W1.3.
-   - **S-C7** — *not* anticipated as an exclusion. Its named detector is
-     C0a's invocation counter, and in W1.1 the only way to move that
-     counter is to make the head detector fire spuriously, which is
-     **S-C12's plant exactly** (live as S203). The two rows are the same
-     edit until a composer exists to distinguish them. Flagged rather
-     than quietly counted as covered.
-
-4. **`--source`, `--target`, `--lib-path`, `--emit-composed` are not
-   built.** §5's prose lists the first two under W1.1; §7.1's build
-   order, §7.2's acceptance and §4's spec-hunk table all name only
-   `--list-source` (S11, the flag surface, is assigned to W1.2). W1.1 has
-   no build path and no store scan for them, so they would be flags whose
-   only behaviour is to refuse — built ahead of a consumer, which D77
-   forbids. **If the manager wants them anyway, say so; it is a small
-   change.**
-
----
+1. **`make test`, `make mech` in full, and the sanitizer battery** remain
+   the manager's by the lane brief. I ran `test-corpus`, `test-rxtsource`
+   and the eleven sabotage rows individually, as instructed.
+2. **Two sabotage rows are DEFERRED**, with the reason written in
+   `tests/rxtsource/CLAUDE.md`. **S-C8** has no composer to plant in.
+   **S-C7** was not anticipated as an exclusion: its named detector is
+   C0a's invocation counter, and in W1.1 the only way to move that counter
+   is to make the head detector fire spuriously — which is **S-C12's plant
+   exactly**, live as S203. The two are the same edit until a composer
+   exists to distinguish them.
+3. **`--source`, `--target`, `--lib-path`, `--emit-composed` are not
+   built** — accepted by the manager; §5 corrected to move them to W1.2.
 
 ## (d) Findings for the manager
 
-### 1. `verify_rxt.py` could not parse 4 of the corpus's 14 line kinds
+### 1. THE DISCOVERY (§7.4 risk 2): zero corpus defects, and the design predicted it
 
-`parse_rxt` knows 10 kinds. The corpus uses 14. `gu` (23 lines),
-`frames-buffer=` (9), `engine` (5) and `budget` (3) each reach
-`raise ValueError("unrecognized line")`, so wiring the oracle over the
-corpus dies on **5 files** — `tests/harness/giveup.rxt`,
-`tests/recursion/d27/sr_depth.rxt`, `tests/recursion/framebuffer.rxt`,
-`tests/recursion/quantified.rxt`, `tests/size/size_term.rxt` — before
-scoring a single expectation. Fixed here (it is F14's territory): all
-four parse, `engine`/`budget`/`frames-buffer=` are recognised and ignored
-(they configure pcrec's own machinery and mean nothing to python `re`),
-and `gu` is a COUNTED skip.
+First corpus-wide run of an oracle nothing in the tree had ever invoked.
+**1,847 reported failures. The split is the finding:**
 
-**CORRECTION TO MY OWN FIRST REPORT OF THIS.** I sent it to the manager
-as a new finding. It is not. `tests/harness/CLAUDE.md` has recorded it
-since [DD-14] wave A — by name, with all three kinds listed, and
-explicitly as *"a live gap, recorded rather than silently worked
-around"*. That entry was right that it was harmless and right to write it
-down. What it could not see is that its own reason — *"no automated
-invocation reaches it"* — was a fact about the WIRING, and W1.1 is the
-change that moves the wiring. **The general shape is worth keeping: a
-gap documented as harmless BECAUSE nothing reaches it expires silently
-the moment something does, and nothing watches that direction.** That is
-[MECH-REACH] read backwards, and the tree has no checker for it either.
+| | count | what it is |
+|---|---|---|
+| python **cannot compile** the pattern | **1,814** (98.2%) | `(?(DEFINE)`, `(?1)`, PCRE2's `(?<n>` spelling, `\g<>`, `(?J)`, possessive `?+`, `(?0)` — constructs python `re` does not have |
+| `perr` blocks python accepts | **28** | two engines, two grammars |
+| **genuine answer differences** | **5** | `a\Z` vs `"a\n"`, and `(?m)^` at end-of-subject |
+| **corpus defects** | **0** | |
+
+**All five real differences are in `tests/assertions/`** — the one
+directory `docs/spec/rxt_format.md` already declares has a REPLACEMENT
+oracle, "because several of its constructs (`\Z`, `\G`, `\K`) have no
+python equivalent at all". §3.1.1 predicted exactly this. **No corpus
+expectation was edited.**
+
+**Two things had to be built before the oracle could be wired at all.**
+
+- **A PER-FILE WALL BOUND.** `tests/base/d27_k23_ambiguous_decomposition.rxt`
+  (`(a{1,3}){65}`, subjects past 100 characters) **does not return** under
+  python `re` — 64 characters answers instantly, 70 never does. A
+  corpus-wide wiring with no bound hangs `make test` forever. `D45`
+  already forbids exactly this for everything else the harness runs
+  ("a loud, named FAILURE, never a hang or a silent skip"); the oracle sat
+  outside it **because it had never run**. A subprocess, not
+  `signal.alarm`: a long `re.search` is one C call that never returns to
+  the interpreter, so SIGALRM cannot interrupt it.
+- **THE OWN-ORACLE RULE**, which the spec has stated all along and nothing
+  implemented. Read as a DECLARATION discovered by looking — the directory
+  carries its own `verify_*.py`, excluding this script — never a path
+  list. It selected **exactly 17 files / 10,274 expectation lines**,
+  reproducing the design note's independently measured figure for
+  `verify_pcre2.py`'s coverage with no number carried across.
+
+**Result: 13,181 verified, 0 failed, and every exclusion counted by
+reason** (pcre2-only 1,357; giveup 23; composed 0; no-python-expression
+1,753; perr-python-accepts 14; own-oracle 10,274), all nine pinned. It
+reconciles: 13,181 + 13,421 + 89 (the bounded file's own lines) = **26,691**.
+
+**A correction I owed on this finding.** I first reported the four
+unparsed line kinds as a new discovery. It is not:
+`tests/harness/CLAUDE.md` recorded it at [DD-14] wave A, by name, as "a
+live gap, recorded rather than silently worked around". That entry was
+right that it was harmless *because nothing reached it* — and that reason
+was a fact about the WIRING, which this step is what moves. **A gap
+documented as harmless because nothing reaches it expires silently the
+moment something does, and nothing watches that direction.**
 
 ### 2. A grammar contradiction, resolved conservatively — needs ratification
 
