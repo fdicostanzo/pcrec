@@ -780,3 +780,30 @@ This is the second delimiter collision in this lane (the first cost only a
 throwaway probe, where `IFS=':'` met `(?:`) and the third instrument bug found
 before it ran, after the misleading `$?` and the addendum placed below the
 verdict. All four were mine; none reached a measurement.
+
+### 12.13 `tests/resource/run_resource_tests.sh` — **29 passed, 0 failed**
+
+The three cells this row owns:
+
+    PASS [OPT-4.1] '(a|b){0,30000}' compiles at the DEFAULT in 20,600 bytes
+         with RX_VM_PREFILTER "none" — the collapsed language is nullable, the
+         rescue is DECLINED, and dropping the prefilter still gets the artifact
+         under the cap
+    PASS [OPT-4]   '(a|b){1,30000}' compiles at the DEFAULT in 34,530 bytes via
+         the SIZE RUNG ('size cap retry, exact 1335105 > 1000000')
+    PASS [OPT-4.1] '(a|b){0,30000}' under -fprefilter KEEPS the collapsed
+         prefilter (32,297 bytes, 'size cap retry, exact 1333367 > 1000000')
+
+The third is the review-found gap made falsifiable: without the build gate's
+`pfc_prefilter_forced` conjunct that compile REFUSES, and `limits.md` §3.3's
+"no pattern that compiles today stops compiling" is false.
+
+**A BYTE-COUNT NOTE THAT BEARS ON THE BENCH'S ASK (ii).** These figures are
+SMALLER than the ones §11.2 records from my own probes (20,600 against 32,076;
+32,297 against 43,773) **for the same patterns and the same flags**, and the
+difference is the OUTPUT SPELLING: the suite compiles with `-o FILE` (split
+`.c` + `.h`) while my probes used `-o -` (self-contained, the shared
+`PCREC_RX_ABI_H` block inline). That is the same axis I expect to account for
+the bench's 24,414-vs-32,075 gap, showing up here by accident before
+`predict_check` measures it deliberately. Both numbers are honest; neither is
+"the" size, which is precisely ask (ii)'s point.
