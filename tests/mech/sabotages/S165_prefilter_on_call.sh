@@ -58,9 +58,21 @@ SAB_COUNT=1
 # collapse gained a SECOND rung (the size-cap retry) and one bool per rung
 # stopped being the right shape. The sabotage is UNCHANGED in meaning: it still
 # disables exactly one conjunct and carries the rest through verbatim.
+# **RE-ANCHORED AGAIN 2026-08-30 ([OPT-4.1]), and it is the SECOND time this
+# row's anchor has moved for the SAME reason** — `fit.prefilter`'s clause is a
+# multi-line expression that every new prefilter conjunct rewrites, and this
+# row spans the whole of it. [OPT-4] added the `collapse_reason != CR_SEL1`
+# term; [OPT-4.1] adds `fit.prefilter_declined_nullable` (the nullability
+# decline on a ladder rung). Re-derived from the text [OPT-4.1] LEAVES BEHIND
+# rather than from `git show HEAD:` — this lane's own uncommitted change is
+# what invalidated it, which is the case `sabotages/CLAUDE.md` distinguishes.
+# The sabotage is UNCHANGED in meaning: it still disables exactly one conjunct
+# and carries the rest through verbatim.
 SAB_BEFORE='        fit.prefilter = (has_bref || has_call ||
-                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1))
+                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
+                         fit.prefilter_declined_nullable)
                         ? false'
 SAB_AFTER='        fit.prefilter = (has_bref || false ||   /* SABOTAGE S165 */
-                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1))
+                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
+                         fit.prefilter_declined_nullable)
                         ? false'
