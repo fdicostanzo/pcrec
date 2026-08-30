@@ -1,0 +1,9 @@
+# [DD-13b.W1.1 r46sem finding 3] `flags xmz` — ONLY `i` IS DEFINED. All
+# three parsers must refuse this identically: leg A used to accept any
+# run of letters and dump `flags=xmz`; leg B already refused it; leg C's
+# `--dump` path (`parse_rxt`) used to accept it with no check at all,
+# validating only in its separate oracle-check loop, which the C1
+# differential never runs.
+pattern a+
+flags xmz
+m "aaa" 0 3

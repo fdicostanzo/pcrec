@@ -140,6 +140,54 @@ parsers refuse it with the reason stated, and the fixture asserts all
 three — because a contradiction resolved differently in one of them
 surfaces later as a bug report rather than as a design decision.
 
+## [r46 / w11f fix lane, 2026-08-30] more fixtures, same shape
+
+The r46 panel on the [DD-13b.W1.1] merge (`docs/dev/reviews/
+2026-08-30-r46-w11-impl.md`) found the same class of gap the head path's
+own fixtures above were built for, one level down: not "the head has an
+empty population on the corpus" but **"the three parsers agree on the
+corpus and diverge one line outside it"** — a control byte the corpus
+never carries, a tab in a `with`/`from` list, a `flags`/`engine` value
+outside the ruled vocabulary, an empty or `|`-trailing-space
+`description`, a whitespace-only line, a directive before any pattern in
+a headless file, a duplicate block name, and a handful more (findings
+1-4, 7, 8, 11-16, 19-21, 23 of that review). Every one got a `.rxtin`
+fixture here and a check in `run_rxtsource_tests.sh`, following the same
+rule the table above states: a head-only construct (a tab in a config
+list, `with` validation, the too-long-identifier caps, the budget
+overflow) is checked through `pcrec --list-source` ALONE, because legs B
+and C never read the head; a construct any of the three bodies can reach
+(`flags`, `engine`, `description`, block `name`, a whitespace-only line,
+a stray pre-block directive) is checked THREE WAYS, either
+accept-with-agreement or refuse-in-all-three.
+
+`check_refusal_all3` (in `run_rxtsource_tests.sh`) is the three-way
+sibling of the pre-existing `check_refusal`: it asserts leg A's message
+via the same needle mechanism and then asserts legs B and C ALSO refuse
+(exit nonzero), without pinning their exact wording — D26 does not
+require three parsers built by different authors in different languages
+to phrase a refusal identically, only to agree that one is owed.
+
+sem1 (the escape byte-value bug, the panel's one BLOCKER) is the fixture
+to read first: `ctrl_bytes.rxtin` carries a literal VT/FF/DEL in its
+pattern text and the check asserts all three legs escape it
+IDENTICALLY, byte for byte — the corpus population for this bug was, and
+remains, zero. `tests/mech/sabotages/S205_rxt_escape_index_not_value.sh`
+re-plants the "index confused with value" shape against the fixed code
+(the loop's POSITION substituted for the byte's own ordinal) and expects
+this section's ctrl_bytes check, and nothing else, to go red.
+
+Left at the manager's discretion, per the review's own triage (findings
+10, 18, 22 not fixed; findings 11, 12 fixed anyway, cheaply): a blank
+line's effect inside a `config` body vs. a block scalar (finding 10) is
+a genuine grammar-direction decision, not an implementation bug, and is
+left for a ruling; a NUL byte silently truncating leg A (finding 18) has
+no fix cheaper than a different line-splitting scheme entirely, for a
+population the review itself calls very-low-likelihood; the escape
+vocabulary being a stated SUBSET of the full subject-escape table
+(finding 22) is now documented in `docs/spec/rxt_format.md` rather than
+given a fixture, since nothing is wrong to detect.
+
 ## Maintenance
 
 - The census is a **PIN**, not a derivation. When a corpus file is added

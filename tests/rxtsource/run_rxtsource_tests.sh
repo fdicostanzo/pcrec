@@ -519,6 +519,20 @@ C3_SKIP_NOPYTHON=1753
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=10274
 C3_TIMEOUT=1
+# [DD-13b.W1.1 r46chk finding 3 / r46sem finding 6] THE "89" NAMED, WITH
+# ITS OWN UPDATE PROCEDURE. This is `tests/base/d27_k23_ambiguous_
+# decomposition.rxt`'s own expectation-line count (MEASURED: the census
+# awk above over that one file gives exactly 89) -- the ONE file
+# C3_TIMEOUT pins as expected to overrun verify_rxt.py's per-file wall
+# bound. It is silently COUPLED to C3_TIMEOUT: if that file ever becomes
+# python-verifiable (a faster box, a python change), the reconciliation
+# check below fails alongside C3_TIMEOUT and pcrec_error's own
+# --allow-timeouts guard, with three different messages and none of them
+# saying "the timed-out file is now verified" on its own -- reading THIS
+# comment is what closes that gap. If the file's own expectation count
+# ever changes (a corpus edit), update C3_TIMEOUT_FILE_LINES here in the
+# same reviewed commit, beside CENSUS_LINES.
+C3_TIMEOUT_FILE_LINES=89
 
 # THE PER-FILE WALL BOUND IS NOT OPTIONAL HERE, and this is the one place
 # it is armed. MEASURED: `tests/base/d27_k23_ambiguous_decomposition.rxt`
@@ -531,8 +545,15 @@ C3_TIMEOUT=1
 # silent skip") and what nobody had applied here because this script had
 # never run.
 C3OUT="$WORKDIR/c3.out"
+# [DD-13b.W1.1 r46sem finding 6] `--allow-timeouts 1`: the ONE file this
+# run pins as expected to overrun (tests/base/d27_k23_ambiguous_
+# decomposition.rxt, C3_TIMEOUT_FILE_LINES above). verify_rxt.py itself
+# now exits 1 on ANY timeout the caller does not explicitly allow, so
+# without this flag a correctly-behaving run would fail on its own known,
+# pinned exclusion; a SECOND file timing out would still exceed the
+# allowance and fail loudly, which is the property finding 6 exists for.
 "$TIMEOUT_BIN" 900 python3 "$VERIFY" --min-files "$CENSUS_FILES" \
-    --file-timeout 10 $(cat "$FILES") > "$C3OUT" 2>&1
+    --file-timeout 10 --allow-timeouts 1 $(cat "$FILES") > "$C3OUT" 2>&1
 c3rc=$?
 c3_files=$(awk -F= '/^FILES=/ { print $2 }' "$C3OUT")
 c3_pass=$(awk '/^PASS=/ { sub(/^PASS=/, "", $1); print $1 }' "$C3OUT")
@@ -580,12 +601,15 @@ if [ "$c3rc" -eq 0 ]; then
   and why."
     fi
 
-    if [ "$((c3_pass + c3_skip + 89))" = "$CENSUS_LINES" ]; then
-        pass "C3 reconciles: $c3_pass verified + $c3_skip skipped + 89 in the timed-out file = $CENSUS_LINES"
+    if [ "$((c3_pass + c3_skip + C3_TIMEOUT_FILE_LINES))" = "$CENSUS_LINES" ]; then
+        pass "C3 reconciles: $c3_pass verified + $c3_skip skipped + $C3_TIMEOUT_FILE_LINES in the timed-out file = $CENSUS_LINES"
     else
-        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_skip + 89 = $((c3_pass + c3_skip + 89)),
+        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_skip + $C3_TIMEOUT_FILE_LINES = $((c3_pass + c3_skip + C3_TIMEOUT_FILE_LINES)),
   census $CENSUS_LINES. Expectations are going somewhere neither counted
-  nor reported, which is the one outcome a skip total exists to prevent."
+  nor reported, which is the one outcome a skip total exists to prevent.
+  If tests/base/d27_k23_ambiguous_decomposition.rxt legitimately changed
+  size, or stopped timing out, update C3_TIMEOUT_FILE_LINES (and
+  C3_TIMEOUT / --allow-timeouts above) together, in a reviewed commit."
     fi
 else
     # ITS FIRST RUN OVER 139 NEVER-ORACLED FILES IS A DISCOVERY, NOT A
@@ -962,6 +986,198 @@ if python3 "$VERIFY" --dump "$HB" > /dev/null 2>&1; then
   and must say so rather than growing a fourth head parser"
 else
     pass "head: verify_rxt.py refuses a head-bearing file by name (the body-only oracle)"
+fi
+
+# =====================================================================
+# [DD-13b.W1.1] THE r46 PANEL'S FIXTURES (docs/dev/reviews/
+# 2026-08-30-r46-w11-impl.md, fix lane w11f) — the class of finding was
+# "the three parsers agree on the CORPUS and diverge one line outside
+# it", and every witness below is a `.rxtin` that makes that divergence
+# REACHABLE and then asserts the fix: either three-way agreement (accept
+# with identical dump, or refuse in all three naming the refusal) or, for
+# the head-only constructs no body parser ever sees, leg A alone.
+
+# --- a REFUSAL helper for a construct all three legs parse (the body) --
+#
+# `check_refusal` (above) already asserts leg A's message; this adds
+# legs B and C's own refusal, which is the part a head-only witness
+# cannot exercise (run.sh/verify_rxt.py never read the head at all).
+check_refusal_all3() {
+    local fixture=$1 label=$2
+    shift 2
+    check_refusal "$fixture" "$label" "$@"
+    local f="$FIXRUN/$fixture"
+    if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$f" > /dev/null 2>&1; then
+        fail "head/$label: run.sh --dump ACCEPTED $fixture; it must be refused too"
+    else
+        pass "head/$label: run.sh --dump refuses it too"
+    fi
+    if "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$f" > /dev/null 2>&1; then
+        fail "head/$label: verify_rxt.py --dump ACCEPTED $fixture; it must be refused too"
+    else
+        pass "head/$label: verify_rxt.py --dump refuses it too — all three parsers agree"
+    fi
+}
+
+# --- sem1 (BLOCKER): the control-byte escape, all three legs, byte for byte
+CB="$FIXRUN/ctrl_bytes.rxt"
+cb_a_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$CB" 2>"$WORKDIR/cb.aerr")"; cb_a_rc=$?
+cb_b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$CB" 2>"$WORKDIR/cb.berr")"; cb_b_rc=$?
+cb_c_out="$("$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$CB" 2>"$WORKDIR/cb.cerr")"; cb_c_rc=$?
+if [ "$cb_a_rc" = "0" ] && [ "$cb_b_rc" = "0" ] && [ "$cb_c_rc" = "0" ]; then
+    cb_a_pat=$(printf '%s\n' "$cb_a_out" | awk -F'\t' '$1 == "pattern" { print $5; exit }')
+    cb_b_pat=$(printf '%s\n' "$cb_b_out" | awk -F'\t' '$1 == "block" { print $6; exit }')
+    cb_c_pat=$(printf '%s\n' "$cb_c_out" | awk -F'\t' '$1 == "block" { print $6; exit }')
+    cb_want='a\x0bb\x0cc\x7fd'
+    if [ "$cb_a_pat" = "$cb_want" ] && [ "$cb_b_pat" = "$cb_want" ] && [ "$cb_c_pat" = "$cb_want" ]; then
+        pass "sem1 (BLOCKER): all three legs escape VT/FF/DEL identically as '$cb_want'"
+    else
+        fail "sem1 (BLOCKER): the control-byte escape disagrees.
+  want:  $cb_want
+  leg A: $cb_a_pat
+  leg B: $cb_b_pat
+  leg C: $cb_c_pat"
+    fi
+else
+    fail "sem1 (BLOCKER): a leg failed to parse the control-byte fixture
+  (leg A rc=$cb_a_rc, leg B rc=$cb_b_rc, leg C rc=$cb_c_rc) — it must be
+  ACCEPTED and escaped, not refused."
+fi
+
+# --- sem2: a tab inside a `from` config list (head-only) --------------
+check_refusal tab_in_config_list.rxt tab-in-list 'comma-separated config list'
+
+# --- sem3: 'flags xmz' — only 'i' is defined, all three legs -----------
+check_refusal_all3 bad_flags.rxt bad-flags "only 'i' is defined"
+
+# --- sem4: 'engine dfa' — only 'vm' is defined for W1.1, all three legs
+check_refusal_all3 bad_engine.rxt bad-engine 'only vm is defined'
+
+# --- sem7: 'target ... with nosuch' — with is validated too (head-only)
+check_refusal with_unknown.rxt with-unknown 'nosuch' 'not a' 'config'
+
+# --- sem8 (discretionary depth check): the too-long diagnostics NAME
+# THE CAP rather than falsely claiming a name is missing. HEAD-only.
+TL="$WORKDIR/toolong.rxt"
+{
+    printf 'config %s\n' "$(printf 'x%.0s' $(seq 1 200))"
+    printf '  flags i\n'
+    printf '\n'
+    printf 'pattern a+\n'
+    printf 'm "aaa" 0 3\n'
+} > "$TL"
+tl_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$TL" 2>&1)"
+if [ $? -eq 0 ]; then
+    fail "sem8: --list-source ACCEPTED a 200-byte config name; it must be refused"
+elif printf '%s' "$tl_out" | grep -q 'too long'; then
+    pass "sem8: a too-long config name is refused NAMING THE CAP, not 'needs a name'"
+else
+    fail "sem8: a too-long config name is refused, but not with a diagnostic
+  naming the cap:
+  $tl_out"
+fi
+
+# --- sem12 (discretionary): budget overflow is refused, not clamped ---
+check_refusal budget_overflow.rxt budget-overflow 'non-negative integer'
+
+# --- sem11 (discretionary): the indented-# wording, config body -------
+check_refusal indented_comment_in_config.rxt indented-comment 'column 1'
+
+# --- sem13: an empty description (trailing space, no text) — ACCEPTED
+# by all three, identically, matching legs B and C's pre-existing
+# behaviour (leg A used to hard-error "needs its text").
+DE="$FIXRUN/desc_empty_trailing_space.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$DE" > "$WORKDIR/de.tsv" 2>"$WORKDIR/de.err" && \
+   "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$DE" > "$WORKDIR/de.b" 2>"$WORKDIR/de.berr" && \
+   "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$DE" > "$WORKDIR/de.c" 2>"$WORKDIR/de.cerr"; then
+    pass "sem13: an empty description (trailing space, no text) is ACCEPTED by all three"
+else
+    fail "sem13: an empty description was refused by at least one leg
+  (A: $(cat "$WORKDIR/de.err"))
+  (B rc via exit status above)
+  (C: $(tail -3 "$WORKDIR/de.cerr" 2>/dev/null))"
+fi
+
+# --- sem14: 'description | ' (trailing space) — REFUSED by all three,
+# matching the exact 'description |' spelling's own refusal.
+check_refusal_all3 desc_pipe_trailing_space.rxt desc-pipe-trailing-ws \
+    'one-line form only'
+
+# --- sem15: a whitespace-only line between cases is ACCEPTED (ignored)
+# by all three, matching the spec's "blank lines are ignored" with no
+# carve-out for a line that is not literally zero bytes.
+WO="$FIXRUN/whitespace_only_line.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WO" > /dev/null 2>"$WORKDIR/wo.aerr" && \
+   "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$WO" > /dev/null 2>"$WORKDIR/wo.berr" && \
+   "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$WO" > /dev/null 2>"$WORKDIR/wo.cerr"; then
+    pass "sem15: a whitespace-only line is ACCEPTED (ignored) by all three"
+else
+    fail "sem15: a whitespace-only line was refused by at least one leg
+  (A: $(cat "$WORKDIR/wo.aerr"))
+  (C: $(tail -3 "$WORKDIR/wo.cerr" 2>/dev/null))"
+fi
+
+# --- sem16: a directive before any pattern in a HEADLESS file — REFUSED
+# by all three (legs A/B already did; leg C used to silently drop it).
+# Leg A reaches this through the HEAD vocabulary ('flags' is not a
+# file-level directive there is no open block yet), which is a
+# DIFFERENT sentence from legs B/C's "before any pattern block" — D26
+# does not pin wording across legs, only that each names something the
+# author can act on, so the needle here is leg A's own text.
+check_refusal_all3 directive_before_pattern.rxt directive-before-pattern \
+    'file-level'
+
+# --- sem19: leg C validates 'name'/'encoding' as identifiers too ------
+check_refusal_all3 bad_name_ident.rxt bad-name-ident 'identifier'
+check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident 'encoding name'
+
+# --- sem20: block name uniqueness, enforced on a HEADLESS file (the
+# population every corpus file is in) — all three legs now refuse it.
+check_refusal_all3 dup_block_name.rxt dup-block-name 'duplicate block name'
+
+# --- sem21: 'with'/'from' trailing whitespace is trimmed (head-only) --
+WT="$FIXRUN/with_trailing_ws.rxt"
+wt_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WT" 2>&1)"
+if [ $? -ne 0 ]; then
+    fail "sem21: --list-source refused the with-trailing-whitespace fixture:
+  $wt_out"
+else
+    wt_with=$(printf '%s\n' "$wt_out" | awk -F'\t' '$1 == "target" { print $13 }')
+    if [ "$wt_with" = "a,b" ]; then
+        pass "sem21: 'target ... with a, b  ' dumps column 13 as 'a,b' — trailing whitespace trimmed"
+    else
+        fail "sem21: column 13 is '$wt_with', expected 'a,b' (trailing
+  whitespace should be trimmed, matching every other token/list value)"
+    fi
+fi
+
+# --- sem23: --list-source on a DIRECTORY must be refused, not silently
+# read as an empty file (stat/EISDIR, previously unchecked).
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXDIR" > "$WORKDIR/dir.out" 2>"$WORKDIR/dir.err"; then
+    fail "sem23: --list-source ACCEPTED a directory and printed:
+$(cat "$WORKDIR/dir.out")"
+else
+    pass "sem23: --list-source refuses a directory ($(cat "$WORKDIR/dir.err"))"
+fi
+
+# --- sem17 (discretionary): invalid UTF-8 no longer CRASHES leg C -----
+# Synthesized here rather than committed as a static fixture, so a raw
+# invalid byte never lands in the repository's own tree. 0xFF is not a
+# valid UTF-8 lead byte in any position.
+UTF="$WORKDIR/invalid_utf8.rxt"
+printf 'pattern a\xffb\nm "a\xffb" 0 3\n' > "$UTF"
+if "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$UTF" > "$WORKDIR/utf.out" 2>"$WORKDIR/utf.err"; then
+    pass "sem17: verify_rxt.py --dump no longer crashes on an invalid-UTF-8 byte"
+elif grep -qi 'UnicodeDecodeError' "$WORKDIR/utf.err"; then
+    fail "sem17: verify_rxt.py STILL crashes with UnicodeDecodeError on an
+  invalid-UTF-8 byte, which surrogateescape should have prevented:
+$(tail -10 "$WORKDIR/utf.err")"
+else
+    # A non-zero exit for a REASON OTHER THAN a decode crash (e.g. the
+    # byte landing somewhere the parser's own grammar refuses) is not
+    # this finding's failure mode -- the point is byte-cleanliness, not
+    # that every such file must dump successfully.
+    pass "sem17: verify_rxt.py --dump did not crash with UnicodeDecodeError on an invalid-UTF-8 byte (exited for another reason, which is fine)"
 fi
 
 # ---------------------------------------------------------------------

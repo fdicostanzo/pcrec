@@ -185,19 +185,51 @@ def declares_own_oracle(path):
     return hit
 
 
+IDENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
+
+
+def ident_ok(s):
+    """The same rule as src/parse/rxt_source.c's `ident_ok`: a PCRE2 group
+    name AND a C identifier, one rule."""
+    return bool(IDENT_RE.match(s))
+
+
 def parse_rxt(path):
     """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','ms','ns','perr','g','gp'}."""
-    with open(path, 'r', encoding='utf-8') as f:
+    # [DD-13b.W1.1 r46sem finding 17] `errors='surrogateescape'` makes this
+    # parser BYTE-CLEAN like legs A and B, rather than crashing on the
+    # first invalid-UTF-8 byte anywhere in the file. Legs A and B both
+    # treat bytes opaquely (`rxt_source.c` reads "rb"; bash's `read -r` is
+    # byte-clean) and the .rxt escape vocabulary is explicitly byte-
+    # oriented ("the escape exists to protect the FRAMING, not to
+    # transcode the content", docs/spec/rxt_format.md). `surrogateescape`
+    # round-trips every byte through a str without raising, which is the
+    # python-native way to keep that property; it does not make this
+    # parser understand non-ASCII text, only stop crashing on it.
+    with open(path, 'r', encoding='utf-8', errors='surrogateescape') as f:
         lines = f.readlines()
     results = []
     pcre2_only_next = False
     seen_pattern = False
+    seen_names = {}
     for lineno, raw_line in enumerate(lines, 1):
         line = raw_line.rstrip('\n')
         if line.strip() == '# pcre2-only':
             pcre2_only_next = True
             continue
-        if line == '' or line.startswith('#'):
+        # [DD-13b.W1.1 r46sem finding 15] A WHOLE-LINE-BLANK TEST, not an
+        # exact-empty one. `line == ''` missed a line of pure whitespace
+        # (docs/spec/rxt_format.md: "Blank lines are ignored", with no
+        # carve-out for one that is not literally zero bytes), so a line
+        # of two spaces reached the indentation check below and raised —
+        # the one parser of three that disagreed with the spec on this.
+        # `line.strip() == ''` covers both without changing how an
+        # INDENTED COMMENT is treated: a line like `  # x` has a non-empty
+        # `.strip()` (`'# x'`), so it still falls through to the
+        # indentation check exactly as it did before, matching legs A/B's
+        # refusal of an indented `#` (column 1 is the only comment
+        # column).
+        if line.strip() == '' or line.startswith('#'):
             continue
         # [DD-13b.W1.1] THE HEAD IS NOT THIS PARSER'S, AND IT SAYS SO.
         # The head ends at the first `pattern` line, and pcrec owns its
@@ -212,16 +244,37 @@ def parse_rxt(path):
         # file reaches this today. It is W1.3's job to close, when a
         # composed file first needs oracling; until then a loud refusal is
         # the honest answer and a silent misparse is not.
+        #
+        # [DD-13b.W1.1 r46sem finding 16] AND EVERY OTHER FIRST TOKEN,
+        # once the file is confirmed headless. A line before any
+        # `pattern` that is not one of the named HEAD words used to fall
+        # through to its own ordinary branch below (`flags`, `features`,
+        # `encoding`, `engine`, `budget`, `perr`, `m`, ...), get appended
+        # to `results`, and then be silently DROPPED by `dump_file`'s
+        # `if blk is None: continue` — a body directive with no open
+        # block to attach to, exactly the shape legs A and B both refuse
+        # loudly (`'X' line before any pattern block`, `run.sh`'s
+        # `have_block` guard generalisation). The one legitimate case —
+        # this line really is a HEAD declaration in a head-bearing file —
+        # is exactly the named-word branch just above, so anything that
+        # reaches here is the bug shape and not a legitimate head.
         if not seen_pattern:
             first = line.split(None, 1)[0] if line.split() else ''
-            if first in ('lib', 'target', 'config', 'description',
-                         'include', 'use', 'oracle', 'tag', 'freq'):
+            head_words = ('lib', 'target', 'config', 'description',
+                          'include', 'use', 'oracle', 'tag', 'freq')
+            if first in head_words:
                 raise ValueError(
                     f"{path}:{lineno}: '{first}' is a file-level (HEAD) "
                     "declaration, and this oracle reads the BODY only -- the "
                     "head grammar has one parser, pcrec's `--list-source`. A "
                     "head-bearing .rxt file is not verifiable by this script "
                     "in this build (DD-13b W1.1; W1.3 closes it)")
+            if first != 'pattern':
+                raise ValueError(
+                    f"{path}:{lineno}: '{first}' line before any pattern "
+                    "block -- a body directive has no open block to attach "
+                    "to (matches tests/harness/run.sh's and "
+                    "src/parse/rxt_source.c's own refusal of this line)")
         if line.startswith(' ') or line.startswith('\t'):
             raise ValueError(
                 f"{path}:{lineno}: a pattern block's lines are not indented "
@@ -234,7 +287,19 @@ def parse_rxt(path):
         elif line == 'perr':
             results.append((lineno, 'perr', None))
         elif line.startswith('flags '):
-            results.append((lineno, 'flags', line[len('flags '):].strip()))
+            # [DD-13b.W1.1 r46sem finding 3] VALIDATED AT PARSE TIME, not
+            # only in main()'s oracle-check loop below (which the `--dump`
+            # path, leg C of the C1 differential, never runs) -- only 'i'
+            # is defined (docs/spec/rxt_format.md, tests/harness/run.sh's
+            # own arm), and leg C used to accept ANY value here with no
+            # check at all, silently mapping only 'i' to re.IGNORECASE and
+            # treating everything else as a no-op flag string that meant
+            # nothing to python and nothing to the differential either.
+            v = line[len('flags '):].strip()
+            if v != 'i':
+                raise ValueError(f"{path}:{lineno}: unknown flag letter(s) "
+                                 f"{v!r} (only 'i' is defined)")
+            results.append((lineno, 'flags', v))
         elif line.startswith('features '):
             # [DD-13b.W1] `features only <list>` (M14): the list REPLACES
             # what a config would union in rather than adding to it. The
@@ -249,7 +314,30 @@ def parse_rxt(path):
                 v = v[len('only'):].strip()
             results.append((lineno, 'features', (v, only)))
         elif line.startswith('name '):
-            results.append((lineno, 'name', line[len('name '):].strip()))
+            # [DD-13b.W1.1 r46sem finding 19 / finding 20] leg C used to
+            # validate strictly LESS than legs A and B here -- no
+            # identifier check at all, so `name 9bad` parsed clean where
+            # leg A refuses it ("'name' wants an identifier") and leg B's
+            # `[A-Za-z_][A-Za-z0-9_]*` arm doesn't match at all (falling to
+            # its own catch-all hard error). A leg that accepts a strict
+            # SUPERSET of what its siblings accept can only ever witness a
+            # disagreement in one direction. Also enforces the spec's
+            # NAME UNIQUENESS rule (finding 20): `name` is in the FILE
+            # namespace and must be unique within the file -- previously
+            # enforced only by pcrec (`src/parse/rxt_source.c`), which
+            # `tests/harness/run.sh` never calls for a headless file (all
+            # 179 corpus files today), so nothing in the tree enforced it
+            # for the population that actually reaches this oracle.
+            v = line[len('name '):].strip()
+            if not ident_ok(v):
+                raise ValueError(f"{path}:{lineno}: 'name' wants an "
+                                 f"identifier (got {v!r})")
+            if v in seen_names:
+                raise ValueError(
+                    f"{path}:{lineno}: duplicate block name {v!r} (already "
+                    f"named on line {seen_names[v]})")
+            seen_names[v] = lineno
+            results.append((lineno, 'name', v))
         elif line.startswith('description '):
             # THE ONE-LINE FORM ONLY in a pattern block, matching
             # tests/harness/run.sh and src/parse/rxt_source.c: the `|`
@@ -263,12 +351,22 @@ def parse_rxt(path):
                                  "'|' is a head form")
             results.append((lineno, 'description', v))
         elif line.startswith('encoding '):
-            results.append((lineno, 'encoding', line[len('encoding '):].strip()))
+            # [DD-13b.W1.1 r46sem finding 19] see the 'name' arm above --
+            # the same "leg C accepts a strict superset" gap.
+            v = line[len('encoding '):].strip()
+            if not ident_ok(v):
+                raise ValueError(f"{path}:{lineno}: 'encoding' wants an "
+                                 f"identifier (got {v!r})")
+            results.append((lineno, 'encoding', v))
         elif line.startswith('engine '):
+            # [DD-13b.W1.1 r46sem finding 4, RULED] ONLY `vm` FOR W1.1 --
+            # see src/parse/rxt_source.c's twin comment. Leg C used to
+            # accept 'dfa' too, while leg B (tests/harness/run.sh) already
+            # refused it -- the D80 defect this step's remedy targets.
             v = line[len('engine '):].strip()
-            if v not in ('vm', 'dfa'):
+            if v != 'vm':
                 raise ValueError(f"{path}:{lineno}: unknown 'engine' value "
-                                 f"{v!r} (want vm or dfa)")
+                                 f"{v!r} (only vm is defined)")
             results.append((lineno, 'engine', v))
         elif line.startswith('budget '):
             v = line[len('budget '):].strip()
@@ -493,10 +591,18 @@ def discover(args):
 # The bound is PER FILE rather than per case because that is what a
 # process boundary costs least: one python startup per file (~30 ms over
 # 179 files) instead of one per case (26,691 of them).
-def run_supervised(files, timeout, min_files):
+def run_supervised(files, timeout, min_files, allow_timeouts=0):
     """Re-invoke this script once per file under a wall bound, and
     aggregate. A file that overruns is NAMED and COUNTED, never silently
-    dropped and never allowed to hang the suite."""
+    dropped and never allowed to hang the suite.
+
+    [DD-13b.W1.1 r46sem finding 6 / chk 8] `allow_timeouts` is the
+    caller's explicit tolerance for the PINNED count of files known to
+    overrun today (docs/spec/rxt_format.md's house rule, quoted below,
+    applies to a timeout as much as to any other bound). A bound exceeded
+    used to be neither pass, fail, nor skip and left the exit status
+    entirely alone -- loud on stdout, silent on the one channel a caller
+    actually checks."""
     import subprocess
 
     SKIP_KEYS = ('pcre2-only', 'giveup', 'composed', 'no-python-expression',
@@ -569,6 +675,18 @@ def run_supervised(files, timeout, min_files):
             print(f"  oracle did not report: {pth}")
     if min_files and len(files) < min_files:
         return 1
+    # [DD-13b.W1.1 r46sem finding 6, BLOCKER-ADJACENT MUST-FIX] AN ORACLE
+    # BOUND EXCEEDED IS A LOUD FAILURE, per docs/spec/rxt_format.md:
+    # "Exceeding a bound is a loud, named FAILURE, never a hang or a
+    # silent skip." `timed_out` used to be excluded from this return's
+    # condition entirely -- printed, named, and then absent from the exit
+    # status, so a SECOND file timing out anywhere other than this
+    # script's own pinned caller (which separately asserts `C3_TIMEOUT`)
+    # read as a clean exit 0. `allow_timeouts` is the caller's explicit,
+    # counted tolerance -- never a blanket exemption -- so exceeding IT
+    # is still loud.
+    if len(timed_out) > allow_timeouts:
+        return 1
     return 1 if (tot_fail or crashed) else 0
 
 
@@ -577,6 +695,7 @@ def main():
     dump = False
     min_files = 0
     file_timeout = 0
+    allow_timeouts = 0
     rest = []
     i = 0
     while i < len(args):
@@ -597,6 +716,17 @@ def main():
                       file=sys.stderr)
                 sys.exit(2)
             file_timeout = float(args[i])
+        elif a == '--allow-timeouts':
+            # [DD-13b.W1.1 r46sem finding 6] the caller's EXPLICIT, COUNTED
+            # tolerance for files known to overrun --file-timeout today.
+            # Default 0: a timeout is a failure unless the caller says
+            # otherwise, naming how many. See run_supervised's own comment.
+            i += 1
+            if i >= len(args):
+                print("verify_rxt.py: --allow-timeouts needs a number",
+                      file=sys.stderr)
+                sys.exit(2)
+            allow_timeouts = int(args[i])
         else:
             rest.append(a)
         i += 1
@@ -636,7 +766,7 @@ def main():
     # tests/rxtsource/ is what passes --file-timeout, because that is the
     # invocation that must never be able to hang `make test`.
     if file_timeout > 0 and len(files) > 1:
-        sys.exit(run_supervised(files, file_timeout, min_files))
+        sys.exit(run_supervised(files, file_timeout, min_files, allow_timeouts))
 
     total_pass = 0
     total_fail = 0
@@ -688,8 +818,14 @@ def main():
         file_own_oracle = declares_own_oracle(path)
         cur_skip = False
         cur_composed_skip = False
-        cur_name = None
-        file_has_name = False
+        # [DD-13b.W1.1 r46sem finding 5 / chk 1, FIXED] `file_has_name` was
+        # computed ONCE, correctly, as a whole-file scan a few lines above
+        # (`any(k == 'name' for _, k, _ in entries)`) -- and then
+        # immediately RE-INITIALIZED to False here, shadowing it for the
+        # entire per-line loop below and defeating the exact invariant the
+        # comment up there asserts (a `name` declared on a block AFTER the
+        # one that references it). `cur_name` was written at the 'name'
+        # branch below and never read anywhere -- dead, removed with it.
         cur_reflags = 0
         file_failures = []
 
@@ -721,11 +857,13 @@ def main():
                 # `engine`/`budget`/`frames-buffer=` size and select
                 # pcrec's own machinery. They are PARSED (a control that
                 # refuses to read a line is no control for it) and then
-                # deliberately ignored -- with `name` remembered, because
-                # the composed-block skip below is keyed on it.
-                if kind == 'name':
-                    cur_name = data
-                    file_has_name = True
+                # deliberately ignored. `file_has_name` is NOT set here
+                # (r46sem finding 5): it is a whole-FILE fact, computed
+                # once above from the full entry list, precisely so a
+                # `name` declared on a LATER block still counts for a
+                # composed-block skip on an EARLIER one that references
+                # it by name -- setting it per-line here would only ever
+                # be correct AFTER the declaring line has been reached.
                 continue
 
             if kind == 'features':
@@ -748,9 +886,13 @@ def main():
                 # which would make this oracle disagree with pcrec's
                 # deliberately ASCII-only fold and silently mis-verify the
                 # base tier. Unicode folding is DD-1/M5.
-                if data != 'i':
-                    file_failures.append((lineno, f"unknown flag letter(s) {data!r} (only 'i' is defined)"))
-                    continue
+                #
+                # [DD-13b.W1.1 r46sem finding 3] parse_rxt (above) now
+                # REFUSES anything but 'i' at parse time, so `data` is
+                # guaranteed 'i' by the time it reaches here -- the
+                # duplicate check this arm used to carry is unreachable
+                # and removed rather than left as a second copy of a rule
+                # with one home.
                 cur_reflags = re.IGNORECASE | re.ASCII
                 if not cur_skip:
                     compile_error = None

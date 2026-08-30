@@ -1,0 +1,10 @@
+# [DD-13b.W1.1 r46sem finding 7] `target t = d with nosuch` — the spec
+# has always said `with` is validated ("an unknown config name ... is
+# refused, naming the members"); only `from`'s cycle walk actually did.
+# HEAD-ONLY (leg A is the only parser that ever sees it).
+config a
+  flags i
+target t = greeting with a, nosuch
+
+pattern a+
+m "aaa" 0 3

@@ -1,0 +1,10 @@
+# [DD-13b.W1.1 r46sem finding 15] A LINE OF PURE WHITESPACE between two
+# cases. docs/spec/rxt_format.md: "Blank lines are ignored", with no
+# carve-out for a line that is not literally zero bytes. Legs A and B
+# already skip it; leg C used to raise ("a pattern block's lines are
+# not indented") on the ordinary indentation check, because its blank-
+# line test was an exact `line == ''`.
+pattern a+
+m "aaa" 0 3
+   
+n "b"

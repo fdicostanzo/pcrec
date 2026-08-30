@@ -330,6 +330,7 @@ project journal entry.
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
+| `make test-rxtsource` | `tests/rxtsource/run_rxtsource_tests.sh` ([DD-13b.W1.1] INV-COMPAT — see below) | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
 | `make test-recursion-lbsweep` | `tests/recursion/run_lookbehind_call_sweep.py` | **no** — opt-in ([DD-14.LB]), see below |
 
@@ -1242,6 +1243,66 @@ against `pcrec_ascii_fold` (src/core/fold.c), which `cls_casefold` derives its
 widening from. Ordered PAIRS, not the 52-byte set, because equality under a fold
 is a RELATION and two sides could agree on WHICH bytes fold while disagreeing
 about what they fold TO.
+
+## `test-rxtsource` — INV-COMPAT ([DD-13b.W1.1], 2026-08-30)
+
+`bash tests/rxtsource/run_rxtsource_tests.sh` (`make test-rxtsource`), added
+when the `.rxt` format grew a HEAD: the question it answers is whether
+growing the format changed what any EXISTING corpus file means. Cheap on
+purpose — three parses of the corpus and no compiles at all (179 files,
+26,691 expectation lines), so it does not compete with `test-corpus` for the
+box. Full design and per-check rationale: `tests/rxtsource/CLAUDE.md`,
+`docs/design/dd13_format/w1_impl.md` §3.
+
+What it asserts, briefly (each against a PINNED census, never a
+self-derived one — a pin that recomputed itself would agree with a shrunk
+corpus by construction):
+
+- **C1** — the three-way parse differential (`pcrec --list-source`,
+  `run.sh --dump`, `verify_rxt.py --dump`), byte for byte over their shared
+  projection, plus a FIELD MANIFEST (exact column names, exact per-row
+  field count, exact total row count) so the differential cannot silently
+  stop comparing a directive both dumps quietly drop.
+- **C3** — the oracle re-run: `verify_rxt.py` wired to the WHOLE corpus for
+  the first time (previously invoked by nothing in the tree, its default
+  discovery covering 40 of 179 files), over a `find`-derived file list with
+  a `--min-files` short-list hard fail, and a per-file wall bound
+  (`--file-timeout`) with a named, counted allowance (`--allow-timeouts`)
+  for the one file known to overrun today.
+- **C0a** — that the composer (unbuilt in W1.1) was never invoked, from two
+  independent sources (an external call-counting wrapper, and a raw-byte
+  census of head-bearing files) that must agree.
+- The arm-block hash pin (`run.sh`'s existing 17-arm chain is unchanged
+  byte for byte) and the keyword census (no corpus line's first token
+  collides with a word the grown grammar wants).
+- The HEAD PATH's own fixtures (`tests/rxtsource/fixtures/*.rxtin`,
+  described in that directory's own CLAUDE.md) — the corpus has 0
+  head-bearing files, so without them every head-grammar check would be
+  green while detecting nothing ([MECH-REACH]'s failure).
+
+**The r46 panel's fix lane (w11f) added roughly thirty more fixture-backed
+checks to this section**, one per finding in `docs/dev/reviews/
+2026-08-30-r46-w11-impl.md` whose population was, like the head path
+itself, ZERO on the real corpus — the class of finding was "the three
+parsers agree on the corpus and diverge one line outside it" (a control
+byte in a pattern, a tab in a `with`/`from` list, `flags`/`engine` values
+outside the ruled vocabulary, an empty or `|`-trailing-space description,
+a whitespace-only line, a directive before any pattern in a headless
+file, a duplicate block name, and more) — see that review and
+`tests/rxtsource/fixtures/*.rxtin`'s own headers for the full list. None
+of them touch the pinned census or the arm hash; they are ADDITIONAL
+fixture-driven checks, in the same section, for the same reason the
+original head-path fixtures exist.
+
+**The mech battery gained ELEVEN rows for the `rxtsource` arm at
+[DD-13b.W1.1]'s own landing** (`tests/mech/sabotages/S194`-`S203`, ten
+live, plus `S204`; two more, `S-C7`/`S-C8`, are DEFERRED until the
+composer exists — `tests/rxtsource/CLAUDE.md` states which and why). Each
+sabotages one of the mechanisms this section defends (the escape, the
+field manifest, the composer-invocation counter, the keyword census, the
+oracle's own skip-reason accounting, an unknown line kind's silent
+swallow) and is scored through `bash tests/mech/run_sabotage_matrix.sh
+S194` (etc.) exactly like every other row in that directory.
 
 ## Internal parallelism and section composition ([TT-2], 2026-08-15)
 

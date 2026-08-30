@@ -1,0 +1,11 @@
+# [DD-13b.W1.1 r46sem finding 12, discretionary] `budget steps=` with a
+# value that overflows `long` on this platform. Leg A used to silently
+# CLAMP to LONG_MAX with `errno` never checked, reporting a value the
+# author never wrote with no diagnostic at all. Also exercises the
+# tightened alphabet: no leading sign or space, matching leg B's
+# `[0-9]+`.
+config dev
+  budget steps=99999999999999999999
+
+pattern a+
+m "aaa" 0 3

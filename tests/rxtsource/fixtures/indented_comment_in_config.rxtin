@@ -1,0 +1,12 @@
+# [DD-13b.W1.1 r46sem finding 11, discretionary wording fix] An indented
+# `#` comment inside a `config` body. Spec-conformant to refuse (a `#`
+# anywhere but column 1 is data), but the diagnostic used to read "'#' is
+# not a config-block directive" -- confusing in the one region where
+# indentation is structural. Named here so the improved wording is
+# exercised, not merely described.
+config dev
+  # the CI build
+  flags i
+
+pattern a+
+m "aaa" 0 3

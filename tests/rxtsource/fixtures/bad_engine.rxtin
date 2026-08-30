@@ -1,0 +1,8 @@
+# [DD-13b.W1.1 r46sem finding 4, RULED] `engine dfa` — only `vm` is
+# defined for W1.1. All three parsers must refuse this identically: leg A
+# and leg C used to accept it; leg B already refused it (the parser that
+# actually runs the corpus). `docs/spec/rxt_format.md`'s own paragraph and
+# its --list-source column table now agree with all three.
+pattern a+
+engine dfa
+m "aaa" 0 3

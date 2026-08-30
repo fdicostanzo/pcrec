@@ -20,6 +20,9 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-syntax` | the syntax construct registry (SR-1/D24) | conforming producer today |
 | `--list-verbs` | the (*VERB) name table | conforming producer today |
 | `--list-definitions` | the replacement/definition table (D85/[DD-11.2]) | conforming producer today |
+| `--list-families` | the construct-family index (D71 item 3) | conforming producer today |
+| `--list-axes` | the optimization-axis registry ([CHK-2] piece 1) | conforming producer today |
+| `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.
@@ -121,3 +124,12 @@ complete format-consumer survey and the CONTENT-vs-FORMAT consumer
 distinction live in docs/design/registry_built_status_memo.md's
 Correction section. This contract exists so the next append is a
 non-event.
+
+[DD-13b.W1.1] (r46sem finding 9, FIXED): `--list-source` landed
+([DD-13b.W1.1]) claiming this contract in both `docs/spec/rxt_format.md`
+and `docs/spec/cli.md` without a row here naming it, and `docs/spec/
+cli.md`'s own "Six TSV dumps" had been true against the CLI (`--list-
+syntax`, `--list-verbs`, `--list-definitions`, `--list-families`,
+`--list-axes`, `--list-source`) while this Scope table listed only
+three of the six — a pre-existing gap this fix closes in full rather
+than adding one more row to a table already known short two others.

@@ -1,0 +1,13 @@
+# [DD-13b.W1.1 r46sem finding 20] TWO BLOCKS NAMING THEMSELVES `x`. The
+# spec has always said a block's `name` is in the FILE namespace and must
+# be unique within the file, but that was enforced only by pcrec, which
+# tests/harness/run.sh never calls for a HEADLESS file -- i.e. every file
+# in the corpus today. This file is deliberately headless (no head
+# declaration at all), so it is the population every corpus file is in.
+pattern a+
+name x
+m "aaa" 0 3
+
+pattern b+
+name x
+m "bbb" 0 3

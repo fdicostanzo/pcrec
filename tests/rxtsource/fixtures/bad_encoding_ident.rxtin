@@ -1,0 +1,6 @@
+# [DD-13b.W1.1 r46sem finding 19] `encoding utf-8` -- a hyphen is not an
+# identifier character. Legs A and B already refuse it; leg C used to
+# accept it with no identifier check at all.
+pattern a+
+encoding utf-8
+m "aaa" 0 3

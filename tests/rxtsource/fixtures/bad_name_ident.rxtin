@@ -1,0 +1,8 @@
+# [DD-13b.W1.1 r46sem finding 19] `name 9bad` -- a name that CANNOT be a
+# PCRE2 group name or a C identifier. Legs A and B already refuse it (A:
+# "'name' wants an identifier"; B's `[A-Za-z_][A-Za-z0-9_]*` arm does not
+# match at all, falling to its own catch-all); leg C used to accept it
+# with no identifier check.
+pattern a+
+name 9bad
+m "aaa" 0 3

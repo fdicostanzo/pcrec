@@ -87,10 +87,22 @@ These bind on every line kind, old and new:
   where indentation costs nothing.
 - **TRAILING WHITESPACE after a directive's value is ignored.** A
   directive whose value is a token or a list (`flags`, `features`,
-  `engine`, `budget`, `encoding`, `name`) means the same thing with or
-  without spaces after it. The two productions that are REST-OF-LINE —
-  `pattern` and `description` — are the exception and keep every byte,
-  because there the trailing space is data.
+  `engine`, `budget`, `encoding`, `name`, `lib`, and the `config`/`target`
+  cascades `with` and `from`) means the same thing with or without spaces
+  after it. **Three** productions are REST-OF-LINE and keep every byte,
+  because there the trailing space is data: `pattern`, `description`,
+  and a `config` body's `pcrec` line (the raw flag text passed to a
+  build) (r46sem finding 21, FIXED — the list above previously omitted
+  `lib`/`with`/`from` from the trimmed set, whose code already trimmed
+  `lib` but not `with`/`from`, and omitted `pcrec` from the rest-of-line
+  set the code already gave it correctly).
+- **A TAB IS REFUSED INSIDE A `with`/`from` CONFIG LIST** (r46sem finding
+  2, FIXED), never accepted as a separator alongside a space. `config
+  <name> from <c1,c2>` and `target <prefix> = <def> [with <c1,c2>]`'s
+  lists both refuse a literal tab anywhere in the list text: a tab there
+  is never what an author means, and letting one through would have to
+  reach `--list-source`'s columns 13/14 (`with`/`from`) unescaped, since
+  those two columns are not among the three the dump escapes.
 - **`pattern` takes exactly one SPACE before its regex**, not arbitrary
   whitespace: the pattern text is rest-of-line verbatim from the byte
   after that space, so the separator cannot be part of it and a tab there
@@ -290,7 +302,7 @@ boundary comes from the one head parser, and the two cannot drift.
 | 7 | `features` | pattern, config | the module list |
 | 8 | `features_only` | pattern | `1` if the block wrote `features only` |
 | 9 | `encoding` | pattern, config | the ident |
-| 10 | `engine` | pattern, config | `vm` \| `dfa` |
+| 10 | `engine` | pattern, config | `vm` |
 | 11 | `budget_steps` | pattern, config | N |
 | 12 | `budget_frames` | pattern, config | N |
 | 13 | `with` | target | the config list, as written |
@@ -304,6 +316,13 @@ head row is exactly one preceding it. That is a property of the ORDER,
 and a column for it would be a second home for a fact the row order
 already carries — free to disagree with it.
 
+**Column 10 (`engine`) reads only `vm`** (r46sem finding 4, FIXED): this
+table briefly disagreed with this same document's own "the .rxt format"
+section below, which has always ruled `dfa` NOT DEFINED for W1.1 (the
+smaller change; it arrives when a test needs it, D77) — `tests/harness/
+run.sh` refused it from the start, and `src/parse/rxt_source.c` and
+`tests/harness/verify_rxt.py` are now consistent with that ruling too.
+
 **Columns 4, 5 and 15 are ESCAPED** in the `.rxt` format's own subject
 escape vocabulary (`\t`, `\n`, `\r`, `\\`, `\xNN` — the table above under
 "`<subject>` is double-quoted text"). This is not decorative: a `pattern`
@@ -311,6 +330,16 @@ line is rest-of-line VERBATIM and may contain a literal tab, and the
 corpus contains three such blocks today. No second escape vocabulary is
 invented — a `.rxt` author already knows this one, and
 `tests/harness/driver.c`'s decoder already implements it.
+
+**This is a SUBSET of the full subject escape table above** (r46sem
+finding 22, noted): the dump's five escapes (`\t \n \r \\ \xNN`) are the
+ones needed to protect TSV FRAMING, not the full seven-escape subject
+vocabulary (which adds `\"` and named `\f`/`\v`). `\f`/`\v` still
+round-trip correctly through the dump's own `\xNN` form (`\f` as `\x0c`,
+`\v` as `\x0b`); a literal `"` is deliberately left unescaped, which is
+harmless for TSV framing but means a dumped field is not directly
+re-feedable to `tests/harness/driver.c`'s `decode()` as a quoted
+subject without re-adding that one escape first.
 
 **AS WRITTEN, never resolved.** `config` composition and the `with` /
 `from` cascades are VALIDATED (an unknown config name and a `from` cycle
