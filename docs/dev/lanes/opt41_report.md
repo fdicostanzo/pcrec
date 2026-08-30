@@ -1001,3 +1001,65 @@ That sharpens the D77 trigger: the number to charter on is not "69 nullable
 hybrids" but "nullable hybrids whose DFA prefilter is also `none`", which this
 census reports the ingredients for and which a future row should measure
 directly.
+
+---
+
+## 17. THE MEASURED TABLE
+
+Every row MEASURED on the delivered tree unless noted. Command, then number.
+
+| # | item | result |
+|---|---|---|
+| 1 | `git merge main` | 1 conflict (`docs/dev/lanes/CLAUDE.md`, both lanes appended) — kept both; 3 auto-merges READ, not trusted; no marker survives |
+| 2 | `make -j4` | rc 0 |
+| 3 | `make strict` | rc 0 — "whole tree compiles clean with -Werror -Wshadow" (re-run after every source edit) |
+| 4 | `make test-cli` | **287 cases / 0 failed** |
+| 5 | `make test-codegen` | **5/5 scripts, 198 checks / 0 failed**; `[SABANCHOR]` all 203 rows' anchors resolve |
+| 6 | `tests/codegen/run_prefilter_collapse.sh` | **59 passed / 0 failed** |
+| 7 | `make test-corpus` | **26,680 cases / 0 failed**; size log restored, tree clean |
+| 8 | answer-identity, the scoped pair | `-fno-prefilter-collapse` **OK** 22,114 keys, 0 mismatch; `-fprefilter-collapse` **OK** 22,114 keys, 0 mismatch, budget-bound 2 (named §12.11); 553 s |
+| 9 | `tests/resource/run_resource_tests.sh` | **29 checks / 0 failed**, all three `[OPT-4.x]` cells |
+| 10 | `tests/registry/axes_registry_check.sh` | **83 checks / 0 failed**, incl. 4 new `RX_ENGINE_SEL` legs |
+| 11 | anchor tripwire | all anchors resolve, 203 sabotages / 214 sites |
+| 12 | mech **S206** (predicate removed) | `pfcollapse:5fail/50pass, resource:1fail/28pass, corpus:0fail/51pass` → **DETECTED** at `412eb52` |
+| 13 | mech **S207** (predicate inverted) | `pfcollapse:17fail/20pass, resource:2fail/27pass, corpus:0fail/51pass` → **DETECTED** at `db670dc` |
+| 14 | the eleven bench points | **11 as predicted, 0 MISMATCH** |
+| 15 | bench ask (ii) byte counts | six readings reported; my split-file hypothesis REFUTED (§15) |
+| 16 | D77 trigger number | **69** nullable exact-prefilter hybrids at 63.5 % coverage, with the caveat that reshapes the row (§16.1) |
+
+### 17.1 Spec hunks (D80), all in the same commits as their code
+
+`docs/spec/tuning.md` §2.17 (the rule, the per-rung flag interactions, the
+`_LANG_WHY` value, the NAMED RESIDUAL, the axes ruling's sibling caveat),
+`docs/spec/limits.md` §3.3, `docs/spec/match_api.md` §6.3's `RX_ENGINE_SEL`
+table, `docs/spec/registry.md` line 203's axis list re-derived live.
+Two PRE-EXISTING spec defects fixed in passing: the `_LANG_WHY` table's stale
+pre-ruling-B `"exact nfa N > B"` row, and its "FIVE values" over six.
+
+### 17.2 What was NOT done, and why
+
+- **The full `make test-axes`** — the scoped pair is the delivered evidence
+  under the manager's recorded ruling (§12.4), with its standing condition.
+- **No code change on the DEFAULT exact prefilter** — ruled, and §16.1 now
+  shows the follow-up needs a sharper predicate than this row's.
+- **The two `nest*` whole forms** stay a NAMED RESIDUAL under D77 (§9 item 1),
+  landed in `tuning.md` §2.17 so the bench can cite it.
+- **`[LIM-1]` owns the size rung's `"selected"` stamp** — recorded so it is
+  not counted twice.
+
+### 17.3 Every red in this lane was mine
+
+Five instrument or expectation defects, none of which reached a measurement,
+plus one real code defect found by a critic:
+
+| # | defect | how it surfaced |
+|---|---|---|
+| 1 | §6b's witness unusable twice over (oversize; DFA-engine) | first live compile |
+| 2 | `lang_witness` byte-identity wrong for `exact-nullable` | run 2 of the check |
+| 3 | §6b(3) over-claimed the `-fprefilter` override | measuring what the arm actually did |
+| 4 | the same over-claim in FIVE places, one user-facing | a sweep after #3 |
+| 5 | `predict_check`'s `\|` delimiter vs patterns containing `\|` | cross-checking two separately-written artifacts |
+| 6 | **the decline lacked its collapsible-rep conjunct** | **critic r47sel finding 1**, verified in code, reproduced live, fixed as one derivation with two readers (§13) |
+
+Plus two housekeeping reds: S102/S165's anchors (third time on that clause,
+now a standing rule) and a run killed by editing its own script mid-flight.
