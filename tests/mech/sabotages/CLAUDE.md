@@ -157,6 +157,18 @@ the OTHER lane's row and stayed put.
   when `fit.prefilter`'s clause went from one line to three — and both times
   the staleness surfaced only from running the whole codegen group, never from
   the scripts the change appeared to touch.
+- **`src/opt/select_engine.c`'s `fit.prefilter` CLAUSE MOVES EVERY TIME A
+  CONJUNCT IS ADDED, and S102/S165 span the whole of it.** [OPT-4.1]
+  (2026-08-30) broke the same two rows a THIRD time, adding the nullability
+  decline. Two rows, one multi-line expression, one predictable cause — so
+  this is no longer "a thing that happened twice", it is a STANDING
+  consequence of how those two anchors are written, and each row's header now
+  says so. **If you add a conjunct there, re-anchor S102 and S165 in the same
+  change and run the tripwire before you believe anything else.** Whether the
+  right long-term fix is to narrow both anchors to their own `has_bref` /
+  `has_call` token is an open question nobody has ruled; narrowing costs the
+  rows their "carries the rest through verbatim" property, which is what makes
+  them readable as one-conjunct disables.
 - **A re-anchor is not a re-point.** It certifies the EDIT still applies and
   says nothing about whether the POPULATION still reaches it. That is what the
   reach fields are for.
