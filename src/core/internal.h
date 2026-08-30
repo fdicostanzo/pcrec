@@ -3560,6 +3560,75 @@ const char *pcrec_enabled_set_modules(void);
  * constant before changing it. */
 extern const char *const PCREC_DEFAULT_FEATURES;
 
+/* ---- [DD-13b.W1] the `.rxt` SOURCE file (src/parse/rxt_source.c) -------
+ *
+ * THE ONE HEAD PARSER's types. `--source` must resolve `lib`/`name`/
+ * `target`/`config` before it can compile anything, so pcrec reads the
+ * file's HEAD; the harness keeps its own BODY parsers and is TOLD where
+ * the body starts (`--list-source`'s `line` column). See
+ * docs/design/dd13_format/w1_impl.md §1.1 for the seam ruling and §1.8
+ * for the dump's contract, docs/spec/rxt_format.md for the format.
+ *
+ * ONE ROW TYPE. A `lib`, a `target`, a `config` and a `pattern` block are
+ * each (kind, name, value, settings, a list), and the dump prints them in
+ * FILE ORDER — which separate per-kind arrays cannot express without a
+ * further structure to interleave them. So one discriminated row, in file
+ * order, and typed lookup is a filter over it. W1.2's target BUILD and
+ * W1.3's composer are what would earn a definition-shaped record with
+ * fields a row has no place for; D77 says that is when to add one. */
+typedef enum {
+    RXT_DECL_LIB,          /* `lib "path"` / `lib <store>`   — value      */
+    RXT_DECL_TARGET,       /* `target p = def [with c,...]`  — name/value */
+    RXT_DECL_CONFIG,       /* `config c [from a,b]` + body   — name       */
+    RXT_DECL_DESCRIPTION,  /* file-level `description`       — value      */
+    RXT_DECL_PATTERN       /* a pattern BLOCK                — value=text */
+} RxtDeclKind;
+
+typedef struct {
+    RxtDeclKind kind;
+    size_t      line;         /* 1-based line of the declaration/block    */
+    const char *name;         /* target prefix / config name / block name */
+    const char *value;        /* lib path-ref, target definition, prose,
+                               * or — on a pattern row — the pattern text
+                               * REST-OF-LINE VERBATIM (it may hold a TAB) */
+    const char *description;  /* a pattern block's own `description`      */
+    const char *flags;        /* `flags` letters                          */
+    const char *features;     /* `features` module list                   */
+    int         features_only;/* the block wrote `features only` (M14)    */
+    const char *encoding;
+    const char *engine;       /* "vm" | "dfa"                             */
+    long        budget_steps; /* -1 when unset — 0 is a legal budget      */
+    long        budget_frames;
+    const char *with_list;    /* target's `with` config list, as written  */
+    const char *from_list;    /* config's `from` config list, as written  */
+    const char *pcrec_raw;    /* config's `pcrec` raw flag text           */
+} RxtRow;
+
+typedef struct {
+    const char *path;
+    RxtRow     *rows;
+    size_t      nrows, rowcap;
+    /* THE SEAM'S ONE NUMBER: the 1-based line of the FIRST `pattern` row,
+     * which is where the head ends and run.sh starts its own per-line
+     * loop. 0 means the file has no pattern block at all — a legal shape
+     * (a pure library file), and DISTINCT from a failed call, which
+     * returns NULL and a diagnostic instead. */
+    size_t      first_pattern_line;
+    Arena       arena;
+} RxtSource;
+
+/* Parses `path`. NULL on failure with `err` filled — every diagnostic
+ * names the FILE, the LINE and the CONSTRUCT. Free with the call below. */
+RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err);
+void       pcrec_rxt_source_free(RxtSource *src);
+/* `--list-source`: the file AS WRITTEN, one row per declaration and per
+ * block, in file order, under docs/spec/table_contract.md. Caller frees. */
+char      *pcrec_rxt_source_tsv(const RxtSource *src);
+/* The dump's column count, so a checker asserts the header's own width
+ * against the producer rather than against a literal it maintains by
+ * hand (the D65 incident's lesson, table_contract.md's History). */
+size_t     pcrec_rxt_source_ncols(void);
+
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means
  * "no filter". These are INTERNAL on purpose: the CLI and the test suite are

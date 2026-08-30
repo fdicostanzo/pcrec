@@ -135,6 +135,13 @@ static void usage(FILE *f)
           "                    yet, so enabling one changes no verdict —\n"
           "                    the gate's state is visible via --probe-ask's\n"
           "                    answered_at either way\n"
+          "  --list-source FILE\n"
+          "                    TSV of a `.rxt` SOURCE file AS WRITTEN (DD-13b\n"
+          "                    W1): one row per head declaration and per\n"
+          "                    pattern block, in FILE ORDER. The head ends at\n"
+          "                    the first `pattern` row, so a head row is\n"
+          "                    exactly one preceding it. Never resolved --\n"
+          "                    `config` composition is validated, not applied\n"
           "  --probe-ask WANT [--] CONSTRUCT\n"
           "                    drive the construct's doorway ONCE at ask\n"
           "                    level WANT (claim|verdict|result) and report\n"
@@ -197,6 +204,7 @@ int main(int argc, char **argv)
     int emit_ir = 0;
     const char *probe_want = NULL;
     const char *features = NULL;
+    const char *list_source = NULL;
 
     int no_more_opts = 0;
     for (int i = 1; i < argc; i++) {
@@ -441,6 +449,19 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "--list-families")) list_families = 1;
         else if (!no_more_opts && !strcmp(a, "--list-axes"))   list_axes = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;
+        /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
+         * Takes its file as the option's VALUE, like --explain and
+         * --probe-ask take theirs, rather than as the bare positional
+         * argument: that slot is the PATTERN's, and a query that quietly
+         * reinterpreted it would make `pcrec --list-source 'a(b|c)'` read
+         * a file named after a regex. */
+        else if (!no_more_opts && !strcmp(a, "--list-source")) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            list_source = argv[++i];
+        }
         else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "pcrec: missing value for %s\n", a);
@@ -516,6 +537,51 @@ int main(int argc, char **argv)
             fprintf(stderr, "pcrec: --features: %s\n", ferr);
             return 1;
         }
+    }
+
+    /* [DD-13b.W1.1] `--list-source` — the `.rxt` SOURCE dump (w1_impl
+     * §1.8, docs/spec/rxt_format.md). A QUERY in --list-syntax's shape:
+     * it reads a file, takes no pattern and no -o, and writes a TSV under
+     * docs/spec/table_contract.md.
+     *
+     * IT IS THE SEAM. tests/harness/run.sh calls this once for a
+     * head-bearing file and starts its own per-line loop at the `line`
+     * column of the first `pattern` row, so the head is a byte range the
+     * harness never parses and the head grammar has exactly ONE
+     * implementation. That makes the `line` column load-bearing, which is
+     * why it has a sabotage row of its own.
+     *
+     * A file with a head and NO pattern blocks is LEGAL and prints its
+     * head rows with no `pattern` row among them — distinct, in exit
+     * status and in stderr, from a call that FAILED. run.sh depends on
+     * being able to tell those two apart. */
+    if (list_source) {
+        if (list_syntax || list_definitions || list_verbs || list_families ||
+            list_axes || explain || count_groups || emit_ir || probe_want) {
+            fprintf(stderr, "pcrec: --list-source is a separate query; use one\n");
+            return 1;
+        }
+        if (pattern || outpath) {
+            fprintf(stderr, "pcrec: --list-source takes no pattern and no -o "
+                            "(it reads the file named by its own value)\n");
+            return 1;
+        }
+        if (flavour) {
+            fprintf(stderr, "pcrec: --flavour applies to --list-syntax, "
+                            "--list-definitions and --explain only\n");
+            return 1;
+        }
+        pcrec_error serr;
+        RxtSource *src = pcrec_rxt_source_parse(list_source, &serr);
+        if (!src) {
+            fprintf(stderr, "pcrec: %s\n", serr.msg);
+            return 1;
+        }
+        char *text = pcrec_rxt_source_tsv(src);
+        fputs(text, stdout);
+        free(text);
+        pcrec_rxt_source_free(src);
+        return 0;
     }
 
     /* --probe-ask drives ONE doorway call and reports the cursor — the

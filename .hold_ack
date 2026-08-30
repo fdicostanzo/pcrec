@@ -1,0 +1,1 @@
+HOLD ACKED 2026-08-30T06:17:52-04:00 — lane w11, worktree relocated from worktrees/admin1/worktrees/w11 to worktrees/w11 (git worktree move); no make/gcc/binary/harness runs until LIFT.
