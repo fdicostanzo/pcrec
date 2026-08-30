@@ -18363,3 +18363,48 @@ below the Makefile; read `date` before labelling a journal entry (three
 labels tonight ran ~30 min fast). The panel-during-battery pattern —
 three critics + three re-checks, ~1 h 15 of wall, zero box time — is
 the shape to repeat: design work overlaps the box's busy hours.
+
+### 2026-08-30 — Forty-sixth session, part 1 (06:1x-06:3x EDT): wake, admin1 LANDED, W1.1 chartered
+
+Frank: "wake up but I'm not ready to go over questions. Proceed on other
+work or maintain idle context cron until then. Pcrecdev2 doing something."
+The open questions (I-19 gate shape, Q-W1, Q-W2, the Q7 residual, [OPT-A]
+STEP 0, D86 columns) stay parked; nothing that depends on them started.
+
+**The box at wake:** pcrecdev2's bounded re-run (the BD7 gate-shape test
+run on 36d5963, launched 05:22) was live — one `pcrec_driver` at 100 %;
+held everything until its `WINDOW_RUN_COMPLETE` at 06:17:07 (rc 0, 6/6
+cells measured on attempt 1, store 50). pcrecdev2: no window needed for
+~2 h ([B19]'s re-pin lane builds in a worktree), then a ~3.5 h abi-12
+sample window BEFORE my next battery. Its I-19 evidence is archived on
+its side (`docs/dev/measurements/2026-08-30-gate-shape-test-run.txt`:
+after-samples 1.81/2.00/3.81 %; the old 1-s gate would have failed
+pcrec-vm-in on one second at 11.88 % — a burst BD7's average absorbed).
+
+**lane/admin1 LANDED (b819512, fast-forward).** `git merge main` into the
+lane was clean (no file overlap). The owed verification (setsid script,
+PROCS=4) FOUND A DEFECT: `make -j4` rc 0, **test-registry rc 2** —
+`axes_registry_check.sh:500: $5: unbound variable`. [REG-SV]'s new
+emitter-source leg gave `check_value_set` an optional 5th argument read as
+`local src_label="$5"`, which dies under `set -u` on every pre-existing
+4-argument call; the script stopped at 61 checks against the predicted
+79. Fixed as `"${5-}"` (set-u safe; sidesteps the apostrophe-in-`${5:-}`
+problem the lane's own comment documents). Re-run: test-registry rc 0,
+axes_registry_check **79/0** (the prediction held once the crash was
+gone), 225/201/54 in the other sections; test-codegen **198/0**; `make
+strict` clean on main. [REG-SV] + [SPEC-1.10] → completed; registry 61
+rows / 21 axes; learnings §3 gained the "measured count welded to an
+inference" bullet with both instances (w1's dead-oracle inference,
+admin1's predicted 79 beside a crashing script). Worktree admin1 removed.
+
+**[DD-13b.W1.1] chartered** — lane w11, opus, `worktrees/w11` /
+`lane/w11` from 1ac1405, brief = `w1_impl.md` §7 verbatim (+ §3.0/§3.1.1
+N1 as the condition, §7.4's discovery-not-regression rule for item 6),
+under a HOLD with enumerated shapes until the bench's window closed
+(acked 06:17, LIFTED 06:2x after admin1's runs). Two lane finds in its
+first minutes: my `git worktree add` had run under a persisted `cd` into
+worktrees/admin1 and nested the worktree (the CLAUDE.md pitfall, third
+family member) — the lane moved it; and the brief named
+`tests/harness/verify_pcre2.py` where the live file is
+`tests/assertions/verify_pcre2.py` (corrected by message). Crons up:
+keepalive :09/:39, stall watchdog */10.

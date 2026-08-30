@@ -186,6 +186,22 @@ distilled forms:
   distinguishes "built" from "enabled" correctly, cross-checked live
   against `--list-syntax`'s own column.)
 
+- **A MEASURED count welded by "so" to an untested inference rides in
+  under the MEASURED mark** (2026-08-30, two instances in one night).
+  (1) Lane w1: "`verify_pcre2.py` has zero Makefile hits, so it is dead"
+  — the grep was real, the conclusion false: the oracle is invoked one
+  layer below the Makefile (`tests/assertions/run_assertions_tests.sh:60`,
+  10,120 cells in battery 3's log); admin1's read-only Task D overturned
+  it, and `w1_impl.md` §0.1 now marks MEASURED and INFERRED separately.
+  (2) Lane admin1: "the coverage guard will read 79" — a prediction
+  filed beside measured rows; the number was right and the script it
+  counted died at line 500 (`$5` under `set -u`) on every pre-existing
+  call, so the run read 61 until the owed verification ran. In this tree
+  every module's oracle is invoked one layer down from the Makefile, and
+  a lane's number that was not READ from a run is a claim: the marking
+  rule is "measured: <command> → <number>" or "inferred", never a
+  measured premise and an inferred conclusion in one sentence.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
