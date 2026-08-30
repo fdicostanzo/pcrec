@@ -118,8 +118,8 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   / `(?&=name)` for a delivering call, `--emit-composed` for the
   serialization. Panel gate satisfied for this round; NO PARSER IS
   WRITTEN.
-- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2 (2026-08-30,
-  lane w1): post-panel (r45) and post-rulings. NO CODE IS WRITTEN.** How
+- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.1 (2026-08-30,
+  lane w1): post-panel (r45), post-re-check and post-rulings. NO CODE IS WRITTEN.** How
   wave 1 of `format_design.md` lands: file by file, the composer, the
   check and sabotage plan, the D80 spec deltas, four lane-sized steps with
   a merge after each, and the open questions. It marks a fourth claim kind
@@ -224,7 +224,7 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   which is what `(?(DEFINE)…)` already desugars to
   (`mod_recursion.c:418`), so `callgraph.c`'s number-to-`A_CAP` bind, the
   splice/linkage choice, the slot layout and `rx_group_entry.ref` (a
-  column that already exists, emitted `NULL` at `emit_dfa.c:1192`) are all
+  column that already exists, emitted `NULL` at `emit_dfa.c:1190-1191`) are all
   reused unchanged. The composer itself is a SUB-PARSE on one `Ctx` — save
   and restore `pat`/`patlen`/`pos` plus the numbering scope, so a
   definition is parsed in its own number space and then re-based by a
@@ -248,6 +248,38 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   [DD-11]'s table is W1's LISTING interface and not its BINDING one —
   `DefTextFn` splices at the occurrence, i.e. INLINES, and composition
   must produce a call.
+  **REVISION 2.1 folds in the r45chk RE-CHECK (F1-F13 all CLOSED; go =
+  charter .1 and .2 with ONE condition), and its N1 is the sharpest thing
+  in the round.** `tests/harness/verify_rxt.py` — the python-`re` oracle
+  that C3 and C1's third leg are specified against — **is executed by
+  nothing in `make test`**: the only Makefile mention is a COMMENT
+  (`Makefile:528`), and its one real consumer,
+  `tests/assertions/verify_pcre2.py` (which imports it as a MODULE so
+  "there is exactly one" `.rxt` reader), **has zero Makefile hits either**.
+  And its discovery is a ONE-LEVEL glob (`:191`/`:195`, `BASE_DIR` at
+  `:20`), which makes the obvious wiring the catastrophic one: MEASURED,
+  `verify_rxt.py tests` covers **0 files** and exits reporting success (no
+  `.rxt` sits directly in `tests/`), while today's default covers **40 of
+  179 files / 3,603 of 26,691 expectation lines — 13.5%**. C3 is the SOLE
+  detector for S-C2 and S-C4, and their populations sit mostly outside
+  that scope: `# pcre2-only` marks are **571 corpus-wide vs 44 in
+  `tests/base`** (7.7% reached), `\x`-bearing lines 171 vs 90. So W1.1
+  must WIRE it over a `find`-derived list with a SHORT-LIST HARD FAIL
+  ([M5-SEAM]'s shape), pin its verified/skip totals, and derive C3's
+  denominator from verify_rxt's OWN discovery rather than carrying
+  run.sh's across. **A precision that resolves two disagreeing numbers in
+  our own documents**: r44-grammar G1 counts 636 `# pcre2-only` marks and
+  the exact count is 571, because G1 matched the line PREFIX while the
+  mechanism matches the stripped line EXACTLY (`verify_rxt.py:121`) — so
+  the 65 lines with trailing text are ordinary comments to the parser, and
+  S-C4's population is the mechanism's 571, not the census's 636. Also in
+  2.1: leg B is invoked through run.sh's `$@` branch (the no-arg branch
+  yields 178, not 179); the arm-block hash pin becomes BEGIN/END marker
+  comments rather than a line range, since W1.1 edits inside `:811-1015`
+  and a line-range hash would be broken by the very change it protects;
+  and C0a's two assertions are named separately (W1's own invocation
+  counter, which shares a source with what it counts, and the independent
+  head-bearing-file census, which cannot see a spurious invocation).
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
 
 Maintenance: update this file when files are added/removed or change
