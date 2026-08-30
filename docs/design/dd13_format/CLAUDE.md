@@ -118,8 +118,8 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   / `(?&=name)` for a delivering call, `--emit-composed` for the
   serialization. Panel gate satisfied for this round; NO PARSER IS
   WRITTEN.
-- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.1 (2026-08-30,
-  lane w1): post-panel (r45), post-re-check and post-rulings. NO CODE IS WRITTEN.** How
+- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.2 (2026-08-30,
+  lane w1): post-panel (r45), post-BOTH re-checks and post-rulings. NO CODE IS WRITTEN.** How
   wave 1 of `format_design.md` lands: file by file, the composer, the
   check and sabotage plan, the D80 spec deltas, four lane-sized steps with
   a merge after each, and the open questions. It marks a fourth claim kind
@@ -280,6 +280,43 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   and C0a's two assertions are named separately (W1's own invocation
   counter, which shares a source with what it counts, and the independent
   head-bearing-file census, which cannot see a spurious invocation).
+  **REVISION 2.2 folds in the r45sem RE-CHECK, whose one open item
+  refuted B1's REMEDY while confirming its diagnosis — a scoping
+  mismatch, and the sharpest correction of the round.** Revision 2 said
+  "exclude the callee's capture indices from `W`". But **`W` is a
+  per-REGION property and "delivering" is per CALL SITE** (D87 rule 5):
+  `vm_publish_saves` (`emit_vm.c:5716-5735`) indexes `rgn_w[]` by the
+  call's TARGET, so every site of one region is handed the SAME save
+  array — the exclusion would therefore have applied to non-delivering
+  sites of the same definition too, which is precisely the
+  called-twice-delivering-once case §2.13 exists for. RULED (manager,
+  architecture): **a delivering call is FORCED to `CALL_SPLICE`**, since
+  `vm_splice` (`:5915-5985`) allocates `base = v->nsplice` FRESH PER SITE
+  — so the exclusion becomes per-site by construction, `cg_eligibility`
+  gains one input, and §2.4's table gains a fourth CHANGED row. The two
+  non-deliverable refusals (recursion; activation > 1), written for the
+  struct's sake, turn out to be the forcing's precondition. Also: the
+  restore's index space is the CALLEE REGION's own (`vm_region`,
+  `:6036-6046`) with `vm_publish_saves`' *"three readers, one write"* and
+  `vm_splice`'s overflow `ctx_fail` (`:5924-5932`, K27's class) as the
+  loud detector, and the omission is TRAIL-COHERENT — `vm_set` is
+  trailed, so a dropped restore keeps the callee's value and a backtrack
+  undoes it, meaning delivery needs one FEWER restore rather than a second
+  undo mechanism; the delivering bit lives ON the `A_CALL` node and is
+  written explicitly on every call, because the arena zero is the unsound
+  direction (`link`'s own situation, `callgraph.c:246`/`:337`); the
+  sub-parse's pending list is CAPTURED into the scope record rather than
+  overwritten by the restore, making the re-basing TWO passes (a tree walk
+  for `A_CAP`, a pass over the captured list); and `match_api.md:1504`
+  joins §1.6's `nnames` sentence as a SECOND instance of the same
+  staleness shape in one struct's documentation. **NEW §7 is the
+  [DD-13b.W1.1] STEP BRIEF** — a seven-item build order with the reason
+  each item sits where it does, the acceptance numbers pinned in advance
+  with their three different denominators, an eight-point definition of
+  green, and two named risks (C1's unmeasured runtime; that wiring a
+  previously-dead oracle over 139 never-checked files may surface
+  PRE-EXISTING failures, which are a discovery to triage and not a
+  regression to fix inside W1.1).
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
 
 Maintenance: update this file when files are added/removed or change
