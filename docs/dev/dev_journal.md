@@ -17962,3 +17962,54 @@ it over a body set — one home, two readers); [DD-11.4]'s synthetic row
 is a test-local fixture. Now on [DD-11.3]. Message delivery to this
 lane lags a full tool round — three rulings were "still awaited" after
 being sent; the fix each time was a fresh RESUME send.
+
+#### Forty-fifth session, part 6 — the battery finds a corpus regression under A; Frank re-rules B; a size warning; [DD-11] complete on its lane (~20:0x-21:4x EDT)
+
+**Battery 1 on ba69380 (19:47-20:08): RED**, 9 check failures — every
+one a check whose witness or expectation [OPT-4] moved in sections the
+lane could not run (three cells whose witness no longer OVERFLOWS at
+all, two [SEL-1] cells expecting the dropped-prefilter form, an
+--emit-ir listing, a ceiling-form witness, the `(a|b){0,30000}`
+acceptance pin, a limit cell that no longer binds, and ONE the check's
+own parser: a bare `RX_VM_PREFILTER` also matching `RX_VM_PREFILTER_LANG`).
+opt4b disposed each as EXPECTATION or WITNESS, never both silently, with
+anti-vacuity rows (dbc4b34 + 2823638), all sections green solo;
+re-merged 7794de9; battery 2 launched 20:46.
+
+**Battery 2: make test 0 checks failed / 1,771; san 0 sanitizer
+reports — but `cases failed: 2` in BOTH runs was NOT the counterk load
+cell** (I had assumed so in run 1 without reading failures-by-file —
+the K35 shape, on myself): tests/base/d27_k23_ambiguous_decomposition.rxt
+`(a{1,3}){65}` (stamped `count-collapsed, exact nfa 392 > 128`) TIMES
+OUT (>10 s) on the two broken-run subjects at lines 90/98, and under
+san exhausts the VM budget — a previously-passing ORDINARY corpus
+pattern, the step-budget-reachability finding (§7.2b) made real. My
+recommendation had flipped B → A → B on successive measurements (B
+inert on the 23 because `emit_code` excludes tables; A's cost assumed
+adversarial-only); the lesson is to withhold a DEFAULT recommendation
+until the battery — the only corpus test — has run. Laid the three
+options out stably for Frank (A knee / B fallback-only / B′ flag-only).
+
+**Frank: "go with B"** — the collapsed language is a ladder ATTEMPT
+only when the exact build is impossible (state cap: the [SEL-1] rung;
+size cap: a new attempt); knee and census retire; `-fprefilter-collapse`
+= always; K39 re-scoped, K41 stays closed via the cap retry; the K23
+cell passes untouched. Plus two asks: the exemplar pass CAN answer
+differently per target ([ENG-PGO] cross-note: a profile-chosen
+`-fprefilter-collapse`), and an advisory SIZE WARNING on builds over N,
+default 250,000 (`--warn-emit-bytes=N`, never a refusal). Briefed to
+opt4b (same lane, after `git merge main`); battery 3 follows.
+
+**[DD-11]** (dd11b): [DD-11.3] the option-matrix self-oracle BUILT and
+wired into make test — first 50 cells / 28,600 comparisons, then with
+the DEFK_TEXTFN rows (Pattern B = the decoded byte re-spelled in a
+different escape family, value off the textfn's output bitmap) and the
+POSIX family as 14 real cells (a per-entry `operand` field): **354
+cells / 202,488 comparisons / 0 disagreements**; it caught a real bug in
+the new decode (`\ca` without uppercasing — PCRE2 uppercases) and a
+scanf whitespace trap in its own checker; `\N{U+}` cannot be oracled at
+options=0 (a noted tautology until UTF mode). [DD-11.4] the recursion
+guard as a test-local fixture (a live-evaluator tag as stand-in — right,
+a fixture must not edit the production switch). Merged main cleanly
+(ce16cee; two count re-pins from live runs). [DD-11] is complete through
+.1-.4 + .4b on lane/dd11; merge after [OPT-4]'s battery 3.
