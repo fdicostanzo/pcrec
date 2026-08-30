@@ -18669,3 +18669,27 @@ wrong expectation in its own sem21 check) — recorded in
 docs/dev/lanes/w11f_report.md. Worktree retired. opt41's .lift follows
 on this merge; ONE battery covers both merges at opt41's landing
 (battery 3's two-lane precedent). Frank's perf hold unchanged.
+
+**16:5x — opt41 Phase 2 interim (all green so far) + two manager rulings.**
+Green on the merged tree: strict ×3, axes_registry_check 83/0 (the four
+new RX_ENGINE_SEL legs both directions), cli 287/0, codegen 198/0,
+prefilter_collapse 58/0, S206/S207 VALIDATE_ONLY clean. Its findings:
+S102/S165 were STALE on arrival (the fit.prefilter expression moved —
+the THIRD time for that cause; promoted in sabotages/CLAUDE.md from
+anecdote to a standing rule, and all four rows verified BEYOND the
+tripwire by applying each to a scratch copy and gcc -fsyntax-only'ing
+the result); its own "-fprefilter overrides the decline" over-claim had
+FIVE copies including a user-facing axes_dump.c row — true on the size
+rung, FALSE on [SEL-1] (there -fprefilter refuses instead) — all five
+corrected (D80); §6b's Phase-1 witness replaced (the transformed pattern
+was refused by SIZE identically under every flag — "choose a witness by
+its OUTCOME, never by transforming a pattern that has that outcome");
+the byte-identity leg on the declined pair replaced by "differ in the
+_LANG_WHY line and nothing else". RULINGS: (1) the SCOPED axes pair
+(deny/force on the one changed axis, full corpus, span+slots) is this
+row's delivered answer-identity evidence — the predicate is read on one
+axis's path, that axis's own pair is swept in full, and the other axes'
+interactions were swept when [OPT-4] landed; a 14-pass sweep re-proves
+axes the change cannot reach; if any later evidence contradicts
+answer-identity the full sweep runs before diagnosis. (2) The interim's
+shared-file touches (the re-anchors, the wording fix) accepted.
