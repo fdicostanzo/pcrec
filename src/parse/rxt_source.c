@@ -92,23 +92,6 @@ static const char *line_value(const char *line)
     return skip_ws(line + tok_len(line));
 }
 
-/* THE SAME VALUE, TRAILING WHITESPACE REMOVED, for the kinds whose value
- * is a TOKEN or a LIST rather than rest-of-line.
- *
- * This exists because the other parser accepts what this one would
- * otherwise refuse. run.sh's directive arms all end `[[:space:]]*$`, so
- * `flags i` and `flags i ` are one value there; without this they would
- * be two here, and the two `.rxt` parsers would disagree about a line
- * neither design document distinguishes. MEASURED: 0 corpus directive
- * lines carry trailing whitespace, so the disagreement is unreachable
- * today — which is exactly why it is worth fixing now rather than
- * leaving the parsers to agree by luck of the corpus (three corpus files
- * DO carry trailing whitespace on other lines, where it is data).
- *
- * Returns an arena copy; the value is not a suffix of the line once
- * anything has been trimmed off its end. */
-static const char *value_trimmed(RxtP *p, const char *line);
-
 static int line_indented(const char *s)
 {
     return *s == ' ' || *s == '\t';
@@ -193,6 +176,9 @@ typedef struct {
  * whose every other reader means "offset into the pattern" would be a
  * second meaning for one field. */
 static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
+    __attribute__((format(printf, 3, 4)));
+
+static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
 {
     va_list ap;
     char body[256];
@@ -220,6 +206,21 @@ static char *arena_strdup(Arena *a, const char *s)
     return arena_strndup(a, s, strlen(s));
 }
 
+/* THE SAME VALUE AS line_value, TRAILING WHITESPACE REMOVED, for the
+ * kinds whose value is a TOKEN or a LIST rather than rest-of-line.
+ *
+ * This exists because the OTHER parser accepts what this one would
+ * otherwise refuse. run.sh's directive arms all end `[[:space:]]*$`, so
+ * `flags i` and `flags i ` are one value there; without this they would
+ * be two here, and the two `.rxt` parsers would disagree about a line
+ * neither design document distinguishes. MEASURED: 0 corpus directive
+ * lines carry trailing whitespace, so the disagreement is unreachable
+ * today — which is exactly why it is worth fixing now rather than
+ * leaving the two parsers to agree by luck of the corpus (three corpus
+ * files DO carry trailing whitespace on other lines, where it is data).
+ *
+ * Returns an arena copy: once anything is trimmed off the end, the value
+ * is no longer a suffix of the line. */
 static const char *value_trimmed(RxtP *p, const char *line)
 {
     const char *v = line_value(line);
@@ -643,9 +644,16 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
         /* name every member from the point the cycle closes */
         char members[512];
         size_t at = 0;
-        for (size_t k = d; k < depth; k++)
-            at += (size_t)snprintf(members + at, sizeof members - at, "%s -> ",
-                                   stack[k]->name);
+        for (size_t k = d; k < depth && at + 1 < sizeof members; k++) {
+            int w = snprintf(members + at, sizeof members - at, "%s -> ",
+                             stack[k]->name);
+            /* snprintf returns what it WOULD have written; letting that
+             * past `at` would make the next `sizeof members - at` wrap to
+             * an enormous size_t and hand snprintf a bogus bound. */
+            if (w < 0) break;
+            at += (size_t)w;
+            if (at >= sizeof members) { at = sizeof members - 1; break; }
+        }
         snprintf(members + at, sizeof members - at, "%s", r->name);
         return rxt_fail(p, r->line,
                         "'config %s from' is a cycle: %s", r->name, members);
@@ -707,7 +715,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
          * begin with whitespace (w1_impl §5), so no existing file can
          * reach either arm. */
         if (line_indented(l)) {
-            rxt_fail(&p, line,
+            rxt_fail(&p, line, "%s",
                      in_body ? "a pattern block's lines are NOT indented "
                                "(indentation is continuation in the head "
                                "only)"
@@ -728,8 +736,25 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * tab IS the thing under test, which is why the dump escapes
              * this column rather than the parser normalising it. */
             {
+                /* THE SEPARATOR IS A SPACE, NOT "whitespace", and that is
+                 * agreement with the other parser rather than pedantry:
+                 * run.sh's arm is `^pattern\ (.*)$` — a LITERAL space —
+                 * so `pattern<TAB>abc` is a hard error there. Accepting
+                 * it here would make the two parsers disagree about a
+                 * line, which is exactly what the differential exists to
+                 * find, and it would find it in a file somebody wrote
+                 * rather than in this comment. MEASURED: 0 of the 3,265
+                 * pattern lines use a tab separator. */
                 const char *after = l + tok_len(l);
-                if (*after == ' ' || *after == '\t') after++;
+                if (*after != ' ') {
+                    rxt_fail(&p, line,
+                             "'pattern' wants a single space before its "
+                             "regex (the pattern text is rest-of-line "
+                             "verbatim from there, so the separator cannot "
+                             "be part of it)");
+                    goto fail;
+                }
+                after++;
                 block->value = arena_strdup(&src->arena, after);
             }
             continue;

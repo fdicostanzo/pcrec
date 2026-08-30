@@ -1381,11 +1381,21 @@ done
 
 # ---- summary ----------------------------------------------------------
 
-# [DD-13b.W1.1] in --dump mode stdout is the TSV and nothing else: a
+# [DD-13b.W1.1] in --dump mode STDOUT is the TSV and nothing else: a
 # differential compares streams, and a summary appended to one of them
 # would be a disagreement about the corpus that is really a disagreement
-# about this script's chattiness.
+# about this script's chattiness. Parse failures still reach STDERR —
+# `record_fail` writes there — so nothing is hidden, it is merely kept out
+# of the data.
+#
+# THE EXIT STATUS STILL MEANS SOMETHING. `--dump` is a parse, so a file it
+# cannot parse must not exit 0: a caller that checks the status (the
+# block-scalar refusal in tests/rxtsource/ is one) would otherwise read
+# "this file was rejected" as "this file was fine and produced no rows",
+# which is the same absence-reads-as-success shape the short-list hard
+# fail exists to refuse one directory over.
 if [ "$RXT_DUMP" = "1" ]; then
+    [ "$total_fail" -eq 0 ] || exit 1
     exit 0
 fi
 
