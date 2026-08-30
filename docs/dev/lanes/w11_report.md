@@ -7,19 +7,30 @@ Branch `lane/w11`, from main `1ac1405`. Written 2026-08-30.
 > below that says MEASURED was executed; the few things that are still
 > owed say so by name.
 
-**Headline results**
+**Headline results — all MEASURED on the final tree**
 
 | | |
 |---|---|
 | `make -j4`, `make strict` | **clean** (-Werror -Wshadow, whole tree) |
 | **C1**, three-way | **leg A == leg B == leg C, BYTE-IDENTICAL** over 179 files / 3,265 blocks / 22,125 case rows |
-| **C1 runtime** | **8.2 s** — leg A 0.74 s, leg B 7.32 s, leg C 0.17 s |
-| **C2** (`make test-corpus`, PROCS=4) | **26,680 passed / 0 failed**, 0 compile failures, 0 pending-vm, **178 of 178 workers** |
-| **C3** (the oracle, first run ever) | **13,181 verified / 0 failed** over 179 files, every exclusion counted by reason |
-| **`make test-rxtsource`** | **39 checks passed, 0 failed** |
+| **C1 runtime** | **~8.2 s** — leg A 0.8, leg B 7.2, leg C 0.2 |
+| **C2** `make test-corpus` PROCS=4 | **26,680 passed / 0 failed**, 0 compile failures, 0 pending-vm, **178 of 178 workers**, size-log 2,878 |
+| **C3** the oracle, first run ever | **13,181 verified / 0 failed** over 179 files; every exclusion counted by reason; nine populations pinned |
+| `make test-rxtsource` | **43 checks passed, 0 failed** |
+| `make test-codegen` | **5/5 scripts**, K37 green |
+| `make test-cli` | **287 cases / 0 failed** |
+| sabotage rows S194-S204 | **11 of 11 DETECTED** (two needed witnesses built first) |
 | the §7.4 discovery | **ZERO corpus defects** |
 
----
+**Three defects in shipped code were found, none of them by a check that
+already existed:**
+
+1. **run.sh let a typo'd `features` list pass QUIETLY on a `perr` block** —
+   found by building a sabotage *witness*, not by any check.
+2. **`verify_rxt.py` could not parse 4 of the corpus's 14 line kinds** —
+   found by pointing it at the corpus for the first time.
+3. **The oracle had no time bound**, and one corpus file does not
+   terminate under python `re` — found by the wiring hanging.
 
 ---
 

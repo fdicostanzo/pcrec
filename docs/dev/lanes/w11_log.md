@@ -115,3 +115,15 @@ Nine commits, `da10212`..`e708753`.
 
 At `ab770e3`. Build green, `make strict` clean, C1 measured green three-way
 (8.2 s: legA 0.74 / legB 7.32 / legC 0.17). Resuming at item 6.
+
+## Close (2026-08-30, all steps complete)
+
+Everything green on the final tree: rxtsource 43/0, codegen 5/5, cli
+287/0, corpus 26,680/0 (178/178 workers), strict clean, 11/11 sabotage
+rows DETECTED, discovery found zero corpus defects.
+
+One process error worth recording: I edited run.sh WHILE test-corpus was
+executing it. bash reads a script incrementally, so four workers resumed
+parsing mid-token and "failed" with a syntax error. Nothing was wrong
+with the code — a clean re-run was 26,680/0. Do not edit a file a running
+suite is executing.
