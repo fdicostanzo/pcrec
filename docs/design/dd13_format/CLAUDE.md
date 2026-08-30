@@ -118,6 +118,68 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   / `(?&=name)` for a delivering call, `--emit-composed` for the
   serialization. Panel gate satisfied for this round; NO PARSER IS
   WRITTEN.
+- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, DESIGN-FIRST
+  deliverable 1 (2026-08-30, lane w1): NO CODE IS WRITTEN.** How wave 1 of
+  `format_design.md` lands: file by file, the composer, the check and
+  sabotage plan, the D80 spec deltas, four lane-sized steps with a merge
+  after each, and the manager's open questions. It marks a fourth claim
+  kind beside MEASURED/CITED/ARGUED — **DECIDED**, six points the format
+  note left to the implementer or where the tree contradicts it — and
+  four of the six make W1 smaller.
+  **Its three departures from `format_design.md` are the sections to read
+  first, because each is forced by code the note did not cite:**
+  (1) **the abi is 12, not 11** — the note's §2.7 says 11 at
+  `emit_dfa.c:1310`; `emit_dfa.c:1375`, `run_codegen_tests.sh:2707` and
+  `match_api.md:159` all say 12 ([OPT-4] bumped it after the note was
+  written), so W1's bump is 12 → 13 and the four D76 sites are re-cited
+  exactly, including the (B) pin at `run_recursion_identity.sh:456`.
+  (2) **the definition's wrapper TAKES an assigned number, so the oracle
+  control's derived offset is ZERO** — reversing the note's §2.3.3
+  RECOMMENDED and deleting §2.3.4's offset `j`. `A_CALL.target` is a
+  group number and `callgraph.c:162,178` binds by matching
+  `A_CAP.u.cap.no`, so a callable body must hold a number in the same
+  space every other group is in; a separate id space would be a second
+  key in the binder. The composer and the textual control then spend one
+  number per definition alike and compare slot for slot, which is a
+  better answer to the very hazard §2.3.4 names. It changes a number the
+  note publishes (`dd`'s composed group 1 is 3, not 2) and goes to Frank.
+  (3) **provenance is NOT a field on the node** — the note's §2.12 says
+  it is, and `internal.h:3247` states the opposite as an invariant
+  (*"`Ast` carries no position of any kind (PARSE-1)"*, restated at
+  `internal.h:729-746` where `A_LOOK.u.look.at` exists BECAUSE of it).
+  Provenance is instead a property of the SUB-PARSE (whose offsets are
+  already local to the definition's own text) and of the assignment
+  table (which is where rule 7(c)'s two sites are known) — strictly less
+  machinery and strictly more capable.
+  Its central mechanism claim is that **composition adds no new AST
+  shape**: a bound definition is injected as `A_REP{0,0}(A_CAP{no}(body))`,
+  which is what `(?(DEFINE)…)` already desugars to
+  (`mod_recursion.c:418`), so `callgraph.c`'s number-to-`A_CAP` bind, the
+  splice/linkage choice, the slot layout and `rx_group_entry.ref` (a
+  column that already exists, emitted `NULL` at `emit_dfa.c:1192`) are all
+  reused unchanged. The composer itself is a SUB-PARSE on one `Ctx` — save
+  and restore `pat`/`patlen`/`pos` plus the numbering scope, so a
+  definition is parsed in its own number space and then re-based by a
+  walk, which is D87 rule 7(i) executed literally; §2.2 tabulates why each
+  saved field is load-bearing (`ncap` most of all: it is read DURING the
+  parse for PCRE2's octal-vs-backref rule, `internal.h:1603`).
+  `--emit-composed` is a **text splice driven by a position list**, not an
+  AST serializer, so no second "AST → PCRE2 text" mechanism is created.
+  **MEASURED for this note** (three single compiles under the manager's
+  HOLD, `build/pcrec` at main `3372e1e`): all three of §1.5's spellings
+  are still refused after [DD-11] landed — `(?<3>a)` and `(?&^.w)` by the
+  name-start validator, `(?&from=email)` by "invalid subpattern name" —
+  so B1/B2/B3 remain free and each extension displaces exactly one known
+  refusal site. Also re-confirmed: 0 corpus lines begin with whitespace.
+  §3 re-homes one of the note's own sabotage rows (S-C5 cannot be caught
+  by the dump differential, because pcrec never parses `frames-buffer=`)
+  and states plainly that S-C8 is caught by nothing on the corpus, since
+  no corpus file composes. §6 carries three questions: the wrapper's
+  number (above), `(?R)`/`(?0)` inside a bound definition as a SIXTH
+  member of §6.0's piece-rule class (recommendation: refuse), and that
+  [DD-11]'s table is W1's LISTING interface and not its BINDING one —
+  `DefTextFn` splices at the occurrence, i.e. INLINES, and composition
+  must produce a call.
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
 
 Maintenance: update this file when files are added/removed or change
