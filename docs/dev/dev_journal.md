@@ -18252,3 +18252,29 @@ denominators on purpose; revision 1 would have shipped 179 in both.
 Structural residual carried to Frank as the ratified Q7 trigger:
 absolute references and colliding names have no external oracle (W-8 is
 valid only on W-1's population; a D27 author shares the oracles).
+
+**[DD-13b.W1] design phase CLOSED (02:4x-02:5x).** Revision 2.1 (a0f4096)
+folded r45chk's N1-N4 — and sharpened N1: the natural wiring
+`verify_rxt.py tests` verifies 0 files and exits 0; the default covers
+13.5 % of the corpus's lines and 7.7 % of `# pcre2-only` marks; G1's 636
+marks vs the mechanism's 571 is prefix-vs-exact match. Revision 2.2
+(3e5ce4d) folded r45sem's N1-N6 under the CALL_SPLICE ruling (w1:
+`vm_publish_saves` hands every site the SAME POINTER, so splice is the
+ONLY place a per-site exclusion is expressible; the two delivery
+refusals are the splice's finiteness precondition; the omitted restore
+is trail-coherent) and wrote §7, the W1.1 step brief (escape before the
+differential; verify_rxt's wiring at item 6 with a discovery-not-
+regression rule for a dead oracle's first run over 139 files). Revision
+2.3 (6e71923) folded admin1's Task D CORRECTION: `verify_pcre2.py` IS
+live (run_assertions_tests.sh:60; 10,120 cells / 0 disagreements in
+battery 3's log; recursive discovery) — w1's "zero Makefile hits → dead"
+was a measured grep welded to an untested inference (now a §0.1 marking
+rule; and a tree fact: every module's oracle is invoked one layer down).
+r45sem's §2.8 re-check: STEP .4 BUILDABLE — the forced splice is the
+latitude `callgraph.c` explicitly reserves; residuals are accounting
+paragraphs (`spl_nw` per site, the splice reader triple, `rgn_emit`,
+`exp == 1` for the multiplicity bound, `_CUT`'s documented non-rewind as
+an S2c sentence) → revision 2.4, accepted on my own read. STATE: W1.1 +
+W1.2 chartered on the lift; W1.3 on Frank's Q-W1/Q-W2; W1.4 designed.
+Panel cost: three critics + two focused re-checks, ~1 h 15 wall,
+overlapping the battery entirely — zero box time.
