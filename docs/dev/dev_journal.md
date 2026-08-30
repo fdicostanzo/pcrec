@@ -18141,3 +18141,32 @@ QUIET box (its measurements are worthless under the battery + the bench
 window). Crons: keepalive :09/:39, lane stall-watchdog every 10 min.
 Frank surfaced at ~01:5x with a remark, no ruling; nothing is blocked on
 him except the v1.4 gate shape (in I-18's draft).
+
+**Battery 3's `make test` stage (01:22-01:38): RED, 1 check + 30 cases — and
+none of it is the code.** Read failures-by-file first, as ruled: (1) the 29
+corpus cases are tests/counterk/counterk.rxt's `((a)|ab){4000}c` and its
+dependents, the known K32 load cell — the battery's own solo stages cleared
+it (counterk.rxt through the harness 1,634/0; test-resource 27/0;
+test-counterk 24/0). (2) test-cli's `--warn-emit-bytes` "oversize-but-
+accepted artifact was REFUSED (rc 124)" is a TIMEOUT: the witness
+`a{0,20000}` is a K25 shape — 18.5 s of CPU SOLO (measured) against
+pcrec_run's 60 s wall, which the battery inflates 3-5× — a cell that reads
+"refused" for a compile that never finished. Witness swapped to
+`[a-z]{0,8192}` (365 KB, 3.1 s CPU; still 46 % over the default). (3)
+test-codegen's `[K39] the DEFAULT artifact emitted 2809 lines for {0,4000}
+against 1009` in run_ir_listing.sh: the block still asserted ruling A ("the
+default is count-independent above the knee") — a stale assertion opt4b's
+B rewrite did not reach (run_prefilter_collapse.sh §1, which it did rewrite,
+already carries B's claim on the self-contained artifact with the default
+pair as the DIVERGING control). Rewritten to B on the split artifact: the
+default pair must DIVERGE (count-BOUNDED; measured 1,009 → 2,809, `exact`)
+and the `-fprefilter-collapse` pair must be EQUAL (measured 810 → 810,
+`count-collapsed`), each the other's control. Both fixes are test files
+only, committed on main while san's first script ran (neither edited script
+was executing — checked by ps snapshot before the edit; the only hits were
+san's own `for s in …` loop line). Both scripts ARE in tests/lib/
+san_scripts.txt, so san exercises the fixed versions inside this battery;
+the codegen + cli groups get a solo re-run on the fix commit after mech.
+The DONE line will read RED (its TCHK counts the stage as run); the verdict
+is by diagnosis, stated as such in I-18. Time labels earlier in this part
+("~02:2x") were ~35 min fast — the reset was ~01:30, the charters ~01:45.
