@@ -807,3 +807,72 @@ difference is the OUTPUT SPELLING: the suite compiles with `-o FILE` (split
 the bench's 24,414-vs-32,075 gap, showing up here by accident before
 `predict_check` measures it deliberately. Both numbers are honest; neither is
 "the" size, which is precisely ask (ii)'s point.
+
+## 13. A CRITIC-FOUND DEFECT (r47sel finding 1), and how it was closed
+
+**The finding.** `fit.prefilter_declined_nullable` lacked the
+`pcrec_has_collapsible_rep(root)` conjunct that its twin `pfc_wanted`
+(`src/core/compile.c`) has.
+
+**VERIFIED IN THE CODE BEFORE ACCEPTING IT**, because a critic's finding is a
+claim like any other: `compile_driver`'s `retry_collapse` really does not test
+for a collapsible repeat, so the [SEL-1] rung IS offered to a pattern with
+none. For such a pattern the collapsed lowering IS the exact one — there is no
+distinct rescue, so nothing to refuse — and stamping `declined-nullable`
+reports a rescue REFUSED where none was ever available. That is precisely the
+inversion `match_api.md`'s own new value table warns about, on the macro the
+comparative bench buckets by.
+
+**REPRODUCED LIVE before fixing.** The witness is `SEL1_NULL` with the count
+spelled OUT — fifteen literal `(?:a|b)` instead of `(?:a|b){15}` — so it is the
+same language, still nullable, still overflows, and has no `A_REP` to collapse:
+
+| witness (unfixed binary) | `RX_ENGINE_SEL` |
+|---|---|
+| `(?:a\|b)*a` + 15 literal `(?:a\|b)` — non-nullable | `overflowed-dfa` — correct |
+| the same wrapped in `(?:…)?` — **nullable** | **`declined-nullable`** — the defect |
+
+The twin reading correctly on the same binary is what makes the asymmetry
+unmistakable, and it is why the fix's check is a PAIR rather than one cell.
+
+**A FIRST WITNESS ATTEMPT WAS MEASURED AND DISCARDED.** Chained `(?:a|b)?`
+optionals (15, then 20) are nullable and non-collapsible but do NOT overflow —
+they stay DFA artifacts (`RX_ENGINE "dfa"` / `selected`) and never reach the
+rung, so a cell built on them would have asserted nothing. Measuring before
+writing is the only reason that did not ship as coverage.
+
+**Fixed as ONE DERIVATION WITH TWO READERS** rather than a second call:
+`EngineFit.prefilter_has_collapsible_rep` is derived at `select_engine.c`'s fit
+site, the decline conjuncts on it, and `compile.c`'s gate now READS it instead
+of calling the predicate again — so the two conjuncts cannot drift the way they
+just did. `!pfc_deny` and `chosen != ENGM_DFA` are deliberately not restated:
+`collapse_reason != CR_NONE` already implies both (neither rung is offered
+under `-fno-prefilter-collapse`, and a rung excludes the DFA).
+
+**The check is §6b cell (2c), and it asserts the PAIR**: with nothing to
+collapse, the nullable witness and its non-nullable twin must BOTH read
+`overflowed-dfa` — nullability makes no difference where there is no rescue.
+Asserting only the nullable one would also pass on a compiler that had stopped
+overflowing.
+
+**After the fix**: `run_prefilter_collapse.sh` **59 passed, 0 failed** with
+(2c) green; `make strict` clean; `axes_registry_check.sh` **83/0**; the anchor
+tripwire still reads *all 203 rows' anchors resolve*.
+
+**S206 AND S207 WERE RE-RUN ON THE CORRECTED TREE**, because a canonical
+`SAB_DOC_FIGURE` must come from the delivered code and not a superseded one.
+
+| run | tree | verdict |
+|---|---|---|
+| S206, PRE-fix | `44ad88a` | `reach:ok(1/1), pfcollapse:5fail/49pass, resource:1fail/28pass, corpus:0fail/51pass` → DETECTED |
+| S206, POST-fix (canonical) | `412eb52` | `reach:ok(1/1), pfcollapse:5fail/50pass, resource:1fail/28pass, corpus:0fail/51pass` → DETECTED |
+
+The only movement is `49pass` → `50pass`: the fix ADDED cell (2c) and the
+plant does not redden it, which is right — S206 removes the NULLABILITY
+predicate, and (2c) is about the COLLAPSIBLE-REPEAT one. A row that reddened
+every cell in the section would be telling me less, not more.
+
+`resource:1fail` is the signature its header predicted — the nullable
+size-rung cell ALONE, its non-nullable twin green — which is what says the
+plant removed a PREDICATE rather than the rung. `corpus:0fail/51pass` is the
+answer-identity this arm exists for.
