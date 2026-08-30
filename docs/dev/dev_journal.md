@@ -18013,3 +18013,26 @@ guard as a test-local fixture (a live-evaluator tag as stand-in — right,
 a fixture must not edit the production switch). Merged main cleanly
 (ce16cee; two count re-pins from live runs). [DD-11] is complete through
 .1-.4 + .4b on lane/dd11; merge after [OPT-4]'s battery 3.
+
+#### Forty-fifth session, part 7 — battery 2 verdict; D88; the bench's bounded window opens (~22:45 EDT)
+
+**Battery 2 on 7794de9 (20:46-22:45):** make test 0 checks failed /
+1,771; san 0 sanitizer reports; **mech 189 rows / unexpected 0 /
+undetected 6 (the expected six) / unreached 0 / anomalies 0** — the
+mechanism's sabotage matrix is clean at abi 12. The only red is the
+K23 corpus cell (`(a{1,3}){65}` timing out under the A default), in
+both test and san — exactly what ruling B removes. Size log restored
+with `git checkout` after the run (again).
+
+**D88 (ab1d156):** one artifact per emitted file, ALWAYS — composition
+is linking, never a multi-pattern TU; N targets are N files; an
+emission set is a directory + manifest header; cross-artifact table
+sharing is link-level, deferred (Frank, on the size warning's unit).
+
+**Box handed to the bench at 22:45** for bench/bounded@0.1's window at
+36d5963 (the BEFORE sample for [OPT-4]; under B the interesting after
+cell is its `[a-z]{0,32768}` refusal, which the cap retry may rescue);
+opt4b on edit/commit HOLD; battery 3 after the bench's CLOSED. My
+10-minute mech ETA was wrong by 30 — the matrix runs rows in LEXICAL
+order (S180-S189 before S19, S2x…S9x last); read the row name against
+the sorted list before estimating.
