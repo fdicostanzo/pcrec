@@ -196,6 +196,12 @@ trap cleanup EXIT
 # one: the default branch excludes tests/known_fail/ and yields 178 files,
 # while C1's population is all 179. The two run the same script over
 # different populations on purpose (§3.0).
+# a head-bearing file with NO `pattern` row: every line is head, so the
+# body loop starts past the end. Larger than any .rxt file's line count
+# (the corpus's longest is four figures) and it is compared with -le, so
+# it is a skip-everything sentinel rather than a magic line number.
+RXT_SKIP_WHOLE_FILE=1000000000
+
 RXT_DUMP=0
 if [ $# -gt 0 ] && [ "$1" = "--dump" ]; then
     RXT_DUMP=1
@@ -928,13 +934,81 @@ for file in "${files[@]}"; do
     have_block=0
     blocks_in_file=0
 
+    # ---- [DD-13b.W1.1] THE SEAM (w1_impl §1.1, the manager's ruling) ----
+    #
+    # This script gains NO HEAD ARMS and no head recogniser. For a file
+    # whose first non-comment line is not `pattern`, it calls pcrec
+    # `--list-source` ONCE, reads the `line` column of the FIRST `pattern`
+    # row, and starts the loop below AT that line. The head is an
+    # UNTOUCHED BYTE RANGE whose boundary comes from the one head parser.
+    #
+    # That is the whole point: the head grammar has exactly one
+    # implementation, so the two cannot drift. What this script decides
+    # for itself is only "is there a head at all" — one token compare
+    # against `pattern`, which is not head syntax and cannot go stale as
+    # the head grammar grows. Everything past that boundary is this
+    # script's own business, unchanged.
+    #
+    # MEASURED: 0 of the corpus's 179 files are head-bearing, so the call
+    # is never made and all 179 take a byte-identical code path. That zero
+    # is asserted TWICE and from two sources in
+    # tests/rxtsource/run_rxtsource_tests.sh — an external count of what
+    # pcrec was actually invoked with, and an independent census of the
+    # corpus — because a counter that shares a source with the thing it
+    # counts cannot see machinery that is simply absent.
+    #
+    # THE `line` COLUMN IS LOAD-BEARING, which is why it has its own
+    # sabotage row: reported too early, the loop starts on a head line and
+    # the catch-all hard-errors; too late with one block, the P-C2 floor
+    # fires; too late with several, the `have_block` guard above catches
+    # what used to be silent.
+    head_skip=0
+    head_probe=""
+    while IFS= read -r probe_line || [ -n "$probe_line" ]; do
+        case $probe_line in
+            '#'*) continue ;;
+        esac
+        case $probe_line in
+            *[![:space:]]*) ;;
+            *) continue ;;
+        esac
+        head_probe=${probe_line%%[[:space:]]*}
+        break
+    done < "$file"
+
+    if [ -n "$head_probe" ] && [ "$head_probe" != "pattern" ]; then
+        ls_out=""
+        if ! ls_out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" \
+                        "$PCREC" --list-source "$file" 2>&1)"; then
+            # THE CALL FAILED. A distinct observable from "the file has no
+            # pattern rows" (below): different exit status, and pcrec's own
+            # diagnostic — which names the file, the line and the construct
+            # — is carried through verbatim rather than replaced.
+            record_fail "$file" 1 \
+                "HARNESS FAILURE: pcrec --list-source failed on this head-bearing file: $ls_out"
+            continue
+        fi
+        head_body_line="$(printf '%s\n' "$ls_out" \
+            | LC_ALL=C awk -F'\t' '$1 == "pattern" { print $2; exit }')"
+        if [ -z "$head_body_line" ]; then
+            # A HEAD AND NO PATTERN BLOCKS. The grammar permits it (a pure
+            # library file is exactly that shape), so it is not an error
+            # HERE — the whole file is head, nothing is parsed below, and
+            # blocks_in_file stays 0, which the P-C2 floor at the end of
+            # this loop reports on its own. Two observables, never confused.
+            head_skip=$RXT_SKIP_WHOLE_FILE
+        else
+            head_skip=$((head_body_line - 1))
+        fi
+    fi
+
     lineno=0
     while IFS= read -r line || [ -n "$line" ]; do
         lineno=$((lineno + 1))
+        [ "$lineno" -le "$head_skip" ] && continue
         [[ "$line" =~ ^[[:space:]]*$ ]] && continue
         [[ "$line" =~ ^# ]] && continue
 
-        # --- BEGIN PINNED 13-ARM REGION (w1 N3) ---
         # [DD-13b.W1.1 / R-COMPAT-1] Everything between these two markers is
         # the arm chain 3,265 existing blocks and 26,691 existing expectation
         # lines are parsed by. It is HASH-PINNED by
@@ -947,7 +1021,10 @@ for file in "${files[@]}"; do
         # are changes to the arms R-COMPAT-1 protects and are meant to move
         # the hash, which is what forces a deliberate re-pin. The update rule
         # lives in the check's own failure message, where a person looking at
-        # the failure will actually read it.
+        # the failure will actually read it. This explanation sits ABOVE the
+        # marker on purpose: the pin covers the ARMS, and prose about the pin
+        # should not be able to move the pin.
+        # --- BEGIN PINNED 13-ARM REGION (w1 N3) ---
         if [[ "$line" =~ ^pattern\ (.*)$ ]]; then
             [ "$have_block" = "1" ] && flush_block
             blocks_in_file=$((blocks_in_file + 1))

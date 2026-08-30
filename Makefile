@@ -121,7 +121,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
-      test-prefilter-collapse
+      test-prefilter-collapse test-rxtsource
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -231,6 +231,28 @@ test-registry: all
 test-parse: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-parse.ran"; fi
 	bash tests/parse/run_parse_tests.sh
+
+# [DD-13b.W1.1] INV-COMPAT — that growing the `.rxt` format changed no
+# existing corpus file's meaning. Three parsers of that format now exist
+# (this one's `--list-source`, tests/harness/run.sh's arm chain and
+# tests/harness/verify_rxt.py's `parse_rxt`) and this section is where
+# they are made to agree, on all 179 files, byte for byte.
+#
+# IT IS ALSO WHERE `verify_rxt.py` FINALLY RUNS. Until this step its
+# `main()` was invoked by NOTHING in the tree — the only Makefile mention
+# of it was a comment (see the `[DD-13c]` note above) — and its directory
+# discovery was a one-level glob, so the obvious wiring
+# (`verify_rxt.py tests`) matched `tests/*.rxt`, of which there are none,
+# verified ZERO files and exited 0. The section runs it over a
+# `find`-derived list with a short-list HARD FAIL, so a discovery that
+# narrows can never read as a pass again.
+#
+# CHEAP ON PURPOSE: three parses of the corpus and no compiles at all, so
+# it does not compete with test-corpus for the box. Its runtime is
+# reported by the script itself, per leg.
+test-rxtsource: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-rxtsource.ran"; fi
+	bash tests/rxtsource/run_rxtsource_tests.sh
 
 # Both scripts here are the "codegen structural checks" docs/testing.md
 # already describes as one thing; `test:` runs them as consecutive lines
@@ -1146,6 +1168,6 @@ clean:
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-anchored-match \
-        test-prefilter-collapse \
+        test-prefilter-collapse test-rxtsource \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
