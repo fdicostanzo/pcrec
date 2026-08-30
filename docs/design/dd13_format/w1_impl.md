@@ -1,6 +1,6 @@
 # [DD-13b.W1] Implementation note — wave 1 of the grown `.rxt` format
 
-**Status: REVISION 2.3, post-panel (r45), post-BOTH re-checks, post-rulings and post-correction. NO CODE IS
+**Status: REVISION 2.4 — DESIGN PHASE COMPLETE. Post-panel (r45), post-all three re-checks, post-rulings and post-correction. NO CODE IS
 WRITTEN.** Revision 1 (`bf843a7`) went to a three-critic D6 panel
 (`docs/dev/reviews/2026-08-30-r45-w1-impl.md`): **4 blockers, 6 must-fix,
 and a verdict that the spine stands and §2 is not buildable as written.**
@@ -145,6 +145,20 @@ read-only survey (manager, 2026-08-30):
 nowhere; its discovery is a one-level glob; `verify_rxt.py tests` would
 cover 0 files and exit 0; S-C4's population is the mechanism's 571 rather
 than the census's 636. The condition on W1.1 is unchanged.
+
+**Revision 2.4** closes r45sem's §2.8 re-check — verdict: **step .4 is
+BUILDABLE**; the forced `CALL_SPLICE` is the shape the tree RESERVES;
+N3-N6 closed; N1/N2 closed on the MECHANISM and open on the ACCOUNTING,
+which is what this revision supplies:
+
+| item | landed |
+|---|---|
+| **N1 accounting** — `base` is per-site but `nsave` and the sizing pass are per-TARGET | §2.8: the exclusion must be threaded into BOTH `nsave` and `spl_nw`'s contribution (`vm_cost:2466`, comment `:2454-2457`) as a per-site quantity; under-reservation is LOUD (`vm_splice:5924-5932`, K27's class), over-reservation merely wasteful; `:7966` compares per-REGION totals and so does NOT see a per-site divergence |
+| **N2 the wrong triple** | §2.8: revision 2.2 cited the LINKAGE triple, which a spliced site never reaches. The SPLICE triple is `vm_cost:2466`, `vm_splice`'s park `:5940` and restore `:5972` loops, and the `:7966` cross-check |
+| **R1 (MUST-FIX)** — per-site splicing was declined ON PURPOSE and RESERVED | §2.8 quotes `callgraph.c:402-412` ("WHY THE DECISION IS PER TARGET AND NOT PER SITE") and answers its three named readers: `<PREFIX>_VM_CALLS` can no longer give one answer per callee; the splice sabotage rows gain two populations; §9.2's `A == B` control must accept a mixed target |
+| **R2** — the region survives for the linkage sites | §2.8: `rgn_emit[i]` (`:7673`) is per-region and must stay TRUE under a mixed target; `vm_call`'s "no emitted region" refusal (`:5794-5797`) is the existing loud detector |
+| **R3** — is `exp` the activation count? | **NO.** `callgraph.c:104` defines `exp[i]` as expansion *"in AST nodes"* — a SIZE, not a multiplicity. §2.8 names the activation bound as **step .4's one genuinely new mechanism**, and lists the existing data it composes (`site[][]`, `reach`, S1's `rmax > 1 \|\| rmax == -1`) |
+| **R4** | §4's S2c gains the cut sentence: `_SET` is trailed and `_CUT` deliberately is not, so a delivering call under an atomic group or possessive quantifier can leave the delivered value live after the cut — the same rule ordinary captures under a cut already follow |
 
 **What the panel could NOT refute, and is not re-argued below:** the
 sub-parse on one `Ctx`; injection as `A_REP{0,0}(A_CAP)`; re-basing by a
@@ -996,25 +1010,106 @@ is worth stating — they were written for the struct's sake and turn out
 to be the splice's precondition as well.
 
 **`cg_eligibility` gains one input**: a site's delivering flag forces
-`CALL_SPLICE` for that node. Today `callgraph.c:423` writes the link from
-a per-REGION decision (`if (i >= 0 && cg->splice[i]) … = CALL_SPLICE`),
-so the per-site force is an override at that write, not a new pass.
+`CALL_SPLICE` for that node. `cg_publish_link` (`callgraph.c:423`) writes
+the link from a per-REGION decision (`if (i >= 0 && cg->splice[i]) … =
+CALL_SPLICE`) and is documented as *"ONLY EVER AN UPGRADE"* over
+`cg_bind`'s `CALL_LINKAGE` default — so a delivering site's force is a
+second upgrade at the same write, not a new pass.
 
-**N2 — the restore's INDEX SPACE, and why a dropped capture is coherent
-rather than merely absent.** The restore is emitted in `vm_region`
-(`emit_vm.c:6036-6046`) over `v->rgn_w[i][j]` — **the callee region's OWN
-index space**, not the caller's and not the lexical occurrence's
-(`internal.h:826-849`: *"THE INDICES ARE THE CALLEE REGION'S OWN … a
-restore written against the wrong indices is §5.3b's axis-C miscompile
-arriving by a second route"*). `vm_publish_saves`'s own header states the
-coupling this design must not break: *"Three readers, one write"* —
-`vm_call`'s save emission, `vm_region`'s restore emission, and
-`vm_cost`'s `2 * |W|` trail charge. **A change that drops an index from
-the save must drop it from all three**, and the loud detector already
-exists: `vm_splice`'s overflow `ctx_fail` (`emit_vm.c:5924-5932`), which
-names K27's class explicitly — *"the pre-pass and this walk disagreed
-about how many sites there are or how big `W` is … LOUD, because the
-alternative is an out-of-bounds write in EMITTED code."*
+**R1 — and this is the part the note owes rather than assumes: the file
+DECLINED per-site splicing on purpose, and reserved it.**
+`callgraph.c:402-412` carries a section headed **"WHY THE DECISION IS PER
+TARGET AND NOT PER SITE"**:
+
+> *"A per-SITE rule could splice the first three calls to a big callee and
+> link the fourth, which is strictly more expressive. It is not taken,
+> because the artifact would then contain BOTH an inlined copy and a
+> shared region for one group, and 'which linkage did this site take'
+> would stop being answerable from the pattern — every future reader of
+> `<PREFIX>_VM_CALLS`, every sabotage row over the splice, and §9.2's
+> `A == B` control all read better against a rule with one answer per
+> callee. **Per-site remains available and costs nothing structural:
+> `link` is already a per-NODE field.**"*
+
+So the forced splice is **the reserved option being taken**, not a new
+capability — the last sentence is the reservation, and `link` being
+per-node is exactly why the force is free. But the mixed state that
+paragraph warns about (one group with an inlined copy at a delivering
+site AND a shared region at a non-delivering one) is now REACHABLE, so
+W1.4 owes its three named readers an answer:
+
+| reader | what changes |
+|---|---|
+| `<PREFIX>_VM_CALLS`'s count | "which linkage did this site take" stops being answerable per CALLEE. The stamp must become per-site-decomposable, or state the mixed case explicitly — **it can no longer be a single answer per target**, and a stamp that keeps claiming one is D81's absence-as-discriminator hazard |
+| the splice sabotage rows | each must declare whether its witness site is delivering; a row written against "the callee is spliced" now has two populations and must name which it plants in (`SAB_REACH_POP`) |
+| §9.2's `A == B` control | A and B must agree that a delivering site is spliced and a non-delivering site of the SAME callee is linked; the control's current shape assumes one linkage per callee |
+
+**Naming the mixed case rather than avoiding it is the point.** The
+alternative — forcing the whole TARGET to splice whenever any site
+delivers — would inflate every non-delivering site of that definition and
+make delivery's cost non-local, which is worse and is not what the ruling
+said.
+
+**R2 — the region is STILL EMITTED for the linkage sites, and the loud
+detector already exists.** `rgn_emit[i] = !pcrec_callgraph_spliced(v.cg, i)`
+(`emit_vm.c:7673`) is **per region**, so under a mixed target the
+region-emission decision must stay TRUE — the non-delivering sites still
+call it. The direction that must never arise is a linkage site whose
+region was not emitted, and `vm_call` refuses it outright
+(`emit_vm.c:5794-5797`): *"internal error: subroutine call to group %d
+has no emitted region"*. So W1.4 does not add a check here; it must
+ensure `rgn_emit` is driven by "does any site LINK" rather than by the
+per-target splice flag, and the existing guard is what catches getting
+that wrong.
+
+**N2 — the coupled sites, and revision 2.2 named THE WRONG TRIPLE.**
+`vm_publish_saves`'s header states a *"Three readers, one write"* triple —
+`vm_call`'s save emission, `vm_region`'s restore emission, `vm_cost`'s
+`2 * |W|` trail charge. **That is the LINKAGE triple, and a SPLICED site
+never reaches any of it**: `vm_region`'s restore (`emit_vm.c:6036-6046`)
+runs in the callee REGION, and a spliced call has no region visit at all.
+Citing it was a leftover from the `W`-exclusion mechanism 2.2 replaced.
+
+**The SPLICE triple, which is what the forced-splice mechanism actually
+touches:**
+
+| site | role |
+|---|---|
+| `vm_cost` (`emit_vm.c:2466`) | RESERVES the block: `v->nsplice += v->spl_nw[idx]` |
+| `vm_splice`'s park loop (`:5940`) | writes the caller's values into `base + j` |
+| `vm_splice`'s restore loop (`:5972`) | reads them back at `done_lbl` |
+| the cross-check (`:7966`) | asserts the pre-pass and the `W` build agree per REGION |
+
+**And the accounting is where the mechanism actually bites, because
+`base` is per-site but the SIZE is not.** `vm_splice` takes
+`base = v->nsplice` fresh per site — that is the per-site property the
+ruling rests on — but it advances by `a->u.call.nsave`, which
+`vm_publish_saves` set from the per-TARGET `rgn_nw[i]`; and the pre-pass
+that RESERVES the block reads the per-TARGET `spl_nw[idx]`
+(`emit_vm.c:2466`, whose comment at `:2454-2457` says the site "allocates
+a full set of per-copy slot instances HERE"). **So the exclusion must be
+carried as a per-site (or per-(site, target)) quantity into BOTH
+`nsave` and `spl_nw`'s contribution**, or the reservation and the use
+diverge.
+
+The failure is LOUD in the direction that matters and merely wasteful in
+the other, which is worth stating precisely rather than as "caught":
+- reservation SMALLER than use → `v->nsplice` outruns `nsplice_total` →
+  `vm_splice`'s overflow `ctx_fail` (`:5924-5932`), which names K27's
+  class outright (*"the alternative is an out-of-bounds write in EMITTED
+  code"*);
+- reservation LARGER than use → slots are over-reserved and never
+  written; no miscompile, wasted `RX_NSLOTS`.
+The `:7966` cross-check compares per-REGION totals, so it does **not**
+see a per-site divergence — which is exactly why the exclusion has to be
+threaded into the sizing pass rather than applied only at the assignment.
+
+**Why a dropped capture is coherent rather than merely absent.** The park
+and restore are `vm_set`s, and `vm_set` is TRAILED, so a delivered
+capture that is not restored keeps the callee's value after the splice
+completes and a backtrack through it undoes the write exactly as it undoes
+every other trailed one. Delivery needs one FEWER restore, not a second
+undo mechanism.
 
 And the omission is **trail-coherent**, which is the part that makes it
 safe rather than merely selective: the restore is a `vm_set`, and
@@ -1050,6 +1145,39 @@ path — not lexical repeat depth.**
 
 Both run in postresolve's existing **ascending pattern offset** order
 (`internal.h:3256`), so the leftmost site is named.
+
+**R3 — "activation ≤ 1 along every path" is a MULTIPLICITY, and pcrec
+does not compute one. `exp` is NOT it.** The natural candidate is
+`callgraph.c`'s `exp[]`, and it is the wrong quantity: its own field
+comment (`callgraph.c:104`) says *"`exp[i]` is the expansion that decision
+was made on, **in AST nodes**"*, and `cg_eligibility` computes it as
+`nodes[i]` plus, per reached target, `site[i][j] * (exp[j] - 1)`
+(`:489-496`), saturating at `CG_EXP_INF`. That is a **SIZE** — how many
+nodes an inline copy would cost — not a count of how many times a site
+can be entered during a match. A five-node definition called once has
+`exp = 5` and activation 1; a one-node definition called under `{0,4}`
+has `exp ≈ 1` and activation 4. **So `exp == 1` is not the rule, and
+reusing it would refuse and admit the wrong sites in both directions.**
+
+**Therefore the activation bound is NEW WORK in step .4, and the note says
+so rather than claiming a reuse.** What it needs, and what already
+exists to build it from:
+
+- the GRAPH half is available — `site[i*ntarget + j]` (how many `A_CALL`
+  nodes lie directly in region i's body naming target j, "not transitive,
+  not saturated", `callgraph.c:96-98`) and the `reach` closure;
+- the TREE half is not — "is this site under an `A_REP` that can iterate
+  more than once", which is S1's honest predicate `rmax > 1 || rmax == -1`
+  (`{1,1}` and `?` bound activations at ≤ 1, `parse.c:1113` builds `A_REP`
+  unconditionally);
+- and they COMPOSE: a site activates more than once if it is lexically
+  under such a repeat, **or** if any region that can reach it is;
+  the cycle case is already excluded by the recursion refusal.
+
+That is a small fixpoint over data that exists, not a new analysis pass —
+but it is a fixpoint pcrec does not have today, and pricing it as "reuse
+`exp`" would have been wrong. **Flagged as .4's one genuinely new
+mechanism** (everything else in .4 is a change at an existing site).
 
 **Iterated capture is out of this row** (D87 rule 5). These refusals are
 the honest answer while no mechanism exists, not a policy against one.
@@ -1675,7 +1803,21 @@ end. A parser landing without its spec hunk is rejected on sight.
 | **S2** "Composition": the AST-level model, D87 rule 7(a)-(j), lexical-scope-wins with qualification, the visited-set closure, the five namespaces, **DECIDED (7)'s file-namespace rule and `(?&self)`**, and that a composed block's oracle is necessarily `pcre2` | `rxt_format.md` | W1.3 |
 | **S2b** the three pattern extensions with the "no legal PCRE2 pattern changes meaning" constraint and §1.4's measurement; the three registry rows | `docs/spec/` + `--list-syntax` | W1.3 |
 | **S9b** D61 made concrete by its first producer: `ngroups`/`nnames` are the PRIMARY's own; **the delivered REGION starts at `ngroups+1`, and the definition's WRAPPER sits there, so the first delivered GROUP is at `ngroups+2`** (N5; Q-W1, r45sem's correction — the region's start and the first readable group are two different numbers and revision 2.1 conflated them in one sentence); `RX_NCAPS` may move across library versions while `1..ngroups` holds still; and the difference between `--source` composition and handing composed TEXT to plain `-p` | `match_api.md` §2/§5 | W1.3 |
-| **S2c** "Delivered results": the scope path, first-set-wins within a path, **the two non-deliverable shapes as CALL-GRAPH activation bounds**, and the `__typeof__` sentence | `rxt_format.md` | W1.4 |
+| **S2c** "Delivered results": the scope path, first-set-wins within a path, **the two non-deliverable shapes as CALL-GRAPH activation bounds**, the `__typeof__` sentence, **and R4's cut sentence** (below) | `rxt_format.md` | W1.4 |
+
+**S2c's R4 sentence, because it is a SEMANTICS statement a caller can
+observe and not an implementation note.** `<PREFIX>_SET` is trailed;
+`<PREFIX>_CUT` deliberately is **not** — `emit_vm.c`'s macro block
+(~`:8950`) says so in those words: *"the possessive CUT. No trail rewind,
+deliberately."* Since delivery works by OMITTING the restore (§2.8), a
+delivering call inside an atomic group or under a possessive quantifier
+can leave the callee's delivered value **live after the cut** — the cut
+discards the choice points, not the trailed writes. **This is exactly what
+an ordinary capture inside a cut already does**, so the spec states it as
+the same rule reaching a new member rather than as a delivery-specific
+wart: a value delivered on a path the cut later abandons remains visible,
+and a caller who needs "set only if the surrounding alternative won"
+must test the enclosing group rather than the delivered member.
 
 **Amendments to `format_design.md` itself**, in the same change (already
 partly landed at `9506e8d`):

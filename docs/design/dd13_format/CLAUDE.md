@@ -118,8 +118,8 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   / `(?&=name)` for a delivering call, `--emit-composed` for the
   serialization. Panel gate satisfied for this round; NO PARSER IS
   WRITTEN.
-- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.3 (2026-08-30,
-  lane w1): post-panel (r45), post-BOTH re-checks, post-rulings and post-correction. NO CODE IS WRITTEN.** How
+- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.4 — DESIGN PHASE COMPLETE (2026-08-30,
+  lane w1): post-panel (r45), post-all three re-checks, post-rulings and post-correction. NO CODE IS WRITTEN.** How
   wave 1 of `format_design.md` lands: file by file, the composer, the
   check and sabotage plan, the D80 spec deltas, four lane-sized steps with
   a merge after each, and the open questions. It marks a fourth claim kind
@@ -341,6 +341,40 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   stands: verify_rxt's own `main()` is invoked nowhere, its discovery is a
   one-level glob, `verify_rxt.py tests` covers 0 files and exits 0, and
   S-C4's population is the mechanism's 571.
+  **REVISION 2.4 closes the §2.8 re-check — verdict STEP .4 IS BUILDABLE,
+  the forced `CALL_SPLICE` being the shape the tree explicitly RESERVES —
+  and supplies the ACCOUNTING the mechanism needs.** Three corrections
+  worth reading: (a) revision 2.2 cited the wrong coupled sites — the
+  *"three readers, one write"* triple is the LINKAGE one and **a spliced
+  site never reaches it**; the SPLICE triple is `vm_cost:2466`,
+  `vm_splice`'s park `:5940` / restore `:5972` loops and the `:7966`
+  cross-check. (b) `base` is per-site but `nsave` and the block-SIZING
+  pass are per-TARGET, so the capture exclusion must be threaded into
+  BOTH as a per-site quantity — under-reservation is loud
+  (`vm_splice:5924-5932`, K27's class), over-reservation merely wasteful,
+  and `:7966` compares per-REGION totals so it does NOT see a per-site
+  divergence. (c) **R3: `exp` is NOT the activation count** — its own
+  field comment (`callgraph.c:104`) defines it as expansion *"in AST
+  nodes"*, a SIZE, so `exp == 1` would refuse and admit the wrong sites in
+  both directions; the activation bound is named as step .4's ONE
+  genuinely new mechanism, with the existing data it composes (`site[][]`,
+  `reach`, S1's `rmax > 1 || rmax == -1`). The MUST-FIX is that
+  `callgraph.c:402-412` ("WHY THE DECISION IS PER TARGET AND NOT PER
+  SITE") declined per-site splicing ON PURPOSE and RESERVED it — *"Per-site
+  remains available and costs nothing structural: `link` is already a
+  per-NODE field"* — so the forced splice is the reserved option being
+  taken, and the mixed state that section warns about (one callee with an
+  inlined delivering site AND a shared region for its linkage sites) is
+  now reachable; the note answers its three named readers
+  (`<PREFIX>_VM_CALLS` can no longer give one answer per callee, the
+  splice sabotage rows gain two populations, §9.2's `A == B` control must
+  accept a mixed target) and records that `rgn_emit[i]` (`:7673`) must
+  stay TRUE for the linkage sites, with `vm_call`'s "no emitted region"
+  refusal (`:5794-5797`) as the existing loud detector. S2c gains R4's
+  semantics sentence: `_SET` is trailed and `_CUT` deliberately is not, so
+  a delivering call under an atomic group or possessive quantifier leaves
+  the delivered value live after the cut — the same rule ordinary captures
+  under a cut already follow.
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
 
 Maintenance: update this file when files are added/removed or change
