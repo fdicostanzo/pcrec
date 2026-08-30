@@ -659,6 +659,15 @@ enum {
 #ifndef PCREC_MAX_VM_EMIT_CODE_BYTES
 #define PCREC_MAX_VM_EMIT_CODE_BYTES 500000
 #endif
+/* [OPT-4] the ADVISORY warning threshold (Frank, 2026-08-29; `lib/pcrec.h`'s
+ * `warn_emit_bytes`, `docs/spec/limits.md`). An order of magnitude under
+ * `PCREC_MAX_EMIT_BYTES` on purpose: the point of a warning is to arrive while
+ * the pattern can still be changed, not at the moment it is refused. It is a
+ * default and not a cap — nothing refuses on it, and 0 turns it off. */
+#ifndef PCREC_DEFAULT_WARN_EMIT_BYTES
+#define PCREC_DEFAULT_WARN_EMIT_BYTES 250000
+#endif
+
 #ifndef PCREC_MAX_EMIT_BYTES
 #define PCREC_MAX_EMIT_BYTES 1000000
 #endif

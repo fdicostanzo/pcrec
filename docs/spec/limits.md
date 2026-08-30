@@ -411,6 +411,38 @@ so these can never be used to make a build fail that would have
 succeeded). The effective values are stamped on every artifact as
 `<PREFIX>_MAX_EMIT_CODE_BYTES` and `<PREFIX>_MAX_EMIT_BYTES`.
 
+### `--warn-emit-bytes=N` — an ADVISORY warning, never a refusal
+
+**[OPT-4] (2026-08-29).** When an ACCEPTED artifact's total emitted bytes
+exceed `N`, pcrec writes ONE line to stderr and then returns the artifact.
+It never refuses, never changes what is emitted, and is not a tuning axis:
+nothing selects on it and no artifact records it.
+
+```
+pcrec: warning: large artifact: 883632 bytes of emitted C source (11418 of
+code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter
+language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or
+raise/disable the warning with --warn-emit-bytes.
+```
+
+The line names the two stamps that EXPLAIN the size — the unroll factor with
+`_UNROLL_K_WHY`'s reason, and the prefilter language — rather than only the
+number, because a reader told "883,632 bytes" can only shrug while one told
+which lever moved it knows what to reach for.
+
+**Default `250000` total bytes; `0` disables it.** The default is an order of
+magnitude under `--max-emit-bytes` on purpose: a warning's value is arriving
+while the pattern can still be changed, not at the moment it is refused.
+
+**IT IS THE ONE SIZE OPTION THAT IS NOT RAISE-ONLY, and the asymmetry is the
+point.** The two caps above are raise-only so that no caller can manufacture
+someone else's refusal. A warning carries no such authority — the build
+succeeds either way — so LOWERING it is exactly what a project wanting earlier
+notice should do, and lowering it cannot fail anyone's build. It is
+`pcrec_options.warn_emit_bytes` for a library caller, and it is **off** for one
+who `memset`s the struct rather than calling `pcrec_default_options`: an
+embedder has not asked pcrec to write to stderr.
+
 ### Handling an oversized artifact
 
 pcrec REFUSES rather than emitting past either limit, and nothing is
@@ -428,6 +460,9 @@ unintended narrowing.
 
 Your options, in the order most callers want them:
 
+0. **Notice it earlier** — `--warn-emit-bytes=N` (above) fires on an
+   artifact that still compiles, so the choices below can be made before a
+   refusal forces them.
 1. **Raise the limit** — `--max-emit-bytes=N` or
    `--max-emit-code-bytes=N` if the size is acceptable to you. **For a
    real build, put the override in the pattern-source file's `config`

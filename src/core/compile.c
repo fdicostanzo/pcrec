@@ -46,6 +46,13 @@ void pcrec_default_options(pcrec_options *opt)
     opt->prefix = "rx";
     opt->encoding = PCREC_ENC_BYTE;
     opt->header_name = NULL; /* self-contained .c by default */
+    /* [OPT-4] the advisory size warning is ON by default. It is the one
+     * `pcrec_options` field whose zero value means DISABLED rather than
+     * "use the built-in", which is why it is set here explicitly: a caller
+     * who memsets the struct and calls `pcrec_compile` gets no warning, and
+     * that is deliberate — a library embedder has not asked for stderr. The
+     * CLI, which has, goes through this function. */
+    opt->warn_emit_bytes = PCREC_DEFAULT_WARN_EMIT_BYTES;
 }
 
 /* [ART-SIZE] THE TWO EMITTED-SIZE QUANTITIES, measured on the finished
@@ -1292,6 +1299,39 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "limits.md \"Handling an oversized artifact\"",
                      emit_tot, cap_tot, emit_tot * 17 / 100 / 1024);
 
+        /* [OPT-4] THE ADVISORY SIZE WARNING (Frank, 2026-08-29;
+         * docs/spec/limits.md, cli.md). Emitted HERE — past both caps, on the
+         * attempt that is about to succeed — so it describes the artifact the
+         * caller actually receives, K's ladder and any collapse rung included,
+         * and never fires on a trial the driver discarded.
+         *
+         * ONE LINE, and it names the two stamps that EXPLAIN the size rather
+         * than only the size itself: a reader who is told "300,000 bytes" can
+         * only shrug, while one told the unroll factor's reason and the
+         * prefilter language's reason knows which lever to reach for. D26 tier
+         * 3 on the wording — this is pcrec's own diagnostic, not a PCRE2 one.
+         *
+         * NEVER A REFUSAL. The compile has already succeeded at this point and
+         * nothing below reads the result; that is what makes it safe for a
+         * config to lower, where lowering a CAP could manufacture someone
+         * else's build failure. */
+        if (defo.warn_emit_bytes && emit_tot > defo.warn_emit_bytes) {
+            const char *kwhy = cx.size_term_why ? cx.size_term_why : "default";
+            const char *lwhy = "n/a (no VM prefilter)";
+            if (cx.job->fit.prefilter)
+                lwhy = cx.job->fit.prefilter_collapsed
+                     ? "count-collapsed" : "exact";
+            fprintf(stderr,
+                    "pcrec: warning: large artifact: %zu bytes of emitted C "
+                    "source (%zu of code), over --warn-emit-bytes=%llu. "
+                    "Unroll factor K=%d (%s); prefilter language %s. "
+                    "See docs/spec/tuning.md for the levers, or raise/disable "
+                    "the warning with --warn-emit-bytes.\n",
+                    emit_tot, emit_code,
+                    (unsigned long long)defo.warn_emit_bytes,
+                    defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K,
+                    kwhy, lwhy);
+        }
         cx.job->out_c  = sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;

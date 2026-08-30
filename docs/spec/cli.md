@@ -150,6 +150,20 @@ only that `--step-budget=N`/`--work-budget=N` (`cli/main.c:56-64`, parsed
 at `cli/main.c:273-295`) override them per compile, positive integers only,
 diagnosed otherwise.
 
+### `--warn-emit-bytes=N` — advisory size warning
+
+**[OPT-4] (2026-08-29).** Warn on stderr when an ACCEPTED artifact exceeds `N`
+total emitted bytes. Default `250000`; `0` disables. A warning, never a
+refusal — the compile succeeds and the artifact is written either way — and
+NOT a tuning axis: it selects nothing and is stamped nowhere.
+
+Unlike `--max-emit-code-bytes` / `--max-emit-bytes`, which are raise-only so
+they cannot be used to manufacture a refusal, this option may be **lowered**:
+a warning cannot fail a build, so tightening it is a project's own business.
+The line it prints names the unroll factor and its reason, the prefilter
+language, and a pointer to `tuning.md` — see `limits.md` for the full text and
+the reasoning.
+
 ### `--backtrack-frames=N`
 
 Raises the emitted resume-stack (and its trail) capacity above the

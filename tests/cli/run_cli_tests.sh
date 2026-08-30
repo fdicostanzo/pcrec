@@ -2109,6 +2109,71 @@ case17
 echo
 echo "== Summary =="
 echo "cases passed: $total_pass"
+# ---------------------------------------------------------------------------
+# [OPT-4] --warn-emit-bytes: an ADVISORY warning, never a refusal
+# ---------------------------------------------------------------------------
+# Frank's ask, 2026-08-29 (lib/pcrec.h's `warn_emit_bytes`, docs/spec/limits.md
+# and cli.md). Three cells, and the THIRD is the one that matters: over, under,
+# and disabled. What makes this option different from the two caps beside it is
+# that it cannot fail a build, so every cell below also asserts rc 0 and a
+# written artifact — a "warning" that refused would be a cap with a friendly
+# message, and that is the defect this option exists to avoid.
+WARNBIG='a{0,20000}'      # ~884 KB emitted, comfortably over the 250,000 default
+WARNSMALL='a(b|c)+d'      # a few KB, comfortably under it
+warn_out="$WORKDIR/warn.c"
+
+# (1) OVER the threshold: warns, and still compiles.
+rm -f "$warn_out"
+werr="$("$PCREC" -p rx -o "$warn_out" -- "$WARNBIG" 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ]; then
+    fail "--warn-emit-bytes: an oversize-but-accepted artifact was REFUSED (rc $wrc)" "$werr"
+elif [ ! -s "$warn_out" ]; then
+    fail "--warn-emit-bytes: warned but wrote no artifact — a warning must not change what is emitted"
+elif printf '%s' "$werr" | grep -q 'warning: large artifact'; then
+    # AND IT NAMES THE LEVERS, not just the number. A reader told only a byte
+    # count can shrug; one told the unroll reason and the prefilter language
+    # knows which lever to reach for, which is the whole point of the line.
+    if printf '%s' "$werr" | grep -q 'Unroll factor K=' \
+       && printf '%s' "$werr" | grep -q 'prefilter language' \
+       && printf '%s' "$werr" | grep -q 'tuning.md'; then
+        pass "--warn-emit-bytes: over the default threshold warns, compiles anyway, and names K, the prefilter language and where to look"
+    else
+        fail "--warn-emit-bytes: warned, but the line does not name the stamps that explain the size" "$werr"
+    fi
+else
+    fail "--warn-emit-bytes: no warning for an $(wc -c < "$warn_out")-byte artifact over the 250,000 default" "$werr"
+fi
+
+# (2) UNDER the threshold: silent.
+rm -f "$warn_out"
+werr="$("$PCREC" -p rx -o "$warn_out" -- "$WARNSMALL" 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 0 ] && ! printf '%s' "$werr" | grep -q 'warning: large artifact'; then
+    pass "--warn-emit-bytes: a small artifact is silent"
+else
+    fail "--warn-emit-bytes: a small artifact warned (rc $wrc)" "$werr"
+fi
+
+# (3) DISABLED with 0, on the SAME pattern that warned in (1) — which is what
+# makes this a control rather than a second small-artifact cell.
+rm -f "$warn_out"
+werr="$("$PCREC" -p rx --warn-emit-bytes=0 -o "$warn_out" -- "$WARNBIG" 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 0 ] && [ -s "$warn_out" ] && ! printf '%s' "$werr" | grep -q 'warning: large artifact'; then
+    pass "--warn-emit-bytes=0 disables the warning on the very artifact that triggers it at the default"
+else
+    fail "--warn-emit-bytes=0 did not disable the warning (rc $wrc)" "$werr"
+fi
+
+# (4) LOWERING IT IS ALLOWED, unlike the raise-only caps beside it: a warning
+# has no authority to fail anyone's build, so a project wanting earlier notice
+# must be able to tighten it.
+rm -f "$warn_out"
+werr="$("$PCREC" -p rx --warn-emit-bytes=1000 -o "$warn_out" -- "$WARNSMALL" 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 0 ] && printf '%s' "$werr" | grep -q 'warning: large artifact'; then
+    pass "--warn-emit-bytes is LOWERABLE (unlike the raise-only caps): 1000 warns on a small artifact and still compiles it"
+else
+    fail "--warn-emit-bytes=1000 did not warn on a small artifact (rc $wrc) — a lowered warning must still fire, and must still compile" "$werr"
+fi
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then

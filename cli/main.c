@@ -90,6 +90,8 @@ static void usage(FILE *f)
           "  --fno-step-budget  emit no step counter at all -- and no work\n"
           "                 counter either, one gate for both. Zero cost, and\n"
           "                 honest because the artifact says so\n"
+          "  --warn-emit-bytes=N   warn (never refuse) when an accepted\n"
+          "                        artifact exceeds N total bytes; 0 disables\n"
           "  --max-emit-code-bytes=N, --max-emit-bytes=N\n"
           "                 RAISE the two emitted-size limits (bytes of\n"
           "                 emitted C source, comments excluded; the .o is\n"
@@ -397,6 +399,24 @@ int main(int argc, char **argv)
             if (parse_raise_only(a + 17, "--max-emit-bytes",
                                  PCREC_MAX_EMIT_BYTES,
                                  &opt.max_emit_bytes) != 0) return 1;
+        }
+        /* [OPT-4] THE ADVISORY WARNING, and it is deliberately NOT
+         * `parse_raise_only`. The two caps above are raise-only so no caller
+         * can manufacture someone else's refusal; a warning has no such
+         * authority — the build succeeds either way — so LOWERING it is the
+         * whole point for a project that wants earlier notice, and 0 turns it
+         * off. Accepting any value is the correct policy here precisely
+         * because this option cannot fail a build. */
+        else if (!no_more_opts && !strncmp(a, "--warn-emit-bytes=", 18)) {
+            char *end = NULL;
+            unsigned long long v = strtoull(a + 18, &end, 10);
+            if (!end || *end || a[18] == '\0') {
+                fprintf(stderr, "pcrec: --warn-emit-bytes wants a "
+                                "non-negative integer (0 disables the "
+                                "warning)\n");
+                return 1;
+            }
+            opt.warn_emit_bytes = (uint64_t)v;
         }
         else if (!no_more_opts && !strncmp(a, "--backtrack-frames=", 19)) {
             char *end = NULL;
