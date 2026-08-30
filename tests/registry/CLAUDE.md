@@ -36,6 +36,21 @@ directory asserts that the description and the shipped parser actually agree.
   parsed bare is not core; the containment grep's bite and the structural
   check's bite (a planted unclosed `\d` class, `"[0-9"`) were both verified
   live by plant-rebuild-revert cycles, never committed.
+  **[DD-11.4] the recursion guard, un-parked** (2026-08-29):
+  `check_recursion_guard` plants two SYNTHETIC rows compiled only into
+  this test binary (never registry.c) and resolves them through the SAME
+  `pcrec_def_resolve` entry point every real row uses — a fake two-entry
+  `\w` (using `DEF_MULTILINE` as a mechanical stand-in for the real
+  `DEF_UCP` a second `\w` row will eventually use, since `DEF_UCP` has no
+  live evaluator path to force today) and a `\b`-shaped row whose text
+  embeds "\w" literally. Proves flag-off matches the real `\w` row's own
+  text (no fixture drift), flag-on picks the alternate entry, and an
+  INTERLEAVED resolve sequence across both synthetic rows under
+  alternating states reproduces all three answers independently —
+  `pcrec_def_resolve` carries no hidden state a future nested resolution
+  (DD-11.5) could trip over. Sabotage-validated live (corrupted the
+  fixture's real-\w text): fires exactly the two checks that depend on
+  it, leaves the untouched one green.
   **NOW WIRED into run_registry_tests.sh's guarded chain** (graduated
   from standalone, 2026-08-29, when [DD-11.3] below landed the standing
   self-oracle this check was always a precursor to — its own population

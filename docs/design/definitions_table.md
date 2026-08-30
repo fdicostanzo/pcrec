@@ -503,6 +503,32 @@ subsection after `--list-axes`.
   mechanism and scoping record.
 - **[DD-11.4] The recursion guard, un-parked** — §3 item 5: the synthetic
   second `\w` row behind a never-true flag. No longer blocked on Unicode.
+  **BUILT 2026-08-29 (lane dd11b):** `tests/registry/definitions_check.c`'s
+  `check_recursion_guard` — manager-ruled shape, a TEST-LOCAL fixture, never
+  production registry data. `DEF_UCP` (the tag a real second `\w` row would
+  eventually use) has NO real evaluator path at all today (internal.h:
+  "NO PRODUCER YET", `pcrec_def_tag_applies` answers it `false`
+  unconditionally) and cannot be forced true without editing that
+  exhaustive switch, which would be production code — so the fixture uses
+  `DEF_MULTILINE` (a tag with a REAL, live evaluator path) as a mechanical
+  stand-in for "the flag is hypothetically live", exactly the design
+  note's own words. Two synthetic rows, compiled only into the test
+  binary, injected through the SAME `pcrec_def_resolve` entry point every
+  real row goes through: a fake two-entry `\w` (flag off = the real `\w`
+  row's own shipped text, proving no drift; flag on = a fictional
+  alternate, proving the resolver isn't wedded to DEF_ALWAYS-only rows)
+  and a `\b`-shaped row (the real `\b` text, which embeds "\w" literally —
+  the table's own "nested definition" shape). Three checks: flag-off
+  matches production; flag-on picks the alternate; and an INTERLEAVED
+  sequence (resolve \w on, resolve \b off, resolve \w off again) reproduces
+  all three independent answers, proving `pcrec_def_resolve` is a pure
+  function of (row, Ctx state) with no hidden state a future nested
+  resolution (DD-11.5's job) could trip over. Sabotage-validated live
+  (corrupted the fixture's own real-\w text, `[A-Za-z0-9_]` ->
+  `[A-Za-z0-8_]`): fires exactly 2 of the 3 checks (the flag-off match and
+  the interleaved sequence, which both depend on the corrupted text; the
+  flag-on check is untouched by that corruption, correctly), reverted
+  clean. 54/0 (was 51/0).
 - **[DD-11.4b] The 9 base-tier literal escapes** — new minimal `RS_BASE`
   rows (the architectural note after §1's table) so `\a \e \f \n \r \t`,
   bare `\x`, octal/`\0` have a `RegRow` to attach `definitions` to.
