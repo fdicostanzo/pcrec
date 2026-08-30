@@ -336,6 +336,24 @@ macros together.
 
 ## 8. What waits on execution (Phase 2)
 
+**TWO OF THESE ARE PRE-WRITTEN AND SYNTAX-CHECKED UNDER THE HOLD**, in the
+session scratchpad (`.../scratchpad/opt41/`, never committed), so the lift
+buys a RUN rather than an authoring session:
+
+- `predict_check.sh` — items 8's eleven forms. The prediction is a LITERAL in
+  its table, not prose, and a mismatch prints `MISMATCH` rather than being
+  accommodated. It reproduces the bench's `(?:PAT)\z` whole-form spelling
+  rather than assuming it, bounds every compile at 180 s (`cls-upto-32768`
+  pays the wasted exact DFA build first — 7.0 s on the smaller `cls-upto-16384`
+  at pin 96e44c2), and belongs in the background with a log.
+- `nullable_census.py` — item 10. Its oracle and its cross-check are as
+  specified below, with COVERAGE reported beside the count and disagreements
+  NAMED. It compiles the whole corpus sequentially, so it is the LAST thing to
+  run and never runs beside `test-corpus`.
+
+Order for the box: build/strict, then the cheap check scripts, then the corpus
+run, then axes, then mech one row at a time, then the two sweeps above.
+
 1. `make -j4`, `make strict`.
 2. `PROCS=4 make test-codegen` — the new §2/§6b/§7/§7b rows, and
    `run_dfa_stamps.sh`'s iff on the artifact kind §6b creates.
