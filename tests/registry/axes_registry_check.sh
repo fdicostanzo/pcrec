@@ -57,6 +57,19 @@
 # everywhere else in this dump, so the check below has no exception left to
 # carry for this macro either.
 #
+# DIRECTION 3B — THE EMITTER-SOURCE LEG (team-lead review, 2026-08-30,
+# [REG-SV]). Direction 3 above is dump-vs-DOCS: both `src/parse/axes_dump.c`
+# and `docs/spec/match_api.md` are HAND-WRITTEN, so a value added to the
+# code that actually WRITES a stamp — `src/core/compile.c`'s
+# `cx.size_term_why` chain, `src/gen/emit_dfa.c`'s `dfa_table_name` — and
+# forgotten in BOTH would still pass every check above. Two more
+# `check_value_set` calls close that, for the two macros whose stamp is
+# hand-stated rather than read live off an emitter array (`RX_UNROLL_K_WHY`
+# in full, `RX_DFA_TABLE`'s two composite values only — its two list-sourced
+# values are already a live read and need no third leg): the dump against
+# the DERIVATION ITSELF, using `extract_prose_values`/`extract_c_return_
+# values` (own headers below) rather than the docs.
+#
 # Usage: bash tests/registry/axes_registry_check.sh
 # Env: PCREC (default build/pcrec), TUNING (default docs/spec/tuning.md —
 #   override to point at a doctored copy, e.g. for the sabotage
@@ -79,6 +92,7 @@ TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
 CLIMAIN="${CLIMAIN:-$ROOT_DIR/cli/main.c}"
 MATCHAPI="${MATCHAPI:-$ROOT_DIR/docs/spec/match_api.md}"
 EMITDFA="${EMITDFA:-$ROOT_DIR/src/gen/emit_dfa.c}"
+COMPILEC="${COMPILEC:-$ROOT_DIR/src/core/compile.c}"   # [REG-SV] the size-term derivation's own source — see the emitter-source leg below
 KEEP="${KEEP:-0}"
 
 if [ ! -x "$PCREC" ]; then
@@ -99,6 +113,10 @@ if [ ! -f "$MATCHAPI" ]; then
 fi
 if [ ! -f "$EMITDFA" ]; then
     echo "axes_registry: FATAL: $EMITDFA not found" >&2
+    exit 1
+fi
+if [ ! -f "$COMPILEC" ]; then
+    echo "axes_registry: FATAL: $COMPILEC not found" >&2
     exit 1
 fi
 
@@ -424,6 +442,40 @@ extract_prose_values() {
     ' "$file" | grep -oE '"[a-z-]+"' | tr -d '"' | sort -u
 }
 
+# extract_c_return_values FILE FUNC_SIG_ANCHOR — every distinct lowercase
+# (hyphens allowed) literal appearing in a `return "value";` statement
+# inside ONE C function, bounded by that function's own column-0 opening
+# and closing braces (this project's own emitter style, src/gen/CLAUDE.md).
+# [REG-SV] THE EMITTER-SOURCE LEG (team-lead review, 2026-08-30): the two
+# legs above compare the DUMP (src/parse/axes_dump.c's hand-stated rows)
+# against DOCS (match_api.md prose) — both HAND-WRITTEN, so a value added to
+# the code that actually WRITES a stamp and forgotten in both the dump and
+# the docs would pass every existing check. This is the third leg: the CODE
+# itself, independent of both.
+#
+# SCOPED TO `return "..."` ON PURPOSE, not every quoted string in the
+# function body. `RX_DFA_TABLE`'s own emitter (src/gen/emit_dfa.c's
+# `dfa_table_name`) carries a COMMENT that quotes `"premultiplied"` as
+# prose ("...let the stamp say \"premultiplied\" about an artifact...") —
+# a value that function never RETURNS, since `"premultiplied"`/`"indexed"`
+# come back through the variable `f`, not a literal, in this function. A
+# naive whole-body grep would import that comment's word as if it were a
+# fourth return value and read a spurious mismatch against the dump's real
+# four-value set; scoping to the `return "..."` shape excludes it and
+# extracts exactly what the function can actually produce as a literal
+# (here: `mixed`/`none`, matched against the dump's two HAND-STATED
+# composite rows only — `premultiplied`/`indexed` are already live-read
+# from a different array by axes_dump.c itself, so they need no third leg).
+extract_c_return_values() {
+    local file="$1" anchor="$2"
+    awk -v anchor="$anchor" '
+        index($0, anchor) { infunc=1 }
+        infunc && $0 == "{" { inbody=1; next }
+        infunc && inbody && $0 == "}" { exit }
+        infunc && inbody { print }
+    ' "$file" | grep -oE 'return "[a-z-]+"' | grep -oE '"[a-z-]+"' | tr -d '"' | sort -u
+}
+
 # check_value_set MACRO SPEC_VALS DUMP_VALS EXCEPT — both directions for one
 # macro. EXCEPT (space-separated, may be empty) names spec values that are
 # NEVER expected back from the dump (a cited, structural exception — see
@@ -432,26 +484,41 @@ extract_prose_values() {
 # in the exception list must still be a real spec value).
 check_value_set() {
     local macro="$1" spec_vals="$2" dump_vals="$3" except="$4"
+    # [REG-SV] a 5th, OPTIONAL arg names where spec_vals came from, for the
+    # bad()/ok() prose — every pre-existing call omits it and reads exactly
+    # as before (docs/spec/match_api.md §6.3's table); the new emitter-source
+    # leg calls below pass the real source (a C function/derivation) so a
+    # failure message never claims a doc said something the EMITTER did.
+    # NOT `${5:-...text with an apostrophe...}` — bash's own parameter-
+    # expansion parser re-interprets a `'` inside `${VAR:-word}` as a quote
+    # START even though the whole expression sits inside double quotes at
+    # the outer level (measured: "unexpected EOF while looking for matching
+    # `''" from exactly this shape), so the default is set with a plain
+    # if/then instead, preserving the exact pre-[REG-SV] wording byte for
+    # byte (docs/testing.md:2986 quotes it verbatim as a sabotage-transcript
+    # example and must not go stale).
+    local src_label="$5"
+    [ -z "$src_label" ] && src_label="docs/spec/match_api.md §6.3's own value-set table"
     local v miss=""
     for v in $dump_vals; do
         if ! grep -qxF "$v" <<< "$spec_vals"; then
-            bad "[$macro] dump stamps value '$v' that docs/spec/match_api.md §6.3's own value-set table for $macro does not list"
+            bad "[$macro] dump stamps value '$v' that $src_label for $macro does not list"
             miss=1
         fi
     done
-    [ -z "$miss" ] && ok "[$macro] every dumped stamp_value ($( printf '%s' "$dump_vals" | tr '\n' ' ' )) is in match_api.md §6.3's own value-set table"
+    [ -z "$miss" ] && ok "[$macro] every dumped stamp_value ($( printf '%s' "$dump_vals" | tr '\n' ' ' )) is in $src_label"
 
     miss=""
     for v in $spec_vals; do
         grep -qxF "$v" <<< "$except" && continue
         if ! grep -qxF "$v" <<< "$dump_vals"; then
-            bad "[$macro] match_api.md §6.3 documents value '$v' for $macro that --list-axes names on no row"
+            bad "[$macro] $src_label documents value '$v' for $macro that --list-axes names on no row"
             miss=1
         fi
     done
     local except_disp="no exceptions"
     [ -n "$except" ] && except_disp="$(printf '%s' "$except" | tr '\n' ',' | sed 's/,$//')"
-    [ -z "$miss" ] && ok "[$macro] every match_api.md §6.3 value for $macro (exceptions: $except_disp) appears in --list-axes' output"
+    [ -z "$miss" ] && ok "[$macro] every $src_label value for $macro (exceptions: $except_disp) appears in --list-axes' output"
 }
 
 dump_stamp_vals() {
@@ -480,6 +547,25 @@ check_value_set "RX_DFA_TABLE" \
 # axes_dump.c's `emit_table_composite_rows`, axis `table` order 3/4), so the
 # exception is DISCHARGED rather than merely documented: both directions of
 # this check now cover the macro's whole four-value set with no exclusion.
+
+# [REG-SV] THE EMITTER-SOURCE LEG, 2026-08-30 (team-lead review): the check
+# above is dump-vs-DOCS, both hand-written. This is dump-vs-CODE — the two
+# composite values (`none`/`mixed`) against `dfa_table_name`'s own
+# `return "..."` statements in src/gen/emit_dfa.c, the function that
+# actually decides `RX_DFA_TABLE`'s value. `premultiplied`/`indexed` are
+# deliberately NOT in this comparison's dump side or expected on the
+# extractor's side: they are already live-read from `dfa_reprs[]` by
+# `axes_dump.c` itself (never hand-typed), so a THIRD leg for them would
+# just be checking a live read against itself. Only the two hand-stated
+# rows need an independent source, and this is it. See
+# `extract_c_return_values`'s own header for why the comment-noise trap
+# (a `"premultiplied"` inside a comment two lines from a real return) is
+# excluded by construction rather than by an exclusion list.
+check_value_set "RX_DFA_TABLE (dfa_table_name composite values)" \
+    "$(extract_c_return_values "$EMITDFA" 'static const char *dfa_table_name')" \
+    "$(dump_stamp_vals RX_DFA_TABLE | grep -vxE 'premultiplied|indexed')" \
+    "" \
+    "src/gen/emit_dfa.c's dfa_table_name()"
 
 # THE ANCHOR CARRIES NO COUNT. It read "its five values are the whole set";
 # [OPT-K] added two values and correctly rewrote that sentence to "seven",
@@ -532,6 +618,22 @@ check_value_set "RX_UNROLL_K_WHY" \
     "$(extract_prose_values "$MATCHAPI" '`<PREFIX>_UNROLL_K_WHY`')" \
     "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
     ""
+
+# [REG-SV] THE EMITTER-SOURCE LEG, 2026-08-30 (team-lead review): the check
+# above is dump-vs-DOCS, both hand-written — a value added to
+# src/core/compile.c's own `cx.size_term_why = ...` derivation and forgotten
+# in BOTH the dump and match_api.md would still pass it. This is dump-vs-
+# CODE: the seven literals of that derivation chain itself, independent of
+# both. `extract_prose_values` (above) works unmodified here — the anchor
+# is the assignment's own unique text, and the chain runs to the next blank
+# line exactly as the match_api.md bullet does, with no comment interleaved
+# to filter out (unlike RX_DFA_TABLE's leg above, this one needs no
+# `return`-scoping: the whole seven-line ternary IS the seven literals).
+check_value_set "RX_UNROLL_K_WHY (compile.c cx.size_term_why derivation)" \
+    "$(extract_prose_values "$COMPILEC" 'cx.size_term_why =')" \
+    "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
+    "" \
+    "src/core/compile.c's cx.size_term_why derivation"
 
 # The nine D46 bit constants: NOT in lib/pcrec.h (they are emitted-artifact
 # text — match_api.md §6.3's own [ABI-NS] paragraph), so EMITDFA (the
