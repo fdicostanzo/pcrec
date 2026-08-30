@@ -1,0 +1,10 @@
+# A `config ... from` CYCLE. The refusal must name the cycle's members:
+# "there is a cycle" without saying which configs form it leaves the
+# author to find it themselves in a file that may have many.
+config a from b
+  flags i
+config b from a
+  engine vm
+
+pattern a+
+m "aaa" 0 3

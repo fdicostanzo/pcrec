@@ -1,0 +1,9 @@
+# A BLOCK SCALAR IN A PATTERN BLOCK. format_design gives a block's
+# `description` the full prose-value production, which includes `|`; the
+# lexical rules say a pattern block's lines are not indented, and a block
+# scalar IS indented continuation. Both cannot hold, and the body's rule
+# wins. Refused by name, in every parser, with the reason stated.
+pattern a+
+description |
+  this cannot work here
+m "aaa" 0 3

@@ -1,0 +1,8 @@
+# A LATER-WAVE KEYWORD. `include` is real, spelled correctly, and in the
+# format's own documentation — so the refusal says NOT IN THIS BUILD, and
+# never "unknown". Reporting it as unknown sends a reader hunting a typo
+# in a word they just read in the spec.
+include "other.rxt"
+
+pattern a+
+m "aaa" 0 3

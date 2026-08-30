@@ -1,0 +1,10 @@
+# A DUPLICATE config name. The refusal must name BOTH sites: a namespace
+# collision the author can only fix if they are told where the other one
+# is.
+config dev
+  flags i
+config dev
+  engine vm
+
+pattern a+
+m "aaa" 0 3

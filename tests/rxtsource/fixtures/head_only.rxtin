@@ -1,0 +1,9 @@
+# A HEAD AND NO PATTERN BLOCKS. The grammar permits it — a pure library
+# file is exactly this shape — so pcrec must accept it and print head
+# rows only, while run.sh must report "no pattern blocks parsed" on its
+# own existing floor. The two outcomes are DISTINCT observables and this
+# fixture is what holds them apart.
+description a library file: definitions only, nothing to run
+lib "definitions/common.rxt"
+config dev
+  flags i

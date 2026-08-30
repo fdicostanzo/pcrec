@@ -162,8 +162,8 @@ def parse_rxt(path):
         # the honest answer and a silent misparse is not.
         if not seen_pattern:
             first = line.split(None, 1)[0] if line.split() else ''
-            if first in ('lib', 'target', 'config', 'include', 'use',
-                         'oracle', 'tag', 'freq'):
+            if first in ('lib', 'target', 'config', 'description',
+                         'include', 'use', 'oracle', 'tag', 'freq'):
                 raise ValueError(
                     f"{path}:{lineno}: '{first}' is a file-level (HEAD) "
                     "declaration, and this oracle reads the BODY only -- the "

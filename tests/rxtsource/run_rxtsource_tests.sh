@@ -607,6 +607,208 @@ else
   refuse. Resolve before adding the arm."
 fi
 
+# =====================================================================
+# THE HEAD PATH — and it exists because otherwise nothing exercises it.
+#
+# Everything above measures that the corpus DID NOT CHANGE, which is the
+# invariant that matters most and is also, on its own, a check that would
+# stay green if the entire head grammar were deleted: 0 of the 179 files
+# are head-bearing, so the seam, the head productions and every refusal
+# they carry have a population of ZERO on the corpus. A detector with an
+# empty population is a green check measuring nothing — this project's
+# most-recorded check-design failure — so the head gets its own witnesses.
+#
+# THE FIXTURES ARE NAMED `.rxtin`, NOT `.rxt`, and that is load-bearing:
+# `find tests -name '*.rxt'` must not see them, or they would join the
+# corpus, move the pinned census, and be dispatched by `run.sh`'s own
+# no-argument discovery during `make test-corpus`. They are copied to a
+# scratch directory under their real extension and invoked explicitly.
+FIXDIR="$SCRIPT_DIR/fixtures"
+FIXRUN="$WORKDIR/fix"
+mkdir -p "$FIXRUN"
+for f in "$FIXDIR"/*.rxtin; do
+    cp "$f" "$FIXRUN/$(basename "${f%.rxtin}").rxt"
+done
+
+# --- the accepting fixture -------------------------------------------
+HB="$FIXRUN/head_basic.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$HB" > "$WORKDIR/hb.tsv" 2>"$WORKDIR/hb.err"; then
+    pass "head: --list-source accepts a head-bearing file"
+
+    # THE ROW ORDER IS THE CONTRACT. There is no head/body column: a head
+    # row is exactly one preceding the first `pattern` row, which is a
+    # property of the ORDER. So the order is what is asserted.
+    got_kinds=$(awk -F'\t' '!/^#/ { printf "%s ", $1 }' "$WORKDIR/hb.tsv")
+    want_kinds="description lib config config target pattern pattern "
+    if [ "$got_kinds" = "$want_kinds" ]; then
+        pass "head: --list-source emits the declarations in FILE ORDER ($want_kinds)"
+    else
+        fail "head: --list-source row order wrong.
+  expected: $want_kinds
+  got:      $got_kinds"
+    fi
+
+    # THE `line` COLUMN, AGAINST AN INDEPENDENT DERIVATION. This is the
+    # seam's one number — run.sh starts its loop there — so the expected
+    # value comes from grep over the raw bytes, never from pcrec. A check
+    # that asked pcrec what line pcrec thinks it is would be pcrec
+    # agreeing with itself.
+    want_body=$(grep -n '^pattern ' "$HB" | head -1 | cut -d: -f1)
+    got_body=$(awk -F'\t' '$1 == "pattern" { print $2; exit }' "$WORKDIR/hb.tsv")
+    if [ "$want_body" = "$got_body" ]; then
+        pass "head: the first pattern row's line is $got_body (grep and pcrec agree)"
+    else
+        fail "head: --list-source reports the first pattern row at line $got_body,
+  but grep finds it at line $want_body. This is THE number run.sh starts
+  its body loop at: too early and the loop meets a head line, too late and
+  blocks are silently skipped."
+    fi
+
+    # THE PATTERN COLUMN SURVIVES ITS OWN ESCAPING. `colou?r` has no
+    # metacharacter the escape touches; what is asserted is that the
+    # round trip is the identity where it should be, so the escape cannot
+    # be "working" by mangling everything equally.
+    if awk -F'\t' '$1 == "pattern" && $5 == "colou?r" { found = 1 }
+                   END { exit !found }' "$WORKDIR/hb.tsv"; then
+        pass "head: a block's pattern text survives the dump unchanged"
+    else
+        fail "head: the pattern column did not carry 'colou?r' verbatim"
+    fi
+
+    # the three new block directives and `features only` reach the dump
+    if awk -F'\t' '$1 == "pattern" && $3 == "colour" && $8 == "1" && $9 == "byte" { ok = 1 }
+                   END { exit !ok }' "$WORKDIR/hb.tsv"; then
+        pass "head: name / encoding / features-only reach the dump on the right block"
+    else
+        fail "head: the second block's name/encoding/features_only columns are wrong:
+$(awk -F'\t' '$1 == "pattern"' "$WORKDIR/hb.tsv")"
+    fi
+else
+    fail "head: --list-source REJECTED the accepting fixture:
+$(cat "$WORKDIR/hb.err")"
+fi
+
+# --- the seam, end to end through run.sh ------------------------------
+#
+# The only place in the tree where the body-start skip actually runs. It
+# is checked through the counting wrapper as well, because "run.sh
+# produced the right answers" would also be true of a run.sh that never
+# made the call and simply happened to parse the head as comments.
+: > "$CALLLOG"
+if PCREC="$WRAPDIR/pcrec" "$TIMEOUT_BIN" 300 bash "$RUNSH" "$HB" \
+        > "$WORKDIR/hb.run" 2>&1; then
+    hb_calls=$(grep -c -- '--list-source' "$CALLLOG" || true)
+    hb_pass=$(awk '/^cases passed:/ { print $3 }' "$WORKDIR/hb.run")
+    hb_fail=$(awk '/^cases failed:/ { print $3 }' "$WORKDIR/hb.run")
+    if [ "${hb_fail:-1}" = "0" ] && [ "${hb_pass:-0}" = "5" ]; then
+        pass "head: run.sh ran the head-bearing fixture's 5 cases, 0 failures"
+    else
+        fail "head: run.sh on the head-bearing fixture reported ${hb_pass:-?} passed / ${hb_fail:-?} failed, expected 5 / 0:
+$(tail -20 "$WORKDIR/hb.run")"
+    fi
+    if [ "$hb_calls" = "1" ]; then
+        pass "head: run.sh made EXACTLY ONE --list-source call for the file (the seam fired)"
+    else
+        fail "head: run.sh made $hb_calls --list-source call(s) for one head-bearing
+  file, expected exactly 1. Zero means the seam did not fire and the head
+  was parsed by something else; more than one means the boundary is being
+  re-derived per block."
+    fi
+else
+    fail "head: run.sh FAILED on the head-bearing fixture:
+$(tail -30 "$WORKDIR/hb.run")"
+fi
+
+# --- head and no body: two distinct observables -----------------------
+HO="$FIXRUN/head_only.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$HO" > "$WORKDIR/ho.tsv" 2>&1; then
+    ho_pat=$(awk -F'\t' '$1 == "pattern" { n++ } END { print n+0 }' "$WORKDIR/ho.tsv")
+    ho_rows=$(awk -F'\t' '!/^#/ { n++ } END { print n+0 }' "$WORKDIR/ho.tsv")
+    if [ "$ho_pat" = "0" ] && [ "$ho_rows" = "3" ]; then
+        pass "head: a file with a head and no pattern blocks is ACCEPTED, 3 head rows, 0 pattern rows"
+    else
+        fail "head: head-only fixture gave $ho_rows row(s), $ho_pat pattern row(s); expected 3 and 0"
+    fi
+else
+    fail "head: --list-source rejected a head-only file; a library file is exactly that shape"
+fi
+if "$TIMEOUT_BIN" 300 bash "$RUNSH" "$HO" > "$WORKDIR/ho.run" 2>&1; then
+    fail "head: run.sh SUCCEEDED on a file with no pattern blocks; the P-C2 floor
+  must fire — otherwise a file that runs nothing reads as a clean pass"
+elif grep -q 'no pattern blocks parsed from file' "$WORKDIR/ho.run"; then
+    pass "head: run.sh reports the P-C2 floor on a head-only file (distinct from a failed call)"
+else
+    fail "head: run.sh failed on the head-only file, but not with the P-C2 floor —
+  'no pattern blocks parsed' and 'the --list-source call failed' must stay
+  distinct observables:
+$(tail -20 "$WORKDIR/ho.run")"
+fi
+
+# --- the refusals, each asserting what its message must NAME ----------
+#
+# D26 puts diagnostic WORDING outside the tier worth pinning, so what is
+# asserted here is never a sentence — it is that the message names the
+# thing the author has to act on: the boundary, the cycle's members, both
+# collision sites, the wave. A refusal that says only "error" is useless
+# in exactly the cases these fixtures are about.
+check_refusal() {
+    local fixture=$1 label=$2
+    shift 2
+    local out rc
+    out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/$fixture" 2>&1)"
+    rc=$?
+    if [ "$rc" = "0" ]; then
+        fail "head/$label: --list-source ACCEPTED $fixture; it must be refused"
+        return
+    fi
+    local missing=""
+    local needle
+    for needle in "$@"; do
+        case $out in
+            *"$needle"*) ;;
+            *) missing="$missing '$needle'" ;;
+        esac
+    done
+    if [ -z "$missing" ]; then
+        pass "head/$label: refused, and the message names what the author must act on"
+    else
+        fail "head/$label: refused, but the message does not name:$missing
+  got: $out"
+    fi
+}
+
+check_refusal head_after_pattern.rxt boundary   'lib' 'head'
+check_refusal from_cycle.rxt          cycle      'cycle' 'a' 'b'
+check_refusal wave2_keyword.rxt       wave       'include' 'NOT IN THIS BUILD'
+check_refusal dup_config.rxt          duplicate  'duplicate' 'dev'
+check_refusal block_scalar_in_body.rxt blockscalar 'one-line form'
+
+# THE BLOCK-SCALAR REFUSAL IS THE ONE ALL THREE PARSERS MUST SHARE.
+# It is where format_design's prose-value production and the body's
+# no-indent rule contradict each other, so it is resolved the same way in
+# every parser or the differential finds it later and calls it a bug.
+bs="$FIXRUN/block_scalar_in_body.rxt"
+if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$bs" > /dev/null 2>&1; then
+    fail "head/blockscalar: run.sh ACCEPTED a '|' block scalar in a pattern block"
+else
+    pass "head/blockscalar: run.sh refuses it too"
+fi
+if "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$bs" > /dev/null 2>&1; then
+    fail "head/blockscalar: verify_rxt.py ACCEPTED a '|' block scalar in a pattern block"
+else
+    pass "head/blockscalar: verify_rxt.py refuses it too — all three parsers agree"
+fi
+
+# verify_rxt refuses a HEAD-BEARING file by name rather than mis-parsing
+# it: the head has one parser, and a fourth would be one more thing to
+# keep in step. A loud refusal is the honest W1.1 answer.
+if python3 "$VERIFY" --dump "$HB" > /dev/null 2>&1; then
+    fail "head: verify_rxt.py accepted a head-bearing file; it reads the BODY only
+  and must say so rather than growing a fourth head parser"
+else
+    pass "head: verify_rxt.py refuses a head-bearing file by name (the body-only oracle)"
+fi
+
 # ---------------------------------------------------------------------
 echo
 echo "== Summary =="

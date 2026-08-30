@@ -1,0 +1,6 @@
+# A file-level declaration AFTER the first `pattern` line. The head ends
+# there, and the refusal must name the BOUNDARY rather than the token —
+# `lib` is a real declaration in the wrong place, not a typo.
+pattern a+
+m "aaa" 0 3
+lib "definitions/common.rxt"
