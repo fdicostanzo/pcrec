@@ -177,8 +177,14 @@ note this round").
 ### 1.1 The seam: who parses the `.rxt` file — RULED
 
 **CITED, the tree.** Two `.rxt` parsers exist today, both the harness's:
-`tests/harness/run.sh` (bash, 1051 lines; an `if/elif` chain of 13
-`[[ =~ ]]` arms at `:811-1021`, catch-all hard error at `:1016-1021`) and
+`tests/harness/run.sh` (bash, 1051 lines; an `if/elif` chain of
+`[[ =~ ]]` arms at `:811-1021`, catch-all hard error at `:1016-1021`)
+**[CORRECTED, W1.1, MEASURED: the chain is 17 `[[ =~ ]]` if/elif arms
+plus the catch-all `else`, not 13** — pattern, flags, features,
+engine-vm, engine-unknown, budget-steps, budget-frames, budget-unknown,
+`frames-buffer=`, perr, m, n, ms, ns, gu-internal, gu-typed, `g|gp`.
+Nothing depended on the number; the pinned region's markers are now
+named without one so it cannot go stale again as arms are appended.] and
 `tests/harness/verify_rxt.py` (python3, 418 lines; `parse_rxt` at
 `:113-182`, 10 kinds, the only place `# pcre2-only` means anything, at
 `:121`).
@@ -1575,8 +1581,9 @@ invocations that HAPPEN:
 
 **F12 — "discharged by construction" is a diff argument, so it gets a
 check.** run.sh's existing arm block is **hash-pinned**: any change to it
-fails, so "the 13 arms are not touched" is asserted rather than
-asserted-in-prose. And format_design §1.1's **32-keyword census becomes a
+fails, so "the arms are not touched" is asserted rather than
+asserted-in-prose. (**W1.1 CORRECTION**: 17 arms plus the catch-all, not
+13 — see §1.1.) And format_design §1.1's **32-keyword census becomes a
 CHECK** rather than a one-time measurement — the appended arms change one
 thing (lines that previously hit the catch-all now parse), the census is
 what makes that safe, and a census can rot.
@@ -1873,7 +1880,13 @@ acceptance measures it rather than assuming it).
 
 **[DD-13b.W1.1] — the head grammar, `--list-source`, and the corpus
 identity proof.**
-Builds F1, F2's types, F3's `--source`/`--lib-path`/`--list-source`,
+Builds F1, F2's types, F3's **`--list-source`** (**CORRECTED, W1.1**:
+`--source` and `--lib-path` move to W1.2 — this sentence listed them, but
+§7.1's build order, §7.2's acceptance and §4's hunk table all name only
+`--list-source` for this step, S11 is assigned to W1.2, and W1.1 has
+neither a build path nor a store scan for them, so they would be flags
+whose only behaviour is to refuse: built ahead of a consumer, which D77
+forbids),
 F12's three block arms + `features only` + the `have_block` guard + the
 C1 dump, F14's structural skip + skip TOTAL + `--dump`. No composer, no
 targets, no abi change.

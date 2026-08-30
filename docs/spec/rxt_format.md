@@ -85,6 +85,16 @@ These bind on every line kind, old and new:
   body is deliberate and is the only one: the body's shape is fixed by
   compatibility with every existing file, and the head is new territory
   where indentation costs nothing.
+- **TRAILING WHITESPACE after a directive's value is ignored.** A
+  directive whose value is a token or a list (`flags`, `features`,
+  `engine`, `budget`, `encoding`, `name`) means the same thing with or
+  without spaces after it. The two productions that are REST-OF-LINE —
+  `pattern` and `description` — are the exception and keep every byte,
+  because there the trailing space is data.
+- **`pattern` takes exactly one SPACE before its regex**, not arbitrary
+  whitespace: the pattern text is rest-of-line verbatim from the byte
+  after that space, so the separator cannot be part of it and a tab there
+  is a hard error.
 - **One line, one value — with exactly one exception, the BLOCK SCALAR.**
   A line whose value is prose may write `<kind> |` and continue on
   indented lines; newlines are preserved and the value ends at the first

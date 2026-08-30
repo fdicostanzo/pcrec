@@ -473,12 +473,12 @@ check_counts() {
         fail "C1: leg $leg emitted $bl block rows, census is $CENSUS_BLOCKS"
     fi
     if [ "$ca" = "$want_cases" ]; then
-        pass "C1: leg $leg emitted $ca case rows (census $CENSUS_LINES minus $perr_lines perr lines)"
+        pass "C1: leg $leg emitted $ca case rows (the subject-bearing kinds; census $CENSUS_LINES minus $perr_lines perr and $kind_group g/gp)"
     else
         fail "C1: leg $leg emitted $ca case rows, expected $want_cases
-  (= the census's $CENSUS_LINES expectation lines minus the $perr_lines
-  \`perr\` lines, which both dumps carry as a BLOCK field rather than as a
-  case row)"
+  (the five subject-bearing kinds: the census's $CENSUS_LINES expectation
+  lines minus $perr_lines \`perr\` — a BLOCK field in both dumps — and minus
+  $kind_group \`g\`/\`gp\`, which FOLD into the preceding case's gspec)"
     fi
 }
 check_counts B "$b_blocks" "$b_cases"
@@ -609,14 +609,14 @@ fi
 # ---------------------------------------------------------------------
 # CHECK — THE ARM-BLOCK HASH PIN (r45chk F12, N3).
 #
-# "run.sh's thirteen existing arms are not touched" was a diff argument,
+# "run.sh's existing arms are not touched" was a diff argument,
 # and a diff argument is not a check. The protected region is delimited
 # by MARKER COMMENTS rather than by a line range, because W1.1 itself
 # edits inside it (the `have_block` guard) — a line-range hash would be
 # broken by the very change it exists to protect, and the only way to
 # "fix" that is to re-pin, which discards the protection entirely.
-BEGIN_MARK='# --- BEGIN PINNED 13-ARM REGION (w1 N3) ---'
-END_MARK='# --- END PINNED 13-ARM REGION ---'
+BEGIN_MARK='# --- BEGIN PINNED ARM REGION (w1 N3) ---'
+END_MARK='# --- END PINNED ARM REGION ---'
 ARM_PIN='3e9453908bd3d8d8ea06da6a3008dbe4bef42848c57ea1ab06a1f0b4c6db5001'
 
 region="$WORKDIR/armregion.txt"
@@ -641,8 +641,9 @@ else
   got      sha256 $got_hash
 
   THE UPDATE RULE. A change inside those markers is a change to the arm
-  chain that R-COMPAT-1 protects — the chain 3,265 existing blocks and
-  26,691 existing expectation lines are parsed by. It is not forbidden,
+  chain that R-COMPAT-1 protects — the 17 [[ =~ ]] arms plus the catch-all
+  that 3,265 existing blocks and 26,691 existing expectation lines are
+  parsed by. It is not forbidden,
   but it is never incidental:
 
     1. Say what moved and why, in the commit message.

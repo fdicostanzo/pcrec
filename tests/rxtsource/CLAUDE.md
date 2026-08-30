@@ -95,6 +95,17 @@ Both are named here rather than left to inference, because the failure
 this project keeps having is a row that scores green while certifying
 nothing, and "the row does not exist yet" is much better than that.
 
+**And one row was ADDED that the design did not have: S204.** W1.1 found
+that `verify_rxt.py`'s parser knew 10 of the corpus's 14 line kinds and
+RAISED on the other four. That was loud, which is why pointing the oracle
+at the corpus surfaced it immediately. The dangerous version is the quiet
+one — an unknown kind swallowed as a comment verifies nothing, reports
+nothing, and subtracts from a total nobody compares — so S204 plants
+exactly that, in the parser's fallthrough rather than against one kind,
+and it is caught twice: by C1's leg B == leg C (which names WHICH kind
+went missing) and by C3's pinned `giveup` count (which works even if both
+dumps were changed together).
+
 ## The population that had to be built, and why
 
 **0 of the corpus's 179 files are head-bearing** — measured, and asserted

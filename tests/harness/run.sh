@@ -1011,7 +1011,10 @@ for file in "${files[@]}"; do
 
         # [DD-13b.W1.1 / R-COMPAT-1] Everything between these two markers is
         # the arm chain 3,265 existing blocks and 26,691 existing expectation
-        # lines are parsed by. It is HASH-PINNED by
+        # lines are parsed by. MEASURED: 17 `[[ =~ ]]` elif arms plus the
+        # catch-all `else` — the design note says "13", which was never the
+        # count; the marker is deliberately named without a number so it
+        # cannot go stale again as arms are appended. It is HASH-PINNED by
         # tests/rxtsource/run_rxtsource_tests.sh, so a change here cannot
         # land unnoticed. The pin is over the TEXT BETWEEN THE MARKERS and
         # not over a line range, deliberately: this very step edits inside
@@ -1024,7 +1027,7 @@ for file in "${files[@]}"; do
         # the failure will actually read it. This explanation sits ABOVE the
         # marker on purpose: the pin covers the ARMS, and prose about the pin
         # should not be able to move the pin.
-        # --- BEGIN PINNED 13-ARM REGION (w1 N3) ---
+        # --- BEGIN PINNED ARM REGION (w1 N3) ---
         if [[ "$line" =~ ^pattern\ (.*)$ ]]; then
             [ "$have_block" = "1" ] && flush_block
             blocks_in_file=$((blocks_in_file + 1))
@@ -1277,7 +1280,7 @@ for file in "${files[@]}"; do
                 [ "$gkind" = "gp" ] && gpend=1
                 case_gspec[$last_idx]="${case_gspec[$last_idx]}${gslot},${gstart},${gend},${gpend};"
             fi
-        # --- END PINNED 13-ARM REGION ---
+        # --- END PINNED ARM REGION ---
         #
         # [DD-13b.W1.1] W1's THREE NEW BLOCK ARMS plus `features only`,
         # APPENDED here rather than inserted above, for two reasons. The

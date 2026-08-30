@@ -411,7 +411,7 @@ block-line =
     | "gu" , ws , giveup-code , ws , subject
     (* --- new --- *)
     | "name"        , ws , ident                                   (* W1 *)
-    | "description" , ws , prose-value                             (* W1 *)
+    | "description" , ws , rest-of-line       (* one-line form ONLY   W1 *)
     | "encoding"    , ws , ident        (* D58's per-pattern axis    W1 M16 *)
     | "tag"         , ws , tag-item , { ws , tag-item }            (* W2 *)
     | "mc"          , ws , subject , ws , int                      (* W2 *)
@@ -430,6 +430,22 @@ optional `only`). Sixteen additions against thirteen existing line
 kinds, plus §1.5's three pattern-level extensions — the format roughly
 doubles, once, and each addition answers a named consumer in
 `requirements.md` or a ruling.
+
+**CORRECTION ([DD-13b.W1.1], 2026-08-30): a pattern block's
+`description` takes the ONE-LINE form only — the production above said
+`prose-value`, which includes the `|` block scalar, and that cannot
+hold.** §1.2's lexical rules say a block scalar IS indented continuation
+and that a PATTERN BLOCK's lines are NOT indented; both cannot be true in
+the body. The body's rule wins: it is the one R-COMPAT-1 and 3,265
+existing blocks depend on, and §1.2 calls the head/body asymmetry "the
+only one". A block scalar in the body would also need continuation
+parsing inside `run.sh`'s per-line loop — head-shaped parsing back in the
+harness, which is exactly what the seam ruling removed. `|` remains a
+HEAD form (a file-level `description`, a `config` body). MEASURED FREE:
+**0** corpus lines are indented and **0** blocks carry a `description`,
+so no existing file can reach either reading. Refused by name in all
+three parsers, and `tests/rxtsource/fixtures/block_scalar_in_body.rxtin`
+asserts all three agree.
 
 **`description` is a FIELD, not a comment** (Frank, r44 15:0x): *"we may
 want to summarize via script what a library or other rxt file has:
