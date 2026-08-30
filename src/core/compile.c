@@ -1021,7 +1021,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const unsigned pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
-            const bool pfc_rep   = pcrec_has_collapsible_rep(root);
+            /* [OPT-4.1] READ, NOT RE-CALLED: `select_engine.c` derived this
+             * at the fit site and `fit.prefilter_declined_nullable` is built
+             * from the same value, so the two conjuncts cannot drift (they
+             * did — r47sel finding 1). */
+            const bool pfc_rep   = cx.job->fit.prefilter_has_collapsible_rep;
             const bool pfc_rung  = cx.collapse_reason != CR_NONE;
             /* [OPT-4.1] THE FOURTH CONJUNCT IS SPLIT OFF so the DECISION and
              * the DECLINE are the same expression with one term negated, and

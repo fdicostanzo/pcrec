@@ -651,6 +651,9 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * answers for the PREFILTER's lowering, and that the collapsed
          * language is nullable exactly when the exact one is. */
         fit.prefilter_lang_nullable = pcrec_minw(root) == 0;
+        /* [OPT-4.1] AND WHETHER THERE IS ANYTHING TO COLLAPSE, derived here
+         * for the same reason and read by the same two sites (internal.h). */
+        fit.prefilter_has_collapsible_rep = pcrec_has_collapsible_rep(root);
         /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
          * is a REFUSAL of `-fprefilter` rather than a silent override, on
          * D46's own do-or-die posture — a request the pattern cannot honour is
@@ -830,8 +833,27 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * answered with the opposite. `-fprefilter-collapse` does NOT outrank
          * it: that flag chooses a LANGUAGE for a prefilter, not whether one
          * exists, and a caller who wants existence has `-fprefilter`. */
+        /* [OPT-4.1] `prefilter_has_collapsible_rep` IS LOAD-BEARING HERE AND
+         * WAS MISSING (r47sel finding 1). `compile_driver`'s `retry_collapse`
+         * does NOT test it, so the [SEL-1] rung is offered to a pattern with
+         * no collapsible repeat — and for such a pattern the collapsed
+         * lowering IS the exact one, so there is no distinct rescue and
+         * nothing to refuse. Declining one and stamping `declined-nullable`
+         * would report a REFUSED rescue where none was ever available, which
+         * is the inversion `match_api.md`'s value table warns about and which
+         * the bench buckets on. Without the conjunct the fallback also loses
+         * its own name: the honest stamp there is `overflowed-dfa`.
+         *
+         * THE CONJUNCTS ARE `pfc_wanted`'s (src/core/compile.c), and the two
+         * sites now read ONE derivation off `EngineFit` rather than each
+         * calling the predicate — which is what makes "they cannot disagree"
+         * structural instead of a thing to remember. `!pfc_deny` and
+         * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
+         * CR_NONE` already implies both: neither rung is offered under
+         * `-fno-prefilter-collapse`, and a rung excludes the DFA. */
         fit.prefilter_declined_nullable =
             cx->collapse_reason != CR_NONE && fit.prefilter_lang_nullable &&
+            fit.prefilter_has_collapsible_rep &&
             !has_bref && !has_call && !force_on;
         fit.prefilter = (has_bref || has_call ||
                          (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||

@@ -681,6 +681,26 @@ fi
 # stamps `overflowed-dfa` / `none` at 34,226.
 SEL1N_CTL='(?:a|b)*a(?:a|b){15}'
 SEL1_NULL='(?:(?:a|b)*a(?:a|b){15})?'
+# [OPT-4.1] A THIRD CELL, and it is r47sel finding 1's witness (2026-08-30).
+# The pair above differ in NULLABILITY; this one differs in whether there is
+# anything to COLLAPSE. It is `SEL1_NULL` with the counted repeat spelled OUT
+# — fifteen literal `(?:a|b)` instead of `(?:a|b){15}` — so it is the SAME
+# LANGUAGE, still nullable, still overflows, and has NO `A_REP` the collapse
+# would change.
+#
+# THE RUNG IS STILL OFFERED (`compile_driver`'s `retry_collapse` does not test
+# for a collapsible repeat), but for this pattern the collapsed lowering IS the
+# exact one, so there is NO DISTINCT RESCUE and nothing to refuse. The honest
+# stamp is `overflowed-dfa`, the same as its non-nullable twin: **nullability
+# must make no difference where there is no rescue.**
+#
+# MEASURED ON THE DEFECT (before the fix): it stamped `declined-nullable` —
+# a rescue REFUSED where none was ever available, the inversion match_api.md's
+# value table warns about and the one the bench buckets on. Its non-nullable
+# twin read `overflowed-dfa` on the same binary, which is what made the
+# asymmetry visible.
+SEL1N_NOREP_CTL='(?:a|b)*a(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)'
+SEL1N_NOREP='(?:(?:a|b)*a(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b))?'
 a="$WORK/sel1n_auto.c"; b="$WORK/sel1n_force.c"; ctl="$WORK/sel1n_ctl.c"
 # (0) THE CONTROL: the SAME SHAPE without the `?` must still be RESCUED. This
 # is what says the pair's overflow is real and the rung is available here — a
@@ -742,6 +762,33 @@ if emit "$a" -- "$SEL1_NULL"; then
         fi
     else
         bad "[sel1n] the nullable witness does not compile under -fno-prefilter-collapse — (2b) has no subject"
+    fi
+    # (2c) [OPT-4.1] r47sel finding 1: NULLABILITY MUST MAKE NO DIFFERENCE
+    # WHERE THERE IS NOTHING TO COLLAPSE. The rung is still OFFERED to a
+    # pattern with no collapsible `A_REP` (`retry_collapse` does not test for
+    # one), but its collapsed lowering IS its exact one, so there is no
+    # distinct rescue and nothing to refuse: the honest stamp is
+    # `overflowed-dfa`, the SAME as the non-nullable twin's.
+    #
+    # THE PAIR IS THE ASSERTION. Reading `overflowed-dfa` on the nullable one
+    # alone would also pass on a compiler that had stopped overflowing; the
+    # twin is what says the shape still reaches the rung at all. Both are the
+    # SAME LANGUAGE as (0)/(1) above with the count spelled OUT, so a
+    # difference between the two pairs can only be the collapsible-repeat
+    # conjunct.
+    if emit "$WORK/norep_ctl.c" -- "$SEL1N_NOREP_CTL" && emit "$WORK/norep.c" -- "$SEL1N_NOREP"; then
+        nc_sel=$(stamp ENGINE_SEL "$WORK/norep_ctl.c"); nc_pf=$(stamp VM_PREFILTER "$WORK/norep_ctl.c")
+        nn_sel=$(stamp ENGINE_SEL "$WORK/norep.c");     nn_pf=$(stamp VM_PREFILTER "$WORK/norep.c")
+        if [ "$nc_sel" = overflowed-dfa ] && [ "$nn_sel" = overflowed-dfa ] \
+           && [ "$nc_pf" = none ] && [ "$nn_pf" = none ]; then
+            ok "[sel1n] with NOTHING to collapse, the nullable witness and its non-nullable twin BOTH read 'overflowed-dfa' / \"none\" — the decline does not fire where there is no rescue to refuse (r47sel finding 1)"
+        elif [ "$nn_sel" = declined-nullable ]; then
+            bad "[sel1n] the nullable NON-COLLAPSIBLE witness stamps 'declined-nullable' (its twin reads '$nc_sel') — it reports a rescue REFUSED where none was ever available: the collapsed lowering IS the exact one here, so the honest route is 'overflowed-dfa'. The declined-nullable conjunct has lost its collapsible-repeat term (r47sel finding 1)"
+        else
+            bad "[sel1n] the NON-COLLAPSIBLE pair stamps SEL '$nc_sel'/'$nn_sel' and PREFILTER '$nc_pf'/'$nn_pf', expected both 'overflowed-dfa' / 'none' — either this shape stopped overflowing (the row proves nothing) or the route has been reassigned"
+        fi
+    else
+        bad "[sel1n] the non-collapsible pair does not compile — (2c) has no subject"
     fi
     # (3) `-fprefilter` IS NEVER SILENTLY ANSWERED WITH ITS OPPOSITE — and this
     # comment says what the row does and does NOT demonstrate, because its

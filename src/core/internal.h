@@ -1311,6 +1311,22 @@ typedef struct {
      * prefilter all day; that is the default and it is not this field. */
     bool        prefilter_declined_nullable;
 
+    /* [OPT-4.1] IS THERE A COLLAPSIBLE `A_REP` AT ALL — an `rmin > 1` or
+     * `rmax > 1` the collapse would CHANGE? `pcrec_has_collapsible_rep(root)`
+     * (src/opt/atomic.c), derived ONCE at `src/opt/select_engine.c`'s fit site
+     * and read by BOTH conjuncts that need it: this pass's
+     * `prefilter_declined_nullable` and `src/core/compile.c`'s `pfc_wanted`.
+     *
+     * IT IS A FIELD RATHER THAN TWO CALLS BECAUSE THE TWO SITES MUST NOT BE
+     * ABLE TO DISAGREE, and they DID: the decline shipped without this
+     * conjunct while the build gate had it (r47sel finding 1). A nullable
+     * pattern that overflows the [SEL-1] cap with NO collapsible repeat then
+     * stamped `_ENGINE_SEL "declined-nullable"` — a rescue REFUSED — when the
+     * collapsed lowering IS the exact one and there was never a distinct
+     * rescue to refuse. `match_api.md`'s own value table warns against exactly
+     * that inversion, and the comparative bench buckets on this macro. */
+    bool        prefilter_has_collapsible_rep;
+
     /* [OPT-4] WHY THAT LANGUAGE (D81's `_WHY`; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
      *
      * FRANK'S RULING B (2026-08-29): the DEFAULT builds the EXACT prefilter and
