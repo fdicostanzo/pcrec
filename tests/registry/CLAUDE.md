@@ -183,7 +183,10 @@ directory asserts that the description and the shipped parser actually agree.
   distinct from "unbuilt" (`\c`/`\o{}`'s real spelling DOES compile at
   options=0; only their decoded byte disagreed, bug (1) above). For this
   row alone `oracle_a` stays `-` (the tautology shape) with a NOTE
-  explaining why, never a silent uninformative "pass".
+  explaining why, never a silent uninformative "pass". Trigger to
+  revisit (team-lead ruling): once [DD-12]/[M5] (the UTF/encoding axis)
+  lands, this row's probe can move to UTF mode for the A==C leg
+  specifically.
 
   Measured after the join: **354 cells, 101,244 A==B + 101,244 A==C
   comparisons, 0 disagreements.** `DEFK_BUILDER` templates are INSTANTIATED over the

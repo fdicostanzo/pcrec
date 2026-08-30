@@ -283,7 +283,13 @@ static int textfn_byte(const Ast *out)
  * real spelling DOES compile under options=0, confirmed live: only their
  * DECODED BYTE disagreed, never their compilability). When false, the
  * oracle column stays `-` (a tautology, exactly the built-row shape) and
- * one NOTE explains why, rather than a silent, uninformative "pass". */
+ * one NOTE explains why, rather than a silent, uninformative "pass".
+ *
+ * TRIGGER TO REVISIT (team-lead ruling, 2026-08-29): once [DD-12]/[M5]
+ * (the UTF/encoding axis) lands, this row's probe can move to UTF mode
+ * for the A==C leg specifically — that is the re-measurement event
+ * docs/pcre2_options.md's options=0 pin exists to gate, not something to
+ * do ahead of it. Until then this row stays the one exception. */
 static void textfn_cells(const RegRow *r, const RegDef *d,
                           const char *real_fmt, bool prefer_literal,
                           const char *const *ops, size_t nops,

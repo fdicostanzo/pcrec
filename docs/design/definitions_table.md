@@ -550,6 +550,10 @@ subsection after `--list-axes`.
   at options=0; only their decoded byte disagreed, bug (1) above). For
   this row alone, `oracle_a` stays `-` (the built-row tautology shape)
   with a NOTE explaining why, rather than a silent, uninformative "pass".
+  **Trigger to revisit (team-lead ruling):** once [DD-12]/[M5] (the
+  UTF/encoding axis) lands, this row's probe can move to UTF mode for the
+  A==C leg specifically — the re-measurement event the options=0 pin
+  exists to gate, not something to do ahead of it.
 - **[DD-11.4] The recursion guard, un-parked** — §3 item 5: the synthetic
   second `\w` row behind a never-true flag. No longer blocked on Unicode.
   **BUILT 2026-08-29 (lane dd11b):** `tests/registry/definitions_check.c`'s
