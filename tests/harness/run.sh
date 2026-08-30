@@ -531,6 +531,26 @@ flush_block() {
                 record_fail "$cur_file" "${case_line[$i]}" \
                     "HARNESS FAILURE: --features '$cur_features' is not a valid enabled-set spec"
             done
+            # [DD-13b.W1.1] A BLOCK WITH NO CASES STILL HAS TO FAIL, and
+            # until this line it did not. The failure was recorded once
+            # PER CASE, so a `perr` block — which by definition has no
+            # m/n/... lines — recorded NOTHING and returned quietly, which
+            # is precisely the "quiet pass" the comment above forbids. It
+            # is also the worst block kind to lose it on: pcrec refuses an
+            # unknown module name with exit 1, and exit 1 is exactly what
+            # `perr` asserts, so the typo'd block would have gone on to
+            # certify the typo rather than the pattern.
+            #
+            # Found by building a WITNESS for sabotage row S199, which
+            # scored UNDETECTED because the corpus contains no invalid
+            # features list to expose it. The fix is the general form of
+            # what the loop above was reaching for: the failure belongs to
+            # the BLOCK, so when there are no cases to hang it on it is
+            # attributed to the block's own `pattern` line.
+            if [ "${#case_kind[@]}" -eq 0 ]; then
+                record_fail "$cur_file" "$cur_pattern_line" \
+                    "HARNESS FAILURE: --features '$cur_features' is not a valid enabled-set spec (block has no cases; a perr block would otherwise have read pcrec's refusal of this typo as its own expected rejection)"
+            fi
             return 0
         fi
         pflags+=(--features "$cur_features")
