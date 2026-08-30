@@ -74,3 +74,33 @@ LEGITIMATE case measured needing more raises the default with the measurement
 recorded, never silently.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+## [OPT-4.1] the size-rung cell became a PAIR (2026-08-30)
+
+`(a|b){0,30000}` was the tree's ONE witness that ruling B's size rung ships an
+artifact where the exact one is refused. It is also NULLABLE — its collapsed
+language `(a|b)*` matches the empty string at every position — so under
+[OPT-4.1] the rescue is DECLINED there and the artifact ships with NO prefilter
+instead, which is smaller still and rescues the compile just as well.
+
+**SO THE ROW IS TWO CELLS NOW, AND EACH IS THE OTHER'S CONTROL.**
+`(a|b){0,30000}` must compile small with `RX_VM_PREFILTER "none"` and no
+language macro; `(a|b){1,30000}` — the same pattern one character over, NOT
+nullable — must still take the rung and stamp `_LANG_WHY "size cap retry,
+exact N > cap"`. Neither direction is safe alone: without the twin, a compiler
+that had stopped taking the size rung at all would leave the nullable cell
+green (no prefilter is exactly what it asserts) while every oversize
+collapsible pattern started refusing; without the nullable cell, a compiler
+that had stopped declining would leave the twin green while shipping a scan
+that can never dismiss a position.
+
+**AND THE TWIN IS THE `size cap retry` STAMP VALUE'S ONLY WITNESS IN THE
+TREE** (K35). No corpus pattern reaches either rung at the default, and
+pcrec-bench reaches neither across 74 forms (its O-10 ask (v)); the other two
+`size_moved` rows are DFA-engine artifacts, which take no VM prefilter
+decision at all. If the twin is ever removed, that bucket becomes tested only
+by `make check`.
+
+The nullable cell's own contract is that nothing which compiles today stops
+compiling: dropping the prefilter is strictly smaller than collapsing it, so
+the rung still rescues (`docs/spec/limits.md` §3.3 states it caller-side).
