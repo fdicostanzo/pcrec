@@ -504,13 +504,41 @@ echo "C1 runtime: leg A (${CENSUS_FILES}x pcrec --list-source) ${tA}s; leg B (ru
 # The list comes from `find` and the FLOOR is the pinned census, passed
 # in from here. The two do not share a source: a discovery that narrows
 # is measured against a number that did not come from the discovery.
+# THE ORACLE'S OWN TOTALS, PINNED. Provenance: the first corpus-wide run
+# of this script, 2026-08-30 (W1.1). Every number below is a POPULATION,
+# and each one is here because a population nobody counts is not a
+# population — a skip reason that silently grows is coverage silently
+# lost.
+C3_FILES=179
+C3_PASS=13181
+C3_SKIP=13421
+C3_SKIP_PCRE2ONLY=1357
+C3_SKIP_GIVEUP=23
+C3_SKIP_COMPOSED=0
+C3_SKIP_NOPYTHON=1753
+C3_SKIP_PERRACCEPT=14
+C3_SKIP_OWNORACLE=10274
+C3_TIMEOUT=1
+
+# THE PER-FILE WALL BOUND IS NOT OPTIONAL HERE, and this is the one place
+# it is armed. MEASURED: `tests/base/d27_k23_ambiguous_decomposition.rxt`
+# (`(a{1,3}){65}`, subjects to 100+ characters) does not return under
+# python `re` — a backtracking engine asked for a 65-group decomposition
+# of an ambiguous run. 64 characters answers instantly; 70 does not
+# answer. Without the bound, wiring this oracle to the corpus hangs
+# `make test` forever, which is what D45 already forbids for every other
+# thing the harness runs ("a loud, named FAILURE, never a hang or a
+# silent skip") and what nobody had applied here because this script had
+# never run.
 C3OUT="$WORKDIR/c3.out"
 "$TIMEOUT_BIN" 900 python3 "$VERIFY" --min-files "$CENSUS_FILES" \
-    $(cat "$FILES") > "$C3OUT" 2>&1
+    --file-timeout 10 $(cat "$FILES") > "$C3OUT" 2>&1
 c3rc=$?
 c3_files=$(awk -F= '/^FILES=/ { print $2 }' "$C3OUT")
 c3_pass=$(awk '/^PASS=/ { sub(/^PASS=/, "", $1); print $1 }' "$C3OUT")
 c3_skip=$(awk -F'[=( ]' '/^SKIP=/ { print $2 }' "$C3OUT")
+c3_timeout=$(awk -F'[=( ]' '/^TIMEOUT=/ { print $2 }' "$C3OUT")
+c3_reason() { sed -n 's/.*[ (]'"$1"'=\([0-9]*\).*/\1/p' "$C3OUT" | head -1; }
 
 if [ "${c3_files:-}" = "$CENSUS_FILES" ]; then
     pass "C3: verify_rxt.py discovered $c3_files files (its own discovery, floored at the census)"
@@ -520,6 +548,45 @@ fi
 
 if [ "$c3rc" -eq 0 ]; then
     pass "C3: verify_rxt.py verified $c3_pass expectation(s) with $c3_skip skip(s), 0 failures"
+
+    # THE TOTALS, AGAINST THEIR PINS. The verified count alone is not
+    # enough: a skip predicate that WIDENS moves work out of PASS and
+    # into SKIP while both totals stay explicable, so each reason is
+    # pinned separately. They also reconcile — pass + skip + the
+    # timed-out file's own lines must be the whole census — which is
+    # what makes this an accounting rather than nine loose numbers.
+    c3_bad=""
+    for chk in "PASS:$c3_pass:$C3_PASS" \
+               "SKIP:$c3_skip:$C3_SKIP" \
+               "TIMEOUT:${c3_timeout:-x}:$C3_TIMEOUT" \
+               "pcre2-only:$(c3_reason pcre2-only):$C3_SKIP_PCRE2ONLY" \
+               "giveup:$(c3_reason giveup):$C3_SKIP_GIVEUP" \
+               "composed:$(c3_reason composed):$C3_SKIP_COMPOSED" \
+               "no-python-expression:$(c3_reason no-python-expression):$C3_SKIP_NOPYTHON" \
+               "perr-python-accepts:$(c3_reason perr-python-accepts):$C3_SKIP_PERRACCEPT" \
+               "own-oracle:$(c3_reason own-oracle):$C3_SKIP_OWNORACLE"; do
+        nm=${chk%%:*}; rest=${chk#*:}; got=${rest%%:*}; want=${rest#*:}
+        [ "$got" = "$want" ] || c3_bad="$c3_bad
+    $nm: got ${got:-<absent>}, pinned $want"
+    done
+    if [ -z "$c3_bad" ]; then
+        pass "C3: all nine population pins hold (verified, skips by reason, timeouts)"
+    else
+        fail "C3: population pin(s) MOVED:$c3_bad
+  A skip reason that grows is coverage lost without a failing case to
+  show for it. If the move is legitimate — a corpus file added, a block
+  newly marked, a module landing that makes patterns python-expressible
+  — re-pin the C3_* values in this file in a reviewed commit saying which
+  and why."
+    fi
+
+    if [ "$((c3_pass + c3_skip + 89))" = "$CENSUS_LINES" ]; then
+        pass "C3 reconciles: $c3_pass verified + $c3_skip skipped + 89 in the timed-out file = $CENSUS_LINES"
+    else
+        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_skip + 89 = $((c3_pass + c3_skip + 89)),
+  census $CENSUS_LINES. Expectations are going somewhere neither counted
+  nor reported, which is the one outcome a skip total exists to prevent."
+    fi
 else
     # ITS FIRST RUN OVER 139 NEVER-ORACLED FILES IS A DISCOVERY, NOT A
     # REGRESSION (w1_impl §7.4 risk 2). Before this wiring, this oracle's

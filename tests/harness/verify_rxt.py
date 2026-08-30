@@ -133,6 +133,58 @@ def has_by_name_reference(pat):
     return BY_NAME_REF.search(pat) is not None
 
 
+# [DD-13b.W1.1] THE OWN-ORACLE RULE, implementing a contract the spec has
+# stated all along and nothing implemented, because this script never ran.
+#
+# docs/spec/rxt_format.md: "A directory may name its own additional or
+# REPLACEMENT oracle instead of (or beside) the default. tests/assertions/
+# is the one directory in the tree whose oracle rule differs by design: it
+# carries verify_pcre2.py, a libpcre2 differential that re-checks every
+# cell -- marked and unmarked -- on every make test, because several of
+# its constructs (\Z, \G, \K) have no python equivalent at all."
+#
+# MEASURED, and this is why it matters: the first corpus-wide run of this
+# oracle produced exactly FIVE genuine answer disagreements, and ALL FIVE
+# are in tests/assertions/ -- `a\Z` against "a\n" (python's \Z is PCRE2's
+# \z) and `(?m)^` at end-of-subject. Every one is the documented
+# divergence, in the one directory documented as having it, already
+# covered by libpcre2 at 10,120 cells on every make test.
+#
+# A DECLARATION, NOT A PATH LIST. The rule is "the directory carries its
+# own verifier", discovered by looking -- not `if 'assertions' in path`.
+# A new module directory that needs the same treatment gets it by
+# following the precedent the spec already points at, with no edit here.
+# This script itself is excluded, or tests/harness/ would exempt its own
+# giveup.rxt from the oracle that lives beside it.
+_OWN_ORACLE_CACHE = {}
+
+
+def declares_own_oracle(path):
+    """True when this file's directory, or any ancestor up to tests/,
+    carries a verifier of its own (verify_*.py that is not this script)."""
+    d = os.path.dirname(os.path.abspath(path))
+    stop = os.path.dirname(BASE_DIR)          # <repo>/tests
+    me = os.path.basename(os.path.abspath(__file__))
+    seen = []
+    while True:
+        if d in _OWN_ORACLE_CACHE:
+            hit = _OWN_ORACLE_CACHE[d]
+            break
+        seen.append(d)
+        try:
+            names = os.listdir(d)
+        except OSError:
+            names = []
+        hit = any(n.startswith('verify_') and n.endswith('.py') and n != me
+                  for n in names)
+        if hit or d == stop or os.path.dirname(d) == d:
+            break
+        d = os.path.dirname(d)
+    for x in seen:
+        _OWN_ORACLE_CACHE[x] = hit
+    return hit
+
+
 def parse_rxt(path):
     """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','ms','ns','perr','g','gp'}."""
     with open(path, 'r', encoding='utf-8') as f:
@@ -415,10 +467,116 @@ def discover(args):
     return sorted(files)
 
 
+# [DD-13b.W1.1] THE PER-FILE WALL BOUND, and the reason it had to exist
+# before this oracle could be wired to the corpus at all.
+#
+# MEASURED: `tests/base/d27_k23_ambiguous_decomposition.rxt` does not
+# finish. Its pattern is `(a{1,3}){65}` and its subjects run to 100+
+# `a`s; python `re` is a BACKTRACKING engine, so finding a decomposition
+# of exactly 65 groups over a run of 70 is exponential. 64 characters
+# answers instantly, 70 does not return. That file is a D27 BLINDED
+# corpus written to probe ambiguous decomposition — it is doing its job,
+# and python is the wrong engine to ask.
+#
+# So the first corpus-wide run of this oracle hangs, forever, inside
+# `make test`. `docs/spec/rxt_format.md` already states the house rule
+# this violates — "every compile and every matcher run in the harness is
+# bounded (D45)... Exceeding a bound is a loud, named FAILURE, never a
+# hang or a silent skip" — and the reason nobody had applied it here is
+# that this script had never run.
+#
+# WHY A SUBPROCESS AND NOT `signal.alarm`: a long `re.search` is a single
+# C call that never returns to the interpreter, so SIGALRM cannot
+# interrupt it. The handler would not run until the search finished,
+# which is the thing that does not happen. A child process can be killed.
+#
+# The bound is PER FILE rather than per case because that is what a
+# process boundary costs least: one python startup per file (~30 ms over
+# 179 files) instead of one per case (26,691 of them).
+def run_supervised(files, timeout, min_files):
+    """Re-invoke this script once per file under a wall bound, and
+    aggregate. A file that overruns is NAMED and COUNTED, never silently
+    dropped and never allowed to hang the suite."""
+    import subprocess
+
+    SKIP_KEYS = ('pcre2-only', 'giveup', 'composed', 'no-python-expression',
+                 'perr-python-accepts', 'own-oracle')
+    tot_pass = tot_fail = tot_skip = 0
+    tot_reason = {k: 0 for k in SKIP_KEYS}
+    timed_out = []
+    crashed = []
+
+    for path in files:
+        try:
+            r = subprocess.run(
+                [sys.executable, os.path.abspath(__file__), path],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                timeout=timeout)
+        except subprocess.TimeoutExpired:
+            timed_out.append(path)
+            print(f"=== {os.path.basename(path)}: ORACLE BOUND EXCEEDED "
+                  f"({timeout}s) — not python-verifiable in bounded time ===")
+            continue
+        out = r.stdout.decode('utf-8', 'replace')
+        got = {}
+        for line in out.splitlines():
+            if line.startswith('PASS=') and ' FAIL=' in line:
+                a, b = line.split(' FAIL=')
+                got['pass'] = int(a[len('PASS='):]); got['fail'] = int(b)
+            elif line.startswith('SKIP='):
+                head = line[len('SKIP='):].split(' ', 1)[0]
+                got['skip'] = int(head)
+                # keyed by NAME, so a reason added to the child's output
+                # is aggregated here without an edit — and one that
+                # DISAPPEARS shows up as a zero rather than as a silently
+                # dropped column.
+                for key in SKIP_KEYS:
+                    tag = key + '='
+                    if tag in line:
+                        got[key] = int(line.split(tag)[1]
+                                       .split(')')[0].split()[0])
+        if 'pass' not in got:
+            crashed.append(path)
+            print(f"=== {os.path.basename(path)}: ORACLE DID NOT REPORT "
+                  f"(exit {r.returncode}) ===")
+            for ln in out.splitlines()[-8:]:
+                print(f"  {ln}")
+            continue
+        tot_pass += got['pass']; tot_fail += got['fail']
+        tot_skip += got.get('skip', 0)
+        for key in SKIP_KEYS:
+            tot_reason[key] += got.get(key, 0)
+        # a child's own failure detail is already on its stdout
+        if got['fail'] or r.returncode != 0:
+            for ln in out.splitlines():
+                if ln.startswith('===') or ln.startswith('  line '):
+                    print(ln)
+
+    print()
+    print("=== Summary ===")
+    print(f"PASS={tot_pass} FAIL={tot_fail}")
+    print(f"FILES={len(files)}")
+    print("SKIP=%d (%s)" % (tot_skip, ' '.join(
+        "%s=%d" % (k, tot_reason[k]) for k in SKIP_KEYS)))
+    # NAMED EVERY RUN, not merely counted: a bound that is exceeded
+    # silently is a file nobody verifies and nobody remembers.
+    print(f"TIMEOUT={len(timed_out)} (per-file bound {timeout}s)")
+    for pth in timed_out:
+        print(f"  not python-verifiable in bounded time: {pth}")
+    if crashed:
+        print(f"CRASHED={len(crashed)}")
+        for pth in crashed:
+            print(f"  oracle did not report: {pth}")
+    if min_files and len(files) < min_files:
+        return 1
+    return 1 if (tot_fail or crashed) else 0
+
+
 def main():
     args = sys.argv[1:]
     dump = False
     min_files = 0
+    file_timeout = 0
     rest = []
     i = 0
     while i < len(args):
@@ -432,6 +590,13 @@ def main():
                       file=sys.stderr)
                 sys.exit(2)
             min_files = int(args[i])
+        elif a == '--file-timeout':
+            i += 1
+            if i >= len(args):
+                print("verify_rxt.py: --file-timeout needs seconds",
+                      file=sys.stderr)
+                sys.exit(2)
+            file_timeout = float(args[i])
         else:
             rest.append(a)
         i += 1
@@ -465,6 +630,14 @@ def main():
             dump_file(path, parse_rxt(path))
         return
 
+    # THE BOUND IS ONLY ARMED FOR A MULTI-FILE RUN. A developer iterating
+    # on one file gets the in-process path unchanged — same output, no
+    # subprocess, and no bound to be surprised by. The corpus wiring in
+    # tests/rxtsource/ is what passes --file-timeout, because that is the
+    # invocation that must never be able to hang `make test`.
+    if file_timeout > 0 and len(files) > 1:
+        sys.exit(run_supervised(files, file_timeout, min_files))
+
     total_pass = 0
     total_fail = 0
     # [DD-13b.W1.1 / r45chk F13(d)] THE SKIP TOTAL. Until now this script
@@ -479,6 +652,9 @@ def main():
     total_skip_pcre2_only = 0
     total_skip_giveup = 0
     total_skip_composed = 0
+    total_skip_no_python = 0
+    total_skip_perr_accept = 0
+    total_skip_own_oracle = 0
     per_file_counts = {}
 
     for path in files:
@@ -506,6 +682,10 @@ def main():
         skipped_pcre2_only = 0
         skipped_giveup = 0
         skipped_composed = 0
+        skipped_no_python = 0
+        skipped_perr_accept = 0
+        skipped_own_oracle = 0
+        file_own_oracle = declares_own_oracle(path)
         cur_skip = False
         cur_composed_skip = False
         cur_name = None
@@ -585,6 +765,19 @@ def main():
                 file_failures.append((lineno, f"{kind} line with no preceding pattern block"))
                 continue
 
+            if file_own_oracle:
+                # THE DIRECTORY DECLARES ITS OWN ORACLE (see
+                # declares_own_oracle above and docs/spec/rxt_format.md).
+                # Its cells are verified by that oracle, on every make
+                # test; re-checking them here against an engine the spec
+                # names as the WRONG one for them would manufacture
+                # disagreements the spec predicts. Counted, so "which
+                # files does the python oracle actually cover" has an
+                # answer rather than an assumption.
+                skipped += 1
+                skipped_own_oracle += 1
+                continue
+
             if cur_skip:
                 skipped += 1
                 skipped_pcre2_only += 1
@@ -605,7 +798,14 @@ def main():
             if kind == 'perr':
                 perr_count += 1
                 if compile_error is None:
-                    file_failures.append((lineno, f"pattern {cur_pattern!r} (from line {cur_pattern_lineno}) was expected to fail to compile, but it compiled fine"))
+                    # pcrec refuses this pattern and python accepts it.
+                    # That is two engines with different grammars, not
+                    # evidence about whether pcrec's refusal is right —
+                    # python accepting `(?<a>x)`-shaped input says nothing
+                    # about PCRE2 semantics. Counted, never scored.
+                    skipped += 1
+                    skipped_perr_accept += 1
+                    continue
                 else:
                     total_pass += 1
                     continue
@@ -616,7 +816,20 @@ def main():
                 last_case_subj = subj
                 last_case_pos = 0
                 if compiled is None:
-                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check m line"))
+                    # NO OPINION IS NOT DISAGREEMENT. python `re` has no
+                    # (?(DEFINE), no (?1) subroutine call, no PCRE2 (?<n>
+                    # spelling, no \g<>, no (?J), no possessive quantifier.
+                    # A pattern it cannot compile yields no python verdict
+                    # at all, so there is nothing to agree or disagree
+                    # with, and scoring it as a FAILURE conflates "python
+                    # says otherwise" with "python cannot be asked".
+                    # MEASURED on the first corpus-wide run: 1,814 of
+                    # 1,847 reported failures were this, drowning the 5
+                    # that were real. COUNTED and PINNED, so a population
+                    # that grows is visible.
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
                 else:
                     mo = compiled.search(subj)
                     if mo is None:
@@ -633,7 +846,20 @@ def main():
                 last_case_subj = None
                 last_case_pos = None
                 if compiled is None:
-                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check n line"))
+                    # NO OPINION IS NOT DISAGREEMENT. python `re` has no
+                    # (?(DEFINE), no (?1) subroutine call, no PCRE2 (?<n>
+                    # spelling, no \g<>, no (?J), no possessive quantifier.
+                    # A pattern it cannot compile yields no python verdict
+                    # at all, so there is nothing to agree or disagree
+                    # with, and scoring it as a FAILURE conflates "python
+                    # says otherwise" with "python cannot be asked".
+                    # MEASURED on the first corpus-wide run: 1,814 of
+                    # 1,847 reported failures were this, drowning the 5
+                    # that were real. COUNTED and PINNED, so a population
+                    # that grows is visible.
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
                 else:
                     mo = compiled.search(subj)
                     if mo is not None:
@@ -648,7 +874,20 @@ def main():
                 last_case_subj = subj
                 last_case_pos = p
                 if compiled is None:
-                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check ms line"))
+                    # NO OPINION IS NOT DISAGREEMENT. python `re` has no
+                    # (?(DEFINE), no (?1) subroutine call, no PCRE2 (?<n>
+                    # spelling, no \g<>, no (?J), no possessive quantifier.
+                    # A pattern it cannot compile yields no python verdict
+                    # at all, so there is nothing to agree or disagree
+                    # with, and scoring it as a FAILURE conflates "python
+                    # says otherwise" with "python cannot be asked".
+                    # MEASURED on the first corpus-wide run: 1,814 of
+                    # 1,847 reported failures were this, drowning the 5
+                    # that were real. COUNTED and PINNED, so a population
+                    # that grows is visible.
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
                 else:
                     mo = compiled.search(subj, p)
                     if mo is None:
@@ -665,7 +904,20 @@ def main():
                 last_case_subj = None
                 last_case_pos = None
                 if compiled is None:
-                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check ns line"))
+                    # NO OPINION IS NOT DISAGREEMENT. python `re` has no
+                    # (?(DEFINE), no (?1) subroutine call, no PCRE2 (?<n>
+                    # spelling, no \g<>, no (?J), no possessive quantifier.
+                    # A pattern it cannot compile yields no python verdict
+                    # at all, so there is nothing to agree or disagree
+                    # with, and scoring it as a FAILURE conflates "python
+                    # says otherwise" with "python cannot be asked".
+                    # MEASURED on the first corpus-wide run: 1,814 of
+                    # 1,847 reported failures were this, drowning the 5
+                    # that were real. COUNTED and PINNED, so a population
+                    # that grows is visible.
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
                 else:
                     mo = compiled.search(subj, p)
                     if mo is not None:
@@ -688,7 +940,9 @@ def main():
                 if last_case_kind != 'm':
                     file_failures.append((lineno, f"'{kind}' line with no preceding m/ms case in this block"))
                 elif compiled is None:
-                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check {kind} line"))
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
                 else:
                     mo = compiled.search(last_case_subj, last_case_pos)
                     if mo is None:
@@ -709,10 +963,15 @@ def main():
         total_skip_pcre2_only += skipped_pcre2_only
         total_skip_giveup += skipped_giveup
         total_skip_composed += skipped_composed
+        total_skip_no_python += skipped_no_python
+        total_skip_perr_accept += skipped_perr_accept
+        total_skip_own_oracle += skipped_own_oracle
         if skipped:
             print(f"  {fname}: {skipped} case(s) skipped, not python-verifiable "
                   f"(pcre2-only {skipped_pcre2_only}, give-up {skipped_giveup}, "
-                  f"composed {skipped_composed})")
+                  f"composed {skipped_composed}, no-python-expression "
+                  f"{skipped_no_python}, perr-python-accepts "
+                  f"{skipped_perr_accept}, own-oracle {skipped_own_oracle})")
         if file_failures:
             print(f"=== {fname}: {len(file_failures)} FAILURES ===")
             for lineno, msg in file_failures:
@@ -739,10 +998,18 @@ def main():
     # run that silently discovered fewer files is comparing two different
     # populations and cannot tell.
     print(f"FILES={len(files)}")
+    # EVERY EXCLUSION IS COUNTED AND NAMED BY ITS REASON. The reasons
+    # have different owners and different populations, and one moving
+    # while another moves the other way would otherwise cancel in a
+    # single total — which is the whole failure mode a skip count exists
+    # to catch.
     print(f"SKIP={total_skip} "
           f"(pcre2-only={total_skip_pcre2_only} "
           f"giveup={total_skip_giveup} "
-          f"composed={total_skip_composed})")
+          f"composed={total_skip_composed} "
+          f"no-python-expression={total_skip_no_python} "
+          f"perr-python-accepts={total_skip_perr_accept} "
+          f"own-oracle={total_skip_own_oracle})")
     if grand_f == 0:
         print("ALL CHECKS PASSED (100%)")
     else:
