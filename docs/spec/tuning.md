@@ -934,6 +934,19 @@ x4.60); where the collapsed language is nullable it was a 1.2-9.9x LOSS
 cannot). Nullability is what separates the two populations, and it is decided
 before any machine is built (`pcrec_minw(root) == 0`, `src/opt/mrl.c`).
 
+**A NAMED RESIDUAL, so a reader does not mistake this predicate for the whole
+question** (`docs/dev/decisions.md` D77 — build under measurement). Nullability
+is not the only reason a rescue can fail to pay. A WHOLE-SUBJECT-anchored form
+(`(?:P)\z`) whose plain form is DFA-selected is rescued only in the ANCHORED
+regime, so its collapsed prefilter can dismiss but is never reached by an
+unanchored search: pcrec-bench measured four such cells (`cls-upto-16384`,
+`cls-lazy-16384`, `nest2-64`, `nest3-16`, `\z` forms only) as FLAT, costing
++376…+4,560 bytes of `.so` for no movement in either direction. Two of those
+four are non-nullable and keep their rescue under the rule above; they are
+LEFT ALONE deliberately. **A measured FLAT is not a loss**, and a rung that
+buys nothing but bytes is revisited only if a LOSS appears — at which point the
+question is the anchored regime's reach, not this predicate.
+
 **THERE IS NO STATE-COUNT KNEE.** An earlier design collapsed whenever the
 exact NFA exceeded a measured budget; it was reversed on a corpus regression
 (`docs/design/prefilter_count_independence.md` §10a) and

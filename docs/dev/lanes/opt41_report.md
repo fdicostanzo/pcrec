@@ -138,6 +138,8 @@ needs no row for the second value.
 | `docs/spec/tuning.md` §2.17 | a new "[OPT-4.1] A RUNG IS DECLINED WHEN THE COLLAPSED LANGUAGE IS NULLABLE" block: the rule, the per-rung outcome, both stamps, the flag interactions, the measured need |
 | `docs/spec/tuning.md` §2.17 | the `-fprefilter-collapse` bullet gains the non-nullability conjunct; the "TWO CONJUNCTS ARE CORRECTNESS" paragraph gains the third, overridable one |
 | `docs/spec/tuning.md` §2.17 | the `_LANG_WHY` value table gains `"nullable collapsed language"` |
+| `docs/spec/tuning.md` §2.17 | **the NAMED RESIDUAL** (manager's ruling on §9 item 1): nullability is not the only reason a rescue can fail to pay — the four whole-subject-only cells the bench measured FLAT are named, two of them non-nullable and deliberately left alone, with "a measured flat is not a loss" stated so the bench can cite it |
+| `docs/spec/registry.md` line 203 | PENDING PHASE 2 — the stale `axis` value list, re-derived from a live `--list-axes` (§8 item 9) |
 | `docs/spec/limits.md` §3.3 | the retry does not apply where the collapsed language is nullable; the "nothing that compiles today stops compiling" statement |
 | `docs/spec/match_api.md` §6.3 | the `RX_ENGINE_SEL` table gains `"declined-nullable"`; "THE LAST THREE" becomes FOUR; a paragraph on why it is not the same outcome as `"overflowed-dfa"` |
 
@@ -279,7 +281,15 @@ bench does not measure for those cells, so it costs .so bytes for nothing. That
 is a DIFFERENT question from nullability — the filter there can dismiss, it
 just never runs in the regime the bench times — and it has no measured loss
 attached, so under D77 it waits for one rather than getting a second predicate
-here.
+here. **RULED a NAMED RESIDUAL** (manager, 2026-08-30) and landed as one in
+`docs/spec/tuning.md` §2.17, so the bench can cite it rather than re-deriving
+it from this report.
+
+**THE MANAGER ACCEPTED BOTH CORRECTIONS AND IS CORRECTING I-21 WITH THE
+BENCH** (2026-08-30): the two `nest*` whole cells keep their rescue AND their
+bytes, and only the nullable `cls-*` cells decline. So the AFTER measurement
+should expect movement on FOUR forms, not six — worth stating because a
+prediction the bench cannot falsify is not a prediction.
 
 **HOW THE PREDICTIONS ARE CONFIRMED IN PHASE 2:** compile each of the eleven
 with `build/pcrec --features all -p rx -o -` (plain and, where listed, wrapped
@@ -344,16 +354,49 @@ macros together.
    are to be filled from the canonical runs.
 8. The eleven bench points compiled and their stamps checked against §6.
 9. `--list-axes | grep engine-route` to confirm the new row, and
-   `docs/spec/registry.md` §203's stale `axis` value list (it names 19 values
-   and omits `engine-route`, `prefilter-lang` and the rest — the bench flagged
-   the count as stale in O-10 item 8) re-derived from a live dump. **NOT DONE
-   in Phase 1** because it needs a run; flagged rather than guessed.
+   `docs/spec/registry.md` line 203's stale `axis` value list (it names 19
+   values and omits `engine-route`, `prefilter-lang` and the rest — the bench
+   flagged the count as stale in O-10 item 8) re-derived from a live dump and
+   FIXED in this row's spec pass. **NOT DONE in Phase 1** because it needs a
+   run; flagged rather than guessed. **TAKEN BY THIS LANE** (manager,
+   2026-08-30).
+10. **THE D77 TRIGGER NUMBER** (manager, 2026-08-30, answering §9 item 2):
+   count the corpus patterns whose EXACT prefilter language is nullable — i.e.
+   hybrid artifacts with `pcrec_minw(root) == 0` — and record it here. No code
+   change this row; the number is what a future row would be chartered on.
+   Method: sweep every `pattern` line under `tests/`, compile at the default,
+   keep the artifacts stamping `RX_VM_PREFILTER "hybrid"`, and split them on a
+   nullability oracle **DERIVED SEPARATELY FROM `pcrec_minw`** — counting with
+   the predicate under test would make the population agree with any defect in
+   it (learnings §3). The oracle is **python3 `re`**: `re.compile(pat).match("")`
+   IS nullability, external to pcrec entirely, and the corpus's own default
+   tier already uses it. It is PARTIAL (python refuses possessive quantifiers,
+   atomic groups and subroutine calls), so the report must carry the COVERAGE
+   as well as the count — an oracle that silently skipped a third of the
+   population would be a number nobody can read.
 
-## 9. Open questions for the manager
+   `RX_DFA_PREFILTER "none"` (§7's second derivation) is a useful STRUCTURAL
+   cross-check beside it but is NOT the oracle, and the difference is worth
+   stating rather than discovering: `unanch_start` selects `DFA_PF_NONE` on
+   `!cand.usable` as well as on `start_acc`, so it is a strict SUPERSET of
+   nullable — a pattern beginning with `.` has an unusable candidate set and
+   stamps `"none"` while being perfectly non-nullable. Report both counts and
+   every disagreement, with the disagreements NAMED rather than summed.
+
+## 9. Open questions — ANSWERED (manager, 2026-08-30)
+
+All three were ruled the same day this report was filed; the rulings are
+recorded inline below, against the question that asked them, rather than
+replacing it — the question is what makes the ruling readable.
 
 1. **The two `nest*` whole forms** (§6 rows 10-11) keep their rescue under this
    predicate and buy nothing measurable in the bench's regimes. Worth an
    [OPT-4.2]-shaped row, or left as a named residual under D77?
+
+   **RULED: NAMED RESIDUAL under D77, no [OPT-4.2].** A measured FLAT is not a
+   loss, and a rescue that buys nothing but bytes is revisited only if a loss
+   appears. The residual sentence is LANDED in `docs/spec/tuning.md` §2.17 —
+   in the spec rather than only here, so pcrec-bench can cite it.
 2. **A nullable EXACT prefilter is equally useless**, by exactly the argument
    in §1 — a nullable language's filter can never dismiss, whether or not it
    was collapsed. This row deliberately does not touch the default exact
@@ -362,9 +405,20 @@ macros together.
    and D77 says wait for the measurement. The population is countable in Phase
    2 (`pcrec_minw(root) == 0` over the corpus's hybrids) and I can report it as
    the number that would trigger the row.
+
+   **RULED: NO code change on the exact prefilter this row, but COUNT THE
+   POPULATION in Phase 2 and record the number here** — it is the D77 trigger
+   for a future row. Carried as §8 item 10, with the independent-oracle
+   requirement stated there rather than left to the sweep's author.
 3. **The size rung's decline stamps `RX_ENGINE_SEL "selected"`** — unchanged
    from what that rung already does when it collapses (the bench's finding
    8(b)), so the decline there is visible only as `RX_VM_PREFILTER "none"`.
    Making it a route value would mean reordering the ESEL ladder past
    `!dfa_disabled`, which changes what `"selected"` means for the size rung
    generally. Left alone; flagged.
+
+   **RULED: LEAVE IT — and `[LIM-1]` OWNS THE DEFECT** (the bench's I-19 item
+   3 folded it in already). Recorded here so nobody counts it twice: the size
+   rung stamping `"selected"` is not an [OPT-4.1] residual and must not be
+   re-opened as one. This row's only interaction with it is that a DECLINED
+   size rung is likewise `"selected"`, visible as `RX_VM_PREFILTER "none"`.
