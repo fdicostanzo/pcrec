@@ -18625,3 +18625,11 @@ every rung, no count crossover. I-21 written. Earlier in this part:
 [LIM-1]); [DD-11] row updated to battery-proven (its .5/.6 wait on the
 exact one-byte-lookbehind DFA lowering — an engine item nothing
 schedules).
+
+**15:3x — FRANK'S PERF HOLD:** "hold on performance tests until further
+notice. i need to run some stuff on the linux box." No measurement
+windows (ours or the bench's [B22]/bounded@0.2) until he lifts it;
+[OPT-5]/[OPT-A] STEP 0s were not yet scheduled and stay unscheduled.
+Correctness runs continue (battery 4's mech tail, w11f stage B, opt41
+Phase 2 — stamps and counts, nothing timed); K32's load cell may read
+red under his workload — diagnosed solo as always. pcrecdev2 told.
