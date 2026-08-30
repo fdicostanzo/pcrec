@@ -18186,3 +18186,46 @@ main while mech runs (its detectors may execute main's tests/ scripts;
 rule 8). After mech: merge, `make san` again in full (~46 min), then the
 solo codegen + cli groups, then the bench's window (ETA sent to
 pcrecdev2: ~04:00-04:15).
+
+**[DD-13b.W1] deliverable 1 + the r45 panel (~02:0x-02:4x).** w1 delivered
+`w1_impl.md` (bf843a7, 1,215 lines; then 9506e8d folding Q-W3 + three
+corrections, one — format_design §2.7's stale "abi 11" — beyond the
+approved two, flagged and accepted). Three departures from the format
+note, each anchored in code: the abi is 12 not 11; the definition's
+WRAPPER takes an assigned number (the textual control's offset becomes
+zero); provenance is NOT a node field (PARSE-1). Rulings I made: Q-W3
+(the [DD-11] table is W1's LISTING interface); `--list-source` = TSV per
+table_contract.md, one row per block, `kind` = declaration name,
+sectionless for W1, AS-WRITTEN, fields rxt-escaped (w1 found three
+corpus blocks whose pattern carries a literal TAB — the thing under test
+— so raw emission would split exactly those rows: S-C9); the SEAM — run.sh
+gains NO head arms, the body boundary is the `line` column of the first
+`pattern` row, and the case arms get the `have_block` guard the directive
+arms already have (w1 measured the corpus: 0 case lines precede a
+`pattern` line, over 179/3,265/26,691 — a THIRD independent derivation of
+the format note's census). Parked for Frank: Q-W1 (adopt the wrapper's
+number; r45sem's correction: S9b must say the wrapper consumes a slot,
+first delivered group at ngroups+2) and Q-W2 (refuse `(?R)`/`(?0)`/
+`(?00)`/`\g<0>` inside a bound definition for W1 — "the ruling is
+missing, not the meaning").
+
+**Panel r45** (docs/dev/reviews/2026-08-30-r45-w1-impl.md, c324a06):
+r45sem 4 BLOCKERS — a delivering call is capture-transparent AND its
+slots are restored on return, so §2.8 delivers nothing; the re-basing
+walk corrupts caller-scope `(?&^.w)` references; `--emit-composed`
+re-introduces by-name binding; `nnames`/`groups[]` breaks match_api §6's
+own lookup — plus 5 must-fix, 6 should; verdict "the spine is right, four
+things before code". r45chk 1 BLOCKER (C0 is empty-vs-empty and the
+format note's S-C7 was silently replaced) + 6 must-fix (W-2/W-5/W-7
+compare the composer to itself; the oracle control floors only the branch
+where it declines to run; `nnames` asserted nowhere; the FILEPIN applied
+per step not per abi). r45gram: 2 seam blockers (resolved by the rulings
+above), citation audit 48/50 with two load-bearing misses. All accepted;
+B4 ruled (primary rows a genuine prefix + `nentries`), F10 ruled (the
+textual control RE-DERIVES the closure). REVISION 2 chartered on lane w1
+(docs, under the HOLD), then a focused re-check before [DD-13b.W1.1].
+w1's one-line nnames find (a cited verification that still reproduces
+after its reason changed: gated ≠ absent) became admin1's Task C — a
+clean sweep of docs/spec + lib/pcrec.h (7987656) and a learnings §3
+paragraph. admin1's [REG-SV] revision 33588a4 (the emitter-source leg
+for both macros) accepted; merge after the post-battery verification.
