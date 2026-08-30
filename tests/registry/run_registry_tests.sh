@@ -340,7 +340,11 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [REG-SV] 73 -> 75 -> 79 (2026-08-30, PREDICTED both times — read from a
+# [REG-SV] 73 -> 75 -> 79 -> 83 ([OPT-4.1] 2026-08-30: the four RX_ENGINE_SEL
+# value-set legs, MEASURED 83/0 by the lane and by battery 5 under san —
+# the lane updated the check but not THIS guard, which fired exactly as
+# designed; the manager missed it in make test's red too, reading only
+# failures-by-file. 73 -> 75 -> 79 (2026-08-30, PREDICTED both times — read from a
 # run before trusting it, this guard's own standing rule):
 #
 # 73 -> 75: `RX_UNROLL_K_WHY` gained its own check_value_set pair in
@@ -405,9 +409,9 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 79 ]; then
+if [ "$axesn" -ne 83 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 79." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 83." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else

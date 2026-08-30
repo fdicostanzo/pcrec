@@ -18776,3 +18776,22 @@ tabled §17.3); the compiler's one defect was the critic's. Merged
 on the result — the ONE battery covering both of today's post-battery-4
 merges (w11f, opt41). Pin moves to the battery's commit on green (the
 bench holds [B21]/[B22] for it); I-22 follows.
+
+**18:5x — battery 5's san abort diagnosed: the registry COVERAGE GUARD,
+firing correctly on a number two of us missed.** san rc 2 at its 4th
+script (0 sanitizer report lines — infrastructural): run_registry_tests.sh
+exits 1 because axes_registry_check now runs 83 checks and the WRAPPER's
+guard still expected 79 — opt41 added the four RX_ENGINE_SEL legs and
+updated the check, but its Phase 2 list (my brief) never ran `make
+test-registry`, so the guard's second site went unexercised until the
+battery. NOT san-specific: the same guard line sits in battery 5's
+test.log (line 2164) — **make test's red had TWO causes and I attributed
+it to counterk alone; the failures-by-file rule reads corpus CASES, and
+a wrapper's guard is a CHECK-side red the rule does not cover — read
+the guard grep too** (battery_v4's own GUARD count would have said 1).
+Fixed: guard 79 → 83 with the history comment carrying the lesson
+(one line + comment; no main-tree registry script executing; mech runs
+in /tmp copies — battery-3 precedent). VERDICT PLAN: after mech, solo
+`PROCS=4 make test-registry` on the fix (expect rc 0 / 83) and a full
+`make san` re-run (~102 min) on the fixed tree; battery 5 closes
+green-by-diagnosis only on those two.
