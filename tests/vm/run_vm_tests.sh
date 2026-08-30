@@ -601,9 +601,47 @@ if build sel1auto "$SEL1_PAT" --features all --engine=auto; then
     grep -q '^#define RX_ENGINE_WHY "dfa overflowed: >32000 states' "$WORKDIR/sel1auto/gen.c" \
         && ok "[SEL-1] RX_ENGINE_WHY names the cap that overflowed (>32000 states)" \
         || bad "[SEL-1] RX_ENGINE_WHY does not name the overflowed cap: $(grep '^#define RX_ENGINE_WHY' "$WORKDIR/sel1auto/gen.c")"
-    grep -q '^#define RX_VM_PREFILTER "none"$' "$WORKDIR/sel1auto/gen.c" \
-        && ok "[SEL-1] the auto-selected prefilter is DROPPED (RX_VM_PREFILTER \"none\") rather than rebuilding the same overflowing DFA" \
-        || bad "[SEL-1] RX_VM_PREFILTER is not \"none\" on the fallback artifact -- the retry re-attempted the same overflowing DFA as a prefilter"
+    # [OPT-4] 2026-08-29 — THE EXPECTATION MOVED AND THE CLAIM DID NOT.
+    # This row asserted `RX_VM_PREFILTER "none"`, and its REASON was "the retry
+    # must not re-attempt the same overflowing DFA". That reason is still
+    # exactly right; what changed is that the retry now has a DIFFERENT machine
+    # to try — the count-collapsed language, whose DFA is 319 states against
+    # the 32,000 cap — so it keeps a prefilter without re-attempting anything
+    # (docs/design/prefilter_count_independence.md §6; tuning.md §2.5).
+    #
+    # So the default row asserts the NEW outcome, and the original claim is
+    # preserved below through `-fno-prefilter-collapse`, which skips the rung
+    # and reproduces the drop exactly as before. Asserting only the new outcome
+    # would have deleted this row's [SEL-1] regression; asserting only the old
+    # one would have made the check a statement about a compiler that no longer
+    # exists.
+    grep -q '^#define RX_VM_PREFILTER "hybrid"$' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[OPT-4] the fallback KEEPS a prefilter (RX_VM_PREFILTER \"hybrid\") — a different, smaller machine, not the one that overflowed" \
+        || bad "[OPT-4] RX_VM_PREFILTER is not \"hybrid\" on the fallback artifact -- [OPT-4]'s collapse rung did not fire: $(grep '^#define RX_VM_PREFILTER' "$WORKDIR/sel1auto/gen.c")"
+    # AND THE TWO STAMPS THAT SAY IT WAS THE RUNG, not the knee. Different
+    # macros, different write sites, so this is a cross-check and not a
+    # restatement of the line above.
+    grep -q '^#define RX_VM_PREFILTER_LANG "count-collapsed"$' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[OPT-4] ...built from the count-collapsed language" \
+        || bad "[OPT-4] the fallback's prefilter is not count-collapsed: $(grep '^#define RX_VM_PREFILTER_LANG ' "$WORKDIR/sel1auto/gen.c")"
+    grep -q '^#define RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, ' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[OPT-4] ...and the reason names the RUNG rather than the state budget" \
+        || bad "[OPT-4] the fallback's LANG_WHY does not name the overflow retry: $(grep '^#define RX_VM_PREFILTER_LANG_WHY ' "$WORKDIR/sel1auto/gen.c")"
+    grep -q '^#define RX_ENGINE_SEL "collapsed-prefilter"$' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[OPT-4] RX_ENGINE_SEL buckets this compile as \"collapsed-prefilter\" — the route a consumer reads instead of parsing the prose" \
+        || bad "[OPT-4] RX_ENGINE_SEL is not \"collapsed-prefilter\": $(grep '^#define RX_ENGINE_SEL' "$WORKDIR/sel1auto/gen.c")"
+    # THE ORIGINAL CLAIM, PRESERVED: deny the axis and the drop is back, with
+    # the route still bucketed as an overflow rather than as a flag.
+    if build sel1deny "$SEL1_PAT" --features all --engine=auto -fno-prefilter-collapse; then
+        grep -q '^#define RX_VM_PREFILTER "none"$' "$WORKDIR/sel1deny/gen.c" \
+            && ok "[SEL-1] under -fno-prefilter-collapse the auto-selected prefilter is still DROPPED rather than rebuilt from the machine that overflowed" \
+            || bad "[SEL-1] with the collapse denied, RX_VM_PREFILTER is not \"none\" -- the retry re-attempted the same overflowing DFA as a prefilter"
+        grep -q '^#define RX_ENGINE_SEL "overflowed-dfa"$' "$WORKDIR/sel1deny/gen.c" \
+            && ok "[SEL-1] ...and RX_ENGINE_SEL buckets it as \"overflowed-dfa\"" \
+            || bad "[SEL-1] with the collapse denied, RX_ENGINE_SEL is not \"overflowed-dfa\": $(grep '^#define RX_ENGINE_SEL' "$WORKDIR/sel1deny/gen.c")"
+    else
+        bad "[SEL-1] the witness did not compile under -fno-prefilter-collapse (was: $(head -1 "$WORKDIR/sel1deny/err" 2>/dev/null))"
+    fi
 else
     bad "[SEL-1] '--engine=auto' on the witness pattern did not compile (was: $(head -1 "$WORKDIR/sel1auto/err" 2>/dev/null))"
 fi
@@ -623,7 +661,29 @@ sel1_check_refuse() {   # sel1_check_refuse <label> [pcrec args...]
     fi
 }
 sel1_check_refuse "--engine=dfa (force)" --engine=dfa
-sel1_check_refuse "--engine=vm -fprefilter (force)" --engine=vm -fprefilter
+# [OPT-4] 2026-08-29 — THE WITNESS MOVED, NOT THE EXPECTATION. `-fprefilter`
+# is still do-or-die and still refuses on a DFA-cap overflow; what changed is
+# that under `--engine=vm -fprefilter` this pattern NO LONGER OVERFLOWS — the
+# count-collapsed prefilter determinizes to 319 states against the 32,000 cap
+# — so the cell compiled and proved nothing. A cell whose subject stopped
+# reaching the hazard is VACUOUS and reads exactly like a pass.
+# `-fno-prefilter-collapse` restores the hazard by denying the axis, which is
+# the same device tests/codegen/run_prefilter_collapse.sh §7b and
+# tests/prefilter/run_prefilter_tests.sh use for the identical reason.
+# `--engine=dfa` above needs no such help: the DFA is the ENGINE there, where
+# a superset would be a miscompile, so the collapse never applies and the
+# exact machine overflows as it always did.
+sel1_check_refuse "--engine=vm -fprefilter (force)" --engine=vm -fprefilter -fno-prefilter-collapse
+# ANTI-VACUITY for the row above: without the deny flag the same invocation
+# must COMPILE. If it ever refuses again, that row has stopped depending on
+# `-fno-prefilter-collapse` and is measuring something else.
+if pcrec_run "$PCREC" -p rx --engine=vm -fprefilter --features all \
+        -o "$WORKDIR/sel1_force_ok.c" -- "$SEL1_PAT" \
+        >/dev/null 2>"$WORKDIR/sel1_force_ok.err"; then
+    ok "[OPT-4] --engine=vm -fprefilter WITHOUT the deny flag compiles — the refusal above is the deny flag's, not the pattern's"
+else
+    bad "[OPT-4] --engine=vm -fprefilter compiled nothing even with the collapse allowed ($(head -1 "$WORKDIR/sel1_force_ok.err")) — the rung has stopped firing, or the row above no longer isolates the flag"
+fi
 
 # ANSWER IDENTITY: the auto fallback artifact and a plain --engine=vm build
 # of the same pattern must agree -- on a subject that matches and on one that
