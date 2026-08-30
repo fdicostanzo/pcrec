@@ -731,3 +731,31 @@ those 26,680 cases would pass whether the collapse fires, does not fire, or
 fires where the bench measured it costing 1.2-9.9x. That it is green says the
 change is answer-preserving; it says nothing about whether the predicate is
 right, which is what §12.5's structural rows and the mech pair are for.
+
+### 12.11 The scoped answer-identity pair — **both axes OK, 0 mismatches**
+
+    -fno-prefilter-collapse (bit 19) | OK | keys_base=22114 keys_axis=22114
+        agree=22114 budget=0 refused=0 lost=0 gained=0 mismatches=0 | 176s
+    -fprefilter-collapse    (bit 20) | OK | keys_base=22114 keys_axis=22114
+        agree=22112 budget=2 refused=0 lost=0 gained=0 mismatches=0 | 181s
+    oracle cross-check: OK — both PC-4 runs 0-failure against live libpcre2
+    total wall 553s
+
+22,114 keys per axis, each key a case's span AND every capture slot. **Zero
+mismatches, zero lost, zero gained** in both directions — the acceptance floor
+this row owes.
+
+**THE `budget=2` IS NAMED RATHER THAN WAVED AT.** Both are
+`tests/base/d27_k23_ambiguous_decomposition.rxt:90` and `:98`, and they are
+RULING B'S OWN REVERSAL WITNESS: `docs/design/prefilter_count_independence.md`
+§10a records `(a{1,3}){65}` going from answering in 0.00 s to exhausting the
+step budget under a forced collapse, because a superset prefilter cannot supply
+the `prefilter-window` ceiling those cells depend on. `run_axes.sh` classifies a
+give-up on one side as `budget-bound`, "not an answer disagreement, never a
+failure", which is why the axis reads OK.
+
+**AND MY PREDICATE DOES NOT TOUCH THEM**, which is worth stating because it
+would be an easy thing to claim credit for: `(a{1,3}){65}` has `minw` 65, so it
+is NOT nullable, the decline never fires on it, and it is budget-bound under
+`-fprefilter-collapse` exactly as it was before this row. Those two cells are
+ruling B's territory, not [OPT-4.1]'s.
