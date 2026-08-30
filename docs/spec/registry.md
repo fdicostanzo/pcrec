@@ -183,10 +183,10 @@ another's, `cli/main.c:517-523`'s own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — 47 rows / 19 axes at abi 11
-(this moves with every axis landing — [OPT-4]'s pending merge is the
-next one — so it is stated as a live count rather than a number to
-trust), 12 columns, confirmed live this pass. Where the first three surfaces describe
+`build/pcrec --list-axes | grep -vc '^#'` — 54 rows / 21 axes at abi 12
+([OPT-4]'s merge, 2026-08-29, moved this from 47/19 at abi 11 — this
+number moves with every axis landing, so it is stated as a live count
+rather than a number to trust), 12 columns, confirmed live this pass. Where the first three surfaces describe
 SYNTAX pcrec accepts, this one describes the compiler's own TUNING
 machinery: for every axis where `src/gen/emit_dfa.c` or
 `src/opt`/`select_engine.c` chooses among two or more emitted
