@@ -18229,3 +18229,26 @@ after its reason changed: gated ≠ absent) became admin1's Task C — a
 clean sweep of docs/spec + lib/pcrec.h (7987656) and a learnings §3
 paragraph. admin1's [REG-SV] revision 33588a4 (the emitter-source leg
 for both macros) accepted; merge after the post-battery verification.
+
+**Focused re-check of revision 2 (02:2x-02:31; the earlier "~02:4x"
+labels in this part were ~30 min ahead of the clock — read `date`
+before labelling).** w1's revision 2 (b74f159, 1,496 lines) answered
+every finding with a mechanism: r45chk 13/13 CLOSED + one NEW must-fix
+(`tests/harness/verify_rxt.py` — C3's sole detector and C1's third leg —
+is run by NOTHING in `make test` and globs one directory level; wire it
+over a `find` list, pin its totals, derive C3's denominator from its own
+discovery); r45sem 13/14 CLOSED — B1's remedy was not implementable:
+`W` is per-REGION (`vm_publish_saves`) while "delivering" is per CALL
+SITE (D87 rule 5). RULED: a delivering call is forced to `CALL_SPLICE`
+(per-site save slots by construction; finite under activation ≤ 1) —
+the existing mechanism, no new knob; two more must-fixes on the
+index-coupled restore and the node-cached flag's unsound zero. Verdicts:
+**[DD-13b.W1.1]/[W1.2] CHARTERED on the hold's lift** (verify_rxt's
+wiring a condition on .1), .3 on Frank's Q-W1/Q-W2, .4 after a one-critic
+§2.8 re-check of revision 2.1. w1's own find in revision 2: the corpus's
+178-vs-179 is the known-fail file (3 blocks / 11 lines; 26,691 − 11 =
+26,680 = the pinned clean baseline) — C1 and C2/C3 now assert DIFFERENT
+denominators on purpose; revision 1 would have shipped 179 in both.
+Structural residual carried to Frank as the ratified Q7 trigger:
+absolute references and colliding names have no external oracle (W-8 is
+valid only on W-1's population; a D27 author shares the oracles).
