@@ -18278,3 +18278,18 @@ an S2c sentence) → revision 2.4, accepted on my own read. STATE: W1.1 +
 W1.2 chartered on the lift; W1.3 on Frank's Q-W1/Q-W2; W1.4 designed.
 Panel cost: three critics + two focused re-checks, ~1 h 15 wall,
 overlapping the battery entirely — zero box time.
+
+**BATTERY 3 DONE 03:22 (launched 01:22 on 4d12a81, code 0f5a98f):** make
+test RED for the three non-code reasons diagnosed above (fixes 4990b32);
+solo stages clear; san ABORTED at its 4th script (the [DD-11] driver's
+missing `$SANFLAGS` — fix merged 467c449); **mech CLEAN: 189 rows /
+unexpected 0 / undetected 6 (S150-S153, S160, S178 — the expected six) /
+unreached 0 / anomalies 0** at f5ad680 (mech ran on the working tree
+after the check fixes; the code is 0f5a98f throughout). Its own DONE line
+reads RED by arithmetic (TCHK=1, san rc=2). The verdict is BY DIAGNOSIS
+pending two re-runs on main: `make san` in full (launched 03:2x, ~46 min,
+this context's `mgr/san2.log`), then the solo codegen + cli groups on the
+fix commit. Mech's per-row trees under /tmp/pcrec-mech-sabotage.*/ are
+where its detectors run — so a main-tree test edit during mech is safe
+(lane/sanfix was merged during it on that evidence). Frank's remark at
+~01:5x remains the only human input since the reset.
