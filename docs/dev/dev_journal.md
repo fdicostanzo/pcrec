@@ -18308,3 +18308,12 @@ Bash is capped at 10 min — anything longer goes setsid+nohup with a
 PID file; and the PID is the process with sid==pid AND ppid==1,
 cwd-verified — my 6-s settle + `sid==pid` alone still caught a
 short-lived PID and made the death-watch fire falsely.
+
+**BATTERY 3 CLOSED GREEN-BY-DIAGNOSIS (05:17):** solo `PROCS=4 make
+test-codegen` 198 checks / 0 failed and `make test-cli` 287 cases / 0
+failed on the fix commit; with san 34/0/0 and mech 189/0/6/0/0 on the
+same code, every stage that measures the code is clean and every red
+was a check's own defect or a load artifact. THIS COMMIT IS THE PIN for
+the bench (abi 12; code 0f5a98f; the two check fixes 4990b32, the
+SANFLAGS fix 467c449). I-18 goes to the bench's inbox next, then
+"BATTERY 3 DONE" and its window.
