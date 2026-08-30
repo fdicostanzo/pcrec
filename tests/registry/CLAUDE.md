@@ -6,6 +6,228 @@ directory asserts that the description and the shipped parser actually agree.
 
 ## Files
 
+- **definitions_check.c** / **run_definitions_tests.sh** — [DD-11.1]'s
+  required checks (docs/design/definitions_table.md §3 items 1-2), now over
+  FIVE `DefKind`s: the STRUCTURAL check (every `DEFK_STR`/POSIX definition
+  parses under `--features all` and every `DEFK_BUILDER`/`DEFK_TEXTFN`
+  output is core-only, via `pcrec_ast_all_core`/`pcrec_ast_is_core`,
+  src/parse/definitions.c — `DEFK_TEXTFN` entries are smoke-tested once per
+  function with a hand-picked well-formed operand, [DD-11.3]'s job being
+  full sampling; `DEFK_BUILDER`/`DEFK_TEXTFN` entries also now require a
+  non-NULL `str` TEMPLATE, r43-second-round), a `DEFK_ROW` chain check
+  (`check_row_chain_entry`: resolves the target by `syntax`
+  (`pcrec_registry_row_by_syntax`), FAILS loudly on a dangling name, then
+  resolves the target's own applicable entry via `pcrec_def_resolve` and
+  structurally checks IT — today's one chain, `$`→`\Z`, resolves to
+  `DEFK_STR` and is checked exactly as any other), a static
+  WELL-FORMEDNESS sweep (every non-NULL `definitions` list ends in a
+  `DEF_ALWAYS` entry — `DEF_IDENTITY`'s own entries are checked to carry no
+  `str`/`builder`/`textfn` data), and the CONTAINMENT check (the tag
+  evaluator `pcrec_def_tag_applies` has exactly one caller in the tree, a
+  shell grep in the `.sh` plus the same fact asserted from inside the
+  built library in the `.c`) plus `table_contract.md` conformance for
+  `--list-definitions`' own TSV ([DD-11.2]'s gate: `table_check_truthfulness`
+  + a direct no-tab/no-newline field check). Two negative controls
+  (`\Z`/A_EOL, `\B`/A_NWORDB — both real, shipped kinds the full reduction
+  retires, §2) prove the structural predicate actually discriminates
+  rather than passing everything for free — `\Z`'s is now doubly proven,
+  since `$`'s `DEFK_ROW` chain resolves to `\Z`'s own row's REAL
+  substitution and the negative control still independently shows `\Z`
+  parsed bare is not core; the containment grep's bite and the structural
+  check's bite (a planted unclosed `\d` class, `"[0-9"`) were both verified
+  live by plant-rebuild-revert cycles, never committed.
+  **[DD-11.4] the recursion guard, un-parked** (2026-08-29):
+  `check_recursion_guard` plants two SYNTHETIC rows compiled only into
+  this test binary (never registry.c) and resolves them through the SAME
+  `pcrec_def_resolve` entry point every real row uses — a fake two-entry
+  `\w` (using `DEF_MULTILINE` as a mechanical stand-in for the real
+  `DEF_UCP` a second `\w` row will eventually use, since `DEF_UCP` has no
+  live evaluator path to force today) and a `\b`-shaped row whose text
+  embeds "\w" literally. Proves flag-off matches the real `\w` row's own
+  text (no fixture drift), flag-on picks the alternate entry, and an
+  INTERLEAVED resolve sequence across both synthetic rows under
+  alternating states reproduces all three answers independently —
+  `pcrec_def_resolve` carries no hidden state a future nested resolution
+  (DD-11.5) could trip over. Sabotage-validated live (corrupted the
+  fixture's real-\w text): fires exactly the two checks that depend on
+  it, leaves the untouched one green.
+  **NOW WIRED into run_registry_tests.sh's guarded chain** (graduated
+  from standalone, 2026-08-29, when [DD-11.3] below landed the standing
+  self-oracle this check was always a precursor to — its own population
+  needle guards against a deleted call, PC-4's own precedent). Landed so far: the class-escape family, `\b`/`\B`, `\R`, bare `\N`, the
+  possessive-suffix family, 7 of the 9 base-tier literal escapes (`\a \e
+  \f \n \r \t` and bare `\x`, via a new `DEFK_TEXTFN` `RegDef` kind for the
+  operand-parameterized ones), `\c`/`\o{}`/octal `\0`/`\N{U+}` (also
+  `DEFK_TEXTFN`, on their existing rows), and the 14-name POSIX class-name
+  family (`DEFK_STR`, one entry per name — a FINITE set, unlike the
+  `DEFK_TEXTFN` rows' unbounded operand space; byte ranges read directly
+  off `pcrec_cls_px_*`, cls_bits.inc, never guessed). A `DEF_IDENTITY`
+  `RegDef` kind (the row's own primitive form, an EXPLICIT entry per the
+  manager's ruling — never inferred from an absent one) has two users, both
+  on the new no-doorway `RK_BARE` kind (manager ruling, 2026-08-29,
+  `RK_QUANTSUFFIX`'s own precedent): `^` and the plain capturing group
+  `(...)`, which had **no `RegRow` at all** before this (confirmed by grep,
+  not a tag/kind gap — base grammar with no doorway; `$` got a row too, see
+  below). `^`'s non-multiline entry is `DEF_IDENTITY` (`A_BOL` genuinely is
+  core, `\A`'s alias); the capturing group's `(?n)`-scoped entry is
+  `DEFK_BUILDER` (`pcrec_def_build_identity`, `(?n)`'s existing no-op,
+  reused) falling through to `DEF_IDENTITY`. **`$`'s non-multiline entry
+  is deliberately NOT `DEF_IDENTITY`**: `sweep_definitions`'s
+  `DEF_IDENTITY` check (`check_str_entry(owner, r->syntax)`) FAILED on it,
+  proving `A_EOL` is not core under full reduction (it aliases `\Z`, which
+  itself reduces to `(?=\n?\z)`) — a correction to the original ruling's
+  assumption. Rather than restate `(?=\n?\z)` twice, `$`'s entry is a new
+  `DefKind`, `DEFK_ROW` (second manager ruling, r43-second-round: "an
+  alias row defines to the row it aliases, never to the alias's own
+  expansion"): `str` names `\Z`'s row by its `syntax`
+  (`pcrec_registry_row_by_syntax`, `family`'s own reference idiom
+  generalised past one `RegKind`), and `pcrec_def_resolve` WALKS THROUGH
+  it (depth-bounded against a mis-edited cycle) — `\Z`'s own row (which
+  had the IDENTICAL A_EOL-not-core problem, and previously had NO
+  `definitions` field at all despite already having a `RegRow`) now
+  carries the real substitution exactly once. Braced
+  `\x{...}` still has no row of its own, but shares the pre-existing bare-
+  `\x` row's `DEFK_TEXTFN` entry (one construct, two spellings, per the
+  same `RK_BARE` ruling: a definitions row a parse-time dispatch never
+  consults costs no lookup on the base path) — `parse.c`'s braced-form
+  diagnostic is unmoved. `RK_COUNT` bumped for `RK_BARE`; every
+  `RK_COUNT`-shaped guard below (row/family/built-status counts,
+  `registry_check.c`'s `kinds[]` arrays, `pcre2_check.c`'s `kind_name`,
+  `compliance_section.py`, `run_cli_tests.sh` case10's noroute set)
+  re-measured from a live run rather than computed by hand.
+- **definitions_oracle_gen.c / definitions_oracle_driver.c /
+  definitions_oracle_check.c / definitions_oracle_subjects.h /
+  run_definitions_oracle.sh** — [DD-11.3]'s OPTION-MATRIX SELF-ORACLE
+  (definitions_table.md §3 item 4, the manager's brief), the STANDING
+  CHECK definitions_check.c's structural check names as its own precursor
+  and out-of-scope claim: does the table's resolved definition (Pattern
+  B) actually MATCH the same strings as the row's own shipped construct
+  (Pattern A) — A==B, no external oracle needed — AND does Pattern A
+  agree with libpcre2 (A==C). `run_pc4.sh`'s exact shape one table over
+  (a cell generator, a per-cell pcrec-compile-and-run sweep, a comparator
+  that also drives libpcre2 directly), with the two-prefix-one-TU linking
+  `tests/possessify/possdiff_driver.c` established.
+
+  `definitions_oracle_gen.c` links `libpcrec.a` and walks every row with
+  `definitions` through the REAL `pcrec_def_resolve`, under a Ctx whose
+  option state is reached by PARSING a real seed pattern (`"(?m)a"` /
+  `"(?n)a"` / `"a"`) rather than by poking `Ctx.mods` directly — that
+  field is INCOMPLETE outside `src/parse/` by design (D62), so this file
+  cannot dereference it even if it wanted to, and parsing a real seed
+  additionally exercises the option-SETTING mechanism itself
+  (`mod_modifiers.c`), which hand-setting a field would have bypassed. It
+  emits `(id, Pattern A, Pattern B, description)` cells as TSV; three
+  populations were originally SKIPPED and NOTED rather than compared —
+  `PCREC_BUILT_NO` rows (`\R`: a real row with no producer yet, D65's own
+  classifier is the answer, never a guessed module-name list —
+  `PCREC_BUILT_NA` rows like `^`/the literal escapes are NOT skipped,
+  that status means "the question doesn't apply", not "cannot compile")
+  is the ONE population still skipped today. **The other two — `DEFK_
+  TEXTFN` rows and the 14-name POSIX family — JOINED THE SWEEP the same
+  day (r43-third-round follow-up, team-lead ruling), and the join is
+  where two real bugs surfaced.**
+
+  **The 14-name POSIX family** gained a per-entry `RegDef.operand` field
+  (registry.c's `posix_def[]` — the name itself, "alpha"/"digit"/...),
+  read DIRECTLY by `definitions_oracle_gen.c`'s `operand_cells()` —
+  bypassing `pcrec_def_resolve`'s first-applicable-wins walk entirely
+  (which, over an all-`DEF_ALWAYS` list, can only ever answer entry 1,
+  "alnum") rather than fixing it — so the 14 entries are 14 real
+  `[[:name:]]` cells now, not a first-wins skip; `--list-definitions`
+  reads the same field for its `definition` column (`[[:alpha:]] ≡
+  [A-Za-z]` per entry, replacing the row's one fixed `syntax` example).
+  Sabotage-validated live (`digit`'s `[0-9]` -> `[0-8]`, reverted): fires
+  exactly 2 of the new cells, the same shape `\d`'s own sabotage below
+  produces.
+
+  **The 5 `DEFK_TEXTFN` rows** (`\c`, bare `\x`, `\o{}`, octal/`\0`,
+  `\N{U+}`) join via a new `textfn_cells()`: Pattern B is the decoded
+  byte RE-SPELLED in a DIFFERENT escape family than the construct under
+  test (`\cA` -> `\x01`, `\o{101}` -> `\x41`, `\0`/`\012` -> `\x0a`; the
+  bare-`\x` row's own respelling is a printable LITERAL instead, since
+  hex-for-hex is no respelling at all), with the byte read off the
+  textfn's OWN output AST bitmap (`textfn_byte`, an `A_CLASS` with
+  exactly one bit set — never a second hex/octal/xor decode written
+  here). Three of the five rows (`\c`, `\o{}`, `\N{U+`) are UNBUILT: for
+  those, Pattern A in the cell is Pattern B repeated (a harmless
+  tautology, never a REFUSED-A) and the real spelling travels in a NEW
+  FIFTH TSV COLUMN, `oracle_a`, read by `definitions_oracle_check.c`'s
+  libpcre2 leg INSTEAD OF Pattern A for exactly those cells (`-` means
+  "use Pattern A as-is", every other cell's value).
+
+  **This is where the join found two real bugs, both fixed, both
+  sabotage-validated live, both reverted clean.** (1) `pcrec_def_text_cx`
+  (`\cX`, src/parse/definitions.c) XORed the RAW operand byte with 0x40
+  without uppercasing it first — measured directly against libpcre2
+  10.46: `\ca` decodes to CTRL-A (0x01), never `'a' xor 0x40` (0x21).
+  Fixed with `toupper()` first (`src/parse/mod_backrefs.c`'s own idiom —
+  this is the compiler's own internals, not emitted-artifact text, so
+  the `tolower()`-in-generated-code prohibition elsewhere in this tree
+  does not apply). Reverting the fix fires 9 of 101,244 A==C cells
+  across the three lowercase operands sampled. (2) A scanf gotcha in
+  `definitions_oracle_check.c`, exposed by the new respelling: a literal
+  whitespace character in a scanf FORMAT STRING matches any amount of
+  whitespace, including none, in the INPUT — so when the bare-`\x` row's
+  respelling produced a Pattern B that was a BARE SPACE (byte 0x20), the
+  format's own literal `\t` between TSV fields silently absorbed it and
+  misparsed everything after. Fixed by excluding 0x20 from the
+  literal-respelling branch (falls back to `\xHH`, never bare whitespace
+  on the wire).
+
+  **One structural boundary was found and flagged rather than silently
+  decided, DD-11.4's own DEF_MULTILINE-stand-in precedent:** `\N{U+dddd}`
+  only PARSES under PCRE2's UTF mode (measured: libpcre2 err 193 at
+  options=0), and this whole suite's oracle is PINNED at options=0
+  (docs/pcre2_options.md's own standing constraint) — so there is no way
+  to ask libpcre2 about this ONE row's real spelling at all, structurally
+  distinct from "unbuilt" (`\c`/`\o{}`'s real spelling DOES compile at
+  options=0; only their decoded byte disagreed, bug (1) above). For this
+  row alone `oracle_a` stays `-` (the tautology shape) with a NOTE
+  explaining why, never a silent uninformative "pass". Trigger to
+  revisit (team-lead ruling): once [DD-12]/[M5] (the UTF/encoding axis)
+  lands, this row's probe can move to UTF mode for the A==C leg
+  specifically.
+
+  Measured after the join: **354 cells, 101,244 A==B + 101,244 A==C
+  comparisons, 0 disagreements.** `DEFK_BUILDER` templates are INSTANTIATED over the
+  manager's body set (`a`, `(a)`, `[ab]`, `a|b`, `\d+`) by splitting the
+  template on its `X ≡ X` shape and substituting each half — generic
+  across both shipped templates except the possessive-suffix family's,
+  whose `<quant>` placeholder names a per-row concrete quantifier the
+  template alone cannot supply (derived instead from the row's own
+  `syntax`, stripping the one-byte canonical body and the trailing `+`);
+  every body is wrapped in `(?:...)` before a suffix attaches, since a
+  possessive suffix attaches to an ATOM and `a|b`/`\d+` are not one
+  (found live: an unwrapped `a|b*+` is a different construct, an
+  alternation with a quantified last branch, not a quantified body).
+
+  `run_definitions_oracle.sh` compiles both patterns per cell with
+  `--features all` (module-gated constructs on both sides — `\b`, the
+  possessive suffix, `(?m)`/`(?n)`, and Pattern B's own use of gated
+  core syntax like lookaround's `(?=...)`), links them with
+  `definitions_oracle_driver.c` under fixed prefixes `pa`/`pb`, and runs
+  the shared subject battery (`definitions_oracle_subjects.h`, PC-4's
+  `pc4_subjects.h` precedent: 256 single bytes + curated multis chosen
+  for THIS table's population — newline placement, word-boundary
+  context, short alternated/quantified runs). `definitions_oracle_
+  check.c` reads the driver's per-cell output for A==B (whole-match
+  verdict only, never the full capture vector — Pattern A and Pattern B
+  can legitimately have different capture SHAPES, e.g. `(a)` vs `(?:a)`,
+  and still be the same construct under D85's own definition) and drives
+  libpcre2 directly on Pattern A for A==C, PC-4's `pc4_check.c` shape.
+  A==B is NOT skippable (no external oracle needed); A==C alone SKIPS
+  loudly without libpcre2. Sabotage-validated live: `\d`'s definition
+  string changed from `[0-9]` to `[0-8]` fires exactly 2 of the A==B
+  cells (the byte `9` and the multi-subject containing it), reverted
+  clean. The `oracle_a` column (fifth TSV field, r43-third-round
+  follow-up): `-` means "use Pattern A as-is" (every DEFK_STR/
+  DEFK_BUILDER/DEF_IDENTITY/DEFK_ROW/POSIX/most-DEFK_TEXTFN cell); a real
+  pattern text overrides what `definitions_oracle_check.c` hands libpcre2
+  for the A==C leg ONLY, used today by the three UNBUILT DEFK_TEXTFN
+  rows whose Pattern A cannot itself be their real spelling. Measured:
+  354 cells, 101,244 A==B + 101,244 A==C comparisons, 0 disagreements
+  (see the paragraphs above for the two real bugs and the one structural
+  boundary this join found).
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output
@@ -150,7 +372,7 @@ directory asserts that the description and the shipped parser actually agree.
 1. **Well-formedness** — no two rows claim one byte, catch-all rows come last,
    each row's `syntax` example really contains its selector byte, and the
    status/module/feature/engines/diagnostic fields are mutually consistent.
-   Plus an EXACT row count (128 at [DD-14]'s close — the figure is pinned in registry_check.c and moves with every module that adds rows; it was 100 at Q2/SR-9; this file said 68 until
+   Plus an EXACT row count (138 at [DD-11]'s `RK_BARE` addition — the figure is pinned in registry_check.c and moves with every module that adds rows; it was 128 at [DD-14]'s close, 100 at Q2/SR-9; this file said 68 until
    2026-08-11, which is the drift an exact count is supposed to prevent
    happening to its own documentation) so rows cannot be deleted silently — the
    same "TABLE SHRANK" guard tests/reject/ carries. Note what R8/C4-10 measured

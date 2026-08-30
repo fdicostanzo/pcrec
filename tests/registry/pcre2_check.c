@@ -282,6 +282,10 @@ static const char *kind_name(RegKind k)
      * libpcre2 — this file's sweeps are per-DOORWAY and there is no doorway —
      * but the mapping must stay total, and `check_rows` iterates RK_COUNT. */
     case RK_QUANTSUFFIX:  return "quantsuffix";
+    /* [DD-11.1] the sixth kind, same shape: no doorway, no PC-3 sweep of
+     * its own, but `check_rows` iterates RK_COUNT and the mapping must
+     * stay total. */
+    case RK_BARE:         return "bare";
     default:              return "?";
     }
 }

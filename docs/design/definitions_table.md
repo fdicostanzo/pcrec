@@ -14,6 +14,51 @@ TAG rather than a stored callable; checks, citations and counts corrected
 throughout. Every FIX/RULED row is folded in below; §7 keeps only what is
 still open.
 
+**Revision 2** (r43-second-round, manager rulings on `[DD-11.3]`'s opening
+questions, 2026-08-29, lane `dd11b`): three findings and two new mechanisms.
+
+- **`^`, `$` and the plain capturing group needed a table row and had none**
+  (§1's own gap, closed): a new no-doorway `RegKind`, `RK_BARE`
+  (`RK_QUANTSUFFIX`'s own precedent — consulted by the dumps and by this
+  table's resolver, nothing on the live parse path), three rows.
+- **`\Z`'s own §1 verdict above ("primitive") is WRONG, found by the
+  structural check `$`'s new row triggered**: `\Z` lowers to the same
+  `A_EOL` kind `$`'s non-multiline form does, and `pcrec_ast_is_core`
+  (already shipped, §2) says `A_EOL` is not core — so `\Z` needs the same
+  real substitution `$` does (`(?=\n?\z)`), not an identity entry. `\A`'s
+  verdict is unaffected (`A_BOL` genuinely is core).
+- **A second manager ruling: an alias row DEFINES TO the row it aliases,
+  never to the alias's own expansion — one fact, one row.** `$`'s
+  non-multiline fact and `\Z`'s own fact are the identical string
+  `(?=\n?\z)`; writing it twice would be D24's "one construct, two homes"
+  shape one level over. New `DefKind` `DEFK_ROW`: `str` names the TARGET
+  row's `syntax` (`family`'s own reference-by-string idiom, generalised
+  past one `RegKind`); `pcrec_def_resolve` WALKS THROUGH it (depth-bounded
+  against a mis-edited cycle, DD-10/TS-4's standing position on unbounded
+  recursion over data this project does not fully control), so no caller
+  ever sees a `DEFK_ROW` entry itself. `$`'s `DEF_ALWAYS` entry chains to
+  `\Z`'s row, which now carries the real substitution exactly once.
+- **The `[DD-11.3]` fork (DEFK_BUILDER rows have no `str`, so no text
+  exists to build a self-oracle Pattern B from): ruled — the template
+  lives IN THE ROW, not in a test-only lookup.** `DEFK_BUILDER` gains the
+  SAME `str`-as-template convention `DEFK_TEXTFN` already has (one
+  placeholder, `X`, quantifier bounds spelled as in the construct):
+  `X<quant>+ ≡ (?>X<quant>)` for the possessive-suffix family,
+  `(?n)(X) ≡ (?:X)` for `(?n)`. `--list-definitions` prints the template
+  instead of the literal `<builder>` (the dump stops lying by omission).
+  `[DD-11.3]` INSTANTIATES the template over a small body set to produce
+  Pattern B and compares BEHAVIOUR (A==B through pcrec, A==C through
+  libpcre2) — no AST-structural-equality infrastructure (D77: no measured
+  need). The builder function stays the production mechanism; the
+  template is its stated contract, and a builder that drifts from it
+  shows up as an A≠B cell in `[DD-11.3]`, not as a silently-wrong dump
+  line.
+
+All landed in the same commit as `RK_BARE` (`bc64d17`, lane `dd11b`);
+verified: `tests/registry/definitions_check.c`'s sweep now covers `DEFK_ROW`
+(one entry, `$`→`\Z`, resolved and checked recursively) and both builders'
+templates (non-NULL, DEFK_TEXTFN's own precedent), 51/0.
+
 ## 1. Inventory — every option-dependent construct in the code today
 
 Read as: **construct** | **option-scope predicate** | **definition in core
@@ -26,7 +71,7 @@ syntax** | **code arm (file:line)** | **replacement or primitive, and why**.
 | `$` (no `(?m)`) | none | — it already IS `\Z`: one node kind, `A_EOL`, `multiline=false` | `src/parse/parse.c:901`; `src/parse/mod_assertions.c:76` builds the same kind for `\Z` | **already core** — same alias shape as `^`/`\A` |
 | `$` under `(?m)` | `cx->mods->multiline` true at the `$` | `(?=\n)\|\z` — this note's own paraphrase of `docs/dev/plan.md`'s [DD-11] row prose (Frank, thirty-fourth session), independently confirmed against libpcre2 (r43-sem: 0 disagreements over 6-8 subjects per zero-width position, incl. `""`/`"\n"`/`"\n\n"`) | `src/parse/parse.c:901`; `src/ir/nfa.c:539` reads the flag, picks `N_EOL`/`N_EOL_M` | **replacement**, shipped as a D62 field+fold |
 | `\A` | none | itself (`A_BOL`) | `src/parse/mod_assertions.c:75` | **primitive** (structural: no option turns `\A` into anything else) |
-| `\Z` | none | itself (`A_EOL`, multiline forced false regardless of scope — `mod_assertions.c:175`) | `src/parse/mod_assertions.c:76` | **primitive** |
+| `\Z` | none | ~~itself~~ **CORRECTED, r43-second-round**: `(?=\n?\z)` — `A_EOL` (multiline forced false regardless of scope — `mod_assertions.c:175`) is NOT core under full reduction (§2), the same finding that hit `$`'s non-multiline form one row up; the census's own "primitive" verdict below was wrong, found by the structural check `$`'s new row triggered | `src/parse/mod_assertions.c:76`; row `registry.c`'s `z_def` | **replacement** — the row `$`'s `DEF_ALWAYS` entry CHAINS to (`DEFK_ROW`), so the fact lives here exactly once |
 | `\z` | none | itself (`A_END`, its own kind, D62) | `src/ir/nfa.c` `case A_END` | **primitive** (structural — strictly stronger than `\Z`, own position set) |
 | `\b` / `\B` | none (unconditional) | `\b ≡ (?<=\w)(?!\w)\|(?<!\w)(?=\w)` — with `\w` itself a nested definition (D66/D85; §3 item 4) | `src/ir/nfa.c` `N_WORDB`/`N_NWORDB`; `src/ir/dfa.c` mechanism 4 | **replacement**, unconditional — two rows, each a one-entry list, predicate `always` |
 | `\G` | none | none — a runtime-value comparison (`pos == startpos`) | `src/ir/nfa.c` `N_GSTART` | **primitive**, permanently (D66) |
@@ -36,7 +81,8 @@ syntax** | **code arm (file:line)** | **replacement or primitive, and why**.
 | `(?U)` ungreedy | `cx->mods->ungreedy` | n/a — inverts the quantifier's OWN default greediness, not a substitution | `src/parse/parse.c:1112/1114` | **parameter**, excluded with `.`/`(?i)`/`(?x)` (r43 C5) |
 | class escapes: `\d \D \s \S \w \W \h \H \v \V \N` (12 rows) + POSIX class names (1 row-family, 14 names) | `always` today; UTF/UCP is the chartered SECOND row once `unicode-props` ships a producer | today's byte definitions — e.g. `\w`'s `pcrec_cls_word_esc`; `\N`'s row is ALREADY `{PORT_SET, ..., pcrec_cls_newline, ...}`, i.e. today's byte set is already derived from D64's ONE newline definition | `src/parse/registry.c:350-364` (`ESC_SET` rows); `\N` at `:388`; POSIX at `mod_classes.c`'s `pcrec_clsport_posix` | **replacement family**, RULED IN by Frank — `cls_bits.inc` becomes a DERIVED artifact (one derivation from the definition strings), PC-4's libpcre2 re-measurement the control |
 | `\R` any Unicode newline sequence | `always` | `(?>\r\n\|\n\|\x0b\|\f\|\r\|\x85)` — verified against libpcre2 (11/11 subjects agree, incl. `"\r\n"`, `"\r\r"`, empty) | row `registry.c:618` (`ESC_CLASS_INVALID`, module `misc`, currently `unbuilt`) | **replacement**, RULED IN by Frank — a real registry row today, UNBUILT; the definitions table can carry an unbuilt row's definition as data before any producer exists |
-| literal escapes with a RegRow today: `\cX`, `\o{101}` (octal via `\o`), `\N{U+0041}`, `\Q…\E` | `always` today; encoding (a code point > 0x7f standing for a byte SEQUENCE under `--encoding=utf8`) is the chartered second row once [DD-12]/[M5] ships | e.g. `\cX ≡ X xor 0x40`, `\N{U+41} ≡ \x41` | `registry.c` (`\c`, `\o`, `\N{U+`, `\Q`/`\E` rows) | **replacement family**, RULED IN by Frank |
+| literal escapes with a RegRow today: `\cX`, `\o{101}` (octal via `\o`), `\N{U+0041}` | `always` today; encoding (a code point > 0x7f standing for a byte SEQUENCE under `--encoding=utf8`) is the chartered second row once [DD-12]/[M5] ships | e.g. `\cX ≡ X xor 0x40`, `\N{U+41} ≡ \x41` | `registry.c` (`\c`, `\o`, `\N{U+` rows) | **replacement family**, RULED IN by Frank |
+| `\Q…\E` | n/a | n/a — a delimiter pair the LEXER strips before any construct is recognised; never itself a construct with a core-syntax equivalent | `src/parse/parse.c`'s quoting skip (siblings of `p_alt`, not children — PARSE-1's own note) | **excluded, LEXICAL** (manager ruling, 2026-08-29) — same shape as `(?x)` below, not a fourth `DefKind`; corrects the first pass's bundling of this construct into the literal-escape replacement family above, which the manager's `DEFK_TEXTFN` ruling superseded |
 | literal escapes with NO RegRow today: `\a \e \f \n \r \t`, bare `\x` (hex), octal / `\0` | `always` today; same future encoding predicate | `\a≡\x07`, `\e≡\x1b` (both verified against libpcre2, 3/3 subjects) etc. | `src/parse/parse.c:356-384` (`esc_char_value`'s switch) — BASE-TIER, decoded directly, no doorway, no row | **replacement family**, RULED IN by Frank, but ARCHITECTURALLY DISTINCT — see the note after this table |
 | NEWLINE (`\n`, dot's complement, `(?m)` boundary tests) | none today (LF hardwired, D64); FUTURE: which newline convention is active | the LF byte class, `pcrec_cls_newline` | `src/core/internal.h:2224`; consumed at `src/ir/dfa.c:147`, `src/gen/emit_dfa.c:1991-1998` | **the working precedent for D85's whole model** — one definition, many consumers, option axis unbuilt |
 | `.` under `(?s)`, `(?i)` caseless | `cx->mods->dotall` / `cx->mods->caseless` | class bitmap widened at atom-construction time | `src/parse/parse.c:880-890`; `src/core/fold.c` | **parameter**, not a replacement — same shape as caseless folding (D23) |
@@ -58,6 +104,32 @@ as shipped exact-alias identities; `\z`, `\G`, `\K` as structural primitives).
 3 parameters (`(?s)`/`(?i)` share a shape, `(?U)`, `(?x)`) + 1 generation
 axis (encoding) — 4 total, corrected from the first pass's "8 primitives"
 (r43 C6: parameters are not primitives).
+
+**Correction (manager ruling, 2026-08-29, applied by lane `dd11b`):** the
+literal-escape family's "5 rows with a RegRow home" above double-counted
+`\Q…\E` as two rows (`\Q`, `\E`) in that bucket; the manager's ruling
+excludes `\Q…\E` entirely, as LEXICAL rather than as a replacement (see §1's
+own row for it, above) — the same shape as `(?x)`, not a fourth `DefKind`.
+The family therefore has **3** rows with a RegRow home today (`\cX`, `\o{}`,
+`\N{U+}`), not 5, and the totals line's `28` becomes **26**. The `9 further
+items with no RegRow` bucket is unaffected (it never included `\Q…\E`,
+which already had a row). This does not reopen §7's remaining open item.
+
+**Second correction (r43-second-round, lane `dd11b`):** `\Z` was double-
+counted the OTHER way — filed as a primitive above, when the structural
+check `$`'s new `RK_BARE` row triggered proved `A_EOL` (`\Z`'s own kind) is
+not core under full reduction, the identical finding that hit `$`'s
+non-multiline form. `\Z` moves from the 5-primitive bucket to the
+replacement bucket (it already had a `RegRow`; what it lacked was a
+`definitions` entry, now `z_def`, `DEFK_STR`, `(?=\n?\z)` — the fact `$`'s
+`DEFK_ROW` entry chains to rather than restates). **Primitives: 4** (`\A`
+as a shipped exact-alias identity; `\z`, `\G`, `\K` as structural
+primitives) — the "5 primitives" line above and its "`\A`, `\Z`... exact-
+alias identities" phrasing are both superseded. Replacement-rows-with-a-
+RegRow-home: **27** (26 from the correction above, +1 for `\Z`). `^`, `$`
+and the plain capturing group also gained rows this pass (`RK_BARE`, not
+counted in either bucket above since they had none before — see Revision
+2's own note at the top of this file).
 
 **Architectural note on the 9 base-tier literal escapes with no RegRow.**
 D24's own founding text draws the registry's boundary at NON-base
@@ -410,8 +482,106 @@ subsection after `--list-axes`.
   the shipped lowering AND to libpcre2 (the co-equal legs). **Gate**: 0
   disagreements on both legs, reproducing `lookaround_design.md` §6's
   972-cell result as a standing check.
+  **BUILT 2026-08-29 (lane dd11b, `run_pc4.sh`'s own shape one table
+  over):** `tests/registry/definitions_oracle_{gen,driver,check}.c` +
+  `run_definitions_oracle.sh`, wired into `run_registry_tests.sh`'s
+  guarded chain alongside the (now also wired) structural check. 50
+  cells, 14,300 A==B + 14,300 A==C comparisons, 0 disagreements.
+  Sabotage-validated live (`\d`'s `[0-9]` -> `[0-8]`, reverted): 2 of
+  14,300 A==B cells fire, naming the exact byte and the subject
+  containing it. Three populations SKIPPED and NOTED rather than
+  compared, none silently: `DEFK_TEXTFN` rows (no splice-ready text,
+  needs byte-valued AST introspection — a real follow-on, not folded
+  into this landing); `PCREC_BUILT_NO` rows (`\R`: a real row with no
+  producer yet — D65's own classifier decides, never a guessed module
+  list); rows with more than one `DEF_ALWAYS` entry (the 14-name POSIX
+  family sharing one row and one fixed `syntax` example — found live,
+  before the skip existed: `pcrec_def_resolve`'s answer for it is
+  entry 1, "alnum", not the "alpha" its `syntax` prints, so the naive
+  pairing compared two different constructs and called the mismatch a
+  finding). See `tests/registry/CLAUDE.md`'s own entry for the full
+  mechanism and scoping record.
+
+  **FOLLOW-UP CLOSED, same day (r43-third-round, team-lead ruling):
+  both skipped populations JOIN THE SWEEP, no new mechanism.** 354
+  cells now, 101,244 A==B + 101,244 A==C comparisons, 0 disagreements.
+  The 14-name POSIX family gained a per-entry `RegDef.operand` field
+  (the name itself), read DIRECTLY by a new `operand_cells()` — bypassing
+  `pcrec_def_resolve`'s first-wins walk entirely rather than fixing it —
+  turning the 14 entries into 14 real `[[:name:]]` cells; `--list-
+  definitions`' `definition` column reads the same field
+  (`[[:alpha:]] ≡ [A-Za-z]` per entry, replacing the row's fixed example).
+  The 5 `DEFK_TEXTFN` rows join via a new `textfn_cells()`: Pattern B is
+  the decoded byte RE-SPELLED in a different escape family (`\cA` ->
+  `\x01`, `\o{101}` -> `\x41`, `\0`/`\012` -> `\x0a`), the byte read off
+  the textfn's OWN output AST bitmap (never a second decode
+  implementation) — for the 3 UNBUILT rows (`\c`, `\o{}`, `\N{U+`) pcrec
+  cannot compile the real spelling, so Pattern A becomes Pattern B
+  repeated (a tautology, never a REFUSED-A) and the real spelling travels
+  in a new FIFTH TSV column, `oracle_a`, read by the libpcre2 leg only.
+
+  **TWO REAL BUGS FOUND AND FIXED by the sweep's first real run, before
+  either skip existed to hide them.** (1) `pcrec_def_text_cx` (`\cX`)
+  XORed the raw operand byte with 0x40 without uppercasing it first —
+  measured directly against libpcre2 10.46: `\ca` decodes to CTRL-A
+  (0x01), never `'a' xor 0x40` (0x21). Fixed by uppercasing first
+  (`toupper`, `<ctype.h>`, matching `src/parse/mod_backrefs.c`'s own
+  idiom — the compiler's own internals, not emitted-artifact text, so the
+  `tolower()`-in-generated-code prohibition elsewhere in this tree does
+  not apply). Sabotage-validated live (reverted the fix): fires 9 of
+  101,244 A==C cells across three lowercase operands, reverted clean.
+  (2) A test-harness bug the sweep's own respelling exposed: a bare
+  SPACE (0x20) as an entire Pattern-B field broke `sscanf`'s field
+  parsing in `definitions_oracle_check.c` — a literal whitespace
+  character in a scanf FORMAT STRING matches any amount of whitespace,
+  including none, in the INPUT, so the format's own literal `\t` between
+  fields silently absorbed a lone-space field. Fixed by excluding 0x20
+  from the bare-`\x` row's literal-respelling branch (falls back to
+  `\xHH`, which is never bare whitespace on the wire).
+
+  **ONE STRUCTURAL BOUNDARY FOUND, flagged rather than silently decided
+  (DD-11.4's DEF_MULTILINE stand-in's own precedent):** `\N{U+dddd}`
+  only PARSES under PCRE2's UTF mode (measured: libpcre2 err 193 at
+  options=0), and this project's whole oracle is PINNED at options=0
+  (docs/pcre2_options.md's own standing constraint). So there is no way
+  to ask libpcre2 about this ONE row's real spelling at all under this
+  suite's testing discipline — structurally distinct from "pcrec hasn't
+  shipped a producer yet" (`\c`/`\o{}`, whose real spelling DOES compile
+  at options=0; only their decoded byte disagreed, bug (1) above). For
+  this row alone, `oracle_a` stays `-` (the built-row tautology shape)
+  with a NOTE explaining why, rather than a silent, uninformative "pass".
+  **Trigger to revisit (team-lead ruling):** once [DD-12]/[M5] (the
+  UTF/encoding axis) lands, this row's probe can move to UTF mode for the
+  A==C leg specifically — the re-measurement event the options=0 pin
+  exists to gate, not something to do ahead of it.
 - **[DD-11.4] The recursion guard, un-parked** — §3 item 5: the synthetic
   second `\w` row behind a never-true flag. No longer blocked on Unicode.
+  **BUILT 2026-08-29 (lane dd11b):** `tests/registry/definitions_check.c`'s
+  `check_recursion_guard` — manager-ruled shape, a TEST-LOCAL fixture, never
+  production registry data. `DEF_UCP` (the tag a real second `\w` row would
+  eventually use) has NO real evaluator path at all today (internal.h:
+  "NO PRODUCER YET", `pcrec_def_tag_applies` answers it `false`
+  unconditionally) and cannot be forced true without editing that
+  exhaustive switch, which would be production code — so the fixture uses
+  `DEF_MULTILINE` (a tag with a REAL, live evaluator path) as a mechanical
+  stand-in for "the flag is hypothetically live", exactly the design
+  note's own words. Two synthetic rows, compiled only into the test
+  binary, injected through the SAME `pcrec_def_resolve` entry point every
+  real row goes through: a fake two-entry `\w` (flag off = the real `\w`
+  row's own shipped text, proving no drift; flag on = a fictional
+  alternate, proving the resolver isn't wedded to DEF_ALWAYS-only rows)
+  and a `\b`-shaped row (the real `\b` text, which embeds "\w" literally —
+  the table's own "nested definition" shape). Three checks: flag-off
+  matches production; flag-on picks the alternate; and an INTERLEAVED
+  sequence (resolve \w on, resolve \b off, resolve \w off again) reproduces
+  all three independent answers, proving `pcrec_def_resolve` is a pure
+  function of (row, Ctx state) with no hidden state a future nested
+  resolution (DD-11.5's job) could trip over. Sabotage-validated live
+  (corrupted the fixture's own real-\w text, `[A-Za-z0-9_]` ->
+  `[A-Za-z0-8_]`): fires exactly 2 of the 3 checks (the flag-off match and
+  the interleaved sequence, which both depend on the corrupted text; the
+  flag-on check is untouched by that corruption, correctly), reverted
+  clean. 54/0 (was 51/0).
 - **[DD-11.4b] The 9 base-tier literal escapes** — new minimal `RS_BASE`
   rows (the architectural note after §1's table) so `\a \e \f \n \r \t`,
   bare `\x`, octal/`\0` have a `RegRow` to attach `definitions` to.

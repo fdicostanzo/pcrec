@@ -343,7 +343,15 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
 
 /* ---- escapes ---- */
 
-static int hexval(int c)
+/* [DD-11.3-prep] exported (was `static hexval`) so the DEFK_TEXTFN definition
+ * for bare `\x` (src/parse/definitions.c's `pcrec_def_text_hex`) shares the
+ * SAME per-digit decode this function's own two call sites below use — the
+ * manager's "one decode site" ruling applied to the one digit-to-value
+ * mapping that carries real semantic content (which byte a hex DIGIT means);
+ * accumulating digits into a value (`v = v*16 + d`) is generic place-value
+ * arithmetic with nothing PCRE2-specific to drift, so it is not duplicated
+ * through a second exported helper. */
+int pcrec_hexval(int c)
 {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -371,8 +379,8 @@ static int esc_char_value(Ctx *cx, size_t epos)
         if (peekc(cx) == '{')
             ctx_fail(cx, epos, "\\x{...} requires module 'unicode-props'");
         int v = 0, ndig = 0;
-        while (ndig < 2 && hexval(peekc(cx)) >= 0) {
-            v = v * 16 + hexval(nextc(cx));
+        while (ndig < 2 && pcrec_hexval(peekc(cx)) >= 0) {
+            v = v * 16 + pcrec_hexval(nextc(cx));
             ndig++;
         }
         if (ndig == 0) /* PCRE2 error 178 (R1 review S-M2) */

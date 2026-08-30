@@ -120,7 +120,7 @@ const char *const PCREC_DEFAULT_FEATURES = "std1";
  * a future module owned quant-suffix rows alone. No `-Wswitch` guards this;
  * `tests/registry/registry_check.c`'s `check_kind_coverage` reads the dump. */
 static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
-                                 RK_QUANTSUFFIX };
+                                 RK_QUANTSUFFIX, RK_BARE };
 
 /* The one name->bits lookup in this file (a spec's explicit list and a
  * named set's expansion both go through it, so there is no second copy of

@@ -79,6 +79,10 @@ static const char *kind_name(RegKind k)
     /* [M6.4.2] the fifth kind, and the one that is NOT a doorway. This name is
      * a frozen column value in `--list-syntax`'s TSV: consumers key on it. */
     case RK_QUANTSUFFIX:  return "quant-suffix";
+    /* [DD-11.1] the sixth kind, ALSO not a doorway — RK_QUANTSUFFIX's own
+     * precedent, a second time (internal.h's comment on RK_BARE has the
+     * full ruling). Frozen column value, same as above. */
+    case RK_BARE:         return "bare";
     default:              return "?";
     }
 }
@@ -98,6 +102,10 @@ static const char *doorway_name(RegKind k)
      * the base tier a lookup on every quantifier. The word says so rather than
      * naming a place that does not exist. */
     case RK_QUANTSUFFIX:  return "a quantifier suffix (no doorway)";
+    /* [DD-11.1] `^`/`$`/plain `(` are parsed directly in `p_atom`/
+     * `p_group_body` (parse.c) — base grammar, no doorway, same shape as
+     * the possessive suffix above. */
+    case RK_BARE:         return "base grammar (no doorway)";
     default:              return "?";
     }
 }
@@ -162,7 +170,7 @@ static void put_expect(StrBuf *sb, const RegRow *r)
  * that iterated `RK_COUNT` over registry.c would share a source with the thing
  * it checks, which is this project's signature check-design failure. */
 static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
-                                     RK_QUANTSUFFIX };
+                                     RK_QUANTSUFFIX, RK_BARE };
 
 char *pcrec_syntax_tsv(unsigned flavours)
 {
@@ -254,6 +262,126 @@ char *pcrec_syntax_tsv(unsigned flavours)
              * NAME precisely so an appended column costs them nothing. */
             put_str(&sb, r->family);
             sb_putc(&sb, '\n');
+        }
+    }
+    return sb_take(&sb);
+}
+
+/* `--list-definitions` — [DD-11.2], the FIFTH registry surface (D85,
+ * docs/design/definitions_table.md §5). Walks the SAME `RegRow`s
+ * `pcrec_syntax_tsv` above prints, through the SAME `kind_name`/
+ * `put_selector`/`put_str` helpers, so `kind`/`selector`/`syntax` are
+ * guaranteed to join the two dumps rather than merely happening to agree —
+ * "the same three columns... so a reader can join the two dumps" is the
+ * note's own requirement, discharged by construction rather than by two
+ * independent renderings that could drift.
+ *
+ * A row with `definitions == NULL` contributes NOTHING — this dump is
+ * per-DEFINITION, not per-row, the same way `pcrec_axes_tsv` is per-
+ * CANDIDATE rather than per-axis. `order` is 1-based and DENSE per row (an
+ * N-entry array prints 1..N), read directly off the array position rather
+ * than carried as a second field on `RegDef` — one more instance of "one
+ * derivation" (the array's own order IS the fact).
+ *
+ * `predicate` is the tag's OWN NAME (`pcrec_def_tag_name`, definitions.c) —
+ * never hand-authored prose, per the r43 ruling folded into the design note:
+ * the predicate column and a stored callable were two derivations of one
+ * fact, and the tag name is the one that survives.
+ *
+ * `definition` is the DEFK_STR/DEFK_TEXTFN/DEFK_BUILDER text verbatim (a
+ * core-syntax splice for the first, a human-readable TEMPLATE for the other
+ * two — never a live evaluation, the same "proves what the compiler
+ * THINKS" boundary `--list-axes`'s own header states, axes_dump.c), the
+ * row's OWN `syntax` for a DEF_IDENTITY entry, or `= <target syntax>` for a
+ * DEFK_ROW entry — a REFERENCE, never the target's own resolved text (D24's
+ * one-fact-one-row argument applied to this table: `$`'s non-multiline
+ * entry prints `= \Z`, not `(?=\n?\z)`, which is `\Z`'s OWN row's line to
+ * print). `DEFK_END` never reaches this loop (it terminates the walk, same
+ * convention `pcrec_def_resolve` uses in definitions.c).
+ *
+ * An entry carrying `operand` (r43-third-round follow-up, team-lead ruling
+ * 2026-08-29 — today's only user is the 14-name POSIX class family) prints
+ * `[[:<operand>:]] ≡ <definition text>` instead of the row's fixed `syntax`
+ * example: the row's own `syntax` field is a single FIXED example
+ * ("[[:alpha:]]") that does not vary per entry, so printing it 14 times
+ * over would repeat the same construct while the `definition` column
+ * changed underneath it — a misleading table, not a partial one. The
+ * `[[:%s:]]` wrapper is this ONE row's own construct shape, hand-written
+ * here rather than derived, on the same "no measured need to generalise a
+ * one-user mechanism" reasoning definitions_oracle_gen.c's own comment
+ * states for its twin.
+ *
+ * `applies` is `active` (a real substitution, including a DEFK_ROW chain —
+ * chaining IS substituting, just by reference) or `identity` (DEF_IDENTITY:
+ * the row restates its own primitive form, nothing to splice). */
+char *pcrec_definitions_tsv(unsigned flavours)
+{
+    StrBuf sb = {0};
+
+    sb_puts(&sb, "# pcrec definitions table (D85, docs/design/definitions_table.md). "
+                 "Empty field = none.\n"
+                 "# `kind`/`selector`/`syntax` are the SAME three columns "
+                 "--list-syntax prints for the owning row, so the two dumps "
+                 "join on them.\n"
+                 "# `order` is 1-based, dense per row (this row's Nth "
+                 "definitions-array entry).\n"
+                 "# `predicate` is the option-scope tag's OWN NAME (a closed, "
+                 "stable vocabulary a consumer may switch on), never "
+                 "hand-authored prose.\n"
+                 "# `definition` is the core-syntax TEXT for a string-kind "
+                 "entry, or the literal `<builder>` for an operand-taking "
+                 "one — never a live evaluation.\n"
+                 "# `applies` is `active` (this entry substitutes a "
+                 "different construct) or `identity` (restates the row's "
+                 "own primitive form).\n"
+                 "#kind\tselector\tsyntax\torder\tpredicate\tdefinition\tapplies\n");
+
+    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (!r->definitions) continue;
+            if (flavours && !(r->flavours & flavours)) continue;
+
+            int order = 0;
+            for (const RegDef *d = r->definitions; d->kind != DEFK_END; d++) {
+                order++;
+                sb_puts(&sb, kind_name(r->kind));      sb_putc(&sb, '\t');
+                put_selector(&sb, r->sel);              sb_putc(&sb, '\t');
+                put_str(&sb, r->syntax);                sb_putc(&sb, '\t');
+                sb_printf(&sb, "%d", order);            sb_putc(&sb, '\t');
+                sb_puts(&sb, pcrec_def_tag_name(d->tag)); sb_putc(&sb, '\t');
+                /* [DD-11.1]/[DD-11.4b]/[r43-second-round] five DefKinds
+                 * reach this dump now: DEFK_STR (the definition itself),
+                 * DEFK_TEXTFN and DEFK_BUILDER (`str` is a human-readable
+                 * TEMPLATE for both, never a splice-ready string —
+                 * definitions.c's/internal.h's own header on those blocks),
+                 * DEF_IDENTITY (the row's OWN `syntax` restated — there is
+                 * no substitution text because there is no substitution),
+                 * and DEFK_ROW (`= ` plus the TARGET row's `syntax` — a
+                 * reference the reader follows to that row's own line,
+                 * never the target's resolved text printed here a second
+                 * time). */
+                if (d->kind == DEF_IDENTITY)
+                    put_str(&sb, r->syntax);
+                else if (d->kind == DEFK_ROW) {
+                    sb_puts(&sb, "= ");
+                    put_str(&sb, d->str);
+                } else if (d->operand) {
+                    sb_printf(&sb, "[[:%s:]] \xe2\x89\xa1 %s",
+                              d->operand, d->str);
+                } else
+                    put_str(&sb, d->str);
+                sb_putc(&sb, '\t');
+                /* `applies` comes FROM THE KIND, never inferred (the
+                 * manager's identity ruling) — DEF_IDENTITY is the only
+                 * kind that restates the row's own primitive form; a
+                 * DEFK_ROW chain is still `active` (it substitutes, just by
+                 * reference rather than by inline text). */
+                sb_puts(&sb, d->kind == DEF_IDENTITY ? "identity" : "active");
+                sb_putc(&sb, '\n');
+            }
         }
     }
     return sb_take(&sb);
@@ -566,6 +694,11 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
      * so the switch stays exhaustive and so a future attempt to route here
      * says so at the compiler rather than falling into EXT_NOT_MINE. */
     case RK_QUANTSUFFIX: break;
+    /* [DD-11.1] same unreachable-by-construction shape: `doorway_route`
+     * recognises `\`, `(?`, `(*`, `[` and can never produce RK_BARE either
+     * — there is no doorway for `^`/`$`/plain `(` any more than there is
+     * for the possessive suffix. */
+    case RK_BARE: break;
     default: break;
     }
     return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "",
@@ -766,6 +899,10 @@ static const char *doorway_word(RegKind k)
      * opener, so they never reach a quant-suffix row and never print this;
      * it exists so the mapping is total. */
     case RK_QUANTSUFFIX:  return "quant-suffix";
+    /* [DD-11.1] same shape: --probe-ask/--explain never reach a RK_BARE
+     * row either (no doorway to scan for), so the mapping is total for the
+     * same reason. */
+    case RK_BARE:         return "bare";
     default:              return "?";
     }
 }
@@ -1383,7 +1520,17 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
              * where `--explain` on base syntax must exit 1 saying "no construct
              * matches" (cli case11). MEASURED as an 11-check `make test`
              * failure before this line existed. */
-            if (listed && r->kind == RK_QUANTSUFFIX && qlen != slen)
+            /* [DD-11.1] RK_BARE joins the same exemption and for the same
+             * reason: the plain capturing-group row's `syntax` needs a
+             * CARRIER atom to be an executable probe (`(a)`, not bare `(`),
+             * so a naive prefix match would let `--explain 'a'` list it —
+             * measured the identical way RK_QUANTSUFFIX's carrier was.
+             * `^`/`$` have no carrier (their `syntax` IS the whole
+             * construct), so this clause is a no-op for them, but the rule
+             * keys on the KIND, matching RK_QUANTSUFFIX's own discipline,
+             * not on a per-row carrier flag. */
+            if (listed && (r->kind == RK_QUANTSUFFIX || r->kind == RK_BARE)
+                && qlen != slen)
                 listed = false;
             bool candidate = q.routed && r->kind == q.d.kind &&
                              r->sel != REG_SEL_ANY && r->sel == q.d.sel;

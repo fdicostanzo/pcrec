@@ -128,6 +128,111 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (§2.4/§2.4a) and the FIRST-DECLARATION name rule (§3.4(c)) each keep one
   definition rather than growing a second copy across the module boundary.
 
+- **definitions.c** — [DD-11.1] `RegRow.definitions`'s ONE evaluator,
+  resolver, tag-namer and core-set structural predicate (D85,
+  docs/design/definitions_table.md). `pcrec_def_tag_applies` is the single
+  exhaustive no-default switch over `DefTag` (internal.h) — containment by
+  construction, checked by a grep in tests/registry/run_definitions_tests.sh
+  (assertions_design.md §8.4's precedent: this function must have exactly
+  one caller in the tree, `pcrec_def_resolve`, right below it in this same
+  file). `pcrec_ast_is_core`/`pcrec_ast_all_core` are the OTHER exhaustive
+  switch this file owns — over `AKind` rather than `DefTag` — answering
+  whether a node kind survives `docs/dev/plan.md`'s [DD-11] addendum (f)'s
+  full reduction; nothing on the compile path calls it, only
+  tests/registry/definitions_check.c's structural check, since wiring the
+  table into real AST construction is [DD-11.5], gated on M6.6's exact
+  one-byte-fixed-lookbehind lowering (definitions_table.md §4's DFA-erasure
+  hazard — read it before adding a call site here). The two DEFK_BUILDER
+  functions (`pcrec_def_build_atomic`, the possessive-suffix family's
+  shared `(?>...)` wrap; `pcrec_def_build_identity`, `(?n)`'s no-op) exist
+  for the same reason: today only the structural check invokes them.
+
+  **Two more `DefKind`s landed by manager ruling (2026-08-29), closing the
+  gaps the paragraph above used to name as open.** `DEF_IDENTITY` — the
+  row's own primitive form, an EXPLICIT entry (no `str`, no `builder`, no
+  `textfn`) never inferred from an absent one, per [DD-13]'s own
+  absence-as-discriminator lesson; `pcrec_def_resolve`'s fallthrough
+  (a list with no firing `DEF_ALWAYS` entry) is now an `assert`, not a
+  silent NULL. `DEFK_TEXTFN` — the general shape for "a binding
+  parameterized by TEXT AT THE OCCURRENCE" (`\cX`, bare `\x`, `\o{}`,
+  octal/`\0`, `\N{U+}`): `str` carries a human-readable TEMPLATE for the
+  dump (never spliced), and `textfn(operand, len, cx)` is the actual
+  definition — it calls the EXISTING decoder where one exists
+  (`pcrec_hexval`, parse.c, exported for exactly this — bare `\x`'s
+  per-digit value), or BECOMES the one decode site where none does yet
+  (`\c`/`\o`/`\N{U+}`, all module `misc`/`unicode-props`, UNBUILT — the
+  `\R` precedent: the table may carry an unbuilt row's definition as data).
+  POSIX class names are the one FINITE enumerable family and stayed
+  `DEFK_STR` — 14 entries on the one row, each a byte range read directly
+  off `pcrec_cls_px_*` (cls_bits.inc) via a throwaway scratch dump, never
+  guessed from POSIX folklore.
+
+  **A FIFTH `DefKind`, and a template convention extended to the fourth,
+  by a SECOND manager ruling (r43-second-round, 2026-08-29, `[DD-11.3]`'s
+  opening question).** `DEFK_ROW` — an entry that CHAINS to another row's
+  own resolution rather than restating a fact that row already carries
+  ("an alias row defines to the row it aliases, never to the alias's own
+  expansion"): `str` names the TARGET row's `syntax` (`family`'s own
+  reference-by-string idiom, `pcrec_registry_row_by_syntax` generalising
+  it past ONE `RegKind`), and `pcrec_def_resolve` WALKS THROUGH it —
+  depth-bounded (4), DD-10/TS-4's standing position on unbounded recursion
+  applied to data rather than to parse depth — so no caller ever sees a
+  `DEFK_ROW` entry itself; `--list-definitions` prints `= <target syntax>`
+  for it instead of resolving eagerly (D24's one-fact-one-row argument
+  applied to the DUMP too). `DEFK_BUILDER` gains the SAME `str`-as-template
+  convention `DEFK_TEXTFN` already has (one placeholder, `X`): the
+  possessive-suffix family's is `X<quant>+ ≡ (?>X<quant>)`, `(?n)`'s is
+  `(?n)(X) ≡ (?:X)` — `--list-definitions` stops printing the fixed
+  literal `<builder>`, and `[DD-11.3]`'s self-oracle instantiates the
+  template over a small body set rather than comparing ASTs directly (D77:
+  no measured need for that infrastructure). The builder function stays
+  the production mechanism; the template is its stated contract.
+
+  `RegRow.definitions` itself is populated in registry.c per
+  definitions_table.md §1's census — see that file's own row-by-row
+  citations for which rows carry which tag/string.
+
+  **`RK_BARE` (manager ruling, 2026-08-29) closed the gap the paragraph
+  above used to name as open.** `^`, `$` and the plain capturing group
+  `(...)` each needed a `DEF_IDENTITY`-bearing entry but had **no `RegRow`
+  at all** — confirmed by grep, base grammar with no doorway, unlike the
+  literal escapes. Rather than stretch an existing `RegKind`'s doorway
+  semantics, they got a NEW no-doorway `RegKind`, `RK_BARE`, on
+  `RK_QUANTSUFFIX`'s own precedent: consulted by the dumps and by this
+  file's definitions machinery, by nothing on the live parse path (`^`/`$`
+  still resolve in `p_atom`, the capturing group still in
+  `p_group_body` — no lookup added to either). `RK_COUNT` bumped; every
+  `RK_COUNT`-shaped guard in the tree re-measured from a live run rather
+  than computed by hand (see `tests/registry/CLAUDE.md`'s own entry and
+  `docs/spec/registry.md` §2/§9). Three rows, registry.c's `bare_rows[]`:
+  `^`'s `DEF_MULTILINE` entry substitutes `\A|(?<=\n)(?!\z)`, falling
+  through to `DEF_IDENTITY` (`A_BOL` genuinely is core, `\A`'s alias);
+  `$`'s `DEF_MULTILINE` entry substitutes `(?=\n)|\z`, falling through to
+  a `DEFK_ROW` entry — **not** `DEF_IDENTITY`: the structural check
+  (`tests/registry/definitions_check.c`'s `check_str_entry(owner,
+  r->syntax)` extension) proved `A_EOL` is not core under full reduction,
+  since it aliases `\Z`, which itself reduces to `(?=\n?\z)` — a
+  correction to the original ruling's assumption, reported to the manager
+  and folded in here rather than silently fixed. Rather than restate
+  `(?=\n?\z)` a second time, `$`'s entry CHAINS to `\Z`'s row (the second
+  manager ruling above): `\Z`'s row — which had the identical
+  A_EOL-not-core problem, and previously carried NO `definitions` field
+  at all despite already having a `RegRow` — now carries the real
+  substitution exactly once (`z_def`, right before `esc_rows[]`). The
+  plain capturing group's `DEF_NOCAP` entry is `DEFK_BUILDER`
+  (`pcrec_def_build_identity`, `(?n)`'s existing no-op builder, reused),
+  falling through to `DEF_IDENTITY` (an ordinary `A_CAP`).
+
+  The same ruling settled `\x{...}` (braced hex): a definitions row a
+  parse-time dispatch never consults costs no lookup on the base path
+  (this file's "no LOOKUP on the base path" rule, below, is about
+  dispatch — not about a table entry dispatch never reaches), so `\x{...}`
+  and bare `\xHH` are ONE construct with two spellings sharing ONE row —
+  the pre-existing bare-`\x` `RK_ESC`/`RS_BASE` row's `DEFK_TEXTFN`
+  template now names both forms, and `pcrec_def_text_hex` is the one
+  decode site for both. `parse.c`'s own braced-form diagnostic is
+  unmoved — still a base `\x` special case with no doorway (below).
+
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
   mod_verbs.c at MOD-0.4 — see its own entry below; declared in internal.h
@@ -1015,6 +1120,28 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   DUPNAMES decline) — the precise distinction a per-module summary always
   blurred, and the reason D65 ruled per-CONSTRUCT granularity.
 
+  **[DD-11.2] `pcrec_definitions_tsv` — `--list-definitions`, the FIFTH
+  registry surface (D85, docs/design/definitions_table.md §5).** Lives
+  here rather than in a new file, deliberately: it reuses `kind_name`/
+  `put_selector`/`put_str` DIRECTLY (private statics in this same TU), so
+  `kind`/`selector`/`syntax` cannot render differently from
+  `pcrec_syntax_tsv`'s own copy — the two dumps join on those columns by
+  construction, not by two independent renderings that happen to agree.
+  Walks the same `all_kinds` sweep, but PER `RegDef` ENTRY rather than
+  per row (a row with `definitions == NULL` contributes nothing); `order`
+  is the entry's own array position, never a stored field (`family`'s own
+  "one derivation" precedent). `predicate` reads `pcrec_def_tag_name`
+  (src/parse/definitions.c) — the tag's OWN name, never hand-authored
+  prose. `applies` prints `active` unconditionally today: every row the
+  table carries substitutes something, and `identity` (the row already IS
+  its own primitive form) is a reserved value with no row using it yet —
+  `^`/`$`/the `(?n)`-scoped capturing-group row each need it and are held
+  pending a `RegDef` field this design has not settled (see the lane's own
+  report to main, and registry.md §9's matching note). Takes `--flavour`
+  like `pcrec_syntax_tsv` (r43 K6): it walks the SAME rows, filtered
+  identically, so an unfiltered dump would print a definition for a
+  construct `--list-syntax --flavour=X` says does not exist.
+
 ## PARSE-1 — `p_alt` as a module callback (2026-08-11)
 
 Three defects made `p_alt` unusable as the callback D28/D29/D30 promise. All
@@ -1122,6 +1249,27 @@ Rules when touching it:
   covers itself with no test edit.
 - **`RS_MODULE` with no handler is a complete outcome**, not a stub: the
   construct is named, cleanly rejected and queryable.
+- **[DD-11.4b] `RS_BASE` in `RK_ESC` is a narrow, named exception to "only
+  non-base escapes get a row here"** (D24's own founding boundary, kept for
+  every OTHER base construct — plain characters, octal still have none):
+  `\a \e \f \n \r \t` plus, since the manager's `DEFK_TEXTFN` ruling, bare
+  `\x` (`ESC_BASE_D`, 7 rows total) exist PURELY to give `RegRow.definitions`
+  (D85) a home for a construct D24 always excluded. `esc_char_value`
+  (parse.c) still decodes all seven directly — no doorway, no lookup, the
+  row is NEVER consulted by the live dispatch (`pcrec_registry_find`/
+  `arbitrate` only run once `esc_char_value` has already declined a byte,
+  and it never declines these seven). `registry_check.c`'s
+  `check_table_to_parser` needed a new `RS_BASE` branch for `RK_ESC`
+  (`RK_GROUP`'s `(?:...)` row's own precedent, checked at BOTH atom and
+  class position since these seven can occur inside a class too) and its
+  `esc_atom_msg`/diagnostic-shape switch needed `RD_NONE` added to `RK_ESC`'s
+  legal set. Braced `\x{...}` stays OUT — it is unicode-props' UNBUILT
+  arbitrary-width form, and giving it a row would be a NEW doorway
+  (`\x{...}`'s own case in `esc_char_value` already refuses by name; see
+  the "Two 'requires module' diagnostics deliberately stay in parse.c"
+  bullet below, unchanged by this ruling). Do not add an EIGHTH base-tier
+  construct here casually — read definitions_table.md's architectural note
+  first.
 - **The `engines` column is design intent, not measurement.** Nothing consumes
   it — [M4.7a] deliberately did not build SR-8's lowering-time consultation
   ahead of a producer (zero producers, zero customers); a TRIPWIRE

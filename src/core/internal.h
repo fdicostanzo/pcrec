@@ -1887,6 +1887,23 @@ typedef enum {
      * from one of those arrays at all, since iterating RK_COUNT over
      * registry.c would share a source with what it checks. */
     RK_QUANTSUFFIX,
+    /* [DD-11.1] manager ruling, 2026-08-29: `RK_QUANTSUFFIX`'s own precedent
+     * ("NOT A DOORWAY" — see its own comment above), applied a second time.
+     * `^`, `$` and the plain capturing group `(...)` are base grammar with
+     * NO doorway at all — parsed directly in `p_atom`/`p_group_body`,
+     * unlike the literal escapes (which route through the real `\`
+     * doorway even when answered before reaching the registry) — so they
+     * had NO `RegRow` home to attach `RegRow.definitions` (D85) to. Named
+     * `RK_BARE` rather than `RK_ANCHOR`: `(...)` is not an anchor, and the
+     * kind is for "a base-grammar construct with no doorway" generally,
+     * not for anchors specifically. Same discipline as `RK_QUANTSUFFIX`:
+     * `pcrec_registry_find`/`arbitrate` are NEVER called with it, the rows
+     * exist for the DUMP and for D85's definitions machinery, and every
+     * site enumerating `RegKind`s explicitly needs a new arm — grep
+     * `RK_QUANTSUFFIX` across the tree for the site list this addition
+     * used to find them all (docs/design/atomic_groups_design.md §7.4 is
+     * the precedent's own worked example of what "every site" means). */
+    RK_BARE,
     RK_COUNT
 } RegKind;
 
@@ -2481,6 +2498,204 @@ Ast *pcrec_ast_char(Ctx *cx, unsigned c);
  * them instead of a comment (R32 E8; sabotage row S116). */
 extern const unsigned char pcrec_ascii_fold[256];
 
+/* [DD-11.1] THE REPLACEMENT/DEFINITION TABLE (D85, docs/design/
+ * definitions_table.md, r43-revised). For a row whose construct stands for
+ * another construct expressible in CORE syntax (D85's own words) under some
+ * option scope, `RegRow.definitions` (below) points at a small `static
+ * const` array of `RegDef` rows: an ORDERED list, first-applicable-wins,
+ * terminated by `DEFK_END` rather than carrying a parallel count (the
+ * `family` field's own precedent: one new fact on the row, not a second
+ * home for its size). NULL for the ~100 rows with nothing to say — the
+ * D82-bound-3 shape `family` already has.
+ *
+ * THE PREDICATE IS A TAG, NOT A STORED CALLABLE (manager ruling, r43,
+ * folding K1/K2/K3/K9 of docs/dev/reviews/2026-08-29-r43-dd11-definitions.md).
+ * A stored `bool (*)(const Ctx *)` was measured NOT to close the gap it was
+ * meant to (K1: `Ctx.mods` already compiles as an opaque pointer everywhere,
+ * so there was no type hazard to avoid) and to WEAKEN containment instead
+ * (K2: a stored callable is reachable from any TU holding a `Ctx *`, which
+ * is every TU downstream of `src/parse` — the deref lives in the CALLEE, not
+ * in the type). `DefTag` is a CLOSED ENUM evaluated by exactly ONE
+ * exhaustive no-default `switch` in `src/parse/definitions.c`
+ * (`pcrec_def_tag_applies`, `mrl.c`'s discipline: a new tag with no arm is a
+ * compile error) — containment by CONSTRUCTION, checked by a grep (K2's
+ * fix) rather than asserted by a type that did not enforce it. */
+typedef enum {
+    DEF_ALWAYS,          /* the row's only entry, or its unconditional tail */
+    DEF_MULTILINE,       /* cx->mods->multiline true at the construct */
+    DEF_NOCAP,           /* cx->mods->nocap true at the construct */
+    DEF_UCP,             /* Unicode class semantics active — NO PRODUCER YET
+                          * (module unicode-props has no \w-shaped producer);
+                          * the evaluator answers false unconditionally until
+                          * one exists, which is sound (the row falls through
+                          * to its DEF_ALWAYS entry, today's byte behaviour) */
+    DEF_ENCODING_UTF8,   /* --encoding=utf8 — NO PRODUCER YET ([DD-12]/[M5]);
+                          * same false-until-built shape as DEF_UCP */
+    DEF_NEWLINE_CONV,    /* a non-LF newline convention is active — NO
+                          * PRODUCER YET (D64, parked); same shape */
+    DEF_LIB_NAME_BOUND   /* [LIB]/[DD-13b]: the name is bound in the
+                          * compile's definitions/library input — NO
+                          * PRODUCER YET; same shape */
+} DefTag;
+
+/* DEFK_END terminates a `definitions` array (no parallel count, see above).
+ * DEFK_STR is a bodyless construct's core-syntax TEXT, parsed and spliced at
+ * the occurrence — the SAME convention `RegRow.syntax` already uses ("a
+ * pattern that PROBES this construct" is itself a valid pcrec pattern), so
+ * `--list-definitions` prints it verbatim. DEFK_BUILDER is an OPERAND-taking
+ * construct (the possessive suffix, `(?n)`) whose definition needs the
+ * caller's own AST subtree spliced in, which no string convention here
+ * expresses without inventing a placeholder syntax nothing else uses.
+ *
+ * DEF_IDENTITY (manager ruling, 2026-08-29, folding the identity question):
+ * the row's own PRIMITIVE form — "already core", no substitution — is an
+ * EXPLICIT entry, never the ABSENCE of one. D85's own text calls the
+ * identity "the last row [that] always applies", which makes it a ROW by
+ * the note's own reading; the alternative (`pcrec_def_resolve` returning
+ * NULL as the identity signal) is ABSENCE-AS-DISCRIMINATOR, the exact
+ * hazard [DD-13]'s stamp design already ruled out (a missing entry reads
+ * identically to a forgotten one). No `str`, no `builder` — there is
+ * nothing to splice, the occurrence's own shipped lowering IS the
+ * definition. `--list-definitions` prints `applies=identity` FROM THIS
+ * KIND, never by inference. Carries `tag == DEF_ALWAYS` (it is always the
+ * unconditional TAIL of its list) so `pcrec_def_resolve`'s ordinary
+ * first-applicable-wins walk needs no special case for it.
+ *
+ * DEFK_TEXTFN (manager ruling, 2026-08-29, folding the operand-
+ * parameterized question): the GENERAL shape for "a binding parameterized
+ * by text at the occurrence" — `\cX`, bare `\x`/`\x{}`, `\o{}`, octal/`\0`,
+ * `\N{U+}` today; [DD-13b]'s [LIB] name-bound rows reuse it later
+ * (parameterized by the name), which is why it is a third KIND and not a
+ * one-off. `str` here is not a splice-ready core-syntax string (there is
+ * no such fixed string when the operand varies) — it is a human-readable
+ * TEMPLATE for `--list-definitions`'s `definition` column (e.g. `\cX ≡
+ * \x{X ^ 0x40}`). `textfn` is the actual definition: given the operand
+ * text at the occurrence, it returns the core AST — and it MUST call the
+ * EXISTING decoder (`esc_char_value` and friends, src/parse/parse.c/
+ * pcrec_esc_char_value_export below) rather than re-implement the
+ * decoding, so there is exactly one decode site regardless of how many
+ * `DefKind`s can reach it. [DD-11.3]'s self-oracle samples `textfn` over a
+ * representative operand set per row (all 256 for `\x`, letters/
+ * punctuation for `\c`, boundary code points for `\N{U+}`, the octal edge
+ * cases) rather than a single string, since no ONE operand could stand for
+ * the row the way a fixed `DEFK_STR` value does. */
+typedef enum { DEFK_END, DEFK_STR, DEFK_BUILDER, DEF_IDENTITY, DEFK_TEXTFN, DEFK_ROW } DefKind;
+
+/* A DEFK_BUILDER's `builder` takes the body the construct would otherwise
+ * wrap or number, and returns the CORE-syntax equivalent — e.g. the
+ * possessive suffix's `body` is the already-built `A_REP` node and the
+ * builder wraps it in `A_ATOMIC`; `(?n)`'s `body` is the group's inner AST
+ * and the builder is the IDENTITY (no `A_CAP` wrapper — `(?:X)` never gets
+ * one either — NOTE this is `pcrec_def_build_identity`, an ordinary
+ * DEFK_BUILDER function operating on a BODY, unrelated to the `DEF_IDENTITY`
+ * KIND above, which marks a whole RegDef entry with no body at all; the
+ * `(?n)`-scoped capturing-group row carries BOTH, in the same list, for
+ * its two different option states). [DD-11.5] is what would call these for
+ * REAL lowering; today they exist so the structural check
+ * (`pcrec_ast_all_core`) can invoke one in isolation and confirm its
+ * OUTPUT is core-set vocabulary.
+ *
+ * A DEFK_BUILDER's `str` is a TEMPLATE (manager ruling, r43-second-round,
+ * 2026-08-29), exactly as DEFK_TEXTFN's already is below — one placeholder
+ * convention, `X` for the operand (the quantifier bounds spelled as in the
+ * construct: `X{n,m}+ ≡ (?>X{n,m})`) — so `--list-definitions` stops
+ * printing the fixed literal `<builder>` for these rows, which said nothing
+ * about what the builder DOES. [DD-11.3]'s self-oracle INSTANTIATES the
+ * template over a small body set (`a`, `(a)`, `[ab]`, `a|b`, `\d+`) to
+ * produce a real Pattern B and compares BEHAVIOUR against the builder's own
+ * output (and against libpcre2) — a builder that drifts from its stated
+ * template shows up as a disagreeing cell, never as an AST-equality
+ * assertion (D77: no measured need for AST-structural-equality
+ * infrastructure this tree does not otherwise have). The template is the
+ * builder's STATED CONTRACT; the builder function stays the production
+ * mechanism — one fact, two readers (dump, self-oracle), same as `str`'s
+ * other two duties below. */
+typedef Ast *(*DefBuilderFn)(Ctx *cx, Ast *body);
+
+/* A DEFK_TEXTFN's `textfn` takes the operand TEXT at the occurrence
+ * (`operand`/`len`, NOT NUL-terminated — pattern text never is) and the
+ * live `Ctx` (needed to build an AST node, `pcrec_ast_node`/`pcrec_ast_char`
+ * and friends all take one), and returns the core AST. It is a pure
+ * function of (operand, cx) — no scanning, no cursor movement, since the
+ * occurrence has already been scanned by the time a definition is asked
+ * for (structural-check/self-oracle callers hand it a slice they chose,
+ * never a live parse position). */
+typedef Ast *(*DefTextFn)(const char *operand, size_t len, Ctx *cx);
+
+/* DEFK_ROW (manager ruling, r43-second-round, 2026-08-29): an entry that
+ * CHAINS to ANOTHER ROW's own resolution rather than restating a fact that
+ * row already carries — "an alias row defines to the row it aliases, never
+ * to the alias's own expansion; one fact, one row." `str` holds the target
+ * row's `syntax` (never the target's OWN definition text) — `family`'s own
+ * reference-by-syntax-string idiom (`mod_lookaround.c`'s `la_kind`),
+ * generalised past ONE `RegKind` via `pcrec_registry_row_by_syntax`
+ * (registry.c), since a chain may cross kinds (`$`, RK_BARE, chains to
+ * `\Z`, RK_ESC — `family` itself never needs to, so it stayed
+ * single-kind). `pcrec_def_resolve` (definitions.c) does not return a
+ * DEFK_ROW entry to its caller: it WALKS THROUGH it, recursively resolving
+ * the target row under the SAME `Ctx` — this is D85's "expandable" table
+ * property made concrete, and it is why `$`'s non-multiline fact
+ * (`(?=\n?\z)`) lives in exactly one row (`\Z`'s) even though two
+ * constructs alias it. A row named by a DEFK_ROW entry that does not exist,
+ * or whose own resolution loops back here, is a registry DEFECT — resolved
+ * by `pcrec_registry_row_by_syntax` returning NULL / by a depth bound, both
+ * asserted loudly by the resolver, never silently — exactly `la_kind`'s
+ * own dangling-reference contract, one level over. */
+
+typedef struct RegDef {
+    DefKind      kind;
+    DefTag       tag;      /* meaningless when kind == DEFK_END */
+    const char  *str;      /* DEFK_STR: the definition itself.
+                            * DEFK_TEXTFN, DEFK_BUILDER: a human-readable
+                            * TEMPLATE for the dump, never spliced or
+                            * parsed (DEFK_BUILDER's own comment above has
+                            * the placeholder convention).
+                            * DEFK_ROW: the TARGET row's `syntax` — a
+                            * reference, never the target's own definition
+                            * text (its comment above has the chaining
+                            * rule). NULL otherwise (DEF_IDENTITY,
+                            * DEFK_END). */
+    DefBuilderFn builder;  /* DEFK_BUILDER only */
+    DefTextFn    textfn;   /* DEFK_TEXTFN only */
+    /* DEFK_STR only, optional (NULL everywhere else): for a row whose
+     * ENTRIES are keyed by an OPERAND (a name) rather than by an
+     * option-scope tag -- the 14-name POSIX class family is today's only
+     * user (r43-third-round follow-up, team-lead ruling 2026-08-29) -- the
+     * entry's own name text ("alpha", "digit", ...). `pcrec_def_resolve`'s
+     * ordinary first-applicable-wins walk cannot select a NAMED entry
+     * (there is no DefTag for "alpha" vs "digit"), so this field exists
+     * for the TWO callers that need to pick a SPECIFIC entry rather than
+     * the walk's first answer: `--list-definitions` prints
+     * `[[:alpha:]] ≡ [A-Za-z]` per entry instead of the row's fixed
+     * `syntax` example, and [DD-11.3]'s self-oracle instantiates the row's
+     * real construct with the name (`[[:%s:]]`) to get 14 real cells
+     * instead of a first-wins skip. Appended at the END of the struct so
+     * every existing positional initializer in registry.c still COMPILES
+     * with this field defaulting to NULL (C's aggregate-init zero-fill
+     * rule) — but `-Wextra`'s `-Wmissing-field-initializers` still flags
+     * every 5-field literal, so `make strict` DID need every one updated
+     * to a trailing `, NULL` (a mechanical pass, 46 lines, no field values
+     * changed) — a lesson for the next field added here: "compiles" and
+     * "compiles clean under strict" are different claims. */
+    const char  *operand;
+} RegDef;
+
+/* src/parse/definitions.c */
+bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx);
+const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw);
+const char *pcrec_def_tag_name(DefTag tag);
+bool pcrec_ast_is_core(AKind k);
+bool pcrec_ast_all_core(const Ast *a);
+Ast *pcrec_def_build_atomic(Ctx *cx, Ast *body);     /* the possessive family */
+Ast *pcrec_def_build_identity(Ctx *cx, Ast *body);   /* (?n) */
+/* DEFK_TEXTFN implementations — each calls the existing base-tier decoder
+ * rather than re-decoding; src/parse/definitions.c's own header names the
+ * one call site each reaches. */
+Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx);      /* \cX */
+Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx);     /* \xHH, \x{HHHH} */
+Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx);   /* \o{OOO}, \NNN, \0 */
+Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx); /* \N{U+HHHH} */
+
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
  * fact, and registry.c's M_* macros emit them as a pair so a row cannot carry
@@ -2673,6 +2888,13 @@ struct RegRow {
      * missing-field-initializer rather than a silent NULL that reads as a
      * claim ("this row is its own family") nobody wrote. */
     const char *family;
+
+    /* [DD-11.1] D85's replacement/definition table, NULL for a row with
+     * nothing to say (same shape and same reason as `family` above — see
+     * the type comment before `struct RegRow` for the placement rationale
+     * and the r43 predicate-representation ruling). LAST for the identical
+     * -Wextra reason `family` states. */
+    const RegDef *definitions;
 };
 
 /* [M6.4.2 / SR-8] The engines mask a node contributes to the pattern-wide AND.
@@ -2685,6 +2907,14 @@ static inline unsigned pcrec_ast_engines(const Ast *a)
 
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
+/* [DD-11.1] the CROSS-KIND syntax lookup a `DEFK_ROW` chain resolves through
+ * (below) — `family`'s own resolution idiom (mod_lookaround.c's `la_kind`),
+ * generalised past ONE `RegKind`: `family` only ever names another `RK_GROUP`
+ * row, but a chain may cross kinds (`$`, `RK_BARE`, chains to `\Z`, `RK_ESC`).
+ * Matches `syntax` by exact string equality across every kind `RK_COUNT`
+ * enumerates; NULL means no such row (a dangling reference — the caller's
+ * job to fail loudly on, exactly as `la_kind`'s own NULL does). */
+const RegRow *pcrec_registry_row_by_syntax(const char *syntax);
 /* `at` points at the byte AFTER the doorway's selector byte and `avail` is how
  * many bytes remain there, so a row's `tail` can be compared without the caller
  * knowing any row exists. Passing avail = 0 asks the tail-less question and is
@@ -3336,6 +3566,14 @@ extern const char *const PCREC_DEFAULT_FEATURES;
  * the only consumers today, and promoting one function into lib/pcrec.h later
  * is easy in a way that un-promoting it is not. */
 char *pcrec_syntax_tsv(unsigned flavours);
+/* [DD-11.2] `--list-definitions`, the fifth registry surface (D85,
+ * docs/design/definitions_table.md §5). Walks the same rows
+ * `pcrec_syntax_tsv` does, through the same rendering helpers
+ * (src/parse/syntax_dump.c), so the two dumps join on `kind`/`selector`/
+ * `syntax` by construction. Takes `--flavour` exactly like `pcrec_syntax_
+ * tsv` (r43 K6: an unfiltered dump would print a definition for a
+ * construct `--list-syntax --flavour=X` says does not exist). */
+char *pcrec_definitions_tsv(unsigned flavours);
 /* D65: the built-status derivation `pcrec_syntax_tsv`'s new column reads,
  * and the same function tests/registry/registry_check.c's defect assertion
  * calls directly — one derivation, two callers, so neither can drift from
@@ -3411,6 +3649,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
 
 /* ---- stage entry points ---- */
 
+int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
 Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
 /* src/core/compile.c — parse-only: the running capture count's end-of-parse

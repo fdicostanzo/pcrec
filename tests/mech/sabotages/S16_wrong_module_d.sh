@@ -39,5 +39,9 @@ SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 2 hand-written fail, 0 iterated"
 SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
 SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
-SAB_BEFORE="ESC_SET('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0),"
-SAB_AFTER="ESC_SET('d', \"\\\\d\", misc, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0),"
+# ANCHOR MOVED at [DD-11.1] (caught by scripts/m6read_check_sab_anchors.py on
+# the same branch): see S15's identical note -- the `\d` row now goes
+# through `ESC_SET_D` (one trailing `d_def` argument) rather than `ESC_SET`.
+# The SABOTAGE is unchanged -- it still swaps the module name only.
+SAB_BEFORE="ESC_SET_D('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0, d_def),"
+SAB_AFTER="ESC_SET_D('d', \"\\\\d\", misc, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0, d_def),"
