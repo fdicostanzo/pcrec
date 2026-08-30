@@ -2884,6 +2884,7 @@ k37_allow_re=(
     "^[^:]*:[0-9]+:[[:space:]]*'[[:space:]]*_[[:space:]]+\"[$]PCREC\""
     '^[^:]*:[0-9]+:SAB_REACH='
     '[$]PCREC = clean binary'
+    '^[^:]*:[0-9]+:exec "[$]PCREC" "[$]@"'
 )
 k37_allow_reason=(
     "a MESSAGE naming the PCREC variable in prose (a missing-binary echo/bad/die diagnostic), never a command word"
@@ -2894,6 +2895,7 @@ k37_allow_reason=(
     "a sabotage row's SAB_REACH probe DEFINITION (tests/mech/sabotages/*.sh, [MECH-REACH]): a STRING, executed only by run_sabotage_matrix.sh's single witness-probe executor, which is the one place the bound lives (\"\$TIMEOUT_BIN\" \${SAB_REACH_TIMEOUT:-120} around its bash -c) -- bounding 21 strings individually would be 21 copies of one mechanism"
     "run_sabotage_matrix.sh's --help PROSE describing what \$PCREC means to a probe (\"\$PCREC = clean binary\"), not a command word"
     "run_bench.sh's COMPILE-SPEED loop: the PCREC variable is a POSITIONAL ARGUMENT to a bash -c heredoc already wrapped in ONE outer \"\$TIMEOUT_BIN\" for the whole loop -- the script's own comment states why per-pattern wrapping was rejected (timeout's fork/exec cost exceeds a base-tier compile)"
+    "tests/rxtsource's COUNTING WRAPPER, which execs the real binary: it IS \$PCREC for the script under test, and that script bounds its own calls, so the exec adds no unbounded invocation of its own ([DD-13b.W1.1], C0a's external invocation count)"
 )
 while IFS= read -r k37_hit; do
     [ -n "$k37_hit" ] || continue

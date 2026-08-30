@@ -312,7 +312,7 @@ tA1=$(date +%s.%N)
 # the exact field COUNT of every data row (the table contract's HEADER
 # TRUTHFULNESS check), and the exact TOTAL row counts against the census.
 MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec'
-hdr="$("$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#' | tail -1)"
+hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#' | tail -1)"
 hdr="${hdr#\#}"
 if [ "$hdr" = "$MANIFEST" ]; then
     pass "C1 manifest: --list-source emits exactly the 15 pinned columns, in order"

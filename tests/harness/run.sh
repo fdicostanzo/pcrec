@@ -997,9 +997,14 @@ for file in "${files[@]}"; do
     done < "$file"
 
     if [ -n "$head_probe" ] && [ "$head_probe" != "pattern" ]; then
+        # [K37/D45] `pcrec_run`, on ONE line. The bound was there before
+        # (an explicit $TIMEOUT_BIN) but split across a continuation, and
+        # the structural check reads a LINE — so it correctly reported an
+        # unbounded-looking invocation. Routing through the house wrapper
+        # is the fix the check names, and it is better anyway: one place
+        # decides what a pcrec invocation's budget is.
         ls_out=""
-        if ! ls_out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" \
-                        "$PCREC" --list-source "$file" 2>&1)"; then
+        if ! ls_out="$(pcrec_run "$PCREC" --list-source "$file" 2>&1)"; then
             # THE CALL FAILED. A distinct observable from "the file has no
             # pattern rows" (below): different exit status, and pcrec's own
             # diagnostic — which names the file, the line and the construct

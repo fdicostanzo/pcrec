@@ -47,7 +47,7 @@ Branch `lane/w11`, from main `1ac1405`. Written 2026-08-30.
 | 2 | C2 equal to §3.1's pins over 178/3,262/26,680 | **PASS.** 26,680 / 0; compile failures 0; pending-vm 0; 178 of 178 workers. See the size-log note below — one number moved and it is derivable. |
 | 3 | C3 runs at all, over its OWN discovery, short list HARD FAILING, totals pinned | **PASS.** 179 files (its own `find`-derived discovery, floored at the census), 13,181 verified, 0 failed. Nine populations pinned and asserted. |
 | 4 | C0a's two independent assertions both 0 | **PASS**, and a third view agrees: the external invocation count is 0, the independent head-bearing census is 0, and pcrec's own dump emitted 0 head-declaration rows over the corpus. |
-| 5 | every sabotage row turns its NAMED check red | **RUNNING** at the time of writing — 11 rows (S194-S204), sequentially, one at a time. All 11 pass field validation. |
+| 5 | every sabotage row turns its NAMED check red | **PASS — all 11 DETECTED** (S194-S204), run one at a time. Two scored UNDETECTED first and had to be given witnesses; see below. |
 | 6 | the arm-block hash pin and the keyword census run as checks | **PASS.** Pin: 252 lines, unchanged. Census: 36 candidate keywords (the pinned 32 plus W1's 4), all 0 in first-token position. |
 | 7 | **C1's runtime measured and recorded** | **8.2 s.** leg A 0.74 s (179 `--list-source`), leg B 7.32 s, leg C 0.17 s. §7.4's risk 1 is closed: ~0.2% of a `test-corpus`. |
 | 8 | `make strict` clean; spec hunks in the same change | **PASS** both. |
@@ -152,7 +152,62 @@ was a fact about the WIRING, which this step is what moves. **A gap
 documented as harmless because nothing reaches it expires silently the
 moment something does, and nothing watches that direction.**
 
-### 2. A grammar contradiction, resolved conservatively — needs ratification
+### 2. Two of my own sabotage rows had EMPTY POPULATIONS, and one of them found a real bug
+
+The eleven rows were run one at a time: **9 DETECTED, 2 UNDETECTED**.
+Both failures are the same shape — a detector with nothing to detect,
+[MECH-REACH], in rows written to guard against exactly that.
+
+- **S199** plants "run.sh silently accepts an invalid `features` list".
+  MEASURED: **all 59 distinct `features` lists in the corpus are valid**,
+  so the plant has nothing to accept. (My first probe of this reported
+  every list INVALID — because it passed `-o /dev/null` and pcrec tried to
+  write `/dev/null.h`. Re-probed the way run.sh does it.)
+- **S204** plants "verify_rxt swallows a line kind it does not know", and
+  the sting is that **fixing the four-kinds gap is what emptied its
+  population**: once the parser knows all 14 corpus kinds, no corpus line
+  reaches its unknown-kind branch.
+
+Both now have witnesses under `tests/rxtsource/fixtures/`, kept outside
+`find … -name '*.rxt'` so the census is untouched. Both re-ran **DETECTED**.
+
+**And building S199's witness found a PRE-EXISTING DEFECT IN SHIPPED
+CODE.** run.sh validates each distinct `features` list, and its own
+comment says why: *"a typo'd features line must be a loud harness
+failure, never a quiet pass"* — because pcrec refuses an unknown module
+with exit 1, and exit 1 is exactly what a `perr` block asserts. It
+recorded that failure once **per case**. A `perr` block has no cases by
+definition, so the loop ran zero times, nothing was recorded, and the
+block silently never ran. **Exactly the quiet pass the comment forbids,
+on exactly the block kind the comment names.** Fixed: the failure belongs
+to the BLOCK, so with no cases to hang it on it is attributed to the
+block's own `pattern` line. No corpus file is affected.
+
+### 3. An unescaped backtick in a sabotage field, and the check that now sees it
+
+`tests/mech/sabotages/CLAUDE.md` has said since [M6.5.2] that a stray
+backtick in a double-quoted field is *"a defect no anchor check can
+see"*. **Three of my rows landed with it** (S196/S197/S202), each
+silently losing the one word naming what it sabotages. `VALIDATE_ONLY`
+passed all three, because the row still loads.
+
+The check now exists, and it must scan the row's **TEXT, not its sourced
+value**: an unescaped backtick is *consumed* by command substitution and
+its span replaced by the output, so a value that still holds a backtick
+proves it was **escaped and safe**, while a value that lost one shows
+nothing. **The defect destroys its own evidence.** Sabotage-validated in
+both directions.
+
+**I got this wrong first, and it is the more useful half of the story.** A
+naive grep for a backtick anywhere in a double-quoted field reported nine
+rows, six of them pre-existing. I acted on it and rewrote twelve files
+before noticing the result had turned safe `\`` sequences into a literal
+`\'`. Reverted. Against the correct, escape-aware predicate, **exactly
+three rows are defective — all three mine, none pre-existing.** A measured
+grep welded to an untested inference, which is the failure
+`docs/dev/learnings.md` has just gained a bullet for.
+
+### 4. A grammar contradiction, resolved conservatively — RATIFIED by the manager
 
 `format_design.md` §1.3 gives a pattern block's `description` the full
 `prose-value` production, which includes the `|` BLOCK SCALAR. §1.2's
@@ -170,7 +225,7 @@ removed. MEASURED FREE: 0 corpus lines indented, 0 blocks carry a
 manager's call, so it is flagged, not buried. A fixture asserts all three
 parsers agree.
 
-### 3. The seam had ZERO population, and now has seven witnesses
+### 5. The seam had ZERO population, and now has nine witnesses
 
 0 of 179 corpus files are head-bearing. So the seam, the head grammar and
 every refusal it carries would have shipped with an empty population, and
@@ -184,7 +239,7 @@ against an independent `grep`, the head-and-no-body file as a distinct
 observable, and five refusals each asserted to NAME what the author must
 act on.
 
-### 4. A population number in the design is the census's, not the mechanism's
+### 6. A population number in the design is the census's, not the mechanism's
 
 w1_impl §3.1.1 gives S-C2 a population of **171** corpus lines / 90 in
 `tests/base`. Both are right for "a line containing `\x` anywhere". Both
@@ -194,7 +249,7 @@ is not in its population. MEASURED: **115 corpus / 53 in `tests/base`**.
 This is exactly the `# pcre2-only` 636-vs-571 lesson the same section
 records, arriving one row over.
 
-### 5. Two parser disagreements, both measured free, both fixed
+### 7. Two parser disagreements, both measured free, both fixed
 
 - run.sh's directive arms all end `[[:space:]]*$` and ACCEPT trailing
   whitespace; pcrec would have refused it. 0 corpus directive lines carry
@@ -204,7 +259,7 @@ records, arriving one row over.
   verify_rxt uses `startswith('pattern ')`; my parser accepted a tab. 0
   of 3,265 pattern lines use one. pcrec now requires the space too.
 
-### 6. Three compile-class defects found by reading
+### 8. Defects found by reading, and then by running
 
 Because nothing could be compiled: a forward declaration naming `RxtP`
 ~70 lines before the typedef (a hard error); a ternary passed AS a printf
@@ -214,7 +269,7 @@ tree's other varargs formatters carry); and an unbounded
 evidence about the review, not reassurance about the code** — reading
 found three, and reading is not a compiler.
 
-### 7. A design-note nit
+### 9. A design-note nit — CORRECTED
 
 §1.1 and §3.1 describe run.sh's chain as "13 `[[ =~ ]]` arms". I count
 **17 elif arms plus the catch-all**: pattern, flags, features, engine-vm,
@@ -226,7 +281,7 @@ It currently says "13-ARM REGION" in the marker text itself, which I kept
 so the marker matches the design note; **if you want it corrected, the
 marker text and `ARM_PIN` move together.**
 
-### 8. Setup: the worktree was created in the wrong place
+### 10. Setup: the worktree was created in the wrong place
 
 `git worktree add` had been run with a relative path from admin1's cwd,
 so `lane/w11` was checked out at
