@@ -178,6 +178,37 @@ trap cleanup EXIT
 
 # ---- collect .rxt files -------------------------------------------------
 
+# [DD-13b.W1.1] `--dump` — LEG B of the C1 parse differential (w1_impl
+# §3.1). It PARSES the named files and prints one TSV row per pattern
+# block and per expectation case, and COMPILES NOTHING: the point is to
+# expose what THIS parser understood, so a third parser (pcrec's
+# `--list-source`, leg A) and a fourth (verify_rxt.py `--dump`, leg C)
+# can be compared against it byte for byte.
+#
+# IT IS FED BY flush_block AND NOT BY THE ARM CHAIN, deliberately. The
+# arms are inside the hash-pinned region, and threading an emit call
+# through each of them would move the pin on every arm at once — the
+# protection would be spent on the change that installed the dump. Every
+# fact a row carries is already in flush_block's own per-block state, so
+# the dump reads what the parse produced rather than re-deriving it.
+#
+# It is invoked through the ARGUMENT branch below, never the no-argument
+# one: the default branch excludes tests/known_fail/ and yields 178 files,
+# while C1's population is all 179. The two run the same script over
+# different populations on purpose (§3.0).
+RXT_DUMP=0
+if [ $# -gt 0 ] && [ "$1" = "--dump" ]; then
+    RXT_DUMP=1
+    shift
+    # serial, so the row order is the file order the caller gave and a
+    # differential can compare streams rather than sorted multisets
+    PROCS=1
+    if [ $# -eq 0 ]; then
+        echo "run.sh: --dump needs at least one file or directory" >&2
+        exit 2
+    fi
+fi
+
 files=()
 if [ $# -eq 0 ]; then
     while IFS= read -r f; do files+=("$f"); done \
@@ -386,7 +417,86 @@ record_case_group_fail() {
 # cur_pattern_line, cur_is_perr) against its accumulated cases (parallel
 # arrays case_kind/case_line/case_subject/case_start/case_end/case_gspec/
 # case_gucode -- the last holding a "gu" case's expected give-up word).
+# [DD-13b.W1.1] THE RXT-ESCAPE, leg B's half. Same vocabulary as
+# src/parse/rxt_source.c's `put_escaped` and as the .rxt format's own
+# subject escape (`\t \n \r \\ \xNN`, docs/spec/rxt_format.md) — one
+# vocabulary, three implementations, which is what a differential over
+# three parsers requires and is why no second decoder is invented.
+#
+# It is NOT `RXTDUMP`'s lossy `tr '\n\t' '  '` squash (run.sh:~56). That
+# squash is correct THERE — that dump is diffed against ITSELF across
+# optimization axes, so an identical squash on both sides loses nothing —
+# and would be WRONG here, where the whole job is to find a
+# cross-implementation disagreement a squash could hide.
+#
+# THE FAST PATH IS PURE BASH, because this runs ~13,000 times over the
+# corpus and a fork per field would dominate C1's runtime. MEASURED: 3
+# corpus patterns carry a literal TAB (the thing under test in all three),
+# 963 pattern lines carry a backslash, and 0 carry any other control byte
+# — so the three substitutions below cover the corpus exactly. The
+# fallback exists anyway: a byte the fast path cannot spell must not
+# silently emit raw and shift every later column.
+rxt_escape() {
+    local s=$1
+    s=${s//\\/\\\\}
+    s=${s//$'\t'/\\t}
+    s=${s//$'\r'/\\r}
+    case $s in
+        *[$'\x01'-$'\x08\x0b\x0c\x0e'-$'\x1f\x7f']*)
+            # a control byte the fast path does not spell: fall back to the
+            # per-byte form, which is the SAME `\xNN` rendering pcrec emits
+            s=$(printf '%s' "$s" | LC_ALL=C awk '{
+                    out=""
+                    for (i = 1; i <= length($0); i++) {
+                        c = substr($0, i, 1)
+                        n = index(CTRL, c)
+                        if (n > 0) out = out sprintf("\\x%02x", n)
+                        else out = out c
+                    }
+                    print out
+                }' CTRL=$'\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f')
+            ;;
+    esac
+    REPLY=$s
+}
+
+# ONE `block` row and one `case` row per expectation, in the schema
+# tests/rxtsource/run_rxtsource_tests.sh projects all three legs onto.
+# `perr` is a BLOCK field rather than a case row because that is how this
+# parser models it (a perr block has no m/n lines and the pattern text is
+# the whole test) and because the directive's own line number is not
+# retained — recording one would be an edit inside the pinned region.
+rxt_dump_block() {
+    # no command substitution anywhere in here: this runs once per block
+    # (3,265 times over the corpus) and a fork per boolean field would be
+    # most of C1's runtime.
+    local desc pat only perr
+    rxt_escape "$cur_description"; desc=$REPLY
+    rxt_escape "$cur_pattern";     pat=$REPLY
+    only=""; [ "$cur_features_only" = "1" ] && only=1
+    perr=""; [ "$cur_is_perr" = "1" ] && perr=1
+    printf 'block\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$cur_file" "$cur_pattern_line" "$cur_name" "$desc" "$pat" \
+        "$cur_flags" "$cur_features" "$only" \
+        "$cur_encoding" "$cur_engine" "$cur_stepbudget" "$cur_framebudget" \
+        "$perr"
+    local i
+    for i in "${!case_kind[@]}"; do
+        printf 'case\t%s\t%s\t%s\t%s\t%s\n' \
+            "$cur_file" "${case_line[$i]}" "${case_kind[$i]}" \
+            "${case_startpos[$i]}" "${case_gspec[$i]}"
+    done
+}
+
 flush_block() {
+    # [DD-13b.W1.1] leg B: report what the parse understood and compile
+    # NOTHING. Placed at the top of the one function every block already
+    # passes through, so the dump cannot see a different set of blocks
+    # than the runner does.
+    if [ "$RXT_DUMP" = "1" ]; then
+        rxt_dump_block
+        return 0
+    fi
     block_counter=$((block_counter + 1))
     local bdir="$WORKDIR/b$block_counter"
     mkdir -p "$bdir"
@@ -1193,6 +1303,14 @@ for file in "${files[@]}"; do
 done
 
 # ---- summary ----------------------------------------------------------
+
+# [DD-13b.W1.1] in --dump mode stdout is the TSV and nothing else: a
+# differential compares streams, and a summary appended to one of them
+# would be a disagreement about the corpus that is really a disagreement
+# about this script's chattiness.
+if [ "$RXT_DUMP" = "1" ]; then
+    exit 0
+fi
 
 echo
 echo "== Summary =="
