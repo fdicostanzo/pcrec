@@ -18293,3 +18293,18 @@ fix commit. Mech's per-row trees under /tmp/pcrec-mech-sabotage.*/ are
 where its detectors run — so a main-tree test edit during mech is safe
 (lane/sanfix was merged during it on that evidence). Frank's remark at
 ~01:5x remains the only human input since the reset.
+
+**san RE-RUN GREEN (03:23-05:12 on 6640704; code 0f5a98f):** rc 0, 0
+sanitizer report lines, 34 scripts — the [DD-11] driver now links under
+the san axis (467c449). 109 min against the 46-min figure recorded for
+`make san` at m65: the per-module single-process libpcre2 diffs
+(rungselect, assertions, backrefs, recursion) are the slow tail under
+instrumentation and the [DD-11] oracle (354 cells) is new since. Solo
+`PROCS=4 make test-codegen` + `test-cli` on the fix commit launched
+05:13 (setsid, PID 3147184 verified sid==pid/ppid 1, `mgr/solo2_driver.log`).
+Two launch lessons re-learned tonight, now in memory
+(`pcrec-box-concurrency` rule 7, third instance): a `run_in_background`
+Bash is capped at 10 min — anything longer goes setsid+nohup with a
+PID file; and the PID is the process with sid==pid AND ppid==1,
+cwd-verified — my 6-s settle + `sid==pid` alone still caught a
+short-lived PID and made the death-watch fire falsely.
