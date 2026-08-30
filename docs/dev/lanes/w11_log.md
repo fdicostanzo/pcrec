@@ -99,3 +99,14 @@ carry it on other lines, where it is data). run.sh's arms all end
 `[[:space:]]*$` and accepted it; pcrec would have refused it. Fixed in
 pcrec (`value_trimmed`) so the two parsers agree on the GRAMMAR rather
 than by luck of the corpus.
+
+## Close (2026-08-30)
+
+All seven items CODED. Nothing compiled or run — the hold was never
+lifted. Full deliverable: `docs/dev/lanes/w11_report.md`.
+
+Items 3 and 5-7 land in `tests/rxtsource/`; the spec hunks in `8a0a918`;
+the sabotage rows as S194-S203 with a new `rxtsource` mech arm registered
+ahead of them.
+
+Nine commits, `da10212`..`e708753`.
