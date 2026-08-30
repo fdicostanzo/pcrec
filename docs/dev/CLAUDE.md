@@ -140,6 +140,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   and the manager's still-owed commands (the PROCS re-validation sweep, the
   full "after" matrix) — both box-exclusive and not run by this lane.
   Written 2026-08-23.
+- `lanes/` — per-lane restart logs and delivery reports (`<lane>_log.md`, `<lane>_report.md`; optional, the lane's own voice, historical after merge). See lanes/CLAUDE.md.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `learnings.md` — the consolidated learnings digest, distilled from a
