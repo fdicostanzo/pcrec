@@ -996,6 +996,49 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `cx.mods = (ModState){...}` assignments are gone, and every Ctx that can
   reach a parser or a doorway port (including syntax_dump.c's two query
   surfaces, which can reach module `modifiers`' producing port) calls it.
+- **rxt_source.c** — [DD-13b.W1.1] THE `.rxt` SOURCE FILE'S HEAD PARSER,
+  and the ONLY one. `--source` must resolve `lib`/`name`/`target`/`config`
+  before it can compile anything, so pcrec reads the file's head; the
+  harness keeps its two BODY parsers (`tests/harness/run.sh`'s arm chain
+  and `tests/harness/verify_rxt.py`'s `parse_rxt`) and is TOLD where the
+  body starts, through `--list-source`'s `line` column. That seam is the
+  manager's ruling and it is the reason this file is short: the head
+  grammar has one implementation, so the two cannot drift; the BODY has
+  three readers on purpose, and that duplication is the control
+  `tests/rxtsource/` compares.
+
+  **ONE `RxtRow` TYPE, NOT FOUR.** A `lib`, a `target`, a `config` and a
+  `pattern` block are each (kind, name, value, settings, a list), and the
+  dump prints them in FILE ORDER — which per-kind arrays cannot express
+  without a further structure to interleave them. So one discriminated
+  row, in file order, with typed lookup as a filter over it. W1.2's
+  target BUILD and W1.3's composer are what earn a definition-shaped
+  record with fields a row has no place for; D77 says that is when.
+
+  **NO `Ctx`, SO NO `ctx_fail`.** This parser runs before any compile —
+  the CLI calls it with no pattern in hand — so there is no `Ctx` to
+  longjmp out of and no arena owner to clean up. Errors are RETURNED, and
+  every one of them names the FILE, the LINE and the CONSTRUCT: a
+  W2/W3 keyword is refused as **NOT IN THIS BUILD** and never as unknown
+  (sending a reader hunting a typo in a word that is in the spec is K14's
+  shape), a duplicate name names BOTH sites, and a `from` cycle names its
+  members.
+
+  **THREE LEXICAL CONTEXTS, EACH A CLOSED VOCABULARY** — head, `config`
+  body, pattern block — and a token unknown IN ITS CONTEXT names the
+  context. Nothing is a keyword everywhere. The vocabulary tables are also
+  what `tests/rxtsource/`'s keyword census checks against the corpus.
+
+  **`--list-source`'s TSV is the contract** (`docs/spec/rxt_format.md`,
+  `docs/spec/table_contract.md`): 15 columns, AS WRITTEN, never resolved.
+  Columns 4, 5 and 15 are escaped in the `.rxt` format's OWN subject
+  vocabulary — a `pattern` line is rest-of-line verbatim and three corpus
+  blocks carry a literal TAB in which the tab IS the thing under test, so
+  emitting raw would split the row and shift every later column on exactly
+  the three hardest rows to notice. No second decoder was invented; the
+  column list is one array so the header and the row writer cannot
+  disagree about how many there are.
+
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
   axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the
   syntax registry syntax_dump.c below renders — a different table

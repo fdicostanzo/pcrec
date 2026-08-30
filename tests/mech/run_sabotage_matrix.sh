@@ -1726,6 +1726,33 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            rxtsource)
+                # [DD-13b.W1.1] tests/rxtsource/run_rxtsource_tests.sh —
+                # INV-COMPAT: that growing the `.rxt` format changed no
+                # existing corpus file's meaning. ITS OWN ARM rather than
+                # `harness`, and the distinction is the whole reason the
+                # section exists: `harness` asks whether the corpus still
+                # gets the right ANSWERS, and this asks whether the three
+                # parsers of the format still AGREE ABOUT WHAT THE FILES
+                # SAY. Those come apart in both directions — a parser can
+                # mis-read a directive that changes no answer (S-C3's
+                # shape), and a routing change can move answers while
+                # every parser reads the file identically (S-C5's) — so a
+                # sabotage of one must not be reported as a sabotage of
+                # the other.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does
+                # not exist yet scores UNKNOWN-SUITE, which is "not
+                # measured" rather than "not detected".
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/rxtsource/run_rxtsource_tests.sh" \
+                    > "$work/rxtsource.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/rxtsource.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/rxtsource.log" | grep -oE '[0-9]+')"
+                suite_bits+=("rxtsource:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")
                 ;;

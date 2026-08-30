@@ -29,7 +29,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   in the tree now runs through it. MEASURED 6.31x wall on an isolated
   `make test-corpus` run; see docs/testing.md "The `timeout` binary
   itself".
-- **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
+- **harness/** — test runner (run.sh), driver template (driver.c),
+  python-re oracle (verify_rxt.py). Since [DD-13b.W1.1] run.sh knows
+  about the `.rxt` HEAD without parsing it — for a head-bearing file it
+  makes ONE `pcrec --list-source` call and starts its per-line loop at the
+  `line` column of the first `pattern` row — and verify_rxt.py is WIRED
+  INTO `make test` for the first time (via tests/rxtsource/, over a
+  `find`-derived list with a short-list hard fail)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
 - **reject/** — the "unsupported constructs fail cleanly, never miscompile" mandate, asserted per construct (274 hand-written rejections + 99 reached by iterating `pcrec --list-syntax`, + 99 accept-controls + 66 gated + zero known-wrong pins since FIX-2 graduated the last five, plus a manifest of the rows an exact count would not protect; these four figures are hand-copied and went stale TWICE during R9 alone (C4-3, then C4V-3 when the counts changed again in the same review), moved again at Q2/SR-9, at A1/§18.2 (→246/62), at FIX-3 (→248/63), at [STD1b] (D37, 2026-08-13: 306/65/0/15→274/99/0/55, the bare-default flip's re-baseline) at [M6.3] (2026-08-18: 55→59 gated, the four named-groups boundary pins — the backref-by-name and (?J) module-boundary proofs plus the 129-byte name-length wall) and at [M6.2] wave A (2026-08-19: 59→66 gated, the enabled-but-unbuilt refusals) — the harness prints them in its own summary block, so read them from a run rather than from here; the two layers catch different things and neither replaces the other — see its CLAUDE.md). Cannot live in .rxt: a `perr` block asserts only THAT a pattern is rejected, never WHY, and the module name is the point. 20 of the rejections are the base-grammar brace errors from FIX-1 and R7 (K5/K6/K8), which have no registry row and name a PCRE2 error instead of a module; another 36 are Q1's verb-doorway outcomes, which pin one name per FORM GROUP rather than one per name — the other 26 verb names are covered by tests/registry/pcre2_check.c alone, which SKIPS without libpcre2 installed
@@ -556,6 +562,24 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   warm on single-row samples) even though it is a measured NO for
   `make test` — the tree-rebuild-per-sabotage shape is the opposite of
   `make test`'s thousands-of-sub-millisecond-compiles shape.
+- **rxtsource/** — [DD-13b.W1.1] INV-COMPAT: that growing the `.rxt`
+  format changed no existing corpus file's meaning. The `.rxt` format now
+  has THREE parsers (`pcrec --list-source`, `harness/run.sh`'s arm chain,
+  `harness/verify_rxt.py`'s `parse_rxt`) and this section makes them agree
+  byte for byte over all 179 files — plus the arm-chain hash pin, the
+  keyword census, and C0a's two independent assertions that the head
+  machinery was never invoked. **It is also where `verify_rxt.py` finally
+  RUNS**: until this step its `main()` was invoked by nothing in the tree
+  and its directory discovery was a one-level glob, so the obvious wiring
+  (`verify_rxt.py tests`) verified ZERO files and exited 0. It now runs
+  over a `find`-derived list with a short-list HARD FAIL.
+  **`fixtures/*.rxtin` are named for their extension**: the corpus has 0
+  head-bearing files, so the seam and every head refusal had an EMPTY
+  population, and the fixtures are the witnesses — kept out of
+  `find tests -name '*.rxt'` so they cannot join the corpus or move its
+  pinned census. Read its CLAUDE.md for the two denominators, the two
+  DEFERRED sabotage rows and why each waits, and the block-scalar
+  contradiction and how it was resolved.
 - **size/** — [ART-SIZE.1b]'s zero-cost artifact-size metrics log +
   corpus-level tripwire, riding `test-corpus`'s own compile pass (no
   `.rxt` corpus of its own — `run_size_log.sh` wraps `tests/harness/
