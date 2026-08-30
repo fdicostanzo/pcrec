@@ -522,7 +522,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * from `vm-prefilter`: it answers a different question about the same
      * neighbourhood. `engine` says WHICH engine this artifact got;
      * `RX_ENGINE_SEL` says HOW it got there, and the two are independent —
-     * `RX_ENGINE "vm"` is reached by five of the six routes below.
+     * `RX_ENGINE "vm"` is reached by EVERY one of the six routes below.
      *
      * THE VALUE SET IS CLOSED AND THE STAMP IS UNCONDITIONAL (D81), which is
      * the whole point of it: `RX_ENGINE_WHY` already carries the reason as
@@ -542,7 +542,7 @@ static void emit_predicate_axes(StrBuf *sb)
                      "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)");
         emit_pred_row(sb, &p, 3, "declined-nullable", "declined-nullable",
                      0, "", 0, "", "",
-                     "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives; -fprefilter overrides the decline (do-or-die), -fprefilter-collapse does not");
+                     "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither");
         emit_pred_row(sb, &p, 4, "overflowed-dfa", "overflowed-dfa",
                      0, "", 0, "", "",
                      "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)");
