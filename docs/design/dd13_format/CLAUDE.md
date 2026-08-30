@@ -118,8 +118,8 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   / `(?&=name)` for a delivering call, `--emit-composed` for the
   serialization. Panel gate satisfied for this round; NO PARSER IS
   WRITTEN.
-- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.2 (2026-08-30,
-  lane w1): post-panel (r45), post-BOTH re-checks and post-rulings. NO CODE IS WRITTEN.** How
+- `w1_impl.md` — **[DD-13b.W1] IMPLEMENTATION note, REVISION 2.3 (2026-08-30,
+  lane w1): post-panel (r45), post-BOTH re-checks, post-rulings and post-correction. NO CODE IS WRITTEN.** How
   wave 1 of `format_design.md` lands: file by file, the composer, the
   check and sabotage plan, the D80 spec deltas, four lane-sized steps with
   a merge after each, and the open questions. It marks a fourth claim kind
@@ -317,6 +317,30 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   previously-dead oracle over 139 never-checked files may surface
   PRE-EXISTING failures, which are a discovery to triage and not a
   regression to fix inside W1.1).
+  **REVISION 2.3 CORRECTS THIS NOTE'S OWN ERROR, and the error is worth
+  more than the fact it got wrong.** Revision 2.1 reported — truly — that
+  `tests/assertions/verify_pcre2.py` has zero Makefile hits, and concluded
+  the assertions oracle does not run. **It runs**:
+  `tests/assertions/run_assertions_tests.sh:60` invokes it,
+  `test-assertions` is in `TEST_SECTIONS` (`Makefile:120`), its discovery
+  is a recursive `os.walk` (`verify_pcre2.py:189`), and battery 3's log
+  shows it gating the section at 10,120 cells against libpcre2 — because
+  **every module's oracle in this tree is invoked one layer down**, from
+  its own section script rather than from the Makefile. The grep was a
+  sound MEASUREMENT; "therefore dead" was an inference riding on it under
+  the same mark. §0.1 now carries the general rule (**a grep count is
+  MEASURED; "therefore dead" is BELIEVED until an invocation trace says
+  otherwise**) and ties it to the `nnames` staleness as the same failure
+  one level over — a true observation with an untested inference welded to
+  it. §3.1.1 gains a three-mechanism coverage table (verify_pcre2 over
+  `tests/assertions/`, 17 files / 10,274 expectation lines; the
+  `# pcre2-only` sweep at `tests/lookaround/run_lookaround_diff.sh:281` as
+  a genuine THIRD mechanism; verify_rxt's unwired 40-file default) and a
+  new W1.1 step 1b: **the coverage map is established by INVOCATION TRACE
+  and is an OUTPUT of W1.1**, never assumed by this note. What still
+  stands: verify_rxt's own `main()` is invoked nowhere, its discovery is a
+  one-level glob, `verify_rxt.py tests` covers 0 files and exits 0, and
+  S-C4's population is the mechanism's 571.
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
 
 Maintenance: update this file when files are added/removed or change

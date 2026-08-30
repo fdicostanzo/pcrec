@@ -1,6 +1,6 @@
 # [DD-13b.W1] Implementation note — wave 1 of the grown `.rxt` format
 
-**Status: REVISION 2.2, post-panel (r45), post-BOTH re-checks and post-rulings. NO CODE IS
+**Status: REVISION 2.3, post-panel (r45), post-BOTH re-checks, post-rulings and post-correction. NO CODE IS
 WRITTEN.** Revision 1 (`bf843a7`) went to a three-critic D6 panel
 (`docs/dev/reviews/2026-08-30-r45-w1-impl.md`): **4 blockers, 6 must-fix,
 and a verdict that the spine stands and §2 is not buildable as written.**
@@ -25,6 +25,22 @@ the `have_block` guard, and B4's sort key).
 - **ARGUED** — reasoning from the above; the panel's natural target.
 - **DECIDED** — a point the format note left to the implementer, or where
   the tree contradicts it. Each is flagged inline and collected in §6.
+
+**A rule this note earned by breaking it (revision 2.3, §3.1.1's
+correction): A GREP COUNT IS MEASURED; "THEREFORE DEAD" IS BELIEVED,
+UNTIL AN INVOCATION TRACE SAYS OTHERWISE.** Revision 2.1 reported, truly,
+that `tests/assertions/verify_pcre2.py` has zero Makefile hits — and
+concluded it does not run. It runs: `run_assertions_tests.sh:60` invokes
+it, one layer down, which is **how every module's oracle in this tree is
+invoked**. The measurement was sound and the inference silently rode on
+it under the same MEASURED mark, which is precisely the conflation the
+marking scheme exists to prevent. So: a claim about what a grep FOUND is
+MEASURED; a claim about what that means for REACHABILITY is ARGUED at
+best, and in a build system with per-section scripts it is usually wrong.
+The same rule applies to `nnames`'s two stale sentences (§1.6, §4's S9c),
+one level over — there, a live command kept reproducing while the claim it
+supported rotted. **Both failures are a true observation with an untested
+inference welded to it.**
 
 ### 0.2 The design in one paragraph
 
@@ -115,6 +131,20 @@ all CLOSED; B1's DIAGNOSIS closed but its REMEDY refuted):
 | **sem N4** — the sub-parse's pending list | §2.5: the list is CAPTURED into the scope record, not overwritten by the restore; the re-basing is TWO passes (a tree walk for `A_CAP`, a pass over the captured list) rather than one |
 | **sem N5** — the region start vs the first delivered group | §4's S9b: the region starts at `ngroups+1` with the wrapper there; the first delivered GROUP is at `ngroups+2`. Revision 2.1 said the second and implied the first |
 | **sem N6** — `match_api.md:1504` becomes reachable-false | §4's S9c, and noted as the SECOND instance of §1.6's staleness shape in one struct's docs |
+
+**Revision 2.3** is a CORRECTION OF THIS NOTE'S OWN ERROR, from admin1's
+read-only survey (manager, 2026-08-30):
+
+| item | landed |
+|---|---|
+| revision 2.1 claimed `tests/assertions/verify_pcre2.py` is not run, from a zero-Makefile-hits grep | **§3.1.1's correction block.** It IS run — `run_assertions_tests.sh:60`, `test-assertions` in `TEST_SECTIONS` (`Makefile:120`), recursive `os.walk` (`verify_pcre2.py:189`), gating battery 3's section at 10,120 cells. **The grep was right; the inference was mine and wrong** |
+| the note asserted a coverage conclusion it had not traced | §3.1.1 gains the three-mechanism table (verify_pcre2 over 17 files / 10,274 lines; the `# pcre2-only` sweep as a THIRD mechanism at `run_lookaround_diff.sh:281`; verify_rxt's 40-file default, unwired) and a new step 1b: **the coverage map is established by INVOCATION TRACE and is an output of W1.1**, not an input this note may assume |
+| the marking scheme let an inference ride a measurement | **§0.1 gains the general rule**, tied to the `nnames` staleness as the same failure one level over |
+
+**What still stands from 2.1**: `verify_rxt.py`'s own `main()` is invoked
+nowhere; its discovery is a one-level glob; `verify_rxt.py tests` would
+cover 0 files and exit 0; S-C4's population is the mechanism's 571 rather
+than the census's 636. The condition on W1.1 is unchanged.
 
 **What the panel could NOT refute, and is not re-argued below:** the
 sub-parse on one `Ctx`; injection as `A_REP{0,0}(A_CAP)`; re-basing by a
@@ -1268,12 +1298,30 @@ Makefile:528:  # ... `tests/harness/verify_rxt.py` skips every cell in it —   
   (every other hit is a comment in another script)
 ```
 
-The only Makefile mention is prose. Its one real consumer,
-`tests/assertions/verify_pcre2.py`, imports it as a MODULE
-(`verify_pcre2.py:54`, `importlib` on `harness/verify_rxt.py`, so that
-"there is exactly one" `.rxt` reader) — **and that script has zero
-Makefile hits either.** So neither the oracle run nor, through it, the
-parser has a live consumer in `make test`.
+The only Makefile mention is prose, and **`verify_rxt.py`'s own `main()`
+is invoked nowhere in the tree** — that part stands.
+
+> **CORRECTION (revision 2.3), and the error was this note's own.**
+> Revision 2.1 continued: *"its one real consumer,
+> `tests/assertions/verify_pcre2.py`, … has zero Makefile hits either. So
+> neither the oracle run nor, through it, the parser has a live consumer
+> in `make test`."* **The second sentence is FALSE.** admin1's survey and
+> a re-check here: `tests/assertions/run_assertions_tests.sh:60` runs
+> `python3 "$SCRIPT_DIR/verify_pcre2.py"`; `test-assertions` is in
+> `TEST_SECTIONS` (`Makefile:120`, target at `:715`); and
+> `verify_pcre2.py:189` discovers by **`os.walk`** — recursive — over
+> `tests/assertions/`. Battery 3's own log shows it gating the section
+> (`verify_pcre2: 10120 cells agree with libpcre2, 0 disagree`).
+> **So `verify_pcre2.py` is LIVE, and the `.rxt` PARSER it imports has a
+> live consumer.** The zero-Makefile-hits grep was a true MEASURED fact;
+> "therefore dead" was an INFERENCE I did not mark as one, and it was
+> wrong because **every module's oracle script is invoked one layer down**,
+> from its own section script rather than from the Makefile. §0.1 now
+> carries the general lesson.
+
+**What survives the correction** — and it is still the condition on W1.1:
+`verify_rxt.py`'s standalone run is unwired, and its discovery is a
+ONE-LEVEL glob (`verify_rxt.py:191`, `:195`; `BASE_DIR` at `:20`):
 
 **And its discovery is a ONE-LEVEL glob** (`verify_rxt.py:191`, `:195`):
 
@@ -1319,6 +1367,22 @@ which the parser treats as ordinary comments. **S-C4's detector
 population is the mechanism's 571, not the census's 636**, and a check
 written against 636 would be asserting a number no code produces.
 
+**The corpus already has MORE THAN ONE oracle mechanism, and C3 must not
+double-count.** Three are now established by invocation rather than by
+grep:
+
+| mechanism | population | live? |
+|---|---|---|
+| `verify_pcre2.py` (libpcre2) | `tests/assertions/`, recursive — **17 files / 10,274 expectation lines** | **YES**, via `run_assertions_tests.sh:60` |
+| the `# pcre2-only` sweep (libpcre2) | the marked blocks, in the lookaround differential (`tests/lookaround/run_lookaround_diff.sh:281`) | **YES**, and a THIRD mechanism, not verify_pcre2 under another entry point |
+| `verify_rxt.py` (python `re`) | its default `tests/base/` — **40 files** | **NO** — `main()` invoked nowhere |
+
+`tests/assertions/` is the corpus's most oracle-sensitive subtree AND the
+one place python `re` is measurably the WRONG oracle (its `\Z` is PCRE2's
+`\z`), so it being covered by libpcre2 rather than by `verify_rxt` is
+correct, not a gap. **C3 counts each file once and names which oracle
+covers it.**
+
 **What W1.1 must do (the manager's condition):**
 
 1. **Wire it into `make test`** as its own target, over a **`find`-derived
@@ -1327,6 +1391,14 @@ written against 636 would be asserting a number no code produces.
    the target is RED, so a discovery that silently narrows can never read
    as a pass. This is the one property the current script structurally
    cannot have.
+1b. **Establish the COVERAGE MAP by invocation trace, not by grep** —
+   which files are oracle-covered today, by which mechanism — before
+   deciding what `verify_rxt` should be pointed at. This note does NOT
+   claim the remaining files are uncovered, because that is exactly the
+   inference the correction above got wrong: a grep can show a script is
+   not named in the Makefile and say nothing about whether a section
+   script runs it. The map is an output of W1.1, produced by running the
+   suite, and the wiring's scope follows from it.
 2. **Pin its verified and skip totals** in §3.1's baseline table, under
    the same provenance line as the other baselines. **NOT MEASURED HERE
    AND DELIBERATELY SO**: `verify_rxt.py` is a script under `tests/`, and
