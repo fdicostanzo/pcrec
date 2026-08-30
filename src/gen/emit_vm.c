@@ -6825,8 +6825,10 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                 " collapsed language matches the empty string, so the filter"
                 " could never dismiss a position and would cost a scan it"
                 " cannot win ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x)."
-                " -fprefilter overrides (do-or-die), -fprefilter-collapse does"
-                " not"
+                " -fprefilter is do-or-die and is never silently dropped: on"
+                " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
+                " it suppresses the rung itself and the compile refuses."
+                " -fprefilter-collapse does not override it"
               /* [SEL-1] tested here, ahead of the two flag routes, for the
                * same reason has_bref/has_call are: this is a THIRD thing no
                * flag explains, and it must not be reported as one. */
