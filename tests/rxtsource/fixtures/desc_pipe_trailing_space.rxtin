@@ -1,0 +1,10 @@
+# [DD-13b.W1.1 r46sem finding 14] `description | ` -- the block-scalar
+# marker PLUS a trailing space. Ruled: compare the TRIMMED value in all
+# three, so this is refused exactly like bare `description |`. Legs A
+# and B used to accept it as the literal text "| " (an exact strcmp/
+# string-compare that the trailing space slipped past); leg C already
+# refused it (`v.strip() == '|'`), which was the one place leg C was
+# STRICTER than its siblings rather than in step with them.
+pattern a+
+description | 
+m "aaa" 0 3

@@ -224,6 +224,43 @@ Beyond the four numbers above, a caller sizing a caller-provided buffer
 this engine takes no buffers, check before you divide" rule. This
 document does not repeat it.
 
+### 3.5 The `.rxt` SOURCE parser's own caps ([DD-13b.W1.1], r46sem finding 8)
+
+`pcrec --list-source`'s head parser (`src/parse/rxt_source.c`) is a
+compile-time tool over a file an author writes, not a caller-facing
+match-time surface — but it has its own two fixed-size caps, and a
+reader of a `.rxt` file's head is entitled to the same "the number is
+here" contract as a caller sizing a match-time buffer.
+
+- **A `config` name, a `target` prefix, and a `target`'s definition
+  name are each capped at 127 bytes** (a 128-byte stack buffer, one NUL).
+  Each of the three names it decides for reports its OWN diagnostic
+  naming the cap when crossed — `'config' name is too long (N bytes, max
+  127)`, and the two `target`-side siblings similarly — rather than the
+  "needs a name"/"needs a prefix"/"needs a definition name" message a
+  genuinely MISSING name gets, which would tell an author with a
+  too-long name a false thing about their line. **A `config`/`target`
+  `with`/`from` LIST ELEMENT has no cap of its own**: the identifier
+  check there runs directly over the bounded span inside the list text,
+  with no copy and no buffer to size.
+- **`config … from` nests at most 64 deep** before it refuses, naming
+  the construct (`src/parse/rxt_source.c`'s cycle walk). This is the
+  SAME cap `docs/dev/decisions.md`'s general recursion-depth stance
+  (DD-10/TS-4) takes elsewhere in the tree, applied to config-cascade
+  data rather than to parse depth.
+- **The whole-file slurp is UNCAPPED.** `--list-source` reads an entire
+  `.rxt` file into memory before parsing a byte of it; there is no size
+  ceiling on the file itself, matching every other whole-file read in
+  this tree (`tests/harness/run.sh`'s own `.rxt` reads are equally
+  uncapped). A `.rxt` file is authored, not received from an untrusted
+  caller (D22's standing scope boundary), so this is a deliberate
+  absence rather than a gap.
+- **`pcrec_error.msg` is 256 bytes**, same as everywhere else this
+  document's give-up codes propagate through it: the diagnostic's
+  `file:line:` prefix is composed FIRST (`rxt_fail`'s own comment), so a
+  long sentence truncates in the direction that keeps the actionable
+  part (which file, which line) rather than losing it.
+
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 
 This is D73's own example, re-measured against this worktree's build

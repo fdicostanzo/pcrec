@@ -1,0 +1,12 @@
+# [DD-13b.W1.1 r46sem finding 2] A TAB INSIDE A `from` LIST. Refused
+# outright: a tab in a comma list is never what an author means, and
+# accepting it would let one reach --list-source's columns 13/14
+# unescaped, splitting the row. HEAD-ONLY (leg A is the only parser that
+# ever sees it, by the seam ruling).
+config a
+  flags i
+config b from a,	c
+  engine vm
+
+pattern a+
+m "aaa" 0 3

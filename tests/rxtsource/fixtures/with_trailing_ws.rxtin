@@ -1,0 +1,13 @@
+# [DD-13b.W1.1 r46sem finding 21] `target t = d with a, b  ` -- TWO
+# TRAILING SPACES after the list. `with`/`from` used to store the list
+# UNTRIMMED, so two files differing only in trailing whitespace on this
+# line produced different TSV bytes on column 13 -- exactly what the C1
+# byte-for-byte differential exists to notice. HEAD-ONLY.
+config a
+  flags i
+config b
+  engine vm
+target t = greeting with a, b  
+
+pattern a+
+m "aaa" 0 3

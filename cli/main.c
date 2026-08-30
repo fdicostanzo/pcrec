@@ -571,7 +571,16 @@ int main(int argc, char **argv)
                             "--list-definitions and --explain only\n");
             return 1;
         }
-        pcrec_error serr;
+        /* [DD-13b.W1.1 r46sem finding 24, FIXED] initialized at the call
+         * site rather than left to `pcrec_rxt_source_parse`'s own
+         * zeroing, which runs BEFORE the `calloc` that can fail — a
+         * `calloc` failure returns NULL with `err->msg` already zeroed to
+         * "" by that point, so this line prints a bare "pcrec: " with no
+         * diagnostic text on out-of-memory. Zeroing here too costs
+         * nothing and keeps this call site correct independent of
+         * whichever side of its own `calloc` check the callee's own
+         * zeroing sits on. */
+        pcrec_error serr = { 0 };
         RxtSource *src = pcrec_rxt_source_parse(list_source, &serr);
         if (!src) {
             fprintf(stderr, "pcrec: %s\n", serr.msg);

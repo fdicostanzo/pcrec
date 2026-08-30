@@ -46,10 +46,12 @@
  */
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "pcrec.h"
 #include "core/internal.h"
@@ -251,29 +253,67 @@ static int ident_ok(const char *s)
     return 1;
 }
 
+/* THE SAME RULE, over a BOUNDED span rather than a NUL-terminated string
+ * (r46sem finding 8): `config_list_ok` used to copy each element into a
+ * fixed `char save[128]` before calling `ident_ok` on it, so an element
+ * over 127 bytes silently returned "invalid list" with no diagnostic that
+ * named the cap. Checking the span directly needs no buffer, no copy, and
+ * no cap at all — an identifier inside a config list has no length limit
+ * of its own, only the ones `config`/`target`'s own names have (see
+ * `parse_config`/`parse_target` below, and docs/spec/limits.md). */
+static int ident_ok_n(const char *s, size_t n)
+{
+    if (!n) return 0;
+    if (!isalpha((unsigned char)s[0]) && s[0] != '_') return 0;
+    for (size_t i = 1; i < n; i++)
+        if (!isalnum((unsigned char)s[i]) && s[i] != '_') return 0;
+    return 1;
+}
+
 /* `config-list` = ident { "," [ws] ident } — accepted as written, stored
  * as written (the dump is AS-WRITTEN, §1.8), but VALIDATED here so a
  * malformed list is refused at the declaration rather than at whatever
- * later pass first tries to walk it. */
+ * later pass first tries to walk it.
+ *
+ * [DD-13b.W1.1 r46sem finding 2] A TAB ANYWHERE IN THE LIST IS REFUSED,
+ * never accepted as a separator. `skip_ws` (below) treats space and tab
+ * identically, because it has to for the ordinary "a, b" case between
+ * items — so without this a list value could carry a literal tab through
+ * to columns 13/14 of `--list-source`'s TSV UNESCAPED (they are not among
+ * the three escaped columns, §1.8), splitting the row and shifting every
+ * later field. Ruled: a tab inside a comma list is never what an author
+ * means, so the construct refuses rather than the dump growing a fourth
+ * escaped column for two fields that should never need one. */
 static int config_list_ok(const char *s)
 {
     if (!*s) return 0;
+    if (strchr(s, '\t')) return 0;
     for (;;) {
         s = skip_ws(s);
         const char *start = s;
         while (*s && *s != ',' && !isspace((unsigned char)*s)) s++;
         if (s == start) return 0;
-        char save[128];
-        size_t n = (size_t)(s - start);
-        if (n >= sizeof save) return 0;
-        memcpy(save, start, n);
-        save[n] = 0;
-        if (!ident_ok(save)) return 0;
+        if (!ident_ok_n(start, (size_t)(s - start))) return 0;
         s = skip_ws(s);
         if (!*s) return 1;
         if (*s != ',') return 0;
         s++;
     }
+}
+
+/* THE SAME TRAILING-WHITESPACE RULE `value_trimmed` GIVES A TOKEN VALUE
+ * (r46sem finding 21), for a raw span that is not itself a `line_value`
+ * call — `with`/`from`'s list text, which is a SUBSTRING of the
+ * declaration line rather than "everything after the keyword". Without
+ * this, `target t = d with a, b  ` (two trailing spaces) stored the
+ * spaces into column 13 of the dump, and two files differing only in
+ * trailing whitespace on this line produced different TSV bytes — exactly
+ * what the C1 byte-for-byte differential exists to notice. */
+static const char *rtrim_ws(Arena *a, const char *s)
+{
+    size_t n = strlen(s);
+    while (n && (s[n - 1] == ' ' || s[n - 1] == '\t')) n--;
+    return arena_strndup(a, s, n);
 }
 
 /* -------------------------------------------------------- file slurping */
@@ -287,6 +327,26 @@ typedef struct { char **v; size_t n; } RxtLines;
 
 static int slurp_lines(RxtP *p, RxtLines *out)
 {
+    /* [DD-13b.W1.1 r46sem finding 23] A DIRECTORY MUST BE REFUSED BY
+     * NAME, not silently read as an empty file. On Linux `fopen(dir,
+     * "rb")` SUCCEEDS and `fseek`/`ftell` succeed too (a directory has a
+     * size), so without this check `fread` returns 0 (EISDIR, previously
+     * unchecked), `slurp_lines` reports zero lines, and
+     * `pcrec_rxt_source_parse` returns a valid EMPTY `RxtSource` —
+     * `pcrec --list-source tests/` printed the header and exited 0. That
+     * is the same "an empty successful dump reads as success" shape
+     * `--min-files` closes one directory over (r45chk N1), here one level
+     * lower. `stat` before `fopen` gives a diagnostic that names the
+     * actual problem, rather than relying on `fread`'s EISDIR behaviour
+     * (which sets the stream's error indicator on this platform but is
+     * not a portable guarantee to lean on for the primary check). */
+    struct stat st;
+    if (stat(p->path, &st) != 0)
+        return rxt_fail(p, 0, "cannot stat .rxt source file");
+    if (!S_ISREG(st.st_mode))
+        return rxt_fail(p, 0,
+                        "not a regular file (a directory or special file "
+                        "cannot be a .rxt source)");
     FILE *f = fopen(p->path, "rb");
     if (!f)
         return rxt_fail(p, 0, "cannot open .rxt source file");
@@ -296,6 +356,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     rewind(f);
     char *buf = arena_alloc(p->arena, (size_t)sz + 2);
     size_t got = fread(buf, 1, (size_t)sz, f);
+    if (ferror(f)) { fclose(f); return rxt_fail(p, 0, "error reading .rxt source file"); }
     fclose(f);
     buf[got] = 0;
 
@@ -361,13 +422,22 @@ static int parse_prose(RxtP *p, RxtLines *L, size_t *i, const char *val,
         *out = arena_strdup(p->arena, val);
         return 0;
     }
+    /* [DD-13b.W1.1 r46sem finding 10, RULED by the manager 2026-08-30] A
+     * BLANK LINE ENDS THE CONTINUATION — for a block scalar exactly as it
+     * already did for a `config` body (`parse_config`'s own `if
+     * (!line_indented(nx)) break;`, unchanged): the body IS the indented
+     * continuation, a blank line is not indented, so it terminates like
+     * any other non-indented line. This used to stop at the first
+     * NON-indented, NON-blank line, treating an INTERIOR blank line as
+     * part of the value (only trailing blanks were trimmed) — a second,
+     * disagreeing answer to the same question format_design.md calls
+     * "the same rule". A directive after the blank line belongs to the
+     * FILE, not to whatever the blank line's continuation would have
+     * been. */
     size_t start = *i + 1;
     size_t end = start;
-    while (end < L->n && (line_indented(L->v[end]) ||
-                          L->v[end][0] == '\0'))
+    while (end < L->n && line_indented(L->v[end]))
         end++;
-    /* trailing blank lines belong to whatever follows, not to the value */
-    while (end > start && L->v[end - 1][0] == '\0') end--;
     if (end == start)
         return rxt_fail(p, *i + 1,
                         "block scalar '|' has no indented continuation lines "
@@ -411,11 +481,17 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
     const char *v = value_trimmed(p, l);
 
     if (tok_is(l, "flags")) {
+        /* [DD-13b.W1.1 r46sem finding 3] ONLY `i` IS DEFINED
+         * (docs/spec/rxt_format.md, tests/harness/run.sh's own arm) — this
+         * leg used to accept any run of letters, which made a corpus block
+         * `flags xmz` dump `flags=xmz` here while leg B hard-errors it,
+         * the exact "three parsers, three answers, on a line the spec
+         * rules" class this step's remedy targets. */
         if (!*v) return rxt_fail(p, line, "'flags' needs its letters");
-        for (const char *q = v; *q; q++)
-            if (!isalpha((unsigned char)*q))
-                return rxt_fail(p, line,
-                                "'flags' takes letters only (got '%s')", v);
+        if (strcmp(v, "i") != 0)
+            return rxt_fail(p, line,
+                            "unknown flag letter(s) '%s' (only 'i' is "
+                            "defined)", v);
         r->flags = arena_strdup(p->arena, v);
         return 0;
     }
@@ -449,9 +525,18 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
         return 0;
     }
     if (tok_is(l, "engine")) {
-        if (strcmp(v, "vm") && strcmp(v, "dfa"))
+        /* [DD-13b.W1.1 r46sem finding 4, RULED] ONLY `vm` FOR W1.1 — the
+         * smaller change; `dfa` arrives when a test needs it (D77). This
+         * leg used to accept `dfa` while leg B (`tests/harness/run.sh`)
+         * already refused it, which is a D80 defect on its face: the two
+         * parsers disagreed about a directive the format's own spec
+         * paragraph (docs/spec/rxt_format.md) already ruled in `vm`'s
+         * favor — only the `--list-source` COLUMN TABLE contradicted it,
+         * fixed in the same change as this. */
+        if (strcmp(v, "vm"))
             return rxt_fail(p, line,
-                            "unknown 'engine' value '%s' (want vm or dfa)", v);
+                            "unknown 'engine' value '%s' (only vm is "
+                            "defined)", v);
         r->engine = arena_strdup(p->arena, v);
         return 0;
     }
@@ -464,9 +549,24 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
             return rxt_fail(p, line,
                             "unknown 'budget' spec '%s' (want steps=<n> or "
                             "frames=<n>)", v);
+        /* [DD-13b.W1.1 r46sem finding 12] LEG B's ALPHABET IS `[0-9]+`
+         * with no sign and no leading space; this leg used to accept a
+         * leading `+` (strtol's own grammar) AND silently clamp an
+         * overflowing value to LONG_MAX with `errno` never checked, so
+         * `budget steps=99999999999999999999` reported
+         * `9223372036854775807` in the dump with no diagnostic at all.
+         * Requiring the FIRST byte to be a bare digit closes the sign/
+         * leading-whitespace gap in one test (strtol's own whitespace
+         * skip and its `+`/`-` prefix are both non-digit first bytes);
+         * checking `errno == ERANGE` closes the overflow. */
+        if (!isdigit((unsigned char)*num))
+            return rxt_fail(p, line,
+                            "'budget' wants a non-negative integer with no "
+                            "sign or leading space (got '%s')", num);
+        errno = 0;
         char *end = NULL;
         long n = strtol(num, &end, 10);
-        if (!end || *end || end == num || n < 0)
+        if (!end || *end || end == num || n < 0 || errno == ERANGE)
             return rxt_fail(p, line,
                             "'budget' wants a non-negative integer (got '%s')",
                             num);
@@ -505,8 +605,18 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *e = v;
     while (*e && !isspace((unsigned char)*e)) e++;
     size_t nlen = (size_t)(e - v);
-    if (!nlen || nlen >= sizeof name)
+    if (!nlen)
         return rxt_fail(p, line, "'config' needs a name");
+    /* [DD-13b.W1.1 r46sem finding 8] A DISTINCT DIAGNOSTIC NAMING THE CAP.
+     * This used to fall into the SAME "needs a name" message a genuinely
+     * missing name gets — which tells an author with a too-long name a
+     * FALSE thing about their line (it has a name; it is too long), worse
+     * than no message at all. docs/spec/limits.md carries the 128-byte
+     * identifier cap this and the two `target` fields below share. */
+    if (nlen >= sizeof name)
+        return rxt_fail(p, line,
+                        "'config' name is too long (%zu bytes, max %zu)",
+                        nlen, sizeof name - 1);
     memcpy(name, v, nlen); name[nlen] = 0;
     if (!ident_ok(name))
         return rxt_fail(p, line,
@@ -526,7 +636,7 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
             return rxt_fail(p, line,
                             "'config %s from' needs a comma-separated config "
                             "list (got '%s')", name, list);
-        r->from_list = arena_strdup(p->arena, list);
+        r->from_list = rtrim_ws(p->arena, list);
     }
 
     /* duplicate config names are a tier-2 refusal naming BOTH sites
@@ -550,7 +660,28 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         const RxtKeyword *kw = vocab_find(config_vocab,
                                           sizeof config_vocab / sizeof *config_vocab,
                                           body);
-        if (!kw) return unknown_token(p, bline, body, "config-block");
+        if (!kw) {
+            /* [DD-13b.W1.1 r46sem finding 11] `line_blank_or_comment`
+             * tests the RAW first byte for '#' (above), so it can never
+             * fire here — `body` is always indented (the caller already
+             * checked `line_indented(nx)`), so its first byte after
+             * `skip_ws` is never a space. An indented `# note` therefore
+             * reaches this catch-all and, without this arm, is reported
+             * as "'#' is not a config-block directive" — spec-conformant
+             * (a `#` anywhere but column 1 is data) but confusing in the
+             * one region where indentation is structural. Named rather
+             * than fixed: the grammar decision (allow a column-1-relative
+             * comment inside a head continuation) is left open (sem10's
+             * sibling), but the diagnostic at least says what happened. */
+            if (*body == '#')
+                return rxt_fail(p, bline,
+                                "a comment must start in column 1 (this '#' "
+                                "is indented, and indentation inside a "
+                                "'config' body is continuation, not "
+                                "commentary — format_design.md's lexical "
+                                "rule)");
+            return unknown_token(p, bline, body, "config-block");
+        }
         if (kw->wave > 1) return refuse_wave(p, bline, kw, "config-block");
         if (tok_is(body, "pcrec")) {
             const char *raw = line_value(body);
@@ -582,8 +713,15 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *pe = eq;
     while (pe > v && isspace((unsigned char)pe[-1])) pe--;
     size_t plen = (size_t)(pe - v);
-    if (!plen || plen >= sizeof prefix)
+    if (!plen)
         return rxt_fail(p, line, "'target' needs a prefix before the '='");
+    /* [DD-13b.W1.1 r46sem finding 8] see parse_config's twin above: a
+     * distinct diagnostic naming the cap, not the "needs a prefix"
+     * message a genuinely missing prefix gets. */
+    if (plen >= sizeof prefix)
+        return rxt_fail(p, line,
+                        "'target' prefix is too long (%zu bytes, max %zu)",
+                        plen, sizeof prefix - 1);
     memcpy(prefix, v, plen); prefix[plen] = 0;
     if (!ident_ok(prefix))
         return rxt_fail(p, line,
@@ -595,9 +733,14 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *de = rest;
     while (*de && !isspace((unsigned char)*de)) de++;
     size_t dlen = (size_t)(de - rest);
-    if (!dlen || dlen >= sizeof def)
+    if (!dlen)
         return rxt_fail(p, line,
                         "'target %s =' needs a definition name", prefix);
+    /* [DD-13b.W1.1 r46sem finding 8] see the two twins above. */
+    if (dlen >= sizeof def)
+        return rxt_fail(p, line,
+                        "'target %s =' definition name is too long (%zu "
+                        "bytes, max %zu)", prefix, dlen, sizeof def - 1);
     memcpy(def, rest, dlen); def[dlen] = 0;
     if (!ident_ok(def))
         return rxt_fail(p, line,
@@ -619,7 +762,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
             return rxt_fail(p, line,
                             "'target %s with' needs a comma-separated config "
                             "list (got '%s')", prefix, list);
-        r->with_list = arena_strdup(p->arena, list);
+        r->with_list = rtrim_ws(p->arena, list);
     }
 
     for (size_t k = 0; k + 1 < src->nrows; k++)
@@ -892,7 +1035,21 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                  * reading. Raised for the manager rather than settled
                  * silently; see the lane report. */
                 const char *v = line_value(l);
-                if (!strcmp(v, "|")) {
+                /* [DD-13b.W1.1 r46sem finding 14] COMPARE THE TRIMMED
+                 * VALUE, not the exact one — ruled: a `|` with trailing
+                 * whitespace is nobody's intended literal, so `description
+                 * | ` (one trailing space) is refused as the block-scalar
+                 * spelling exactly like bare `description |`, matching
+                 * `tests/harness/verify_rxt.py`'s `v.strip() == '|'`
+                 * (which already trims). Before this fix the exact
+                 * `strcmp` let the trailing-space form fall through and be
+                 * accepted as the literal text `"| "` — the one place leg
+                 * C was STRICTER than legs A/B rather than in step with
+                 * them. */
+                size_t vlen = strlen(v);
+                while (vlen && (v[vlen - 1] == ' ' || v[vlen - 1] == '\t'))
+                    vlen--;
+                if (vlen == 1 && v[0] == '|') {
                     rxt_fail(&p, line,
                              "a pattern block's 'description' takes the "
                              "one-line form only: the '|' block scalar is "
@@ -900,10 +1057,15 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              "not indented (the head is where '|' belongs)");
                     goto fail;
                 }
-                if (!*v) {
-                    rxt_fail(&p, line, "'description' needs its text");
-                    goto fail;
-                }
+                /* [DD-13b.W1.1 r46sem finding 13] AN EMPTY DESCRIPTION IS
+                 * ACCEPTED, matching legs B and C — `description ` (one
+                 * trailing space, no text) used to hard-error here while
+                 * both other parsers accept it with an empty value. There
+                 * is nothing wrong with a block declaring it has no
+                 * description text; "needs its text" was never true of
+                 * this line, only of one with nothing after the keyword
+                 * at all — which does not reach this arm (see
+                 * `vocab_find`'s tokenizer above). */
                 block->description = arena_strdup(&src->arena, v);
                 continue;
             }
@@ -919,6 +1081,35 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             if (src->rows[i].kind == RXT_DECL_CONFIG &&
                 config_walk(&p, src, &src->rows[i], stack, 0) != 0)
                 goto fail;
+    }
+
+    /* [DD-13b.W1.1 r46sem finding 7] `target … with c1,c2` NAMES A LIST
+     * OF CONFIGS THAT MUST EXIST, and docs/spec/rxt_format.md has always
+     * said so ("config composition and the with/from cascades are
+     * VALIDATED") — only `from`'s cycle walk above actually did it.
+     * `parse_target` checks `with_list` for SYNTAX only (`config_list_ok`)
+     * and stores it; nothing ever resolved the names against the file's
+     * declared configs, so `target t = d with nosuch` parsed clean. Run as
+     * a WHOLE-FILE pass, like the `from` cycle check just above, because a
+     * `with` may name a config declared LATER in the file. */
+    for (size_t i = 0; i < src->nrows; i++) {
+        RxtRow *r = &src->rows[i];
+        if (r->kind != RXT_DECL_TARGET || !r->with_list) continue;
+        const char *s = r->with_list;
+        while (*s) {
+            s = skip_ws(s);
+            const char *start = s;
+            while (*s && *s != ',' && !isspace((unsigned char)*s)) s++;
+            if (!config_by_name(src, start, (size_t)(s - start))) {
+                rxt_fail(&p, r->line,
+                         "'target %s with' names '%.*s', which is not a "
+                         "config declared in this file", r->name,
+                         (int)(s - start), start);
+                goto fail;
+            }
+            s = skip_ws(s);
+            if (*s == ',') s++;
+        }
     }
 
     /* A FILE WITH A HEAD AND NO `pattern` BLOCKS IS LEGAL (the grammar

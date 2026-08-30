@@ -1039,6 +1039,40 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   column list is one array so the header and the row writer cannot
   disagree about how many there are.
 
+  **[r46 / w11f fix lane, 2026-08-30]** narrowed several constructs to the
+  RULED vocabulary the r46 panel found this leg had drifted from
+  (`docs/dev/reviews/2026-08-30-r46-w11-impl.md`): `flags` accepts only
+  `i` and `engine` only `vm` (findings 3/4 — previously any letter run,
+  and `dfa`, both contradicting `tests/harness/run.sh`'s own arms); a
+  tab is refused anywhere inside a `config`/`target` `with`/`from` list
+  (finding 2, `config_list_ok`); `with` names are now resolved against
+  the file's declared configs, matching `from`'s existing cycle walk
+  (finding 7 — the spec always said both were validated, only `from`
+  was); a too-long `config` name / `target` prefix / definition name
+  reports a diagnostic NAMING THE CAP rather than the "needs a name"
+  message a genuinely missing one gets (finding 8, `docs/spec/limits.md`
+  §3.5); `with`/`from` are stored TRIMMED of trailing whitespace, like
+  every other token/list value (finding 21); `budget steps=`/`frames=`
+  rejects a leading sign or space and checks `errno == ERANGE` rather
+  than silently clamping an overflow to `LONG_MAX` (finding 12); a
+  directory named as the `.rxt` source is refused via `stat`/`S_ISREG`
+  rather than silently read as an empty file (finding 23, the same
+  absence-reads-as-success shape `--min-files` closes one directory
+  over); a block-level `description` accepts empty text (trailing space,
+  no text — finding 13) and refuses a trailing-space `|` exactly like the
+  bare form (finding 14, comparing the TRIMMED value, matching
+  `verify_rxt.py`'s pre-existing stricter check); and an indented `#`
+  inside a `config` body gets a diagnostic naming the actual rule
+  ("comments must start in column 1", finding 11) instead of "'#' is not
+  a config-block directive". **Finding 10 (RULED by the manager,
+  2026-08-30): `parse_prose` (the block-scalar production the head's
+  `description` uses) now stops at the FIRST non-indented line, blank or
+  not** — it used to treat an interior blank line as part of the value
+  (only trailing blanks were trimmed), disagreeing with `parse_config`'s
+  own `if (!line_indented(nx)) break;`, which format_design.md calls "the
+  same rule" as the block scalar's. Witnesses:
+  `tests/rxtsource/fixtures/*.rxtin`.
+
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
   axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the
   syntax registry syntax_dump.c below renders — a different table

@@ -1,0 +1,12 @@
+# [DD-13b.W1.1 r46sem finding 1, BLOCKER] THE CONTROL-BYTE ESCAPE
+# WITNESS. Without it, `--list-source`'s escape on columns 4/5/15 (and
+# leg B's own `rxt_escape`) had a population of ZERO on the real corpus
+# (MEASURED: 0 corpus patterns carry any control byte other than TAB),
+# so the bug the panel found -- leg B's awk fallback mapping a byte's
+# INDEX in a side table rather than its VALUE, turning VT (0x0b) into a
+# decoded TAB and passing DEL (0x7f) through raw -- had nothing to fail
+# on. This block's pattern carries VT, FF and DEL literally (bytes
+# 0x0b, 0x0c, 0x7f); all three parsers must dump it identically, byte
+# for byte.
+pattern abcd
+m "abcd" 0 7

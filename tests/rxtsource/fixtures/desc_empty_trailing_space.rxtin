@@ -1,0 +1,8 @@
+# [DD-13b.W1.1 r46sem finding 13] `description ` -- ONE TRAILING SPACE,
+# NO TEXT. Legs B and C already accept an empty description here; leg A
+# used to hard-error "'description' needs its text", which is false of
+# this line (it has a description, it is merely empty). All three must
+# accept it identically.
+pattern a+
+description 
+m "aaa" 0 3

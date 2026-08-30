@@ -18625,3 +18625,47 @@ every rung, no count crossover. I-21 written. Earlier in this part:
 [LIM-1]); [DD-11] row updated to battery-proven (its .5/.6 wait on the
 exact one-byte-lookbehind DFA lowering — an engine item nothing
 schedules).
+
+**15:3x — FRANK'S PERF HOLD:** "hold on performance tests until further
+notice. i need to run some stuff on the linux box." No measurement
+windows (ours or the bench's [B22]/bounded@0.2) until he lifts it;
+[OPT-5]/[OPT-A] STEP 0s were not yet scheduled and stay unscheduled.
+Correctness runs continue (battery 4's mech tail, w11f stage B, opt41
+Phase 2 — stamps and counts, nothing timed); K32's load cell may read
+red under his workload — diagnosed solo as always. pcrecdev2 told.
+
+#### Forty-sixth session, part 7 (15:4x EDT): BATTERY 4 CLOSED GREEN-BY-DIAGNOSIS on cf86987 — [DD-13b.W1.1] is battery-proven
+
+DONE 15:46:59 (launched 12:09:10; 3 h 38). The DONE line reads RED by
+arithmetic on ONE guard line — the `make[1]: *** test-corpus Error 1`
+from the K32 counterk load cell (29 cases, cleared solo: red lines 0).
+Everything that measures the code is clean: `make test` **1,901 checks /
+0 failed**; strict clean; **san rc 0 / 0 report lines (102 min)**;
+**mech 200 rows / unexpected 0 / undetected 6 (S150-S153, S160, S178 —
+the expected six) / unreached 0 / anomalies 0** — the eleven W1.1 rows
+(S194-S204) all DETECTED inside the full matrix. No abi change, so pin
+96e44c2 stands; the bench told (their untimed [B20] make check may run).
+Frank's PERF HOLD (15:3x) remains in force — no measurement windows.
+
+Next: w11f stage B (its corpus INV-COMPAT run + its S205 escape row),
+then its review/merge; opt41 Phase 2 after it. NUMBERING COLLISION
+caught at this boundary: w11f minted S205 (the rxt-escape index-vs-value
+row) and opt41 independently minted S205/S206 (predicate removed /
+inverted) — w11f keeps S205; opt41 renumbers to S206/S207 before its
+Phase 2 (told by message; it is idle, so the message lands).
+
+#### Forty-sixth session, part 8 (16:2x EDT): lane/w11f MERGED — the r46 panel's findings closed measured
+
+w11f's stage B, all MEASURED on the merged tree: test-corpus 26,680/0
+(0 compile failures, 178/178, size-log 2,878); S205 solo DETECTED
+(reach 1/1; exactly the one ctrl_bytes check red; corpus untouched) with
+S203 as the unblunted control, also DETECTED; final test-rxtsource 78/0;
+stage A had already measured build/strict/codegen 5/5/cli 287/0. Merged
+into main (ort, clean). The r46 record: 1 blocker + 10 must-fixes fixed
+and fixture-proven; sem10 ruled (a blank line ends a config body);
+sem18/sem22 left with reasons; two Phase-1 bugs caught by the lane's own
+stage-A checks (run.sh's description arm missed by sem14's first fix; a
+wrong expectation in its own sem21 check) — recorded in
+docs/dev/lanes/w11f_report.md. Worktree retired. opt41's .lift follows
+on this merge; ONE battery covers both merges at opt41's landing
+(battery 3's two-lane precedent). Frank's perf hold unchanged.

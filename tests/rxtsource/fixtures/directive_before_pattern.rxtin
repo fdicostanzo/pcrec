@@ -1,0 +1,9 @@
+# [DD-13b.W1.1 r46sem finding 16] `flags i` BEFORE ANY `pattern` LINE, in
+# a HEADLESS file. Legs A and B already refuse it ("'flags' line before
+# any pattern block"); leg C used to fall through to its ordinary `flags`
+# branch, get appended to `results`, and be silently DROPPED by
+# `dump_file`'s `if blk is None: continue` -- accepting a directive with
+# no block to attach to.
+flags i
+pattern a+
+m "aaa" 0 3

@@ -508,6 +508,108 @@ if [ "$needs_clean" -eq 1 ] && [ "$CLEAN_REUSED" -eq 0 ]; then
     echo
 fi
 
+# [DD-13b.W1.1 r46chk finding 2 / chk 2, FIXED] THE UNESCAPED-BACKTICK
+# CHECK, rebuilt as a QUOTE-STATE MACHINE over the JOINED source text
+# rather than a per-line scan. The per-line form only ever looked at ONE
+# `$0` per `SAB_X="` match, so a double-quoted field that does not close
+# on the line it opens was invisible to it however unescaped its
+# backtick was -- MEASURED: 43 of this directory's own SAB_BEFORE/
+# SAB_AFTER/etc. fields are multi-line double-quoted strings today, and a
+# synthetic multi-line plant with an unescaped backtick produced NO
+# output from the old check (see the self-test right below, which is
+# exactly that plant, kept permanently rather than run once and
+# discarded).
+#
+# Defined ONCE, as data (an awk program held in a shell variable) rather
+# than as an inline literal at the one call site, so the self-test run at
+# script start and the real per-row check further inside `run_one` are
+# THE SAME RULE — a control that shared no source with what it controls
+# would be two copies of this awk program silently drifting apart, which
+# is this project's own most-recorded check-design failure
+# (docs/dev/learnings.md §3).
+#
+# THE STATE MACHINE: `in_field` is 1 while positioned inside an OPEN
+# double-quoted `SAB_NAME="..."` value (across as many embedded newlines
+# as the field actually has); `at_bol` is 1 only immediately after a
+# newline (or at the very start of the file), because an opening token is
+# only recognised at the START OF A LINE — exactly as the old per-line
+# form required `^SAB_[A-Z_0-9]+="` — so an incidental "SAB_" substring
+# inside some other field's text can never be misread as a second
+# opener. Escaping (`\\` then any character) is honoured inside a field
+# exactly as bash's own double-quote parsing honours it, which is what
+# lets `\\\`` stay the safe, literal spelling most rows already use.
+SAB_BT_AWK='
+BEGIN {
+    file = ARGV[1]
+    text = ""
+    while ((getline line < file) > 0) text = text line "\n"
+    close(file)
+    n = length(text)
+    in_field = 0; esc = 0; cur_line = 1; at_bol = 1; i = 1
+    while (i <= n) {
+        c = substr(text, i, 1)
+        if (!in_field) {
+            if (at_bol) {
+                rest = substr(text, i)
+                if (match(rest, /^SAB_[A-Z_0-9]+="/)) {
+                    field_line = cur_line
+                    i += RLENGTH
+                    in_field = 1; esc = 0; at_bol = 0
+                    continue
+                }
+            }
+            if (c == "\n") { cur_line++; at_bol = 1 } else { at_bol = 0 }
+            i++
+            continue
+        }
+        if (c == "\n") { cur_line++; i++; continue }
+        if (esc) { esc = 0; i++; continue }
+        if (c == "\\") { esc = 1; i++; continue }
+        if (c == "\"") { in_field = 0; i++; continue }
+        if (c == "`") {
+            print cur_line ": unescaped backtick (field opened at line " field_line ")"
+            i++; continue
+        }
+        i++
+    }
+}'
+
+# THE SELF-TEST: a PLANTED-GOOD and a PLANTED-BAD file, both multi-line,
+# run through the identical `SAB_BT_AWK` this script uses for real. Ran
+# ONCE, before any sabotage row, so a future edit to the awk program that
+# reintroduces the per-line blindness (or any other regression) is caught
+# before eighty minutes of a real matrix run rather than never, which is
+# what "closes a defect no anchor check can see" has to mean for the
+# check's OWN correctness and not only for the rows it protects.
+_sab_bt_selftest() {
+    local good bad out
+    good="$(mktemp)"; bad="$(mktemp)"
+    trap 'rm -f "$good" "$bad"' RETURN
+    cat > "$good" <<'SELFTEST_GOOD'
+SAB_DESC="a multi-line field whose backtick is ESCAPED
+right here: \` -- safe, must NOT be flagged"
+SELFTEST_GOOD
+    cat > "$bad" <<'SELFTEST_BAD'
+SAB_DESC="a multi-line field whose backtick is UNESCAPED
+right here: ` -- dangerous, MUST be flagged"
+SELFTEST_BAD
+    out="$(LC_ALL=C awk "$SAB_BT_AWK" "$good")"
+    if [ -n "$out" ]; then
+        echo "FATAL: the backtick checker's self-test PLANTED-GOOD file was" \
+             "flagged (a false positive on an escaped, multi-line backtick):" >&2
+        echo "$out" >&2
+        exit 2
+    fi
+    out="$(LC_ALL=C awk "$SAB_BT_AWK" "$bad")"
+    if [ -z "$out" ]; then
+        echo "FATAL: the backtick checker's self-test PLANTED-BAD file was" \
+             "NOT flagged -- the multi-line quote-state machine is broken" \
+             "(this is exactly the shape that let S196/S197/S202 land)" >&2
+        exit 2
+    fi
+}
+_sab_bt_selftest
+
 # ---- run one sabotage: fresh tree, verify-apply, build, run suites ----
 
 run_one() {
@@ -641,18 +743,13 @@ run_one() {
         # ONLY UNESCAPED ONES: `\\\`` inside a double-quoted string is a
         # literal backtick and is perfectly safe, which is how most of
         # this directory already writes it.
-        _sab_bt="$(LC_ALL=C awk '
-            /^SAB_[A-Z_0-9]+="/ {
-                body = $0
-                sub(/^SAB_[A-Z_0-9]+="/, "", body)
-                n = length(body)
-                for (i = 1; i <= n; i++) {
-                    c = substr(body, i, 1)
-                    if (c == "\\") { i++; continue }
-                    if (c == "\"") break
-                    if (c == "`") { print FNR ": " $0; break }
-                }
-            }' "$sab_path")"
+        #
+        # [r46chk finding 2 / chk 2] `SAB_BT_AWK` (defined once, above
+        # `run_one`, with its own self-test) IS this check — a
+        # quote-state machine over the file's JOINED text, so a field
+        # that does not close on the line it opens is no longer invisible
+        # to it.
+        _sab_bt="$(LC_ALL=C awk "$SAB_BT_AWK" "$sab_path")"
         if [ -n "$_sab_bt" ]; then
             echo "FATAL[$(basename "$sab_path")]: an UNESCAPED backtick in a" \
                  "double-quoted field. In a double-quoted string that is" \

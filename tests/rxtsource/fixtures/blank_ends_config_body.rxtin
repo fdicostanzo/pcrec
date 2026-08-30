@@ -1,0 +1,19 @@
+# [DD-13b.W1.1 r46sem finding 10, RULED 2026-08-30] A blank line ENDS a
+# `config` body's continuation, exactly as it ends a block scalar's — the
+# body IS the indented continuation, a blank line is not indented, so it
+# terminates like any other non-indented line. `config dev` therefore
+# gets ONLY `flags i`; the `description` line below the blank belongs to
+# the FILE, not to `config dev`. Before this fix `parse_prose` (the block
+# scalar production `description` also uses in the head) disagreed with
+# `parse_config`'s own body-ending rule by treating an INTERIOR blank
+# line as part of the value rather than ending it there — this fixture
+# exercises the `config` body half of that disagreement; a head-level
+# `description |` block scalar with an interior blank line would have
+# exercised the other half identically.
+config dev
+  flags i
+
+description this belongs to the FILE, not to config dev
+
+pattern a+
+m "aaa" 0 3

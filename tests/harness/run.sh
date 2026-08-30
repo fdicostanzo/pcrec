@@ -449,18 +449,33 @@ rxt_escape() {
     s=${s//$'\r'/\\r}
     case $s in
         *[$'\x01'-$'\x08\x0b\x0c\x0e'-$'\x1f\x7f']*)
-            # a control byte the fast path does not spell: fall back to the
-            # per-byte form, which is the SAME `\xNN` rendering pcrec emits
-            s=$(printf '%s' "$s" | LC_ALL=C awk '{
-                    out=""
-                    for (i = 1; i <= length($0); i++) {
-                        c = substr($0, i, 1)
-                        n = index(CTRL, c)
-                        if (n > 0) out = out sprintf("\\x%02x", n)
-                        else out = out c
-                    }
-                    print out
-                }' CTRL=$'\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f')
+            # [DD-13b.W1.1 r46sem finding 1, BLOCKER, fixed] a control byte
+            # the fast path does not spell: fall back to a per-BYTE encode
+            # that derives the `\xNN` rendering FROM THE BYTE'S OWN VALUE —
+            # never from its position in a side table. The bug this
+            # replaces read the INDEX of a lookup table as if it were the
+            # byte's value (coinciding only for 0x01..0x08, and never
+            # spelling 0x7f at all, since CTRL did not carry it): 0x0b
+            # rendered as `\x09`, which DECODES TO A TAB — the exact
+            # framing hazard this escape exists to prevent. An arithmetic
+            # test on the byte's own numeric value has no second source to
+            # disagree with `src/parse/rxt_source.c`'s `put_escaped`
+            # (`*q < 0x20 || *q == 0x7f`), which this mirrors byte for
+            # byte; there is no CTRL table left to drift out of step with
+            # it. Rare path by construction (0 corpus patterns reach it
+            # today; the fixture at tests/rxtsource/fixtures/ctrl_bytes.rxtin
+            # is what does), so a bash loop's cost is immaterial.
+            local out="" i c n
+            for (( i = 0; i < ${#s}; i++ )); do
+                c=${s:i:1}
+                printf -v n '%d' "'$c"
+                if (( n < 32 || n == 127 )); then
+                    out+=$(printf '\\x%02x' "$n")
+                else
+                    out+="$c"
+                fi
+            done
+            s=$out
             ;;
     esac
     REPLY=$s
@@ -953,6 +968,11 @@ for file in "${files[@]}"; do
     case_route=()
     have_block=0
     blocks_in_file=0
+    # [DD-13b.W1.1 r46sem finding 20] `name` IS IN THE FILE NAMESPACE
+    # (docs/spec/rxt_format.md) and must be unique within the file. Reset
+    # PER FILE, never per block -- the whole point is to catch a SECOND
+    # block naming itself the same thing.
+    declare -A declared_names=()
 
     # ---- [DD-13b.W1.1] THE SEAM (w1_impl §1.1, the manager's ruling) ----
     #
@@ -1347,14 +1367,25 @@ for file in "${files[@]}"; do
             # RECORDED, NOT USED, in W1.1: `rx_info.name` is W1.2's and the
             # abi does not move in this step. The harness records it so the
             # C1 dump carries it and so the two parsers are compared on a
-            # line one of them would otherwise never see. A DUPLICATE name is
-            # pcrec's refusal to make, not this loop's — a duplicate is a
-            # whole-FILE fact and this parser is the body's.
+            # line one of them would otherwise never see.
+            #
+            # [DD-13b.W1.1 r46sem finding 20, FIXED] A DUPLICATE NAME IS NOW
+            # CAUGHT HERE TOO. It used to be "pcrec's refusal to make, not
+            # this loop's" — true, but pcrec (`--list-source`) is called
+            # for a HEAD-BEARING file only, and every file in the corpus
+            # today is headless, so nothing in the tree enforced the
+            # spec's own uniqueness rule for the population that actually
+            # reaches this parser. `declared_names` is reset PER FILE
+            # (above), matching `name`'s FILE-namespace scope.
             blk_name="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
                 record_fail "$file" "$lineno" "'name' line before any pattern block"
+            elif [ -n "${declared_names[$blk_name]:-}" ]; then
+                record_fail "$file" "$lineno" \
+                    "duplicate block name '$blk_name' (already named on line ${declared_names[$blk_name]})"
             else
                 cur_name="$blk_name"
+                declared_names[$blk_name]="$lineno"
             fi
         elif [[ "$line" =~ ^description[[:space:]]+(.*)$ ]]; then
             # [DD-13b.W1] `description` is a FIELD, not a comment (Frank,
@@ -1372,9 +1403,20 @@ for file in "${files[@]}"; do
             # seam ruling removed. src/parse/rxt_source.c refuses `|` here
             # with that reason named, so the two parsers agree.
             blk_desc="${BASH_REMATCH[1]}"
+            # [DD-13b.W1.1 r46sem finding 14, FIXED] COMPARE THE TRIMMED
+            # VALUE, not the exact one -- ruled: a `|` with trailing
+            # whitespace is nobody's intended literal, so `description | `
+            # (one trailing space) is refused exactly like bare
+            # `description |`, matching src/parse/rxt_source.c's twin fix
+            # and tests/harness/verify_rxt.py's pre-existing
+            # `v.strip() == '|'`. The exact `[ = "|" ]` compare used to let
+            # the trailing-space form fall through and be accepted as the
+            # literal text "| " -- the one place THIS leg was looser than
+            # its siblings rather than in step with them.
+            blk_desc_trimmed="${blk_desc%"${blk_desc##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
                 record_fail "$file" "$lineno" "'description' line before any pattern block"
-            elif [ "$blk_desc" = "|" ]; then
+            elif [ "$blk_desc_trimmed" = "|" ]; then
                 record_fail "$file" "$lineno" \
                     "a pattern block's 'description' takes the one-line form only: the '|' block scalar is continuation, and a pattern block's lines are not indented (the head is where '|' belongs)"
             else

@@ -5,7 +5,15 @@ It sets variables and nothing else: no command runs at source time, and a file
 that executes anything (a stray backtick inside a double-quoted field, the
 [M6.5.2] finding below) is a defect **that now HAS a check** — the driver's
 field validation scans each row's TEXT for an UNESCAPED backtick in a
-double-quoted field and FATALs ([DD-13b.W1.1]).
+double-quoted field and FATALs ([DD-13b.W1.1]). **[r46chk finding 2 / w11f
+fix lane, 2026-08-30]: the scan is now a QUOTE-STATE MACHINE over the
+file's JOINED text, not a per-line one.** The per-line form matched
+`^SAB_[A-Z_0-9]+="` and scanned only that one `$0`, so a double-quoted
+field that does not CLOSE on the line it opens was invisible to it
+however unescaped its backtick was — MEASURED, 43 of this directory's own
+fields are multi-line. `run_sabotage_matrix.sh`'s `SAB_BT_AWK` (defined
+once, with a permanent planted-good/planted-bad self-test run at script
+start) is the fix.
 
 It must read the TEXT and not the sourced value, and that is the whole trick:
 an unescaped backtick is CONSUMED by command substitution at source time and
