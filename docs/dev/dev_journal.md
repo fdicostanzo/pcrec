@@ -18733,3 +18733,16 @@ Earlier: [OPT-VMLIT] queued (Frank's string-compare idea; the trie's
 non-branching chains are the finder; [ENG-DIRECT] gets the DFA
 string-edge cross-note); battery does not grow (engine identity stays
 opt-in; engine performance stays the bench's).
+
+**17:4x-17:5x — clang probed (Frank installed 21.1.8).** Scratch-only
+probe, three artifact shapes × {gcc, clang} -O2: DFA/memchr and
+recursion artifacts compile and AGREE cell-for-cell (one cosmetic
+`noclone` warning); a backtracking VM artifact compiles with ZERO
+warnings and agrees. ONE real incompatibility, narrow: a FRAMELESS VM
+artifact still emits the resume dispatch (`goto *…resume_label`) with
+no `&&label` in the function — gcc accepts, clang refuses. → plan row
+[CC-CLANG] (step 1: dispatch emitted only when a push site exists +
+the noclone guard, one abi bump; step 2: opt-in clang compilee-axis
+corpus sweep on the SAN-1 hook precedent; step 3: the bench's partial
+cc axis, behind the perf hold, goes in I-22). ADMIN column after
+[M4-QUOTING].
