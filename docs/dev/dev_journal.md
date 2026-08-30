@@ -18633,3 +18633,23 @@ windows (ours or the bench's [B22]/bounded@0.2) until he lifts it;
 Correctness runs continue (battery 4's mech tail, w11f stage B, opt41
 Phase 2 — stamps and counts, nothing timed); K32's load cell may read
 red under his workload — diagnosed solo as always. pcrecdev2 told.
+
+#### Forty-sixth session, part 7 (15:4x EDT): BATTERY 4 CLOSED GREEN-BY-DIAGNOSIS on cf86987 — [DD-13b.W1.1] is battery-proven
+
+DONE 15:46:59 (launched 12:09:10; 3 h 38). The DONE line reads RED by
+arithmetic on ONE guard line — the `make[1]: *** test-corpus Error 1`
+from the K32 counterk load cell (29 cases, cleared solo: red lines 0).
+Everything that measures the code is clean: `make test` **1,901 checks /
+0 failed**; strict clean; **san rc 0 / 0 report lines (102 min)**;
+**mech 200 rows / unexpected 0 / undetected 6 (S150-S153, S160, S178 —
+the expected six) / unreached 0 / anomalies 0** — the eleven W1.1 rows
+(S194-S204) all DETECTED inside the full matrix. No abi change, so pin
+96e44c2 stands; the bench told (their untimed [B20] make check may run).
+Frank's PERF HOLD (15:3x) remains in force — no measurement windows.
+
+Next: w11f stage B (its corpus INV-COMPAT run + its S205 escape row),
+then its review/merge; opt41 Phase 2 after it. NUMBERING COLLISION
+caught at this boundary: w11f minted S205 (the rxt-escape index-vs-value
+row) and opt41 independently minted S205/S206 (predicate removed /
+inverted) — w11f keeps S205; opt41 renumbers to S206/S207 before its
+Phase 2 (told by message; it is idle, so the message lands).
