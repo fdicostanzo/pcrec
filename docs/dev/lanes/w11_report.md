@@ -270,15 +270,48 @@ records, arriving one row over.
   verify_rxt uses `startswith('pattern ')`; my parser accepted a tab. 0
   of 3,265 pattern lines use one. pcrec now requires the space too.
 
-### 8. Defects found by reading, and then by running
+### 8. Defects found in three waves — by reading, by building, by running
 
-Because nothing could be compiled: a forward declaration naming `RxtP`
-~70 lines before the typedef (a hard error); a ternary passed AS a printf
-format (found only after giving `rxt_fail` the format attribute the
-tree's other varargs formatters carry); and an unbounded
-`snprintf`-return accumulation that could wrap a `size_t`. **This is
-evidence about the review, not reassurance about the code** — reading
+Worth separating, because each wave found a class the previous one could
+not, and the last two only became possible when the hold lifted.
+
+**By READING** (while nothing could be compiled): a forward declaration
+naming `RxtP` ~70 lines before the typedef — a hard error; a ternary
+passed AS a printf format, visible only after giving `rxt_fail` the
+format attribute the tree's other varargs formatters carry; and an
+unbounded `snprintf`-return accumulation that could wrap a `size_t`.
+**Evidence about the review, not reassurance about the code** — reading
 found three, and reading is not a compiler.
+
+**By BUILDING:**
+
+1. **A `-Wformat-truncation` that would have failed `make strict`.**
+   `rxt_fail` formatted the body into a scratch buffer as large as the
+   destination and spliced the two, which is precisely what gcc warns
+   about. Now composed in place.
+2. **Four diagnostics repeated the file path INSIDE the sentence**, and
+   `pcrec_error.msg`'s 256 bytes then truncated away the part the reader
+   **cannot derive** — the *other* site's line number on a duplicate, and
+   the boundary line on a misplaced head declaration. The path is already
+   in the message's own prefix, so the repetition bought nothing and cost
+   the only fact the author needed. Found by *reading actual output*, not
+   by any check. **LEARNINGS CANDIDATE (the manager's flag): a diagnostic
+   under a length cap should spend its budget on what the reader cannot
+   work out for themselves; the redundant half is what truncation should
+   be allowed to take, and here it was the other way round.**
+3. **A bug in my own check.** `want_cases` subtracted only the `perr`
+   lines from the census, forgetting that `g`/`gp` FOLD into the
+   preceding case rather than being cases. Replaced with a derivation
+   over the five subject-bearing kinds **plus a reconciliation** — cases
+   + perr + g/gp must add back to 26,691 — so the two passes check each
+   other instead of one being trusted.
+
+**By RUNNING:** the three shipped-code defects above (the quiet `perr`
+features pass, the four unparsed line kinds, the missing time bound), the
+two empty-population sabotage rows, and — from `make test-codegen` — three
+compiler invocations of mine with no visible bound, one of which was
+bounded but split across a continuation line the K37 scanner reads as one
+line.
 
 ### 9. A design-note nit — CORRECTED
 
