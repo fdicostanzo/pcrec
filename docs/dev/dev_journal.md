@@ -18746,3 +18746,33 @@ the noclone guard, one abi bump; step 2: opt-in clang compilee-axis
 corpus sweep on the SAN-1 hook precedent; step 3: the bench's partial
 cc axis, behind the perf hold, goes in I-22). ADMIN column after
 [M4-QUOTING].
+
+#### Forty-sixth session, part 9 (18:1x EDT): [OPT-4.1] MERGED; battery 5 (the combined battery for w11f + opt41) launched
+
+opt41's Phase 2, all MEASURED on the merged tree: cli 287/0; codegen
+198/0 (203 anchors resolve); prefilter_collapse **59/0**; corpus
+**26,680/0**; the scoped axes pair **22,114 keys each / 0 mismatches**;
+resource 29/0; registry 83/0 (the four new RX_ENGINE_SEL legs);
+**S206 DETECTED** (pfcollapse 5f/50p, resource 1f/28p — the nullable
+size-rung cell ALONE, its twin green; corpus 0f) and **S207 DETECTED**
+(17f/20p, 2f/27p — inversion breaks winners and losers at once; corpus
+0f), read against each other by design; **the eleven bench points 11/11
+as predicted** (exact-NFA counts byte-identical to O-10's — the same
+artifacts; the four `\z` forms overflow by K7's subset-elements route,
+the plain by the state cap — both [SEL-1]). `.abi` untouched (values,
+not scaffolding — D76). r47sel's must-fix reproduced/fixed/pair-checked
+(reviews/2026-08-30-r47-opt41.md). Bench ask (ii): the lane's own
+split-file hypothesis REFUTED by its six readings (24,414 matches none;
+the artifact carries no size stamp; at 96e44c2 the pattern was a hybrid
+where it is now a declined artifact — a same-pin re-comparison is the
+only honest answer; report §15's six rules go into I-22). D77 trigger:
+69 of 1,262 exact-prefilter hybrids nullable by the EXTERNAL oracle
+(python re, 63.5 % coverage, a floor) — with the caveat that reshapes
+the future row: three nullable hybrids have WORKING `$`-view prefilters,
+so the follow-up keys on "nullable AND dfa_prefilter none", never on
+minw alone. Every red in the lane was its own instrumentation (six,
+tabled §17.3); the compiler's one defect was the critic's. Merged
+(git merge alone, no MERGE_HEAD); worktree retired; battery 5 launched
+on the result — the ONE battery covering both of today's post-battery-4
+merges (w11f, opt41). Pin moves to the battery's commit on green (the
+bench holds [B21]/[B22] for it); I-22 follows.

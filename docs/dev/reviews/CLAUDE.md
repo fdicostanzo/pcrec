@@ -422,3 +422,4 @@ Maintenance: add a file per checkpoint and list it here.
   critic-arch (sonnet), read-only. Skeleton with two lenses' findings
   and dispositions committed first; the semantics lens appended on arrival.
 - `2026-08-30-r46-w11-impl.md` — panel on the [DD-13b.W1.1] MERGE (r46sem opus / r46chk sonnet, during battery 4): 1 BLOCKER (leg B's escape emits the table index, not the byte), 8 must-fixes, the 'agree on the corpus, diverge outside it' class; triage table → fix lane w11f.
+- `2026-08-30-r47-opt41.md` — one-critic review of [OPT-4.1] (r47sel, sonnet, during the lane's Phase 2): 1 must-fix (the declined-nullable flag's missing collapsible-rep conjunct — reproduced, fixed, pair-checked), 1 benign note; the minw predicate survived structural induction.
