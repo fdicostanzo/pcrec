@@ -18693,3 +18693,17 @@ interactions were swept when [OPT-4] landed; a 14-pass sweep re-proves
 axes the change cannot reach; if any later evidence contradicts
 answer-identity the full sweep runs before diagnosis. (2) The interim's
 shared-file touches (the re-anchors, the wording fix) accepted.
+
+**17:2x — Frank:** "i am running a series of block tests on usb drives
+and will be for several hours. if this level of usage is ok, you can
+proceed as you want." USB block tests are I/O-bound — correctness runs
+proceed (battery included); the PERF HOLD on measurement windows stays
+until he lifts it. r47sel's panel on opt41: ONE must-fix (the
+declined-nullable flag lacks the collapsible-rep conjunct its compile.c
+twin has — a no-rescue overflow would mislabel as declined; routed to
+the lane with a third witness cell: taken / declined / never-offered),
+size-rung variant benign by trace, everything else held up (the minw
+predicate survived full structural induction). opt41 meanwhile:
+resource 29/0 with the -fprefilter override cell green (the
+review-found gap made falsifiable), and ask (ii) corroborated by
+accident — split `.c`/`.h` vs self-contained is the whole size gap.
