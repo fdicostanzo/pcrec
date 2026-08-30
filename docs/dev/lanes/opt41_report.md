@@ -610,3 +610,40 @@ answer comparison, which compares span AND every capture slot per case. **This
 is deliberately NOT the full `make test-axes`** — that script's own header
 calls an `AXES`-scoped run "a QUICK check, not the delivered run" — and the
 report says so rather than letting a scoped run be read as the delivered one.
+
+### 12.5 `tests/codegen/run_prefilter_collapse.sh` — **58 passed, 0 failed**
+
+Every `[OPT-4.1]` row green, and the two the row was built for read:
+
+    PASS [sel1n] the NON-nullable twin is rescued: SEL 'collapsed-prefilter'
+         / PREFILTER "hybrid" / LANG "count-collapsed"
+    PASS [sel1n] the NULLABLE overflow witness declines the rescue:
+         RX_ENGINE_WHY 'dfa overflowed: >32000 states at pattern offset 0'
+         beside RX_VM_PREFILTER "none" / RX_ENGINE_SEL "declined-nullable"
+    PASS [sel1n] ...and carries no RX_VM_PREFILTER_LANG (§6.3's iff)
+    PASS [sel1n] ...and -fno-prefilter-collapse on the SAME pattern reads
+         'overflowed-dfa' / "none"
+    PASS [sel1n] -fprefilter on the nullable witness is REFUSED
+    PASS [why]  '((a)|b){0,4000}' … DECLINED under -fprefilter-collapse
+                ('nullable collapsed language')
+    PASS [why]  '((a)|b){0,3}' … same
+    PASS [sel]  route 'declined-nullable' is reachable (vm/none)
+
+The `-fprefilter` refusal is now the GENUINE do-or-die one — *"-fprefilter
+requires the VM engine; this pattern compiles to the DFA engine"* — because the
+capture-free witness is DFA-selected before the overflow. On the capturing
+spelling it was the DFA state cap instead. Either way a refusal, never a silent
+drop; §6b's comment records that neither is the [OPT-4.1] override.
+
+**IT TOOK THREE RUNS AND EACH RED WAS MINE**, which is worth listing because
+none of them was the compiler:
+
+| run | result | cause |
+|---|---|---|
+| 1 | died mid-sweep, `line 552: syntax error` | I edited the script while bash was executing it (§11.4) |
+| 2 | 56 passed, **1 failed** | my `[sel1n]` case arm demanded `RX_ENGINE_WHY` name the overflow; the capturing witness reads *"capture group at pattern offset 3"* — correct, and about a different route (a capture forces the VM on its own, so only the PREFILTER's DFA overflowed) |
+| 3 | **58 passed, 0 failed** | witness made capture-free, which is the [SEL-1] rung in its documented shape |
+
+Run 2's failure also bought the (2b) arm: the capture-free pair let the SAME
+pattern be read at the default (`declined-nullable`) and denied
+(`overflowed-dfa`), which is the sharpest statement of why the value exists.
