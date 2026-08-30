@@ -6770,7 +6770,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     sb_printf(o, "; prefilter    %s\n", st->prefilter
               /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped
                * being true of every hybrid. Above
-               * PCREC_PREFILTER_EXACT_NFA_STATES the pair is built from the
+               * On a collapse RUNG (Frank's ruling B: a DFA state cap
+               * overflowed, or a size cap refused the exact artifact) — or
+               * under -fprefilter-collapse — the pair is built from the
                * count-collapsed lowering, so it hands the VM a CANDIDATE
                * window the VM verifies -- rejection sound, start a lower
                * bound, END not a bound, which is why the PRUNING line below
@@ -7568,7 +7570,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * because the two above already say everything it would have to say.
      * docs/design/prefilter_count_independence.md §2/§3.
      *
-     * Above `PCREC_PREFILTER_EXACT_NFA_STATES` the prefilter is built from the
+     * On a collapse rung, or under -fprefilter-collapse, the prefilter is built from the
      * COUNT-COLLAPSED lowering (`src/ir/nfa.c`'s `A_REP` arm, every counted
      * repeat as `X{min(m,1),}`), so it answers for a strict superset by the
      * one-line proof in §3. H1 (rejection) and H2 (the span START, re-asked on
@@ -8303,13 +8305,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * the axis (`"denied"`). A user reading a size they did not expect
          * needs to know which, and so does a check.
          *
-         * THE NUMBER IS IN THE STRING, and it is the measured exact forward
-         * NFA state count with the budget it was compared against — not a
-         * remark about the budget, the actual comparison, so a reader can see
-         * how close the artifact came to the other side of the knee without
-         * rebuilding it. The budget is printed from
-         * `PCREC_PREFILTER_EXACT_NFA_STATES` rather than spelled `128`, so the
-         * stamp stays true if the number ever moves.
+         * THE NUMBER IS IN THE STRING WHERE THERE IS ONE, and it is the
+         * measurement that CAUSED the rung — the exact NFA's size for the
+         * [SEL-1] rung, the refused artifact's bytes and the cap it exceeded
+         * for the size rung. Not a remark about a threshold: the actual
+         * comparison, so a reader can see what the collapse avoided, or decide
+         * to raise a cap instead, without rebuilding anything.
          *
          * NO SECOND DERIVATION HERE. Both halves come off `EngineFit`, written
          * once at `src/core/compile.c`'s gate; this site formats and does not
@@ -8318,46 +8319,39 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * tests/codegen/run_prefilter_collapse.sh §2 asserts on the artifact
          * rather than on the predicate. */
         switch (job->fit.prefilter_lang_why) {
-        case PFLW_DENIED:
-            /* The number is carried here too, and this is the path that most
-             * needs it: `PFLW_DENIED` is reached only where the machine WAS
-             * over the knee, so the reader is being told both that the flag
-             * acted and how much it cost. */
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"denied, exact nfa %u > %d\"\n", v.up,
-                      job->fit.prefilter_nfa_states,
-                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
-            break;
         case PFLW_NO_REP:
+            /* Distinct from `"exact"` because it is the state
+             * `-fprefilter-collapse` is HONOURED but vacuous in: a caller who
+             * passed the flag and got the exact language needs to know that
+             * there was nothing to collapse, not that a rung declined. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
                          " \"no counted repeat\"\n", v.up);
             break;
         case PFLW_FORCED:
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"forced\"\n", v.up);
             break;
-        case PFLW_OVER:
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"exact nfa %u > %d\"\n", v.up,
-                      job->fit.prefilter_nfa_states,
-                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
-            break;
         case PFLW_SEL1:
-            /* The rung, not the knee. `RX_ENGINE_WHY` on this artifact reads
-             * "dfa overflowed: ..." and a reader would otherwise expect
-             * `RX_VM_PREFILTER "none"` beside it (that was the only outcome
-             * before [OPT-4]); this line is what explains the prefilter that
-             * is there instead. The measured NFA is carried too, because it is
-             * the EXACT machine's size and therefore the scale of what the
-             * collapse avoided. */
+            /* The [SEL-1] rung, not a budget. `RX_ENGINE_WHY` on this artifact
+             * reads "dfa overflowed: ..." and a reader would otherwise expect
+             * `RX_VM_PREFILTER "none"` beside it; this line explains the
+             * prefilter that is there instead. The measured NFA is the EXACT
+             * machine's, i.e. the scale of what the collapse avoided. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
                          " \"dfa overflow retry, exact nfa %u\"\n", v.up,
                       job->fit.prefilter_nfa_states);
             break;
-        default:
+        case PFLW_SIZECAP:
+            /* [OPT-4] RULING B'S OWN VALUE. The numbers are the EMITTED SIZE
+             * that was refused and the cap it exceeded — not NFA states —
+             * because that is the comparison that caused this retry, and a
+             * reader deciding whether to raise a cap instead needs it. */
             sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"exact nfa %u <= %d\"\n", v.up,
-                      job->fit.prefilter_nfa_states,
-                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+                         " \"size cap retry, exact %llu > %llu\"\n", v.up,
+                      job->fit.prefilter_sizecap_bytes,
+                      job->fit.prefilter_sizecap_limit);
+            break;
+        default:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"exact\"\n", v.up);
             break;
         }
     }

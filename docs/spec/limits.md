@@ -164,20 +164,32 @@ which is why it adds no ceiling of its own to the list above, and why the
 paragraph it follows still describes every way a state-count ceiling can
 refuse a pattern.
 
-**[OPT-4] (2026-08-29) A THIRD ENTRY IN THIS NEIGHBOURHOOD, AND IT IS NOT AN
-EXCEPTION TO ANY CEILING — it is a BUDGET that changes which machine gets
-built.** `PCREC_PREFILTER_EXACT_NFA_STATES` (128) is compared against the exact
-forward NFA's state count at the point the VM hybrid's prefilter is about to be
-determinized. Over it, the prefilter is rebuilt from the COUNT-COLLAPSED
-lowering (`docs/spec/tuning.md` §2.17) — a sound superset whose machine does
-not scale with a bounded repeat's count. **It refuses nothing and accepts
-nothing new by itself**, so it adds no row to the contract above; what it
-changes is the SIZE of an accepted artifact, and through that it interacts with
-§8's emitted-size caps in one direction only — a pattern refused there may
-become acceptable, never the reverse. MEASURED: K41's second fuzz-gate witness
-went from refused at 670,932 code bytes to 158,643, compiling in 1.94 s of gcc
-where the un-capped exact form took 49.25 s. The budget never applies where the
-DFA is the ENGINE, where the language must be exact.
+**[OPT-4] (2026-08-29, as re-ruled) THE PREFILTER-LANGUAGE RETRY, AND IT IS NOT
+AN EXCEPTION TO ANY CEILING — it is what happens AFTER one fires.** An earlier
+design put a state BUDGET here (`PCREC_PREFILTER_EXACT_NFA_STATES`, 128) that
+chose the count-collapsed prefilter by measuring the pattern; Frank reversed it
+on a corpus regression and the constant is deleted
+(`docs/design/prefilter_count_independence.md` §10a).
+
+What remains is a RETRY, in `compile_driver`'s existing attempt ladder. When
+§8's emitted-size caps refuse an artifact, pcrec makes ONE more attempt with
+the VM hybrid's prefilter built from the count-collapsed lowering
+(`docs/spec/tuning.md` §2.17) — a sound superset whose machine does not scale
+with a bounded repeat's count — and refuses only if that is over the caps too.
+The [SEL-1] rung above it does the same thing for a DFA STATE cap, where the
+alternative is no prefilter at all rather than a refusal.
+
+**THIS IS THE ONE PLACE A CAP IN THIS DOCUMENT IS NOT THE LAST WORD**, and the
+contract is still exactly as stated: nothing is emitted past a cap, and a
+pattern is refused unless some attempt produces an artifact under it. The retry
+adds attempts, never headroom. MEASURED: K41's second fuzz-gate witness is
+refused at 670,952 code bytes under the exact language and ships at 152,259
+through the retry, stamping
+`RX_VM_PREFILTER_LANG_WHY "size cap retry, exact 670952 > 500000"`.
+
+`-fno-prefilter-collapse` denies both rungs, so a caller who would rather be
+refused than handed a superset prefilter can be. The retry never applies where
+the DFA is the ENGINE, where the language must be exact.
 
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST
@@ -411,6 +423,38 @@ so these can never be used to make a build fail that would have
 succeeded). The effective values are stamped on every artifact as
 `<PREFIX>_MAX_EMIT_CODE_BYTES` and `<PREFIX>_MAX_EMIT_BYTES`.
 
+### `--warn-emit-bytes=N` — an ADVISORY warning, never a refusal
+
+**[OPT-4] (2026-08-29).** When an ACCEPTED artifact's total emitted bytes
+exceed `N`, pcrec writes ONE line to stderr and then returns the artifact.
+It never refuses, never changes what is emitted, and is not a tuning axis:
+nothing selects on it and no artifact records it.
+
+```
+pcrec: warning: large artifact: 883632 bytes of emitted C source (11418 of
+code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter
+language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or
+raise/disable the warning with --warn-emit-bytes.
+```
+
+The line names the two stamps that EXPLAIN the size — the unroll factor with
+`_UNROLL_K_WHY`'s reason, and the prefilter language — rather than only the
+number, because a reader told "883,632 bytes" can only shrug while one told
+which lever moved it knows what to reach for.
+
+**Default `250000` total bytes; `0` disables it.** The default is an order of
+magnitude under `--max-emit-bytes` on purpose: a warning's value is arriving
+while the pattern can still be changed, not at the moment it is refused.
+
+**IT IS THE ONE SIZE OPTION THAT IS NOT RAISE-ONLY, and the asymmetry is the
+point.** The two caps above are raise-only so that no caller can manufacture
+someone else's refusal. A warning carries no such authority — the build
+succeeds either way — so LOWERING it is exactly what a project wanting earlier
+notice should do, and lowering it cannot fail anyone's build. It is
+`pcrec_options.warn_emit_bytes` for a library caller, and it is **off** for one
+who `memset`s the struct rather than calling `pcrec_default_options`: an
+embedder has not asked pcrec to write to stderr.
+
 ### Handling an oversized artifact
 
 pcrec REFUSES rather than emitting past either limit, and nothing is
@@ -428,6 +472,9 @@ unintended narrowing.
 
 Your options, in the order most callers want them:
 
+0. **Notice it earlier** — `--warn-emit-bytes=N` (above) fires on an
+   artifact that still compiles, so the choices below can be made before a
+   refusal forces them.
 1. **Raise the limit** — `--max-emit-bytes=N` or
    `--max-emit-code-bytes=N` if the size is acceptable to you. **For a
    real build, put the override in the pattern-source file's `config`

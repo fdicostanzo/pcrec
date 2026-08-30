@@ -2029,11 +2029,19 @@ against the unchanged `ac4917d`. Demonstrated both directions again — see the
   inside a class) before it is trusted, and carries a non-vacuity control
   because a scanner answering ">= 2" for everything would make the assertion a
   tautology.
-  **§5 BANDS ITS POPULATION ON BOTH SIDES, deliberately.** A floor catches the
-  knee that stopped separating; it does not catch the knee that started
-  collapsing everything — a budget of 0, a flipped comparison — which reads as
-  "more optimisation!" rather than as the sharper filter being thrown away
-  corpus-wide.
+  **§5 IS RETIRED AND DELETED (Frank's ruling B, 2026-08-29).** It was a form
+  census over the knee's population — how many corpus artifacts sat above
+  `PCREC_PREFILTER_EXACT_NFA_STATES`, banded on both sides, with zero of them
+  of replication factor < 2. Ruling B deleted the knee, so that population no
+  longer exists and every one of those assertions would now be measuring
+  nothing. DELETED rather than left with a band of `0..0`: a check whose
+  subject has gone is worse than no check, because it reads like coverage. Its
+  replication-factor scanner went with it.
+  **WHAT REPLACED IT IS STRONGER.** The same corpus sweep now asserts RULING B
+  ITSELF — every artifact that collapses at the default must name a LADDER RUNG
+  as its reason (`n_coll - n_rung == 0`). A returning knee, by design or by
+  accident, fails there. It is not vacuous: one corpus pattern reaches the
+  [SEL-1] rung, so the assertion has a live subject.
   **§6 IS A DIFFERENT QUESTION FROM THE REST OF THE FILE** ([OPT-4]'s second
   commit, the [SEL-1] rung). Every other cell compares two languages for ONE
   artifact; §6 is about an artifact that did not previously EXIST. A pattern
@@ -2044,10 +2052,10 @@ against the unchanged `ac4917d`. Demonstrated both directions again — see the
   prefilter at all", and the evidence is a different stamp plus the deny flag
   returning the old outcome, which is the section's non-vacuity control: without
   it the cells would pass on a compiler whose caps had simply been raised.
-  **THE COUNTS IN THIS FILE ARE NOT THE DESIGN NOTE'S, and neither is wrong.**
-  §5 sweeps every `pattern` line under `tests/` (`sort -u`, 2,772) and measures
-  20 collapsed of 1,263 hybrids; `docs/design/prefilter_count_independence.md`
-  §4 counts rows of `docs/dev/artifact_size_log.tsv` and says 23 (19 distinct
-  patterns). Two populations. No number is copied between them, and each check
-  floors its own — which is the whole of the K35 lesson applied to a number
-  that looks like it should be shared.
+  **§1 SPLIT IN TWO UNDER RULING B, and the split IS the ruling.** K39 can be
+  answered two ways and only one is the default: COUNT-INDEPENDENT (reachable
+  under `-fprefilter-collapse`, asserted on K39's own pair with its
+  failing-direction control) and COUNT-BOUNDED (what a user gets — the caps
+  bound the size, and a pattern whose exact artifact they refuse compiles via
+  the size rung). Asserting only the first would be a claim about a flag nobody
+  passes; asserting only the second would let the force flag rot.

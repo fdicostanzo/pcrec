@@ -366,7 +366,7 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",
                      V(PCREC_NO_PREFILTER_COLLAPSE), V(PCREC_FORCE_PREFILTER_COLLAPSE),
                      "-fno-prefilter-collapse / -fprefilter-collapse",
-                     "these machines serve only as the VM's prefilter (the DFA is not the engine), a counted repeat with rmin > 1 or rmax > 1 exists, and the exact NFA is over PCREC_PREFILTER_EXACT_NFA_STATES — which -fprefilter-collapse drops: every X{m,n} then lowers as X{min(m,1),}");
+                     "these machines serve only as the VM's prefilter (the DFA is not the engine), a counted repeat with rmin > 1 or rmax > 1 exists, AND either -fprefilter-collapse was passed or compile_driver took a retry rung (a DFA state cap overflowed, or an emitted-size cap refused the exact artifact). There is no state-count knee: the default is the exact language (Frank's ruling B). Every X{m,n} then lowers as X{min(m,1),}");
         emit_pred_row(sb, &p, 2, "exact", "exact",
                      0, "", 0, "", "",
                      "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse");

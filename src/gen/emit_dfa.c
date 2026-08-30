@@ -1349,14 +1349,15 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      *    <PREFIX>_VM_PREFILTER_LANG_WHY "..."` (D81's `_WHY`, five values;
      *    docs/spec/tuning.md §2.17) — on 2,855 of the corpus's 2,878
      *    artifacts.
-     *  - A VM HYBRID ABOVE `PCREC_PREFILTER_EXACT_NFA_STATES` gains those two
-     *    lines reading `"count-collapsed"` / `"exact nfa N > 128"`, a SMALLER
-     *    inlined prefilter (different tables, different state counts), and
+     *  - A VM HYBRID THAT TOOK A COLLAPSE RUNG gains those two lines reading
+     *    `"count-collapsed"` / a rung reason, a SMALLER inlined prefilter
+     *    (different tables, different state counts), and
      *    `<PREFIX>_VM_PRUNE_CEILING` moving `"prefilter-window"` ->
-     *    `"subject-end"` with the MRL clamp it names. MEASURED at 23 rows of
-     *    docs/dev/artifact_size_log.tsv (19 distinct patterns; the
-     *    2,772-pattern sweep in tests/codegen/run_prefilter_collapse.sh §5
-     *    counts 20 — the populations differ and each check floors its own).
+     *    `"subject-end"` with the MRL clamp it names. Under Frank's ruling B
+     *    (2026-08-29) that population is TINY and driven by the caps rather
+     *    than by a knee: one corpus pattern reaches the [SEL-1] rung and none
+     *    reaches the size rung, so essentially every artifact gains only the
+     *    two stamp lines.
      *
      * COMPARISON (A) IS STILL EXPECTED BYTE-IDENTICAL, INCLUDING ON THE
      * COLLAPSED ARTIFACTS, and the reason is worth stating because the first

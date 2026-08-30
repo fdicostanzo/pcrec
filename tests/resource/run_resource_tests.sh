@@ -204,21 +204,22 @@ echo
 # raise-only override is exercised end to end, and it is the answer to "how do
 # I still get this artifact" being a real answer rather than a sentence.
 # ---------------------------------------------------------------------------
-# [OPT-4] 2026-08-29 — THE THIRD SHAPE NEEDS `-fno-prefilter-collapse` NOW, AND
-# THE FOURTH FIELD SAYS SO. `(a|b){0,30000}`'s 1.33 MB was almost entirely its
-# hybrid PREFILTER's tables, and [OPT-4] rebuilds that from the count-collapsed
-# language: at the default the artifact is **32,279 bytes** in the split
-# `.c`+`.h` form this cell emits (43,433 self-contained) and compiles
-# cleanly, so the cell had no oversize subject left and the cap it exists to
-# test was never reached. That is a WITNESS going vacuous, not a cap that
-# stopped working — the other two shapes, whose bulk is the VM body rather than
-# a prefilter, still refuse at the default untouched.
+# [OPT-4] 2026-08-29 — THE THIRD SHAPE KEEPS `-fno-prefilter-collapse`, AND
+# UNDER FRANK'S RULING B THE REASON IS BETTER THAN IT WAS. `(a|b){0,30000}`'s
+# 1.33 MB is almost entirely its hybrid PREFILTER's tables. Ruling B builds the
+# EXACT prefilter at the default, so the total cap REFUSES that artifact as it
+# always did — and then the SIZE RUNG retries with the collapsed prefilter and
+# ships 32,298 bytes instead. The cap therefore still fires on this shape; what
+# changed is that firing is no longer the end of the story.
 #
-# Denying the axis restores the exact machine and the refusal (MEASURED at
-# 1,333,300 bytes, against the 1,333,109 pinned here before the two new stamp
-# lines). The shape keeps its coverage of the ALTERNATION case, and the new
-# default outcome is pinned separately below so the size win is recorded rather
-# than merely absent.
+# So this row denies the axis to observe the REFUSAL (the rung is what
+# `-fno-prefilter-collapse` turns off, and observing a refusal is the only
+# thing that flag still buys a caller), and the row below pins the DEFAULT
+# outcome — the rescue — from a run. Together they assert both halves of
+# ruling B on one shape: the cap catches the exact artifact, the rung ships a
+# smaller one. The other two shapes, whose bulk is the VM body rather than a
+# prefilter, have nothing to collapse and refuse at the default untouched,
+# which is why they carry no flag.
 size_moved=(
     'a{0,25000}:1103367:'
     '[a-z]{0,30000}:1323371:'
@@ -265,10 +266,13 @@ rm -f "$WORKDIR/o.c"
 dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
 if [ $? -eq 0 ]; then
     sz=$(wc -c < "$WORKDIR/o.c")
-    if [ "$sz" -lt 200000 ]; then
-        ok "[OPT-4] '(a|b){0,30000}' now compiles at the DEFAULT in $sz bytes (was 1,333,109 and refused) — its size was its prefilter, and the count-collapsed one does not scale with the count"
+    szwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
+    if [ "$sz" -lt 200000 ] && [ "${szwhy#size cap retry}" != "$szwhy" ]; then
+        ok "[OPT-4] '(a|b){0,30000}' compiles at the DEFAULT in $sz bytes via the SIZE RUNG ('$szwhy') — the cap refused the exact artifact and ruling B's retry shipped a smaller one"
+    elif [ "$sz" -ge 200000 ]; then
+        bad "[OPT-4] '(a|b){0,30000}' compiled at the default but emitted $sz bytes, expected well under 200,000 — the size rung is not reaching this shape"
     else
-        bad "[OPT-4] '(a|b){0,30000}' compiled at the default but emitted $sz bytes, expected well under 200,000 — the collapse is not reaching this shape as it did at the landing"
+        bad "[OPT-4] '(a|b){0,30000}' compiled small at the default but stamps LANG_WHY '$szwhy', expected a 'size cap retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back"
     fi
 else
     bad "[OPT-4] '(a|b){0,30000}' no longer compiles at the DEFAULT — it did at the landing (32,279 bytes); the collapse has stopped firing on it, or a cap moved: $(printf '%s' "$dflog" | head -1)"
@@ -332,20 +336,17 @@ enomem_case() {   # enomem_case <vlimKB> <pattern> [pcrec flags...]
 # interned state-sets, the emitter's string buffer — rather than proving one
 # call site works four times.
 #
-# [OPT-4] 2026-08-29 — THE SECOND SHAPE KEEPS ITS FLAG, and the flag is what
-# keeps this cell non-vacuous rather than a preference. `((a)|bc){0,4000}d` is
-# the one shape here whose demand was its PREFILTER, and [OPT-4] rebuilds that
-# from the count-collapsed language: MEASURED peak RSS **5 MB at the default**
-# against **112 MB with `-fno-prefilter-collapse`** (the comment's original
-# "needs 111 MB", reproduced). At the default the 60,000 KB limit no longer
-# binds, the compile succeeds, and the `0)` arm above scores that as the
-# failure it is. Denying the axis restores the exact machine, the 112 MB
-# demand, and therefore this row's coverage of the VM-route-plus-prefilter
-# allocators — which is the distinct thing it contributes to the four.
-# Re-witnessing with a different pattern would have kept the cell green while
-# quietly dropping that allocator path.
+# [OPT-4] 2026-08-29 — THIS ROW NEEDED A FLAG FOR ONE AFTERNOON AND DOES NOT
+# ANY MORE. Under the knee this pattern's prefilter collapsed at the default,
+# its peak RSS fell to 5 MB, the 60,000 KB limit stopped binding, and the cell
+# had to pass `-fno-prefilter-collapse` to keep its subject. Frank's ruling B
+# made the exact prefilter the default again, so the demand is back where the
+# comment always said it was: MEASURED 112 MB at the default (the original
+# "needs 111 MB", reproduced). The flag is removed rather than left as a
+# harmless belt — a flag whose reason has gone is a flag the next reader has to
+# re-derive.
 enomem_case 100000 'a{9000}'                 # needs 175 MB
-enomem_case  60000 '((a)|bc){0,4000}d' -fno-prefilter-collapse   # needs 112 MB (VM route + EXACT prefilter); 5 MB at the default since [OPT-4]
+enomem_case  60000 '((a)|bc){0,4000}d'       # needs 112 MB (VM route + prefilter)
 enomem_case  80000 '[a-zA-Z0-9_.-]{9000}'    # needs 175 MB, wide alphabet
 enomem_case  60000 'a{8000}'                 # needs 140 MB
 

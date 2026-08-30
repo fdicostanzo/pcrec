@@ -56,9 +56,14 @@ SAB_COUNT=1
 # now tries a count-collapsed prefilter before dropping the prefilter outright.
 # The sabotage is UNCHANGED in meaning: it still disables exactly one conjunct
 # and carries the rest through verbatim.
+# [OPT-4] 2026-08-29 (ruling B): ANCHOR RE-DERIVED FROM THE LIVE SOURCE again.
+# `prefilter_collapse_retry` became `collapse_reason != CR_SEL1` when the
+# collapse gained a SECOND rung (the size-cap retry) and one bool per rung
+# stopped being the right shape. The sabotage is UNCHANGED in meaning: it still
+# disables exactly one conjunct and carries the rest through verbatim.
 SAB_BEFORE='        fit.prefilter = (has_bref || has_call ||
-                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1))
                         ? false'
 SAB_AFTER='        fit.prefilter = (false || has_call ||   /* SABOTAGE S102 */
-                         (cx->dfa_disabled && !cx->prefilter_collapse_retry))
+                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1))
                         ? false'

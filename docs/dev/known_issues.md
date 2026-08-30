@@ -3038,7 +3038,7 @@ undeclared `_re`/`_rv`) while the DFA and 1-char cells correctly stay
 green. `make test-codegen` and `make test-cli` green afterward
 (287/287 CLI cases, `make strict` clean).
 
-## K39 — CLOSED 2026-08-29 ([OPT-4], lane opt4/opt4b) — the VM HYBRID's inlined DFA prefilter SCALES WITH A BOUNDED-REPEAT COUNT: `((a)|b){0,4000}c` emits 1,994 lines at the default vs 869 for `{0,400}`, while the VM body itself is count-independent (573 lines at any count with the prefilter off)
+## K39 — RE-SCOPED, NOT CLOSED (2026-08-29, Frank's ruling B) — count-BOUNDED at the default, count-INDEPENDENT under `-fprefilter-collapse`; the VM HYBRID's inlined DFA prefilter SCALES WITH A BOUNDED-REPEAT COUNT: `((a)|b){0,4000}c` emits 1,994 lines at the default vs 869 for `{0,400}`, while the VM body itself is count-independent (573 lines at any count with the prefilter off)
 
 **Symptom.** MEASURED at 32890e2 (before the day's scaffolding): default
 engine (auto = VM + hybrid prefilter) `{0,400}` 869 lines, `{0,4000}`
@@ -3104,12 +3104,39 @@ candidate starts — the named worst case, `((a)|b){0,400}c` on 100,000 `a` then
 exact, same answer. `-fno-prefilter-collapse` recovers today's artifact byte
 for byte, and `-fprefilter-collapse` forces the collapse below the knee.
 
-**What this does NOT close.** The artifact is count-BOUNDED at the default, not
-literally count-independent: below `PCREC_PREFILTER_EXACT_NFA_STATES` an
-artifact keeps its exact prefilter and its size still moves with the count —
-but it is small there by the same measurement that set the knee, and
-`-fprefilter-collapse` reaches the literal form. The note's §4 says so in those
-words rather than claiming the stronger result.
+**RE-OPENED AS RE-SCOPED, 2026-08-29, BY FRANK'S RULING B — read this instead
+of the paragraph above it.** The close above was measured against the KNEE
+default (collapse whenever the exact NFA exceeded 128 states). The merge
+battery then found what that default cost, on a corpus cell rather than on a
+benchmark: `(a{1,3}){65}` in `tests/base/d27_k23_ambiguous_decomposition.rxt`
+collapsed at 392 exact NFA states, lost its `prefilter-window` ceiling, and
+went from answering `0,100 90,100` in 0.00 s to returning `PCREC_ERR_STEPS`
+after **13.34 s** on its broken-run subjects. Answer identity was not violated
+(D46 is about an unbounded step budget) but a documented caller-visible bound
+was, on a pattern that compiled fine.
+
+Frank re-ruled the default to **B, fallback-only**, and K39's status follows:
+
+- **At the DEFAULT the artifact is count-BOUNDED, by the emitted-size CAPS
+  and nothing else.** The prefilter is the pattern's own language; when the
+  caps refuse the resulting artifact, `compile_driver` retries once with the
+  count-collapsed prefilter and ships that instead. So the size still moves
+  with the count — `((a)|b){0,4000}c` is larger than `{0,400}` — but it cannot
+  run away, because the cap is what triggers the retry.
+- **Count-INDEPENDENCE is reachable, under `-fprefilter-collapse`**, which
+  collapses wherever a collapsible repeat exists. That is the flag's whole
+  purpose now.
+- So K39's symptom is BOUNDED rather than removed, and the issue is re-scoped
+  rather than closed. `tests/codegen/run_prefilter_collapse.sh` §1 asserts both
+  halves separately, which is the shape of the ruling: the force cell proves
+  count-independence, the default cell proves a capped artifact still ships.
+
+The knee is deleted — there is no `PCREC_PREFILTER_EXACT_NFA_STATES` any more
+and deliberately nothing in its place, because under ruling B the caps are the
+only quantity that decides. The bar sweep that chose 128 is kept in
+`docs/design/prefilter_count_independence.md` §4 as the record of a decision
+that was REVERSED, and §10 carries the ruling chain (A, the corpus regression,
+B).
 
 ## K40 — CLOSED 2026-08-28 (lane sel1) — under `--engine=auto`, a DFA build that overflows a cap REFUSES the whole compile instead of falling back to the VM, even when the pattern's own DFA-erasure is only being built as the VM's auto-selected PREFILTER MERGE-REVIEW LANDING FIX (manager, 2026-08-28, on f75a33f): the retry left the refused build's diagnostic in `err->msg`, so a successful fallback returned 0 beside "pattern too complex…" (library probe: rc=0, msg set); `compile_driver` now clears `err` on the retry path — probe rc=0, msg empty.
 
@@ -3240,6 +3267,31 @@ underlying VM lowering still replicates for nested bounded repeats — the caps
 are what stand between that and a gcc the user waits on. K41 is closed because
 both of its witnesses compile within the documented budgets, not because the
 lowering became cheap.
+
+**STILL CLOSED AFTER FRANK'S RULING B (2026-08-29), BY A DIFFERENT MECHANISM,
+AND THAT IS THE INTERESTING PART.** The close above was measured under the knee
+default, where witness 2 collapsed because its exact NFA was 3,423 states.
+Ruling B deleted the knee, so nothing about this pattern's SHAPE makes it
+collapse any more — instead the exact artifact is built, the code cap REFUSES
+it at 670,952 bytes, and `compile_driver`'s size rung retries with the
+collapsed prefilter and ships it. The artifact stamps
+`RX_VM_PREFILTER_LANG_WHY "size cap retry, exact 670952 > 500000"`, which is
+the rung naming the comparison that triggered it.
+
+So the outcome is unchanged and the reason is better: witness 2 is rescued
+because its artifact was too big, which is what K41 was always about, rather
+than because a state count crossed a threshold that had nothing to do with the
+cap. `-fno-prefilter-collapse` still refuses it — that flag now denies the
+rungs, and observing this refusal is the main thing it buys a caller.
+
+**PROVED FROM A GATE RUN, not from arithmetic** (the manager's standing rule
+for this row): `tests/fuzz/run_capturediff_gate.sh` PASSES with every pinned
+count unchanged — `both accept` 183, `emitted-size cap` 0, `subject pairs
+compared` 2745, `oracle inconclusive` 3 — and `content divergences` and
+`accept/reject divergences` are both still **0**. Witness 2 is in the compare
+population and answers identically to PCRE2 on all 15 of its subjects under the
+new mechanism, which is the evidence the size rung produces a correct artifact
+and not merely a small one.
 
 ---
 

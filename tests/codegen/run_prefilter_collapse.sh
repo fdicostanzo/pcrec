@@ -99,68 +99,83 @@ emit() {  # emit OUTFILE FLAGS... -- PATTERN
 }
 
 # ---------------------------------------------------------------------------
-# §1 COUNT-INDEPENDENCE, ASSERTED — K39's own two patterns
+# §1 COUNT-INDEPENDENCE (the FORCE flag) and COUNT-BOUNDEDNESS (the default)
 # ---------------------------------------------------------------------------
-# K39 was filed with these two and the checks that carried it (tests/vm,
-# run_ir_listing.sh) could only PRINT the auto sizes beside a claim about the
-# prefilter-denied ones. This asserts the claim the row exists to make, and it
-# asserts it on the DEFAULT artifact — the one a user gets.
+# FRANK'S RULING B (2026-08-29) SPLIT THIS SECTION IN TWO, and the split IS the
+# ruling. K39 was filed on `((a)|b){0,4000}c` emitting 1,994 lines against 869
+# for `{0,400}`. Two different things can answer it and only one is the
+# default now:
 #
-# THE UNIT IS LINES, THE SAME 2-LINE BAR the prefilter-denied comparison
-# beside it already uses, and the unit is the point rather than a convenience:
-# the count appears in the VM body and in the emitted prose as a LITERAL (`400`
-# against `4000`), so the two artifacts differ by those DIGITS however
-# count-independent their structure is. Bytes would therefore never be equal
-# and the bar would have to be a fudge factor; lines are equal exactly when the
-# emitted SHAPE stops depending on the count, which is the claim.
-c_small="$WORK/auto_small.c"; c_big="$WORK/auto_big.c"
-if emit "$c_small" -- '((a)|b){0,400}c' && emit "$c_big" -- '((a)|b){0,4000}c'; then
+#   COUNT-INDEPENDENT — the emitted size does not move with the count at all.
+#   Reachable only under `-fprefilter-collapse`, which collapses wherever a
+#   collapsible repeat exists. Asserted below on K39's own two patterns, with
+#   its failing-direction control.
+#
+#   COUNT-BOUNDED — the size may move with the count, but the emitted-size CAPS
+#   bound it: a pattern whose EXACT artifact the caps refuse is compiled via
+#   the size rung rather than refused. That is what a user gets by default, and
+#   it is a weaker claim than the row above on purpose (docs/design/
+#   prefilter_count_independence.md §10; the knee was removed on a measured
+#   regression, `(a{1,3}){65}` going from 0.00 s to a 13.34 s step-budget
+#   exhaustion).
+#
+# ASSERTING ONLY THE FIRST WOULD BE A CLAIM ABOUT A FLAG NOBODY PASSES;
+# asserting only the second would let the force flag rot.
+c_small="$WORK/f_small.c"; c_big="$WORK/f_big.c"
+if emit "$c_small" -fprefilter-collapse -- '((a)|b){0,400}c' \
+   && emit "$c_big" -fprefilter-collapse -- '((a)|b){0,4000}c'; then
     n_small=$(wc -l < "$c_small"); n_big=$(wc -l < "$c_big")
     d=$(( n_big > n_small ? n_big - n_small : n_small - n_big ))
     if [ "$d" -le 2 ]; then
-        ok "[K39] the DEFAULT artifact is count-independent: '((a)|b){0,400}c' $n_small lines, '((a)|b){0,4000}c' $n_big (delta $d <= 2)"
+        ok "[K39/force] -fprefilter-collapse is COUNT-INDEPENDENT: '((a)|b){0,400}c' $n_small lines, '((a)|b){0,4000}c' $n_big (delta $d <= 2)"
     else
-        bad "[K39] '((a)|b){0,4000}c' emitted $n_big lines against $n_small for {0,400} (delta $d > 2) — the hybrid's prefilter is scaling with the count again"
+        bad "[K39/force] under -fprefilter-collapse '((a)|b){0,4000}c' emitted $n_big lines against $n_small for {0,400} (delta $d > 2) — the forced collapse is scaling with the count"
     fi
-    # THE MEASURED NUMBER IN `_LANG_WHY`, held to the PATTERN TEXT — the one
-    # independent term available for it, and the one that catches the bug this
-    # stamp invites. `prefilter_nfa_states` is meant to be the EXACT forward
-    # NFA's size; if it were ever read off the machine actually BUILT, both
-    # artifacts here would report a small, near-equal count, because that is
-    # the whole point of the collapsed machine. The exact NFA is linear in the
-    # count (§1 of the design note), so a tenfold bound in the pattern must
-    # show as an ~tenfold N — asserted loosely at 9x, since the constant term
-    # differs, and the direction is what matters.
-    w_small=$(stamp VM_PREFILTER_LANG_WHY "$c_small")
-    w_big=$(stamp VM_PREFILTER_LANG_WHY "$c_big")
-    k_small=$(printf '%s' "$w_small" | sed -n 's/^exact nfa \([0-9]*\) .*/\1/p')
-    k_big=$(printf '%s' "$w_big"     | sed -n 's/^exact nfa \([0-9]*\) .*/\1/p')
-    if [ -z "$k_small" ] || [ -z "$k_big" ]; then
-        bad "[K39] one of the pair reports no measured NFA count in RX_VM_PREFILTER_LANG_WHY ('$w_small' / '$w_big') — the stamp's number is the only evidence the knee was measured rather than guessed"
-    elif [ "$k_big" -gt "$((k_small * 9))" ]; then
-        ok "[K39] RX_VM_PREFILTER_LANG_WHY reports the EXACT machine's size, not the built one's: $k_small states at {0,400} against $k_big at {0,4000} (>9x, tracking the count as the exact lowering does)"
-    else
-        bad "[K39] RX_VM_PREFILTER_LANG_WHY reports $k_small states at {0,400} and $k_big at {0,4000} — a tenfold count moved the number by less than 9x, so it is not the exact NFA's size"
-    fi
-    # AND THE CONTROL, in the failing direction: under -fno-prefilter-collapse
-    # the two MUST diverge. Without it §1 would pass on a compiler that had
-    # stopped emitting a prefilter at all, or on one where the exact machine
-    # had never been count-proportional in the first place — the check would
-    # be asserting something no mechanism produces.
-    e_small="$WORK/deny_small.c"; e_big="$WORK/deny_big.c"
-    if emit "$e_small" -fno-prefilter-collapse -- '((a)|b){0,400}c' && \
-       emit "$e_big"   -fno-prefilter-collapse -- '((a)|b){0,4000}c'; then
+    # THE MEASURED NUMBER IN `_LANG_WHY` cannot be checked here any more: the
+    # forced route stamps `"forced"` and names no count, by design (there is no
+    # budget left to compare against). The exact machine's size is still the
+    # thing that would drift, and §6's `dfa overflow retry, exact nfa N` row is
+    # where it is now held to a pattern.
+    e_small="$WORK/d_small.c"; e_big="$WORK/d_big.c"
+    if emit "$e_small" -- '((a)|b){0,400}c' && emit "$e_big" -- '((a)|b){0,4000}c'; then
         m_small=$(wc -l < "$e_small"); m_big=$(wc -l < "$e_big")
         if [ "$m_big" -gt "$((m_small * 2))" ]; then
-            ok "[K39] the control holds: with -fno-prefilter-collapse the same pair is $m_small vs $m_big lines, so §1's equality is the collapse and not an artefact"
+            ok "[K39/force] the control holds: at the DEFAULT the same pair is $m_small vs $m_big lines, so §1's equality is the forced collapse and not an artefact"
         else
-            bad "[K39] CONTROL VACUOUS: with -fno-prefilter-collapse '{0,400}' is $m_small lines and '{0,4000}' is $m_big — the exact prefilter is no longer count-proportional, so §1 proves nothing"
+            bad "[K39/force] CONTROL VACUOUS: at the default '{0,400}' is $m_small lines and '{0,4000}' is $m_big — the exact prefilter is no longer count-proportional, so the row above proves nothing"
         fi
     else
-        bad "[K39] the -fno-prefilter-collapse control did not compile — §1 has no control"
+        bad "[K39/force] the default-build control did not compile — §1 has no control"
     fi
 else
-    bad "[K39] '((a)|b){0,400}c' or '((a)|b){0,4000}c' does not compile at the default"
+    bad "[K39/force] '((a)|b){0,400}c' or '((a)|b){0,4000}c' does not compile under -fprefilter-collapse"
+fi
+
+# THE DEFAULT'S OWN CLAIM: count-BOUNDED. A pattern whose EXACT artifact the
+# caps refuse must COMPILE, through the size rung, and say so. K41's witness 2
+# is that pattern and the reason this row exists (known_issues.md K41).
+K41W2='(?:(0{28,30}|[\n\t]?(?:c{1}?c{28,30}?a|1{1,}a{0,30}0|c){5,10}?\n){0,3}?b[\x6]|[^abc]b(0{2,}[\]]|(b{0,30}a??|a{0,3}?\n)[-a]|^))a?|a(\n{1,2}b{1,2}|0)??a{0,30}$'
+w2="$WORK/k41w2.c"
+if emit "$w2" -- "$K41W2"; then
+    w2why=$(stamp VM_PREFILTER_LANG_WHY "$w2")
+    case "$w2why" in
+      "size cap retry, exact "*" > "*)
+        ok "[K39/default] count-BOUNDED: an artifact the caps refuse under the exact language compiles via the size rung ('$w2why')" ;;
+      *)
+        bad "[K39/default] K41 witness 2 compiled but stamps LANG_WHY '$w2why', expected the size-cap retry — either the rung did not fire or something else made it small" ;;
+    esac
+    # AND THE CONTROL, which is also the only thing -fno-prefilter-collapse
+    # still buys a caller under ruling B: denying the rungs restores the
+    # refusal.
+    if emit "$WORK/k41w2_deny.c" -fno-prefilter-collapse -- "$K41W2"; then
+        bad "[K39/default] CONTROL VACUOUS: K41 witness 2 compiles under -fno-prefilter-collapse too, so the row above is not measuring the size rung"
+    elif grep -q 'bytes of emitted code' "$WORK/k41w2_deny.c.err"; then
+        ok "[K39/default] the control holds: -fno-prefilter-collapse restores the cap's refusal ($(head -1 "$WORK/k41w2_deny.c.err" | cut -c1-64)...)"
+    else
+        bad "[K39/default] under -fno-prefilter-collapse K41 witness 2 was refused, but not by a size cap: $(head -1 "$WORK/k41w2_deny.c.err")"
+    fi
+else
+    bad "[K39/default] K41 witness 2 does not compile at the default — ruling B's size rung is not rescuing it: $(head -1 "$w2.err")"
 fi
 
 # ---------------------------------------------------------------------------
@@ -175,9 +190,17 @@ fi
 #
 # Each row is a pattern chosen to land on a named side of the knee.
 lang_witness() {  # lang_witness EXPECTED PATTERN
-    local want="$1" pat="$2" a="$WORK/w_auto.c" b="$WORK/w_deny.c"
-    if ! emit "$a" -- "$pat"; then
-        bad "[lang] '$pat' does not compile — this row has no subject"; return
+    local want="$1" pat="$2" a="$WORK/w_force.c" b="$WORK/w_def.c"
+    # [OPT-4] RULING B PIVOTED THIS SECTION ONTO THE FORCE FLAG. It used to
+    # compare the DEFAULT against `-fno-prefilter-collapse`, because the
+    # default was where the collapse happened. It is not any more: the default
+    # is the exact language, so the deny flag is a no-op on almost everything
+    # and the comparison would have been vacuous on every row. The independent
+    # axis is now `-fprefilter-collapse` against the default, which asks the
+    # same question — does the STAMP agree with the BYTES — through the flag
+    # that actually moves them.
+    if ! emit "$a" -fprefilter-collapse -- "$pat"; then
+        bad "[lang] '$pat' does not compile under -fprefilter-collapse — this row has no subject"; return
     fi
     local vmpf; vmpf=$(stamp VM_PREFILTER "$a")
     if [ "$vmpf" != "hybrid" ]; then
@@ -185,83 +208,78 @@ lang_witness() {  # lang_witness EXPECTED PATTERN
     fi
     local got; got=$(stamp VM_PREFILTER_LANG "$a")
     if [ "$got" != "$want" ]; then
-        bad "[lang] '$pat' stamps RX_VM_PREFILTER_LANG '$got', expected '$want'"; return
+        bad "[lang] '$pat' under -fprefilter-collapse stamps RX_VM_PREFILTER_LANG '$got', expected '$want'"; return
     fi
-    if ! emit "$b" -fno-prefilter-collapse -- "$pat"; then
-        bad "[lang] '$pat' does not compile under -fno-prefilter-collapse — the row has no independent term"; return
+    if ! emit "$b" -- "$pat"; then
+        bad "[lang] '$pat' does not compile at the default — the row has no independent term"; return
     fi
-    # [OPT-4] THE `_WHY` COMPANION, and the independent term for its NUMBER.
-    # `_LANG` says which language; `_LANG_WHY` says which conjunct decided and
-    # on what measurement. The value is checked for SHAPE against the language
-    # (the five reasons partition into the two outcomes), and then the number
-    # is checked against a build that took the OTHER branch: the exact forward
-    # NFA is built on both paths, so `-fno-prefilter-collapse` must report the
-    # SAME N. That is what catches the one bug this stamp invites — reading the
-    # count off the COLLAPSED machine, which would leave the default build
-    # reporting a small N while the denied build reports the real one.
+    # THE REASON, and the two outcomes have DIFFERENT ones under ruling B: a
+    # forced collapse says `forced`, a forced NON-collapse says why it could
+    # not (`no counted repeat`). Both are checked, because "the flag was
+    # honoured" and "the flag had something to act on" are two facts.
     local why dwhy
     why=$(stamp VM_PREFILTER_LANG_WHY "$a")
     dwhy=$(stamp VM_PREFILTER_LANG_WHY "$b")
-    case "$want:$why" in
-      count-collapsed:"exact nfa "*" > "*|count-collapsed:forced|count-collapsed:"dfa overflow retry, "*) ok "[why] '$pat' stamps LANG \"count-collapsed\" with a collapsing reason: '$why'" ;;
-      exact:"exact nfa "*" <= "*|exact:"no counted repeat") ok "[why] '$pat' stamps LANG \"exact\" with a non-collapsing reason: '$why'" ;;
-      *) bad "[why] '$pat' stamps LANG \"$want\" but LANG_WHY '$why' — the reason does not belong to the outcome, so the two lines disagree about the same decision" ;;
-    esac
-    # THE DENIED BUILD'S REASON, and the two halves are DIFFERENT assertions.
-    # Where the collapse DID act, denying it changed the build and the artifact
-    # must say so. Where it did NOT, denying it changed nothing, and the reason
-    # must be UNCHANGED — that is the byte-for-byte recovery promise
-    # (tuning.md §2.17) stated on the one field most likely to break it, and it
-    # is not hypothetical: the first version of this stamp said "denied"
-    # unconditionally and moved 13 bytes on '((a)|b){0,3}c'. The `cmp` below
-    # would catch the bytes; this says WHICH field moved, which is the
-    # difference between a diagnosis and a puzzle.
     if [ "$want" = count-collapsed ]; then
-        case "$dwhy" in
-          "denied, exact nfa "*) ok "[why] '$pat' under -fno-prefilter-collapse stamps '$dwhy' — the flag acted, and the artifact reports both that and what it cost" ;;
-          *) bad "[why] '$pat' under -fno-prefilter-collapse stamps LANG_WHY '$dwhy' — the flag kept a machine that would have collapsed and the artifact does not say so" ;;
-        esac
-    elif [ "$dwhy" = "$why" ]; then
-        ok "[why] '$pat' stamps the SAME reason ('$why') with the axis allowed and denied — a flag that cannot act moves no byte"
+        [ "$why" = forced ] \
+            && ok "[why] '$pat' under -fprefilter-collapse stamps 'forced' — the flag is the reason, and the artifact says so" \
+            || bad "[why] '$pat' collapsed under -fprefilter-collapse but stamps LANG_WHY '$why', expected 'forced'"
+        [ "$dwhy" = exact ] \
+            && ok "[why] ...and at the DEFAULT the same pattern stamps 'exact' — ruling B's default is the pattern's own language" \
+            || bad "[why] '$pat' at the DEFAULT stamps LANG_WHY '$dwhy', expected 'exact' — something other than the force flag is collapsing it"
     else
-        bad "[why] '$pat' stamps LANG_WHY '$why' by default and '$dwhy' under -fno-prefilter-collapse, on an artifact the collapse never acted on — the flag is leaking into an artifact it cannot change, which breaks the byte-for-byte recovery promise"
+        [ "$why" = "no counted repeat" ] \
+            && ok "[why] '$pat' is HONOURED but vacuous under -fprefilter-collapse ('no counted repeat')" \
+            || bad "[why] '$pat' stamps LANG_WHY '$why' under -fprefilter-collapse, expected 'no counted repeat' — the flag reached a conjunct that is vacuity, not policy"
     fi
-    # The BUDGET half of the value, against the one the compiler was built
-    # with. `--list-axes` does not print it, so the independent term is the
-    # OTHER artifacts' agreement: §5 asserts every artifact in the corpus
-    # reports the same B, which a per-artifact constant cannot fail to do and a
-    # per-artifact COMPUTATION could.
-    # The denied build carries the SAME stamp line reading `"exact"` when the
-    # collapse did not act, so on the `exact` rows the files must be identical
-    # including that line; on the `count-collapsed` rows they must differ, and
-    # by far more than the stamp's own 15-character value change.
+    # H3, ON THE ARTIFACT THAT ACTUALLY COLLAPSED. This was a corpus-wide
+    # sweep until ruling B emptied its population (nothing collapses at the
+    # default any more), so it moved here, where every `count-collapsed` row
+    # supplies a real subject at no extra compile. The claim is unchanged and
+    # it is the SILENT MATCH LOSS one: a superset prefilter's span END is not
+    # a bound on the match end (match_api.md §6.3 H3), so a collapsed artifact
+    # must not carry the `prefilter-window` clamp. The two stamps come out of
+    # different expressions — `v.mrl_win`'s conjuncts against
+    # `job->fit.prefilter_collapsed` — so this is a cross-check, not a
+    # restatement. ONE-DIRECTIONAL by construction: an EXACT artifact may also
+    # lack the ceiling (an atomic group or a lookaround drops it), so only the
+    # collapsed => no-ceiling implication is asserted.
+    if [ "$want" = count-collapsed ]; then
+        local ceil; ceil=$(stamp VM_PRUNE_CEILING "$a")
+        [ "$ceil" != "prefilter-window" ] \
+            && ok "[H3] '$pat' collapsed and dropped the prefilter-window ceiling (reads '$ceil')" \
+            || bad "[H3] '$pat' is count-collapsed and STILL carries RX_VM_PRUNE_CEILING \"prefilter-window\" — the clamp prunes real matches on a superset prefilter"
+    fi
+    # THE STAMP AGAINST BYTES. A forced build that collapsed must DIFFER from
+    # the default; one that could not collapse must be byte-IDENTICAL to it —
+    # a flag with nothing to act on moves no byte, which is the same promise
+    # `-fno-prefilter-collapse` carries from the other side.
     if cmp -s "$a" "$b"; then
         if [ "$want" = exact ]; then
-            ok "[lang] '$pat' stamps \"exact\" and is byte-identical to its -fno-prefilter-collapse build — the stamp agrees with the artifact"
+            ok "[lang] '$pat' stamps \"exact\" under -fprefilter-collapse and is byte-identical to its default build — the stamp agrees with the artifact"
         else
-            bad "[lang] '$pat' stamps \"count-collapsed\" but is byte-identical to its -fno-prefilter-collapse build — the stamp names a collapse that did not happen"
+            bad "[lang] '$pat' stamps \"count-collapsed\" but is byte-identical to its default build — the stamp names a collapse that did not happen"
         fi
     else
         local na nb; na=$(wc -c < "$a"); nb=$(wc -c < "$b")
         if [ "$want" = count-collapsed ]; then
-            ok "[lang] '$pat' stamps \"count-collapsed\" and differs from its -fno-prefilter-collapse build ($na vs $nb bytes) — the stamp agrees with the artifact"
+            ok "[lang] '$pat' stamps \"count-collapsed\" and differs from its default build ($na vs $nb bytes) — the stamp agrees with the artifact"
         else
-            bad "[lang] '$pat' stamps \"exact\" but differs from its -fno-prefilter-collapse build ($na vs $nb bytes) — the collapse acted on an artifact that says it did not"
+            bad "[lang] '$pat' stamps \"exact\" but differs from its default build ($na vs $nb bytes) — the flag acted on an artifact that says it did not"
         fi
     fi
 }
-# BELOW the knee: a counted repeat exists but its exact machine is small, so
-# the sharper language is kept. This is the majority of the corpus's
-# counted-repeat hybrids and the row that fails if the knee ever goes to zero.
-lang_witness exact           '((a)|b){0,3}c'
-# NOTHING TO COLLAPSE: no counted repeat at all. The collapsed lowering of
-# this pattern IS its exact lowering, which is why the `applies` has a
-# has-collapsible conjunct rather than relying on the budget alone.
+# NOTHING TO COLLAPSE: the flag is honoured and vacuous. This is the row that
+# fails if `-fprefilter-collapse` ever starts reaching the has-collapsible
+# conjunct, which would be vacuity dressed as policy.
 lang_witness exact           'a(b|c)+d'
-# ABOVE the knee, three shapes that carry the count in DIFFERENT machines —
-# `{0,4000}` in the reverse one only (the `Sigma*` wrap absorbs the bound
-# forward), the literal-prefixed form in BOTH, and the exact-count form in
-# both. A fix confined to one direction passes the first and fails the others.
+# WITH something to collapse, four shapes that carry the count in DIFFERENT
+# machines — `{0,4000}` in the reverse one only (the `Sigma*` wrap absorbs the
+# bound forward), the literal-prefixed form in BOTH, the exact-count form in
+# both, and a small one (`{0,3}`) that the OLD knee would have left alone. That
+# last row is ruling B's own: the force flag has no budget conjunct to drop any
+# more, so it must collapse a counted repeat of ANY size.
+lang_witness count-collapsed '((a)|b){0,3}c'
 lang_witness count-collapsed '((a)|b){0,4000}c'
 lang_witness count-collapsed 'foo((a)|b){0,1000}bar'
 lang_witness count-collapsed '((a)|ab){4000}c'
@@ -270,31 +288,11 @@ lang_witness count-collapsed '((a)|ab){4000}c'
 lang_witness count-collapsed '((a)|b){0,4000}?c'
 lang_witness count-collapsed '((a{10,20}){10,50})z'
 
-# THE FORCE HALF, and it is a different assertion from the deny half: it drops
-# the state budget alone, so a BELOW-the-knee pattern must collapse under it
-# while a pattern with nothing to collapse must still stamp `"exact"`.
+# THE CONFLICT PAIR is REFUSED, by name (tuning.md §2.17). The two
+# force/vacuity rows that used to sit here are now `lang_witness`'s own — under
+# ruling B every `count-collapsed` row IS a force row, so keeping separate ones
+# would have been the same assertion written twice.
 f="$WORK/force.c"
-if emit "$f" -fprefilter-collapse -- '((a)|b){0,3}c'; then
-    got=$(stamp VM_PREFILTER_LANG "$f")
-    if [ "$got" = count-collapsed ]; then
-        ok "[force] -fprefilter-collapse drops the state budget: '((a)|b){0,3}c' collapses where the default keeps it exact"
-    else
-        bad "[force] -fprefilter-collapse left '((a)|b){0,3}c' at '$got' — the force half reaches no conjunct"
-    fi
-else
-    bad "[force] '((a)|b){0,3}c' does not compile under -fprefilter-collapse"
-fi
-if emit "$f" -fprefilter-collapse -- 'a(b|c)+d'; then
-    got=$(stamp VM_PREFILTER_LANG "$f")
-    if [ "$got" = exact ]; then
-        ok "[force] -fprefilter-collapse on a pattern with no counted repeat is HONOURED and stamps \"exact\" — the artifact reports what was built, not what was asked"
-    else
-        bad "[force] 'a(b|c)+d' stamps '$got' under -fprefilter-collapse — the force flag reached the has-collapsible conjunct, which is vacuity and not policy"
-    fi
-else
-    bad "[force] 'a(b|c)+d' does not compile under -fprefilter-collapse"
-fi
-# The conflict pair is REFUSED, by name (tuning.md §2.17).
 if emit "$f" -fprefilter-collapse -fno-prefilter-collapse -- 'a(b|c)+d'; then
     bad "[force] -fprefilter-collapse and -fno-prefilter-collapse together were ACCEPTED — a request with two contradictory halves must be refused, never silently resolved"
 elif grep -q 'cannot both be requested' "$f.err"; then
@@ -326,99 +324,21 @@ grep -rhE '^pattern ' "$ROOT_DIR/tests" --include='*.rxt' 2>/dev/null \
     | sed 's/^pattern //' | sort -u > "$PATS"
 npat=$(wc -l < "$PATS")
 
-# ---------------------------------------------------------------------------
-# THE REPLICATION FACTOR, READ OUT OF THE PATTERN TEXT — §5's independent term
-# ---------------------------------------------------------------------------
-# docs/dev/learnings.md §3. §5 asserts that the knee fires only where a COUNT
-# made the machine big, i.e. that no artifact over the budget has replication
-# factor < 2. Asking the compiler which patterns have a collapsible repeat
-# would be asking the mechanism to grade itself: `pcrec_has_collapsible_rep` is
-# a conjunct OF the gate under test, so a bug in it would make the assertion
-# agree with the defect. So the factor is re-derived HERE, from the pattern
-# string, by a scanner that shares nothing with `src/`.
-#
-# ONE awk PASS over the whole file rather than one per pattern: the sweep below
-# already spends a compile per pattern and this must not add 2,700 processes.
-# Output is one integer per line, positionally parallel to $PATS, read in the
-# loop on fd 3.
-#
-# WHAT IT APPROXIMATES, stated rather than hidden. It tracks backslash escapes
-# and character classes (including a leading `]` or `^]`, which the corpus
-# does contain — `[^]abc]`), and reads `{m}` / `{m,}` / `{m,n}` as a quantifier
-# only where the braces hold digits. It does NOT understand `\Q...\E`, so a
-# literal brace-count inside a quoted span would be miscounted as a
-# quantifier. That direction OVER-reports the factor, which could only make
-# assertion (a) vacuous, so the scanner is itself pinned on named patterns
-# below before it is trusted.
-FACAWK="$WORK/factor.awk"
-cat > "$FACAWK" <<'AWKEOF'
-{
-    n = length($0); best = 1; incls = 0; clsat = 0
-    for (i = 1; i <= n; i++) {
-        c = substr($0, i, 1)
-        if (c == "\\") { i++; continue }
-        if (incls) {
-            # a `]` in the first position of a class (after an optional `^`)
-            # is a LITERAL, not the close
-            if (c == "]" && i > clsat) incls = 0
-            else if (c == "^" && i == clsat) clsat = i + 1
-            continue
-        }
-        if (c == "[") { incls = 1; clsat = i + 1; continue }
-        if (c == "{") {
-            rest = substr($0, i)
-            if (match(rest, /^\{[0-9]+(,[0-9]*)?\}/)) {
-                body = substr(rest, 2, RLENGTH - 2)
-                k = index(body, ",")
-                if (k == 0) { lo = body + 0; hi = lo }
-                else {
-                    lo = substr(body, 1, k - 1) + 0
-                    hs = substr(body, k + 1)
-                    hi = (hs == "") ? lo : hs + 0
-                }
-                if (lo > best) best = lo
-                if (hi > best) best = hi
-                i += RLENGTH - 1
-            }
-        }
-    }
-    print best
-}
-AWKEOF
-FACS="$WORK/facs.txt"
-awk -f "$FACAWK" "$PATS" > "$FACS"
-if [ "$(wc -l < "$FACS")" != "$npat" ]; then
-    bad "[census] the replication-factor scanner produced $(wc -l < "$FACS") rows for $npat patterns — §5's independent term is not aligned with its population"
-fi
-# THE SCANNER IS PINNED BEFORE IT IS TRUSTED, on shapes taken from the corpus
-# and from the design note: a scanner that always answered ">= 2" would make
-# assertion (a) pass on any defect at all.
-fac_of() { printf '%s\n' "$1" | awk -f "$FACAWK"; }
-fac_bad=0
-for row in 'a(b|c)+d:1' '((a)|b){0,3}c:3' '((a)|ab){4000}c:4000' \
-           '(ab){300}:300' '(a{10,20}){10,50}:50' '(x(?:ab){2,4}){0,12}c:12' \
-           '(1{0,30}?[^]abc][^abc]){8,8}0+|a:30' 'a\{4000\}b:1' '[a{9}]z:1'; do
-    fp="${row%:*}"; fw="${row##*:}"; fg=$(fac_of "$fp")
-    [ "$fg" = "$fw" ] || { bad "[census] the factor scanner reads '$fp' as $fg, expected $fw"; fac_bad=$((fac_bad+1)); }
-done
-[ "$fac_bad" -eq 0 ] && ok "[census] the replication-factor scanner agrees with 9 hand-checked patterns, including an ESCAPED brace and one inside a class — §5's control is not vacuous"
 
 if [ "$npat" -lt 1000 ]; then
     bad "[sweep] the corpus extraction found only $npat patterns — the sweep below would be vacuous"
 else
     n_hybrid=0; n_coll=0; n_exact=0; n_dfa_macro=0; n_novm_macro=0
-    n_ceiling_bad=0; n_lang_missing=0; bad_ex=""
+    n_ceiling_bad=0; n_lang_missing=0; bad_ex=""; coll_ex=""
     # §5's census terms, all keyed on the TEXTUAL factor (see the scanner
     # above), never on the compiler's own has-collapsible predicate.
-    n_lowfac=0; n_hifac=0; n_coll_lowfac=0; n_why_bad=0; n_budget_bad=0
-    lowfac_ex=""; why_ex=""; budget=""
+    n_why_bad=0; n_rung=0
+    why_ex=""
     # [OPT-4] `<PREFIX>_ENGINE_SEL`'s accounting (§7). Counted over EVERY
     # artifact, not just the hybrids, because the stamp is unconditional.
     n_art=0; n_sel_bad=0; n_sel_forced=0; n_sel_cross=0; sel_ex=""
     art="$WORK/sweep.c"
-    exec 3< "$FACS"
     while IFS= read -r p; do
-        read -r fac <&3 || fac=1
         emit "$art" -- "$p" || continue
         eng=$(stamp ENGINE "$art")
         vmpf=$(stamp VM_PREFILTER "$art")
@@ -452,7 +372,6 @@ else
             continue
         fi
         n_hybrid=$((n_hybrid+1))
-        if [ "$fac" -ge 2 ]; then n_hifac=$((n_hifac+1)); else n_lowfac=$((n_lowfac+1)); fi
         # THE `_WHY` COMPANION, over the whole population rather than over §2's
         # seven witnesses: the five reasons partition into the two outcomes,
         # and `internal.h` makes that structural (`>= PFLW_FORCED` iff
@@ -463,31 +382,20 @@ else
         # this sweep compiles at the DEFAULT, where the deny flag is not passed,
         # so an artifact reporting it would mean the reason had come from
         # somewhere other than the build.
+        # [OPT-4] RULING B's value set. The two RUNG values are the only ways
+        # an artifact collapses at the default, and `forced` is unreachable
+        # here because this sweep passes no flag — which is itself asserted
+        # below rather than assumed.
         case "$lang:$why" in
-          count-collapsed:"exact nfa "*" > "*|count-collapsed:forced) : ;;
-          # [OPT-4]/[SEL-1] the DFA-overflow rung. A corpus pattern whose DFA
-          # overflows as the ENGINE reaches this and no other value.
-          count-collapsed:"dfa overflow retry, "*) : ;;
-          exact:"exact nfa "*" <= "*|exact:"no counted repeat") : ;;
+          count-collapsed:"dfa overflow retry, "*) n_rung=$((n_rung+1)) ;;
+          count-collapsed:"size cap retry, "*)     n_rung=$((n_rung+1)) ;;
+          exact:exact|exact:"no counted repeat")   : ;;
           *) n_why_bad=$((n_why_bad+1)); [ -z "$why_ex" ] && why_ex="$p ($lang / $why)" ;;
         esac
-        # The BUDGET the artifact reports, which must be ONE number across the
-        # corpus — a per-artifact constant cannot vary and a per-artifact
-        # computation could.
-        b=$(printf '%s' "$why" | sed -n 's/^exact nfa [0-9]* [<>]*=* \([0-9]*\)$/\1/p')
-        if [ -n "$b" ]; then
-            if [ -z "$budget" ]; then budget="$b"
-            elif [ "$b" != "$budget" ]; then
-                n_budget_bad=$((n_budget_bad+1)); [ -z "$why_ex" ] && why_ex="$p (budget $b vs $budget)"
-            fi
-        fi
         case "$lang" in
             count-collapsed)
                 n_coll=$((n_coll+1))
-                if [ "$fac" -lt 2 ]; then
-                    n_coll_lowfac=$((n_coll_lowfac+1))
-                    [ -z "$lowfac_ex" ] && lowfac_ex="$p"
-                fi
+                [ -z "$coll_ex" ] && coll_ex="$p ($why)"
                 if [ "$(stamp VM_PRUNE_CEILING "$art")" = "prefilter-window" ]; then
                     n_ceiling_bad=$((n_ceiling_bad+1))
                     [ -z "$bad_ex" ] && bad_ex="$p"
@@ -496,11 +404,31 @@ else
             *)     n_lang_missing=$((n_lang_missing+1)); [ -z "$bad_ex" ] && bad_ex="$p" ;;
         esac
     done < "$PATS"
-    exec 3<&-
 
-    if [ "$n_ceiling_bad" -eq 0 ]; then
-        ok "[H3] all $n_coll count-collapsed artifact(s) dropped the prefilter-window ceiling — a superset's span END is not a bound on the match end"
+    # [OPT-4] RULING B, ASSERTED CORPUS-WIDE, and this is what §3 measures now.
+    # The old assertion here swept for collapsed artifacts and checked their
+    # ceilings; its population is legitimately ZERO under ruling B, so it moved
+    # onto the forced witnesses in §2 (where a subject exists) and this loop
+    # asserts the ruling itself instead: at the DEFAULT, over the whole corpus,
+    # NOTHING collapses. If a knee ever returns — by design or by accident —
+    # this is the line that says so, and it is a far stronger statement than
+    # the vacuous ceiling sweep it replaces.
+    #
+    # The two rungs are invisible here by construction: no corpus pattern
+    # overflows a DFA state cap or is refused by an emitted-size cap at the
+    # default, which is exactly why they need named witnesses (§1, §6) rather
+    # than a population.
+    # THE ASSERTION IS "ONLY A RUNG", NOT "NEVER". A corpus pattern MAY reach
+    # a rung at the default — that is what the rungs are for — so the check
+    # that catches a returning knee is that every collapsed artifact names a
+    # RUNG as its reason. `n_coll - n_rung` is the number that collapsed for
+    # some other reason, and it is what a knee would grow.
+    if [ "$((n_coll - n_rung))" -eq 0 ]; then
+        ok "[rulingB] all $n_coll collapsed artifact(s) of $n_hybrid hybrids over $npat corpus patterns collapsed via a LADDER RUNG${coll_ex:+ (e.g. $coll_ex)} — the collapse is never a measurement of the pattern"
     else
+        bad "[rulingB] $((n_coll - n_rung)) of $n_hybrid hybrid artifact(s) collapsed at the DEFAULT for a reason that is not a ladder rung (first: '$coll_ex') — under Frank's ruling B only a failed attempt may collapse; a knee has come back"
+    fi
+    if [ "$n_ceiling_bad" -ne 0 ]; then
         bad "[H3] $n_ceiling_bad count-collapsed artifact(s) still carry RX_VM_PRUNE_CEILING \"prefilter-window\" — the clamp prunes real matches on a superset prefilter (first: '$bad_ex')"
     fi
 
@@ -524,80 +452,32 @@ else
     fi
 
     # ----------------------------------------------------------------------
-    # §5 THE FORM CENSUS: the knee's population, PRINTED and BANDED
+    # §5 IS RETIRED (Frank's ruling B, 2026-08-29). Its quantity no longer
+    # exists.
     # ----------------------------------------------------------------------
-    # docs/testing.md "Answer-identity sweep" shape. The census is PRINTED
-    # unconditionally, because a number nobody prints is a number nobody
-    # notices moving (K35), and then two things are asserted about it.
+    # This section was a form census over the knee's population: it printed how
+    # many corpus artifacts sat above `PCREC_PREFILTER_EXACT_NFA_STATES`,
+    # banded that count, and asserted that none of them had a replication
+    # factor below 2. Under ruling B there is no knee and no such population —
+    # the collapse acts only on the two ladder rungs, whose corpus population
+    # is legitimately ZERO — so every one of those assertions would now be
+    # measuring nothing.
     #
-    # (a) THE KNEE FIRES ONLY WHERE A COUNT MADE THE MACHINE BIG. This is the
-    #     claim `PCREC_PREFILTER_EXACT_NFA_STATES = 128` is set on — the whole
-    #     population with nothing to collapse tops out at 20 NFA states, so no
-    #     budget in range can touch it — and it is the one that would fail
-    #     silently if the budget were lowered, if the lowering changed, or if
-    #     the exact NFA grew for an unrelated reason. The term is the TEXTUAL
-    #     replication factor (scanner above), which shares nothing with
-    #     `pcrec_has_collapsible_rep`.
+    # DELETED RATHER THAN LEFT WITH A BAND OF `0..0`, which is the manager's
+    # instruction and the right one: a check whose subject has gone is a
+    # VACUOUS check, and a vacuous check is worse than no check because it
+    # reads like coverage. The replication-factor scanner it used went with it.
+    # What the rungs do is asserted where the rungs are — §1's size-cap row,
+    # §6's [SEL-1] row — on named witnesses rather than on a population.
     #
-    # (b) THE POPULATION IS IN A BAND, not merely above a floor. A floor
-    #     catches the knee that stopped separating; it does not catch the knee
-    #     that started collapsing everything, which is the failure a
-    #     mis-typed comparison or a budget of 0 produces and which reads as
-    #     "more optimisation!" rather than as a defect. The band is measured
-    #     on this tree and deliberately loose in both directions, because the
-    #     population is a property of the CORPUS and patterns come and go.
-    #
-    # THE BAND IS THIS AXIS'S PIN. The bar was swept at 64/96/112/120/128/
-    # 144/160/192/256/512 over the 1,388 hybrid rows of
-    # docs/dev/artifact_size_log.tsv and the over-budget count is FLAT at 23
-    # for every bar in 117..160 — a 44-wide plateau with 128 near its middle,
-    # and zero factor-< 2 artifacts over EVERY bar in the sweep, not only over
-    # this one (docs/design/prefilter_count_independence.md §4).
-    #
-    # WHY THE NUMBER HERE IS NOT THAT 23. This sweep's population is every
-    # `pattern` line under tests/ (`sort -u`), which is not the size log's set
-    # of built artifacts: the log has 23 ROWS over the budget but only 19
-    # distinct patterns among them, and this sweep sees one pattern the log
-    # has no row for. Measured here: 20. Two counts, two populations, both
-    # right — which is exactly why each check floors its OWN and no number is
-    # copied between them.
-    COLLAPSE_BAND_LO=15
-    COLLAPSE_BAND_HI=28
-    printf 'census: %d corpus patterns -> %d hybrid artifact(s): %d count-collapsed, %d exact\n' \
-           "$npat" "$n_hybrid" "$n_coll" "$n_exact"
-    printf 'census: by TEXTUAL replication factor: %d with factor >= 2, %d with factor < 2\n' \
-           "$n_hifac" "$n_lowfac"
-    printf 'census: budget reported by the artifacts: %s\n' "${budget:-<none seen>}"
-
-    if [ "$n_coll_lowfac" -eq 0 ]; then
-        ok "[census] (a) none of the $n_coll collapsed artifact(s) has textual replication factor < 2 — the knee is firing only where a COUNT made the machine big"
-    else
-        bad "[census] (a) $n_coll_lowfac collapsed artifact(s) carry NO counted repeat of factor >= 2 (first: '$lowfac_ex') — the budget is catching machines that are big for some other reason, which is not what 128 was measured to separate"
-    fi
-    # AND (a)'s OWN CONTROL. If the scanner reported ">= 2" for everything,
-    # (a) would pass on any defect whatever. It cannot: a large factor-< 2
-    # hybrid population is the thing that makes the assertion say something.
-    if [ "$n_lowfac" -ge 100 ]; then
-        ok "[census] (a) is not vacuous: $n_lowfac of the $n_hybrid hybrid artifact(s) have textual factor < 2 and every one of them kept the exact language"
-    else
-        bad "[census] (a) IS VACUOUS: only $n_lowfac hybrid artifact(s) were read as factor < 2, so 'no collapsed artifact has factor < 2' is close to a tautology — check the scanner before believing (a)"
-    fi
-    if [ "$n_coll" -ge "$COLLAPSE_BAND_LO" ] && [ "$n_coll" -le "$COLLAPSE_BAND_HI" ]; then
-        ok "[census] (b) $n_coll of $n_hybrid hybrid artifact(s) took the count-collapsed language, inside the pinned band $COLLAPSE_BAND_LO..$COLLAPSE_BAND_HI (measured 20 at the landing)"
-    elif [ "$n_coll" -lt "$COLLAPSE_BAND_LO" ]; then
-        bad "[census] (b) only $n_coll of $n_hybrid collapsed, below the band's floor of $COLLAPSE_BAND_LO — find out why before lowering it; a knee that stopped separating reads exactly like this"
-    else
-        bad "[census] (b) $n_coll of $n_hybrid collapsed, ABOVE the band's ceiling of $COLLAPSE_BAND_HI — the knee is separating far more than the 20 it was measured at, which is what a lowered or mis-compared budget looks like, and it reads like an improvement rather than like a defect"
-    fi
+    # The bar sweep this section pinned (the 117..160 plateau) is kept in
+    # docs/design/prefilter_count_independence.md §4 as the RECORD OF A
+    # DECISION THAT WAS REVERSED, not as a live claim; §10 carries the ruling
+    # chain that reversed it.
     if [ "$n_why_bad" -eq 0 ]; then
         ok "[why] all $n_hybrid hybrid artifact(s) carry a RX_VM_PREFILTER_LANG_WHY whose reason belongs to the language it stamps"
     else
         bad "[why] $n_why_bad hybrid artifact(s) stamp a LANG_WHY reason that does not belong to their LANG (first: '$why_ex') — the two lines disagree about one decision"
-    fi
-    if [ "$n_budget_bad" -eq 0 ]; then
-        ok "[why] every artifact reporting a budget reports the SAME one (${budget:-none}) — it is a constant, not a per-artifact computation"
-    else
-        bad "[why] $n_budget_bad artifact(s) report a different budget from the first one seen (first: '$why_ex')"
     fi
     # ----------------------------------------------------------------------
     # §7 `RX_ENGINE_SEL`: the value set is CLOSED, and it agrees with the

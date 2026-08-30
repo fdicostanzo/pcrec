@@ -575,6 +575,27 @@ typedef struct {
      * flags serve the single-pattern case and the test harness. */
     uint64_t    max_emit_code_bytes;
     uint64_t    max_emit_bytes;
+
+    /* [OPT-4] AN ADVISORY SIZE WARNING, and the word advisory is the whole
+     * design (Frank, 2026-08-29). When an ACCEPTED artifact's total emitted
+     * bytes exceed this, pcrec writes ONE line to stderr naming the size, this
+     * limit, and the stamps that explain it — and then returns the artifact.
+     * It never refuses, never changes what is emitted, and is not an
+     * optimization axis: nothing selects on it and no artifact records it.
+     *
+     * WHY A WARNING AND NOT A LOWER CAP. The caps above are raise-only
+     * precisely so no caller can manufacture someone else's refusal; a
+     * lowerable cap would undo that. A warning gives the same early notice
+     * with none of the authority — the build still succeeds, so a config that
+     * sets it can never break a downstream consumer.
+     *
+     * 0 DISABLES IT. The default is `PCREC_DEFAULT_WARN_EMIT_BYTES`
+     * (250,000 total bytes), chosen an order of magnitude under
+     * `PCREC_MAX_EMIT_BYTES` so the line arrives while a pattern can still be
+     * changed rather than at the moment it is refused. Unlike the caps this is
+     * NOT raise-only: lowering it is exactly what a project that wants tighter
+     * notice should do, and lowering a warning cannot fail anyone's build. */
+    uint64_t    warn_emit_bytes;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

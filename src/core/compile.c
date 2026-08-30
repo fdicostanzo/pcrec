@@ -46,6 +46,13 @@ void pcrec_default_options(pcrec_options *opt)
     opt->prefix = "rx";
     opt->encoding = PCREC_ENC_BYTE;
     opt->header_name = NULL; /* self-contained .c by default */
+    /* [OPT-4] the advisory size warning is ON by default. It is the one
+     * `pcrec_options` field whose zero value means DISABLED rather than
+     * "use the built-in", which is why it is set here explicitly: a caller
+     * who memsets the struct and calls `pcrec_compile` gets no warning, and
+     * that is deliberate — a library embedder has not asked for stderr. The
+     * CLI, which has, goes through this function. */
+    opt->warn_emit_bytes = PCREC_DEFAULT_WARN_EMIT_BYTES;
 }
 
 /* [ART-SIZE] THE TWO EMITTED-SIZE QUANTITIES, measured on the finished
@@ -356,7 +363,14 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * lower ladder rung plus one FINAL attempt that re-emits the chosen K.
  * DERIVED from the ladder rather than hand-typed, so adding a rung cannot
  * silently truncate the search. */
-enum { COMPILE_MAX_ATTEMPTS = 3 + SIZE_TERM_LADDER_N + 1 };
+/* [OPT-4] RULING B DOUBLES THE LADDER-BEARING HALF. The size rung restarts
+ * the size term from scratch with a smaller prefilter (it must: the collapsed
+ * artifact's figures are not the exact one's, and a `K` chosen for the latter
+ * is a `K` chosen for an artifact that no longer exists), so the ladder can run
+ * TWICE — once for the exact attempt and once after the collapse. `+1` for
+ * that rung's own transition. Derived rather than typed, so adding a ladder
+ * rung cannot silently truncate the search. */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -504,7 +518,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     volatile bool dfa_disabled = false;
     /* [OPT-4] the [SEL-1] ladder's middle rung (see `Ctx`'s field comment).
      * `volatile` for the same `-Wclobbered` reason `dfa_disabled` is. */
-    volatile bool collapse_retry = false;
+    volatile unsigned char collapse_reason = CR_NONE;
+    /* [OPT-4] the size refusal that triggered CR_SIZECAP, carried across the
+     * retry the way `overflow_why` is: `job_cleanup` has already run on the
+     * attempt that measured it. */
+    volatile unsigned long long size_cap_bytes = 0, size_cap_limit = 0;
     /* [OPT-4] the failing attempt's ROLE for the DFA, for `<PREFIX>_ENGINE_SEL`
      * (see `Ctx.dfa_was_engine`). Recorded where it is still knowable. */
     volatile bool dfa_was_engine = false;
@@ -590,9 +608,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * will not attempt (compile.c's build gate and select_engine.c's
          * prefilter derivation both skip it — see `forces_dfa_overflow`). */
         cx.dfa_disabled = dfa_disabled;
-        /* [OPT-4] the middle rung, seeded the same way and NEVER without
-         * `dfa_disabled` (the ladder below sets them together). */
-        cx.prefilter_collapse_retry = collapse_retry;
+        /* [OPT-4] WHICH collapse rung this attempt is (CR_NONE on the
+         * default one). `CR_SEL1` is never set without `dfa_disabled`; the
+         * ladder below sets them together. */
+        cx.collapse_reason = collapse_reason;
+        cx.size_cap_bytes = size_cap_bytes;
+        cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
@@ -710,7 +731,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * eligibility test is shared — an auto-mode DFA overflow with no
              * `-fprefilter` — and only what the next attempt is TOLD differs:
              *
-             *   rung 1  dfa_disabled + prefilter_collapse_retry
+             *   rung 1  dfa_disabled + collapse_reason = CR_SEL1
              *           the DFA stops being the ENGINE, but the prefilter
              *           SURVIVES and is built from the count-collapsed
              *           language. [OPT-4]: the premise that made rung 2 the
@@ -722,7 +743,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              *           when the COLLAPSED machine overflows too, which is the
              *           case rung 1 cannot help.
              *
-             * `!dfa_disabled` on the first and `!collapse_retry` on the second
+             * `!dfa_disabled` on the first and the CR_SEL1 test on the second
              * are what make this a LADDER rather than a loop: each rung is
              * offered at most once, so the whole fallback is bounded at two
              * extra builds however many caps a pattern manages to overflow.
@@ -739,7 +760,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 ovf_eligible && !dfa_disabled &&
                 !(defo.flags & PCREC_NO_PREFILTER_COLLAPSE);
             const bool retry_drop =
-                ovf_eligible && !(dfa_disabled && !collapse_retry);
+                ovf_eligible && !(dfa_disabled && collapse_reason != CR_SEL1);
             if (retry_collapse || retry_drop) {
                 memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
                 /* [OPT-4] READ BEFORE `job_cleanup`, and only on the FIRST
@@ -752,12 +773,61 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     dfa_was_engine = cx.job->fit.chosen == ENGM_DFA;
                 job_cleanup(&cx);
                 dfa_disabled = true;
-                collapse_retry = retry_collapse;
+                collapse_reason = retry_collapse ? CR_SEL1 : CR_NONE;
                 /* The refused build wrote its diagnostic into `err`; the
                  * retry is a fresh compile and must start with the same
                  * clean channel the first attempt had, or a successful
                  * fallback returns 0 beside a stale "too complex" message
                  * (manager's landing fix, merge review 2026-08-28). */
+                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+                continue;
+            }
+            /* [OPT-4] FRANK'S RULING B — THE SIZE RUNG. The exact artifact was
+             * refused by an emitted-size cap; before giving up, try ONE more
+             * attempt with the prefilter built from the count-collapsed
+             * language. This is the whole of the new default: the collapse
+             * acts where the caps say the exact artifact cannot ship, and
+             * nowhere else.
+             *
+             * IT IS THE SAME LADDER, not a second recovery point: one more
+             * pass of the existing loop around the existing single `setjmp`,
+             * labelled at the failure site by `cx.size_cap_refused` exactly as
+             * [SEL-1] labels its own with `cx.dfa_overflowed`.
+             *
+             * OFFERED AT MOST ONCE (`collapse_reason != CR_SIZECAP`), so a
+             * pattern whose COLLAPSED artifact is also over the cap refuses
+             * after two attempts rather than looping. The size-term ladder's
+             * own state is reset with it, because the smaller prefilter
+             * changes every figure that ladder chose `K` on and reusing the
+             * old record would pick a `K` for an artifact that no longer
+             * exists.
+             *
+             * THE CONJUNCTS ARE THE GATE'S, RESTATED HERE ONLY TO AVOID A
+             * POINTLESS ATTEMPT: no rung for a pattern with nothing to
+             * collapse, none for a DFA-engine artifact (a superset would be a
+             * miscompile), and none when the caller denied the axis — that
+             * caller gets the refusal, which is the only thing
+             * `-fno-prefilter-collapse` still buys them under ruling B. */
+            const bool size_eligible =
+                cx.size_cap_refused &&
+                collapse_reason != CR_SIZECAP &&
+                !(defo.flags & PCREC_NO_PREFILTER_COLLAPSE) &&
+                cx.job && cx.job->fit.chosen != ENGM_DFA &&
+                cx.job->fit.prefilter &&
+                !cx.job->fit.prefilter_collapsed;
+            if (size_eligible) {
+                size_cap_bytes = cx.size_cap_bytes;
+                size_cap_limit = cx.size_cap_limit;
+                job_cleanup(&cx);
+                collapse_reason = CR_SIZECAP;
+                st_phase = ST_DEFAULT; st_idx = 0; st_final_k = 0;
+                st_rescue = false; st_capexcl = false;
+                memset(st_k, 0, sizeof st_k);
+                memset(st_ok, 0, sizeof st_ok);
+                memset(st_code, 0, sizeof st_code);
+                memset(st_total, 0, sizeof st_total);
+                memset(st_nodes, 0, sizeof st_nodes);
+                memset(st_whylen, 0, sizeof st_whylen);
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 continue;
             }
@@ -911,99 +981,77 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
             pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
             /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
-             * prefilter_count_independence.md §4). The decision sits HERE,
-             * between the exact build and everything downstream, because it
-             * needs a number only the exact build has and nothing after this
-             * point may see two machines.
+             * prefilter_count_independence.md §4, as re-ruled). The decision
+             * sits HERE, between the exact build and everything downstream,
+             * because nothing after this point may see two machines.
+             *
+             * FRANK'S RULING B (2026-08-29): THE DEFAULT IS THE EXACT
+             * LANGUAGE. There is no state-count knee any more — the collapsed
+             * prefilter is a LADDER ATTEMPT, taken only when `compile_driver`
+             * has already watched something fail and set `collapse_reason`
+             * (a DFA state cap overflowing, or an emitted-size cap refusing
+             * the exact artifact). The knee was ruled out on a MEASURED
+             * regression rather than on taste: `(a{1,3}){65}` in
+             * tests/base/d27_k23_ambiguous_decomposition.rxt collapsed at 392
+             * exact NFA states and went from answering in 0.00 s to
+             * exhausting the step budget after 13.34 s on its broken-run
+             * subjects, because a superset prefilter cannot supply the
+             * `prefilter-window` ceiling those cases depend on.
              *
              * THE FIRST CONJUNCT IS THE WHOLE SAFETY ARGUMENT. `chosen !=
              * ENGM_DFA` means these machines' ONLY customer is the VM's
              * prefilter — a filter, which owes a sound rejection and a lower
-             * bound on the start and nothing else (§2 H1/H2, and `emit_vm.c`'s
-             * retry loop re-derives from every candidate it is handed). When
-             * the DFA is the ENGINE its machine IS the answer, and a superset
-             * would be a miscompile; that case never reaches this branch.
+             * bound on the start and nothing else (§2 H1/H2). When the DFA is
+             * the ENGINE its machine IS the answer and a superset would be a
+             * miscompile; that case never reaches this branch.
              *
              * THE SECOND ASKS WHETHER THERE IS ANYTHING TO COLLAPSE, so a
              * pattern with no counted repeat never pays for a second build
-             * that would produce the identical machine. THE THIRD is the
-             * measured knee: below it the exact language is kept, because it
-             * is a strictly sharper filter and the artifact is small there
-             * anyway (limits.h states the two distributions the number sits
-             * between). `PCREC_FORCE_PREFILTER_COLLAPSE` drops the third
-             * conjunct — not the first two, which are correctness and not
-             * policy — which is what makes the emitted size count-INDEPENDENT
-             * rather than merely count-bounded, and what gives this axis its
-             * force half for `make test-axes`.
+             * that would produce the identical machine.
              *
-             * The rebuild is into the SAME `Nfa`: `pcrec_build_nfa` resets
-             * `n` and `nst` reuses the Job-owned array, so the discarded exact
+             * THE THIRD IS THE SELECTOR, and it is now entirely
+             * caller-or-driver driven: `PCREC_FORCE_PREFILTER_COLLAPSE` (the
+             * only route to literal count-INDEPENDENCE), or a rung the driver
+             * decided to try. `PCREC_NO_PREFILTER_COLLAPSE` denies both.
+             *
+             * The rebuild is into the SAME `Nfa`: `pcrec_build_nfa` resets `n`
+             * and `nst` reuses the Job-owned array, so the discarded exact
              * machine costs no allocation and — the expensive half —
              * determinization never runs on it. */
             const unsigned pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
-            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0
-                                || cx.prefilter_collapse_retry;
+            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
             const bool pfc_rep   = pcrec_has_collapsible_rep(root);
-            const bool pfc_over  =
-                cx.job->nfa.n > PCREC_PREFILTER_EXACT_NFA_STATES;
+            const bool pfc_rung  = cx.collapse_reason != CR_NONE;
             bool collapse = cx.job->fit.chosen != ENGM_DFA
                          && !pfc_deny
                          && pfc_rep
-                         && (pfc_force || pfc_over);
+                         && (pfc_force || pfc_rung);
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
-             * from the SAME four conjuncts (D81; `internal.h`'s `PFLW_*`).
-             * The alternative — letting the emitter re-derive a reason from
-             * the flags — is the drift `EngineFit.prefilter_collapsed`'s own
-             * comment already rules out: a build that ASKED for the collapse
-             * and did not get it must report what was BUILT.
-             *
-             * THE LADDER BRANCHES ON `collapse` FIRST, rather than re-walking
-             * the conjuncts in the gate's order, and that is what makes
+             * from the SAME conjuncts (D81). The ladder branches on the
+             * DECISION rather than re-walking them, which is what makes
              * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed` a
-             * STRUCTURAL invariant instead of a property two expressions have
-             * to keep agreeing on. It also covers the gate's first conjunct
-             * (`chosen != ENGM_DFA`) for free: a DFA artifact takes no VM
-             * prefilter decision, emits no stamp, and lands in the
-             * non-collapsing half rather than in a reason it never reached.
+             * structural fact and covers the `chosen != ENGM_DFA` conjunct for
+             * free: a DFA artifact takes no VM prefilter decision, emits no
+             * stamp, and lands in the non-collapsing half.
              *
-             * `PFLW_FORCED` is reported only where the force flag was
-             * NECESSARY. An above-the-knee pattern compiled with
-             * `-fprefilter-collapse` stamps `PFLW_OVER`, because the flag
-             * changed nothing there and the artifact reports what was BUILT
-             * rather than what was asked — the same rule `prefilter_collapsed`
-             * follows on the vacuous-force case.
+             * A RUNG BEATS THE FLAG when both apply, because the rung is the
+             * more specific fact: a caller who passed `-fprefilter-collapse`
+             * AND hit the size cap is better served by "the cap refused the
+             * exact artifact" than by "you asked for it".
              *
-             * `PFLW_DENIED` IS REPORTED ONLY WHERE THE DENIAL CHANGED WHAT
-             * WAS BUILT — that is, where the collapse would have fired but for
-             * the flag. This is not a nicety, it is the same defect [OPT-4]
-             * already fixed once at `emit_dfa.c`'s `strategy_denials` mask:
-             * `-fno-prefilter-collapse` promises to recover today's artifact
-             * BYTE-FOR-BYTE (docs/spec/tuning.md §2.17), and a reason string
-             * that changed length merely because the flag was PASSED would
-             * break that promise on every artifact the flag cannot act on.
-             * MEASURED as a defect before it was a comment: the first version
-             * of this ladder said `denied` unconditionally and moved 13 bytes
-             * on `((a)|b){0,3}c` and 11 on `a(b|c)+d`, caught by
-             * run_prefilter_collapse.sh §2's byte comparison.
-             *
-             * So a denied build below the knee stamps `"exact nfa 21 <= 128"`,
-             * exactly as the default build does, and only a denied build that
-             * was OVER the knee says so. It is the same rule as everywhere
-             * else in this change: the artifact reports what was BUILT, never
-             * what was asked.
-             *
-             * The exact NFA size is recorded on every path — including the
-             * paths that did not consult it — because a stamp that omits the
-             * number where it did not fire cannot be told from one where the
+             * The exact NFA size is recorded on every path, including the ones
+             * that never consult it, because a stamp that omits the number
+             * where it did not fire cannot be told from one where the
              * measurement never happened. */
             cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
+            cx.job->fit.prefilter_sizecap_bytes = cx.size_cap_bytes;
+            cx.job->fit.prefilter_sizecap_limit = cx.size_cap_limit;
             cx.job->fit.prefilter_lang_why =
-                  collapse && cx.prefilter_collapse_retry ? PFLW_SEL1
-                : collapse              ? (pfc_over ? PFLW_OVER : PFLW_FORCED)
-                : !pfc_rep              ? PFLW_NO_REP
-                : (pfc_deny && pfc_over) ? PFLW_DENIED
-                                        : PFLW_UNDER;
+                  !collapse                        ? (pfc_rep ? PFLW_EXACT : PFLW_NO_REP)
+                : cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP
+                : cx.collapse_reason == CR_SEL1    ? PFLW_SEL1
+                                                   : PFLW_FORCED;
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;
@@ -1215,6 +1263,20 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * term did not run, or on the FINAL attempt once the ladder has taken
          * its best shot. Nothing is written past a cap (D84 addendum) and the
          * figures quoted are the ones the caller's own artifact has. */
+        /* [OPT-4] LABEL THE FAILURE WHERE IT HAPPENS, so `compile_driver`'s
+         * size rung can tell a cap refusal from every other `ctx_fail` that
+         * arrives at the same `setjmp`. `dfa_overflowed`'s shape exactly; this
+         * compiler has ONE recovery point, so a rung that wants to act on a
+         * particular failure has to say so here. Set unconditionally before
+         * both caps: the refusal that follows is the one being labelled, and
+         * the fields are read only when the longjmp actually arrives. */
+        if (emit_code > cap_code || emit_tot > cap_tot) {
+            cx.size_cap_refused = true;
+            cx.size_cap_bytes = emit_code > cap_code
+                              ? (unsigned long long)emit_code
+                              : (unsigned long long)emit_tot;
+            cx.size_cap_limit = emit_code > cap_code ? cap_code : cap_tot;
+        }
         if (emit_code > cap_code)
             ctx_fail(&cx, 0,
                      /* NO `.o` figure: the ~17 % source-to-object ratio is
@@ -1237,6 +1299,39 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "limits.md \"Handling an oversized artifact\"",
                      emit_tot, cap_tot, emit_tot * 17 / 100 / 1024);
 
+        /* [OPT-4] THE ADVISORY SIZE WARNING (Frank, 2026-08-29;
+         * docs/spec/limits.md, cli.md). Emitted HERE — past both caps, on the
+         * attempt that is about to succeed — so it describes the artifact the
+         * caller actually receives, K's ladder and any collapse rung included,
+         * and never fires on a trial the driver discarded.
+         *
+         * ONE LINE, and it names the two stamps that EXPLAIN the size rather
+         * than only the size itself: a reader who is told "300,000 bytes" can
+         * only shrug, while one told the unroll factor's reason and the
+         * prefilter language's reason knows which lever to reach for. D26 tier
+         * 3 on the wording — this is pcrec's own diagnostic, not a PCRE2 one.
+         *
+         * NEVER A REFUSAL. The compile has already succeeded at this point and
+         * nothing below reads the result; that is what makes it safe for a
+         * config to lower, where lowering a CAP could manufacture someone
+         * else's build failure. */
+        if (defo.warn_emit_bytes && emit_tot > defo.warn_emit_bytes) {
+            const char *kwhy = cx.size_term_why ? cx.size_term_why : "default";
+            const char *lwhy = "n/a (no VM prefilter)";
+            if (cx.job->fit.prefilter)
+                lwhy = cx.job->fit.prefilter_collapsed
+                     ? "count-collapsed" : "exact";
+            fprintf(stderr,
+                    "pcrec: warning: large artifact: %zu bytes of emitted C "
+                    "source (%zu of code), over --warn-emit-bytes=%llu. "
+                    "Unroll factor K=%d (%s); prefilter language %s. "
+                    "See docs/spec/tuning.md for the levers, or raise/disable "
+                    "the warning with --warn-emit-bytes.\n",
+                    emit_tot, emit_code,
+                    (unsigned long long)defo.warn_emit_bytes,
+                    defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K,
+                    kwhy, lwhy);
+        }
         cx.job->out_c  = sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;
@@ -1247,12 +1342,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         return 0;
     }
     /* EXHAUSTION IS A DEFECT, AND IT MUST SAY SO (r42 critic-sem S8).
-     * `COMPILE_MAX_ATTEMPTS` is exactly tight — a DFA attempt, [SEL-1]'s
-     * overflow fallback, five ladder rungs and the FINAL re-emission use all
-     * eight — so a future rung, or a second retry, silently converts "one
-     * attempt too few" into a bare `-1` with `err->msg` still cleared from
-     * entry: a caller sees failure with no diagnostic at all, which is the
-     * one outcome this driver is built never to produce. Name it instead. */
+     * `COMPILE_MAX_ATTEMPTS` is tight — a DFA attempt, [SEL-1]'s two overflow
+     * rungs, [OPT-4]'s size rung, and up to TWO full runs of the five ladder
+     * rungs plus their FINAL re-emission (the size rung restarts the term) —
+     * so a future rung, or a second retry, silently converts "one attempt too
+     * few" into a bare `-1` with `err->msg` still cleared from entry: a caller
+     * sees failure with no diagnostic at all, which is the one outcome this
+     * driver is built never to produce. Name it instead. */
     if (err && err->msg[0] == 0)
         snprintf(err->msg, sizeof err->msg,
                  "internal error: compile attempts exhausted (%d) without a "

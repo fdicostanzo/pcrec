@@ -379,58 +379,51 @@ fi
 #    with the prefilter window it does not. Both halves are asserted, because
 #    the second is only interesting against the first.
 # ---------------------------------------------------------------------------
-# [OPT-4] 2026-08-29 — THE WITNESS MOVED, AND WHAT IT MOVED OFF IS A REAL
-# REGRESSION THIS SECTION CAUGHT. Read this before touching the rows below.
+# [OPT-4] 2026-08-29 — THIS SECTION CAUGHT THE REGRESSION THAT REVERSED A
+# RULING, and it is worth knowing why it is back to its original shape.
 #
-# K23's exact prefilter NFA is 1,592 states, over
-# PCREC_PREFILTER_EXACT_NFA_STATES, so at the DEFAULT its prefilter is now
-# built from the count-collapsed superset — whose span END is not a bound on
-# the match end (match_api.md §6.3 H3) — and the artifact stamps
-# `RX_VM_PRUNE_CEILING "subject-end"` instead of `"prefilter-window"`.
+# Under the knee K23's prefilter collapsed (1,592 exact NFA states), the
+# artifact lost `RX_VM_PRUNE_CEILING "prefilter-window"`, and at a 64-step
+# budget the DEFAULT build returned `r=-2` (PCREC_ERR_STEPS) on the very
+# subject this section was written for. Answer identity was not violated —
+# D46 and `make test-axes` are about an UNBOUNDED budget — but the step budget
+# is a documented caller-visible bound (DD-2/D22) and the collapse changed
+# which patterns fit inside it: the caller did not get a slower answer, they
+# got no answer. That measurement is what Frank ruled B on
+# (docs/design/prefilter_count_independence.md §7.2b, §10).
 #
-# THE CONSEQUENCE IS NOT COSMETIC: at a 64-step budget the DEFAULT build now
-# returns `r=-2` (PCREC_ERR_STEPS) on the very subject this section was written
-# for, where it previously answered `0,100 90,100`. The axis is
-# answer-identity-preserving with an UNBOUNDED budget (D46, and `make
-# test-axes` checks exactly that), but the step budget is a documented
-# caller-visible bound (DD-2/D22) and this row changes which patterns fit
-# inside it. That is recorded as its own assertion below rather than deleted,
-# because a cost nobody asserts is a cost nobody notices returning.
-#
-# THE SECTION'S CLAIM IS UNCHANGED and still demonstrable on K23 itself: the
-# prefilter-window ceiling closes the suffix residual and the subject-end
-# ceiling does not. `-fno-prefilter-collapse` is what reaches the window form
-# now, so `suf_win` is built with it. The control stays `--engine=vm`.
+# So the DEFAULT carries the window ceiling again and the rows below are the
+# originals. The `-fno-prefilter-collapse` build the fix briefly needed is
+# gone; a flag whose reason has gone is a flag the next reader has to
+# re-derive.
 SUF="$(printf 'b%.0s' $(seq 1 16))"
-if gen suf_win "$K23" --step-budget=64 -fno-prefilter-collapse \
-   && gen suf_def "$K23" --step-budget=64 \
-   && gen_vm suf_vm "$K23" --step-budget=64; then
-    s_win="$(build_run suf_win a 100 "$SUF")"
+if gen suf_def "$K23" --step-budget=64 && gen_vm suf_vm "$K23" --step-budget=64; then
     s_def="$(build_run suf_def a 100 "$SUF")"
     s_vm="$(build_run suf_vm  a 100 "$SUF")"
-    # (a) THE CLAIM, on the artifact that still carries the window ceiling.
-    if [ "$s_win" = "0,100 90,100" ]; then
-        ok "suffix residual: with the prefilter-window ceiling (-fno-prefilter-collapse), a 16-byte trailing suffix still answers within 64 steps (§9.1 closed)"
+    if [ "$s_def" = "0,100 90,100" ]; then
+        ok "suffix residual: with the prefilter-window ceiling, a 16-byte trailing suffix still answers within 64 steps (§9.1 closed)"
     else
-        bad "suffix residual: the window-ceiling build gave '$s_win' on 100 'a's + 16 'b's at a 64-step budget"
+        bad "suffix residual: the default build gave '$s_def' on 100 'a's + 16 'b's at a 64-step budget"
     fi
-    # (b) THE CONTROL, unchanged: the subject-end ceiling does not close it.
-    if [ "$s_vm" != "$s_win" ]; then
-        ok "suffix residual control: the SUBJECT-END ceiling (--engine=vm) does not close it ('$s_vm') -- which is why the window form is the one that ships where it can, and why the stamp says which is active"
+    if [ "$s_vm" != "$s_def" ]; then
+        ok "suffix residual control: the SUBJECT-END ceiling (--engine=vm) does not close it ('$s_vm') -- which is why the window form is the one that ships, and why the stamp says which is active"
     else
         bad "suffix residual control: --engine=vm answered too, so this pair is not measuring the ceiling form"
     fi
-    # (c) THE COST [OPT-4] BUYS ITS SIZE WITH, PINNED. At the default K23 now
-    # behaves like the --engine=vm arm, because the collapsed prefilter cannot
-    # supply an end bound. If this ever answers again, either the knee moved,
-    # the default changed, or a collapsed prefilter started carrying a ceiling
-    # it is not entitled to (match_api.md §6.3 H3) -- all three are things
-    # someone must look at, which is why it is asserted rather than left to a
-    # comment.
-    if [ "$s_def" = "$s_vm" ]; then
-        ok "[OPT-4] cost, pinned: at the DEFAULT K23 now exhausts the 64-step budget exactly as --engine=vm does ('$s_def') -- its prefilter is count-collapsed, so it carries no prefilter-window ceiling (docs/design/prefilter_count_independence.md §7.2)"
+    # THE RULING, PINNED WHERE IT WAS BROKEN. `-fprefilter-collapse` is now the
+    # only route to the behaviour that caused the regression, so it is also the
+    # only place the cost can be asserted. If this ever ANSWERS, the collapse
+    # has started carrying a ceiling it is not entitled to (match_api.md §6.3
+    # H3); if the DEFAULT ever stops answering, ruling B has been undone.
+    if gen suf_force "$K23" --step-budget=64 -fprefilter-collapse; then
+        s_force="$(build_run suf_force a 100 "$SUF")"
+        if [ "$s_force" = "$s_vm" ]; then
+            ok "[OPT-4] the cost the knee would have bought, pinned under the FORCE flag: -fprefilter-collapse exhausts the 64-step budget exactly as --engine=vm does ('$s_force') -- a collapsed prefilter carries no prefilter-window ceiling (design note §7.2b, the measurement Frank ruled B on)"
+        else
+            bad "[OPT-4] -fprefilter-collapse gave '$s_force' where the subject-end arm gives '$s_vm' -- re-derive §7.2b's cost before moving this pin"
+        fi
     else
-        bad "[OPT-4] at the default K23 gave '$s_def' where the subject-end arm gives '$s_vm' -- the default's ceiling behaviour has changed again; re-derive §7.2's cost before moving this pin"
+        bad "[OPT-4] '$K23' does not compile under -fprefilter-collapse"
     fi
 fi
 
