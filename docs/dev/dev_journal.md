@@ -18719,3 +18719,17 @@ engine identity sweep stays OPT-IN (test-axes' engine axis; run on
 engine-adjacent changes — the scoped-pair shape opt41 used today); the
 performance comparison stays the bench's, where pcrec-vm/vm-in are
 standing testees beside auto in every sample.
+
+**17:4x — Frank's inlining question, answered by probe** (gcc 15 -O2,
+scratch): constant-length `memcmp` always inlines (by-pieces: "panic" =
+one dword + one byte compare, zero calls; 19 bytes likewise); variable
+length is a real call; **`memchr` is NEVER inlined — constant n=8 still
+emits `jmp memchr@PLT`**. Today's emitted memchr (DFA_PF_MEMCHR) scans
+rest-of-subject — long-run, amortized, correct as is. Recorded on
+[OPT-VMLIT] (emit constant-length compares; never memchr for short
+windows) and [OPT-A] (per-candidate call overhead is a real term at
+high anchor density; STEP 0 separates call cost from scan cost).
+Earlier: [OPT-VMLIT] queued (Frank's string-compare idea; the trie's
+non-branching chains are the finder; [ENG-DIRECT] gets the DFA
+string-edge cross-note); battery does not grow (engine identity stays
+opt-in; engine performance stays the bench's).
