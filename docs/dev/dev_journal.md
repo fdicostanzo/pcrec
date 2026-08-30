@@ -18170,3 +18170,19 @@ the codegen + cli groups get a solo re-run on the fix commit after mech.
 The DONE line will read RED (its TCHK counts the stage as run); the verdict
 is by diagnosis, stated as such in I-18. Time labels earlier in this part
 ("~02:2x") were ~35 min fast — the reset was ~01:30, the charters ~01:45.
+
+**Battery 3's san stage ABORTED (01:46-01:56, rc 2)** at its fourth script:
+`tests/registry/run_definitions_tests.sh` builds its `definitions_check.c`
+driver against `$LIB` (the ASan-built libpcrec.a under `make san`) WITHOUT
+`$SANFLAGS` — the only C-check compile in tests/registry that omits them —
+so the link failed on `__asan_register_globals` and the san loop's `set -e`
+stopped there: harness, cli, reject ran clean (0 sanitizer report lines),
+the other ~20 scripts never ran under san. A [DD-11] test-infrastructure
+defect on the sanitizer axis only, found by the first battery whose san
+stage reached that script (opt4b/dd11 ran no san under the hold). Fix
+staged on `lane/sanfix` (worktrees/sanfix): `SANFLAGS="${SANFLAGS:-}"` +
+`$SANFLAGS` on the compile line, the siblings' shape — NOT merged into
+main while mech runs (its detectors may execute main's tests/ scripts;
+rule 8). After mech: merge, `make san` again in full (~46 min), then the
+solo codegen + cli groups, then the bench's window (ETA sent to
+pcrecdev2: ~04:00-04:15).
