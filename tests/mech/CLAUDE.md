@@ -2174,6 +2174,21 @@ overflow witness and §6b's are the same pattern four characters apart
 `(a|b){1,30000}`. Each is the other's control in the only way that carries
 information — they share the machine and differ in the predicate.
 
+**CANONICAL RUNS (2026-08-30, at `412eb52`, one invocation per row):**
+
+    S206  reach:ok(1/1), pfcollapse:5fail/50pass, resource:1fail/28pass,
+          corpus:0fail/51pass                                      DETECTED
+    S207  reach:ok(2/2), pfcollapse:17fail/20pass, resource:2fail/27pass,
+          corpus:0fail/51pass                                      DETECTED
+
+**READ THE TWO ROWS AGAINST EACH OTHER, NOT ALONE — that is what the pair is
+for.** S206 removes the predicate, so only the NULLABLE size-rung cell moves
+(`resource:1fail`, its non-nullable twin GREEN). S207 inverts it, so the twin
+moves too (`resource:2fail`), and the inversion is loud in `pfcollapse` as
+well — 17 fails against 5 — because it breaks the winners and the losers at
+once. A single row could not have expressed that difference, and the 2-vs-1 is
+what says which of the two failures a future red is.
+
 **AND `corpus:0fail` IS THE EXPECTED READING ON BOTH.** Not a thin population:
 the prefilter is a FILTER, so a useless one, a missing one and an exact one
 are answer-identical by construction. The whole `.rxt` corpus, both oracles,
