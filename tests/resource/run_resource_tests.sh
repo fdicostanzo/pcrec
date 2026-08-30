@@ -262,21 +262,62 @@ done
 # is line-based (it looks for the bound on the SAME line as the compiler call),
 # so a continuation line carrying `"$PCREC"` alone reads as unbounded. Split
 # across lines this cell failed make test-codegen while being perfectly bounded.
-rm -f "$WORKDIR/o.c"
-dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
-if [ $? -eq 0 ]; then
-    sz=$(wc -c < "$WORKDIR/o.c")
-    szwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
-    if [ "$sz" -lt 200000 ] && [ "${szwhy#size cap retry}" != "$szwhy" ]; then
-        ok "[OPT-4] '(a|b){0,30000}' compiles at the DEFAULT in $sz bytes via the SIZE RUNG ('$szwhy') — the cap refused the exact artifact and ruling B's retry shipped a smaller one"
-    elif [ "$sz" -ge 200000 ]; then
-        bad "[OPT-4] '(a|b){0,30000}' compiled at the default but emitted $sz bytes, expected well under 200,000 — the size rung is not reaching this shape"
-    else
-        bad "[OPT-4] '(a|b){0,30000}' compiled small at the default but stamps LANG_WHY '$szwhy', expected a 'size cap retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back"
+#
+# [OPT-4.1] THE ROW BECAME A PAIR, AND THE PAIR IS THE POINT. `(a|b){0,30000}`
+# is NULLABLE — its collapsed language `(a|b)*` matches the empty string at
+# every position, so the collapsed prefilter could never dismiss one — and
+# [OPT-4.1] declines it, shipping an artifact with NO prefilter, which is
+# SMALLER still and therefore rescues the compile just as the collapse did.
+# `(a|b){1,30000}` is the same pattern one character over, is NOT nullable, and
+# must still take the size rung and its stamp.
+#
+# EACH IS THE OTHER'S CONTROL, and neither direction is safe alone. Without the
+# non-nullable twin, a compiler that had stopped taking the size rung at all
+# would leave the nullable row green (no prefilter is exactly what it asserts)
+# while every oversize collapsible pattern started refusing. Without the
+# nullable row, a compiler that had stopped declining would leave the twin
+# green while shipping the scan pcrec-bench measured at 1.2-9.9x slower than
+# none. The `size cap retry` bucket ALSO has no other witness in this tree —
+# the corpus reaches neither rung — so the twin is what keeps that stamp value
+# reachable at all (K35).
+size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL
+    local pat="$1" want="$2" label="$3"
+    rm -f "$WORKDIR/o.c"
+    local dflog rc
+    dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default $label" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" "$pat" 2>&1)"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        bad "[OPT-4] '$pat' no longer compiles at the DEFAULT — the size rung has stopped rescuing this shape, or a cap moved: $(printf '%s' "$dflog" | head -1)"
+        return
     fi
-else
-    bad "[OPT-4] '(a|b){0,30000}' no longer compiles at the DEFAULT — it did at the landing (32,279 bytes); the collapse has stopped firing on it, or a cap moved: $(printf '%s' "$dflog" | head -1)"
-fi
+    local sz pf szwhy
+    sz=$(wc -c < "$WORKDIR/o.c")
+    pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
+    szwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
+    if [ "$sz" -ge 200000 ]; then
+        bad "[OPT-4] '$pat' compiled at the default but emitted $sz bytes, expected well under 200,000 — the size rung is not reaching this shape"
+        return
+    fi
+    if [ "$want" = hybrid ]; then
+        if [ "$pf" = hybrid ] && [ "${szwhy#size cap retry}" != "$szwhy" ]; then
+            ok "[OPT-4] '$pat' compiles at the DEFAULT in $sz bytes via the SIZE RUNG ('$szwhy') — the cap refused the exact artifact and ruling B's retry shipped a smaller one"
+        elif [ "$pf" != hybrid ]; then
+            bad "[OPT-4] '$pat' compiled small at the default with RX_VM_PREFILTER '$pf' — its collapsed language is NOT nullable, so the rung must KEEP the prefilter; the [OPT-4.1] decline is over-firing"
+        else
+            bad "[OPT-4] '$pat' compiled small at the default but stamps LANG_WHY '$szwhy', expected a 'size cap retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back"
+        fi
+    else
+        if [ "$pf" = none ] && [ -z "$szwhy" ]; then
+            ok "[OPT-4.1] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" — the collapsed language is nullable, the rescue is DECLINED, and dropping the prefilter still gets the artifact under the cap"
+        elif [ "$pf" = hybrid ]; then
+            bad "[OPT-4.1] '$pat' kept a prefilter (RX_VM_PREFILTER 'hybrid', LANG_WHY '$szwhy') — its collapsed language matches the empty string, so this artifact pays a scan that can never dismiss a position (pcrec-bench O-10: 1.2-9.9x)"
+        else
+            bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' and LANG_WHY '$szwhy' — no prefilter, yet a language macro beside it; the two lines disagree about one artifact"
+        fi
+    fi
+}
+size_rung_cell '(a|b){0,30000}' none   'alternation nullable'
+size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable'
 
 echo
 

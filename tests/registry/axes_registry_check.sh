@@ -608,6 +608,36 @@ check_value_set "RX_ENGINE" \
     "$(dump_stamp_vals RX_ENGINE)" \
     ""
 
+# [OPT-4.1], 2026-08-30: `RX_ENGINE_SEL` HAD NO LEG HERE AT ALL. Its value set
+# is a CLOSED vocabulary a consumer buckets on (the comparative bench's own O-8
+# ask), and it was checked in exactly one place — a hardcoded `case` list in
+# tests/codegen/run_prefilter_collapse.sh §7, which shares no source with the
+# dump or the spec and so could not see either of them going stale. This is the
+# gap [OPT-4.1] walked into while adding a sixth value; the leg is the fix, and
+# it is written the way the two legs below it are, not as a special case.
+#
+# THE ANCHOR CARRIES NO COUNT, per this file's own thrice-learned rule: the
+# paragraph above the table says "SIX VALUES" today and a seventh must not
+# break the extractor. `the same decision as a TOKEN` is unique in match_api.md
+# and survives a value being added.
+check_value_set "RX_ENGINE_SEL" \
+    "$(extract_md_table_values "$MATCHAPI" "the same decision as a TOKEN")" \
+    "$(dump_stamp_vals RX_ENGINE_SEL)" \
+    ""
+
+# [OPT-4.1] THE EMITTER-SOURCE LEG, the same shape `RX_DFA_TABLE`'s and
+# `RX_UNROLL_K_WHY`'s already have: the check above is dump-vs-DOCS, both
+# hand-written, so a value added to `pcrec_engine_sel_name` and forgotten in
+# BOTH would pass it. This is dump-vs-CODE — the function that actually decides
+# the macro's value, read through its own `return "..."` statements. Its
+# `default:` arm returns `"selected"`, so the extraction covers the whole set
+# including the fallback and needs no exception.
+check_value_set "RX_ENGINE_SEL (pcrec_engine_sel_name)" \
+    "$(extract_c_return_values "$EMITDFA" 'const char *pcrec_engine_sel_name')" \
+    "$(dump_stamp_vals RX_ENGINE_SEL)" \
+    "" \
+    "src/gen/emit_dfa.c's pcrec_engine_sel_name()"
+
 # [REG-SV], 2026-08-30: `RX_UNROLL_K_WHY`'s seven-value set, previously
 # uncovered by this direction entirely (no call at all — the gap the
 # comparative bench found: the dump's two `size-term` rows both stamped an

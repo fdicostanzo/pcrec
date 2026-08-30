@@ -191,6 +191,16 @@ fi
 # Each row is a pattern chosen to land on a named side of the knee.
 lang_witness() {  # lang_witness EXPECTED PATTERN
     local want="$1" pat="$2" a="$WORK/w_force.c" b="$WORK/w_def.c"
+    # [OPT-4.1] A THIRD EXPECTATION, and it shares `exact`'s LANG on purpose.
+    # `exact-nullable` is a row whose flag was honoured, had something to act
+    # on, and was DECLINED as useless — so the LANGUAGE is `exact` exactly as
+    # the vacuous row's is, and the only thing that tells the two apart is the
+    # `_WHY` line. Folding it into this function rather than writing a second
+    # one is the point: the byte-identity leg below is the same claim for both
+    # (a flag that changed nothing moved no byte), and a parallel witness
+    # would be a second place that claim is made.
+    local wlang="$want"
+    [ "$want" = exact-nullable ] && wlang=exact
     # [OPT-4] RULING B PIVOTED THIS SECTION ONTO THE FORCE FLAG. It used to
     # compare the DEFAULT against `-fno-prefilter-collapse`, because the
     # default was where the collapse happened. It is not any more: the default
@@ -207,8 +217,8 @@ lang_witness() {  # lang_witness EXPECTED PATTERN
         bad "[lang] '$pat' is not a hybrid (RX_VM_PREFILTER '$vmpf') — this row has stopped testing what it names"; return
     fi
     local got; got=$(stamp VM_PREFILTER_LANG "$a")
-    if [ "$got" != "$want" ]; then
-        bad "[lang] '$pat' under -fprefilter-collapse stamps RX_VM_PREFILTER_LANG '$got', expected '$want'"; return
+    if [ "$got" != "$wlang" ]; then
+        bad "[lang] '$pat' under -fprefilter-collapse stamps RX_VM_PREFILTER_LANG '$got', expected '$wlang'"; return
     fi
     if ! emit "$b" -- "$pat"; then
         bad "[lang] '$pat' does not compile at the default — the row has no independent term"; return
@@ -227,6 +237,20 @@ lang_witness() {  # lang_witness EXPECTED PATTERN
         [ "$dwhy" = exact ] \
             && ok "[why] ...and at the DEFAULT the same pattern stamps 'exact' — ruling B's default is the pattern's own language" \
             || bad "[why] '$pat' at the DEFAULT stamps LANG_WHY '$dwhy', expected 'exact' — something other than the force flag is collapsing it"
+    elif [ "$want" = exact-nullable ]; then
+        # [OPT-4.1] THE DECLINE NAMES ITSELF. Without this row the nullable
+        # forced build is indistinguishable from a pattern with nothing to
+        # collapse, which is the exact confusion `no counted repeat` was split
+        # out of `exact` to prevent — one level down.
+        [ "$why" = "nullable collapsed language" ] \
+            && ok "[why] '$pat' has something to collapse and the collapse is DECLINED under -fprefilter-collapse ('nullable collapsed language')" \
+            || bad "[why] '$pat' stamps LANG_WHY '$why' under -fprefilter-collapse, expected 'nullable collapsed language' — the flag reached a vacuity or a collapse where it should have reached the [OPT-4.1] policy"
+        # ...and the DEFAULT build of the same pattern says `exact`, which is
+        # what makes the row above the FLAG's decline rather than a property
+        # the artifact would have reported anyway.
+        [ "$dwhy" = exact ] \
+            && ok "[why] ...and at the DEFAULT the same pattern stamps 'exact' — the decline is the flag's, not the default's" \
+            || bad "[why] '$pat' at the DEFAULT stamps LANG_WHY '$dwhy', expected 'exact'"
     else
         [ "$why" = "no counted repeat" ] \
             && ok "[why] '$pat' is HONOURED but vacuous under -fprefilter-collapse ('no counted repeat')" \
@@ -255,7 +279,7 @@ lang_witness() {  # lang_witness EXPECTED PATTERN
     # a flag with nothing to act on moves no byte, which is the same promise
     # `-fno-prefilter-collapse` carries from the other side.
     if cmp -s "$a" "$b"; then
-        if [ "$want" = exact ]; then
+        if [ "$wlang" = exact ]; then
             ok "[lang] '$pat' stamps \"exact\" under -fprefilter-collapse and is byte-identical to its default build — the stamp agrees with the artifact"
         else
             bad "[lang] '$pat' stamps \"count-collapsed\" but is byte-identical to its default build — the stamp names a collapse that did not happen"
@@ -287,6 +311,16 @@ lang_witness count-collapsed '((a)|ab){4000}c'
 # claim that this covers the family rather than one spelling.
 lang_witness count-collapsed '((a)|b){0,4000}?c'
 lang_witness count-collapsed '((a{10,20}){10,50})z'
+# [OPT-4.1] THE NULLABLE HALF, and each row is the row ABOVE IT MINUS ONE
+# CHARACTER. `((a)|b){0,4000}c` collapses to `((a)|b)*c`, which still has to
+# find a `c`; `((a)|b){0,4000}` collapses to `((a)|b)*`, which matches the
+# empty string at every position and can therefore dismiss nothing. The two
+# rows are each other's control in the only way that matters here — they share
+# the counted repeat, the capture, the branch structure and the machine, and
+# differ in exactly the predicate under test — so a decline that fired on the
+# STRUCTURE rather than on nullability turns the pair red from both ends.
+lang_witness exact-nullable  '((a)|b){0,4000}'
+lang_witness exact-nullable  '((a)|b){0,3}'
 
 # THE CONFLICT PAIR is REFUSED, by name (tuning.md §2.17). The two
 # force/vacuity rows that used to sit here are now `lang_witness`'s own — under
@@ -348,7 +382,7 @@ else
         n_art=$((n_art+1))
         sel=$(stamp ENGINE_SEL "$art")
         case "$sel" in
-          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter) ;;
+          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter|declined-nullable) ;;
           *) n_sel_bad=$((n_sel_bad+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel')" ;;
         esac
         [ "$sel" = forced ] && { n_sel_forced=$((n_sel_forced+1)); [ -z "$sel_ex" ] && sel_ex="$p (forced at the default)"; }
@@ -359,7 +393,12 @@ else
           collapsed-prefilter)
             { [ "$vmpf" = hybrid ] && [ "$lang" = count-collapsed ]; } || {
                 n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL collapsed-prefilter but PREFILTER '$vmpf' / LANG '$lang')"; } ;;
-          overflowed-dfa|overflowed-prefilter)
+          overflowed-dfa|overflowed-prefilter|declined-nullable)
+            # [OPT-4.1] `declined-nullable` joins the "no prefilter survived"
+            # arm rather than getting one of its own: what it names is a
+            # DIFFERENT REASON for the same artifact-level outcome, and the
+            # cross-check here is about the outcome. The reason is what §7b's
+            # own witness pins.
             [ "$vmpf" = none ] || {
                 n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel' but PREFILTER '$vmpf')"; } ;;
         esac
@@ -484,9 +523,9 @@ else
     #    stamps that would contradict it
     # ----------------------------------------------------------------------
     if [ "$n_sel_bad" -eq 0 ]; then
-        ok "[sel] all $n_art artifact(s) carry RX_ENGINE_SEL with one of the five documented values — the set is closed and the stamp is unconditional (D81)"
+        ok "[sel] all $n_art artifact(s) carry RX_ENGINE_SEL with one of the six documented values — the set is closed and the stamp is unconditional (D81)"
     else
-        bad "[sel] $n_sel_bad artifact(s) carry no RX_ENGINE_SEL or an undocumented value (first: '$sel_ex') — a closed value set a consumer buckets on cannot grow a sixth value silently"
+        bad "[sel] $n_sel_bad artifact(s) carry no RX_ENGINE_SEL or an undocumented value (first: '$sel_ex') — a closed value set a consumer buckets on cannot grow a value silently"
     fi
     # `forced` is the one value the COMMAND LINE decides, and this sweep never
     # passes --engine=, so its population here must be zero. That is a real
@@ -561,7 +600,82 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# §7b THE FIVE ROUTES ARE EACH REACHABLE — the K35 half of a closed value set
+# §6b [OPT-4.1] THE SAME RUNG, DECLINED — a prefilter that is NOT built
+# ---------------------------------------------------------------------------
+# §6 asserts the rung FIRES. This asserts it is REFUSED on the one shape where
+# firing costs rather than pays, and the two sections' witnesses are the SAME
+# PATTERN, wrapped: `(?:SEL1)?` has §6's machine plus one epsilon, and it is
+# nullable, so its count-collapsed language matches the empty string at every
+# position and can dismiss nothing. pcrec-bench O-10 measured that shape at
+# 1.2-9.9x SLOWER than the same artifact with no prefilter (`[a-z]{0,32768}`,
+# pin 96e44c2), which is the whole reason this section exists.
+#
+# EACH SECTION IS THE OTHER'S CONTROL, and that is not a figure of speech here:
+# §6 fails if the predicate over-fires (a compiler that declined everything
+# would take §6's prefilter away), this section fails if it under-fires, and
+# the witnesses differ by four characters, so neither can be explained by the
+# patterns being unrelated. What no single-direction check can see is a
+# predicate wired to a constant.
+#
+# THE EVIDENCE IS A DIFFERENT STAMP FROM §6's, on purpose. §6 reads
+# `RX_VM_PREFILTER_LANG`, which a declined artifact does not carry AT ALL
+# (match_api.md §6.3's iff) — so the decline is read off `RX_ENGINE_SEL`, whose
+# value is written by `pcrec_engine_sel_name` in a different file from the
+# `fit.prefilter` clause that took the decision, and the ABSENCE of the LANG
+# macro is checked beside it as the second, independent term.
+SEL1_NULL="(?:$SEL1)?"
+a="$WORK/sel1n_auto.c"; b="$WORK/sel1n_force.c"
+if emit "$a" -- "$SEL1_NULL"; then
+    eng=$(stamp ENGINE "$a"); ewhy=$(stamp ENGINE_WHY "$a")
+    pf=$(stamp VM_PREFILTER "$a"); sel=$(stamp ENGINE_SEL "$a")
+    lang=$(stamp VM_PREFILTER_LANG "$a")
+    # (1) THE RUNG WAS REACHED AND DECLINED. The engine stamp must still report
+    # the overflow — an artifact that had simply never overflowed would carry
+    # `RX_VM_PREFILTER "none"` for a completely different reason and this row
+    # would be asserting nothing.
+    case "$eng:$ewhy:$pf:$sel" in
+      vm:"dfa overflowed"*:none:declined-nullable)
+        ok "[sel1n] the NULLABLE overflow witness declines the rescue: RX_ENGINE_WHY '$ewhy' beside RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable\"" ;;
+      vm:"dfa overflowed"*:hybrid:*)
+        bad "[sel1n] the nullable overflow witness KEPT a count-collapsed prefilter (PREFILTER '$pf', SEL '$sel') — the [OPT-4.1] predicate did not fire, and this artifact pays a scan that can never dismiss a position" ;;
+      vm:"dfa overflowed"*:none:*)
+        bad "[sel1n] the nullable overflow witness has no prefilter but stamps RX_ENGINE_SEL '$sel', expected 'declined-nullable' — the outcome is right and the artifact cannot say why, so a consumer cannot tell it from a rescue that was never available" ;;
+      *)
+        bad "[sel1n] the nullable overflow witness stamps ENGINE '$eng' / WHY '$ewhy' / PREFILTER '$pf' / SEL '$sel' — this row has stopped testing the decline it names" ;;
+    esac
+    # (2) AND IT CARRIES NO LANGUAGE MACRO. The iff, on the one artifact kind
+    # this row creates: a declined rescue has no prefilter, so there is no
+    # language to name, and a `_LANG` line here would mean the emitter is
+    # describing a machine that was not built.
+    if [ -z "$lang" ]; then
+        ok "[sel1n] ...and carries no RX_VM_PREFILTER_LANG — no prefilter, no language (match_api.md §6.3's iff)"
+    else
+        bad "[sel1n] the declined artifact carries RX_VM_PREFILTER_LANG '$lang' beside RX_VM_PREFILTER '$pf' — the macro names a machine this artifact does not contain"
+    fi
+    # (3) `-fprefilter` OVERRIDES THE DECLINE, which is the flag interaction
+    # tuning.md §2.17 states and the one direction a "decline is unconditional"
+    # implementation would get wrong. do-or-die: the decline's alternative is
+    # no prefilter, and that is exactly what an explicit -fprefilter forbids.
+    # NOTE the artifact this produces is the EXACT-language one (`-fprefilter`
+    # suppresses the overflow rung outright), so what is asserted is that a
+    # prefilter EXISTS, not which language it answers for.
+    if emit "$b" -fprefilter -- "$SEL1_NULL"; then
+        pf_force=$(stamp VM_PREFILTER "$b")
+        [ "$pf_force" = hybrid ] \
+            && ok "[sel1n] -fprefilter overrides the nullability decline (RX_VM_PREFILTER \"hybrid\") — a do-or-die request is refused or honoured, never silently answered with its opposite" \
+            || bad "[sel1n] under -fprefilter the nullable witness stamps RX_VM_PREFILTER '$pf_force', expected 'hybrid' — the decline is overriding an explicit request instead of yielding to it"
+    else
+        # A REFUSAL IS ALSO AN ACCEPTABLE do-or-die ANSWER and is reported as
+        # such rather than as a pass: what must never happen is a silent
+        # override, and a refusal is not one.
+        ok "[sel1n] -fprefilter on the nullable witness is REFUSED ($(head -1 "$b.err" | cut -c1-80)) — do-or-die honoured by refusing, which is not a silent override"
+    fi
+else
+    bad "[sel1n] the nullable DFA-overflow witness does not compile — §6b has no subject"
+fi
+
+# ---------------------------------------------------------------------------
+# §7b THE SIX ROUTES ARE EACH REACHABLE — the K35 half of a closed value set
 # ---------------------------------------------------------------------------
 # §7 asserts nothing OUTSIDE the set appears. It cannot see a value that has
 # quietly become unreachable, which reads as "cleaner!" and is how a bucket a
@@ -588,6 +702,14 @@ sel_witness forced   --engine=dfa  -- 'abc'
 # unrelated rows.
 sel_witness collapsed-prefilter                          -- "$SEL1_P"
 sel_witness overflowed-dfa       -fno-prefilter-collapse -- "$SEL1_P"
+# [OPT-4.1] THE SIXTH ROUTE, and it completes a THREE-WAY control rather than
+# adding a fourth unrelated row: the same overflow, with the rescue TAKEN
+# (`collapsed-prefilter`), DENIED by a flag (`overflowed-dfa`) and DECLINED by
+# the language (`declined-nullable`). The first two are one pattern under two
+# flag settings; this one is the pattern's nullable twin at the DEFAULT, so the
+# value cannot be produced by a flag at all — which is exactly what makes it
+# the row that fails if the predicate is wired to a constant.
+sel_witness declined-nullable                            -- "(?:$SEL1_P)?"
 sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"
