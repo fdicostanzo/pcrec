@@ -129,6 +129,52 @@ static void check_str_entry(const char *owner, const char *str)
     release(&cx);
 }
 
+/* One row's DEFK_ROW chain: `str` names the TARGET row's `syntax`
+ * ("an alias row defines to the row it aliases, never to the alias's own
+ * expansion" — internal.h's comment before `DEFK_ROW` has the full rule).
+ * Resolves the target via `pcrec_registry_row_by_syntax` (a dangling name
+ * is a FAIL, never a skip), then resolves the TARGET's own applicable
+ * entry under DEFAULT mods (the chain entry's own tag already gated the
+ * reference; the target's own tag, if it has one, is a separate question
+ * [DD-11.3]'s option matrix exercises in full) and dispatches on ITS kind.
+ * Only DEFK_STR/DEF_IDENTITY targets are exercised structurally here —
+ * today's one chain ($ -> \Z) resolves to DEFK_STR; a future DEFK_BUILDER/
+ * DEFK_TEXTFN target is accepted without a structural check of its own
+ * (those kinds are already exercised directly, once per function, below). */
+static void check_row_chain_entry(const char *owner, const char *target_syntax)
+{
+    const RegRow *target = pcrec_registry_row_by_syntax(target_syntax);
+    if (!target) {
+        bad("definitions: %s: DEFK_ROW entry names '%s', which no row's "
+            "syntax matches (dangling chain)", owner, target_syntax);
+        return;
+    }
+    Ctx cx; pcrec_options defo;
+    memset(&cx, 0, sizeof cx);
+    pcrec_default_options(&defo);
+    cx.pat = "";
+    cx.patlen = 0;
+    cx.opt = &defo;
+    cx.job = calloc(1, sizeof(Job));
+    if (!cx.job) { fprintf(stderr, "FAIL: out of memory\n"); exit(2); }
+    cx.arena.cx = &cx;
+    pcrec_parse_mods_init(&cx);
+
+    const RegDef *resolved = pcrec_def_resolve(&cx, target);
+    if (!resolved) {
+        bad("definitions: %s: chain target '%s' resolved to NULL (its "
+            "own `definitions` field is malformed)", owner, target_syntax);
+    } else if (resolved->kind == DEFK_STR) {
+        check_str_entry(owner, resolved->str);
+    } else if (resolved->kind == DEF_IDENTITY) {
+        check_str_entry(owner, target->syntax);
+    } else {
+        ok("definitions: %s: chains to '%s' (kind %d, exercised directly "
+           "elsewhere)", owner, target_syntax, (int)resolved->kind);
+    }
+    release(&cx);
+}
+
 /* One DEFK_BUILDER entry: build a trivial core body (a single literal 'a',
  * i.e. A_CLASS — core per pcrec_ast_is_core) and confirm the builder's
  * OUTPUT is core-only too. The two shipped builders (pcrec_def_build_atomic,
@@ -200,7 +246,7 @@ static void check_textfn_entry(const char *owner, DefTextFn textfn,
  * registry_check.c) so a sixth RegKind added later is swept with no edit
  * here — silence on a new kind is exactly the "half-done invisibly" failure
  * shape that precedent was written to close. */
-static int n_rows_with_defs = 0, n_str_entries = 0, n_textfn_entries = 0;
+static int n_rows_with_defs = 0, n_str_entries = 0, n_textfn_entries = 0, n_row_entries = 0;
 
 static void sweep_definitions(void)
 {
@@ -236,10 +282,23 @@ static void sweep_definitions(void)
                      * point at the same pcrec_def_build_atomic — so sweeping
                      * per-row here would just repeat the same self-test);
                      * this branch only confirms the row's entry is
-                     * well-formed (a non-NULL function pointer). */
+                     * well-formed (a non-NULL function pointer, and — since
+                     * the r43-second-round builder-template ruling — a
+                     * non-NULL template, DEFK_TEXTFN's own precedent). */
                     if (!d->builder)
                         bad("definitions: %s: DEFK_BUILDER entry with a "
                             "NULL builder", owner);
+                    if (!d->str)
+                        bad("definitions: %s: DEFK_BUILDER entry with no "
+                            "template text (--list-definitions would print "
+                            "an empty `definition` field)", owner);
+                } else if (d->kind == DEFK_ROW) {
+                    n_row_entries++;
+                    if (!d->str)
+                        bad("definitions: %s: DEFK_ROW entry with no "
+                            "target syntax (nothing to chain to)", owner);
+                    else
+                        check_row_chain_entry(owner, d->str);
                 } else if (d->kind == DEFK_TEXTFN) {
                     n_textfn_entries++;
                     /* textfns are checked once, directly, below (per
@@ -282,9 +341,9 @@ static void sweep_definitions(void)
             "— the table is populated but nothing reached this check "
             "(coverage regression)");
     else
-        ok("definitions: swept %d rows / %d DEFK_STR + %d DEFK_TEXTFN "
-           "entries with `definitions` populated",
-           n_rows_with_defs, n_str_entries, n_textfn_entries);
+        ok("definitions: swept %d rows / %d DEFK_STR + %d DEFK_TEXTFN + "
+           "%d DEFK_ROW entries with `definitions` populated",
+           n_rows_with_defs, n_str_entries, n_textfn_entries, n_row_entries);
 }
 
 /* The two shipped builders, tested directly once each (see the comment in

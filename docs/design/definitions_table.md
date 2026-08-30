@@ -14,6 +14,51 @@ TAG rather than a stored callable; checks, citations and counts corrected
 throughout. Every FIX/RULED row is folded in below; §7 keeps only what is
 still open.
 
+**Revision 2** (r43-second-round, manager rulings on `[DD-11.3]`'s opening
+questions, 2026-08-29, lane `dd11b`): three findings and two new mechanisms.
+
+- **`^`, `$` and the plain capturing group needed a table row and had none**
+  (§1's own gap, closed): a new no-doorway `RegKind`, `RK_BARE`
+  (`RK_QUANTSUFFIX`'s own precedent — consulted by the dumps and by this
+  table's resolver, nothing on the live parse path), three rows.
+- **`\Z`'s own §1 verdict above ("primitive") is WRONG, found by the
+  structural check `$`'s new row triggered**: `\Z` lowers to the same
+  `A_EOL` kind `$`'s non-multiline form does, and `pcrec_ast_is_core`
+  (already shipped, §2) says `A_EOL` is not core — so `\Z` needs the same
+  real substitution `$` does (`(?=\n?\z)`), not an identity entry. `\A`'s
+  verdict is unaffected (`A_BOL` genuinely is core).
+- **A second manager ruling: an alias row DEFINES TO the row it aliases,
+  never to the alias's own expansion — one fact, one row.** `$`'s
+  non-multiline fact and `\Z`'s own fact are the identical string
+  `(?=\n?\z)`; writing it twice would be D24's "one construct, two homes"
+  shape one level over. New `DefKind` `DEFK_ROW`: `str` names the TARGET
+  row's `syntax` (`family`'s own reference-by-string idiom, generalised
+  past one `RegKind`); `pcrec_def_resolve` WALKS THROUGH it (depth-bounded
+  against a mis-edited cycle, DD-10/TS-4's standing position on unbounded
+  recursion over data this project does not fully control), so no caller
+  ever sees a `DEFK_ROW` entry itself. `$`'s `DEF_ALWAYS` entry chains to
+  `\Z`'s row, which now carries the real substitution exactly once.
+- **The `[DD-11.3]` fork (DEFK_BUILDER rows have no `str`, so no text
+  exists to build a self-oracle Pattern B from): ruled — the template
+  lives IN THE ROW, not in a test-only lookup.** `DEFK_BUILDER` gains the
+  SAME `str`-as-template convention `DEFK_TEXTFN` already has (one
+  placeholder, `X`, quantifier bounds spelled as in the construct):
+  `X<quant>+ ≡ (?>X<quant>)` for the possessive-suffix family,
+  `(?n)(X) ≡ (?:X)` for `(?n)`. `--list-definitions` prints the template
+  instead of the literal `<builder>` (the dump stops lying by omission).
+  `[DD-11.3]` INSTANTIATES the template over a small body set to produce
+  Pattern B and compares BEHAVIOUR (A==B through pcrec, A==C through
+  libpcre2) — no AST-structural-equality infrastructure (D77: no measured
+  need). The builder function stays the production mechanism; the
+  template is its stated contract, and a builder that drifts from it
+  shows up as an A≠B cell in `[DD-11.3]`, not as a silently-wrong dump
+  line.
+
+All landed in the same commit as `RK_BARE` (`bc64d17`, lane `dd11b`);
+verified: `tests/registry/definitions_check.c`'s sweep now covers `DEFK_ROW`
+(one entry, `$`→`\Z`, resolved and checked recursively) and both builders'
+templates (non-NULL, DEFK_TEXTFN's own precedent), 51/0.
+
 ## 1. Inventory — every option-dependent construct in the code today
 
 Read as: **construct** | **option-scope predicate** | **definition in core
@@ -26,7 +71,7 @@ syntax** | **code arm (file:line)** | **replacement or primitive, and why**.
 | `$` (no `(?m)`) | none | — it already IS `\Z`: one node kind, `A_EOL`, `multiline=false` | `src/parse/parse.c:901`; `src/parse/mod_assertions.c:76` builds the same kind for `\Z` | **already core** — same alias shape as `^`/`\A` |
 | `$` under `(?m)` | `cx->mods->multiline` true at the `$` | `(?=\n)\|\z` — this note's own paraphrase of `docs/dev/plan.md`'s [DD-11] row prose (Frank, thirty-fourth session), independently confirmed against libpcre2 (r43-sem: 0 disagreements over 6-8 subjects per zero-width position, incl. `""`/`"\n"`/`"\n\n"`) | `src/parse/parse.c:901`; `src/ir/nfa.c:539` reads the flag, picks `N_EOL`/`N_EOL_M` | **replacement**, shipped as a D62 field+fold |
 | `\A` | none | itself (`A_BOL`) | `src/parse/mod_assertions.c:75` | **primitive** (structural: no option turns `\A` into anything else) |
-| `\Z` | none | itself (`A_EOL`, multiline forced false regardless of scope — `mod_assertions.c:175`) | `src/parse/mod_assertions.c:76` | **primitive** |
+| `\Z` | none | ~~itself~~ **CORRECTED, r43-second-round**: `(?=\n?\z)` — `A_EOL` (multiline forced false regardless of scope — `mod_assertions.c:175`) is NOT core under full reduction (§2), the same finding that hit `$`'s non-multiline form one row up; the census's own "primitive" verdict below was wrong, found by the structural check `$`'s new row triggered | `src/parse/mod_assertions.c:76`; row `registry.c`'s `z_def` | **replacement** — the row `$`'s `DEF_ALWAYS` entry CHAINS to (`DEFK_ROW`), so the fact lives here exactly once |
 | `\z` | none | itself (`A_END`, its own kind, D62) | `src/ir/nfa.c` `case A_END` | **primitive** (structural — strictly stronger than `\Z`, own position set) |
 | `\b` / `\B` | none (unconditional) | `\b ≡ (?<=\w)(?!\w)\|(?<!\w)(?=\w)` — with `\w` itself a nested definition (D66/D85; §3 item 4) | `src/ir/nfa.c` `N_WORDB`/`N_NWORDB`; `src/ir/dfa.c` mechanism 4 | **replacement**, unconditional — two rows, each a one-entry list, predicate `always` |
 | `\G` | none | none — a runtime-value comparison (`pos == startpos`) | `src/ir/nfa.c` `N_GSTART` | **primitive**, permanently (D66) |
@@ -69,6 +114,22 @@ The family therefore has **3** rows with a RegRow home today (`\cX`, `\o{}`,
 `\N{U+}`), not 5, and the totals line's `28` becomes **26**. The `9 further
 items with no RegRow` bucket is unaffected (it never included `\Q…\E`,
 which already had a row). This does not reopen §7's remaining open item.
+
+**Second correction (r43-second-round, lane `dd11b`):** `\Z` was double-
+counted the OTHER way — filed as a primitive above, when the structural
+check `$`'s new `RK_BARE` row triggered proved `A_EOL` (`\Z`'s own kind) is
+not core under full reduction, the identical finding that hit `$`'s
+non-multiline form. `\Z` moves from the 5-primitive bucket to the
+replacement bucket (it already had a `RegRow`; what it lacked was a
+`definitions` entry, now `z_def`, `DEFK_STR`, `(?=\n?\z)` — the fact `$`'s
+`DEFK_ROW` entry chains to rather than restates). **Primitives: 4** (`\A`
+as a shipped exact-alias identity; `\z`, `\G`, `\K` as structural
+primitives) — the "5 primitives" line above and its "`\A`, `\Z`... exact-
+alias identities" phrasing are both superseded. Replacement-rows-with-a-
+RegRow-home: **27** (26 from the correction above, +1 for `\Z`). `^`, `$`
+and the plain capturing group also gained rows this pass (`RK_BARE`, not
+counted in either bucket above since they had none before — see Revision
+2's own note at the top of this file).
 
 **Architectural note on the 9 base-tier literal escapes with no RegRow.**
 D24's own founding text draws the registry's boundary at NON-base

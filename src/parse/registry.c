@@ -486,6 +486,19 @@ static const RegDef unicode_def[] = {
     {DEFK_END,    DEF_ALWAYS, NULL, NULL, NULL},
 };
 
+/* [DD-11.1 chaining ruling, r43-second-round, 2026-08-29] `\Z`'s OWN
+ * definition — the fact `$`'s non-multiline entry below CHAINS to (DEFK_ROW)
+ * rather than restating. `\Z` (A_EOL) is not core under full reduction any
+ * more than `$`'s own non-multiline form is (both alias the same AST kind,
+ * definitions_table.md §2) — the structural check that proved that for `$`
+ * (tests/registry/definitions_check.c's DEF_IDENTITY `check_str_entry`
+ * extension) applies identically here, which is why this is a REAL
+ * DEFK_STR substitution and not DEF_IDENTITY. */
+static const RegDef z_def[] = {
+    {DEFK_STR, DEF_ALWAYS, "(?=\\n?\\z)", NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
+};
+
 static const RegRow esc_rows[] = {
 ESC_SET_D('d', "\\d", classes, ANY_ENGINE, "any decimal digit", QF_YES, "set 10", pcrec_cls_digit_esc, 0, d_def),
 ESC_SET_D('D', "\\D", classes, ANY_ENGINE, "any character that is not a decimal digit", QF_YES, "set 246", pcrec_cls_digit_esc, 1, D_def),
@@ -610,7 +623,7 @@ ESC_SET_D('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical w
  RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
  "end of subject, or before a final newline",
  ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
- {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT, NULL, NULL},
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT, NULL, z_def},
 {RK_ESC, 'z', NULL, "\\z", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
  RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "end of subject",
  ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
@@ -1399,8 +1412,16 @@ REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are no
  * string — `pcrec_def_build_atomic` (src/parse/definitions.c). One array,
  * shared by all four rows below: the definition is identical for `*+ ++ ?+
  * {n,m}+`, only the quantifier producing the body differs. */
+/* [DD-11.1 builder-template ruling, r43-second-round, 2026-08-29]: the
+ * TEMPLATE lives on the row, not in a test-only lookup — internal.h's
+ * comment before `DefBuilderFn` has the placeholder convention (`X` for
+ * the operand, quantifier bounds spelled as in the construct). All four
+ * `quantsuffix_rows` share this ONE array (and therefore this one
+ * template), which is correct: the definition is identical for `*+ ++ ?+
+ * {n,m}+`, only the QUANTIFIER producing the body differs, and the
+ * template names the general shape rather than four near-duplicates. */
 static const RegDef possessive_def[] = {
-    {DEFK_BUILDER, DEF_ALWAYS, NULL, pcrec_def_build_atomic, NULL},
+    {DEFK_BUILDER, DEF_ALWAYS, "X<quant>+ ≡ (?>X<quant>)", pcrec_def_build_atomic, NULL},
     {DEFK_END,     DEF_ALWAYS, NULL, NULL, NULL},
 };
 
@@ -1478,14 +1499,28 @@ static const RegDef bol_def[] = {
  * is applied literally; `$` needed a SECOND real substitution instead of
  * an identity entry once it was. Verified against libpcre2 already
  * (definitions_table.md §4 / assertions_design.md: `x\Z` vs
- * `x(?=\n?\z)`, 6/6 subjects agree). */
+ * `x(?=\n?\z)`, 6/6 subjects agree).
+ *
+ * [DD-11.1 chaining ruling, r43-second-round, 2026-08-29] THE DEF_ALWAYS
+ * ENTRY IS NOW A CHAIN (DEFK_ROW), NOT A RESTATEMENT. `$`'s non-multiline
+ * fact and `\Z`'s OWN fact are the identical string `(?=\n?\z)` — writing
+ * it twice would be two homes for one fact, D24's own founding argument one
+ * level over. This entry instead names `\Z`'s row by its `syntax`
+ * (`pcrec_registry_row_by_syntax` resolves it; `pcrec_def_resolve` walks
+ * through it — internal.h's comment before `DEFK_ROW` has the rule: "an
+ * alias row defines to the row it aliases, never to the alias's own
+ * expansion"). `\Z`'s own entry (`z_def`, above esc_rows) carries the real
+ * text now. */
 static const RegDef eol_def[] = {
     {DEFK_STR, DEF_MULTILINE, "(?=\\n)|\\z", NULL, NULL},
-    {DEFK_STR, DEF_ALWAYS, "(?=\\n?\\z)", NULL, NULL},
+    {DEFK_ROW, DEF_ALWAYS, "\\Z", NULL, NULL},
     {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
 };
+/* [DD-11.1 builder-template ruling] `(?n)`'s own template: the identity
+ * builder's contract stated as text, `(?n)`'s definitions_table.md §1 row
+ * restated in the placeholder convention. */
 static const RegDef cap_def[] = {
-    {DEFK_BUILDER, DEF_NOCAP, NULL, pcrec_def_build_identity, NULL},
+    {DEFK_BUILDER, DEF_NOCAP, "(?n)(X) ≡ (?:X)", pcrec_def_build_identity, NULL},
     {DEF_IDENTITY, DEF_ALWAYS, NULL, NULL, NULL},
     {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
 };
@@ -1659,6 +1694,24 @@ const RegRow *pcrec_registry(RegKind k, size_t *n)
     case RK_BARE:         *n = sizeof bare_rows         / sizeof bare_rows[0];         return bare_rows;
     default:              *n = 0;                                                      return NULL;
     }
+}
+
+/* [DD-11.1] the DEFK_ROW chain's lookup — `family`'s own reference-by-
+ * syntax-string idiom (mod_lookaround.c's `la_kind`), generalised past ONE
+ * `RegKind` since a chain may cross kinds (internal.h's comment on
+ * `pcrec_registry_row_by_syntax` has the full ruling). RK_COUNT-driven so a
+ * future kind needs no edit here, same precedent `pcrec_registry`'s own
+ * `default:` arm states two functions up. */
+const RegRow *pcrec_registry_row_by_syntax(const char *syntax)
+{
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        for (size_t i = 0; i < n; i++)
+            if (rows[i].syntax && strcmp(rows[i].syntax, syntax) == 0)
+                return &rows[i];
+    }
+    return NULL;
 }
 
 /* ---- MOD-0.2: recogniser + rank arbitration (design §2.2/D32, §14.4) ----

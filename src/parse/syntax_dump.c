@@ -288,22 +288,20 @@ char *pcrec_syntax_tsv(unsigned flavours)
  * the predicate column and a stored callable were two derivations of one
  * fact, and the tag name is the one that survives.
  *
- * `definition` is the DEFK_STR string verbatim, or the literal text
- * `<builder>` for a DEFK_BUILDER entry — never a live evaluation, the same
- * "proves what the compiler THINKS" boundary `--list-axes`'s own header
- * states (axes_dump.c). `DEFK_END` never reaches this loop (it terminates
- * the walk, same convention `pcrec_def_resolve` uses in definitions.c).
+ * `definition` is the DEFK_STR/DEFK_TEXTFN/DEFK_BUILDER text verbatim (a
+ * core-syntax splice for the first, a human-readable TEMPLATE for the other
+ * two — never a live evaluation, the same "proves what the compiler
+ * THINKS" boundary `--list-axes`'s own header states, axes_dump.c), the
+ * row's OWN `syntax` for a DEF_IDENTITY entry, or `= <target syntax>` for a
+ * DEFK_ROW entry — a REFERENCE, never the target's own resolved text (D24's
+ * one-fact-one-row argument applied to this table: `$`'s non-multiline
+ * entry prints `= \Z`, not `(?=\n?\z)`, which is `\Z`'s OWN row's line to
+ * print). `DEFK_END` never reaches this loop (it terminates the walk, same
+ * convention `pcrec_def_resolve` uses in definitions.c).
  *
- * `applies` is `active` for every entry printed today ('identity' is a
- * RESERVED value, not yet reachable): every row currently in the table is
- * an unconditional or option-gated SUBSTITUTION with no case where the row
- * is already its own primitive form (`^`/`$`'s non-multiline case and the
- * `(?n)`-scoped capturing-group row's non-nocap case both have a genuine
- * identity case, and are held out of the table pending a ruling on how
- * `RegDef` marks it — see the lane's own report). Printing `active`
- * unconditionally is not a placeholder lie: it is exactly true of the
- * table as populated, and the day an identity-bearing row lands, this
- * comment and the constant string below are the one place that changes. */
+ * `applies` is `active` (a real substitution, including a DEFK_ROW chain —
+ * chaining IS substituting, just by reference) or `identity` (DEF_IDENTITY:
+ * the row restates its own primitive form, nothing to splice). */
 char *pcrec_definitions_tsv(unsigned flavours)
 {
     StrBuf sb = {0};
@@ -342,24 +340,30 @@ char *pcrec_definitions_tsv(unsigned flavours)
                 put_str(&sb, r->syntax);                sb_putc(&sb, '\t');
                 sb_printf(&sb, "%d", order);            sb_putc(&sb, '\t');
                 sb_puts(&sb, pcrec_def_tag_name(d->tag)); sb_putc(&sb, '\t');
-                /* [DD-11.1]/[DD-11.4b] four DefKinds reach this dump now:
-                 * DEFK_STR (the definition itself), DEFK_TEXTFN (`str` is a
-                 * human-readable TEMPLATE, never a splice-ready string —
-                 * definitions.c's own header on that block), DEFK_BUILDER
-                 * (no text at all — `<builder>`, the operand is an AST the
-                 * dump has no pattern text for), and DEF_IDENTITY (the
-                 * row's OWN `syntax` restated — there is no substitution
-                 * text because there is no substitution). */
-                if (d->kind == DEFK_STR || d->kind == DEFK_TEXTFN)
-                    put_str(&sb, d->str);
-                else if (d->kind == DEF_IDENTITY)
+                /* [DD-11.1]/[DD-11.4b]/[r43-second-round] five DefKinds
+                 * reach this dump now: DEFK_STR (the definition itself),
+                 * DEFK_TEXTFN and DEFK_BUILDER (`str` is a human-readable
+                 * TEMPLATE for both, never a splice-ready string —
+                 * definitions.c's/internal.h's own header on those blocks),
+                 * DEF_IDENTITY (the row's OWN `syntax` restated — there is
+                 * no substitution text because there is no substitution),
+                 * and DEFK_ROW (`= ` plus the TARGET row's `syntax` — a
+                 * reference the reader follows to that row's own line,
+                 * never the target's resolved text printed here a second
+                 * time). */
+                if (d->kind == DEF_IDENTITY)
                     put_str(&sb, r->syntax);
-                else
-                    sb_puts(&sb, "<builder>");
+                else if (d->kind == DEFK_ROW) {
+                    sb_puts(&sb, "= ");
+                    put_str(&sb, d->str);
+                } else
+                    put_str(&sb, d->str);
                 sb_putc(&sb, '\t');
                 /* `applies` comes FROM THE KIND, never inferred (the
                  * manager's identity ruling) — DEF_IDENTITY is the only
-                 * kind that restates the row's own primitive form. */
+                 * kind that restates the row's own primitive form; a
+                 * DEFK_ROW chain is still `active` (it substitutes, just by
+                 * reference rather than by inline text). */
                 sb_puts(&sb, d->kind == DEF_IDENTITY ? "identity" : "active");
                 sb_putc(&sb, '\n');
             }

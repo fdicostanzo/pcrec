@@ -52,12 +52,34 @@ bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx)
     return false;
 }
 
-const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw)
+/* [DD-11.1 chaining ruling, r43-second-round, 2026-08-29] DEFK_ROW's walk,
+ * depth-bounded rather than open recursion — this project's standing
+ * position on unbounded recursion over data it does not fully control
+ * (DD-10/TS-4 exists to remove exactly this shape from the PARSER; a
+ * mis-edited registry.c chaining back on itself must not turn into the
+ * same failure one table over). 4 is generous for a table with one hop
+ * today ($ -> \Z); a real cycle asserts here rather than recursing
+ * forever. */
+static const RegDef *def_resolve_depth(const Ctx *cx, const RegRow *rw, int depth)
 {
+    assert(depth < 4 && "pcrec_def_resolve: DEFK_ROW chain depth exceeded "
+           "-- likely a cycle in registry.c's definitions data");
     if (!rw->definitions) return NULL;
     for (const RegDef *d = rw->definitions; d->kind != DEFK_END; d++) {
-        if (pcrec_def_tag_applies(d->tag, cx))
-            return d;
+        if (!pcrec_def_tag_applies(d->tag, cx)) continue;
+        if (d->kind == DEFK_ROW) {
+            /* `str` names the TARGET row's `syntax` (never its own
+             * definition text — "an alias row defines to the row it
+             * aliases, never to the alias's own expansion"). Resolve under
+             * the SAME Ctx: the target's own tag, if it has one, is a
+             * separate question from the one that selected THIS entry. */
+            const RegRow *target = pcrec_registry_row_by_syntax(d->str);
+            assert(target && "pcrec_def_resolve: DEFK_ROW entry names a "
+                   "row that does not exist (dangling chain in "
+                   "registry.c)");
+            return def_resolve_depth(cx, target, depth + 1);
+        }
+        return d;
     }
     /* UNREACHABLE BY CONSTRUCTION (manager ruling, 2026-08-29, the identity
      * question): a well-formed `definitions` list always ends in a
@@ -77,6 +99,11 @@ const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw)
     assert(0 && "pcrec_def_resolve: definitions list has no DEF_ALWAYS "
                 "terminal entry (malformed row in registry.c)");
     return NULL;
+}
+
+const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw)
+{
+    return def_resolve_depth(cx, rw, 0);
 }
 
 /* The tag's OWN name — `--list-definitions` prints this, never hand-authored

@@ -167,6 +167,27 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   off `pcrec_cls_px_*` (cls_bits.inc) via a throwaway scratch dump, never
   guessed from POSIX folklore.
 
+  **A FIFTH `DefKind`, and a template convention extended to the fourth,
+  by a SECOND manager ruling (r43-second-round, 2026-08-29, `[DD-11.3]`'s
+  opening question).** `DEFK_ROW` — an entry that CHAINS to another row's
+  own resolution rather than restating a fact that row already carries
+  ("an alias row defines to the row it aliases, never to the alias's own
+  expansion"): `str` names the TARGET row's `syntax` (`family`'s own
+  reference-by-string idiom, `pcrec_registry_row_by_syntax` generalising
+  it past ONE `RegKind`), and `pcrec_def_resolve` WALKS THROUGH it —
+  depth-bounded (4), DD-10/TS-4's standing position on unbounded recursion
+  applied to data rather than to parse depth — so no caller ever sees a
+  `DEFK_ROW` entry itself; `--list-definitions` prints `= <target syntax>`
+  for it instead of resolving eagerly (D24's one-fact-one-row argument
+  applied to the DUMP too). `DEFK_BUILDER` gains the SAME `str`-as-template
+  convention `DEFK_TEXTFN` already has (one placeholder, `X`): the
+  possessive-suffix family's is `X<quant>+ ≡ (?>X<quant>)`, `(?n)`'s is
+  `(?n)(X) ≡ (?:X)` — `--list-definitions` stops printing the fixed
+  literal `<builder>`, and `[DD-11.3]`'s self-oracle instantiates the
+  template over a small body set rather than comparing ASTs directly (D77:
+  no measured need for that infrastructure). The builder function stays
+  the production mechanism; the template is its stated contract.
+
   `RegRow.definitions` itself is populated in registry.c per
   definitions_table.md §1's census — see that file's own row-by-row
   citations for which rows carry which tag/string.
@@ -187,13 +208,18 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `^`'s `DEF_MULTILINE` entry substitutes `\A|(?<=\n)(?!\z)`, falling
   through to `DEF_IDENTITY` (`A_BOL` genuinely is core, `\A`'s alias);
   `$`'s `DEF_MULTILINE` entry substitutes `(?=\n)|\z`, falling through to
-  a REAL `DEFK_STR` substitution, `(?=\n?\z)` — **not** `DEF_IDENTITY`:
-  the structural check (`tests/registry/definitions_check.c`'s
-  `check_str_entry(owner, r->syntax)` extension) proved `A_EOL` is not
-  core under full reduction, since it aliases `\Z`, which itself reduces
-  to `(?=\n?\z)` — a correction to the original ruling's assumption,
-  reported to the manager and folded in here rather than silently fixed;
-  the plain capturing group's `DEF_NOCAP` entry is `DEFK_BUILDER`
+  a `DEFK_ROW` entry — **not** `DEF_IDENTITY`: the structural check
+  (`tests/registry/definitions_check.c`'s `check_str_entry(owner,
+  r->syntax)` extension) proved `A_EOL` is not core under full reduction,
+  since it aliases `\Z`, which itself reduces to `(?=\n?\z)` — a
+  correction to the original ruling's assumption, reported to the manager
+  and folded in here rather than silently fixed. Rather than restate
+  `(?=\n?\z)` a second time, `$`'s entry CHAINS to `\Z`'s row (the second
+  manager ruling above): `\Z`'s row — which had the identical
+  A_EOL-not-core problem, and previously carried NO `definitions` field
+  at all despite already having a `RegRow` — now carries the real
+  substitution exactly once (`z_def`, right before `esc_rows[]`). The
+  plain capturing group's `DEF_NOCAP` entry is `DEFK_BUILDER`
   (`pcrec_def_build_identity`, `(?n)`'s existing no-op builder, reused),
   falling through to `DEF_IDENTITY` (an ordinary `A_CAP`).
 

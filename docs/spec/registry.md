@@ -304,7 +304,7 @@ this lane's own branch point; not re-verified against the commit above.
 
 ## 9. `--list-definitions` — the replacement/definition table (the FIFTH surface, D85/[DD-11.2])
 
-`build/pcrec --list-definitions | grep -vc '^#'` — 49 rows today (grows
+`build/pcrec --list-definitions | grep -vc '^#'` — 50 rows today (grows
 as the remaining census items land, see below), 7 columns:
 
     #kind  selector  syntax  order  predicate  definition  applies
@@ -314,8 +314,8 @@ as the remaining census items land, see below), 7 columns:
 | `kind`/`selector`/`syntax` | the SAME three columns §2 prints for the owning row — reused through the SAME rendering helpers (`src/parse/syntax_dump.c`'s `kind_name`/`put_selector`/`put_str`), not a second independent rendering, which is what makes joining the two dumps on these columns safe rather than merely convenient | yes |
 | `order` | a positive integer, 1-based, dense per row (a row with N `definitions` entries uses 1..N) | yes |
 | `predicate` | the option-scope TAG's own name (`DEF_ALWAYS`, `DEF_MULTILINE`, `DEF_NOCAP`, `DEF_UCP`, `DEF_ENCODING_UTF8`, `DEF_NEWLINE_CONV`, `DEF_LIB_NAME_BOUND` — the closed enum `DefTag`, `src/core/internal.h`), never hand-authored prose — the predicate column and a stored callable were two derivations of one fact (r43's ruling), and the tag name is the one that survives | yes, closed vocabulary |
-| `definition` | the core-syntax TEXT for a `DEFK_STR` entry (itself a valid pcrec probe pattern, `syntax`'s own convention); a human-readable TEMPLATE for a `DEFK_TEXTFN` entry (e.g. `\cX = byte (X xor 0x40)` — never spliced, never a live evaluation); the row's OWN `syntax` restated for a `DEF_IDENTITY` entry (nothing substitutes); or the literal text `<builder>` for a `DEFK_BUILDER` (AST-operand) entry, which has no pattern text to show | free text for `DEFK_STR`/`DEFK_TEXTFN`; `<builder>` is a fixed literal; `DEF_IDENTITY` echoes `syntax` |
-| `applies` | `active` (this entry substitutes a different construct) or `identity` (restates the row's own primitive form) | yes, closed vocabulary — **read directly from the entry's `DefKind`** (manager ruling: identity is an explicit `DEF_IDENTITY` entry, never inferred from absence); two rows use `identity` today — `^`'s non-multiline `DEF_ALWAYS` entry (the row's own primitive form, `A_BOL`, genuinely is core — `\A`'s alias) and the `(?n)`-scoped capturing group's `DEF_ALWAYS` entry (an ordinary `A_CAP`, unaffected by `(?n)` outside its scope). `$`'s non-multiline `DEF_ALWAYS` entry is deliberately NOT `identity`: the structural check (`tests/registry/definitions_check.c`'s `check_str_entry(owner, r->syntax)` extension) proved `A_EOL` is not core under full reduction — it aliases `\Z`, which itself reduces to `(?=\n?\z)` — so that entry carries the real substitution instead, matching `\Z`'s own row |
+| `definition` | the core-syntax TEXT for a `DEFK_STR` entry (itself a valid pcrec probe pattern, `syntax`'s own convention); a human-readable TEMPLATE for a `DEFK_TEXTFN` or `DEFK_BUILDER` entry (e.g. `\cX = byte (X xor 0x40)`, `X<quant>+ ≡ (?>X<quant>)` — never spliced, never a live evaluation); the row's OWN `syntax` restated for a `DEF_IDENTITY` entry (nothing substitutes); or `= <target syntax>` for a `DEFK_ROW` entry — a REFERENCE to another row, never that row's own resolved text printed a second time (`$`'s non-multiline entry prints `= \Z`, not `(?=\n?\z)`, which is `\Z`'s own line to print — one fact, one row, D24's argument applied to this table) | free text for `DEFK_STR`/`DEFK_TEXTFN`/`DEFK_BUILDER`; `DEF_IDENTITY` echoes `syntax`; `DEFK_ROW` echoes `= ` plus the target's `syntax` |
+| `applies` | `active` (this entry substitutes a different construct — including a `DEFK_ROW` chain, which substitutes by reference) or `identity` (restates the row's own primitive form) | yes, closed vocabulary — **read directly from the entry's `DefKind`** (manager ruling: identity is an explicit `DEF_IDENTITY` entry, never inferred from absence); two rows use `identity` today — `^`'s non-multiline `DEF_ALWAYS` entry (the row's own primitive form, `A_BOL`, genuinely is core — `\A`'s alias) and the `(?n)`-scoped capturing group's `DEF_ALWAYS` entry (an ordinary `A_CAP`, unaffected by `(?n)` outside its scope). `$`'s non-multiline `DEF_ALWAYS` entry is deliberately NOT `identity`: the structural check (`tests/registry/definitions_check.c`'s `check_str_entry(owner, r->syntax)` extension) proved `A_EOL` is not core under full reduction — it aliases `\Z`, which itself reduces to `(?=\n?\z)` — so that entry CHAINS to `\Z`'s own row instead (`DEFK_ROW`, below), which carries the real substitution exactly once |
 
 **BOUNDARY, stated once here because it governs every column above**:
 this dump shares its source with the resolver it describes.
@@ -349,21 +349,36 @@ print a definition for a construct `--list-syntax --flavour=X` says
 does not exist under that flavour. It takes no pattern/`-o` — a syntax
 query, `cli.md` §1.
 
-**Four `DefKind`s reach this dump today**, two more than the design
-note's first pass: `DEFK_STR` (a fixed core-syntax string — the
-class-escape family, `\R`, `\b`/`\B`, the fixed literal escapes, and
-the POSIX named-class row's 14 names, each its own entry since the
-family is a FINITE enumerable set rather than an unbounded operand
-space); `DEFK_BUILDER` (an AST-operand function — the possessive-suffix
-family, `(?n)`); `DEFK_TEXTFN` (manager ruling: the general shape for
-"a binding parameterized by TEXT AT THE OCCURRENCE" — `\cX`, bare `\x`,
-`\o{}`, octal/`\0`, `\N{U+}` — each carries a human-readable TEMPLATE
-for this column plus a function that calls the EXISTING decoder where
-one exists, becomes the first decode site where none does yet, per
-`\R`'s own precedent for an unbuilt construct); and `DEF_IDENTITY`
-(manager ruling: the row's own primitive form, an EXPLICIT entry never
-inferred from an absent one — [DD-13]'s stamp-design lesson applied
-here). Now used by three rows, all on `RK_BARE` (below).
+**Five `DefKind`s reach this dump today**: `DEFK_STR` (a fixed
+core-syntax string — the class-escape family, `\R`, `\b`/`\B`, the
+fixed literal escapes, the POSIX named-class row's 14 names, each its
+own entry since the family is a FINITE enumerable set rather than an
+unbounded operand space, and `\Z`'s own row — below); `DEFK_BUILDER`
+(an AST-operand function — the possessive-suffix family, `(?n)` —
+**since a second manager ruling, r43-second-round, carries a TEMPLATE
+in `str` exactly as `DEFK_TEXTFN` does**, `X<quant>+ ≡ (?>X<quant>)` /
+`(?n)(X) ≡ (?:X)`, instantiated over a small body set for [DD-11.3]'s
+self-oracle rather than compared at the AST level — D77, no measured
+need for AST-structural-equality infrastructure); `DEFK_TEXTFN`
+(manager ruling: the general shape for "a binding parameterized by
+TEXT AT THE OCCURRENCE" — `\cX`, bare `\x`, `\o{}`, octal/`\0`,
+`\N{U+}` — each carries a human-readable TEMPLATE for this column plus
+a function that calls the EXISTING decoder where one exists, becomes
+the first decode site where none does yet, per `\R`'s own precedent
+for an unbuilt construct); `DEF_IDENTITY` (manager ruling: the row's
+own primitive form, an EXPLICIT entry never inferred from an absent
+one — [DD-13]'s stamp-design lesson applied here), used by two rows,
+both on `RK_BARE` (below); and `DEFK_ROW` (second manager ruling,
+r43-second-round: an entry that CHAINS to another row's own
+resolution rather than restating a fact that row already carries —
+"an alias row defines to the row it aliases, never to the alias's own
+expansion" — `str` holds the TARGET's `syntax`, `family`'s own
+reference-by-string idiom, generalised past one `RegKind` via
+`pcrec_registry_row_by_syntax`; `pcrec_def_resolve` WALKS THROUGH it,
+depth-bounded against a mis-edited cycle, so a caller never sees a
+`DEFK_ROW` entry itself). Used by one row today — `$`'s non-multiline
+entry, chaining to `\Z`'s own row, which carries the real substitution
+`(?=\n?\z)` exactly once.
 
 **`RK_BARE` (manager ruling, 2026-08-29): a new no-doorway `RegKind`,
 on `RK_QUANTSUFFIX`'s own precedent** — consulted by the dumps and by
@@ -390,13 +405,18 @@ rather than a single entry: `^`'s `DEF_MULTILINE` substitution is
 entry (`A_BOL`, `^`'s own non-multiline form, genuinely is core —
 `\A`'s alias, per the design note's full-reduction census). `$`'s
 `DEF_MULTILINE` substitution is `(?=\n)|\z`, falling through to a
-`DEFK_STR` `DEF_ALWAYS` entry, `(?=\n?\z)` — **not** `DEF_IDENTITY`:
-the structural check (`tests/registry/definitions_check.c`'s
-`check_str_entry(owner, r->syntax)` extension for `DEF_IDENTITY`
-entries) FAILED here, proving `A_EOL` is not core under full
-reduction — it aliases `\Z`, which itself reduces to `(?=\n?\z)`, so
-this row's `DEF_ALWAYS` entry is a real substitution matching `\Z`'s
-own row, not the identity the manager's original ruling assumed. The
+`DEFK_ROW` `DEF_ALWAYS` entry — **not** `DEF_IDENTITY`: the structural
+check (`tests/registry/definitions_check.c`'s `check_str_entry(owner,
+r->syntax)` extension for `DEF_IDENTITY` entries) FAILED here, proving
+`A_EOL` is not core under full reduction — it aliases `\Z`, which
+itself reduces to `(?=\n?\z)`, so this row's `DEF_ALWAYS` entry needed
+a real substitution, not the identity the manager's original ruling
+assumed. Rather than restate `(?=\n?\z)` a second time, it CHAINS to
+`\Z`'s own row (a second manager ruling, r43-second-round: "an alias
+row defines to the row it aliases, never to the alias's own
+expansion") — `\Z`'s row carries the fact exactly once, `\Z`'s own
+non-`(?m)` construct having the identical A_EOL-not-core problem `$`
+does. The
 capturing-group row's `DEF_NOCAP` entry is `DEFK_BUILDER`
 (`pcrec_def_build_identity`, `(?n)`'s existing no-op builder — reused
 rather than duplicated), falling through to a `DEF_IDENTITY`
