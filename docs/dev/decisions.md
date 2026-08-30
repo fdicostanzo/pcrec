@@ -6253,3 +6253,84 @@ build. Consequences:
    differentials) are the model: many artifacts, one link.
 Cross-notes: [DD-13b] §2.7, [V-E], [EMIT-SET], limits.md (the warning's
 unit).
+
+## D89 — COMPOSITION NUMBERING: the definition's wrapper takes a group number INTERNALLY; a library's groups are NON-CAPTURING to the caller by default; delivery is BY NAME; PCRE2's grouplist arguments are TBD (2026-08-30, Frank, forty-sixth session — the Q-W1/Q-W2 rulings)
+
+1. **Q-W1, ADOPTED with a narrowing.** A bound definition is injected as
+   `(?(DEFINE)(?<name>body))` appended after the caller (closure order,
+   w1_impl.md §2.4); the wrapper takes the next group number — required,
+   because `callgraph.c` binds calls by `A_CAP.u.cap.no` and a second id
+   space would be a second key in the binder (§2.6). That number is
+   INTERNAL. The caller-visible half r45sem attached ("one permanently
+   empty slot, first delivered group at `ngroups+2`") is WITHDRAWN:
+   Frank — "the groups that are assigned are useless … if we use define
+   as a wrapper, we should have syntax included when wrapping to redefine
+   them to non-capturing".
+2. **A library's groups are non-capturing from the caller's side, by a
+   two-tier rule.** (a) A lib group referenced by nothing inside the lib
+   (no backreference, no call targets it) is REWRITTEN to `(?:…)` in the
+   composed text — truly non-capturing, zero slots, and the PCRE2 textual
+   control is the same pattern byte for byte. (b) A lib group the lib
+   itself needs (a backref target, a nested call target) and the wrapper
+   stay capturing but HIDDEN: an engine slot above `ngroups`, absent from
+   `groups[]`, no name lookup. `rx_info.ngroups` is the caller's count.
+   (c) DELIVERED groups are the only lib groups the caller sees — by
+   NAME in `groups[]`, slot above `ngroups`; the number is the artifact's
+   business and is never authored. The caller's ordinary tool for "what
+   the call matched" is its own group around the call, `(?<a>(?&dd))`.
+3. **Q-W2, REFUSED for W1**: `(?R)`/`(?0)`/`(?00)`/`\g<0>` inside a bound
+   definition — diagnostic "the ruling is missing, not the meaning"; the
+   "0 means the lib's own wrapper" reading is reserved.
+4. **PCRE2's capture-returning calls are TBD, not adopted.** PCRE2 (newer
+   than the box's 10.46, which REFUSES the spelling — measured) has
+   `(?&name(grouplist))`: retain the listed groups in the caller, listed
+   by whole-pattern number. W1.4's delivery has these semantics — so it is
+   no longer "a named deviation" (§2.8's framing is to be re-anchored) —
+   but Frank rejects the numbering ("I don't like that I have to specify
+   the numbers of the resulting groups … you'd have to count them out and
+   know the order they were assigned"). On record as the candidate
+   spelling if pcrec ever needs in-pattern syntax: `(?&dd(2))` = "pull
+   dd's LOCAL group 2 in as a new caller group numbered at the call
+   site, counted by parentheses", `(?&dd(2)(1))` for several,
+   `(?&dd(?<digit>2))` named. In `.rxt`, delivery is declared by the
+   lib's own names; no in-pattern syntax is built in W1.
+5. **The Q7 residual is ACKNOWLEDGED as structural** (K42): absolute
+   references after re-basing and colliding names have no external
+   oracle; W-8 is valid only on W-1's population; a D27 author shares the
+   oracles. Not W1.3's to discharge.
+6. **PCRE2 upgrade path**: the box is at the newest packaged PCRE2 for
+   its Ubuntu; a newer PCRE2 comes only from GitHub — as a git sub-repo
+   in pcrec if wanted (Frank; plan row [PCRE2-UP], not started). It would
+   move differential baselines (a PC-2 re-survey) and give W-8 the
+   grouplist oracle.
+Consequences: w1_impl.md §2.6/§2.7 and the S9b spec hunk are REVISED
+before [DD-13b.W1.3] is chartered (the hidden-groups rule is a composer
+rule; W1.1/W1.2 are untouched); §2.8's "named deviation" framing is
+re-anchored to PCRE2's grouplist semantics at W1.4's re-check.
+Cross-notes: D87, D26 (syntax follows PCRE2; refusals name the module),
+memory `pcrec-general-mechanisms-not-special-cases`.
+
+## D90 — EVERY NUMERIC LIMIT LIVES IN ONE TABLE (`src/core/limits.def`) THAT `--list-limits` DUMPS AND THE SPEC DERIVES FROM; a new number is a table row, never a bare `#define` (2026-08-30, Frank: "we tend to expose internals … consider: is there a table internally of numbers that can be a --list target")
+
+Measured 2026-08-30: sixteen numeric limits in eight files under four
+naming schemes (`PCREC_*` in limits.h — five of them; `VM_DEFAULT_STEP_
+BUDGET`/`_WORK_BUDGET` in emit_vm.c; `PCREC_PREFIX_K_MAX`/`_OFSK_MAX_SET`/
+`_MINW_MAX` in internal.h; `RC_NUMBER_MAX`/`BR_NUMBER_MAX` in the modules;
+the NFA and subset caps spelled differently again); six with a runtime
+override, one with a build-time `-D` (the anchored ceiling), the rest
+none; docs/spec/limits.md §3 carries the values BY HAND — the K25 class
+of staleness, and the shape under which the [OPT-5] knee would have
+become one more secret number.
+Ruling: [LIM-1] builds an X-macro table — `name, value, unit, kind
+(compile budget | runtime capacity | size cap | selection knee), override
+(flag | -D | none), spec anchor, one-line what-it-bounds` — from which
+limits.h and every default derive; `pcrec --list-limits` dumps it as TSV
+per table_contract.md; the registry check pins limits.md §3 against the
+dump; a sabotage row catches a bare numeric `#define` outside the table.
+[OPT-5]'s knee is born as a `selection knee` row, override `none` until a
+measured need (D77). Folded into the same lane: the size-cap RESCUE
+stamps `_ENGINE_SEL "selected"` (bench O-10 preview) so a fallback bucket
+misses it — a distinct `_ENGINE_SEL` value, a D80 spec hunk, no abi bump
+(a value, not scaffolding — D76). Order: [LIM-1] (admin) then [OPT-5]
+(optimization), both after [DD-13b.W1.1]'s battery.
+Cross-notes: D80, D76, D77, D86, docs/spec/limits.md §3, table_contract.md.

@@ -3446,3 +3446,20 @@ generator/seed changed — re-derive, do not silently widen); a movement
 above 2 means a NEW pattern is oversize and the gate stays RED naming
 it, with the count, the witness pattern, and this K-row cited in the
 failure message — never a silent allowlist.
+
+## K42 — STRUCTURAL RESIDUAL (acknowledged by Frank 2026-08-30, D89 item 5): composition's absolute references and colliding names have NO EXTERNAL ORACLE
+
+[DD-13b.W1]'s composer re-bases a library's group numbers into the
+caller's space (w1_impl.md §2.5) and resolves name collisions by lexical
+scope (D87). libpcre2 can check the COMPOSED TEXT's capture count and
+ovector (check W-8), but only over the population W-1 generates — and a
+D27-blinded test author shares exactly those oracles, so blinding buys
+no independence here. The controls that exist: the composed text is
+itself an independent re-derivation the composer is compared against
+(F10), and the identity gate. This is a limit of the test surface, not
+a known miscompile; it is recorded so that a future "W-8 is green"
+claim is read at its true scope (W-1's population) and not as proof
+over absolute references or collisions in general. Not [DD-13b.W1.3]'s
+to discharge. Closes when an oracle independent of pcrec's own
+composer exists (a second composer, or PCRE2 gaining library
+composition — neither planned).
