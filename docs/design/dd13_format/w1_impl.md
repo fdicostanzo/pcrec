@@ -86,7 +86,7 @@ the section is named.
 | **chk F7** S-W2's population is empty | §3.4: a `(?R)` witness with `SAB_REACH_EXPECT`, four spellings |
 | **chk F8** the FILEPIN rule is per-ABI, not per-step | §3.5 and §5: the gate re-runs and the pin moves at EVERY merge of the abi-13 change |
 | **chk F9** the gate is blind to `rx_info.name`'s VALUE | §3.5: a structural assertion over the corpus's artifacts |
-| **chk F10** S-W8 plants independence and expects a red | §2.3 **DECIDED (6) REWRITTEN** on the manager's ruling: the control RE-DERIVES; S-W8 becomes "make the report disagree with the text" |
+| **chk F10** S-W8 plants independence and expects a red | §2.3 **DECIDED (8)**, rewriting revision 1's rule on the manager's ruling: the control RE-DERIVES; S-W8 becomes "make the composer's report disagree with the text" |
 | **chk F11** `ncap`'s octal reason is untested | §3.2 W-1c: the `\12` cell, answer from libpcre2 |
 | **chk F12** "by construction" has no check | §3.1: run.sh's arm block is hash-pinned; the 32-keyword census becomes a CHECK |
 | **chk F13** mechanical gaps vs `tests/mech/sabotages/CLAUDE.md` | §3.4: `SAB_REACH*` on every row, the `SAB_SUITES` arm registered first, rows land with their code, `verify_rxt` gains a TOTAL |
