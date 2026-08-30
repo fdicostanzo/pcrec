@@ -672,3 +672,36 @@ witness:
 
 That is the predicate's THIRD reader working, and it is the one that would
 otherwise have named a flag the caller did not pass.
+
+### 12.8 `make test-codegen` — **5/5 scripts, 198 checks, 0 failed**
+
+`run_codegen_tests.sh` 106/0, `run_dfa_stamps.sh` 31/0, `run_offset_skip.sh`
+22/0, `run_size_term.sh` 32/0, `run_trie_identity.sh` 7/0. Zero `FAIL`/
+`MISMATCH` lines anywhere in the group.
+
+The row to read is the tree's own verdict on §12.3's re-anchors:
+
+    PASS [SABANCHOR] scripts/m6read_check_sab_anchors.py: all 203 sabotage
+         rows' anchors resolve
+
+`run_prefilter_collapse.sh` is NOT in this group — it is its own section,
+`make test-prefilter-collapse` (its header records the corpus sweep at a
+MEASURED 151 s, which is why it is kept out of `smoke`'s budget). Its result is
+§12.5.
+
+### 12.9 A fifth copy of the flag over-claim, and where it was
+
+The sweep for `overrides the decline` found the sentence in FIVE places, not
+one. Four were docs; the fifth was `src/parse/axes_dump.c`'s `engine-route` row
+description — **which reaches a user, through `pcrec --list-axes`**. All five
+now state the rule per rung. The `axes_dump.c` edit was deliberately HELD until
+`test-codegen` finished, because `run_trie_identity.sh` in that group builds a
+reference compiler from `src/` and a half-written file would have failed it for
+a reason unrelated to anything — the same class of hazard as §11.4's, avoided
+this time rather than learned again.
+
+Its neighbouring illustrative claim was corrected in the same edit and is now
+MEASURED rather than approximate: `RX_ENGINE "vm"` is reachable by EVERY one of
+the six routes (`forced` via `--engine=vm`, `selected` via any capture-bearing
+pattern, and the four fallback routes always), which is a stronger statement of
+the two axes' independence than the "four of the five" it inherited.
