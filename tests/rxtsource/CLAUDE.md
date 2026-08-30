@@ -91,6 +91,27 @@ neither is an oversight:
   plant, exactly**, live as S203. The two rows are the same edit until a
   composer exists to distinguish them.
 
+**The row table, so nobody counts a row twice:**
+
+| design row | status here |
+|---|---|
+| S-C1 | live as **S194** |
+| S-C2 | live as **S195** |
+| S-C3 | live as **S196** |
+| S-C4 | live as **S197** |
+| S-C5 | live as **S198** |
+| S-C6 | live as **S199** (needed a witness — see below) |
+| S-C7 | **deferred to W1.3 (its only W1.1 route is S-C12's plant)** |
+| S-C8 | **deferred to W1.3 (no composer to plant in)** |
+| S-C9 | live as **S200** |
+| S-C10 | live as **S201** |
+| S-C11 | live as **S202** |
+| S-C12 | live as **S203** |
+| (new) the four-kinds gap | live as **S204** (needed a witness) |
+
+**All eleven live rows measured DETECTED**, one at a time through the
+matrix's single-row filter.
+
 Both are named here rather than left to inference, because the failure
 this project keeps having is a row that scores green while certifying
 nothing, and "the row does not exist yet" is much better than that.
