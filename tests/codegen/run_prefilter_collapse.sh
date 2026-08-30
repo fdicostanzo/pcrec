@@ -664,11 +664,23 @@ fi
 # value is written by `pcrec_engine_sel_name` in a different file from the
 # `fit.prefilter` clause that took the decision, and the ABSENCE of the LANG
 # macro is checked beside it as the second, independent term.
+# THE GROUPS ARE NON-CAPTURING, and that is not cosmetic. The capturing
+# spelling `(a|b)*a(a|b){15}` works too, but a capture FORCES the VM on its own
+# — `RX_ENGINE_WHY` then reads "capture group at pattern offset 3" and the
+# artifact reaches the rung because only its PREFILTER's DFA overflowed. The
+# non-capturing form is the [SEL-1] rung in its DOCUMENTED shape: the DFA was
+# to be the ENGINE, its build overflowed, and `RX_ENGINE_WHY` says so — which
+# is what lets (1) assert the overflow rather than take it on trust. (The
+# capturing spelling is what the first draft used, and it turned (1) red for
+# exactly this reason: the row was asserting a prose string that is correct and
+# is about a different route.)
+#
 # MEASURED on this tree (2026-08-30): the control stamps `collapsed-prefilter`
-# / `hybrid` / `count-collapsed` / `dfa overflow retry, exact nfa 20` at 47,152
-# bytes; the nullable twin stamps `declined-nullable` / `none` at 34,723.
-SEL1N_CTL='(a|b)*a(a|b){15}'
-SEL1_NULL='(?:(a|b)*a(a|b){15})?'
+# / `hybrid` / `count-collapsed` at 46,658 bytes; the nullable twin stamps
+# `declined-nullable` / `none` at 34,229; and with the axis denied the twin
+# stamps `overflowed-dfa` / `none` at 34,226.
+SEL1N_CTL='(?:a|b)*a(?:a|b){15}'
+SEL1_NULL='(?:(?:a|b)*a(?:a|b){15})?'
 a="$WORK/sel1n_auto.c"; b="$WORK/sel1n_force.c"; ctl="$WORK/sel1n_ctl.c"
 # (0) THE CONTROL: the SAME SHAPE without the `?` must still be RESCUED. This
 # is what says the pair's overflow is real and the rung is available here — a
@@ -711,6 +723,25 @@ if emit "$a" -- "$SEL1_NULL"; then
         ok "[sel1n] ...and carries no RX_VM_PREFILTER_LANG — no prefilter, no language (match_api.md §6.3's iff)"
     else
         bad "[sel1n] the declined artifact carries RX_VM_PREFILTER_LANG '$lang' beside RX_VM_PREFILTER '$pf' — the macro names a machine this artifact does not contain"
+    fi
+    # (2b) AND THE DENY FLAG PRODUCES THE OTHER ROUTE ON THE SAME PATTERN.
+    # `-fno-prefilter-collapse` skips the rung outright, so the artifact is the
+    # pre-[OPT-4] one and stamps `overflowed-dfa`. That the SAME pattern reads
+    # `declined-nullable` at the default and `overflowed-dfa` denied is the
+    # whole case for the value existing: both artifacts have NO prefilter, and
+    # a consumer measuring what the rung buys must not count a rescue that was
+    # REFUSED as one that was never available. Nothing else in the tree
+    # distinguishes them.
+    if emit "$WORK/sel1n_deny.c" -fno-prefilter-collapse -- "$SEL1_NULL"; then
+        d_sel=$(stamp ENGINE_SEL "$WORK/sel1n_deny.c")
+        d_pf=$(stamp VM_PREFILTER "$WORK/sel1n_deny.c")
+        if [ "$d_sel" = overflowed-dfa ] && [ "$d_pf" = none ]; then
+            ok "[sel1n] ...and -fno-prefilter-collapse on the SAME pattern reads 'overflowed-dfa' / \"none\" — the two no-prefilter outcomes are told apart by the route, which is the value's whole purpose"
+        else
+            bad "[sel1n] under -fno-prefilter-collapse the nullable witness stamps SEL '$d_sel' / PREFILTER '$d_pf', expected 'overflowed-dfa' / 'none' — either the deny flag stopped reaching the rung, or 'declined-nullable' is being stamped where no rung was offered at all"
+        fi
+    else
+        bad "[sel1n] the nullable witness does not compile under -fno-prefilter-collapse — (2b) has no subject"
     fi
     # (3) `-fprefilter` IS NEVER SILENTLY ANSWERED WITH ITS OPPOSITE — and this
     # comment says what the row does and does NOT demonstrate, because its
@@ -783,7 +814,7 @@ sel_witness overflowed-dfa       -fno-prefilter-collapse -- "$SEL1_P"
 # witness rather than a wrapped `$SEL1_P`: §6b's header carries the two
 # MEASURED reasons the wrapped form is unusable (it does not compile, and with
 # the cap raised it is a DFA artifact taking no VM prefilter decision at all).
-sel_witness declined-nullable                            -- '(?:(a|b)*a(a|b){15})?' 
+sel_witness declined-nullable                            -- '(?:(?:a|b)*a(?:a|b){15})?' 
 sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"

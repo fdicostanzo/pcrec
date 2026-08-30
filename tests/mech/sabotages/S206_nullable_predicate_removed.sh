@@ -29,7 +29,7 @@
 # in exactly the sense `sizeterm` and `offsetskip` already document.
 #
 # **WHAT DOES SEE IT, and each sees a different half.** `pfcollapse` §6b is
-# the sharp one: the nullable overflow witness `(?:(a|b)*a(a|b){15})?` — the
+# the sharp one: the nullable overflow witness `(?:(?:a|b)*a(?:a|b){15})?` — the
 # exponential-DFA shape plus one `?`, three characters from its own
 # non-nullable control in the same section — keeps a `count-collapsed`
 # prefilter where it must have none, and `RX_ENGINE_SEL` reads
@@ -51,7 +51,7 @@ SAB_SUITES="pfcollapse resource harness"
 SAB_HARNESS_TARGET="tests/base/bounded_repeats.rxt"
 SAB_DESC="[OPT-4.1]'s nullability predicate is pinned false, so the count-collapsed prefilter rescue is built again for languages that match the empty string at every position and can therefore dismiss nothing — the 1.2-9.9x regression pcrec-bench measured at O-10 item 3, with every answer in the tree still right (the prefilter is a FILTER, so a useless one is answer-identical to none)"
 SAB_DOC_FIGURE="PENDING PHASE 2 (lane opt41 coded this row under an execution hold; the canonical run belongs beside the [OPT-4.1] merge). EXPECTED: pfcollapse red on §6b's sel1n rows, §7b's declined-nullable witness and §2's two exact-nullable rows; resource red on the nullable size-rung cell alone (its non-nullable twin stays green, which is what says the plant removed a PREDICATE rather than the rung); corpus 0fail/N pass -- the answer-identity that makes this arm necessary."
-SAB_REACH='"$PCREC" --features all -p rx -o - -- "(?:(a|b)*a(a|b){15})?"'
+SAB_REACH='"$PCREC" --features all -p rx -o - -- "(?:(?:a|b)*a(?:a|b){15})?"'
 SAB_REACH_EXPECT="declined-nullable"
 SAB_REACH_POP="tests/codegen/run_prefilter_collapse.sh|^lang_witness exact-nullable|2
 tests/codegen/run_prefilter_collapse.sh|\[sel1n\]|10
