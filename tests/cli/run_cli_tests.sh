@@ -2127,7 +2127,14 @@ echo "cases passed: $total_pass"
 # that it cannot fail a build, so every cell below also asserts rc 0 and a
 # written artifact — a "warning" that refused would be a cap with a friendly
 # message, and that is the defect this option exists to avoid.
-WARNBIG='a{0,20000}'      # ~884 KB emitted, comfortably over the 250,000 default
+# THE WITNESS MUST BE CHEAP TO COMPILE (union battery 3, 2026-08-30): the first
+# witness, `a{0,20000}` (~884 KB), is a K25 shape — Moore refinement on a chain,
+# 18.5 s of CPU SOLO on this box — against pcrec_run's 60 s wall, which inflates
+# 3-5x under `make -j12 test`; it timed out (rc 124) and this cell read
+# "REFUSED" for a compile that never finished. The cell is about the WARNING,
+# not the compile cost, so the witness is a cheap oversize artifact: 365 KB in
+# 3.1 s of CPU (measured 2026-08-30, load ~7), still 46% over the default.
+WARNBIG='[a-z]{0,8192}'   # ~365 KB emitted, comfortably over the 250,000 default; 3 s CPU
 WARNSMALL='a(b|c)+d'      # a few KB, comfortably under it
 warn_out="$WORKDIR/warn.c"
 

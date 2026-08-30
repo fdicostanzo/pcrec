@@ -335,26 +335,44 @@ fi
 # today's scaffolding) — a pre-existing cost the old ceiling hid by slack
 # (K39).
 #
-# **[OPT-4], 2026-08-29: THE AUTO SIZES ARE NOW ASSERTED, NOT PRINTED.** K39 is
-# fixed — above `PCREC_PREFILTER_EXACT_NFA_STATES` the hybrid's prefilter is
-# built from the count-collapsed language, so the DEFAULT artifact is
-# count-independent too and the informational line that stood here has a claim
-# to make. It is asserted on the SPLIT (`-o FILE`) artifact, which is a
-# different emitted shape from the self-contained one
-# `tests/codegen/run_prefilter_collapse.sh` §1 asserts on; that script also
-# carries this assertion's CONTROL (under `-fno-prefilter-collapse` the same
-# pair must DIVERGE), which is what stops either of them passing on a compiler
-# that had stopped emitting a prefilter at all.
+# **[OPT-4], 2026-08-29: THE AUTO SIZES ARE ASSERTED, NOT PRINTED — AND UNDER
+# RULING B THE DEFAULT IS THE ONE THAT GROWS.** Frank's ruling B (2026-08-29
+# evening, docs/design/prefilter_count_independence.md §10a) made the EXACT
+# prefilter the default: the count-collapsed language is a ladder RESCUE only
+# (a state cap or a size cap refused the exact machine), never a knee. So K39
+# is RE-SCOPED, not fixed: at the default the hybrid's inlined prefilter
+# carries the bounded repeat and the artifact is count-BOUNDED (by the caps),
+# while `-fprefilter-collapse` is where count-INDEPENDENCE lives. Both halves
+# are asserted here on the SPLIT (`-o FILE`) artifact, which is a different
+# emitted shape from the self-contained one
+# `tests/codegen/run_prefilter_collapse.sh` §1 asserts on — and each half is
+# the other's control: a compiler that stopped emitting a prefilter at all
+# would make the default pair EQUAL (caught below), and one that collapsed at
+# the default (a knee coming back) would too. The first version of this block
+# asserted ruling A (the default count-independent above a knee) and went red
+# in union battery 3 (2026-08-30: 2,809 vs 1,009 lines) — the assertion was
+# stale, not the compiler.
 if pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
    && pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
     eg_auto_big="$(wc -l < "$WORKDIR/endgame_auto.c")"
     eg_auto_small="$(wc -l < "$WORKDIR/endgame_auto_small.c")"
     eg_auto_delta=$(( eg_auto_big > eg_auto_small ? eg_auto_big - eg_auto_small : eg_auto_small - eg_auto_big ))
-    [ "$eg_auto_delta" -le 2 ] \
-        && ok "[K39] the DEFAULT artifact is count-independent too: {0,400} $eg_auto_small lines, {0,4000} $eg_auto_big (delta $eg_auto_delta) — the hybrid's prefilter takes the count-collapsed language above the knee ([OPT-4])" \
-        || bad "[K39] the DEFAULT artifact emitted $eg_auto_big lines for {0,4000} against $eg_auto_small for {0,400} (delta $eg_auto_delta > 2) — the hybrid's inlined prefilter is scaling with the count again"
+    [ "$eg_auto_delta" -gt 2 ] \
+        && ok "[K39] the DEFAULT split artifact is count-BOUNDED, not count-independent (ruling B): {0,400} $eg_auto_small lines, {0,4000} $eg_auto_big (delta $eg_auto_delta) — the exact prefilter carries the count, as ruled" \
+        || bad "[K39] the DEFAULT split artifact emitted $eg_auto_big lines for {0,4000} against $eg_auto_small for {0,400} (delta $eg_auto_delta <= 2) — either a knee is back (ruling B forbids collapsing at the default) or no prefilter is being emitted at all"
 else
     bad "[K39] '((a)|b){0,400}c' or '((a)|b){0,4000}c' does not compile at the DEFAULT engine"
+fi
+if pcrec_run "$PCREC" -p rx -fprefilter-collapse -o "$WORKDIR/endgame_force.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx -fprefilter-collapse -o "$WORKDIR/endgame_force_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
+    eg_force_big="$(wc -l < "$WORKDIR/endgame_force.c")"
+    eg_force_small="$(wc -l < "$WORKDIR/endgame_force_small.c")"
+    eg_force_delta=$(( eg_force_big > eg_force_small ? eg_force_big - eg_force_small : eg_force_small - eg_force_big ))
+    [ "$eg_force_delta" -le 2 ] \
+        && ok "[K39] the -fprefilter-collapse split artifact is count-INDEPENDENT: {0,400} $eg_force_small lines, {0,4000} $eg_force_big (delta $eg_force_delta) — the collapsed prefilter drops the count" \
+        || bad "[K39] under -fprefilter-collapse the split artifact emitted $eg_force_big lines for {0,4000} against $eg_force_small for {0,400} (delta $eg_force_delta > 2) — the forced collapse is scaling with the count again"
+else
+    bad "[K39] '((a)|b){0,400}c' or '((a)|b){0,4000}c' does not compile under -fprefilter-collapse"
 fi
 if pcrec_run "$PCREC" -p rx -fno-prefilter -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
    && pcrec_run "$PCREC" -p rx -fno-prefilter -o "$WORKDIR/endgame_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then

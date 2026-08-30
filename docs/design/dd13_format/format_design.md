@@ -201,7 +201,7 @@ a finding about the check set):
 | S-C2 | decode `\x41` as the two characters `x41` | (1) dump differential, (3) oracle |
 | S-C3 | let `flags` carry forward to the next block | (1) dump differential |
 | S-C4 | treat `# pcre2-only` as an ordinary comment | (3) oracle skip count |
-| S-C5 | make `frames-buffer=` block-scoped rather than positional | (1) dump differential |
+| S-C5 | make `frames-buffer=` block-scoped rather than positional | **(2) the answer re-run** — CORRECTED 2026-08-30 ([DD-13b.W1]): this row read "(1) dump differential", and under W1's parser split the dump differential **cannot** catch it, because pcrec never parses `frames-buffer=` at all (it is an expectation-routing line, no part of a compile) so the line does not appear in both dumps. What does catch it is (2): `run.sh` captures `cur_route` at each case push (`run.sh:931,941,951,961,990`), so a block-scoped version changes which route a case runs under and the counts move |
 | S-C6 | accept an unknown `features` name silently | (2) — a `perr` block flips |
 | S-C7 | make the composer bind a definition on a block that references none (e.g. treat a lexically-declared name as a file reference) | (1) dump differential — the closure size is reported and must be 0 for all 3,265 blocks |
 | S-C8 | assign a definition's re-based numbers starting at 1 instead of `ngroups+1` | (2) — `g` slots move on any composed cell; on the corpus it is vacuous, which is itself the finding S-C7 exists to report |
@@ -1115,11 +1115,24 @@ target <prefix> = <name> [with <config>[,<config>…]]
   `name`, or the prefix when the block is unnamed, so no artifact ever
   carries a NULL name. This is a scaffolding change and therefore **an
   `abi` bump under D76's ritual, in the same change**, at all four sites
-  CLAUDE.md names: `src/gen/emit_dfa.c`'s `.abi` (currently **11**,
-  MEASURED at `src/gen/emit_dfa.c:1310`), `tests/codegen/run_codegen_tests.sh`'s
-  [DD-14.FB] §10.4 expectation, `docs/spec/match_api.md` §6, and the
-  identity gate's (B) pin. It rides W1's first landing, not a separate
-  event (memory `pcrec-abi-changes-pre-release`).
+  CLAUDE.md names: `src/gen/emit_dfa.c`'s `.abi` (~~currently **11**,
+  MEASURED at `src/gen/emit_dfa.c:1310`~~ — **STALE; CORRECTED
+  2026-08-30 ([DD-13b.W1]): the abi is 12, at
+  `src/gen/emit_dfa.c:1375`.** [OPT-4]'s prefilter-language stamp bumped
+  11 → 12 after this note was written, so W1's bump is **12 → 13**.
+  Three sites in the tree agree on 12 — `emit_dfa.c:1375`,
+  `tests/codegen/run_codegen_tests.sh:2707` (`ABI_EXPECT=12`), and
+  `docs/spec/match_api.md:159`), `tests/codegen/run_codegen_tests.sh`'s
+  [DD-14.FB] §10.4 expectation (**`ABI_EXPECT` at
+  `run_codegen_tests.sh:2707`**, with the bump ledger in the `bad`
+  message at `:2709`), `docs/spec/match_api.md` §6 (**the "`rx_info.abi`
+  is `12`" sentence at `:159`, and the struct block at ~`:1340`**), and
+  the identity gate's (B) pin (**`FILEPIN` at
+  `tests/codegen/run_recursion_identity.sh:456`, currently `c275aef`** —
+  and that file's own rule at `:394-406` binds: the pin moves with the
+  LAST src-touching commit of the abi, not the first, which cost 952
+  falsely-differing artifacts once). It rides W1's first landing, not a
+  separate event (memory `pcrec-abi-changes-pre-release`).
 - **`ngroups` and `nnames` stay the PRIMARY's own** (D61; r44-sem
   M4/M5). A composed artifact's `ngroups` counts the target pattern's own
   groups, not the closure's; the definitions' delivered slots sit above
@@ -1619,6 +1632,26 @@ D85 rules that the replacement model is a **predicate-scanned table** on
 "[DD-13b]'s `name`/`lib` resolution and the [LIB] store read the same
 table (a library definition is a row whose predicate is the library's
 presence)."
+
+**RULED 2026-08-30 (manager, on [DD-13b.W1]'s Q-W3): this is a LISTING
+interface, not a BINDING one, and the word "interface" below is read
+that way throughout.** W1's implementation note found that the two
+cannot be the same surface. The tree already reserves
+`DEF_LIB_NAME_BOUND` (`src/core/internal.h:2536`, "NO PRODUCER YET —
+[LIB]/[DD-13b]") and names `DEFK_TEXTFN` as what "[DD-13b]'s [LIB]
+name-bound rows reuse later" (`internal.h:2564-2577`) — but `DefTextFn`
+is `Ast *(*)(const char *operand, size_t len, Ctx *cx)` and its contract
+is to return the core AST **spliced at the occurrence**, which is
+INLINING. Composition must produce a **CALL**: a call restores the
+callee's capture state on return and an inlining does not (§2.3.5's
+first difference), and whether a call is spliced or linked is
+`cg_eligibility`'s decision with its own `SLOT_SPLICE_SAVE` machinery —
+"the format pins the answer; the compiler chooses the linkage". **So
+W1 adds no `DEF_LIB_NAME_BOUND` producer**: the composer resolves names
+itself, and `--list-definitions`'s "what did `lib` bring into scope"
+surface (§3.3) READS the composer's resolved set — one derivation, two
+readers. Items 1-4 below stand as the listing contract; item 1's
+"BUILDER" is what the LISTING must be able to show, not a splice point.
 
 **What this format needs from [DD-11]** — the interface, stated as this
 side of the seam:

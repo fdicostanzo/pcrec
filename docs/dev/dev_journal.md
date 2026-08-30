@@ -18121,3 +18121,245 @@ committed to the bench's inbox only on GREEN.
 **Watchdog note (own mistake):** `scripts/watchdog -m 3000000` is a BYTE
 count (2,930 kB) — the suffix (`-m 3g`) is not optional in practice;
 four ladder rows were killed at 5-14 MB RSS before I read the header.
+
+**Chartered (~02:2x, under the battery's HOLD, per the overnight plan):**
+FEATURE lane **w1** (opus, `worktrees/w1`, `lane/w1`) — [DD-13b.W1]
+design-first: deliverable 1 is `docs/design/dd13_format/w1_impl.md` (what
+lands where, the composer per D87, the check/sabotage plan, the D80 spec
+deltas, the lane-sized steps with merge points); it STOPS there for a D6
+panel before any code. ADMIN lane **admin1** (sonnet, `worktrees/admin1`,
+`lane/admin1`) — [REG-SV] (filed: the empty `stamp_value` on the
+name-valued `size-term` rows + the `table` axis's missing `none`/`mixed`
+outcomes; the general form — one derivation, two readers; witness
+reachability measured per value) and [SPEC-1.10]'s survey debt (F4's
+sabotage-row format, K2's status against main's binary). Both HOLD
+messages enumerate the forbidden SHAPES (no make of any kind, no gcc, no
+tests/ scripts, no sweeps/loops/background jobs) and the one allowed
+thing (edit/commit/read + ONE main-tree `build/pcrec` call on ONE
+pattern) and demand an ack on the first ping. [OPT-A] STEP 0 waits for a
+QUIET box (its measurements are worthless under the battery + the bench
+window). Crons: keepalive :09/:39, lane stall-watchdog every 10 min.
+Frank surfaced at ~01:5x with a remark, no ruling; nothing is blocked on
+him except the v1.4 gate shape (in I-18's draft).
+
+**Battery 3's `make test` stage (01:22-01:38): RED, 1 check + 30 cases — and
+none of it is the code.** Read failures-by-file first, as ruled: (1) the 29
+corpus cases are tests/counterk/counterk.rxt's `((a)|ab){4000}c` and its
+dependents, the known K32 load cell — the battery's own solo stages cleared
+it (counterk.rxt through the harness 1,634/0; test-resource 27/0;
+test-counterk 24/0). (2) test-cli's `--warn-emit-bytes` "oversize-but-
+accepted artifact was REFUSED (rc 124)" is a TIMEOUT: the witness
+`a{0,20000}` is a K25 shape — 18.5 s of CPU SOLO (measured) against
+pcrec_run's 60 s wall, which the battery inflates 3-5× — a cell that reads
+"refused" for a compile that never finished. Witness swapped to
+`[a-z]{0,8192}` (365 KB, 3.1 s CPU; still 46 % over the default). (3)
+test-codegen's `[K39] the DEFAULT artifact emitted 2809 lines for {0,4000}
+against 1009` in run_ir_listing.sh: the block still asserted ruling A ("the
+default is count-independent above the knee") — a stale assertion opt4b's
+B rewrite did not reach (run_prefilter_collapse.sh §1, which it did rewrite,
+already carries B's claim on the self-contained artifact with the default
+pair as the DIVERGING control). Rewritten to B on the split artifact: the
+default pair must DIVERGE (count-BOUNDED; measured 1,009 → 2,809, `exact`)
+and the `-fprefilter-collapse` pair must be EQUAL (measured 810 → 810,
+`count-collapsed`), each the other's control. Both fixes are test files
+only, committed on main while san's first script ran (neither edited script
+was executing — checked by ps snapshot before the edit; the only hits were
+san's own `for s in …` loop line). Both scripts ARE in tests/lib/
+san_scripts.txt, so san exercises the fixed versions inside this battery;
+the codegen + cli groups get a solo re-run on the fix commit after mech.
+The DONE line will read RED (its TCHK counts the stage as run); the verdict
+is by diagnosis, stated as such in I-18. Time labels earlier in this part
+("~02:2x") were ~35 min fast — the reset was ~01:30, the charters ~01:45.
+
+**Battery 3's san stage ABORTED (01:46-01:56, rc 2)** at its fourth script:
+`tests/registry/run_definitions_tests.sh` builds its `definitions_check.c`
+driver against `$LIB` (the ASan-built libpcrec.a under `make san`) WITHOUT
+`$SANFLAGS` — the only C-check compile in tests/registry that omits them —
+so the link failed on `__asan_register_globals` and the san loop's `set -e`
+stopped there: harness, cli, reject ran clean (0 sanitizer report lines),
+the other ~20 scripts never ran under san. A [DD-11] test-infrastructure
+defect on the sanitizer axis only, found by the first battery whose san
+stage reached that script (opt4b/dd11 ran no san under the hold). Fix
+staged on `lane/sanfix` (worktrees/sanfix): `SANFLAGS="${SANFLAGS:-}"` +
+`$SANFLAGS` on the compile line, the siblings' shape — NOT merged into
+main while mech runs (its detectors may execute main's tests/ scripts;
+rule 8). After mech: merge, `make san` again in full (~46 min), then the
+solo codegen + cli groups, then the bench's window (ETA sent to
+pcrecdev2: ~04:00-04:15).
+
+**[DD-13b.W1] deliverable 1 + the r45 panel (~02:0x-02:4x).** w1 delivered
+`w1_impl.md` (bf843a7, 1,215 lines; then 9506e8d folding Q-W3 + three
+corrections, one — format_design §2.7's stale "abi 11" — beyond the
+approved two, flagged and accepted). Three departures from the format
+note, each anchored in code: the abi is 12 not 11; the definition's
+WRAPPER takes an assigned number (the textual control's offset becomes
+zero); provenance is NOT a node field (PARSE-1). Rulings I made: Q-W3
+(the [DD-11] table is W1's LISTING interface); `--list-source` = TSV per
+table_contract.md, one row per block, `kind` = declaration name,
+sectionless for W1, AS-WRITTEN, fields rxt-escaped (w1 found three
+corpus blocks whose pattern carries a literal TAB — the thing under test
+— so raw emission would split exactly those rows: S-C9); the SEAM — run.sh
+gains NO head arms, the body boundary is the `line` column of the first
+`pattern` row, and the case arms get the `have_block` guard the directive
+arms already have (w1 measured the corpus: 0 case lines precede a
+`pattern` line, over 179/3,265/26,691 — a THIRD independent derivation of
+the format note's census). Parked for Frank: Q-W1 (adopt the wrapper's
+number; r45sem's correction: S9b must say the wrapper consumes a slot,
+first delivered group at ngroups+2) and Q-W2 (refuse `(?R)`/`(?0)`/
+`(?00)`/`\g<0>` inside a bound definition for W1 — "the ruling is
+missing, not the meaning").
+
+**Panel r45** (docs/dev/reviews/2026-08-30-r45-w1-impl.md, c324a06):
+r45sem 4 BLOCKERS — a delivering call is capture-transparent AND its
+slots are restored on return, so §2.8 delivers nothing; the re-basing
+walk corrupts caller-scope `(?&^.w)` references; `--emit-composed`
+re-introduces by-name binding; `nnames`/`groups[]` breaks match_api §6's
+own lookup — plus 5 must-fix, 6 should; verdict "the spine is right, four
+things before code". r45chk 1 BLOCKER (C0 is empty-vs-empty and the
+format note's S-C7 was silently replaced) + 6 must-fix (W-2/W-5/W-7
+compare the composer to itself; the oracle control floors only the branch
+where it declines to run; `nnames` asserted nowhere; the FILEPIN applied
+per step not per abi). r45gram: 2 seam blockers (resolved by the rulings
+above), citation audit 48/50 with two load-bearing misses. All accepted;
+B4 ruled (primary rows a genuine prefix + `nentries`), F10 ruled (the
+textual control RE-DERIVES the closure). REVISION 2 chartered on lane w1
+(docs, under the HOLD), then a focused re-check before [DD-13b.W1.1].
+w1's one-line nnames find (a cited verification that still reproduces
+after its reason changed: gated ≠ absent) became admin1's Task C — a
+clean sweep of docs/spec + lib/pcrec.h (7987656) and a learnings §3
+paragraph. admin1's [REG-SV] revision 33588a4 (the emitter-source leg
+for both macros) accepted; merge after the post-battery verification.
+
+**Focused re-check of revision 2 (02:2x-02:31; the earlier "~02:4x"
+labels in this part were ~30 min ahead of the clock — read `date`
+before labelling).** w1's revision 2 (b74f159, 1,496 lines) answered
+every finding with a mechanism: r45chk 13/13 CLOSED + one NEW must-fix
+(`tests/harness/verify_rxt.py` — C3's sole detector and C1's third leg —
+is run by NOTHING in `make test` and globs one directory level; wire it
+over a `find` list, pin its totals, derive C3's denominator from its own
+discovery); r45sem 13/14 CLOSED — B1's remedy was not implementable:
+`W` is per-REGION (`vm_publish_saves`) while "delivering" is per CALL
+SITE (D87 rule 5). RULED: a delivering call is forced to `CALL_SPLICE`
+(per-site save slots by construction; finite under activation ≤ 1) —
+the existing mechanism, no new knob; two more must-fixes on the
+index-coupled restore and the node-cached flag's unsound zero. Verdicts:
+**[DD-13b.W1.1]/[W1.2] CHARTERED on the hold's lift** (verify_rxt's
+wiring a condition on .1), .3 on Frank's Q-W1/Q-W2, .4 after a one-critic
+§2.8 re-check of revision 2.1. w1's own find in revision 2: the corpus's
+178-vs-179 is the known-fail file (3 blocks / 11 lines; 26,691 − 11 =
+26,680 = the pinned clean baseline) — C1 and C2/C3 now assert DIFFERENT
+denominators on purpose; revision 1 would have shipped 179 in both.
+Structural residual carried to Frank as the ratified Q7 trigger:
+absolute references and colliding names have no external oracle (W-8 is
+valid only on W-1's population; a D27 author shares the oracles).
+
+**[DD-13b.W1] design phase CLOSED (02:4x-02:5x).** Revision 2.1 (a0f4096)
+folded r45chk's N1-N4 — and sharpened N1: the natural wiring
+`verify_rxt.py tests` verifies 0 files and exits 0; the default covers
+13.5 % of the corpus's lines and 7.7 % of `# pcre2-only` marks; G1's 636
+marks vs the mechanism's 571 is prefix-vs-exact match. Revision 2.2
+(3e5ce4d) folded r45sem's N1-N6 under the CALL_SPLICE ruling (w1:
+`vm_publish_saves` hands every site the SAME POINTER, so splice is the
+ONLY place a per-site exclusion is expressible; the two delivery
+refusals are the splice's finiteness precondition; the omitted restore
+is trail-coherent) and wrote §7, the W1.1 step brief (escape before the
+differential; verify_rxt's wiring at item 6 with a discovery-not-
+regression rule for a dead oracle's first run over 139 files). Revision
+2.3 (6e71923) folded admin1's Task D CORRECTION: `verify_pcre2.py` IS
+live (run_assertions_tests.sh:60; 10,120 cells / 0 disagreements in
+battery 3's log; recursive discovery) — w1's "zero Makefile hits → dead"
+was a measured grep welded to an untested inference (now a §0.1 marking
+rule; and a tree fact: every module's oracle is invoked one layer down).
+r45sem's §2.8 re-check: STEP .4 BUILDABLE — the forced splice is the
+latitude `callgraph.c` explicitly reserves; residuals are accounting
+paragraphs (`spl_nw` per site, the splice reader triple, `rgn_emit`,
+`exp == 1` for the multiplicity bound, `_CUT`'s documented non-rewind as
+an S2c sentence) → revision 2.4, accepted on my own read. STATE: W1.1 +
+W1.2 chartered on the lift; W1.3 on Frank's Q-W1/Q-W2; W1.4 designed.
+Panel cost: three critics + two focused re-checks, ~1 h 15 wall,
+overlapping the battery entirely — zero box time.
+
+**BATTERY 3 DONE 03:22 (launched 01:22 on 4d12a81, code 0f5a98f):** make
+test RED for the three non-code reasons diagnosed above (fixes 4990b32);
+solo stages clear; san ABORTED at its 4th script (the [DD-11] driver's
+missing `$SANFLAGS` — fix merged 467c449); **mech CLEAN: 189 rows /
+unexpected 0 / undetected 6 (S150-S153, S160, S178 — the expected six) /
+unreached 0 / anomalies 0** at f5ad680 (mech ran on the working tree
+after the check fixes; the code is 0f5a98f throughout). Its own DONE line
+reads RED by arithmetic (TCHK=1, san rc=2). The verdict is BY DIAGNOSIS
+pending two re-runs on main: `make san` in full (launched 03:2x, ~46 min,
+this context's `mgr/san2.log`), then the solo codegen + cli groups on the
+fix commit. Mech's per-row trees under /tmp/pcrec-mech-sabotage.*/ are
+where its detectors run — so a main-tree test edit during mech is safe
+(lane/sanfix was merged during it on that evidence). Frank's remark at
+~01:5x remains the only human input since the reset.
+
+**san RE-RUN GREEN (03:23-05:12 on 6640704; code 0f5a98f):** rc 0, 0
+sanitizer report lines, 34 scripts — the [DD-11] driver now links under
+the san axis (467c449). 109 min against the 46-min figure recorded for
+`make san` at m65: the per-module single-process libpcre2 diffs
+(rungselect, assertions, backrefs, recursion) are the slow tail under
+instrumentation and the [DD-11] oracle (354 cells) is new since. Solo
+`PROCS=4 make test-codegen` + `test-cli` on the fix commit launched
+05:13 (setsid, PID 3147184 verified sid==pid/ppid 1, `mgr/solo2_driver.log`).
+Two launch lessons re-learned tonight, now in memory
+(`pcrec-box-concurrency` rule 7, third instance): a `run_in_background`
+Bash is capped at 10 min — anything longer goes setsid+nohup with a
+PID file; and the PID is the process with sid==pid AND ppid==1,
+cwd-verified — my 6-s settle + `sid==pid` alone still caught a
+short-lived PID and made the death-watch fire falsely.
+
+**BATTERY 3 CLOSED GREEN-BY-DIAGNOSIS (05:17):** solo `PROCS=4 make
+test-codegen` 198 checks / 0 failed and `make test-cli` 287 cases / 0
+failed on the fix commit; with san 34/0/0 and mech 189/0/6/0/0 on the
+same code, every stage that measures the code is clean and every red
+was a check's own defect or a load artifact. THIS COMMIT IS THE PIN for
+the bench (abi 12; code 0f5a98f; the two check fixes 4990b32, the
+SANFLAGS fix 467c449). I-18 goes to the bench's inbox next, then
+"BATTERY 3 DONE" and its window.
+
+#### Forty-fifth session, CLOSE (post-reset part; 06:1x EDT 2026-08-30) — Frank: "If done close session and we'll go over open questions next session"
+
+**Closed state.** Battery 3 green-by-diagnosis; **pin 96e44c2 (abi 12)**
+sent as I-18 (bench c52a74e); the bench's window ran 05:22-~06:25 on
+36d5963's three inconclusive cells under BD7 (its [OPT-4] BEFORE + the
+gate-shape test run); it re-pins to 96e44c2 next ([B19]). [OPT-4]
+archived to plan_completed.md (090b924). **lane/w1 MERGED (e4c563f,
+docs only: w1_impl.md revision 2.4, its CLAUDE.md entry, four
+format_design.md corrections, match_api.md's nnames sentence)** — the
+[DD-13b.W1] design is on main; W1.1 starts CODE next session (a fresh
+worktree from main; w1_impl.md §7 is the step brief; the verify_rxt.py
+wiring is .1's condition). **lane/admin1 UNMERGED** (33588a4 [REG-SV] +
+e7fb479 [SPEC-1.10] + 7987656 Task C; worktrees/admin1 kept): its
+verification (`make -j4`, `PROCS=4 make test-registry` — the coverage
+guard's 79 is PREDICTED, read from the run — and `test-codegen`) never
+ran because the box was the battery's then the bench's; next session
+lifts the hold, verifies, merges. Lanes stopped; crons torn down;
+worktrees: admin1 only.
+
+**Open questions for Frank (next session):** (1) the bench's v1.4 gate
+shape (gate_shape_v14.md P1-P4; evidence: the six bounded records + the
+spread data; I-18 carries the durable copy) → I-19; (2) [DD-13b.W1]
+Q-W1 — the definition's wrapper takes an assigned number (first
+delivered group at ngroups+2; caller-visible via --emit-composed;
+recommend ADOPT); (3) Q-W2 — `(?R)`/`(?0)`/`(?00)`/`\g<0>` inside a
+bound definition: REFUSE for W1 with the reason "the ruling is missing,
+not the meaning" (the "0 is local → the wrapper" reading reserved); (4)
+the ratified Q7 trigger — absolute references and colliding names have
+NO external oracle (W-8 is valid only on W-1's population; a D27 author
+shares the oracles): a structural residual to acknowledge, not for .3
+to discharge; (5) [OPT-A] STEP 0's charter (the stack-frame 1 MB SIMD
+pair-scan measurement; opus; needs a quiet box) — the optimization
+column's next row; (6) D86 columns after W1.1 lands.
+
+**Lessons of this part** (journal-only unless noted): a `run_in_background`
+Bash is capped at 10 min and the PID is the process with sid==pid AND
+ppid==1 (memory, rule 7 third instance); `make san` is 109 min on this
+tree, not 46; a measured grep count welded by "so" to an untested
+inference rides in under the MEASURED mark (w1_impl.md §0.1's rule;
+admin1's learnings §3 paragraph on lane/admin1 gets the second instance
+at merge); in this tree every module's oracle is invoked one layer
+below the Makefile; read `date` before labelling a journal entry (three
+labels tonight ran ~30 min fast). The panel-during-battery pattern —
+three critics + three re-checks, ~1 h 15 of wall, zero box time — is
+the shape to repeat: design work overlaps the box's busy hours.
