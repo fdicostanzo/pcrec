@@ -1,6 +1,6 @@
 # [DD-13b.W1] Implementation note — wave 1 of the grown `.rxt` format
 
-**Status: REVISION 2, post-panel (r45) and post-rulings. NO CODE IS
+**Status: REVISION 2.1, post-panel (r45), post-re-check and post-rulings. NO CODE IS
 WRITTEN.** Revision 1 (`bf843a7`) went to a three-critic D6 panel
 (`docs/dev/reviews/2026-08-30-r45-w1-impl.md`): **4 blockers, 6 must-fix,
 and a verdict that the spine stands and §2 is not buildable as written.**
@@ -93,6 +93,16 @@ the section is named.
 | **chk F14 / gram 3 / gram 4** citations | fixed: `compile.c:882`, `mod_backrefs.c:733-734`, `emit_dfa.c:1190-1191` |
 | **gram 1 / gram 2** the seam and `--list-source`'s contract | RESOLVED by the manager's rulings; §1.1 rewritten, new §1.8 |
 | **gram 5 / gram 9** `with c1,c2`; the step-order reason | one sentence each (§1.5, §5) |
+
+**Revision 2.1** folds in the r45chk RE-CHECK's four items (F1-F13 all
+closed; go/no-go = charter .1 and .2, with N1 as the condition):
+
+| item | landed |
+|---|---|
+| **N1** (MUST-FIX, the condition on .1) — C3 and C1's leg C are specified against a script `make test` does not run, whose discovery is a one-level glob | **§3.1.1**, new. Measured: the only Makefile mention is a COMMENT; the naive wiring `verify_rxt.py tests` covers **0** files; today's default covers **40 of 179 / 3,603 of 26,691 (13.5%)**; and S-C4's population is **7.7%** reached at that scope. W1.1 must wire it with a short-list hard fail and pin its totals |
+| **N2** (SHOULD) — C1 asserts 179 where run.sh's no-arg branch yields 178 | §3.1: leg B is invoked through run.sh's `$@` branch (`:187-195`, no exclusion), with the manifest's total-line assertion as the backstop |
+| **N3** (SHOULD) — the arm-block hash pin sits inside the range W1.1 edits | §3.1: BEGIN/END marker comments delimit the protected region, the check hashes between them, and the update rule lives in the failure message |
+| **N4** (NOTE) — C0a conflated two kinds of fact | §3.1: W1's own invocation counter and the independent head-bearing-file census are named separately, with why neither alone suffices |
 
 **What the panel could NOT refute, and is not re-argued below:** the
 sub-parse on one `Ctx`; injection as `A_REP{0,0}(A_CAP)`; re-basing by a
@@ -1069,6 +1079,20 @@ grammar's own refusals, (ii) the field manifest below, and (iii) the fact
 that on the corpus the head is EMPTY, which C1's row-order comparison
 asserts.
 
+**N2 — leg B's invocation must be the `$@` branch, not the default.**
+C1 asserts **179**, but run.sh's no-argument branch discovers **178**
+(`run.sh:184-186`'s `known_fail` exclusion, §3.0). So leg B is invoked
+with an explicit file list — run.sh's `else` branch at `:187-195`, which
+takes files or directories as arguments and applies no exclusion — and
+the dump then covers all 179. Naming the branch matters because the two
+differ by exactly the file whose absence C2 depends on: leg B and C2 run
+the SAME script over DIFFERENT populations, deliberately, and a reader
+who assumes one invocation would find the 179/178 split inexplicable.
+**The field manifest's total-line assertion is the backstop**: if leg B
+were ever invoked the default way, its line count would fall short of the
+179-file census and C1 goes red on the count before anyone reads the
+diff.
+
 **C1's runtime is stated** (r45chk F12 asked): 179 `--list-source`
 invocations plus one bash pass and one python pass. Each `--list-source`
 is a parse with no compile, so this is bounded by the corpus's parse
@@ -1105,6 +1129,95 @@ the COUNT catches that. r45chk F13(d): the file prints a per-file line
 only `if skipped:` (`:387-388`) and no total, so **it gains a TOTAL
 line** — without which C3's "same skip count" has nothing to read.
 
+**But see §3.1.1 first: C3 is currently specified against a script that
+does not run.**
+
+### 3.1.1 N1 — wiring `verify_rxt.py`, the condition on W1.1
+
+**MEASURED, and it is worse than "not wired".** The re-check's N1 found
+that `tests/harness/verify_rxt.py` is executed by nothing in `make test`.
+Confirmed, and then sharpened:
+
+```
+$ grep -rn 'verify_rxt' --include='*.sh' --include='Makefile' . | grep -v worktrees
+Makefile:528:  # ... `tests/harness/verify_rxt.py` skips every cell in it —   <- A COMMENT
+  (every other hit is a comment in another script)
+```
+
+The only Makefile mention is prose. Its one real consumer,
+`tests/assertions/verify_pcre2.py`, imports it as a MODULE
+(`verify_pcre2.py:54`, `importlib` on `harness/verify_rxt.py`, so that
+"there is exactly one" `.rxt` reader) — **and that script has zero
+Makefile hits either.** So neither the oracle run nor, through it, the
+parser has a live consumer in `make test`.
+
+**And its discovery is a ONE-LEVEL glob** (`verify_rxt.py:191`, `:195`):
+
+```
+files = sorted(glob.glob(os.path.join(a, "*.rxt")))          # a directory arg
+files = sorted(glob.glob(os.path.join(BASE_DIR, "*.rxt")))   # the default
+BASE_DIR = <repo>/tests/base                                 # :20
+```
+
+Not recursive. So the obvious wiring is the dangerous one:
+
+| invocation | files | blocks | expectation lines |
+|---|---|---|---|
+| `verify_rxt.py tests` (the naive wiring) | **0** | 0 | 0 |
+| `verify_rxt.py` (today's default, `tests/base`) | **40** | 763 | 3,603 |
+| the corpus | 179 | 3,265 | 26,691 |
+
+**`verify_rxt.py tests` verifies ZERO files and exits reporting
+success**, because no `.rxt` file sits directly in `tests/`
+(`ls tests/*.rxt` → 0). And the default covers **40 of 179 files and
+3,603 of 26,691 expectation lines — 13.5%** — while C3 would claim to be
+the oracle leg over "the corpus".
+
+**This matters most because C3 is the SOLE detector for two sabotage
+rows, and their populations are mostly outside its default scope:**
+
+| row | its population | corpus-wide | in `tests/base` | reached |
+|---|---|---|---|---|
+| S-C4 | `# pcre2-only` marks | **571** | **44** | **7.7%** |
+| S-C2 | subjects carrying a `\x` escape | 171 | 90 | 53% |
+
+A sabotage planted outside `tests/base` would go undetected by the very
+check named as its detector — [MECH-REACH] with the witness and the site
+in different directories.
+
+**A precision worth recording, because two numbers in this project
+disagree and only one is operative.** r44-grammar G1 counts **636**
+`# pcre2-only` marks; the exact-match count is **571**. Both are right:
+G1 matched the line PREFIX, and the mechanism matches the stripped line
+EXACTLY — `verify_rxt.py:121`, `if line.strip() == '# pcre2-only':`. The
+65-line difference is lines beginning `# pcre2-only` with trailing text,
+which the parser treats as ordinary comments. **S-C4's detector
+population is the mechanism's 571, not the census's 636**, and a check
+written against 636 would be asserting a number no code produces.
+
+**What W1.1 must do (the manager's condition):**
+
+1. **Wire it into `make test`** as its own target, over a **`find`-derived
+   list** (not the one-level glob), with a **SHORT-LIST HARD FAIL** —
+   [M5-SEAM]'s shape: if the discovered list is shorter than the census,
+   the target is RED, so a discovery that silently narrows can never read
+   as a pass. This is the one property the current script structurally
+   cannot have.
+2. **Pin its verified and skip totals** in §3.1's baseline table, under
+   the same provenance line as the other baselines. **NOT MEASURED HERE
+   AND DELIBERATELY SO**: `verify_rxt.py` is a script under `tests/`, and
+   the HOLD forbids those by shape. The numbers are owed at W1.1's
+   first run and are part of its acceptance, not of this note.
+3. **C3's denominator comes from verify_rxt's OWN discovery**, never from
+   run.sh's 178 / 3,262 / 26,680 carried across. The two populations are
+   different by construction (verify_rxt has no `known_fail` exclusion and
+   its own skip rules), and carrying a denominator between two checks that
+   discover independently is the split-identity-gate lesson: a number that
+   looks authoritative because it came from somewhere else.
+
+**Until (1) lands, C3 is a specification, not a check** — and this note
+says so rather than listing it beside C1 and C2 as though all three run.
+
 **C0 — REDESIGNED, because revision 1's version could not fail
 (r45chk F1, the blocker).** Revision 1 said "the composer reports the
 size of the closure it bound, and for the corpus that number is 0 in all
@@ -1116,11 +1229,20 @@ by a composer that is absent, disabled, or hard-coded to return 0.**
 Empty-vs-empty. Redesigned into two checks whose numbers come from
 invocations that HAPPEN:
 
-- **C0a (corpus)** — the harness asserts `--list-source` was invoked
-  **exactly 0 times** across the run, and that the count of head-bearing
-  files is 0. That is a real assertion about a real quantity (the census),
-  and it fails if a future file grows a head without the rest of the
-  machinery.
+- **C0a (corpus)** — TWO assertions from TWO sources, and N4 asks that
+  the note say which is which, because they are not the same kind of
+  fact:
+  - **W1's own counter**: `--list-source` was invoked **exactly 0 times**
+    across the run. This is the harness reporting on its own behaviour —
+    it can only catch the machinery calling out when it should not.
+  - **The independent census**: the number of head-bearing files in
+    `tests/` is **0**, derived by scanning the corpus rather than by
+    asking the harness. This is what catches a future file growing a head
+    without the rest of the machinery, and it holds even if the counter
+    is broken.
+  Neither alone is enough: the counter shares a source with the thing it
+  counts, and the census cannot see a spurious invocation. Both are
+  asserted, and a disagreement between them is itself a failure.
 - **C0b (W1's fixtures)** — on every composed cell, the composer's
   reported closure (size AND order) is compared against the control's
   **RE-DERIVED** closure (DECIDED (8)). This is the comparison revision 1
@@ -1128,12 +1250,34 @@ invocations that HAPPEN:
   report.
 
 **F12 — "discharged by construction" is a diff argument, so it gets a
-check.** run.sh's existing arm block (`:811-1015`) is **hash-pinned**: any
-change to it fails, so "the 13 arms are not touched" is asserted rather
-than asserted-in-prose. And format_design §1.1's **32-keyword census
-becomes a CHECK** rather than a one-time measurement — the appended arms
-change one thing (lines that previously hit the catch-all now parse), the
-census is what makes that safe, and a census can rot.
+check.** run.sh's existing arm block is **hash-pinned**: any change to it
+fails, so "the 13 arms are not touched" is asserted rather than
+asserted-in-prose. And format_design §1.1's **32-keyword census becomes a
+CHECK** rather than a one-time measurement — the appended arms change one
+thing (lines that previously hit the catch-all now parse), the census is
+what makes that safe, and a census can rot.
+
+**N3 — the pin cannot be a LINE RANGE, because W1.1 edits inside it.**
+Revision 2 pinned `run.sh:811-1015`. But W1.1 appends three block arms
+and adds the `have_block` guard to six others — *inside that range* — so
+a line-range hash would be broken by the very change it is meant to
+protect, and the only way to "fix" it would be to re-pin, which discards
+the protection entirely. **So the protected region is delimited by
+explicit marker comments in run.sh** — `# --- BEGIN PINNED 13-ARM REGION
+(w1 N3) ---` / `# --- END PINNED 13-ARM REGION ---` — and the check
+hashes the text BETWEEN the markers. The new arms are appended AFTER the
+END marker, and the guard lines are added inside their arms, which means
+the guard edits are inside the region and DO move the hash: that is
+correct and intended, since the guard is a change to the 13 arms and
+should require a deliberate re-pin.
+
+**The update rule lives in the check's own failure message**, not in this
+note: when the hash moves, the message names the two markers, says that a
+change inside them is a change to the arms R-COMPAT-1 protects, and
+requires the re-pin to be a separate reviewed commit citing what moved.
+That is the [ART-SIZE] lesson applied one level over — the rule that
+governs a pin belongs where the pin is set, because that is the only
+place a person looking at the failure will read.
 
 **Where this is still weak, stated rather than buried.** C1's value on
 the 179 is largely "three parsers agree that nothing happened", because
@@ -1395,12 +1539,22 @@ Builds F1, F2's types, F3's `--source`/`--lib-path`/`--list-source`,
 F12's three block arms + `features only` + the `have_block` guard + the
 C1 dump, F14's structural skip + skip TOTAL + `--dump`. No composer, no
 targets, no abi change.
-Acceptance: C1 three-way byte-identical over **179 / 3,265 / 26,691**
-with the field manifest asserted; C2 and C3 equal to §3.1's pinned
-baselines over **178 / 3,262 / 26,680**; C0a reports 0 invocations;
-S-C1..S-C7, S-C9..S-C12 each turn their NAMED check red; the arm-block
-hash pin and the 32-keyword census run as checks; **C1's runtime
-measured and recorded**. `make strict` clean.
+**Acceptance, with N1 as an explicit CONDITION:**
+- **`verify_rxt.py` is WIRED into `make test`** over a `find`-derived
+  list with a short-list hard fail, and its verified/skip totals are
+  measured and pinned in §3.1's baseline table under the same provenance
+  line (§3.1.1). Without this, C3 is a specification and S-C2/S-C4 have
+  no detector — so this is a gate on the step, not a nice-to-have;
+- C1 three-way byte-identical over **179 / 3,265 / 26,691** with the
+  field manifest asserted, leg B invoked through the `$@` branch (N2);
+- C2 equal to §3.1's pinned baselines over **178 / 3,262 / 26,680**;
+  **C3 against its OWN discovery's denominator**, never run.sh's;
+- C0a's two assertions — W1's invocation counter at 0 AND the independent
+  head-bearing-file census at 0 (N4);
+- S-C1..S-C7, S-C9..S-C12 each turn their NAMED check red;
+- the arm-block hash pin (between its BEGIN/END markers, N3) and the
+  32-keyword census run as checks;
+- **C1's runtime measured and recorded**; `make strict` clean.
 Merge.
 
 **[DD-13b.W1.2] — targets, `rx_info.name`, `nentries`, the abi ritual,
