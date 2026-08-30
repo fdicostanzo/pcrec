@@ -428,13 +428,42 @@ b_cases=$(awk -F'\t' '$1 == "case" { n++ } END { print n+0 }' "$DUMP_B")
 c_blocks=$(awk -F'\t' '$1 == "block" { n++ } END { print n+0 }' "$DUMP_C")
 c_cases=$(awk -F'\t' '$1 == "case" { n++ } END { print n+0 }' "$DUMP_C")
 
-# `perr` is a BLOCK field in both dumps, not a case row, so the case rows
-# are the census's expectation lines MINUS the perr lines. Stated as a
-# derivation rather than as a second pinned number: two pins that must
-# differ by a third quantity are two chances to be wrong about it.
-perr_lines=$(xargs -a "$FILES" grep -c '^perr[[:space:]]*$' 2>/dev/null \
-    | awk -F: '{ n += $NF } END { print n+0 }')
-want_cases=$((CENSUS_LINES - perr_lines))
+# HOW MANY `case` ROWS THE DUMPS OWE, and it is a DERIVATION rather than
+# a fourth pin, because two pins that must differ by a third quantity are
+# two chances to be wrong about it.
+#
+# Not every expectation line is a case row, and the two ways it can fail
+# to be one are different:
+#   `perr`      is a BLOCK field in both dumps — a perr block has no
+#               m/n lines and the pattern text is the whole test;
+#   `g` / `gp`  are FOLDED into the preceding m/ms case's gspec, which is
+#               how run.sh models them (they attach to a case, they are
+#               not cases).
+# So the case rows are the five kinds that carry a subject. This awk is
+# the same independent pass the census uses, and the RECONCILIATION below
+# is what makes it a check rather than a restatement: if the five kinds,
+# the perr lines and the g/gp lines do not add back up to the census, one
+# of the two counts is wrong and neither is trusted.
+read -r kind_cases kind_perr kind_group <<EOF
+$(xargs -a "$FILES" awk '
+    /^(m|n|ms|ns|gu)([ \t]|$)/ { c++; next }
+    /^perr([ \t]|$)/           { p++; next }
+    /^(g|gp)([ \t]|$)/         { g++ }
+    END { printf "%d %d %d\n", c+0, p+0, g+0 }' \
+  | awk '{ c += $1; p += $2; g += $3 } END { printf "%d %d %d\n", c, p, g }')
+EOF
+want_cases=$kind_cases
+perr_lines=$kind_perr
+
+if [ "$((kind_cases + kind_perr + kind_group))" = "$CENSUS_LINES" ]; then
+    pass "case-row derivation reconciles: $kind_cases subject-bearing + $kind_perr perr + $kind_group g/gp = $CENSUS_LINES expectation lines"
+else
+    fail "case-row derivation DOES NOT reconcile: $kind_cases + $kind_perr + $kind_group
+  = $((kind_cases + kind_perr + kind_group)), but the census is $CENSUS_LINES.
+  These are two passes over the same bytes with different line-kind
+  patterns; a disagreement means one of them has stopped describing the
+  format, and the case-row count below cannot be trusted either way."
+fi
 
 check_counts() {
     local leg=$1 bl=$2 ca=$3

@@ -180,13 +180,23 @@ static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
 
 static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
 {
+    /* The prefix is written FIRST and the body straight after it, rather
+     * than formatting the body into a scratch buffer and splicing the two.
+     * The splice needs a scratch as large as the destination, so gcc's
+     * -Wformat-truncation is right to say the result may not fit — and
+     * `make strict` is -Werror. Composing in place has nothing to warn
+     * about, allocates nothing, and truncates in the one direction that
+     * keeps the file and line (which is what a reader acts on) rather
+     * than losing them to a long sentence. */
+    char *out = p->err->msg;
+    size_t cap = sizeof p->err->msg;
+    int n = snprintf(out, cap, "%s:%zu: ", p->path, line);
+    size_t at = (n < 0) ? 0 : (size_t)n;
+    if (at > cap - 1) at = cap - 1;
     va_list ap;
-    char body[256];
     va_start(ap, fmt);
-    vsnprintf(body, sizeof body, fmt, ap);
+    vsnprintf(out + at, cap - at, fmt, ap);
     va_end(ap);
-    snprintf(p->err->msg, sizeof p->err->msg, "%s:%zu: %s",
-             p->path, line, body);
     p->err->pos = 0;
     p->err->input = PCREC_ERR_INPUT_PATTERN;
     p->failed = 1;
@@ -526,8 +536,8 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         if (src->rows[k].kind == RXT_DECL_CONFIG &&
             !strcmp(src->rows[k].name, name))
             return rxt_fail(p, line,
-                            "duplicate config name '%s' (already declared at "
-                            "%s:%zu)", name, p->path, src->rows[k].line);
+                            "duplicate config name '%s' (already declared "
+                            "on line %zu)", name, src->rows[k].line);
 
     /* the body: indented lines, closed vocabulary, own context */
     while (*i + 1 < L->n) {
@@ -616,8 +626,8 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         if (src->rows[k].kind == RXT_DECL_TARGET &&
             !strcmp(src->rows[k].name, prefix))
             return rxt_fail(p, line,
-                            "duplicate target prefix '%s' (already declared at "
-                            "%s:%zu)", prefix, p->path, src->rows[k].line);
+                            "duplicate target prefix '%s' (already declared "
+                            "on line %zu)", prefix, src->rows[k].line);
     return 0;
 }
 
@@ -820,9 +830,9 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 if (hk)
                     rxt_fail(&p, line,
                              "'%s' is a file-level declaration and the head "
-                             "ENDED at the first 'pattern' line (%s:%zu); "
+                             "ENDED at the first 'pattern' line (line %zu); "
                              "nothing file-level may appear after it",
-                             hk->kw, p.path, src->first_pattern_line);
+                             hk->kw, src->first_pattern_line);
                 else
                     unknown_token(&p, line, l, "pattern-block");
                 goto fail;
@@ -856,8 +866,8 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                         &src->rows[k] != block && src->rows[k].name &&
                         !strcmp(src->rows[k].name, v)) {
                         rxt_fail(&p, line,
-                                 "duplicate block name '%s' (already named at "
-                                 "%s:%zu)", v, p.path, src->rows[k].line);
+                                 "duplicate block name '%s' (already named on "
+                                 "line %zu)", v, src->rows[k].line);
                         goto fail;
                     }
                 block->name = arena_strdup(&src->arena, v);
