@@ -647,3 +647,28 @@ none of them was the compiler:
 Run 2's failure also bought the (2b) arm: the capture-free pair let the SAME
 pattern be read at the default (`declined-nullable`) and denied
 (`overflowed-dfa`), which is the sharpest statement of why the value exists.
+
+### 12.6 `make test-cli` — **287 cases passed, 0 failed**
+
+Unmoved by this row, which is the expected result: nothing here changes a CLI
+surface. Recorded because the brief asks for it and because `run_cli_tests.sh`
+is where the D37 feature-stamp and `--list-*` field counts are pinned, and this
+row touched `--list-axes`' row set.
+
+### 12.7 Rebuild after the `--emit-ir` wording fix — `make -j4` + `make strict` rc 0
+
+The listing's prefilter line carried the SAME over-claim §11.2 records in the
+check ("-fprefilter overrides (do-or-die)"), which is true on the size rung and
+false on the [SEL-1] rung. It now states both, so an artifact from either rung
+reads a line that agrees with `tuning.md` §2.17. Verified live on the declined
+witness:
+
+    ; prefilter    NO (nullable collapsed language) -- a ladder rung offered
+                   the count-collapsed prefilter ([OPT-4]) and it was DECLINED
+                   … -fprefilter is do-or-die and is never silently dropped: on
+                   the size rung it OVERRIDES this decline, on the [SEL-1] rung
+                   it suppresses the rung itself and the compile refuses.
+                   -fprefilter-collapse does not override it
+
+That is the predicate's THIRD reader working, and it is the one that would
+otherwise have named a flag the caller did not pass.
