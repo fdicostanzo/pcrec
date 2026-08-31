@@ -19037,3 +19037,36 @@ pcrecdev2's measurement windows per the handshake). Frank's /feedback
 on the earlier loops-dismissal was sent upstream this session
 (receipt in the session log). Lanes now: opt5s1 only (the DFA scan
 edge, opus, reading phase).
+
+**10:4x-14:0x — THE BENCH WINDOW (held and closed clean); opt5s1's
+held-state review; LIFT at 14:0x.** pcrecdev2 requested WINDOW OPEN at
+~10:41 ([B22] re-pin merged, its make check green); opt5s1 halted by
+.hold (its polling loops are sleep-only — verified when the watchdog
+flagged 7 live PIDs), QUIET confirmed 10:42. The window ran LONG
+(~3.3 h vs the 2-2.5 h envelope — bounded@0.2's cells are 22-25 min
+each with the added patterns; one inconclusive-spread re-measured per
+contract, agreed) and CLOSED at ~14:0x: **8/8 cells pinned-tier at
+263b013** (bounded@0.2 × six testees + loglines@0.1 × the two
+[OPT-4.1] KEEP arms; store 67 measured / 9 inconclusive-load / 1
+inconclusive-spread). O-11 will carry the ledger reading against
+I-26's two-flat-lines frame AND a year4 re-attribution (the +4,096 B
+was ELF page alignment tripped by THEIR [B19] shim, not pcrec bytes —
+O-10 ask (iii) resolves bench-side). During the hold, opt5s1's
+held-state report was reviewed by message: the forms model landed as
+two LIVE axes (H `dfa_edges` scan-edge/table-walk per state, bit 21;
+I `dfa_scans` range/bitmap) riding the same dfa_select walk; abi
+12→13 at the four sites with FILEPIN correctly awaiting the final src
+commit; guard 83→91 (stale, re-measure owed); [LIM-1]'s check FORCED
+the lane's hand-written cap enum into limits.def (44→45) — the
+general mechanism catching a special case one day after landing;
+letters 2.71-2.98x / digits 1.09x-slower control (the peel is the
+shave, residual ≈1 cycle/direction); embedded chains refuse honestly.
+R4 ruled (bound-1 discharge for a new construct: residue audit +
+hand-twin, structural pin only). Housekeeping: .gitignore's
+lane-signalling block gained .hold + /rulings.md (both had been swept
+into the lane's commits by a git add -A — the rule against add -A
+exists for this; the gitignore is now the backstop). test-codegen was
+NEVER run by the lane (its own flag) — first item on the LIFT list.
+LIFTED 14:0x; lane re-verifying the rework; then review/merge (strip
+the two files, merge main in first), r48 panel during the battery,
+ONE battery proves [M4-QUOTING] + the scan edge and becomes the pin.
