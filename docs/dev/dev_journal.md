@@ -19114,3 +19114,35 @@ refutation (~35 adversarial probes); F1 = S215 owed (the cap
 conjunct's sabotage row); F2 = the verdict diffs mech's per-row
 figures vs the author-cited ones; F3 = S212 narrative amendment owed;
 F4 fixed in-session (src/parse/CLAUDE.md staleness).
+
+**15:4x-16:1x — BATTERY 7's CIRCUIT BREAKER, THE FIX WAVE, AND THE REAL
+LAUNCH (9bfabaa).** The 15:13 battery run STOPPED ITSELF at its
+broken-tree breaker (7 persistent test reds; san/mech skipped — correct
+behavior, first firing). All nine test-stage reds diagnosed: EIGHT were
+the scan edge's intended consequences — witnesses that used to emit
+>1 MB now emit 18-35 KB, so the size caps/warn/rescue-rung checks lost
+their subjects — and ONE was the quoting corpus tripping the wordctx
+positive control's spelling-based census (`\Qa\b\E` counted as a word
+assertion). Fix wave (committed, all four sections re-run solo rc=0):
+(1) wordctx's has_word_assertion is quote-aware; (2) the total-cap
+witnesses rewritten — one NATURAL period-2 witness
+`(?:[a-z][0-9]){0,8000}` (the period-1 criterion refuses it; it goes
+red again when STEP 2 lands — the tripwire working) + the classic
+witnesses kept alive under `-fno-scan-edge` (refusals re-measured);
+the size_moved array parser now splits from the RIGHT (a left split
+read the `(?:` pattern as `(?` — measured); (3) size_rung_cell grew an
+EXTRA-flags arg, both rung cells + the -fprefilter cell run under
+-fno-scan-edge (declined-nullable / size-cap-retry / "size cap retry,
+exact 1333406 > 1000000" all reproduce); (4) the cli warn witness is
+the two-class 381 KB shape; (5) sel_witness size-cap-retry flag-gated.
+AND THE REAL FINDING: `(a|b){0,30000}` (size-REFUSED before [OPT-5])
+now compiles into a hybrid whose EXACT language is NULLABLE — O-10's
+1.2-9.9x pathology on a newly-accepted population. **[OPT-4.2] FILED**
+(extend the nullability decline to every rung — the general form;
+needs Frank's charter; ESEL invariant care documented in the row) and
+tests/resource's [OPT-4.2 tripwire] cell pins the gap loud and dated.
+O-11 ARRIVED mid-wave: [OPT-4.1] closed 10/10; NO KNEE at nine rungs
+(I-26 reproduced to two decimals); the bench's rank-1 ask is the scan
+edge WE ALREADY MERGED; W1.2 UNBLOCKED; year4 was their shim's ELF
+alignment; five asks queued for I-27. Battery 7 (real) launched
+16:12:45 on 9bfabaa, driver 2411504 verified detached.
