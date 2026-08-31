@@ -18816,3 +18816,17 @@ the bench as a durable I-23 (pcrecdev2 CLOSED for the night at ~20:2x —
 Frank's call; its bounded@0.2 cut is merged on its side, [B22] briefed;
 a live message tonight would reach nobody, the inbox is what its next
 session wakes to). Frank's perf hold stands.
+
+#### Forty-sixth session, part 11 (22:2x EDT): BATTERY 5 CLOSED GREEN-BY-DIAGNOSIS — [OPT-4.1] and the r46 fixes are battery-proven; THIS COMMIT IS THE PIN
+
+san re-run on eefb228: **rc 0, 0 sanitizer report lines, 34 scripts,
+108 min** (20:32-22:20) — the registry wrapper now passes under san with
+the guard at its true 83. With battery 5's mech (203 rows / 0 unexpected
+/ the expected six undetected / 0 unreached / 0 anomalies), test 1,941/0
+(counterk cleared solo), strict clean, and the solo registry re-run (rc
+0, 83), every stage that measures the code is clean and both reds were
+one check-side number (the guard, firing as designed). **[OPT-4.1] →
+completed (battery-proven); [DD-13b.W1.1]'s r46 fixes battery-proven.**
+The code is cdaae0b + the guard fix eefb228; THIS journal commit is the
+PIN the bench re-pins to (I-23 follows in its inbox; pcrecdev2 wakes to
+it). Frank's perf hold stands — [B21]/[B22]'s windows wait on his lift.
