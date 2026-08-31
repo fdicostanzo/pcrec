@@ -2639,7 +2639,15 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
              * does exactly that. Its interior states are gone by then, so the
              * step that followed such a skip would read a table cell the pass
              * killed. Costs nothing on any machine without a scan edge, which
-             * is every machine in the pre-[OPT-5] corpus. */
+             * is every machine in the pre-[OPT-5] corpus.
+             *
+             * IT READS THE ANNOTATION AND NOT AXIS H, which is the honest
+             * question rather than a shortcut past the selection: what this
+             * exclusion needs to know is whether the PASS left a run's
+             * interior deleted here, and this function has no `Ctx` to ask
+             * an axis through. The two agree in both directions anyway —
+             * under `-fno-scan-edge` the pass writes no annotation, so
+             * neither the axis nor this test can be true. */
             if (d->st[i].scan_span != 0) continue;
             bool taken = false;
             for (int k = 0; k < nout; k++)
