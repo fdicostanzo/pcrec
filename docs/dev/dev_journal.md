@@ -18876,3 +18876,21 @@ lane's last src edits (23:45) postdated its verified build. Merged
 — it decides [LIM-1] battery-proven and the pin that supersedes
 fa01910 (I-25 to the bench inbox on green). Frank's perf hold is
 LIFTED (23:1x); pcrecdev2's next session runs the windows.
+
+#### Forty-sixth session, part 13 (04:0x EDT 2026-08-31): BATTERY 6 CLOSED GREEN-BY-DIAGNOSIS — [LIM-1] battery-proven; THIS COMMIT IS THE PIN; session close
+
+Battery 6 DONE 04:05:36 (launched 00:13:34 on 99d4cbd; 3 h 52). RED by
+arithmetic on ONE guard line — K32's counterk make-error (29 cases,
+cleared solo, red lines 0). Everything measuring the code clean: test
+**1,963 checks / 0 failed**; strict clean; **san rc 0 / 0 report lines
+(~110 min)** on the takeover-landed tree; **mech 205 rows / unexpected 0
+/ undetected 6 (S150-S153, S160, S178 — the expected six) / unreached 0
+/ anomalies 0** — S208/S209 DETECTED in the full matrix. **[LIM-1] →
+completed (battery-proven).** THIS COMMIT IS THE PIN superseding
+fa01910; I-25 carries it to the bench (whose next session runs the
+windows under the lifted hold). Session totals: FOUR merges
+battery-proven in one day (W1.1, the r46 fixes, [OPT-4.1], [LIM-1]),
+three batteries (4, 5, 6), two panels (r46, r47), six inbox items
+(I-19..I-24 + I-25 now), five plan rows filed from Frank's evening
+ideas ([M4-QUOTING], [CC-CLANG], [OPT-VMLIT], [PCRE2-UP], the [OPT-5]
+re-scope), one takeover landing. wake.md rewritten with the verdict.
