@@ -340,13 +340,28 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 ([OPT-5] 2026-08-31: the DFA SCAN EDGE
-# axis, MEASURED 91/0 by the lane. +8 in one change and every one of them a
-# real leg: `scan-edge` contributes FOUR candidate rows to the per-row sweep
-# (`range`, `bitmap`, `mixed`, `none`) at two checks each -- its bit-21
-# tuning.md heading and, on the two rows that carry one, its `-fno-scan-edge`
-# cli/main.c pairing -- and `RX_DFA_SCAN_EDGE` gains its own value-set PAIR
-# (dump->spec, spec->dump) beside the six macros that already had one.
+# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 ([OPT-5] 2026-08-31, and it is the
+# FIRST TIME THIS NUMBER HAS GONE DOWN, so the reason is written out rather
+# than left to the diff.
+#
+# The row landed at 91 with the scan edge modelled as ONE hand-stated
+# predicate axis whose four rows (`range`/`bitmap`/`mixed`/`none`) each
+# carried `PCREC_NO_SCAN_EDGE` and `-fno-scan-edge`. Manager ruling R1 then
+# split the mechanism into the TWO axes D82 actually separates -- `scan-edge`
+# (per STATE: does this state emit an edge at all) and `scan-body` (per EDGE:
+# which run-extension body) -- both walked live off `src/gen/emit_dfa.c`'s own
+# candidate arrays rather than hand-stated here.
+#
+# THE THREE LOST CHECKS WERE DUPLICATE ASSERTIONS OF ONE FACT, not coverage.
+# The bit-21 heading and the `-fno-scan-edge` cli/main.c pairing are now
+# asserted ONCE, on the region axis's own candidate -- the axis that actually
+# owns the flag -- where before they were asserted on every row that happened
+# to mention it. The old shape also told a reader the BODY could be denied
+# independently of the EDGE, which is false: denying a body while the edge
+# survived would leave a machine with deleted states and no loop to replace
+# them. Fewer checks, one of which had been asserting something untrue.
+# MEASURED 88/0 by the lane at the axis swap; the value-set PAIR for
+# `RX_DFA_SCAN_EDGE` (dump->spec, spec->dump) is unchanged and still present.
 # ([OPT-4.1] 2026-08-30: the four RX_ENGINE_SEL
 # value-set legs, MEASURED 83/0 by the lane and by battery 5 under san —
 # the lane updated the check but not THIS guard, which fired exactly as
@@ -416,16 +431,16 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 91 ]; then
+if [ "$axesn" -ne 88 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 91." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 88." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (91 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (88 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 91 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 88 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
