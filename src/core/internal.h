@@ -1163,6 +1163,32 @@ typedef struct {
      * tests/codegen/run_endvar_identity.sh is the check that says so. */
     int      endvar;
     int     *tr;       /* [ncls] target dfa state or -1 = dead (arena) */
+    /* [OPT-5] THE SCAN EDGE (src/opt/scanedge.c, docs/spec/tuning.md S2.18).
+     * A maximal run of states that differ only in HOW MANY bytes of one fixed
+     * class have been counted is collapsed into ONE edge on the run's head,
+     * and the emitter writes it as an address-only-dependent bounded scan loop
+     * instead of `span` data-dependent table steps.
+     *
+     * `scan_span` IS THE PRESENCE FLAG AND ITS ZERO IS "NO EDGE", which is the
+     * arena's and `calloc`'s own zero — so a `DState` built by any of this
+     * tree's three constructors (src/ir/dfa.c's `make_state`, src/opt/
+     * minimize.c's compacting rebuild, and this pass's own) is correctly
+     * edgeless without knowing this field exists. A `scan_cls`-shaped
+     * presence flag would have made "class 0" the default and every such
+     * constructor a silent miscompile. Its other two values:
+     *   > 0   count at most this many bytes, then the state is `scan_next`
+     *   -1    UNBOUNDED (the state's own class-C self-loop: `*` and `+`)
+     *
+     * The other two fields are meaningless when `scan_span == 0` and are not
+     * read there. When the edge exists, `tr[scan_cls]` is set to -1 (dead) and
+     * that cell is NEVER READ: the emitter runs the scan before the step, and
+     * the scan consumes every class-`scan_cls` byte the bound allows, so the
+     * step can only ever be reached on a byte of some OTHER class. See the
+     * pass's own header for the whole argument, which is what licenses
+     * DELETING the run's interior states from the table. */
+    int      scan_span;
+    int      scan_cls;   /* the byte class the scan counts */
+    int      scan_next;  /* the state after `scan_span` bytes (-1 == dead) */
 } DState;
 
 typedef struct {
@@ -3933,6 +3959,19 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
  * optional machine is well-formed rather than corrupt on the way out. */
 enum { PCREC_DFA_DEAD = -1 };
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
+/* [OPT-5] THE SCAN-EDGE PASS (src/opt/scanedge.c). Runs on EVERY machine,
+ * immediately after `pcrec_minimize_dfa` on that machine: it needs the
+ * canonical state set, and nothing after it rebuilds a `DState`. It reads
+ * `PCREC_NO_SCAN_EDGE` itself, so a denied build is byte-for-byte the
+ * compiler that shipped before this row. */
+void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/scanedge.c */
+/* The emitted class test's two forms, ONE predicate and one emission site
+ * (D75 addendum: a one-site boolean stays a boolean). True when the class's
+ * byte set is a contiguous range, which the emitter writes as a
+ * subtract-and-compare against two immediates — the shape
+ * docs/dev/opt5_step0_profile.md S3.2 measured. `lo`/`hi` are filled only on
+ * a true answer. */
+bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi);
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 
 /* ---- [OPT-ALTCLS] alternation->class normalization (docs/dev/plan.md) ---- */

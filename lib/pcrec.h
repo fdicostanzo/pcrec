@@ -433,7 +433,22 @@ enum {
      * whether to pass either flag can see how close this pattern sits to the
      * knee without recompiling it. */
     PCREC_NO_PREFILTER_COLLAPSE    = 1u << 19,
-    PCREC_FORCE_PREFILTER_COLLAPSE = 1u << 20
+    PCREC_FORCE_PREFILTER_COLLAPSE = 1u << 20,
+
+    /* [OPT-5] THE DFA SCAN EDGE (docs/dev/opt5_step0_profile.md;
+     * src/opt/scanedge.c). A region of a DFA whose states differ only in HOW
+     * MANY bytes of one fixed class have been counted is one EDGE, emitted as
+     * a bounded scan loop whose loop-carried register is the cursor — instead
+     * of one data-dependent transition-table load per byte, which the profile
+     * measured at ~6x the cost of the identical language on pcrec's own VM.
+     *
+     * IT IS THE FIRST DFA AXIS WHOSE DENIAL CHANGES THE MACHINE AND NOT ONLY
+     * THE EMITTED LOOP: the run's interior states are DELETED (the scan edge
+     * replaces them), so `[a-z]{0,16384}`'s forward machine is two states
+     * rather than 16,385. Denying it restores both the states and the table
+     * walk, which is what makes the denied build a byte-for-byte reference
+     * for the answer-identity sweep. It changes no answer either way. */
+    PCREC_NO_SCAN_EDGE = 1u << 21
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
