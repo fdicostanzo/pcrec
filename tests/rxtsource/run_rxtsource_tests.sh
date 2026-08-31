@@ -2,7 +2,7 @@
 # tests/rxtsource/run_rxtsource_tests.sh — [DD-13b.W1.1] INV-COMPAT.
 #
 # The question this section answers: does growing the `.rxt` format change
-# what any EXISTING corpus file means? The corpus is 179 files, 3,265
+# what any EXISTING corpus file means? The corpus is 188 files, 3,317
 # pattern blocks and 26,691 expectation lines, and none of them uses one
 # byte of the new grammar — so the answer must be "no" in a way that a
 # check can fail, not in a way a reader can believe.
@@ -27,16 +27,16 @@
 # ---------------------------------------------------------------------
 # THE TWO DENOMINATORS DIFFER ON PURPOSE (w1_impl §3.0)
 #
-#   census (all files)         179 files / 3,265 blocks / 26,691 lines
+#   census (all files)         188 files / 3,317 blocks / 26,786 lines
 #   tests/known_fail/k34...      1 file  /     3 blocks /     11 lines
 #                              ---------------------------------------
 #   run.sh's own population    178 files / 3,262 blocks / 26,680 lines
 #
 # `run.sh`'s no-argument branch discovers with `-not -path "*/known_fail/*"`,
 # so the known-fail ratchet's own file is never dispatched. C1 is a PARSE
-# differential and can and should read every file, so it asserts 179 and
+# differential and can and should read every file, so it asserts 188 and
 # invokes leg B through the ARGUMENT branch (which applies no exclusion).
-# C2 asserts 178. Asserting 179 in both would make the second one wrong.
+# C2 asserts 187. Asserting 188 in both would make the second one wrong.
 #
 # C3 asserts **verify_rxt's OWN discovery** and never either of the above:
 # that script has no known_fail exclusion and its own skip rules, so
@@ -88,16 +88,16 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # commit — and the failure message says so. A check that re-derived its
 # own expectation would agree with a shrunk corpus by construction, which
 # is this project's signature check-design failure (learnings §3).
-CENSUS_FILES=179
-CENSUS_BLOCKS=3265
-CENSUS_LINES=26691
+CENSUS_FILES=188
+CENSUS_BLOCKS=3317
+CENSUS_LINES=26786
 
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 179/178 split inexplicable.
-RUNSH_FILES=178
-RUNSH_BLOCKS=3262
-RUNSH_LINES=26680
+RUNSH_FILES=187
+RUNSH_BLOCKS=3314
+RUNSH_LINES=26775
 
 echo "== [DD-13b.W1.1] .rxt source / INV-COMPAT =="
 
@@ -510,12 +510,18 @@ echo "C1 runtime: leg A (${CENSUS_FILES}x pcrec --list-source) ${tA}s; leg B (ru
 # population — a skip reason that silently grows is coverage silently
 # lost.
 C3_FILES=179
-C3_PASS=13181
-C3_SKIP=13421
+# [M4-QUOTING] 2026-08-31: +7/+88/+88 for tests/quoting/d27/ (95 cells).
+# The 88 new no-python-expression skips are the POINT, not lost coverage:
+# python `re` has no \Q at all, so the module's cells are inexpressible
+# here by nature — their oracle is libpcre2 via tests/quoting/d27/
+# checker.py (95/95 at landing), and the 7 python-expressible cells are
+# the corpus's own (?x)/plain controls, verified here like any other.
+C3_PASS=13188
+C3_SKIP=13509
 C3_SKIP_PCRE2ONLY=1357
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1753
+C3_SKIP_NOPYTHON=1841
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=10274
 C3_TIMEOUT=1
