@@ -1,0 +1,32 @@
+# D27 quoting corpus -- compile-time errors specific to \Q...\E.
+#
+# Per project policy D26, only the accept/reject FACT is a project promise;
+# PCRE2's exact diagnostic WORDING is not. The error codes and messages
+# below are recorded as provenance (this is what libpcre2-8 10.46 reports
+# for these patterns) via oracle_probe's own errmsg mode, not as a
+# requirement pcrec's own diagnostic text must match.
+
+# unterminated \Q inside a class, no \E at all: the class is never closed because the ']' that would close it is never reached (pattern ends first)
+pattern [a\Qbc
+features quoting
+# PCRE2 rejects this pattern: error 106 (missing terminating ] for character class), offset 6
+perr
+
+# unterminated \Q inside a class, \E present but the CLASS itself is never closed: quoting ends, but no ']' follows before the pattern ends
+pattern [a\Qbc\E
+features quoting
+# PCRE2 rejects this pattern: error 106 (missing terminating ] for character class), offset 8
+perr
+
+# positive control for the two cases above: the same class, properly closed after \E, compiles fine
+pattern [a\Qbc\E]
+features quoting
+m "b" 0 1
+m "a" 0 1
+n "d"
+
+# a quantifier with nothing to repeat (see quantifier_after.rxt for the full discussion) -- included here too as the corpus's other quoting-adjacent compile error
+pattern \Q\E+
+features quoting
+# PCRE2 rejects this pattern: error 109 (quantifier does not follow a repeatable item), offset 4
+perr

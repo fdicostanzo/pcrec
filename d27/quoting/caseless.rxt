@@ -1,0 +1,20 @@
+# D27 quoting corpus -- \Q...\E under case-insensitive matching.
+
+# case-insensitive flag folds quoted literal text same as any other literal
+pattern \QABC\E
+flags i
+features quoting
+m "abc" 0 3
+m "ABC" 0 3
+m "AbC" 0 3
+
+# control: without the caseless flag, quoted text is still case-sensitive
+pattern \QABC\E
+features quoting
+m "ABC" 0 3
+n "abc"
+
+# inline (?i) before the quoted run has the same effect as the flags directive
+pattern (?i)\QABC\E
+features quoting
+m "abc" 0 3

@@ -1,0 +1,32 @@
+# D27 quoting corpus -- a quantifier applied AFTER a quoted run.
+#
+# \Q...\E is equivalent to writing out each contained character as its own
+# escaped literal, so ordinary quantifier-binds-to-the-immediately-preceding-
+# atom rules apply: only the LAST quoted character is what a following
+# quantifier repeats. Verified against the oracle rather than assumed --
+# this is the one place this corpus's author found the documentation's
+# prose genuinely ambiguous before checking.
+
+# a quantifier after a quoted run binds to the run's LAST character only ('b'), not the whole run
+pattern \Qab\E+
+features quoting
+m "ab" 0 2
+m "abbb" 0 4
+m "aabb" 1 4
+
+# an EMPTY \Q\E between an atom and a quantifier is transparent: the quantifier reaches past it and binds to 'a'
+pattern a\Q\E+
+features quoting
+m "a" 0 1
+m "aaa" 0 3
+
+# pcre2pattern(3) worked example: \Q/\E anywhere inside what might otherwise be a quantifier stops it being recognized as one -- the whole thing is literal text "{1,2}"
+pattern {\Q1\E,2}
+features quoting
+m "{1,2}" 0 5
+
+# a quantifier with NOTHING before it (the quoted run it might have followed is itself empty and at the very start of the pattern) is a hard compile error, same as a bare leading '+'
+pattern \Q\E+
+features quoting
+# PCRE2 rejects this pattern: error 109 (quantifier does not follow a repeatable item), offset 4
+perr
