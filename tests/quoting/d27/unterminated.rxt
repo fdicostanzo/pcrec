@@ -1,0 +1,39 @@
+# D27 quoting corpus -- \Q...\E, unterminated \Q and isolated \E.
+#
+# pcre2pattern(3): "If \Q is not followed by \E later in the pattern, the
+# literal interpretation continues to the end of the pattern (that is, \E is
+# assumed at the end)." and "An isolated \E that is not preceded by \Q is
+# ignored." Both are oracle-verified here. The INSIDE-a-character-class case
+# of an unterminated \Q is a compile ERROR, not an implicit-\E case -- see
+# errors.rxt.
+
+# unterminated \Q outside a class: literal quoting runs to the end of the pattern (implicit \E)
+pattern ab\Qc+d
+features quoting
+m "abc+d" 0 5
+n "abcccd"
+
+# \Q at the very end of the pattern with nothing after it: contributes zero literal characters
+pattern abc\Q
+features quoting
+m "abc" 0 3
+
+# an isolated \E with no preceding \Q is ignored entirely
+pattern \Eabc
+features quoting
+m "abc" 0 3
+
+# two isolated \E's, neither preceded by an open \Q, both ignored
+pattern a\Eb\Ec
+features quoting
+m "abc" 0 3
+
+# a real \Q...\E followed immediately by a second, isolated \E -- the second \E is ignored, not an error
+pattern \Qab\E\Ec
+features quoting
+m "abc" 0 3
+
+# quoted run, then literal 'c', then an isolated trailing \E, then literal 'd' -- the isolated \E vanishes without affecting anything around it
+pattern \Qab\Ec\Ed
+features quoting
+m "abcd" 0 4

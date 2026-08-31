@@ -1,0 +1,102 @@
+# D27 quoting corpus -- \Q...\E LITERAL QUOTING, basics.
+#
+# \Q...\E turns every character up to the matching \E into a literal --
+# quantifiers, anchors, dots, parens, brackets, the alternation bar, and
+# backslash itself all lose their special meaning inside a quoted run.
+# Oracle: libpcre2-8 via oracle_probe.c (this directory). See FINDINGS.md --
+# no documentation/oracle divergence was found while building this corpus.
+
+# quoted dot: '.' is literal, not any-char
+pattern a\Qb.c\Ed
+features quoting
+m "ab.cd" 0 5
+n "abXcd"
+
+# quoted star: not a quantifier
+pattern \Qa*b\E
+features quoting
+m "a*b" 0 3
+n "aaab"
+
+# quoted plus: not a quantifier
+pattern \Qa+b\E
+features quoting
+m "a+b" 0 3
+n "aaab"
+
+# quoted question mark: not a quantifier
+pattern \Qa?b\E
+features quoting
+m "a?b" 0 3
+n "ab"
+
+# quoted counted repeat: literal braces
+pattern \Qa{2,3}b\E
+features quoting
+m "a{2,3}b" 0 7
+n "aab"
+
+# quoted anchors: literal caret and dollar, no anchoring
+pattern \Q^a$\E
+features quoting
+m "^a$" 0 3
+n "a"
+
+# quoted parens: literal, no capturing group created
+pattern \Qa(b)c\E
+features quoting
+m "a(b)c" 0 5
+
+# quoted brackets: literal, no character class opened
+pattern \Qa[b]c\E
+features quoting
+m "a[b]c" 0 5
+
+# quoted alternation bar: literal, not alternation
+pattern \Qa|b\E
+features quoting
+m "a|b" 0 3
+n "a"
+
+# quoted backslash: literal backslash+b, not \b word boundary
+pattern \Qa\b\E
+features quoting
+m "a\\b" 0 3
+ns 1 "a"
+
+# pcre2pattern(3) worked example: \Q\\E matches a single backslash (the first backslash is quoted data, the second+E terminates)
+pattern \Q\\E
+features quoting
+m "\\" 0 1
+
+# pcre2pattern(3) worked example: $ and @ are literal in \Q...\E (unlike Perl's interpolation)
+pattern \Qabc$xyz\E
+features quoting
+m "abc$xyz" 0 7
+
+# pcre2pattern(3) worked example: backslash inside \Q...\E is itself literal data, so \$ quotes to two literal chars
+pattern \Qabc\$xyz\E
+features quoting
+m "abc\\$xyz" 0 8
+
+# pcre2pattern(3) worked example: leaving quoting to use an escaped $ then re-entering quoting
+pattern \Qabc\E\$\Qxyz\E
+features quoting
+m "abc$xyz" 0 7
+
+# pcre2pattern(3) worked example: quoted A\B is four literal chars
+pattern \QA\B\E
+features quoting
+m "A\\B" 0 3
+
+# empty \Q\E in the middle contributes zero literal characters
+pattern a\Q\Eb
+features quoting
+m "ab" 0 2
+
+# \Q\E alone: a zero-width match, like an empty pattern
+pattern \Q\E
+features quoting
+m "" 0 0
+m "xyz" 0 0
+ms 2 "xyz" 2 2
