@@ -216,16 +216,18 @@ static int acc_of(const Dfa *d, int s)
  * reachable only as the next link of its own chain" is a number and not an
  * argument. The ROOTS count: a seed state the start dispatch selects has no
  * transition pointing at it and must never be deleted. */
-static void in_degrees(const Dfa *d, int *indeg)
+static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt)
 {
     memset(indeg, 0, (size_t)d->n * sizeof(int));
+    memset(viewtgt, 0, (size_t)d->n * sizeof(bool));
     for (int s = 0; s < d->n; s++) {
         for (int c = 0; c < d->ncls; c++) {
             int t = d->st[s].tr[c];
             if (t >= 0 && t < d->n) indeg[t]++;
         }
-        if (d->st[s].eolvar >= 0 && d->st[s].eolvar < d->n) indeg[d->st[s].eolvar]++;
-        if (d->st[s].endvar >= 0 && d->st[s].endvar < d->n) indeg[d->st[s].endvar]++;
+        int v = d->st[s].eolvar, e = d->st[s].endvar;
+        if (v >= 0 && v < d->n) { indeg[v]++; viewtgt[v] = true; }
+        if (e >= 0 && e < d->n) { indeg[e]++; viewtgt[e] = true; }
     }
     if (d->s0 >= 0 && d->s0 < d->n) indeg[d->s0]++;
     for (int u = 0; u < UPC_N; u++) {
@@ -243,7 +245,8 @@ static void in_degrees(const Dfa *d, int *indeg)
  * are candidates and both are tried — which is not an edge case but the
  * common machine, `[a-z]{0,n}`'s own alphabet being exactly two classes. */
 static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
-                   const int *exitv, bool *haspred, Chain *out, int cap, int nout)
+                   const bool *viewtgt, const int *exitv, bool *haspred,
+                   Chain *out, int cap, int nout)
 {
     /* A HEAD is a member with no COMPATIBLE predecessor over this class. One
      * forward pass answers it for every state at once — the O(n^2) reverse
@@ -261,6 +264,28 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
 
     for (int s = 0; s < d->n && nout < cap; s++) {
         if (!ok[s] || haspred[s]) continue;
+        /* PRECONDITION (6), and it is a MEASURED one — the deletion argument
+         * had a hole exactly here and `a{0,4}$` found it, 87 cells of
+         * tests/possessify/possessify.rxt reporting the right match END and
+         * the wrong START.
+         *
+         * The argument says the ordinary step can never read `tr[head][C]`,
+         * because the scan consumed that byte whenever the STATE VARIABLE
+         * held the head. But under a position view the step does not read
+         * the state variable: `emit_scan_loop` steps from `f->src`, which at
+         * `pos + 1 >= n` is the VIEW-SELECTED state — so a state whose
+         * `$`/`\Z`/`\z` view POINTS AT the head puts the head into the step
+         * with the scan edge never having run, and the killed cell is read
+         * after all. `a{0,4}$`'s reverse machine is exactly that: its start
+         * state has no transitions at all and reaches the counting chain
+         * only through its EOL view.
+         *
+         * Refusing a head that is any state's view target is exact and
+         * costs nothing on a machine with no views, where `f->src` IS the
+         * state variable. Precondition (3) is the neighbouring rule and NOT
+         * the same one: (3) is about a member's OWN view, this is about
+         * being someone else's. */
+        if (viewtgt[s]) continue;
         int e = exitv[s], a = acc_of(d, s), nx = d->st[s].tr[cls];
 
         /* THE UNBOUNDED FORM: the head's class edge is its own self-loop.
@@ -345,25 +370,26 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
     int   *indeg = malloc((size_t)n * sizeof(int));
     bool  *ok    = malloc((size_t)n * sizeof(bool));
     bool  *hp    = malloc((size_t)n * sizeof(bool));
+    bool  *vtg   = malloc((size_t)n * sizeof(bool));
     bool  *drop  = calloc((size_t)n, sizeof(bool));
     int   *exitv = malloc((size_t)n * sizeof(int));
     int   *remap = malloc((size_t)n * sizeof(int));
     Chain *found = malloc((size_t)(n + 1) * sizeof(Chain));
-    if (!indeg || !ok || !hp || !drop || !exitv || !remap || !found) {
-        free(indeg); free(ok); free(hp); free(drop);
+    if (!indeg || !ok || !hp || !vtg || !drop || !exitv || !remap || !found) {
+        free(indeg); free(ok); free(hp); free(vtg); free(drop);
         free(exitv); free(remap); free(found);
         ctx_nomem(cx);
     }
-    in_degrees(d, indeg);
+    in_degrees(d, indeg, vtg);
 
     int nfound = 0;
     for (int cls = 0; cls < d->ncls && nfound < n; cls++) {
         for (int s = 0; s < n; s++)
             ok[s] = member_ok(&d->st[s]) && shaped(d, s, cls, &exitv[s]);
-        nfound = collect(d, cls, indeg, ok, exitv, hp, found, n, nfound);
+        nfound = collect(d, cls, indeg, ok, vtg, exitv, hp, found, n, nfound);
     }
     if (nfound == 0) {
-        free(indeg); free(ok); free(hp); free(drop);
+        free(indeg); free(ok); free(hp); free(vtg); free(drop);
         free(exitv); free(remap); free(found);
         return;
     }
@@ -376,9 +402,34 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
     for (int i = 0; i < n; i++) remap[i] = -1;
 
     int nedges = 0;
+    int taken[SCAN_MAX_EDGES];
     for (int i = 0; i < nfound && nedges < SCAN_MAX_EDGES; i++) {
         Chain *ch = &found[i];
         bool clash = false;
+
+        /* PRECONDITION (7): TWO EDGES THAT CHAIN MUST BE EMITTED IN ORDER,
+         * and the emitter walks states ASCENDING, so the link must run that
+         * way too. `[a-z]{3,10}` is the shape: its first chain's
+         * fall-through IS its second chain's head, and the emitted blocks
+         * are plain `if`s in sequence, so after the first sets `state = F`
+         * the second fires in the SAME iteration and consumes the run. If
+         * the second block sat EARLIER in the sequence it would already have
+         * been passed, and the ordinary step would read `tr[F][C]` — the
+         * cell this pass killed. Requiring the source's head to have the
+         * smaller index makes "emitted in dependency order" a property of
+         * the state numbering rather than of a sort the emitter has to keep
+         * in step with; compaction is monotone, so a link that satisfies it
+         * here still satisfies it after renumbering. Subset construction
+         * numbers a fall-through after its head in the ordinary case, so
+         * this refuses very little — and what it refuses is one edge, never
+         * a wrong answer. */
+        for (int k = 0; k < nedges && !clash; k++) {
+            const Chain *y = &found[taken[k]];
+            if (y->next == ch->head && y->head > ch->head) clash = true;
+            if (ch->next == y->head && ch->head > y->head)  clash = true;
+        }
+        if (clash) continue;
+
         int cur = ch->head;
         for (int k = 0; k < ch->nmembers; k++) {
             if (remap[cur] == -2) { clash = true; break; }
@@ -394,6 +445,7 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
             cur = d->st[cur].tr[ch->cls];
             if (cur < 0 || cur >= n) break;
         }
+        taken[nedges] = i;
         d->st[ch->head].scan_span = ch->span;
         d->st[ch->head].scan_cls  = ch->cls;
         d->st[ch->head].scan_next = ch->next;
@@ -438,6 +490,6 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
         }
     }
 
-    free(indeg); free(ok); free(hp); free(drop);
+    free(indeg); free(ok); free(hp); free(vtg); free(drop);
     free(exitv); free(remap); free(found);
 }
