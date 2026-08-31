@@ -18840,3 +18840,14 @@ witness as the bucket's test. W1.2 stays held for the bench's one
 re-pin; battery 6 at lim1's landing supersedes fa01910 as the pin (the
 bench session is closed and re-pins once, to whichever pin is newest at
 its wake — still one re-pin).
+
+**23:1x — Frank: "i finished my tests so the linux box is yours" — the
+PERF HOLD IS LIFTED** (its stated reason gone; recorded as the further
+notice). What it unblocks: the bench's windows ([B22]'s re-pin +
+ten-point AFTER, [B21] bounded@0.2, later [B24] clang cc axis) — run by
+the NEXT bench session (pcrecdev2 closed at ~20:2x; one repo per
+session, and this session is mid-lim1 + battery 6); and our [OPT-5]/
+[OPT-A] STEP 0 profiles, ordered after [LIM-1] regardless. Tonight's
+plan unchanged: lim1's verification → review/merge → battery 6 → the
+superseding pin → wake.md. I-24 appended to the bench inbox so its next
+session opens windows at wake without waiting on a live ask.
