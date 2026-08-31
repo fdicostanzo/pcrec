@@ -18944,3 +18944,32 @@ suites):
 results inline). Next: review deliveries, merge impl → battery →
 merge corpus → battery, [CC-CLANG] step 1 after [M4-QUOTING] per the
 ADMIN column's order.
+
+**09:0x — [OPT-5] STEP 0 DELIVERED AND MERGED (a2a9e0d); I-26 sent.**
+Lane opt5m: docs/dev/opt5_step0_profile.md (378 lines, doc-only, reviewed
+against the diff-stat and read in key sections). THE MECHANISM: the DFA's
+premultiplied transition walk is a DATA-dependent loop-carried chain
+(next_state's load ADDRESS is the previous iteration's loaded VALUE —
+textbook pointer-chasing, opt3's 7-cycle latency-bound shape, and by
+[ENG-FORM]'s single emitted skeleton it is every DFA machine's shape by
+construction, shown here by disassembly); the VM's possessified span-loop
+is ADDRESS-only. Letters ratio 5.19/5.98/6.00x at n=256/4096/16384, FLAT
+across a 64x table-size range (not cache); digits ~2.0x the other way,
+also flat — fixed per-call overhead under the bench's real FIND-ALL
+regime (one rx_search per byte on a nullable no-in-class subject; the
+lane reproduced testees/pcrec/driver.c's loop after a single-call driver
+diverged 4 orders of magnitude on digits — a correction to my brief's
+premise, as was perf: perf_event_paranoid=4, opt3's finding, my brief
+wrongly said /usr/bin/perf was usable; the lane substituted calibrated
+wall-time + static disassembly per opt3 precedent). VERDICT: no count
+crossover on either axis (mechanism-backed, falsifiable at [B21]'s new
+rungs — two flat lines predicted); NOT a limits.def threshold — the
+deciding variable is run-time-only (does the subject stay in-class).
+CANDIDATE FIX (unchartered, escalate to Frank): give the DFA's
+counted-single-class regions the VM's address-only bounded-scan shape —
+general form per the general-mechanisms memo; SIMD stacks on top, not a
+substitute. [OPT-VMLIT]'s trigger: partially measured (consume chains
+confirmed; l-03 named as the instrument; no load-bearing percentage
+without perf). Worktree/branch retired. qd27's corpus snapshotted
+earlier (95/95 oracle agreement, manager re-run). quoting lane still
+in flight.
