@@ -746,8 +746,17 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
          * quant-suffix arm runs a real parse whose refusal is a `ctx_fail`
          * that lands exactly here. See that arm for why a raise at a
          * forced-open gate can only be a missing producer, and where the
-         * malformed-syntax half of the question is checked instead. */
-        return r->kind == RK_QUANTSUFFIX ? PCREC_BUILT_NO : PCREC_BUILT_DEFECT;
+         * malformed-syntax half of the question is checked instead.
+         *
+         * [M4-QUOTING] `RF_LEXICAL` joins `RK_QUANTSUFFIX` here for the SAME
+         * reason, not a new one: its own arm below runs an ordinary parse
+         * too, and a raise there means the same thing — the construct's
+         * producer (a lexer-mode transition, not a port) declined. See that
+         * arm's own comment for why `PCREC_BUILT_DEFECT` (the "parsed but
+         * stamped nothing" outcome `RK_QUANTSUFFIX` can reach) does not
+         * apply to a lexical row at all. */
+        return (r->kind == RK_QUANTSUFFIX || (r->flags & RF_LEXICAL))
+               ? PCREC_BUILT_NO : PCREC_BUILT_DEFECT;
     }
     pcrec_parse_mods_init(&cx);
 
@@ -794,6 +803,47 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
                                                             : PCREC_BUILT_DEFECT;
         arena_free(&cx.arena);
         return st;
+    }
+
+    /* [M4-QUOTING] THE LEXICAL ARM, R31 C1's own reasoning applied to a
+     * SECOND non-doorway population. `doorway_route` recognises `\`, `(?`,
+     * `(*`, `[` and WOULD route an `RF_LEXICAL` row's `syntax` there
+     * (`\Q` genuinely starts with `\`) — straight into `pcrec_ext_escape`/
+     * `pcrec_ext_group`'s own port machinery, which an `RF_LEXICAL` row
+     * deliberately has none of (the flag's own comment, internal.h: "the
+     * construct is a TOKENIZER MODE, not an atom... its producer is the
+     * mode transition itself"). That producer lives one layer below the
+     * registry — in the LEXER (module `quoting`'s xskip/cls_skip/cat_ends
+     * extensions and esc_atom's/p_class's own quote-mode dispatch,
+     * src/parse/parse.c) — where the doorway arm below cannot see it at
+     * all: calling it would read `\Q` back to its OLD unbuilt refusal
+     * even once the module compiles the construct, because that refusal
+     * is exactly what `pcrec_ext_escape` still answers on its own (the
+     * lexer intercepts BEFORE the doorway is ever reached, not through it).
+     *
+     * So, like `RK_QUANTSUFFIX`, this needs an ORDINARY PARSE of the row's
+     * own `syntax` — but the classification differs from that arm's: a
+     * lexical construct never STAMPS a node (`Ast.reg`, SR-8/D67) — it
+     * produces zero or more ORDINARY literal atoms, and stamping is a
+     * PRODUCER's act, which a mode transition is not. `built` is simply
+     * "the parse did not raise": the `setjmp` guard above already routes a
+     * raise on an `RF_LEXICAL` row to `PCREC_BUILT_NO` (see its own
+     * comment), so reaching this return means it did not, and there is no
+     * `BUILT_DEFECT` outcome for this arm to reach — the module's own
+     * `syntax` rows (`\Q`, `\E`) are SR-1's guarantee that every row's
+     * `syntax` really reaches its own construct, same as every other row
+     * this file classifies. MEASURED FALSIFIABLE the same way
+     * `RK_QUANTSUFFIX`'s arm is: with the module disabled (the gate this
+     * function forces open notwithstanding — see its own header, the gate
+     * mutation is what makes that force meaningful) both rows derive
+     * `unbuilt`; with esc_atom's/p_class's quote-mode dispatch removed and
+     * everything else in place, both derive `unbuilt` again; with it in
+     * place, both derive `built`. */
+    if (r->flags & RF_LEXICAL) {
+        Ast *root = pcrec_parse(&cx);
+        (void)root;
+        arena_free(&cx.arena);
+        return PCREC_BUILT_YES;
     }
 
     Doorway d;
