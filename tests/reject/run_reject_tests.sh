@@ -278,7 +278,7 @@ $show"
     ok "reject '$show' -> $want"
 }
 
-accept() { # accept <pattern> [display-label]
+accept() { # accept <pattern> [display-label] [features]
     # [TT-2] internal-parallelism gate; see reject()'s comment above.
     callidx=$((callidx + 1))
     [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
@@ -286,10 +286,20 @@ accept() { # accept <pattern> [display-label]
     # The optional label is for patterns containing RAW control bytes, which
     # would otherwise put a newline or a non-UTF-8 byte into this script's own
     # output and break anything that reads it as text.
-    local pat="$1" show="${2:-$1}" out rc
+    # [M4-QUOTING] the optional third arg is `reject_gated`'s own shape
+    # (a module list for `--features`) applied to an ACCEPT rather than a
+    # REJECT -- needed the day a control's own claim is "this compiles ONLY
+    # once a module is enabled" rather than "this compiles unconditionally".
+    # Omitted (the default, every pre-existing caller), it is exactly the
+    # bare-`accept` behaviour this function has always had.
+    local pat="$1" show="${2:-$1}" feats="${3:-}" out rc
     naccept=$((naccept + 1))
     rm -f "$WORKDIR/ok.c" "$WORKDIR/ok.h"
-    out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    if [ -n "$feats" ]; then
+        out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    else
+        out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    fi
     if [ "$rc" -ge 124 ]; then
         bad "accept '$show': exit $rc — timed out or was killed, which is not 'compiles'"
         return
@@ -785,10 +795,12 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # merely an absence. The count going DOWN in the "unbuilt" sense is the module
 # LANDING, not coverage eroding; the control that says so is
 # tests/recursion/leadingzero.rxt and spellings.rxt, which assert the same
-# spelling compiles and matches. The arm's remaining two modules
-# (`conditionals`, `quoting`, below) are still enough to keep the
+# spelling compiles and matches. The arm's remaining two modules were
+# `conditionals` and `quoting` (below) — enough, at the time, to keep the
 # enabled-but-unbuilt sentence from being read as module-specific rather than
-# general.
+# general. [M4-QUOTING] retired the second of those two; see the comment
+# where `quoting`'s rows used to stand, below, for what replaced them and
+# what stopped being provable when only one module was left.
 reject_gated recursion '\g<1>' "refers to capture group 1, but this pattern has 0"
 # [M6.6.2] wave B+C moved THE `lookaround` ROW WITHIN ITS OWN MODULE, from
 # `(?=a)` to `(?<=a)`: the lookahead half had landed, so the old pin would have
@@ -824,40 +836,66 @@ reject_gated conditionals  '(?(1)a|b)' "module 'conditionals' is enabled but (?(
 # LANDING, not coverage eroding; the control that says so is
 # tests/atomic_groups/'s corpus, which asserts the same pattern compiles and
 # matches. The arm itself keeps three modules and both positions above.
-reject_gated quoting       '[\Q]'  "module 'quoting' is enabled but \Q in a class is not implemented yet"
-# [srMech 2026-08-25] THE ESCAPE DOORWAY'S OWN POSITION, RESTORED. The
-# paragraph above claims this arm covers "BOTH POSITIONS", and since
-# [M6.5.2] retired `\k` (backrefs) it has not. Read the three rows above
-# against src/parse/ext.c and the gap is exact:
+# [M4-QUOTING] THE `quoting` ROWS RETIRED HERE, and this time BOTH of them
+# at once — the module's OWN construct reaches both the in-class splice
+# (`[\Q]`, was directly above) and the escape doorway's own out-of-class
+# epilogue (`\Q`, was below), which is exactly why `\Q` was picked as "the
+# same letter" for the paragraph that used to stand here: one module, one
+# letter, two sites. Both pins would now be pinning a LIE — `--features
+# quoting '[\Q]'` and `--features quoting '\Q'` both COMPILE (an empty
+# match; measured, tests/probes and the quoting-module differential this
+# lane's own report carries). The control that says this is landing and
+# not coverage eroding lives in the module's oracle probe set (this lane
+# delivered no tests/quoting/ corpus — D27 reserves it for a blinded
+# writer — see the lane report for what stands in for it today).
 #
-#   - `\g<1>` (recursion) pins the error-115-class sentence now, NOT the
-#     enabled-but-unbuilt one — [DD-14] wave D changed what it asserts;
-#   - `(?(1)a|b)` (conditionals) reaches the GROUP doorway's `UNBUILT` call
-#     at ext.c:509;
-#   - `[\Q]` (quoting) reaches the IN-CLASS wording, which the paragraph
-#     above says in as many words is spliced at a DIFFERENT site and does
-#     NOT go through the macro (ext.c:308-320).
+# THE REPLACEMENT IS `misc`'s `\c`, AND FOR THE SAME "ONE LETTER, TWO
+# SITES" REASON `\Q` WAS CHOSEN ORIGINALLY: `--features misc '\c'` reaches
+# the out-of-class epilogue and `--features misc '[\c]'` reaches the
+# in-class splice, both still unbuilt (module `misc` has no producer for
+# any of its five rows). What did NOT survive the swap is the "TWO
+# MODULES" property the paragraph here used to argue for: quoting was the
+# SECOND-TO-LAST module with unbuilt `RK_ESC` rows, `misc` is now the
+# LAST — `unicode-props` is the only other one left, and its three rows
+# (`\N{U+`, `\p`, `\P`) bypass this macro entirely for a REFINED
+# malformed-vs-unknown-name split (mod_uprops.c, "no producer this phase"
+# — see src/parse/CLAUDE.md's entry), so they cannot stand in for a second
+# module here. Both rows below are `misc`'s, which proves less than the
+# two-module pair did (a reader cannot rule out "the sentence happens to
+# be right for `misc`" from these two alone) — flagged for the manager
+# rather than quietly accepted: if a future module retires a `misc` row
+# and no other unbuilt `RK_ESC` module exists, THIS macro's `reject_gated`
+# coverage runs out entirely, which is the moment to decide whether the
+# escape doorway's own epilogue still needs a dedicated pin at all (its
+# `RK_GROUP` sibling, `(?(1)a|b)` two rows up, reaches a DIFFERENT site —
+# ext.c:509 — so it cannot cover for this one).
+reject_gated misc          '[\c]'  "module 'misc' is enabled but \c in a class is not implemented yet"
+reject_gated misc          '\c'    "module 'misc' is enabled but \c is not implemented yet"
+reject_gated misc          '\R'    "module 'misc' is enabled but \R is not implemented yet"
+# [M4-QUOTING] mech rows S210/S211's own detectors (tests/mech/sabotages/
+# S210_cat_ends_quote_guard_dropped.sh, S211_cls_quoted_dash_range.sh):
+# module `quoting` is ENABLED here, so these assert what the CORRECT lexer
+# does with the module built, not what the closed gate refuses.
 #
-# So NOTHING reached the ESCAPE doorway's out-of-class epilogue
-# (`UNBUILT(at, "\%c", c)`, ext.c:325-326) — the site sabotage row S70
-# deletes. MEASURED 2026-08-25: with that epilogue deleted, the `reject` and
-# `assertions` suites were BOTH green, so the row scored UNDETECTED against a
-# tree that had genuinely lost the diagnostic. The two rows below are the pin
-# put back at that site, and they are the row's detectors.
-#
-# TWO ROWS AND TWO MODULES, for the reason the paragraph above gives for
-# needing three: the sentence is assembled from the row's own `module` and
-# `syntax`, so one module's row cannot tell "the sentence is right" from "the
-# sentence happens to be right for THAT module". Both are modules with rows
-# and no producer that are not in Frank's ruled M6 list, so neither is a loan
-# against a wave that is about to land.
-#
-# `\Q` IS DELIBERATELY THE SAME LETTER AS THE IN-CLASS ROW ABOVE. One module,
-# one letter, two positions, two different sentences from two different sites
-# in ext.c — which is what makes "BOTH POSITIONS" a measurement here rather
-# than a claim, and what a wave that unified the two sites would trip over.
-reject_gated quoting       '\Q'   "module 'quoting' is enabled but \Q is not implemented yet"
-reject_gated misc          '\R'   "module 'misc' is enabled but \R is not implemented yet"
+# S210 — `cat_ends` must not treat a byte inside an OPEN quote as a group
+# terminator, however much it looks like one. `(a\Qb)c\E)` quotes "b)c" (the
+# `\Q` opens right after `a`'s atom, `\E` closes right before the outer `)`),
+# so the FIRST `)` is a literal quoted byte and only the SECOND closes the
+# group — measured against libpcre2 10.46, which compiles this identically.
+# Without the guard the sabotaged `cat_ends` sees the quoted `)` as a real
+# one, the group closes one byte early, and the pattern becomes unbalanced:
+# "unmatched closing parenthesis" (verified live on the sabotaged tree).
+accept '(a\Qb)c\E)' '(a\Qb)c\E)' quoting
+# S211 — a QUOTED dash is an ordinary literal byte, never a range operator
+# (measured: `[\Qa-b\E]` is the three members {a,-,b}, not the range a-b —
+# parse.c's own comment on the guard this detects). `[\Q9-1\E]` is chosen
+# deliberately OUT OF ORDER: an in-order quoted range like `[\Qa-z\E]`
+# produces a bitset IDENTICAL to the correct three-member answer whenever
+# the members happen to be contiguous, so it would detect NOTHING; `9 > 1`
+# forces the sabotaged reading (the quoted `-` misread as a range operator)
+# into "range out of order in character class", a REFUSAL where the correct
+# reading compiles (verified live both ways).
+accept '[\Q9-1\E]' '[\Q9-1\E]' quoting
 # The `m` LETTER's own arm (src/parse/mod_modifiers.c), which produces its
 # refusal per letter rather than through the `(?` doorway's row — so it needs
 # its own copy of the rule and its own pin.
@@ -2302,8 +2340,8 @@ fi
 # live command substitution inside a double-quoted string — the guard's own
 # message lost several fragments to it and printed "command not found" every
 # time it fired — and are single quotes now.
-if [ "$nrej" -ne 282 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 80 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 282 / 99 / 0 / 80 ([srMech, 2026-08-25] moved gated 78 -> 80 and rejections not at all. The two new gated rows are the ESCAPE doorway's own enabled-but-unbuilt pin, restored: sabotage row S70 deletes ext.c's out-of-class UNBUILT epilogue and the full matrix scored it UNDETECTED, because after [M6.5.2] retired the backrefs row every surviving pin on that arm reaches a DIFFERENT site -- the group doorway for conditionals, the in-class splice for quoting, and a changed sentence for recursion's \\g<1>. \\Q (quoting) and \\R (misc) put it back, two modules so the sentence cannot be module-specific, and \\Q deliberately shares its letter with the in-class row beside it so 'BOTH POSITIONS' is measured rather than claimed. Before those, [DD-14.LB] moved gated 73 -> 78 and rejections not at all. The five new gated rows are the DEFERRED lookbehind width re-check's OFFSET contract, and they are in this file rather than in tests/recursion/inlookaround.rxt because a '.rxt' 'perr' asserts a nonzero exit and nothing else -- while WHERE the refusal points is the whole content of what that wave changed, module 'lookaround''s SS2.5 rule having moved out of the parse hook and into 'pcrec_postresolve'. Three of them pin the ORDER ('pcrec_postresolve' visits recorded constructs in ASCENDING PATTERN OFFSET, not walk order, which for a left-nested A_CAT spine would blame the LAST offending lookbehind); the triple is irreducible, since row 3 is what stops 'always blame the first lookbehind' passing rows 1 and 2 for the wrong reason, and all three offsets are libpcre2 10.46's own. The fifth pins a WORDING, which this file normally leaves to D26 tier 3 and which earns a pin here for one reason: that sentence is what proved wave B+C's parked cell 2 was a SS2.5 capability limit rather than the timing bug it was filed as, so a regression to 'unbounded' would be a true refusal for a false reason and no exit code could see it. Before those, [M6.5.2] moved rejections 279 -> 282 and gated 65 -> 73. The three new rejections are the module's own std1-BOUNDARY proof -- (a)\\1, \\k<n> and (a)\\g{-1} refused by the BARE default naming backrefs, the shape (?J)a already carried. The seven new gated rows are backrefs_design.md S10's partial-enable MATRIX, which needs THREE modules to state and which a .rxt block cannot express because which module a diagnostic PROMISES is the tier-2 fact under D26; one of its cells CORRECTS the design (under std1 '(?<n>a)\\k<n>' names named-groups, not backrefs, because pcrec reports the LEFTMOST construct it cannot handle and the DECLARATION comes first). Before those, gated 65 -> 66: the enabled-but-unbuilt pin MOVED backrefs -> recursion (\\g<1>, a row that module added born unbuilt) rather than retiring, net zero, and one NEW gated row asserts that with backrefs+named-groups+modifiers a duplicate NAME is legal while a reference to an undeclared one is still the error-115 class. Before that, [M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
+if [ "$nrej" -ne 282 ] || [ "$naccept" -ne 101 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 80 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 282 / 101 / 0 / 80 ([M4-QUOTING mech S210/S211] two accept-controls added, moving accept 99 -> 101 and nothing else: mech rows S210 (cat_ends's in_quote guard) and S211 (the class dash-lookahead's !cx->in_quote guard) each needed a witness under --features quoting that FLIPS from compiling to refusing under the sabotage, and this file's own reject_gated shape had no gated-ACCEPT form -- accept() gained an optional third arg (a --features list, defaulting to unset i.e. every pre-existing caller unchanged) rather than inventing a parallel function. '(a\\Qb)c\\E)' (S210: a quoted ')' must never end the group early -- verified live, clean rc=0, sabotaged 'unmatched closing parenthesis') and '[\\Q9-1\\E]' (S211: a quoted '-' must never form a range -- the OUT-OF-ORDER endpoints are deliberate, since an in-order quoted range like [\\Qa-z\\E] produces a bitset IDENTICAL to the correct answer and would detect nothing; verified live, clean rc=0, sabotaged 'range out of order in character class'). Before that, [M4-QUOTING] module quoting landed: its two \\Q/\\E rows flip unbuilt -> built (see tests/registry/registry_check.c's built-status tally, 106/16 -> 108/14), which retires BOTH of the gate-open pins quoting used to carry here -- '[\\Q]' (the in-class splice) and '\\Q' (the escape doorway's own out-of-class epilogue, srMech's row below) both now COMPILE with the gate open, so pinning either as an unbuilt refusal would pin a lie. Net gated count is UNCHANGED at 80: module 'misc' -- the only other unbuilt RK_ESC module left, since unicode-props bypasses this macro entirely for its own refined split -- takes over BOTH sites with its own 'one letter, two positions' row, \\c ('\\c' out-of-class, '[\\c]' in-class), replacing quoting's two rows one-for-one. What did NOT survive the swap: the srMech paragraph's 'TWO MODULES' argument, which needed a second unbuilt RK_ESC module distinct from misc to prove the sentence is not module-specific -- none remains, so both pins at this site are now misc's, a narrowing recorded at the rows themselves for whoever lands the next module here. The default-gate (module OFF) pins for \\Q/\\E/'a\\Q\\E*' are UNCHANGED -- disabling the module reproduces the exact pre-landing refusal, which module quoting's own oracle probe set (this lane's report) verifies byte-identical. Before that, [srMech, 2026-08-25] moved gated 78 -> 80 and rejections not at all. The two new gated rows are the ESCAPE doorway's own enabled-but-unbuilt pin, restored: sabotage row S70 deletes ext.c's out-of-class UNBUILT epilogue and the full matrix scored it UNDETECTED, because after [M6.5.2] retired the backrefs row every surviving pin on that arm reaches a DIFFERENT site -- the group doorway for conditionals, the in-class splice for quoting, and a changed sentence for recursion's \\g<1>. \\Q (quoting) and \\R (misc) put it back, two modules so the sentence cannot be module-specific, and \\Q deliberately shares its letter with the in-class row beside it so 'BOTH POSITIONS' is measured rather than claimed. Before those, [DD-14.LB] moved gated 73 -> 78 and rejections not at all. The five new gated rows are the DEFERRED lookbehind width re-check's OFFSET contract, and they are in this file rather than in tests/recursion/inlookaround.rxt because a '.rxt' 'perr' asserts a nonzero exit and nothing else -- while WHERE the refusal points is the whole content of what that wave changed, module 'lookaround''s SS2.5 rule having moved out of the parse hook and into 'pcrec_postresolve'. Three of them pin the ORDER ('pcrec_postresolve' visits recorded constructs in ASCENDING PATTERN OFFSET, not walk order, which for a left-nested A_CAT spine would blame the LAST offending lookbehind); the triple is irreducible, since row 3 is what stops 'always blame the first lookbehind' passing rows 1 and 2 for the wrong reason, and all three offsets are libpcre2 10.46's own. The fifth pins a WORDING, which this file normally leaves to D26 tier 3 and which earns a pin here for one reason: that sentence is what proved wave B+C's parked cell 2 was a SS2.5 capability limit rather than the timing bug it was filed as, so a regression to 'unbounded' would be a true refusal for a false reason and no exit code could see it. Before those, [M6.5.2] moved rejections 279 -> 282 and gated 65 -> 73. The three new rejections are the module's own std1-BOUNDARY proof -- (a)\\1, \\k<n> and (a)\\g{-1} refused by the BARE default naming backrefs, the shape (?J)a already carried. The seven new gated rows are backrefs_design.md S10's partial-enable MATRIX, which needs THREE modules to state and which a .rxt block cannot express because which module a diagnostic PROMISES is the tier-2 fact under D26; one of its cells CORRECTS the design (under std1 '(?<n>a)\\k<n>' names named-groups, not backrefs, because pcrec reports the LEFTMOST construct it cannot handle and the DECLARATION comes first). Before those, gated 65 -> 66: the enabled-but-unbuilt pin MOVED backrefs -> recursion (\\g<1>, a row that module added born unbuilt) rather than retiring, net zero, and one NEW gated row asserts that with backrefs+named-groups+modifiers a duplicate NAME is legal while a reference to an undeclared one is still the error-115 class. Before that, [M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

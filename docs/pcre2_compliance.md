@@ -236,7 +236,7 @@ survey earned its keep").
 | syntax | status | becomes |
 |---|---|---|
 | `\` + non-alphanumeric | `OK` | — |
-| `\Q...\E` | `REJECTED` | `PLANNED` |
+| `\Q...\E` | `OK` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: quoting -->
 
@@ -251,7 +251,16 @@ Escaped punctuation is a literal; corpus-covered.
 
 **`\Q`**
 
-Pure front-end lexing; `PLANNED`-easy whenever wanted.
+SHIPPED 2026-08-31 ([M4-QUOTING]): lexer state in src/parse (RF_LEXICAL —
+the producer is the mode transition itself; deliberately no module file),
+gated behind `--features quoting` (not in `std1`). Semantics oracle-verified
+164/164 against libpcre2 10.46 on BOTH engines: literal quoting of every
+metacharacter, backslash a plain byte inside (`\Q\\E` is one literal
+`\`), unterminated `\Q` quotes to pattern end, stray `\E` ignored,
+boundary transparency (`a\Q\E*` binds the `*` to `a` — one bytecode node,
+matching libpcre2's own shape), `(?x)` whitespace stays literal inside
+quotes. The blinded D27 corpus (tests/quoting/) is the promise-side check;
+S210 pins the structural-byte guard (`(a\Qb)c\E)`).
 
 <!-- END GENERATED -->
 
@@ -501,7 +510,7 @@ omitted.
 | `[...]`, `[^...]`, `[x-y]` | `OK` | — |
 | `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `OK` | — |
 | `[[.ch.]]` collating elements, `[[=ch=]]` equivalence classes | `AGREES-REJECT` | — |
-| `\Q...\E` inside a class | `REJECTED` | — |
+| `\Q...\E` inside a class | `OK` | — |
 | `[x&&y]`, `[x--y]`, `[x~~y]` (UTS#18 set ops) | `OK` | `PLANNED` |
 | `(?[...])` Perl extended classes, `& - ^ ! +` operators | `REJECTED` | `PLANNED` |
 
@@ -549,7 +558,13 @@ collating elements and equivalence classes.
 
 **`base:class-quoting-e`**
 
-Module `quoting`.
+Module `quoting` — SHIPPED 2026-08-31 ([M4-QUOTING]), in-class quoting
+included: quoted bytes are literal members (`]`, `^`, `-` in otherwise
+special positions), range endpoints are reachable through a quote
+(`[a-\Qz\E]` is a-z), and a QUOTED dash is never a range operator
+(`[\Qa-b\E]` is {a,-,b}) — S211 pins that guard with the out-of-order
+witness `[\Q9-1\E]`, chosen because an in-order quoted range yields a
+bitset identical to the correct reading.
 
 **`base:class-set-ops-uts18`**
 
@@ -2155,8 +2170,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 138 rows 
 | after `\` | `\g'1'` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference — also spelled `\g'0'`, `\g'01'` |
 | after `\` | `\p{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
 | after `\` | `\P{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
-| after `\` | `\Q` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
-| after `\` | `\E` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | end literal quoting begun by \Q |
+| after `\` | `\Q` | `REJECTED` | `built` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
+| after `\` | `\E` | `REJECTED` | `built` | planned | `quoting` | dfa|vm | end literal quoting begun by \Q |
 | after `\` | `\R` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | any Unicode newline sequence |
 | after `\` | `\X` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | a Unicode extended grapheme cluster |
 | after `\` | `\C` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | one data unit (byte), even in UTF mode |

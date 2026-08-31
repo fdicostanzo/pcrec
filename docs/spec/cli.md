@@ -217,7 +217,7 @@ no module is split):
 | `conditionals` | not built | `(?(cond)yes\|no)` |
 | `extended-classes` | not built | nested/set-operation character classes |
 | `misc` | not built | scattered rarer constructs |
-| `quoting` | not built | `\Q…\E` |
+| `quoting` | **built** | `\Q…\E` literal quoting, including inside a character class |
 | `unicode-props` | not built | `\p{…}`/`\P{…}` (recogniser-only, no producer — D37) |
 | `verbs` | not built (per-name; the 12 alpha-spelled lookaround verbs are attributed to `lookaround`/`assertions` instead, D71 item 3) | `(*PRUNE)`/`(*COMMIT)`/etc. |
 

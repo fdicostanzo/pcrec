@@ -218,17 +218,72 @@ static bool xskip_byte(int c)
            c == 0x0d || c == 0x20 || c == 0x85;
 }
 
+/* [M4-QUOTING] true iff `\Q` at cx->pos would quote NOTHING: the next two
+ * bytes are exactly `\E`, or nothing at all follows `\Q` (true end of
+ * pattern -- `\Q` alone is measured against libpcre2 10.46 to compile
+ * byte-identically to `\Q\E`). Only ever asked with `peekc(cx)=='\\' &&
+ * peekc2(cx)=='Q'` already true. A NON-empty `\Q` is not this function's
+ * business: it is real content, and only esc_atom/p_class's own explicit
+ * open (not this transparency check) may consume it. */
+static bool q_open_is_empty(Ctx *cx)
+{
+    return (cx->pos + 3 < cx->patlen &&
+            cx->pat[cx->pos + 2] == '\\' && cx->pat[cx->pos + 3] == 'E') ||
+           cx->pos + 2 >= cx->patlen;
+}
+
+/* [M4-QUOTING] the boundary-transparency step (design's QF_LEXICAL note,
+ * SPEC-MOD0 finding A: "\Q literalises [the quantifier target] -- a bare
+ * yes there would be false"). `a\Q\E*` must compile with `*` binding to
+ * `a` (measured: libpcre2 emits ONE bytecode node, "a*+", not two) and
+ * `a*\Q\E?` must read the `?` as the LAZY marker on that same `*`
+ * (measured: "a*?") -- both require an EMPTY `\Q\E`, and a stray `\E`
+ * with no open `\Q` at all (measured: `a\Eb` is "ab"), to vanish at
+ * EXACTLY the two places `xskip` already runs: p_cat's leading position
+ * and p_rep's own post-atom position (which is what lets a quantifier and
+ * its lazy marker "bind across skipped bytes" the way MOD-0.5d's `(?x)`
+ * whitespace already does). A NON-empty `\Q` must NOT be touched here --
+ * it is real content for esc_atom to open, one quoted byte at a time, so
+ * this function only ever removes an EMPTY `\Q\E` or a bare `\E`, never a
+ * `\Q` with something to say. While `cx->in_quote` is true there is a
+ * REAL quoted byte pending (guaranteed: `cat_ends` and this function's own
+ * loop both close an EXHAUSTED quote -- on `\E` or true end -- before
+ * returning control to a caller that might invoke p_atom), so every byte
+ * there is content, never skippable, including one that LOOKS like
+ * whitespace or a stray `\E` would elsewhere: `(?x)\Q a b \E` keeps its
+ * literal spaces (measured). */
 static void xskip(Ctx *cx)
 {
-    if (!cx->mods->xlevel) return;
     for (;;) {
-        int c = peekc(cx);
-        if (c == '#') {
-            cx->pos++;
-            while ((c = peekc(cx)) >= 0 && c != 0x0a) cx->pos++;
+        if (cx->in_quote) {
+            if (peekc(cx) == '\\' && peekc2(cx) == 'E') {
+                cx->pos += 2;
+                cx->in_quote = false;
+                continue;
+            }
+            return;
+        }
+        if (cx->mods->xlevel) {
+            int c = peekc(cx);
+            if (c == '#') {
+                cx->pos++;
+                while ((c = peekc(cx)) >= 0 && c != 0x0a) cx->pos++;
+                continue;
+            }
+            if (c >= 0 && xskip_byte(c)) { cx->pos++; continue; }
+        }
+        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+            peekc(cx) == '\\' && peekc2(cx) == 'E') {
+            cx->pos += 2;   /* a stray \E: in_quote is already false here */
             continue;
         }
-        if (c >= 0 && xskip_byte(c)) { cx->pos++; continue; }
+        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+            peekc(cx) == '\\' && peekc2(cx) == 'Q' && q_open_is_empty(cx)) {
+            cx->pos += 2;   /* consume "\Q"; a following "\E" (if any) is
+                              * picked up by the stray-\E branch above on
+                              * the next spin through this same loop */
+            continue;
+        }
         return;
     }
 }
@@ -243,23 +298,77 @@ static void xskip(Ctx *cx)
  * bounded POSIX-bracket scan reads raw too (`(?xx)[[: alpha :]]` is PCRE2's
  * unknown-name 130, the spaces belong to the name). Single `x` NEVER
  * touches a class interior. */
+/* [M4-QUOTING] the class-interior twin of xskip's boundary transparency,
+ * called at every position p_class might be about to read a NEW item from
+ * (its own header comment lists them). A `\E` — closing an open quote OR
+ * stray, the two cases needing IDENTICAL handling here since both simply
+ * stop being quoted at this byte — is always transparent (measured:
+ * `[a\Eb]` is {a,b}, `[\Ea]` is {a}). An EMPTY `\Q\E` is transparent too,
+ * and the reason it must be checked HERE rather than left to the main
+ * loop's own explicit open is the range endpoint: `[a-\Q\Ez]` is measured
+ * as the range a-z, i.e. the dash-lookahead and the high-endpoint read
+ * (both call this function first) must see straight through it to the
+ * real `z`. A NON-empty `\Q` is declined — real content, opened only by
+ * p_class's own explicit check or (for a high endpoint) its own inline
+ * mirror of it. While `in_quote` is true and NOT positioned at `\E`,
+ * this returns immediately without touching xx's ws/tab deletion: every
+ * byte there is quoted content, and xx must not delete it (design's own
+ * semantics list item 5; no oracle probe needed beyond `(?x)\Q a b \E`
+ * keeping its literal spaces, already measured for xskip above). */
 static void cls_skip(Ctx *cx)
 {
-    if (cx->mods->xlevel < 2) return;
-    int c;
-    while ((c = peekc(cx)) == ' ' || c == '\t') cx->pos++;
+    for (;;) {
+        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+            peekc(cx) == '\\' && peekc2(cx) == 'E') {
+            cx->pos += 2;
+            cx->in_quote = false;
+            continue;
+        }
+        if (cx->in_quote) return;
+        if (cx->mods->xlevel >= 2) {
+            int c = peekc(cx);
+            if (c == ' ' || c == '\t') { cx->pos++; continue; }
+        }
+        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+            peekc(cx) == '\\' && peekc2(cx) == 'Q' &&
+            cx->pos + 3 < cx->patlen && cx->pat[cx->pos + 2] == '\\' &&
+            cx->pat[cx->pos + 3] == 'E') {
+            cx->pos += 2;   /* the "\E" this uncovers is swept up by the
+                              * stray-\E branch above on the next spin */
+            continue;
+        }
+        return;
+    }
 }
 
 /* The byte a range-dash would bind to, seen THROUGH xx's deletion — the
  * dash-vs-literal decision (`- ]` = literal, `-\tz` = range) must look past
  * deleted bytes or `(?xx)[a- ]` mis-parses as a range. Identical to
- * peekc2 when the deletion is off. */
+ * peekc2 when the deletion is off.
+ *
+ * [M4-QUOTING] and now THROUGH an empty `\Q\E` too, non-mutating (this
+ * function only peeks — cx->pos is untouched, exactly as before): measured,
+ * `[a-\Q\E]` is members {a,-} (the trailing-dash rule, reached only if this
+ * lookahead sees past the empty quote to the real `]`) and `[a-\Q\Ez]` is
+ * the range a-z (reached only if it sees past the empty quote to the real
+ * `z`). A NON-empty `\Q` is not dissolved here — real content is a value,
+ * not something to skip past — so this only removes exactly what cls_skip
+ * itself would remove without touching cx->pos. */
 static int cls_peek_past_dash(Ctx *cx)
 {
     size_t i = cx->pos + 1;
-    if (cx->mods->xlevel >= 2)
-        while (i < cx->patlen &&
-               (cx->pat[i] == ' ' || cx->pat[i] == '\t')) i++;
+    for (;;) {
+        if (cx->mods->xlevel >= 2)
+            while (i < cx->patlen &&
+                   (cx->pat[i] == ' ' || cx->pat[i] == '\t')) i++;
+        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+            i + 3 < cx->patlen && cx->pat[i] == '\\' && cx->pat[i + 1] == 'Q' &&
+            cx->pat[i + 2] == '\\' && cx->pat[i + 3] == 'E') {
+            i += 4;
+            continue;
+        }
+        break;
+    }
     return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
 }
 
@@ -394,6 +503,32 @@ static int esc_char_value(Ctx *cx, size_t epos)
     }
 }
 
+/* [M4-QUOTING] the per-byte reader for an OPEN, real quote: cx->in_quote is
+ * true and cx->pos sits at a byte that is genuinely quoted (never `\E`,
+ * never true end — cat_ends and xskip both close an exhausted quote BEFORE
+ * calling back into p_rep/p_atom, so by construction this function is
+ * never entered any other way; the two checks below are the wall for that
+ * invariant, not a code path this reaches). Called from BOTH the initial
+ * open (esc_atom, on a fresh non-empty `\Q`) and every subsequent atom
+ * position while the quote stays open (p_atom's own top-of-function
+ * check) — one reader, since "the byte at cx->pos is literal" means the
+ * same thing at either call site. Reads exactly ONE raw byte as an
+ * ordinary literal atom, no metacharacter interpretation and no `\`
+ * re-escaping of what follows (measured: `\Q\\E` is a single literal `\`,
+ * i.e. a backslash inside a quote is just a byte, checked for `\E` at
+ * every position rather than treated as an escape prefix of its own —
+ * `\Q\Q\E` is the two literal bytes `\` and `Q`, never a nested quote). */
+static Ast *p_quote_next(Ctx *cx)
+{
+    int c = peekc(cx);
+    if (c < 0 || (c == '\\' && peekc2(cx) == 'E'))
+        ctx_fail(cx, cx->pos,
+                 "internal error: quote mode reached a boundary its "
+                 "caller (cat_ends/xskip) should already have resolved");
+    cx->pos++;
+    return char_node(cx, (unsigned)c);
+}
+
 /* Escape outside a class -> AST atom. Doorway 1: anything esc_char_value
  * declines (a digit, or a letter that is not a plain character escape) belongs
  * to the registry, which owns both the module name and the wording. */
@@ -404,6 +539,27 @@ static Ast *esc_atom(Ctx *cx)
     int v = esc_char_value(cx, epos);
     if (v >= 0) return char_node(cx, (unsigned)v);
     cx->pos = save;
+    /* [M4-QUOTING] module `quoting`'s ONLY producer: a lexer-mode
+     * transition, not a registry port (RF_LEXICAL's own comment — "when
+     * built, it is built in the lexer"), so it is decided HERE, before the
+     * registry doorway, rather than through `pcrec_ext_escape`'s aport/
+     * cport (both stay NO_PORT on this row forever). Reaching this line
+     * with the module DISABLED falls straight through to the doorway below
+     * exactly as before this module existed — byte-identical, since the
+     * `if` simply does not fire.
+     *
+     * REACHING HERE AT ALL MEANS THIS `\Q` IS NON-EMPTY (or unterminated
+     * WITH real content): xskip's own boundary transparency (this
+     * function's only caller chain is p_rep->p_atom, and xskip runs
+     * immediately before every such call — see its own comment) has
+     * already dissolved every EMPTY `\Q\E` before parsing ever reaches an
+     * atom position, so a live `\Q` here is guaranteed to have at least
+     * one byte to quote before its `\E` or the true end of the pattern. */
+    if (pcrec_feature_enabled(FEAT_QUOTING) && peekc(cx) == 'Q') {
+        cx->pos++;               /* the 'Q' */
+        cx->in_quote = true;
+        return p_quote_next(cx);
+    }
     ExtResult r = pcrec_ext_escape(cx, WANT_RESULT, nextc(cx), false, epos);
     /* THE SPLICE (MOD-0.3c — the line D33 §9.3 promised would replace the
      * wall, visibly): a produced atom node is the construct.
@@ -538,17 +694,47 @@ static Ast *p_class(Ctx *cx)
     bool first = true;
 
     for (;;) {
-        cls_skip(cx);   /* xx: unescaped SP/TAB are not members */
+        cls_skip(cx);   /* xx: unescaped SP/TAB are not members; also
+                          * dissolves an empty \Q\E or a stray \E (M4-QUOTING) */
+
+        /* [M4-QUOTING] a NON-empty `\Q` opens quote mode. cls_skip has
+         * already made every EMPTY `\Q\E` and every `\E` transparent, so
+         * reaching a live `\Q` here means real content follows. Opening
+         * does not touch `first` — measured: `[\Q^\E]` does not negate
+         * (the negation check, above, runs BEFORE this loop and sees the
+         * raw `\` — unaffected either way) and `[\Q\E]` does not let the
+         * `]` right after it close the class (PCRE2's own leading-`]`-is-
+         * literal rule reaches straight through the dissolved empty quote
+         * — measured: error "missing terminating ]", not an empty class),
+         * both of which require an opening `\Q` to be as inert to `first`
+         * as the bytes it goes on to quote are loud about being ordinary
+         * members. */
+        if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
+            peekc(cx) == '\\' && peekc2(cx) == 'Q') {
+            cx->pos += 2;
+            cx->in_quote = true;
+            continue;
+        }
+
         int c = peekc(cx);
         if (c < 0) ctx_fail(cx, opening, "missing terminating ] for character class");
-        if (c == ']' && !first) { cx->pos++; break; }
-        bool at_content_start = first && !neg;   /* R9/C3-4: `[[:<:]]` only */
+        /* [M4-QUOTING] a quoted byte is never the closer, never a POSIX
+         * bracket doorway trigger, and never re-decoded through
+         * esc_class_value even when its OWN value is '\\' or ']' or '['
+         * (measured: `[\Qa]b\E]` is {a,],b} — the mid-quote `]` is a
+         * literal member; `[\Q[:alpha:]\E]` is the eight literal bytes of
+         * "[:alpha:]", not the POSIX class). `quoted` gates every one of
+         * those three special-cases below without touching their logic
+         * for an ordinary (non-quoted) `c`. */
+        bool quoted = cx->in_quote;
+        if (!quoted && c == ']' && !first) { cx->pos++; break; }
+        bool at_content_start = first && !neg && !quoted;   /* R9/C3-4: `[[:<:]]` only */
         first = false;
 
         /* Doorway 4b: a bracket INSIDE the class. It declines far more often
          * than it fires — `[` is an ordinary member — and then falls through
          * to the member handling below. */
-        if (c == '[') {
+        if (!quoted && c == '[') {
             ExtResult r = pcrec_ext_class_bracket(cx, WANT_RESULT, peekc2(cx),
                                                   cx->pos, cx->pos + 2, false,
                                                   at_content_start);
@@ -586,14 +772,22 @@ static Ast *p_class(Ctx *cx)
         int lo;
         ExtResult loclaim = { .what = EXT_NOT_MINE };
         cx->pos++;
-        lo = (c == '\\') ? esc_class_value(cx, &loclaim) : c;
+        lo = (!quoted && c == '\\') ? esc_class_value(cx, &loclaim) : c;
 
         /* xx: deletion precedes RANGE PARSING (measured: [a\t-\tz] is the
          * range a-z), and the dash-vs-literal lookahead must see through it
          * (measured: [a- ] is members {a,-} — the trailing dash is literal
          * because only `]` remains after deletion). */
         cls_skip(cx);
-        if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
+        /* [M4-QUOTING] `!cx->in_quote` here is load-bearing: a QUOTED dash
+         * (a quote still open after cls_skip declined to close it — real
+         * content pending, not positioned at \E) is an ordinary literal
+         * byte, not a range operator (measured: `[\Qa-b\E]` is {a,-,b},
+         * not the range a-b — the same rule `[a\Q-\Ez]` already
+         * established for a dash that IS the whole quoted span). Without
+         * this guard the quoted `-` here would be misread as the SAME
+         * range-forming dash an unquoted one is. */
+        if (!cx->in_quote && peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
             cls_peek_past_dash(cx) >= 0) {
             size_t dashpos = cx->pos;
             cx->pos++; /* '-' */
@@ -639,9 +833,35 @@ static Ast *p_class(Ctx *cx)
             if (peekc(cx) == '[' &&
                 pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
                 ctx_fail(cx, dashpos, "invalid range in character class");
+            /* [M4-QUOTING] the high endpoint is the ONE other position
+             * PCRE2 lets a quote answer for (measured: `[a-\Qz\E]` and
+             * `[a-\Q\Ez]` are both the range a-z — the second shows the
+             * empty-quote transparency reaching THROUGH to a real byte
+             * beyond it, cls_skip's own job just above). Mirrors the main
+             * loop's own open check exactly; a quote with MORE than one
+             * byte left after supplying the endpoint stays open, and the
+             * loop's next spin (cls_skip, then the open/quoted checks
+             * above) picks up the rest as ordinary members — measured:
+             * `[a-\Qzy\E]` does not drop `y`. */
+            if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
+                peekc(cx) == '\\' && peekc2(cx) == 'Q') {
+                cx->pos += 2;
+                cx->in_quote = true;
+                cls_skip(cx);   /* an immediately-empty quote dissolves too */
+            }
+            /* [M4-QUOTING] unlike the main loop's own open (which loops
+             * back through this function's `c < 0` check above before
+             * reading anything further), this one has no such loopback —
+             * an unterminated `\Q` opened AS a high endpoint with nothing
+             * left in the pattern (`[a-\Q` at true end) must raise the
+             * SAME class-truncation error the main loop raises, not fall
+             * through to `nextc` returning -1 as if it were a byte value. */
+            if (cx->in_quote && peekc(cx) < 0)
+                ctx_fail(cx, opening, "missing terminating ] for character class");
+            bool hi_quoted = cx->in_quote;
             int hc = nextc(cx);
             ExtResult hiclaim = { .what = EXT_NOT_MINE };
-            int hi = (hc == '\\') ? esc_class_value(cx, &hiclaim) : hc;
+            int hi = (!hi_quoted && hc == '\\') ? esc_class_value(cx, &hiclaim) : hc;
             if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
                 pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
             /* step 4 — either side SET-shaped -> invalid range. A claim
@@ -878,6 +1098,13 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
 
 static Ast *p_atom(Ctx *cx)
 {
+    /* [M4-QUOTING] the SAME dispatch point every ordinary atom reaches,
+     * taken first: while a quote is open there is a real quoted byte
+     * waiting (guaranteed — see cat_ends/xskip), and it must bypass the
+     * whole switch below (no metacharacters, no registry doorway) rather
+     * than be read as whatever construct it would otherwise start. */
+    if (cx->in_quote) return p_quote_next(cx);
+
     size_t apos = cx->pos;
     int c = nextc(cx);
 
@@ -1173,8 +1400,32 @@ have:
     return a;
 }
 
+/* [M4-QUOTING] quote-aware: while a REAL quoted byte is pending, the cat
+ * never ends here, no matter what that byte's own value is (measured:
+ * `(a\Qb)c\E)` swallows the inner `)` as a literal member and only the
+ * OUTER, unquoted `)` closes the group — `\Q...\E` reads past `)`, `|`,
+ * `(`, `[` and `]` alike, ignoring pattern structure entirely until `\E`
+ * or true end). This is the ONE place that closes a quote which has run
+ * out of pattern with no `\E` (the unterminated case, `\Qabc` alone
+ * compiling like `\Qabc\E`): xskip's own close-on-\E only fires when `\E`
+ * is actually there, so the true-end half has to live here, where
+ * "nothing left, stop asking p_rep for another atom" is already the
+ * question being asked. Closing (either way) falls through to the
+ * ordinary check below, re-read at the NEW position, so a cat that ends
+ * exactly where a quote closes is detected in the same call rather than
+ * needing a second one. */
 static bool cat_ends(Ctx *cx)
 {
+    if (cx->in_quote) {
+        if (peekc(cx) == '\\' && peekc2(cx) == 'E') {
+            cx->pos += 2;
+            cx->in_quote = false;
+        } else if (peekc(cx) < 0) {
+            cx->in_quote = false;
+        } else {
+            return false;
+        }
+    }
     int c = peekc(cx);
     return c < 0 || c == '|' || c == ')';
 }

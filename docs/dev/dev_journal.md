@@ -18894,3 +18894,82 @@ three batteries (4, 5, 6), two panels (r46, r47), six inbox items
 (I-19..I-24 + I-25 now), five plan rows filed from Frank's evening
 ideas ([M4-QUOTING], [CC-CLANG], [OPT-VMLIT], [PCRE2-UP], the [OPT-5]
 re-scope), one takeover landing. wake.md rewritten with the verdict.
+
+## 2026-08-31 (EDT), forty-seventh session — wake; baseline green; three lanes chartered ([M4-QUOTING] impl + D27 corpus, [OPT-5] STEP 0)
+
+Woke per the forty-sixth close (battery 6 green-by-diagnosis; pin
+263b013 = I-25). Verified: bench outbox still tops at O-10 — pcrecdev2
+has NOT woken since I-25 (its last commit is our inbox item), so the
+[B22]/[B21] windows have not run and **[DD-13b.W1.2] stays HELD** for
+the bench's one re-pin. No worktrees existed; lane/* branches
+historical; the only untracked item is `.vscode/` (left alone).
+Baseline verified on 263b013: `make -j4` + `make strict` +
+`PROCS=4 make test-registry` rc 0 (definitions oracle 354 cells /
+101,244+101,244 comparisons / 0 disagreements). battery_v4.sh rescued
+from the forty-sixth session's scratchpad into this session's
+`mgr/` (diff vs its twin: path lines only). Keepalive cron deduped
+(two identical :09/:39 jobs had accumulated; one deleted).
+
+CHARTERED (D86, one row per column; all sonnet per Frank's tiering;
+briefs carry the full 2026-08-30 rule set — absolute paths/`git -C`,
+no `git add -A`, .hold/rulings.md file channel, bounded foreground
+polls of own run logs, PID-only kills, WIP commits, PROCS=4, no heavy
+suites):
+- **quoting** (ADMIN, [M4-QUOTING]): worktrees/quoting, lane/quoting
+  from 263b013. Module 'quoting' (\Q...\E): lexer state in src/parse,
+  registry rows 768-769 flip to built, reject rows ~985/986/1215 FLIP
+  to accept-controls with the coverage comment extended, D80 spec hunk,
+  oracle = libpcre2 probes (NOTE: libpcre2-dev is NOW INSTALLED — a
+  compiled probe can link; earlier cells used ctypes for lack of it).
+  No emitted-code change expected (pure front end); told to STOP if
+  one proves needed (D76). S210/S211 allocated. Does NOT write
+  tests/quoting/.
+- **qd27** (the blinded corpus): cell qd27-cell built
+  (mk_d27_cell.sh; allowlist rxt_format.md + testing.md + pcrec.h +
+  prebuilt build/). Corpus for \Q from `man pcre2pattern` +
+  libpcre2-8 oracle cell-for-cell, delivered under d27/quoting/;
+  disclosure requirement restated. tests/quoting/ = this corpus at
+  merge (impl merges first, corpus second, battery between per the
+  usual serialization).
+- **opt5m** (OPTIMIZATION, [OPT-5] STEP 0): worktrees/opt5m. The
+  mechanism question (why the counted DFA loses 5× to our own VM on
+  in-class letter runs, wins on digits) via perf on the bench's own
+  subjects (read-only copies; bench patterns' exact spellings);
+  deliverable docs/dev/opt5_step0_profile.md; carries [OPT-VMLIT]'s
+  literal-stepping-share trigger measurement for free; load-checked
+  measurements (two light lanes beside it), perf counters preferred
+  over wall time.
+
+10-min stall watchdog cron up (reads run logs' rc lines, pings with
+results inline). Next: review deliveries, merge impl → battery →
+merge corpus → battery, [CC-CLANG] step 1 after [M4-QUOTING] per the
+ADMIN column's order.
+
+**09:0x — [OPT-5] STEP 0 DELIVERED AND MERGED (a2a9e0d); I-26 sent.**
+Lane opt5m: docs/dev/opt5_step0_profile.md (378 lines, doc-only, reviewed
+against the diff-stat and read in key sections). THE MECHANISM: the DFA's
+premultiplied transition walk is a DATA-dependent loop-carried chain
+(next_state's load ADDRESS is the previous iteration's loaded VALUE —
+textbook pointer-chasing, opt3's 7-cycle latency-bound shape, and by
+[ENG-FORM]'s single emitted skeleton it is every DFA machine's shape by
+construction, shown here by disassembly); the VM's possessified span-loop
+is ADDRESS-only. Letters ratio 5.19/5.98/6.00x at n=256/4096/16384, FLAT
+across a 64x table-size range (not cache); digits ~2.0x the other way,
+also flat — fixed per-call overhead under the bench's real FIND-ALL
+regime (one rx_search per byte on a nullable no-in-class subject; the
+lane reproduced testees/pcrec/driver.c's loop after a single-call driver
+diverged 4 orders of magnitude on digits — a correction to my brief's
+premise, as was perf: perf_event_paranoid=4, opt3's finding, my brief
+wrongly said /usr/bin/perf was usable; the lane substituted calibrated
+wall-time + static disassembly per opt3 precedent). VERDICT: no count
+crossover on either axis (mechanism-backed, falsifiable at [B21]'s new
+rungs — two flat lines predicted); NOT a limits.def threshold — the
+deciding variable is run-time-only (does the subject stay in-class).
+CANDIDATE FIX (unchartered, escalate to Frank): give the DFA's
+counted-single-class regions the VM's address-only bounded-scan shape —
+general form per the general-mechanisms memo; SIMD stacks on top, not a
+substitute. [OPT-VMLIT]'s trigger: partially measured (consume chains
+confirmed; l-03 named as the instrument; no load-bearing percentage
+without perf). Worktree/branch retired. qd27's corpus snapshotted
+earlier (95/95 oracle agreement, manager re-run). quoting lane still
+in flight.

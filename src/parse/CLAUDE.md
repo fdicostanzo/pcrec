@@ -58,7 +58,83 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   CONSTRUCTS — it does not freeze the base grammar's own correctness. FIX-1
   (2026-08-10) added a `case '{'` to `p_atom` and a two-phase overflow rule to
   `try_quant` for K5/K6, both of which are the base tier being wrong about
-  syntax it already owned, with no registry row involved
+  syntax it already owned, with no registry row involved.
+
+  **[M4-QUOTING] module `quoting` (`\Q...\E`) LANDED HERE, IN parse.c
+  ITSELF, WITH NO `mod_quoting.c`** — the one deliberate departure from
+  every other module's shape in this file, and the reason is the flag its
+  two rows carry: `RF_LEXICAL` means the construct is a TOKENIZER MODE,
+  not an atom (internal.h's own comment on the flag), so there is no
+  single call site a port function could sit behind — `\Q` has to change
+  how the LEXER reads bytes for everything up to its `\E`, which is a
+  property of `esc_atom`, `p_atom`, `p_class` and the boundary-skip
+  functions `xskip`/`cls_skip`/`cat_ends` all at once, not a producer one
+  doorway calls. Every one of those six functions gained an `in_quote`-
+  aware branch (new `Ctx.in_quote` field, internal.h), all gated on
+  `pcrec_feature_enabled(FEAT_QUOTING)` so the module disabled reproduces
+  the pre-landing parse byte-for-byte (verified: an unrelated pattern's
+  emitted C is identical before/after, module on or off — this is a
+  FRONT-END-only change, src/gen never touched, no `abi` bump).
+
+  **THE TRANSPARENCY RULE (QF_LEXICAL, SPEC-MOD0 finding A) IS WHERE MOST
+  OF THE SUBTLETY LIVES.** `a\Q\E*` must compile with `*` binding to `a`
+  (measured against libpcre2 10.46: ONE bytecode node, not two), which
+  means an EMPTY `\Q\E` — and a stray `\E` with no open `\Q` — has to
+  vanish at the exact token-boundary positions `xskip` already owns for
+  `(?x)` whitespace, not inside `p_atom`'s per-atom dispatch: by the time
+  `esc_atom` sees a live `\Q`, `xskip`'s own boundary check has already
+  proven it is non-empty (`q_open_is_empty`), so `p_quote_next` (the
+  per-quoted-byte reader, called both to open a quote and to continue one)
+  never has to handle the empty case at all — reaching it at `\E` or true
+  end is an internal-error wall, not a code path. `cat_ends` closes a
+  quote on `\E` or true end BEFORE deciding whether a cat/group/pattern
+  boundary has been reached — required because `\Q...\E` reads straight
+  through `)`, `|`, `(`, `[`, `]` as literal bytes regardless of pattern
+  structure (measured: `(a\Qb)c\E)` swallows the inner `)`, only the outer
+  one closes the group) — and MUST return `false` unconditionally while a
+  real quoted byte is pending, or a quoted `)`/`|` would end the cat early.
+
+  **IN A CLASS the SAME transparency has to reach the RANGE grammar**,
+  which is the part oracle probing (not the design note) found: `[a-
+  \Q\Ez]` is the range a-z (an empty quote between a dash and its high
+  endpoint dissolves — `cls_peek_past_dash` and `cls_skip` both see
+  through it non-mutating/mutating respectively) and `[a-\Qz\E]` is ALSO
+  a-z (a single quoted byte answers for the high endpoint, mirroring the
+  main loop's own open check). The inverse discipline is just as load-
+  bearing and easy to get backwards: a QUOTED dash is never a range
+  operator (measured: `[\Qa-b\E]` is the three literal members `{a,-,b}`,
+  not the range a-b) — `p_class`'s dash-lookahead is gated `!cx->in_quote`
+  for exactly this reason, a guard whose absence would have silently
+  reclassified a literal quoted `-` as a range trigger with no reject-table
+  pin able to see it (range vs. three-adjacent-members produces the
+  IDENTICAL bitset when the members happen to be consecutive, which is why
+  this needed an out-of-range oracle probe — `9` before `1` — to surface
+  at all, not a spot check). `\Q` also suppresses the class doorway's
+  OTHER special positions while open: the leading-`^`-negates check, the
+  leading-`]`-is-literal rule (both reached only because `\Q` is
+  TRANSPARENT to them, not because it disables them — an empty `[\Q\E]`
+  still lets the immediately-following real `]` trigger the leading-`]`
+  rule, giving "missing terminating ]" rather than an empty class), the
+  `[`-bracket POSIX-doorway, and `esc_class_value`'s own backslash
+  re-decoding (measured: `\Q\\E` is ONE literal backslash — inside a
+  quote a backslash is a plain byte, checked for an exact `\E` match at
+  every position rather than treated as an escape prefix of its own).
+
+  **THE REGISTRY ROWS THEMSELVES ARE UNCHANGED** (registry.c:768-769,
+  still `ESC_LEXICAL`, still no `aport`/`cport` — an `RF_LEXICAL` row
+  never gets one, by design, not "not yet"), which meant D65's `built`
+  derivation needed a new arm: the existing doorway-return classifier
+  calls `pcrec_ext_escape` directly, which for `\Q` ALWAYS answers the
+  module's old unbuilt refusal (the lexer intercepts BEFORE that call,
+  never through it), so `built_status_probe` (syntax_dump.c) gained an
+  `RF_LEXICAL` arm alongside `RK_QUANTSUFFIX`'s non-doorway one — an
+  ordinary parse of the row's own `syntax`, classified on whether it
+  raised, with no `BUILT_DEFECT` outcome since a lexical construct never
+  stamps a node. See that file's own comment for the full argument.
+
+  No `tests/quoting/` corpus ships with this landing (D27 reserves it for
+  a blinded writer denied `src/`/`tests/`); validation is the oracle
+  differential probe set + the reject-table's flipped/replaced pins.
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup. Since Q1 (D25) it also
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by

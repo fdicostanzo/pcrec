@@ -1697,6 +1697,20 @@ struct Ctx {
     size_t               patlen;
     size_t               pos;      /* parser cursor */
     int                  depth;    /* parser group-nesting depth (bounded) */
+    /* [M4-QUOTING] module `quoting`'s lexer-mode flag (design's own words,
+     * RF_LEXICAL's comment above: "a TOKENIZER MODE, not an atom"). True
+     * from a NON-EMPTY `\Q` through its `\E` (or true end of pattern, the
+     * unterminated case) -- an EMPTY `\Q\E` never sets it, because it is
+     * fully transparent and never reaches p_atom/p_class at all (xskip/
+     * cls_skip dissolve it before either is called; see parse.c). While
+     * true, p_atom and p_class's main loop read raw bytes literally instead
+     * of dispatching through the ordinary switch/registry doorway -- the
+     * ONLY state this flag changes. `cat_ends`/`xskip`/`cls_skip` are the
+     * three places that must close it on `\E` (or true end) BEFORE deciding
+     * whether a cat/class item boundary has been reached; see their own
+     * comments in parse.c for why the close has to happen there and not
+     * inside the quoted-byte reader itself. */
+    bool                 in_quote;
     /* SCOPED PARSE STATE (PARSE-1; widened to a struct at MOD-0.5c, the
      * D31-note's "expect a struct, not more bools"). Seeded at parse entry
      * and saved/restored around every BODY-CARRYING group, because that is
@@ -2253,12 +2267,22 @@ enum {
     /* The LEXICAL row kind (MOD-0.1 slice 4, design §13.3): the construct is
      * a TOKENIZER MODE, not an atom — `\Q...\E` turns raw bytes into literal
      * character tokens, `\E` alone is the measured no-op, `(?#...)` is a
-     * lexer discard. When built, it is built in the lexer; when ports land
-     * (MOD-0.2+), a LEXICAL row has NO class port and NO AST port, and its
-     * "producer" is the mode transition itself, gating like any producer:
-     * disabled -> terminal at the token with the row's existing vocabulary.
-     * Until then the three rows keep refusing with their exact strings
-     * (byte-identity, §13.3) — this flag changes no behaviour today.
+     * lexer discard. When built, it is built in the lexer; a LEXICAL row
+     * has NO class port and NO AST port ever — not "not yet", by design,
+     * since the mode transition IS the producer — and it gates like any
+     * producer: disabled -> terminal at the token with the row's existing
+     * vocabulary.
+     *
+     * [M4-QUOTING] TWO OF THE THREE ROWS ARE BUILT NOW, and this paragraph's
+     * old claim ("this flag changes no behaviour today") is true only of
+     * the third. `\Q`/`\E` (module `quoting`) are built in exactly the shape
+     * this paragraph describes: `esc_atom`'s own quote-mode dispatch and the
+     * `xskip`/`cls_skip`/`cat_ends` boundary-transparency extensions
+     * (src/parse/parse.c), gated on `pcrec_feature_enabled(FEAT_QUOTING)`
+     * with the module disabled reproducing the pre-landing refusal
+     * byte-for-byte. `(?#...)` (module `comments`) remains exactly as
+     * described — refusing with its exact string, RF_LEXICAL changing no
+     * behaviour for that one row until it lands the same way.
      *
      * MEMBERSHIP IS MEASURED, not asserted: §13.3(d)'s criterion is the same
      * fact the `quant` column carries as QF_LEXICAL, so registry_check

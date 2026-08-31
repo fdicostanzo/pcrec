@@ -79,9 +79,15 @@ file by this pass.
 | `family` | the canonical `syntax` of the family this row is a spelling of, empty when the row is its own family — **D71 item 3's column; see §5** | free text (but its value, when set, is always another row's own `syntax`) |
 
 Live counts this pass (`build/pcrec --list-syntax \| grep -v '^#' \|
-cut -f16 \| sort \| uniq -c`): `built` 106, `unbuilt` 16, `-` 16, `defect`
-0 — 138 total, matching `registry_check.c:2956`'s own pinned
-`checked/built/unbuilt/na` tuple (138/106/16/16) exactly.
+cut -f16 \| sort \| uniq -c`): `built` 108, `unbuilt` 14, `-` 16, `defect`
+0 — 138 total, matching `registry_check.c`'s own pinned
+`checked/built/unbuilt/na` tuple (138/108/14/16) exactly. [M4-QUOTING]
+moved this from 106/16 to 108/14: module `quoting`'s two rows (`\Q`, `\E`)
+flip `unbuilt -> built`, the first `RF_LEXICAL` rows ever to (their
+producer is a lexer-mode transition with no `aport`/`cport` to read, so
+`pcrec_construct_built_status` gained a dedicated arm for the flag rather
+than the usual doorway-return classification — see
+`src/parse/syntax_dump.c`'s own comment on that arm).
 
 ## 3. `built` vs. `status`/`roadmap` — two different questions
 
