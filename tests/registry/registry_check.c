@@ -2953,9 +2953,36 @@ static void check_built_status_defects(void)
      * joins the n/a bucket, same as the other 6 fixed base-tier escapes. */
     /* 135 = 106 + 16 + 13 -> 138 = 106 + 16 + 16: the 3 new RK_BARE rows
      * join the n/a bucket, same as every other RS_BASE row. */
-    else if (checked != 138 || built != 106 || unbuilt != 16 || na != 16)
+    /* [M4-QUOTING] 138 = 106 + 16 + 16 -> 138 = 108 + 14 + 16: module
+     * `quoting`'s two rows (`\Q`, `\E`) flip `unbuilt -> built`, NO ROW IS
+     * ADDED OR REMOVED, and NO ROW OUTSIDE MODULE `quoting` MOVES. The
+     * shape is unlike every module above it: both rows carry `RF_LEXICAL`
+     * (design §13.3) and neither has ever had an `aport`/`cport` — "when
+     * built, it is built in the lexer... its producer is the mode
+     * transition itself" (the flag's own comment, internal.h) — so
+     * `built_status_probe`'s doorway arm, which classifies on a RETURNED
+     * `ExtResult` from `pcrec_ext_escape`, structurally cannot see either
+     * row move: that call still answers the module's OLD unbuilt refusal
+     * regardless of the lexer, because the lexer intercepts `\Q` in
+     * `esc_atom` BEFORE the doorway is ever reached, not through it. This
+     * is the SAME gap `RK_QUANTSUFFIX` (whose `syntax`, `a*+`, routes to no
+     * doorway at all) opened the non-doorway arm for, and `RF_LEXICAL`
+     * joins that arm rather than inventing a third: an ordinary parse of
+     * the row's own `syntax`, classified on whether it RAISED — with the
+     * one difference from `RK_QUANTSUFFIX`'s classification that a lexical
+     * construct never STAMPS a node (it desugars to ordinary literal
+     * atoms, and stamping is a PRODUCER's act, which a mode transition is
+     * not), so there is no `BUILT_DEFECT` outcome for it to reach; "parsed,
+     * did not raise" is simply `built`. See `built_status_probe`'s own new
+     * arm (src/parse/syntax_dump.c) for the full argument, including the
+     * MEASURED FALSIFIABLE claim `RK_QUANTSUFFIX`'s comment makes for
+     * itself: with the module disabled both rows derive `unbuilt`; with
+     * it enabled but esc_atom's/p_class's quote-mode dispatch reverted,
+     * both derive `unbuilt` again; with everything in place, both derive
+     * `built`. */
+    else if (checked != 138 || built != 108 || unbuilt != 14 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 138 = 106 + 16 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 138 = 108 + 14 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "

@@ -673,6 +673,23 @@ directory asserts that the description and the shipped parser actually agree.
     wider force costs nothing and fixed the one real gap found while
     verifying this against the shipped compiler.
 
+    **[M4-QUOTING] gained the classifier's SECOND non-doorway arm, and
+    `RF_LEXICAL` is why one was needed at all.** `\Q`/`\E` never had an
+    `aport`/`cport` — module `quoting`'s producer is a mode transition in
+    the LEXER, not a registry port — so the doorway arm above, which reads
+    `pcrec_ext_escape`'s RETURNED `ExtResult`, cannot see them move: that
+    call still answers the module's old unbuilt refusal because esc_atom
+    intercepts a real `\Q` BEFORE the doorway is ever reached, never
+    through it. `built_status_probe` (src/parse/syntax_dump.c) gained an
+    `RF_LEXICAL` arm alongside `RK_QUANTSUFFIX`'s (a real parse of the
+    row's own `syntax`, classified on whether it raised), differing only
+    in outcome shape: a lexical construct never STAMPS a node, so there is
+    no `BUILT_DEFECT` cell for it to reach — "parsed, did not raise" is
+    simply `built`. Tally: **138 = 106 + 16 + 16 -> 138 = 108 + 14 + 16**,
+    both rows flipping `unbuilt -> built`, no row added or removed, no row
+    outside module `quoting` moving — see `registry_check.c`'s own comment
+    on the tally for the full argument and the falsifiability claim.
+
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
 between two descriptions, not a control: it asserts the two agree, never that
