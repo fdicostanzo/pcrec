@@ -132,7 +132,15 @@ Two unrelated bounds both get called a "limit" and this document keeps
 them apart. **What pcrec PROMISES** is a set of hard state-count
 ceilings in `src/core/limits.h` — `PCREC_MAX_NFA_STATES` (131,072,
 `src/ir/nfa.c:110-111`), `PCREC_MAX_VM_NODES` (131,072), and their
-siblings for DFA states, table entries and subset construction. Cross
+siblings for DFA states, table entries and subset construction:
+`PCREC_MAX_DFA_STATES_GOTO` (10,000, the computed-goto DFA attempt
+engine), `PCREC_MAX_DFA_STATES_TABLE` (32,000, the table engine),
+`PCREC_MAX_TABLE_ENTRIES` (2,000,000, the states*classes transition-table
+bound) and `PCREC_MAX_SUBSET_ELEMS` (48,000,000, K7's element budget on
+the priority subset construction) — [LIM-1] (2026-08-30): `pcrec
+--list-limits` is the live command that reproduces all six numbers on
+this page, checked in the same commit that adds a row
+(`tests/registry/limits_check.sh`). Cross
 any of them and compilation FAILS cleanly, naming the ceiling
 (`src/ir/nfa.c:111`'s message is representative) — never a hang, an
 OOM, or a silent truncation. These are a CONTRACT: pcrec commits to
@@ -497,7 +505,8 @@ The line names the two stamps that EXPLAIN the size — the unroll factor with
 number, because a reader told "883,632 bytes" can only shrug while one told
 which lever moved it knows what to reach for.
 
-**Default `250000` total bytes; `0` disables it.** The default is an order of
+**Default `250,000` total bytes (`PCREC_DEFAULT_WARN_EMIT_BYTES`); `0`
+disables it.** The default is an order of
 magnitude under `--max-emit-bytes` on purpose: a warning's value is arriving
 while the pattern can still be changed, not at the moment it is refused.
 
