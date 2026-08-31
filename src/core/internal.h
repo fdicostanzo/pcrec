@@ -1191,6 +1191,27 @@ typedef struct {
     int      scan_span;
     int      scan_cls;   /* the byte class the scan counts */
     int      scan_next;  /* the state after `scan_span` bytes (-1 == dead) */
+    /* [OPT-5] THE PERIOD OF THE COUNTED SEQUENCE, and it is 1 on every edge
+     * this compiler builds (manager ruling R3, 2026-08-31, from Frank's
+     * "isn't a loop over a static string just a memcmp: `(?:ab){1,100}`").
+     * The general shape is a chain whose advance classes CYCLE with period
+     * k — k singleton classes being a STRING, whose body is a counted loop
+     * of constant-length compares — and `scan_cls` is that sequence's
+     * element 0.
+     *
+     * THE FIELD IS HERE AND THE SEQUENCE IS NOT, which is the honest half of
+     * the ruling's own "if a period field genuinely complicates STEP 1, skip
+     * it and say so". A period-k edge needs k CLASSES, which is an arena
+     * array plus a length on a `DState` that is `realloc`'d at a fixed size,
+     * and every reader of `scan_cls` would change shape for a producer that
+     * does not exist (D77). What this field buys at zero cost is that the
+     * criterion's OUTPUT is already a periodic sequence rather than a single
+     * class baked into the representation: period-k is then a criterion
+     * extension plus a new axis-I body object, and the refusal stays clean
+     * either way — a chain whose mid-period states disagree about their exit
+     * target is not scan-shaped and takes the ordinary walk. Every emitter
+     * site asserts it is 1 rather than assuming it. */
+    int      scan_period;
 } DState;
 
 /* [OPT-5] `PCREC_MAX_SCAN_EDGES` — how many scan edges one machine may carry
@@ -3883,6 +3904,15 @@ size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap);       /* axis 
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis E */
 size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
 size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
+/* [OPT-5] The scan edge's two axes, and they ride the SAME generic walk as
+ * the six above -- their objects are `DfaCand`-headed, so `--list-axes` and
+ * the registry check see a candidate added to either list with no
+ * hand-copied restatement. Axis H is the REGION decision (does this state
+ * emit an edge at all) and owns `-fno-scan-edge`; axis I is the edge's
+ * run-extension BODY, whose future ISA-neutral SIMD form is a new object in
+ * that list and nothing else (manager rulings R1/R2). */
+size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap);       /* axis H */
+size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis I */
 /* `src/parse/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */

@@ -446,9 +446,16 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
             if (cur < 0 || cur >= n) break;
         }
         taken[nedges] = i;
-        d->st[ch->head].scan_span = ch->span;
-        d->st[ch->head].scan_cls  = ch->cls;
-        d->st[ch->head].scan_next = ch->next;
+        d->st[ch->head].scan_span   = ch->span;
+        d->st[ch->head].scan_cls    = ch->cls;
+        d->st[ch->head].scan_next   = ch->next;
+        /* PERIOD 1 IS THE ONLY PERIOD THIS PASS BUILDS (manager ruling R3;
+         * `DState.scan_period`'s own comment carries the reasoning). It is
+         * written explicitly rather than left at the constructor's zero so
+         * the emitter's assertion has something true to check, and so the
+         * day a period-k criterion lands the two sites disagree loudly
+         * instead of silently. */
+        d->st[ch->head].scan_period = 1;
         /* THE HEAD'S CLASS EDGE IS THE SCAN EDGE NOW. The table cell is set
          * dead because the emitted step can never read it (the file header's
          * argument), and dead is the one value every existing reader of this

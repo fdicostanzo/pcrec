@@ -117,6 +117,12 @@ static const AxisDesc AXIS_DESC[] = {
     { "direction", "reverse", "always — finds where that match BEGINS" },
     { "direction", "anchored", "always on a DFA artifact that selects the unwrapped match-here form ([ENG-ABS]) — finds where the match beginning at ctx->pos ends" },
 
+    { "scan-edge", "scan-edge", "per STATE: src/opt/scanedge.c found a maximal run of states differing only in how many bytes of ONE class have been counted, rooted here, and DELETED the run's interior from the table -- so this state's edge is mandatory, not an accelerator ([OPT-5])" },
+    { "scan-edge", "table-walk", "always (fallback) -- this state counts nothing, or the axis is denied and the pass left every state where it was" },
+
+    { "scan-body", "range", "the edge's class is a CONTIGUOUS byte set: subtract-and-compare against two immediates, no memory touched but the subject ([OPT-5])" },
+    { "scan-body", "bitmap", "always (fallback) -- any other byte set, tested by a 256-byte membership table. The load is VALUE-addressed, not result-addressed, so the cursor is still the only loop-carried register. A per-ISA SIMD run-extension form would sit ABOVE these two ([OPT-SIMD]; ISA-neutral by ruling, scalar forms always the fallback)" },
+
     { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
     { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
 };
@@ -146,6 +152,11 @@ static const char *stamp_macro_of(const char *axis)
      * direction — its value is a caller-visible cost property of
      * `<prefix>_match` (spec §3.2), not an emitter-internal decision. */
     if (!strcmp(axis, "match")) return "RX_DFA_MATCH";
+    /* [OPT-5] The stamp belongs to the BODY axis, whose candidate names ARE
+     * its values. The REGION axis (`scan-edge`) has no value stamp of its
+     * own: what an artifact reports is which body its edges took, and
+     * "table-walk everywhere" is that stamp's `"none"`. */
+    if (!strcmp(axis, "scan-body")) return "RX_DFA_SCAN_EDGE";
     return "";
 }
 
@@ -169,6 +180,8 @@ static const char *cli_flag_of(const char *axis, const char *cand)
     if (!strcmp(axis, "prefilter") &&
         (!strcmp(cand, "offset-set") || !strcmp(cand, "offset-set-bounded")))
         return "-fno-offset-skip";
+    if (!strcmp(axis, "scan-edge") && !strcmp(cand, "scan-edge"))
+        return "-fno-scan-edge";
     return "";
 }
 
@@ -197,6 +210,7 @@ static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
     { PCREC_NO_OFFSET_SKIP, "PCREC_NO_OFFSET_SKIP" },
     { PCREC_NO_ANCHORED_DFA, "PCREC_NO_ANCHORED_DFA" },
     { PCREC_NO_SIZE_TERM, "PCREC_NO_SIZE_TERM" },
+    { PCREC_NO_SCAN_EDGE, "PCREC_NO_SCAN_EDGE" },
 };
 #define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
 
@@ -453,34 +467,6 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, "", 0, "", "",
                      "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse");
     }
-    /* [OPT-5] scan-edge — §2.18, `RX_DFA_SCAN_EDGE`. A DFA-side axis in a
-     * dump whose other predicate axes are VM-side, and it is a `predicate`
-     * row rather than a `list` one for a reason worth stating: the axis has
-     * two real emitted forms and exactly ONE emission site, so D75's addendum
-     * (and D82 bound 3) keeps it a predicate in `src/gen/emit_dfa.c` —
-     * `pcrec_scan_range` — instead of a seventh candidate array. There is
-     * therefore no live array for this dump to walk, and the rows below are
-     * hand-stated, exactly as `table`'s two composite rows are.
-     *
-     * `mixed` and `none` carry no deny bit because neither is a form anything
-     * SELECTS: `none` is what an artifact with no counted class run reports
-     * (and what the denied build reports for every artifact), `mixed` is the
-     * artifact-level composition over its two or three machines. */
-    {
-        PredAxis p = { "scan-edge", NULL, "RX_DFA_SCAN_EDGE", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "range", "range",
-                     V(PCREC_NO_SCAN_EDGE), 0, "", "-fno-scan-edge",
-                     "per DFA machine: a maximal run of states differing only in how many bytes of ONE class have been counted (src/opt/scanedge.c), where that class's byte set is a contiguous range — the test is a subtract-and-compare against two immediates");
-        emit_pred_row(sb, &p, 2, "bitmap", "bitmap",
-                     V(PCREC_NO_SCAN_EDGE), 0, "", "-fno-scan-edge",
-                     "the same run where the class is not contiguous — the test is a 256-byte membership table read, which keeps the loop-carried register a cursor but does touch memory");
-        emit_pred_row(sb, &p, 3, "mixed", "mixed",
-                     0, "", 0, "", "",
-                     "artifact-level composition: this artifact's machines took both forms (RX_DFA_TABLE's own \"mixed\" shape)");
-        emit_pred_row(sb, &p, 4, "none", "none",
-                     0, "", 0, "", "",
-                     "always (fallback) — no machine carries a collapsible run, the engine is ENG_ATTEMPT (no table walk to shorten) or is provably empty, or the axis is denied");
-    }
     /* altcls-merge — §2.6, RX_ALTCLS_MERGES is an ACTIVITY COUNT, not a
      * named value — stamp_value left empty on both rows for that reason. */
     {
@@ -645,6 +631,13 @@ char *pcrec_axes_tsv(void)
     emit_dfa_list_axis(&sb, "accept", "list", pcrec_dfa_axis_accept_cands);
     emit_dfa_list_axis(&sb, "direction", "both", pcrec_dfa_axis_direction_cands);
     emit_dfa_list_axis(&sb, "match", "list", pcrec_dfa_axis_match_cands);
+    /* [OPT-5] axes H and I. Both are LIST axes off live candidate arrays,
+     * not hand-stated predicate rows: manager ruling R1 makes the region
+     * decision a D82 selection and the edge's run-extension body its own
+     * representation axis, so both have a real array for this walk to read
+     * and a SIMD body added later appears here with no edit. */
+    emit_dfa_list_axis(&sb, "scan-edge", "list", pcrec_dfa_axis_edge_cands);
+    emit_dfa_list_axis(&sb, "scan-body", "list", pcrec_dfa_axis_scanbody_cands);
 
     emit_predicate_axes(&sb);
 

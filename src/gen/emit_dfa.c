@@ -1759,6 +1759,16 @@ typedef struct DfaSel {
     const Dfa  *d;            /* THIS machine — forward and reverse differ */
     const void *us;           /* the UnanchStart; opaque until it is declared */
     bool        forward;
+    /* [OPT-5] THE STATE A PER-STATE AXIS IS ABOUT, or -1. Six of this file's
+     * axes describe a whole MACHINE and never read it; the scan edge's two
+     * describe ONE STATE (does it emit an edge at all, and which
+     * run-extension body does that edge use), and a selection walk that
+     * cannot name the state would have to be a second, parallel walk. It is
+     * -1 wherever it is meaningless, so a candidate that reads it on a
+     * machine-level selection indexes nothing rather than reading a
+     * fabricated state — `dfa_match_of`'s own reason for passing a NULL `d`
+     * rather than a made-up one. */
+    int         st;
 } DfaSel;
 
 typedef struct DfaCand {
@@ -1787,6 +1797,19 @@ typedef struct DfaRepr {
  * the objects) and by the table emitters immediately below, so the two
  * entry points are declared here and defined with the objects. */
 static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d);
+
+/* [OPT-5] The scan edge's two per-state axes, same shape and same reason:
+ * `dfa_scan_edge_name` (the stamp path, ~1,500 lines above the objects) asks
+ * both, and the emitted loop asks both, so they are declared here and
+ * DEFINED with the objects. Their types are opaque until then. */
+typedef struct DfaEdge DfaEdge;
+typedef struct DfaScan DfaScan;
+static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st);
+static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st);
+/* Is `e` the region axis's FIRST candidate, i.e. did this state take an
+ * edge? Spelled once here rather than compared against `&dfa_edges[0]` at
+ * three call sites, two of which are above that array's definition. */
+static bool dfa_edge_taken(const DfaEdge *e);
 
 static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
                           const Dfa *d, const DfaRepr *r)
@@ -2525,12 +2548,15 @@ static const char *dfa_table_name(Ctx *cx)
  * consumer picking between two spellings of a class can see which it got. The
  * value comes off `pcrec_scan_range` — the same predicate the emitted test is
  * written from, never a second reading of "is this class contiguous". */
-static const char *scan_edge_of(const Dfa *d, const char *so_far)
+static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
 {
     for (int i = 0; i < d->n; i++) {
-        if (d->st[i].scan_span == 0) continue;
-        const char *v = pcrec_scan_range(d, d->st[i].scan_cls, NULL, NULL)
-                        ? "range" : "bitmap";
+        /* AXIS H first: a state the region axis did not give an edge to has
+         * no body to name. Then AXIS I's chosen object's own `c.name` IS the
+         * value (D82 rule 2) -- never a second reading of the predicate that
+         * chose it. */
+        if (!dfa_edge_taken(dfa_edge_of(cx, d, i))) continue;
+        const char *v = dfa_scan_of(cx, d, i)->c.name;
         if (!strcmp(so_far, "none")) so_far = v;
         else if (strcmp(so_far, v)) return "mixed";
     }
@@ -2541,10 +2567,10 @@ static const char *dfa_scan_edge_name(Ctx *cx)
 {
     if (dfa_engine_is_empty(cx)) return "none";
     if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";
-    const char *v = scan_edge_of(&cx->job->dfa, "none");
-    if (strcmp(v, "mixed")) v = scan_edge_of(&cx->job->rdfa, v);
+    const char *v = scan_edge_of(cx, &cx->job->dfa, "none");
+    if (strcmp(v, "mixed")) v = scan_edge_of(cx, &cx->job->rdfa, v);
     if (strcmp(v, "mixed") && dfa_match_is_unwrapped(cx))
-        v = scan_edge_of(&cx->job->adfa, v);
+        v = scan_edge_of(cx, &cx->job->adfa, v);
     return v;
 }
 
@@ -3193,7 +3219,7 @@ static const DfaRepr dfa_reprs[] = {
 
 static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d)
 {
-    DfaSel s = { cx, d, NULL, true };
+    DfaSel s = { cx, d, NULL, true, -1 };
     return DFA_SELECT(DfaRepr, dfa_reprs, &s, cx->opt->flags);
 }
 
@@ -3809,7 +3835,7 @@ static const DfaPf dfa_pfs[] = {
 
 static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
-    DfaSel s = { cx, &cx->job->dfa, us, true };
+    DfaSel s = { cx, &cx->job->dfa, us, true, -1 };
     return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags);
 }
 
@@ -4030,7 +4056,7 @@ static const DfaMatch dfa_matches[] = {
  * fabricated `d` would invite a later candidate to read it. */
 static const DfaMatch *dfa_match_of(Ctx *cx)
 {
-    DfaSel s = { cx, NULL, NULL, false };
+    DfaSel s = { cx, NULL, NULL, false, -1 };
     return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
 }
 
@@ -4092,6 +4118,14 @@ size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
  * restatement. */
 size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_matches); }
+/* [OPT-5] axes H and I ride the same walk for the same reason. Adding the
+ * ISA-neutral SIMD body object manager ruling R2 reserves a slot for
+ * therefore needs NO edit here, in `axes_dump.c`'s iteration, or in the
+ * registry check's row sweep -- only its own `applies` and `emit_test`. */
+size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_edges); }
+size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_scans); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
@@ -4140,30 +4174,153 @@ size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap)
  *     table read from the whole construct.
  */
 
-/* THE CLASS TEST. Two forms, ONE predicate and this one emission site, which
- * is D75's addendum applied rather than a seventh candidate list: a range is
- * a subtract-and-compare against two immediates baked into the instruction
- * stream (the VM's `(unsigned)(b - 97) <= 25u`, profile §3.2), and anything
- * else is a 256-byte membership table. Both keep the loop-carried register a
- * cursor, which is the property that matters; the range form additionally
- * touches no memory but the subject. */
+/* ---- AXIS H: DOES THIS STATE EMIT AN EDGE AT ALL ------------------------
+ *
+ * The REGION decision, as a D82 selection rather than an `if` inside the
+ * walk emitter (manager ruling R1.1, 2026-08-31, from Frank's design
+ * question). It is per STATE, which is what `DfaSel.st` exists for, and it
+ * is where `-fno-scan-edge` rides the axis machinery: `deny` REMOVES the
+ * first candidate and the ordinary walk selects the fallback, exactly as
+ * `-fno-anchored-dfa` removes axis G's `unwrapped`.
+ *
+ * THE DENY BIT IS HERE AND ALSO AT THE PASS, AND THAT IS ONE FACT WITH TWO
+ * READERS RATHER THAN TWO MECHANISMS. `src/opt/scanedge.c` reads the same
+ * bit because DELETING a run's interior states is not something an emitter
+ * filter can undo — a denied build must keep the states the walk needs, so
+ * the pass has to see the flag before it removes anything. The filter here
+ * is therefore unreachable in a denied build (no state carries an
+ * annotation, so `edge_applies` is false anyway) and is kept because the
+ * axis is what `--list-axes` reads to name the flag that addresses it;
+ * reporting 0 there would tell a caller the axis has no knob. */
+struct DfaEdge {
+    DfaCand c;
+};
+
+static bool edge_applies(const DfaSel *s)
+{
+    return s->st >= 0 && s->st < s->d->n && s->d->st[s->st].scan_span != 0;
+}
+
+static const DfaEdge dfa_edges[] = {
+    { { "scan-edge",  PCREC_NO_SCAN_EDGE, edge_applies } },
+    { { "table-walk", 0,                  cand_always  } },
+};
+
+/* ---- AXIS I: THE EDGE'S RUN-EXTENSION BODY ------------------------------
+ *
+ * Manager ruling R1.2: the body is its own form axis with representation
+ * objects, and D82 bound 3 is satisfied on day one because two REAL forms
+ * exist. Both keep the loop-carried register a CURSOR, which is the whole
+ * property `docs/dev/opt5_step0_profile.md` §3 measured; they differ in what
+ * the class test costs.
+ *
+ *   `range`   a contiguous byte set, tested by subtract-and-compare against
+ *             two IMMEDIATES baked into the instruction stream. No memory
+ *             but the subject is touched.
+ *   `bitmap`  any other byte set, tested by a 256-byte membership table.
+ *             THE LOAD IS VALUE-ADDRESSED, NOT RESULT-ADDRESSED — its
+ *             address is `table + the byte this iteration read`, never the
+ *             value a previous iteration's load returned — so the cursor is
+ *             still the only loop-carried register and the dependency-chain
+ *             property the transform exists for is intact. That is the
+ *             difference between this table read and the transition table's,
+ *             and it is why a bitmap body is a cost rather than a defeat.
+ *
+ * THE THIRD SLOT IS NAMED AND NOT BUILT. A SIMD run-extension form
+ * (`studies/simd1`'s branchless classify + count-leading-zeros, [OPT-SIMD]'s
+ * row) belongs at the TOP of this list: a new object plus its `emit_test`
+ * body, with nothing above the axis moving — not the criterion, not the
+ * stamp, not the deletion, not the gates. Manager ruling R2 (Frank, same
+ * day) fixes its CONTRACT as ISA-NEUTRAL: it is "a SIMD run-extension form,
+ * per-ISA gated, with the scalar forms always available as the fallback",
+ * never an x86 slot — Frank's own machine is aarch64/NEON. Nothing this axis
+ * emits today is ISA-conditional, and the two scalar forms are the portable
+ * baseline that keeps a per-ISA form optional forever.
+ *
+ * `bitmap` applies unconditionally and is the list's total fallback (D82
+ * rule 1): every byte set has a membership table. Neither object carries a
+ * `deny` bit — the FLAG belongs to axis H, which decides whether there is an
+ * edge at all, and putting it here as well would let a reader think a body
+ * could be denied while the edge survived, which would be a machine with
+ * deleted states and no loop to replace them. */
+struct DfaScan {
+    DfaCand c;
+    void  (*emit_test)(StrBuf *c, const DfaForm *f, int head);
+    /* NULL == this body needs no table of its own. */
+    void  (*emit_tables)(StrBuf *c, const DfaForm *f, int head);
+};
+
+static bool scan_range_applies(const DfaSel *s)
+{
+    return s->st >= 0 && s->st < s->d->n &&
+           pcrec_scan_range(s->d, s->d->st[s->st].scan_cls, NULL, NULL);
+}
+
+static void scan_test_range(StrBuf *c, const DfaForm *f, int head)
+{
+    int lo, hi;
+    pcrec_scan_range(f->d, f->d->st[head].scan_cls, &lo, &hi);
+    if (lo == hi)       sb_printf(c, "%s == %d", f->dir->peek, lo);
+    else if (lo == 0)   sb_printf(c, "%s <= %d", f->dir->peek, hi);
+    else                sb_printf(c, "(unsigned char)(%s - %d) <= %d",
+                                  f->dir->peek, lo, hi - lo);
+}
+
+static void scan_test_bitmap(StrBuf *c, const DfaForm *f, int head)
+{
+    sb_printf(c, "%s_%s_scan%d[%s]", f->p, f->dir->c.name, head, f->dir->peek);
+}
+
+static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
+{
+    uint8_t set[256];
+    int cls = f->d->st[head].scan_cls;
+    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    char name[PCREC_MAX_EMIT_NAME_LEN + 16];
+    snprintf(name, sizeof name, "%s_scan%d", f->dir->c.name, head);
+    emit_u8_table(c, f->p, name, set, 256);
+}
+
+static const DfaScan dfa_scans[] = {
+    { { "range",  0, scan_range_applies }, scan_test_range,  NULL },
+    { { "bitmap", 0, cand_always        }, scan_test_bitmap, scan_tables_bitmap },
+};
+
+/* THE TWO SELECTIONS, per state. They are the ONLY readers of these lists
+ * and every consumer — the emitted test, the emitted table, the artifact's
+ * stamp — goes through them, so "the stamp is the chosen object's name"
+ * (D82 rule 2) holds structurally rather than by convention. */
+static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st)
+{
+    DfaSel s = { cx, d, NULL, true, st };
+    return DFA_SELECT(DfaEdge, dfa_edges, &s, cx->opt->flags);
+}
+
+static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st)
+{
+    DfaSel s = { cx, d, NULL, true, st };
+    return DFA_SELECT(DfaScan, dfa_scans, &s, cx->opt->flags);
+}
+
+static bool dfa_edge_taken(const DfaEdge *e) { return e == &dfa_edges[0]; }
+
 static void scan_test(StrBuf *c, const DfaForm *f, int head)
 {
-    int cls = f->d->st[head].scan_cls, lo, hi;
-    if (pcrec_scan_range(f->d, cls, &lo, &hi)) {
-        if (lo == hi) sb_printf(c, "%s == %d", f->dir->peek, lo);
-        else if (lo == 0) sb_printf(c, "%s <= %d", f->dir->peek, hi);
-        else sb_printf(c, "(unsigned char)(%s - %d) <= %d",
-                       f->dir->peek, lo, hi - lo);
-    } else {
-        sb_printf(c, "%s_%s_scan%d[%s]", f->p, f->dir->c.name, head,
-                  f->dir->peek);
-    }
+    dfa_scan_of(f->cx, f->d, head)->emit_test(c, f, head);
 }
 
 static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 {
     const DState *st = &f->d->st[head];
+    /* [OPT-5] PERIOD 1 IS ASSERTED, NOT ASSUMED (manager ruling R3). This
+     * emitter writes ONE class test per iteration, which is the period-1
+     * body; a period-k edge's body is a different axis-I object and would
+     * need a class SEQUENCE this `DState` does not carry. A loud internal
+     * error is this file's standing preference over emitting a correct
+     * matcher with the wrong loop in it. */
+    if (st->scan_period != 1)
+        ctx_fail(f->cx, 0, "internal error: scan edge with period %d "
+                 "(only period 1 is built)", st->scan_period);
     const char *ind = f->dir->bind;
     int span = st->scan_span, nx = st->scan_next;
     int acc  = st->up[UPC_PLAIN].accept != 0;
@@ -4249,26 +4406,12 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
     sb_printf(c, "%s}\n", ind);
 }
 
-/* The membership table a non-range class needs, one per edge that needs one.
- * Named after the machine and the head state, `<M>_stay<K>`'s own convention,
- * so two edges on one machine cannot collide. */
-static void emit_scan_table(StrBuf *c, const char *p, const char *tag,
-                            int head, const Dfa *d)
-{
-    uint8_t set[256];
-    int cls = d->st[head].scan_cls;
-    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(d->clsmap[b] == cls);
-    char name[PCREC_MAX_EMIT_NAME_LEN + 16];
-    snprintf(name, sizeof(name), "%s%d", tag, head);
-    emit_u8_table(c, p, name, set, 256);
-}
-
 /* ---- THE DERIVATION: one machine's whole form, selected once ------------ */
 
 static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
-    DfaSel s = { cx, d, us, !dir->reverse };
+    DfaSel s = { cx, d, us, !dir->reverse, -1 };
     unsigned flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
@@ -4303,7 +4446,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * two lists are disjoint by construction and the emitted `if` chains
      * cannot both fire at one state. */
     for (int i = 0; i < d->n && f->nscan < PCREC_MAX_SCAN_EDGES; i++)
-        if (d->st[i].scan_span != 0) f->scan[f->nscan++] = i;
+        if (dfa_edge_taken(dfa_edge_of(cx, d, i))) f->scan[f->nscan++] = i;
 }
 
 /* ---- THE TABLES, one path called twice ---------------------------------- */
@@ -4357,15 +4500,15 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
     snprintf(tag, sizeof tag, "%s_stay", m);
     for (int k = 0; k < f->nskip; k++)
         emit_stay_table(c, p, tag, f->skip[k], f->d);
-    /* [OPT-5] and one membership table per scan edge whose class is not a
-     * contiguous range. `pcrec_scan_range` is asked here and at the emitted
-     * test, one predicate and two readers, so a table can never be emitted
-     * for an edge that compares against immediates or omitted for one that
-     * does not. */
-    snprintf(tag, sizeof tag, "%s_scan", m);
-    for (int k = 0; k < f->nscan; k++)
-        if (!pcrec_scan_range(f->d, f->d->st[f->scan[k]].scan_cls, NULL, NULL))
-            emit_scan_table(c, p, tag, f->scan[k], f->d);
+    /* [OPT-5] and whatever table each edge's own BODY OBJECT owns — the
+     * object is asked here and at the emitted test, so a table can never be
+     * emitted for a body that compares against immediates, nor omitted for
+     * one that reads a membership table. A body added to `dfa_scans` needs
+     * no line here. */
+    for (int k = 0; k < f->nscan; k++) {
+        const DfaScan *sc = dfa_scan_of(f->cx, f->d, f->scan[k]);
+        if (sc->emit_tables) sc->emit_tables(c, f, f->scan[k]);
+    }
 }
 
 /* ---- THE SCAN LOOP, emitted ONCE and called twice ----------------------- */

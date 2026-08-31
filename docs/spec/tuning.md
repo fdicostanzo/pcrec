@@ -1134,14 +1134,49 @@ per-state table sizes as well as emitted code, and the denied build is the
 pre-`[OPT-5]` compiler byte for byte. `-fno-scan-edge` restores both the
 states and the table walk. No answer moves either way.
 
-**The stamp** is `<PREFIX>_DFA_SCAN_EDGE` (§3 below and `match_api.md` §6.3):
-`"range"` when every edge the artifact carries tests a contiguous byte range
-(a subtract-and-compare against two immediates), `"bitmap"` when a class is
-not contiguous and the test is a 256-byte membership read, `"mixed"` when the
-artifact's machines took both forms, `"none"` when it carries no edge. Like
-`<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_PREFILTER` it is a fact about a DFA
+**IT IS TWO AXES, and `--list-axes` reports both.** The emitter models the
+mechanism at the two levels D82 separates, and a caller reading the axis
+registry sees them as `scan-edge` and `scan-body`:
+
+| axis | candidates | question |
+|---|---|---|
+| `scan-edge` | `scan-edge`, `table-walk` | per STATE: does this state emit an edge at all? **This is the axis `-fno-scan-edge` denies** — the flag removes the first candidate and the ordinary walk selects the fallback. |
+| `scan-body` | `range`, `bitmap` | per EDGE: which run-extension body does that edge use? |
+
+**The stamp** is `<PREFIX>_DFA_SCAN_EDGE` (§3 below and `match_api.md` §6.3)
+and it reports the **body** axis's chosen object by name: `"range"` when every
+edge the artifact carries tests a contiguous byte range (a subtract-and-compare
+against two immediates), `"bitmap"` when a class is not contiguous and the test
+is a 256-byte membership read — whose load is addressed by *the byte this
+iteration read*, never by a previous iteration's result, so the cursor is still
+the only loop-carried register — `"mixed"` when the artifact's machines took
+both forms, and `"none"` when the region axis chose `table-walk` everywhere.
+Like `<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_PREFILTER` it is a fact about a DFA
 SCAN, so a VM HYBRID that inlines one reports it too ([DD-13c]'s (a)/(b)
 split).
+
+**A THIRD BODY IS RESERVED AND IS NOT BUILT.** A SIMD run-extension form —
+branchless classify plus count-leading-zeros, `studies/simd1`'s measured shape,
+plan row `[OPT-SIMD]`'s territory — belongs at the top of the `scan-body`
+preference list: a new candidate object and its test, with nothing above the
+axis moving (not the criterion, not the deletion, not the stamp's other
+values, not the gates). **Its contract is ISA-NEUTRAL by ruling**: it is "a
+SIMD run-extension form, per-ISA gated, with the scalar forms always available
+as the fallback", never an SSE2 or a NEON slot. Nothing this axis emits today
+is ISA-conditional, and `range`/`bitmap` are the portable baseline that keeps
+any per-ISA form optional forever.
+
+**AND THE COUNTED SEQUENCE HAS A PERIOD, WHICH IS 1.** The general shape of
+this mechanism is a chain whose advance classes CYCLE with period *k* — *k*
+singleton classes being a literal STRING, whose body is a counted loop of
+constant-length compares, i.e. `(?:ab){1,100}` collapsing the way `[ab]{1,100}`
+does. `DState.scan_period` carries that period so the criterion's output is a
+periodic sequence rather than a single class baked into the representation;
+only period 1 is built, the emitter asserts it rather than assuming it, and a
+period-*k* form is then a criterion extension plus a new `scan-body` object
+rather than a rewrite. The refusal is clean either way: a chain whose
+mid-period states disagree about their exit target is not scan-shaped and takes
+the ordinary walk.
 
 **The boundary, stated rather than left to be discovered.** A run is collapsed
 only when every one of its states has NO position view (`$`/`\Z`/`\z` select a
