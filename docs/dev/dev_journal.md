@@ -18851,3 +18851,28 @@ session, and this session is mid-lim1 + battery 6); and our [OPT-5]/
 plan unchanged: lim1's verification → review/merge → battery 6 → the
 superseding pin → wake.md. I-24 appended to the bench inbox so its next
 session opens windows at wake without waiting on a live ask.
+
+#### Forty-sixth session, part 12 (00:1x-00:2x EDT 2026-08-31): [LIM-1] LANDED BY TAKEOVER; battery 6 launched
+
+lim1 delivered the substance — 4 commits + a 300-line report with the
+measured table (the limits table `src/core/limits.def` at **44 rows**
+(the 16-floor survey grew by 28), `--list-limits` live at 44,
+limits_check.sh 21/21, registry 83/0 with the ENGINE_SEL value legs, the
+size-cap rescue's distinct `RX_ENGINE_SEL` value with before/after
+stamps on the three witnesses, S208/S209 DETECTED, corpus 26,680/0,
+resource + prefilter_collapse green) — then went UNRESPONSIVE after its
+verification runs: six lost wakes tonight across three lanes, and this
+one ended answering two explicit FINALIZE pings with "I'll wait for the
+notification" (a sonnet lane's long-context judgment degrading — the
+lesson is already in the lane memory; the new instance: even the
+FINALIZE instruction lost to the waiting loop). TAKEOVER per the skill:
+TaskStop; the final wave (23 files — spec hunks, the ENGINE_SEL value,
+the .def wiring — verified by the lane's own 23:0x-23:52 runs but never
+committed) committed as 71b8c59 with the takeover stated in the
+message; REBUILT and re-verified on the actual final tree (make -j4,
+strict, PROCS=4 test-registry rc 0: 225/201/83/21/54) because the
+lane's last src edits (23:45) postdated its verified build. Merged
+(git merge alone, no MERGE_HEAD). **Battery 6 launched on this commit**
+— it decides [LIM-1] battery-proven and the pin that supersedes
+fa01910 (I-25 to the bench inbox on green). Frank's perf hold is
+LIFTED (23:1x); pcrecdev2's next session runs the windows.
