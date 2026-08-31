@@ -18973,3 +18973,43 @@ confirmed; l-03 named as the instrument; no load-bearing percentage
 without perf). Worktree/branch retired. qd27's corpus snapshotted
 earlier (95/95 oracle agreement, manager re-run). quoting lane still
 in flight.
+
+**09:3x-09:5x — [M4-QUOTING] impl merged; compliance refreshed; THE D27
+CORPUS CAUGHT A TIER-1 MISCOMPILE ON ITS FIRST RUN; [OPT-5] STEP 1
+chartered on Frank's GO.**
+Impl merge clean (11 files; S210/S211 wired first on my change request,
+both DETECTED solo — S211's witness deliberately out-of-order since an
+in-order quoted range yields a bitset identical to the correct reading).
+/compliance-refresh run per the skill: index re-emitted (138 rows, \Q/\E
+built), both survey rows REJECTED→OK, both keyed annotations re-verified
+and date-stamped; all four compliance checks + full registry section
+green (rc 0, 595 PASS). strict clean. THEN the acceptance moment — the
+blinded corpus placed as tests/quoting/d27/ on branch qd27 (assertions/
+d27 precedent; snapshot binary git-rm'd; CLAUDE.md written) and run
+against the merged tree: 25 cells FAILED. Two classes: (A) 8 distinct
+compile failures = corpus `features quoting` lists lacking the std1
+modules their patterns also need (the .rxt contract maps `features`
+literally to `--features`, which replaces the default — corpus-side
+fix, manager's task, dd13b-syntax is the manager's call); (B) 12 cells
+= A REAL MISCOMPILE: a quantifier character INSIDE \Q...\E is parsed as
+a LIVE quantifier on the preceding quoted atom — `\Qa*b\E` compiles as
+the regex `a*b` (hand-reproduced both directions: 'a*b'→match 2 3,
+'aaab'→match 0 4; embedded `a\Qb*c\Ed` likewise). The quoted-DOT blocks
+pass — atoms literalize; the QUANTIFIER READER after the atom was never
+quote-guarded. The impl lane's own 164/164 probe table lists these
+exact shapes as PASSING — its probe harness has a self-confirming flaw
+(autopsy demanded; a lane's validation is a claim, measured instance).
+D27 earned its keep again: four adversarial-grade checks (probes,
+reject, registry, strict) were green over a miscompile the blinded
+corpus found in one run. Fix brief sent to the (warm) quoting lane:
+guard + autopsy + harness-path re-verification + S212 (allocated;
+detector = the corpus itself, validated by me post-merge). main
+carries the miscompile meanwhile — blast radius is the opt-in
+`--features quoting` only (not std1), fix imminent, battery follows.
+**[OPT-5] STEP 1 CHARTERED** (lane opt5s1, opus): the DFA scan edge —
+Frank's GO, and Frank's IDEA (see the plan row's provenance
+correction: he suggested loops sessions ago and was wrongly told
+that's not what DFA engines do). Bench coordination: pcrecdev2 awake,
+re-pin to 263b013 underway, OPEN/QUIET/CLOSED handshake agreed; my
+battery queues after WINDOW CLOSED; both lanes carry the no-heavy-runs
++ .hold discipline.
