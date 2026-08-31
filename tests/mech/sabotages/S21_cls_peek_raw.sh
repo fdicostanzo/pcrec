@@ -15,16 +15,11 @@ SAB_COUNT=1
 # Ctx.mods became a pointer to ParseMods at [M6.2] wave A, so
 # `cx->mods.xlevel` became `cx->mods->xlevel`. Intent (drop the
 # xlevel>=2 skip-through) unchanged.
-SAB_BEFORE="static int cls_peek_past_dash(Ctx *cx)
-{
-    size_t i = cx->pos + 1;
-    if (cx->mods->xlevel >= 2)
-        while (i < cx->patlen &&
-               (cx->pat[i] == ' ' || cx->pat[i] == '\\t')) i++;
-    return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
-}"
-SAB_AFTER="static int cls_peek_past_dash(Ctx *cx)
-{
-    size_t i = cx->pos + 1;
-    return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
-}"
+# ANCHOR RE-DERIVED 2026-08-31 from the live file: [M4-QUOTING] rewrote
+# cls_peek_past_dash into a for(;;) that also dissolves empty \Q\E pairs;
+# this row's subject is ONLY the xx ws-deletion, so the anchor narrows to
+# that branch and the quoting branch is left untouched by the plant.
+SAB_BEFORE="        if (cx->mods->xlevel >= 2)
+            while (i < cx->patlen &&
+                   (cx->pat[i] == ' ' || cx->pat[i] == '\\t')) i++;"
+SAB_AFTER="        /* SABOTAGE S21: xx ws-deletion dropped from the dash lookahead */"

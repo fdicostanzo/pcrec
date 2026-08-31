@@ -290,6 +290,7 @@ static void build_anchored_dfa(Ctx *cx)
 
     if (cx->job->adfa.overflowed) return;   /* stays `anchored_ok == false` */
     pcrec_minimize_dfa(cx, &cx->job->adfa);
+    pcrec_scanedge_dfa(cx, &cx->job->adfa);   /* [OPT-5], the third machine */
     cx->job->anchored_ok = true;
 }
 
@@ -1104,6 +1105,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                 cx.job->rnfa.start, false);
                 pcrec_minimize_dfa(&cx, &cx.job->dfa);
                 pcrec_minimize_dfa(&cx, &cx.job->rdfa);
+                /* [OPT-5] The scan edge is a property of the FINAL transition
+                 * table, so it runs after minimization on each machine and
+                 * before anything reads one. The reverse pass gets it on the
+                 * same line as the forward one, which is the whole point of
+                 * its being a table property rather than a pattern one
+                 * (docs/dev/opt5_step0_profile.md §3.1: the reverse walk is
+                 * the identical dependent-load shape). */
+                pcrec_scanedge_dfa(&cx, &cx.job->dfa);
+                pcrec_scanedge_dfa(&cx, &cx.job->rdfa);
                 build_anchored_dfa(&cx);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
@@ -1111,6 +1121,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                 PCREC_MAX_DFA_STATES_GOTO,
                                 cx.job->nfa.start, false);
                 pcrec_minimize_dfa(&cx, &cx.job->dfa);
+                /* [OPT-5] NOT run on ENG_ATTEMPT's machine, and the reason is
+                 * [OPT-3]'s own for exempting that engine one row earlier:
+                 * its states are LABELS and a step is
+                 * `goto *targets_K[byte_class[...]]`, so there is no
+                 * loop-carried table load to shorten -- the cell already IS
+                 * the thing the hardware consumes. Leaving the pass out here
+                 * is also what keeps every `^`-anchored artifact in the tree
+                 * byte-identical across this change. */
             }
         }
 

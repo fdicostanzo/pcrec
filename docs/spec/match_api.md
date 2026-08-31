@@ -156,10 +156,11 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `12`
-([OPT-4], the prefilter-language stamp; it read `6` when this note
+events but never stated the general rule; `rx_info.abi` is `13`
+([OPT-5], the DFA scan edge; it read `6` when this note
 was written, `7` after [OPT-3], `8` after [ENG-FORM], `9` after
-[OPT-K], `10` after [ENG-ABS] and `11` after [ART-SIZE]).
+[OPT-K], `10` after [ENG-ABS], `11` after [ART-SIZE] and `12` after
+[OPT-4]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1598,10 +1599,14 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `12` on every artifact today ([OPT-4] bumped it
-  from 11 by adding `<PREFIX>_VM_PREFILTER_LANG` and its companion
-  `<PREFIX>_VM_PREFILTER_LANG_WHY` to every VM HYBRID —
-  §6.3, and to no other artifact kind; `11` was [ART-SIZE]'s four size
+- **`rx_info.abi` is `13` on every artifact today ([OPT-5] bumped it
+  from 12 by adding `<PREFIX>_DFA_SCAN_EDGE` (§6.3) to every artifact and,
+  on any DFA scan whose machine carries a counted class run, by replacing
+  that run's states with one in-loop scan block — the first bump to move a
+  MACHINE and not only emitted text; `12` was [OPT-4]'s
+  `<PREFIX>_VM_PREFILTER_LANG` and its companion
+  `<PREFIX>_VM_PREFILTER_LANG_WHY` on every VM HYBRID and no other
+  artifact kind, `11` [ART-SIZE]'s four size
   stamps `_UNROLL_K`/`_UNROLL_K_WHY`/`_MAX_EMIT_CODE_BYTES`/
   `_MAX_EMIT_BYTES`, `10` [ENG-ABS]'s anchored match-here form, `9`
   [OPT-K]'s offset-k candidate-start skip, `8` [ENG-FORM]'s opaque DFA
@@ -2135,7 +2140,28 @@ names which of §3.2's two forms the artifact's `<prefix>_match` and
 | `"unwrapped"` | the artifact carries a THIRD machine — the forward tables WITHOUT the start-anywhere self-loop — and runs it from `ctx->pos`: no later start to reject, no backwards pass, and a failing probe stops at the first byte that cannot continue a match beginning here |
 | `"search-filter"` | the entry runs `<prefix>_search` and rejects any match whose start is not `ctx->pos`. Four populations: `_DFA_SCAN "attempt"`, `_DFA_SCAN "empty"`, an anchored machine that exceeded a DFA cap (a SELECTION OUTCOME, never a refusal), and any build under `-fno-anchored-dfa` |
 
-**THE IFF IS DIFFERENT FROM THE FOUR STAMPS ABOVE, and the difference is
+**`<PREFIX>_DFA_SCAN_EDGE` ([OPT-5], `abi` 13) is on every artifact that
+CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the same iff the four
+`_DFA_SCAN`/`_DFA_PREFILTER`/`_DFA_PREFILTER_OFFSETS`/`_DFA_TABLE` stamps
+carry — and names how that scan tests the class of a SCAN EDGE. An edge is a
+maximal run of states differing only in how many bytes of one fixed class have
+been counted, replaced by a bounded cursor loop and DELETED from the
+transition table (`docs/spec/tuning.md` §2.18; `src/opt/scanedge.c`). The four
+values below are all this macro ever reads:
+
+```
+#define RX_DFA_SCAN_EDGE "range"    /* (unsigned char)(b - 97) <= 25 */
+#define RX_DFA_SCAN_EDGE "none"     /* no machine carries a collapsible run */
+```
+
+| value | mechanism |
+|---|---|
+| `"none"` | the artifact carries no scan edge. Four causes and none of them a failure: no machine has a collapsible run; `_DFA_SCAN "attempt"`, whose states are code labels and whose step is a computed `goto`, so there is no loop-carried table load to shorten; `_DFA_SCAN "empty"`, whose body is one `return 0`; and any build under `-fno-scan-edge` |
+| `"range"` | every edge in the artifact tests a CONTIGUOUS byte range, emitted as a subtract-and-compare against two immediates baked into the instruction stream — the loop touches no memory but the subject |
+| `"bitmap"` | at least one edge's class is not contiguous, so its test is a 256-byte membership table read. The loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price |
+| `"mixed"` | an ARTIFACT-LEVEL composition, `RX_DFA_TABLE`'s own shape: this artifact's machines took both forms. The choice is per EDGE, and a machine may carry up to four |
+
+**THE IFF IS DIFFERENT FROM THE FIVE STAMPS ABOVE, and the difference is
 the fact rather than a filing decision.** Those four describe a DFA SCAN,
 and a VM HYBRID contains one — it inlines the DFA as its prefilter — so
 they appear on hybrids too. This one describes the artifact's
@@ -2161,11 +2187,12 @@ when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
-`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE` are
+`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE`/`RX_DFA_SCAN_EDGE` are
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
 since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
 artifacts AND VM hybrids, the iff stated in (a). `RX_DFA_TABLE` is
-[OPT-3]'s and joins that iff unchanged. `RX_DFA_MATCH` is [ENG-ABS]'s and
+[OPT-3]'s and `RX_DFA_SCAN_EDGE` [OPT-5]'s; both join that iff unchanged.
+`RX_DFA_MATCH` is [ENG-ABS]'s and
 does NOT: it is a fact about an ENTRY rather than about a scan, so its
 iff is `RX_ENGINE "dfa"` — see its own paragraph above. **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from

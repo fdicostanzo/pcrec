@@ -117,6 +117,12 @@ static const AxisDesc AXIS_DESC[] = {
     { "direction", "reverse", "always — finds where that match BEGINS" },
     { "direction", "anchored", "always on a DFA artifact that selects the unwrapped match-here form ([ENG-ABS]) — finds where the match beginning at ctx->pos ends" },
 
+    { "scan-edge", "scan-edge", "per STATE: src/opt/scanedge.c found a maximal run of states differing only in how many bytes of ONE class have been counted, rooted here, and DELETED the run's interior from the table -- so this state's edge is mandatory, not an accelerator ([OPT-5])" },
+    { "scan-edge", "table-walk", "always (fallback) -- this state counts nothing, or the axis is denied and the pass left every state where it was" },
+
+    { "scan-body", "range", "the edge's class is a CONTIGUOUS byte set: subtract-and-compare against two immediates, no memory touched but the subject ([OPT-5])" },
+    { "scan-body", "bitmap", "always (fallback) -- any other byte set, tested by a 256-byte membership table. The load is VALUE-addressed, not result-addressed, so the cursor is still the only loop-carried register. A per-ISA SIMD run-extension form would sit ABOVE these two ([OPT-SIMD]; ISA-neutral by ruling, scalar forms always the fallback)" },
+
     { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
     { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
 };
@@ -146,6 +152,11 @@ static const char *stamp_macro_of(const char *axis)
      * direction — its value is a caller-visible cost property of
      * `<prefix>_match` (spec §3.2), not an emitter-internal decision. */
     if (!strcmp(axis, "match")) return "RX_DFA_MATCH";
+    /* [OPT-5] The stamp belongs to the BODY axis, whose candidate names ARE
+     * its values. The REGION axis (`scan-edge`) has no value stamp of its
+     * own: what an artifact reports is which body its edges took, and
+     * "table-walk everywhere" is that stamp's `"none"`. */
+    if (!strcmp(axis, "scan-body")) return "RX_DFA_SCAN_EDGE";
     return "";
 }
 
@@ -169,6 +180,8 @@ static const char *cli_flag_of(const char *axis, const char *cand)
     if (!strcmp(axis, "prefilter") &&
         (!strcmp(cand, "offset-set") || !strcmp(cand, "offset-set-bounded")))
         return "-fno-offset-skip";
+    if (!strcmp(axis, "scan-edge") && !strcmp(cand, "scan-edge"))
+        return "-fno-scan-edge";
     return "";
 }
 
@@ -197,6 +210,7 @@ static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
     { PCREC_NO_OFFSET_SKIP, "PCREC_NO_OFFSET_SKIP" },
     { PCREC_NO_ANCHORED_DFA, "PCREC_NO_ANCHORED_DFA" },
     { PCREC_NO_SIZE_TERM, "PCREC_NO_SIZE_TERM" },
+    { PCREC_NO_SCAN_EDGE, "PCREC_NO_SCAN_EDGE" },
 };
 #define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
 
@@ -283,6 +297,30 @@ static void emit_table_composite_rows(StrBuf *sb)
     axis_row(sb, "table", 4, "mixed", "predicate",
              "RX_DFA_TABLE", "mixed", "", "", "", "", "",
              "the artifact's own machines took DIFFERENT per-machine table representations (dfa_table_name(): forward vs. reverse, and since [ENG-ABS] the anchored machine, disagree) — a per-artifact composition, never a single machine's own selection");
+}
+
+/* [OPT-5] `scan-body`'s TWO COMPOSITE ROWS, and they exist for `table`'s
+ * reason exactly. `RX_DFA_SCAN_EDGE`'s real value set is FOUR strings
+ * (docs/spec/match_api.md §6.3) and `pcrec_dfa_axis_scanbody_cands()` reports
+ * the TWO the body axis can select PER EDGE. `dfa_scan_edge_name()`
+ * (src/gen/emit_dfa.c) answers `"none"` when the REGION axis chose
+ * `table-walk` at every state — no edge, so no body to name — and `"mixed"`
+ * when the artifact's edges did not all take the same body. Neither is
+ * something the per-edge list could ever select on its own.
+ *
+ * NEITHER CARRIES THE DENY LEVER, and that is not an oversight: the flag
+ * belongs to the axis that decides whether an edge EXISTS (`scan-edge`,
+ * where it is reported on that axis's own first candidate), not to the axis
+ * that decides what an edge's loop looks like. `"none"` IS what a denied
+ * build stamps, which the prose below says rather than the column. */
+static void emit_scan_composite_rows(StrBuf *sb)
+{
+    axis_row(sb, "scan-body", 3, "none", "predicate",
+             "RX_DFA_SCAN_EDGE", "none", "", "", "", "", "",
+             "the artifact carries no scan edge, so there is no body to name: no machine has a collapsible counted run, or the engine is ENG_ATTEMPT (label dispatch, no table walk to shorten) or provably empty -- and it is also what every artifact stamps under -fno-scan-edge, which denies the scan-edge axis above rather than this one");
+    axis_row(sb, "scan-body", 4, "mixed", "predicate",
+             "RX_DFA_SCAN_EDGE", "mixed", "", "", "", "", "",
+             "the artifact's own edges took DIFFERENT bodies (dfa_scan_edge_name(): one machine's edge tests a contiguous range, another's reads a membership table) -- a per-artifact composition, never a single edge's own selection");
 }
 
 /* ---- "predicate" axes: no candidate-list-as-data yet -------------------
@@ -617,6 +655,14 @@ char *pcrec_axes_tsv(void)
     emit_dfa_list_axis(&sb, "accept", "list", pcrec_dfa_axis_accept_cands);
     emit_dfa_list_axis(&sb, "direction", "both", pcrec_dfa_axis_direction_cands);
     emit_dfa_list_axis(&sb, "match", "list", pcrec_dfa_axis_match_cands);
+    /* [OPT-5] axes H and I. Both are LIST axes off live candidate arrays,
+     * not hand-stated predicate rows: manager ruling R1 makes the region
+     * decision a D82 selection and the edge's run-extension body its own
+     * representation axis, so both have a real array for this walk to read
+     * and a SIMD body added later appears here with no edit. */
+    emit_dfa_list_axis(&sb, "scan-edge", "list", pcrec_dfa_axis_edge_cands);
+    emit_dfa_list_axis(&sb, "scan-body", "list", pcrec_dfa_axis_scanbody_cands);
+    emit_scan_composite_rows(&sb);
 
     emit_predicate_axes(&sb);
 

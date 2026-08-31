@@ -6,7 +6,8 @@
  * target". Survey of the tree at this lane's start found 16 numbers hand-
  * enumerated in the brief and a REAL population of 44 once every file was
  * grepped (docs/dev/lanes/lim1_report.md carries the survey delta). Every
- * one of those 44 is a row below; `pcrec --list-limits` dumps this table as
+ * one of those 44 is a row below (45 since [OPT-5] added the scan-edge
+ * budget); `pcrec --list-limits` dumps this table as
  * TSV (src/parse/limits_dump.c) and `docs/spec/limits.md` §3's prose is
  * checked against the dump rather than hand-copied from it
  * (tests/registry/limits_check.sh).
@@ -172,11 +173,12 @@ PCREC_LIMIT(VM_DEFAULT_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, "
 PCREC_LIMIT(VM_MAX_AUTO_RESUME_FRAMES, 2048, "frames", "runtime capacity", FLAG, "3.2", "[M4.6a]: clamp ceiling for the BOUNDED-depth class's exact auto-sizing under --backtrack-frames", EMIT_VM)
 PCREC_LIMIT(VM_MAX_AUTO_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, "3.2", "[M4.6a]: trail's own clamp ceiling, paired with VM_MAX_AUTO_RESUME_FRAMES", EMIT_VM)
 
-/* ---- home: INTERNAL_H (3) — src/core/internal.h's own compile-side caps */
+/* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
 
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)
 PCREC_LIMIT(PCREC_OFSK_MAX_SET, 4, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many offsets the selected offset-set prefilter candidate may carry", INTERNAL_H)
 PCREC_LIMIT(PCREC_MINW_MAX, (1LL << 40), "", "compile budget", NONE, "", "src/opt/callgraph.c: the minimum-width analysis' saturation ceiling (== PCREC_W_UNBOUNDED)", INTERNAL_H)
+PCREC_LIMIT(PCREC_MAX_SCAN_EDGES, 4, "count", "selection knee", NONE, "", "[OPT-5]: how many scan edges one DFA machine may carry — src/opt/scanedge.c takes the longest chains first, src/gen/emit_dfa.c sizes its array by it, and each edge costs one compare on the emitted loop's generic path", INTERNAL_H)
 
 /* ---- home: MOD_RECURSION / MOD_BACKREFS / MOD_LOOKAROUND (3) ----------- *
  * Parse-time saturation/buffer caps local to one module, kept at their own

@@ -2076,6 +2076,78 @@ artifact is a TS-1 failure and a §5.3 breach, and it binds under `-D` exactly
 as without one. Inert without the `-D`, so what the check reads IS the default
 artifact's text.
 
+## [OPT-5] AXES H AND I — THE SCAN EDGE (2026-08-31)
+
+`src/opt/scanedge.c` is the pass and its header carries the criterion, the
+seven preconditions and the argument that licenses DELETING a counted run's
+interior states. What lives here is the LOOP and the two axes the manager
+ruled it must be modelled as (ruling R1, from Frank's design question), and
+the two things about it that are the point:
+
+**THE LOOP-CARRIED VALUE IS THE CURSOR.** No table is read inside it, so
+iteration i+1's load address is known the instant iteration i's cursor is —
+the one structural difference `docs/dev/opt5_step0_profile.md` §3 measured
+between the DFA's 3.62 ns/byte and the VM's 0.60 on the same language. It is
+deliberately the same three-conjunct shape as the VM's own possessified span
+loop (§3.2), because that is the shape gcc was measured compiling into an
+address-independent loop on this box.
+
+**THE STATE IS NOT UPDATED ON AN EARLY EXIT, and that is not an omission.**
+Every member of the run has the same exit target and the same accept bit, so
+leaving the variable at the HEAD is indistinguishable from setting it to the
+true `u_k` — and it is what removes the last table read from the construct.
+
+**TWO AXES, BOTH REAL CANDIDATE LISTS.** Axis H (`dfa_edges`) is the REGION
+decision — does this state emit an edge, or fall to the ordinary walk — and is
+where `-fno-scan-edge` rides the axis machinery, `-fno-anchored-dfa`'s shape
+one axis over. Axis I (`dfa_scans`) is the edge's RUN-EXTENSION BODY, with two
+real forms on day one (D82 bound 3): `range` (subtract-and-compare against two
+immediates) and `bitmap` (a 256-byte membership table whose load is
+VALUE-addressed, not result-addressed — the cursor is still the only
+loop-carried register, which is what makes a bitmap body a cost rather than a
+defeat). **A per-ISA SIMD form is the reserved third candidate and is
+ISA-NEUTRAL by ruling** (R2): a new object plus its `emit_test`, nothing above
+the axis moving, and never described as an x86 slot — the scalar forms are the
+portable baseline and stay the fallback forever.
+
+**BOTH AXES ARE PER-STATE, WHICH IS WHAT `DfaSel.st` EXISTS FOR.** The other
+six axes describe a whole machine and never read it; a selection walk that
+could not name the state would have had to be a second, parallel walk. It is
+-1 wherever it is meaningless, `dfa_match_of`'s own reason for passing a NULL
+`d` rather than a fabricated one.
+
+**THE DENY BIT IS AT THE PASS *AND* ON AXIS H, and that is one fact with two
+readers.** Deleting states is not something an emitter filter can undo, so the
+pass must see the flag before it removes anything; the axis carries it because
+`--list-axes` reads `.deny` to name the flag that addresses an axis, and
+reporting 0 there would tell a caller the axis has no knob. The filter is
+unreachable in a denied build — no state carries an annotation — and says so.
+
+**FOUR SITES IN THIS FILE**, and what each is for: `emit_scan_edge` (the loop,
+written once for all three directions — unlike `emit_skip` the three differ in
+nothing else, so `DfaDir` gained two STRINGS rather than a method:
+`scan_more`, the bound's negation written out rather than derived, and
+`scan_back`, the position one byte behind the cursor IN WALK ORDER, `- 1`
+forward and `+ 1` reverse); `emit_scan_loop`'s call, placed AFTER the stay
+skips and BEFORE the view select, which is part of the deletion argument
+rather than a layout choice; `emit_machine_tables`, which asks each edge's own
+body object for whatever table it owns; and `pick_skip_states`, which DECLINES
+a state carrying an edge, because a stay skip fires before the edge and
+advances the position the edge's argument depends on.
+
+**THE FIRST ITERATION IS PEELED INTO THE GUARD, and that is measured.** The
+block sits on the loop's generic path, so it runs once per iteration whether
+or not there is a run — and the bench's `t-digits-016k` cell is that case at
+its worst (a nullable `[a-z]{0,n}` under find-all issues one `rx_search` per
+subject byte and not one of them scans a byte). Entered unconditionally it
+cost 3.69 -> 5.23 ns/call there; with the class test folded into the guard the
+residual is 8.5%, and the letters win GREW at the same time (n=256: 1.69x ->
+2.71x; n=16384: 2.43x -> 2.98x).
+
+`abi` 12 -> 13, and it is the FIRST bump that moves a MACHINE rather than only
+emitted text — see `emit_info_def`'s own comment for the per-artifact-kind
+breakdown and why comparison (A) does not move.
+
 ## [ENG-ABS] AXIS G — THE ANCHORED MATCH-HERE FORM (2026-08-29)
 
 `docs/design/anchored_match_unwrapped.md` is the note; what lives here is what

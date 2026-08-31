@@ -913,6 +913,62 @@ construction (src/ir) and emission (src/gen).
   Tests: tests/mrl/ (its own CLAUDE.md; the `.rxt` corpus there is
   D27-BLINDED and found a real gap in the first implementation).
 
+- **scanedge.c** — [OPT-5] THE DFA SCAN EDGE: a counted class run stops
+  being *m* table steps. Runs on every machine immediately after
+  `pcrec_minimize_dfa` (it needs the canonical state set, and nothing after
+  it rebuilds a `DState`), and it is the one pass in this directory that
+  DELETES states rather than annotating or rewriting nodes.
+
+  **THE MEASURED NEED** is `docs/dev/opt5_step0_profile.md`: the DFA's
+  per-byte step is `state = next_state[state + class]`, whose load ADDRESS is
+  the value the previous iteration's load RETURNED — pointer-chasing, 3.62
+  ns/byte on an in-class letter run against 0.60 for pcrec's OWN VM on the
+  identical language, flat across a 64x count range. The VM wins because its
+  loop-carried register is a CURSOR. This pass gives the DFA that loop where
+  a region of its state graph is doing nothing but counting; §7 of the
+  profile is explicit that address-independence is the first-order fix and a
+  SIMD run-extension stacks on top ([OPT-SIMD]), never instead.
+
+  **THE CRITERION IS A PROPERTY OF THE TRANSITION TABLE, not of `{m,n}`.**
+  Nothing here reads the AST or knows what construct produced the states: a
+  SCAN-SHAPED state advances on one class and leaves by the SAME door on
+  every other, and a chain is a maximal run of them sharing (class, exit,
+  accept bit). `[a-z]{0,n}` is the simplest instance rather than a special
+  case of one; `[a-z]*`/`[a-z]+` are the unbounded one-state form;
+  `[a-z]{3,10}` is TWO chains because the exit target changes when the
+  machine starts accepting; `[0-9]{4}-[0-9]{2}` has one per run. The
+  two-class control `([a-z]|[0-9]X){0,8}` is left exactly as it is.
+
+  **SEVEN PRECONDITIONS, EVERY ONE A DECLINE, and two of them were
+  MEASURED rather than reasoned.** The file's header carries all seven; the
+  two worth knowing before editing anything are (6) a chain head may not be
+  any state's `eolvar`/`endvar` target — the emitted loop steps from the
+  VIEW-SELECTED state, not from the state variable, so a view pointing at a
+  head reaches the killed table cell with the edge never having run
+  (`a{0,4}$`, 87 cells of tests/possessify/possessify.rxt, the right match
+  END and the wrong START) — and (7) when one chain's fall-through is
+  another's head the source must have the smaller state index, because the
+  emitted blocks are plain `if`s in state order.
+
+  **THE DELETION IS WHAT BUYS THE SIZE AND IT RESTS ON ONE CLAIM about the
+  EMITTED loop**: when the ordinary step runs, the state variable never holds
+  a chain head together with a byte of that head's scan class. The header
+  spells out the four things that make it true (where the edge sits in the
+  loop body, that it is its own `if`, that a head is excluded from
+  `pick_skip_states`, and that the scan consumes what the bound allows).
+  MEASURED: `[a-z]{0,16384}`'s forward machine goes from 16,385 states to 2,
+  its artifact from 725,729 to 17,776 source bytes and 212,800 to 16,192
+  `.so` bytes.
+
+  `-fno-scan-edge` (`PCREC_NO_SCAN_EDGE`) gates the pass ITSELF, which is
+  where the soundness half has to live: an emitter filter cannot put back
+  states this pass removed. `src/gen/emit_dfa.c`'s axis H carries the same
+  bit so `--list-axes` can name the flag that addresses the axis; one bit,
+  two readers. Tests: the answer corpora it reaches (counterk, classes,
+  bounded_repeats, possessify, k18_*), `docs/spec/tuning.md` §2.18;
+  sabotage rows S213 (the criterion's exit-uniformity clause) and S214 (the
+  emitted loop's count bound), with DISJOINT detectors.
+
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
   alphabet symbol so `$`-machines minimize correctly, and since [M6.2] wave A

@@ -1094,6 +1094,103 @@ knee this section used to describe and it is deleted — see "What it controls"
 above and `docs/design/prefilter_count_independence.md` §10a for the regression
 that removed it.
 
+### 2.18 `-fno-scan-edge` — `PCREC_NO_SCAN_EDGE` (bit 21)
+
+**What it controls.** Whether a DFA machine's *counted class runs* are
+collapsed into **scan edges**. A run here is a maximal sequence of states that
+differ in nothing but how many bytes of ONE fixed class have been counted —
+every one of them leaving by the same door on every other byte, and every one
+of them carrying the same accept bit. `[a-z]{0,16384}`'s forward machine is
+one such run of 16,384 states plus the state that has counted them all;
+`[a-z]*` and `[a-z]+` are the unbounded one-state form; `[0-9]{16}` is a run
+of sixteen. The pass is `src/opt/scanedge.c` and its header carries the exact
+criterion and its five preconditions.
+
+**What the artifact does instead.** One `if (state == K) { … }` block inside
+the scan loop, counting the class's bytes in a loop whose only carried value
+is the cursor:
+
+```c
+if (forward_state == 0) {
+    unsigned long scan_run_length = 0;
+    while (scan_position < subject_length && scan_run_length < 16UL
+           && (unsigned char)(subject[scan_position] - 48) <= 9)
+        { scan_position++; scan_run_length++; }
+    if (scan_run_length == 16UL) { forward_state = 2; last_accept_position = scan_position; }
+}
+```
+
+**Why.** `docs/dev/opt5_step0_profile.md` measured the DFA's ordinary step —
+`state = next_state[state + class]`, whose load ADDRESS is the value the
+previous iteration's load RETURNED — at ~3.62 ns/byte on an in-class letter
+run, against 0.60 for pcrec's own VM compiling the identical language. The
+difference is not the table lookup and it is not SIMD: it is whether the
+loop-carried register FEEDS an address (cheap, pipelined) or is FED BY a load
+(serial). A scan edge gives the DFA the VM's own loop shape.
+
+**It is the one DFA axis whose denial changes the MACHINE.** The run's
+interior states are DELETED — the edge replaces them — so this axis moves
+per-state table sizes as well as emitted code, and the denied build is the
+pre-`[OPT-5]` compiler byte for byte. `-fno-scan-edge` restores both the
+states and the table walk. No answer moves either way.
+
+**IT IS TWO AXES, and `--list-axes` reports both.** The emitter models the
+mechanism at the two levels D82 separates, and a caller reading the axis
+registry sees them as `scan-edge` and `scan-body`:
+
+| axis | candidates | question |
+|---|---|---|
+| `scan-edge` | `scan-edge`, `table-walk` | per STATE: does this state emit an edge at all? **This is the axis `-fno-scan-edge` denies** — the flag removes the first candidate and the ordinary walk selects the fallback. |
+| `scan-body` | `range`, `bitmap` | per EDGE: which run-extension body does that edge use? |
+
+**The stamp** is `<PREFIX>_DFA_SCAN_EDGE` (§3 below and `match_api.md` §6.3)
+and it reports the **body** axis's chosen object by name: `"range"` when every
+edge the artifact carries tests a contiguous byte range (a subtract-and-compare
+against two immediates), `"bitmap"` when a class is not contiguous and the test
+is a 256-byte membership read — whose load is addressed by *the byte this
+iteration read*, never by a previous iteration's result, so the cursor is still
+the only loop-carried register — `"mixed"` when the artifact's machines took
+both forms, and `"none"` when the region axis chose `table-walk` everywhere.
+Like `<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_PREFILTER` it is a fact about a DFA
+SCAN, so a VM HYBRID that inlines one reports it too ([DD-13c]'s (a)/(b)
+split).
+
+**A THIRD BODY IS RESERVED AND IS NOT BUILT.** A SIMD run-extension form —
+branchless classify plus count-leading-zeros, `studies/simd1`'s measured shape,
+plan row `[OPT-SIMD]`'s territory — belongs at the top of the `scan-body`
+preference list: a new candidate object and its test, with nothing above the
+axis moving (not the criterion, not the deletion, not the stamp's other
+values, not the gates). **Its contract is ISA-NEUTRAL by ruling**: it is "a
+SIMD run-extension form, per-ISA gated, with the scalar forms always available
+as the fallback", never an SSE2 or a NEON slot. Nothing this axis emits today
+is ISA-conditional, and `range`/`bitmap` are the portable baseline that keeps
+any per-ISA form optional forever.
+
+**AND THE COUNTED SEQUENCE HAS A PERIOD, WHICH IS 1.** The general shape of
+this mechanism is a chain whose advance classes CYCLE with period *k* — *k*
+singleton classes being a literal STRING, whose body is a counted loop of
+constant-length compares, i.e. `(?:ab){1,100}` collapsing the way `[ab]{1,100}`
+does. `DState.scan_period` carries that period so the criterion's output is a
+periodic sequence rather than a single class baked into the representation;
+only period 1 is built, the emitter asserts it rather than assuming it, and a
+period-*k* form is then a criterion extension plus a new `scan-body` object
+rather than a rewrite. The refusal is clean either way: a chain whose
+mid-period states disagree about their exit target is not scan-shaped and takes
+the ordinary walk.
+
+**The boundary, stated rather than left to be discovered.** A run is collapsed
+only when every one of its states has NO position view (`$`/`\Z`/`\z` select a
+different state at `pos == n-1`/`n`, and a scan passes those positions) and an
+accept bit that does not vary with the next byte's class (`\b`, `(?m)$`).
+Both are DECLINES, both are free on a pattern carrying none of those
+constructs, and a declined run compiles exactly as it did before this axis
+existed. At most four edges are collapsed per machine — each is a compare on
+the loop's generic path, the budget `pick_skip_states` already spends four of
+— and the longest runs are taken first. `ENG_ATTEMPT` (a `^`-anchored
+pattern) is not eligible at all: its states are code labels and a step is
+`goto *targets_K[class]`, so there is no loop-carried table load to shorten,
+which is `[OPT-3]`'s own reason for exempting that engine.
+
 
 ## 3. The DFA side's own stamps
 
@@ -1172,6 +1269,22 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   values and a header-less consumer needs to know which it linked.
   **It is also the one `RX_DFA_*` stamp a HYBRID does not carry** (§3.1
   below), because a hybrid's `_match` is the VM's own anchored body.
+
+- `RX_DFA_SCAN_EDGE` (`[OPT-5]`, 2026-08-31) names how that scan tests the
+  class of a **scan edge** — a counted class run collapsed out of the
+  transition table into one bounded cursor loop — as `"range"` (a
+  subtract-and-compare against two immediates), `"bitmap"` (a 256-byte
+  membership read, for a class whose byte set is not contiguous), `"mixed"`
+  (the artifact's machines took both) or `"none"` (it carries no edge).
+  §2.18 above is the axis and `src/opt/scanedge.c` the pass;
+  `docs/spec/match_api.md` §6.3 states the value set. `"none"` is not a
+  failure and is the common answer: `"attempt"` scans are not eligible (their
+  states are labels), `"empty"` ones have no loop, and a machine with no
+  counted class run has nothing to collapse. Like `RX_DFA_TABLE` it has **no
+  `rx_info` mirror**, for that stamp's reason — it is an internal encoding
+  choice rather than a cost property of an entry point a caller calls — and
+  like it, a HYBRID DOES carry it, because a hybrid inlines this emitter's
+  scan and therefore has the fact to report.
 
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not

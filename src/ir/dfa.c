@@ -960,6 +960,20 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         d->cap = ncap;
     }
     DState *s = &d->st[d->n];
+    /* [OPT-5] ZERO THE STATE FIRST, and this line is a bug fix rather than
+     * tidiness. `d->st` is REALLOC'd (this function's own growth above), so a
+     * new state's storage is whatever the allocator last held — and every
+     * field below is assigned, which is why that has never mattered. It
+     * stopped being true the moment a field arrived that a state may
+     * legitimately NOT have: `scan_span`/`scan_cls`/`scan_next` are written
+     * only by src/opt/scanedge.c, on the few states that carry a scan edge,
+     * and garbage in `scan_span` reads as "this state has one" everywhere
+     * else. MEASURED as a SEGFAULT in the pass's own remap on
+     * `foo[a-z]{0,8}bar` before this line existed. Zeroing here makes "the
+     * default is the absent case" true for this constructor the way it
+     * already is for `src/opt/minimize.c`'s `calloc`'d rebuild — so the next
+     * optional field costs nobody a second diagnosis. */
+    memset(s, 0, sizeof *s);
     for (int u = 0; u < UPC_N; u++) {
         int n = up[u].nlist;
         s->up[u].nlist  = n;
