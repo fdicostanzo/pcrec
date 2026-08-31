@@ -1024,14 +1024,33 @@ typedef struct {
 /* How far past offset 0 the walk looks. It is a WALK bound and not a tuning
  * knob: past ~two dozen bytes a fixed-width prefix is vanishingly rare and
  * the frontier has almost always either accepted or fanned out. The k-SET
- * cap below is the one that bounds emitted work. */
-#define PCREC_PREFIX_K_MAX   24
-
-/* How many (offset, byte-set) tests one skip may carry — the k-set cap. Four
+ * cap below is the one that bounds emitted work.
+ *
+ * How many (offset, byte-set) tests one skip may carry — the k-set cap. Four
  * is the note's §4.6: the third and fourth verify are already below the
  * model's noise on every corpus pattern, and each one is emitted text and a
- * branch on the candidate path. */
-#define PCREC_OFSK_MAX_SET   4
+ * branch on the candidate path.
+ *
+ * [LIM-1] (D90, 2026-08-30): both generated from src/core/limits.def, the
+ * single derivation `pcrec --list-limits` dumps — values unchanged (24, 4). */
+#define PCREC_LIMIT_INTERNAL_H(name, value, unit, kind, override, anchor, desc) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_INTERNAL_H
+/* MEASURED (make strict): gcc's enum-widening extension picks an UNSIGNED
+ * underlying type for PCREC_MINW_MAX's enumerator (1LL << 40 exceeds
+ * UINT_MAX, and gcc's "smallest sufficient type" rule prefers unsigned for
+ * a non-negative value out of int range) — every comparison and arithmetic
+ * use across this tree (mrl.c, callgraph.c, emit_vm.c) assumes `long long`,
+ * so `-Wsign-compare` fires at all eleven of them. One correction, at
+ * generation, rather than a cast repeated at every use site: rebinding the
+ * name to a cast of itself is standard C's self-referential-macro rule
+ * (C11 6.10.3.4) — the inner occurrence is not re-expanded, so it resolves
+ * to the ENUM CONSTANT the include above just declared, cast once. The
+ * 2^40 value is still spelled exactly once, in limits.def; this is a TYPE
+ * fix, not a second numeric source. PCREC_W_UNBOUNDED (below) is unaffected
+ * by construction — it is already only ever a macro alias of this name. */
+#define PCREC_MINW_MAX ((long long)PCREC_MINW_MAX)
 
 typedef struct {
     int      k;          /* the offset, in bytes from the candidate start */
@@ -4052,8 +4071,10 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * analysis does — two different ceilings would let a long concatenation of
  * saturated subtrees overflow past the one that was supposed to prevent it.
  * Far above any addressable subject on purpose: a saturated bound reads as
- * "doomed", which at 2^40 remaining bytes it is. */
-#define PCREC_MINW_MAX (1LL << 40)
+ * "doomed", which at 2^40 remaining bytes it is.
+ *
+ * [LIM-1] (D90): generated earlier in this file (PCREC_PREFIX_K_MAX's own
+ * limits.def include, home INTERNAL_H) — value unchanged, (1LL << 40). */
 
 /* [M6.6.2 wave A] The MAXIMUM number of subject bytes any match of `a` can
  * consume — `pcrec_minw`'s twin, and its DIRECTION IS THE OPPOSITE ONE.

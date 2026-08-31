@@ -59,8 +59,13 @@
 /* A group number well above anything PCRE2 can declare, used to saturate the
  * decimal accumulator. A run of 40 digits must not wrap into a small positive
  * value that happens to name a real group — the same saturation discipline
- * src/opt/mrl.c applies to its own arithmetic, for the same reason. */
-#define BR_NUMBER_MAX 1000000L
+ * src/opt/mrl.c applies to its own arithmetic, for the same reason. The
+ * NUMBER has one home now, [LIM-1]'s src/core/limits.def (value unchanged,
+ * 1000000L). */
+#define PCREC_LIMIT_MOD_BACKREFS(name, value, unit, kind, override, anchor, desc) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_MOD_BACKREFS
 
 static long br_decimal(const char *p, size_t from, size_t to)
 {

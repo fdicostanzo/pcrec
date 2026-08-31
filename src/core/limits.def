@@ -1,0 +1,191 @@
+/* src/core/limits.def — [LIM-1] THE SINGLE DERIVATION OF EVERY NUMERIC
+ * LIMIT IN PCREC (D90, docs/dev/decisions.md).
+ *
+ * WHY THIS FILE EXISTS. Frank, 2026-08-30: "we tend to expose internals ...
+ * consider: is there a table internally of numbers that can be a --list
+ * target". Survey of the tree at this lane's start found 16 numbers hand-
+ * enumerated in the brief and a REAL population of 44 once every file was
+ * grepped (docs/dev/lanes/lim1_report.md carries the survey delta). Every
+ * one of those 44 is a row below; `pcrec --list-limits` dumps this table as
+ * TSV (src/parse/limits_dump.c) and `docs/spec/limits.md` §3's prose is
+ * checked against the dump rather than hand-copied from it
+ * (tests/registry/limits_check.sh).
+ *
+ * THE ROW SHAPE, one line per limit:
+ *
+ *   PCREC_LIMIT(name, value, unit, kind, override, anchor, desc, home)
+ *
+ *   name     the C symbol, spelled exactly as it appears at its use sites
+ *   value    the numeric value or expression, exactly as C would spell it —
+ *            may reference an EARLIER row's own name in the same home file
+ *            (PCREC_MAX_EMIT_NAME_LEN's row references PCREC_MAX_PREFIX_LEN;
+ *            VM_MAX_BODY_CAPS, emit_vm.c, is a bare alias of
+ *            PCREC_MAX_REVDET_BODY_GROUPS rather than a second row — see
+ *            emit_vm.c's own comment at that #define)
+ *   unit     "bytes" | "states" | "entries" | "elements" | "nodes" |
+ *            "copies" | "groups" | "levels" | "positions" | "chars" |
+ *            "frames" | "steps" | "work-units" | "count" | "" (dimensionless
+ *            / a magnitude ceiling)
+ *   kind     "compile budget" (bounds the COMPILER's own analysis/emission;
+ *            crossing it can REFUSE a pattern) | "runtime capacity" (bounds
+ *            the EMITTED MATCHER's own resource use; crossing it is a
+ *            give-up, never a wrong answer) | "size cap" (bounds emitted
+ *            artifact BYTES) | "selection knee" (a threshold or default that
+ *            steers which SELECTION mechanism fires, not a hard ceiling) |
+ *            "identifier cap" (bounds a NAME's length or a construct COUNT
+ *            tied to naming/authoring, not to match-time resource use)
+ *   override "flag" (a CLI flag or pcrec_options field lets a caller move it
+ *            at RUNTIME/per-compile) | "-D" (only a build-time `-D` at
+ *            pcrec's OWN compile time moves it; never a caller lever) |
+ *            "none" (fixed; no lever anywhere)
+ *   anchor   the docs/spec/limits.md section (e.g. "3.1") this number is
+ *            documented in, or "" — most of the compile-budget internals
+ *            are NOT in limits.md by design: that document states what
+ *            pcrec PROMISES a CALLER about the emitted matcher's resource
+ *            bounds (its own §1), not an internals catalog, so a bound on
+ *            the COMPILER's own analysis (PCREC_MAX_ALTCLS_FACTOR_DEPTH, an
+ *            unroll-K default, an identifier length) legitimately has no
+ *            anchor there. limits_check.sh verifies every §3 number that DOES
+ *            exist is one of these rows' values, and every anchored row's
+ *            value appears at its named section — not that every row has an
+ *            anchor.
+ *   desc     one-line "what this bounds", plain enough to stand alone in a
+ *            TSV cell
+ *   home     which C file's own X-macro invocation (below) is the ONE place
+ *            this row expands into a real `#define`/`#ifndef` — every other
+ *            home's expansion of this same row is a no-op (see "THE HOME
+ *            DISPATCH" below). This is HOW "no number stays hand-spelled"
+ *            holds: the number is spelled ONCE, right here, and every site
+ *            that used to hand-spell it now expands this table instead.
+ *
+ * THE HOME DISPATCH. A site that wants ITS OWN rows defines
+ * `PCREC_LIMIT_<HOME>(name, value, unit, kind, override, anchor, desc)`
+ * BEFORE `#include "core/limits.def"`; every other home token gets a
+ * harmless no-op default from this file, and `PCREC_LIMIT` itself dispatches
+ * each row to `PCREC_LIMIT_##home`. A site that wants EVERY row uniformly
+ * (the dump, the registry check's derivation) instead defines the full
+ * `PCREC_LIMIT(name, value, unit, kind, override, anchor, desc, home)` macro
+ * directly, which bypasses the dispatch layer entirely — see
+ * src/parse/limits_dump.c for that shape. Every macro this file defines is
+ * `#undef`-ed at the bottom, so a second `#include` elsewhere starts clean.
+ *
+ * EVERY ROW BECOMES A PLAIN `#define NAME (VALUE)` at its home (or, for
+ * override="-D" rows, an `#ifndef`-guarded one) — never an enum member, even
+ * where the original site used one. A macro substitution and an enum
+ * constant are interchangeable everywhere these values are used (comparison,
+ * array sizing, switch-case labels), and using ONE shape uniformly is what
+ * lets a single dispatch macro serve every home without a second axis of
+ * per-row variation. Verified by build: the codegen structural checks and
+ * the full corpus are answer-identical before and after (docs/dev/lanes/
+ * lim1_report.md). */
+
+#ifndef PCREC_LIMIT
+#ifndef PCREC_LIMIT_LIMITS_H
+#define PCREC_LIMIT_LIMITS_H(name, value, unit, kind, override, anchor, desc)
+#endif
+#ifndef PCREC_LIMIT_EMIT_VM
+#define PCREC_LIMIT_EMIT_VM(name, value, unit, kind, override, anchor, desc)
+#endif
+#ifndef PCREC_LIMIT_INTERNAL_H
+#define PCREC_LIMIT_INTERNAL_H(name, value, unit, kind, override, anchor, desc)
+#endif
+#ifndef PCREC_LIMIT_MOD_RECURSION
+#define PCREC_LIMIT_MOD_RECURSION(name, value, unit, kind, override, anchor, desc)
+#endif
+#ifndef PCREC_LIMIT_MOD_BACKREFS
+#define PCREC_LIMIT_MOD_BACKREFS(name, value, unit, kind, override, anchor, desc)
+#endif
+#ifndef PCREC_LIMIT_MOD_LOOKAROUND
+#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc)
+#endif
+#ifndef PCREC_LIMIT_RXT_SOURCE
+#define PCREC_LIMIT_RXT_SOURCE(name, value, unit, kind, override, anchor, desc)
+#endif
+#define PCREC_LIMIT(name, value, unit, kind, override, anchor, desc, home) \
+    PCREC_LIMIT_##home(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_DEF_UNDEF_DISPATCH 1
+#endif
+
+/* ---- home: LIMITS_H (28) — src/core/limits.h's three D26 tiers --------- */
+
+PCREC_LIMIT(PCREC_MAX_PREFIX_LEN, 60, "bytes", "identifier cap", NONE, "", "generated-symbol prefix (-p): a C identifier bound", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_EMIT_NAME_LEN, (PCREC_MAX_PREFIX_LEN + 96), "bytes", "identifier cap", NONE, "", "K38: fixed buffer size for every emitted identifier/sub-expression built from the -p prefix", LIMITS_H)
+PCREC_LIMIT(PCREC_DFA_OVERFLOW_WHY_LEN, 96, "bytes", "identifier cap", NONE, "", "[SEL-1]: fixed size of the DFA-cap-overflow reason string (RX_ENGINE_WHY source)", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_NFA_STATES, 131072, "states", "compile budget", NONE, "3.3", "M2.8: NFA state-count ceiling; a memory backstop, the DFA caps below usually bind first", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_DFA_STATES_GOTO, 10000, "states", "compile budget", NONE, "3.3", "computed-goto DFA attempt engine's state ceiling", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_DFA_STATES_TABLE, 32000, "states", "compile budget", NONE, "3.3", "table-engine DFA state ceiling; must fit in a C short", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_TABLE_ENTRIES, 2000000, "entries", "compile budget", NONE, "3.3", "states*classes bound on the DFA transition table (~12 MB source)", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_SUBSET_ELEMS, 48000000, "elements", "compile budget", NONE, "3.3", "[M4.7b]/K7: total NFA-state-list elements the priority subset construction may intern, summed over both machines", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_VM_NODES, 131072, "nodes", "compile budget", NONE, "3.3", "[M4.5b]: the VM emitter's own node-count size backstop", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_VM_REPEAT_COPIES, 64, "copies", "compile budget", NONE, "", "[M4.5c]: how many times a bounded repeat may replicate a body with a choice point", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_VM_REPLICATION_PRODUCT, PCREC_MAX_VM_NODES, "nodes", "compile budget", NONE, "", "[K22]: total replication product along a chain of nested bounded repeats — a literal alias of PCREC_MAX_VM_NODES, not tuned separately", LIMITS_H)
+PCREC_LIMIT(PCREC_DEFAULT_UNROLL_K, 8, "count", "selection knee", FLAG, "", "[ENG-BREP]: the counter rung's default unroll factor K, overridden by --unroll=N", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_POSSESS_POSITIONS, 256, "positions", "compile budget", NONE, "", "[ENG-BREP]: byte-consuming positions a quantifier body may have before possessify.c declines it", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_REVDET_BODY_GROUPS, 64, "groups", "compile budget", NONE, "", "[ENG-BREP]: capturing groups a quantifier body may contain before revdet.c declines the reverse-deterministic rung", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_ALTCLS_FACTOR_DEPTH, 64, "levels", "compile budget", NONE, "", "[OPT-ALTCLS] stage 2: how deep prefix factoring may recurse into a group that just split", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_REPEAT, 65535, "count", "compile budget", NONE, "", "FIX-1/K5: the largest {n,m} quantifier count PCRE2 accepts (measured against libpcre2 10.46)", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_GROUP_DEPTH, 250, "levels", "compile budget", NONE, "", "PCRE2's own nested-group depth ceiling (measured); also bounds parser/AST recursion depth", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_GROUP_NAME, 128, "bytes", "identifier cap", NONE, "", "[M6.3]: a named group's name, measured against libpcre2 10.46 (PCRE2 error 148 above it)", LIMITS_H)
+PCREC_LIMIT(PCREC_VERB_NAME_MAX, 128, "bytes", "identifier cap", NONE, "", "a (*VERB) name; PCRE2-internals tier, measured over both name tables", LIMITS_H)
+PCREC_LIMIT(PCREC_VERB_LIMIT_ACC_MAX, 429496728, "", "compile budget", NONE, "", "(*LIMIT_MATCH=N) and friends: the accumulator magnitude PCRE2 refuses at (UINT32_MAX/10 - 1)", LIMITS_H)
+PCREC_LIMIT(PCREC_UPROP_NAME_MAX, 48, "chars", "identifier cap", NONE, "", "\\p{...}/\\P{...} property name, in SIGNIFICANT characters (measured against libpcre2 10.46)", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_SPLICE_NODES, 512, "nodes", "compile budget", NONE, "", "[DD-14 wave G]: per-call-site AST-node splice budget before a call linkage is forced", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_SPLICE_TOTAL, 8192, "nodes", "compile budget", NONE, "", "[DD-14 wave G]: total added AST nodes across every spliced call site in one compile", LIMITS_H)
+PCREC_LIMIT(PCREC_ANCHORED_MAX_STATES, 4096, "states", "compile budget", BUILD_D, "", "[ENG-ABS]: the optional anchored match-here machine's own DFA state ceiling, lower than the mandatory pair's", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_VM_EMIT_CODE_BYTES, 500000, "bytes", "size cap", BUILD_D, "8", "[ART-SIZE]/D84: emitted C bytes OUTSIDE table initializers; --max-emit-code-bytes ALSO raises it per-compile (raise-only); -D moves the built-in default (run_size_term.sh's reference-compiler consumer)", LIMITS_H)
+PCREC_LIMIT(PCREC_DEFAULT_WARN_EMIT_BYTES, 250000, "bytes", "size cap", BUILD_D, "8", "[OPT-4]: the advisory --warn-emit-bytes default (never refuses, 0 disables) ALSO settable per-compile; -D moves the built-in default", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_EMIT_BYTES, 1000000, "bytes", "size cap", BUILD_D, "8", "[ART-SIZE]/D84: the whole comment-excluded artifact; --max-emit-bytes ALSO raises it per-compile (raise-only); -D moves the built-in default", LIMITS_H)
+PCREC_LIMIT(PCREC_SIZE_TERM_THRESHOLD, 120000, "bytes", "selection knee", BUILD_D, "", "[ART-SIZE]: the emitted-size knee above which the unroll-K size term evaluates the ladder at all", LIMITS_H)
+
+/* ---- home: EMIT_VM (6) — src/gen/emit_vm.c's runtime give-up budgets --- *
+ * Deliberately NOT in limits.h's own tiers (VM_DEFAULT_WORK_BUDGET's own
+ * comment there states why: that file's inclusion rule is "changes what
+ * pcrec ACCEPTS, REJECTS or PROMISES" at COMPILE time, and a runtime give-up
+ * budget changes none of the three then) — this table catalogues them
+ * without relocating them, exactly the shape the LIM-1 brief names for
+ * "the modules" rows below too. */
+
+PCREC_LIMIT(VM_DEFAULT_STEP_BUDGET, 500000000LL, "steps", "runtime capacity", FLAG, "3.1", "D51: default backtrack-resumption budget; --step-budget=N overrides per compile", EMIT_VM)
+PCREC_LIMIT(VM_DEFAULT_WORK_BUDGET, 1000000000LL, "work-units", "runtime capacity", FLAG, "3.1", "D49: default forward-only-work budget, a separate counter from steps; --work-budget=N overrides", EMIT_VM)
+PCREC_LIMIT(VM_DEFAULT_RESUME_FRAMES, 2048, "frames", "runtime capacity", FLAG, "3.2", "D73: default resume-stack capacity for the UNBOUNDED-depth class; --backtrack-frames=N overrides", EMIT_VM)
+PCREC_LIMIT(VM_DEFAULT_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, "3.2", "D73: default trail capacity paired with VM_DEFAULT_RESUME_FRAMES", EMIT_VM)
+PCREC_LIMIT(VM_MAX_AUTO_RESUME_FRAMES, 2048, "frames", "runtime capacity", FLAG, "3.2", "[M4.6a]: clamp ceiling for the BOUNDED-depth class's exact auto-sizing under --backtrack-frames", EMIT_VM)
+PCREC_LIMIT(VM_MAX_AUTO_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, "3.2", "[M4.6a]: trail's own clamp ceiling, paired with VM_MAX_AUTO_RESUME_FRAMES", EMIT_VM)
+
+/* ---- home: INTERNAL_H (3) — src/core/internal.h's own compile-side caps */
+
+PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)
+PCREC_LIMIT(PCREC_OFSK_MAX_SET, 4, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many offsets the selected offset-set prefilter candidate may carry", INTERNAL_H)
+PCREC_LIMIT(PCREC_MINW_MAX, (1LL << 40), "", "compile budget", NONE, "", "src/opt/callgraph.c: the minimum-width analysis' saturation ceiling (== PCREC_W_UNBOUNDED)", INTERNAL_H)
+
+/* ---- home: MOD_RECURSION / MOD_BACKREFS / MOD_LOOKAROUND (3) ----------- *
+ * Parse-time saturation/buffer caps local to one module, kept at their own
+ * module file per the brief's own "the modules" grouping rather than moved
+ * into limits.h — each is a bound on PARSED NUMBER MAGNITUDE or a diagnostic
+ * buffer, not a state/emission budget the other homes above track. */
+
+PCREC_LIMIT(RC_NUMBER_MAX, 1000000L, "", "compile budget", NONE, "", "src/parse/mod_recursion.c: saturation ceiling for a (?N)/(?+N)/(?-N) recursion-call number", MOD_RECURSION)
+PCREC_LIMIT(BR_NUMBER_MAX, 1000000L, "", "compile budget", NONE, "", "src/parse/mod_backrefs.c: saturation ceiling for a \\N/\\g{N} backreference number", MOD_BACKREFS)
+PCREC_LIMIT(LA_MSG_MAX, 256, "bytes", "identifier cap", NONE, "", "src/parse/mod_lookaround.c: fixed buffer size for the §2.5/§2.7 lookaround diagnostic text", MOD_LOOKAROUND)
+
+/* ---- home: RXT_SOURCE (4) — the .rxt SOURCE head parser's own caps ----- *
+ * [DD-13b.W1.1]/r46sem finding 8, docs/spec/limits.md §3.5. These four were
+ * bare buffer-size literals (`char name[128]`, an inline `64`) before this
+ * lane named them — the survey's own finding, not a pre-existing table. */
+
+PCREC_LIMIT(RXT_CONFIG_NAME_MAX, 127, "bytes", "identifier cap", NONE, "3.5", "a .rxt `config` block's own name", RXT_SOURCE)
+PCREC_LIMIT(RXT_TARGET_PREFIX_MAX, 127, "bytes", "identifier cap", NONE, "3.5", "a .rxt `target` block's -p prefix", RXT_SOURCE)
+PCREC_LIMIT(RXT_TARGET_DEF_MAX, 127, "bytes", "identifier cap", NONE, "3.5", "a .rxt `target` block's definition name", RXT_SOURCE)
+PCREC_LIMIT(RXT_FROM_NEST_MAX, 64, "levels", "compile budget", NONE, "3.5", "a .rxt `config ... from` cascade's nesting depth before the head parser refuses", RXT_SOURCE)
+
+#ifdef PCREC_LIMIT_DEF_UNDEF_DISPATCH
+#undef PCREC_LIMIT
+#undef PCREC_LIMIT_LIMITS_H
+#undef PCREC_LIMIT_EMIT_VM
+#undef PCREC_LIMIT_INTERNAL_H
+#undef PCREC_LIMIT_MOD_RECURSION
+#undef PCREC_LIMIT_MOD_BACKREFS
+#undef PCREC_LIMIT_MOD_LOOKAROUND
+#undef PCREC_LIMIT_RXT_SOURCE
+#undef PCREC_LIMIT_DEF_UNDEF_DISPATCH
+#endif

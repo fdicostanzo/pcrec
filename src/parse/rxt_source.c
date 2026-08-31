@@ -56,6 +56,18 @@
 #include "pcrec.h"
 #include "core/internal.h"
 
+/* [LIM-1] (D90, 2026-08-30) THE FOUR CAPS THIS HEAD PARSER HAS ALWAYS HAD
+ * (docs/spec/limits.md §3.5) but never NAMED — the survey that built
+ * src/core/limits.def found them as bare buffer-size literals
+ * (`char name[128]`, an inline `64`) rather than as a table row anywhere.
+ * Generated here, the single derivation `pcrec --list-limits` dumps and
+ * limits.md §3.5 is checked against — values unchanged: 127-byte identifier
+ * caps (a 128-byte buffer, one NUL) and a 64-deep `from` nest. */
+#define PCREC_LIMIT_RXT_SOURCE(name, value, unit, kind, override, anchor, desc) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_RXT_SOURCE
+
 /* ---------------------------------------------------------------- lexer */
 
 /* A line's first whitespace-delimited token IS its kind (format_design
@@ -601,7 +613,7 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
 {
     size_t line = *i + 1;
     const char *v = line_value(L->v[*i]);
-    char name[128];
+    char name[RXT_CONFIG_NAME_MAX + 1];
     const char *e = v;
     while (*e && !isspace((unsigned char)*e)) e++;
     size_t nlen = (size_t)(e - v);
@@ -709,7 +721,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         return rxt_fail(p, line,
                         "'target' wants '<prefix> = <definition>' (no '=' on "
                         "the line)");
-    char prefix[128];
+    char prefix[RXT_TARGET_PREFIX_MAX + 1];
     const char *pe = eq;
     while (pe > v && isspace((unsigned char)pe[-1])) pe--;
     size_t plen = (size_t)(pe - v);
@@ -729,7 +741,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
                         "the generated symbols' prefix)", prefix);
 
     const char *rest = skip_ws(eq + 1);
-    char def[128];
+    char def[RXT_TARGET_DEF_MAX + 1];
     const char *de = rest;
     while (*de && !isspace((unsigned char)*de)) de++;
     size_t dlen = (size_t)(de - rest);
@@ -811,9 +823,10 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
         return rxt_fail(p, r->line,
                         "'config %s from' is a cycle: %s", r->name, members);
     }
-    if (depth >= 64)
+    if (depth >= RXT_FROM_NEST_MAX)
         return rxt_fail(p, r->line,
-                        "'config %s from' nests more than 64 deep", r->name);
+                        "'config %s from' nests more than %d deep",
+                        r->name, RXT_FROM_NEST_MAX);
     stack[depth] = r;
     if (!r->from_list) return 0;
     const char *s = r->from_list;
@@ -1076,7 +1089,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     /* the `from` cycle check, once every config is known — a `from` may
      * name a config declared later in the file, so this cannot run inline */
     {
-        RxtRow *stack[64];
+        RxtRow *stack[RXT_FROM_NEST_MAX];
         for (size_t i = 0; i < src->nrows; i++)
             if (src->rows[i].kind == RXT_DECL_CONFIG &&
                 config_walk(&p, src, &src->rows[i], stack, 0) != 0)
