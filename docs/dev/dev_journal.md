@@ -19070,3 +19070,26 @@ NEVER run by the lane (its own flag) — first item on the LIFT list.
 LIFTED 14:0x; lane re-verifying the rework; then review/merge (strip
 the two files, merge main in first), r48 panel during the battery,
 ONE battery proves [M4-QUOTING] + the scan edge and becomes the pin.
+
+**14:4x-15:1x — [OPT-5] STEP 1 LANDED (merge from lane/opt5s1); battery
+next.** Post-LIFT re-verification all green (its table: strict, 850-cell
+differential both flag states, 40-artifact byte-neutrality, 16 corpora,
+R4 discharged — the hand-twin came back INSTRUCTION-IDENTICAL on range
+and one register name off on bitmap, i.e. zero accessor residue;
+registry 88/0 with the guard's first-ever DECREASE argued in the guard
+comment: three lost checks were duplicates and one asserted a falsehood
+— that the body could be denied independently of the edge). Its
+test-codegen run caught MAIN red: S21/S23 anchors stale since the
+quoting landing (my debt — quoting's brief ran registry/reject/strict/
+rxtsource but never test-codegen; the lane correctly refused to fix
+them against its stale parse.c). Landing: signalling files stripped,
+main merged into the branch clean, merged-state verify green (registry
+rc 0, quoting 95/95, counterk 1,634/0), S21/S23 re-derived against
+live parse.c (narrowed anchors, quoting branch untouched) and
+re-proven DETECTED solo (3fail/14pass, 1fail/6pass), full
+test-codegen on the branch 198 PASS / 0 FAIL rc 0, merged to main.
+Numbers on the rework: letters 5,513/4,896 ns (2.71x/3.03x), digits
+62,986 (1.08x — accepted); stamps range/bitmap/none confirmed.
+NEXT: battery on this commit (proves [M4-QUOTING] AND the scan edge;
+supersedes 263b013 as the pin; I-27 to the bench on green) + the r48
+read-only panel during it.
