@@ -286,6 +286,13 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_OFFSET_SKIP;
         else if (!no_more_opts && !strcmp(a, "-fno-anchored-dfa"))
             opt.flags |= PCREC_NO_ANCHORED_DFA;
+        /* [OPT-5] Denies the SCAN EDGE, which is the one DFA axis whose
+         * denial changes the MACHINE and not only the emitted loop: the run's
+         * interior states come back and the table walk with them. That is
+         * what makes the denied build the answer-identity sweep's reference
+         * rather than merely a slower variant. See lib/pcrec.h. */
+        else if (!no_more_opts && !strcmp(a, "-fno-scan-edge"))
+            opt.flags |= PCREC_NO_SCAN_EDGE;
         /* [ART-SIZE] Denies the K SELECTION only. It does NOT reach either
          * emitted-size cap — those are raise-only via --max-emit-*-bytes
          * (D84 ruling 1): a safety refusal a flag turns off is not one. */

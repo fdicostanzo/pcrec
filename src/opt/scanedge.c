@@ -154,7 +154,7 @@
  * kind of budget `pick_skip_states` spends four of, and for the same reason.
  * The chains are taken LONGEST FIRST, so what a machine with more than four
  * gives up is always the smallest saving available to it. */
-#define SCAN_MAX_EDGES 4
+#define SCAN_MAX_EDGES PCREC_MAX_SCAN_EDGES
 
 typedef struct {
     int head, cls, span, next;   /* `span` -1 == unbounded */

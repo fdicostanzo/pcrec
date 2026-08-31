@@ -1169,13 +1169,15 @@ typedef struct {
      * and the emitter writes it as an address-only-dependent bounded scan loop
      * instead of `span` data-dependent table steps.
      *
-     * `scan_span` IS THE PRESENCE FLAG AND ITS ZERO IS "NO EDGE", which is the
-     * arena's and `calloc`'s own zero — so a `DState` built by any of this
-     * tree's three constructors (src/ir/dfa.c's `make_state`, src/opt/
-     * minimize.c's compacting rebuild, and this pass's own) is correctly
-     * edgeless without knowing this field exists. A `scan_cls`-shaped
-     * presence flag would have made "class 0" the default and every such
-     * constructor a silent miscompile. Its other two values:
+     * `scan_span` IS THE PRESENCE FLAG AND ITS ZERO IS "NO EDGE". A
+     * `scan_cls`-shaped presence flag would have made "class 0" the default,
+     * which is a live class on every machine. Both `DState` constructors give
+     * that zero: src/opt/minimize.c's rebuild `calloc`s, and src/ir/dfa.c's
+     * `make_state` `memset`s — the LATTER was added by this row and is a bug
+     * fix, because `Dfa.st` is REALLOC'd and every other field of a state
+     * happens to be assigned unconditionally. A field a state may
+     * legitimately NOT have is the first one that notices. Its other two
+     * values:
      *   > 0   count at most this many bytes, then the state is `scan_next`
      *   -1    UNBOUNDED (the state's own class-C self-loop: `*` and `+`)
      *
@@ -1190,6 +1192,15 @@ typedef struct {
     int      scan_cls;   /* the byte class the scan counts */
     int      scan_next;  /* the state after `scan_span` bytes (-1 == dead) */
 } DState;
+
+/* [OPT-5] How many scan edges one machine may carry. Each is a compare
+ * against the state variable on the emitted loop's generic path, so this is
+ * the budget `pick_skip_states` spends four of and for the same reason. It is
+ * SHARED between the pass that selects the chains (src/opt/scanedge.c, taking
+ * the longest first) and the emitter that walks for them (src/gen/emit_dfa.c,
+ * whose fixed array is sized by it), so the emitter's array cannot silently
+ * truncate what the pass chose. */
+enum { PCREC_MAX_SCAN_EDGES = 4 };
 
 typedef struct {
     DState  *st;       /* heap (realloc'd) */

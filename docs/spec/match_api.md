@@ -156,10 +156,11 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `12`
-([OPT-4], the prefilter-language stamp; it read `6` when this note
+events but never stated the general rule; `rx_info.abi` is `13`
+([OPT-5], the DFA scan edge; it read `6` when this note
 was written, `7` after [OPT-3], `8` after [ENG-FORM], `9` after
-[OPT-K], `10` after [ENG-ABS] and `11` after [ART-SIZE]).
+[OPT-K], `10` after [ENG-ABS], `11` after [ART-SIZE] and `12` after
+[OPT-4]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1598,10 +1599,14 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `12` on every artifact today ([OPT-4] bumped it
-  from 11 by adding `<PREFIX>_VM_PREFILTER_LANG` and its companion
-  `<PREFIX>_VM_PREFILTER_LANG_WHY` to every VM HYBRID —
-  §6.3, and to no other artifact kind; `11` was [ART-SIZE]'s four size
+- **`rx_info.abi` is `13` on every artifact today ([OPT-5] bumped it
+  from 12 by adding `<PREFIX>_DFA_SCAN_EDGE` (§6.3) to every artifact and,
+  on any DFA scan whose machine carries a counted class run, by replacing
+  that run's states with one in-loop scan block — the first bump to move a
+  MACHINE and not only emitted text; `12` was [OPT-4]'s
+  `<PREFIX>_VM_PREFILTER_LANG` and its companion
+  `<PREFIX>_VM_PREFILTER_LANG_WHY` on every VM HYBRID and no other
+  artifact kind, `11` [ART-SIZE]'s four size
   stamps `_UNROLL_K`/`_UNROLL_K_WHY`/`_MAX_EMIT_CODE_BYTES`/
   `_MAX_EMIT_BYTES`, `10` [ENG-ABS]'s anchored match-here form, `9`
   [OPT-K]'s offset-k candidate-start skip, `8` [ENG-FORM]'s opaque DFA
