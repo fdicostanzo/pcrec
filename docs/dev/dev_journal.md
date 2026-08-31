@@ -18795,3 +18795,24 @@ in /tmp copies — battery-3 precedent). VERDICT PLAN: after mech, solo
 `PROCS=4 make test-registry` on the fix (expect rc 0 / 83) and a full
 `make san` re-run (~102 min) on the fixed tree; battery 5 closes
 green-by-diagnosis only on those two.
+
+#### Forty-sixth session, part 10 (20:3x EDT): battery 5's DONE line read; mech CLEAN; the two verdict re-runs — registry GREEN, san re-run launched
+
+Battery 5 DONE 20:31:30 (launched 18:18:54 on cdaae0b). The DONE line
+reads RED by arithmetic on exactly the two diagnosed causes: guard
+lines = 2 (K32's counterk make-error + the registry coverage guard) and
+san rc 2 (the same guard, aborting the san loop at its 4th script; 0
+sanitizer report lines). Everything that measures the code is clean:
+test **1,941 checks / 0 failed** (the 29 counterk cases cleared solo);
+strict clean; **mech 203 rows / unexpected 0 / undetected 6 (S150-S153,
+S160, S178 — the expected six) / unreached 0 / anomalies 0** — S205,
+S206, S207 all DETECTED inside the full matrix. Verdict re-runs on the
+guard fix (eefb228): solo `PROCS=4 make test-registry` **rc 0, 83
+passing checks** (the guard's new number, read from the run); full
+`make san` launched 20:32:39 (setsid, PID 2162937 verified sid==pid /
+ppid 1; san5.log; ~102 min → ≈22:15). Battery 5 closes
+green-by-diagnosis ON THE SAN RE-RUN ONLY; then the pin line goes to
+the bench as a durable I-23 (pcrecdev2 CLOSED for the night at ~20:2x —
+Frank's call; its bounded@0.2 cut is merged on its side, [B22] briefed;
+a live message tonight would reach nobody, the inbox is what its next
+session wakes to). Frank's perf hold stands.
