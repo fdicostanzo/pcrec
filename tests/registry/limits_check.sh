@@ -209,6 +209,11 @@ done <<< "$anchored"
 #   VM_MAX_STRIDE, VM_FAST_TIER_BYTES, VM_FAST_TIER_MIN (emit_vm.c) —
 #     emitter-internal rung-selection knobs with their own proofs beside
 #     them (src/gen/CLAUDE.md's [OPT-1] section for the FAST_TIER pair)
+#   VM_MRL_DYN_MAX (emit_vm.c) — a soundness-preserving retreat on a
+#     runtime follow-min EXPRESSION LENGTH, with its own correctness
+#     argument at the constant ("the arithmetic must be right where nobody
+#     is watching"); unreachable on anything pcrec compiles today, and not
+#     a bound on what pcrec accepts/rejects/promises
 #   SELECT_MAX_ROUNDS (select_engine.c), COMPILE_MAX_ATTEMPTS (compile.c) —
 #     bounded-loop iteration caps with a from-day-one-bound argument at the
 #     loop itself (src/core/CLAUDE.md's [SEL-1] section), not a value a
@@ -224,6 +229,7 @@ LEGEND_MAX_EXAMPLE
 VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
+VM_MRL_DYN_MAX
 SELECT_MAX_ROUNDS
 COMPILE_MAX_ATTEMPTS
 PCREC_STEP_BUDGET_DEFAULT
@@ -231,7 +237,7 @@ PCREC_WORK_BUDGET_DEFAULT"
 
 TABLE_NAMES="$NAMES"
 
-found="$(grep -rnE '#define[[:space:]]+[A-Z_][A-Z0-9_]*[[:space:]]+[0-9]|^[[:space:]]*[A-Z_][A-Z0-9_]*[[:space:]]*=[[:space:]]*[0-9]+[[:space:]]*[,;}]' \
+found="$(grep -rnE '#define[[:space:]]+[A-Z_][A-Z0-9_]*[[:space:]]+[0-9]|(^|[{;[:space:]])[A-Z_][A-Z0-9_]*[[:space:]]*=[[:space:]]*[0-9]+[[:space:]]*[,;}]' \
     "$ROOT_DIR/src" "$ROOT_DIR/cli" "$ROOT_DIR/lib" \
     --include=*.c --include=*.h 2>/dev/null \
     | grep -v '/limits\.def:' \
