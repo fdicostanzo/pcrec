@@ -19093,3 +19093,24 @@ Numbers on the rework: letters 5,513/4,896 ns (2.71x/3.03x), digits
 NEXT: battery on this commit (proves [M4-QUOTING] AND the scan edge;
 supersedes 263b013 as the pin; I-27 to the bench on green) + the r48
 read-only panel during it.
+
+**15:1x — BATTERY 7 FALSE START AND RELAUNCH (rule-7 FOURTH instance,
+new variant: the LAUNCHER's own timeout kill).** The first battery 7
+launch (14:56, on 60c85f8) died at exactly +120 s: the launch command
+combined `setsid nohup ... &` with a slow per-PID /proc scan in the
+SAME command; the scan blew the tool's 2-min timeout, the harness
+killed the command, and the kill swept the setsid'd battery with it
+(test.log's tail: make "wait: No child processes" at 14:58, no rc line
+ever printed — the watchdog caught it by reading the STAGE LOG's
+mtime+tail, artifacts-over-process-greps working as designed). No
+leftovers (verified by ps one-pass). LESSON, appended to the rule-7
+family: THE LAUNCHER MUST EXIT FAST — setsid detachment does not
+survive the launcher dying by SIGKILL-to-tree while still the parent;
+scrape the PID in a SEPARATE later command. Relaunched 15:13:28 on
+b50a3c3 (same code; the extra commits are the r48 record + doc fixes)
+— driver 577632 verified sid==pid/ppid==1, build/strict/anchors green,
+test running. The r48 panel closed during the gap: NO semantic
+refutation (~35 adversarial probes); F1 = S215 owed (the cap
+conjunct's sabotage row); F2 = the verdict diffs mech's per-row
+figures vs the author-cited ones; F3 = S212 narrative amendment owed;
+F4 fixed in-session (src/parse/CLAUDE.md staleness).
