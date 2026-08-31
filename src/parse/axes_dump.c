@@ -453,6 +453,34 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, "", 0, "", "",
                      "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse");
     }
+    /* [OPT-5] scan-edge — §2.18, `RX_DFA_SCAN_EDGE`. A DFA-side axis in a
+     * dump whose other predicate axes are VM-side, and it is a `predicate`
+     * row rather than a `list` one for a reason worth stating: the axis has
+     * two real emitted forms and exactly ONE emission site, so D75's addendum
+     * (and D82 bound 3) keeps it a predicate in `src/gen/emit_dfa.c` —
+     * `pcrec_scan_range` — instead of a seventh candidate array. There is
+     * therefore no live array for this dump to walk, and the rows below are
+     * hand-stated, exactly as `table`'s two composite rows are.
+     *
+     * `mixed` and `none` carry no deny bit because neither is a form anything
+     * SELECTS: `none` is what an artifact with no counted class run reports
+     * (and what the denied build reports for every artifact), `mixed` is the
+     * artifact-level composition over its two or three machines. */
+    {
+        PredAxis p = { "scan-edge", NULL, "RX_DFA_SCAN_EDGE", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "range", "range",
+                     V(PCREC_NO_SCAN_EDGE), 0, "", "-fno-scan-edge",
+                     "per DFA machine: a maximal run of states differing only in how many bytes of ONE class have been counted (src/opt/scanedge.c), where that class's byte set is a contiguous range — the test is a subtract-and-compare against two immediates");
+        emit_pred_row(sb, &p, 2, "bitmap", "bitmap",
+                     V(PCREC_NO_SCAN_EDGE), 0, "", "-fno-scan-edge",
+                     "the same run where the class is not contiguous — the test is a 256-byte membership table read, which keeps the loop-carried register a cursor but does touch memory");
+        emit_pred_row(sb, &p, 3, "mixed", "mixed",
+                     0, "", 0, "", "",
+                     "artifact-level composition: this artifact's machines took both forms (RX_DFA_TABLE's own \"mixed\" shape)");
+        emit_pred_row(sb, &p, 4, "none", "none",
+                     0, "", 0, "", "",
+                     "always (fallback) — no machine carries a collapsible run, the engine is ENG_ATTEMPT (no table walk to shorten) or is provably empty, or the axis is denied");
+    }
     /* altcls-merge — §2.6, RX_ALTCLS_MERGES is an ACTIVITY COUNT, not a
      * named value — stamp_value left empty on both rows for that reason. */
     {

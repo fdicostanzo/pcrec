@@ -340,7 +340,14 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [REG-SV] 73 -> 75 -> 79 -> 83 ([OPT-4.1] 2026-08-30: the four RX_ENGINE_SEL
+# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 ([OPT-5] 2026-08-31: the DFA SCAN EDGE
+# axis, MEASURED 91/0 by the lane. +8 in one change and every one of them a
+# real leg: `scan-edge` contributes FOUR candidate rows to the per-row sweep
+# (`range`, `bitmap`, `mixed`, `none`) at two checks each -- its bit-21
+# tuning.md heading and, on the two rows that carry one, its `-fno-scan-edge`
+# cli/main.c pairing -- and `RX_DFA_SCAN_EDGE` gains its own value-set PAIR
+# (dump->spec, spec->dump) beside the six macros that already had one.
+# ([OPT-4.1] 2026-08-30: the four RX_ENGINE_SEL
 # value-set legs, MEASURED 83/0 by the lane and by battery 5 under san —
 # the lane updated the check but not THIS guard, which fired exactly as
 # designed; the manager missed it in make test's red too, reading only
@@ -409,16 +416,16 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 83 ]; then
+if [ "$axesn" -ne 91 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 83." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 91." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (79 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (91 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 79 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 91 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

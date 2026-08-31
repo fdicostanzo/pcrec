@@ -2140,7 +2140,28 @@ names which of §3.2's two forms the artifact's `<prefix>_match` and
 | `"unwrapped"` | the artifact carries a THIRD machine — the forward tables WITHOUT the start-anywhere self-loop — and runs it from `ctx->pos`: no later start to reject, no backwards pass, and a failing probe stops at the first byte that cannot continue a match beginning here |
 | `"search-filter"` | the entry runs `<prefix>_search` and rejects any match whose start is not `ctx->pos`. Four populations: `_DFA_SCAN "attempt"`, `_DFA_SCAN "empty"`, an anchored machine that exceeded a DFA cap (a SELECTION OUTCOME, never a refusal), and any build under `-fno-anchored-dfa` |
 
-**THE IFF IS DIFFERENT FROM THE FOUR STAMPS ABOVE, and the difference is
+**`<PREFIX>_DFA_SCAN_EDGE` ([OPT-5], `abi` 13) is on every artifact that
+CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the same iff the four
+`_DFA_SCAN`/`_DFA_PREFILTER`/`_DFA_PREFILTER_OFFSETS`/`_DFA_TABLE` stamps
+carry — and names how that scan tests the class of a SCAN EDGE. An edge is a
+maximal run of states differing only in how many bytes of one fixed class have
+been counted, replaced by a bounded cursor loop and DELETED from the
+transition table (`docs/spec/tuning.md` §2.18; `src/opt/scanedge.c`). The four
+values below are all this macro ever reads:
+
+```
+#define RX_DFA_SCAN_EDGE "range"    /* (unsigned char)(b - 97) <= 25 */
+#define RX_DFA_SCAN_EDGE "none"     /* no machine carries a collapsible run */
+```
+
+| value | mechanism |
+|---|---|
+| `"none"` | the artifact carries no scan edge. Four causes and none of them a failure: no machine has a collapsible run; `_DFA_SCAN "attempt"`, whose states are code labels and whose step is a computed `goto`, so there is no loop-carried table load to shorten; `_DFA_SCAN "empty"`, whose body is one `return 0`; and any build under `-fno-scan-edge` |
+| `"range"` | every edge in the artifact tests a CONTIGUOUS byte range, emitted as a subtract-and-compare against two immediates baked into the instruction stream — the loop touches no memory but the subject |
+| `"bitmap"` | at least one edge's class is not contiguous, so its test is a 256-byte membership table read. The loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price |
+| `"mixed"` | an ARTIFACT-LEVEL composition, `RX_DFA_TABLE`'s own shape: this artifact's machines took both forms. The choice is per EDGE, and a machine may carry up to four |
+
+**THE IFF IS DIFFERENT FROM THE FIVE STAMPS ABOVE, and the difference is
 the fact rather than a filing decision.** Those four describe a DFA SCAN,
 and a VM HYBRID contains one — it inlines the DFA as its prefilter — so
 they appear on hybrids too. This one describes the artifact's
@@ -2166,11 +2187,12 @@ when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
-`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE` are
+`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE`/`RX_DFA_SCAN_EDGE` are
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
 since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
 artifacts AND VM hybrids, the iff stated in (a). `RX_DFA_TABLE` is
-[OPT-3]'s and joins that iff unchanged. `RX_DFA_MATCH` is [ENG-ABS]'s and
+[OPT-3]'s and `RX_DFA_SCAN_EDGE` [OPT-5]'s; both join that iff unchanged.
+`RX_DFA_MATCH` is [ENG-ABS]'s and
 does NOT: it is a fact about an ENTRY rather than about a scan, so its
 iff is `RX_ENGINE "dfa"` — see its own paragraph above. **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from

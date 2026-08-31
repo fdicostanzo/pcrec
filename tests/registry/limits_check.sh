@@ -38,7 +38,7 @@
 #   3. dump-vs-CODE: every numeric `#define`/enum-member whose NAME matches
 #      a policy-limit shape (MAX/CAP/LIMIT/BUDGET/_LEN/DEPTH/NEST) anywhere
 #      under src/, cli/, lib/ OUTSIDE src/core/limits.def itself must be one
-#      of limits.def's own 44 names, OR be on the small NAMED, CITED
+#      of limits.def's own 45 names, OR be on the small NAMED, CITED
 #      allowlist below — every one of which is a constant limits.h's own
 #      header comment already excludes BY RULE ("local algorithmic bounds
 #      whose correctness argument lives beside them", "structural
@@ -120,6 +120,7 @@ VM_MAX_AUTO_TRAIL_FRAMES
 PCREC_PREFIX_K_MAX
 PCREC_OFSK_MAX_SET
 PCREC_MINW_MAX
+PCREC_MAX_SCAN_EDGES
 RC_NUMBER_MAX
 BR_NUMBER_MAX
 LA_MSG_MAX
@@ -130,8 +131,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 44 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 44 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 45 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 45 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true

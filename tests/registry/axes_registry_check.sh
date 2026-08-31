@@ -590,6 +590,19 @@ check_value_set "RX_DFA_MATCH" \
     "$(dump_stamp_vals RX_DFA_MATCH)" \
     ""
 
+# [OPT-5] axis `scan-edge`'s stamp. THE ANCHOR CARRIES NO COUNT — the rule two
+# blocks up, restated because this macro's own spec sentence DOES name a
+# number ("The four values below are…") and it was deliberately not used as
+# the anchor for that reason. It also deliberately avoids the substring
+# `RX_DFA_PREFILTER`'s anchor ("values are the whole set") occupies: the
+# extractor takes the FIRST match, so a second paragraph containing that
+# phrase would be harmless today and a silent mis-harvest the day the two
+# paragraphs are reordered.
+check_value_set "RX_DFA_SCAN_EDGE" \
+    "$(extract_md_table_values "$MATCHAPI" "all this macro ever reads")" \
+    "$(dump_stamp_vals RX_DFA_SCAN_EDGE)" \
+    ""
+
 # [OPT-4] THE PATTERN IS WORD-BOUNDED, as `RX_ENGINE`'s below always was.
 # The bare `RX_VM_PREFILTER` matched `RX_VM_PREFILTER_LANG` too — a DIFFERENT
 # macro with its OWN value set — and harvested its `"exact"` as one of this
