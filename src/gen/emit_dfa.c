@@ -4169,15 +4169,22 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
     int acc  = st->up[UPC_PLAIN].accept != 0;
     int facc = (nx < 0) ? 0 : (f->d->st[nx].up[UPC_PLAIN].accept != 0);
 
-    sb_printf(c, "%s// [OPT-5] SCAN EDGE, class %d. Counting these bytes is\n"
-                 "%s// all the states between here and state %d do, so they\n"
-                 "%s// are ONE edge rather than %s table steps: the loop\n"
-                 "%s// below carries only the cursor, where a table walk\n"
-                 "%s// carries the state its own last load returned. The\n"
-                 "%s// transition cell for this class reads \"dead\" in the\n"
-                 "%s// table above BECAUSE this loop owns that byte.\n",
-             ind, st->scan_cls, ind, nx, ind, span < 0 ? "any number of" : "that many",
-             ind, ind, ind, ind);
+    /* THE COMMENT IS FOUR LINES AND WAS SEVEN. It is emitted once per edge
+     * per machine, i.e. up to twelve times per artifact, and MEASURED at ~900
+     * bytes of source on `[a-z]*` — an artifact this transform removes no
+     * table from. The two facts a reader cannot get anywhere else are kept:
+     * what the loop replaces, and why the table cell above says "dead". */
+    if (span < 0)
+        sb_printf(c, "%s// [OPT-5] SCAN EDGE: every state a run of class %d\n"
+                     "%s// would pass IS this state, so count them here rather\n"
+                     "%s// than stepping the table once per byte.\n",
+                  ind, st->scan_cls, ind, ind);
+    else
+        sb_printf(c, "%s// [OPT-5] SCAN EDGE: the states between here and state\n"
+                     "%s// %d differ only in how many class-%d bytes have been\n"
+                     "%s// counted, so they are ONE loop carrying only the cursor.\n"
+                     "%s// The class's cell above reads \"dead\" because of this.\n",
+                  ind, ind, nx, st->scan_cls, ind, ind);
     sb_printf(c, "%sif (%s == %d) {\n", ind, f->dir->statev,
               f->repr->cell_of(head, f->d));
 
