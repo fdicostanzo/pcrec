@@ -34,7 +34,7 @@ SAB_FILE="src/parse/parse.c"
 SAB_SUITES="reject harness"
 SAB_HARNESS_TARGET="tests/base/groups.rxt"
 SAB_DESC="cat_ends's whole 'if (cx->in_quote) { ... }' guard is deleted, so a byte inside an OPEN \\Q...\\E quote is read as an ordinary ')'/'|'/end-of-pattern the instant its own VALUE looks like one -- '(a\\Qb)c\\E)' (quoted content \"b)c\") closes its group one atom early on the quoted ')' and the pattern becomes unbalanced, where the clean tree (and libpcre2) both compile it. No answer-checking corpus reaches it (no tests/quoting/ yet, and every other hand-written \\Q shape either has no structural byte inside the quote or is unaffected either way), so the accept-control tests/reject/run_reject_tests.sh added for this row is its only detector"
-SAB_DOC_FIGURE="PREDICTED: reject:1fail/590pass ('(a\\Qb)c\\E)' flips ACCEPT->REFUSE, 'unmatched closing parenthesis'). harness expected 0fail on groups.rxt -- nothing in the base-tier corpus uses \\Q. Canonical figure owed from run_sabotage_matrix.sh S210."
+SAB_DOC_FIGURE="MEASURED via 'bash tests/mech/run_sabotage_matrix.sh S210' (single-row, PROCS=4) at 3122d96: DETECTED, reject:1fail/590pass, corpus:0fail/26pass (1 rows, unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0), matching the prediction exactly. Also verified by hand before wiring: clean tree compiles '(a\\Qb)c\\E)' rc 0; sabotaged tree refuses with 'unmatched closing parenthesis' at pattern offset 9, rc 1."
 SAB_COUNT=1
 SAB_BEFORE='static bool cat_ends(Ctx *cx)
 {

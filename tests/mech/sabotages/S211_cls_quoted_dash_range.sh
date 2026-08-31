@@ -37,7 +37,7 @@ SAB_FILE="src/parse/parse.c"
 SAB_SUITES="reject harness"
 SAB_HARNESS_TARGET="tests/base/classes.rxt"
 SAB_DESC="p_class's dash-lookahead drops its '!cx->in_quote &&' conjunct, so a QUOTED '-' is misread as a range-forming operator exactly as an unquoted one would be. '[\\Q9-1\\E]' (OUT-OF-ORDER endpoints, deliberately: an in-order quoted range like [\\Qa-z\\E] produces a bitset identical to the correct reading and would detect nothing) flips from the three literal members {9,-,1} (clean, compiles) to the range 9-1, which p_class's own ordering step refuses ('range out of order in character class'). No answer-checking corpus reaches it (no tests/quoting/ yet, and no base-tier class contains a quoted dash), so the accept-control tests/reject/run_reject_tests.sh added for this row is its only detector"
-SAB_DOC_FIGURE="PREDICTED: reject:1fail/590pass ('[\\Q9-1\\E]' flips ACCEPT->REFUSE, 'range out of order in character class'). harness expected 0fail on classes.rxt -- nothing in the base-tier corpus quotes a dash. Canonical figure owed from run_sabotage_matrix.sh S211."
+SAB_DOC_FIGURE="MEASURED via 'bash tests/mech/run_sabotage_matrix.sh S211' (single-row, PROCS=4) at 3122d96: DETECTED, reject:1fail/590pass, corpus:0fail/42pass (1 rows, unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0), matching the prediction exactly. Also verified by hand before wiring: clean tree compiles '[\\Q9-1\\E]' rc 0; sabotaged tree refuses with 'range out of order in character class' at pattern offset 4, rc 1."
 SAB_COUNT=1
 SAB_BEFORE='        if (!cx->in_quote && peekc(cx) == '\''-'\'' && cls_peek_past_dash(cx) != '\'']'\'' &&
             cls_peek_past_dash(cx) >= 0) {'
