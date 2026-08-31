@@ -873,7 +873,16 @@ sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^a
 # (`$SEL1_P`) never reaches an emitted-size cap at all, so it cannot stand in
 # for this rung — the [SEL-1] and [OPT-4] rungs are separate, offered under
 # different conditions in compile_driver's own retry loop.
-sel_witness size-cap-retry                                -- '(a|b){1,30000}'
+# [OPT-5] 2026-08-31: `-fno-scan-edge` ADDED — the scan edge collapses this
+# witness's (a|b)-class chain to a tiny loop at the default, so the exact
+# artifact never exceeds the cap and the route is (correctly) not taken. The
+# route itself SURVIVES for machines the edge cannot collapse; the deny flag
+# makes the witness deterministic (MEASURED: FNSE stamps 'size-cap-retry',
+# 34,575 B). A NATURAL witness was searched for and not found in the counted
+# families ([OPT-5] STEP 2's period-k edge will shrink even the (?:[a-z][0-9])
+# shapes — when a natural witness reappears or the route truly empties, this
+# row is the tripwire either way.
+sel_witness size-cap-retry   -fno-scan-edge              -- '(a|b){1,30000}'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

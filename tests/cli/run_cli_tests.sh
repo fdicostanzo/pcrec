@@ -2134,7 +2134,7 @@ echo "cases passed: $total_pass"
 # "REFUSED" for a compile that never finished. The cell is about the WARNING,
 # not the compile cost, so the witness is a cheap oversize artifact: 365 KB in
 # 3.1 s of CPU (measured 2026-08-30, load ~7), still 46% over the default.
-WARNBIG='[a-z]{0,8192}'   # ~365 KB emitted, comfortably over the 250,000 default; 3 s CPU
+WARNBIG='([a-z]|[0-9]X){0,2000}'   # ~381 KB emitted (MEASURED 2026-08-31), comfortably over the 250,000 default. [OPT-5]: the old '[a-z]{0,8192}' witness collapsed to ~18 KB when the scan edge landed (single-class counted chains stopped emitting tables) — this two-class shape is scan-edge-REFUSED (two live classes, different targets) so it still emits big naturally; if THIS one ever shrinks, a new emission mechanism landed and the witness moves again
 WARNSMALL='a(b|c)+d'      # a few KB, comfortably under it
 warn_out="$WORKDIR/warn.c"
 

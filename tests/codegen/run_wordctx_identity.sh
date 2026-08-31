@@ -141,14 +141,32 @@ src, bout, nout = sys.argv[1], sys.argv[2], sys.argv[3]
 
 def has_word_assertion(p):
     """True iff `\\b` or `\\B` occurs at an ATOM position, i.e. outside a
-    bracket expression. Mirrors the base grammar's class scanning: `[` opens,
-    a leading `^` and a leading `]` are literal members, `\\` escapes the next
-    byte, `]` closes."""
-    i, n, incls = 0, len(p), False
+    bracket expression AND outside a `\\Q...\\E` quoted span. Mirrors the
+    base grammar's class scanning: `[` opens, a leading `^` and a leading
+    `]` are literal members, `\\` escapes the next byte, `]` closes.
+    [M4-QUOTING] 2026-08-31: quote-awareness added the day the corpus grew
+    `\\Qa\\b\\E`-shaped patterns — inside a quote `\\b` is two literal
+    BYTES, no word context, and the spelling-based mention count had put two
+    such patterns in the must-differ population (the positive control's
+    AGREE-UNEXPLAINED red, battery 7). Inside a quote the ONLY recognized
+    sequence is `\\E`; classification treats quoting as enabled (a pattern
+    whose \\Q rejects lands in rejected-by-both either way)."""
+    i, n, incls, inq = 0, len(p), False, False
     while i < n:
         c = p[i]
+        if inq:
+            if c == '\\' and i + 1 < n and p[i + 1] == 'E':
+                inq = False
+                i += 2
+            else:
+                i += 1
+            continue
         if c == '\\' and i + 1 < n:
             nxt = p[i + 1]
+            if nxt == 'Q':
+                inq = True
+                i += 2
+                continue
             if not incls and nxt in ('b', 'B'):
                 return True
             i += 2
