@@ -118,6 +118,10 @@ static void usage(FILE *f)
           "                    one line per (axis, candidate), preference order,\n"
           "                    with its stamp, deny/force flag and one-line\n"
           "                    description. No --flavour axis\n"
+          "  --list-limits     TSV of every numeric limit (D90/[LIM-1]): one\n"
+          "                    line per limit, its value, unit, kind, whether\n"
+          "                    a flag/-D/nothing overrides it, and a one-line\n"
+          "                    description. No --flavour axis\n"
           "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
           "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
           "                    exists today; a second one arrives with SR-7)\n"
@@ -200,6 +204,7 @@ int main(int argc, char **argv)
     int list_verbs = 0;
     int list_families = 0;
     int list_axes = 0;
+    int list_limits = 0;
     int count_groups = 0;
     int emit_ir = 0;
     const char *probe_want = NULL;
@@ -448,6 +453,7 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
         else if (!no_more_opts && !strcmp(a, "--list-families")) list_families = 1;
         else if (!no_more_opts && !strcmp(a, "--list-axes"))   list_axes = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-limits")) list_limits = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;
         /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
          * Takes its file as the option's VALUE, like --explain and
@@ -557,7 +563,7 @@ int main(int argc, char **argv)
      * being able to tell those two apart. */
     if (list_source) {
         if (list_syntax || list_definitions || list_verbs || list_families ||
-            list_axes || explain || count_groups || emit_ir || probe_want) {
+            list_axes || list_limits || explain || count_groups || emit_ir || probe_want) {
             fprintf(stderr, "pcrec: --list-source is a separate query; use one\n");
             return 1;
         }
@@ -600,7 +606,7 @@ int main(int argc, char **argv)
      * not run at all exits nonzero, so the check can tell "measured a
      * refusal" from "measured nothing". */
     if (probe_want) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || explain || count_groups) {
+        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || explain || count_groups) {
             fprintf(stderr, "pcrec: --probe-ask is a separate query; use one\n");
             return 1;
         }
@@ -646,7 +652,7 @@ int main(int argc, char **argv)
      * prints, taking no -o and writing no C. A pattern pcrec refuses is
      * refused here with pcrec_compile's exact diagnostic. */
     if (emit_ir) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || explain || count_groups) {
+        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || explain || count_groups) {
             fprintf(stderr, "pcrec: --emit-ir is a separate query; use one\n");
             return 1;
         }
@@ -674,7 +680,7 @@ int main(int argc, char **argv)
     }
 
     if (count_groups) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || explain) {
+        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || explain) {
             fprintf(stderr, "pcrec: --count-groups is a separate query; use one\n");
             return 1;
         }
@@ -705,11 +711,11 @@ int main(int argc, char **argv)
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
      * half of it. */
-    if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes) {
-        if (list_syntax + list_definitions + list_verbs + list_families + list_axes + (explain != NULL) > 1) {
+    if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes || list_limits) {
+        if (list_syntax + list_definitions + list_verbs + list_families + list_axes + list_limits + (explain != NULL) > 1) {
             fprintf(stderr, "pcrec: --list-syntax, --list-definitions, --list-verbs, "
-                            "--list-families, --list-axes and --explain are separate "
-                            "queries; use one\n");
+                            "--list-families, --list-axes, --list-limits and --explain "
+                            "are separate queries; use one\n");
             return 1;
         }
         if (pattern || outpath) {
@@ -718,7 +724,8 @@ int main(int argc, char **argv)
                     list_definitions ? "--list-definitions" :
                     list_verbs       ? "--list-verbs"  :
                     list_families    ? "--list-families" :
-                    list_axes        ? "--list-axes" : "--explain");
+                    list_axes        ? "--list-axes" :
+                    list_limits      ? "--list-limits" : "--explain");
             return 1;
         }
         /* --list-verbs has no flavour axis: the verb tables record what libpcre2
@@ -743,8 +750,13 @@ int main(int argc, char **argv)
          * r43 K6's ruling, reversing the first design pass's "no": it walks
          * the SAME RegRows --list-syntax does, and an unfiltered dump would
          * print a definition for a construct --list-syntax --flavour=X says
-         * does not exist under that flavour. */
-        if ((list_verbs || list_families || list_axes) && flavour) {
+         * does not exist under that flavour.
+         *
+         * [LIM-1] --list-limits joins --list-axes' reason exactly: it
+         * reports what THIS BUILD's own limits.def says, never a claim
+         * about a flavour's syntax — a numeric limit has no flavour axis
+         * at all. */
+        if ((list_verbs || list_families || list_axes || list_limits) && flavour) {
             fprintf(stderr, "pcrec: --flavour applies to --list-syntax, "
                             "--list-definitions and --explain only\n");
             return 1;
@@ -763,6 +775,12 @@ int main(int argc, char **argv)
         }
         if (list_axes) {
             char *v = pcrec_axes_tsv();
+            fputs(v, stdout);
+            free(v);
+            return 0;
+        }
+        if (list_limits) {
+            char *v = pcrec_limits_tsv();
             fputs(v, stdout);
             free(v);
             return 0;

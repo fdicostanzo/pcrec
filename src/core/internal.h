@@ -3798,6 +3798,11 @@ size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis 
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
 char *pcrec_axes_tsv(void);
 
+/* [LIM-1] `src/parse/limits_dump.c` — renders src/core/limits.def, the
+ * numeric-limits table (D90), as one TSV, table_contract.md's wire format
+ * (the SIXTH surface). Caller frees. */
+char *pcrec_limits_tsv(void);
+
 /* NULL when no construct matches the query. */
 /* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
  * no doorway AND no row looks like it — the CLI turns that into exit 1 with
