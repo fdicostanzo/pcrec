@@ -22,6 +22,7 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-definitions` | the replacement/definition table (D85/[DD-11.2]) | conforming producer today |
 | `--list-families` | the construct-family index (D71 item 3) | conforming producer today |
 | `--list-axes` | the optimization-axis registry ([CHK-2] piece 1) | conforming producer today |
+| `--list-limits` | the numeric-limits table (D90/[LIM-1]) | conforming producer today |
 | `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table

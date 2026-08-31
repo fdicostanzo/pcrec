@@ -233,6 +233,12 @@
 #     literal) where the other is BREADTH. It is also the SECOND arm here that
 #     can decline for want of an oracle, which is why the verdict block below
 #     no longer names `pc3` as the only one
+#   limits — added 2026-08-30 (D90/[LIM-1]); runs tests/registry/
+#     limits_check.sh, its OWN arm rather than `registry` for that script's
+#     own stated reason: `registry` deliberately skips any wrapper whose
+#     coverage guard fires on a changed PASS COUNT, and limits_check.sh's
+#     row-count-by-manifest check IS such a guard. Registered before S208/
+#     S209, its two consumers.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1928,6 +1934,33 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/rxtsource.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/rxtsource.log" | grep -oE '[0-9]+')"
                 suite_bits+=("rxtsource:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            limits)
+                # [LIM-1] tests/registry/limits_check.sh — the numeric-limits
+                # table (D90) against docs/spec/limits.md §3/§8 (forward) and
+                # against the TREE, for a bare policy-shaped #define/enum
+                # member outside src/core/limits.def. ITS OWN ARM rather than
+                # `registry`, for `rxtsource`'s reason above: `registry`'s own
+                # comment explains it deliberately does NOT run any wrapper
+                # whose coverage guard fires on a changed PASS COUNT (a
+                # sabotage-caused failure would also read "coverage changed"
+                # and the cell could not distinguish the two) — and this
+                # script IS such a wrapper (its own count check, part 1, is
+                # itself a coverage guard by manifest). Folding it into
+                # `registry` would make every S208/S209-shaped row
+                # unscoreable by that arm's own stated rule.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE, which is "not measured"
+                # rather than "not detected".
+                PCREC="$pcrec" bash "$tree/tests/registry/limits_check.sh" \
+                    > "$work/limits.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/limits.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/limits.log" | grep -oE '[0-9]+')"
+                suite_bits+=("limits:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

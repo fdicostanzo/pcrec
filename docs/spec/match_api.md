@@ -1935,19 +1935,39 @@ neither is parsed to produce the other.
 | `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
 | `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
-| `"collapsed-prefilter"` | `auto`, a DFA build overflowed, and the retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
-| `"declined-nullable"` | `auto`, a DFA build overflowed, the retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter could never dismiss a position. No prefilter survives, and the artifact is the one this compile produced before that retry existed (`tuning.md` §2.17, [OPT-4.1]) |
+| `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
+| `"declined-nullable"` | `auto`, a [SEL-1] OR [OPT-4] retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter could never dismiss a position. No prefilter survives, and the artifact is the one this compile produced before that retry existed (`tuning.md` §2.17, [OPT-4.1]) |
+| `"size-cap-retry"` | [LIM-1] (2026-08-30) `auto`, an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact, and the [OPT-4] size rung rebuilt a smaller one whose count-collapsed prefilter SURVIVED (`tuning.md` §2.17). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the two rungs are offered under different conditions in `compile_driver`'s retry loop |
 
-**THE LAST FOUR ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
-CANNOT CARRY** — they share one prose string (`"dfa overflowed: …"`) and differ
-in what SURVIVED. A consumer wanting only "did this compile fall back?" tests
-for the four; one wanting to know what it cost reads which.
+**THE LAST FIVE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
+CANNOT CARRY** — the first four share one prose string (`"dfa overflowed: …"`)
+and differ in what SURVIVED; `"size-cap-retry"` has its own prose
+(`_ENGINE_WHY` is unaffected by an emitted-size refusal, so it still reads
+whatever forced the VM or stays absent on a plain DFA build) and differs from
+the rest in which CAP fell back. A consumer wanting only "did this compile
+fall back?" tests for all five; one wanting to know what it cost, or which cap
+it was, reads which.
 
 **`"declined-nullable"` AND `"overflowed-dfa"` ARE NOT THE SAME OUTCOME**, and
 the difference is worth a value: both artifacts carry `<PREFIX>_VM_PREFILTER
 "none"`, but the first is a rescue that was REFUSED as useless and the second
 is one that was not available. A consumer measuring what the collapse rung buys
 must not count the first as a case where it had nothing to offer.
+
+**`"size-cap-retry"` CLOSES A GAP THIS DOCUMENT ITSELF USED TO NAME WITHOUT
+FIXING** ([LIM-1], D90, 2026-08-30). Before this value existed, a [OPT-4] size
+rung whose retry SUCCEEDED (the collapsed prefilter survived) stamped
+`"selected"` — indistinguishable from a compile that never touched any cap at
+all, because `dfa_disabled` (the flag that routes to the DFA-overflow arms
+above) is never set on this rung: the DFA build itself succeeded, it was the
+WHOLE ARTIFACT that an emitted-size cap refused. `docs/spec/limits.md` §3.3's
+own [OPT-4] section had recorded "the SIZE rung's own decline is not this
+value... the route stays `selected`" as a statement about the DECLINE only,
+and it was being silently read as true of the rung's SUCCESS too — the exact
+closed-value-set-losing-a-member shape K35 exists to name. A rescue that was
+refused (nullable) now reads `"declined-nullable"`; one that shipped now reads
+`"size-cap-retry"`; only a genuinely unremarkable compile still reads
+`"selected"`.
 
 **It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for the
 same reason: nothing measured reads one yet (D77), and the trigger to add one

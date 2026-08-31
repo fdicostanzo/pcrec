@@ -290,27 +290,40 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL
         bad "[OPT-4] '$pat' no longer compiles at the DEFAULT — the size rung has stopped rescuing this shape, or a cap moved: $(printf '%s' "$dflog" | head -1)"
         return
     fi
-    local sz pf szwhy
+    local sz pf szwhy sel
     sz=$(wc -c < "$WORKDIR/o.c")
     pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
     szwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
+    sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/o.c" | sed 's/.*SEL //;s/"//g')
     if [ "$sz" -ge 200000 ]; then
         bad "[OPT-4] '$pat' compiled at the default but emitted $sz bytes, expected well under 200,000 — the size rung is not reaching this shape"
         return
     fi
     if [ "$want" = hybrid ]; then
-        if [ "$pf" = hybrid ] && [ "${szwhy#size cap retry}" != "$szwhy" ]; then
-            ok "[OPT-4] '$pat' compiles at the DEFAULT in $sz bytes via the SIZE RUNG ('$szwhy') — the cap refused the exact artifact and ruling B's retry shipped a smaller one"
+        # [LIM-1] (D90, 2026-08-30): the expectation moved from reading the
+        # _LANG_WHY prefix to reading RX_ENGINE_SEL directly — before this
+        # fold-in a successful size-rung rescue stamped ENGINE_SEL "selected",
+        # indistinguishable from an ordinary compile that never touched a
+        # cap; it now stamps "size-cap-retry", ITS OWN closed-value-set
+        # member (match_api.md §6.3), which is what this cell is this
+        # constant's ONLY witness in the tree for (see this file's own
+        # [LIM-1] note below). LANG_WHY is still read and still reported for
+        # its own information (which cap, and the byte comparison), but the
+        # PASS/FAIL verdict no longer depends on parsing its prefix.
+        if [ "$pf" = hybrid ] && [ "$sel" = size-cap-retry ]; then
+            ok "[OPT-4] '$pat' compiles at the DEFAULT in $sz bytes via the SIZE RUNG (RX_ENGINE_SEL '$sel', LANG_WHY '$szwhy') — the cap refused the exact artifact and ruling B's retry shipped a smaller one"
         elif [ "$pf" != hybrid ]; then
             bad "[OPT-4] '$pat' compiled small at the default with RX_VM_PREFILTER '$pf' — its collapsed language is NOT nullable, so the rung must KEEP the prefilter; the [OPT-4.1] decline is over-firing"
         else
-            bad "[OPT-4] '$pat' compiled small at the default but stamps LANG_WHY '$szwhy', expected a 'size cap retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back"
+            bad "[OPT-4] '$pat' compiled small at the default with RX_VM_PREFILTER hybrid but RX_ENGINE_SEL '$sel' (LANG_WHY '$szwhy'), expected 'size-cap-retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back, or [LIM-1]'s fold-in regressed"
         fi
     else
-        if [ "$pf" = none ] && [ -z "$szwhy" ]; then
-            ok "[OPT-4.1] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" — the collapsed language is nullable, the rescue is DECLINED, and dropping the prefilter still gets the artifact under the cap"
+        if [ "$pf" = none ] && [ -z "$szwhy" ] && [ "$sel" = declined-nullable ]; then
+            ok "[OPT-4.1] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable\" — the collapsed language is nullable, the rescue is DECLINED, and dropping the prefilter still gets the artifact under the cap"
         elif [ "$pf" = hybrid ]; then
             bad "[OPT-4.1] '$pat' kept a prefilter (RX_VM_PREFILTER 'hybrid', LANG_WHY '$szwhy') — its collapsed language matches the empty string, so this artifact pays a scan that can never dismiss a position (pcrec-bench O-10: 1.2-9.9x)"
+        elif [ "$sel" != declined-nullable ]; then
+            bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' but RX_ENGINE_SEL '$sel', expected 'declined-nullable' ([LIM-1]: the SIZE rung's own nullable decline now reads this value, not 'selected')"
         else
             bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' and LANG_WHY '$szwhy' — no prefilter, yet a language macro beside it; the two lines disagree about one artifact"
         fi

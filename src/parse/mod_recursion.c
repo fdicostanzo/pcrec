@@ -79,8 +79,12 @@
  * forty digits must not wrap into a small positive value that happens to name
  * a real group. Spelled again rather than exported because the two files'
  * accumulators are independent and a shared constant would be the only thing
- * tying them together. */
-#define RC_NUMBER_MAX 1000000L
+ * tying them together — but the NUMBER itself now has one home, [LIM-1]'s
+ * src/core/limits.def (value unchanged, 1000000L). */
+#define PCREC_LIMIT_MOD_RECURSION(name, value, unit, kind, override, anchor, desc, default_name) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_MOD_RECURSION
 
 static long rc_decimal(const char *p, size_t from, size_t to)
 {

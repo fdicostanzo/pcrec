@@ -341,8 +341,14 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
  * UNBOUNDED IS TESTED FIRST because `PCREC_W_UNBOUNDED` is itself above
  * `INT_MAX`, so the other order reports every `a*` body as "too long" — a
  * different and wrong claim. Here pcrec AGREES WITH PCRE2, whose own answer
- * is err 125 "length of lookbehind assertion is not limited" (§2.5). */
-#define LA_MSG_MAX 256
+ * is err 125 "length of lookbehind assertion is not limited" (§2.5).
+ *
+ * [LIM-1] (D90): generated from src/core/limits.def, the single derivation
+ * `pcrec --list-limits` dumps — value unchanged, 256. */
+#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc, default_name) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_MOD_LOOKAROUND
 static void la_width_refusal(char *buf, size_t n, long long lo, long long hi)
 {
     if (hi >= PCREC_W_UNBOUNDED)

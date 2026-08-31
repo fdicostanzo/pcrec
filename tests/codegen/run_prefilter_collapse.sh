@@ -403,7 +403,7 @@ else
         n_art=$((n_art+1))
         sel=$(stamp ENGINE_SEL "$art")
         case "$sel" in
-          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter|declined-nullable) ;;
+          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter|declined-nullable|size-cap-retry) ;;
           *) n_sel_bad=$((n_sel_bad+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel')" ;;
         esac
         [ "$sel" = forced ] && { n_sel_forced=$((n_sel_forced+1)); [ -z "$sel_ex" ] && sel_ex="$p (forced at the default)"; }
@@ -411,9 +411,9 @@ else
         # test: a route that says a prefilter survived must have one, and a
         # route that says one was dropped must not.
         case "$sel" in
-          collapsed-prefilter)
+          collapsed-prefilter|size-cap-retry)
             { [ "$vmpf" = hybrid ] && [ "$lang" = count-collapsed ]; } || {
-                n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL collapsed-prefilter but PREFILTER '$vmpf' / LANG '$lang')"; } ;;
+                n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL $sel but PREFILTER '$vmpf' / LANG '$lang')"; } ;;
           overflowed-dfa|overflowed-prefilter|declined-nullable)
             # [OPT-4.1] `declined-nullable` joins the "no prefilter survived"
             # arm rather than getting one of its own: what it names is a
@@ -544,7 +544,7 @@ else
     #    stamps that would contradict it
     # ----------------------------------------------------------------------
     if [ "$n_sel_bad" -eq 0 ]; then
-        ok "[sel] all $n_art artifact(s) carry RX_ENGINE_SEL with one of the six documented values — the set is closed and the stamp is unconditional (D81)"
+        ok "[sel] all $n_art artifact(s) carry RX_ENGINE_SEL with one of the seven documented values — the set is closed and the stamp is unconditional (D81)"
     else
         bad "[sel] $n_sel_bad artifact(s) carry no RX_ENGINE_SEL or an undocumented value (first: '$sel_ex') — a closed value set a consumer buckets on cannot grow a value silently"
     fi
@@ -824,7 +824,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# §7b THE SIX ROUTES ARE EACH REACHABLE — the K35 half of a closed value set
+# §7b THE SEVEN ROUTES ARE EACH REACHABLE — the K35 half of a closed value set
 # ---------------------------------------------------------------------------
 # §7 asserts nothing OUTSIDE the set appears. It cannot see a value that has
 # quietly become unreachable, which reads as "cleaner!" and is how a bucket a
@@ -861,8 +861,19 @@ sel_witness overflowed-dfa       -fno-prefilter-collapse -- "$SEL1_P"
 # witness rather than a wrapped `$SEL1_P`: §6b's header carries the two
 # MEASURED reasons the wrapped form is unusable (it does not compile, and with
 # the cap raised it is a DFA artifact taking no VM prefilter decision at all).
-sel_witness declined-nullable                            -- '(?:(?:a|b)*a(?:a|b){15})?' 
+sel_witness declined-nullable                            -- '(?:(?:a|b)*a(?:a|b){15})?'
 sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
+# [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the lane's own
+# brief. Reuses tests/resource's own `(a|b){1,30000}` cell rather than a new
+# pattern — that IS this value's standing witness (tests/resource/
+# run_resource_tests.sh's `size_rung_cell '(a|b){1,30000}' hybrid ...`), and a
+# second, unrelated witness here would be a second place this shape could
+# silently stop reaching its site. Distinct from `collapsed-prefilter`
+# (order 3) on purpose: that row's own DFA-overflow control pair
+# (`$SEL1_P`) never reaches an emitted-size cap at all, so it cannot stand in
+# for this rung — the [SEL-1] and [OPT-4] rungs are separate, offered under
+# different conditions in compile_driver's own retry loop.
+sel_witness size-cap-retry                                -- '(a|b){1,30000}'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

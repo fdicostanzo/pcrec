@@ -250,8 +250,8 @@ force-vs-deny distinction, and the byte-identity/engine-selecting split:
 
 ## 2. Listing surfaces
 
-Six TSV dumps, each a query taking no pattern and no `-o` (mixing either
-in is refused). Five answer from pcrec's own registries; the sixth,
+Seven TSV dumps, each a query taking no pattern and no `-o` (mixing either
+in is refused). Six answer from pcrec's own registries; the seventh,
 `--list-source`, reads a FILE named by its own value. The column CONTRACT itself — `#`
 comments, a header row naming every column, append-only columns, resolve
 by header name never position — is `docs/spec/table_contract.md`,
@@ -326,6 +326,25 @@ separate checks). Takes `--flavour`, unlike `--list-verbs`/
 `--list-syntax` does, so an unfiltered dump would print a definition for
 a construct `--list-syntax --flavour=X` says does not exist under that
 flavour.
+
+### `--list-limits`
+
+Every numeric limit in `src/core/limits.def`, D90/[LIM-1] — the SIXTH
+surface: one row per limit, `name`, `value`, `unit`, `kind` (`compile
+budget` | `runtime capacity` | `size cap` | `selection knee` |
+`identifier cap`), `override` (`flag` | `-D` | `none`), `anchor` (the
+`docs/spec/limits.md` §N this number is documented in, empty when it is
+not — that document states caller-facing PROMISES, not an internals
+catalogue, so most compile-budget internals have none) and `desc` (a
+one-line "what this bounds"). Reports the SAME numbers every `#define`/
+`enum` in the tree now generates from — a row's `value` is spliced
+straight into the generating site, so this dump and the compiled binary
+cannot disagree about what a limit's value IS. It does not by itself
+prove `docs/spec/limits.md` still states that value correctly —
+`tests/registry/limits_check.sh` is the independent side of that claim,
+`registry.md`'s own pattern for every other surface here. Takes no
+`--flavour` (the same reason `--list-axes` doesn't: a numeric limit has
+no flavour axis).
 
 ### `--list-source FILE`
 

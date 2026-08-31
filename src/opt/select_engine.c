@@ -890,17 +890,47 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * a consumer quite different things (one is a rescue that was not
      * available, the other a rescue that was refused as useless), and the
      * bench buckets on this macro precisely because it cannot bucket on prose.
-     * The conjunct is CR_SEL1's, not `collapse_reason != CR_NONE`: the SIZE
-     * rung reaches `ESEL_SELECTED` above and keeps it, declined or not, which
-     * is what keeps `>= ESEL_OVERFLOWED_DFA` meaning "a DFA build
-     * overflowed". */
+     *
+     * [LIM-1] (D90, 2026-08-30) THE CONJUNCT WIDENED FROM `CR_SEL1` TO
+     * `collapse_reason != CR_NONE`, FOLDING IN THE SIZE RUNG'S OWN DECLINE.
+     * It used to be CR_SEL1-only, on the ARGUMENT that "the SIZE rung reaches
+     * ESEL_SELECTED above and keeps it, declined or not" — true of the SIZE
+     * rung's SUCCESS (which now has its own value, ESEL_SIZE_CAP_RETRY,
+     * below) but never true of its DECLINE: a SIZE-rung nullable decline
+     * used to fall through to `!cx->dfa_disabled ? ESEL_SELECTED` (dfa_
+     * disabled is never set on this rung) and stamp `"selected"` —
+     * indistinguishable from an ordinary compile, the exact "closed value
+     * set silently losing a member" shape K35 exists to name. Both rungs'
+     * declines are now ONE arm; the CR_SEL1-scoped `ESEL_COLLAPSED_
+     * PREFILTER` arm above is UNCHANGED (a SIZE-rung success is a different
+     * value, tested next), so `>= ESEL_OVERFLOWED_DFA && <= ESEL_
+     * DECLINED_NULLABLE` still means exactly "a DFA STATE cap overflowed"
+     * (internal.h's own updated invariant comment). */
     fit.engine_sel =
           cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
+        : (cx->collapse_reason != CR_NONE && fit.prefilter_declined_nullable)
+                                                      ? ESEL_DECLINED_NULLABLE
+        : /* [LIM-1] THE SIZE RUNG'S OWN SUCCESS — `dfa_disabled` is never set
+           * on this rung (it is not a DFA-overflow fallback at all: the DFA
+           * build succeeded, the WHOLE ARTIFACT was refused by an emitted-
+           * size cap), so without this arm it would fall through to
+           * `ESEL_SELECTED` next and read `"selected"` — the exact gap
+           * docs/spec/limits.md §3.3's own [OPT-4] section named without a
+           * fix ("the SIZE rung's own decline is not this value... the
+           * route stays selected", which this arm's own header addendum
+           * corrects: that sentence was true of the decline only, and was
+           * being silently read as true of the rung's SUCCESS too).
+           * `fit.prefilter` is a conjunct for `ESEL_COLLAPSED_PREFILTER`'s
+           * own reason: a size-cap-refused compile can still end with no
+           * prefilter (a backreference/linked call), and that case is
+           * already `ESEL_SELECTED` — nothing about ITS route through a
+           * cap is observable in any other stamp, so leaving it alone is
+           * the conservative choice pending a named consumer (D77). */
+          (cx->collapse_reason == CR_SIZECAP && fit.prefilter)
+                                                      ? ESEL_SIZE_CAP_RETRY
         : !cx->dfa_disabled                           ? ESEL_SELECTED
         : (cx->collapse_reason == CR_SEL1 && fit.prefilter)
                                                       ? ESEL_COLLAPSED_PREFILTER
-        : (cx->collapse_reason == CR_SEL1 && fit.prefilter_declined_nullable)
-                                                      ? ESEL_DECLINED_NULLABLE
         : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
                                                       : ESEL_OVERFLOWED_PREFILTER;
 

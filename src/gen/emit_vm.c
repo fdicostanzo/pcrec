@@ -83,22 +83,29 @@
  * (~2.6x is the absolute fit). Multi-KB reach needs an ENGINE change
  * (cursor/revdet eligibility for same-trailing-byte alternations), not this
  * knob. */
+/* [LIM-1] (D90, 2026-08-30) VM_DEFAULT_RESUME_FRAMES/_TRAIL_FRAMES and
+ * VM_MAX_AUTO_RESUME_FRAMES/_TRAIL_FRAMES are now GENERATED from
+ * src/core/limits.def — the single derivation `pcrec --list-limits` dumps
+ * and docs/spec/limits.md §3.2 is checked against. This comment's own
+ * PROVENANCE PROSE is unchanged; only the mechanical `= value,` lines moved,
+ * and the numbers are unchanged (2048/3072 both pairs). Exact sizing (§2.5:
+ * "where the pattern's dynamic depth is statically bounded the emitter
+ * computes the exact requirement") is clamped by the AUTO pair. Past the
+ * clamp the requirement is bounded but does not fit the stack budget, so the
+ * artifact enforces the clamp and says so. RECALIBRATED [M4.6a] 2026-08-17
+ * with the DEFAULT pair (was 1024/1536): the two pairs are distinct knobs —
+ * the AUTO pair caps the large-BOUNDED class's exact sizing, the DEFAULT
+ * pair serves the UNBOUNDED class — but both emit the same two arrays under
+ * the same D19 arithmetic, so they move together or the calibration is
+ * half-landed (measured: changing only the AUTO pair left
+ * `((a)|ab){0,4000}c` at 1024 frames / ceiling 307, which is how the
+ * two-knobs fact was discovered). */
+#define PCREC_LIMIT_EMIT_VM(name, value, unit, kind, override, anchor, desc, default_name) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_EMIT_VM
+
 enum {
-    VM_DEFAULT_RESUME_FRAMES    = 2048,
-    VM_DEFAULT_TRAIL_FRAMES = 3072,
-    /* Exact sizing (§2.5: "where the pattern's dynamic depth is statically
-     * bounded the emitter computes the exact requirement") is clamped here.
-     * Past the clamp the requirement is bounded but does not fit the stack
-     * budget, so the artifact enforces the clamp and says so. RECALIBRATED
-     * [M4.6a] 2026-08-17 with the DEFAULT pair above (was 1024/1536): the
-     * two pairs are distinct knobs — this one caps the large-BOUNDED class's
-     * exact sizing, the pair above serves the UNBOUNDED class — but both
-     * emit the same two arrays under the same D19 arithmetic, so they move
-     * together or the calibration is half-landed (measured: changing only
-     * the pair above left `((a)|ab){0,4000}c` at 1024 frames / ceiling 307,
-     * which is how the two-knobs fact was discovered). */
-    VM_MAX_AUTO_RESUME_FRAMES    = 2048,
-    VM_MAX_AUTO_TRAIL_FRAMES = 3072,
     /* [OPT-1] THE FAST TIER'S BYTE BUDGET (docs/design/two_tier_entry.md §3).
      * A THIRD knob, and it caps neither of the two above: it is how much of
      * the un-suffixed entry's own STACK FRAME the run state and its two arrays
@@ -159,8 +166,11 @@ enum {
  *
  * The 20M measured-conservative option is the road not taken; it is recorded
  * in docs/design/m46a_impl/'s proposal table. A bring-up-calibrated value the
- * project can move again with evidence, in [M4.6a]'s own posture. */
-#define VM_DEFAULT_STEP_BUDGET 500000000LL
+ * project can move again with evidence, in [M4.6a]'s own posture.
+ *
+ * [LIM-1] (D90) generated above, with VM_DEFAULT_WORK_BUDGET below, from the
+ * same src/core/limits.def include this file's own DEFAULT_RESUME_FRAMES
+ * block already uses — value unchanged (500,000,000LL). */
 
 /* [ENG-BREP counter-K] The THIRD bound's default (D47 SECOND ADDENDUM
  * settlement 4; the VALUE ruled at D49). Its unit is a WORK UNIT — one frame
@@ -185,8 +195,8 @@ enum {
  * for both. This is NOT in src/core/limits.h, and deliberately: that file's
  * own inclusion rule is "a number belongs here if changing it changes what
  * pcrec ACCEPTS, REJECTS or PROMISES", and a runtime give-up budget changes
- * none of the three at compile time. It lives beside its two siblings. */
-#define VM_DEFAULT_WORK_BUDGET 1000000000LL
+ * none of the three at compile time. It lives beside its two siblings — the
+ * home is EMIT_VM in limits.def, catalogued but not relocated ([LIM-1]). */
 
 /* The §2.5 cursor rung only fires for bodies whose emitted inline test stays
  * small; past this the body goes to the frames rung, which is correct and
@@ -196,8 +206,16 @@ enum { VM_MAX_STRIDE = 32 };
 
 /* Capture groups a cursor-rung body may contain. A body of stride <= 32 can
  * still nest arbitrarily many groups (`((((a))))` is four groups in one byte),
- * so this is NOT implied by VM_MAX_STRIDE and needs its own bound. */
-enum { VM_MAX_BODY_CAPS = 64 };
+ * so this is NOT implied by VM_MAX_STRIDE and needs its own bound.
+ *
+ * [LIM-1] (D90, 2026-08-30): this is a BARE ALIAS of PCREC_MAX_REVDET_BODY_
+ * GROUPS (limits.h), not a second independently-chosen 64 — the survey that
+ * built src/core/limits.def found the two were the SAME NUMBER FOR THE SAME
+ * REASON at two sites (limits.h's own comment on PCREC_MAX_REVDET_BODY_GROUPS
+ * already said so: "Same number and same reason as the cursor rung's own
+ * VM_MAX_BODY_CAPS"), which is exactly the two-homes shape a sabotage row
+ * now guards (tests/mech/sabotages/S209_vm_max_body_caps_delinked.sh). */
+#define VM_MAX_BODY_CAPS PCREC_MAX_REVDET_BODY_GROUPS
 
 /* ---- the emitter's state -------------------------------------------------*/
 

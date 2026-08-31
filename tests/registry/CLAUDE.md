@@ -350,6 +350,31 @@ directory asserts that the description and the shipped parser actually agree.
   (default `build/pcrec`), `TUNING`/`CLIMAIN`/`MATCHAPI`/`EMITDFA`
   (override to point at a doctored scratch copy — the sabotage-validation
   lever; never point these at a file under this repo's own tracked tree)
+- **limits_check.sh** — [LIM-1] (D90, 2026-08-30): the numeric-limits
+  table's own check, the SIXTH registry-family TSV surface's independent
+  side. Three parts: the `--list-limits` row count pinned by NAME
+  MANIFEST (44, not a bare number); every ANCHORED row's value, comma-
+  grouped, found within its own cited `docs/spec/limits.md` section
+  (forward only — that document's prose is full of MEASURED WITNESS
+  numbers unrelated to the table, so a blind reverse sweep would be the
+  K35 "population nobody counts" shape); and a bare policy-shaped
+  `#define`/enum-member found anywhere under `src/`/`cli`/`lib` OUTSIDE
+  `src/core/limits.def`, against a small NAMED, CITED allowlist (every
+  entry excluded from the table BY RULE at its own site — a local
+  algorithmic bound with its proof beside it, a debug-listing width, a
+  loop-iteration cap, an API sentinel). Wired into `run_registry_tests.sh`
+  below AND as its own `limits` arm in `tests/mech/run_sabotage_matrix.sh`
+  (never folded into `registry`, whose own comment says it deliberately
+  skips any wrapper with a changed-PASS-COUNT-shaped coverage guard, which
+  part 1 here is). Found and fixed two real `limits.md` drifts on its
+  first run (four DFA-sibling numbers §3.3 named without stating, one
+  ungrouped `250000` against its comma-grouped siblings) and one real
+  code drift on its second (`VM_MAX_BODY_CAPS`, emit_vm.c, an
+  independently-spelled `64` coincidentally equal to
+  `PCREC_MAX_REVDET_BODY_GROUPS` — now a bare alias). Sabotage rows
+  S208 (a table value edited with the doc left stale) and S209 (a bare
+  literal put back, the `VM_MAX_BODY_CAPS` regression re-introduced),
+  both DETECTED live.
 
 ## What it asserts
 

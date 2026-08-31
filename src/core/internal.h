@@ -1024,14 +1024,33 @@ typedef struct {
 /* How far past offset 0 the walk looks. It is a WALK bound and not a tuning
  * knob: past ~two dozen bytes a fixed-width prefix is vanishingly rare and
  * the frontier has almost always either accepted or fanned out. The k-SET
- * cap below is the one that bounds emitted work. */
-#define PCREC_PREFIX_K_MAX   24
-
-/* How many (offset, byte-set) tests one skip may carry — the k-set cap. Four
+ * cap below is the one that bounds emitted work.
+ *
+ * How many (offset, byte-set) tests one skip may carry — the k-set cap. Four
  * is the note's §4.6: the third and fourth verify are already below the
  * model's noise on every corpus pattern, and each one is emitted text and a
- * branch on the candidate path. */
-#define PCREC_OFSK_MAX_SET   4
+ * branch on the candidate path.
+ *
+ * [LIM-1] (D90, 2026-08-30): both generated from src/core/limits.def, the
+ * single derivation `pcrec --list-limits` dumps — values unchanged (24, 4). */
+#define PCREC_LIMIT_INTERNAL_H(name, value, unit, kind, override, anchor, desc, default_name) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_INTERNAL_H
+/* MEASURED (make strict): gcc's enum-widening extension picks an UNSIGNED
+ * underlying type for PCREC_MINW_MAX's enumerator (1LL << 40 exceeds
+ * UINT_MAX, and gcc's "smallest sufficient type" rule prefers unsigned for
+ * a non-negative value out of int range) — every comparison and arithmetic
+ * use across this tree (mrl.c, callgraph.c, emit_vm.c) assumes `long long`,
+ * so `-Wsign-compare` fires at all eleven of them. One correction, at
+ * generation, rather than a cast repeated at every use site: rebinding the
+ * name to a cast of itself is standard C's self-referential-macro rule
+ * (C11 6.10.3.4) — the inner occurrence is not re-expanded, so it resolves
+ * to the ENUM CONSTANT the include above just declared, cast once. The
+ * 2^40 value is still spelled exactly once, in limits.def; this is a TYPE
+ * fix, not a second numeric source. PCREC_W_UNBOUNDED (below) is unaffected
+ * by construction — it is already only ever a macro alias of this name. */
+#define PCREC_MINW_MAX ((long long)PCREC_MINW_MAX)
 
 typedef struct {
     int      k;          /* the offset, in bytes from the candidate start */
@@ -1403,14 +1422,24 @@ typedef struct {
      * once at `src/opt/select_engine.c`'s single `cx->job->fit = fit` site
      * from the driver's own attempt record.
      *
-     * SIX VALUES, and the last four are all "fell back" with different
-     * outcomes — which is exactly the distinction `why` cannot carry. */
+     * SEVEN VALUES since [LIM-1] (was six) — `ESEL_SIZE_CAP_RETRY` joined
+     * at D90's fold-in — and the last five are all "fell back" with
+     * different outcomes — which is exactly the distinction `why` cannot
+     * carry. */
     unsigned char engine_sel;
 } EngineFit;
 
 /* [OPT-4] `EngineFit.engine_sel` — `<PREFIX>_ENGINE_SEL`'s closed value set.
- * Ordered so `>= ESEL_OVERFLOWED_DFA` reads "a DFA build overflowed and this
- * compile fell back", which is the bucket the bench actually wants. */
+ * Ordered so `>= ESEL_OVERFLOWED_DFA && <= ESEL_DECLINED_NULLABLE` reads "a
+ * DFA build overflowed a STATE cap and this compile fell back", which is the
+ * bucket the bench actually wants. [LIM-1] (2026-08-30) added
+ * `ESEL_SIZE_CAP_RETRY` OUTSIDE that range on purpose — its own cap is the
+ * emitted-SIZE one (`compile_driver`'s CR_SIZECAP rung), not a DFA state
+ * cap, so folding it into the contiguous range above would make the
+ * existing range test lie about what overflowed. A consumer wanting
+ * "any fallback occurred, of any kind" now tests `>= ESEL_OVERFLOWED_DFA`
+ * (unbounded above, since this is the last value); one wanting
+ * specifically "a DFA state cap overflowed" needs the bounded range. */
 enum {
     ESEL_FORCED               = 0,  /* the caller named --engine=vm/dfa */
     ESEL_SELECTED             = 1,  /* auto chose on the AST; nothing overflowed */
@@ -1418,16 +1447,35 @@ enum {
     ESEL_OVERFLOWED_DFA       = 2,  /* the DFA was to be the ENGINE; no prefilter survives */
     ESEL_OVERFLOWED_PREFILTER = 3,  /* the VM was already chosen; its prefilter was dropped */
     ESEL_COLLAPSED_PREFILTER  = 4,  /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
-    /* [OPT-4.1] the [SEL-1] rung OFFERED and DECLINED: the collapsed language
-     * is nullable, so the rescue would have shipped a filter that can never
-     * dismiss. No prefilter survives — the artifact is the pre-[OPT-4] one —
-     * and this value is the difference between "the collapsed machine
-     * overflowed too" (ESEL_OVERFLOWED_DFA) and "the collapse was refused on
-     * purpose". IT KEEPS THE ORDERING CLAIM ABOVE: it is reachable ONLY from
-     * the [SEL-1] rung, i.e. only after a DFA build overflowed a cap. The SIZE
-     * rung's own decline is not this value — nothing overflowed there and the
-     * route stays `"selected"`, exactly as it is when that rung collapses. */
-    ESEL_DECLINED_NULLABLE    = 5
+    /* [OPT-4.1] a [SEL-1] OR [OPT-4] SIZE rung OFFERED and DECLINED: the
+     * collapsed language is nullable, so the rescue would have shipped a
+     * filter that can never dismiss. No prefilter survives — the artifact is
+     * the pre-rung one — and this value is the difference between "the
+     * collapsed machine overflowed/refused too" (ESEL_OVERFLOWED_DFA /
+     * ESEL_SIZE_CAP_RETRY's own absence) and "the collapse was refused on
+     * purpose". [LIM-1] (2026-08-30) WIDENED ITS REACH: it used to be
+     * reachable ONLY from the [SEL-1] rung ("the SIZE rung's own decline
+     * stays `selected`" was this comment's own claim, and it was WRONG the
+     * moment the SIZE rung's own outcome got a value of its own below — a
+     * SIZE-rung nullable decline was silently indistinguishable from an
+     * ordinary `selected` compile, exactly the K35 shape this whole macro
+     * exists to prevent). Both rungs' declines now read this value. */
+    ESEL_DECLINED_NULLABLE    = 5,
+    /* [LIM-1] (D90, 2026-08-30) THE SIZE RUNG'S OWN SUCCESS, FOLDED IN FROM
+     * [LIM-1]'s brief. Before this value existed, a [OPT-4] SIZE-rung
+     * rescue that SURVIVED (the collapsed prefilter shipped) stamped
+     * `"selected"` — indistinguishable from an ordinary compile that never
+     * hit any cap at all, so a consumer bucketing on this macro alone (the
+     * bench's own O-10 use) could not tell "this artifact is smaller only
+     * because the emitted-size cap forced a retry" from "nothing unusual
+     * happened". `docs/spec/limits.md` §3.3's own [OPT-4] section already
+     * named the gap without a fix: "the SIZE rung's own decline is not this
+     * value... the route stays `selected`" was true of the DECLINE only,
+     * and was silently ALSO being read as true of the rung's SUCCESS,
+     * which this value corrects. Reachable ONLY from `collapse_reason ==
+     * CR_SIZECAP` (src/core/compile.c) with a prefilter that survived —
+     * tests/resource's `(a|b){1,30000}` cell is the standing witness. */
+    ESEL_SIZE_CAP_RETRY       = 6
 };
 
 /* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that everything from
@@ -3779,6 +3827,11 @@ size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis 
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
 char *pcrec_axes_tsv(void);
 
+/* [LIM-1] `src/parse/limits_dump.c` — renders src/core/limits.def, the
+ * numeric-limits table (D90), as one TSV, table_contract.md's wire format
+ * (the SIXTH surface). Caller frees. */
+char *pcrec_limits_tsv(void);
+
 /* NULL when no construct matches the query. */
 /* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
  * no doorway AND no row looks like it — the CLI turns that into exit 1 with
@@ -4052,8 +4105,10 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * analysis does — two different ceilings would let a long concatenation of
  * saturated subtrees overflow past the one that was supposed to prevent it.
  * Far above any addressable subject on purpose: a saturated bound reads as
- * "doomed", which at 2^40 remaining bytes it is. */
-#define PCREC_MINW_MAX (1LL << 40)
+ * "doomed", which at 2^40 remaining bytes it is.
+ *
+ * [LIM-1] (D90): generated earlier in this file (PCREC_PREFIX_K_MAX's own
+ * limits.def include, home INTERNAL_H) — value unchanged, (1LL << 40). */
 
 /* [M6.6.2 wave A] The MAXIMUM number of subject bytes any match of `a` can
  * consume — `pcrec_minw`'s twin, and its DIRECTION IS THE OPPOSITE ONE.

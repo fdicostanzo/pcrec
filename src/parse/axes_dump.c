@@ -549,7 +549,26 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 5, "overflowed-prefilter", "overflowed-prefilter",
                      0, "", 0, "", "",
                      "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped");
-        emit_pred_row(sb, &p, 6, "selected", "selected",
+        /* [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the
+         * lane's own brief. Before this row, a successful [OPT-4] SIZE-rung
+         * rescue (the emitted-size cap refused the exact artifact, the
+         * retry's count-collapsed prefilter shipped and survived) stamped
+         * `"selected"` — indistinguishable from a compile that never hit
+         * any cap at all. Placed LAST among the "fell back" outcomes rather
+         * than beside `collapsed-prefilter` (order 3): that row's own
+         * `applies` text already reads "auto, a DFA build overflowed" —
+         * true only of the [SEL-1] rung — and inserting a SIZE-rung outcome
+         * between it and its neighbours would suggest the two rungs share
+         * one ladder position, which they do not (compile_driver's own
+         * comment: two SEPARATE rungs in one retry loop, offered under
+         * different conditions). `order` is this dump's own field and
+         * carries no promise about `ESEL_*`'s numeric values (internal.h's
+         * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
+         * DFA-overflow range at the C level). */
+        emit_pred_row(sb, &p, 6, "size-cap-retry", "size-cap-retry",
+                     0, "", 0, "", "",
+                     "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)");
+        emit_pred_row(sb, &p, 7, "selected", "selected",
                      0, "", 0, "", "",
                      "always (fallback) — auto chose on the AST and nothing overflowed");
     }

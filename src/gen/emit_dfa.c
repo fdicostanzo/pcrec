@@ -218,6 +218,7 @@ const char *pcrec_engine_sel_name(Ctx *cx)
     case ESEL_OVERFLOWED_PREFILTER: return "overflowed-prefilter";
     case ESEL_COLLAPSED_PREFILTER:  return "collapsed-prefilter";
     case ESEL_DECLINED_NULLABLE:    return "declined-nullable";
+    case ESEL_SIZE_CAP_RETRY:       return "size-cap-retry";
     default:                        return "selected";
     }
 }

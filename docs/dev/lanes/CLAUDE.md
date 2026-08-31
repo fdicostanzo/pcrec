@@ -27,3 +27,4 @@ never edited afterwards.
   about the brief's own premises (the K39 witnesses are NOT nullable; the
   `_LANG_WHY` value alone cannot carry the measured case), and three open
   questions. No `_log.md`: the lane's ordering is in its commits.
+- `lim1_report.md` — [LIM-1] (2026-08-30/31, lane lim1): the limits table (src/core/limits.def, 44 rows), `--list-limits`, the size-cap rescue's distinct RX_ENGINE_SEL value, S208/S209. Final wave committed by the MANAGER (takeover: the lane went unresponsive after its verification runs; content verified per the report's measured table, re-verified at landing).
