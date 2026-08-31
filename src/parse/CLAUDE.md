@@ -132,9 +132,13 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   raised, with no `BUILT_DEFECT` outcome since a lexical construct never
   stamps a node. See that file's own comment for the full argument.
 
-  No `tests/quoting/` corpus ships with this landing (D27 reserves it for
-  a blinded writer denied `src/`/`tests/`); validation is the oracle
-  differential probe set + the reject-table's flipped/replaced pins.
+  The `tests/quoting/d27/` corpus landed SEPARATELY, hours after this
+  module (D27: written by a blinded author denied `src/`/`tests/`, from
+  `man pcre2pattern` + the libpcre2 oracle — see tests/quoting/CLAUDE.md),
+  and on its FIRST run caught a tier-1 miscompile this module's own
+  164-probe differential had missed (quoted quantifier chars live; the
+  p_rep in_quote guard is the fix, S212 pins it). The impl lane itself
+  wrote no tests here — that remains the point.
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup. Since Q1 (D25) it also
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by
