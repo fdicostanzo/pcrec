@@ -38,5 +38,9 @@ docs/design/subroutines_measurements/email_specimen/subjects/
 docs/design/subroutines_measurements/email_specimen/throughput/
 
 # lane hold/lift artifacts (manager<->lane signalling files, never content)
+# 2026-08-31: .hold and rulings.md added after both were swept into a lane's
+# commit (the block predated those two spellings; opt5s1's root-cause).
 .lift
 .hold_ack
+.hold
+/rulings.md
