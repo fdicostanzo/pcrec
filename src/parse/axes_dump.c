@@ -299,6 +299,30 @@ static void emit_table_composite_rows(StrBuf *sb)
              "the artifact's own machines took DIFFERENT per-machine table representations (dfa_table_name(): forward vs. reverse, and since [ENG-ABS] the anchored machine, disagree) — a per-artifact composition, never a single machine's own selection");
 }
 
+/* [OPT-5] `scan-body`'s TWO COMPOSITE ROWS, and they exist for `table`'s
+ * reason exactly. `RX_DFA_SCAN_EDGE`'s real value set is FOUR strings
+ * (docs/spec/match_api.md §6.3) and `pcrec_dfa_axis_scanbody_cands()` reports
+ * the TWO the body axis can select PER EDGE. `dfa_scan_edge_name()`
+ * (src/gen/emit_dfa.c) answers `"none"` when the REGION axis chose
+ * `table-walk` at every state — no edge, so no body to name — and `"mixed"`
+ * when the artifact's edges did not all take the same body. Neither is
+ * something the per-edge list could ever select on its own.
+ *
+ * NEITHER CARRIES THE DENY LEVER, and that is not an oversight: the flag
+ * belongs to the axis that decides whether an edge EXISTS (`scan-edge`,
+ * where it is reported on that axis's own first candidate), not to the axis
+ * that decides what an edge's loop looks like. `"none"` IS what a denied
+ * build stamps, which the prose below says rather than the column. */
+static void emit_scan_composite_rows(StrBuf *sb)
+{
+    axis_row(sb, "scan-body", 3, "none", "predicate",
+             "RX_DFA_SCAN_EDGE", "none", "", "", "", "", "",
+             "the artifact carries no scan edge, so there is no body to name: no machine has a collapsible counted run, or the engine is ENG_ATTEMPT (label dispatch, no table walk to shorten) or provably empty -- and it is also what every artifact stamps under -fno-scan-edge, which denies the scan-edge axis above rather than this one");
+    axis_row(sb, "scan-body", 4, "mixed", "predicate",
+             "RX_DFA_SCAN_EDGE", "mixed", "", "", "", "", "",
+             "the artifact's own edges took DIFFERENT bodies (dfa_scan_edge_name(): one machine's edge tests a contiguous range, another's reads a membership table) -- a per-artifact composition, never a single edge's own selection");
+}
+
 /* ---- "predicate" axes: no candidate-list-as-data yet -------------------
  *
  * Sourced from lib/pcrec.h's own enum symbols (the `V()` macro below
@@ -638,6 +662,7 @@ char *pcrec_axes_tsv(void)
      * and a SIMD body added later appears here with no edit. */
     emit_dfa_list_axis(&sb, "scan-edge", "list", pcrec_dfa_axis_edge_cands);
     emit_dfa_list_axis(&sb, "scan-body", "list", pcrec_dfa_axis_scanbody_cands);
+    emit_scan_composite_rows(&sb);
 
     emit_predicate_axes(&sb);
 

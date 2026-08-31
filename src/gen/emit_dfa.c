@@ -1806,6 +1806,11 @@ typedef struct DfaEdge DfaEdge;
 typedef struct DfaScan DfaScan;
 static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st);
 static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st);
+/* The chosen BODY object's own `c.name`, i.e. the stamp value (D82 rule 2).
+ * An accessor rather than a dereference at the stamp path, because `DfaScan`
+ * is incomplete up here -- and the accessor is what keeps "the stamp is the
+ * chosen object's name" a single expression instead of a second reading. */
+static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st);
 /* Is `e` the region axis's FIRST candidate, i.e. did this state take an
  * edge? Spelled once here rather than compared against `&dfa_edges[0]` at
  * three call sites, two of which are above that array's definition. */
@@ -2556,7 +2561,7 @@ static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
          * value (D82 rule 2) -- never a second reading of the predicate that
          * chose it. */
         if (!dfa_edge_taken(dfa_edge_of(cx, d, i))) continue;
-        const char *v = dfa_scan_of(cx, d, i)->c.name;
+        const char *v = dfa_scan_body_name(cx, d, i);
         if (!strcmp(so_far, "none")) so_far = v;
         else if (strcmp(so_far, v)) return "mixed";
     }
@@ -4118,14 +4123,6 @@ size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
  * restatement. */
 size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_matches); }
-/* [OPT-5] axes H and I ride the same walk for the same reason. Adding the
- * ISA-neutral SIMD body object manager ruling R2 reserves a slot for
- * therefore needs NO edit here, in `axes_dump.c`'s iteration, or in the
- * registry check's row sweep -- only its own `applies` and `emit_test`. */
-size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap)
-{ return AXIS_LIST(dfa_edges); }
-size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap)
-{ return AXIS_LIST(dfa_scans); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
@@ -4303,6 +4300,27 @@ static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st)
 }
 
 static bool dfa_edge_taken(const DfaEdge *e) { return e == &dfa_edges[0]; }
+
+static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st)
+{ return dfa_scan_of(cx, d, st)->c.name; }
+
+/* [CHK-2]'s generic walk over axes H and I. They sit HERE rather than with
+ * the other six accessors ~150 lines above because that block is written
+ * before these two arrays exist; `AXIS_LIST` is `#undef`-ed at the end of
+ * that block, so the two calls are spelled out. Adding the ISA-neutral SIMD
+ * body object ruling R2 reserves a slot for needs NO edit here, in
+ * `axes_dump.c`'s iteration, or in the registry check's row sweep -- only
+ * its own `applies` and `emit_test`. */
+size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap)
+{
+    return pcrec_dfa_axis_cands(dfa_edges, sizeof dfa_edges / sizeof dfa_edges[0],
+                                sizeof dfa_edges[0], out, cap);
+}
+size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap)
+{
+    return pcrec_dfa_axis_cands(dfa_scans, sizeof dfa_scans / sizeof dfa_scans[0],
+                                sizeof dfa_scans[0], out, cap);
+}
 
 static void scan_test(StrBuf *c, const DfaForm *f, int head)
 {
