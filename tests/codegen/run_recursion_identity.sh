@@ -452,8 +452,25 @@ KEEP="${KEEP:-0}"
 # measured 691 B per artifact of the size log's comment classifier), which is
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
+# [OPT-5], 2026-08-31 — THE SECOND RE-PIN BY A CHANGE THAT MOVES EMITTED
+# PROGRAM BYTES, and the FIRST by one that moves a MACHINE. The DFA scan edge
+# replaces a counted class run's states with one bounded cursor loop and
+# DELETES the run's interior from every per-state table, so (B) moves on every
+# artifact whose machine carries such a run — `[a-z]{0,16384}`'s forward
+# machine goes from 16,385 states to 2 — and EVERY artifact gains the
+# `<PREFIX>_DFA_SCAN_EDGE` stamp line. `abi` 12 -> 13.
+#
+# (A) IS STILL EXPECTED BYTE-IDENTICAL, and here that is a real check rather
+# than a formality: its `prog_region` is the VM PROGRAM, and a hybrid's
+# inlined DFA prefilter is emitted ABOVE that region — so this change reaches
+# no VM program byte even on the artifacts whose prefilter it rewrites.
+#
+# THE PIN IS THIS CHANGE'S LAST src/lib/cli-TOUCHING COMMIT, per the rule two
+# paragraphs up: `dc2c8ef`, not the commit that first moved a byte and not the
+# later test-only commits. Pin was `c275aef` ([OPT-4.1]'s).
+
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c275aef}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-dc2c8ef}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
