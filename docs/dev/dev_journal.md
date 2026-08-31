@@ -19013,3 +19013,27 @@ that's not what DFA engines do). Bench coordination: pcrecdev2 awake,
 re-pin to 263b013 underway, OPEN/QUIET/CLOSED handshake agreed; my
 battery queues after WINDOW CLOSED; both lanes carry the no-heavy-runs
 + .hold discipline.
+
+**10:0x-10:2x — [M4-QUOTING] FULLY LANDED (fix + corpus), battery
+pending.** The fix wave (6b26485): one `if (cx->in_quote) break;` in
+p_rep after xskip, mirroring p_atom's guard; transparency semantics
+argued in the comment and re-verified (empty \Q\E never sets in_quote;
+a post-close quantifier still binds). The lane's autopsy of its own
+164/164 claim: an ABSENT test axis, not a broken harness — zero
+quantifier-char-inside-quotes probes existed; attention had
+concentrated on the axes that had already yielded S210/S211 (coverage
+bias; its summary table overstated). Fix merged; hand-verified on
+main both directions; corpus merged (14 files, 1,445 lines);
+**acceptance 95/95 / 0 compile failures**; rxtsource census
+179/3265/26691 → 188/3317/26786 with RUNSH twins and C3 populations
+(+7 verified / +88 no-python-expression — \Q is python-inexpressible
+by nature, the corpus's oracle is its own checker.py; history comments
+carry it); S212 validated solo post-merge (DETECTED,
+corpus:8fail/19pass — exactly the 8 quantifier cells) and its figure
+flipped to MEASURED. Worktrees/branches quoting + qd27 + the cell
+retired. Registry coverage guard unmoved (83 — no leg count changed).
+Remaining for [M4-QUOTING] completed: the battery (queued behind
+pcrecdev2's measurement windows per the handshake). Frank's /feedback
+on the earlier loops-dismissal was sent upstream this session
+(receipt in the session log). Lanes now: opt5s1 only (the DFA scan
+edge, opus, reading phase).
