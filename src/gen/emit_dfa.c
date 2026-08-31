@@ -4185,12 +4185,28 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
                      "%s// counted, so they are ONE loop carrying only the cursor.\n"
                      "%s// The class's cell above reads \"dead\" because of this.\n",
                   ind, ind, nx, st->scan_cls, ind, ind);
-    sb_printf(c, "%sif (%s == %d) {\n", ind, f->dir->statev,
-              f->repr->cell_of(head, f->d));
+    /* THE FIRST ITERATION IS PEELED INTO THE GUARD, and it is a MEASURED
+     * change rather than a stylistic one. This block sits on the loop's
+     * generic path, so it is entered once per iteration whether or not there
+     * is a run to count — and the bench's `t-digits-016k` cell is exactly
+     * that case at its worst: `[a-z]{0,n}` is nullable, so under the find-all
+     * regime the driver issues one `rx_search` per subject byte and NOT ONE
+     * of them scans a single byte. MEASURED with the run entered
+     * unconditionally: 3.69 -> 5.23 ns/call, a 1.43x regression on a cell
+     * that does no scanning at all, from the counter initialiser, the
+     * `scan_run_length == span` test and the accept store all executing on a
+     * run of length zero. Folding the class test into the guard leaves the
+     * empty-run path at a state compare, a bound compare and the class test
+     * the loop's own first iteration would have done anyway. */
+    sb_printf(c, "%sif (%s == %d && %s && ", ind, f->dir->statev,
+              f->repr->cell_of(head, f->d), f->dir->scan_more);
+    scan_test(c, f, head);
+    sb_puts(c, ") {\n");
 
     if (span < 0) {
         /* UNBOUNDED (`*` / `+`): no counter, and the state does not move —
          * the run's every position IS this state. */
+        sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
         sb_printf(c, "%s    while (%s && ", ind, f->dir->scan_more);
         scan_test(c, f, head);
         sb_printf(c, ") %s;\n", f->dir->advance);
@@ -4201,7 +4217,8 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
         return;
     }
 
-    sb_printf(c, "%s    unsigned long scan_run_length = 0;\n", ind);
+    sb_printf(c, "%s    unsigned long scan_run_length = 1;\n", ind);
+    sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
     sb_printf(c, "%s    while (%s && scan_run_length < %dUL\n"
                  "%s           && ",
               ind, f->dir->scan_more, span, ind);

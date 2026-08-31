@@ -29,3 +29,16 @@ ISA-neutrally in the spec hunk ("a SIMD run-extension form, per-ISA gated,
 scalar forms always available as fallback"), not as an SSE2 slot. Your
 scalar scan-range/scan-bitmap forms are the portable baseline; nothing you
 emit in STEP 1 may be ISA-conditional.
+
+## R3 (2026-08-31 ~10:2x, Frank — representation only, NOT scope)
+Frank: "isn't a loop over a static string just a memcmp: (?:ab){1,100}" —
+yes: a chain whose advance classes CYCLE with period k (singletons = a
+string) is the period-k generalization of your scan edge, body = a
+counted loop of constant-length compares. DO NOT BUILD IT in STEP 1 —
+scope stays period-1. But: give the IR scan-edge representation a
+period/сlass-sequence field (period=1 everywhere today) rather than a
+single class baked in, IF that costs nothing structural — so the string
+form later is a criterion extension + a new body form, not a rewrite.
+If a period field genuinely complicates STEP 1, skip it and say so in
+the report — the refusal must stay clean either way (mid-period states
+with differing exit targets → ordinary walk).
