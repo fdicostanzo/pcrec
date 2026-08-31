@@ -6381,3 +6381,46 @@ build something SIMD must then undo) — none known today; the scan
 edge is evidence of the opposite.
 Cross-notes: D77, D82 (the form slot SIMD drops into), [OPT-SIMD],
 [OPT-5] STEP 1 rulings R1/R2, studies/simd1.
+
+## D92 — PCRE2 IS THE MINIMUM TARGET, NOT THE SPECIFIC TARGET (Frank, 2026-08-31, forty-seventh session)
+
+**Frank's words:** "we are at the point where pcre2 is a minimum target
+more than a specific target."
+
+**What this changes.** The project's posture toward PCRE2 moves from
+destination to FLOOR. Compatibility on the shipped surface remains
+guaranteed and D26 remains the law for it (what a pattern MATCHES is
+exact; construct reality and module ownership exact; diagnostic wording
+tiered) — nothing about the compatible surface loosens. What changes is
+the ceiling: pcrec's own capabilities are the point, and exceeding
+PCRE2 is a legitimate roadmap direction, not scope creep. The existing
+instances that anticipated this: the M4-SUBST beyond-PCRE2 template
+direction (Frank, 2026-08-13, SR-10's flagged-namespace discipline),
+the AOT-only wins (compile-time group-reference checking), and now the
+[OPT-5] mechanism arc — the scan edge already gives pcrec performance
+semantics PCRE2 does not have, and STEP 3 (construction-time synthesis)
+makes some of PCRE2's own practical limits obsolete inside pcrec.
+
+**Disciplines that survive unchanged:** SR-10 (everything past PCRE2's
+surface lives in pcrec's clearly-flagged namespace or behind opt-in, so
+the D26 compatibility story stays clean); D77 (beyond-PCRE2 features
+still wait for a measured need or Frank's call, not built on spec);
+the reject table (what the BARE default refuses stays PCRE2-shaped —
+exceeding the floor is opt-in, never a silent default divergence).
+
+**First candidate instance, deliberately NOT acted on:**
+PCREC_MAX_REPEAT = 65535 is today a D26 bound (PCRE2 refuses {65536};
+so do we, with its measured error semantics). Once [OPT-5] STEP 3
+lands, a counted repeat is a u64 field and the 65535 ceiling is pure
+compatibility. Under this decision an OPT-IN raise (a flag or limits
+override accepting counts PCRE2 refuses) becomes thinkable; the
+DEFAULT keeps refusing at 65535. Left for Frank's ruling when STEP 3
+is real.
+
+**Revisit-when:** a beyond-floor divergence is proposed for the bare
+default (that would need its own decision, not this one); or the
+compliance page's framing ("distance to PCRE2") starts reading wrong
+against a tree that exceeds it — the page then gains a "beyond the
+floor" section rather than bending the survey.
+Cross-notes: D26, SR-10, D77, [M4-SUBST]'s beyond-PCRE2 paragraph,
+[OPT-5] STEPs 1-3, docs/pcre2_compliance.md.
