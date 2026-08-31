@@ -6334,3 +6334,50 @@ misses it — a distinct `_ENGINE_SEL` value, a D80 spec hunk, no abi bump
 (a value, not scaffolding — D76). Order: [LIM-1] (admin) then [OPT-5]
 (optimization), both after [DD-13b.W1.1]'s battery.
 Cross-notes: D80, D76, D77, D86, docs/spec/limits.md §3, table_contract.md.
+
+## D91 — SCALAR-FIRST BEFORE SIMD, and the two SIMD budgets (Frank, 2026-08-31, forty-seventh session)
+
+**Ruling (Frank's words):** "i like our current methodology of trying to
+get it as fast as possible without simd before we implement because i
+don't want the simd crutch to hide inefficiencies or opportunities."
+SIMD is layered ON TOP of an already-optimal scalar shape, never used to
+paper over a structural inefficiency. The worked example that earned the
+rule: [OPT-5] STEP 0 — the counted DFA's 5-6× loss to the VM was a
+dependency-chain SHAPE (data-dependent loop-carried load), and the
+scalar fix (the scan edge, address-only cursor) captures the win with
+zero vector instructions; SIMD run-extension stacks on top as a further
+multiplier. Had SIMD been reached for first, the structural defect would
+have persisted underneath it on every non-SIMD path and every
+future machine shape.
+
+**The two SIMD budgets (Frank, same ruling).** SIMD emission has two
+distinct sites with different dispatch economics, and designs must not
+conflate them:
+1. **The PREFILTER** — run ~once per match point, then scans many bytes:
+   dispatch/selection cost is NOISE there. All SIMD implementations can
+   live in ONE compiled artifact (one emitted helper per class shape,
+   ISA ladder or dispatch-once inside), selection at runtime, no
+   artifact variants. libc's own memchr (ifunc + PLT, paid today on
+   every prefilter call) is the standing proof the model costs nothing
+   at that site.
+2. **INSIDE THE PATTERN** (e.g. a scan edge in the hot match loop) —
+   potentially hit many times per match: dispatch may NOT be noise, and
+   the one-helper conclusion must be re-measured at that site rather
+   than inherited from the prefilter argument.
+
+**Corollary on memchr (Frank):** memchr was the default assumption, but
+where the compiler can PROVE the scan window is short (pattern-derived
+bounds — minw/maxw machinery — or a counted repeat's own bound), a
+short-window scan spelled as memchr is the wrong emission: measured
+2026-08-30, memchr is NEVER inlined (PLT+ifunc even at constant length
+8) while constant-length memcmp/scalar compares inline for free. A
+proven-short window earns an inline scalar scan or constant-length
+compare instead. Long-run/rest-of-subject scans stay memchr (the call
+amortizes; correct as-is).
+
+**Revisit-when:** a measured case where the scalar-optimal shape and
+the SIMD-friendly shape genuinely diverge (i.e. scalar-first would
+build something SIMD must then undo) — none known today; the scan
+edge is evidence of the opposite.
+Cross-notes: D77, D82 (the form slot SIMD drops into), [OPT-SIMD],
+[OPT-5] STEP 1 rulings R1/R2, studies/simd1.

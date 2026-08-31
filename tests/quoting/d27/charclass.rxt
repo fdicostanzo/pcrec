@@ -1,0 +1,54 @@
+# D27 quoting corpus -- \Q...\E inside [...] character classes.
+#
+# pcre2pattern(3), BACKSLASH section: "The \Q...\E sequence is recognized
+# both inside and outside character classes." Verified here: a quoted ']'
+# does not close the class, a quoted leading '^' does not negate it, and a
+# quoted '-' does not form a range.
+
+# quoted run as ordinary class members, equivalent to [abc]
+pattern [\Qabc\E]
+features quoting
+m "b" 0 1
+n "d"
+
+# quoted ']' as the class's sole member -- it does not terminate the class while quoted
+pattern [\Q]\E]
+features quoting
+m "]" 0 1
+n "a"
+
+# quoted '^' as the class's sole member -- NOT negation, even though it is the first thing after '['
+pattern [\Q^\E]
+features quoting
+m "^" 0 1
+n "a"
+
+# contrast with the above: an UNQUOTED leading '^' still negates; the quoted member inside is what is excluded
+pattern [^\Qa\E]
+features quoting
+n "a"
+m "b" 0 1
+
+# quoted 'a-z' is three literal members {a,-,z}, not a range
+pattern [\Qa-z\E]
+features quoting
+m "a" 0 1
+m "-" 0 1
+m "z" 0 1
+n "m"
+
+# an interior hyphen quoted on its own: still no range formed between 'a' and 'z'
+pattern [a\Q-\Ez]
+features quoting
+m "a" 0 1
+m "-" 0 1
+m "z" 0 1
+n "m"
+
+# a literal backslash-Q is impossible to spell this way -- this pattern instead re-enters quoting harmlessly: \Q opens, 'a' is quoted, a SECOND \Q inside an already-open quote is just two literal chars ('\','Q') per the doc's rule that only the literal two-byte sequence \E is special inside a quote, and \E then closes it -- net class members {a,\,Q}
+pattern [\Qa\Q\E]
+features quoting
+m "a" 0 1
+m "\\" 0 1
+m "Q" 0 1
+n "b"

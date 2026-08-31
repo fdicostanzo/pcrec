@@ -1,0 +1,26 @@
+# D27 quoting corpus -- \Q...\E interaction with capturing groups.
+#
+# A quoted run creates no capturing group of its own (its parens, if any,
+# are literal text), which this file checks both by content (a group's
+# captured span around quoted text) and by NUMBERING (quoted parens must
+# not consume a group number).
+
+# a capturing group wrapping an entire quoted run
+pattern (\Qab\E)cd
+features quoting
+m "abcd" 0 4
+g 1 0 2
+
+# a capturing group around quoted metacharacter-shaped text -- the '+' inside must stay literal even though it is now also inside a group
+pattern a(\Qb+c\E)d
+features quoting
+m "ab+cd" 0 5
+g 1 1 4
+n "abccd"
+
+# quoting between two real capturing groups: the quoted parens create no group of their own, so group numbering skips straight from 1 to 2
+pattern (a)\Q(b)\E(c)
+features quoting
+m "a(b)c" 0 5
+g 1 0 1
+g 2 4 5

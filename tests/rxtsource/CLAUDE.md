@@ -44,14 +44,14 @@ empty.
 ## The two denominators differ, and it is a derivation not a discrepancy
 
 ```
-census (all files)         179 files / 3,265 blocks / 26,691 lines
+census (all files)         188 files / 3,317 blocks / 26,786 lines
 tests/known_fail/k34...      1 file  /     3 blocks /     11 lines
                            ---------------------------------------
 run.sh's own population    178 files / 3,262 blocks / 26,680 lines
 ```
 
 `run.sh`'s no-argument branch excludes `*/known_fail/*`. C1 is a PARSE
-differential and reads every file, so it asserts 179 and invokes leg B
+differential and reads every file, so it asserts 188 and invokes leg B
 through the ARGUMENT branch, which applies no exclusion. C2 (which is
 `make test-corpus`, not this directory) asserts 178. **C3 asserts
 `verify_rxt`'s OWN discovery** and never either of the above — that script
@@ -129,7 +129,7 @@ dumps were changed together).
 
 ## The population that had to be built, and why
 
-**0 of the corpus's 179 files are head-bearing** — measured, and asserted
+**0 of the corpus's 188 files are head-bearing** — measured, and asserted
 every run. So the seam, the head productions and every refusal they carry
 had a population of ZERO, and every check named as their detector would
 have been green while detecting nothing. That is [MECH-REACH]'s failure,

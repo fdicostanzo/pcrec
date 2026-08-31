@@ -18973,3 +18973,100 @@ confirmed; l-03 named as the instrument; no load-bearing percentage
 without perf). Worktree/branch retired. qd27's corpus snapshotted
 earlier (95/95 oracle agreement, manager re-run). quoting lane still
 in flight.
+
+**09:3x-09:5x — [M4-QUOTING] impl merged; compliance refreshed; THE D27
+CORPUS CAUGHT A TIER-1 MISCOMPILE ON ITS FIRST RUN; [OPT-5] STEP 1
+chartered on Frank's GO.**
+Impl merge clean (11 files; S210/S211 wired first on my change request,
+both DETECTED solo — S211's witness deliberately out-of-order since an
+in-order quoted range yields a bitset identical to the correct reading).
+/compliance-refresh run per the skill: index re-emitted (138 rows, \Q/\E
+built), both survey rows REJECTED→OK, both keyed annotations re-verified
+and date-stamped; all four compliance checks + full registry section
+green (rc 0, 595 PASS). strict clean. THEN the acceptance moment — the
+blinded corpus placed as tests/quoting/d27/ on branch qd27 (assertions/
+d27 precedent; snapshot binary git-rm'd; CLAUDE.md written) and run
+against the merged tree: 25 cells FAILED. Two classes: (A) 8 distinct
+compile failures = corpus `features quoting` lists lacking the std1
+modules their patterns also need (the .rxt contract maps `features`
+literally to `--features`, which replaces the default — corpus-side
+fix, manager's task, dd13b-syntax is the manager's call); (B) 12 cells
+= A REAL MISCOMPILE: a quantifier character INSIDE \Q...\E is parsed as
+a LIVE quantifier on the preceding quoted atom — `\Qa*b\E` compiles as
+the regex `a*b` (hand-reproduced both directions: 'a*b'→match 2 3,
+'aaab'→match 0 4; embedded `a\Qb*c\Ed` likewise). The quoted-DOT blocks
+pass — atoms literalize; the QUANTIFIER READER after the atom was never
+quote-guarded. The impl lane's own 164/164 probe table lists these
+exact shapes as PASSING — its probe harness has a self-confirming flaw
+(autopsy demanded; a lane's validation is a claim, measured instance).
+D27 earned its keep again: four adversarial-grade checks (probes,
+reject, registry, strict) were green over a miscompile the blinded
+corpus found in one run. Fix brief sent to the (warm) quoting lane:
+guard + autopsy + harness-path re-verification + S212 (allocated;
+detector = the corpus itself, validated by me post-merge). main
+carries the miscompile meanwhile — blast radius is the opt-in
+`--features quoting` only (not std1), fix imminent, battery follows.
+**[OPT-5] STEP 1 CHARTERED** (lane opt5s1, opus): the DFA scan edge —
+Frank's GO, and Frank's IDEA (see the plan row's provenance
+correction: he suggested loops sessions ago and was wrongly told
+that's not what DFA engines do). Bench coordination: pcrecdev2 awake,
+re-pin to 263b013 underway, OPEN/QUIET/CLOSED handshake agreed; my
+battery queues after WINDOW CLOSED; both lanes carry the no-heavy-runs
++ .hold discipline.
+
+**10:0x-10:2x — [M4-QUOTING] FULLY LANDED (fix + corpus), battery
+pending.** The fix wave (6b26485): one `if (cx->in_quote) break;` in
+p_rep after xskip, mirroring p_atom's guard; transparency semantics
+argued in the comment and re-verified (empty \Q\E never sets in_quote;
+a post-close quantifier still binds). The lane's autopsy of its own
+164/164 claim: an ABSENT test axis, not a broken harness — zero
+quantifier-char-inside-quotes probes existed; attention had
+concentrated on the axes that had already yielded S210/S211 (coverage
+bias; its summary table overstated). Fix merged; hand-verified on
+main both directions; corpus merged (14 files, 1,445 lines);
+**acceptance 95/95 / 0 compile failures**; rxtsource census
+179/3265/26691 → 188/3317/26786 with RUNSH twins and C3 populations
+(+7 verified / +88 no-python-expression — \Q is python-inexpressible
+by nature, the corpus's oracle is its own checker.py; history comments
+carry it); S212 validated solo post-merge (DETECTED,
+corpus:8fail/19pass — exactly the 8 quantifier cells) and its figure
+flipped to MEASURED. Worktrees/branches quoting + qd27 + the cell
+retired. Registry coverage guard unmoved (83 — no leg count changed).
+Remaining for [M4-QUOTING] completed: the battery (queued behind
+pcrecdev2's measurement windows per the handshake). Frank's /feedback
+on the earlier loops-dismissal was sent upstream this session
+(receipt in the session log). Lanes now: opt5s1 only (the DFA scan
+edge, opus, reading phase).
+
+**10:4x-14:0x — THE BENCH WINDOW (held and closed clean); opt5s1's
+held-state review; LIFT at 14:0x.** pcrecdev2 requested WINDOW OPEN at
+~10:41 ([B22] re-pin merged, its make check green); opt5s1 halted by
+.hold (its polling loops are sleep-only — verified when the watchdog
+flagged 7 live PIDs), QUIET confirmed 10:42. The window ran LONG
+(~3.3 h vs the 2-2.5 h envelope — bounded@0.2's cells are 22-25 min
+each with the added patterns; one inconclusive-spread re-measured per
+contract, agreed) and CLOSED at ~14:0x: **8/8 cells pinned-tier at
+263b013** (bounded@0.2 × six testees + loglines@0.1 × the two
+[OPT-4.1] KEEP arms; store 67 measured / 9 inconclusive-load / 1
+inconclusive-spread). O-11 will carry the ledger reading against
+I-26's two-flat-lines frame AND a year4 re-attribution (the +4,096 B
+was ELF page alignment tripped by THEIR [B19] shim, not pcrec bytes —
+O-10 ask (iii) resolves bench-side). During the hold, opt5s1's
+held-state report was reviewed by message: the forms model landed as
+two LIVE axes (H `dfa_edges` scan-edge/table-walk per state, bit 21;
+I `dfa_scans` range/bitmap) riding the same dfa_select walk; abi
+12→13 at the four sites with FILEPIN correctly awaiting the final src
+commit; guard 83→91 (stale, re-measure owed); [LIM-1]'s check FORCED
+the lane's hand-written cap enum into limits.def (44→45) — the
+general mechanism catching a special case one day after landing;
+letters 2.71-2.98x / digits 1.09x-slower control (the peel is the
+shave, residual ≈1 cycle/direction); embedded chains refuse honestly.
+R4 ruled (bound-1 discharge for a new construct: residue audit +
+hand-twin, structural pin only). Housekeeping: .gitignore's
+lane-signalling block gained .hold + /rulings.md (both had been swept
+into the lane's commits by a git add -A — the rule against add -A
+exists for this; the gitignore is now the backstop). test-codegen was
+NEVER run by the lane (its own flag) — first item on the LIFT list.
+LIFTED 14:0x; lane re-verifying the rework; then review/merge (strip
+the two files, merge main in first), r48 panel during the battery,
+ONE battery proves [M4-QUOTING] + the scan edge and becomes the pin.

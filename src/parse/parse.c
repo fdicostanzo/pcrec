@@ -1309,6 +1309,41 @@ static Ast *p_rep(Ctx *cx)
          * trailing ws when the loop breaks, which is what lets cat_ends
          * and the group's `)` see their bytes. */
         xskip(cx);
+        /* [M4-QUOTING] TIER-1 MISCOMPILE FIX (found by the D27 corpus on
+         * the merged tree): a byte inside an OPEN quote must never be read
+         * as a quantifier suffix, however much it looks like one --
+         * `\Qa*b\E` is the three-byte literal "a*b" (measured against
+         * libpcre2 10.46: `--features quoting '\Qa*b\E'` on subject "a*b"
+         * is a single match of the whole 3 bytes; python has no \Q at all,
+         * so libpcre2 is the only oracle here, per the module's own
+         * standing rule), not `a*` followed by a literal `b`. `xskip`
+         * above is a no-op while `cx->in_quote` is true and the current
+         * byte is not `\E` (real quoted content pending -- see its own
+         * comment), so `c` below could otherwise be the quoted BYTE
+         * VALUE `*`/`+`/`?`/`{` read straight off pattern text, exactly
+         * as if it were the real operator. This mirrors `p_atom`'s own
+         * top-of-function guard: while a quote is open there is a real
+         * quoted byte pending (cat_ends/xskip both close an EXHAUSTED
+         * quote -- on `\E` or true end -- before ever handing control back
+         * here), so quantifier-scanning for THIS atom stops, exactly as
+         * it does for a genuinely non-quantifier byte (the pre-existing
+         * `else break` below) -- the byte is picked up as its OWN literal
+         * atom by p_cat's next iteration (p_atom's in_quote dispatch).
+         *
+         * WHAT THIS DOES NOT CHANGE: an EMPTY `\Q\E` never sets
+         * `cx->in_quote` at all (xskip's own boundary transparency
+         * dissolves it before this loop ever runs), so `a\Q\E*` still
+         * lets `*` reach back to `a` exactly as measured (ONE bytecode
+         * node in libpcre2, not two) -- this guard cannot fire for that
+         * case because `cx->in_quote` is false throughout it. And a
+         * quantifier immediately after a quote CLOSES correctly:
+         * `\Qab\E*` reads `a` (in_quote true, guard fires, `b` becomes
+         * its own atom next), reads `b`, and THIS loop's own `xskip`
+         * call for `b`'s quantifier check is what closes the quote on the
+         * `\E` it finds there (xskip's in_quote branch) -- in_quote reads
+         * false by the time this guard is reached for `b`, so `*` is
+         * read as a real quantifier on `b`, matching libpcre2. */
+        if (cx->in_quote) break;
         int c = peekc(cx);
         int rmin, rmax;
 
