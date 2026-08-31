@@ -104,3 +104,21 @@ by `make check`.
 The nullable cell's own contract is that nothing which compiles today stops
 compiling: dropping the prefilter is strictly smaller than collapsing it, so
 the rung still rescues (`docs/spec/limits.md` §3.3 states it caller-side).
+
+## [LIM-1] the pair's own verdict moved from LANG_WHY's prefix to ENGINE_SEL (2026-08-30)
+
+D90's fold-in gave the SIZE rung's own SUCCESS a distinct `RX_ENGINE_SEL`
+value, `"size-cap-retry"` — before this it stamped `"selected"`,
+indistinguishable from a compile that never touched any cap
+(`docs/spec/match_api.md` §6.3's own value table names the gap this closed).
+`(a|b){1,30000}`'s cell is that value's STANDING WITNESS: nothing else in the
+tree reaches `RX_ENGINE_SEL "size-cap-retry"` (`tests/codegen/
+run_prefilter_collapse.sh` §7b's own `sel_witness size-cap-retry` reuses this
+exact pattern rather than inventing a second one, per this pair's own
+one-witness-two-readers precedent). The verdict now reads `RX_ENGINE_SEL`
+directly rather than a `${szwhy#size cap retry}` string-prefix test; `LANG_WHY`
+is still read and still reported, for the byte comparison it alone carries.
+`(a|b){0,30000}`'s nullable twin gained the matching check —
+`RX_ENGINE_SEL "declined-nullable"` — since [LIM-1] widened that value's own
+reach from the [SEL-1] rung alone to both rungs (`src/opt/select_engine.c`'s
+own comment at the fit site has the derivation).

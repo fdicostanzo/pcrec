@@ -100,7 +100,7 @@
  * half-landed (measured: changing only the AUTO pair left
  * `((a)|ab){0,4000}c` at 1024 frames / ceiling 307, which is how the
  * two-knobs fact was discovered). */
-#define PCREC_LIMIT_EMIT_VM(name, value, unit, kind, override, anchor, desc) \
+#define PCREC_LIMIT_EMIT_VM(name, value, unit, kind, override, anchor, desc, default_name) \
     enum { name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_EMIT_VM

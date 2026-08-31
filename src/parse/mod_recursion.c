@@ -81,7 +81,7 @@
  * accumulators are independent and a shared constant would be the only thing
  * tying them together — but the NUMBER itself now has one home, [LIM-1]'s
  * src/core/limits.def (value unchanged, 1000000L). */
-#define PCREC_LIMIT_MOD_RECURSION(name, value, unit, kind, override, anchor, desc) \
+#define PCREC_LIMIT_MOD_RECURSION(name, value, unit, kind, override, anchor, desc, default_name) \
     enum { name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_MOD_RECURSION

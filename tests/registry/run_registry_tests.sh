@@ -423,6 +423,37 @@ if [ "$axesn" -ne 83 ]; then
     rc=1
 fi
 
+# ---- [LIM-1]: the numeric-limits table's own check (D90) -------------------
+#
+# The SIXTH TSV surface's own independent-side check: `pcrec --list-limits`
+# read against docs/spec/limits.md §3/§8 (forward) and against the TREE, for
+# a bare policy-shaped #define/enum member outside src/core/limits.def, two
+# files/populations the dump itself never opens.
+LIMITSOUT="$WORKDIR/limits_registry.out"
+PCREC="$PCREC" bash "$SCRIPT_DIR/limits_check.sh" 2>&1 | tee "$LIMITSOUT"
+limitsrc=${PIPESTATUS[0]}
+if [ "$limitsrc" -ne 0 ]; then
+    rc=1
+fi
+# 21 checks: 1 (row count) + 19 (anchored-row doc checks, one per anchored
+# row in the 44-row table) + 1 (the bare-#define code sweep). Moves only when
+# a row's `anchor` field is added/removed or the table gains/loses a row —
+# update this number in the same commit.
+limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
+if [ "$limitsn" -ne 21 ]; then
+    if grep -q "^checks failed: 0" "$LIMITSOUT"; then
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 21." >&2
+        echo "registry:   if you added/removed a limits.def row or an anchor on purpose," >&2
+        echo "registry:   update this number in the same commit; if not, coverage was removed" >&2
+    else
+        limitsnf="$(sed -n 's/^checks failed: //p' "$LIMITSOUT" | tail -1)"
+        echo "registry: limits_check shows $limitsn passing checks (21 expected; ${limitsnf:-?} failed," >&2
+        echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
+        echo "registry:   number must return to 21 — if it does not, coverage was removed too" >&2
+    fi
+    rc=1
+fi
+
 # ---- [DD-11.1]/[DD-11.3]: the definitions table's structural check and
 #      option-matrix self-oracle, D85's fifth registry surface -----------
 #

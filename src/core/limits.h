@@ -673,12 +673,24 @@
 /* [LIM-1] EVERY CONSTANT ABOVE IS GENERATED HERE, from
  * src/core/limits.def (the single derivation D90 charters). Only this
  * file's own home rows expand; every other home token is a no-op default
- * from limits.def itself. */
-#define PCREC_LIMIT_LIMITS_H(name, value, unit, kind, override, anchor, desc) \
-    PCREC_LIMIT_LIMITS_H_##override(name, value)
-#define PCREC_LIMIT_LIMITS_H_NONE(name, value)    enum { name = (value) };
-#define PCREC_LIMIT_LIMITS_H_FLAG(name, value)    enum { name = (value) };
-#define PCREC_LIMIT_LIMITS_H_BUILD_D(name, value) enum { name##_DEFAULT = (value) };
+ * from limits.def itself.
+ *
+ * [LIM-1 fix, 2026-08-30] `default_name` is limits.def's OWN pre-pasted
+ * `name##_DEFAULT` (computed at the table's own dispatch macro, where
+ * `name`'s occurrence is `##`-adjacent and so exempt from macro-argument
+ * pre-expansion) — NOT recomputed here. Recomputing it in THIS macro would
+ * reintroduce the bug it fixes: `tests/codegen/run_size_term.sh`'s
+ * reference-compiler build passes e.g. `-DPCREC_MAX_VM_EMIT_CODE_BYTES=
+ * 31000`, which makes `name`'s PLAIN (unglued) occurrence below expand to
+ * `31000` before substitution — safe for `_NONE`/`_FLAG`, which use only
+ * that occurrence, and exactly why `_BUILD_D` must use `default_name`
+ * instead. See limits.def's own comment at `PCREC_LIMIT`'s definition for
+ * the full mechanism. */
+#define PCREC_LIMIT_LIMITS_H(name, value, unit, kind, override, anchor, desc, default_name) \
+    PCREC_LIMIT_LIMITS_H_##override(name, value, default_name)
+#define PCREC_LIMIT_LIMITS_H_NONE(name, value, default_name)    enum { name = (value) };
+#define PCREC_LIMIT_LIMITS_H_FLAG(name, value, default_name)    enum { name = (value) };
+#define PCREC_LIMIT_LIMITS_H_BUILD_D(name, value, default_name) enum { default_name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_LIMITS_H
 #undef PCREC_LIMIT_LIMITS_H_NONE

@@ -345,7 +345,7 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
  *
  * [LIM-1] (D90): generated from src/core/limits.def, the single derivation
  * `pcrec --list-limits` dumps — value unchanged, 256. */
-#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc) \
+#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc, default_name) \
     enum { name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_MOD_LOOKAROUND

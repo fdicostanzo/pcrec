@@ -81,28 +81,48 @@
 
 #ifndef PCREC_LIMIT
 #ifndef PCREC_LIMIT_LIMITS_H
-#define PCREC_LIMIT_LIMITS_H(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_LIMITS_H(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
 #ifndef PCREC_LIMIT_EMIT_VM
-#define PCREC_LIMIT_EMIT_VM(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_EMIT_VM(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
 #ifndef PCREC_LIMIT_INTERNAL_H
-#define PCREC_LIMIT_INTERNAL_H(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_INTERNAL_H(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
 #ifndef PCREC_LIMIT_MOD_RECURSION
-#define PCREC_LIMIT_MOD_RECURSION(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_MOD_RECURSION(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
 #ifndef PCREC_LIMIT_MOD_BACKREFS
-#define PCREC_LIMIT_MOD_BACKREFS(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_MOD_BACKREFS(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
 #ifndef PCREC_LIMIT_MOD_LOOKAROUND
-#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
 #ifndef PCREC_LIMIT_RXT_SOURCE
-#define PCREC_LIMIT_RXT_SOURCE(name, value, unit, kind, override, anchor, desc)
+#define PCREC_LIMIT_RXT_SOURCE(name, value, unit, kind, override, anchor, desc, default_name)
 #endif
+/* [LIM-1 fix, 2026-08-30] THE EXTRA `name##_DEFAULT` ARGUMENT, and why it is
+ * computed HERE rather than in `PCREC_LIMIT_LIMITS_H_BUILD_D` where it is
+ * used. MEASURED: `tests/codegen/run_size_term.sh` builds a REFERENCE
+ * COMPILER with e.g. `-DPCREC_MAX_VM_EMIT_CODE_BYTES=31000` — which
+ * pre-defines that exact identifier as an object-like macro BEFORE this
+ * file is preprocessed. A macro argument is expanded before substitution
+ * UNLESS the parameter it fills is adjacent to `#`/`##` in the macro doing
+ * the substituting (C11 6.10.3.1p1) — `home` is glued in this macro's own
+ * body, `name` is not, so `name`'s argument (the token `PCREC_MAX_VM_EMIT_
+ * CODE_BYTES`) gets expanded to `31000` RIGHT HERE, before
+ * `PCREC_LIMIT_LIMITS_H_BUILD_D` ever sees it — three layers too late for
+ * that macro's own `name##_DEFAULT` to paste anything but
+ * `31000##_DEFAULT`, an invalid token ("invalid suffix '_DEFAULT' on
+ * integer constant" — the exact error this fix answers). The cure is to
+ * paste `name` with `_DEFAULT` ONCE, HERE, where `name`'s occurrence in
+ * `name##_DEFAULT` (unlike its OTHER, unglued occurrence three tokens
+ * earlier in this same call) is exempt from pre-expansion by the same
+ * rule — each occurrence of a parameter is judged independently — and hand
+ * the correctly-pasted identifier down as an extra argument every home
+ * macro receives and only `PCREC_LIMIT_LIMITS_H_BUILD_D` reads. */
 #define PCREC_LIMIT(name, value, unit, kind, override, anchor, desc, home) \
-    PCREC_LIMIT_##home(name, value, unit, kind, override, anchor, desc)
+    PCREC_LIMIT_##home(name, value, unit, kind, override, anchor, desc, name##_DEFAULT)
 #define PCREC_LIMIT_DEF_UNDEF_DISPATCH 1
 #endif
 

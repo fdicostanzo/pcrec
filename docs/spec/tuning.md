@@ -910,8 +910,10 @@ every answer is "maybe". pcrec builds NO prefilter in that case:
   be told apart from `"overflowed-dfa"`, where no rescue was available at all;
 - on the **[OPT-4] size** rung the artifact ships with no prefilter, which is
   strictly SMALLER than the collapsed one, so the rung still rescues the compile
-  and nothing that compiles today stops compiling. `<PREFIX>_ENGINE_SEL` stays
-  `"selected"` there, as it already does when that rung collapses, and the
+  and nothing that compiles today stops compiling. `<PREFIX>_ENGINE_SEL` reads
+  **`"declined-nullable"`** there too ([LIM-1], 2026-08-30 — this used to read
+  `"selected"`, indistinguishable from an ordinary compile; both rungs' nullable
+  declines are now one value, `match_api.md` §6.3's own value table), and the
   artifact's `<PREFIX>_VM_PREFILTER "none"` is what records the outcome;
 - under **`-fprefilter-collapse`** with no rung the prefilter is kept and built
   from the EXACT language — the flag chooses a language, not whether a filter

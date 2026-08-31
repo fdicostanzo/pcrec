@@ -63,7 +63,7 @@
  * Generated here, the single derivation `pcrec --list-limits` dumps and
  * limits.md §3.5 is checked against — values unchanged: 127-byte identifier
  * caps (a 128-byte buffer, one NUL) and a 64-deep `from` nest. */
-#define PCREC_LIMIT_RXT_SOURCE(name, value, unit, kind, override, anchor, desc) \
+#define PCREC_LIMIT_RXT_SOURCE(name, value, unit, kind, override, anchor, desc, default_name) \
     enum { name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_RXT_SOURCE

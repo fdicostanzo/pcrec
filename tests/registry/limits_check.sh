@@ -56,6 +56,7 @@ export LC_ALL=C   # K35 — see tests/harness/run.sh's own header for why
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37]: pcrec_run bounds the call below
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 LIMITSMD="${LIMITSMD:-$ROOT_DIR/docs/spec/limits.md}"
 
@@ -73,7 +74,7 @@ nfail=0
 ok()   { npass=$((npass + 1)); echo "PASS: $1"; }
 bad()  { nfail=$((nfail + 1)); echo "FAIL: $1" >&2; }
 
-DUMP="$("$PCREC" --list-limits)"
+DUMP="$(pcrec_run "$PCREC" --list-limits)"
 DATA="$(printf '%s\n' "$DUMP" | grep -v '^#')"
 
 # ---------------------------------------------------------------------------

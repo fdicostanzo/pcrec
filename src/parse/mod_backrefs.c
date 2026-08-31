@@ -62,7 +62,7 @@
  * src/opt/mrl.c applies to its own arithmetic, for the same reason. The
  * NUMBER has one home now, [LIM-1]'s src/core/limits.def (value unchanged,
  * 1000000L). */
-#define PCREC_LIMIT_MOD_BACKREFS(name, value, unit, kind, override, anchor, desc) \
+#define PCREC_LIMIT_MOD_BACKREFS(name, value, unit, kind, override, anchor, desc, default_name) \
     enum { name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_MOD_BACKREFS

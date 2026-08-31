@@ -183,8 +183,13 @@ another's, `cli/main.c:517-523`'s own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — 61 rows / 21 axes as of [REG-SV]
-(2026-08-30, moved this from 54/21 — five more `size-term` rows and two more
+`build/pcrec --list-axes | grep -vc '^#'` — 63 rows / 21 axes, re-derived live
+this pass ([LIM-1], 2026-08-30 — was last stated as 61, moved by one `engine-
+route` row this pass's own ENGINE_SEL fold-in adds ([LIM-1]/axes_dump.c below)
+and by one further row of unstated origin at the branch point this pass read
+from, no new axis name either time — see this section's own standing "re-
+derive rather than trust this line" rule, which is exactly the drift this
+correction demonstrates). [REG-SV] (2026-08-30, moved this from 54/21 — five more
 `table` rows, no new axis name; see §6's own [REG-SV] paragraph below — this
 number moves with every axis landing, so it is stated as a live count
 rather than a number to trust), 12 columns. Where the first three surfaces describe
