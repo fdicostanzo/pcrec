@@ -8,28 +8,28 @@
 
 # under (?x), whitespace inside \Q...\E is literal even though (?x) strips unescaped whitespace elsewhere
 pattern (?x)a\Q b \Ec
-features quoting
+features quoting,modifiers
 m "a b c" 0 5
 n "abc"
 
 # contrast/control: outside any quoting, (?x) strips the whitespace between letters
 pattern (?x) a b c
-features quoting
+features quoting,modifiers
 m "abc" 0 3
 
 # under (?x), '#' inside \Q...\E is literal, not a comment starter
 pattern (?x)\Qa#b\E
-features quoting
+features quoting,modifiers
 m "a#b" 0 3
 n "a"
 
 # contrast/control: outside quoting, (?x) '#' starts a comment that runs to the end of the pattern (no newline is available inside a single .rxt pattern line, so this exercises end-of-pattern as the comment's other boundary)
 pattern (?x)a#comment
-features quoting
+features quoting,modifiers
 m "a" 0 1
 m "acomment" 0 1
 
 # one pattern with both: the quoted '#' is literal data, the later unquoted '#' opens a real comment that swallows the rest of the line
 pattern (?x)\Qa#b\E#trailing comment eaten
-features quoting
+features quoting,modifiers
 m "a#b" 0 3

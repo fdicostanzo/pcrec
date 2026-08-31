@@ -16,5 +16,5 @@ n "abc"
 
 # inline (?i) before the quoted run has the same effect as the flags directive
 pattern (?i)\QABC\E
-features quoting
+features quoting,modifiers
 m "abc" 0 3
