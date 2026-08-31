@@ -18894,3 +18894,53 @@ three batteries (4, 5, 6), two panels (r46, r47), six inbox items
 (I-19..I-24 + I-25 now), five plan rows filed from Frank's evening
 ideas ([M4-QUOTING], [CC-CLANG], [OPT-VMLIT], [PCRE2-UP], the [OPT-5]
 re-scope), one takeover landing. wake.md rewritten with the verdict.
+
+## 2026-08-31 (EDT), forty-seventh session — wake; baseline green; three lanes chartered ([M4-QUOTING] impl + D27 corpus, [OPT-5] STEP 0)
+
+Woke per the forty-sixth close (battery 6 green-by-diagnosis; pin
+263b013 = I-25). Verified: bench outbox still tops at O-10 — pcrecdev2
+has NOT woken since I-25 (its last commit is our inbox item), so the
+[B22]/[B21] windows have not run and **[DD-13b.W1.2] stays HELD** for
+the bench's one re-pin. No worktrees existed; lane/* branches
+historical; the only untracked item is `.vscode/` (left alone).
+Baseline verified on 263b013: `make -j4` + `make strict` +
+`PROCS=4 make test-registry` rc 0 (definitions oracle 354 cells /
+101,244+101,244 comparisons / 0 disagreements). battery_v4.sh rescued
+from the forty-sixth session's scratchpad into this session's
+`mgr/` (diff vs its twin: path lines only). Keepalive cron deduped
+(two identical :09/:39 jobs had accumulated; one deleted).
+
+CHARTERED (D86, one row per column; all sonnet per Frank's tiering;
+briefs carry the full 2026-08-30 rule set — absolute paths/`git -C`,
+no `git add -A`, .hold/rulings.md file channel, bounded foreground
+polls of own run logs, PID-only kills, WIP commits, PROCS=4, no heavy
+suites):
+- **quoting** (ADMIN, [M4-QUOTING]): worktrees/quoting, lane/quoting
+  from 263b013. Module 'quoting' (\Q...\E): lexer state in src/parse,
+  registry rows 768-769 flip to built, reject rows ~985/986/1215 FLIP
+  to accept-controls with the coverage comment extended, D80 spec hunk,
+  oracle = libpcre2 probes (NOTE: libpcre2-dev is NOW INSTALLED — a
+  compiled probe can link; earlier cells used ctypes for lack of it).
+  No emitted-code change expected (pure front end); told to STOP if
+  one proves needed (D76). S210/S211 allocated. Does NOT write
+  tests/quoting/.
+- **qd27** (the blinded corpus): cell qd27-cell built
+  (mk_d27_cell.sh; allowlist rxt_format.md + testing.md + pcrec.h +
+  prebuilt build/). Corpus for \Q from `man pcre2pattern` +
+  libpcre2-8 oracle cell-for-cell, delivered under d27/quoting/;
+  disclosure requirement restated. tests/quoting/ = this corpus at
+  merge (impl merges first, corpus second, battery between per the
+  usual serialization).
+- **opt5m** (OPTIMIZATION, [OPT-5] STEP 0): worktrees/opt5m. The
+  mechanism question (why the counted DFA loses 5× to our own VM on
+  in-class letter runs, wins on digits) via perf on the bench's own
+  subjects (read-only copies; bench patterns' exact spellings);
+  deliverable docs/dev/opt5_step0_profile.md; carries [OPT-VMLIT]'s
+  literal-stepping-share trigger measurement for free; load-checked
+  measurements (two light lanes beside it), perf counters preferred
+  over wall time.
+
+10-min stall watchdog cron up (reads run logs' rc lines, pings with
+results inline). Next: review deliveries, merge impl → battery →
+merge corpus → battery, [CC-CLANG] step 1 after [M4-QUOTING] per the
+ADMIN column's order.
