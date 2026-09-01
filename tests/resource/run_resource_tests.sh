@@ -372,19 +372,39 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
         # tripwire-turned-fixed cell below asserts at the plain DEFAULT,
         # confirming the decline does not depend on scan-edge either.
         #
-        # WHETHER `ESEL_DECLINED_NULLABLE`'s OWN SIZE-CAP-RUNG POPULATION IS
-        # NOW EMPTY IN THIS CORPUS is a real, open, K35-shaped question this
-        # lane is FLAGGING rather than silently deciding: by the "collapsed
-        # language's nullability is the exact pattern's" invariant
-        # (src/opt/CLAUDE.md's [OPT-4.1] entry), any pattern whose collapsed
-        # language is nullable has an EXACT language that is ALSO nullable —
-        # so the ONLY way left to reach `ESEL_DECLINED_NULLABLE` via the SIZE
-        # rung is a pattern that is DFA-chosen (not VM) on attempt 1 (e.g.
-        # under `--no-captures`), whose first attempt overflows a DIFFERENT
-        # cap in a way that still leads to a SIZE-cap retry while nullable.
-        # No such witness exists in this file today. Left for the manager
-        # to rule on rather than invented under this lane's own time
-        # pressure.
+        # WHETHER `ESEL_DECLINED_NULLABLE` STAYS REACHABLE AT ALL, RESOLVED BY
+        # CODE TRACE AND MEASUREMENT (lane o42, 2026-09-01), not left open.
+        # `prefilter_declined_nullable_default`'s OWN guard requires
+        # `collapse_reason == CR_NONE`, which is true ONLY on a compile's
+        # FIRST attempt — so it can NEVER fire during a RETRY, and the
+        # rung-scoped `prefilter_declined_nullable` (which requires the
+        # opposite, `collapse_reason != CR_NONE`) is therefore never
+        # shadowed by it. The SIZE-cap rung specifically IS foreclosed for
+        # any nullable pattern, but for a DIFFERENT, MEASURED reason: the
+        # collapse-and-retry rescue is a VM-HYBRID-PREFILTER mechanism (there
+        # is no "prefilter" to collapse on a plain DFA artifact), and a
+        # nullable pattern that is VM-chosen on attempt 1 is exactly the
+        # population this row's own decline preempts before any build is
+        # attempted (MEASURED: `--no-captures [a-z]{0,30000} -fno-scan-edge`
+        # — DFA-chosen throughout — hits the SIZE cap and REFUSES outright,
+        # no retry at all; a DFA-chosen oversized artifact has never had a
+        # rescue rung to offer). But the [SEL-1] STATE-cap rung's own path
+        # stays open in principle: a pattern that is DFA-CHOSEN on attempt 1
+        # (no VM-forcing construct) whose DFA-as-ENGINE build overflows
+        # `PCREC_MAX_DFA_STATES_TABLE` retries with `dfa_disabled=true` AND
+        # `collapse_reason=CR_SEL1` set TOGETHER on the SAME retry pass, so
+        # `prefilter_declined_nullable_default`'s CR_NONE guard is false
+        # there and cannot block the rung-scoped decline from firing on a
+        # nullable, collapsible-repeat pattern. No CORPUS WITNESS for that
+        # specific combination exists today — two attempts to build one from
+        # `tests/prefilter`'s own SEL-1 witness (`\b(?:ERROR|...)`) wrapped
+        # nullable either stayed under the DFA state cap or moved to the
+        # SIZE cap instead of the STATE cap, changing which cap fires first
+        # — so this is a WITNESS GAP, not a dead value: the mechanism is
+        # provably still live, only unexercised by anything in this corpus.
+        # Left for the manager to decide whether a dedicated witness is
+        # worth constructing, rather than invented under this lane's own
+        # time pressure.
         if [ "$pf" = none ] && [ -z "$szwhy" ] && [ "$sel" = declined-nullable-default ]; then
             ok "[OPT-4.2] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable-default\" — the pattern's own EXACT language is nullable, the decline fires before any rung is ever offered, and dropping the prefilter still gets the artifact under the cap"
         elif [ "$pf" = hybrid ]; then
