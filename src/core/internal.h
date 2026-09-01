@@ -1388,6 +1388,49 @@ typedef struct {
      * prefilter all day; that is the default and it is not this field. */
     bool        prefilter_declined_nullable;
 
+    /* [OPT-4.2] THE SAME DECLINE, OFF THE RUNG. `prefilter_declined_nullable`
+     * above only ever fires under `cx->collapse_reason != CR_NONE` — a
+     * ladder rung offering the count-collapsed rescue. Every OTHER hybrid
+     * (the ordinary, un-rung compile: auto routed to the VM, or `--engine=vm`
+     * plus `-fprefilter`) still built the EXACT prefilter unconditionally,
+     * nullable or not, which is the general case [OPT-4.1] left standing —
+     * `(a|b){0,30000}`'s own EXACT language is nullable (it matches the empty
+     * string), the pattern reaches no rung at all since [OPT-5]'s scan edge
+     * (34,522 B, comfortably under every cap), and the shipped hybrid paid the
+     * same 1.2-9.9x loss O-10 measured on the collapsed shape for the
+     * identical reason: a nullable filter admits a zero-length match at every
+     * position and can dismiss none of them.
+     *
+     * ONE PREDICATE, TWO SCOPES (src/opt/select_engine.c's fit site derives
+     * both from the same `lang_nullable_declinable` local — nullable, no
+     * backreference, no linked call, not `-fprefilter`-forced — so a future
+     * conjunct added to one cannot silently miss the other): this field is
+     * `collapse_reason == CR_NONE && lang_nullable_declinable`, its rung-
+     * scoped sibling above is `collapse_reason != CR_NONE && ... &&
+     * prefilter_has_collapsible_rep`. The two are therefore MUTUALLY
+     * EXCLUSIVE by construction (one requires `CR_NONE`, the other its
+     * negation) and never both true for one compile.
+     *
+     * IT NEEDS NO `prefilter_has_collapsible_rep` CONJUNCT, unlike its rung
+     * sibling. That conjunct exists there to tell "a rescue was offered and
+     * refused" from "there was never a distinct rescue to refuse" (no
+     * collapsible repeat means the collapsed lowering IS the exact one). On
+     * this path there is no collapse involved anywhere — the ordinary hybrid
+     * always builds the EXACT prefilter, collapsible repeat or not — so
+     * there is always something concrete for this field to decline.
+     *
+     * THREE READERS, THE SAME THREE `prefilter_declined_nullable` HAS: the
+     * `_ENGINE_SEL` ladder (a NEW value, `ESEL_DECLINED_NULLABLE_DEFAULT` —
+     * `ESEL_DECLINED_NULLABLE` stays rung-scoped and is not reused, since the
+     * two answer different questions about different failure populations and
+     * folding them into one value would be exactly the K35 "closed value set
+     * silently losing a member" shape this project keeps a list of), the
+     * `--emit-ir` listing's `; prefilter` line (its own new arm, worded for
+     * the ordinary path rather than for a declined rung), and the
+     * `fit.prefilter` clause below, which this field joins as a THIRD reason
+     * `fit.prefilter` reads false. */
+    bool        prefilter_declined_nullable_default;
+
     /* [OPT-4.1] IS THERE A COLLAPSIBLE `A_REP` AT ALL — an `rmin > 1` or
      * `rmax > 1` the collapse would CHANGE? `pcrec_has_collapsible_rep(root)`
      * (src/opt/atomic.c), derived ONCE at `src/opt/select_engine.c`'s fit site
@@ -1480,10 +1523,12 @@ typedef struct {
      * once at `src/opt/select_engine.c`'s single `cx->job->fit = fit` site
      * from the driver's own attempt record.
      *
-     * SEVEN VALUES since [LIM-1] (was six) — `ESEL_SIZE_CAP_RETRY` joined
-     * at D90's fold-in — and the last five are all "fell back" with
-     * different outcomes — which is exactly the distinction `why` cannot
-     * carry. */
+     * EIGHT VALUES since [OPT-4.2] (was seven since [LIM-1], six before it)
+     * — `ESEL_DECLINED_NULLABLE_DEFAULT` joined as the RUNGLESS twin of
+     * `ESEL_DECLINED_NULLABLE`, and it is NOT a "fell back" outcome (nothing
+     * overflowed on that path; see its own placement note below) — and the
+     * five fallback values are each "fell back" with a different outcome,
+     * which is exactly the distinction `why` cannot carry. */
     unsigned char engine_sel;
 } EngineFit;
 
@@ -1497,14 +1542,39 @@ typedef struct {
  * existing range test lie about what overflowed. A consumer wanting
  * "any fallback occurred, of any kind" now tests `>= ESEL_OVERFLOWED_DFA`
  * (unbounded above, since this is the last value); one wanting
- * specifically "a DFA state cap overflowed" needs the bounded range. */
+ * specifically "a DFA state cap overflowed" needs the bounded range.
+ *
+ * [OPT-4.2] (2026-08-31) `ESEL_DECLINED_NULLABLE_DEFAULT` IS PLACED
+ * IMMEDIATELY AFTER `ESEL_SELECTED`, BELOW BOTH RANGES ABOVE, AND THAT
+ * PLACEMENT IS DELIBERATE RATHER THAN AN APPEND. Unlike every value from
+ * `ESEL_OVERFLOWED_DFA` on, nothing overflowed on this path: it is an
+ * ORDINARY auto-selected (or `--engine=vm`) compile that built no prefilter
+ * because the pattern's own EXACT language is nullable, a policy decision
+ * with no cap behind it at all. Placing it inside — or numerically above —
+ * the bounded `ESEL_OVERFLOWED_DFA..ESEL_DECLINED_NULLABLE` range would
+ * break that range's own stated meaning; placing it above `ESEL_SIZE_CAP_
+ * RETRY` (i.e. appending it, [LIM-1]'s own precedent) would ALSO satisfy
+ * the unbounded "any fallback occurred" test above for a value that is not
+ * one — the exact silent-misclassification shape ESEL_DECLINED_NULLABLE's
+ * own comment already tells this list to keep watching for. Renumbering
+ * five sibling values to make room costs nothing outside this file: no
+ * generated artifact ever carries one of these ints — every reader goes
+ * through `pcrec_engine_sel_name()`'s STRING, never the raw ordinal (the
+ * abi-ritual precedent this row followed: see src/gen/CLAUDE.md's
+ * "[OPT-4.1] ADDED THE SIXTH" note — a VALUE, not scaffolding, no `abi`
+ * bump either time). */
 enum {
-    ESEL_FORCED               = 0,  /* the caller named --engine=vm/dfa */
-    ESEL_SELECTED             = 1,  /* auto chose on the AST; nothing overflowed */
+    ESEL_FORCED                    = 0,  /* the caller named --engine=vm/dfa */
+    ESEL_SELECTED                  = 1,  /* auto chose on the AST; nothing overflowed */
+    /* [OPT-4.2] a NON-fallback outcome, placed here so it is excluded from
+     * BOTH invariants below: the bounded "a DFA state cap overflowed" range
+     * and the unbounded "any fallback occurred" test. See the placement
+     * note above the enum. */
+    ESEL_DECLINED_NULLABLE_DEFAULT = 2,
     /* everything from here is a FALLBACK after a DFA build overflowed a cap */
-    ESEL_OVERFLOWED_DFA       = 2,  /* the DFA was to be the ENGINE; no prefilter survives */
-    ESEL_OVERFLOWED_PREFILTER = 3,  /* the VM was already chosen; its prefilter was dropped */
-    ESEL_COLLAPSED_PREFILTER  = 4,  /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
+    ESEL_OVERFLOWED_DFA       = 3,  /* the DFA was to be the ENGINE; no prefilter survives */
+    ESEL_OVERFLOWED_PREFILTER = 4,  /* the VM was already chosen; its prefilter was dropped */
+    ESEL_COLLAPSED_PREFILTER  = 5,  /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
     /* [OPT-4.1] a [SEL-1] OR [OPT-4] SIZE rung OFFERED and DECLINED: the
      * collapsed language is nullable, so the rescue would have shipped a
      * filter that can never dismiss. No prefilter survives — the artifact is
@@ -1517,8 +1587,14 @@ enum {
      * moment the SIZE rung's own outcome got a value of its own below — a
      * SIZE-rung nullable decline was silently indistinguishable from an
      * ordinary `selected` compile, exactly the K35 shape this whole macro
-     * exists to prevent). Both rungs' declines now read this value. */
-    ESEL_DECLINED_NULLABLE    = 5,
+     * exists to prevent). Both rungs' declines now read this value.
+     * [OPT-4.2] added this value's RUNGLESS twin, `ESEL_DECLINED_NULLABLE_
+     * DEFAULT` above — kept SEPARATE rather than folded in here, because the
+     * two answer different questions about different populations (a rung
+     * OFFERED and REFUSED a rescue vs. an ordinary compile that never had a
+     * rung to begin with) and merging them would be the identical K35 shape
+     * this paragraph already once fixed. */
+    ESEL_DECLINED_NULLABLE    = 6,
     /* [LIM-1] (D90, 2026-08-30) THE SIZE RUNG'S OWN SUCCESS, FOLDED IN FROM
      * [LIM-1]'s brief. Before this value existed, a [OPT-4] SIZE-rung
      * rescue that SURVIVED (the collapsed prefilter shipped) stamped
@@ -1533,7 +1609,7 @@ enum {
      * which this value corrects. Reachable ONLY from `collapse_reason ==
      * CR_SIZECAP` (src/core/compile.c) with a prefilter that survived —
      * tests/resource's `(a|b){1,30000}` cell is the standing witness. */
-    ESEL_SIZE_CAP_RETRY       = 6
+    ESEL_SIZE_CAP_RETRY       = 7
 };
 
 /* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that everything from
