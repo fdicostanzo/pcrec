@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "pcrec.h"
 /* The syntax-query modes read the construct registry, which is internal: the
@@ -104,6 +105,22 @@ static void usage(FILE *f)
           "                 bounded, a stamped default otherwise\n"
           "  -h, --help     this help\n"
           "\n"
+          "compiling from a .rxt SOURCE file (docs/spec/rxt_format.md):\n"
+          "  --source FILE  compile the `target` lines of a .rxt source. Each\n"
+          "                 target is its own artifact under its own prefix,\n"
+          "                 built from the pattern block its definition names,\n"
+          "                 under the configs its `with` list composes. Takes\n"
+          "                 no pattern argument: the file holds the patterns.\n"
+          "                 -o names a FILE for one target, an existing\n"
+          "                 DIRECTORY for several (<dir>/<prefix>.c and .h per\n"
+          "                 target), or '-' for one target on stdout. A file\n"
+          "                 that declares no target is a library and builds\n"
+          "                 nothing, at exit 0\n"
+          "  --target NAME  build only the target with this prefix\n"
+          "  --lib-path DIR  a directory to resolve `lib \"path\"` references\n"
+          "                 against. Repeatable; order is the search order,\n"
+          "                 after the source file's own directory\n"
+          "\n"
           "syntax queries (no pattern, no -o):\n"
           "  --list-syntax     TSV of every non-base construct pcrec knows\n"
           "  --list-definitions  TSV of the replacement/definition table\n"
@@ -192,33 +209,94 @@ static int write_file(const char *path, const char *text)
     return 0;
 }
 
-int main(int argc, char **argv)
-{
+/* [DD-13b.W1.2] EVERY OPTION THIS CLI UNDERSTANDS, IN ONE PLACE.
+ *
+ * These were locals of `main` until a `.rxt` source's `config` block gained
+ * a `pcrec <raw>` line, which has to mean the SAME thing the command line
+ * means — a flag that reads one way on the command line and another in a
+ * config block is exactly the two-homes drift D24 exists to prevent, one
+ * surface over. So the argument loop became `cli_parse` over this struct
+ * and the config block is a second CALLER of it, never a second parser.
+ *
+ * THE LAYOUT IS LOAD-BEARING: `opt` is FIRST and everything else follows,
+ * because a config block may set the compile options and nothing else, and
+ * `cli_extras_clean` checks that by testing the bytes PAST `opt` against
+ * zero. Written as a field list it would be a list to keep in step with
+ * this struct; written as one span it covers a field added tomorrow by an
+ * author who never reads this comment. `saw_prefix` is in the tail rather
+ * than being inferred from `opt.prefix` for exactly that reason — `-p` sets
+ * a field inside `opt`, so the span cannot see it, and this is how it is
+ * brought back under the same guard. */
+typedef struct {
     pcrec_options opt;
-    pcrec_default_options(&opt);
-    const char *outpath = NULL;
-    const char *pattern = NULL;
-    int list_syntax = 0;
-    int list_definitions = 0;
-    const char *explain = NULL, *flavour = NULL;
-    int list_verbs = 0;
-    int list_families = 0;
-    int list_axes = 0;
-    int list_limits = 0;
-    int count_groups = 0;
-    int emit_ir = 0;
-    const char *probe_want = NULL;
-    const char *features = NULL;
-    const char *list_source = NULL;
 
+    const char *outpath;
+    const char *pattern;
+    int         list_syntax;
+    int         list_definitions;
+    int         list_verbs;
+    int         list_families;
+    int         list_axes;
+    int         list_limits;
+    int         count_groups;
+    int         emit_ir;
+    int         saw_prefix;
+    int         want_help;
+    const char *explain;
+    const char *flavour;
+    const char *probe_want;
+    const char *features;
+    const char *list_source;
+    /* [DD-13b.W1.2] the `.rxt` SOURCE surface */
+    const char *source;
+    const char *target;
+    const char **libdirs;
+    size_t      nlibdirs, libcap;
+} CliState;
+
+/* Everything past `opt` is zero — i.e. this invocation asked for compile
+ * options and nothing else. The comparison is over the raw bytes of the
+ * tail, which is well defined here because every `CliState` in this file is
+ * `memset` to zero before a field is assigned, so padding is zero too. */
+static int cli_extras_clean(const CliState *st)
+{
+    const unsigned char *p = (const unsigned char *)st + sizeof st->opt;
+    size_t n = sizeof *st - sizeof st->opt;
+    for (size_t i = 0; i < n; i++) if (p[i]) return 0;
+    return 1;
+}
+
+static int libdir_push(CliState *st, const char *dir)
+{
+    if (st->nlibdirs == st->libcap) {
+        size_t cap = st->libcap ? st->libcap * 2 : 4;
+        const char **v = realloc(st->libdirs, cap * sizeof *v);
+        if (!v) { perror("realloc"); return 1; }
+        st->libdirs = v;
+        st->libcap = cap;
+    }
+    st->libdirs[st->nlibdirs++] = dir;
+    return 0;
+}
+
+/* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
+ * `where` names the surface for diagnostics — "command line", or a config
+ * block — and changes nothing else: both callers get the same grammar, the
+ * same values and the same refusals. */
+static int cli_parse(int argc, char **argv, CliState *st, const char *where)
+{
+    pcrec_options opt = st->opt;
     int no_more_opts = 0;
-    for (int i = 1; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
         const char *a = argv[i];
         if (!no_more_opts && !strcmp(a, "--")) no_more_opts = 1;
-        else if (!no_more_opts && (!strcmp(a, "-h") || !strcmp(a, "--help"))) {
-            usage(stdout);
-            return 0;
-        }
+        /* `-h` sets a FLAG rather than printing and exiting, because this
+         * function has a second caller: a `config` block's `pcrec -h` must
+         * not print usage and exit 0 in the middle of a compile. The flag
+         * lives in the tail of `CliState`, so `cli_extras_clean` refuses it
+         * there with no clause of its own. */
+        else if (!no_more_opts && (!strcmp(a, "-h") || !strcmp(a, "--help")))
+            st->want_help = 1;
         else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
         else if (!no_more_opts && !strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
@@ -229,7 +307,7 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_CAPTURES;
         else if (!no_more_opts && !strcmp(a, "--trace"))
             opt.flags |= PCREC_TRACE;
-        else if (!no_more_opts && !strcmp(a, "--emit-ir")) emit_ir = 1;
+        else if (!no_more_opts && !strcmp(a, "--emit-ir")) st->emit_ir = 1;
         else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [ENG-BREP] the first of D47.3's DENY family. Spelled `-fno-` in the
@@ -455,13 +533,13 @@ int main(int argc, char **argv)
             }
             opt.frame_capacity = (int)v;
         }
-        else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-definitions")) list_definitions = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-families")) list_families = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-axes"))   list_axes = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-limits")) list_limits = 1;
-        else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-syntax")) st->list_syntax = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-definitions")) st->list_definitions = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-verbs"))  st->list_verbs = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-families")) st->list_families = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-axes"))   st->list_axes = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-limits")) st->list_limits = 1;
+        else if (!no_more_opts && !strcmp(a, "--count-groups")) st->count_groups = 1;
         /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
          * Takes its file as the option's VALUE, like --explain and
          * --probe-ask take theirs, rather than as the bare positional
@@ -473,21 +551,21 @@ int main(int argc, char **argv)
                 fprintf(stderr, "pcrec: missing value for %s\n", a);
                 return 1;
             }
-            list_source = argv[++i];
+            st->list_source = argv[++i];
         }
         else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "pcrec: missing value for %s\n", a);
                 return 1;
             }
-            probe_want = argv[++i];
+            st->probe_want = argv[++i];
         }
         else if (!no_more_opts && !strcmp(a, "--features")) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "pcrec: missing value for %s\n", a);
                 return 1;
             }
-            features = argv[++i];
+            st->features = argv[++i];
         }
         else if (!no_more_opts &&
                  (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
@@ -496,7 +574,7 @@ int main(int argc, char **argv)
                 return 1;
             }
             const char *v = argv[++i];
-            if (a[2] == 'e') explain = v; else flavour = v;
+            if (a[2] == 'e') st->explain = v; else st->flavour = v;
         }
         else if (!no_more_opts &&
                  (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e"))) {
@@ -505,19 +583,376 @@ int main(int argc, char **argv)
                 return 1;
             }
             const char *v = argv[++i];
-            if (a[1] == 'o') outpath = v;
-            else if (a[1] == 'p') opt.prefix = v;
+            if (a[1] == 'o') st->outpath = v;
+            else if (a[1] == 'p') { opt.prefix = v; st->saw_prefix = 1; }
             else if (set_encoding(&opt, v) != 0) return 1;
         }
+        /* [DD-13b.W1.2] THE `.rxt` SOURCE SURFACE (S11). All three take
+         * their value as a separate argument, like -o/-p/-e and unlike the
+         * `=value` MODE flags: a file, a name and a directory are exactly
+         * the three things that spelling is for. */
+        else if (!no_more_opts && !strcmp(a, "--source")) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            st->source = argv[++i];
+        }
+        else if (!no_more_opts && !strcmp(a, "--target")) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            st->target = argv[++i];
+        }
+        /* REPEATABLE, and order is the search order — the one flag in this
+         * CLI that accumulates rather than replacing. A single-valued
+         * --lib-path would make two libraries an either/or. */
+        else if (!no_more_opts && !strcmp(a, "--lib-path")) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            if (libdir_push(st, argv[++i]) != 0) return 1;
+        }
         else if (!no_more_opts && a[0] == '-' && a[1]) {
-            fprintf(stderr, "pcrec: unknown option '%s' (use -- before a "
-                            "pattern that starts with '-')\n", a);
-            usage(stderr);
+            fprintf(stderr, "pcrec: unknown option '%s' in the %s (use -- "
+                            "before a pattern that starts with '-')\n",
+                    a, where);
+            if (!strcmp(where, "command line")) usage(stderr);
             return 1;
         }
-        else if (!pattern) pattern = a;
-        else { fprintf(stderr, "pcrec: exactly one pattern expected\n"); return 1; }
+        else if (!st->pattern) st->pattern = a;
+        else {
+            fprintf(stderr, "pcrec: exactly one pattern expected (%s)\n",
+                    where);
+            return 1;
+        }
     }
+    st->opt = opt;
+    return 0;
+}
+
+/* ------------- [DD-13b.W1.2] compiling from a `.rxt` SOURCE ------------- */
+
+/* Splits a `config` block's `pcrec <raw>` text into an argv on whitespace.
+ * DELIBERATELY NOT A SHELL: there is no quoting, no escaping and no
+ * variable expansion, because no flag in this CLI's surface takes a value
+ * containing a space and inventing a quoting language for a case that does
+ * not exist is a grammar somebody would then have to keep. The returned
+ * vector and its one backing buffer are freed together by the caller. */
+static int raw_split(const char *raw, char ***vout, int *nout, char **bufout)
+{
+    size_t len = strlen(raw);
+    char *buf = malloc(len + 1);
+    if (!buf) { perror("malloc"); return 1; }
+    memcpy(buf, raw, len + 1);
+
+    int cap = 8, n = 0;
+    char **v = malloc((size_t)cap * sizeof *v);
+    if (!v) { perror("malloc"); free(buf); return 1; }
+
+    char *p = buf;
+    while (*p) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (!*p) break;
+        if (n == cap) {
+            cap *= 2;
+            char **nv = realloc(v, (size_t)cap * sizeof *nv);
+            if (!nv) { perror("realloc"); free(v); free(buf); return 1; }
+            v = nv;
+        }
+        v[n++] = p;
+        while (*p && *p != ' ' && *p != '\t') p++;
+        if (*p) *p++ = '\0';
+    }
+    *vout = v; *nout = n; *bufout = buf;
+    return 0;
+}
+
+/* The target's composed settings, ON TOP OF the command line's options.
+ *
+ * THE FILE WINS, and the precedent is in the tree rather than invented
+ * here: `tests/harness/run.sh` appends `RXTFLAGS` LAST to its flag array
+ * "so a directive on the same axis wins". A `.rxt` source states the build
+ * its patterns are meant to have, and that build should not change with the
+ * invocation that happened to trigger it; a command-line flag is the BASE a
+ * file has not spoken about.
+ *
+ * WITHIN a target, `pcrec <raw>` is applied FIRST and the typed directives
+ * on top. The typed spellings are the format's own named axes and are the
+ * only ones a pattern BLOCK can write, so they are the more specific of the
+ * two; `pcrec` is the general escape hatch, which is what makes it the
+ * base rather than the override. */
+static int apply_target(const CliState *cli, const RxtTarget *t,
+                        pcrec_options *out)
+{
+    CliState ts;
+    memset(&ts, 0, sizeof ts);
+    ts.opt = cli->opt;
+    ts.opt.prefix = t->prefix;
+    ts.opt.name = t->name;
+
+    if (t->pcrec_raw) {
+        char **v = NULL, *buf = NULL;
+        int n = 0;
+        if (raw_split(t->pcrec_raw, &v, &n, &buf) != 0) return 1;
+        char where[160];
+        snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
+        int rc = cli_parse(n, v, &ts, where);
+        free(v); free(buf);
+        if (rc != 0) return 1;
+        /* THE CONTAINMENT, and it is one test rather than a list. A config
+         * block sets COMPILE OPTIONS; anything else it could have set — an
+         * output path, a pattern, a query mode, another source file, `-h`,
+         * or `-p`, which would silently overrule the target's own prefix —
+         * is refused here, and a flag added to this CLI tomorrow is covered
+         * without an edit because the check is over the whole tail of the
+         * struct rather than over a list of names. */
+        if (!cli_extras_clean(&ts)) {
+            fprintf(stderr,
+                    "pcrec: %s:%zu: a `config` block's `pcrec` line may set "
+                    "compile options only — not an output path, a pattern, a "
+                    "prefix, a query mode or another source ('%s')\n",
+                    cli->source, t->line, t->pcrec_raw);
+            return 1;
+        }
+    }
+
+    if (t->flags) {
+        for (const char *f = t->flags; *f; f++) {
+            if (*f == 'i') ts.opt.flags |= PCREC_CASELESS;
+            else {
+                fprintf(stderr,
+                        "pcrec: %s:%zu: unknown flag letter '%c' in "
+                        "`flags %s`\n", cli->source, t->block_line, *f,
+                        t->flags);
+                return 1;
+            }
+        }
+    }
+    if (t->encoding && set_encoding(&ts.opt, t->encoding) != 0) {
+        fprintf(stderr, "pcrec: %s:%zu: in `encoding %s`\n",
+                cli->source, t->block_line, t->encoding);
+        return 1;
+    }
+    if (t->engine) {
+        if (!strcmp(t->engine, "vm")) ts.opt.engine = PCREC_ENGINE_VM;
+        else {
+            fprintf(stderr,
+                    "pcrec: %s:%zu: `engine %s` is not a value this format "
+                    "accepts (only `vm`)\n",
+                    cli->source, t->block_line, t->engine);
+            return 1;
+        }
+    }
+    /* `budget frames=` sizes the ARTIFACT's resume stack, which is
+     * `--backtrack-frames`, not the caller-supplied buffer of §10 —
+     * tests/harness/run.sh maps the same directive the same way. */
+    if (t->budget_steps  >= 0) ts.opt.step_budget = t->budget_steps;
+    if (t->budget_frames >= 0) ts.opt.frame_capacity = (int)t->budget_frames;
+
+    /* The enabled set is PROCESS-WIDE (src/parse/enabled.c), so it is
+     * installed per target, immediately before that target's compile. */
+    {
+        char ferr[256];
+        const char *fspec = t->features ? t->features
+                          : (cli->features ? cli->features
+                                           : PCREC_DEFAULT_FEATURES);
+        if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
+            fprintf(stderr,
+                    "pcrec: %s:%zu: features: %s%s\n",
+                    cli->source, t->block_line, ferr,
+                    (t->features && !t->features_only)
+                        ? ".\n       This list is the UNION of the target's "
+                          "configs and the block's own `features` line. "
+                          "`features only <list>` on the block makes the "
+                          "block's list stand alone."
+                        : "");
+            return 1;
+        }
+    }
+
+    *out = ts.opt;
+    return 0;
+}
+
+static int path_is_dir(const char *p)
+{
+    struct stat sb;
+    return stat(p, &sb) == 0 && S_ISDIR(sb.st_mode);
+}
+
+/* `--source FILE`: parse the head, resolve the targets, compile each one.
+ *
+ * D88 HOLDS BY CONSTRUCTION HERE and is worth naming at the site: each
+ * target is a SEPARATE `pcrec_compile()` call writing its own translation
+ * unit, so there is no code path that could produce a multi-artifact TU
+ * even if someone wanted one. */
+static int compile_source(const CliState *cli)
+{
+    pcrec_error err = { 0 };
+    RxtSource *src = pcrec_rxt_source_parse(cli->source, &err);
+    if (!src) { fprintf(stderr, "pcrec: %s\n", err.msg); return 1; }
+
+    RxtTarget *ts = NULL;
+    size_t nt = 0;
+    if (pcrec_rxt_source_resolve(src, cli->libdirs, cli->nlibdirs,
+                                 &ts, &nt, &err) != 0) {
+        fprintf(stderr, "pcrec: %s\n", err.msg);
+        pcrec_rxt_source_free(src);
+        return 1;
+    }
+
+    /* `--target NAME` selects by PREFIX, which is the name a `target` line
+     * declares and the name the artifact's symbols carry. */
+    if (cli->target) {
+        size_t k = nt;
+        for (size_t i = 0; i < nt; i++)
+            if (!strcmp(ts[i].prefix, cli->target)) { k = i; break; }
+        if (k == nt) {
+            fprintf(stderr, "pcrec: %s: no target named '%s'", cli->source,
+                    cli->target);
+            if (!nt) fprintf(stderr, " (this file declares no target at all)");
+            else {
+                fprintf(stderr, " (it declares: ");
+                for (size_t i = 0; i < nt; i++)
+                    fprintf(stderr, "%s%s", i ? ", " : "", ts[i].prefix);
+                fputc(')', stderr);
+            }
+            fputc('\n', stderr);
+            pcrec_rxt_source_free(src);
+            return 1;
+        }
+        ts = &ts[k];
+        nt = 1;
+    }
+
+    /* A LIBRARY SHIPS NOTHING BY ITSELF (format_design §6.1). Zero targets
+     * is not an error — it is what a file of definitions means — but it is
+     * surprising enough at a build step that it says so, on stderr, at exit
+     * 0, where a script that meant it is unaffected. */
+    if (nt == 0) {
+        fprintf(stderr,
+                "pcrec: %s declares no target and is not a single unnamed "
+                "pattern block, so it builds nothing (it is a library of "
+                "definitions). Add a `target <prefix> = <definition>` line "
+                "to build from it\n", cli->source);
+        pcrec_rxt_source_free(src);
+        return 0;
+    }
+
+    /* THE OUTPUT NAMING RULE (w1_impl §1.5). Three forms, and which one
+     * applies is decided by the SHAPE of `-o`'s value, not by a flag:
+     *   `-o -`          self-contained C on stdout; exactly one target
+     *   `-o <dir>`      <dir>/<prefix>.c + .h, one pair per target
+     *   `-o out.c`      one pair; exactly one target
+     * A directory is an existing directory. Anything else is a file name,
+     * which is what makes `-o out.c` on a fresh checkout behave the same
+     * whether or not `out.c` exists yet. */
+    int to_stdout = !strcmp(cli->outpath, "-");
+    int to_dir = !to_stdout && path_is_dir(cli->outpath);
+
+    if (nt > 1 && !to_dir) {
+        fprintf(stderr,
+                "pcrec: %s has %zu targets (", cli->source, nt);
+        for (size_t i = 0; i < nt; i++)
+            fprintf(stderr, "%s%s", i ? ", " : "", ts[i].prefix);
+        fprintf(stderr,
+                ") and `-o %s` names %s. Either build one target "
+                "(`--target <prefix>`) or name an existing DIRECTORY with "
+                "`-o`, which writes <dir>/<prefix>.c and .h per target\n",
+                cli->outpath, to_stdout ? "stdout" : "a single file");
+        pcrec_rxt_source_free(src);
+        return 1;
+    }
+
+    int rc = 0;
+    for (size_t i = 0; i < nt && rc == 0; i++) {
+        const RxtTarget *t = &ts[i];
+        pcrec_options topt;
+        if (apply_target(cli, t, &topt) != 0) { rc = 1; break; }
+
+        char *cpath = NULL, *hpath = NULL;
+        if (!to_stdout) {
+            size_t n;
+            if (to_dir) {
+                n = strlen(cli->outpath) + 1 + strlen(t->prefix) + 3;
+                cpath = malloc(n);
+                hpath = malloc(n);
+                if (!cpath || !hpath) { perror("malloc"); free(cpath); free(hpath); rc = 1; break; }
+                snprintf(cpath, n, "%s/%s.c", cli->outpath, t->prefix);
+                snprintf(hpath, n, "%s/%s.h", cli->outpath, t->prefix);
+            } else {
+                size_t len = strlen(cli->outpath);
+                cpath = malloc(len + 1);
+                hpath = malloc(len + 3);
+                if (!cpath || !hpath) { perror("malloc"); free(cpath); free(hpath); rc = 1; break; }
+                memcpy(cpath, cli->outpath, len + 1);
+                memcpy(hpath, cli->outpath, len + 1);
+                if (len > 2 && !strcmp(hpath + len - 2, ".c"))
+                    strcpy(hpath + len - 2, ".h");
+                else strcat(hpath, ".h");
+            }
+            topt.header_name = base_name(hpath);
+        }
+
+        pcrec_output out;
+        pcrec_error cerr;
+        if (pcrec_compile(t->pattern, &topt, &out, &cerr) != 0) {
+            /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
+             * A `.rxt` author's coordinates are file:line; the pattern
+             * offset is still printed, because it is the only thing that
+             * locates a failure INSIDE a pattern. */
+            fprintf(stderr, "pcrec: %s:%zu: target '%s': %s (pattern offset "
+                            "%zu)\n",
+                    cli->source, t->block_line, t->prefix, cerr.msg, cerr.pos);
+            free(cpath); free(hpath);
+            rc = 1;
+            break;
+        }
+        if (to_stdout) {
+            fputs(out.c_src, stdout);
+        } else if (write_file(cpath, out.c_src) != 0 ||
+                   write_file(hpath, out.h_src) != 0) {
+            rc = 1;
+        }
+        pcrec_output_free(&out);
+        free(cpath);
+        free(hpath);
+    }
+
+    pcrec_rxt_source_free(src);
+    return rc;
+}
+
+int main(int argc, char **argv)
+{
+    CliState st;
+    memset(&st, 0, sizeof st);
+    pcrec_default_options(&st.opt);
+    if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) return 1;
+    if (st.want_help) { usage(stdout); return 0; }
+
+    /* Read-only aliases for the modes below, so the query dispatch reads
+     * exactly as it did before the parser was factored out. `opt` is a COPY
+     * the compile path may still adjust (`header_name`). */
+    pcrec_options opt        = st.opt;
+    const char *outpath      = st.outpath;
+    const char *pattern      = st.pattern;
+    const int list_syntax    = st.list_syntax;
+    const int list_definitions = st.list_definitions;
+    const int list_verbs     = st.list_verbs;
+    const int list_families  = st.list_families;
+    const int list_axes      = st.list_axes;
+    const int list_limits    = st.list_limits;
+    const int count_groups   = st.count_groups;
+    const int emit_ir        = st.emit_ir;
+    const char *explain      = st.explain;
+    const char *flavour      = st.flavour;
+    const char *probe_want   = st.probe_want;
+    const char *features     = st.features;
+    const char *list_source  = st.list_source;
 
     /* --count-groups is the one query that TAKES a pattern — it runs the real
      * parser (parse only, nothing emitted) and prints the running capture
@@ -570,8 +1005,11 @@ int main(int argc, char **argv)
      * being able to tell those two apart. */
     if (list_source) {
         if (list_syntax || list_definitions || list_verbs || list_families ||
-            list_axes || list_limits || explain || count_groups || emit_ir || probe_want) {
-            fprintf(stderr, "pcrec: --list-source is a separate query; use one\n");
+            list_axes || list_limits || explain || count_groups || emit_ir ||
+            probe_want || st.source) {
+            fprintf(stderr, "pcrec: --list-source is a separate query; use one "
+                            "(--list-source READS a .rxt file, --source "
+                            "COMPILES one)\n");
             return 1;
         }
         if (pattern || outpath) {
@@ -849,6 +1287,47 @@ int main(int argc, char **argv)
     if (flavour) {
         fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
                         "--explain only\n");
+        return 1;
+    }
+
+    /* [DD-13b.W1.2] `--source FILE` — COMPILE FROM A `.rxt` SOURCE.
+     *
+     * It is a COMPILE MODE, not a query: it takes `-o` and honours every
+     * compile flag, and the one thing it refuses beside a query is a
+     * positional PATTERN, because a source file IS the pattern (or several)
+     * and accepting both would leave "which one did I build" answerable two
+     * ways. `--target` and `--lib-path` are meaningful only with it. */
+    if (st.source) {
+        if (list_syntax || list_definitions || list_verbs || list_families ||
+            list_axes || list_limits || explain || count_groups || emit_ir ||
+            probe_want || list_source) {
+            fprintf(stderr, "pcrec: --source compiles; it does not compose "
+                            "with a query surface\n");
+            return 1;
+        }
+        if (pattern) {
+            fprintf(stderr, "pcrec: --source takes no pattern argument — the "
+                            "file's `pattern` blocks are the patterns (got "
+                            "'%s')\n", pattern);
+            return 1;
+        }
+        if (!outpath) {
+            fprintf(stderr, "pcrec: --source needs -o: a FILE for one target, "
+                            "an existing DIRECTORY for several (which writes "
+                            "<dir>/<prefix>.c and .h per target), or '-' for "
+                            "one target on stdout\n");
+            return 1;
+        }
+        {
+            int rc = compile_source(&st);
+            free(st.libdirs);
+            return rc;
+        }
+    }
+    if (st.target || st.libdirs) {
+        fprintf(stderr, "pcrec: %s applies to --source only\n",
+                st.target ? "--target" : "--lib-path");
+        free(st.libdirs);
         return 1;
     }
 
