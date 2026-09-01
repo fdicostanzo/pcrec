@@ -1341,14 +1341,28 @@ static char *join_path(Arena *a, const char *dir, const char *rest)
 
 /* Renders the search chain for a diagnostic: the source's own directory
  * first, then every `--lib-path` in order. It is built from the SAME list
- * the search walks, so a message can never name a path the search skipped. */
+ * the search walks, so a message can never name a path the search skipped.
+ *
+ * THE SOURCE'S OWN DIRECTORY IS NAMED, NOT SPELLED, and that is a size fix
+ * rather than a style one. Every diagnostic that carries this chain also
+ * carries `rxt_fail`'s `<path>:<line>: ` prefix — so printing the
+ * directory's full text here put the SOURCE PATH IN THE MESSAGE TWICE,
+ * once as the prefix the reader is already looking at and once inside the
+ * chain. On a 256-byte `pcrec_error.msg` that redundancy is what pushed
+ * the no-such-definition refusal over the buffer at the very path length
+ * its own fixture runs at (263 bytes, MEASURED by the class check one
+ * directory over). Saying "the source's own directory" costs 28 bytes
+ * whatever the path is, tells the reader the same thing, and reads better.
+ * The `--lib-path` entries ARE spelled: those the reader has not been told
+ * anywhere else. */
 static const char *lib_chain_text(Arena *a, const char *own,
                                   const char *const *dirs, size_t ndirs)
 {
+    (void)own;
     StrBuf sb = { 0 };
-    sb_printf(&sb, "'%s' (source dir)", *own ? own : "./");
+    sb_puts(&sb, "the source's own directory");
     for (size_t i = 0; i < ndirs; i++) sb_printf(&sb, ", '%s'", dirs[i]);
-    if (!ndirs) sb_puts(&sb, ", no --lib-path");
+    if (!ndirs) sb_puts(&sb, " (no --lib-path)");
     char *heap = sb_take(&sb);
     size_t n = strlen(heap) + 1;
     char *out = arena_alloc(a, n);
