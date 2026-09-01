@@ -384,7 +384,17 @@ fi
 # check; one that returned nothing would fail the A check. Neither can pass
 # by accident, which is what the 256-branch-control lesson in CLAUDE.md is
 # about — a control has to fire inside the range of what it certifies.
-CC="${CC:-gcc}"
+# [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang; an explicit CC
+# always wins. Same shape as LINTGEN's -fanalyzer append, one compiler over.
+# NOTE: the K24 partial-inlining check below (search "K24 noclone control")
+# is GCC-SPECIFIC BY DESIGN -- it asserts gcc's own partial-inlining pass
+# clones the stripped-attribute control, which has no clang analogue at all
+# (clang performs no such pass), so that one check is expected to read
+# differently, not wrongly, under CLANGGEN=1.
+CC="${CC:-}"
+if [ -z "$CC" ]; then
+    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+fi
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 # SAN-1 LINTGEN: ride this GENCFLAGS compile with gcc -fanalyzer, opt-in.
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
@@ -2267,6 +2277,21 @@ fi
 # it ("a wave-G fully-spliced artifact is back to 1"); the fixture expectations
 # are what moved, and they moved for five of the nine rows.
 #
+# **[CC-CLANG], 2026-08-31 -- THE "1" IS NOW CONDITIONAL, and the leading term
+# in the relation is `(has_push ? 1 : 0)`, not an unconditional `1`.** The
+# fail label's own `goto *` is omitted entirely on a FRAMELESS program — no
+# `RX_PUSH` and no `RX_CALL` site anywhere in the tree, `src/gen/emit_vm.c`'s
+# own `has_push` — because `run->resume_depth` can then never leave 0 and the
+# dispatch is unreachable (see that file's header comment for the clang
+# reason). A shared callee body still implies a LINKED call, which always sets
+# `has_push` true, so the leading term is 0 only where the SECOND term is also
+# 0 — a splice-only or call-free program with no other choice point at all.
+# Seven of the eleven rows below are exactly that shape (a straight-line
+# capture, or every call site splicing to a body with no internal choice
+# point) and moved 1 -> 0; the four rows carrying a genuinely LINKED call
+# (every one of them also carries an internal `?` around the recursive call,
+# which pushes on its own account regardless of linkage) are unmoved.
+#
 # THE MIXED ROW IS THE NEW ONE AND IT IS THE SHARP ONE.
 # `(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)` calls TWO DISTINCT groups, one
 # recursive and one acyclic, and MEASURES 2 — the old reading ("one per distinct
@@ -2277,8 +2302,9 @@ fi
 # A CONSTANT WOULD BE WRONG IN BOTH DIRECTIONS and R34's LENS2-5 measured it:
 # a call-free artifact is 1, a pattern calling ONE group is 2, a pattern
 # calling THREE DISTINCT groups is 4 however many call SITES there are (the
-# sites share the body), and a wave-G fully-spliced artifact is back to 1. A
-# hard-coded "two" fires on three of those four.
+# sites share the body), and a wave-G fully-spliced artifact is back to 1
+# (now 0 post-[CC-CLANG], since a fully-spliced artifact with no other choice
+# point is frameless). A hard-coded "two" fires on three of those four.
 #
 # [DD-14 WAVE F] THE LAST FOUR FIXTURES ARE THE `(?(DEFINE)` SPELLING, and
 # they are here because D71 item 4's claim is that the DEFINE lowers to the
@@ -2286,8 +2312,10 @@ fi
 # relation is where it would break first: a DEFINE that emitted its body
 # lexically would change the count, and one that emitted a region per call
 # SITE rather than per group would too. `(?(DEFINE)(a))b` -- a definition
-# NOBODY CALLS -- is the floor of the set and MEASURED at 1: the definition
-# costs no region at all, which is the same thing `X{0}` has always done.
+# NOBODY CALLS -- is the floor of the set and MEASURED at 0 post-[CC-CLANG]
+# (was 1): the definition costs no region at all, which is the same thing
+# `X{0}` has always done, and with no call and no other construct the program
+# is frameless.
 #
 # THE RELATION IS ASSERTIBLE ONLY BECAUSE THE `goto *` IS WRITTEN INLINE. The
 # design's §5.1 sketches `RX_RETURN` as a MACRO, which would put one `goto *`
@@ -2296,14 +2324,14 @@ fi
 # is a deliberate deviation recorded at `vm_region`, and this check is what it
 # buys.
 for dd14_row in \
-    '1|(a)b' \
-    '1|(a)(?1)' \
-    '1|(a)(?1)(?1)(?1)' \
-    '1|(a)(b)(c)(?1)(?2)(?3)' \
+    '0|(a)b' \
+    '0|(a)(?1)' \
+    '0|(a)(?1)(?1)(?1)' \
+    '0|(a)(b)(c)(?1)(?2)(?3)' \
     '2|a(?R)?b' \
-    '1|(?(DEFINE)(a))(?1)b' \
-    '1|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
-    '1|(?(DEFINE)(a))b' \
+    '0|(?(DEFINE)(a))(?1)b' \
+    '0|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
+    '0|(?(DEFINE)(a))b' \
     '2|(?(DEFINE)(?<w>a(?&w)?b))(?&w)' \
     '3|(?(DEFINE)(?<p>a(?&p)?b)(?<q>x(?&q)?y))(?&p)(?&q)' \
     '2|(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)' ; do
@@ -2312,9 +2340,9 @@ for dd14_row in \
     if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
         dd14_got=$(grep -c 'goto \*' "$WORKDIR/dd14.c")
         if [ "$dd14_got" -ne "$dd14_want" ]; then
-            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want (1 for the fail label plus one per DISTINCT *LINKED* called group -- a SPLICED target emits no region and contributes none). A count that is too HIGH means a region was emitted per call SITE instead of per group, or a spliceable target was linked; too LOW means a region's return was folded into something shared, which §6.3 forbids -- the body may be shared, the EXIT may never be"
+            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want ((has_push ? 1 : 0) for the fail label, [CC-CLANG], plus one per DISTINCT *LINKED* called group -- a SPLICED target emits no region and contributes none). A count that is too HIGH means a region was emitted per call SITE instead of per group, a spliceable target was linked, or the frameless omission did not fire; too LOW means a region's return was folded into something shared (which §6.3 forbids -- the body may be shared, the EXIT may never be) or the frameless omission fired on a program that still pushes"
         else
-            ok "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits exactly $dd14_want 'goto *' -- 1 + the number of emitted shared callee bodies, which after wave G is one per distinct LINKED target"
+            ok "[DD-14-RECURSION rule 1] (§5.8, [CC-CLANG]): '$dd14_pat' emits exactly $dd14_want 'goto *' -- (has_push ? 1 : 0) plus the number of emitted shared callee bodies, which after wave G is one per distinct LINKED target"
         fi
     else
         bad "[DD-14-RECURSION rule 1]: pcrec failed to compile the fixture '$dd14_pat'"
@@ -2704,9 +2732,9 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # control-shares-a-source failure (learnings.md §3). Updating it is part of
     # the bump, and this check firing is how a bump that forgot a doc gets
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
-    ABI_EXPECT=13
+    ABI_EXPECT=14
     if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed), and by [OPT-K]'s offset-k candidate-start skip (8->9 — a <PREFIX>_DFA_PREFILTER_OFFSETS stamp line on EVERY DFA artifact, plus, on an artifact that selects the form, a file-scope <prefix>_ofsskip block, up to three candidate tables and a changed prefilter body with a reseed in it), and by [ENG-ABS]'s anchored match-here form (9->10 — a <PREFIX>_DFA_MATCH stamp line and an rx_info.match_form field on EVERY artifact, plus, on a DFA artifact that selects the form, a file-scope <prefix>_anchored_state accessor block, a THIRD machine's tables inside <prefix>_match, and rewritten _match/_match_caps bodies), and by [ART-SIZE]'s emitted-size term and caps (10->11), and by [OPT-4]'s prefilter-language stamp (11->12 — a <PREFIX>_VM_PREFILTER_LANG line AND its <PREFIX>_VM_PREFILTER_LANG_WHY companion on every VM HYBRID and on no other artifact; on the few hybrids above PCREC_PREFILTER_EXACT_NFA_STATES the two lines also come with a smaller inlined prefilter's tables and a dropped prefilter-window MRL ceiling; the SAME bump also adds <PREFIX>_ENGINE_SEL, unconditional on EVERY artifact and both engines, which is why a DFA artifact's scaffolding moves at abi 12 as well), and by [OPT-5]'s DFA SCAN EDGE (12->13 -- a <PREFIX>_DFA_SCAN_EDGE stamp line on EVERY artifact, plus, on any DFA scan whose machine carries a counted class run, one in-loop scan block per edge, a membership table per non-range edge, and the run's interior states DELETED from every per-state table: this is the first bump that moves the MACHINE and not only the emitted text) -- one bump per change, D76)"
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed), and by [OPT-K]'s offset-k candidate-start skip (8->9 — a <PREFIX>_DFA_PREFILTER_OFFSETS stamp line on EVERY DFA artifact, plus, on an artifact that selects the form, a file-scope <prefix>_ofsskip block, up to three candidate tables and a changed prefilter body with a reseed in it), and by [ENG-ABS]'s anchored match-here form (9->10 — a <PREFIX>_DFA_MATCH stamp line and an rx_info.match_form field on EVERY artifact, plus, on a DFA artifact that selects the form, a file-scope <prefix>_anchored_state accessor block, a THIRD machine's tables inside <prefix>_match, and rewritten _match/_match_caps bodies), and by [ART-SIZE]'s emitted-size term and caps (10->11), and by [OPT-4]'s prefilter-language stamp (11->12 — a <PREFIX>_VM_PREFILTER_LANG line AND its <PREFIX>_VM_PREFILTER_LANG_WHY companion on every VM HYBRID and on no other artifact; on the few hybrids above PCREC_PREFILTER_EXACT_NFA_STATES the two lines also come with a smaller inlined prefilter's tables and a dropped prefilter-window MRL ceiling; the SAME bump also adds <PREFIX>_ENGINE_SEL, unconditional on EVERY artifact and both engines, which is why a DFA artifact's scaffolding moves at abi 12 as well), and by [OPT-5]'s DFA SCAN EDGE (12->13 -- a <PREFIX>_DFA_SCAN_EDGE stamp line on EVERY artifact, plus, on any DFA scan whose machine carries a counted class run, one in-loop scan block per edge, a membership table per non-range edge, and the run's interior states DELETED from every per-state table: this is the first bump that moves the MACHINE and not only the emitted text), and by [CC-CLANG]'s clang-compatibility pair (13->14 -- an __has_attribute guard around emit_search_head's noclone line on EVERY DFA and VM-hybrid artifact, plus the fail label's pop-and-resume goto* dispatch omitted entirely on a FRAMELESS VM artifact with no RX_PUSH and no RX_CALL site: no answer moves on either half) -- one bump per change, D76)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else

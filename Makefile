@@ -26,6 +26,25 @@ BUILD_DIR ?= build
 LINTGEN ?= 0
 export LINTGEN
 
+# CLANGGEN ([CC-CLANG], 2026-08-31): the SAME opt-in shape as LINTGEN above,
+# one compiler over — rides `make test`'s EXISTING generated-matcher compile
+# pass with clang as the COMPILEE AXIS instead of gcc, instead of requiring a
+# separate clang-only run over generated code. `make test CLANGGEN=1` —
+# default unset/0 leaves plain `make test` byte-for-byte unchanged (nobody's
+# CC changes). gcc stays the target compiler (D2): this axis answers "does
+# the SAME emitted artifact also compile under a second, independent
+# toolchain", it never builds pcrec itself with clang (that survey is
+# `make CC=clang`, a one-time compiler-axis check, not this flag's job — see
+# docs/testing.md "Sanitizer + lint battery"). The scripts that compile
+# generated matchers (tests/harness, tests/cli, tests/codegen,
+# tests/registry/run_pc4.sh) each read $CLANGGEN themselves and default their
+# own $CC to clang when the caller left CC unset — an explicit CC always
+# wins, the same precedence LINTGEN's GENCFLAGS append has no need of since
+# it only ever appends. `export` here is what makes the value reach those
+# child processes from a `make test CLANGGEN=1` command line.
+CLANGGEN ?= 0
+export CLANGGEN
+
 # CCACHE ([TT-3], Frank chartered 2026-08-21) — opt-in compile caching for
 # BOTH compile paths: this file's own tree-build compiles below, and the
 # GENCFLAGS generated-artifact compiles every test suite runs through

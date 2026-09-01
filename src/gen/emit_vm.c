@@ -11,6 +11,20 @@
  * and never per byte (§2.7: the VM has no per-byte dispatch, so D13's
  * table-vs-computed-goto arbitration simply does not arise here).
  *
+ * [CC-CLANG] THE ONE EXCEPTION, AND IT IS ZERO RATHER THAN A SECOND ONE. A
+ * FRAMELESS program — no `RX_PUSH` and no `RX_CALL` site anywhere in the
+ * tree (`has_push` in `pcrec_emit_vm`, e.g. a straight-line `(a)b` or a
+ * bounded repeat entirely on the counter rung) — never lets
+ * `run->resume_depth` leave 0, so the fail label's pop-and-resume dispatch
+ * is unreachable and is OMITTED rather than emitted dead: that artifact has
+ * ZERO indirect jumps, not a second one. clang refuses an indirect goto in a
+ * function with no address-of-label expression at all ("indirect goto in
+ * function with no address-of-label expressions"), which is exactly the
+ * shape a frameless program's dispatch would otherwise be; gcc accepts it.
+ * The relation `tests/codegen/run_codegen_tests.sh`'s `[DD-14-RECURSION rule
+ * 1]` asserts is therefore `(has_push ? 1 : 0) + shared-callee-bodies`, not
+ * an unconditional `1 + ...`.
+ *
  * The five decisions the emitted shape encodes (§2.2):
  *   1. One function per pattern. Label addresses are function-local, which is
  *      fine WITHIN a call — APPROACH §6's A-4/A-5 "&&label does not survive a
@@ -8099,6 +8113,24 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
     const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
 
+    /* [CC-CLANG] IS THERE ANY RESUME FRAME TO POP, ANYWHERE IN THIS PROGRAM.
+     * `v.npush` (set by the `vm_count_slots` pre-pass above) counts every
+     * `RX_PUSH` site — but deliberately NOT a linked call SITE's own frame
+     * (vm_count_slots's `A_CALL` arm: "the call site itself allocates
+     * nothing", by design, because a call frame is not a SLOT). `RX_CALL`
+     * still increments `run->resume_depth` at run time (see its own
+     * comment), so a call-only program can push despite `npush == 0` and
+     * both terms are needed. A COUNTER-RUNG-ONLY program (no alternation, no
+     * optional copy, no lookaround, no call — the frameless witness is
+     * `[a-z]{0,4096}` --engine=vm) has neither, and `resume_depth` can then
+     * never become nonzero: the fail label's pop-and-resume block below is
+     * unreachable in that program, has no address-of-label expression
+     * anywhere in the function, and is what clang refuses ("indirect goto in
+     * function with no address-of-label expressions") where gcc accepts it.
+     * `has_push` is the gate that omits it there instead of emitting dead
+     * dispatch code. */
+    const bool has_push = v.npush > 0 || v.has_linked_calls;
+
     /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
      * `--fno-step-budget` suppresses BOTH counters, which is what keeps
      * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
@@ -9313,17 +9345,28 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_printf(c, "    unsigned char %s_revdet_group_seen[%d] = {0};\n", v.p, v.nrevcaps);
     }
     sb_puts(c, "    (void)subject; (void)subject_length; (void)slot_values;\n");
-    /* Three of the five per-loop locals are used only by shapes that do not
+    /* Four of the five per-loop locals are used only by shapes that do not
      * always occur — the walk cursor and `prev` exist only when a walk is
-     * emitted, and the seen-counter only when the body has groups — and the
-     * generated matcher is built -Wall -Wextra -Werror. `--no-captures` on a
-     * possessified rung loop is the combination that has none of them, and it
-     * failed -Wunused-variable before this line. `it` and `mk` are used by every
-     * shape and are deliberately not listed, so a future shape that stops using
-     * one still gets caught. */
+     * emitted, the seen-counter only when the body has groups, and (found by
+     * [CC-CLANG]'s CLANGGEN sweep, not by inspection) `iteration` only where
+     * a READER exists for it: the rmax-bound test at the scan head fires iff
+     * `rmax >= 0` and the rmin tests at the commit/short labels fire iff
+     * `rmin > 0`, so a bare unbounded `X*` (rmin 0, rmax -1) writes it
+     * (reset, incremented every iteration) and never reads it at all —
+     * gcc's `-Wunused-but-set-variable` does not catch a write-only local
+     * reached through `x++` (measured: gcc accepts `((?<a>a)|(?<b>b))*`
+     * clean at -Wall -Wextra -Werror), clang's does. `mk` (`frame_mark`) is
+     * the only one of the five genuinely used by every shape — the cut it
+     * feeds runs on every commit, rmin or rmax notwithstanding — and is
+     * deliberately not listed, so a future shape that stops using it still
+     * gets caught. The generated matcher is built -Wall -Wextra -Werror;
+     * `--no-captures` on a possessified rung loop is the combination that
+     * has none of the first three, and it failed -Wunused-variable before
+     * this line existed. */
     for (int i = 0; i < nrev_total; i++)
-        sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position; (void)%s_rv%d_groups_seen;\n",
-                  v.p, i, v.p, i, v.p, i);
+        sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position;"
+                     " (void)%s_rv%d_groups_seen; (void)%s_rv%d_iteration;\n",
+                  v.p, i, v.p, i, v.p, i, v.p, i);
     if (v.tracing)
         sb_printf(c, "    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\","
                      " scan_position, subject_length);\n", v.p);
@@ -9372,6 +9415,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
     }
+    /* [CC-CLANG] The fail label's own comment claims "THE ONLY ... INDIRECT
+     * JUMP", which is exactly untrue on a FRAMELESS program (has_push
+     * false, below): there is no `goto *` left in that case at all. The
+     * comment is selected on the same predicate that omits the dispatch,
+     * rather than left to describe a jump the artifact no longer contains. */
     sb_printf(c,
         "\n%s_accept: __attribute__((unused));\n"
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
@@ -9382,19 +9430,55 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "%s"
         "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
         "\n%s_fail: __attribute__((unused));\n"
-        "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
-        "     * A step is one backtrack resumption (4.2), counted at exactly\n"
-        "     * this place — so forward progress is FREE (a linear match over\n"
-        "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
-        "     * independent, and the counter measures precisely the thing it is\n"
-        "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
-        "     * boundary, and it must not be traded against execution speed. */\n"
+        "%s"
         "%s%s"
-        "    if (run->resume_depth == 0) return -1;\n",
-        v.p, accept_tr, v.p, fail_tr, exhaust_tr);
-    if (has_budget)
+        "%s",
+        v.p, accept_tr, v.p,
+        has_push
+          ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
+            "     * A step is one backtrack resumption (4.2), counted at exactly\n"
+            "     * this place — so forward progress is FREE (a linear match over\n"
+            "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
+            "     * independent, and the counter measures precisely the thing it is\n"
+            "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
+            "     * boundary, and it must not be traded against execution speed. */\n"
+          : "    /* [CC-CLANG] THE ONLY BACKTRACKER, AND THIS PROGRAM PUSHES\n"
+            "     * NO RESUME FRAME AT ALL (no RX_PUSH site, no linked\n"
+            "     * subroutine call anywhere in the tree) -- so there is no\n"
+            "     * indirect jump here, and the pop-and-resume dispatch below\n"
+            "     * is omitted rather than emitted dead. A step is one\n"
+            "     * backtrack resumption (4.2), counted at exactly this place\n"
+            "     * — forward progress is FREE, the steps_left is subject-\n"
+            "     * length-independent, and the counter measures precisely the\n"
+            "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
+            "     * security boundary, and it must not be traded against\n"
+            "     * execution speed. */\n",
+        fail_tr, exhaust_tr,
+        /* [CC-CLANG] `has_push` false means `run->resume_depth` can never
+         * leave 0, so the guard on the return is not merely redundant but
+         * actively wrong to emit AS a guard: an `if` with no covering `else`
+         * leaves the compiler unable to see that every path returns, and
+         * both gcc and clang reject the resulting fall-off-the-end with
+         * `-Wreturn-type` under this project's own default `-Werror`
+         * GENCFLAGS. The honest text is the unconditional return the proof
+         * already licenses, not a conditional one dressed as always-true. */
+        has_push ? "    if (run->resume_depth == 0) return -1;\n"
+                 : "    return -1;\n");
+    /* [CC-CLANG] The budget decrement below is reachable only past the
+     * return just emitted, so on a frameless artifact (has_push false) it
+     * would be unreachable dead code -- omitted for the same reason the
+     * pop-and-resume block is, not merely to silence a warning. */
+    if (has_budget && has_push)
         sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
-    {
+    if (!has_push) {
+        /* [CC-CLANG] `has_push` is false: no `RX_PUSH` and no linked
+         * subroutine call exists anywhere in this program, so the
+         * unconditional return just emitted always fires and the
+         * pop-and-resume block that would otherwise follow is unreachable —
+         * omitted rather than emitted dead, and taking the one indirect jump
+         * this file's own header counts (the fail label) down to none. */
+        sb_puts(c, "}\n\n");
+    } else {
         char pop_tr[352];
         pop_tr[0] = 0;
         if (v.tracing)
@@ -9442,15 +9526,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
               : "");
+        sb_puts(c,
+            "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
+            "            run->trail_depth--;\n"
+            "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
+            "        }\n"
+            "        goto *run->resume_stack[frame_index].resume_label;\n"
+            "    }\n"
+            "}\n\n");
     }
-    sb_puts(c,
-        "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
-        "            run->trail_depth--;\n"
-        "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
-        "        }\n"
-        "        goto *run->resume_stack[frame_index].resume_label;\n"
-        "    }\n"
-        "}\n\n");
 
     sb_printf(c, "#undef %s_TRAIL\n#undef %s_SET\n#undef %s_PUSH\n\n",
               v.up, v.up, v.up);

@@ -44,6 +44,13 @@
 #              analyzer finding fails the compile loudly. See docs/testing.md
 #              "Sanitizer + lint battery" for the shape survey that found
 #              zero analyzer findings/false positives before this was wired.
+#   CLANGGEN=1 ([CC-CLANG]) ride this SAME compile pass with clang as the
+#              COMPILEE axis instead of gcc — the SAN-1 LINTGEN shape one
+#              compiler over: opt-in, writes nothing to build/ (pcrec itself
+#              stays gcc-built, D2), and a plain `make test` is byte-for-byte
+#              unchanged. Only takes effect when CC is not already set
+#              explicitly (an explicit CC always wins). See docs/testing.md
+#              "Sanitizer + lint battery" for the probe this rides.
 #   KEEP=1     keep the temp working directory instead of deleting it
 #   VERBOSE=1  print a line for every passing case, not just failures
 #   PROCS=N    run N .rxt FILES concurrently (default 1 — serial, unchanged).
@@ -138,7 +145,12 @@ RUN_SECS="$(gen_run_secs)"   # per-cell matcher-run budget; see the run site
 . "$ROOT_DIR/tests/lib/size_count.sh"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+# [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang, same shape as
+# LINTGEN's -fanalyzer append: opt-in, and an explicit CC always wins.
+CC="${CC:-}"
+if [ -z "$CC" ]; then
+    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+fi
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 RXTFLAGS="${RXTFLAGS:-}"

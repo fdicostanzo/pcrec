@@ -1896,6 +1896,65 @@ points; not free enough to fold into the default `make test` claim, which
 stays byte-identical with `LINTGEN` unset. Placement ruling: see "Battery
 integration" below.
 
+### CLANGGEN — a second COMPILEE toolchain, riding the same compile pass ([CC-CLANG], 2026-08-31)
+
+`make test CLANGGEN=1` is `LINTGEN`'s exact shape, one compiler over: rather
+than a separate clang-only pass over generated code, it defaults the SAME
+generated-matcher compile every test suite already runs through to `clang`
+instead of `gcc`, in the same `GENCFLAGS` compile pass `LINTGEN` rides.
+`CLANGGEN` is `?= 0` and `export`ed from the Makefile; `tests/harness/run.sh`,
+`tests/cli/run_cli_tests.sh`, `tests/codegen/run_codegen_tests.sh`, and
+`tests/registry/run_pc4.sh` each read it themselves (the same four scripts
+`LINTGEN` rides) and default their own `CC` to `clang` — **only when the
+caller left `CC` unset**: an explicit `CC=` on the command line always wins,
+which is the one precedence rule `LINTGEN` never needed (it only ever
+APPENDS to `GENCFLAGS`, never overrides an axis someone else chose). Unset
+(default), the four scripts compute `CC=gcc` exactly as before; `make test`
+is unaffected, and nothing is written to `build/` — this axis never rebuilds
+`pcrec` itself, which stays gcc-built (D2). `pcrec` the compiler and `clang`
+the compilee toolchain are deliberately independent knobs: `make test
+CLANGGEN=1` builds `build/pcrec` with `gcc` as always and points every
+generated-matcher compile at `clang`; `make CC=clang` (below) is the
+SEPARATE, one-time survey of building pcrec's own SOURCES under clang, and
+the two are not meant to be combined casually.
+
+**Why this is the right place for it and not a new script.** [CC-CLANG]'s
+probe (docs/dev/plan.md) found gcc and clang agreeing cell-for-cell on every
+artifact shape it tried apart from one structural incompatibility (a
+frameless VM artifact's indirect-goto dispatch, fixed by [CC-CLANG] step 1 —
+see `src/gen/emit_vm.c`'s `has_push` comment) and one cosmetic warning
+(`noclone`, now `__has_attribute`-guarded). The remaining question is
+breadth: does clang accept EVERY shape the corpus produces, not just the
+four hand-probed ones — exactly the question `LINTGEN` asks of `-fanalyzer`,
+answered the same way, by riding the compile pass every suite already runs
+rather than building a parallel one.
+
+**One known interaction, named rather than special-cased around.** The K24
+partial-inlining check in `tests/codegen/run_codegen_tests.sh` (search "K24
+noclone control") asserts that gcc's OWN partial-inlining pass clones a
+function once `noclone` is stripped from it — a claim with no clang
+analogue, since clang performs no such pass at all. That one check is
+expected to behave differently under `CLANGGEN=1`, not incorrectly; it is
+not a finding about the mechanism, and no attempt was made to make that
+specific check compiler-agnostic (D18: gold-plate under measurement, not
+ahead of it).
+
+**Findings surface the same way `LINTGEN`'s do**: `harness`/`cli`/`codegen`'s
+default `GENCFLAGS` already carries `-Werror`, so a clang diagnostic on
+generated code is a hard compile failure exactly like any other warning on
+that path, with no new machinery. `run_pc4.sh`'s `-O0 -std=gnu11` default
+carries neither `-Wall` nor `-Werror` (unaffected by this flag, same as
+under `LINTGEN`) — a caller who wants clang WARNINGS to fail loudly there
+needs `GENCFLAGS` set explicitly, same as today.
+
+**A ONE-TIME `make CC=clang` survey of the COMPILER itself** (pcrec's own
+`src/`, `cli/`, `lib/` sources, gcc-dialect per D2) is a separate, narrower
+question from the sweep above: not "does clang accept every generated
+artifact" but "does clang accept pcrec's OWN source". Findings from that
+one-time run are recorded in the lane report rather than wired into any
+`make` target — D2 keeps gcc the target compiler, so this is a survey, not
+a standing axis.
+
 ### Measured runtimes (2026-08-13, QUIET box, san1 at `2e71606` plus these
 landing edits, gcc 15.2.0 Ubuntu 15.2.0-16ubuntu1, libpcre2 10.46 present —
 PC-3/PC-4's ~1000+ checks and ~700K probes run for real under both

@@ -1599,8 +1599,17 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `13` on every artifact today ([OPT-5] bumped it
-  from 12 by adding `<PREFIX>_DFA_SCAN_EDGE` (§6.3) to every artifact and,
+- **`rx_info.abi` is `14` on every artifact today ([CC-CLANG] bumped it
+  from 13 by wrapping `emit_search_head`'s `noclone` line in an
+  `__has_attribute` guard (three lines gained on every DFA and VM-hybrid
+  artifact; gcc still emits the attribute, since it has it) and by omitting
+  the fail label's pop-and-resume `goto *` dispatch entirely on a FRAMELESS
+  VM artifact — no `RX_PUSH` and no `RX_CALL` site anywhere in the program,
+  e.g. `[a-z]{0,4096}` --engine=vm — where that dispatch was unreachable
+  already and its `goto *` with no address-of-label expression in the
+  function is what clang refuses and gcc accepts; every other VM artifact's
+  program bytes are unchanged. `13` was [OPT-5] adding
+  `<PREFIX>_DFA_SCAN_EDGE` (§6.3) to every artifact and,
   on any DFA scan whose machine carries a counted class run, by replacing
   that run's states with one in-loop scan block — the first bump to move a
   MACHINE and not only emitted text; `12` was [OPT-4]'s
@@ -1660,6 +1669,26 @@ against them:
   sequence is unchanged on the hot loop's carried dependency chain, and every
   answer is byte-identical over the corpus and over 81,821 answer lines from
   the comparative bench's subjects.
+
+  **`abi` 13 → 14, [CC-CLANG] (2026-08-31): clang-compatibility, and no
+  answer moves.** Two independent scaffolding changes, bundled because both
+  exist only so the SAME artifact gcc already accepts also compiles under
+  clang, and neither is a caller-visible surface change. (i)
+  `__attribute__((noclone))` (§6.3 K24's own fix) is now wrapped in an
+  `__has_attribute` guard — three lines every DFA and VM-hybrid artifact
+  gains, and gcc's emitted attribute is unaffected because gcc has it; the
+  guard names no compiler, only the feature. (ii) A VM artifact whose
+  program contains no `RX_PUSH` and no `RX_CALL` site at all (a
+  counter-rung-only body — `[a-z]{0,4096}` --engine=vm is the probed
+  witness) no longer emits the fail label's pop-and-resume `goto *`
+  dispatch: `run->resume_depth` can never leave 0 in such a program, so that
+  block was unreachable already, and its indirect jump with no
+  address-of-label expression anywhere else in the function is exactly what
+  clang's "indirect goto in function with no address-of-label expressions"
+  refuses and gcc accepts. Every artifact that pushes at least one resume
+  frame is byte-identical on this axis. Nothing a caller can call, link, or
+  read as a value moved, and no answer changed on any corpus or bench
+  pattern.
 
 **What a caller may assume, stated once in caller terms rather than left
 to accumulate from six bump-event paragraphs (D76, D40 regime 1).** The

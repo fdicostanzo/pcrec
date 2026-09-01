@@ -13,10 +13,11 @@
 #
 # Env vars:
 #   PCREC   path to the pcrec binary    (default: <repo-root>/build/pcrec)
-#   CC      C compiler                  (default: gcc)
+#   CC      C compiler                  (default: gcc, or clang under CLANGGEN=1)
 #   LIBA    path to libpcrec.a          (default: <repo-root>/build/libpcrec.a)
 #   LIBDIR  dir containing pcrec.h      (default: <repo-root>/lib)
 #   KEEP=1  keep the temp working directory instead of deleting it on exit
+#   CLANGGEN=1  ([CC-CLANG]) default CC to clang; opt-in, an explicit CC wins
 
 set -u
 
@@ -36,7 +37,12 @@ export WATCHDOG_SECTION="cli"
 . "$ROOT_DIR/tests/lib/table.sh"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+# [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang; an explicit CC
+# always wins. Same shape as LINTGEN's -fanalyzer append, one compiler over.
+CC="${CC:-}"
+if [ -z "$CC" ]; then
+    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+fi
 LIBA="${LIBA:-$ROOT_DIR/build/libpcrec.a}"
 LIBDIR="${LIBDIR:-$ROOT_DIR/lib}"
 KEEP="${KEEP:-0}"

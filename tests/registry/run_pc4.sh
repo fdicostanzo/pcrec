@@ -32,7 +32,12 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="registry"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+# [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang; an explicit CC
+# always wins. Same shape as LINTGEN's -fanalyzer append, one compiler over.
+CC="${CC:-}"
+if [ -z "$CC" ]; then
+    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+fi
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 # SAN-1 LINTGEN: this default carries no -Werror (unlike harness/cli/codegen's),
