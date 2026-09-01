@@ -24,3 +24,47 @@ worktree and `git` are what this lane does until then.
      — the design note's `c275aef` is stale.
   This lane's bump is therefore **13 -> 14**; the manager assigns the final
   number at merge.
+
+## Oracle verification of the new fixture cells (python3 `re`, one invocation)
+
+```
+OK  [a-z]+ 'abc' (0, 3) (0, 3)
+OK  [a-z]+ '123' None None
+OK  [0-9]+ '42'  (0, 2) (0, 2)
+OK  [0-9]+ 'xy'  None None
+OK  error|warn|fatal 'an error here' (3, 8) (3, 8)
+OK  error|warn|fatal 'a fatal one'   (2, 7) (2, 7)
+OK  error|warn|fatal 'nothing here'  None None
+OK  a+ 'aaa' (0, 3) (0, 3)
+```
+
+## Build order actually taken
+
+1. resolver (`rxt_source.c` + `internal.h`)
+2. `rx_info.name` / `nentries` / abi sites 1-3
+3. `cli/main.c` — the option-parser factoring, then the three flags and
+   the output-naming rule
+4. `driver.c` (F13), then `run.sh` (H11)
+5. tests + fixtures
+6. spec hunks (D80) + every owning CLAUDE.md
+7. the lane report
+
+Site 4 of the abi ritual (the FILEPIN) is deliberately last and is still
+OWED — the pin must name this step's final src commit.
+
+## Self-review performed under the hold, in place of a build
+
+`bash -n` on all three edited shell scripts; a read-through of `main.c`'s
+new definition ORDER (`base_name`/`write_file` at 197/203 precede the new
+block at 644+; `cli_parse` at 269 precedes `apply_target` at 687); a check
+that every new `"$PCREC"` call carries `"$TIMEOUT_BIN"` on its own line
+([K37]); that both new `sort` sites carry `LC_ALL=C` ([K35]); and that
+every `run.sh` edit lies outside the BEGIN/END pinned arm region
+(1184-1437 — edits at 764, 843, 1088, 1124, 1559).
+
+Two defects were found and fixed by that review rather than by a run: a
+`--source`/query conflict tested BELOW the query dispatch, where each
+query returns from `main` first and would have won silently
+(`--source f.rxt --count-groups -- a` counted the pattern and ignored the
+file); and a backtick inside a double-quoted `pass "..."` message, which
+bash would have run as a command.
