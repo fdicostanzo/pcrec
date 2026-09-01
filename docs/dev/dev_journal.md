@@ -19493,3 +19493,29 @@ Battery 8 re-launches after the identity-gate re-pin to the fix commit.
 prefilter-collapse, atomic-diff, cli, encseam, vm, codegen, registry all
 green at this entry (registry plain was green post-merge; its LINTGEN
 red is K43's).
+
+## 2026-09-01 — Forty-ninth session, part 3 (afternoon): battery 8b refuted the strstr form of the has_push fix; replaced with the flag-in-the-primitive form
+
+Battery 8b (on adc0f5a) went red in its test stage and every red traced
+to the FIRST FORM of the has_push fix: (a) the TRACED push spelling is
+`<UP>_PUSH(id, &&…)`, so the strstr needle (`<UP>_PUSH(&&`) missed every
+traced push and traced backtracking artifacts lost their dispatch —
+run_ir_listing's "--trace must not change the answer" caught it on four
+cells; (b) the needle's snprintf drew -Wformat-truncation in every
+identity gate's from-source reference build (six scripts). A needle is a
+SECOND SPELLING of the emission — the exact drift class the fix was
+supposed to remove. Replaced with `Vm.emitted_push`, set by vm_push_at
+(the ONE primitive that writes a push, either spelling) in the same call
+that writes the bytes — vm_rung_mark's one-call-two-views pattern.
+Verified: traced witnesses answer correctly; ir_listing, trie_identity,
+anchored_match green; strict clean. Untraced emitted bytes are identical
+to adc0f5a's, so the identity gate's (B) FILEPIN stays adc0f5a (within
+one abi, byte-exact holds — no re-pin event).
+
+Also in 8b, LOAD-MARGINAL cells, no code movement: counterk's
+'((a)|ab){4000}c' pcrec-compile hit exit 124 under -j12 (measured 3.06s
+solo on this tree, 3.31s on the PRE-MERGE tree — no regression; the cli
+warn witness's comment already documents the 3-5x -j12 inflation class),
+taking 29 corpus cells with it. If it or the k18 tripwire reds again in
+8c, the verdict is per-cell solo re-measurement (battery 7's
+green-by-diagnosis precedent), not a re-pin.

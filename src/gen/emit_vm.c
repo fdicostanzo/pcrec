@@ -458,6 +458,14 @@ typedef struct {
     long long npush;      /* [M4.5c fix] emitted RX_PUSH sites, counted in the
                            * pre-pass. Reported in the listing so a check can
                            * hold it against the artifact; not itself a cap. */
+    bool emitted_push;    /* [CC-CLANG fix, 2026-09-01] set by vm_push_at, the
+                           * ONE primitive that writes a push (either tracing
+                           * spelling), in the same call that writes the bytes
+                           * — vm_rung_mark's pattern, so the fail label's
+                           * dispatch gate cannot drift from the program text.
+                           * NOT the pre-pass's npush, whose counter-rung
+                           * unbounded arm once went negative and omitted the
+                           * dispatch from a program with ten live pushes. */
     long long maxcopies;  /* the largest REPLICATION FACTOR any one bounded
                            * repeat over a choice-bearing body demands. This is
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
@@ -2724,6 +2732,7 @@ static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
     else
         sb_printf(v->b, "    %s_PUSH(&&%s_L%d, %s);\n",
                   v->up, v->p, lblid, posexpr);
+    v->emitted_push = true;
     vm_ev(v, VE_PUSH, lblid, 0, role);
 }
 
@@ -9455,20 +9464,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
     }
-    /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — derived
-     * from the EMITTED PROGRAM TEXT, which is already complete in `c` at this
-     * point. The needle matches only USE sites (`<UP>_PUSH(&&`); the macro
-     * DEFINITION spells `<UP>_PUSH(lbl_` and comments were reworded at bug 2
-     * not to spell it at all. `v.has_linked_calls` stays as the second term:
-     * `RX_CALL` increments `run->resume_depth` at run time, and its own
-     * emission is gated on the same flag, so the two agree by construction.
-     * (`v.npush` is deliberately NOT consulted — it is the resume-point cap's
-     * ESTIMATE, and the counter rung's unbounded arm once drove it negative,
-     * which omitted this dispatch from a program with live pushes.) */
-    char push_needle[48];
-    snprintf(push_needle, sizeof push_needle, "%s_PUSH(&&", v.up);
-    const bool has_push = (c->p != NULL && strstr(c->p, push_needle) != NULL)
-                          || v.has_linked_calls;
+    /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — read off
+     * `v.emitted_push`, which `vm_push_at` (the ONE primitive that writes a
+     * push, in EITHER tracing spelling) sets in the same call that writes the
+     * bytes, so this gate cannot drift from the program text. The first form
+     * of this fix was a strstr over the emitted buffer for `<UP>_PUSH(&&`,
+     * and the battery refuted it the same day: the TRACED spelling is
+     * `<UP>_PUSH(id, &&…)`, so every traced backtracking artifact lost its
+     * dispatch and nomatched — a needle is a second spelling of the emission,
+     * and the flag-in-the-primitive is the one-derivation form.
+     * `v.has_linked_calls` stays as the second term: `RX_CALL` increments
+     * `run->resume_depth` at run time, and its own emission is gated on the
+     * same flag. (`v.npush` is deliberately NOT consulted — it is the
+     * resume-point cap's ESTIMATE, and the counter rung's unbounded arm once
+     * drove it negative, which omitted this dispatch from a program with ten
+     * live pushes.) */
+    const bool has_push = v.emitted_push || v.has_linked_calls;
     /* [CC-CLANG] The fail label's own comment claims "THE ONLY ... INDIRECT
      * JUMP", which is exactly untrue on a FRAMELESS program (has_push
      * false, below): there is no `goto *` left in that case at all. The
