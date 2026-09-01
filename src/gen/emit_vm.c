@@ -9421,7 +9421,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "\n%s_fail: __attribute__((unused));\n"
         "%s"
         "%s%s"
-        "    if (run->resume_depth == 0) return -1;\n",
+        "%s",
         v.p, accept_tr, v.p,
         has_push
           ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
@@ -9442,13 +9442,27 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
             "     * security boundary, and it must not be traded against\n"
             "     * execution speed. */\n",
-        fail_tr, exhaust_tr);
-    if (has_budget)
+        fail_tr, exhaust_tr,
+        /* [CC-CLANG] `has_push` false means `run->resume_depth` can never
+         * leave 0, so the guard on the return is not merely redundant but
+         * actively wrong to emit AS a guard: an `if` with no covering `else`
+         * leaves the compiler unable to see that every path returns, and
+         * both gcc and clang reject the resulting fall-off-the-end with
+         * `-Wreturn-type` under this project's own default `-Werror`
+         * GENCFLAGS. The honest text is the unconditional return the proof
+         * already licenses, not a conditional one dressed as always-true. */
+        has_push ? "    if (run->resume_depth == 0) return -1;\n"
+                 : "    return -1;\n");
+    /* [CC-CLANG] The budget decrement below is reachable only past the
+     * return just emitted, so on a frameless artifact (has_push false) it
+     * would be unreachable dead code -- omitted for the same reason the
+     * pop-and-resume block is, not merely to silence a warning. */
+    if (has_budget && has_push)
         sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
     if (!has_push) {
-        /* [CC-CLANG] `has_push` is false: no `RX_PUSH` and no `RX_CALL` site
-         * exists anywhere in this program, so `run->resume_depth == 0` above
-         * has already returned on every path that reaches here and the
+        /* [CC-CLANG] `has_push` is false: no `RX_PUSH` and no linked
+         * subroutine call exists anywhere in this program, so the
+         * unconditional return just emitted always fires and the
          * pop-and-resume block that would otherwise follow is unreachable —
          * omitted rather than emitted dead, and taking the one indirect jump
          * this file's own header counts (the fail label) down to none. */
