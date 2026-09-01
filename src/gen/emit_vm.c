@@ -8099,6 +8099,24 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
     const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
 
+    /* [CC-CLANG] IS THERE ANY RESUME FRAME TO POP, ANYWHERE IN THIS PROGRAM.
+     * `v.npush` (set by the `vm_count_slots` pre-pass above) counts every
+     * `RX_PUSH` site — but deliberately NOT a linked call SITE's own frame
+     * (vm_count_slots's `A_CALL` arm: "the call site itself allocates
+     * nothing", by design, because a call frame is not a SLOT). `RX_CALL`
+     * still increments `run->resume_depth` at run time (see its own
+     * comment), so a call-only program can push despite `npush == 0` and
+     * both terms are needed. A COUNTER-RUNG-ONLY program (no alternation, no
+     * optional copy, no lookaround, no call — the frameless witness is
+     * `[a-z]{0,4096}` --engine=vm) has neither, and `resume_depth` can then
+     * never become nonzero: the fail label's pop-and-resume block below is
+     * unreachable in that program, has no address-of-label expression
+     * anywhere in the function, and is what clang refuses ("indirect goto in
+     * function with no address-of-label expressions") where gcc accepts it.
+     * `has_push` is the gate that omits it there instead of emitting dead
+     * dispatch code. */
+    const bool has_push = v.npush > 0 || v.has_linked_calls;
+
     /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
      * `--fno-step-budget` suppresses BOTH counters, which is what keeps
      * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
@@ -9394,7 +9412,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         v.p, accept_tr, v.p, fail_tr, exhaust_tr);
     if (has_budget)
         sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
-    {
+    if (!has_push) {
+        /* [CC-CLANG] `has_push` is false: no `RX_PUSH` and no `RX_CALL` site
+         * exists anywhere in this program, so `run->resume_depth == 0` above
+         * has already returned on every path that reaches here and the
+         * pop-and-resume block that would otherwise follow is unreachable —
+         * omitted rather than emitted dead, and taking the one indirect jump
+         * this file's own header counts (the fail label) down to none. */
+        sb_puts(c, "}\n\n");
+    } else {
         char pop_tr[352];
         pop_tr[0] = 0;
         if (v.tracing)
@@ -9442,15 +9468,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
               : "");
+        sb_puts(c,
+            "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
+            "            run->trail_depth--;\n"
+            "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
+            "        }\n"
+            "        goto *run->resume_stack[frame_index].resume_label;\n"
+            "    }\n"
+            "}\n\n");
     }
-    sb_puts(c,
-        "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
-        "            run->trail_depth--;\n"
-        "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
-        "        }\n"
-        "        goto *run->resume_stack[frame_index].resume_label;\n"
-        "    }\n"
-        "}\n\n");
 
     sb_printf(c, "#undef %s_TRAIL\n#undef %s_SET\n#undef %s_PUSH\n\n",
               v.up, v.up, v.up);

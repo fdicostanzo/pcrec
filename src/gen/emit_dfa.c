@@ -399,12 +399,26 @@ static int dfa_artifact_ncaps(Ctx *cx)
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              const char *storage)
 {
+    /* [CC-CLANG] `noclone` is a gcc extension (documented since 4.5) with no
+     * clang equivalent, so a strange compiler's `-Wattributes -Werror` must
+     * not see it at all rather than see it and warn. The `__has_attribute`
+     * guard is the general, compiler-name-free way to ask "does THIS
+     * toolchain support this attribute" (the same idiom used to detect any
+     * attribute across compilers) rather than a clang-specific `#ifdef`, and
+     * it degrades safely on a pre-`__has_attribute` compiler via the
+     * `#ifndef` fallback definition. */
     sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
                "   .part clone of this function -- the split costs a\n"
                "   measured 1.33x on a scan-bound pattern, with identical\n"
                "   instructions, purely from code placement. Do not remove;\n"
-               "   see pcrec docs/dev/known_issues.md K24. */\n"
-               "__attribute__((noclone))\n");
+               "   see pcrec docs/dev/known_issues.md K24. Guarded by\n"
+               "   __has_attribute: gcc has this attribute, clang does not. */\n"
+               "#ifndef __has_attribute\n"
+               "# define __has_attribute(x) 0\n"
+               "#endif\n"
+               "#if __has_attribute(noclone)\n"
+               "__attribute__((noclone))\n"
+               "#endif\n");
     sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n", storage, fn);
     /* [DD-14 wave G] THE DEAD GROUPS, DECLARED AND PERMANENTLY UNSET. Emitted
@@ -1400,7 +1414,27 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * on every VM artifact and this change reaches no VM program byte.
      * Comparison (B) compares whole files and is re-pinned in this same
      * change, per D76. */
-    sb_puts(c,   "    .abi = 13,\n");
+    /* [CC-CLANG] abi 13 -> 14 (D76): TWO EMITTED-SCAFFOLDING CHANGES, bundled
+     * because both exist only to let clang compile the same artifact gcc
+     * already accepts and neither moves an answer:
+     *
+     *  - `emit_search_head`'s `noclone` line is now wrapped in an
+     *    `__has_attribute` guard (this file, above) — EVERY artifact gains
+     *    the three guard lines and loses nothing on gcc, which still emits
+     *    `__attribute__((noclone))` because it has the attribute.
+     *  - `src/gen/emit_vm.c`'s fail label omits the pop-and-resume `goto *`
+     *    dispatch entirely on a FRAMELESS artifact (no `RX_PUSH` and no
+     *    `RX_CALL` site anywhere in the program — the counter-rung-only
+     *    shape, e.g. `[a-z]{0,4096}` --engine=vm): that dispatch was
+     *    unreachable there already (resume_depth can never leave 0), and its
+     *    `goto *` with no address-of-label expression in the function is
+     *    exactly what clang refuses and gcc accepts. Every OTHER VM
+     *    artifact's program bytes are unchanged — comparison (A) still
+     *    applies to them.
+     *
+     * Comparison (B) compares whole files and is re-pinned in this same
+     * change, per D76. */
+    sb_puts(c,   "    .abi = 14,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
