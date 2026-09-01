@@ -41,7 +41,35 @@ in the note is cited from a measurement document, never re-measured here.
 - **F4** The acceptance instrument's nine rungs are the
   `large-subject-throughput` (find-all) band, not a "match" band.
 
+- **F5** The `abi` ritual's "FOUR sites" is incomplete: `docs/spec/match_api.md`
+  line 159 is a FIFTH reader of the number and is already stale at `13` after
+  `[CC-CLANG]` (`c657ae9`) moved it to `14` at line 1602.
+
+## The recommended split (detail in §1.3 of the note)
+
+- **STEP 2** = the START-PINNED SEARCH. Where the forward machine's start state
+  accepts unconditionally, D3's accept-pruning kills every later start before
+  the first byte, so `match_start_position == search_from` always and the
+  reverse machine is not emitted at all. Provable today, no new machine, covers
+  the whole nine-rung instrument, and is a size event as well as a speed one.
+- **STEP 3** = construction-time scan-edge synthesis, plus the forward-tracked
+  ORIGIN that multi-edge `end − Σcount` elision needs. Population today: empty
+  (r48sem — the forward machine grows 0 edges on embedded shapes).
+- **Its own row** = the VIEW-TOLERANT SCAN EDGE, which is what bench ask (iii)
+  actually wants; its trigger already exists (the two whole-form artifacts at
+  93.7 % of the `[ART-SIZE]` cap, owning both surviving warns).
+
+## Identifiers verified against the tree at `ae3e6ca` (read, never executed)
+
+`state_acc_any` (emit_dfa.c:2052), `dfa_needs_seed` (:2064), `start_acc`
+(:2445), `.abi = 14` (:1441), `PCREC_NO_SCAN_EDGE = 1u << 21` (lib/pcrec.h:451,
+the last allocated bit — so bit 22 is free), `member_ok`/`shaped`/`in_degrees`
+(src/opt/scanedge.c), `PCREC_MAX_SCAN_EDGES` (src/core/limits.def:181).
+
 ## WIP timeline
 
 - 2026-09-01: worktree `lane/opt5d` created from `ae3e6ca`; keepalive cron
   every 27 min doubling as the `.lift` poll; reading complete; note drafting.
+- 2026-09-01: `docs/design/opt5_step2_twopass.md` written (§0–§9) and
+  `docs/design/CLAUDE.md` given its entry. Hold still in force at delivery;
+  nothing in this lane needed the lift, and nothing was executed.

@@ -1620,5 +1620,35 @@ append-only or historical records.
   the 9 base-tier literal escapes with no `RegRow` today get minimal new
   rows or a second row-less array).
 
+- `opt5_step2_twopass.md` — **[OPT-5] STEP 2**, the design note written BEFORE
+  any emitter change (lane opt5d, 2026-09-01, chartered by Frank; DESIGN ONLY,
+  written under a box hold so every number is CITED and none re-measured): the
+  TWO-PASS FIX. `<prefix>_search` runs a forward scan for the match END and a
+  backwards scan for its START, and since STEP 1 both are cursor loops — which
+  is why the bench's nine-rung ratio sits at 1.76–2.00 and not lower. The
+  mechanism is the **START-PINNED SEARCH**: where the forward machine's start
+  state accepts unconditionally (PLAIN view, no `eolvar`/`endvar`, accept equal
+  across every class context, and the same of every live seed state), D3's
+  accept-pruning has already killed every later start before the first byte, so
+  `match_start_position == search_from` on every call and the reverse machine,
+  its tables, its accessor block and its loop are **not emitted at all** — a
+  size event as much as a speed one. §0's acceptance frame is falsifiable per
+  rung on the bench's standing `bounded@0.2` instrument (0.90–1.10 and FLAT at
+  the nine letters rungs; digits unchanged; `cls-atleast-4096` unmoved as the
+  in-instrument control). §1.1 records that site (a) — the anchored
+  `<prefix>_match` — was ALREADY BUILT by `[ENG-ABS]` and needs nothing;
+  §1.3 recommends the multi-edge `end − Σcount` form as deliberately STEP 3 and
+  shows why (the count is the easy half; the ORIGIN is what the wrapped forward
+  machine cannot name, and it grows 0 edges on embedded shapes today anyway).
+  §2 answers bench ask (iii) NO with the mechanism — the `\z` whole forms are
+  refused by scan-edge precondition (3), a position-view fact orthogonal to the
+  two-pass structure — and names the **VIEW-TOLERANT SCAN EDGE** as its own row,
+  with `[ART-SIZE]`'s first real customer (two artifacts at 93.7 % of the cap)
+  as its existing trigger. §5's strongest check is a positive control whose
+  expected value comes from an unrelated measurement (the 21 corpus artifacts on
+  which the widened and narrowed start-accept bits disagree). §9 collects five
+  findings against the plan row's own text, including a FIFTH, already-stale
+  reader of the `abi` number the four-site ritual does not cover.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
