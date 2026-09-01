@@ -697,10 +697,12 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         char **v = NULL, *buf = NULL;
         int n = 0;
         if (raw_split(t->pcrec_raw, &v, &n, &buf) != 0) return 1;
-        /* 24 literal bytes + a prefix capped at PCREC_LIMIT_RXT_TARGET_
-         * PREFIX_MAX (127, docs/spec/limits.md §3.5) + a quote + NUL = 153,
+        /* 24 literal bytes + a prefix capped by the RXT_TARGET_PREFIX_MAX
+         * row (docs/spec/limits.md §3.5) + a quote + NUL = 153 worst case,
          * so this cannot truncate — stated because `-Wformat-truncation`
-         * has bitten this tree once (src/parse/rxt_source.c's rxt_fail). */
+         * has bitten this tree once (src/parse/rxt_source.c's rxt_fail).
+         * The row's name is kept on ONE line: the [LIM-1] bare-numeric
+         * guard reads tokens, and a wrapped name reads as a bare limit. */
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
         int rc = cli_parse(n, v, &ts, where);
