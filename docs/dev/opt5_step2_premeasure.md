@@ -63,7 +63,31 @@ Sanity probes (hand patterns, not part of the census): `a*` -> `yes`;
 
 ## M2 — N_declined_by_view at today's tree (§7 item 2)
 
-(running)
+(running — see below for a methodology defect found and fixed before the
+real sweep)
+
+**A first attempt over-counted by roughly 100x on a spurious signal, caught
+before it was reported.** The scratch narrowed variant (`unanch_start`'s
+`start_acc` narrowed from `state_acc_any(&fd->st[fs])` to the view-strict
+`fd->st[fs].up[UPC_PLAIN].accept` — and the matching seed-loop narrowing —
+the wave C edit, applied via `git archive HEAD | tar -x` into a scratch copy,
+never committed) was diffed against the baseline using DIFFERENT `-o`
+basenames per side (`a.c` vs `b.c`). `pcrec` derives an `#include
+"<basename>.h"` from the output filename, so EVERY artifact differed by that
+one line regardless of `start_acc` — 188/200 patterns "changed" in the first
+200, an order of magnitude over wave C's ~21-artifact scale, which is what
+flagged it as wrong rather than a real number. Confirmed directly: diffing
+two `abc` artifacts built with `-o a.c` / `-o b.c` differs ONLY in the
+`#include` line. Fixed by using the SAME basename (`art.c`) in two separate
+directories. Re-verified on two controls before the real sweep: `abc`
+(non-nullable start) — identical, as expected, since `start_acc` cannot
+matter when the state doesn't accept at all; `\bx*` — **also identical**,
+which is itself informative: `\bx*`'s widened/narrowed `start_acc` values
+genuinely differ (word-context accept vs plain-view accept), but `cand.usable`
+is false for it (no proper byte subset to filter on), so `!start_acc &&
+o->cand.usable` never both hold and the emitted `RX_DFA_PREFILTER` stays
+`"none"` either way — reproducing wave C's own finding in `src/gen/CLAUDE.md`
+that "§3.6.1's `\bx*` prediction is false."
 
 ## M3 — which precondition declines `(?:[a-z]{0,2048})\z` (§7 item 3)
 
