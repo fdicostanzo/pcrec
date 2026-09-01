@@ -19146,3 +19146,37 @@ O-11 ARRIVED mid-wave: [OPT-4.1] closed 10/10; NO KNEE at nine rungs
 edge WE ALREADY MERGED; W1.2 UNBLOCKED; year4 was their shim's ELF
 alignment; five asks queued for I-27. Battery 7 (real) launched
 16:12:45 on 9bfabaa, driver 2411504 verified detached.
+
+#### Forty-seventh session, verdict (20:0x-20:4x EDT): BATTERY 7 CLOSED GREEN-BY-DIAGNOSIS — [M4-QUOTING] completed, [OPT-5] STEP 1 battery-proven; THIS COMMIT IS THE PIN
+
+Battery 7 DONE 20:05:21 (launched 16:12:45 on 9bfabaa; 3 h 53). RED by
+arithmetic on exactly three diagnosed causes, all cleared: (1) the K32
+counterk guard line (29 cases under -j12 load, cleared solo IN-battery,
+solo red lines=0 — the standing shape); (2)+(3) mech's unexpected 2 =
+unreached 2 = THE SAME TWO ROWS, S193 and S70 — witness expiries caused
+by TODAY'S OWN LANDINGS (S193's size-cap witness collapsed by the scan
+edge; S70's quoting pair retired by the module it was waiting for), the
+reach machinery catching same-day expiry both times. Both re-pointed
+and re-proven DETECTED solo (S193 reach:ok resource:11fail/19pass
+sizeterm:23fail; S70 reach:ok(2/2) reject:2fail/589pass exactly).
+Everything measuring the code: test **1,971 checks / 0 failed** (cases
+27,033/29-then-0); strict clean; **san rc 0 / 0 report lines** (111
+min) over the scan edge AND quoting; **mech 210 rows / 0 unexpected
+after the re-points / expected-six undetected / 0 anomalies**, with all
+seven new/re-derived rows (S21, S23, S210-S214) DETECTED at figures
+MATCHING the author-cited ones (r48 F2's diff — discharged). r48's
+owed items closed: S215 wired — and its FIRST witness was measured
+INERT (the original blocks never bind the cap; seam states shatter
+chains; the K35 population-nobody-counted shape, caught by the matrix
+scoring honestly) then rebuilt cap-binding (reverse machine 5
+candidates/4 emitted) and proven DETECTED (corpus:1fail/12pass);
+S212's provenance note added (r48 F3). rxtsource census
+189/3320/26799. **[M4-QUOTING] → completed (battery-proven; row moved
+to plan_completed). [OPT-5] STEP 1 → battery-proven (row stays started
+for the STEP 2/3 candidates).** THIS JOURNAL COMMIT IS THE PIN
+superseding 263b013; I-27 follows to the bench (the O-11 answers ride
+it). Two process lessons for the day's ledger: run_in_background's
+10-min cap killed a solo chain (the rule existed in memory; setsid
+relaunch), and the mech matrix measures COMMITTED HEAD only — a solo
+run of uncommitted row fixes measures nothing (caught by the run's own
+banner).
