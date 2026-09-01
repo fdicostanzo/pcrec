@@ -493,11 +493,18 @@ KEEP="${KEEP:-0}"
 # `ESEL_DECLINED_NULLABLE_DEFAULT` moves the `RX_ENGINE_SEL` stamp VALUE on
 # ~50 corpus artifacts (a value, not scaffolding — abi stays 14, D76), so
 # those artifacts differ whole-file against `ec6f481` while (A) is
-# 0-differing on every axis. The pin is the lane/o42 merge commit
-# `ff13660`, whose tree carries both [CC-CLANG] and [OPT-4.2].
+# 0-differing on every axis. Pin was briefly the lane/o42 merge `ff13660`.
+#
+# [CC-CLANG fix], 2026-09-01, same day — RE-PIN AGAIN, to `adc0f5a`: the
+# has_push miscompile fix (journal 2026-09-01 part 2) RESTORES the
+# pop-and-resume dispatch on unbounded-counter artifacts whose npush
+# estimate had gone negative, and derives the gate from the emitted text —
+# bytes move on that population (all AFTER `<p>_accept:`, so (A) is again
+# untouched), abi stays 14 (which artifacts carry the conditional dispatch
+# changed; the scaffolding scheme did not).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-ff13660}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-adc0f5a}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
