@@ -19180,3 +19180,23 @@ it). Two process lessons for the day's ledger: run_in_background's
 relaunch), and the mech matrix measures COMMITTED HEAD only — a solo
 run of uncommitted row fixes measures nothing (caught by the run's own
 banner).
+
+#### Forty-seventh session, close (21:0x EDT): session reset on Frank's instruction; bench told to proceed
+
+Frank: "lets reset your session. next session proceed with queued items.
+let bench know to proceed." Closing clean at the pin a7e0bdf (+ the
+post-pin annotation/candidate commits, all doc-only). Day's totals:
+[M4-QUOTING] chartered→built→miscompile-caught-by-its-own-blinded-
+corpus→fixed→completed (battery-proven); [OPT-5] STEP 0 measured →
+STEP 1 chartered on Frank's GO → built (opus lane, forms-model
+integrated, R1-R4 rulings) → battery-proven, with STEPs 2/3 + the
+reverse-pass-elision (chained Σ-counts form) specced from Frank's own
+designs; [OPT-4.2] found (the nullable-exact-hybrid gap on a
+newly-compiling population) and filed with a tripwire; D91 (scalar-
+first + the two SIMD budgets), D92 (PCRE2 = minimum target); the r48
+panel (no refutation; S215 born, measured inert once, rebuilt
+cap-binding, proven); two batteries' worth of runs (the breaker
+firing + the real battery 7); the bench's O-11 read and answered
+(I-27); bench acked with [B25] (the abi-13 re-pin + the [OPT-5]
+acceptance AFTER against our per-rung predictions). Frank's proceed
+ruling for the bench goes as I-28 + a live message. wake.md rewritten.
