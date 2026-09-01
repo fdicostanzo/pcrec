@@ -1,0 +1,28 @@
+# A LIBRARY FILE: definitions only, no `target`, several blocks.
+#
+# Two jobs, and they are the same fact seen from two sides.
+#
+# (1) It is what `head_basic.rxt`'s `lib "common.rxt"` RESOLVES TO. W1.1
+#     recorded a `lib` path and never looked at it, so `head_basic` could
+#     name a file that does not exist and nothing noticed; [DD-13b.W1.2]'s
+#     resolver checks the path (existence only — a library's CONTENTS are
+#     the composer's, W1.3, and the store scan is [LIB]'s), which is what
+#     gives that reference something real to point at.
+#
+# (2) It is the "a library ships nothing by itself" witness
+#     (format_design.md §6.1). No `target`, and MORE THAN ONE block, so
+#     the compatibility default (`no target` + exactly one UNNAMED block
+#     => `target rx`) does not apply: `pcrec --source` on it builds
+#     nothing, at exit 0, which is a DIFFERENT observable from a file it
+#     refuses.
+description RFC-shaped pieces. Definitions only; this file declares no target.
+
+pattern [a-z]+
+name word
+m "abc" 0 3
+n "123"
+
+pattern [0-9]+
+name number
+m "42" 0 2
+n "xy"

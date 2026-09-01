@@ -7,8 +7,20 @@
 # named as its detector would be green while detecting nothing. That is
 # [MECH-REACH]'s failure exactly, and it is cheaper to notice here than
 # two milestones later.
+#
+# [DD-13b.W1.2] TWO CORRECTIONS THIS FIXTURE NEEDED, AND NEITHER WAS
+# VISIBLE AT W1.1, WHICH IS THE POINT. Its `lib` named a file that does
+# not exist, and its `target` named the definition `greeting`, which NO
+# BLOCK IN THIS FILE DECLARES. W1.1 recorded a `lib` path without opening
+# it and parsed `target` without resolving it, so both were inert and
+# nothing in the tree could go red. W1.2 resolves both, so the fixture had
+# to become true: `common.rxt` is a real sibling fixture and the target
+# names `plain_run`, a block that is here. A fixture that could not be
+# built was still a perfectly good witness for the SEAM — which is what it
+# was written for — and stopped being one the moment a step downstream
+# started reading the declarations it carried.
 description this file exercises W1's head grammar end to end
-lib "definitions/common.rxt"
+lib "common.rxt"
 config dev
   pcrec --warn-emit-bytes=100000
   flags i
@@ -17,7 +29,7 @@ config dev
 config release from dev
   engine vm
   encoding byte
-target rx = greeting with dev, release
+target rx = plain_run with dev, release
 
 pattern a+
 name plain_run

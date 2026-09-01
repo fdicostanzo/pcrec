@@ -1,0 +1,37 @@
+# [DD-13b.W1.2] format_design.md §6.3, THE THREE-CONFIG FILE, with real
+# pcrec flags in place of the design note's illustrative ones.
+#
+# ONE DEFINITION, THREE TARGETS, THREE PREFIXES, ONE NAME. That is the
+# whole acceptance sentence for this step, and this file is the only
+# place in the tree where all four halves of it are observable at once:
+# `--source -o <dir>` writes three artifacts; each stamps its own
+# `<prefix>`; all three stamp `rx_info.name == "level_filter"`; and
+# run.sh builds all three and requires them to ANSWER IDENTICALLY on this
+# block's own cases, which is §6.3's "identity between them is a free
+# control" made mechanical.
+#
+# THE CONFIG CASCADE IS EXERCISED IN BOTH MECHANISMS: `from` (two configs
+# inherit `baseline`'s own `pcrec` line, materialised once) and `with`
+# (each target composes one config). The flags are chosen to be
+# ANSWER-IDENTICAL on purpose — `--no-captures` on a group-free pattern,
+# `--engine=dfa` on a pattern the DFA takes anyway, a raised size cap
+# nothing approaches — because a config that changed an ANSWER would make
+# the agreement control wrong rather than strict, and the control is the
+# point.
+config baseline
+  pcrec --no-captures
+config strict from baseline
+  pcrec --engine=dfa
+config big from baseline
+  pcrec --max-emit-bytes=2000000
+
+target log_base   = level_filter with baseline
+target log_strict = level_filter with strict
+target log_big    = level_filter with big
+
+pattern error|warn|fatal
+name level_filter
+description the three targets are three builds of THIS block
+m "an error here" 3 8
+m "a fatal one" 2 7
+n "nothing here"
