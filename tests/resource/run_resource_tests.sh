@@ -352,31 +352,36 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
 size_rung_cell '(a|b){0,30000}' none   'alternation nullable'     '-fno-scan-edge'
 size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable' '-fno-scan-edge'
 
-# [OPT-4.2 TRIPWIRE] (manager, 2026-08-31, from battery 7's diagnosis): at
-# the DEFAULT, '(a|b){0,30000}' now COMPILES (it was size-refused before
-# [OPT-5]) and lands as a VM hybrid whose EXACT prefilter language is
-# NULLABLE — a scan that can never dismiss a position (bench O-10: 1.2-9.9x
-# loss on exactly this shape). The [OPT-4.1] gate only covers the COLLAPSE
-# rungs (`collapse_reason != CR_NONE`); the general form — decline ANY
-# prefilter whose language is nullable — is filed as [OPT-4.2] in plan.md
-# and awaits Frank's charter. This cell PINS today's behavior so the gap is
-# measured, loud, and dated rather than latent; when [OPT-4.2] lands, the
-# expected stamps flip to none/<no LANG_WHY> and this comment moves to the
-# history.
+# [OPT-4.2] LANDED, 2026-08-31 (lane o42) — this cell used to be a TRIPWIRE
+# pinning a KNOWN gap (see the pcrec_reflog for the retired comment): at the
+# DEFAULT, '(a|b){0,30000}' compiles (it was size-refused before [OPT-5]) as
+# a VM hybrid whose EXACT prefilter language is NULLABLE, and until [OPT-4.2]
+# the [OPT-4.1] gate covered only the COLLAPSE rungs
+# (`collapse_reason != CR_NONE`), so the ordinary hybrid still built and
+# shipped that useless filter (bench O-10: 1.2-9.9x loss on exactly this
+# shape). The general decline now covers this path too
+# (`src/opt/select_engine.c`'s `prefilter_declined_nullable_default`), so
+# the artifact now ships with NO prefilter and stamps
+# `RX_ENGINE_SEL "declined-nullable-default"` — the SIZE rung's own nullable
+# twin ([LIM-1]) reads the rung-scoped `"declined-nullable"` instead, and the
+# two are kept as two values for the reason `docs/spec/match_api.md` §6.3
+# gives: a rung OFFERED and REFUSED a rescue is a different population from
+# an ordinary compile that never had a rung to begin with.
 rm -f "$WORKDIR/o.c"
 o42log="$("$ROOT_DIR/scripts/watchdog" -l "opt42-tripwire" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
 if [ $? -eq 0 ]; then
     o42pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
+    o42sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/o.c" | head -1 | sed 's/.*SEL //;s/"//g')
     o42why=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
-    if [ "$o42pf" = hybrid ] && [ "$o42why" = exact ]; then
-        ok "[OPT-4.2 tripwire] '(a|b){0,30000}' at the DEFAULT compiles as hybrid/exact with a NULLABLE prefilter language — the KNOWN, dated gap this cell pins until [OPT-4.2] extends the nullability decline to the exact rung"
-    elif [ "$o42pf" = none ]; then
-        bad "[OPT-4.2 tripwire] '(a|b){0,30000}' at the DEFAULT has NO prefilter — [OPT-4.2] (or something else) landed; flip this cell's expectation to the gated behavior and retire the tripwire comment in the same commit"
+    if [ "$o42pf" = none ] && [ "$o42sel" = declined-nullable-default ] && [ -z "$o42why" ]; then
+        ok "[OPT-4.2] '(a|b){0,30000}' at the DEFAULT ships with NO prefilter (RX_ENGINE_SEL declined-nullable-default) — the ordinary hybrid's own nullable EXACT language is declined off the rung"
+    elif [ "$o42pf" = hybrid ] && [ "$o42why" = exact ]; then
+        bad "[OPT-4.2] '(a|b){0,30000}' at the DEFAULT REGRESSED to hybrid/exact with a nullable prefilter language — the [OPT-4.2] decline stopped firing"
     else
-        bad "[OPT-4.2 tripwire] '(a|b){0,30000}' at the DEFAULT stamps PREFILTER '$o42pf' / LANG_WHY '$o42why' — neither the pinned gap nor the gated fix; investigate"
+        bad "[OPT-4.2] '(a|b){0,30000}' at the DEFAULT stamps PREFILTER '$o42pf' / RX_ENGINE_SEL '$o42sel' / LANG_WHY '$o42why' — neither the fixed behavior nor the pre-fix gap; investigate"
     fi
 else
-    bad "[OPT-4.2 tripwire] '(a|b){0,30000}' no longer compiles at the DEFAULT: $(printf '%s' "$o42log" | head -1)"
+    bad "[OPT-4.2] '(a|b){0,30000}' no longer compiles at the DEFAULT: $(printf '%s' "$o42log" | head -1)"
 fi
 
 # [OPT-4.1] `-fprefilter` OVERRIDES THE DECLINE, AND THIS IS THE ONLY PLACE IN
