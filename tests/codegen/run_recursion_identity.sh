@@ -465,21 +465,23 @@ KEEP="${KEEP:-0}"
 # inlined DFA prefilter is emitted ABOVE that region — so this change reaches
 # no VM program byte even on the artifacts whose prefilter it rewrites.
 #
-# [CC-CLANG], 2026-08-31 — THE THIRD RE-PIN BY A SCAFFOLDING-ONLY CHANGE,
-# and (A) IS STILL EXPECTED BYTE-IDENTICAL for the same reason: the
-# `__has_attribute` guard sits above `<prefix>_search`'s own definition
-# (outside `prog_region`), and the omitted resume dispatch touches only a
-# FRAMELESS artifact's fail label, a region no call-free corpus pattern
-# reaches with a live pop block in the first place (comparison (A)'s own
-# corpus is call-free; a frameless artifact never emits `RX_CALL`, so this
-# axis is orthogonal to (A)'s population). `abi` 13 -> 14.
+# [CC-CLANG], 2026-08-31 — THE THIRD RE-PIN, AND (A) IS STRUCTURALLY
+# UNTOUCHED RATHER THAN MERELY UNTOUCHED ON THIS POPULATION. `prog_region`'s
+# own awk range (`/^    goto rx_L0;$/,/^rx_accept:/`) stops AT the accept
+# label, inclusive — the fail label and everything after it (the resume
+# dispatch this change makes conditional) sits entirely OUTSIDE that range on
+# every artifact, call-free or not, so (A) cannot see this change at all. The
+# `__has_attribute` guard is likewise above `goto <p>_L0;`. `abi` 13 -> 14.
 #
 # THE PIN IS THIS CHANGE'S LAST src/lib/cli-TOUCHING COMMIT, per the rule two
-# paragraphs up: `c657ae9`, not the commit that first moved a byte and not the
-# later test-only commits. Pin was `dc2c8ef` ([OPT-5]'s).
+# paragraphs up: `8e0b624` (a follow-on commit in the same change made the
+# fail label's own emitted COMMENT conditional on `has_push` too, moving
+# further src bytes past the first pin attempt at `c657ae9`) — not the commit
+# that first moved a byte and not any later test-only commit. Pin was
+# `dc2c8ef` ([OPT-5]'s).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c657ae9}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e0b624}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
