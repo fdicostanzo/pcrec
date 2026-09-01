@@ -87,6 +87,44 @@
 
 #include "gen.h"
 
+/* [DD-13b.W1.2] H11 — THE PREFIX IS A `-D`, NOT A HARD-CODED NAME.
+ *
+ * A `.rxt` source declares `target <prefix> = <definition>`, and each
+ * target's artifact carries its own symbol prefix. This driver has to link
+ * against whichever one it is handed, so the prefix became a compile-time
+ * macro. `w1_impl.md` DECIDED (3) picks this over a generated shim: a shim
+ * would put a second code generator inside the harness, whose output
+ * nobody reviews.
+ *
+ * THE DEFAULT IS `rx`, SO EVERY EXISTING INVOCATION IS UNCHANGED. The
+ * ordinary per-block path compiles with `-p rx` and passes no `-D` at all,
+ * which is what keeps all 179 corpus files on a byte-identical build line.
+ *
+ * TWO MACROS AND NOT ONE, because C cannot case-convert a token: an
+ * artifact's identifiers are `<prefix>_*` and its macros are `<PREFIX>_*`.
+ * run.sh derives BOTH from one value, which is where their agreement
+ * lives — and a mismatched pair cannot pass silently, because every use of
+ * each names something the artifact either declares or does not, so a
+ * wrong half is a compile error rather than a wrong answer.
+ *
+ * `rx_ctx` is NOT among them. It is one of the fixed-literal ABI types
+ * (docs/spec/match_api.md §1/§2), unprefixed on every artifact on purpose,
+ * so that differently-prefixed matchers compose in one TU. Prefixing it
+ * here would be this driver inventing a rule the ABI does not have. */
+#ifndef RXT_PREFIX
+#define RXT_PREFIX  rx
+#endif
+#ifndef RXT_UPREFIX
+#define RXT_UPREFIX RX
+#endif
+#define RXT_PASTE_(a, b) a##b
+#define RXT_PASTE(a, b)  RXT_PASTE_(a, b)
+/* `<prefix>_suffix` and `<PREFIX>_SUFFIX`. The pasted token is rescanned,
+ * so RXMAC(_NCAPS) reaches the artifact's own `#define` and can be used
+ * where a constant expression is required — an array bound, below. */
+#define RXFN(suffix)  RXT_PASTE(RXT_PREFIX, suffix)
+#define RXMAC(suffix) RXT_PASTE(RXT_UPREFIX, suffix)
+
 static int hexval(unsigned char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -250,11 +288,11 @@ int main(int argc, char **argv) {
      * ignores anyway. */
     void *frames_mem = NULL, *trail_mem = NULL;
     if (have_buffers) {
-        if (RX_RESUME_FRAME_SIZE == 0 || RX_TRAIL_FRAME_SIZE == 0) {
+        if (RXMAC(_RESUME_FRAME_SIZE) == 0 || RXMAC(_TRAIL_FRAME_SIZE) == 0) {
             have_buffers = 0;   /* an inert (DFA) artifact: nothing to size */
         } else {
-            frames_mem = malloc(nframes * (size_t)RX_RESUME_FRAME_SIZE);
-            trail_mem  = malloc(ntrail  * (size_t)RX_TRAIL_FRAME_SIZE);
+            frames_mem = malloc(nframes * (size_t)RXMAC(_RESUME_FRAME_SIZE));
+            trail_mem  = malloc(ntrail  * (size_t)RXMAC(_TRAIL_FRAME_SIZE));
             if (!frames_mem || !trail_mem) {
                 fprintf(stderr, "driver: out of memory for a %zu-frame / %zu-entry buffer\n",
                         nframes, ntrail);
@@ -293,17 +331,17 @@ int main(int argc, char **argv) {
      * input exit (2), and it lets run.sh treat a give-up as its own HARD
      * harness-level failure (never compared against a `match`/`nomatch`
      * expectation) the same way it already treats a crash or a timeout. */
-    ptrdiff_t caps[RX_NCAPS][2];
-    rx_buffers rxb;
-    const rx_buffers *bufp = NULL;
+    ptrdiff_t caps[RXMAC(_NCAPS)][2];
+    RXFN(_buffers) rxb;
+    const RXFN(_buffers) *bufp = NULL;
     int found;
     rxb.frames = frames_mem; rxb.nframes = nframes;
     rxb.trail  = trail_mem;  rxb.ntrail  = ntrail;
     if (have_buffers) bufp = &rxb;
     if (!use_in) {
-        found = rx_search(buf, len, startpos, caps);
+        found = RXFN(_search)(buf, len, startpos, caps);
     } else {
-        found = rx_search_in(buf, len, startpos, caps, bufp);
+        found = RXFN(_search_in)(buf, len, startpos, caps, bufp);
     }
 
     /*
@@ -343,16 +381,17 @@ int main(int argc, char **argv) {
      */
     if (use_in) {
         rx_ctx ctx;
-        ptrdiff_t caps_plain[RX_NCAPS][2] = {{0}}, caps_in[RX_NCAPS][2] = {{0}};
+        ptrdiff_t caps_plain[RXMAC(_NCAPS)][2] = {{0}},
+                  caps_in[RXMAC(_NCAPS)][2] = {{0}};
         ptrdiff_t m_plain, m_in, c_plain, c_in;
         int k, bad = 0;
         ctx.subject = buf; ctx.len = len; ctx.pos = startpos;
         ctx.ncap = 0; ctx.caps = NULL; ctx.user = NULL;
 
-        m_plain = rx_match(&ctx);
-        m_in    = rx_match_in(&ctx, bufp);
-        c_plain = rx_match_caps(&ctx, caps_plain);
-        c_in    = rx_match_caps_in(&ctx, caps_in, bufp);
+        m_plain = RXFN(_match)(&ctx);
+        m_in    = RXFN(_match_in)(&ctx, bufp);
+        c_plain = RXFN(_match_caps)(&ctx, caps_plain);
+        c_in    = RXFN(_match_caps_in)(&ctx, caps_in, bufp);
 
         /* Differing is permitted only when a buffer was supplied AND at
          * least one of the two answers is a give-up (< -1). Either direction:
@@ -373,7 +412,7 @@ int main(int argc, char **argv) {
             bad = 1;
         }
         if (c_in == c_plain && c_plain >= 0) {
-            for (k = 0; k < RX_NCAPS; k++) {
+            for (k = 0; k < RXMAC(_NCAPS); k++) {
                 if (caps_in[k][0] != caps_plain[k][0] || caps_in[k][1] != caps_plain[k][1]) {
                     fprintf(stderr, "driver: rx_match_caps_in slot %d disagrees"
                                     " (%td,%td) vs (%td,%td)\n", k,
@@ -389,7 +428,7 @@ int main(int argc, char **argv) {
     free(frames_mem); free(trail_mem);
     if (found == 1) {
         printf("match");
-        for (int k = 0; k < RX_NCAPS; k++) {
+        for (int k = 0; k < RXMAC(_NCAPS); k++) {
             printf(" %td %td", caps[k][0], caps[k][1]);
         }
         printf("\n");

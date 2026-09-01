@@ -761,6 +761,61 @@ flush_block() {
         return 0
     fi
 
+    # ---- [DD-13b.W1.2] H11: BUILD EVERY TARGET THAT NAMES THIS BLOCK ----
+    #
+    # One artifact per target, each through `pcrec --source --target`, each
+    # in its OWN directory named `gen.c`/`gen.h` — so driver.c's
+    # `#include "gen.h"` resolves per target off `-I` alone and needs no
+    # header macro of its own. The PREFIX is passed as the two `-D`s
+    # driver.c's own header block documents, both derived from one value
+    # here, which is where their agreement lives.
+    #
+    # MEASURED FREE FOR THE CORPUS: 0 of the 179 files are head-bearing, so
+    # `head_target_def` is empty in every one of them and this whole block
+    # is one array-length test.
+    local tgt_bin=() tgt_px=()
+    if [ "${#head_target_def[@]}" -gt 0 ] && [ -n "$cur_name" ]; then
+        local ti px upx tdir
+        for ti in "${!head_target_def[@]}"; do
+            [ "${head_target_def[$ti]}" = "$cur_name" ] || continue
+            px="${head_target_prefix[$ti]}"
+            upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
+            tdir="$bdir/tgt_$px"
+            mkdir -p "$tdir"
+            local tsrc_err tsrc_rc
+            tsrc_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --source "$cur_file" --target "$px" -o "$tdir/gen.c" 2>&1 >/dev/null)"
+            tsrc_rc=$?
+            if [ $tsrc_rc -ne 0 ] || [ ! -f "$tdir/gen.h" ]; then
+                record_fail "$cur_file" "$cur_pattern_line" \
+                    "HARNESS FAILURE: pcrec --source --target $px failed (exit $tsrc_rc): $tsrc_err"
+                continue
+            fi
+            if ! gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$tdir" \
+                    -DRXT_PREFIX="$px" -DRXT_UPREFIX="$upx" \
+                    -o "$tdir/t" "$SCRIPT_DIR/driver.c" "$tdir/gen.c"; then
+                record_fail "$cur_file" "$cur_pattern_line" \
+                    "HARNESS FAILURE: $CC failed to build the driver for target '$px': $GEN_CC_LOG"
+                continue
+            fi
+            # THE NAME IS ASSERTED HERE, on the artifact, not inferred: this
+            # is the one place in the tree that has a target's declared
+            # definition and that target's emitted `rx_info.name` side by
+            # side. F9's corpus-wide sweep lives in tests/rxtsource/; this
+            # is its per-target twin, and it is what makes "N targets -> N
+            # artifacts, N prefixes, ONE name" checkable at all.
+            local emitted_name
+            emitted_name="$(LC_ALL=C grep -m1 '^    \.name = ' "$tdir/gen.c" | sed 's/.*= "\(.*\)",$/\1/')"
+            if [ "$emitted_name" != "$cur_name" ]; then
+                record_fail "$cur_file" "$cur_pattern_line" \
+                    "target '$px' emits rx_info.name '$emitted_name' where the block it is built from is named '$cur_name'"
+                continue
+            fi
+            tgt_bin+=("$tdir/t")
+            tgt_px+=("$px")
+            head_targets_built=$((head_targets_built + 1))
+        done
+    fi
+
     local i
     for i in "${!case_kind[@]}"; do
         local kind="${case_kind[$i]}" line="${case_line[$i]}" subj="${case_subject[$i]}"
@@ -785,6 +840,32 @@ flush_block() {
         local route="${case_route[$i]:-}"
         out="$("$TIMEOUT_BIN" "$RUN_SECS" "$bdir/t" "$subj" "$pos" "$route")"
         trc=$?
+        # [DD-13b.W1.2] H11's AGREEMENT CONTROL. Each target built from this
+        # block must answer this case exactly as the block's own compile
+        # did — same line, same exit status. That is §6.3's "identity
+        # between them is a free control", and it is free in the literal
+        # sense: it introduces no expectation, so a corpus author writes
+        # nothing and a target cannot be scored right by an expectation
+        # someone wrote to match it.
+        #
+        # IT IS ALLOWED TO DIFFER FOR ONE REASON AND THE BLOCK STATES IT: a
+        # target built under a `config` that changes an ANSWER-AFFECTING
+        # axis (`flags i`, `encoding`) genuinely should differ, and this
+        # check would then be wrong. No such config exists in the corpus and
+        # none is expressible without the block writing the same directive,
+        # in which case both sides carry it. If that ever stops being true
+        # the honest fix is a directive saying which targets a case applies
+        # to, not a loosened comparison.
+        local _ti
+        for _ti in "${!tgt_bin[@]}"; do
+            local tout trc2
+            tout="$("$TIMEOUT_BIN" "$RUN_SECS" "${tgt_bin[$_ti]}" "$subj" "$pos" "$route")"
+            trc2=$?
+            if [ "$tout" != "$out" ] || [ "$trc2" -ne "$trc" ]; then
+                record_fail "$cur_file" "$line" \
+                    "target '${tgt_px[$_ti]}' DISAGREES with the block's own compile: got '$tout' (exit $trc2), block got '$out' (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
+            fi
+        done
         # RXTDUMP (see the header comment): the RAW case identity, dumped
         # BEFORE any pass/fail interpretation below so it captures every
         # evaluated case in one uniform shape regardless of which branch
@@ -1004,6 +1085,11 @@ for file in "${files[@]}"; do
     # what used to be silent.
     head_skip=0
     head_probe=""
+    # [DD-13b.W1.2] reset PER FILE, like every other per-file state above:
+    # a stale inventory would make one file's targets fire on the next.
+    head_target_prefix=()
+    head_target_def=()
+    head_targets_built=0
     while IFS= read -r probe_line || [ -n "$probe_line" ]; do
         case $probe_line in
             '#'*) continue ;;
@@ -1035,6 +1121,29 @@ for file in "${files[@]}"; do
         fi
         head_body_line="$(printf '%s\n' "$ls_out" \
             | LC_ALL=C awk -F'\t' '$1 == "pattern" { print $2; exit }')"
+        # ---- [DD-13b.W1.2] H11: THE TARGET INVENTORY ----
+        #
+        # A head-bearing file may declare `target <prefix> = <definition>`
+        # lines. This script does not parse them — it reads them off the
+        # SAME `--list-source` call it already made for the body boundary,
+        # so the seam ruling is unchanged: pcrec owns the head grammar and
+        # this script owns nothing but the columns' names.
+        #
+        # WHAT IT DOES WITH THEM IS A CROSS-CHECK, NOT A SECOND SET OF
+        # EXPECTATIONS. The ordinary per-block compile is untouched; every
+        # target naming a block is additionally built, through
+        # `pcrec --source --target`, and required to ANSWER IDENTICALLY on
+        # that block's own cases. §6.3's three-config file is exactly that
+        # shape, and its "identity between them is a free control" is this
+        # loop. A second expectation vocabulary would have had to say which
+        # target an `m` line meant; agreement needs no vocabulary at all.
+        head_target_prefix=()
+        head_target_def=()
+        while IFS=$'\t' read -r _k _l _n _v _rest; do
+            [ "$_k" = "target" ] || continue
+            head_target_prefix+=("$_n")
+            head_target_def+=("$_v")
+        done < <(printf '%s\n' "$ls_out" | LC_ALL=C grep -v '^#')
         if [ -z "$head_body_line" ]; then
             # A HEAD AND NO PATTERN BLOCKS. The grammar permits it (a pure
             # library file is exactly that shape), so it is not an error
@@ -1446,6 +1555,17 @@ for file in "${files[@]}"; do
     [ "$have_block" = "1" ] && flush_block
     if [ "$blocks_in_file" -eq 0 ]; then
         record_fail "$file" 0 "no pattern blocks parsed from file (P-C2 floor)"
+    fi
+    # [DD-13b.W1.2] THE TARGET FLOOR, and it is the P-C2 floor's own shape
+    # one level up. A `target` whose definition names no block in this file
+    # would simply never be reached by the loop above and would cost
+    # NOTHING — a population nobody counts. pcrec's own resolver refuses
+    # that file outright, so this is a check that the two agree; it fires
+    # if a target is declared and never exercised for any reason.
+    if [ "${#head_target_prefix[@]}" -gt 0 ] && \
+       [ "$head_targets_built" -lt "${#head_target_prefix[@]}" ]; then
+        record_fail "$file" 0 \
+            "declared ${#head_target_prefix[@]} target(s) but only built $head_targets_built — a target whose definition names no block in this file is exercised by nothing"
     fi
 done
 
