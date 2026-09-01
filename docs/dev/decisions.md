@@ -6424,3 +6424,29 @@ against a tree that exceeds it — the page then gains a "beyond the
 floor" section rather than bending the survey.
 Cross-notes: D26, SR-10, D77, [M4-SUBST]'s beyond-PCRE2 paragraph,
 [OPT-5] STEPs 1-3, docs/pcre2_compliance.md.
+
+## D93 — A `.rxt` SOURCE'S COMPOSED CONFIG WINS OVER A COMMAND-LINE FLAG ON THE SAME AXIS (Frank, 2026-09-01, forty-ninth session — ratifying lane w12's [DD-13b.W1.2] call)
+
+Decision: when a `--source` build's target has a composed `config` setting
+an axis and the command line sets the same axis, THE FILE WINS. Stated in
+`docs/spec/cli.md` (the lane's D80 hunk); the in-tree precedent is the
+harness's own `RXTFLAGS` rule ("appended LAST so a directive on the same
+axis wins").
+
+Why (Frank's framing, which is the ratification's substance): treat `.rxt`
+files like C source files. A target is the artifact's DEFINITION, not
+ambient user preference — "you wouldn't change a C function name via cli
+options." Letting an ambient flag silently reshape a named target would
+make the same target name produce different artifacts per invocation,
+which also breaks H11's free identity control (every target must answer
+identically to its block's own compile). The call is NARROW: flags on axes
+the file does not set behave exactly as before.
+
+The honest counterargument is on record (most CLIs let the command line
+override config files); it lost to the source-code framing. Revisit-when:
+a real user scenario needs a CLI override of a file-set axis — the likely
+shape then is an explicit loud override flag, never a silent precedence
+flip.
+
+Cross-notes: [DD-13b.W1.2], docs/spec/cli.md, tests/harness `RXTFLAGS`,
+lane report docs/dev/lanes/w12_report.md §3.2.

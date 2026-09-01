@@ -19373,3 +19373,61 @@ its own last src commit + gate re-run) + battery; Frank's rulings
 ([OPT-4.2] formal confirm, O-12 ask (iv), w12's file-wins
 ratification review, o42's witness-gap decision); I-29. S216 is now
 USED (next free: S217). The .lift files are removed; worktrees stay.
+
+## 2026-09-01 — Forty-ninth session, part 1 (morning): baseline green; cc and o42 MERGED with checks green so far; Frank's ruling batch collected
+
+Session charter (Frank, ~8% budget remaining): COMPLETE the three delivered
+lanes — merges, check chains, batteries, bookkeeping — with the manager
+doing the reviews/merges directly (no new lanes) and the long runs watched
+as background artifacts. Battery batching: cc+o42 under ONE battery
+(wake.md's floated option, taken for budget), then w12's own.
+
+DONE SO FAR:
+- **Baseline verify (owed from session 48): GREEN** — make -j4 + strict +
+  PROCS=4 test-registry on main a7e0bdf-era tip e8ef9c8, rc 0, axes 88.
+- **cc MERGED** (merge 0e51459, clean, no conflicts). First bump-carrying
+  merge → final abi = 14 exactly as written in-branch; FILEPIN ec6f481
+  already in main's history, no renumbering needed. Post-merge chain
+  GREEN: build, strict, full 4-axis identity gate, PROCS=4 test-codegen
+  (all checks 0 failed). Review basis: cc_report.md read in full — the
+  four-bug record, five re-pins, comparison (A) confirmed directly.
+  Two small flagged drifts deferred (S168 doc figure; rule-1 comment
+  citing S166 where S166 is rule 3's).
+- **o42 MERGED** (merge ff13660). ONE conflict, docs/dev/plan.md's own
+  [OPT-4.2] row (HEAD's forty-eighth-close annotation vs the lane's
+  under-hold progress note) — resolved to HEAD's side, strict clean,
+  committed per the merge-alone discipline. Then the promised (B) re-pin
+  WITHOUT a bump (0e60eb9): FILEPIN ec6f481 → ff13660, [OPT-4.1]'s
+  value-not-scaffolding precedent, abi stays 14; pin-note paragraph added
+  at the gate. Post-merge chain (gate + codegen + registry + prefilter +
+  resource, PROCS=4) running at this entry's write.
+
+FRANK'S RULINGS (this morning, the wake.md §4 batch):
+- (a) [OPT-4.2] charter: CONFIRMED (the "finish these lanes" instruction
+  read as the one-line confirmation, offered and not objected to).
+- (b) O-12 ask (iv), the TWO-PASS FIX: CHARTERED for a future session —
+  "i see no downside." Clarified for Frank: NOT a second match
+  implementation; the existing <prefix>_match entry drops the reverse
+  pass (start is the caller's own position), search keeps it; mechanism
+  likely via [ENG-ABS]'s unwrapped anchored entry; the bench's 9-rung
+  surface is the acceptance instrument.
+- (c) w12's file-wins-over-flag: RATIFIED → D93 (Frank: .rxt files are
+  like C source; "you wouldn't change a C function name via cli
+  options"). lib existence-STAT: stands.
+- (d) o42 witness-gap: REVISIT in a future session; the recorded trace
+  stays as interim evidence (accept-the-gap default holds).
+- O-12 asks (ii)+(v): a future-session MEASUREMENT — sweep a variety of
+  low run-counts for the edge boundary (and the skip-below-k question),
+  plus a breakdown of which patterns hit the hybrid-gained-edge case,
+  before any ruling.
+- O-12 ask (iii): Frank agrees with the recommendation — answer the bench
+  "STEP 3 unless STEP 2's design note finds it free; [ART-SIZE] builds
+  nothing ahead of it (D77)."
+All of the above go into I-29 to the bench (drafted after the battery
+proves the merged pin, with the cls-* re-measure item).
+
+NEXT: o42 chain verdict → battery cc+o42 (test LINTGEN=1 → strict → san →
+lint → mech, script rebuilt from docs/testing.md as battery_v4) → w12
+merge (abi 14→15 renumber at all four D76 sites + its own re-pin) → w12
+checks → final battery → plan/journal/wake/briefs/CLAUDE.md bookkeeping +
+I-29.
