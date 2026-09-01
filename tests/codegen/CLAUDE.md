@@ -1372,6 +1372,34 @@ ruling `test-atomic-identity` and `test-backrefs-identity` have and for the
 same reason: the reference is a second full build of the compiler, and the
 answer cannot change unless someone edits code at or before the pin.
 
+## [DD-13b.W1.2] F9 — `rx_info.name`'s VALUE, and `nentries`
+
+Three checks in `run_codegen_tests.sh`, and the first is w1_impl's F9
+verbatim: Frank ruled at format_design §6.3 that no artifact ever carries a
+NULL name, and **nothing would have checked it** — the identity gates
+compare artifacts from a corpus with no composed file, so they are equally
+happy with a field that is always NULL and one that is always right.
+
+**THE CORPUS ARM CHECKS THE FALLBACK, NOT A SUPPLIED NAME.** Every corpus
+pattern is compiled with no name, so the sweep (every distinct `pattern`
+line under `tests/base/`, compile-only, floored at 300 against a measured
+381) asserts that each artifact stamps its own PREFIX. The other half — a
+supplied name reaching the artifact — is checked where a name can come from
+at all, in `tests/rxtsource/` against the `target` line that named it.
+
+**THE PREFIX IS VARIED, and that arm is what catches the likeliest wrong
+implementation.** With `rx` everywhere, an emitter stamping the literal
+string `"rx"` instead of `opt->prefix` is indistinguishable from a correct
+one on every artifact in the tree — the same blindness `run_ir_listing.sh`
+records for its own non-default-prefix case. Four prefixes of different
+length and shape, each of which must stamp itself.
+
+**`nentries` IS PINNED EQUAL TO `nnames` AND PRESENT.** Equality is the
+honest state of an uncomposed artifact (`docs/spec/match_api.md` §6) and the
+composer is what will separate them; what the check pins is that the field
+EXISTS and is not hard-wired to 0 beside a real `nnames`, which is the shape
+a caller switching to `nentries` would silently lose every row to.
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the

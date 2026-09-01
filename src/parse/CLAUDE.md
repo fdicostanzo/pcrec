@@ -1153,6 +1153,50 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   same rule" as the block scalar's. Witnesses:
   `tests/rxtsource/fixtures/*.rxtin`.
 
+  **[DD-13b.W1.2] IT RESOLVES NOW, AND RESOLUTION IS A SECOND SECTION
+  RATHER THAN A SECOND PASS OVER THE ROWS.** Everything above the
+  `RESOLUTION` banner reports the file AS WRITTEN and touches no
+  filesystem, which is what keeps `--list-source` comparable against
+  run.sh's and verify_rxt.py's own parses; `pcrec_rxt_source_resolve`
+  answers the three questions `--source` has to answer before it can call
+  `pcrec_compile` even once.
+
+  **WHICH ARTIFACTS**: the `target` rows in file order; or, with no
+  `target` and exactly ONE UNNAMED block, the implicit `target rx` (Frank,
+  format_design §6.4) — which is what makes every one of the corpus's 189
+  files buildable with no head. **Anything else with no `target` builds
+  NOTHING at exit 0**: a library ships nothing by itself, and that is a
+  DIFFERENT observable from a file the resolver refuses.
+
+  **FROM WHICH BLOCK**: a definition name is a block's `name`, in the FILE
+  namespace (w1_impl DECIDED (7)). There is no composer here and no
+  library's contents are read, so a name this file does not declare is a
+  tier-2 refusal naming the name AND the `lib` chain searched — which lets
+  an author tell "I misspelled it" from "it lives in a library and this
+  build cannot reach into one yet".
+
+  **UNDER WHICH SETTINGS**: `cfg_merge` is the flat LATER-WINS rule and it
+  is the ONLY rule `with` and `from` use — one struct, one function, so the
+  two levels cannot acquire two implementations. The PER-KIND table
+  (`features` UNION unless `only`, everything else more-specific-wins) is
+  applied exactly ONCE, at the block, in `resolve_one`. Conflating the two
+  would make `with` order-sensitive in the way r44-sem M15 rejected. A
+  `config`'s `pcrec <raw>` ACCUMULATES rather than replacing, because it is
+  a line kind that may legitimately appear more than once and its
+  later-wins is the CLI option parser's own, applied to the joined text.
+
+  **THE `lib` LINE'S TWO SPELLINGS ARE TWO MECHANISMS.** `"path"` is
+  resolved as far as EXISTENCE (the source's own directory, then each
+  `--lib-path` in order) and refused by name if it names no readable file;
+  `<store-name>` is refused as NOT IN THIS BUILD, because searching for a
+  file called `common` because someone wrote `lib <common>` would report
+  "no readable file" about a reference that was never meant to be one. A
+  library's CONTENTS are the composer's (W1.3) and the store SCAN is
+  [LIB]'s. **The parse-time side touches no filesystem at all**, which is
+  what keeps `--list-source` a pure function of the file's bytes — asserted
+  in `tests/rxtsource/`, where the fixture whose `lib` does not resolve is
+  DUMPED happily and REFUSED by `--source`.
+
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
   axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the
   syntax registry syntax_dump.c below renders — a different table

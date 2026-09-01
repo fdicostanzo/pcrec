@@ -44,8 +44,8 @@ Four file-level declarations exist in this build:
 
 | declaration | means |
 |---|---|
-| `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **Recorded, not yet resolved** — resolving it against a search path is not built |
-| `target <prefix> = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **Parsed, not yet built** |
+| `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **The `"path"` form is RESOLVED as far as existence** (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name if it names no readable file; its CONTENTS are not read, so no pattern can call a definition that lives in it. `<store-name>` is refused as NOT IN THIS BUILD |
+| `target <prefix> = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes |
 
@@ -60,6 +60,40 @@ are recognised and refused **by name, as NOT IN THIS BUILD** — never as
 unknown. They are real, spelled correctly, and simply not implemented
 here; reporting them as unknown would send a reader hunting a typo in a
 word they just read in the format's own documentation.
+
+### Building from a source file
+
+`pcrec --source FILE -o OUT` builds this file's `target` declarations;
+`docs/spec/cli.md` §1 is the command-line contract and states the `-o`
+forms, `--target`, `--lib-path` and the precedence rules. What belongs to
+the FORMAT rather than to the CLI is this:
+
+- **A `target`'s definition is a pattern block's `name`**, which lives in
+  the FILE namespace — the same namespace a block's `name` is unique in.
+  A `target` may name a block that appears later in the file: the head
+  precedes the body and resolution is a whole-file pass.
+- **No `target` and exactly ONE UNNAMED pattern block means `target rx`.**
+  That is what makes every file written before this format grew a head
+  buildable without declaring anything.
+- **No `target` and anything else builds NOTHING.** The file is a library
+  of definitions; `pcrec` says so and exits 0. It is not an error, and it
+  is a different outcome from a file `pcrec` refuses.
+- **One definition may be named by several targets**, which is the point
+  of the `with` list: three targets naming one definition under three
+  configs are three artifacts with three prefixes and ONE
+  `rx_info.name` (`docs/spec/match_api.md` §6).
+- **`features` composes as a UNION** of the target's configs and the
+  block's own line, unless the block wrote `features only`, in which case
+  the block's list stands alone. `flags`, `encoding`, `engine` and
+  `budget` are more-specific-wins: the block's value beats the configs'.
+
+**THE HARNESS BUILDS THEM TOO, as a control rather than as a second set of
+expectations.** For a head-bearing file, `tests/harness/run.sh` builds every
+target that names a block and requires each to answer that block's own
+`m`/`n`/`ms`/`ns` cases EXACTLY as the block's own compile did. So a `.rxt`
+author writes no expectation per target, and a config that changed an
+ANSWER — rather than only how one is found — would make that control red
+rather than pass silently.
 
 ### Lexical rules
 

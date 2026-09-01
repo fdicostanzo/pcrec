@@ -249,6 +249,95 @@ why it alone is documented in `--help`. Full per-flag semantics, the
 force-vs-deny distinction, and the byte-identity/engine-selecting split:
 `docs/spec/tuning.md` ([SPEC-1.3]).
 
+### `--source FILE` — compiling from a `.rxt` source ([DD-13b.W1.2])
+
+`pcrec --source FILE -o OUT` compiles the `target` declarations of a `.rxt`
+source file (`docs/spec/rxt_format.md`). It is a COMPILE MODE, not a listing
+surface: it honours every compile flag in §1 and it writes artifacts.
+
+**It takes no pattern argument.** The file's `pattern` blocks are the
+patterns; accepting a positional pattern as well would leave "which one did
+I build" answerable two ways. A `--source` invocation carrying a pattern, or
+composed with any query surface of §2, is refused.
+
+**WHICH ARTIFACTS GET BUILT.** The file's `target <prefix> = <definition>`
+lines, in file order, one artifact each — or, when the file declares no
+`target` at all and holds exactly ONE UNNAMED pattern block, the implicit
+`target rx`, which is what makes an ordinary single-pattern `.rxt` file
+buildable with no head. **A file with no `target` and anything else builds
+NOTHING**: it is a library of definitions, `pcrec` says so on stderr and
+exits 0. That is deliberately not an error — a library ships nothing by
+itself — and it is a different observable from a file `pcrec` refuses.
+
+A target's definition names a pattern block's `name`, which lives in the
+FILE namespace. A name this file does not declare is refused, naming both
+the name and the `lib` chain that was searched: today `pcrec` reads no
+library's contents, so a definition that lives in one is out of reach and
+the diagnostic says which situation you are in.
+
+**`-o`'s THREE FORMS, chosen by the SHAPE of its value.**
+
+| `-o` value | result | targets |
+|---|---|---|
+| an existing DIRECTORY | `<dir>/<prefix>.c` and `<dir>/<prefix>.h`, one pair per target | any number |
+| any other name | that `.c` plus its `.h` sibling, exactly as §1's `-o FILE` | exactly one |
+| `-` | one self-contained `.c` on stdout, exactly as §1's `-o -` | exactly one |
+
+A directory is an *existing* directory; anything else is a file name, so
+`-o out.c` behaves the same whether or not `out.c` exists yet. `-o FILE`
+or `-o -` on a file with several targets is REFUSED, naming the targets and
+both ways forward (`--target`, or an existing directory). **Each target is a
+separate compile writing its own translation unit** — there is no code path
+that could produce a multi-artifact TU (D88).
+
+**`--target NAME`** builds only the target whose PREFIX is `NAME`. An
+unknown name is refused and the message lists the targets the file does
+declare.
+
+**`--lib-path DIR`** adds a directory to the search path a `lib "path"`
+reference resolves against. **Repeatable**, and the order given is the
+search order, after the source file's own directory — the one flag in this
+CLI that accumulates rather than replacing, because a single-valued form
+would make two libraries an either/or. Today a `lib` reference is resolved
+only far enough to say whether it names a readable file; its CONTENTS are
+not read, so a `lib <store-name>` reference (the other spelling the grammar
+has) is refused as not in this build. Both flags apply to `--source` alone.
+
+**HOW A TARGET'S OPTIONS ARE COMPOSED, and what wins.** Two mechanisms, and
+they are not the same rule at different scales:
+
+1. `target … with c1, c2` composes CONFIGS by one flat LATER-WINS rule, and
+   `config c from a, b` is that same rule one level down, materialised once.
+2. The resulting config then composes against the pattern BLOCK's own
+   directives by kind: `features` is the UNION of the two unless the block
+   wrote `features only`, and everything else — `flags`, `encoding`,
+   `engine`, `budget` — is MORE-SPECIFIC-WINS, i.e. the block.
+
+Within one target, a `config`'s `pcrec <raw>` flags apply FIRST and the
+typed directives on top: the typed spellings are the format's own named
+axes and the only ones a block can write, so they are the more specific of
+the two.
+
+**THE FILE WINS OVER THE COMMAND LINE.** A flag given on the command line
+is the BASE; a target that speaks about the same axis overrides it. A `.rxt`
+source states the build its patterns are meant to have, and that build
+should not change with the invocation that triggered it. (This is the rule
+`tests/harness/run.sh` already follows for its own `RXTFLAGS` env var.)
+
+**A `config` block's `pcrec <raw>` is re-parsed by this CLI's own option
+parser**, so a flag cannot mean one thing on the command line and another in
+a config block. It may set COMPILE OPTIONS only: an output path, a pattern,
+a prefix (`-p`, which would silently overrule the target's own), a query
+mode or another `--source` are all refused. The raw text is split on
+whitespace and there is no quoting — no flag in this CLI takes a value
+containing a space.
+
+**Every artifact stamps `rx_info.name`** with the block's `name`, or with
+its own `<prefix>` when the block is unnamed, so one definition built under
+three configs is three artifacts, three prefixes and one name
+(`docs/spec/match_api.md` §6). Diagnostics from a `--source` compile lead
+with `FILE:LINE`, then the target, then `pcrec`'s own pattern offset.
+
 ## 2. Listing surfaces
 
 Seven TSV dumps, each a query taking no pattern and no `-o` (mixing either
@@ -463,13 +552,18 @@ Stated plainly rather than left for a stranger to discover by trial:
   that interprets a pattern against a subject without first generating
   and compiling C. `--emit-main`'s appended `main()` (§1) is the closest
   thing to a quick try, and it still goes through a real `cc` invocation.
-- **No multi-pattern compilation units.** Every invocation compiles
-  exactly one pattern to one artifact. A unit that can hold several
-  named, cross-referencing patterns is `[V-E]`, `docs/dev/plan.md:581`,
-  **STATE:not-started** — confirmed at this commit, not shipped in any
-  form.
-- **No `--lib FILE`.** A library of reusable named subpatterns a pattern
-  could call by name is `[LIB]`, `docs/dev/plan.md:580`,
+- **No multi-pattern compilation UNITS**, which since [DD-13b.W1.2] is a
+  narrower statement than it was. `--source` (§1) compiles SEVERAL
+  patterns in one invocation, but each target is its own separate compile
+  writing its own translation unit — one artifact per TU, D88. A single
+  unit holding several named, CROSS-REFERENCING patterns is still `[V-E]`,
+  `docs/dev/plan.md:581`, **STATE:not-started**.
+- **No `--lib FILE`, and `--lib-path` is not it.** `--lib-path` supplies
+  the search path a `lib "path"` reference in a `.rxt` source resolves
+  against, and today that resolution goes exactly far enough to say
+  whether the file exists: pcrec reads no library's CONTENTS and no
+  pattern can call a definition that lives in one. The library of reusable
+  named subpatterns is `[LIB]`, `docs/dev/plan.md:580`,
   **STATE:not-started**, and its own plan row records that its place
   relative to the project's roadmap has not even been ruled yet ("planned
   but I don't know that I'd put them on the spine," Frank, 2026-08-24).
@@ -487,6 +581,10 @@ Stated plainly rather than left for a stranger to discover by trial:
 
 ## Revision history
 
+- 2026-08-31 ([DD-13b.W1.2]): §1 gains `--source` / `--target` /
+  `--lib-path` and the output-naming rule; §4's multi-pattern and
+  `--lib` bullets are narrowed to what is now true. Nothing in §1's
+  single-pattern surface changed.
 - 2026-08-25 ([SPEC-1.2]): first version, written against `cli/main.c` at
   this worktree's branch point (`0e2b23d`) plus a live `build/pcrec` from
   a clean `make -j4`. Folds in [SPEC-1.7] (diagnostics, §3) and [SPEC-1.8]

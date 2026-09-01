@@ -11,6 +11,13 @@
 # §1.1, which states INV-COMPAT). Contract: docs/spec/rxt_format.md,
 # docs/spec/table_contract.md.
 #
+# [DD-13b.W1.2], 2026-08-31: this file gained a section that COMPILES. The
+# W1.1 header's "three parses of the corpus and no compiles at all" was
+# what kept the section cheap enough to run beside `test-corpus`, and it is
+# no longer literally true — building a `.rxt` source cannot be checked
+# without building one. The corpus half is unchanged and still compiles
+# nothing; what compiles is a handful of fixture targets.
+#
 # ---------------------------------------------------------------------
 # WHAT IS HERE, AND WHAT IS DELIBERATELY NOT
 #
