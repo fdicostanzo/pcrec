@@ -118,25 +118,68 @@ sentences 13→14).
 
 ---
 
-## 2. Acceptance — OWED, every line
+## 2. Acceptance — MEASURED
 
-Nothing below has been run. The hold forbade it and the lane did not run
-it anyway.
+Validated 2026-09-01 00:38-02:0x EDT, after the box hold lifted. `PROCS=4`,
+async, serialized behind lane cc per the manager.
 
-| item | status |
+| item | measured |
 |---|---|
-| N targets → N artifacts, N prefixes, one `rx_info.name` | OWED (`tests/rxtsource` W1.2 §1) |
-| §6.3's three-config file compiles three ways, the three agree | OWED (`three_configs.rxtin` + H11) |
-| abi 14 at all four sites | **THREE DONE, SITE 4 OWED** — see §4. The 13 -> 14 premise is now MEASURED, not read: the main binary stamps `.abi = 13` |
-| F9's `.name` assertion over the corpus's artifacts | OWED (`run_codegen_tests.sh`) |
-| identity gate (A) byte-identical | OWED, and EXPECTED: the two bytes this change writes are `rx_info` initializer lines, emitted below (A)'s `prog_region` on every artifact |
-| identity gate (B) re-pinned | OWED — the pin must be this step's LAST src commit, so it lands last |
-| `make test-codegen` green (PROCS=4, async) | OWED |
-| `make strict` clean | OWED |
-| oracle-verified expectations for new cells | **DONE** — all four `three_configs` / `common` cells verified against python3 `re` in one invocation; transcript in the lane log |
-| D26 tiering (no gold-plated diagnostics) | DONE by construction: every new refusal names a FILE, a LINE and a CONSTRUCT and none reproduces a PCRE2 message |
+| `make strict` | **CLEAN**, `-Werror -Wshadow`, FIRST attempt — ~500 lines of C written under the hold and never compiled until 00:38 |
+| N targets → N artifacts, N prefixes, one `rx_info.name` | **PASS.** `--source three_configs.rxt -o <dir>` → `log_base`/`log_strict`/`log_big` `.c`+`.h`; each entry carries its own prefix (`int log_base_search`, …); all three stamp `.name = "level_filter"` |
+| §6.3's three-config file compiles three ways and the three agree | **PASS (H11).** `run.sh` made exactly 3 `--source` calls and all three targets answered the block's 3 cases identically to its own compile |
+| `features` UNION reaches the artifact | **PASS.** all three stamp `PCREC_FEATURE_MODULES "classes,named-groups"` (`classes` from `baseline`, `named-groups` from the block) |
+| the four resolution refusals | **PASS**, each naming what §1.3 requires |
+| library builds nothing / compatibility default | **PASS**, exit 0 with no artifact / implicit `target rx` naming itself `"rx"` |
+| F9's `.name` assertion over the corpus | **PASS.** every distinct `pattern` under `tests/base/` stamps its own prefix (floor 300); plus 4 prefixes of different length and shape |
+| `nentries` present and == `nnames` | **PASS** on 0- and 2-named-group artifacts |
+| abi 14 at all four sites | **DONE.** sites 1-3 with the emitter change; **site 4 FILEPIN `dc2c8ef` → `0bc6884`** (commit `8979d23`), naming the step's LAST src-touching commit |
+| identity gate (A) byte-identical | **PASS, 0 differing on all four axes** (same 2223 / 2228 / 2224 / 2228 vs the UNMOVED pre-module pin `ac4917d`) |
+| identity gate (B) re-pinned | **PASS, 0 differing on all four axes** (same 2274 / 2275 / 2274 / 2274 vs the new pin `0bc6884`); refusal-mismatch 0, elided 0, stamp-moved 0. Gate wall 714 s, 16 checks / 0 failures |
+| `make test-codegen` | see §2.1 — re-run on the FIXED tree |
+| `tests/rxtsource` | **94 checks / 0 failures**, wall **40 s** |
+| oracle-verified expectations | **DONE**, python3 `re`, all new cells |
+| D26 tiering | **DONE** — every refusal names FILE, LINE and CONSTRUCT; none reproduces a PCRE2 message |
 
----
+### 2.1 The `test-codegen` re-run, and why there is one
+
+The first run was **4/5** — `run_size_term.sh` red (§3.7). After fixing it I
+re-ran **only that script** (32/0). The other four were last run on the tree
+BEFORE the emitter fix, and that fix MOVES EMITTED BYTES; three of the four
+read emitted text. So the group was re-run in full on the fixed tree rather
+than assembled from two different trees.
+
+**`run_trie_identity` would not have caught it either way**, and that is
+worth knowing rather than assuming the four are equally informative: it
+compares two builds of the SAME tree, so a change present in both cancels.
+
+### 2.2 §5.5's runtime delta, measured by ABLATION
+
+The manager's baseline (8.2 s, `w11_report.md:63`) is **C1's runtime, not the
+section wall** — its three legs ARE C1, and the section also ran C3, C0a, the
+hash pin, the keyword census and the head fixtures. So "measured wall minus
+8.2" would charge this lane for every non-C1 check W1.1 already had.
+
+Two honest numbers instead:
+
+- **C1 is UNCHANGED.** The section prints its own: leg A 0.8 s (189
+  `--list-source`), leg B 7.4 s, leg C 0.2 s = **8.4 s**, against W1.1's
+  8.2 s. This lane adds nothing to the parse differential.
+- **H11's own cost, by ABLATION** — `run.sh` on the three-target fixture,
+  then on the same fixture with its `target` lines stripped, everything else
+  held constant:
+
+  | | wall | cases |
+  |---|---|---|
+  | with 3 targets | 905 ms | 3 / 0 |
+  | targets removed | 275 ms | 3 / 0 |
+  | **H11's marginal cost** | **630 ms** | ~210 ms per target |
+
+  An ablation measures the feature; a subtraction from a number that means
+  something else measures the difference between two definitions.
+
+Section wall **40 s** absolute; the whole W1.2 block is ≈1.5 s of it once its
+~15 `pcrec` calls are added to H11's 630 ms.
 
 ## 3. Findings the manager should read
 
