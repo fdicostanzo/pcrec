@@ -318,11 +318,22 @@ typed directives on top: the typed spellings are the format's own named
 axes and the only ones a block can write, so they are the more specific of
 the two.
 
-**THE FILE WINS OVER THE COMMAND LINE.** A flag given on the command line
-is the BASE; a target that speaks about the same axis overrides it. A `.rxt`
-source states the build its patterns are meant to have, and that build
-should not change with the invocation that triggered it. (This is the rule
-`tests/harness/run.sh` already follows for its own `RXTFLAGS` env var.)
+**THE FILE WINS OVER THE COMMAND LINE, ON THE AXES THE TARGET ACTUALLY
+SPEAKS ABOUT — AND ONLY THOSE.** In one sentence: a command-line flag
+applies unless the target's own configs or block set the SAME axis, in
+which case the file's value is used. Every other flag you pass reaches the
+compile untouched; this is not a general "flags lose" rule, and there is no
+axis where naming a target silently discards an option you gave.
+
+The narrow form is the point. A `.rxt` source states the build its patterns
+are meant to have, and that build should not change with the invocation
+that triggered it — which is exactly how a `.rxt` config directive already
+behaves under `tests/harness/run.sh`'s `RXTFLAGS` env var ("appended LAST
+so a directive on the same axis wins"), so a `target` behaves like the
+config block it is. **It does invert the usual CLI convention** that an
+explicit flag beats a file, so if you need the command line to win on an
+axis the file sets, remove it from the file rather than expecting the flag
+to override it.
 
 **A `config` block's `pcrec <raw>` is re-parsed by this CLI's own option
 parser**, so a flag cannot mean one thing on the command line and another in

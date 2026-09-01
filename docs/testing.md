@@ -1249,10 +1249,23 @@ about what they fold TO.
 `bash tests/rxtsource/run_rxtsource_tests.sh` (`make test-rxtsource`), added
 when the `.rxt` format grew a HEAD: the question it answers is whether
 growing the format changed what any EXISTING corpus file means. Cheap on
-purpose — three parses of the corpus and no compiles at all (179 files,
-26,691 expectation lines), so it does not compete with `test-corpus` for the
-box. Full design and per-check rationale: `tests/rxtsource/CLAUDE.md`,
-`docs/design/dd13_format/w1_impl.md` §3.
+purpose — three parses of the corpus and **no compiles OF THE CORPUS**
+(189 files, 26,799 expectation lines), so it does not compete with
+`test-corpus` for the box. Full design and per-check rationale:
+`tests/rxtsource/CLAUDE.md`, `docs/design/dd13_format/w1_impl.md` §3.
+
+**[DD-13b.W1.2], 2026-08-31 — IT COMPILES NOW, AND THE HEADLINE ABOVE IS
+NARROWED RATHER THAN LEFT TO BE DISCOVERED.** The section gained a W1.2
+half that builds a handful of TARGET FIXTURES (single digits: the
+three-config file's three targets, a few one-target files, and `run.sh`
+building the same three again through the H11 path, which also invokes the
+C compiler for their drivers). Building a `.rxt` source cannot be checked
+without building one. **The cost is bounded by the FIXTURE count, not by
+the corpus**, so it does not grow as the corpus does, and the corpus half
+is unchanged — C1, C3, C0a, the arm-block hash pin and the keyword census
+still read all 189 files and compile none of them. The measured
+section-runtime delta is recorded at the lane's validation
+(`docs/dev/lanes/w12_report.md`).
 
 What it asserts, briefly (each against a PINNED census, never a
 self-derived one — a pin that recomputed itself would agree with a shrunk

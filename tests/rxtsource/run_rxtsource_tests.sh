@@ -11,12 +11,20 @@
 # §1.1, which states INV-COMPAT). Contract: docs/spec/rxt_format.md,
 # docs/spec/table_contract.md.
 #
-# [DD-13b.W1.2], 2026-08-31: this file gained a section that COMPILES. The
-# W1.1 header's "three parses of the corpus and no compiles at all" was
-# what kept the section cheap enough to run beside `test-corpus`, and it is
-# no longer literally true — building a `.rxt` source cannot be checked
-# without building one. The corpus half is unchanged and still compiles
-# nothing; what compiles is a handful of fixture targets.
+# [DD-13b.W1.2], 2026-08-31 — WHAT THIS SECTION COSTS, RE-ADVERTISED.
+# W1.1's header said "three parses of the corpus and no compiles at all",
+# which is what kept it cheap enough to run beside `test-corpus`. That is
+# no longer literally true: this file now COMPILES A HANDFUL OF TARGET
+# FIXTURES (single digits — the three-config file's three targets, a few
+# one-target files, and `run.sh` building the same three again through the
+# H11 path, which also invokes the C compiler for their drivers).
+#
+# THE CORPUS HALF IS UNCHANGED and still compiles nothing: the three-way
+# parse differential, C3's oracle re-run, C0a, the arm-block hash pin and
+# the keyword census all still read the 189 files and compile none of
+# them. The new cost is bounded by the FIXTURE count, not by the corpus,
+# so it does not grow as the corpus does. docs/testing.md's tiered-testing
+# entry for this section says the same thing.
 #
 # ---------------------------------------------------------------------
 # WHAT IS HERE, AND WHAT IS DELIBERATELY NOT
@@ -1304,6 +1312,38 @@ $(grep -h '^int .*_search(' "$W12/dir"/*.c)"
 else
     fail "W1.2: --source -o <dir> failed on the three-config fixture:
 $(cat "$W12/dir.err")"
+fi
+
+# --- the `features` UNION, which nothing else can reach ---------------
+#
+# §1.5's per-kind table makes `features` the ONE directive that UNIONS a
+# target's configs with the block's own line instead of letting the block
+# win. Without a file where BOTH sides are non-empty that branch has a
+# population of ZERO, so this is the only place it is observable. The
+# evidence is the artifact's own D37 stamp — `classes` comes from
+# `baseline` (which `strict` and `big` inherit through `from`) and
+# `named-groups` from the block, so a target that took only one side, or
+# let the block win outright, stamps a different list.
+#
+# MEASURED against the shipped binary before this check was written: a
+# two-member list is accepted and stamps `"classes,named-groups"`, while a
+# WHOLE-SPEC word inside a list (`all,classes`) is refused by
+# `pcrec_enabled_set_spec` in its own words — which is why the resolver
+# restates no vocabulary of its own.
+w12_un_bad=""
+for w12_t in log_base log_strict log_big; do
+    w12_got="$(LC_ALL=C grep -m1 '^#define PCREC_FEATURE_MODULES ' "$W12/dir/$w12_t.c" 2>/dev/null)"
+    [ "$w12_got" = '#define PCREC_FEATURE_MODULES "classes,named-groups"' ] || \
+        w12_un_bad="$w12_un_bad  $w12_t -> ${w12_got:-<none>}"
+done
+if [ -z "$w12_un_bad" ]; then
+    pass "W1.2: \`features\` UNIONS the target's configs with the block's own line — all three artifacts stamp \"classes,named-groups\""
+else
+    fail "W1.2: the features UNION did not reach the artifact:$w12_un_bad
+  want: #define PCREC_FEATURE_MODULES \"classes,named-groups\"
+  (classes comes from config baseline, named-groups from the block; a
+  target taking only one side, or letting the block win outright, is
+  exactly what this asserts against)"
 fi
 
 # --- `-o out.c` with N > 1 is REFUSED, naming both ways forward -------
