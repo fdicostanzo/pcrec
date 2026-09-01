@@ -848,14 +848,24 @@ flush_block() {
         # nothing and a target cannot be scored right by an expectation
         # someone wrote to match it.
         #
-        # IT IS ALLOWED TO DIFFER FOR ONE REASON AND THE BLOCK STATES IT: a
-        # target built under a `config` that changes an ANSWER-AFFECTING
-        # axis (`flags i`, `encoding`) genuinely should differ, and this
-        # check would then be wrong. No such config exists in the corpus and
-        # none is expressible without the block writing the same directive,
-        # in which case both sides carry it. If that ever stops being true
-        # the honest fix is a directive saying which targets a case applies
-        # to, not a loosened comparison.
+        # THERE ARE TWO WAYS A CORRECT TARGET COULD LEGITIMATELY DIFFER, and
+        # the second is the one a later author will meet first:
+        #
+        #   (i)  a `config` that changes an ANSWER-AFFECTING axis (`flags i`,
+        #        `encoding`), which the block's own compile does not carry.
+        #   (ii) a `config` that changes the printed line's ARITY without
+        #        changing any answer — `pcrec --no-captures` on a
+        #        GROUP-BEARING pattern takes RX_NCAPS to 1, and driver.c
+        #        prints one span pair per slot, so the target's line is a
+        #        PREFIX of the block's rather than equal to it.
+        #
+        # Neither exists in the corpus (no corpus file declares a target at
+        # all) and the fixtures avoid both ON PURPOSE — `three_configs`
+        # carries `--no-captures` over a pattern with NO GROUPS, which is
+        # why its arity is 1 on both sides. If a real file ever needs
+        # either, the honest fix is a directive saying which targets a case
+        # applies to, not a comparison loosened until it stops
+        # discriminating.
         local _ti
         for _ti in ${tgt_bin[@]+"${!tgt_bin[@]}"}; do
             local tout trc2
