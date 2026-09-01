@@ -1,12 +1,13 @@
 # lane w12 — [DD-13b.W1.2] report
 
-**Branch** `lane/w12`. **Status at time of writing: BUILT, NOT VALIDATED —
-the box HOLD was in force for the lane's entire working period and no
-`make`, no gcc and no `build/pcrec` run has happened.** Every acceptance
-number below is marked OWED. The lane acked the hold in its first WIP
-commit and has stayed inside it: reads, edits in this worktree, `git`,
-`bash -n` (a parse, no execution), and one `python3 -c` used to
-oracle-verify the new fixtures' expectations.
+**Branch** `lane/w12`. **Status: DELIVERED — built under the box hold,
+validated after it lifted.** Every acceptance row in §2 is MEASURED.
+
+The lane was written entirely under a hold that forbade execution: no
+`make`, no gcc, no `build/pcrec` until 00:38. `make strict` was clean on
+its first attempt over ~500 lines of C that had never been compiled. Three
+defects were then found by this lane's own validation, all three invisible
+to every check upstream of it (§3.7).
 
 ---
 
@@ -136,7 +137,7 @@ async, serialized behind lane cc per the manager.
 | abi 14 at all four sites | **DONE.** sites 1-3 with the emitter change; **site 4 FILEPIN `dc2c8ef` → `0bc6884`** (commit `8979d23`), naming the step's LAST src-touching commit |
 | identity gate (A) byte-identical | **PASS, 0 differing on all four axes** (same 2223 / 2228 / 2224 / 2228 vs the UNMOVED pre-module pin `ac4917d`) |
 | identity gate (B) re-pinned | **PASS, 0 differing on all four axes** (same 2274 / 2275 / 2274 / 2274 vs the new pin `0bc6884`); refusal-mismatch 0, elided 0, stamp-moved 0. Gate wall 714 s, 16 checks / 0 failures |
-| `make test-codegen` | see §2.1 — re-run on the FIXED tree |
+| `make test-codegen` | **5/5 scripts, rc 0**, wall 225 s on the FIXED tree — see §2.1 for why it was re-run |
 | `tests/rxtsource` | **94 checks / 0 failures**, wall **40 s** |
 | oracle-verified expectations | **DONE**, python3 `re`, all new cells |
 | D26 tiering | **DONE** — every refusal names FILE, LINE and CONSTRUCT; none reproduces a PCRE2 message |
@@ -152,6 +153,10 @@ than assembled from two different trees.
 **`run_trie_identity` would not have caught it either way**, and that is
 worth knowing rather than assuming the four are equally informative: it
 compares two builds of the SAME tree, so a change present in both cancels.
+
+Re-run result: **5/5 scripts passed, rc 0, wall 225 s.** The first run's
+~24 min against this 225 s is not a speed-up to explain away — that run
+built the compiler and its reference compilers cold, this one did not.
 
 ### 2.2 §5.5's runtime delta, measured by ABLATION
 
