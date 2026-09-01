@@ -213,13 +213,17 @@ bool pcrec_artifact_has_dfa_scan(Ctx *cx)
 const char *pcrec_engine_sel_name(Ctx *cx)
 {
     switch (cx->job->fit.engine_sel) {
-    case ESEL_FORCED:               return "forced";
-    case ESEL_OVERFLOWED_DFA:       return "overflowed-dfa";
-    case ESEL_OVERFLOWED_PREFILTER: return "overflowed-prefilter";
-    case ESEL_COLLAPSED_PREFILTER:  return "collapsed-prefilter";
-    case ESEL_DECLINED_NULLABLE:    return "declined-nullable";
-    case ESEL_SIZE_CAP_RETRY:       return "size-cap-retry";
-    default:                        return "selected";
+    case ESEL_FORCED:                    return "forced";
+    /* [OPT-4.2] the RUNGLESS twin of ESEL_DECLINED_NULLABLE below: an
+     * ordinary auto-selected (or forced --engine=vm) hybrid whose own EXACT
+     * language is nullable, so no prefilter was ever built at all. */
+    case ESEL_DECLINED_NULLABLE_DEFAULT: return "declined-nullable-default";
+    case ESEL_OVERFLOWED_DFA:            return "overflowed-dfa";
+    case ESEL_OVERFLOWED_PREFILTER:      return "overflowed-prefilter";
+    case ESEL_COLLAPSED_PREFILTER:       return "collapsed-prefilter";
+    case ESEL_DECLINED_NULLABLE:         return "declined-nullable";
+    case ESEL_SIZE_CAP_RETRY:            return "size-cap-retry";
+    default:                             return "selected";
     }
 }
 
