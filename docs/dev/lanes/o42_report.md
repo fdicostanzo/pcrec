@@ -5,7 +5,7 @@ PHASE 1 (read + code only, under the box hold) COMPLETE, all 9 steps
 committed. PHASE 2 (build + full validation, after the box lift landed and
 the team lead serialized this lane third behind `cc`/`w12`) is ALSO
 COMPLETE — see §9 for the full measured results. **DELIVERED**: branch
-`lane/o42`, 21 commits, not merged, not pushed.
+`lane/o42`, 15 commits, not merged, not pushed.
 
 Every claim below is marked MEASURED (a command run and its number) or
 INFERRED (derived from a careful source read + hand-trace, from the Phase 1
@@ -334,7 +334,7 @@ run this lane; nothing to `git checkout` back).
 
 ## 10. Branch state
 
-`lane/o42`, 21 commits, not merged, not pushed.
+`lane/o42`, 15 commits, not merged, not pushed.
 `git log --oneline 14f7c44..HEAD` in the worktree lists them in order. One
 process note from Phase 1: my first attempt at step 1 landed in the MAIN
 repo tree by mistake (an absolute-path slip past the worktree prefix) —
