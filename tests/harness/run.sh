@@ -857,7 +857,7 @@ flush_block() {
         # the honest fix is a directive saying which targets a case applies
         # to, not a loosened comparison.
         local _ti
-        for _ti in "${!tgt_bin[@]}"; do
+        for _ti in ${tgt_bin[@]+"${!tgt_bin[@]}"}; do
             local tout trc2
             tout="$("$TIMEOUT_BIN" "$RUN_SECS" "${tgt_bin[$_ti]}" "$subj" "$pos" "$route")"
             trc2=$?

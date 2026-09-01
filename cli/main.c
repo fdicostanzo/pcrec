@@ -987,6 +987,22 @@ int main(int argc, char **argv)
         }
     }
 
+    /* [DD-13b.W1.2] `--source` VERSUS EVERY QUERY, CHECKED HERE AND NOT AT
+     * THE COMPILE PATH. Each query mode below returns from `main` on its
+     * own, so a conflict tested down beside the compile is a conflict the
+     * query already won SILENTLY — `--source f.rxt --count-groups -- a`
+     * would have counted the pattern's groups and ignored the file. The
+     * test is one place, above all of them, and it names both surfaces. */
+    if (st.source && (list_syntax || list_definitions || list_verbs ||
+                      list_families || list_axes || list_limits || explain ||
+                      count_groups || emit_ir || probe_want || list_source ||
+                      flavour)) {
+        fprintf(stderr, "pcrec: --source COMPILES a .rxt file; it does not "
+                        "compose with a query surface (--list-source READS "
+                        "one)\n");
+        return 1;
+    }
+
     /* [DD-13b.W1.1] `--list-source` — the `.rxt` SOURCE dump (w1_impl
      * §1.8, docs/spec/rxt_format.md). A QUERY in --list-syntax's shape:
      * it reads a file, takes no pattern and no -o, and writes a TSV under
@@ -1298,13 +1314,8 @@ int main(int argc, char **argv)
      * and accepting both would leave "which one did I build" answerable two
      * ways. `--target` and `--lib-path` are meaningful only with it. */
     if (st.source) {
-        if (list_syntax || list_definitions || list_verbs || list_families ||
-            list_axes || list_limits || explain || count_groups || emit_ir ||
-            probe_want || list_source) {
-            fprintf(stderr, "pcrec: --source compiles; it does not compose "
-                            "with a query surface\n");
-            return 1;
-        }
+        /* the query conflict was refused above, before any query could
+         * return; what is left is this mode's own two requirements. */
         if (pattern) {
             fprintf(stderr, "pcrec: --source takes no pattern argument — the "
                             "file's `pattern` blocks are the patterns (got "
