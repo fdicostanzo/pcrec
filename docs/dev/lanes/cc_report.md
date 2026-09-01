@@ -40,10 +40,23 @@ patch, i.e. the row's `goto *` count should move from 1 to 0.
 Every row matches my prediction exactly — the seven rows I'd reasoned would
 move to 0 all have zero real push/call activity today, and the four unmoved
 rows all have real activity (their self-recursive call forces linkage, plus
-each one's internal `?` pushes on its own account). This is strong
-corroborating evidence for the fixture-table rewrite in commit `8e0b624`,
-though it is still not a run of my *actual patched compiler* — that still
-needs `cc.lift`.
+each one's internal `?` pushes on its own account).
+
+**Then I found a stronger check and re-ran all eleven through it**:
+`--emit-ir`'s `; resume pts N` line is a direct print of `v->npush` itself
+(`src/gen/emit_vm.c:6927`, `sb_printf(o, "; resume pts   %lld\n",
+v->npush);`) — not a grep proxy, the exact quantity `has_push`'s first term
+reads. `bash -c '.../pcrec -p rx --features all --engine=vm --emit-ir --
+"$p"' | grep "resume pts"` for all eleven gives `npush` = `0, 0, 0, 0, 2, 0,
+0, 0, 1, 2, 1` in fixture order — identical in shape to the table above (zero
+exactly where `RX_CALL` invocations were also zero, nonzero exactly on the
+four self-recursive rows) and, combined with each row's `RX_CALL` invocation
+count already confirming `has_linked_calls`, this is as close to a direct
+confirmation of `has_push`'s value as is possible without compiling my own
+patch. Still not a run of the *actual patched compiler* — that needs
+`cc.lift` — but the fixture-table rewrite in commit `8e0b624` is now
+verified against both terms of the gate individually, not merely reasoned
+about.
 
 Also confirmed while probing: the frameless witness `[a-z]{0,4096}
 --engine=vm` has zero `&&rx_` address-of-label expressions anywhere in its
