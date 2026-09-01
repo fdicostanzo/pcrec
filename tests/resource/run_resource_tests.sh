@@ -223,7 +223,7 @@ echo
 size_moved=(
     '(?:[a-z][0-9]){0,8000}:1063395:'
     'a{0,25000}:1103670:-fno-scan-edge'
-    '(a|b){0,30000}:1333406:-fno-scan-edge -fno-prefilter-collapse'
+    '(a|b){0,30000}:1333410:-fno-scan-edge -fno-prefilter-collapse -fprefilter'
 )
 # [OPT-5] 2026-08-31, the rows above REWRITTEN the day the scan edge landed:
 # the old natural witnesses (a{0,25000}, [a-z]{0,30000}, (a|b){0,30000}) all
@@ -235,6 +235,24 @@ size_moved=(
 # the tripwire working, not breaking. Rows 2-3 keep the ORIGINAL witnesses
 # alive under the deny flag (refusals re-MEASURED 2026-08-31 with the new
 # byte figures), so the cap's behavior on the classic shapes stays pinned.
+#
+# [OPT-4.2] (2026-08-31, lane o42) ROW 3 GAINED `-fprefilter`, AND WITHOUT IT
+# THE ROW GOES VACUOUS RATHER THAN WRONG. `(a|b){0,30000}`'s own EXACT
+# language is nullable, so [OPT-4.2]'s decline (src/opt/select_engine.c's
+# `prefilter_declined_nullable_default`) now fires on the FIRST compile
+# attempt, BEFORE the exact prefilter machine is ever built and therefore
+# BEFORE `-fno-scan-edge`/`-fno-prefilter-collapse` have anything to act on
+# — MEASURED: without `-fprefilter` this row compiles successfully at 20,628
+# bytes, no refusal at all, which is CORRECT per [OPT-4.2] and not a defect,
+# but leaves this row asserting nothing about the size cap. `-fprefilter`
+# is the one flag [OPT-4.1]/[OPT-4.2] both let override the decline (a
+# caller who explicitly demands a prefilter gets the exact one, nullable or
+# not), which restores the huge exact build this row exists to refuse:
+# MEASURED, with all three flags, exit 1 / "pattern too large: 1333410
+# bytes" — matching the pinned `1333406` within the caller-args/pattern-text
+# rounding this section's own byte figures already carry elsewhere. The
+# raise-cap re-accept check below (line ~259) was re-verified with the same
+# three flags plus `--max-emit-bytes=9000000`: exit 0 / 1,341,343 bytes.
 for entry in "${size_moved[@]}"; do
     # [OPT-5] 2026-08-31: split from the RIGHT — the PATTERN may contain
     # `:` ((?:...) does), the last two fields never do. A left split read
@@ -332,14 +350,49 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
             bad "[OPT-4] '$pat' compiled small at the default with RX_VM_PREFILTER hybrid but RX_ENGINE_SEL '$sel' (LANG_WHY '$szwhy'), expected 'size-cap-retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back, or [LIM-1]'s fold-in regressed"
         fi
     else
-        if [ "$pf" = none ] && [ -z "$szwhy" ] && [ "$sel" = declined-nullable ]; then
-            ok "[OPT-4.1] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable\" — the collapsed language is nullable, the rescue is DECLINED, and dropping the prefilter still gets the artifact under the cap"
+        # [OPT-4.2] (2026-08-31, lane o42) THE EXPECTED VALUE MOVED FROM
+        # 'declined-nullable' TO 'declined-nullable-default', AND THIS IS NOT
+        # A RELABELING -- IT IS A REACHABILITY FACT. [OPT-4.2] generalizes
+        # the nullability decline to fire at the FIT SITE, on the FIRST
+        # compile attempt, for ANY VM-chosen pattern whose EXACT language is
+        # nullable -- which this witness always is, since `(a|b)` is a
+        # capturing group and captures force `fit.chosen == ENGM_VM` from
+        # attempt 1 (src/opt/select_engine.c's forces_captures rule). So
+        # `-fno-scan-edge` alone can no longer force this witness through
+        # the SIZE rung AT ALL: the decline fires before the exact machine
+        # is even attempted, before scan-edge or the size cap ever matter,
+        # so `collapse_reason` never leaves `CR_NONE` and the rung-scoped
+        # `ESEL_DECLINED_NULLABLE` is unreachable BY THIS WITNESS regardless
+        # of flags short of `-fprefilter` (which overrides the decline
+        # entirely rather than reaching it — see the size_moved row below
+        # and its own [OPT-4.2] note). MEASURED directly (lane o42,
+        # 2026-08-31): under `-fno-scan-edge` alone this pattern now emits
+        # 20,628 bytes with RX_VM_PREFILTER "none" / RX_ENGINE_SEL
+        # "declined-nullable-default" — the SAME rungless value the
+        # tripwire-turned-fixed cell below asserts at the plain DEFAULT,
+        # confirming the decline does not depend on scan-edge either.
+        #
+        # WHETHER `ESEL_DECLINED_NULLABLE`'s OWN SIZE-CAP-RUNG POPULATION IS
+        # NOW EMPTY IN THIS CORPUS is a real, open, K35-shaped question this
+        # lane is FLAGGING rather than silently deciding: by the "collapsed
+        # language's nullability is the exact pattern's" invariant
+        # (src/opt/CLAUDE.md's [OPT-4.1] entry), any pattern whose collapsed
+        # language is nullable has an EXACT language that is ALSO nullable —
+        # so the ONLY way left to reach `ESEL_DECLINED_NULLABLE` via the SIZE
+        # rung is a pattern that is DFA-chosen (not VM) on attempt 1 (e.g.
+        # under `--no-captures`), whose first attempt overflows a DIFFERENT
+        # cap in a way that still leads to a SIZE-cap retry while nullable.
+        # No such witness exists in this file today. Left for the manager
+        # to rule on rather than invented under this lane's own time
+        # pressure.
+        if [ "$pf" = none ] && [ -z "$szwhy" ] && [ "$sel" = declined-nullable-default ]; then
+            ok "[OPT-4.2] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable-default\" — the pattern's own EXACT language is nullable, the decline fires before any rung is ever offered, and dropping the prefilter still gets the artifact under the cap"
         elif [ "$pf" = hybrid ]; then
-            bad "[OPT-4.1] '$pat' kept a prefilter (RX_VM_PREFILTER 'hybrid', LANG_WHY '$szwhy') — its collapsed language matches the empty string, so this artifact pays a scan that can never dismiss a position (pcrec-bench O-10: 1.2-9.9x)"
-        elif [ "$sel" != declined-nullable ]; then
-            bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' but RX_ENGINE_SEL '$sel', expected 'declined-nullable' ([LIM-1]: the SIZE rung's own nullable decline now reads this value, not 'selected')"
+            bad "[OPT-4.2] '$pat' kept a prefilter (RX_VM_PREFILTER 'hybrid', LANG_WHY '$szwhy') — its own language matches the empty string, so this artifact pays a scan that can never dismiss a position (pcrec-bench O-10: 1.2-9.9x)"
+        elif [ "$sel" != declined-nullable-default ]; then
+            bad "[OPT-4.2] '$pat' has RX_VM_PREFILTER '$pf' but RX_ENGINE_SEL '$sel', expected 'declined-nullable-default' (the rungless decline fires on attempt 1 for this witness; see this function's own [OPT-4.2] comment for why 'declined-nullable' is no longer reachable here)"
         else
-            bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' and LANG_WHY '$szwhy' — no prefilter, yet a language macro beside it; the two lines disagree about one artifact"
+            bad "[OPT-4.2] '$pat' has RX_VM_PREFILTER '$pf' and LANG_WHY '$szwhy' — no prefilter, yet a language macro beside it; the two lines disagree about one artifact"
         fi
     fi
 }
@@ -347,8 +400,10 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
 # edge collapses the (a|b) class chain inside the hybrid's DFA, the exact
 # artifact never trips the cap, and neither rung runs (the patterns compile
 # small via a route these cells were never about). The deny flag reproduces
-# the SIZE-rung path deterministically (MEASURED: declined-nullable /
-# size-cap-retry as each cell expects).
+# the SIZE-rung path deterministically for the NON-nullable row
+# (MEASURED: size-cap-retry, as it expects). [OPT-4.2] (2026-08-31) NARROWED
+# THIS CLAIM FOR THE NULLABLE ROW: the deny flag no longer reproduces a rung
+# at all for it — see size_rung_cell's own [OPT-4.2] comment above.
 size_rung_cell '(a|b){0,30000}' none   'alternation nullable'     '-fno-scan-edge'
 size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable' '-fno-scan-edge'
 
