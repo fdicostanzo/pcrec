@@ -738,16 +738,32 @@ static void emit_rx_abi_types(StrBuf *sb)
          * rest. Today no composer exists, so every artifact stamps
          * `nentries == nnames`; it lands NOW because it rides this `abi`
          * bump, and the alternative is a second bump for one integer. */
-        "    const char           *name;        /* the artifact's own name;\n"
-        "                                          the `<prefix>` when the\n"
-        "                                          build named nothing.\n"
-        "                                          NEVER NULL. */\n"
-        "    int                   nentries;    /* rows in groups[], ALL of\n"
-        "                                          them. nnames counts the\n"
-        "                                          PRIMARY pattern's own,\n"
-        "                                          which are a prefix of the\n"
-        "                                          array; the two are equal\n"
-        "                                          on an uncomposed one. */\n"
+        /* THE COMMENTS SIT ABOVE THEIR MEMBERS, NOT AFTER THEM, for the
+         * MEASURED reason [ENG-ABS] states at `match_form` twenty lines up —
+         * and this row learned it the way the note predicts rather than by
+         * reading it. `tests/lib/size_count.sh`'s classifier is LINE-BASED:
+         * a line that STARTS a comment block is tracked to its end, so a
+         * comment above a member costs ZERO counted bytes, while the
+         * CONTINUATION lines of a trailing multi-line comment start no block
+         * and are counted as CODE.
+         *
+         * The first version of these two members used the trailing shape and
+         * put EIGHT prose lines into every artifact in the tree. That is a
+         * K-INVARIANT constant added to both sides of [ART-SIZE]'s
+         * materiality ratio, which pulls it toward 1 — exactly the mechanism
+         * `tests/codegen/run_size_term.sh` §9's own header warns about for
+         * the DFA prefilter's K-invariant tables — and it was enough to push
+         * that cell's 0.7475 witness over the 75 % bar. The check caught it;
+         * the two cells bracket the constant to 0.73 %, so there was very
+         * little room to be wrong in. */
+        "    /* [DD-13b.W1.2] this artifact's own name: the `.rxt` block's\n"
+        "       `name` when a source named one, the <prefix> otherwise.\n"
+        "       NEVER NULL. */\n"
+        "    const char           *name;\n"
+        "    /* [DD-13b.W1.2] rows in groups[], ALL of them. `nnames` counts\n"
+        "       the PRIMARY pattern's own, which are a PREFIX of the array;\n"
+        "       the two are equal on every artifact pcrec emits today. */\n"
+        "    int                   nentries;\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
