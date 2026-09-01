@@ -106,3 +106,49 @@ rxtsource section asserts all three artifacts stamp
 `PCREC_FEATURE_MODULES "classes,named-groups"`. Neither module is
 reachable from `error|warn|fatal`, so no answer moves and the agreement
 control stays strict.
+
+## Validation order, as RULED by the manager (2026-08-31 ~23:2x)
+
+Re-pin FIRST, run the gate ONCE. The predicted-red (B) run would have been
+a positive control of a gate whose detection ability is not in question
+tonight (it fired correctly at the opt5s1 re-pin days ago), and that gate's
+reference-compiler build is the long pole — paying it twice near midnight
+buys nothing.
+
+1. `make strict`
+2. `make test-codegen` (PROCS=4, async)
+3. `bash tests/rxtsource/run_rxtsource_tests.sh`, WALL-TIMED — the §5.5
+   section-runtime delta the manager asked for
+4. abi SITE 4: `tests/codegen/run_recursion_identity.sh`'s `FILEPIN`,
+   `dc2c8ef` -> **`359fc99`**
+5. the identity gate, ONCE
+6. acceptance table filled with measured values, commit, DONE
+
+If any red forces a src-touching fix, the FILEPIN moves to THAT fix's
+commit and the gate re-runs — the normal ritual, not a deviation.
+
+## The FILEPIN candidate, computed under the hold
+
+The gate archives `src lib cli` from its pin, so "src-touching" means
+those three trees. MEASURED on this branch:
+
+- commits on `lane/w12` touching them: six, newest `359fc99`;
+- `git diff --stat 359fc99..HEAD -- src lib cli` is **EMPTY**, so the
+  subject tree and the pin share IDENTICAL compiler sources.
+
+Two consequences worth having written down before the run:
+
+- **(B) is expected byte-identical everywhere**, and for a stronger reason
+  than "the change is scaffolding": subject and reference are built from
+  the same `src`/`lib`/`cli`. A difference would mean the gate is not
+  comparing what it believes it is.
+- **The re-pin commit cannot move its own target.** It edits
+  `tests/codegen/run_recursion_identity.sh`, which is not in `src`, `lib`
+  or `cli`, so it does not become a newer "last src-touching commit" —
+  there is no chicken-and-egg here.
+
+**(A)'s pin is a DIFFERENT and UNMOVED one** — `REFCOMMIT` `ac4917d`, the
+pre-`A_CALL`-producer commit — and this step does not touch it. (A) is
+expected byte-identical because the two lines this change writes are
+`rx_info` initializer lines, emitted BELOW `prog_region`
+(`goto <p>_L0;` .. `<p>_accept:`) on every artifact.
