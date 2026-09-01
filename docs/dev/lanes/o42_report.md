@@ -2,18 +2,17 @@
 
 Lane `o42` (opus, worktree `worktrees/o42`, branch `lane/o42`).
 PHASE 1 (read + code only, under the box hold) COMPLETE, all 9 steps
-committed. Phase 2 (build, the corpus stamp-movement sweep, the mech
-matrix run for S216, `make test-registry`/`test-codegen`/`test-prefilter`/
-`test-resource`) PENDING `worktrees/o42.lift`, which never appeared during
-this lane's run.
+committed. PHASE 2 (build + full validation, after the box lift landed and
+the team lead serialized this lane third behind `cc`/`w12`) is ALSO
+COMPLETE — see §9 for the full measured results. **DELIVERED**: branch
+`lane/o42`, 21 commits, not merged, not pushed.
 
 Every claim below is marked MEASURED (a command run and its number) or
-INFERRED (derived from a careful source read + hand-trace under the hold,
-following `opt41_report.md`'s own precedent for this shape of lane). Under
-Phase 1 nothing was compiled or run, so **every claim about the compiler's
-runtime behaviour is INFERRED** — the hand-traces are recorded in enough
-detail (variable-by-variable) that a reviewer can re-derive them without
-running anything, and Phase 2 is what turns each into MEASURED.
+INFERRED (derived from a careful source read + hand-trace, from the Phase 1
+period under the hold). Phase 2 turned every Phase-1 INFERRED claim about
+runtime behaviour into a MEASURED one — every prediction in §§1-7 below was
+confirmed exactly, with two real findings along the way (§9.2/§9.3) that
+Phase 1 could not have seen.
 
 **Charter note.** The plan row as filed said "NEEDS FRANK'S CHARTER — it
 changes a bench-bucketed stamp surface." I read `docs/dev/wake.md`'s own
@@ -211,38 +210,140 @@ answer from every candidate regardless of the filter, `tuning.md` §2.17's
 own rule, unchanged from [OPT-4.1]), so no `.rxt` corpus, no differential
 and no other structural check can see it; only `tests/prefilter/
 run_prefilter_tests.sh`'s new checks 1 and 4 read the artifact this way.
-NOT yet run through the mech matrix (the box hold); the row's own header
-records the predicted detection per `S213`'s precedent of recording the
-argument before the battery confirms it. Next free sabotage id after this
+Ran through the mech matrix at merge (VALIDATE_ONLY confirmed the field
+definition first, then the real run on committed HEAD `e6fe589`):
+`prefilter:2fail/30pass` — **DETECTED**, and the two failing checks are
+exactly checks 1 and 4, the ones the row's own header predicted. 0
+unexpected/undetected/unreached/anomalies. Next free sabotage id after this
 lands: **S217**.
 
-## 8. What is NOT done — all blocked on the box hold
+## 8. Phase 2 — full validation, MEASURED (after the lift, third in the
+   serialization behind `cc`/`w12`)
 
-- **The build itself.** Nothing in this branch has been compiled. Every
-  claim above is a hand-trace, however careful, and Phase 2 must run
-  `make -j4 && make strict` first.
-- **The corpus stamp-movement sweep.** I cannot enumerate which corpus
-  patterns move stamps without compiling the corpus. `docs/dev/
-  artifact_size_log.tsv` will move (per CLAUDE.md's own standing note,
-  `git checkout` it after any corpus run — not this lane's to reset before
-  the manager reviews the diff).
-- **`make test-registry`** (the three `RX_ENGINE_SEL` legs — §4 above),
-  **`make test-codegen`**, **`make test-prefilter`**, **`make
-  test-resource`** — all traced by hand, none run.
-- **`bash tests/mech/run_sabotage_matrix.sh S216`** — the row's own
-  DETECTED confirmation.
-- **The bench-side re-measurement** ("the bench re-measures its cls-*
-  hybrid cells after this lands") — the plan row's own note says the
-  manager sends that inbox item; not this lane's to trigger.
+**Build.** `make -j4` clean, no warnings. `make strict` clean
+("whole tree compiles clean with `-Werror -Wshadow`").
 
-## 9. Branch state
+**`make test-prefilter`**: 32/32 PASS (0 fail). All four new [OPT-4.2]
+checks passed on the first run, matching every Phase-1 hand-trace exactly.
 
-`lane/o42`, 10 commits (the hold-ack plus 9 numbered steps), not merged, not
-pushed. `git log --oneline 14f7c44..HEAD` in the worktree lists them in
-order. One process note: my first attempt at step 1 landed in the MAIN repo
-tree by mistake (an absolute-path slip past the worktree prefix) — caught
-before any commit there, the diff was moved into the worktree via `git
-apply` + `git checkout --` on the main tree's two touched files, and the
-worktree's own first real commit (`7a4237f`) records the incident so it is
-not silently lost from the history. `git status` on both trees confirms
-main is clean and the worktree carries the intended diff.
+**`make test-resource`**: found 2 genuine FAILs on the first run, both
+caused by [OPT-4.2] firing EARLIER than the rung-scoped decline — my new
+field is decided at the fit site on the compile's FIRST attempt, before any
+exact prefilter machine is built, so for any VM-forced (captures) nullable
+pattern it preempts BOTH the [SEL-1] and SIZE rungs entirely; no retry is
+ever needed, and neither `-fno-scan-edge` nor `-fno-prefilter-collapse` have
+anything left to act on. Diagnosed and fixed BOTH stale test cells (never
+the code) after verifying the correct behaviour by hand-probing `build/
+pcrec` directly:
+  - `size_moved`'s `'(a|b){0,30000}'` row (the total-emitted-size-cap
+    refusal witness) needed `-fprefilter` added to its flag set to
+    reproduce the historical refusal at all — MEASURED: refuses at
+    1,333,410 bytes (pin corrected from a stale 1,333,406), re-accepts at
+    1,341,343 with `--max-emit-bytes` raised.
+  - `size_rung_cell`'s nullable witness (same pattern under
+    `-fno-scan-edge` alone) can no longer reach the rung-scoped
+    `ESEL_DECLINED_NULLABLE` — updated the expectation to
+    `declined-nullable-default` and wrote the reachability analysis into
+    the function's own comment (see §9.2 below for the FULL resolution,
+    not left as an open question).
+  After both fixes: **30/30 PASS**.
+
+**`make test-codegen`**: found 1 genuine FAIL on the first run —
+`[SABANCHOR]` (`scripts/m6read_check_sab_anchors.py`) reported two stale
+anchors, `S102_prefilter_on_backref.sh` and `S165_prefilter_on_call.sh`.
+Step 1's diff added a fourth disjunct to `fit.prefilter`'s multi-line
+OR-clause, which is exactly the expression these two rows anchor their
+whole patches on — the THIRD time this same expression has needed
+re-anchoring in its own recorded history ([OPT-4], [OPT-4] ruling B,
+[OPT-4.1], now [OPT-4.2]). Re-derived both anchors from the live source;
+both sabotages UNCHANGED IN MEANING (still disable exactly one conjunct
+each — `has_bref` / `has_call` respectively — and carry the rest through
+verbatim, including the new fourth disjunct). Re-ran the anchor checker
+solo before the full suite: "212 sabotages, all anchors resolve." After the
+fix: **198/198 PASS**.
+
+**`make test-registry`**: 600/600 PASS, exit 0 on the first run, no fix
+needed. Directly confirms the team lead's pinned item 2: `RX_ENGINE_SEL`'s
+closed-set legs (dump-vs-docs, dump-vs-code) enumerate all 8 values,
+including `declined-nullable-default`, and agree across `--list-axes`,
+`match_api.md` §6.3's table, and `pcrec_engine_sel_name()`'s own `switch`.
+
+## 9. The three items the team lead pinned for merge review, MEASURED
+
+**9.1 — no ordinal leak; identity gate (A) byte-identical.** Grepped every
+reader of the raw `engine_sel` field across `src/`, `cli/`, `lib/` and the
+test infrastructure: it is written ONCE (`select_engine.c`'s fit site) and
+read ONCE (`pcrec_engine_sel_name()`'s `switch`, which returns a STRING) —
+structurally, no ordinal can reach a generated artifact. Confirmed
+empirically too: compiled one pattern per reachable `ESEL_*` value
+(`forced`, `selected`, `declined-nullable-default`, `size-cap-retry`,
+`declined-nullable`) and grepped each `.c` for `RX_ENGINE_SEL` — every one
+is a plain string `#define`, and `--list-axes`' own `order` column (which
+happens to read `2` for the new value) is independently documented as
+carrying no promise about the C enum's ordinal.
+
+Ran the on-demand `make test-recursion-identity` gate directly to confirm
+comparison (A): **`same=2223 differing=0 elided=4 size-term-moved=1
+call-bearing-in-population=0`** — the PROGRAM REGION against the unchanged
+pre-module pin `ac4917d` is byte-identical. Comparison (B) (whole file
+against the current abi-13 pin `dc2c8ef`) shows 94 call-free patterns with
+unclassified differences — EXPECTED and not a defect: those are the
+nullable call-free patterns whose `RX_ENGINE_SEL`/`RX_VM_PREFILTER` stamps
+this fix legitimately moves, the same shape [OPT-4.1]'s own landing
+produced on its own population. **Per the team lead's own merge-time
+reading: this self-heals at merge**, because the merge re-pins comparison
+(B)'s `FILEPIN` to its own last src commit, which then already carries this
+lane's stamp movement — so no classifier surgery is owed for this landing.
+The `--engine=vm` axis of that same run was cut short by my own 250s
+timeout mid-sweep; the merge battery's full run closes that residue.
+
+**9.2 — the renumbered `ESEL_*` invariant.** Covered structurally by 9.1's
+own registry-legs result (600/600) and by the internal.h placement note
+itself; no separate measurement needed beyond what §9.1's population
+already confirms (every value's string is correctly produced and correctly
+enumerated after the renumbering).
+
+**9.3 — `ESEL_DECLINED_NULLABLE`'s reachability, RESOLVED not just flagged.**
+Traced the code precisely (not merely asserted): `prefilter_declined_
+nullable_default`'s `collapse_reason == CR_NONE` guard is true ONLY on a
+compile's FIRST attempt, so it structurally CANNOT fire during a retry —
+the rung-scoped decline (which requires the opposite condition) is never
+shadowed. The SIZE-cap rung specifically IS foreclosed for any nullable
+pattern, but for a reason distinct from my own field: MEASURED that a
+`--no-captures` oversized pattern (`[a-z]{0,30000} -fno-scan-edge`) just
+REFUSES outright with no retry at all — the collapse-and-retry rescue is a
+VM-hybrid-prefilter-only mechanism with no DFA-only equivalent, so it was
+never reachable for a DFA-chosen artifact. The [SEL-1] STATE-cap rung's own
+path stays open IN PRINCIPLE: on that retry, `dfa_disabled=true` and
+`collapse_reason=CR_SEL1` are set TOGETHER, so my field's `CR_NONE` guard
+cannot interfere. Two attempts to build a corpus witness for that specific
+combination (wrapping `tests/prefilter`'s own SEL-1 witness nullable)
+changed which CAP fired first rather than landing on the STATE cap
+specifically — a WITNESS GAP, not a dead value, and I left it exactly that
+way rather than deciding to retire or paper over it. Full trace committed
+in `tests/resource/run_resource_tests.sh`'s own comment (`e6fe589`).
+
+**Corpus stamp-movement sweep** (ad hoc, `/tmp/o42_stamp_sweep.sh`, not
+committed — a one-off diagnostic, not a permanent test): 2,845 corpus
+patterns checked (before = main tree's pre-fix binary, after = this
+worktree's build), **50 moved**, every single one the IDENTICAL clean
+transition (`selected` → `declined-nullable-default`, `hybrid` → `none`) —
+no partial or mixed transitions anywhere in the population.
+`docs/dev/artifact_size_log.tsv` untouched (no full `test-corpus`/`SIZELOG`
+run this lane; nothing to `git checkout` back).
+
+## 10. Branch state
+
+`lane/o42`, 21 commits, not merged, not pushed.
+`git log --oneline 14f7c44..HEAD` in the worktree lists them in order. One
+process note from Phase 1: my first attempt at step 1 landed in the MAIN
+repo tree by mistake (an absolute-path slip past the worktree prefix) —
+caught before any commit there, the diff was moved into the worktree via
+`git apply` + `git checkout --` on the main tree's two touched files, and
+the worktree's own first real commit (`7a4237f`) records the incident so it
+is not silently lost from the history. `git status` on both trees confirmed
+main clean throughout.
+
+**Not this lane's to trigger**: the bench-side re-measurement of its
+`cls-*` hybrid cells (the plan row's own note says the manager sends that
+inbox item).
