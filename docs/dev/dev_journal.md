@@ -19266,3 +19266,20 @@ w12, [OPT-4.2] lane o42 (Frank's one-line charter confirmation still
 owed), [CC-CLANG] lane cc. Next session: read O-12 FIRST, verify
 baseline, relaunch the three lanes from their briefs+logs, then the
 merge/battery serialization with final abi numbering.
+
+#### Forty-eighth session, addendum (21:2x EDT): Frank revises — lanes run to COMPLETION, no new lanes; the close entry above is superseded in part
+
+Minutes after the park order, Frank: "just let the lanes complete if
+it isn't too late. we should be good there. just don't start any more
+lanes." Park RESCINDED for all three lanes; they continue to full
+delivery under the standing constraints (probes until 22:05 EDT only;
+fully quiet from the bench's WINDOW OPEN to WINDOW CLOSED; after the
+.lift drop, validations serialize through the manager one at a time,
+PROCS=4). The watchdog cron is re-armed; pcrecdev2 told the CLOSED
+ping is live-relevant again. NO NEW LANES this session. The close
+entry above stands as the record of the parked interval; the
+_brief.md files stay (still the durable relaunch/charter record) and
+wake.md gets its real rewrite at the actual close. At this addendum
+all three lanes were already deep in implementation: w12 through the
+CLI surface + F13 driver + H11; cc through both steps written; o42
+through step 5 (tripwire flip).
