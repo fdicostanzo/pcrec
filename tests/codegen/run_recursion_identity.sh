@@ -488,9 +488,16 @@ KEEP="${KEEP:-0}"
 # again, past the four earlier pin attempts at `c657ae9`, `8e0b624`,
 # `353306a` and `c13fd7b`) — not the commit that first moved a byte and not
 # any later test-only commit. Pin was `dc2c8ef` ([OPT-5]'s).
+#
+# [OPT-4.2], 2026-09-01 — RE-PIN WITHOUT A BUMP, the [OPT-4.1] precedent:
+# `ESEL_DECLINED_NULLABLE_DEFAULT` moves the `RX_ENGINE_SEL` stamp VALUE on
+# ~50 corpus artifacts (a value, not scaffolding — abi stays 14, D76), so
+# those artifacts differ whole-file against `ec6f481` while (A) is
+# 0-differing on every axis. The pin is the lane/o42 merge commit
+# `ff13660`, whose tree carries both [CC-CLANG] and [OPT-4.2].
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-ec6f481}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-ff13660}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
