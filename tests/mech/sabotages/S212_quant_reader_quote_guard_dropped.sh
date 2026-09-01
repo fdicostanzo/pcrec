@@ -60,6 +60,15 @@
 # src/parse/parse.c, and separately hand-verified the sabotage's predicted
 # flip against a scratch build (below), but could not run the row itself
 # against its own detector before that corpus lands.
+# PROVENANCE NOTE (r48 F3, 2026-08-31): the coverage-gap autopsy this
+# header cites ("no a*b/a+b/a?b/a{2,3} shape appears in the lane's probe
+# set") was measured against the lane's SCRATCH differential harness,
+# which was session-temporary and is not reproducible from the repo
+# (learnings §3's expired-scratch-measurement shape). The claim's
+# provenance is the quoting lane's 2026-08-31 report (journal, forty-
+# seventh session); the row's DETECTOR (tests/quoting/d27/basics.rxt)
+# is repo-live and independently sourced — only the historical
+# why-nothing-caught-it narrative rests on the expired measurement.
 SAB_ID="S212-quant-reader-quote-guard-dropped"
 SAB_FILE="src/parse/parse.c"
 SAB_SUITES="harness"

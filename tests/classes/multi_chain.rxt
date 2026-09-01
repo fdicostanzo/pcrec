@@ -1,0 +1,22 @@
+# [OPT-5]/r48 F1: MULTI-CHAIN witnesses — patterns whose machines carry MORE
+# scan-chain candidates than PCREC_MAX_SCAN_EDGES (4 per machine), so the
+# selection cap's two sites (the pass's own conjunct, scanedge.c, and the
+# emit-side annotation cap, emit_dfa.c) are both exercised with chains left
+# OVER. Correct behavior either way the cap binds: unselected chains simply
+# stay table-walked. Sabotage row S215 deletes the PASS-side conjunct and
+# these cells are its detector. Expectations python3-re verified 2026-08-31.
+
+# five counted single-class segments -> ~10 chain candidates across the
+# forward machine ({m,n} splits at the accept transition), cap keeps 4
+pattern [a-c]{2,4}[0-9]{2,4}[A-C]{2,4}[j-l]{2,4}[x-z]{2,4}
+m "ab12ABjkxy" 0 10
+m "abc123ABCjklxyz" 0 15
+m "zzab12ABjkxyzz" 2 14
+n "ab12ABjk"
+n "ab12ABjkx"
+
+# the unbounded-tail variant: four bounded chains + a * self-loop chain
+pattern [a-c]{2,4}[0-9]{2,4}[A-C]{2,4}[j-l]{2,4}[x-z]*
+m "ab12ABjk" 0 8
+m "ab12ABjkxyz" 0 11
+n "ab12AB"

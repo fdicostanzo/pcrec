@@ -38,7 +38,14 @@ SAB_SUITES="resource sizeterm harness"
 SAB_HARNESS_TARGET="tests/size/size_term.rxt"
 SAB_DESC="the total emitted-size cap's refusal comparison is inverted, so every artifact under the megabyte limit is refused as 'too large' and the three oversize shapes tests/resource §1b pins are accepted at 1.1-1.3 MB. The resource arm is the only one in the tree that expresses that DIRECTION; every other red cell says only that a pattern stopped compiling"
 SAB_DOC_FIGURE="CANONICAL RUN 2026-08-29 (run_sabotage_matrix.sh S193 at 48e9a90): resource:7fail/19pass, sizeterm:17fail/3pass, corpus:21fail/0pass, reach:ok(1/1), both pops =1 -- DETECTED, and LOUD BY CONSTRUCTION as this header says. The resource arm is the one to read: all SIX section-1b cells flip in both directions -- the three shapes are ACCEPTED where a refusal is required (a{0,25000} at 1,103,367 B, [a-z]{0,30000} at 1,323,371 B, (a|b){0,30000} at 1,333,109 B), and each is then REFUSED at --max-emit-bytes=9000000 where the raised override must re-accept it, because under the inversion a larger limit refuses more. The seventh red is section 1s own a{65535} auto cell (SEL-1s fallback), refused at 18,155 bytes against a 1,000,000 limit -- the same inversion seen from the small side. Nothing else in the tree expresses that DIRECTION: the 21 red corpus cells and the 17 red sizeterm cells all say only that a pattern stopped compiling."
-SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/big.c" -- "a{0,25000}"'
+# [OPT-5] 2026-08-31: the reach witness moved a{0,25000} -> (?:[a-z][0-9]){0,8000}.
+# The scan edge collapsed every single-class counted witness to ~18 KB (this
+# row scored UNREACHED in battery 7 — the reach machinery catching a witness
+# expiry the same day it happened); the period-2 shape is scan-edge-REFUSED
+# and still exceeds the 1 MB total cap naturally (MEASURED: refuses at
+# 1,063,394 B). tests/resource's §1b witnesses moved the same way in the
+# same battery's fix wave.
+SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/big.c" -- "(?:[a-z][0-9]){0,8000}"' 
 SAB_REACH_EXPECT="bytes of emitted C source"
 SAB_REACH_POP="tests/resource/run_resource_tests.sh|size_moved=|1
 tests/resource/run_resource_tests.sh|bytes of emitted C source|1"

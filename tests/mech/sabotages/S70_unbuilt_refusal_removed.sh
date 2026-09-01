@@ -97,10 +97,19 @@ SAB_DOC_FIGURE="RE-MEASURED 2026-08-25 after the row scored UNDETECTED. SUPERSED
 #     NOT match the IN-CLASS row (`'[\Q]'`, ext.c:308-320), which reaches a
 #     DIFFERENT site: the whole point of the re-point was to stop treating
 #     the two positions as one population.
-SAB_REACH='"$PCREC" --features quoting -p rx -o "$REACH_TMP/q.c" -- "\\Q"; "$PCREC" --features misc -p rx -o "$REACH_TMP/r.c" -- "\\R"'
-SAB_REACH_EXPECT="module 'quoting' is enabled but \\Q is not implemented yet
+# [M4-QUOTING] 2026-08-31: the quoting half RETIRED — module quoting BUILT
+# \Q, so `--features quoting '\Q'` now COMPILES and this row scored
+# UNREACHED in battery 7 (the reach machinery catching the expiry). The
+# replacement pair follows tests/reject's own swap (see that file's history
+# comment at the gated rows): module misc's `\c` reaches the SAME
+# out-of-class epilogue, `\R` stays. THE TWO-MODULE PROPERTY IS DEGRADED
+# TO TWO SPELLINGS OF ONE MODULE — misc is the last unbuilt RK_ESC module;
+# the reject file's comment carries the same flag and names the moment to
+# re-decide (when a future module retires a misc row).
+SAB_REACH='"$PCREC" --features misc -p rx -o "$REACH_TMP/q.c" -- "\\c"; "$PCREC" --features misc -p rx -o "$REACH_TMP/r.c" -- "\\R"'
+SAB_REACH_EXPECT="module 'misc' is enabled but \\c is not implemented yet
 module 'misc' is enabled but \\R is not implemented yet"
-SAB_REACH_POP="tests/reject/run_reject_tests.sh|^reject_gated +quoting +'.Q'|1
+SAB_REACH_POP="tests/reject/run_reject_tests.sh|^reject_gated +misc +'.c'|1
 tests/reject/run_reject_tests.sh|^reject_gated +misc +'.R'|1"
 SAB_COUNT=1
 SAB_BEFORE='    if (want == WANT_RESULT) {
