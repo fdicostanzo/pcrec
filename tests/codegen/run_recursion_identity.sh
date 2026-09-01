@@ -474,16 +474,20 @@ KEEP="${KEEP:-0}"
 # `__has_attribute` guard is likewise above `goto <p>_L0;`. `abi` 13 -> 14.
 #
 # THE PIN IS THIS CHANGE'S LAST src/lib/cli-TOUCHING COMMIT, per the rule two
-# paragraphs up: `353306a` (a THIRD src commit in the same change — the
-# `has_push=false` comment's first wording leaked the literal token
-# `RX_CALL` into a call-free/spliced artifact's own text, tripping
-# `[DD-14-RECURSION rule 2]`'s presence check; reworded, no answer changed,
-# but the emitted bytes moved again, past the two earlier pin attempts at
-# `c657ae9` and `8e0b624`) — not the commit that first moved a byte and not
-# any later test-only commit. Pin was `dc2c8ef` ([OPT-5]'s).
+# paragraphs up: `c13fd7b` (a FOURTH src commit in the same change — clang
+# AND gcc both reject the frameless branch's original conditional
+# `if (run->resume_depth == 0) return -1;` with no covering `else` as
+# "control reaches end of non-void function" under `-Werror=return-type`, a
+# REAL bug this change's own validation found rather than a cosmetic one;
+# fixed to an unconditional `return -1;` there — the honest text the
+# `has_push == false` proof already licenses — and the now-unreachable
+# step-budget decrement in that branch is skipped too. Emitted bytes moved
+# again, past the three earlier pin attempts at `c657ae9`, `8e0b624` and
+# `353306a`) — not the commit that first moved a byte and not any later
+# test-only commit. Pin was `dc2c8ef` ([OPT-5]'s).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-353306a}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c13fd7b}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
