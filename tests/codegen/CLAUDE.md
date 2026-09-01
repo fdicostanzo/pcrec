@@ -654,7 +654,10 @@ decides whether to perform it — and then run the row through
   DFA-only emitter produces. Part
   of `make test`;
   env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
-  (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
+  (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in),
+  CLANGGEN=1 ([CC-CLANG]: the same shape one compiler over — defaults CC
+  to clang unless already set, opt-in; the K24 noclone check is
+  gcc-specific by design and reads differently, not wrongly, under it).
   **[M4.7c] (2026-08-17)** added two more `rx_info` cells beside the
   ncaps/engine pair above: `pattern_len` is the pattern's ordinary byte
   count for `'abc'` (3), and — the cell that would catch a field silently
