@@ -1249,14 +1249,46 @@ static void set_from_row(RxtSet *s, const RxtRow *r)
     s->pcrec_raw = r->pcrec_raw;
 }
 
-/* A config's EFFECTIVE settings: its `from` chain expanded in order, then
- * its own lines on top. The cycle and the every-name-exists check both ran
- * at parse time (`config_walk`), so this walk needs neither — which is the
- * point of doing them there: the reachability question is asked once, by
- * the pass that can name the cycle's members. */
-static void cfg_effective(RxtSource *src, RxtRow *r, RxtSet *out)
+/* A config MATERIALISES ONCE, and `seen` is what makes that true rather
+ * than nearly true (§1.5: "`config c from a, b` materialises ONCE at
+ * parse"). Without it a DIAMOND double-counts: `target t with dev,
+ * release` where `release from dev` expands `dev` twice, and while every
+ * ordinary setting is idempotent under later-wins, `pcrec <raw>`
+ * ACCUMULATES — so the joined flag text would carry `dev`'s line twice.
+ * That is harmless for every flag pcrec has today (each is last-wins) and
+ * would stop being harmless the day one is not, which is the wrong thing
+ * to leave resting on the flag set's current shape.
+ *
+ * `seen` spans ONE target's whole `with` composition, not one `from`
+ * chain, because the diamond's two arms come from different list members.
+ * ORDER is unaffected: skipping an already-materialised config removes a
+ * REPEAT, and a repeat under later-wins contributes only what the first
+ * visit already did.
+ *
+ * The cycle and the every-name-exists checks both ran at parse time
+ * (`config_walk`), so this walk needs neither — which is the point of
+ * doing them there: the reachability question is asked once, by the pass
+ * that can name the cycle's members. `seen` therefore terminates a
+ * diamond, never a cycle. */
+typedef struct { RxtRow **v; size_t n, cap; } RxtSeen;
+
+static int seen_add(Arena *a, RxtSeen *s, RxtRow *r)
+{
+    for (size_t i = 0; i < s->n; i++) if (s->v[i] == r) return 0;
+    if (s->n == s->cap) {
+        size_t cap = s->cap ? s->cap * 2 : 8;
+        RxtRow **v = arena_alloc(a, cap * sizeof *v);
+        for (size_t i = 0; i < s->n; i++) v[i] = s->v[i];
+        s->v = v; s->cap = cap;
+    }
+    s->v[s->n++] = r;
+    return 1;
+}
+
+static void cfg_effective(RxtSource *src, RxtRow *r, RxtSeen *seen, RxtSet *out)
 {
     set_init(out);
+    if (!seen_add(&src->arena, seen, r)) return;   /* already materialised */
     if (r->from_list) {
         const char *cur = r->from_list;
         RxtItem it;
@@ -1264,7 +1296,7 @@ static void cfg_effective(RxtSource *src, RxtRow *r, RxtSet *out)
             RxtRow *dep = config_by_name(src, it.s, (size_t)(it.e - it.s));
             if (!dep) continue;          /* parse already refused this */
             RxtSet sub;
-            cfg_effective(src, dep, &sub);
+            cfg_effective(src, dep, seen, &sub);
             cfg_merge(&src->arena, out, &sub);
         }
     }
@@ -1459,13 +1491,15 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         RxtSet s;
         set_init(&s);
         if (tr->with_list) {
+            /* ONE `seen` for the whole `with` list — see cfg_effective. */
+            RxtSeen seen = { NULL, 0, 0 };
             const char *cur = tr->with_list;
             RxtItem it;
             while (list_next(&cur, &it)) {
                 RxtRow *cr = config_by_name(src, it.s, (size_t)(it.e - it.s));
                 if (!cr) continue;       /* parse already refused this */
                 RxtSet eff;
-                cfg_effective(src, cr, &eff);
+                cfg_effective(src, cr, &seen, &eff);
                 cfg_merge(&src->arena, &s, &eff);
             }
         }

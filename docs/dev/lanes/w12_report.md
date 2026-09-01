@@ -189,7 +189,19 @@ alternative is a second bump for one integer. `match_api.md` §6 says so in
 those words, and the codegen check pins the equality rather than implying
 a distinction with no producer.
 
-### 3.5 `docs/dev/plan.md` was NOT touched
+### 3.5 A DIAMOND double-counted `pcrec` text, found by hand-tracing a fixture
+
+`target rx = plain_run with dev, release` where `release from dev` expands
+`dev` TWICE, and while every ordinary setting is idempotent under
+later-wins, `pcrec <raw>` ACCUMULATES — so the joined flag text carried
+`dev`'s line twice. Harmless for every flag pcrec has today (each is
+last-wins) and resting entirely on that, which is the wrong thing to leave
+standing. Fixed: a `seen` set spanning ONE target's whole `with`
+composition, so a config materialises ONCE, which is what §1.5 says. Found
+by hand-tracing `head_basic`'s own config cascade under the hold, not by a
+run.
+
+### 3.6 `docs/dev/plan.md` was NOT touched
 
 Three lanes may be editing the `[DD-13b.W1]` row. The lane left the STATE
 tag to the manager rather than risk a merge conflict on a row it does not
