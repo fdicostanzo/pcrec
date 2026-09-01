@@ -9432,15 +9432,16 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
             "     * boundary, and it must not be traded against execution speed. */\n"
           : "    /* [CC-CLANG] THE ONLY BACKTRACKER, AND THIS PROGRAM PUSHES\n"
-            "     * NO RESUME FRAME AT ALL (no RX_PUSH, no RX_CALL site) --\n"
-            "     * so there is no indirect jump here, and the pop-and-resume\n"
-            "     * dispatch below is omitted rather than emitted dead. A step\n"
-            "     * is one backtrack resumption (4.2), counted at exactly this\n"
-            "     * place — forward progress is FREE, the steps_left is\n"
-            "     * subject-length-independent, and the counter measures\n"
-            "     * precisely the thing it is meant to bound. D22: DD-2 is\n"
-            "     * ROBUSTNESS, not a security boundary, and it must not be\n"
-            "     * traded against execution speed. */\n",
+            "     * NO RESUME FRAME AT ALL (no RX_PUSH site, no linked\n"
+            "     * subroutine call anywhere in the tree) -- so there is no\n"
+            "     * indirect jump here, and the pop-and-resume dispatch below\n"
+            "     * is omitted rather than emitted dead. A step is one\n"
+            "     * backtrack resumption (4.2), counted at exactly this place\n"
+            "     * — forward progress is FREE, the steps_left is subject-\n"
+            "     * length-independent, and the counter measures precisely the\n"
+            "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
+            "     * security boundary, and it must not be traded against\n"
+            "     * execution speed. */\n",
         fail_tr, exhaust_tr);
     if (has_budget)
         sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
