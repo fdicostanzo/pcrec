@@ -74,7 +74,11 @@ part of the rule-1 test, which always uses the default/splice behavior).
 
 ## Branch
 
-`lane/cc`, six commits on top of `14f7c44`:
+`lane/cc`, ten commits on top of `14f7c44` at last update (code/doc commits
+1-7 below; 3 more are report-only updates recording the probe-window
+verification, `11a20e6`/`7694103`/`0d1eec7` — read the report history via
+`git log lane/cc` for the exact list, since this section is not kept
+byte-current with every report-only commit):
 
 1. `9f6e621` — lane start / hold ack.
 2. `c657ae9` — step 1: clang compatibility, abi 13→14 (the `__has_attribute`
@@ -94,6 +98,9 @@ part of the rule-1 test, which always uses the default/splice behavior).
    untouched for a *structural* reason (the fail label sits entirely outside
    `prog_region`'s awk range), not because of anything about the call-free
    population specifically.
+8-10. `7694103`, `11a20e6`, `0d1eec7` — this report, written and then twice
+   strengthened with the probe-window verification tables (see that section
+   above).
 
 ## Step 1 — clang compatibility (abi 13→14)
 
