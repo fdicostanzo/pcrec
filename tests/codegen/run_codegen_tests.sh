@@ -384,7 +384,17 @@ fi
 # check; one that returned nothing would fail the A check. Neither can pass
 # by accident, which is what the 256-branch-control lesson in CLAUDE.md is
 # about — a control has to fire inside the range of what it certifies.
-CC="${CC:-gcc}"
+# [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang; an explicit CC
+# always wins. Same shape as LINTGEN's -fanalyzer append, one compiler over.
+# NOTE: the K24 partial-inlining check below (search "K24 noclone control")
+# is GCC-SPECIFIC BY DESIGN -- it asserts gcc's own partial-inlining pass
+# clones the stripped-attribute control, which has no clang analogue at all
+# (clang performs no such pass), so that one check is expected to read
+# differently, not wrongly, under CLANGGEN=1.
+CC="${CC:-}"
+if [ -z "$CC" ]; then
+    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+fi
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 # SAN-1 LINTGEN: ride this GENCFLAGS compile with gcc -fanalyzer, opt-in.
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi

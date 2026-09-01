@@ -36,14 +36,20 @@
 # untraced one. A debug build that changes the answer is a tool that lies.
 #
 # Usage: bash tests/codegen/run_ir_listing.sh
-# Env: PCREC (default <root>/build/pcrec), CC, GENCFLAGS, KEEP=1
+# Env: PCREC (default <root>/build/pcrec), CC, GENCFLAGS, KEEP=1,
+#      CLANGGEN=1 ([CC-CLANG]: default CC to clang, opt-in, explicit CC wins)
 
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+# [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang; an explicit CC
+# always wins. Same shape as LINTGEN's -fanalyzer append, one compiler over.
+CC="${CC:-}"
+if [ -z "$CC" ]; then
+    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+fi
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 KEEP="${KEEP:-0}"
