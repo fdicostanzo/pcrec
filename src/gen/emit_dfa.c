@@ -5752,6 +5752,56 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * (a)/(b) split is the rule; the hybrid is where its point shows. */
     sb_printf(c, "#define %s_DFA_SCAN_EDGE \"%s\"\n", upper,
               dfa_scan_edge_name(cx));
+    /* [OPT5M2-PROBE] MEASUREMENT-ONLY, NEVER COMMITTED FOR REAL: reads the
+     * design note's P1-P4 (docs/design/opt5_step2_twopass.md §1.2) directly
+     * off the Dfa struct this function already has in scope, at the exact
+     * point unanch_start's own start_acc is computed a few lines up in
+     * dfa_prefilter_name. P1+P2 combined for one state is member_ok's own
+     * body (src/opt/scanedge.c) plus the base accept bit — copied verbatim,
+     * cited, not re-derived. */
+    if (cx->job->engine != PCREC_ENG_ATTEMPT && !dfa_engine_is_empty(cx)) {
+        const Dfa *__pfd = &cx->job->dfa;
+        int __pfs = __pfd->s0;
+        const char *__preason = "notacc";
+        if (__pfs < 0) {
+            __preason = "notacc";
+        } else {
+            const DState *__pst = &__pfd->st[__pfs];
+            if (__pst->eolvar >= 0 || __pst->endvar >= 0) {
+                __preason = "view";
+            } else {
+                bool __pctxok = true;
+                for (int __pu = 1; __pu < UPC_N; __pu++)
+                    if ((bool)__pst->up[__pu].accept != (bool)__pst->up[0].accept)
+                        __pctxok = false;
+                if (!__pctxok) __preason = "classctx";
+                else if (__pst->up[UPC_PLAIN].accept == 0) __preason = "notacc";
+                else {
+                    __preason = "yes";
+                    if (dfa_needs_seed(__pfd)) {
+                        for (int __pu = 0; __pu < UPC_N; __pu++) {
+                            if (!upc_emit_live(__pu)) continue;
+                            int __pss = __pfd->s1u[__pu];
+                            if (__pss < 0) { __preason = "seed:missing"; break; }
+                            const DState *__pset = &__pfd->st[__pss];
+                            if (__pset->eolvar >= 0 || __pset->endvar >= 0) {
+                                __preason = "seed:view"; break;
+                            }
+                            bool __psctxok = true;
+                            for (int __pv = 1; __pv < UPC_N; __pv++)
+                                if ((bool)__pset->up[__pv].accept != (bool)__pset->up[0].accept)
+                                    __psctxok = false;
+                            if (!__psctxok) { __preason = "seed:classctx"; break; }
+                            if (__pset->up[UPC_PLAIN].accept == 0) {
+                                __preason = "seed:notacc"; break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        sb_printf(c, "#define %s_PROBE_PINNED \"%s\"\n", upper, __preason);
+    }
 }
 
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
