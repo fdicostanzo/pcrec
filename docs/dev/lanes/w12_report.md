@@ -263,7 +263,55 @@ the block, and the section asserts all three artifacts stamp
 not a re-derivation. Neither module is reachable from `error|warn|fatal`,
 so no answer moves and the agreement control stays strict.
 
-### 3.7 `docs/dev/plan.md` was NOT touched
+### 3.7 THREE DEFECTS, all found by this lane's own validation, none visible upstream
+
+Recorded together because they are one lesson at three depths.
+
+**(a) 519 bytes of prose in every artifact.** `rx_info`'s two new members
+used TRAILING multi-line comments. `tests/lib/size_count.sh`'s classifier is
+LINE-BASED — a line that STARTS a block is tracked to its end, so a comment
+ABOVE a member costs zero counted bytes while the CONTINUATION lines of a
+trailing one start no block and are counted as CODE. Eight lines, 519 bytes,
+on EVERY artifact in the tree (+7.68 % of the corpus median). That is a
+K-INVARIANT constant on both sides of `run_size_term.sh` §9's materiality
+ratio, which pulls it toward 1 — the exact mechanism that check's own header
+warns about for the prefilter's K-invariant tables — and 0.7475 sat under a
+75 % bar. **`emit_dfa.c` already documented this twenty lines above where I
+was typing**, at `match_form`, with its own prior measurement (+691 B across
+2,875 artifacts) and the words "a MEASURED choice rather than a style one".
+Fixed to the above-the-member shape.
+
+**(b) A refusal that never met its own contract.** §1.3 requires the
+no-such-definition refusal to name the definition AND the `lib` chain
+searched. `pcrec_error.msg` is a FIXED 256 bytes already holding a path and a
+line; the message repeated the name three times, added a sentence about
+[DD-13b.W1.3], and put the chain LAST — and `rxt_fail` truncates the tail by
+design. MEASURED: cut off at EVERY path length tried, including a 20-byte
+one. So it had never satisfied its contract on any input, and the truncation
+hid that rather than announcing it. Fixed CONTRACT-FIRST, PROSE-LAST.
+
+**(c) The fix for (b) was still wrong, and the check I wrote for (b) caught
+it.** Bounding the CLASS (all four refusals under the buffer) fired on its
+first run: `no_such_definition` at 263 against a 263 limit. Shortening words
+had not worked because verbosity was not the problem — every message carrying
+the chain ALSO carries `rxt_fail`'s `<path>:<line>: ` prefix, so spelling the
+source's own directory inside the chain put **the source path in the message
+twice**. That is why a short-path measurement said 234 and the real fixture
+said 263: the overflow scales with the path, and I had measured at a path I
+chose rather than the one the fixture uses. The chain now NAMES that
+directory (28 bytes, any path) and SPELLS only the `--lib-path` entries.
+
+**The through-line.** (a) was invisible to every oracle — no answer, refusal
+or stamp VALUE moved, only emitted-byte accounting. (b) was invisible to any
+check that reads a message for a substring it happens to still contain. (c)
+was invisible to any check pinned at a path its author picked. Each was
+caught by a structural check whose charter is exactly that class, and (c) by
+one written minutes earlier for (b).
+
+**A rule stated once in a file does not survive contact with an author
+appending to that file; the CHECK is what survives.**
+
+### 3.8 `docs/dev/plan.md` was NOT touched
 
 Three lanes may be editing the `[DD-13b.W1]` row. The lane left the STATE
 tag to the manager rather than risk a merge conflict on a row it does not
