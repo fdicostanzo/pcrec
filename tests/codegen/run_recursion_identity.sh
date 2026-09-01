@@ -474,14 +474,16 @@ KEEP="${KEEP:-0}"
 # `__has_attribute` guard is likewise above `goto <p>_L0;`. `abi` 13 -> 14.
 #
 # THE PIN IS THIS CHANGE'S LAST src/lib/cli-TOUCHING COMMIT, per the rule two
-# paragraphs up: `8e0b624` (a follow-on commit in the same change made the
-# fail label's own emitted COMMENT conditional on `has_push` too, moving
-# further src bytes past the first pin attempt at `c657ae9`) — not the commit
-# that first moved a byte and not any later test-only commit. Pin was
-# `dc2c8ef` ([OPT-5]'s).
+# paragraphs up: `353306a` (a THIRD src commit in the same change — the
+# `has_push=false` comment's first wording leaked the literal token
+# `RX_CALL` into a call-free/spliced artifact's own text, tripping
+# `[DD-14-RECURSION rule 2]`'s presence check; reworded, no answer changed,
+# but the emitted bytes moved again, past the two earlier pin attempts at
+# `c657ae9` and `8e0b624`) — not the commit that first moved a byte and not
+# any later test-only commit. Pin was `dc2c8ef` ([OPT-5]'s).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e0b624}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-353306a}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
