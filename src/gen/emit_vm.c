@@ -2604,7 +2604,18 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
              * vm_cost_rep counts the runtime requirement, which is still one
              * per ITERATION for the non-possessive shapes and ONE for the
              * whole loop possessified. */
-            v->npush += cuts ? (nopt >= K ? 1 : nopt)
+            /* [CC-CLANG fix, 2026-09-01] UNBOUNDED (`rmax < 0`) FIRST: there
+             * `nopt` is NEGATIVE (rmax - rmin = -1 - rmin), and feeding it to
+             * either arm below SUBTRACTS from npush — measured cancelling the
+             * replicated body's real pushes to zero on `(?:ab|b){8,}+c`,
+             * which then omitted the fail label's pop-and-resume dispatch
+             * from an artifact with ten live RX_PUSH sites (a miscompile:
+             * nomatch on every subject needing the second alternative). The
+             * unbounded tail is the frames star, one push site, possessive
+             * or not — the frames-rung arm below says the same for its own
+             * rmax < 0 case. */
+            v->npush += a->u.rep.rmax < 0 ? 1
+                      : cuts ? (nopt >= K ? 1 : nopt)
                              : (nopt >= K ? K + nopt % K : nopt);
             if (copies > v->maxcopies) v->maxcopies = copies;
             for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
@@ -8150,8 +8161,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * anywhere in the function, and is what clang refuses ("indirect goto in
      * function with no address-of-label expressions") where gcc accepts it.
      * `has_push` is the gate that omits it there instead of emitting dead
-     * dispatch code. */
-    const bool has_push = v.npush > 0 || v.has_linked_calls;
+     * dispatch code.
+     *
+     * [CC-CLANG fix, 2026-09-01] `has_push` is NO LONGER computed here from
+     * `v.npush`: the pre-pass's push count is an ESTIMATE whose original
+     * consumer is the resume-point cap (where an error is an accounting bug),
+     * and the counter rung's unbounded arm measured it NEGATIVE, which made
+     * the dispatch-omission gate a miscompile. The gate is now derived from
+     * the EMITTED PROGRAM TEXT at the fail-label emission site below — one
+     * derivation (the bytes) with the emitter itself as the only writer. */
 
     /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
      * `--fno-step-budget` suppresses BOTH counters, which is what keeps
@@ -9437,6 +9455,20 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
     }
+    /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — derived
+     * from the EMITTED PROGRAM TEXT, which is already complete in `c` at this
+     * point. The needle matches only USE sites (`<UP>_PUSH(&&`); the macro
+     * DEFINITION spells `<UP>_PUSH(lbl_` and comments were reworded at bug 2
+     * not to spell it at all. `v.has_linked_calls` stays as the second term:
+     * `RX_CALL` increments `run->resume_depth` at run time, and its own
+     * emission is gated on the same flag, so the two agree by construction.
+     * (`v.npush` is deliberately NOT consulted — it is the resume-point cap's
+     * ESTIMATE, and the counter rung's unbounded arm once drove it negative,
+     * which omitted this dispatch from a program with live pushes.) */
+    char push_needle[48];
+    snprintf(push_needle, sizeof push_needle, "%s_PUSH(&&", v.up);
+    const bool has_push = (c->p != NULL && strstr(c->p, push_needle) != NULL)
+                          || v.has_linked_calls;
     /* [CC-CLANG] The fail label's own comment claims "THE ONLY ... INDIRECT
      * JUMP", which is exactly untrue on a FRAMELESS program (has_push
      * false, below): there is no `goto *` left in that case at all. The

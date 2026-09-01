@@ -2140,7 +2140,7 @@ echo "cases passed: $total_pass"
 # "REFUSED" for a compile that never finished. The cell is about the WARNING,
 # not the compile cost, so the witness is a cheap oversize artifact: 365 KB in
 # 3.1 s of CPU (measured 2026-08-30, load ~7), still 46% over the default.
-WARNBIG='([a-z]|[0-9]X){0,2000}'   # ~381 KB emitted (MEASURED 2026-08-31), comfortably over the 250,000 default. [OPT-5]: the old '[a-z]{0,8192}' witness collapsed to ~18 KB when the scan edge landed (single-class counted chains stopped emitting tables) — this two-class shape is scan-edge-REFUSED (two live classes, different targets) so it still emits big naturally; if THIS one ever shrinks, a new emission mechanism landed and the witness moves again
+WARNBIG='([a-z]|[0-9]X){1,2000}'   # ~383 KB emitted (MEASURED 2026-09-01, 0.36 s), comfortably over the 250,000 default. [OPT-5]: the old '[a-z]{0,8192}' witness collapsed to ~18 KB when the scan edge landed (single-class counted chains stopped emitting tables); [OPT-4.2]: its `{0,2000}` successor collapsed to ~25 KB when the general nullability decline landed (a nullable exact language now carries NO hybrid prefilter, and the prefilter WAS the bulk of the bytes) — `{1,2000}` is the same shape made non-nullable, still scan-edge-REFUSED (two live classes, different targets), so it still emits big naturally; if THIS one ever shrinks, a new emission mechanism landed and the witness moves again
 WARNSMALL='a(b|c)+d'      # a few KB, comfortably under it
 warn_out="$WORKDIR/warn.c"
 

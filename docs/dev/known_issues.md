@@ -3463,3 +3463,37 @@ over absolute references or collisions in general. Not [DD-13b.W1.3]'s
 to discharge. Closes when an oracle independent of pcrec's own
 composer exists (a second composer, or PCRE2 gaining library
 composition — neither planned).
+
+## K43 — INFRASTRUCTURE (2026-09-01, forty-ninth session, found by battery 8's `make test LINTGEN=1` stage): the LINTGEN axis is RED on this box's gcc 15 — `-fanalyzer` false positives (CWE-457) on VM artifacts whose driver calls the anchored entry, plus the traced-artifact and rung-boundary build cases
+
+`make test LINTGEN=1` fails in five sections (encseam, vm, registry's
+definitions-oracle, codegen's [DD-14.FB] --trace check, cli before its
+witness moved) with `-Werror=analyzer-use-of-uninitialized-value` at
+`RX_SET`'s trail-save line (`run->trail[...].saved_value =
+slot_values[(slot_)]`) inside `<prefix>_match_anchored`.
+
+**MEASURED FALSE POSITIVE, and PRE-EXISTING**: `<prefix>_run_state_init`
+initializes every slot (`for (i = 0; i < NSLOTS; i++) slot_values[i] =
+PCREC_UNSET;`) before any program byte runs, so the flagged read is
+covered; gcc 15's analyzer cannot prove the loop covers the index through
+these drivers' call shapes. Reproduced IDENTICALLY on the pre-merge tree
+(e8ef9c8 archive build: `pcrec -p fa -o fa.c '(a*)*'` + the encseam
+find-all driver + `-fanalyzer -Werror` = the same CWE-457 at the same
+macro), so the cc/o42 merges did not cause it — battery 8's stage was
+simply the first in some time to actually exercise LINTGEN over these
+sections (the ruling in docs/testing.md "Battery integration" says
+battery-grade `make test` adopts LINTGEN=1; recent green batteries
+evidently ran it plain, or gcc's analyzer has moved since SAN-1's
+2026-08-13 measurement — R5-Q1's "a newer gcc's new opinion" applied to
+the analyzer axis).
+
+**Interim disposition (manager, 2026-09-01): the battery's test stage
+runs PLAIN `make test`; LINTGEN=1 stays opt-in and is expected red on
+gcc 15 until this entry is fixed.** Fix directions, unruled: (a) per-site
+`-fanalyzer` suppressions or a documented exclusion list for the known
+driver shapes; (b) an emitted-code change making the init provable
+(e.g. `= {0}`-style aggregate init — an abi-relevant emitted-bytes
+change, D76); (c) revisit on a newer gcc. Repro:
+`build/pcrec -p fa -o fa.c '(a*)*' && gcc -O1 -std=gnu11 -Wall -Wextra
+-Werror -fanalyzer -Itests/encseam -o drv tests/encseam/findall_driver.c
+fa.c`.

@@ -19431,3 +19431,65 @@ lint → mech, script rebuilt from docs/testing.md as battery_v4) → w12
 merge (abi 14→15 renumber at all four D76 sites + its own re-pin) → w12
 checks → final battery → plan/journal/wake/briefs/CLAUDE.md bookkeeping +
 I-29.
+
+## 2026-09-01 — Forty-ninth session, part 2 (midday): battery 8's test stage RED caught a REAL cc-family miscompile; fixed same session; LINTGEN ruled red on gcc 15 (K43)
+
+Battery 8 (cc+o42, the first with this manager's rebuilt battery_v4)
+went red in its test stage and the triage found ONE real miscompile,
+one class of pre-existing analyzer false positives, two checks o42
+legitimately outdated, and one load artifact:
+
+**THE MISCOMPILE ([CC-CLANG]'s has_push gate × a LATENT npush accounting
+bug):** `vm_count_slots`' counter-rung arm computes `nopt = rmax - rmin`,
+which is NEGATIVE for an UNBOUNDED `{m,}` (rmax = -1) — so its
+`v->npush +=` arm SUBTRACTED, cancelling the replicated body's real
+pushes. Harmless while npush's only consumer was the resume-point cap;
+[CC-CLANG] made it load-bearing (`has_push = npush > 0 || linked`), so
+`(?:ab|b){8,}+c` emitted TEN live RX_PUSH sites and NO pop-and-resume
+dispatch: nomatch on every subject needing the second alternative
+(libpcre2/python: match). Caught by tests/atomic_groups/run_atomic_diff.sh
+(6 cells); invisible to cc's own validation because the dispatch sits
+OUTSIDE gate (A)'s program region, (B) compares the same tree, and the
+CLANGGEN sweeps skipped atomic_groups. FIX, two halves: (1) the counter
+arm handles rmax<0 first (+1, the frames-star tail's own site — the
+frames arm's existing precedent); (2) `has_push` is now DERIVED FROM THE
+EMITTED PROGRAM TEXT at the fail-label site (needle `<UP>_PUSH(&&`, use
+sites only) plus `v.has_linked_calls` — the accounting estimate keeps
+the cap and loses the dispatch decision (one derivation, the bytes).
+Verified: the witness matches both spellings and both subject classes;
+the frameless witness `[a-z]{0,4096}` still omits the dispatch and
+compiles clang -Werror clean; atomic diff green; codegen 106/106 incl.
+SABANCHOR 212 and the rule-1 fixtures; strict clean.
+
+**K43 (new INFRASTRUCTURE entry): `make test LINTGEN=1` is RED on this
+box's gcc 15** — analyzer CWE-457 false positives at RX_SET's trail-save
+(the init loop in run_state_init provably covers the read) on VM
+artifacts driven through encseam/vm_oracle/definitions-oracle/--trace
+shapes. REPRODUCED ON THE PRE-MERGE TREE (e8ef9c8 archive) — not a merge
+artifact; battery 8 was simply the first battery in some time to
+actually exercise the axis. Interim ruling in the entry: battery test
+stage runs PLAIN; LINTGEN stays opt-in, expected red until fixed.
+encseam/vm/codegen re-verified GREEN plain.
+
+**o42's two stale checks, fixed by the manager (small landing-bar
+items):** run_prefilter_collapse.sh gains `declined-nullable-default` in
+its closed set + the no-prefilter-survived cross-check arm, an eighth
+sel_witness row, and the two `exact-nullable` lang rows became
+`declined_default_witness` rows asserting the [OPT-4.2] outcome
+(SEL declined-nullable-default / PREFILTER none / no LANG macro, at the
+default AND under -fprefilter-collapse) — measured before written.
+tests/cli's `--warn-emit-bytes` witness moved to `([a-z]|[0-9]X){1,2000}`
+(383 KB, 0.36 s): its nullable predecessor collapsed to ~25 KB when the
+general decline landed — the witness comment predicted exactly this
+class of move and now records it.
+
+**Load artifact, watching:** the corpus GCC-CPU tripwire fired at 1.097x
+its 8.0s pin on k18_cost_gates.rxt:103 at load1 35.97 (the -j12 battery
+thrashing its own measurement). If it fires again on the quiet re-run it
+gets investigated as real movement, per lesson 3 (suspect your bytes
+before the check's pin).
+
+Battery 8 re-launches after the identity-gate re-pin to the fix commit.
+prefilter-collapse, atomic-diff, cli, encseam, vm, codegen, registry all
+green at this entry (registry plain was green post-merge; its LINTGEN
+red is K43's).

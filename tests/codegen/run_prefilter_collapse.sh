@@ -340,8 +340,40 @@ lang_witness count-collapsed '((a{10,20}){10,50})z'
 # the counted repeat, the capture, the branch structure and the machine, and
 # differ in exactly the predicate under test — so a decline that fired on the
 # STRUCTURE rather than on nullability turns the pair red from both ends.
-lang_witness exact-nullable  '((a)|b){0,4000}'
-lang_witness exact-nullable  '((a)|b){0,3}'
+#
+# [OPT-4.2] (2026-09-01) THESE TWO ROWS CHANGED EXPECTATION, because the
+# DEFAULT changed under them: the general nullability decline now refuses the
+# ordinary EXACT hybrid too, so a nullable pattern carries NO prefilter at all
+# — `RX_VM_PREFILTER "none"`, `RX_ENGINE_SEL "declined-nullable-default"`, and
+# no `RX_VM_PREFILTER_LANG` macro (match_api.md §6.3's iff: no machine, no
+# language). `-fprefilter-collapse` reaches the same outcome — the collapse it
+# forces is itself declined for nullability, and there is no exact hybrid left
+# to fall back onto. The minus-one-character pairing above still holds: the
+# `count-collapsed` row with the `c` is the non-nullable control.
+declined_default_witness() {  # declined_default_witness PATTERN
+    local pat="$1" a="$WORK/w_dd.c"
+    if ! emit "$a" -- "$pat"; then
+        bad "[lang] '$pat' does not compile at the default — this row has no subject"; return
+    fi
+    local vmpf sel lang
+    vmpf=$(stamp VM_PREFILTER "$a"); sel=$(stamp ENGINE_SEL "$a"); lang=$(stamp VM_PREFILTER_LANG "$a")
+    if [ "$vmpf" != none ] || [ "$sel" != declined-nullable-default ]; then
+        bad "[lang] '$pat' at the default stamps PREFILTER '$vmpf' / SEL '$sel', expected 'none' / 'declined-nullable-default' — the [OPT-4.2] general decline stopped firing on the nullable exact language"; return
+    fi
+    if [ -n "$lang" ]; then
+        bad "[lang] '$pat' has no prefilter but stamps RX_VM_PREFILTER_LANG '$lang' — §6.3's iff is broken (no machine, no language)"; return
+    fi
+    if ! emit "$a" -fprefilter-collapse -- "$pat"; then
+        bad "[lang] '$pat' does not compile under -fprefilter-collapse"; return
+    fi
+    vmpf=$(stamp VM_PREFILTER "$a"); sel=$(stamp ENGINE_SEL "$a")
+    if [ "$vmpf" != none ] || [ "$sel" != declined-nullable-default ]; then
+        bad "[lang] '$pat' under -fprefilter-collapse stamps PREFILTER '$vmpf' / SEL '$sel', expected the same decline as the default — a forced collapse of a nullable language must not produce a filter that can dismiss nothing"; return
+    fi
+    ok "[lang] '$pat' declines every prefilter (SEL 'declined-nullable-default', PREFILTER 'none', no LANG macro) at the default AND under -fprefilter-collapse — the [OPT-4.2] general decline, with the '+c' row above as its non-nullable control"
+}
+declined_default_witness '((a)|b){0,4000}'
+declined_default_witness '((a)|b){0,3}'
 
 # THE CONFLICT PAIR is REFUSED, by name (tuning.md §2.17). The two
 # force/vacuity rows that used to sit here are now `lang_witness`'s own — under
@@ -403,7 +435,7 @@ else
         n_art=$((n_art+1))
         sel=$(stamp ENGINE_SEL "$art")
         case "$sel" in
-          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter|declined-nullable|size-cap-retry) ;;
+          selected|forced|overflowed-dfa|overflowed-prefilter|collapsed-prefilter|declined-nullable|declined-nullable-default|size-cap-retry) ;;
           *) n_sel_bad=$((n_sel_bad+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel')" ;;
         esac
         [ "$sel" = forced ] && { n_sel_forced=$((n_sel_forced+1)); [ -z "$sel_ex" ] && sel_ex="$p (forced at the default)"; }
@@ -414,12 +446,13 @@ else
           collapsed-prefilter|size-cap-retry)
             { [ "$vmpf" = hybrid ] && [ "$lang" = count-collapsed ]; } || {
                 n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL $sel but PREFILTER '$vmpf' / LANG '$lang')"; } ;;
-          overflowed-dfa|overflowed-prefilter|declined-nullable)
+          overflowed-dfa|overflowed-prefilter|declined-nullable|declined-nullable-default)
             # [OPT-4.1] `declined-nullable` joins the "no prefilter survived"
             # arm rather than getting one of its own: what it names is a
             # DIFFERENT REASON for the same artifact-level outcome, and the
             # cross-check here is about the outcome. The reason is what §7b's
-            # own witness pins.
+            # own witness pins. [OPT-4.2]'s `declined-nullable-default` joins
+            # for the identical reason one rung further out.
             [ "$vmpf" = none ] || {
                 n_sel_cross=$((n_sel_cross+1)); [ -z "$sel_ex" ] && sel_ex="$p (SEL '$sel' but PREFILTER '$vmpf')"; } ;;
         esac
@@ -862,6 +895,12 @@ sel_witness overflowed-dfa       -fno-prefilter-collapse -- "$SEL1_P"
 # MEASURED reasons the wrapped form is unusable (it does not compile, and with
 # the cap raised it is a DFA artifact taking no VM prefilter decision at all).
 sel_witness declined-nullable                            -- '(?:(?:a|b)*a(?:a|b){15})?'
+# [OPT-4.2] THE EIGHTH ROUTE: the general (rungless) decline, on §2's own
+# nullable witness — an ORDINARY hybrid candidate whose exact language is
+# nullable, no overflow and no rung anywhere near it. Reuses the pattern the
+# `declined_default_witness` rows above pin in detail; this row is only the
+# K35 reachability half.
+sel_witness declined-nullable-default                    -- '((a)|b){0,4000}'
 sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
 # [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the lane's own
 # brief. Reuses tests/resource's own `(a|b){1,30000}` cell rather than a new
