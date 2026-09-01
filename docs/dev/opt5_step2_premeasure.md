@@ -67,12 +67,26 @@ Sanity probes (hand patterns, not part of the census): `a*` -> `yes`;
 
 ## M3 — which precondition declines `(?:[a-z]{0,2048})\z` (§7 item 3)
 
-**INFERRED, static reading**, confirmation probe pending build availability.
+**MEASURED**, static reading confirmed by one discriminating probe pair.
 `\z` forces an END view (`endvar >= 0`) onto every state in the counted
 `[a-z]{0,2048}` chain, since each such state's accept depends on whether
-`pos == n`. `src/opt/scanedge.c`'s `member_ok` (line 188-194) checks
+`pos == n`. `src/opt/scanedge.c`'s `member_ok` (line 190) checks
 `st->endvar >= 0` FIRST, before the class-context loop, so **precondition
 (3)** ("NO POSITION VIEW ON ANY MEMBER") is what refuses every member —
-never reaching precondition (2)'s class-context check. Matches the design
-note's own §2 item 1 INFERRED claim and the manager's observed
-`RX_DFA_SCAN_EDGE "none"`.
+never reaching precondition (2)'s class-context check.
+
+```
+$ build/pcrec --features all -p rx -o m3a.c -- '(?:[a-z]{0,2048})\z'
+#define RX_DFA_SCAN_EDGE "none"
+#define RX_DFA_PREFILTER "byte-class-bounded"
+
+$ build/pcrec --features all -p rx -o m3b.c -- '(?:[a-z]{0,2048})'
+#define RX_DFA_SCAN_EDGE "range"
+#define RX_DFA_PREFILTER "none"
+```
+
+Removing `\z` alone (same skeleton, no other change) flips `RX_DFA_SCAN_EDGE`
+from `"none"` to `"range"` — the discriminating pair the brief asked for.
+Confirms both the design note's own §2 item 1 INFERRED claim and the
+manager's observed `RX_DFA_SCAN_EDGE "none"`: precondition (3), not (1) or
+(2), is what declines the whole form.
