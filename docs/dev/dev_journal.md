@@ -19283,3 +19283,19 @@ wake.md gets its real rewrite at the actual close. At this addendum
 all three lanes were already deep in implementation: w12 through the
 CLI surface + F13 driver + H11; cc through both steps written; o42
 through step 5 (tripwire flip).
+
+#### Forty-eighth session, lift (23:16 EDT): bench window CLOSED clean — 4/4 [B25] cells measured attempt-1; serialized validations begin cc → w12 → o42
+
+pcrecdev2's window ran 21:46-23:15 EDT, all four bounded@0.2 acceptance
+cells landed measured with no spread retry; their per-rung reading vs
+I-27's predictions lands as durable O-12 tonight. Their re-pin merge
+carried one welcome fact: the counted ladder's emitted source is FLAT
+at the pin, the 16384 rung down ×44. Our side held fully silent for
+the whole window (watchdog deleted for the duration; all lane and
+manager crons message-only). 23:16: the three .lift files dropped;
+validations serialize quickest-first — cc (box now), w12 on GO, o42
+last (its corpus sweep + S216 mech solo are the long tail). All three
+lanes pre-confirmed their measured-probe corroborations during the
+21:1x-21:2x probe window and carry pinned validation orders; the
+watchdog cron is re-armed for the validation phase. Merges, final abi
+numbering (in merge order), and the battery remain NEXT-session work.
