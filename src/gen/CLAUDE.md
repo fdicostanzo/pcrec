@@ -765,17 +765,20 @@ consumer cannot BUCKET on prose, and the last four values share one
 the fallback.
 
 **[OPT-4.1] ADDED THE SIXTH, AND IT IS A VALUE RATHER THAN SCAFFOLDING (D76,
-so no `abi` bump).** `declined-nullable` says the [SEL-1] rung was OFFERED and
+so no `abi` bump).** `declined-nullable` says a rung was OFFERED and
 REFUSED: the count-collapsed language is nullable, so the rescue would have
 shipped a filter that can never dismiss a position (pcrec-bench O-10 measured
 that at 1.2-9.9x slower than none). Without it the declined artifact is
 byte-indistinguishable in its stamps from one whose COLLAPSED machine also
 overflowed — two outcomes that cost a consumer quite different things, and the
-bench buckets on this macro precisely because it cannot bucket on prose. It is
-reachable ONLY from the [SEL-1] rung, which is what keeps
-`>= ESEL_OVERFLOWED_DFA` still meaning "a DFA build overflowed"; the SIZE
-rung's own decline stays `"selected"`, exactly as it is when that rung
-collapses, and shows up as `RX_VM_PREFILTER "none"` instead. Its
+bench buckets on this macro precisely because it cannot bucket on prose.
+**[LIM-1] (2026-08-30) WIDENED ITS REACH FROM THE [SEL-1] RUNG ALONE TO
+BOTH RUNGS** (this paragraph used to say "reachable ONLY from the [SEL-1]
+rung" and "the SIZE rung's own decline stays `\"selected\"`", which was true
+until the SIZE rung's own SUCCESS got its own value below — a SIZE-rung
+nullable decline was silently indistinguishable from an ordinary compile,
+the exact K35 shape this whole macro exists to prevent, so both rungs'
+declines now read this one value). Its
 value comes from `pcrec_engine_sel_name(cx)`, one spelling of each token, off
 `EngineFit.engine_sel` — written once at `select_engine.c`'s single fit site,
 never parsed out of the prose. The PREFILTER stamps are deliberately
@@ -783,6 +786,25 @@ NOT shared: their value sets are different vocabularies (`RX_VM_PREFILTER` is
 `"hybrid"`/`"none"`; the DFA's five are below), and a shared emitter for two
 vocabularies is only a switch. The VM name is also stamped in pcrec-bench's
 adapter today, so it does not move.
+
+**[OPT-4.2] (2026-08-31) ADDED AN EIGHTH, `declined-nullable-default`, AND
+IT FOLLOWS THE SAME NON-ABI-BUMP PRECEDENT.** The general form of the decline
+above, off the rung entirely: an ORDINARY hybrid (no rung ever ran,
+`collapse_reason == CR_NONE`) whose own EXACT language is nullable never
+built a prefilter, and until this row landed it did. Kept as a SEPARATE
+value from `declined-nullable` rather than folded in — the two answer
+different questions about different populations (a rung offered and refused
+a rescue vs. an ordinary compile that never had a rung to begin with), the
+same reason `declined-nullable` itself is not `overflowed-dfa`. Internal to
+the compiler, `ESEL_DECLINED_NULLABLE_DEFAULT` sits adjacent to
+`ESEL_SELECTED` in `internal.h`'s enum rather than appended after
+`ESEL_SIZE_CAP_RETRY` — it is the one value in the set that is not a
+fallback of any kind, and internal.h's own comment there states the
+placement argument. The renumbering that entailed for the five sibling
+values costs nothing outside that one file: as `pcrec_engine_sel_name`'s
+`switch` above shows, no generated artifact ever carries the raw ordinal,
+only the STRING — the same fact that makes this landing, like [OPT-4.1]'s,
+a value rather than scaffolding.
 
 **THE VALUES COME OFF THE SAME DERIVATION THE LOOP DOES.** `RX_DFA_SCAN` reads
 `job->engine`, the field `src/core/compile.c` sets at its `nfa_has_bot` fork,

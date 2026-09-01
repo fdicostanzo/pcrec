@@ -122,3 +122,24 @@ is still read and still reported, for the byte comparison it alone carries.
 `RX_ENGINE_SEL "declined-nullable"` — since [LIM-1] widened that value's own
 reach from the [SEL-1] rung alone to both rungs (`src/opt/select_engine.c`'s
 own comment at the fit site has the derivation).
+
+## [OPT-4.2] the tripwire cell FLIPPED (2026-08-31)
+
+The `[OPT-4.2 tripwire]` cell just below the pair above (this file's own
+manager-filed comment, dated 2026-08-31) pinned a KNOWN, dated gap rather
+than a fix: [OPT-5]'s scan edge made `'(a|b){0,30000}'` compile comfortably
+under every cap, so it never reaches either rung above and the [OPT-4.1]
+decline — scoped to `collapse_reason != CR_NONE` — never applied to it. The
+ordinary hybrid still built and shipped its own EXACT prefilter, nullable or
+not, at 34,522 B, hybrid/exact — the same 1.2-9.9x loss shape as the pair
+above, on a population [OPT-4.1] never covered.
+
+[OPT-4.2] generalizes the decline off the rung entirely
+(`src/opt/select_engine.c`'s `prefilter_declined_nullable_default`), and the
+cell now asserts the FIXED behavior instead of the gap: `RX_VM_PREFILTER
+"none"`, `RX_ENGINE_SEL "declined-nullable-default"`, no `_LANG_WHY` macro at
+all (there is no prefilter left to name a language for). It is kept as a
+THIRD cell rather than folded into the pair above, because it is testing a
+DIFFERENT population from either rung cell: no cap is ever hit here, so the
+one thing distinguishing this row from an ordinary `"selected"` compile is
+the decline itself.

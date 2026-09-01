@@ -6685,6 +6685,13 @@ typedef struct {
      * reason an artifact has no prefilter. Copied off `job->fit`, never
      * re-derived. */
     bool      prefilter_declined_nullable;
+    /* [OPT-4.2] the SAME decline, off the rung: an ORDINARY hybrid's own
+     * EXACT prefilter was nullable, with no rung ever involved. Read only by
+     * the listing's prefilter line, for `prefilter_declined_nullable`'s own
+     * reason -- worded differently there because there is no rung to name
+     * ("offered and declined") on this path, only a policy this pattern's
+     * own language triggered. Copied off `job->fit`, never re-derived. */
+    bool      prefilter_declined_nullable_default;
     /* [M6.5.2] does this artifact contain a backreference? Read only by the
      * listing's prefilter line, which without it names a FLAG the caller did
      * not pass as the reason a backref pattern has none. */
@@ -6861,6 +6868,21 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                 " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
                 " it suppresses the rung itself and the compile refuses."
                 " -fprefilter-collapse does not override it"
+              /* [OPT-4.2] THE RUNGLESS TWIN, tested immediately after its
+               * rung-scoped sibling for the same "no flag explains it"
+               * reason -- and it must be worded DIFFERENTLY, not merely
+               * generalized, because there is no rung here to say was
+               * "offered": this pattern's own EXACT language is nullable on
+               * the ORDINARY hybrid path, no ladder attempt involved. */
+              : st->prefilter_declined_nullable_default
+              ? "NO (nullable exact language) -- this pattern's own EXACT"
+                " language matches the empty string, so the ordinary hybrid's"
+                " forward+reverse DFA pair would admit a zero-length match at"
+                " every position and could never dismiss one ([OPT-4.2], the"
+                " general form of [OPT-4.1]'s rung-scoped decline; pcrec-bench"
+                " O-10 measured 1.2-9.9x on the analogous collapsed shape)."
+                " -fprefilter overrides this decline; -fno-prefilter already"
+                " reaches the same artifact by a different door"
               /* [SEL-1] tested here, ahead of the two flag routes, for the
                * same reason has_bref/has_call are: this is a THIRD thing no
                * flag explains, and it must not be reported as one. */
@@ -10066,6 +10088,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         /* [OPT-4.1] the same rule, one field over: the listing reports the
          * decision `select_engine.c` took, it does not re-derive it. */
         st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;
+        /* [OPT-4.2] its rungless twin, the same rule. */
+        st.prefilter_declined_nullable_default =
+            job->fit.prefilter_declined_nullable_default;
         st.has_bref  = (v.enc_mask &
                         (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)) != 0;
         /* [DD-14 wave E] NOT read off `enc_mask`, unlike its neighbour: a

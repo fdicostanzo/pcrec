@@ -851,18 +851,71 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
          * CR_NONE` already implies both: neither rung is offered under
          * `-fno-prefilter-collapse`, and a rung excludes the DFA. */
+        /* [OPT-4.2] THE NULLABILITY DECLINE, GENERALIZED TO EVERY RUNG —
+         * INCLUDING THE ONE THAT IS NOT A RUNG AT ALL. `lang_nullable_
+         * declinable` is the one predicate common to both scopes: nullable,
+         * no backreference, no linked call, not forced on by `-fprefilter`
+         * (that flag outranks the decline on either scope, for [OPT-4.1]'s
+         * own reason — its alternative is no prefilter at all, and forcing
+         * one on is precisely what `-fprefilter` exists to demand). The two
+         * fields below are its two SCOPES and are never both true for one
+         * compile, since one requires `collapse_reason != CR_NONE` and the
+         * other its negation:
+         *
+         *   `prefilter_declined_nullable`         a RUNG offered the
+         *     collapsed rescue and it was refused (unchanged from [OPT-4.1]
+         *     — ALSO needs `prefilter_has_collapsible_rep`, because without a
+         *     collapsible repeat the collapsed lowering IS the exact one and
+         *     there is no distinct rescue to decline).
+         *   `prefilter_declined_nullable_default`  the ORDINARY, un-rung
+         *     hybrid's own EXACT prefilter is nullable ([OPT-4.2], new — NO
+         *     collapsible-repeat conjunct needed: this path never collapses
+         *     anything, so there is always a concrete prefilter to decline —
+         *     but it DOES need `would_prefilter` below, plus `!cx->dfa_
+         *     disabled`, for the r47sel-1 reason `prefilter_declined_
+         *     nullable` needs `prefilter_has_collapsible_rep`: without them
+         *     a DFA-chosen artifact, a forced `--engine=vm` build with no
+         *     `-fprefilter` (R21 E-6 already turns the prefilter off there
+         *     for its own reason), or a retry whose OWN prefilter machine
+         *     overflowed with no collapse rung offered (`dfa_disabled &&
+         *     collapse_reason == CR_NONE` — `ESEL_OVERFLOWED_DFA`/
+         *     `_PREFILTER`'s own population) would each stamp "a rescue was
+         *     refused" on an artifact that never had a working prefilter to
+         *     refuse in the first place.
+         *
+         * internal.h's own field comments carry the full argument for each;
+         * this is the ONE site that derives both, off the one local. */
+        bool lang_nullable_declinable =
+            fit.prefilter_lang_nullable && !has_bref && !has_call && !force_on;
+        /* [OPT-4.2] "would this compile build a prefilter at all, absent the
+         * nullability decline" — the SAME condition the final ternary below
+         * falls through to when nothing declines it, read once here so the
+         * decline and its baseline cannot disagree about what they are
+         * declining. NOT `&& !cx->dfa_disabled` — this expression is ALSO
+         * the final fallback value below, and on the CR_SEL1 rung `dfa_
+         * disabled` is true precisely while a collapsed rescue is surviving,
+         * where `fit.prefilter` must still be able to read true. The
+         * DFA-overflowed-with-no-rung-offered case (`dfa_disabled &&
+         * collapse_reason == CR_NONE`) already forces `fit.prefilter` false
+         * through the OR-clause below regardless of this value, so nothing
+         * here needs to special-case it — only the DEFAULT decline's own
+         * attribution does, immediately below. */
+        bool would_prefilter = (fit.chosen == ENGM_VM) &&
+                                (cx->opt->engine != PCREC_ENGINE_VM);
         fit.prefilter_declined_nullable =
-            cx->collapse_reason != CR_NONE && fit.prefilter_lang_nullable &&
-            fit.prefilter_has_collapsible_rep &&
-            !has_bref && !has_call && !force_on;
+            cx->collapse_reason != CR_NONE && lang_nullable_declinable &&
+            fit.prefilter_has_collapsible_rep;
+        fit.prefilter_declined_nullable_default =
+            cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
+            lang_nullable_declinable && would_prefilter;
         fit.prefilter = (has_bref || has_call ||
                          (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                         fit.prefilter_declined_nullable)
+                         fit.prefilter_declined_nullable ||
+                         fit.prefilter_declined_nullable_default)
                         ? false
                        : force_on ? true
                        : force_off ? false
-                       : (fit.chosen == ENGM_VM) &&
-                         (cx->opt->engine != PCREC_ENGINE_VM);
+                       : would_prefilter;
     }
 
     /* [OPT-4] `<PREFIX>_ENGINE_SEL`, derived HERE and nowhere else — the one
@@ -906,8 +959,21 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * value, tested next), so `>= ESEL_OVERFLOWED_DFA && <= ESEL_
      * DECLINED_NULLABLE` still means exactly "a DFA STATE cap overflowed"
      * (internal.h's own updated invariant comment). */
+    /* [OPT-4.2] `ESEL_DECLINED_NULLABLE_DEFAULT` TESTED IMMEDIATELY AFTER
+     * `ESEL_FORCED`, AHEAD OF EVERY FALLBACK ARM BELOW — not because it
+     * outranks them in some priority sense, but because it CANNOT OVERLAP
+     * WITH THEM: `fit.prefilter_declined_nullable_default` requires
+     * `collapse_reason == CR_NONE && !cx->dfa_disabled`, which is precisely
+     * the condition every arm below it is testing the NEGATION or a further
+     * refinement of (a SIZE/SEL1 rung ran, or `dfa_disabled` is set). Testing
+     * it here rather than after `ESEL_SELECTED` is the same non-overlap
+     * argument stated positively: this is the one case where `!cx->dfa_
+     * disabled` holds AND the ordinary `"selected"` fallthrough would be the
+     * wrong stamp — internal.h's own placement note explains why the VALUE
+     * sits outside both the bounded and the unbounded fallback ranges. */
     fit.engine_sel =
           cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
+        : fit.prefilter_declined_nullable_default      ? ESEL_DECLINED_NULLABLE_DEFAULT
         : (cx->collapse_reason != CR_NONE && fit.prefilter_declined_nullable)
                                                       ? ESEL_DECLINED_NULLABLE
         : /* [LIM-1] THE SIZE RUNG'S OWN SUCCESS — `dfa_disabled` is never set

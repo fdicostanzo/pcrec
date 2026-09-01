@@ -223,7 +223,7 @@ echo
 size_moved=(
     '(?:[a-z][0-9]){0,8000}:1063395:'
     'a{0,25000}:1103670:-fno-scan-edge'
-    '(a|b){0,30000}:1333406:-fno-scan-edge -fno-prefilter-collapse'
+    '(a|b){0,30000}:1333410:-fno-scan-edge -fno-prefilter-collapse -fprefilter'
 )
 # [OPT-5] 2026-08-31, the rows above REWRITTEN the day the scan edge landed:
 # the old natural witnesses (a{0,25000}, [a-z]{0,30000}, (a|b){0,30000}) all
@@ -235,6 +235,24 @@ size_moved=(
 # the tripwire working, not breaking. Rows 2-3 keep the ORIGINAL witnesses
 # alive under the deny flag (refusals re-MEASURED 2026-08-31 with the new
 # byte figures), so the cap's behavior on the classic shapes stays pinned.
+#
+# [OPT-4.2] (2026-08-31, lane o42) ROW 3 GAINED `-fprefilter`, AND WITHOUT IT
+# THE ROW GOES VACUOUS RATHER THAN WRONG. `(a|b){0,30000}`'s own EXACT
+# language is nullable, so [OPT-4.2]'s decline (src/opt/select_engine.c's
+# `prefilter_declined_nullable_default`) now fires on the FIRST compile
+# attempt, BEFORE the exact prefilter machine is ever built and therefore
+# BEFORE `-fno-scan-edge`/`-fno-prefilter-collapse` have anything to act on
+# — MEASURED: without `-fprefilter` this row compiles successfully at 20,628
+# bytes, no refusal at all, which is CORRECT per [OPT-4.2] and not a defect,
+# but leaves this row asserting nothing about the size cap. `-fprefilter`
+# is the one flag [OPT-4.1]/[OPT-4.2] both let override the decline (a
+# caller who explicitly demands a prefilter gets the exact one, nullable or
+# not), which restores the huge exact build this row exists to refuse:
+# MEASURED, with all three flags, exit 1 / "pattern too large: 1333410
+# bytes" — matching the pinned `1333406` within the caller-args/pattern-text
+# rounding this section's own byte figures already carry elsewhere. The
+# raise-cap re-accept check below (line ~259) was re-verified with the same
+# three flags plus `--max-emit-bytes=9000000`: exit 0 / 1,341,343 bytes.
 for entry in "${size_moved[@]}"; do
     # [OPT-5] 2026-08-31: split from the RIGHT — the PATTERN may contain
     # `:` ((?:...) does), the last two fields never do. A left split read
@@ -332,14 +350,69 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
             bad "[OPT-4] '$pat' compiled small at the default with RX_VM_PREFILTER hybrid but RX_ENGINE_SEL '$sel' (LANG_WHY '$szwhy'), expected 'size-cap-retry' — something OTHER than the size rung made it small, which under ruling B means a knee has come back, or [LIM-1]'s fold-in regressed"
         fi
     else
-        if [ "$pf" = none ] && [ -z "$szwhy" ] && [ "$sel" = declined-nullable ]; then
-            ok "[OPT-4.1] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable\" — the collapsed language is nullable, the rescue is DECLINED, and dropping the prefilter still gets the artifact under the cap"
+        # [OPT-4.2] (2026-08-31, lane o42) THE EXPECTED VALUE MOVED FROM
+        # 'declined-nullable' TO 'declined-nullable-default', AND THIS IS NOT
+        # A RELABELING -- IT IS A REACHABILITY FACT. [OPT-4.2] generalizes
+        # the nullability decline to fire at the FIT SITE, on the FIRST
+        # compile attempt, for ANY VM-chosen pattern whose EXACT language is
+        # nullable -- which this witness always is, since `(a|b)` is a
+        # capturing group and captures force `fit.chosen == ENGM_VM` from
+        # attempt 1 (src/opt/select_engine.c's forces_captures rule). So
+        # `-fno-scan-edge` alone can no longer force this witness through
+        # the SIZE rung AT ALL: the decline fires before the exact machine
+        # is even attempted, before scan-edge or the size cap ever matter,
+        # so `collapse_reason` never leaves `CR_NONE` and the rung-scoped
+        # `ESEL_DECLINED_NULLABLE` is unreachable BY THIS WITNESS regardless
+        # of flags short of `-fprefilter` (which overrides the decline
+        # entirely rather than reaching it — see the size_moved row below
+        # and its own [OPT-4.2] note). MEASURED directly (lane o42,
+        # 2026-08-31): under `-fno-scan-edge` alone this pattern now emits
+        # 20,628 bytes with RX_VM_PREFILTER "none" / RX_ENGINE_SEL
+        # "declined-nullable-default" — the SAME rungless value the
+        # tripwire-turned-fixed cell below asserts at the plain DEFAULT,
+        # confirming the decline does not depend on scan-edge either.
+        #
+        # WHETHER `ESEL_DECLINED_NULLABLE` STAYS REACHABLE AT ALL, RESOLVED BY
+        # CODE TRACE AND MEASUREMENT (lane o42, 2026-09-01), not left open.
+        # `prefilter_declined_nullable_default`'s OWN guard requires
+        # `collapse_reason == CR_NONE`, which is true ONLY on a compile's
+        # FIRST attempt — so it can NEVER fire during a RETRY, and the
+        # rung-scoped `prefilter_declined_nullable` (which requires the
+        # opposite, `collapse_reason != CR_NONE`) is therefore never
+        # shadowed by it. The SIZE-cap rung specifically IS foreclosed for
+        # any nullable pattern, but for a DIFFERENT, MEASURED reason: the
+        # collapse-and-retry rescue is a VM-HYBRID-PREFILTER mechanism (there
+        # is no "prefilter" to collapse on a plain DFA artifact), and a
+        # nullable pattern that is VM-chosen on attempt 1 is exactly the
+        # population this row's own decline preempts before any build is
+        # attempted (MEASURED: `--no-captures [a-z]{0,30000} -fno-scan-edge`
+        # — DFA-chosen throughout — hits the SIZE cap and REFUSES outright,
+        # no retry at all; a DFA-chosen oversized artifact has never had a
+        # rescue rung to offer). But the [SEL-1] STATE-cap rung's own path
+        # stays open in principle: a pattern that is DFA-CHOSEN on attempt 1
+        # (no VM-forcing construct) whose DFA-as-ENGINE build overflows
+        # `PCREC_MAX_DFA_STATES_TABLE` retries with `dfa_disabled=true` AND
+        # `collapse_reason=CR_SEL1` set TOGETHER on the SAME retry pass, so
+        # `prefilter_declined_nullable_default`'s CR_NONE guard is false
+        # there and cannot block the rung-scoped decline from firing on a
+        # nullable, collapsible-repeat pattern. No CORPUS WITNESS for that
+        # specific combination exists today — two attempts to build one from
+        # `tests/prefilter`'s own SEL-1 witness (`\b(?:ERROR|...)`) wrapped
+        # nullable either stayed under the DFA state cap or moved to the
+        # SIZE cap instead of the STATE cap, changing which cap fires first
+        # — so this is a WITNESS GAP, not a dead value: the mechanism is
+        # provably still live, only unexercised by anything in this corpus.
+        # Left for the manager to decide whether a dedicated witness is
+        # worth constructing, rather than invented under this lane's own
+        # time pressure.
+        if [ "$pf" = none ] && [ -z "$szwhy" ] && [ "$sel" = declined-nullable-default ]; then
+            ok "[OPT-4.2] '$pat' compiles at the DEFAULT in $sz bytes with RX_VM_PREFILTER \"none\" / RX_ENGINE_SEL \"declined-nullable-default\" — the pattern's own EXACT language is nullable, the decline fires before any rung is ever offered, and dropping the prefilter still gets the artifact under the cap"
         elif [ "$pf" = hybrid ]; then
-            bad "[OPT-4.1] '$pat' kept a prefilter (RX_VM_PREFILTER 'hybrid', LANG_WHY '$szwhy') — its collapsed language matches the empty string, so this artifact pays a scan that can never dismiss a position (pcrec-bench O-10: 1.2-9.9x)"
-        elif [ "$sel" != declined-nullable ]; then
-            bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' but RX_ENGINE_SEL '$sel', expected 'declined-nullable' ([LIM-1]: the SIZE rung's own nullable decline now reads this value, not 'selected')"
+            bad "[OPT-4.2] '$pat' kept a prefilter (RX_VM_PREFILTER 'hybrid', LANG_WHY '$szwhy') — its own language matches the empty string, so this artifact pays a scan that can never dismiss a position (pcrec-bench O-10: 1.2-9.9x)"
+        elif [ "$sel" != declined-nullable-default ]; then
+            bad "[OPT-4.2] '$pat' has RX_VM_PREFILTER '$pf' but RX_ENGINE_SEL '$sel', expected 'declined-nullable-default' (the rungless decline fires on attempt 1 for this witness; see this function's own [OPT-4.2] comment for why 'declined-nullable' is no longer reachable here)"
         else
-            bad "[OPT-4.1] '$pat' has RX_VM_PREFILTER '$pf' and LANG_WHY '$szwhy' — no prefilter, yet a language macro beside it; the two lines disagree about one artifact"
+            bad "[OPT-4.2] '$pat' has RX_VM_PREFILTER '$pf' and LANG_WHY '$szwhy' — no prefilter, yet a language macro beside it; the two lines disagree about one artifact"
         fi
     fi
 }
@@ -347,36 +420,43 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
 # edge collapses the (a|b) class chain inside the hybrid's DFA, the exact
 # artifact never trips the cap, and neither rung runs (the patterns compile
 # small via a route these cells were never about). The deny flag reproduces
-# the SIZE-rung path deterministically (MEASURED: declined-nullable /
-# size-cap-retry as each cell expects).
+# the SIZE-rung path deterministically for the NON-nullable row
+# (MEASURED: size-cap-retry, as it expects). [OPT-4.2] (2026-08-31) NARROWED
+# THIS CLAIM FOR THE NULLABLE ROW: the deny flag no longer reproduces a rung
+# at all for it — see size_rung_cell's own [OPT-4.2] comment above.
 size_rung_cell '(a|b){0,30000}' none   'alternation nullable'     '-fno-scan-edge'
 size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable' '-fno-scan-edge'
 
-# [OPT-4.2 TRIPWIRE] (manager, 2026-08-31, from battery 7's diagnosis): at
-# the DEFAULT, '(a|b){0,30000}' now COMPILES (it was size-refused before
-# [OPT-5]) and lands as a VM hybrid whose EXACT prefilter language is
-# NULLABLE — a scan that can never dismiss a position (bench O-10: 1.2-9.9x
-# loss on exactly this shape). The [OPT-4.1] gate only covers the COLLAPSE
-# rungs (`collapse_reason != CR_NONE`); the general form — decline ANY
-# prefilter whose language is nullable — is filed as [OPT-4.2] in plan.md
-# and awaits Frank's charter. This cell PINS today's behavior so the gap is
-# measured, loud, and dated rather than latent; when [OPT-4.2] lands, the
-# expected stamps flip to none/<no LANG_WHY> and this comment moves to the
-# history.
+# [OPT-4.2] LANDED, 2026-08-31 (lane o42) — this cell used to be a TRIPWIRE
+# pinning a KNOWN gap (see the pcrec_reflog for the retired comment): at the
+# DEFAULT, '(a|b){0,30000}' compiles (it was size-refused before [OPT-5]) as
+# a VM hybrid whose EXACT prefilter language is NULLABLE, and until [OPT-4.2]
+# the [OPT-4.1] gate covered only the COLLAPSE rungs
+# (`collapse_reason != CR_NONE`), so the ordinary hybrid still built and
+# shipped that useless filter (bench O-10: 1.2-9.9x loss on exactly this
+# shape). The general decline now covers this path too
+# (`src/opt/select_engine.c`'s `prefilter_declined_nullable_default`), so
+# the artifact now ships with NO prefilter and stamps
+# `RX_ENGINE_SEL "declined-nullable-default"` — the SIZE rung's own nullable
+# twin ([LIM-1]) reads the rung-scoped `"declined-nullable"` instead, and the
+# two are kept as two values for the reason `docs/spec/match_api.md` §6.3
+# gives: a rung OFFERED and REFUSED a rescue is a different population from
+# an ordinary compile that never had a rung to begin with.
 rm -f "$WORKDIR/o.c"
 o42log="$("$ROOT_DIR/scripts/watchdog" -l "opt42-tripwire" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
 if [ $? -eq 0 ]; then
     o42pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
+    o42sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/o.c" | head -1 | sed 's/.*SEL //;s/"//g')
     o42why=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
-    if [ "$o42pf" = hybrid ] && [ "$o42why" = exact ]; then
-        ok "[OPT-4.2 tripwire] '(a|b){0,30000}' at the DEFAULT compiles as hybrid/exact with a NULLABLE prefilter language — the KNOWN, dated gap this cell pins until [OPT-4.2] extends the nullability decline to the exact rung"
-    elif [ "$o42pf" = none ]; then
-        bad "[OPT-4.2 tripwire] '(a|b){0,30000}' at the DEFAULT has NO prefilter — [OPT-4.2] (or something else) landed; flip this cell's expectation to the gated behavior and retire the tripwire comment in the same commit"
+    if [ "$o42pf" = none ] && [ "$o42sel" = declined-nullable-default ] && [ -z "$o42why" ]; then
+        ok "[OPT-4.2] '(a|b){0,30000}' at the DEFAULT ships with NO prefilter (RX_ENGINE_SEL declined-nullable-default) — the ordinary hybrid's own nullable EXACT language is declined off the rung"
+    elif [ "$o42pf" = hybrid ] && [ "$o42why" = exact ]; then
+        bad "[OPT-4.2] '(a|b){0,30000}' at the DEFAULT REGRESSED to hybrid/exact with a nullable prefilter language — the [OPT-4.2] decline stopped firing"
     else
-        bad "[OPT-4.2 tripwire] '(a|b){0,30000}' at the DEFAULT stamps PREFILTER '$o42pf' / LANG_WHY '$o42why' — neither the pinned gap nor the gated fix; investigate"
+        bad "[OPT-4.2] '(a|b){0,30000}' at the DEFAULT stamps PREFILTER '$o42pf' / RX_ENGINE_SEL '$o42sel' / LANG_WHY '$o42why' — neither the fixed behavior nor the pre-fix gap; investigate"
     fi
 else
-    bad "[OPT-4.2 tripwire] '(a|b){0,30000}' no longer compiles at the DEFAULT: $(printf '%s' "$o42log" | head -1)"
+    bad "[OPT-4.2] '(a|b){0,30000}' no longer compiles at the DEFAULT: $(printf '%s' "$o42log" | head -1)"
 fi
 
 # [OPT-4.1] `-fprefilter` OVERRIDES THE DECLINE, AND THIS IS THE ONLY PLACE IN

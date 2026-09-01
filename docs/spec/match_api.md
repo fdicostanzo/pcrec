@@ -1967,6 +1967,7 @@ neither is parsed to produce the other.
 |---|---|
 | `"selected"` | `auto` chose on the AST and nothing overflowed. The common case, on both engines |
 | `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
+| `"declined-nullable-default"` | [OPT-4.2] (2026-08-31) `auto` (or forced `--engine=vm` plus `-fprefilter`), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one. No rung is involved and no prefilter survives. The general form of `"declined-nullable"` below, off the rung it is scoped to (`tuning.md` §2.17) |
 | `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
@@ -1980,13 +1981,28 @@ and differ in what SURVIVED; `"size-cap-retry"` has its own prose
 whatever forced the VM or stays absent on a plain DFA build) and differs from
 the rest in which CAP fell back. A consumer wanting only "did this compile
 fall back?" tests for all five; one wanting to know what it cost, or which cap
-it was, reads which.
+it was, reads which. `"declined-nullable-default"` is deliberately NOT among
+the five: nothing overflowed on that path, it is an ordinary compile whose
+own prefilter a policy declined, and it sits beside `"forced"`/`"selected"`
+in that respect even though its NAME echoes a fallback value's.
 
 **`"declined-nullable"` AND `"overflowed-dfa"` ARE NOT THE SAME OUTCOME**, and
 the difference is worth a value: both artifacts carry `<PREFIX>_VM_PREFILTER
 "none"`, but the first is a rescue that was REFUSED as useless and the second
 is one that was not available. A consumer measuring what the collapse rung buys
 must not count the first as a case where it had nothing to offer.
+
+**`"declined-nullable-default"` AND `"declined-nullable"` ARE THE SAME
+POLICY ON TWO DIFFERENT POPULATIONS, KEPT AS TWO VALUES ([OPT-4.2],
+2026-08-31) rather than folded into one.** Both say "this pattern's own
+language admits a zero-length match at every position, so no prefilter for
+it can ever dismiss one" — but `"declined-nullable"` says a ladder RUNG
+offered a rescue and it was refused, while `"declined-nullable-default"` says
+there was never a rung: the ORDINARY hybrid's own exact prefilter was the
+thing declined. A consumer that folded the two together could not tell
+"this compile hit a cap and recovered smaller-but-useless" from "this
+compile never hit anything at all", which is exactly the distinction the
+five fallback values above exist to keep visible.
 
 **`"size-cap-retry"` CLOSES A GAP THIS DOCUMENT ITSELF USED TO NAME WITHOUT
 FIXING** ([LIM-1], D90, 2026-08-30). Before this value existed, a [OPT-4] size

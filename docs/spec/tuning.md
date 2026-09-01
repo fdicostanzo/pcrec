@@ -939,6 +939,43 @@ x4.60); where the collapsed language is nullable it was a 1.2-9.9x LOSS
 cannot). Nullability is what separates the two populations, and it is decided
 before any machine is built (`pcrec_minw(root) == 0`, `src/opt/mrl.c`).
 
+**[OPT-4.2] (2026-08-31) THE SAME DECLINE, GENERALIZED TO EVERY PREFILTER —
+NOT ONLY THE TWO RUNGS ABOVE.** [OPT-4.1]'s gate is scoped to a ladder
+ATTEMPT: it only ever asks about the collapsed language, because the two
+rungs above are the only places pcrec offers one. But the ORDINARY hybrid —
+`auto` (or forced `--engine=vm`) with no cap ever hit — builds the pattern's
+own EXACT prefilter unconditionally, and that filter is exactly as useless
+when the EXACT language is nullable as a collapsed one is: `(a|b){0,30000}`
+matches the empty string at every position (its own language, not merely its
+collapsed superset), and until this row landed the ordinary hybrid still
+built and shipped that filter regardless. The population GREW when [OPT-5]'s
+scan edge landed: patterns like this one that used to be REFUSED by the size
+cap (and so took the [OPT-4] size rung's own decline above) now compile
+comfortably inside every cap and never reach a rung at all — MEASURED
+2026-08-31, `(a|b){0,30000}`: 34,522 B, hybrid/exact.
+
+So the decline is now asked on EVERY prefilter this compiler can build, rung
+or not: `<PREFIX>_ENGINE_SEL` reads **`"declined-nullable-default"`**
+(`match_api.md` §6.3's own value table — a NEW value, kept separate from
+`"declined-nullable"` rather than folded into it, since the two answer
+different questions about different populations: a rung OFFERED and REFUSED
+a rescue vs. an ordinary compile that never had a rung to begin with) and
+`<PREFIX>_VM_PREFILTER` reads `"none"`, exactly as the rung-scoped decline's
+artifact does. The same three overrides apply, and `-fprefilter` is the only
+asymmetric one for the same reason: it outranks the decline (the artifact
+still gets its exact prefilter, on demand), while `-fno-prefilter` and
+`-fprefilter-collapse` change nothing about this outcome — the first already
+reaches the identical artifact by its own door, and the second's axis (which
+LANGUAGE a filter recognises) does not apply once no filter is going to be
+built at all.
+
+MEASURED (pcrec-bench O-10, the analogous collapsed shape): the same 1.2-9.9x
+loss the collapsed-language decline exists to avoid, since the mechanism is
+identical — a filter admitting a zero-length match at every position can
+dismiss none of them, whether that filter's language came from the pattern
+directly or from a count-collapse. The bench re-measures its `cls-*` hybrid
+cells after this lands; their prior 1.2-9.9x loss is the predicted win.
+
 **A NAMED RESIDUAL, so a reader does not mistake this predicate for the whole
 question** (`docs/dev/decisions.md` D77 — build under measurement). Nullability
 is not the only reason a rescue can fail to pay. A WHOLE-SUBJECT-anchored form

@@ -68,11 +68,21 @@ SAB_COUNT=1
 # what invalidated it, which is the case `sabotages/CLAUDE.md` distinguishes.
 # The sabotage is UNCHANGED in meaning: it still disables exactly one conjunct
 # and carries the rest through verbatim.
+# **RE-ANCHORED AGAIN 2026-08-31/09-01 ([OPT-4.2], lane o42) — the THIRD time
+# this row's anchor has moved for the SAME reason.** [OPT-4.2] adds
+# `fit.prefilter_declined_nullable_default` (the nullability decline
+# generalized OFF the rung, [OPT-4.1]'s own field's rungless twin) as a
+# fourth disjunct. Re-derived from this lane's own uncommitted change, found
+# by `make test-codegen`'s [SABANCHOR] check going red at lift, not assumed.
+# The sabotage is UNCHANGED in meaning: it still disables exactly one
+# conjunct (`has_call`) and carries the rest through verbatim.
 SAB_BEFORE='        fit.prefilter = (has_bref || has_call ||
                          (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                         fit.prefilter_declined_nullable)
+                         fit.prefilter_declined_nullable ||
+                         fit.prefilter_declined_nullable_default)
                         ? false'
 SAB_AFTER='        fit.prefilter = (has_bref || false ||   /* SABOTAGE S165 */
                          (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                         fit.prefilter_declined_nullable)
+                         fit.prefilter_declined_nullable ||
+                         fit.prefilter_declined_nullable_default)
                         ? false'
