@@ -465,12 +465,21 @@ KEEP="${KEEP:-0}"
 # inlined DFA prefilter is emitted ABOVE that region — so this change reaches
 # no VM program byte even on the artifacts whose prefilter it rewrites.
 #
+# [CC-CLANG], 2026-08-31 — THE THIRD RE-PIN BY A SCAFFOLDING-ONLY CHANGE,
+# and (A) IS STILL EXPECTED BYTE-IDENTICAL for the same reason: the
+# `__has_attribute` guard sits above `<prefix>_search`'s own definition
+# (outside `prog_region`), and the omitted resume dispatch touches only a
+# FRAMELESS artifact's fail label, a region no call-free corpus pattern
+# reaches with a live pop block in the first place (comparison (A)'s own
+# corpus is call-free; a frameless artifact never emits `RX_CALL`, so this
+# axis is orthogonal to (A)'s population). `abi` 13 -> 14.
+#
 # THE PIN IS THIS CHANGE'S LAST src/lib/cli-TOUCHING COMMIT, per the rule two
-# paragraphs up: `dc2c8ef`, not the commit that first moved a byte and not the
-# later test-only commits. Pin was `c275aef` ([OPT-4.1]'s).
+# paragraphs up: `c657ae9`, not the commit that first moved a byte and not the
+# later test-only commits. Pin was `dc2c8ef` ([OPT-5]'s).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-dc2c8ef}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c657ae9}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
