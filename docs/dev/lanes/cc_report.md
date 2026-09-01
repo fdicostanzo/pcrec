@@ -228,40 +228,67 @@ Documented in `docs/testing.md`'s "Sanitizer + lint battery" section (new
 async, not alongside other heavy work, per the brief. No findings to report
 yet.
 
-## Owed validation (all blocked on `cc.lift`)
+## Owed validation (all blocked on `cc.lift`) — PINNED SHAPE (manager ruling, 2026-08-31)
 
-In the order I'd run them:
+**The check-design flaw in my own probe-window verification, named by the
+manager and worth stating plainly rather than glossing over:** the rule-1
+fixture table's `want` values and my `has_push` code are BOTH derived from
+the same reading of `vm_count_slots`'s splice/link eligibility rules. A
+check and the code it checks sharing one source of reasoning is this
+project's own most-repeated check-design failure (`docs/dev/learnings.md`
+§3, memory `pcrec-check-design-lessons`) — if my reading of the eligibility
+rule is wrong in some way that is consistently wrong in both places, the
+probe-window table proves nothing; it would just show two wrong numbers
+agreeing. `--emit-ir`'s `v->npush` print is closer to a real check for the
+CODE (it reads the compiler's own internal count independent of my
+predicted "which patterns are push-free" reasoning) but nothing in the
+probe window is independent of that reasoning for the FIXTURE TABLE's own
+`want` values.
 
-1. **The four originally-probed shapes**, re-confirmed against the *fixed*
-   compiler: `[a-z]{0,4096}` `--engine=vm` compiles clean under clang (the
-   original failing shape); the DFA/memchr, backtracking-VM `(a|ab)+c`, and
-   recursion artifacts still agree gcc-vs-clang cell-for-cell.
-2. **`bash tests/codegen/run_codegen_tests.sh`** — still first once builds are
-   allowed, though now lower-risk: the probe-window table above directly
-   confirmed all eleven fixtures' current `RX_PUSH`/`RX_CALL` invocation
-   counts against the LIVE pre-change compiler, and every one matches what
-   the rewritten table expects once `has_push` is wired in. What is still
-   unverified is only that my actual `has_push`/conditional-emission code
-   (not just my reasoning about which patterns are push-free) compiles and
-   produces exactly those bytes.
-3. **`make test-codegen`** more broadly, and **`make strict`** (PROCS=4,
-   async, per the brief).
-4. **Frameless artifacts under gcc stay answer-identical** — spot-check a
-   few (`[a-z]{0,4096}` `--engine=vm`, `(a)b` `--engine=vm`, `(a)(?1)`
-   `--engine=vm`) against their pre-change answers over a handful of
-   subjects, since the whole claim of this row is "the omitted dispatch was
-   already unreachable," and that claim deserves a direct check, not just a
-   structural one.
-5. **A small `CLANGGEN=1` section** (not the full sweep — the manager
-   schedules that) to confirm the mechanism itself works end to end. Given
-   the K24 interaction above, I'd pick a plain corpus section (e.g. a single
-   `.rxt` directory through `tests/harness/run.sh`) rather than
-   `test-codegen` for this first small-scale check, to keep the result
-   legible; `test-codegen` is still worth running separately once its rule-1
-   table is confirmed correct under gcc.
-6. **`make CC=clang`** compiler-itself survey, once, async, not alongside
-   other heavy work — findings to be appended to this report, not wired into
-   any target.
+**So the validation order at lift is PINNED as follows, superseding my
+earlier list**, run in order, with (2) and (3) restoring genuine
+independence:
+
+1. `bash tests/codegen/run_codegen_tests.sh` as planned — the check against
+   itself, first, cheap.
+2. **Independent of the check's own PASS/FAIL line**: for each of the 11
+   fixtures, grep the actual emitted artifact for the dispatch text
+   (`goto \*run->resume_stack`) and tabulate presence/absence row by row
+   against the report table above — the emitted text is the fact, the
+   check's exit code is not. If a row disagrees with the check's own
+   verdict, the check itself has a bug independent of `has_push`.
+3. **clang-compile all 11 fixtures.** This is the real independent oracle:
+   clang has no idea what `has_push` is or what my table predicts — it only
+   knows whether an indirect goto has an address-of-label expression in
+   scope. Any artifact I classified as push-free that is actually NOT will
+   fail clang loudly, in exactly the shape that motivated this whole row.
+   This is the check that actually discharges the risk the manager named.
+4. **gcc answer-identity spot-checks**: at least 2 of the 7 "moved" rows and
+   1 of the 4 "unmoved" rows, confirming the omitted dispatch changed no
+   answer (the structural claim "it was already unreachable" made
+   behavioural).
+5. `make test-codegen` more broadly, and `make strict` (PROCS=4, async).
+6. A small `CLANGGEN=1` section (not the full sweep — the manager schedules
+   that). Given the K24 interaction noted above, a plain corpus section
+   (e.g. one `.rxt` directory through `tests/harness/run.sh`) rather than
+   `test-codegen`, to keep the first result legible.
+7. `make CC=clang` compiler-itself survey, once, async, not alongside other
+   heavy work — findings appended to this report, not wired into any target.
+
+## For the journal / plan row at merge (manager's instruction)
+
+**The frameless population is bigger than [CC-CLANG]'s own charter names.**
+The plan row's probe named ONE witness — a counter-rung bounded repeat
+(`[a-z]{0,4096}` `--engine=vm`) — as the frameless shape needing the fix.
+Working the change through, the actual population is broader: ANY VM
+program with no `RX_PUSH` site and no `RX_CALL` site is frameless, which
+includes a bare capturing concatenation with no alternation/quantifier/
+lookaround/call at all (`(a)b`), and any pattern where every subroutine call
+splices to a callee with no internal choice point of its own (`(a)(?1)`,
+`(a)(b)(c)(?1)(?2)(?3)`, an unused or singly-called `(?(DEFINE)...)`).
+This is a real fact about the shape of the fix, not a scope creep — the
+`has_push` gate is the general, correct condition and the plan row's own
+counter-rung witness is one instance of it, not the whole of it.
 
 ## Files touched
 
