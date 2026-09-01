@@ -4,8 +4,10 @@
 claim that nothing existing changed meaning stops being a claim.
 
 `make test-rxtsource`, and a section of `make test`. Cheap on purpose:
-three parses of the corpus and no compiles at all, so it does not compete
-with `test-corpus` for the box.
+three parses of the corpus and NO COMPILES OF THE CORPUS, so it does not
+compete with `test-corpus` for the box. [DD-13b.W1.2] added a section that
+does compile — a handful of fixture targets, single digits — because
+building a `.rxt` source cannot be checked without building one.
 
 ## Files
 
@@ -221,6 +223,47 @@ itself calls very-low-likelihood; the escape vocabulary being a stated
 SUBSET of the full subject-escape table (finding 22) is now documented in
 `docs/spec/rxt_format.md` rather than given a fixture, since nothing is
 wrong to detect.
+
+## [DD-13b.W1.2] the W1.2 section, and what stopped being cheap
+
+W1.1 PARSED `target`/`config`/`lib` and resolved none of them, so this
+directory could assert the head grammar's SHAPE and nothing about what it
+MEANS. The W1.2 section is where resolution stops being a promise: N targets
+-> N artifacts with N prefixes and ONE `rx_info.name`, the `-o` naming rule
+in all three forms, `--target`'s selection and its unknown-name refusal,
+`--lib-path` resolving the very reference that fails without it, the four
+resolution refusals (no such definition, an unresolvable `lib` path, a
+`<store>` reference, a `config` whose `pcrec` line reaches past compile
+options), the library-builds-nothing outcome, and the compatibility default.
+
+**THIS SECTION NOW COMPILES.** Its header used to say "three parses of the
+corpus and no compiles at all", which was what kept it cheap enough to run
+beside `test-corpus`. Building a `.rxt` source cannot be checked without
+building one; the fixtures are small and the count is in single digits.
+
+**H11's own check counts `--source` CALLS through the wrapper**, for the
+reason the seam's check counts `--list-source` calls: three green cases
+would also be true of a `run.sh` that never built a target at all.
+
+**THE `head_basic` FIXTURE WAS WRONG AND NOTHING COULD SEE IT.** Its `lib`
+named a file that does not exist and its `target` named the definition
+`greeting`, which no block in it declares. Both were inert under W1.1 — a
+recorded path is never opened, a parsed target is never resolved — so the
+fixture was a perfectly good SEAM witness while carrying two declarations
+that could not be satisfied. W1.2 resolves both, so it had to become true:
+`common.rxtin` is a real sibling library and the target names `plain_run`.
+**The generalisable half is that a fixture written for one property can be
+false about another, and stops being merely unused the moment a step
+downstream starts reading the declarations it carries.**
+
+| new fixture | what it makes reachable |
+|---|---|
+| `three_configs` | format_design §6.3: three targets, one definition, `from` and `with` both exercised. The ONLY place N-targets/N-prefixes/one-name and H11's agreement control are observable |
+| `common` | a `lib "path"` that RESOLVES, and the library-ships-nothing outcome (no target, several blocks) |
+| `no_such_definition` | the tier-2 refusal naming the definition AND the lib chain |
+| `lib_missing` | the tier-3 path refusal, `--lib-path`'s cure, and that `--list-source` still ACCEPTS the same file |
+| `lib_store` | `lib <store>` refused as NOT IN THIS BUILD, never searched for as a filename |
+| `config_pcrec_escape` | a `config`'s `pcrec -p …`, the one escape that would otherwise be SILENT (an artifact under the wrong prefix compiles perfectly) |
 
 ## Maintenance
 

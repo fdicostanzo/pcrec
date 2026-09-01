@@ -945,8 +945,15 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             if (tok_is(l, "lib")) {
                 const char *v = value_trimmed(&p, l);
                 /* a `path-ref` is C's own two spellings: "local" or
-                 * <store>. The path is RECORDED, never opened — resolving
-                 * it against a --lib-path list is [LIB]'s store scan. */
+                 * <store>. Both are RECORDED here and neither is opened:
+                 * this parser touches no filesystem at all, which is what
+                 * keeps `--list-source` a pure function of the file's
+                 * bytes. [DD-13b.W1.2]'s `pcrec_rxt_source_resolve` is
+                 * where the "local" form's path is RESOLVED (existence
+                 * only, against the source's own directory and the
+                 * --lib-path list) and where the <store> form is refused as
+                 * not in this build; a library's CONTENTS are the
+                 * composer's, and the store SCAN is [LIB]'s. */
                 size_t n = strlen(v);
                 if (n < 2 || !((v[0] == '"' && v[n - 1] == '"') ||
                                (v[0] == '<' && v[n - 1] == '>'))) {
@@ -1141,6 +1148,432 @@ void pcrec_rxt_source_free(RxtSource *src)
     if (!src) return;
     arena_free(&src->arena);
     free(src);
+}
+
+/* ------------------------------------------- [DD-13b.W1.2] RESOLUTION ----
+ *
+ * Everything above this line reports the file AS WRITTEN. Everything below
+ * answers the three questions `--source` has to answer before it can call
+ * `pcrec_compile` even once: which artifacts, from which block, under which
+ * settings. `--list-source` never reaches any of it, which is what keeps
+ * that dump comparable against run.sh's and verify_rxt.py's own parses —
+ * resolution is a third thing only pcrec does, so a resolved dump would
+ * compare pcrec's resolver against no counterpart (w1_impl §1.8).
+ *
+ * NO FILE IS OPENED HERE EXCEPT TO SAY WHETHER IT EXISTS. A `lib` row's
+ * path is resolved (does it name a readable file, in the source's own
+ * directory or in one of the `--lib-path` entries) because §1.3's refusal
+ * table demands a diagnostic naming the path and the list searched. Its
+ * CONTENT is never read: pulling definitions out of a library is the
+ * composer's, i.e. W1.3's, and [LIB]'s store scan is [LIB]'s.
+ */
+
+/* ---- the small list walk both `with` and `from` are spelled in ---- */
+
+typedef struct { const char *s; const char *e; } RxtItem;
+
+/* Yields the next comma-separated item of `*cur`, trimmed, or 0 at the end.
+ * `config_list_ok` has already validated the spelling at parse time, so
+ * this walk has no grammar of its own to get wrong. */
+static int list_next(const char **cur, RxtItem *out)
+{
+    const char *s = skip_ws(*cur);
+    if (!*s) return 0;
+    const char *e = s;
+    while (*e && *e != ',' && !isspace((unsigned char)*e)) e++;
+    out->s = s; out->e = e;
+    s = skip_ws(e);
+    if (*s == ',') s++;
+    *cur = s;
+    return e > out->s;
+}
+
+/* ---- the settings accumulator ----
+ *
+ * ONE STRUCT FOR BOTH COMPOSITION LEVELS, which is what stops the two
+ * mechanisms §1.5 separates from being written twice. `cfg_merge` is the
+ * flat LATER-WINS rule, and it is the only rule `from` and `with` use; the
+ * PER-KIND table (features UNION, everything else more-specific-wins) is
+ * applied exactly once, at the block, by `resolve_one` below. */
+typedef struct {
+    const char *flags, *features, *encoding, *engine;
+    int         features_only;
+    long        budget_steps, budget_frames;
+    const char *pcrec_raw;
+} RxtSet;
+
+static void set_init(RxtSet *s)
+{
+    memset(s, 0, sizeof *s);
+    s->budget_steps = -1;
+    s->budget_frames = -1;
+}
+
+/* `a` then `b`, later wins — except `pcrec`, which ACCUMULATES.
+ *
+ * The exception is not an inconsistency: every other config line is a
+ * SETTING and a later one replaces an earlier one, while `pcrec <raw>` is
+ * a line kind that may legitimately appear more than once and whose
+ * later-wins is the CLI option parser's own, applied to the joined text.
+ * Joining is therefore how "later wins" is spelled for that kind, not an
+ * escape from it. */
+static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
+{
+    if (add->flags)     dst->flags = add->flags;
+    if (add->features)  dst->features = add->features;
+    if (add->encoding)  dst->encoding = add->encoding;
+    if (add->engine)    dst->engine = add->engine;
+    if (add->budget_steps  >= 0) dst->budget_steps  = add->budget_steps;
+    if (add->budget_frames >= 0) dst->budget_frames = add->budget_frames;
+    if (add->pcrec_raw) {
+        if (!dst->pcrec_raw) dst->pcrec_raw = add->pcrec_raw;
+        else {
+            size_t n = strlen(dst->pcrec_raw) + 1 + strlen(add->pcrec_raw) + 1;
+            char *j = arena_alloc(a, n);
+            snprintf(j, n, "%s %s", dst->pcrec_raw, add->pcrec_raw);
+            dst->pcrec_raw = j;
+        }
+    }
+}
+
+static void set_from_row(RxtSet *s, const RxtRow *r)
+{
+    set_init(s);
+    s->flags = r->flags;
+    s->features = r->features;
+    s->features_only = r->features_only;
+    s->encoding = r->encoding;
+    s->engine = r->engine;
+    s->budget_steps = r->budget_steps;
+    s->budget_frames = r->budget_frames;
+    s->pcrec_raw = r->pcrec_raw;
+}
+
+/* A config MATERIALISES ONCE, and `seen` is what makes that true rather
+ * than nearly true (§1.5: "`config c from a, b` materialises ONCE at
+ * parse"). Without it a DIAMOND double-counts: `target t with dev,
+ * release` where `release from dev` expands `dev` twice, and while every
+ * ordinary setting is idempotent under later-wins, `pcrec <raw>`
+ * ACCUMULATES — so the joined flag text would carry `dev`'s line twice.
+ * That is harmless for every flag pcrec has today (each is last-wins) and
+ * would stop being harmless the day one is not, which is the wrong thing
+ * to leave resting on the flag set's current shape.
+ *
+ * `seen` spans ONE target's whole `with` composition, not one `from`
+ * chain, because the diamond's two arms come from different list members.
+ * ORDER is unaffected: skipping an already-materialised config removes a
+ * REPEAT, and a repeat under later-wins contributes only what the first
+ * visit already did.
+ *
+ * The cycle and the every-name-exists checks both ran at parse time
+ * (`config_walk`), so this walk needs neither — which is the point of
+ * doing them there: the reachability question is asked once, by the pass
+ * that can name the cycle's members. `seen` therefore terminates a
+ * diamond, never a cycle. */
+typedef struct { RxtRow **v; size_t n, cap; } RxtSeen;
+
+static int seen_add(Arena *a, RxtSeen *s, RxtRow *r)
+{
+    for (size_t i = 0; i < s->n; i++) if (s->v[i] == r) return 0;
+    if (s->n == s->cap) {
+        size_t cap = s->cap ? s->cap * 2 : 8;
+        RxtRow **v = arena_alloc(a, cap * sizeof *v);
+        for (size_t i = 0; i < s->n; i++) v[i] = s->v[i];
+        s->v = v; s->cap = cap;
+    }
+    s->v[s->n++] = r;
+    return 1;
+}
+
+static void cfg_effective(RxtSource *src, RxtRow *r, RxtSeen *seen, RxtSet *out)
+{
+    set_init(out);
+    if (!seen_add(&src->arena, seen, r)) return;   /* already materialised */
+    if (r->from_list) {
+        const char *cur = r->from_list;
+        RxtItem it;
+        while (list_next(&cur, &it)) {
+            RxtRow *dep = config_by_name(src, it.s, (size_t)(it.e - it.s));
+            if (!dep) continue;          /* parse already refused this */
+            RxtSet sub;
+            cfg_effective(src, dep, seen, &sub);
+            cfg_merge(&src->arena, out, &sub);
+        }
+    }
+    RxtSet own;
+    set_from_row(&own, r);
+    cfg_merge(&src->arena, out, &own);
+}
+
+/* ---- `lib` path resolution ---- */
+
+static int path_is_file(const char *p)
+{
+    struct stat st;
+    return stat(p, &st) == 0 && S_ISREG(st.st_mode);
+}
+
+/* `src->path`'s own directory, arena-owned, "" when it has none. A `lib`
+ * reference is relative to THE FILE THAT WROTE IT, not to the process's
+ * working directory — a source file that names its library is portable
+ * only under that rule, and `--lib-path` is the caller's addition to it
+ * rather than its replacement. */
+static const char *source_dir(RxtSource *src)
+{
+    const char *slash = strrchr(src->path, '/');
+    if (!slash) return "";
+    size_t n = (size_t)(slash - src->path) + 1;   /* keep the '/' */
+    char *d = arena_alloc(&src->arena, n + 1);
+    memcpy(d, src->path, n);
+    d[n] = 0;
+    return d;
+}
+
+static char *join_path(Arena *a, const char *dir, const char *rest)
+{
+    size_t nd = strlen(dir);
+    int need_slash = nd && dir[nd - 1] != '/';
+    size_t n = nd + (size_t)need_slash + strlen(rest) + 1;
+    char *p = arena_alloc(a, n);
+    snprintf(p, n, "%s%s%s", dir, need_slash ? "/" : "", rest);
+    return p;
+}
+
+/* Renders the search chain for a diagnostic: the source's own directory
+ * first, then every `--lib-path` in order. It is built from the SAME list
+ * the search walks, so a message can never name a path the search skipped.
+ *
+ * THE SOURCE'S OWN DIRECTORY IS NAMED, NOT SPELLED, and that is a size fix
+ * rather than a style one. Every diagnostic that carries this chain also
+ * carries `rxt_fail`'s `<path>:<line>: ` prefix — so printing the
+ * directory's full text here put the SOURCE PATH IN THE MESSAGE TWICE,
+ * once as the prefix the reader is already looking at and once inside the
+ * chain. On a 256-byte `pcrec_error.msg` that redundancy is what pushed
+ * the no-such-definition refusal over the buffer at the very path length
+ * its own fixture runs at (263 bytes, MEASURED by the class check one
+ * directory over). Saying "the source's own directory" costs 28 bytes
+ * whatever the path is, tells the reader the same thing, and reads better.
+ * The `--lib-path` entries ARE spelled: those the reader has not been told
+ * anywhere else. */
+static const char *lib_chain_text(Arena *a, const char *own,
+                                  const char *const *dirs, size_t ndirs)
+{
+    (void)own;
+    StrBuf sb = { 0 };
+    sb_puts(&sb, "the source's own directory");
+    for (size_t i = 0; i < ndirs; i++) sb_printf(&sb, ", '%s'", dirs[i]);
+    if (!ndirs) sb_puts(&sb, " (no --lib-path)");
+    char *heap = sb_take(&sb);
+    size_t n = strlen(heap) + 1;
+    char *out = arena_alloc(a, n);
+    memcpy(out, heap, n);
+    free(heap);
+    return out;
+}
+
+/* ---- the entry ---- */
+
+int pcrec_rxt_source_resolve(RxtSource *src,
+                             const char *const *libdirs, size_t nlib,
+                             RxtTarget **out, size_t *nout,
+                             pcrec_error *err)
+{
+    RxtP p = { .path = src->path, .arena = &src->arena, .err = err, .failed = 0 };
+    *out = NULL;
+    *nout = 0;
+
+    const char *own = source_dir(src);
+    const char *chain = lib_chain_text(&src->arena, own, libdirs, nlib);
+
+    /* (1) Every `lib` reference must name a file that EXISTS. Its contents
+     * are not read — see this section's header. */
+    for (size_t i = 0; i < src->nrows; i++) {
+        const RxtRow *r = &src->rows[i];
+        if (r->kind != RXT_DECL_LIB || !r->value) continue;
+        const char *ref = r->value;
+        size_t rl = strlen(ref);
+        /* THE TWO SPELLINGS ARE TWO DIFFERENT MECHANISMS, and only one of
+         * them is a path. `<store-name>` names a library STORE, whose scan
+         * is [LIB]'s row; treating it as a filename would be a silently
+         * wrong search that reports "no readable file" for a reference that
+         * was never meant to be one. It is refused as REAL AND NOT IN THIS
+         * BUILD — the same tier the head grammar gives a wave-2 keyword,
+         * and for the same reason (DECIDED (1)). */
+        if (rl >= 2 && ref[0] == '<')
+            return rxt_fail(&p, r->line,
+                            "'lib %s' is a library-STORE reference, which is "
+                            "NOT IN THIS BUILD (the store scan arrives with "
+                            "[LIB]; the spelling is real, not a typo). The "
+                            "\"path\" form resolves today", ref);
+        /* a quoted path-ref keeps its quotes in `value` (AS WRITTEN); the
+         * reference itself is what is between them. */
+        if (rl >= 2 && ref[0] == '"' && ref[rl - 1] == '"') {
+            char *unq = arena_alloc(&src->arena, rl - 1);
+            memcpy(unq, ref + 1, rl - 2);
+            unq[rl - 2] = 0;
+            ref = unq;
+        }
+        int found = 0;
+        if (ref[0] == '/') found = path_is_file(ref);
+        else {
+            found = path_is_file(join_path(&src->arena, own, ref));
+            for (size_t d = 0; !found && d < nlib; d++)
+                found = path_is_file(join_path(&src->arena, libdirs[d], ref));
+        }
+        if (!found)
+            return rxt_fail(&p, r->line,
+                            "'lib %s' names no readable file; searched %s",
+                            r->value, chain);
+    }
+
+    /* (2) WHICH ARTIFACTS. */
+    size_t ntarget = 0, npattern = 0;
+    const RxtRow *lone = NULL;
+    for (size_t i = 0; i < src->nrows; i++) {
+        if (src->rows[i].kind == RXT_DECL_TARGET) ntarget++;
+        else if (src->rows[i].kind == RXT_DECL_PATTERN) {
+            npattern++;
+            lone = &src->rows[i];
+        }
+    }
+
+    if (!ntarget) {
+        /* THE COMPATIBILITY DEFAULT (Frank, format_design §6.4): no
+         * `target` and exactly ONE UNNAMED block means `target rx`, so a
+         * file that is a single pattern with expectations — which is what
+         * every one of the corpus's 179 files is — builds the artifact it
+         * always did without declaring anything.
+         *
+         * ANYTHING ELSE WITH NO `target` BUILDS NOTHING, and that is not an
+         * error: a library ships nothing by itself (format_design §6.1).
+         * Zero targets, exit 0, no diagnostic. Two observables, never
+         * confused — a file that CANNOT be built refuses, a file that
+         * declares nothing to build is silent. */
+        if (npattern == 1 && !lone->name) {
+            RxtTarget *t = arena_alloc(&src->arena, sizeof *t);
+            memset(t, 0, sizeof *t);
+            t->prefix = "rx";
+            t->name = "rx";
+            t->pattern = lone->value;
+            t->line = lone->line;
+            t->block_line = lone->line;
+            t->flags = lone->flags;
+            t->features = lone->features;
+            t->features_only = lone->features_only;
+            t->encoding = lone->encoding;
+            t->engine = lone->engine;
+            t->budget_steps = lone->budget_steps;
+            t->budget_frames = lone->budget_frames;
+            t->pcrec_raw = NULL;
+            *out = t;
+            *nout = 1;
+        }
+        return 0;
+    }
+
+    RxtTarget *ts = arena_alloc(&src->arena, ntarget * sizeof *ts);
+    size_t n = 0;
+
+    for (size_t i = 0; i < src->nrows; i++) {
+        RxtRow *tr = &src->rows[i];
+        if (tr->kind != RXT_DECL_TARGET) continue;
+
+        /* (3) FROM WHICH BLOCK. A definition name is a block's `name`, in
+         * the FILE namespace (DECIDED (7)). W1.2 has no composer and reads
+         * no `lib` file, so a name this file does not declare is refused
+         * naming the name AND the chain that was searched — the caller can
+         * then tell "I misspelled it" from "it lives in a library and this
+         * build cannot reach into one yet". */
+        const RxtRow *blk = NULL;
+        for (size_t k = 0; k < src->nrows; k++) {
+            if (src->rows[k].kind != RXT_DECL_PATTERN) continue;
+            if (src->rows[k].name && !strcmp(src->rows[k].name, tr->value)) {
+                blk = &src->rows[k];
+                break;
+            }
+        }
+        /* CONTRACT FIRST, PROSE LAST, AND THAT ORDER IS THE WHOLE POINT.
+         * §1.3's table requires this refusal to name the definition AND the
+         * `lib` chain searched, and `pcrec_error.msg` is a FIXED 256 bytes
+         * that already holds a path and a line number. The first version of
+         * this message spent its budget repeating the name three times and
+         * on a sentence about [DD-13b.W1.3], and put the chain LAST — so the
+         * chain was cut off at EVERY path length tried, including a 20-byte
+         * one. It therefore never met the contract it was written for, on
+         * any input, and the truncation hid that rather than announcing it.
+         * `rxt_fail`'s documented rule is that truncation keeps the file and
+         * line, i.e. it eats the TAIL: so whatever the contract requires
+         * must come before whatever merely helps. */
+        if (!blk)
+            return rxt_fail(&p, tr->line,
+                            "'target %s' names no definition '%s': no pattern "
+                            "block here has that name; searched %s (a lib's "
+                            "definitions need the composer, W1.3)",
+                            tr->name, tr->value, chain);
+
+        /* (4) UNDER WHICH SETTINGS — the two mechanisms, in order. */
+        RxtSet s;
+        set_init(&s);
+        if (tr->with_list) {
+            /* ONE `seen` for the whole `with` list — see cfg_effective. */
+            RxtSeen seen = { NULL, 0, 0 };
+            const char *cur = tr->with_list;
+            RxtItem it;
+            while (list_next(&cur, &it)) {
+                RxtRow *cr = config_by_name(src, it.s, (size_t)(it.e - it.s));
+                if (!cr) continue;       /* parse already refused this */
+                RxtSet eff;
+                cfg_effective(src, cr, &seen, &eff);
+                cfg_merge(&src->arena, &s, &eff);
+            }
+        }
+
+        RxtTarget *t = &ts[n++];
+        memset(t, 0, sizeof *t);
+        t->prefix = tr->name;
+        /* Frank's §6.3 rule, and the ONE place it is spelled: the block's
+         * `name`, or the prefix when the block is unnamed. A target that
+         * reaches here always came from a NAMED block (it named one), so
+         * the fallback covers the implicit target above and any future
+         * caller; either way `name` is never NULL. */
+        t->name = blk->name ? blk->name : tr->name;
+        t->pattern = blk->value;
+        t->line = tr->line;
+        t->block_line = blk->line;
+        t->pcrec_raw = s.pcrec_raw;
+
+        /* THE PER-KIND TABLE (§1.5), applied exactly once. */
+        t->features_only = blk->features_only;
+        if (blk->features_only || !s.features) {
+            t->features = blk->features;
+        } else if (!blk->features) {
+            t->features = s.features;
+        } else {
+            /* UNION, spelled as the comma-join `--features` already reads.
+             * No vocabulary is restated here: a join that is not a legal
+             * spec (`all`, `none` and the frozen set names are whole-spec
+             * words, not list members) is refused by
+             * `pcrec_enabled_set_spec` in its own words, and the CLI adds
+             * the one sentence that names the way forward — `features
+             * only` on the block. Duplicating that vocabulary here to
+             * pre-empt the message would be a second home for it. */
+            size_t sz = strlen(s.features) + 1 + strlen(blk->features) + 1;
+            char *j = arena_alloc(&src->arena, sz);
+            snprintf(j, sz, "%s,%s", s.features, blk->features);
+            t->features = j;
+        }
+        t->flags    = blk->flags    ? blk->flags    : s.flags;
+        t->encoding = blk->encoding ? blk->encoding : s.encoding;
+        t->engine   = blk->engine   ? blk->engine   : s.engine;
+        t->budget_steps  = blk->budget_steps  >= 0 ? blk->budget_steps
+                                                   : s.budget_steps;
+        t->budget_frames = blk->budget_frames >= 0 ? blk->budget_frames
+                                                   : s.budget_frames;
+    }
+
+    *out = ts;
+    *nout = n;
+    return 0;
 }
 
 /* ------------------------------------------------- `--list-source`'s TSV */

@@ -1,0 +1,51 @@
+# [DD-13b.W1.2] format_design.md §6.3, THE THREE-CONFIG FILE, with real
+# pcrec flags in place of the design note's illustrative ones.
+#
+# ONE DEFINITION, THREE TARGETS, THREE PREFIXES, ONE NAME. That is the
+# whole acceptance sentence for this step, and this file is the only
+# place in the tree where all four halves of it are observable at once:
+# `--source -o <dir>` writes three artifacts; each stamps its own
+# `<prefix>`; all three stamp `rx_info.name == "level_filter"`; and
+# run.sh builds all three and requires them to ANSWER IDENTICALLY on this
+# block's own cases, which is §6.3's "identity between them is a free
+# control" made mechanical.
+#
+# THE CONFIG CASCADE IS EXERCISED IN BOTH MECHANISMS: `from` (two configs
+# inherit `baseline`'s own `pcrec` line, materialised once) and `with`
+# (each target composes one config). The flags are chosen to be
+# ANSWER-IDENTICAL on purpose — `--no-captures` on a group-free pattern,
+# `--engine=dfa` on a pattern the DFA takes anyway, a raised size cap
+# nothing approaches — because a config that changed an ANSWER would make
+# the agreement control wrong rather than strict, and the control is the
+# point.
+#
+# THE `features` UNION IS EXERCISED HERE AND NOWHERE ELSE, which is why
+# this file carries two module names it does not use. §1.5's per-kind
+# table makes `features` the one directive that UNIONS the target's
+# configs with the block's own line rather than letting the block win, and
+# without a file where BOTH sides are non-empty that branch has a
+# population of zero — a green check measuring nothing, this project's
+# most-recorded check-design failure. `baseline` says `classes`, the block
+# says `named-groups`, and the artifact must stamp
+# `PCREC_FEATURE_MODULES "classes,named-groups"`. Neither module is
+# reachable from `error|warn|fatal`, so enabling them changes no answer
+# and the agreement control stays strict.
+config baseline
+  pcrec --no-captures
+  features classes
+config strict from baseline
+  pcrec --engine=dfa
+config big from baseline
+  pcrec --max-emit-bytes=2000000
+
+target log_base   = level_filter with baseline
+target log_strict = level_filter with strict
+target log_big    = level_filter with big
+
+pattern error|warn|fatal
+name level_filter
+description the three targets are three builds of THIS block
+features named-groups
+m "an error here" 3 8
+m "a fatal one" 2 7
+n "nothing here"

@@ -2170,6 +2170,34 @@ residual is 8.5%, and the letters win GREW at the same time (n=256: 1.69x ->
 emitted text — see `emit_info_def`'s own comment for the per-artifact-kind
 breakdown and why comparison (A) does not move.
 
+## [DD-13b.W1.2] `rx_info.name` AND `rx_info.nentries` — abi 14 -> 15 at the merge (written 13 -> 14 in-branch 2026-08-31; renumbered at the 2026-09-01 merge, behind [CC-CLANG]'s 14)
+
+Two members APPENDED to `struct rx_info` after `match_form`, and two
+initializer lines in `emit_info_def`. **The first bump since [OPT-1] that
+moves no emitted PROGRAM byte at all**: no table, no state, no label, no
+macro VALUE and no struct OFFSET moves on either engine, and no analysis is
+consulted that was not consulted before. `emit_info_def`'s own `abi` comment
+carries the per-artifact-kind breakdown (r37 A12's rule).
+
+**`name`'s FALLBACK IS THE RULE, not a default.** `cx->opt->name` when a
+build supplied one, `cx->opt->prefix` otherwise — which is Frank's
+format_design §6.3 ruling ("no artifact ever carries a NULL name") spelled
+as one line. It is the `<prefix>` and NOT the literal `"rx"`: two
+differently-prefixed artifacts in one TU must not both claim to be "rx", and
+`tests/codegen/run_codegen_tests.sh`'s F9 block drives four prefixes of
+different length and shape for exactly that reason — with `rx` everywhere,
+an emitter stamping the literal string would be indistinguishable from a
+correct one on every artifact in the tree.
+
+**`nentries` READS THE SAME COUNT `nnames` DOES, AND SHIPS ANYWAY.** Today
+`groups[]` holds the primary pattern's own named rows and nothing else, so
+the two numbers are equal on every artifact pcrec emits. They are different
+QUESTIONS — `nnames` is what `docs/spec/match_api.md` §6's caller algorithm
+bsearches, and the primary's rows stay a genuine PREFIX of the array once
+[DD-13b.W1.3]'s composer injects a definition's own names below them — and
+the field lands now because it rides this bump. The alternative is a second
+`abi` bump for one integer.
+
 ## [ENG-ABS] AXIS G — THE ANCHORED MATCH-HERE FORM (2026-08-29)
 
 `docs/design/anchored_match_unwrapped.md` is the note; what lives here is what

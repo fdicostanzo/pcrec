@@ -179,6 +179,20 @@ spec and a design doc disagree, the spec is what the tool promises.
   "unanchored"`, `RX_DFA_PREFILTER "byte-class-bounded"`/
   `"memchr-bounded"`).
 
+
+  **[DD-13b.W1.2], 2026-08-31 — the sixth revision, `rx_info.name` and
+  `rx_info.nentries`.** Two members APPENDED to §6's struct (no existing
+  offset moves) and `abi` 13 -> 14. `name` is the artifact's own name —
+  never NULL, stamping the `<prefix>` when a build supplies none — and it
+  answers a different question from `prefix`: one definition built under
+  three configs is three artifacts, three prefixes and ONE name.
+  `nentries` is the length of the whole `groups[]` array where `nnames`
+  counts the primary pattern's own rows, which stay a genuine PREFIX of
+  it; **they are EQUAL on every artifact pcrec emits today** and the
+  section says so in those words rather than implying a distinction that
+  has no producer yet. The field ships now because it rides this bump
+  rather than costing a second one.
+
 - `table_contract.md` — the ruled contract for every command that outputs
   a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table
   surface, which adopts it at birth): `#` comments, a header row naming
@@ -222,6 +236,16 @@ spec and a design doc disagree, the spec is what the tool promises.
   `cli/main.c` AND a live `build/pcrec` run at this worktree's branch
   point (`0e2b23d`); where `--help`'s wording and the code agreed, cited
   directly rather than restated from memory.
+
+  **[DD-13b.W1.2], 2026-08-31**: §1 gains `--source` / `--target` /
+  `--lib-path` and the `-o` output-naming rule (a FILE for one target, an
+  existing DIRECTORY for several, `-` for one on stdout); §4's
+  "no multi-pattern compilation units" and "no `--lib FILE`" bullets are
+  NARROWED to what is now true rather than deleted — several patterns per
+  invocation, still one artifact per translation unit (D88), and
+  `--lib-path` resolves a `lib` reference's EXISTENCE without reading a
+  library's contents. Nothing in the single-pattern surface changed.
+
 - `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
   contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),
   one section per axis (every `-f`/`-fno-` flag, `--unroll=K`,
@@ -254,6 +278,16 @@ spec and a design doc disagree, the spec is what the tool promises.
   record (runtimes, battery composition, sanitizer/lint measurements,
   TT-* notes, the living oracle-exclusion catalog) and gained a header
   note plus a one-paragraph pointer where the moved sections stood.
+
+
+  **[DD-13b.W1.2], 2026-08-31**: the head table's `target` row stops
+  reading "Parsed, not yet built" and its `lib` row stops reading
+  "Recorded, not yet resolved"; a new "Building from a source file"
+  section states what belongs to the FORMAT rather than to the CLI — a
+  definition is a block's `name` in the FILE namespace, the
+  no-target-plus-one-unnamed-block compatibility default, the
+  library-builds-nothing outcome, the `features` UNION and the
+  more-specific-wins table, and the harness's per-target agreement control.
 
 - `registry.md` — **[SPEC-1.5], 2026-08-25.** The `--list-syntax`/
   `--list-verbs`/`--list-families` TSV COLUMN CONTRACT: every column

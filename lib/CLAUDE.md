@@ -219,6 +219,31 @@ rather than a fifth reference axis. **Do not "fix" that by adding this bit to
 the mask** — it would falsify the artifact's own record of itself to satisfy a
 check.
 
+## [DD-13b.W1.2] `pcrec_options.name` (2026-08-31)
+
+One new field, APPENDED so no existing member's offset moves: the artifact's
+own NAME, emitted as `rx_info.name` (`docs/spec/match_api.md` §6).
+
+**It is not derivable from `prefix`, which is why it is a field.** `prefix`
+says what this artifact's SYMBOLS are called; `name` says what the artifact
+IS. A `.rxt` source's `target <prefix> = <definition>` builds one definition
+under a prefix, and three targets naming one definition are three artifacts,
+three prefixes and ONE name — which is exactly what a consumer walking
+several `<prefix>_info` symbols in one binary needs in order to say "these
+three are the same matcher, built differently".
+
+**NULL MEANS "use `prefix`", and that IS the rule** Frank ruled at
+format_design §6.3: no artifact ever carries a NULL name. So every caller
+that predates the field — every `pcrec_compile` in the tree, every CLI
+compile without `--source` — stamps its own prefix and needs no edit, and
+the emitter has no NULL case to get wrong. `pcrec_default_options`'s
+`memset` supplies the NULL; nothing had to be added there.
+
+It is a NAME and not a symbol: it is emitted as a string literal, no
+generated identifier derives from it, and it is unconstrained by C
+identifier syntax. `.rxt`'s own `name` grammar is stricter, and that is
+that format's rule rather than this field's.
+
 ## [DD-14.FB] the generated-API comment names three more entries (2026-08-25)
 
 `pcrec.h`'s "Generated searcher contract" block now names
