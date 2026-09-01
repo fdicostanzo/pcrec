@@ -63,8 +63,39 @@ Sanity probes (hand patterns, not part of the census): `a*` -> `yes`;
 
 ## M2 — N_declined_by_view at today's tree (§7 item 2)
 
-(running — see below for a methodology defect found and fixed before the
-real sweep)
+**MEASURED. N_declined_by_view = 16** (population 2,845 corpus patterns,
+floor 2,620; `refused_base` = `refused_narrow` = 293, no refusal-behavior
+divergence between the two builds on any pattern). Wave C measured 21 at its
+own (older) tree for a different consumer of the bit; 16 at today's tree is
+the same order of magnitude and the same shape, not a re-derivation of the
+same number — corpus and tree both moved since. All 16 changed patterns:
+
+```
+(?m)$
+(?m)(?:z|)[^c]{0,2}$
+(?m).*$
+(?m)[^c]*$
+(?m)[^c]?$
+(?m)[^c]{0,2}$
+(?m)[^c]{0,4}$
+(?m)[a-z]{0,4}$
+(?m)\bx*$
+(?m)\w*$
+(?m)a*$
+(?m)a{0,4}$
+(?m)a{0,4}$(?-m)
+(?m)x*$
+(?m:.*$)
+(?m:[^c]{0,2}$)
+```
+
+Every one is an `(?m)...$` multiline-EOL shape — exactly F3's counter-example
+class (§3.4(a) of the design note): a state that accepts only under the
+EOL/END view, which is where the widened `state_acc_any` read and the
+narrowed `up[UPC_PLAIN].accept` read disagree. This is the positive control
+the note's §5.2 asks S217 to carry.
+
+**Method, and a bug found and fixed before this real sweep:**
 
 **A first attempt over-counted by roughly 100x on a spurious signal, caught
 before it was reported.** The scratch narrowed variant (`unanch_start`'s
