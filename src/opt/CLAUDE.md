@@ -1111,3 +1111,53 @@ rung ineligible so the decline is never reached and the compile REFUSES.
 `-fprefilter-collapse` overrides on neither, because it chooses a LANGUAGE and
 not whether a filter exists. `docs/spec/tuning.md` §2.17 is the
 contract.
+
+## [OPT-4.2] the decline generalizes off the rung — ONE PREDICATE, TWO SCOPES
+
+[OPT-4.1]'s decline above is scoped to a ladder ATTEMPT
+(`cx->collapse_reason != CR_NONE`): it only ever fires while a RUNG is
+offering the count-collapsed rescue. The ORDINARY hybrid — `auto` (or forced
+`--engine=vm` plus `-fprefilter`) with no cap ever hit — still built its
+pattern's own EXACT prefilter unconditionally, nullable or not, which is
+exactly the same defect one door over: `(a)*`'s own language matches the
+empty string (no collapse involved at all — this is not a repeat the
+collapse touches), and its prefilter could never dismiss a position either.
+The population that reaches this path GREW when [OPT-5]'s scan edge landed:
+`(a|b){0,30000}`-family patterns that used to be SIZE-REFUSED (and so took
+the [OPT-4] size rung's own decline above) now compile inside every cap and
+never reach a rung at all.
+
+`select_engine.c`'s fit site derives ONE shared local,
+`lang_nullable_declinable` (`prefilter_lang_nullable && !has_bref &&
+!has_call && !force_on` — the exact conjuncts [OPT-4.1]'s field above
+already had, minus `prefilter_has_collapsible_rep`, which is meaningless off
+a rung: the ordinary path never collapses anything, so there is always a
+concrete prefilter to decline), and reads it into BOTH declines:
+
+- `prefilter_declined_nullable` (unchanged) additionally needs
+  `collapse_reason != CR_NONE` and `prefilter_has_collapsible_rep` — a rung
+  ran and there was a distinct rescue to refuse.
+- `prefilter_declined_nullable_default` (new) additionally needs
+  `collapse_reason == CR_NONE` and `would_prefilter` — a LOCAL answering "is
+  `fit.chosen == ENGM_VM` and would this compile actually have built a
+  prefilter, absent the decline" (the same condition the final `fit.prefilter`
+  ternary falls through to), further guarded by `!cx->dfa_disabled` so the
+  decline cannot fire on a retry whose OWN prefilter construction overflowed
+  with no rung offered (`ESEL_OVERFLOWED_DFA`/`_PREFILTER`'s own population —
+  the r47sel-1 false-stamp shape one level over: without the guard, a DFA
+  build that genuinely had nothing to offer would stamp "a rescue was
+  refused" instead of "nothing survived").
+
+The two fields are MUTUALLY EXCLUSIVE by construction (one requires
+`collapse_reason != CR_NONE`, the other its negation) and get their own
+`ESEL_DECLINED_NULLABLE_DEFAULT` value (internal.h) rather than sharing
+`ESEL_DECLINED_NULLABLE` — the K35 "closed value set silently losing a
+member" shape: a rung OFFERED and REFUSED a rescue is a different population
+from an ordinary compile that never had a rung to begin with, and the bench
+buckets on `RX_ENGINE_SEL` precisely because it cannot bucket on prose.
+`internal.h`'s own enum comment carries the placement argument (why the new
+value sits adjacent to `ESEL_SELECTED` rather than appended after
+`ESEL_SIZE_CAP_RETRY`); `docs/spec/tuning.md` §2.17 and `match_api.md` §6.3
+are the caller-facing contract. `tests/resource`'s `(a|b){0,30000}` cell and
+`tests/prefilter`'s `(a)*` witness are the two populations
+(size-cap-rescued-then-declined-anyway vs. never-capped-at-all).
