@@ -127,7 +127,7 @@ it anyway.
 |---|---|
 | N targets → N artifacts, N prefixes, one `rx_info.name` | OWED (`tests/rxtsource` W1.2 §1) |
 | §6.3's three-config file compiles three ways, the three agree | OWED (`three_configs.rxtin` + H11) |
-| abi 14 at all four sites | **THREE DONE, SITE 4 OWED** — see §4 |
+| abi 14 at all four sites | **THREE DONE, SITE 4 OWED** — see §4. The 13 -> 14 premise is now MEASURED, not read: the main binary stamps `.abi = 13` |
 | F9's `.name` assertion over the corpus's artifacts | OWED (`run_codegen_tests.sh`) |
 | identity gate (A) byte-identical | OWED, and EXPECTED: the two bytes this change writes are `rx_info` initializer lines, emitted below (A)'s `prog_region` on every artifact |
 | identity gate (B) re-pinned | OWED — the pin must be this step's LAST src commit, so it lands last |
@@ -201,7 +201,26 @@ composition, so a config materialises ONCE, which is what §1.5 says. Found
 by hand-tracing `head_basic`'s own config cascade under the hold, not by a
 run.
 
-### 3.6 `docs/dev/plan.md` was NOT touched
+### 3.6 The `features` UNION had a population of ZERO — found by probing, in this lane's own new code
+
+The manager's probe window was spent settling what this lane had inferred
+about the surfaces it builds on (full table in `w12_log.md`). One probe —
+confirming §3.3's claim that a whole-spec word cannot join a `features`
+list — exposed that the UNION branch was reached by NO fixture:
+`head_basic`'s config sets `features` and its block does not, and
+`three_configs` set none at all. So §1.5's one genuinely composing
+directive had a green check behind it and no population, which is the
+exact failure this project records most often, committed by this lane in
+the code it wrote to avoid it.
+
+Closed: `three_configs` carries `features classes` on `baseline` (which
+`strict` and `big` inherit through `from`) and `features named-groups` on
+the block, and the section asserts all three artifacts stamp
+`PCREC_FEATURE_MODULES "classes,named-groups"` — an artifact-side witness,
+not a re-derivation. Neither module is reachable from `error|warn|fatal`,
+so no answer moves and the agreement control stays strict.
+
+### 3.7 `docs/dev/plan.md` was NOT touched
 
 Three lanes may be editing the `[DD-13b.W1]` row. The lane left the STATE
 tag to the manager rather than risk a merge conflict on a row it does not

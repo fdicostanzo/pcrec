@@ -68,3 +68,41 @@ query returns from `main` first and would have won silently
 (`--source f.rxt --count-groups -- a` counted the pattern and ignored the
 file); and a backtick inside a double-quoted `pass "..."` message, which
 bash would have run as a command.
+
+## PROBE WINDOW, 2026-08-31 21:23-21:27 EDT (manager's hold amendment)
+
+Single-pattern `build/pcrec` probes against the **MAIN tree's** binary
+(`/home/duxevents/pcrec/build/pcrec`, built from main at 14:55, i.e. WITHOUT
+this branch's code). `date` before each; no make, no gcc, no test script.
+
+**What a main-tree binary can and cannot answer.** It cannot exercise one
+line of this lane's code. What it CAN do is settle the things this lane
+INFERRED about the surfaces it builds on — the `--list-source` column
+layout its new run.sh reader indexes, the emitted-text shapes its new
+greps pin, and whether its own fixtures parse at all. Every one of those
+was an assumption until this window.
+
+| probe | answer |
+|---|---|
+| `--list-source three_configs.rxtin` | parses; `target` rows are (col3 = PREFIX, col4 = DEFINITION), which is what `run.sh`'s new `read -r _k _l _n _v _rest` indexes |
+| `--list-source head_basic.rxtin` (after this lane's correction) | parses; kind order still `description lib config config target pattern pattern`, so W1.1's existing check is unmoved; `lib` value keeps its quotes (`"common.rxt"`), which is why the resolver unquotes |
+| `--list-source` on the five other new fixtures | all parse. **`lib <common>` PARSES and keeps its angle brackets**, so the `<store>` refusal is reachable and its needle matches; `config sneaky`'s `pcrec -p notmyprefix` survives to column 15 as raw text |
+| `-o -` on a named-groups pattern | **`.abi = 13`** on main (site 1's before-value, confirmed rather than read from a doc); `    .nnames = 2,` — the 4-space initializer shape both new greps assume |
+| `-o -` with `-p level_filter` | `    .pattern = "error\|warn\|fatal",` — the escaper's exact shape, so `^    \.name = ` and run.sh's `sed 's/.*= "\(.*\)",$/\1/'` are right; `int level_filter_search(` at column 0, which the rxtsource prefix check greps |
+| `--features classes,named-groups` | ACCEPTED, stamps `PCREC_FEATURE_MODULES "classes,named-groups"` |
+| `--features all,classes` | REFUSED: *"unknown module 'all' (names are --list-syntax's module column; also 'all', 'none', or a named set: std1)"* |
+
+**The last two turned a report FINDING into a measurement and then found a
+gap in this lane's own work.** §3.3 argued that a whole-spec word cannot
+join a `features` UNION and that the resolver should restate no vocabulary
+— now measured true. But checking it exposed that **the UNION branch had a
+population of ZERO across every fixture**: `head_basic`'s union is
+config-only (its block writes no `features`), and `three_configs` wrote
+none at all. A branch nothing reaches is a green check measuring nothing —
+this project's most-recorded check-design failure, committed by this lane
+in its own new code. Closed: `three_configs` now carries `features
+classes` on `baseline` and `features named-groups` on the block, and the
+rxtsource section asserts all three artifacts stamp
+`PCREC_FEATURE_MODULES "classes,named-groups"`. Neither module is
+reachable from `error|warn|fatal`, so no answer moves and the agreement
+control stays strict.
