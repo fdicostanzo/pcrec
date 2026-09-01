@@ -697,6 +697,10 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         char **v = NULL, *buf = NULL;
         int n = 0;
         if (raw_split(t->pcrec_raw, &v, &n, &buf) != 0) return 1;
+        /* 24 literal bytes + a prefix capped at PCREC_LIMIT_RXT_TARGET_
+         * PREFIX_MAX (127, docs/spec/limits.md §3.5) + a quote + NUL = 153,
+         * so this cannot truncate — stated because `-Wformat-truncation`
+         * has bitten this tree once (src/parse/rxt_source.c's rxt_fail). */
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
         int rc = cli_parse(n, v, &ts, where);
@@ -710,6 +714,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * without an edit because the check is over the whole tail of the
          * struct rather than over a list of names. */
         if (!cli_extras_clean(&ts)) {
+            free(ts.libdirs);   /* a config that reached for --lib-path */
             fprintf(stderr,
                     "pcrec: %s:%zu: a `config` block's `pcrec` line may set "
                     "compile options only — not an output path, a pattern, a "
@@ -934,6 +939,23 @@ int main(int argc, char **argv)
     if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) return 1;
     if (st.want_help) { usage(stdout); return 0; }
 
+    /* [DD-13b.W1.2] `--target`/`--lib-path` APPLY TO `--source` ALONE, and
+     * this is refused HERE — above every query — for two reasons that
+     * happen to coincide. A query returns from `main` on its own, so a
+     * conflict tested lower down is one the query already won silently;
+     * and `--lib-path` is the only option in this CLI that ALLOCATES, so
+     * refusing it here is what makes "st.libdirs is non-NULL" true on
+     * exactly two paths — this one and the `--source` compile — both of
+     * which free it. Every other exit from `main` provably has nothing to
+     * free, which is why none of them carries a `free` that a reader would
+     * have to keep in step. */
+    if (!st.source && (st.target || st.libdirs)) {
+        fprintf(stderr, "pcrec: %s applies to --source only\n",
+                st.target ? "--target" : "--lib-path");
+        free(st.libdirs);
+        return 1;
+    }
+
     /* Read-only aliases for the modes below, so the query dispatch reads
      * exactly as it did before the parser was factored out. `opt` is a COPY
      * the compile path may still adjust (`header_name`). */
@@ -1000,6 +1022,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "pcrec: --source COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)\n");
+        free(st.libdirs);
         return 1;
     }
 
@@ -1320,6 +1343,7 @@ int main(int argc, char **argv)
             fprintf(stderr, "pcrec: --source takes no pattern argument — the "
                             "file's `pattern` blocks are the patterns (got "
                             "'%s')\n", pattern);
+            free(st.libdirs);
             return 1;
         }
         if (!outpath) {
@@ -1327,6 +1351,7 @@ int main(int argc, char **argv)
                             "an existing DIRECTORY for several (which writes "
                             "<dir>/<prefix>.c and .h per target), or '-' for "
                             "one target on stdout\n");
+            free(st.libdirs);
             return 1;
         }
         {
@@ -1335,13 +1360,6 @@ int main(int argc, char **argv)
             return rc;
         }
     }
-    if (st.target || st.libdirs) {
-        fprintf(stderr, "pcrec: %s applies to --source only\n",
-                st.target ? "--target" : "--lib-path");
-        free(st.libdirs);
-        return 1;
-    }
-
     if (!pattern || !outpath) {
         fprintf(stderr, "pcrec: pattern and -o are required\n");
         usage(stderr);
