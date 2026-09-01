@@ -44,7 +44,7 @@ empty.
 ## The two denominators differ, and it is a derivation not a discrepancy
 
 ```
-census (all files)         189 files / 3,319 blocks / 26,794 lines
+census (all files)         189 files / 3,320 blocks / 26,799 lines
 tests/known_fail/k34...      1 file  /     3 blocks /     11 lines
                            ---------------------------------------
 run.sh's own population    178 files / 3,262 blocks / 26,680 lines

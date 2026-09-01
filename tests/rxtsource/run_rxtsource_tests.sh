@@ -2,7 +2,7 @@
 # tests/rxtsource/run_rxtsource_tests.sh — [DD-13b.W1.1] INV-COMPAT.
 #
 # The question this section answers: does growing the `.rxt` format change
-# what any EXISTING corpus file means? The corpus is 189 files, 3,319
+# what any EXISTING corpus file means? The corpus is 189 files, 3,320
 # pattern blocks and 26,691 expectation lines, and none of them uses one
 # byte of the new grammar — so the answer must be "no" in a way that a
 # check can fail, not in a way a reader can believe.
@@ -27,7 +27,7 @@
 # ---------------------------------------------------------------------
 # THE TWO DENOMINATORS DIFFER ON PURPOSE (w1_impl §3.0)
 #
-#   census (all files)         189 files / 3,319 blocks / 26,794 lines
+#   census (all files)         189 files / 3,320 blocks / 26,799 lines
 #   tests/known_fail/k34...      1 file  /     3 blocks /     11 lines
 #                              ---------------------------------------
 #   run.sh's own population    178 files / 3,262 blocks / 26,680 lines
@@ -89,15 +89,15 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # own expectation would agree with a shrunk corpus by construction, which
 # is this project's signature check-design failure (learnings §3).
 CENSUS_FILES=189
-CENSUS_BLOCKS=3319
-CENSUS_LINES=26794
+CENSUS_BLOCKS=3320
+CENSUS_LINES=26799
 
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 179/178 split inexplicable.
 RUNSH_FILES=188
-RUNSH_BLOCKS=3316
-RUNSH_LINES=26783
+RUNSH_BLOCKS=3317
+RUNSH_LINES=26788
 
 echo "== [DD-13b.W1.1] .rxt source / INV-COMPAT =="
 
@@ -518,7 +518,7 @@ C3_FILES=179
 # the corpus's own (?x)/plain controls, verified here like any other.
 # [OPT-5]/S215 2026-08-31: +8 for tests/classes/multi_chain.rxt — all eight
 # cells are python-expressible and verified here like any other.
-C3_PASS=13196
+C3_PASS=13201
 C3_SKIP=13509
 C3_SKIP_PCRE2ONLY=1357
 C3_SKIP_GIVEUP=23

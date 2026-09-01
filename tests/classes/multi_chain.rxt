@@ -20,3 +20,19 @@ pattern [a-c]{2,4}[0-9]{2,4}[A-C]{2,4}[j-l]{2,4}[x-z]*
 m "ab12ABjk" 0 8
 m "ab12ABjkxyz" 0 11
 n "ab12AB"
+
+# THE CAP-BINDING witness (S215's real detector; the two blocks above turned
+# out NOT to bind the cap — their seam states carry two live classes, chains
+# shatter, candidates never exceed 4 per machine; measured via the emitted
+# 'scan edge:' comments, 2026-08-31). Literal separators make each counted
+# segment a clean single-class chain: the REVERSE machine gets 5 candidates
+# and emits exactly 4 (the cap binding), the forward machine refuses all of
+# them (start-anywhere threading — the documented embedded refusal), the
+# anchored machine binds too. Dropping the pass-side cap conjunct (S215)
+# condemns the 5th chain's states with no loop to cover them.
+pattern [a-c]{2,4}x[0-9]{2,4}y[A-C]{2,4}z[j-l]{2,4}w[x-z]{2,4}
+m "abx12yABzjkwxy" 0 14
+m "aabbx1234yAABBzjjkkwxxyy" 0 24
+m "QQabx12yABzjkwxyQQ" 2 16
+n "abx12yABzjkwx"
+n "abx12yABzjkw"

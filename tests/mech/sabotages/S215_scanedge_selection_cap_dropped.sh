@@ -18,7 +18,7 @@ SAB_FILE="src/opt/scanedge.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/classes/multi_chain.rxt"
 SAB_DESC="scanedge.c's selection loop drops its 'nedges < SCAN_MAX_EDGES' conjunct — the CAP's true enforcer (emit_dfa.c's annotation cap is redundant only by construction). The pass then selects every found chain on a >4-chain machine, condemning interior states the emitter will never cover with a loop (and overrunning taken[]), so multi-chain patterns lose matches or the compiler misbehaves outright. Detector: tests/classes/multi_chain.rxt (added with this row — five-segment counted-class patterns, ~10 chain candidates vs the cap's 4, python3-re-verified cells)"
-SAB_DOC_FIGURE="PREDICTED at wiring: the multi_chain.rxt cells flip (lost matches on the segments whose chains fall past the emit cap) or the sabotaged compile itself fails on the witness; measured figure recorded by the manager's solo run below this line."
+SAB_DOC_FIGURE="FIRST WIRING MEASURED UNDETECTED (2026-08-31, solo run): the original two multi_chain.rxt blocks never BIND the cap — their seam states carry two live classes, chains shatter to length 2, candidates stay under 4 per machine (counted via the emitted scan-edge comments). The row was inert, exactly the population-nobody-counted shape (K35). The CAP-BINDING block was then added (literal separators; the REVERSE machine gets 5 candidates / 4 emitted) and the re-run is the figure of record: recorded below by the manager after the re-run."
 SAB_COUNT=1
 SAB_BEFORE='    for (int i = 0; i < nfound && nedges < SCAN_MAX_EDGES; i++) {'
 SAB_AFTER='    for (int i = 0; i < nfound /* SABOTAGE S215: cap conjunct dropped */; i++) {'
