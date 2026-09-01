@@ -1346,9 +1346,9 @@ static const char *lib_chain_text(Arena *a, const char *own,
                                   const char *const *dirs, size_t ndirs)
 {
     StrBuf sb = { 0 };
-    sb_printf(&sb, "'%s' (the source's own directory)", *own ? own : "./");
+    sb_printf(&sb, "'%s' (source dir)", *own ? own : "./");
     for (size_t i = 0; i < ndirs; i++) sb_printf(&sb, ", '%s'", dirs[i]);
-    if (!ndirs) sb_puts(&sb, " — no --lib-path was given");
+    if (!ndirs) sb_puts(&sb, ", no --lib-path");
     char *heap = sb_take(&sb);
     size_t n = strlen(heap) + 1;
     char *out = arena_alloc(a, n);
@@ -1478,14 +1478,24 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                 break;
             }
         }
+        /* CONTRACT FIRST, PROSE LAST, AND THAT ORDER IS THE WHOLE POINT.
+         * §1.3's table requires this refusal to name the definition AND the
+         * `lib` chain searched, and `pcrec_error.msg` is a FIXED 256 bytes
+         * that already holds a path and a line number. The first version of
+         * this message spent its budget repeating the name three times and
+         * on a sentence about [DD-13b.W1.3], and put the chain LAST — so the
+         * chain was cut off at EVERY path length tried, including a 20-byte
+         * one. It therefore never met the contract it was written for, on
+         * any input, and the truncation hid that rather than announcing it.
+         * `rxt_fail`'s documented rule is that truncation keeps the file and
+         * line, i.e. it eats the TAIL: so whatever the contract requires
+         * must come before whatever merely helps. */
         if (!blk)
             return rxt_fail(&p, tr->line,
-                            "'target %s = %s' names no definition: this file "
-                            "declares no pattern block named '%s'. A "
-                            "definition in a `lib` file is not reachable in "
-                            "this build (the composer arrives with "
-                            "[DD-13b.W1.3]); the lib chain is %s",
-                            tr->name, tr->value, tr->value, chain);
+                            "'target %s' names no definition '%s': no pattern "
+                            "block here has that name; searched %s (a lib's "
+                            "definitions need the composer, W1.3)",
+                            tr->name, tr->value, chain);
 
         /* (4) UNDER WHICH SETTINGS — the two mechanisms, in order. */
         RxtSet s;

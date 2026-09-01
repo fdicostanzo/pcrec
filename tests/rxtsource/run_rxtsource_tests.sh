@@ -1434,10 +1434,44 @@ w12_refuse() {
   message: $(cat "$out")"
     fi
 }
-w12_refuse no_such_definition.rxt nodef  'level_filter' 'no definition' 'W1.3'
+# The needles are the CONTRACT (§1.3: name the definition AND the lib chain
+# searched), never the prose. An earlier version of this row asserted the
+# string 'W1.3' — a D26 tier-3 pointer sitting at the message's tail, which
+# is exactly the part `rxt_fail`'s documented truncation rule eats first.
+w12_refuse no_such_definition.rxt nodef  'level_filter' 'no definition' 'searched'
 w12_refuse lib_missing.rxt        libmiss 'extra_defs.rxt' 'no readable file' 'searched'
 w12_refuse lib_store.rxt          libstore '<common>' 'NOT IN THIS BUILD' 'LIB'
 w12_refuse config_pcrec_escape.rxt cfgesc  'compile options only' 'prefix'
+
+# --- NO REFUSAL MAY BE TRUNCATED, which is a CLASS check --------------
+#
+# `pcrec_error.msg` is a FIXED 256 bytes and already holds a path and a
+# line number, so a refusal that spends its budget on prose loses its TAIL
+# — and §1.3 puts CONTRACT content (the definition name, the `lib` chain
+# searched) in exactly the place that is lost. MEASURED before this check
+# existed: the no-such-definition refusal was cut off at EVERY path length
+# tried, including a 20-byte one, so it never met its contract on any
+# input and the truncation hid that rather than announcing it.
+#
+# The instance was caught by a proxy needle; this is the CLASS, and it is
+# the check that would have found it directly. It bounds the whole message
+# (pcrec's own "pcrec: " prefix included) below the buffer, so a refusal
+# that grows past it fails HERE rather than silently shedding whatever it
+# was contractually required to say.
+w12_trunc_bad=""
+for w12_fx in no_such_definition lib_missing lib_store config_pcrec_escape; do
+    w12_n=$("$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/$w12_fx.rxt" \
+                -o "$W12/trunc.c" 2>&1 >/dev/null | wc -c)
+    [ "$w12_n" -lt 263 ] || \
+        w12_trunc_bad="$w12_trunc_bad  $w12_fx: $w12_n bytes (limit 263)"
+done
+if [ -z "$w12_trunc_bad" ]; then
+    pass "W1.2: no resolution refusal reaches pcrec_error.msg's 256-byte buffer — the CONTRACT half of each message survives, since truncation eats the tail"
+else
+    fail "W1.2: a resolution refusal is TRUNCATED, so whatever §1.3 requires it to name may be the part that was cut:$w12_trunc_bad
+  rxt_fail truncates the TAIL (keeping file:line), so contract content must
+  come BEFORE prose. Shorten the message; do not raise the buffer."
+fi
 
 # `--list-source` still ACCEPTS the file whose lib does not resolve. The
 # two surfaces answer different questions and only one of them touches the
