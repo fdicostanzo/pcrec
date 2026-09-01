@@ -19200,3 +19200,40 @@ firing + the real battery 7); the bench's O-11 read and answered
 (I-27); bench acked with [B25] (the abi-13 re-pin + the [OPT-5]
 acceptance AFTER against our per-rung predictions). Frank's proceed
 ruling for the bench goes as I-28 + a live message. wake.md rewritten.
+
+## 2026-08-31 — Forty-eighth session (evening): wake at the a7e0bdf pin; three lanes launched under the bench's [B25] window
+
+#### Forty-eighth session, open (20:4x-21:0x EDT): queue chartered per Frank's close ruling; window handshake live
+
+Woke ~20:47 EDT at the pin a7e0bdf (abi 13), tree clean (plus Frank's
+untracked .vscode/, untouched). The bench (pcrecdev2, live) started
+[B25] within minutes of this wake — handshake established by live
+message: their b25repin lane is in its BUILD phase (~60-90 min,
+compile-load only; our light work fine alongside), WINDOW OPEN for the
+four timed bounded@0.2 acceptance cells ~22:15-22:30 EDT, WINDOW
+CLOSED ~midnight ±30. Protocol adopted: fully quiet on this side from
+their OPEN to their CLOSED ping; lanes may run single-pattern
+build/pcrec probes only until a 22:05 EDT hard edge.
+
+THREE LANES LAUNCHED per the D86 columns, all from Frank's close
+ruling ("next session proceed with queued items"):
+- FEATURE — lane w12 (opus, `lane/w12`): [DD-13b.W1.2] targets,
+  rx_info.name, nentries, abi ritual, H11; charter = w1_impl.md §5's
+  W1.2 paragraph + §1.5-§1.8; briefed on the staleness (abi already
+  13; bump written 13→14 in-branch).
+- OPTIMIZATION — lane o42 (sonnet, `lane/o42`): [OPT-4.2], the
+  rungless nullability decline; manager's design pin: own ESEL value,
+  internal.h invariant preserved + comment extended, tripwire cell
+  flips, S216 assigned. Frank's blanket proceed read as the charter
+  (wake.md's instruction); one-line confirmation owed when present.
+- ADMIN — lane cc (sonnet, `lane/cc`): [CC-CLANG] steps 1+2
+  (frameless-VM indirect-goto fix + __has_attribute noclone guard,
+  ONE abi bump; CLANGGEN sweep mechanism — full sweep stays with the
+  manager).
+
+All three abi bumps written 13→14 in-branch; final numbers assigned
+at merge serialization (merges through the manager, battery between).
+Lanes hold builds until per-lane .lift files (dropped at the bench's
+WINDOW CLOSED). Keepalive cron :09/:39 up; 10-min stall watchdog up.
+Baseline verify (make/strict/test-registry) owed after WINDOW CLOSED,
+before any merge.
