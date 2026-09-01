@@ -9345,17 +9345,28 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_printf(c, "    unsigned char %s_revdet_group_seen[%d] = {0};\n", v.p, v.nrevcaps);
     }
     sb_puts(c, "    (void)subject; (void)subject_length; (void)slot_values;\n");
-    /* Three of the five per-loop locals are used only by shapes that do not
+    /* Four of the five per-loop locals are used only by shapes that do not
      * always occur — the walk cursor and `prev` exist only when a walk is
-     * emitted, and the seen-counter only when the body has groups — and the
-     * generated matcher is built -Wall -Wextra -Werror. `--no-captures` on a
-     * possessified rung loop is the combination that has none of them, and it
-     * failed -Wunused-variable before this line. `it` and `mk` are used by every
-     * shape and are deliberately not listed, so a future shape that stops using
-     * one still gets caught. */
+     * emitted, the seen-counter only when the body has groups, and (found by
+     * [CC-CLANG]'s CLANGGEN sweep, not by inspection) `iteration` only where
+     * a READER exists for it: the rmax-bound test at the scan head fires iff
+     * `rmax >= 0` and the rmin tests at the commit/short labels fire iff
+     * `rmin > 0`, so a bare unbounded `X*` (rmin 0, rmax -1) writes it
+     * (reset, incremented every iteration) and never reads it at all —
+     * gcc's `-Wunused-but-set-variable` does not catch a write-only local
+     * reached through `x++` (measured: gcc accepts `((?<a>a)|(?<b>b))*`
+     * clean at -Wall -Wextra -Werror), clang's does. `mk` (`frame_mark`) is
+     * the only one of the five genuinely used by every shape — the cut it
+     * feeds runs on every commit, rmin or rmax notwithstanding — and is
+     * deliberately not listed, so a future shape that stops using it still
+     * gets caught. The generated matcher is built -Wall -Wextra -Werror;
+     * `--no-captures` on a possessified rung loop is the combination that
+     * has none of the first three, and it failed -Wunused-variable before
+     * this line existed. */
     for (int i = 0; i < nrev_total; i++)
-        sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position; (void)%s_rv%d_groups_seen;\n",
-                  v.p, i, v.p, i, v.p, i);
+        sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position;"
+                     " (void)%s_rv%d_groups_seen; (void)%s_rv%d_iteration;\n",
+                  v.p, i, v.p, i, v.p, i, v.p, i);
     if (v.tracing)
         sb_printf(c, "    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\","
                      " scan_position, subject_length);\n", v.p);
