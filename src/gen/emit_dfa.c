@@ -713,6 +713,41 @@ static void emit_rx_abi_types(StrBuf *sb)
         "       mirroring <PREFIX>_DFA_MATCH. NULL on every artifact whose\n"
         "       _match this engine did not write. */\n"
         "    const char           *match_form;\n"
+        /* [DD-13b.W1.2] THE ARTIFACT'S OWN NAME, and the count of every row
+         * in `groups[]`. APPENDED AT THE END, after `match_form`, so no
+         * existing member's offset moves — the [DD-13c] append precedent
+         * rather than abi 2's and abi 3's insertions; the `abi` bump
+         * announces the growth either way.
+         *
+         * `name` IS NEVER NULL. A `.rxt` source's `target` names a
+         * definition and the block it names may carry a `name`; this is
+         * that name, and it is the artifact's answer to "what am I" as
+         * distinct from `<prefix>`'s "what are my symbols called". A build
+         * that names nothing stamps its own prefix (Frank, format_design
+         * §6.3), so a consumer needs no NULL case and the emitter has none
+         * to get wrong.
+         *
+         * `nentries` IS NOT `nnames` RESTATED, and the difference is a
+         * SHIPPED CONTRACT rather than a nicety. §6's caller algorithm
+         * bsearches `groups[0 .. nnames)` and walks a run of equal names;
+         * once composition injects a definition's own named groups
+         * ([DD-13b.W1.3]) the array grows rows the primary did not declare,
+         * sorted BELOW the primary's by the (ref-is-NULL, name, number)
+         * key, so the primary's rows stay a genuine PREFIX and `nnames`
+         * keeps its meaning exactly. `nentries` is how a caller reaches the
+         * rest. Today no composer exists, so every artifact stamps
+         * `nentries == nnames`; it lands NOW because it rides this `abi`
+         * bump, and the alternative is a second bump for one integer. */
+        "    const char           *name;        /* the artifact's own name;\n"
+        "                                          the `<prefix>` when the\n"
+        "                                          build named nothing.\n"
+        "                                          NEVER NULL. */\n"
+        "    int                   nentries;    /* rows in groups[], ALL of\n"
+        "                                          them. nnames counts the\n"
+        "                                          PRIMARY pattern's own,\n"
+        "                                          which are a prefix of the\n"
+        "                                          array; the two are equal\n"
+        "                                          on an uncomposed one. */\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -1400,7 +1435,29 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * on every VM artifact and this change reaches no VM program byte.
      * Comparison (B) compares whole files and is re-pinned in this same
      * change, per D76. */
-    sb_puts(c,   "    .abi = 13,\n");
+    /* [DD-13b.W1.2] abi 13 -> 14 (D76): `rx_info.name` AND `rx_info.nentries`.
+     * SCAFFOLDING ONLY, on every artifact of both engines, and this is the
+     * first bump since [OPT-3] that moves no emitted PROGRAM byte at all —
+     * stating that per artifact kind is r37 A12's lesson:
+     *
+     *  - EVERY artifact of EITHER engine gains exactly two `rx_info`
+     *    initializer lines (`.name`, `.nentries`) and the two member
+     *    declarations in the shared `PCREC_RX_ABI_H` block. Nothing else.
+     *  - NO STRUCT OFFSET MOVES: both members are APPENDED after
+     *    `match_form`, the [DD-13c] append shape rather than abi 2's and
+     *    abi 3's insertions.
+     *  - No table, no state, no label, no macro VALUE changes on any
+     *    artifact, and no analysis is consulted that was not consulted
+     *    before: `.name` reads an option field and `.nentries` reads the
+     *    same `cx->n_named_groups` `.nnames` already read.
+     *
+     * COMPARISON (A) of run_recursion_identity.sh (`goto <p>_L0;` through
+     * `<p>_accept:`, the VM PROGRAM) is expected byte-identical, and here
+     * that is structural rather than argued: the two bytes this row writes
+     * are `rx_info` initializer lines, which are emitted below that region
+     * on every artifact. Comparison (B) compares whole files and is
+     * re-pinned in this same change, per D76. */
+    sb_puts(c,   "    .abi = 14,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1587,6 +1644,30 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         sb_printf(c, "    .match_form = \"%s\",\n", dfa_match_name(cx));
     else
         sb_puts(c, "    .match_form = NULL,\n");
+    /* [DD-13b.W1.2] THE NAME, AND THE FALLBACK IS THE RULE. Frank's
+     * format_design §6.3 ruling is "no artifact ever carries a NULL name",
+     * and this line is the whole of it: `opt->name` when a build supplied
+     * one (`pcrec --source`, from the `target`'s block), the prefix
+     * otherwise. Written through the same string-literal escaper the
+     * pattern goes through, because a name is arbitrary text — `.rxt`'s own
+     * `name` grammar is stricter, but that is that format's rule and not
+     * this field's, and a library caller may set anything.
+     *
+     * IT IS THE `<prefix>` AND NOT THE LITERAL "rx": two differently-
+     * prefixed artifacts in one TU must not both claim to be "rx". */
+    {
+        const char *nm = cx->opt->name ? cx->opt->name : cx->opt->prefix;
+        sb_puts(c, "    .name = ");
+        emit_c_string_literal(c, nm, strlen(nm));
+        sb_puts(c, ",\n");
+    }
+    /* `nentries` reads the SAME count `nnames` does, from the same field,
+     * because today the array holds the primary's rows and nothing else.
+     * Two spellings of one number is the honest state of an uncomposed
+     * artifact, not an oversight: what makes them different questions is
+     * the composer, and the day it lands this line is where the injected
+     * rows are counted. */
+    sb_printf(c, "    .nentries = %u,\n", cx->n_named_groups);
     sb_puts(c,   "};\n");
 }
 
