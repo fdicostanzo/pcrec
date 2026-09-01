@@ -11,6 +11,20 @@
  * and never per byte (§2.7: the VM has no per-byte dispatch, so D13's
  * table-vs-computed-goto arbitration simply does not arise here).
  *
+ * [CC-CLANG] THE ONE EXCEPTION, AND IT IS ZERO RATHER THAN A SECOND ONE. A
+ * FRAMELESS program — no `RX_PUSH` and no `RX_CALL` site anywhere in the
+ * tree (`has_push` in `pcrec_emit_vm`, e.g. a straight-line `(a)b` or a
+ * bounded repeat entirely on the counter rung) — never lets
+ * `run->resume_depth` leave 0, so the fail label's pop-and-resume dispatch
+ * is unreachable and is OMITTED rather than emitted dead: that artifact has
+ * ZERO indirect jumps, not a second one. clang refuses an indirect goto in a
+ * function with no address-of-label expression at all ("indirect goto in
+ * function with no address-of-label expressions"), which is exactly the
+ * shape a frameless program's dispatch would otherwise be; gcc accepts it.
+ * The relation `tests/codegen/run_codegen_tests.sh`'s `[DD-14-RECURSION rule
+ * 1]` asserts is therefore `(has_push ? 1 : 0) + shared-callee-bodies`, not
+ * an unconditional `1 + ...`.
+ *
  * The five decisions the emitted shape encodes (§2.2):
  *   1. One function per pattern. Label addresses are function-local, which is
  *      fine WITHIN a call — APPROACH §6's A-4/A-5 "&&label does not survive a
@@ -9390,6 +9404,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
     }
+    /* [CC-CLANG] The fail label's own comment claims "THE ONLY ... INDIRECT
+     * JUMP", which is exactly untrue on a FRAMELESS program (has_push
+     * false, below): there is no `goto *` left in that case at all. The
+     * comment is selected on the same predicate that omits the dispatch,
+     * rather than left to describe a jump the artifact no longer contains. */
     sb_printf(c,
         "\n%s_accept: __attribute__((unused));\n"
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
@@ -9400,16 +9419,29 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "%s"
         "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
         "\n%s_fail: __attribute__((unused));\n"
-        "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
-        "     * A step is one backtrack resumption (4.2), counted at exactly\n"
-        "     * this place — so forward progress is FREE (a linear match over\n"
-        "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
-        "     * independent, and the counter measures precisely the thing it is\n"
-        "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
-        "     * boundary, and it must not be traded against execution speed. */\n"
+        "%s"
         "%s%s"
         "    if (run->resume_depth == 0) return -1;\n",
-        v.p, accept_tr, v.p, fail_tr, exhaust_tr);
+        v.p, accept_tr, v.p,
+        has_push
+          ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
+            "     * A step is one backtrack resumption (4.2), counted at exactly\n"
+            "     * this place — so forward progress is FREE (a linear match over\n"
+            "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
+            "     * independent, and the counter measures precisely the thing it is\n"
+            "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
+            "     * boundary, and it must not be traded against execution speed. */\n"
+          : "    /* [CC-CLANG] THE ONLY BACKTRACKER, AND THIS PROGRAM PUSHES\n"
+            "     * NO RESUME FRAME AT ALL (no RX_PUSH, no RX_CALL site) --\n"
+            "     * so there is no indirect jump here, and the pop-and-resume\n"
+            "     * dispatch below is omitted rather than emitted dead. A step\n"
+            "     * is one backtrack resumption (4.2), counted at exactly this\n"
+            "     * place — forward progress is FREE, the steps_left is\n"
+            "     * subject-length-independent, and the counter measures\n"
+            "     * precisely the thing it is meant to bound. D22: DD-2 is\n"
+            "     * ROBUSTNESS, not a security boundary, and it must not be\n"
+            "     * traded against execution speed. */\n",
+        fail_tr, exhaust_tr);
     if (has_budget)
         sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
     if (!has_push) {

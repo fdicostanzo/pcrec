@@ -1694,6 +1694,20 @@ ONE of this rule's four call-bearing fixtures — the three-distinct-callee one.
 A rule written as a constant would have passed that sabotage three times out
 of four.
 
+**[CC-CLANG], 2026-08-31 — THE LEADING "1" IS NOW `(has_push ? 1 : 0)`.** A
+FRAMELESS program (no `RX_PUSH` and no `RX_CALL` site anywhere — a
+straight-line capture, or every call site splicing to a body with no
+internal choice point of its own) omits the fail label's `goto *` too, since
+`run->resume_depth` can then never leave 0 and clang refuses an indirect
+goto in a function with no address-of-label expression at all. A shared
+callee body still implies a LINKED call, which always sets `has_push` true,
+so the leading term drops to 0 only where the trailing term is also 0. See
+`src/gen/emit_vm.c`'s file header and `run_codegen_tests.sh`'s own updated
+eleven-row fixture list for the worked cases (seven of eleven moved 1 → 0;
+the four carrying a genuinely linked call are unmoved, each for an
+independent reason — an internal `?` around the recursive call pushes on
+its own account regardless of linkage).
+
 **RULE 2 — a call-FREE artifact carries none of this module's machinery**
 (design §9.1). The resume frame gains two fields, `RX_PUSH` a line, the fail
 label a line, both resets a line each, and `RX_CALL` appears — all gated on

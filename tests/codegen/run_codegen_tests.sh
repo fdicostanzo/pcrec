@@ -2277,6 +2277,21 @@ fi
 # it ("a wave-G fully-spliced artifact is back to 1"); the fixture expectations
 # are what moved, and they moved for five of the nine rows.
 #
+# **[CC-CLANG], 2026-08-31 -- THE "1" IS NOW CONDITIONAL, and the leading term
+# in the relation is `(has_push ? 1 : 0)`, not an unconditional `1`.** The
+# fail label's own `goto *` is omitted entirely on a FRAMELESS program — no
+# `RX_PUSH` and no `RX_CALL` site anywhere in the tree, `src/gen/emit_vm.c`'s
+# own `has_push` — because `run->resume_depth` can then never leave 0 and the
+# dispatch is unreachable (see that file's header comment for the clang
+# reason). A shared callee body still implies a LINKED call, which always sets
+# `has_push` true, so the leading term is 0 only where the SECOND term is also
+# 0 — a splice-only or call-free program with no other choice point at all.
+# Seven of the eleven rows below are exactly that shape (a straight-line
+# capture, or every call site splicing to a body with no internal choice
+# point) and moved 1 -> 0; the four rows carrying a genuinely LINKED call
+# (every one of them also carries an internal `?` around the recursive call,
+# which pushes on its own account regardless of linkage) are unmoved.
+#
 # THE MIXED ROW IS THE NEW ONE AND IT IS THE SHARP ONE.
 # `(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)` calls TWO DISTINCT groups, one
 # recursive and one acyclic, and MEASURES 2 — the old reading ("one per distinct
@@ -2287,8 +2302,9 @@ fi
 # A CONSTANT WOULD BE WRONG IN BOTH DIRECTIONS and R34's LENS2-5 measured it:
 # a call-free artifact is 1, a pattern calling ONE group is 2, a pattern
 # calling THREE DISTINCT groups is 4 however many call SITES there are (the
-# sites share the body), and a wave-G fully-spliced artifact is back to 1. A
-# hard-coded "two" fires on three of those four.
+# sites share the body), and a wave-G fully-spliced artifact is back to 1
+# (now 0 post-[CC-CLANG], since a fully-spliced artifact with no other choice
+# point is frameless). A hard-coded "two" fires on three of those four.
 #
 # [DD-14 WAVE F] THE LAST FOUR FIXTURES ARE THE `(?(DEFINE)` SPELLING, and
 # they are here because D71 item 4's claim is that the DEFINE lowers to the
@@ -2296,8 +2312,10 @@ fi
 # relation is where it would break first: a DEFINE that emitted its body
 # lexically would change the count, and one that emitted a region per call
 # SITE rather than per group would too. `(?(DEFINE)(a))b` -- a definition
-# NOBODY CALLS -- is the floor of the set and MEASURED at 1: the definition
-# costs no region at all, which is the same thing `X{0}` has always done.
+# NOBODY CALLS -- is the floor of the set and MEASURED at 0 post-[CC-CLANG]
+# (was 1): the definition costs no region at all, which is the same thing
+# `X{0}` has always done, and with no call and no other construct the program
+# is frameless.
 #
 # THE RELATION IS ASSERTIBLE ONLY BECAUSE THE `goto *` IS WRITTEN INLINE. The
 # design's §5.1 sketches `RX_RETURN` as a MACRO, which would put one `goto *`
@@ -2306,14 +2324,14 @@ fi
 # is a deliberate deviation recorded at `vm_region`, and this check is what it
 # buys.
 for dd14_row in \
-    '1|(a)b' \
-    '1|(a)(?1)' \
-    '1|(a)(?1)(?1)(?1)' \
-    '1|(a)(b)(c)(?1)(?2)(?3)' \
+    '0|(a)b' \
+    '0|(a)(?1)' \
+    '0|(a)(?1)(?1)(?1)' \
+    '0|(a)(b)(c)(?1)(?2)(?3)' \
     '2|a(?R)?b' \
-    '1|(?(DEFINE)(a))(?1)b' \
-    '1|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
-    '1|(?(DEFINE)(a))b' \
+    '0|(?(DEFINE)(a))(?1)b' \
+    '0|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
+    '0|(?(DEFINE)(a))b' \
     '2|(?(DEFINE)(?<w>a(?&w)?b))(?&w)' \
     '3|(?(DEFINE)(?<p>a(?&p)?b)(?<q>x(?&q)?y))(?&p)(?&q)' \
     '2|(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)' ; do
@@ -2322,9 +2340,9 @@ for dd14_row in \
     if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
         dd14_got=$(grep -c 'goto \*' "$WORKDIR/dd14.c")
         if [ "$dd14_got" -ne "$dd14_want" ]; then
-            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want (1 for the fail label plus one per DISTINCT *LINKED* called group -- a SPLICED target emits no region and contributes none). A count that is too HIGH means a region was emitted per call SITE instead of per group, or a spliceable target was linked; too LOW means a region's return was folded into something shared, which §6.3 forbids -- the body may be shared, the EXIT may never be"
+            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want ((has_push ? 1 : 0) for the fail label, [CC-CLANG], plus one per DISTINCT *LINKED* called group -- a SPLICED target emits no region and contributes none). A count that is too HIGH means a region was emitted per call SITE instead of per group, a spliceable target was linked, or the frameless omission did not fire; too LOW means a region's return was folded into something shared (which §6.3 forbids -- the body may be shared, the EXIT may never be) or the frameless omission fired on a program that still pushes"
         else
-            ok "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits exactly $dd14_want 'goto *' -- 1 + the number of emitted shared callee bodies, which after wave G is one per distinct LINKED target"
+            ok "[DD-14-RECURSION rule 1] (§5.8, [CC-CLANG]): '$dd14_pat' emits exactly $dd14_want 'goto *' -- (has_push ? 1 : 0) plus the number of emitted shared callee bodies, which after wave G is one per distinct LINKED target"
         fi
     else
         bad "[DD-14-RECURSION rule 1]: pcrec failed to compile the fixture '$dd14_pat'"
