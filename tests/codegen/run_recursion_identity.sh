@@ -474,20 +474,23 @@ KEEP="${KEEP:-0}"
 # `__has_attribute` guard is likewise above `goto <p>_L0;`. `abi` 13 -> 14.
 #
 # THE PIN IS THIS CHANGE'S LAST src/lib/cli-TOUCHING COMMIT, per the rule two
-# paragraphs up: `c13fd7b` (a FOURTH src commit in the same change — clang
-# AND gcc both reject the frameless branch's original conditional
-# `if (run->resume_depth == 0) return -1;` with no covering `else` as
-# "control reaches end of non-void function" under `-Werror=return-type`, a
-# REAL bug this change's own validation found rather than a cosmetic one;
-# fixed to an unconditional `return -1;` there — the honest text the
-# `has_push == false` proof already licenses — and the now-unreachable
-# step-budget decrement in that branch is skipped too. Emitted bytes moved
-# again, past the three earlier pin attempts at `c657ae9`, `8e0b624` and
-# `353306a`) — not the commit that first moved a byte and not any later
-# test-only commit. Pin was `dc2c8ef` ([OPT-5]'s).
+# paragraphs up: `ec6f481` (a FIFTH src commit in the same change — the
+# CLANGGEN=1 sweep mechanism [CC-CLANG] step 2 built found a THIRD, distinct
+# clang incompatibility on its very first small-scale run: the revdet
+# rung's `iteration` counter is write-only under a bare unbounded `X*`
+# (gcc's -Wunused-but-set-variable does not catch a write-only local
+# reached only through `x++`; clang's does), fixed by adding it to the
+# file's own existing per-loop `(void)`-cast list one line above, which
+# also corrects that comment's wrong claim that `iteration` is used by
+# every shape. Both the block this touches and everything from the
+# previous four re-pins sit BEFORE `goto <p>_L0;` or after `<p>_accept:`,
+# so (A) is unaffected by any of them; only (B) moves. Emitted bytes moved
+# again, past the four earlier pin attempts at `c657ae9`, `8e0b624`,
+# `353306a` and `c13fd7b`) — not the commit that first moved a byte and not
+# any later test-only commit. Pin was `dc2c8ef` ([OPT-5]'s).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c13fd7b}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-ec6f481}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
