@@ -407,6 +407,67 @@ else
     bad "force-on vs a DFA-cap overflow: refused, but not with the expected diagnostic: $(cat "$WORKDIR/sel1_refuse.err")"
 fi
 
+# ---------------------------------------------------------------------------
+# [OPT-4.2] THE NULLABILITY DECLINE, GENERALIZED OFF THE RUNG.
+# [OPT-4.1] declined a ladder RUNG's count-collapsed rescue when the collapsed
+# language was nullable; this generalizes the SAME predicate to the ORDINARY
+# hybrid path (no rung, `collapse_reason == CR_NONE`), where the pattern's own
+# EXACT language admits the empty string and its unconditionally-built exact
+# prefilter could never dismiss a position. The witness is a pre-existing
+# population -- a captures-forced VM pattern that was ALREADY nullable, no
+# [OPT-5] scan-edge growth needed to reach it -- distinct from tests/resource's
+# own '(a|b){0,30000}' witness for the population [OPT-5] grew.
+# ---------------------------------------------------------------------------
+sel_of() {   # sel_of <file>
+    sed -n 's/^#define RX_ENGINE_SEL "\(.*\)"$/\1/p' "$1"
+}
+
+echo
+echo "== [OPT-4.2] the nullability decline off the rung =="
+
+# 1. A pre-existing VM-CHOSEN NULLABLE pattern: '(a)*' forces the VM through
+#    its capturing group (default captures-on) and its own EXACT language
+#    matches the empty string (zero repetitions). Before [OPT-4.2] this
+#    built and shipped a prefilter unconditionally; now it is declined.
+if gen o42_null '(a)*'; then
+    st="$(stamp_of "$WORKDIR/o42_null.c")"
+    sel="$(sel_of "$WORKDIR/o42_null.c")"
+    fn="$(prefilter_fns "$WORKDIR/o42_null.c")"
+    if [ "$st" = "none" ] && [ "$sel" = "declined-nullable-default" ] && [ "${fn:-0}" -eq 0 ]; then
+        ok "[OPT-4.2] '(a)*' (VM-chosen via captures, own language nullable): no prefilter, RX_ENGINE_SEL declined-nullable-default, 0 _prefilter symbols"
+    else
+        bad "[OPT-4.2] '(a)*' stamps PREFILTER '$st' / RX_ENGINE_SEL '$sel' / $fn _prefilter symbol(s); expected none/declined-nullable-default/0"
+    fi
+else
+    bad "[OPT-4.2] '(a)*' failed to compile"
+fi
+
+# 2. THE CONTROL: a NON-nullable VM-chosen hybrid is UNCHANGED. Reuses check
+#    1's own '(a)b' witness above (its language requires a literal 'b', so
+#    it cannot match empty) -- RX_ENGINE_SEL must still read "selected", not
+#    the new value, or the decline is reaching a pattern it must not.
+if gen o42_ctl '(a)b'; then
+    st="$(stamp_of "$WORKDIR/o42_ctl.c")"
+    sel="$(sel_of "$WORKDIR/o42_ctl.c")"
+    if [ "$st" = "hybrid" ] && [ "$sel" = "selected" ]; then
+        ok "[OPT-4.2] control '(a)b' (non-nullable VM-chosen hybrid): UNCHANGED, PREFILTER hybrid / RX_ENGINE_SEL selected"
+    else
+        bad "[OPT-4.2] control '(a)b' stamps PREFILTER '$st' / RX_ENGINE_SEL '$sel'; expected hybrid/selected -- the decline reached a pattern it must not"
+    fi
+else
+    bad "[OPT-4.2] control '(a)b' failed to compile"
+fi
+
+# 3. -fprefilter OVERRIDES the decline -- the one asymmetric override,
+#    [OPT-4.1]'s own precedent carried over unchanged: the caller who
+#    explicitly demands a prefilter gets the exact one, nullable or not.
+check_stamp "[OPT-4.2] -fprefilter overrides the decline on '(a)*'" yes o42_force '(a)*' -fprefilter
+
+# 4. --emit-ir's "; prefilter" LINE is worded for the RUNGLESS path -- no
+#    "offered and declined" language, since no ladder attempt ran here.
+check_listing_reason "[OPT-4.2] the rungless decline names the pattern's own language, not a rung" \
+    '(a)*' 'NO (nullable exact language)'
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

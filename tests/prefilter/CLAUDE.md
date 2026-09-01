@@ -145,3 +145,24 @@ reached and checked verbatim.
 routes' own do-or-die and stamp-mask properties — flagged rather than added
 silently; a future lane should give this arm the same permanent-row
 treatment R28-1 asks for.
+
+## [OPT-4.2] the nullability decline, off the rung entirely (2026-08-31)
+
+[OPT-4.1] declined a ladder RUNG's count-collapsed rescue when the collapsed
+language was nullable; [OPT-4.2] generalizes the SAME predicate to the
+ORDINARY hybrid path (`collapse_reason == CR_NONE`, no rung ever ran), where
+the pattern's own EXACT language admits the empty string and the
+unconditionally-built exact prefilter could never dismiss a position. Four
+new rows: `'(a)*'` (a PRE-EXISTING population — captures force the VM, the
+pattern's own language is nullable with no [OPT-5] growth needed to reach
+it, distinct from tests/resource's `'(a|b){0,30000}'` witness for the
+population [OPT-5]'s scan edge grew) declines and stamps `RX_ENGINE_SEL
+"declined-nullable-default"` with zero `_prefilter(` symbols; the existing
+`'(a)b'` non-nullable control (check 1's own witness) is asserted UNCHANGED
+(`"selected"`, not the new value); `-fprefilter` overrides the decline on
+`'(a)*'`, [OPT-4.1]'s own asymmetry carried over; and the `--emit-ir`
+listing gets its own worded arm (`"NO (nullable exact language)"`, no
+"offered and declined" language since there is no rung to have offered
+anything).
+
+**NOT YET SABOTAGE-COVERED**, same flag as the [SEL-1] section above.
