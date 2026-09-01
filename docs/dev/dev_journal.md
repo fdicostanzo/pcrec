@@ -19299,3 +19299,77 @@ lanes pre-confirmed their measured-probe corroborations during the
 21:1x-21:2x probe window and carry pinned validation orders; the
 watchdog cron is re-armed for the validation phase. Merges, final abi
 numbering (in merge order), and the battery remain NEXT-session work.
+
+#### Forty-eighth session, validation verdict (01:1x-03:2x EDT 09-01): ALL THREE LANES DELIVERED GREEN — seven real defects found by the lanes' own validation; O-12: [OPT-5] STEP 1 ACCEPTED
+
+Serialized validations ran cc (00:33-01:32) → w12 (01:32-02:24) →
+o42 (02:25-03:15). All three branches DELIVERED, none merged — review
++ merge + battery are next session's work.
+
+**cc ([CC-CLANG] 1+2, lane/cc, 19 commits):** abi 13→14, has_push
+gates the frameless dispatch, __has_attribute guards noclone,
+CLANGGEN=1 shipped. FOUR real bugs: the named clang incompatibility;
+an RX_CALL literal leak in a comment; a genuine fall-off-the-end in
+the frameless branch (BOTH compilers reject; the suite never compiled
+those fixtures); and CLANGGEN's FIRST run catching the revdet
+write-only counter (clang-only warning). Five FILEPIN re-pins, full
+four-axis sweep after each (16/16); codegen 106/106; strict clean;
+5,425 CLANGGEN assertions 0 fail; make CC=clang: zero warnings.
+Frameless population is BIGGER than the charter's witness (bare (a)b,
+fully-spliced chains) — plan/journal fact at merge.
+
+**w12 ([DD-13b.W1.2], lane/w12, head d03bcaa, 22 commits):** all
+acceptance measured green — N targets/N prefixes/one name, H11's
+three-way agreement, the features union (population repaired same
+day it was found empty), four refusals, F9+nentries, abi 14 at four
+sites (FILEPIN 0bc6884), gate 16/0 with (A) AND (B) at 0 differing
+on all four axes, rxtsource 94/0 (C1 unchanged 8.4s vs 8.2s), H11
+cost by ABLATION 630ms/3 targets, codegen 5/5 re-run on the fixed
+tree after the lane caught its own stale-green gap. THREE defects,
+all its own validation's catches, all invisible upstream: (a) 519 B
+of comment prose in EVERY artifact from the trailing-comment shape
+(the size-term bar caught it; the manager's headroom-rederivation
+suggestion was WRONG and is withdrawn on the record — it would have
+accepted the regression); (b) the no-such-definition refusal NEVER
+met §1.3's contract on any input (truncation ate the lib chain);
+(c) the fix for (b) still truncated at the fixture's real path (the
+source path was in the message twice) — caught by the class check
+written minutes earlier BECAUSE it bounds at the fixture's path, not
+the author's. Through-line, verbatim from the lane: a rule stated
+once in a file does not survive contact with an author appending to
+that file; the check is what survives. Note at merge: the 519 B fix
+moves artifact_size_log.tsv DOWNWARD tree-wide on the next full
+corpus run — expected, this entry is the explanation.
+
+**o42 ([OPT-4.2], lane/o42, head f90643e, 15 commits):** prefilter
+32/32 (four new checks match every hand-trace), resource 30/30 (two
+cells the fix legitimately preempted, fixed with recorded reasons),
+registry 600/600 first run (closed-set legs enumerate the 8th value),
+codegen 198/198 (S102/S165 re-anchored — the FOURTH re-anchoring of
+the same fit.prefilter OR-expression across the [OPT-4] family),
+gate (A) 0 differing (no program byte moved — the no-abi-bump call
+verified empirically; (B)'s 94 stamp-movement diffs vs the
+pre-landing pin are transient and self-heal at the merge re-pin),
+corpus sweep 2,845 checked / 50 moved, every one the identical clean
+transition. ESEL_DECLINED_NULLABLE reachability RESOLVED by trace +
+measurement: a WITNESS GAP (SEL-1 state-cap path live in principle),
+not a dead value; build-vs-accept is the manager's merge decision.
+S216 mech solo: DETECTED, prefilter 2fail/30pass, exactly the
+predicted checks, 0 anomalies.
+
+**O-12 (bench, 4d7dc4f): [OPT-5] STEP 1 ACCEPTED** — letters
+1.76-2.00 at all nine rungs (band held; 64/128 better than
+predicted), digits 0.596-0.604 inside the 1.08 entry-cost bound,
+find-all reproduced to two decimals; the 8192 inversion WITHDRAWN
+(their mis-reading, corrected); unpredicted: a ×1.69-2.24 search-band
+bonus and the whole-form ladder did NOT collapse. Five asks; ask (iv)
+— charter the two-pass fix on the same 9-rung surface — goes to
+Frank next session with I-29.
+
+OWED NEXT SESSION: baseline verify (never ran this session); the
+three merge reviews + serialized merges with final abi numbering
+(14/15/16 in merge order, each merge renumbers sites 1-3 + FILEPIN to
+its own last src commit + gate re-run) + battery; Frank's rulings
+([OPT-4.2] formal confirm, O-12 ask (iv), w12's file-wins
+ratification review, o42's witness-gap decision); I-29. S216 is now
+USED (next free: S217). The .lift files are removed; worktrees stay.
