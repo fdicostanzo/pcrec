@@ -470,7 +470,7 @@ KEEP="${KEEP:-0}"
 # later test-only commits. Pin was `c275aef` ([OPT-4.1]'s).
 
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-dc2c8ef}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-0bc6884}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
