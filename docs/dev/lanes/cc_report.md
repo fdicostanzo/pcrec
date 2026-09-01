@@ -2,12 +2,62 @@
 
 hold acked: no builds/compiles until cc.lift
 
-STATUS at last update: code-complete for steps 1 and 2, reasoned and
-statically reviewed against the corpus's existing structural checks; **no
-compile, no test run, no probe has executed yet** — the box hold
-(`worktrees/cc.lift` absent) was in force for this lane's entire session, so
-every number below is a *derivation*, not a *measurement*. Everything under
-"Owed validation" must run before this lane can be called done.
+STATUS at last update: code-complete for steps 1 and 2. The box hold
+(`worktrees/cc.lift` absent) is still in force for anything that COMPILES my
+own changes, but the manager granted a time-boxed amendment (until 22:05 EDT,
+2026-08-31) to run single-pattern probes against the MAIN tree's *existing*
+`build/pcrec` binary — no make, no gcc/clang, no test scripts. I used that
+window to directly verify the highest-risk piece of step 1 (the
+`[DD-14-RECURSION rule 1]` fixture-table rewrite) against the live, unmodified
+compiler; see "Verified during the probe window" below. Everything else —
+actually compiling my changes and confirming the new behavior — is still
+unmeasured and blocked on `cc.lift`.
+
+## Verified during the probe window (2026-08-31, ~21:13-21:16 EDT, main tree's `build/pcrec`, pre-[CC-CLANG])
+
+For every one of the eleven `[DD-14-RECURSION rule 1]` fixture patterns,
+I compiled it with the CURRENT (pre-change) `build/pcrec --engine=vm
+--features all -o -` and counted actual `RX_PUSH(`/`RX_CALL(` *invocations*
+(as opposed to their macro definitions, which are emitted unconditionally
+and always add exactly one matching line each). An invocation count of 0
+beyond the definition line means `has_push` will read false under my step 1
+patch, i.e. the row's `goto *` count should move from 1 to 0.
+
+| pattern | current `goto *` | RX_PUSH invocations | RX_CALL invocations | predicted new count |
+|---|---|---|---|---|
+| `(a)b` | 1 | 0 | 0 | **0** |
+| `(a)(?1)` | 1 | 0 | 0 | **0** |
+| `(a)(?1)(?1)(?1)` | 1 | 0 | 0 | **0** |
+| `(a)(b)(c)(?1)(?2)(?3)` | 1 | 0 | 0 | **0** |
+| `a(?R)?b` | 2 | 2 | 2 | 2 (unmoved) |
+| `(?(DEFINE)(a))(?1)b` | 1 | 0 | 0 | **0** |
+| `(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)` | 1 | 0 | 0 | **0** |
+| `(?(DEFINE)(a))b` | 1 | 0 | 0 | **0** |
+| `(?(DEFINE)(?<w>a(?&w)?b))(?&w)` | 2 | 1 | 2 | 2 (unmoved) |
+| `(?(DEFINE)(?<p>a(?&p)?b)(?<q>x(?&q)?y))(?&p)(?&q)` | 3 | 2 | 4 | 3 (unmoved) |
+| `(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)` | 2 | 1 | 2 | 2 (unmoved) |
+
+Every row matches my prediction exactly — the seven rows I'd reasoned would
+move to 0 all have zero real push/call activity today, and the four unmoved
+rows all have real activity (their self-recursive call forces linkage, plus
+each one's internal `?` pushes on its own account). This is strong
+corroborating evidence for the fixture-table rewrite in commit `8e0b624`,
+though it is still not a run of my *actual patched compiler* — that still
+needs `cc.lift`.
+
+Also confirmed while probing: the frameless witness `[a-z]{0,4096}
+--engine=vm` has zero `&&rx_` address-of-label expressions anywhere in its
+emitted text (confirming it is exactly the clang-breaking shape named in the
+plan row) and carries no `noclone` line at all — it has no DFA hybrid
+prefilter, so `emit_search_head` is never called for it, which is a
+different, unrelated fact about this specific witness (not a defect in my
+fix). A hybrid pattern (`(a+)b`) DOES carry `noclone` on its
+`static int rx_prefilter`, confirming the guard's placement covers VM
+hybrids as documented. And under `-fno-splice-calls`,
+`(a)(b)(c)(?1)(?2)(?3)` forces linkage and reads `goto *: 4` with 3 real
+`RX_CALL` invocations — matching the design's own "three distinct callees is
+4" figure and confirming that axis is untouched by my fix (that axis isn't
+part of the rule-1 test, which always uses the default/splice behavior).
 
 ## Branch
 
@@ -166,12 +216,14 @@ In the order I'd run them:
    compiler: `[a-z]{0,4096}` `--engine=vm` compiles clean under clang (the
    original failing shape); the DFA/memchr, backtracking-VM `(a|ab)+c`, and
    recursion artifacts still agree gcc-vs-clang cell-for-cell.
-2. **`bash tests/codegen/run_codegen_tests.sh`** — the big one. This is
-   where the `[DD-14-RECURSION rule 1]` fixture-table rewrite either holds or
-   doesn't; if any of the seven "moved to 0" rows actually still emits a
-   `goto *`, my splice-eligibility reasoning for that specific pattern was
-   wrong and needs re-deriving from a real `--emit-ir` dump rather than from
-   the source alone.
+2. **`bash tests/codegen/run_codegen_tests.sh`** — still first once builds are
+   allowed, though now lower-risk: the probe-window table above directly
+   confirmed all eleven fixtures' current `RX_PUSH`/`RX_CALL` invocation
+   counts against the LIVE pre-change compiler, and every one matches what
+   the rewritten table expects once `has_push` is wired in. What is still
+   unverified is only that my actual `has_push`/conditional-emission code
+   (not just my reasoning about which patterns are push-free) compiles and
+   produces exactly those bytes.
 3. **`make test-codegen`** more broadly, and **`make strict`** (PROCS=4,
    async, per the brief).
 4. **Frameless artifacts under gcc stay answer-identical** — spot-check a
