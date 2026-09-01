@@ -19519,3 +19519,60 @@ warn witness's comment already documents the 3-5x -j12 inflation class),
 taking 29 corpus cells with it. If it or the k18 tripwire reds again in
 8c, the verdict is per-cell solo re-measurement (battery 7's
 green-by-diagnosis precedent), not a re-pin.
+
+## 2026-09-01 — Forty-ninth session, part 4 (late afternoon): battery 8c VERDICT; Frank rules all seven STEP 2 questions; [OPT-VEDGE] chartered; the bench's match instrument lands two exhibits; burn-rate directive
+
+**BATTERY 8c (ae3e6ca) COMPLETE 16:30.** strict/san/lint GREEN (san 0
+reports); mech 212 rows: 0 anomalies, 6 undetected ALL EXPECTED, ONE
+unexpected — S206 UNREACHED, and the cause is this morning's own check
+fix: renaming the `lang_witness exact-nullable` rows to
+`declined_default_witness` broke S206's population probe. [MECH-REACH]
+working exactly as built (the S70/S155 failure class caught in-run).
+Probe re-pointed (+ a note that the row's detector surface GREW under
+[OPT-4.2], since the sabotaged line is the shared nullability fact);
+solo re-prove queued. test stage red ONLY on the known load-marginal
+counterk compile cell (green solo, 1,634/0, measured 3.06s vs the
+pre-merge 3.31s); the PROCS=6 quiet re-run is the stage verdict, next.
+
+**FRANK'S RULINGS on opt5d's §8 (all seven, this afternoon):** Q1 YES —
+STEP 2 is the start-pinned search elision only. Q2 the rx_info mirror is
+APPROVED ("a great idea"), scheduling mine → it rides STEP 2's
+implementation so one abi event carries both; Frank's broader direction
+recorded: question whether some stamps should remain #defines at all — a
+future reflection-surface survey row. Q3 stamp spelling is the
+manager's. Q4 YES → [OPT-VEDGE] chartered (new plan row). Q5 agreed
+deferred ("i'd presumed this to be the case"). Q6 YES → D94 (the abi
+ritual's site list is every-reader-by-grep; CLAUDE.md row amended; the
+stale fifth site fixes at w12's 14→15). Q7 agreed delay — "attribution
+is important."
+
+**BENCH (pcrecdev2), three exchanges:** (1) their shim learns
+declined-nullable-default + the abi-15 appended fields in one re-pin;
+CLANGGEN spelling clarified; classic emit invocation confirmed unchanged
+by w12. (2) Their bounded@0.3 MATCH instrument (scratch-tier, flagged
+inconclusive-load, overnight confirms): cross-rung ×1.97-2.04 with a
+flat VM control CONFIRMS the ×2.0 residual IS the reverse pass; and an
+UNPREDICTED exhibit — the search-filter fallback's match entry pays an
+O(subject) candidate scan on FAILING calls (×37 at 1024 B), on the four
+whole-subject rungs above the PCREC_ANCHORED_MAX_STATES boundary (4096 ×
+the measured \z halving = their 2048 rung exactly). Ask (a) answered
+with that composition; ask (b) — does STEP 2 remove the failing-call
+scan — is a panel question, with the note that a match-here caller can
+never use a candidate past its own position, so bounding the fallback's
+scan is O(divergence) restored without touching the cap; [OPT-VEDGE]
+reaches the same artifacts by collapsing their states instead. Frame
+restated for I-30: STEP 2's customers are the search-filter + VM rungs;
+unwrapped rungs 64..1024 predicted FLAT (a free control). (3) Their ask
+(v) census: FOUR cells; the ledger's trade decomposes into a sibling
+plain-DFA throughput win + a fixed +6..12 ns matching-call entry term.
+
+**LANES:** opt5d delivered the STEP 2 note (lane/opt5d 8d36141) and
+closed; s217 delivered the S217 sabotage row (lane/s217 262fc1a,
+validation owed) and closed. Frank's windfall directive (usage zeroed,
+reset Friday): build wide today, run wide tonight — the bench is
+building [B24]/[B27]/[B11.2] plus the STEP 2 instrument and runs the
+full suite overnight after WINDOW OPEN + I-30.
+
+NEXT: PROCS=6 test verdict (bench pinged) → S206+S217 solo mech rows →
+opt5d's two owed measurements → w12 merge (abi 15, five-reader grep per
+D94) → w12 battery → WINDOW OPEN + I-30.

@@ -6450,3 +6450,21 @@ flip.
 
 Cross-notes: [DD-13b.W1.2], docs/spec/cli.md, tests/harness `RXTFLAGS`,
 lane report docs/dev/lanes/w12_report.md §3.2.
+
+## D94 — THE ABI RITUAL'S SITE LIST IS "EVERY READER OF THE NUMBER, FOUND BY GREP", NEVER A HAND-ENUMERATED FOUR (Frank, 2026-09-01, forty-ninth session, ruling opt5d's Q6 — "agree. this is the right direction")
+
+Decision: D76's re-pin ritual stops naming FOUR sites. At every abi bump
+the lane greps the tree for readers of the number (the `.abi` stamp, every
+test expectation, every spec sentence, the gate pin) and moves ALL of
+them; the CLAUDE.md situation-index row says so.
+
+Why: the four-site checklist was hand-enumerated and drifted from its
+subject exactly the way this project's hand-copied counts always have —
+lane opt5d found a FIFTH reader (docs/spec/match_api.md's §3-area "abi is
+N" sentence at ~line 159) already stale at 13 after [CC-CLANG]'s bump to
+14, while the enumerated four all moved. learnings §3's one-derivation
+rule applied to a checklist: enumerate by search, not by memory.
+
+The stale fifth site is fixed at the w12 merge (which renumbers to 15
+anyway). Cross-notes: D76, [CC-CLANG], docs/design/opt5_step2_twopass.md
+F5/Q6.
