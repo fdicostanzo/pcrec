@@ -6,7 +6,9 @@ measurement-only stamp (`RX_PROBE_PINNED`), kept only for this lane's own
 sweeps and not proposed for merge. Answers `docs/design/opt5_step2_twopass.md`
 (lane `opt5d`) §7 items 1-3.
 
-(WIP — M1 done, M2/M3 in progress; this file is updated as each lands.)
+**All three measurements complete.** N_pinned = 175 (0 hybrids);
+N_declined_by_view = 16; the whole-form decline is precondition (3). Details
+and commands below.
 
 ## M1 — N_pinned (§7 item 1)
 
