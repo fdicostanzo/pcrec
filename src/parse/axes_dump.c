@@ -560,7 +560,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * from `vm-prefilter`: it answers a different question about the same
      * neighbourhood. `engine` says WHICH engine this artifact got;
      * `RX_ENGINE_SEL` says HOW it got there, and the two are independent —
-     * `RX_ENGINE "vm"` is reached by EVERY one of the six routes below.
+     * `RX_ENGINE "vm"` is reached by EVERY one of the eight routes below.
      *
      * THE VALUE SET IS CLOSED AND THE STAMP IS UNCONDITIONAL (D81), which is
      * the whole point of it: `RX_ENGINE_WHY` already carries the reason as
@@ -575,16 +575,25 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 1, "forced", "forced",
                      0, "", 0, "", "--engine=vm / --engine=dfa",
                      "the caller named the engine, so auto selected nothing");
-        emit_pred_row(sb, &p, 2, "collapsed-prefilter", "collapsed-prefilter",
+        /* [OPT-4.2] THE EIGHTH ROUTE, placed right after `forced` rather
+         * than beside its rung-scoped cousin below: it is the ONE route in
+         * this list that is not a fallback of any kind (internal.h's own
+         * placement note on `ESEL_DECLINED_NULLABLE_DEFAULT` has the
+         * argument), and grouping it with the "auto, a DFA build
+         * overflowed" family would misstate what it is. */
+        emit_pred_row(sb, &p, 2, "declined-nullable-default", "declined-nullable-default",
+                     0, "", 0, "", "",
+                     "auto (or forced --engine=vm plus -fprefilter), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline; -fno-prefilter reaches the same artifact by a different door");
+        emit_pred_row(sb, &p, 3, "collapsed-prefilter", "collapsed-prefilter",
                      0, "", 0, "", "",
                      "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)");
-        emit_pred_row(sb, &p, 3, "declined-nullable", "declined-nullable",
+        emit_pred_row(sb, &p, 4, "declined-nullable", "declined-nullable",
                      0, "", 0, "", "",
                      "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither");
-        emit_pred_row(sb, &p, 4, "overflowed-dfa", "overflowed-dfa",
+        emit_pred_row(sb, &p, 5, "overflowed-dfa", "overflowed-dfa",
                      0, "", 0, "", "",
                      "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)");
-        emit_pred_row(sb, &p, 5, "overflowed-prefilter", "overflowed-prefilter",
+        emit_pred_row(sb, &p, 6, "overflowed-prefilter", "overflowed-prefilter",
                      0, "", 0, "", "",
                      "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped");
         /* [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the
@@ -603,10 +612,10 @@ static void emit_predicate_axes(StrBuf *sb)
          * carries no promise about `ESEL_*`'s numeric values (internal.h's
          * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
          * DFA-overflow range at the C level). */
-        emit_pred_row(sb, &p, 6, "size-cap-retry", "size-cap-retry",
+        emit_pred_row(sb, &p, 7, "size-cap-retry", "size-cap-retry",
                      0, "", 0, "", "",
                      "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)");
-        emit_pred_row(sb, &p, 7, "selected", "selected",
+        emit_pred_row(sb, &p, 8, "selected", "selected",
                      0, "", 0, "", "",
                      "always (fallback) — auto chose on the AST and nothing overflowed");
     }
