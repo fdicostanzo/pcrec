@@ -4,6 +4,11 @@ One `<lane>_log.md` (the lane's own running log: what it did, in order,
 for its restart) and one `<lane>_report.md` (the delivery: commits, the
 brief's acceptance table filled with MEASURED values, findings) per lane
 that chose to keep them. Optional — briefs allow it, never require it.
+A `<lane>_brief.md` is the MANAGER's artifact, kept only when a lane is
+PARKED mid-flight across a session boundary: the original launch brief
+preserved verbatim (stale sections marked) so a fresh agent can be
+relaunched onto the lane's branch without the dead session's context.
+Delete it when the lane's row completes and merges.
 They are the lane's voice, not the manager's: the plan, journal and
 decisions log carry the manager's record, and on any disagreement the
 committed docs in docs/dev/ win. Historical once the lane is merged;

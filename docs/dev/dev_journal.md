@@ -19237,3 +19237,32 @@ Lanes hold builds until per-lane .lift files (dropped at the bench's
 WINDOW CLOSED). Keepalive cron :09/:39 up; 10-min stall watchdog up.
 Baseline verify (make/strict/test-registry) owed after WINDOW CLOSED,
 before any merge.
+
+#### Forty-eighth session, close (21:1x EDT): shutdown on Frank's budget call — three lanes parked ~20 minutes in; the bench keeps the box for [B25]
+
+Frank at 81% usage: "complete all the live stuff you have scheduled
+then shutdown. fine for 1-2 rounds." Between the open and this close,
+one process change on his instruction: LANES SELF-KEEPALIVE — a lane
+that must idle creates its OWN ~30-min off-minute cron whose tick
+doubles as its .lift/rulings poll (memory pcrec-subagent-cache-warmth
+updated; rides every brief from now on).
+
+Close actions: all three lanes ordered to PARK (delete their crons,
+commit all WIP to their branches, write <lane>_log.md as a resume
+note); the three launch briefs preserved verbatim as
+docs/dev/lanes/{w12,cc,o42}_brief.md (hold sections marked stale) so
+the next session relaunches fresh agents onto the branches without
+this session's context; lanes/CLAUDE.md documents the _brief.md role.
+First-watchdog-tick state (20:56): w12 committed (orientation + the
+four abi sites re-verified — it reports the pin note's numbers stale,
+abi 13 / FILEPIN dc2c8ef confirmed), cc committed (lane start), o42
+still orienting on main's tip. Park verification is the next round's
+one remaining act before shutdown. Bench: pcrecdev2 acknowledged the
+handover — box theirs for the whole [B25] window, results land as
+durable O-12 (per-rung against I-27's predictions), no live pcrec
+reply expected. Manager crons (keepalive, watchdog) deleted. Plan
+rows stay STATE:started (parked, not blocked): [DD-13b.W1.2] lane
+w12, [OPT-4.2] lane o42 (Frank's one-line charter confirmation still
+owed), [CC-CLANG] lane cc. Next session: read O-12 FIRST, verify
+baseline, relaunch the three lanes from their briefs+logs, then the
+merge/battery serialization with final abi numbering.
