@@ -19576,3 +19576,49 @@ full suite overnight after WINDOW OPEN + I-30.
 NEXT: PROCS=6 test verdict (bench pinged) → S206+S217 solo mech rows →
 opt5d's two owed measurements → w12 merge (abi 15, five-reader grep per
 D94) → w12 battery → WINDOW OPEN + I-30.
+
+## 2026-09-01/02 — Forty-ninth session, part 5 (night): ALL THREE LANES BATTERY-PROVEN at 1989c62; r49 panel compiled; the bench's re-pin corrections; WINDOW OPEN + I-30
+
+**BATTERY w12 (the union battery on 1989c62, abi 15) COMPLETE 22:42:**
+strict/san/lint GREEN (san 34 scripts 0 reports ~102 min); mech 213
+rows — 0 unexpected, 6 undetected all EXPECTED, 0 unreached, 0
+anomalies (S217 riding its first full matrix); test stage
+GREEN-BY-DIAGNOSIS on K44's cell (counterk:1807, green solo 1,634/0,
+third occurrence — K44 filed tonight as the standing disposition).
+**cc, o42 and w12 are all MERGED and BATTERY-PROVEN; the final pin is
+1989c62.** A mid-evening Claude-process restart (~20:26, both
+sessions) cost only a monitor re-arm — the setsid battery never
+noticed.
+
+**r49 PANEL COMPILED** → docs/dev/reviews/2026-09-01-r49-opt5-step2.md
+(verdict: the start-pinned mechanism SURVIVES; 18 triaged findings; the
+note goes to REV 2 before implementation; bench ask (b) CLOSED —
+r49sound's a*b witness kills every cheap failing-call bound, and
+[OPT-VEDGE] owns that population by construction). The three critics'
+full reports are preserved verbatim in the review file.
+
+**BENCH RE-PIN CORRECTIONS (their 227/227 green at 1989c62):** (1) my
+I-29 item 4 was WRONG — the cls-* cells were already declined-nullable
+at [OPT-4.1]'s size rung; [OPT-4.2] has no bench AFTER tonight;
+witness shapes handed over ((a)* and ((a)|b){0,4000}) for their next
+set version. (2) `"nullable collapsed language"` (_LANG_WHY) is
+STRUCTURALLY DEAD post-[OPT-4.2] — their argument verified (collapsed
+nullable ⟹ exact nullable), retired in tuning.md §2.17 tonight with
+the re-opening condition recorded. (3) The +202/+105 B flat size move
+is abi 15's appended fields (their reading right, my I-29 size
+heads-up imprecise — the comment-byte fix is invisible to their
+measure by definition). Their clang census: 50/264 artifact failures
+at a7e0bdf → 0/264 at ae3e6ca — independent external confirmation of
+the [CC-CLANG]+has_push landing. Process debt owed by me and recorded:
+the TEST-STAGE DONE ping after w12's test stage went out ~25 min late
+(triage before ping — next battery pings FIRST); and plan.md briefly
+cited a live bench message before O-13 existed (r49cons caught it;
+O-13/99de28e landed the durable record with an O-14 withdrawal rule).
+
+Lane briefs w12/cc/o42 deleted at their merges per the standing rule.
+WINDOW OPEN + I-30 goes out with this commit; the bench runs its full
+suite overnight (their rehearsed order, ~10 h), O-14 tomorrow morning
+carries their measured verdicts including the STEP 2 scratch-tier
+confirmations. NEXT SESSION: the note's rev 2 against r49's list;
+Frank's implementation go; the [OPT-VEDGE] first measurement;
+[LIM-1]-check follow-ups (K43 fix directions unruled).

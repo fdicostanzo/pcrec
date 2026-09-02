@@ -3497,3 +3497,27 @@ change, D76); (c) revisit on a newer gcc. Repro:
 `build/pcrec -p fa -o fa.c '(a*)*' && gcc -O1 -std=gnu11 -Wall -Wextra
 -Werror -fanalyzer -Itests/encseam -o drv tests/encseam/findall_driver.c
 fa.c`.
+
+## K44 — INFRASTRUCTURE (2026-09-01, forty-ninth session, batteries 8b/8c/w12): ONE load-marginal compile cell reds full-parallelism batteries, green solo every time — counterk.rxt:1807's `((a)|ab){4000}c`
+
+Three consecutive full `make -k -j12 test` runs (batteries 8b, 8c, and
+w12's) each failed EXACTLY ONE corpus cell on a compile-time wall/CPU
+budget, and in three of three diagnoses the cell was GREEN SOLO with its
+compile cost UNCHANGED against the pre-merge tree: counterk.rxt:1807
+(`((a)|ab){4000}c`, pcrec-compile exit 124; 3.06 s solo vs 3.31 s
+pre-merge) twice, and tests/resource's `(a|b){0,30000}` 45 s-CPU
+watchdog once (30/30 solo). Mechanism: the battery's -j12 × PROCS
+oversubscription inflates wall AND CPU accounting ([TT-10]'s finding)
+past budgets sized for a quiet box; the cli `--warn-emit-bytes`
+comment's "3-5x under -j12" is the same class.
+
+STANDING DISPOSITION (manager): a battery test stage red on EXACTLY one
+of these cells, green solo, is GREEN-BY-DIAGNOSIS — record the solo
+number, cite this entry, do not re-pin anything (lesson 3 checked each
+time: the bytes did not move). FIX DIRECTIONS, unruled: (a) route the
+harness's per-pattern pcrec compiles through tests/lib/load_guard.sh's
+third outcome (INCONCLUSIVE-under-load, the [TT-10] shape) so a loaded
+box says "inconclusive" instead of "failed"; (b) run battery test
+stages at reduced PROCS (measured: PROCS=6 still red once); (c) accept
+and document. Whoever takes (a) should re-read learnings §3 first — an
+inconclusive that absorbs real regressions is worse than this noise.
