@@ -206,7 +206,7 @@ below**: the `goto *` count must be SCOPED to the VM program's own function.
 | `make test-codegen` | **109/0, 31/0, 22/0, 32/0, 7/0** |
 | `make test-registry` | **0 failed** (the axes coverage guard moved 88 → 93, read from a run) |
 | `make test-premul-table` | **16 / 0** |
-| `make test-axes` | **THE AXIS IS CLEAN**; the run fails on five PRE-EXISTING axes — see below |
+| `make test-axes` | **`-fno-start-pinned` 22309/22309 agree, 0 mismatches; five pre-existing AXIS FAILs on main's own cells, reproduced with main's compiler, filed by the manager as K45** (§4.5, finding F12) |
 
 ### 4.5 `make test-axes` — the row's primary control
 
@@ -256,10 +256,12 @@ was "found by writing the cell without it and watching it fail for the wrong
 reason" — and `RXTFLAGS` layering an engine or a denial on top defeats that,
 so the NFA is built and explodes.
 
-**Not fixed in this lane, deliberately.** The honest repair is either an
-axis-documented-limit entry for the nested-replication family or an axis
-exclusion on that block, and both are decisions about ANOTHER row's witness
-inside this row's abi bump. Flagged for the manager rather than absorbed.
+**Not fixed in this lane, and that is the manager's ruling rather than my
+preference.** The repair is either an axis-documented-limit entry for the
+nested-replication family or an axis exclusion on that block, and both are
+decisions about ANOTHER row's witness inside this row's abi bump. **Filed as
+K45**; the tower's axis documentation belongs to `[ART-SIZE.2]`'s row and
+lands as a separate item after this merge. Carried as finding **F12** below.
 
 ---
 
@@ -405,6 +407,18 @@ class before any engine exists, and wave G then SPLICES both call sites
 A row needing a linked call needs a target in a CYCLE. And
 `foo[0-9]+bar -fprefilter` is REFUSED rather than compiled: the pattern is
 capture-free, so it is a pure DFA artifact and `-fprefilter` is do-or-die.
+
+**F12 — `make test-axes` was ALREADY RED on main, on five axes, and the row's
+own axis is clean.** `-fno-start-pinned` reports 22,309 of 22,309 cases
+agreeing with 0 mismatches. Five OTHER axes — `-fno-counter`, `-fprefilter`,
+`-fno-altcls-merge`, `-fno-size-term`, `--engine=dfa` — each report
+`refused_undoc=2` with `mismatches=0`, all pointing at
+`tests/size/size_term.rxt:34-35`, `[ART-SIZE.2]`'s nested `{41}` tower
+(`fa9b6d4`, 2026-08-29, untouched by this lane). Reproduced with a compiler
+built from `5496ca6`: every figure identical, including both AXIS FAIL lines
+verbatim. **`make test-axes` is opt-in and not part of the union battery**,
+which is how a pre-existing red there survived unnoticed. Filed by the
+manager as **K45**, and NOT repaired in this lane by ruling.
 
 **F10 — the note's §3.4(a) is wrong about reachability: the widened bit is
 not a miscompile on its own.** F3/§3.4(a) presents the `state_acc_any`
