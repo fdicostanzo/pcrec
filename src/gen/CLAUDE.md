@@ -2259,3 +2259,94 @@ both artifact kinds have one. `<PREFIX>_DFA_MATCH` is a fact about the
 artifact's `<prefix>_match` ENTRY, and a hybrid's is the VM's own anchored
 body. It lives in `emit_dfa_stamps` (DFA-only) and `rx_info.match_form` is NULL
 wherever `fit.chosen != ENGM_DFA`.
+
+## [OPT-5] STEP 2 — AXIS J, THE START-PINNED SEARCH (2026-09-02)
+
+`docs/design/opt5_step2_twopass.md` is the note and carries the proof.
+`docs/spec/tuning.md` §2.19 is the contract. What lives here is the axis, the
+predicate and the one `if` in `emit_unanchored`.
+
+**THE MECHANISM IN ONE SENTENCE.** `<prefix>_search` scans the same bytes
+twice — forward for the match END, backwards over an independently built
+REVERSE machine for the match START — and when the forward machine's start
+state accepts UNCONDITIONALLY the backwards pass provably computes
+`search_from` on every call, so the whole reverse machine leaves the artifact.
+
+**AXIS J IS AXIS G'S SIBLING, NOT A NEW SHAPE.** G answers "which form does
+`<prefix>_match` take"; J answers "which form does `<prefix>_search`'s
+POST-LOOP BLOCK take". Same properties for the same reasons: a question about
+an ENTRY POINT, so bare `DfaCand`s with no emitter pointer, no `DfaForm`, and
+one `if` — the two bodies (a whole machine with tables, an accessor block and
+a loop, versus two assignments) are far too different for a shared skeleton.
+**The letter is J and not H**: H and I are STEP 1's, and a collision would be
+SILENT because `--list-axes` walks the arrays generically.
+
+**FIVE READERS, ONE SELECTION.** `dfa_search_start_of` is read by the
+emitter's dispatch, the `<PREFIX>_DFA_START` stamp, `rx_info.search_form`, and
+the TWO STAMP FOLDS — `dfa_table_name` and `dfa_scan_edge_name` must stop
+reading `job->rdfa` on a pinned artifact, or the artifact stamps a fact about
+text it does not contain. That is the mirror image of the defect [ENG-ABS]
+avoided when it ADDED the anchored machine to `RX_DFA_TABLE`'s composition,
+and it matters most on `_DFA_SCAN_EDGE`: on the shapes at issue the reverse
+machine grows edges more readily than the forward one (r48sem measured `mc2`
+at forward 0 against reverse 4), so a pinned artifact would otherwise stamp
+`"range"` while carrying no edge at all.
+
+**THE ORIENTATION BLOCK IS A SIXTH READER, and it is easy to forget.** Its
+"ONE SEARCH, END TO END" step 3 described a reverse scan, and a hybrid's
+"HALF 1" described "a pair of table-driven scanners". Both are wrong on a
+pinned artifact. A map naming tables that are not in the file is worse than no
+map, so both paragraphs branch on the same predicate the body did.
+
+**THE PREDICATE DECLINES, NEVER STRETCHES**, and three of its clauses are
+worth knowing before editing it:
+
+- **P1 reads `up[UPC_PLAIN].accept`, NOT `state_acc_any`.** That widened bit
+  is `unanch_start`'s, its own comment calls it BELT-AND-BRACES and tells the
+  reader not to cite it as a premise, and reusing it here inverts its meaning:
+  `$` alone is the named counter-example, reporting `[0,3)` on `"abc"` where
+  the true span is `[3,3)`. Sixteen corpus artifacts discriminate the two
+  spellings and every one is an `(?m)…$` shape.
+- **P3's LIVENESS conjunct is not tidiness.** A search at `search_from > 0`
+  that seeds into `s1u[u] < 0` records no accept, and "no match begins here"
+  is the CORRECT answer; eliding there would fabricate an empty match, which
+  is worse than every other failure direction (all of which produce a
+  too-small `caps[0][0]`). Nothing here may rely on "a dead token records
+  nothing" — that read is already latent UB, `dfa_premul`'s own note.
+- **P0 IS ASSERTED, NOT CHECKED.** The predicate reads `fs = fd->s0`, which is
+  the right state at `search_from == 0` only because `ENG_UNANCH` implies no
+  `N_BOT`/`N_GSTART`. `dfa_needs_seed` compares only `s1u[u]` ACROSS `u` and
+  would not notice an `s0 != s1u[PLAIN]` split, so an engine-selection change
+  that routed a BOT-bearing machine here would break the elision SILENTLY.
+  `start_pinned_assert_routing` is a loud `ctx_fail` instead.
+
+**THE KEPT `last_accept_position == (size_t)-1` GATE IS LOAD-BEARING**, and
+the emitted comment says so and says why. This file's own note about a
+DIFFERENT gate — "presenting a redundant condition and a load-bearing one as
+the same claim is how someone eventually simplifies away the wrong half" —
+argues the other way here: a coverage report will show this branch never taken
+on THIS CORPUS, which is a corpus fact and not a machine fact.
+
+**WHAT THE ELISION DOES NOT DELETE**, because a reader will expect more: the
+forward machine's VIEW TABLES stay (`f->viewsel`/`f->views` come from the
+SHARED `UnanchStart`, whose flags are ORs over BOTH machines), and so does the
+demoted accept ORDER. Narrowing that OR to the machine that created the flag
+would move the D11 evaluation order that cost 53 divergences, so it is its own
+change with its own argument — folding it in as "a size cleanup" is how a
+correctness change ships under a performance heading.
+
+**THE REVERSE MACHINE IS STILL BUILT.** Skipping the BUILD as well as the
+emission is a separate compiler-CPU optimization with its own trigger (the
+note's §8 Q5); what this row does is not derive its `DfaForm`, which is how
+the compiler enforces that nothing downstream reads a form for a machine whose
+text is absent.
+
+`-fno-start-pinned` / `PCREC_NO_START_PINNED` (bit 22) is a D82 `deny` field
+on the first candidate, and it is MASKED out of `rx_info.flags` — unlike
+`-fno-scan-edge`, which is not — so an artifact the predicate DECLINES is
+byte-for-byte the same under the flag. That is what makes the declined
+population a usable reference for the axis's own checks.
+
+`abi` 15 -> 16; see `emit_info_def`'s own comment for the per-artifact-kind
+breakdown and why comparison (A) does not move. Gate:
+`tests/codegen/run_search_pinned.sh`; sabotage rows S218-S222.

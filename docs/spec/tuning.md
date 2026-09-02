@@ -1244,6 +1244,81 @@ pattern) is not eligible at all: its states are code labels and a step is
 which is `[OPT-3]`'s own reason for exempting that engine.
 
 
+### 2.19 `-fno-start-pinned` — `PCREC_NO_START_PINNED` (bit 22)
+
+**What it controls.** Which of two forms `<prefix>_search`'s post-loop block
+takes — the compiler calls this **axis J**, and `--list-axes` reports it as
+`search-start`.
+
+A DFA search runs TWO scans over the same bytes. The forward one finds where a
+match ENDS; a second, backwards one over an independently built REVERSE machine
+finds where that match BEGAN, because the forward tables record only where a
+match can end and never where the one that ended there started.
+
+For a large family of patterns the second scan's answer is a compile-time
+constant. When the forward machine's start state accepts **unconditionally** —
+at every position, under every position view, and in every class context — then
+a match exists wherever the search begins, and D3's accept-pruning has removed
+the start-anywhere self-loop from every accepting closure before the first byte
+is read. No later start is ever spawned, so every accept the forward loop
+records belongs to a thread that began at `search_from`, and the backwards scan
+would necessarily walk back to exactly that position. `[a-z]{0,4096}`, `a*`,
+`.*` and `\w*` are all in this family; `abc`, `[a-z]{4096,}` and `(?m)a*$` are
+not.
+
+**What the artifact does instead.** The post-loop block becomes two assignments
+and a `return 1`, and — the half that buys more than the time — **the reverse
+machine is not emitted at all**: no transition, accept or byte-class table, no
+stay tables, no scan-edge membership tables, no `<prefix>_reverse_*` accessor
+block, and no reverse scan loop.
+
+```c
+if (last_accept_position == (size_t)-1) return 0;
+if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from;
+                     capture_spans[0][1] = (ptrdiff_t)last_accept_position; }
+return 1;
+```
+
+**The `last_accept_position == (size_t)-1` gate above it is LOAD-BEARING and
+is kept.** A search at `startpos > 0` on a machine whose start state depends on
+a context byte can begin in a state with no live closure. It records no accept,
+and "no match begins here" is the correct answer; deleting the gate would
+report an empty match where there is none. The emitted artifact carries that
+sentence above the line, and the compiler additionally DECLINES the elision on
+any machine with a dead seed state, so the gate is not the only defence.
+
+**Why.** The two scans are the residual factor of roughly two between the DFA
+and pcrec's own VM on a counted class run: since `[OPT-5]` STEP 1 both are
+cursor loops, so the DFA does exactly twice the VM's work. `docs/design/
+opt5_step2_twopass.md` is the design and carries the proof.
+
+**No answer moves either way, and the denied build is a genuine control.**
+This is not the usual "the flag changes nothing observable" claim: the denied
+build recovers the match start from an INDEPENDENTLY BUILT automaton — the
+emitter's own note on the pair is that "the two machines are independent and
+need not agree" — where the default build derives it from a compile-time proof
+about the forward machine. Nothing is shared but the answer, which is what
+makes `make test-axes`'s sweep over this flag a control rather than a build
+comparing itself.
+
+**Deny-only**, `-fno-anchored-dfa`'s shape: the compiler takes the pinned form
+wherever the predicate holds, so there is nothing for a caller to address and
+nothing to force. A machine the predicate declines emits the reverse pass,
+which is a SELECTION OUTCOME and never a refusal. **MASKED out of
+`rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`): the axis changes
+no answer, so two artifacts that behave identically must not differ in their
+reflection surface over it — and concretely, so that an artifact the predicate
+DECLINES is byte-for-byte the same under the flag as without it. What the
+emitter DID is reported by `<PREFIX>_DFA_START` (§3 below) and mirrored at run
+time by `rx_info.search_form` (§3.2).
+
+**A VM HYBRID is in scope.** A hybrid inlines this same search body as its
+`static <prefix>_prefilter`, so the flag reaches it and the stamp appears on
+it. The elision is safe there for a second reason worth stating: the hybrid
+consumes the span as a BOUND (`attempt_position = window[0][0]`), never as the
+answer, and `search_from` is the strongest sound lower bound there is.
+
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -1338,6 +1413,22 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   like it, a HYBRID DOES carry it, because a hybrid inlines this emitter's
   scan and therefore has the fact to report.
 
+- `RX_DFA_START` (`[OPT-5]` STEP 2, 2026-09-02) names which of the two forms
+  that scan's ENTRY takes when it recovers the match START — `"pinned"` (the
+  start is `search_from` by compile-time proof, and the artifact carries no
+  reverse machine at all) or `"reverse-pass"` (the second, backwards scan over
+  the artifact's own reverse machine). §2.19 above is the axis and
+  `docs/design/opt5_step2_twopass.md` the design;
+  `docs/spec/match_api.md` §6.3 states the value set. The two forms are
+  **answer-identical** and differ only in cost — roughly a factor of two on a
+  counted class run — and in the artifact's size. **It DOES have an `rx_info`
+  mirror** (`search_form`), for `RX_DFA_MATCH`'s reason rather than a new one:
+  it is a caller-visible COST property of an entry point the caller calls, not
+  an internal encoding choice. Unlike `RX_DFA_MATCH`, a **HYBRID DOES carry
+  it** — a hybrid inlines this emitter's search body as its prefilter, so it
+  has the fact to report, which is `RX_DFA_SCAN_EDGE`'s placement rather than
+  `RX_DFA_MATCH`'s.
+
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
 forced — `rx_info.engine_why` is `NULL` there for the same reason.
@@ -1402,6 +1493,24 @@ before. `prefilter` is never `NULL`: it reads the DFA's vocabulary wherever
 `scan` is non-NULL and the VM's `"none"` where it is not. The full rule, with
 the reason the string `"hybrid"` never appears in the field, is
 `docs/spec/match_api.md` §6.
+
+**[OPT-5] STEP 2, 2026-09-02 — a THIRD mirror, and `match_form` was the
+second.**
+
+> **`rx_info.search_form`** mirrors `<PREFIX>_DFA_START`. It is the third
+> `rx_info` mirror of a DFA selection stamp, and it exists for
+> `match_form`'s reason rather than a new one: a header-less consumer that
+> `dlopen`s an artifact needs to know which form of `<prefix>_search` it
+> linked, because the two differ by roughly a factor of two in cost on a
+> counted class run and not at all in answers. Unlike `match_form`, it is
+> **non-NULL on a VM HYBRID as well**, because a hybrid inlines this same
+> search body as its prefilter; it is NULL only on a plain VM artifact with
+> no DFA scan.
+
+It is appended at the END of the struct, after `nentries`, so no existing
+member's offset moves, and it rides `rx_info.abi` 15 -> 16.
+`tests/codegen/run_search_pinned.sh` asserts field == macro on every compiled
+artifact of both engines, including the NULL case.
 
 **A BENCH ROW CAN NOW BE BUCKETED WITHOUT READING THE ARTIFACT'S SOURCE**, on
 either surface, for every artifact kind — which is the gap `[DD-13]`'s row

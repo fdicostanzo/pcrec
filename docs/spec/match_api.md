@@ -514,6 +514,33 @@ resets the reported start to wherever the winning path last crossed it, so on
 A pattern with no `\K` is unaffected in every respect: the construct is
 module-gated (`assertions`) and, when present, forces the VM engine.
 
+**TWO FORMS OF THIS ENTRY, ANSWER-IDENTICAL, DIFFERING ONLY IN COST**
+([OPT-5] STEP 2; `<PREFIX>_DFA_START`, §6.3; `docs/spec/tuning.md` §2.19) —
+stated here for the same reason §3.2 states `<prefix>_match`'s two forms. A
+DFA search normally runs TWO scans over the same bytes: a forward one to find
+where the match ends, and a backwards one over a second, independently built
+machine to find where it began. On a pattern whose forward machine accepts
+before it reads a byte — `a*`, `.*`, `[a-z]{0,4096}` and the rest of that
+family — the compiler PROVES the second scan's answer is `startpos` and emits
+neither the scan nor the machine. The artifact then stamps
+`<PREFIX>_DFA_START "pinned"`; otherwise `"reverse-pass"`.
+
+**Nothing in this section's contract changes between the two forms.** Both
+report ABSOLUTE offsets into `s`, as the paragraph above requires — the pinned
+form writes `caps[0][0] = startpos`, never `0`, and a find-all loop from a
+non-zero `startpos` depends on exactly that. Both keep the zero-length-match-
+is-a-success convention, which the pinned form DEPENDS on rather than alters:
+the empty match at `startpos` is the answer it reports. The difference a
+caller can observe is cost — roughly a factor of two on a counted class run —
+and the artifact's size.
+
+**A pinned search still returns `0` on some calls.** A search at
+`startpos > 0` on a machine whose start state depends on the byte before it
+(`\b`, `(?m)^`) can begin in a state from which nothing can match; no accept is
+recorded, and `0` is the correct answer. The emitted artifact keeps the test
+that delivers it and names it load-bearing, so a reader of a coverage report
+does not mistake it for dead code.
+
 **The subject side of the contract.** `s` is `n` bytes and nothing more:
 a `0x00` byte inside `s` is an ORDINARY byte with no special meaning (it
 is only the *pattern* side, §7, that is NUL-terminated), and **the
@@ -1415,6 +1442,22 @@ struct rx_info {
                                             are a prefix of the array; the
                                             two are equal on every artifact
                                             pcrec emits today */
+    const char           *search_form;  /* [OPT-5 STEP 2] HOW
+                                            <prefix>_search recovers the
+                                            match START: "pinned" (the
+                                            start is search_from by
+                                            compile-time proof, and this
+                                            artifact carries no reverse
+                                            machine at all) or
+                                            "reverse-pass" (the second,
+                                            backwards scan), mirroring
+                                            <PREFIX>_DFA_START. NON-NULL on
+                                            every artifact that CONTAINS a
+                                            DFA scan, a VM HYBRID INCLUDED
+                                            — unlike match_form, whose
+                                            guard is "the DFA emitter wrote
+                                            _match". NULL only on a plain
+                                            VM artifact (§6.3) */
 };
 ```
 
@@ -1944,11 +1987,23 @@ engine-scoped.**
   two struct fields were a separate D40-addendum layout decision at [DD-13c],
   justified by a header-less consumer (`dlopen`, FFI, a tool walking several
   `<prefix>_info` symbols), and measured 2026-08-26 no such consumer exists
-  yet — the abi-6 fields are still unread. A third unread mirror would be
-  built ahead of a measured need (D77). **The trigger, so it need not be
-  re-derived: the first consumer that reads `rx_info.scan` or
+  yet — the abi-6 fields are still unread. An unread mirror for THIS stamp
+  would be built ahead of a measured need (D77). **The trigger, so it need not
+  be re-derived: the first consumer that reads `rx_info.scan` or
   `rx_info.prefilter` at run time makes `table` owed too**, and it is an
   append at the end of the struct at that point, moving no existing offset.
+
+  **THERE ARE NOW THREE `rx_info` MIRRORS OF A DFA SELECTION STAMP, and
+  `table` is still not one of them** — the count is worth stating because the
+  paragraph above once read "a third unread mirror". `scan` and `prefilter`
+  ([DD-13c], abi 6) are two; `match_form` ([ENG-ABS], abi 10) is the third,
+  and `search_form` ([OPT-5] STEP 2, abi 16) the fourth field though the third
+  DISTINCT trigger. The two later ones did NOT arrive by symmetry: both are
+  caller-visible COST properties of an ENTRY POINT the caller calls, which is
+  the trigger §6.3 named, where `table` and `scan_edge` are internal encoding
+  choices. `search_form`'s guard is `scan`/`prefilter`'s and not
+  `match_form`'s — a hybrid inlines this emitter's search body, so it HAS a
+  search form to report.
 
   All four values come from ONE derivation per engine (`unanch_start`,
   `attempt_cand` in `src/gen/emit_dfa.c`) read by every site that needs
@@ -2262,6 +2317,38 @@ values below are all this macro ever reads:
 | `"bitmap"` | at least one edge's class is not contiguous, so its test is a 256-byte membership table read. The loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price |
 | `"mixed"` | an ARTIFACT-LEVEL composition, `RX_DFA_TABLE`'s own shape: this artifact's machines took both forms. The choice is per EDGE, and a machine may carry up to four |
 
+**`<PREFIX>_DFA_START` ([OPT-5] STEP 2, `abi` 16) is on every artifact that
+CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the SAME IFF as
+`<PREFIX>_DFA_TABLE` and the four stamps beside it, and NOT
+`<PREFIX>_DFA_MATCH`'s narrower one. It is a **(a) SELECTION FACT**: the macro
+is defined iff the artifact contains a DFA scan, and its value names the object
+axis J selected. It names which of two forms that scan's entry takes when it
+recovers the match START:
+
+```
+#define RX_DFA_START "pinned"         /* the start is search_from, by compile-time proof */
+#define RX_DFA_START "reverse-pass"   /* a second, backwards scan finds it */
+```
+
+| value | mechanism |
+|---|---|
+| `"pinned"` | the forward machine's start state accepts UNCONDITIONALLY — at every position, under every position view, in every class context — so a match exists wherever the search begins and D3's accept-pruning removed the start-anywhere self-loop from every accepting closure before the first byte was read. Every accept the forward loop records therefore belongs to a thread that began at `search_from`, and the post-loop block writes that offset directly. **The artifact carries NO reverse machine**: no transition, accept or byte-class table, no stay tables, no scan-edge membership tables, no `<prefix>_reverse_*` accessor block and no reverse scan loop |
+| `"reverse-pass"` | the artifact carries its reverse machine and walks it backwards from the match end to find the furthest-back accepting position. Every artifact whose start state does not accept, or whose accept depends on the position or on the upcoming byte, or which seeds into a state that may be dead, or whose scan is `"attempt"` or `"empty"`, or any build under `-fno-start-pinned` |
+
+**The two forms are ANSWER-IDENTICAL and differ only in cost and in size.**
+`caps[0][0]`'s contract is unchanged under both, including §3.1's "every offset
+written to `caps` is an ABSOLUTE offset into `s`, never relative to
+`startpos`", and the zero-length-match-is-a-success convention — the pinned
+form DEPENDS on both rather than altering either. `rx_info.search_form` mirrors
+this macro; `docs/spec/tuning.md` §2.19 is the axis and
+`docs/design/opt5_step2_twopass.md` the proof.
+
+**A pinned search still returns 0 on some calls, and the line that does it is
+LOAD-BEARING.** A search at `startpos > 0` on a machine whose start state
+depends on a context byte can begin in a state with no live closure; it records
+no accept, and "no match begins here" is the correct answer. The emitted
+artifact keeps that test and names it load-bearing above the line.
+
 **THE IFF IS DIFFERENT FROM THE FIVE STAMPS ABOVE, and the difference is
 the fact rather than a filing decision.** Those four describe a DFA SCAN,
 and a VM HYBRID contains one — it inlines the DFA as its prefilter — so
@@ -2288,11 +2375,12 @@ when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
-`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE`/`RX_DFA_SCAN_EDGE` are
+`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE`/`RX_DFA_SCAN_EDGE`/`RX_DFA_START` are
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
 since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
 artifacts AND VM hybrids, the iff stated in (a). `RX_DFA_TABLE` is
-[OPT-3]'s and `RX_DFA_SCAN_EDGE` [OPT-5]'s; both join that iff unchanged.
+[OPT-3]'s, `RX_DFA_SCAN_EDGE` [OPT-5] STEP 1's and `RX_DFA_START` [OPT-5]
+STEP 2's; all three join that iff unchanged.
 `RX_DFA_MATCH` is [ENG-ABS]'s and
 does NOT: it is a fact about an ENTRY rather than about a scan, so its
 iff is `RX_ENGINE "dfa"` — see its own paragraph above. **[ABI-NS],
