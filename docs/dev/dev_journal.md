@@ -19912,3 +19912,10 @@ alternation, zero frames where the first byte decides, the nfa.c trie as
 the finder. Recorded on [ENG-ISL] as its first named island candidate,
 with the bench's altwide@0.2 bigcap VM arm as the BEFORE and a w-64
 hand-twin as STEP 0.
+
+Part 7 addendum 4 (~16:3x): Frank: "I asked bench to set up blocking runs
+for nighttime. Let's dev during the day." Standing rule from here: pcrec
+lanes and batteries by day (one heavy suite at a time), the bench's
+blocking windows overnight. STEP 2's union battery (~4 h) is scheduled to
+finish before the evening on whichever day opt5i lands; I-35 records the
+split in the durable channel.
