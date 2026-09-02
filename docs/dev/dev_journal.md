@@ -19784,7 +19784,7 @@ ledger; two landing fixes (the size log is pcrec's, not the bench's;
 artifact. No lanes in flight; the box is free; nothing battery-length
 runs until Frank's STEP 2 go.
 
-Addendum (part 5, ~18:1x): lane execsum's follow-up commit (5e8dc00,
+Addendum (part 5, ~14:1x): lane execsum's follow-up commit (5e8dc00,
 merged d860d2d) corrected a misread we BOTH made — [SEL-1] is NOT
 "unrowed": it is a COMPLETED row in docs/dev/plan_completed.md (closed
 2026-08-28, the DFA-overflow fallback contract). Tonight's engine-
@@ -19798,7 +19798,7 @@ alone; future summary lanes grep plan_completed.md too.
 
 ## 2026-09-02 — Fiftieth session, part 6 (evening): FRANK'S RULINGS — STEP 2 GO, three rows chartered; his hot-loop question on the scan edge answered from the emitter (iso-ts: 8 edge blocks in rx_search)
 
-Frank (~18:2x): "Agree to step 2 go. Agree to three candidate rows." And
+Frank (~14:2x): "Agree to step 2 go. Agree to three candidate rows." And
 a design question: how does the loop transition from DFA states to a
 span, with two spans — an if-chain per state in the hot loop? — and
 whether edge states could be reserved as negatives so the loop tests
@@ -19827,7 +19827,7 @@ in flight, disjoint (emit_dfa.c vs a measurement memo); stall watchdog
 at 10 min. I-33 to the bench carries the rulings and the edge-count
 hypothesis for their §7.2 family.
 
-Part 6 addendum (~18:5x): Frank: (1) "frameless vm is basically the
+Part 6 addendum (~14:5x): Frank: (1) "frameless vm is basically the
 direct dfa idea we discussed a while ago" — yes: [ENG-DIRECT] (plan.md
 :880, filed 2026-08-18, "could we implement without state transition
 tables"). A VM program with no resume frame IS a direct-coded automaton
@@ -19838,3 +19838,8 @@ vmfl0 told via its rulings file. (2) The minimum-chain floor for
 [OPT-EDGE] is measured AFTER the single-dispatch change, on the new
 loop — the per-edge entry cost is what the floor prices, and the
 dispatch change removes it; sequencing written into the row.
+
+Timestamp correction (14:4x EDT): the "~18:xx" times written into
+today's parts 5-6, the plan rows and I-33 were UTC read off lane
+message headers; corrected to EDT (~14:xx) in place. The bench's
+timestamps in O-14 (14:1x) were right all along.
