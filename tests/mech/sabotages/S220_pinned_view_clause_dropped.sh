@@ -33,11 +33,30 @@
 #                                      check goes RED in three places.
 #
 # SO THE TWO ARE NOT DISJOINT — THEY ARE A DEFENCE-IN-DEPTH PAIR, which is
-# S108's shape and is why S218 now ships as a TWO-HUNK row. `\bx*`, which
-# the note names as this row's discriminating witness, does not discriminate:
-# its start state's PLAIN accept is 0 (a `\b` at a position whose next byte
-# is non-word cannot start `x*`), so P1 refuses it in BOTH spellings and P2
-# is never what stops it.
+# S108's shape and is why S218 now ships as a TWO-HUNK row.
+#
+# P2'S OWN DISCRIMINATING POPULATION IS EXACTLY THREE ARTIFACTS, AND THEY ARE
+# NAMED. An instrumented build (a measurement-only stamp reporting which
+# clause refused, reverted before delivery) swept the corpus: of 2,850
+# patterns, 1,705 are refused by P1, 224 pass P1+P2 and need no seed, and
+# exactly THREE are refused by P2 — `\B`, `\B\B` and `\Bx*`. Not `\bx*`,
+# which the note names as this row's witness and which does NOT discriminate:
+# its start state's PLAIN accept is 0, so P1 refuses it in both spellings.
+#
+# AND THOSE THREE ARE STILL DECLINED WITH P2 GONE, which is the second layer
+# and the reason this row is inert rather than thin. All three are
+# SEED-NEEDING machines (`\B` creates a word context), so removing P2 at the
+# start state simply lets them reach P3 — whose per-seed loop applies P1 AND
+# P2 again to every live seed, and refuses them there. MEASURED: with P2
+# dropped at the start state, all three stamp `reverse-pass`; with it dropped
+# at BOTH sites, all three still stamp `reverse-pass`, because a seed's own
+# plain-view accept is 0.
+#
+# THE STRUCTURE THIS EXPOSES, worth carrying: on this corpus P1 refuses
+# everything that is not nullable, P2's population is three `\B` shapes that
+# P3 refuses anyway, and P3 is NEVER ASKED (see S219). The predicate's three
+# clauses are not three independent guards here; they are one guard with two
+# spares.
 #
 # THE ROW SHIPS ANYWAY, DECLARED `UNDETECTED`, and its value is the reverse
 # direction — the same argument S219's header makes for `UNREACHED`. P2 is
