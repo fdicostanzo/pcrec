@@ -19622,3 +19622,38 @@ carries their measured verdicts including the STEP 2 scratch-tier
 confirmations. NEXT SESSION: the note's rev 2 against r49's list;
 Frank's implementation go; the [OPT-VEDGE] first measurement;
 [LIM-1]-check follow-ups (K43 fix directions unruled).
+
+## 2026-09-02 — Fiftieth session, part 1 (morning): hold through the bench's window; WINDOW CLOSED 10:48 (29/29 measured at 1989c62); baseline GREEN; STEP 2 REV 2 lane launched
+
+**HOLD:** woke 22:50 on 2026-09-01 under the bench's overnight window
+(Frank: "hold with cron cache keep alive", then "hold lifted when bench
+run completed"). Keepalive cron + an outbox watch (O-14 / WINDOW CLOSED /
+new bench commits) carried the hold; nothing heavy ran. The bench's 07:04
+live status (four sets done at attempt 1, clang passes running, finish
+slipping to ~09:15) was acked with "hold until your explicit CLOSED, cut
+nothing". Two bounded@0.3 clang cells were killed at their window
+script's 3000 s cap (49-50 min cells) and re-run by hand; their cap is
+now 5400 (bench d621079). **WINDOW CLOSED 10:48 EDT: 29/29 cells
+measured at 1989c62, every one at attempt 1, no gate refusal, no spread,
+store 111 records.** O-14 (the ledger read) is expected early afternoon;
+the outbox watch stays armed for it.
+
+**BASELINE on main 05c984b: GREEN** — `make -j4`, `make strict`, `PROCS=4
+make test-registry` rc 0 (definitions-oracle 354 cells, 101,244 A==B and
+A==C comparisons, 0 disagreements).
+
+**LANE opt5d2 (opus) LAUNCHED ~11:1x** on the kept opt5d worktree: [OPT-5]
+STEP 2 note REV 2 against r49 §2 — all 18 items + minors, each with a
+manager ruling in the brief (A1's proof re-derived FROM THE EMITTER CODE
+with the two witnesses re-emitted; the -1 gate kept load-bearing; P3
+liveness conjunct; failing-call bound CLOSED to [OPT-VEDGE]; axis J;
+rx_info.search_form mirror hunk; S218-S222; the (?m)$ control as a NAMED
+MANIFEST; N_hybrid_pinned counted under the force axis before §5.2 may
+assert it; the r49cons frame table verbatim with the O-13/O-14
+provenance rule). The lane also lands opt5m2's memo (docs only). Stall
+watchdog cron at 10 min replaces the plain keepalive. Implementation
+waits for rev 2 + Frank's go (not started unprompted).
+
+NEXT: O-14 → answer its asks (I-31); rev 2 review + merge (doc-only:
+strict + test-codegen, no battery); Frank's open rulings (o42 witness-gap,
+K43/K44 fix directions, reflection-surface note).
