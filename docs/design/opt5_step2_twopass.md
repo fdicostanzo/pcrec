@@ -297,7 +297,7 @@ tables for its scan edges. This is a size event as much as a speed one (§4, §7
 `capture_spans[0][0] = search_from` and not `= 0`: `docs/spec/match_api.md`
 §3.1's "**Every offset written to `caps` is an ABSOLUTE offset into `s`, never
 relative to `startpos`**" is a measured property a find-all loop depends on, and
-it is the obvious way to get this wrong (sabotage S220, §5).
+it is the obvious way to get this wrong (sabotage S221, §5.6d).
 
 **The predicate, spelled precisely (PROPOSED).** Let `fd = &job->dfa`, `fs` its
 start state.
@@ -1617,9 +1617,10 @@ The bench measures TIME and reads STAMPS over **its own** pattern set. It does
 run an answer-agreement pass (O-12 §6 records 3 disagreeing rows of 1,885, 0
 groups), so it is not answer-blind — but:
 
-- Its population is the bench's patterns, not the corpus's ~2,772. **None of the
-  21 discriminating artifacts is known to be in it.** The miscompile in §3.4(a)
-  is therefore entirely the in-tree checks' to catch.
+- Its population is the bench's patterns, not the corpus's 2,845. **No member
+  of `VIEW_DECLINE_MANIFEST` is known to be in it** — the 16 M2 measured are
+  all `(?m)…$` shapes and the bench's sets carry none. The miscompile in
+  §3.4(a) is therefore entirely the in-tree checks' to catch.
 - It cannot see artifact SIZE movement on non-bench patterns, nor compiler CPU.
 - It cannot distinguish "the elision fired and was right" from "the elision
   declined" except through the stamp — which is why check 5.4(3), tying the stamp
@@ -1631,25 +1632,55 @@ groups), so it is not answer-blind — but:
 
 ---
 
-## 6. D80 spec deltas
+## 6. D80 spec deltas — revised
 
 Contract changes land in `docs/spec/` in the SAME change; a reviewer rejects a
-contract change without its spec hunk.
+contract change without its spec hunk. **This is a design note, so nothing in
+`docs/spec/` is edited here** — this table is what the implementation lane
+lands under D80.
 
-| file | section | delta |
-|---|---|---|
-| `docs/spec/tuning.md` | new **§2.19** | `-fno-start-pinned` / `PCREC_NO_START_PINNED` (bit 22): what the axis is, what the denied build does instead, the answer-identity promise, and the D82 note that the flag removes a candidate object rather than branching |
-| `docs/spec/tuning.md` | **§3** (the DFA side's own stamps) | a `<PREFIX>_DFA_START` bullet in the existing list: value set, that a HYBRID carries it (with the `RX_DFA_SCAN_EDGE` reason — the hybrid inlines this scan), and that it has **no `rx_info` mirror**, naming the trigger that would make one owed |
-| `docs/spec/match_api.md` | **§6.3** | `RX_DFA_START` added to the stamp value-set table |
-| `docs/spec/match_api.md` | **§6** | the "`rx_info.abi` is `N`" sentence (line 1602) — and **line 159's stale `13`**, F5 |
-| `docs/spec/match_api.md` | **§3.1** | one paragraph, mirroring §3.2's treatment of `RX_DFA_MATCH`: the two search forms are **answer-identical** and differ only in cost; `caps[0][0]`'s contract is unchanged, including the absolute-offset sentence and the zero-length-is-success convention, both of which the elision depends on rather than alters |
-| `docs/spec/limits.md` | — | **no change**, deliberately (§4.3) |
-| `docs/guide/` | — | a pointer only if an existing page already names the two-pass cost; the guide points at the spec and never restates it |
+| # | file | section | delta |
+|---|---|---|---|
+| 1 | `docs/spec/tuning.md` | new **§2.19** | `-fno-start-pinned` / `PCREC_NO_START_PINNED` (bit 22): what **axis J** is, what the denied build does instead, the answer-identity promise, and the D82 note that the flag removes a candidate object rather than branching |
+| 2 | `docs/spec/tuning.md` | **§3** (the DFA side's own stamps) | a `<PREFIX>_DFA_START` bullet: value set `"pinned"` / `"reverse-pass"`, and that a HYBRID carries it (the `RX_DFA_SCAN_EDGE` reason — the hybrid inlines this scan) |
+| 3 | `docs/spec/tuning.md` | **§3.2** (the mirror list) | **a THIRD mirror bullet — NEW in revision 2** (r49 MINOR). See the wording below |
+| 4 | `docs/spec/match_api.md` | **§6** (the `rx_info` struct block) | **the `search_form` member — NEW in revision 2** (r49 item 5). The hunk is in §4.2; it appends at the END of the struct, after `nentries`, and its guard is `pcrec_artifact_has_dfa_scan`, NOT `fit.chosen == ENGM_DFA` |
+| 5 | `docs/spec/match_api.md` | **§6.3** | `RX_DFA_START` added to the stamp value-set table, classified under **(a) SELECTION FACTS** — see below |
+| 6 | `docs/spec/match_api.md` | **§6.3** | the mirror-COUNT prose moves from two mirrors to three (`match_form`, plus whatever §6.3 already counts, plus `search_form`) |
+| 7 | `docs/spec/match_api.md` | **§6** and elsewhere | the `abi` sentences — found by **D94's grep** (§4.4), not by this list |
+| 8 | `docs/spec/match_api.md` | **§3.1** | one paragraph, mirroring §3.2's treatment of `RX_DFA_MATCH`: the two search forms are **answer-identical** and differ only in cost; `caps[0][0]`'s contract is unchanged, including the absolute-offset sentence and the zero-length-is-success convention, both of which the elision depends on rather than alters. **Add one sentence naming the `last_accept_position == -1` gate's role** — a search that seeds into a dead state at `startpos > 0` correctly returns "no match", per §3.3 |
+| 9 | `docs/spec/limits.md` | — | **no change**, deliberately (§4.3) |
+| 10 | `docs/guide/` | — | a pointer only if an existing page already names the two-pass cost; the guide points at the spec and never restates it |
+| 11 | — | — | **NO fallback (`_match`) hunk today**, and that is correct per §3.5 and D77 — the trigger is [OPT-VEDGE]'s landing, recorded so the absence is deliberate rather than forgotten |
 
-`docs/design/CLAUDE.md` gains a one-line entry for this note, and
-`docs/dev/plan.md`'s `[OPT-5]` row gains the STEP 2 charter text with the
-STEP 3 / view-tolerant-edge split recorded so the next reader inherits the
-distinction rather than re-deriving it.
+### 6.1 The `tuning.md` §3.2 mirror bullet — the wording, for the implementation lane
+
+**This note does NOT edit `tuning.md`.** The bullet the implementation lane
+adds should say, in §3.2's existing voice:
+
+> **`rx_info.search_form`** mirrors `<PREFIX>_DFA_START`. It is the third
+> `rx_info` mirror of a DFA selection stamp, and it exists for
+> `match_form`'s reason rather than a new one: a header-less consumer that
+> `dlopen`s an artifact needs to know which form of `<prefix>_search` it
+> linked, because the two differ by roughly a factor of two in cost on a
+> counted class run and not at all in answers. Unlike `match_form`, it is
+> **non-NULL on a VM HYBRID as well**, because a hybrid inlines this same
+> search body as its prefilter; it is NULL only on a plain VM artifact with
+> no DFA scan.
+
+### 6.2 §6.3's classification: `RX_DFA_START` is a **(a) SELECTION FACT**
+
+r49 item 5 / r49cons's Q2 analysis. `docs/spec/match_api.md` §6.3 sorts the
+observability macros into classes, and `RX_DFA_START` joins **(a) SELECTION
+FACTS** with the **same IFF** as `<PREFIX>_DFA_TABLE`:
+
+> the macro is defined **iff** the artifact contains a DFA scan, and its value
+> names the object axis J selected.
+
+Not a capability macro, not a limit, not a diagnostic. The IFF matters because
+it is what makes check 5.4(8) writable at all: a field-equals-stamp assertion
+needs a defined predicate for "should this artifact have one", and
+"contains a DFA scan" is that predicate for both the macro and the mirror.
 
 ---
 
@@ -1660,14 +1691,20 @@ of them to be *written*). Each names what would make it necessary.
 
 | # | measurement | trigger — do not take it before this |
 |---|---|---|
-| 1 | **N_pinned**: how many corpus artifacts the predicate accepts, and how many are hybrids | before the D6 panel. The note claims the gate is non-vacuous and estimates from a 380-artifact stamp census that is *not* this predicate; the claim is unsupported until counted |
-| 2 | **N_declined_by_view** re-counted at today's tree | before writing S217's assertion. The 21 is a [M6.2] wave C number for a different consumer at an older tree; an assertion pinned to a stale count is a check that disarms itself via its own failure message |
-| 3 | **Which precondition declines `(?:[a-z]{0,2048})\z`** — one `pcrec` run reading the stamps | before chartering the view-tolerant scan edge (§2). The note INFERS precondition (3); if it is a different one the row's design changes |
+| 1 | ~~**N_pinned**~~ **DONE** — 175, all pure DFA, 0 hybrids on the default axis | *was*: before the D6 panel. TAKEN by lane opt5m2 `24ba0c4`, `docs/dev/opt5_step2_premeasure.md` M1 |
+| 2 | ~~**N_declined_by_view** re-counted~~ **DONE, and it changed the check** — 16 at today's tree, all `(?m)…$` | *was*: before writing the widened-bit row's assertion. TAKEN (memo M2) — **and the taking is what expired its independence**, so §5.2 pins a NAMED MANIFEST rather than the number (r49 item 7) |
+| 3 | ~~**Which precondition declines `(?:[a-z]{0,2048})\z`**~~ **DONE** — precondition (3), the position view | *was*: before chartering the view-tolerant scan edge. TAKEN (memo M3), confirmed by a discriminating probe pair; the note's §2 INFERENCE was right |
 | 4 | **The nine-rung `bounded@0.2` AFTER at the STEP 2 pin** | the acceptance frame itself (§0). The instrument is standing — O-12 ask (iv) — and the per-rung predictions are recorded above BEFORE the run, which is the point |
 | 5 | **Artifact-size movement on the accepted population**, per artifact, predicted then compared | at the first full-corpus `test-corpus` run after landing. Predicted downward (§5.5) |
 | 6 | **Compiler CPU with the reverse machine's BUILD skipped, not just its emission** | only if (5) or a user report shows the build cost matters. The comparable number exists: `[ENG-ABS]`'s optional machine cost **+46 % compiler CPU** on the resource shapes (24.3 → 35.9 s on `[a-z]{0,30000}`, r41 S1), so the symmetric saving is plausible and measurable. **Not in STEP 2** (§8 Q5) |
 | 7 | **The `capture_spans == NULL` run-time skip** — the reverse pass is run today even when no caller reads its result, and `match_start_position` is then used only by an early return | **DO NOT BUILD.** No measured caller exists: the bench's driver reports spans, so its find-all loop needs the end and its agreement pass needs the start. The trigger is a measured caller that searches without captures. Recorded so the observation is not lost, not so it is acted on |
 | 8 | O-12 asks (ii)/(v): the per-run edge-selection boundary, the fixed term's size, the hybrid trade | **not STEP 2's.** They are STEP 1's fixed entry term — `year4` ×1.07–1.11 on a 4-count run, `dotted4` ×1.11 (ledger §7.3) — a different mechanism at a different site. A "skip-below-k" knob is a NUMBER and would be born as a `limits.def` row (D90). Its own row |
+| **9** | **`N_hybrid_pinned` UNDER THE FORCE AXIS** — the count of hybrids the predicate accepts when `-fprefilter` is in play, with its command shape in §5.2 | **NEW in revision 2** (r49 item 12 / sound B2). M1's 0 is a DEFAULT-axis number and `make test-axes` runs the force axis over a corpus holding `\K` and nullable patterns — the K35 shape. **Trigger: before §5.2's hybrid line is written as anything but "not yet counted", and before the implementation declares its axis sweep complete** |
+| **10** | **P3 EVALUATION count** (not decline count): how often the seed conjunct is ASKED, default axis and force axis | **NEW in revision 2** (r49 item 8 / check M3, sound F1). M1 counted declines (0) and nobody counted evaluations, so "P3 is unreachable" and "P3 is reachable but never declines" are not yet distinguished. The instrument is opt5m2's `RX_PROBE_PINNED` shape. **Trigger: before the implementation ships S219 as anything other than `SAB_EXPECT=UNREACHED`** (§5.6b) |
+| **11** | **`N_pinned ∩ search-filter`** over the corpus — how many of the 175 also stamp `RX_DFA_MATCH "search-filter"` | **NEW in revision 2** (r49 item 11 / sound B6, C3). This is C3's population, and §1.1 currently names four VERIFIED members rather than a count. **Trigger: before check 5.4(7)'s differential is floored** |
+| **12** | **The `startpos > 0` find-all population over the 175** | **NEW in revision 2** (r49 item 10 / check M5). §5.6d names the two acceptable discharges. **Trigger: before S221 ships** |
+| **13** | **S220's disjointness from S218** — a member of the classctx population S218's detector does NOT catch | **NEW in revision 2** (r49 MINOR / check 6). **Trigger: before S220 ships**; if empty, S220 is a redundancy finding (§5.6c) |
+| **14** | **The P2-relaxation split**: of M1's 47 `view` declines, how many carry a view variant whose accept bit AGREES with the base | **NEW in revision 2** (r49 item 13 / sound B4). P2 is deliberately stricter than soundness needs and it costs population. **Trigger: a bench or corpus customer lands in that group** — and note [OPT-VEDGE] moves the same population from the other side, so the two must be sequenced (§1.2 P2) |
 
 ---
 
