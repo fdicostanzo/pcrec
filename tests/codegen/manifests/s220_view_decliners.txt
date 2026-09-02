@@ -1,0 +1,32 @@
+# tests/codegen/manifests/s220_view_decliners.txt — S220's REAL discriminating
+# population (r51fix item 2; docs/dev/reviews/2026-09-02-r51-opt5-step2-impl.md
+# §2 finding 2, r51check finding 2).
+#
+# S220 (tests/mech/sabotages/S220_pinned_view_clause_dropped.sh) drops the
+# start-pinned predicate's P2 clause. Its own header MEASURED that the
+# `(?m)…$` manifest S218/S222 float (docs/dev/opt5m2_m2_changed_patterns.txt)
+# does NOT discriminate for THIS predicate: every `(?m)…$` artifact fails P1
+# alone, in both spellings, so P2's own clause never gets a chance to matter
+# there. An instrumented sweep of the full 2,850-pattern corpus (S220's
+# header, MEASURED 2026-09-02) found that exactly THREE patterns are refused
+# by P2 and not by P1 or P3 — these three, and no others:
+#
+#     \B      a bare non-word-boundary assertion
+#     \B\B    two of them in sequence
+#     \Bx*    a non-word-boundary assertion followed by a nullable run
+#
+# All three are SEED-NEEDING machines (a `\B` creates a word class-context
+# split), whose start state accepts under the plain view (nullable) but whose
+# accept is NOT invariant across class context — exactly P2's own clause.
+#
+# One pattern per line, no header markers inside the population itself, so a
+# simple `^\B` line-start match (S220's own SAB_REACH_POP EREGEX) selects all
+# three and nothing else. Floored at 3 -- its own full measured population,
+# not a decorative round number. If this file's population ever needs a
+# fourth member (a new P2-discriminating shape found by a future re-sweep),
+# add it here AND raise S220's floor in the same change; this file and that
+# floor move together (docs/dev/learnings.md §3, "a population floor copied
+# from a sibling").
+\B
+\B\B
+\Bx*
