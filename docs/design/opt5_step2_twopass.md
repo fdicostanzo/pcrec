@@ -1228,26 +1228,102 @@ match/no-match verdict, not the length, not the end. Learnings §3 records that
 compares match/no-match, or compares lengths, is vacuous against every failure
 direction in §3.4 — including the one where every answer is still "matched".
 
-### 5.2 Population accounting (K35)
+### 5.2 Population accounting (K35) — rewritten in revision 2
 
-Three numbers, printed, floored, and failing loudly at zero:
+Rev 1 asked for three numbers as ESTIMATES. Two are now measured, one is owed
+under a different axis, and the way they are PINNED has changed.
 
-- **N_pinned** — corpus artifacts the predicate ACCEPTS. If 0 the whole gate is
-  vacuous. Expected non-trivial: `docs/spec/tuning.md` §3's measured stamp
-  census has **380 DFA artifacts** (and 644 across everything containing a DFA
-  scan) at `RX_DFA_PREFILTER "none"`, whose *largest* documented cause is the
-  start state accepting. That is an ESTIMATE and not a bound in either direction
-  — `none` has other causes, and the widened bit that produced it is not P1 —
-  so §7 item 1 owes the real count before the panel.
-- **N_declined_by_view** — artifacts where P1's widened and narrowed spellings
-  disagree. Expected ≈ 21 ([M6.2] wave C, MEASURED; §7 item 2 re-counts). **Every
-  one must be DECLINED.** This is the positive control for F3 and it is the
-  strongest check in the plan, because its expected value comes from a
-  measurement taken for an unrelated purpose at a different site — a control that
-  cannot have inherited this mechanism's alphabet.
-- **N_hybrid_pinned** — hybrids the predicate accepts. Expected ~0 (§1.2). A
-  non-zero value is not a failure; it is a finding that wants reading, and the
-  check should print it rather than assert it.
+#### N_pinned = 175 — MEASURED
+
+`docs/dev/opt5_step2_premeasure.md` M1 (lane opt5m2 `24ba0c4`): over 2,845
+distinct corpus `pattern` lines (floor 2,620, `LC_ALL=C sort -u` per K35),
+default engine, `--features all`. **175 artifacts the predicate accepts, all of
+them pure DFA, 0 among hybrids on the default axis** — 9.35% of the
+1,872-artifact `unanchored` population the predicate is even asked of, so the
+gate is comfortably non-vacuous. Decline reasons: `notacc` 1,642 (96.8%),
+`view` 47 (2.8%), `classctx` 8 (0.5%), **seed stage 0**.
+
+That last zero is the check plan's central problem and §5.6b is about it.
+
+#### The view-decline control — a NAMED MANIFEST, never the count
+
+Rev 1 wrote "**Expected ≈ 21** … every one must be DECLINED" and called it the
+strongest check in the plan because its expected value came from a measurement
+taken for an unrelated purpose. **Revision 2 withdraws the count and the
+independence claim** (r49 item 7 / check M2, learnings §3's "exact counts
+disarm themselves via their own failure message; the fix is a manifest naming
+irreplaceable rows").
+
+*Why the independence expired.* [M6.2] wave C's 21 was a different consumer's
+number at an older tree. M2's 16 is **this check's own number, re-measured for
+this check, by re-deriving the exact predicate distinction the sabotage
+edits — using `member_ok`'s body, which this note proposes to SHARE with the
+implementation.** Once P2 is one exported predicate, the probe and the feature
+call one function: a latent defect appears identically in "expected" and
+"actual" and the check greens wrongly. That is the control-shares-a-source
+defect, arriving through the fix for a different one.
+
+*Why a count is not a control even setting that aside.* A count answers "did
+someone delete a lot"; it never answers "the right ones". And it disarms
+itself: when the corpus grows an `(?m)…$` pattern the assertion fails with
+"expected 16, got 17", and the cheapest correct-looking repair is to edit the
+16.
+
+**THE MANIFEST — `VIEW_DECLINE_MANIFEST`, shape-defined and floored:**
+
+- **Selector (the definition, not a list):** every corpus pattern whose
+  artifact is `RX_DFA_SCAN "unanchored"` and whose forward start state accepts
+  under SOME view but NOT under `UPC_PLAIN` — i.e. `state_acc_any(fs)` is true
+  and `fs->up[UPC_PLAIN].accept` is 0. This is the population on which P1's
+  widened and narrowed spellings disagree, stated as the property rather than
+  as its extension.
+- **The all-and-only assertion:** every member is DECLINED by the predicate,
+  and no member is accepted. The check reports the member list, so a
+  disagreement names patterns rather than a delta.
+- **The floor:** `>= 12` members (M2 measured 16; the floor is set below it so
+  ordinary corpus churn does not trip it, and a drop to single digits is a
+  loud finding about the corpus). The floor is a `SAB_REACH_POP` line on
+  S218, per §5.6.
+- **Named irreplaceable rows** — the shape-anchors, which must never leave the
+  corpus without a stated reason: `(?m)$` (the minimal form), `(?m)a*$` (the
+  nullable-with-EOL form), `(?m)\bx*$` (the form carrying a class context too),
+  `(?m:.*$)` (the scoped-group spelling), `(?m)a{0,4}$(?-m)` (the
+  mode-toggled spelling). The full 16 as measured live in
+  `docs/dev/opt5m2_m2_changed_patterns.txt`; the five above are the ones whose
+  loss would silently narrow the manifest's SHAPE coverage.
+- **The independent leg the manifest still needs:** the manifest is derived
+  from the same predicate it controls, so it is a MANIFEST, not an oracle. The
+  ANSWER leg is what makes it a control: every member is also run through the
+  find-all `caps[0][0]` differential of §5.1, whose reference is the reverse
+  machine under `-fno-start-pinned` — an independently built automaton. State
+  the two legs separately in the check's own output so a reader can see which
+  one is asserting what.
+
+#### N_hybrid_pinned — an OWED MEASUREMENT under the FORCE AXIS, not a fact
+
+M1 measured 0 hybrids. **That is a DEFAULT-AXIS number and §5.2 may not assert
+it as a population** (r49 item 12 / sound B2, and this is K35's shape: a claim
+stated over a narrower set than the check runs on). `pfc_prefilter_forced`
+(`src/core/compile.c:1060-1063`) lets `-fprefilter` override the
+`prefilter_lang_nullable` decline, and `make test-axes` derives its sweep from
+the `PCREC_(NO|FORCE)_*` bits — so `-fprefilter` is INSIDE the gate's own
+population, over a corpus holding both `\K` patterns and nullable patterns.
+P5's `\Ka*` witness is a member.
+
+**The owed measurement, with its command shape** (D77 — named, not taken here):
+
+```sh
+# for each corpus pattern P, under the FORCE axis rather than the default:
+build/pcrec --features all -fprefilter -p rx -o art.c -- "$P"
+# then read RX_ENGINE == "vm" AND the STEP 2 predicate's verdict on the
+# inlined prefilter's forward machine (opt5m2's RX_PROBE_PINNED instrument,
+# or the shipped RX_DFA_START stamp once it exists)
+```
+
+**Trigger: before §5.2's hybrid line is written as anything but "not yet
+counted", and before the implementation's axis sweep is declared complete.**
+Until then the check PRINTS `N_hybrid_pinned` and asserts nothing about it —
+a non-zero value is a finding that wants reading, not a failure.
 
 ### 5.3 Identity gates
 
@@ -1263,11 +1339,11 @@ Three numbers, printed, floored, and failing loudly at zero:
 - **Object-code neutrality** (`run_object_neutrality.sh`) is NOT applicable —
   STEP 2 deliberately changes executed code.
 
-### 5.4 Structural checks owed (`tests/codegen`)
+### 5.4 Structural checks owed (`tests/codegen`) — revised
 
 1. An artifact the predicate accepts contains **no `rewind_position`, no
-   `<prefix>_reverse_*` table, and no reverse accessor block** — grepped from the
-   emitted text, not from a compiler flag.
+   `<prefix>_reverse_*` table, and no reverse accessor block** — grepped from
+   the emitted text, not from a compiler flag.
 2. An artifact it declines still contains all three. (Both directions, or the
    check is a liveness argument rather than a value argument.)
 3. **The stamp and the body agree**: `<PREFIX>_DFA_START "pinned"` iff
@@ -1275,24 +1351,92 @@ Three numbers, printed, floored, and failing loudly at zero:
    assumed.
 4. `RX_DFA_TABLE` and `RX_DFA_SCAN_EDGE` never name a machine the artifact does
    not contain (§4.2). Concretely: on an accepted artifact, neither fold reads
-   `job->rdfa`.
-5. **The `\K`-free premise (P5)**: no DFA artifact carries the construct. This is
-   guaranteed by the module gate today; the check exists so that the guarantee
-   fails loudly if the gate ever moves, rather than turning into a miscompile.
-6. **Branch coverage of the kept `last_accept_position == -1` gate.** It becomes
-   unreachable on the accepted population (§3.3). A coverage-style check that
-   flags never-taken branches will report it; the answer is to keep the branch
-   and record here that it is deliberately dead, not to delete it and not to
-   suppress the report silently.
+   `job->rdfa` — the two sites are `dfa_table_name:2665` and
+   `dfa_scan_edge_name:2711`.
+5. **The `\K`-free premise (P5) — asserted at the ENGINE level, reworded in
+   revision 2** (r49 item 12 / sound F4). Rev 1 said "no DFA artifact carries
+   the construct", which is FALSE: `-fprefilter '\Ka*'` puts a `\K` machine
+   through this emitter as a hybrid, so that assertion would either fire on
+   that artifact or pass vacuously. The check is: **`fit.chosen == ENGM_DFA`
+   implies the pattern carries no `\K`** — i.e. no artifact whose `_match` and
+   `_search` this emitter OWNS. Plus a second, separate assertion for the
+   hybrid: on a hybrid whose inlined prefilter is pinned, the emitted
+   `rx_search_run` still consumes `window[0][0]` as a lower bound
+   (`attempt_position = (size_t)window[0][0];`) and still clamps
+   `window_end` from `window[0][1]` — the bound-not-answer shape. Both fail
+   loudly if the module gate or the hybrid's window contract ever moves.
+6. **The kept `last_accept_position == -1` gate — INVERTED in revision 2**
+   (r49 item 1 / sound A2, check F3). Rev 1 said: a coverage check will report
+   it never-taken, "the answer is to keep the branch and record here that it is
+   deliberately dead". **That records a falsehood.** The gate is load-bearing
+   (§3.3); the branch is never taken because THIS CORPUS holds no dead seed at
+   `startpos > 0`, which is a corpus fact, not a machine fact. The check
+   becomes:
+   - the gate is PRESENT in every accepted artifact's emitted text (a grep,
+     asserted positively — it must not be "simplified away");
+   - a coverage report showing it never-taken is recorded as an observation
+     about the corpus, with a pointer to S222, and is NOT an exemption;
+   - the emitted comment above the gate names it LOAD-BEARING and says why,
+     so the next reader of the artifact gets the fact without this note.
+7. **NEW — C3's behavioural fact** (r49 item 3 / sound C3). On an artifact
+   that is BOTH predicate-accepted AND `RX_DFA_MATCH "search-filter"`, the
+   fallback `<prefix>_match`'s `return -1` is **unreachable**: `rx_search`
+   returns 1 with `caps[0][0] == ctx->pos` on every call. Assert it as a
+   differential rather than by inspection — over the pinned ∩ search-filter
+   population (`[a-z]{0,4096}`, `{0,8192}`, `{0,16384}` are named members,
+   VERIFIED this build), at `startpos` values spanning 0 and > 0, on both
+   matching and failing subjects, `_match` never returns −1. This is the half
+   of rev 1's §1.1 that survives B6, and it is behavioural, so it belongs
+   here and not in the bench's column.
+8. **NEW — M8: the `rx_info` mirror agrees with the stamp** (r49 item 5 /
+   check M8, [DD-13c]'s runtime-mirror pattern). On **every** compiled
+   artifact, **both engines**: `rx_info.search_form` equals the
+   `<PREFIX>_DFA_START` stamp's value where the artifact contains a DFA scan,
+   and is NULL where it does not. This is the fourth structural check and it
+   exists because a mirror and a macro are two readers of one derivation — the
+   `unanch_start` M2.7 fork is what happens when they are allowed to drift.
+   It must run on the VM side too, or it cannot see the NULL case.
+9. **NEW — the ENG_UNANCH routing premise (P0)**. The predicate's `fs = fd->s0`
+   read is sound only because `ENG_UNANCH` implies `!nfa_has_bot` (§1.2 P0).
+   Assert `fs == s1u[UPC_PLAIN]` on every artifact the predicate accepts, in
+   the compiler, so that an engine-selection change that routed a BOT-bearing
+   machine here fails loudly instead of eliding wrongly.
 
-### 5.5 Size
+### 5.5 Size — the prediction NARROWED, and the obvious cleanup is a SEPARATE change
 
 `docs/dev/artifact_size_log.tsv` should move **DOWNWARD** on the accepted
-population at the next full-corpus `test-corpus` run — a whole machine's tables
-and accessor block leave every accepted artifact. `tests/size/`'s tripwire pins
-are maxima, so downward movement cannot trip them, but the log diff is the
+population at the next full-corpus `test-corpus` run. `tests/size/`'s tripwire
+pins are maxima, so downward movement cannot trip them, but the log diff is the
 reviewer's artifact (`scripts/size_diff`) and the movement should be *predicted
 per artifact before the run*, not read off afterwards. §7 item 5.
+
+**What the prediction may claim, and it is less than rev 1 implied** (r49
+item 14 / sound B5). Rev 1 said "a whole machine's tables and accessor block
+leave every accepted artifact", which invites a reader to expect the artifact's
+whole view apparatus to go with it. It does not. `f->viewsel` and `f->views`
+come from the SHARED `UnanchStart`, whose `eol`, `endv` and `wctx` are ORs over
+`fd` **and** `rd` (`src/gen/emit_dfa.c:2487-2503`). Deleting the reverse
+machine's EMISSION leaves in place, on the forward machine:
+
+- its view tables — `if (f->viewsel)` in `emit_machine_tables` (`:4646-4656`)
+  emits `<M>_eol_view` / `<M>_end_view` for machine `f` regardless of which
+  machine created the flag;
+- its demoted (viewed) accept ORDER, i.e. §3.2.0's probe-below-the-edge shape,
+  which is exactly what witness (ii) `a*|9` shows: no reverse machine in the
+  artifact would still leave the forward probe below the edge.
+
+**So §5.5 predicts the reverse machine's TABLES and ACCESSOR BLOCK only** —
+its transition table, accept table, byte-class table, any stay tables, any
+scan-edge membership tables, the `<prefix>_reverse_state` accessor block, and
+the reverse scan loop's own text. Not the view tables. Not the accept order.
+
+**The views-OR narrowing is its OWN change and must not ride STEP 2.**
+Narrowing `views`/`viewsel` to the machine that created the flag would move the
+D11 evaluation order — the order that cost 53 divergences — so it needs its own
+argument, its own answer-identity evidence and its own sabotage row. Recorded
+here as a named candidate with no row and no trigger yet (D77); folding it in
+as "a size cleanup" is precisely how a correctness change gets shipped under a
+performance heading.
 
 ### 5.6 Sabotage rows and their detectors
 
