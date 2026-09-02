@@ -1621,34 +1621,61 @@ append-only or historical records.
   rows or a second row-less array).
 
 - `opt5_step2_twopass.md` — **[OPT-5] STEP 2**, the design note written BEFORE
-  any emitter change (lane opt5d, 2026-09-01, chartered by Frank; DESIGN ONLY,
-  written under a box hold so every number is CITED and none re-measured): the
-  TWO-PASS FIX. `<prefix>_search` runs a forward scan for the match END and a
+  any emitter change. **REVISION 2 (2026-09-02, lane opt5d) works every finding
+  of the D6 panel `docs/dev/reviews/2026-09-01-r49-opt5-step2.md`; §10 is the
+  item-by-item disposition table and is where a reviewer starts.** Rev 1 was
+  2026-09-01 under a box hold with every number cited; rev 2 was allowed one
+  build, so its proof witnesses are emitted artifacts quoted from this tree.
+  DESIGN ONLY — nothing under `src/`, `tests/` or `docs/spec/` lands from this
+  lane; §6 is what the implementation lane lands under D80.
+
+  THE MECHANISM (unchanged, and the panel found no input on which it answers
+  wrongly): `<prefix>_search` runs a forward scan for the match END and a
   backwards scan for its START, and since STEP 1 both are cursor loops — which
-  is why the bench's nine-rung ratio sits at 1.76–2.00 and not lower. The
-  mechanism is the **START-PINNED SEARCH**: where the forward machine's start
-  state accepts unconditionally (PLAIN view, no `eolvar`/`endvar`, accept equal
-  across every class context, and the same of every live seed state), D3's
-  accept-pruning has already killed every later start before the first byte, so
+  is why the bench's nine-rung ratio sits at 1.76–2.00. The **START-PINNED
+  SEARCH**: where the forward machine's start state is LIVE and accepts
+  unconditionally (PLAIN view, no `eolvar`/`endvar`, accept equal across every
+  class context, and the same of every seed state), D3's accept-pruning has
+  already killed every later start before the first byte, so
   `match_start_position == search_from` on every call and the reverse machine,
-  its tables, its accessor block and its loop are **not emitted at all** — a
-  size event as much as a speed one. §0's acceptance frame is falsifiable per
-  rung on the bench's standing `bounded@0.2` instrument (0.90–1.10 and FLAT at
-  the nine letters rungs; digits unchanged; `cls-atleast-4096` unmoved as the
-  in-instrument control). §1.1 records that site (a) — the anchored
-  `<prefix>_match` — was ALREADY BUILT by `[ENG-ABS]` and needs nothing;
-  §1.3 recommends the multi-edge `end − Σcount` form as deliberately STEP 3 and
-  shows why (the count is the easy half; the ORIGIN is what the wrapped forward
-  machine cannot name, and it grows 0 edges on embedded shapes today anyway).
-  §2 answers bench ask (iii) NO with the mechanism — the `\z` whole forms are
-  refused by scan-edge precondition (3), a position-view fact orthogonal to the
-  two-pass structure — and names the **VIEW-TOLERANT SCAN EDGE** as its own row,
-  with `[ART-SIZE]`'s first real customer (two artifacts at 93.7 % of the cap)
-  as its existing trigger. §5's strongest check is a positive control whose
-  expected value comes from an unrelated measurement (the 21 corpus artifacts on
-  which the widened and narrowed start-accept bits disagree). §9 collects five
-  findings against the plan row's own text, including a FIFTH, already-stale
-  reader of the `abi` number the four-site ritual does not cover.
+  its tables, its accessor block and its loop are **not emitted at all**.
+
+  WHAT REVISION 2 CHANGED. (1) **The proof is re-derived from `emit_dfa.c` site
+  by site** — rev 1's Claim A ("the accept probe runs before anything
+  advances") is FALSE, because the probe is an axis-E object that sits BELOW
+  the scan edges on any viewed or by-class artifact, and `acc_viewed_applies`
+  reads a flag OR'd over BOTH machines; the claim is now "some accept ≥
+  `search_from` is always recorded", with `[a-z]{0,8}|9$` and `a*|\b9` emitted
+  as witnesses. (2) **The `last_accept_position == -1` gate is LOAD-BEARING,
+  not dead** — on a dead seed at `startpos > 0` it is the only correct answer,
+  so P3 gains a LIVENESS conjunct and every "deliberately dead" phrasing is
+  deleted. (3) **The failing-call bound is CLOSED as unsound** (`a*b`/"aab":
+  `tr[fs]['a'] == fs`), with no `_match` change in STEP 2 and the population
+  handed to `[OPT-VEDGE]`, which also owns the bench's ×37 exhibit — the
+  predicate DECLINES that whole form, which rev 1 had claimed as a rescue.
+  (4) **Axis J, not H** (STEP 1 took H and I). (5) **Frank APPROVED the
+  `rx_info.search_form` mirror**, against rev 1's recommendation, so the change
+  carries a struct-layout event and a fourth structural check. (6) **The abi
+  ritual is D94's grep**, abi 15 → 16. (7) §0 becomes a **two-instrument
+  acceptance frame** with the `unwrapped` match rungs as a CONTROL and the
+  `search-filter` rungs and search band as the CUSTOMERS, and an O-13/O-14
+  provenance rule (O-14 had not landed; the markers are in place). (8) The
+  check plan is rebuilt on **named manifests instead of counts** — the
+  independence of the view-decline control expired when it was re-measured for
+  this check — with birth-time `SAB_REACH`/`SAB_REACH_POP`, ids S218–S222, and
+  six new owed measurements. **S219 ships declared `UNREACHED`**: §5.6b derives
+  why the P3-discriminating population looks empty on `ENG_UNANCH` rather than
+  merely unpopulated, and the liveness conjunct's real guard is a compiler
+  assertion.
+
+  §2 still answers bench ask (iii) NO — now MEASURED, not inferred: memo M3's
+  discriminating probe pair confirms scan-edge precondition (3) is what refuses
+  the `\z` whole forms — and names the **VIEW-TOLERANT SCAN EDGE**, chartered
+  as `[OPT-VEDGE]`, with `[ART-SIZE]`'s first real customer as its trigger.
+  §7's owed measurements are the memo's three (all now TAKEN) plus six new
+  ones. §9 collects five findings against the plan row plus five raised by the
+  revision itself. Companion data: `docs/dev/opt5_step2_premeasure.md` and
+  `docs/dev/opt5m2_m2_changed_patterns.txt`.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
