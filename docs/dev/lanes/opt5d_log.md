@@ -73,3 +73,69 @@ the last allocated bit — so bit 22 is free), `member_ok`/`shaped`/`in_degrees`
 - 2026-09-01: `docs/design/opt5_step2_twopass.md` written (§0–§9) and
   `docs/design/CLAUDE.md` given its entry. Hold still in force at delivery;
   nothing in this lane needed the lift, and nothing was executed.
+
+---
+
+## Revision 2 session (2026-09-02) — r49 worked
+
+**Setup.** `git merge main` alone in its own command: clean merge of `05c984b`
+(abi 15, S217 merged, D93/D94 landed, the r49 review file committed), no
+conflicts, as the brief predicted. Landed lane/opt5m2's premeasure memo
+(`docs/dev/opt5_step2_premeasure.md`, `docs/dev/opt5m2_m2_changed_patterns.txt`)
+with two `docs/dev/CLAUDE.md` entries. The `[OPT5M2-PROBE]` `src/gen/emit_dfa.c`
+hunk was deliberately NOT checked out.
+
+**Build.** ONE `gnutimeout 900 make -j2`, exit 0, first try. Every
+`build/pcrec` invocation wrapped in `gnutimeout 60`. No `make test`, no
+`test-codegen`, no battery, no sanitizer target.
+
+**Witnesses emitted and verified against the review's claims** (all from this
+build, all stamps read directly):
+
+| pattern | what it proves | result |
+|---|---|---|
+| `[a-z]{0,8}\|9$` | A1 witness (i): scan edge above the probe | REPRODUCED verbatim, edge opens the loop, probe 8 lines below the view select |
+| `a*\|\b9` | A1 witness (ii): `wctx` alone demotes the probe, no view select emitted | REPRODUCED verbatim |
+| `[a-z]{0,64}` | the `scalar-plain` control: probe FIRST | REPRODUCED |
+| `\Ka*` `-fprefilter` | B1: a `\K` machine through this emitter | REPRODUCED — `RX_ENGINE "vm"`, `is_accepting[2] = {1,1}`, start-accepting |
+| `a*b` `-fno-anchored-dfa` | C1: `tr[fs]['a'] == fs` | REPRODUCED — `next_state[6] = {0,0,3,…}`, legend state 1 = `"b"` ACCEPTING, `_match` body as quoted |
+| `[a-z]{4096,}` | M9: `cls-atleast-4096` must not move | CONFIRMED — `PREFILTER "byte-class"`, `is_accepting[4] = {0,0,1,1}`, start does NOT accept, predicate declines |
+| `[a-z]{0,64..32768}` ladder | the nine rungs' `RX_DFA_MATCH` split | 64–2048 `unwrapped`, 4096/8192/16384 `search-filter`, 32768 VM; all PREFILTER `none` |
+| `(?:[a-z]{0,8192})\z` | M3 / B6: the whole form is view-declined | CONFIRMED — `byte-class-bounded`, `SCAN_EDGE "none"` |
+
+**Code line numbers verified in this tree** (all cited in the note): `dfa_accs`
+`:3572`, `acc_viewed_applies` `:3511`, `emit_scan_loop`'s calls `:4696`/`:4697`/
+`:4699-4703`/`:4714`/`:4715`/`:4716`/`:4717`, `dir_fwd_skip` `:3992-4014`,
+`emit_scan_edge` `:4473-4568`, `acc_emit_tail_by_class` `:3530-3570`,
+`unanch_start` `:2487-2503`/`:2542-2547`/`:2581`/`:2596`, `dfa_needs_seed`
+`:2161-2166`, `dfa_premul` `:2205-2215`, `seed_emit_constant` `:3496-3502`,
+`dfa_table_name` `:2664-2666`, `dfa_scan_edge_name` `:2706-2715`, axes H/I
+`:4317`/`:4349`, `.abi = 15` `:1514`, `member_ok` `src/opt/scanedge.c:188-194`,
+the loop-order sentence `:107-109`.
+
+**One correction to the review's own line numbers, minor:** `dfa_table_name`'s
+`rdfa` read is at `:2665`, not `:2664` (`:2664` is the FORWARD read). The note
+cites the pair.
+
+**The hard item (r49 item 1) is done and the proof holds.** The repair is not
+cosmetic: rev 1's Claim A was doing work it could not do (it was carrying
+`caps[0][0] = search_from`, which actually comes from Claim B). §3.2.1's
+proof enumerates every recording site and shows each either records or cannot
+advance, so *some* accept ≥ `search_from` is always recorded.
+
+**The item I could not fully discharge: r49 item 8 (S219's synthetic witness).**
+I worked six candidate shapes and none reaches P3's discriminating branch. The
+derivation in §5.6b argues the population is EMPTY on `ENG_UNANCH`, not merely
+unpopulated. The brief allowed this branch; the row ships declared `UNREACHED`,
+and §7 item 10 (count P3 EVALUATIONS, not declines, on both axes) is the
+measurement that would settle it.
+
+**O-14 had NOT landed** when this revision was finished (checked twice, last at
+11:28 EDT 2026-09-02; the outbox's last write is 2026-09-01 18:47 and its
+newest message is `## O-13`). Every scratch-tier number in §0 carries an
+`[O-14 PENDING — manager fills at merge]` marker.
+
+**Commits, in order:** memo landing, header, §0/§1.1/§1.2, §1.3+§3.2/§3.3,
+§3.4/§3.5, §4, §5.2/§5.4/§5.5, §5.6, §5.7/§6/§7, §8/§9, §10, §2/§5.1/§5.3,
+design/CLAUDE.md, report. Nothing under `src/` or `tests/` is touched; the
+lane's whole diff against main is six documentation files.
