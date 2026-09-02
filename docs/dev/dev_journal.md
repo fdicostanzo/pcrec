@@ -19926,3 +19926,20 @@ the block or the surviving VM branch (the Wu-Manber block-hash shape).
 Explicitly NOT folded into current items; design notes and the D77
 trigger (altwide@0.2's width curves) recorded on the row; a third
 dispatch shape beside the first-byte switch on [ENG-ISL].
+
+## 2026-09-02 — Fiftieth session, part 8 (~17:5x): Frank's clang ruling — compile gate stays, timed arms go periodic; [CC-DIFF] chartered and launched
+
+Frank asked whether clang vs gcc was ever compared overall. Ledger §5:
+NOT constant — regime-shaped: bounded auto/nocaps 0.929, forced VM 0.840
+(large-subject THROUGHPUT median 0.599 over 43 cells!), loglines 1.03-
+1.05; clang wins short DFA match cells and VM throughput loops (cls-upto-4
+thr 0.407, floor match 0.432, dig-upto-16 vm thr 0.378), loses collapsed-
+prefilter hybrids (level-context 1.69) and the frameless floor scan
+(1.996). RULING: clang stays a compile-only gate on every pin (its
+refusal set found [CC-CLANG], which found the ×9); timed clang arms leave
+the nightly and re-run periodically / at emission-model changes. Frank
+wants the clang wins investigated for C-level spellings gcc could share
+("low hanging fruit", no deep asm) → [CC-DIFF] chartered, lane ccdiff
+(opus, one lane-day, hot-loop asm diff only, hand-twins timed). I-36
+sent. Two lanes in flight (opt5i, ccdiff), disjoint (ccdiff writes a
+memo, no src).
