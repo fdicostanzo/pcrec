@@ -24,7 +24,7 @@
 # 2026-09-02: of the 175 corpus patterns the predicate accepts, only FIVE
 # carried any `ms`/`ns` cell at all — 14 cells between them, on `x*`, `a*`,
 # `(?>a?)`, `(?:ab)?+` and `\Q\E`. That is thin enough that the row does not
-# rest on it: `tests/base/start_pinned_startpos.rxt` (112 cells over five
+# rest on it: `tests/base/start_pinned_startpos.rxt` (79 cells over four
 # pinned patterns at every startpos) and its seeded sibling
 # `tests/assertions/start_pinned_startpos.rxt` were added with this row, and
 # the floor below is on the first of them.
@@ -51,7 +51,7 @@ SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manage
 # `.rxt` cells that could see this at all — still exists.
 SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "a*" && grep -q "capture_spans\[0\]\[0\] = (ptrdiff_t)search_from;" "$REACH_TMP/o.c" && echo REACH-PINNED-WRITES-SEARCH-FROM'
 SAB_REACH_EXPECT="REACH-PINNED-WRITES-SEARCH-FROM"
-SAB_REACH_POP="tests/base/start_pinned_startpos.rxt|^(ms|ns) |60"
+SAB_REACH_POP="tests/base/start_pinned_startpos.rxt|^(ms|ns) |50"
 SAB_COUNT=1
 SAB_BEFORE='            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"'
 SAB_AFTER='            /* SABOTAGE S221: the absolute-offset trap. */

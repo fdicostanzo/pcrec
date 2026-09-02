@@ -221,10 +221,48 @@ echo
 # prefilter, have nothing to collapse and refuse at the default untouched,
 # which is why they carry no flag.
 size_moved=(
-    '(?:[a-z][0-9]){0,8000}:1063395:'
-    'a{0,25000}:1103670:-fno-scan-edge'
-    '(a|b){0,30000}:1333410:-fno-scan-edge -fno-prefilter-collapse -fprefilter'
+    '(?:[a-z][0-9]){1,8000}:1065432:'
+    'a{0,25000}:1103981:-fno-scan-edge -fno-start-pinned'
+    '(a|b){0,30000}:1333236:-fno-scan-edge -fno-prefilter-collapse -fprefilter -fno-start-pinned'
 )
+# [OPT-5] STEP 2, 2026-09-02 — THE ROWS MOVED AGAIN, and the note two
+# paragraphs down PREDICTED this class of event while naming a different
+# mechanism for it. What landed as STEP 2 is not the period-k edge that note
+# expected; it is the START-PINNED SEARCH ELISION, which deletes the whole
+# REVERSE MACHINE from any artifact whose forward start state accepts
+# unconditionally. MEASURED at this tree, each of the three witnesses lost
+# very close to HALF its bytes — 1,063,395 -> 537,224; 1,103,670 -> 557,311;
+# 1,333,410 -> 683,524 — because on these shapes the reverse machine WAS half
+# the artifact. The CAP still works; the WITNESSES stopped reaching it, which
+# is the same sentence STEP 1 wrote here and is the tripwire working.
+#
+# ROW 1 IS A NEW NATURAL WITNESS AND IT IS THE OLD ONE MINUS ONE CHARACTER.
+# `(?:[a-z][0-9]){1,8000}` is NOT NULLABLE, so its forward start state does
+# not accept, so axis J DECLINES it (`RX_DFA_START "reverse-pass"`, VERIFIED)
+# and it keeps both machines and still refuses at the DEFAULT — 1,065,432
+# bytes, no flag. Its `{0,8000}` twin is the same pattern one character over,
+# is nullable, IS pinned, and now compiles at 537,224. **The pair is a
+# control in this file's own idiom** (`(a|b){0,30000}` vs `{1,30000}` below
+# is the same shape): a compiler that stopped eliding would make the twin
+# refuse too, and a compiler that elided a NON-nullable start state would
+# make this row compile.
+#
+# ROWS 2-3 KEEP THE CLASSIC WITNESSES ALIVE UNDER THE NEW DENY FLAG, exactly
+# as STEP 1 kept them alive under `-fno-scan-edge`. `-fno-start-pinned`
+# restores the reverse machine and the byte figures come back to within a
+# thousand bytes of their pre-STEP-2 values (the residue is this abi bump's
+# own new stamp and initializer lines). Re-MEASURED 2026-09-02, not carried
+# forward.
+#
+# WHAT NO LONGER HAS A NATURAL DEFAULT WITNESS, said out loud rather than
+# left for the next reader to discover: for the `(?:[a-z][0-9]){0,n}` family
+# specifically, SCALING THE COUNT NO LONGER REACHES THE BYTE CAP AT ALL.
+# MEASURED: n=10,000 -> 669,228 (premultiplied side), n=12,000 -> 481,228
+# (the table crosses the 65,535-entry bound and the accept table stops being
+# class-replicated), n=14,000 -> 561,228, and by n=22,000 the DFA-as-engine
+# STATE cap fires first and [SEL-1] retries onto the VM at 20,229 bytes. So
+# the byte cap's reachable band for that family now tops out around 670 KB.
+# That is why row 1 changes SHAPE rather than COUNT.
 # [OPT-5] 2026-08-31, the rows above REWRITTEN the day the scan edge landed:
 # the old natural witnesses (a{0,25000}, [a-z]{0,30000}, (a|b){0,30000}) all
 # collapsed to ~18-35 KB artifacts — the CAP still works, the WITNESSES
@@ -481,7 +519,19 @@ rm -f "$WORKDIR/o.c"
 # [OPT-5] 2026-08-31: `-fno-scan-edge` added here too — same reason as the
 # cells above; MEASURED: FNSE -fprefilter stamps hybrid / "size cap retry,
 # exact 1333406 > 1000000".
-fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fprefilter -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
+#
+# [OPT-5] STEP 2, 2026-09-02: `-fno-start-pinned` JOINS IT, and without it
+# this cell goes VACUOUS rather than wrong. The START-PINNED SEARCH ELISION
+# halves the EXACT prefilter's own artifact (the hybrid's inlined scan is
+# this emitter's search body, and this pattern is nullable, so it is pinned),
+# so the exact build stops tripping the total byte cap, the SIZE RUNG never
+# runs, and `-fprefilter` simply ships the exact prefilter stamping
+# `LANG_WHY "exact"`. That is CORRECT behaviour and not a defect — the
+# pattern compiles, which is what limits.md §3.3 promises — but it leaves
+# this cell asserting nothing about the rung it exists for. MEASURED with the
+# flag: hybrid / "size cap retry, exact 1333236 > 1000000", 32,325 bytes,
+# which is the same shape the 2026-08-31 figure records one abi apart.
+fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
 if [ $? -eq 0 ]; then
     fpsz=$(wc -c < "$WORKDIR/o.c")
     fppf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')

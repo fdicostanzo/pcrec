@@ -19,6 +19,17 @@
 # belongs here anyway: it is the control that says a nonzero startpos is
 # reported correctly on both sides of the axis.
 #
+# ONE PATTERN WAS DELIBERATELY LEFT OUT, and it is worth saying which.
+# `[a-z]{0,4096}` is the pinned rung this row's own C3 check drives, and it
+# was in the first version of this file. It is NOT here, because its ANCHORED
+# machine exceeds `PCREC_ANCHORED_MAX_STATES` — so adding it to the corpus
+# moves [ENG-ABS]'s own census (`tests/codegen/run_anchored_match.sh` §5 pins
+# the anchored-OVERFLOW population at 0 and says, correctly, "do not simply
+# re-pin this line"). A startpos-coverage file has no business moving an
+# unrelated row's population, and `[a-z]{0,64}` makes the identical claim
+# about the elision. The big rungs are driven out-of-corpus by
+# `tests/codegen/run_search_pinned.sh` §6/§10 instead, at every startpos.
+#
 # THE SEEDED BLOCK IS IN A SIBLING FILE, not missing:
 # `tests/assertions/start_pinned_startpos.rxt` carries `\bx*`, because `\b`
 # needs module `assertions` and this is a base-tier file. It is the control on
@@ -85,25 +96,6 @@ ms 3 "aa11bb" 3 3
 ms 4 "aa11bb" 4 6
 ms 5 "aa11bb" 5 6
 ms 6 "aa11bb" 6 6
-
-pattern [a-z]{0,4096}
-ms 0 "" 0 0
-ms 0 "abc" 0 3
-ms 1 "abc" 1 3
-ms 2 "abc" 2 3
-ms 3 "abc" 3 3
-ms 0 "1abc1" 0 0
-ms 1 "1abc1" 1 4
-ms 2 "1abc1" 2 4
-ms 3 "1abc1" 3 4
-ms 4 "1abc1" 4 4
-ms 5 "1abc1" 5 5
-ms 0 "zz9qq" 0 2
-ms 1 "zz9qq" 1 2
-ms 2 "zz9qq" 2 2
-ms 3 "zz9qq" 3 5
-ms 4 "zz9qq" 4 5
-ms 5 "zz9qq" 5 5
 
 pattern .*
 ms 0 "" 0 0
