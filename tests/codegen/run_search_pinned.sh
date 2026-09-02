@@ -520,9 +520,19 @@ fi
 # refusals here against 1,584 with captures on. So the pinned-hybrid count is
 # 23 under these flags and 70 under the corpus's own. Both are real; this
 # floor is on the one this file measures.
+#
+# THE FLOOR IS 20, NOT 12 (r51 finding 4). A floor of 12 against a measured
+# 23 is 48% slack, where the sibling floor four lines up (:501, 140 against
+# 175) sits at 20% — and this is the population that was INVISIBLE before
+# the force arm existed at all (§9's own floor above answers "did the axis
+# stay live"; this one answers "did the axis stay live ON THE POPULATION
+# NOTHING ELSE IN THE TREE EXERCISES", which is the harder direction to lose
+# quietly and the wrong one to leave the loosest). 20 keeps the same ~20%
+# margin the sibling uses (23 * 0.8 ≈ 18, rounded up to the next even floor)
+# rather than the ad hoc 48% the original number left.
 n_pf=$(tok PINNED-force)
-if [ "$n_pf" -lt 12 ]; then
-    bad "§9 only $n_pf artifacts are PINNED on the -fprefilter force axis, below the 12 floor (measured 23 under this file's own --no-captures flags, 70 with captures on). The pinned-HYBRID population has collapsed, and with it every corpus-scale claim in this file about a hybrid — read it before re-pinning"
+if [ "$n_pf" -lt 20 ]; then
+    bad "§9 only $n_pf artifacts are PINNED on the -fprefilter force axis, below the 20 floor (measured 23 under this file's own --no-captures flags, 70 with captures on). The pinned-HYBRID population has collapsed, and with it every corpus-scale claim in this file about a hybrid — read it before re-pinning"
 else
     ok "§9 the force axis carries $n_pf pinned artifacts (measured 23 under this file's flags; 70 with captures on, which is §7 item 9's own answer), so the PINNED HYBRID population this file's §2/§3 claims run over is real and not §4's single named witness"
 fi
