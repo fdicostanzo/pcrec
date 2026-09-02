@@ -80,12 +80,14 @@ which only the RATIO between two arms measured back to back under one load
 with a flat control survives. **O-14** — the overnight full-suite verdict at
 pcrec `1989c62`, 29/29 measured, window CLOSED 10:48 on 2026-09-01 — confirms
 or withdraws them, section by section, the way O-12 withdrew the 8192 flag.
-**O-14 had NOT landed in `/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md`
-when this revision was written** (last write 2026-09-01 18:47, newest message
-`## O-13`), so every scratch-tier cell below carries an
-**`[O-14 PENDING — manager fills at merge]`** marker. Ledger readings
-(`2026-08-31-opt5-step1-acceptance-a7e0bdf.md`) and stamp facts are NOT
-scratch tier and carry no marker.
+**O-14 LANDED after this revision was written** (bench `dc33947`, 2026-09-02
+~14:1x; ledger `docs/dev/ledgers/2026-09-02-full-suite-1989c62.md`): O-13
+CONFIRMED in every section, withdrawn nowhere. The scratch-tier cells below
+now carry their PINNED value in an `[O-14: …]` note, filled by the manager at
+merge per this section's own rule; the AFTER is read against ledger §10's
+twelve-point checklist. Ledger readings
+(`2026-08-31-opt5-step1-acceptance-a7e0bdf.md`) and stamp facts were never
+scratch tier.
 
 **Instrument 1 — `large-subject-throughput` (find-all) band, plain form,
 `auto ÷ vm`, the nine counted rungs.** This is the surface O-12 ask (iv)
@@ -126,10 +128,10 @@ The two entry forms sit on the SAME ladder, so the ladder splits in two:
 O-13's own readings on instrument 2, carried here with their tier:
 `cls-upto-2048 ÷ cls-upto-1024`, matching letters runs 64–1024 B: **1.97–2.04**
 with the VM control at 0.90–0.99 — the ×2.0 residual IS the reverse pass
-(SCRATCH TIER; `[O-14 PENDING — manager fills at merge]`). And on a FAILING
+(scratch tier; **[O-14: PINNED 1.986–2.036 on the five matching letters runs, VM control 0.999; per byte 3.695 vs 1.861 ns/B = ×1.985 — CONFIRMED, ledger §3.2-3.3]**). And on a FAILING
 anchored match, `d-01024`: **×37.4** (11.6 → 432.4 ns), the `search-filter`
 entry scanning the whole subject for candidate starts before rejecting every
-one (SCRATCH TIER; `[O-14 PENDING — manager fills at merge]`). **That ×37
+one (scratch tier; **[O-14: PINNED ×37.1, 10.6 → 393.7 ns — CONFIRMED, ledger §3.5]**). **That ×37
 exhibit is the whole-form row above, which the predicate DECLINES** — see
 §1.1, r49 item 11.
 
