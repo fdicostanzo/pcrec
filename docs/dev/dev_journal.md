@@ -19987,3 +19987,12 @@ if test-axes joins the battery (K45's open question). Post-merge build
 + strict + recursion-identity running; the union battery follows
 (STAGE START sent; the bench holds its window until DONE); panel r51
 (soundness with live witnesses; check design) runs read-only beside it.
+
+Part 10 addendum (~19:3x): Frank chartered [TT-12] — test-axes wall-clock
+(pairwise axes) + adding it to the union battery, with a STEP 0 that
+observes CPU usage across the battery's stages. The sampler rides
+tonight's battery on de32a4b (cpu_samples.tsv in the scratchpad, 30 s
+cadence, stage-tagged); the analysis lane runs tomorrow morning and
+archives the samples. Battery launched detached (battery.sh, waits for
+the post-merge identity check to go green, then test → strict → san →
+lint → mech at PROCS=4; stage markers timestamped).
