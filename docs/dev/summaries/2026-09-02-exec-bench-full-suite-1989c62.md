@@ -1,4 +1,4 @@
-# Executive summary — pcrec-bench full-suite night, pin 1989c62
+# Executive summary: pcrec-bench full-suite night, pin 1989c62
 
 Overnight window 2026-09-01 22:45 to 2026-09-02 10:48 EDT (the two
 window-script-capped clang cells re-run by hand to 10:48). Four sets
@@ -148,26 +148,26 @@ record's trial agreement (ledger §1.2-§1.4, §2.2).
 - (i) Is the frameless-VM ×9 intended to stay, or an unowned side
   effect a later change could silently take back? Does
   `resume_frames == 1` match `has_push == false` exactly? Is
-  gcc-only expected? — pcrec manager / Frank ruling.
+  gcc-only expected? Answered by: pcrec manager, Frank ruling.
 - (ii) Carry the size-book correction (−402/+105/+202 B by frame
-  count and DFA presence) into both projects' documents. — pcrec
-  manager (already corrected on pcrec's side per the journal; confirm
-  to the bench).
+  count and DFA presence) into both projects' documents. Answered by:
+  pcrec manager (already corrected on pcrec's side per the journal,
+  confirm to the bench).
 - (iii) Is `cls-atleast-4096`'s `search-filter` entry form
-  deliberate? It is the natural control for the STEP 2 AFTER. — pcrec
-  manager.
+  deliberate? It is the natural control for the STEP 2 AFTER. Answered
+  by: pcrec manager.
 - (iv) The scan-edge boundary keys on spelling and form, not a count.
   What does the decision key on, and is there a cell expected to win
-  that the bench should measure? — pcrec manager.
+  that the bench should measure? Answered by: pcrec manager.
 - (v) `level-context` is the one corpus pattern clang builds
-  1.4-1.7× slower; worth a look at that code shape. — a measurement
-  lane.
+  1.4-1.7× slower; worth a look at that code shape. Answered by: a
+  measurement lane.
 - (vi) The DFA route's late size check costs 36 s to learn a pattern
-  is too big against the VM route's 0.02 s. — pcrec manager /
-  a measurement lane (candidate 5).
+  is too big against the VM route's 0.02 s. Answered by: pcrec
+  manager, a measurement lane (candidate 5).
 - (vii) `pfx3-512` (pcre2-jit ×147 over the interpreter) is refused by
-  pcrec's source cap on every config; build altwide@0.2 around it? —
-  Frank ruling (scope decision).
+  pcrec's source cap on every config; build altwide@0.2 around it?
+  Answered by: Frank ruling (scope decision).
 
 **(b) pcrec's own queue, as the journal states it:**
 
