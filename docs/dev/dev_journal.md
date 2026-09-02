@@ -19795,3 +19795,34 @@ label by territory only; I-32's "recorded on that row" is loose — it is
 recorded HERE and on the [OPT-5] row, and would be a NEW row if Frank
 charters it. The lane's grep missed the row because it searched plan.md
 alone; future summary lanes grep plan_completed.md too.
+
+## 2026-09-02 — Fiftieth session, part 6 (evening): FRANK'S RULINGS — STEP 2 GO, three rows chartered; his hot-loop question on the scan edge answered from the emitter (iso-ts: 8 edge blocks in rx_search)
+
+Frank (~18:2x): "Agree to step 2 go. Agree to three candidate rows." And
+a design question: how does the loop transition from DFA states to a
+span, with two spans — an if-chain per state in the hot loop? — and
+whether edge states could be reserved as negatives so the loop tests
+`state < 0` once. READ OFF emit_dfa.c (emit_scan_loop / emit_scan_edge):
+his read is right — every edge is its OWN `if (state == HEAD && more &&
+class_test)` block on the generic path (deliberately not an else-chain;
+they must follow everything that advances the position), so the
+per-iteration cost is one compare PER EDGE. MEASURED from main: the
+bench's iso-ts emits 8 edge blocks in rx_search and 4 in rx_match — the
+worst of the loglines regressors (×1.09, +5,059 B); http-5xx/ipv6 have
+one each (×1.03). A sign test cannot serve as written (heads must stay
+valid table rows for the fall-through step), but renumbering edge heads
+to the TOP of the id space gives one range compare `state >= FIRST_HEAD`
+regardless of edge count — the general form of his idea; premultiplied
+cells are monotone so it holds on cells. That plus a minimum-chain floor
+above precondition (5)'s `m >= 2` is [OPT-EDGE]'s content.
+
+CHARTERED (plan.md): [OPT-VMFL] (own the frameless-VM shape; STEP 0
+measurement lane vmfl0, sonnet, launched: has_push-vs-frames census,
+direct-branch dispatcher hand-twin on three frames≥2 artifacts, stamp
+proposal), [LIM-2] (DFA projected-size bail; queued behind STEP 2, same
+build path), [OPT-EDGE] (queued behind STEP 2, same emit_scan_loop
+region). LAUNCHED: lane opt5i (opus) — STEP 2 implementation against
+the rev 2 note; the union battery is the manager's at merge. Two lanes
+in flight, disjoint (emit_dfa.c vs a measurement memo); stall watchdog
+at 10 min. I-33 to the bench carries the rulings and the edge-count
+hypothesis for their §7.2 family.
