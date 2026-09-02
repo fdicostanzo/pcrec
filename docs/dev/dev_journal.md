@@ -19896,3 +19896,19 @@ carries the framing; [OPT-EDGE] carries the trigger ("if the spans idea
 works out for some N, reframe rather than add edge kinds"); [OPT-NEG] and
 [OPT-VMLIT] cross-noted as island bodies. "We're blurring the lines" —
 deliberately.
+
+Part 7 addendum 3 (~16:0x): Frank on the altwide set — "could that be
+helped structurally by span checking? My suspicion is a large number of
+frames for a single character. Are the alts composed like a search
+trie?" Read off the code: the VM holds ONE live frame per alternation
+(vm_alt: branch k's frame resumes k+1) but TRIES branches serially — w-512
+worst case is 511 push/fail/pop/dispatch round-trips on one subject byte,
+and each literal branch is its own body (the VM code cap refuses w≥512).
+The NFA builder DOES compose flat alternations as a priority-preserving
+prefix trie (nfa.c:192, M2.8), and the DFA route is that trie
+determinized — hence auto FLAT over w-8..256. So the structural help is
+not spans but the ISLAND: a first-byte(s) switch dispatch for the VM's
+alternation, zero frames where the first byte decides, the nfa.c trie as
+the finder. Recorded on [ENG-ISL] as its first named island candidate,
+with the bench's altwide@0.2 bigcap VM arm as the BEFORE and a w-64
+hand-twin as STEP 0.
