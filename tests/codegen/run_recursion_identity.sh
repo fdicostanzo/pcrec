@@ -512,7 +512,12 @@ KEEP="${KEEP:-0}"
 # merge behind [CC-CLANG]'s 14 (D76 merge-order rule; site list per D94,
 # every reader found by grep).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6dbdf41}"
+# [OPT-5] STEP 2, 2026-09-02 — abi 15 -> 16 at the opt5i MERGE (da4fe60): the
+# start-pinned search elision (axis J, RX_DFA_START, rx_info.search_form
+# appended after nentries) + RX_VM_FRAMELESS (ruling R1) move dispatch bytes
+# on the 175 pinned artifacts and stamp lines on every VM artifact; re-pinned
+# to the merge per D76/D94 (readers of the old pin found by grep).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-da4fe60}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
