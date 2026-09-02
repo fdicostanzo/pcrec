@@ -3521,3 +3521,39 @@ box says "inconclusive" instead of "failed"; (b) run battery test
 stages at reduced PROCS (measured: PROCS=6 still red once); (c) accept
 and document. Whoever takes (a) should re-read learnings §3 first — an
 inconclusive that absorbs real regressions is worse than this noise.
+
+## K45 — INFRASTRUCTURE (2026-09-02, fiftieth session, found by lane opt5i's `make test-axes`): `make test-axes` is RED ON MAIN for [ART-SIZE.2]'s nested-repeat tower — five axes report `refused_undoc=2` on tests/size/size_term.rxt:34-35, pre-existing since fa9b6d4 (2026-08-29)
+
+The block `(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}` carries
+`engine vm` precisely so the NFA is never built (its own comment: found
+by writing the cell without it and watching it fail for the wrong
+reason). run_axes.sh layers each axis's RXTFLAGS on top of the block's
+own flags, and for FIVE axes that defeats the `engine vm` shortcut or
+moves the refusal onto a limit the axis does not list: `-fno-counter`
+(bit 6: the nested-replication limit, 2,825,761 > 131,072),
+`-fprefilter` (9) and `--engine=dfa` (§2.11) (the NFA state cap,
+131,072), `-fno-altcls-merge` (10) (the VM emitted-node cap), and
+`-fno-size-term` (18) (the emitted-code cap). Zero MISMATCHES on any
+axis; every failure is an UNDOCUMENTED-REFUSAL line, i.e. a
+documentation/exclusion gap, not an answer defect. MEASURED by opt5i:
+main's own compiler (5496ca6, built from `git archive`) produces the
+identical refusal message under all five flags; `git diff` on tests/size
+between the branch point and the lane is empty.
+
+WHY IT WENT UNNOTICED: `make test-axes` is OPT-IN and NOT a stage of
+battery_v4 (test → strict → san → lint → mech); the last full test-axes
+sweep recorded in the journal predates fa9b6d4. A pre-existing red on an
+opt-in suite stays invisible until a lane runs the suite for its own
+axis — which is what happened.
+
+DISPOSITION (manager, 2026-09-02): NOT opt5i's to fix (another row's
+witness; not folded into an abi bump). A separate landing item after the
+STEP 2 merge, on [ART-SIZE.2]'s row: EITHER an axis-documented-limit
+entry for the nested-replication / state-cap / node-cap family on that
+block OR the harness's axis-exclusion marking for a block whose `engine`
+line is load-bearing — read run_axes.sh's documented-limits mechanism
+and choose the one that keeps the block's purpose intact. Until then a
+`make test-axes` run reports these five AXIS FAILs and nothing else on a
+clean tree; a lane's OWN axis is judged on its own line. OPEN QUESTION
+for Frank: whether test-axes joins the battery (it is ~70 min at
+PROCS=nproc) or stays opt-in with this entry as its standing caveat.
