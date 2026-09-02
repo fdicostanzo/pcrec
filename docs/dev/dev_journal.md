@@ -19919,3 +19919,10 @@ lanes and batteries by day (one heavy suite at a time), the bench's
 blocking windows overnight. STEP 2's union battery (~4 h) is scheduled to
 finish before the evening on whichever day opt5i lands; I-35 records the
 split in the durable channel.
+
+Part 7 addendum 5 (~16:4x): Frank filed [OPT-ALTHASH] — a k-byte block
+hash (k≈4) at a wide alternation's head, looking up the DFA state after
+the block or the surviving VM branch (the Wu-Manber block-hash shape).
+Explicitly NOT folded into current items; design notes and the D77
+trigger (altwide@0.2's width curves) recorded on the row; a third
+dispatch shape beside the first-byte switch on [ENG-ISL].
