@@ -17,8 +17,10 @@ over 43 throughput cells — clang inlines pcrec's VM entry chain and gcc does
 not, so every `<prefix>_search` call under gcc builds a 152-byte frame, pays a
 stack-protector canary and makes an out-of-line call for working storage that
 a frameless artifact never touches. One attribute on the emitted static
-helpers takes gcc to clang's shape, is answer-identical, and does not disturb
-either control where gcc legitimately wins.
+helpers, gated on the frameless stamp pcrec already computes, takes gcc to
+clang's shape and past it — **0.611 on the frameless throughput cell against
+clang's own 0.817** — is answer-identical over 3,204 comparisons, and leaves
+both controls where gcc legitimately wins untouched (0.994 and 0.954).
 
 ## Method
 
@@ -37,8 +39,9 @@ the bench measured.
 Timing harness reproduces `testees/pcrec/driver.c`'s three regime loops
 verbatim and calls through `dlsym` exactly as the bench does, so neither
 toolchain gets cross-translation-unit inlining the bench would not have given
-it. Five process launches per point, medians. Load conditions are stated with
-the numbers below.
+it. The box was never quiet during this lane, so timing uses an interleaved
+paired design rather than separated batches; it and the load conditions are
+described with the numbers below.
 
 ---
 
@@ -156,34 +159,54 @@ can be taken without paying for them.
 
 ## Candidate emitter spellings, ranked
 
-### 1. `always_inline` on the emitted VM helpers (twin V) — RECOMMENDED
+### 1. `always_inline` on the emitted VM helpers, GATED ON FRAMELESS (twin V) — RECOMMENDED
 
-**(a) Targets:** every artifact with a VM entry chain — the ledger's forced-VM
-large-subject-throughput median of 0.599 over 43 cells, and the `auto`
-hybrids. Corpus reach measured over all four bench sets: **83 of 180 emitted
-artifacts have the chain; 36 of 90 forced-VM artifacts (40 %) are frameless**
-and get the full storage elision as well as the inline.
+**(a) Targets:** the frameless VM artifacts — where the entry's whole working
+storage is dead and can be deleted. Corpus reach measured over all four bench
+sets: 83 of 180 emitted artifacts have a VM entry chain, and **36 of 90
+forced-VM artifacts (40 %) are frameless**. Lane vmfl0's independent census
+puts the frameless shape at 35 % of the VM population under ordinary `auto`
+selection too (`optvmfl_step0.md`), so this is not a `--engine=vm`-only
+population.
 
-**(c) Effect on the controls:** none, measured statically and by timing.
-`floor`/thr/vm keeps gcc's rotated 4-instruction attempt loop **and** loses
-the frame and canary — a strict improvement, not a trade.
-`level-context`'s prefilter body is **byte-identical** before and after.
+**(b) Measured:** `dig-upto-16` thr/vm **0.611**, which BEATS clang's own
+0.817 on that cell.
+
+**(c) Effect on the controls: none, and this was the thing most at risk.**
+`floor`/thr/vm — gcc's ×2 win — measures **0.994**: gcc's rotated
+4-instruction attempt loop is untouched and the frame and canary go away, so
+it is a strict improvement, not a trade. `level-context`'s prefilter body is
+**byte-identical** before and after (0.954 measured).
 
 **(d) Generality:** one emitter site, `src/gen/emit_vm.c`'s emitted function
-headers. The attribute goes on every emitted static helper except the
-matcher; the matcher joins them **only when the artifact is frameless**,
-because gcc *refuses* `always_inline` on a function containing a computed goto
-(a hard error, not a warning). That gate is not a new condition: it is the
-same `has_push` predicate [CC-CLANG] already evaluates to decide whether to
-emit the pop-and-resume dispatch at all. And the attribute constrains only the
-compiler that was not already doing this — clang inlines the same set on its
-own — so it moves gcc toward clang rather than pinning either.
+headers. The attribute constrains only the compiler that was not already doing
+this — clang inlines the same set on its own — so it moves gcc toward clang
+rather than pinning either, and every twin compiles clean under both.
 
-Two independent wins ride in it: the out-of-line call disappears, and on a
-frameless artifact so do the 152-byte frame and the stack-protector canary.
-The canary is the one worth naming to Frank: pcrec is paying a security-
-hardening tax on every search call for a buffer the artifact provably never
-writes.
+**Why the frameless gate, and why it is not a special case.** Two independent
+facts force it to the same place. gcc *refuses* `always_inline` on a function
+containing a computed goto — a hard error, not a warning — so the matcher can
+only take it when the artifact pushes no resume frame. And the measurement
+agrees: on the three FRAMED cells the spelling buys nothing (0.990, 0.954,
+and `stack-frame` at **1.032**, a mild regression in 11 of 15 rounds), because
+there the storage is genuinely live, so inlining deletes nothing and only
+inflates the entry. The gate is the `has_push` predicate [CC-CLANG] already
+evaluates to decide whether to emit the pop-and-resume dispatch at all — an
+existing stamp, not a new condition.
+
+The canary is worth naming to Frank on its own: pcrec is paying a
+security-hardening tax on every search call for storage the artifact provably
+never touches.
+
+### 1b. REJECTED ALTERNATIVE: elide the buffers without inlining (twin W)
+
+The obvious more-surgical spelling — drop the `rx_run_buffers storage`
+declaration and bind NULL/0 when frameless, changing no inlining decision —
+**does not work**: measured **0.986**, i.e. nothing. The canary survives,
+because `rx_run_state`'s own `slot_values[]` array trips
+`-fstack-protector-strong` exactly as the buffers do. Answer-identical, so it
+is rejected on its measurement rather than its correctness. Recorded because
+it is the first thing a reader will propose.
 
 ### 2. Uniform-table folding in the emitted step helpers (twin A)
 
@@ -234,24 +257,99 @@ count: **3,204 comparisons, all identical.**
 
 ## Measured hand-twin ratios under gcc
 
-<!--TIMINGS-->
+All numbers are **per-round paired ratios**: within one round every variant
+runs back to back on the same subject, so a load excursion hits them together
+and the statistic is the median of the ratios, not a ratio of medians. 11
+rounds each (15 for the `stack-frame` confirmation). The full range is given
+because the box was not quiet.
+
+**LOAD CONDITIONS: 4.4–4.7 throughout** (lane opt5i's `make test` held the box
+at 4.5–5.8 for the whole lane-day; it never dropped below 1.5, so the
+low-load batch the brief asked for could not be taken). The interleaved
+paired-ratio design is what makes these numbers usable anyway, and the
+controls validate it: `floor`/thr/vm reproduces the ledger's 1.996 as
+**1.993**, `stack-frame` its 0.680 as **0.718**, `level-context` its 1.693 as
+**1.838**, `cls-upto-4` its 0.407 as **0.338**.
+
+| cell | clang | twin | twin ratio (median) | range |
+|---|---|---|---|---|
+| `cls-upto-4` thr/auto | 0.338 | **A** (uniform tables) | **0.589** | 0.573–0.653 |
+| `cls-upto-4` thr/auto | 0.338 | C (single-IV edge) | 0.849 | 0.809–0.928 |
+| `cls-upto-4` thr/auto | 0.338 | A+C | 0.577 | 0.521–0.698 |
+| `dig-upto-16` thr/vm (frameless) | 0.817 | **V** (always_inline) | **0.611** | 0.409–0.942 |
+| `floor` thr/vm (frameless, CONTROL 1.996) | 1.993 | **V** | **0.994** | 0.727–1.054 |
+| `nest3-16` thr/vm (framed, CONTROL) | 1.047 | V | 0.990 | 0.585–2.118 |
+| `level-context` search/auto (framed, CONTROL 1.693) | 1.838 | V | 0.954 | 0.843–1.029 |
+| `stack-frame` search/vm (framed) | 0.718 | V | **1.032** | 0.907–1.205, 11/15 rounds > 1 |
+
+**Twin V beats clang outright on the frameless throughput cell** (0.611 against
+clang's 0.817) and is neutral on the frameless control (0.994) — the control's
+entry cost is amortised over 16,384 match attempts, so the entry improvements
+correctly do not show there, and gcc's rotated attempt loop is untouched.
+
+### Decomposition: where twin V's win comes from
+
+`dig-upto-16` thr/vm, same paired design:
+
+| variant | ratio | reading |
+|---|---|---|
+| `art-gcc` | 1.000 | baseline |
+| `-fno-stack-protector` on the original | 0.889 | the canary alone is ~11 points |
+| twin W (elide `rx_run_buffers` only) | 0.986 | **buys nothing on its own** |
+| twin V (always_inline) | **0.611** | the inline, and the dead-code elimination it unlocks |
+
+Twin W is the more surgical spelling — drop the `rx_run_buffers storage`
+declaration and bind NULL/0 when frameless — and it **fails**: the canary
+survives, because `rx_run_state`'s own `slot_values[]` array triggers
+`-fstack-protector-strong` just as the buffers do. Only inlining, which makes
+the entire run state dead, removes it. (Answer-identical, so it is rejected on
+its measurement, not on correctness.)
+
+### The gate: FRAMELESS ONLY
+
+The three framed cells give 0.990, 0.954 and **1.032** — two neutral and one
+mild regression, no measured benefit. On a framed artifact the storage is
+genuinely live, so inlining `rx_search_run` deletes nothing and only inflates
+the entry (`stack-frame` `rx_search` goes 40 -> 97 instructions for a regime
+that calls it once per search). **So the attribute should ride the frameless
+stamp and stop there** — which is also the only form gcc will accept on the
+matcher, and the more conservative change.
+
+### Compile gate
+
+Every twin compiles clean under **both** gcc and clang at `-O2 -std=gnu11
+-Wall -Wextra`. Frank's ruling that clang stays a compile-only gate with an
+empty refusal set is unaffected.
+
 
 ---
 
 ## Worth chartering / not worth it
 
-**WORTH CHARTERING: twin V, the `always_inline` spelling on the emitted VM
-helpers.** It is one emitter site, it rides a stamp pcrec already computes, it
-is answer-identical, it leaves both controls where gcc legitimately wins
-untouched, and it addresses the ledger's general signal rather than one cell.
-The stack-protector canary on provably-dead buffers is a finding in its own
-right.
+**WORTH CHARTERING: twin V, `always_inline` on the emitted VM helpers gated on
+the frameless stamp.** Measured **0.611** on the frameless throughput cell,
+which beats clang's own 0.817; **0.994** on the ×2 control, so nothing is
+traded. It is one emitter site, it rides a stamp pcrec already computes, it is
+answer-identical over 3,204 comparisons, and it addresses the ledger's general
+signal rather than one cell. The stack-protector canary on provably-dead
+storage is a finding in its own right.
 
-**WORTH CHARTERING, second: twin A, uniform-table folding.** Narrower reach
-(a quarter of `auto` artifacts) but a larger per-cell effect, and it is a
-general fact about a table the emitter already has in hand.
+**WORTH CHARTERING, second: twin A, uniform-table folding.** Measured
+**0.589** on `cls-upto-4`. Narrower reach (24 % of `auto` artifacts) but a
+large per-cell effect, and it is a general fact about a table the emitter
+already has in hand.
 
-**NOT WORTH IT: twin C, the pragma-unroll variant, and any `GENCFLAGS` flag.**
+**NOT WORTH IT: twin C (0.849, and gcc still will not unroll), twin W (0.986,
+the canary survives), the pragma-unroll variant, applying twin V to FRAMED
+artifacts (1.032 on `stack-frame`), and any `GENCFLAGS` flag.**
+
+**CAVEAT ON THE NUMBERS.** The box never dropped below load 4.4 during this
+lane, so every ratio above is an interleaved paired median with its full range
+printed, not a quiet-box measurement. The design is validated by the controls
+reproducing the ledger (`floor`/thr/vm 1.993 against 1.996; `stack-frame`
+0.718 against 0.680), and the two recommended spellings' ranges do not cross
+1.0. A quiet-box re-run before the implementing lane merges would still be
+worth its cost.
 
 **FOR THE BENCH, NOT FOR pcrec: `floor` / match / `auto`.** Its ×2.3 does not
 reproduce; clang's absolute number matches the ledger and gcc's is twice what

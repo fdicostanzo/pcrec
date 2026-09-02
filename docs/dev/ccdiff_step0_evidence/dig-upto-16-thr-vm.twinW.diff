@@ -1,0 +1,44 @@
+--- /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/dig-upto-16-thr-vm/artifact.c	2026-09-02 17:46:03.025924314 -0400
++++ /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/dig-upto-16-thr-vm/twinW.c	2026-09-02 18:16:25.266614069 -0400
+@@ -305,9 +305,10 @@
+        ptrdiff_t (*capture_spans)[2])
+ {
+     rx_run_state run;
+-    rx_run_buffers storage;   /* this artifact's stamped default */
+-    rx_run_state_bind(&run, storage.frames, RX_RESUME_FRAMES,
+-                            storage.trail,  RX_TRAIL_FRAMES);
++    /* [twinW] frameless: this artifact pushes no resume frame and
++       trails no slot, so the buffers are never read. Declaring them
++       costs a 152-byte frame and a stack-protector canary per call. */
++    rx_run_state_bind(&run, (void *)0, 0, (void *)0, 0);
+     return rx_search_run(subject, subject_length, search_from, capture_spans, &run);
+ }
+ 
+@@ -382,9 +383,10 @@
+ ptrdiff_t rx_match(const rx_ctx *ctx)
+ {
+     rx_run_state run;
+-    rx_run_buffers storage;
+-    rx_run_state_bind(&run, storage.frames, RX_RESUME_FRAMES,
+-                            storage.trail,  RX_TRAIL_FRAMES);
++    /* [twinW] frameless: this artifact pushes no resume frame and
++       trails no slot, so the buffers are never read. Declaring them
++       costs a 152-byte frame and a stack-protector canary per call. */
++    rx_run_state_bind(&run, (void *)0, 0, (void *)0, 0);
+     return rx_match_run(ctx, &run);
+ }
+ 
+@@ -400,9 +402,10 @@
+ ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])
+ {
+     rx_run_state run;
+-    rx_run_buffers storage;
+-    rx_run_state_bind(&run, storage.frames, RX_RESUME_FRAMES,
+-                            storage.trail,  RX_TRAIL_FRAMES);
++    /* [twinW] frameless: this artifact pushes no resume frame and
++       trails no slot, so the buffers are never read. Declaring them
++       costs a 152-byte frame and a stack-protector canary per call. */
++    rx_run_state_bind(&run, (void *)0, 0, (void *)0, 0);
+     return rx_match_caps_run(ctx, capture_spans_out, &run);
+ }
+ 

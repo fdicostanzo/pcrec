@@ -119,3 +119,45 @@ Every twin checked against BOTH the gcc original and the clang build over all
 178 bench subjects (bounded + loglines, compliance and throughput) in all
 three regimes, comparing every reported span, not just a count: **3,204
 comparisons, all identical.**
+
+## Timing
+
+The box never dropped below load 4.4 during the lane (opt5i's `make test`
+held it at 4.5-5.8 all afternoon; a queued batch waiting for load < 1.5 never
+fired). Timing therefore uses an INTERLEAVED PAIRED design — within one round
+every variant runs back to back on the same subject, so a load excursion hits
+them together and the statistic is the median of per-round RATIOS, with the
+full range printed. 11 rounds, 15 for the `stack-frame` confirmation.
+
+The design validates against the ledger: `floor`/thr/vm reproduces 1.996 as
+**1.993**, `stack-frame` 0.680 as **0.718**, `level-context` 1.693 as
+**1.838**, `cls-upto-4` 0.407 as **0.338**.
+
+Headline ratios under gcc: twin A on `cls-upto-4` **0.589**; twin V on the
+frameless `dig-upto-16` **0.611** (beating clang's 0.817); twin V on the ×2
+control `floor`/thr/vm **0.994** (no trade). Twin C 0.849, twin W 0.986, twin
+V on framed `stack-frame` 1.032 — all rejected.
+
+## Decomposition, and the two negative results worth keeping
+
+On `dig-upto-16`: `-fno-stack-protector` alone 0.889, twin W (elide the
+buffers, no inlining change) 0.986, twin V 0.611. So the canary is ~11 points
+and the inlining plus the dead-code elimination it unlocks is the rest.
+
+**Twin W fails** because `rx_run_state`'s own `slot_values[]` array trips
+`-fstack-protector-strong` just as `rx_run_buffers` does — eliding only the
+buffers leaves the canary. Only full inlining, which makes the whole run state
+dead, removes it.
+
+**Twin V must be gated on FRAMELESS.** Two independent facts land in the same
+place: gcc refuses `always_inline` on a function with a computed goto (hard
+error), and the three framed cells measure 0.990 / 0.954 / 1.032 — no benefit,
+one mild regression. On a framed artifact the storage is live, so inlining
+deletes nothing and only inflates the entry.
+
+## Delivered
+
+`docs/dev/ccdiff_step0.md`, this log, the `docs/dev/CLAUDE.md` rows, and
+`docs/dev/ccdiff_step0_evidence/` (transforms, diffs, per-cell disassembly
+under both toolchains, the 180-artifact reach sweep, raw timing rows). Nothing
+under `src/`, `tests/` or `docs/spec/` was touched; no suite was run.
