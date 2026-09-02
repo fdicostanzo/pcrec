@@ -1695,7 +1695,10 @@ against them:
   unconditionally, the deletion of the whole REVERSE machine from
   `<prefix>_search`: its tables, its accessor block and its scan loop, with
   `<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_SCAN_EDGE` no longer folding a
-  machine the artifact does not contain. No answer moves; `15` was
+  machine the artifact does not contain. [OPT-VMFL]'s
+  `<PREFIX>_VM_FRAMELESS` rides the same bump rather than taking one of its
+  own, adding one stamp line to every VM artifact and every hybrid. No
+  answer moves; `15` was
   [DD-13b.W1.2], which bumped
   it from 14 by APPENDING `name` and `nentries` to this struct — two
   initializer lines on every artifact of both engines, no struct offset
@@ -2012,10 +2015,39 @@ engine-scoped.**
   derivation itself is wrong, in which case the loop is wrong too.
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
-  `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`, the
+  `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
+  `_VM_FRAMELESS`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
   such activity to report. This is the half the old rule was right about.
+
+  **[OPT-VMFL], 2026-09-02: `<PREFIX>_VM_FRAMELESS`, and it is (b) for
+  `_VM_CALL_SPLICED`'s reason rather than a new one.** It is not a decision
+  the compiler MADE before emitting — there is no frameless mode anywhere
+  upstream — it is what the emitted program turned out to CONTAIN,
+  discovered by emitting.
+
+  ```c
+  #define RX_VM_FRAMELESS 1   /* or 0 */
+  ```
+
+  **The IFF: it is `1` iff the artifact's VM program emits no `RX_PUSH` site
+  and no linked call, i.e. the fail label has no pop-and-resume `goto *`
+  dispatch.** `0` otherwise. It is **UNCONDITIONAL on every VM artifact,
+  hybrids included, and never defined on a pure-DFA artifact** — both values
+  are spelled, never one omitted, because a fact readable by a macro's
+  ABSENCE is the discriminator [DD-13] had to go back and remove from two
+  checks ([OPT-1]'s `_FAST_FRAMES` precedent).
+
+  It is a SCALAR BOOLEAN and not a mask, unlike the three above it: those
+  are masks because the rung/strategy/clamp is chosen per `A_REP` and a
+  scalar would lie on a mixed artifact, where "did ANY site emit a push" is
+  a whole-artifact fact with no per-quantifier axis to mix. It has **no
+  `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for its
+  reason: no consumer reads the fact at RUN time today, so a third unread
+  mirror would be built ahead of a measured need (D77). The trigger that
+  would make one owed is the same one `RX_DFA_TABLE`'s entry names, and it
+  would be a struct append moving no existing offset.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

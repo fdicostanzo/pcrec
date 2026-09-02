@@ -1585,6 +1585,12 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      *    `<PREFIX>_DFA_TABLE` / `<PREFIX>_DFA_SCAN_EDGE` folds stop reading
      *    the machine that is no longer there — so either stamp's VALUE can
      *    move, always toward the FORWARD machine's own value.
+     *  - EVERY VM ARTIFACT, A HYBRID INCLUDED, gains one
+     *    `<PREFIX>_VM_FRAMELESS` stamp line. That is [OPT-VMFL]'s macro, not
+     *    this row's, and it RIDES THIS BUMP by the manager's ruling rather
+     *    than taking one of its own: a second abi event immediately behind
+     *    this one would cost a second union battery for one macro. It is
+     *    written in `src/gen/emit_vm.c` beside `_VM_RUNGS`; see that file.
      *  - No answer moves on any artifact, either way. That is the deny
      *    flag's whole job (`-fno-start-pinned`, `make test-axes`).
      *

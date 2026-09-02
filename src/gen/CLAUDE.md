@@ -2350,3 +2350,48 @@ population a usable reference for the axis's own checks.
 `abi` 15 -> 16; see `emit_info_def`'s own comment for the per-artifact-kind
 breakdown and why comparison (A) does not move. Gate:
 `tests/codegen/run_search_pinned.sh`; sabotage rows S218-S222.
+
+## [OPT-VMFL] `<PREFIX>_VM_FRAMELESS` — the frameless fact, stamped (2026-09-02)
+
+`docs/dev/optvmfl_step0.md` §4.1-§4.4 is the proposal; `docs/spec/match_api.md`
+§6.3 is the contract. It rides `[OPT-5]` STEP 2's abi 15 → 16 bump by manager
+ruling rather than taking one of its own — a second abi event immediately
+behind that one would cost a second union battery for one macro.
+
+**WHAT IT SAYS.** `1` iff the artifact's VM program emits no `RX_PUSH` site and
+no linked call, i.e. the fail label has no pop-and-resume `goto *` dispatch;
+`0` otherwise. UNCONDITIONAL on every VM artifact including a hybrid — both
+values spelled, never one omitted, `[OPT-1]`'s `_FAST_FRAMES` rule — and never
+defined on a pure-DFA artifact.
+
+**IT IS §6.3 FAMILY (b), for `_VM_CALL_SPLICED`'s reason.** There is no
+frameless MODE anywhere upstream of this file; `has_push` is read off
+`v.emitted_push`, which `vm_push_at` sets in the same call that writes the
+bytes. It is DISCOVERED BY EMITTING, exactly as `Job.enc_mask` and the cursor
+local are, so it reports what the program turned out to CONTAIN rather than a
+decision the compiler made.
+
+**THE `has_push` DERIVATION MOVED UP TO THE STAMP, AND THAT MOVE IS THE WHOLE
+SAFETY ARGUMENT.** The stamp and the fail label's dispatch omission read ONE
+BOOL, declared once beside the `(b)` stamp block. `[CC-CLANG]`'s own first
+attempt at that gate was a `strstr` for `<UP>_PUSH(&&` and the battery refuted
+it the same day — the TRACED spelling is `<UP>_PUSH(id, &&…)`, so every traced
+backtracking artifact lost its dispatch. A stamp re-deriving the fact would be
+that defect a second time. `v.npush` is deliberately not consulted: it is the
+resume-point cap's ESTIMATE, and the counter rung's unbounded arm once drove it
+negative.
+
+**A SCALAR AND NOT A MASK**, unlike `_VM_RUNGS`/`_STRATS`/`_PRUNES`: those are
+per-`A_REP` and a scalar would lie on a mixed artifact; "did ANY site emit a
+push" is a whole-artifact fact with no axis to mix. **No `rx_info` mirror**, on
+`RX_DFA_TABLE`'s precedent — no consumer reads it at RUN time today (D77).
+
+**THE CHECK IS `tests/codegen/run_vm_frameless.sh`, and its own first run
+found the trap worth carrying forward.** It counts `goto *` in the EMITTED
+TEXT and asserts the biconditional, never reading the bool. The count must be
+SCOPED to the VM program's own function: `run_codegen_tests.sh`'s
+`[DD-14-RECURSION rule 1]` counts whole-file and is right to, because it
+compiles under `--engine=vm` where no DFA scan exists — but on the default and
+`-fprefilter` axes a hybrid inlines one, and an `ENG_ATTEMPT` scan's STEP IS A
+COMPUTED GOTO. Measured: `(?m)^(a|b)$` carries six `goto *`, every one in
+`rx_prefilter`, none in the VM program.
