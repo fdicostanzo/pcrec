@@ -54,3 +54,68 @@ still declines to unroll: 138 instructions, frame still 3 pushes. A+C is 80.
 Timing deferred: box load 5.0-5.8 all afternoon (lane opt5i's `make test`),
 and repeat batches disagreed by 60% on the same binary. Numbers are taken in
 one batch at low load and recorded in step0 with the load line.
+
+### 2. `floor` (`:`) / match-compliance / `auto` — ledger 0.432 — DOES NOT REPRODUCE
+
+The artifact is byte-identical to the ledger's (`git log 1989c62..22a6775 -- src/`
+is empty, so the emitter has not moved since the pin). Summed over all 49
+subjects of `floor`'s compliance set, 20,000 iterations each, five interleaved
+rounds: **clang's absolute number reproduces the ledger to 1.4 % (214.6 vs
+217.6 ns), gcc's does not (median ~307 vs 503.3).** The measured ratio is
+~0.79, not 0.432.
+
+And there is no transformation to name. The two `rx_match` bodies are the same
+shape and nearly the same length — gcc 53 instructions, clang 48, both a
+bottom-tested rotated loop of 12 instructions per byte, both hoisting the
+three table bases into the entry block. If anything gcc's entry is leaner:
+gcc pushes one callee-saved register, clang pushes three.
+
+VERDICT: a layout / i-cache artefact of the ledger's gcc build, not a codegen
+difference. At ~5 ns per call over 49 short calls this is exactly the scale
+alignment moves. Reported to the bench rather than chased further (stop rule).
+
+### 3-6. The four VM cells — THE GENERAL SIGNAL, and it is one transformation
+
+`dig-upto-16` thr/vm (0.378), `floor` thr/vm (**1.996, a control where clang
+LOSES**), `nest3-16` thr/vm (1.511 control), `stack-frame` search/vm (0.680).
+
+NAMED: **clang inlines the VM entry chain and gcc does not.** On every one of
+the four, gcc's `rx_search` is a stub that builds a 152-byte frame, stores the
+four run-state binding fields, pays a `-fstack-protector-strong` canary — the
+arrays in `rx_run_buffers` are what trigger it, and Ubuntu's gcc has it on by
+default — and then CALLs `rx_search_run` out of line. Per search attempt.
+clang inlines `rx_search_run` into `rx_search` in all four cases, and on the
+two FRAMELESS artifacts it inlines `rx_match_anchored` too and then proves the
+whole `rx_run_state` / `rx_run_buffers` storage dead and deletes it: no frame,
+no canary, no binding stores.
+
+Measured directly: `nm` on the loglines `stack-frame` artifact shows
+`rx_search_run` as a local symbol in the gcc build and **no such symbol in the
+clang build**, with `rx_match_anchored` out of line in both (it holds the
+computed goto, which neither compiler will inline).
+
+Twin V: `__attribute__((always_inline))` on every emitted static helper except
+the matcher, plus the matcher itself when the artifact is frameless. gcc
+REFUSES the attribute on a function containing a computed goto — a hard error,
+not a warning — so the gate is required; it is the SAME predicate
+`src/gen/emit_vm.c` already evaluates for [CC-CLANG]'s `has_push`, so the
+spelling rides a stamp pcrec already computes.
+
+Static result, `rx_search` instruction counts (gcc / clang / twinV):
+
+| cell | gcc | clang | twinV-gcc | canary gcc -> twinV |
+|---|---|---|---|---|
+| `dig-upto-16` thr/vm | 20 (a stub + call) | 55 | 88 | 2 -> 0 |
+| `floor` thr/vm | 14 (stub + call) | 22 | 25 | 2 -> 0 |
+| `nest3-16` thr/vm | 41 (stub + call) | 103 | 99 | 2 -> 2 |
+| `stack-frame` search/vm | 40 (stub + call) | 102 | 97 | 2 -> 2 |
+
+twinV reaches clang's shape on all four, and removes the out-of-line
+`rx_search_run` symbol on all four.
+
+## Answer identity
+
+Every twin checked against BOTH the gcc original and the clang build over all
+178 bench subjects (bounded + loglines, compliance and throughput) in all
+three regimes, comparing every reported span, not just a count: **3,204
+comparisons, all identical.**
