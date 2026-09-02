@@ -239,7 +239,18 @@ five flags, and `run_axes.sh` run with `AXES="-fno-altcls-merge"` against THAT
 compiler reproduces both AXIS FAIL lines verbatim, including "this axis has NO
 documented refusal population at all".
 
-The mechanism is the block's own design: it carries `engine vm` precisely
+**The controlled re-run is byte-for-byte identical.** `run_axes.sh` with
+`AXES="--engine=dfa -fno-altcls-merge"` and `PCREC` pointed at the
+`5496ca6` build, on this same corpus:
+
+| axis | MAIN's compiler | this lane's compiler |
+|---|---|---|
+| `-fno-altcls-merge` | FAIL agree=22307 refused=2 mismatches=0 refused_undoc=2 | **identical** |
+| `--engine=vm` | OK agree=22299 budget=10 mismatches=0 | **identical** |
+| `--engine=dfa` | FAIL agree=12826 refused=9483 mismatches=0 refused_doc=9481 refused_undoc=2 | **identical** |
+
+Not one figure moves. The mechanism is the block's own design: it carries
+`engine vm` precisely
 because forcing the VM skips the NFA build — its own comment records that it
 was "found by writing the cell without it and watching it fail for the wrong
 reason" — and `RXTFLAGS` layering an engine or a denial on top defeats that,
