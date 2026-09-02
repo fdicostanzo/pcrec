@@ -1,0 +1,45 @@
+== csv5 match f-csv-5 (20000000) ==
+csv5_orig_time match f-csv-5.bin trial1 load=0.33 elapsed_ns=960759238.0 total_calls=20000000 ns_per_call=48.0380
+csv5_orig_time match f-csv-5.bin trial2 load=0.33 elapsed_ns=949234193.0 total_calls=20000000 ns_per_call=47.4617
+csv5_orig_time match f-csv-5.bin trial3 load=0.33 elapsed_ns=948946752.0 total_calls=20000000 ns_per_call=47.4473
+csv5_orig_time match f-csv-5.bin trial4 load=0.33 elapsed_ns=944427644.0 total_calls=20000000 ns_per_call=47.2214
+csv5_orig_time match f-csv-5.bin trial5 load=0.38 elapsed_ns=957736577.0 total_calls=20000000 ns_per_call=47.8868
+csv5_twin_time match f-csv-5.bin trial1 load=0.38 elapsed_ns=963324760.0 total_calls=20000000 ns_per_call=48.1662
+csv5_twin_time match f-csv-5.bin trial2 load=0.38 elapsed_ns=933041448.0 total_calls=20000000 ns_per_call=46.6521
+csv5_twin_time match f-csv-5.bin trial3 load=0.38 elapsed_ns=957554986.0 total_calls=20000000 ns_per_call=47.8777
+csv5_twin_time match f-csv-5.bin trial4 load=0.38 elapsed_ns=959487814.0 total_calls=20000000 ns_per_call=47.9744
+csv5_twin_time match f-csv-5.bin trial5 load=0.38 elapsed_ns=956053331.0 total_calls=20000000 ns_per_call=47.8027
+== csv5 findall csv5_large (2000) ==
+csv5_orig_time findall csv5_large.bin trial1 load=0.43 elapsed_ns=230622834.0 total_calls=3974000 ns_per_call=58.0329
+csv5_orig_time findall csv5_large.bin trial2 load=0.43 elapsed_ns=231599098.0 total_calls=3974000 ns_per_call=58.2786
+csv5_orig_time findall csv5_large.bin trial3 load=0.43 elapsed_ns=238387105.0 total_calls=3974000 ns_per_call=59.9867
+csv5_orig_time findall csv5_large.bin trial4 load=0.43 elapsed_ns=239754910.0 total_calls=3974000 ns_per_call=60.3309
+csv5_orig_time findall csv5_large.bin trial5 load=0.43 elapsed_ns=239054228.0 total_calls=3974000 ns_per_call=60.1546
+csv5_twin_time findall csv5_large.bin trial1 load=0.43 elapsed_ns=246204807.0 total_calls=3974000 ns_per_call=61.9539
+csv5_twin_time findall csv5_large.bin trial2 load=0.43 elapsed_ns=236724188.0 total_calls=3974000 ns_per_call=59.5682
+csv5_twin_time findall csv5_large.bin trial3 load=0.43 elapsed_ns=236998240.0 total_calls=3974000 ns_per_call=59.6372
+csv5_twin_time findall csv5_large.bin trial4 load=0.43 elapsed_ns=246465538.0 total_calls=3974000 ns_per_call=62.0195
+csv5_twin_time findall csv5_large.bin trial5 load=0.43 elapsed_ns=239868622.0 total_calls=3974000 ns_per_call=60.3595
+== ctx match l-00 (5000000) ==
+ctx-lazy-256_orig_time match l-00.bin trial1 load=0.43 elapsed_ns=1937908014.0 total_calls=5000000 ns_per_call=387.5816
+ctx-lazy-256_orig_time match l-00.bin trial2 load=0.56 elapsed_ns=1932467963.0 total_calls=5000000 ns_per_call=386.4936
+ctx-lazy-256_orig_time match l-00.bin trial3 load=0.56 elapsed_ns=1936004767.0 total_calls=5000000 ns_per_call=387.2010
+ctx-lazy-256_orig_time match l-00.bin trial4 load=0.56 elapsed_ns=1931855451.0 total_calls=5000000 ns_per_call=386.3711
+ctx-lazy-256_orig_time match l-00.bin trial5 load=0.59 elapsed_ns=1960776146.0 total_calls=5000000 ns_per_call=392.1552
+ctx-lazy-256_twin_time match l-00.bin trial1 load=0.59 elapsed_ns=2016295059.0 total_calls=5000000 ns_per_call=403.2590
+ctx-lazy-256_twin_time match l-00.bin trial2 load=0.63 elapsed_ns=1995538116.0 total_calls=5000000 ns_per_call=399.1076
+ctx-lazy-256_twin_time match l-00.bin trial3 load=0.63 elapsed_ns=1984055379.0 total_calls=5000000 ns_per_call=396.8111
+ctx-lazy-256_twin_time match l-00.bin trial4 load=0.63 elapsed_ns=1991934491.0 total_calls=5000000 ns_per_call=398.3869
+ctx-lazy-256_twin_time match l-00.bin trial5 load=0.74 elapsed_ns=1971499389.0 total_calls=5000000 ns_per_call=394.2999
+== ctx match l-03 worst case (500000) ==
+ctx-lazy-256_orig_time match l-03.bin trial1 load=0.74 elapsed_ns=1982223873.0 total_calls=500000 ns_per_call=3964.4477
+ctx-lazy-256_orig_time match l-03.bin trial2 load=0.92 elapsed_ns=1988158226.0 total_calls=500000 ns_per_call=3976.3165
+ctx-lazy-256_orig_time match l-03.bin trial3 load=0.92 elapsed_ns=1981897441.0 total_calls=500000 ns_per_call=3963.7949
+ctx-lazy-256_orig_time match l-03.bin trial4 load=0.92 elapsed_ns=1979758632.0 total_calls=500000 ns_per_call=3959.5173
+ctx-lazy-256_orig_time match l-03.bin trial5 load=0.93 elapsed_ns=1997754535.0 total_calls=500000 ns_per_call=3995.5091
+ctx-lazy-256_twin_time match l-03.bin trial1 load=0.93 elapsed_ns=1972063702.0 total_calls=500000 ns_per_call=3944.1274
+ctx-lazy-256_twin_time match l-03.bin trial2 load=1.01 elapsed_ns=1974743482.0 total_calls=500000 ns_per_call=3949.4870
+ctx-lazy-256_twin_time match l-03.bin trial3 load=1.01 elapsed_ns=1976516889.0 total_calls=500000 ns_per_call=3953.0338
+ctx-lazy-256_twin_time match l-03.bin trial4 load=1.01 elapsed_ns=1960900847.0 total_calls=500000 ns_per_call=3921.8017
+ctx-lazy-256_twin_time match l-03.bin trial5 load=1.01 elapsed_ns=1985428746.0 total_calls=500000 ns_per_call=3970.8575
+== ctx findall ctx_large (500) ==

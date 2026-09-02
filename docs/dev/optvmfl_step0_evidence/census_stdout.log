@@ -1,0 +1,16 @@
+{
+  "total_items": 2902,
+  "vm_compiled_ok": 2603,
+  "vm_refused": 299,
+  "cell_counts": {
+    "f1_frameless": 1090,
+    "f1_dispatch": 0,
+    "fgt1_frameless": 198,
+    "fgt1_dispatch": 1315
+  },
+  "auto_dfa": 1104,
+  "auto_vm_plain": 316,
+  "auto_vm_hybrid": 1181,
+  "divergent_count": 198,
+  "inconsistent_marker_count": 0
+}

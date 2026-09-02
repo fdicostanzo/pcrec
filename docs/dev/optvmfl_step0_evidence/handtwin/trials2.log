@@ -1,0 +1,33 @@
+== ctx findall ctx_large2 (5000) ==
+ctx-lazy-256_orig_time findall ctx_large2.bin trial1 load=0.93 elapsed_ns=341194479.0 total_calls=970000 ns_per_call=351.7469
+ctx-lazy-256_orig_time findall ctx_large2.bin trial2 load=0.93 elapsed_ns=358410306.0 total_calls=970000 ns_per_call=369.4952
+ctx-lazy-256_orig_time findall ctx_large2.bin trial3 load=0.93 elapsed_ns=359896070.0 total_calls=970000 ns_per_call=371.0269
+ctx-lazy-256_orig_time findall ctx_large2.bin trial4 load=0.93 elapsed_ns=359785859.0 total_calls=970000 ns_per_call=370.9133
+ctx-lazy-256_orig_time findall ctx_large2.bin trial5 load=0.93 elapsed_ns=352408339.0 total_calls=970000 ns_per_call=363.3076
+ctx-lazy-256_twin_time findall ctx_large2.bin trial1 load=0.93 elapsed_ns=356838892.0 total_calls=970000 ns_per_call=367.8751
+ctx-lazy-256_twin_time findall ctx_large2.bin trial2 load=0.93 elapsed_ns=355256177.0 total_calls=970000 ns_per_call=366.2435
+ctx-lazy-256_twin_time findall ctx_large2.bin trial3 load=0.93 elapsed_ns=356817612.0 total_calls=970000 ns_per_call=367.8532
+ctx-lazy-256_twin_time findall ctx_large2.bin trial4 load=0.93 elapsed_ns=358127385.0 total_calls=970000 ns_per_call=369.2035
+ctx-lazy-256_twin_time findall ctx_large2.bin trial5 load=0.93 elapsed_ns=357089863.0 total_calls=970000 ns_per_call=368.1339
+== nest2-64 match d-01024 (2000000) ==
+nest2-64_orig_time match d-01024.bin trial1 load=0.93 elapsed_ns=1792502552.0 total_calls=2000000 ns_per_call=896.2513
+nest2-64_orig_time match d-01024.bin trial2 load=0.94 elapsed_ns=1773899332.0 total_calls=2000000 ns_per_call=886.9497
+nest2-64_orig_time match d-01024.bin trial3 load=0.94 elapsed_ns=1768602557.0 total_calls=2000000 ns_per_call=884.3013
+nest2-64_orig_time match d-01024.bin trial4 load=0.94 elapsed_ns=1785551492.0 total_calls=2000000 ns_per_call=892.7757
+nest2-64_orig_time match d-01024.bin trial5 load=1.03 elapsed_ns=1765747570.0 total_calls=2000000 ns_per_call=882.8738
+nest2-64_twin_time match d-01024.bin trial1 load=1.03 elapsed_ns=1715749354.0 total_calls=2000000 ns_per_call=857.8747
+nest2-64_twin_time match d-01024.bin trial2 load=1.10 elapsed_ns=1753112075.0 total_calls=2000000 ns_per_call=876.5560
+nest2-64_twin_time match d-01024.bin trial3 load=1.10 elapsed_ns=1708557505.0 total_calls=2000000 ns_per_call=854.2788
+nest2-64_twin_time match d-01024.bin trial4 load=1.10 elapsed_ns=1729052250.0 total_calls=2000000 ns_per_call=864.5261
+nest2-64_twin_time match d-01024.bin trial5 load=1.10 elapsed_ns=1722161052.0 total_calls=2000000 ns_per_call=861.0805
+== nest2-64 findall t-digits-016k (100000) ==
+nest2-64_orig_time findall t-digits-016k.bin trial1 load=1.10 elapsed_ns=2454305616.0 total_calls=500000 ns_per_call=4908.6112
+nest2-64_orig_time findall t-digits-016k.bin trial2 load=1.10 elapsed_ns=2467987302.0 total_calls=500000 ns_per_call=4935.9746
+nest2-64_orig_time findall t-digits-016k.bin trial3 load=1.09 elapsed_ns=2472804515.0 total_calls=500000 ns_per_call=4945.6090
+nest2-64_orig_time findall t-digits-016k.bin trial4 load=1.09 elapsed_ns=2486509241.0 total_calls=500000 ns_per_call=4973.0185
+nest2-64_orig_time findall t-digits-016k.bin trial5 load=1.08 elapsed_ns=2467192820.0 total_calls=500000 ns_per_call=4934.3856
+nest2-64_twin_time findall t-digits-016k.bin trial1 load=1.08 elapsed_ns=2369773688.0 total_calls=500000 ns_per_call=4739.5474
+nest2-64_twin_time findall t-digits-016k.bin trial2 load=1.07 elapsed_ns=2354358326.0 total_calls=500000 ns_per_call=4708.7167
+nest2-64_twin_time findall t-digits-016k.bin trial3 load=1.07 elapsed_ns=2364083462.0 total_calls=500000 ns_per_call=4728.1669
+nest2-64_twin_time findall t-digits-016k.bin trial4 load=1.07 elapsed_ns=2359669441.0 total_calls=500000 ns_per_call=4719.3389
+nest2-64_twin_time findall t-digits-016k.bin trial5 load=1.07 elapsed_ns=2371566632.0 total_calls=500000 ns_per_call=4743.1333

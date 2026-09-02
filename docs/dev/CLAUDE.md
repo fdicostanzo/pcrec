@@ -256,3 +256,4 @@ change.
   Read with `scripts/size_diff OLD.tsv NEW.tsv` for a summarised movement
   report rather than a raw two-file diff. See `tests/size/CLAUDE.md` and
   `docs/testing.md` "The artifact-size log".
+- `optvmfl_step0_evidence/` — [OPT-VMFL] STEP 0's reproduction pieces archived out of the session scratchpad by the manager at merge (2026-09-02): the census script + its JSON result, the hand-twin transform (`handtwin/make_twin.py`), the correctness/timing driver sources and the 5-trial logs the memo `optvmfl_step0.md` §3 cites. Generated artifacts (.c/.h/.o/.bin) are NOT archived — they regenerate from the pinned compiler.
