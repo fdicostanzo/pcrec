@@ -1708,52 +1708,64 @@ of them to be *written*). Each names what would make it necessary.
 
 ---
 
-## 8. Open questions for Frank, each with a recommendation
+## 8. The seven questions — **each with its RULING STATUS** (revision 2)
+
+Frank answered all seven on 2026-09-01, and **the r49 panel left every ruling
+standing** (review §1: "Frank's seven Q-rulings stand unchanged by the panel").
+Revision 2 keeps the questions and marks each one, because a note that still
+reads as "open questions" invites an implementation lane to re-open a settled
+call.
 
 **Q1 — Is STEP 2 the start-pinned elision only?**
-**Recommend YES.** The Σcount / multi-edge form has no population today: the
-forward machine grows 0 edges on the embedded shape r48sem measured, against 4
-on reverse and anchored, so "the match region is edge-total" is unsatisfiable
-forward. It also lacks a soundness argument for the origin (§1.3). Building it
-now is building ahead of a measured need on top of an unwritten proof.
+**RULED YES. Stands.** Rev 1 recommended yes; the panel found no reason to
+revisit, and sound D2 strengthens the argument by converting §1.3's
+impossibility prose into a cost argument that reaches the same conclusion
+(build start-pinned and nothing else). Recorded as settled.
 
 **Q2 — Does the new stamp get an `rx_info` mirror (`search_form`)?**
-**Recommend NO for now**, matching `RX_DFA_TABLE` and `RX_DFA_SCAN_EDGE`, with
-the trigger recorded in §6.3. It breaks symmetry with `RX_DFA_MATCH`, which DID
-earn one on the "caller-visible cost property of an entry the caller calls"
-trigger that arguably fires here too — so this is a genuine call, not a
-formality. The cost of yes is an `rx_info` struct-layout change on top of the
-text change.
+**RULED YES — AGAINST rev 1's recommendation. Stands, and revision 2
+implements it.** Rev 1 recommended NO, matching `RX_DFA_TABLE` and
+`RX_DFA_SCAN_EDGE`. Frank ruled the other way ("a great idea", with a direction
+note questioning which stamps should remain `#define`s at all). The trace is
+kept in §4.2 so a reader sees the argument that lost; the struct hunk, the
+guard choice and check 5.4(8) are in §4.2, §6 and §5.4. **This is the only one
+of the seven that was ruled against the note's own recommendation**, and it is
+the one an implementation lane is most likely to get wrong by reading rev 1.
 
 **Q3 — The stamp's spelling** (`<PREFIX>_DFA_START "pinned" | "reverse-pass"`).
-Offered, not settled. By the `pcrec-dd13b-syntax-is-managers` precedent this is
-the manager's call; flagged here only so it is made deliberately rather than
-inherited from this note's draft.
+**RULED: the manager's call, per `pcrec-dd13b-syntax-is-managers`. Stands.**
+Offered, not settled by this note. Revision 2 adds one consideration the
+manager may want: the mirror field's name (`search_form`) is now fixed by
+Frank's Q2 ruling and by `match_form`'s precedent, so a stamp spelling that
+does not read as that field's macro would break the pairing check 5.4(8)
+depends on for readability.
 
-**Q4 — Ask (iii): charter the VIEW-TOLERANT SCAN EDGE as its own row now?**
-**Recommend YES, opened on §7 item 3's one-command measurement.** Its trigger
-already exists and is the bench's own: the two whole-form artifacts at 471,204
-and 937,248 bytes, 93.7 % of the `[ART-SIZE]` cap, owning both surviving warns
-(O-12 §4). That answers the second half of ask (iii) — `[ART-SIZE]`'s first real
-customer is there — with a measured number rather than an expectation.
+**Q4 — Charter the VIEW-TOLERANT SCAN EDGE as its own row now?**
+**RULED YES — it is [OPT-VEDGE], chartered 2026-09-01 ("agree"). Stands, and
+its scope GREW.** Rev 1 opened it on §7 item 3's measurement, which is now
+taken (precondition (3), memo M3). Revision 2 records that the row has a
+SECOND customer nobody had connected to it: the bench's ×37 failing-call band
+(§3.5 / sound C2). One mechanism, two customers.
 
 **Q5 — Skip the reverse machine's BUILD as well as its emission?**
-**Recommend NOT in STEP 2.** Skipping the emission is required for honesty (a
-built-but-unemitted machine feeding stamps is the defect §4.2 describes);
+**RULED NOT IN STEP 2. Stands.** Skipping the emission is required for honesty
+(a built-but-unemitted machine feeding stamps is the defect §4.2 describes);
 skipping the build is a separate compiler-CPU optimization with its own trigger
-(§7 item 6). Two changes, two triggers, one at a time.
+(§7 item 6).
 
-**Q6 — The fifth `abi` site.** `match_api.md:159` is stale at `13` (F5).
-**Recommend** STEP 2 fixes it, and `CLAUDE.md`'s ritual row is amended from
-"FOUR sites" to "every reader of the number, found by grep" — a checklist that
-enumerates by hand drifts from its subject, which is learnings §3's
-reference-build lesson applied to a checklist instead of a source list.
+**Q6 — The fifth `abi` site.**
+**RULED AND CLOSED — this is D94.** Frank: "agree. this is the right
+direction". The ritual now says "every reader of the number, found by grep",
+`CLAUDE.md`'s situation-index row says so, and the stale `match_api.md:159`
+was fixed at the w12 merge. **Revision 2 deletes rev 1's recommendation text
+and replaces §4.4 with the grep** (r49 item 17). Nothing is owed.
 
 **Q7 — Do O-12 asks (ii) and (v) ride STEP 2's charter?**
-**Recommend NO** (§7 item 8). They are STEP 1's fixed per-call entry term. If
-they ride here, STEP 2's acceptance frame stops being falsifiable, because a
-regression family and an improvement family would move on the same pin for two
-different reasons.
+**RULED NO. Stands** (§7 item 8). Revision 2 adds the reinforcing reason from
+§0's two-instrument frame: the acceptance table now carries an explicit
+CONTROL family (the `unwrapped` match rungs, predicted flat) alongside the
+customers, and folding a second mechanism in would make a moving control
+unreadable.
 
 ---
 
@@ -1773,10 +1785,110 @@ For the manager's merge review; each is argued in place above.
 - **F3** (§3.4a) `unanch_start`'s `start_acc` is a deliberate widening whose own
   comment forbids citing it as a premise; reusing it to gate the elision is a
   miscompile with a named witness (`$`) and a measured discriminating population
-  (21 corpus artifacts, [M6.2] wave C).
+  — **16 corpus artifacts at today's tree, all `(?m)…$`** (memo M2; [M6.2]
+  wave C's 21 was a different consumer at an older tree). CONFIRMED by the
+  panel (check F2), with the caveat that re-measuring it for this check
+  expired its independence — §5.2.
 - **F4** (§0) The acceptance instrument's nine rungs are the
   `large-subject-throughput` (find-all) band, not a `match` band — the charter
   brief's wording; ledger §3's own table heading is the source.
 - **F5** (§4.4) The `abi` ritual's "FOUR sites" is incomplete: a fifth reader,
-  `docs/spec/match_api.md:159`, is already stale at `13` after `[CC-CLANG]`'s
-  bump to 14.
+  `docs/spec/match_api.md:159`, was already stale at `13` after `[CC-CLANG]`'s
+  bump to 14. **DISCHARGED**: ruled as **D94** (the site list is every reader
+  of the number, found by grep) and the stale site fixed at the w12 merge; the
+  grep now returns five readers plus the (B) pin (§4.4).
+
+### Findings raised by revision 2 itself
+
+- **F6** (§3.2) **Revision 1's Claim A was false.** The accept probe is an
+  axis-E object (`dfa_accs`, `src/gen/emit_dfa.c:3572-3579`) and sits BELOW the
+  scan edges on any `scalar-viewed` or `by-class` artifact; `acc_viewed_applies`
+  reads `us->views`, which is an OR over BOTH machines, so a `\b` in the
+  REVERSE machine alone demotes the FORWARD probe. Two emitted witnesses,
+  `[a-z]{0,8}|9$` and `a*|\b9`. The answer was never at risk; the proof was.
+- **F7** (§3.3) **Revision 1 called a load-bearing gate dead.** The
+  `last_accept_position == -1` return is the correct answer on a dead seed at
+  `startpos > 0`, and rev 1's "record here that it is deliberately dead" would
+  have written a falsehood a later simplification acts on.
+- **F8** (§4.2) **The [DD-13c] append discipline and the review's wording
+  disagree, and the discipline wins.** "Append after `match_form`" was true
+  when `match_form` was the last member; `name` and `nentries` now follow it,
+  so appending "after `match_form`" would move their offsets — the exact thing
+  the discipline exists to prevent. The hunk appends at the END.
+- **F9** (§5.6b) **P3's discriminating population appears EMPTY on
+  `ENG_UNANCH`, not merely unpopulated** — a derivation, not a census result.
+  The row therefore ships declared `UNREACHED` and the liveness conjunct's real
+  guard is a compiler assertion. §7 item 10 is the measurement that would
+  settle it.
+- **F10** (§5.2) **Re-measuring a control's expected value FOR the check it
+  controls destroys the property that made it strong.** M2's 16 was taken with
+  `member_ok`'s own body — the body this note proposes to share with the
+  implementation — so probe and feature would call one function. The manifest
+  replaces the count for that reason, not merely because counts drift.
+
+---
+
+## 10. Revision 2 — r49 disposition table
+
+One row per item in `docs/dev/reviews/2026-09-01-r49-opt5-step2.md` §2, plus
+each MINOR. **CONFIRMED-class rows name the sentence added**, so a reviewer can
+verify item by item without re-reading the note.
+
+### BLOCKER-class
+
+| r49 § | item | disposition | note sections | what changed |
+|---|---|---|---|---|
+| 1 | [sound A1] Claim A false on axis-E viewed/by-class artifacts | **WORKED** | §3.2 (rewritten), §3.2.0 (new), §3.2.1 (new), §3.3 (rewritten), §5.4(6), §9 F6 | The proof is re-derived FROM THE EMITTER: §3.2.0 is a site-by-site table of every recording site with function name and line (`emit_scan_loop` `:4696`/`:4697`/`:4699-4703`/`:4714`-`:4717`; `dfa_accs` `:3572-3579`; `acc_viewed_applies` `:3511`; `unanch_start`'s views OR `:2487-2503`; `dir_fwd_skip` `:3992-4014`; `emit_scan_edge` `:4473-4568`; `acc_emit_tail_by_class` `:3530-3570`). Claim A now reads "the forward loop's FIRST iteration records `last_accept_position = q` for some `q >= search_from`". Both witnesses (`[a-z]{0,8}\|9$`, `a*\|\b9`) plus the `[a-z]{0,64}` control were EMITTED HERE and quoted. Added sentence: *"What Claim A does NOT say, and rev 1 wrongly assumed it did: it does not say the recorded position is `search_from`."* |
+| 2 | [sound A2] P3 gains a LIVENESS conjunct + the dead-token hazard note | **WORKED** | §1.2 P3, §3.4(b′), §5.4(6), §5.6b | P3 reads *"every seed state is LIVE and satisfies P1 and P2 as well — i.e. the predicate DECLINES when any `d->s1u[u] < 0`"*, cited to `src/ir/dfa.c:1249-1258` / `:1113-1116` and `dfa_premul` `:2205-2215`. The hazard is its OWN block-quoted paragraph: *"PRE-EXISTING HAZARD, NOT STEP 2's TO FIX … Nothing in STEP 2, or after it, may rely on 'a dead token records nothing'."* The implementation ASSERTS the conjunct (stated in §1.2 and §5.6b). |
+| 3 | [sound C1+C2] the failing-call bound is unsound; C3 joins §5.4 | **CLOSED, as ruled** | §3.5 (new), §1.1, §5.4(7), §7 item 11 | §3.5 records the closure with the witness reproduced from the emitted artifact (`a*b` under `-fno-anchored-dfa`: `rx_forward_next_state[6] = { 0, 0, 3, … }`, `tr[fs]['a'] == fs`, legend state 1 = `"b"` ACCEPTING; `"aab"` at pos 0 expects 3, any stopped-progress bound returns −1). States **"no `_match` change in STEP 2"**, names [OPT-VEDGE] as the population's owner, and records both sound-but-untaken spellings. C3 becomes structural check **5.4(7)**: on a pinned ∩ `search-filter` artifact the fallback's `return -1` is unreachable. |
+| 4 | [cons F-B / sound E3] axis letter H is taken; use J | **WORKED** | §4.1, §4.2, §6 rows 1-2, §10 | Global rename. §4.1 cites the collision (`:4317` axis H, `:4349` axis I, `scan_edge_of` `:2694-2695`) and names the silent failure mode (`--list-axes` would print two axes with one letter). Deny flag spelling `-fno-start-pinned` / `PCREC_NO_START_PINNED` unchanged; every stamp/axis mention says J. |
+| 5 | [cons F-A / E2] Q2 superseded — the `rx_info.search_form` mirror is approved | **WORKED** | §4.2, §6 rows 3-6, §6.1, §6.2, §5.4(8), §8 Q2 | §4.2's "recommend NO" text is replaced by the ruling, with a one-line trace of the losing argument. The struct hunk is written out with its comment, appending at the END after `nentries` (see MINOR/F8 below). The guard is `pcrec_artifact_has_dfa_scan`, NOT `fit.chosen == ENGM_DFA`, derived from `emit_info_def`'s own note at `:1690-1697`. §6.2 classifies the stamp under **(a) SELECTION FACTS** with the same IFF as `_DFA_TABLE`. §5.4(8) is check **M8**: field == stamp on every artifact, both engines, including the NULL case. |
+| 6 | [check B1] sabotage ids S217-S221 are taken | **WORKED** | §5.6 | Ids are **S218-S222**, and §5.6 states *"the range is ARBITRATED BY THE MANAGER AT MERGE"* per `tests/mech/sabotages/CLAUDE.md`, with the S205/S206 incident's rule (a worktree's id space is as of its branch point) and the simultaneous-substitution requirement. |
+
+### MAJOR
+
+| r49 § | item | disposition | note sections | what changed |
+|---|---|---|---|---|
+| 7 | [check M2] pin the CLASS as a named manifest, never the count 16 | **WORKED** | §5.2, §3.4(a), §9 F10 | `VIEW_DECLINE_MANIFEST` is defined by its SELECTOR (`state_acc_any(fs)` true and `fs->up[UPC_PLAIN].accept` 0, on an `unanchored` artifact), asserted all-and-only, floored at ≥ 12, with five named irreplaceable shape-anchors. §5.2 explains *why* a count is not a control here: the independence expired when M2 re-measured it for this check using `member_ok`'s own body, so probe and feature would call one function once P2 is shared. |
+| 8 | [check M3 + sound F1] the fseed/P3 row's witness never reaches P3 | **WORKED — as the "cannot construct" branch the brief allows** | §5.6b, §3.4(b), §7 item 10, §9 F9 | §5.6b gives the DERIVATION that the P3-discriminating population looks empty on `ENG_UNANCH` (routing of `(?m)^`/`\G` away via `nfa_has_bot`; `(?m)$`'s next-byte axis creating no `s1u` split; `s1u[PLAIN] == fs`; and the squeeze — a P2-passing `fs` accepts through a boundary-free branch, which sits in every seed closure). Six candidate shapes are named and rejected. **The row ships declared `SAB_EXPECT=UNREACHED` with a reason — the S79/S80 phantom-check shape, named as such** — and the liveness conjunct's real guard is a compiler assertion. §7 item 10 is the P3-EVALUATION count that would settle reachability. |
+| 9 | [check M4] SAB_REACH_POP from birth on rows [OPT-VEDGE] can move | **WORKED** | §5.6 | Marked rows: **S218, S220, S221**, each with its floor named (`opt5m2_m2_changed_patterns.txt` ≥ 12; the classctx population below M1's 8; the startpos>0 population once counted). The paragraph cites the S206/[OPT-4.2] lesson and `[MECH-REACH]`'s "a reach probe and a population floor are different claims and expire separately". |
+| 10 | [check M5] the absolute-offset row needs a counted `startpos>0` population | **WORKED as a named obligation** | §5.6d, §7 item 12 | §5.6d states the structural reason it is plausibly thin (plain `m`/`n` cells are startpos-0; only `ms`/`ns` carry nonzero) and gives **two acceptable discharges** — count the `ms`/`ns` cells over the 175 and floor it, or add synthetic `ms` witnesses for named pinned patterns (`a*`, `[a-z]{0,64}`, `[a-z]{0,4096}`, one seeded shape). **The row does not ship without one.** |
+| 11 | [check M9 + sound B6] `cls-atleast-4096` becomes an in-tree named witness; quantify §1.1 | **WORKED** | §0 instrument 1, §1.1, §5.4, §7 item 11 | `cls-atleast-4096` = `[a-z]{4096,}`, VERIFIED here: it stamps `RX_DFA_PREFILTER "byte-class"` and `rx_forward_is_accepting[4] = {0,0,1,1}` — the start state does NOT accept, so P1 fails and the predicate DECLINES. §0 names it an in-tree NAMED WITNESS ("must not move") rather than bench prose. §1.1 is rewritten: the ×37 exhibit is the `\z` whole form, view-declined, **[OPT-VEDGE]'s customer, NOT STEP 2's**; the pinned counted-ladder `search-filter` rungs get C3's fact instead, with a VERIFIED four-row stamp table. |
+| 12 | [sound B1/B2] P5 is false as worded; N_hybrid_pinned must be counted under the force axis | **WORKED** | §1.2 P5, §1.2 blast radius, §3.4(d), §5.4(5), §5.2, §7 item 9 | P5 is reworded to the ENGINE-level fact (`fit.chosen == ENGM_DFA` implies no `\K`), with the `-fprefilter '\Ka*'` witness EMITTED HERE (`RX_ENGINE "vm"`, `rx_forward_is_accepting[2] = {1,1}`) and the bound-not-answer sentence quoting the emitted `rx_search_run`. §5.4(5) asserts the engine-level fact plus a second hybrid-window assertion. **N_hybrid_pinned is written as an OWED measurement with its command shape (§5.2, §7 item 9), not as ~0** — the check prints it and asserts nothing. |
+| 13 | [sound B4] P2 is stricter than soundness needs | **WORKED** | §1.2 P2, §7 item 14 | Recorded as a **DELIBERATE CONSERVATIVE CHOICE** with the reason (one derivation for a fact two passes read) and the cost named (some of M1's 47 `view` declines). The relaxing measurement is §7 item 14 with its D77 trigger, plus the note that [OPT-VEDGE] moves the same population from the other side so the two must be sequenced. |
+| 14 | [sound B5] §5.5's size prediction narrows; the views-OR cleanup is its own change | **WORKED** | §5.5 | The prediction is narrowed to **the reverse machine's tables and accessor block only** — enumerated — with the reason (`views`/`viewsel` are ORs over both machines, `:2487-2503`; `emit_machine_tables` `:4646-4656` emits view tables regardless of which machine set the flag; witness (ii) shows the demoted accept order survives). The views-OR narrowing is recorded as **its own candidate change** with no row and no trigger, and the note says folding it in is how a correctness change ships under a performance heading. |
+| 15 | [sound D2] §1.3's impossibility prose becomes a cost argument | **WORKED** | §1.3 | The bullet now reads *"Tracking the origin forward on a multi-origin machine is SOUND and NOT FREE — a COST argument, not an impossibility one"*, names Laurikari-style TDFA explicitly, states the cost (a register copy per transition, a larger build — the very per-step cost STEP 2 removes), and carries the **D77 trigger: re-evaluate WHEN STEP 3 lands**. Added sentence: *"Nobody should carry away 'forward origin tracking is unsound'; it is untaken, on cost."* Prose and table now agree. |
+| 16 | [sound E4] the two stamp folds must drop the reverse machine; movements go in a prediction table | **WORKED** | §4.2, §5.4(4) | The two sites are cited in a table (`dfa_table_name` `:2664-2666`, the `rdfa` read at `:2665`; `dfa_scan_edge_name` `:2706-2715`, the fold at `:2711`). A **PREDICTED STAMP MOVEMENTS** table follows, written before the change, with five artifact classes including the `"mixed"` → form-name movements and the `mc2` scan-edge case. §5.4(4) asserts the negative form. |
+| 17 | [cons F-C/F-D/E1 + Q3] staleness sweep; §0 adopts the two-instrument frame with the O-13/O-14 rule | **WORKED — with one deviation, flagged** | §0, §4.4, §8 Q6, §9 F5 | §4.4 is rewritten around **D94's grep** (the two grep commands are given; the five readers plus the (B) pin are shown as a dated snapshot the implementation must NOT copy). abi is 15, STEP 2 writes 16, and the serialization ambiguity is gone. F5/Q6 are marked DISCHARGED, naming what discharged them (the w12 merge fixed `match_api.md:159`; D94 amended the ritual). §0 becomes a two-instrument table with the CONTROL/CUSTOMER split and a provenance rule. **DEVIATION: the review carries r49cons's frame table only as a Q3 SUMMARY, not verbatim** — the verbatim table is not in the review file — so §0's table is reconstructed from that summary plus O-13 §2/§2(c) and this build's own stamp probes. **`[O-14 PENDING — manager fills at merge]` markers are in place: O-14 had NOT landed** (outbox last written 2026-09-01 18:47, newest message `## O-13`). |
+| 18 | [sound A6] state the `fs == s1u[PLAIN]` routing dependency | **WORKED** | §1.2 P0 (new), §5.4(9) | A new predicate clause **P0** states the dependency with its citations (`src/core/compile.c:1096`, `src/ir/nfa.c:990-993`, `src/ir/dfa.c:1249-1258`) and the reason it must be written rather than inherited: `dfa_needs_seed` (`:2161-2166`) compares only `s1u[u]` across `u` and would not notice an `s0 != s1u[PLAIN]` split, and `seed_emit_constant` (`:3496-3502`) then emits `s0` unconditionally. Added sentence: *"A future engine-selection change that routed a BOT-bearing machine here would break the elision silently."* Check **5.4(9)** asserts it in the compiler. |
+
+### MINOR
+
+| item | disposition | where |
+|---|---|---|
+| [cons Q4] `design/CLAUDE.md` entry rides rev 2 | **WORKED** — the existing rev-1 entry is REVISED in place, not duplicated | `docs/design/CLAUDE.md` |
+| the [OPT-VEDGE] back-pointer | **WORKED** — added everywhere the population is discussed | §0 instrument 2, §1.1, §3.5, §1.2 P2, §7 item 14 |
+| `tuning.md` §3.2 mirror bullet | **WORKED** — the bullet's WORDING is written out in §6.1; **`tuning.md` itself is NOT edited**, per the brief and D80 (this is a design note) | §6 row 3, §6.1 |
+| [check 6] S-classctx row's disjointness measured before shipping | **WORKED as a named obligation** | §5.6c, §7 item 13 |
+| [check 7] the stamp-fork sabotage must be shown non-vacuous | **WORKED** — §5.6e says HOW (fork to the widened `state_acc_any` read, which §5.2's manifest already gives ≥ 12 disagreeing artifacts), and requires the demonstration in the row's own header with the measurement; its disjointness from S218 is argued (different SITES, distinguished by check 5.4(3)) | §5.6e |
+
+### Where revision 2 disagrees with the review or the brief
+
+Recorded as findings rather than silent deviations, per the brief:
+
+1. **The `rx_info` hunk appends at the END, after `nentries` — not "after
+   `match_form`"** (§9 F8). [DD-13c]'s discipline is "append at the end so no
+   existing member's offset moves"; `match_form` was the last member when that
+   was written and no longer is.
+2. **r49cons's reconciled frame table is not in the review verbatim** (item 17
+   above). §0's table is a reconstruction from the Q3 summary plus O-13 and
+   this build's stamp probes. The manager should check it against r49cons's
+   delivery message.
+3. **S219 has no witness and this note says so** (item 8). The brief allowed
+   this branch explicitly; the derivation in §5.6b is the argument that the
+   population is empty rather than merely unpopulated, and §7 item 10 is how
+   to settle it.
+4. **The two P3 arms share one id.** The brief said S218-S222 (five ids) and
+   rev 1 had five rows; revision 2 has a sixth failure direction (the liveness
+   conjunct). Rather than mint a sixth id a worktree cannot safely claim, S219
+   carries both arms and the note flags it for the manager's arbitration.
