@@ -340,8 +340,28 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 ([OPT-5] 2026-08-31, and it is the
-# FIRST TIME THIS NUMBER HAS GONE DOWN, so the reason is written out rather
+# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 -> 93.
+#
+# 88 -> 93 ([OPT-5] STEP 2, 2026-09-02, READ FROM A RUN per this guard's own
+# standing rule — the estimate beforehand was 93 and the run agreed, but the
+# number below comes from the run). Axis J (`search-start`, the START-PINNED
+# SEARCH) contributes +5, which is axis G's own shape at [ENG-ABS]: two
+# CANDIDATE rows join the per-row sweep (`pinned`, `reverse-pass`), the
+# `PCREC_NO_START_PINNED` bit-22 heading and the `-fno-start-pinned`
+# cli/main.c pairing are asserted ONCE on the candidate that owns the flag
+# (three checks, the shape ruling R1 gave `scan-edge`), and `RX_DFA_START`
+# gains its own value-set PAIR (dump->spec, spec->dump) beside the seven
+# macros that already had one.
+#
+# THE VALUE-SET PAIR WAS THE PART THAT HAD TO BE NOTICED. The first landing
+# of axis J scored 91 — the three per-row checks alone — and reading THIS
+# GUARD's failure is what surfaced that the new stamp had no dump<->spec
+# pair while every other stamp macro in the dump does. That is the guard
+# working as designed: it does not know what SHOULD have been added, but it
+# knows the number moved and makes somebody look.
+#
+# The 91 -> 88 entry below is [OPT-5] STEP 1's, and it is the
+# FIRST TIME THIS NUMBER HAD GONE DOWN, so the reason is written out rather
 # than left to the diff.
 #
 # The row landed at 91 with the scan edge modelled as ONE hand-stated
@@ -431,9 +451,9 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 88 ]; then
+if [ "$axesn" -ne 93 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 88." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 93." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
