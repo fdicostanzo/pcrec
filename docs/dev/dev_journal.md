@@ -19771,3 +19771,15 @@ projected-size bail (36 s → 0.02 s refusals, D77 trigger measured);
 from 1024 up — recorded, waits for STEP 2's AFTER (which removes the ×2
 half first). Lane execsum (sonnet) is drafting Frank's executive summary
 from the ledger + O-14 + I-32.
+
+## 2026-09-02 — Fiftieth session, part 5 (afternoon): Frank's executive summary of the bench night MERGED (28491d9)
+
+Lane execsum (sonnet) drafted docs/dev/summaries/2026-09-02-exec-bench-
+full-suite-1989c62.md (new directory with its CLAUDE.md; 184 lines;
+findings / surprises / impact / next steps, every number cited to the
+ledger section) from the ledger, O-14 and I-32. Review: faithful to the
+ledger; two landing fixes (the size log is pcrec's, not the bench's;
+[SEL-1] is the bench's label with no pcrec plan row yet). Merged
+28491d9; a rendered page of the same text published for Frank as an
+artifact. No lanes in flight; the box is free; nothing battery-length
+runs until Frank's STEP 2 go.
