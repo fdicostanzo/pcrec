@@ -202,9 +202,53 @@ below**: the `goto *` count must be SCOPED to the VM program's own function.
 | `make test-search-pinned` | **16 / 0** |
 | `bash tests/harness/run.sh` on the two new `.rxt` files | **112 / 0** |
 | `scripts/m6read_check_sab_anchors.py` | 218 sabotages, 230 anchor sites, all resolve |
-| `make test` | *filled in below* |
-| `make test-codegen` | *filled in below* |
-| `make test-axes` | *filled in below* |
+| `make test` | four sections red for four NON-DEFECT causes, all re-derived (§6a); all four re-run **GREEN** — resource 30/0, anchored-match 15/0 + 7/0, lookaround 5/0 + 11/0 |
+| `make test-codegen` | **109/0, 31/0, 22/0, 32/0, 7/0** |
+| `make test-registry` | **0 failed** (the axes coverage guard moved 88 → 93, read from a run) |
+| `make test-premul-table` | **16 / 0** |
+| `make test-axes` | **THE AXIS IS CLEAN**; the run fails on five PRE-EXISTING axes — see below |
+
+### 4.5 `make test-axes` — the row's primary control
+
+**`-fno-start-pinned` (bit 22): OK.**
+
+```
+keys_base=22309 keys_axis=22309 agree=22309 budget=0
+refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0   175s
+```
+
+Every one of 22,309 corpus cases answers IDENTICALLY under the denied build,
+whose match start comes from an independently built reverse automaton. That
+is the row's whole answer-identity claim, proven corpus-wide, and it is the
+one number in this report that could not have been produced by any structural
+check.
+
+**The run as a whole FAILS, on five axes that have nothing to do with this
+row, and I did not paper over it.** `-fno-counter` (6), `-fprefilter` (9),
+`-fno-altcls-merge` (10), `-fno-size-term` (18) and `--engine=dfa` (§2.11)
+each report `refused_undoc=2` and **`mismatches=0`**. All five point at the
+same two cells, `tests/size/size_term.rxt:34` and `:35`.
+
+**They are PRE-EXISTING, and that is measured rather than argued.** The
+pattern is `[ART-SIZE.2]`'s nested-repeat tower
+`(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}`, last touched at
+`fa9b6d4`, reachable from this lane's branch point;
+`git diff 5496ca6..HEAD -- tests/size/` is empty. A compiler built from
+`5496ca6` by `git archive` produces the IDENTICAL refusal message under all
+five flags, and `run_axes.sh` run with `AXES="-fno-altcls-merge"` against THAT
+compiler reproduces both AXIS FAIL lines verbatim, including "this axis has NO
+documented refusal population at all".
+
+The mechanism is the block's own design: it carries `engine vm` precisely
+because forcing the VM skips the NFA build — its own comment records that it
+was "found by writing the cell without it and watching it fail for the wrong
+reason" — and `RXTFLAGS` layering an engine or a denial on top defeats that,
+so the NFA is built and explodes.
+
+**Not fixed in this lane, deliberately.** The honest repair is either an
+axis-documented-limit entry for the nested-replication family or an axis
+exclusion on that block, and both are decisions about ANOTHER row's witness
+inside this row's abi bump. Flagged for the manager rather than absorbed.
 
 ---
 
