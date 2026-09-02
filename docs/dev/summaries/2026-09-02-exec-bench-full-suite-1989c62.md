@@ -10,12 +10,11 @@ differ by set (bounded/altwide against a7e0bdf, loglines against
 263b013/96e44c2, email against 96e44c2) and are named per finding
 below. 29 of 29 scheduled cells landed at attempt 1; two bounded clang
 cells were killed by the window script's 3000 s cap and re-run by hand
-the same morning, counted as first-class, no second-tier flag. Store
-grew to 111 records. Source: pcrec-bench's ledger
-`docs/dev/ledgers/2026-09-02-full-suite-1989c62.md` (1,136 lines),
-confirmed by their outbox message O-14, which existed at the time of
-this summary and reads as a faithful compression of the ledger with no
-disagreement found between the two.
+the same morning, counted as first-class. Store grew to 111 records.
+Source: pcrec-bench's ledger
+`docs/dev/ledgers/2026-09-02-full-suite-1989c62.md` (1,136 lines) and
+outbox message O-14, a faithful compression with no disagreement found
+against the ledger.
 
 ## 1. Findings
 
@@ -125,20 +124,18 @@ altwide's 8.7-36 s refusal cost.
 
 What is fragile: the ×9 win is a gcc heuristic (whole-function
 optimization once a computed goto is removed), not a code-size or
-instruction-count effect, and it belongs to nobody's charter. If a
-future compiler change or gcc version stops performing that
-optimization, the win disappears silently, since no charter or test
-currently pins it as a deliberate property.
+instruction-count effect, and no charter or test pins it as a
+deliberate property. A future compiler change could take it back
+silently.
 
 What the bench instrument itself proved: all three control arms
 (interp, jit, `pcrec-auto`) stayed flat to four significant figures
 across a 1.55× change in iteration count, which is what let the ×9 be
 attributed to the code rather than the measurement. The pre-flight
 gate widened its observed quiet band from 5.21% to 7.41% with no
-refusal, trial agreement held `agree` on all 30 records (8 disagreeing
-rows of 59,076 judged, 0 disagreeing groups), and one genuine
-interference event (a 91.63% other-core spike during one bounded clang
-cell) was caught, recorded, and shown not to have corrupted that
+refusal, trial agreement held `agree` on all 30 records, and one
+genuine interference event (a 91.63% other-core spike during one
+bounded clang cell) was caught and shown not to have corrupted that
 record's trial agreement (ledger §1.2-§1.4, §2.2).
 
 ## 4. Next steps
@@ -186,9 +183,12 @@ Three candidate rows go to Frank from I-32, one per plan column: the
 frameless-VM shape (OPTIMIZATION, ask i), the DFA projected-size bail
 (ADMIN/LIMITS, ask vi), the scan-edge minimum chain length
 (OPTIMIZATION follow-up, ask iv). The engine-selection question (auto
-picking the slower engine at rungs ≥ 1024; the bench files it under its
-[SEL-1] label, which has no pcrec plan row yet) is recorded as a measured
-fact awaiting STEP 2's AFTER, since STEP 2 removes half the gap first.
+picking the slower engine at rungs ≥ 1024) is recorded as a measured
+fact awaiting STEP 2's AFTER, since STEP 2 removes half the gap first;
+both the ledger and I-32 call it a "[SEL-1] question" by territory,
+but `[SEL-1]` itself is a COMPLETED pcrec row (the DFA-overflow
+fallback contract, closed 2026-08-28) and does not cover this
+cost-based case, so no plan row owns it yet.
 
 **(b) pcrec's own queue, as the journal states it:**
 
