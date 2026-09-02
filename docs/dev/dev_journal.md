@@ -19885,3 +19885,14 @@ push is exact; positive/non-atomic over-charged by one; lookbehind +m vs
 m-1); cost = a lower subject_ceiling stamp + a few over-provisioned
 frames. The stamp removes the reason anyone read `resume_frames` as a
 frameless proxy, which is the general fix. Recorded on the row.
+
+Part 7 addendum 2 (~15:3x): Frank's FRAMING recorded — "islands of VM in
+DFA" as the general form behind the scan edge, the hybrid prefilter
+(DFA-in-VM, in production) and the direct-coded automaton: one dev
+source for the loop shapes both engines use, the edge's head/fall-through
+splice as the protocol, opening the DFA route to the VM's measured wins
+(bench §3.3's bounded match axis). [ENG-ISL] made bidirectional and
+carries the framing; [OPT-EDGE] carries the trigger ("if the spans idea
+works out for some N, reframe rather than add edge kinds"); [OPT-NEG] and
+[OPT-VMLIT] cross-noted as island bodies. "We're blurring the lines" —
+deliberately.
