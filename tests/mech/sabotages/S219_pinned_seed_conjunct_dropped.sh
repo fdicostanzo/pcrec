@@ -53,13 +53,35 @@
 # forbids. `docs/design/opt5_step2_twopass.md` §5.6b is the argument in full
 # and §7 item 10 the measurement (a P3 EVALUATION count, not a decline count)
 # that would settle whether the site is reachable at all.
+#
+# ============ §7 ITEM 10 IS NOW TAKEN, AND IT AGREES ============
+#
+# The note made that count the trigger for shipping this row as anything
+# other than UNREACHED. TAKEN 2026-09-02 with an instrumented build (a
+# measurement-only stamp reporting which clause refused, or that P3 was asked
+# and with what outcome; reverted before delivery), over all 2,850 corpus
+# patterns on THREE axes:
+#
+#   axis                     asked   notasked-p1  notasked-p2  notasked-noseed
+#   default                      0         1,696            3              177
+#   -fprefilter (FORCE)          0         1,004            0               70
+#   --no-captures                0         1,705            3              224
+#
+# **P3 IS NEVER ASKED, ON ANY AXIS.** Every machine that reaches the seed
+# gate needs no seed (`dfa_needs_seed` is false), and every seed-needing
+# machine is refused earlier — by P1 in almost every case and by P2 in
+# exactly three (`\B`, `\B\B`, `\Bx*`; S220's header carries them). That is
+# the third of the three outcomes §7 item 10 enumerates: "a zero makes P3
+# provably unreachable on this corpus". The derivation above PREDICTED it and
+# the sweep CONFIRMS it rather than replacing it — a derivation says why, a
+# count says only that.
 SAB_ID="S219-pinned-seed-conjunct-dropped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned harness"
 SAB_DESC="P3 is dropped from the start-pinned predicate, both arms at once: the elision no longer requires the seed states a search at startpos > 0 actually begins in to be live, nor to satisfy P1 and P2. On a machine with a dead seed it would report an empty match at a startpos where there is none; on one with a non-accepting seed it would report a caps[0][0] that is too small"
 SAB_EXPECT=UNREACHED
 SAB_EXPECT_REASON="The P3-discriminating population appears EMPTY on ENG_UNANCH rather than merely unpopulated, and the row's header carries the derivation: (?m)^ and \\G route to ENG_ATTEMPT, (?m)\$ creates no s1u split, s1u[PLAIN] == fs by P0, and a P2-passing fs accepts through a boundary-free branch which sits in every seed closure — so P1 at fs appears to IMPLY P1 and liveness at every seed. Six candidate witness shapes were worked through and rejected (named in the header). M1 measured ZERO P3-stage declines over 2,845 corpus patterns. The conjunct's real guard is start_pinned_assert_routing, a compiler assertion that needs no witness; this row ships so the [MECH-REACH] reverse check reads NOW REACHED the day the witness exists."
-SAB_DOC_FIGURE="UNREACHED by construction. If a future tree makes this row read NOW REACHED, that is the finding: a machine reaching P3 has appeared, docs/design/opt5_step2_twopass.md §5.6b's derivation is falsified, and the row becomes an ordinary DETECTED one."
+SAB_DOC_FIGURE="UNREACHED, and MEASURED so 2026-09-02: an instrumented sweep over 2,850 corpus patterns on three axes (default, -fprefilter, --no-captures) counts ZERO P3 EVALUATIONS on every one — the §7 item 10 number the note owed. If a future tree makes this row read NOW REACHED, that is the finding: a machine reaching P3 has appeared, docs/design/opt5_step2_twopass.md §5.6b's derivation is falsified, and the row becomes an ordinary DETECTED one."
 # [MECH-REACH] THE PROBE IS THE DERIVATION MADE OPERATIONAL: it asserts that
 # the shapes the header rejects still behave as the header says. `\bx*` must
 # decline at P2 (classctx), NOT at P3 — if it ever declines at P3 the
