@@ -19964,3 +19964,26 @@ controls reproduce the ledger, so the design holds, and a quiet-box
 re-run is the implementing lane's acceptance. The bench's floor/match/
 auto 0.432 does NOT reproduce (I-37). Recommendation to Frank: charter
 both spellings as one lane on one abi event after STEP 2 merges.
+
+## 2026-09-02 — Fiftieth session, part 10 (~19:3x): [OPT-5] STEP 2 MERGED (da4fe60 + de32a4b, abi 16), gate (B) re-pinned, battery + r51 panel launched
+
+opt5i delivered after ~8 h (21 commits). Merge conflict only in
+docs/dev/lanes/CLAUDE.md (both sides appended entries; kept both);
+artifact_size_log.tsv restored to main's pinned copy — the lane's copy
+was a corpus-run side effect swept in by `git add -A`, not the
+deliberate regeneration (that follows the battery, with the movement
+explained: o42's declines, w12's +202/+105, STEP 2's −3,232 per pinned
+artifact, the frameless stamp lines). Gate (B) re-pinned to da4fe60
+(readers of 6dbdf41 found by grep: the script's default + its comment;
+the design note's and plan's mentions are historical). S218-S222 stand
+as filed. My earlier attribution of the test-axes reds to the lane's
+witness was WRONG — the lane checked (main's compiler reproduces the
+same five AXIS FAILs on [ART-SIZE.2]'s tower) and I filed K45; lesson:
+a red on an opt-in suite has no baseline unless someone ran it.
+Frank's question "is test-axes wall-clock optimized?" — no: sequential
+over 21 axes at ~175 s each with the box half idle (load 4.5-6 on 12
+cores); pairing axes would roughly halve it; a candidate harness item
+if test-axes joins the battery (K45's open question). Post-merge build
++ strict + recursion-identity running; the union battery follows
+(STAGE START sent; the bench holds its window until DONE); panel r51
+(soundness with live witnesses; check design) runs read-only beside it.
