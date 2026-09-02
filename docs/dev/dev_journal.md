@@ -19843,3 +19843,14 @@ Timestamp correction (14:4x EDT): the "~18:xx" times written into
 today's parts 5-6, the plan rows and I-33 were UTC read off lane
 message headers; corrected to EDT (~14:xx) in place. The bench's
 timestamps in O-14 (14:1x) were right all along.
+
+Part 6 addendum 2 (~15:0x): two ideas from Frank FILED as rows. [OPT-NEG]
+— negated classes scanned as "does not equal": read off emit_dfa.c:4424,
+axis I has exactly two bodies (`range`, `bitmap`), so `[^,]*`, `\N`,
+`[^"\\]` all walk the bitmap today; a `not-equal` body (and memchr for
+the excluded byte on unbounded runs) and a `not-in-small-set` body are
+the candidates, census first; queued with [OPT-EDGE]. [FEAT-VAR] —
+pattern variables (a caller-supplied string injected at match time),
+VM-natural and, given string/span edges, DFA-capable; the placement rule
+(the variable is an opaque symbol to determinization) is the design;
+expand on arrival when Frank brings it up.
