@@ -19943,3 +19943,24 @@ wants the clang wins investigated for C-level spellings gcc could share
 (opus, one lane-day, hot-loop asm diff only, hand-twins timed). I-36
 sent. Two lanes in flight (opt5i, ccdiff), disjoint (ccdiff writes a
 memo, no src).
+
+## 2026-09-02 — Fiftieth session, part 9 (~18:2x): [CC-DIFF] STEP 0 delivered and merged (b295552) — the fruit hangs low: two general emitter spellings, both measured
+
+Lane ccdiff (opus, one lane-day) named both of clang's wins as single
+transformations and measured C-level spellings that get gcc there. VM:
+clang inlines the emitted entry chain and deletes the dead run-state
+storage; gcc calls out of line and pays a 152-byte frame + a stack-
+protector canary for storage a frameless artifact never touches → twin V
+(`always_inline` on the emitted helpers, gated on FRAMELESS — gcc refuses
+the attribute on a computed-goto function, and framed cells gain nothing)
+measures 0.611 on dig-upto-16 thr/vm, beating clang's 0.817, with the ×2
+frameless control untouched (0.994). DFA: LLVM folds loads from all-
+equal constant tables, gcc does not → twin A (fold uniform tables in the
+emitter) measures 0.589 on cls-upto-4. Both answer-identical over 3,204
+span comparisons; both clang-clean. Rejected on measurement: single-IV
+edge, buffer elision without inlining, pragma-unroll, GENCFLAGS flags.
+Numbers are interleaved paired medians under load 4.4+ (opt5i's suites);
+controls reproduce the ledger, so the design holds, and a quiet-box
+re-run is the implementing lane's acceptance. The bench's floor/match/
+auto 0.432 does NOT reproduce (I-37). Recommendation to Frank: charter
+both spellings as one lane on one abi event after STEP 2 merges.
