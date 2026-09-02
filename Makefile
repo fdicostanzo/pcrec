@@ -140,7 +140,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
-      test-prefilter-collapse test-rxtsource
+      test-search-pinned test-prefilter-collapse test-rxtsource
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -321,6 +321,19 @@ test-anchored-match: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_anchored_match.sh' \
 	    'bash tests/anchored/run_anchored_diff.sh'
+
+# [OPT-5] STEP 2 the START-PINNED SEARCH's own checks
+# (docs/design/opt5_step2_twopass.md). Its OWN section rather than a sixth
+# script in `test-codegen`'s group above, on `test-premul-table`'s and
+# `test-anchored-match`'s measured argument: `make smoke` includes
+# `test-codegen` and is already at its 60s target, and this script sweeps the
+# whole corpus TWICE (each declined artifact is re-compiled under the deny
+# flag for the byte-identity leg) AND builds and runs nineteen two-artifact
+# differential drivers. It IS part of `make test`; only the smoke wrapper is
+# spared it.
+test-search-pinned: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-search-pinned.ran"; fi
+	bash tests/codegen/run_search_pinned.sh
 
 # [OPT-4] the COUNT-COLLAPSED PREFILTER's own checks (K39; docs/design/
 # prefilter_count_independence.md). Its OWN section rather than a sixth script
@@ -1187,6 +1200,6 @@ clean:
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-anchored-match \
-        test-prefilter-collapse test-rxtsource \
+        test-search-pinned test-prefilter-collapse test-rxtsource \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

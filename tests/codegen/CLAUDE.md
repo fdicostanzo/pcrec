@@ -519,6 +519,55 @@ decides whether to perform it — and then run the row through
     the `#include "<basename>.h"` line — the trap `run_trie_identity.sh`
     documents at its own `gen_a`/`gen_b`, met a third time.
 
+- **run_search_pinned.sh** + **searchpin_driver.c** — [OPT-5] STEP 2
+  (2026-09-02) the START-PINNED SEARCH (`docs/design/opt5_step2_twopass.md`,
+  `docs/spec/tuning.md` §2.19), held to the artifact rather than to its stamp.
+  Its own section, `make test-search-pinned`, part of `make test` and NOT of
+  `make smoke` — `run_premul_table.sh`'s measured argument, plus a second
+  compile of every DECLINED artifact for its byte-identity leg.
+  - **WHY IT EXISTS.** Axis J is ANSWER-IDENTITY-PRESERVING, so the whole
+    `.rxt` corpus, both oracles and `make test-axes` agree whether or not the
+    emitter ever selects the pinned form. §9's FLOOR is the arm that catches
+    the form silently ceasing to be selected — with nothing to deny, the
+    denied and default builds are ONE BUILD and every answer stays right.
+  - **THE CONTROL IS UNUSUALLY WELL PLACED, and the file says so rather than
+    claiming the usual thing.** The denied build recovers the match start by
+    walking an INDEPENDENTLY BUILT REVERSE AUTOMATON (`emit_unanchored`'s own
+    note: "the two machines are independent and need not agree"), where the
+    default writes `search_from` from a compile-time proof about the FORWARD
+    machine. Nothing is shared but the answer.
+  - **§3 RECOMPUTES BOTH STAMP FOLDS FROM THE EMITTED TEXT** over the machines
+    each artifact ACTUALLY CONTAINS — a machine's repr from its accessor
+    block's own C type cross-checked against that block's prose marker, its
+    edges from the `[OPT-5] SCAN EDGE` blocks attributed by the state variable
+    their guard names. That is check 4 of the note's §5.4, and it is applied to
+    DECLINED artifacts too, which is what makes it a check of the FOLD rather
+    than of axis J.
+  - **§10's DRIVER SWEEPS EVERY STARTPOS AND READS `caps[0][0]` EXPLICITLY**,
+    which is the whole detector for S221: the absolute-offset trap is invisible
+    to a search at 0, and a plain `m`/`n` `.rxt` cell is startpos-0. It reads
+    the VERDICT too, because the one failure direction that is not a quiet
+    offset (a dead seed with P3's liveness conjunct dropped) reports a match
+    where there is none.
+  - **TWO FINDINGS AGAINST THE DESIGN NOTE, recorded in the file rather than
+    asserted away.** C3's "returns 1 on every call" is true only IN RANGE —
+    `search_from > subject_length` is disposed of by the emitted range guard's
+    own `return 0` above the scan, so `<prefix>_match` correctly returns -1
+    there on a pinned artifact exactly as on any other, and the driver counts
+    the two separately. And the hybrid's `window_end` clamp is emitted only
+    where the artifact carries an MRL clamp (`v.nclamp > 0`), so §4 asserts it
+    where it exists rather than demanding it universally.
+  - **ITS OWN FIRST RUN FOUND FOUR DEFECTS IN ITSELF**, and the first is worth
+    carrying: bash does NOT evaluate the right-hand sides of ONE `local`
+    statement left to right against each other, so `local f="$1" v="$f"` left
+    `v` EMPTY and the fold helper reported every artifact as mismatched. The
+    others were a `ctx_fail` message split across adjacent C string literals
+    (so no single line held the sentence a grep was looking for), backticks
+    inside a double-quoted failure message running as command substitutions,
+    and the C3 counter above.
+  - Sabotage rows S218-S222 on the `searchpinned` mech arm, and the
+    transcripts are at the foot of the script.
+
 - **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
   compiles every `.rxt` corpus pattern twice (default engine, and
   `--engine=vm` forced where accepted — the wider population for the
