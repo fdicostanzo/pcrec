@@ -47,6 +47,13 @@ each one loses **3,232 bytes** of non-comment emitted C.
 | `bce0d0b` | `tests/codegen/run_search_pinned.sh` + its driver, the `searchpinned` mech arm, sabotage rows S218-S222 |
 | `dd4ad2a` | the `startpos > 0` corpus witnesses S221's population needed |
 | `dad6306` | the census, measured against the prediction table |
+| `2100caa` | untrack `opt5i_rulings.md` — its own header says never commit it |
+| `d155de7` | the `RX_DFA_START` value-set pair in the axis registry check; the report |
+| `df372fb` | **manager ruling R1**: `<PREFIX>_VM_FRAMELESS` rides this abi bump |
+| `b9f7690` | the axes-registry coverage guard, 88 → 93, read from a run |
+
+
+
 
 Range for review: `5496ca6..lane/opt5i`.
 
@@ -167,7 +174,26 @@ is the WIDENED `state_acc_any` read, on which §8's manifest population
 disagrees with the narrowed one by construction, so the row cannot pass by the
 two predicates happening to agree.
 
-### 4.3 Suite results
+### 4.3 Manager ruling R1 — `<PREFIX>_VM_FRAMELESS`
+
+Landed on this abi event rather than taking one of its own, per the ruling.
+`docs/dev/optvmfl_step0.md` §4.1-§4.4 is the proposal; nothing in it conflicts
+with this lane's charter, so it did not have to be done last.
+
+| the ruling asked for | delivered |
+|---|---|
+| a §6.3 (b)-family macro, VM route only, UNCONDITIONAL, not on a pure DFA artifact | `src/gen/emit_vm.c`, beside `_VM_RUNGS`. Both values spelled; §2 of the check asserts the DFA-side absence |
+| value read from `has_push` at the stamp's own site — the SAME bool the fail label reads, one derivation, two readers; NOT recomputed from `v.npush` | the `const bool has_push = v.emitted_push \|\| v.has_linked_calls;` declaration MOVED UP to sit beside the stamp; the fail label now reads that one variable |
+| no `rx_info` mirror | none |
+| the `match_api.md` §6.3 entry with its IFF | landed, with the IFF verbatim |
+| the `tuning.md` line if §4.2 names one | **§4.2 names none, and none was invented.** That file's §3 is the DFA side's own stamps; the VM's (b) family is documented in `match_api.md` §6.3 and has no `tuning.md` section to join, because there is no flag |
+| a `tests/codegen` structural check: every VM/hybrid artifact defines it; 1 ⇔ no `goto *`; 0 ⇔ it does; corpus + `-fprefilter` force axis | `tests/codegen/run_vm_frameless.sh`, `make test-vm-frameless`, **6 / 0**. Default axis: 1,492 VM artifacts (583 frameless / 909 pushing). Force axis: 1,266 VM (495 / 771). Both sides floored at 100 on each axis |
+| it rides the abi 15→16 bump and (B) re-pin, no separate bump | the `emit_dfa.c` abi comment, the `run_codegen_tests.sh` ledger sentence and `match_api.md`'s abi paragraph all name it |
+
+**Its first run found a trap worth carrying forward, and it is finding F8
+below**: the `goto *` count must be SCOPED to the VM program's own function.
+
+### 4.4 Suite results
 
 | gate | result |
 |---|---|
@@ -277,6 +303,26 @@ identity that makes the denied build a ground truth. Axis J is masked for
 exactly that reason, and §9 of the check proves the consequence (all 2,083
 declined artifacts byte-identical under the flag). Whether STEP 1's omission is
 deliberate is not this lane's to decide; it is flagged.
+
+**F8 — a whole-file `goto *` count is not a VM fact on the default or force
+axis, and `[DD-14-RECURSION rule 1]` is right only because it forces
+`--engine=vm`.** `run_vm_frameless.sh`'s first run reported 199 artifacts
+stamping `RX_VM_FRAMELESS 1` while "the artifact contains 6 `goto *`". Every
+one was correct: an `ENG_ATTEMPT` DFA scan's STEP IS A COMPUTED GOTO
+(`goto *<p>_targets_K[class]`), and a hybrid inlines one. MEASURED on
+`(?m)^(a|b)$`: six `goto *`, all inside `static int rx_prefilter(...)`, none
+inside the VM program. Rule 1 avoids this by compiling under `--engine=vm`,
+which turns the prefilter off (D44/R21 E-6) — a property of ITS axis, not of
+the count. The check now scopes to the program's own function and says so.
+
+**F9 — two of my own `RX_VM_FRAMELESS` witnesses were wrong, and the file
+records why rather than swapping them quietly.** `(a|b)(?1)(?1)` was chosen as
+a LINKED-call row and is nothing of the kind: `altcls` merges `(a|b)` to a
+class before any engine exists, and wave G then SPLICES both call sites
+(`RX_VM_CALL_SPLICED 2`, `_LINKED 0`), so the artifact is genuinely frameless.
+A row needing a linked call needs a target in a CYCLE. And
+`foo[0-9]+bar -fprefilter` is REFUSED rather than compiled: the pattern is
+capture-free, so it is a pure DFA artifact and `-fprefilter` is do-or-die.
 
 **F7 — the ORIENTATION BLOCK is a sixth reader of the selection and the note
 lists five.** §4.2 names the emitter's `if`, the stamp, the mirror and the two
