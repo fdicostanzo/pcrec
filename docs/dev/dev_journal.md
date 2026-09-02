@@ -19826,3 +19826,15 @@ the rev 2 note; the union battery is the manager's at merge. Two lanes
 in flight, disjoint (emit_dfa.c vs a measurement memo); stall watchdog
 at 10 min. I-33 to the bench carries the rulings and the edge-count
 hypothesis for their §7.2 family.
+
+Part 6 addendum (~18:5x): Frank: (1) "frameless vm is basically the
+direct dfa idea we discussed a while ago" — yes: [ENG-DIRECT] (plan.md
+:880, filed 2026-08-18, "could we implement without state transition
+tables"). A VM program with no resume frame IS a direct-coded automaton
+(program counter = state), and the ×9 is that row's first measured
+number, from an artifact nobody built for it. [OPT-VMFL] is cross-noted
+as [ENG-DIRECT]'s STEP 0 + selection question, not a sibling row; lane
+vmfl0 told via its rulings file. (2) The minimum-chain floor for
+[OPT-EDGE] is measured AFTER the single-dispatch change, on the new
+loop — the per-edge entry cost is what the floor prices, and the
+dispatch change removes it; sequencing written into the row.
