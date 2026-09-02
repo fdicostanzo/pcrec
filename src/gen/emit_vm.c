@@ -8589,6 +8589,58 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * frame is pushed. */\n"
             "#define %s_VM_ROOT_MINW %lluULL\n",
             v.up, (unsigned long long)root_minw);
+    /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — read off
+     * `v.emitted_push`, which `vm_push_at` (the ONE primitive that writes a
+     * push, in EITHER tracing spelling) sets in the same call that writes the
+     * bytes, so this gate cannot drift from the program text. The first form
+     * of this fix was a strstr over the emitted buffer for `<UP>_PUSH(&&`,
+     * and the battery refuted it the same day: the TRACED spelling is
+     * `<UP>_PUSH(id, &&…)`, so every traced backtracking artifact lost its
+     * dispatch and nomatched — a needle is a second spelling of the emission,
+     * and the flag-in-the-primitive is the one-derivation form.
+     * `v.has_linked_calls` stays as the second term: `RX_CALL` increments
+     * `run->resume_depth` at run time, and its own emission is gated on the
+     * same flag. (`v.npush` is deliberately NOT consulted — it is the
+     * resume-point cap's ESTIMATE, and the counter rung's unbounded arm once
+     * drove it negative, which omitted this dispatch from a program with ten
+     * live pushes.)
+     *
+     * [OPT-VMFL] STEP 0 §4.2, 2026-09-02: THE DERIVATION MOVED UP HERE, and
+     * that move is the stamp's whole safety argument. `<PREFIX>_VM_FRAMELESS`
+     * below and the fail label's dispatch omission far below now read ONE
+     * BOOL rather than two spellings of one fact — the discipline this file
+     * states at `vm_push_at` and `unanch_start` states one file over, and
+     * the reason `[CC-CLANG]`'s own first attempt (a strstr for the needle)
+     * was refuted. Both `v.emitted_push` and `v.has_linked_calls` are FINAL
+     * at this point: the program was emitted into the scratch buffer above,
+     * which is the only place `vm_push_at` runs, and `has_linked_calls` is
+     * set from `rgn_emit[]` before that. */
+    const bool has_push = v.emitted_push || v.has_linked_calls;
+    /* [OPT-VMFL] THE FRAMELESS STAMP — §6.3 family (b), VM route only, and
+     * UNCONDITIONAL on every VM artifact including a hybrid: `0` on a
+     * pushing program and `1` on a frameless one, both spelled. A fact
+     * readable by a macro's ABSENCE is the discriminator [DD-13] had to go
+     * back and remove from two checks ([OPT-1]'s own `_FAST_FRAMES`
+     * precedent).
+     *
+     * IT IS (b) AND NOT (a), and the reason is the same one that puts
+     * `_VM_CALL_SPLICED`/`_LINKED` there: it is not a decision the compiler
+     * MADE before emitting — there is no frameless mode anywhere upstream —
+     * it is what the emitted program turned out to CONTAIN, discovered by
+     * emitting, exactly as `Job.enc_mask` and the cursor local are.
+     *
+     * A SCALAR BOOLEAN AND NOT A MASK, unlike the three below it: those are
+     * masks because the rung/strategy/clamp is chosen PER `A_REP` and a
+     * scalar would lie on a mixed artifact ([M4.5e]'s corrected design).
+     * "Did ANY site emit a push" is a whole-artifact fact with no
+     * per-quantifier axis to mix.
+     *
+     * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent: no consumer reads
+     * this at RUN time today — the bench's own exchange read the artifact
+     * TEXT — so a third unread mirror would be built ahead of a measured
+     * need (D77). The trigger that would make one owed is the same one
+     * `RX_DFA_TABLE`'s spec entry names. */
+    sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 0 : 1);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * because it reports what the VM DID — §6.3's family (b), D81), but
@@ -9464,22 +9516,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
     }
-    /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — read off
-     * `v.emitted_push`, which `vm_push_at` (the ONE primitive that writes a
-     * push, in EITHER tracing spelling) sets in the same call that writes the
-     * bytes, so this gate cannot drift from the program text. The first form
-     * of this fix was a strstr over the emitted buffer for `<UP>_PUSH(&&`,
-     * and the battery refuted it the same day: the TRACED spelling is
-     * `<UP>_PUSH(id, &&…)`, so every traced backtracking artifact lost its
-     * dispatch and nomatched — a needle is a second spelling of the emission,
-     * and the flag-in-the-primitive is the one-derivation form.
-     * `v.has_linked_calls` stays as the second term: `RX_CALL` increments
-     * `run->resume_depth` at run time, and its own emission is gated on the
-     * same flag. (`v.npush` is deliberately NOT consulted — it is the
-     * resume-point cap's ESTIMATE, and the counter rung's unbounded arm once
-     * drove it negative, which omitted this dispatch from a program with ten
-     * live pushes.) */
-    const bool has_push = v.emitted_push || v.has_linked_calls;
+    /* `has_push` is derived ABOVE, beside the `<PREFIX>_VM_FRAMELESS` stamp
+     * it is also read by — one derivation, two readers of the same bool
+     * ([OPT-VMFL] STEP 0 §4.2). */
     /* [CC-CLANG] The fail label's own comment claims "THE ONLY ... INDIRECT
      * JUMP", which is exactly untrue on a FRAMELESS program (has_push
      * false, below): there is no `goto *` left in that case at all. The

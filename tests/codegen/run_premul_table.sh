@@ -215,6 +215,12 @@ read_artifact() {
         # failure that would make every witness above describe a form the loop
         # no longer takes.
         /rx_(forward|reverse)_next_state\[/ && $0 !~ /^    static const/ { leak++ }
+        # [OPT-5 STEP 2] DOES THIS ARTIFACT STILL RUN A REVERSE PASS? Matcher
+        # text — the cursor local the reverse scan carries — never the
+        # `RX_DFA_START` stamp, which is what `implied_stamp` below must NOT
+        # consult in order to interpret `RX_DFA_TABLE`. (No apostrophe in this
+        # block: the whole awk program is single-quoted, and one closes it.)
+        /size_t rewind_position/                                   { rev = 1 }
         # Does this artifact contain a DFA scan at all? The [DD-13c] iff, with
         # the markers run_dfa_stamps.sh uses: matcher text written by
         # emit_dfa.c, never a stamp. The EMPTY engine COUNTS -- its body is one
@@ -232,12 +238,13 @@ read_artifact() {
                                     sub(/"$/, "", s); stamp = s }
         function ent(l,   t) { t = l; sub(/^[^[]*\[/, "", t); sub(/\].*$/, "", t); return t + 0 }
         END {
-            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d stamp=%s\n",
+            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d rev=%d stamp=%s\n",
                    (scan ? 1 : 0),
                    (fent ? fpm : -1), (rent ? rpm : -1),
                    fent + 0, rent + 0, facc + 0, racc + 0,
                    (fvar == "" ? "-" : fvar), (rvar == "" ? "-" : rvar),
                    (fix == "" ? "-" : fix), (rix == "" ? "-" : rix), leak + 0,
+                   (rev ? 1 : 0),
                    (stamp == "" ? "-" : stamp)
         }
     '
@@ -269,11 +276,30 @@ table_cells() {   # <file> <forward|reverse>
 # The artifact-level stamp value the per-machine facts imply. This is the
 # check's OWN statement of the rule (match_api.md §6.3's value set), never a
 # call into the compiler.
+# [OPT-5 STEP 2] THE FOLD RUNS OVER THE MACHINES THE ARTIFACT CONTAINS, and
+# that is a real change rather than a loosening. `RX_DFA_TABLE` is an
+# ARTIFACT-LEVEL composition (spec §6.3), so when axis J's `pinned` form
+# elides the whole REVERSE machine — tables, accessor block and loop — the
+# composition has one fewer machine to span, exactly as `[ENG-ABS]` gave it
+# one more. A fold that kept demanding a reverse table would report a stamp
+# drift on every pinned artifact (MEASURED: 178 of them on this corpus)
+# while the emitter was right and this check was wrong.
+#
+# THE ABSENCE IS READ FROM MATCHER TEXT, NOT FROM `RX_DFA_START`. `rpm` is
+# `-1` when `read_artifact` found no reverse transition-table DECLARATION,
+# and the caller additionally requires the reverse scan's own cursor local to
+# be gone. Reading the axis-J stamp here to interpret the axis-A stamp would
+# be one stamp vouching for another, which is the circularity this file's
+# own header refuses.
 implied_stamp() {   # <fpm> <rpm>
     case "$1:$2" in
         -1:-1) echo none ;;
         1:1)   echo premultiplied ;;
         0:0)   echo indexed ;;
+        # THE PINNED PAIR: a forward machine with a table and NO reverse
+        # machine at all. The composition is the forward machine's own form.
+        1:-1)  echo premultiplied ;;
+        0:-1)  echo indexed ;;
         # A machine that has no numeric table at all cannot disagree with one
         # that does; ENG_ATTEMPT is `-1:-1` above, so this arm is a genuinely
         # mixed pair and nothing else.
@@ -391,9 +417,19 @@ else
             drift=$((drift + 1)); continue
         fi
         cmp_n=$((cmp_n + 1))
+        # [OPT-5 STEP 2] A MISSING REVERSE TABLE IS ONLY LEGITIMATE WHEN THE
+        # REVERSE PASS IS GONE TOO. `rev` is the emitted `rewind_position`
+        # local — matcher text from a different emitter site than the table
+        # declaration — so a reverse table that vanished for some OTHER reason,
+        # leaving a loop that reads it, is still a drift rather than a
+        # silently-accepted pinned artifact.
+        if [ "$fent" -gt 0 ] && [ "$rent" -eq 0 ] && [ "${rev:-0}" -ne 0 ]; then
+            bad "[agreement] '$pat' has no reverse transition table but still emits a rewind_position — the reverse pass reads a table the artifact does not contain"
+            drift=$((drift + 1)); continue
+        fi
         imp="$(implied_stamp "$fpm" "$rpm")"
         [ "$imp" = "$stamp" ] || { drift=$((drift + 1));
-            echo "    DRIFT '$pat': stamps \"$stamp\", tables imply \"$imp\" (fwd $fent/$fpm rev $rent/$rpm)" >&2; }
+            echo "    DRIFT '$pat': stamps \"$stamp\", tables imply \"$imp\" (fwd $fent/$fpm rev $rent/$rpm rev_pass=${rev:-0})" >&2; }
         case "$stamp" in premultiplied) prem=$((prem+1)) ;; indexed) idx=$((idx+1)) ;;
                          mixed) mix=$((mix+1)) ;; none) non=$((non+1)) ;; esac
         # The BOUND, on every machine of every artifact.

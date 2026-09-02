@@ -1079,6 +1079,26 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            searchpinned)
+                # [OPT-5] STEP 2 tests/codegen/run_search_pinned.sh — the
+                # START-PINNED SEARCH held to the artifact AND its two
+                # behavioural claims. Its own arm for `offsetskip`'s reason
+                # two arms up, and with the same consequence: A ROW ON THIS
+                # ARM MAY LEGITIMATELY SCORE `corpus:0fail`. The corpus drives
+                # `<prefix>_search` at startpos 0 almost everywhere, so the
+                # absolute-offset trap (writing 0 instead of search_from) is
+                # invisible to it — that is what §10's own driver, which
+                # sweeps every startpos and reads caps[0][0] explicitly,
+                # exists for. A row scoring `searchpinned:Nfail` with
+                # `corpus:0fail` is this arm working, not a half-detection.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_search_pinned.sh" \
+                    > "$work/searchpinned.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/searchpinned.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/searchpinned.log" | grep -oE '[0-9]+')"
+                suite_bits+=("searchpinned:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             anchdiff)
                 # [ENG-ABS] tests/anchored/run_anchored_diff.sh — the ANSWER
                 # half, and the arm whose absence would make an entire class of

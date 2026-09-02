@@ -969,6 +969,25 @@ construction (src/ir) and emission (src/gen).
   sabotage rows S213 (the criterion's exit-uniformity clause) and S214 (the
   emitted loop's count bound), with DISJOINT detectors.
 
+  **[OPT-5] STEP 2 (2026-09-02) EXPORTED PRECONDITIONS (2) AND (3) AS
+  `pcrec_state_view_invariant`**, and the file's own apology for spelling
+  them locally is thereby discharged. `member_ok` used to hold the three-view
+  comparison inline with a note saying `state_acc_varies`' definition "lives
+  in the emitter, which is the wrong direction for this file to depend in".
+  STEP 2's start-pinned search asks the SAME question of the forward
+  machine's start state — does this state's accept depend on WHERE it is or
+  on WHAT COMES NEXT — so the body moved into an exported predicate that
+  `src/gen/emit_dfa.c`'s axis-J selection calls, and `member_ok` is now one
+  line that calls it. **One derivation, two readers**, which is what memory
+  `pcrec-general-mechanisms-not-special-cases` requires of a general fact two
+  passes read; a second copy in the emitter is the parallel mechanism it
+  forbids. `state_acc_varies` stays in the emitter and stays about a
+  different question (skip eligibility, which ignores the position views
+  entirely). The predicate is deliberately STRICTER than STEP 2's soundness
+  needs — it refuses a state carrying a view variant at all, where the
+  elision needs only the variant's accept BIT to agree — and the relaxation
+  has its own trigger (`docs/design/opt5_step2_twopass.md` §7 item 14).
+
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
   alphabet symbol so `$`-machines minimize correctly, and since [M6.2] wave A

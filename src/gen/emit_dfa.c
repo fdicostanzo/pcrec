@@ -186,6 +186,19 @@ static const char *dfa_match_name(Ctx *cx);
  * somewhere as a second reading of the same selection. */
 static bool dfa_match_is_unwrapped(Ctx *cx);
 
+/* [OPT-5 STEP 2] AXIS J's chosen object's name, forward-declared for axis G's
+ * reason exactly: the selection lives beside its candidate list far below and
+ * FIVE readers call it from above — `<PREFIX>_DFA_START`, `rx_info.
+ * search_form`, `emit_unanchored`'s own dispatch, and the two stamp folds
+ * (`dfa_table_name`, `dfa_scan_edge_name`) that must stop naming a machine a
+ * pinned artifact no longer contains. One derivation, five readers, so no
+ * reader can disagree with the body that was emitted. */
+static const char *dfa_search_start_name(Ctx *cx);
+/* The same selection asked as a yes/no, for the four sites that need the
+ * ANSWER rather than the name. Spelled once here so that no
+ * `strcmp(name, "pinned")` grows anywhere as a second reading. */
+static bool dfa_search_is_pinned(Ctx *cx);
+
 /* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
  *
  * THE CONDITION IS src/core/compile.c's, VERBATIM AND ON PURPOSE: that file
@@ -782,6 +795,44 @@ static void emit_rx_abi_types(StrBuf *sb)
         "       the PRIMARY pattern's own, which are a PREFIX of the array;\n"
         "       the two are equal on every artifact pcrec emits today. */\n"
         "    int                   nentries;\n"
+        /* [OPT-5 STEP 2] AXIS J's runtime mirror, APPENDED AT THE END — after
+         * `nentries`, NOT after `match_form`.
+         *
+         * THE [DD-13c] DISCIPLINE IS "APPEND AT THE END SO NO EXISTING
+         * MEMBER'S OFFSET MOVES", and its own statement twenty lines up says
+         * "after `match_form`" because `match_form` WAS the last member when
+         * that was written. `name` and `nentries` now follow it, so taking
+         * that phrasing literally would INSERT before them and move their
+         * offsets — the exact thing the discipline exists to prevent. The
+         * discipline wins over its own dated wording.
+         *
+         * ITS GUARD IS `pcrec_artifact_has_dfa_scan` AND DELIBERATELY NOT
+         * `match_form`'s. `match_form` is guarded on `fit.chosen == ENGM_DFA`
+         * because a hybrid's `<prefix>_match` is the VM's own anchored body,
+         * which axis G does not describe. Axis J describes
+         * `<prefix>_search`'s post-loop block, which a hybrid DOES contain —
+         * it inlines this emitter's whole scan — so this field follows
+         * `scan`/`prefilter`'s guard instead, exactly as the `_DFA_START`
+         * macro follows `_DFA_SCAN_EDGE`'s placement. Copying `match_form`'s
+         * guard here would stamp NULL on every hybrid.
+         *
+         * THE COMMENT SITS ABOVE THE MEMBER for the MEASURED reason
+         * [ENG-ABS] and [DD-13b.W1.2] both state above: `tests/lib/
+         * size_count.sh`'s classifier is LINE-BASED, so a comment above a
+         * member costs zero counted bytes while the CONTINUATION lines of a
+         * trailing multi-line comment are counted as CODE in every artifact
+         * in the corpus. */
+        "    /* [OPT-5 STEP 2] HOW <prefix>_search recovers the match START:\n"
+        "       \"pinned\" (the start is search_from by compile-time proof, and\n"
+        "       this artifact carries no reverse machine at all) or\n"
+        "       \"reverse-pass\" (the second, backwards scan), mirroring\n"
+        "       <PREFIX>_DFA_START. The two forms are ANSWER-IDENTICAL and\n"
+        "       differ only in cost. NON-NULL on every artifact that CONTAINS\n"
+        "       a DFA scan, a VM HYBRID INCLUDED -- a hybrid inlines this same\n"
+        "       search body as its prefilter, so unlike match_form the guard\n"
+        "       is \"has a DFA scan\" and not \"the DFA emitter wrote _match\".\n"
+        "       NULL only on a plain VM artifact. */\n"
+        "    const char           *search_form;\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -1511,7 +1562,45 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * are `rx_info` initializer lines, which are emitted below that region
      * on every artifact. Comparison (B) compares whole files and is
      * re-pinned in this same change, per D76. */
-    sb_puts(c,   "    .abi = 15,\n");
+    /* [OPT-5 STEP 2] abi 15 -> 16 (D76): the START-PINNED SEARCH. This bump
+     * is the OPPOSITE of the one above — it moves emitted PROGRAM bytes, and
+     * on the accepted population it DELETES a whole machine — so what it
+     * moves is stated per artifact kind, r37 A12's lesson:
+     *
+     *  - EVERY artifact of EITHER engine gains ONE `rx_info` member
+     *    declaration (`search_form`) in the shared `PCREC_RX_ABI_H` block and
+     *    ONE initializer line. NO STRUCT OFFSET MOVES: the member is APPENDED
+     *    AT THE END, after `nentries` — the [DD-13c] discipline's SUBSTANCE
+     *    ("append at the end so no existing member's offset moves") rather
+     *    than its dated wording ("after `match_form`"), which was written
+     *    when `match_form` was the last member and no longer is.
+     *  - EVERY artifact that CONTAINS a DFA scan (a VM HYBRID included) gains
+     *    one `<PREFIX>_DFA_START` stamp line, and its `.search_form` reads a
+     *    string rather than NULL.
+     *  - On an artifact the axis-J predicate ACCEPTS, `<prefix>_search` loses
+     *    its whole reverse machine: the reverse transition/accept/class
+     *    tables, any stay tables, any scan-edge membership tables, the
+     *    `<prefix>_reverse_*` accessor block and the reverse scan loop. Its
+     *    post-loop block becomes two assignments and a `return 1`, and the
+     *    `<PREFIX>_DFA_TABLE` / `<PREFIX>_DFA_SCAN_EDGE` folds stop reading
+     *    the machine that is no longer there — so either stamp's VALUE can
+     *    move, always toward the FORWARD machine's own value.
+     *  - EVERY VM ARTIFACT, A HYBRID INCLUDED, gains one
+     *    `<PREFIX>_VM_FRAMELESS` stamp line. That is [OPT-VMFL]'s macro, not
+     *    this row's, and it RIDES THIS BUMP by the manager's ruling rather
+     *    than taking one of its own: a second abi event immediately behind
+     *    this one would cost a second union battery for one macro. It is
+     *    written in `src/gen/emit_vm.c` beside `_VM_RUNGS`; see that file.
+     *  - No answer moves on any artifact, either way. That is the deny
+     *    flag's whole job (`-fno-start-pinned`, `make test-axes`).
+     *
+     * COMPARISON (A) of run_recursion_identity.sh (`goto <p>_L0;` through
+     * `<p>_accept:`, the VM PROGRAM) is expected byte-identical: every byte
+     * this row writes is either an `rx_info` initializer line, a `#define`
+     * above the program, or DFA-side text, none of which is inside that
+     * region. Comparison (B) compares whole files and is re-pinned in this
+     * same change, per D76. */
+    sb_puts(c,   "    .abi = 16,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1622,7 +1711,27 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * mask's own reason;
                                            * `<PREFIX>_DFA_MATCH` is where what
                                            * the emitter DID is recorded. */
-                                          PCREC_NO_ANCHORED_DFA;
+                                          PCREC_NO_ANCHORED_DFA |
+                                          /* [OPT-5 STEP 2] axis J, the search
+                                           * entry's start-recovery form. It
+                                           * changes no answer (the elision's
+                                           * proof is opt5_step2_twopass.md
+                                           * §3.2), so it belongs to the mask
+                                           * for the mask's own reason; and
+                                           * concretely, without it every
+                                           * artifact the predicate DECLINES
+                                           * would move `rx_info.flags` under
+                                           * the deny flag — destroying the
+                                           * byte-identity of the declined
+                                           * population, which is the
+                                           * reference the axis's own checks
+                                           * are written against. That is the
+                                           * defect [OPT-4]'s comment above
+                                           * measured on bit 19 before it was
+                                           * a comment. `<PREFIX>_DFA_START`
+                                           * is where what the emitter DID is
+                                           * recorded. */
+                                          PCREC_NO_START_PINNED;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -1722,6 +1831,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * the composer, and the day it lands this line is where the injected
      * rows are counted. */
     sb_printf(c, "    .nentries = %u,\n", cx->n_named_groups);
+    /* [OPT-5 STEP 2] AXIS J's mirror, from the SAME `dfa_search_start_name`
+     * the `<PREFIX>_DFA_START` macro is written from — one value written
+     * twice, never two computations of one fact, which is what makes the
+     * codegen assertion that they AGREE a check of the emitter rather than of
+     * arithmetic.
+     *
+     * THE GUARD IS THE SHARED PREDICATE, `scan`/`prefilter`'s and not
+     * `match_form`'s, and the struct member's own comment carries the
+     * argument. On a non-hybrid VM artifact `job->engine` and `job->dfa` were
+     * never written, so calling the selection there would read uninitialised
+     * analysis — the same reason the two fields above ask HERE. */
+    if (pcrec_artifact_has_dfa_scan(cx))
+        sb_printf(c, "    .search_form = \"%s\",\n", dfa_search_start_name(cx));
+    else
+        sb_puts(c, "    .search_form = NULL,\n");
     sb_puts(c,   "};\n");
 }
 
@@ -2661,8 +2785,17 @@ static const char *dfa_table_name(Ctx *cx)
      * loop was emitted through, so "one derivation, three readers" is
      * structural here rather than a convention this function keeps. */
     const char *f = dfa_repr_of(cx, &cx->job->dfa)->c.name;
-    const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;
-    if (strcmp(f, r)) return "mixed";
+    /* [OPT-5 STEP 2] A COMPOSITION MUST NOT NAME A MACHINE THE ARTIFACT DOES
+     * NOT CONTAIN, which is the mirror image of the defect [ENG-ABS] avoided
+     * when it ADDED the anchored machine to this fold. Axis J's `pinned` form
+     * emits no reverse machine — no tables, no accessor block, no loop — so
+     * reading `job->rdfa` here would let a pinned artifact stamp `"mixed"`
+     * about text that is not in it. Asked through the SAME selection the body
+     * was emitted through, never a second reading. */
+    if (!dfa_search_is_pinned(cx)) {
+        const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;
+        if (strcmp(f, r)) return "mixed";
+    }
     /* [ENG-ABS] THE COMPOSITION SPANS EVERY MACHINE THE ARTIFACT CARRIES, and
      * after this row that is three rather than two whenever axis G selected
      * `unwrapped`. `RX_DFA_TABLE` is an artifact-level composition (spec
@@ -2708,7 +2841,14 @@ static const char *dfa_scan_edge_name(Ctx *cx)
     if (dfa_engine_is_empty(cx)) return "none";
     if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";
     const char *v = scan_edge_of(cx, &cx->job->dfa, "none");
-    if (strcmp(v, "mixed")) v = scan_edge_of(cx, &cx->job->rdfa, v);
+    /* [OPT-5 STEP 2] The reverse machine drops out of this fold on a pinned
+     * artifact, for `dfa_table_name`'s reason exactly — and it MATTERS more
+     * here than there, because on the shapes at issue the reverse machine
+     * grows edges more readily than the forward one (r48sem measured `mc2`
+     * at forward 0 edges against reverse 4), so a pinned artifact would
+     * otherwise stamp `"range"` or `"bitmap"` while carrying no edge at all. */
+    if (strcmp(v, "mixed") && !dfa_search_is_pinned(cx))
+        v = scan_edge_of(cx, &cx->job->rdfa, v);
     if (strcmp(v, "mixed") && dfa_match_is_unwrapped(cx))
         v = scan_edge_of(cx, &cx->job->adfa, v);
     return v;
@@ -4213,6 +4353,220 @@ static const char *dfa_match_name(Ctx *cx) { return dfa_match_of(cx)->c.name; }
 static bool dfa_match_is_unwrapped(Ctx *cx)
 { return dfa_match_of(cx) == &dfa_matches[0]; }
 
+/* ---- AXIS J: WHICH FORM THE SEARCH ENTRY'S START RECOVERY TAKES ---------
+ *
+ * [OPT-5 STEP 2] (docs/design/opt5_step2_twopass.md §1.2, §3.2, §4.1). Axis
+ * G's sibling: G answers "which form does `<prefix>_match` take", this
+ * answers "which form does `<prefix>_search`'s POST-LOOP BLOCK take". It has
+ * G's properties for G's reasons — a question about an ENTRY POINT rather
+ * than about one machine's dimensions, so no `DfaForm`, bare `DfaCand`s, one
+ * `if` in `emit_unanchored`, and the two bodies (a whole reverse machine with
+ * tables, an accessor block and a scan loop, versus two assignments) are far
+ * too different for a shared skeleton.
+ *
+ * THE LETTER IS J AND NOT H. H and I are STEP 1's — the scan edge's REGION
+ * and BODY axes at `:4317`/`:4349`, named by letter there, in
+ * `scan_edge_of`'s own comment and in `src/gen/CLAUDE.md`. A collision would
+ * be SILENT: `--list-axes` walks the candidate arrays generically and would
+ * print two axes under one letter.
+ *
+ * ================== WHAT `pinned` CLAIMS, AND WHY ==================
+ *
+ * `<prefix>_search` scans the same bytes twice: forward to find where a match
+ * ENDS, backwards to find where it BEGAN. When the forward machine's start
+ * state accepts UNCONDITIONALLY, the backwards pass computes `search_from` on
+ * every call, provably, at compile time:
+ *
+ *   1. A match exists at `search_from` for every `search_from <= n` — at
+ *      minimum the empty one — so the search returns 1 on every call, and the
+ *      spec's zero-length-is-success convention (match_api.md §3.1) is what
+ *      makes that a correct answer rather than a suspicious one.
+ *   2. D3's accept-pruning removes the start-anywhere self-loop from the
+ *      closure of any accepting state — `unanch_start`'s own comments state
+ *      it twice, independently. If the START state accepts, that pruning has
+ *      fired BEFORE THE FIRST BYTE IS READ: no later start is ever spawned,
+ *      so every accept the forward loop records belongs to a thread that
+ *      began at `search_from`.
+ *   3. Therefore `last_accept_position` is the end of the LONGEST match
+ *      beginning at `search_from`, that match is the leftmost one, and
+ *      `match_start_position == search_from` unconditionally.
+ *
+ * The reverse machine is then dead text and is NOT EMITTED AT ALL: no tables,
+ * no accessor block, no stay-skip tables, no scan-edge membership tables, no
+ * loop. That is a SIZE event as much as a speed one.
+ *
+ * ================== THE PREDICATE, CLAUSE BY CLAUSE ==================
+ *
+ * Every clause DECLINES rather than stretches, and each one has a failure
+ * direction on record in the note's §3.4.
+ *
+ * P0 — THE ROUTING DEPENDENCY, INHERITED AND THEREFORE STATED. The predicate
+ * reads `fs = fd->s0`. That is the right state at `search_from == 0` only
+ * because `ENG_UNANCH` implies `!nfa_has_bot` (`src/core/compile.c`), i.e. no
+ * `N_BOT`/`N_BOT_M`/`N_GSTART`: `s0` is closed with `bot_ok = true,
+ * gst_ok = true` and `s1u[UPC_PLAIN]` with `false, false`, so with none of
+ * those nodes present the two closures coincide and intern to the same id.
+ * NOTHING IN P1-P5 CHECKS THIS — `dfa_needs_seed` compares only `s1u[u]`
+ * ACROSS `u` and would not notice an `s0 != s1u[PLAIN]` split, and
+ * `seed_emit_constant` then emits `s0` unconditionally at every
+ * `search_from`. A future engine-selection change that routed a BOT-bearing
+ * machine here would break the elision SILENTLY, so it is ASSERTED below
+ * rather than left to the routing.
+ *
+ * P1 — `fd->st[fs].up[UPC_PLAIN].accept != 0`. The start state accepts under
+ * the PLAIN view. *Not* `state_acc_any`: that bit is `unanch_start`'s
+ * deliberate widening, whose own neighbouring comment says it is
+ * BELT-AND-BRACES and instructs the reader not to cite it as a premise.
+ * Reusing it here would invert its meaning — `$` alone is the named
+ * counter-example, and on `"abc"` from `startpos = 0` the widened read
+ * reports `[0,3)` where the true span is `[3,3)`.
+ *
+ * P2 — the accept is position- and context-INVARIANT, via
+ * `pcrec_state_view_invariant`, which is `src/opt/scanedge.c`'s own
+ * `member_ok` body and not a second copy of it (that pass's precondition (3)
+ * exists for the same reason: a view makes a state's accept differ at
+ * `pos == n-1`/`pos == n`, positions a scan can pass). It is STRICTER than
+ * soundness needs — the elision needs only the variant's accept BIT to agree,
+ * where this refuses a state carrying a variant at all — and that is a
+ * deliberate conservative choice: one derivation for a fact two passes read.
+ *
+ * P3 — under `dfa_needs_seed` (mechanism 4: `\b`, `(?m)^`, where a search at
+ * `startpos > 0` begins in `s1u[u]` rather than in `fs`), EVERY live seed
+ * state must be LIVE and satisfy P1 and P2 as well.
+ *
+ *   THE LIVENESS HALF IS NOT TIDINESS. `d->s1u[u]` is `-1` when no
+ *   `(view, class-context)` closure is live. A search at `search_from > 0`
+ *   that seeds into a DEAD state records no accept, the kept
+ *   `last_accept_position == (size_t)-1` gate returns 0, AND THAT IS THE
+ *   CORRECT ANSWER — no match begins there. Without this conjunct the elision
+ *   would write a FABRICATED EMPTY MATCH at `search_from`: a match reported
+ *   where there is none, which is strictly worse than every other failure
+ *   direction here (all of which produce a too-small `caps[0][0]`).
+ *   `dfa_premul` refuses pre-multiplication on exactly this condition;
+ *   STEP 2 takes the same posture. AND NOTHING HERE RELIES ON "a dead token
+ *   records nothing": the accept probe on a dead token is already latent UB
+ *   (`is_accepting[-1]` indexed, `[65535]` premultiplied — `dfa_premul`'s own
+ *   note), a PRE-EXISTING hazard this row does not fix and must not lean on.
+ *
+ * P4 — the artifact's scan is `unanchored`. `attempt` scans are a different
+ * emitter with no reverse pass to elide; the `empty` engine is one
+ * `return 0`.
+ *
+ * P5 — is an ENGINE-LEVEL fact and is deliberately NOT a clause here. `\K`
+ * would break the identification of "where reporting begins" with "where
+ * matching began", and `fit.chosen == ENGM_DFA` implies no `\K` — so no
+ * artifact whose `_match` and `_search` this emitter OWNS carries one. A VM
+ * HYBRID can put a `\K` machine through this emitter as its inlined
+ * prefilter, and there the elision is SAFE FOR A DIFFERENT REASON that must
+ * be said rather than assumed: `rx_search_run` consumes `window[0][0]` as a
+ * LOWER BOUND on the attempt start, never as the answer, and `search_from` is
+ * the strongest sound lower bound there is. So a pinned hybrid is if anything
+ * MORE conservative than today. `tests/codegen/run_search_pinned.sh` asserts
+ * the engine-level fact and the hybrid's bound-not-answer shape separately. */
+typedef struct DfaSearchStart {
+    DfaCand c;
+} DfaSearchStart;
+
+/* P0's assertion, and it is the real guard for two of the clauses above
+ * rather than a decoration. It fires as a loud internal error, which is this
+ * file's standing preference over a silent fallback (`ctx_fail` is what the
+ * offset-k skip's two unreachable arms use, for the same reason).
+ *
+ * The seed-liveness half has NO SABOTAGE WITNESS and cannot currently have
+ * one — the note's §5.6b derives that the P3-discriminating population looks
+ * EMPTY on `ENG_UNANCH`, not merely unpopulated — so an assertion is the
+ * correct instrument: it needs no witness, because its firing IS the finding.
+ * Sabotage row S219 ships declared `UNREACHED` beside it and exists so that
+ * the `[MECH-REACH]` reverse check reads NOW REACHED the day somebody builds
+ * the machine this assertion is waiting for. */
+static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
+{
+    if (fd->s1u[UPC_PLAIN] != fs)
+        ctx_fail(cx, 0, "internal error: the start-pinned search's P0 routing "
+                        "premise is broken -- ENG_UNANCH's s0 (%d) and "
+                        "s1u[UPC_PLAIN] (%d) are different states, so the "
+                        "elision's proof is about a state the search at "
+                        "startpos == 0 may not occupy (docs/design/"
+                        "opt5_step2_twopass.md P0)", fs, fd->s1u[UPC_PLAIN]);
+    for (int u = 0; u < UPC_N; u++)
+        if (fd->s1g[u] != fd->s1u[u])
+            ctx_fail(cx, 0, "internal error: the start-pinned search reached a "
+                            "machine with a \\G start family (s1g[%d] = %d, "
+                            "s1u[%d] = %d); ENG_UNANCH implies no N_GSTART, so "
+                            "this artifact's routing has moved under the "
+                            "elision's P0 premise", u, fd->s1g[u], u,
+                            fd->s1u[u]);
+    if (dfa_needs_seed(fd))
+        for (int u = 0; u < UPC_N; u++) {
+            if (!upc_emit_live(u)) continue;
+            if (fd->s1u[u] < 0)
+                ctx_fail(cx, 0, "internal error: the start-pinned search "
+                                "accepted a machine with a DEAD seed state "
+                                "(s1u[%d] < 0); P3's liveness conjunct should "
+                                "have declined it, and eliding here would "
+                                "report an empty match at a startpos where "
+                                "there is none", u);
+        }
+}
+
+/* THE PREDICATE. `DfaSel.d` IS the forward machine and is read as such — this
+ * axis is genuinely about it, so unlike axis G there is nothing fabricated to
+ * invite a later candidate to misread. */
+static bool start_pinned_applies(const DfaSel *s)
+{
+    Ctx *cx = s->cx;
+    /* P4. `dfa_engine_is_empty` is asked through the shared predicate rather
+     * than by re-spelling `us.empty`, `dfa_scan_name`'s own rule (r37 #5). */
+    if (cx->job->engine != PCREC_ENG_UNANCH) return false;
+    if (dfa_engine_is_empty(cx)) return false;
+
+    const Dfa *fd = s->d;
+    int fs = fd->s0;
+    if (fs < 0 || fs >= fd->n) return false;
+
+    /* P1 — the NARROWED read. */
+    if (!fd->st[fs].up[UPC_PLAIN].accept) return false;
+    /* P2 — one derivation, shared with the scan-edge pass. */
+    if (!pcrec_state_view_invariant(&fd->st[fs])) return false;
+
+    /* P3 — every LIVE seed state, and liveness first. */
+    if (dfa_needs_seed(fd)) {
+        for (int u = 0; u < UPC_N; u++) {
+            if (!upc_emit_live(u)) continue;
+            int su = fd->s1u[u];
+            if (su < 0) return false;                       /* the LIVENESS half */
+            if (su >= fd->n) return false;
+            if (!fd->st[su].up[UPC_PLAIN].accept) return false;
+            if (!pcrec_state_view_invariant(&fd->st[su])) return false;
+        }
+    }
+    return true;
+}
+
+/* `-fno-start-pinned` is a `deny` FIELD on the first candidate, D82's shape:
+ * the flag REMOVES the object and the ordinary walk selects the fallback.
+ * Nothing branches on the flag, and `--list-axes` picks this array up with no
+ * edit because that walk is generic over `DfaCand`'s common leading member. */
+static const DfaSearchStart dfa_search_starts[] = {
+    { { "pinned",       PCREC_NO_START_PINNED, start_pinned_applies } },
+    { { "reverse-pass", 0,                     cand_always          } },
+};
+
+/* THE ONE SELECTION. It takes a bare `Ctx` because every caller has one and
+ * none of them holds a `DfaSel`; the `d` it builds is the artifact's own
+ * forward machine, which is the machine this axis is about. */
+static const DfaSearchStart *dfa_search_start_of(Ctx *cx)
+{
+    DfaSel s = { cx, &cx->job->dfa, NULL, true, -1 };
+    return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
+}
+
+static const char *dfa_search_start_name(Ctx *cx)
+{ return dfa_search_start_of(cx)->c.name; }
+
+static bool dfa_search_is_pinned(Ctx *cx)
+{ return dfa_search_start_of(cx) == &dfa_search_starts[0]; }
+
 /* ---- [CHK-2] `--list-axes`: READ-ONLY ACCESS TO THE SIX LAYER-1 LISTS ---
  *
  * `pcrec --list-axes` (src/parse/axes_dump.c) needs the SAME name+deny data
@@ -4266,6 +4620,11 @@ size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
  * restatement. */
 size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_matches); }
+/* [OPT-5 STEP 2] axis J, on the same terms as axis G one line up: its objects
+ * are `DfaCand`-headed, so the dump and the registry check see the new
+ * candidates and `PCREC_NO_START_PINNED` with no hand-copied restatement. */
+size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_search_starts); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
@@ -4743,21 +5102,38 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
         return;
     }
 
+    /* [OPT-5 STEP 2] AXIS J, and this is its ONE dispatch. The SAME
+     * `dfa_search_start_of` call `<PREFIX>_DFA_START`, `rx_info.search_form`
+     * and the two stamp folds read, so no reader can name a form this
+     * function did not write — `unanch_start`'s own header is the cautionary
+     * tale ("M2.7 forked a second copy, and the fork is exactly how the
+     * prefilter and skip loops went missing from the `$` path for a whole
+     * milestone"). */
+    bool pinned = dfa_search_is_pinned(cx);
+
     DfaForm fwd, rev;
     dfa_form_derive(cx, &job->dfa,  &us, &dfa_dir_forward, &fwd);
-    dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+    /* THE REVERSE MACHINE'S FORM IS NOT EVEN DERIVED under `pinned`, which is
+     * a deliberate step past "derived and not emitted": nothing downstream may
+     * read a form for a machine whose text is absent, and leaving `rev`
+     * uninitialised is how the compiler enforces that rather than a comment.
+     * The reverse machine is still BUILT — skipping the build is a separate
+     * compiler-CPU optimization with its own trigger (design note §8 Q5). */
+    if (!pinned) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+    else         start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);
 
-    /* LAYER 2, at file scope and above the body: the two accessor blocks,
-     * and — [OPT-K] — the forward prefilter's own block where its form has
-     * one. Same place, same reason: the VM hybrid inlines this emitter's
-     * output, so a block emitted here is a block the hybrid gets. */
+    /* LAYER 2, at file scope and above the body: the accessor blocks — one
+     * per machine this artifact actually contains — and, [OPT-K], the forward
+     * prefilter's own block where its form has one. Same place, same reason:
+     * the VM hybrid inlines this emitter's output, so a block emitted here is
+     * a block the hybrid gets. */
     fwd.repr->emit_token(c, &fwd);
-    rev.repr->emit_token(c, &rev);
+    if (!pinned) rev.repr->emit_token(c, &rev);
     if (fwd.pf->emit_block) fwd.pf->emit_block(c, &fwd);
 
     emit_search_head(cx, c, fn, storage);
     emit_machine_tables(c, &fwd);
-    emit_machine_tables(c, &rev);
+    if (!pinned) emit_machine_tables(c, &rev);
 
     sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
                "    // One byte per iteration. The loop keeps the LAST accepting\n"
@@ -4766,6 +5142,38 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                "    size_t scan_position = search_from;\n"
                "    size_t last_accept_position = (size_t)-1;\n");
     emit_scan_loop(c, &fwd);
+    if (pinned) {
+        /* THE GATE IS LOAD-BEARING AND THE EMITTED COMMENT SAYS SO, which is
+         * the point of writing it at all: a reader of a coverage report finds
+         * this branch never taken on this corpus and must not conclude it is
+         * dead. It is the correct answer on a live input — see below — and
+         * "presenting a redundant condition and a load-bearing one as the
+         * same claim is how someone eventually simplifies away the wrong
+         * half" (this file, about a DIFFERENT gate). */
+        sb_puts(c,
+            "    // LOAD-BEARING, not belt-and-braces: a search at\n"
+            "    // search_from > 0 on a seeded machine can begin in a state\n"
+            "    // with no live closure. It records no accept, and \"no match\n"
+            "    // begins here\" is the correct answer. Deleting this line\n"
+            "    // would report an empty match where there is none.\n"
+            "    if (last_accept_position == (size_t)-1) return 0;\n"
+            "    // ---- THE MATCH BEGAN AT search_from ----------------------\n"
+            "    // [OPT-5 STEP 2] No reverse pass, and no reverse machine in\n"
+            "    // this artifact at all. The forward machine's start state\n"
+            "    // accepts unconditionally -- at every position, under every\n"
+            "    // position view, in every class context -- so D3's\n"
+            "    // accept-pruning cut the start-anywhere self-loop out of\n"
+            "    // every accepting closure before the first byte was read.\n"
+            "    // No later start is ever spawned, so every accept recorded\n"
+            "    // above belongs to a thread that began at search_from, and\n"
+            "    // a backwards scan would walk back to exactly that\n"
+            "    // position. The offset is ABSOLUTE into subject, never\n"
+            "    // relative to search_from.\n"
+            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"
+            "    return 1;\n"
+            "}\n");
+        return;
+    }
     sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n"
                "    {\n"
                "        size_t match_end_position = last_accept_position;\n"
@@ -5446,6 +5854,11 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
     Job *job = cx->job;
     bool vm = job->fit.chosen == ENGM_VM;
     bool prefilter = job->fit.prefilter;
+    /* [OPT-5 STEP 2] AXIS J, for the map paragraphs below. Asked only where
+     * this artifact HAS a DFA scan — on a plain VM artifact `job->dfa` was
+     * never built, so the selection would read uninitialised analysis, which
+     * is `emit_info_def`'s own reason for guarding its two mirrors. */
+    bool pinned = (!vm || prefilter) && dfa_search_is_pinned(cx);
     /* WHICH prefilter shape the forward scan uses is NOT re-derived here. The
      * derivation lives in emit_unanchored, which owns it, and a second copy
      * that agreed today would be a second source of truth about the emitted
@@ -5484,17 +5897,47 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                    " *      than stepped over. Speed only: it can never change the\n"
                    " *      answer. Its own comment, at the loop below, says which form\n"
                    " *      this artifact uses.\n");
-        sb_puts(c, " *\n"
-                   " *   3. REVERSE SCAN. Walk backwards from the end found in step 1,\n"
-                   " *      through a SECOND set of tables built from the same pattern\n"
-                   " *      read right to left. The furthest-back accepting position is\n"
-                   " *      where the match STARTS. The second pass exists because the\n"
-                   " *      forward tables record only where a match can END, never where\n"
-                   " *      the one that ended there began.\n *\n");
+        /* [OPT-5 STEP 2] THE ORIENTATION BLOCK MAY NOT DESCRIBE A PASS THE
+         * ARTIFACT DOES NOT CONTAIN, which is the same rule that makes the
+         * two stamp folds drop the reverse machine — this paragraph is a
+         * READER's map of the file, and a map naming tables that are not
+         * there is worse than no map. Read off the SAME `dfa_search_is_pinned`
+         * the body was emitted through. */
+        if (pinned)
+            sb_puts(c, " *\n"
+                       " *   3. NO REVERSE SCAN, AND NO REVERSE TABLES IN THIS FILE. For\n"
+                       " *      this pattern the forward machine accepts before it reads\n"
+                       " *      a byte, so a match exists wherever the search starts and\n"
+                       " *      every accept the forward scan records belongs to it. The\n"
+                       " *      match therefore BEGINS at the position the caller asked\n"
+                       " *      the search to start from, and there is nothing to walk\n"
+                       " *      back to. Other patterns' artifacts carry a second set of\n"
+                       " *      tables here, built from the same pattern read right to\n"
+                       " *      left; this one does not need them.\n *\n");
+        else
+            sb_puts(c, " *\n"
+                       " *   3. REVERSE SCAN. Walk backwards from the end found in step 1,\n"
+                       " *      through a SECOND set of tables built from the same pattern\n"
+                       " *      read right to left. The furthest-back accepting position is\n"
+                       " *      where the match STARTS. The second pass exists because the\n"
+                       " *      forward tables record only where a match can END, never where\n"
+                       " *      the one that ended there began.\n *\n");
     } else {
         sb_puts(c, " * This pattern reports where its capture groups matched, so the\n"
                    " * matcher is built in two halves that run one after the other:\n *\n");
-        if (prefilter)
+        if (prefilter && pinned)
+            /* [OPT-5 STEP 2] A HYBRID'S INLINED PREFILTER IS THIS EMITTER'S
+             * OWN SEARCH BODY, so the elision reaches it and this paragraph
+             * must say so — "a pair of scanners" would name a machine the
+             * artifact does not carry. */
+            sb_puts(c, " *   HALF 1 -- the prefilter. ONE table-driven forward scanner\n"
+                       " *     that answers \"is there a match at all, and between which\n"
+                       " *     two offsets?\" while ignoring the groups. Its start is the\n"
+                       " *     position the search began at -- the machine accepts before\n"
+                       " *     it reads a byte -- so it needs no backwards pass and this\n"
+                       " *     artifact carries no reverse tables. It never backtracks.\n"
+                       " *     What it cannot do is say where the groups fell.\n *\n");
+        else if (prefilter)
             sb_puts(c, " *   HALF 1 -- the prefilter. A pair of table-driven scanners,\n"
                        " *     forward then reverse, that answer \"is there a match at all,\n"
                        " *     and between which two offsets?\" while ignoring the groups.\n"
@@ -5849,6 +6292,15 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * (a)/(b) split is the rule; the hybrid is where its point shows. */
     sb_printf(c, "#define %s_DFA_SCAN_EDGE \"%s\"\n", upper,
               dfa_scan_edge_name(cx));
+    /* [OPT-5 STEP 2] AXIS J, and it belongs in THIS function for the scan
+     * edge's reason one line up rather than beside `_DFA_MATCH`: it is a fact
+     * about the DFA SCAN's own entry, so a VM HYBRID that inlines this
+     * emitter's scan HAS one and reports it. `_DFA_MATCH` is DFA-only because
+     * a hybrid's `_match` is the VM's; `_DFA_START` is not, because a
+     * hybrid's inlined prefilter IS this body. [DD-13c]'s (a)/(b) split is
+     * the rule and this is where its point shows. */
+    sb_printf(c, "#define %s_DFA_START \"%s\"\n", upper,
+              dfa_search_start_name(cx));
 }
 
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)

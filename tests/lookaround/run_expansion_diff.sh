@@ -2,12 +2,14 @@
 # tests/lookaround/run_expansion_diff.sh — [M6.6.2] wave E2: THE SUBSTITUTION
 # DRIVER (design `lookaround_design.md` §6.3, §11 wave E2).
 #
-# WHAT IT IS. `tests/assertions/` is 468 blocks and 10,120 behavioural cells,
+# WHAT IT IS. `tests/assertions/` is 469 blocks and 10,136 behavioural cells,
 # every expectation produced by libpcre2 rather than written by hand, for a
 # module that already ships. Every assertion in it has a LOOKAROUND DEFINITION
 # (§6.1). Textually replacing each assertion by its definition therefore turns
-# that corpus into a LOOKAROUND corpus for free — 263 blocks and 8,260 cells of
-# it, whose expectations are not this module's guesses.
+# that corpus into a LOOKAROUND corpus for free — 264 blocks and 8,276 cells of
+# it, whose expectations are not this module's guesses. (Design §6.3 measured
+# 468/10,120 and 263/8,260; the +1 block / +16 cells is [OPT-5] STEP 2's
+# seeded control, named at the population pin below.)
 #
 # **IT IS A CORPUS GENERATOR, NOT A PRODUCT MECHANISM** (Frank, 2026-08-23;
 # design §6.4). It emits PATTERN TEXT that the compiler sees as an ordinary
@@ -70,7 +72,8 @@
 # ---------------------------------------------------------------------------
 # THE POPULATION, AND WHY THE COUNTS ARE ASSERTED AND NOT PRINTED
 # ---------------------------------------------------------------------------
-# §6.3 measured 263 qualifying blocks / 8,260 cells with a per-rule
+# §6.3 measured 263 qualifying blocks / 8,260 cells (264 / 8,276 on HEAD —
+# see the population pin's own DELTA 1 note) with a per-rule
 # disqualification table, and those numbers are guards here, not decoration: a
 # qualification rule that quietly stopped firing would SHRINK this population,
 # and a smaller population is the one failure mode a green run cannot show.
@@ -491,13 +494,39 @@ cnt() { awk -F'\t' -v k="$1" '$1 == k {print $2}' "$PLAN/counts.tsv"; }
 # re-derived from a run and changed deliberately — a floor would let the
 # population shrink, and a shrinking population is the one failure a green
 # run cannot show.
-exp_pop="tot_blocks=468 tot_beh=10120 tot_g=67 \
-qual_blocks=263 qual_beh=8260 qual_g=13 \
+#
+# ==================== DELTA 1, 2026-09-02, [OPT-5] STEP 2 ====================
+# THE CORPUS CHANGE THAT CAUSED IT, named as this check's own message demands:
+# `tests/assertions/start_pinned_startpos.rxt` landed with the START-PINNED
+# SEARCH ELISION — ONE block (`\bx*`) carrying SIXTEEN `ms`/`ns` cells across
+# five subjects at every startpos. It is the SEEDED control for that row's
+# nonzero-startpos population (`docs/design/opt5_step2_twopass.md` §5.6d);
+# `\b` needs module `assertions`, which is why it is in this directory and
+# therefore in this check's population at all. Its sibling
+# `tests/base/start_pinned_startpos.rxt` is NOT here, correctly — this
+# check's population is `tests/assertions/` alone.
+#
+# EVERY MOVED NUMBER MOVES BY EXACTLY THAT BLOCK AND THOSE CELLS, and the
+# arithmetic is the evidence rather than the re-run: +1 block and +16 cells on
+# both the TOTAL and the QUALIFYING counts (the block qualifies — it is a
+# `\b`-bearing block with no `\Z`, no `\G` and no `\K`), +1 on each policy's
+# pattern count and on each policy's LOOKAROUND count (its `\b` expands under
+# both P1 and P2), and 0 on the six per-rule DISQUALIFICATION counts and on
+# the two IDENTITY counts (it carries no identity-expanded escape). A delta
+# that had moved a disqualification count, or moved the totals without moving
+# the qualifying ones, would be a different event and is not this one.
+#
+#            tot_blocks 468 -> 469      tot_beh 10120 -> 10136
+#            qual_blocks 263 -> 264     qual_beh 8260 -> 8276
+#            p1_patterns 263 -> 264     p2_patterns 361 -> 362
+#            p1_lookaround 199 -> 200   p2_lookaround 248 -> 249
+exp_pop="tot_blocks=469 tot_beh=10136 tot_g=67 \
+qual_blocks=264 qual_beh=8276 qual_g=13 \
 q1_blocks=87 q1_cells=0 q2_blocks=87 q2_cells=754 \
 q3_blocks=0 q3_cells=0 q4_blocks=31 q4_cells=1106 \
 q5_blocks=0 q5_cells=0 q6_blocks=0 q6_cells=0 \
-p1_patterns=263 p2_patterns=361 \
-p1_identity=56 p2_identity=84 p1_lookaround=199 p2_lookaround=248"
+p1_patterns=264 p2_patterns=362 \
+p1_identity=56 p2_identity=84 p1_lookaround=200 p2_lookaround=249"
 pop_bad=0
 for kv in $exp_pop; do
     k="${kv%%=*}"; want="${kv#*=}"; got="$(cnt "$k")"
@@ -507,7 +536,7 @@ for kv in $exp_pop; do
     fi
 done
 if [ "$pop_bad" -eq 0 ]; then
-    ok "§1 the population: 468 blocks / 10,120 behavioural cells re-counted on HEAD, 263 blocks / 8,260 cells QUALIFYING, and the six per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0) EXACT against design §6.3. No delta"
+    ok "§1 the population: 469 blocks / 10,136 behavioural cells re-counted on HEAD, 264 blocks / 8,276 cells QUALIFYING, and the six per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0) EXACT against design §6.3. No delta"
 fi
 # THE IDENTITY ROWS, asserted rather than tolerated. `\A` and `\z` are
 # PRIMITIVES in §6.1, so an occurrence-level substitution of one of them is
@@ -675,12 +704,12 @@ report_policy() {
     esac
 }
 case "$POLICY" in
-    all)  report_policy P1 263 56 199
-          report_policy P2 361 84 248
-          report_policy NONE 263 263 0 ;;
-    P1)   report_policy P1 263 56 199 ;;
-    P2)   report_policy P2 361 84 248 ;;
-    none) report_policy NONE 263 263 0 ;;
+    all)  report_policy P1 264 56 200
+          report_policy P2 362 84 249
+          report_policy NONE 264 264 0 ;;
+    P1)   report_policy P1 264 56 200 ;;
+    P2)   report_policy P2 362 84 249 ;;
+    none) report_policy NONE 264 264 0 ;;
 esac
 
 # ---- the headline, stated once ------------------------------------------

@@ -4051,6 +4051,10 @@ size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis 
  * that list and nothing else (manager rulings R1/R2). */
 size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap);       /* axis H */
 size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis I */
+/* [OPT-5 STEP 2] axis J -- which form <prefix>_search's post-loop start
+ * recovery takes ("pinned" / "reverse-pass"). Axis G's sibling: a question
+ * about an ENTRY POINT, so bare DfaCands and no DfaForm. */
+size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
 /* `src/parse/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
@@ -4151,6 +4155,14 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/scanedge.c */
  * docs/dev/opt5_step0_profile.md S3.2 measured. `lo`/`hi` are filled only on
  * a true answer. */
 bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi);
+/* [OPT-5 STEP 2] IS THIS STATE'S ACCEPT INDEPENDENT OF POSITION AND OF THE
+ * UPCOMING BYTE? — scan-edge preconditions (2) and (3), and the start-pinned
+ * search's P2, which are the same question asked by two passes. ONE
+ * derivation, two readers: `src/opt/scanedge.c`'s chain membership and
+ * `src/gen/emit_dfa.c`'s axis-J predicate both call this, never a local copy
+ * (memory `pcrec-general-mechanisms-not-special-cases`). Stricter than STEP
+ * 2's soundness needs on purpose — see the definition's own comment. */
+bool pcrec_state_view_invariant(const DState *st);  /* src/opt/scanedge.c */
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 
 /* ---- [OPT-ALTCLS] alternation->class normalization (docs/dev/plan.md) ---- */

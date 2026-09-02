@@ -125,6 +125,9 @@ static const AxisDesc AXIS_DESC[] = {
 
     { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
     { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
+
+    { "search-start", "pinned", "ENG_UNANCH, a non-empty engine, and the forward machine's start state accepts under the PLAIN view with an accept that is invariant in position and in class context -- and, where mechanism 4 seeds, every live seed state does too. The match then provably begins at search_from and no reverse machine is emitted ([OPT-5] STEP 2)" },
+    { "search-start", "reverse-pass", "always (fallback) -- the backwards scan over the artifact's own reverse machine recovers the match start" },
 };
 #define N_AXIS_DESC (sizeof AXIS_DESC / sizeof AXIS_DESC[0])
 
@@ -157,6 +160,11 @@ static const char *stamp_macro_of(const char *axis)
      * own: what an artifact reports is which body its edges took, and
      * "table-walk everywhere" is that stamp's `"none"`. */
     if (!strcmp(axis, "scan-body")) return "RX_DFA_SCAN_EDGE";
+    /* [OPT-5 STEP 2] axis J HAS a per-artifact stamp for axis G's reason: its
+     * value is a caller-visible COST property of an entry point the caller
+     * calls (roughly a factor of two on a counted class run), not an
+     * emitter-internal decision. */
+    if (!strcmp(axis, "search-start")) return "RX_DFA_START";
     return "";
 }
 
@@ -182,6 +190,8 @@ static const char *cli_flag_of(const char *axis, const char *cand)
         return "-fno-offset-skip";
     if (!strcmp(axis, "scan-edge") && !strcmp(cand, "scan-edge"))
         return "-fno-scan-edge";
+    if (!strcmp(axis, "search-start") && !strcmp(cand, "pinned"))
+        return "-fno-start-pinned";
     return "";
 }
 
@@ -211,6 +221,7 @@ static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
     { PCREC_NO_ANCHORED_DFA, "PCREC_NO_ANCHORED_DFA" },
     { PCREC_NO_SIZE_TERM, "PCREC_NO_SIZE_TERM" },
     { PCREC_NO_SCAN_EDGE, "PCREC_NO_SCAN_EDGE" },
+    { PCREC_NO_START_PINNED, "PCREC_NO_START_PINNED" },
 };
 #define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
 
@@ -672,6 +683,12 @@ char *pcrec_axes_tsv(void)
     emit_dfa_list_axis(&sb, "scan-edge", "list", pcrec_dfa_axis_edge_cands);
     emit_dfa_list_axis(&sb, "scan-body", "list", pcrec_dfa_axis_scanbody_cands);
     emit_scan_composite_rows(&sb);
+    /* [OPT-5 STEP 2] axis J. A LIST axis off the live candidate array, axis
+     * G's shape: the two forms of <prefix>_search's post-loop block. It has
+     * NO composite rows -- unlike `table` and `scan-body`, whose stamps
+     * compose a fact across machines, RX_DFA_START names one artifact-level
+     * selection and its value set is exactly these two candidates. */
+    emit_dfa_list_axis(&sb, "search-start", "list", pcrec_dfa_axis_searchstart_cands);
 
     emit_predicate_axes(&sb);
 

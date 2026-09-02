@@ -1,0 +1,37 @@
+# tests/assertions/start_pinned_startpos.rxt — [OPT-5] STEP 2's SEEDED
+# control for the nonzero-startpos population.
+#
+# `tests/base/start_pinned_startpos.rxt` carries the pinned patterns; this is
+# the one block that could not live there, because `\b` needs module
+# `assertions`. It belongs to the same argument and is named in that file's
+# header.
+#
+# WHAT IT CONTROLS. `\bx*` is a machine the start-pinned predicate DECLINES
+# (its start state's accept varies with the upcoming byte, so P2 refuses it),
+# and it is also a SEEDED machine: a search at `startpos > 0` enters through
+# `s1u[]` rather than through `s0`, chosen by the class of the byte BEFORE the
+# start position. So it is the row that says a nonzero startpos is reported
+# correctly on the DECLINED side of axis J, on the one shape where the entry
+# state itself depends on the startpos.
+#
+# Expectations oracle-verified against python3 `re` (`re.compile(p).search(s,
+# pos)`, which is startpos semantics exactly), generated 2026-09-02.
+
+pattern \bx*
+features assertions
+ns 0 ""
+ms 0 "x" 0 1
+ms 1 "x" 1 1
+ms 0 "ax" 0 0
+ms 1 "ax" 2 2
+ms 2 "ax" 2 2
+ms 0 "a x" 0 0
+ms 1 "a x" 1 1
+ms 2 "a x" 2 3
+ms 3 "a x" 3 3
+ms 0 "xx yy" 0 2
+ms 1 "xx yy" 2 2
+ms 2 "xx yy" 2 2
+ms 3 "xx yy" 3 3
+ms 4 "xx yy" 5 5
+ms 5 "xx yy" 5 5

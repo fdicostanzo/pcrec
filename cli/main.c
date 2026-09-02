@@ -371,6 +371,15 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * rather than merely a slower variant. See lib/pcrec.h. */
         else if (!no_more_opts && !strcmp(a, "-fno-scan-edge"))
             opt.flags |= PCREC_NO_SCAN_EDGE;
+        /* [OPT-5 STEP 2] Denies the START-PINNED SEARCH, i.e. restores
+         * `<prefix>_search`'s reverse pass and the whole reverse machine that
+         * runs it. The denied build recovers the match start with an
+         * INDEPENDENTLY BUILT automaton rather than from a compile-time
+         * proof about the forward one, which is what makes it a genuine
+         * control for the answer-identity sweep rather than a build sharing
+         * its derivation with what it controls. See lib/pcrec.h. */
+        else if (!no_more_opts && !strcmp(a, "-fno-start-pinned"))
+            opt.flags |= PCREC_NO_START_PINNED;
         /* [ART-SIZE] Denies the K SELECTION only. It does NOT reach either
          * emitted-size cap — those are raise-only via --max-emit-*-bytes
          * (D84 ruling 1): a safety refusal a flag turns off is not one. */
