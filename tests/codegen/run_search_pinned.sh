@@ -599,12 +599,30 @@ fi
 # The two greps are separate lines of the source: `ctx_fail`'s message is
 # split across adjacent C string literals, so no single line holds the whole
 # sentence — matching one is how this check stays true to the text.
+#
+# THIS IS A WIRING CHECK, AND IT SAYS SO (r51 finding 1). The three greps
+# above confirm the assertion's DEFINITION exists and reads the right
+# message; none of them confirm it is CALLED. Deleting the one CALL SITE
+# (emit_dfa.c:5123, inside axis J's own dispatch — `else
+# start_pinned_assert_routing(cx, ...)`) while leaving the definition as dead
+# code passed all three vacuously, and this file's own header on
+# `start_pinned_assert_routing` says the seed-liveness half has NO SABOTAGE
+# WITNESS of its own — so this grep block is that clause's ONLY guard, and it
+# had a hole exactly where the guard mattered most. The fourth grep below
+# closes it: it greps the CALL SITE'S OWN EXPRESSION SHAPE
+# (`start_pinned_assert_routing(cx,`) rather than the bare identifier, so a
+# sabotage that deletes the call (but leaves the definition, whose signature
+# reads `(Ctx *cx,` and never `(cx,`) cannot satisfy it — anchored on the
+# call's own text, not on a line number, so a reflow of the dispatch does not
+# false-fail it. Sabotage row S223 is the row: it deletes exactly that call
+# and nothing else.
 if grep -q 'start_pinned_assert_routing' "$ROOT_DIR/src/gen/emit_dfa.c" \
    && grep -q "P0 routing " "$ROOT_DIR/src/gen/emit_dfa.c" \
-   && grep -q 'liveness conjunct should' "$ROOT_DIR/src/gen/emit_dfa.c"; then
-    ok "§7 the P0 routing assertion is present in the compiler, and no artifact among the $n_pinned pinned ones tripped it (a trip is a ctx_fail, i.e. a compile failure)"
+   && grep -q 'liveness conjunct should' "$ROOT_DIR/src/gen/emit_dfa.c" \
+   && grep -q 'start_pinned_assert_routing(cx,' "$ROOT_DIR/src/gen/emit_dfa.c"; then
+    ok "§7 the P0 routing assertion is present in the compiler AND WIRED (the call-site grep \`start_pinned_assert_routing(cx,\` finds axis J's own dispatch, not only the definition), and no artifact among the $n_pinned pinned ones tripped it (a trip is a ctx_fail, i.e. a compile failure)"
 else
-    bad '§7 the P0 routing assertion is GONE from src/gen/emit_dfa.c — the elision\047s "fs == s1u[UPC_PLAIN]" premise is now unchecked in both the predicate and the compiler, and an engine-selection change would break it silently'
+    bad '§7 the P0 routing assertion is GONE from src/gen/emit_dfa.c, OR its CALL SITE is (the wiring half of this check, S223) — the elision\047s "fs == s1u[UPC_PLAIN]" premise is now unchecked in both the predicate and the compiler, and an engine-selection change would break it silently'
 fi
 
 # =========================================================================
@@ -816,7 +834,7 @@ exit 0
 # =========================================================================
 # Recorded at landing, 2026-09-02, on this tree. A check with no measured
 # failing direction is the defect this project keeps recording. The permanent
-# rows are tests/mech/sabotages/S218-S222.
+# rows are tests/mech/sabotages/S218-S223.
 #
 #   S218 -- P1 WIDENED from `up[UPC_PLAIN].accept` to `state_acc_any`.
 #     This file: RED in §1 (the `$` and `(?m)a*$` witnesses stamp "pinned"),
@@ -842,3 +860,12 @@ exit 0
 #   S222 -- the stamp forked from the selection. This file: RED in §2 (stamp
 #     vs body) and in §2's mirror leg. Non-vacuity comes from forking to the
 #     WIDENED read, on which §8's population disagrees by construction.
+#
+#   S223 (r51fix item 1) -- P0's routing assertion CALL SITE deleted, the
+#     definition left as dead code. This file: RED in §7 ONLY — the wiring
+#     grep `start_pinned_assert_routing(cx,` no longer finds the call, the
+#     other three §7 greps stay green because the definition and its message
+#     text are untouched. No answer moves and no other section can see it,
+#     which is exactly why §7 needed a fourth grep rather than a fifth
+#     section: it was its own only guard and had a hole in the one place
+#     that mattered.
