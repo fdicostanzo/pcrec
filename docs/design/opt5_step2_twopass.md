@@ -65,14 +65,34 @@ compile time** — so the pass, its machine, its tables and its accessor block
 can all be deleted from the artifact. That family is exactly the family the
 bench's counted ladder is made of.
 
-**The acceptance frame (falsifiable, per rung, on the bench's own standing
-instrument — O-12 ask (iv), I-29's `bounded@0.2` surface).**
+**The acceptance frame — TWO INSTRUMENTS, reconciled (r49 item 17 / r49cons
+Q3).** Rev 1 named one instrument. There are two, they read different things,
+and the panel's reconciliation is that **the `unwrapped` match rungs are a
+CONTROL and the `search-filter` rungs and the search band are the CUSTOMERS**.
+Conflating them is how a family that must not move and a family that must
+would land on one pin for two reasons — exactly what Q7 refuses.
 
-The instrument is the **`large-subject-throughput` (find-all) band**, plain
-form, `auto ÷ vm`, at the nine counted rungs. *This corrects the charter brief's
-wording, which named a "MATCH regime": the nine-rung acceptance table in ledger
-§3 is headed `auto ÷ vm`, `large-subject-throughput`, plain form. The `match`
-band is a different, smaller surface, and `year4`/`nest*` are its residents.*
+*Provenance rule for every number in this section (r49 item 17).* Readings
+sourced to **O-13** (`pcrec-bench` `99de28e`, relayed 2026-09-01 ~18:5x) are
+**SCRATCH TIER** and carry O-13's own withdrawal rule: two `pcrecbench quick`
+cells at `--trials 3` on a loaded box, both stamped `inconclusive-load`, from
+which only the RATIO between two arms measured back to back under one load
+with a flat control survives. **O-14** — the overnight full-suite verdict at
+pcrec `1989c62`, 29/29 measured, window CLOSED 10:48 on 2026-09-01 — confirms
+or withdraws them, section by section, the way O-12 withdrew the 8192 flag.
+**O-14 had NOT landed in `/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md`
+when this revision was written** (last write 2026-09-01 18:47, newest message
+`## O-13`), so every scratch-tier cell below carries an
+**`[O-14 PENDING — manager fills at merge]`** marker. Ledger readings
+(`2026-08-31-opt5-step1-acceptance-a7e0bdf.md`) and stamp facts are NOT
+scratch tier and carry no marker.
+
+**Instrument 1 — `large-subject-throughput` (find-all) band, plain form,
+`auto ÷ vm`, the nine counted rungs.** This is the surface O-12 ask (iv)
+offered and I-29's `bounded@0.2` stands ready on. *This corrects the charter
+brief's wording, which named a "MATCH regime": the nine-rung acceptance table
+in ledger §3 is headed `auto ÷ vm`, `large-subject-throughput`, plain form.
+The `match` band is instrument 2, and `year4`/`nest*` are its residents.*
 
 | axis | today (MEASURED, ledger §3) | STEP 2 predicts | falsified if |
 |---|---|---|---|
@@ -80,9 +100,38 @@ band is a different, smaller surface, and `year4`/`nest*` are its residents.*
 | letters rung 32768 | 0.999–1.002 (parity-via-decline: `auto` IS the VM) | unchanged | it moves at all |
 | digits, all rungs | 0.596–0.604 | **unchanged, 0.58–0.62** | it moves outside that band |
 | digits `×1.04–1.06` entry-cost term | present at every rung | **still present** — it is STEP 1's fixed term, not STEP 2's | STEP 2 is credited with removing it |
-| `cls-atleast-4096` | letters 2.107–2.716 | **unmoved** (not start-accepting — §3) | it moves |
+| `cls-atleast-4096` | letters 2.107–2.716 | **unmoved** — the predicate DECLINES it, and that is now an in-tree NAMED WITNESS (§5.6a) rather than bench prose | it moves |
 | search band, `cls-*` cells | ×2.23–2.25 won at STEP 1 | **moves again** | flat |
 | search band, `pw-8-64` / `line-80` / `hex32` / `csv5` / `dotted4` / `year4` / `nest*` | see ledger §7.2 | **unmoved by STEP 2** | any of them moves |
+
+Every one of the nine rungs is start-pinned. VERIFIED here by emitting the
+ladder (`build/pcrec -p rx --features all`, this revision's own build): all of
+`[a-z]{0,64}` … `[a-z]{0,16384}` stamp `RX_DFA_PREFILTER "none"`, which by
+§3.4's `!start_acc` gate is the observable consequence of the start state
+accepting. `[a-z]{0,32768}` routes to the VM, which is the parity-via-decline
+rung.
+
+**Instrument 2 — `bounded@0.3` `match` regime, `search-filter` rung ÷
+`unwrapped` rung, per subject, forced VM as the flat control.** This is the
+instrument O-13 §2 fired, and it is where the CONTROL/CUSTOMER split lives.
+The two entry forms sit on the SAME ladder, so the ladder splits in two:
+
+| rung family | `RX_DFA_MATCH` today (VERIFIED, this build) | role | STEP 2 predicts |
+|---|---|---|---|
+| plain `[a-z]{0,64}` … `{0,2048}` | `unwrapped` | **CONTROL — predicted FLAT.** `_match` has been reverse-pass-free since `dfd112b` (§1.1 F1), so STEP 2's `<prefix>_search` change cannot reach it | unmoved on the `match` regime; the find-all band still moves (instrument 1) |
+| plain `[a-z]{0,4096}` / `{0,8192}` / `{0,16384}` | `search-filter` | **CUSTOMER.** `_match` is four lines around `<prefix>_search` and pays its reverse pass in full | the ×2.0 two-pass term goes; and per C3 the fallback's failing calls CEASE rather than get bounded (§3.5) |
+| whole-form `(?:[a-z]{0,N})\z`, N ≥ 2048 | `search-filter`, `RX_DFA_PREFILTER "byte-class-bounded"`, `RX_DFA_SCAN_EDGE "none"` | **NOT STEP 2's.** The predicate declines them (view, §2) — they are [OPT-VEDGE]'s customer | **unmoved by STEP 2** |
+| hybrid rows (`nest2-64`, `nest3-16`) | `engine=vm`, four cells (O-13 §3, a record read) | pending the FORCE-AXIS census §5.2 owes | no prediction until that census exists (§5.2) |
+
+O-13's own readings on instrument 2, carried here with their tier:
+`cls-upto-2048 ÷ cls-upto-1024`, matching letters runs 64–1024 B: **1.97–2.04**
+with the VM control at 0.90–0.99 — the ×2.0 residual IS the reverse pass
+(SCRATCH TIER; `[O-14 PENDING — manager fills at merge]`). And on a FAILING
+anchored match, `d-01024`: **×37.4** (11.6 → 432.4 ns), the `search-filter`
+entry scanning the whole subject for candidate starts before rejecting every
+one (SCRATCH TIER; `[O-14 PENDING — manager fills at merge]`). **That ×37
+exhibit is the whole-form row above, which the predicate DECLINES** — see
+§1.1, r49 item 11.
 
 Why `0.90–1.10` and not "parity": under the elision the DFA does ONE
 address-independent pass and the VM does one, so the ratio should become the
@@ -140,8 +189,44 @@ machine overflowed `PCREC_ANCHORED_MAX_STATES` (4,096; seven named fallback
 members are on record, r41 S1), or the build carries `-fno-anchored-dfa`, or
 the artifact is a VM hybrid — `<prefix>_match` is `search-filter`: four lines
 around `<prefix>_search`, and it pays that function's reverse pass in full.
-STEP 2's search-side elision rescues exactly those artifacts, for free, with no
-axis-G change. INFERRED (from the two emitters' text, not measured).
+STEP 2's search-side elision reaches those artifacts with no axis-G change.
+INFERRED (from the two emitters' text, not measured).
+
+**QUANTIFIED, and rev 1's "rescues exactly those artifacts, for free" was
+BOTH unquantified and wrong about the exhibit** (r49 item 11 / sound B6 +
+check M9). Two separate populations were being run together:
+
+1. **The bench's ×37 exhibit is NOT in the pinned population.** It is the
+   whole form `(?:[a-z]{0,N})\z`, and M3 measured that the predicate declines
+   it — VERIFIED again here: `(?:[a-z]{0,8192})\z` stamps
+   `RX_DFA_PREFILTER "byte-class-bounded"` and `RX_DFA_SCAN_EDGE "none"`,
+   the position-view refusal of §2. **STEP 2 leaves the measured exhibit
+   exactly where it is.** It is the customer of **[OPT-VEDGE]**
+   (`docs/dev/plan.md` `[OPT-VEDGE]`, chartered 2026-09-01 on Frank's Q4
+   "agree"), whose relaxed scan-edge precondition (3) collapses the `\z`
+   skeletons and drops the anchored machine's state count back under
+   `PCREC_ANCHORED_MAX_STATES` — one mechanism, two customers, and the
+   ×37 band is the second.
+2. **The population that IS pinned and IS `search-filter` is the plain
+   counted ladder above the anchored cap**, and what it gets is C3's fact,
+   not a bound. VERIFIED, this build:
+
+   | pattern | `RX_DFA_PREFILTER` | `RX_DFA_MATCH` |
+   |---|---|---|
+   | `[a-z]{0,2048}` | `none` (pinned) | `unwrapped` |
+   | `[a-z]{0,4096}` | `none` (pinned) | `search-filter` |
+   | `[a-z]{0,8192}` | `none` (pinned) | `search-filter` |
+   | `[a-z]{0,16384}` | `none` (pinned) | `search-filter` |
+
+   On these, once the elision lands, `rx_search` returns 1 with
+   `caps[0][0] == ctx->pos` on **every** call, so the fallback's
+   `found != 1 || caps[0][0] != ctx->pos` filter never fires: the O(subject)
+   failing path does not get bounded, it **ceases to exist**, and the
+   `return -1` becomes unreachable. That is §3.5's C3 and it is a
+   BEHAVIOURAL claim §5.4 asserts, distinct from the throughput claim above.
+
+   `N_pinned ∩ search-filter` is not yet a corpus-wide count; §7 item 9
+   records it as owed with its trigger.
 
 ### 1.2 Site (b) — the `<prefix>_search` entry — IS STEP 2.
 
@@ -223,39 +308,153 @@ start state.
 - **P2** `fs`'s accept is position- and context-invariant:
   `st->eolvar < 0 && st->endvar < 0`, and `st->up[u].accept == st->up[0].accept`
   for every `u` in `1..UPC_N`. This is **character for character
-  `src/opt/scanedge.c`'s `member_ok`**, which exists for the same reason
-  (precondition (3) there: "a view makes a state's accept differ at
+  `src/opt/scanedge.c`'s `member_ok`** (`:188-194`), which exists for the same
+  reason (precondition (3) there: "a view makes a state's accept differ at
   `pos == n-1`/`pos == n`, which are positions a scan can pass"). PROPOSED:
   lift `member_ok` to a shared, exported predicate rather than writing a second
   copy — a parallel mechanism for a general fact is exactly what memory
   `pcrec-general-mechanisms-not-special-cases` forbids, and `scanedge.c`'s own
   header already apologises for spelling it locally.
-- **P3** If `dfa_needs_seed(fd)` (mechanism 4 — `\b`, `(?m)^` — where a search at
-  `startpos > 0` begins in `s1u[u]`/`s1g[u]` rather than in `fs`), then **every
-  live seed state satisfies P1 and P2 as well.** Omitting this is sabotage S218:
-  the predicate would be a statement about a state the search may never occupy,
-  which is the exact defect `unanch_start`'s `fseed` clause was added to fix
-  ("[M6.2 wave B] `!fseed` joins the conjunction: the proof is about the ONE
-  start state `fs`").
+
+  **P2 IS STRICTER THAN SOUNDNESS NEEDS, AND THAT IS A DELIBERATE
+  CONSERVATIVE CHOICE** (r49 item 13 / sound B4). The elision needs only the
+  variant's **accept bit** to agree; `member_ok` refuses a state that carries a
+  view *variant at all*. The variant's state identity matters to the STEP
+  (`f->src` feeds the transition — `src/gen/emit_dfa.c:3596-3600`, and the
+  emitted `forward_state = rx_forward_step(..., forward_view_state, ...)`), not
+  to the ORIGIN; and a variant that accepts pruned its own closure exactly as
+  the base view did (Claim B, §3.2), so the elision holds for it too.
+  Consequence: some of M1's **47 `view` declines** are not view-*accept*
+  dependent, and the accepted population is smaller than it needs to be.
+  This note takes the strict form anyway, because reusing `member_ok`
+  unchanged is what keeps ONE derivation for a fact two passes read, and
+  because the relaxation is a separate soundness argument.
+  **The relaxing measurement and its trigger (D77):** partition M1's 47 `view`
+  declines into (i) states whose accept bit genuinely differs across views and
+  (ii) states that merely CARRY a variant with an equal accept bit; the
+  relaxation is worth building only if (ii) is a material share. **Trigger:**
+  a bench or corpus customer lands in group (ii). Do not build it before
+  that number exists — and note it is not free of interaction with
+  [OPT-VEDGE], which moves the same population from the other side.
+- **P3** If `dfa_needs_seed(fd)` (`src/gen/emit_dfa.c:2161-2166` — mechanism 4,
+  `\b`, `(?m)^`, where a search at `startpos > 0` begins in `s1u[u]`/`s1g[u]`
+  rather than in `fs`), then **every seed state is LIVE and satisfies P1 and
+  P2 as well** — i.e. the predicate DECLINES when any `d->s1u[u] < 0`.
+  Omitting the P1/P2 half is sabotage S219 (§5.6): the predicate would be a
+  statement about a state the search may never occupy, the exact defect
+  `unanch_start`'s `fseed` clause was added to fix ("[M6.2 wave B] `!fseed`
+  joins the conjunction: the proof is about the ONE start state `fs`").
+
+  **The LIVENESS conjunct is new in revision 2** (r49 item 2 / sound A2) and
+  it is not a tightening for tidiness. `d->s1u[u]` can be `-1`
+  (`src/ir/dfa.c:1249-1258`; `make_state` returns `-1` when no
+  `(view, class-context)` closure is live, `:1113-1116`). A search at
+  `search_from > 0` that seeds into a DEAD state records no accept, the kept
+  `last_accept_position == (size_t)-1` gate returns 0, **and that is the
+  correct answer** — no match begins there. Without the conjunct the elision
+  would write a fabricated empty match at `search_from`: a match reported
+  where there is none, which is a strictly worse failure than §3.4(f)'s
+  too-small `caps[0][0]`. `dfa_premul` (`src/gen/emit_dfa.c:2205-2215`)
+  refuses pre-multiplication on exactly this condition and its comment records
+  a 2026-08-26 sweep finding no negative cell over 1,256 corpus patterns — a
+  MEASUREMENT, not a proof, and that transform declines rather than resting on
+  it. STEP 2 takes the same posture. **The implementation ASSERTS the
+  conjunct**, so a machine that reaches the elision with a dead seed is a loud
+  internal error rather than a silent miscompile.
+
+  > **PRE-EXISTING HAZARD, NOT STEP 2's TO FIX.** The accept probe on a dead
+  > token is already latent UB: `is_accepting[-1]` in the indexed form,
+  > `is_accepting[65535]` in the premultiplied one — the emitter's own note at
+  > `src/gen/emit_dfa.c:2205-2215`. **Nothing in STEP 2, or after it, may rely
+  > on "a dead token records nothing"**; declining is the only clean posture,
+  > which is why P3's liveness conjunct is a conjunct and not a comment. Filing
+  > or fixing the hazard is a separate row with its own trigger.
 - **P4** The artifact's scan is `unanchored`. `attempt` scans are a different
   emitter with no reverse pass to elide, and `empty` scans are one `return 0`.
-- **P5** No `\K`. Free by construction, not by a test: `\K` is module-gated to
-  `assertions` and forces the VM engine, so no DFA artifact carries one
-  (`docs/spec/match_api.md` §3.1). It matters because `\K` is precisely the
-  construct that separates "where reporting begins" from "where matching began",
-  and this mechanism identifies the two.
+- **P5** — **REWORDED IN REVISION 2; rev 1's version was FALSE** (r49 item 12 /
+  sound B1). Rev 1 said "no DFA artifact carries `\K`… free by construction,
+  not by a test". `\K` forces the **engine** to the VM; it does not keep the
+  pattern's machine away from this emitter, because `emit_unanchored` has a
+  SECOND customer — the VM hybrid's inlined `static <prefix>_prefilter`
+  (`src/gen/emit_dfa.c:1356`, `:4725`, and `emit_search_head`'s own note at
+  `:438-447`). VERIFIED here:
 
-**Blast radius, INFERRED.** `emit_unanchored`'s output is also what a VM HYBRID
-inlines as its `static <prefix>_prefilter` (`src/gen/emit_dfa.c`: "the hybrid
-inlines `emit_unanchored`'s own output"), so hybrids are in scope by
-construction. In practice the hybrid ∩ start-pinned population should be at or
-near **zero**, and for a satisfying reason: a start-accepting machine gets no
-candidate prefilter at all (`docs/spec/tuning.md` §3: `RX_DFA_PREFILTER
-"none"`'s *largest cause* is "the start state ACCEPTS — `\bx*`, `a*`, `.*`,
-`$` — where no skip is sound at all"), and `[OPT-4.1]`/`[OPT-4.2]` decline to
-build a hybrid prefilter whose language is nullable. The two mechanisms are
-declining on nearly the same fact. §5 makes the population a printed number
-rather than this paragraph.
+  ```
+  $ build/pcrec -p rx --features all -fprefilter -o K3.c -- '\Ka*'
+  #define RX_ENGINE          "vm"
+  #define RX_DFA_SCAN        "unanchored"
+  #define RX_DFA_PREFILTER   "none"
+      static const unsigned char rx_forward_is_accepting[2] = { 1, 1, };
+  ```
+
+  A `\K` pattern whose hybrid prefilter is a one-state start-accepting machine:
+  P1 ✓, P2 ✓, P4 ✓, P3 n/a. **The correct statement of P5 is the ENGINE-LEVEL
+  fact:** `fit.chosen == ENGM_DFA` implies no `\K`, so no artifact whose
+  `<prefix>_match` and `<prefix>_search` this emitter OWNS carries one.
+
+  **And the hybrid case is safe for a different reason, which must be said
+  rather than assumed: the span is a BOUND, not an ANSWER.** The emitted
+  `rx_search_run` reads
+
+  ```c
+  if (rx_prefilter(subject, subject_length, search_from, window) != 1) return 0;
+  attempt_position = (size_t)window[0][0];
+  window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+  ```
+
+  `window[0][0]` is a lower bound on the attempt start, and `search_from` is
+  the strongest sound lower bound there is; `window[0][1]` is untouched by the
+  elision. So on a hybrid the elision is if anything MORE conservative than
+  today. §5.4(5) is reworded to assert the engine-level fact, because the
+  artifact-level assertion rev 1 wrote would either fire on this artifact or
+  pass vacuously (sound F4).
+
+**P0 — THE ROUTING DEPENDENCY THE PREDICATE INHERITS AND MUST STATE**
+(r49 item 18 / sound A6). The predicate reads `fs = fd->s0`. That is the right
+state at `search_from == 0` only because `ENG_UNANCH` implies `!nfa_has_bot`
+(`src/core/compile.c:1096`), i.e. no `N_BOT`, `N_BOT_M` or `N_GSTART`
+(`src/ir/nfa.c:990-993`): `s0` is closed with `bot_ok = true, gst_ok = true`
+and `s1u[UPC_PLAIN]` with `false, false` (`src/ir/dfa.c:1249-1258`), so with
+none of those nodes present the two closures coincide and intern to the same
+id — **`fs == s1u[UPC_PLAIN]`**, and `s1g[]` equals `s1u[]` entry for entry.
+P3 then covers `search_from > 0`, and there is no third (`\G`) start family to
+miss.
+
+**Why this must be WRITTEN and not inherited:** `dfa_needs_seed`
+(`src/gen/emit_dfa.c:2161-2166`) compares only `s1u[u]` ACROSS `u` — it would
+not notice an `s0 != s1u[PLAIN]` split — and `seed_emit_constant` (`:3496-3502`)
+then emits `s0` unconditionally at every `search_from`. The elision is sound
+today **only because of the ENG_UNANCH no-BOT routing above**, not because
+anything in the predicate checks it. A future engine-selection change that
+routed a BOT-bearing machine here would break the elision silently. The
+implementation states this as a comment at the predicate and, per §5.4, the
+structural checks name `ENG_UNANCH` explicitly rather than assuming it.
+
+**Blast radius, INFERRED for the mechanism, MEASURED for the population.**
+`emit_unanchored`'s output is also what a VM HYBRID inlines as its
+`static <prefix>_prefilter` (`src/gen/emit_dfa.c:1356`, `:4725`), so hybrids
+are in scope by construction. The reason the two rarely coincide is sharper
+than rev 1 gave: a start-accepting machine gets no candidate prefilter at all,
+and it is the **same widened bit** that gates both —
+`if (!start_acc && o->cand.usable)` at `:2581`, with the offset-k selection
+riding that same verdict at `:2596`. So the prefilter mechanism and the
+elision cannot disagree; they are not "declining on nearly the same fact",
+they are reading one bit. A useful corollary for the proof: on the accepted
+population there is **no candidate prefilter and no offset-k skip**, so
+neither can move the scan's entry position (sound A3).
+
+**M1 MEASURED `N_hybrid_pinned = 0` — AND THAT IS A DEFAULT-AXIS NUMBER, NOT
+A POPULATION** (r49 item 12 / sound B2, the K35 shape). M1's census ran default
+flags. `pfc_prefilter_forced` (`src/core/compile.c:1060-1063`) lets
+`-fprefilter` build a prefilter whose collapsed language is nullable —
+do-or-die overrides the `prefilter_lang_nullable` decline, and the comment at
+`:1051-1059` says so. A nullable prefilter language is precisely the pinned
+shape, as P5's `\Ka*` witness demonstrates. And `make test-axes`
+(`Makefile`'s `test-axes` target → `tests/axes/run_axes.sh`) derives its sweep
+from the `PCREC_(NO|FORCE)_*` bits, so **`-fprefilter` is inside the gate's own
+population**, on a corpus that contains both `\K` patterns and nullable
+patterns. §5.2 therefore records `N_hybrid_pinned` under the FORCE axis as an
+OWED MEASUREMENT with its command shape, not as a fact.
 
 ### 1.3 What is deliberately STEP 3, and why the plan row's own formula is not the mechanism
 
