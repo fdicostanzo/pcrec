@@ -99,3 +99,89 @@ Predicted sign per class:
   touched by this change at all.
 
 ---
+
+## PREDICTION vs MEASURED — the census, run 2026-09-02
+
+Both censuses over the same 2,846 comparable corpus patterns (2,848 extracted;
+2 refused on one side only are excluded from the join). Default flags,
+`--features all`, captures ON — the SAME flags M1 used, deliberately, so the
+population is comparable to the premeasure memo's.
+
+### P-1 / P-4 — stamp movements
+
+| stamp | predicted | MEASURED | verdict |
+|---|---|---|---|
+| `RX_ENGINE` | no movement | **0 moved** | HELD |
+| `RX_DFA_SCAN` | no movement | **0 moved** | HELD |
+| `RX_DFA_PREFILTER` | no movement | **0 moved** | HELD |
+| `RX_DFA_MATCH` | no movement (axis G untouched) | **0 moved** | HELD |
+| `RX_DFA_TABLE` | `"mixed"` → the forward form name where the reprs DIFFERED | **0 moved** | HELD **with an EMPTY population** — see below |
+| `RX_DFA_SCAN_EDGE` | the forward machine's own value where the reverse machine had edges the forward one lacked | **8 moved, every one toward `"none"`** (7 from `"range"`, 1 from `"bitmap"`) | HELD, and in the predicted DIRECTION |
+
+**The `RX_DFA_TABLE` row's population is EMPTY on this corpus, and that is
+worth stating rather than reading as a pass.** The prediction was conditional
+("where the forward and reverse reprs DIFFER"), and no pinned artifact in this
+corpus has such a pair — every one is `premultiplied` on both machines. So the
+fold's reverse-drop is UNEXERCISED by the census, and what tests it is
+`run_search_pinned.sh` §3, which recomputes the fold from the emitted text on
+every artifact including the declined ones.
+
+The eight `RX_DFA_SCAN_EDGE` movements are the note's own `mc2` shape: the
+reverse machine grows edges more readily than the forward one, so an artifact
+whose forward machine carries no edge used to stamp the REVERSE machine's
+value. Those eight are exactly the artifacts that would have stamped a fact
+about text no longer in the file.
+
+### P-2 — the new stamp and mirror
+
+Both present and agreeing on every artifact; `run_search_pinned.sh` §2 asserts
+it corpus-wide in both directions, including the NULL case on a plain VM
+artifact. 2,305 artifacts carry a DFA scan (1,563 pure DFA, 742 hybrid at
+`--no-captures`; 1,177 hybrid at the default), 249 plain VM stamp nothing.
+
+### P-3 — the population
+
+**MEASURED: 175 pinned, of 2,846.** That is EXACTLY M1's number
+(`docs/dev/opt5_step2_premeasure.md`), measured on the same flags by a
+different instrument (M1 used a probe stamp on an unshipped branch; this is
+the shipped `RX_DFA_START`). The prediction said "equal or smaller than 175,
+because the shipped predicate adds P3's liveness conjunct and P4's
+empty-engine clause"; it is equal, i.e. neither conjunct declines anything on
+this corpus. All 175 are `RX_ENGINE "dfa"`; **0 hybrids on the default axis**,
+also matching M1.
+
+`rewind_position` moved 1,872 → 1,697 artifacts: a difference of exactly 175.
+The population and the mechanism agree.
+
+### P-5 — size
+
+`.c` non-comment bytes, over the 2,846 joined patterns (2,552 that compile):
+
+| class | n | before | after | delta | per artifact |
+|---|---|---|---|---|---|
+| pinned | 175 | 2,179,360 | 1,613,744 | **−565,616** | **−3,232.1** |
+| declined (DFA + hybrid) | 2,062 | 37,568,686 | 37,715,088 | +146,402 | +71.0 |
+| plain VM (no DFA scan) | 315 | 5,122,621 | 5,130,496 | +7,875 | +25.0 |
+| **total, `.c` only** | 2,552 | 44,870,667 | 44,459,328 | **−411,339** | −0.92 % |
+
+Plus the `.h`: **+39 bytes on every artifact of both engines**, the
+`search_form` member declaration in the shared `PCREC_RX_ABI_H` block. The
+comment above it costs ZERO counted bytes, which is the measured
+above-the-member placement `[ENG-ABS]` and `[DD-13b.W1.2]` both record. Whole
+change, both files: **−411,339 + 39 × 2,552 = −311,811 bytes**, −0.69 %.
+
+Largest decreases are `.*`, `(?i)a*`, `(?:|[^a])*` and the nullable
+`{0,2}`-wrapped shapes at about −4,500 bytes each; largest increases are +71,
+the declined-artifact constant. **The prediction's direction and its NARROWING
+both hold**: nothing but the reverse machine's tables, accessor block and loop
+left the accepted artifacts, and the declined population moved by exactly the
+two new lines.
+
+### P-6 — the named witnesses that must not move
+
+All five hold, asserted permanently in `run_search_pinned.sh` §9:
+`[a-z]{4096,}` (`cls-atleast-4096`) and `(?:[a-z]{0,8192})\z` are DECLINED;
+`[a-z]{0,4096}`, `{0,8192}` and `{0,16384}` are PINNED. The
+`VIEW_DECLINE_MANIFEST`'s five shape-anchors are all declined (§8), and the
+`unwrapped` `match`-regime control is untouched because `<prefix>_match` is
+not changed by this row at all.
