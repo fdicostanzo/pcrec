@@ -36,7 +36,7 @@ directory's conventions and the traps that have actually been hit.
 |---|---|
 | `SAB_ID` | the row's identity in the matrix. Conventionally `S<NN>-<kebab-name>`; it is NOT the selector (see "Numbering" below) |
 | `SAB_FILE` | the file the edit lands in, repo-relative |
-| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `searchpinned` ([OPT-5] STEP 2, registered with the arm and before S218-S222, which name it); before it `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207) and `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
+| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `vmframeless` ([OPT-VMFL] STEP 0, registered with the arm and before S224-S226, which name it); before it `searchpinned` ([OPT-5] STEP 2, registered with the arm and before S218-S222, which name it); before that `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207) and `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
 | `SAB_DESC` | one sentence: what the edit makes the compiler do wrong |
 | `SAB_BEFORE` / `SAB_AFTER` | the literal edit. `lib/replace.py` refuses unless BEFORE occurs exactly `SAB_COUNT` times and AFTER is present afterwards |
 

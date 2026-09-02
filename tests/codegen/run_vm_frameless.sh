@@ -290,29 +290,45 @@ echo "checks failed: $fail"
 exit 0
 
 # =========================================================================
-# SABOTAGE TRANSCRIPTS
+# SABOTAGE TRANSCRIPTS — what each plant does to this file
 # =========================================================================
-# Recorded at landing, 2026-09-02. This file's failing directions were
-# exercised by hand rather than by a permanent mech row, and that is stated
-# rather than implied: [OPT-VMFL] STEP 0's own charter is a stamp, and the
-# BEHAVIOUR its bool gates (the fail label's dispatch omission) already has
-# its own coverage in `run_codegen_tests.sh`'s `[DD-14-RECURSION rule 1]`,
-# whose `goto *` relation moved to `(has_push ? 1 : 0) + shared-callee-bodies`
-# at [CC-CLANG] for exactly this fact.
+# Recorded at landing, 2026-09-02. THIS FILE'S THREE FAILING DIRECTIONS ARE
+# NOW PERMANENT MECH ROWS (r51fix item 3; r51 panel finding 3, r51check
+# finding 3): they shipped "exercised by hand rather than by a permanent mech
+# row" and were the ONLY instrument scoping `goto *` correctly on the default
+# and -fprefilter axes (rule 1's whole-file grep in run_codegen_tests.sh is
+# WRONG there — 199 false positives from a hybrid's inlined ENG_ATTEMPT scan,
+# this file's own header). A structural check with no committed sabotage row
+# is the defect this project keeps recording — the permanent rows are
+# tests/mech/sabotages/S224-S226, on the new `vmframeless` mech arm.
+# [OPT-VMFL] STEP 0's own charter is a stamp, and the BEHAVIOUR its bool
+# gates (the fail label's dispatch omission) ALSO has its own coverage in
+# `run_codegen_tests.sh`'s `[DD-14-RECURSION rule 1]`, whose `goto *` relation
+# moved to `(has_push ? 1 : 0) + shared-callee-bodies` at [CC-CLANG] for
+# exactly this fact — that rule is a second, independent net on the same
+# underlying bool, not a substitute for these three rows on the STAMP.
 #
-#   PLANT 1 -- THE STAMP INVERTED (`has_push ? 1 : 0`). This file: RED in §1
-#     on all six witnesses and in §3 on every VM artifact of both axes. No
-#     answer moves anywhere in the tree, which is why the stamp needs a
-#     structural check at all.
+#   S224 -- THE STAMP INVERTED (`has_push ? 1 : 0`), with SAB_REACH from
+#     birth (a capture-bearing frameless witness on the default axis). This
+#     file: RED in §1 on all six named witnesses and in §3 on every VM
+#     artifact of both axes. No answer moves anywhere in the tree, which is
+#     why the stamp needs a structural check at all.
 #
-#   PLANT 2 -- THE STAMP RECOMPUTED FROM `v.npush` rather than reading the
-#     shared bool (the derivation the memo's §4.2 rejects by name). This file:
-#     RED in §3 on the artifacts where the resume-point cap's ESTIMATE
-#     disagrees with what was emitted — the counter rung's unbounded arm once
-#     drove `npush` negative, which is the measured reason the dispatch gate
-#     itself does not read it.
+#   S225 -- THE STAMP RECOMPUTED FROM `v.npush` rather than reading the
+#     hoisted `has_push` bool (the derivation this file's own comment at the
+#     stamp site rejects by name), with SAB_REACH from birth (a linked-call
+#     witness on the default axis). This file: RED in §3 on the artifacts
+#     where the resume-point cap's ESTIMATE disagrees with what was emitted
+#     — the counter rung's unbounded arm once drove `npush` negative, which
+#     is the measured reason the dispatch gate itself does not read it, and a
+#     linked call site allocates no slot of its own so a call-only program
+#     can push despite `npush == 0`.
 #
-#   PLANT 3 -- THE STAMP EMITTED CONDITIONALLY (only when frameless). This
-#     file: RED in §1 (every `want=0` witness reports the macro absent) and in
-#     §3 (`appears 0 times`). That is [OPT-1]'s `_FAST_FRAMES` lesson: a fact
-#     readable by a macro's ABSENCE is not a fact a consumer can `#if` on.
+#   S226 -- THE STAMP EMITTED CONDITIONALLY (only when frameless), with
+#     SAB_REACH from birth (a linked-call, pushing witness on the default
+#     axis). This file: RED in §1 (every `want=0` witness reports the macro
+#     absent) and in §3 (`appears 0 times`) — DIFFERENT detector lines from
+#     S224's value-mismatch assertions, which is why this is its own row
+#     rather than a second hunk of S224. That is [OPT-1]'s `_FAST_FRAMES`
+#     lesson: a fact readable by a macro's ABSENCE is not a fact a consumer
+#     can `#if` on.

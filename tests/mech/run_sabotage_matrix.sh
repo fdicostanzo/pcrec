@@ -1099,6 +1099,32 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            vmframeless)
+                # [OPT-VMFL] STEP 0 (r51fix item 3)
+                # tests/codegen/run_vm_frameless.sh — `<PREFIX>_VM_FRAMELESS`
+                # held to the VM program's own `goto *` count rather than to
+                # the bool that wrote it. ITS OWN ARM rather than
+                # `searchpinned` or `codegen`, for the same reason those two
+                # are split from each other: what it guards (the stamp
+                # agreeing with the emitted dispatch) is orthogonal to both.
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (S224-S226), per
+                # R31 C11. A ROW ON THIS ARM MAY LEGITIMATELY SCORE
+                # `corpus:0fail`: the stamp is a fact a bench or a dlopen
+                # consumer reads, not a verdict `<prefix>_search` returns, so
+                # a red `vmframeless` beside a green corpus is this arm
+                # working, `searchpinned`'s own S222 shape one construct over.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE rather than "not detected".
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_vm_frameless.sh" \
+                    > "$work/vmframeless.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/vmframeless.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/vmframeless.log" | grep -oE '[0-9]+')"
+                suite_bits+=("vmframeless:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             anchdiff)
                 # [ENG-ABS] tests/anchored/run_anchored_diff.sh — the ANSWER
                 # half, and the arm whose absence would make an entire class of
