@@ -1,0 +1,135 @@
+# [OPT-5] STEP 2 — the START-PINNED SEARCH at a NONZERO startpos.
+#
+# WHY THIS FILE EXISTS, and it is not "more coverage of a* ".
+# `docs/design/opt5_step2_twopass.md` §5.6d: the elision writes
+# `caps[0][0] = search_from`, and the obvious way to get that wrong is to
+# write the literal `0`. That defect is INVISIBLE to every single search at
+# startpos 0 — which is what a plain `m`/`n` cell is, and therefore what
+# almost the whole corpus is. The joined count measured 2026-09-02: of the
+# 175 corpus patterns the predicate accepts, only FIVE carried any `ms`/`ns`
+# cell at all, 14 cells between them. This file is the note's second
+# acceptable discharge (build synthetic witnesses) for the named members of
+# that population, so sabotage row S221 has a corpus arm as well as
+# `tests/codegen/run_search_pinned.sh` §10's every-startpos differential.
+#
+# EVERY PATTERN HERE IS ONE THE PREDICATE ACCEPTS (`RX_DFA_START "pinned"`),
+# and the last block is the SEEDED shape — a `\b` in the start closure, so
+# the search at `startpos > 0` enters through `s1u[]` rather than through
+# `s0`, which is the P3 half of the predicate. It is a DECLINED pattern and
+# belongs here anyway: it is the control that says a nonzero startpos is
+# reported correctly on both sides of the axis.
+#
+# THE SEEDED BLOCK IS IN A SIBLING FILE, not missing:
+# `tests/assertions/start_pinned_startpos.rxt` carries `\bx*`, because `\b`
+# needs module `assertions` and this is a base-tier file. It is the control on
+# the DECLINED side of the axis and on the one shape whose ENTRY STATE depends
+# on the startpos.
+#
+# Expectations oracle-verified against python3 `re` (`re.compile(p).search(s,
+# pos)`, which is startpos semantics exactly), generated 2026-09-02.
+
+pattern a*
+ms 0 "" 0 0
+ms 0 "a" 0 1
+ms 1 "a" 1 1
+ms 0 "aa" 0 2
+ms 1 "aa" 1 2
+ms 2 "aa" 2 2
+ms 0 "xa" 0 0
+ms 1 "xa" 1 2
+ms 2 "xa" 2 2
+ms 0 "xaa" 0 0
+ms 1 "xaa" 1 3
+ms 2 "xaa" 2 3
+ms 3 "xaa" 3 3
+ms 0 "aax" 0 2
+ms 1 "aax" 1 2
+ms 2 "aax" 2 2
+ms 3 "aax" 3 3
+ms 0 "xaax" 0 0
+ms 1 "xaax" 1 3
+ms 2 "xaax" 2 3
+ms 3 "xaax" 3 3
+ms 4 "xaax" 4 4
+ms 0 "xxaayy" 0 0
+ms 1 "xxaayy" 1 1
+ms 2 "xxaayy" 2 4
+ms 3 "xxaayy" 3 4
+ms 4 "xxaayy" 4 4
+ms 5 "xxaayy" 5 5
+ms 6 "xxaayy" 6 6
+
+pattern [a-z]{0,64}
+ms 0 "" 0 0
+ms 0 "abc" 0 3
+ms 1 "abc" 1 3
+ms 2 "abc" 2 3
+ms 3 "abc" 3 3
+ms 0 "xy1abc" 0 2
+ms 1 "xy1abc" 1 2
+ms 2 "xy1abc" 2 2
+ms 3 "xy1abc" 3 6
+ms 4 "xy1abc" 4 6
+ms 5 "xy1abc" 5 6
+ms 6 "xy1abc" 6 6
+ms 0 "1abc1" 0 0
+ms 1 "1abc1" 1 4
+ms 2 "1abc1" 2 4
+ms 3 "1abc1" 3 4
+ms 4 "1abc1" 4 4
+ms 5 "1abc1" 5 5
+ms 0 "aa11bb" 0 2
+ms 1 "aa11bb" 1 2
+ms 2 "aa11bb" 2 2
+ms 3 "aa11bb" 3 3
+ms 4 "aa11bb" 4 6
+ms 5 "aa11bb" 5 6
+ms 6 "aa11bb" 6 6
+
+pattern [a-z]{0,4096}
+ms 0 "" 0 0
+ms 0 "abc" 0 3
+ms 1 "abc" 1 3
+ms 2 "abc" 2 3
+ms 3 "abc" 3 3
+ms 0 "1abc1" 0 0
+ms 1 "1abc1" 1 4
+ms 2 "1abc1" 2 4
+ms 3 "1abc1" 3 4
+ms 4 "1abc1" 4 4
+ms 5 "1abc1" 5 5
+ms 0 "zz9qq" 0 2
+ms 1 "zz9qq" 1 2
+ms 2 "zz9qq" 2 2
+ms 3 "zz9qq" 3 5
+ms 4 "zz9qq" 4 5
+ms 5 "zz9qq" 5 5
+
+pattern .*
+ms 0 "" 0 0
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+ms 0 "a\nb" 0 1
+ms 1 "a\nb" 1 1
+ms 2 "a\nb" 2 3
+ms 3 "a\nb" 3 3
+ms 0 "xyz" 0 3
+ms 1 "xyz" 1 3
+ms 2 "xyz" 2 3
+ms 3 "xyz" 3 3
+
+pattern \w*
+ms 0 "" 0 0
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 2 "ab" 2 2
+ms 0 "a-b" 0 1
+ms 1 "a-b" 1 1
+ms 2 "a-b" 2 3
+ms 3 "a-b" 3 3
+ms 0 "-ab-" 0 0
+ms 1 "-ab-" 1 3
+ms 2 "-ab-" 2 3
+ms 3 "-ab-" 3 3
+ms 4 "-ab-" 4 4

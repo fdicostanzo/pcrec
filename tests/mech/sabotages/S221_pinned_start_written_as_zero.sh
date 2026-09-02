@@ -19,11 +19,21 @@
 # startpos from 0 to n+1 on every subject and reads `caps[0][0]` EXPLICITLY
 # against the `-fno-start-pinned` build's independently derived answer.
 #
-# THE `harness` ARM IS THEREFORE EXPECTED TO SCORE GREEN OR NEARLY SO, and
-# that is this row working rather than a half-detection — the same shape
-# `offsetskip`'s S187 and `sizeterm`'s S191/S192 already have. The reach floor
-# below is what says the thin `ms`/`ns` population has not gone to zero
-# underneath it.
+# THE POPULATION IS COUNTED, WHICH IS THE NOTE'S FIRST ACCEPTABLE DISCHARGE
+# (§5.6d), AND THE WITNESSES ARE BUILT, WHICH IS ITS SECOND. MEASURED
+# 2026-09-02: of the 175 corpus patterns the predicate accepts, only FIVE
+# carried any `ms`/`ns` cell at all — 14 cells between them, on `x*`, `a*`,
+# `(?>a?)`, `(?:ab)?+` and `\Q\E`. That is thin enough that the row does not
+# rest on it: `tests/base/start_pinned_startpos.rxt` (112 cells over five
+# pinned patterns at every startpos) and its seeded sibling
+# `tests/assertions/start_pinned_startpos.rxt` were added with this row, and
+# the floor below is on the first of them.
+#
+# THE `harness` ARM IS THEREFORE EXPECTED TO GO RED ON THE NEW FILE AND
+# NEARLY NOWHERE ELSE, which is this row working rather than a
+# half-detection — the same shape `offsetskip`'s S187 and `sizeterm`'s
+# S191/S192 already have. Before those cells existed the arm would have been
+# green outright.
 #
 # THE FAILURE MODE IS A SPAN THAT STARTS BEFORE THE SEARCH DID: on `a*` over
 # "xxaa" from startpos 2 the true span is [2,4) and the planted build reports
@@ -41,7 +51,7 @@ SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manage
 # `.rxt` cells that could see this at all — still exists.
 SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "a*" && grep -q "capture_spans\[0\]\[0\] = (ptrdiff_t)search_from;" "$REACH_TMP/o.c" && echo REACH-PINNED-WRITES-SEARCH-FROM'
 SAB_REACH_EXPECT="REACH-PINNED-WRITES-SEARCH-FROM"
-SAB_REACH_POP="tests/assertions/gpos.rxt|^(ms|ns) |20"
+SAB_REACH_POP="tests/base/start_pinned_startpos.rxt|^(ms|ns) |60"
 SAB_COUNT=1
 SAB_BEFORE='            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"'
 SAB_AFTER='            /* SABOTAGE S221: the absolute-offset trap. */
