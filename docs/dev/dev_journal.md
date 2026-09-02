@@ -19657,3 +19657,46 @@ waits for rev 2 + Frank's go (not started unprompted).
 NEXT: O-14 → answer its asks (I-31); rev 2 review + merge (doc-only:
 strict + test-codegen, no battery); Frank's open rulings (o42 witness-gap,
 K43/K44 fix directions, reflection-surface note).
+
+## 2026-09-02 — Fiftieth session, part 2 (midday): [OPT-5] STEP 2 note REV 2 delivered, verified and MERGED (66da68c)
+
+Lane opt5d2 (opus) delivered rev 2 in ~35 minutes wall: the note went 812
+→ 1,915 lines, seven doc files, nothing under src/ or tests/. All 18 r49
+items and the five minors carry a row in the note's new §10 disposition
+table. The hard item (A1) is a real re-derivation: §3.2.0 tabulates every
+recording site in `emit_scan_loop` by function and line, both of
+r49sound's witnesses were re-emitted and quoted, and the `-1` gate is
+LOAD-BEARING throughout. Item 8 is the one honest non-discharge: no
+synthetic witness reaches P3 (six shapes tried and rejected; §5.6b derives
+why the population looks EMPTY on ENG_UNANCH, not merely unpopulated) —
+S219 ships UNREACHED with its reason, the liveness conjunct's real guard is
+a compiler assertion, and §7 item 10 (count P3 EVALUATIONS, not declines,
+both axes) is what settles it.
+
+**Review:** verifier r50verify (sonnet, read-only, refute-first) confirmed
+every disposition, 9 of 10 sampled code citations exact to the line, and
+the lane's two implementation-lane catches against the code: (1) the
+`rx_info.search_form` mirror appends after `nentries`, not "after
+`match_form`" as the review worded it (stale by one abi bump — [DD-13c]
+means append at the END); (2) the mirror's guard is
+`pcrec_artifact_has_dfa_scan`, NOT `match_form`'s `fit.chosen == ENGM_DFA`
+— a hybrid's `_search` post-loop block exists, and copying `match_form`'s
+guard would stamp NULL on every hybrid. The one defect: the lane's
+"correction" of the review's `dfa_table_name` line was itself inverted
+(`:2663` forward, `:2664` reverse, `:2665` strcmp — the review was right);
+fixed at landing, finding 4 retracted by a manager note on the report.
+Provenance caveat recorded: r49cons's reconciled frame table exists in the
+review only as a summary sentence (its delivery message died with the
+previous session), so §0's table is a reconstruction — O-14 anchors it.
+
+Sabotage-id arbitration: S219 carries both P3 arms; no sixth id unless the
+implementation finds a witness. Worktrees opt5d/opt5m2 removed (branches
+kept; opt5m2's `[OPT5M2-PROBE]` hunk stays unmerged on its branch by
+design). `make test-codegen` on the merged tree: see the next part.
+
+**Frank's standing instruction (this session):** when the bench's O-14
+reports land, write an EXECUTIVE SUMMARY of the bench findings —
+findings, surprises, impact, next steps — as a committed doc.
+
+NEXT: O-14 → fill the §0 slots, answer asks (I-31), executive summary;
+Frank's implementation go for STEP 2; his open rulings.

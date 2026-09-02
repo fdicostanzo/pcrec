@@ -46,3 +46,13 @@ never edited afterwards.
   fixture had been FALSE since W1.1 — its `lib` named no file and its
   `target` named no block, both inert while nothing resolved them.
 - `lim1_report.md` — [LIM-1] (2026-08-30/31, lane lim1): the limits table (src/core/limits.def, 44 rows), `--list-limits`, the size-cap rescue's distinct RX_ENGINE_SEL value, S208/S209. Final wave committed by the MANAGER (takeover: the lane went unresponsive after its verification runs; content verified per the report's measured table, re-verified at landing).
+- `opt5d_log.md`, `opt5d_report.md` — [OPT-5] STEP 2 design note (2026-09-01
+  lane opt5d wrote rev 1; 2026-09-02 lane opt5d2 wrote REVISION 2 against the
+  r49 panel, `docs/dev/reviews/2026-09-01-r49-opt5-step2.md`). The report's §5
+  carries seven findings against the review and the note's premises — two of
+  them real implementation-lane catches (the `rx_info` mirror appends after
+  `nentries`, not `match_form`; its guard is `pcrec_artifact_has_dfa_scan`,
+  not `match_form`'s engine test) — and one RETRACTED at landing (finding 4,
+  the `dfa_table_name` line: the review's `:2664` was right). The one r49
+  item not fully discharged is 8 (no synthetic witness reaches P3; S219 ships
+  UNREACHED with the derivation).
