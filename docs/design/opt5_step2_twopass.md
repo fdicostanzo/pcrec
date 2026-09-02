@@ -483,13 +483,30 @@ know:
   on the winning origin, not the origin: threads from `q`, `q+1`, `q+2` can all
   be live, the `q` one can die, and the surviving `q+2` thread is mid-flight —
   so the state is not `fs` and no cursor in the loop names `q+2`.
-- The only sound way to make the origin a single number is to run a machine that
-  has ONE origin by construction. That machine exists — it is `[ENG-ABS]`'s
-  unwrapped anchored machine — and running it per start position is a search,
-  not a match-here.
+- **Tracking the origin forward on a multi-origin machine is SOUND and NOT
+  FREE — a COST argument, not an impossibility one** (r49 item 15 / sound D2;
+  revision 2 corrects rev 1, which said "the only sound way" and contradicted
+  its own comparison table two paragraphs down). Tagged determinization —
+  Laurikari-style TDFA: a start-position register carried per thread set, with
+  copy operations attached to transitions — is a standard, sound construction
+  that tracks the origin forward on exactly this machine, and it is what
+  TNFA-based engines use for submatch extraction in one pass. What it costs is
+  a register copy per transition and a substantially larger build — **which is
+  precisely the per-step cost STEP 2 exists to remove**, and precisely why it
+  should not be built now. The alternative that has no per-step cost is a
+  machine with ONE origin by construction; that machine exists — it is
+  `[ENG-ABS]`'s unwrapped anchored machine — and running it per start position
+  is a search, not a match-here.
 
-So the multi-edge form is not blocked by bookkeeping; it is blocked by the same
-fact `[ENG-ABS]` had to build a third machine to get around. **Recommended
+  **The D77 trigger, named so the next reader revisits rather than inherits:**
+  STEP 3's construction-time scan-edge synthesis changes the economics —
+  fewer states, fewer register copies, and counted regions that are
+  single-origin by construction. **Re-evaluate forward origin tracking WHEN
+  STEP 3 lands, and not before.** Nobody should carry away "forward origin
+  tracking is unsound"; it is untaken, on cost.
+
+So the multi-edge form is not blocked by bookkeeping; it is blocked by a cost
+the same fact `[ENG-ABS]` paid a third machine to avoid. **Recommended
 split:**
 
 | | STEP 2 (this note) | STEP 3 and after (named, not designed here) |
@@ -577,56 +594,237 @@ origin is** (§1.3). STEP 2 uses the equivalent-but-stronger fact that the origi
 is `search_from`, which needs no arithmetic at all: it is the *same number* the
 `end − Σcount` form would compute, obtained without maintaining anything.
 
-### 3.2 The elision's own proof, in full
+### 3.2 The elision's own proof, re-derived FROM THE EMITTER (rewritten in revision 2)
 
-Assume P1–P5 and `search_from ≤ subject_length` (the forward direction's range
+Assume P0–P5 and `search_from <= subject_length` (the forward direction's range
 guard `if (search_from > subject_length) return 0;` disposes of the rest).
 
-*Claim A — the forward loop records an accept at `search_from` itself.* The
-emitted loop body's order is fixed and documented in `scanedge.c`'s header: *"the
-accept probe, the candidate-start prefilter, the stay skips, THE SCAN EDGES, the
-position-view select, the viewed accept probe, and the tail (bound check, then
-the step)"*. The accept probe therefore runs at `scan_position == search_from`
-before anything advances. By P1+P2+P3 the state occupied there accepts under
-whatever view holds, so `last_accept_position = search_from`. Hence the
-`last_accept_position == (size_t)-1` early return is unreachable.
+**Revision 1's Claim A was FALSE and is replaced** (r49 item 1 / sound A1).
+Rev 1 said: *"The emitted loop body's order is fixed and documented in
+`scanedge.c`'s header … The accept probe therefore runs at
+`scan_position == search_from` before anything advances."* That misreads the
+header. The header's own list names **two** probe sites — "the accept probe,
+the candidate-start prefilter, the stay skips, THE SCAN EDGES, the
+position-view select, the viewed accept probe, and the tail"
+(`src/opt/scanedge.c:107-109`) — and **which of them an artifact has is an
+axis-E selection, not a constant.**
 
-*Claim B — no later start is ever live.* D3's accept-pruning drops every thread
-below the highest-priority accepting one; the start-anywhere self-loop is the
-lowest-priority thread. `fs` accepts, so the pruning fires in `fs`'s own closure,
-before any byte is consumed, and `δ(fs, c)` contains no fresh start thread for
-any `c`. By induction no state reachable from `fs` does either. This is not a
-new argument: `emit_dfa.c` makes it twice, for the prefilter's stay set and for
-the `last == (size_t)-1` gate, and records that "two independent critics attacked
-the gate and neither could build a witness: deleting it produced 0 divergences
-over 8.0M oracle-checked comparisons".
+#### 3.2.0 Where the loop records an accept — the derivation, site by site
 
-*Claim C — the leftmost match begins at `search_from`.* By Claim A a match
-exists there. Leftmost-first semantics select it. By Claim B, `last_accept_position`
-is the furthest end of a thread from `search_from`, i.e. the longest match at
-`search_from` — which is what the reverse pass, run from that end, would have
-walked back to. So the two forms report the same span.
+`emit_scan_loop` (`src/gen/emit_dfa.c`) emits the body in this order, and
+every line below is a call in that function:
+
+| order | line | what it emits | does it record `last_accept_position`? |
+|---|---|---|---|
+| 1 | `:4696` | `f->acc->emit_top` | only under axis-E `scalar-plain` |
+| 2 | `:4697` | `f->pf->emit` (candidate prefilter) | no — and ABSENT on the accepted population (§3.2.1) |
+| 3 | `:4699-4703` | `f->dir->emit_skip` per stay skip | yes, at its LANDING position, when `!views` and the skipped state accepts (`dir_fwd_skip`, `:3992-4014`, the record at `:4011-4012`) |
+| 4 | `:4714` | `emit_scan_edge` per edge | yes, at a landing position, in every arm (`:4473-4568`; see below) |
+| 5 | `:4715` | `f->view->emit` (position-view select) | no — moves nothing |
+| 6 | `:4716` | `f->acc->emit_after_view` | only under axis-E `scalar-viewed` |
+| 7 | `:4717` | `f->acc->emit_tail` | under `by-class`, yes — the tail IS the probe |
+
+Axis E is `dfa_accs` (`:3572-3579`) and it has three objects:
+
+- **`scalar-plain`** (`cand_always`) supplies `emit_top` — probe FIRST, above
+  everything;
+- **`scalar-viewed`** (`acc_viewed_applies`, `:3511`) supplies
+  `emit_after_view` — probe BELOW the scan edges;
+- **`by-class`** (`acc_by_class_applies`, `:3510`) supplies NEITHER, and
+  records inside `acc_emit_tail_by_class` (`:3530-3570`): the class-indexed
+  probe at `:3563-3565` in the interior, `emit_bound_accept` at `:3558` at the
+  boundary arm.
+
+And `acc_viewed_applies` reads `us->views`, which `unanch_start` builds as
+`o->views = o->viewsel || wctx` with `wctx = fd->clsctx || rd->clsctx`
+(`:2487-2503`) — **an OR over BOTH machines**, so a `\b` that exists only in
+the REVERSE machine demotes the FORWARD probe below the edges.
+
+**Two witnesses, emitted here** (`build/pcrec -p rx --features all`, this
+revision's build; both stamp `RX_ENGINE "dfa"`, `RX_DFA_SCAN "unanchored"`,
+`RX_DFA_PREFILTER "none"` — start-accepting, i.e. inside the accepted
+population):
+
+**(i) `[a-z]{0,8}|9$`** — the loop body OPENS with the scan edge at state 0;
+the probe is eight lines later, after the view select:
+
+```c
+    for (;;) {
+        // [OPT-5] SCAN EDGE: the states between here and state
+        // 1 differ only in how many class-2 bytes have been counted, ...
+        if (forward_state == 0 && scan_position < subject_length && (unsigned char)(subject[scan_position] - 97) <= 25) {
+            unsigned long scan_run_length = 1;
+            scan_position++;
+            while (scan_position < subject_length && scan_run_length < 8UL
+                   && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; scan_run_length++; }
+            if (scan_run_length == 8UL) {
+                forward_state = 3;
+                last_accept_position = scan_position;
+            } else {
+                last_accept_position = scan_position;   // the run stopped inside the edge
+            }
+        }
+        rx_forward_state forward_view_state = forward_state;
+        if (__builtin_expect(scan_position + 1 >= subject_length, 0) && ...)
+            forward_view_state = rx_forward_view_take(...);
+        if (rx_forward_accepts(rx_forward_is_accepting, forward_view_state)) last_accept_position = scan_position;
+```
+
+On `"abc"` at `search_from = 0` the edge consumes the run and records
+`last_accept_position = 3`. **Position 0 is never recorded.**
+
+**(ii) `a*|\b9`** — the same shape via `wctx` alone; no view select is emitted
+at all, because the machine's only class context comes from the `\b` in the
+other branch:
+
+```c
+    for (;;) {
+        // [OPT-5] SCAN EDGE: every state a run of class 3 would pass IS this state, ...
+        if (forward_state == 0 && scan_position < subject_length && subject[scan_position] == 97) {
+            scan_position++;
+            while (scan_position < subject_length && subject[scan_position] == 97) scan_position++;
+            last_accept_position = scan_position;   // every position the run passed accepts
+        }
+        if (rx_forward_accepts(rx_forward_is_accepting, forward_state)) last_accept_position = scan_position;
+```
+
+**(iii) the control — `[a-z]{0,64}`**, the shape rev 1 assumed was universal,
+DOES put the probe first:
+
+```c
+    for (;;) {
+        if (rx_forward_accepts(rx_forward_is_accepting, forward_state)) last_accept_position = scan_position;
+        // [OPT-5] SCAN EDGE: ...
+```
+
+A second, independent reason rev 1's literal claim fails: `pick_skip_states`
+excludes `s0` ONLY (`:4601-4602`, via `dir->prefilter_owns_start`), not the
+seed states — so on a SEEDED machine at `search_from > 0` a stay skip can fire
+on the first iteration and advance the position before any probe. And
+scan-edge heads are excluded from nothing: `dfa_form_derive` takes every state
+with `dfa_edge_taken` (`:4609-4610`), `fs` included — which is exactly where
+the elision's speed comes from, since on the accepted population the edge sits
+AT the start state.
+
+#### 3.2.1 Claim A (repaired) — some accept ≥ `search_from` is ALWAYS recorded
+
+*Claim A.* Under P0–P4, the forward loop's FIRST iteration records
+`last_accept_position = q` for some `q >= search_from`. Hence
+`last_accept_position != (size_t)-1` when the loop exits.
+
+*Proof, by the table in §3.2.0.* The entry state is `fs` at
+`search_from == 0` (P0) or a seed state at `search_from > 0` (P3), and in
+either case it is LIVE and accepts under every position view and every class
+context (P1 + P2 + P3). Nothing above the recording sites can advance the
+position past a recording site without itself recording:
+
+- **The prefilter cannot fire at all.** `start_acc = state_acc_any(&fd->st[fs])`
+  OR'd over the seed states (`:2542-2547`), and the prefilter is gated
+  `if (!start_acc && o->cand.usable)` (`:2581`). P1
+  (`up[UPC_PLAIN].accept != 0`) implies `state_acc_any` implies `start_acc`,
+  so the gate is false: **no candidate prefilter, and no offset-k skip either**,
+  since the k-selection rides that same verdict (`:2596`). VERIFIED: every
+  probe in the accepted population stamps `RX_DFA_PREFILTER "none"`
+  (`a*`, `[a-z]{0,64}` … `{0,16384}`, `[a-z]{0,8}|9$`, `a*|\b9`, forced
+  `\Ka*`).
+- **A stay skip that fires records its landing** when `!views`
+  (`dir_fwd_skip:4011-4012`, guarded on the skipped state's PLAIN accept bit,
+  which P1+P2 give); when `views` it deliberately does not, because the probe
+  BELOW it covers the landing — the emitter says so at `:4009-4011`.
+- **A scan edge that fires records a landing in every arm.** With `acc = 1`
+  (P1 at the head `fs`): the unbounded arm records at `:4531-4533`; the bounded
+  arm records the fall-through's position at `:4556` when the fall-through
+  accepts, the step-back position at `:4552` when it does not, and the
+  run-stopped position at `:4561-4562`.
+- **The view select and both probes move nothing** (`:4715`, `:4696`, `:4716`).
+- **If NOTHING above fired**, the position is still `search_from` and the
+  axis-E object records there: `scalar-plain` at `:4696`, `scalar-viewed` at
+  `:4716`, `by-class` inside the tail at `:3563-3565` (interior) or `:3558`
+  (boundary) — the class-indexed bit equalling the base bit by P2, and the
+  base bit being 1 by P1. ∎
+
+**What Claim A does NOT say, and rev 1 wrongly assumed it did:** it does not
+say the recorded position is `search_from`. Witness (i) records 3, not 0.
+`caps[0][0] = search_from` is not Claim A's; it is Claim B's.
+
+*Claim B — no later start is ever live.* `nfa_wrap_unanchored`
+(`src/ir/nfa.c:946-955`) sets `st[sp].t1 = nfa->start` (the pattern) and
+`st[sp].t2 = any` (the byte self-loop), so the restart thread is the
+**lowest**-priority branch of the split. `closure()` walks the pre-set in
+priority order and stops the instant an accept is reached
+(`src/ir/dfa.c:794`: `if (prune && cl.accept) break;`), and `clo_walk`
+discards every deferred branch on accept (`:649-655`). Under P1+P2 every live
+`(view, class-context)` closure of `fs` accepts — at most nine of them,
+`make_state` at `:1080-1110` — so all of them prune, no restart thread
+survives into `fs`'s list, and by induction none reappears downstream
+(`any`'s only in-edge is from `sp`). Minimization preserves this: it is a
+language-level statement (`L(fs)` is the pattern's own, un-wrapped language),
+and `pcrec_minimize_dfa` preserves the language from each state.
+
+*Claim C — the leftmost match begins at `search_from`.* By P1 a match exists
+at `search_from`: at minimum the empty one. Leftmost-first semantics select
+it. By Claim B every accept the forward loop records belongs to a thread that
+began at `search_from`, so `last_accept_position` is the furthest END of such
+a thread — the longest match at `search_from`, which is what the reverse pass,
+run from that end, would have walked back to. Independently: the reverse
+machine is the **unpruned** reverse language (`prune = false`,
+`src/core/compile.c:1103`), hence a superset of the pruned forward language, so
+anything the forward loop accepted from `search_from` is accepted walking back;
+the reverse loop is bounded at `rewind_position > search_from`
+(`src/gen/emit_dfa.c:4113-4116`) and records the furthest-back accept, so it
+necessarily lands on `search_from`. The two forms report the same span.
 
 *Claim D — the return value is unchanged.* The two-pass form returns `0` when
-`last_accept_position == -1` (unreachable, Claim A) or when
-`match_start_position == -1` (the reverse machine failed to complete a match;
-under Claims B–C it cannot, since a completed forward path from `search_from` to
-the end exists). Otherwise `1`. The elided form returns `1`. Identical.
+`last_accept_position == -1` — reachable ONLY in the dead-seed case P3 now
+excludes, and there `0` is the correct answer (§3.3) — or when
+`match_start_position == -1`, unreachable by Claim C. Otherwise `1`. The
+elided form returns `1` on the accepted population. Identical.
 
 *Claim E — `capture_spans == NULL` and the non-zero `RX_NCAPS` case.* Slots
 `1..NCAPS-1` are filled with `PCREC_UNSET` by `emit_search_head` at entry to
-`<prefix>_search` (wave G's dead-capture elision), untouched by either form. The
+`<prefix>_search` (`src/gen/emit_dfa.c:428-448`, wave G's dead-capture
+elision), above BOTH forms and gated
+`cx->job->fit.chosen == ENGM_DFA && dfa_artifact_ncaps(cx) > 1`, so a hybrid's
+inlined prefilter never runs it. Neither form touches it, and the
 `if (capture_spans)` guard is unchanged.
 
-### 3.3 The `last_accept_position == -1` gate: keep it, do not cite it
+### 3.3 The `last_accept_position == -1` gate is LOAD-BEARING — keep it, and say why
 
-Claim A makes it unreachable. **Keep it anyway, and do not present it as part of
-the argument** — this is the posture `emit_dfa.c` already takes about its own
-redundant gate, in the sentence that follows the 8.0M-comparison measurement:
-*"Keep the gate — it is free belt-and-braces — but do not cite it as a premise.
-Presenting a redundant condition and a load-bearing one as the same claim is how
-someone eventually 'simplifies away' the wrong half."* The same words apply here
-verbatim. §5 notes the branch-coverage consequence.
+**Revision 1 got this backwards and revision 2 withdraws it in full.** Rev 1
+titled this section "keep it, do not cite it", called the gate unreachable
+under Claim A, and borrowed `emit_dfa.c`'s "free belt-and-braces … do not cite
+it as a premise" sentence — which is about a DIFFERENT gate, the prefilter's
+stay set. Applied here it writes a falsehood a later simplification would act
+on (r49 item 1 / sound A2, check F3).
+
+**The gate is the correct answer on a live input.** A search at
+`search_from > 0` on a seeded machine can seed into a state that is DEAD:
+`d->s1u[u]` is `-1` when no `(view, class-context)` closure is live
+(`src/ir/dfa.c:1249-1258`, `make_state`'s return at `:1113-1116`). No accept is
+recorded, `last_accept_position` stays `(size_t)-1`, the gate returns 0, and
+**there is genuinely no match beginning there**. Delete the gate and the
+elision fabricates an empty match at `search_from` — a match reported where
+there is none, the failure direction §3.4(f) says cannot happen.
+
+So the posture is the opposite of rev 1's:
+
+1. **P3's liveness conjunct** (§1.2) makes the predicate DECLINE any machine
+   with a dead seed, so the gate is not the elision's only defence.
+2. **The gate stays, and is named LOAD-BEARING in the emitted comment** and in
+   `docs/spec/`, precisely so that nobody reads a coverage report and deletes
+   it.
+3. **The branch-coverage consequence is a CORPUS fact, not a machine fact**
+   (sound F3). A coverage-style check will find the branch never taken on the
+   accepted population; the correct record is "this corpus contains no dead
+   seed at `startpos > 0`", never "deliberately dead". §5.4(6) is rewritten
+   accordingly, and §5.6 gives the dead-seed case a sabotage row rather than a
+   coverage exemption.
+
+**Every "dead" / "do not cite" phrasing about this gate is deleted from the
+note.** The one sentence that survives from `emit_dfa.c` — "Presenting a
+redundant condition and a load-bearing one as the same claim is how someone
+eventually 'simplifies away' the wrong half" — now argues the other way: the
+gate is the load-bearing half, and rev 1 was the reader it warns about.
 
 ### 3.4 The failure directions
 
