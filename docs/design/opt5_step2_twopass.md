@@ -1118,7 +1118,7 @@ The two sites, cited:
 
 | stamp | function | the reverse read to drop |
 |---|---|---|
-| `RX_DFA_TABLE` | `dfa_table_name`, `src/gen/emit_dfa.c:2664-2666` | `const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;` at `:2665`, and the `if (strcmp(f, r)) return "mixed";` that consumes it |
+| `RX_DFA_TABLE` | `dfa_table_name`, `src/gen/emit_dfa.c:2664-2666` | `const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;` at `:2664` (the forward read is `:2663`), and the `if (strcmp(f, r)) return "mixed";` that consumes it |
 | `RX_DFA_SCAN_EDGE` | `dfa_scan_edge_name`, `:2706-2715` | `if (strcmp(v, "mixed")) v = scan_edge_of(cx, &cx->job->rdfa, v);` at `:2711` |
 
 **PREDICTED STAMP MOVEMENTS, written BEFORE the change** (this is the
@@ -1373,7 +1373,7 @@ a non-zero value is a finding that wants reading, not a failure.
    assumed.
 4. `RX_DFA_TABLE` and `RX_DFA_SCAN_EDGE` never name a machine the artifact does
    not contain (§4.2). Concretely: on an accepted artifact, neither fold reads
-   `job->rdfa` — the two sites are `dfa_table_name:2665` and
+   `job->rdfa` — the two sites are `dfa_table_name:2664` and
    `dfa_scan_edge_name:2711`.
 5. **The `\K`-free premise (P5) — asserted at the ENGINE level, reworded in
    revision 2** (r49 item 12 / sound F4). Rev 1 said "no DFA artifact carries

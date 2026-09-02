@@ -151,3 +151,14 @@ None blocking. Two worth a ruling when convenient:
 - Note §8 marks all seven of Frank's rulings as STANDING, with Q2 flagged as
   the one ruled AGAINST the note's own rev-1 recommendation — the item an
   implementer reading rev 1 is most likely to get wrong.
+
+---
+**MANAGER LANDING NOTE (2026-09-02, at merge):** finding 4 above is
+RETRACTED. The independent verifier (lane r50verify, read-only) checked the
+source: `emit_dfa.c:2663` is the forward (`dfa`) read, `:2664` the reverse
+(`rdfa`) read, `:2665` the `strcmp`. The review's `:2664` was correct; the
+lane's correction inverted it. The note's three citations (§4.2 stamps
+table, §5.4 item 4, §10 item 16's sections) were fixed to `:2664` at
+landing. Every other citation the verifier sampled (9 of 10) and the
+lane's findings 1 and 2 (the `rx_info` append point; the mirror's guard
+predicate) were confirmed against the code.
