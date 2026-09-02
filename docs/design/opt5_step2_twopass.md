@@ -843,41 +843,151 @@ alone is exactly the counter-example: it never leaves `fs` and
 report `[0,3)` — a wrong `caps[0][0]`, a silent miscompile of the field
 learnings §3 names as the historically blind one.
 
-**The discriminating population is already a measured number.** [M6.2] wave C
-measured that narrowing this same state's read from `state_acc_any` to
-`up[UPC_PLAIN].accept` *"changes 21 corpus artifacts and 0 answers, over 2,247
-find-all cells"*. Those **21 artifacts are exactly the population on which P1's
-two spellings disagree**, and therefore exactly the population a wrong predicate
-miscompiles. They are the positive control §5 builds S217 on. (Caveat, stated
-because learnings §3 demands the population be named: the 21 was measured at the
-[M6.2] tree for a different consumer of the bit, and §7 item 2 owes its re-count
-before the assertion is written.)
+**The discriminating population is measured, and revision 2 changes both the
+number and the way it is pinned.** [M6.2] wave C measured that narrowing this
+same state's read from `state_acc_any` to `up[UPC_PLAIN].accept` *"changes 21
+corpus artifacts and 0 answers, over 2,247 find-all cells"*. §7 item 2's
+re-count is now DONE: **M2 measured 16** at today's tree over 2,845 corpus
+patterns (`docs/dev/opt5_step2_premeasure.md` M2), and every one of the 16 is
+an `(?m)...$` multiline-EOL shape — exactly this counter-example class.
 
-**(b) The seed states dropped (P3).** `\bx*` searched at `startpos > 0` begins in
-a seeded start state whose accept depends on `subject[search_from - 1]`. If that
-state does not accept, there is no empty match at `search_from`, the true origin
-is later, and the reported start is too small. Detector: sabotage S218.
+**Do NOT pin the check to "16", or to any count** (r49 item 7 / check M2). The
+strength rev 1 claimed for this control was its independence: a number
+measured for an unrelated consumer at a different tree. **That independence
+EXPIRED when M2 re-measured it FOR this check**, re-deriving the exact
+predicate distinction the sabotage edits, with the `member_ok` body this note
+proposes to SHARE with the implementation. Once P2 is a shared exported
+predicate, probe and feature call one function, a latent defect appears
+identically in "expected" and "actual", and the check greens wrongly. §5.2
+replaces the count with a NAMED MANIFEST.
+
+**`$` is the named witness the emitter already carries:** *"`$` alone is
+exactly the counter-example: it never leaves `fs` and
+`forward_is_accepting[fs]` is 0, but its EOL variant accepts."* On `$` over
+`"abc"` from `startpos = 0` the true span is `[3,3)`; the widened predicate
+would report `[0,3)`.
+
+**(b) The seed states dropped (P3's P1/P2 half).** A seeded start state whose
+accept depends on `subject[search_from - 1]`. If it does not accept, there is
+no empty match at `search_from`, the true origin is later, and the reported
+start is too small. Detector: sabotage **S219** — **whose witness is the check
+plan's hardest problem**, because rev 1's `\bx*` never reaches P3 (P2 declines
+it first) and M1 found ZERO P3-stage declines corpus-wide. §5.6b is the whole
+of that argument.
+
+**(b′) The seed state DEAD (P3's liveness half) — new in revision 2.** A
+search at `search_from > 0` seeding into `s1u[u] < 0`. Here the correct answer
+is "no match", the kept `-1` gate delivers it, and an elision without the
+liveness conjunct fabricates an empty match instead. This is the ONE failure
+direction in this section that is not a too-small `caps[0][0]` (see (f)), and
+it is why P3's conjunct is asserted in the implementation. Detector: sabotage
+**S222** (the liveness conjunct dropped), plus the assertion itself.
 
 **(c) Class-context views (`clsctx`).** A state whose accept differs by the class
 of the preceding byte. Covered by P2's `up[u]` comparison; dropped, it is
-sabotage S219, and §5 records why S219 needs a witness S217's detector cannot
-catch or it is a redundancy finding rather than a check.
+sabotage **S220**, whose disjointness from S218 is an OWED MEASUREMENT before
+shipping (§5.6c) — M1 counted the `classctx` decline population at **8**, and
+a population of 8 that may overlap S218's is exactly the S79/S80 shape.
 
 **(d) `\K`.** Would break the identification of "where reporting begins" with
 "where matching began" (`match_api.md` §3.1: on `a\Kb` over `"ab"` the search
-consumes from 0 and reports `[1,2)`). Free by construction (P5), and the
-structural check that keeps it free is asserting no DFA artifact carries the
-construct — which the module gate already guarantees.
+consumes from 0 and reports `[1,2)`). **Free by ENGINE ROUTING, not by
+artifact absence** — see the reworded P5 (§1.2): `fit.chosen == ENGM_DFA`
+implies no `\K`, while a `-fprefilter` hybrid CAN put a `\K` machine through
+this emitter, where the span is a bound and not an answer. §5.4(5) asserts the
+engine-level fact.
 
 **(e) The absolute-offset trap.** Writing `0` instead of `search_from`. Invisible
 to any single-search test at `startpos = 0`, which is most of them. Detector:
-sabotage S220 and a find-all differential (§5).
+sabotage **S221** — and §5.6d records that its detector population is not yet
+counted, which is r49 item 10.
 
-**(f) Direction of harm.** Every failure above produces a `caps[0][0]` that is
-**too small** (a span that starts earlier than the match did) — never a missed
-match, never a crash. That is the quietest possible failure mode and is the
-argument for making `caps[0][0]` an explicitly read field in every check (§5),
-not an incidental one.
+**(f) Direction of harm — with ONE exception, new in revision 2.** Every
+failure above except (b′) produces a `caps[0][0]` that is **too small** (a span
+that starts earlier than the match did) — never a missed match, never a crash.
+That is the quietest possible failure mode and is the argument for making
+`caps[0][0]` an explicitly read field in every check (§5), not an incidental
+one. **(b′) is worse**: a dead seed with the liveness conjunct dropped reports
+a MATCH WHERE THERE IS NONE. A check plan calibrated only on "offsets are the
+blind field" would not be looking for it, so §5.6's S222 asserts the verdict,
+not the offset.
+
+### 3.5 The failing-call bound is CLOSED — unsound in every cheap spelling
+
+New in revision 2 (r49 item 3 / sound C1+C2+C3; it also answers the bench's
+ask (b) and O-13's ask (i)). Rev 1's §1.1 carried a rider suggesting
+`<prefix>_match`'s fallback could bound its search at `start == ctx->pos`.
+**It cannot, and the answer for the bench is NO `_match` change in STEP 2.**
+
+**Why no cheap spelling is sound.** The fallback body, from
+`build/pcrec -p rx --features all -fno-anchored-dfa -- 'a*b'` (VERIFIED, this
+build):
+
+```c
+ptrdiff_t rx_match(const rx_ctx *ctx)
+{
+    ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}};
+    int found = rx_search(ctx->subject, ctx->len, ctx->pos, capture_spans);
+    if (found < 0) return (ptrdiff_t)found;
+    if (found != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;
+    return capture_spans[0][1] - capture_spans[0][0];
+}
+```
+
+The wrapped machine's state variable cannot distinguish "the thread from
+`ctx->pos` is still alive" from "only a fresh thread spawned here is alive" —
+**they are the same DFA state.** The witness, read off the same artifact's
+emitted tables:
+
+```
+ * State legend -- the shortest input that reaches each state:
+ *    0  (start) nothing consumed yet
+ *    1  "b"   ACCEPTING
+ */
+static const unsigned short rx_forward_next_state[6] = { 0, 0, 3, 65535, 65535, 65535 };
+                                                          ^     ^
+                                              tr[fs]['a'] == fs |  tr[fs]['b'] == state 1
+```
+
+Pattern `a*b`, subject `"aab"`, `ctx->pos = 0`, expected `_match == 3` (PCRE2
+matches `"aab"` at 0). The machine sits in the start state at positions 0, 1
+and 2 and accepts at 3. **Any bound that stops when the scan is back in the
+start state, or when "no candidate can still begin at `ctx->pos`", stops at
+position 1 and returns −1** — a lost match, not a slow one.
+
+This is §1.3's own origin-unknowability arriving at a second site: §1.3 argues
+the forward machine cannot name the origin, and the candidate fix needs exactly
+that fact. **The note's §1.3 is the argument against rev 1's §1.1 rider.**
+
+For the record, the two spellings that ARE sound and are still not taken:
+
+- **truncating `subject_length` to `ctx->pos + MRL`** — UNSOUND on any
+  view-bearing artifact: it makes `$`/`\Z`/`\z` true at a fake end. That is the
+  slice-vs-window trap `seed_emit_seeded`'s own comment names
+  (`src/gen/emit_dfa.c:3475-3482`).
+- **a separate `window_end` parameter** that bounds the scan without moving the
+  views — sound in shape (it is what the hybrid already passes to
+  `rx_match_anchored`), but it helps only patterns with a finite maximum match
+  length, and `last_accept_position` may still belong to a later origin, so the
+  `caps[0][0] != ctx->pos` filter is still what makes it correct.
+
+**Who owns the population.** [OPT-VEDGE] (`docs/dev/plan.md`, chartered
+2026-09-01 on Frank's Q4 "agree") already records the mechanism: relaxing
+scan-edge precondition (3) collapses the `\z` skeletons AND drops the anchored
+machine's state count below `PCREC_ANCHORED_MAX_STATES`, so the `search-filter`
+band the bench measured at ×37 shrinks by the same move. That route replaces
+the fallback with the `unwrapped` `_match` already battery-proven at `dfd112b`,
+**so it needs no new soundness argument at all**, where the bounded fallback
+needs one it cannot have. Folding a `_match` change into STEP 2 would also
+break §0's acceptance frame for Q7's reason: two families moving on one pin for
+two different reasons.
+
+**What STEP 2 DOES do at that site, and it is a different claim from §1.1's**
+(C3). On the PINNED population the fallback's failing calls do not get bounded,
+they **cease to exist**: `rx_search` returns 1 with `caps[0][0] == ctx->pos` on
+every call, so `_match` never takes the O(subject) path and its `return -1` is
+**unreachable**. That is a behavioural fact about emitted code, so §5.4 asserts
+it as a structural check rather than leaving it as prose.
 
 ---
 
