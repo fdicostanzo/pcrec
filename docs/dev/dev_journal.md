@@ -19783,3 +19783,15 @@ ledger; two landing fixes (the size log is pcrec's, not the bench's;
 28491d9; a rendered page of the same text published for Frank as an
 artifact. No lanes in flight; the box is free; nothing battery-length
 runs until Frank's STEP 2 go.
+
+Addendum (part 5, ~18:1x): lane execsum's follow-up commit (5e8dc00,
+merged d860d2d) corrected a misread we BOTH made — [SEL-1] is NOT
+"unrowed": it is a COMPLETED row in docs/dev/plan_completed.md (closed
+2026-08-28, the DFA-overflow fallback contract). Tonight's engine-
+selection finding (auto picking the ×3-6 slower DFA over the VM on the
+bounded match axis from 1024 up, no overflow involved) is a DISTINCT
+cost-based question that the ledger and I-32 file under the [SEL-1]
+label by territory only; I-32's "recorded on that row" is loose — it is
+recorded HERE and on the [OPT-5] row, and would be a NEW row if Frank
+charters it. The lane's grep missed the row because it searched plan.md
+alone; future summary lanes grep plan_completed.md too.
