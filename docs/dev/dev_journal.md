@@ -19996,3 +19996,25 @@ cadence, stage-tagged); the analysis lane runs tomorrow morning and
 archives the samples. Battery launched detached (battery.sh, waits for
 the post-merge identity check to go green, then test → strict → san →
 lint → mech at PROCS=4; stage markers timestamped).
+
+## 2026-09-02 — Fiftieth session, part 11 (~20:0x): battery test stage on de32a4b — three reds diagnosed, two landing items, one K44
+
+Battery (detached, battery.sh; stage markers timestamped; CPU sampler
+beside it for [TT-12]): test 19:36-19:53 rc=2 → strict GREEN → san
+running from 19:53. The test stage's reds: (1) K44's cell counterk.rxt:
+1807 `((a)|ab){4000}c` exit 124 under -j12 (load 47, busy 99%) — all 29
+of the section's failed cases are its rows; solo it compiles (7.5 s wall
+/ 6.9 s user BESIDE san — not a quiet number; K44's disposition needs the
+solo compile cost UNCHANGED vs pre-merge, so the quiet-box pair
+(de32a4b vs 5496ca6) is owed after mech). (2) tests/rxtsource's CORPUS
+CENSUS pins not moved for opt5i's two new .rxt files (found 191/3325/
+26894 vs pinned 189/3320/26799; C1/C2/C3 all red) — the lane's omission;
+lane `landing` (sonnet) moves every pin with the cause named. (3) a
+LATENT shell bug in run_codegen_tests.sh:816 — `grep -c` prints 0 and
+exits 1, so `|| echo 999` also fires and k24_left becomes "0\n999"; the
+`-ne 0` test errors ("integer expected") and skips the K24 accessor
+assertion silently; pre-existing, harmless, fixed by the same lane. r51
+panel compiled (docs/dev/reviews/2026-09-02-r51-opt5-step2-impl.md);
+r51fix (sonnet) has all five check fixes written, holding for .lift.
+After mech: .lift both lanes, validate, apply to main, RE-RUN the test
+stage (17 min) so the pin's battery claim is whole, then WINDOW OPEN.
