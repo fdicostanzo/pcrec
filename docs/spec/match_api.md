@@ -156,10 +156,11 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `15`
-([DD-13b.W1.2], `rx_info.name` + `nentries`, atop [CC-CLANG]'s `14`; it read `6` when this note
-was written, `7` after [OPT-3], `8` after [ENG-FORM], `9` after
-[OPT-K], `10` after [ENG-ABS], `11` after [ART-SIZE] and `12` after
+events but never stated the general rule; `rx_info.abi` is `16`
+([OPT-5] STEP 2, the start-pinned search: `rx_info.search_form` +
+`<PREFIX>_DFA_START`, atop [DD-13b.W1.2]'s `15` and [CC-CLANG]'s `14`; it read
+`6` when this note was written, `7` after [OPT-3], `8` after [ENG-FORM], `9`
+after [OPT-K], `10` after [ENG-ABS], `11` after [ART-SIZE] and `12` after
 [OPT-4]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
@@ -1644,7 +1645,15 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `15` on every artifact today ([DD-13b.W1.2] bumped
+- **`rx_info.abi` is `16` on every artifact today ([OPT-5] STEP 2 bumped
+  it from 15 with the START-PINNED SEARCH — `search_form` APPENDED to this
+  struct and a `<PREFIX>_DFA_START` stamp on every artifact containing a DFA
+  scan, plus, on every artifact whose forward machine's start state accepts
+  unconditionally, the deletion of the whole REVERSE machine from
+  `<prefix>_search`: its tables, its accessor block and its scan loop, with
+  `<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_SCAN_EDGE` no longer folding a
+  machine the artifact does not contain. No answer moves; `15` was
+  [DD-13b.W1.2], which bumped
   it from 14 by APPENDING `name` and `nentries` to this struct — two
   initializer lines on every artifact of both engines, no struct offset
   moved, no emitted program byte moved and no stamp VALUE changed; `14`

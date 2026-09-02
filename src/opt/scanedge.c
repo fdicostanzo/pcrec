@@ -181,17 +181,37 @@ bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi)
     return true;
 }
 
-/* Preconditions (2) and (3), asked of one state. `state_acc_varies`' own
- * definition lives in the emitter, which is the wrong direction for this file
- * to depend in, so the three-view comparison is spelled here — it is one line
- * and the emitter's copy is about a different question (skip eligibility). */
-static bool member_ok(const DState *st)
+/* Preconditions (2) and (3), asked of one state — AND, since [OPT-5] STEP 2,
+ * the same question the start-pinned search's P2 asks of the forward machine's
+ * start state, which is why the body moved out of this file's `member_ok` and
+ * became `pcrec_state_view_invariant` below.
+ *
+ * IT IS ONE PREDICATE WITH TWO READERS, and lifting it was the point rather
+ * than tidiness. The two questions are the same question — "does this state's
+ * accept depend on WHERE it is or on WHAT COMES NEXT" — and a second copy in
+ * `src/gen/emit_dfa.c` would be a parallel mechanism for a general fact, which
+ * memory `pcrec-general-mechanisms-not-special-cases` forbids and which this
+ * file's own header already apologised for spelling locally. The apology is
+ * discharged: `state_acc_varies`' definition still lives in the emitter and is
+ * still about a different question (skip eligibility, which ignores the
+ * position views entirely).
+ *
+ * ONE CONSEQUENCE THE STEP 2 NOTE RECORDS AND THIS COMMENT REPEATS AT THE
+ * SITE: this predicate is STRICTER than STEP 2's soundness needs. The elision
+ * needs only the view variant's ACCEPT BIT to agree; this refuses a state that
+ * carries a view variant at all (`eolvar`/`endvar`). That is deliberate and
+ * conservative — sharing one derivation is worth a smaller accepted population
+ * — and the relaxation is a separate soundness argument with its own trigger
+ * (the note's §7 item 14). */
+bool pcrec_state_view_invariant(const DState *st)
 {
     if (st->eolvar >= 0 || st->endvar >= 0) return false;
     for (int u = 1; u < UPC_N; u++)
         if (st->up[u].accept != st->up[0].accept) return false;
     return true;
 }
+
+static bool member_ok(const DState *st) { return pcrec_state_view_invariant(st); }
 
 /* Precondition (1) for ONE class: is `s` scan-shaped for (cls, *exit)? */
 static bool shaped(const Dfa *d, int s, int cls, int *exit)

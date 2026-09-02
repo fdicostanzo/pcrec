@@ -448,7 +448,44 @@ enum {
      * rather than 16,385. Denying it restores both the states and the table
      * walk, which is what makes the denied build a byte-for-byte reference
      * for the answer-identity sweep. It changes no answer either way. */
-    PCREC_NO_SCAN_EDGE = 1u << 21
+    PCREC_NO_SCAN_EDGE = 1u << 21,
+
+    /* [OPT-5 STEP 2] `-fno-start-pinned` — deny the START-PINNED SEARCH on a
+     * DFA artifact (docs/design/opt5_step2_twopass.md; docs/spec/tuning.md
+     * §2.19). AXIS J: which form `<prefix>_search`'s post-loop block takes.
+     *
+     * WHAT IT DENIES. `<prefix>_search` runs two scans of the same bytes: a
+     * forward one to find where the match ENDS and a backwards one to find
+     * where it BEGAN. When the forward machine's start state accepts
+     * UNCONDITIONALLY — at every position, under every position view, in every
+     * class context — the backwards pass provably computes `search_from` on
+     * every call: D3's accept-pruning cuts the start-anywhere self-loop out of
+     * every accepting closure, so every accept the forward loop records belongs
+     * to a thread that began at `search_from`. The whole reverse machine is
+     * then dead text, and the artifact carries neither its tables, its accessor
+     * block, its scan-edge membership tables nor its loop.
+     *
+     * ANSWER-IDENTITY-preserving, and the argument is that note's §3.2: the
+     * denied build computes the same span with an INDEPENDENTLY BUILT
+     * automaton (the reverse machine — the emitter's own note on the pair is
+     * "the two machines are independent and need not agree"), which is what
+     * makes `-fno-start-pinned` a genuine control for the sweep rather than a
+     * build that shares its derivation with what it controls.
+     *
+     * DENY-ONLY, `-fno-anchored-dfa`'s shape: the compiler takes the pinned
+     * form wherever the predicate holds, so there is nothing for a caller to
+     * ADDRESS and nothing to force. A machine the predicate declines emits the
+     * reverse pass, which is a SELECTION OUTCOME and never a refusal.
+     *
+     * IT JOINS `emit_info_def`'s `strategy_denials` MASK (src/gen/emit_dfa.c)
+     * for that mask's own reason: it changes no answer, so two artifacts that
+     * behave identically must not differ in their reflection surface over it —
+     * and, concretely, so that an artifact the predicate DECLINES is byte-for-
+     * byte the same under the flag as without it, which is what makes the
+     * declined population a usable reference. What the emitter DID is reported
+     * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`) and mirrored at
+     * run time by `rx_info.search_form`. */
+    PCREC_NO_START_PINNED = 1u << 22
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
