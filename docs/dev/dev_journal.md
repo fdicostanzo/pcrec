@@ -19725,3 +19725,49 @@ Lesson for the executive summary Frank asked for: the biggest
 performance movement of the pin came from a PORTABILITY change nobody
 measured for speed — the bench's controls-flat design is what made it
 attributable.
+
+## 2026-09-02 — Fiftieth session, part 4 (afternoon): O-14 landed; I-32 answers all seven asks; the STEP 2 BEFORE pinned in the note; three candidate rows for Frank
+
+**O-14 (bench dc33947, 14:1x)**: O-13 confirmed in every section, withdrawn
+nowhere. The STEP 2 BEFORE is on record — ×1.985 on matching calls, ×37.1
+on the failing anchored call, VM control 0.999; auto FLAT across the pin
+(0/832 artifacts stamp declined-nullable-default); the forced-VM ×9
+population is EXACTLY `resume_frames == 1` on their census (−402/+105/
++202 B by frame count and DFA presence — their "flat" sentence was a
+summary error, corrected their side); the scan-edge boundary is spelling-
+and-form at k = 2-4 (P3 refuted both ways) with no measured win and a
+measured cost (iso-ts/http-5xx/ipv6 ×1.03-1.09); cc axis regime-shaped
+(clang wins short DFA match cells, loses collapsed-prefilter hybrids,
+level-context ×1.69); altwide 12/20 refused at our two caps (26 source-cap
+on auto at 8.7-36 s each, 24 code-cap on VM at 0.01-0.07 s), P2 emphatic
+(auto FLAT over w-8..256 while every other testee rises 74-90×). The note's
+three `[O-14 PENDING]` slots filled with the pinned values (80390a2).
+
+**I-32 (their 54c5633)** answers the seven asks from the code, not by
+category: (i) the OMISSION is pinned (S217 + gates (A)/(B)), the SPEED is
+unowned; `resume_frames` (pre-pass estimate, emit_vm.c:8128) and
+`has_push` (emitted text, :9482) have different sources and coincided on
+118 artifacts by measurement; clang has NO BEFORE on that population (it
+refused those artifacts at a7e0bdf), so "gcc-only" is a gap at the pin,
+not a before/after. (iii) cls-atleast-4096's search-filter form is
+deliberate (ANCHORED_MAX_STATES 4096 halved by `\z`), now the note's
+named must-not-move witness. (iv) the edge keys on CHAIN LENGTH:
+scanedge.c precondition (5) `m >= 2`; `\d{1,2}` flips the accept bit
+after one digit → two chains of 1 → declined; the describing knob is a
+minimum chain length, measured under `-fno-scan-edge`. The whole-subject
+form's decline on the wrapped anchored machine is OWED as a read, not
+asserted. (vi) the source cap is checked on emitted bytes after
+construction (compile.c:1203) — a projected-size bail is the fix. (vii)
+both caps are raise-only per compile (`--max-emit-bytes`,
+`--max-emit-code-bytes`) — altwide@0.2 can measure pfx3-512 today.
+
+**THREE CANDIDATE ROWS FOR FRANK (D86, one per column)**: OPTIMIZATION —
+own the frameless-VM shape (a stamp for the frameless property; does the
+×9 extend to frames≥2 via a direct-branch dispatcher when the resume set
+is small; the gcc-heuristic fragility named); ADMIN/LIMITS — the DFA
+projected-size bail (36 s → 0.02 s refusals, D77 trigger measured);
+[OPT-5] STEP 1 follow-up — the scan-edge minimum chain length. Plus the
+[SEL-1] fact: auto picks the ×3-6 slower DFA on the bounded match axis
+from 1024 up — recorded, waits for STEP 2's AFTER (which removes the ×2
+half first). Lane execsum (sonnet) is drafting Frank's executive summary
+from the ledger + O-14 + I-32.
