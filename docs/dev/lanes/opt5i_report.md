@@ -233,12 +233,39 @@ bytes, −0.69 %** over the compiling corpus.
 
 | note §7 | measurement | RESULT |
 |---|---|---|
-| 9 | `N_hybrid_pinned` under the FORCE axis | *filled in below* |
-| 10 | the P3 EVALUATION count (not the decline count), both axes | *filled in below* |
+| 9 | `N_hybrid_pinned` under the FORCE axis | **70** with captures on, **23** under the check's own `--no-captures` flags. M1's `0` was a DEFAULT-axis number and the note was right to refuse it as a population. The force axis is now a second arm of the corpus sweep, floored |
+| 10 | the P3 EVALUATION count (not the decline count), both axes | **ZERO, on all three axes** — default, `-fprefilter`, `--no-captures`. P3 is never ASKED: every machine reaching the seed gate needs no seed, and every seed-needing machine is refused earlier. S219's UNREACHED is now measured, not only derived |
 | 11 | `N_pinned ∩ search-filter` over the corpus | **0.** All 175 pinned artifacts stamp `RX_DFA_MATCH "unwrapped"`. C3's corpus population is EMPTY; its three named members (`[a-z]{0,4096}`, `{0,8192}`, `{0,16384}`) are out-of-corpus witnesses, which is what §6 of the check drives and asserts the membership of |
 | 12 | the `startpos > 0` population over the 175 | **5 patterns, 14 cells** (`x*` 5, `a*` 4, `(?>a?)` 2, `(?:ab)?+` 2, `\Q\E` 1). Both of §5.6d's acceptable discharges taken: counted here, and 112 synthetic cells built (`tests/base/start_pinned_startpos.rxt` + its seeded sibling) |
-| 13 | S220's disjointness from S218 | *filled in below* |
+| 13 | S220's disjointness from S218 | **They are NOT disjoint — they are a defence-in-depth pair, and NEITHER has a failing direction alone.** Measured by planting each half, rebuilding, and sweeping: P1 widened alone → 224 pinned (the clean figure) and the check 17/0; P2 dropped alone → 224 and 17/0; BOTH → 243, 19 artifacts flip, the check RED in three places including a real ANSWER divergence. S218 became a two-hunk row; S220 ships declared UNDETECTED |
 | 5 | artifact-size movement, predicted then compared | **DONE**, §5 above |
+
+---
+
+## 6a. The four IN-TREE CHECKS the elision moved
+
+`make test` found four sections red. **None was a defect in the emitter**;
+each check's own message asked for a deliberate re-derivation naming the
+cause, and that is what landed.
+
+| section | cause | disposition |
+|---|---|---|
+| `test-lookaround` (11) | my `tests/assertions/start_pinned_startpos.rxt` joined `run_expansion_diff.sh`'s pinned population | re-pinned: +1 block / +16 cells on the totals AND the qualifying counts, +1 per policy pattern and lookaround count, **0** on the six disqualification counts and the two identity counts. The arithmetic is the evidence; a delta that moved a disqualification count would be a different event |
+| `test-resource` (4) | the three size-cap witnesses lost ~HALF their bytes and stopped reaching the cap | row 1 becomes `(?:[a-z][0-9]){1,8000}` — the old witness MINUS ONE CHARACTER, non-nullable, therefore DECLINED, therefore still refusing at the default with no flag. Rows 2-3 keep the classic witnesses under `-fno-start-pinned`, as STEP 1 kept them under `-fno-scan-edge`. The `[OPT-4.1]` cell gets the same flag or goes vacuous |
+| `test-premul-table` (1) | `implied_stamp` demanded a reverse table on a pinned artifact — 178 artifacts read as drift while the emitter was right | the fold now runs over the machines PRESENT. The absence is read from MATCHER TEXT, never from `RX_DFA_START`, and a reverse table missing while a `rewind_position` REMAINS is still a drift |
+| `test-anchored-match` (1) | my own corpus file's `[a-z]{0,4096}` exceeds `PCREC_ANCHORED_MAX_STATES` and moved [ENG-ABS]'s overflow population 0 → 1 | REMOVED from the corpus file. That check says "do not simply re-pin this line", a startpos file has no business moving an unrelated census, and `[a-z]{0,64}` makes the identical claim |
+
+**MEASURED, and worth carrying**: each size-cap witness lost very close to
+HALF its bytes — 1,063,395 → 537,224; 1,103,670 → 557,311; 1,333,410 →
+683,524. On those shapes the reverse machine WAS half the artifact.
+
+**NAMED so the next reader does not re-derive it**: for the
+`(?:[a-z][0-9]){0,n}` family, SCALING THE COUNT no longer reaches the byte
+cap at all. n=10,000 → 669,228; n=12,000 → 481,228 (the table crosses the
+65,535-entry bound and the accept table stops being class-replicated);
+n=14,000 → 561,228; and by n=22,000 the DFA state cap fires first and
+[SEL-1] retries onto the VM at 20,229 bytes. That is why row 1 changes
+SHAPE rather than COUNT.
 
 ---
 
@@ -323,6 +350,31 @@ class before any engine exists, and wave G then SPLICES both call sites
 A row needing a linked call needs a target in a CYCLE. And
 `foo[0-9]+bar -fprefilter` is REFUSED rather than compiled: the pattern is
 capture-free, so it is a pure DFA artifact and `-fprefilter` is do-or-die.
+
+**F10 — the note's §3.4(a) is wrong about reachability: the widened bit is
+not a miscompile on its own.** F3/§3.4(a) presents the `state_acc_any`
+widening as "the sharpest miscompile available here", with a discriminating
+population of 16. MEASURED: planting exactly that widening changes NOTHING —
+224 pinned artifacts, the same 224 the clean tree gives, and
+`run_search_pinned.sh` 17/0. `state_acc_any` ORs over the CLASS-CONTEXT
+views, not the position views, so the two spellings of P1 disagree only on a
+state whose accept varies by class context — and P2 refuses exactly those.
+Meanwhile the `(?m)…$` family fails P1 in BOTH spellings, because its start
+state accepts only under the EOL VIEW, which `state_acc_any` does not see.
+M2's 16 artifacts are a fact about `unanch_start`'s PREFILTER gate, which has
+no P2 beside it; they are not this predicate's discriminating population.
+
+**F11 — P1, P2 and P3 are not three independent guards on this corpus; they
+are one guard with two spares.** Instrumented sweep, 2,850 patterns: P1
+refuses 1,705, P2 refuses exactly THREE (`\B`, `\B\B`, `\Bx*`), 224 pass
+both and need no seed, and P3 is asked ZERO times on every axis. The three
+P2-refused artifacts are all seed-needing, so removing P2 at the start state
+only lets them reach P3 — whose per-seed loop applies P1 and P2 again and
+refuses them there. That is why S220 is inert at one hunk AND at two.
+**This does not make P2 or P3 removable**: both defend against machine shapes
+the corpus does not contain, which is what the compiler assertion and the
+declared-UNREACHED rows are for. It does mean the note's §5.6 table
+overstates what a single-hunk plant can show.
 
 **F7 — the ORIENTATION BLOCK is a sixth reader of the selection and the note
 lists five.** §4.2 names the emitter's `if`, the stamp, the mirror and the two
