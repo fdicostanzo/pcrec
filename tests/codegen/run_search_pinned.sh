@@ -364,9 +364,19 @@ command -v fold_join >/dev/null || { echo "BAD: worker did not inherit fold_join
 art="$WORKDIR/a.$$.c"
 den="$WORKDIR/d.$$.c"
 trap 'rm -f "$art" "$den"' EXIT
-while IFS= read -r pat; do
-    if ! pcrec_run "$PCREC" --features all -p rx --no-captures -o - -- "$pat" > "$art" 2>/dev/null; then
-        echo REFUSED; continue
+# ONE PATTERN ON ONE AXIS. `$ax` tags every verdict token, so the parent can
+# read the two axes apart, and the tokens the parent already counts keep
+# their default-axis spelling.
+one() {
+    local ax="$1"; shift
+    # THE AXIS FLAGS ARE SAVED BEFORE `set --` EATS THEM. `set -- $(awk ...)`
+    # below replaces the positional parameters wholesale, so a later `"$@"`
+    # is the awk OUTPUT and not the flags — which is exactly the bug this
+    # file's first two-axis run produced: the §9 deny-flag re-compile was
+    # handed field values as arguments and "refused" 2,825 patterns.
+    local axflags="$*"
+    if ! pcrec_run "$PCREC" --features all -p rx --no-captures $axflags -o - -- "$pat" > "$art" 2>/dev/null; then
+        echo "REFUSED-$ax"; return
     fi
     set -- $(awk -f "$WORKDIR/read.awk" < "$art")
     eng="$1"; start="$2"; mir="$3"; nstart="$4"; nmir="$5"
@@ -375,41 +385,41 @@ while IFS= read -r pat; do
     rr="$6"; re="$7"; rb="$8"; ar="$9"; shift 9
     ae="$1"; ab="$2"; gate="$3"; gatec="$4"; hywin="$5"; clash="$6"
 
-    [ "$nmir" -eq 1 ] || { echo MIRRDUP; echo "BAD: rx_info.search_form appears $nmir times (expected exactly 1): $pat"; continue; }
-    [ "$clash" = "-" ] || { echo PROSECLASH; echo "BAD: a machine's accessor typedef and its own prose form marker disagree ($clash) — this file's repr reader is broken, not the emitter: $pat"; }
+    [ "$nmir" -eq 1 ] || { echo "MIRRDUP-$ax"; echo "BAD: rx_info.search_form appears $nmir times (expected exactly 1): $pat"; return; }
+    [ "$clash" = "-" ] || { echo "PROSECLASH-$ax"; echo "BAD: a machine's accessor typedef and its own prose form marker disagree ($clash) — this file's repr reader is broken, not the emitter: $pat"; }
 
     # ---- §2: the stamp/body/mirror third term, both engines ----
     if [ "$start" = "-" ]; then
         # No RX_DFA_START at all. The IFF says: exactly the artifacts with no
         # DFA scan, i.e. a plain VM artifact, which must ALSO mirror NULL.
-        echo NOSTAMP
-        [ "$eng" = "vm" ] || { echo IFFBAD; echo "BAD: no RX_DFA_START on a non-VM artifact: $pat"; }
-        [ "$mir" = "NULL" ] || { echo IFFBAD; echo "BAD: no RX_DFA_START macro but rx_info.search_form is '$mir', not NULL: $pat"; }
-        [ "$rw" -eq 0 ] || { echo IFFBAD; echo "BAD: no RX_DFA_START but the artifact emits a rewind_position — it contains a DFA scan and stamps nothing about it: $pat"; }
-        continue
+        echo "NOSTAMP-$ax"
+        [ "$eng" = "vm" ] || { echo "IFFBAD-$ax"; echo "BAD: no RX_DFA_START on a non-VM artifact: $pat"; }
+        [ "$mir" = "NULL" ] || { echo "IFFBAD-$ax"; echo "BAD: no RX_DFA_START macro but rx_info.search_form is '$mir', not NULL: $pat"; }
+        [ "$rw" -eq 0 ] || { echo "IFFBAD-$ax"; echo "BAD: no RX_DFA_START but the artifact emits a rewind_position — it contains a DFA scan and stamps nothing about it: $pat"; }
+        return
     fi
-    [ "$nstart" -eq 1 ] || { echo DUP; echo "BAD: RX_DFA_START appears $nstart times: $pat"; continue; }
-    echo HASSTAMP
-    case "$start" in pinned|reverse-pass) ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_START '$start': $pat" ;; esac
-    [ "$mir" = "$start" ] || { echo MIRRBAD; echo "BAD: rx_info.search_form '$mir' vs macro '$start': $pat"; }
-    [ "$eng" = "vm" ] && echo HYBRID || echo DFAART
+    [ "$nstart" -eq 1 ] || { echo "DUP-$ax"; echo "BAD: RX_DFA_START appears $nstart times: $pat"; return; }
+    echo "HASSTAMP-$ax"
+    case "$start" in pinned|reverse-pass) ;; *) echo "VALUE-$ax"; echo "BAD: UNDOCUMENTED RX_DFA_START '$start': $pat" ;; esac
+    [ "$mir" = "$start" ] || { echo "MIRRBAD-$ax"; echo "BAD: rx_info.search_form '$mir' vs macro '$start': $pat"; }
+    [ "$eng" = "vm" ] && echo "HYBRID-$ax" || echo "DFAART-$ax"
 
     if [ "$start" = "pinned" ]; then
-        echo PINNED
-        [ "$rw" -eq 0 ] || { echo BODYBAD; echo "BAD: stamps \"pinned\" but emits a rewind_position: $pat"; }
-        [ "$rtok" -eq 0 ] || { echo BODYBAD; echo "BAD: stamps \"pinned\" but emits the rx_reverse_state accessor block: $pat"; }
-        [ "$rtbl" -eq 0 ] || { echo BODYBAD; echo "BAD: stamps \"pinned\" but emits an rx_reverse_next_state table: $pat"; }
-        [ "$rr" = "-" ] || { echo BODYBAD; echo "BAD: stamps \"pinned\" but a reverse machine's accessor typedef is present: $pat"; }
+        echo "PINNED-$ax"
+        [ "$rw" -eq 0 ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"pinned\" but emits a rewind_position: $pat"; }
+        [ "$rtok" -eq 0 ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"pinned\" but emits the rx_reverse_state accessor block: $pat"; }
+        [ "$rtbl" -eq 0 ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"pinned\" but emits an rx_reverse_next_state table: $pat"; }
+        [ "$rr" = "-" ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"pinned\" but a reverse machine's accessor typedef is present: $pat"; }
         # §5: the load-bearing gate and its comment
-        [ "$gate" -eq 1 ] || { echo GATEBAD; echo "BAD: a pinned artifact has NO last_accept_position == (size_t)-1 gate — it was simplified away, and a search that seeds into a dead state now reports an empty match: $pat"; }
-        [ "$gatec" -eq 1 ] || { echo GATEBAD; echo "BAD: a pinned artifact's gate carries no LOAD-BEARING comment — the next reader of a coverage report has nothing to stop them deleting it: $pat"; }
-        [ "$eng" = "vm" ] && { [ "$hywin" -eq 1 ] || { echo HYWINBAD; echo "BAD: a PINNED HYBRID does not consume window[0][0] as the attempt start — the span is a BOUND, not an answer, and that shape is the elision's safety argument on a hybrid: $pat"; }; }
-        [ "$mf" = "search-filter" ] && echo PINSF
+        [ "$gate" -eq 1 ] || { echo "GATEBAD-$ax"; echo "BAD: a pinned artifact has NO last_accept_position == (size_t)-1 gate — it was simplified away, and a search that seeds into a dead state now reports an empty match: $pat"; }
+        [ "$gatec" -eq 1 ] || { echo "GATEBAD-$ax"; echo "BAD: a pinned artifact's gate carries no LOAD-BEARING comment — the next reader of a coverage report has nothing to stop them deleting it: $pat"; }
+        [ "$eng" = "vm" ] && { [ "$hywin" -eq 1 ] || { echo "HYWINBAD-$ax"; echo "BAD: a PINNED HYBRID does not consume window[0][0] as the attempt start — the span is a BOUND, not an answer, and that shape is the elision's safety argument on a hybrid: $pat"; }; }
+        [ "$mf" = "search-filter" ] && echo "PINSF-$ax"
     else
-        echo REVPASS
+        echo "REVPASS-$ax"
         # ENG_ATTEMPT and the empty engine legitimately have no reverse pass.
-        if [ "$rw" -eq 0 ]; then echo REVNOBODY; else
-            [ "$rtbl" -eq 1 ] || { echo BODYBAD; echo "BAD: a reverse-pass artifact has a rewind_position but no reverse table: $pat"; }
+        if [ "$rw" -eq 0 ]; then echo "REVNOBODY-$ax"; else
+            [ "$rtbl" -eq 1 ] || { echo "BODYBAD-$ax"; echo "BAD: a reverse-pass artifact has a rewind_position but no reverse table: $pat"; }
         fi
     fi
 
@@ -417,22 +427,35 @@ while IFS= read -r pat; do
     hasrev=0; [ "$rr" != "-" ] && hasrev=1
     want_tbl="$(fold_repr "$fr" "$rr" "$ar" "$mf")"
     want_edge="$(fold_edge "$fe" "$fb" "$re" "$rb" "$ae" "$ab" "$mf" "$hasrev")"
-    echo FOLDCMP
+    echo "FOLDCMP-$ax"
     if [ "$tbl" != "none" ]; then
-        [ "$tbl" = "$want_tbl" ] || { echo FOLDBAD; echo "BAD: RX_DFA_TABLE '$tbl' but the machines in the artifact fold to '$want_tbl' (fwd=$fr rev=$rr anch=$ar match=$mf): $pat"; }
+        [ "$tbl" = "$want_tbl" ] || { echo "FOLDBAD-$ax"; echo "BAD: RX_DFA_TABLE '$tbl' but the machines in the artifact fold to '$want_tbl' (fwd=$fr rev=$rr anch=$ar match=$mf): $pat"; }
     fi
-    [ "$edge" = "$want_edge" ] || { echo EDGEBAD; echo "BAD: RX_DFA_SCAN_EDGE '$edge' but the artifact's own edges fold to '$want_edge' (fwd $fe/$fb rev $re/$rb anch $ae/$ab match=$mf): $pat"; }
+    [ "$edge" = "$want_edge" ] || { echo "EDGEBAD-$ax"; echo "BAD: RX_DFA_SCAN_EDGE '$edge' but the artifact's own edges fold to '$want_edge' (fwd $fe/$fb rev $re/$rb anch $ae/$ab match=$mf): $pat"; }
 
     # ---- §9: a DECLINED artifact is byte-identical under the deny flag ----
     if [ "$start" = "reverse-pass" ]; then
-        if pcrec_run "$PCREC" --features all -p rx --no-captures -fno-start-pinned -o - -- "$pat" > "$den" 2>/dev/null; then
-            if cmp -s "$art" "$den"; then echo DENYSAME; else
-                echo DENYDIFF; echo "BAD: a DECLINED artifact is NOT byte-identical under -fno-start-pinned — the flag has an effect on a pattern the axis cannot act on, so the declined population is not a usable reference: $pat"
+        if pcrec_run "$PCREC" --features all -p rx --no-captures $axflags -fno-start-pinned -o - -- "$pat" > "$den" 2>/dev/null; then
+            if cmp -s "$art" "$den"; then echo "DENYSAME-$ax"; else
+                echo "DENYDIFF-$ax"; echo "BAD: a DECLINED artifact is NOT byte-identical under -fno-start-pinned ($ax) — the flag has an effect on a pattern the axis cannot act on, so the declined population is not a usable reference: $pat"
             fi
         else
-            echo DENYREFUSED; echo "BAD: the -fno-start-pinned build REFUSED a pattern the default build compiled — a deny flag that changes the accepted language is not an axis: $pat"
+            echo "DENYREFUSED-$ax"; echo "BAD: the -fno-start-pinned build REFUSED a pattern the default build compiled ($ax) — a deny flag that changes the accepted language is not an axis: $pat"
         fi
     fi
+}
+while IFS= read -r pat; do
+    one default
+    # [OPT-5 STEP 2] THE FORCE AXIS, and the note's §5.1 asks for it by name:
+    # "-fno-start-pinned crossed with -fprefilter is where the uncounted
+    # hybrid population lives". MEASURED 2026-09-02 before this arm existed:
+    # the DEFAULT axis has 742 hybrids and ZERO of them pinned, so every
+    # claim this sweep makes about a PINNED HYBRID rested on §4's single
+    # named `\Ka*` witness. Under `-fprefilter` there are 70. That is K35's
+    # shape exactly — a claim stated over a narrower set than the check runs
+    # on — and it is why the arm is here rather than in the report as a
+    # number.
+    one force -fprefilter
 done
 WORKER
 
@@ -446,20 +469,22 @@ wait
 cat "$WORKDIR"/out.* > "$WORKDIR/all.out" 2>/dev/null
 
 tok() { grep -c "^$1\$" "$WORKDIR/all.out" 2>/dev/null || true; }
-n_refused=$(tok REFUSED);   n_nostamp=$(tok NOSTAMP);  n_hasstamp=$(tok HASSTAMP)
-n_pinned=$(tok PINNED);     n_rev=$(tok REVPASS);      n_hybrid=$(tok HYBRID)
-n_dfaart=$(tok DFAART);     n_pinsf=$(tok PINSF);      n_foldcmp=$(tok FOLDCMP)
-n_denysame=$(tok DENYSAME); n_revnobody=$(tok REVNOBODY)
+for ax in default force; do
+    echo "    [$ax] $npat patterns; $(tok "REFUSED-$ax") refused; with a DFA scan $(tok "HASSTAMP-$ax") (dfa $(tok "DFAART-$ax") / hybrid $(tok "HYBRID-$ax")); plain VM $(tok "NOSTAMP-$ax")"
+    echo "    [$ax] axis J: pinned $(tok "PINNED-$ax") (of which RX_DFA_MATCH \"search-filter\": $(tok "PINSF-$ax")), reverse-pass $(tok "REVPASS-$ax") (no reverse body at all — attempt/empty: $(tok "REVNOBODY-$ax"))"
+done
+n_pinned=$(tok PINNED-default); n_pinned_force=$(tok PINNED-force)
+n_hyb_pin_force=0
+n_foldcmp=$(( $(tok FOLDCMP-default) + $(tok FOLDCMP-force) ))
+n_denysame=$(( $(tok DENYSAME-default) + $(tok DENYSAME-force) ))
+n_hasstamp=$(( $(tok HASSTAMP-default) + $(tok HASSTAMP-force) ))
 n_bad=$(grep -c '^BAD: ' "$WORKDIR/all.out" 2>/dev/null || true)
 
-echo "    corpus: $npat patterns; $n_refused refused; artifacts with a DFA scan $n_hasstamp (dfa $n_dfaart / hybrid $n_hybrid); plain VM (no stamp) $n_nostamp"
-echo "    axis J: pinned $n_pinned (of which RX_DFA_MATCH \"search-filter\": $n_pinsf), reverse-pass $n_rev (of which no reverse body at all — attempt/empty: $n_revnobody)"
-
 if [ "$n_bad" -eq 0 ]; then
-    ok "§2 stamp == body == mirror on all $npat corpus patterns, both engines, in BOTH directions (a pinned artifact carries no rewind_position, no reverse accessor block and no reverse table; a reverse-pass one carries them; a plain VM artifact stamps nothing and mirrors NULL)"
+    ok "§2 stamp == body == mirror on all $npat corpus patterns x TWO AXES (default and -fprefilter), both engines, in BOTH directions (a pinned artifact carries no rewind_position, no reverse accessor block and no reverse table; a reverse-pass one carries them; a plain VM artifact stamps nothing and mirrors NULL)"
     ok "§3 RX_DFA_TABLE and RX_DFA_SCAN_EDGE agree with a fold recomputed from the machines each artifact ACTUALLY CONTAINS, on all $n_foldcmp artifacts with a DFA scan — so neither stamp names a machine the elision removed"
     ok "§5 every pinned artifact keeps the last_accept_position == (size_t)-1 gate AND its LOAD-BEARING comment"
-    ok "§9 all $n_denysame DECLINED artifacts are byte-identical under -fno-start-pinned — the flag is inert where the axis cannot act, so the declined population is a usable reference"
+    ok "§9 all $n_denysame DECLINED artifacts (both axes) are byte-identical under -fno-start-pinned — the flag is inert where the axis cannot act, so the declined population is a usable reference"
 else
     bad "§2/§3/§5/§9 the corpus sweep reported $n_bad failures; first eight:"
     grep -m8 '^BAD: ' "$WORKDIR/all.out" >&2
@@ -476,7 +501,30 @@ fi
 if [ "$n_pinned" -lt 140 ]; then
     bad "§9 only $n_pinned corpus artifacts select the pinned form, below the 140 floor (measured 175 at 2026-09-02). Either the corpus moved or the axis stopped selecting — read it before re-pinning; a build in which the form is dead passes every other row in this file"
 else
-    ok "§9 the pinned population is $n_pinned artifacts, above the 140 floor — the axis is live and non-vacuous over the corpus"
+    ok "§9 the pinned population is $n_pinned artifacts on the default axis, above the 140 floor — the axis is live and non-vacuous over the corpus"
+fi
+
+# THE FORCE AXIS'S OWN FLOOR, and it is the one the note's §7 item 9 owes.
+# M1 measured ZERO pinned hybrids on the DEFAULT axis and the note refused to
+# write that as a population, because `-fprefilter` is INSIDE `make
+# test-axes`'s own sweep and builds a hybrid out of a pattern that would
+# otherwise be a pure DFA artifact. MEASURED here 2026-09-02: 70. Floored
+# well below it so churn does not trip it; a drop to ZERO means every claim
+# this file makes about a PINNED HYBRID has gone back to resting on §4's one
+# named witness, which is what the floor is for.
+#
+# THE NUMBER IS THE ONE THIS FILE'S OWN FLAGS PRODUCE, not the one §7 item 9
+# reports, and the difference is worth a line because it is easy to copy the
+# wrong one. This sweep compiles `--no-captures`, which routes more patterns
+# to the pure DFA engine, where `-fprefilter` is DO-OR-DIE and REFUSES: 2,085
+# refusals here against 1,584 with captures on. So the pinned-hybrid count is
+# 23 under these flags and 70 under the corpus's own. Both are real; this
+# floor is on the one this file measures.
+n_pf=$(tok PINNED-force)
+if [ "$n_pf" -lt 12 ]; then
+    bad "§9 only $n_pf artifacts are PINNED on the -fprefilter force axis, below the 12 floor (measured 23 under this file's own --no-captures flags, 70 with captures on). The pinned-HYBRID population has collapsed, and with it every corpus-scale claim in this file about a hybrid — read it before re-pinning"
+else
+    ok "§9 the force axis carries $n_pf pinned artifacts (measured 23 under this file's flags; 70 with captures on, which is §7 item 9's own answer), so the PINNED HYBRID population this file's §2/§3 claims run over is real and not §4's single named witness"
 fi
 
 # =========================================================================
