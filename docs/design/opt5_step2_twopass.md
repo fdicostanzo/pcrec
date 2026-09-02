@@ -1,10 +1,44 @@
-# [OPT-5] STEP 2 — THE TWO-PASS FIX: reverse-pass elision
+# [OPT-5] STEP 2 — THE TWO-PASS FIX: reverse-pass elision — **REVISION 2, 2026-09-02, r49 worked**
 
-Lane `opt5d`, 2026-09-01. **Design only** — nothing under `src/` or `tests/`
-changed by this lane, and nothing was executed: the lane was launched under a
-box HOLD, so every number below is CITED from a measurement document by file
-and section, never re-measured here. Where a load-bearing number does not
-exist, §7 records it as owed with its trigger (D77) rather than inventing it.
+Lane `opt5d`, revision 1 2026-09-01 (`8d36141`), **revision 2 2026-09-02**
+working every finding of the D6 panel review
+`docs/dev/reviews/2026-09-01-r49-opt5-step2.md` (three critics: r49sound,
+r49check, r49cons). **Design only** — nothing under `src/` or `tests/` is
+changed by this lane. Revision 1 was written under a box HOLD and could
+execute nothing; revision 2 was allowed ONE build, so the emitted witnesses
+this revision's proof rests on are quoted from artifacts emitted here at
+`build/pcrec` on the merge of `lane/opt5d` with main `05c984b` (abi 15).
+Everything else is still CITED from a measurement document by file and
+section. Where a load-bearing number does not exist, §7 records it as owed
+with its trigger (D77) rather than inventing it.
+
+**§10 is the r49 disposition table** — one row per r49 §2 item, verifiable
+item by item.
+
+### Changed from revision 1
+
+1. **The elision proof is re-derived from the emitter code** (§3.2, §3.3).
+   Rev 1's Claim A ("the accept probe runs before anything advances") is
+   FALSE: the probe is an axis-E object and sits BELOW the scan edges on any
+   viewed or by-class artifact. The proof is now *some accept ≥ `search_from`
+   is always recorded*, derived site by site from `src/gen/emit_dfa.c` with
+   two emitted witnesses reproduced here.
+2. **The `last_accept_position == -1` gate is LOAD-BEARING, not dead** (§3.3,
+   §5.4). Rev 1's "keep it, do not cite it" framing is withdrawn: on a dead
+   seed state at `search_from > 0` the gate is the only correct answer.
+3. **P3 gains a LIVENESS conjunct** and a pre-existing-hazard note (§1.2).
+4. **The failing-call bound is CLOSED as unsound** and handed to
+   [OPT-VEDGE]; no `_match` change in STEP 2 (§3.5, new).
+5. **The axis letter is J**, not H — H and I are STEP 1's (§4.1).
+6. **The `rx_info.search_form` mirror is APPROVED** by Frank; rev 1
+   recommended against it and was ruled the other way (§4.2, §6).
+7. **The abi ritual follows D94's grep rule**, not a four-site list; abi is
+   15 today and STEP 2 writes 16 (§4.4).
+8. **§0's acceptance frame becomes a TWO-INSTRUMENT table** with an explicit
+   control/customer split and an O-13/O-14 provenance rule.
+9. **The check plan is rebuilt**: named manifests instead of counts, birth-time
+   `SAB_REACH`/`SAB_REACH_POP`, sabotage ids S218-S222, and three owed
+   measurements that were previously written as facts (§5).
 
 Chartered by Frank 2026-09-01 ("i see no downside"), answering the bench's own
 ask (iv) in `pcrec-bench` O-12: *"does Frank charter the TWO-PASS fix (parity's
