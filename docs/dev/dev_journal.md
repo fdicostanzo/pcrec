@@ -19874,3 +19874,14 @@ family VM-route macro; ship-now vs subsume-into-RX_ENGINE's-third-value
 is Frank's ruling (R1 asked for a recommendation, not a decision; the
 memo §4.3 gives two shapes). Worktree removed; opt5i is the one lane in
 flight. I-34 to the bench with the census numbers.
+
+Part 7 addendum (~15:2x): Frank: "Ship now. And the lookaround frames?"
+RX_VM_FRAMELESS ships — folded into opt5i's abi 16 event by rulings R1
+(one macro, spec §6.3 entry, a structural check value⇔no `goto *`), so
+no second bump/battery. The lookaround over-charge stays: emit_vm.c
+:2196-2231 documents it as the deliberate safe-direction UNION that keeps
+`vm_look` the single reader of the lookaround flags (negative form's one
+push is exact; positive/non-atomic over-charged by one; lookbehind +m vs
+m-1); cost = a lower subject_ceiling stamp + a few over-provisioned
+frames. The stamp removes the reason anyone read `resume_frames` as a
+frameless proxy, which is the general fix. Recorded on the row.
