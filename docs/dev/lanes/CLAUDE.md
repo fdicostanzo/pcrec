@@ -56,3 +56,7 @@ never edited afterwards.
   the `dfa_table_name` line: the review's `:2664` was right). The one r49
   item not fully discharged is 8 (no synthetic witness reaches P3; S219 ships
   UNREACHED with the derivation).
+- `vmfl0_log.md` — [OPT-VMFL]/[ENG-DIRECT] STEP 0 (2026-09-02, lane vmfl0):
+  the census script, the hand-twin transform, and the R1 mid-flight
+  ruling's arrival, in order. See `docs/dev/optvmfl_step0.md` for the
+  findings themselves.
