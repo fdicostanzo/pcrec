@@ -16,31 +16,49 @@
 # front: the verdict and the match END stay right, and only the reported start
 # moves — the quiet direction again.
 #
-# ITS DISJOINTNESS FROM S218 IS OWED AND IS ARGUED HERE RATHER THAN ASSUMED
-# (the design note's §7 item 13, and the S79/S80 rule). The two plants edit
-# DIFFERENT CLAUSES of the same predicate and their populations are NOT the
-# same:
+# ============ §7 item 13 ANSWERED, AND THE ANSWER IS NOT THE ONE THE NOTE
+# ============ EXPECTED: THIS ROW HAS NO FAILING DIRECTION ON ITS OWN.
 #
-#   - S218 widens P1 and is discriminated by the `(?m)…$` family, where the
-#     start state does NOT accept under the plain view but DOES under the EOL
-#     view. Those artifacts fail P1 first; P2 is never reached on them.
-#   - S220 drops P2 and is discriminated by a state that DOES accept under the
-#     plain view and whose accept VARIES — the `classctx` family, `\bx*` and
-#     relatives, which M1 counted at 8 corpus artifacts. S218 leaves every one
-#     of those DECLINED, because P1 passes on them and P2 is what refuses.
+# The note asks for a member of S220's population that S218's detector does
+# not catch, "and if none exists, S220 is recorded as a redundancy finding".
+# MEASURED 2026-09-02, by planting each half separately, rebuilding, and
+# sweeping the whole corpus:
 #
-# So `\bx*` is the member of S220's population that S218's plant does NOT
-# catch, and it is a NAMED witness in `tests/codegen/run_search_pinned.sh` §1
-# for exactly that reason. The two rows are not redundant.
+#   P2 dropped ALONE:                  224 pinned artifacts, which is the
+#                                      SAME 224 the clean tree produces, and
+#                                      `run_search_pinned.sh` 17 passed / 0
+#                                      FAILED.
+#   P1 widened ALONE (S218's hunk 1):  224 again, 17/0 again.
+#   BOTH together:                     243 pinned, 19 artifacts flip, and the
+#                                      check goes RED in three places.
 #
-# A POPULATION OF 8 IS THIN, so it is FLOORED FROM BIRTH rather than watched
-# ([MECH-REACH]; and [OPT-VEDGE] relaxes the same view precondition from the
-# other side, which is what the S206/[OPT-4.2] lesson says will move it).
+# SO THE TWO ARE NOT DISJOINT — THEY ARE A DEFENCE-IN-DEPTH PAIR, which is
+# S108's shape and is why S218 now ships as a TWO-HUNK row. `\bx*`, which
+# the note names as this row's discriminating witness, does not discriminate:
+# its start state's PLAIN accept is 0 (a `\b` at a position whose next byte
+# is non-word cannot start `x*`), so P1 refuses it in BOTH spellings and P2
+# is never what stops it.
+#
+# THE ROW SHIPS ANYWAY, DECLARED `UNDETECTED`, and its value is the reverse
+# direction — the same argument S219's header makes for `UNREACHED`. P2 is
+# documented as STRICTER THAN SOUNDNESS NEEDS (`docs/design/
+# opt5_step2_twopass.md` §1.2 P2, §7 item 14: the elision needs only the view
+# variant's ACCEPT BIT to agree, where `pcrec_state_view_invariant` refuses a
+# state carrying a variant at all), and RELAXING it is a named future change
+# with its own trigger. **The day P2 is relaxed, or the day a corpus pattern
+# lands whose start state accepts under the plain view while its accept
+# varies, this row reads NOW DETECTED and the matrix says so.** That is a
+# tripwire on a scheduled change, not a phantom.
+#
+# THE FLOOR STAYS, and [OPT-VEDGE] relaxes the same view precondition from
+# the other side (the S206/[OPT-4.2] lesson says that will move the
+# population), so it is declared from birth rather than watched.
 SAB_ID="S220-pinned-view-clause-dropped"
+SAB_EXPECT=UNDETECTED
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned harness"
 SAB_DESC="The start-pinned predicate's P2 stops asking whether the start state's accept is invariant in position and in class context, so a state that accepts only at some positions is treated as accepting at all of them. The elision then fires on a machine that has no match at every search_from and writes caps[0][0] = search_from where the true match begins later -- a span too wide at the front, with the verdict and the match end both still right"
-SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manager's own matrix run): searchpinned RED in §1 (the '\\bx*' and '(?m)a*\$' witnesses stamp \"pinned\") and in §8; harness RED on the classctx cells that carry capture lines. Its disjointness from S218 is argued in this header: '\\bx*' passes P1 and is refused by P2 alone, so S218's plant leaves it DECLINED."
+SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `\bx*`
 # is DECLINED, and it is declined at P2 rather than P1 (its start state DOES
 # accept under the plain view — a bare `x*` is nullable — so P1 passes). THE
