@@ -881,7 +881,8 @@ is "no match", the kept `-1` gate delivers it, and an elision without the
 liveness conjunct fabricates an empty match instead. This is the ONE failure
 direction in this section that is not a too-small `caps[0][0]` (see (f)), and
 it is why P3's conjunct is asserted in the implementation. Detector: sabotage
-**S222** (the liveness conjunct dropped), plus the assertion itself.
+**S219**'s second arm (the liveness conjunct dropped) — and the assertion in
+the compiler is the real guard, for the reason §5.6b gives.
 
 **(c) Class-context views (`clsctx`).** A state whose accept differs by the class
 of the preceding byte. Covered by P2's `up[u]` comparison; dropped, it is
@@ -1438,20 +1439,177 @@ here as a named candidate with no row and no trigger yet (D77); folding it in
 as "a size cleanup" is precisely how a correctness change gets shipped under a
 performance heading.
 
-### 5.6 Sabotage rows and their detectors
+### 5.6 Sabotage rows and their detectors — rebuilt in revision 2
 
-Each row must be shown to fail SOLO, and each must be shown to reach the binary
-(learnings §3). Where two rows share a detector, the disjointness must be proven
-the way S213/S214 were — otherwise the second row is a redundancy finding, not a
-check.
+Each row must be shown to fail SOLO, and each must be shown to REACH the
+binary (learnings §3, `[MECH-REACH]`). Where two rows share a detector, the
+disjointness must be proven the way S213/S214 were — otherwise the second row
+is a redundancy finding, not a check.
 
-| row | the sabotage | detector | note |
-|---|---|---|---|
-| **S217** | predicate widened from `up[UPC_PLAIN].accept` to `state_acc_any` (F3) | the N_declined_by_view assertion (§5.2) + a `$`-shaped answer differential reading `caps[0][0]` | the strongest row; its expected population is an independently measured number |
-| **S218** | the `fseed` clause dropped from the predicate (P3) | `\bx*` searched at `startpos > 0`, `caps[0][0]` differential | must be a witness S217's detector does NOT catch |
-| **S219** | P2's view/context clause dropped (`eolvar`/`endvar`/`up[u]`) | a `(?m)$`-view start-accepting pattern | **overlaps S217 by construction** — the row is only a check if it carries its own witness; prove the disjointness or record it as redundancy |
-| **S220** | `caps[0][0] = 0` instead of `= search_from` | any find-all cell at `startpos > 0` | invisible to every single-search-at-0 test, which is most of the corpus |
-| **S221** | the stamp forked from the selection (a second predicate at the stamp site) | check 5.4(3) | the `unanch_start` M2.7 failure mode, pre-empted |
+**IDS: S218–S222, and they are PROVISIONAL.** Rev 1 drafted S217–S221; S217 was
+minted the same day by the merged `has_push` row (`tests/mech/sabotages/S217_has_push_npush_estimate_reverts.sh`),
+so every id in rev 1 collides (r49 item 6 / check B1). S218–S222 are free as of
+`05c984b`, but **a worktree's `sabotages/` is the id space as of ITS branch
+point, not the id space** — the S205/S206 incident. Per
+`tests/mech/sabotages/CLAUDE.md`, **the range is ARBITRATED BY THE MANAGER AT
+MERGE**; the implementation lane numbers from the highest it can see, states
+the range in its handback, and renumbers on instruction with a SIMULTANEOUS
+substitution.
+
+| row | the sabotage | detector | reach | note |
+|---|---|---|---|---|
+| **S218** | predicate widened from `up[UPC_PLAIN].accept` to `state_acc_any` (F3) | `VIEW_DECLINE_MANIFEST` all-and-only (§5.2) + a `$`-shaped find-all differential reading `caps[0][0]` | `SAB_REACH` on `$`'s decline; `SAB_REACH_POP` on the manifest floor (≥ 12) | the strongest row; §5.6a |
+| **S219** | P3 dropped — TWO ARMS: (i) the P1/P2 conjunct, (ii) the LIVENESS conjunct | none constructed | **UNREACHED, declared** | §5.6b — ships as the phantom-check shape, named |
+| **S220** | P2's view/context clause dropped (`eolvar`/`endvar`/`up[u]`) | a `(?m)$`-view start-accepting pattern + `caps[0][0]` | `SAB_REACH_POP` against the classctx manifest | §5.6c — **disjointness from S218 is OWED** |
+| **S221** | `caps[0][0] = 0` instead of `= search_from` | a find-all cell at `startpos > 0` reading `caps[0][0]` | `SAB_REACH_POP` on the startpos>0 population | §5.6d — **the population is not counted; that is r49 item 10** |
+| **S222** | the stamp forked from the selection (a second predicate at the stamp site) | check 5.4(3) + check 5.4(8) | `SAB_REACH` on the stamp line | §5.6e — **non-vacuity must be demonstrated** |
+
+**SAB_REACH_POP FROM BIRTH on every row whose population [OPT-VEDGE] can
+move** (r49 item 9 / check M4 — the S206 / [OPT-4.2] lesson, learned the same
+day). [OPT-VEDGE] relaxes scan-edge precondition (3) from "no view on any
+member" to "the only view is the END view"; that is the SAME predicate family
+S218's and S220's populations are defined by, and it moves them by design.
+**S218, S220 and S221 declare `SAB_REACH_POP` in their first commit**, not
+after a re-anchor finds them empty:
+
+- **S218** → `docs/dev/opt5m2_m2_changed_patterns.txt | ^\(\?m\) | 12` plus the
+  manifest's own all-and-only assertion. (A file floor alone is not enough:
+  the file is data, the manifest is the claim. Both, per `[MECH-REACH]`'s
+  "a reach probe and a population floor are different claims and expire
+  separately".)
+- **S220** → the classctx population, floored below M1's measured **8**. A
+  population of 8 is thin enough that it must be floored from birth rather
+  than watched.
+- **S221** → the `startpos > 0` find-all population, floored once §5.6d counts
+  it.
+
+#### 5.6a — S218, and why its reach probe is not its population floor
+
+The probe asserts the SITE still answers: on the clean tree, `$` compiles to an
+artifact whose predicate verdict is `view`. The floor asserts the WITNESS ROWS
+still exist. S70 is why both are needed — a probe alone stays green while
+somebody retires every row that reaches it, and the compiler goes on producing
+a sentence nobody asks for.
+
+#### 5.6b — S219 has NO CONSTRUCTED WITNESS, and this note says so plainly
+
+r49 item 8 (check M3 + sound F1) asked for a purpose-built synthetic witness
+that reaches P3, or an explicit statement that the row ships as the
+phantom-check shape. **This lane could not construct one, and the reason is a
+derivation rather than a failure of effort. The row ships as the S79/S80
+phantom-check shape, named as such.**
+
+*What rev 1 had wrong.* Rev 1 gave `\bx*` as S219's witness. `\bx*` never
+reaches P3: M1 measured its verdict as **`classctx`** — P2 declines it first,
+because `\b`'s truth depends on the UPCOMING byte and so the start state's
+accept varies by class context. And M1 found **ZERO P3-stage declines over
+2,845 corpus patterns**.
+
+*Why the P3-discriminating population looks EMPTY, not merely unpopulated.*
+Reachability of P3 at all needs `dfa_needs_seed(fd)` (`:2161-2166`), i.e. some
+`s1u[u] != s1u[UPC_PLAIN]`. On `ENG_UNANCH`:
+
+1. `(?m)^` and `\G` route to `ENG_ATTEMPT` via `nfa_has_bot`
+   (`src/ir/nfa.c:990-993`), so they are not here at all.
+2. `(?m)$`'s dependence is on the UPCOMING byte (the class-accept axis,
+   `sides_of` at `src/ir/dfa.c:1023`), not on the consumed one, so it creates
+   no `s1u` split.
+3. `s1u[UPC_PLAIN] == s0 == fs` always (P0 / sound A6).
+
+So only `s1u[WORD]` and `s1u[NL]` can differ from `fs`, and in practice only
+`WORD` — a `\b`/`\B` in the start closure. Now the squeeze: **for `fs` to pass
+P2, its accept must be invariant in the upcoming byte**, which rules out an
+accept reached through `\b`/`\B`, whose truth depends on both neighbours. So a
+passing `fs` accepts through a boundary-FREE branch — and a boundary-free
+branch sits in the closure under every class context, which makes every seed
+state accept as well, and live. P1 passing at `fs` appears to IMPLY P1 and
+liveness at every seed.
+
+Candidate shapes this lane worked through and rejected, recorded so the next
+author does not repeat them: `\ba|c*` and `\Ba|c*` (the nullable alternative is
+in every seed closure, so every seed accepts — P3 passes trivially); `\bz*`
+and `\Bz*` (accept varies with the next byte, so `fs` fails P2 and P3 is never
+reached); `\bz|c*` (same as the first); `\bz` alone (`s1u[WORD]` is genuinely
+dead, but `fs` is not nullable so P1 fails first); `\b(?=\w)` and its
+relatives (the lookahead reintroduces the next-byte dependence at `fs`).
+
+*Therefore:*
+
+- **S219 ships with `SAB_EXPECT=UNREACHED` and a `SAB_EXPECT_REASON`** naming
+  this derivation, so the matrix scores it as declared-dead rather than
+  silently green — and so the `[MECH-REACH]` reverse check reads **NOW
+  REACHED** the day somebody builds the witness. That reverse direction is the
+  whole value of shipping the row at all.
+- **The liveness conjunct's real guard is an ASSERTION IN THE COMPILER**, not
+  a sabotage row. An assertion needs no witness: its firing IS the finding.
+  This is the correct instrument for a conjunct that defends against a
+  machine shape nobody can currently build but nothing forbids.
+- **THE OWED MEASUREMENT THAT WOULD SETTLE IT** (D77 — named, not taken here).
+  M1 counted P3 *declines* (0). **Nobody has counted P3 EVALUATIONS.** Instrument
+  the predicate to emit a stamp distinguishing "P3 not asked" / "P3 asked and
+  passed" / "P3 asked and declined" — the same shape as opt5m2's
+  `RX_PROBE_PINNED` — and sweep the corpus **under the force axis as well as
+  the default**. Three outcomes: a non-zero "asked and passed" count makes the
+  conjunct live and the row worth a witness hunt; a zero makes P3 provably
+  unreachable on this corpus and the row a documented redundancy; and a
+  decline is the witness itself. **Trigger: before the implementation lane
+  ships S219 as anything other than `UNREACHED`.**
+
+#### 5.6c — S220's disjointness from S218 is an OWED MEASUREMENT
+
+Rev 1 already noted the overlap. It is still unresolved, the classctx
+population is **8** (M1), and 8 is exactly the scale at which "the second row
+is a redundancy finding, not a check" becomes the likely answer. **Before
+shipping**: run S218 and S220 solo against each other's detectors and show a
+member of S220's population that S218's detector does NOT catch. If none
+exists, S220 is recorded as a redundancy finding — which is a real result and
+is what `unanch_start`'s own wave-C comment does about its widened bit ("it
+therefore ships NO sabotage row: a check with no failing direction is exactly
+what this file's own neighbouring comment warns about"). This is the S79/S80
+rule and it is the MINOR item r49 raised as [check 6].
+
+#### 5.6d — S221's detector population is NOT COUNTED
+
+r49 item 10 / check M5. The row's detector is "any find-all cell at
+`startpos > 0`", and nobody has counted them. The reason it is plausibly thin
+is structural: plain `m`/`n` `.rxt` cells are `startpos`-0; only the opt-in
+`ms`/`ns` forms carry a nonzero `startpos`. There is no suite, floor or
+manifest saying which of the **175** pinned artifacts have such coverage.
+
+**Two acceptable discharges, and the row does not ship without one:**
+
+1. **COUNT IT.** Over the 175, count `ms`/`ns` cells with `startpos > 0`
+   (`grep -rhE '^(ms|ns) '` across `tests/**/*.rxt`, joined to the pinned
+   pattern list), and floor the count in `SAB_REACH_POP`. If the count is
+   small, say so in the row's header rather than shipping a thin population
+   silently.
+2. **BUILD SYNTHETIC WITNESSES.** Add `ms` cells at `startpos > 0` for a named
+   handful of pinned patterns — `a*`, `[a-z]{0,64}`, `[a-z]{0,4096}` and one
+   seeded shape — reading `caps[0][0]` explicitly, oracle-verified. These are
+   corpus additions, so they belong to the implementation lane and are named
+   here so it does not discover the gap at check-writing time.
+
+This matters more than its severity suggests, because §3.4(e) is invisible to
+every single-search-at-0 test, which is most of the corpus.
+
+#### 5.6e — S222 must be shown NON-VACUOUS
+
+r49's CONFIRMED-7 / [check 7]. The stamp/body third-term check follows the
+`run_dfa_stamps` provenance discipline correctly, but a stamp-fork sabotage can
+pass vacuously: if the forked second predicate happens to agree with the first
+on every corpus artifact, the row is green and certifies nothing.
+
+**How to show non-vacuity**, and it must be demonstrated in the row's own
+header with the measurement, not asserted: fork the stamp site to a predicate
+that DISAGREES on a named artifact — the natural choice is the widened
+`state_acc_any` read, since §5.2's manifest already names ≥ 12 artifacts on
+which widened and narrowed disagree. `SAB_REACH` then asserts the stamp LINE
+is present on a named artifact, and the failing direction is check 5.4(3)
+reporting `<PREFIX>_DFA_START "pinned"` on an artifact that still contains
+`rewind_position`. Because that construction reuses S218's discriminating
+population, **S222's disjointness from S218 must be argued too**: they sabotage
+different SITES (the selection vs the stamp) and 5.4(3) is what distinguishes
+them, so the row's header states that rather than leaving it implied.
 
 ### 5.7 What the bench's AFTER cannot see, so the in-tree checks must
 
