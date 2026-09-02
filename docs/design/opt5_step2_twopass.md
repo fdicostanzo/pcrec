@@ -550,9 +550,13 @@ are true of it and neither is the two-pass structure:
    `pos == n`, so each carries an `endvar` position view, and `member_ok`
    refuses every member (`eolvar < 0 && endvar < 0`). STEP 2 changes what
    `<prefix>_search` does *after* the forward loop; it does not change which
-   states qualify as chain members. **INFERRED** — read off `scanedge.c`'s
-   `member_ok` and the `-bounded` prefilter's documented cause, not executed
-   (§7 item 3 owes the one-command confirmation).
+   states qualify as chain members. **MEASURED in revision 2** — rev 1 marked
+   this INFERRED and owed a confirmation; §7 item 3 is now taken. Memo M3
+   (`docs/dev/opt5_step2_premeasure.md`) confirms precondition (3) with a
+   discriminating probe PAIR — removing `\z` alone from the same skeleton flips
+   `RX_DFA_SCAN_EDGE` from `"none"` to `"range"` — and `member_ok` (line 190)
+   checks `st->endvar >= 0` FIRST, before the class-context loop, so
+   precondition (3) refuses every member and precondition (2) is never reached.
 2. **STEP 2's own predicate also declines it.** `(?:[a-z]{0,N})\z` matches empty
    only at `pos == n`, so its start state accepts under the END view and not
    under PLAIN — P1 fails, P2 fails. The whole forms get nothing from STEP 2 and
@@ -1229,6 +1233,18 @@ match/no-match verdict, not the length, not the end. Learnings §3 records that
 compares match/no-match, or compares lengths, is vacuous against every failure
 direction in §3.4 — including the one where every answer is still "matched".
 
+**One exception, added in revision 2, and it points the other way.** §3.4(b′)
+— a dead seed with P3's liveness conjunct dropped — reports a MATCH WHERE
+THERE IS NONE, so the VERDICT is what moves, not the offset. A differential
+tuned entirely to "offsets are the blind field" would not be looking for it.
+So the sweep reads `caps[0][0]` AND the verdict; and because no witness for
+that shape can currently be built (§5.6b), the compiler assertion is what
+actually stands guard.
+
+**The denied build must also carry the deny flag through the AXIS SWEEP under
+the FORCE axis**, not only the default one — `-fno-start-pinned` crossed with
+`-fprefilter` is where §5.2's uncounted hybrid population lives (§7 item 9).
+
 ### 5.2 Population accounting (K35) — rewritten in revision 2
 
 Rev 1 asked for three numbers as ESTIMATES. Two are now measured, one is owed
@@ -1339,6 +1355,11 @@ a non-zero value is a finding that wants reading, not a failure.
   This note does not predict the outcome: the lane must read it, not assume it.
 - **Object-code neutrality** (`run_object_neutrality.sh`) is NOT applicable —
   STEP 2 deliberately changes executed code.
+- **(B)'s pin value today is `6dbdf41`** (`tests/codegen/run_recursion_identity.sh:515`),
+  which D94's grep returns alongside the abi readers (§4.4). It is re-pinned to
+  STEP 2's own last `src`-touching commit; the gate's structural check then
+  requires the pin's stamped abi to equal the compiler's, so a bump without a
+  re-pin fails (B) and is told why.
 
 ### 5.4 Structural checks owed (`tests/codegen`) — revised
 
