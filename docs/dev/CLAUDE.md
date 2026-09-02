@@ -143,6 +143,9 @@ Append-only where noted; the restart/status-recovery record for the project.
 - `lanes/` — per-lane restart logs and delivery reports (`<lane>_log.md`, `<lane>_report.md`; optional, the lane's own voice, historical after merge). See lanes/CLAUDE.md.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
+- `summaries/` — executive summaries written for Frank at his request, the
+  manager's voice, each citing the ledger/review it summarises. See
+  summaries/CLAUDE.md.
 - `learnings.md` — the consolidated learnings digest, distilled from a
   complete read of the journal (written 2026-08-17 at Frank's request,
   126 entries in). Eight sections: measurement discipline, oracle
