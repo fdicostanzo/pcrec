@@ -993,7 +993,7 @@ it as a structural check rather than leaving it as prose.
 
 ## 4. AXES / FORM placement (D82), stamps, deny flag, abi
 
-### 4.1 A new axis, on the shape axis G established
+### 4.1 A new axis — **AXIS J**, not H (corrected in revision 2)
 
 Axis G (`dfa_matches`) answers *which form `<prefix>_match` takes*. This is its
 sibling: *which form `<prefix>_search`'s post-loop block takes*. It has axis G's
@@ -1002,8 +1002,17 @@ than about one machine's form, so **no `DfaForm`, bare `DfaCand`s, one `if` in
 `emit_unanchored`**, and the two bodies (a reverse machine with tables and a
 loop, versus two assignments) are far too different for a shared skeleton.
 
+**The letter is J** (r49 item 4 / cons F-B, sound E3). Rev 1 proposed H, which
+is TAKEN: [OPT-5] STEP 1 landed **axis H** ("DOES THIS STATE EMIT AN EDGE AT
+ALL", `src/gen/emit_dfa.c:4317`) and **axis I** ("THE EDGE'S RUN-EXTENSION
+BODY", `:4349`); `scan_edge_of` names both by letter at `:2694-2695` and
+`src/gen/CLAUDE.md` does too. A collision here is silent — `--list-axes`
+(D82) walks the candidate arrays generically and would print two axes with one
+letter — so the rename is global across this note, the axis comment, the deny
+flag's spelling, `src/gen/CLAUDE.md`'s axis list, and every stamp discussion.
+
 ```c
-/* PROPOSED — AXIS H: WHICH FORM THE SEARCH ENTRY'S START RECOVERY TAKES */
+/* PROPOSED — AXIS J: WHICH FORM THE SEARCH ENTRY'S START RECOVERY TAKES */
 static const DfaSearchStart dfa_search_starts[] = {
     { { "pinned",       PCREC_NO_START_PINNED, start_pinned_applies } },
     { { "reverse-pass", 0,                     cand_always          } },
@@ -1039,29 +1048,90 @@ predicate. `unanch_start`'s own header is the cautionary tale — *"M2.7 forked 
 second copy, and the fork is exactly how the prefilter and skip loops went
 missing from the `$` path for a whole milestone."*
 
-**`rx_info` mirror — recommend NO, for now.** `RX_DFA_MATCH` earned its
-`match_form` mirror on a stated trigger: it is a caller-visible COST property of
-an entry point the caller calls, and a header-less consumer needs to know which
-form it linked. `<prefix>_search` is also an entry the caller calls and this is
-also a ~2× cost property, so the trigger arguably fires. Against it: adding an
-`rx_info` field is a struct-layout event on top of a text event, `RX_DFA_TABLE`
-and `RX_DFA_SCAN_EDGE` both declined mirrors on "no such consumer reads them
-yet", and the bench — the only consumer in evidence — buckets by reading the
-emitted `#define`s, not `rx_info`. Recommend the stamp alone, record the trigger
-in `match_api.md` §6.3 the way the other two do, and put the asymmetry with
-`RX_DFA_MATCH` in front of Frank (§8 Q2).
+**`rx_info.search_form` MIRROR — APPROVED. Revision 1 recommended against it
+and was RULED THE OTHER WAY** (r49 item 5 / cons F-A, sound E2). Rev 1's
+argument, kept here as the trace a reader is owed: `RX_DFA_TABLE` and
+`RX_DFA_SCAN_EDGE` both declined mirrors on "no such consumer reads them yet",
+and the bench buckets by reading the emitted `#define`s. **Frank ruled the
+other way the same day** (`docs/dev/plan.md` `[OPT-5]`: "`rx_info.search_form`
+mirror APPROVED, rides the implementation's own abi event (Q2, Frank: 'a great
+idea', with a direction note questioning which stamps should remain `#define`s
+at all)"). The trigger that fires is `RX_DFA_MATCH`'s own: a caller-visible
+COST property of an entry point the caller calls, which a header-less consumer
+needs in order to know which form it linked. §8 Q2 records the ruling.
+
+**Consequence: the implementation carries an `rx_info` STRUCT-LAYOUT change on
+top of the text change,** and a merge review that follows a spec-delta table
+without it ships an incomplete contract. §6 carries the hunk.
+
+**THE HUNK, and a disagreement with the review's wording, recorded rather than
+silently deviated from.** The review says "append after `match_form`,
+[DD-13c] discipline". [DD-13c]'s discipline as the emitter states it is
+*"APPENDED AT THE END, after `match_form`, so no existing member's offset
+moves — the [DD-13c] append precedent rather than abi 2's and abi 3's
+insertions"* (`src/gen/emit_dfa.c:735-737`). At the time that comment was
+written, `match_form` WAS the last member; today `name` and `nentries` follow
+it (`:735ff`, added by [DD-13b.W1.2] at abi 15). **Taking "after `match_form`"
+literally would INSERT before `name`/`nentries` and move their offsets, which
+is the exact thing the discipline exists to prevent.** So the hunk appends at
+the END, after `nentries`, and this note records the reading for the merge
+review to confirm.
+
+```c
+    /* [DD-13b.W1.2] ... name; nentries ...  <- unchanged, still last today */
+    const char           *name;
+    int                   nentries;
+    /* [OPT-5 STEP 2] HOW <prefix>_search recovers the match START:
+       "pinned" (the start is search_from by compile-time proof, and the
+       artifact carries no reverse machine) or "reverse-pass" (the second
+       scan). Mirrors <PREFIX>_DFA_START. NON-NULL on every artifact that
+       CONTAINS a DFA scan -- a VM HYBRID inlines this same body, so unlike
+       match_form the guard is pcrec_artifact_has_dfa_scan and NOT
+       fit.chosen == ENGM_DFA. NULL on a plain VM artifact. */
+    const char           *search_form;
+```
+
+**The guard is deliberately the OTHER one**, and the emitter's own note at
+`:1690-1697` is why: `match_form` is guarded on `fit.chosen == ENGM_DFA`
+because "a hybrid's `<prefix>_match` is the VM's own anchored body, which this
+axis does not describe". Axis J describes `<prefix>_search`'s post-loop block,
+which a hybrid DOES contain (it inlines `emit_unanchored`) — so the field
+follows the `RX_DFA_SCAN_EDGE` precedent, exactly as the stamp does. The
+comment sits ABOVE the member, not after it, for the measured
+`tests/lib/size_count.sh` reason `[ENG-ABS]` records at `match_form`.
 
 **Stamp compositions must stop naming a machine the artifact no longer
-contains.** `RX_DFA_TABLE` is an artifact-level composition across machines
-(spec §6.3) and `RX_DFA_SCAN_EDGE` folds `dfa` → `rdfa` → `adfa`
-(`scan_edge_of` is called three times in `dfa_scan_edge_name`). If the reverse
-machine is not emitted it must drop out of both folds, or the artifact stamps a
-fact about text that is not in it — the mirror image of the defect `[ENG-ABS]`
-avoided when it *added* the anchored machine to `RX_DFA_TABLE`'s composition
-("leaving the anchored machine out would let the stamp say `"premultiplied"`
-about an artifact holding an indexed table"). A fold that changes from `"mixed"`
-to `"premultiplied"` on some artifact is the expected, correct consequence.
-§5 owes a check.
+contains — CONFIRMED by the panel at exactly two sites** (r49 item 16 /
+sound E4). `RX_DFA_TABLE` is an artifact-level composition across machines
+(spec §6.3) and `RX_DFA_SCAN_EDGE` folds `dfa` → `rdfa` → `adfa`. If the
+reverse machine is not emitted it must drop out of both folds, or the artifact
+stamps a fact about text that is not in it — the mirror image of the defect
+`[ENG-ABS]` avoided when it *added* the anchored machine to `RX_DFA_TABLE`'s
+composition.
+
+The two sites, cited:
+
+| stamp | function | the reverse read to drop |
+|---|---|---|
+| `RX_DFA_TABLE` | `dfa_table_name`, `src/gen/emit_dfa.c:2664-2666` | `const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;` at `:2665`, and the `if (strcmp(f, r)) return "mixed";` that consumes it |
+| `RX_DFA_SCAN_EDGE` | `dfa_scan_edge_name`, `:2706-2715` | `if (strcmp(v, "mixed")) v = scan_edge_of(cx, &cx->job->rdfa, v);` at `:2711` |
+
+**PREDICTED STAMP MOVEMENTS, written BEFORE the change** (this is the
+prediction table r49 item 16 asks for; it is a per-artifact prediction the
+implementation lane compares against, not a summary read afterwards):
+
+| artifact class | `RX_DFA_TABLE` today | predicted after | `RX_DFA_SCAN_EDGE` today | predicted after |
+|---|---|---|---|---|
+| pinned, both machines same repr | its form name | **unchanged** | as folded | may change only if the reverse machine was the `"mixed"` cause |
+| pinned, forward and reverse reprs DIFFER | `"mixed"` | **the forward machine's form name** — an expected, correct movement | — | — |
+| pinned, reverse machine had edges the forward one lacks (the `mc2` shape r48sem measured: forward 0, reverse 4) | — | — | `"mixed"` | **the forward machine's value** (`"none"` where the forward machine has no edge) |
+| pinned AND `RX_DFA_MATCH "unwrapped"` | folds three machines | folds **two** (forward + anchored) | same | same |
+| declined (any) | unchanged | **unchanged** | unchanged | **unchanged** |
+
+Both stamps are DFA-and-hybrid artifact-level facts, so a hybrid whose inlined
+prefilter is pinned moves the same way. §5.4(4) asserts the negative form (on
+an accepted artifact neither fold reads `job->rdfa`), because a prediction
+table is a reviewer's artifact and an assertion is a check.
 
 ### 4.3 The number that is NOT born
 
@@ -1074,42 +1144,62 @@ leaving a reader to check. (The one place a number could appear is O-12 ask
 (ii)'s "skip-below-k knob" — which belongs to STEP 1's fixed entry term, not
 here; §8 Q7.)
 
-### 4.4 The `abi` bump and its sites (D76)
+### 4.4 The `abi` bump — D94's GREP RULE, not a site list (rewritten in revision 2)
 
-Deleting a machine's tables, accessor block and loop from the emitted artifact is
-far past "scaffolding": it is an `abi` bump, in the same change, with the gate
-re-pinned. `src/gen/emit_dfa.c:1441` reads `.abi = 14` at `main`'s `ae3e6ca`
-(taken there by `[CC-CLANG]` step 1, `c657ae9`). Lane `w12` is delivered and
-unmerged and also claims 14, so **STEP 2 writes the next free number and the
-final value is assigned at merge serialization** — the same handling `w12`'s own
-charter used.
+Deleting a machine's tables, accessor block and loop from the emitted artifact
+is far past "scaffolding": it is an `abi` bump, in the same change, with the
+gate re-pinned (D76). **STEP 2 also appends an `rx_info` member** (§4.2), so
+the bump carries a struct-layout event as well as a text one.
 
-The four sites, all in one change, `make test-codegen` before delivering:
+**abi is 15 today and STEP 2 writes 16.** Rev 1 read 14 at `ae3e6ca` and
+described a "next free number assigned at merge serialization" because
+lane `w12` also claimed 14. That is resolved: `w12` merged, `src/gen/emit_dfa.c:1514`
+reads `.abi = 15`, and there is no serialization ambiguity left (r49 item 17 /
+cons F-C).
 
-1. `src/gen/emit_dfa.c` — the `.abi = N` line (1441).
-2. `tests/codegen/run_codegen_tests.sh` — `ABI_EXPECT` and the `[DD-14.FB]`
-   §10.4 narrative sentence (~2713–2741), which carries one clause per bump and
-   gains STEP 2's.
-3. `docs/spec/match_api.md` §6 — the "`rx_info.abi` is `14`" sentence (line
-   1602).
-4. The gate's (B) pin — `RECURSION_IDENTITY_FILEPIN`, re-pinned to this change's
-   last `src`-touching commit. (B) compares WHOLE FILES within one abi number,
-   so it moves by construction (`tests/codegen/CLAUDE.md`, [TT-11]/D76).
+**Rev 1's four-site checklist is DELETED. D94 retired it — on this note's own
+finding.** `docs/dev/decisions.md` D94 (Frank, 2026-09-01, ruling this note's
+Q6, "agree. this is the right direction"): *"At every abi bump the lane greps
+the tree for readers of the number … and moves ALL of them"*, because the
+hand-enumerated four drifted exactly the way this project's hand-copied counts
+always have. **So this note states the GREP, not the sites:**
 
-**F5 — THERE IS A FIFTH READER, AND IT IS ALREADY STALE.**
-`docs/spec/match_api.md:159` reads "`rx_info.abi` is `13` ([OPT-5], the DFA scan
-edge…)" while line 1602 reads `14`. `[CC-CLANG]`'s bump updated the site the
-ritual names and not this one. The four-site checklist in `CLAUDE.md` is
-therefore incomplete as written. Recommend: STEP 2 fixes line 159 as part of its
-own bump, and the `CLAUDE.md` row is amended to say *every* reader of the number
-(or line 159 is rewritten to stop carrying one — it is a change-history
-narrative, and a history sentence pinned to "today" is a stale site by
-construction). §8 Q6.
+```sh
+grep -rEn '\.abi = |ABI_EXPECT|`rx_info\.abi` is' src lib cli tests docs Makefile
+grep -rn  'RECURSION_IDENTITY_FILEPIN' tests          # the gate's (B) pin
+```
+
+Run in this worktree at `05c984b`, that grep returns FIVE readers of the
+number today, which is one more than rev 1's list had — the demonstration that
+the rule is the right shape:
+
+| reader | what it is |
+|---|---|
+| `src/gen/emit_dfa.c:1514` | the `.abi = 15` stamp itself |
+| `tests/codegen/run_codegen_tests.sh:2735` | `ABI_EXPECT=15` |
+| `tests/codegen/run_codegen_tests.sh:2737` | the `[DD-14.FB]` §10.4 narrative sentence, one clause per bump — STEP 2 appends its own |
+| `docs/spec/match_api.md:159` | the §3-area "`rx_info.abi` is `15`" sentence |
+| `docs/spec/match_api.md:1647` | the §6 "`rx_info.abi` is `15` on every artifact today" sentence |
+| `tests/codegen/run_recursion_identity.sh:515` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6dbdf41}"` — the (B) pin, re-pinned to STEP 2's last `src`-touching commit |
+
+**Do not copy that table into the implementation.** It is a snapshot taken
+2026-09-02 to show the rule works; the implementation runs the grep itself, at
+its own tree, and moves whatever it returns. `make test-codegen` before
+delivering.
+
+**F5 and Q6 are DISCHARGED and revision 2 deletes rev 1's text about them**
+(r49 item 17 / cons F-C, sound E1). Rev 1 found `match_api.md:159` stale at
+`13` while `:1602` read `14`, and recommended fixing it plus amending the
+ritual. Both halves landed: the w12 merge renumbered `:159` (it now reads
+`15`, VERIFIED by the grep above), and the ritual amendment is **D94**, already
+in `docs/dev/decisions.md` and in `CLAUDE.md`'s situation index. Nothing is
+owed here; §8 Q6 records it as ruled and closed.
 
 **Registry.** A new tuning flag is a registry row (`PCREC_NO_START_PINNED`,
-bit 22 — bit 21 is `PCREC_NO_SCAN_EDGE`, `lib/pcrec.h:451`). The registry counts
-move; this note deliberately does not predict the new numbers, since they depend
-on what else lands first.
+**bit 22** — bit 21 is `PCREC_NO_SCAN_EDGE` at `lib/pcrec.h:451` and nothing
+above it is defined, CONFIRMED by the panel). The registry counts move; this
+note deliberately does not predict the new numbers, since they depend on what
+else lands first.
 
 ---
 
