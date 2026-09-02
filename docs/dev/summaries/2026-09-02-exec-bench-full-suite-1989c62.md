@@ -143,31 +143,52 @@ record's trial agreement (ledger §1.2-§1.4, §2.2).
 
 ## 4. Next steps
 
-**(a) The bench's seven asks (ledger §9), answer owed in I-32:**
+**(a) The bench's seven asks (ledger §9), now answered in I-32
+(pcrec-bench commit 54c5633):**
 
-- (i) Is the frameless-VM ×9 intended to stay, or an unowned side
-  effect a later change could silently take back? Does
-  `resume_frames == 1` match `has_push == false` exactly? Is
-  gcc-only expected? Answered by: pcrec manager, Frank ruling.
-- (ii) Carry the size-book correction (−402/+105/+202 B by frame
-  count and DFA presence) into both projects' documents. Answered by:
-  pcrec manager (already corrected on pcrec's side per the journal,
-  confirm to the bench).
-- (iii) Is `cls-atleast-4096`'s `search-filter` entry form
-  deliberate? It is the natural control for the STEP 2 AFTER. Answered
-  by: pcrec manager.
-- (iv) The scan-edge boundary keys on spelling and form, not a count.
-  What does the decision key on, and is there a cell expected to win
-  that the bench should measure? Answered by: pcrec manager.
-- (v) `level-context` is the one corpus pattern clang builds
-  1.4-1.7× slower; worth a look at that code shape. Answered by: a
-  measurement lane.
-- (vi) The DFA route's late size check costs 36 s to learn a pattern
-  is too big against the VM route's 0.02 s. Answered by: pcrec
-  manager, a measurement lane (candidate 5).
-- (vii) `pfx3-512` (pcre2-jit ×147 over the interpreter) is refused by
-  pcrec's source cap on every config; build altwide@0.2 around it?
-  Answered by: Frank ruling (scope decision).
+- (i) The `has_push` OMISSION is deliberate and pinned (mech row S217
+  catches a wrong gate as a miscompile; identity gates pin the emitted
+  bytes), but the ×9 SPEED itself is unowned by any charter today.
+  `resume_frames == 1` does NOT equal `has_push == false` by
+  construction, they come from different sources and diverge where
+  the frame-count pre-pass estimate undercounts. gcc-only is not
+  proven either way: clang had no BEFORE on this population (those
+  artifacts were refused under clang at a7e0bdf), so no gcc/clang
+  before/after comparison exists, only a gcc/clang gap at 1989c62.
+  Proposed as an OPTIMIZATION candidate row to Frank.
+- (ii) The −402/+105/+202 B split is now carried on the [CC-CLANG]
+  plan row and in the journal; pcrec's `docs/dev/artifact_size_log.tsv`
+  stays stale-but-pinned until deliberately regenerated (a standing note).
+- (iii) `cls-atleast-4096`'s `search-filter` entry is deliberate
+  (`PCREC_ANCHORED_MAX_STATES` = 4096, halved by the `\z` wrapper, is
+  exceeded); it is now an in-tree named witness in the STEP 2 note
+  that the elision predicate declines, contract: must not move.
+- (iv) The scan-edge decision keys on a maximal same-shaped,
+  same-accept-bit DFA state chain's LENGTH, taken only for chains of
+  2 or more states; the k = 2-4 bracket the ladder found is that rule
+  read through its own spellings. Proposed as an OPTIMIZATION
+  follow-up candidate (a minimum-chain-length knob), to be measured
+  via the existing `-fno-scan-edge` arm.
+- (v) `level-context` under clang recorded as a candidate measurement,
+  not chartered ahead of STEP 2; pcrec will cite it once the bench
+  parks the artifact and both `-S` outputs in a measurements file.
+- (vi) Agreed, and the mechanism is known: the subset construction and
+  table emission both run before the emitted-bytes source cap is
+  checked. Proposed as an ADMIN/LIMITS candidate row (a projected-size
+  bail during construction).
+- (vii) Measurable today with no pcrec change: both caps are
+  raise-only per compile (`--max-emit-bytes`, `--max-emit-code-bytes`)
+  and never fail a build that would otherwise have succeeded; build
+  altwide@0.2's configs with the raise rather than around the
+  defaults.
+
+Three candidate rows go to Frank from I-32, one per plan column: the
+frameless-VM shape (OPTIMIZATION, ask i), the DFA projected-size bail
+(ADMIN/LIMITS, ask vi), the scan-edge minimum chain length
+(OPTIMIZATION follow-up, ask iv). The engine-selection question (auto
+picking the slower engine at rungs ≥ 1024; the bench files it under its
+[SEL-1] label, which has no pcrec plan row yet) is recorded as a measured
+fact awaiting STEP 2's AFTER, since STEP 2 removes half the gap first.
 
 **(b) pcrec's own queue, as the journal states it:**
 
@@ -175,10 +196,8 @@ record's trial agreement (ledger §1.2-§1.4, §2.2).
   design note is merged (66da68c) and verified.
 - [OPT-VEDGE]'s first measurement (opt5d §7 item 3's one-command
   measurement) is not yet started.
-- The frameless-VM shape question is a candidate row, not yet
-  chartered: does it extend to frames ≥ 2, and should a gcc-only win
-  be pinned deliberately.
-- The DFA late-size-check candidate (ledger §8 #5) has no owner yet.
+- The three candidate rows proposed to Frank in (a) above are not yet
+  ranked or chartered; that ranking is his to make.
 - Frank's open rulings, unchanged since the journal's last note: the
   o42 witness-gap (deferred to a future session), K43/K44 fix
   directions (unruled), and the reflection-surface note.
