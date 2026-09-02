@@ -1620,5 +1620,62 @@ append-only or historical records.
   the 9 base-tier literal escapes with no `RegRow` today get minimal new
   rows or a second row-less array).
 
+- `opt5_step2_twopass.md` — **[OPT-5] STEP 2**, the design note written BEFORE
+  any emitter change. **REVISION 2 (2026-09-02, lane opt5d) works every finding
+  of the D6 panel `docs/dev/reviews/2026-09-01-r49-opt5-step2.md`; §10 is the
+  item-by-item disposition table and is where a reviewer starts.** Rev 1 was
+  2026-09-01 under a box hold with every number cited; rev 2 was allowed one
+  build, so its proof witnesses are emitted artifacts quoted from this tree.
+  DESIGN ONLY — nothing under `src/`, `tests/` or `docs/spec/` lands from this
+  lane; §6 is what the implementation lane lands under D80.
+
+  THE MECHANISM (unchanged, and the panel found no input on which it answers
+  wrongly): `<prefix>_search` runs a forward scan for the match END and a
+  backwards scan for its START, and since STEP 1 both are cursor loops — which
+  is why the bench's nine-rung ratio sits at 1.76–2.00. The **START-PINNED
+  SEARCH**: where the forward machine's start state is LIVE and accepts
+  unconditionally (PLAIN view, no `eolvar`/`endvar`, accept equal across every
+  class context, and the same of every seed state), D3's accept-pruning has
+  already killed every later start before the first byte, so
+  `match_start_position == search_from` on every call and the reverse machine,
+  its tables, its accessor block and its loop are **not emitted at all**.
+
+  WHAT REVISION 2 CHANGED. (1) **The proof is re-derived from `emit_dfa.c` site
+  by site** — rev 1's Claim A ("the accept probe runs before anything
+  advances") is FALSE, because the probe is an axis-E object that sits BELOW
+  the scan edges on any viewed or by-class artifact, and `acc_viewed_applies`
+  reads a flag OR'd over BOTH machines; the claim is now "some accept ≥
+  `search_from` is always recorded", with `[a-z]{0,8}|9$` and `a*|\b9` emitted
+  as witnesses. (2) **The `last_accept_position == -1` gate is LOAD-BEARING,
+  not dead** — on a dead seed at `startpos > 0` it is the only correct answer,
+  so P3 gains a LIVENESS conjunct and every "deliberately dead" phrasing is
+  deleted. (3) **The failing-call bound is CLOSED as unsound** (`a*b`/"aab":
+  `tr[fs]['a'] == fs`), with no `_match` change in STEP 2 and the population
+  handed to `[OPT-VEDGE]`, which also owns the bench's ×37 exhibit — the
+  predicate DECLINES that whole form, which rev 1 had claimed as a rescue.
+  (4) **Axis J, not H** (STEP 1 took H and I). (5) **Frank APPROVED the
+  `rx_info.search_form` mirror**, against rev 1's recommendation, so the change
+  carries a struct-layout event and a fourth structural check. (6) **The abi
+  ritual is D94's grep**, abi 15 → 16. (7) §0 becomes a **two-instrument
+  acceptance frame** with the `unwrapped` match rungs as a CONTROL and the
+  `search-filter` rungs and search band as the CUSTOMERS, and an O-13/O-14
+  provenance rule (O-14 had not landed; the markers are in place). (8) The
+  check plan is rebuilt on **named manifests instead of counts** — the
+  independence of the view-decline control expired when it was re-measured for
+  this check — with birth-time `SAB_REACH`/`SAB_REACH_POP`, ids S218–S222, and
+  six new owed measurements. **S219 ships declared `UNREACHED`**: §5.6b derives
+  why the P3-discriminating population looks empty on `ENG_UNANCH` rather than
+  merely unpopulated, and the liveness conjunct's real guard is a compiler
+  assertion.
+
+  §2 still answers bench ask (iii) NO — now MEASURED, not inferred: memo M3's
+  discriminating probe pair confirms scan-edge precondition (3) is what refuses
+  the `\z` whole forms — and names the **VIEW-TOLERANT SCAN EDGE**, chartered
+  as `[OPT-VEDGE]`, with `[ART-SIZE]`'s first real customer as its trigger.
+  §7's owed measurements are the memo's three (all now TAKEN) plus six new
+  ones. §9 collects five findings against the plan row plus five raised by the
+  revision itself. Companion data: `docs/dev/opt5_step2_premeasure.md` and
+  `docs/dev/opt5m2_m2_changed_patterns.txt`.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
