@@ -19700,3 +19700,28 @@ findings, surprises, impact, next steps — as a committed doc.
 
 NEXT: O-14 → fill the §0 slots, answer asks (I-31), executive summary;
 Frank's implementation go for STEP 2; his open rulings.
+
+## 2026-09-02 — Fiftieth session, part 3 (afternoon): the bench's reports flag — forced-VM ×9 on simple bodies is [CC-CLANG]'s frameless-dispatch gate (unpredicted); I-31
+
+`make test-codegen` on the rev 2 merge: GREEN (all scripts, rc 0). The
+bench merged its six report groups at 13:34 (their f8c6cb9) and sent a
+live flag ahead of O-14: **the forced-VM route got ~×9 faster on simple
+bodies at 1989c62** (floor literal 174,405 → 19,383 ns/call; a gradient
+down to ×1.1 on hex32/uuid), with a −402 B split on 36 frameless bodies
+and +105 B (abi 15's fields, flat) on 24 pushing bodies; controls flat
+to four figures. Their hypothesis was right and I confirmed it FROM THE
+EMITTER, not by category: `emit_vm.c:9482-9560` — `has_push` false omits
+the pop-and-resume block including the computed goto, the resume_depth
+guard and the fail-label budget decrement. The ×9 is gcc's whole-function
+treatment of a computed goto lifting, not fewer executed instructions (a
+mechanism argument; the measurement is theirs and O-14 is the citation
+under D78). Not predicted by the cc charter (clang portability) and not
+measured here — recorded on the [CC-CLANG] row as UNPREDICTED EFFECT.
+I-31 written to their inbox (a0e2f91) with the citations; their other
+two flags (loglines Δ-baseline non-uniformity; altwide 12/20 refused by
+the 1,000,000 B emit cap on every config) are answered in O-14's turn.
+
+Lesson for the executive summary Frank asked for: the biggest
+performance movement of the pin came from a PORTABILITY change nobody
+measured for speed — the bench's controls-flat design is what made it
+attributable.
