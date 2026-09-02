@@ -56,3 +56,18 @@ never edited afterwards.
   the `dfa_table_name` line: the review's `:2664` was right). The one r49
   item not fully discharged is 8 (no synthetic witness reaches P3; S219 ships
   UNREACHED with the derivation).
+- `opt5i_log.md`, `opt5i_report.md` — [OPT-5] STEP 2 IMPLEMENTATION (2026-09-02,
+  lane opt5i): the START-PINNED SEARCH ELISION — axis J, the P0-P5 predicate
+  with its compiler assertion, the `RX_DFA_START` stamp and the
+  `rx_info.search_form` mirror, abi 15 → 16, `tests/codegen/run_search_pinned.sh`
+  and sabotage rows S218-S222. The log carries the PREDICTION TABLE written
+  before any census was run and the measured comparison against it (175 pinned,
+  exactly M1's number; −311,811 bytes net). The report's §7 carries seven
+  findings against the note and the tree — the sharpest being that C3 holds only
+  for `startpos <= n` (the emitted range guard sits above the scan, so the note's
+  "on every call" is falsified by one cell per subject), that the
+  `RX_DFA_TABLE` fold's reverse-drop has an EMPTY corpus population so the
+  census cannot demonstrate it, and that the hybrid `window_end` clamp the note
+  quotes as universal is conditional on an MRL clamp existing. The (B) identity
+  pin is deliberately UNSET and owed to the manager at merge: D76's pin must
+  name a commit reachable after the merge, which a lane branch's is not.

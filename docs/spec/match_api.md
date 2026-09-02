@@ -2322,7 +2322,7 @@ CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the SAME IFF as
 `<PREFIX>_DFA_TABLE` and the four stamps beside it, and NOT
 `<PREFIX>_DFA_MATCH`'s narrower one. It is a **(a) SELECTION FACT**: the macro
 is defined iff the artifact contains a DFA scan, and its value names the object
-axis J selected. It names which of two forms that scan's entry takes when it
+axis J selected. It names which of two forms the scan entry takes when it
 recovers the match START:
 
 ```

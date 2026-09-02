@@ -603,6 +603,20 @@ check_value_set "RX_DFA_SCAN_EDGE" \
     "$(dump_stamp_vals RX_DFA_SCAN_EDGE)" \
     ""
 
+# [OPT-5] STEP 2 axis `search-start`'s stamp. Its value set is exactly the
+# two candidates the axis can select — unlike `table` and `scan-body`, whose
+# stamps compose a fact ACROSS machines and therefore carry `"none"`/`"mixed"`
+# composite values the per-machine list could never produce. So this call
+# needs no composite sibling, and the dump needs no hand-stated outcome rows.
+#
+# THE ANCHOR CARRIES NO COUNT, `RX_DFA_SCAN_EDGE`'s rule one block up: a
+# phrase naming a number goes stale the day a third form lands, silently, by
+# harvesting a shorter list than the spec states.
+check_value_set "RX_DFA_START" \
+    "$(extract_md_table_values "$MATCHAPI" "which of two forms the scan entry takes")" \
+    "$(dump_stamp_vals RX_DFA_START)" \
+    ""
+
 # [OPT-4] THE PATTERN IS WORD-BOUNDED, as `RX_ENGINE`'s below always was.
 # The bare `RX_VM_PREFILTER` matched `RX_VM_PREFILTER_LANG` too — a DIFFERENT
 # macro with its OWN value set — and harvested its `"exact"` as one of this
