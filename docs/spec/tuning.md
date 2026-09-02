@@ -1131,6 +1131,21 @@ knee this section used to describe and it is deleted — see "What it controls"
 above and `docs/design/prefilter_count_independence.md` §10a for the regression
 that removed it.
 
+
+**[OPT-4.2] STRUCTURAL RETIREMENT (2026-09-01): the `_LANG_WHY` value
+`"nullable collapsed language"` is no longer reachable.** The collapse
+X{m,n} → X{min(m,1),} introduces nullability only when m == 0 or X is
+itself nullable — and in both cases the EXACT language is nullable too, so
+the [OPT-4.2] general decline (or the rung decline, which emits no
+prefilter and therefore no `_LANG` / `_LANG_WHY` at all) fires first.
+Verified structurally on both sides (pcrec-bench measured ten shapes, none
+reaches it; our own reachability witnesses became `declined_default`
+rows at the [OPT-4.2] merge for the same reason). The value string stays
+documented as HISTORICAL; nothing emits it. Re-opens only if either side
+finds a reachable witness — the argument above says where to look (a
+collapsed-nullable language whose exact language is NOT nullable, which
+the identity makes empty).
+
 ### 2.18 `-fno-scan-edge` — `PCREC_NO_SCAN_EDGE` (bit 21)
 
 **What it controls.** Whether a DFA machine's *counted class runs* are

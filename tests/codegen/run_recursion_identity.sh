@@ -503,8 +503,16 @@ KEEP="${KEEP:-0}"
 # untouched), abi stays 14 (which artifacts carry the conditional dispatch
 # changed; the scaffolding scheme did not).
 
+# [DD-13b.W1.2], 2026-09-01 — abi 14 -> 15 at the w12 MERGE (6dbdf41): the
+# appended rx_info.name/.nentries members move two initializer lines and two
+# shared-block declarations on EVERY artifact of both engines (whole-file
+# bytes, so (B) re-pins to the merge commit); no struct offset and no program
+# byte moves, so (A) is untouched — the branch's own gate run measured (A)
+# 0-differing on all four axes, and the final number 15 was assigned at the
+# merge behind [CC-CLANG]'s 14 (D76 merge-order rule; site list per D94,
+# every reader found by grep).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-adc0f5a}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6dbdf41}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

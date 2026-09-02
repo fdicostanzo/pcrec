@@ -32,4 +32,17 @@ never edited afterwards.
   about the brief's own premises (the K39 witnesses are NOT nullable; the
   `_LANG_WHY` value alone cannot carry the measured case), and three open
   questions. No `_log.md`: the lane's ordering is in its commits.
+- `w12_log.md`, `w12_report.md` — [DD-13b.W1.2] (2026-08-31, lane w12):
+  targets, `rx_info.name`/`nentries`, the abi ritual and H11. **Delivered
+  BUILT-NOT-VALIDATED**: the box hold was in force for the lane's whole
+  working period, so every acceptance number in the report is marked OWED
+  and abi site 4 (the FILEPIN) is deliberately unset — it must name the
+  step's last src commit. Its report is worth reading for four defects the
+  lane found by SELF-REVIEW in place of a build (a `--source`/query
+  conflict tested below the query dispatch, where each query returns
+  first and would have won silently; a backtick inside a double-quoted
+  message; a `--lib-path` leak invariant; a config DIAMOND double-counting
+  joined `pcrec` flag text) and for the finding that the `head_basic`
+  fixture had been FALSE since W1.1 — its `lib` named no file and its
+  `target` named no block, both inert while nothing resolved them.
 - `lim1_report.md` — [LIM-1] (2026-08-30/31, lane lim1): the limits table (src/core/limits.def, 44 rows), `--list-limits`, the size-cap rescue's distinct RX_ENGINE_SEL value, S208/S209. Final wave committed by the MANAGER (takeover: the lane went unresponsive after its verification runs; content verified per the report's measured table, re-verified at landing).

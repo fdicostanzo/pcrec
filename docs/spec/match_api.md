@@ -156,8 +156,8 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `13`
-([OPT-5], the DFA scan edge; it read `6` when this note
+events but never stated the general rule; `rx_info.abi` is `15`
+([DD-13b.W1.2], `rx_info.name` + `nentries`, atop [CC-CLANG]'s `14`; it read `6` when this note
 was written, `7` after [OPT-3], `8` after [ENG-FORM], `9` after
 [OPT-K], `10` after [ENG-ABS], `11` after [ART-SIZE] and `12` after
 [OPT-4]).
@@ -1404,8 +1404,53 @@ struct rx_info {
                                             DFA emitter did not write —
                                             every VM artifact, HYBRIDS
                                             INCLUDED (§6.3) */
+    const char           *name;         /* [DD-13b.W1.2] this artifact's
+                                            own name. NEVER NULL — a build
+                                            that names nothing stamps its
+                                            own <prefix> */
+    int                   nentries;     /* [DD-13b.W1.2] rows in groups[],
+                                            ALL of them. nnames counts the
+                                            PRIMARY pattern's own, which
+                                            are a prefix of the array; the
+                                            two are equal on every artifact
+                                            pcrec emits today */
 };
 ```
+
+**[DD-13b.W1.2], 2026-08-31 — `name` and `nentries`.** Appended after
+`match_form` on [DD-13c]'s terms: no existing member's offset moves, and
+`abi` bumps 13 → 14 because the emitted scaffolding grew (D76 — the rule
+is about the scaffolding as a whole, not about this struct alone).
+
+**`name` answers a different question from `prefix`, which is why it is
+not derivable from one.** `<prefix>` says what this artifact's symbols
+are called; `name` says what the artifact IS. A `.rxt` source
+(`docs/spec/rxt_format.md`) declares `target <prefix> = <definition>`, and
+the definition is a pattern block that may carry its own `name` — so one
+definition built under three configs is three artifacts, three prefixes
+and ONE name, which is exactly what a consumer walking several
+`<prefix>_info` symbols in one binary needs in order to say "these three
+are the same matcher, built differently".
+
+**It is never NULL, and that is a contract rather than an observation.**
+A compile that supplies no name stamps its own `<prefix>`, so every
+artifact pcrec has ever emitted and every artifact it emits now carries a
+non-NULL `name`; a caller needs no NULL branch. It is arbitrary text, not
+an identifier: nothing derives a symbol from it. (`.rxt`'s own `name`
+grammar is stricter — that is that format's rule, not this field's.)
+
+**`nentries` is not `nnames` restated.** §6.0's caller algorithm
+bsearches `groups[0 .. nnames)`; `nnames` is the count of the PRIMARY
+pattern's own named groups, and those rows are a genuine PREFIX of the
+array. `nentries` is the length of the whole array. **They are equal on
+every artifact pcrec emits today**, because nothing yet puts a row in
+`groups[]` that the primary pattern did not declare. The field ships now,
+equal, because it rides this `abi` bump rather than costing a second one;
+what will make the two differ is `.rxt` composition injecting a
+definition's own named groups ([DD-13b.W1.3]), whose rows sort below the
+primary's and carry a non-NULL `ref`. **A caller that wants only the
+pattern's own names should keep reading `nnames` and will not have to
+change**; a caller that wants everything in the array reads `nentries`.
 
 **[DD-13b.W1], 2026-08-30 — `nnames`'s comment was STALE, and the way it
 was stale is worth one paragraph.** It read *"0 until module
@@ -1599,20 +1644,22 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `14` on every artifact today ([CC-CLANG] bumped it
-  from 13 by wrapping `emit_search_head`'s `noclone` line in an
+- **`rx_info.abi` is `15` on every artifact today ([DD-13b.W1.2] bumped
+  it from 14 by APPENDING `name` and `nentries` to this struct — two
+  initializer lines on every artifact of both engines, no struct offset
+  moved, no emitted program byte moved and no stamp VALUE changed; `14`
+  was [CC-CLANG], which wrapped `emit_search_head`'s `noclone` line in an
   `__has_attribute` guard (three lines gained on every DFA and VM-hybrid
-  artifact; gcc still emits the attribute, since it has it) and by omitting
+  artifact; gcc still emits the attribute, since it has it) and omitted
   the fail label's pop-and-resume `goto *` dispatch entirely on a FRAMELESS
   VM artifact — no `RX_PUSH` and no `RX_CALL` site anywhere in the program,
   e.g. `[a-z]{0,4096}` --engine=vm — where that dispatch was unreachable
   already and its `goto *` with no address-of-label expression in the
-  function is what clang refuses and gcc accepts; every other VM artifact's
-  program bytes are unchanged. `13` was [OPT-5] adding
+  function is what clang refuses and gcc accepts; `13` was [OPT-5] adding
   `<PREFIX>_DFA_SCAN_EDGE` (§6.3) to every artifact and,
   on any DFA scan whose machine carries a counted class run, by replacing
   that run's states with one in-loop scan block — the first bump to move a
-  MACHINE and not only emitted text; `12` was [OPT-4]'s
+  MACHINE and not only emitted text, `12` was [OPT-4]'s
   `<PREFIX>_VM_PREFILTER_LANG` and its companion
   `<PREFIX>_VM_PREFILTER_LANG_WHY` on every VM HYBRID and no other
   artifact kind, `11` [ART-SIZE]'s four size

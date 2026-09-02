@@ -53,7 +53,15 @@ SAB_DESC="[OPT-4.1]'s nullability predicate is pinned false, so the count-collap
 SAB_DOC_FIGURE="CANONICAL RUN 2026-08-30 (run_sabotage_matrix.sh S206 at 412eb52): reach:ok(1/1), pfcollapse:5fail/50pass, resource:1fail/28pass, corpus:0fail/51pass -- DETECTED, with all three SAB_REACH_POP floors met (exact-nullable=2, [sel1n]=16, size_rung_cell=2). THE TWO CELLS TO READ: resource:1fail is the NULLABLE size-rung cell ALONE, its non-nullable twin GREEN -- that asymmetry is what says the plant removed a PREDICATE rather than the rung, and a row that reddened both would not distinguish them. corpus:0fail/51pass is the answer-identity this arm exists for: the prefilter is a FILTER, so a useless one is answer-identical to none, and no oracle, differential or identity gate in the tree can be red for this plant. An EARLIER run at 44ad88a (before r47sel finding 1 was fixed) read pfcollapse:5fail/49pass with everything else identical; the one-cell difference is section 6b(2c), which the fix ADDED and which this plant correctly does not redden -- (2c) is about the collapsible-repeat conjunct, not the nullability one."
 SAB_REACH='"$PCREC" --features all -p rx -o - -- "(?:(?:a|b)*a(?:a|b){15})?"'
 SAB_REACH_EXPECT="declined-nullable"
-SAB_REACH_POP="tests/codegen/run_prefilter_collapse.sh|^lang_witness exact-nullable|2
+# [OPT-4.2] (2026-09-01): the two `lang_witness exact-nullable` rows this
+# probe used to count became `declined_default_witness` rows when the GENERAL
+# decline landed (the exact language itself is now declined, so the old rows'
+# subject vanished — battery 8c's matrix caught this probe stale as UNREACHED,
+# which is [MECH-REACH] doing its job). The sabotaged line is the SHARED
+# nullability fact, so this row's detector surface GREW at [OPT-4.2]: the
+# declined_default rows red too. Canonical figures in SAB_DOC_FIGURE predate
+# [OPT-4.2]; the next solo run re-canonicalizes.
+SAB_REACH_POP="tests/codegen/run_prefilter_collapse.sh|^declined_default_witness |2
 tests/codegen/run_prefilter_collapse.sh|\[sel1n\]|10
 tests/resource/run_resource_tests.sh|^size_rung_cell |2"
 SAB_COUNT=1

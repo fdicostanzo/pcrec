@@ -178,6 +178,44 @@ also pins that the DEFAULT artifact is byte-identical to the explicitly
 `-e byte` one — a stronger statement than "it compiles", since it says the
 default and the explicit request are the same request.
 
+## [DD-13b.W1.2] ONE OPTION PARSER, and `--source` / `--target` / `--lib-path`
+
+`main`'s argument loop became **`cli_parse` over a `CliState`**, and the
+reason is not tidiness: a `.rxt` source's `config` block carries a
+`pcrec <raw>` line, and w1_impl §1.5 requires it to be re-parsed by this
+CLI's OWN option parser so a flag cannot mean one thing on the command line
+and another in a config block. That is D24's two-homes argument one surface
+over. The config block is a second CALLER, never a second parser.
+
+**THE CONTAINMENT IS ONE TEST OVER A SPAN, NOT A LIST OF FLAG NAMES.**
+`pcrec_options opt` is `CliState`'s FIRST member and everything else follows
+it; `cli_extras_clean` checks that the bytes PAST `opt` are all zero, i.e.
+that this invocation asked for compile options and nothing else. A config
+block that reached for an output path, a pattern, a query mode, another
+`--source` or `-h` is refused by that one test — and so is a flag added to
+this CLI tomorrow, with no edit here. **`saw_prefix` is in the tail rather
+than being inferred from `opt.prefix`** for exactly that reason: `-p` writes
+INSIDE `opt`, where the span cannot see it, and a config silently
+overruling its target's declared prefix is the one escape that would
+compile perfectly.
+
+`-h`/`--help` sets a flag instead of printing and exiting, so a config
+block's `pcrec -h` cannot print usage and exit 0 in the middle of a compile.
+The flag lives in the tail, so the same one test refuses it.
+
+**THE THREE NEW FLAGS** all take their value as a separate argument, like
+`-o`/`-p`/`-e` and unlike the `=value` MODE flags — a file, a name and a
+directory are exactly what that spelling is for. `--source FILE` is a
+COMPILE MODE (it takes `-o`, honours every compile flag, and refuses a
+positional pattern, since the file's `pattern` blocks are the patterns);
+`--target NAME` selects one target by prefix; `--lib-path DIR` is
+REPEATABLE and its order is the search order — the one flag here that
+accumulates rather than replacing, because a single-valued form would make
+two libraries an either/or. `docs/spec/cli.md` §1 is the contract,
+including the `-o` naming rule (a FILE for one target, an existing
+DIRECTORY for several, `-` for one on stdout) and the precedence rule (the
+FILE wins over the command line, `run.sh`'s own `RXTFLAGS` precedent).
+
 ## [DD-14 wave G] `-fno-splice-calls`
 
 The deny family's sixth member, and it is `-fno-atomic-discharge`'s SHAPE rather

@@ -1,0 +1,14 @@
+# [DD-13b.W1.2] THE `<store>` SPELLING OF `lib`, which is NOT a path.
+#
+# The grammar has two path-refs, `"local"` and `<store-name>`, and only
+# the first is a filename. Searching for a file called `common` because
+# someone wrote `lib <common>` would report "no readable file" about a
+# reference that was never meant to be one — a confidently wrong search.
+# It is refused as REAL AND NOT IN THIS BUILD instead, the same tier the
+# head grammar gives a wave-2 keyword (DECIDED (1)).
+lib <common>
+target t = a_run
+
+pattern a+
+name a_run
+m "aaa" 0 3

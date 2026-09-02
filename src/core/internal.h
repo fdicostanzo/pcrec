@@ -3929,6 +3929,68 @@ char      *pcrec_rxt_source_tsv(const RxtSource *src);
  * hand (the D65 incident's lesson, table_contract.md's History). */
 size_t     pcrec_rxt_source_ncols(void);
 
+/* ---- [DD-13b.W1.2] RESOLUTION: from rows AS WRITTEN to artifacts ------
+ *
+ * `--list-source` reports the file AS WRITTEN and resolves nothing. This is
+ * the other half: what `--source` needs before it can call `pcrec_compile`
+ * even once. It answers three questions the rows alone do not —
+ *
+ *   WHICH ARTIFACTS. The `target` rows, in file order; or, when the file
+ *   declares none and holds exactly ONE UNNAMED block, the implicit
+ *   `target rx` (Frank, format_design §6.4's compatibility default). A file
+ *   with no `target` and anything else is a LIBRARY and builds NOTHING —
+ *   zero targets, exit 0, no diagnostic (format_design §6.1: "a library
+ *   ships nothing by itself").
+ *
+ *   FROM WHICH BLOCK. A `target`'s definition name is a block's `name`,
+ *   which lives in the FILE namespace (w1_impl DECIDED (7)). W1.2 has no
+ *   composer and reads no `lib` file, so a name this file does not declare
+ *   is a tier-2 refusal naming the name AND the `lib` chain searched.
+ *
+ *   UNDER WHICH SETTINGS. Two composition mechanisms, and conflating them
+ *   would make `with` order-sensitive in the way r44-sem M15 rejected
+ *   (w1_impl §1.5): `with c1, c2` composes CONFIGS by one flat later-wins
+ *   rule (and `from` is the same rule one level down, materialised once at
+ *   parse); the resulting config then composes against the BLOCK's own
+ *   directives by the PER-KIND table — `features` UNION unless the block
+ *   wrote `features only`, everything else MORE-SPECIFIC-WINS, i.e. the
+ *   block.
+ *
+ * The result is arena-owned by `src` and dies with it. */
+typedef struct {
+    const char *prefix;        /* the target's symbol prefix (`-p`)         */
+    const char *name;          /* the block's `name`, or the prefix when the
+                                * block is unnamed — never NULL, which is
+                                * Frank's §6.3 rule stated as a type         */
+    const char *pattern;       /* the block's pattern text, verbatim        */
+    size_t      line;          /* the `target` row's line (the block's, for
+                                * the implicit target)                       */
+    size_t      block_line;    /* the pattern block's own line              */
+    /* the composed settings; NULL / -1 mean "the compiler's own default" */
+    const char *flags;
+    const char *features;
+    int         features_only;
+    const char *encoding;
+    const char *engine;
+    long        budget_steps, budget_frames;
+    const char *pcrec_raw;     /* every composed `pcrec` line's text, in
+                                * composition order, space-joined — re-parsed
+                                * by the CLI's OWN option parser, so a flag
+                                * cannot mean one thing on the command line
+                                * and another in a `config` block (§1.5)     */
+} RxtTarget;
+
+/* Resolves `src` into 0..N targets. Returns 0 on success (`*nout` may be
+ * 0 — a library file), -1 with `err` filled on a refusal. `libdirs`/`nlib`
+ * are the `--lib-path` list, used for two things and no third: resolving a
+ * `lib` row's path (existence only — a `lib` file's DEFINITIONS are W1.3's
+ * composer, not this) and naming the chain that was searched in the "no such
+ * definition" refusal. */
+int pcrec_rxt_source_resolve(RxtSource *src,
+                             const char *const *libdirs, size_t nlib,
+                             RxtTarget **out, size_t *nout,
+                             pcrec_error *err);
+
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means
  * "no filter". These are INTERNAL on purpose: the CLI and the test suite are

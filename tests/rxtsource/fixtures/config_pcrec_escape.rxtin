@@ -1,0 +1,23 @@
+# [DD-13b.W1.2] A `config` BLOCK'S `pcrec` LINE REACHING PAST COMPILE
+# OPTIONS.
+#
+# `pcrec <raw>` is re-parsed by the CLI's OWN option parser (§1.5), so a
+# flag cannot mean one thing on the command line and another here. That
+# reuse is the point and it is also the hazard: the command line's parser
+# also understands `-o`, `-p`, a pattern, the query modes and `--source`,
+# none of which a config block may set — `-p` in particular would
+# silently overrule the target's own declared prefix.
+#
+# The refusal is ONE test over the whole tail of the parser's state
+# rather than a list of flag names, so a flag added to pcrec tomorrow is
+# covered without an edit here. `-p` is the witness because it is the one
+# that would otherwise be SILENT: an artifact under the wrong prefix
+# compiles perfectly.
+config sneaky
+  pcrec -p notmyprefix
+
+target t = a_run with sneaky
+
+pattern a+
+name a_run
+m "aaa" 0 3

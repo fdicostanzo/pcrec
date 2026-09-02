@@ -611,6 +611,26 @@ typedef struct {
      * NOT raise-only: lowering it is exactly what a project that wants tighter
      * notice should do, and lowering a warning cannot fail anyone's build. */
     uint64_t    warn_emit_bytes;
+
+    /* [DD-13b.W1.2] THE ARTIFACT'S NAME — what `rx_info.name` reports.
+     *
+     * A `.rxt` source's pattern BLOCK may carry a `name`, and a `target`
+     * names one; the artifact built from it should be able to say which
+     * definition it IS, independently of the symbol prefix a build happened
+     * to choose. `prefix` answers "what are my symbols called"; this answers
+     * "what am I".
+     *
+     * NULL MEANS "use `prefix`", and that is the whole of the rule Frank
+     * ruled at format_design §6.3: NO ARTIFACT EVER CARRIES A NULL NAME.
+     * Every invocation that predates this field — every CLI compile without
+     * `--source`, every library caller — therefore stamps its own prefix and
+     * needs no edit, and the emitter has no NULL case to get wrong.
+     *
+     * It is a NAME, not a symbol: it is emitted as a string literal and no
+     * generated identifier is derived from it, so it is unconstrained by C
+     * identifier syntax. `.rxt`'s own `name` grammar (docs/spec/rxt_format.md)
+     * is stricter, and that is that format's rule rather than this field's. */
+    const char *name;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

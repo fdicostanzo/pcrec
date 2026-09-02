@@ -2732,9 +2732,9 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # control-shares-a-source failure (learnings.md §3). Updating it is part of
     # the bump, and this check firing is how a bump that forgot a doc gets
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
-    ABI_EXPECT=14
+    ABI_EXPECT=15
     if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed), and by [OPT-K]'s offset-k candidate-start skip (8->9 — a <PREFIX>_DFA_PREFILTER_OFFSETS stamp line on EVERY DFA artifact, plus, on an artifact that selects the form, a file-scope <prefix>_ofsskip block, up to three candidate tables and a changed prefilter body with a reseed in it), and by [ENG-ABS]'s anchored match-here form (9->10 — a <PREFIX>_DFA_MATCH stamp line and an rx_info.match_form field on EVERY artifact, plus, on a DFA artifact that selects the form, a file-scope <prefix>_anchored_state accessor block, a THIRD machine's tables inside <prefix>_match, and rewritten _match/_match_caps bodies), and by [ART-SIZE]'s emitted-size term and caps (10->11), and by [OPT-4]'s prefilter-language stamp (11->12 — a <PREFIX>_VM_PREFILTER_LANG line AND its <PREFIX>_VM_PREFILTER_LANG_WHY companion on every VM HYBRID and on no other artifact; on the few hybrids above PCREC_PREFILTER_EXACT_NFA_STATES the two lines also come with a smaller inlined prefilter's tables and a dropped prefilter-window MRL ceiling; the SAME bump also adds <PREFIX>_ENGINE_SEL, unconditional on EVERY artifact and both engines, which is why a DFA artifact's scaffolding moves at abi 12 as well), and by [OPT-5]'s DFA SCAN EDGE (12->13 -- a <PREFIX>_DFA_SCAN_EDGE stamp line on EVERY artifact, plus, on any DFA scan whose machine carries a counted class run, one in-loop scan block per edge, a membership table per non-range edge, and the run's interior states DELETED from every per-state table: this is the first bump that moves the MACHINE and not only the emitted text), and by [CC-CLANG]'s clang-compatibility pair (13->14 -- an __has_attribute guard around emit_search_head's noclone line on EVERY DFA and VM-hybrid artifact, plus the fail label's pop-and-resume goto* dispatch omitted entirely on a FRAMELESS VM artifact with no RX_PUSH and no RX_CALL site: no answer moves on either half) -- one bump per change, D76)"
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed), and by [OPT-K]'s offset-k candidate-start skip (8->9 — a <PREFIX>_DFA_PREFILTER_OFFSETS stamp line on EVERY DFA artifact, plus, on an artifact that selects the form, a file-scope <prefix>_ofsskip block, up to three candidate tables and a changed prefilter body with a reseed in it), and by [ENG-ABS]'s anchored match-here form (9->10 — a <PREFIX>_DFA_MATCH stamp line and an rx_info.match_form field on EVERY artifact, plus, on a DFA artifact that selects the form, a file-scope <prefix>_anchored_state accessor block, a THIRD machine's tables inside <prefix>_match, and rewritten _match/_match_caps bodies), and by [ART-SIZE]'s emitted-size term and caps (10->11), and by [OPT-4]'s prefilter-language stamp (11->12 — a <PREFIX>_VM_PREFILTER_LANG line AND its <PREFIX>_VM_PREFILTER_LANG_WHY companion on every VM HYBRID and on no other artifact; on the few hybrids above PCREC_PREFILTER_EXACT_NFA_STATES the two lines also come with a smaller inlined prefilter's tables and a dropped prefilter-window MRL ceiling; the SAME bump also adds <PREFIX>_ENGINE_SEL, unconditional on EVERY artifact and both engines, which is why a DFA artifact's scaffolding moves at abi 12 as well), and by [OPT-5]'s DFA SCAN EDGE (12->13 -- a <PREFIX>_DFA_SCAN_EDGE stamp line on EVERY artifact, plus, on any DFA scan whose machine carries a counted class run, one in-loop scan block per edge, a membership table per non-range edge, and the run's interior states DELETED from every per-state table: this is the first bump that moves the MACHINE and not only the emitted text), and by [CC-CLANG]'s clang-compatibility pair (13->14 -- an __has_attribute guard around emit_search_head's noclone line on EVERY DFA and VM-hybrid artifact, plus the fail label's pop-and-resume goto* dispatch omitted entirely on a FRAMELESS VM artifact with no RX_PUSH and no RX_CALL site: no answer moves on either half), and by [DD-13b.W1.2]'s rx_info.name + nentries (14->15 -- two APPENDED struct members and two initializer lines on EVERY artifact of both engines, no struct offset moved, no emitted program byte moved and no stamp VALUE changed: the first scaffolding-only bump since [OPT-1]) -- one bump per change, D76)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else
@@ -2742,6 +2742,95 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     fi
 else
     bad "[DD-14.FB]: pcrec failed to compile the VM and DFA fixtures for the caller-buffer surface checks"
+fi
+
+# ===========================================================================
+# [DD-13b.W1.2] rx_info.name — F9: THE FIELD'S VALUE, OVER THE CORPUS
+# ===========================================================================
+#
+# Frank ruled at format_design.md §6.3 that NO ARTIFACT EVER CARRIES A NULL
+# NAME, and w1_impl.md's own F9 is the observation that nothing would have
+# checked it: the identity gates compare artifacts from a corpus with no
+# composed file, so they are equally happy with a field that is always NULL
+# and a field that is always right.
+#
+# THE RULE HAS TWO HALVES AND ONLY ONE OF THEM IS INTERESTING ON THIS
+# CORPUS. Every corpus pattern is compiled with no name, so its artifact
+# must stamp its own PREFIX — which makes the sweep below a check that the
+# FALLBACK is live everywhere rather than a check that a supplied name is
+# carried. The other half (a supplied name reaching the artifact) is
+# checked where a name can come from at all: `tests/rxtsource/`, on the
+# three-config fixture, against the `target` line that named it.
+#
+# THE PREFIX IS VARIED, and that is the arm that would catch the likeliest
+# wrong implementation. With `rx` everywhere, an emitter that stamped the
+# literal string "rx" instead of `opt->prefix` would be indistinguishable
+# from a correct one on every artifact in the tree — the same blindness
+# `run_ir_listing.sh` records for its own non-default-prefix case.
+#
+# THE POPULATION IS BOUNDED AND SAID SO. It is every distinct `pattern`
+# line under `tests/base/`, which is a compile-only sweep (no gcc) and the
+# largest one this section can afford beside everything else it does. The
+# count is FLOORED, because a sweep that quietly found nothing would pass.
+w12_names_checked=0
+w12_names_bad=""
+while IFS= read -r w12_pat; do
+    w12_out="$("$TIMEOUT_BIN" 20 "$PCREC" -p rx -o - -- "$w12_pat" 2>/dev/null)" || continue
+    w12_name="$(printf '%s' "$w12_out" | grep -m1 '^    \.name = ' || true)"
+    if [ "$w12_name" != '    .name = "rx",' ]; then
+        w12_names_bad="$w12_names_bad
+  '$w12_pat' -> ${w12_name:-<no .name line at all>}"
+    fi
+    w12_names_checked=$((w12_names_checked + 1))
+done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/base/*.rxt | sed 's/^pattern //' | LC_ALL=C sort -u)
+
+if [ -n "$w12_names_bad" ]; then
+    bad "[DD-13b.W1.2] F9: rx_info.name is not the artifact's own prefix on $(printf '%s' "$w12_names_bad" | grep -c .) of $w12_names_checked tests/base patterns — Frank's format_design.md §6.3 rule is that NO artifact carries a NULL name, and a build that supplies none stamps its <prefix>:$w12_names_bad"
+elif [ "$w12_names_checked" -lt 300 ]; then
+    bad "[DD-13b.W1.2] F9: only $w12_names_checked tests/base patterns compiled (floor 300, measured 381) — the sweep lost its population, which is the one way this check passes while asserting nothing"
+else
+    ok "[DD-13b.W1.2] F9: rx_info.name == the artifact's own prefix on all $w12_names_checked distinct tests/base patterns (the NULL-name rule's fallback half)"
+fi
+
+# THE PREFIX ARM. One pattern, four prefixes of different lengths and
+# shapes -- `run_codegen_tests.sh`'s own [M4.4/D44/A-2] fixture set, reused
+# rather than re-invented -- each of which must stamp ITSELF.
+w12_px_bad=""
+for w12_px in rx r myprefix a_very_long_prefix_name; do
+    w12_got="$("$TIMEOUT_BIN" 20 "$PCREC" -p "$w12_px" -o - -- 'a(b|c)+d' 2>/dev/null \
+               | grep -m1 '^    \.name = ' || true)"
+    [ "$w12_got" = "    .name = \"$w12_px\"," ] || \
+        w12_px_bad="$w12_px_bad  -p $w12_px -> ${w12_got:-<none>}"
+done
+if [ -n "$w12_px_bad" ]; then
+    bad "[DD-13b.W1.2] F9: rx_info.name does not follow --prefix:$w12_px_bad — an emitter stamping the literal \"rx\" would be indistinguishable from a correct one on the default-prefix sweep above"
+else
+    ok "[DD-13b.W1.2] F9: rx_info.name follows -p on four prefixes of different length and shape (rx / r / myprefix / a_very_long_prefix_name)"
+fi
+
+# `nentries` == `nnames` on every artifact pcrec emits today, and BOTH must
+# be present. The equality is the honest state of an uncomposed artifact
+# (docs/spec/match_api.md §6) and the composer is what will separate them;
+# what this pins is that the field EXISTS and is not, say, hard-wired to 0
+# while `nnames` reports a real count -- which is the shape a caller
+# switching to `nentries` would silently lose every row to.
+w12_ne_bad=""
+for w12_pair in "(?<g>a)(?<h>b):2" "a(b)c:0" "(?<z>x)|(?<a>y):2"; do
+    w12_p="${w12_pair%:*}"; w12_want="${w12_pair##*:}"
+    w12_art="$("$TIMEOUT_BIN" 20 "$PCREC" -p rx --features named-groups -o - -- "$w12_p" 2>/dev/null)" || {
+        w12_ne_bad="$w12_ne_bad  '$w12_p' did not compile"; continue; }
+    w12_nn="$(printf '%s' "$w12_art" | grep -m1 '^    \.nnames = ' | tr -dc '0-9')"
+    w12_ne="$(printf '%s' "$w12_art" | grep -m1 '^    \.nentries = ' | tr -dc '0-9')"
+    if [ -z "$w12_ne" ]; then
+        w12_ne_bad="$w12_ne_bad  '$w12_p' emits no .nentries line at all"
+    elif [ "$w12_nn" != "$w12_want" ] || [ "$w12_ne" != "$w12_want" ]; then
+        w12_ne_bad="$w12_ne_bad  '$w12_p' nnames=$w12_nn nentries=$w12_ne want $w12_want each"
+    fi
+done
+if [ -n "$w12_ne_bad" ]; then
+    bad "[DD-13b.W1.2]: rx_info.nentries is wrong or absent:$w12_ne_bad"
+else
+    ok "[DD-13b.W1.2]: rx_info.nentries is emitted and equals nnames on every artifact pcrec emits today (0 and 2 named groups; the composer is what will separate them -- match_api.md section 6)"
 fi
 
 # ===========================================================================

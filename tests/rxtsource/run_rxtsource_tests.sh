@@ -11,6 +11,21 @@
 # §1.1, which states INV-COMPAT). Contract: docs/spec/rxt_format.md,
 # docs/spec/table_contract.md.
 #
+# [DD-13b.W1.2], 2026-08-31 — WHAT THIS SECTION COSTS, RE-ADVERTISED.
+# W1.1's header said "three parses of the corpus and no compiles at all",
+# which is what kept it cheap enough to run beside `test-corpus`. That is
+# no longer literally true: this file now COMPILES A HANDFUL OF TARGET
+# FIXTURES (single digits — the three-config file's three targets, a few
+# one-target files, and `run.sh` building the same three again through the
+# H11 path, which also invokes the C compiler for their drivers).
+#
+# THE CORPUS HALF IS UNCHANGED and still compiles nothing: the three-way
+# parse differential, C3's oracle re-run, C0a, the arm-block hash pin and
+# the keyword census all still read the 189 files and compile none of
+# them. The new cost is bounded by the FIXTURE count, not by the corpus,
+# so it does not grow as the corpus does. docs/testing.md's tiered-testing
+# entry for this section says the same thing.
+#
 # ---------------------------------------------------------------------
 # WHAT IS HERE, AND WHAT IS DELIBERATELY NOT
 #
@@ -1237,6 +1252,286 @@ if python3 "$VERIFY" --dump "$BE" > /dev/null 2>&1; then
     fail "sem10: verify_rxt.py accepted a head-bearing file; it must refuse by name"
 else
     pass "sem10: verify_rxt.py still refuses the head-bearing file by name (unaffected by this fix)"
+fi
+
+# =====================================================================
+# [DD-13b.W1.2] TARGETS, THE OUTPUT-NAMING RULE, AND rx_info.name
+# =====================================================================
+#
+# W1.1 PARSED `target` and `config` and resolved neither. This section is
+# where resolution stops being a promise. Everything it checks has a
+# population of ZERO on the corpus for the same reason the head path does
+# — no corpus file declares a target — so it is fixtures all the way down,
+# and each one names the thing it makes reachable.
+#
+# THE COMPILES ARE NEW HERE. This section used to be three parses and no
+# compiles at all, which is what kept it cheap enough to run beside
+# `test-corpus`. Building a `.rxt` source cannot be checked without
+# building one; the fixtures are small and the count is in single digits.
+
+W12="$WORKDIR/w12"
+mkdir -p "$W12"
+TC="$FIXRUN/three_configs.rxt"
+
+# --- N targets -> N artifacts, N prefixes, ONE name -------------------
+#
+# The `-o <dir>` form, which is the only one that can express several
+# targets at all. Four assertions, and the fourth is the one the step is
+# named for: the three artifacts must agree on `rx_info.name` and DISAGREE
+# on their prefixes, because one definition built three ways is three
+# builds of ONE matcher and a consumer walking three `<prefix>_info`
+# symbols needs to be able to say so.
+mkdir -p "$W12/dir"
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" -o "$W12/dir" 2>"$W12/dir.err"; then
+    w12_c=$(ls "$W12/dir"/*.c 2>/dev/null | wc -l)
+    w12_h=$(ls "$W12/dir"/*.h 2>/dev/null | wc -l)
+    w12_names=$(grep -h -m1 '^    \.name = ' "$W12/dir"/*.c 2>/dev/null | LC_ALL=C sort -u | wc -l)
+    w12_name1=$(grep -h -m1 '^    \.name = ' "$W12/dir"/log_base.c 2>/dev/null)
+    if [ "$w12_c" = "3" ] && [ "$w12_h" = "3" ] && \
+       [ -f "$W12/dir/log_base.c" ] && [ -f "$W12/dir/log_strict.c" ] && \
+       [ -f "$W12/dir/log_big.c" ] && \
+       [ "$w12_names" = "1" ] && [ "$w12_name1" = '    .name = "level_filter",' ]; then
+        pass "W1.2: 3 targets -> 3 .c + 3 .h named for their PREFIXES, all three stamping the one rx_info.name \"level_filter\""
+    else
+        fail "W1.2: the three-config file did not produce three prefixed pairs with one shared name.
+  .c files: $w12_c (want 3), .h files: $w12_h (want 3)
+  distinct .name values: $w12_names (want 1), log_base's: '$w12_name1'
+  dir listing: $(ls "$W12/dir" | tr '\n' ' ')"
+    fi
+    # The prefixes must genuinely differ IN THE EMITTED SYMBOLS, not only in
+    # the file names — a `-o <dir>` implementation that named files per
+    # target while compiling them all under `rx` would satisfy everything
+    # above.
+    if grep -q '^int log_strict_search(' "$W12/dir/log_strict.c" && \
+       grep -q '^int log_big_search('    "$W12/dir/log_big.c"; then
+        pass "W1.2: each artifact's entry points carry its OWN target prefix"
+    else
+        fail "W1.2: an artifact's emitted entry does not carry its target's prefix:
+$(grep -h '^int .*_search(' "$W12/dir"/*.c)"
+    fi
+else
+    fail "W1.2: --source -o <dir> failed on the three-config fixture:
+$(cat "$W12/dir.err")"
+fi
+
+# --- the `features` UNION, which nothing else can reach ---------------
+#
+# §1.5's per-kind table makes `features` the ONE directive that UNIONS a
+# target's configs with the block's own line instead of letting the block
+# win. Without a file where BOTH sides are non-empty that branch has a
+# population of ZERO, so this is the only place it is observable. The
+# evidence is the artifact's own D37 stamp — `classes` comes from
+# `baseline` (which `strict` and `big` inherit through `from`) and
+# `named-groups` from the block, so a target that took only one side, or
+# let the block win outright, stamps a different list.
+#
+# MEASURED against the shipped binary before this check was written: a
+# two-member list is accepted and stamps `"classes,named-groups"`, while a
+# WHOLE-SPEC word inside a list (`all,classes`) is refused by
+# `pcrec_enabled_set_spec` in its own words — which is why the resolver
+# restates no vocabulary of its own.
+w12_un_bad=""
+for w12_t in log_base log_strict log_big; do
+    w12_got="$(LC_ALL=C grep -m1 '^#define PCREC_FEATURE_MODULES ' "$W12/dir/$w12_t.c" 2>/dev/null)"
+    [ "$w12_got" = '#define PCREC_FEATURE_MODULES "classes,named-groups"' ] || \
+        w12_un_bad="$w12_un_bad  $w12_t -> ${w12_got:-<none>}"
+done
+if [ -z "$w12_un_bad" ]; then
+    pass "W1.2: \`features\` UNIONS the target's configs with the block's own line — all three artifacts stamp \"classes,named-groups\""
+else
+    fail "W1.2: the features UNION did not reach the artifact:$w12_un_bad
+  want: #define PCREC_FEATURE_MODULES \"classes,named-groups\"
+  (classes comes from config baseline, named-groups from the block; a
+  target taking only one side, or letting the block win outright, is
+  exactly what this asserts against)"
+fi
+
+# --- `-o out.c` with N > 1 is REFUSED, naming both ways forward -------
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" -o "$W12/one.c" >"$W12/one.out" 2>&1; then
+    fail "W1.2: --source -o <file> ACCEPTED a three-target file; it must refuse"
+else
+    w12_msg="$(cat "$W12/one.out")"
+    w12_miss=""
+    for w12_need in log_base log_strict log_big -- --target DIRECTORY; do
+        case $w12_msg in *"$w12_need"*) ;; *) w12_miss="$w12_miss '$w12_need'" ;; esac
+    done
+    if [ -z "$w12_miss" ]; then
+        pass "W1.2: -o <file> with 3 targets is refused, naming every target AND both ways forward (--target, an existing DIRECTORY)"
+    else
+        fail "W1.2: the multi-target -o refusal does not name:$w12_miss
+  message: $w12_msg"
+    fi
+fi
+
+# --- `--target` selects one, and it is the one asked for --------------
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" --target log_strict -o "$W12/sel.c" 2>"$W12/sel.err"; then
+    if [ -f "$W12/sel.h" ] && grep -q '^int log_strict_search(' "$W12/sel.c" && \
+       grep -q '^    \.name = "level_filter",' "$W12/sel.c"; then
+        pass "W1.2: --target builds exactly the named target, one .c/.h pair, prefix log_strict, name level_filter"
+    else
+        fail "W1.2: --target log_strict produced the wrong artifact:
+$(grep -h '^int .*_search(\|^    \.name = ' "$W12/sel.c" 2>/dev/null)"
+    fi
+else
+    fail "W1.2: --source --target failed: $(cat "$W12/sel.err")"
+fi
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" --target nosuch -o "$W12/x.c" >"$W12/nt.out" 2>&1; then
+    fail "W1.2: --target nosuch was ACCEPTED"
+else
+    if grep -q 'log_base' "$W12/nt.out" && grep -q 'log_strict' "$W12/nt.out"; then
+        pass "W1.2: an unknown --target is refused and LISTS the targets the file does declare"
+    else
+        fail "W1.2: the unknown-target refusal does not list the real targets: $(cat "$W12/nt.out")"
+    fi
+fi
+
+# --- the three agree, end to end through run.sh (H11) -----------------
+#
+# §6.3's "identity between them is a free control", run. run.sh builds
+# each target through `--source --target` and requires it to answer this
+# block's own cases exactly as the block's own compile did. The
+# `--source` CALL COUNT is asserted through the wrapper for the reason the
+# seam's own check asserts `--list-source`'s: three green cases would also
+# be true of a run.sh that never built a target at all.
+: > "$CALLLOG"
+if PCREC="$WRAPDIR/pcrec" "$TIMEOUT_BIN" 300 bash "$RUNSH" "$TC" > "$W12/tc.run" 2>&1; then
+    w12_srccalls=$(grep -c -- '--source' "$CALLLOG" || true)
+    w12_pass=$(awk '/^cases passed:/ { print $3 }' "$W12/tc.run")
+    w12_fail=$(awk '/^cases failed:/ { print $3 }' "$W12/tc.run")
+    if [ "${w12_fail:-1}" = "0" ] && [ "${w12_pass:-0}" = "3" ] && [ "$w12_srccalls" = "3" ]; then
+        pass "W1.2 (H11): run.sh built all 3 targets (3 --source calls) and they answered the block's 3 cases identically to its own compile"
+    else
+        fail "W1.2 (H11): run.sh on the three-config fixture reported ${w12_pass:-?} passed / ${w12_fail:-?} failed / $w12_srccalls --source call(s), expected 3 / 0 / 3.
+  Zero --source calls means the target build path did not fire and the
+  agreement control asserted nothing.
+$(tail -25 "$W12/tc.run")"
+    fi
+else
+    fail "W1.2 (H11): run.sh FAILED on the three-config fixture:
+$(tail -30 "$W12/tc.run")"
+fi
+
+# --- the refusals, each asserting what its message must NAME ----------
+#
+# `check_refusal` above is `--list-source`'s helper and cannot be reused:
+# these are RESOLUTION refusals, and `--list-source` accepts every one of
+# these files by design (it reports the file AS WRITTEN and touches no
+# filesystem). That difference is itself asserted below, on lib_missing.
+w12_refuse() {
+    local fixture="$1" label="$2"; shift 2
+    local f="$FIXRUN/$fixture" out="$W12/$label.out" miss="" need
+    if "$TIMEOUT_BIN" 60 "$PCREC" --source "$f" -o "$W12/$label.c" >"$out" 2>&1; then
+        fail "W1.2 ($label): --source ACCEPTED $fixture; it must refuse"
+        return
+    fi
+    for need in "$@"; do
+        grep -qF -- "$need" "$out" || miss="$miss '$need'"
+    done
+    if [ -z "$miss" ]; then
+        pass "W1.2 ($label): refused, naming $*"
+    else
+        fail "W1.2 ($label): the refusal does not name:$miss
+  message: $(cat "$out")"
+    fi
+}
+# The needles are the CONTRACT (§1.3: name the definition AND the lib chain
+# searched), never the prose. An earlier version of this row asserted the
+# string 'W1.3' — a D26 tier-3 pointer sitting at the message's tail, which
+# is exactly the part `rxt_fail`'s documented truncation rule eats first.
+w12_refuse no_such_definition.rxt nodef  'level_filter' 'no definition' 'searched'
+w12_refuse lib_missing.rxt        libmiss 'extra_defs.rxt' 'no readable file' 'searched'
+w12_refuse lib_store.rxt          libstore '<common>' 'NOT IN THIS BUILD' 'LIB'
+w12_refuse config_pcrec_escape.rxt cfgesc  'compile options only' 'prefix'
+
+# --- NO REFUSAL MAY BE TRUNCATED, which is a CLASS check --------------
+#
+# `pcrec_error.msg` is a FIXED 256 bytes and already holds a path and a
+# line number, so a refusal that spends its budget on prose loses its TAIL
+# — and §1.3 puts CONTRACT content (the definition name, the `lib` chain
+# searched) in exactly the place that is lost. MEASURED before this check
+# existed: the no-such-definition refusal was cut off at EVERY path length
+# tried, including a 20-byte one, so it never met its contract on any
+# input and the truncation hid that rather than announcing it.
+#
+# The instance was caught by a proxy needle; this is the CLASS, and it is
+# the check that would have found it directly. It bounds the whole message
+# (pcrec's own "pcrec: " prefix included) below the buffer, so a refusal
+# that grows past it fails HERE rather than silently shedding whatever it
+# was contractually required to say.
+w12_trunc_bad=""
+for w12_fx in no_such_definition lib_missing lib_store config_pcrec_escape; do
+    w12_n=$("$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/$w12_fx.rxt" \
+                -o "$W12/trunc.c" 2>&1 >/dev/null | wc -c)
+    [ "$w12_n" -lt 263 ] || \
+        w12_trunc_bad="$w12_trunc_bad  $w12_fx: $w12_n bytes (limit 263)"
+done
+if [ -z "$w12_trunc_bad" ]; then
+    pass "W1.2: no resolution refusal reaches pcrec_error.msg's 256-byte buffer — the CONTRACT half of each message survives, since truncation eats the tail"
+else
+    fail "W1.2: a resolution refusal is TRUNCATED, so whatever §1.3 requires it to name may be the part that was cut:$w12_trunc_bad
+  rxt_fail truncates the TAIL (keeping file:line), so contract content must
+  come BEFORE prose. Shorten the message; do not raise the buffer."
+fi
+
+# `--list-source` still ACCEPTS the file whose lib does not resolve. The
+# two surfaces answer different questions and only one of them touches the
+# filesystem; a resolver bolted into the parser would have broken this.
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/lib_missing.rxt" >/dev/null 2>&1; then
+    pass "W1.2: --list-source still accepts a file whose 'lib' path does not resolve (AS WRITTEN never touches the filesystem)"
+else
+    fail "W1.2: --list-source refused a file that only --source has grounds to refuse"
+fi
+
+# --- --lib-path is the SAME file's cure, which is its only real check --
+mkdir -p "$W12/libs"
+cp "$FIXRUN/common.rxt" "$W12/libs/extra_defs.rxt"
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/lib_missing.rxt" \
+        --lib-path "$W12/libs" -o "$W12/viapath.c" 2>"$W12/viapath.err"; then
+    pass "W1.2: --lib-path resolves the very reference that fails without it — the flag's one consumer today"
+else
+    fail "W1.2: --lib-path did not resolve a reference to a file that is in the named directory:
+$(cat "$W12/viapath.err")"
+fi
+
+# --- a library ships nothing by itself (format_design §6.1) -----------
+#
+# Zero targets is NOT an error, and the two outcomes must stay distinct:
+# a file that CANNOT be built refuses (above), a file that DECLARES
+# nothing to build exits 0 and writes no artifact. A resolver that treated
+# "nothing to build" as a failure would make every library file a build
+# error; one that silently wrote something would be worse.
+rm -f "$W12/lib.c" "$W12/lib.h"
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/common.rxt" -o "$W12/lib.c" 2>"$W12/lib.err"; then
+    if [ ! -f "$W12/lib.c" ] && grep -q 'builds nothing' "$W12/lib.err"; then
+        pass "W1.2: a definitions-only file builds NOTHING at exit 0, and says so on stderr (distinct from a refusal)"
+    else
+        fail "W1.2: --source on a library file exited 0 but did not behave as one.
+  artifact written: $([ -f "$W12/lib.c" ] && echo yes || echo no) (want no)
+  stderr: $(cat "$W12/lib.err")"
+    fi
+else
+    fail "W1.2: --source REFUSED a definitions-only file; a library ships nothing by itself, which is not an error:
+$(cat "$W12/lib.err")"
+fi
+
+# --- the compatibility default: no target + ONE UNNAMED block ---------
+#
+# Frank's format_design §6.4 rule, and the reason every one of the 189
+# corpus files could be built with no head at all. It is checked on a
+# scratch file rather than a corpus one only so the population is visible
+# in this script.
+printf 'pattern a+\nm "aaa" 0 3\n' > "$W12/lone.rxt"
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$W12/lone.rxt" -o "$W12/lone.c" 2>"$W12/lone.err"; then
+    if grep -q '^int rx_search(' "$W12/lone.c" && \
+       grep -q '^    \.name = "rx",' "$W12/lone.c"; then
+        pass "W1.2: no target + exactly ONE UNNAMED block builds the implicit \`target rx\` (format_design §6.4), naming itself \"rx\""
+    else
+        fail "W1.2: the implicit target did not produce an rx-prefixed, rx-named artifact:
+$(grep -h '^int .*_search(\|^    \.name = ' "$W12/lone.c")"
+    fi
+else
+    fail "W1.2: --source refused a single-unnamed-block file, which is the compatibility default's whole population:
+$(cat "$W12/lone.err")"
 fi
 
 # ---------------------------------------------------------------------
