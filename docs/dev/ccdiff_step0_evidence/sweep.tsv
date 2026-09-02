@@ -1,0 +1,181 @@
+set	pattern	mode	uniform_tables	frameless	has_vm_chain
+bounded	cls-atleast-4096	auto	NO UNIFORM TABLE	frameless	no
+bounded	cls-atleast-4096	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-lazy-16384	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-lazy-16384	vm	NO UNIFORM TABLE	framed	yes
+bounded	cls-upto-1024	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-1024	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-128	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-128	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-16384	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-16384	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-16	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-16	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-2048	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-2048	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-256	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-256	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-32768	auto	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-32768	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-32	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-32	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-4096	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-4096	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-4	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-4	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-512	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-512	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-64	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-64	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-65535	auto	REFUSED	-	-
+bounded	cls-upto-65535	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-8192	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-8192	vm	NO UNIFORM TABLE	frameless	yes
+bounded	cls-upto-8	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	cls-upto-8	vm	NO UNIFORM TABLE	frameless	yes
+bounded	csv5	auto	NO UNIFORM TABLE	frameless	no
+bounded	csv5	vm	NO UNIFORM TABLE	framed	yes
+bounded	ctx-greedy-256	auto	NO UNIFORM TABLE	framed	yes
+bounded	ctx-greedy-256	vm	NO UNIFORM TABLE	framed	yes
+bounded	ctx-lazy-1024	auto	NO UNIFORM TABLE	framed	yes
+bounded	ctx-lazy-1024	vm	NO UNIFORM TABLE	framed	yes
+bounded	ctx-lazy-256	auto	NO UNIFORM TABLE	framed	yes
+bounded	ctx-lazy-256	vm	NO UNIFORM TABLE	framed	yes
+bounded	ctx-lazy-64	auto	NO UNIFORM TABLE	framed	yes
+bounded	ctx-lazy-64	vm	NO UNIFORM TABLE	framed	yes
+bounded	dig-exact-16	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	dig-exact-16	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-exact-2	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	dig-exact-2	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-exact-32	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	dig-exact-32	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-exact-8	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	dig-exact-8	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-upto-16	auto	NO UNIFORM TABLE	frameless	no
+bounded	dig-upto-16	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-upto-2	auto	NO UNIFORM TABLE	frameless	no
+bounded	dig-upto-2	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-upto-32	auto	NO UNIFORM TABLE	frameless	no
+bounded	dig-upto-32	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-upto-4	auto	NO UNIFORM TABLE	frameless	no
+bounded	dig-upto-4	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dig-upto-8	auto	NO UNIFORM TABLE	frameless	no
+bounded	dig-upto-8	vm	NO UNIFORM TABLE	frameless	yes
+bounded	dotted4	auto	NO UNIFORM TABLE	frameless	no
+bounded	dotted4	vm	NO UNIFORM TABLE	framed	yes
+bounded	floor	auto	NO UNIFORM TABLE	frameless	no
+bounded	floor	vm	NO UNIFORM TABLE	frameless	yes
+bounded	grp-upto-1024	auto	forward_next_state uniform = 65535; forward_is_accepting uniform = 1; reverse_next_state uniform = 65535; reverse_is_accepting uniform = 1; anchored_next_state uniform = 65535; anchored_is_accepting uniform = 1	frameless	no
+bounded	grp-upto-1024	vm	NO UNIFORM TABLE	frameless	yes
+bounded	hex32	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	hex32	vm	NO UNIFORM TABLE	frameless	yes
+bounded	line-80	auto	NO UNIFORM TABLE	frameless	no
+bounded	line-80	vm	NO UNIFORM TABLE	frameless	yes
+bounded	nest2-4	auto	NO UNIFORM TABLE	frameless	no
+bounded	nest2-4	vm	NO UNIFORM TABLE	framed	yes
+bounded	nest2-64	auto	NO UNIFORM TABLE	frameless	no
+bounded	nest2-64	vm	NO UNIFORM TABLE	framed	yes
+bounded	nest2-letters-6	auto	NO UNIFORM TABLE	frameless	no
+bounded	nest2-letters-6	vm	NO UNIFORM TABLE	framed	yes
+bounded	nest3-16	auto	NO UNIFORM TABLE	frameless	no
+bounded	nest3-16	vm	NO UNIFORM TABLE	framed	yes
+bounded	nest3-3	auto	NO UNIFORM TABLE	frameless	no
+bounded	nest3-3	vm	NO UNIFORM TABLE	framed	yes
+bounded	pw-8-64	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	pw-8-64	vm	NO UNIFORM TABLE	frameless	yes
+bounded	year4	auto	reverse_next_state uniform = 65535; anchored_next_state uniform = 65535	frameless	no
+bounded	year4	vm	NO UNIFORM TABLE	frameless	yes
+loglines	bignum	auto	NO UNIFORM TABLE	frameless	no
+loglines	bignum	vm	NO UNIFORM TABLE	framed	yes
+loglines	floor	auto	NO UNIFORM TABLE	frameless	no
+loglines	floor	vm	NO UNIFORM TABLE	frameless	yes
+loglines	hex32-id	auto	NO UNIFORM TABLE	frameless	no
+loglines	hex32-id	vm	NO UNIFORM TABLE	frameless	yes
+loglines	http-5xx	auto	NO UNIFORM TABLE	frameless	no
+loglines	http-5xx	vm	NO UNIFORM TABLE	framed	yes
+loglines	ipv4	auto	NO UNIFORM TABLE	frameless	no
+loglines	ipv4	vm	NO UNIFORM TABLE	framed	yes
+loglines	ipv6	auto	NO UNIFORM TABLE	frameless	no
+loglines	ipv6	vm	NO UNIFORM TABLE	framed	yes
+loglines	iso-ts	auto	NO UNIFORM TABLE	frameless	no
+loglines	iso-ts	vm	NO UNIFORM TABLE	framed	yes
+loglines	kv-quoted	auto	NO UNIFORM TABLE	frameless	no
+loglines	kv-quoted	vm	NO UNIFORM TABLE	framed	yes
+loglines	level-context	auto	NO UNIFORM TABLE	framed	yes
+loglines	level-context	vm	NO UNIFORM TABLE	framed	yes
+loglines	stack-frame	auto	NO UNIFORM TABLE	frameless	no
+loglines	stack-frame	vm	NO UNIFORM TABLE	framed	yes
+loglines	uuid	auto	NO UNIFORM TABLE	frameless	no
+loglines	uuid	vm	NO UNIFORM TABLE	frameless	yes
+altwide	ci-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	ci-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	ci-512	auto	REFUSED	-	-
+altwide	ci-512	vm	REFUSED	-	-
+altwide	cnt-64	auto	NO UNIFORM TABLE	frameless	no
+altwide	cnt-64	vm	NO UNIFORM TABLE	framed	yes
+altwide	floor	auto	NO UNIFORM TABLE	frameless	no
+altwide	floor	vm	NO UNIFORM TABLE	frameless	yes
+altwide	nar4-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	nar4-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	nar4-512	auto	REFUSED	-	-
+altwide	nar4-512	vm	REFUSED	-	-
+altwide	nar4-64	auto	NO UNIFORM TABLE	frameless	no
+altwide	nar4-64	vm	NO UNIFORM TABLE	framed	yes
+altwide	pfx3-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	pfx3-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	pfx3-512	auto	REFUSED	-	-
+altwide	pfx3-512	vm	REFUSED	-	-
+altwide	s-2048	auto	REFUSED	-	-
+altwide	s-2048	vm	REFUSED	-	-
+altwide	s-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	s-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	s-4096	auto	REFUSED	-	-
+altwide	s-4096	vm	REFUSED	-	-
+altwide	s-512	auto	NO UNIFORM TABLE	frameless	no
+altwide	s-512	vm	NO UNIFORM TABLE	framed	yes
+altwide	sfx-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	sfx-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	sfx-512	auto	REFUSED	-	-
+altwide	sfx-512	vm	REFUSED	-	-
+altwide	sfx-64	auto	NO UNIFORM TABLE	frameless	no
+altwide	sfx-64	vm	NO UNIFORM TABLE	framed	yes
+altwide	sh1-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	sh1-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	sh1-512	auto	REFUSED	-	-
+altwide	sh1-512	vm	REFUSED	-	-
+altwide	sh1-64	auto	NO UNIFORM TABLE	frameless	no
+altwide	sh1-64	vm	NO UNIFORM TABLE	framed	yes
+altwide	srt-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	srt-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	srt-512	auto	REFUSED	-	-
+altwide	srt-512	vm	REFUSED	-	-
+altwide	w-1024	auto	REFUSED	-	-
+altwide	w-1024	vm	REFUSED	-	-
+altwide	w-128	auto	NO UNIFORM TABLE	frameless	no
+altwide	w-128	vm	NO UNIFORM TABLE	framed	yes
+altwide	w-192	auto	NO UNIFORM TABLE	frameless	no
+altwide	w-192	vm	NO UNIFORM TABLE	framed	yes
+altwide	w-2048	auto	REFUSED	-	-
+altwide	w-2048	vm	REFUSED	-	-
+altwide	w-256	auto	NO UNIFORM TABLE	frameless	no
+altwide	w-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	w-384	auto	REFUSED	-	-
+altwide	w-384	vm	REFUSED	-	-
+altwide	w-512	auto	REFUSED	-	-
+altwide	w-512	vm	REFUSED	-	-
+altwide	w-64	auto	NO UNIFORM TABLE	frameless	no
+altwide	w-64	vm	NO UNIFORM TABLE	framed	yes
+altwide	w-8	auto	NO UNIFORM TABLE	frameless	no
+altwide	w-8	vm	NO UNIFORM TABLE	framed	yes
+altwide	w-96	auto	NO UNIFORM TABLE	frameless	no
+altwide	w-96	vm	NO UNIFORM TABLE	framed	yes
+altwide	wb-256	auto	REFUSED	-	-
+altwide	wb-256	vm	NO UNIFORM TABLE	framed	yes
+altwide	wb-512	auto	REFUSED	-	-
+altwide	wb-512	vm	REFUSED	-	-
+email	factored	auto	NO UNIFORM TABLE	frameless	no
+email	factored	vm	NO UNIFORM TABLE	framed	yes
+email	floor	auto	NO UNIFORM TABLE	frameless	no
+email	floor	vm	NO UNIFORM TABLE	frameless	yes
+email	orig	auto	NO UNIFORM TABLE	frameless	no
+email	orig	vm	NO UNIFORM TABLE	framed	yes

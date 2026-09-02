@@ -1,0 +1,41 @@
+--- /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/cls-upto-4-thr-auto/artifact.c	2026-09-02 17:46:02.997180441 -0400
++++ /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/cls-upto-4-thr-auto/twinA.c	2026-09-02 17:49:01.452592739 -0400
+@@ -80,10 +80,10 @@
+  */
+ typedef unsigned rx_forward_state;
+ static inline rx_forward_state rx_forward_step(const unsigned short *transitions, rx_forward_state s, unsigned cl)
+-{ return transitions[s + cl]; }
++{ (void)transitions; (void)s; (void)cl; return 65535; }  /* [twinA] uniform table */
+ static inline int rx_forward_is_dead(rx_forward_state s) { return s == 65535; }
+ static inline int rx_forward_accepts(const unsigned char *accepting, rx_forward_state s)
+-{ return accepting[s]; }
++{ (void)accepting; (void)s; return 1; }  /* [twinA] uniform table */
+ 
+ /* ---- THE REVERSE SCAN'S STATE, AS AN OPAQUE TOKEN --------------------
+  * The scan carries its state in a `rx_reverse_state`. Everything that
+@@ -98,10 +98,10 @@
+  */
+ typedef unsigned rx_reverse_state;
+ static inline rx_reverse_state rx_reverse_step(const unsigned short *transitions, rx_reverse_state s, unsigned cl)
+-{ return transitions[s + cl]; }
++{ (void)transitions; (void)s; (void)cl; return 65535; }  /* [twinA] uniform table */
+ static inline int rx_reverse_is_dead(rx_reverse_state s) { return s == 65535; }
+ static inline int rx_reverse_accepts(const unsigned char *accepting, rx_reverse_state s)
+-{ return accepting[s]; }
++{ (void)accepting; (void)s; return 1; }  /* [twinA] uniform table */
+ 
+ /* K24: noclone denies gcc's partial-inlining pass the
+    .part clone of this function -- the split costs a
+@@ -292,10 +292,10 @@
+  */
+ typedef unsigned rx_anchored_state;
+ static inline rx_anchored_state rx_anchored_step(const unsigned short *transitions, rx_anchored_state s, unsigned cl)
+-{ return transitions[s + cl]; }
++{ (void)transitions; (void)s; (void)cl; return 65535; }  /* [twinA] uniform table */
+ static inline int rx_anchored_is_dead(rx_anchored_state s) { return s == 65535; }
+ static inline int rx_anchored_accepts(const unsigned char *accepting, rx_anchored_state s)
+-{ return accepting[s]; }
++{ (void)accepting; (void)s; return 1; }  /* [twinA] uniform table */
+ 
+ /* [ENG-ABS] The anchored match-here entry, spec S3.2: a match at
+  * exactly ctx->pos, or -1. It runs the artifact's THIRD machine --

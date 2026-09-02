@@ -1,0 +1,89 @@
+--- /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/cls-upto-4-thr-auto/artifact.c	2026-09-02 17:46:02.997180441 -0400
++++ /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/cls-upto-4-thr-auto/twinAC.c	2026-09-02 17:50:06.859082690 -0400
+@@ -80,10 +80,10 @@
+  */
+ typedef unsigned rx_forward_state;
+ static inline rx_forward_state rx_forward_step(const unsigned short *transitions, rx_forward_state s, unsigned cl)
+-{ return transitions[s + cl]; }
++{ (void)transitions; (void)s; (void)cl; return 65535; }  /* [twinA] uniform table */
+ static inline int rx_forward_is_dead(rx_forward_state s) { return s == 65535; }
+ static inline int rx_forward_accepts(const unsigned char *accepting, rx_forward_state s)
+-{ return accepting[s]; }
++{ (void)accepting; (void)s; return 1; }  /* [twinA] uniform table */
+ 
+ /* ---- THE REVERSE SCAN'S STATE, AS AN OPAQUE TOKEN --------------------
+  * The scan carries its state in a `rx_reverse_state`. Everything that
+@@ -98,10 +98,10 @@
+  */
+ typedef unsigned rx_reverse_state;
+ static inline rx_reverse_state rx_reverse_step(const unsigned short *transitions, rx_reverse_state s, unsigned cl)
+-{ return transitions[s + cl]; }
++{ (void)transitions; (void)s; (void)cl; return 65535; }  /* [twinA] uniform table */
+ static inline int rx_reverse_is_dead(rx_reverse_state s) { return s == 65535; }
+ static inline int rx_reverse_accepts(const unsigned char *accepting, rx_reverse_state s)
+-{ return accepting[s]; }
++{ (void)accepting; (void)s; return 1; }  /* [twinA] uniform table */
+ 
+ /* K24: noclone denies gcc's partial-inlining pass the
+    .part clone of this function -- the split costs a
+@@ -230,10 +230,12 @@
+         // counted, so they are ONE loop carrying only the cursor.
+         // The class's cell above reads "dead" because of this.
+         if (forward_state == 0 && scan_position < subject_length && (unsigned char)(subject[scan_position] - 97) <= 25) {
+-            unsigned long scan_run_length = 1;
++            const size_t rx_edge_start = scan_position;   /* [twinC] single-IV edge */
++            const size_t rx_edge_limit = (subject_length - rx_edge_start > 4UL)
++                                         ? rx_edge_start + 4UL : subject_length;
+             scan_position++;
+-            while (scan_position < subject_length && scan_run_length < 4UL
+-                   && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; scan_run_length++; }
++            while (scan_position < rx_edge_limit && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; }
++            unsigned long scan_run_length = (unsigned long)(scan_position - rx_edge_start);
+             if (scan_run_length == 4UL) {
+                 forward_state = 2;
+                 last_accept_position = scan_position;
+@@ -258,10 +260,12 @@
+             // counted, so they are ONE loop carrying only the cursor.
+             // The class's cell above reads "dead" because of this.
+             if (reverse_state == 0 && rewind_position > search_from && (unsigned char)(subject[rewind_position - 1] - 97) <= 25) {
+-                unsigned long scan_run_length = 1;
++                const size_t rx_edge_start = rewind_position;   /* [twinC] single-IV edge */
++                const size_t rx_edge_limit = (rx_edge_start - search_from > 4UL)
++                                             ? rx_edge_start - 4UL : search_from;
+                 rewind_position--;
+-                while (rewind_position > search_from && scan_run_length < 4UL
+-                       && (unsigned char)(subject[rewind_position - 1] - 97) <= 25) { rewind_position--; scan_run_length++; }
++                while (rewind_position > rx_edge_limit && (unsigned char)(subject[rewind_position - 1] - 97) <= 25) { rewind_position--; }
++                unsigned long scan_run_length = (unsigned long)(rx_edge_start - rewind_position);
+                 if (scan_run_length == 4UL) {
+                     reverse_state = 2;
+                     match_start_position = rewind_position;
+@@ -292,10 +296,10 @@
+  */
+ typedef unsigned rx_anchored_state;
+ static inline rx_anchored_state rx_anchored_step(const unsigned short *transitions, rx_anchored_state s, unsigned cl)
+-{ return transitions[s + cl]; }
++{ (void)transitions; (void)s; (void)cl; return 65535; }  /* [twinA] uniform table */
+ static inline int rx_anchored_is_dead(rx_anchored_state s) { return s == 65535; }
+ static inline int rx_anchored_accepts(const unsigned char *accepting, rx_anchored_state s)
+-{ return accepting[s]; }
++{ (void)accepting; (void)s; return 1; }  /* [twinA] uniform table */
+ 
+ /* [ENG-ABS] The anchored match-here entry, spec S3.2: a match at
+  * exactly ctx->pos, or -1. It runs the artifact's THIRD machine --
+@@ -377,10 +381,12 @@
+         // counted, so they are ONE loop carrying only the cursor.
+         // The class's cell above reads "dead" because of this.
+         if (anchored_state == 0 && scan_position < subject_length && (unsigned char)(subject[scan_position] - 97) <= 25) {
+-            unsigned long scan_run_length = 1;
++            const size_t rx_edge_start = scan_position;   /* [twinC] single-IV edge */
++            const size_t rx_edge_limit = (subject_length - rx_edge_start > 4UL)
++                                         ? rx_edge_start + 4UL : subject_length;
+             scan_position++;
+-            while (scan_position < subject_length && scan_run_length < 4UL
+-                   && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; scan_run_length++; }
++            while (scan_position < rx_edge_limit && (unsigned char)(subject[scan_position] - 97) <= 25) { scan_position++; }
++            unsigned long scan_run_length = (unsigned long)(scan_position - rx_edge_start);
+             if (scan_run_length == 4UL) {
+                 anchored_state = 2;
+                 last_accept_position = scan_position;

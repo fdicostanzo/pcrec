@@ -1,0 +1,65 @@
+--- /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/stack-frame-srch-vm/artifact.c	2026-09-02 17:46:03.039569855 -0400
++++ /tmp/claude-1001/-home-duxevents-pcrec/dcce9a31-e3ae-41e3-8913-a4a918af3f32/scratchpad/ccdiff/cells/stack-frame-srch-vm/twinV.c	2026-09-02 17:55:38.655968912 -0400
+@@ -201,7 +201,7 @@
+ /* Point a run state at its working storage. Called BEFORE
+  * <prefix>_run_state_init, which must not disturb these four
+  * fields -- see its comment. */
+-static void rx_run_state_bind(rx_run_state *run,
++static inline __attribute__((always_inline)) void rx_run_state_bind(rx_run_state *run,
+                         void *frames, size_t nframes,
+                         void *trail, size_t ntrail)
+ {
+@@ -218,7 +218,7 @@
+  * function runs after it. Re-zeroing them would leave every buffered
+  * call matching against a NULL stack or a capacity of 0
+  * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */
+-static void rx_run_state_init(rx_run_state *run)
++static inline __attribute__((always_inline)) void rx_run_state_init(rx_run_state *run)
+ {
+     int i;
+     for (i = 0; i < RX_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;
+@@ -233,7 +233,7 @@
+  * here too, for the same reason and one step further along: a
+  * bump-along to the next start position keeps the caller's buffers
+  * exactly as it keeps the budgets ([DD-14.FB] §11 item 5). */
+-static void rx_reset_for_next_attempt(rx_run_state *run)
++static inline __attribute__((always_inline)) void rx_reset_for_next_attempt(rx_run_state *run)
+ {
+     while (run->trail_depth) { run->trail_depth--; run->slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value; }
+     run->resume_depth = 0;
+@@ -578,7 +578,7 @@
+  * whole-match pair is not written by the VM at all -- the entry knows
+  * where the attempt began and how long it ran. Group g lives in the
+  * slot PAIR (2g, 2g+1), which is why this indexes arithmetically. */
+-static void rx_report_captures(const rx_run_state *run, ptrdiff_t (*capture_spans)[2],
++static inline __attribute__((always_inline)) void rx_report_captures(const rx_run_state *run, ptrdiff_t (*capture_spans)[2],
+                         size_t match_start, ptrdiff_t match_length)
+ {
+     int group;
+@@ -592,7 +592,7 @@
+ 
+ /* The search loop. Called by both entries below with a run state
+  * already pointed at its working storage. */
+-static int rx_search_run(const unsigned char *subject, size_t subject_length,
++static inline __attribute__((always_inline)) int rx_search_run(const unsigned char *subject, size_t subject_length,
+        size_t search_from, ptrdiff_t (*capture_spans)[2], rx_run_state *run)
+ {
+     rx_ctx ctx;
+@@ -693,7 +693,7 @@
+  * inner give-up read as a plain path failure, so an outer match could
+  * report an ANSWER where a bound had actually blown. A caller that
+  * only asks 'did it match' still writes `result < 0` and is unaffected. */
+-static ptrdiff_t rx_match_run(const rx_ctx *ctx, rx_run_state *run)
++static inline __attribute__((always_inline)) ptrdiff_t rx_match_run(const rx_ctx *ctx, rx_run_state *run)
+ {
+     ptrdiff_t result;
+     if (ctx->pos > ctx->len) return -1;
+@@ -715,7 +715,7 @@
+  * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on
+  * every negative return, give-up included: a caller that gave up has
+  * no captures, and A-8's untouched-wins rule does not bend for it. */
+-static ptrdiff_t rx_match_caps_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],
++static inline __attribute__((always_inline)) ptrdiff_t rx_match_caps_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],
+                         rx_run_state *run)
+ {
+     ptrdiff_t result;
