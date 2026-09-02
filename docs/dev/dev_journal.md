@@ -19854,3 +19854,23 @@ pattern variables (a caller-supplied string injected at match time),
 VM-natural and, given string/span edges, DFA-capable; the placement rule
 (the variable is an opaque symbol to determinization) is the design;
 expand on arrival when Frank brings it up.
+
+## 2026-09-02 — Fiftieth session, part 7 (~15:1x): [OPT-VMFL] STEP 0 MEASURED and merged (6fa1c66) — no under-counts, the dispatcher is not a win, the stamp is Frank's call
+
+Lane vmfl0 (sonnet, ~45 min) delivered docs/dev/optvmfl_step0.md. The
+census over 2,603 VM-compiled artifacts answers the bench's (i)(b) with
+numbers: the under-count direction I-32 called theoretically live is
+EMPTY (0); the only divergence is 198 over-counts (7.6%), every one a
+lookaround with a choice-point-free body — vm_cost's uniform lookaround
+frame charge — none in the bench's sets. 35% of the frameless population
+reaches the shape under `auto` (290 hybrids + 95 plain), so the ×9 is
+not a forced-VM curiosity. The direct-branch dispatcher hand-twin (goto*
+→ switch, answer-identical 15/15) is MIXED: 3-4% faster on nest2-64
+(24 labels, scan-loop body), flat-to-2.9%-slower on csv5/ctx-lazy-256 —
+D77 trigger NOT met, nothing built; the lane's hypothesis (the payoff
+tracks how much of the function is a tight scan loop) hands the ×9 back
+to [ENG-DIRECT]'s own claim. Stamp `RX_VM_FRAMELESS` drafted as a (b)-
+family VM-route macro; ship-now vs subsume-into-RX_ENGINE's-third-value
+is Frank's ruling (R1 asked for a recommendation, not a decision; the
+memo §4.3 gives two shapes). Worktree removed; opt5i is the one lane in
+flight. I-34 to the bench with the census numbers.
