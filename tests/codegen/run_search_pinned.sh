@@ -636,18 +636,31 @@ fi
 # named witness is `$` and whose miscompile is a `caps[0][0]` of 0 where the
 # true span begins at n.
 #
-# THE ASSERTION IS ALL-AND-ONLY: every member is DECLINED, and no member is
-# accepted. The check reports the member LIST, so a disagreement names
-# patterns rather than a delta.
+# THE CLAIM IS OVER THE FIVE NAMED SHAPE-ANCHORS BELOW, NOT AN ALL-AND-ONLY
+# CLAIM OVER VIEW_DECLINE_MANIFEST AS A POPULATION (r51 finding 5). An
+# earlier draft of this section called itself ALL-AND-ONLY and described an
+# OBSERVABLE PROXY for the selector — a corpus pattern is a member iff it is
+# `RX_DFA_SCAN "unanchored"` and its emitted forward accept table has a 0 at
+# the start state while the artifact carries an EOL or END view table — but
+# the proxy was never COMPUTED: the section tests these five literals plus an
+# UNRELATED count of every `(?m)`-prefixed corpus pattern below, most of
+# which are not manifest members at all (a bare `(?m)^` with no `$`/`\Z`/`\z`
+# counts there and is outside the selector). r51check's finding, verbatim:
+# "True only over five literals."
 #
-# THE OBSERVABLE PROXY for the selector, and it is stated because it is the
-# one place this section could go circular: a corpus pattern is a member iff
-# it is `RX_DFA_SCAN "unanchored"` and its emitted forward accept table has a
-# 0 at the start state while the artifact carries an EOL or END view table.
-# That is matcher TEXT — the tables and the view block — not the predicate.
-# The five NAMED ROWS below are shape-anchors: their loss would silently
-# narrow the manifest's coverage even while the floor held, so they are
-# asserted by name.
+# DISPOSITION (r51fix item 5): REWORDED to the claim this section actually
+# tests, rather than building the corpus-wide sweep the proxy would need.
+# That sweep is a real option — the emitted forward accept table and the
+# EOL/END view block are both matcher TEXT this file already reads
+# elsewhere — but it is a NEW population-scale mechanism, and a check-design
+# fix lane is not the place to land one unmeasured and unable to be run
+# before delivery (D77): a hand-rolled accept-table/view-table extractor
+# gotten subtly wrong would certify less than the narrower, honest claim
+# below, not more. The five rows are shape-anchors (the minimal `(?m)$`, the
+# nullable-with-EOL, the one carrying a class context too, the scoped-group
+# spelling, the mode-toggled spelling): their loss would silently narrow what
+# this section tests even while the POPULATION floor below — a DIFFERENT,
+# weaker claim — stayed green.
 MANIFEST_ANCHORS='(?m)$
 (?m)a*$
 (?m)\bx*$
@@ -666,22 +679,26 @@ done <<EOF
 $MANIFEST_ANCHORS
 EOF
 if [ -n "$manifest_accepted" ]; then
-    bad "§8 VIEW_DECLINE_MANIFEST: these shape-anchors are ACCEPTED by the predicate where every one must be DECLINED — the widened `state_acc_any` read has been substituted for the narrowed one, which reports caps[0][0] = 0 on a pattern whose true match begins at n: $manifest_accepted"
+    bad "§8 VIEW_DECLINE_MANIFEST shape-anchors: these are ACCEPTED by the predicate where every one must be DECLINED — the widened `state_acc_any` read has been substituted for the narrowed one, which reports caps[0][0] = 0 on a pattern whose true match begins at n: $manifest_accepted"
 elif [ -n "$manifest_missing" ]; then
-    bad "§8 VIEW_DECLINE_MANIFEST: these shape-anchors no longer compile: $manifest_missing"
+    bad "§8 VIEW_DECLINE_MANIFEST shape-anchors: these no longer compile: $manifest_missing"
 else
-    ok "§8 VIEW_DECLINE_MANIFEST: all five named shape-anchors (the minimal (?m)\$, the nullable-with-EOL, the one carrying a class context too, the scoped-group spelling and the mode-toggled spelling) are DECLINED"
+    ok "§8 VIEW_DECLINE_MANIFEST: the five named shape-anchors (the minimal (?m)\$, the nullable-with-EOL, the one carrying a class context too, the scoped-group spelling and the mode-toggled spelling) are DECLINED — a claim over these five literals, not an ALL-AND-ONLY claim over the manifest as a population (r51 finding 5)"
 fi
 
-# THE POPULATION FLOOR, separate from the anchors above because a reach probe
-# and a population floor are DIFFERENT CLAIMS that expire separately
-# ([MECH-REACH]). The anchors say the SHAPES are still tested; this says the
-# corpus still holds enough of them for a sweep to mean anything.
+# THE POPULATION FLOOR IS A DIFFERENT, WEAKER CLAIM FROM THE FIVE ANCHORS
+# ABOVE, and the two expire separately ([MECH-REACH]: a reach probe and a
+# population floor are different claims). The anchors say five SHAPES are
+# still tested BY NAME; this says the corpus still holds enough
+# `(?m)`-prefixed patterns for that population to be non-trivial — it is NOT
+# a claim that every pattern this count includes is a VIEW_DECLINE_MANIFEST
+# MEMBER (most are not: a `(?m)^`-only pattern with no `$`/`\Z`/`\z` is
+# counted here and does not belong to the selector at all — r51 finding 5).
 mcount=$(grep -cE '^pattern \(\?m[:)]' -r "$ROOT_DIR/tests" 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')
 if [ "$mcount" -lt 12 ]; then
-    bad "§8 the corpus holds only $mcount (?m)-shaped patterns, below the 12 floor (16 measured 2026-09-02, docs/dev/opt5m2_m2_changed_patterns.txt). The manifest's population has thinned; the ALL-AND-ONLY assertion above still runs but is testing a shrinking set"
+    bad "§8 the corpus holds only $mcount (?m)-prefixed patterns, below the 12 floor (16 measured 2026-09-02, docs/dev/opt5m2_m2_changed_patterns.txt) — a population-liveness floor, not a manifest-membership claim (r51 finding 5)"
 else
-    ok "§8 the (?m) population that discriminates P1's two spellings is $mcount patterns, above the 12 floor"
+    ok "§8 the corpus holds $mcount (?m)-prefixed patterns, above the 12 floor — a population-liveness floor for the five named shape-anchors above, not a claim that all $mcount are VIEW_DECLINE_MANIFEST members (r51 finding 5)"
 fi
 
 # =========================================================================
