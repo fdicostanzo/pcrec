@@ -20316,3 +20316,13 @@ edge's "bitmap" body is a 256-BYTE table (one load; the name is a
 misnomer), the VM's class test a 32-byte BIT array (load + shifts +
 and). Recorded as [OPT-CLSPACK]'s STEP 0: three shapes per class site,
 both engines, cache footprint counted.
+
+Part 23 addendum 5 (~17:3x): Frank chartered [DD-13b.W1.3] (composition
+proper) as lane D of the evening wave, with DOGFOODING as its driver:
+the bench's sub-bench definitions as .rxt sources and our own corpus
+using `lib`/`target` composition. Manager's syntax ruling (dd13b syntax
+is mine): block names admit `-` and `.`, mapped to `_` in the C prefix
+with a collision refusal — the bench's 63/77 non-identifier pattern ids
+become block names verbatim. The wave is now A ([ENG-ISL] STEP 1), B
+([OPT-EDGE] + K43's init), D (W1.3), all opus; C ([LIM-2], sonnet) waits
+for the first merge slot tomorrow (three significant lanes at a time).
