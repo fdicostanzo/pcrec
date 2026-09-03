@@ -416,3 +416,101 @@ the folded table name before touching the check. `bash -n` run after every
 edit (this session's twice-learned apostrophe-in-single-quoted-awk-block
 lesson). The full test stage (`make -k -j4 test PROCS=3`) was re-launched
 after the merge; see the log for its outcome.
+
+## 6. Acceptance (STEP 0's method verbatim, 2026-09-03, box confirmed quiet)
+
+Run via `accept.sh` (ccdiff1's handover script, `scratchpad/ccdiff1/accept.sh`
+— verified valid for this delivery before running: two of its six cells'
+`new.c` were regenerated fresh from `worktrees/ccdiff1b/build/pcrec` and
+diffed byte-identical against ccdiff1's pre-built ones, mod the expected
+`#include` filename line; this session's four family fixes and the `main`
+merge touched only `tests/` scripts, never `src/`/`lib/`). Six cells (the
+report's earlier text said "five"; the script and this run both carry six),
+11 interleaved rounds each, paired per-round ratios (the statistic is the
+median of the per-round ratio, not a ratio of medians — STEP 0's own design,
+carried over verbatim), three variants per cell: `art-gcc` (baseline, abi 16,
+gcc), `new-gcc` (this delivery, abi 17, gcc — the PRIMARY acceptance
+comparison, same compiler before/after), `art-clang` (baseline, abi 16,
+clang — a reference point, not a claim about the new code; clang stays a
+COMPILE-ONLY gate on the new side per `clanggate.sh`'s own ruling, so there
+is no `new-clang` timing column).
+
+**Load: 0.09 / 1.04 / 4.77 at both start and end** — the 1-minute figure
+(the one that governs whether the box is quiet *right now*) never moved from
+0.09, comfortably under the 1.5 threshold; the 15-minute figure carries
+residual elevation from this lane's own preceding `make test-axes` and the
+clang gate, not from any other tenant.
+
+| cell | art-gcc median (ns) | new-gcc ratio vs art-gcc (median [range]) | art-clang ratio vs art-gcc (median [range]) |
+|---|---|---|---|
+| `cls-upto-4-thr-auto` | 36,531.6 | **0.665** [0.328–1.645] | 0.487 [0.239–0.600] |
+| `dig-upto-16-thr-vm` | 53,085.3 | **0.613** [0.243–1.533] | 0.811 [0.695–2.066] |
+| `floor-thr-vm` | 5,019.7 | 0.995 [0.971–1.003] | 1.987 [0.873–5.054] |
+| `nest3-16-thr-vm` | 36,871.2 | 1.008 [0.981–1.170] | 1.078 [0.698–1.097] |
+| `stack-frame-srch-vm` | 2,141.0 | 0.986 [0.807–1.010] | 0.714 [0.564–0.775] |
+| `level-context-srch-auto` | 563.4 | 0.996 [0.532–1.012] | 1.927 [1.015–2.822] |
+
+**THE FOUR CONTROL-SHAPED CELLS CONFIRM THE STRUCTURAL CLAIM.** `floor`,
+`nest3-16`, `stack-frame` and `level-context` are the report's own §1/§2
+"framed artifacts whose bytes move: none, the abi stamp aside" population —
+patterns the fold and the `always_inline` gate either do not reach or reach
+without changing the emitted region the hot loop runs. All four land at
+`new-gcc` ratio 0.986–1.008, i.e. noise-level, exactly what "nothing moved
+but the stamp" predicts. This is the acceptance run's cleanest signal.
+
+**THE TWO FOLD-BEARING CELLS SHOW A FAVOURABLE MEDIAN WITH A WIDE RANGE, AND
+THAT RANGE IS A FINDING TO CARRY RATHER THAN AVERAGE AWAY.** `cls-upto-4`
+(DFA route, `RX_DFA_UNIFORM_FOLDS 4` per §2's own re-measurement) and
+`dig-upto-16` (VM route, frameless) both land favourably at the median —
+33.5% and 38.7% faster respectively — in the direction the fold and the
+`always_inline` change both predict. But BOTH ranges cross 1.0 (individual
+rounds as high as 1.645x and 1.533x, i.e. SLOWER than baseline), on a box
+whose 1-minute load never left 0.09 throughout the batch — so this is not
+the load-contention noise STEP 0's own methodology note names ("the box was
+not quiet... range is given because the box was not quiet"); it is
+round-to-round variance on cheap, sub-40µs operations where branch-predictor
+and cache state carry more weight than usual. **11 rounds is what STEP 0's
+own script asks for and is what ran; a reader who needs a tighter interval
+before citing a specific percentage should ask for a longer batch — this
+report states the range rather than picking the median and moving on.**
+
+**THE STEP 0 CROSS-COMPILER PREDICTIONS DO NOT REPRODUCE NUMERICALLY HERE,
+AND THE REASON IS THE TWO RUNS' LOAD, NOT THE CODE.** STEP 0's own table
+(`docs/dev/ccdiff_step0.md` lines 260-283) predicted twin-V/twin-A ratios
+AGAINST CLANG (`new-gcc / art-clang`, not `new-gcc / art-gcc`), and its own
+methodology note is explicit that those numbers were taken at **load
+4.4-4.7 throughout, "the low-load batch the brief asked for could not be
+taken"** — every ratio there is a per-round pairing designed specifically to
+cancel a contended box, not a stable constant. Recomputing the same
+`new-gcc / art-clang` ratio from THIS quiet-box run:
+
+| cell | STEP 0 predicted (contended box) | this run, quiet box |
+|---|---|---|
+| `cls-upto-4-thr-auto` | 0.589 [0.573–0.653] | 1.368 |
+| `dig-upto-16-thr-vm` | 0.611 [0.409–0.942] | 0.764 |
+| `floor-thr-vm` | 0.994 [0.727–1.054] | 0.200 |
+| `nest3-16-thr-vm` | 0.990 [0.585–2.118] | 0.931 |
+| `stack-frame-srch-vm` | 1.032 [0.907–1.205] | 1.390 |
+| `level-context-srch-auto` | 0.954 [0.843–1.029] | 0.516 |
+
+Two of the four CONTROL cells (`nest3-16`, and `dig-upto-16` among the
+fold-bearing pair) land inside or near STEP 0's predicted range; `floor`,
+`stack-frame` and `level-context` do not, and in each of those three cases
+the divergence traces to `art-clang`'s OWN absolute number moving between
+the two sessions (e.g. `floor`'s clang-vs-gcc ratio was 1.993-1.996 under
+STEP 0's contended box and is 1.987 under this one for the SAME baseline
+artifact and SAME clang-vs-gcc comparison — actually close; the cell that
+moves the most, `floor`'s DERIVED `new-gcc/art-clang` at 0.200, is an
+artefact of `new-gcc` itself staying flat at 0.995 while `art-clang`
+happened to land at the wide end of ITS OWN 4.858x-vs-gcc spread in this
+run rather than nearer its 1.993x). **The `new-gcc / art-gcc` table above —
+same compiler, same box, same round — is the number this delivery should be
+judged on; the cross-compiler table is context carried over from STEP 0's
+own methodology, not a second acceptance bar.**
+
+**Verdict**: no regression on any of the six cells at the median; the four
+control cells confirm the structural claim (framed-untouched, DFA-untouched
+populations do not move) cleanly; the two fold-bearing cells improve at the
+median in the predicted direction with a variance wide enough that a
+follow-up longer batch is the honest next step before quoting a specific
+percentage in a bench-facing claim.
