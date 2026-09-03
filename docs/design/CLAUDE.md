@@ -1677,5 +1677,48 @@ append-only or historical records.
   revision itself. Companion data: `docs/dev/opt5_step2_premeasure.md` and
   `docs/dev/opt5m2_m2_changed_patterns.txt`.
 
+- `alt_dispatch_study.md` — **[ENG-ISL.S0]**, the alternation-dispatch study
+  (2026-09-03, lane altstudy): the measurement note behind `[ENG-ISL]`'s
+  first named island candidate ("VM ALTERNATION AS A TRIE DISPATCH",
+  docs/dev/plan.md), backed by `studies/alt_dispatch/` (own Makefile,
+  never built by pcrec's own `make`; nothing under `src/`/`tests/` lands
+  from this lane). Five dispatch algorithms for a wide literal
+  alternation, all checked against a serial-try oracle at every subject
+  position of every pattern this study built: (a) today's `vm_alt`
+  (`src/gen/emit_vm.c`), unfactored serial try; (b) stable first-byte
+  grouping; (c) a port of `src/ir/nfa.c:192`'s M2.8 trie to a query walk,
+  every accept tagged with its original alternation index, answer = the
+  lowest index the walk passes; (d) `[OPT-ALTHASH]`'s k-byte (k=2,4)
+  block hash, open-addressed with exact-key verification (not a true
+  minimal perfect hash); and (e), added MID-STUDY by ruling R1 (Frank,
+  2026-09-03) as the PRIMARY candidate — the VM-NATIVE TRIE WALK: (c)'s
+  same trie plus a static per-node `subtree_min` annotation, deciding at
+  every end node whether to COMMIT (push one resumable frame, stop — the
+  shape a real emitted island would take) or DEFER (record into a small
+  ascending-index list and keep walking). §3.2 is the exactness argument
+  for (e) and is worth reading on its own: the ruling's literal wording
+  ("commit iff nothing deeper beats this index") is NECESSARY but NOT
+  SUFFICIENT — `src/ir/nfa.c`'s own rule-1 counter-example (`abc|a|abd` on
+  `"abd"`) exposed a case where an already-DEFERRED shallower candidate
+  is lower than a leaf node whose own local subtree has nothing lower,
+  which the naive test would wrongly commit past; the fix tracks a
+  second, running `best_deferred` value and requires beating both. Caught
+  by `tests/unit_trie.c`'s own regression case before it reached the
+  results tables, not by a panel. On every real bench-derived pattern
+  this study measured, (e) pushes AT MOST ONE VM frame per dispatch
+  (`total_frames` in `results/tries.tsv`, both algorithms' trie is order-
+  INSENSITIVE by construction, `w`/`srt` pairs building the identical
+  trie). §5 records what the study could not settle: `sh1`/`pfx3` beyond
+  width 512 (the bench's own pools cap there), a true minimal perfect
+  hash for (d), rule 2's "NFA step" half (only the decline half is
+  implemented), and — flagged explicitly — that this study's (a) is a
+  PURE unfactored serial try where today's real `vm_alt` is fed a
+  partially-factored trie already, so its measured (a)-vs-(c)/(e) ratios
+  are not a direct stand-in for the bench's own measured ×8.87 (w-256 vs
+  srt-256) / ×20.1 (w-512 vs srt-512) VM order-penalty figures — a sixth,
+  "today's actual partial factoring" baseline was not built. §6
+  recommends between (c) and (e) for the VM island and states the D77
+  trigger. See its own README.md/CLAUDE.md for reproduction.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
