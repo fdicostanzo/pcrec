@@ -20151,3 +20151,14 @@ the worktree persisted across my next call, so the first `git merge` ran
 inside the lane's tree ("already up to date") — the real merge followed
 from the main tree; the situation-index row about `cd` in compound
 commands applies to persisted cwd too.
+
+Part 17 addendum (10:2x): lane ccdiff1 (opus) lost FOUR consecutive turns
+to API 529s (09:27-10:13) with its two spellings already committed
+(lane/ccdiff1 37549a1: emit_vm.c always_inline gated on frameless;
+emit_dfa.c uniform-table fold; run_dfa_uniform_fold.sh; docs). Stood
+down by rulings file + message; lane ccdiff1b (sonnet) continues on
+lane/ccdiff1b from those commits (read-site check, abi 16→17 by grep,
+spec paragraph, prediction table, validation after .lift, acceptance).
+The bench's daytime `make check` (10:07) overlapped tt12b's first K44
+shape run; asked to hold bursts until 10:50 — they stopped it at 10:13;
+tt12b re-runs shape (a) last so the three shapes carry comparable load.
