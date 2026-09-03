@@ -1197,6 +1197,52 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   in `tests/rxtsource/`, where the fixture whose `lib` does not resolve is
   DUMPED happily and REFUSED by `--source`.
 
+- **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
+  definitions into the target pattern's tree. ONE FILE, because every
+  mechanism in it is meaningless without the others and a reviewer must be
+  able to read the whole thing without leaving it — the sub-parse, the
+  assignment MAP, the injection, the two re-basing passes, the
+  re-resolution. Design: `docs/design/dd13_format/w1_impl.md` §2 (the
+  mechanism) and §8 (what D89 changed and why §2 alone is not buildable as
+  written).
+
+  **IT RUNS BETWEEN `pcrec_parse` AND `pcrec_altcls`, and both bounds are
+  forced** (`src/core/compile.c`): after the parse because it needs the
+  caller's `ncap`, `named_groups` and resolved references; before
+  `pcrec_callgraph_build` absolutely, because that pass is the only writer
+  of `u.call.body` and is driven from `u.call.target` over the FINAL tree;
+  before `altcls` so an injected definition gets the same optimization every
+  other subtree gets. Its output is expressed in NUMBERS, not pointers, for
+  `callgraph.c`'s own recorded reason.
+
+  **COMPOSITION ADDS NO NEW AST SHAPE.** A bound definition is injected as
+  `A_REP{0,0}(A_CAP{base}(body))` — what `mod_recursion.c:418`'s
+  `(?(DEFINE)…)` port already builds — so `callgraph.c`'s number-to-`A_CAP`
+  bind, the splice/linkage choice, the slot layout and
+  `rx_group_entry.ref` are all reused unchanged.
+
+  **THE THREE TIERS ARE D89 AND THEY ARE THE PART TO READ FIRST**, because
+  `w1_impl.md` §2 predates the ruling and has no mechanism for the middle
+  one. A definition's group is DELIVERED when the definition NAMES it (a
+  slot above `ngroups` AND a `groups[]` row whose `ref` is the definition's
+  name), HIDDEN when it is unnamed but the definition's own references reach
+  it (a slot, no row), and ERASED when it is unnamed and unread (the `A_CAP`
+  is DELETED and it spends NO NUMBER). The erased tier is why §2.5's "add
+  `base` to every `A_CAP`" walk became a MAP — survivors must close up — and
+  the map degenerates to `+base` exactly when nothing is erased, which is
+  what keeps §2.5's MEASURED cell the expected answer.
+
+  **DELIVERY IS DECLARED BY NAMING**, and that is the one rule W1.3 invents
+  (D89 point 4 leaves delivery to "the lib's own names"). Naming a group in
+  a library IS the author's declaration that it is part of the interface;
+  every alternative either builds W1.4's syntax early or creates a SECOND
+  place an interface is declared. The cost — a definition cannot name a
+  group privately — is question Q-W3 in `w1_impl.md` §8.8.
+
+  **A NO-OP WHEN `cx->defs` IS NULL**, by an early return, which is what
+  makes every non-`--source` artifact byte-identical to before this file
+  existed and the identity gate's comparison (A) a real check of it.
+
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
   axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the
   syntax registry syntax_dump.c below renders — a different table
@@ -1693,3 +1739,38 @@ stays with DD-1/M5.
 The parser builds an expression AST using recursive descent. Split edges in the AST preserve choice order for greedy/lazy and alternation preference. Non-base syntax is described once, in registry.c's row tables, and reached through the four doorways — three defined in ext.c, the verb doorway in mod_verbs.c since MOD-0.4 (its two name tables moved with it): adding a construct means adding a row, not editing parse.c. Unsupported syntax produces an actionable "requires module 'X'" error rather than a miscompile.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+## [DD-13b.W1.3] what changed in the files already listed above
+
+- **`rxt_source.c` READS a `lib` file now.** W1.2 resolved a `lib`
+  reference as far as EXISTENCE and said its contents were "the composer's,
+  W1.3"; this is that. `closure_walk` is a fixpoint with a visited set KEYED
+  ON THE RESOLVED PATH, so a diamond reads a file once and a cycle
+  terminates; order is `lib` declaration order, depth first, with the naming
+  file's own blocks first, and it is a STATED order rather than an emergent
+  one because the duplicate-name refusal names the two files it found. A
+  duplicate definition name across the closure is a refusal — K42's residual
+  is about names the FORMAT cannot see, and this one it can. The child
+  sources are OWNED by the root `RxtSource` (its new `kids` array) and freed
+  with it, because the definition set points into their arenas.
+- **`defname_ok` is not `ident_ok`, and the two must stay two.** A block's
+  `name` and a `target` row's definition reference admit `-` and `.` after
+  the first byte (the manager's ruling on the bench's O-13 §4(a)); a
+  `target`'s PREFIX is still an identifier. `pcrec_rxt_prefix_from_name` is
+  the ONE home of the `-`/`.` -> `_` mapping, because the duplicate-prefix
+  refusal is stated over it. **THE NAME GRAMMAR HAS THREE READERS AND THEY
+  MOVE TOGETHER** — leg A here, leg B `tests/harness/run.sh`'s `name` arm,
+  leg C `tests/harness/verify_rxt.py`'s `NAME_RE` — with C1's differential
+  as what makes them agree; D94's rule applied to a grammar rather than to a
+  number.
+- **`pcrec_rxt_flags_from_letters` moved here from `cli/main.c`**, because a
+  DEFINITION's own `flags` are read here too and a letter added to one loop
+  and not the other would make a library mean one thing built as a target
+  and another bound into a caller.
+- **`mod_backrefs.c`'s `pcrec_bref_resolve` DEFERS** an unresolved by-name
+  `PEND_CALL` when `Ctx.defer_file_refs` is set (DECIDED (6)), because the
+  name may be a FILE reference. The `PEND_BREF` name arm is NOT deferred: a
+  caller's `\k<w>` must never see a library's `w` (D87 rule 2). `deferred`
+  is written EXPLICITLY in both arms and never left to the arena zero — the
+  unsound direction is a missed write reading "not deferred", which the
+  composer then skips.

@@ -2501,3 +2501,39 @@ points at the fold count.
 **THE CHECK IS `tests/codegen/run_dfa_uniform_fold.sh`.** It reads the emitted
 text for the accessor's lost parameter and the table name's absence, asserts
 the biconditional, and only then compares the stamp against their count.
+
+## [DD-13b.W1.3] `groups[]` GROWS ROWS THE PRIMARY DID NOT DECLARE — an abi event, number assigned at the merge
+
+**Written 2026-09-03 by lane w13 under the evening box hold; the branch does
+NOT bump the number.** The merging session assigns it (18 or later,
+depending on what serializes ahead of it), and `docs/design/dd13_format/
+w1_impl.md` §8.7 carries the D94 site list — SIX readers of the current
+value, found by grep, of which a hand-enumerated four would have missed two.
+
+**What moves in the emitted text**, and it moves ONLY on a `--source` build
+that binds a definition:
+
+- `emit_info_def`'s `rx_group_entry` array gains rows the target pattern did
+  not declare, each with a non-NULL `.ref` naming the DEFINITION it came
+  from. The column has existed since D61 (`:602`, *"NULL/empty for the
+  primary's own groups"*) and was emitted as a literal `NULL` until now;
+  W1.3 is its first producer.
+- `ng_cmp_name`'s key becomes **`(ref-is-NULL, name, number)`**. That is an
+  ABI CONTRACT and not a tiebreak: `match_api.md` §6 documents `nnames` as
+  the entries in `groups[]` and hands a caller a bsearch that walks a name
+  RUN, so rows sorting AMONG the primary's while `nnames` counted only the
+  primary's would let a caller walk off its own run into a library's private
+  group. The leading key makes the primary's rows a genuine PREFIX.
+  **[M6.5-DUPNAMES]'s structural check reads that order off the artifact and
+  its expectation moves in the same change.**
+- `.ngroups` reads `cx->ncap_primary` where it read `cx->ncap`, `.nnames`
+  counts the `scope == NULL` rows where it read `cx->n_named_groups`, and
+  `.nentries` — appended at abi 15 for exactly this and equal to `nnames`
+  on every artifact since — becomes the whole array's length.
+
+**ON EVERY NON-COMPOSED COMPILE EVERY ONE OF THESE VALUES IS WHAT IT WAS**,
+by construction: `ncap_primary == ncap` (seeded in `compile_driver` whether
+or not the composer runs), no injected rows, `.ref` still `NULL`. That is
+what makes the identity gate's comparison (A) a real control on this change
+rather than a tautology, and it is the property to re-measure first if the
+gate goes red.

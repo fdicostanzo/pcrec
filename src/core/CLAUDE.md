@@ -798,3 +798,30 @@ a prefilter would REFUSE a pattern that compiles today, which is exactly what
 `-fprefilter` never gets here at all: it makes that rung ineligible in
 `compile_driver`, so the compile refuses earlier and for a different reason. `src/opt/CLAUDE.md` carries the predicate's own entry;
 `docs/spec/tuning.md` §2.17 is the contract.
+
+## [DD-13b.W1.3] the composer's three fields on `Ctx`, and one internal entry
+
+- **`Ctx.ncap_primary`** — the PRIMARY pattern's own capture count, seeded
+  by `compile_driver` from `ncap` immediately before `pcrec_rxt_compose`, on
+  EVERY compile. `rx_info.ngroups` emits it; `RX_NCAPS` still emits
+  `ncap + 1`. On a non-composed compile the two are equal by construction,
+  which is what lets `src/gen/emit_dfa.c` read it unconditionally instead of
+  asking whether composition happened.
+- **`Ctx.defs`** — the `.rxt` definition closure, or NULL. Non-NULL only on
+  the `--source` path (`pcrec_compile_defs`), so `pcrec_rxt_compose` is one
+  pointer test on every other compile.
+- **`Ctx.defer_file_refs`** — DERIVED from `defs` at compile entry and never
+  set independently, so "the parser defers" and "a composer will resolve"
+  cannot get out of step. Read at exactly one place,
+  `pcrec_bref_resolve`'s call-by-name arm. It is a flag on `Ctx` rather than
+  a change to `pcrec_parse_info` because that is the ONE parse entry point —
+  shared by `--count-groups`, `--explain` and the built-status probe — and
+  making it composition-aware would put a FILE-level concern inside the
+  parser.
+
+**`pcrec_compile_defs` is `pcrec_compile` plus a definition set**, and the
+two share `compile_driver`, so there is exactly one compile pipeline and
+`--source` cannot acquire a second one. It is INTERNAL and deliberately not
+a `pcrec_options` field: D20 keeps the public option surface scalar, and a
+definition closure is a FILE's property that only the `.rxt` reader can
+build. A library caller that wants composition gets it through [LIB].

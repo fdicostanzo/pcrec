@@ -2320,16 +2320,34 @@ by construction (`ncap_primary == ncap`, no injected rows, `.ref` still
 
 ### 8.7 The D94 site list — every reader of the abi number, found by grep
 
-The command is the contract, not the list:
-`grep -rn "\babi\b\|ABI_EXPECT\|FILEPIN" src/ tests/ docs/spec/ cli/`.
-§8.7's table in the lane's report carries the run's output at the time
-of the bump; the number today is **17**, and the readers are the `.abi`
-stamp in `src/gen/emit_dfa.c`, `ABI_EXPECT` and its ledger in
-`tests/codegen/run_codegen_tests.sh`, the two sentences plus the struct
-block in `docs/spec/match_api.md`, and the `FILEPIN` in
-`tests/codegen/run_recursion_identity.sh`. **D94's own lesson is that a
-hand-enumerated four missed a fifth**, so the grep is re-run at the bump
-and its output — not this paragraph — is what the commit answers to.
+The command is the contract, not the list, and it was RUN (2026-09-03,
+lane w13, over the branch at its D6 commit):
+
+```
+grep -rn "\babi\b\|ABI_EXPECT\|FILEPIN" src/ tests/ docs/spec/ cli/ lib/
+```
+
+filtered to the readers of the CURRENT VALUE, which today is **17**:
+
+| # | site | what it holds | moves at the bump |
+|---|---|---|---|
+| 1 | `src/gen/emit_dfa.c:1652` | `sb_puts(c, "    .abi = 17,\n");` — the stamp itself | YES |
+| 2 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=17` | YES |
+| 3 | `tests/codegen/run_codegen_tests.sh:2760` | the BUMP LEDGER inside that check's `bad` message — one clause per event since abi 2 | YES, one clause appended |
+| 4 | `docs/spec/match_api.md:159` | *"`rx_info.abi` is `17`"* in §1's general-rule paragraph | YES |
+| 5 | `docs/spec/match_api.md:1754` | *"`rx_info.abi` is `17` on every artifact today"* in the struct section | YES |
+| 6 | `tests/codegen/run_recursion_identity.sh:555` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"` — the gate's (B) pin | YES, to **this step's LAST src-touching commit**, never its first (that file's own rule at `:394-406`; getting it backwards cost 952 falsely-differing artifacts once) |
+| — | `docs/spec/match_api.md:2208` | *"the abi-17 …"* — names the EVENT at which the always-inline spelling landed | **NO.** A historical reference to when something happened, not a claim about the current number |
+| — | `src/gen/CLAUDE.md:2399` etc. | one dated section per past bump | NO — a bump ADDS a section, it does not edit the old ones |
+
+**Six readers, and a hand-enumerated four would have missed two of them**
+— `match_api.md:1754` and the ledger clause — which is D94's own lesson
+reproduced on the very next bump after the ruling. The seventh and eighth
+rows are the other half of the discipline: the grep finds text that
+CONTAINS the number and is not a reader of it, and a list that silently
+dropped them would be indistinguishable from one that missed a real site.
+The grep is re-run at the bump and its output — not this table — is what
+the commit answers to.
 
 ### 8.8 Questions this step could not settle from the documents
 
