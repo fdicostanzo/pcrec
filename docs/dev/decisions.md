@@ -6468,3 +6468,52 @@ rule applied to a checklist: enumerate by search, not by memory.
 The stale fifth site is fixed at the w12 merge (which renumbers to 15
 anyway). Cross-notes: D76, [CC-CLANG], docs/design/opt5_step2_twopass.md
 F5/Q6.
+
+### D89 addendum (2026-09-03 18:2x EDT, Frank, fifty-first session — the Q-W3 ruling and three companions; the lib-side interface is EXPLICIT)
+
+Frank, on W1.3's question "is every named group in a definition
+delivered?" (built as yes by lane w13): four rulings, verbatim in
+substance.
+
+1. **A group-number reference within a pattern always works, regardless
+   of external reference.** Reaffirms D87 rule 1 / rule 7(i): `\N`,
+   `(?N)`, `(?(N)…)` inside a definition mean the definition's OWN group N
+   wherever the piece lands; the composer re-bases, never refuses, and an
+   internally-referenced group is never erased (it is the HIDDEN tier of
+   point 2(b) above). Measured by w13's M1 (`\1` → `\3`, meaning kept).
+2. **For library use, the library explicitly provides the names it
+   intends to export.** Point 2(c) above is REVISED: delivery is no
+   longer "every named group"; a definition DECLARES its exported names,
+   and a named group that is not exported is hidden (if referenced
+   inside the lib) or erased (if not) — the three tiers w13 built already
+   carry the undelivered case. Default: nothing exported. Manager's
+   spelling (dd13b syntax is the manager's): a pattern-block line
+   `export <ident>{, <ident>}` (the `config-list` shape `with`/`use`/
+   `from` already use); naming a group the definition does not declare
+   is a refusal naming both.
+3. **The namespace reference syntax for subroutine calls keeps groups
+   from clashing and lets the same definition be referenced twice.**
+   This is format_design.md §1.5 B2/B3 as designed: a DELIVERING call
+   `(?&site=name)` names a scope `site`; the delivered groups are reached
+   as `site.group` (`(?&site.group)` in a pattern, `r.site.group` in the
+   struct view, the string `site.group` as the `groups[]` row name);
+   `(?&=name)` uses the definition's own name as the site; two
+   delivering calls of one definition under two site names are two
+   scopes. So a delivered `groups[]` row is site-qualified and exists
+   ONLY for a delivering call — W1.3's FLAT injection of lib names into
+   the caller's table (no site) is WITHDRAWN.
+4. **There is a form for calling an external definition WITHOUT saving
+   its named groups.** That form is the plain call `(?&name)`: PCRE2's
+   own spelling with PCRE2's own capture-transparent meaning (D26 keeps
+   it), which B3 already defines as the non-delivering default; Frank's
+   candidate `*.name` would be a second spelling of the default and is
+   not adopted. Delivery is what a site opts into with `=` (D87 rule 5:
+   an undeclared call stays capture-transparent at zero cost).
+
+OPEN, asked of Frank in the same exchange: whether a delivering call in
+W1.3 RETAINS the callee's exported groups after the call returns (the
+grouplist semantics of point 4 above, previously W1.4's), or whether
+W1.3 lands the export list + the delivering-call syntax + the site-
+qualified name table with retention following in W1.4. Manager's
+recommendation: retention rides the delivering call — a delivered row
+that always reads (-1,-1) is the half-feature these rulings remove.

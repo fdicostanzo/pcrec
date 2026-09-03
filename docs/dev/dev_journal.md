@@ -20478,3 +20478,19 @@ surface grows with every lib's internal names; an explicit delivered-
 list is the conventional module form and the three-tier map already
 carries the undelivered case) and recommends the explicit list, default
 none, as a small W1.3 item tomorrow; Frank rules.
+
+## 2026-09-03 — Fifty-first session, part 30 (18:2x EDT): Frank rules Q-W3 — explicit `export`, site-qualified delivery via the delivering call, plain call = no delivery; W1.3's flat injection withdrawn
+
+Frank's four points (D89 addendum): numbered refs inside a definition
+always work (D87 rule 1, reaffirmed); a library exports names EXPLICITLY
+(manager's spelling: `export <ident>{, <ident>}`, default none); the
+namespace call syntax keeps delivered groups from clashing and lets one
+definition be delivered twice — that is §1.5 B3 `(?&site=name)`, rows
+named `site.group`; the no-delivery form is PCRE2's own plain call (no
+`*` spelling). Consequence for lane w13: the flat injection of every lib
+name is withdrawn; tomorrow adds the `export` line and site-qualified
+delivery per delivering call; the composer/tiers/map/grammar/dogfood
+stand. Open with Frank: whether the delivering call RETAINS the callee's
+exported groups in W1.3 (recommended yes; else W1.4). w13's rulings file
+carries the addendum; the lane designs the retention hook, builds it
+only on the answer.
