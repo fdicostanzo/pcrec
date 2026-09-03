@@ -340,7 +340,18 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 -> 93.
+# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 -> 93 -> 96.
+#
+# 93 -> 96 ([ENG-ISL] STEP 1, 2026-09-03, READ FROM A RUN per this guard's own
+# standing rule). The `alt-island` axis contributes +3 and NOT axis J's +5,
+# and the difference is the part worth writing down: its two candidate rows
+# (`island`, `denied`) join the per-row sweep, and the `PCREC_NO_ALT_ISLAND`
+# bit-23 heading plus the `-fno-alt-island` cli/main.c pairing are asserted
+# once on the candidate that owns the flag — but `RX_VM_ALT_ISLANDS` gains NO
+# value-set pair, because it is an activity COUNT rather than a closed value
+# set. That is `RX_ALTCLS_MERGES`/`_FACTORED`'s own shape (neither has a pair
+# either, and the dump carries an empty stamp_value on both of their rows for
+# the same reason), not an omission of the kind this guard caught at axis J.
 #
 # 88 -> 93 ([OPT-5] STEP 2, 2026-09-02, READ FROM A RUN per this guard's own
 # standing rule — the estimate beforehand was 93 and the run agreed, but the
@@ -451,9 +462,9 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 93 ]; then
+if [ "$axesn" -ne 96 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 93." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 96." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
