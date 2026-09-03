@@ -283,5 +283,13 @@ int main(int argc, char **argv)
     }
 
     fclose(f_id); fclose(f_tries); fclose(f_time); fclose(f_cons);
+    /* Explicit completion trailer: a run's caller often redirects this
+     * binary's stderr to a log and polls it rather than the process table
+     * (docs/dev/learnings.md §6's "artifacts, never process greps"); a bare
+     * `make run` (no `time` wrapper) leaves no other unambiguous end-of-run
+     * marker in that log, which cost a false "is it still running?" check
+     * during this study's own R1 re-run. */
+    fprintf(stderr, "[altdispatch] ALL DONE: %d pattern(s) x %d subject(s), %d round(s) each\n",
+            pat_list.n, subj_list.n, rounds);
     return 0;
 }
