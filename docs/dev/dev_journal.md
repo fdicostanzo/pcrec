@@ -20283,3 +20283,12 @@ Next: Frank's questions on the wave, then "reset": wake.md pinned with
 the three lane briefs (A opus emit_vm.c; B opus emit_dfa.c scan loop +
 the K43 init; C sonnet dfa.c/compile.c), no suites tonight (the bench's
 window), merges serialized tomorrow with a battery between.
+
+Part 23 addendum (~16:5x): TWO DIRECTION RULINGS. (1) The SYNTAX CENSUS
+chartered as [BENCH-1]'s content (I-42 to the bench): registry-seeded,
+blind-written, one-night first sample, outliers → depth probes → a
+ranked list of questions for Frank. (2) SIMD LAST: "get what we can
+algorithmically and generally, then pull out SIMD at the end in an 'I'm
+not left-handed' manner" — recorded on [OPT-SIMD] and in the census
+charter's ranking rule; pcrec beats the JIT on most benched cells
+without it.
