@@ -20232,3 +20232,22 @@ perfect hash for (d), rule 2's NFA-step half, and the VM's continuation-
 backtracking cost (the next D77 measurement, a hand-twin on a real
 resumed frame). RECOMMENDATION recorded as [ENG-ISL] STEP 1, Frank's
 charter owed; queued behind [CC-DIFF] STEP 1 (same emitter file).
+
+## 2026-09-03 — Fiftieth session, part 21 (15:4x): [CC-DIFF] STEP 1 MERGED (a3f40b1, abi 17), gate (B) re-pinned; battery_v5's first run tomorrow morning
+
+ccdiff1b delivered after the five-family diagnosis: every family a
+detector reading table text the fold removes (verified by emit + -Werror
++ python re + grep), the size-cap witnesses moved, and its own fold
+check's phantom (sharded workers silently empty — "0 of 0" green) found
+and fixed, surfacing two more hidden bugs. Test stage 32/32 rc=0 at
+-j4/PROCS=3 (no K44 cells red, as tt12b measured); test-axes 21/21
+answer-identical on the paired sweep; clang gate empty (2,556 compiled);
+acceptance on a quiet box: controls flat (0.986-1.008), the two fold
+cells 0.665 / 0.613 at the median — matching STEP 0 — with per-round
+ranges crossing 1.0 despite load 0.09, recorded as a finding (the
+bench's instrument gives the citable number). Merged fast-forward
+(a3f40b1); FILEPIN re-pinned to a3f40b1 by grep (the only reader was the
+script's own default + comment). Per I-40 the battery moves to tomorrow
+morning; the bench gets the night at 288d505 as planned. Owed: the
+post-merge build + strict + recursion-identity check (running next),
+wake.md, DONE to the bench.

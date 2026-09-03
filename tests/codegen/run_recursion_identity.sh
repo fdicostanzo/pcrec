@@ -547,7 +547,11 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # against the PRE-change reference and its (A)/(B) numbers are readable as the
 # change's own footprint. Re-pin to the merge before the merge is called done
 # (D76/D94).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-da4fe60}"
+# [CC-DIFF] STEP 1, 2026-09-03 — abi 16 -> 17 at the ccdiff1b MERGE (a3f40b1): the
+# always_inline attribute on frameless VM helpers and the uniform-table fold
+# (RX_DFA_UNIFORM_FOLDS) move bytes on 1,090+ VM artifacts and ~370 DFA
+# artifacts; re-pinned to the merge per D76/D94 (readers of the old pin by grep).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
