@@ -45,7 +45,7 @@ Four file-level declarations exist in this build:
 | declaration | means |
 |---|---|
 | `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **The `"path"` form is RESOLVED as far as existence** (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name if it names no readable file; its CONTENTS are not read, so no pattern can call a definition that lives in it. `<store-name>` is refused as NOT IN THIS BUILD |
-| `target <prefix> = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below |
+| `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes |
 
@@ -72,6 +72,24 @@ the FORMAT rather than to the CLI is this:
   the FILE namespace — the same namespace a block's `name` is unique in.
   A `target` may name a block that appears later in the file: the head
   precedes the body and resolution is a whole-file pass.
+- **A `target`'s PREFIX is a C identifier** and is never mapped. Written
+  out, it is exactly what the emitted symbols carry.
+- **`target = <definition>` DERIVES the prefix from the definition
+  name**, by replacing every `-` and `.` with `_` and copying every other
+  byte. This is the form an exporter writes: a set of patterns whose ids
+  carry `-` becomes a source with one `target =` row per pattern and no
+  hand-written mapping anywhere.
+- **Two definitions that map to one prefix are REFUSED**, and the
+  diagnostic names BOTH definitions, the line of the first, and the
+  prefix they share. The mapping is deliberately not injective — `a-b`
+  and `a.b` both give `a_b` — because a mapping that could not collide
+  would have to mangle a name its author wrote; the refusal is where that
+  is paid for, and an explicit `target <prefix> = <definition>` on either
+  one settles it. Writing one prefix twice is refused with the older
+  "duplicate target prefix" sentence, which is the same collision seen
+  from the side where naming both definitions would say nothing new.
+- A derived prefix is still subject to every rule a written one is,
+  including the symbol-prefix length bound in `docs/spec/limits.md`.
 - **No `target` and exactly ONE UNNAMED pattern block means `target rx`.**
   That is what makes every file written before this format grew a head
   buildable without declaring anything.
@@ -228,11 +246,25 @@ These bind on every line kind, old and new:
   bug, never a planned outcome a corpus block gets to expect. Scored
   against the driver's exit `3` plus its printed word, the one case kind
   that WANTS that exit — see "The driver protocol" below.
-- `name <ident>` — block-scoped: names the block. An `ident` is a PCRE2
-  group name AND a C identifier (first byte a letter or `_`, then letters,
-  digits or `_`), one rule, so a name that can be a group cannot fail to
-  be a symbol later. **The name is in the FILE namespace**, not the
-  pattern's group namespace, and must be unique within the file.
+- `name <defname>` — block-scoped: names the block, declaring it as a
+  DEFINITION. A `<defname>` is a first byte that is a letter or `_`,
+  then letters, digits, `_`, `-` or `.`. **The name is in the FILE
+  namespace**, not the pattern's group namespace, and must be unique
+  within the file.
+
+  - **A definition name is neither a PCRE2 group name nor a C
+    identifier**, and both halves of that matter. It is not a group name,
+    so a definition whose name carries `-` or `.` **cannot be called from
+    a pattern**: `(?&some-id)` goes through PCRE2's own group-name
+    grammar and is refused there. It is not a C identifier, so it cannot
+    be a symbol prefix as written — `-` and `.` **map to `_`** to produce
+    one (see `target` below). A definition meant to be COMPOSED into
+    another pattern must therefore be named with an identifier; a
+    definition meant only to be BUILT may use the wider set.
+  - The wider set exists because an exported set of patterns carries ids
+    a person chose (`cls-upto-64`, `w-512`), and requiring an identifier
+    would force every such export to carry a name map beside it — a
+    second place a pattern's identity is written.
 - `description <text>` — block-scoped: a machine-readable prose field for
   this block. One-line form only (see "Lexical rules" above).
 - `encoding <ident>` — block-scoped: the subject encoding for this

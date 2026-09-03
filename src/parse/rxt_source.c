@@ -265,6 +265,45 @@ static int ident_ok(const char *s)
     return 1;
 }
 
+/* [DD-13b.W1.3] A DEFINITION NAME IS NOT AN IDENTIFIER, AND THAT IS THE
+ * MANAGER'S RULING (2026-09-03, `dd13b syntax is the manager's`), taken on
+ * the bench's O-13 §4(a): of the bench's pattern ids, all but a handful
+ * carry a `-` (`cls-upto-64`, `ctx-lazy-256`, `w-512`), so requiring an
+ * identifier here would mean every set that ever became an `.rxt` source
+ * had to carry a name map beside it — a second place a pattern's identity
+ * is written, which is the shape this project refuses everywhere else.
+ *
+ * SO A BLOCK'S `name`, AND A `target` ROW'S DEFINITION REFERENCE, ADMIT
+ * `-` AND `.` AFTER THE FIRST BYTE. The first byte stays `[A-Za-z_]`
+ * because the MAPPED name (below) must be a C identifier and no mapping
+ * can repair a leading digit or `-`.
+ *
+ * IT DOES NOT WIDEN A GROUP NAME, and the boundary is worth stating where
+ * a reader meets the rule: a block's `name` lives in the FILE namespace
+ * (w1_impl DECIDED (7)), never in the pattern's group namespace, so
+ * `(?&some-id)` is still refused by PCRE2's own name grammar
+ * (`pcrec_group_name_scan`, mod_recursion.c) and D26 makes that PCRE2's
+ * rule rather than one this format may widen. A `-`/`.` definition is
+ * therefore BUILDABLE as a target and NOT CALLABLE from a pattern —
+ * exactly what a bench set needs, since its patterns never call each
+ * other, and exactly what a library meant to be composed must avoid.
+ *
+ * THREE PARSERS READ THIS GRAMMAR AND THEY MOVE TOGETHER (D94's rule
+ * applied to a grammar rather than to a number): leg A is here, leg B is
+ * `tests/harness/run.sh`'s `^name[[:space:]]+(...)` arm, leg C is
+ * `tests/harness/verify_rxt.py`'s `NAME_RE`. C1's three-parser
+ * differential is what makes them agree; a fourth reader cannot be added
+ * quietly. */
+static int defname_ok(const char *s)
+{
+    if (!*s) return 0;
+    if (!isalpha((unsigned char)*s) && *s != '_') return 0;
+    for (const char *p = s + 1; *p; p++)
+        if (!isalnum((unsigned char)*p) && *p != '_' && *p != '-' && *p != '.')
+            return 0;
+    return 1;
+}
+
 /* THE SAME RULE, over a BOUNDED span rather than a NUL-terminated string
  * (r46sem finding 8): `config_list_ok` used to copy each element into a
  * fixed `char save[128]` before calling `ident_ok` on it, so an element
@@ -280,6 +319,26 @@ static int ident_ok_n(const char *s, size_t n)
     for (size_t i = 1; i < n; i++)
         if (!isalnum((unsigned char)s[i]) && s[i] != '_') return 0;
     return 1;
+}
+
+/* [DD-13b.W1.3] THE NAME -> PREFIX MAPPING, and it has ONE HOME because
+ * the collision refusal is stated OVER it: `-` and `.` become `_`, every
+ * other byte is copied. A second copy of this loop would be a second
+ * answer to "do these two names collide", which is the whole question the
+ * refusal exists to answer.
+ *
+ * It is total on every name `defname_ok` admits, and it is NOT injective —
+ * `a-b` and `a.b` both map to `a_b`. That is not a defect to design away
+ * (a mapping that never collided would have to mangle the name a reader
+ * wrote); it is the reason the refusal exists, and the reason the
+ * diagnostic names BOTH definitions rather than only the prefix they
+ * share. Writes into `dst`, which must hold `strlen(name) + 1`. */
+void pcrec_rxt_prefix_from_name(const char *name, char *dst, size_t dstsz)
+{
+    size_t j = 0;
+    for (const char *q = name; *q && j + 1 < dstsz; q++)
+        dst[j++] = (*q == '-' || *q == '.') ? '_' : *q;
+    dst[j] = 0;
 }
 
 /* `config-list` = ident { "," [ws] ident } — accepted as written, stored
@@ -725,20 +784,33 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *pe = eq;
     while (pe > v && isspace((unsigned char)pe[-1])) pe--;
     size_t plen = (size_t)(pe - v);
-    if (!plen)
-        return rxt_fail(p, line, "'target' needs a prefix before the '='");
-    /* [DD-13b.W1.1 r46sem finding 8] see parse_config's twin above: a
-     * distinct diagnostic naming the cap, not the "needs a prefix"
-     * message a genuinely missing prefix gets. */
-    if (plen >= sizeof prefix)
-        return rxt_fail(p, line,
-                        "'target' prefix is too long (%zu bytes, max %zu)",
-                        plen, sizeof prefix - 1);
-    memcpy(prefix, v, plen); prefix[plen] = 0;
-    if (!ident_ok(prefix))
-        return rxt_fail(p, line,
-                        "'target' prefix '%s' is not an identifier (it becomes "
-                        "the generated symbols' prefix)", prefix);
+    /* [DD-13b.W1.3] `target = <definition>` — THE PREFIX OMITTED MEANS
+     * "derive it from the definition name". It is the exporter's form: a
+     * bench set's ids carry `-`, a C prefix cannot, and writing the
+     * mapping out by hand 33 times is 33 chances to write it differently
+     * once. An EMPTY left side is now this shorthand and no longer the
+     * "needs a prefix" refusal; a left side that is present is checked
+     * exactly as before, so nothing an author already wrote changes
+     * meaning.
+     *
+     * It does not repeal format_design §2.7's "every other file builds
+     * nothing unless it says so": this IS the file saying so. A `name`d
+     * block alone still declares a definition and builds nothing. */
+    int derived = (plen == 0);
+    if (!derived) {
+        /* [DD-13b.W1.1 r46sem finding 8] see parse_config's twin above: a
+         * distinct diagnostic naming the cap, not the "needs a prefix"
+         * message a genuinely missing prefix gets. */
+        if (plen >= sizeof prefix)
+            return rxt_fail(p, line,
+                            "'target' prefix is too long (%zu bytes, max %zu)",
+                            plen, sizeof prefix - 1);
+        memcpy(prefix, v, plen); prefix[plen] = 0;
+        if (!ident_ok(prefix))
+            return rxt_fail(p, line,
+                            "'target' prefix '%s' is not an identifier (it "
+                            "becomes the generated symbols' prefix)", prefix);
+    }
 
     const char *rest = skip_ws(eq + 1);
     char def[RXT_TARGET_DEF_MAX + 1];
@@ -754,10 +826,23 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
                         "'target %s =' definition name is too long (%zu "
                         "bytes, max %zu)", prefix, dlen, sizeof def - 1);
     memcpy(def, rest, dlen); def[dlen] = 0;
-    if (!ident_ok(def))
+    /* [DD-13b.W1.3] `defname_ok`: a target names a DEFINITION, which is a
+     * file-namespace name and may carry `-`/`.`. The PREFIX above stays an
+     * identifier — it is what the emitted symbols are built from. */
+    if (!defname_ok(def))
         return rxt_fail(p, line,
-                        "'target %s' definition name '%s' is not an "
-                        "identifier", prefix, def);
+                        "'target %s' definition name '%s' is not a definition "
+                        "name (a letter or '_' then letters, digits, '_', '-' "
+                        "or '.')",
+                        derived ? "=" : prefix, def);
+    if (derived) {
+        pcrec_rxt_prefix_from_name(def, prefix, sizeof prefix);
+        if (!ident_ok(prefix))
+            return rxt_fail(p, line,
+                            "'target = %s' cannot derive a prefix: '%s' is not "
+                            "an identifier even with '-' and '.' mapped to "
+                            "'_'", def, prefix);
+    }
 
     RxtRow *r = row_push(p, src, RXT_DECL_TARGET, line);
     r->name = arena_strdup(p->arena, prefix);
@@ -777,12 +862,35 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         r->with_list = rtrim_ws(p->arena, list);
     }
 
+    /* [DD-13b.W1.3] THE COLLISION REFUSAL, and the mapping made it reachable
+     * from two DIFFERENT names. `a-b` and `a.b` are distinct definitions and
+     * both map to `a_b`; before the mapping the only way to collide was to
+     * write one prefix twice, so naming the prefix alone was a complete
+     * answer. It is not any more — a reader shown only `a_b` cannot tell
+     * which two of their names produced it — so the diagnostic names BOTH
+     * definitions when they differ, and keeps the old sentence when they do
+     * not. Two shapes, one check, because they are one collision.
+     *
+     * MEASURED (2026-09-03, over every `patterns` directory under
+     * `/home/duxevents/pcrec-bench/bench`): across the bench's 90 ids the mapping
+     * produces exactly one collision, `floor`, and it is CROSS-SET (each of
+     * the four sets carries its own `floor.rx`) — so no single-set export
+     * collides, and the refusal fires exactly where sets are merged, which
+     * is where it should. */
     for (size_t k = 0; k + 1 < src->nrows; k++)
         if (src->rows[k].kind == RXT_DECL_TARGET &&
-            !strcmp(src->rows[k].name, prefix))
+            !strcmp(src->rows[k].name, prefix)) {
+            if (strcmp(src->rows[k].value, def) != 0)
+                return rxt_fail(p, line,
+                                "definitions '%s' and '%s' (line %zu) both map "
+                                "to target prefix '%s'; a name's '-'/'.' "
+                                "become '_', so give one an explicit prefix",
+                                def, src->rows[k].value, src->rows[k].line,
+                                prefix);
             return rxt_fail(p, line,
                             "duplicate target prefix '%s' (already declared "
                             "on line %zu)", prefix, src->rows[k].line);
+        }
     return 0;
 }
 
@@ -1015,9 +1123,15 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
 
             if (tok_is(l, "name")) {
                 const char *v = value_trimmed(&p, l);
-                if (!ident_ok(v)) {
+                /* [DD-13b.W1.3] `defname_ok`, not `ident_ok`: see that
+                 * function's header for the ruling and for the one
+                 * boundary it draws (buildable as a target, not callable
+                 * from a pattern). */
+                if (!defname_ok(v)) {
                     rxt_fail(&p, line,
-                             "'name' wants an identifier (got '%s')", v);
+                             "'name' wants a definition name — a letter or "
+                             "'_' then letters, digits, '_', '-' or '.' "
+                             "(got '%s')", v);
                     goto fail;
                 }
                 /* A BLOCK'S `name` IS IN THE FILE NAMESPACE (w1_impl

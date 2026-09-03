@@ -187,11 +187,39 @@ def declares_own_oracle(path):
 
 IDENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 
+# [DD-13b.W1.3] LEG C OF A THREE-LEG GRAMMAR. A DEFINITION NAME IS NOT AN
+# IDENTIFIER any more, and the two rules must stay two: `ident_ok` still
+# governs `encoding` (a C identifier, and a value pcrec maps to a backend),
+# while `name_ok` governs a block's `name`, which lives in the FILE
+# namespace (w1_impl DECIDED (7)) and admits `-` and `.` after the first
+# byte -- the manager's ruling on the bench's O-13 section 4(a), where all
+# but a handful of pattern ids carry a `-`.
+#
+# THE THREE LEGS MOVE TOGETHER OR C1 GOES RED, which is what C1 is for:
+# leg A is `src/parse/rxt_source.c`'s `defname_ok`, leg B is
+# `tests/harness/run.sh`'s `^name[[:space:]]+(...)` arm, leg C is here.
+# `-`/`.` are admitted only after the first byte because the name -> prefix
+# mapping (`-`/`.` -> `_`) cannot repair a leading one.
+NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_.-]*$')
+
 
 def ident_ok(s):
-    """The same rule as src/parse/rxt_source.c's `ident_ok`: a PCRE2 group
-    name AND a C identifier, one rule."""
+    """A C identifier. Still the rule for `encoding`; NOT the rule for a
+    block `name` since [DD-13b.W1.3] -- see `name_ok`."""
     return bool(IDENT_RE.match(s))
+
+
+def name_ok(s):
+    """The same rule as src/parse/rxt_source.c's `defname_ok`: a definition
+    name, which is neither a PCRE2 group name nor (yet) a C identifier."""
+    return bool(NAME_RE.match(s))
+
+
+def prefix_from_name(s):
+    """The same mapping as src/parse/rxt_source.c's
+    `pcrec_rxt_prefix_from_name`: `-` and `.` become `_`. Not injective --
+    that is what the duplicate-prefix refusal exists for."""
+    return s.replace('-', '_').replace('.', '_')
 
 
 def parse_rxt(path):
@@ -329,9 +357,9 @@ def parse_rxt(path):
             # 179 corpus files today), so nothing in the tree enforced it
             # for the population that actually reaches this oracle.
             v = line[len('name '):].strip()
-            if not ident_ok(v):
-                raise ValueError(f"{path}:{lineno}: 'name' wants an "
-                                 f"identifier (got {v!r})")
+            if not name_ok(v):
+                raise ValueError(f"{path}:{lineno}: 'name' wants a definition "
+                                 f"name (got {v!r})")
             if v in seen_names:
                 raise ValueError(
                     f"{path}:{lineno}: duplicate block name {v!r} (already "

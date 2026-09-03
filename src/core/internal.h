@@ -3917,6 +3917,14 @@ typedef struct {
     Arena       arena;
 } RxtSource;
 
+/* [DD-13b.W1.3] The definition-name -> C-prefix mapping, with ONE home
+ * because the duplicate-prefix refusal is stated over it: `-` and `.`
+ * become `_`, every other byte is copied. Not injective on purpose (`a-b`
+ * and `a.b` both give `a_b`), which is what the refusal is for. `dst` must
+ * hold `strlen(name) + 1`; the result is truncated to `dstsz` and always
+ * NUL-terminated. */
+void pcrec_rxt_prefix_from_name(const char *name, char *dst, size_t dstsz);
+
 /* Parses `path`. NULL on failure with `err` filled — every diagnostic
  * names the FILE, the LINE and the CONSTRUCT. Free with the call below. */
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err);

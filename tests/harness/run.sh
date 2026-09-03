@@ -1489,11 +1489,24 @@ for file in "${files[@]}"; do
                 cur_features="$feat_list"
                 cur_features_only=1
             fi
-        elif [[ "$line" =~ ^name[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*$ ]]; then
-            # [DD-13b.W1] the block's NAME — an `ident`, which is a PCRE2
-            # group name AND a C identifier, one rule so a name that can be a
-            # group cannot fail to be a symbol later. It is in the FILE
-            # namespace, not the pattern's (w1_impl DECIDED (7)).
+        elif [[ "$line" =~ ^name[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)[[:space:]]*$ ]]; then
+            # [DD-13b.W1] the block's NAME. It is in the FILE namespace, not
+            # the pattern's (w1_impl DECIDED (7)).
+            #
+            # [DD-13b.W1.3] LEG B OF A THREE-LEG GRAMMAR, WIDENED IN THE SAME
+            # CHANGE as legs A and C or the three parsers disagree — leg A is
+            # `src/parse/rxt_source.c`'s `defname_ok`, leg C is
+            # `verify_rxt.py`'s `NAME_RE`, and C1's differential is what makes
+            # them agree. A definition name admits `-` and `.` after the first
+            # byte (the manager's ruling on the bench's O-13 §4(a): all but a
+            # handful of bench pattern ids carry a `-`). The old comment here
+            # said a name is "a PCRE2 group name AND a C identifier, one rule"
+            # — that stopped being true with this change and the two halves
+            # part company in a way worth stating: the name is NOT a PCRE2
+            # group name any more (`(?&some-id)` is still refused), and it is
+            # not a C identifier either until the `-`/`.` -> `_` mapping runs.
+            # `-` and `.` are admitted only AFTER the first byte, because no
+            # mapping can repair a leading one.
             #
             # RECORDED, NOT USED, in W1.1: `rx_info.name` is W1.2's and the
             # abi does not move in this step. The harness records it so the
