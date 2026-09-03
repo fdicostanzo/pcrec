@@ -1733,7 +1733,13 @@ fi
 if pcrec_run "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/null 2>&1; then
     # The whole of the emitted caps_out, so both the presence of the \K form
     # and the ABSENCE of the plain one are read from the same text.
-    awk '/^static void rx_report_captures\(/,/^}/' "$WORKDIR/kres.c" > "$WORKDIR/kres.capsout"
+    # [CC-DIFF] STEP 1(a): on a FRAMELESS artifact (this one — 'a\Kb' pushes no
+    # resume frame) the function header carries an extra
+    # `inline __attribute__((always_inline))` before its return type, so the
+    # anchor allows that prefix optionally rather than assuming `static void`
+    # is the whole of it — a rigid anchor is exactly the "extractor stops
+    # matching the emitted shape" failure this rule's own `bad` message names.
+    awk '/^static (inline __attribute__\(\(always_inline\)\) )?void rx_report_captures\(/,/^}/' "$WORKDIR/kres.c" > "$WORKDIR/kres.capsout"
     if [ ! -s "$WORKDIR/kres.capsout" ]; then
         bad "[M6.2-KRESET rule 1]: could not extract rx_report_captures from the 'a\\Kb' artifact — the extractor has stopped matching the emitted shape, so this rule is measuring nothing"
     elif ! grep -q 'run->slot_values\[0\] != PCREC_UNSET' "$WORKDIR/kres.capsout"; then
@@ -1762,7 +1768,9 @@ fi
 # below are what the emitter produced BEFORE this wave, quoted here so the
 # check has a source independent of the emitter it checks.
 if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/nok.c" -- '(a)(b)' >/dev/null 2>&1; then
-    awk '/^static void rx_report_captures\(/,/^}/' "$WORKDIR/nok.c" > "$WORKDIR/nok.capsout"
+    # [CC-DIFF] STEP 1(a): same optional-attribute-prefix anchor as rule 1
+    # above — a \K-free VM artifact with no RX_PUSH is frameless too.
+    awk '/^static (inline __attribute__\(\(always_inline\)\) )?void rx_report_captures\(/,/^}/' "$WORKDIR/nok.c" > "$WORKDIR/nok.capsout"
     if [ ! -s "$WORKDIR/nok.capsout" ]; then
         bad "[M6.2-KRESET rule 1b]: could not extract rx_report_captures from the \\K-free VM artifact"
     elif ! grep -qF '    capture_spans[0][0] = (ptrdiff_t)match_start;' "$WORKDIR/nok.capsout" \
@@ -1810,7 +1818,9 @@ fi
 # that spelling.
 if pcrec_run "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/null 2>&1; then
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.match"
-    awk '/^static ptrdiff_t rx_match_run\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" >> "$WORKDIR/kent.match"
+    # [CC-DIFF] STEP 1(a): same optional-attribute-prefix anchor — 'a\Kb' is
+    # frameless, so rx_match_run carries the always_inline prefix too.
+    awk '/^static (inline __attribute__\(\(always_inline\)\) )?ptrdiff_t rx_match_run\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" >> "$WORKDIR/kent.match"
     awk '/^ptrdiff_t rx_match_in\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.matchin"
     if [ ! -s "$WORKDIR/kent.match" ] || [ ! -s "$WORKDIR/kent.matchin" ]; then
         bad "[M6.2-KRESET rule 3]: could not extract rx_match from the 'a\\Kb' artifact"

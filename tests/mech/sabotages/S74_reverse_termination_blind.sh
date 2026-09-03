@@ -57,17 +57,33 @@ SAB_COUNT=1
 # site, called from axis E's `by_class` tail, rather than a branch inside
 # `emit_unanchored`. The `(void)cls` the old planting needed is gone with the
 # `cls` buffer it silenced.
+# RE-ANCHORED 2026-09-03 ([CC-DIFF] STEP 1(b)): the boundary's SCALAR accept
+# call (the ternary's `:` arm) now routes its table argument through
+# `fold_arg`, which drops `<m>_is_accepting` from the call and adds a
+# `char ab[...]` local to hold the (possibly empty) result -- the uniform-
+# table fold's own change, unrelated to this row's edit but moving the exact
+# bytes this anchor pins. The EDIT is unchanged in kind: the context-indexed
+# `?`-arm is dropped and the scalar `:`-arm is kept, unconditional, which is
+# still the LOST MATCH for a leading \B at search_from > 0 this row exists
+# for.
 SAB_BEFORE='    const char *m = f->dir->c.name;
+    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (search_from"
                  " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
-                 "%s                 : %s_%s_accepts(%s_%s_is_accepting, %s))"
+                 "%s                 : %s_%s_accepts(%s%s))"
                  " %s = %s;\n",
-              f->dir->bind, f->p, m, f->p, m, f->src,
+              f->dir->bind, f->p, m, f->p, m,
+              f->src,
               f->dir->bind, f->p, m,
-              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);'
+              f->dir->bind, f->p, m,
+              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              f->src, f->dir->recv, f->dir->posv);'
 SAB_AFTER='    /* SABOTAGE S74: the context read is dropped and the boundary takes
      * the blind scalar accept. */
     const char *m = f->dir->c.name;
-    sb_printf(c, "%s    if (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
-              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);'
+    char ab[PCREC_MAX_EMIT_NAME_LEN];
+    sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
+              f->dir->bind, f->p, m,
+              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              f->src, f->dir->recv, f->dir->posv);'
