@@ -2075,6 +2075,104 @@ static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st);
  * three call sites, two of which are above that array's definition. */
 static bool dfa_edge_taken(const DfaEdge *e);
 
+/* ---- [CC-DIFF] STEP 1 (b): THE UNIFORM-TABLE FOLD ------------------------
+ *
+ * THE FACT. pcrec BUILDS the transition and accept tables, so at emission
+ * time it already knows whether every cell of one holds the same value. When
+ * one does, the indexed load is a CONSTANT, and the emitter can spell it as
+ * one instead of emitting an array for the compiler to re-derive it from.
+ * LLVM does this fold on its own (`ConstantFoldLoadFromUniformValue`); gcc 15
+ * does not fold a variable-index load even from an all-equal `static const`
+ * array, which is the whole of the bench ledger's `cls-upto-4` gap
+ * ([CC-DIFF] STEP 0 §1: gcc `rx_search` 142 instructions and 6 table-base
+ * `lea`s against clang's 76 and 0). Measured hand-twin ratio 0.589.
+ *
+ * WHERE THE UNIFORMITY COMES FROM, and why this is not a pattern special
+ * case: [OPT-5]'s scan edge absorbs a bounded class's real transitions into
+ * the edge's own run loop, which leaves the machine's own table with nothing
+ * left to say — `[a-z]{0,4}` ends with all six of its tables uniform. But the
+ * rule here is a property of a TABLE, not of a pattern or of a pass: any
+ * all-equal table folds, whatever made it all-equal.
+ *
+ * ONE DERIVATION OF THE CELL. The constant this fold emits and the cells the
+ * table emitter writes come from the SAME three functions below, which is the
+ * point of factoring them out of the emitters at all. A fold computed from a
+ * second reading of `d->st[].tr[]` would be exactly the control-sharing-a-
+ * source failure docs/dev/learnings.md §3 keeps a list of — except inverted
+ * and worse: here the two readings must AGREE, and the only way to guarantee
+ * that is for there to be one reading.
+ *
+ * WHAT IS IN SCOPE: the two tables the per-byte hot loop reads through the
+ * §LAYER-2 state-token accessors — `<m>_next_state` (the step) and the accept
+ * pair `<m>_is_accepting` / `<m>_is_accepting_by_class`. The seed, view and
+ * stay tables are read at most twice per search and are deliberately NOT
+ * folded: there is no measurement behind folding them and D77 says wait for
+ * one. The `<m>_byte_class` table is not a transition or accept table and is
+ * read directly rather than through an accessor; a uniform one means a
+ * single-class machine, and it is likewise left alone. The direct-threaded
+ * ENG_ATTEMPT emitter's own `<p>_is_accepting_by_class` (further down, read
+ * as a bare subscript beside a `goto *targets`) is a different mechanism with
+ * no accessor and no transition table, and is out of this change's scope. */
+static int tr_cell(const Dfa *d, const DfaRepr *r, int i, int cl)
+{
+    int t = d->st[i].tr[cl];
+    return t < 0 ? r->dead_cell : r->cell_of(t, d);
+}
+
+static int acc_cell(const Dfa *d, int i)
+{
+    return d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
+}
+
+static int upc_emit_of_class(const Dfa *d, int cl);
+
+static int accw_cell(const Dfa *d, int i, int cl)
+{
+    return d->st[i].up[upc_emit_of_class(d, cl)].accept ? 1 : 0;
+}
+
+/* "Every cell of this table is `value`", or `folded == false`. A table with a
+ * single cell is uniform, which is correct and not a corner: the fold is
+ * right for it and the array was never worth emitting. A table with NO cells
+ * is not folded — there is nothing to fold to, and the emitter's own `[0]`
+ * array is the pre-existing behaviour on a shape that does not occur. */
+typedef struct { bool folded; int value; } DfaFold;
+
+static DfaFold fold_tr(const Dfa *d, const DfaRepr *r)
+{
+    DfaFold f = { false, 0 };
+    if (d->n <= 0 || d->ncls <= 0) return f;
+    int v = tr_cell(d, r, 0, 0);
+    for (int i = 0; i < d->n; i++)
+        for (int cl = 0; cl < d->ncls; cl++)
+            if (tr_cell(d, r, i, cl) != v) return f;
+    f.folded = true; f.value = v;
+    return f;
+}
+
+static DfaFold fold_acc(const Dfa *d)
+{
+    DfaFold f = { false, 0 };
+    if (d->n <= 0) return f;
+    int v = acc_cell(d, 0);
+    for (int i = 0; i < d->n; i++)
+        if (acc_cell(d, i) != v) return f;
+    f.folded = true; f.value = v;
+    return f;
+}
+
+static DfaFold fold_accw(const Dfa *d)
+{
+    DfaFold f = { false, 0 };
+    if (d->n <= 0 || d->ncls <= 0) return f;
+    int v = accw_cell(d, 0, 0);
+    for (int i = 0; i < d->n; i++)
+        for (int cl = 0; cl < d->ncls; cl++)
+            if (accw_cell(d, i, cl) != v) return f;
+    f.folded = true; f.value = v;
+    return f;
+}
+
 static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
                           const Dfa *d, const DfaRepr *r)
 {
@@ -2084,8 +2182,7 @@ static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
-            int t = d->st[i].tr[cl];
-            sb_printf(c, " %d,", t < 0 ? r->dead_cell : r->cell_of(t, d));
+            sb_printf(c, " %d,", tr_cell(d, r, i, cl));
         }
     }
     sb_puts(c, "\n    };\n");
@@ -2247,7 +2344,7 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
               d->n * rep_n);
     int k = 0;
     for (int i = 0; i < d->n; i++) {
-        int bit = d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
+        int bit = acc_cell(d, i);
         for (int rr = 0; rr < rep_n; rr++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
             sb_printf(c, " %d,", bit);
@@ -2381,8 +2478,7 @@ static void emit_acc_cls_table(StrBuf *c, const char *p, const char *tag,
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
-            sb_printf(c, " %d,",
-                      d->st[i].up[upc_emit_of_class(d, cl)].accept ? 1 : 0);
+            sb_printf(c, " %d,", accw_cell(d, i, cl));
         }
     }
     sb_puts(c, "\n    };\n");
@@ -3320,6 +3416,16 @@ struct DfaForm {
      * for them, never a second selection. The array is sized by the same
      * `PCREC_MAX_SCAN_EDGES` the pass spends, so it cannot truncate. */
     int            nscan, scan[PCREC_MAX_SCAN_EDGES];
+    /* [CC-DIFF] (b) THE THREE UNIFORM-TABLE FOLDS, derived ONCE in
+     * `dfa_form_derive` and read by three places that must not disagree: the
+     * accessor's parameter list, the table's emission (or its omission), and
+     * every call site's argument list. A second `fold_tr(...)` at any of them
+     * would be a second derivation of one fact, and a fold that disagreed
+     * with its accessor is a compile error at best and a wrong answer at
+     * worst. `accw` is meaningful only under `acc->wide_table`, and is left
+     * unfolded otherwise so nothing can read it into an artifact that has no
+     * such table. */
+    DfaFold        tr_fold, acc_fold, accw_fold;
     CandSet        cand;
     /* [OPT-K] BY POINTER into the caller's `UnanchStart`, which outlives every
      * use: the selection carries 24 byte-sets and copying it into a stack
@@ -3376,6 +3482,79 @@ static int  cell_indexed(int st, const Dfa *d) { (void)d; return st; }
  * ONLY THE ACCESSORS THIS MACHINE USES ARE EMITTED — `accepts_class` under
  * axis E's `by_class`, `row`/`view_live`/`view_take` under a view — so no
  * artifact carries a dead one. */
+/* [CC-DIFF] (b) THE TABLE ARGUMENT A FOLDED ACCESSOR NO LONGER TAKES: the
+ * empty string when the fold removed the parameter, `"<p>_<m>_<tag>, "` when
+ * it did not. Every call site of a foldable accessor spells its table
+ * argument THROUGH THIS, so the accessor's parameter list and its call sites
+ * are two readings of ONE `DfaFold` and cannot drift apart into a program
+ * that does not compile.
+ *
+ * ONLY THE TABLE POINTER LEAVES. The state and class arguments stay in the
+ * signature and are still passed, still evaluated, and then ignored by name
+ * — because a class argument is routinely `<m>_byte_class[subject[pos++]]`,
+ * and dropping THAT parameter would drop the increment with it. A folded
+ * accessor is a function that ignores what it is given, never a call site
+ * that stops giving it. */
+static const char *fold_arg(char *buf, size_t n, const DfaForm *f,
+                            const DfaFold *fold, const char *tag)
+{
+    if (fold->folded) { buf[0] = '\0'; return buf; }
+    snprintf(buf, n, "%s_%s_%s, ", f->p, f->dir->c.name, tag);
+    return buf;
+}
+
+/* The `_step` accessor, in the one spelling both representations share: the
+ * folded body ignores everything and returns the constant, and the table
+ * parameter is gone from the list. `%s` is the representation's own cell type
+ * and index expression, which is what makes this ONE function rather than a
+ * copy in each `token_*`. */
+static void token_step(StrBuf *c, const DfaForm *f, const char *cell_type,
+                       const char *index_expr)
+{
+    const char *p = f->p, *m = f->dir->c.name;
+    if (f->tr_fold.folded) {
+        sb_printf(c,
+            "/* [CC-DIFF] EVERY CELL of the %s transition table holds %d, so the\n"
+            " * table is not emitted and a step IS that constant. The state and the\n"
+            " * class are still passed -- the class expression can consume a byte --\n"
+            " * and then ignored. */\n"
+            "static inline %s_%s_state %s_%s_step(%s_%s_state s, unsigned cl)\n"
+            "{ (void)s; (void)cl; return %d; }\n",
+            m, f->tr_fold.value, p, m, p, m, p, m, f->tr_fold.value);
+        return;
+    }
+    sb_printf(c, "static inline %s_%s_state %s_%s_step(const %s *transitions, %s_%s_state s, unsigned cl)\n"
+                 "{ return %s; }\n", p, m, p, m, cell_type, p, m, index_expr);
+}
+
+/* The two accept accessors, same rule. `accepts_class` is emitted only under
+ * a wide table, which is the same condition `accw_fold` is derived under. */
+static void token_accepts(StrBuf *c, const DfaForm *f, const char *cls_index)
+{
+    const char *p = f->p, *m = f->dir->c.name;
+    if (f->acc_fold.folded)
+        sb_printf(c,
+            "/* [CC-DIFF] EVERY STATE of the %s machine has accept bit %d, so the\n"
+            " * table is not emitted and the probe IS that constant. */\n"
+            "static inline int %s_%s_accepts(%s_%s_state s)\n"
+            "{ (void)s; return %d; }\n",
+            m, f->acc_fold.value, p, m, p, m, f->acc_fold.value);
+    else
+        sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
+                     "{ return accepting[s]; }\n", p, m, p, m);
+    if (!f->acc->wide_table) return;
+    if (f->accw_fold.folded)
+        sb_printf(c,
+            "/* [CC-DIFF] EVERY CELL of the %s class-indexed accept table holds %d,\n"
+            " * so the table is not emitted and the probe IS that constant. */\n"
+            "static inline int %s_%s_accepts_class(%s_%s_state s, unsigned cl)\n"
+            "{ (void)s; (void)cl; return %d; }\n",
+            m, f->accw_fold.value, p, m, p, m, f->accw_fold.value);
+    else
+        sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
+                     "{ return %s; }\n", p, m, p, m, cls_index);
+}
+
 static void token_premul(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
@@ -3393,15 +3572,10 @@ static void token_premul(StrBuf *c, const DfaForm *f)
         " * reserved value meaning \"dead, stop\".\n"
         " */\n", f->dir->label, p, m, nc, PREMUL_DEAD);
     sb_printf(c, "typedef unsigned %s_%s_state;\n", p, m);
-    sb_printf(c, "static inline %s_%s_state %s_%s_step(const unsigned short *transitions, %s_%s_state s, unsigned cl)\n"
-                 "{ return transitions[s + cl]; }\n", p, m, p, m, p, m);
+    token_step(c, f, "unsigned short", "transitions[s + cl]");
     sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s == %d; }\n",
               p, m, p, m, PREMUL_DEAD);
-    sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
-                 "{ return accepting[s]; }\n", p, m, p, m);
-    if (f->acc->wide_table)
-        sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
-                     "{ return accepting[s + cl]; }\n", p, m, p, m);
+    token_accepts(c, f, "accepting[s + cl]");
     if (f->viewsel) {
         /* THE ONE UN-MULTIPLY, and the reason it is a function rather than a
          * hoisted local at the call site: under this form it is a DIVISION.
@@ -3437,15 +3611,16 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
         " * stop\".\n"
         " */\n", f->dir->label, p, m, nc);
     sb_printf(c, "typedef int %s_%s_state;\n", p, m);
-    sb_printf(c, "static inline %s_%s_state %s_%s_step(const short *transitions, %s_%s_state s, unsigned cl)\n"
-                 "{ return transitions[s * %d + cl]; }\n", p, m, p, m, p, m, nc);
+    /* The indexed form scales the token by the column count, so its two index
+     * expressions carry `ncls` and are built here rather than written as
+     * literals in the shared emitter above. */
+    char tr_ix[64], acc_ix[64];
+    snprintf(tr_ix, sizeof tr_ix, "transitions[s * %d + cl]", nc);
+    snprintf(acc_ix, sizeof acc_ix, "accepting[s * %d + cl]", nc);
+    token_step(c, f, "short", tr_ix);
     sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s < 0; }\n",
               p, m, p, m);
-    sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
-                 "{ return accepting[s]; }\n", p, m, p, m);
-    if (f->acc->wide_table)
-        sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
-                     "{ return accepting[s * %d + cl]; }\n", p, m, p, m, nc);
+    token_accepts(c, f, acc_ix);
     if (f->viewsel) {
         sb_printf(c, "static inline unsigned %s_%s_row(%s_%s_state s) { return (unsigned)s; }\n",
                   p, m, p, m);
@@ -3653,17 +3828,21 @@ static bool acc_viewed_applies(const DfaSel *s)
 
 static void acc_emit_probe(StrBuf *c, const DfaForm *f)
 {
-    sb_printf(c, "%sif (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
-              f->dir->bind, f->p, f->dir->c.name, f->p, f->dir->c.name,
+    char ab[PCREC_MAX_EMIT_NAME_LEN];
+    sb_printf(c, "%sif (%s_%s_accepts(%s%s)) %s = %s;\n",
+              f->dir->bind, f->p, f->dir->c.name,
+              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);
 }
 
 static void acc_emit_tail_scalar(StrBuf *c, const DfaForm *f)
 {
+    char tb[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%sif (%s) break;\n", f->dir->bind, f->dir->at_bound);
-    sb_printf(c, "%s%s = %s_%s_step(%s_%s_next_state, %s, %s_%s_byte_class[%s]);\n",
+    sb_printf(c, "%s%s = %s_%s_step(%s%s, %s_%s_byte_class[%s]);\n",
               f->dir->bind, f->dir->statev, f->p, f->dir->c.name,
-              f->p, f->dir->c.name, f->src, f->p, f->dir->c.name,
+              fold_arg(tb, sizeof tb, f, &f->tr_fold, "next_state"),
+              f->src, f->p, f->dir->c.name,
               f->dir->consume);
 }
 
@@ -3694,17 +3873,21 @@ static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
      * boundary and the token is live, so both are unreachable by
      * construction. */
     const char *ind = f->dir->bind, *m = f->dir->c.name, *p = f->p;
+    char ab[PCREC_MAX_EMIT_NAME_LEN], tb[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
     f->dir->emit_bound_accept(c, f);
     sb_printf(c, "%s    break;\n%s}\n", ind, ind);
     sb_printf(c, "%s{\n", ind);
     sb_printf(c, "%s    unsigned %s_class = %s_%s_byte_class[%s];\n",
               ind, m, p, m, f->dir->peek);
-    sb_printf(c, "%s    if (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s, %s_class))"
+    sb_printf(c, "%s    if (%s_%s_accepts_class(%s%s, %s_class))"
                  " %s = %s;\n",
-              ind, p, m, p, m, f->src, m, f->dir->recv, f->dir->posv);
-    sb_printf(c, "%s    %s = %s_%s_step(%s_%s_next_state, %s, %s_class);\n",
-              ind, f->dir->statev, p, m, p, m, f->src, m);
+              ind, p, m,
+              fold_arg(ab, sizeof ab, f, &f->accw_fold, "is_accepting_by_class"),
+              f->src, m, f->dir->recv, f->dir->posv);
+    sb_printf(c, "%s    %s = %s_%s_step(%s%s, %s_class);\n",
+              ind, f->dir->statev, p, m,
+              fold_arg(tb, sizeof tb, f, &f->tr_fold, "next_state"), f->src, m);
     sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
     sb_printf(c, "%s}\n", ind);
 }
@@ -4183,8 +4366,10 @@ static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
      * MATCH-HERE scan, so a hardcoded name here referred to the wrong
      * machine's accept table from inside `<prefix>_match`. Byte-for-byte
      * unchanged on the forward machine, whose `c.name` IS "forward". */
-    sb_printf(c, "%s    if (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
-              f->dir->bind, f->p, f->dir->c.name, f->p, f->dir->c.name,
+    char ab[PCREC_MAX_EMIT_NAME_LEN];
+    sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
+              f->dir->bind, f->p, f->dir->c.name,
+              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);
 }
 
@@ -4207,14 +4392,19 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
      * Nothing but the reverse machine reaches this emitter today, so the text
      * is unchanged. */
     const char *m = f->dir->c.name;
+    char wb[PCREC_MAX_EMIT_NAME_LEN], ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (search_from"
-                 " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
+                 " ? %s_%s_accepts_class(%s%s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
-                 "%s                 : %s_%s_accepts(%s_%s_is_accepting, %s))"
+                 "%s                 : %s_%s_accepts(%s%s))"
                  " %s = %s;\n",
-              f->dir->bind, f->p, m, f->p, m, f->src,
               f->dir->bind, f->p, m,
-              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);
+              fold_arg(wb, sizeof wb, f, &f->accw_fold, "is_accepting_by_class"),
+              f->src,
+              f->dir->bind, f->p, m,
+              f->dir->bind, f->p, m,
+              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              f->src, f->dir->recv, f->dir->posv);
 }
 
 static const DfaDir dfa_dir_forward = {
@@ -4967,6 +5157,14 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * cannot both fire at one state. */
     for (int i = 0; i < d->n && f->nscan < PCREC_MAX_SCAN_EDGES; i++)
         if (dfa_edge_taken(dfa_edge_of(cx, d, i))) f->scan[f->nscan++] = i;
+    /* [CC-DIFF] (b) THE FOLDS, and this is the ONLY place they are computed.
+     * After the repr and acc selections above, because the transition cell's
+     * VALUE depends on the representation (pre-multiplied or indexed, and
+     * which sentinel means dead) and the wide accept table exists only under
+     * `acc->wide_table`. */
+    f->tr_fold   = fold_tr(d, f->repr);
+    f->acc_fold  = fold_acc(d);
+    f->accw_fold = f->acc->wide_table ? fold_accw(d) : (DfaFold){ false, 0 };
 }
 
 /* ---- THE TABLES, one path called twice ---------------------------------- */
@@ -4985,17 +5183,26 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
     snprintf(tag, sizeof tag, "%s_byte_class", m);
     emit_u8_table(c, p, tag, f->d->clsmap, 256);
 
-    f->repr->emit_tr_comment(c, f);
-    emit_state_legend(c, f->d, f->dir->reverse);
-    sb_puts(c, "     */\n");
-    snprintf(tag, sizeof tag, "%s_next_state", m);
-    emit_tr_table(c, p, tag, f->d, f->repr);
+    /* [CC-DIFF] (b) A FOLDED TABLE IS NOT EMITTED AT ALL, and its comment and
+     * state legend go with it: the legend names the states a cell could hold,
+     * and with no cells left it would document an array that is not there.
+     * The fold's own one-line note lives on the accessor, which is where a
+     * reader of the emitted C meets the constant. */
+    if (!f->tr_fold.folded) {
+        f->repr->emit_tr_comment(c, f);
+        emit_state_legend(c, f->d, f->dir->reverse);
+        sb_puts(c, "     */\n");
+        snprintf(tag, sizeof tag, "%s_next_state", m);
+        emit_tr_table(c, p, tag, f->d, f->repr);
+    }
 
-    f->repr->emit_acc_comment(c, f);
-    snprintf(tag, sizeof tag, "%s_is_accepting", m);
-    emit_acc_table(c, p, tag, f->d, f->repr);
+    if (!f->acc_fold.folded) {
+        f->repr->emit_acc_comment(c, f);
+        snprintf(tag, sizeof tag, "%s_is_accepting", m);
+        emit_acc_table(c, p, tag, f->d, f->repr);
+    }
 
-    if (f->acc->wide_table) {
+    if (f->acc->wide_table && !f->accw_fold.folded) {
         snprintf(tag, sizeof tag, "%s_is_accepting_by_class", m);
         emit_acc_cls_table(c, p, tag, f->d);
     }

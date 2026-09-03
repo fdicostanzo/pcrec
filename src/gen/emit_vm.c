@@ -8641,6 +8641,46 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * need (D77). The trigger that would make one owed is the same one
      * `RX_DFA_TABLE`'s spec entry names. */
     sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 0 : 1);
+    /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
+     * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
+     *
+     * WHAT IT FIXES ([CC-DIFF] STEP 0, docs/dev/ccdiff_step0.md §3-6). gcc 15
+     * at -O2 stops inlining at the first call boundary below `<prefix>_search`:
+     * the entry materialises a 152-byte frame for `<prefix>_run_state` plus
+     * `<prefix>_run_buffers`, stores the four binding fields, pays a
+     * `-fstack-protector-strong` canary (the arrays in the frame are what
+     * trip it; Ubuntu's gcc has the flag on by default) and CALLs
+     * `<prefix>_search_run` out of line — once per search attempt, for
+     * storage a FRAMELESS artifact provably never touches. clang inlines the
+     * same chain on its own and then proves the whole run state dead and
+     * deletes it, which is the single transformation behind the bench
+     * ledger's forced-VM signal (a median of 0.599 over 43 throughput cells).
+     * So the attribute constrains only the compiler that was not already
+     * doing this; it does not pin either toolchain to a shape.
+     *
+     * WHY THE FRAMELESS GATE, AND WHY IT IS NOT A SPECIAL CASE. Two
+     * independent facts land on the same predicate. gcc REFUSES
+     * `always_inline` on a function containing a computed goto — a hard
+     * error, not a warning — and this file's own invariant (see the header
+     * comment) is that the `goto *` count is `(has_push ? 1 : 0) +
+     * shared-callee-bodies`, both terms of `has_push`, so `has_push` false
+     * means there is no computed goto anywhere in the artifact and the
+     * attribute is legal on every helper including the matcher. And the
+     * MEASUREMENT agrees independently: on the three FRAMED cells STEP 0
+     * timed, the spelling bought 0.990, 0.954 and — on `stack-frame` —
+     * **1.032**, a mild regression in 11 of 15 rounds, because there the
+     * storage is genuinely live, so inlining deletes nothing and only
+     * inflates the entry (`rx_search` 40 -> 97 instructions). A framed
+     * artifact therefore takes NO attribute and is byte-identical to what it
+     * was before this change, the `_VM_ABI` bump aside.
+     *
+     * ONE DERIVATION, on the [OPT-VMFL] §4.2 discipline the stamp above
+     * states: this reads the SAME `has_push` bool the stamp and the fail
+     * label's dispatch omission read. It is deliberately NOT recomputed from
+     * `v.npush` (an estimate that has gone negative), from a strstr for
+     * `goto *` in the emitted buffer (refuted the same day it was written —
+     * the traced push is a second spelling), or from the stamp's own text. */
+    const char *ai = has_push ? "" : "inline __attribute__((always_inline)) ";
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * because it reports what the VM DID — §6.3's family (b), D81), but
@@ -9266,7 +9306,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "/* Point a run state at its working storage. Called BEFORE\n"
         " * <prefix>_run_state_init, which must not disturb these four\n"
         " * fields -- see its comment. */\n"
-        "static void %s_run_state_bind(%s_run_state *run,\n"
+        "static %svoid %s_run_state_bind(%s_run_state *run,\n"
         "                        void *frames, size_t nframes,\n"
         "                        void *trail, size_t ntrail)\n"
         "{\n"
@@ -9275,7 +9315,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    run->trail        = (%s_trail_entry *)trail;\n"
         "    run->trail_cap    = ntrail;\n"
         "}\n\n",
-        v.p, v.p, v.p, v.p);
+        ai, v.p, v.p, v.p, v.p);
 
     sb_printf(c,
         "/* Start a fresh attempt: every group unset, nothing to undo, both\n"
@@ -9285,12 +9325,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * function runs after it. Re-zeroing them would leave every buffered\n"
         " * call matching against a NULL stack or a capacity of 0\n"
         " * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */\n"
-        "static void %s_run_state_init(%s_run_state *run)\n"
+        "static %svoid %s_run_state_init(%s_run_state *run)\n"
         "{\n"
         "    int i;\n"
         "    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n"
         "    run->resume_depth = 0; run->trail_depth = 0;\n",
-        v.p, v.p, v.up);
+        ai, v.p, v.p, v.up);
     /* [DD-14 wave B+C] §5.6 site 5a — NOT an `ERR_FLOOR` site but a MISSING
      * INITIALISER, and R34's LENS2-7 found it by noticing the design's own
      * prototype set the sentinel BY HAND in `main()`, which is exactly the
@@ -9322,13 +9362,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * here too, for the same reason and one step further along: a\n"
         " * bump-along to the next start position keeps the caller's buffers\n"
         " * exactly as it keeps the budgets ([DD-14.FB] §11 item 5). */\n"
-        "static void %s_reset_for_next_attempt(%s_run_state *run)\n"
+        "static %svoid %s_reset_for_next_attempt(%s_run_state *run)\n"
         "{\n"
         "    while (run->trail_depth) { run->trail_depth--; run->slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value; }\n"
         "    run->resume_depth = 0;\n"
         "%s"
         "}\n\n",
-        v.p, v.p, reset_call_top);
+        ai, v.p, v.p, reset_call_top);
 
     /* ---- the class bitmaps ------------------------------------------------
      * File-scope `static const` (TS-1: all-const tables, no mutable globals),
@@ -9395,13 +9435,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact with no clamp keeps the signature it had before MRL existed
      * and stays byte-identical. */
     sb_printf(c,
-        "static ptrdiff_t %s_match_anchored(const rx_ctx *ctx, %s_run_state *run%s%s)\n"
+        "static %sptrdiff_t %s_match_anchored(const rx_ctx *ctx, %s_run_state *run%s%s)\n"
         "{\n"
         "    const unsigned char *const subject = ctx->subject;\n"
         "    const size_t subject_length = ctx->len;\n"
         "    size_t scan_position = ctx->pos;\n"
         "    ptrdiff_t *const slot_values = run->slot_values;\n",
-        v.p, v.p,
+        ai, v.p, v.p,
         v.nclamp > 0 ? mrl_param : "",
         v.ngst > 0 ? gst_param : "");
     if (v.rungs & vm_rung_bit[VM_RUNG_CURSOR])
@@ -9689,7 +9729,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * whole-match pair is not written by the VM at all -- the entry knows\n"
         " * where the attempt began and how long it ran. Group g lives in the\n"
         " * slot PAIR (2g, 2g+1), which is why this indexes arithmetically. */\n"
-        "static void %s_report_captures(const %s_run_state *run, ptrdiff_t (*capture_spans)[2],\n"
+        "static %svoid %s_report_captures(const %s_run_state *run, ptrdiff_t (*capture_spans)[2],\n"
         "                        size_t match_start, ptrdiff_t match_length)\n"
         "{\n"
         "    int group;\n"
@@ -9700,7 +9740,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "        capture_spans[group][1] = run->slot_values[2 * group + 1];\n"
         "    }\n"
         "}\n\n",
-        v.p, v.p,
+        ai, v.p, v.p,
         v.nkreset > 0
           ? "    /* \\K: the reported start is where the winning path last\n"
             "     * crossed a \\K (slot 0, trailed), NOT where matching began.\n"
@@ -9729,7 +9769,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     sb_printf(c,
         "/* The search loop. Called by both entries below with a run state\n"
         " * already pointed at its working storage. */\n"
-        "static int %s_run(const unsigned char *subject, size_t subject_length,\n"
+        "static %sint %s_run(const unsigned char *subject, size_t subject_length,\n"
         "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run)\n"
         "{\n"
         "    rx_ctx ctx;\n"
@@ -9737,7 +9777,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    size_t attempt_position;\n"
         "%s"
         "    if (search_from > subject_length) return 0;\n",
-        g.searchfn, v.p,
+        ai, g.searchfn, v.p,
         v.nclamp > 0 ? "    size_t window_end;\n" : "");
 
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
@@ -10044,7 +10084,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * inner give-up read as a plain path failure, so an outer match could\n"
         " * report an ANSWER where a bound had actually blown. A caller that\n"
         " * only asks 'did it match' still writes `result < 0` and is unaffected. */\n"
-        "static ptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
+        "static %sptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
         "{\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
@@ -10059,7 +10099,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "     * would be dead code pretending to be a safeguard. */\n"
         "    return result;\n"
         "}\n\n",
-        g.matchfn, v.p, v.p, v.p,
+        ai, g.matchfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
          * `ctx->pos` — it is threaded, not absent — so `\G` here is
@@ -10079,7 +10119,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on\n"
         " * every negative return, give-up included: a caller that gave up has\n"
         " * no captures, and A-8's untouched-wins rule does not bend for it. */\n"
-        "static ptrdiff_t %s_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+        "static %sptrdiff_t %s_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
         "                        %s_run_state *run)\n"
         "{\n"
         "    ptrdiff_t result;\n"
@@ -10090,7 +10130,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        g.matchcapsfn, v.p, v.p, v.p,
+        ai, g.matchcapsfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
         v.ngst > 0 ? ", ctx->pos" : "", v.p);
 
