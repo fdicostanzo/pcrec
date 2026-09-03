@@ -381,17 +381,19 @@ rulings file is not part of the branch and this report is:
 
 | Q | ruling | effect on the branch |
 |---|---|---|
-| Q1 | escalated to Frank with the manager's recommendation = land the island, and a size term in [CC-DIFF]'s gate as its own measured step. **The lane changes nothing in the gate**, and instead measures a three-point knee ladder tomorrow so the ruling is measured rather than argued | none tonight |
+| Q1 | **RULED BY FRANK 2026-09-03 ~18:1x EDT ("agree"): the island LANDS AS BUILT.** The size term in [CC-DIFF]'s gate becomes that row's STEP 2, filed by the manager; the lane changes nothing in the gate. The three-point knee ladder below is [CC-DIFF] STEP 2's STEP 0 | none |
 | Q2 | CONFIRMED — every element a one-byte class; the tail form (`ab[cd]\|abx`) is a STEP 2 shape the manager files on the row | none, as built |
 | Q3 | AGREED as the fallback, but ONLY on the hand-twin's numbers: report the measurement before touching the predicate | none, as built |
 | Q4 | CONFIRMED — `VM_ISL_MIN_BRANCHES` 2. The measurement that would move it is a width-2 twin cell, added to tomorrow's timing. Answer identity over the whole corpus is what bounds the blast radius, not the threshold | none, as built |
 | Q5 | the number arrives in the lift message; every site written by this lane as ONE separate final commit; the lane may not be first to merge, so 18 is not assumed | none tonight |
 
-**Q1's ladder, as specified.** Single artifacts `w-8` / `w-64` / `w-256`,
+**Q1's ladder, as specified, and it is now [CC-DIFF] STEP 2's STEP 0 rather
+than this row's own defence.** Single artifacts `w-8` / `w-64` / `w-256`,
 island build, gcc each TWICE — as emitted, and with the `always_inline`
 attribute hand-removed from the artifact TEXT (no emitter change) — recording
-`.text`, gcc wall, peak RSS and one search call's runtime on the same subject.
-It lands in §4.2 as a table.
+`.text`, gcc wall, peak RSS and one search call's runtime on the same subject
+(median of a bounded loop, N stated). Three points are what a size term needs
+to find a knee. It lands in §4.2 as a table.
 
 **Q4's cells.** `foo|bar` (prefix-free, no candidate chain, frameless) and
 `fo|foo` (prefix-bearing, one push), island vs chain, §5's protocol exactly.
