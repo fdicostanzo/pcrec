@@ -20363,3 +20363,27 @@ no abi bump tonight (the first to merge takes 18). [OPT-EDGE] STATE →
 started. C ([LIM-2]) waits for tomorrow's first merge slot. Note: the
 previous session's journal clock ran ~50 min fast (part 24 says 17:4x;
 its commit is 16:54 EDT) — times here are from `date`.
+
+## 2026-09-03 — Fifty-first session, part 26 (17:5x EDT): lane A's write phase DONE — the island is built; its input is the subtree's LANGUAGE; no mask; a [CC-DIFF] inline interaction escalated to Frank
+
+isl1 delivered tonight's items (tip 70c0083; 2,214 lines over 19 files:
+the lowering in emit_vm.c, `-fno-alt-island` bit 23, `RX_VM_ALT_ISLANDS`,
+the axis row, spec hunks in tuning.md §2.20 / match_api.md / cli.md,
+scripts/alt_census.py, tests/island/ with 114 oracle-verified cases and a
+structural script, `make -j2` + strict clean; nothing suite-shaped run,
+per the hold). Findings, recorded on the [ENG-ISL] row: the deferred mask
+does not need to exist (one-byte trie edges make the walk a static path;
+the study's commit rule is discharged by construction); the island's
+input is the subtree's language, not its branch list — altcls's stage-2
+factoring rewrites wide alternations before the emitter, and the
+charter's branch test fired on nothing but altcls residues (11 islands on
+w-256, +3.0%); the general predicate gives one island per pattern and
+w-256/srt-256 two bytes apart (the ×8.87 order effect gone at the source);
+w-384 now compiles on the VM route. THE INTERACTION: island artifacts are
+frameless, [CC-DIFF]'s always_inline gate fires, six copies of a 70 KB
+matcher: .text ×3.8, gcc ×4.3 on w-256 — the gate wants a size term.
+Rulings written to worktrees/isl1/docs/dev/lanes/isl1_rulings.md (Q2
+confirmed, Q3 on measurement only, Q4 confirmed + width-2 cells, Q5 at
+the lift); Q1 escalated to Frank with recommendation (b) + a measured
+[CC-DIFF] size-term step, the lane's three-point inline ladder tomorrow
+making that decision measured. isl1 idles on its :17 keepalive cron.
