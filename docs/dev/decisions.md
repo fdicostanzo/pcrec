@@ -6539,3 +6539,9 @@ libpcre2 10.46 before adoption):
   recommendation is NOT to add it (two spellings of the default; the
   plain call is already the no-save form and PCRE2 fixes its meaning).
   Frank to confirm or override.
+
+**Addendum 3 (18:4x EDT, Frank): "your syntax of plain call doesn't
+import is a change in direction but i think its a good call. it doesn't
+do anything surprising. !.rxname is therefore not needed."** RULED: the
+plain call `(?&name)` is the no-delivery form; no explicit no-save
+spelling exists. The family is three: plain, `site=`/`=`, `*.`.

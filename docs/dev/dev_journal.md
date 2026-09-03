@@ -20500,3 +20500,7 @@ manager picks `!` if an explicit no-save spelling is wanted and
 recommends against adding one (the plain call is that form). D89
 addendum 2; w13's rulings file updated; both spellings owe the §1.5
 libpcre2-refusal measurement before adoption.
+Part 30 addendum 2 (18:4x): Frank confirms — the plain call delivers
+nothing ("a change in direction but a good call; it doesn't do anything
+surprising"); no `!.` spelling. Family = plain / `site=` / `*.`. Still
+open: retention in W1.3 or W1.4.
