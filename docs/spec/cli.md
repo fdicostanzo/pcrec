@@ -298,10 +298,30 @@ declare.
 reference resolves against. **Repeatable**, and the order given is the
 search order, after the source file's own directory — the one flag in this
 CLI that accumulates rather than replacing, because a single-valued form
-would make two libraries an either/or. Today a `lib` reference is resolved
-only far enough to say whether it names a readable file; its CONTENTS are
-not read, so a `lib <store-name>` reference (the other spelling the grammar
-has) is refused as not in this build. Both flags apply to `--source` alone.
+would make two libraries an either/or. A `lib <store-name>` reference (the
+other spelling the grammar has) is refused as not in this build. Both flags
+apply to `--source` alone.
+
+**[DD-13b.W1.3] A `lib` FILE IS NOW READ, AND ITS DEFINITIONS ARE IN
+SCOPE.** Until this step a `lib` reference was resolved only far enough to
+say whether it named a readable file. It is now PARSED, transitively, and
+its `name`d blocks join the definition set the target pattern's `(?&name)`
+calls resolve against:
+
+- The closure is this file's own named blocks first, then each `lib` file's
+  in DECLARATION ORDER, depth first, deduplicated **by resolved path** — so
+  two files each naming a third read it once, and a cycle terminates.
+- **One definition name declared twice in the closure is refused**, naming
+  both files. Within one file the same rule already applies to a duplicate
+  block `name`.
+- A definition is compiled in its OWN scope: its groups number from 1 in its
+  own space and are re-based into the caller's, and its own `flags` seed its
+  parse. A definition does not inherit the target's `flags`.
+- **What a caller sees of a definition's groups is `docs/spec/match_api.md`
+  §6's composition subsection**, and the short version is: a library's
+  groups are non-capturing to the caller unless the definition NAMES them,
+  and a named one is delivered BY NAME with a `groups[]` row whose `ref` is
+  the definition's name.
 
 **HOW A TARGET'S OPTIONS ARE COMPOSED, and what wins.** Two mechanisms, and
 they are not the same rule at different scales:
@@ -592,6 +612,13 @@ Stated plainly rather than left for a stranger to discover by trial:
 
 ## Revision history
 
+- 2026-09-03 ([DD-13b.W1.3]): §1's `--lib-path` entry gains the composition
+  paragraph — a `lib` file is READ now, its definitions are in scope, the
+  closure's order and dedup are stated, and a duplicate definition name
+  across the closure is a refusal. `target [<prefix>] = <definition>`'s
+  omitted-prefix form and the `-`/`.` name grammar are
+  `docs/spec/rxt_format.md`'s; what a caller sees of a library's groups is
+  `docs/spec/match_api.md` §6's.
 - 2026-08-31 ([DD-13b.W1.2]): §1 gains `--source` / `--target` /
   `--lib-path` and the output-naming rule; §4's multi-pattern and
   `--lib` bullets are narrowed to what is now true. Nothing in §1's
