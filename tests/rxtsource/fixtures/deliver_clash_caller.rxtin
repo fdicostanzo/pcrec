@@ -1,0 +1,16 @@
+# [DD-13b.W1.3] A FLAT IMPORT LANDING ON A GROUP THE CALLER ALREADY HAS.
+#
+# `(?&*=name)` puts the exports in the CALLER's own scope, which is the whole
+# point of the form — a flat row is counted by `nnames` and found by
+# `match_api.md` §6's bsearch, indistinguishable from a group the caller
+# declared. That is exactly why the clash must refuse: two rows sharing one
+# name would make that bsearch return whichever the sort happened to put
+# first.
+target = t
+
+pattern ^(?<kept>z)(?&*=piece)$
+name t
+
+pattern (?<kept>a)
+name piece
+export kept

@@ -11,21 +11,28 @@
 # EACH DEFINITION IS WRITTEN TO EXERCISE ONE TIER of D89's three, so the
 # composed artifacts have something to be right about:
 #
-#   `w`         NAMES its group      -> DELIVERED: a `groups[]` row whose
-#                                       `ref` is "w", a slot above ngroups
+#   `w`         NAMES and EXPORTS    -> DELIVERABLE: a delivering site gets
+#               its group                a `groups[]` row `site.word`; a PLAIN
+#                                        caller gets nothing and pays nothing
 #   `num`       has no group at all  -> costs the caller nothing but the
 #                                       wrapper's own internal number
-#   `hostname`  NAMES one group and  -> one DELIVERED row and one ERASED
-#               leaves one unnamed      group: the inner `(?:…)` is written
-#               and unreferenced        non-capturing here on purpose, so
-#                                       the ERASED tier is exercised by
-#                                       `dotted` below instead, where the
-#                                       group is capturing and unread
-#   `dotted`    has a capturing group nothing reads -> ERASED: the `A_CAP`
-#                                       is deleted and it spends NO number,
-#                                       which is what makes the composed
-#                                       artifact's RX_NCAPS smaller than a
-#                                       naive textual append's
+#   `hostname`  NAMES and EXPORTS    -> the same, under whatever site a
+#               its group                caller names
+#   `dotted`    has capturing groups nothing reads and nothing exports ->
+#                                       ERASED: each `A_CAP` is deleted and
+#                                       spends NO number, which is what makes
+#                                       the composed artifact's RX_NCAPS
+#                                       smaller than a naive textual append's
+#   `dd`        references its own group -> HIDDEN: a slot, no row, and it
+#                                       survives because a group-number
+#                                       reference inside a pattern always
+#                                       works (D89 addendum point 1)
+#
+# [D89 addendum, 2026-09-03] NAMING A GROUP NO LONGER EXPORTS IT. Delivery is
+# what a definition DECLARES with `export` and what a SITE asks for with
+# `(?&site=name)`; the default is nothing exported and nothing delivered, so
+# `dotted` and `dd` publish no interface at all and a caller of them pays for
+# no slot they own.
 #
 # ITS EXTENSION IS `.rxtin` AND THAT IS LOAD-BEARING. `tests/harness/run.sh`
 # finds `*.rxt`; a `.rxt` here would join the scored corpus and move four
@@ -38,12 +45,14 @@ description reusable pieces for the composition identity proof. Definitions only
 
 pattern (?<word>[a-z]+)
 name w
+export word
 
 pattern [0-9]+
 name num
 
 pattern (?<host>[a-z]+(?:\.[a-z]+)+)
 name hostname
+export host
 
 pattern ([a-z]+)\.([a-z]+)
 name dotted

@@ -276,7 +276,7 @@ test-rxtsource: all
 
 # [DD-13b.W1.3] the COMPOSITION IDENTITY PROOF: a composed artifact answers
 # what the hand-written flat one does, and both answer what python `re` does.
-# Four targets, fifteen cells, eight small compiles — a fixture-bounded cost
+# Seven targets, twenty-three cells, fourteen small compiles — a fixture-bounded cost
 # that does not grow with the corpus.
 test-definitions: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-definitions.ran"; fi

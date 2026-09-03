@@ -27,7 +27,7 @@
 #
 # WHAT A GREEN RUN DOES NOT PROVE, stated because the numbers here are small.
 # It does not prove the composer right on any pattern this corpus does not
-# contain; the population is four targets and fifteen cases. Its job is to
+# contain; the population is seven targets and twenty-three cases. Its job is to
 # be the FIRST place a composed artifact's answers are checked at all, and
 # to be a place a sabotage row can be aimed at. The sabotage rows are named
 # in w1_impl.md §8.4 (S-W13a..g); the ones this file is the named detector
@@ -87,8 +87,8 @@ cp "$SCRIPT_DIR/flat.rxtin"        "$WORKDIR/flat.rxt"
 # about zero cases, and a fixture that silently lost its blocks would make
 # this whole section green. Both numbers are compared below against a
 # derivation that does not go through pcrec.
-PIN_TARGETS=4
-PIN_CASES=15
+PIN_TARGETS=7
+PIN_CASES=23
 
 # ---------------------------------------------------------------------
 # (0) The population, derived by awk over the raw bytes — never by asking
@@ -163,6 +163,7 @@ block_cases() {
 # ---------------------------------------------------------------------
 # (2) THE IDENTITY PROOF, per target.
 total_cells=0
+delivered_cells=0
 for px in $(LC_ALL=C awk '/^target /{ n=$3; gsub(/[-.]/, "_", n); print n }' "$WORKDIR/composed.rxt"); do
     def="$(LC_ALL=C awk -v p="$px" '/^target /{ n=$3; m=n; gsub(/[-.]/,"_",m); if (m==p) { print n; exit } }' "$WORKDIR/composed.rxt")"
 
@@ -211,6 +212,11 @@ for px in $(LC_ALL=C awk '/^target /{ n=$3; gsub(/[-.]/, "_", n); print n }' "$W
         fail "'$def': nnames=$cnnames, nentries=$cnentries — nnames must never exceed nentries"
     fi
 
+    # THE `groups[]` ROW TABLES, read off both artifacts as TEXT — never off
+    # the composer's own report of what it delivered. `name:slot` per row.
+    crows="$(LC_ALL=C sed -n 's/^    { "\([^"]*\)", [0-9]*, \([0-9-]*\), .*$/\1:\2/p' "$cdir/gen.c")"
+    frows="$(LC_ALL=C sed -n 's/^    { "\([^"]*\)", [0-9]*, \([0-9-]*\), .*$/\1:\2/p' "$fdir/gen.c")"
+
     # THE ANSWERS.
     while IFS=$'\t' read -r kind subj; do
         [ -n "$kind" ] || continue
@@ -238,6 +244,57 @@ print("match %d %d" % m.span() if m else "nomatch")
             fail "'$def' subject \"$subj\": composed answered '$cspan' (exit $crc), flat answered '$fspan' (exit $frc)"
             continue
         fi
+        # ---- [DD-13b.W1.3] THE DELIVERED SPANS, COMPARED BY NAME --------
+        #
+        # The whole-match span above says a composed matcher finds the same
+        # text. It says NOTHING about whether a delivering site kept what its
+        # callee matched, which is the half D89 addendum 4(2) added — and a
+        # delivered row that always read (-1,-1) would pass every check above
+        # it.
+        #
+        # THE BRIDGE IS THE ORACLE'S OWN RENAME RULE. Addendum 4(2) defines
+        # the oracle for a delivering site as the definition's body inlined at
+        # the site with its groups renamed `site_x`; `flat.rxtin` is written
+        # that way by hand. So a composed row named `site.group` and the flat
+        # control's row named `site_group` are THE SAME GROUP under that rule,
+        # and comparing their spans is comparing a delivery against a pattern
+        # nobody generated. A flat import's row is already the bare name on
+        # both sides, so one substitution covers both shapes.
+        #
+        # THE SLOTS DIFFER ON PURPOSE and are never compared: the composed
+        # artifact's delivered slot sits above `ngroups` and the control's is
+        # an ordinary group number. Matching by NAME is what makes that
+        # difference invisible, which is also the contract `match_api.md` §6
+        # states for a caller.
+        for crow in $crows; do
+            cname="${crow%%:*}"; cslot="${crow##*:}"
+            fname="$(printf '%s' "$cname" | tr '.' '_')"
+            fslot=""
+            for frow in $frows; do
+                [ "${frow%%:*}" = "$fname" ] && fslot="${frow##*:}"
+            done
+            if [ -z "$fslot" ]; then
+                fail "'$def': the composed artifact delivers '$cname' but the flat control has no group '$fname' —
+  the control cannot check a delivery it does not carry (addendum 4(2)'s rename rule is site.group -> site_group)"
+                continue
+            fi
+            cds="$(printf '%s' "$cout" | awk -v k="$cslot" '{print $(2*k+2), $(2*k+3)}')"
+            fds="$(printf '%s' "$fout" | awk -v k="$fslot" '{print $(2*k+2), $(2*k+3)}')"
+            if [ "$cds" = "$fds" ]; then
+                delivered_cells=$((delivered_cells + 1))
+                # A DELIVERED ROW THAT IS UNSET ON A MATCHING CASE IS THE
+                # HALF-FEATURE THESE RULINGS REMOVED, so it is a failure even
+                # when both sides agree about it — agreement on (-1,-1) is
+                # exactly what a build with no retention would produce.
+                if [ "$kind" = "m" ] && [ "$cds" = "-1 -1" ]; then
+                    fail "'$def' subject \"$subj\": delivered group '$cname' reads (-1,-1) on a MATCHING case.
+  Both artifacts agree, which is what a build with no retention at all looks like."
+                fi
+            else
+                fail "'$def' subject \"$subj\": delivered '$cname' is [$cds] but the flat control's '$fname' is [$fds]"
+            fi
+        done
+
         if [ "$cspan" != "$pyout" ]; then
             fail "'$def' subject \"$subj\": both artifacts answered '$cspan' but python re on the flat pattern answered '$pyout' —
   the two pcrec legs agreeing against the oracle is a defect BELOW the composer"
@@ -249,6 +306,14 @@ print("match %d %d" % m.span() if m else "nomatch")
         esac
     done < <(block_cases "$WORKDIR/composed.rxt" "$def")
 done
+
+if [ "$delivered_cells" -gt 0 ]; then
+    pass "retention: $delivered_cells delivered-span comparisons against the hand-written flat control"
+else
+    fail "retention: ZERO delivered spans were compared. Either no fixture uses a
+  delivering call, or every composed artifact emitted no groups[] row — both of
+  which make every check above vacuous for the feature D89 addendum 4(2) added."
+fi
 
 if [ "$total_cells" = "$PIN_CASES" ]; then
     pass "identity: $total_cells cells compared three ways (composed artifact, flat artifact, python re)"

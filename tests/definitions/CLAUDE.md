@@ -43,7 +43,7 @@ stopped reaching its site), that `nnames <= nentries`, and that every
 ref-NULL row in `groups[]` precedes every ref-bearing one, which is the ABI
 contract `match_api.md` §6's bsearch depends on.
 
-Its population is PINNED (four targets, fifteen cases) and compared against
+Its population is PINNED (seven targets, twenty-three cases) and compared against
 an awk pass over the raw bytes, because two artifacts agree perfectly about
 zero cases.
 

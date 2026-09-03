@@ -1,0 +1,13 @@
+# [DD-13b.W1.3] TWO DELIVERING CALLS UNDER ONE SITE NAME. A site IS a scope
+# (D89 addendum point 3: the same definition delivered under two sites is two
+# scopes), so two sites sharing a name is the same collision the flat imports
+# have, seen from the qualified side — one refusal covers both because they
+# are one rule about row names.
+target = t
+
+pattern ^(?&s=piece)(?&s=piece)$
+name t
+
+pattern (?<kept>a)
+name piece
+export kept

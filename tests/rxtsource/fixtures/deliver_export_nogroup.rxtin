@@ -1,0 +1,15 @@
+# [DD-13b.W1.3] AN `export` NAMING A GROUP THE DEFINITION DOES NOT DECLARE.
+#
+# The check cannot live at the `export` line: `export` names GROUPS and the
+# `.rxt` head reader does not parse patterns. It happens at BIND time, where
+# the sub-parse's own `named_groups` is in hand, and names BOTH the export and
+# the definition — a reader shown only the name cannot tell a typo in the
+# export list from a group that was renamed inside the pattern.
+target = t
+
+pattern ^(?&piece)$
+name t
+
+pattern (?<kept>a)
+name piece
+export nosuch

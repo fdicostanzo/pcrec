@@ -24,6 +24,9 @@ target = pair
 target = logline
 target = pairdot
 target = rep
+target = pairdeliv
+target = logdeliv
+target = flatdeliv
 
 pattern ^(?&w)-(?&num)$
 name pair
@@ -55,3 +58,32 @@ m "5-77" 0 4
 m "5-11" 0 4
 n "5-75"
 n "55-77"
+
+# ---- [D89 addendum, 2026-09-03] THE DELIVERING CALLS -------------------
+#
+# THE ORACLE FOR EVERY CASE BELOW IS addendum 4(2)'s: the definition's body
+# inlined textually at the site with its groups renamed `site_x`, which is a
+# legal python/PCRE2 pattern. `flat.rxtin` carries exactly that pattern under
+# the same block name, so the identity proof compares a composed DELIVERY
+# against a flat pattern nobody generated — and the `g` lines below are the
+# delivered spans, read off that oracle before they were written down.
+
+pattern ^(?&w=w)-(?&num)$
+name pairdeliv
+description one delivering site and one plain call in one pattern
+m "abc-42" 0 6
+n "abc-"
+n "-42"
+
+pattern ^(?&num) (?&h=hostname)$
+name logdeliv
+description the delivering site is the SECOND call; the first delivers nothing
+m "80 a.b" 0 6
+m "80 a.b.c" 0 8
+n "80 ab"
+
+pattern ^(?&*=w)@(?&*=hostname)$
+name flatdeliv
+description two FLAT imports into the caller's own scope, no clash
+m "me@a.b" 0 6
+n "me@ab"

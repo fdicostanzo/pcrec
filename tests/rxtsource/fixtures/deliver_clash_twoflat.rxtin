@@ -1,0 +1,17 @@
+# [DD-13b.W1.3] TWO FLAT IMPORTS EXPORTING THE SAME NAME. The other half of
+# the clash rule, and the one a single-import fixture cannot reach: neither
+# name is the caller's own, so a check that only compared against the caller's
+# declarations would pass this while the artifact carried two rows called
+# `kept`.
+target = t
+
+pattern ^(?&*=p1)(?&*=p2)$
+name t
+
+pattern (?<kept>a)
+name p1
+export kept
+
+pattern (?<kept>b)
+name p2
+export kept

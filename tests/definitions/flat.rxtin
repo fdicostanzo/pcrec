@@ -44,3 +44,25 @@ m "5-77" 0 4
 m "5-11" 0 4
 n "5-75"
 n "55-77"
+
+# The flat twins of the three DELIVERING blocks. Each is the definition's body
+# inlined at the site with its groups renamed `site_x` — addendum 4(2)'s own
+# oracle rule, written out by hand here so the identity proof has something to
+# compare a delivery against that pcrec did not produce.
+
+pattern ^(?<w_word>[a-z]+)-(?:[0-9]+)$
+name pairdeliv
+m "abc-42" 0 6
+n "abc-"
+n "-42"
+
+pattern ^(?:[0-9]+) (?<h_host>[a-z]+(?:\.[a-z]+)+)$
+name logdeliv
+m "80 a.b" 0 6
+m "80 a.b.c" 0 8
+n "80 ab"
+
+pattern ^(?<word>[a-z]+)@(?<host>[a-z]+(?:\.[a-z]+)+)$
+name flatdeliv
+m "me@a.b" 0 6
+n "me@ab"
