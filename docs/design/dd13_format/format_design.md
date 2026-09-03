@@ -518,6 +518,29 @@ which agreed):
 | `(?&&email)` | refused — "subpattern name expected" | **free** |
 | **`(?<from>&email)`** | **COMPILES — matches the literal `&email`** | **DISQUALIFIED** |
 
+**RE-MEASURED AND EXTENDED 2026-09-03 (lane w13, libpcre2 10.46
+2025-08-27, the same `pcre2_ctypes.py` binding).** D89's addenda put three
+NEW spellings on the table and every one of them owed this measurement
+before adoption. The run reproduced the two controls above — `(?&^.w)`
+refused, `(?<from>&email)` COMPILES — so the instrument is agreeing with
+the record before it is trusted on anything new:
+
+| candidate | libpcre2 10.46 | verdict |
+|---|---|---|
+| `(?&site=x)` | refused — *"syntax error in subpattern name (missing terminator?)"* at offset 7 | **free** — B3's delivering call, named site |
+| `(?&=x)` | refused — *"subpattern name expected"* at offset 3 | **free** — B3's delivering call, default site |
+| `(?&*=x)` | refused — *"subpattern name expected"* at offset 3 | **free** — addendum 4(3)'s flat import |
+| `(?&site.group)` | refused — *"syntax error in subpattern name"* at offset 7 | **free** — B2's path reference to a delivered group |
+| `(?&*.x)` | refused — *"subpattern name expected"* at offset 3 | free, but NOT ADOPTED (addendum 4(3) supersedes it with `*=`) |
+| `(?&!.x)` | refused — *"subpattern name expected"* at offset 3 | free, but NOT ADOPTED (addendum 3: the plain call is already the no-save form) |
+
+The last two rows are measured deliberately even though neither is
+adopted. A spelling that was CONSIDERED and dropped for a design reason is
+worth separating from one that was dropped because PCRE2 already means
+something by it — the difference is exactly what disqualified
+`(?<from>&email)`, and a table that recorded only the adopted rows could
+not tell the two kinds of "no" apart.
+
 The last row matters: `(?<from>&email)` was the leading shape for the
 delivering declaration, and it is an ordinary PCRE2 named group whose
 body is the two-character literal `&email`. On both oracles it matches
