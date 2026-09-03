@@ -28,7 +28,7 @@ SAB_ID="S224-vm-frameless-stamp-inverted"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vmframeless"
 SAB_DESC="The RX_VM_FRAMELESS stamp's value is written has_push ? 1 : 0 instead of has_push ? 0 : 1 -- the two arms swapped at the sb_printf call, so a PUSHING program (needs the fail label's dispatch) stamps FRAMELESS 1 and a FRAMELESS program stamps FRAMELESS 0. No answer moves: the fail label's own dispatch omission is written from has_push directly at a separate emission site, unaffected by this stamp"
-SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manager's own matrix run): vmframeless RED in section1 on all six named witnesses (each asserts the stamped value against a LITERAL expectation, never harvested) and in section3's corpus sweep, on both the default and -fprefilter axes, wherever the VM program's own goto* count disagrees with the (now-inverted) stamped value. corpus:0fail expected on every axis -- no answer moves."
+SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50edcafbceb056616650f6cca2f80f4d89): DETECTED, unexpected: 0 -- reach:ok(1/1), vmframeless:7fail/4pass. Seven of the eleven checks in run_vm_frameless.sh go red (the value-mismatch assertions in §1's named witnesses and §3's corpus sweep), confirming no answer moves anywhere else in the tree."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree a
 # capture-bearing straight-line pattern compiles to a VM program and stamps
 # RX_VM_FRAMELESS 1 -- the has_push definition and the stamp write both

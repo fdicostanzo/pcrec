@@ -46,7 +46,7 @@ SAB_ID="S223-pinned-assert-routing-call-deleted"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned"
 SAB_DESC="The start-pinned search's P0/P3 routing assertion (start_pinned_assert_routing) has its ONE call site deleted from axis J's dispatch; the function definition and its ctx_fail messages are left untouched as dead code. No answer moves anywhere in the tree -- the assertion never fires on this corpus (S219's own measurement) -- what is lost is the compiler-side guard against a future engine-selection change routing a machine past P0's or P3's premise without the elision noticing"
-SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manager's own matrix run): searchpinned RED in §7 ONLY -- the wiring grep \`start_pinned_assert_routing(cx,\` finds no match, while the other three §7 greps (identifier, \"P0 routing \", \"liveness conjunct should\") stay green because the definition and its message text are untouched. Every other section unaffected: no answer moves, so §1/§2/§3/§6/§8/§9/§10 and the harness arm are all expected green."
+SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 1, solo mech run, tree 26644f50edcafbceb056616650f6cca2f80f4d89): DETECTED, unexpected: 0 -- reach:ok(1/1), searchpinned:1fail/16pass. The single failure is §7's wiring grep (\`start_pinned_assert_routing(cx,\` finds no match); the other 16 checks in the file stay green, confirming no answer moves and that §7 was this row's only guard."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree the
 # call-site expression is present in the emitter's own routing dispatch, not
 # only in the function's definition line (whose signature spells the

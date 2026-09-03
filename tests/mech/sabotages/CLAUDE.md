@@ -190,3 +190,10 @@ When a row is added or re-pointed, say so IN THE ROW'S OWN HEADER with the
 measurement — this directory's rows carry their history, and the matrix output
 is the citation, never a number copied into prose. When a corpus edit moves a
 figure a row's `SAB_REACH_POP` states, move the row in the same change.
+
+**Newest (r51fix, 2026-09-03):** S219 flipped `UNREACHED` → `UNDETECTED` (a
+mis-declared reach claim, not a falsified derivation), S220's `SAB_REACH_POP`
+re-derived to its own named manifest, and three new rows S224-S226 on the
+`vmframeless` arm. See `../CLAUDE.md`'s own "[OPT-5]/[OPT-VMFL] r51fix" section
+for the per-row narrative — this file carries the field reference and traps,
+not the row history.

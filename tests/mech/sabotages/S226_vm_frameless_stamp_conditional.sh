@@ -33,7 +33,7 @@ SAB_ID="S226-vm-frameless-stamp-conditional"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vmframeless"
 SAB_DESC="The RX_VM_FRAMELESS macro is emitted CONDITIONALLY -- wrapped in if (!has_push) -- instead of unconditionally on every VM artifact as spec section6.3 requires. A pushing program (has_push true) then defines NO RX_VM_FRAMELESS macro at all: the fact is readable only by the macro ABSENCE, which is the discriminator the file own comment names as the wrong shape ([OPT-1] _FAST_FRAMES precedent). No answer moves -- the fail label dispatch is written from has_push directly, at a separate site unaffected by this plant"
-SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manager's own matrix run): vmframeless RED in section1 on every want=0 (pushing) named witness (\"is a VM artifact and defines NO RX_VM_FRAMELESS\") and in section3's corpus sweep (\"RX_VM_FRAMELESS appears 0 times on a VM artifact\") on the whole PUSHING population, both axes. corpus:0fail expected -- no answer moves."
+SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50edcafbceb056616650f6cca2f80f4d89): DETECTED, unexpected: 0 -- reach:ok(1/1), vmframeless:6fail/1pass. Six of the eleven checks in run_vm_frameless.sh go red (section1's want=0 named witnesses reporting the macro absent, section3's corpus-sweep absence/exact-count assertions on the pushing population, both axes) -- confirming no answer moves anywhere else in the tree."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree a
 # linked-recursive-call (pushing) witness compiles to a VM program and
 # stamps RX_VM_FRAMELESS 0 UNCONDITIONALLY -- the macro is present on a
