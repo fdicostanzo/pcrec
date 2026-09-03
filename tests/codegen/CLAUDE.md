@@ -610,6 +610,40 @@ decides whether to perform it — and then run the row through
     of S224. All three carry SAB_REACH from birth. Transcripts are at the
     foot of the script.
 
+- **run_dfa_uniform_fold.sh** — [CC-DIFF] STEP 1 (b) (2026-09-03) the
+  UNIFORM-TABLE FOLD and its `<PREFIX>_DFA_UNIFORM_FOLDS` stamp, held to the
+  artifact's own text rather than to the scan that wrote it. Its own section,
+  `make test-dfa-uniform-fold`, part of `make test` and NOT of `make smoke` —
+  `run_vm_frameless.sh`'s argument exactly, and the same two axes (default and
+  `-fprefilter`, where the "hybrids included" half of the IFF is at risk).
+  - **WHY IT EXISTS.** The fold is ANSWER-IDENTITY-PRESERVING BY CONSTRUCTION —
+    a uniform table and its constant are the same function — so the whole
+    `.rxt` corpus, both oracles, every differential and `make test-axes` agree
+    whether or not the emitter ever folds anything. What they cannot see is the
+    fold silently ceasing to fire (every answer right, the measured 0.589 on
+    `cls-upto-4` gone), a constant emitted while the table stays (no saving),
+    or a table deleted from under a read site the change missed.
+  - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** The stamp's
+    value comes from `fold_tr`/`fold_acc` scanning the `Dfa`. This file never
+    scans a `Dfa` and never re-derives uniformity: it reads the EMITTED TEXT
+    for two facts the fold makes true TOGETHER — the accessor lost its TABLE
+    PARAMETER, and the table's NAME occurs nowhere in the file — asserts the
+    biconditional between those two, and only then compares the stamp against
+    their count. Each direction is a distinct red.
+  - **THE ABSENCE TEST IS WHOLE-FILE, NOT "NO ARRAY DEFINITION", and that is
+    the choice to keep.** The fold's real hazard is a READ SITE the change
+    missed; `emit_dfa.c` names these tables at seven emitted call sites and
+    omitting one ships a matcher naming an array that is not there. A
+    whole-file absence test covers every site without enumerating them, which
+    is exactly what an enumerated list would lose the next time a site is
+    added.
+  - **The engine discriminator is `_byte_class[256]`** — machine text every DFA
+    scan of either engine emits unconditionally and this change never folds —
+    and NOT `RX_DFA_SCAN`, for `run_dfa_stamps.sh`'s circularity reason.
+  - **The floor is a FRACTION of the DFA-carrying population, not a harvested
+    count** (K35): a sweep in which nothing folds asserts nothing about the
+    fold and would be green with the fold deleted from the emitter entirely.
+
 - **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
   compiles every `.rxt` corpus pattern twice (default engine, and
   `--engine=vm` forced where accepted — the wider population for the
