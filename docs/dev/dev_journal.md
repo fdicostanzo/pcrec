@@ -20053,3 +20053,19 @@ after WINDOW CLOSED: .lift both lanes → validate → merge landing + r51fix
 → test-stage re-run (17 min) → K44 quiet-box pair → WINDOW OPEN with the
 abi-16 pin. Frank's rulings today also set: keepalives just under an
 hour; day = pcrec dev, night = bench.
+
+## 2026-09-03 — Fiftieth session, part 13 (06:2x): WINDOW CLOSED 06:26; K44 pair UNCHANGED (green-by-diagnosis applies); both lanes lifted
+
+The bench's window (23:58-06:26): eleven cells, all rc=0 at attempt 1,
+all measured, store 122 — altwide@0.2 six + the bigcap pair + loglines
+auto/noedge + the I-37 bounded × clang re-run; their readings come by
+desk work today (O-15). K44 PAIR on the quiet box (06:27, load 0.34):
+`((a)|ab){4000}c` user seconds, 5 trials — main (de32a4b code) 2.90-3.04,
+median 2.96; pre-merge 5496ca6 (git archive + make) 2.97-3.05, median
+2.99 — UNCHANGED, and equal to K44's recorded 3.06 solo; the battery's
+red on that cell is GREEN-BY-DIAGNOSIS per K44's exact rule (bytes did
+not move: the pattern is a VM artifact, STEP 2 touches the DFA route).
+The 6.9 s read beside san yesterday was load, as expected. .lift created
+for `landing` and `r51fix` at 06:28; both validate now (build + their
+own scripts + solo mech rows), then deliver → merge → test-stage re-run
+→ WINDOW OPEN + I-38 with the abi-16 pin.
