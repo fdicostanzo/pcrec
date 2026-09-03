@@ -378,6 +378,24 @@ def parse_rxt(path):
                                  "'description' takes the one-line form only: "
                                  "'|' is a head form")
             results.append((lineno, 'description', v))
+        elif line.startswith('export '):
+            # [DD-13b.W1.3] THE DEFINITION'S DECLARED INTERFACE (D89
+            # addendum point 2). A `config-list` of GROUP names — plain
+            # identifiers, because a group name is PCRE2's grammar and not
+            # the file-namespace one a block `name` uses since this step.
+            #
+            # RECORDED, NOT ACTED ON: what a block exports changes what a
+            # COMPOSED artifact delivers, and this oracle verifies a block
+            # against python `re` on its own text. It is parsed here so the
+            # three `.rxt` parsers stay comparable on a line all three see —
+            # the C1 differential's whole purpose.
+            v = line[len('export '):].strip()
+            parts = [e.strip() for e in v.split(',')]
+            if not v or not all(IDENT_RE.match(e) for e in parts):
+                raise ValueError(f"{path}:{lineno}: 'export' wants a "
+                                 f"comma-separated list of group names "
+                                 f"(got {v!r})")
+            results.append((lineno, 'export', ', '.join(parts)))
         elif line.startswith('encoding '):
             # [DD-13b.W1.1 r46sem finding 19] see the 'name' arm above --
             # the same "leg C accepts a strict superset" gap.
@@ -521,11 +539,13 @@ def dump_file(path, entries):
     def flush():
         if blk is None:
             return
-        print('block\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
+        # [DD-13b.W1.3] `export` APPENDED after `perr` — see run.sh's twin
+        # comment for why appending rather than inserting.
+        print('block\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
             path, blk['line'], blk['name'], rxt_escape(blk['desc']),
             rxt_escape(blk['pat']), blk['flags'], blk['features'],
             blk['only'], blk['encoding'], blk['engine'],
-            blk['steps'], blk['frames'], blk['perr']))
+            blk['steps'], blk['frames'], blk['perr'], blk['exports']))
         for c in cases:
             print('case\t%s\t%d\t%s\t%d\t%s' % (path, c[0], c[1], c[2], c[3]))
 
@@ -535,7 +555,8 @@ def dump_file(path, entries):
             del cases[:]
             blk = {'line': lineno, 'pat': data[0], 'name': '', 'desc': '',
                    'flags': '', 'features': '', 'only': '', 'encoding': '',
-                   'engine': '', 'steps': '', 'frames': '', 'perr': ''}
+                   'engine': '', 'steps': '', 'frames': '', 'perr': '',
+                   'exports': ''}
             continue
         if blk is None:
             continue
@@ -544,6 +565,7 @@ def dump_file(path, entries):
         elif kind == 'name':       blk['name'] = data
         elif kind == 'description':blk['desc'] = data
         elif kind == 'encoding':   blk['encoding'] = data
+        elif kind == 'export':     blk['exports'] = data
         elif kind == 'engine':     blk['engine'] = data
         elif kind == 'budget':
             blk['steps' if data[0] == 'steps' else 'frames'] = str(data[1])

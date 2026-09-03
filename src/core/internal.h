@@ -3961,6 +3961,13 @@ typedef struct {
     const char *with_list;    /* target's `with` config list, as written  */
     const char *from_list;    /* config's `from` config list, as written  */
     const char *pcrec_raw;    /* config's `pcrec` raw flag text           */
+    /* [DD-13b.W1.3] a pattern block's `export` list AS WRITTEN — the
+     * definition's own declared interface (D89 addendum point 2). NULL means
+     * the block declared none, which is the DEFAULT and means nothing is
+     * exported. Validated as a `config-list` here; whether each name is a
+     * group the definition declares is the COMPOSER's question, asked where
+     * the sub-parse's `named_groups` is in hand. */
+    const char *exports;
 } RxtRow;
 
 typedef struct RxtSource RxtSource;
@@ -4031,6 +4038,12 @@ typedef struct {
      * the format CANNOT honour. It is REFUSED at bind time rather than
      * ignored: a silent ignore is a population nobody counts. */
     const char        *encoding;
+    /* [DD-13b.W1.3, D89 addendum point 2] the definition's DECLARED
+     * INTERFACE — its `export` list as written, or NULL for none, which is
+     * the default. The list says what MAY be delivered; a DELIVERING CALL
+     * decides what IS (addendum 4(1)). A name here that the definition does
+     * not declare as a group is refused at bind time, naming both. */
+    const char        *exports;
     const char        *file;      /* the file this block was read from      */
     size_t             line;      /* its `pattern` line in that file        */
 } RxtDef;

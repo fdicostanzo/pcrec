@@ -339,11 +339,11 @@ tA1=$(date +%s.%N)
 # three things beyond byte-identity: the exact column NAMES pcrec emits,
 # the exact field COUNT of every data row (the table contract's HEADER
 # TRUTHFULNESS check), and the exact TOTAL row counts against the census.
-MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec'
+MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export'
 hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#' | tail -1)"
 hdr="${hdr#\#}"
 if [ "$hdr" = "$MANIFEST" ]; then
-    pass "C1 manifest: --list-source emits exactly the 15 pinned columns, in order"
+    pass "C1 manifest: --list-source emits exactly the 16 pinned columns, in order"
 else
     fail "C1 manifest: --list-source's header MOVED.
   expected: $MANIFEST
@@ -426,14 +426,24 @@ PROJ_B12="$WORKDIR/projB12.tsv"
 PROJ_B="$WORKDIR/projB.tsv"
 PROJ_C="$WORKDIR/projC.tsv"
 
-# A: <file>\t<15 cols> -> block <file> <line> <name> <desc> <pat> <flags>
-#    <features> <only> <encoding> <engine> <steps> <frames>
+# A: <file>\t<16 cols> -> block <file> <line> <name> <desc> <pat> <flags>
+#    <features> <only> <encoding> <engine> <steps> <frames> <export>
+#
+# [DD-13b.W1.3] BOTH SIDES NOW SELECT FIELDS EXPLICITLY rather than one of
+# them truncating with `NF = 13`. `export` was APPENDED to leg B's row (after
+# `perr`, which leg A cannot know and which this comparison has always
+# dropped), so a truncation would have dropped `export` too — and a directive
+# absent from both sides of a differential leaves it byte-identical while it
+# quietly stops covering that directive, which is the hazard this file's own
+# manifest comment names. Selecting is one line longer and cannot do that.
 awk -F'\t' -v OFS='\t' '$2 == "pattern" {
-    print "block", $1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' \
+    print "block", $1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $17 }' \
     "$DUMP_A_RAW" > "$PROJ_A"
 
-awk -F'\t' -v OFS='\t' '$1 == "block" {
-    NF = 13; print }' "$DUMP_B" > "$PROJ_B12"
+awk -F'\t' '$1 == "block" {
+    printf "%s", $1
+    for (i = 2; i <= 13; i++) printf "\t%s", $i
+    printf "\t%s\n", $15 }' "$DUMP_B" > "$PROJ_B12"
 cp "$DUMP_B" "$PROJ_B"
 cp "$DUMP_C" "$PROJ_C"
 

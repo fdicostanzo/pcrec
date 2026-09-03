@@ -508,11 +508,15 @@ rxt_dump_block() {
     rxt_escape "$cur_pattern";     pat=$REPLY
     only=""; [ "$cur_features_only" = "1" ] && only=1
     perr=""; [ "$cur_is_perr" = "1" ] && perr=1
-    printf 'block\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    # [DD-13b.W1.3] `export` is APPENDED after `perr`, not inserted before
+    # it: the A-vs-B projection selects fields explicitly (it always dropped
+    # `perr`, which leg A cannot know), so appending keeps every existing
+    # field at the index its reader already uses.
+    printf 'block\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$cur_file" "$cur_pattern_line" "$cur_name" "$desc" "$pat" \
         "$cur_flags" "$cur_features" "$only" \
         "$cur_encoding" "$cur_engine" "$cur_stepbudget" "$cur_framebudget" \
-        "$perr"
+        "$perr" "$cur_exports"
     local i
     for i in "${!case_kind[@]}"; do
         printf 'case\t%s\t%s\t%s\t%s\t%s\n' \
@@ -1063,6 +1067,7 @@ for file in "${files[@]}"; do
     cur_stepbudget=""
     cur_framebudget=""
     cur_name=""
+    cur_exports=""
     cur_description=""
     cur_encoding=""
     cur_features_only=0
@@ -1221,6 +1226,7 @@ for file in "${files[@]}"; do
             # would compile the following pattern under something nobody
             # wrote (S-C3's shape, one directive over).
             cur_name=""
+            cur_exports=""
             cur_description=""
             cur_encoding=""
             cur_features_only=0
@@ -1488,6 +1494,21 @@ for file in "${files[@]}"; do
             else
                 cur_features="$feat_list"
                 cur_features_only=1
+            fi
+        elif [[ "$line" =~ ^export[[:space:]]+([A-Za-z_][A-Za-z0-9_]*([[:space:]]*,[[:space:]]*[A-Za-z_][A-Za-z0-9_]*)*)[[:space:]]*$ ]]; then
+            # [DD-13b.W1.3] THE DEFINITION'S DECLARED INTERFACE (D89 addendum
+            # point 2), recorded so the C1 dump carries it and the three
+            # parsers are compared on a line all three see. A `config-list` of
+            # GROUP names — plain identifiers, because a group name is PCRE2's
+            # grammar and not the file-namespace one a block `name` uses.
+            #
+            # RECORDED, NOT USED, here: what a block exports changes what a
+            # COMPOSED artifact delivers, and this script compiles a block
+            # from its own text. Leg A (pcrec) is where it becomes operative.
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'export' line before any pattern block"
+            else
+                cur_exports="${BASH_REMATCH[1]}"
             fi
         elif [[ "$line" =~ ^name[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)[[:space:]]*$ ]]; then
             # [DD-13b.W1] the block's NAME. It is in the FILE namespace, not

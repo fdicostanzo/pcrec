@@ -161,6 +161,7 @@ static const RxtKeyword block_vocab[] = {
     { "ms",             1 }, { "ns",       1 }, { "g",       1 },
     { "gp",             1 }, { "gu",       1 },
     { "name",           1 }, { "description", 1 }, { "encoding", 1 },
+    { "export",         1 },
     { "tag",            2 }, { "mc",       2 },
     { "oracle",         3 }, { "variant",  3 },
 };
@@ -1150,6 +1151,44 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 block->name = arena_strdup(&src->arena, v);
                 continue;
             }
+            if (tok_is(l, "export")) {
+                /* [DD-13b.W1.3, D89 addendum point 2] THE LIBRARY'S OWN
+                 * INTERFACE, DECLARED. Frank: "for library use, the library
+                 * explicitly provides the names it intends to export."
+                 * Delivery stopped being "every named group" — the default
+                 * is now NOTHING exported, and a definition says what it
+                 * offers.
+                 *
+                 * THE `config-list` SHAPE, because `with`/`use`/`from`
+                 * already use it and a fourth list syntax would be a fourth
+                 * thing to get wrong. `config_list_ok` is the SAME validator
+                 * those three run, so a tab or a malformed element is
+                 * refused here in the words it is refused there.
+                 *
+                 * WHAT IS *NOT* CHECKED HERE: whether the definition
+                 * actually declares a group by each name. That is a question
+                 * about the PATTERN, and this parser does not parse
+                 * patterns — the composer answers it at bind time, where the
+                 * sub-parse's own `named_groups` list is in hand, and
+                 * refuses naming both the export and the definition. Asking
+                 * it here would need a second regex parser in the head
+                 * reader, which is the one thing the seam ruling forbids. */
+                const char *v = value_trimmed(&p, l);
+                if (!config_list_ok(v)) {
+                    rxt_fail(&p, line,
+                             "'export' wants a comma-separated list of "
+                             "group names (got '%s')", v);
+                    goto fail;
+                }
+                if (block->exports) {
+                    rxt_fail(&p, line,
+                             "a block has one 'export' line; this one already "
+                             "declared '%s'", block->exports);
+                    goto fail;
+                }
+                block->exports = rtrim_ws(&src->arena, v);
+                continue;
+            }
             if (tok_is(l, "description")) {
                 /* THE ONE-LINE FORM ONLY, IN A BLOCK. format_design §1.3
                  * gives a block-line `description` the same `prose-value`
@@ -1629,6 +1668,7 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         d->pattern = r->value;
         d->flags = f;
         d->encoding = r->encoding;
+        d->exports = r->exports;
         d->file = s->path;
         d->line = r->line;
     }
@@ -1944,6 +1984,10 @@ static const char *const rxt_columns[] = {
     "kind", "line", "name", "value", "pattern", "flags", "features",
     "features_only", "encoding", "engine", "budget_steps", "budget_frames",
     "with", "from", "pcrec",
+    /* [DD-13b.W1.3] APPENDED, never inserted — `docs/spec/table_contract.md`
+     * and this dump's own rule: a consumer's positional read of columns 1-15
+     * must survive. */
+    "export",
 };
 #define RXT_NCOLS (sizeof rxt_columns / sizeof *rxt_columns)
 
@@ -2016,6 +2060,8 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         if (r->from_list) sb_puts(&sb, r->from_list);           /* 14 from */
         sb_putc(&sb, '\t');
         if (is_cfg) put_escaped(&sb, r->pcrec_raw);             /* 15 pcrec */
+        sb_putc(&sb, '\t');
+        if (r->exports) sb_puts(&sb, r->exports);               /* 16 export */
         sb_putc(&sb, '\n');
     }
     return sb_take(&sb);

@@ -282,6 +282,23 @@ These bind on every line kind, old and new:
   because a dropped directive is a population nobody counts. Whether the named encoding is IMPLEMENTED
   is pcrec's answer, not the harness's — `utf8` is refused until milestone
   M5, and a block asking for it hears that from the compiler.
+- `export <name>{, <name>}` — block-scoped: **the definition's declared
+  INTERFACE**, the group names it offers to a caller that DELIVERS from it.
+  The `config-list` shape `with`/`use`/`from` already use; the names are
+  GROUP names, so they follow PCRE2's group-name grammar (a letter or `_`,
+  then letters, digits or `_`) and not the wider definition-name grammar a
+  block's own `name` uses.
+
+  - **The default is NOTHING exported.** A block with no `export` line
+    offers no names, and a delivering call on it delivers nothing.
+  - **A name the definition does not declare as a group is REFUSED**,
+    naming both the export and the definition. The check happens where the
+    pattern has been parsed, not at the `export` line — this format's head
+    reader does not parse patterns.
+  - Exporting a name does not by itself put anything in an artifact: the
+    list says what MAY be delivered, and a DELIVERING CALL decides what IS
+    (see "Composition" in `docs/spec/match_api.md` §6). An exported name
+    that no site delivers costs nothing at all.
 - `features only <list>` — as `features`, except that the list REPLACES
   what a `config` would otherwise contribute rather than being unioned
   with it. Parsed and recorded in this build; it becomes operative when
@@ -388,6 +405,7 @@ boundary comes from the one head parser, and the two cannot drift.
 | 13 | `with` | target | the config list, as written |
 | 14 | `from` | config | the config list, as written |
 | 15 | `pcrec` | config | the raw flag text |
+| 16 | `export` | pattern | the block's `export` list, as written ([DD-13b.W1.3]) |
 
 **`kind` carries the DECLARATION NAME**, not a `head`/`body`
 supercategory. There is no column saying whether a row is a head row and
