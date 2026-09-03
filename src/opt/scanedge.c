@@ -104,18 +104,30 @@
  *     when the ordinary step runs, the state variable never holds a chain
  *     head together with a byte of that head's scan class.
  *
- * The emitted loop body is, in order: the accept probe, the candidate-start
- * prefilter, the stay skips, THE SCAN EDGES, the position-view select, the
- * viewed accept probe, and the tail (bound check, then the step). So:
+ * SINCE [OPT-EDGE] STEP 1 the emitted loop has two paths through its body
+ * and the argument is about both. The GENERIC path is, in order: the accept
+ * probe, the candidate-start prefilter, the stay skips, the position-view
+ * select, the viewed accept probe, and the tail (bound check, then the step,
+ * then the ONE stop test). The EDGE path is entered only from that stop test
+ * (and once from the loop's entry) and is, in order: the accept probe, the
+ * prefilter WHERE `s0` IS ITSELF A HEAD, THE SCAN EDGES, and then it rejoins
+ * the generic path at the position-view select. So:
  *
- *   - the scan edge runs AFTER everything that can advance the position
- *     (the prefilter and the stay skips) and BEFORE everything that cannot
- *     (the view select and both probes move nothing), so it sees the
- *     position the step will read;
- *   - it is its OWN `if`, never an `else if` behind the prefilter, so a
- *     prefilter that just skipped onto a class-C byte cannot preempt it;
- *   - a chain head is excluded from `pick_skip_states`, so no stay skip
- *     fires at one;
+ *   - the state variable holds a head only where the edge path runs. It is
+ *     written in exactly three places — the loop's entry seed, the step, and
+ *     the offset-set prefilter's RESEED — and the first two are guarded by
+ *     the stop test while the third cannot produce a head by precondition (8);
+ *   - on the edge path the scan edge still runs AFTER everything that can
+ *     advance the position (the prefilter, which is replayed there for
+ *     exactly this reason) and BEFORE everything that cannot (the view select
+ *     and both probes move nothing), so it sees the position the step reads;
+ *   - the edges are still each their OWN `if` in sequence, never an `else if`
+ *     behind the prefilter, so a prefilter that just skipped onto a class-C
+ *     byte cannot preempt one, and two chained edges still fire in one pass
+ *     (precondition (7));
+ *   - a chain head is excluded from `pick_skip_states`, so no stay skip fires
+ *     at one — which is also why the stay skips are NOT replayed on the edge
+ *     path;
  *   - and the scan consumes every class-C byte the bound allows, so when it
  *     returns either the byte at the position is not class C, or the bound
  *     was reached and the state is F rather than the head.
@@ -149,9 +161,17 @@
 
 #include "core/internal.h"
 
-/* At most this many scan edges are emitted per machine. Each one is a compare
- * against the state variable on the loop's generic path, so this is the same
- * kind of budget `pick_skip_states` spends four of, and for the same reason.
+/* At most this many scan edges are emitted per machine.
+ *
+ * IT USED TO BE A HOT-PATH BUDGET and since [OPT-EDGE] STEP 1 it is not: each
+ * edge WAS a compare against the state variable on the loop's generic path,
+ * which is what made it "the same kind of budget `pick_skip_states` spends
+ * four of". Under the shared sentinel the generic path carries NO per-edge
+ * compare at all, so what remains is an EMITTED-BYTES budget and a bound on
+ * the edge path's own `if` chain. The number has not been re-measured against
+ * that reading (D77: the floor and the ceiling are both measured on the new
+ * loop, [OPT-EDGE]'s next rung, not guessed here).
+ *
  * The chains are taken LONGEST FIRST, so what a machine with more than four
  * gives up is always the smallest saving available to it. */
 #define SCAN_MAX_EDGES PCREC_MAX_SCAN_EDGES
@@ -236,10 +256,11 @@ static int acc_of(const Dfa *d, int s)
  * reachable only as the next link of its own chain" is a number and not an
  * argument. The ROOTS count: a seed state the start dispatch selects has no
  * transition pointing at it and must never be deleted. */
-static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt)
+static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt, bool *seedtgt)
 {
     memset(indeg, 0, (size_t)d->n * sizeof(int));
     memset(viewtgt, 0, (size_t)d->n * sizeof(bool));
+    memset(seedtgt, 0, (size_t)d->n * sizeof(bool));
     for (int s = 0; s < d->n; s++) {
         for (int c = 0; c < d->ncls; c++) {
             int t = d->st[s].tr[c];
@@ -251,8 +272,18 @@ static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt)
     }
     if (d->s0 >= 0 && d->s0 < d->n) indeg[d->s0]++;
     for (int u = 0; u < UPC_N; u++) {
-        if (d->s1u[u] >= 0 && d->s1u[u] < d->n) indeg[d->s1u[u]]++;
-        if (d->s1g[u] >= 0 && d->s1g[u] < d->n) indeg[d->s1g[u]]++;
+        /* THE SEED FAMILIES ARE ALSO A ROOT SET FOR PRECONDITION (8) below,
+         * and that is why `seedtgt` is filled on the same pass rather than
+         * recomputed: "how many ways in does this state have" and "is this
+         * state one the start dispatch or the prefilter's reseed can INSTALL"
+         * are two readings of the same three loops. `d->s0` is deliberately
+         * NOT marked — the reseed's fallback arm writes `s0` at a point where
+         * the state variable already holds `s0`, so it can never CHANGE the
+         * state to a head, which is the only thing (8) is about. */
+        if (d->s1u[u] >= 0 && d->s1u[u] < d->n)
+        { indeg[d->s1u[u]]++; if (d->s1u[u] != d->s0) seedtgt[d->s1u[u]] = true; }
+        if (d->s1g[u] >= 0 && d->s1g[u] < d->n)
+        { indeg[d->s1g[u]]++; if (d->s1g[u] != d->s0) seedtgt[d->s1g[u]] = true; }
     }
 }
 
@@ -265,7 +296,8 @@ static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt)
  * are candidates and both are tried — which is not an edge case but the
  * common machine, `[a-z]{0,n}`'s own alphabet being exactly two classes. */
 static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
-                   const bool *viewtgt, const int *exitv, bool *haspred,
+                   const bool *viewtgt, const bool *seedtgt,
+                   const int *exitv, bool *haspred,
                    Chain *out, int cap, int nout)
 {
     /* A HEAD is a member with no COMPATIBLE predecessor over this class. One
@@ -306,6 +338,24 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
          * the same one: (3) is about a member's OWN view, this is about
          * being someone else's. */
         if (viewtgt[s]) continue;
+        /* PRECONDITION (8), [OPT-EDGE] STEP 1's own, and it exists because
+         * the emitted loop no longer tests for a head on its generic path.
+         * Under the shared sentinel the loop learns "the state is a head"
+         * from THE STEP'S RESULT — `emit_scan_loop`'s one stop test — so the
+         * edge body is reachable only from there and from the loop's entry.
+         * Anything else that WRITES the state variable mid-body would install
+         * a head the edge block never sees, and the ordinary step would then
+         * read `tr[head][C]`, the cell this pass kills.
+         *
+         * Exactly one thing does: the offset-set prefilter's RESEED
+         * (`pf_emit_ofs_reseed`, emitted on a machine with a seed), which
+         * writes `s1u[upc(s[cand-1])]` after skipping. Refusing a head that
+         * any seed family can name is exact, is this pass's standing posture
+         * (every precondition DECLINES rather than stretching), and costs
+         * nothing on a machine with no seed — where `seedtgt` is all false.
+         * The neighbouring rule (6) is about being a VIEW target and is not
+         * the same one; the s0 exclusion is in `in_degrees`' own comment. */
+        if (seedtgt[s]) continue;
         int e = exitv[s], a = acc_of(d, s), nx = d->st[s].tr[cls];
 
         /* THE UNBOUNDED FORM: the head's class edge is its own self-loop.
@@ -391,25 +441,26 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
     bool  *ok    = malloc((size_t)n * sizeof(bool));
     bool  *hp    = malloc((size_t)n * sizeof(bool));
     bool  *vtg   = malloc((size_t)n * sizeof(bool));
+    bool  *stg   = malloc((size_t)n * sizeof(bool));
     bool  *drop  = calloc((size_t)n, sizeof(bool));
     int   *exitv = malloc((size_t)n * sizeof(int));
     int   *remap = malloc((size_t)n * sizeof(int));
     Chain *found = malloc((size_t)(n + 1) * sizeof(Chain));
-    if (!indeg || !ok || !hp || !vtg || !drop || !exitv || !remap || !found) {
-        free(indeg); free(ok); free(hp); free(vtg); free(drop);
+    if (!indeg || !ok || !hp || !vtg || !stg || !drop || !exitv || !remap || !found) {
+        free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
         free(exitv); free(remap); free(found);
         ctx_nomem(cx);
     }
-    in_degrees(d, indeg, vtg);
+    in_degrees(d, indeg, vtg, stg);
 
     int nfound = 0;
     for (int cls = 0; cls < d->ncls && nfound < n; cls++) {
         for (int s = 0; s < n; s++)
             ok[s] = member_ok(&d->st[s]) && shaped(d, s, cls, &exitv[s]);
-        nfound = collect(d, cls, indeg, ok, vtg, exitv, hp, found, n, nfound);
+        nfound = collect(d, cls, indeg, ok, vtg, stg, exitv, hp, found, n, nfound);
     }
     if (nfound == 0) {
-        free(indeg); free(ok); free(hp); free(vtg); free(drop);
+        free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
         free(exitv); free(remap); free(found);
         return;
     }
@@ -486,10 +537,57 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
         nedges++;
     }
 
-    /* ---- compaction, minimize.c's own shape --------------------------- */
+    /* ---- compaction AND the sentinel renumbering, in ONE permutation ---
+     *
+     * [OPT-EDGE] STEP 1. Two facts are settled by one `remap`: the interior
+     * members are DROPPED (the size half of [OPT-5], unchanged), and the
+     * surviving HEADS are moved to the TOP of the row space so that "dead
+     * or a scan-edge head" is one unsigned compare in the emitted loop.
+     *
+     * WHY THE TOP AND NOT BELOW ZERO. The emitted loop already pays one
+     * sentinel test per iteration (`if (is_dead(state)) break;`), and
+     * [OPT-EDGE]'s mechanism is to make the edge heads share THAT test
+     * instead of buying one compare per edge on the generic path. Sharing it
+     * needs the non-states and the heads to form ONE contiguous range at one
+     * end of the id space. The heads must also stay VALID TABLE ROWS, because
+     * the ordinary step still reads a head's row for every class but its own.
+     * Putting them at the TOP satisfies both with a table base bias of zero:
+     * the dead sentinel is already above every live cell under BOTH
+     * representations (premultiplied dead is 65535 and `PREMUL_MAX_ENTRIES`
+     * keeps the largest cell `(n-1)*ncls` below it; the indexed form's dead
+     * is -1, whose UNSIGNED reading is UINT_MAX), so `(unsigned)s >= FLOOR`
+     * with `FLOOR = cell_of(n - nheads)` tests dead-or-head and nothing else.
+     * `src/gen/emit_dfa.c`'s `emit_scan_loop` is the reader, and it CHECKS
+     * this layout rather than assuming it.
+     *
+     * THE RELATIVE ORDER OF THE HEADS IS PRESERVED, which is what keeps
+     * precondition (7) true after the move: (7) requires a chain whose
+     * fall-through is another chain's head to have the SMALLER index, the two
+     * states in question are both heads, and a permutation that keeps heads
+     * in their existing relative order keeps their comparison.
+     *
+     * THE MOVE IS NOT MONOTONE, so unlike minimize.c's compaction it cannot
+     * write into `d->st` in place — a head moving UP would clobber a state
+     * not yet visited. The rows are permuted through a scratch array; each
+     * row's `tr` is an arena pointer that travels with its struct and is
+     * rewritten exactly once. */
     int m = 0;
-    for (int i = 0; i < n; i++) remap[i] = drop[i] ? -1 : m++;
-    if (m < n) {
+    for (int i = 0; i < n; i++)
+        if (!drop[i] && d->st[i].scan_span == 0) remap[i] = m++;
+    for (int i = 0; i < n; i++)
+        if (!drop[i] && d->st[i].scan_span != 0) remap[i] = m++;
+    for (int i = 0; i < n; i++)
+        if (drop[i]) remap[i] = -1;
+
+    bool moved = (m < n);
+    for (int i = 0; i < n && !moved; i++) if (remap[i] != i) moved = true;
+    if (moved) {
+        DState *ns = malloc((size_t)m * sizeof(DState));
+        if (!ns) {
+            free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
+            free(exitv); free(remap); free(found);
+            ctx_nomem(cx);
+        }
         for (int i = 0; i < n; i++) {
             if (remap[i] < 0) continue;
             DState *st = &d->st[i];
@@ -498,17 +596,18 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
                 /* A surviving state cannot point at a dropped one: a dropped
                  * state had in-degree 1 and its one in-edge was the chain's,
                  * from a state that is either dropped too or the head, whose
-                 * cell this pass has already killed. The assignment is
-                 * therefore an identity for every live cell, and the guard is
-                 * what makes that a checked claim rather than a comment. */
+                 * cell this pass has already killed. The guard is what makes
+                 * that a checked claim rather than a comment. */
                 st->tr[c] = (t < 0 || remap[t] < 0) ? -1 : remap[t];
             }
             if (st->eolvar >= 0) st->eolvar = remap[st->eolvar];
             if (st->endvar >= 0) st->endvar = remap[st->endvar];
             if (st->scan_span != 0 && st->scan_next >= 0)
                 st->scan_next = remap[st->scan_next];
-            if (i != remap[i]) d->st[remap[i]] = *st;
+            ns[remap[i]] = *st;
         }
+        memcpy(d->st, ns, (size_t)m * sizeof(DState));
+        free(ns);
         d->n = m;
         if (d->s0 >= 0) d->s0 = remap[d->s0];
         for (int u = 0; u < UPC_N; u++) {
@@ -517,6 +616,6 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
         }
     }
 
-    free(indeg); free(ok); free(hp); free(vtg); free(drop);
+    free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
     free(exitv); free(remap); free(found);
 }
