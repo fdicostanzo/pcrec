@@ -159,4 +159,19 @@ pcrec (the Makefile owns that).
   testing" for the opt-in rationale and `git push --no-verify` as the
   documented bypass.
 
+- **battery.sh** — [TT-12] STEP 1 item 5: `battery_v5`, the manager's
+  merge/close validation chain (test -> strict -> axes -> san -> lint ->
+  mech) as one detached, self-logging run — `axes` is new (STEP 2, Frank's
+  ruling 2026-09-03), every other stage's shape is this row's own STEP 1
+  measurement rather than the manager's earlier ad-hoc `battery_v4.sh`
+  unchanged (`TEST_MAKE_J`/`TEST_PROCS` from item 4's K44 measurement,
+  `MECH_PROCS=6` from [TT-8], `SAN_PROCS` from item 3, `AXES_PROCS` feeding
+  `run_axes.sh`'s own item-1 pairing). Runs `setsid`-detached with a PID
+  file under a timestamped `build/battery_<ts>/` directory, one log per
+  stage plus a `trailer.log` with stage START/END/rc lines and a final
+  `== BATTERY DONE rc=` line — waits for nothing; the caller (a lane or the
+  manager) polls the trailer at its own cron tick (docs/dev/learnings.md
+  §6: artifacts, never process greps). Does not run the whole battery
+  itself when invoked by a lane — see `docs/dev/lanes/tt12b_report.md`.
+
 Maintenance: update this file when scripts are added/removed or change role.
