@@ -523,10 +523,23 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # deletes `<m>_next_state` / `<m>_is_accepting` and rewrites their accessors
 # and call sites on any machine whose table is all-equal, plus a
 # `<PREFIX>_DFA_UNIFORM_FOLDS` stamp line on every artifact containing a DFA
-# scan. Whole-file bytes move on both populations, so (B) re-pins; (A) is
-# untouched on the VM half (headers only, above `<p>_accept:`) and DOES move
-# on the DFA half wherever a table folds, which the lane's own gate run
-# reports rather than assumes.
+# scan. Whole-file bytes move on both populations, so (B) re-pins.
+#
+# (A) IS UNTOUCHED BY BOTH HALVES, AND THIS IS A STRUCTURAL FACT CHECKED BY
+# READING THE EMITTER, NOT AN ASSUMPTION. `prog_region()` below extracts only
+# the span from `goto <p>_L0;` to `<p>_accept:` -- the VM's own program body.
+# Spelling (a)'s eight statics are all DEFINED above that span (the last,
+# `<prefix>_run_state_bind`, at src/gen/emit_vm.c:9309, well before "the
+# program" begins at :9425); a FRAMED artifact carries none of the attribute
+# at all. Spelling (b)'s fold lives inside `pcrec_emit_dfa_engine`, which for
+# a HYBRID is called from emit_vm.c's own prefilter block (:9421) -- ALSO
+# before the program marker -- and a non-hybrid DFA artifact has no `goto
+# <p>_L0;` at all, so `prog_region()` returns empty on both sides of the
+# comparison regardless of what the DFA scan emits. So this population's
+# `rdiff` stays 0 on this change on both counts, and a NONZERO one would mean
+# something else moved, not that this change reached the region: verified by
+# byte offset on a hand-built hybrid (`(x)[a-z]{0,4}\z --engine=vm
+# -fprefilter`) before trusting the corpus run to confirm it at scale.
 #
 # THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, NOT THIS LANE'S: it must be
 # the last src commit of the change as it lands, and a lane branch cannot know

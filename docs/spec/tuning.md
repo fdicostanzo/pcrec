@@ -1384,6 +1384,24 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   decision for a header-less consumer, no such consumer reads them yet, and
   match_api.md §6.3 states the trigger that would make this one owed.
 
+- `RX_DFA_UNIFORM_FOLDS` (`[CC-DIFF]` STEP 1, 2026-09-03) is an INTEGER, not
+  one of this section's string stamps: how many of this artifact's DFA
+  tables were ALL-EQUAL and are therefore NOT EMITTED, with the accessor
+  returning the constant instead (`0..6` — the forward machine's two tables
+  always in scope, the reverse machine's unless `RX_DFA_START "pinned"`, the
+  anchored machine's under `RX_DFA_MATCH "unwrapped"`). `docs/spec/
+  match_api.md` §6.3 states the value set and the IFF; there is no tuning
+  axis for it in §2 above — unlike every other stamp in this section, the
+  fold is not a generation-time CHOICE (no pass decides it, no `-fno-`
+  flag denies it), it is what the emitted machine turned out to CONTAIN,
+  discovered while the emitter held the table, which is `RX_VM_FRAMELESS`'s
+  reasoning one section down and not a new one. `RX_DFA_TABLE` still names
+  the ENCODING that was selected even where every table of it folded (it
+  still fixes the folded constant's value), so the two stamps read together
+  rather than one superseding the other. It has **no `rx_info` mirror**, on
+  `RX_DFA_TABLE`'s own precedent and for its stated reason.
+  `tests/codegen/run_dfa_uniform_fold.sh` holds it to the emitted text.
+
 - `RX_DFA_MATCH` (`[ENG-ABS]`, 2026-08-29) names which of the two forms
   the artifact's `<prefix>_match` takes — `"unwrapped"` (its own anchored
   machine, run from `ctx->pos`) or `"search-filter"` (the unanchored
