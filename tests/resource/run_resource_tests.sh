@@ -54,6 +54,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+CC="${CC:-cc}"   # [CC-DIFF] STEP 1 -- the [OPT-4.1] lowered-cap reference build below
 
 # [TT-10] tests/lib/load_guard.sh — see its own header for the measurement
 # and threshold. Section 1's watchdog CPU/wall kills (123/124) are the two
@@ -222,9 +223,29 @@ echo
 # which is why they carry no flag.
 size_moved=(
     '(?:[a-z][0-9]){1,8000}:1065432:'
-    'a{0,25000}:1103981:-fno-scan-edge -fno-start-pinned'
-    '(a|b){0,30000}:1333236:-fno-scan-edge -fno-prefilter-collapse -fprefilter -fno-start-pinned'
+    'a{5,25000}:1104674:-fno-scan-edge -fno-start-pinned'
+    '(a|b){5,30000}:1335297:-fno-scan-edge -fno-prefilter-collapse -fprefilter -fno-start-pinned'
 )
+# [CC-DIFF] STEP 1, 2026-09-03 — ROWS 2-3 MOVED AGAIN, and the mechanism is a
+# THIRD one: the UNIFORM-TABLE FOLD. `a{0,25000}` and `(a|b){0,30000}` both
+# have MIN 0, so EVERY reachable state of their automaton accepts (a prefix
+# of any length up to the bound is itself a valid match), which makes the
+# whole accept table one constant cell — `RX_DFA_UNIFORM_FOLDS 2` on both,
+# MEASURED — and the fold has no deny flag (docs/dev/decisions.md, and this
+# file's own [OPT-5] paragraph above already explains why: "there is no fold
+# mode anywhere upstream, no pass decides it"). `a{0,25000}` shrank to
+# 754,605 bytes, `(a|b){0,30000}` to 921,143 — both under the 1,000,000-byte
+# cap that used to refuse them, MEASURED with every flag the OLD rows already
+# carried.
+#
+# THE FIX IS THE SAME SHAPE THE FIRST TWO EVENTS USED: change the MINIMUM,
+# not the flags. `X{5,N}` has the identical bounded-repeat structure and the
+# identical reach for every flag above, but its accept bit is FALSE on states
+# 0..4, so the accept table cannot fold and the artifact reaches its old size
+# again (`a{5,25000}` 1,104,674 B / `(a|b){5,30000}` 1,335,297 B, MEASURED
+# with the flags unchanged, `RX_DFA_UNIFORM_FOLDS 0` on both) — the cap still
+# refuses, which is the property this row exists to defend. The CAP still
+# works; the WITNESSES stopped reaching it, same sentence as before.
 # [OPT-5] STEP 2, 2026-09-02 — THE ROWS MOVED AGAIN, and the note two
 # paragraphs down PREDICTED this class of event while naming a different
 # mechanism for it. What landed as STEP 2 is not the period-k edge that note
@@ -531,7 +552,57 @@ rm -f "$WORKDIR/o.c"
 # this cell asserting nothing about the rung it exists for. MEASURED with the
 # flag: hybrid / "size cap retry, exact 1333236 > 1000000", 32,325 bytes,
 # which is the same shape the 2026-08-31 figure records one abi apart.
-fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
+#
+# [CC-DIFF] STEP 1(b), 2026-09-03 — A FOURTH TIME, AND NO DENY FLAG EXISTS
+# FOR THIS ONE. The uniform-table fold shrank the SAME artifact again
+# (913,278 B, was 1,333,236 before the fold — the accept tables the
+# pattern's own nullability guarantees are uniform, per `[CC-DIFF]`'s own
+# design), and this time the established fix (add the new optimization's
+# `-fno-` flag alongside the two already here) is not available:
+# `docs/spec/tuning.md`'s own `RX_DFA_UNIFORM_FOLDS` entry states the fold
+# is "not a generation-time CHOICE ... no `-fno-` flag denies it" — it is
+# what the machine turned out to contain, discovered after the emitter
+# already held the table. Scaling the pattern's count up to re-cross
+# `PCREC_MAX_EMIT_BYTES` (1,000,000) instead hits an ORTHOGONAL cap first:
+# the automaton needed for this shape already exceeds
+# PCREC_MAX_DFA_STATES_TABLE at exactly the count where the fold's ~412 KB
+# saving would otherwise be recovered (measured: n=30000 compiles at
+# 913,278 B / fold; n=32000 refuses outright, "too complex for the DFA
+# engine (>32000 states)" — no room between the two). Widening the
+# alternation's own alphabet (more classes per state, same state count)
+# was measured too, and barely moves the total: this shape's per-state
+# cost does not scale with branch count, only with `{0,N}`'s N.
+#
+# So this cell now uses `run_size_term.sh` §5's OWN established technique
+# for exactly this situation ("cap-rescue has a natural population of
+# ZERO ... the check builds a REFERENCE COMPILER with the limits lowered
+# at pcrec's own compile time") rather than inventing a new one: a LOCAL
+# reference `pcrec` built with `PCREC_MAX_EMIT_BYTES` lowered to 500000 at
+# COMPILE TIME (raise-only via the CLI flag per limits.def; `-D` is the
+# only way to lower it), which sits comfortably below the exact artifact's
+# 913,278 B and comfortably above the declined-nullable default's 20,693 B
+# and the collapsed rescue's own tiny size — so the ladder actually RUNS
+# and is actually OVERRULED, `run_size_term.sh`'s own phrase for the shape
+# this cell needs. MEASURED under the reference build: default axis (no
+# -fprefilter) still stamps RX_ENGINE_SEL "declined-nullable-default" /
+# RX_VM_PREFILTER "none" at 20,693 B (the decline is unaffected by the
+# lowered cap, so this is still testing an OVERRIDE and not a compiler
+# that simply always takes the size rung); under -fprefilter it stamps
+# "size cap retry, exact 913278 > 500000" at 32,145 B. The pattern itself
+# is UNCHANGED (still '(a|b){0,30000}', still nullable, still the same
+# text [OPT-4.2]'s cell above uses), so nothing here depends on the state
+# cap headroom the count-scaling attempt above ran out of.
+REFCAP="$WORKDIR/pcrec_lowcap"
+REFCAP_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
+# shellcheck disable=SC2086
+if [ -z "$REFCAP_SRCS" ]; then
+    bad "[OPT-4.1] found no compiler sources under $ROOT_DIR/src for the lowered-cap reference build"
+elif ! $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -DPCREC_MAX_EMIT_BYTES=500000 \
+        -o "$REFCAP" "$ROOT_DIR/cli/main.c" $REFCAP_SRCS 2>"$WORKDIR/refcap.err"; then
+    bad "[OPT-4.1] could not build the lowered-cap (PCREC_MAX_EMIT_BYTES=500000) reference compiler: $(head -3 "$WORKDIR/refcap.err")"
+else
+fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$REFCAP" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
 if [ $? -eq 0 ]; then
     fpsz=$(wc -c < "$WORKDIR/o.c")
     fppf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
@@ -545,6 +616,7 @@ if [ $? -eq 0 ]; then
     fi
 else
     bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter no longer COMPILES — this is limits.md §3.3's 'no pattern that compiles today stops compiling' going false: declining the collapse keeps the exact prefilter the cap refused, and the size rung has no third attempt: $(printf '%s' "$fplog" | head -1)"
+fi
 fi
 
 echo
