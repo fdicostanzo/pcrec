@@ -485,7 +485,48 @@ enum {
      * declined population a usable reference. What the emitter DID is reported
      * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`) and mirrored at
      * run time by `rx_info.search_form`. */
-    PCREC_NO_START_PINNED = 1u << 22
+    PCREC_NO_START_PINNED = 1u << 22,
+
+    /* [ENG-ISL] STEP 1 `-fno-alt-island` — deny the VM's ALTERNATION ISLAND
+     * (docs/design/alt_dispatch_study.md algorithm (e); docs/spec/tuning.md
+     * §2.20). A VM-route axis: which SHAPE `src/gen/emit_vm.c` lowers a flat
+     * alternation of literal branches into.
+     *
+     * WHAT IT DENIES. Today's `vm_alt` emits an N-way alternation as a CHAIN:
+     * one resume frame per untried branch, the frame pushed at branch k
+     * resuming branch k+1, and each branch its own byte chain — so matching
+     * the LAST of 512 branches costs 511 push/fail/pop round trips on one
+     * subject byte, and the bench measured branch ORDER costing the VM ×8.87
+     * at width 256 and ×20.1 at 512 while the DFA artifact was byte-identical.
+     * The island replaces that with a TRIE over the branches' literal bytes: a
+     * byte compare per single-child node, a switch per fan-out node, and one
+     * try site per end node. The walk is deterministic (every trie edge is one
+     * BYTE, so sibling edges are disjoint), which is what makes the set of
+     * alternation branches still live at any point in it a COMPILE-TIME
+     * function of the node reached rather than a runtime mask.
+     *
+     * ANSWER-IDENTITY-preserving, and by construction rather than by
+     * inspection: leftmost-first over an alternation of literals is
+     * `min{ i : branch i matches here }` — a function of WHICH branches match
+     * and never of match length or trie depth — and the branches still live at
+     * a node are exactly the accepts on the path to it, tried in ASCENDING
+     * ORIGINAL INDEX, which is the order `vm_alt`'s chain tries them in.
+     * `(ab|abc)d` on "abcd" falls from `ab` to `abc` either way.
+     *
+     * DENY-ONLY, `-fno-altcls-factor`'s shape: the emitter takes the island
+     * wherever every branch of a flat alternation is a bare literal byte run,
+     * so there is nothing for a caller to ADDRESS and nothing to force. An
+     * alternation the predicate declines — a class-leading or otherwise
+     * non-literal branch, a branch carrying a capture, a backreference, a
+     * lookaround or a quantifier, an empty branch — is emitted by `vm_alt`
+     * unchanged, which is a SELECTION OUTCOME and never a refusal. A caseless
+     * alternation declines for the same one reason: D23 folds a caseless
+     * literal to a two-member CLASS at parse time, so its branches are
+     * class-leading before the emitter ever sees them.
+     *
+     * What the emitter DID is reported by `<PREFIX>_VM_ALT_ISLANDS`, an
+     * activity COUNT (docs/spec/match_api.md §6.3 family (b)). */
+    PCREC_NO_ALT_ISLAND = 1u << 23
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

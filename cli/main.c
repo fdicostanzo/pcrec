@@ -443,6 +443,13 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             opt.flags |= PCREC_NO_ALTCLS_MERGE;
         else if (!no_more_opts && !strcmp(a, "-fno-altcls-factor"))
             opt.flags |= PCREC_NO_ALTCLS_FACTOR;
+        /* [ENG-ISL] the VM's alternation island. Deny-only, and for the same
+         * reason as the two flags above: each qualifying flat alternation is
+         * its own selection point, the emitter takes the island wherever the
+         * predicate holds, and a declined one is emitted by `vm_alt`
+         * unchanged. See lib/pcrec.h's PCREC_NO_ALT_ISLAND comment. */
+        else if (!no_more_opts && !strcmp(a, "-fno-alt-island"))
+            opt.flags |= PCREC_NO_ALT_ISLAND;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

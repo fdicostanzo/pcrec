@@ -471,6 +471,15 @@ typedef struct {
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
                            * known before emission — which is the point. */
     long long nodes;      /* emitted-node budget, against PCREC_MAX_VM_NODES */
+    /* [ENG-ISL] how many flat alternations this program lowered as an
+     * ALTERNATION ISLAND (a trie dispatch) rather than as `vm_alt`'s serial
+     * frame chain — the source of `<PREFIX>_VM_ALT_ISLANDS`, §6.3 family (b).
+     * An ACTIVITY COUNT for `RX_ALTCLS_FACTORED`'s reason: the island is
+     * selected PER ALTERNATION, so a pattern with two of them can and does
+     * mix, and a boolean "did it" would lose which. Written by `vm_alt`
+     * itself, in the same call that emits the island, so the stamp cannot
+     * drift from the program text. */
+    long long nislands;
     unsigned  rungs;       /* [D46] BITMASK of VmRungKind values PRESENT in
                             * this program — the rung decision is PER
                             * QUANTIFIER BODY (vm_cursor_fits is consulted
@@ -2323,6 +2332,60 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
     return c;
 }
 
+/* Below this width the island is not built. TWO branches is the floor because
+ * the island's forward pass is never MORE byte tests than the chain it
+ * replaces (it is the same tests, factored) and it emits no push at all where
+ * the chain emits one per untried branch — so there is no measured width at
+ * which the chain is ahead. It is a named constant rather than a bare 2 so
+ * that a future measurement moves one line: the region below the study's own
+ * narrowest rung is UNMEASURED, and `docs/dev/lanes/isl1_report.md` records
+ * what would settle it. */
+#define VM_ISL_MIN_BRANCHES 2
+
+typedef struct {
+    int idx;      /* the branch's ORIGINAL alternation index (0-based) */
+    int len;      /* its literal length in bytes */
+    int next;     /* the next accept AT THIS NODE, or -1 */
+} VmIslAcc;
+
+typedef struct {
+    int child;    /* first child, or -1 — children in ASCENDING edge byte */
+    int sib;      /* next sibling, or -1 */
+    int parent;   /* -1 at the root */
+    int acc;      /* first accept record at this node, or -1 */
+    int acclast;  /* last accept record, so appending is O(1) and the list
+                   * stays in ascending original index: branches are inserted
+                   * in index order, so appending IS sorting */
+    int nacc;
+    int nkids;
+    int depth;    /* bytes consumed to reach this node */
+    int npath;    /* accepts on the root..here path, this node's included —
+                   * the study's MASK DEPTH, as a compile-time number */
+    int chain;    /* the node owning the candidate chain this node's
+                   * walk-dies-here exit takes: the deepest ancestor-or-self
+                   * with an accept, or -1 for "no branch matched, fail" */
+    int lbl;      /* the dispatch label */
+    int chainlbl; /* the FIRST candidate's label, on a node with accepts */
+    unsigned char byte; /* the edge byte that reaches this node */
+} VmIslNode;
+
+typedef struct {
+    VmIslNode *nd;
+    int        nnd, ndcap;
+    VmIslAcc  *acc;
+    int        nacc, acccap;
+    int        nbr;
+    int        maxdepth;
+    int        maxpath;    /* the largest npath over the trie */
+    long long  trysites;   /* candidate try sites the emission will write */
+    long long  pushes;     /* RX_PUSH sites the emission will write */
+} VmIsl;
+
+
+/* [ENG-ISL] the analysis, defined beside `vm_alt` where it is emitted and
+ * declared here because `vm_count_slots` below must ask the SAME question. */
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast **br, int nbr);
+
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
 /* Counts slot_values slots AND emitted resume points, in one walk that mirrors the
@@ -2522,7 +2585,36 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         v->nmark++;
         vm_count_slots(v, a->l, repl, false);
         return;
-    case A_ALT:
+    case A_ALT: {
+        /* [ENG-ISL] THE ISLAND'S PUSH COUNT IS A PROPERTY OF THE TRIE, not of
+         * the branch count, so this arm asks the SAME `vm_isl_build` `vm_alt`
+         * will — the "site for site" discipline this function's header states.
+         * An island emits one push per pending candidate beyond the first at
+         * each end node, which is ZERO on a branch set where no branch is a
+         * prefix of another (274 of the corpus's 429 qualifying alternations)
+         * and can exceed `nbr - 1` where several are (`a|ab|abc` emits three
+         * against the chain's two) — an argument from branch counts would be
+         * wrong in BOTH directions. A declined alternation falls through to
+         * the chain arithmetic below, unchanged. */
+        {
+            int nbr = 1;
+            for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+            const Ast **br = arena_alloc(&v->cx->arena,
+                                         (size_t)nbr * sizeof(Ast *));
+            int i = nbr;
+            const Ast *t = a;
+            while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+            br[0] = t;
+            VmIsl isl;
+            if (vm_isl_build(v, &isl, br, nbr)) {
+                v->npush += isl.pushes;
+                /* The branches are literal chains by construction: no slot, no
+                 * mark, no resume point of their own. Nothing to descend
+                 * into, and descending would be the second derivation this
+                 * arm exists to avoid. */
+                return;
+            }
+        }
         /* Iterative spine walk (R1 R-2 / D10) — see vm_nullable. One push per
          * A_ALT NODE, which for a left-nested flat alternation of k branches
          * is k-1, exactly what vm_alt emits. */
@@ -2533,6 +2625,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         }
         vm_count_slots(v, a, repl, false);
         return;
+    }
     case A_CAT:
         while (a->k == A_CAT) { vm_count_slots(v, a->r, repl, false); a = a->l; }
         vm_count_slots(v, a, repl, false);
@@ -3036,6 +3129,345 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  * which is what keeps `(a|b|c|...)` off the frame-capacity bound. The
  * preference order is identical either way: the frame pushed at branch k
  * resumes branch k+1. */
+/* ---- [ENG-ISL] STEP 1: the ALTERNATION ISLAND ----------------------------
+ *
+ * `docs/design/alt_dispatch_study.md` algorithm (e), built here as the VM's
+ * lowering for a flat alternation whose every branch is a bare literal byte
+ * run. The measured need is the plan row's ([ENG-ISL], bench O-15): branch
+ * ORDER costs `vm_alt`'s serial chain ×8.87 at width 256 and ×20.1 at 512
+ * while the DFA artifact for the same pattern is byte-identical, because the
+ * chain spends one push/fail/pop round trip per untried branch on ONE subject
+ * byte. The island spends a byte compare instead.
+ *
+ * THE SHAPE. The branches are inserted into a TRIE keyed by their literal
+ * bytes, sorted by byte at every node, each end node tagged with the ORIGINAL
+ * alternation indices of the branches that end there. A node with one child
+ * emits a byte compare, a node with several a `switch` on the subject byte.
+ * `scan_position` is NOT advanced during the walk — every test reads
+ * `subject[scan_position + depth]` — so the alternation's entry position is
+ * still in `scan_position` at every point in the island, which is what a
+ * resume frame needs to record and what the try sites add a branch's length
+ * to.
+ *
+ * WHY IT ANSWERS WHAT `vm_alt` ANSWERS. Leftmost-first over an alternation of
+ * literals is `min{ i : branch i matches at this position }` — a pure function
+ * of WHICH branches match, never of their length or of trie depth
+ * (`src/ir/nfa.c:192`'s own counter-example: `abc|a|abd` on "abd" is the `a`
+ * branch, index 1, length 1, not the longer `abd` at index 2). The trie's
+ * construction reorders nothing and discards nothing: a node's accepts are
+ * exactly the branches whose literal equals the prefix consumed to reach it,
+ * so the branches matching at a position are exactly the accepts on the ONE
+ * path the subject selects. And when the continuation fails, PCRE backtracks
+ * INTO the alternation (`(ab|abc)d` on "abcd" must fall from `ab` to `abc`),
+ * so those accepts have to be tried in ASCENDING ORIGINAL INDEX — which is
+ * the order `vm_alt`'s chain tries them in, and the order this emits.
+ *
+ * THE DEFERRED MASK IS A COMPILE-TIME CONSTANT, WHICH IS WHY NO SLOT IS
+ * ALLOCATED AND NO MASK IS EMITTED. Every trie edge here is a single BYTE, so
+ * sibling edges are DISJOINT by construction and the walk is a single
+ * deterministic path — there is no sibling subtree left unvisited that could
+ * still produce a candidate. The set of still-live branches at the point the
+ * walk dies is therefore a function of WHICH NODE it died at, known while the
+ * emitter is standing on that node. The study's §3.2 commit rule ("commit only
+ * if this accept beats everything deeper in the subtree AND the best already
+ * deferred") is the RUNTIME form of the same fact, needed only by a walker
+ * that discovers the path as it goes; an EMITTER already knows the whole path,
+ * so it emits the candidate list itself, in index order, with no runtime
+ * decision and no mask to size. The census (`scripts/alt_census.py`) measured
+ * that list at length 1 for 274 of the corpus's 429 qualifying alternations
+ * and never longer than 4.
+ *
+ * ONE CHAIN PER END NODE, SHARED DOWNWARD. A node with no accepts of its own
+ * has the same candidate list as its parent, so the chains are keyed by the
+ * deepest ancestor-or-self carrying an accept (`chain` below) — the number of
+ * chains is the number of end nodes, not the number of nodes.
+ *
+ * WHAT IT DECLINES, and every one of these is a SCOPE BOUNDARY rather than a
+ * refusal: the alternation is emitted by `vm_alt` unchanged.
+ *   - any branch that is not a chain of SINGLETON byte classes: a class
+ *     (including a caseless literal, which D23 folded to a two-member class at
+ *     parse time long before the emitter sees it), a quantifier, a group, a
+ *     capture, a backreference, a lookaround, an assertion, or an EMPTY
+ *     branch. The trie's edges are bytes; a class edge would break the
+ *     disjoint-siblings property the whole argument above rests on, and is
+ *     `src/ir/nfa.c`'s rule 2 in the emitter's own vocabulary.
+ *   - fewer than `VM_ISL_MIN_BRANCHES` branches.
+ *   - `PCREC_NO_ALT_ISLAND`.
+ *
+ * The analysis is ONE function (`vm_isl_build`), called by `vm_alt` to emit
+ * and by `vm_count_slots` to count the resume points it will emit — the "site
+ * for site" discipline that function's header states, and the reason the push
+ * count is not re-derived from an argument about branch counts. */
+
+/* The byte an A_CLASS admits when it admits EXACTLY ONE, else -1. This is the
+ * emitter's whole literal test: `src/parse/` normalizes a literal to a
+ * singleton class (internal.h's A_CLASS comment), so "is a literal byte" and
+ * "is a one-member class" are the same question asked once. */
+static int vm_isl_single(const Ast *a)
+{
+    int found = -1;
+    if (a->k != A_CLASS) return -1;
+    for (int c = 0; c < 256; c++) {
+        if (!cls_has(a->u.cls.bits, (unsigned)c)) continue;
+        if (found >= 0) return -1;
+        found = c;
+    }
+    return found;
+}
+
+/* A branch's literal bytes, or NULL when the branch is not a bare literal run.
+ * The A_CAT spine is flattened ITERATIVELY for `vm_emit`'s own reason (R-2 /
+ * D10): a 20,000-element concatenation must not overflow pcrec's own C stack.
+ */
+static const uint8_t *vm_isl_bytes(Vm *v, const Ast *a, int *outlen)
+{
+    int n = 1;
+    for (const Ast *t = a; t->k == A_CAT; t = t->l) n++;
+    uint8_t *out = arena_alloc(&v->cx->arena, (size_t)n);
+    int i = n;
+    const Ast *t = a;
+    while (t->k == A_CAT) {
+        int b = vm_isl_single(t->r);
+        if (b < 0) return NULL;
+        out[--i] = (uint8_t)b;
+        t = t->l;
+    }
+    {
+        int b = vm_isl_single(t);
+        if (b < 0) return NULL;
+        out[--i] = (uint8_t)b;
+    }
+    *outlen = n;
+    return out;
+}
+
+static int vm_isl_node(Vm *v, VmIsl *t, int parent, int depth, unsigned char byte)
+{
+    if (t->nnd == t->ndcap) {
+        int ncap = t->ndcap ? t->ndcap * 2 : 16;
+        VmIslNode *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        if (t->nnd) memcpy(nv, t->nd, (size_t)t->nnd * sizeof *nv);
+        t->nd = nv;
+        t->ndcap = ncap;
+    }
+    VmIslNode *n = &t->nd[t->nnd];
+    n->child = n->sib = n->acc = n->acclast = -1;
+    n->parent = parent;
+    n->nacc = n->nkids = n->npath = 0;
+    n->depth = depth;
+    n->chain = -1;
+    n->lbl = n->chainlbl = -1;
+    n->byte = byte;
+    return t->nnd++;
+}
+
+/* Insert one branch. `idx` ascends across calls, so appending to a node's
+ * accept list keeps that list in ascending ORIGINAL INDEX with no sort. */
+static void vm_isl_insert(Vm *v, VmIsl *t, const uint8_t *w, int len, int idx)
+{
+    int cur = 0;
+    for (int i = 0; i < len; i++) {
+        int prev = -1, ch = t->nd[cur].child;
+        while (ch >= 0 && t->nd[ch].byte < w[i]) { prev = ch; ch = t->nd[ch].sib; }
+        if (ch < 0 || t->nd[ch].byte != w[i]) {
+            int nn = vm_isl_node(v, t, cur, t->nd[cur].depth + 1, w[i]);
+            t->nd[nn].sib = ch;
+            if (prev < 0) t->nd[cur].child = nn;
+            else          t->nd[prev].sib  = nn;
+            t->nd[cur].nkids++;
+            ch = nn;
+        }
+        cur = ch;
+    }
+    if (t->nacc == t->acccap) {
+        int ncap = t->acccap ? t->acccap * 2 : 16;
+        VmIslAcc *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        if (t->nacc) memcpy(nv, t->acc, (size_t)t->nacc * sizeof *nv);
+        t->acc = nv;
+        t->acccap = ncap;
+    }
+    int ai = t->nacc++;
+    t->acc[ai].idx = idx;
+    t->acc[ai].len = len;
+    t->acc[ai].next = -1;
+    if (t->nd[cur].acc < 0) t->nd[cur].acc = ai;
+    else                    t->acc[t->nd[cur].acclast].next = ai;
+    t->nd[cur].acclast = ai;
+    t->nd[cur].nacc++;
+}
+
+/* Build the island for a flat alternation, or return false and leave `t`
+ * unusable. `br`/`nbr` are the branches in ORIGINAL ORDER, as `vm_alt`
+ * flattens them.
+ *
+ * ONE ANALYSIS, TWO READERS. `vm_alt` calls this to emit; `vm_count_slots`
+ * calls it to learn `pushes` before emission, which is the only honest way to
+ * mirror an emission whose push count is a property of the trie rather than of
+ * the branch count. */
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast **br, int nbr)
+{
+    memset(t, 0, sizeof *t);
+    if (v->cx->opt->flags & PCREC_NO_ALT_ISLAND) return false;
+    if (nbr < VM_ISL_MIN_BRANCHES) return false;
+    t->nbr = nbr;
+    (void)vm_isl_node(v, t, -1, 0, 0);      /* the root */
+    for (int j = 0; j < nbr; j++) {
+        int len = 0;
+        const uint8_t *w = vm_isl_bytes(v, br[j], &len);
+        if (!w || len == 0) return false;
+        vm_isl_insert(v, t, w, len, j);
+        if (len > t->maxdepth) t->maxdepth = len;
+    }
+
+    /* npath / chain, by an ITERATIVE pre-order walk — the trie is as deep as
+     * the longest branch, which a pattern controls, so a recursion here would
+     * be a stack the pattern sizes. */
+    int *stk = arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
+    int sp = 0;
+    t->nd[0].npath = t->nd[0].nacc;
+    t->nd[0].chain = t->nd[0].nacc ? 0 : -1;
+    stk[sp++] = 0;
+    while (sp) {
+        int x = stk[--sp];
+        if (t->nd[x].npath > t->maxpath) t->maxpath = t->nd[x].npath;
+        if (t->nd[x].nacc) {
+            t->trysites += t->nd[x].npath;
+            t->pushes   += t->nd[x].npath - 1;
+        }
+        for (int c = t->nd[x].child; c >= 0; c = t->nd[c].sib) {
+            t->nd[c].npath = t->nd[x].npath + t->nd[c].nacc;
+            t->nd[c].chain = t->nd[c].nacc ? c : t->nd[x].chain;
+            stk[sp++] = c;
+        }
+    }
+    return true;
+}
+
+/* The candidate list at node `x`: every accept on the root..x path, ASCENDING
+ * ORIGINAL INDEX. Written into `out` (which the caller sized at
+ * `nd[x].npath`), by walking UP to the root and inserting each node's
+ * already-ascending accept list into the right place — an insertion sort over
+ * a list the census measured at length 1 for the overwhelming majority and
+ * never longer than 4. */
+static void vm_isl_cands(VmIsl *t, int x, VmIslAcc *out)
+{
+    int n = 0;
+    for (int y = x; y >= 0; y = t->nd[y].parent) {
+        for (int a = t->nd[y].acc; a >= 0; a = t->acc[a].next) {
+            int i = n++;
+            while (i > 0 && out[i - 1].idx > t->acc[a].idx) {
+                out[i] = out[i - 1];
+                i--;
+            }
+            out[i] = t->acc[a];
+        }
+    }
+}
+
+/* Where a node's walk goes when no child matches the subject byte (or the
+ * subject ran out): its chain, or the fail label. Every exit from the island's
+ * forward walk is one of these, which is why the WORK CHARGE for the bytes the
+ * walk examined is written here and nowhere else. */
+static void vm_isl_die(Vm *v, VmIsl *t, int x)
+{
+    if (t->nd[x].depth > 0) {
+        char cnt[32];
+        snprintf(cnt, sizeof cnt, "%d", t->nd[x].depth);
+        vm_work(v, cnt,
+                "work charge: alternation-island trie bytes examined on this "
+                "path, which the fail label never sees");
+    }
+    if (t->nd[x].chain < 0) vm_fail(v);
+    else                    vm_goto(v, t->nd[t->nd[x].chain].chainlbl);
+}
+
+static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
+{
+    StrBuf *b = v->b;
+
+    /* Labels first, so a node's dispatch can `goto` a child emitted later.
+     * The ROOT takes the caller's `entry` — the island IS the alternation's
+     * entry point, not a region reached from one. */
+    t->nd[0].lbl = entry;
+    for (int x = 1; x < t->nnd; x++) t->nd[x].lbl = vm_label(v);
+    for (int x = 0; x < t->nnd; x++)
+        if (t->nd[x].nacc) t->nd[x].chainlbl = vm_label(v);
+
+    int *stk = arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
+    int sp = 0;
+    stk[sp++] = 0;
+    while (sp) {
+        int x = stk[--sp];
+        const VmIslNode *n = &t->nd[x];
+
+        /* the emitted-node budget, charged per TRIE node: the island's size is
+         * its node count, and PCREC_MAX_VM_NODES is what bounds an emission a
+         * pattern controls the size of. */
+        vm_charge(v);
+
+        vm_lbl(v, n->lbl, x == 0
+               ? vm_rolef(v, "alternation island: trie dispatch over %d "
+                             "literal branches", t->nbr)
+               : vm_rolef(v, "island node at depth %d (byte 0x%02x), %d "
+                             "child%s, %d accept%s",
+                          n->depth, (unsigned)n->byte, n->nkids,
+                          n->nkids == 1 ? "" : "ren", n->nacc,
+                          n->nacc == 1 ? "" : "s"));
+
+        if (n->nkids == 1) {
+            int c = n->child;
+            sb_printf(b, "    if (scan_position + %d < subject_length && "
+                         "subject[scan_position + %d] == %d) goto %s_L%d;\n",
+                      n->depth, n->depth, (int)t->nd[c].byte, v->p, t->nd[c].lbl);
+            vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: single-child byte compare");
+        } else if (n->nkids > 1) {
+            sb_printf(b, "    if (scan_position + %d < subject_length) "
+                         "switch (subject[scan_position + %d]) {\n",
+                      n->depth, n->depth);
+            for (int c = n->child; c >= 0; c = t->nd[c].sib) {
+                sb_printf(b, "    case %d: goto %s_L%d;\n",
+                          (int)t->nd[c].byte, v->p, t->nd[c].lbl);
+                vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: first-byte switch arm");
+            }
+            sb_puts(b, "    }\n");
+        }
+        vm_isl_die(v, t, x);
+
+        for (int c = n->child; c >= 0; c = t->nd[c].sib) stk[sp++] = c;
+    }
+
+    /* THE CANDIDATE CHAINS. One per end node, tried in ascending original
+     * index — `vm_alt`'s own resume order, computed at compile time. The push
+     * comes BEFORE the `scan_position` advance so the frame records the
+     * ALTERNATION'S entry position, which is exactly where the next candidate
+     * has to start measuring from. */
+    for (int x = 0; x < t->nnd; x++) {
+        if (!t->nd[x].nacc) continue;
+        int k = t->nd[x].npath;
+        VmIslAcc *cand = arena_alloc(&v->cx->arena, (size_t)k * sizeof *cand);
+        vm_isl_cands(t, x, cand);
+        int *lbl = arena_alloc(&v->cx->arena, (size_t)k * sizeof *lbl);
+        lbl[0] = t->nd[x].chainlbl;
+        for (int j = 1; j < k; j++) lbl[j] = vm_label(v);
+        for (int j = 0; j < k; j++) {
+            vm_charge(v);
+            vm_lbl(v, lbl[j],
+                   vm_rolef(v, "island: branch %d of %d matched here (%d byte%s)"
+                               "%s", cand[j].idx + 1, t->nbr, cand[j].len,
+                            cand[j].len == 1 ? "" : "s",
+                            j + 1 < k ? "; resume tries the next one that did"
+                                      : "; the last candidate on this path"));
+            if (j + 1 < k)
+                vm_push(v, lbl[j + 1],
+                        vm_rolef(v, "island: branch %d preferred; resume tries "
+                                    "branch %d", cand[j].idx + 1,
+                                 cand[j + 1].idx + 1));
+            sb_printf(b, "    scan_position += %d;\n", cand[j].len);
+            vm_goto(v, next);
+        }
+    }
+}
+
 static void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
@@ -3046,6 +3478,22 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     const Ast *t = a;
     while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
     br[0] = t;
+
+    /* [ENG-ISL] the island first, and it is a SELECTION rather than a special
+     * case: `vm_isl_build` either returns the trie for a flat alternation of
+     * literal branches or declines, and a declined alternation falls straight
+     * through to the chain below unchanged — which is what makes
+     * `-fno-alt-island` a byte-identity control on every pattern the predicate
+     * declines. `v->nislands` is bumped HERE, in the call that emits, so
+     * `<PREFIX>_VM_ALT_ISLANDS` cannot drift from the program text. */
+    {
+        VmIsl isl;
+        if (vm_isl_build(v, &isl, br, nbr)) {
+            v->nislands++;
+            vm_isl_emit(v, &isl, entry, next);
+            return;
+        }
+    }
 
     int *bentry = arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
     int *resume = arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
@@ -8641,6 +9089,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * need (D77). The trigger that would make one owed is the same one
      * `RX_DFA_TABLE`'s spec entry names. */
     sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 0 : 1);
+    /* [ENG-ISL] THE ALTERNATION-ISLAND STAMP — §6.3 family (b), VM route only,
+     * UNCONDITIONAL on every VM artifact including a hybrid, `0` spelled as
+     * readily as any other value. A fact readable by a macro's ABSENCE is the
+     * discriminator [DD-13] had to go back and remove from two checks.
+     *
+     * AN ACTIVITY COUNT AND NOT A BOOLEAN, on `RX_ALTCLS_FACTORED`'s
+     * precedent: the island is selected PER FLAT ALTERNATION, so a pattern
+     * with two alternations can and does take it for one and decline the
+     * other, and "did it" would lose which. `v.nislands` is written by
+     * `vm_alt` in the same call that emits the trie, so this cannot report an
+     * island the program does not contain.
+     *
+     * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
+     * no consumer reads the fact at RUN time today, so a mirror would be built
+     * ahead of a measured need (D77). */
+    sb_printf(c, "#define %s_VM_ALT_ISLANDS %lld\n", v.up, v.nislands);
     /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
      * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
      *
