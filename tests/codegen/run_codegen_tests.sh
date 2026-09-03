@@ -813,9 +813,22 @@ elif pcrec_run "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|eps
         -e 's/rx_reverse_step(rx_reverse_next_state, \([a-z_]*\), \(.*\));/rx_reverse_next_state[\1 + \2];/' \
         -e 's/rx_\(forward\|reverse\)_state \([a-z_]*_state\) =/unsigned \2 =/' \
         "$WORKDIR/k24.c" > "$WORKDIR/k24_stripped.c"
-    k24_left=$(body "$WORKDIR/k24_stripped.c" rx_search "$WORKDIR/k24_ctl.body" >/dev/null 2>&1 &&
-               grep -cE 'rx_(forward|reverse)_(step|is_dead|accepts|accepts_class|row|view_live|view_take)\(' \
-                    "$WORKDIR/k24_ctl.body" || echo 999)
+    # [landing, 2026-09-02] `grep -c` exits 1 (not 0) when it counts zero
+    # matches — and zero IS the success value this check wants (a fully
+    # de-sugared control has no accessor calls left) — so the old
+    # one-liner's `|| echo 999` fired on every passing run too, making
+    # k24_left the TWO-LINE string "0\n999" and turning the `-ne 0` test
+    # below into a silent no-op ("integer expression expected" on stderr,
+    # evaluated false either way). Split extraction failure from the count
+    # itself: only a failed `body` extraction sets 999, and the grep's own
+    # exit status is discarded (`|| true`) so k24_left is always exactly
+    # one integer.
+    if body "$WORKDIR/k24_stripped.c" rx_search "$WORKDIR/k24_ctl.body" >/dev/null 2>&1; then
+        k24_left=$(grep -cE 'rx_(forward|reverse)_(step|is_dead|accepts|accepts_class|row|view_live|view_take)\(' \
+                        "$WORKDIR/k24_ctl.body" || true)
+    else
+        k24_left=999
+    fi
 
     if [ "$(grep -c '__attribute__((noclone))' "$WORKDIR/k24.c")" -lt 1 ]; then
         bad "[K24]: emitted artifact carries no __attribute__((noclone)) at all — the K24 lever has been removed from emit_search_head (docs/dev/known_issues.md K24, docs/design/k24bisect_impl/k24_fix_note.md)"
