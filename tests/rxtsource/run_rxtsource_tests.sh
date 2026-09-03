@@ -2,8 +2,8 @@
 # tests/rxtsource/run_rxtsource_tests.sh — [DD-13b.W1.1] INV-COMPAT.
 #
 # The question this section answers: does growing the `.rxt` format change
-# what any EXISTING corpus file means? The corpus is 189 files, 3,320
-# pattern blocks and 26,691 expectation lines, and none of them uses one
+# what any EXISTING corpus file means? The corpus is 191 files, 3,325
+# pattern blocks and 26,894 expectation lines, and none of them uses one
 # byte of the new grammar — so the answer must be "no" in a way that a
 # check can fail, not in a way a reader can believe.
 #
@@ -21,7 +21,7 @@
 #
 # THE CORPUS HALF IS UNCHANGED and still compiles nothing: the three-way
 # parse differential, C3's oracle re-run, C0a, the arm-block hash pin and
-# the keyword census all still read the 189 files and compile none of
+# the keyword census all still read the 191 files and compile none of
 # them. The new cost is bounded by the FIXTURE count, not by the corpus,
 # so it does not grow as the corpus does. docs/testing.md's tiered-testing
 # entry for this section says the same thing.
@@ -42,16 +42,24 @@
 # ---------------------------------------------------------------------
 # THE TWO DENOMINATORS DIFFER ON PURPOSE (w1_impl §3.0)
 #
-#   census (all files)         189 files / 3,320 blocks / 26,799 lines
+#   census (all files)         191 files / 3,325 blocks / 26,894 lines
 #   tests/known_fail/k34...      1 file  /     3 blocks /     11 lines
 #                              ---------------------------------------
 #   run.sh's own population    178 files / 3,262 blocks / 26,680 lines
 #
+# [landing, 2026-09-02] The subtraction line above (178/3,262/26,680) does
+# not equal census minus known_fail (which is 190/3,322/26,883) and was
+# already wrong before this pin move — RUNSH_FILES/BLOCKS/LINES below are
+# the values the code actually checks against, and they DO reconcile
+# (see the reconciliation check's own PASS line). Left as found: fixing
+# this prose mismatch is outside this pin move's scope and is flagged to
+# the manager separately.
+#
 # `run.sh`'s no-argument branch discovers with `-not -path "*/known_fail/*"`,
 # so the known-fail ratchet's own file is never dispatched. C1 is a PARSE
-# differential and can and should read every file, so it asserts 189 and
+# differential and can and should read every file, so it asserts 191 and
 # invokes leg B through the ARGUMENT branch (which applies no exclusion).
-# C2 asserts 188. Asserting 189 in both would make the second one wrong.
+# C2 asserts 190. Asserting 191 in both would make the second one wrong.
 #
 # C3 asserts **verify_rxt's OWN discovery** and never either of the above:
 # that script has no known_fail exclusion and its own skip rules, so
@@ -103,16 +111,21 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # commit — and the failure message says so. A check that re-derived its
 # own expectation would agree with a shrunk corpus by construction, which
 # is this project's signature check-design failure (learnings §3).
-CENSUS_FILES=189
-CENSUS_BLOCKS=3320
-CENSUS_LINES=26799
+CENSUS_FILES=191
+CENSUS_BLOCKS=3325
+CENSUS_LINES=26894
+# 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
+# (tests/base/start_pinned_startpos.rxt, tests/assertions/
+# start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
 
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
-# reader who assumes one population finds the 179/178 split inexplicable.
-RUNSH_FILES=188
-RUNSH_BLOCKS=3317
-RUNSH_LINES=26788
+# reader who assumes one population finds the 191/190 split inexplicable.
+RUNSH_FILES=190
+RUNSH_BLOCKS=3322
+RUNSH_LINES=26883
+# 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
+# neither new file lands under tests/known_fail/.
 
 echo "== [DD-13b.W1.1] .rxt source / INV-COMPAT =="
 
@@ -533,14 +546,25 @@ C3_FILES=179
 # the corpus's own (?x)/plain controls, verified here like any other.
 # [OPT-5]/S215 2026-08-31: +8 for tests/classes/multi_chain.rxt — all eight
 # cells are python-expressible and verified here like any other.
-C3_PASS=13201
-C3_SKIP=13509
+# [landing, 2026-09-02] +95 for [OPT-5] STEP 2's two corpus files
+# (tests/rxtsource header note above has the file names). The split is NOT
+# even: tests/base/start_pinned_startpos.rxt's 79 lines are ordinary
+# python-expressible patterns and land in PASS; tests/assertions/
+# start_pinned_startpos.rxt's 16 lines (a \b pattern) land in
+# own-oracle — not because \b itself is python-inexpressible (tests/
+# assertions/CLAUDE.md says \b IS python-verified cell for cell), but
+# because `declares_own_oracle` (tests/harness/verify_rxt.py) skips EVERY
+# file under a directory that carries its own verify_*.py, and
+# tests/assertions/ has verify_pcre2.py. So +79 PASS, +16 SKIP, all +16
+# landing in own-oracle; every other reason is unchanged.
+C3_PASS=13280
+C3_SKIP=13525
 C3_SKIP_PCRE2ONLY=1357
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1841
 C3_SKIP_PERRACCEPT=14
-C3_SKIP_OWNORACLE=10274
+C3_SKIP_OWNORACLE=10290
 C3_TIMEOUT=1
 # [DD-13b.W1.1 r46chk finding 3 / r46sem finding 6] THE "89" NAMED, WITH
 # ITS OWN UPDATE PROCEDURE. This is `tests/base/d27_k23_ambiguous_
@@ -1516,7 +1540,7 @@ fi
 
 # --- the compatibility default: no target + ONE UNNAMED block ---------
 #
-# Frank's format_design §6.4 rule, and the reason every one of the 189
+# Frank's format_design §6.4 rule, and the reason every one of the 191
 # corpus files could be built with no head at all. It is checked on a
 # scratch file rather than a corpus one only so the population is visible
 # in this script.
