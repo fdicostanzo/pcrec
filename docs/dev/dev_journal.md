@@ -20192,3 +20192,19 @@ deleted path and died). Harmless; lesson for the skill: before
 `git worktree remove`, check the process table for cwds under the
 worktree (by PID, not pkill) — a delivered lane's harness workers can
 outlive its delivery by a minute.
+
+## 2026-09-03 — Fiftieth session, part 19 (11:4x): the bench re-pinned to 288d505; two of its census facts sharpen [ENG-ISL] and [OPT-VMFL]
+
+The bench's master aca987f is at pin 288d505 (make check 4/72/0 ·
+270/270 · 68+7). Facts for our rows: (1) the ALTCLS stamps exist on both
+routes (no defect), and the VM's branch-ORDER penalty is the trie's
+FACTORING count reaching the VM lowering — factored 11 (w-256) vs 57
+(srt-256), the DFA artifacts byte-identical but for that line — so the
+VM already consumes the trie's factoring and sorted input factors ~5×
+more; a canonical, priority-safe branch order (nfa.c:192's rules say
+where order carries meaning) is a cheap STEP 0 lever before any dispatch
+island, recorded on [ENG-ISL]. (2) `(?=abc)x+` stamps RX_VM_FRAMELESS 1
+with RX_RESUME_FRAMES 2 — the I-34 over-count class on their own
+witness. (3) cls-upto-16384 pinned: 16,554 → 13,162 B. (4) a new
+`search-start` registry axis of two rows on their side. Tonight's
+bounded@0.3 AFTER launches on Frank's word to them directly.
