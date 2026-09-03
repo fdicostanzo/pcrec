@@ -274,6 +274,17 @@ after.
 | the same widened: 22 patterns x 21 subjects | 462 x 3 arms | 0 |
 | this branch vs python3 `re` | 462 | 0 |
 | this branch under TEN axes vs main 9d8401a (default, `-fno-start-pinned`, `-fno-premul-table`, `-fno-anchored-dfa`, `-fno-scan-edge`, `-fprefilter`, `--engine=vm`, `-fno-possessify`, `-fno-counter`, `-fno-revdet`) | 3,024 | 0 |
+| VM HYBRIDS carrying edges (`-fprefilter`, 4 patterns x 7 subjects), where the loop is emitted inside `static rx_prefilter` | 28 | 0 |
+
+The hybrid row is separate because it is the one population where the two
+labels and the entry `goto` land inside a function that is not
+`<prefix>_search`: `pcrec_emit_dfa_engine` is the same call, so the hybrid
+gets the new loop by construction, and 3 of the 4 witnesses carry between one
+and four edges.
+
+Compilation: 149 artifacts across SIX axes (default, `--trace`,
+`--engine=vm`, `-fno-scan-edge`, `-fprefilter`, `--engine=dfa`) built
+`-Wall -Wextra -Werror`, 0 failures — after the two defects in F1 were fixed.
 
 ### 3.3 Byte identity where the transform is absent
 

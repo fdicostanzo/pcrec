@@ -5272,7 +5272,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     for (int k = 0; k < f->nscan; k++)
         if (f->scan[k] != d->n - f->nscan + k)
             ctx_fail(cx, 0, "internal error: scan-edge head %d sits at row %d, "
-                     "not at %d — the sentinel range must be the top %d rows",
+                     "not at %d -- the sentinel range must be the top %d rows",
                      k, f->scan[k], d->n - f->nscan + k, f->nscan);
     for (int k = 0; k < f->nskip; k++)
         for (int j = 0; j < f->nscan; j++)
