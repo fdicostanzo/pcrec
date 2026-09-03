@@ -541,6 +541,43 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # byte offset on a hand-built hybrid (`(x)[a-z]{0,4}\z --engine=vm
 # -fprefilter`) before trusting the corpus run to confirm it at scale.
 #
+# [ENG-ISL] STEP 1, 2026-09-03 — abi 17 -> 18. THE VM'S ALTERNATION ISLAND,
+# AND IT IS THE FIRST CHANGE IN THIS FILE'S HISTORY THAT MOVES COMPARISON (A)
+# ON PURPOSE. Every bump above says "(A) is still expected byte-identical, and
+# here that is a real check rather than a formality"; each of them was a change
+# ABOVE the `goto <p>_L0;` marker — stamps, entry chains, DFA tables, a
+# prefilter. This one is the VM PROGRAM ITSELF: a flat alternation whose whole
+# subtree matches a finite set of literal byte strings is emitted as a TRIE
+# (a byte compare per single-child node, a switch per fan-out node, one try
+# site per node where an alternative ends) instead of `vm_alt`'s serial resume
+# chain. `prog_region` is exactly where that happens, so of course it moves.
+#
+# THE EXEMPTION IS AN IFF, NOT AN ALLOWANCE, and that is the whole design of
+# the bucket below. A region that moved is excused ONLY when the subject
+# artifact's own `RX_VM_ALT_ISLANDS` stamp reads > 0 — a THIRD term, written
+# by `Vm.nislands` where the region is written by the trie emitter — and the
+# converse is asserted in the same pass: an artifact that STAMPS an island and
+# whose region is byte-identical to the pre-island reference is a failure,
+# because the stamp is then claiming a trie the program does not contain. A
+# plain count of excused patterns would have caught neither direction.
+#
+# AND THE BUCKET HAS ITS OWN NON-VACUITY FLOOR. `risland == 0` FAILS: an
+# emitter that stopped building islands entirely would otherwise read green
+# here, which is the shape this tree has had to go back and remove from two
+# checks. The floor is "at least one", not a pinned population count, because
+# the population is a property of the corpus and moves whenever a `.rxt` file
+# is added — a number here would be re-pinned for reasons that have nothing to
+# do with the island.
+#
+# WHAT IS **NOT** EXEMPT, and this is what the bucket buys: a call-free
+# pattern whose region moved while its artifact stamps ZERO islands still
+# lands in `rdiff` and still fails. That is the pre-module pin doing exactly
+# the job it has always done, on the population this change does not touch.
+#
+# (B) re-pins as usual: every VM artifact gains a `<PREFIX>_VM_ALT_ISLANDS`
+# line whatever its value, so whole-file bytes move on the whole VM
+# population, island or not.
+#
 # THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, NOT THIS LANE'S: it must be
 # the last src commit of the change as it lands, and a lane branch cannot know
 # that commit. (The lane left it at da4fe60 (abi 16); the manager re-pinned it
@@ -880,6 +917,12 @@ sweep() { # sweep <label> <extra pcrec args>
     # pre-module pin. Kept in its own variables and printed on its own line so
     # the two claims never blur into one number.
     local rsame=0 rdiff=0 relided=0 rcallbearing=0 rsizeterm=0
+    # [ENG-ISL] the alternation island's own two buckets — see the header's
+    # 2026-09-03 entry. `risland` counts a region that moved AND whose artifact
+    # stamps an island; `rislsame` counts the other direction, an artifact that
+    # stamps one whose region did NOT move, which would mean the stamp claims a
+    # trie the program does not contain.
+    local risland=0 rislsame=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -918,6 +961,10 @@ sweep() { # sweep <label> <extra pcrec args>
             ra="$(printf '%s\n' "$a" | stamp_strip | prog_region)"
             rb="$(printf '%s\n' "$r" | stamp_strip | prog_region)"
             case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
+            # [ENG-ISL] the artifact's OWN account of what it contains, read
+            # from the subject side only: the pre-module reference predates the
+            # stamp entirely, so there is nothing to read there.
+            isl_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_ALT_ISLANDS \([0-9]*\)$/\1/p' | head -1)"
             if [ "$ra" = "$rb" ]; then
                 rsame=$((rsame + 1))
             elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
@@ -925,9 +972,20 @@ sweep() { # sweep <label> <extra pcrec args>
             elif printf '%s\n' "$SIZE_TERM_REGION_MOVERS" | grep -qxF -- "$pat"; then
                 rsizeterm=$((rsizeterm + 1))
                 printf 'REGION MOVED (ruled, [ART-SIZE] size term chose K) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "${isl_a:-0}" -gt 0 ]; then
+                risland=$((risland + 1))
+                printf 'REGION MOVED (ruled, [ENG-ISL] %s alternation island(s)) %s\n' "$isl_a" "$pat" >> "$WORKDIR/diff.$label"
             else
                 rdiff=$((rdiff + 1))
                 printf 'REGION DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            fi
+            # THE OTHER HALF OF THE IFF, and it is the half that catches a
+            # stamp lying about the program: an artifact that says it carries
+            # an island whose region is byte-identical to the PRE-ISLAND
+            # reference emitted no trie.
+            if [ "$ra" = "$rb" ] && [ "${isl_a:-0}" -gt 0 ]; then
+                rislsame=$((rislsame + 1))
+                printf 'ISLAND STAMPED BUT REGION UNMOVED %s\n' "$pat" >> "$WORKDIR/diff.$label"
             fi
         fi
 
@@ -961,7 +1019,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm island-moved=$risland island-stamped-unmoved=$rislsame call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -1029,6 +1087,13 @@ sweep() { # sweep <label> <extra pcrec args>
     fi
     if [ "$rcallbearing" -ne 0 ]; then
         bad "[$label] (A) $rcallbearing artifacts in the CALL-FREE population carry RX_VM_CALL_ macros. The two [DD-14.FB] region lines (the region-exit guard's type and capacity operand) are emitted only for a call-BEARING artifact, so this population's asserted count for them is ZERO; a non-zero one means the call-free classifier has leaked, not that the named exception fired"
+    fi
+    if [ "$rislsame" -ne 0 ]; then
+        bad "[$label] (A) $rislsame artifacts stamp RX_VM_ALT_ISLANDS > 0 and yet emit a PROGRAM REGION byte-identical to the pre-island reference $REFCOMMIT. The stamp claims a trie the program does not contain — which is the direction a count that is merely decorative fails in, and the reason this bucket is an IFF rather than an allowance:"
+        grep '^ISLAND STAMPED BUT REGION UNMOVED' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
+    if [ "$risland" -eq 0 ]; then
+        bad "[$label] (A) NOT ONE call-free pattern's program region moved for an alternation island. The island's own [ENG-ISL] bucket is empty, so this axis is no longer measuring the thing the 2026-09-03 ruling exempted — an emitter that stopped building islands entirely would read GREEN here"
     fi
     if [ "$rdiff" -ne 0 ]; then
         bad "[$label] (A) $rdiff call-free patterns emit a DIFFERENT PROGRAM REGION than $REFCOMMIT for a reason no ruling has recorded — this is the claim the pre-module pin exists to defend:"
