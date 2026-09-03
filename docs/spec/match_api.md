@@ -156,9 +156,12 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `16`
-([OPT-5] STEP 2, the start-pinned search: `rx_info.search_form` +
-`<PREFIX>_DFA_START`, atop [DD-13b.W1.2]'s `15` and [CC-CLANG]'s `14`; it read
+events but never stated the general rule; `rx_info.abi` is `17`
+([CC-DIFF] STEP 1, the two emitted-code spellings: `always_inline` on a
+frameless VM artifact's entry-chain helpers, and the uniform-table fold with
+its `<PREFIX>_DFA_UNIFORM_FOLDS` stamp, atop
+[OPT-5] STEP 2's `16` — the start-pinned search: `rx_info.search_form` +
+`<PREFIX>_DFA_START` — [DD-13b.W1.2]'s `15` and [CC-CLANG]'s `14`; it read
 `6` when this note was written, `7` after [OPT-3], `8` after [ENG-FORM], `9`
 after [OPT-K], `10` after [ENG-ABS], `11` after [ART-SIZE] and `12` after
 [OPT-4]).
@@ -1688,7 +1691,38 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `16` on every artifact today ([OPT-5] STEP 2 bumped
+- **`rx_info.abi` is `17` on every artifact today ([CC-DIFF] STEP 1 bumped
+  it from 16 with TWO EMITTED-CODE SPELLINGS, taken as ONE event because
+  both are emitter changes on the same landing.
+
+  **(a) The VM entry chain's helpers carry
+  `static inline __attribute__((always_inline))` on a FRAMELESS artifact.**
+  The eight statics `<prefix>_run_state_bind`, `_run_state_init`,
+  `_reset_for_next_attempt`, `_match_anchored`, `_report_captures`,
+  `<prefix>_search_run`, `<prefix>_match_run` and `<prefix>_match_caps_run`
+  gain the attribute if and only if `<PREFIX>_VM_FRAMELESS` is `1`. A FRAMED
+  artifact (`<PREFIX>_VM_FRAMELESS 0`) is byte-identical to what abi 16
+  emitted, this stamp aside. The gate is forced from two directions at once:
+  gcc REFUSES `always_inline` on a function containing a computed goto, and a
+  framed artifact is exactly the one that has one; and [CC-DIFF] STEP 0
+  measured no benefit on framed cells and a mild regression on one. On a
+  frameless artifact the effect is that `<prefix>_search_run` and
+  `<prefix>_match_anchored` have no out-of-line copy left (`nm` lists neither),
+  and `<prefix>_search`'s 152-byte frame, its four run-state binding stores
+  and its `-fstack-protector-strong` canary go away with them.
+
+  **(b) A DFA transition or accept table whose cells are ALL EQUAL is not
+  emitted, and its accessor returns the constant.** `<m>_next_state` and
+  `<m>_is_accepting` are affected; the accessor loses only its table
+  parameter, keeping the state and class parameters so that a call site's
+  `subject[pos++]` is still evaluated. `<PREFIX>_DFA_UNIFORM_FOLDS` counts
+  what was folded, and is the supported way to observe it. `<PREFIX>_DFA_TABLE`
+  keeps naming the ENCODING that was SELECTED — the selection still happens
+  and still fixes the folded constant's value — so a `"premultiplied"`
+  artifact reading `4` here carries no folded table at all.
+
+  **No answer moves on either half**, which the corpus, the axis sweep and the
+  bench's own subject sets are what sweep. `16` was [OPT-5] STEP 2, which bumped
   it from 15 with the START-PINNED SEARCH — `search_form` APPENDED to this
   struct and a `<PREFIX>_DFA_START` stamp on every artifact containing a DFA
   scan, plus, on every artifact whose forward machine's start state accepts
@@ -1984,7 +2018,20 @@ engine-scoped.**
   | `"none"` | the scan has no numeric transition table at all: `_DFA_SCAN "attempt"` (states are labels, a step is a computed `goto`) or `_DFA_SCAN "empty"` |
 
   It is a SELECTION FACT and therefore (a), read off the same predicate the
-  emitted loop branches on. **It has no `rx_info` mirror, deliberately** —
+  emitted loop branches on.
+
+  **[CC-DIFF] STEP 1, 2026-09-03: the encoding this stamp names is the
+  selection that was MADE, and after the uniform fold an artifact can carry
+  that selection without carrying a table.** `<PREFIX>_DFA_UNIFORM_FOLDS`
+  (below) is where a consumer reads how many tables are actually there. The
+  stamp does NOT fall to `"none"` when everything folds: the representation
+  was still chosen, and it still fixes the folded constant's value (`65535`
+  under `"premultiplied"`, `-1` under `"indexed"`), so reporting `"none"`
+  would erase a live fact rather than correct a stale one. `"none"` keeps its
+  existing meaning, a scan with no numeric transition table by CONSTRUCTION —
+  `_DFA_SCAN "attempt"` or `"empty"`.
+
+  **It has no `rx_info` mirror, deliberately** —
   unlike `scan` and `prefilter`, whose mirrors §3.2 of `tuning.md` records.
   §6.3's (a)/(b) split is a rule about MACROS and makes the macro owed; the
   two struct fields were a separate D40-addendum layout decision at [DD-13c],
@@ -2013,6 +2060,52 @@ engine-scoped.**
   them — the emitted loop, the DFA artifact's stamp, the hybrid's stamp —
   so a stamp cannot disagree with the loop it describes unless the
   derivation itself is wrong, in which case the loop is wrong too.
+  **[CC-DIFF] STEP 1, 2026-09-03: a FOURTH `_DFA_*` macro,
+  `<PREFIX>_DFA_UNIFORM_FOLDS`** — on exactly the same footing and under
+  exactly the same IFF as `_DFA_TABLE`: every artifact that CONTAINS a DFA
+  scan, which is every DFA artifact and every VM hybrid, and no other. It is
+  an INTEGER, not a string:
+
+  ```c
+  #define RX_DFA_UNIFORM_FOLDS 4
+  ```
+
+  **The IFF: it is the number of this artifact's DFA tables whose cells were
+  ALL EQUAL, and which are therefore NOT EMITTED — the accessor returns the
+  constant instead.** Two tables per machine are foldable, `<m>_next_state`
+  and `<m>_is_accepting`, so the value runs `0..6`: the forward machine
+  always, the reverse machine unless the search is start-pinned (it is not in
+  the artifact to fold), and the anchored machine under
+  `<PREFIX>_DFA_MATCH "unwrapped"` — the same composition `_DFA_TABLE` and
+  `_DFA_SCAN_EDGE` use, so none of the three can name a machine the artifact
+  does not contain. `0` on `_DFA_SCAN "attempt"` and `"empty"`, which have
+  neither table.
+
+  **It is a COUNT and deliberately not a MASK.** The three masks in this
+  section are masks because a rung, a strategy or a clamp is chosen PER
+  `A_REP` and a scalar would LIE on a mixed artifact; "how many tables folded
+  out" is a whole-artifact total with no per-quantifier axis to mix.
+
+  **It is family (b), for `<PREFIX>_VM_FRAMELESS`'s reason and not a new
+  one**, which is why a DFA-route macro appears under a heading the
+  introduction below calls VM-only: it is not a decision the compiler MADE
+  before emitting — there is no fold mode anywhere upstream — it is what the
+  emitted machine turned out to CONTAIN, discovered while the emitter had the
+  table in hand. **The macro is owed rather than optional** because the fold's
+  effect is a table's ABSENCE, and a fact readable only by a macro's absence
+  is the discriminator [DD-13] had to go back and remove from two checks.
+  `tests/codegen/run_dfa_uniform_fold.sh` reads this number.
+
+  What a consumer may conclude: the artifact is smaller and its scan loop
+  cheaper by that many indexed loads. What it may NOT conclude: anything
+  about the ANSWERS, which are identical either way — a uniform table and its
+  constant are the same function.
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77). The trigger
+  that would make one owed is the one `_DFA_TABLE`'s entry names, and it would
+  be a struct append moving no existing offset.
+
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
@@ -2048,6 +2141,18 @@ engine-scoped.**
   mirror would be built ahead of a measured need (D77). The trigger that
   would make one owed is the same one `RX_DFA_TABLE`'s entry names, and it
   would be a struct append moving no existing offset.
+
+  **[CC-DIFF] STEP 1, 2026-09-03: THIS MACRO NOW REPORTS A SECOND FACT ABOUT
+  THE SAME ARTIFACT, and it is deliberately the SAME macro rather than a new
+  one.** `1` additionally means that the artifact's eight VM entry-chain
+  statics carry `static inline __attribute__((always_inline))` (the abi-17
+  entry above lists them); `0` means none of them does. A second stamp —
+  `<PREFIX>_VM_INLINE_CHAIN`, say — was considered and REJECTED: it would
+  carry the same value as this one BY CONSTRUCTION, since the emitter derives
+  both from the one `has_push` bool, and a second spelling of one fact is the
+  shape this project has had to unpick twice ([CC-CLANG]'s `strstr` for a
+  push needle; the `_FAST_FRAMES` discriminator). A consumer that wants to
+  know whether the entry chain is inlined reads this macro.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

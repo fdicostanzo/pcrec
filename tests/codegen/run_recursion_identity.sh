@@ -517,6 +517,23 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # appended after nentries) + RX_VM_FRAMELESS (ruling R1) move dispatch bytes
 # on the 175 pinned artifacts and stamp lines on every VM artifact; re-pinned
 # to the merge per D76/D94 (readers of the old pin found by grep).
+# [CC-DIFF] STEP 1, 2026-09-03 — abi 16 -> 17: the always_inline attribute on
+# a FRAMELESS VM artifact's eight entry-chain statics (function headers only;
+# a FRAMED artifact is byte-identical), and the uniform-table fold, which
+# deletes `<m>_next_state` / `<m>_is_accepting` and rewrites their accessors
+# and call sites on any machine whose table is all-equal, plus a
+# `<PREFIX>_DFA_UNIFORM_FOLDS` stamp line on every artifact containing a DFA
+# scan. Whole-file bytes move on both populations, so (B) re-pins; (A) is
+# untouched on the VM half (headers only, above `<p>_accept:`) and DOES move
+# on the DFA half wherever a table folds, which the lane's own gate run
+# reports rather than assumes.
+#
+# THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, NOT THIS LANE'S: it must be
+# the last src commit of the change as it lands, and a lane branch cannot know
+# that commit. Left at da4fe60 (abi 16) deliberately, so the gate compares
+# against the PRE-change reference and its (A)/(B) numbers are readable as the
+# change's own footprint. Re-pin to the merge before the merge is called done
+# (D76/D94).
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-da4fe60}"
 
 WORKDIR="$(mktemp -d)"

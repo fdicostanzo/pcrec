@@ -1600,7 +1600,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * above the program, or DFA-side text, none of which is inside that
      * region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 16,\n");
+    sb_puts(c,   "    .abi = 17,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -2102,17 +2102,31 @@ static bool dfa_edge_taken(const DfaEdge *e);
  * and worse: here the two readings must AGREE, and the only way to guarantee
  * that is for there to be one reading.
  *
- * WHAT IS IN SCOPE: the two tables the per-byte hot loop reads through the
- * §LAYER-2 state-token accessors — `<m>_next_state` (the step) and the accept
- * pair `<m>_is_accepting` / `<m>_is_accepting_by_class`. The seed, view and
- * stay tables are read at most twice per search and are deliberately NOT
- * folded: there is no measurement behind folding them and D77 says wait for
- * one. The `<m>_byte_class` table is not a transition or accept table and is
- * read directly rather than through an accessor; a uniform one means a
- * single-class machine, and it is likewise left alone. The direct-threaded
- * ENG_ATTEMPT emitter's own `<p>_is_accepting_by_class` (further down, read
- * as a bare subscript beside a `goto *targets`) is a different mechanism with
- * no accessor and no transition table, and is out of this change's scope. */
+ * WHAT IS IN SCOPE, AND THE BOUNDARY IS DRAWN ON A PROPERTY RATHER THAN ON
+ * TASTE: the two tables EVERY machine emits UNCONDITIONALLY and reads once
+ * per byte through the §LAYER-2 state-token accessors — `<m>_next_state` (the
+ * step) and `<m>_is_accepting` (the accept probe). Because their existence is
+ * not itself a selection, `<PREFIX>_DFA_UNIFORM_FOLDS` can count the folds
+ * EXACTLY from `(cx, d)` at the stamp path, through these same two functions,
+ * with no second reading of any axis's choice.
+ *
+ * DELIBERATELY OUT OF SCOPE, each for a stated reason, none of them an
+ * oversight:
+ *   - `<m>_is_accepting_by_class`, the WIDE accept table. It is uniform on
+ *     the same shapes and folding it would work, but it EXISTS only where
+ *     axis E chose `by-class`, so counting its fold at the stamp path would
+ *     mean re-reading that selection there — and a count that skipped it
+ *     instead would under-report. Left for a follow-up that either moves the
+ *     fold derivation onto the Job (one derivation both readers share) or
+ *     gives axis E a stamp-path accessor of `dfa_repr_of`'s shape.
+ *   - the seed, view and stay tables: read at most twice per search, so
+ *     there is no measurement behind folding them and D77 says wait for one.
+ *   - `<m>_byte_class`: not a transition or accept table, read as a bare
+ *     subscript rather than through an accessor, and uniform only on a
+ *     single-class machine.
+ *   - the direct-threaded ENG_ATTEMPT emitter's own `<p>_is_accepting_by_class`
+ *     (further down, a bare subscript beside a `goto *targets`): a different
+ *     mechanism with no accessor and no transition table at all. */
 static int tr_cell(const Dfa *d, const DfaRepr *r, int i, int cl)
 {
     int t = d->st[i].tr[cl];
@@ -2157,18 +2171,6 @@ static DfaFold fold_acc(const Dfa *d)
     int v = acc_cell(d, 0);
     for (int i = 0; i < d->n; i++)
         if (acc_cell(d, i) != v) return f;
-    f.folded = true; f.value = v;
-    return f;
-}
-
-static DfaFold fold_accw(const Dfa *d)
-{
-    DfaFold f = { false, 0 };
-    if (d->n <= 0 || d->ncls <= 0) return f;
-    int v = accw_cell(d, 0, 0);
-    for (int i = 0; i < d->n; i++)
-        for (int cl = 0; cl < d->ncls; cl++)
-            if (accw_cell(d, i, cl) != v) return f;
     f.folded = true; f.value = v;
     return f;
 }
@@ -2950,6 +2952,50 @@ static const char *dfa_scan_edge_name(Ctx *cx)
     return v;
 }
 
+/* [CC-DIFF] `<PREFIX>_DFA_UNIFORM_FOLDS` — HOW MANY OF THIS ARTIFACT'S DFA
+ * TABLES THE UNIFORM FOLD REMOVED. A COUNT, and deliberately not a mask: the
+ * three masks in §6.3 are masks because a rung or a strategy is chosen PER
+ * QUANTIFIER and a scalar would LIE on a mixed artifact, where this is a
+ * whole-artifact total with no axis to mix. Two tables per machine are
+ * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6.
+ *
+ * WHY IT IS OWED RATHER THAN SYMMETRY. The fold makes a table ABSENT, and
+ * this project has gone back and REMOVED a check that read a fact off a
+ * macro's absence twice ([DD-13], and [OPT-1]'s `_FAST_FRAMES` before it).
+ * Without this line the only way to see the fold is to grep the emitted C for
+ * an array that is not there. `tests/codegen/run_dfa_uniform_fold.sh` reads
+ * this number and nothing else.
+ *
+ * IT IS FAMILY (b), for `<PREFIX>_VM_FRAMELESS`'s reason exactly and not a
+ * new one: there is no fold mode anywhere upstream and no pass decides it —
+ * it is what the emitted machine turned out to CONTAIN, discovered while the
+ * emitter held the table. Its scope is the `_DFA_*` family's IFF, every
+ * artifact CONTAINING a DFA scan, hybrids included.
+ *
+ * THE MACHINE COMPOSITION IS `dfa_table_name`'s, ASKED THE SAME WAY: the
+ * reverse machine drops out of a start-pinned artifact (it is not there to
+ * fold) and the anchored machine joins only under `unwrapped`. A count that
+ * included a machine the artifact does not contain would be the same defect
+ * that paragraph exists to name, arriving through a third door. */
+static int uniform_folds_of(Ctx *cx, const Dfa *d)
+{
+    const DfaRepr *r = dfa_repr_of(cx, d);
+    return (fold_tr(d, r).folded ? 1 : 0) + (fold_acc(d).folded ? 1 : 0);
+}
+
+static int dfa_uniform_folds(Ctx *cx)
+{
+    /* An empty scan has no machine, and ENG_ATTEMPT's states are LABELS with
+     * no numeric transition table and no scalar accept table to fold — the
+     * same two exclusions `dfa_table_name` opens with, for the same reason. */
+    if (dfa_engine_is_empty(cx)) return 0;
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) return 0;
+    int n = uniform_folds_of(cx, &cx->job->dfa);
+    if (!dfa_search_is_pinned(cx)) n += uniform_folds_of(cx, &cx->job->rdfa);
+    if (dfa_match_is_unwrapped(cx)) n += uniform_folds_of(cx, &cx->job->adfa);
+    return n;
+}
+
 
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
@@ -3416,16 +3462,16 @@ struct DfaForm {
      * for them, never a second selection. The array is sized by the same
      * `PCREC_MAX_SCAN_EDGES` the pass spends, so it cannot truncate. */
     int            nscan, scan[PCREC_MAX_SCAN_EDGES];
-    /* [CC-DIFF] (b) THE THREE UNIFORM-TABLE FOLDS, derived ONCE in
+    /* [CC-DIFF] (b) THE TWO UNIFORM-TABLE FOLDS, derived ONCE in
      * `dfa_form_derive` and read by three places that must not disagree: the
      * accessor's parameter list, the table's emission (or its omission), and
-     * every call site's argument list. A second `fold_tr(...)` at any of them
-     * would be a second derivation of one fact, and a fold that disagreed
-     * with its accessor is a compile error at best and a wrong answer at
-     * worst. `accw` is meaningful only under `acc->wide_table`, and is left
-     * unfolded otherwise so nothing can read it into an artifact that has no
-     * such table. */
-    DfaFold        tr_fold, acc_fold, accw_fold;
+     * every call site's argument list. A second uniformity scan at any of
+     * them would be a second derivation of one fact, and a fold that
+     * disagreed with its accessor is a compile error at best and a wrong
+     * answer at worst. `<PREFIX>_DFA_UNIFORM_FOLDS` is a fourth reader, and
+     * it calls the SAME `fold_tr`/`fold_acc` on the same `(d, repr)` at the
+     * stamp path, exactly as `dfa_table_name` re-asks `dfa_repr_of` there. */
+    DfaFold        tr_fold, acc_fold;
     CandSet        cand;
     /* [OPT-K] BY POINTER into the caller's `UnanchStart`, which outlives every
      * use: the selection carries 24 byte-sets and copying it into a stack
@@ -3543,16 +3589,8 @@ static void token_accepts(StrBuf *c, const DfaForm *f, const char *cls_index)
         sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
                      "{ return accepting[s]; }\n", p, m, p, m);
     if (!f->acc->wide_table) return;
-    if (f->accw_fold.folded)
-        sb_printf(c,
-            "/* [CC-DIFF] EVERY CELL of the %s class-indexed accept table holds %d,\n"
-            " * so the table is not emitted and the probe IS that constant. */\n"
-            "static inline int %s_%s_accepts_class(%s_%s_state s, unsigned cl)\n"
-            "{ (void)s; (void)cl; return %d; }\n",
-            m, f->accw_fold.value, p, m, p, m, f->accw_fold.value);
-    else
-        sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
-                     "{ return %s; }\n", p, m, p, m, cls_index);
+    sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
+                 "{ return %s; }\n", p, m, p, m, cls_index);
 }
 
 static void token_premul(StrBuf *c, const DfaForm *f)
@@ -3873,18 +3911,16 @@ static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
      * boundary and the token is live, so both are unreachable by
      * construction. */
     const char *ind = f->dir->bind, *m = f->dir->c.name, *p = f->p;
-    char ab[PCREC_MAX_EMIT_NAME_LEN], tb[PCREC_MAX_EMIT_NAME_LEN];
+    char tb[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
     f->dir->emit_bound_accept(c, f);
     sb_printf(c, "%s    break;\n%s}\n", ind, ind);
     sb_printf(c, "%s{\n", ind);
     sb_printf(c, "%s    unsigned %s_class = %s_%s_byte_class[%s];\n",
               ind, m, p, m, f->dir->peek);
-    sb_printf(c, "%s    if (%s_%s_accepts_class(%s%s, %s_class))"
+    sb_printf(c, "%s    if (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s, %s_class))"
                  " %s = %s;\n",
-              ind, p, m,
-              fold_arg(ab, sizeof ab, f, &f->accw_fold, "is_accepting_by_class"),
-              f->src, m, f->dir->recv, f->dir->posv);
+              ind, p, m, p, m, f->src, m, f->dir->recv, f->dir->posv);
     sb_printf(c, "%s    %s = %s_%s_step(%s%s, %s_class);\n",
               ind, f->dir->statev, p, m,
               fold_arg(tb, sizeof tb, f, &f->tr_fold, "next_state"), f->src, m);
@@ -4392,14 +4428,13 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
      * Nothing but the reverse machine reaches this emitter today, so the text
      * is unchanged. */
     const char *m = f->dir->c.name;
-    char wb[PCREC_MAX_EMIT_NAME_LEN], ab[PCREC_MAX_EMIT_NAME_LEN];
+    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (search_from"
-                 " ? %s_%s_accepts_class(%s%s,\n"
+                 " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
                  "%s                 : %s_%s_accepts(%s%s))"
                  " %s = %s;\n",
-              f->dir->bind, f->p, m,
-              fold_arg(wb, sizeof wb, f, &f->accw_fold, "is_accepting_by_class"),
+              f->dir->bind, f->p, m, f->p, m,
               f->src,
               f->dir->bind, f->p, m,
               f->dir->bind, f->p, m,
@@ -5162,9 +5197,8 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * VALUE depends on the representation (pre-multiplied or indexed, and
      * which sentinel means dead) and the wide accept table exists only under
      * `acc->wide_table`. */
-    f->tr_fold   = fold_tr(d, f->repr);
-    f->acc_fold  = fold_acc(d);
-    f->accw_fold = f->acc->wide_table ? fold_accw(d) : (DfaFold){ false, 0 };
+    f->tr_fold  = fold_tr(d, f->repr);
+    f->acc_fold = fold_acc(d);
 }
 
 /* ---- THE TABLES, one path called twice ---------------------------------- */
@@ -5202,7 +5236,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
         emit_acc_table(c, p, tag, f->d, f->repr);
     }
 
-    if (f->acc->wide_table && !f->accw_fold.folded) {
+    if (f->acc->wide_table) {
         snprintf(tag, sizeof tag, "%s_is_accepting_by_class", m);
         emit_acc_cls_table(c, p, tag, f->d);
     }
@@ -6492,6 +6526,15 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
     dfa_prefilter_offsets(cx, c);
     sb_puts(c, "\"\n");
     sb_printf(c, "#define %s_DFA_TABLE \"%s\"\n", upper, dfa_table_name(cx));
+    /* [CC-DIFF] Beside `_DFA_TABLE` because it is about the same tables:
+     * that one names their ENCODING, this one says how many of them the
+     * uniform fold removed. A `"premultiplied"` artifact reading 2 here
+     * carries no forward transition or accept table at all -- the encoding
+     * is still the selection that was MADE (and still fixes the folded
+     * constant: 65535 pre-multiplied, -1 indexed), which is why that stamp
+     * keeps its value rather than falling to `"none"`. */
+    sb_printf(c, "#define %s_DFA_UNIFORM_FOLDS %d\n", upper,
+              dfa_uniform_folds(cx));
     /* [OPT-5] AND THE SCAN EDGE, which belongs in THIS function and not in
      * `emit_dfa_stamps` beside `_DFA_MATCH`: it is a fact about the DFA SCAN,
      * so a VM HYBRID that inlines this emitter's scan has one too and reports
