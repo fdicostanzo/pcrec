@@ -20135,3 +20135,19 @@ reproduces on the clang arm (the gcc half still open — a layout probe
 proposed). I-39 answers the five asks; the ALTCLS stamps they asked for
 already exist (match_api.md:2429). The bench's daytime lane re-pins to
 288d505.
+
+## 2026-09-03 — Fiftieth session, part 17 (10:1x): the second executive summary (the altwide/noedge/clang night) merged and published
+
+Lane execsum2 (sonnet) drafted docs/dev/summaries/2026-09-03-exec-bench-
+altwide-noedge-ccrerun-1989c62.md (265 lines; Frank asked for more
+context per finding: each carries the measured fact, the mechanism in
+plain language, and what it changes — nine findings, five surprises).
+Landing fixes: tonight's go awaits Frank's DIRECT word to the bench (not
+"confirmed"); the queued rows wait on [CC-DIFF] STEP 1 to avoid merge
+conflicts in the same emitter files, not a "one abi event at a time"
+rule the lane invented; the bench's candidate numbering explained.
+Merged 3815d0d; published as a page for Frank. Process slip: a `cd` into
+the worktree persisted across my next call, so the first `git merge` ran
+inside the lane's tree ("already up to date") — the real merge followed
+from the main tree; the situation-index row about `cd` in compound
+commands applies to persisted cwd too.
