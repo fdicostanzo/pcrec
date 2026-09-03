@@ -1731,7 +1731,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * a comment. `<PREFIX>_DFA_START`
                                            * is where what the emitter DID is
                                            * recorded. */
-                                          PCREC_NO_START_PINNED;
+                                          PCREC_NO_START_PINNED |
+                                          /* [ENG-ISL] the VM's alternation
+                                           * island. It emits a different SHAPE
+                                           * for the same alternation and
+                                           * changes no answer, so it belongs
+                                           * to the mask for the mask's own
+                                           * reason — and concretely, so that
+                                           * an alternation the predicate
+                                           * DECLINES is byte-for-byte the same
+                                           * under the flag, which is what makes
+                                           * the declined population a usable
+                                           * reference. `<PREFIX>_VM_ALT_ISLANDS`
+                                           * is where what the emitter DID is
+                                           * recorded. */
+                                          PCREC_NO_ALT_ISLAND;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

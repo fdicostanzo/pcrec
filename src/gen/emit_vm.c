@@ -2384,7 +2384,7 @@ typedef struct {
 
 /* [ENG-ISL] the analysis, defined beside `vm_alt` where it is emitted and
  * declared here because `vm_count_slots` below must ask the SAME question. */
-static bool vm_isl_build(Vm *v, VmIsl *t, const Ast **br, int nbr);
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a);
 
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
@@ -2597,16 +2597,8 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
          * wrong in BOTH directions. A declined alternation falls through to
          * the chain arithmetic below, unchanged. */
         {
-            int nbr = 1;
-            for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-            const Ast **br = arena_alloc(&v->cx->arena,
-                                         (size_t)nbr * sizeof(Ast *));
-            int i = nbr;
-            const Ast *t = a;
-            while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
-            br[0] = t;
             VmIsl isl;
-            if (vm_isl_build(v, &isl, br, nbr)) {
+            if (vm_isl_build(v, &isl, a)) {
                 v->npush += isl.pushes;
                 /* The branches are literal chains by construction: no slot, no
                  * mark, no resume point of their own. Nothing to descend
@@ -3215,30 +3207,137 @@ static int vm_isl_single(const Ast *a)
     return found;
 }
 
-/* A branch's literal bytes, or NULL when the branch is not a bare literal run.
- * The A_CAT spine is flattened ITERATIVELY for `vm_emit`'s own reason (R-2 /
- * D10): a 20,000-element concatenation must not overflow pcrec's own C stack.
- */
-static const uint8_t *vm_isl_bytes(Vm *v, const Ast *a, int *outlen)
+/* ---- the island's INPUT: the subtree's literal words, in PREFERENCE ORDER --
+ *
+ * THE FIRST VERSION OF THIS READ ONE BRANCH AND THE MEASUREMENT REFUTED IT.
+ * It asked "is this branch a bare literal byte run", which is what the charter
+ * says and is right about a pattern AS WRITTEN — and wrong about the AST this
+ * emitter is handed, because `src/opt/altcls.c`'s stage-2 factoring runs first
+ * and rewrites a wide alternation into a PARTIALLY FACTORED tree: a shared
+ * first byte followed by a nested alternation. Every branch altcls touched is
+ * then an `A_CAT` ending in an `A_ALT`, not a literal run, so the branch test
+ * DECLINED the top-level alternation and took the island only on the small
+ * residues altcls had just created. MEASURED on the bench's own altwide set:
+ * `w-256` stamped ELEVEN islands (exactly `RX_ALTCLS_FACTORED`'s own count for
+ * that pattern) and the artifact came out 3.0% LARGER than the chain it was
+ * supposed to replace. The island was firing everywhere except on the shape
+ * the measured need is about.
+ *
+ * SO THE INPUT IS THE SUBTREE'S LANGUAGE, NOT ITS BRANCH LIST: every literal
+ * word the alternation can match, enumerated in the order PCRE would try them.
+ * That is a strictly more general question than "is each branch a literal" —
+ * it asks whether the subtree's language is FINITE AND LITERAL — and it is the
+ * question that survives an upstream pass rearranging the tree, which is the
+ * property the branch test lacked.
+ *
+ * THE ORDER IS PCRE'S OWN, and the concatenation case is the one to check:
+ * `XY` where both are alternations tries X's first branch against every one of
+ * Y's, then X's second, and so on, so the cross product is X-MAJOR. Worked
+ * against a shape where the naive reading differs: `(?:a|ab)(?:c|bc)` on
+ * "abc" enumerates `ac`, `abc`, `abc`, `abbc`; the lowest index that matches
+ * is 1, and PCRE's own answer is X=`a`, Y=`bc` — the same word.
+ *
+ * IT IS BUDGETED IN BOTH DIRECTIONS, and the budget is a DECLINE rather than a
+ * refusal. The cross product is where a literal language gets big
+ * (`(?:a|b)(?:c|d)(?:e|f)…` is 2^k words in 6k characters), and the recursion
+ * is over ALTERNATION NESTING, which a pattern controls — D10/R-2's class, the
+ * one this file has already had to fix three times. Over either bound the
+ * island simply is not built and `vm_alt`'s chain emits the alternation
+ * exactly as it did before. */
+
+#define VM_ISL_MAX_WORDS 8192      /* the bench's widest altwide rung is 4096 */
+#define VM_ISL_MAX_BYTES 262144    /* total literal bytes across every word */
+#define VM_ISL_MAX_DEPTH 64        /* alternation nesting; D10/R-2's stack */
+
+typedef struct { const uint8_t *b; int len; } VmIslW;
+typedef struct { VmIslW *w; int n; } VmIslWL;
+
+/* `budget` is the REMAINING literal-byte allowance, shared across the whole
+ * enumeration and decremented as words are materialised, so a cross product
+ * cannot spend it twice. */
+static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
+                         long long *budget)
 {
-    int n = 1;
-    for (const Ast *t = a; t->k == A_CAT; t = t->l) n++;
-    uint8_t *out = arena_alloc(&v->cx->arena, (size_t)n);
-    int i = n;
-    const Ast *t = a;
-    while (t->k == A_CAT) {
-        int b = vm_isl_single(t->r);
-        if (b < 0) return NULL;
-        out[--i] = (uint8_t)b;
-        t = t->l;
+    static const uint8_t empty[1] = { 0 };
+    if (depth > VM_ISL_MAX_DEPTH) return false;
+
+    switch (a->k) {
+    case A_EMPTY:
+        out->w = arena_alloc(&v->cx->arena, sizeof *out->w);
+        out->w[0].b = empty; out->w[0].len = 0;
+        out->n = 1;
+        return true;
+    case A_CLASS: {
+        int b = vm_isl_single(a);
+        if (b < 0) return false;
+        uint8_t *p = arena_alloc(&v->cx->arena, 1);
+        p[0] = (uint8_t)b;
+        if (--*budget < 0) return false;
+        out->w = arena_alloc(&v->cx->arena, sizeof *out->w);
+        out->w[0].b = p; out->w[0].len = 1;
+        out->n = 1;
+        return true;
     }
-    {
-        int b = vm_isl_single(t);
-        if (b < 0) return NULL;
-        out[--i] = (uint8_t)b;
+    case A_ALT: {
+        /* Iterative spine walk (D10): a flat alternation of any width must not
+         * cost pcrec's own C stack one frame per branch. Preference order is
+         * left to right, which for a LEFT-NESTED chain means the deepest `l`
+         * first. */
+        int nbr = 1;
+        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
+        int i = nbr;
+        const Ast *t = a;
+        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+        br[0] = t;
+
+        VmIslWL *sub = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *sub);
+        long long total = 0;
+        for (int j = 0; j < nbr; j++) {
+            if (!vm_isl_words(v, br[j], &sub[j], depth + 1, budget)) return false;
+            total += sub[j].n;
+            if (total > VM_ISL_MAX_WORDS) return false;
+        }
+        out->w = arena_alloc(&v->cx->arena, (size_t)total * sizeof *out->w);
+        out->n = 0;
+        for (int j = 0; j < nbr; j++)
+            for (int k = 0; k < sub[j].n; k++) out->w[out->n++] = sub[j].w[k];
+        return true;
     }
-    *outlen = n;
-    return out;
+    case A_CAT: {
+        int nsp = 1;
+        for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
+        const Ast **el = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
+        int i = nsp;
+        const Ast *t = a;
+        while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
+        el[0] = t;
+
+        if (!vm_isl_words(v, el[0], out, depth + 1, budget)) return false;
+        for (int j = 1; j < nsp; j++) {
+            VmIslWL rhs;
+            if (!vm_isl_words(v, el[j], &rhs, depth + 1, budget)) return false;
+            long long n = (long long)out->n * rhs.n;
+            if (n > VM_ISL_MAX_WORDS) return false;
+            VmIslW *w = arena_alloc(&v->cx->arena, (size_t)n * sizeof *w);
+            int m = 0;
+            for (int x = 0; x < out->n; x++)
+                for (int y = 0; y < rhs.n; y++) {
+                    int len = out->w[x].len + rhs.w[y].len;
+                    *budget -= len;
+                    if (*budget < 0) return false;
+                    uint8_t *p = arena_alloc(&v->cx->arena, (size_t)len + 1);
+                    memcpy(p, out->w[x].b, (size_t)out->w[x].len);
+                    memcpy(p + out->w[x].len, rhs.w[y].b, (size_t)rhs.w[y].len);
+                    w[m].b = p; w[m].len = len; m++;
+                }
+            out->w = w; out->n = m;
+        }
+        return true;
+    }
+    default:
+        return false;
+    }
 }
 
 static int vm_isl_node(Vm *v, VmIsl *t, int parent, int depth, unsigned char byte)
@@ -3296,27 +3395,30 @@ static void vm_isl_insert(Vm *v, VmIsl *t, const uint8_t *w, int len, int idx)
     t->nd[cur].nacc++;
 }
 
-/* Build the island for a flat alternation, or return false and leave `t`
- * unusable. `br`/`nbr` are the branches in ORIGINAL ORDER, as `vm_alt`
- * flattens them.
+/* Build the island for an alternation, or return false and leave `t` unusable.
+ * `a` is the `A_ALT` node itself: the enumeration above turns its whole
+ * subtree into the ordered word list, so a partially factored tree and the
+ * flat alternation it was factored from produce the SAME island.
  *
  * ONE ANALYSIS, TWO READERS. `vm_alt` calls this to emit; `vm_count_slots`
  * calls it to learn `pushes` before emission, which is the only honest way to
  * mirror an emission whose push count is a property of the trie rather than of
  * the branch count. */
-static bool vm_isl_build(Vm *v, VmIsl *t, const Ast **br, int nbr)
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
 {
     memset(t, 0, sizeof *t);
     if (v->cx->opt->flags & PCREC_NO_ALT_ISLAND) return false;
-    if (nbr < VM_ISL_MIN_BRANCHES) return false;
-    t->nbr = nbr;
+
+    long long budget = VM_ISL_MAX_BYTES;
+    VmIslWL wl;
+    if (!vm_isl_words(v, a, &wl, 0, &budget)) return false;
+    if (wl.n < VM_ISL_MIN_BRANCHES) return false;
+
+    t->nbr = wl.n;
     (void)vm_isl_node(v, t, -1, 0, 0);      /* the root */
-    for (int j = 0; j < nbr; j++) {
-        int len = 0;
-        const uint8_t *w = vm_isl_bytes(v, br[j], &len);
-        if (!w || len == 0) return false;
-        vm_isl_insert(v, t, w, len, j);
-        if (len > t->maxdepth) t->maxdepth = len;
+    for (int j = 0; j < wl.n; j++) {
+        vm_isl_insert(v, t, wl.w[j].b, wl.w[j].len, j);
+        if (wl.w[j].len > t->maxdepth) t->maxdepth = wl.w[j].len;
     }
 
     /* npath / chain, by an ITERATIVE pre-order walk — the trie is as deep as
@@ -3405,14 +3507,23 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
          * pattern controls the size of. */
         vm_charge(v);
 
+        /* A ROLE ON THE ROOT AND ON THE ACCEPT-BEARING NODES ONLY, and the
+         * silence in between is a size decision measured rather than assumed.
+         * `vm_lbl` writes the role as a line COMMENT beside the label, and an
+         * island's node count is the pattern's: a 55-byte comment on each of
+         * `w-256`'s ~3,000 interior nodes is ~165 KB of an artifact whose
+         * whole emitted-size delta against the chain is 53 KB. An interior
+         * node has nothing to say that its own emitted compare does not
+         * already say; `vm_emit`'s A_CLASS arm passes NULL for the same
+         * reason. The listing keeps every node either way — `vm_lbl` records
+         * the VE_LABEL event whether or not there is a role to print. */
         vm_lbl(v, n->lbl, x == 0
                ? vm_rolef(v, "alternation island: trie dispatch over %d "
-                             "literal branches", t->nbr)
-               : vm_rolef(v, "island node at depth %d (byte 0x%02x), %d "
-                             "child%s, %d accept%s",
-                          n->depth, (unsigned)n->byte, n->nkids,
-                          n->nkids == 1 ? "" : "ren", n->nacc,
-                          n->nacc == 1 ? "" : "s"));
+                             "literal alternatives", t->nbr)
+               : n->nacc
+               ? vm_rolef(v, "island: %d alternative%s end here (depth %d)",
+                          n->nacc, n->nacc == 1 ? "" : "s", n->depth)
+               : NULL);
 
         if (n->nkids == 1) {
             int c = n->child;
@@ -3462,7 +3573,8 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                         vm_rolef(v, "island: branch %d preferred; resume tries "
                                     "branch %d", cand[j].idx + 1,
                                  cand[j + 1].idx + 1));
-            sb_printf(b, "    scan_position += %d;\n", cand[j].len);
+            if (cand[j].len)
+                sb_printf(b, "    scan_position += %d;\n", cand[j].len);
             vm_goto(v, next);
         }
     }
@@ -3488,7 +3600,7 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
      * `<PREFIX>_VM_ALT_ISLANDS` cannot drift from the program text. */
     {
         VmIsl isl;
-        if (vm_isl_build(v, &isl, br, nbr)) {
+        if (vm_isl_build(v, &isl, a)) {
             v->nislands++;
             vm_isl_emit(v, &isl, entry, next);
             return;
