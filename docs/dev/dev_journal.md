@@ -20031,3 +20031,25 @@ run_rxtsource_tests.sh is not in san_scripts.txt at all; main is clean.
 The post-battery test-stage re-run executes both scripts again anyway.
 LESSON → the brief template: a writer verifies `git rev-parse
 --show-toplevel` prints its worktree path BEFORE its first edit.
+
+## 2026-09-03 — Fiftieth session, part 12 (~00:0x): UNION BATTERY on de32a4b DONE — strict/san/lint GREEN, test's three reds diagnosed, mech's one UNEXPECTED is S219's reach semantics; STAGE DONE sent, the bench's window runs to ~07:00
+
+Battery 19:36-23:56 (4 h 20): test rc=2 (19:36-19:53, -j12, load 47) →
+strict GREEN → san GREEN 0 reports (19:53-21:43, mostly single-threaded:
+9-14% busy for 100 of 110 min — [TT-12]'s first hard number) → lint GREEN
+(50 s) → mech rc=2 (21:44-23:56, PROCS=4, 35-96% busy): 218 rows, 0
+anomalies, 7 undetected (the 6 standing + S220 declared), 1 unreached,
+1 UNEXPECTED: S219 "NOW REACHED — the witness this row declares dead is
+live again" (reach:ok 1/1). Diagnosis: the row's SAB_REACH probe marks
+the P3 CONJUNCT's line, executed by every pinned candidate; what no
+witness reaches is the DECLINE arm — so the declaration and the probe
+disagree about what "reached" means. Not a miscompile; a check-design
+item, ruled to r51fix as item 6 (re-aim the probe at the decline arm, or
+flip to declared UNDETECTED with the derivation). STAGE DONE to the bench
+at 23:58; their window (altwide@0.2 + bigcap + noedge + the I-37 clang
+re-run, all at 1989c62) runs to ~07:00. The CPU sampler's 530 rows and
+the stage markers archived under docs/dev/ for [TT-12]. MORNING SEQUENCE
+after WINDOW CLOSED: .lift both lanes → validate → merge landing + r51fix
+→ test-stage re-run (17 min) → K44 quiet-box pair → WINDOW OPEN with the
+abi-16 pin. Frank's rulings today also set: keepalives just under an
+hour; day = pcrec dev, night = bench.

@@ -1,0 +1,12 @@
+== BATTERY START 19:28:56 HEAD=1ec9f7d
+== STAGE test START 19:36:36
+== STAGE test END rc=2 19:53:19
+== STAGE strict START 19:53:19
+== STAGE strict END rc=0 19:53:29
+== STAGE san START 19:53:29
+== STAGE san END rc=0 21:43:07
+== STAGE lint START 21:43:07
+== STAGE lint END rc=0 21:43:57
+== STAGE mech START 21:43:57
+== STAGE mech END rc=2 23:56:08
+== BATTERY DONE rc=2 test=2 strict=0 san=0 lint=0 mech=2 23:56:08
