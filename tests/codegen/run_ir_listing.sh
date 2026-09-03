@@ -248,20 +248,46 @@ for pat in "${PATTERNS[@]}"; do
         bad "ir-listing[$pat]: the cap counts $ir_rp resume points but the artifact emits $c_rp — PCREC_MAX_VM_RESUME_POINTS is being checked against the wrong number"
     fi
 
-    # ---- islands / callouts: empty AND the artifact agrees ---------------
+    # ---- islands / callouts: the listing's count against the ARTIFACT ----
+    #
+    # [ENG-ISL] STEP 1, 2026-09-03: THE ISLANDS SECTION HAS A PRODUCER NOW, so
+    # this block stopped being an honest-empty assertion and became a real
+    # comparison. It was `isl == 0 && the artifact contains no 'island'`, which
+    # was the right shape while nothing could produce one — and the day the
+    # producer landed it failed on two patterns, which is the section working
+    # rather than the section breaking.
+    #
+    # The two terms are INDEPENDENT EMITTER SURFACES and that is the point: the
+    # listing's count comes from the VE_ISLAND event stream `vm_isl_emit`
+    # appends, and `RX_VM_ALT_ISLANDS` comes from `Vm.nislands`, a counter
+    # `vm_alt` bumps. Neither is computed from the other, so a lowering that
+    # emitted a trie without recording it (or recorded one it did not emit)
+    # parts them here. The artifact TEXT is the third term, and it stays a
+    # biconditional rather than a count because "the .c mentions an island" is
+    # not a number.
+    #
+    # CALLOUTS keep the honest-empty shape: module 'callouts' still has no
+    # producer, so `cal` and `art_cal` must both be 0.
     isl="$(grep -oE '^DFA ISLANDS \([0-9]+\)' "$d/ir" | grep -oE '[0-9]+')"
     cal="$(grep -oE '^CALLOUT SITES \([0-9]+\)' "$d/ir" | grep -oE '[0-9]+')"
-    # An island would emit its own transition table INSIDE the VM function; a
-    # callout site would emit a call through rx_callout_ref. Neither exists,
-    # and the check reads the artifact rather than trusting the count.
+    stamp_isl="$(sed -n 's/^#define rx_VM_ALT_ISLANDS \([0-9]*\)$/\1/Ip' "$d/gen.c")"
     art_isl=0
     grep -q 'island' "$d/gen.c" && art_isl=1
     art_cal=0
     grep -qE 'rx_callout_ref [a-z_]*\(|->fn\(' "$d/gen.c" && art_cal=1
-    if [ "$isl" = "0" ] && [ "$art_isl" = "0" ] && [ "$cal" = "0" ] && [ "$art_cal" = "0" ]; then
-        ok "ir-listing[$pat]: ISLANDS/CALLOUTS — the listing reports 0 of each and the artifact contains neither (honestly empty, not blanked)"
+    isl_says_some=0; [ -n "$isl" ] && [ "$isl" -gt 0 ] && isl_says_some=1
+    if [ "$cal" != "0" ] || [ "$art_cal" != "0" ]; then
+        bad "ir-listing[$pat]: callout accounting disagrees — listing says $cal, artifact says $art_cal (module 'callouts' has no producer, so both must be 0)"
+    elif [ -z "$stamp_isl" ]; then
+        bad "ir-listing[$pat]: the artifact carries no RX_VM_ALT_ISLANDS stamp — it is UNCONDITIONAL on every VM artifact (docs/spec/match_api.md 6.3)"
+    elif [ "$isl" != "$stamp_isl" ]; then
+        bad "ir-listing[$pat]: the listing counts $isl islands and the artifact stamps $stamp_isl — the VE_ISLAND event stream and Vm.nislands disagree about what was emitted"
+    elif [ "$isl_says_some" != "$art_isl" ]; then
+        bad "ir-listing[$pat]: the listing reports $isl islands but the artifact text ${art_isl:+does not }contains no island — the count and the emitted C disagree"
+    elif [ "$isl" = "0" ]; then
+        ok "ir-listing[$pat]: ISLANDS/CALLOUTS — the listing reports 0 of each, the stamp agrees and the artifact contains neither (honestly empty, not blanked)"
     else
-        bad "ir-listing[$pat]: island/callout accounting disagrees — listing says $isl/$cal, artifact says $art_isl/$art_cal"
+        ok "ir-listing[$pat]: the listing's $isl island(s) match the artifact's own RX_VM_ALT_ISLANDS stamp and its emitted text"
     fi
 done
 

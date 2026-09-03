@@ -224,6 +224,15 @@ done <<< "$anchored"
 #     API SENTINELS (both 0, "use the compiled-in default"), not the limit
 #     value itself; the real defaults are VM_DEFAULT_STEP_BUDGET/_WORK_
 #     BUDGET, both IN the table
+#   VM_ISL_MAX_WORDS, VM_ISL_MAX_BYTES, VM_ISL_MAX_DEPTH (emit_vm.c) —
+#     [ENG-ISL]'s alternation-island ENUMERATION budget, VM_MAX_STRIDE's
+#     category exactly: an emitter-internal selection knob with its proof
+#     beside it (src/gen/CLAUDE.md's [ENG-ISL] section). Over any of the
+#     three the island is simply NOT BUILT and `vm_alt`'s chain emits the
+#     alternation unchanged — so not one of them bounds what pcrec accepts,
+#     rejects or promises, which is this list's own membership rule. The
+#     DEPTH one additionally guards pcrec's own C stack (D10/R-2), the same
+#     argument TRIE_MAX_RDEPTH is on this list for.
 ALLOWLIST="TRIE_MAX_RDEPTH
 MAX_GROUPS
 LEGEND_MAX_STATES
@@ -232,6 +241,9 @@ VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
 VM_MRL_DYN_MAX
+VM_ISL_MAX_WORDS
+VM_ISL_MAX_BYTES
+VM_ISL_MAX_DEPTH
 SELECT_MAX_ROUNDS
 COMPILE_MAX_ATTEMPTS
 PCREC_STEP_BUDGET_DEFAULT

@@ -3549,6 +3549,19 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
          * already say; `vm_emit`'s A_CLASS arm passes NULL for the same
          * reason. The listing keeps every node either way — `vm_lbl` records
          * the VE_LABEL event whether or not there is a role to print. */
+        if (x == 0)
+            /* [ENG-ISL] THE LISTING'S OWN RECORD, written by the emitter that
+             * writes the island — engine_m4.md S10's rule, and the reason the
+             * ISLANDS section could say "honestly empty" for as long as it
+             * did. `a` is the island's entry label and `b` its width, so the
+             * section can name WHERE and HOW WIDE without re-walking the AST. */
+            vm_ev(v, VE_ISLAND, entry, t->nbr,
+                  vm_rolef(v, "alternation island: %d literal alternatives, "
+                              "%d trie nodes, depth %d, %lld try site%s, "
+                              "%lld resume point%s",
+                           t->nbr, t->nnd, t->maxdepth,
+                           t->trysites, t->trysites == 1 ? "" : "s",
+                           t->pushes, t->pushes == 1 ? "" : "s"));
         vm_lbl(v, n->lbl, x == 0
                ? vm_rolef(v, "alternation island: trie dispatch over %d "
                              "literal alternatives", t->nbr)
@@ -7832,8 +7845,14 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     }
 
     /* ---- ISLANDS / CALLOUTS --------------------------------------------
-     * Honestly empty, and empty by COUNT rather than by a hardcoded blank:
-     * the day a producer exists these sections fill in with no change here. */
+     * Empty by COUNT rather than by a hardcoded blank, which is what let the
+     * ISLANDS section start working the day a producer existed with no change
+     * to this block's shape.
+     *
+     * [ENG-ISL] STEP 1, 2026-09-03: THE PRODUCER EXISTS. Every row below is a
+     * VE_ISLAND event `vm_isl_emit` appended in the same call that wrote the
+     * trie, so this section cannot claim an island the program does not
+     * contain — S10's rule, and the reason a listing is not a second walk. */
     {
         int isl = 0, co = 0;
         for (int i = 0; i < v->nev; i++) {
@@ -7841,10 +7860,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             if (v->ev[i].k == VE_CALLOUT) co++;
         }
         sb_printf(o, "\nDFA ISLANDS (%d)\n", isl);
+        for (int i = 0; i < v->nev; i++) {
+            if (v->ev[i].k != VE_ISLAND) continue;
+            sb_printf(o, "  at L%-6d width %-6d %s\n", v->ev[i].a, v->ev[i].b,
+                      v->ev[i].role ? v->ev[i].role : "");
+        }
         if (isl == 0)
-            sb_puts(o, "  (none: islands are [M4.6]; engine_m4.md S6.3/S6.4 --"
-                       " the auto-possessification that proves an island exact"
-                       " does not exist yet)\n");
+            sb_puts(o, "  (none: no flat alternation in this program has a"
+                       " finite literal language, so src/gen/emit_vm.c's"
+                       " alternation island declined every one --"
+                       " docs/spec/tuning.md S2.20)\n");
         sb_printf(o, "\nCALLOUT SITES (%d)\n", co);
         if (co == 0)
             sb_puts(o, "  (none: module 'callouts' has no producer, so no"

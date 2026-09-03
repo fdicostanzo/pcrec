@@ -111,9 +111,15 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # commit — and the failure message says so. A check that re-derived its
 # own expectation would agree with a shrunk corpus by construction, which
 # is this project's signature check-design failure (learnings §3).
-CENSUS_FILES=191
-CENSUS_BLOCKS=3325
-CENSUS_LINES=26894
+# [ENG-ISL] 2026-09-03: +2/+21/+114 for tests/island/ (island.rxt 20 blocks
+# 108 cells, island_caseless.rxt 1 block 6 cells) — the VM alternation
+# island's answer corpus, every expectation produced by python3 `re`, so all
+# 114 land in C3_PASS and NO skip bucket moves. That is the file's own claim
+# rather than an accident: the axis is answer-identity-preserving, so a cell
+# python cannot express would be a cell testing the wrong thing.
+CENSUS_FILES=193
+CENSUS_BLOCKS=3346
+CENSUS_LINES=27008
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
 # (tests/base/start_pinned_startpos.rxt, tests/assertions/
 # start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
@@ -121,9 +127,9 @@ CENSUS_LINES=26894
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
-RUNSH_FILES=190
-RUNSH_BLOCKS=3322
-RUNSH_LINES=26883
+RUNSH_FILES=192
+RUNSH_BLOCKS=3343
+RUNSH_LINES=26997
 # 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
 # neither new file lands under tests/known_fail/.
 
@@ -557,7 +563,7 @@ C3_FILES=179
 # file under a directory that carries its own verify_*.py, and
 # tests/assertions/ has verify_pcre2.py. So +79 PASS, +16 SKIP, all +16
 # landing in own-oracle; every other reason is unchanged.
-C3_PASS=13280
+C3_PASS=13394
 C3_SKIP=13525
 C3_SKIP_PCRE2ONLY=1357
 C3_SKIP_GIVEUP=23
