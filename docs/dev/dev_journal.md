@@ -20512,14 +20512,14 @@ not exported-and-delivered by a site → non-capturing). w13's rulings
 file carries the build order; the inlined-body PCRE2 oracle for the
 delivered case is named.
 
-## 2026-09-03 — Fifty-first session, part 31 (19:0x EDT): Frank rules the merge cadence and hands the box back for the evening — isl1 LIFTED (abi 18), w13 writes in parallel, edge1 queued behind isl1's suites; the bench waits for OPEN
+## 2026-09-03 — Fifty-first session, part 31 (18:3x EDT): Frank rules the merge cadence and hands the box back for the evening — isl1 LIFTED (abi 18), w13 writes in parallel, edge1 queued behind isl1's suites; the bench waits for OPEN
 
 Frank: "1. agree" (merge cadence = the short chain — make test → strict
 → test-codegen → test-registry → test-axes — between merges, ONE full
 battery after the last merge, the bench's pinned tier moving only at
 that commit) and "I will wake bench and tell it to wait for your open".
 So tonight is no longer write-only: one heavy suite at a time, serialized
-through the manager. `.lift` created for isl1 at 19:0x with abi 18 and
+through the manager. `.lift` created for isl1 at 18:35 with abi 18 and
 the order suites → codegen → registry → axes → timing (quiet box) → abi
 ritual → deliver; merge order isl1 → edge1 → w13 (w13's scope grew:
 export line, site-qualified delivery, retention, `*=`, erasure). w13 is
@@ -20529,3 +20529,10 @@ heavy stage ends, then takes the box. The manager's 10-min watchdog is
 re-armed to read isl1's run logs. OPEN to the bench (live + inbox) when
 the night's last suite ends; their STEP 2 AFTER at 288d505 does not
 depend on our tree.
+Part 31 addendum (18:4x): Frank — "if you want to spend more time doing
+something, go ahead; just tell bench when you're done; don't feel
+rushed." So the evening runs the whole sequence: lanes validate
+SERIALLY (isl1 → edge1 → w13, each through timing and its abi ritual),
+then the merges in that order with the short chain between, then the
+battery, then OPEN to the bench. edge1 is lifted when isl1's `.stage`
+reaches `abi-ritual` (after its timing, so the box is quiet for it).
