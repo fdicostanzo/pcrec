@@ -20162,3 +20162,25 @@ spec paragraph, prediction table, validation after .lift, acceptance).
 The bench's daytime `make check` (10:07) overlapped tt12b's first K44
 shape run; asked to hold bursts until 10:50 — they stopped it at 10:13;
 tt12b re-runs shape (a) last so the three shapes carry comparable load.
+
+## 2026-09-03 — Fiftieth session, part 18 (11:1x): [TT-12] STEP 1 merged (648970e) — the test stage's shape is -j4/PROCS=3 and K44's cells go green; K45 closed; san pooled; battery_v5 written
+
+tt12b delivered all four measurements. K44 SHAPE TABLE (full make test,
+one at a time): -j12/PROCS=1 1,674 s rc=2; -j4/PROCS=3 1,115 s rc=0 with
+BOTH K44 cells green; -j2/PROCS=6 1,792 s rc=0 — the two stacked
+parallelism layers were the whole of K44, and the measured shape retires
+it (direction (b), as Frank ruled: the data decides). K45 CLOSED: the
+[ART-SIZE.2] tower's five refusals documented on the axes, the sweep
+green on a clean tree. Pairwise axes 2,868 s vs 4,205 (1.47×, under
+load 12-18 — the ≤40-min target waits for a quiet-box run). san: a
+bounded pool of 4 over the 34 scripts (tests/lib/run_san_group.sh) — the
+five identity scripts 831 → 351 s, no contention, verdicts identical;
+the full pooled san is unmeasured until the next battery. scripts/
+battery.sh (battery_v5) written, not run; first run = [CC-DIFF] STEP 1's
+merge battery. ccdiff1b lifted 11:1x; its `make test` uses the new
+shape. The bench held its `make check` bursts 10:13-11:10 for the shape
+table (a ~6-min overlap on shapes (a)/(b) noted; the relative order
+holds). Lane ccdiff1 (opus) returned after five API 529s and stood down
+with a clean handover (ready acceptance/clang-gate scripts; byte-identity
+evidence on three of five acceptance cells; scope decisions), forwarded
+to ccdiff1b.
