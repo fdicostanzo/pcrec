@@ -20292,3 +20292,12 @@ algorithmically and generally, then pull out SIMD at the end in an 'I'm
 not left-handed' manner" — recorded on [OPT-SIMD] and in the census
 charter's ranking rule; pcrec beats the JIT on most benched cells
 without it.
+
+Part 23 addendum 2 (~17:0x): Frank filed [FORM-CHAR] — character
+matching as a D82 axis (exact / ascii-fold / utf8-exact / utf8-simple-
+fold / utf8-full-fold). The fact that makes it a row: caselessness
+folds away at parse time (D23), so `(?i)abc` is three two-member
+classes and every literal mechanism sees classes — ci-256's bitmap edge
+is that cost. A folded COMPARE keeps the literal shape; UTF-8 exact is
+byte-identical to exact for literals; M5.0 lands as objects on this
+axis. Filed, sequenced after [ENG-ISL] STEP 1 and before M5.0.
