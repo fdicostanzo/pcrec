@@ -308,6 +308,50 @@ are byte-identical artifacts.
 364 to 612 emitted bytes per machine that carries an edge, and zero for every
 machine that does not.
 
+### 3.6 The precondition-(8) census — PARTIAL, and the loglines half is closed
+
+Ruling item 6 (manager, 2026-09-03 17:5x) asks how many artifacts LOSE an
+edge to precondition (8). The corpus-wide half is tomorrow's, after
+`make test` has built everything. The bench's `loglines` family is closed
+tonight, from eleven single-artifact compiles inside the hold's allowance —
+edges counted from each artifact's own `[OPT-5] SCAN EDGE` markers, main
+`9d8401a` against this branch:
+
+| artifact | main | branch | seed tables |
+|---|---|---|---|
+| iso-ts | 12 | 12 | 0 |
+| http-5xx | 2 | 2 | 2 |
+| ipv6 | 1 | 1 | 0 |
+| uuid | 0 | 0 | 8 |
+| ipv4 | 0 | 0 | 0 |
+| kv-quoted | 0 | 0 | 4 |
+| level-context | 0 | 0 | 4 |
+| stack-frame | 0 | 0 | 6 |
+| hex32-id | 0 | 0 | 6 |
+| bignum | 0 | 0 | 6 |
+| floor | 0 | 0 | 0 |
+
+Nothing moved. SIX of the eleven carry seed tables, so precondition (8) was
+LIVE on them and cost none of them an edge; iso-ts and ipv6 carry no seed at
+all, so (8) structurally cannot reach them. The row's own acceptance cell
+(iso-ts) and the two artifacts beside it in the family are therefore
+unaffected, which is the constraint the ruling set.
+
+**THE INSTRUMENT IS THE MARKER COUNT, NOT THE STAMP, and the ruling was
+corrected on that.** There is no `RX_SCAN_EDGES` macro. `RX_DFA_SCAN_EDGE`
+is axis I's BODY form (`"range"` / `"bitmap"` / `"none"`), so reading it
+detects only an artifact dropping to ZERO edges — a machine going from four
+to three keeps the value `"range"` and reads identical. Tomorrow's sweep
+counts markers, and reports a stamp that went `"none"` separately as a total
+loss.
+
+**AND THE POPULATION IS BOUNDED, which the sweep asserts rather than
+discovers.** (8) refuses a head that a SEED family names, and `dfa_needs_seed`
+is true only where the interior start states differ by context class — the
+`\b`, `(?m)` and `\G` shapes. An artifact with no seed table cannot lose an
+edge to (8); one that appears in the moved set without a seed means (8) is
+NOT the cause and something else moved.
+
 ### 3.5 K43
 
 `gcc -fanalyzer -Wall -Wextra -Werror`, gcc 15.2.0, on every shape K43 names,
