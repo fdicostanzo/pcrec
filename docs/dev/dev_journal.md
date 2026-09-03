@@ -20511,3 +20511,21 @@ and the erased tier extended per composition (not referenced inside,
 not exported-and-delivered by a site → non-capturing). w13's rulings
 file carries the build order; the inlined-body PCRE2 oracle for the
 delivered case is named.
+
+## 2026-09-03 — Fifty-first session, part 31 (19:0x EDT): Frank rules the merge cadence and hands the box back for the evening — isl1 LIFTED (abi 18), w13 writes in parallel, edge1 queued behind isl1's suites; the bench waits for OPEN
+
+Frank: "1. agree" (merge cadence = the short chain — make test → strict
+→ test-codegen → test-registry → test-axes — between merges, ONE full
+battery after the last merge, the bench's pinned tier moving only at
+that commit) and "I will wake bench and tell it to wait for your open".
+So tonight is no longer write-only: one heavy suite at a time, serialized
+through the manager. `.lift` created for isl1 at 19:0x with abi 18 and
+the order suites → codegen → registry → axes → timing (quiet box) → abi
+ritual → deliver; merge order isl1 → edge1 → w13 (w13's scope grew:
+export line, site-qualified delivery, retention, `*=`, erasure). w13 is
+told to START its write items now under the same single-compile rules
+(no suites until its own `.lift`); edge1 stays held until isl1's last
+heavy stage ends, then takes the box. The manager's 10-min watchdog is
+re-armed to read isl1's run logs. OPEN to the bench (live + inbox) when
+the night's last suite ends; their STEP 2 AFTER at 288d505 does not
+depend on our tree.
