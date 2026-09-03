@@ -1,0 +1,6 @@
+# PROVENANCE: hand-built from src/ir/nfa.c:192's own counter-example 1 (M2.8 comment)
+# MODE literal
+# BRANCHES 3
+abc
+a
+abd

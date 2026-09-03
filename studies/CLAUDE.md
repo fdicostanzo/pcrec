@@ -22,5 +22,15 @@ re-measure before load-bearing use.
   test`, and a batching prototype (`proto/`) measuring three compile-shapes
   at several batch sizes on the two worst sections the census names. Backs
   docs/dev/tt4_measurement.md. See its own CLAUDE.md.
+- `alt_dispatch/` — [ENG-ISL.S0] the alternation-dispatch study (chartered
+  by Frank 2026-09-03): five dispatch algorithms for a wide literal
+  alternation — today's serial try (`vm_alt`), first-byte grouping, a
+  ported `src/ir/nfa.c:192` M2.8 trie walk with priority-tagged accepts, a
+  `[OPT-ALTHASH]` k-byte block hash, and (ruling R1, added mid-study) the
+  VM-native trie walk (commit/defer, frames pushed) — compared for
+  exactness (answer-identity against the serial oracle at every subject
+  position, zero mismatches everywhere) and cost, on pcrec-bench's
+  `bench/altwide/` patterns and subjects. Backs
+  docs/design/alt_dispatch_study.md. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.
