@@ -8,12 +8,14 @@
 # day/night rule). Every other stage's SHAPE is this row's own STEP 1
 # measurement, not carried over from the manager's earlier ad-hoc
 # battery_v4.sh unchanged:
-#   - `test`  : $(TEST_MAKE_J) / PROCS=$(TEST_PROCS) — see docs/dev/lanes/
-#     tt12b_report.md's K44 table for the three shapes measured
-#     (-j12 PROCS=1 / -j4 PROCS=3 / -j2 PROCS=6) and which one this
-#     defaults to; battery_v4 ran plain `make -k -j12 test` (PROCS=nproc
-#     internally, uncapped), the K44 double-parallelism shape (load 47.61
-#     measured, TT-12 STEP 0 §5).
+#   - `test`  : $(TEST_MAKE_J) / PROCS=$(TEST_PROCS), defaulting to
+#     `-j4 PROCS=3` — MEASURED (docs/dev/lanes/tt12b_report.md's K44
+#     table): of the three shapes tried (-j12 PROCS=1: 1674s, rc=2, the
+#     resource CPU-cap cell reds; -j4 PROCS=3: 1115s, rc=0, clean; -j2
+#     PROCS=6: 1792s, rc=0, clean), -j4 PROCS=3 is BOTH the fastest and
+#     the only one with zero failures — the default here. battery_v4 ran
+#     plain `make -k -j12 test` (PROCS=nproc internally, uncapped), the
+#     K44 double-parallelism shape (load 47.61 measured, TT-12 STEP 0 §5).
 #   - `axes`  : tests/axes/run_axes.sh's own [TT-12] STEP 1 pairing (two
 #     axes concurrently at PROCS=nproc/2 each) — battery_v4 never ran this
 #     stage at all.
