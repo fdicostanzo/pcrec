@@ -823,6 +823,49 @@ struct Ast {
              * sets this for EVERY node before the emitter runs, and wave G's
              * eligibility rule is what may downgrade it. */
             CallLink    link;
+            /* [DD-13b.W1.3, D89 addendum point 3] IS THIS CALL A DELIVERING
+             * ONE, and under what SITE NAME. The call family is three
+             * (addendum 3 closed it):
+             *
+             *   `(?&name)`        plain — capture-transparent, delivers
+             *                     nothing. PCRE2's own meaning (D26), and
+             *                     D87 rule 5's zero-cost default.
+             *   `(?&site=name)`   deliver `name`'s exports under the scope
+             *                     `site`; rows are named `site.group`.
+             *   `(?&=name)`       the same with the definition's own name as
+             *                     the site.
+             *   `(?&*=name)`      deliver them FLAT into the caller's own
+             *                     scope; rows are named as exported, and a
+             *                     clash with a caller group or another flat
+             *                     import is a refusal by name.
+             *
+             * `delivers` IS WRITTEN ON EVERY `A_CALL`, true and false alike,
+             * before selection runs — N3's rule. The arena zero is the
+             * UNSOUND direction here: a missed write reads "not delivering",
+             * which is delivery that quietly does not happen, and no check
+             * downstream can tell it from a site the author never declared.
+             * This is `link`'s own situation and gets `link`'s own answer.
+             *
+             * `deliver_site` is the site name, or the sentinel `"*"` for the
+             * flat import. It is NULL exactly when `delivers` is false. */
+            bool        delivers;
+            const char *deliver_site;
+            /* [DD-13b.W1.3] THE RETENTION PLAN, filled by the composer
+             * (src/parse/rxt_compose.c) and read by the emitter at the
+             * delivering site's RETURN path. `deliver_n` pairs: the callee's
+             * own hidden slot `deliver_from[i]` is copied into the caller's
+             * site slot `deliver_to[i]`, as a TRAILED write, BEFORE the
+             * ordinary restore puts the callee's slots back.
+             *
+             * THE COPY IS PER SITE AND SO ARE THE DESTINATIONS: two
+             * delivering calls of one definition under two site names are two
+             * scopes with two slot sets, which is exactly why the destination
+             * cannot be a property of the callee. `deliver_n == 0` on every
+             * plain call, so a plain call copies nothing and costs nothing —
+             * D87 rule 5 held at the emitter. */
+            int         deliver_n;
+            const int  *deliver_from;
+            const int  *deliver_to;
             /* |W| — HOW MANY SLOTS THE RETURN RESTORES, and `save` is the
              * ascending list of their INDICES. W is the CALLEE REGION's SLOT
              * WRITE SET: EVERY slot family any node in the callee's

@@ -689,6 +689,21 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                 if (strcmp(gp->name, pr->name) == 0)
                     if (first == 0 || gp->number < first) first = gp->number;
             if (first > 0) {
+                /* [DD-13b.W1.3] A DELIVERING CALL WHOSE TARGET IS A LOCAL
+                 * GROUP IS REFUSED. Delivery is a DEFINITION's interface —
+                 * `(?&site=name)` names the exports of a `.rxt` definition
+                 * (D89 addendum point 3) — and a group in this same pattern
+                 * has no export list and is already the caller's own, so
+                 * there is nothing for a site to deliver. Accepting it
+                 * silently as a plain call would be a directive that does
+                 * nothing, which is the population-nobody-counts shape this
+                 * step refused for `encoding` one file over. */
+                if (pr->node->u.call.delivers)
+                    ctx_fail(cx, pr->at,
+                             "%s delivers from '%s', but '%s' is a capture "
+                             "group in this pattern, not a definition; a "
+                             "plain (?&%s) calls it",
+                             pr->what, pr->name, pr->name, pr->name);
                 pr->node->u.call.target = first;
                 /* [DD-13b.W1.3] WRITTEN IN BOTH ARMS, ALWAYS. `deferred` is
                  * the composer's key and the arena zero is the unsound

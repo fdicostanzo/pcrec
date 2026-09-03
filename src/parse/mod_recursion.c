@@ -128,6 +128,19 @@ static Ast *rc_node(Ctx *cx, const RegRow *rw, size_t at, bool root,
 {
     Ast *a = pcrec_ast_node(cx, A_CALL);
     pcrec_ast_stamp(cx, a, rw, at);
+    /* [DD-13b.W1.3] N3: `delivers` IS WRITTEN ON EVERY `A_CALL`, and this is
+     * the one constructor every spelling reaches — the numeric forms, the
+     * relative forms, `(?R)`, and module `backrefs`' `\g<>` arms, which call
+     * in here rather than building their own node. Setting it HERE rather
+     * than at each producer is what makes "never written" unreachable
+     * instead of merely unlikely; `rc_name_call` is the only caller that
+     * then overrides it, on the one spelling that can carry an `=`.
+     *
+     * The arena zero happens to be false, and that is not the reason: the
+     * unsound direction is exactly this value, so relying on the zero would
+     * make a forgotten write indistinguishable from a plain call. */
+    a->u.call.delivers = false;
+    a->u.call.deliver_site = NULL;
     if (root) {
         a->u.call.target = 0;
         return a;
@@ -279,6 +292,64 @@ static ExtResult rc_name_call(Ctx *cx, const RegRow *rw, ExtWant want, size_t at
                    "'named-groups'", what);
     if (blen == 0)
         REFUSE(at, "subpattern name expected in %s", what);
+
+    /* [DD-13b.W1.3, D89 addendum point 3 + addendum 4(3)] THE DELIVERING
+     * CALL, and the split is on the FIRST `=` — before the name grammar
+     * runs, because `=` is not a name character and the scan below would
+     * refuse the whole body without ever seeing why.
+     *
+     *   `(?&name)`       plain: no `=`, delivers nothing (PCRE2's meaning)
+     *   `(?&site=name)`  deliver under the scope `site`
+     *   `(?&=name)`      deliver under the definition's OWN name
+     *   `(?&*=name)`     deliver FLAT into the caller's scope
+     *
+     * ALL THREE NEW SPELLINGS ARE MEASURED FREE on libpcre2 10.46 (lane w13,
+     * 2026-09-03; format_design.md §1.5's table), which is the constraint
+     * §1.5 states: a candidate PCRE2 already accepts is DISQUALIFIED, because
+     * adopting it would silently re-interpret patterns that exist in the
+     * world. That is not hypothetical here — `(?<from>&email)`, the leading
+     * shape for this construct in the first design, COMPILES on 10.46 and was
+     * rejected on the measurement.
+     *
+     * THE SITE IS A SCOPE NAME AND NOT A GROUP NAME, but it is held to the
+     * same grammar: it becomes the left half of a `groups[]` row name
+     * (`site.group`), and a site that could contain a `.` would make that
+     * string ambiguous to a caller splitting it. `*` is the one exception and
+     * it cannot collide, because `*` is not a name character at all — the
+     * same argument B2 makes for `^`. */
+    const char *site = NULL;      /* NULL = a plain call */
+    {
+        size_t eq = 0;
+        while (eq < blen && body[eq] != '=') eq++;
+        if (eq < blen) {
+            size_t slen = eq;
+            const char *sp = body;
+            body += eq + 1;
+            blen -= eq + 1;
+            if (blen == 0)
+                REFUSE(at, "%s delivers from a definition but names none "
+                           "after the '='", what);
+            if (slen == 0) {
+                /* `(?&=name)`: the site IS the definition's name, and it is
+                 * taken from the RIGHT half rather than left empty, so every
+                 * delivering site downstream has a name and no pass has to
+                 * re-derive one. */
+                site = rc_strndup(cx, body, blen);
+            } else if (slen == 1 && sp[0] == '*') {
+                site = "*";
+            } else {
+                const char *why = NULL;
+                size_t len = pcrec_group_name_scan(sp, slen, 0, &why);
+                if (len != slen)
+                    REFUSE(at, "%s names the delivery site '%.*s', which is "
+                               "not a valid scope name (%s)",
+                           what, (int)slen, sp,
+                           why ? why : "invalid subpattern name");
+                site = rc_strndup(cx, sp, slen);
+            }
+        }
+    }
+
     if (isdigit((unsigned char)body[0]))
         REFUSE(at, "subpattern name must start with a non-digit (a subroutine "
                    "call BY NUMBER is spelled (?N) or (?+N)/(?-N))");
@@ -288,10 +359,15 @@ static ExtResult rc_name_call(Ctx *cx, const RegRow *rw, ExtWant want, size_t at
         if (len != blen)
             REFUSE(at, "%s", why ? why : "invalid subpattern name");
     }
-    return rc_result_node(rc_node(cx, rw, at, false, 0,
-                                  rc_strndup(cx, body, blen),
-                                  rc_strndup(cx, what, strlen(what))),
-                          at, end, want);
+    Ast *node = rc_node(cx, rw, at, false, 0,
+                        rc_strndup(cx, body, blen),
+                        rc_strndup(cx, what, strlen(what)));
+    /* WRITTEN ON EVERY CALL, true and false alike — N3's rule. The arena zero
+     * is the unsound direction: a missed write reads "not delivering", which
+     * is delivery that quietly does not happen. */
+    node->u.call.delivers = (site != NULL);
+    node->u.call.deliver_site = site;
+    return rc_result_node(node, at, end, want);
 }
 
 ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,

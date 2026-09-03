@@ -111,21 +111,54 @@ typedef struct {
     int                  depth;
 } RxtScope;
 
-/* One bound definition, in binding (closure) order. */
+/* One bound definition, in binding (closure) order.
+ *
+ * [DD-13b.W1.3, D89 addendum 4(1)] THE COMPOSER IS TWO PASSES AND THIS
+ * STRUCT IS WHY. Numbering used to happen inside the bind, which was correct
+ * while "which of a definition's groups survive" was answerable from the
+ * definition alone. It is not any more: addendum 4(1) makes a group survive
+ * when it is referenced inside the definition OR exported AND DELIVERED BY
+ * SOME SITE IN THIS COMPOSITION — and the delivering sites are not all known
+ * until the fixpoint has bound everything, because a definition bound LATER
+ * may itself carry the delivering call.
+ *
+ * So pass 1 SUB-PARSES (scope swap, capture, the refusals a definition's own
+ * text earns) and assigns nothing; pass 2 counts the sites, computes each
+ * map, re-bases, allocates the per-site slots and injects. Splitting it is
+ * what lets the erasure rule be asked once, with the whole composition in
+ * hand, instead of guessed per definition. */
 typedef struct {
     const RxtDef *def;
-    int           base;        /* the WRAPPER's group number (INTERNAL)   */
-    Ast          *inject;      /* A_REP{0,0}(A_CAP{base}(body))           */
+    Ast          *body;        /* the sub-parsed subtree, NOT yet re-based */
+    NamedGroup   *names;       /* the definition's own, NOT yet re-based   */
+    PendingRef   *pend;        /* its captured pending list                */
+    int           k;           /* its own group count, 1..k                */
+    int           base;        /* the WRAPPER's number (INTERNAL), pass 2  */
+    int          *map;         /* local -> final, or 0 for ERASED, pass 2  */
+    int           nmap;
+    Ast          *inject;      /* A_REP{0,0}(A_CAP{base}(body))            */
+    int           nsites;      /* delivering sites naming this definition  */
 } Bound;
+
+/* One DELIVERING CALL SITE. A site is a (call node, scope name) pair, and it
+ * is per SITE and not per definition on purpose: two delivering calls of one
+ * definition under two site names are two scopes with two slot sets (D89
+ * addendum point 3), which is exactly the case a per-definition record
+ * cannot express. */
+typedef struct {
+    Bound      *to;            /* the definition it delivers from          */
+    Ast        *node;          /* the `A_CALL`, for the retention plan     */
+    const char *site;          /* the scope name, or "*" for a flat import */
+    size_t      at;            /* the call's offset, for its diagnostics   */
+    const char *what;          /* the spelling, for its diagnostics        */
+} Site;
 
 typedef struct {
     Ctx    *cx;
     Bound  *bound;
     size_t  nbound;
-    /* Every definition's captured pending list, kept so the re-resolution
-     * pass can reach a reference a definition itself deferred. Parallel to
-     * `bound`. */
-    PendingRef **pend;
+    Site   *site;
+    size_t  nsite, sitecap;
 } Composer;
 
 /* ---- looking a name up ------------------------------------------------- */
@@ -209,18 +242,20 @@ static Ast *rc_remap_caps(Ast *a, const int *map, int nmap)
 
 /* ---- marking which groups survive -------------------------------------
  *
- * `keep[i]` is true when local group `i` is DELIVERED (the definition names
- * it) or HIDDEN (the definition's own resolved references reach it). It is
- * derived from the definition's captured `named_groups` and captured
- * `PendingRef` list and from nothing else — in particular NOT from a tree
- * walk, because a tree walk cannot distinguish a call the sub-parse resolved
- * locally from one it deferred, and a deferred call's `target` is 0. */
-static void rc_mark_kept(const NamedGroup *names, const PendingRef *pend,
-                         bool *keep, int nmap)
+ * `keep[i]` is true when local group `i` is HIDDEN — the definition's own
+ * resolved references reach it. **NAMING A GROUP NO LONGER KEEPS IT**: D89's
+ * addendum point 2 revised delivery from "every named group" to "the names
+ * the library EXPORTS", and addendum 4(1) narrowed it again to the names some
+ * site in THIS composition actually delivers. So this function answers only
+ * the internal half, and `rc_assign` adds the delivered half once the site
+ * count is known — which is exactly why the composer became two passes.
+ *
+ * It is derived from the captured `PendingRef` list and from nothing else —
+ * in particular NOT from a tree walk, because a tree walk cannot distinguish
+ * a call the sub-parse resolved locally from one it deferred, and a deferred
+ * call's `target` is 0. */
+static void rc_mark_kept(const PendingRef *pend, bool *keep, int nmap)
 {
-    for (const NamedGroup *g = names; g; g = g->next)
-        if (g->number > 0 && g->number < nmap) keep[g->number] = true;
-
     for (const PendingRef *pr = pend; pr; pr = pr->next) {
         if (pr->deferred) continue;          /* a FILE reference: not local */
         if (pr->kind == PEND_CALL) {
@@ -379,15 +414,6 @@ static void rc_bind(Composer *co, const RxtDef *def)
                      def->name, def->encoding, hn, def->file, def->line);
     }
 
-    /* THE WRAPPER TAKES A NUMBER, AND IT IS INTERNAL (w1_impl §2.6, D89
-     * point 1). `A_CALL.target` is a group number and `callgraph.c` binds by
-     * matching `A_CAP.u.cap.no`, so a callable body must hold a number in
-     * the same space every other group is in; a separate id space would be a
-     * second key in the binder. The number is never authored, never a
-     * `groups[]` row and never a name — Frank's Q-W1 ruling withdrew the
-     * caller-visible half r45sem had attached to it. */
-    int base = (int)cx->ncap + 1;
-
     /* `mods` is SEEDED FROM THE DEFINITION BLOCK'S OWN `flags`, not restored
      * and not inherited (r45sem M2): format_design §2.6 makes `flags`
      * block-scoped, so a definition that wrote `flags i` must get it and one
@@ -457,40 +483,105 @@ static void rc_bind(Composer *co, const RxtDef *def)
                      def->name, def->file, def->line);
     }
 
-    /* THE MAP (w1_impl §8.0). `nmap` is `k + 1` so a group number indexes it
-     * directly; entry 0 is unused and stays 0, which is what makes an
-     * unnumbered `A_CAP` (there are none today) fall into the erased arm
-     * rather than into an out-of-range read. */
-    int   nmap = k + 1;
+    /* [D89 addendum point 2] THE EXPORT LIST IS CHECKED HERE, and this is
+     * the only place it can be: `export` names GROUPS, the head reader does
+     * not parse patterns, and the sub-parse above is the first moment the
+     * definition's own `named_groups` exists. A name the definition does not
+     * declare is refused naming BOTH — the export and the definition —
+     * because a reader shown only the name cannot tell a typo in the export
+     * list from a group that was renamed inside the pattern. */
+    for (const char *e = def->exports; e && *e; ) {
+        while (*e == ' ' || *e == '\t' || *e == ',') e++;
+        if (!*e) break;
+        const char *b = e;
+        while (*e && *e != ',' && *e != ' ' && *e != '\t') e++;
+        size_t elen = (size_t)(e - b);
+        bool found = false;
+        for (const NamedGroup *g = names; g && !found; g = g->next)
+            found = strlen(g->name) == elen && memcmp(g->name, b, elen) == 0;
+        if (!found)
+            ctx_fail(cx, 0,
+                     "definition '%s' exports '%.*s', which it declares no "
+                     "capture group for (%s:%zu)",
+                     def->name, (int)elen, b, def->file, def->line);
+    }
+
+    co->bound[co->nbound].def    = def;
+    co->bound[co->nbound].body   = body;
+    co->bound[co->nbound].names  = names;
+    co->bound[co->nbound].pend   = pend;
+    co->bound[co->nbound].k      = k;
+    co->bound[co->nbound].nsites = 0;
+    co->nbound++;
+}
+
+/* ---- pass 2: numbering, erasure, the delivered rows, the injection -----
+ *
+ * Runs once the fixpoint has bound everything and every delivering site is
+ * known, because addendum 4(1)'s erasure rule needs both.
+ */
+static bool rc_export_lists(const RxtDef *def, const char *want, size_t wlen)
+{
+    for (const char *e = def->exports; e && *e; ) {
+        while (*e == ' ' || *e == '\t' || *e == ',') e++;
+        if (!*e) break;
+        const char *b = e;
+        while (*e && *e != ',' && *e != ' ' && *e != '\t') e++;
+        if ((size_t)(e - b) == wlen && memcmp(b, want, wlen) == 0) return true;
+    }
+    return false;
+}
+
+/* Assign this definition's numbers and splice it. */
+static void rc_assign(Composer *co, Bound *bd)
+{
+    Ctx *cx = co->cx;
+    const RxtDef *def = bd->def;
+
+    /* THE WRAPPER TAKES A NUMBER, AND IT IS INTERNAL (w1_impl §2.6, D89
+     * point 1). `A_CALL.target` is a group number and `callgraph.c` binds by
+     * matching `A_CAP.u.cap.no`, so a callable body must hold a number in
+     * the same space every other group is in; a separate id space would be a
+     * second key in the binder. The number is never authored, never a
+     * `groups[]` row and never a name — Frank's Q-W1 ruling withdrew the
+     * caller-visible half r45sem had attached to it. */
+    int base = (int)cx->ncap + 1;
+    int nmap = bd->k + 1;
     bool *keep = arena_alloc(&cx->arena, (size_t)nmap * sizeof *keep);
     int  *map  = arena_alloc(&cx->arena, (size_t)nmap * sizeof *map);
-    rc_mark_kept(names, pend, keep, nmap);
+
+    /* TIER 2, HIDDEN: a group the definition's own resolved references
+     * reach. Unchanged since the first version, and D89 addendum point 1
+     * reaffirms it — a group-number reference within a pattern always works,
+     * so an internally-referenced group is never erased. */
+    rc_mark_kept(bd->pend, keep, nmap);
+
+    /* TIER 1, DELIVERED — and addendum 4(1) is why this is a PER-COMPOSITION
+     * question rather than a per-definition one. An exported name survives
+     * only if some site in THIS composition actually delivers it: "the export
+     * list declares what MAY be delivered; the composition decides what IS."
+     * So an exported name with no delivering site is ERASED exactly like an
+     * unnamed unreferenced one, and a library that exports ten names costs a
+     * caller that delivers none of them nothing at all. */
+    if (bd->nsites > 0)
+        for (const NamedGroup *g = bd->names; g; g = g->next)
+            if (g->number > 0 && g->number < nmap &&
+                rc_export_lists(def, g->name, strlen(g->name)))
+                keep[g->number] = true;
 
     int next = base;
     for (int i = 1; i < nmap; i++) map[i] = keep[i] ? ++next : 0;
 
-    body = rc_remap_caps(body, map, nmap);
-    rc_rebase_refs(cx, pend, map, nmap);
+    bd->body = rc_remap_caps(bd->body, map, nmap);
+    rc_rebase_refs(cx, bd->pend, map, nmap);
+    for (NamedGroup *g = bd->names; g; g = g->next)
+        if (g->number > 0 && g->number < nmap)
+            g->number = map[g->number];
 
     cx->ncap = (unsigned)next;
-
-    /* THE DELIVERED ROWS. A definition's named groups join the caller's
-     * `named_groups` list with `scope` set, at their FINAL numbers, so
-     * `emit_info_def` sees one list and sorts it once. They are APPENDED
-     * conceptually and PREPENDED physically, exactly as the parser's own
-     * declarations are (`mod_named_groups.c`), because the emitted order is
-     * decided by the sort and not by the list. */
-    for (NamedGroup *g = names; g; ) {
-        NamedGroup *nx = g->next;
-        if (g->number > 0 && g->number < nmap && map[g->number] > 0) {
-            g->number = map[g->number];
-            g->scope  = def->name;
-            g->next   = cx->named_groups;
-            cx->named_groups = g;
-            cx->n_named_groups++;
-        }
-        g = nx;
-    }
+    bd->base = base;
+    bd->map  = map;
+    bd->nmap = nmap;
 
     /* THE INJECTION (w1_impl §2.4): `A_REP{0,0}(A_CAP{base}(body))`. Not a
      * new shape — `mod_recursion.c`'s `(?(DEFINE)…)` port builds exactly
@@ -505,7 +596,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
      * shape and the textual `(?(DEFINE)…)` control produce structurally
      * identical trees and a check can ASSERT that rather than assume it. */
     Ast *cap = pcrec_ast_node(cx, A_CAP);
-    cap->l = body;
+    cap->l = bd->body;
     cap->u.cap.no = base;
 
     Ast *rep = pcrec_ast_node(cx, A_REP);
@@ -513,12 +604,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
     rep->u.rep.rmin = 0;
     rep->u.rep.rmax = 0;
     rep->u.rep.greedy = !cx->mods->ungreedy;
-
-    co->bound[co->nbound].def    = def;
-    co->bound[co->nbound].base   = base;
-    co->bound[co->nbound].inject = rep;
-    co->pend[co->nbound]         = pend;
-    co->nbound++;
+    bd->inject = rep;
 }
 
 /* ---- the fixpoint ------------------------------------------------------
@@ -574,23 +660,27 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
      * of one fact, agreeing today and available to disagree later. */
 
     Composer co;
-    co.cx     = cx;
-    co.nbound = 0;
-    co.bound  = arena_alloc(&cx->arena, cx->defs->n * sizeof *co.bound);
-    co.pend   = arena_alloc(&cx->arena, cx->defs->n * sizeof *co.pend);
+    co.cx      = cx;
+    co.nbound  = 0;
+    co.bound   = arena_alloc(&cx->arena, cx->defs->n * sizeof *co.bound);
+    co.site    = NULL;
+    co.nsite   = 0;
+    co.sitecap = 0;
 
-    /* The worklist. Each round takes the leftmost unbound name reachable
-     * from the caller or from anything bound so far; binding it may defer
-     * more names, which the next round sees. It cannot run more than
-     * `defs->n` rounds, because every round binds one definition and
-     * `bound_by_name` never lets one be bound twice. */
+    /* ---- PASS 1: THE FIXPOINT ------------------------------------------
+     *
+     * Each round takes the leftmost unbound name reachable from the caller
+     * or from anything bound so far; binding it may defer more names, which
+     * the next round sees. It cannot run more than `defs->n` rounds, because
+     * every round binds one definition and `bound_by_name` never lets one be
+     * bound twice. NOTHING IS NUMBERED HERE. */
     for (size_t round = 0; round <= cx->defs->n; round++) {
         const char *unknown = NULL;
         size_t      uat     = 0;
         const RxtDef *want = rc_next_wanted(&co, cx->pending_refs,
                                             &unknown, &uat);
         for (size_t i = 0; !want && i < co.nbound; i++)
-            want = rc_next_wanted(&co, co.pend[i], &unknown, &uat);
+            want = rc_next_wanted(&co, co.bound[i].pend, &unknown, &uat);
         if (!want) break;
         rc_bind(&co, want);
     }
@@ -598,12 +688,16 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
     /* ---- RE-RESOLUTION -------------------------------------------------
      *
      * Every deferred by-name call now binds to its definition's WRAPPER
-     * number, which is the group `callgraph.c` will find and the number
-     * `--emit-composed` would print. A name the set does not declare
-     * RE-RAISES `mod_backrefs.c`'s own refusal — the same sentence at the
-     * same offset — so the four `perr` blocks in
+     * number, which is the group `callgraph.c` will find. A name the set
+     * does not declare RE-RAISES `mod_backrefs.c`'s own refusal — the same
+     * sentence at the same offset — so the four `perr` blocks in
      * `tests/recursion/d27/sr_refusals.rxt` are untouched by this step, and
      * a file that composes nothing behaves as it always did.
+     *
+     * THE TARGET IS FILLED IN PASS 3, not here: a wrapper has no number yet.
+     * What this pass does is DECIDE which definition each call reaches, and
+     * record a DELIVERING call as a SITE — which is the input addendum
+     * 4(1)'s erasure rule needs before any number is assigned.
      *
      * THE LEFTMOST FAILURE IS STILL THE ONE REPORTED, and under composition
      * a bare offset is no longer totally ordered — `pr->at` may be an offset
@@ -612,33 +706,199 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
      * themselves first, and only if the caller has none does a definition's
      * unresolved name get reported, naming that definition's file and line
      * so the two coordinate systems are never silently mixed. */
-    for (PendingRef *pr = cx->pending_refs; pr; pr = pr->next) {
-        if (!pr->deferred || !pr->name) continue;
-        Bound *b = bound_by_name(&co, pr->name);
-        if (b) { pr->node->u.call.target = b->base; pr->deferred = false; continue; }
-    }
     {
         const PendingRef *worst = NULL;
         for (const PendingRef *pr = cx->pending_refs; pr; pr = pr->next)
-            if (pr->deferred && pr->name && (!worst || pr->at < worst->at))
+            if (pr->deferred && pr->name && !bound_by_name(&co, pr->name) &&
+                (!worst || pr->at < worst->at))
                 worst = pr;
         if (worst)
             ctx_fail(cx, worst->at,
                      "%s refers to a capture group named '%s', which this "
                      "pattern does not declare", worst->what, worst->name);
     }
-    for (size_t i = 0; i < co.nbound; i++) {
-        for (PendingRef *pr = co.pend[i]; pr; pr = pr->next) {
+    for (size_t i = 0; i < co.nbound; i++)
+        for (PendingRef *pr = co.bound[i].pend; pr; pr = pr->next)
+            if (pr->deferred && pr->name && !bound_by_name(&co, pr->name))
+                ctx_fail(cx, 0,
+                         "definition '%s' (%s:%zu): %s refers to '%s', which "
+                         "is neither one of its own groups nor a definition "
+                         "this source declares",
+                         co.bound[i].def->name, co.bound[i].def->file,
+                         co.bound[i].def->line, pr->what, pr->name);
+
+    /* ---- PASS 2: COLLECT THE DELIVERING SITES --------------------------
+     *
+     * In SOURCE ORDER within each list, and the caller's list before any
+     * definition's, because the site order decides the slot order a caller
+     * reads off `groups[]`. The lists are PREPENDED, so each is reversed
+     * into source order before it is walked — the same reason
+     * `br_name_run` sorts its own run rather than trusting the walk. */
+    for (size_t li = 0; li <= co.nbound; li++) {
+        PendingRef *list = li == 0 ? cx->pending_refs : co.bound[li - 1].pend;
+        /* count, then walk backwards by index: no allocation, and the
+         * reversal is local to this loop rather than a mutation of a list
+         * three other passes read. */
+        size_t n = 0;
+        for (PendingRef *pr = list; pr; pr = pr->next) n++;
+        for (size_t back = n; back-- > 0; ) {
+            PendingRef *pr = list;
+            for (size_t j = 0; j < back; j++) pr = pr->next;
+            if (!pr->name || pr->kind != PEND_CALL) continue;
+            if (!pr->node->u.call.delivers) continue;
+            Bound *b = bound_by_name(&co, pr->name);
+            if (!b) continue;            /* refused above */
+            if (co.nsite == co.sitecap) {
+                size_t nc = co.sitecap ? co.sitecap * 2 : 8;
+                Site *nv = arena_alloc(&cx->arena, nc * sizeof *nv);
+                for (size_t j = 0; j < co.nsite; j++) nv[j] = co.site[j];
+                co.site = nv; co.sitecap = nc;
+            }
+            co.site[co.nsite].to   = b;
+            co.site[co.nsite].node = pr->node;
+            co.site[co.nsite].site = pr->node->u.call.deliver_site;
+            co.site[co.nsite].at   = pr->at;
+            co.site[co.nsite].what = pr->what;
+            co.nsite++;
+            b->nsites++;
+        }
+    }
+
+    /* A DELIVERING SITE ON A DEFINITION THAT EXPORTS NOTHING IS A REFUSAL,
+     * not a no-op. The default IS "nothing exported" (D89 addendum point 2),
+     * so a caller writing `(?&s=lib)` against a library that never published
+     * an interface has written something that cannot do anything — and a
+     * delivering call that delivers nothing is precisely the half-feature
+     * these rulings removed. Naming both sides is what lets the author tell
+     * "I misread the library" from "the library forgot its export line". */
+    for (size_t i = 0; i < co.nsite; i++)
+        if (!co.site[i].to->def->exports)
+            ctx_fail(cx, co.site[i].at,
+                     "%s delivers from definition '%s', which exports nothing "
+                     "(%s:%zu); add an `export` line to it, or call it plainly "
+                     "as (?&%s)",
+                     co.site[i].what, co.site[i].to->def->name,
+                     co.site[i].to->def->file, co.site[i].to->def->line,
+                     co.site[i].to->def->name);
+
+    /* ---- PASS 3: NUMBER, ERASE, INJECT --------------------------------- */
+    for (size_t i = 0; i < co.nbound; i++) rc_assign(&co, &co.bound[i]);
+
+    for (PendingRef *pr = cx->pending_refs; pr; pr = pr->next) {
+        if (!pr->deferred || !pr->name) continue;
+        Bound *b = bound_by_name(&co, pr->name);
+        if (b) { pr->node->u.call.target = b->base; pr->deferred = false; }
+    }
+    for (size_t i = 0; i < co.nbound; i++)
+        for (PendingRef *pr = co.bound[i].pend; pr; pr = pr->next) {
             if (!pr->deferred || !pr->name) continue;
             Bound *b = bound_by_name(&co, pr->name);
-            if (b) { pr->node->u.call.target = b->base; pr->deferred = false; continue; }
-            ctx_fail(cx, 0,
-                     "definition '%s' (%s:%zu): %s refers to '%s', which is "
-                     "neither one of its own groups nor a definition this "
-                     "source declares",
-                     co.bound[i].def->name, co.bound[i].def->file,
-                     co.bound[i].def->line, pr->what, pr->name);
+            if (b) { pr->node->u.call.target = b->base; pr->deferred = false; }
         }
+
+    /* ---- PASS 4: THE DELIVERED ROWS, PER SITE --------------------------
+     *
+     * THE FLAT INJECTION OF EVERY LIBRARY NAME IS GONE (D89 addendum point
+     * 3, WITHDRAWN and removed rather than left dormant). A `groups[]` row
+     * for a library group now exists only because some site asked for it,
+     * and it is named for that site.
+     *
+     * TWO SHAPES, ONE LOOP:
+     *   `(?&site=name)` / `(?&=name)`  ->  row `site.group`, `ref` = the
+     *       definition's name. It is a LIBRARY row: it sorts BELOW the
+     *       primary's, `nnames` does not count it, and a caller reaches it
+     *       by the qualified name.
+     *   `(?&*=name)`                   ->  row `group`, `ref` = NULL. The
+     *       author asked for it in the CALLER's own scope, so that is where
+     *       it goes — counted by `nnames`, found by `match_api.md` §6's
+     *       bsearch, indistinguishable from a group the caller declared.
+     *       That last clause is exactly what the clash refusal below pays
+     *       for, and it is the tradeoff the form exists to make.
+     *
+     * EACH SITE GETS ITS OWN SLOTS. The definition's own copy of an exported
+     * group stays where it is; the site's slot is a new caller-space number,
+     * and the retention plan recorded on the node is what will copy one into
+     * the other at the site's return. Two sites of one definition therefore
+     * cannot alias, which is the whole reason a site is a scope. */
+    for (size_t i = 0; i < co.nsite; i++) {
+        Site *st = &co.site[i];
+        bool flat = strcmp(st->site, "*") == 0;
+        int nex = 0;
+        for (const NamedGroup *g = st->to->names; g; g = g->next)
+            if (g->number > 0 &&
+                rc_export_lists(st->to->def, g->name, strlen(g->name))) nex++;
+        if (nex == 0) continue;
+
+        int *from = arena_alloc(&cx->arena, (size_t)nex * sizeof *from);
+        int *to   = arena_alloc(&cx->arena, (size_t)nex * sizeof *to);
+        int  n    = 0;
+        /* IN THE ORDER THE `export` LINE WRITES THEM, not the order the
+         * definition's `named_groups` list happens to be in. That list is
+         * PREPENDED at declaration (`mod_named_groups.c`), so walking it
+         * yields REVERSE declaration order — and the slot order is
+         * caller-visible through every row's `slot` column, so it must be an
+         * order somebody chose. The export line is the definition author's
+         * own statement of its interface, which makes it the only order here
+         * with a reason behind it. */
+        for (const char *e = st->to->def->exports; e && *e; ) {
+            while (*e == ' ' || *e == '\t' || *e == ',') e++;
+            if (!*e) break;
+            const char *eb = e;
+            while (*e && *e != ',' && *e != ' ' && *e != '\t') e++;
+            size_t elen = (size_t)(e - eb);
+            NamedGroup *g = NULL;
+            for (NamedGroup *q = st->to->names; q; q = q->next)
+                if (strlen(q->name) == elen &&
+                    memcmp(q->name, eb, elen) == 0) { g = q; break; }
+            if (!g || g->number <= 0) continue;
+            char *rowname;
+            if (flat) {
+                rowname = arena_alloc(&cx->arena, strlen(g->name) + 1);
+                memcpy(rowname, g->name, strlen(g->name) + 1);
+            } else {
+                size_t sl = strlen(st->site), gl = strlen(g->name);
+                rowname = arena_alloc(&cx->arena, sl + 1 + gl + 1);
+                memcpy(rowname, st->site, sl);
+                rowname[sl] = '.';
+                memcpy(rowname + sl + 1, g->name, gl + 1);
+            }
+            /* THE CLASH REFUSAL, BY NAME, and one test covers both shapes
+             * because they are one collision: a flat import landing on a
+             * caller's own group or on another flat import, and two
+             * delivering calls that named the same site. A row name is a
+             * caller's whole handle on a delivered group, so two rows
+             * sharing one would make `match_api.md` §6's bsearch return
+             * whichever the sort happened to put first. */
+            for (const NamedGroup *o = cx->named_groups; o; o = o->next)
+                if (strcmp(o->name, rowname) == 0)
+                    ctx_fail(cx, st->at,
+                             "%s would deliver a group named '%s', which this "
+                             "pattern already has; give the site another name",
+                             st->what, rowname);
+
+            int slot = (int)cx->ncap + 1;
+            cx->ncap = (unsigned)slot;
+
+            NamedGroup *row = arena_alloc(&cx->arena, sizeof *row);
+            row->name   = rowname;
+            row->number = slot;
+            row->scope  = flat ? NULL : st->to->def->name;
+            row->next   = cx->named_groups;
+            cx->named_groups = row;
+            cx->n_named_groups++;
+
+            from[n] = g->number;      /* already re-based by rc_assign */
+            to[n]   = slot;
+            n++;
+        }
+        /* THE RETENTION PLAN, recorded on the node for the emitter. Filling
+         * it here rather than in the emitter is what keeps "which slots does
+         * this site deliver" a COMPOSITION fact — the emitter has no notion
+         * of an export list — and it is why a plain call carries `n == 0`
+         * and copies nothing without the emitter testing for a site. */
+        st->node->u.call.deliver_n    = n;
+        st->node->u.call.deliver_from = from;
+        st->node->u.call.deliver_to   = to;
     }
 
     /* ---- THE SPLICE ----------------------------------------------------
