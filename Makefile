@@ -1113,15 +1113,25 @@ SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
 
 # Same suite list as `ubsan:`/`asan:` (tests/thread/ excluded, same TSan
 # reason; see docs/testing.md's Exclusions section for the full rationale).
+#
+# [TT-12] STEP 1 item 3: the 34-script loop runs through tests/lib/
+# run_san_group.sh's bounded job pool (SAN_PROCS, default 4) rather than
+# strictly serially. Measured (docs/dev/lanes/tt12b_report.md): the D77
+# concurrent-vs-sequential check on the five whole-corpus identity scripts
+# found no shared-resource contention (each isolates itself with its own
+# `mktemp -d` and only ever READS $PCREC), so this is safe by the same
+# argument tests/lib/run_group.sh's own header already makes for its
+# smaller groups. NOT tests/lib/run_group.sh itself — that script's
+# GROUP_PROCS is a real throttle only at exactly 1 (serial); above that it
+# launches its whole group unthrottled, which is fine for its own 2-3-
+# script call sites but would stack san's 34 scripts (several already
+# internally parallel at PROCS=nproc) into the same K44-shaped
+# oversubscription this project is retiring elsewhere.
 san:
 	@echo "== san: building the compiler axis at $(SAN_DIR)/ =="
 	$(MAKE) BUILD_DIR=$(SAN_DIR) CFLAGS="$(SAN_CFLAGS)" all
-	@echo "== san: running the suite, both axes instrumented =="
-	@set -e; \
-	for s in $(SAN_SCRIPTS); do \
-	    echo "-- san: $$s --"; \
-	    env $(SAN_ENV) bash "$$s" || exit 1; \
-	done
+	@echo "== san: running the suite, both axes instrumented, SAN_PROCS=$${SAN_PROCS:-4} =="
+	@env $(SAN_ENV) SAN_GROUP_PROCS=$${SAN_PROCS:-4} bash tests/lib/run_san_group.sh $(SAN_SCRIPTS)
 	@echo "san: suite green under -fsanitize=address,undefined, both axes"
 
 # `make lint` — static analysis survey (SAN-1 item 3). Adopts what earns its

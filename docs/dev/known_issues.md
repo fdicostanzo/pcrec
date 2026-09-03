@@ -3522,6 +3522,32 @@ stages at reduced PROCS (measured: PROCS=6 still red once); (c) accept
 and document. Whoever takes (a) should re-read learnings §3 first — an
 inconclusive that absorbs real regressions is worse than this noise.
 
+**DIRECTION (b) MEASURED THREE WAYS, 2026-09-03, [TT-12] STEP 1 item 4
+(lane tt12b):** the battery's own `make -k -j12 test` stacks TWO
+parallelism layers — the outer `-j` and every PROCS-aware section's own
+internal `PROCS=nproc` fan-out — to a load the K44/[TT-10] cells were
+never sized for. Three shapes, each capping the PRODUCT of the two
+layers at ~nproc rather than letting them multiply, full `make test`,
+one at a time (box NOT quiet throughout — a concurrent pcrec-bench
+`make check`/`check-harness` ran through the middle of shapes (a) and
+(b); relative comparison still holds, absolute wall times are inflated):
+
+| shape | wall | rc | counterk.rxt:1807 | resource CPU cap (`[a-z]{0,30000}`) |
+|---|---|---|---|---|
+| `-j12 PROCS=1` | 1674s (27:54) | 2 (FAIL) | green | **RED** — exceeded 45s CPU |
+| `-j4 PROCS=3` | 1115s (18:35) | 0 (PASS) | green | green |
+| `-j2 PROCS=6` | 1792s (29:52) | 0 (PASS) | green | green |
+
+All three ran the full 31/31 sections (no section silently skipped).
+`-j4 PROCS=3` is BOTH the fastest of the three AND the only one with
+zero failures — not a coin flip between speed and cleanliness. RULING:
+`scripts/battery.sh` ([TT-12] STEP 1 item 5) defaults the battery's test
+stage to `-j4 PROCS=3`. This still does not discharge direction (a) or
+(c) — (b) alone does not GUARANTEE the cell can never red again on a
+sufficiently loaded box (this run's own contamination is a reminder of
+that), only that it is measurably less marginal at this shape than at
+the union battery's previous `-j12` default.
+
 ## K45 — INFRASTRUCTURE (2026-09-02, fiftieth session, found by lane opt5i's `make test-axes`): `make test-axes` is RED ON MAIN for [ART-SIZE.2]'s nested-repeat tower — five axes report `refused_undoc=2` on tests/size/size_term.rxt:34-35, pre-existing since fa9b6d4 (2026-08-29)
 
 The block `(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}` carries
@@ -3557,3 +3583,19 @@ and choose the one that keeps the block's purpose intact. Until then a
 clean tree; a lane's OWN axis is judged on its own line. OPEN QUESTION
 for Frank: whether test-axes joins the battery (it is ~70 min at
 PROCS=nproc) or stays opt-in with this entry as its standing caveat.
+
+**FIXED 2026-09-03, [TT-12] STEP 1 item 2 (lane tt12b):** five
+`REFUSAL_PATTERN` entries added/extended in `run_axes.sh` — see
+`tests/axes/CLAUDE.md`'s own "K45" section for the mechanism each axis
+actually hits (a second replication-cap diagnostic shape for
+`-fno-counter`; the general NFA construction cap for `-fprefilter` and
+`--engine=dfa`, reached because forcing either needs the NFA/DFA build the
+block's own `engine vm` directive was written to skip; new entries for
+`-fno-altcls-merge`'s VM node cap and `-fno-size-term`'s emitted-code-
+bytes cap, neither of which had ANY entry before). Verified live against
+the full corpus (paired run, docs/dev/lanes/tt12b_report.md): all five
+axes now read `refused_undoc=0`, `refused_doc` matching the pre-fix
+reference (opt5i's `axes2.log`, 2026-09-02) plus exactly the two new
+tower cells each, every other AGREE/BUDGET/REFUSED count byte-identical.
+`make test-axes` is green on a clean tree (both from this fix and from
+the corpus-wide pairing run that exercised it).

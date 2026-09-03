@@ -20135,3 +20135,100 @@ reproduces on the clang arm (the gcc half still open — a layout probe
 proposed). I-39 answers the five asks; the ALTCLS stamps they asked for
 already exist (match_api.md:2429). The bench's daytime lane re-pins to
 288d505.
+
+## 2026-09-03 — Fiftieth session, part 17 (10:1x): the second executive summary (the altwide/noedge/clang night) merged and published
+
+Lane execsum2 (sonnet) drafted docs/dev/summaries/2026-09-03-exec-bench-
+altwide-noedge-ccrerun-1989c62.md (265 lines; Frank asked for more
+context per finding: each carries the measured fact, the mechanism in
+plain language, and what it changes — nine findings, five surprises).
+Landing fixes: tonight's go awaits Frank's DIRECT word to the bench (not
+"confirmed"); the queued rows wait on [CC-DIFF] STEP 1 to avoid merge
+conflicts in the same emitter files, not a "one abi event at a time"
+rule the lane invented; the bench's candidate numbering explained.
+Merged 3815d0d; published as a page for Frank. Process slip: a `cd` into
+the worktree persisted across my next call, so the first `git merge` ran
+inside the lane's tree ("already up to date") — the real merge followed
+from the main tree; the situation-index row about `cd` in compound
+commands applies to persisted cwd too.
+
+Part 17 addendum (10:2x): lane ccdiff1 (opus) lost FOUR consecutive turns
+to API 529s (09:27-10:13) with its two spellings already committed
+(lane/ccdiff1 37549a1: emit_vm.c always_inline gated on frameless;
+emit_dfa.c uniform-table fold; run_dfa_uniform_fold.sh; docs). Stood
+down by rulings file + message; lane ccdiff1b (sonnet) continues on
+lane/ccdiff1b from those commits (read-site check, abi 16→17 by grep,
+spec paragraph, prediction table, validation after .lift, acceptance).
+The bench's daytime `make check` (10:07) overlapped tt12b's first K44
+shape run; asked to hold bursts until 10:50 — they stopped it at 10:13;
+tt12b re-runs shape (a) last so the three shapes carry comparable load.
+
+## 2026-09-03 — Fiftieth session, part 18 (11:1x): [TT-12] STEP 1 merged (648970e) — the test stage's shape is -j4/PROCS=3 and K44's cells go green; K45 closed; san pooled; battery_v5 written
+
+tt12b delivered all four measurements. K44 SHAPE TABLE (full make test,
+one at a time): -j12/PROCS=1 1,674 s rc=2; -j4/PROCS=3 1,115 s rc=0 with
+BOTH K44 cells green; -j2/PROCS=6 1,792 s rc=0 — the two stacked
+parallelism layers were the whole of K44, and the measured shape retires
+it (direction (b), as Frank ruled: the data decides). K45 CLOSED: the
+[ART-SIZE.2] tower's five refusals documented on the axes, the sweep
+green on a clean tree. Pairwise axes 2,868 s vs 4,205 (1.47×, under
+load 12-18 — the ≤40-min target waits for a quiet-box run). san: a
+bounded pool of 4 over the 34 scripts (tests/lib/run_san_group.sh) — the
+five identity scripts 831 → 351 s, no contention, verdicts identical;
+the full pooled san is unmeasured until the next battery. scripts/
+battery.sh (battery_v5) written, not run; first run = [CC-DIFF] STEP 1's
+merge battery. ccdiff1b lifted 11:1x; its `make test` uses the new
+shape. The bench held its `make check` bursts 10:13-11:10 for the shape
+table (a ~6-min overlap on shapes (a)/(b) noted; the relative order
+holds). Lane ccdiff1 (opus) returned after five API 529s and stood down
+with a clean handover (ready acceptance/clang-gate scripts; byte-identity
+evidence on three of five acceptance cells; scope decisions), forwarded
+to ccdiff1b.
+
+Part 18 addendum (11:1x): removing tt12b's worktree raced ONE straggling
+harness worker from its last suite (a `pcrec_run` at 11:10:16, exit 127
+— the binary was already gone; it wrote build/watchdog.log into the
+deleted path and died). Harmless; lesson for the skill: before
+`git worktree remove`, check the process table for cwds under the
+worktree (by PID, not pkill) — a delivered lane's harness workers can
+outlive its delivery by a minute.
+
+## 2026-09-03 — Fiftieth session, part 19 (11:4x): the bench re-pinned to 288d505; two of its census facts sharpen [ENG-ISL] and [OPT-VMFL]
+
+The bench's master aca987f is at pin 288d505 (make check 4/72/0 ·
+270/270 · 68+7). Facts for our rows: (1) the ALTCLS stamps exist on both
+routes (no defect), and the VM's branch-ORDER penalty is the trie's
+FACTORING count reaching the VM lowering — factored 11 (w-256) vs 57
+(srt-256), the DFA artifacts byte-identical but for that line — so the
+VM already consumes the trie's factoring and sorted input factors ~5×
+more; a canonical, priority-safe branch order (nfa.c:192's rules say
+where order carries meaning) is a cheap STEP 0 lever before any dispatch
+island, recorded on [ENG-ISL]. (2) `(?=abc)x+` stamps RX_VM_FRAMELESS 1
+with RX_RESUME_FRAMES 2 — the I-34 over-count class on their own
+witness. (3) cls-upto-16384 pinned: 16,554 → 13,162 B. (4) a new
+`search-start` registry axis of two rows on their side. Tonight's
+bounded@0.3 AFTER launches on Frank's word to them directly.
+
+## 2026-09-03 — Fiftieth session, part 20 (13:0x): [ENG-ISL.S0] the alternation-dispatch study — delivered in ~50 min, merged (6fbc3f4): build (e)
+
+Lane altstudy (sonnet) built studies/alt_dispatch/ (own Makefile, C
+harness, the bench's altwide shapes at widths 64-2048, serial try as the
+leftmost-first oracle) and measured five algorithms with ZERO mismatches
+over 25.7 M subject positions. The VM-native trie walk (e) — Frank's
+"sort, build the trie, end nodes are candidates, if they fail the walk
+continues", with the priority annotation — runs 7× faster than serial
+try at w-64 and 120× at w-2048 (27.1 vs 190.0 ns/byte; 53.5 vs 6,442.4),
+within 1-5% of the DFA-trie (c) and the shape an emitter can build: one
+frame per dispatch, and the deferred mask needed zero capacity on every
+bench pool (no two accepts on one walked path). The study CORRECTED
+(e)'s commit rule: an end node commits only if it beats every deeper
+accept AND the best already-deferred one — nfa.c's own `abc|a|abd`
+counter-example catches the naive form (regression-guarded in
+tests/unit_trie.c, argued in the design doc §3.2). Caveat: the study's
+serial baseline is unfactored, so it does not reproduce the bench's
+order penalty (real vm_alt consumes the trie's factoring) — a sixth
+baseline, unbuilt. Not settled: sh1/pfx3 beyond 512, a true minimal
+perfect hash for (d), rule 2's NFA-step half, and the VM's continuation-
+backtracking cost (the next D77 measurement, a hand-twin on a real
+resumed frame). RECOMMENDATION recorded as [ENG-ISL] STEP 1, Frank's
+charter owed; queued behind [CC-DIFF] STEP 1 (same emitter file).

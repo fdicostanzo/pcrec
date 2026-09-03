@@ -2480,6 +2480,19 @@ Measured (table above), the ruling:
   land in the inventory above with a triage before any fix (the
   findings-discipline that produced F1's clean arc).
 
+**`battery_v5` ([TT-12] STEP 2, Frank's ruling 2026-09-03, "2 yes"):**
+`test-axes` joins the chain as its own stage, between `strict` and `san`
+— `test → strict → axes → san → lint → mech`. Landed as `scripts/battery.sh`
+([TT-12] STEP 1 item 5): every stage besides `axes` itself also picked up a
+STEP 1 measurement over the manager's prior ad-hoc `battery_v4.sh` — the
+test stage runs at `-j4 PROCS=3` (item 4's K44 table, below), `san` runs
+its 34-script loop through a `SAN_PROCS`-wide job pool (item 3, above), and
+`mech` runs at `PROCS=6` ([TT-8]'s own measured setting, which
+`battery_v4.sh` was contradicting at `PROCS=4`). Runs detached under
+`setsid` with per-stage logs and a trailer the caller polls; see
+`scripts/CLAUDE.md`'s `battery.sh` entry. The first full end-to-end run is
+owed at the next merge/close battery — not performed by the STEP 1 lane.
+
 ### [TT-7] combined axis (2026-08-23) — ADOPTED: `make san` is the battery's sanitizer stage
 
 `docs/dev/chain_profile.md` candidate (a), 2026-08-23: today's `ubsan` and
@@ -2545,6 +2558,41 @@ report the combined build attributes ambiguously. The chain_profile.md
 estimate (~45-55 min) was confirmed at its low end. Caveat carried from
 K26: LSan is a no-op on this box under every axis (`ptrace_scope=1`), so
 the `leak` component of `san` is inert here exactly as `asan`'s was.
+
+### [TT-12] STEP 1 item 3 (2026-09-03) — `san`'s 34-script loop runs through a bounded job pool
+
+`docs/dev/tt12_step0_profile.md` §2: `san` (and `ubsan`/`asan`) ran its
+34-script suite list STRICTLY SERIALLY at ~1.9 of 12 cores busy through the
+whole 109.6-minute stage — 18.5 idle core-hours, the single biggest number
+in the STEP 0 profile — because only 4 of the 34 scripts
+(`tests/harness/run.sh`, `tests/reject/run_reject_tests.sh`,
+`tests/lookaround/run_expansion_diff.sh`, `tests/anchored/run_anchored_diff.sh`)
+read `PROCS` themselves; the other 30, including all five whole-corpus
+identity scripts, are structurally single-process.
+
+`tests/lib/run_san_group.sh` (new) replaces the Makefile's bare serial loop
+with a bounded job pool (`SAN_PROCS`, default 4), reusing `PROCS` = the
+outer `-j` shape's own ceiling (`ceil(nproc/SAN_PROCS)`) for the four
+PROCS-aware scripts — [TT-8]'s own mech fix (`INNER_PROCS = ncpu/PROCS`)
+applied to the identical shape, since running those four concurrently with
+pool siblings at their old `PROCS=nproc` would double-stack exactly the
+K44 way. See `tests/lib/CLAUDE.md`'s `run_san_group.sh` entry for the
+mechanism (buffered per-script output replayed in argument order, a
+lost/crashed worker scored a HARD FAILURE, why this is a new script rather
+than `tests/lib/run_group.sh`'s own GROUP_PROCS).
+
+**D77 pre-measurement** (the trigger STEP 0 named before wiring anything):
+the five whole-corpus identity scripts, sequential vs `-P4`, same tree,
+box load 1.4-4 through the run (quiet-ish). **Sequential: 831s. Concurrent:
+351s — a 2.37x speedup.** No shared-resource contention: every script's own
+wall time was flat to slightly FASTER concurrently (each isolates itself
+with its own `mktemp -d` and only ever reads `$PCREC`), and every script's
+verdict tail was byte-identical between the two runs. Clears the D77
+trigger.
+
+**NOT run**: a full `make san` end to end under the new wiring (45-50 min
+at the measured shape) — owed at the next merge/close battery alongside
+`scripts/battery.sh`'s own first full run.
 
 ## The load guard ([TT-10], 2026-08-25) — a THIRD outcome for CPU-bounded checks under contention
 
@@ -3296,12 +3344,35 @@ each named individually (span and capture-slot divergences both), e.g.
 line 38: default `match 0 2 0 1`, sabotaged axis `nomatch`. Full transcript
 in `run_axes.sh`'s own header.
 
-**Runtime**: ~14 full `tests/harness/run.sh` passes (13 bit-flag axes + 2
-engine directions, plus the baseline; [OPT-K] made it 13 from 12) at roughly `test-corpus`'s own
-per-pass runtime with `PROCS=$(nproc)`. Measured on quick subset runs (see
-`run_axes.sh`'s header for the exact commands); the full-corpus run is the
-delivered `make test-axes` invocation and its measured total is recorded
-at the next battery this row rides.
+**Runtime**: 22 full `tests/harness/run.sh` passes (19 bit-flag axes + 2
+engine directions + the baseline; [OPT-K] grew the bit-flag family from 12
+to 13, and further axes since) at roughly `test-corpus`'s own per-pass
+runtime with `PROCS=$(nproc)`. **SEQUENTIAL reference: 4205s (70:05)**,
+opt5i's full-corpus run, `docs/dev/tt12_step0_profile.md`'s source data
+(2026-09-02, `axes2.log`).
+
+**[TT-12] STEP 1 item 1 (2026-09-03, lane tt12b): axes now run PAIRWISE**
+— two at a time, each at `PROCS=ceil(nproc/2)` (see `tests/axes/run_axes.sh`'s
+own header and `tests/axes/CLAUDE.md`'s "Pairwise execution" section for the
+mechanism). **MEASURED, full corpus + oracle cross-check, same tree: 2868s
+(47:48)** — a 1.47x speedup (31.8% off the sequential reference), but ABOVE
+the STEP 1 charter's ≤40 min target. The shortfall is load, not the
+mechanism: the reference run's own box sat at load 4.5-6 through its
+sequential sweep (docs/dev/plan.md [TT-12] row), while the paired run's box
+sat at load 12-18 throughout (other daytime work per the day/night
+handshake, not a hold on this run) — every pair's own per-axis wall time
+landed 25-30% above the reference's solo figure, consistent with contention
+rather than the pairing itself. **Answer identity fully verified**: every
+one of the 21 axes' AGREE/BUDGET/REFUSED/LOST/MISMATCH/GAINED counts is
+BYTE-IDENTICAL to the sequential reference (K45's five axes' `refused_doc`
+counts read exactly 2 higher each — the K45 fix landing in the same run,
+not a pairing artifact); zero MISMATCH, zero LOST, zero GAINED anywhere.
+Pairing THREE at a time was not measured (D77: no trigger for it — two
+already meets the "close to additive" bar the STEP 0 profile predicted,
+and a third full ~45+ minute run was not spent chasing a stretch target
+the charter listed as optional). A re-run on a quiet box would be the
+confirming measurement for whether ≤40 min is reachable under normal
+conditions; not performed here.
 
 ### The form census (`tests/codegen/run_form_census.sh`)
 

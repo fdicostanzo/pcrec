@@ -90,6 +90,83 @@ Per-axis output line: `agree=N budget-bound=N refused-documented=N
 (floor F) lost-other=N mismatches=N gained=N` — every bucket printed
 beside the verdict, never only a pass/fail count.
 
+## Pairwise execution ([TT-12] STEP 1 item 1, 2026-09-03)
+
+The job list (bit-flag axes in bit order, then `--engine=vm`, then
+`--engine=dfa` — same order and same `AXES=` filtering as before) is now
+run TWO AT A TIME rather than strictly serially, each at `PROCS=ceil(PROCS/2)`
+(6 each at the default `PROCS=nproc=12`). `docs/dev/tt12_step0_profile.md`
+§4 is why this is close to additive rather than merely contending: a single
+axis's wall time is bounded by ONE `.rxt` file's case count under the
+harness's per-FILE `PROCS` dispatch (`tests/assertions/multiline.rxt` at
+3,065 cases, 56% more than the next-largest file), not by `PROCS` reaching
+`nproc` — the box already sits roughly half-idle through most of one axis's
+own run for a reason unrelated to `PROCS` width, so pairing a second axis's
+own independent bottleneck onto the idle half should roughly double
+throughput. **Measured** (docs/dev/lanes/tt12b_report.md has the full
+table): the sequential reference is opt5i's 4205s run (`axes2.log`,
+2026-09-02); see the report for the paired total.
+
+**Answer identity is unaffected by pairing — verified, not merely argued.**
+Every AGREE/REFUSED/BUDGET/LOST/MISMATCH count is computed from `diffline`,
+a value captured directly from `dump_diff.awk`'s own output into a local
+shell variable; nothing about the verdict is read back from a file two
+concurrent axes could both be writing. What COULD have been a genuine race
+under pairing, and was fixed as part of landing it: `run_one_axis` used to
+write the harness's stdout/stderr and the diff-awk's own stderr to FIXED
+filenames (`$WORKDIR/axis.out`/`axis.err`/`diff.err`) shared across every
+axis call — harmless when only one axis ever runs at a time, a real risk
+for the DIAGNOSTIC TEXT a failure prints (`---- axis.out ----` etc.) once
+two axes can be mid-run at once. Every such filename is now per-axis
+(slug-derived, the same shape `dump`/`rowsfile` already used).
+
+**Implementation shape**: a subshell (`( ... ) &`) cannot mutate this
+script's own `fail` variable or append to its own `axis_results` array —
+subshells do not write state back to their parent. Each backgrounded axis
+call writes its own `pararesult_<slug>` file (the axis_results line it
+would have appended, then its own `fail` value) and `paraout_<slug>` file
+(everything it would otherwise have printed live); the parent re-absorbs
+both, in job-list order, after `wait`ing on the pair — so the summary table
+and AXIS FAIL semantics are IDENTICAL to the sequential form, only the
+moment output appears (after both of a pair finish, not streamed live)
+differs. `trap - EXIT` inside the subshell is load-bearing, not decoration:
+the top-level `trap cleanup EXIT` (deletes the whole `$WORKDIR` unless
+`KEEP=1`) is INHERITED by a forked subshell, so without disabling it there
+the first background job to finish would delete `$WORKDIR` — including the
+shared `BASE_DUMP` — out from under everything else still using it.
+
+## K45 — tests/size/size_term.rxt's tower, documented (2026-09-03)
+
+`tests/size/size_term.rxt:34-35`'s nested-repeat tower (`engine vm`-forced,
+own header: "on the default axis this pattern refuses much earlier, at NFA
+construction... a pre-existing limit that has nothing to do with the size
+term") was RED on five axes with `refused_undoc=2` each — not a defect,
+`REFUSAL_PATTERN` simply didn't have an entry (or the right substring) for
+the route each axis's own denial takes through this specific pattern:
+
+- `-fno-counter` — the pattern trips a SECOND diagnostic shape of the same
+  replication cap (`PCREC_MAX_VM_REPLICATION_PRODUCT`): "nested bounded
+  repeats would replicate a body N times in total", distinct wording from
+  the single-level "a bounded repeat would replicate its body" the entry
+  already matched.
+- `-fprefilter` and `--engine=dfa` — forcing either requires the NFA/DFA
+  build the `engine vm` directive was written to skip, so both reach
+  `src/ir/nfa.c`'s own construction cap ("pattern too large (NFA exceeds
+  ... states)") before either axis's own do-or-die machinery gets a chance
+  to fire.
+- `-fno-altcls-merge` and `-fno-size-term` had NO `REFUSAL_PATTERN` entry
+  at all (correct in general — neither is documented as ever refusing under
+  the default engine); on this tower specifically they reach real caps
+  (the VM emitted-node cap; the emitted-code-bytes cap) rather than a
+  defect, so each gained a one-line entry.
+
+No `REFUSAL_FLOOR` was added for the two newly-populated axes: a floor
+asserts a MEASURED population (K35), and the only measurement behind these
+two is this one file's two cells, not a corpus-wide sweep. Verified live,
+2026-09-03, against the full corpus: `refused_undoc=0` on all five axes,
+`refused_doc` matching the pre-fix reference run plus exactly the two new
+tower cells, every other AGREE/BUDGET/REFUSED count byte-identical.
+
 ## Conventions
 
 `RXTDUMP` (documented in `tests/harness/run.sh`'s own header) is the ONE
