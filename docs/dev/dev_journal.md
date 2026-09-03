@@ -20251,3 +20251,19 @@ script's own default + comment). Per I-40 the battery moves to tomorrow
 morning; the bench gets the night at 288d505 as planned. Owed: the
 post-merge build + strict + recursion-identity check (running next),
 wake.md, DONE to the bench.
+
+## 2026-09-03 — Fiftieth session, part 22 (16:0x): day CLOSED — post-merge check green on a3f40b1; DONE to the bench three hours early; wake.md rewritten
+
+Post-merge on main: make OK, strict OK, recursion-identity OK at the new
+FILEPIN a3f40b1 (15:46). I-41 DONE sent (durable + live): the box is the
+bench's from 15:5x for tonight's four-pass suite at 288d505; [CC-DIFF]
+STEP 1's battery_v5 run is tomorrow morning after their CLOSED; the
+abi-17 pin follows that battery. The session's arc: STEP 2 merged and
+battery-proven (abi 16) → handed to the bench; [TT-12] STEP 0+1 (K44
+retired by the measured -j4/PROCS=3 shape, K45 closed, san pooled, axes
+paired, battery_v5 written); [CC-DIFF] STEP 0+1 (two gcc spellings, abi
+17); [OPT-VMFL] STEP 0 + the stamp shipped; [ENG-ISL.S0] the
+alternation-dispatch study (7×-120×); two executive summaries; nine rows
+chartered or filed on Frank's rulings and ideas. wake.md rewritten for
+the next session (the morning sequence: O-16, battery_v5's first run
+with the CPU sampler, panel r52, then WINDOW OPEN with the abi-17 pin).
