@@ -9,5 +9,13 @@ each cites the ledger/review it summarises and never replaces it.
   impact, next steps for the pcrec-bench full-suite night at pin `1989c62`
   (abi 15). Cites `pcrec-bench`'s ledger
   `docs/dev/ledgers/2026-09-02-full-suite-1989c62.md` and outbox `O-14`.
+- `2026-09-03-exec-bench-altwide-noedge-ccrerun-1989c62.md` — findings,
+  surprises, impact, next steps for `altwide@0.2`'s first sample, the
+  raised-cap pair, the `loglines` scan-edge counterfactual, and the
+  clang-only `bounded@0.3` re-run, all at pin `1989c62` (abi 15). Each
+  finding carries the measured fact, a plain-language mechanism, and what
+  it changes. Cites `pcrec-bench`'s ledger
+  `docs/dev/ledgers/2026-09-03-altwide-0.2-noedge-ccrerun-1989c62.md`,
+  outbox `O-15`, and pcrec's own answer `I-39`.
 
 Maintenance: update this file when files are added or removed.
