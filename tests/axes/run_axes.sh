@@ -291,7 +291,27 @@ REFUSAL_DELIM=$'\x01'   # joins multiple documented substrings per axis; an
                         # ANY of them (never all — they are ALTERNATIVES,
                         # not conjuncts).
 declare -A REFUSAL_PATTERN=(
-    ["-fno-counter"]="would replicate its body"
+    # K45 (2026-09-02/03) — tests/size/size_term.rxt:34-35's nested-repeat
+    # tower (`(?:(?:...(?:a|b){41}...){41}` six deep, `engine vm`-forced so
+    # the pattern reaches the size term's own machinery rather than the
+    # DFA/NFA build the block's header says is "a pre-existing limit that
+    # has nothing to do with the size term") REFUSES under five axes, and
+    # every one of the five is a REAL, documented pcrec limit — not a
+    # defect — that the axis's own denial reaches by a route this sweep had
+    # no entry for. `-fno-counter` has TWO distinct replication-cap
+    # diagnostic shapes in src/gen/emit_vm.c (verified live 2026-08-26/
+    # 2026-09-03): the single-level one this entry already matched
+    # ("a bounded repeat would replicate its body"), and — reached only by
+    # a NESTED bounded-repeat tower, which the pre-existing substring never
+    # matched — "nested bounded repeats would replicate a body N times in
+    # total (limit 131072). Repetition counts MULTIPLY through nesting" at
+    # src/gen/emit_vm.c:2663-2665, same PCREC_MAX_VM_REPLICATION_PRODUCT
+    # cap, different wording because the message names the tower rather
+    # than one level. Measured population on this file alone: 2
+    # (size_term.rxt:34-35); no full-corpus resweep performed to raise the
+    # floor (K35: a floor is a measured number, and this file's count is
+    # not the corpus's).
+    ["-fno-counter"]="would replicate its body${REFUSAL_DELIM}nested bounded repeats would replicate a body"
     # -fprefilter's do-or-die (§2.5) has THREE distinct diagnostic shapes
     # in src/opt/select_engine.c, verified live (2026-08-26, against the
     # actual full-corpus REFUSED population — 12,537 of the first shape,
@@ -311,7 +331,16 @@ declare -A REFUSAL_PATTERN=(
     # (§2.11)"), so -fprefilter on such a pattern refuses with the DFA
     # cap's own text. Population measured on the first sweep after [SEL-1]:
     # 2 (tests/base/k18_cost_gates.rxt:67-68, the [SEL-1] witness cells).
-    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine"
+    # FIFTH shape, K45 (2026-09-03): forcing a prefilter needs a DFA/NFA
+    # built alongside the VM artifact regardless of the pattern's own
+    # `engine vm` directive, so on size_term.rxt's tower this axis reaches
+    # src/ir/nfa.c's construction cap ("pattern too large (NFA exceeds
+    # 131072 states)") BEFORE any of the four shapes above ever get a
+    # chance to fire — the same general NFA-build limit --engine=dfa hits
+    # below, verified live, substring shared between the two entries on
+    # purpose. Measured population on this file alone: 2. No floor raised
+    # (K35; this file's count is not a corpus-wide measurement).
+    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine${REFUSAL_DELIM}pattern too large (NFA exceeds"
     # --engine=dfa's own do-or-die posture (§2.11) has TWO distinct shapes
     # in select_engine.c's switch (verified live against the full-corpus
     # REFUSED population — 3,874 of the first, 5,594 of the second): the
@@ -330,7 +359,38 @@ declare -A REFUSAL_PATTERN=(
     # zero-population entry cannot be verified live and this axis's own
     # floor is left unset for the same reason (K35: a floor asserts a
     # MEASURED population, never a guessed one).
-    ["--engine=dfa"]="requires the VM engine${REFUSAL_DELIM}requires captures (on by default)"
+    # THIRD shape now populated, K45 (2026-09-03): forcing `--engine=dfa`
+    # on size_term.rxt's `engine vm`-forced tower requires the SAME NFA
+    # build the VM-forced form was written to skip (this block's own
+    # header comment), so the axis reaches src/ir/nfa.c's construction cap
+    # ("pattern too large (NFA exceeds 131072 states)") rather than either
+    # of the two branches above — this is the zero-population third limit
+    # this entry's earlier comment named and declined to add; it now has a
+    # measured population (2, this file's two `n` cells) reached through a
+    # different door (the pre-existing NFA-state cap, not the DFA
+    # subset-construction one src/ir/dfa.c's own message names) than the
+    # one that comment anticipated, so the substring is the NFA message's,
+    # shared verbatim with -fprefilter's fifth shape above. No floor raised
+    # (K35; this file's count is not a corpus-wide measurement).
+    ["--engine=dfa"]="requires the VM engine${REFUSAL_DELIM}requires captures (on by default)${REFUSAL_DELIM}pattern too large (NFA exceeds"
+    # K45 (2026-09-03): these two axes had NO entry at all before — every
+    # REFUSED case under them was unconditionally promoted to a failure,
+    # which is correct in general (tuning.md documents neither as
+    # do-or-die) but wrong for size_term.rxt's tower, where BOTH reach a
+    # real, pre-existing structural cap rather than any defect. Verified
+    # live, 2026-09-03, against this file alone (population 2 each; no
+    # floor — K35, not a corpus-wide count):
+    # `-fno-altcls-merge` denies the alternation-to-class merge that keeps
+    # this tower's VM node count under the emitted-node cap, so denying it
+    # reaches src/gen/emit_vm.c's own cap message directly ("pattern too
+    # large (VM exceeds 131072 emitted nodes)").
+    ["-fno-altcls-merge"]="pattern too large (VM exceeds"
+    # `-fno-size-term` denies the size term's own K-ladder (the mechanism
+    # this whole file's r40 R1 witness exists to test), so on this tower
+    # the emitted C reverts to its unchunked size and trips the emitted-
+    # code-bytes ceiling directly ("pattern too large: N bytes of emitted
+    # code (limit 500000)").
+    ["-fno-size-term"]="bytes of emitted code (limit"
 )
 declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
@@ -395,7 +455,22 @@ run_one_axis() {
     # in this file's own two-file spot check (real file args among the
     # three bogus ones still got processed and dominated the small
     # population) and only showed up on the delivered full-corpus run.
-    local dump="$WORKDIR/axis_$(echo "$label" | tr -c 'A-Za-z0-9' '_').tsv"
+    # [TT-12 STEP 1] per-label, not fixed, names for the harness's own
+    # stdout/stderr and the diff-awk stderr: with two axes now able to run
+    # CONCURRENTLY (the pairing loop below), a fixed `$WORKDIR/axis.out`/
+    # `axis.err`/`diff.err` would be a race between the two subshells —
+    # every AXIS FAIL/PASS decision is computed from `diffline` (an awk
+    # value captured into a local var, never read back from these files) so
+    # the race could not flip a verdict, but the DIAGNOSTIC TEXT a failure
+    # prints ("---- axis.out ----" etc.) could show the WRONG axis's
+    # output, which defeats the whole point of printing it. One `slug` per
+    # label, reused everywhere a per-axis file is named (dump/rowsfile
+    # already used this shape; outlog/errlog/diffe are new).
+    local slug
+    slug="$(echo "$label" | tr -c 'A-Za-z0-9' '_')"
+    local dump="$WORKDIR/axis_$slug.tsv"
+    local outlog="$WORKDIR/axis_$slug.out"
+    local errlog="$WORKDIR/axis_$slug.err"
     echo
     echo "axes: axis $label (RXTFLAGS=\"$flags\")..."
     local t0 t1
@@ -403,21 +478,22 @@ run_one_axis() {
     "$ROOT_DIR/scripts/watchdog" -l "axes-$label" -S axes -s 3600 -- \
         env RXTFLAGS="$flags" RXTDUMP="$dump" PCREC="$PCREC" CC="$CC" \
             GENCFLAGS="$GENCFLAGS" PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" \
-            bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/axis.out" 2>"$WORKDIR/axis.err"
+            bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$outlog" 2>"$errlog"
     local axis_rc=$?
     t1=$(date +%s)
     if [ ! -f "$dump" ]; then
-        echo "AXIS FAIL: $label: run.sh produced NO dump at all (rc=$axis_rc) — see $WORKDIR/axis.err" >&2
-        cat "$WORKDIR/axis.err" >&2
+        echo "AXIS FAIL: $label: run.sh produced NO dump at all (rc=$axis_rc) — see $errlog" >&2
+        cat "$errlog" >&2
         fail=1
         axis_results+=("$label|FAIL|no-dump|$((t1 - t0))s")
         return
     fi
-    local rowsfile="$WORKDIR/rows_$(echo "$label" | tr -c 'A-Za-z0-9' '_').tsv"
+    local rowsfile="$WORKDIR/rows_$slug.tsv"
     : > "$rowsfile"
+    local diffe="$WORKDIR/diff_$slug.err"
     local diffline
-    diffline="$(awk -v BASEFILE="$BASE_DUMP" -v ROWSFILE="$rowsfile" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$WORKDIR/diff.err")"
-    cat "$WORKDIR/diff.err" >&2
+    diffline="$(awk -v BASEFILE="$BASE_DUMP" -v ROWSFILE="$rowsfile" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$diffe")"
+    cat "$diffe" >&2
     echo "  $diffline"
     local mismatches budget refused lost gained agree_n keys_base_n keys_axis_n
     mismatches="$(echo "$diffline" | grep -oE 'mismatches=[0-9]+' | cut -d= -f2)"
@@ -442,10 +518,10 @@ run_one_axis() {
     if [ -n "$keys_base_n" ] && [ "$keys_base_n" -gt 0 ] && [ -n "$keys_axis_n" ] && \
        [ "$keys_axis_n" -lt "$((keys_base_n / 2))" ]; then
         echo "AXIS FAIL: $label: HARNESS-LEVEL FAILURE — only $keys_axis_n of $keys_base_n baseline keys were produced (a per-case LOST count would UNDER-report this: the harness itself did not run the corpus, not merely an axis population change). tests/harness/run.sh's own stdout/stderr for this axis:" >&2
-        echo "---- $WORKDIR/axis.out ----" >&2
-        cat "$WORKDIR/axis.out" >&2
-        echo "---- $WORKDIR/axis.err ----" >&2
-        cat "$WORKDIR/axis.err" >&2
+        echo "---- $outlog ----" >&2
+        cat "$outlog" >&2
+        echo "---- $errlog ----" >&2
+        cat "$errlog" >&2
         echo "---- end harness output ----" >&2
         fail=1
         axis_results+=("$label|FAIL|harness-level:$diffline|$((t1 - t0))s")
@@ -519,9 +595,17 @@ run_one_axis() {
         echo "  ($refused_documented case(s) refused with this axis's own documented limit — a population, not a failure)"
     fi
     axis_results+=("$label|$verdict|$diffline refused_doc=$refused_documented refused_undoc=$refused_undocumented|$((t1 - t0))s")
-    [ "$KEEP" = "1" ] || rm -f "$dump" "$rowsfile"
+    [ "$KEEP" = "1" ] || rm -f "$dump" "$rowsfile" "$outlog" "$errlog" "$diffe"
 }
 
+# ============================================================================
+# BUILD THE ORDERED JOB LIST — SAME axes, SAME order, SAME AXES= filtering
+# as the sequential form (bit-flag axes in bit order, then --engine=vm,
+# then --engine=dfa) — pairing changes ONLY how the list below is executed,
+# never which axes run or the order their summary rows are printed in.
+# ============================================================================
+
+declare -a job_label=() job_flags=() job_lost_ok=()
 for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
     macro="${bit_macro[$bit]}"
     flagtext="${macro_flag[$macro]}"
@@ -531,17 +615,91 @@ for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
     fi
     lost_ok=0
     [ "$bit" = "$force_bit" ] && lost_ok=1
-    run_one_axis "$label" "$flagtext" "$lost_ok" "$@"
+    job_label+=("$label"); job_flags+=("$flagtext"); job_lost_ok+=("$lost_ok")
 done
-
-# ============================================================================
-# THE COARSE AXIS — §2.11, --engine=vm / --engine=dfa
-# ============================================================================
-
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
-    run_one_axis "--engine=vm (§2.11)" "--engine=vm" "1" "$@"
-    run_one_axis "--engine=dfa (§2.11)" "--engine=dfa" "1" "$@"
+    job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
+    job_label+=("--engine=dfa (§2.11)"); job_flags+=("--engine=dfa"); job_lost_ok+=("1")
 fi
+
+# ============================================================================
+# [TT-12 STEP 1] RUN THE JOB LIST PAIRWISE — two axes concurrently, each at
+# PROCS/2 (rounded up). docs/dev/tt12_step0_profile.md §4 measured why this
+# should be close to additive rather than contending: a single axis's own
+# wall time is bounded by ONE `.rxt` file's case count under the harness's
+# per-FILE PROCS dispatch (tests/assertions/multiline.rxt at 3,065 cases,
+# 56% more than the next-largest file), not by PROCS reaching nproc — the
+# box already sits at roughly half load through most of one axis's own run
+# for a reason unrelated to PROCS width, so a SECOND axis's independent
+# file-granularity bottleneck should fill the other half rather than queue
+# behind the first.
+#
+# THE SHIFT-3 BUG'S FIX (see run_one_axis's own header) is exactly why this
+# job list is built and iterated by INDEX rather than passed straight into
+# a `&`-backgrounded call inline — this file has already shipped one bug
+# from positional-argument confusion and a second layer of indirection
+# (background subshells around a function with a fixed positional-arg
+# contract) is exactly where that class of mistake would recur silently.
+#
+# WHY A RESULT FILE PER JOB, NOT AXIS_RESULTS DIRECTLY: `( ... ) &` forks a
+# subshell — its own `fail=1` and its own `axis_results+=(...)` are
+# invisible to this process once the subshell exits, bash subshells do not
+# share writable state back to their parent. Each backgrounded job writes
+# its own $WORKDIR/pararesult_<slug> (axis_results line, then fail 0/1) and
+# $WORKDIR/paraout_<slug> (everything run_one_axis would otherwise have
+# printed live), and the parent re-absorbs both after `wait` — so the
+# printed summary table and the AXIS FAIL semantics are IDENTICAL to the
+# sequential form, only the moment output appears (after both of a pair
+# finish, rather than streamed live) differs.
+#
+# `trap - EXIT` inside the subshell is not decoration: the top-level
+# `trap cleanup EXIT` (which deletes the WHOLE $WORKDIR unless KEEP=1) is
+# INHERITED by a forked subshell, so without this the first background job
+# to finish would delete $WORKDIR — including the shared BASE_DUMP and the
+# still-running sibling axis's own dump/rowsfile — out from under
+# everything else still using it.
+PAIR_PROCS=$(( (PROCS + 1) / 2 ))
+[ "$PAIR_PROCS" -lt 1 ] && PAIR_PROCS=1
+if [ "$PAIR_PROCS" -lt "$PROCS" ]; then
+    echo "axes: pairing two axes at a time, PROCS=$PAIR_PROCS each (was $PROCS sequential)"
+fi
+
+n_jobs=${#job_label[@]}
+i=0
+while [ "$i" -lt "$n_jobs" ]; do
+    pair_idx=("$i")
+    [ "$((i + 1))" -lt "$n_jobs" ] && pair_idx+=("$((i + 1))")
+    outfiles=(); resultfiles=(); pids=()
+    for idx in "${pair_idx[@]}"; do
+        jslug="$(echo "${job_label[$idx]}" | tr -c 'A-Za-z0-9' '_')"
+        out="$WORKDIR/paraout_$jslug"
+        res="$WORKDIR/pararesult_$jslug"
+        outfiles+=("$out"); resultfiles+=("$res")
+        (
+            trap - EXIT
+            PROCS="$PAIR_PROCS"
+            run_one_axis "${job_label[$idx]}" "${job_flags[$idx]}" "${job_lost_ok[$idx]}" "$@"
+            printf '%s\n' "${axis_results[-1]}" > "$res"
+            echo "$fail" >> "$res"
+        ) > "$out" 2>&1 &
+        pids+=("$!")
+    done
+    for p in "${pids[@]}"; do wait "$p"; done
+    for k in "${!pair_idx[@]}"; do
+        cat "${outfiles[$k]}"
+        idx="${pair_idx[$k]}"
+        if [ -s "${resultfiles[$k]}" ]; then
+            axis_results+=("$(sed -n '1p' "${resultfiles[$k]}")")
+            [ "$(sed -n '2p' "${resultfiles[$k]}")" = "1" ] && fail=1
+        else
+            echo "AXIS FAIL: ${job_label[$idx]}: the background job produced NO result file at all — treating this as a hard failure rather than silently dropping the axis from the summary" >&2
+            fail=1
+            axis_results+=("${job_label[$idx]}|FAIL|no-result-file|?s")
+        fi
+        [ "$KEEP" = "1" ] || rm -f "${outfiles[$k]}" "${resultfiles[$k]}"
+    done
+    i=$((i + 2))
+done
 
 # ============================================================================
 # THE ORACLE CROSS-CHECK — PC-4 (live libpcre2) under -fno-premul-table
