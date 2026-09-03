@@ -86,3 +86,17 @@ never edited afterwards.
   main-tree scope violation caught and closed before any commit (exact
   timestamps in the report), separate from the manager's own journal entry
   on the same incident.
+- `ccdiff1_report.md` — [CC-DIFF] STEP 1 (2026-09-03, lane ccdiff1): the two
+  emitter spellings STEP 0 measured, landed as ONE abi event (16 -> 17).
+  `always_inline` on a FRAMELESS VM artifact's eight entry-chain statics, gated
+  on the same `has_push` bool `RX_VM_FRAMELESS` reads (a FRAMED artifact is
+  byte-identical, the stamp aside), and the uniform-table fold in the DFA
+  emitter — an all-equal `<m>_next_state` or `<m>_is_accepting` is not emitted
+  and its accessor returns the constant, with the table parameter dropped and
+  the state/class parameters kept so a call site's `subject[pos++]` still runs.
+  Carries the PREDICTION TABLE written before the census, the abi site list BY
+  GREP, and the two stamp rulings: `RX_DFA_UNIFORM_FOLDS` SHIPS (the fold makes
+  a table ABSENT, and this tree has twice had to remove a check reading a fact
+  off a macro's absence), `RX_VM_INLINE_CHAIN` does NOT (it would carry
+  `RX_VM_FRAMELESS`'s value by construction). The (B) identity pin is left at
+  `da4fe60` and owed to the manager at merge, opt5i's precedent.
