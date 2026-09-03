@@ -208,6 +208,19 @@ read_artifact() {
             v = ($0 ~ /\* [0-9]+ \+/) ? "mul" : "add"
             if (instep == "f") fix = v; else if (instep == "r") rix = v
             instep = "" }
+        # [CC-DIFF] STEP 1(b): THE REVERSE STEP CALL SITE, TABLE ARGUMENT
+        # STILL PRESENT. This is the fold-aware half of the [agreement] check
+        # below: `rent == 0` is legitimate for TWO reasons now -- no reverse
+        # pass at all (rev == 0, the pre-fold case this check was written
+        # for), or a reverse pass whose OWN table folded (rev == 1, rtblcall
+        # == 0, fold_arg dropped the table argument at emission -- the exact
+        # biconditional tests/codegen/run_dfa_uniform_fold.sh already asserts
+        # for this same accessor). What is NOT legitimate, and what this line
+        # exists to still catch, is a call site that NAMES the table as an
+        # argument while the table itself is undeclared -- which the fold
+        # mechanism cannot produce (fold_arg and the table declaration are one
+        # derivation) but a differently-broken emitter could.
+        /rx_reverse_step\(rx_reverse_next_state,/                  { rtblcall = 1 }
         # THE TOKEN-LEAK WITNESS (docs/design/emitter_form.md §9.2): outside its
         # own DECLARATION, a transition table may only be named as an argument
         # to that machine step accessor. A `rx_forward_next_state[` subscript
@@ -231,20 +244,31 @@ read_artifact() {
         /^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ \
                                                                    { scan = 1 }  # the empty engine
         /^    const size_t start_max = /                           { scan = 1 }  # ENG_ATTEMPT
-        /rx_forward_next_state\[/                                  { scan = 1 }  # ENG_UNANCH
+        # [CC-DIFF] STEP 1(b): was rx_forward_next_state[ (the forward TABLE
+        # DECLARATION) until the uniform-table fold made that declaration
+        # optional -- a folded forward machine emits no such line though its
+        # scan is genuinely there (RX_DFA_TABLE still names the encoding that
+        # was selected, per that stamp own spec paragraph), so this anchor
+        # used to read no scan on every fully-folded artifact. Re-anchored on
+        # the STEP CALL, run_dfa_stamps.sh own fix for the identical
+        # discriminator: it survives folding unchanged (only the table
+        # argument drops) and is unique to this shape (attempt dispatches by
+        # goto star, never by a _step call).
+        /forward_state = rx_forward_step\(/                        { scan = 1 }  # ENG_UNANCH
         /^static int rx_prefilter\(const unsigned char \*subject, / { scan = 1 }  # the inlined hybrid
         # ---- (ii) STAMPED: the `#define` line, and nothing else ------------
         /^#define RX_DFA_TABLE "/ { s = $0; sub(/^#define RX_DFA_TABLE "/, "", s);
                                     sub(/"$/, "", s); stamp = s }
         function ent(l,   t) { t = l; sub(/^[^[]*\[/, "", t); sub(/\].*$/, "", t); return t + 0 }
         END {
-            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d rev=%d stamp=%s\n",
+            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d rev=%d rtblcall=%d stamp=%s\n",
                    (scan ? 1 : 0),
                    (fent ? fpm : -1), (rent ? rpm : -1),
                    fent + 0, rent + 0, facc + 0, racc + 0,
                    (fvar == "" ? "-" : fvar), (rvar == "" ? "-" : rvar),
                    (fix == "" ? "-" : fix), (rix == "" ? "-" : rix), leak + 0,
                    (rev ? 1 : 0),
+                   (rtblcall ? 1 : 0),
                    (stamp == "" ? "-" : stamp)
         }
     '
@@ -291,6 +315,23 @@ table_cells() {   # <file> <forward|reverse>
 # be gone. Reading the axis-J stamp here to interpret the axis-A stamp would
 # be one stamp vouching for another, which is the circularity this file's
 # own header refuses.
+# [CC-DIFF] STEP 1(b): THE EFFECTIVE FORM, surviving a folded table. `fpm`/
+# `rpm` read -1 when read_artifact found no table DECLARATION, which is now
+# true for two different reasons: no such machine exists at all, or the
+# machine exists and its own table folded (the uniform-table fold, emit_dfa.c
+# `token_step`). The typedef line (`typedef unsigned rx_forward_state;` /
+# `typedef int ...`) is emitted UNCONDITIONALLY per machine, before the fold
+# branch ever runs, so it survives folding and distinguishes the two -- the
+# single source both call sites below share, never a second derivation of
+# the fold itself.
+eff_pm() {   # <pm> <var>
+    if [ "$1" = "-1" ] && [ "$2" != "-" ]; then
+        [ "$2" = "unsigned" ] && echo 1 || echo 0
+    else
+        echo "$1"
+    fi
+}
+
 implied_stamp() {   # <fpm> <rpm>
     case "$1:$2" in
         -1:-1) echo none ;;
@@ -336,7 +377,7 @@ while IFS='~' read -r pat want why; do
         continue
     fi
     eval "$(read_artifact < "$f")"
-    imp="$(implied_stamp "$fpm" "$rpm")"
+    imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")")"
     case " $TABLE_VALUES " in *" $stamp "*) ;; *)
         bad "[witness] '$pat' stamps RX_DFA_TABLE \"$stamp\", which is not in the documented value set ($TABLE_VALUES) — a new value needs a docs/spec/match_api.md §6.3 hunk and a line in this file, in the same change" ;;
     esac
@@ -418,16 +459,28 @@ else
         fi
         cmp_n=$((cmp_n + 1))
         # [OPT-5 STEP 2] A MISSING REVERSE TABLE IS ONLY LEGITIMATE WHEN THE
-        # REVERSE PASS IS GONE TOO. `rev` is the emitted `rewind_position`
-        # local — matcher text from a different emitter site than the table
-        # declaration — so a reverse table that vanished for some OTHER reason,
-        # leaving a loop that reads it, is still a drift rather than a
-        # silently-accepted pinned artifact.
-        if [ "$fent" -gt 0 ] && [ "$rent" -eq 0 ] && [ "${rev:-0}" -ne 0 ]; then
-            bad "[agreement] '$pat' has no reverse transition table but still emits a rewind_position — the reverse pass reads a table the artifact does not contain"
+        # REVERSE PASS IS GONE TOO, OR ITS OWN TABLE FOLDED. `rev` is the
+        # emitted `rewind_position` local — matcher text from a different
+        # emitter site than the table declaration — so a reverse table that
+        # vanished for some OTHER reason, leaving a loop that reads it, is
+        # still a drift rather than a silently-accepted pinned artifact.
+        #
+        # [CC-DIFF] STEP 1(b) ADDED THE THIRD CASE: `rent == 0` is now ALSO
+        # legitimate when the reverse pass is present (rev == 1) and its OWN
+        # table folded — the fold drops the table argument from the call
+        # site, `rx_reverse_step(rx_reverse_next_state, ...)` becomes
+        # `rx_reverse_step(<state>, ...)`, so `rtblcall` (the call-site
+        # marker above) reads 0. What is STILL a drift: `rtblcall == 1` with
+        # `rent == 0` — a call that names the table as an argument while the
+        # table itself is undeclared, which is the shape this rule was
+        # written to catch and which the fold mechanism cannot itself
+        # produce (fold_arg and the table declaration are one derivation,
+        # tests/codegen/run_dfa_uniform_fold.sh's own biconditional).
+        if [ "$fent" -gt 0 ] && [ "$rent" -eq 0 ] && [ "${rev:-0}" -ne 0 ] && [ "${rtblcall:-0}" -ne 0 ]; then
+            bad "[agreement] '$pat' has no reverse transition table but its reverse step call still names one — the reverse pass reads a table the artifact does not contain"
             drift=$((drift + 1)); continue
         fi
-        imp="$(implied_stamp "$fpm" "$rpm")"
+        imp="$(implied_stamp "$(eff_pm "$fpm" "$fvar")" "$(eff_pm "$rpm" "$rvar")")"
         [ "$imp" = "$stamp" ] || { drift=$((drift + 1));
             echo "    DRIFT '$pat': stamps \"$stamp\", tables imply \"$imp\" (fwd $fent/$fpm rev $rent/$rpm rev_pass=${rev:-0})" >&2; }
         case "$stamp" in premultiplied) prem=$((prem+1)) ;; indexed) idx=$((idx+1)) ;;
@@ -445,8 +498,20 @@ else
             # form: premultiplied-indexed means states*classes cells, indexed
             # means states. It comes from a different emitter function than the
             # transition table's type, so the two agreeing is evidence.
-            if [ "$pm" = "1" ] && [ "$acc" != "$ent" ]; then accviol=$((accviol + 1)); fi
-            if [ "$pm" = "0" ] && [ "$acc" -ge "$ent" ]; then accviol=$((accviol + 1)); fi
+            #
+            # [CC-DIFF] STEP 1(b): `acc == 0` HERE IS NOW LEGITIMATE ON ITS OWN,
+            # and `acc > 0` guards both lines below for that reason. `fold_tr`
+            # and `fold_acc` are independent per machine (emit_dfa.c), so a
+            # machine can reach this loop with its TRANSITION table intact
+            # (`ent > 0`, the guard above this comment already passed) while its
+            # OWN accept table folded -- `token_accepts` emits the accept probe
+            # in EITHER case, so `ent > 0` already proves the machine exists and
+            # `acc == 0` here can only mean its accept table is the folded one,
+            # never an absent probe. Asserting `acc == ent` on that machine
+            # would compare a folded accessor width against a table that
+            # legitimately is not there.
+            if [ "$pm" = "1" ] && [ "$acc" -gt 0 ] && [ "$acc" != "$ent" ]; then accviol=$((accviol + 1)); fi
+            if [ "$pm" = "0" ] && [ "$acc" -gt 0 ] && [ "$acc" -ge "$ent" ]; then accviol=$((accviol + 1)); fi
         done
         # THE SHAPE, failure mode (i): a premultiplied machine must declare an
         # `unsigned` state variable and a transition line with no multiply; an
