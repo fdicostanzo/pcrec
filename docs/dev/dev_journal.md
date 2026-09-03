@@ -20536,3 +20536,29 @@ SERIALLY (isl1 → edge1 → w13, each through timing and its abi ritual),
 then the merges in that order with the short chain between, then the
 battery, then OPEN to the bench. edge1 is lifted when isl1's `.stage`
 reaches `abi-ritual` (after its timing, so the box is quiet for it).
+
+## 2026-09-03 — Fifty-first session, part 32 (19:1x EDT): isl1's make test — 16 reds in 4 families, three closed by diagnosis (a REAL defect: vm_cost lacked the island arm), one instrument defect ruled — [ART-SIZE]'s §9 bracket becomes a witness pool
+
+isl1's first `make test` with the island live: 33/33 sections launched,
+16 FAILs in 4 families. (1) tests/possessify's boundary row caught a
+real defect: `vm_cost`'s A_ALT arm still charged the chain's frame per
+alternation while the island had stopped pushing, so the artifact
+declared subject_ceiling 1024 and matched past 1088 ("parted at
+never") — vm_cost now reads the same vm_isl_build as vm_alt and
+vm_count_slots (one analysis, three readers); stamps 2048, parts at
+2051; 18/18 with no test changed. (2) --emit-ir's ISLANDS section
+("honestly empty" until a producer existed): a VE_ISLAND event from the
+island's emitter, the check rewritten as a three-surface comparison
+(event stream / Vm.nislands via the stamp / emitted text). (3) the
+three island budgets join the limits registry's argued allowlist (over
+budget = decline, the chain unchanged); the corpus census pins move
++2 files/+21 blocks/+114 cases, all python-expressible. (4) NEEDS
+RULING, ruled: tests/codegen/run_size_term.sh §9 pins [ART-SIZE]'s 75%
+materiality constant with two alternation-bearing witnesses 0.73% apart
+(0.7475 taken / 0.7548 not); the island moved BOTH to 0.7497/0.7499 —
+the bracket collapsed, the constant did not move. Manager's ruling: the
+instrument is the defect; §9 gets a WITNESS POOL (6-10 enumerated
+corpus patterns, each at the 8 K values, the table printed, PASS iff a
+pair straddles 0.75 within a stated band, RED with the table otherwise
+— never a silent pass, nothing re-pinned by hand); built beside test-
+axes, bounded at 30 min, else left red and filed on [ART-SIZE].
