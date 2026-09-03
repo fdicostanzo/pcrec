@@ -20425,3 +20425,43 @@ table; retention is W1.4's). TO FRANK: Q-W3 (every named group
 delivered; the alternative is a head-line list) and (5) as a note. The
 bench's exporter rules (report §7) go in the morning's I-43 with O-16's
 answers. w13 idles on its :29 cron.
+
+## 2026-09-03 — Fifty-first session, part 28 (18:1x EDT): lane B's write phase DONE — the shared-sentinel dispatch built with ZERO bias (heads at the top); iso-ts generic path 29 → 15; K43 (b) built; all three lanes idle on their crons
+
+edge1 delivered (tip 3f40b5c, 8 commits, 1,385 lines over 14 files;
+make -j2 + strict clean; 149 artifacts × six axes built -Wall -Wextra
+-Werror, 0 failures after two defects in its own edge path were found
+by that sweep). Mechanism as built: scanedge.c renumbers edge heads to
+the machine's TOP rows inside the compaction it already does (a non-
+monotone permutation through a scratch array); emit_dfa.c emits one
+accessor `is_stop(s) = (unsigned)s >= FLOOR` — dead already sits above
+every live cell in both representations (premultiplied 65535; indexed
+-1 → UINT_MAX), so NO table-base bias is needed, is_dead is unchanged,
+no cell moves; the edge blocks moved verbatim onto a path reached only
+from that one test. A new precondition (8): the offset-set prefilter's
+RESEED is the one mid-body writer of the state variable the stop test
+cannot see, so a head may not be a state any seed family names
+(declines; free without a seed). K43 (b): a designated-range initializer
++ __builtin_memcpy; gcc -fanalyzer clean on all eight shapes K43 names.
+Numbers: iso-ts forward loop generic path 29 (main) → 15 (branch) vs 19
+(-fno-scan-edge control) — shorter than the control because s0 is a
+head there and the prefilter's guard left the generic path too; nil at
+one edge (http-5xx 16 → 16; cls-upto-4 identical: its whole loop is the
+edge) — O(1) in the edge count vs O(N), so N=1 is a wash; emitted bytes
++364..612 per edge-carrying machine, zero elsewhere; 3,486 single-
+artifact answer cells over ten axes + 462 vs python re + 28 VM hybrids,
+0 disagreements; 17/17 -fno-scan-edge artifacts byte-identical to main.
+Findings: PCREC_MAX_SCAN_EDGES (4) changed MEANING (an emitted-bytes
+budget now, not a generic-path one) and is documented, not re-chosen;
+the brief's 8-edge rung cannot exist (4 per machine; iso-ts's 8 = 4
+forward + 4 reverse) — the ladder is 1/2/3/4; a pre-existing dead-fall-
+through hazard recorded with no witness (Frank's o42 rule: no row, no
+hunt); the draft structural check is red on 2 of 4 witnesses (gcc
+hoists the anchor) with three repairs tried and recorded — the anchor is
+the wrong instrument. Rulings in worktrees/edge1/docs/dev/lanes/
+edge1_rulings.md: zero-bias form accepted; one bounded attempt tomorrow
+at a structural (SCC) loop identification asserting `≤ the no-edge
+control` with the delta explained, not a merge blocker; the cap not
+re-chosen; a census of what precondition (8) moves; K43 rides the event.
+ALL THREE LANES are now idle on their keepalive crons (:17/:23/:29)
+awaiting `.lift`; the 10-min watchdog is retired for an hourly tick.
