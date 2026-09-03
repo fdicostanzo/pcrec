@@ -96,6 +96,21 @@ emit() { # emit <outfile> <pattern> [extra args...]
 read_art() {
     awk '
       /_byte_class\[256\]/                       { dfa = 1 }
+      # [CC-DIFF] STEP 1(b) FAMILY 4 FIX: the empty-engine bucket
+      # ("\\B\\b" and its three run_dfa_stamps.sh-documented siblings --
+      # a pattern proven to match nothing) has RX_DFA_SCAN "empty" and
+      # RX_DFA_UNIFORM_FOLDS 0 legitimately stamped, but its rx_search
+      # body is one `return 0;` with no loop and therefore no
+      # _byte_class[256] table at all -- the "every DFA scan emits it
+      # unconditionally" premise this file states at its own top does
+      # not cover this named, narrow exception. Its body is this exact,
+      # deterministic two-cast-then-return shape (verified against all
+      # four corpus members: \\B\\b, \\b\\B, \\d\\b\\w, a\\bb), so it is
+      # its own independent text signal rather than a read of RX_DFA_SCAN
+      # (which would be exactly the circularity this file refuses).
+      emptycast && /^    return 0;$/                 { dfa = 1 }
+      /^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ { emptycast = 1 }
+      !/^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ { emptycast = 0 }
       /^#define RX_DFA_UNIFORM_FOLDS /            { nstamp++; stamp = $3 }
       # An accessor declaration names its machine in the function name; the
       # table it reads is that machine name plus a fixed suffix, so the two
@@ -114,9 +129,22 @@ read_art() {
       { line[NR] = $0 }
       END {
           folded = 0; ghost = 0
+          # [CC-DIFF] STEP 1(b) FAMILY 4 FIX: a bare substring test on the
+          # folded table NAME false-positives on a [M6.2-WORDB] class-
+          # indexed sibling table -- rx_forward_is_accepting_by_class
+          # CONTAINS rx_forward_is_accepting as a leading substring, and is
+          # a real, unfolded, unrelated table (the machine reads it through
+          # a DIFFERENT accessor, rx_forward_accepts_class, whenever a
+          # word-boundary construct routes accept through the class axis
+          # instead of the scalar one). A true leftover reference to the
+          # folded name is never followed by another identifier
+          # character, so requiring that boundary keeps the real-leftover
+          # case (a ghost table pointer or a stray mention) while dropping
+          # this one, verified on \\Bcat / \\B\\w+\\B.
           for (t in fld) {
               folded++
-              for (i = 1; i <= NR; i++) if (index(line[i], t)) { ghost++; break }
+              re = t "([^A-Za-z0-9_]|$)"
+              for (i = 1; i <= NR; i++) if (line[i] ~ re) { ghost++; break }
           }
           for (t in unf) {
               seen = 0
@@ -264,7 +292,23 @@ WORKER
 
 # `read_art`'s body is shared with the worker by TEXT rather than re-written,
 # so the sweep and §1 cannot read an artifact two different ways.
-{ echo 'READ_ART() {'; declare -f read_art | sed '1d;$d'; echo '}'; \
+#
+# [CC-DIFF] STEP 1(b) FAMILY 4 FIX (2026-09-03): `declare -f read_art`
+# formats the definition on (at least) FOUR lines, with the opening brace on
+# its OWN line ("read_art () " then "{ " then the body then the closing
+# "}") -- not the one-line "read_art() {" the old `sed '1d;$d'` assumed.
+# Deleting only line 1 left line 2's bare "{ " in the reconstructed
+# function, stacked under the manually-echoed "READ_ART() {" opener, with
+# only ONE closing brace to match TWO opens. Every worker's w2.sh therefore
+# failed to PARSE AT ALL ("syntax error: unexpected end of file from `{`
+# command on line 1"), silently producing zero DFA-/BAD-/FOLDING- lines
+# from EVERY shard -- which is why the corpus sweep's population read
+# 0 of 0 (nothing to do with load, PROCS or the corpus path: reproduced
+# standalone on an idle box, with PROCS unset and with PROCS=3 alike).
+# Fixed by renaming the function IN PLACE (its own header line, whatever
+# `declare -f` happens to format it as) instead of stripping and
+# re-wrapping braces by line position.
+{ declare -f read_art | sed '1s/^read_art (/READ_ART (/'; \
   cat "$WORKDIR/worker.sh"; } > "$WORKDIR/w2.sh"
 
 for s in "$WORKDIR"/sh/p*; do
