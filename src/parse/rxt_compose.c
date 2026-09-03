@@ -72,6 +72,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "gen/enc/enc.h"
 #include "parse/parse_mods.h"
 
 /* ---- the saved numbering scope (w1_impl §2.2) --------------------------
@@ -338,6 +339,45 @@ static void rc_bind(Composer *co, const RxtDef *def)
         cx->pending_refs, cx->n_pending_refs,
         cx->mods, cx->opt, cx->in_quote, cx->depth
     };
+
+    /* [Q-W4, Frank 2026-09-03] A DEFINITION'S OWN `encoding` MUST AGREE WITH
+     * THE ARTIFACT'S, AND DISAGREEING IS A REFUSAL RATHER THAN AN IGNORE.
+     *
+     * A definition does not inherit the target's config (Q-W4, confirmed):
+     * its own `flags` seed its sub-parse and nothing else reaches it, which
+     * is what makes a library mean the same thing in every file that binds
+     * it. `encoding` is the one setting where that rule and the artifact
+     * collide — D58 makes encoding a per-PATTERN scalar and a composed
+     * artifact has exactly ONE, so a definition asking for a different one
+     * is asking for something the format cannot give.
+     *
+     * IGNORING IT WAS THE OTHER OPTION AND IT IS THE WORSE ONE: a directive
+     * that is silently dropped is a population nobody counts, and the author
+     * who wrote it has no way to learn it did nothing. Equal or absent is
+     * fine, so a library that states the encoding it was written for keeps
+     * working in every artifact built at that encoding and refuses — by
+     * name, naming both — in one built at another.
+     *
+     * The comparison is by NAME against the encoding registry's own spelling
+     * for the artifact's id, so there is no second name-to-id mapping here:
+     * `--encoding` and this line resolve through the same table. */
+    if (def->encoding) {
+        const PcrecEnc *have = pcrec_enc_by_id(cx->opt->encoding);
+        const char *hn = have ? have->name : "(unknown)";
+        if (strcmp(def->encoding, hn) != 0)
+            /* THE CONTRACT COMES FIRST AND THE ADVICE LAST, because
+             * `rxt_fail`'s caller truncates the TAIL: the definition's name,
+             * both encodings and the definition's line must survive a long
+             * path, and the sentence telling the author what to do about it
+             * is the part that may be cut. The file is named too, and it is
+             * the second-longest thing here — the same doubled-path cost
+             * `lib_chain_text` records — so it goes after the two encodings
+             * rather than before them. */
+            ctx_fail(cx, 0,
+                     "definition '%s' declares `encoding %s` but this "
+                     "artifact is '%s' (%s:%zu); one artifact, one encoding",
+                     def->name, def->encoding, hn, def->file, def->line);
+    }
 
     /* THE WRAPPER TAKES A NUMBER, AND IT IS INTERNAL (w1_impl §2.6, D89
      * point 1). `A_CALL.target` is a group number and `callgraph.c` binds by

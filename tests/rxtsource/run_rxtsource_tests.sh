@@ -1711,6 +1711,35 @@ w13_refuse compose_dup_definition.rxt \
     "one definition name declared in two files of the closure, naming both" \
     "word" "common.rxt" "compose_dup_definition.rxt"
 
+# --- Q-W4: a definition's own `encoding` must agree with the artifact's --
+#
+# BOTH DIRECTIONS, because a refusal that fired on ANY `encoding` line on a
+# definition would pass the negative arm while being wrong: `ok` binds a
+# definition that states the encoding the artifact IS built for, and must
+# compose silently. THE HOME OF THIS ROW is here rather than tests/reject/:
+# that table is per-CONSTRUCT and its point is the MODULE name, and this is
+# a `.rxt` source refusal with no construct and no module.
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_encoding_clash.rxt" \
+        --target ok -o "$W13/enc_ok.c" 2>"$W13/enc_ok.err"; then
+    pass "W1.3 Q-W4: a definition stating the encoding the artifact IS built for composes silently"
+else
+    fail "W1.3 Q-W4: a definition whose encoding MATCHES the artifact was refused:
+$(cat "$W13/enc_ok.err")"
+fi
+enc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_encoding_clash.rxt" \
+             --target clash -o "$W13/enc_bad.c" 2>&1)"
+enc_rc=$?
+enc_miss=""
+for tok in "other" "utf8" "byte"; do
+    case "$enc_out" in *"$tok"*) ;; *) enc_miss="$enc_miss $tok" ;; esac
+done
+if [ "$enc_rc" != "0" ] && [ -z "$enc_miss" ]; then
+    pass "W1.3 Q-W4: a definition whose encoding differs is REFUSED, naming the definition and both encodings"
+else
+    fail "W1.3 Q-W4: exit $enc_rc, missing from the message:$enc_miss
+  got: $enc_out"
+fi
+
 # --- THE DOGFOOD: the bench set as a source ---------------------------
 #
 # The claim is NOT that these patterns match anything in particular -- the

@@ -270,7 +270,16 @@ These bind on every line kind, old and new:
 - `encoding <ident>` — block-scoped: the subject encoding for this
   block's compile, passed as `--encoding=<ident>`. Per-block, never
   global, exactly as the CLI option is per-compile: two blocks in one file
-  may use different encodings. Whether the named encoding is IMPLEMENTED
+  may use different encodings.
+
+  **[DD-13b.W1.3] ON A BLOCK USED AS A DEFINITION, an `encoding` that
+  differs from the artifact's is REFUSED**, naming the definition, both
+  encodings and the definition's own line. A definition does not inherit
+  the target's config, so its `encoding` line is a thing it stated — but
+  a composed artifact has exactly ONE encoding, so a definition asking for
+  another is asking for something the format cannot give. Equal or absent
+  composes normally. The refusal exists rather than a silent ignore
+  because a dropped directive is a population nobody counts. Whether the named encoding is IMPLEMENTED
   is pcrec's answer, not the harness's — `utf8` is refused until milestone
   M5, and a block asking for it hears that from the compiler.
 - `features only <list>` — as `features`, except that the list REPLACES

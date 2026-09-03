@@ -1628,6 +1628,7 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         d->name = r->name;
         d->pattern = r->value;
         d->flags = f;
+        d->encoding = r->encoding;
         d->file = s->path;
         d->line = r->line;
     }

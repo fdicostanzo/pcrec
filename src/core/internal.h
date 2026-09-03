@@ -4023,6 +4023,14 @@ typedef struct {
     const char        *name;      /* the block's `name`, FILE namespace     */
     const char        *pattern;   /* the block's pattern text, verbatim     */
     unsigned long long flags;     /* the block's own `flags`, RESOLVED      */
+    /* [DD-13b.W1.3, Q-W4] the block's own `encoding` AS WRITTEN, or NULL.
+     * A definition does NOT inherit the target's config, so a definition
+     * that states an encoding has stated something — and a composed
+     * artifact has exactly ONE encoding (D58 makes it a per-PATTERN
+     * scalar), so an encoding that differs from the target's is a thing
+     * the format CANNOT honour. It is REFUSED at bind time rather than
+     * ignored: a silent ignore is a population nobody counts. */
+    const char        *encoding;
     const char        *file;      /* the file this block was read from      */
     size_t             line;      /* its `pattern` line in that file        */
 } RxtDef;
