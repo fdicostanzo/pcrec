@@ -2127,7 +2127,19 @@ with nothing erased it IS `+base`, which is what makes W-1's existing
 MEASURED cell (`dd` = `(\d)\1`, caller `^(\d)-(?&dd)$`, `\1` -> `\3`)
 still the expected answer.
 
-**What makes a group DELIVERED, and it is the only rule W1.3 invents.**
+**~~What makes a group DELIVERED, and it is the only rule W1.3 invents.~~
+SUPERSEDED 2026-09-03 18:2x — FRANK RULED Q-W3 THE OTHER WAY, and §9 below
+carries the model that shipped.** The paragraph is kept rather than deleted
+because the ruling is easier to read against the thing it replaced, and
+because it is a worked instance of this note's own claim tiering: it was
+marked DECIDED, which means "the implementer chose, and Frank may not have" —
+and he had not.
+
+Frank: *"for library use, the library explicitly provides the names it
+intends to export."* Delivery is now TWO declarations, not one — an `export`
+list on the definition and a DELIVERING CALL at the site — and neither alone
+delivers anything. The superseded reasoning follows.
+
 D89 point 4 says *"In `.rxt`, delivery is declared by the lib's own
 names; no in-pattern syntax is built in W1"*. DECIDED (w13): **a
 definition's group is delivered exactly when the definition NAMES it.**
@@ -2370,3 +2382,102 @@ the commit answers to.
   so" is a shipped rule and an implicit target would repeal it. The
   bench's exporter then writes one `target =` row per pattern, which is
   33 rows for altwide@0.2.
+
+---
+
+## 9. What D89's four addenda changed, 2026-09-03 evening
+
+Frank ruled Q-W3 and three companions the same evening this step's first
+phase was delivered (`decisions.md`'s D89 addendum 1-4). The composer, the
+three tiers, the MAP, the name grammar, the dogfood and the identity proof
+all stand; the DELIVERY MODEL is different, and §8.0's `DECIDED` paragraph is
+the casualty.
+
+### 9.1 The model that shipped
+
+**Two declarations, and neither alone does anything.** A definition lists
+what it offers (`export a, b`; the default is NOTHING), and a call site asks
+for it (`(?&site=name)`). A plain `(?&name)` stays PCRE2's capture-transparent
+call and costs nothing — D87 rule 5 held rather than argued about.
+
+**Delivery is SITE-QUALIFIED.** The `groups[]` row is named `site.group`, one
+row set per delivering call, so the same definition delivered under two sites
+is two scopes with two slot sets. **W1.3's flat injection of every library
+name is WITHDRAWN and REMOVED, not left dormant.**
+
+**Three call forms** (addendum 3 closed the family; there is no `!.` form,
+because the plain call already IS the no-save form and PCRE2 fixes its
+meaning): plain, `site=` / `=`, and `*=` — the last delivering FLAT into the
+caller's own scope, with a clash refused by name.
+
+**Erasure is now a PER-COMPOSITION question** (addendum 4(1)): a group
+survives when it is referenced inside the definition OR exported AND
+delivered by some site IN THIS COMPOSITION. An exported name no site delivers
+is erased exactly like an unnamed unreferenced one.
+
+**Retention rides the delivering call** (addendum 4(2)): the site keeps what
+its callee matched. The rows and the retention are ONE unit.
+
+### 9.2 The three things that forced real restructuring
+
+1. **The composer became TWO PASSES.** Numbering used to happen inside the
+   bind, which was correct while "which of a definition's groups survive" was
+   answerable from the definition alone. Addendum 4(1) makes it a property of
+   the whole composition, and the delivering sites are not all known until
+   the fixpoint has bound everything — a definition bound LATER may itself
+   carry the delivering call. Pass 1 sub-parses and assigns nothing; pass 2
+   counts sites; pass 3 numbers, erases and injects; pass 4 emits the rows.
+2. **`pcrec_has_live_capture` needed a delivering arm, and without it the
+   feature fails silently and completely.** §2.8's B1 predicted this and it
+   reproduced exactly: a composed pattern whose captures all live in
+   definitions is the caller's text plus `A_REP{0,0}(A_CAP(body))`, whose
+   zero-repetition arm PRUNES — so the pattern looks capture-dead, takes the
+   DFA, and every delivered slot reads `(-1,-1)`. One arm, keyed on the CALL.
+3. **A delivering site is FORCED to `CALL_SPLICE`, and the reason is TIMING**
+   — which is a different reason from the one §2.2 gave. §2.2 wanted per-site
+   `W` exclusion; what actually forces it is that under `CALL_LINKAGE` the
+   callee's SHARED region restores its whole `W` at its own exit, BEFORE
+   control reaches the caller's return label, so a copy at the site would move
+   the caller's own values. Under `CALL_SPLICE` the restore is emitted AT the
+   site and a copy just before it sees what the callee matched. This is the
+   per-site option `callgraph.c:402-412` declined ON PURPOSE and RESERVED;
+   a delivering site is the consumer that earns it. **A delivering call on a
+   callee that cannot be spliced is REFUSED** — recursion, the inlining
+   budget, or `-fno-splice-calls` — and the message names which.
+
+### 9.3 One defect worth recording, because it was in the check and not the code
+
+The forced splice was first written as a branch inside `cg_publish_link`.
+That function is reached from the END of `cg_eligibility`, which **returns
+early under `PCREC_NO_SPLICE_CALLS`** — so under `-fno-splice-calls` a
+delivering call would have kept `CALL_LINKAGE` silently and delivered
+nothing. The refusal that exists to make the half-feature impossible had a
+flag that turned it off. It is now its own walk, run on every path from
+`pcrec_callgraph_build`, keyed on the FINAL `link` value rather than on the
+eligibility table that produced it.
+
+### 9.4 The measurement that gated the syntax
+
+Every new spelling owed §1.5's constraint before adoption, and all of them
+are refused by libpcre2 10.46: `(?&site=x)`, `(?&=x)`, `(?&*=x)`, and also
+`(?&site.group)`, `(?&*.x)` and `(?&!.x)` (the last two measured though not
+adopted). The run reproduced both recorded controls first — `(?&^.w)` refused,
+`(?<from>&email)` COMPILES and stays disqualified — so the instrument was
+shown agreeing with the record before it was trusted on anything new. The
+table is in `format_design.md` §1.5.
+
+**`(?&site.group)` is FREE but NOT BUILT**, and the manager asked either way:
+it is a call to a delivered group, which needs a reference class that resolves
+after composition against the site table. That is a new deferred-reference
+kind rather than a widening of an existing one, so it is not cheap in the
+sense the question meant. Nothing about the rows or retention forecloses it.
+
+### 9.5 What §8 still says that is still true
+
+§8.1's file table, §8.2's name grammar (including the boundary that a
+`-`/`.` name is buildable and not callable), §8.4's check plan and sabotage
+rows, §8.5's spec delta, §8.6's abi event and §8.7's D94 grep list are all
+unchanged by the addenda. §8.4's S-W13d ("mark every lib group delivered")
+is now a plant against a rule that no longer exists — it is kept because its
+DETECTOR is the one that matters (`nentries` moving), and the rule it plants
+against is precisely what Frank withdrew.
