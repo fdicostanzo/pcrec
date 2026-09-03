@@ -20301,3 +20301,11 @@ classes and every literal mechanism sees classes — ci-256's bitmap edge
 is that cost. A folded COMPARE keeps the literal shape; UTF-8 exact is
 byte-identical to exact for literals; M5.0 lands as objects on this
 axis. Filed, sequenced after [ENG-ISL] STEP 1 and before M5.0.
+
+Part 23 addendum 3 (~17:1x): Frank filed [OPT-CLSPACK] (class compaction:
+one byte→atom table + a per-class mask, the DFA's own partition reused
+by the VM; a size-term rung if it costs time). Fact: the VM emits a
+32-byte bitmap per class site today. CORRECTION to a premise: we have
+NOT measured "a class is faster than a double compare" — ci-256's
+finding was range-vs-bitmap on the DFA edge; the class-vs-folded-
+compare measurement is [FORM-CHAR]'s STEP 0.
