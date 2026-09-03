@@ -141,7 +141,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
-      test-prefilter-collapse test-rxtsource
+      test-prefilter-collapse test-rxtsource test-definitions
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -273,6 +273,14 @@ test-parse: all
 test-rxtsource: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-rxtsource.ran"; fi
 	bash tests/rxtsource/run_rxtsource_tests.sh
+
+# [DD-13b.W1.3] the COMPOSITION IDENTITY PROOF: a composed artifact answers
+# what the hand-written flat one does, and both answer what python `re` does.
+# Four targets, fifteen cells, eight small compiles — a fixture-bounded cost
+# that does not grow with the corpus.
+test-definitions: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-definitions.ran"; fi
+	bash tests/definitions/run_definitions_tests.sh
 
 # Both scripts here are the "codegen structural checks" docs/testing.md
 # already describes as one thing; `test:` runs them as consecutive lines
@@ -1232,6 +1240,6 @@ clean:
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
-        test-prefilter-collapse test-rxtsource \
+        test-prefilter-collapse test-rxtsource test-definitions \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

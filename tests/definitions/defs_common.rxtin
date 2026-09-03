@@ -1,0 +1,52 @@
+# tests/definitions/defs_common.rxtin — THE SHARED DEFINITIONS FILE.
+#
+# [DD-13b.W1.3] part 3, our own usage: pcrec's corpus composing over a
+# library of its own, rather than only over fixtures written to exercise the
+# format's grammar.
+#
+# A LIBRARY SHIPS NOTHING BY ITSELF (format_design §6.1): no `target` line,
+# several blocks, so `pcrec --source` on this file builds nothing at exit 0.
+# What it ships is NAMES.
+#
+# EACH DEFINITION IS WRITTEN TO EXERCISE ONE TIER of D89's three, so the
+# composed artifacts have something to be right about:
+#
+#   `w`         NAMES its group      -> DELIVERED: a `groups[]` row whose
+#                                       `ref` is "w", a slot above ngroups
+#   `num`       has no group at all  -> costs the caller nothing but the
+#                                       wrapper's own internal number
+#   `hostname`  NAMES one group and  -> one DELIVERED row and one ERASED
+#               leaves one unnamed      group: the inner `(?:…)` is written
+#               and unreferenced        non-capturing here on purpose, so
+#                                       the ERASED tier is exercised by
+#                                       `dotted` below instead, where the
+#                                       group is capturing and unread
+#   `dotted`    has a capturing group nothing reads -> ERASED: the `A_CAP`
+#                                       is deleted and it spends NO number,
+#                                       which is what makes the composed
+#                                       artifact's RX_NCAPS smaller than a
+#                                       naive textual append's
+#
+# ITS EXTENSION IS `.rxtin` AND THAT IS LOAD-BEARING. `tests/harness/run.sh`
+# finds `*.rxt`; a `.rxt` here would join the scored corpus and move four
+# pinned census numbers (`tests/rxtsource/run_rxtsource_tests.sh`'s
+# CENSUS_FILES/BLOCKS/LINES and the RUNSH_* it reconciles against). The
+# identity proof beside this file copies these into a scratch directory as
+# `.rxt` when it needs them, which is `tests/rxtsource/fixtures/`'s own
+# convention.
+description reusable pieces for the composition identity proof. Definitions only.
+
+pattern (?<word>[a-z]+)
+name w
+
+pattern [0-9]+
+name num
+
+pattern (?<host>[a-z]+(?:\.[a-z]+)+)
+name hostname
+
+pattern ([a-z]+)\.([a-z]+)
+name dotted
+
+pattern (\d)\1
+name dd

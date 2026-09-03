@@ -1,0 +1,57 @@
+# tests/definitions/composed.rxtin — THE COMPOSED SOURCE.
+#
+# [DD-13b.W1.3] part 3: pcrec's own corpus composing over a shared
+# definitions file. Every block here calls a definition BY NAME and none of
+# them can be compiled from its own text alone — the definitions are a
+# FILE-level fact, which is exactly what makes this file the thing the
+# identity proof beside it exists for.
+#
+# THE PAIRING IS BY BLOCK NAME. `flat.rxtin` carries a block of the same
+# name for every block here, with the SAME cases and a HAND-WRITTEN pattern
+# that inlines the definitions. `run_definitions_tests.sh` builds both and
+# requires them to answer every case identically, and requires each to agree
+# with python `re` run on the FLAT pattern — three sources, no two of which
+# share one.
+#
+# THE FLAT CONTROL IS WRITTEN BY HAND AND NEVER GENERATED, which is the
+# whole reason it is a control: a flat pattern produced by pcrec (by
+# `--emit-composed`, say) would be the composer describing itself. A
+# subroutine call is capture-transparent, so a definition inlines as a
+# NON-CAPTURING group and the whole-match span is the same question on both
+# sides.
+lib "defs_common.rxt"
+target = pair
+target = logline
+target = pairdot
+target = rep
+
+pattern ^(?&w)-(?&num)$
+name pair
+description delivers `w`'s named group `word`; `num` has no group at all
+m "abc-42" 0 6
+n "abc-"
+n "-42"
+n "abc-4x"
+
+pattern ^(?&num) (?&hostname)$
+name logline
+description delivers `hostname`'s named group `host`
+m "80 a.b" 0 6
+m "80 a.b.c" 0 8
+n "80 ab"
+n "x a.b"
+
+pattern ^(?&dotted)$
+name pairdot
+description `dotted`'s two groups are unnamed and unread — the ERASED tier
+m "ab.cd" 0 5
+n "abcd"
+n "ab."
+
+pattern ^(\d)-(?&dd)$
+name rep
+description w1_impl §2.5's MEASURED cell: `dd`'s own `\1` must re-base with it
+m "5-77" 0 4
+m "5-11" 0 4
+n "5-75"
+n "55-77"

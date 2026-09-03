@@ -1,0 +1,46 @@
+# tests/definitions/flat.rxtin — THE HAND-WRITTEN FLAT CONTROL.
+#
+# One block per block in `composed.rxtin`, same name, same cases, and a
+# pattern written BY HAND with the definitions inlined. It shares no source
+# with the composer: nothing here was produced by pcrec, and the patterns are
+# ordinary self-contained regexes that python `re` verifies directly.
+#
+# WHY INLINING IS THE RIGHT CONTROL rather than a `(?(DEFINE)…)` textual
+# append. The append is the thing the composer REPLACES, and it is the thing
+# format_design §2.3.3 MEASURED to be wrong — it inverts a library piece's
+# meaning by renumbering its backreferences. A control that reproduced the
+# composer's own numbering would be a second implementation of the very rule
+# under test. Inlining asks a different and simpler question — does the
+# composed artifact MATCH THE SAME STRINGS — and that is what `m`/`n` assert.
+#
+# A subroutine call is capture-transparent, so a definition inlines as a
+# NON-CAPTURING group. Every pattern below was verified against python `re`
+# (2026-09-03) before it was written down.
+description the flat twins of composed.rxtin, hand-written; the identity control
+
+pattern ^(?:[a-z]+)-(?:[0-9]+)$
+name pair
+m "abc-42" 0 6
+n "abc-"
+n "-42"
+n "abc-4x"
+
+pattern ^(?:[0-9]+) (?:[a-z]+(?:\.[a-z]+)+)$
+name logline
+m "80 a.b" 0 6
+m "80 a.b.c" 0 8
+n "80 ab"
+n "x a.b"
+
+pattern ^(?:[a-z]+\.[a-z]+)$
+name pairdot
+m "ab.cd" 0 5
+n "abcd"
+n "ab."
+
+pattern ^(\d)-(\d)\2$
+name rep
+m "5-77" 0 4
+m "5-11" 0 4
+n "5-75"
+n "55-77"
