@@ -20494,3 +20494,9 @@ stand. Open with Frank: whether the delivering call RETAINS the callee's
 exported groups in W1.3 (recommended yes; else W1.4). w13's rulings file
 carries the addendum; the lane designs the retention hook, builds it
 only on the answer.
+Part 30 addendum (18:3x): Frank revises — `(?&*.name)` = flat import of
+the exports (no namespace); `^` is unavailable (B2's scope-up segment);
+manager picks `!` if an explicit no-save spelling is wanted and
+recommends against adding one (the plain call is that form). D89
+addendum 2; w13's rulings file updated; both spellings owe the §1.5
+libpcre2-refusal measurement before adoption.

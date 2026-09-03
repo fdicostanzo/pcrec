@@ -6517,3 +6517,25 @@ W1.3 lands the export list + the delivering-call syntax + the site-
 qualified name table with retention following in W1.4. Manager's
 recommendation: retention rides the delivering call — a delivered row
 that always reads (-1,-1) is the half-feature these rulings remove.
+
+**Addendum 2 (same exchange, 18:3x EDT).** Frank: `*.name` should instead
+IMPORT the exported names WITHOUT a namespace ("handy"); pick another
+spelling for the no-save call — `#`, `^` or `!`. Manager: `^` is B2's
+"one scope up" segment and cannot be reused; `#` is PCRE2's comment
+character under `(?x)` and reads as a number. The call family as now
+ruled (every new spelling still owes the §1.5 measurement: refused by
+libpcre2 10.46 before adoption):
+- `(?&name)` — the plain call: capture-transparent, delivers nothing
+  (PCRE2's own meaning, D87 rule 5).
+- `(?&site=name)` / `(?&=name)` — deliver the definition's exports under
+  the scope `site` (or its own name): rows `site.group`.
+- `(?&*.name)` — deliver the definition's exports FLAT into the caller's
+  own scope: rows named as exported; a clash with a caller group or with
+  another flat import is a REFUSAL by name (the duplicate-declaration
+  rule of §2.2; D87 rule 2's "caller wins" governed the withdrawn
+  implicit injection, not an explicit import).
+- an explicit no-save spelling: manager's pick if one exists is
+  `(?&!.name)`, identical in meaning to the plain call; manager's
+  recommendation is NOT to add it (two spellings of the default; the
+  plain call is already the no-save form and PCRE2 fixes its meaning).
+  Frank to confirm or override.
