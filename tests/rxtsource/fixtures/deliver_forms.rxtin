@@ -1,0 +1,29 @@
+# [DD-13b.W1.3, D89 addendum point 3 + addendum 4(3)] THE FOUR CALL SHAPES,
+# one target each, over ONE definition — so the only thing that differs
+# between the four artifacts is the call, which is what makes comparing their
+# emitted rows a comparison of the call forms and not of four patterns.
+#
+# `piece` exports two of its three groups. The third is unnamed and unread and
+# is ERASED in every one of the four; the two exported ones are erased as well
+# in `plaincall`, because the export list says what MAY be delivered and the
+# composition decides what IS (addendum 4(1)).
+target = plaincall
+target = sitecall
+target = selfcall
+target = flatcall
+
+pattern ^(?&piece)$
+name plaincall
+
+pattern ^(?&s=piece)$
+name sitecall
+
+pattern ^(?&=piece)$
+name selfcall
+
+pattern ^(?&*=piece)$
+name flatcall
+
+pattern (?<kept>a)(?<other>b)(c)
+name piece
+export kept, other

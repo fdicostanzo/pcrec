@@ -1,11 +1,17 @@
 # lane w13 — [DD-13b.W1.3] report
 
-**Branch `lane/w13`, 9 commits on `main` 9d8401a. Status: BUILT, NOT
-SUITE-VALIDATED.** The lane worked 17:00–17:5x EDT on 2026-09-03, entirely
-under the evening box hold, which forbids every script under `tests/`. So
-nothing here rests on `make test`; what it rests on is `make strict`, 81
-single compiles, and a handful of matcher runs, each named below with what
-it measured.
+**Branch `lane/w13`, 16 commits on `main` 9d8401a. Status: BUILT, NOT
+SUITE-VALIDATED.** Two phases on 2026-09-03, both entirely under the box
+hold, which forbids every script under `tests/`. So nothing here rests on
+`make test`; what it rests on is `make strict`, ~260 single compiles, and a
+set of matcher runs against outside oracles, each named below with what it
+measured.
+
+- **PHASE 1, 17:00–17:5x** — the composer, the name grammar, the altwide
+  dogfood, the identity proof. §§1-8.
+- **PHASE 2, 18:3x–19:0x** — Frank's D89 addenda 1-4 arrived and changed the
+  DELIVERY MODEL. **§§9-12 are the current state; where §§1-8 and §§9-12
+  disagree, §§9-12 win**, and §9 says exactly where they disagree.
 
 ---
 
@@ -158,7 +164,12 @@ shortened anyway so the message is whole.
 
 ---
 
-## 6. Questions for the manager, each with the provisional choice IMPLEMENTED
+## 6. Questions for the manager — ALL FIVE NOW RULED (see §9)
+
+**Every question below was answered the same evening**, four of them by Frank
+(D89 addenda 1-4) and one by the manager. They are kept as written because §9
+is easier to read against them. Q-W3's answer went AGAINST the provisional
+choice, which is the one that mattered.
 
 1. **Q-W3 — is EVERY named group in a definition delivered?** Implemented
    **yes**: naming is the only interface declaration W1 has (D89 point 4
@@ -256,6 +267,124 @@ reported from the other side, now with pcrec's own numbers and its own
 refusal wording attached to each id.
 
 ---
+
+
+---
+
+# PHASE 2 — D89's addenda 1-4 (18:3x–19:0x)
+
+## 9. What changed, and what it cost
+
+Frank ruled Q-W3 the other way. **Delivery is no longer "every named group";
+it is TWO declarations, and neither alone does anything**: the definition
+lists what it offers (`export a, b`, default NOTHING) and a call site asks
+for it (`(?&site=name)`). §§1-8's model — every named group injected flat
+into the caller's table — is **withdrawn and removed, not left dormant**.
+
+What SURVIVED unchanged: the composer's spine, the three tiers, the MAP that
+replaced the offset, the name grammar with `-`/`.`, the prefix mapping and
+its collision refusal, the altwide dogfood, the D94 site list, the abi event.
+
+**Three things forced real restructuring, and each is worth knowing:**
+
+1. **The composer became FOUR PASSES.** Numbering used to happen inside the
+   bind, which was right while "which of a definition's groups survive" was
+   answerable from the definition alone. Addendum 4(1) makes it a property of
+   the whole COMPOSITION — a group survives if it is referenced inside the
+   definition or exported AND DELIVERED BY SOME SITE — and the delivering
+   sites are not all known until the fixpoint has bound everything, because a
+   definition bound later may itself carry the delivering call.
+2. **`pcrec_has_live_capture` needed a delivering arm, and without it the
+   feature fails silently and completely.** `w1_impl` §2.8's B1 predicted this
+   and it reproduced exactly: a composed pattern whose captures all live in
+   definitions is the caller's text plus `A_REP{0,0}(A_CAP(body))`, whose
+   zero-repetition arm PRUNES — so the whole pattern looks capture-DEAD, takes
+   the DFA, and every delivered slot reads `(-1,-1)`. One arm, keyed on the
+   CALL and never on the wrapper's shape.
+3. **A delivering site is FORCED to `CALL_SPLICE`, for a different reason
+   than the design note gave.** §2.2 wanted per-site `W` exclusion. What
+   actually forces it is TIMING: under `CALL_LINKAGE` the callee's SHARED
+   region restores its whole `W` at its own exit, BEFORE control reaches the
+   caller's return label, so a copy at the site would move the caller's own
+   values. Under `CALL_SPLICE` the restore is emitted AT the site. This is the
+   per-site option `callgraph.c:402-412` declined ON PURPOSE and RESERVED.
+
+## 10. What was MEASURED in phase 2
+
+| # | claim | how | result |
+|---|---|---|---|
+| M12 | the three new spellings are FREE on libpcre2 | `pcre2_ctypes.py` against libpcre2 10.46 | `(?&site=x)`, `(?&=x)`, `(?&*=x)` all REFUSED, so adopting them re-interprets no legal pattern. Both recorded controls reproduced first: `(?&^.w)` refused, `(?<from>&email)` COMPILES and stays disqualified |
+| M13 | the four call forms differ exactly where they should | one fixture, four targets, ONE definition | plain: no rows, `RX_NCAPS` 2. `(?&s=…)`: `s.kept`, `s.other`. `(?&=…)`: `piece.kept`, `piece.other`. `(?&*=…)`: `kept`, `other` |
+| M14 | **the per-composition erasure** | the same fixture's plain-call target | `RX_NCAPS` **2** — a definition exporting two of its three groups costs a plain caller NOTHING. A build keeping exported-but-undelivered groups reads 4, and so does the withdrawn every-named-group model |
+| M15 | `ref` and `nnames` are one decision seen twice | the emitted rows | a site row carries `ref="piece"` and is NOT counted by `nnames`; a flat row carries `ref=NULL` and IS |
+| M16 | **RETENTION delivers real spans** | three delivering targets built, run, compared against addendum 4(2)'s inlined-body oracle | `(?&w=w)` → `w.word` (0,3); `(?&h=hostname)` → `h.host` (3,8); two flat imports → `word` (0,2), `host` (3,6). **Every one agrees with python `re` on the renamed inlined pattern** |
+| M17 | two sites of one definition do not alias | `^(?&a=piece)(?&b=piece)$` on "abcabc" | `a.*` = (0,1),(1,2) and `b.*` = (3,4),(4,5); oracle agrees. The definition's own hidden copies read (-1,-1) throughout |
+| M18 | identity (A) still holds | a compiler built from `main` vs this branch | **176 artifacts, 0 differing** under `--features all` after the restructure |
+| M19 | eight refusals, each once | single compiles | export-names-no-group; delivering-call-on-a-non-exporter; flat-import clash with a caller group; two flat imports clashing; two sites sharing a name; a delivering call to a LOCAL group; a definition's `encoding` differing from the artifact's; a delivering call to a recursive definition |
+
+## 11. Two defects found in phase 2, both in checks rather than in code
+
+1. **The forced splice had a flag that turned it off.** It was first written
+   as a branch inside `cg_publish_link`, which is reached from the END of
+   `cg_eligibility` — and that function **returns early under
+   `PCREC_NO_SPLICE_CALLS`**. So under `-fno-splice-calls` a delivering call
+   would have kept `CALL_LINKAGE` silently and delivered nothing: the refusal
+   that exists to make a half-feature impossible was itself disabled by a
+   flag. It is now its own walk, run on every path, keyed on the FINAL `link`
+   value rather than on the eligibility table that produced it.
+2. **My first `export`-column change would have stopped the C1 differential
+   covering it.** `export` is appended to leg B's dump row after `perr`, and
+   the A-vs-B projection truncated with `NF = 13` — which drops `perr`
+   deliberately and would have dropped `export` accidentally. A directive
+   absent from BOTH sides leaves the differential byte-identical while it
+   quietly stops covering that directive, which is the hazard that file's own
+   manifest comment names. Both sides now SELECT fields explicitly.
+
+There is also one process note. The first attempt at one commit put backticks
+inside a double-quoted shell message and the shell ran the quoted identifier
+as a command — lane w12's own recorded defect, met from the other direction:
+I had guarded against it in the test scripts and then walked into it in a
+commit message. Message files from there on.
+
+## 12. What is left, and one thing I did not build
+
+**The `run.sh` composed-block path is NOT built**, per the manager's own
+ordering: it is the LAST item and comes after every suite is green, and no
+suite can run under the hold. Its shape is unchanged from §6(4) and is
+written out in `tests/definitions/CLAUDE.md`. **If it does not fit tomorrow it
+is a W1.3.1 row** — the manager's instruction, and I am saying so at the
+point I know it rather than at the end of the day.
+
+**`(?&site.group)` is measured FREE but NOT built**, and the manager asked
+either way. It is a call to a delivered group, which needs a reference class
+that resolves AFTER composition against the site table — a new
+deferred-reference kind rather than a widening of an existing one, so not
+cheap in the sense the question meant. Nothing about the rows or retention
+forecloses it.
+
+**Everything in §3 is still owed** and phase 2 adds to it: the delivering
+path has never been through `make test`, `test-codegen`, the identity gate,
+or `mech`. The specific new risks a suite will find first:
+
+- `[M6.5-DUPNAMES]`'s `groups[]` order check — still the most likely red,
+  and now for two reasons rather than one (the leading sort key, and rows
+  whose names contain a `.`).
+- **The forced splice makes a MIXED linkage state reachable** — one callee
+  with a spliced delivering site and a shared region for its plain sites.
+  `callgraph.c:402-412` reserved this and named three readers that must cope;
+  `<PREFIX>_VM_CALLS` can no longer give one answer per callee. Nothing in
+  the tree has exercised it before this branch.
+- The trail charge grew by `2 * deliver_n` per delivering site. It is 0 on
+  every non-delivering pattern, so no existing artifact's arithmetic moves,
+  but the frame-buffer suites are where a mistake would surface.
+
+**One judgement worth flagging for the merge.** A FLAT import's rows carry
+`ref = NULL` and are counted by `nnames`, so a caller cannot tell them from
+groups it declared itself. That is what "flat into the caller's own scope"
+has to mean if §6's bsearch is to find them, and the clash refusal is what
+pays for it — but it does lose provenance, and an alternative (keep `ref` and
+have §6's algorithm span `nentries` for flat rows) exists. I picked the one
+that keeps §6's shipped algorithm correct unchanged.
 
 ## 8. Disclosure
 

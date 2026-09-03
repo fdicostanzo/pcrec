@@ -1721,6 +1721,90 @@ w13_refuse compose_dup_definition.rxt \
     "one definition name declared in two files of the closure, naming both" \
     "word" "common.rxt" "compose_dup_definition.rxt"
 
+# --- [D89 addenda] export, the delivering call, and the five refusals ----
+#
+# EACH OF THESE HAD A POPULATION OF ZERO before its fixture existed, and four
+# of the five are shapes no `.rxt` in the tree can otherwise reach: the export
+# list, the site-qualified row, the flat import and the clash rules all need a
+# COMPOSED build, and the corpus composes nothing.
+w13_refuse deliver_export_nogroup.rxt \
+    "an export naming a group the definition does not declare, naming both" \
+    "nosuch" "piece" "declares no capture group"
+w13_refuse deliver_deliver_noexport.rxt \
+    "a delivering call on a definition that exports nothing (the DEFAULT), naming both" \
+    "piece" "exports nothing"
+w13_refuse deliver_clash_caller.rxt \
+    "a flat import landing on a group the caller already has" \
+    "kept" "already has"
+w13_refuse deliver_clash_twoflat.rxt \
+    "two flat imports exporting one name — neither is the caller's own" \
+    "kept" "already has"
+w13_refuse deliver_clash_samesite.rxt \
+    "two delivering calls sharing a site name (the qualified side of one rule)" \
+    "s.kept" "already has"
+
+# --- the three call forms, as EMITTED ROWS -------------------------------
+#
+# Read off the artifact as text, never off the composer's report. The three
+# assertions are about the three things a caller can see and cannot infer from
+# each other: WHICH rows exist, whether they carry a `ref`, and whether
+# `nnames` counts them.
+w13_rows() {
+    local target="$1" want="$2" label="$3"
+    local out
+    if ! "$TIMEOUT_BIN" 60 "$PCREC" --features all \
+            --source "$FIXRUN/deliver_forms.rxt" --target "$target" \
+            -o "$W13/$target.c" 2>"$W13/$target.err"; then
+        fail "W1.3 forms ($label): --source --target $target failed:
+$(cat "$W13/$target.err")"
+        return
+    fi
+    out="$(LC_ALL=C sed -n 's/^    { "\([^"]*\)".*$/\1/p' "$W13/$target.c" | sort | tr '\n' ' ')"
+    if [ "$out" = "$want" ]; then
+        pass "W1.3 forms: $label emits rows [$out]"
+    else
+        fail "W1.3 forms ($label): expected rows [$want], got [$out]"
+    fi
+}
+w13_rows plaincall "" "a PLAIN call delivers nothing"
+w13_rows sitecall "s.kept s.other " "(?&s=name) delivers site-qualified rows"
+w13_rows selfcall "piece.kept piece.other " "(?&=name) uses the definition's own name as the site"
+w13_rows flatcall "kept other " "(?&*=name) delivers FLAT into the caller's scope"
+
+# THE `ref` COLUMN AND `nnames` TOGETHER, because they are one decision seen
+# twice: a site-qualified row is a LIBRARY row (non-NULL ref, below nnames,
+# invisible to §6's algorithm), a flat row is the CALLER's (NULL ref, counted
+# by nnames, found by that algorithm). Getting one right and the other wrong
+# is the shape that would let a caller's bsearch walk into a library group.
+if grep -q '{ "s.kept", [0-9]*, [0-9]*, "piece" }' "$W13/sitecall.c" &&
+   [ "$(grep -m1 '^    \.nnames = ' "$W13/sitecall.c" | tr -dc '0-9')" = "0" ]; then
+    pass "W1.3 forms: a site-qualified row carries ref=\"piece\" and is NOT counted by nnames"
+else
+    fail "W1.3 forms: the site-qualified row's ref/nnames pair is wrong:
+$(grep -hE '^    \{ \"|^    \.nnames = ' "$W13/sitecall.c")"
+fi
+if grep -q '{ "kept", [0-9]*, [0-9]*, NULL }' "$W13/flatcall.c" &&
+   [ "$(grep -m1 '^    \.nnames = ' "$W13/flatcall.c" | tr -dc '0-9')" = "2" ]; then
+    pass "W1.3 forms: a FLAT row carries ref=NULL and IS counted by nnames (the caller's own scope)"
+else
+    fail "W1.3 forms: the flat row's ref/nnames pair is wrong:
+$(grep -hE '^    \{ \"|^    \.nnames = ' "$W13/flatcall.c")"
+fi
+
+# THE PER-COMPOSITION ERASURE, as a NUMBER (D89 addendum 4(1)). The definition
+# has three groups and exports two; a PLAIN caller delivers none of them, so
+# all three are erased and only the wrapper spends a number — RX_NCAPS 2. A
+# build that kept an exported-but-undelivered group would read 4, and one that
+# kept every named group (the model the addendum WITHDREW) would read 4 too.
+pc_ncaps="$(grep -m1 -oE '^#define PLAINCALL_NCAPS [0-9]+' "$W13/plaincall.h" | awk '{print $3}')"
+if [ "$pc_ncaps" = "2" ]; then
+    pass "W1.3 erasure: a plain caller of a definition that exports two groups pays for NONE of them (RX_NCAPS 2)"
+else
+    fail "W1.3 erasure: expected RX_NCAPS 2 on the plain-call target, got $pc_ncaps.
+  4 means an exported-but-undelivered group still spends a number, which is the
+  model D89's addendum withdrew."
+fi
+
 # --- Q-W4: a definition's own `encoding` must agree with the artifact's --
 #
 # BOTH DIRECTIONS, because a refusal that fired on ANY `encoding` line on a
