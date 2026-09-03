@@ -20562,3 +20562,33 @@ corpus patterns, each at the 8 K values, the table printed, PASS iff a
 pair straddles 0.75 within a stated band, RED with the table otherwise
 — never a silent pass, nothing re-pinned by hand); built beside test-
 axes, bounded at 30 min, else left red and filed on [ART-SIZE].
+
+## 2026-09-03 — Fifty-first session, part 33 (19:2x EDT): w13 phase 2 DONE — export/delivery/retention built together and proven against the inlined-body oracle; three new spellings measured FREE on libpcre2 10.46; flat rows keyed by SCOPE (ruled)
+
+w13 (19 commits, strict clean): the §1.5 measurement first — `(?&site=x)`,
+`(?&=x)`, `(?&*=x)` all REFUSED by libpcre2 10.46 (free), both controls
+reproduced, the dropped `(?&*.x)`/`(?&!.x)` recorded as free-but-not-
+adopted. Built: the encoding-mismatch refusal; `export` through all
+three parsers + the dump's 16th column; the flat injection REMOVED;
+site-qualified rows per delivering call; `(?&*=name)`; the extended
+per-composition erasure (external referent: a plain call on a
+definition exporting 2 of 3 groups gives RX_NCAPS 2 where the withdrawn
+model read 4); RETENTION — every delivered span agrees with python re
+via the inlined-body oracle (`(?&w=w)` → w.word (0,3); two sites of one
+definition → a.* / b.* with no aliasing; the hidden copies read (-1,-1)
+underneath). Restructuring forced: the composer is four passes (erasure
+is a whole-composition property, sites known only after the fixpoint);
+pcrec_has_live_capture gained a delivering arm (without it the wrapper's
+A_REP{0,0} looked capture-dead, the DFA took the pattern and every slot
+read (-1,-1) — B1's predicted silent failure); a delivering site is
+forced to CALL_SPLICE for TIMING (the shared region restores its whole
+W before the caller's return label) — callgraph.c's reserved per-site
+option, now a reachable MIXED linkage state the suites have never
+exercised. Two check defects found and fixed (the forced splice sat
+where -fno-splice-calls skipped it; the C1 projection truncated at
+NF=13 so the export column was uncovered). NOT built (W1.3.1): the
+run.sh composed-block path; `(?&site.group)` references (measured free;
+needs a post-composition deferred-reference kind). RULED: flat-import
+rows keep ref (provenance) and the sort/count key becomes SCOPE (caller
+scope = own + flat imports = the nnames prefix; site scope above), so
+§6's bsearch is unchanged. w13 re-arms its cron; third for suites.
