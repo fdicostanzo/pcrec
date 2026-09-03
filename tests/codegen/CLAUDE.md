@@ -644,6 +644,42 @@ decides whether to perform it — and then run the row through
     count** (K35): a sweep in which nothing folds asserts nothing about the
     fold and would be green with the fold deleted from the emitter entirely.
 
+- **run_scan_edge_dispatch.sh** — [OPT-EDGE] STEP 1 (2026-09-03) the
+  SHARED-SENTINEL EDGE DISPATCH: that the scan edge costs the loop's GENERIC
+  PATH nothing. **DRAFT, RED ON TWO OF FOUR WITNESSES, wired into NO make
+  target and carrying NO sabotage row** — read its own STATUS header and §6
+  before using it, and do not wire it in as it stands.
+  - **WHY IT EXISTS.** [OPT-5] put one `if (state == HEAD && ...)` per edge on
+    the loop's generic path, so N edges cost N compares PER BYTE; the bench
+    sized that at x1.089 on iso-ts. [OPT-EDGE] folds the edge test into the one
+    state test the loop already had. The whole change is ANSWER-IDENTITY-
+    PRESERVING, so the corpus, both oracles and `make test-axes` agree whether
+    or not the dispatch is there.
+  - **THE CONTROL CONTAINS NONE OF THE MECHANISM.** The reference arm is the
+    same pattern under `-fno-scan-edge`, whose denial is at the PASS — no
+    heads, no renumbering, no `is_stop`, no edge path. A sabotage that puts
+    the per-edge compares back moves the subject arm and leaves the reference
+    untouched.
+  - **THE MEASURABLE IS A CYCLE LENGTH, NOT A TEXT PATTERN** (three earlier
+    checks here went vacuous as presence-by-text detectors): `objdump -dr`,
+    build the CFG, take the SHORTEST CYCLE through the byte-class table's
+    load. Layout-independent by construction, which matters because gcc places
+    the cold edge path out of line.
+  - **AND THAT ANCHOR IS THE DEFECT.** gcc HOISTS the table's address load out
+    of the loop on two of the four witnesses, so the anchor is on no cycle and
+    the file reports INCONCLUSIVE and FAILS rather than passing. Its §6
+    records three repairs tried and MEASURED — follow the register (finds the
+    prefilter's inner loop, 11 where the truth is 15), the same restricted to
+    dereferences (same 11), and `-fno-move-loop-invariants` (keeps the load in
+    the loop and also stops gcc rotating it, 33 against the denied arm's 19).
+    Identifying the loop STRUCTURALLY, or measuring the emitted C's own blocks
+    before gcc sees them, is the untried direction.
+  - Measured where it reaches (gcc 15.2.0, -O2): iso-ts 15 instructions on the
+    generic path with 12 edges against 19 denied; `[a-z]{2}[0-9]{2}`'s
+    `\d{2}[.]\d{2}` sibling the same 15 against 19. Both agree with a hand
+    count of the same disassembly, and iso-ts's 15 against the pre-[OPT-EDGE]
+    compiler's 29 is the row's own number.
+
 - **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
   compiles every `.rxt` corpus pattern twice (default engine, and
   `--engine=vm` forced where accepted — the wider population for the

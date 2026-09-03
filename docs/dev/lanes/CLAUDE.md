@@ -56,6 +56,23 @@ never edited afterwards.
   the `dfa_table_name` line: the review's `:2664` was right). The one r49
   item not fully discharged is 8 (no synthetic witness reaches P3; S219 ships
   UNREACHED with the derivation).
+- `edge1_report.md` — [OPT-EDGE] STEP 1 + K43 (b) (2026-09-03, lane edge1):
+  the shared-sentinel edge dispatch (heads renumbered to the machine's TOP
+  rows, one unsigned compare for dead-or-head, the edge blocks moved verbatim
+  off the generic path) and the designated-range slot initializer. Carries the
+  PREDICTION TABLE stated before any build and SCORED against the measurement,
+  including three misses. Worth reading for six findings: two `-Werror`
+  defects in the lane's own emitted code that no answer check can see (an
+  unused label where the edge path is reached by fall-through; `(unsigned)s >=
+  0u` on a machine all of whose states are heads); a NEW precondition (8) the
+  mechanism forces on `src/opt/scanedge.c` (the offset-set prefilter's reseed
+  is the one mid-body writer of the state variable the stop test cannot see);
+  that the win is O(1) in the edge count and therefore NIL at one edge; that
+  `PCREC_MAX_SCAN_EDGES` has silently changed from a hot-path budget to an
+  emitted-bytes one; and that the brief's "8-edge ladder" cannot be built,
+  since four is the per-machine ceiling. Its draft structural check is
+  DELIVERED RED on two of four witnesses, with the three repairs that were
+  tried and measured recorded so nobody re-tries them blind.
 - `vmfl0_log.md` — [OPT-VMFL]/[ENG-DIRECT] STEP 0 (2026-09-02, lane vmfl0):
   the census script, the hand-twin transform, and the R1 mid-flight
   ruling's arrival, in order. See `docs/dev/optvmfl_step0.md` for the
