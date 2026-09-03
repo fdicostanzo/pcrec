@@ -211,7 +211,61 @@ site. No check's actual claim weakened.
 2. `make -j4 && make strict` — DONE, clean.
 3. `make test-codegen` — DONE, 5/5 after the three fixes above.
 4. `make -k -j4 test PROCS=3` (the manager's measured shape for this box,
-   not `-j12`) — IN PROGRESS.
+   not `-j12`) — IN PROGRESS (second attempt; first found four more
+   detector fixes, below).
+
+### 3a. The first `make test` run found `run_premul_table.sh` broken by
+###     the SAME class of read-site issue, in a DIFFERENT script
+
+`run_premul_table.sh` ([OPT-3]'s premultiplied-table check, part of
+`make test` proper, not `make test-codegen`) was never audited when this
+lane started — it reads the same `<m>_next_state`/`<m>_is_accepting` tables
+run_dfa_stamps.sh does, with its own independent `read_artifact` extractor,
+and the fold broke it in FOUR places. All four are the same shape as the
+earlier fixes — a detector keyed on table TEXT the fold makes optional,
+never an emitter defect — verified the same way (emit `$` and
+`(?:(?:b*?|a)?)*`, compile `-Werror` clean, run against python `re`, grep
+for zero leftover references to the folded table names) before touching
+anything:
+
+- **`scan` discriminator**: same `rx_forward_next_state[` anchor
+  `run_dfa_stamps.sh` had; same fix, the `forward_state = rx_forward_step(`
+  call site.
+- **`[agreement]` reverse-table check**: `rent == 0` used to mean only "no
+  reverse pass"; now also legitimately means "the reverse pass's own table
+  folded". Added an `rtblcall` marker on the call site's own table
+  argument (present only when unfolded) so the check still catches a
+  table genuinely missing under a call that still names it — the shape it
+  was written for — without flagging a correctly-folded reverse pass.
+- **`[agreement]` `implied_stamp` drift check**: derived the artifact-level
+  `RX_DFA_TABLE` form from `fpm:rpm`, both of which read `-1` when no table
+  DECLARATION exists — now true for two reasons (no machine, or a folded
+  machine) where the check only handled one. Added `eff_pm()`: the typedef
+  line (`typedef unsigned/int rx_forward_state;`) is emitted
+  unconditionally per machine before the fold branch runs, so it survives
+  folding and gives the true form.
+- **`[accept]` table-length check**: `fold_tr`/`fold_acc` are independent
+  per machine, so a machine can have its transition table intact while its
+  own accept table folded — the check demanded `acc == ent` unconditionally
+  and had no way to see that. Guarded both comparisons on `acc > 0`, since
+  `ent > 0` already proves the machine exists and the accept probe is
+  always emitted (folded or not).
+
+`run_premul_table.sh`: 16/16 after the fixes (was 14/16, 2 `FAIL:` lines
+representing 31 + 165 individual drifts in the corpus sweep). Commit
+979cbdd. None of the four fixes loosens a correctness claim the fold does
+not already make true — each widens an anchor or a guard to recognize a
+shape the fold legitimately introduces.
+
+**Lesson for `.lift`+1 if this pattern recurs a third time**: every
+structural check in `tests/codegen/` that reads a DFA transition or accept
+table's presence, length, or declared TYPE as a proxy for "this machine
+exists" or "this is the machine's true form" is a candidate for the same
+bug, because the fold makes table PRESENCE stop being synonymous with
+machine EXISTENCE for the first time in this project's history. The fix
+pattern is always the same: find a signal that survives folding (a call
+site's argument shape, a typedef, an unconditionally-emitted sibling line)
+rather than loosening the check's actual claim.
 5. `make test-axes`.
 6. The clang COMPILE gate over the whole corpus (refusal set must stay
    empty) — ccdiff1's `clanggate.sh`, `ROOT` repointed at this worktree.
