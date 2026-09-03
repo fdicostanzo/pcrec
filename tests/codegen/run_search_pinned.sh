@@ -154,8 +154,15 @@ witness() { # witness <label> <pattern> <expected value> <expect reverse: y|n> [
     if [ "$rev" = y ]; then
         has_rewind "$f" \
             || bad "§1 [$lbl] stamps \"reverse-pass\" but emits NO rewind_position — the stamp and the mechanism have come apart"
-        has_revtbl "$f" \
-            || bad "§1 [$lbl] stamps \"reverse-pass\" but emits NO rx_reverse_next_state table"
+        # [CC-DIFF] STEP 1(b): `has_revtbl` (the table DECLARATION) is no
+        # longer a valid existence test — the uniform-table fold can remove
+        # the reverse machine's table while the reverse pass itself is
+        # genuinely still there. `has_revtoken` (the typedef line) is
+        # emitted unconditionally per machine, before the fold branch ever
+        # runs, so it survives folding; it is already this file's own
+        # negative-direction check two lines below.
+        has_revtoken "$f" \
+            || bad "§1 [$lbl] stamps \"reverse-pass\" but emits NO rx_reverse_state accessor block"
     else
         has_rewind "$f" \
             && bad "§1 [$lbl] stamps \"$got\" but still emits a rewind_position — the reverse pass was not elided"
@@ -419,7 +426,12 @@ one() {
         echo "REVPASS-$ax"
         # ENG_ATTEMPT and the empty engine legitimately have no reverse pass.
         if [ "$rw" -eq 0 ]; then echo "REVNOBODY-$ax"; else
-            [ "$rtbl" -eq 1 ] || { echo "BODYBAD-$ax"; echo "BAD: a reverse-pass artifact has a rewind_position but no reverse table: $pat"; }
+            # [CC-DIFF] STEP 1(b): rtbl reads the table DECLARATION, which the
+            # uniform-table fold can legitimately remove while the reverse
+            # machine itself is still present. rr is the fold-safe signal
+            # already computed above from the unconditionally-emitted
+            # typedef line, so it is what proves the reverse machine exists.
+            [ "$rr" != "-" ] || { echo "BODYBAD-$ax"; echo "BAD: a reverse-pass artifact has a rewind_position but no reverse machine (typedef absent): $pat"; }
         fi
     fi
 
