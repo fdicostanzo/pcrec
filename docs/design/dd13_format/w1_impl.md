@@ -2091,3 +2091,264 @@ at every merge of the abi-13 change (F8).
   been through this oracle. If it produces failures, they are pre-existing
   and the right response is a triage list for the manager, not a fix
   inside W1.1.
+
+---
+
+## 8. [DD-13b.W1.3] — the step brief: composition proper, and the dogfood
+
+**Written by lane w13 on 2026-09-03, under the evening box hold (write-only:
+no `make`, no test script, no repeated matcher run). Every claim below is
+CITED or DECIDED unless it carries the word MEASURED, and the four MEASURED
+rows name the command that produced them.** §2 above is the design this
+section implements; where the two differ, D89 is why, and §8.1 says so
+finding by finding.
+
+### 8.0 What D89 changed, and why §2 alone is not buildable as written
+
+§2 was written before Frank ruled Q-W1. D89 point 2 replaced its
+one-tier "the definition's groups are injected" with a **THREE-TIER
+rule**, and the middle tier is the one §2 has no mechanism for:
+
+| tier | which lib group | slot | `groups[]` row | §2's answer |
+|---|---|---|---|---|
+| **delivered** | one the definition NAMES | yes, above `ngroups` | yes, `.ref` = the definition's name | §2.7 (unchanged) |
+| **hidden** | unnamed, but the definition itself references it (a backref target, a call target) | yes, above `ngroups` | **no** | §2 had no such tier |
+| **erased** | unnamed and referenced by nothing inside the definition | **no — the `A_CAP` is deleted** | no | §2 numbered it anyway |
+
+D89(2)(a)'s words are *"REWRITTEN to `(?:…)` in the composed text — truly
+non-capturing, zero slots, and the PCRE2 textual control is the same
+pattern byte for byte"*. A tier that spends no number is not expressible
+by §2.5's "add `base` to every `A_CAP`" walk, because the surviving
+groups must then CLOSE UP. **So the re-basing walk's `+base` becomes a
+MAP**, `local number -> final number or 0`, and that map is the
+assignment table §2.7 already names as the one derivation with three
+readers. The map is strictly more general than the offset it replaces:
+with nothing erased it IS `+base`, which is what makes W-1's existing
+MEASURED cell (`dd` = `(\d)\1`, caller `^(\d)-(?&dd)$`, `\1` -> `\3`)
+still the expected answer.
+
+**What makes a group DELIVERED, and it is the only rule W1.3 invents.**
+D89 point 4 says *"In `.rxt`, delivery is declared by the lib's own
+names; no in-pattern syntax is built in W1"*. DECIDED (w13): **a
+definition's group is delivered exactly when the definition NAMES it.**
+Naming a group in a library IS the author's declaration that it is part
+of the library's interface; every other rule available (a new head line,
+a per-target list, an in-pattern marker) either builds W1.4's syntax
+early or adds a second place where an interface is declared. The cost is
+that a definition has no way to name a group PRIVATELY — recorded as
+question Q-W3 in §8.8, with `(?:…)` plus a comment as today's workaround.
+
+### 8.1 What lands where
+
+| file | what |
+|---|---|
+| `src/parse/rxt_compose.c` | **NEW.** The composer: the definition set, the sub-parse, the map, the injection, the re-resolution. One file, because every one of those is meaningless without the others, and because a reviewer must be able to read the whole mechanism without leaving it |
+| `src/core/internal.h` | `RxtDefs`/`RxtDef`; `NamedGroup.scope`; `Ctx.ncap_primary`, `Ctx.defs`, `Ctx.defer_file_refs`; `PendingRef.deferred`; `pcrec_rxt_compose`'s declaration; `pcrec_rxt_prefix_from_name` |
+| `src/parse/rxt_source.c` | the name grammar (`-`/`.`); the prefix mapping and its collision refusal; `target = <name>`; **the `lib` files are now PARSED**, transitively, and their named blocks join the definition set |
+| `src/parse/mod_backrefs.c` | `pcrec_bref_resolve` DEFERS an unresolved by-name **`PEND_CALL`** under `Ctx.defer_file_refs` instead of refusing, and writes `deferred` explicitly in both arms |
+| `src/core/compile.c` | the composer's call site, between `pcrec_parse` and `pcrec_altcls` (§2.1); `pcrec_compile_defs`, the internal entry that carries a definition set |
+| `src/gen/emit_dfa.c` | `ng_cmp_name` gains the leading `(ref-is-NULL)` key; `.ngroups` reads `ncap_primary`; `.nnames` counts the primary's rows; `.nentries` counts all; the `.ref` column stops being a literal `NULL` |
+| `cli/main.c` | `compile_source` calls `pcrec_compile_defs` |
+| `tests/rxtsource/` | the altwide fixture, the composition fixtures, the refusal fixtures |
+| `tests/definitions/` | our own corpus directory composed over a shared definitions file, and C1's identity proof extended |
+| `tests/harness/run.sh`, `tests/harness/verify_rxt.py` | legs B and C of the name grammar — **the same change, or the three parsers disagree** |
+
+**THE NAME GRAMMAR HAS THREE READERS AND THEY ARE FOUND BY GREP, not by
+memory** (D94's rule applied to a grammar rather than to a number). Leg A
+is `rxt_source.c`'s `ident_ok` at the `name` line and at a `target`'s
+definition reference; leg B is `run.sh:1492`'s
+`^name[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)`; leg C is
+`verify_rxt.py`'s `IDENT_RE`. C1 is the check that they agree, and it is
+the reason a fourth reader cannot be added quietly.
+
+**The prefix mapping is ONE function with ONE home**,
+`pcrec_rxt_prefix_from_name` — `-` and `.` to `_`, every other byte
+unchanged — because the mapping is what the collision refusal is stated
+over, and a second copy of it would be a second answer to "do these two
+names collide".
+
+### 8.2 The grammar change, exactly
+
+- A block's `name` and a `target` row's DEFINITION reference admit `-`
+  and `.` after the first byte. The first byte stays `[A-Za-z_]`, because
+  the mapped name must be a C identifier and a leading digit or `-`
+  cannot be repaired by the mapping.
+- A `target` row's PREFIX is unchanged: `ident_ok`, no `-`, no `.`. It is
+  a C identifier written by the author and never mapped.
+- **`target = <name>`** (the prefix omitted) means *"prefix =
+  `pcrec_rxt_prefix_from_name(<name>)`"*. This is what makes a hyphenated
+  definition buildable without the author writing the mapping out by
+  hand, and it is what a bench exporter emits.
+- **The collision refusal**: two `target` rows whose prefixes are equal
+  are refused today (`rxt_source.c:782-786`); the mapping makes that
+  refusal reachable from two DIFFERENT names, and the diagnostic must
+  then name BOTH names and the prefix they share, not just the prefix.
+
+**A hyphenated definition is buildable but NOT CALLABLE from a pattern,
+and that boundary is deliberate.** `(?&some-id)` goes through PCRE2's own
+group-name grammar (`pcrec_group_name_scan`, `mod_recursion.c:284-289`),
+which refuses `-`; D26 makes that PCRE2's rule and not ours to widen. So
+`-`/`.` names live in the FILE namespace only — which is exactly
+DECIDED (7)'s split, and exactly what the bench needs (a bench set's
+patterns never call each other). A definition meant to be CALLED must
+have an identifier name. MEASURED (2026-09-03, `ls`+`grep` over
+`/home/duxevents/pcrec-bench/bench/*/patterns/*.rx`): 90 bench patterns
+today, every id starting with a letter, so every one of them maps.
+
+### 8.3 The composer, mechanism by mechanism
+
+1. **The definition set** is built by `pcrec_rxt_source_resolve`: this
+   file's named blocks, then each `lib` file's, transitively, in `lib`
+   declaration order, deduplicated **by resolved path** so a diamond is
+   read once and a cycle terminates. A name declared twice in the closure
+   is a refusal naming both files (the K42 residual is about names the
+   FORMAT cannot see; this one it can).
+2. **The deferral.** `Ctx.defer_file_refs` is set only when a definition
+   set is present. `pcrec_bref_resolve`'s `PEND_CALL` name arm then
+   leaves an unresolved name in the list with `deferred = true` instead
+   of making it `worst`. **The `PEND_BREF` name arm is NOT deferred**: a
+   caller's `\k<w>` must never see a library's `w` (D87 rule 2, §2.7's
+   three-walker table), so it keeps today's refusal at today's offset.
+   `deferred` is written in BOTH arms on every pass, never left to the
+   arena zero — N3's rule, and here the unsound direction is the same
+   one: a missed write reads "not deferred", the composer skips the
+   reference, and the call reaches `callgraph.c` with `target == 0`.
+3. **The worklist.** Each deferred name that the set declares is bound
+   once; binding a definition may defer more names, which join the
+   worklist. Cycles are allowed and terminate on the visited set (r44-sem
+   M8: self- and mutual recursion compile and match on both oracles).
+4. **The sub-parse** is §2.2's, unchanged: one `Ctx`, one arena, a
+   `RxtParseScope` saving `pat`/`patlen`/`pos`/`ncap`/`named_groups`/
+   `n_named_groups`/`pending_refs`/`n_pending_refs`/`mods`, with `mods`
+   SEEDED from the definition block's own `flags` and the definition's
+   pending list CAPTURED rather than merely restored (N4).
+5. **The map.** After the sub-parse the definition has groups `1..k` in
+   its own space. `keep[i]` is true when group `i` is NAMED (delivered)
+   or is the target of any captured `PendingRef` (hidden). `map[i]` is
+   then the next number above `base`, or 0. The wrapper takes `base`
+   itself (§2.6, D89 point 1 — INTERNAL, and never a `groups[]` row).
+6. **Two passes, not one** (§2.5's N4): a tree walk remapping every
+   `A_CAP.u.cap.no` and DELETING the `A_CAP` whose `map` is 0; then a
+   pass over the captured `PendingRef` list remapping the resolved
+   `u.call.target` and `u.bref.refs[]` of exactly the references the
+   sub-parse resolved locally. A deferred record is not remapped; it is
+   resolved after the walk, at its final number.
+7. **The injection** is §2.4's `A_REP{0,0}(A_CAP{base}(body))`,
+   concatenated onto the caller's root in closure order — the shape
+   `mod_recursion.c:418` already builds for `(?(DEFINE)…)`, so no
+   downstream pass gains a line.
+8. **The re-resolution** binds each deferred `PEND_CALL` to its
+   definition's WRAPPER number, and re-raises `mod_backrefs.c:733-734`'s
+   exact refusal for a name the set does not declare — same sentence,
+   same offset, so the four `perr` blocks in
+   `tests/recursion/d27/sr_refusals.rxt` are untouched.
+9. **The named rows** are appended to `cx->named_groups` with
+   `scope` = the definition's name and the MAPPED number.
+   `cx->n_named_groups` counts them; `nnames` no longer does.
+
+**`ncap_primary` is frozen before the first sub-parse and is what
+`.ngroups` emits.** On every non-composed compile it equals `cx->ncap`
+by construction, which is what makes identity gate (A) a real check of
+this change rather than a tautology.
+
+### 8.4 The check plan — and what each check does NOT share a source with
+
+Memory `pcrec-check-design-lessons`: a control that shares a source with
+what it controls checks nothing. Each row below names the thing it
+would be useless against.
+
+| id | what it proves | its source | what it must NOT share |
+|---|---|---|---|
+| **W1.3-A** | injection is SORTED correctly: the primary's rows are a genuine prefix of `groups[]` and `(ref, name, number)` is non-decreasing | the EMITTED ARTIFACT, read as text by `tests/codegen` | it never asks the composer what it wrote. [M6.5-DUPNAMES]'s existing row is the same shape and its expectation MOVES in this change |
+| **W1.3-B** | `nentries > nnames` for the first time, and `nnames` still counts exactly the rows a `match_api.md` §6 caller may bsearch | the artifact's two numbers vs a COUNT OF EMITTED ROWS with `.ref == NULL` | comparing `nnames` to `cx->n_named_groups` would be the composer checking itself |
+| **W1.3-C** | delivery BY NAME works end to end: a composed matcher's delivered slot holds the right offsets | `tests/definitions`' `.rxt` cases through the ordinary driver | the oracle is python `re` on the FLAT pattern, not on the composed one |
+| **W1.3-D** | the composed artifact is ANSWER-IDENTICAL to the flat one (C1's identity proof extended) | two artifacts, two `--source`-free and `--source` compiles, the same case list | the flat pattern is written BY HAND in the fixture, never generated by `--emit-composed` |
+| **W1.3-E** | the collision refusal fires | the reject table: two names mapping to one prefix, one `.rxtin` fixture per shape | the diagnostic names BOTH names, so a refusal that names only the prefix is a red |
+| **W1.3-F** | the `-`/`.` name mapping | leg A/B/C agreement over a fixture carrying both bytes, i.e. C1's existing three-parser differential with a new input | a single-leg test would pass while two parsers disagreed — which is the defect C1 exists for |
+| **W1.3-G** | the ERASED tier really erases: an unreferenced unnamed lib group costs no slot | `RX_NCAPS` in the artifact vs the count the fixture's comment states by hand | reading the composer's own map |
+
+**SABOTAGE ROWS** (the `mech` battery's shape; each must be DETECTED by
+the check named, and by that check alone if possible):
+
+| row | the plant | detector |
+|---|---|---|
+| **S-W13a** | drop the leading `(ref-is-NULL)` key from `ng_cmp_name` | W1.3-A |
+| **S-W13b** | make `.nnames` emit `cx->n_named_groups` again | W1.3-B |
+| **S-W13c** | make `map[i]` a plain `+base` (no compaction), so an erased group still spends a number | W1.3-G, and W1.3-D through `RX_NCAPS` |
+| **S-W13d** | mark every lib group delivered (drop the `keep`/named distinction) | W1.3-B (nentries moves) and W1.3-A (rows appear for unnamed groups) |
+| **S-W13e** | skip the `PendingRef` pass, re-basing only the tree | W1.3-C — the `\1`-inside-a-definition cell, which is §2.5's own MEASURED row |
+| **S-W13f** | make the prefix mapping identity (`-` left alone) | W1.3-E stops refusing AND `make strict` stops compiling the emitted symbols — two independent detectors |
+| **S-W13g** | forget one field in the `RxtParseScope` swap (§2.2's S-W6, re-aimed at `ncap`) | W1.3-C's meaning cell: a definition containing `\12` means something different when parsed at the caller's count |
+
+**S-W13c and S-W13d are the pair worth keeping**, because they fail in
+OPPOSITE directions on the same number: one spends a slot nobody can
+read, the other publishes a row nobody declared, and a check that only
+counted rows would call one of them green.
+
+### 8.5 The D80 spec delta
+
+| # | file | the hunk |
+|---|---|---|
+| S13a | `docs/spec/rxt_format.md` | the `name` line's grammar admits `-`/`.`; the mapping to a C prefix; `target = <name>`; the collision refusal; that a `-`/`.` name is not callable from a pattern |
+| S13b | `docs/spec/rxt_format.md` | `lib` files are READ, not merely resolved: the closure, its order, its dedup, and the duplicate-definition refusal |
+| S13c | `docs/spec/match_api.md` §6 | **S9b as D89 revised it**: `ngroups`/`nnames` are the primary's own; `nentries` may exceed `nnames`; `groups[0..nnames)` is the primary's rows and is what §6's algorithm walks; `groups[nnames..nentries)` are DELIVERED library groups, addressed BY NAME, with `.ref` naming the definition; the wrapper's number is internal and appears in NO row; `RX_NCAPS` may move across library versions while `1..ngroups` holds still |
+| S13d | `docs/spec/match_api.md` §6 | the three tiers, stated as what a caller can and cannot see |
+| S13e | `docs/spec/cli.md` | `--source` composes: what a definition is, where it is looked up, `--lib-path`'s role now that libs are read |
+| S13f | `docs/spec/table_contract.md` | nothing — `--list-source` still reports the file AS WRITTEN, and composition is not a column |
+
+**S9b's revision is the one to read against D89**: r45sem's "the first
+delivered group is at `ngroups+2`" was WITHDRAWN by Frank, and the reason
+is that a caller never authors a delivered group's number at all. The
+spec therefore states delivery in terms of NAMES and says the numbers are
+the artifact's business — which is a weaker promise than revision 2.1's
+and the only one that stays true when the erasure tier changes how many
+numbers a definition spends.
+
+### 8.6 The abi event
+
+`groups[]` gains rows the primary did not declare and a `.ref` column
+that stops being a literal `NULL`; `.ngroups`, `.nnames` and `.nentries`
+change what they count on a composed artifact. That is emitted
+scaffolding, so **D76's ritual applies: a bump and a re-pin in the same
+change**. Per the manager's brief, **W1.3 does NOT choose the number** —
+the merging session assigns it. §8.7 is the D94 site list, found by
+grep, that the bump commit must touch.
+
+**On a NON-composed compile every one of these values is what it was**,
+by construction (`ncap_primary == ncap`, no injected rows, `.ref` still
+`NULL`), which is what makes identity gate (A) a real control here.
+
+### 8.7 The D94 site list — every reader of the abi number, found by grep
+
+The command is the contract, not the list:
+`grep -rn "\babi\b\|ABI_EXPECT\|FILEPIN" src/ tests/ docs/spec/ cli/`.
+§8.7's table in the lane's report carries the run's output at the time
+of the bump; the number today is **17**, and the readers are the `.abi`
+stamp in `src/gen/emit_dfa.c`, `ABI_EXPECT` and its ledger in
+`tests/codegen/run_codegen_tests.sh`, the two sentences plus the struct
+block in `docs/spec/match_api.md`, and the `FILEPIN` in
+`tests/codegen/run_recursion_identity.sh`. **D94's own lesson is that a
+hand-enumerated four missed a fifth**, so the grep is re-run at the bump
+and its output — not this paragraph — is what the commit answers to.
+
+### 8.8 Questions this step could not settle from the documents
+
+- **Q-W3 — is EVERY named group in a definition delivered?** §8.0 says
+  yes and implements yes, because naming is the only interface
+  declaration W1 has. A library author who wants a named-but-private
+  group has no spelling. The alternative (a head line listing the
+  delivered names) is a second place an interface is declared and was
+  rejected on that ground alone; Frank may prefer it.
+- **Q-W4 — does a definition inherit the TARGET's config?** Implemented
+  as NO: a definition block's own `flags` seed its sub-parse (r45sem M2)
+  and nothing else reaches it, so a library means the same thing in every
+  file that binds it. The counter-case is `encoding`, which D58 makes a
+  per-pattern scalar and which therefore cannot differ between a caller
+  and its definition; W1.3 refuses a definition block that writes an
+  `encoding` differing from the target's rather than silently picking one.
+- **Q-W5 — `target = <name>` versus an implicit target per `name`d
+  block.** Implemented as the explicit shorthand, because
+  format_design §2.7's "every other file builds nothing unless it says
+  so" is a shipped rule and an implicit target would repeal it. The
+  bench's exporter then writes one `target =` row per pattern, which is
+  33 rows for altwide@0.2.
