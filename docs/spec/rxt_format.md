@@ -61,6 +61,35 @@ unknown. They are real, spelled correctly, and simply not implemented
 here; reporting them as unknown would send a reader hunting a typo in a
 word they just read in the format's own documentation.
 
+### The delivering call — reaching a definition's exported groups
+
+**[DD-13b.W1.3]** A definition's `export` line says what it offers; a call
+says what it takes. Three forms, and the plain one is PCRE2's own:
+
+| written in a pattern | meaning |
+|---|---|
+| `(?&name)` | the plain call: run the definition, keep nothing. PCRE2's own capture-transparent meaning, unchanged |
+| `(?&site=name)` | DELIVER: the definition's exported groups become the caller's, named `site.group` |
+| `(?&=name)` | the same, with the definition's own name as the site |
+| `(?&*=name)` | DELIVER FLAT: the exported groups become the caller's under their own names |
+
+All three delivering spellings were checked against libpcre2 10.46 before
+adoption and are refused by it, so adopting them changes the meaning of no
+legal pattern (the constraint `format_design.md` §1.5 states, and the one
+that disqualified an earlier candidate PCRE2 turned out to accept).
+
+- **A site is a scope.** Two delivering calls of one definition under two
+  site names give two independent sets of groups.
+- **A clash is refused by name** — a flat import landing on a group the
+  caller already has, two flat imports exporting one name, or two sites
+  sharing a name.
+- **A delivering call whose target is a group in the SAME pattern is
+  refused.** Delivery is a definition's interface; a local group has no
+  export list and is already the caller's own.
+- **A delivering call on a RECURSIVE definition is refused**, because
+  delivery needs the callee written out at the site.
+- What a caller then reads is `docs/spec/match_api.md` §6's "Composition".
+
 ### Building from a source file
 
 `pcrec --source FILE -o OUT` builds this file's `target` declarations;
@@ -298,7 +327,12 @@ These bind on every line kind, old and new:
   - Exporting a name does not by itself put anything in an artifact: the
     list says what MAY be delivered, and a DELIVERING CALL decides what IS
     (see "Composition" in `docs/spec/match_api.md` §6). An exported name
-    that no site delivers costs nothing at all.
+    that no site delivers costs nothing at all — no slot, no row.
+  - **A delivering call on a definition that exports nothing is REFUSED.**
+    The default being "nothing" is what makes that a real check rather than
+    a formality: it is the shape a caller reaches by assuming a library
+    publishes its named groups automatically, which this format deliberately
+    does not do.
 - `features only <list>` — as `features`, except that the list REPLACES
   what a `config` would otherwise contribute rather than being unioned
   with it. Parsed and recorded in this build; it becomes operative when

@@ -1511,51 +1511,81 @@ everything in the array reads `nentries`.
 ### Composition — what a caller sees of a library's groups
 
 **[DD-13b.W1.3], 2026-09-03.** `pcrec --source FILE` composes: the target
-pattern's `(?&name)` calls bind DEFINITIONS declared in that file or in a
-file it `lib`s (`docs/spec/rxt_format.md`). What follows is the whole of
-what composition changes about this struct; a caller of a
-single-pattern artifact is unaffected in every particular.
+pattern's `(?&…)` calls bind DEFINITIONS declared in that file or in a file
+it `lib`s (`docs/spec/rxt_format.md`). What follows is the whole of what
+composition changes about this struct; a caller of a single-pattern artifact
+is unaffected in every particular.
 
-**A library's groups are NON-CAPTURING to the caller by default** (D89),
-and there are exactly three tiers:
+**A LIBRARY'S GROUPS ARE PRIVATE UNLESS BOTH SIDES ASK.** Two declarations
+are required and neither alone does anything:
+
+1. the DEFINITION lists what it offers, with an `export` line. The default
+   is nothing.
+2. the CALL SITE asks for it, with a DELIVERING call. A plain `(?&name)`
+   asks for nothing and costs nothing.
+
+An exported name that no site delivers costs no slot at all, and a delivering
+call on a definition that exports nothing is refused.
+
+**THE THREE CALL FORMS**, and the plain one is PCRE2's own:
+
+| in the pattern | what the caller gets |
+|---|---|
+| `(?&name)` | nothing. Capture-transparent, exactly as PCRE2 defines it |
+| `(?&site=name)` | one row per exported group, named `site.group`, `ref` = the definition's name |
+| `(?&=name)` | the same, with the definition's own name as the site |
+| `(?&*=name)` | one row per exported group, named as exported, in the CALLER's own scope |
+
+- **A site is a SCOPE.** Two delivering calls of one definition under two
+  site names are two independent sets of rows and two sets of slots, so
+  `(?&a=email)…(?&b=email)` gives `a.local`, `a.host`, `b.local`, `b.host`
+  and they do not alias.
+- **`(?&*=name)` puts the rows in the caller's own scope**: they carry a
+  NULL `ref`, are counted by `nnames`, and are found by §6's algorithm
+  exactly like a group the caller declared. That is the form's purpose, and
+  it is why a clash — with a caller's own group, or with another flat
+  import — is REFUSED by name rather than resolved by precedence.
+- **A delivered group is addressed BY NAME, never by number.** Its number
+  depends on which definitions this target bound, in what order, and which
+  sites delivered — so it may move when the library changes even though
+  nothing the caller wrote did. Read `groups[i].name`, take
+  `groups[i].slot`, and never compute one.
+
+**WHAT A DELIVERED SLOT HOLDS.** After a delivering call returns, the site's
+slots hold **what the callee matched on that call** — the spans are retained
+across the return rather than restored away. This is a deliberate departure
+from PCRE2, whose plain subroutine call is capture-transparent
+(`(?(DEFINE)(?<g>a))(?&g)` leaves group 1 unset), and it is what the `=` in
+the call opts into. The definition's OWN copy of the group stays private and
+reads `(-1,-1)`; only the site's rows are readable.
+
+**The oracle for a delivered span**, and it is exact for a non-recursive
+definition: the definition's body written out at the call site with its
+groups renamed `site_x` is a legal PCRE2 pattern, and it delivers the same
+spans. A delivering call on a RECURSIVE definition is refused, because
+delivery needs the callee inlined at the site.
+
+**THE THREE TIERS a definition's groups fall into**, which is what makes a
+composed artifact no larger than it has to be:
 
 | the definition's group | a caps[] slot | a `groups[]` row |
 |---|---|---|
-| one the definition NAMES — **delivered** | yes, above `ngroups` | yes, with `ref` = the definition's name |
-| unnamed, but the definition references it itself — **hidden** | yes, above `ngroups` | no |
-| unnamed and referenced by nothing inside it — **erased** | **no** | no |
+| exported AND delivered by some site | one per delivering site | one per delivering site |
+| referenced by the definition itself | one, private | no |
+| neither | **none — it spends no number at all** | no |
 
-- **`ngroups` is the target pattern's own count and slots `1..ngroups`
-  keep their permanent-prefix promise**, exactly as D61 states it. A
-  definition's slots are above it.
-- **`nnames` is the target pattern's own named rows, and they are a
-  PREFIX of `groups[]`.** The array is sorted `(ref-is-NULL, name,
-  number)`, so §6.0's algorithm run over `groups[0 .. nnames)` is correct
-  unchanged and can never walk a name run into a library's row.
+- **`ngroups` is the target pattern's own count** and slots `1..ngroups`
+  keep their permanent-prefix promise (D61). Everything a definition
+  occupies is above it.
+- **`nnames` counts the rows the caller's own scope holds** — its declared
+  named groups plus any flat imports — and they are a genuine PREFIX of
+  `groups[]`, which is sorted `(ref-is-NULL, name, number)`. §6's algorithm
+  run over `groups[0 .. nnames)` is therefore correct unchanged and can
+  never walk a name run into a library's row.
 - **`nentries` is the whole array.** Rows `[nnames .. nentries)` are
-  delivered library groups, each with a non-NULL `ref`.
-- **A delivered group is addressed BY NAME, never by number.** The number
-  in its row is the artifact's own business: it depends on which
-  definitions this target bound and in what order, so it may move when
-  the library changes even though nothing the caller wrote did. Read
-  `groups[i].name` and `groups[i].ref`, take `groups[i].slot`, and never
-  compute one.
-- **The definition's own wrapper takes a number and appears in NO row.**
-  It is internal.
+  site-qualified library rows, each with a non-NULL `ref`.
 - **`RX_NCAPS` may move across library versions** while every index in
   `1..ngroups` holds still.
-
-**WHAT A DELIVERED SLOT HOLDS TODAY, stated plainly because it is the one
-thing a reader will assume wrongly.** `groups[]` tells a caller WHICH
-library groups a composed artifact exposes and at WHICH slot. It does not
-yet promise that the slot holds the offsets the definition matched: a
-subroutine call is capture-transparent, so a callee's captures are
-restored on return and a delivered slot reads `(-1, -1)` — **which is
-PCRE2's own behaviour** for the equivalent pattern
-(`(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1 with group 1 unset). Making
-a call RETAIN what its callee matched is a declared property of the CALL
-SITE, and the syntax that declares it is [DD-13b.W1.4]'s. So today the
-name table is the deliverable and the live value is not.
 
 **[DD-13b.W1], 2026-08-30 — `nnames`'s comment was STALE, and the way it
 was stale is worth one paragraph.** It read *"0 until module
