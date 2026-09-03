@@ -20267,3 +20267,19 @@ alternation-dispatch study (7×-120×); two executive summaries; nine rows
 chartered or filed on Frank's rulings and ideas. wake.md rewritten for
 the next session (the morning sequence: O-16, battery_v5's first run
 with the CPU sampler, panel r52, then WINDOW OPEN with the abi-17 pin).
+
+## 2026-09-03 — Fiftieth session, part 23 (16:3x): Frank's evening rulings — [ENG-ISL] STEP 1 chartered; K43 direction (b); the stale /tmp scratch deleted (9.1 GB free); the o42 witness-gap: WAIT FOR A WITNESS
+
+Rulings: [ENG-ISL] STEP 1 approved (lane A of the evening wave: the
+VM-native trie walk as emit_vm.c's alternation island). K43: direction
+(b) — a provable slot init in the emitted code, riding lane B's abi
+event, LINTGEN green as acceptance. The 36 stale /tmp/pcrec-* dirs (788
+MB) deleted with Frank's yes (no process inside; 9.1 GB free). The o42
+witness-gap: Frank rules WAIT FOR A WITNESS — no row, no hunt; the
+recorded trace stays the record (the impact analysis: both errors on
+the unwitnessed retry path are performance-only — a prefilter is a
+filter, never the answer — on a population nobody has constructed).
+Next: Frank's questions on the wave, then "reset": wake.md pinned with
+the three lane briefs (A opus emit_vm.c; B opus emit_dfa.c scan loop +
+the K43 init; C sonnet dfa.c/compile.c), no suites tonight (the bench's
+window), merges serialized tomorrow with a battery between.
