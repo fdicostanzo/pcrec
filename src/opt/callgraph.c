@@ -421,6 +421,7 @@ static void cg_publish_link(void *ud, const Ast *a)
      * the sound direction, since a splice of an unknown callee has no body to
      * inline. */
     if (i >= 0 && cg->splice[i]) ((Ast *)a)->u.call.link = CALL_SPLICE;
+
 }
 
 /* The ceiling `exp` saturates at, and the value a cyclic target starts at.
@@ -532,6 +533,44 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     }
 
     cg_walk(root, cg_publish_link, cg);
+}
+
+/* [DD-13b.W1.3] see the call site in `pcrec_callgraph_build` for why this is
+ * a separate walk and not a branch inside `cg_publish_link`. */
+typedef struct { Ctx *cx; const struct CallGraph *cg; } CgDeliver;
+
+static void cg_force_deliver_splice(void *ud, const Ast *a)
+{
+    const CgDeliver *d = ud;
+    if (a->k != A_CALL || !a->u.call.delivers) return;
+    const int i = cg_index(d->cg, a->u.call.target);
+    if (i < 0)
+        ctx_fail(d->cx, 0,
+                 "internal error: a delivering call to group %d is not in the "
+                 "call graph", a->u.call.target);
+    /* A CALLEE THAT CANNOT BE SPLICED CANNOT BE DELIVERED FROM, and that is a
+     * REFUSAL rather than a silent downgrade to a delivery that does not
+     * happen. Two causes, and the message names which, because the two have
+     * different answers: a CYCLE is a property of the definition (a spliced
+     * recursive call is an infinite emitter), while the budget and the denial
+     * flag are properties of this build. */
+    if (a->u.call.link != CALL_SPLICE && !d->cg->splice[i]) {
+        if (pcrec_callgraph_reaches(d->cg, i, i))
+            ctx_fail(d->cx, 0,
+                     "a delivering call names a RECURSIVE definition (group "
+                     "%d); delivery needs the callee inlined AT THE SITE so "
+                     "the site can keep what it matched, and a recursive "
+                     "callee has no finite inlining. Call it plainly, or "
+                     "deliver from a non-recursive definition that wraps it",
+                     a->u.call.target);
+        ctx_fail(d->cx, 0,
+                 "a delivering call names a definition (group %d) this build "
+                 "did not inline at the site, so there is nothing for the site "
+                 "to keep: it exceeded the subroutine inlining budget, or "
+                 "-fno-splice-calls denied it",
+                 a->u.call.target);
+    }
+    ((Ast *)a)->u.call.link = CALL_SPLICE;
 }
 
 /* ---- WAVE A2's SECOND OBLIGATION, DISCHARGED BY MEASUREMENT --------------
@@ -658,6 +697,40 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * this pass runs before engine selection precisely so that question has an
      * answer when it is asked. See `pcrec_callgraph_build`'s declaration. */
     cg_eligibility(cx, cg, root);
+
+    /* ---- [DD-13b.W1.3] THE DELIVERING SITE'S FORCED SPLICE --------------
+     *
+     * AFTER eligibility and OUTSIDE it, so it runs on EVERY path — including
+     * the `PCREC_NO_SPLICE_CALLS` early return, which never reaches
+     * `cg_publish_link` at all. Putting the check inside that function was
+     * the first shape and it had exactly that hole: under
+     * `-fno-splice-calls` a delivering call would have kept `CALL_LINKAGE`
+     * silently and delivered nothing, which is the failure this whole
+     * mechanism exists to make impossible.
+     *
+     * KEYED ON THE FINAL `link` VALUE, which is the thing that actually
+     * decides whether the site can keep anything, rather than on the
+     * eligibility table that produced it. The denial flag, the cycle and the
+     * size budget are three routes to one fact and this reads the fact.
+     *
+     * WHY DELIVERY NEEDS THE SPLICE, and it is TIMING rather than taste:
+     * under `CALL_LINKAGE` the callee's SHARED region restores every slot in
+     * its `W` at its own exit, BEFORE control reaches the caller's return
+     * label (`vm_region`; `emit_vm.c`'s own note at the splice-save assertion
+     * says the same thing from the other side) — so a copy at the site would
+     * run after the callee's spans are already gone. Under `CALL_SPLICE` the
+     * restore is emitted AT THE SITE, and a copy placed just before it sees
+     * exactly what the callee matched.
+     *
+     * THIS IS THE RESERVED OPTION BEING TAKEN. §402-412 above declined
+     * per-site splicing ON PURPOSE and reserved it — "Per-site remains
+     * available and costs nothing structural: `link` is already a per-NODE
+     * field" — and a delivering site is the consumer that earns it. The MIXED
+     * state that section warns about (one callee with a spliced delivering
+     * site and a shared region for its linkage sites) is now reachable;
+     * `rgn_emit[i]` must stay TRUE for those linkage sites, and `vm_call`'s
+     * "no emitted region" refusal is the loud detector if it ever does not. */
+    { CgDeliver d = { cx, cg }; cg_walk(root, cg_force_deliver_splice, &d); }
 
     /* ---- THE `minw` FIXPOINT (design §4.4b) -----------------------------
      *

@@ -2315,6 +2315,16 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
          * trailed writes on either linkage. */
         if (a->u.call.link != CALL_SPLICE) c.frames += 1;
         c.trail  += 2LL * a->u.call.nsave;
+        /* [DD-13b.W1.3] AND THE DELIVERY'S OWN TRAIL, CHARGED PER SITE.
+         * A delivering site emits two trailed writes per exported group (the
+         * span's two halves) at its return, before the restore — so the
+         * charge is `2 * deliver_n`, and it is per SITE for the same reason
+         * the destination slots are: two delivering calls of one definition
+         * are two scopes with two slot sets. `deliver_n` is 0 on every plain
+         * call, so this line adds nothing to any pattern that does not
+         * deliver, which is what keeps every existing artifact's trail
+         * arithmetic where it was. */
+        c.trail  += 2LL * a->u.call.deliver_n;
         if (pcrec_callgraph_reaches(v->cg, idx, idx))
             c.unbounded = c.growable = true;
         return c;
@@ -6021,6 +6031,55 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
     v->splice_depth--;
 
     vm_lbl(v, done_lbl, "the spliced callee is complete; restore and continue");
+
+    /* ---- [DD-13b.W1.3] RETENTION, AND IT IS BEFORE THE RESTORE ----------
+     *
+     * D89 addendum 4(2): on a DELIVERING site's return path, the callee's
+     * exported spans are copied into THIS SITE's own slots, as trailed
+     * writes, BEFORE the ordinary restore puts the caller's values back.
+     *
+     * THE ORDER IS THE WHOLE MECHANISM. One statement later and the loop
+     * below has already overwritten the callee's pairs with the caller's, so
+     * the copy would move the caller's own values into the delivered slots —
+     * silently, and looking exactly like a working delivery on any pattern
+     * where the caller's group happened to be unset.
+     *
+     * THE DESTINATION IS PER SITE AND THAT IS WHY THIS IS IN `vm_splice`
+     * RATHER THAN IN `vm_region`. Two delivering calls of one definition
+     * under two site names are two scopes with two slot sets (D89 addendum
+     * point 3); a shared region has one exit for every site and could not
+     * tell them apart. `src/opt/callgraph.c` FORCES a delivering site to
+     * `CALL_SPLICE` for exactly this reason and refuses a delivering call it
+     * cannot splice, so reaching here with `deliver_n > 0` and no per-site
+     * body is not a state this file has to defend against.
+     *
+     * THE PAIRS ARE `(2g, 2g+1)`, the capture-pair layout this file already
+     * uses, and both halves are copied because a span is two numbers and a
+     * half-copied span is a lie in the worse direction (a start with a stale
+     * end reads as a match that did not happen). The region is sized by
+     * `nstate`'s `2 * (ngroups + 1)` term, and the composer allocated every
+     * destination below `cx->ncap`, so no slot here is outside it.
+     *
+     * A PLAIN CALL CARRIES `deliver_n == 0` AND THIS LOOP EMITS NOTHING —
+     * D87 rule 5's "an undeclared call stays capture-transparent at zero
+     * cost" held at the emitter rather than argued about. */
+    for (int j = 0; j < a->u.call.deliver_n; j++) {
+        const int from = a->u.call.deliver_from[j];
+        const int to   = a->u.call.deliver_to[j];
+        for (int half = 0; half < 2; half++) {
+            char val[160];
+            char nm[48];
+            const int fs = 2 * from + half;
+            if (vm_slot_name(v, fs, nm, sizeof nm))
+                snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
+            else
+                snprintf(val, sizeof val, "slot_values[%d]", fs);
+            vm_set(v, 2 * to + half, val,
+                   "DELIVER: keep the callee's exported span in this site's "
+                   "own slot (trailed, and BEFORE the restore below)");
+        }
+    }
+
     for (int j = 0; j < a->u.call.nsave; j++) {
         char val[160];
         char nm[48];
