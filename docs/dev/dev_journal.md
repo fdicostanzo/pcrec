@@ -20018,3 +20018,16 @@ panel compiled (docs/dev/reviews/2026-09-02-r51-opt5-step2-impl.md);
 r51fix (sonnet) has all five check fixes written, holding for .lift.
 After mech: .lift both lanes, validate, apply to main, RE-RUN the test
 stage (17 min) so the pin's battery claim is whole, then WINDOW OPEN.
+
+Part 11 addendum (~20:1x): PROCESS INCIDENT, closed. Lane landing edited
+tests/rxtsource/run_rxtsource_tests.sh (20:00:57-20:02:53) and tests/
+codegen/run_codegen_tests.sh (20:02:33-20:02:53) in the MAIN tree during
+the battery's san stage before noticing it was in the wrong tree, then
+`cp`'d the edits to its worktree and `git checkout`-restored main. Bash
+reads a script incrementally, so a replaced running script corrupts its
+run. Checked: san executed run_codegen_tests.sh in that window and
+finished 109 passed / 0 failed — the exact count of an intact run — and
+run_rxtsource_tests.sh is not in san_scripts.txt at all; main is clean.
+The post-battery test-stage re-run executes both scripts again anyway.
+LESSON → the brief template: a writer verifies `git rev-parse
+--show-toplevel` prints its worktree path BEFORE its first edit.

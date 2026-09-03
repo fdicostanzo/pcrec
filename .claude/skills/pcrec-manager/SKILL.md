@@ -67,6 +67,7 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
 - **Every brief restates the repository scope mandate** from CLAUDE.md
   (touch only /home/duxevents/pcrec; scratch files to the session
   scratchpad, never committed).
+- **A writer's FIRST command in its worktree is `git rev-parse --show-toplevel`**, and its first edit waits for that to print the worktree path (2026-09-02: a lane edited two test scripts in the MAIN tree while the battery's san stage was executing one of them; bash reads scripts incrementally, so that can corrupt a running stage — it did not this time, by luck of timing). Put the line in every writer's brief.
 - **Writers get a git worktree under `worktrees/`** (gitignored, inside the
   repo so the scope mandate holds by construction). They commit in the
   worktree and deliver a diff/branch; the main session reviews and merges.
