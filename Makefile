@@ -140,7 +140,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
-      test-search-pinned test-vm-frameless test-prefilter-collapse test-rxtsource
+      test-search-pinned test-vm-frameless test-dfa-uniform-fold \
+      test-prefilter-collapse test-rxtsource
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -345,6 +346,15 @@ test-search-pinned: all
 test-vm-frameless: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vm-frameless.ran"; fi
 	bash tests/codegen/run_vm_frameless.sh
+
+# [CC-DIFF] STEP 1 (b) the UNIFORM-TABLE FOLD's own check. Its OWN section for
+# `test-vm-frameless`'s reason exactly, and it is the same shape: it sweeps
+# the whole corpus TWICE (the default axis and the `-fprefilter` FORCE axis,
+# where the "hybrids included" half of the macro's IFF is at risk), which is
+# more than `make smoke`'s 60 s target has room for. It IS part of `make test`.
+test-dfa-uniform-fold: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-dfa-uniform-fold.ran"; fi
+	bash tests/codegen/run_dfa_uniform_fold.sh
 
 # [OPT-4] the COUNT-COLLAPSED PREFILTER's own checks (K39; docs/design/
 # prefilter_count_independence.md). Its OWN section rather than a sixth script
@@ -1211,6 +1221,7 @@ clean:
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-anchored-match \
-        test-search-pinned test-vm-frameless test-prefilter-collapse test-rxtsource \
+        test-search-pinned test-vm-frameless test-dfa-uniform-fold \
+        test-prefilter-collapse test-rxtsource \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
