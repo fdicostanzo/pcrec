@@ -189,3 +189,64 @@ None of the above can run until `.lift` exists (tt12b's timed harness
 measurements own the box until then) or without the manager's go-ahead on a
 quiet box for item 7. This lane's own hourly cron (`47 * * * *`) polls
 `.lift` and resumes automatically.
+
+## 4. Handover from ccdiff1 (returned briefly, stood down again), and its
+##    evidence re-verified against a FRESH build rather than trusted as-is
+
+ccdiff1 came back once more and handed off, via the manager, ready-to-run
+scripts and gathered evidence in its own scratchpad
+(`.../scratchpad/ccdiff1/`), copied into this lane's own scratchpad
+(`.../scratchpad/ccdiff1b/handover/`) per the scope mandate. Two artifacts:
+`accept.sh` (STEP 0's interleaved-paired-median acceptance method, six cells
+prebuilt under gcc/clang) and `clanggate.sh` (the corpus swept through the
+bench's own shim line, not a bare compile) — both reviewed and correct in
+method; `clanggate.sh`'s `ROOT` is hardcoded to `worktrees/ccdiff1` and MUST
+be repointed at this lane's own worktree before running (never touch that
+tree per the mandate).
+
+**A staleness catch, before trusting the relayed byte-identity numbers.** The
+handover's own `art/` snapshot (`sweep.sh`'s answer-identity artifacts,
+`stack-frame-vm.{b,n}.c` etc.) shows `stack-frame-vm.b.c` and `.n.c` as
+byte-identical INCLUDING `.abi = 16` on BOTH sides — which cannot be a
+same-session `.abi 16` vs `.abi 17` comparison and does not match even the
+weaker claim relayed ("differs only by the `.abi` line"). Traced: those
+specific files were generated at a point in ccdiff1's session before its own
+worktree binary had been rebuilt past the abi-bump commit — a snapshot
+staleness, not a defect in what shipped (`/home/duxevents/pcrec/worktrees/
+ccdiff1/build/pcrec` reads `.abi = 17` NOW, when checked directly).
+
+**So the three "byte-identical modulo stamp" claims were RE-DERIVED here,
+fresh, against this lane's own build at 885846f (abi 17) vs the pinned
+pre-change reference `.../scratchpad/ccdiff1/base/build/pcrec` (abi 16),
+rather than accepted from the stale snapshot:**
+
+| cell | pattern source | result |
+|---|---|---|
+| `stack-frame` search/vm | `bench/loglines/patterns/stack-frame.rx`, `--engine=vm` | differs ONLY by `.abi = 16` → `17`; `RX_VM_FRAMELESS 0` both sides (framed, no attribute — matches the STEP 0 control prediction) |
+| `level-context` search/auto | `bench/loglines/patterns/level-context.rx` | differs by `.abi` AND one new line, `#define RX_DFA_UNIFORM_FOLDS 0` — no fold fires on this pattern, so twin V's earlier 0.95 prediction (which attributed framed VM helpers too) is correctly superseded by the shipped, more conservative gate |
+| `nest3-16` thr/vm | `bench/bounded/patterns/nest3-16.rx`, `--engine=vm` | differs ONLY by `.abi` |
+
+**The two size-delta headline claims, also independently re-measured** (fresh
+build, `gcc -O2 -fPIC -shared`, same two patterns as the CLAUDE.md doc):
+`\d{1,16} --engine=vm`: `nm` confirms neither `rx_search_run` nor
+`rx_match_anchored` survives as a symbol in the new build (both absorbed);
+whole-`.so` `.text` **3454 → 3010 bytes** (net shrink, confirming the
+"absorbing the callees shrinks the artifact" claim — the exact `rx_search`-
+only figure quoted elsewhere, 1561→1417, was not reproduced byte-for-byte by
+this lane's cruder `objdump`-line-count method and is left as ccdiff1's own
+measurement rather than double-counted here). `[a-z]{0,4}` default engine:
+`RX_DFA_UNIFORM_FOLDS 4` confirmed, `rx_search` disassembly line count
+**81 → 46** (EXACT match to the CLAUDE.md figure), whole-`.so` `.text`
+**3080 → 2180 bytes**.
+
+**Answer identity spot-checked** on these same two fresh artifacts (not the
+full 6,969-comparison sweep, which is `.lift`-gated): `search`/`match`/
+`findall` regimes, base vs new, `dig` and `cls` cells — all six comparisons
+identical.
+
+**Scope decisions relayed as settled, not re-opened**: the fold covers only
+`<m>_next_state`/`<m>_is_accepting`; the wide accept table is a named,
+deliberate follow-up; `RX_VM_INLINE_CHAIN` stays rejected
+(`RX_VM_FRAMELESS` carries it by construction); the bench shim's
+`PB_SHIM_MIN_ABI` is 15, so abi 17 clears it with no bench-side change
+needed.
