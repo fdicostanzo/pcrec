@@ -107,7 +107,19 @@ stamp()  { grep -m1 '^#define RX_DFA_MATCH "' "$1" | cut -d'"' -f2; }
 mirror() { grep -m1 '^    \.match_form = ' "$1" \
              | sed 's/^    \.match_form = //; s/,$//; s/^"//; s/"$//'; }
 # THE MECHANISM, from matcher text alone.
-has_anchored_tbl() { grep -q "rx_anchored_next_state\[" "$1"; }
+# [CC-DIFF] STEP 1(b): the raw table declaration (rx_anchored_next_state[)
+# is NOT a fold-safe existence signal any more -- the uniform-table fold can
+# legitimately remove BOTH the anchored transition table and its accept
+# table while the anchored (match-here) machine itself is genuinely still
+# there (e.g. a nullable body under a Kleene star folds both to constants:
+# rx_anchored_step always returns 65535, rx_anchored_accepts always returns
+# 1). typedef rx_anchored_state is emitted unconditionally whenever the
+# machine exists, fold or no fold, and is absent whenever it does not
+# (verified: 'search-filter'/'attempt'/'empty' artifacts carry neither the
+# typedef nor either table) -- so it is the signal every existence check
+# here actually wants, and every call site below is an existence check, not
+# a claim about the table specifically.
+has_anchored_tbl() { grep -qE '^typedef (unsigned|int) rx_anchored_state;' "$1"; }
 # The `<prefix>_match` body, from its signature to the closing brace at
 # column 0 — the region every §2/§3 claim is read out of.
 match_body()      { sed -n '/^ptrdiff_t rx_match(const rx_ctx \*ctx)$/,/^}$/p' "$1"; }
@@ -477,10 +489,16 @@ while IFS= read -r pat; do
     sc="$(grep -m1 '^#define RX_DFA_SCAN "' "$art" | cut -d'"' -f2)"
     [ -n "$mf" ] || { echo IFFBAD; echo "BAD: a DFA artifact stamps no RX_DFA_MATCH: $pat"; }
     # THE MECHANISM AND THE STAMP, on every artifact of the corpus.
-    if grep -q 'rx_anchored_next_state\[' "$art"; then
-        [ "$mf" = unwrapped ] || { echo MISMATCH; echo "BAD: carries an anchored table but stamps \"$mf\": $pat"; }
+    # [CC-DIFF] STEP 1(b): the table declaration is not fold-safe (the
+    # uniform-table fold can drop it while the anchored machine is genuinely
+    # present, e.g. a nullable body); the typedef is emitted unconditionally
+    # whenever the machine exists and absent when it does not, so it is the
+    # existence signal this check actually wants — mirrors this file's own
+    # has_anchored_tbl() fix, which this worker cannot call directly.
+    if grep -qE '^typedef (unsigned|int) rx_anchored_state;' "$art"; then
+        [ "$mf" = unwrapped ] || { echo MISMATCH; echo "BAD: carries an anchored machine but stamps \"$mf\": $pat"; }
     else
-        [ "$mf" = search-filter ] || { echo MISMATCH; echo "BAD: stamps \"$mf\" with no anchored table: $pat"; }
+        [ "$mf" = search-filter ] || { echo MISMATCH; echo "BAD: stamps \"$mf\" with no anchored machine: $pat"; }
     fi
     echo "DFA $mf $sc"
 done
