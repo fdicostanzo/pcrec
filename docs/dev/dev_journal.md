@@ -20184,3 +20184,11 @@ holds). Lane ccdiff1 (opus) returned after five API 529s and stood down
 with a clean handover (ready acceptance/clang-gate scripts; byte-identity
 evidence on three of five acceptance cells; scope decisions), forwarded
 to ccdiff1b.
+
+Part 18 addendum (11:1x): removing tt12b's worktree raced ONE straggling
+harness worker from its last suite (a `pcrec_run` at 11:10:16, exit 127
+— the binary was already gone; it wrote build/watchdog.log into the
+deleted path and died). Harmless; lesson for the skill: before
+`git worktree remove`, check the process table for cwds under the
+worktree (by PID, not pkill) — a delivered lane's harness workers can
+outlive its delivery by a minute.
