@@ -20388,7 +20388,7 @@ the lift); Q1 escalated to Frank with recommendation (b) + a measured
 [CC-DIFF] size-term step, the lane's three-point inline ladder tomorrow
 making that decision measured. isl1 idles on its :17 keepalive cron.
 
-## 2026-09-03 — Fifty-first session, part 27 (18:0x EDT): lane D's write phase DONE — the composer built, three tiers via a MAP, nentries > nnames for the first time; Q-W3 and the (-1,-1) slot semantics to Frank
+## 2026-09-03 — Fifty-first session, part 27 (17:5x EDT): lane D's write phase DONE — the composer built, three tiers via a MAP, nentries > nnames for the first time; Q-W3 and the (-1,-1) slot semantics to Frank
 
 w13 delivered (tip f5d17b6, 10 commits, 3,312 lines over 39 files;
 `make strict` clean twice; nothing suite-shaped run). Built: the composer
@@ -20426,7 +20426,7 @@ delivered; the alternative is a head-line list) and (5) as a note. The
 bench's exporter rules (report §7) go in the morning's I-43 with O-16's
 answers. w13 idles on its :29 cron.
 
-## 2026-09-03 — Fifty-first session, part 28 (18:1x EDT): lane B's write phase DONE — the shared-sentinel dispatch built with ZERO bias (heads at the top); iso-ts generic path 29 → 15; K43 (b) built; all three lanes idle on their crons
+## 2026-09-03 — Fifty-first session, part 28 (17:5x EDT): lane B's write phase DONE — the shared-sentinel dispatch built with ZERO bias (heads at the top); iso-ts generic path 29 → 15; K43 (b) built; all three lanes idle on their crons
 
 edge1 delivered (tip 3f40b5c, 8 commits, 1,385 lines over 14 files;
 make -j2 + strict clean; 149 artifacts × six axes built -Wall -Wextra
