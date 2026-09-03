@@ -97,6 +97,7 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   to messages while the run executes. Before finishing an "idle" lane's
   landing, check the worktree for fresh mtimes AND send a status message
   first; only take over on silence or an explicit handback.
+- **A lane's background-run completion notice is NOT a reliable wake-up** (2026-09-02/03: opt5i, landing and r51fix each sat idle 10-20 min after their run had ended, "waiting for the notification"). Brief every lane: the run's LOG is the trigger — at each keepalive tick, check the log's tail for the completion line (`checks failed:`, `== mech run COMPLETE`, `run_group:`) and proceed the moment it is there; never arm a Monitor on a progress log (opt5i's per-minute flood). The manager's watchdog reads the same logs and pings on "run ended, lane silent".
 - **STALL WATCHDOG (Frank, 2026-08-15, twenty-first session): whenever
   subagents or async background processes are in flight, set up a
   10-minute cron** (CronCreate) that checks for stalls — lanes or
