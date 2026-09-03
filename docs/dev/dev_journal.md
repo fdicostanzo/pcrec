@@ -20089,3 +20089,22 @@ the re-run. GREEN-BY-DIAGNOSIS per K44's exact rule, both cells, solo
 numbers recorded here. Remaining before the pin: r51fix's delivery
 (solo rows ALL-ROWS-DONE at 07:0x; report pending) → merge → its two
 scripts re-run on main → WINDOW OPEN + I-38.
+
+## 2026-09-03 — Fiftieth session, part 15 (07:5x): r51fix merged (288d505) — [OPT-5] STEP 2 BATTERY-PROVEN at PIN 288d505; WINDOW OPEN + I-38
+
+r51fix delivered all six items validated solo: S223 (assert call site
+deleted) DETECTED by the new §7 wiring grep alone (1 fail/16 pass);
+S224/S225/S226 (frameless stamp inverted / from v.npush / conditional)
+DETECTED on three distinct detector lines (7/1/6 fails of the frameless
+check); S219 and S220 declared UNDETECTED with reach:ok and 0 unexpected;
+S220's population re-derived to a named 3-pattern manifest (floor 3,
+exactly 3); the force-axis floor 20 vs measured 23; §8 reworded to the
+five literals it tests. Merged 288d505 (tests + docs only; the identity
+pin da4fe60 stands). Merged main: build, strict, search-pinned 17/0,
+frameless 6/0. Mech definitions 223, next free S227; the six new rows'
+matrix figures ride the next battery. The three lane waiters that never
+fired (opt5i, landing, r51fix) are now a brief rule in the skill: the
+run's log is the trigger. PIN 288d505 → the bench (I-38, WINDOW OPEN):
+the STEP 2 AFTER reads against ledger §10 — search-filter rungs to
+0.90-1.10 of unwrapped, unwrapped rungs flat, d-01024's ×37 unchanged
+([OPT-VEDGE]'s). Owed items listed on the [OPT-5] row.
