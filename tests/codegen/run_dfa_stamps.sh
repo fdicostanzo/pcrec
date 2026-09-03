@@ -230,7 +230,17 @@ read_artifact() {
         /^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ \
                                                { mtnothing = 1 }                # emit_dfa.c: the empty engine
         /^    const size_t start_max = /       { attempt = 1 }                  # emit_attempt: the per-start loop
-        /rx_forward_next_state\[/              { unanch = 1 }                   # emit_unanchored: the forward table
+        # [CC-DIFF] STEP 1(b): was rx_forward_next_state[ (the forward table
+        # declaration itself) until the uniform-table fold made that
+        # declaration OPTIONAL -- a folded machine emits no table at all, so
+        # that anchor read no loop on every folded artifact (31 in the
+        # corpus at this writing) though the unanchored scan is genuinely
+        # there. The call site survives folding UNCHANGED (token_step keeps
+        # the call and the state/class arguments; only the table argument
+        # drops) and is unique to this shape -- attempt dispatches by
+        # goto star, never by a _step call -- so it is the anchor that does
+        # not go stale when the table it used to name stops existing.
+        /forward_state = rx_forward_step\(/    { unanch = 1 }                   # emit_unanchored: the forward step call
         /const void \*q = memchr\(subject \+ start, /   { pf_at = 1 }           # emit_attempt: D63 attempt skip
         /const void \*q = memchr\(subject \+ scan_position, / {                 # emit_unanchored: the memchr arm
                                                  pf_mc = 1
