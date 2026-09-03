@@ -20465,3 +20465,16 @@ control` with the delta explained, not a merge blocker; the cap not
 re-chosen; a census of what precondition (8) moves; K43 rides the event.
 ALL THREE LANES are now idle on their keepalive crons (:17/:23/:29)
 awaiting `.lift`; the 10-min watchdog is retired for an hourly tick.
+
+## 2026-09-03 — Fifty-first session, part 29 (18:1x EDT): Frank rules Q1 — the island lands, [CC-DIFF] STEP 2 (a size term on the inline gate) filed; Q-W3 still open ("there is an argument there")
+
+Frank: "1. agree" — [ENG-ISL] Q1 ruled as recommended: the island lands
+as built; the always_inline gate's size term is [CC-DIFF]'s own measured
+step (STEP 2 filed on the row; isl1's three-point inline ladder tomorrow
+is its STEP 0). "2. i think i understand q-w3 but i feel there is an
+argument there" — the manager lays the argument out (implicit delivery
+conflates "named for reference" with "named for export"; the collision
+surface grows with every lib's internal names; an explicit delivered-
+list is the conventional module form and the three-tier map already
+carries the undelivered case) and recommends the explicit list, default
+none, as a small W1.3 item tomorrow; Frank rules.
