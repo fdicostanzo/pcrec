@@ -2395,3 +2395,109 @@ compiles under `--engine=vm` where no DFA scan exists — but on the default and
 `-fprefilter` axes a hybrid inlines one, and an `ENG_ATTEMPT` scan's STEP IS A
 COMPUTED GOTO. Measured: `(?m)^(a|b)$` carries six `goto *`, every one in
 `rx_prefilter`, none in the VM program.
+
+## [CC-DIFF] STEP 1 — THE TWO EMITTED-CODE SPELLINGS (2026-09-03), abi 16 -> 17
+
+[CC-DIFF] STEP 0 (`docs/dev/ccdiff_step0.md`) explained the bench ledger's
+clang-vs-gcc gap on the SAME emitted C as TWO transformations LLVM performs
+and gcc 15 does not. Both are now spelled in the emitter, as one abi event
+because both are emitter changes on one landing.
+
+### (a) `always_inline` on the VM entry chain's helpers — `emit_vm.c`
+
+The eight statics `<prefix>_run_state_bind`, `_run_state_init`,
+`_reset_for_next_attempt`, `_match_anchored`, `_report_captures` and the three
+`<prefix>_{search,match,match_caps}_run` carry
+`static inline __attribute__((always_inline))` on a FRAMELESS artifact and
+nothing at all on a framed one.
+
+**THE ATTRIBUTE IS ONE STRING, `ai`, DERIVED ONCE FROM `has_push`** — the same
+bool `<PREFIX>_VM_FRAMELESS` and the fail label's dispatch omission read, and
+it is declared immediately beside that stamp for exactly the reason the
+paragraph above this one gives. There is no second predicate, no `strstr` over
+the emitted buffer, and no read of `v.npush`.
+
+**TWO INDEPENDENT FACTS FORCE THE GATE TO THE SAME PLACE, which is why it is
+not a special case.** gcc REFUSES `always_inline` on a function containing a
+computed goto — a hard error — and this file's own header invariant is that the
+`goto *` count is `(has_push ? 1 : 0) + shared-callee-bodies`, both terms of
+`has_push`, so a frameless artifact has none anywhere and the attribute is
+legal on every helper INCLUDING the matcher. And STEP 0 measured the framed
+cells at 0.990, 0.954 and — on `stack-frame` — **1.032**, a mild regression in
+11 of 15 rounds, because there the storage is genuinely live and inlining only
+inflates the entry (`rx_search` 40 -> 97 instructions).
+
+**MEASURED ON THE ARTIFACT** (`\d{1,16}` `--engine=vm`, gcc 15.2.0 `-O2
+-fPIC -shared`, before vs after): `rx_search`'s prologue loses `sub
+$0x98,%rsp` (the 152-byte frame), `mov %fs:0x28,%rax` and the
+`__stack_chk_fail@plt` edge (the `-fstack-protector-strong` canary the arrays
+in the frame trip), the four binding stores and its `call rx_search_run`; `nm`
+lists neither `rx_search_run` nor `rx_match_anchored` any more. `.text` goes
+**1561 -> 1417 bytes** — the absorbed callees' out-of-line copies are deleted,
+so the inlining SHRINKS the artifact rather than growing it.
+
+### (b) The uniform-table fold — `emit_dfa.c`
+
+A `<m>_next_state` or `<m>_is_accepting` whose cells are ALL EQUAL is NOT
+EMITTED, and its `_step` / `_accepts` accessor returns the constant.
+
+**ONE DERIVATION OF THE CELL, and it is why the three table emitters were
+refactored.** `tr_cell`, `acc_cell` and `accw_cell` are now functions, called
+BOTH by the emitter that writes the array and by the `fold_tr`/`fold_acc` scan
+that decides whether to write it at all. A fold computed from a second reading
+of `d->st[].tr[]` would be the control-sharing-a-source failure inverted and
+worse: here the two readings MUST agree, and the only way to guarantee that is
+for there to be one.
+
+**ONLY THE TABLE POINTER LEAVES THE ACCESSOR.** The state and class parameters
+stay, are still passed, and are then ignored by name — because a class argument
+is routinely `<m>_byte_class[subject[pos++]]`, and dropping THAT parameter
+would drop the increment with it. `fold_arg` produces the call sites' table
+argument from the same `DfaFold`, so the parameter list and every call site are
+two readings of one fact and cannot drift into a program that does not compile.
+
+**SCOPE, drawn on a PROPERTY rather than on taste**: the two tables every
+machine emits UNCONDITIONALLY and reads once per byte through the §LAYER-2
+accessors. That is what lets `<PREFIX>_DFA_UNIFORM_FOLDS` count the folds
+EXACTLY from `(cx, d)` at the stamp path. The WIDE accept table
+(`<m>_is_accepting_by_class`) is uniform on the same shapes and would fold
+fine, but it EXISTS only where axis E chose `by-class`, so counting its fold at
+the stamp path would mean re-reading that selection there and skipping it would
+under-report — left for a follow-up, named in the emitter's own comment. The
+seed/view/stay tables are read at most twice per search (no measurement, D77);
+`<m>_byte_class` is neither a transition nor an accept table; the
+direct-threaded ENG_ATTEMPT emitter's own `<p>_is_accepting_by_class` is a
+different mechanism with no accessor and no transition table.
+
+**MEASURED ON THE ARTIFACT** (`[a-z]{0,4}`, the bench's `cls-upto-4`, STEP 0's
+0.589 cell): 4 folds (forward and anchored `next_state` + `is_accepting`; axis
+J pins the search so there is no reverse machine). Source 403 -> 373 lines,
+`.rodata` **627 -> 47 bytes**, and `rx_search` 81 -> 46 instructions with its 3
+callee-saved pushes and 3 rip-relative table `lea`s all gone.
+
+### The stamps, and the one that was REJECTED
+
+`<PREFIX>_DFA_UNIFORM_FOLDS` SHIPS: a §6.3 family-**(b)** macro under the
+`_DFA_*` family's IFF (every artifact containing a DFA scan, hybrids included),
+an INTEGER `0..6`, composed over the machines the artifact actually contains by
+`dfa_table_name`'s own rule. It is family (b) for `_VM_FRAMELESS`'s reason —
+there is no fold mode upstream; it is what the machine turned out to CONTAIN.
+It is **owed rather than optional** because the fold makes a table ABSENT, and
+this tree has twice had to go back and remove a check that read a fact off a
+macro's absence. A COUNT and not a mask: the three masks in §6.3 are masks
+because a rung is chosen per `A_REP`, where this has no axis to mix.
+
+`<PREFIX>_VM_INLINE_CHAIN` was considered and **REJECTED**: it would carry
+`<PREFIX>_VM_FRAMELESS`'s value BY CONSTRUCTION, since both come from the one
+`has_push` bool, and a second spelling of one fact is the shape unpicked twice
+already here. `_VM_FRAMELESS`'s spec entry states the widened meaning instead.
+
+`<PREFIX>_DFA_TABLE` keeps its value on a fully-folded artifact rather than
+falling to `"none"`: the representation was still SELECTED, and it still fixes
+the folded constant (`65535` pre-multiplied, `-1` indexed), so `"none"` would
+erase a live fact rather than correct a stale one. Its spec entry says so and
+points at the fold count.
+
+**THE CHECK IS `tests/codegen/run_dfa_uniform_fold.sh`.** It reads the emitted
+text for the accessor's lost parameter and the table name's absence, asserts
+the biconditional, and only then compares the stamp against their count.
