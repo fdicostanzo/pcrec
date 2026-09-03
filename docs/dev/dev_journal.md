@@ -20387,3 +20387,41 @@ confirmed, Q3 on measurement only, Q4 confirmed + width-2 cells, Q5 at
 the lift); Q1 escalated to Frank with recommendation (b) + a measured
 [CC-DIFF] size-term step, the lane's three-point inline ladder tomorrow
 making that decision measured. isl1 idles on its :17 keepalive cron.
+
+## 2026-09-03 — Fifty-first session, part 27 (18:0x EDT): lane D's write phase DONE — the composer built, three tiers via a MAP, nentries > nnames for the first time; Q-W3 and the (-1,-1) slot semantics to Frank
+
+w13 delivered (tip f5d17b6, 10 commits, 3,312 lines over 39 files;
+`make strict` clean twice; nothing suite-shaped run). Built: the composer
+src/parse/rxt_compose.c (sub-parse on one Ctx with the numbering scope
+swapped, an assignment MAP that degenerates to +base when nothing is
+erased, injection as A_REP{0,0}(A_CAP{base}(body)), two re-basing passes,
+re-resolution); lib files READ (W1.2 only resolved existence) with a
+path-keyed fixpoint and a duplicate-definition refusal; the name grammar
+`[A-Za-z_][A-Za-z0-9_.-]*` with pcrec_rxt_prefix_from_name the one home
+of the `-`/`.`→`_` mapping, `target = <def>` deriving the prefix, the
+collision refusal, all three legs moved (rxt_source.c, run.sh, verify_
+rxt.py); groups[] sorted (ref-is-NULL, name, number); spec hunks in
+rxt_format.md, match_api.md §6, cli.md; six fixtures + a W1.3 section in
+tests/rxtsource; the altwide@0.2 dogfood fixture with provenance;
+tests/definitions/ with its own make section (never run). The design
+change: D89's Q-W1 ruling adds a third tier (an unnamed unreferenced lib
+group rewritten non-capturing, spending NO number) that w1_impl §2's
+"+base" walk cannot express — hence the MAP. Measured: nentries > nnames
+({ "word", 2, 2, "local" }, ngroups 0 / nnames 0 / nentries 1); the
+erased tier worth one slot against the PCRE2 textual control (NCAPS 4 vs
+5, and the control leaks the wrapper name with ref NULL — what D89(2)
+forbids); IDENTITY (A) 81 artifacts / 0 differing vs a main-built
+compiler; all 90 bench patterns (O-13 said 77) losslessly representable;
+the only prefix collision (`floor`) is cross-set; altwide@0.2 at default
+caps 19 built / 14 refused. Owed tomorrow: every suite (test-codegen's
+[M6.5-DUPNAMES] order check is the expected red), the identity gate (B)
+after the bump, test-definitions' first run, the D94 ritual (six readers
+of 17 by grep; a hand list would have missed two). Rulings written to
+worktrees/w13/docs/dev/lanes/w13_rulings.md: Q-W4 confirmed + an
+`encoding`-mismatch REFUSAL tomorrow; Q-W5 explicit `target =` confirmed
+(syntax); the run.sh composed-block path LAST tomorrow with a loud floor,
+else a W1.3.1 row; (5) the (-1,-1) slot accepted as W1.3 scope (name
+table; retention is W1.4's). TO FRANK: Q-W3 (every named group
+delivered; the alternative is a head-line list) and (5) as a note. The
+bench's exporter rules (report §7) go in the morning's I-43 with O-16's
+answers. w13 idles on its :29 cron.
