@@ -20069,3 +20069,23 @@ The 6.9 s read beside san yesterday was load, as expected. .lift created
 for `landing` and `r51fix` at 06:28; both validate now (build + their
 own scripts + solo mech rows), then deliver → merge → test-stage re-run
 → WINDOW OPEN + I-38 with the abi-16 pin.
+
+## 2026-09-03 — Fiftieth session, part 14 (07:1x): landing merged (70a2a10 + 886a0ef); the test-stage RE-RUN's only reds are K44's two cells, both green solo
+
+Lane landing: census pins 191/3325/26894 (RUNSH 190/3322/26883; C3
+13280/13525/10290, re-derived from the two files, not the truncated
+log) and the K24 grep fix — validated green (rxtsource 94/94 incl.
+"INV-COMPAT holds over 191/3325/26894"; test-codegen 5/5 scripts, 201
+checks, the K24 control now reporting "1 clone(s)" — the assertion that
+had been vacuous on every green run fires again). Merged 70a2a10, report
+886a0ef. TEST-STAGE RE-RUN on 70a2a10 (06:49-07:08, -j12, beside
+r51fix's solo mech rows at load 44): rc=2 — exactly K44's two cells and
+nothing else: counterk.rxt:1807 (paired this morning: 2.96 vs 2.99 s
+user, unchanged) and tests/resource's `(a|b){0,30000}` size-cap witness
+(45 s-CPU watchdog fired under load; SOLO under the check's exact flags
+it refuses correctly at 1,333,243 B in 23.0 s user; `make test-resource`
+solo 30/0). The census PASS line and the K24 assertion both appear in
+the re-run. GREEN-BY-DIAGNOSIS per K44's exact rule, both cells, solo
+numbers recorded here. Remaining before the pin: r51fix's delivery
+(solo rows ALL-ROWS-DONE at 07:0x; report pending) → merge → its two
+scripts re-run on main → WINDOW OPEN + I-38.
