@@ -1751,6 +1751,60 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
  *
  * Conservative in the safe direction throughout: over-estimating cost lowers
  * the stamped ceiling, which under-promises rather than over-promises. */
+/* Below this width the island is not built. TWO branches is the floor because
+ * the island's forward pass is never MORE byte tests than the chain it
+ * replaces (it is the same tests, factored) and it emits no push at all where
+ * the chain emits one per untried branch — so there is no measured width at
+ * which the chain is ahead. It is a named constant rather than a bare 2 so
+ * that a future measurement moves one line: the region below the study's own
+ * narrowest rung is UNMEASURED, and `docs/dev/lanes/isl1_report.md` records
+ * what would settle it. */
+#define VM_ISL_MIN_BRANCHES 2
+
+typedef struct {
+    int idx;      /* the branch's ORIGINAL alternation index (0-based) */
+    int len;      /* its literal length in bytes */
+    int next;     /* the next accept AT THIS NODE, or -1 */
+} VmIslAcc;
+
+typedef struct {
+    int child;    /* first child, or -1 — children in ASCENDING edge byte */
+    int sib;      /* next sibling, or -1 */
+    int parent;   /* -1 at the root */
+    int acc;      /* first accept record at this node, or -1 */
+    int acclast;  /* last accept record, so appending is O(1) and the list
+                   * stays in ascending original index: branches are inserted
+                   * in index order, so appending IS sorting */
+    int nacc;
+    int nkids;
+    int depth;    /* bytes consumed to reach this node */
+    int npath;    /* accepts on the root..here path, this node's included —
+                   * the study's MASK DEPTH, as a compile-time number */
+    int chain;    /* the node owning the candidate chain this node's
+                   * walk-dies-here exit takes: the deepest ancestor-or-self
+                   * with an accept, or -1 for "no branch matched, fail" */
+    int lbl;      /* the dispatch label */
+    int chainlbl; /* the FIRST candidate's label, on a node with accepts */
+    unsigned char byte; /* the edge byte that reaches this node */
+} VmIslNode;
+
+typedef struct {
+    VmIslNode *nd;
+    int        nnd, ndcap;
+    VmIslAcc  *acc;
+    int        nacc, acccap;
+    int        nbr;
+    int        maxdepth;
+    int        maxpath;    /* the largest npath over the trie */
+    long long  trysites;   /* candidate try sites the emission will write */
+    long long  pushes;     /* RX_PUSH sites the emission will write */
+} VmIsl;
+
+
+/* [ENG-ISL] the analysis, defined beside `vm_alt` where it is emitted and
+ * declared here because `vm_count_slots` below must ask the SAME question. */
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a);
+
 struct Cost {
     long long frames, trail;  /* max simultaneously live (bounded part) */
     long long pf, pt;         /* per-ITERATION frames/trail of the outermost
@@ -2124,6 +2178,38 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
     case A_ALT: {
+        /* [ENG-ISL] THE ISLAND'S FRAME REQUIREMENT IS A PROPERTY OF THE TRIE,
+         * and this arm asks the SAME `vm_isl_build` `vm_alt` and
+         * `vm_count_slots` do — the third reader of one analysis.
+         *
+         * IT IS NOT A TIDINESS FIX. `1 + max` is SAFE here in the sense that
+         * over-charging frames only over-sizes the array, but `pf`/`pt` and
+         * `frames` are also what `subject_ceiling` is DIVIDED from, so an
+         * over-charge makes an artifact DECLARE a smaller subject than it can
+         * actually match. MEASURED as a failing check before it was a comment:
+         * `tests/possessify/run_possessify_tests.sh`'s boundary row drives
+         * `(x)(?:a|bc)+d`, whose `-fno-possessify` build stamps a ceiling of
+         * 1024 and must start failing within 64 bytes above it. Under the
+         * island that alternation pushes NOTHING, so the build answered
+         * straight past 1088 and the row read "parted at never" — the stamp
+         * had become an under-promise wide enough to stop measuring anything.
+         *
+         * An island's frame requirement is ZERO where no alternative is a
+         * prefix of another (the candidate chain has one entry, so nothing is
+         * pushed) and ONE where some is (the chain keeps exactly one live, the
+         * serial chain's own shape). `isl.pushes` is the count of chain
+         * entries beyond the first, summed over end nodes, which is positive
+         * on exactly the second case. The branches contribute nothing: they
+         * are literal chains by construction. */
+        {
+            VmIsl isl;
+            if (vm_isl_build(v, &isl, a)) {
+                c.frames = isl.pushes > 0 ? 1 : 0;
+                c.trail = 0;
+                c.pf = c.pt = 0;
+                return c;
+            }
+        }
         /* The chain shape keeps exactly ONE alternation frame live at a time
          * (see vm_alt), and a failed branch's own frames are popped before the
          * next branch runs — so this is max-plus-one, not a sum.
@@ -2331,60 +2417,6 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
     }
     return c;
 }
-
-/* Below this width the island is not built. TWO branches is the floor because
- * the island's forward pass is never MORE byte tests than the chain it
- * replaces (it is the same tests, factored) and it emits no push at all where
- * the chain emits one per untried branch — so there is no measured width at
- * which the chain is ahead. It is a named constant rather than a bare 2 so
- * that a future measurement moves one line: the region below the study's own
- * narrowest rung is UNMEASURED, and `docs/dev/lanes/isl1_report.md` records
- * what would settle it. */
-#define VM_ISL_MIN_BRANCHES 2
-
-typedef struct {
-    int idx;      /* the branch's ORIGINAL alternation index (0-based) */
-    int len;      /* its literal length in bytes */
-    int next;     /* the next accept AT THIS NODE, or -1 */
-} VmIslAcc;
-
-typedef struct {
-    int child;    /* first child, or -1 — children in ASCENDING edge byte */
-    int sib;      /* next sibling, or -1 */
-    int parent;   /* -1 at the root */
-    int acc;      /* first accept record at this node, or -1 */
-    int acclast;  /* last accept record, so appending is O(1) and the list
-                   * stays in ascending original index: branches are inserted
-                   * in index order, so appending IS sorting */
-    int nacc;
-    int nkids;
-    int depth;    /* bytes consumed to reach this node */
-    int npath;    /* accepts on the root..here path, this node's included —
-                   * the study's MASK DEPTH, as a compile-time number */
-    int chain;    /* the node owning the candidate chain this node's
-                   * walk-dies-here exit takes: the deepest ancestor-or-self
-                   * with an accept, or -1 for "no branch matched, fail" */
-    int lbl;      /* the dispatch label */
-    int chainlbl; /* the FIRST candidate's label, on a node with accepts */
-    unsigned char byte; /* the edge byte that reaches this node */
-} VmIslNode;
-
-typedef struct {
-    VmIslNode *nd;
-    int        nnd, ndcap;
-    VmIslAcc  *acc;
-    int        nacc, acccap;
-    int        nbr;
-    int        maxdepth;
-    int        maxpath;    /* the largest npath over the trie */
-    long long  trysites;   /* candidate try sites the emission will write */
-    long long  pushes;     /* RX_PUSH sites the emission will write */
-} VmIsl;
-
-
-/* [ENG-ISL] the analysis, defined beside `vm_alt` where it is emitted and
- * declared here because `vm_count_slots` below must ask the SAME question. */
-static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a);
 
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
