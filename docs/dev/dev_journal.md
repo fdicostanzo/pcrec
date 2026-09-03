@@ -20309,3 +20309,10 @@ by the VM; a size-term rung if it costs time). Fact: the VM emits a
 NOT measured "a class is faster than a double compare" — ci-256's
 finding was range-vs-bitmap on the DFA edge; the class-vs-folded-
 compare measurement is [FORM-CHAR]'s STEP 0.
+
+Part 23 addendum 4 (~17:2x): Frank: "did we measure a single byte load
+vs all that bit shifting?" — no. And the two emitters differ: the DFA
+edge's "bitmap" body is a 256-BYTE table (one load; the name is a
+misnomer), the VM's class test a 32-byte BIT array (load + shifts +
+and). Recorded as [OPT-CLSPACK]'s STEP 0: three shapes per class site,
+both engines, cache footprint counted.
