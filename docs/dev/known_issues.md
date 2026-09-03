@@ -3489,7 +3489,7 @@ the analyzer axis).
 
 **Interim disposition (manager, 2026-09-01): the battery's test stage
 runs PLAIN `make test`; LINTGEN=1 stays opt-in and is expected red on
-gcc 15 until this entry is fixed.** Fix directions, unruled: (a) per-site
+gcc 15 until this entry is fixed.** **RULED (Frank, 2026-09-03): direction (b) — make the init PROVABLE in the emitted code (a designated-range initializer for the slot array in place of the loop, same runtime cost, an emitted-bytes change riding the next abi event — lane B of the 2026-09-03 evening wave), acceptance = `make test LINTGEN=1` green on gcc 15; then LINTGEN returns to the battery's test stage.** Fix directions, unruled: (a) per-site
 `-fanalyzer` suppressions or a documented exclusion list for the known
 driver shapes; (b) an emitted-code change making the init provable
 (e.g. `= {0}`-style aggregate init — an abi-relevant emitted-bytes
