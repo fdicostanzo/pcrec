@@ -378,13 +378,43 @@ or `mech`. The specific new risks a suite will find first:
   every non-delivering pattern, so no existing artifact's arithmetic moves,
   but the frame-buffer suites are where a mistake would surface.
 
-**One judgement worth flagging for the merge.** A FLAT import's rows carry
-`ref = NULL` and are counted by `nnames`, so a caller cannot tell them from
-groups it declared itself. That is what "flat into the caller's own scope"
-has to mean if §6's bsearch is to find them, and the clash refusal is what
-pays for it — but it does lose provenance, and an alternative (keep `ref` and
-have §6's algorithm span `nentries` for flat rows) exists. I picked the one
-that keeps §6's shipped algorithm correct unchanged.
+**~~One judgement worth flagging for the merge.~~ RULED by the manager,
+19:1x, and the ruling is better than either option I offered.** I had framed
+it as a choice between provenance and §6's shipped algorithm: give a flat
+import `ref = NULL` (found by the bsearch, no provenance) or keep `ref` and
+widen the algorithm. **The ruling takes both, by keying the sort on the SCOPE
+instead of on `ref`.** A flat import is caller scope AND carries `ref`; the
+first sort term became caller-scope-vs-site-scope, `nnames` counts the
+caller-scope rows, and §6's algorithm is correct unchanged while a consumer
+that wants to know a name came from a library reads `ref`.
+
+The lesson is worth keeping: I had treated one field as answering two
+questions — where a name lives, and where it came from — and the flat import
+is precisely the case that separates them. MEASURED after the change, on a
+pattern with the caller's own group, two flat imports and one delivering
+site: `nnames` 3 (`kept`, `other`, `own` — in name order, the prefix), and
+`nentries` 5 with `s.kept`/`s.other` above it; every library-derived row
+carries `ref = "piece"`, including the flat ones.
+
+## 13. The W1.3.1 list
+
+Two items, RULED out of this step (manager, 19:1x) and recorded here with
+what each needs:
+
+1. **The `run.sh` composed-block path.** `tests/harness/run.sh` compiles a
+   composed block through `--source --target` instead of `-p rx` with the
+   bare pattern, plus a LOUD floor for a composed block with no target (K35:
+   never a silently unscored population), plus `verify_rxt.py`'s existing
+   skip predicate gaining a non-zero population. Needs a real `make test`
+   behind it. Until it lands, `tests/definitions/`'s fixtures stay `.rxtin`
+   and are exercised by their own section rather than by the corpus runner.
+2. **`(?&site.group)` — the B2 path reference to a delivered group.**
+   MEASURED free on libpcre2 10.46 (`format_design.md` §1.5), so nothing
+   about it is blocked. It needs a reference class that resolves AFTER
+   composition against the site table: a new deferred-reference kind rather
+   than a widening of an existing one, since the name is a PATH and the
+   target does not exist until the delivering site has been assigned its
+   slots. Nothing in the rows or the retention forecloses it.
 
 ## 8. Disclosure
 

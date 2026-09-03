@@ -1783,11 +1783,18 @@ else
     fail "W1.3 forms: the site-qualified row's ref/nnames pair is wrong:
 $(grep -hE '^    \{ \"|^    \.nnames = ' "$W13/sitecall.c")"
 fi
-if grep -q '{ "kept", [0-9]*, [0-9]*, NULL }' "$W13/flatcall.c" &&
+# A FLAT ROW IS THE CASE THAT SEPARATES THE TWO QUESTIONS, and it is the
+# reason the sort key is the SCOPE and not `ref` (manager's ruling,
+# 2026-09-03 19:1x): it came from a library, so it carries a `ref`, AND it
+# lives in the caller's own scope, so it is inside the `nnames` prefix where
+# §6's bsearch will find it. A build that keyed the sort on `ref` would emit
+# the same row with `nnames` 0 and pass any check that looked at only one of
+# the two numbers.
+if grep -q '{ "kept", [0-9]*, [0-9]*, "piece" }' "$W13/flatcall.c" &&
    [ "$(grep -m1 '^    \.nnames = ' "$W13/flatcall.c" | tr -dc '0-9')" = "2" ]; then
-    pass "W1.3 forms: a FLAT row carries ref=NULL and IS counted by nnames (the caller's own scope)"
+    pass "W1.3 forms: a FLAT row keeps ref=\"piece\" (provenance) AND is counted by nnames (the caller's scope)"
 else
-    fail "W1.3 forms: the flat row's ref/nnames pair is wrong:
+    fail "W1.3 forms: the flat row's ref/nnames pair is wrong — it must carry BOTH:
 $(grep -hE '^    \{ \"|^    \.nnames = ' "$W13/flatcall.c")"
 fi
 

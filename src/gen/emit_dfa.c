@@ -1255,8 +1255,15 @@ typedef struct {
  * assertion (it returns 0 only for rows equal in BOTH fields). Neither depends
  * on `qsort`'s stability or on the list's direction, which is what a
  * behavioural row here would have depended on. Sabotage row S120. */
-/* [DD-13b.W1.3] THE LEADING KEY IS `ref-is-NULL`, AND IT IS AN ABI CONTRACT
- * RATHER THAN A TIEBREAK. Once the composer can inject a DEFINITION's named
+/* [DD-13b.W1.3] THE LEADING KEY IS THE SCOPE, AND IT IS AN ABI CONTRACT
+ * RATHER THAN A TIEBREAK.
+ *
+ * THE KEY IS THE SCOPE AND NOT `ref`, and the difference is a FLAT import
+ * (`(?&*=name)`): it comes from a library, so it carries a `ref`, but it
+ * lives in the CALLER's own scope, which is what that form asks for. Keying
+ * on `ref != NULL` would sort it out of the prefix and §6's bsearch would
+ * stop finding it — so the first term is caller-scope-vs-site-scope, and
+ * `ref` is left to answer the separate question of where a name came from. Once the composer can inject a DEFINITION's named
  * groups into this array, `nnames` and the array length stop being one
  * number: `match_api.md` §6 documents `nnames` as the entries in `groups[]`
  * and hands a caller a bsearch that walks a name RUN backwards and forwards.
@@ -1280,8 +1287,8 @@ static int ng_cmp_name(const void *a, const void *b)
 {
     const NamedGroup *const *pa = a;
     const NamedGroup *const *pb = b;
-    int ra = (*pa)->scope ? 1 : 0;
-    int rb = (*pb)->scope ? 1 : 0;
+    int ra = (*pa)->site_scoped ? 1 : 0;
+    int rb = (*pb)->site_scoped ? 1 : 0;
     if (ra != rb) return ra - rb;
     int c = strcmp((*pa)->name, (*pb)->name);
     if (c != 0) return c;
@@ -1289,15 +1296,18 @@ static int ng_cmp_name(const void *a, const void *b)
          : (*pa)->number > (*pb)->number ?  1 : 0;
 }
 
-/* The primary's own rows — `nnames`. Counted from the SAME list the array is
- * built from, so the number and the rows cannot disagree; and counted rather
- * than tracked in a second counter on `Ctx`, because a counter would be a
- * second derivation of a fact this list already carries. */
-static unsigned ng_count_primary(const Ctx *cx)
+/* THE CALLER-SCOPE ROWS — `nnames`. The pattern's own named groups AND any
+ * flat imports, which is what makes `nnames` "the names a caller may look up
+ * by their own spelling" rather than "the names this pattern's text wrote".
+ * Counted from the SAME list the array is built from, so the number and the
+ * rows cannot disagree; and counted rather than tracked in a second counter
+ * on `Ctx`, because a counter would be a second derivation of a fact this
+ * list already carries. */
+static unsigned ng_count_caller_scope(const Ctx *cx)
 {
     unsigned n = 0;
     for (const NamedGroup *g = cx->named_groups; g; g = g->next)
-        if (!g->scope) n++;
+        if (!g->site_scoped) n++;
     return n;
 }
 
@@ -1795,7 +1805,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * construction, which is why this line moves no emitted byte anywhere
      * outside a `--source` build. */
     sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap_primary);
-    sb_printf(c, "    .nnames = %u,\n", ng_count_primary(cx));
+    sb_printf(c, "    .nnames = %u,\n", ng_count_caller_scope(cx));
     /* [ABI-NS] (D60 addendum): the comment names the emitted PCREC_ENGINE_*
      * constants (emit_rx_abi_types), not the internal ENGM_* enum. */
     sb_printf(c, "    .engine = %d, /* %s */\n", st->engine,

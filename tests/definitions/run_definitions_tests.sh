@@ -330,22 +330,34 @@ fi
 # would be the composer checking itself.
 pair_rows="$(LC_ALL=C grep -E '^    \{ "' "$WORKDIR/c_pair/gen.c" 2>/dev/null || true)"
 if printf '%s\n' "$pair_rows" | LC_ALL=C grep -q '{ "word", [0-9]*, [0-9]*, "w" }'; then
-    pass "delivery: 'pair' emits a groups[] row for 'word' with ref \"w\" (the definition's name)"
+    pass "delivery: a flat import keeps its PROVENANCE — ref \"w\" — while living in the caller's scope"
 else
     fail "delivery: 'pair' has no groups[] row { \"word\", .., .., \"w\" }. Rows found:
 $pair_rows"
 fi
-# THE ORDER IS THE ABI CONTRACT: `(ref-is-NULL, name, number)`, so every row
-# with a NULL ref precedes every row without one. A caller running
-# match_api.md §6's bsearch over groups[0..nnames) depends on it.
+# THE ORDER IS THE ABI CONTRACT, AND THE KEY IS THE SCOPE — not `ref`.
+# `groups[]` sorts (caller-scope-first, name, number), so the `nnames` prefix
+# holds the pattern's own names AND any flat imports, and `match_api.md` §6's
+# shipped bsearch over `groups[0 .. nnames)` finds every name a caller may
+# spell for itself.
+#
+# THE OBSERVABLE IS THE ROW NAME, and it is the contract rather than a
+# coincidence: a site-scoped row is named `site.group` and an export name and
+# a site name are both plain identifiers, so a caller-scope row can never
+# contain a `.` and a site-scoped row always does. Keying this check on `ref`
+# would be the check reproducing the very mistake the ruling corrected — a
+# flat import carries a `ref` and is still caller scope.
 order_bad="$(printf '%s\n' "$pair_rows" | LC_ALL=C awk '
-    /, NULL \}/ { if (seen_ref) bad++ ; next }
-    /\}/        { seen_ref = 1 }
-    END         { print bad + 0 }')"
+    { name = $2; gsub(/[",]/, "", name)
+      dotted = (index(name, ".") > 0)
+      if (!dotted && seen_dotted) bad++
+      if (dotted) seen_dotted = 1 }
+    END { print bad + 0 }')"
 if [ "$order_bad" = "0" ]; then
-    pass "order: every ref-NULL row precedes every ref-bearing row (the primary's rows are a genuine PREFIX)"
+    pass "order: every caller-scope row precedes every site-scoped row (nnames names a genuine PREFIX)"
 else
-    fail "order: $order_bad ref-NULL row(s) sort AFTER a ref-bearing row — nnames no longer names a prefix"
+    fail "order: $order_bad caller-scope row(s) sort AFTER a site-scoped one — nnames no longer names a prefix,
+  and a caller's bsearch over groups[0..nnames) can walk into a library's row"
 fi
 
 echo

@@ -1813,6 +1813,34 @@ typedef struct NamedGroup {
      * meaning and the §6 algorithm is correct unchanged over
      * `groups[0..nnames)` forever (w1_impl §2.7's B4, the manager's ruling). */
     const char         *scope;
+    /* [DD-13b.W1.3, manager 2026-09-03 19:1x] WHICH SCOPE THE NAME LIVES IN,
+     * and it is a SEPARATE question from which definition the group came
+     * from. The two used to be one field, and a FLAT import is exactly the
+     * case that separates them: `(?&*=name)` puts the exported groups in the
+     * CALLER's own scope — that is the form's whole purpose — while they still
+     * came from a library and a consumer may reasonably want to know it.
+     *
+     *   caller scope (`false`)   the pattern's own named groups AND flat
+     *                            imports. These form the `nnames` PREFIX, in
+     *                            name order, so `match_api.md` §6's shipped
+     *                            bsearch finds a flat import unchanged.
+     *   site scope (`true`)      a `site.group` row from a delivering call.
+     *                            Above `nnames`; reached by the qualified
+     *                            name.
+     *
+     * `scope` above keeps its meaning — the DEFINITION the group came from,
+     * NULL only for the pattern's own — so a flat import carries both: caller
+     * scope AND a non-NULL `ref`. Keying the sort on `scope != NULL` instead
+     * would push flat imports out of the prefix and break the one property
+     * §6's algorithm depends on.
+     *
+     * THE UNSOUND DIRECTION IS `false`, so the composer writes it explicitly
+     * on every row it creates: a site row that missed the write would be
+     * counted by `nnames` and a caller's bsearch could land on a library's
+     * private group, which is D87 rule 2 violated at the artifact tier. The
+     * parser's own declarations are caller scope and the arena zero is both
+     * correct and sound for them. */
+    bool                site_scoped;
     struct NamedGroup  *next;
 } NamedGroup;
 

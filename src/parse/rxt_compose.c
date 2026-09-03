@@ -882,7 +882,15 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
             NamedGroup *row = arena_alloc(&cx->arena, sizeof *row);
             row->name   = rowname;
             row->number = slot;
-            row->scope  = flat ? NULL : st->to->def->name;
+            /* PROVENANCE ALWAYS, SCOPE SEPARATELY (manager's ruling,
+             * 2026-09-03 19:1x). Both shapes came from a library and both say
+             * so through `ref`; what differs is WHERE the name lives. A flat
+             * import is caller scope — that is what `(?&*=name)` asks for, and
+             * it is why the clash refusal above has to guarantee uniqueness
+             * there — while a `site.group` row is its own scope, above
+             * `nnames`, reached by the qualified name. */
+            row->scope       = st->to->def->name;
+            row->site_scoped = !flat;
             row->next   = cx->named_groups;
             cx->named_groups = row;
             cx->n_named_groups++;

@@ -1540,11 +1540,13 @@ call on a definition that exports nothing is refused.
   site names are two independent sets of rows and two sets of slots, so
   `(?&a=email)…(?&b=email)` gives `a.local`, `a.host`, `b.local`, `b.host`
   and they do not alias.
-- **`(?&*=name)` puts the rows in the caller's own scope**: they carry a
-  NULL `ref`, are counted by `nnames`, and are found by §6's algorithm
-  exactly like a group the caller declared. That is the form's purpose, and
-  it is why a clash — with a caller's own group, or with another flat
-  import — is REFUSED by name rather than resolved by precedence.
+- **`(?&*=name)` puts the rows in the caller's own SCOPE while keeping their
+  PROVENANCE.** They are counted by `nnames` and found by §6's algorithm
+  exactly like a group the caller declared — that is the form's purpose, and
+  it is why a clash (with a caller's own group, or with another flat import)
+  is REFUSED by name rather than resolved by precedence — **and they still
+  carry `ref`**, naming the definition they came from. Scope and origin are
+  two questions and this form answers them differently.
 - **A delivered group is addressed BY NAME, never by number.** Its number
   depends on which definitions this target bound, in what order, and which
   sites delivered — so it may move when the library changes even though
@@ -1577,13 +1579,20 @@ composed artifact no larger than it has to be:
 - **`ngroups` is the target pattern's own count** and slots `1..ngroups`
   keep their permanent-prefix promise (D61). Everything a definition
   occupies is above it.
-- **`nnames` counts the rows the caller's own scope holds** — its declared
-  named groups plus any flat imports — and they are a genuine PREFIX of
-  `groups[]`, which is sorted `(ref-is-NULL, name, number)`. §6's algorithm
-  run over `groups[0 .. nnames)` is therefore correct unchanged and can
-  never walk a name run into a library's row.
-- **`nentries` is the whole array.** Rows `[nnames .. nentries)` are
-  site-qualified library rows, each with a non-NULL `ref`.
+- **`nnames` counts the CALLER-SCOPE rows** — the pattern's own named groups
+  plus any flat imports — and they are a genuine PREFIX of `groups[]`, which
+  is sorted **`(caller-scope first, name, number)`**. §6's algorithm run over
+  `groups[0 .. nnames)` is therefore correct unchanged, finds a flat import
+  without knowing the form exists, and can never walk a name run into a
+  site-scoped row.
+- **`nentries − nnames` is the number of SITE-SCOPED rows**, `[nnames ..
+  nentries)`, each named `site.group`.
+- **The sort key is the SCOPE, not `ref`.** A flat import carries a `ref` and
+  is still caller scope, so the two are different questions: `ref` says which
+  definition a name came from and is non-NULL on every delivered row of
+  either shape; the scope says whether a caller may spell the name itself.
+  A caller-scope name never contains a `.` and a site-scoped one always
+  does, because export names and site names are both plain identifiers.
 - **`RX_NCAPS` may move across library versions** while every index in
   `1..ngroups` holds still.
 
