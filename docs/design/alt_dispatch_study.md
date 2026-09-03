@@ -633,6 +633,12 @@ not derivable from (c)'s output.
 
 ## 7. Provenance
 
-Lane altstudy, worktree `worktrees/altstudy`, branch `lane/altstudy`. Commit
-range: [FILL]. Harness, inputs and results: `studies/alt_dispatch/`. This
-file.
+Lane altstudy, worktree `worktrees/altstudy`, branch `lane/altstudy`,
+based on main at `2ee6d92` (the charter commit). Delivered as one commit,
+`9a02498` — the harness, five algorithms, `gen_inputs.py`'s derivation
+rules, `tests/unit_trie.c`'s adversarial regression cases, the full
+measured `results/*.tsv`, this design note, and the two `CLAUDE.md`
+entries. Harness, inputs and results: `studies/alt_dispatch/`. Measured on
+this box (2026-09-03, load1 1.04–2.28 during the timing sweep, gcc 15
+`-O2`) — re-measure before load-bearing use per `studies/CLAUDE.md`'s D35
+spirit.
