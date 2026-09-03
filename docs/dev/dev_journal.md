@@ -20208,3 +20208,27 @@ with RX_RESUME_FRAMES 2 — the I-34 over-count class on their own
 witness. (3) cls-upto-16384 pinned: 16,554 → 13,162 B. (4) a new
 `search-start` registry axis of two rows on their side. Tonight's
 bounded@0.3 AFTER launches on Frank's word to them directly.
+
+## 2026-09-03 — Fiftieth session, part 20 (13:0x): [ENG-ISL.S0] the alternation-dispatch study — delivered in ~50 min, merged (6fbc3f4): build (e)
+
+Lane altstudy (sonnet) built studies/alt_dispatch/ (own Makefile, C
+harness, the bench's altwide shapes at widths 64-2048, serial try as the
+leftmost-first oracle) and measured five algorithms with ZERO mismatches
+over 25.7 M subject positions. The VM-native trie walk (e) — Frank's
+"sort, build the trie, end nodes are candidates, if they fail the walk
+continues", with the priority annotation — runs 7× faster than serial
+try at w-64 and 120× at w-2048 (27.1 vs 190.0 ns/byte; 53.5 vs 6,442.4),
+within 1-5% of the DFA-trie (c) and the shape an emitter can build: one
+frame per dispatch, and the deferred mask needed zero capacity on every
+bench pool (no two accepts on one walked path). The study CORRECTED
+(e)'s commit rule: an end node commits only if it beats every deeper
+accept AND the best already-deferred one — nfa.c's own `abc|a|abd`
+counter-example catches the naive form (regression-guarded in
+tests/unit_trie.c, argued in the design doc §3.2). Caveat: the study's
+serial baseline is unfactored, so it does not reproduce the bench's
+order penalty (real vm_alt consumes the trie's factoring) — a sixth
+baseline, unbuilt. Not settled: sh1/pfx3 beyond 512, a true minimal
+perfect hash for (d), rule 2's NFA-step half, and the VM's continuation-
+backtracking cost (the next D77 measurement, a hand-twin on a real
+resumed frame). RECOMMENDATION recorded as [ENG-ISL] STEP 1, Frank's
+charter owed; queued behind [CC-DIFF] STEP 1 (same emitter file).
