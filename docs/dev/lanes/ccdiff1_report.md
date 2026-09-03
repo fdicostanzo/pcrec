@@ -168,27 +168,59 @@ reasoning, not a new one).
 
 ## 3. WHAT REMAINS (owed at `.lift`, box rule: one heavy suite at a time)
 
-1. `tests/codegen/run_dfa_uniform_fold.sh`'s own corpus sweep (§3 there — the
-   K35 floor, both default and `-fprefilter` axes) — the exhaustive version
-   of §2a above.
-2. `make -j4 && make strict` in this worktree.
-3. `make test-codegen` (re-derive every moved size/structural check with its
-   cause named, per D94 — comparison (A)/(B) in `run_recursion_identity.sh`
-   is the one already known to move, predictable now per §2c/§2b).
-4. `make test` (K44's two cells may red under `-j12`: re-run solo, cite K44
-   rather than treat as new).
+**`.lift` appeared 2026-09-03 ~11:1x; validation resumed. `make -j4 && make
+strict` clean. `make test-codegen` went 3/5 (four `FAIL:` lines named below)
+on its first post-lift run — none of them a defect in what shipped, all four
+structural checks holding a fixed-text assumption the always_inline
+attribute or the uniform-table fold moved:**
+
+- **`[M6.2-KRESET rule 1]`/`rule 1b`/`rule 3`** (`run_codegen_tests.sh`):
+  three `awk` extractors anchored on `^static void rx_report_captures(` /
+  `^static ptrdiff_t rx_match_run(const rx_ctx *ctx`. Both `'a\Kb'` and the
+  `\K`-free VM fixture are frameless, so spelling (a) prepends
+  `inline __attribute__((always_inline)) ` before the return type and the
+  rigid anchors stopped matching. Widened to accept the optional prefix.
+- **`[agreement]`** (`run_dfa_stamps.sh`): the `unanch` (unanchored-scan)
+  discriminator read `/rx_forward_next_state\[/` — the forward table's own
+  declaration — which a folded machine no longer emits (31 corpus artifacts
+  at the time this ran). Re-anchored on `forward_state = rx_forward_step\(`,
+  the call site, which spelling (b) never removes (only the table argument
+  drops) and which is unique to the unanchored shape (`attempt` dispatches
+  by `goto *`, never a `_step(` call).
+- **`[SABANCHOR]`**: `S74_reverse_termination_blind.sh`'s `SAB_BEFORE`
+  pinned `dir_rev_bound_accept`'s literal text from before spelling (b)'s
+  `fold_arg` refactor touched that same function. Re-derived from the live
+  source (never `git show HEAD:<path>`, per that directory's own
+  Conventions) and verified with `scripts/m6read_check_sab_anchors.py`
+  (222 sabotages, all anchors resolve).
+
+One self-inflicted bash syntax error along the way (an apostrophe inside the
+single-quoted `awk` program broke `run_dfa_stamps.sh`'s own shell parse,
+caught by the team lead's log read and fixed with `bash -n` on all four
+touched files before the next re-run). **`make test-codegen` is now 5/5, 0
+failures** (commits 973f048, 0c908c2). Re-derivation notes: none of these
+four checks needed a moved BAR (a floor, a count, a byte figure) — each
+needed a wider ANCHOR for text the emitter still writes, in the same shape,
+just with an optional prefix or at a different (but equally exact) call
+site. No check's actual claim weakened.
+
+1. `tests/codegen/run_dfa_uniform_fold.sh`'s own corpus sweep — DONE, part of
+   the green `make test-codegen` above (5/5 includes this section's checks
+   via `make test`'s wider run; the K35 floor and both axes are asserted in
+   that script itself, see §1/§2/§3 of its own header).
+2. `make -j4 && make strict` — DONE, clean.
+3. `make test-codegen` — DONE, 5/5 after the three fixes above.
+4. `make -k -j4 test PROCS=3` (the manager's measured shape for this box,
+   not `-j12`) — IN PROGRESS.
 5. `make test-axes`.
 6. The clang COMPILE gate over the whole corpus (refusal set must stay
-   empty) — a ~10-minute sweep of this lane's own.
+   empty) — ccdiff1's `clanggate.sh`, `ROOT` repointed at this worktree.
 7. Quiet-box acceptance re-measurement (STEP 0's paired-median method, 11
-   rounds): `dig-upto-16` thr/vm (target ≈0.611), `cls-upto-4` thr/auto
-   (≈0.589), controls `floor` thr/vm (≈0.994), `level-context` search/auto
-   (≈0.954), `stack-frame` search/vm (framed, ≈1.00 — no attribute).
-
-None of the above can run until `.lift` exists (tt12b's timed harness
-measurements own the box until then) or without the manager's go-ahead on a
-quiet box for item 7. This lane's own hourly cron (`47 * * * *`) polls
-`.lift` and resumes automatically.
+   rounds, ccdiff1's `accept.sh`): `dig-upto-16` thr/vm (target ≈0.611),
+   `cls-upto-4` thr/auto (≈0.589), controls `floor` thr/vm (≈0.994),
+   `level-context` search/auto (≈0.954), `stack-frame` search/vm (framed,
+   ≈1.00 — no attribute) — WAITS for the manager to arrange a quiet box with
+   the bench, per the brief; tell the manager before starting this one.
 
 ## 4. Handover from ccdiff1 (returned briefly, stood down again), and its
 ##    evidence re-verified against a FRESH build rather than trusted as-is
