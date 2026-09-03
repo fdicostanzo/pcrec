@@ -20504,3 +20504,10 @@ Part 30 addendum 2 (18:4x): Frank confirms — the plain call delivers
 nothing ("a change in direction but a good call; it doesn't do anything
 surprising"); no `!.` spelling. Family = plain / `site=` / `*.`. Still
 open: retention in W1.3 or W1.4.
+Part 30 addendum 3 (18:5x): Frank rules retention INTO W1.3 (rows +
+retention one unit; without retention the branch merges without rows),
+the flat import spelled `(?&*=name)` for consistency with `site=name`,
+and the erased tier extended per composition (not referenced inside,
+not exported-and-delivered by a site → non-capturing). w13's rulings
+file carries the build order; the inlined-body PCRE2 oracle for the
+delivered case is named.

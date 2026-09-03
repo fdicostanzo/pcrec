@@ -6545,3 +6545,22 @@ import is a change in direction but i think its a good call. it doesn't
 do anything surprising. !.rxname is therefore not needed."** RULED: the
 plain call `(?&name)` is the no-delivery form; no explicit no-save
 spelling exists. The family is three: plain, `site=`/`=`, `*.`.
+
+**Addendum 4 (18:5x EDT, Frank).** (1) "You can remove capture from the
+callee if it is not internally or externally referenced" — the ERASED
+tier (point 2(a)) extended to the per-composition view: a group that is
+neither referenced inside the definition nor exported-AND-delivered by
+some delivering site in this composition is rewritten non-capturing and
+spends no slot; an `export`ed name with no delivering site in the
+composition is erased too (the export list declares what MAY be
+delivered; the composition decides what IS). (2) RETENTION RIDES THE
+DELIVERING CALL in W1.3 (manager's approach agreed): the exported hidden
+slots are copied into the site's slots on the delivering site's return
+path, trailed like any capture write; plain calls copy nothing; the
+delivered rows and retention are ONE unit — if retention slips, the
+branch merges WITHOUT the rows and both land as W1.4. The oracle for a
+non-recursive definition is the body inlined textually at the site with
+its groups renamed `site_x` (a legal PCRE2 pattern). (3) The flat import
+is spelled `(?&*=name)`, not `*.name` — consistent with `site=name`: the
+left of `=` is the destination scope and `*` is the caller's own. Owes
+the §1.5 libpcre2-refusal measurement before adoption, like `site=`.
