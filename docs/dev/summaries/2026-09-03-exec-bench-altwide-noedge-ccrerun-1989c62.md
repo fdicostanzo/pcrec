@@ -23,8 +23,9 @@ outbox O-15, with pcrec's own answer I-39 cited where it settles an ask.
   mechanism: extrapolating `w-256`'s per-branch rate, the DFA route would
   cross near width 262 and the VM route near 375 under the other's cap
   value. **Changes:** retires the 0.1-era "at or above 512 refuses" with a
-  bracketed rung, and is candidate 3's evidence base; the refusals sit
-  between pcrec and this bench's largest measured wins (ledger §7).
+  bracketed rung, and is the evidence base for the bench's candidate 3 (its ranked list,
+  ledger §7, numbers its own candidates; pcrec's row for it is `[LIM-2]`);
+  the refusals sit between pcrec and this bench's largest measured wins.
 
 - **Branch order costs the VM engine a large, width-growing penalty the
   DFA route never pays.** `srt-256` (`w-256`'s branches sorted by first
@@ -254,12 +255,13 @@ raised-cap arm a standing cell-cap note (`pcrec-vm-bigcap` needed
 14,400 s against the 5,400 s default).
 
 **(c) pcrec's own queue, as the journal states it today.** The bench's
-`bounded@0.3` STEP 2 AFTER runs tonight, Frank's go confirmed directly to
-the bench (journal part 16). `[TT-12]` STEP 1 (pairwise test-axes timing)
+`bounded@0.3` STEP 2 AFTER is proposed for tonight; Frank said yes to the
+manager, and the bench launches on his word given to it directly (journal
+part 16). `[TT-12]` STEP 1 (pairwise test-axes timing)
 is in flight (lane tt12b). `[CC-DIFF]` STEP 1 (both spellings,
 `always_inline` on frameless VM helpers and uniform-table constant
 folding in the DFA step/accept bodies, one abi event) is chartered and in
 flight (lane ccdiff1). `[OPT-EDGE]`, `[LIM-2]`, and the strengthened
-`[ENG-ISL]` island candidate stay queued behind the emitters `[CC-DIFF]`
-STEP 1 and `[OPT-5]` STEP 2 already touch, per the standing rule that
-emitted-scaffolding changes ride one abi event at a time.
+`[ENG-ISL]` island candidate stay queued behind `[CC-DIFF]` STEP 1, which
+edits the same emitter files; two lanes in one region would conflict at
+merge.
