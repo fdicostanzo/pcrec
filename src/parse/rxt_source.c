@@ -1260,6 +1260,13 @@ fail:
 void pcrec_rxt_source_free(RxtSource *src)
 {
     if (!src) return;
+    /* [DD-13b.W1.3] the `lib` closure's other files, freed before this one:
+     * they were parsed into their own `RxtSource`s (each with its own arena)
+     * by `pcrec_rxt_source_resolve`, and the definition set points INTO
+     * their arenas. Recursion depth is the `lib` chain's, which the visited
+     * set bounds at the number of distinct files. */
+    for (size_t i = 0; i < src->nkids; i++) pcrec_rxt_source_free(src->kids[i]);
+    free(src->kids);
     arena_free(&src->arena);
     free(src);
 }
@@ -1485,6 +1492,175 @@ static const char *lib_chain_text(Arena *a, const char *own,
     return out;
 }
 
+/* ---- [DD-13b.W1.3] THE `flags` LETTER MAPPING, with ONE home -----------
+ *
+ * `flags i` means the same thing on a `config` line, on a pattern block and
+ * on a DEFINITION, so the letter -> bit mapping is one function and not one
+ * loop per caller. It moved here rather than staying in `cli/main.c` because
+ * this file is where a definition's letters are read, and a mapping with two
+ * homes is the D24 shape one tier down: a letter added to the CLI's loop and
+ * not to the composer's would make a library mean one thing when built as a
+ * target and another when bound into a caller. */
+int pcrec_rxt_flags_from_letters(const char *letters, unsigned long long *out,
+                                 char *bad)
+{
+    unsigned long long f = 0;
+    if (letters) {
+        for (const char *c = letters; *c; c++) {
+            if (*c == 'i') f |= (unsigned long long)PCREC_CASELESS;
+            else { if (bad) *bad = *c; return -1; }
+        }
+    }
+    *out = f;
+    return 0;
+}
+
+/* ---- [DD-13b.W1.3] THE DEFINITION CLOSURE ------------------------------
+ *
+ * W1.2 resolved a `lib` reference as far as EXISTENCE and deliberately read
+ * nothing: a library's CONTENTS were "the composer's, W1.3". This is that.
+ *
+ * THE WALK IS A FIXPOINT WITH A VISITED SET KEYED ON THE RESOLVED PATH, and
+ * both halves of that matter. Keyed on the RESOLVED path so a diamond — two
+ * files each `lib`-ing a third — reads the third once and its definitions
+ * are one set of definitions rather than two with colliding names; a visited
+ * SET so a cycle terminates, which format_design §2.5 makes legal (a library
+ * may reasonably `lib` a file that `lib`s it back, and refusing that would
+ * be a rule about file layout rather than about meaning).
+ *
+ * ORDER IS `lib` DECLARATION ORDER, DEPTH FIRST, WITH THIS FILE'S OWN BLOCKS
+ * FIRST. It is a stated order rather than an emergent one because a
+ * DUPLICATE NAME refusal names the two files it found, and "which one was
+ * found first" must be a property of the source text and not of a traversal
+ * anyone could change.
+ *
+ * A DUPLICATE DEFINITION NAME ACROSS THE CLOSURE IS A REFUSAL. K42 records
+ * the residual — colliding names have no external oracle — but that is about
+ * names the FORMAT cannot see; this one it can, and refusing it here is what
+ * keeps the residual from growing. Within ONE file the parser already
+ * refuses it (`duplicate block name`); this is the same rule one scope out,
+ * and its diagnostic names both files because the two lines are in different
+ * ones.
+ */
+typedef struct {
+    RxtP               *p;        /* diagnostics, re-pathed per file      */
+    RxtSource          *root;     /* owns the arena and the kid list      */
+    const char *const  *dirs;
+    size_t              ndirs;
+    const char        **seen;     /* resolved paths already read          */
+    size_t              nseen, seencap;
+    RxtDef             *defs;
+    size_t              ndefs, defcap;
+} RxtClosure;
+
+/* The `"path"` form's search, EXACTLY as the existence check walks it: the
+ * naming file's own directory, then each `--lib-path` in order. Returns the
+ * resolved path (arena-owned) or NULL. */
+static const char *lib_resolve(RxtClosure *cl, const char *own,
+                               const char *ref)
+{
+    if (ref[0] == '/') return path_is_file(ref) ? ref : NULL;
+    const char *cand = join_path(&cl->root->arena, own, ref);
+    if (path_is_file(cand)) return cand;
+    for (size_t d = 0; d < cl->ndirs; d++) {
+        cand = join_path(&cl->root->arena, cl->dirs[d], ref);
+        if (path_is_file(cand)) return cand;
+    }
+    return NULL;
+}
+
+static int closure_seen(RxtClosure *cl, const char *path)
+{
+    for (size_t i = 0; i < cl->nseen; i++)
+        if (!strcmp(cl->seen[i], path)) return 1;
+    return 0;
+}
+
+static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath);
+
+/* A `lib` row's reference, unquoted; NULL when the row is a store
+ * reference (which is refused by the caller, in its own words). */
+static const char *lib_ref_text(Arena *a, const char *value)
+{
+    size_t rl = strlen(value);
+    if (rl >= 2 && value[0] == '"' && value[rl - 1] == '"')
+        return arena_strndup(a, value + 1, rl - 2);
+    return value;
+}
+
+static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
+{
+    if (closure_seen(cl, respath)) return 0;
+    if (cl->nseen == cl->seencap) {
+        size_t nc = cl->seencap ? cl->seencap * 2 : 8;
+        const char **nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+        for (size_t i = 0; i < cl->nseen; i++) nv[i] = cl->seen[i];
+        cl->seen = nv; cl->seencap = nc;
+    }
+    cl->seen[cl->nseen++] = respath;
+
+    RxtP fp = *cl->p;
+    fp.path = s->path;
+
+    /* This file's own named blocks, in file order. */
+    for (size_t i = 0; i < s->nrows; i++) {
+        const RxtRow *r = &s->rows[i];
+        if (r->kind != RXT_DECL_PATTERN || !r->name) continue;
+        for (size_t k = 0; k < cl->ndefs; k++)
+            if (!strcmp(cl->defs[k].name, r->name))
+                return rxt_fail(&fp, r->line,
+                                "definition '%s' is declared twice in the lib "
+                                "closure: also at %s:%zu",
+                                r->name, cl->defs[k].file, cl->defs[k].line);
+        unsigned long long f = 0;
+        char badc = 0;
+        if (pcrec_rxt_flags_from_letters(r->flags, &f, &badc) != 0)
+            return rxt_fail(&fp, r->line,
+                            "unknown flag letter '%c' in `flags %s` on "
+                            "definition '%s'", badc, r->flags, r->name);
+        if (cl->ndefs == cl->defcap) {
+            size_t nc = cl->defcap ? cl->defcap * 2 : 8;
+            RxtDef *nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+            for (size_t k = 0; k < cl->ndefs; k++) nv[k] = cl->defs[k];
+            cl->defs = nv; cl->defcap = nc;
+        }
+        RxtDef *d = &cl->defs[cl->ndefs++];
+        d->name = r->name;
+        d->pattern = r->value;
+        d->flags = f;
+        d->file = s->path;
+        d->line = r->line;
+    }
+
+    /* Then its `lib` rows, in declaration order, depth first. */
+    const char *own = source_dir(s);
+    for (size_t i = 0; i < s->nrows; i++) {
+        const RxtRow *r = &s->rows[i];
+        if (r->kind != RXT_DECL_LIB || !r->value) continue;
+        if (r->value[0] == '<') continue;      /* refused by the caller */
+        const char *ref = lib_ref_text(&cl->root->arena, r->value);
+        const char *rp = lib_resolve(cl, own, ref);
+        if (!rp) continue;                     /* refused by the caller */
+        if (closure_seen(cl, rp)) continue;
+        pcrec_error kerr = { 0 };
+        RxtSource *kid = pcrec_rxt_source_parse(rp, &kerr);
+        if (!kid)
+            return rxt_fail(&fp, r->line,
+                            "'lib %s' does not parse: %s", r->value, kerr.msg);
+        if (cl->root->nkids == cl->root->kidcap) {
+            size_t nc = cl->root->kidcap ? cl->root->kidcap * 2 : 4;
+            RxtSource **nv = realloc(cl->root->kids, nc * sizeof *nv);
+            if (!nv) { pcrec_rxt_source_free(kid);
+                       return rxt_fail(&fp, r->line, "out of memory reading "
+                                       "'lib %s'", r->value); }
+            cl->root->kids = nv; cl->root->kidcap = nc;
+        }
+        cl->root->kids[cl->root->nkids++] = kid;
+        if (closure_walk(cl, kid, rp) != 0) return -1;
+    }
+    return 0;
+}
+
 /* ---- the entry ---- */
 
 int pcrec_rxt_source_resolve(RxtSource *src,
@@ -1540,6 +1716,23 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                             r->value, chain);
     }
 
+    /* (1b) [DD-13b.W1.3] THE DEFINITION CLOSURE. Built ONCE per source and
+     * shared by every target, because it is a property of the FILE. It runs
+     * AFTER the existence loop above so a missing or store-shaped `lib`
+     * keeps its own diagnostic — the closure walk skips exactly those two
+     * cases, which is why they are refused before it rather than inside it.
+     *
+     * NEVER NULL. A file with no named block anywhere in its closure gets an
+     * EMPTY set rather than a NULL one, so the composer has one thing to
+     * test and every `--source` build takes the same path. */
+    RxtDefs *defs = arena_alloc(&src->arena, sizeof *defs);
+    {
+        RxtClosure cl = { .p = &p, .root = src, .dirs = libdirs, .ndirs = nlib };
+        if (closure_walk(&cl, src, src->path) != 0) return -1;
+        defs->v = cl.defs;
+        defs->n = cl.ndefs;
+    }
+
     /* (2) WHICH ARTIFACTS. */
     size_t ntarget = 0, npattern = 0;
     const RxtRow *lone = NULL;
@@ -1579,6 +1772,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
             t->budget_steps = lone->budget_steps;
             t->budget_frames = lone->budget_frames;
             t->pcrec_raw = NULL;
+            t->defs = defs;
             *out = t;
             *nout = 1;
         }
@@ -1655,6 +1849,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->line = tr->line;
         t->block_line = blk->line;
         t->pcrec_raw = s.pcrec_raw;
+        t->defs = defs;
 
         /* THE PER-KIND TABLE (§1.5), applied exactly once. */
         t->features_only = blk->features_only;

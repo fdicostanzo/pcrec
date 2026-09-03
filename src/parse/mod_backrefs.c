@@ -690,11 +690,39 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                     if (first == 0 || gp->number < first) first = gp->number;
             if (first > 0) {
                 pr->node->u.call.target = first;
+                /* [DD-13b.W1.3] WRITTEN IN BOTH ARMS, ALWAYS. `deferred` is
+                 * the composer's key and the arena zero is the unsound
+                 * direction: a record that reads "not deferred" is one the
+                 * composer skips, and a skipped FILE reference reaches
+                 * `callgraph.c` with `target == 0`. So this arm says NO
+                 * explicitly rather than relying on nothing having said
+                 * yes — `link`'s own situation and `link`'s own answer
+                 * (`callgraph.c:246`/`:337`). */
+                pr->deferred = false;
                 continue;
             }
+            /* [DD-13b.W1.3] DECIDED (6): DEFER instead of refusing when a
+             * DEFINITION SET is in scope, because the name may be a FILE
+             * reference rather than a group. `src/parse/rxt_compose.c`
+             * resolves it or RE-RAISES this very sentence, at this very
+             * offset — so with no definition set (every compile that is not
+             * `--source`) the flag is off, this arm refuses exactly what it
+             * always refused, and the four `perr` blocks in
+             * `tests/recursion/d27/sr_refusals.rxt` are untouched.
+             *
+             * ONLY THE CALL ARM DEFERS. A by-name BACKREFERENCE (`\k<w>`)
+             * is handled below and keeps today's refusal: a caller's
+             * `\k<w>` must never see a library's `w` (D87 rule 2, and
+             * w1_impl §2.7's three-walker table names this as one of the
+             * three places an injected row could leak). A CALL is how a
+             * pattern reaches a definition; a BACKREFERENCE is how it reaches
+             * its own text, and the two questions are not the same one. */
+            if (cx->defer_file_refs) { pr->deferred = true; continue; }
+            pr->deferred = false;
             if (!worst || pr->at < worst->at) worst = pr;
             continue;
         }
+        pr->deferred = false;
         if (!pr->name) {
             if (pr->number >= 1 && (unsigned long)pr->number <= cx->ncap) {
                 if (pr->kind == PEND_CALL) {

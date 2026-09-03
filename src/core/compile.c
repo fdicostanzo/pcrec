@@ -494,7 +494,8 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
 }
 
 static int compile_driver(const char *pattern, const pcrec_options *opt,
-                          pcrec_output *out, pcrec_error *err, char **ir_out)
+                          pcrec_output *out, pcrec_error *err, char **ir_out,
+                          const RxtDefs *defs)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
@@ -595,6 +596,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * hook) and is what makes "--no-captures reproduces today's AST, and
          * therefore today's bytes" true by construction rather than by audit. */
         cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
+        /* [DD-13b.W1.3] THE DEFINITION SET, and the ONE flag read from it.
+         * NULL on every entry but `pcrec_compile_defs`, so `pcrec_rxt_compose`
+         * below is one pointer test and every artifact a non-`--source`
+         * compile emits is byte-identical to before the composer existed —
+         * which is what makes identity gate (A) a real check of this change.
+         * `defer_file_refs` is derived here and never set independently, so
+         * "the parser defers" and "a composer will resolve" cannot get out of
+         * step. */
+        cx.defs = defs;
+        cx.defer_file_refs = (defs != NULL && defs->n > 0);
         cx.first_cap_pos = (size_t)-1;
         /* [M6.4.2 / SR-8, D67] ONE field where `first_kreset_pos` and a
          * would-be `first_atomic_pos` used to be: with the engine consultation
@@ -888,6 +899,23 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * than the alternation spelling (docs/dev/plan.md's interaction note).
          * Self-gated on PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR; see
          * src/opt/altcls.c. */
+        /* [DD-13b.W1.3] THE COMPOSER, and its position is forced from BOTH
+         * sides (w1_impl §2.1). AFTER `pcrec_parse` because it needs the
+         * caller's `ncap`, `named_groups` and resolved references; BEFORE
+         * `pcrec_callgraph_build` absolutely, because that pass is the only
+         * writer of `u.call.body`, is driven from `u.call.target` over the
+         * FINAL tree, and its own header records why a `.body` captured
+         * earlier names a subtree a later pass has rebuilt ("TWO DIFFERENT
+         * PROGRAMS FOR ONE GROUP"); and BEFORE `pcrec_altcls` so an injected
+         * definition gets the same optimization every other subtree gets.
+         *
+         * `ncap_primary` is seeded here and not inside the composer, so it
+         * is right on EVERY compile — including the ones the composer
+         * returns from immediately — which is what lets `emit_dfa.c` read it
+         * unconditionally instead of asking whether composition happened. */
+        cx.ncap_primary = cx.ncap;
+        root = pcrec_rxt_compose(&cx, root);
+
         root = pcrec_altcls(&cx, root);
 
         /* [M6.4.2] THE FREE DISCHARGE: delete every `A_ATOMIC` whose cut
@@ -1415,7 +1443,20 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 int pcrec_compile(const char *pattern, const pcrec_options *opt,
                   pcrec_output *out, pcrec_error *err)
 {
-    return compile_driver(pattern, opt, out, err, NULL);
+    return compile_driver(pattern, opt, out, err, NULL, NULL);
+}
+
+/* [DD-13b.W1.3] The `--source` entry: `pcrec_compile` plus a definition set.
+ * INTERNAL and NOT a `pcrec_options` field — D20 keeps the public option
+ * surface scalar, and a definition closure is a `.rxt` FILE's property that
+ * only the `.rxt` reader can build. The two entries share one driver, so
+ * there is exactly one compile pipeline and `--source` cannot acquire a
+ * second one. */
+int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
+                       const RxtDefs *defs, pcrec_output *out,
+                       pcrec_error *err)
+{
+    return compile_driver(pattern, opt, out, err, NULL, defs);
 }
 
 /* DD-8's listing entry. It runs a REAL compile and throws the C away, because
@@ -1435,7 +1476,7 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     /* A paired header would only put an #include line in output nobody reads. */
     defo.header_name = NULL;
 
-    if (compile_driver(pattern, &defo, &out, err, &text) != 0) {
+    if (compile_driver(pattern, &defo, &out, err, &text, NULL) != 0) {
         free(text);
         return NULL;
     }

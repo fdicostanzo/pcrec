@@ -1255,14 +1255,50 @@ typedef struct {
  * assertion (it returns 0 only for rows equal in BOTH fields). Neither depends
  * on `qsort`'s stability or on the list's direction, which is what a
  * behavioural row here would have depended on. Sabotage row S120. */
+/* [DD-13b.W1.3] THE LEADING KEY IS `ref-is-NULL`, AND IT IS AN ABI CONTRACT
+ * RATHER THAN A TIEBREAK. Once the composer can inject a DEFINITION's named
+ * groups into this array, `nnames` and the array length stop being one
+ * number: `match_api.md` §6 documents `nnames` as the entries in `groups[]`
+ * and hands a caller a bsearch that walks a name RUN backwards and forwards.
+ * If injected rows sorted AMONG the primary's while `nnames` counted only
+ * the primary's, a caller could walk off the end of its own run into a
+ * library's private group, or miss its own name entirely — D87 rule 2
+ * violated at the artifact tier, one level below where the composer enforces
+ * it (w1_impl §2.7's B4, the manager's ruling).
+ *
+ * So the primary's rows are a genuine PREFIX. `nnames` then keeps the
+ * meaning it has always had, a caller that ignores composition runs §6's
+ * algorithm unchanged over `groups[0..nnames)` correctly forever, and the
+ * NEW `nentries` is what a caller that wants the injected rows reads.
+ *
+ * WITHIN each half the key is unchanged — (name, number), which reproduces
+ * libpcre2's own `PCRE2_INFO_NAMETABLE` order (measured,
+ * tests/probes/probe_named_groups.c) and which [M6.5-DUPNAMES]'s structural
+ * check reads off the artifact. That check's expectation MOVES in this
+ * change, because a new leading key changes what "non-decreasing" means. */
 static int ng_cmp_name(const void *a, const void *b)
 {
     const NamedGroup *const *pa = a;
     const NamedGroup *const *pb = b;
+    int ra = (*pa)->scope ? 1 : 0;
+    int rb = (*pb)->scope ? 1 : 0;
+    if (ra != rb) return ra - rb;
     int c = strcmp((*pa)->name, (*pb)->name);
     if (c != 0) return c;
     return (*pa)->number < (*pb)->number ? -1
          : (*pa)->number > (*pb)->number ?  1 : 0;
+}
+
+/* The primary's own rows — `nnames`. Counted from the SAME list the array is
+ * built from, so the number and the rows cannot disagree; and counted rather
+ * than tracked in a second counter on `Ctx`, because a counter would be a
+ * second derivation of a fact this list already carries. */
+static unsigned ng_count_primary(const Ctx *cx)
+{
+    unsigned n = 0;
+    for (const NamedGroup *g = cx->named_groups; g; g = g->next)
+        if (!g->scope) n++;
+    return n;
 }
 
 static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
@@ -1309,8 +1345,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
              * gets — whether any match can set it is a different question
              * and not this field's. See mod_named_groups.c's header. */
             int slot = cx->want_caps ? sorted[i]->number : -1;
-            sb_printf(c, "    { \"%s\", %d, %d, NULL },\n",
+            /* [DD-13b.W1.3] `.ref` STOPS BEING A LITERAL `NULL`. The column
+             * has existed since D61 ("NULL/empty for the primary's own
+             * groups", `:602` above) and reserved exactly this; W1.3 is its
+             * first producer. A non-NULL value names the DEFINITION the row
+             * came from, which is how a caller tells its own group from a
+             * delivered one without counting — delivery is BY NAME (D89
+             * point 2(c)) and the number is the artifact's business. */
+            sb_printf(c, "    { \"%s\", %d, %d, ",
                       sorted[i]->name, sorted[i]->number, slot);
+            if (sorted[i]->scope)
+                emit_c_string_literal(c, sorted[i]->scope,
+                                      strlen(sorted[i]->scope));
+            else
+                sb_puts(c, "NULL");
+            sb_puts(c, " },\n");
         }
         sb_puts(c, "};\n");
     }
@@ -1737,8 +1786,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     }
     sb_printf(c, "    .encoding = %d,\n", cx->opt->encoding);
     sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
-    sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap);
-    sb_printf(c, "    .nnames = %u,\n", cx->n_named_groups);
+    /* [DD-13b.W1.3] `ngroups` IS THE PRIMARY'S OWN COUNT (D61,
+     * format_design §2.7): a composed artifact's `ngroups` counts the TARGET
+     * pattern's groups and the definitions' slots sit ABOVE it, so a
+     * caller's `1..ngroups` means what it always did while `RX_NCAPS` — read
+     * from `cx->ncap + 1` by `dfa_artifact_ncaps`, unchanged — may move when
+     * a library changes. On every non-composed compile the two are equal by
+     * construction, which is why this line moves no emitted byte anywhere
+     * outside a `--source` build. */
+    sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap_primary);
+    sb_printf(c, "    .nnames = %u,\n", ng_count_primary(cx));
     /* [ABI-NS] (D60 addendum): the comment names the emitted PCREC_ENGINE_*
      * constants (emit_rx_abi_types), not the internal ENGM_* enum. */
     sb_printf(c, "    .engine = %d, /* %s */\n", st->engine,
@@ -1824,12 +1881,17 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         emit_c_string_literal(c, nm, strlen(nm));
         sb_puts(c, ",\n");
     }
-    /* `nentries` reads the SAME count `nnames` does, from the same field,
-     * because today the array holds the primary's rows and nothing else.
-     * Two spellings of one number is the honest state of an uncomposed
-     * artifact, not an oversight: what makes them different questions is
-     * the composer, and the day it lands this line is where the injected
-     * rows are counted. */
+    /* [DD-13b.W1.3] THE DAY HAS COME. This comment used to say that
+     * `nentries` read the same count `nnames` did "because today the array
+     * holds the primary's rows and nothing else … what makes them different
+     * questions is the composer, and the day it lands this line is where the
+     * injected rows are counted". The composer has landed, so this line
+     * counts the WHOLE array and `nnames` counts the `ref == NULL` prefix.
+     *
+     * On an uncomposed artifact the two are still equal, and that equality
+     * is now a MEASURED property of a composed-free build rather than a
+     * shared expression — which is what lets a check compare them without
+     * comparing a value to itself. */
     sb_printf(c, "    .nentries = %u,\n", cx->n_named_groups);
     /* [OPT-5 STEP 2] AXIS J's mirror, from the SAME `dfa_search_start_name`
      * the `<PREFIX>_DFA_START` macro is written from — one value written
