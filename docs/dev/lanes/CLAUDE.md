@@ -75,3 +75,14 @@ never edited afterwards.
   quotes as universal is conditional on an MRL clamp existing. The (B) identity
   pin is deliberately UNSET and owed to the manager at merge: D76's pin must
   name a commit reachable after the merge, which a lane branch's is not.
+- `landing_report.md` — the union battery's [OPT-5] STEP 2 LANDING-BAR fixes
+  (2026-09-02/03, lane landing): re-pins `tests/rxtsource/
+  run_rxtsource_tests.sh`'s corpus census (opt5i's two new corpus files,
+  +2/+5/+95, traced to the exact PASS/own-oracle split rather than
+  copied from the truncated battery log) and fixes a latent `grep -c`/`||`
+  bug in `tests/codegen/run_codegen_tests.sh`'s K24 control that made its
+  accessor-count assertion silently vacuous on every green run. No
+  `_log.md`: the lane's ordering is in its commits. Also records a
+  main-tree scope violation caught and closed before any commit (exact
+  timestamps in the report), separate from the manager's own journal entry
+  on the same incident.
