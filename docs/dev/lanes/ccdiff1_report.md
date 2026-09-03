@@ -336,3 +336,83 @@ deliberate follow-up; `RX_VM_INLINE_CHAIN` stays rejected
 (`RX_VM_FRAMELESS` carries it by construction); the bench shim's
 `PB_SHIM_MIN_ABI` is 15, so abi 17 clears it with no bench-side change
 needed.
+
+## 5. Five failure families from the second full `make test` run, diagnosed and fixed separately (2026-09-03)
+
+The second full `make -k -j4 test PROCS=3` run (test-full2.log, rc=2) found
+five distinct failure families. Per team-lead's instruction, each was
+classified detector-bug-vs-defect WITH EVIDENCE (emit the pattern, compile
+`-Werror`, run against python `re`, grep for zero leftover references to the
+folded table name) before anything was touched. **All five are detector bugs
+in the test scripts, none are compiler defects** — CC-DIFF STEP 1's fold
+itself is correct throughout. Each family is a separate commit with its own
+cause, listed oldest-first:
+
+- **Family 2** (`tests/codegen/run_search_pinned.sh`, commit `d044764`): both
+  the §1 witness and §3 corpus-sweep reverse-table checks read the table
+  DECLARATION (`rx_reverse_next_state[`) as a proxy for "the reverse machine
+  exists" — a proxy the fold breaks. Verified on `[^abc]{2,4}`:
+  `RX_DFA_UNIFORM_FOLDS 2`, the table absent, `rx_reverse_step` folded to a
+  constant, zero leftover references, clean under `-Werror`. Fixed to read
+  the fold-safe typedef signal (mirrors the earlier `run_premul_table.sh`
+  fix's `has_revtoken` swap).
+
+- **Family 3** (`tests/codegen/run_anchored_match.sh`, commit `270aa2a`): the
+  same class — `has_anchored_tbl()` read `rx_anchored_next_state[`. Verified
+  on `'(?:(?:b*?|a)(?:b*?|d))*'`: BOTH anchored tables fold
+  (`RX_DFA_UNIFORM_FOLDS 4`), machine genuinely present (typedef + folded
+  accessors). One redefinition (typedef-based) fixed all 8 call sites in the
+  file plus the §5 worker's separate inline copy. 14/1 → 15/0.
+
+- **Family 4** (`tests/codegen/run_dfa_uniform_fold.sh`, commit `70c8511`):
+  turned out to be **three bugs in this file's own §3 sweep**, not a
+  load/PROCS/environment issue — reproduced standalone on an idle box with
+  PROCS unset and PROCS=3 alike. Root cause of the reported "0 of 0": the
+  worker-script reconstruction (`declare -f read_art | sed '1d;$d'`)
+  assumed a one-line function header; bash's `declare -f` puts the opening
+  brace on its own line, so every shard's `w2.sh` failed to PARSE at all
+  ("syntax error ... from `{` command"), silently producing zero output from
+  all 12 shards — `KEEP=1` confirmed this exactly. Fixing that surfaced two
+  more, previously-unreachable bugs in the same file: a ghost-reference check
+  doing a bare substring match that false-positives on `[M6.2-WORDB]`'s
+  `*_by_class` sibling tables (verified on `\Bcat`, `\B\w+\B`), and the `dfa`
+  discriminator missing the empty-engine bucket (`\B\b` and its three
+  `run_dfa_stamps.sh`-documented siblings, which fold to `RX_DFA_UNIFORM_FOLDS
+  0` with no `_byte_class[256]` table at all, since their body is one
+  `return 0;`). All three fixed; now 6/6, "3507 artifact/axis cells contain a
+  DFA scan, 370 fold at least one table, 0 disagreements."
+
+- **Family 1** (`tests/resource/run_resource_tests.sh`, commit `4d708c6`):
+  two parts. The `size_moved` array (`a{0,25000}`, `(a|b){0,30000}`) shrank
+  below the 1MB `[ART-SIZE]` cap; re-derived to `a{5,25000}` /
+  `(a|b){5,30000}` (bumping min from 0 to 5 breaks the `X{0,N}`
+  full-acceptance uniformity the fold exploits), following this file's own
+  established precedent (it has re-derived these same witnesses twice before,
+  for `-fno-scan-edge` and OPT-5-STEP-2). Both verified clean under
+  `-Werror` and correct against python `re`. The separate `[OPT-4.1]`
+  `-fprefilter`-override cell could NOT use the same fix — it structurally
+  needs `(a|b){0,30000}` to STAY nullable (min=0), and no `-fno-` flag exists
+  to deny the fold (`docs/spec/tuning.md` states this explicitly: the fold is
+  "not a generation-time CHOICE ... no `-fno-` flag denies it"). Scaling the
+  count up hits `PCREC_MAX_DFA_STATES_TABLE` before re-crossing the byte cap
+  (n=30000 compiles at 913,278 B; n=32000 refuses outright — no room between
+  them), and widening the alternation's alphabet barely moves the total size.
+  Fixed with `run_size_term.sh` §5's own established technique — a LOCAL
+  reference compiler built with `PCREC_MAX_EMIT_BYTES` lowered to 500000 at
+  compile time (`-D`) — so the pattern text is unchanged and the ladder
+  genuinely runs and is overruled. 30/30, 0 fail.
+
+- **Family 5** (`git merge main`, commit `445d626`): clean merge, no
+  conflicts, no `MERGE_HEAD` left over — main's landing census pins, tt12b's
+  paired axes/battery shape and the `studies/alt_dispatch` addition, no
+  emitter overlap as predicted. `make -j4` (nothing to rebuild — the merge
+  touched no `src/` files) and `make strict` both clean afterward.
+
+Every fix in this section follows the same diagnostic method: emit the exact
+failing pattern with the exact flags from the failing check, compile at
+`-O2 -Wall -Wextra -Werror`, run against python `re` (or the artifact's own
+`--emit-main` driver), and grep the emitted C for zero leftover references to
+the folded table name before touching the check. `bash -n` run after every
+edit (this session's twice-learned apostrophe-in-single-quoted-awk-block
+lesson). The full test stage (`make -k -j4 test PROCS=3`) was re-launched
+after the merge; see the log for its outcome.
