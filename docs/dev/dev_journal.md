@@ -20326,3 +20326,15 @@ with a collision refusal — the bench's 63/77 non-identifier pattern ids
 become block names verbatim. The wave is now A ([ENG-ISL] STEP 1), B
 ([OPT-EDGE] + K43's init), D (W1.3), all opus; C ([LIM-2], sonnet) waits
 for the first merge slot tomorrow (three significant lanes at a time).
+
+## 2026-09-03 — Fiftieth session, part 24 (17:4x): RESET — the evening wave pinned in wake.md (lanes A/B/D tonight, C tomorrow); session closes
+
+Frank: "let's reset and run these." wake.md rewritten with the wave's
+four briefs (A [ENG-ISL] STEP 1 opus; B [OPT-EDGE] + K43 opus; D
+[DD-13b.W1.3] opus; C [LIM-2] sonnet tomorrow), tonight's write-only
+rule (the bench has the night: no suites, no timing, `.hold`/`.lift`
+protocol), tomorrow's sequence (O-16 → battery_v5's first run with the
+CPU sampler and panel r52 → the abi-17 pin → lifts and serialized
+merges), standing facts and the session's lessons. Crons cleared; the
+bench watch dies with the session. Next session: `/pcrec-manager`,
+launch A/B/D from wake.md.
