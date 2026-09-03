@@ -20338,3 +20338,28 @@ CPU sampler and panel r52 → the abi-17 pin → lifts and serialized
 merges), standing facts and the session's lessons. Crons cleared; the
 bench watch dies with the session. Next session: `/pcrec-manager`,
 launch A/B/D from wake.md.
+
+## 2026-09-03 — Fifty-first session, part 25 (17:05 EDT): the evening wave LAUNCHED — lanes A/B/D under `.hold`, watchdog armed
+
+Woke from wake.md on 9d8401a (abi 17, clean, no lanes; load 0.15 — the
+bench not yet awake for its night). Created three worktrees with a
+`.hold` in each root and launched the wave as briefed in wake.md, all
+opus: A `isl1` (lane/isl1: [ENG-ISL] STEP 1, the VM alternation island —
+census, lowering, axis+stamp, single compiles of w-8/64/256 + srt-256,
+the hand-twin design, spec drafts, D94 site list); B `edge1`
+(lane/edge1: [OPT-EDGE] STEP 1 shared-sentinel dispatch + K43 (b) —
+prediction table first, single-artifact byte/objdump diffs on iso-ts /
+http-5xx / cls-upto-4 / a no-edge control, the measurement protocol);
+D `w13` (lane/w13: [DD-13b.W1.3] — design-note update, grammar with
+`-`/`.` names and the collision refusal, groups[] injection, the
+altwide@0.2 fixture with provenance, the tests/definitions composition,
+test drafts). Every brief: scope mandate, toplevel check before the
+first edit, `.hold_ack`, the enumerated forbidden shapes (no suites, no
+tests/ scripts, no mech/battery/san, no timing, -j ≤ 2), `.lift` as the
+only lift signal, `NAME_rulings.md` for mid-run rulings, tonight ends
+in an idle + report, own keepalive cron at :17/:23/:29 if idling, WIP
+commits, gnutimeout everywhere, log-completion-line polling tomorrow,
+no abi bump tonight (the first to merge takes 18). [OPT-EDGE] STATE →
+started. C ([LIM-2]) waits for tomorrow's first merge slot. Note: the
+previous session's journal clock ran ~50 min fast (part 24 says 17:4x;
+its commit is 16:54 EDT) — times here are from `date`.
