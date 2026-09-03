@@ -543,7 +543,8 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 #
 # THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, NOT THIS LANE'S: it must be
 # the last src commit of the change as it lands, and a lane branch cannot know
-# that commit. Left at da4fe60 (abi 16) deliberately, so the gate compares
+# that commit. (The lane left it at da4fe60 (abi 16); the manager re-pinned it
+# to the merge a3f40b1 below.) The lane's build compared
 # against the PRE-change reference and its (A)/(B) numbers are readable as the
 # change's own footprint. Re-pin to the merge before the merge is called done
 # (D76/D94).
