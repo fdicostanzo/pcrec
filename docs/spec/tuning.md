@@ -1156,11 +1156,16 @@ of them carrying the same accept bit. `[a-z]{0,16384}`'s forward machine is
 one such run of 16,384 states plus the state that has counted them all;
 `[a-z]*` and `[a-z]+` are the unbounded one-state form; `[0-9]{16}` is a run
 of sixteen. The pass is `src/opt/scanedge.c` and its header carries the exact
-criterion and its five preconditions.
+criterion and its preconditions — five in the header, three more stated at
+their own sites: (6) a head may not be another state's position-VIEW target,
+(7) two chains that link must have their heads in ascending order, and
+(8) ([OPT-EDGE] STEP 1) a head may not be a state any SEED family names, so
+that nothing but the step and the loop's entry can put a head into the state
+variable.
 
-**What the artifact does instead.** One `if (state == K) { … }` block inside
-the scan loop, counting the class's bytes in a loop whose only carried value
-is the cursor:
+**What the artifact does instead.** One `if (state == K) { … }` block per
+edge, counting the class's bytes in a loop whose only carried value is the
+cursor:
 
 ```c
 if (forward_state == 0) {
@@ -1171,6 +1176,37 @@ if (forward_state == 0) {
     if (scan_run_length == 16UL) { forward_state = 2; last_accept_position = scan_position; }
 }
 ```
+
+**WHERE THAT BLOCK SITS CHANGED AT [OPT-EDGE] STEP 1, and it is the reason
+the axis costs a machine that never takes an edge nothing at all.** Until
+then every edge block was on the loop's GENERIC PATH — one
+`if (state == K && …)` evaluated on every iteration at every state, so N
+edges cost N compares per byte. Since [OPT-EDGE] the machine's edge HEADS are
+renumbered to its TOP rows and the loop's ONE existing per-iteration state
+test (`is_dead`, which stopped the walk) is widened to a `<prefix>_<m>_is_stop`
+that answers "dead OR a head" in the same single unsigned compare. The edge
+blocks move onto a path reached only from that test, so the generic path
+carries NO per-edge compare:
+
+```c
+for (;;) {
+    if (<m>_accepts(state)) last_accept_position = scan_position;
+  <prefix>_forward_scan_views:
+    if (scan_position >= subject_length) break;
+    state = <m>_step(next_state, state, byte_class[subject[scan_position++]]);
+    if (!<m>_is_stop(state)) continue;            /* the generic path */
+    if (<m>_is_dead(state)) break;
+    /* … the edge blocks, unchanged … */
+    goto <prefix>_forward_scan_views;
+}
+```
+
+Three consequences a caller can see. The emitted state NUMBERS of an
+edge-bearing machine differ from the pre-[OPT-EDGE] compiler's (the heads are
+the top rows); each such machine emits one extra accessor, `<prefix>_<m>_is_stop`
+(folded to the constant `1` where every state is a head); and an artifact with
+no scan edge — which includes every artifact built with this flag — is
+byte-identical to the pre-[OPT-EDGE] compiler's.
 
 **Why.** `docs/dev/opt5_step0_profile.md` measured the DFA's ordinary step —
 `state = next_state[state + class]`, whose load ADDRESS is the value the

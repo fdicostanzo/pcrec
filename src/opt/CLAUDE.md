@@ -939,10 +939,14 @@ construction (src/ir) and emission (src/gen).
   machine starts accepting; `[0-9]{4}-[0-9]{2}` has one per run. The
   two-class control `([a-z]|[0-9]X){0,8}` is left exactly as it is.
 
-  **SEVEN PRECONDITIONS, EVERY ONE A DECLINE, and two of them were
-  MEASURED rather than reasoned.** The file's header carries all seven; the
-  two worth knowing before editing anything are (6) a chain head may not be
-  any state's `eolvar`/`endvar` target — the emitted loop steps from the
+  **EIGHT PRECONDITIONS, EVERY ONE A DECLINE, and two of them were
+  MEASURED rather than reasoned.** The file's header carries the first five
+  and (6)-(8) sit at their own sites; the three worth knowing before editing
+  anything are (8) ([OPT-EDGE] STEP 1) a chain head may not be a state any
+  SEED family (`s1u`/`s1g`) names, because the offset-set prefilter's RESEED
+  writes the state variable MID-BODY and the emitted loop's one stop test
+  cannot see that write — see the [OPT-EDGE] block below; (6) a chain head
+  may not be any state's `eolvar`/`endvar` target — the emitted loop steps from the
   VIEW-SELECTED state, not from the state variable, so a view pointing at a
   head reaches the killed table cell with the edge never having run
   (`a{0,4}$`, 87 cells of tests/possessify/possessify.rxt, the right match
@@ -953,9 +957,10 @@ construction (src/ir) and emission (src/gen).
   **THE DELETION IS WHAT BUYS THE SIZE AND IT RESTS ON ONE CLAIM about the
   EMITTED loop**: when the ordinary step runs, the state variable never holds
   a chain head together with a byte of that head's scan class. The header
-  spells out the four things that make it true (where the edge sits in the
-  loop body, that it is its own `if`, that a head is excluded from
-  `pick_skip_states`, and that the scan consumes what the bound allows).
+  spells out the things that make it true (where the edge sits — since
+  [OPT-EDGE] STEP 1 that is a whole PATH rather than a position; that it is
+  its own `if`; that a head is excluded from `pick_skip_states`; that no seed
+  can name one; and that the scan consumes what the bound allows).
   MEASURED: `[a-z]{0,16384}`'s forward machine goes from 16,385 states to 2,
   its artifact from 725,729 to 17,776 source bytes and 212,800 to 16,192
   `.so` bytes.
@@ -968,6 +973,33 @@ construction (src/ir) and emission (src/gen).
   bounded_repeats, possessify, k18_*), `docs/spec/tuning.md` §2.18;
   sabotage rows S213 (the criterion's exit-uniformity clause) and S214 (the
   emitted loop's count bound), with DISJOINT detectors.
+
+  **[OPT-EDGE] STEP 1 (2026-09-03) MADE THIS PASS RENUMBER, and the
+  renumbering is folded into the compaction it already did.** The emitted
+  loop used to pay ONE COMPARE PER EDGE on its generic path — `if (state ==
+  HEAD && ...)`, evaluated at every state on every iteration, so the entry
+  cost was O(edges) per byte and the bench measured iso-ts (8 edges in
+  `rx_search`) at x1.089 against a `-fno-scan-edge` arm. The fix is to make
+  the heads share the ONE sentinel test the loop already had: the surviving
+  states are permuted so the HEADS ARE THE MACHINE'S TOP ROWS, in their
+  existing relative order, and `src/gen/emit_dfa.c` then tests "dead or a
+  head" with one unsigned compare. Three things about it:
+
+  - **The heads go to the TOP, not below zero, so the table base is not
+    biased at all.** The dead value is already above every live cell under
+    both representations (65535 by `PREMUL_MAX_ENTRIES`; `-1` read as
+    unsigned), and a head must remain a VALID TABLE ROW because the ordinary
+    step still reads its row for every class but its own.
+  - **The permutation is NOT MONOTONE**, unlike minimize.c's compaction, so
+    it cannot write `d->st` in place — a head moving UP would clobber a state
+    not yet visited. It goes through a scratch array.
+  - **Precondition (7) survives because the heads keep their RELATIVE
+    order**: (7) compares two HEADS, and a permutation that preserves their
+    order preserves the comparison.
+
+  The emitter CHECKS the layout rather than assuming it (`dfa_form_derive`
+  fails loudly if a head is not at `n - nheads + k`), which is the one form
+  of check here that cannot share a source with what it checks.
 
   **[OPT-5] STEP 2 (2026-09-02) EXPORTED PRECONDITIONS (2) AND (3) AS
   `pcrec_state_view_invariant`**, and the file's own apology for spelling
