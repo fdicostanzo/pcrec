@@ -77,14 +77,31 @@ SAB_EXPECT=UNDETECTED
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned harness"
 SAB_DESC="The start-pinned predicate's P2 stops asking whether the start state's accept is invariant in position and in class context, so a state that accepts only at some positions is treated as accepting at all of them. The elision then fires on a machine that has no match at every search_from and writes caps[0][0] = search_from where the true match begins later -- a span too wide at the front, with the verdict and the match end both still right"
-SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places."
+SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant applied and the tree rebuilt, the corpus produces the SAME 224 pinned artifacts as the clean tree and tests/codegen/run_search_pinned.sh is 17 passed / 0 failed. See the header for the derivation and for the two-hunk row (S218) that IS detected, at 243 pinned with 19 artifacts flipping and the check red in three places. RE-MEASURED 2026-09-03 (r51fix item 2, solo mech run against the re-derived SAB_REACH_POP manifest, tree 26644f50edcafbceb056616650f6cca2f80f4d89): UNDETECTED (EXPECTED), unexpected: 0 -- pop:tests/codegen/manifests/s220_view_decliners.txt:/^\\B/=3(want>=3), reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass. The manifest's population reads exactly 3, its own full measured population, confirming the floor is not decorative."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `\bx*`
 # is DECLINED, and it is declined at P2 rather than P1 (its start state DOES
-# accept under the plain view — a bare `x*` is nullable — so P1 passes). THE
-# FLOOR says the classctx population still exists.
+# accept under the plain view — a bare `x*` is nullable — so P1 passes).
+#
+# THE FLOOR IS RE-DERIVED TO THIS PREDICATE'S OWN DISCRIMINATING POPULATION
+# (r51fix item 2; docs/dev/reviews/2026-09-02-r51-opt5-step2-impl.md §2
+# finding 2, r51check finding 2). It used to float the `(?m)…$` manifest
+# S218/S222 share — and this row's own header, two paragraphs up, already
+# disclaims that population as "not a discriminating population for THIS
+# predicate": every `(?m)…$` artifact fails P1 alone, in both spellings, so
+# P2 never gets asked. A copied floor is a DECORATIVE one (docs/dev/
+# learnings.md §3, "a population floor copied from a sibling"): it could read
+# green forever while the population it is actually meant to watch —
+# P2's OWN THREE ARTIFACTS — vanished underneath it.
+#
+# The floor now points at a NAMED MANIFEST holding exactly that population —
+# `\B`, `\B\B`, `\Bx*`, the three patterns this row's own header (MEASURED
+# 2026-09-02, an instrumented sweep of the full corpus) found are refused by
+# P2 and by no other clause. Floored at its full measured population (3),
+# not a decorative round number: if this manifest ever needs a fourth
+# member, the floor moves with it in the same change.
 SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" -- "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
 SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
-SAB_REACH_POP="docs/dev/opt5m2_m2_changed_patterns.txt|^\(\?m|12"
+SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^\\\\B|3"
 SAB_COUNT=1
 SAB_BEFORE='    /* P2 — one derivation, shared with the scan-edge pass. */
     if (!pcrec_state_view_invariant(&fd->st[fs])) return false;'

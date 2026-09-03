@@ -13,11 +13,49 @@
 # LIVENESS half reports A MATCH WHERE THERE IS NONE, which is the one failure
 # direction in this whole row that is not a quiet offset.
 #
-# ================== THIS ROW SHIPS DECLARED UNREACHED ==================
+# ============ THIS ROW SHIPS DECLARED UNDETECTED, NOT UNREACHED ============
+# ============ (r51fix ITEM 6, r51fix_rulings.md R1, 2026-09-03) ============
 #
-# AND THAT IS A DERIVATION, NOT A FAILURE OF EFFORT. For P3 to be REACHED at
-# all the machine needs `dfa_needs_seed`, i.e. some `s1u[u] != s1u[UPC_PLAIN]`.
-# On ENG_UNANCH:
+# THE UNION BATTERY'S MECH STAGE (2026-09-03, running de32a4b) READ S219
+# ***UNEXPECTED***: "NOW REACHED — the witness this row declares dead is live
+# again" (reach:ok 1/1), against the row's OWN prior declaration of
+# `SAB_EXPECT=UNREACHED`. That mismatch is a MISCALIBRATION IN THIS ROW, not a
+# falsified derivation — the derivation below (unchanged, still correct) was
+# never the thing the mechanical reach check was testing.
+#
+# THE DISTINCTION THE ORIGINAL DECLARATION BLURRED: "P3's SURROUNDING CODE
+# EXECUTES" and "P3's DECLINE ARM FIRES" are two different claims. The
+# `SAB_REACH` probe below compiles `\bx*` and `\ba|c*` — both seed-needing
+# shapes (`dfa_needs_seed` is true for any `\b`/`\B` in the start closure) —
+# and both trivially satisfy it, because [MECH-REACH]'s mechanism can only run
+# `$PCREC` normally and grep its stdout/artifact TEXT; it has no way to read
+# an internal predicate's branch outcome. So the probe was ALWAYS measuring
+# "does the seed-needing FOR LOOP run on some witness" (yes, on any `\b`
+# pattern that reaches the seed gate at all — mech's REACHED reading is
+# CORRECT), never "does the LIVENESS CHECK (`su < 0`) inside it ever evaluate
+# true" (which is the actual UNREACHED-shaped claim, and remains unmeasurable
+# by this mechanism — see below). §7 item 10's own measurement, taken with a
+# SCRATCH instrumented build reverted before delivery, is the only instrument
+# that has ever answered the second question; nothing permanent in this tree
+# can, which is exactly what makes option (a) (re-aiming the probe at the
+# decline arm) inexpressible with `[MECH-REACH]`'s command-and-grep shape —
+# there is no stamp or diagnostic naming which predicate clause declined an
+# artifact for the probe to grep.
+#
+# THE CORRECT READING, therefore (R1's disposition (b), `S220`'s shape): P3's
+# LOOP IS REACHED REGULARLY on this corpus — the union battery's own "NOW
+# REACHED" is accurate at the mechanical level the probe tests — but dropping
+# it changes NO ANSWER on any pattern this corpus (or this design's own
+# derivation) can build, because the DECLINE never fires. That is UNDETECTED,
+# not UNREACHED: "reached but never declining" is the measured state (§7 item
+# 10 below: P3 EVALUATED 0 times across three axes over 2,850 patterns), and
+# the row's real guard remains the compiler assertion
+# `start_pinned_assert_routing`, unaffected by this reclassification.
+#
+# ================= THE DERIVATION (UNCHANGED, STILL CORRECT) =================
+#
+# For P3's DECLINE to be REACHED at all the machine needs `dfa_needs_seed`,
+# i.e. some `s1u[u] != s1u[UPC_PLAIN]`. On ENG_UNANCH:
 #
 #   1. `(?m)^` and `\G` route to ENG_ATTEMPT via `nfa_has_bot`, so they are
 #      not here at all.
@@ -44,50 +82,50 @@
 # The corpus census agrees from the other side: ZERO P3-stage declines over
 # 2,845 patterns (docs/dev/opt5_step2_premeasure.md M1).
 #
-# THE ROW EXISTS ANYWAY, and its whole value is the REVERSE direction: the
-# `[MECH-REACH]` machinery reads NOW REACHED the day somebody builds the
-# machine this conjunct defends against. THE REAL GUARD IS AN ASSERTION IN THE
-# COMPILER — `start_pinned_assert_routing`, which needs no witness because its
-# firing IS the finding. That is the correct instrument for a conjunct
-# defending against a machine shape nobody can currently build but nothing
-# forbids. `docs/design/opt5_step2_twopass.md` §5.6b is the argument in full
-# and §7 item 10 the measurement (a P3 EVALUATION count, not a decline count)
-# that would settle whether the site is reachable at all.
+# THE REAL GUARD IS AN ASSERTION IN THE COMPILER —
+# `start_pinned_assert_routing`, which needs no witness because its firing IS
+# the finding. That is the correct instrument for a conjunct defending against
+# a machine shape nobody can currently build but nothing forbids.
+# `docs/design/opt5_step2_twopass.md` §5.6b is the argument in full and §7
+# item 10 the measurement (a P3 EVALUATION count, not a decline count).
 #
-# ============ §7 ITEM 10 IS NOW TAKEN, AND IT AGREES ============
+# ============ §7 ITEM 10 WAS TAKEN, AND IT AGREES ============
 #
-# The note made that count the trigger for shipping this row as anything
-# other than UNREACHED. TAKEN 2026-09-02 with an instrumented build (a
-# measurement-only stamp reporting which clause refused, or that P3 was asked
-# and with what outcome; reverted before delivery), over all 2,850 corpus
-# patterns on THREE axes:
+# TAKEN 2026-09-02 with an instrumented build (a measurement-only stamp
+# reporting which clause refused, or that P3 was asked and with what outcome;
+# reverted before delivery), over all 2,850 corpus patterns on THREE axes:
 #
 #   axis                     asked   notasked-p1  notasked-p2  notasked-noseed
 #   default                      0         1,696            3              177
 #   -fprefilter (FORCE)          0         1,004            0               70
 #   --no-captures                0         1,705            3              224
 #
-# **P3 IS NEVER ASKED, ON ANY AXIS.** Every machine that reaches the seed
-# gate needs no seed (`dfa_needs_seed` is false), and every seed-needing
+# **P3'S DECLINE IS NEVER ASKED, ON ANY AXIS.** Every machine that reaches the
+# seed gate needs no seed (`dfa_needs_seed` is false), and every seed-needing
 # machine is refused earlier — by P1 in almost every case and by P2 in
 # exactly three (`\B`, `\B\B`, `\Bx*`; S220's header carries them). That is
 # the third of the three outcomes §7 item 10 enumerates: "a zero makes P3
-# provably unreachable on this corpus". The derivation above PREDICTED it and
-# the sweep CONFIRMS it rather than replacing it — a derivation says why, a
-# count says only that.
+# provably unreachable on this corpus" — read now as "provably NEVER
+# DECLINES", the derivation this row's UNDETECTED declaration rests on. The
+# derivation above PREDICTED it and the sweep CONFIRMS it rather than
+# replacing it — a derivation says why, a count says only that.
 SAB_ID="S219-pinned-seed-conjunct-dropped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned harness"
 SAB_DESC="P3 is dropped from the start-pinned predicate, both arms at once: the elision no longer requires the seed states a search at startpos > 0 actually begins in to be live, nor to satisfy P1 and P2. On a machine with a dead seed it would report an empty match at a startpos where there is none; on one with a non-accepting seed it would report a caps[0][0] that is too small"
-SAB_EXPECT=UNREACHED
-SAB_EXPECT_REASON="The P3-discriminating population appears EMPTY on ENG_UNANCH rather than merely unpopulated, and the row's header carries the derivation: (?m)^ and \\G route to ENG_ATTEMPT, (?m)\$ creates no s1u split, s1u[PLAIN] == fs by P0, and a P2-passing fs accepts through a boundary-free branch which sits in every seed closure — so P1 at fs appears to IMPLY P1 and liveness at every seed. Six candidate witness shapes were worked through and rejected (named in the header). M1 measured ZERO P3-stage declines over 2,845 corpus patterns. The conjunct's real guard is start_pinned_assert_routing, a compiler assertion that needs no witness; this row ships so the [MECH-REACH] reverse check reads NOW REACHED the day the witness exists."
-SAB_DOC_FIGURE="UNREACHED, and MEASURED so 2026-09-02: an instrumented sweep over 2,850 corpus patterns on three axes (default, -fprefilter, --no-captures) counts ZERO P3 EVALUATIONS on every one — the §7 item 10 number the note owed. If a future tree makes this row read NOW REACHED, that is the finding: a machine reaching P3 has appeared, docs/design/opt5_step2_twopass.md §5.6b's derivation is falsified, and the row becomes an ordinary DETECTED one."
-# [MECH-REACH] THE PROBE IS THE DERIVATION MADE OPERATIONAL: it asserts that
-# the shapes the header rejects still behave as the header says. `\bx*` must
-# decline at P2 (classctx), NOT at P3 — if it ever declines at P3 the
-# population is no longer empty and this row's UNREACHED declaration expires.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" -- "\ba|c*" && grep -q "RX_DFA_START" "$REACH_TMP/p.c" && echo REACH-P3-SHAPES-STILL-COMPILE'
-SAB_REACH_EXPECT="REACH-P3-SHAPES-STILL-COMPILE"
+SAB_EXPECT=UNDETECTED
+SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 6, solo mech run, tree 26644f50edcafbceb056616650f6cca2f80f4d89): UNDETECTED (EXPECTED), unexpected: 0 -- reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass. Confirms the flip from a mis-declared UNREACHED: the seed-needing conjunct's surrounding loop IS reached (reach:ok), and dropping it changes no answer on the whole corpus, matching docs/design/opt5_step2_twopass.md §5.6b's derivation and §7 item 10's instrumented sweep (zero P3 evaluations across three axes over 2,850 patterns)."
+# [MECH-REACH] THE PROBE demonstrates that P3's seed-needing LOOP is
+# regularly EXECUTED on this corpus (`\bx*` and `\ba|c*` both need a seed,
+# so `dfa_needs_seed(fd)` is true and the removed for-loop runs on both) --
+# NOT that its LIVENESS decline (`su < 0`) ever fires, which this
+# command-and-grep mechanism has no way to observe (no stamp or diagnostic
+# names which predicate clause declined an artifact) and which the
+# derivation above and §7 item 10's instrumented sweep both hold at zero.
+# Renamed from the row's original REACH-P3-SHAPES-STILL-COMPILE tag to say
+# what it actually demonstrates, per r51fix ruling R1.
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" -- "\ba|c*" && grep -q "RX_DFA_START" "$REACH_TMP/p.c" && echo REACH-SEED-CONJUNCT-LOOP-EXERCISED'
+SAB_REACH_EXPECT="REACH-SEED-CONJUNCT-LOOP-EXERCISED"
 SAB_COUNT=1
 SAB_BEFORE='    /* P3 — every LIVE seed state, and liveness first. */
     if (dfa_needs_seed(fd)) {'

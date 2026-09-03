@@ -2196,3 +2196,84 @@ are answer-identical by construction. The whole `.rxt` corpus, both oracles,
 both plants. That is the S68 shape (a sabotage that changes no answer) with
 the strongest available argument behind it — a proof rather than a
 measurement — and it is the whole reason `pfcollapse` is an arm.
+
+## [OPT-5]/[OPT-VMFL] r51fix: S219 flip, S223-S226, and a new arm (2026-09-03)
+
+The r51 panel's check-design pass on [OPT-5] STEP 2/[OPT-VMFL] STEP 0
+(`docs/dev/reviews/2026-09-02-r51-opt5-step2-impl.md`) plus one manager
+ruling mid-flight (`docs/dev/lanes/r51fix_rulings.md` R1) produced one flipped
+row, three new rows and a new suite word. Solo mech runs, tree
+`26644f50edcafbceb056616650f6cca2f80f4d89`:
+
+    S219  reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass
+          UNDETECTED (EXPECTED), unexpected: 0
+    S220  pop:tests/codegen/manifests/s220_view_decliners.txt:/^\B/=3(want>=3),
+          reach:ok(1/1), searchpinned:0fail/17pass, corpus:0fail/26883pass
+          UNDETECTED (EXPECTED), unexpected: 0
+    S223  reach:ok(1/1), searchpinned:1fail/16pass                 DETECTED
+    S224  reach:ok(1/1), vmframeless:7fail/4pass                   DETECTED
+    S225  reach:ok(1/1), vmframeless:1fail/5pass                   DETECTED
+    S226  reach:ok(1/1), vmframeless:6fail/1pass                   DETECTED
+
+**S219 IS A FLIP, NOT A NEW ROW, and it is the second occurrence of S70's own
+lesson: mech's REACHED reading and a row author's INTENDED reading are not
+the same claim.** S219 shipped `SAB_EXPECT=UNREACHED` (opt5i lane,
+2026-09-02): dropping P3's seed-liveness conjunct changes no answer because
+the design's own derivation (docs/design/opt5_step2_twopass.md §5.6b) argues
+no witness can reach the DECLINE ARM (`s1u[u] < 0`) on ENG_UNANCH. The union
+battery's mech stage (2026-09-03, tree de32a4b) then read it **NOW REACHED**
+— an UNEXPECTED mismatch — because the row's `SAB_REACH` probe (compiling
+`\bx*`/`\ba|c*`) only ever tests that the seed-needing FOR LOOP *executes*
+on a live `\b`-bearing witness, which it does, regularly. That is a
+genuinely different claim from "the decline arm fires", and
+`[MECH-REACH]`'s command-and-grep mechanism has no way to test the second
+claim at all: no stamp or diagnostic anywhere names which predicate clause
+declined an artifact, and the only time anyone measured "P3 asked/declined"
+counts was a SCRATCH instrumented build reverted before delivery (opt5i
+`SAB_DOC_FIGURE`, §7 item 10). So re-aiming the probe at the decline arm —
+the more surgical fix — is not expressible with today's mechanism; the row
+now declares `SAB_EXPECT=UNDETECTED` (S220's shape: reached, but the
+population that would make it observable is empty), with the corrected
+claim in its own header and `SAB_REACH_EXPECT` renamed
+`REACH-SEED-CONJUNCT-LOOP-EXERCISED` to say what it actually shows.
+
+**S220's `SAB_REACH_POP` moved from a borrowed, non-discriminating floor to
+a named manifest of its OWN population**, and this is the `S140`/K35 lesson
+recurring inside a single mech wave: S220 (P2's view/context clause
+dropped) had been floored against S218/S222's `(?m)…$` manifest, which
+S220's own header already disclaimed as not discriminating for P2 (every
+`(?m)…$` artifact declines at P1 alone). The floor could go on reading
+green forever while P2's real population — measured as exactly three
+patterns, `\B`/`\B\B`/`\Bx*` — thinned to nothing underneath it. New file
+`tests/codegen/manifests/s220_view_decliners.txt` holds that population by
+name; `SAB_REACH_POP` now floors against it at 3 (its own full measured
+size), and the solo run above reads the pop line exactly at 3/3.
+
+**S223 is the reverse tripwire `[MECH-REACH]`'s own doctrine asks for on a
+witness-less assertion.** `start_pinned_assert_routing`'s seed-liveness
+half has no sabotage witness of its own (S219's own header says so), so
+`tests/codegen/run_search_pinned.sh` §7 was its ONLY guard — and §7 used to
+grep only the assertion's identifier and message text, never its one CALL
+SITE (`src/gen/emit_dfa.c:5123`). S223 deletes exactly that call, leaving
+the definition as dead code; §7 now carries a fourth grep anchored on the
+call's own expression shape (`start_pinned_assert_routing(cx,`, which the
+definition's own `Ctx *cx,` signature never matches) and catches it.
+
+**`vmframeless` is a new suite word** (registered before S224-S226, R31
+C11), running `tests/codegen/run_vm_frameless.sh` — `<PREFIX>_VM_FRAMELESS`
+held to the VM program's own `goto *` count. The script shipped with ZERO
+committed rows (its three failing directions were hand-planted and
+reverted) despite being the ONLY instrument that scopes `goto *` correctly
+on the default/`-fprefilter` axes (`[DD-14-RECURSION rule 1]`'s whole-file
+grep is wrong there: 199 false positives from a hybrid's inlined prefilter
+scan). S224 (the stamp's two arms swapped at its definition site), S225
+(the stamp recomputed from `v.npush`, the derivation the emitter's own
+comment rejects by name — `v.npush` excludes a linked call site's own
+frame and was measured driven negative by the counter rung's unbounded
+arm), and S226 (the macro emitted conditionally, `if (!has_push) {...}`,
+instead of unconditionally). **S226 stayed a separate row rather than a
+second hunk of S224**: tracing `run_vm_frameless.sh`'s `bad()` call sites
+shows the two plants trip DIFFERENT detector lines — S224 a value-mismatch
+assertion in §1/§3, S226 an absence assertion in §1 and an exact-count
+assertion in §3 — so folding them would leave one plant's failing
+direction unexercised by anything the row's own header could point to.

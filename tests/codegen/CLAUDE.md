@@ -565,8 +565,50 @@ decides whether to perform it — and then run the row through
     (so no single line held the sentence a grep was looking for), backticks
     inside a double-quoted failure message running as command substitutions,
     and the C3 counter above.
-  - Sabotage rows S218-S222 on the `searchpinned` mech arm, and the
-    transcripts are at the foot of the script.
+  - Sabotage rows S218-S223 on the `searchpinned` mech arm, and the
+    transcripts are at the foot of the script. **S223** (r51fix item 1,
+    2026-09-02) is the WIRING row: §7's P0-routing-assertion check greped
+    only for the assertion's definition and message text, never for its one
+    CALL SITE (emit_dfa.c:5123) — a sabotage deleting the call while leaving
+    the definition as dead code passed vacuously, and the assertion's own
+    seed-liveness half has no sabotage witness of its own (S219 ships
+    UNREACHED beside it), so §7 was that clause's ONLY guard. §7 now carries
+    a fourth grep anchored on the call's own expression shape
+    (`start_pinned_assert_routing(cx,`, which the definition's own signature
+    — `Ctx *cx,` — never matches) and says in its own comment that it is a
+    wiring check.
+
+- **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
+  FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
+  `has_push` bool that wrote it. Its own section, `make test-codegen`, one
+  `awk` per artifact, no `gcc` compile beyond the compiler's own patterns.
+  - **WHY IT EXISTS.** A VM program that emits no `RX_PUSH` site and no
+    linked call has no resume frame to pop, so [CC-CLANG] omits the fail
+    label's pop-and-resume `goto *` dispatch entirely (clang refuses an
+    indirect goto in a function with no address-of-label expression). The
+    macro is unconditional on every VM artifact including a hybrid.
+  - **THE `goto *` COUNT IS SCOPED TO THE VM PROGRAM'S OWN FUNCTION, and
+    this file's first run is what said it must be.** `run_codegen_tests.sh`'s
+    `[DD-14-RECURSION rule 1]` counts `goto *` with a WHOLE-FILE grep, which
+    is right there (`--engine=vm` turns the hybrid prefilter off) and WRONG
+    on this file's default/`-fprefilter` axes — a hybrid's inlined
+    `ENG_ATTEMPT` scan steps by computed goto, MEASURED at 199 false
+    positives on `(?m)^`-shaped artifacts on the first run. This file scopes
+    the count to the region between the program entry (`    goto rx_L0;`)
+    and the enclosing function's closing brace.
+  - Sabotage rows S224-S226 on the new `vmframeless` mech arm (r51fix item
+    3, 2026-09-02), replacing an earlier "exercised by hand" state the r51
+    panel found (finding 3) — this was the only instrument scoping `goto *`
+    correctly on the default/force axes and had no committed row. S224
+    inverts the stamp's value at its definition site; S225 recomputes it
+    from `v.npush` (the resume-point cap's pre-pass ESTIMATE) instead of the
+    hoisted `has_push` bool, the derivation the emitter's own comment
+    rejects by name; S226 emits the macro CONDITIONALLY (only when
+    frameless) rather than unconditionally, caught by different detector
+    lines from S224's (an absence assertion and an exact-count assertion,
+    not a value-mismatch one) and so its own row rather than a second hunk
+    of S224. All three carry SAB_REACH from birth. Transcripts are at the
+    foot of the script.
 
 - **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
   compiles every `.rxt` corpus pattern twice (default engine, and
