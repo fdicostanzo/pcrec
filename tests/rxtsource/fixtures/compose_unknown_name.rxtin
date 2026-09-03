@@ -1,0 +1,12 @@
+# [DD-13b.W1.3] A BY-NAME CALL TO A NAME THE CLOSURE DOES NOT DECLARE. The
+# parse DEFERS it (a definition set is in scope, so the name might be a file
+# reference); the composer then RE-RAISES module `backrefs`' own refusal,
+# with the same sentence at the same offset — which is what keeps every
+# existing refusal in the corpus at today's wording.
+target = caller
+
+pattern ^(?&nosuch)$
+name caller
+
+pattern [a-z]+
+name present

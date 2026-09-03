@@ -1,0 +1,15 @@
+# [DD-13b.W1.3] Q-W2 (D89 point 3): `(?R)` INSIDE A BOUND DEFINITION IS
+# REFUSED. After injection it could mean the caller's whole pattern or the
+# definition's own body, and D89 chose mechanisms over silent defaults — the
+# refusal says the RULING is missing, not the meaning.
+#
+# It is raised at the SUB-PARSE, because nothing later can tell it from the
+# three other situations that leave `u.call.target` at 0 (the arena zero, a
+# deferred cross-definition call, and a call the composer has not reached).
+target = caller
+
+pattern ^(?&selfy)$
+name caller
+
+pattern a(?R)?b
+name selfy

@@ -276,3 +276,55 @@ downstream starts reading the declarations it carries.**
   message, where a person looking at the failure will read it. New line
   kinds go AFTER the END marker and need no re-pin.
 - Update this file when a check, a fixture or a deferred row changes role.
+
+## [DD-13b.W1.3] — composition, the name grammar, and the dogfood
+
+A fourth section at the end of `run_rxtsource_tests.sh`, and six new
+fixtures. Every one of them exists because the population was ZERO: no
+corpus file declares a `name`, so the widened name grammar, the prefix
+mapping, the collision refusal and the composer itself would all have
+shipped with nothing exercising them.
+
+- `name_dashdot.rxtin` — a definition named `cls-upto-64` and one named
+  `ctx.lazy`, each built through `target = <name>`. Two assertions, and the
+  pair is the point: the ARTIFACTS are `cls_upto_64` and `ctx_lazy` while
+  each one's `rx_info.name` is the UNMAPPED block name. The prefix says what
+  the symbols are called; the name says what the artifact IS, and a build
+  that mapped one into the other would lose the bench id the whole ruling
+  exists to preserve.
+- `target_prefix_collision.rxtin` — `a-b` and `a.b`, both mapping to `a_b`.
+  The refusal must contain all THREE strings: naming only the shared prefix
+  leaves a reader unable to tell which two of their names produced it.
+- `compose_delivers.rxtin` — all three of D89's tiers in one artifact.
+  `piece` = `(?<kept>a)(b)(c)\2` bound into `^(?&piece)$`: `kept` is named
+  (DELIVERED, a `groups[]` row with `ref` "piece"), `(b)` is reached by the
+  definition's own `\2` (HIDDEN, a slot and no row), `(c)` is unnamed and
+  unread (ERASED, no number at all). It is where `nentries > nnames` is
+  asserted for the first time, in its strongest form — 1 against 0, because
+  the caller declares no named group. **The erasure assertion is a NUMBER
+  with an external referent**: `RX_NCAPS` is 4, where the PCRE2 textual
+  control for the same composition emits 5 (MEASURED 2026-09-03), so a
+  build whose erased tier stopped erasing reads the naive append's value
+  and the check says which.
+- `compose_root_recursion.rxtin` — Q-W2 (D89 point 3): `(?R)` inside a bound
+  definition is refused because the RULING is missing, not the meaning.
+- `compose_unknown_name.rxtin` — a by-name call the closure cannot satisfy
+  RE-RAISES `mod_backrefs.c`'s own sentence at its own offset, which is what
+  keeps the four `perr` blocks in `tests/recursion/d27/sr_refusals.rxt` at
+  today's wording.
+- `compose_dup_definition.rxtin` — one name declared in two files of the
+  `lib` closure. The within-file rule one scope out, naming both files.
+- `bench_altwide_0_2.rxtin` — **THE DOGFOOD**: pcrec-bench's altwide@0.2
+  pattern set as an `.rxt` source, verbatim, with a provenance header (repo,
+  set, version, the bench commit, the date, and that the bench's own exporter
+  replaces it). 33 blocks, 33 `target =` rows, and deliberately NO
+  `config`/`flags`/`engine`/`budget`/`encoding` — the bench's own condition
+  (their O-13 §4(b)), since D93 file-wins would otherwise pin their testee
+  matrix from inside the set.
+
+  **Its byte-for-byte arm SKIPS LOUDLY when pcrec-bench is not present.**
+  That repo is a sibling, never a dependency, so a checkout without it must
+  not fail this section; but where it IS present, all 33 patterns are
+  compared against the bench's own `.rx` files, because a provenance header
+  is a CLAIM and a claim nothing checks is a comment. `PCREC_BENCH_PATTERNS`
+  overrides the path.

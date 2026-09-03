@@ -1,0 +1,13 @@
+# [DD-13b.W1.3] TWO DEFINITIONS, ONE DERIVED PREFIX. `a-b` and `a.b` are
+# different names and both map to `a_b`, so the second `target =` row is
+# REFUSED — and the diagnostic must name BOTH definitions, not just the
+# prefix they share, because a reader shown only `a_b` cannot tell which two
+# of their names produced it.
+target = a-b
+target = a.b
+
+pattern x
+name a-b
+
+pattern y
+name a.b

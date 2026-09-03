@@ -1558,6 +1558,232 @@ else
 $(cat "$W12/lone.err")"
 fi
 
+
+# =====================================================================
+# [DD-13b.W1.3] COMPOSITION, THE NAME GRAMMAR, AND THE DOGFOOD
+# =====================================================================
+#
+# Three things this section owns, and each had a population of ZERO before
+# the fixtures beside it existed -- no corpus file declares a "name" at all,
+# measured 0 of 191, which is why they are fixtures and not corpus files:
+#
+#   the NAME GRAMMAR    a definition name admits "-" and "." after its first
+#                       byte, and "target = <name>" derives the C prefix by
+#                       mapping them to "_"; two names mapping to one prefix
+#                       is a refusal that names BOTH
+#   COMPOSITION         a definition own named groups reach groups[] with a
+#                       non-NULL ref, sorted BELOW the primary rows, so
+#                       nentries > nnames for the first time
+#   THE DOGFOOD         pcrec-bench altwide@0.2 as an .rxt source, verbatim,
+#                       33 pattern ids a person chose
+#
+# EVERY ASSERTION HERE READS THE EMITTED ARTIFACT AS TEXT, never the
+# composer own report of what it did. The behavioural half -- a composed
+# artifact answering what a hand-written flat one does -- is a different
+# question and lives in tests/definitions/, with an outside oracle.
+
+W13="$WORKDIR/w13"
+mkdir -p "$W13"
+
+# --- the name grammar, and the derived prefix -------------------------
+#
+# The block names are cls-upto-64 and ctx.lazy; the artifacts must be
+# cls_upto_64 and ctx_lazy, and each must carry its ORIGINAL name. The two
+# are different fields answering different questions: the prefix is what the
+# symbols are called, the name is what the artifact IS
+# (docs/spec/match_api.md section 6), and a build that mapped one into the
+# other would lose the bench id this whole ruling exists to preserve.
+mkdir -p "$W13/nd"
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/name_dashdot.rxt" -o "$W13/nd" 2>"$W13/nd.err"; then
+    nd_files=$(cd "$W13/nd" && ls ./*.c 2>/dev/null | sed 's|^\./||' | sort | tr '\n' ' ')
+    if [ "$nd_files" = "cls_upto_64.c ctx_lazy.c " ]; then
+        pass "W1.3 names: a dash or dot in a definition name maps to underscore in the derived prefix ($nd_files)"
+    else
+        fail "W1.3 names: expected 'cls_upto_64.c ctx_lazy.c ', got '$nd_files'"
+    fi
+    nd_names=$(grep -h '^    \.name = ' "$W13/nd"/*.c | sed 's/.*= "\(.*\)",$/\1/' | sort | tr '\n' ' ')
+    if [ "$nd_names" = "cls-upto-64 ctx.lazy " ]; then
+        pass "W1.3 names: each artifact keeps its ORIGINAL name ($nd_names) while its symbols carry the mapped prefix"
+    else
+        fail "W1.3 names: rx_info.name should be the UNMAPPED block name; got '$nd_names'"
+    fi
+else
+    fail "W1.3 names: --source refused a file whose definitions carry a dash and a dot:
+$(cat "$W13/nd.err")"
+fi
+
+# --- the collision refusal, and it must name BOTH definitions ---------
+#
+# The mapping is deliberately not injective -- one that could not collide
+# would have to mangle a name its author wrote -- so the refusal is where
+# that is paid for. Naming only the shared prefix would leave a reader unable
+# to tell which two of their names produced it, so all three of a-b, a.b and
+# a_b are required in the message.
+coll_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/target_prefix_collision.rxt" 2>&1)"
+coll_rc=$?
+coll_miss=""
+for tok in "a-b" "a.b" "a_b"; do
+    case "$coll_out" in *"$tok"*) ;; *) coll_miss="$coll_miss $tok" ;; esac
+done
+if [ "$coll_rc" != "0" ] && [ -z "$coll_miss" ]; then
+    pass "W1.3 collision: two names mapping to one prefix are refused, naming both definitions and the prefix"
+else
+    fail "W1.3 collision: exit $coll_rc, missing from the message:$coll_miss
+  got: $coll_out"
+fi
+
+# --- composition: the delivered row, its ref, and nentries > nnames ----
+#
+# piece is (?<kept>a)(b)(c)\2 bound into ^(?&piece)$. All three of D89 tiers
+# fire in one artifact: kept is NAMED (delivered), (b) is referenced by the
+# definition own \2 (hidden), (c) is unnamed and unread (erased, spending no
+# number at all).
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_delivers.rxt" \
+        -o "$W13/user.c" 2>"$W13/user.err"; then
+    u_rows="$(grep -E '^    \{ "' "$W13/user.c" || true)"
+    u_ngroups="$(grep -m1 '^    \.ngroups = ' "$W13/user.c" | tr -dc '0-9')"
+    u_nnames="$(grep -m1 '^    \.nnames = ' "$W13/user.c" | tr -dc '0-9')"
+    u_nentries="$(grep -m1 '^    \.nentries = ' "$W13/user.c" | tr -dc '0-9')"
+    u_ncaps="$(grep -m1 -oE '^#define USER_NCAPS [0-9]+' "$W13/user.h" | awk '{print $3}')"
+
+    if printf '%s\n' "$u_rows" | grep -q '{ "kept", [0-9]*, [0-9]*, "piece" }'; then
+        pass "W1.3 delivery: the definition named group reaches groups[] with ref piece"
+    else
+        fail "W1.3 delivery: no row for kept with ref piece. Rows:
+$u_rows"
+    fi
+    # THE FIRST TIME THE TWO NUMBERS DIFFER. nnames counts the PRIMARY rows
+    # and nentries the whole array; the caller pattern declares no named
+    # group, so 0 and 1 is the strongest possible form of the claim.
+    if [ "$u_nnames" = "0" ] && [ "$u_nentries" = "1" ]; then
+        pass "W1.3: nentries ($u_nentries) > nnames ($u_nnames) -- the injected row is counted by one and not the other"
+    else
+        fail "W1.3: expected nnames=0 and nentries=1 on a caller that declares no name of its own; got $u_nnames / $u_nentries"
+    fi
+    # THE ERASED TIER, AS A NUMBER. The definition has three groups; one is
+    # delivered, one is hidden, one is erased, and the wrapper takes one --
+    # so the caller 0 groups plus 3 spent numbers is RX_NCAPS 4. A build that
+    # numbered the erased group too would read 5, which is exactly what the
+    # PCRE2 textual control emits for the equivalent (?(DEFINE)...) spelling
+    # (MEASURED, 2026-09-03).
+    if [ "$u_ngroups" = "0" ] && [ "$u_ncaps" = "4" ]; then
+        pass "W1.3 erasure: ngroups=0, RX_NCAPS=4 -- the unnamed, unreferenced group spent NO number"
+    else
+        fail "W1.3 erasure: expected ngroups=0 and RX_NCAPS=4; got $u_ngroups / $u_ncaps.
+  RX_NCAPS 5 means the erased tier stopped erasing (the naive textual append number)."
+    fi
+else
+    fail "W1.3: --source could not build the composition fixture:
+$(cat "$W13/user.err")"
+fi
+
+# --- the three composition refusals -----------------------------------
+#
+# Q-W2 (D89 point 3): whole-pattern recursion inside a bound definition is
+# refused because the RULING is missing, not the meaning. A by-name call the
+# closure cannot satisfy RE-RAISES module backrefs own sentence, which is
+# what keeps the four perr blocks in tests/recursion/d27/sr_refusals.rxt at
+# today wording. And one name declared in two files of the closure is the
+# duplicate-block-name rule one scope out, naming both files.
+w13_refuse() {
+    local fixture="$1" label="$2"; shift 2
+    local out rc miss="" need
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/$fixture" \
+             -o "$W13/refuse.c" 2>&1)"
+    rc=$?
+    for need in "$@"; do
+        case "$out" in *"$need"*) ;; *) miss="$miss [$need]" ;; esac
+    done
+    if [ "$rc" != "0" ] && [ -z "$miss" ]; then
+        pass "W1.3 refusal: $label"
+    else
+        fail "W1.3 refusal ($label): exit $rc, missing:$miss
+  got: $out"
+    fi
+}
+w13_refuse compose_root_recursion.rxt \
+    "whole-pattern recursion inside a bound definition (Q-W2), naming the definition and its file:line" \
+    "selfy" "compose_root_recursion.rxt:" "whole-pattern recursion"
+w13_refuse compose_unknown_name.rxt \
+    "a by-name call the closure cannot satisfy re-raises the parser own sentence, unchanged" \
+    "nosuch" "which this pattern does not declare"
+w13_refuse compose_dup_definition.rxt \
+    "one definition name declared in two files of the closure, naming both" \
+    "word" "common.rxt" "compose_dup_definition.rxt"
+
+# --- THE DOGFOOD: the bench set as a source ---------------------------
+#
+# The claim is NOT that these patterns match anything in particular -- the
+# bench owns those expectations and the oracle that produced them. It is that
+# the FORMAT carries a real consumer real set: 33 ids a person chose, 32 of
+# them not C identifiers, one alternation of 4,096 branches on a single
+# pattern line.
+#
+# THE LOSSLESSNESS IS ASSERTED AGAINST THE BENCH OWN FILES WHERE THEY EXIST,
+# and against the fixture alone where they do not. pcrec-bench is a sibling
+# repo, not a dependency: a checkout without it must not fail this section,
+# so the byte-for-byte arm SKIPS LOUDLY and the structural arm always runs.
+AW="$FIXRUN/bench_altwide_0_2.rxt"
+aw_targets=$(grep -c '^target = ' "$AW")
+aw_blocks=$(grep -c '^pattern ' "$AW")
+if [ "$aw_targets" = "33" ] && [ "$aw_blocks" = "33" ]; then
+    pass "W1.3 dogfood: the altwide fixture carries 33 targets and 33 blocks"
+else
+    fail "W1.3 dogfood: expected 33 targets and 33 blocks, got $aw_targets / $aw_blocks"
+fi
+if "$TIMEOUT_BIN" 120 "$PCREC" --list-source "$AW" > "$W13/aw.tsv" 2>"$W13/aw.err"; then
+    aw_rows=$(grep -vc '^#' "$W13/aw.tsv")
+    aw_dups=$(awk -F'\t' '$1 == "target" { print $3 }' "$W13/aw.tsv" | sort | uniq -d | wc -l)
+    if [ "$aw_rows" = "66" ] && [ "$aw_dups" = "0" ]; then
+        pass "W1.3 dogfood: --list-source reads all 66 rows and the 33 derived prefixes are distinct"
+    else
+        fail "W1.3 dogfood: $aw_rows rows (want 66), $aw_dups colliding prefixes (want 0)"
+    fi
+else
+    fail "W1.3 dogfood: --list-source refused the bench set as a source:
+$(cat "$W13/aw.err")"
+fi
+# The SMALL one, built end to end. A large one would make this section pay
+# the bench own compile cost, which is the bench business and not this
+# suite -- w-8 is 56 bytes and eight branches.
+if "$TIMEOUT_BIN" 120 "$PCREC" --source "$AW" --target w_8 -o "$W13/w8.c" 2>"$W13/w8.err"; then
+    if grep -q '^    \.name = "w-8",' "$W13/w8.c"; then
+        pass "W1.3 dogfood: a bench pattern builds through --source --target, keeping its id w-8 as rx_info.name"
+    else
+        fail "W1.3 dogfood: the w_8 artifact does not carry the name w-8:
+$(grep -h '^    \.name = ' "$W13/w8.c")"
+    fi
+else
+    fail "W1.3 dogfood: --source --target w_8 failed on the bench set:
+$(cat "$W13/w8.err")"
+fi
+# BYTE-FOR-BYTE AGAINST THE BENCH OWN FILES, when they are there. This is
+# the only arm that can catch the fixture drifting away from the set it
+# claims to be a copy of -- a provenance header is a claim, and a claim
+# nothing checks is a comment.
+BENCH_PAT="${PCREC_BENCH_PATTERNS:-/home/duxevents/pcrec-bench/bench/altwide/patterns}"
+if [ -d "$BENCH_PAT" ]; then
+    aw_bad=0 aw_seen=0
+    for bf in "$BENCH_PAT"/*.rx; do
+        bn=$(basename "$bf" .rx)
+        aw_seen=$((aw_seen + 1))
+        want=$(cat "$bf")
+        got=$(awk -v want="$bn" '
+            /^pattern / { p = substr($0, 9); next }
+            /^name /    { if ($2 == want) { print p; exit } }' "$AW")
+        [ "$got" = "$want" ] || aw_bad=$((aw_bad + 1))
+    done
+    if [ "$aw_seen" = "33" ] && [ "$aw_bad" = "0" ]; then
+        pass "W1.3 dogfood: all 33 patterns are byte-for-byte the bench own .rx files (the .rxt round trip is the identity)"
+    else
+        fail "W1.3 dogfood: $aw_bad of $aw_seen patterns differ from the bench own files.
+  The fixture provenance header claims it is a verbatim copy; either it drifted
+  or the bench set moved. Regenerate it or update the header."
+    fi
+else
+    echo "SKIP: W1.3 dogfood byte-for-byte arm: $BENCH_PAT not present (pcrec-bench is a sibling repo, not a dependency)"
+fi
+
 # ---------------------------------------------------------------------
 echo
 echo "== Summary =="

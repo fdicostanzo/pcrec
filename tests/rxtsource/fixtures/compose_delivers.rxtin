@@ -1,0 +1,15 @@
+# [DD-13b.W1.3] COMPOSITION, and the three tiers in one file.
+#
+# `piece` NAMES one group (DELIVERED: a groups[] row whose ref is "piece"),
+# references one by number (HIDDEN: a slot, no row), and leaves one unnamed
+# and unread (ERASED: the A_CAP is deleted and it spends no number at all).
+# The caller declares no group of its own, so `ngroups` is 0 and every slot
+# above it belongs to the definition — which is what makes `nentries >
+# nnames` observable here for the first time in this tree.
+target = user
+
+pattern ^(?&piece)$
+name user
+
+pattern (?<kept>a)(b)(c)\2
+name piece
