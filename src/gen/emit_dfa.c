@@ -3603,11 +3603,32 @@ static void token_stop(StrBuf *c, const DfaForm *f)
      * cut one per-machine comment for exactly that reason (`emit_scan_edge`'s,
      * seven lines to four, ~900 emitted bytes on `[a-z]*`). The two facts a
      * reader cannot get anywhere else are what is left. */
+    /* THE WHOLE-MACHINE CASE IS THE FLOOR AT ZERO, and it is a FOLD rather
+     * than a special case — [CC-DIFF]'s uniform-table fold one accessor over,
+     * spelled the same way. `[a-z]*`'s forward machine is ONE state and that
+     * state is the head, so every value the predicate can see is in the
+     * reserved range and the answer is the constant. Emitting the compare
+     * anyway is `(unsigned)s >= 0u`, which is `-Werror=type-limits` in
+     * generated C the harness and every caller build with `-Wall -Wextra
+     * -Werror`; the loop's own shape does not change, because gcc folds the
+     * inline call and drops the unreachable arm. */
+    if (floor == 0) {
+        sb_printf(c,
+            "/* [OPT-EDGE] EVERY state of this machine is a scan-edge head, so the\n"
+            " * loop's generic path is unreachable and the test IS that constant. */\n"
+            "static inline int %s_%s_is_stop(%s_%s_state s) { (void)s; return 1; }\n",
+            p, m, p, m);
+        return;
+    }
+    char heads[48];
+    if (f->nscan == 1) snprintf(heads, sizeof heads, "the scan-edge head");
+    else snprintf(heads, sizeof heads, "one of the %d scan-edge heads", f->nscan);
     sb_printf(c,
-        "/* [OPT-EDGE] Dead, or one of the %d scan-edge head%s — which are the\n"
-        " * machine's TOP rows, so one unsigned compare answers both. */\n"
+        "/* [OPT-EDGE] Dead, or %s -- which %s the machine's\n"
+        " * TOP row%s, so ONE unsigned compare answers both. */\n"
         "static inline int %s_%s_is_stop(%s_%s_state s) { return (unsigned)s >= %uu; }\n",
-        f->nscan, f->nscan == 1 ? "" : "s", p, m, p, m, floor);
+        heads, f->nscan == 1 ? "is" : "are", f->nscan == 1 ? "" : "s",
+        p, m, p, m, floor);
 }
 
 /* The two accept accessors, same rule. `accepts_class` is emitted only under
@@ -5455,7 +5476,15 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
               ind, f->p, f->dir->c.name, f->dir->statev);
     sb_printf(c, "%s    if (%s_%s_is_dead(%s)) break;   // dead: no match can continue\n",
               ind, f->p, f->dir->c.name, f->dir->statev);
-    sb_printf(c, "%s  %s:\n", ind, le);
+    /* THE LABEL IS EMITTED ONLY WHERE SOMETHING JUMPS TO IT, which is the
+     * loop's entry and nothing else — the stop test reaches this block by
+     * FALLING THROUGH. Emitting it unconditionally is a `-Wunused-label`
+     * error in every artifact whose start state is not a head, and generated
+     * C is compiled `-Wall -Wextra -Werror` by the harness and by callers.
+     * The alternative idiom in this file, `__attribute__((unused))` on the
+     * label (`<p>_dead`'s), would say "nothing may jump here" of a label that
+     * IS jumped to on the other half of the population. */
+    if (s0head) sb_printf(c, "%s  %s:\n", ind, le);
     /* The head's own accept probe. It is the one loop-top statement the edge
      * path genuinely REPLAYS: an edge whose class test fails advances nothing
      * and changes nothing, so without this a head's accepting position would

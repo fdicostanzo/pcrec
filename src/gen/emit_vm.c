@@ -9327,10 +9327,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */\n"
         "static %svoid %s_run_state_init(%s_run_state *run)\n"
         "{\n"
-        "    int i;\n"
-        "    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n"
+        "    /* [K43] A DESIGNATED-RANGE INITIALIZER, NOT A LOOP. The loop this\n"
+        "     * replaced covered every slot, and gcc 15's -fanalyzer could not\n"
+        "     * prove it did through the anchored entry's call shapes -- it\n"
+        "     * reported CWE-457 at the trail save in %s_SET, on a read the loop\n"
+        "     * really had covered. An initializer states the same fact where\n"
+        "     * the analyzer can see it: the object is fully initialized before\n"
+        "     * the copy, and the copy writes the whole array. */\n"
+        "    static const ptrdiff_t %s_unset_slots[%s_NSLOTS] =\n"
+        "        { [0 ... %s_NSLOTS - 1] = PCREC_UNSET };\n"
+        "    __builtin_memcpy(run->slot_values, %s_unset_slots, sizeof %s_unset_slots);\n"
         "    run->resume_depth = 0; run->trail_depth = 0;\n",
-        ai, v.p, v.p, v.up);
+        ai, v.p, v.p, v.up, v.p, v.up, v.up, v.p, v.p);
     /* [DD-14 wave B+C] §5.6 site 5a — NOT an `ERR_FLOOR` site but a MISSING
      * INITIALISER, and R34's LENS2-7 found it by noticing the design's own
      * prototype set the sentinel BY HAND in `main()`, which is exactly the
