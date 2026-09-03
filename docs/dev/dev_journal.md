@@ -20108,3 +20108,30 @@ run's log is the trigger. PIN 288d505 → the bench (I-38, WINDOW OPEN):
 the STEP 2 AFTER reads against ledger §10 — search-filter rungs to
 0.90-1.10 of unwrapped, unwrapped rungs flat, d-01024's ×37 unchanged
 ([OPT-VEDGE]'s). Owed items listed on the [OPT-5] row.
+
+## 2026-09-03 — Fiftieth session, part 16 (08:5x): Frank's morning rulings; [TT-12] STEP 0 merged + STEP 1 launched; O-15 read and answered (I-39)
+
+Frank: (2) test-axes JOINS the battery ([TT-12] STEP 2 chartered); (3)
+GO for the bench's bounded@0.3 STEP 2 AFTER tonight (the bench wants his
+word directly — relayed to him); (1) [CC-DIFF] explained in full (ruling
+still owed); (4) K44's clocks explained: counterk:1807 is WALL-timed (the
+harness's gnutimeout per compile, exit 124), the resource witness
+CPU-timed (watchdog -c 45); both inflate under -j12 × PROCS=nproc.
+[TT-12] STEP 0 (lane tt12a, docs/dev/tt12_step0_profile.md, merged
+6fba88d): idle core-hours san 18.49 (15.7% busy; only 4/34 scripts read
+PROCS), mech 14.01 (47% busy — MY battery.sh ran PROCS=4 against
+[TT-8]'s measured PROCS=6), test 0.62 (81% busy, load 47 — K44's cause:
+two parallelism layers stacked); each test-axes axis is bounded by ONE
+3,065-case file (assertions/multiline.rxt) under per-file dispatch, so
+pairing should be near-additive. STEP 1 (lane tt12b, sonnet, launched
+~08:4x): pairwise axes, K45's tower documented, san -P measured then
+wired, the K44 test-stage shape table (-j12/PROCS=1, -j4/3, -j2/6),
+scripts/battery.sh (battery_v5 with mech PROCS=6). O-15 (bench 2b92b87):
+altwide@0.2's refusal boundary 256 < w ≤ 384 both routes; branch order
+×8.87@256 / ×20.1@512 on the VM, DFA byte-identical; the flat auto line
+to w-2048 under the raise; the scan-edge counterfactual ×1.089 on iso-ts
+at the pinned tier → [OPT-EDGE]'s BEFORE; the I-37 cell's 0.432
+reproduces on the clang arm (the gcc half still open — a layout probe
+proposed). I-39 answers the five asks; the ALTCLS stamps they asked for
+already exist (match_api.md:2429). The bench's daytime lane re-pins to
+288d505.
