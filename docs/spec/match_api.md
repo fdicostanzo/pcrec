@@ -2154,6 +2154,46 @@ engine-scoped.**
   push needle; the `_FAST_FRAMES` discriminator). A consumer that wants to
   know whether the entry chain is inlined reads this macro.
 
+**[ENG-ISL] STEP 1, 2026-09-03: `<PREFIX>_VM_ALT_ISLANDS`, and it is (b) for
+`RX_ALTCLS_FACTORED`'s reason.** There is no island MODE anywhere upstream of
+the emitter; it is what the emitted program turned out to CONTAIN, decided
+alternation by alternation while `src/gen/emit_vm.c` was standing on the node.
+
+```c
+#define RX_VM_ALT_ISLANDS 1   /* or 0, or more */
+```
+
+**The IFF: it is the number of this artifact's flat alternations that the VM
+lowered as an ALTERNATION ISLAND — a trie dispatch over the alternation's
+literal alternatives — rather than as `vm_alt`'s serial resume chain**
+(`docs/spec/tuning.md` §2.20). It is **UNCONDITIONAL on every VM artifact,
+hybrids included, and never defined on a pure-DFA artifact**: `0` is spelled as
+readily as any other value, because a fact readable by a macro's ABSENCE is the
+discriminator [DD-13] had to go back and remove from two checks. A DFA artifact
+carries no such decision — the DFA route determinizes the same trie for every
+alternation whether or not anyone names it — so there is nothing there to
+report.
+
+**A COUNT and not a boolean**, on `RX_ALTCLS_MERGES`/`_FACTORED`'s precedent:
+the island is selected PER ALTERNATION, so a pattern with two of them can take
+it for one and decline the other, and "did it" would lose which. It is not a
+MASK either, for `_DFA_UNIFORM_FOLDS`'s reason: the three masks in this section
+are masks because a rung, a strategy or a clamp is chosen per `A_REP` and a
+scalar would LIE on a mixed artifact, where "how many alternations took the
+island" is a whole-artifact total with no per-alternation axis to mix.
+
+What a consumer may conclude: the artifact dispatches its alternations by byte
+rather than by trying them in turn, so its cost on a wide alternation does not
+scale with the branch INDEX of the winner, and its emitted size does not depend
+on the ORDER the alternatives were written in. What it may NOT conclude:
+anything about the ANSWERS, which are identical either way — the island reports
+the same alternative, in the same backtracking order, as the chain.
+
+**It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for its
+reason: no consumer reads the fact at RUN time today, so a mirror would be
+built ahead of a measured need (D77). The trigger that would make one owed is
+the same one `RX_DFA_TABLE`'s entry names.
+
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the
 capacities the un-suffixed entries' FAST TIER runs on (§3, §10.9), and they

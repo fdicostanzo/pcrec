@@ -111,6 +111,27 @@ pcrec (the Makefile owns that).
   `make testscripts` or directly:
   `timeout 300 bash scripts/tests/safekill.test`.
 
+- **alt_census.py** — [ENG-ISL] STEP 1's CORPUS CENSUS of alternation
+  shapes: over `tests/**/*.rxt` and pcrec-bench's `bench/altwide/patterns/*.rx`
+  (read-only), how many flat alternations exist, how many are all-literal,
+  the branch-width distribution, the trie each builds (nodes, depth, fan-out)
+  and the MASK DEPTH — the largest number of alternatives that can be pending
+  on one root-to-leaf path, which is what sizes (or, as it turned out,
+  eliminates) the island's deferred machinery. It carries its OWN conservative
+  PCRE scanner rather than using python's `re._parser`, which factors common
+  prefixes as it parses (`abc|a|abd` comes back as `a` followed by a
+  three-way branch) — that is precisely the structure the census exists to
+  measure, so the standard parser would report the post-factoring shape and
+  call it the input. Anything the scanner is not certain about makes the
+  alternation unqualified, so every number is a LOWER BOUND on what the
+  emitter's own analysis takes, which is the safe direction for a sizing
+  census. It reports the pattern AS WRITTEN; `src/opt/altcls.c` rewrites the
+  tree before `src/gen/emit_vm.c` sees it, so the emitter's own qualification
+  is BROADER (it asks whether the subtree's language is a finite literal set),
+  and `docs/dev/lanes/isl1_report.md` records what that difference cost to
+  discover. Not a gate: nothing reads its output, and it decides nothing about
+  what a pattern MATCHES.
+
 - **safekill** — kills a process by PID/PGID or by cmdline pattern without
   the collateral-kill failure mode `pkill -f` produced twice on
   2026-08-19: a name pattern cannot distinguish two legitimate concurrent

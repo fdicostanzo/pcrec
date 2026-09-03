@@ -1319,6 +1319,77 @@ consumes the span as a BOUND (`attempt_position = window[0][0]`), never as the
 answer, and `search_from` is the strongest sound lower bound there is.
 
 
+### 2.20 `-fno-alt-island` — `PCREC_NO_ALT_ISLAND` (bit 23)
+
+**What it controls.** Which of two shapes `src/gen/emit_vm.c` lowers an
+alternation of literal alternatives into. `--list-axes` reports it as
+`alt-island`.
+
+Today's `vm_alt` emits an N-way alternation as a CHAIN: one resume frame per
+untried branch, the frame pushed at branch k resuming branch k+1, and each
+branch its own run of byte tests. Matching the LAST of 512 branches therefore
+costs 511 push/fail/pop round trips on ONE subject byte. The ALTERNATION
+ISLAND replaces that with a TRIE over the alternatives' literal bytes: a byte
+compare at a node with one child, a `switch` on the subject byte at a node with
+several, and one try site per node where an alternative ends.
+
+**What it applies to, and the predicate is about the LANGUAGE rather than the
+branch list.** The island is built when the alternation's whole subtree matches
+a FINITE set of literal byte strings — every element a single-byte class, every
+combination of them enumerable in bounded space. That is deliberately not "each
+branch is a literal run": `src/opt/altcls.c`'s stage-2 factoring (§2.7) runs
+first and rewrites a wide alternation into a shared literal followed by a
+nested alternation, so a branch test declines exactly the patterns the axis
+exists for. Asking about the language instead makes the island's answer
+independent of how far that earlier pass got.
+
+**What it declines**, each a selection outcome and never a refusal — the
+alternation is emitted by the chain unchanged:
+
+| declined | why |
+|---|---|
+| any element that is not a one-byte class | a trie edge is a byte; a multi-byte class edge would break the disjoint-siblings property the exactness argument rests on (`src/ir/nfa.c`'s rule 2) |
+| a quantifier, a group, a capture, a backreference, a lookaround, an assertion, a subroutine call | the language is not a finite literal set, or the VM is needed inside the alternation |
+| a **caseless** alternation | D23 folds a caseless literal to a two-member CLASS at parse time, so its alternatives are class-leading before the emitter sees them. This is `[FORM-CHAR]`'s axis, not this one |
+| more literal alternatives, or more total literal bytes, than the emitter's own enumeration budget | the cross product of concatenated alternations is exponential in principle; over the budget the island is not built |
+| fewer than two literal alternatives | there is no dispatch to make |
+
+**No answer moves either way, and the argument is structural.** Leftmost-first
+over an alternation of literals is `min{ i : alternative i matches here }` — a
+function of WHICH alternatives match and never of their length or of trie
+depth, which is `src/ir/nfa.c:192`'s own counter-example (`abc|a|abd` on "abd"
+is the `a` branch, index 1, length 1, not the longer `abd` at index 2). Every
+trie edge is one byte, so sibling edges are disjoint and a subject selects ONE
+root-to-leaf path; the alternatives that match are exactly the ones that end on
+that path. When the continuation fails, PCRE backtracks INTO the alternation
+(`(ab|abc)d` on "abcd" must fall from `ab` to `abc`), and the island tries
+those alternatives in ascending original index — the order the chain tries them
+in.
+
+**There is no runtime deferred mask, and that is a consequence of the same
+fact.** Because the walk is a single deterministic path, the set of
+alternatives still live when the walk stops is a compile-time function of the
+node it stopped at. The emitter writes that list out as a chain of try sites
+instead of computing it at run time, so the island allocates no slot.
+
+**Deny-only**, `-fno-altcls-factor`'s shape: the emitter takes the island
+wherever the predicate holds, so there is nothing for a caller to address and
+nothing to force.
+
+**It joins `emit_info_def`'s `strategy_denials` mask**, for that mask's own
+reason: the axis changes no answer, so two artifacts that behave identically
+must not differ in their reflection surface over it — and concretely, so that
+an alternation the predicate DECLINES is byte-for-byte the same under the flag,
+which is what makes the declined population a usable reference. What the
+emitter DID is reported by `<PREFIX>_VM_ALT_ISLANDS` (`docs/spec/match_api.md`
+§6.3), an activity COUNT.
+
+**VM route only.** The DFA route determinizes the same trie for free (that is
+why its artifacts are byte-identical under a branch reorder where the VM's are
+not), so there is nothing for this axis to select there and no DFA artifact
+carries the stamp.
+
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -1570,6 +1641,7 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
 | `flags` bit `PCREC_NO_OFFSET_SKIP` | `-fno-offset-skip` | §2.14 |
 | `flags` bit `PCREC_NO_ANCHORED_DFA` | `-fno-anchored-dfa` | §2.15 |
+| `flags` bit `PCREC_NO_ALT_ISLAND` | `-fno-alt-island` | §2.20 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
 
