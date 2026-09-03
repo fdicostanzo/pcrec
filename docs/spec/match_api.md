@@ -359,8 +359,11 @@ state that a reader should not have to infer:
   `outcap == 0` it writes nothing and returns the length it *would*
   produce. That is how a caller sizes a buffer before rendering.
 - **`rx_group_entry.ref`** is documented in the artifact only as
-  "NULL/empty for the primary's own groups". Its non-empty form is a
-  labeled insertion path that nothing in pcrec can produce today.
+  "NULL/empty for the primary's own groups". **[DD-13b.W1.3] it has a
+  producer now**: on a composed artifact (`pcrec --source`, see
+  `docs/spec/rxt_format.md`) a row whose `ref` is non-NULL names the
+  DEFINITION that declared the group, and that row is a library's group
+  seen by the caller. See §6's composition subsection.
 - **[ABI-NS], 2026-08-18 (D60 + addendum): every macro in this block is
   UNPREFIXED and byte-identical across every `--prefix`.** Before this
   date the give-up codes and the unset sentinel were spelled
@@ -1377,14 +1380,19 @@ struct rx_info {
     int           ngroups;         /* capturing groups in the PATTERN
                                        TEXT — a lexical fact, independent
                                        of --no-captures and of engine
-                                       selection */
-    int           nnames;          /* entries in groups[]: NAMED groups
-                                       only. 0 when the pattern text
+                                       selection. On a COMPOSED artifact
+                                       this is the TARGET pattern's own
+                                       count; a bound definition's groups
+                                       sit above it (D61, [DD-13b.W1.3]) */
+    int           nnames;          /* rows in groups[] the PRIMARY pattern
+                                       declared — a PREFIX of the array,
+                                       always. 0 when the pattern text
                                        declares no named group, and 0
                                        when module 'named-groups' is not
                                        ENABLED for this compile — which
                                        are two different reasons, not one
-                                       (see the staleness note below) */
+                                       (see the staleness note below).
+                                       nentries is the whole array */
     unsigned      engine;          /* PCREC_ENGINE_DFA=1 /
                                        PCREC_ENGINE_VM=2 */
     int64_t       step_budget;     /* -1 = none */
@@ -1442,9 +1450,12 @@ struct rx_info {
     int                   nentries;     /* [DD-13b.W1.2] rows in groups[],
                                             ALL of them. nnames counts the
                                             PRIMARY pattern's own, which
-                                            are a prefix of the array; the
-                                            two are equal on every artifact
-                                            pcrec emits today */
+                                            are a prefix of the array.
+                                            [DD-13b.W1.3]: on a COMPOSED
+                                            artifact the two DIFFER — the
+                                            rows past nnames are a bound
+                                            definition's delivered groups,
+                                            each carrying a non-NULL ref */
     const char           *search_form;  /* [OPT-5 STEP 2] HOW
                                             <prefix>_search recovers the
                                             match START: "pinned" (the
@@ -1490,14 +1501,61 @@ grammar is stricter — that is that format's rule, not this field's.)
 bsearches `groups[0 .. nnames)`; `nnames` is the count of the PRIMARY
 pattern's own named groups, and those rows are a genuine PREFIX of the
 array. `nentries` is the length of the whole array. **They are equal on
-every artifact pcrec emits today**, because nothing yet puts a row in
-`groups[]` that the primary pattern did not declare. The field ships now,
-equal, because it rides this `abi` bump rather than costing a second one;
-what will make the two differ is `.rxt` composition injecting a
-definition's own named groups ([DD-13b.W1.3]), whose rows sort below the
-primary's and carry a non-NULL `ref`. **A caller that wants only the
-pattern's own names should keep reading `nnames` and will not have to
-change**; a caller that wants everything in the array reads `nentries`.
+every artifact built from a single pattern**, because nothing puts a row
+in `groups[]` that the pattern itself did not declare. **[DD-13b.W1.3]
+they now DIFFER on a composed artifact** — see the composition subsection
+below. **A caller that wants only the pattern's own names should keep
+reading `nnames` and will not have to change**; a caller that wants
+everything in the array reads `nentries`.
+
+### Composition — what a caller sees of a library's groups
+
+**[DD-13b.W1.3], 2026-09-03.** `pcrec --source FILE` composes: the target
+pattern's `(?&name)` calls bind DEFINITIONS declared in that file or in a
+file it `lib`s (`docs/spec/rxt_format.md`). What follows is the whole of
+what composition changes about this struct; a caller of a
+single-pattern artifact is unaffected in every particular.
+
+**A library's groups are NON-CAPTURING to the caller by default** (D89),
+and there are exactly three tiers:
+
+| the definition's group | a caps[] slot | a `groups[]` row |
+|---|---|---|
+| one the definition NAMES — **delivered** | yes, above `ngroups` | yes, with `ref` = the definition's name |
+| unnamed, but the definition references it itself — **hidden** | yes, above `ngroups` | no |
+| unnamed and referenced by nothing inside it — **erased** | **no** | no |
+
+- **`ngroups` is the target pattern's own count and slots `1..ngroups`
+  keep their permanent-prefix promise**, exactly as D61 states it. A
+  definition's slots are above it.
+- **`nnames` is the target pattern's own named rows, and they are a
+  PREFIX of `groups[]`.** The array is sorted `(ref-is-NULL, name,
+  number)`, so §6.0's algorithm run over `groups[0 .. nnames)` is correct
+  unchanged and can never walk a name run into a library's row.
+- **`nentries` is the whole array.** Rows `[nnames .. nentries)` are
+  delivered library groups, each with a non-NULL `ref`.
+- **A delivered group is addressed BY NAME, never by number.** The number
+  in its row is the artifact's own business: it depends on which
+  definitions this target bound and in what order, so it may move when
+  the library changes even though nothing the caller wrote did. Read
+  `groups[i].name` and `groups[i].ref`, take `groups[i].slot`, and never
+  compute one.
+- **The definition's own wrapper takes a number and appears in NO row.**
+  It is internal.
+- **`RX_NCAPS` may move across library versions** while every index in
+  `1..ngroups` holds still.
+
+**WHAT A DELIVERED SLOT HOLDS TODAY, stated plainly because it is the one
+thing a reader will assume wrongly.** `groups[]` tells a caller WHICH
+library groups a composed artifact exposes and at WHICH slot. It does not
+yet promise that the slot holds the offsets the definition matched: a
+subroutine call is capture-transparent, so a callee's captures are
+restored on return and a delivered slot reads `(-1, -1)` — **which is
+PCRE2's own behaviour** for the equivalent pattern
+(`(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1 with group 1 unset). Making
+a call RETAIN what its callee matched is a declared property of the CALL
+SITE, and the syntax that declares it is [DD-13b.W1.4]'s. So today the
+name table is the deliverable and the live value is not.
 
 **[DD-13b.W1], 2026-08-30 — `nnames`'s comment was STALE, and the way it
 was stale is worth one paragraph.** It read *"0 until module
@@ -1608,11 +1666,13 @@ pattern has `ngroups=1, ncaps=2`.
 2026-08-18; advisory forward promise — no emitted text changes with
 it).** On any captures-on build, slots `1..ngroups` of the caps array
 are THIS pattern's own groups in its own left-to-right numbering, so
-`ngroups <= ncaps - 1` with equality on every build pcrec emits today.
-Slots above `ngroups` are reserved for future insertion/composition
+`ngroups <= ncaps - 1` with equality on every build from a single
+pattern. Slots above `ngroups` are reserved for insertion/composition
 mechanisms: a ref-bearing producer (§2's "labeled insertion path")
 APPENDS its delivered slots and never interleaves with or renumbers the
-primary prefix. A caller indexing `caps` by the pattern's own group
+primary prefix. **[DD-13b.W1.3] that producer exists**: a composed
+artifact has `ngroups < ncaps - 1`, and every slot in between belongs to
+a bound definition. A caller indexing `caps` by the pattern's own group
 numbers is therefore safe against every future insertion feature. The
 promise pins the caps LAYOUT, not group NUMBERING —
 `rx_group_entry.slot` remains the number-to-slot indirection for
