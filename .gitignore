@@ -46,4 +46,4 @@ docs/design/subroutines_measurements/email_specimen/throughput/
 /rulings.md
 
 # the manager -> lane rulings channel: polled, never committed (its own header says so)
-docs/dev/lanes/opt5i_rulings.md
+docs/dev/lanes/*_rulings.md
