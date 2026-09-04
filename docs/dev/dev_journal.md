@@ -20712,3 +20712,35 @@ Meanwhile isl1 is fixing r53's fourteen check findings (C1-C14 in the
 review file) plus the five doc items already landed (15701e4; the two
 knees are limits.def rows; the registry filter sees MIN/THRESHOLD; K46
 filed for the Makefile's missing limits.def dependency).
+
+## 2026-09-03 — Fifty-first session, part 39 (22:2x EDT): panel r53 COMPLETE — no answer divergence in ~11,400 cells, but the island can REFUSE what the chain accepts (S1); 14 check findings; 5 doc findings; all with isl1
+
+r53sem (opus): ~11,400 cells, island = chain = libpcre2 = python on
+every one (1,305 hand-built across ten families incl. cross products
+forced through the A_CAT arm; 10,085 fuzz cells over 1,102 patterns).
+Findings: S1 HIGH — a caller-observable REGRESSION: `((?:aa|bb)×11|zzz)`
+is REFUSED under the island (1,504,398 emitted bytes vs the 500,000
+cap) and compiles at 55,694 B without it — vm_isl_words' cross product
+grows the TRIE exponentially while the budgets bound only the word
+list; the knee on the VM is k=9 → 10 factors; test-axes counted
+refused=0 because the corpus has no such shape. RULED: build the island
+only where its emitted size ≤ the chain's for the same subtree (both
+from the analysis); a decline witness; a REFUSAL-IDENTITY check over a
+synthetic ladder — an axis's acceptance is refusal identity as well as
+answer identity. S2 HIGH — the same shape at 9 factors compiles and
+costs gcc 42.8 s / 574 MB (chain 0.26 s) through always_inline on the
+frameless trie (a 55-char fuzzer pattern showed the class too); S1's
+rule declines it. S3 = C6. S4 — the census's "lower bound" is wrong
+under altcls-MERGE (single-byte branches folded into a class decline
+the subtree); the class-member expansion is STEP 2. S5 LOW — not
+answer-identical under a binding --step-budget (the island is the
+cheaper arm; the documented "modulo which budget binds" class; the
+sweep's budget bucket has never been populated — a K-row candidate).
+r53chk (opus): C1-C14 (the pool forced the knob it tests; no member took
+an island; the identity excuse was blanket; floor of 1; vacuous
+converse; budgets bound acceptance; stamp-only island tests; the frame
+witness; the factoring precondition; hard-fail extraction; the pool
+floor/upper side; emit-ir engine; a garbled message; the gitignore
+glob; one abi pointer). r53doc (sonnet): D1-D5 done at 15701e4. All
+with isl1 in one landing pass; K46 filed on the way. The review file
+carries every finding with its disposition.
