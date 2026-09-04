@@ -663,3 +663,214 @@ that implementation and the paper is a named, cheap item in §5.
 
 I would not charter this without B having been measured first. If B gets the
 ratio from 27× to 3×, the remaining 3× is not worth a new subsystem.
+
+---
+
+## 4. Brittleness (Frank's directive 3, and his stated concern)
+
+The two candidates that actually compact are **A** (Frank's shape) and **B**
+(dominance pruning). This section takes each apart by failure mode and asks
+the project's own question of each one: *what would have to be true for a
+check to fail, and who chose that input* (`docs/dev/learnings.md` §3).
+
+The working definition, from the brief: **a mechanism whose failures nothing
+would catch is brittle.** By that definition the verdicts below are not
+symmetric, and the asymmetry is the useful part of this section.
+
+### 4.1 The existing checks, and what each one can see
+
+| check | sees | blind to |
+|---|---|---|
+| `.rxt` corpus under `tests/harness/run.sh` | wrong spans, wrong verdicts, on ~2,845 patterns | anything the mechanism does not reach on those patterns |
+| `make test-axes` | an axis flag changing an answer | a change that is answer-identical and wrong about size or cost |
+| PC-3 registry vs libpcre2 | construct reality and module attribution | spans (it is a registry differential) |
+| `counterk` differential, `tests/base/k18_*.rxt` (1,459 guard cases) | counted-repeat and empty-iteration preference errors | assertion × counted-repeat cross products |
+| `tests/codegen/run_*_identity.sh` | one emitted byte moving, against a reference build | nothing — this axis is well covered and loud |
+| `tests/size/` artifact-size log + tripwire | artifact size moving per pattern | compile TIME |
+| `tests/resource/` CPU budgets, `k18_cost_gates.rxt`'s harness budget | a compile-time cliff on the shapes it names | a uniform few-percent regression spread over the corpus |
+| `tests/mech/run_sabotage_matrix.sh` | a check that cannot go red | a check nobody wrote |
+| lim2's `tests/resource/lim2_census.c` | raw-vs-minimized shrink, forward machine, 12 patterns | the reverse and anchored machines |
+
+### 4.2 Candidate A — periodic partial minimization
+
+| # | failure mode | caught by | new check needed |
+|---|---|---|---|
+| A1 | a merge made on a partial machine that the final machine would not make (unsound in the silent direction) | the corpus sweep — **only if the online pass fires on corpus patterns.** It fires above a threshold; ordinary patterns never reach it. This is the `[MECH-REACH]` shape exactly: a witness that never reaches its site | **yes, and it is the load-bearing one:** a forced mode (`threshold = 1`, run after every interned state) plus the whole corpus, answer-identical. Without it the mechanism's soundness is checked on a population of about a dozen patterns |
+| A2 | `d->n` shrinks, so the state cap (`dfa.c:886`) and `PCREC_MAX_TABLE_ENTRIES` fire later: patterns that refuse today compile | **nothing asserts the refusal set.** lim2 §11's identical failure was caught by `tests/vm/run_vm_tests.sh`'s [SEL-1] section by luck, not by design | **yes:** a refusal-set manifest — verdict plus stamped category per pattern over corpus + `tests/resource` shapes, diffed. lim2 needs it too; it is one check for two rows |
+| A3 | scoped to the forward machine (lim2's precedent), leaving the reverse machine — where the measured shrink is worst, 29-65% (lim2 §2) — untouched | nothing per-machine | extend `lim2_census.c` to the reverse and anchored machines. Small |
+| A4 | the DFA is also the VM's capture-erased **prefilter** (S6.1); a prefilter that became a subset rather than a superset would drop matches | the corpus's hybrid patterns, `counterk`, `backrefs` | no — covered, provided A1's forced mode runs over the whole corpus |
+| A5 | state numbering moves, so emitted bytes move | the identity gates and the size ratchet, loudly | no. This axis is the project's strongest |
+| A6 | performance cliff: K25 records minimization at 15.3 s of a 15.4 s compile on `a{0,25000}`; k runs multiply it | `tests/resource/` budgets and `k18_cost_gates.rxt`'s own harness budget — this is precisely what that file exists for | no |
+| A7 | the threshold predicate's calibration — a number chosen against a small witness set | nothing | **yes:** a census across the population, and per learnings §3 it must not be derived from the mechanism's own decision. lim2 §10 is the template, including its failure |
+
+**Verdict on A: checkable, but only with A1's forced mode, and A1's forced
+mode is the whole difference between "tested" and "tested on twelve
+patterns".** A's real problem is not brittleness. It is that §3.2 expects it
+to merge almost nothing on the population that motivated the study, and that
+prediction is untested. **Measure before building** (§5, M1).
+
+### 4.3 Candidate B — dominance pruning inside the closure
+
+| # | failure mode | caught by | new check needed |
+|---|---|---|---|
+| B1 | the preorder dominates across an assertion boundary, so a `\b` / `(?m)$` / `\z` accept bit is wrong in one view only | `tests/assertions/` and PC-3 — **only if a corpus pattern combines an unrolled counted repeat with an assertion.** That is a cross-product cell, and learnings §3 records this exact failure ("a corpus needs the axes of the MECHANISM under test, not of the exemplar that motivated it; the cross-product cell neither of two large honest sweeps generates") | **yes, and it is the load-bearing one:** a generated corpus of {counted-repeat shapes} × {`\b`, `\B`, `(?m)^`, `(?m)$`, `\z`, `\Z`, `\G`}, oracle-verified against libpcre2. It does not exist today |
+| B2 | the K18 open-loop context makes "the language of a position" context-dependent, so a preorder computed on the bare NFA is wrong under some contexts | the four `k18_*.rxt` files' 1,459 guard cases — the strongest existing check for this hazard, and `DFA_INVARIANT` (`dfa.c:250`) aborts in shipped builds if loop nesting stops being proper | **yes:** sabotage rows planting an over-relating preorder, asserting the k18 suites go red. If they stay green that is a finding about the population, not a pass (learnings §3) |
+| B3 | priority: §3.3's condition 3 is an argument, and the leftmost-first machinery in this file has already produced K1, K17 and K18 against arguments that looked this clean | the corpus's spans, `counterk`, the lazy-preference witnesses `src/ir/nfa.c:741` names (`(?:ab\|a){0,2}?b`) | a preference differential over dominated-position shapes specifically — lazy and greedy spellings of the same counted repeat |
+| B4 | the reverse machine runs with `prune` off and must keep every thread to find the **earliest** accept; the soundness argument there is not the forward one | full-span corpus answers, if such a pattern exists in the corpus | same cross-product corpus as B1, with the reverse machine as an explicit axis |
+| B5 | emitted bytes move wherever domination exists | identity gates, size ratchet | no — but the landing is an `abi` bump plus a re-pin at every reader found by grep (D76/D94) |
+| B6 | the preorder is computed on **every** pattern, including the 99% that gain nothing; classically `O(\|Q\|·\|δ\|)` | `tests/bench/run_bench.sh`'s COMPILE-SPEED budget and `tests/resource/` — both calibrated for cliffs, not for a uniform 3% | **yes:** a corpus-wide compile-time delta, the shape the artifact-size log already has for size |
+| B7 | fewer states and smaller subsets mean K7 and the state caps fire later: the refusal set moves permissively | nothing | the same refusal-set manifest as A2 |
+
+**Verdict on B: brittle as the tree stands today, and specifically fixable.**
+Three of its seven failure modes (B1, B2, B4) live in a cross-product cell
+that no existing sweep generates, and B2's is the cell where this project has
+already been wrong three times. That corpus is a bounded, buildable thing —
+a few hundred generated patterns, oracle-verified — and learnings §3's rule
+applies with full force: **it must be written before the mechanism, not
+after**, because "guards written to answer a finding are reliably wrong in
+the way the finding was wrong."
+
+With that corpus and the sabotage rows, B stops being brittle. Without it, B
+is a mechanism whose sharpest failure mode nothing in the tree can see, which
+is the definition the brief gave.
+
+### 4.4 The null candidates' brittleness, briefly
+
+N1 (a work budget) has one failure mode: it refuses a pattern that would have
+compiled. That is loud, deterministic, and caught by the refusal-set manifest
+of A2/B7 — which N1 needs built anyway. N2 (project from the closed subgraph)
+cannot be unsound as a lower bound (§3.1), so its only failure is being
+*vacuous*, which is a silent failure of a different kind: the bail simply
+never fires and lim2's 10-20 s refusals come back. That is caught by lim2's
+existing cost check (`run_lim2_sizecap_projection.sh`'s check 2, the wall-time
+ceiling that fails when the bail stops firing) — a check that already exists
+and was already designed for exactly this.
+
+---
+
+## 5. Recommendation, and the measurement that would trigger building it
+
+### 5.1 Recommendation
+
+**Do not build A. Do not build C yet. Take two measurements, and let them
+decide B.** In order:
+
+1. **Fix lim2's margin problem with N2, as its own small row, now.** The
+   closed-subgraph block count is a sound lower bound with no percentage in
+   it, which retires lim2 §10's finding that no `BAIL_KEEP_PCT` value can
+   express the required margin. It changes no emitted byte, is not an `abi`
+   event, and is 80-120 lines. **Conditional on M1** below showing the closed
+   set is not empty; if it is empty, fall back to N1 (a deterministic work
+   budget), which is smaller still and delivers most of the measured benefit
+   while making no size claim at all.
+2. **Measure the prize for B (M2). If it is there, charter B; if it is not,
+   the honest answer to the charter's question is "no, not affordably", and
+   that is a legitimate outcome to record rather than a failure to route
+   around.**
+3. **Read the Nicol & Frohme paper and its library (M5).** No box time, and
+   it is the only thing that can retire §2.3's and §3.4's `unverified`
+   marks. Do it regardless of what M1 and M2 say.
+
+Frank's directive 2 asked whether "incremental partial during, thorough at
+the end" is simpler than full online minimization. **It is simpler — the
+soundness rule is one branch in `state_sig` — and I believe it is
+ineffective on the population that motivated the study**, because the merges
+it can soundly make are exactly the closed subgraph's, and on a counted
+repetition the frontier stays reachable from nearly everything until the
+end. That belief is the thing M1 tests, and M1 is cheap enough that no
+design work should happen before it.
+
+Frank's directive 3 asked whether this can be done without getting brittle.
+**For B: yes, but only after the cross-product corpus of §4.3 exists.** For
+A: yes, but only with the forced-threshold mode of §4.2, and the question is
+moot if M1 says A does nothing.
+
+### 5.2 The measurements
+
+All five are read-only instrumentation of a debug build, none of them land
+under `src/`. Each names its own acceptance bar in advance, per D77.
+
+**M1 — the closed fraction (decides A and N2; the cheapest thing here).**
+Instrument `pcrec_build_dfa`'s worklist to report, at each 5% of raw states
+built, how many built states have no unfilled row reachable from them.
+
+- Rows: `tests/base/k18_cost_gates.rxt`'s two witnesses (the census witness
+  `(1{0,30}?[^]abc][^abc]){28,30}0+|a` and the nested-counted family the
+  brief cites); pcrec-bench's altwide `w-2048`, `w-512`, `s-4096`, `s-2048`,
+  `sh1-512`; the `tests/counterk/` tower; and 20 ordinary corpus patterns as
+  a control.
+- Read: closed fraction against construction progress, per machine (forward,
+  reverse, anchored).
+- **Bar:** if the closed fraction passes 50% before half the raw states are
+  built on the k18 witness, A and N2 are both live. If it stays under 10%
+  until the last 5% of construction, **A is dead for this population and N2
+  is vacuous** — go to N1 and stop.
+
+**M2 — the dominance prize (decides B).** Instrument the same build with a
+deliberately illegitimate stand-in for the general preorder: drop a position
+when an earlier copy of the same unrolled repeat is present in the list. This
+is the special case §3.3 names and forbids as a landing; it is legitimate
+here because the only question it answers is *how much is there to win*.
+
+- Rows: the same set as M1.
+- Read: raw states, minimized states, `sum(nlist)` (the K7 charge),
+  construction wall time — each with and without the stand-in.
+- **Bar:** charter B's general form if, on the k18 witness, the raw/minimized
+  ratio falls from 27× to under 3×, **and** `sum(nlist)` falls by more than
+  2× on the altwide `w-N` series. If the ratio stays above 10×, B is not the
+  mechanism either; record that and close the study's question.
+
+**M3 — the refusal-time prize (the thing [LIM-2] actually wanted).** Refusal
+wall time on `w-2048` and on `run_lim2_sizecap_projection.sh`'s own
+1,600-literal synthetic witness, under whichever of N1/N2/B survives.
+
+- **Bar:** lim2's own target was "the VM route's cost class", ~0.1 s. lim2
+  measured 1.55 s on `w-2048` and 12.51 s on `s-4096` and did not reach it.
+  Beating 1.55 s on `w-2048` is the honest bar; reaching 0.1 s is the goal.
+
+**M4 — the cost on the 99% (a veto, not a prize).** Compile-time delta over
+the whole `.rxt` corpus for whichever prototype survives M1/M2, in the shape
+the artifact-size log already has for size.
+
+- **Bar:** median regression under 2%, p99 under 10%. Worse than that and the
+  mechanism needs a threshold predicate, which reopens §4.2's A7 calibration
+  hazard and should be counted against the candidate's simplicity, not waved
+  through.
+
+**M5 — read the literature properly.** Nicol & Frohme, arXiv:2505.10319 /
+TACAS 2026, in full, plus their open-source library: the operational
+definitions of "equivalence registry", "convexity closure" and the threshold
+predicate; the experimental numbers; the overhead on easy inputs. No box
+time, no acceptance bar — it retires four `unverified` marks in this
+document.
+
+### 5.3 The acceptance bar for the step itself, whenever it is chartered
+
+Not a measurement, a delivery standard, stated here so it is not negotiated
+later:
+
+- Answer-identical over the whole corpus on every axis (`make test-axes`),
+  and PC-3 green.
+- **The cross-product corpus of §4.3 (counted repeats × assertions × machine
+  direction) written, oracle-verified and RED under a planted over-relating
+  preorder, before the mechanism lands** — not after.
+- A refusal-set manifest, with every movement in it explained and carried in
+  `docs/spec/limits.md` in the same change (D80).
+- The identity gates green after a deliberate `abi` bump and a re-pin at
+  every reader of the number found by grep (D76/D94), or byte identity
+  demonstrated and the bump shown to be unnecessary — measured, not argued
+  from §1.3(c)'s plausibility sketch.
+- `make strict`, `make test`, `make test-codegen`.
+
+### 5.4 What this study does not claim
+
+- That B is sound. §3.3's three conditions are stated as obligations, and
+  condition 3 (priority) is an argument I want attacked.
+- That the byte-identity sketch in §1.3(c) holds. It is a plausibility
+  argument with three named holes and it must be measured.
+- Anything about Nicol & Frohme's algorithm beyond its abstract.
+- Any number about pcrec that was not read from the code or from lim2's
+  report. **No compile, no `make`, and no benchmark was run by this lane**;
+  every quantitative claim here is either cited from `lim2_report.md`, from
+  `known_issues.md`, from `limits.def`, or marked as an expectation to be
+  measured.
