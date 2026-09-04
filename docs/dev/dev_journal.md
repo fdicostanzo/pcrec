@@ -20647,3 +20647,22 @@ under -fno-alt-island. isl1 restored the file (dd1a39b's precedent);
 the regeneration is the battery's, on the merged tree, read with that
 +31 in mind. The manager's 20:59 rulings did not reach the lane (it
 listed them as open at 21:1x); resent compressed.
+
+## 2026-09-03 — Fifty-first session, part 36 (21:2x EDT): Frank files [OPT-DIAL] — a speed-vs-size dial that sets the trade-off switches as a group from a policy table
+
+On the inline ladder ("it can be switched"): Frank — "We should have a
+method of indicating the relative desire of speed vs size. Say there
+was a dial of N which indicated max speed vs min size then these
+switches could be set as a group depending on the dial setting." Filed
+as [OPT-DIAL], a D82 meta-axis: one ordinal option (spelling mine)
+setting a GROUP of existing switches from a policy table (one row per
+switch, one column per dial value), explicit flags overriding it, the
+value stamped, answer identity across the dial as the acceptance
+(test-axes' shape, unchanged). Only switches with a MEASURED exchange
+rate go on it — the inline ladder is entry one; [ART-SIZE]'s bar and K,
+`--unroll`, the table representations, prefilter collapse, the caps are
+candidates with ledgers to read; pure wins (the island) and unmeasured
+trades stay off. STEP 0 = the inventory from ledgers we already have.
+Frank's clarification on the ladder's .text: the artifact's own object
+only (`gcc -O2 -c`, no driver), the two arms differing only in the
+hand-removed attribute.
