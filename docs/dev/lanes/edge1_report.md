@@ -1,7 +1,9 @@
 # edge1 — [OPT-EDGE] STEP 1 (shared-sentinel edge dispatch) + K43 (b)
 
 Lane B of the 2026-09-03 evening wave. Branch `lane/edge1`, based on main
-9d8401a (abi 17). Written under the bench's box hold: TONIGHT is
+9d8401a (abi 17), delivered at **abi 19** as **[OPT-EDGE] STEP 1 ALONE** —
+K43 (b) was chartered onto this branch and DROPPED from it on measurement
+(§9). Written under the bench's box hold: TONIGHT is
 write-only, no `make test` / `make test-axes` / `make test-codegen` /
 batteries / timing loops. Every acceptance number that needs a suite is
 marked **OWED**.
@@ -450,7 +452,12 @@ ruling adopted. Every number below is from a log under `build/`.
 | `make test LINTGEN=1` | 32/32 sections, **9 reds** |
 | `make test-axes` | (in progress at the time of writing) |
 
-**EVERY SUBSTANTIVE RED TRACES TO K43 (b), and §8 is the finding.** The two
+**EVERY SUBSTANTIVE RED TRACED TO K43 (b), AND ALL OF THEM WENT WITH IT.**
+After the revert (§9): `tests/codegen/run_size_term.sh` alone is **32 passed
+/ 0 failed** — the [ART-SIZE] materiality bar is green, which is the
+diagnosis confirmed rather than argued — and `gcc -fanalyzer` is clean on
+both regressing patterns as single artifacts. The numbers below are the
+PRE-revert run and are kept because they are K43's evidence. The two
 `make test` reds were K37 (mine, in the draft check, fixed) and the
 [ART-SIZE] materiality bar (K43's bytes). LINTGEN's nine are six analyzer
 build failures from a SECOND false positive K43 (b) exposes, the same
@@ -741,3 +748,84 @@ timing acceptance on a quiet box. §3.6b, §3.7 and §3.8 carry the numbers.
    bound how much shorter is open.
 5. **F5's dead-fall-through hazard** — recorded with no witness, per this
    morning's ruling. If the manager wants it hunted, it is a separate row.
+
+---
+
+## 9. K43 (b): CHARTERED ONTO THIS BRANCH, DROPPED FROM IT ON MEASUREMENT
+
+Frank ruled direction (b) — a designated-range initializer for the emitted
+slot array, so gcc 15's `-fanalyzer` can prove the slots initialized, with
+`make test LINTGEN=1` green as the acceptance. It was built (`bd333f5`),
+measured, and **reverted** (`628331aa`) on the manager's ruling, because the
+measurement refutes it as a fix. The measurement is kept here as K43's
+finding; the row goes back to Frank.
+
+**IT MOVES THE FALSE POSITIVE RATHER THAN REMOVING IT.** Two arms, plain
+artifacts (what the suite compiles), gcc 15.2.0 `-O1 -Wall -Wextra -Werror
+-fanalyzer`, 30 patterns:
+
+| | |
+|---|---|
+| error → clean | **7** — K43's own site, the `RX_SET` trail-save read of `slot_values` |
+| clean → **ERROR** | **2** — `((a)|b)*` and `(?:(a)|(b))*c` |
+| unchanged | 21 |
+
+The two regressions are a SECOND, DISTINCT false positive at the trail
+REWIND:
+
+```
+slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;
+error: use of uninitialized value '*<unknown>.slot_index' [CWE-457]
+```
+
+K43's site is the read of the SLOT ARRAY; this is the read of the TRAIL
+ENTRY. **Making the slot array provably initialized is exactly what lets the
+analyzer push further into the function and reach the rewind**, where nothing
+can prove the entries below `trail_depth` were written. The same trick does
+not extend: the trail is caller-sized and up to thousands of entries, so
+initializing it is the O(cap)-per-call page-touch [OPT-1] exists to remove.
+
+**MAIN AND THE BRANCH WERE EXACT INVERSES** — main clean on both regressing
+patterns and erroring on K43's own `(a*)*`, the branch the reverse — so
+LINTGEN is not green either way. That is the acceptance unmet.
+
+**AND IT WAS THE SOLE CAUSE OF THE [ART-SIZE] MATERIALITY BAR RED.** Its 101
+model-visible bytes (578 raw; the 8-line comment is comment-excluded and
+costs the model nothing) are K-INVARIANT, so they land on both sides of a
+ratio the bar pins to 0.73% and pull it toward 1. The decisive control:
+`((a)|ab){4000}c` under a threshold-1000 reference compiler reads
+`size-model` on main and `size-model-declined` on the branch. Confirmed by
+the revert: that script alone is 32/0 again.
+
+**THE GENERALISABLE FINDING** (the manager takes it to `learnings.md` §3):
+any emitted-bytes change to VM artifacts moves that bar, because the bar's
+quantity is a RATIO and the change is K-invariant. abi 17's [CC-DIFF]
+`always_inline` landed on frameless artifacts only and missed it; K43 was
+the first change to hit every member of the population at once. Ruled
+disposition: **touch nothing in §9's constants** — [ENG-ISL]'s branch, which
+merges first, has already rebuilt that cell as a witness POOL.
+
+**K43 RETURNS TO FRANK** with (b) refuted and the live options unchanged:
+(a) per-site suppressions or a documented exclusion list, and (c) revisit on
+a newer gcc.
+
+---
+
+## 10. TWO THINGS THIS LANE ALMOST COMMITTED AND DID NOT
+
+**A POISONED `docs/dev/artifact_size_log.tsv`.** The `make test LINTGEN=1`
+run left a regenerated log in the tree reading `rows=2896` against the
+committed `rows=2933` — **37 artifacts missing**, because those are the ones
+that failed to compile under `-fanalyzer`. `tests/size/run_size_log.sh`'s own
+header says the log must come from a FULL-CORPUS run and never a partial
+one, and a LINTGEN run is exactly the partial case: a compile failure
+silently drops a row, and committing it would have re-pinned the ratchet's
+population DOWN. Reverted with `git checkout --`. The regeneration is the
+manager's own one commit after the merges.
+
+**A DRAFT CHECK THAT MEASURES THE WRONG NUMBER.**
+`tests/codegen/run_scan_edge_dispatch.sh` stays outside every make target,
+red on two of four witnesses, with its four attempted repairs and their wrong
+numbers recorded in its own §6 (F6, and the ruled one-hour SCC attempt at
+`5f4af3ef`). Green on three witnesses by reading the wrong number on four is
+the vacuity the file exists to avoid.
