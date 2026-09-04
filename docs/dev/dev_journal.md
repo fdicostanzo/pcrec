@@ -21382,3 +21382,5 @@ session. All eight idle agents were stopped with TaskStop (it works for
 in-process agents — the accumulation Frank described is cleared for this
 session); every worktree removed. Next: wake.md rewritten for the new
 machine, then the push of main and the lane branches (Frank's ruling).
+
+Part 68 addendum (19:3x): the restarted bench session (pcrecdev2) launched its held 288d505 STEP 2 AFTER suite at 19:28 on I-44 — quiet gate verdict quiet (load1 0.2), four passes, ~7.3 h, expected done ~03:00 EDT; [B37]'s re-pin target moves to 334fd10e / abi 22; its WINDOW CLOSED goes to the outbox. Acked live; nothing of pcrec's runs on the box from here.
