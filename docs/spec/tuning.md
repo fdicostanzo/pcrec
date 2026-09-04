@@ -1506,6 +1506,73 @@ not), so there is nothing for this axis to select there and no DFA artifact
 carries the stamp.
 
 
+### 2.21 `--vm-entry-shape=N` — the VM entry chain's ORDINAL rung
+
+Not a bit in `pcrec_options.flags`; a separate `int vm_entry_shape` field
+(`lib/pcrec.h`), `--unroll=K`'s shape rather than the deny family's. Range
+enforced at the CLI: an integer in `0..4` (`cli/main.c`).
+
+**What it selects.** A VM artifact's six entries (`<prefix>_search`,
+`_search_in`, `_match`, `_match_in`, `_match_caps`, `_match_caps_in`) sit on
+three thin `_run` helpers which sit on one matcher body,
+`<prefix>_match_anchored`. This value chooses how many copies of that body the
+artifact carries and whether the un-suffixed entries bind storage or forward:
+
+| N | token | shape |
+|---|---|---|
+| 0 | — | **AUTO** (the default): the size term below chooses |
+| 1 | `plain` | no attribute anywhere. ONE body; six entries, each with its own frame, its `-fstack-protector` canary and an out-of-line call |
+| 2 | `shared` | the body `noinline` (ONE copy, called); the three un-suffixed entries FORWARD to their `_in` siblings through a static empty descriptor, so they carry no frame and no canary |
+| 3 | `forward` | the same forwards, body inlined: THREE copies, in the three `_in` entries. No canary anywhere in the artifact |
+| 4 | `inline` | six copies — what `[CC-DIFF]` STEP 1(a) shipped |
+
+**ANSWER-IDENTICAL across every value**, and the emitted matcher program is
+byte-identical across all five: what moves is the entry scaffolding above
+`goto <prefix>_L0;` and nothing below it.
+
+**A value the artifact cannot honour is a SELECTION OUTCOME, never a
+refusal** — `-fno-altcls-factor`'s rule. Values 2-4 need a FRAMELESS artifact
+(`<PREFIX>_VM_FRAMELESS 1`): gcc refuses `always_inline` on a function
+containing a computed goto, and on a framed artifact the storage is live, so
+inlining deletes nothing and only inflates the entry (`[CC-DIFF]` STEP 0
+measured 1.032 there). A framed artifact takes `plain` whatever is asked.
+Values 2 and 3 need more: the forward binds a NULL descriptor, so the artifact
+must provably never WRITE the working storage — no `RX_PUSH`, no linked call
+and no `RX_SET`. The trail is real storage even on a frameless artifact
+(`(abc)(def)` pushes nothing and saves two capture slots), so frameless alone
+is not enough. Where a forward rung is illegal the fallback is by INTENT:
+`shared` falls to `plain` and `forward` falls to `inline`, the other rung of
+the same body-count family.
+
+**AUTO, and the size term.** `VM_INLINE_CHAIN_MAX_BYTES` (`src/core/limits.def`,
+4,096 bytes) is compared against the artifact's own emitted program bytes,
+stamped as `<PREFIX>_VM_PROGRAM_BYTES`. At or below it AUTO takes `forward`;
+above it, `shared`. Where the forward rungs are illegal AUTO takes `inline`
+below the term and `plain` above it — the two shapes that shipped before and
+after `[CC-DIFF]` STEP 1 respectively, so neither step is novel.
+
+**Reason it exists, and it is a measurement.** `[CC-DIFF]` STEP 0
+(`docs/dev/ccdiff_step0.md`) found gcc leaving the entry chain out of line
+where clang inlines it, costing a 152-byte frame, a stack-protector canary and
+a call per search on storage a frameless artifact never touches; STEP 1(a)
+fixed that with `always_inline`, which six entries then honoured six times.
+`[ENG-ISL]` made WIDE artifacts frameless, and the same gate replicated a
+70 KB matcher six times (`.text` x3.8, gcc x4.3 on `w-256`). This value is the
+copy count made addressable, and the size term is where it is chosen from the
+artifact. `docs/dev/lanes/ccd2_report.md` §3 is the four-rung ladder the term
+was placed on.
+
+**What the emitter DID is stamped** — `<PREFIX>_VM_ENTRY_SHAPE` (the token
+above) and `<PREFIX>_VM_PROGRAM_BYTES` (the number the term compared), both
+`docs/spec/match_api.md` §6.3 family (b), both on every VM artifact including
+a hybrid, neither on a pure-DFA artifact. Two stamps rather than one because
+four different artifacts can read `plain` for four different reasons (framed,
+forward-illegal and large, tiered, or asked for), and the outcome alone does
+not say which.
+
+**Not masked out of `rx_info.flags`**, because it is not a flags bit at all;
+it has no reflection-surface question to answer.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while

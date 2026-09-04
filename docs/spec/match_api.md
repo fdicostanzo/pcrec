@@ -2304,6 +2304,57 @@ engine-scoped.**
   push needle; the `_FAST_FRAMES` discriminator). A consumer that wants to
   know whether the entry chain is inlined reads this macro.
 
+  **[CC-DIFF] STEP 2, 2026-09-04: THAT SECOND FACT IS NOW A NECESSARY AND NO
+  LONGER A SUFFICIENT CONDITION, and `<PREFIX>_VM_ENTRY_SHAPE` carries the
+  rest of it.** The inline attribute stopped being a boolean when STEP 2 made
+  the entry chain a four-rung ordinal (`docs/spec/tuning.md` §2.21): a
+  frameless artifact may carry the attribute on all eight statics (`inline`,
+  `forward`), on seven with the matcher `noinline` instead (`shared`), or on
+  none at all (`plain`, which AUTO selects above the size term where the
+  forward rungs are illegal). So this macro's `1` now means the artifact IS
+  ELIGIBLE for the attribute, and the SHAPE stamp says what was actually
+  emitted. `0` still means none of them carries it, exactly as before — a
+  framed artifact is `plain` by construction and there is no second route to
+  `0`.
+
+**[CC-DIFF] STEP 2, 2026-09-04: `<PREFIX>_VM_ENTRY_SHAPE` and
+`<PREFIX>_VM_PROGRAM_BYTES`, and they are (b) for `_VM_FRAMELESS`'s reason.**
+There is no entry-shape MODE upstream of the emitter either: the rung is
+chosen where the program has just been emitted, from the program's own size
+and from what it turned out to contain.
+
+```c
+#define RX_VM_ENTRY_SHAPE   "forward"   /* or "plain", "shared", "inline" */
+#define RX_VM_PROGRAM_BYTES 646ULL
+```
+
+**The IFF for the first: it names the rung the emitter TOOK for this
+artifact's six entries** — `plain` (one body, six framed entries), `shared`
+(one out-of-line body behind three forwarding entries), `forward` (three
+bodies in the three `_in` entries, three forwards), `inline` (six bodies,
+what STEP 1(a) shipped). A **CLOSED TOKEN**, `<PREFIX>_ENGINE_SEL`'s shape
+and for its reason: a consumer cannot bucket on prose, and the value set is
+fixed at four by the emitter's own enum.
+
+**The IFF for the second: it is the artifact's emitted VM program size in
+bytes — the exact quantity `VM_INLINE_CHAIN_MAX_BYTES` was compared against
+when AUTO chose the rung.** Both are **UNCONDITIONAL on every VM artifact,
+hybrids included, and never defined on a pure-DFA artifact**, on
+`_VM_FRAMELESS`'s own rule.
+
+**THE SECOND MACRO IS NOT DECORATION, and that is why there are two.** Four
+artifacts can stamp `"plain"` for four different reasons — framed, or
+forward-illegal above the term, or tiered, or asked for — and the shape alone
+does not distinguish them. `<PREFIX>_VM_FRAMELESS` separates the first; the
+program size against the stamped limit separates the rest. A stamp whose
+outcome is visible and whose input is not is a fact a reader can see and
+cannot CHECK, which is the shape §6.3's stamps repeatedly exist to prevent.
+
+Both are SCALARS, not masks, on `_VM_FRAMELESS`'s reason: the entry shape is
+a whole-artifact fact with no per-`A_REP` axis to mix. Neither has an
+`rx_info` mirror, on `RX_DFA_TABLE`'s precedent — no consumer reads either at
+RUN time today (D77).
+
 **[ENG-ISL] STEP 1, 2026-09-03: `<PREFIX>_VM_ALT_ISLANDS`, and it is (b) for
 `RX_ALTCLS_FACTORED`'s reason.** There is no island MODE anywhere upstream of
 the emitter; it is what the emitted program turned out to CONTAIN, decided

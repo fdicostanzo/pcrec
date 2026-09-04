@@ -234,30 +234,53 @@ PCREC_LIMIT(VM_ISL_BYTES_PER_NODE, 180, "bytes", "selection knee", NONE, "", "[E
 PCREC_LIMIT(VM_ISL_BYTES_PER_CHAIN_NODE, 98, "bytes", "selection knee", NONE, "", "[ENG-ISL]: measured marginal emitted-code bytes per AST node of the subtree vm_alt's serial chain would emit instead", EMIT_VM)
 PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-ISL]: how many times the chain's estimated emitted size the island may reach before it declines; on the ESTIMATOR the two populations separate at 2.60 against 4.02, and 2 is validated by the random size census (0 refused, max artifact growth 1.03x) rather than argued", EMIT_VM)
 
-/* [CC-DIFF] STEP 2 — THE INLINE CHAIN'S SIZE TERM, and it is a POINT ON A
+/* [CC-DIFF] STEP 2 — THE ENTRY CHAIN'S SIZE TERM, and it is a POINT ON A
  * MEASURED CURVE rather than a defect boundary.
  *
  * WHAT IT DECIDES. `pcrec_options.vm_entry_shape` AUTO (the default) reads
- * this: an artifact whose emitted VM program is at or below it takes the
- * top rung (the matcher body inlined into all six entries, [CC-DIFF] STEP
- * 1(a)'s shape); one above it steps down. The quantity compared is the
- * VM program's own emitted SOURCE bytes — `job->vmsb.len` at the point the
- * shape is chosen, the same buffer the emitted-size caps and [ART-SIZE]'s
- * ladder already measure — and NOT a second analysis of the AST, for
- * emit_vm.c's standing "one derivation" rule.
+ * this: a VM artifact whose emitted program is at or below it takes rung
+ * FORWARD (the matcher body inlined into the three `_in` entries, the three
+ * un-suffixed entries forwarding), one above it takes rung SHARED (one
+ * out-of-line body behind the same three forwards). The quantity compared is
+ * the VM program's own emitted SOURCE bytes — `job->vmsb.len` at the point
+ * the shape is chosen, stamped on every VM artifact as
+ * `<PREFIX>_VM_PROGRAM_BYTES` so the decision is auditable without the
+ * command line — and NOT a second analysis of the AST, for emit_vm.c's
+ * standing "one derivation" rule.
  *
- * WHY A TERM AT ALL. `always_inline` on the entry chain BUYS run time at
- * every width isl1 measured, and the benefit barely decays: 0.780 / 0.770 /
- * 0.842 of the un-attributed time at w-8 / w-64 / w-256
- * (docs/dev/lanes/isl1_report.md §12.2). What explodes is the PRICE — .text
- * x2.58 / x3.91 / x6.51 and gcc x2.9 / x5.2 / x6.6 across the same two width
- * decades. So the honest reading is never "inlining is wrong on big
- * programs"; it is that the exchange rate degrades by two and a half times,
- * and where to stop is a choice made with the numbers.
+ * THE VALUE IS SET AT A MEASURED GAP, AND THE GAP IS WHERE FORWARD STOPS
+ * BEING FREE. `.text` under rung FORWARD as a fraction of rung SHARED's, over
+ * 20 artifacts on this box (gcc 15.2.0 `-O2 -c`; the full table is
+ * docs/dev/lanes/ccd2_report.md §3):
  *
- * THE VALUE IS SET AT THE LADDER'S OWN MEASURED GAP. See
- * docs/dev/lanes/ccd2_report.md for the four-arm table this was read off. */
-PCREC_LIMIT(VM_INLINE_CHAIN_MAX_BYTES, 20000, "bytes", "selection knee", FLAG, "", "[CC-DIFF] STEP 2: emitted VM program bytes at or below which the entry chain is inlined into all six entries; above it the emitter steps down the vm_entry_shape ladder. --vm-entry-shape=N overrides the decision outright", EMIT_VM)
+ *   program bytes    646    818   3,222   4,024 | 5,183   8,558  79,451  305,686
+ *   FORWARD/SHARED  0.62x  0.65x  0.89x   0.98x | 1.13x   1.45x   1.97x    3.15x
+ *
+ * Below about four kilobytes of program FORWARD is SMALLER than SHARED as
+ * well as structurally better; above it FORWARD starts paying for its two
+ * extra body copies and the price rises without bound. 4,096 sits inside the
+ * one measured gap the crossing falls in (4,024 at 0.98x, 5,183 at 1.13x).
+ *
+ * WHY THE LADDER'S TOP RUNG IS NOT THE DEFAULT ANY MORE. [CC-DIFF] STEP
+ * 1(a) shipped rung INLINE (six body copies). Measured, rung FORWARD has the
+ * IDENTICAL object-code properties — no entry frame, no `-fstack-protector`
+ * canary anywhere in the artifact, no out-of-line chain symbol — at almost
+ * exactly HALF the `.text` and half the gcc time, at every width from 646 to
+ * 305,686 program bytes (0.50x-0.61x, 20 artifacts, no exception). Six copies
+ * exist only because six entries each honour the attribute; there are three
+ * distinct call shapes, so three copies is what the mechanism actually needs.
+ *
+ * WHAT THIS NUMBER IS STILL OWED. The run-time arm is isl1's ladder
+ * (docs/dev/lanes/isl1_report.md §12.2), which measured INLINE against PLAIN
+ * at a flat 16-23% across two width decades. Rungs FORWARD and SHARED are NEW
+ * points and their ns/call is NOT YET MEASURED — SHARED in particular keeps a
+ * canary in each `_in` entry (`<prefix>_run_state`'s own slot array trips
+ * `-fstack-protector-strong`, which is why STEP 0's "elide the buffers
+ * without inlining" measured 0.986, i.e. nothing). If the quiet-box ladder
+ * finds SHARED at PLAIN's run time, this term moves down; if it finds it at
+ * FORWARD's, the term becomes nearly moot. It is placed on the size and gcc
+ * evidence that exists and is stated as such. */
+PCREC_LIMIT(VM_INLINE_CHAIN_MAX_BYTES, 4096, "bytes", "selection knee", FLAG, "", "[CC-DIFF] STEP 2: emitted VM program bytes at or below which the entry chain is inlined into the three _in entries (rung FORWARD); above it one shared out-of-line body (rung SHARED). --vm-entry-shape=N overrides the decision outright", EMIT_VM)
 
 /* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
 

@@ -9730,23 +9730,37 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     const bool may_fwd  = !touches_storage && !tiered; /* rungs 2, 3    */
     int shape = cx->opt->vm_entry_shape;
     if (shape == PCREC_VM_ENTRY_AUTO) {
-        /* AUTO: the top rung under the size term, and the CHEAPEST rung this
-         * artifact can reach above it. `may_fwd` false above the term leaves
-         * PLAIN as the only step down — which is the shape that shipped
-         * before [CC-DIFF] STEP 1, so the step-down is never novel code. */
-        shape = (long long)job->vmsb.len <= VM_INLINE_CHAIN_MAX_BYTES
-                  ? PCREC_VM_ENTRY_INLINE
-                  : (may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN);
+        /* AUTO PICKS BETWEEN FORWARD AND SHARED, AND NEVER INLINE, WHICH IS A
+         * CHANGE FROM WHAT STEP 1(a) SHIPPED AND IS MEASURED RATHER THAN
+         * PREFERRED. Rung FORWARD has INLINE's object-code properties exactly
+         * — no entry frame, no canary anywhere in the artifact, no
+         * out-of-line chain symbol — at 0.50x-0.61x of its `.text` and gcc
+         * time at every width from 646 to 305,686 program bytes, 20 artifacts,
+         * no exception (docs/dev/lanes/ccd2_report.md §3). INLINE's six copies
+         * come from six entries each honouring the attribute; the mechanism
+         * needs three, because there are three distinct call shapes. INLINE
+         * remains reachable, as the ladder's max-speed rung, by asking.
+         *
+         * WHERE THE FORWARD RUNGS ARE ILLEGAL there is no ladder to walk and
+         * the artifact takes what it took before this change: INLINE below
+         * the term (STEP 1(a)'s shape) and PLAIN above it (the pre-[CC-DIFF]
+         * shape). Neither step is novel code. */
+        if ((long long)job->vmsb.len <= VM_INLINE_CHAIN_MAX_BYTES)
+            shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
+        else
+            shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;
     }
     if (!may_attr) shape = PCREC_VM_ENTRY_PLAIN;
-    else if (!may_fwd && (shape == PCREC_VM_ENTRY_SHARED
-                          || shape == PCREC_VM_ENTRY_FORWARD)) {
-        /* A forward rung was asked for and cannot be spelled. The legal
-         * neighbours are PLAIN and INLINE; take INLINE, so a caller asking
-         * for MORE inlining than the artifact can express never gets LESS
-         * than the default it would have had. */
+    else if (!may_fwd && shape == PCREC_VM_ENTRY_SHARED)
+        /* A forward rung was asked for and cannot be spelled. The fallback is
+         * by INTENT, not by ordinal distance: SHARED and PLAIN are the two
+         * ONE-BODY rungs and FORWARD and INLINE the two body-per-entry ones,
+         * so a caller who asked for one body gets the other one-body rung and
+         * a caller who asked for copies gets the other copying rung. Falling
+         * SHARED up to INLINE would answer "min size" with six copies. */
+        shape = PCREC_VM_ENTRY_PLAIN;
+    else if (!may_fwd && shape == PCREC_VM_ENTRY_FORWARD)
         shape = PCREC_VM_ENTRY_INLINE;
-    }
     /* The thin helpers (bind / init / reset / report_captures / the three
      * `_run`s): inlined on every rung but PLAIN. They are a handful of
      * statements each, so their copies are not what the size term prices. */
@@ -9762,6 +9776,38 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                                  ? "__attribute__((noinline)) " : "");
     const bool fwd_entries = (shape == PCREC_VM_ENTRY_SHARED
                               || shape == PCREC_VM_ENTRY_FORWARD);
+    /* [CC-DIFF] STEP 2 — THE ENTRY-SHAPE STAMPS, §6.3 family (b), and there
+     * are TWO because a selection and the number it was made on are two
+     * facts. `<PREFIX>_VM_ENTRY_SHAPE` names the rung the emitter TOOK — a
+     * CLOSED TOKEN, `_ENGINE_SEL`'s shape, because a consumer cannot bucket
+     * on prose and the value set is fixed at four. `<PREFIX>_VM_PROGRAM_BYTES`
+     * is the quantity the size term compared, so an artifact says which side
+     * of the knee it fell on WITHOUT its command line — the same reason
+     * `_MAX_EMIT_CODE_BYTES` above stamps the effective cap rather than
+     * assuming the default.
+     *
+     * WHY BOTH, and why the second is not decoration. The rung is chosen from
+     * a threshold and a LEGALITY pair, so four different artifacts can take
+     * `plain` for four different reasons: framed, forward-illegal-and-large,
+     * tiered, or asked for. `RX_VM_FRAMELESS` distinguishes the first; the
+     * byte count plus the stamped limit distinguish the rest. Without the
+     * number a reader can see the outcome and cannot check it — the K35 shape
+     * this file's stamps repeatedly exist to prevent.
+     *
+     * ONE DERIVATION: `shape` is the same int the attributes and the entry
+     * emission below read, and the count is the same `job->vmsb.len` the
+     * threshold compared, both read HERE rather than recomputed at the stamp.
+     *
+     * A SCALAR, not a mask, on `_VM_FRAMELESS`'s reason: the entry shape is a
+     * whole-artifact fact with no per-`A_REP` axis to mix. No `rx_info`
+     * mirror, on `RX_DFA_TABLE`'s precedent — no consumer reads either at RUN
+     * time today (D77). */
+    sb_printf(c, "#define %s_VM_ENTRY_SHAPE \"%s\"\n", v.up,
+              shape == PCREC_VM_ENTRY_PLAIN   ? "plain"   :
+              shape == PCREC_VM_ENTRY_SHARED  ? "shared"  :
+              shape == PCREC_VM_ENTRY_FORWARD ? "forward" : "inline");
+    sb_printf(c, "#define %s_VM_PROGRAM_BYTES %lluULL\n", v.up,
+              (unsigned long long)job->vmsb.len);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * because it reports what the VM DID — §6.3's family (b), D81), but

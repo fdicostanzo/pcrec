@@ -2691,6 +2691,92 @@ is the pattern's: a 55-byte comment on each of `w-256`'s ~3,000 interior nodes
 is ~165 KB against a whole size delta of 53 KB. The listing keeps every node
 either way — `vm_lbl` records `VE_LABEL` whether or not there is a role.
 
+## [CC-DIFF] STEP 2 — THE ENTRY CHAIN BECOMES A FOUR-RUNG LADDER (2026-09-04), abi event owed
+
+`docs/spec/tuning.md` §2.21 is the contract; `docs/dev/lanes/ccd2_report.md`
+§3 is the ladder the size term was placed on. **The branch does NOT bump the
+number** — the merging session assigns it and §7 of that report carries the
+D94 grep (SEVEN readers of 20).
+
+**WHAT STEP 1 CONFLATED, AND WHY THAT WAS ONLY VISIBLE FROM THE ISLAND.**
+STEP 1(a) put `always_inline` on the eight entry-chain statics of a frameless
+artifact and measured 0.611 on `dig-upto-16`. That one attribute does TWO
+things: it deletes the entry's 152-byte frame, its `-fstack-protector` canary
+and its out-of-line call — where the win came from — and it replicates the
+matcher body into all SIX entries, because six entries each honour it. On the
+small programs STEP 1 measured, the second effect SHRANK the artifact
+(`.text` 1,561 -> 1,417) and was invisible. `[ENG-ISL]` then made 70 KB
+programs frameless and the same gate cost `.text` x3.8 and gcc x4.3.
+
+**THE LADDER SEPARATES THEM**, and the rungs are `pcrec_options.vm_entry_shape`
+1..4 (`plain`, `shared`, `forward`, `inline`), ordered min-size to max-speed
+because that is the direction `[OPT-DIAL]`'s dial runs in. What each rung
+actually produces, MEASURED with `objdump`/`nm` on 20 artifacts from 646 to
+305,686 program bytes, and the table is uniform across every one of them:
+
+| rung | entry frame | `__stack_chk` refs | out-of-line chain symbols | body copies |
+|---|---|---|---|---|
+| `plain` | yes | 7 (3 on a small artifact) | 2 | 1 |
+| `shared` | no | 5 (1) | 1 | 1 |
+| `forward` | no | **0** | **0** | 3 |
+| `inline` | no | **0** | **0** | 6 |
+
+**RUNG `forward` IS THE FINDING, AND IT IS FRANK'S OWN QUESTION ANSWERED**
+("why can't `rx_match` call `rx_match_in` with the stack buffer?" —
+2026-09-03 22:4x). It has `inline`'s object-code properties EXACTLY and half
+its `.text` and gcc time at every width measured (0.50x-0.61x, 20 artifacts,
+no exception). Six copies were never what the mechanism needed: there are
+THREE distinct call shapes, and the `_in` entries are where they live. So AUTO
+selects `forward` below the size term, not `inline`, and `inline` becomes the
+ladder's max-speed rung reachable by asking.
+
+**THE FORWARD IS A REAL FORWARD, and the emitted entry is three
+instructions**: `endbr64; lea; jmp <prefix>_search_in`. That is what makes it
+free of a frame and a canary — the un-suffixed entry declares NO LOCAL AT ALL,
+so nothing trips `-fstack-protector-strong` and no address escapes.
+
+**THE LEGALITY PREDICATE IS TWO TERMS AND THE SECOND IS NEW.** Rungs 2-4 need
+`has_push` false, exactly as STEP 1's gate did. Rungs 2 and 3 need MORE: they
+bind a static EMPTY descriptor, so the artifact must provably never WRITE the
+working storage. `has_push` does not say that — **the TRAIL is storage a
+frameless artifact can still write**: `(abc)(def)` pushes nothing and saves two
+capture slots through `<PREFIX>_SET` -> `<PREFIX>_TRAIL`. `Vm.emitted_set` is
+that term, set by `vm_set` in the same call that writes the bytes, on
+`emitted_push`'s discipline and for its reason. Binding a zero-capacity
+descriptor on such an artifact would turn a match into a `FRAMES` give-up —
+a silent wrong answer, not a size regression.
+
+**THE FALLBACK IS BY INTENT, NOT BY ORDINAL DISTANCE.** `shared` and `plain`
+are the two ONE-BODY rungs; `forward` and `inline` the two copying ones. Where
+a forward rung is illegal, `shared` falls to `plain` and `forward` to
+`inline` — so a caller who asked for one body never gets six. The first draft
+promoted both to `inline` and would have answered "minimum size" with the
+largest artifact on the ladder.
+
+**`tiered` DECLINES THE FORWARD**, and the term is braces rather than a case:
+a tiered entry is a fast-tier run plus a `FRAMES` escalation ([OPT-1]), which
+a forward would delete rather than re-spell. A storage-untouched artifact can
+never reach a `FRAMES` give-up at all — `RX_PUSH` and `RX_TRAIL` are its only
+two sites — so the two conditions are expected never to co-occur.
+
+**TWO STAMPS, AND THE SECOND IS WHAT MAKES THE FIRST CHECKABLE.**
+`<PREFIX>_VM_ENTRY_SHAPE` is the rung as a closed token
+(`<PREFIX>_ENGINE_SEL`'s shape); `<PREFIX>_VM_PROGRAM_BYTES` is `job->vmsb.len`,
+the exact quantity the size term compared. Four artifacts can read `"plain"`
+for four different reasons — framed, forward-illegal above the term, tiered,
+or asked for — and the outcome alone does not say which. Both are `docs/spec/
+match_api.md` §6.3 family (b), unconditional on every VM artifact and never on
+a pure-DFA one, no `rx_info` mirror (D77).
+
+**`VM_INLINE_CHAIN_MAX_BYTES` (4,096) IS PLACED ON THE SIZE AND GCC EVIDENCE
+AND IS STILL OWED ITS RUN-TIME ARM.** `forward`/`shared` `.text` crosses 1.0
+between 4,024 and 5,183 program bytes (0.98x, then 1.13x), which is the
+measured gap the value sits in. What is NOT measured is `forward`'s and
+`shared`'s ns/call — isl1's flat 16-23% is `inline` against `plain`, and
+`shared` in particular keeps a canary in each `_in` entry, which is exactly
+why STEP 0's "elide the buffers without inlining" measured 0.986. The
+`limits.def` row says so at the row.
+
 ## [DD-13b.W1.3] `groups[]` GROWS ROWS THE PRIMARY DID NOT DECLARE — an abi event, number assigned at the merge
 
 **Written 2026-09-03 by lane w13 under the evening box hold; the branch does

@@ -578,6 +578,39 @@ decides whether to perform it — and then run the row through
     — `Ctx *cx,` — never matches) and says in its own comment that it is a
     wiring check.
 
+- **run_inline_capability.sh** — [CC-DIFF] STEP 2 (2026-09-04), the
+  CAPABILITY PROBE: does the compiler about to build an artifact ALREADY
+  inline the VM entry chain, or does the `always_inline` workaround do real
+  work under it? One witness, two arms, `nm`; no corpus sweep.
+  - **WHY IT EXISTS, and why no preprocessor guard can replace it.** Frank
+    asked (2026-09-03 23:0x) whether there is a guard telling us the compiler
+    has the optimisation. `__has_attribute(always_inline)` says the attribute
+    is UNDERSTOOD, never that the inlining WOULD HAVE HAPPENED without it.
+    The capability is observable only in object code. [CC-DIFF] STEP 0's own
+    evidence was exactly this `nm` witness and lived only in its report.
+  - **THE METHOD.** Compile `\d{1,16}` (STEP 0's `dig-upto-16` cell) under
+    the harness's `CC` at rung INLINE and again with the attribute gone, and
+    ask whether `rx_search_run` / `rx_match_anchored` survive as symbols.
+    Absent in the no-attribute arm means REDUNDANT under that compiler;
+    present means NEEDED.
+  - **ARM B IS BUILT TWICE AND THE TWO MUST AGREE** (learnings §3). The
+    convenient spelling is the emitter's own PLAIN rung — the subject's own
+    author. So the file ALSO builds arm B by a TEXTUAL `sed` removal of the
+    attribute, which knows nothing about the emitter, and is RED if the two
+    spellings differ in source or in symbol table. MEASURED at landing: they
+    differ in nothing but the paired header's `#include`.
+  - **IT IS A CENSUS LINE, NOT A PIN, and never red on a verdict.** Pinning
+    either answer would go red on a compiler upgrade that changed nothing
+    about pcrec. It is red on exactly two things, both failures of the PROBE:
+    the witness stopping being frameless (the [MECH-REACH] shape — a witness
+    that stopped reaching its site), and a symbol table that cannot be read
+    or two arm-B spellings that disagree.
+  - **NON-VACUITY MEASURED AT LANDING, and it is the reason to trust either
+    verdict**: gcc 15.2.0 prints NEEDED (`rx_match_anchored` and
+    `rx_search_run` both out of line without the attribute — STEP 0's own
+    witness reproduced), `CC=clang` 21.1.8 prints REDUNDANT. A probe that
+    could only ever print one of its two answers would be worth nothing.
+
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
   `has_push` bool that wrote it. Its own section, `make test-codegen`, one
