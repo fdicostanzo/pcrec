@@ -156,8 +156,13 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `21`
-([OPT-EDGE] STEP 1.1, the scan-edge ENTRY DISPATCH: the entry-seed dispatch is
+events but never stated the general rule; `rx_info.abi` is `22`
+([CC-DIFF] STEP 2, the VM ENTRY SHAPE: every VM artifact gains the
+`<PREFIX>_VM_ENTRY_SHAPE` and `<PREFIX>_VM_PROGRAM_BYTES` stamps, and at rungs
+`shared`/`forward` the entry chain's own shape moves — the three `_in` entries
+carry the body, the un-suffixed entries forward to them, and a static empty
+descriptor is new emitted text; the VM program region is unmoved. Before it,
+21 = [OPT-EDGE] STEP 1.1, the scan-edge ENTRY DISPATCH: the entry-seed dispatch is
 generalised to `is_stop && !is_dead` and precondition (8) admits an edge only
 where the seed AND the prefilter reseeds — the entry block's shape moved on
 every edge-bearing artifact and nothing else; before it, 20 = [DD-13b.W1.3],
@@ -1802,7 +1807,12 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `21` on every artifact today ([OPT-EDGE] STEP 1.1 bumped
+- **`rx_info.abi` is `22` on every artifact today ([CC-DIFF] STEP 2 bumped it
+  from 21: the VM ENTRY SHAPE — two stamps on every VM artifact,
+  `<PREFIX>_VM_ENTRY_SHAPE` and `<PREFIX>_VM_PROGRAM_BYTES`, and the entry
+  chain's shape at rungs `shared`/`forward`; the VM program region is unmoved;
+  `_VM_PROGRAM_BYTES` deliberately costs STEP 1's "framed artifacts are
+  byte-identical" property, see §6.3. 21 was [OPT-EDGE] STEP 1.1, which bumped
   it from 20: the scan-edge ENTRY DISPATCH — the entry-seed check generalised
   to `is_stop && !is_dead`, precondition (8) requiring the seed AND a
   prefilter reseed — so the entry block's shape moved on every edge-bearing
