@@ -349,6 +349,89 @@ n="$(islands "$WORKDIR/budge.c")"
 [ "${n:-0}" = "10" ] && ok "a 1,024-word cross product (well inside VM_ISL_MAX_WORDS) still declines at the top level — the SIZE rule is what bounds it, not the word budget" \
                      || bad "a 1,024-word cross product stamps ${n:-?} islands where 10 (top-level declined, the ten inner factors taken) is expected: it is INSIDE the word budget, so if the top level is admitted the size rule is not acting and the acceptance regression can return"
 
+# ---------------------------------------------------------------------------
+# 10. [ENG-ISL / panel r53 S5] THE BUDGET-BOUND CLASS, asserted rather than
+# described.
+#
+# `docs/spec/tuning.md` §2.5 states the general rule for the prefilter: answer
+# identity is modulo WHICH BUDGET BINDS. §2.20 states it for this axis. The
+# island charges its trie walk to the WORK counter where `vm_alt`'s chain
+# spends a STEP per branch resume, so on a subject that exhausts the chain's
+# step budget the island ANSWERS and the chain returns PCREC_ERR_STEPS (-2).
+# Measured at the SHIPPED budget with no flags.
+#
+# WHY THIS IS HERE AND NOT A `.rxt` CELL. The shapes that exhaust the chain's
+# step budget are backtracking bombs, and python `re` -- the corpus oracle --
+# needs 15-20 SECONDS on each of these subjects, past `verify_rxt.py`'s bound.
+# A corpus cell whose oracle cannot run is a cell nobody checks. But the claim
+# does not need an external oracle at all: it is a statement about the TWO ARMS
+# of one axis, and both are right here.
+#
+# THE DIRECTION IS THE ASSERTION. The island does strictly less stepping, so it
+# may answer where the chain gives up and NEVER the reverse. A cell where the
+# ISLAND gave up and the chain answered would mean the island had started
+# spending steps the chain does not -- which is why that direction is a
+# failure here rather than an untested symmetry.
+# ---------------------------------------------------------------------------
+BUDGET_PAT='(?:aabb|baba|abab||ba|aa|bab|b|aabbb|aba|ab)+?q'
+BUDGET_SUBJECTS='bbaabaabbaaabbaaaaaaaabbbaabbaabbbabbabaaababbaaaaaabbbbaabbabbabaaaaaab
+aabaabbabbaabbaaabaaaabbabbbaaaaaabbbababaabaaaaabbabaaaababbbbbaaaababa
+abbaaaababababababaaaabaabbbbbbbabbaabbabababaabbaaababa
+abababaabbaabbaabaaaaababababaabbbabaababbbbbabaabaabbba'
+
+cat > "$WORKDIR/bdrv.c" <<'BDRV_EOF'
+#include <stdio.h>
+#include <string.h>
+#include "gen.h"
+int main(int argc, char **argv)
+{
+    ptrdiff_t caps[RX_NCAPS][2];
+    (void)argc;
+    printf("%d\n", rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0, caps));
+    return 0;
+}
+BDRV_EOF
+
+bud_ok=1
+for arm in on off; do
+    fl=""; [ "$arm" = off ] && fl="-fno-alt-island"
+    d="$WORKDIR/bud_$arm"; mkdir -p "$d"
+    # shellcheck disable=SC2086
+    pcrec_run "$PCREC" -p rx --engine=vm $fl -o "$d/gen.c" -- "$BUDGET_PAT" >/dev/null 2>&1         || { bad "the budget witness did not compile ($arm)"; bud_ok=0; break; }
+
+    cp "$WORKDIR/bdrv.c" "$d/bdrv.c"
+    if ! "${CC:-gcc}" -O1 -w -std=gnu11 -I"$d" -o "$d/t" "$d/bdrv.c" "$d/gen.c" 2>"$d/cc.err"; then bad "the budget witness driver did not build ($arm): $(head -2 "$d/cc.err" | tr '\n' ' ')"; bud_ok=0; break; fi
+done
+
+if [ "$bud_ok" = "1" ]; then
+    i_on="$(islands "$WORKDIR/bud_on/gen.c")"
+    [ "${i_on:-0}" -ge 1 ] || bad "the budget witness stamps ${i_on:-<none>} islands under --engine=vm: it must TAKE the island, or this block compares two chains"
+    seen_div=0; wrong_way=0
+    while IFS= read -r subj; do
+        [ -n "$subj" ] || continue
+        a="$("$WORKDIR/bud_on/t"  "$subj")"
+        b="$("$WORKDIR/bud_off/t" "$subj")"
+        if [ "$a" = "$b" ]; then continue; fi
+        seen_div=$((seen_div + 1))
+        # -2 is PCREC_ERR_STEPS. The island must be the arm that ANSWERS.
+        if [ "$b" = "-2" ] && [ "$a" -ge 0 ] 2>/dev/null; then
+            :
+        else
+            wrong_way=$((wrong_way + 1))
+            echo "  BUDGET WITNESS: island=$a chain=$b on '$subj'" >&2
+        fi
+    done <<BUD_EOF
+$BUDGET_SUBJECTS
+BUD_EOF
+    if [ "$wrong_way" -ne 0 ]; then
+        bad "$wrong_way budget-bound cell(s) diverge the WRONG WAY: the island gave up where the chain answered. The island does strictly less stepping than the chain, so this direction should be impossible"
+    elif [ "$seen_div" -eq 0 ]; then
+        bad "NOT ONE of the ${BUDGET_SUBJECTS} witnesses still diverges: the budget-bound class this cell documents has stopped being reachable, so tuning.md §2.20's sentence about it is now describing nothing. Re-derive a witness or remove the claim"
+    else
+        ok "the budget-bound class holds on $seen_div witness(es): the island ANSWERS where the chain returns PCREC_ERR_STEPS, and never the reverse (docs/spec/tuning.md §2.20)"
+    fi
+fi
+
 echo
 echo "island structural checks: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -1072,3 +1072,43 @@ each declining a shape the measurement said was not worth taking. What is left
 is the population the timing actually measured a win on.
 
 `checks passed: 16, checks failed: 0`.
+
+### 17.8 S2 verified, and F10 confirmed
+
+**S2** — `((?:aa|bb)×9|z×18)`, the gcc-cost witness, after the size rule:
+
+| | before (the critic's) | after |
+|---|---|---|
+| emitted file | 481,490 B | **56,351 B** |
+| gcc wall | 42.8 s | **0.15 s** |
+| gcc peak RSS | 574 MB | **34.8 MB** |
+| vs the chain | 53,804 B | 56,351 B (**1.048×**) |
+
+Its top-level alternation declines and the nine inner 2-way factors each stay
+an island, so the stamp reads 9 rather than 1 — the size rule acting per
+subtree. **This sharpens [CC-DIFF] STEP 2's case rather than replacing it**:
+the 42.8 s was frameless-plus-`always_inline` replicating an oversized trie six
+times, and the size rule removed the oversized trie. The exchange-rate finding
+in §12.2 stands on its own and still wants a size term in that gate.
+
+**F10 confirmed** from the pool's own run: 9 members, both sides carrying ≥2
+distinct shapes (4 below the bar, 3 above), 7 band-eligible, and **2 that
+stamp an island**, read off the artifact.
+
+### 17.9 The budget-bound class is asserted, not described
+
+`tests/island/run_island_tests.sh` block 10 compiles the witness pattern both
+ways under `--engine=vm`, runs four subjects through each, and asserts that
+where the two arms differ the island ANSWERS and the chain returns
+`PCREC_ERR_STEPS` (-2) — **and never the reverse**, which is the half that
+would catch the island starting to spend steps the chain does not.
+
+**It is not a `.rxt` cell, and the reason is worth recording.** The shapes that
+exhaust the chain's step budget are backtracking bombs: python `re`, the corpus
+oracle, needs **15-20 seconds on each of these subjects**, past
+`verify_rxt.py`'s bound — measured, after a first attempt to add them as corpus
+cells tripped exactly that. A corpus cell whose oracle cannot run is a cell
+nobody checks. But this claim needs no external oracle: it is a statement about
+the two ARMS of one axis, and both are in hand. The four witnesses are my own,
+found by sweeping subjects rather than transcribed, and python agrees with the
+island (nomatch) on every one of them.
