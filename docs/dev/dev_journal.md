@@ -21163,3 +21163,42 @@ agents per lane at the lift. The I-43 draft moved from the scratchpad
 into docs/dev/lanes/I-43_draft.md. wake.md rewritten from scratch (the
 first-things-on-wake sequence: read the trailer → size-log commit →
 I-43 → serial lifts/merges → DONE at ~18:00).
+
+## 2026-09-04 — Fifty-second session, part 62 (13:4x EDT): BATTERY_v5's FIRST RUN GREEN (4 h 03 min, every stage rc=0); the size log regenerated and committed alone (251bb117); I-43 sent (DONE at the pin, the box from ~18:00); lim2 LIFTED; Frank's observation on the battery's wall
+
+The restart's wake sequence held: the detached battery (pid 3011580)
+finished at 13:28, `== BATTERY DONE rc=0` — test 20 min → strict → axes
+50 min (21 axes answer-identical) → san 55 min (34 scripts, -P4) → lint →
+mech 115 min (222 rows, 0 unexpected, 8 expected-undetected, 0 unreached,
+0 anomalies). [TT-12] STEP 2 is thereby battery-proven; the row records
+the stage times. The tree was clean at the end (the battery's stages do
+not write the size log), so the log was regenerated deliberately on the
+quiet box (`gnutimeout 1200 make test-corpus`, load1 0.06, ~1 min) and
+committed ALONE as 251bb117: 2,962 rows (+29: island 22, counterk 7),
+EVERY common row moved, floor +28 B (the abi 17-20 stamps), mean +234 B,
+median +59 B, the four -1,706 B shrinks are wordb artifacts that
+[OPT-EDGE] precondition (8) costs their edge; the +1,4xx maxima on
+class/edge-bearing artifacts are NOT attributed per feature — a candidate
+reading for [ART-SIZE]. Tripwire OK.
+
+I-43 appended to the bench's inbox and committed there (single-file
+[inbox] commit): DONE at the pin 251bb117 with the stage times; WINDOW
+INFO now, the BOX from ~18:00 EDT or the end of the last lane timing;
+the W1.3 exporter rules; the island's altwide facts; O-15's asks. Live
+message to pcrecdev2 follows.
+
+lim2 lifted at 13:41 (`.hold` removed, `.lift` created; a fresh sonnet
+agent on the committed branch, brief = the rulings file's post-lift
+list, async runs, log-as-trigger, WIP commits, :41 keepalive). Order
+after it: edge2 → ccd2 → form0, one heavy suite at a time.
+
+Frank at 13:3x, on [TT-12]'s status: "as soon as we speed up testing
+battery we add something to it that brings it back to where it was.
+its been 4ish hours for awhile now." Assessment given (recorded on the
+[TT-12] row, UNRULED): STEP 1 took ~75 min out, STEP 2 put 50 back;
+mech doubled in rows AND per-row cost since 08-23 (rows × corpus, both
+growing) — a constant-factor fix cannot hold against a growing
+population. Proposed: tier mech by cadence via rows_for.sh (per-merge =
+touched rows; full matrix scheduled), overlap san+mech after one
+measured run, an allowlist for what a lane adds to the per-merge set.
+Nothing built.
