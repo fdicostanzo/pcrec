@@ -2726,3 +2726,13 @@ or not the composer runs), no injected rows, `.ref` still `NULL`. That is
 what makes the identity gate's comparison (A) a real control on this change
 rather than a tautology, and it is the property to re-measure first if the
 gate goes red.
+
+**[LIM-2] (2026-09-0x) `PREMUL_DEAD`/`PREMUL_MAX_ENTRIES` MOVED TO
+`src/core/internal.h`.** `emit_dfa.c`'s `dfa_premul` (the representation
+RULE) and `src/ir/dfa.c`'s projected-size bail (a second reader of the same
+"does this machine's entries rule out pre-multiplication" fact) now read
+one `#define` pair instead of two that would have to be kept in step — this
+file's own comment on those constants already named that as the failure
+shape to avoid. The sentinel's reasoning, and `tests/codegen/
+run_premul_table.sh`'s independent literal-65535 check on it, are
+unchanged; only the `#define` site moved.

@@ -283,7 +283,7 @@ static void build_anchored_dfa(Ctx *cx)
      * shared and the mandatory machines reach them first. */
     pcrec_build_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,
                     PCREC_ANCHORED_MAX_STATES,
-                    cx->job->nfa.anch_start, true);
+                    cx->job->nfa.anch_start, true, false, 0);
 
     cx->dfa_overflowed = saved_overflowed;
     memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
@@ -1125,14 +1125,49 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 cx.job->engine = PCREC_ENG_UNANCH;
                 nfa_wrap_unanchored(&cx, &cx.job->nfa);
                 pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
-                pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
-                                PCREC_MAX_DFA_STATES_TABLE,
-                                cx.job->nfa.start, false);
+                /* [LIM-2] THE REVERSE MACHINE BUILDS (AND MINIMIZES) FIRST
+                 * NOW, reordered from this pair's old forward-then-reverse
+                 * shape. Reverse construction is cheap regardless (measured
+                 * milliseconds against the forward machine's seconds on
+                 * every expensive witness in the design note's sample), and
+                 * finishing it first turns its own table into an EXACT,
+                 * already-known figure the forward build's projected-size
+                 * bail can use as a head start (`size_bail_headstart`
+                 * below) -- without it, that bail cannot prove anything
+                 * until the FORWARD machine's own raw growth alone crosses
+                 * the whole cap, which on the design note's own worst
+                 * witness is ~90% of the way through raw construction.
+                 * SAFE TO REORDER: `cx.subset_elems` (K7) is a per-COMPILE
+                 * running total gated by ONE threshold, so which machine's
+                 * construction crosses it first changes nothing about
+                 * WHETHER it crosses (the sum is order-independent); each
+                 * machine's own `PCREC_MAX_DFA_STATES_TABLE` state cap is a
+                 * per-machine field untouched by the other's construction
+                 * order. Neither refusal's diagnostic names a machine, so
+                 * no observable text changes either. */
                 pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false, true,
                                 PCREC_MAX_DFA_STATES_TABLE,
-                                cx.job->rnfa.start, false);
-                pcrec_minimize_dfa(&cx, &cx.job->dfa);
+                                cx.job->rnfa.start, false, false, 0);
                 pcrec_minimize_dfa(&cx, &cx.job->rdfa);
+                /* [LIM-2] 0 wherever the now-finished reverse machine's own
+                 * entries do not RULE OUT pre-multiplication (`d->n * ncls
+                 * <= PREMUL_MAX_ENTRIES`) -- this file does not duplicate
+                 * `emit_dfa.c`'s `dfa_premul` rule to guess which form it
+                 * will pick there, so it offers no figure rather than a
+                 * wrong one. Safe: 0 is the loosest valid head start, never
+                 * an unsound one -- see `pcrec_dfa_indexed_table_bytes`'s
+                 * own comment. */
+                long lim2_rev_headstart =
+                    pcrec_dfa_indexed_table_bytes(&cx.job->rdfa);
+                pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
+                                PCREC_MAX_DFA_STATES_TABLE,
+                                cx.job->nfa.start, false,
+                                true /* [LIM-2] the forward table build --
+                                        see pcrec_build_dfa's own comment on
+                                        `size_bail` for why only this one
+                                        call passes true */,
+                                lim2_rev_headstart);
+                pcrec_minimize_dfa(&cx, &cx.job->dfa);
                 /* [OPT-5] The scan edge is a property of the FINAL transition
                  * table, so it runs after minimization on each machine and
                  * before anything reads one. The reverse pass gets it on the
@@ -1147,7 +1182,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                                 PCREC_MAX_DFA_STATES_GOTO,
-                                cx.job->nfa.start, false);
+                                cx.job->nfa.start, false, false, 0);
                 pcrec_minimize_dfa(&cx, &cx.job->dfa);
                 /* [OPT-5] NOT run on ENG_ATTEMPT's machine, and the reason is
                  * [OPT-3]'s own for exempting that engine one row earlier:

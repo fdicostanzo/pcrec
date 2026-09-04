@@ -8,6 +8,24 @@ could see.
 
 ## Files
 
+- **run_lim2_sizecap_projection.sh** — the [LIM-2] pin: the DFA route's
+  projected-size bail (`src/ir/dfa.c`'s worklist loop, `pcrec_build_dfa`'s
+  `size_bail`/`size_bail_headstart`) refuses an oversized wide-alternation
+  artifact DURING subset construction rather than after emission, with the
+  SAME stamped reason and diagnostic template the post-emission total-cap
+  check gives. Three checks on one self-contained, deterministically
+  python3-generated witness (shaped after pcrec-bench's `bench/altwide`
+  `w-*` family, WITHOUT depending on that sibling repo being present): the
+  refusal-identity pin this file's own sizecap section already uses the
+  shape of; a WALL-TIME CEILING on that refusal (the actual cost claim —
+  a regression that made the bail stop firing, while still refusing
+  correctly just LATE, would pass every other check here and fail only
+  this one); and a small accepted witness proving the bail's own
+  bookkeeping and the reverse-then-forward build reorder disturb nothing
+  where the cap is never hit. Deliberately does NOT diff against a
+  historical "before" compiler — that comparison is real (a one-time
+  manual sweep, see docs/dev/lanes/lim2_report.md) but has no stable home
+  in a permanent `make test` pin once this lane merges.
 - **run_resource_tests.sh** — the [M4.7b] K7 pin, in three sections:
 
   1. **Bounded outcome.** Eleven large-bounded-repeat shapes (K7's own repro

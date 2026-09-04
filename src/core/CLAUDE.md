@@ -825,3 +825,17 @@ two share `compile_driver`, so there is exactly one compile pipeline and
 a `pcrec_options` field: D20 keeps the public option surface scalar, and a
 definition closure is a FILE's property that only the `.rxt` reader can
 build. A library caller that wants composition gets it through [LIB].
+
+**[LIM-2] (2026-09-0x) `compile.c`'s D7 fast path REORDERS the forward and
+reverse DFA builds.** The reverse machine now builds and is MINIMIZED
+before the forward one (previously the reverse pair came second), so its
+finished transition table's exact byte count can be handed to the forward
+build as `pcrec_build_dfa`'s new `size_bail_headstart` — see `src/ir/
+CLAUDE.md`'s own [LIM-2] note for the mechanism this serves. Argued (in a
+comment at the reorder site) order-independent for every other observable:
+`cx->subset_elems` (K7) is a per-compile running total gated by one
+threshold, so which machine crosses it first cannot change WHETHER the
+compile refuses; each machine's own state-count cap is a per-machine field
+untouched by the other's construction order; neither refusal's diagnostic
+names a machine. `pcrec_dfa_indexed_table_bytes` (src/ir/dfa.c) computes
+the reverse machine's exact figure once it is minimized.
