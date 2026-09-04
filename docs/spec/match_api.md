@@ -156,7 +156,7 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `17`
+events but never stated the general rule; `rx_info.abi` is `20`
 ([CC-DIFF] STEP 1, the two emitted-code spellings: `always_inline` on a
 frameless VM artifact's entry-chain helpers, and the uniform-table fold with
 its `<PREFIX>_DFA_UNIFORM_FOLDS` stamp, atop
@@ -1790,7 +1790,19 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `17` on every artifact today ([CC-DIFF] STEP 1 bumped
+- **`rx_info.abi` is `20` on every artifact today ([DD-13b.W1.3] bumped it
+  from 17 with COMPOSITION; 18 and 19 were spent by other changes merging
+  ahead of it).** On a COMPOSED artifact (`pcrec --source`) `groups[]` gains
+  rows the target pattern did not declare, each carrying a non-NULL `ref`
+  naming the definition it came from; the array's sort key gains a leading
+  SCOPE term, so `nnames` counts the caller-scope prefix and §6's algorithm
+  is correct unchanged while `nentries` counts the whole array; `ngroups`
+  reads the primary pattern's own count; and a delivering call site retains
+  what its callee matched. **Every one of these is invisible on a
+  non-composed compile**, which is why no artifact built without `--source`
+  moved a byte. See "Composition" above.
+
+- **`rx_info.abi` was `17` ([CC-DIFF] STEP 1 bumped
   it from 16 with TWO EMITTED-CODE SPELLINGS, taken as ONE event because
   both are emitter changes on the same landing.
 
