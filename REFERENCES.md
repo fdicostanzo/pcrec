@@ -127,9 +127,7 @@ URL: <https://arxiv.org/abs/2505.10319>, version-pinned
 <https://link.springer.com/chapter/10.1007/978-3-032-22749-2_20>.
 Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.3, §3.2, §3.8,
-§5.1, §5.2, §6 (retrofitted by lane m5paper, 2026-09-04 (refs2 duplicated the retrofit; main carries m5paper's)); also referenced
-informally in `docs/dev/plan.md` (out of this lane's scope — see "To
-retrofit" below).
+§5.1, §5.2, §6 (retrofitted by lane m5paper, 2026-09-04 (refs2 duplicated the retrofit; main carries m5paper's)); `docs/dev/plan.md` [LIM-2] row (keyed by the manager, 2026-09-04).
 
 ### [OTF] `jn1z/OTF` — Nicol & Frohme's reference implementation (software, not a paper)
 
