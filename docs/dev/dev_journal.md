@@ -20872,3 +20872,31 @@ runs alone on that signal, driven by the manager's watchdog stage by
 stage with logs under the scratchpad; then w13 gets the slot back for
 the run.sh path's make test, DELIVERED; then edge1's merge + chain,
 w13's merge + chain, the battery, DONE + OPEN.
+
+## 2026-09-04 — Fifty-first session, part 46 (04:2x EDT): w13 DELIVERED (lane/w13, 24 commits, abi 20, every suite green); a runner defect caught by non-vacuity guards; [M6.5-DUPNAMES] does not cover the scope key; the size log will be regenerated once on the merged tree
+
+w13: make test 33/33 (68 min — the first run's 3,600 s bound fired two
+sections from the end, both its own; run directly first, which found
+the defect in five minutes instead of sixty-five); test-axes 21 axes
+identical; test-definitions 22/0 (first run ever); rxtsource 121/0 with
+the census unmoved; identity gate 16/0; strict clean. THE DEFECT was in
+its own runner, not the compiler: build_one appended -o after the
+caller's `-- <pattern>`, so the output path was read as a second
+pattern and every flat control failed to build — caught only by the two
+non-vacuity guards ("ZERO delivered spans compared", "identity ran 0
+cells, pinned 23"); without them the section read four passes. THE
+PREDICTION IT GOT WRONG: [M6.5-DUPNAMES]'s order check stayed green —
+its population is plain single patterns where the new SCOPE term is
+constant, so it cannot test the new ordering and never will; the
+coverage is tests/definitions' own order check (validated both ways).
+Four stale expectations corrected (the plain-target delivery check
+became the CONTROL, the delivering twin the assertion). The abi ritual
+in two commits (the bump is a src change, so (B) pins in a src-free
+follow-up — the gate caught the pin-before-the-bump attempt instantly,
+subject 20 vs pin 17). W1.3.1: the run.sh composed-block path (four
+prefix-assuming sites in flush_block's hot path; the CLI allowance W1.2
+refused) and `(?&site.group)`. MERGE DECISION: the branch's regenerated
+artifact_size_log.tsv (rows 2934, a full run on its own tree) is NOT
+taken — the log is regenerated once on the merged tree after the
+battery. Lane closed. Main's chain: make test 40 min in, one red (the
+K35 sort-locale hygiene gate on isl1's pool, fixed at 47c43e28).
