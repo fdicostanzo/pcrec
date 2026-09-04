@@ -21119,3 +21119,36 @@ population printed as a finding line; over-answering accepted if test-
 axes is identical; the mech sabotage row written now, run in the next
 battery (S227); the harnesses committed under studies/; timing post-
 lift. Byte identity over 30 patterns: exactly the 11 move.
+
+## 2026-09-04 — Fifty-first session, part 60 (11:3x EDT): ccd2's write phase — the FORWARD rung (three body copies behind forwarding entries) has the inline rung's object-code properties at half the size; two brief premises corrected; K46 fixed on the branch; the [OPT-DIAL] inventory written
+
+ccd2 (opus, ~40 min): a four-rung ladder as an ORDINAL option
+`--vm-entry-shape=0-4` (pcrec_options.vm_entry_shape) emitted from
+emit_vm.c: plain / shared / forward / inline (+ AUTO). Over twenty
+artifacts (646 to 305,686 program bytes) `forward` has NO entry frame,
+ZERO __stack_chk references and NO out-of-line chain symbol — exactly
+`inline`'s properties — with three body copies instead of six:
+.text 0.50-0.61 of inline. The six copies STEP 1 shipped were never
+what the mechanism needed: there are three call shapes. AUTO selects
+`forward` below a size term VM_INLINE_CHAIN_MAX_BYTES = 4,096 (inside
+the measured gap where forward stops being smaller than shared: 4,024
+at 0.98× / 5,183 at 1.13×) and `shared` above it; `inline` stays
+reachable as the max-speed rung. Two stamps: `<P>_VM_ENTRY_SHAPE` and
+`<P>_VM_PROGRAM_BYTES`. The capability probe: NEEDED under gcc 15.2.0,
+REDUNDANT under clang 21.1.8, both reproduced. TWO BRIEF PREMISES
+CORRECTED: (a) a frameless artifact's non-`_in` entries DO have
+something to bind — the TRAIL: `(abc)(def)` pushes nothing but saves
+two capture slots, so forwarding through a zero-capacity descriptor
+would turn a match into a FRAMES give-up; the legality predicate gained
+`Vm.emitted_set`; (b) `shared` does not delete the canary, it moves it
+to the three `_in` entries (STEP 0's 0.986 shape). K46 FOUND AND FIXED:
+limits.def was not a Makefile prerequisite — the lane moved the term
+20,000 → 4,096, the emitter honoured it and --list-limits still printed
+20,000 (one binary, two values of one constant). Inventory:
+docs/design/opt_dial_inventory.md — 4 of 21 switches carry a two-axis
+measured rate, 2 are pure wins, 15 unmeasured (nearly always on size).
+Unverified: every ns/call (the box was held all day — the size term's
+VALUE turns on it), the suites, the identity gate (3 of 14 witnesses
+vacuous on its subject set, named). 70 emit-compile-answer runs, 0
+mismatches; all rungs -Werror-clean under gcc and clang. Rulings
+pending its truncated item 4.
