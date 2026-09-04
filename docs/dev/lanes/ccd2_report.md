@@ -334,8 +334,35 @@ Two questions, in priority order:
    as a reachable rung rather than deleted.
 
 Also unmeasured, and all post-lift: `make test`, `make test-codegen`,
-`make test-axes` over the new ordinal, the identity gate, and the bench's own
+`make test-registry`, `make test-axes`, the identity gate, and the bench's own
 altwide arms (this box, `gcc -O2`, one subject shape).
+
+**HOW THE NEW ORDINAL JOINS `test-axes`** (the manager asked): as FOUR jobs
+appended to `tests/axes/run_axes.sh`'s job list where the coarse `--engine=`
+pair is appended, and by the same mechanism — `RXTFLAGS` takes an arbitrary
+extra flag, not only a `-f` spelling. Four rather than one, because "the
+answers do not move" is a claim about each rung and not about the family. The
+EDIT IS ON THE BRANCH ALREADY (writing was allowed under the hold; only the
+run is owed), together with its `tests/axes/CLAUDE.md` entry.
+
+**`lost_ok` is 0 on all four, which is strictly stronger than the coarse
+axis's claim.** `--engine=dfa` is do-or-die and legitimately refuses, so its
+LOST population is documented rather than failed. This axis NEVER refuses — a
+rung an artifact cannot legally take is a selection outcome, and the emitter
+falls to the nearest legal rung of the same body-count family — so a LOST case
+means a pattern stopped compiling under a flag that cannot make that happen,
+and it fails.
+
+**COST, AND WHERE TO CUT IT.** Four more full-corpus runs; [TT-12] STEP 1's
+pairwise execution absorbs them two at a time, so the wall cost is about two
+runs' worth. If that is judged too much for the default sweep, the honest
+reduction is rungs 1 and 4 only — NOT one representative, because rungs 2 and
+3 are the ones that emit the forward entries and the static empty descriptor,
+i.e. the only new emitted code this step adds.
+
+**THE THREE VACUOUS WITNESSES (§5) ARE REPLACED POST-LIFT.** `[0-9a-f]{32}`,
+`(?<=foo)bar` and `(?>a*)ab` matched nothing on the ad-hoc subject set; the
+corpus sweep above is their replacement and needs no hand-picked subjects.
 
 ---
 
@@ -367,9 +394,17 @@ sabotage produced ZERO disagreements because the edited .inc never entered the
 binary — hand-maintained header deps must grow with every new include"*.
 `[LIM-1]` then introduced `limits.def` and did not add it.
 
-**FIXED ON THIS BRANCH** by adding `src/core/limits.def` to the pattern rule's
-prerequisites, with the history in the comment beside it. Everything in §3,
-§4 and §5 was re-measured after a full rebuild.
+**IT IS K46, FILED THE DAY BEFORE BY A DIFFERENT LANE AND A DIFFERENT
+WITNESS.** `docs/dev/known_issues.md` K46 was opened 2026-09-03 by lane isl1,
+whose witness is a COUNT — the limits manifest read 45 after two rows were
+added, so the dump was short. This lane's is a VALUE, and it fires on the
+commoner operation: isl1's needs a row to be ADDED, this one fires on any edit
+to an existing row. Neither lane could have seen the other's.
+
+**FIXED ON THIS BRANCH, AND IT CLOSES K46 AT MERGE** (manager's ruling 6,
+2026-09-04): `src/core/limits.def` joins the pattern rule's prerequisites,
+with the history in the comment beside it and the K46 row updated in the same
+change. Everything in §3, §4 and §5 was re-measured after a full rebuild.
 
 **WHAT I DID NOT DO.** Automatic dependency generation (`-MMD -MP`) would
 retire the hand-maintained list entirely and is the real fix; it is out of
@@ -474,7 +509,39 @@ optimisation of the artifact, which pcrec does not control.
 
 ---
 
-## 10. What I need ruled
+## 10. What was ruled (manager, 2026-09-04 11:3x EDT)
+
+All six items below were RULED after the write phase; the questions are kept
+with their answers so a reader sees what was weighed. `docs/dev/lanes/
+ccd2_rulings.md` is the manager's own text (uncommitted by instruction).
+
+**RULED 1 — abi:** an abi EVENT. No bump on the branch; the number is assigned
+at merge and comparison (B) re-pinned to the merge commit. §7's seven-reader
+list stands.
+
+**RULED 2 — AUTO = `forward`: PROVISIONAL until the ns/call ladder**, which is
+the first post-lift item. If `forward` is within noise of `inline` on run time,
+`forward` is the default and `inline` is the dial's max-speed rung only; if
+`inline` wins measurably, the term's VALUE is re-chosen on the exchange rate
+and stated as such. The mechanism lands either way.
+
+**RULED 3 — `--vm-entry-shape=0..4` stays PUBLIC** and documented, as the
+dial's first native rung, with a sentence in `tuning.md` §2.21 saying
+[OPT-DIAL] STEP 1 may subsume its spelling under `--tune` while the ordinal
+remains the explicit override (explicit beats profile, D93's shape).
+
+**RULED 4 — `<PREFIX>_VM_PROGRAM_BYTES`: KEEP.** Auditability is what D82 asks
+of a stamp; losing STEP 1's "framed artifacts byte-identical" property is the
+abi event's stated cost.
+
+**RULED 5 — the dial's spelling ADOPTED as [OPT-DIAL] STEP 1's design input:**
+`--tune=size|balanced|speed`, a `tune <name>` config line (D93), a
+`<PREFIX>_TUNE` token stamp, and the ALLOWLIST rule — the dial can never set a
+switch without a measured two-axis rate. Nothing of it is built here.
+
+**RULED 6 — K46 CLOSES at this merge** (§6b).
+
+## 10b. The questions as they were put
 
 1. **The abi number**, and whether this branch rides another event (§7).
 2. **AUTO's default changing from `inline` to `forward`.** It is measured on

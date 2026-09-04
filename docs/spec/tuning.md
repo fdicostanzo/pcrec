@@ -1573,6 +1573,16 @@ not say which.
 **Not masked out of `rx_info.flags`**, because it is not a flags bit at all;
 it has no reflection-surface question to answer.
 
+**[OPT-DIAL] MAY SUBSUME THIS SPELLING, AND THE ORDINAL SURVIVES EITHER WAY.**
+`docs/dev/plan.md` `[OPT-DIAL]` charters a SPEED-vs-SIZE DIAL — one option
+whose value sets a GROUP of switches from a policy table — and this axis is its
+first native rung, the reason being that the dial wants per-switch ORDINALS and
+this is one (`docs/design/opt_dial_inventory.md` §2.21 carries the measured
+exchange rate that admits it). When the dial lands, the profile SETS this value
+and an explicit `--vm-entry-shape=N` OVERRIDES the profile — explicit beats
+profile, as D93's file-wins beats the command line — so nothing documented above
+is withdrawn; what may change is that most callers stop spelling it.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while

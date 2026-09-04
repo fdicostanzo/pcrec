@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 # tests/axes/run_axes.sh — [CHK-2] piece 2: THE ANSWER-IDENTITY SWEEP.
 #
-# docs/spec/tuning.md §2 documents THIRTEEN axes, and for eleven of the
+# THE COUNT IN THIS SENTENCE IS PROSE AND HAS DRIFTED BEFORE — read the job
+# list at the foot of the file for what actually runs, and the "(bit N)"
+# cross-check for what is required to. What the sweep covers is: every
+# BIT-FLAG member of the deny/force family, the coarse `--engine=` pair, and
+# (since [CC-DIFF] STEP 2) the `--vm-entry-shape=` ORDINAL's four rungs.
+#
+# docs/spec/tuning.md §2 documented THIRTEEN axes when this was written, and
+# for eleven of the
 # BIT-FLAG members of the deny/force family (bits 4-31 of
 # pcrec_options.flags) the promise is ANSWER-IDENTITY: the .rxt corpus's
 # match/nomatch/span/capture/give-up answer under the axis must equal the
@@ -620,6 +627,34 @@ done
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
     job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
     job_label+=("--engine=dfa (§2.11)"); job_flags+=("--engine=dfa"); job_lost_ok+=("1")
+fi
+# [CC-DIFF] STEP 2 THE VM ENTRY SHAPE (§2.21), the coarse axis's shape one
+# option over: an ORDINAL rather than a bit, so it is appended here for the
+# same reason `--engine=` is — RXTFLAGS takes an arbitrary extra flag, not
+# only a `-f` spelling — and the four rungs are FOUR JOBS, because "the
+# answers do not move" is a claim about each rung and not about the family.
+#
+# `lost_ok` IS 0 ON ALL FOUR, AND THAT IS A STRICTLY STRONGER CLAIM THAN THE
+# COARSE AXIS MAKES. `--engine=dfa` is DO-OR-DIE and legitimately refuses, so
+# its LOST population is documented rather than failed. This axis NEVER
+# refuses: a rung the artifact cannot legally take is a SELECTION OUTCOME —
+# the emitter falls to the nearest legal rung of the same body-count family
+# (`docs/spec/tuning.md` §2.21) — so a LOST case here means a pattern stopped
+# compiling under a flag that cannot make that happen, and it is a failure.
+#
+# WHAT THIS COSTS: four more full-corpus runs. [TT-12] STEP 1's pairwise
+# execution below absorbs them two at a time, so the wall cost is about two
+# runs' worth rather than four. If that is judged too much for the default
+# sweep, the honest reduction is to keep rungs 1 and 4 (the two the AUTO path
+# reaches where the forward rungs are illegal) and drop 2 and 3 — NOT to keep
+# one representative, since 2 and 3 are the rungs that emit the forward
+# entries and the empty descriptor, i.e. the only new emitted code.
+if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
+    for _shape in 1 2 3 4; do
+        job_label+=("--vm-entry-shape=$_shape (§2.21)")
+        job_flags+=("--vm-entry-shape=$_shape")
+        job_lost_ok+=("0")
+    done
 fi
 
 # ============================================================================

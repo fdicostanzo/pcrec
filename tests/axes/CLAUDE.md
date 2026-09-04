@@ -203,3 +203,26 @@ change.
   ladder's interior rungs earn their cost — it names any pattern whose argmin
   is interior. On its first run it found three, which is why the ladder is
   `[8,6,4,3,2,1]` and not its endpoints.
+
+## [CC-DIFF] STEP 2 (2026-09-04) — the sweep gains an ORDINAL axis
+
+`--vm-entry-shape=1..4` (`docs/spec/tuning.md` §2.21) joins the job list as
+FOUR jobs, appended where `--engine=vm`/`--engine=dfa` are and for the same
+mechanical reason: `RXTFLAGS` takes an arbitrary extra flag, not only a `-f`
+spelling. Four rather than one, because "the answers do not move" is a claim
+about each rung and not about the family.
+
+**`lost_ok` IS 0 ON ALL FOUR, AND THAT IS STRICTLY STRONGER THAN THE COARSE
+AXIS'S CLAIM.** `--engine=dfa` is DO-OR-DIE and legitimately refuses, so its
+LOST population is documented rather than failed. This axis NEVER refuses: a
+rung an artifact cannot legally take is a SELECTION OUTCOME, and the emitter
+falls to the nearest legal rung of the same body-count family. A LOST case
+here therefore means a pattern stopped compiling under a flag that cannot
+make that happen, and it fails.
+
+**WHAT IT COSTS AND WHERE TO CUT IF IT IS TOO MUCH.** Four more full-corpus
+runs; [TT-12] STEP 1's pairwise execution absorbs them two at a time, so the
+wall cost is about two runs' worth. The honest reduction is to keep rungs 1
+and 4 and drop 2 and 3 — NOT to keep one representative, because 2 and 3 are
+the rungs that emit the forward entries and the static empty descriptor, i.e.
+the only new emitted code the step adds.
