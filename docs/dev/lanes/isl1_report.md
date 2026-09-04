@@ -633,3 +633,34 @@ subject shape (131,072 bytes, 16 placed hits) and a find-all loop. The
 comparative numbers that belong in a ledger are the bench's to take at the next
 pin. `p3` is a pattern I constructed to stress the candidate chain, not a
 corpus or bench pattern, and it is labelled as such wherever it is cited.
+
+## 13. A finding that is NOT this change's: the committed size log is stale
+
+`make test`'s corpus stage rewrites `docs/dev/artifact_size_log.tsv`, so the
+run in §11.1 left it modified. **It is restored, not committed**, on
+`dd1a39b`'s precedent ("the harness rewrites it on every corpus run") — and
+the reason is worth recording, because committing it would have credited this
+change with a tree-wide growth that belongs to another row.
+
+`scripts/size_diff` over the committed log against my run reports **2,933 of
+2,933 common patterns moved**, total size +1.95%, with almost every row at
+exactly **+31 bytes**. That is not the island. Checked directly on
+`a{2,4}?b` (`tests/base/review_r2.rxt:52`, one of the movers): it is a
+**DFA** artifact, it carries no `RX_VM_ALT_ISLANDS` at all, and it is
+byte-for-byte identical under `-fno-alt-island`. The +31 is
+`#define RX_DFA_UNIFORM_FOLDS 0` — 31 bytes including its newline —
+[CC-DIFF] STEP 1's own stamp, which landed on main at `a3f40b1` AFTER the log
+was last regenerated at `9dd1d4c`.
+
+So the committed log is stale on main by one abi event, and the next change to
+run a corpus stage inherits that +31 on every artifact in its own diff. The
+island's real size movement is in §4 and it is measured per artifact rather
+than read off this log: comment-excluded code bytes 0.76-0.98 of the chain's
+from width 64 up, `w-256` and `srt-256` within two bytes of each other, and
+`w-384` compiling where the chain is refused. The 22 `NEW` rows in the diff
+are `tests/island/`'s own patterns and are real.
+
+**For the merge battery:** regenerate the log there, where the corpus stage
+runs against the merged tree, and read the per-pattern movement with
+`scripts/size_diff` knowing that the first regeneration since `a3f40b1`
+carries [CC-DIFF]'s +31 as well as the island's own.
