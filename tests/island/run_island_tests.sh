@@ -121,6 +121,32 @@ decline d_anch   '^a|b'               'an assertion in a branch'
 decline d_ci     'cat|dog'            'caseless folds to two-member classes at parse time, D23' -i
 decline d_flag   'cat|dog|cow'        'the axis denied' -fno-alt-island
 
+# The NARROW PREFIX-BEARING decline, and it needs BOTH directions asserted
+# because it is the one decline whose condition is a measurement rather than a
+# structural impossibility (report §12.1's table; the emitter carries it at the
+# decline itself). Prefix freedom is the discriminator, not width — so a
+# width-2 PREFIX-FREE alternation must still take the island, and asserting
+# only the decline would leave a floor that also threw away the biggest
+# per-pattern win in the table.
+decline d_narrow 'fo|foo'             'prefix-bearing below the measured knee (width 2 loses x1.13)'
+decline d_narrow2 '(?:ab|abc)d'       'prefix-bearing below the measured knee (width 2 loses x1.14)'
+
+for pat in 'foo|bar' 'cat|dog|cow'; do
+    gen narrow_free "$pat"
+    n="$(islands "$WORKDIR/narrow_free.c")"
+    f="$(sed -n 's/^#define RX_VM_FRAMELESS \([0-9]*\)$/\1/p' "$WORKDIR/narrow_free.c")"
+    if [ "${n:-}" = "1" ] && [ "${f:-}" = "1" ]; then
+        ok "'$pat' is narrow but PREFIX-FREE, so it keeps the island and is frameless — the floor is on pushes, not on width"
+    else
+        bad "'$pat' should keep the island (islands=${n:-<none>}, frameless=${f:-<none>}): a width floor that caught a prefix-FREE alternation would throw away the table's biggest per-pattern win"
+    fi
+done
+
+gen narrow_ok '(?:a|ab|abc|abcd)z'
+n="$(islands "$WORKDIR/narrow_ok.c")"
+[ "${n:-}" = "1" ] && ok "'(?:a|ab|abc|abcd)z' is prefix-bearing AT the knee (width 4, measured a wash at 1.001) and keeps the island" \
+                   || bad "'(?:a|ab|abc|abcd)z' should keep the island at width 4 — the knee is 4, not 5, and width 4 measured a wash rather than a loss"
+
 # ---------------------------------------------------------------------------
 # 5. THE DECLINED POPULATION IS BYTE-IDENTICAL UNDER THE FLAG. This is what
 # makes `-fno-alt-island` a usable reference rather than a build that differs
@@ -173,10 +199,20 @@ n="$(frameless "$WORKDIR/pfree.c")"
 [ "${n:-}" = "1" ] && ok "a prefix-free island pushes nothing (RX_VM_FRAMELESS 1)" \
                    || bad "'cat|dog|cow' should be frameless under the island, RX_VM_FRAMELESS reads '${n:-<none>}'"
 
-gen pbear '(ab|abc)d'
+# The witness is a width-4 shape rather than `(ab|abc)d`, and the swap is the
+# narrow-width decline's doing: at width 2 that pattern is now the CHAIN's, so
+# it would still read frameless=0 and this check would be passing for a reason
+# that has nothing to do with the island. `(?:abcd|abc|ab|a)z` is the same
+# hazard at a width the island takes — four alternatives on one root-to-leaf
+# path, so its candidate chain has a second entry and something must push.
+gen pbear '(?:abcd|abc|ab|a)z'
 n="$(frameless "$WORKDIR/pbear.c")"
-[ "${n:-}" = "0" ] && ok "'(ab|abc)d' keeps a resume frame — the continuation must be able to fall from ab to abc" \
-                   || bad "'(ab|abc)d' reads RX_VM_FRAMELESS '${n:-<none>}' — a prefix-bearing island MUST be able to retry its second candidate"
+i="$(islands "$WORKDIR/pbear.c")"
+if [ "${i:-}" = "1" ] && [ "${n:-}" = "0" ]; then
+    ok "'(?:abcd|abc|ab|a)z' takes the island AND keeps a resume frame — its four-deep candidate chain has somewhere to retry from"
+else
+    bad "'(?:abcd|abc|ab|a)z' reads islands='${i:-<none>}' frameless='${n:-<none>}': a prefix-bearing island must both fire at this width and be able to retry its second candidate"
+fi
 
 echo
 echo "island structural checks: $pass passed, $fail failed"

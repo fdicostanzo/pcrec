@@ -94,8 +94,10 @@ m "fool" 0 2
 n "f"
 m "foolish" 0 2
 
-# DUPLICATE alternatives: one trie node carries two accepts, and both are
-# in the candidate chain
+# DUPLICATE alternatives: one trie node carries two accepts. Declined at this
+# width (prefix-bearing, 4 words but only 2 distinct, and the duplicates make
+# it push), so this cell is the chain's -- and the answer is the same either
+# way, which is the file's whole claim
 pattern fo|foo|fo|foo
 m "fo" 0 2
 m "foo" 0 2

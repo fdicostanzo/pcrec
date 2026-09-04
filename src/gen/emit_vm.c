@@ -1761,6 +1761,11 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
  * what would settle it. */
 #define VM_ISL_MIN_BRANCHES 2
 
+/* The floor for an island that PUSHES — one whose alternatives are not
+ * prefix-free, so its candidate chain has a second entry and the artifact
+ * stays framed. Measured, not guessed: see the table at the decline itself. */
+#define VM_ISL_MIN_BRANCHES_PREFIXED 4
+
 typedef struct {
     int idx;      /* the branch's ORIGINAL alternation index (0-based) */
     int len;      /* its literal length in bytes */
@@ -3474,6 +3479,38 @@ static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
             stk[sp++] = c;
         }
     }
+
+    /* [ENG-ISL] THE NARROW WIDTH DECLINE, and it is a MEASUREMENT rather than
+     * a guess — the hand-twin's own table (docs/dev/lanes/isl1_report.md §12.1,
+     * quiet box, 11 interleaved rounds, answers checked every round):
+     *
+     *   foo|bar             width 2, prefix-FREE     island/chain 0.175
+     *   (?:cat|dog|cow)s    width 3, prefix-FREE                  0.140
+     *   fo|foo              width 2, prefix-bearing               1.131
+     *   (?:ab|abc)d         width 2, prefix-bearing               1.144
+     *   (?:a|ab|abc|abcd)z  width 4, prefix-bearing               1.001
+     *   w-64 x2 + a tail    width 128, prefix-bearing             0.010
+     *
+     * THE DISCRIMINATOR IS PREFIX FREEDOM, NOT WIDTH, which is why this reads
+     * `pushes` and not just the count. A prefix-FREE island's candidate chain
+     * has one entry, so it pushes nothing, the artifact comes out frameless
+     * and [CC-DIFF]'s `always_inline` deletes the entry frame on top — that is
+     * the biggest per-pattern win in the table and it happens AT WIDTH 2, so a
+     * width floor alone would throw away exactly the population that gains
+     * most. A prefix-BEARING island keeps a push, stays framed, and below the
+     * knee the trie walk plus that frame is simply more work than two short
+     * byte runs.
+     *
+     * FOUR AND NOT FIVE (the manager's ruling on the table above): width 4
+     * MEASURED a wash at 1.001, so it keeps the mechanism at no cost; width 2
+     * loses by 13-14%; width 3 is unmeasured and sits on the losing side of
+     * the knee, so it declines with 2 rather than being admitted on a guess.
+     *
+     * It is ONE condition on two numbers this function has already computed,
+     * not a second analysis — and it is read by all three callers through the
+     * same return, so the emitter, the slot pre-pass and the cost model cannot
+     * disagree about which alternations are islands. */
+    if (t->pushes > 0 && t->nbr < VM_ISL_MIN_BRANCHES_PREFIXED) return false;
     return true;
 }
 
