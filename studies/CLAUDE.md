@@ -38,5 +38,18 @@ re-measure before load-bearing use.
   LANGUAGE rather than per branch — the per-branch form measured wrong,
   because altcls factors the tree before the emitter sees it (the
   eleven-islands defect).**
+- `lim2_census/` — [LIM-2] STEP 1's corpus-wide raw-vs-minimized DFA
+  transition-table census (manager ruling 1, docs/dev/lanes/
+  lim2_rulings.md, 2026-09-04), kept as a permanent measuring instrument
+  after the projected-size bail it was built to validate was WITHDRAWN
+  (ruling 7) — the census itself is what withdrew it: a real corpus
+  pattern shrinks 97.062% on minimization, and 2x that (194.1 points)
+  exceeds what a percent-of-raw-bytes margin can express at all
+  ([0,100)). Population 12 (1 corpus + 11 pcrec-bench altwide),
+  committed as `census_data.tsv`. Feeds [LIM-2] STUDY-1's N2/N1 successor
+  design (`docs/dev/dfa_online_minimization_study.md` on `main`). See its
+  own README.md for the full finding and CLAUDE.md's usual shape
+  (`make` builds `lim2_census` against `../../build/libpcrec.a`, `make
+  census` re-runs the sweep).
 
 Maintenance: update this file when studies are added/removed.
