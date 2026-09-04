@@ -20616,3 +20616,24 @@ The manager's watchdog would have lifted edge1 on `abi-ritual` while
 isl1 still owed its timing — caught by reading isl1's message against
 the .stage file; the trigger is now `timing-done`/`pool`/`DELIVERED`
 and isl1 times on the quiet box first (load1 0.98 → < 0.5).
+
+## 2026-09-03 — Fifty-first session, part 35 (21:0x EDT): isl1's timing — Q3 refused by measurement (the resumed frame is O(1)), Q4's discriminator is PREFIX FREEDOM not width (ruled: decline pushes > 0 && words < 4), Q1's ladder is an exchange rate for Frank
+
+isl1 timed on load1 0.24-0.31 with a harness that refuses above the
+bar, every cell answer-checked per round. Hand-twin (Q3): the sharpest
+prefix-bearing shape — 128 alternatives, two accepts on every path, a
+subject that forces the candidate chain on every hit — island/chain
+0.010; the resumed frame is one push + an O(1) resume, so the prefix-
+free-only fallback is REFUSED. Width-2 cells (Q4): prefix-free wins at
+width 2 (foo|bar 0.175; (?:cat|dog|cow)s 0.140) while prefix-bearing
+tiny loses (fo|foo 1.131; (?:ab|abc)d 1.144), a wash at width 4
+(1.001) and ×99 at 128 — the discriminator is prefix freedom: a
+prefix-free island pushes nothing and always_inline deletes its entry
+frame. RULED: decline where pushes > 0 && words < 4; the floor stays 2.
+Q1's inline ladder (recorded on [CC-DIFF] as STEP 2's STEP 0): always_
+inline buys 16-23% run time at every rung for ×2.6→×6.5 code and
+×2.9→×6.6 gcc from w-8 to w-256 — an exchange rate, Frank's point to
+choose. Sequencing: the manager overwrote isl1's .stage from
+`timing-done` to `codegen-rerun` so the watchdog does not lift edge1
+while isl1 re-runs test-codegen after its abi bump (the gate CLAUDE.md
+names); then the §9 witness pool (`pool` lifts edge1); then delivery.
