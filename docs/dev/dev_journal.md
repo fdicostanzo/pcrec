@@ -20794,3 +20794,24 @@ timing measured a win on. Manager: one guard requested before merge
 (decline when est(island) > the code cap × 0.9 while est(chain) ≤ it —
 the factor alone admits a refusal where the chain is ~300 KB). edge1:
 axes 21/21 green, in timing; the K43 ruling resent (drop (b)).
+
+## 2026-09-04 — Fifty-first session, part 42 (00:0x EDT): [OPT-EDGE] STEP 1's acceptance MET (×1.0937 → ×0.9995 on iso-ts); the ladder's design refuted and owed; w13 LIFTED; the K43 ruling reached edge1 on the third send
+
+edge1's timing on the quiet box: the bench's ×1.089 counterfactual
+reproduces on this instrument as ×1.0937 (main/noedge), and the branch
+reads ×0.9995 against noedge — the shared-sentinel dispatch costs the
+loop nothing; branch/main ×0.9173. The subject is the measurement: on
+the bench's syslog the prefilter dismisses nearly every position and
+the loop reads 0.22 ns/byte, so the lane used 256 KB of near-miss
+timestamp fields that enter and leave the digit chain. The 1/2/3/4
+ladder is NOT delivered: subtracting the -fno-scan-edge arm compares
+DIFFERENT MACHINES (chain interiors intact vs deleted), so the entry
+cost read negative at every rung; the right isolation is branch vs
+main (every rung faster, not monotone, box drifting to load ~1) — owed
+on a quiet box; the minimum-chain floor not reached; the cap stays.
+Message delivery: the K43 ruling (drop (b)) reached edge1 only on the
+third send; isl1 likewise missed several rulings until re-sent while
+idle — lesson: a ruling to a lane mid-run must be re-sent after the
+lane's next idle notice, or written into its rulings file (which the
+lanes DO poll). w13 LIFTED at 00:0x (abi 20) — edge1's .stage read
+timing-done and its remaining work (revert, ritual) is light.
