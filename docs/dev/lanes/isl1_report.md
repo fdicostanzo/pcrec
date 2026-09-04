@@ -341,6 +341,17 @@ name the measurement that would move it.
 
 ## 8. What is NOT verified
 
+**SUPERSEDED BY §11 AND §12 — kept because a lane's own prediction of where it
+would be wrong is worth reading against what happened.** Of the seven items
+below, six are now measured; the seventh (the census's compiler cross-check)
+stands. Two predictions were wrong in opposite directions and both are worth
+noting: `tests/island/run_island_tests.sh` was expected to need "at least one
+assertion adjusted" and passed 19/19 on its first run, while `make test` was
+expected to be mechanical and turned up a REAL DEFECT in `vm_cost` (§11.1).
+The original list follows unedited.
+
+### 8.0 The original list, as written before the lift
+
 Everything that needs a suite. Under the hold I ran no `make test`, no
 `test-codegen`, no `test-axes`, no harness script, and no timing loop.
 Specifically unverified:
@@ -362,6 +373,22 @@ Specifically unverified:
   pattern as written; a `--emitter` mode that reads `RX_VM_ALT_ISLANDS` back
   over the corpus is tomorrow's, and is what would turn §3's "lower bound"
   into a number).
+
+### 8.1 What still stands, after §11 and §12
+
+1. **The census's compiler cross-check.** `scripts/alt_census.py` still reports
+   the pattern AS WRITTEN, so §3's 429 is a lower bound on what the emitter
+   takes and nothing has closed that gap with a number. The identity gate's own
+   run is an indirect answer — 166 of the default axis's call-free artifacts
+   carry an island — but that is a different population (call-free, one axis)
+   from the census's, and it is not the same question.
+2. **The bench's altwide arms.** Every number in §12 is this box, `gcc -O2`,
+   one subject shape and a find-all loop. The comparative figures belong to the
+   bench at its next pin.
+3. **`p3` is a constructed pattern**, not a corpus or bench one — built to
+   stress the candidate chain, and labelled as such wherever it is cited.
+4. **The `[ART-SIZE]` materiality bar** (§11.4) is the one red left anywhere,
+   escalated rather than re-pinned.
 
 ## 9. Disclosure
 
@@ -512,6 +539,11 @@ follow-up that touches no `src/`, so `9bc7723` remains the change's last src
 commit and the gate header's own pin rule holds for a lane that writes its own
 bump. **The manager re-pins to the MERGE commit when it lands**, as at every
 bump before this one; the header says so where a merger will read it.
+
+VERIFIED after the bump: `tests/codegen/run_codegen_tests.sh` 109 checks
+passed, 0 failed, with `[DD-14.FB] (§10.4): rx_info carries the four sizing
+fields with abi 18 on both engines`. That is the gate the repo `CLAUDE.md`
+names for an abi change.
 
 ## 12. The timing (stage 5), measured 2026-09-03 20:5x-21:0x on a quiet box
 
