@@ -582,6 +582,8 @@ decides whether to perform it — and then run the row through
   CAPABILITY PROBE: does the compiler about to build an artifact ALREADY
   inline the VM entry chain, or does the `always_inline` workaround do real
   work under it? One witness, two arms, `nm`; no corpus sweep.
+  Wired into `make test-codegen`'s run_group (manager, 2026-09-04 at merge —
+  the lane delivered it in no target, so it certified nothing; 0.52 s).
   - **WHY IT EXISTS, and why no preprocessor guard can replace it.** Frank
     asked (2026-09-03 23:0x) whether there is a guard telling us the compiler
     has the optimisation. `__has_attribute(always_inline)` says the attribute
