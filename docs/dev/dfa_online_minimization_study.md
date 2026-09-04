@@ -1318,3 +1318,356 @@ unexplored states exist elsewhere in the machine. Turning that into a
 partition (wildcard-compatibility is not transitive — §3.5's own warning),
 so it is not obviously a refinement step. Named so it is not lost; **not
 settled here, and nothing in the paper bears on it.**
+
+### 6.4 Cost (answer 3)
+
+**Complexity, as the paper states it: it does not.** §3.3 declines the
+analysis outright — *"Providing a detailed analysis of OTF's complexity is a
+challenge as it highly depends on user-provided parameters... As a result,
+we only want to briefly sketch the worst-case performance"* — and the sketch
+is that the main loop may still iterate exponentially often, *"On top of
+that come the costs of registry management, threshold evaluation, and
+minimization, which – in the worst case – results in additional overhead
+compared to classic subset construction."* There is no amortized result, no
+bound relating work to the compression ratio, and no theorem.
+
+**Per-operation costs, as stated per registry:**
+
+| operation | CCL (§4.1) | CCLS (§4.2) |
+|---|---|---|
+| PUT | amortized constant (hash) | + prune and saturate, linear in $\|Q\|$ with cached simulation |
+| UNIFY | merge two lattices; dominated by $\mathcal{O}(\|M_1\|\|M_2\|)$ subset comparisons on the minimal-element antichains | identical to CCL |
+| GET | hash hit if singleton; otherwise scan lattices for one covering $Q$ from above and below. Worst case *"quadratic (in the number of lattices and the number of their minimal elements) number of subset comparisons"* (§4.1 Remarks) | prune first, then as CCL; *"the runtime is still dominated by the quadratic lookup process"* |
+
+Preprocessing for CCLS is the similarity relation, $\mathcal{O}(|\delta|\cdot|S|)$
+(§2.2, citing [32]); bisimilarity is $\mathcal{O}(|\delta|\cdot\log|S|)$ (§2.2,
+citing [49]). §4.2's Remarks carry the warning the study's §3.7 arrived at
+independently: *"Computing the simulation preorder can be prohibitively
+expensive for large or dense NFAs, so the benefit of precomputing simulation
+relations must outweigh the cost."* §5.1 records that they tried the LIGHT-
+and HEAVY- reduction methods of [12] and *"found [them] to be impractical in
+our benchmarks due to their worst-case performance on NFAs"*.
+
+The threshold is adaptive (§5.1 "Parameters"): $t$ starts at 5000 and is
+rescaled after each minimization by the ratio of the new to the previous
+minimized size, so poor compression *lengthens* the interval between
+minimizations and good compression shortens it. That is a self-calibrating
+answer to §4.2's A7 hazard and is worth borrowing whatever else is.
+
+**Measured results.** Two benchmark families, both on a server with two AMD
+EPYC 7763 CPUs and 2 TB of RAM, single-threaded runs capped at 256 GB
+(§5.1).
+
+- **Use case 1, Walnut (§5.2):** 52 systems from Büchi-based arithmetic on
+  automatic sequences, one-hour timeout. State counts min/median/max/mean =
+  64 / 9,824 / 60,317 / 10,113; alphabet sizes 2 / 8 / 1,323 / 89. OTF
+  *"canonizes notably more systems within the set timeout than SC"*, and
+  OTF-S and BRZ-OTF canonize 44 and 45 systems respectively — not the same
+  44 and 45, with only two canonized by neither. Minimization triggers
+  (Table 2): OTF min 2, median 48, max 145, mean 50.29; OTF-S 0 / 9 / 105 /
+  14.93; BRZ-OTF 0 / 2 / 27 / 4.61; BRZ-OTF-S 0 / 1 / 17 / 3.49.
+- **Use case 2, random systems with modular structure (§5.3):** a
+  Tabakov–Vardi variant with a modular partition of the state space,
+  $n\in\{20,30,\dots,300\}$, ten seeds each, transition density 2, alphabet
+  $k=\max(1,\lfloor\sqrt n\rfloor)$, 1000 s timeout. Triggers (Table 3):
+  OTF 0 / 6 / 129 / 25.48, and the other three configurations within noise
+  of it. The paper's own reading: OTF reduces overhead and improves runtime,
+  *"though less dramatically, because the equivalence classes in this model
+  are dominated by one class with a complex antichain, leading to slower
+  searches"* — i.e. the registry lookup can eat the win.
+
+**Overhead on easy inputs — asked for by §5.2's M5, and the answer is a
+qualitative one.** The paper gives no percentage anywhere. The nearest
+statement is §5.2's *"While the additional work of intermediate
+minimizations results in somewhat similar runtimes for the best cases, its
+positive impact on the more complex systems is evident"*, plus the abstract's
+*"we are able to improve especially worst-case scenarios"* and the
+conclusion's *"while being competitive for the remaining ones"*. So:
+roughly neutral on easy inputs, by the authors' account, unquantified, and
+on a population whose median system has 9,824 states. **It says nothing
+about the cost of a registry on pcrec's median pattern, which builds a DFA
+of tens of states.** §4.5's C5 and §5.2's M4 stand entirely unretired.
+
+**Counted repetitions and bounded repeats: absent from the evaluation, and
+so are regular expressions.** Neither benchmark family is regex-derived —
+one is automatic-sequence arithmetic from Walnut, the other synthetic
+modular NFAs. String matching appears in the paper exactly once, as a
+motivating citation in §1 ([2], Aho–Corasick). **No K18 shape, no unrolled
+counter, no `((?:[^a]{1,2}|.{0,2}?)+){0,8}`, nothing of the kind is
+represented.** Worse for transfer: §5.3 states that the OTF idea is
+targeted at *structure* — *"Random models like the ones by Tabakov-Vardi
+[46] typically lack any structure which is what OTF is designed to
+exploit"* — and whether an unrolled counted repeat's copy lattice is
+"structure" in the sense CCL's convexity closure can exploit is exactly the
+question the paper's evaluation does not answer. It is a plausible yes
+(§3.7's inclusion chain over copies is a lattice), and it is **unverified**.
+
+### 6.5 Fit to pcrec (answer 4)
+
+The mapping first, then what breaks.
+
+| paper | pcrec |
+|---|---|
+| NFA $A=(S,\Sigma,\delta,S_0,F)$, Def. 1, **no epsilon transitions** | `Nfa`, with epsilon structure; positions are `N_CLASS` byte-consuming states (`src/ir/dfa.c:1315`) |
+| metastate $Q\subseteq S$ | `DView.list`, a **priority-ordered** id list (`src/core/internal.h:1158`), one per class-axis view |
+| $\delta(C,i)$, Algorithm 1 line 18 | filter the source view's list by the class representative byte, then `closure` — `src/ir/dfa.c:1313`-`:1316` then `:771` |
+| DFA state $q$, an integer from a counter (Algorithm 1 lines 21-23) | `d->n++`, creation order (`src/ir/dfa.c:994`) |
+| registry PUT/GET, hash-based one-to-one baseline | `dhash`/`tab_insert`/`intern` (`src/ir/dfa.c:809`, `:827`, `:871`) — pcrec **is** the baseline registry the paper describes |
+| $E'$, explored states | states with index below the worklist cursor `si` (`src/ir/dfa.c:1284`); every popped state's row is complete by `:1326` |
+| intermediate minimize with `sig` (lines 34-42) | `pcrec_minimize_dfa` with `state_sig` (`src/opt/minimize.c:39`) and unexplored states pinned |
+| final minimize | `src/core/compile.c:1134`-`:1135` |
+
+**What pcrec would have to supply that it does not have. Five items, in
+descending order of how fundamental they are.**
+
+1. **A metastate that is a SET. This is the deepest obstacle and it is not a
+   porting detail.** CCL's entire inferential power is the convexity closure
+   of a join-semilattice whose join is $\cup$ and whose order is $\subseteq$
+   (§2.3, §4.1 Eqs. 1-2). pcrec's state is a priority-ordered list compared
+   by `memcmp` (`src/ir/dfa.c:849`), and the order is produced by the closure
+   walk, not by the membership (`src/ir/dfa.c:533`, `:571`, `:771`). There is
+   no $A\cup B$: the union of two ordered lists is not a state the
+   construction can produce and its order is undefined. To build CCL on
+   pcrec you would first have to prove that the order, the accept bits and
+   the pruning are all functions of the underlying position set — which is
+   §3.7's condition 3 (priority) restated over the whole lattice rather than
+   over one dominated pair, and §3.7 already flags that argument as the one
+   it most wants attacked.
+2. **Pruning, which makes even the set-level identity fail on forward
+   machines.** Forward machines run with `prune` on and the closure *"stops
+   the instant ACCEPT is reached — lower-priority threads are pruned"*
+   (`src/ir/dfa.c:1`-`:6`; the cut is `src/ir/dfa.c:655` and `:794`). The
+   interned list is therefore a **truncated** closure, so it is not the
+   closure of the pre-set and $L(Q)=\bigcup_{q\in Q}L(q)$ (§2.1) is not the
+   semantics of the object pcrec interns. The reverse machine runs with
+   `prune` off (D7, `src/ir/dfa.c:1`) and is closer to the paper's object,
+   which is an interesting asymmetry: **the machine where lim2 measured the
+   worst raw-vs-minimized shrink is also the one where the paper's algebra
+   comes nearest to applying.**
+3. **One key per state, not a tuple of five.** Def. 4's $Q$ is one metastate
+   and $q$ one state. pcrec's identity is three ordered lists with three
+   accept bits (`src/core/internal.h:1192`) plus two interned *variant state
+   ids* (`:1193`, `:1207`), and the variants are interned **before** the base
+   state (`src/ir/dfa.c:1126`, `:1132`, then `:1136`). A registry GET on the
+   base tuple would therefore depend on registry decisions already taken for
+   its own variants, and the convexity closure would have to hold
+   componentwise *and* jointly. The paper has no analogue and the study's
+   §1.3(a) obligation applies in full.
+4. **A simulation preorder, for CCLS.** pcrec has none, and building one
+   lands §3.7's three conditions unchanged — every view (`\b`, `(?m)$`,
+   `\z`), the K18 open-loop context that makes "the language of a position"
+   context-dependent (`src/ir/dfa.c:207`, `:329`, `:392`), and priority.
+   Note this is candidate B: **the paper's SC-S configuration IS candidate B,
+   and its OTF-S is candidate A plus B plus the generalization layer.**
+5. **Epsilon transitions are NOT an obstacle**, and it is worth saying so to
+   keep the list honest. `closure` is a deterministic function of the ordered
+   pre-set and the machine's flags (`src/ir/dfa.c:771`, called at `:1104`),
+   so Algorithm 1's $\delta(C,i)$ maps cleanly onto pcrec's filter-then-close
+   and the key the registry would hold is the closed list pcrec already
+   interns. The obstacle is item 1's ordering, not the epsilons.
+
+**And the renumbering hazards, which the reference implementation dodges in
+a way pcrec specifically cannot.** §3.5 listed five. OTF avoids most of them
+by **never renumbering**: `updateDFA` redirects each merged state's
+predecessors to the block representative, then pushes the dead id onto a
+`stateBuffer` free list and reuses it for the next state created
+(`OTFDeterminization.java`, `updateDFA` and the `stateBuffer.pop()` in
+`doOTF`). That is elegant and it is **worse than useless for pcrec**: id
+recycling destroys the property that a state's index is its creation order
+(`src/ir/dfa.c:994`, `:806`), and creation order is what §1.3(c)'s entire
+byte-identity argument rests on, via `minimize.c:161`'s renumber-by-first-
+occurrence. So pcrec would face §3.5's hazards 1-5 in full, *continuously*
+rather than periodically, and would additionally have to solve the one the
+paper's implementation solved by a means pcrec cannot use. Hazard 3 is
+unchanged and is the concrete blocker: `src/opt/minimize.c:185`-`:186` nulls
+every view's list, and the worklist reads exactly those lists at
+`src/ir/dfa.c:1310`. Hazard 5 is unchanged too: `d->n` feeds the caps at
+`src/ir/dfa.c:886` and `:934`, so the refusal set moves.
+
+One favourable note: **the alphabet fits.** The paper's systems have a median
+of 8 input symbols and a maximum of 1,323 (§5.2), and its conclusion names
+large alphabets as a known weak spot for the registries ([16], BDDs as
+future work). pcrec's byte equivalence classes (`eqclasses`,
+`src/ir/dfa.c:152`) are in the same range, so this is one axis where pcrec
+is on the good side of the paper's envelope rather than the bad one.
+
+### 6.6 Revised verdict on C (answer 5)
+
+**C keeps its Tier-4 classification and loses its rank.** §3.2's taxonomy is
+unchanged and is confirmed by the paper: OTF's GET-on-an-unseen-metastate
+(Algorithm 1 line 19) is a genuine Tier-4 merge and is the only part of the
+construction that reduces exploration. What changes is everything §3.8 built
+on top of that.
+
+**§3.8's three reasons, re-scored:**
+
+1. *"It is the only candidate for which the second pass is genuinely
+   optional"* — **false** (§6.1). Withdrawn in full, and with it the claim
+   that raw equals emitted and lim2's projection becomes an identity.
+2. *"It is one of only two candidates that makes construction cheaper"* —
+   **confirmed** (Algorithm 1 lines 19-29), and it is the reason C is not
+   dead.
+3. *"It subsumes A′ and composes with B"* — **half right, and the wrong
+   half is load-bearing.** C does not subsume A′; C *requires* **A**. UNIFY
+   is called from exactly one place, the intermediate minimization
+   (Algorithm 1 lines 43-45; in the implementation, `registry.unify` is
+   reachable only from `otfMinimization`). Without periodic partial
+   minimization the CCL registry learns nothing and degenerates to the
+   hash map pcrec already has — the paper says so itself in §3.2: a
+   constantly-false threshold plus a one-to-one registry *"coincides with
+   classic subset construction"*. So **§5.1's "Do not build A" and any
+   future "build C" are inconsistent**: A is C's evidence source. The only
+   escape is CCLS's PUT-time prune-and-saturate, which needs no UNIFY at
+   all — and that is candidate B wearing a registry's clothes, which is
+   precisely the paper's SC-S configuration.
+
+**The paper's Table 1 is a 2×2 of this study's own candidates**, which is
+the single most useful thing M5 brought back:
+
+| paper's name | this study |
+|---|---|
+| SC | today's pcrec — Tier 0, syntactic interning only (§3.2) |
+| SC-S | **candidate B** (simulation prune/saturate on metastates) |
+| OTF | **candidate A** + the CCL generalization layer |
+| OTF-S | **A + B** + the generalization layer |
+| BRZ / BRZ-* | Brzozowski, set aside for pcrec-specific reasons in §2.3 |
+
+And the paper's own strongest size result lands on the **B** column, not the
+C column: *"For SC and OTF, simulation boosts performance both by improving
+runtime and reducing overhead, sometimes to the point of not introducing any
+redundant states at all"* (§5.2). The configurations that occasionally reach
+zero overhead — raw equals emitted, the property §3.9 wanted — are the
+simulation-bearing ones.
+
+**Revised ranking.** C moves from first-class to *"the most expensive route
+to a benefit B may deliver more cheaply"*, on four grounds: its unique
+property is false; it requires A underneath, whose five renumbering hazards
+pcrec would take continuously and one of which the paper's implementation
+solves by id recycling that pcrec cannot use (§6.5); its generalization
+layer needs a set lattice pcrec's ordered, pruned, five-component states do
+not form (§6.5 item 1); and its evaluation contains no regex, no counted
+repeat and no pattern of pcrec's shape (§6.4).
+
+**Should §5.1's recommendation change? Yes, in four specific ways.**
+
+1. **Step 1 (fix lim2's margin with N2 or N1, conditional on M1) is
+   unchanged and is now *more* clearly right.** §3.1's finding that the bail
+   needs proved inequivalence while compaction proves equivalence is
+   confirmed by §6.3: OTF supplies no bound of either kind, and the paper's
+   §1 says the full DFA must be built.
+2. **Step 2 (read the paper) is discharged by this section.**
+3. **Step 4's "then choose between B and C on the numbers" becomes
+   B-first.** B is the paper's SC-S: published, evaluated, the only
+   configuration observed to reach zero overhead, Tier 1 so it cuts both
+   construction work and the K7 charge, and it needs no intermediate
+   minimization and therefore none of §3.5's five hazards. C is reconsidered
+   only if M2 shows a large residual gap after B *and* someone is willing to
+   build A underneath it. §4.3's cross-product corpus is still the
+   precondition for B and is now the critical path.
+4. **"Do not build A" survives, on a corrected reason.** §3.5's rule is
+   confirmed by the paper — but §3.5's claim that under it *"what remains
+   merging is precisely the closed subgraph"* is **too pessimistic, and it
+   was the sole basis for predicting A does nothing.** Two states each
+   carrying an unexplored successor still merge when it is the *same*
+   unexplored successor, which is not the closed subgraph; §3.5's own
+   parenthetical says as much ("a state transitioning into one merges with a
+   state transitioning elsewhere" — the exclusion propagates only for
+   *elsewhere*) and then over-concludes. The paper's median of 48 productive
+   minimization triggers per Walnut system (Table 2) is evidence the yield is
+   not vacuous on *some* population. A still is not recommended alone — it is
+   Tier 3, it saves no construction work, and it lands all five hazards —
+   but it should be declined on those grounds and not on a yield prediction
+   this section shows was wrongly derived.
+
+**Does M6 as written still decide the second-pass question? No — it is
+answered in advance for C, and should be rewritten.** M6's bar was *"the
+second pass may be made optional only if, with it skipped, no artifact grows
+by more than a few percent"*. §6.1 settles that no OTF-shaped mechanism
+licenses skipping it: the published construction requires a final
+minimization and its reference implementation runs one unconditionally. M6's
+**second half survives intact and is independent of the paper**: does
+[OPT-5]'s scan edge require *minimality* or only *finality*
+(`src/opt/scanedge.c:43`'s five local preconditions against
+`src/core/internal.h:4387`'s "it needs the canonical state set")? That is a
+pcrec code question a prototype answers in an afternoon, and it should be
+what M6 is. **M1 also needs restating**: it should measure the yield of the
+paper's partition rule — explored states blocked by accept vector,
+unexplored states pinned singleton — not the closed fraction, because §6.6
+item 4 shows those are not the same set. **M2 gains one row**: report the
+paper's *overhead* metric (maximum intermediate size minus final size), since
+that is lim2's own quantity and it makes pcrec's numbers directly comparable
+to §5's.
+
+### 6.7 Their library (answer 6)
+
+**Name** OTF. **URL** `https://github.com/jn1z/OTF` (given in the paper's
+Data-Availability Statement, alongside the Zenodo artifact
+doi:10.5281/zenodo.18163403 holding the benchmark systems, full results and
+a Docker image — **not downloaded**). **Licence** MIT, *"Copyright © 2025
+John Nicol and Markus Frohme"* (`LICENSE.txt`, read). **Language** Java,
+built on AutomataLib 0.12.1 (`net.automatalib`, `pom.xml`); the paper (§1,
+§6) states it is included in the theorem prover Walnut since version 7.
+**Size**: the GitHub API reports the repository at 375 KB over 70 files; the
+32 files under `src/main/java` total ≈183 KB of source, plus ≈57 KB of
+tests. The core loop, Algorithm 1 itself, is 182 lines
+(`OTFDeterminization.java`). Byte sizes from the tree API — **the repository
+was not cloned and no line count was taken**.
+
+Two things the repository says that the paper does not.
+
+- **The shipped registry is already past §4.1.** The driver instantiates
+  `AntichainForestRegistry`, and the tree carries `AntichainForest`,
+  `AntichainForest2`, `AntichainForest5`, `AntichainForest5Idx`,
+  `InvertedIndex`, `ACElts`/`ACGlobals`/`ACPlus` and `SmartBitSet` — roughly
+  130 KB of the 183 KB. §4.1's Remarks and §6 name *"more involved
+  structures for antichains [10] or inverse indices [25]"* as future work;
+  the implementation has already gone there. **§3.8's estimate of "500+
+  lines, a new subsystem" is if anything low**: on this evidence the
+  registry, not the loop, is the system.
+- **`CHANGELOG.md` records two correctness-adjacent fixes in 1.1.0**
+  (2025-10-29), one of them *"Fixed AC Union performance bug (conservative
+  AC unioning sometimes lost equivalence information)"* — i.e. the antichain
+  union silently dropped equivalences it had earned. That is §4.5's C2
+  failure class, in the authors' own tree, found by them, five months after
+  the first release. It is not a soundness bug (losing equivalences costs
+  size and time, it does not corrupt the language), but it is direct evidence
+  for §4.5's verdict that a registry is a structure where being wrong is
+  quiet.
+
+**As an isomorphism oracle for pcrec: no, and §4.5's claim never needed it.**
+The tool reads finite automata in BA format and can write its result out
+(`--writeBA`, added in 1.1.0 explicitly as a replacement for the removed
+`--sanity-check` option), so it *can* be diffed against — but only for plain
+NFAs with no epsilon transitions, no priority order, no class-axis or
+position views and no `eolvar`/`endvar`. pcrec's machines are not expressible
+in its input format, so it cannot check pcrec's DFAs. **This costs §4.5
+nothing**: that section's checkability claim was a differential against
+**pcrec's own existing two-pass pipeline** (compile every corpus pattern both
+ways, assert the minimized machines isomorphic), which needs no external
+reference and stands unchanged. The library's realistic use to this project
+is as a cross-check for a pcrec-side *re-implementation of the algorithm* on
+plain NFAs, which is a much narrower thing than an oracle. **Verified**: the
+format, the flags and the licence, from the README, CHANGELOG and LICENSE.
+**Unverified**: everything about running it — it was not cloned, built or
+executed, and no claim here rests on its behaviour.
+
+### 6.8 What M5 did not settle
+
+- **Whether an unrolled counted repeat is "structure" in CCL's sense.** The
+  copies form an inclusion chain (§3.7), which looks like exactly the lattice
+  convexity closure exploits, and there is not one regex in the paper's
+  evaluation to check it against. Plausible; **unverified**; it is the single
+  most valuable thing a prototype could measure, and M2's stand-in is the
+  cheap way to approach it.
+- **Figures 1 and 2.** They are images in the HTML and were not read as data,
+  so every quantitative claim in §6.4 about relative runtime and overhead is
+  the paper's prose about its own plots, not a reading of them.
+- **Any overhead number on easy inputs.** §6.4: the paper gives none, and
+  pcrec's median pattern is three orders of magnitude smaller than its median
+  benchmark system. §5.2's M4 is not retired by anything here.
+- **The Zenodo artifact**, and therefore any independent check of the
+  reported numbers.
+- **Whether the priority order and the pruning are functions of the position
+  set** (§6.5 item 1). This is the premise CCL would need in pcrec and it is
+  the same claim §3.7's condition 3 wants attacked. Nothing in the paper
+  bears on it, because the paper's automata have neither.
