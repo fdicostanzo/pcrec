@@ -20693,3 +20693,22 @@ three re-pins, the abi readers, the stamping population), r53doc
 (sonnet, spec/doc contract + abi readers + staleness). Read-only, no
 make, scratch under the session scratchpad. Merge after triage; the
 merge's short chain waits for edge1's heavy stages.
+
+## 2026-09-03 — Fifty-first session, part 38 (22:0x EDT): K43 direction (b) REFUTED by edge1's two-arm measurement — it moves the analyzer's false positive to the trail rewind; DROPPED from the branch (pending Frank); panel r53's 14 check findings all with isl1
+
+edge1 (test-registry green 101,244/0; test-codegen 4/5 with only the
+[ART-SIZE] bar; LINTGEN 32/32 sections, 9 FAILs): every substantive
+red is K43's. Two arms over 30 patterns under gcc 15.2.0 -fanalyzer:
+7 error → clean (K43's own site), 2 clean → ERROR (a second CWE-457 at
+the trail rewind, unreachable by (b): the trail is caller-sized), 21
+unchanged; main and the branch are exact inverses. Plus 578 B on every
+VM artifact (the [ART-SIZE] bar hit) and a GCC-CPU tripwire at 1.100×
+under the lane's own -j4 load (re-measured solo later, never re-pinned
+under load). RULED: (b) dropped from lane/edge1 after test-axes
+completes; the branch is [OPT-EDGE] STEP 1 alone; K43 goes back to
+Frank with the table and options (a)/(c) — recorded on the K43 row.
+edge1 disclosed one `pgrep -f nothing` in a poll loop (matched nothing).
+Meanwhile isl1 is fixing r53's fourteen check findings (C1-C14 in the
+review file) plus the five doc items already landed (15701e4; the two
+knees are limits.def rows; the registry filter sees MIN/THRESHOLD; K46
+filed for the Makefile's missing limits.def dependency).
