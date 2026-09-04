@@ -682,3 +682,234 @@ writing it the obvious way first.
 Under AUTO several of these patterns select the DFA engine and stamp no rung
 at all, which would make the gate vacuous a SECOND way — and this is the same
 fact that made the ladder's first harness measure nothing (§12.1).
+
+
+---
+
+## 12. THE ns/call LADDER (RULING 8 item 1) — the number this row turned on
+
+**Ran on a quiet box, 2026-09-04 16:2x-16:4x EDT. Twenty cells, four rungs,
+none refused.** §6 said "no ns/call was taken and a timing harness that caveats
+instead of refusing is worse than none". This is that measurement.
+
+### 12.1 Method, and the two things that had to be got right first
+
+Protocol is **isl1 §12.2's, reused deliberately** so the numbers are comparable
+to the run-time arm already in evidence: `rx_search` in a FIND-ALL loop over a
+131,072-byte subject, arms INTERLEAVED round by round, medians reported with
+the per-round range beside them, and a `load1 < 0.5` gate that REFUSES rather
+than warns. 9 rounds x 3 runs per cell, and **the gate is checked before EVERY
+CELL, not once at the start** — a lane starting a compile sweep mid-run would
+otherwise poison the tail of the table silently. Each cell records the `load1`
+it ran at, so a drifting cell is visible rather than latent.
+
+**THE ANSWER IS CHECKED EVERY ROUND, not sampled.** The driver accumulates an
+FNV checksum over EVERY span, so a rung that finds the same NUMBER of matches
+in different places parts. **All four rungs' checksums are identical in every
+one of the twenty cells** — an answer-identity arm the ladder gets for free
+beside its timings.
+
+**THE SUBJECT IS THE BENCH'S OWN `t-128k-dense.bin`** (131,072 B, 1,024 branch
+occurrences, sha-pinned in `bench/altwide/manifest_throughput.tsv`), read-only.
+DENSE is the point: the entry chain is a PER-CALL cost, so a cell must make
+many short calls. `ns/call` is elapsed divided by the number of `rx_search`
+INVOCATIONS.
+
+**TWO CORRECTIONS THE FIRST HARNESS NEEDED, and the first is the one to carry.**
+
+1. **THE CELLS MUST BE EMITTED `--engine=vm`.** At AUTO every one of these
+   patterns selects the **DFA** engine, stamps no `RX_VM_ENTRY_SHAPE` at all,
+   and is untouched by all four rungs. The first harness timed those artifacts
+   and would have reported four identical columns as a finding. It is the same
+   [MECH-REACH] shape as the vacuous witnesses in §11 — a measurement that
+   stopped reaching its site — and it is why §3's twenty artifacts read the
+   program bytes they do (`w-8` stamps 8,558 under `--engine=vm`, which is
+   exactly §3.1's row).
+2. **THE STAMPS ARE IN THE `.c`, NOT THE `.h`.** Read from the emitted `.c`.
+
+### 12.2 THE TABLE — ns/call medians, 20 cells, four rungs
+
+| prog | calls/pass | plain | shared | forward | inline | fwd/inl | shd/pln |
+|---|---|---|---|---|---|---|---|
+| 645 | 47,704 | 16.8 | 16.5 | 11.0 | **10.2** | 1.073 | 0.979 |
+| 646 | 3,722 | 340.9 | 197.0 | 98.3 | 96.7 | 1.016 | 0.578\* |
+| 695 | 1 | — | — | — | — | — | **VACUOUS** |
+| 818 | 160 | 3,263.5 | 2,980.1 | 1,132.3 | 1,130.0 | 1.002 | 0.913\* |
+| 2,618 | 1 | — | — | — | — | — | **VACUOUS** |
+| 3,222 | 65 | 7,228.7 | 7,244.2 | 2,834.2 | 2,832.2 | 1.001 | 1.002 |
+| 4,024 | 65 | 8,925.3 | 8,937.1 | 3,265.2 | 3,271.7 | 0.998 | 1.001 |
+| 5,009 | 1 | — | — | — | — | — | **VACUOUS** |
+| 5,183 | 65 | 8,903.9 | 8,901.3 | 4,592.0 | 4,592.6 | 1.000 | 1.000 |
+| 5,985 | 65 | 15,521.0 | 15,541.6 | 10,266.7 | 10,268.2 | 1.000 | 1.001 |
+| 6,954 | 65 | 16,171.3 | 16,168.6 | 9,489.1 | 9,489.8 | 1.000 | 1.000 |
+| 8,558 | 129 | 10,204.7 | 10,231.5 | 6,983.0 | 6,948.3 | 1.005 | 1.003 |
+| 12,514 | 129 | 10,990.7 | 10,988.4 | 7,282.1 | 7,276.9 | 1.001 | 1.000 |
+| 17,776 | 129 | 11,621.7 | 11,602.9 | 8,274.0 | 8,283.7 | 0.999 | 0.998 |
+| 26,226 | 129 | 13,784.9 | 13,684.0 | 8,983.0 | 8,974.8 | 1.001 | 0.993 |
+| 36,217 | 129 | 14,262.8 | 14,184.1 | 9,675.8 | 9,672.6 | 1.000 | 0.994 |
+| 55,858 | 129 | 14,401.9 | 14,447.2 | 10,837.8 | 10,822.1 | 1.001 | 1.003 |
+| 79,451 | 129 | 15,168.5 | 15,093.1 | 11,078.1 | 11,017.3 | 1.006 | 0.995 |
+| 119,802 | 129 | 16,080.1 | 16,035.2 | 11,517.6 | 11,517.4 | 1.000 | 0.997 |
+| 305,686 | 193 | 12,035.2 | 11,999.6 | **9,853.5** | 10,069.2 | 0.979 | 0.997 |
+
+Per-cell round ranges are in `ladder.tsv`'s `ns_min`/`ns_max` columns; every
+cell's spread is under 2% except where noted. `load1` per cell: 0.36-0.53
+throughout, bar 0.74 and 0.81 on two large cells whose own gcc invocations
+raise the one-minute average AFTER the gate has passed and BEFORE the timed
+runs — the compiles, not contention.
+
+**THREE CELLS ARE VACUOUS AND THE HARNESS SAID SO, not the author.**
+`[0-9a-f]{32}`, the 16-byte literal and the IPv4 shape each make ONE call per
+pass and match nothing on this subject: each measures the SCAN, not the entry
+chain. One call per pass is this ladder's [MECH-REACH] shape and such a cell is
+named, never quoted. (\*) The two starred `shd/pln` values are not read as
+results either: at prog 646 `plain`'s rounds span 186.4-399.4 against `shared`'s
+195.4-197.0, so the two agree at their MINIMA and 0.578 is the noise in
+`plain`'s distribution.
+
+### 12.3 RULING 2's RULE, APPLIED: `forward` is the default
+
+**FORWARD IS WITHIN NOISE OF INLINE on sixteen of the seventeen valid cells**
+(0.979x-1.016x), and at 305,686 program bytes it is the FASTER of the two at
+HALF the `.text` — §3.4's three-copies-not-six finding arriving on the run-time
+axis as well as the size one. By ruling 2's stated rule, **`forward` is AUTO's
+default and `inline` is the dial's max-speed rung only.**
+
+**THE SEVENTEENTH IS STATED RATHER THAN AVERAGED AWAY.** At prog 645 `inline`
+is a measured **7% ahead** (10.24 against 10.99; the cells' round ranges
+10.10-10.69 and 10.64-11.95 barely overlap) for +632 bytes of `.text`. That is
+the one place `inline` earns its keep, and it is now a MEASURED RATE at the
+small end rather than the assumption STEP 1 shipped.
+
+**AND SHARED IS AT PLAIN'S RUN TIME** — 0.993x-1.003x on fifteen of seventeen —
+exactly as STEP 0's 0.986 predicted for "elide the buffers without inlining".
+§6's question 1 is answered in the direction §3.3's mechanism predicted:
+moving the canary off three entries and re-paying one call is not what buys
+anything.
+
+### 12.4 THE TERM: CONFIRMED at 4,096, and now on the SIGN CHANGE of the trade
+
+Because `shared` buys nothing, the term is not choosing HOW MUCH of the win an
+artifact gets. **It is FORWARD OR NOTHING.** So the quantity that decides it is
+`forward` against `shared` on both axes at once:
+
+| prog | shared ns | forward ns | Δ.text | bytes per ns/call saved |
+|---|---|---|---|---|
+| 645 | 16.5 | 11.0 | **−552** | PURE WIN (smaller AND faster) |
+| 646 | 197.0 | 98.3 | **−584** | PURE WIN |
+| 818 | 2,980.1 | 1,132.3 | **−568** | PURE WIN |
+| 3,222 | 7,244.2 | 2,834.2 | **−216** | PURE WIN |
+| 4,024 | 8,937.1 | 3,265.2 | **−48** | PURE WIN |
+| | | | | ← **4,096 sits here** |
+| 5,183 | 8,901.3 | 4,592.0 | +288 | 0.067 |
+| 5,985 | 15,541.6 | 10,266.7 | +320 | 0.061 |
+| 6,954 | 16,168.6 | 9,489.1 | +440 | 0.066 |
+| 8,558 | 10,231.5 | 6,983.0 | +1,208 | 0.372 |
+| 12,514 | 10,988.4 | 7,282.1 | +2,176 | 0.587 |
+| 17,776 | 11,602.9 | 8,274.0 | +3,456 | 1.038 |
+| 26,226 | 13,684.0 | 8,983.0 | +5,912 | 1.258 |
+| 36,217 | 14,184.1 | 9,675.8 | +7,856 | 1.743 |
+| 55,858 | 14,447.2 | 10,837.8 | +12,208 | 3.382 |
+| 79,451 | 15,093.1 | 11,078.1 | +17,408 | 4.336 |
+| 119,802 | 16,035.2 | 11,517.6 | +31,816 | 7.043 |
+| 305,686 | 11,999.6 | 9,853.5 | +102,272 | 47.656 |
+
+**THE SIGN CHANGES BETWEEN 4,024 AND 5,183, AND 4,096 IS IN THAT GAP.** Below
+it `forward` is SMALLER than `shared` *and* 1.7x-2.7x faster, so a default that
+takes it trades NOTHING and any other choice is strictly worse. Above it
+`forward` buys a real 1.2x-1.9x for `.text`, at a rate that degrades **seven
+hundred fold** across the range — a genuine two-axis trade, which is a DIAL
+position rather than a default.
+
+**The value is CONFIRMED, and the basis is stronger than the one it was placed
+on.** The write phase had the size crossing alone (§3.5) and said so; the
+run-time ladder shows the win is present at every width, so that size crossing
+IS the pure-win boundary rather than merely a byte curve's knee. Two
+independent measurements put the same number in the same gap.
+
+### 12.5 What this hands [OPT-DIAL] STEP 1, and what was deliberately NOT done
+
+Ruling 5's ALLOWLIST demands a measured two-axis rate before a profile may set
+a switch. **The rate column above is it**, and its shape carries a
+recommendation: `--tune=speed` should **RAISE this term into the 8-13 kB
+region rather than remove it.** The cells just above 4,096 are the cheapest
+wins anywhere in the table (0.061-0.067 B/ns, five times better than the next
+cell up and seven hundred times better than the widest), while 305,686 at
+47.7 B/ns is not a position any profile should take unasked.
+
+**RAISING THE DEFAULT THERE WAS NOT DONE, and that is a scope call rather than
+an oversight.** It would make a size-sensitive build regress with no flag
+passed, and whether a DEFAULT may trade size for speed is a policy question,
+not a measurement. The measurement is here; the ruling is the manager's, and
+either way the mechanism and the spec are unchanged — only the constant moves.
+
+### 12.6 An incidental confirmation of the K46 fix
+
+Editing this term's value in `src/core/limits.def` to write the numbers above
+**rebuilt all nine translation units and relinked**, where before this branch
+the same edit printed *"Nothing to be done for 'all'"* (§6b). The fix is
+observable in the ordinary course of using it.
+
+---
+
+## 13. SPEC FINAL (RULING 8 item 3)
+
+Everything a caller can observe is in `docs/spec/`, and the write phase's hunks
+(§8) were already complete for the flag, the rung table, the legality rule, the
+two stamps and the AUTO rule. Post-lift this lane added ONE hunk, because the
+ladder changed what can be SAID about the AUTO rule rather than what it does:
+
+- **`docs/spec/tuning.md` §2.21**, a new paragraph before "Reason it exists":
+  the term is measured on RUN TIME as well as size; `forward` is within noise
+  of `inline` so `forward` is the default and `inline` the max-speed rung; and
+  the caller-facing consequence — **`shared` is at `plain`'s run time, so an
+  artifact above the term gets NONE of the win, not less of it**, and
+  `--vm-entry-shape=3` is how a caller takes it anyway, at a stated price.
+
+The test-axes TIERING (default `forward`+`inline`; all four under
+`AXES_FULL=1`) was already stated in §2.21, in `tests/axes/run_axes.sh`'s
+header, in `tests/axes/CLAUDE.md`, and in the sweep's own printed tier line and
+closing sentence. Re-read and unchanged.
+
+`src/core/limits.def`'s `VM_INLINE_CHAIN_MAX_BYTES` row carries the full
+evidence table above at the row, per the situation index's rule that a limit's
+justification lives beside it.
+
+---
+
+## 14. THE abi ANSWER (RULING 8 item 4)
+
+**This branch IS an abi event, and it bumps NOTHING** — the manager assigns the
+number at merge (22, after edge2's 21) and re-pins comparison (B).
+
+**WHAT SCAFFOLDING MOVES, exactly.** Three things, all of them ABOVE
+`goto <prefix>_L0;`:
+
+1. **Two new `#define` lines on every VM artifact** — `<PREFIX>_VM_ENTRY_SHAPE`
+   (a closed token) and `<PREFIX>_VM_PROGRAM_BYTES` (a number). These are
+   whole-file bytes on ~1,500 VM artifacts.
+2. **The entry chain's own shape** — at rung `forward` the three `_in` entries
+   carry the body and the three un-suffixed entries forward to them; the static
+   empty descriptor is new emitted text. This is the only genuinely new emitted
+   CODE the step adds, and it lands on rungs `shared` and `forward`.
+3. **Nothing inside the VM program region.** Comparison **(A)** of
+   `run_recursion_identity.sh` — `goto <prefix>_L0;` … `<prefix>_accept:` — is
+   expected UNMOVED; comparison **(B)**, which is whole-file, moves and is
+   re-pinned to the merge commit.
+
+**`<PREFIX>_VM_PROGRAM_BYTES` COSTS STEP 1's "FRAMED ARTIFACTS ARE
+BYTE-IDENTICAL" PROPERTY**, deliberately and by ruling 4: the number is stamped
+on every VM artifact including framed ones and hybrids, because a stamp whose
+job is auditability must be there when the artifact fell on the size side
+without its command line. That cost is stated in `match_api.md` §6.3's IFF.
+
+**THE SEVEN-READER SITE LIST (§7) STANDS, FOUND BY GREP** and re-verified after
+the post-lift work: `emit_dfa.c`'s stamp and its per-artifact-kind comment
+paragraph; `run_codegen_tests.sh`'s `ABI_EXPECT` and its cumulative-event
+message; `run_recursion_identity.sh`'s `FILEPIN`; and `match_api.md`'s two
+sentences (§159 and the event list at §1801). A hand-enumerated list would
+plausibly have stopped at four; D94's own lesson is that it missed a fifth.
+
+**`make test-codegen` was NOT run in this lane** — RULING 8 forbids suites here
+and the union chain on the merged edge2+ccd2 tree runs it once. The
+identity-gate work in §11 is what this lane owed that chain.

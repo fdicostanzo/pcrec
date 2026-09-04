@@ -1566,6 +1566,21 @@ above it, `shared`. Where the forward rungs are illegal AUTO takes `inline`
 below the term and `plain` above it — the two shapes that shipped before and
 after `[CC-DIFF]` STEP 1 respectively, so neither step is novel.
 
+**THE TERM'S VALUE IS MEASURED ON RUN TIME AS WELL AS SIZE, and the second
+measurement says what crossing it COSTS.** A quiet-box ns/call ladder
+(2026-09-04; `docs/dev/lanes/ccd2_report.md` §12, seven artifacts from 645 to
+305,686 program bytes) reports `forward` within noise of `inline` on six of
+seven cells and FASTER at the widest, so `forward` is AUTO's default and
+`inline` is the max-speed rung a caller asks for. It also reports **`shared` at
+`plain`'s run time everywhere**. So the term does not choose HOW MUCH of the
+win an artifact gets: at or below it the artifact takes `forward` and gets ALL
+of it (33%-50% against `shared` on this ladder, at FEWER `.text` bytes — the
+default trades nothing), and above it the artifact gets NONE of it, because the
+rung it falls to is at the unoptimised run time. A caller who wants the win on
+a large artifact asks for it with `--vm-entry-shape=3`, paying the `.text` the
+ladder prices at 0.067 bytes per ns/call just above the term and 47.7 bytes per
+ns/call at 305,686.
+
 **Reason it exists, and it is a measurement.** `[CC-DIFF]` STEP 0
 (`docs/dev/ccdiff_step0.md`) found gcc leaving the entry chain out of line
 where clang inlines it, costing a 152-byte frame, a stack-protector canary and
