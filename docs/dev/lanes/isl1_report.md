@@ -714,20 +714,13 @@ witnesses would only move the same fragility to `[OPT-CLSPACK]`. So §9 no
 longer pins two patterns' values. It measures a POOL, prints the whole table
 whatever the verdict, and passes on the EXISTENCE of a straddling pair.
 
-| pattern | ratio | side | moves for |
-|---|---|---|---|
-| `((a)\|ab){4000}c` | 0.7498 | below | alternation (island TAKEN) |
-| `((a)\|ab){17}c` | 0.7008 | below | alternation (island TAKEN) |
-| `((a)\|ab){12}c` | 0.6239 | below | alternation (island TAKEN) |
-| `(?:aa\|a){8,12}+b` | 0.7571 | above | alternation (island DECLINED, narrow) |
-| `(?:aa\|a){8,12}+ab` | 0.7586 | above | alternation (island DECLINED, narrow) |
-| `(?:[ab]a\|[ab]){8,12}+b` | 0.7485 | below | **classes** — island declines it by construction, so `[OPT-CLSPACK]` is what moves it |
-| `(a{1,3}){64}` | 0.7299 | below | **no alternation at all** |
-| `(a{10,20}){10,50}` | 0.5616 | below | **no alternation at all** |
-
-Three of the eight cannot move for an alternation reason, and the taking and
-declining families move in opposite directions, so no single emitter axis can
-flatten every pair. **The band is 0.05** and that is the half that keeps this a
+> **THE TABLE THAT WAS HERE WAS WRONG AND THE POOL IT DESCRIBED WAS VACUOUS —
+> see §16.** It labelled three members "island TAKEN" and NOT ONE of the eight
+> stamped an island; and the check compared its own computed ratios against a
+> literal `0.75` in the script rather than reading the compiler, so the
+> materiality constant could be changed to 60 or 85 and every cell stayed
+> green. §16.1 carries the pool as it now stands and the sabotage that proves
+> it bites. **The band is 0.05** and that is the half that keeps this a
 pin rather than "some two patterns exist": a pair at 0.55 and 0.95 would
 satisfy "one either side" while saying nothing about where the constant is.
 The surviving claim is that a constant of 0.70 or 0.80 fails this file. The
@@ -766,3 +759,144 @@ the corpus had no class-bearing pattern that reaches the ladder.
 **There is no red left anywhere on this branch.** The one item outstanding is
 the manager's at landing: (B)'s pin names `9bc7723`, this lane's last src
 commit, and must become the merge commit.
+
+## 16. Panel r53, checks lens — three checks that could not fail
+
+The doc lens (§15 is its record in the commits) found five gaps. The CHECKS
+lens found something worse in the same branch: **three of the checks this lane
+wrote or touched were incapable of failing**, and two of them were checks I had
+described in this report as evidence. What follows is what each could not see
+and what it asserts now.
+
+### 16.1 §9's pool compared the script against itself (F1)
+
+The pool forced `--unroll=$k`, computed each member's argmin/K8 ratio itself,
+and compared that ratio against a **literal `0.75` written in the script**.
+Nothing in it read the compiler. `src/core/compile.c`'s materiality constant
+could be changed to 60 or 85 and every cell stayed green — while the failure
+text asserted "a constant of 0.70 or 0.80 would fail this file", which was
+simply false.
+
+The forced-K ladder is the INSTRUMENT now; the ASSERTION is that the
+compiler's own `<PREFIX>_UNROLL_K_WHY` stamp at the default equals what the
+ratio predicts against the bar, for members on both sides. **Sabotage, run and
+recorded:**
+
+| constant | result |
+|---|---|
+| 70 | RED — 4 members' stamp disagrees with their prediction |
+| 75 (shipped) | green |
+| 85 | RED — 3 members disagree |
+
+Also in this pass: the byte extraction HARD-FAILS instead of falling back to
+whole-file bytes (F9 — the [ART-SIZE] quantity confusion its own learnings
+record); the band floor counts BAND-ELIGIBLE members rather than measured ones,
+and both sides must carry two DISTINCT shapes (F10 — the whole above side had
+been one shape, `(?:aa|a){8,12}+` with and without a trailing character); and
+the band value is stated in the script as ASSERTED, not derived.
+
+### 16.2 Not one pool member took an island (F2)
+
+The pool shipped labelling three members "island TAKEN". Measured:
+`RX_VM_ALT_ISLANDS` reads **0 on all eight**, and the artifacts are byte-
+identical under `-fno-alt-island`. `((a)|ab)` was never eligible — `(a)` is a
+capture inside a branch, which the predicate declines by construction. The
+"families move in opposite directions" property I claimed for the pool had no
+basis at all.
+
+**And §11.4's diagnosis was half wrong.** Measured against a build of `main`
+with ONE instrument rather than against the check's inherited comment:
+
+| pattern | main | this branch | why it moved |
+|---|---|---|---|
+| `((a)\|ab){4000}c` | 0.7495 | 0.7497 | the unconditional stamp line, +0.0002 — it never took an island |
+| `(?:aa\|a){8,12}+b` | 0.7569 | 0.7571 | same +0.0002 **post-Q4**; pre-Q4 it read 0.7499, and THAT was a real island effect |
+| `(?:aa\|a){8,12}+ab` | 0.7583 | 0.7585 | the stamp line |
+
+So the 0.7475 / 0.7548 in the old comment were a DIFFERENT instrument's and
+were never comparable to mine; only one witness ever really moved, and the
+island's whole effect on the pair was on that one, pre-Q4. The pool now carries
+nine members with shape tags, two of which stamp an island (read off the
+artifact, asserted, not labelled by hand).
+
+### 16.3 The identity gate's excuse was a blanket exemption (F3, F4, F5)
+
+`prog_region()` extracts the WHOLE program, and the bucket excused any byte
+difference anywhere in an artifact whose island stamp read > 0 — so an
+unrelated emitter regression inside an island-bearing artifact read green.
+Three changes:
+
+- **The excuse is a claim about the deny axis.** A moved region is excused IFF
+  building the same pattern with the SUBJECT compiler under `-fno-alt-island`
+  restores the PINNED region byte for byte. Anything else that moved is not the
+  island's to excuse.
+- **The converse is self-contained** against that same axis rather than against
+  the August pin, which decays as the emitter moves: stamped ⇒ differs from its
+  own denied build; unstamped ⇒ byte-identical to it. Sabotage run: a scratch
+  build that sets the stamp and then falls through to the chain produces **13
+  failures**, including the new region checks.
+- **The non-vacuity floor is an enumerated manifest**, not a count. "At least
+  one island moved" read green under any narrowing that left one island
+  standing — raising `VM_ISL_MIN_BRANCHES_PREFIXED` to 40 passes it.
+
+**And my first manifest was itself asserted from memory rather than measured.**
+I wrote that "every entry was verified to stamp an island at the landing" and
+had not verified them: three of eleven did not — `a|b|c|d|e|f|g|h` (altcls
+MERGES single-byte alternatives into a class, so no alternation reaches the
+emitter), `fo|foo|fool` and `(?:x|)y` (prefix-bearing at widths the Q4 knee
+declines). It read green on the default axis, where all three route to the DFA
+and are skipped, and failed only under `--engine=vm`. Every entry is verified
+now, and the manifest is gated on the VM route because the stamp is VM-only.
+
+**The post-Q4 island population, per axis** — §11.2's 166/236/166/123 were
+PRE-Q4 and nobody had recounted them:
+
+| axis | same | differing | island-moved | stamped-but-deny-is-a-noop | unstamped-but-deny-moves |
+|---|---|---|---|---|---|
+| default | 2167 | 0 | **74** | 0 | 0 |
+| vm | 2144 | 0 | **102** | 0 | 0 |
+| noprefilter | 2168 | 0 | **74** | 0 | 0 |
+| nocaptures | 2190 | 0 | **56** | 0 | 0 |
+
+**This gate is a byte-inequality gate, not a correctness gate**, and its header
+now says so: it says which bytes moved and licenses exactly one reason for
+them to have moved. Correctness is `tests/island/`'s oracle-verified corpus and
+`make test-axes`.
+
+### 16.4 The rest (F6-F14)
+
+- **F6** — the three enumeration budgets are `limits.def` rows, not allowlist
+  entries. The argument that put them on the allowlist was refuted by this
+  lane's own §4: "over budget the chain emits unchanged" is true, but the chain
+  is never SMALLER than the island, so a pattern that falls back can land above
+  the 500,000-byte cap where the island fit under it — `w-384`, 427,739 island
+  bytes against 508,477 chain bytes. A budget CAN trade an accept for a reject
+  at a cap, which is what bounding acceptance means. Manifest 47 → 50.
+- **F7 / F7b / F8** — `tests/island/run_island_tests.sh` read only stamps, and
+  all three come from `vm_isl_build`, so an emitter that set `nislands` and fell
+  through to the chain passed 24/24. It now asserts the emitted PROGRAM REGION
+  differs from the pattern's own `-fno-alt-island` region for taking patterns
+  and is identical for declined ones; that a pushing island declares STRICTLY
+  FEWER frames than the chain (the frameless stamp reads 0 on both, so the
+  witness swap in §14.1 did NOT fix the flaw it was meant to); and
+  `RX_ALTCLS_FACTORED > 0` as the factoring precondition, which was printed and
+  never checked. 32 checks.
+- **F11 / F12** — the listing check compiles `--engine=vm` on both invocations,
+  since it demands a stamp the spec makes VM-only; and its mismatch message
+  reads correctly in both directions rather than always expanding one way.
+- **F13 / F14** — `.gitignore` carries the `docs/dev/lanes/*_rulings.md` GLOB
+  main already uses, rather than two named lines that would conflict at the
+  merge; and `match_api.md`'s `always_inline` cross-reference is restored to
+  "the abi-17 entry", which was correct and direct — that spelling is abi 17's,
+  not this bump's.
+
+### 16.5 What this pass says about the branch
+
+Three checks I had cited in this report as evidence could not fail. Two of them
+I wrote. The pattern in all three is the same and it is the one
+`docs/dev/learnings.md` §3 already names: a check that shares a source with
+what it controls. §9 compared the script's arithmetic against the script's own
+constant; the island script read stamps that one function writes; the identity
+bucket excused an artifact on the strength of a stamp that artifact carries.
+The fix in each case was to introduce a term the emitter does not write — the
+compiler's own decision stamp, the emitted program text, and the deny axis.

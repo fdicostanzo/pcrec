@@ -197,3 +197,18 @@ m "ab" 0 1
 m "ba" 0 1
 m "b" 0 1
 m "a" 0 1
+
+# An EMPTY alternative at a width the narrow-width knee ADMITS. `(?:x|)y`
+# above is the same shape at width 2, where a PUSHING island declines — so
+# this cell is where the empty alternative is actually carried through the
+# trie (an accept at the ROOT, depth 0, length 0) and its candidate chain
+# reached. It is also ISLAND_PATTERNS' witness for that shape in
+# tests/codegen/run_recursion_identity.sh.
+pattern (?:x|xy|xyz|)w
+m "xw" 0 2
+m "xyw" 0 3
+m "xyzw" 0 4
+m "w" 0 1
+m "zw" 1 2
+m "xyzzw" 4 5
+n "xy"

@@ -150,8 +150,18 @@ SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}
 # VM_ISL_MIN_BRANCHES_PREFIXED to 40, or any other narrowing that left a single
 # island standing anywhere in the corpus, read GREEN.
 #
-# Every entry was verified to stamp RX_VM_ALT_ISLANDS > 0 at the landing, and
-# they are chosen to span the predicate rather than to be numerous: prefix-free
+# EVERY ENTRY WAS VERIFIED UNDER `--engine=vm` AGAINST THE SHIPPED COMPILER,
+# and the first version of this list was NOT — it was copied from the answer
+# corpus on the assumption that an island-flavoured pattern stamps one, and
+# THREE of its eleven did not: `a|b|c|d|e|f|g|h` (altcls MERGES single-byte
+# alternatives into a class, so no alternation survives to the emitter),
+# `fo|foo|fool` and `(?:x|)y` (both prefix-bearing at widths the narrow-width
+# knee declines). The list read GREEN on the default axis, where those three
+# route to the DFA and are skipped, and failed only under `--engine=vm`. A
+# manifest asserted from memory is the thing this file's other two manifests
+# exist to avoid.
+#
+# They are chosen to span the predicate rather than to be numerous: prefix-free
 # at widths 2/3/8, a deep shared prefix, a prefix LADDER (four alternatives on
 # one root-to-leaf path, so its candidate chain has a second entry), an empty
 # alternative, a cross-product, a capture around the alternation, two
@@ -160,14 +170,12 @@ SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}
 # either the predicate narrowed — and this list is the record of what that
 # costs — or the analysis broke.
 ISLAND_PATTERNS='cat|dog|cow
-a|b|c|d|e|f|g|h
 (cat|dog)s
 (cat|dog)(s|es)
 abcdefghij|abcdefghik|abcdefghil
 thin|think|thinker|thinking
 (?:abcd|abc|ab|a)z
-fo|foo|fool
-(?:x|)y
+(?:x|xy|xyz|)w
 (?:a|ab)(?:c|bc)
 (?:ab|ba|aa|bb){24}c'
 #
