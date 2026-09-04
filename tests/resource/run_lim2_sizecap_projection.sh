@@ -132,12 +132,12 @@ elif ! cc -O1 -g -Wall -Wextra -std=gnu11 \
     bad "census: FAILED TO BUILD lim2_census.c"
     sed -n '1,40p' "$WORKDIR/census.build" >&2
 else
-    find "$ROOT_DIR/tests" -name '*.rxt' -print0 | sort -z > "$WORKDIR/census_corpus.list"
+    find "$ROOT_DIR/tests" -name '*.rxt' -print0 | LC_ALL=C sort -z > "$WORKDIR/census_corpus.list"
     CENSUS_ARGS=()
     while IFS= read -r -d '' f; do CENSUS_ARGS+=("$f"); done < "$WORKDIR/census_corpus.list"
 
     if [ -d "$BENCH_ALTWIDE_DIR" ]; then
-        find "$BENCH_ALTWIDE_DIR" -name '*.rx' -print0 | sort -z > "$WORKDIR/census_altwide.list"
+        find "$BENCH_ALTWIDE_DIR" -name '*.rx' -print0 | LC_ALL=C sort -z > "$WORKDIR/census_altwide.list"
         while IFS= read -r -d '' f; do CENSUS_ARGS+=("$f"); done < "$WORKDIR/census_altwide.list"
         ok "census: pcrec-bench's altwide set found and included ($(find "$BENCH_ALTWIDE_DIR" -name '*.rx' | wc -l) patterns)"
     else
@@ -151,7 +151,7 @@ else
         # whole population, read from the DATA rather than re-parsing the
         # binary's own human-readable summary line.
         max_shrink=$(awk -F'\t' 'BEGIN{m=-1} {if ($7+0>m) m=$7+0} END{printf "%.3f", (m<0?0:m)}' "$WORKDIR/census.tsv")
-        max_shrink_row=$(sort -t$'\t' -k7,7gr "$WORKDIR/census.tsv" | head -1)
+        max_shrink_row=$(LC_ALL=C sort -t$'\t' -k7,7gr "$WORKDIR/census.tsv" | head -1)
         bail_keep_pct=$(grep -oP '^#define PCREC_LIM2_BAIL_KEEP_PCT \K[0-9]+' "$ROOT_DIR/src/core/internal.h")
         margin=$((100 - bail_keep_pct))
         # integer-arithmetic 2x compare against the same 3-decimal figure
@@ -167,7 +167,7 @@ else
         else
             bad "census: population $pop, MAX forward shrink ${max_shrink}% ($(printf '%s' "$max_shrink_row" | cut -f1)) -- margin ${margin}pts (BAIL_KEEP_PCT=$bail_keep_pct) does NOT clear 2x the measured shrink ($(awk -v s="$max_shrink" 'BEGIN{printf "%.3f", s*2}')pts required). Per ruling 1 (docs/dev/lanes/lim2_rulings.md, 2026-09-04) the margin must move to the census's number, never the reverse -- FLAGGED FOR THE MANAGER rather than changed here, because the required margin here exceeds what a percent-of-raw-bytes margin can express (see lim2_report.md). Full distribution:"
             echo "  id                                                            raw_n   ncls  raw_bytes   min_n   min_bytes   shrink_pct"
-            sort -t$'\t' -k7,7gr "$WORKDIR/census.tsv" | awk -F'\t' '{printf "  %-60s %7d %5d %10d %7d %10d %9.3f\n", $1, $2, $3, $4, $5, $6, $7}'
+            LC_ALL=C sort -t$'\t' -k7,7gr "$WORKDIR/census.tsv" | awk -F'\t' '{printf "  %-60s %7d %5d %10d %7d %10d %9.3f\n", $1, $2, $3, $4, $5, $6, $7}'
         fi
     else
         bad "census: lim2_census exited nonzero"
@@ -184,6 +184,23 @@ echo
 # 17 KB literal. Shaped after pcrec-bench's `bench/altwide` `w-*` family
 # (wide top-level alternation) — the population [LIM-2]'s charter measured
 # construction cost against — WITHOUT depending on that sibling repo.
+#
+# `--engine=dfa` (FORCE), not the default `auto`, and deliberately so
+# (found via `make test`'s own [SEL-1] regression, tests/vm/run_vm_tests.sh,
+# 2026-09-04): under `auto` this specific witness is now ALSO [SEL-1]-retry-
+# eligible (src/ir/dfa.c's size-bail refusal sets `cx->dfa_overflowed`,
+# joining intern()'s two existing reasons under one umbrella so auto's
+# retry ladder still covers a size-triggered overflow -- see that file's own
+# comment), and this witness's FLAT 1,600-way alternation has no repeated
+# COUNT for the retry's count-collapsed language to shrink, so the retry
+# rebuilds a VM prefilter that is STILL too big -- for a DIFFERENT cap
+# (`PCREC_MAX_VM_EMIT_CODE_BYTES`), with a diagnostic naming that cap
+# instead of this one. The pattern refuses EITHER WAY (auto's own ladder is
+# doing its job correctly; this is not a regression in it), but a diagnostic
+# assertion has to name ONE diagnostic, and `--engine=dfa` is what isolates
+# THIS mechanism (the forward table-engine build's own projected-size bail)
+# from auto's separate, correct, and orthogonal retry ladder. See
+# docs/dev/lanes/lim2_report.md for the fuller account.
 # ---------------------------------------------------------------------------
 WITNESS_PAT="$(python3 -c '
 import random
@@ -198,7 +215,7 @@ print("(?:" + "|".join(words) + ")")
 out="$WORKDIR/witness.c"
 rm -f "$out"
 t0=$(date +%s.%N)
-log="$("$ROOT_DIR/scripts/watchdog" -l "lim2 witness" -s "$LIM2_SECS" -c "$LIM2_SECS" -m "$LIM2_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --features all -o "$out" "$WITNESS_PAT" 2>&1)"   # [K37]: one line, the bound and the bounded call together
+log="$("$ROOT_DIR/scripts/watchdog" -l "lim2 witness" -s "$LIM2_SECS" -c "$LIM2_SECS" -m "$LIM2_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --features all --engine=dfa -o "$out" "$WITNESS_PAT" 2>&1)"   # [K37]: one line, the bound and the bounded call together
 rc=$?
 t1=$(date +%s.%N)
 wall=$(awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.2f", b-a}')
