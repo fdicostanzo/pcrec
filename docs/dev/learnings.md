@@ -247,6 +247,19 @@ distilled forms:
   channel (and the lane's "delivered" can precede its reading of the
   inbox — check the branch, not the claim).
 
+- **A guard can protect a hazard nobody named; demand the positive control
+  before narrowing it.** [OPT-EDGE]'s precondition (8) was filed as guarding
+  the offset-set prefilter's reseed; the lane told to build a witness that
+  MISBEHAVES with the guard removed found a second, unrecorded hazard (the
+  entry seed) whose removal is a lost-match miscompile (`foo\B` on
+  "xfoofoox"), and found the named hazard has NO witness at all. The
+  narrowing shipped with the guard kept and its zero population printed.
+- **A census read at the wrong resolution attributes a cause to the wrong
+  machine.** STEP 1's "2 of 11 carry the hazard" read the ARTIFACT-level
+  prefilter stamp, which describes the forward machine, for an edge that
+  lived on the reverse machine (no prefilter at all). Count per machine,
+  from the machine's own markers.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
