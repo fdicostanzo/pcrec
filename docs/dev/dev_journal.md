@@ -21023,3 +21023,24 @@ over artifacts; the manager's "rx_ctx vs zz_ctx" claim was WRONG
 abi-versioned guard (silent sharing across abis today; validated that a
 versioned guard collides loudly), a byte-identity pin on the block, an
 optional standalone export. [PFX-1] STEP 0 shrinks accordingly.
+
+## 2026-09-04 — Fifty-first session, part 55 (09:0x EDT): lim2's write phase delivered (af0848b9) — the projected-size bail with a reverse-first head start; w-2048 10.97 → 1.55 s; the margin is provisional until a census proves it
+
+lim2 (sonnet, ~45 min): the bail lives in src/ir/dfa.c's worklist loop
+for the forward table-engine build, tracking the transition table's
+exact text bytes once the indexed representation is guaranteed
+(PREMUL_MAX_ENTRIES moved to core/internal.h); the first forward-only
+version never fired on w-2048 (the forward table is ~60% of the
+artifact), so compile.c now builds and minimizes the REVERSE machine
+first (~24 ms) and hands its finished size in as a head start. Numbers
+(before = main at 56f34b01): w-2048 10.97 → 1.55 s; s-4096 19.58 →
+12.51 s; s-2048 / sh1-512 unchanged (the margin never proves the cap
+early); the seeded 1,600-literal synthetic witness 12.15 → 1.02 s; 11
+accepted altwide artifacts byte-identical; 4 refusals same verdict and
+category. The charter's "exact" premise was wrong: minimization shrinks
+AFTER construction (up to 65% on reverse machines, 3.5% forward
+measured), so the projection carries a margin (BAIL_KEEP_PCT=85) —
+ruled PROVISIONAL: the check gains a corpus-wide raw-vs-minimized
+census and asserts the margin exceeds the measured max forward shrink
+by 2×. Diagnostic when early: "projected at least N bytes" (ours, D26).
+The accept-table term is STEP 2. Lift after the battery.
