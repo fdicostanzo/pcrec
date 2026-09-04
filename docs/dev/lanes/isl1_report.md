@@ -410,3 +410,105 @@ still differs. Smoke-tested against an already-built artifact
 timing was taken, the hold being in force. Nothing in the scratchpad is
 committed — if the numbers land, whether the harness becomes a `tests/probes/`
 probe is a question for the manager at delivery.
+
+## 11. Validation after the lift (2026-09-03 evening)
+
+Stages 1-4 of the manager's order are complete. Stage 5 (timing) is blocked on
+a quiet box and stage 6's last step is the manager's merge re-pin.
+
+### 11.1 `make test` — 16 reds in four families, all closed
+
+`make -j4 test PROCS=3`, 33/33 sections launched, 18:37-18:55.
+
+**One was a REAL DEFECT in this change, and the check that found it is the one
+the charter never mentioned.** `tests/possessify`'s boundary row drives
+`(x)(?:a|bc)+d`: the `-fno-possessify` build stamped `subject_ceiling` 1024
+and then answered straight past 1088, so the row read "parted at never".
+`vm_cost`'s `A_ALT` arm was still charging the chain's frame per alternation
+while the island had stopped pushing — and `frames`/`pf` are what
+`subject_ceiling` is DIVIDED from, so the artifact was DECLARING a smaller
+subject than it could match. Over-charging frames is safe for the array and
+UNSAFE for the declared limit, which is the half I had not thought through.
+`vm_cost` is now the THIRD reader of `vm_isl_build`, alongside `vm_alt` and
+`vm_count_slots`. The artifact stamps 2048 and parts at 2051 — inside the
+row's own 64-byte window. `tests/possessify` 18/18, and no test was edited to
+get there.
+
+Worth recording separately: the first repair I reached for was to REPLACE the
+row's witness with `(x)(?:a|b.)+e`, which the island declines and whose
+ceiling numbers match the original's exactly. That would have gone green and
+left the defect in the compiler. The check was right and the change was wrong.
+
+**The other three families were mechanical, each closed with its diagnosis:**
+
+| family | n | what moved |
+|---|---|---|
+| limits registry | 3 | `VM_ISL_MAX_WORDS`/`_BYTES`/`_DEPTH` joined the argued allowlist on `VM_MAX_STRIDE`'s rule: over any of them the island is not built and the chain emits unchanged, so none bounds what pcrec accepts, rejects or promises |
+| `--emit-ir` ISLANDS | 2 | the section's producer now EXISTS. It was an honest-empty assertion; it is now a three-surface comparison — the `VE_ISLAND` event stream, `Vm.nislands` via the stamp, and the emitted text, none derived from another |
+| corpus census pins | 9 | +2 files / +21 blocks / +114 cases for `tests/island/`. All 114 are python-expressible, so `C3_PASS` moves and NO skip bucket does — which is the corpus's own claim rather than an accident |
+
+### 11.2 The identity gate — comparison (A) moves, for the first time ever
+
+Every bump in `run_recursion_identity.sh`'s history says "(A) is still
+expected byte-identical, and here that is a real check rather than a
+formality". Each of them was a change ABOVE `goto <prefix>_L0;`. This one is
+the VM program.
+
+The exemption is an **IFF, not an allowance**: a moved region is excused only
+where the subject artifact's own `RX_VM_ALT_ISLANDS` reads > 0, and the
+CONVERSE is asserted in the same pass — an artifact that stamps an island
+whose region is byte-identical to the pre-island reference FAILS, because the
+stamp is then claiming a trie the program does not contain. The bucket also
+carries a non-vacuity floor: zero excused patterns fails, so an emitter that
+stopped building islands cannot read green.
+
+| axis | same | differing | island-moved | island-stamped-unmoved |
+|---|---|---|---|---|
+| default | 2070 | **0** | 166 | **0** |
+| vm | 2005 | **0** | 236 | **0** |
+| noprefilter | 2071 | **0** | 166 | **0** |
+| nocaptures | 2118 | **0** | 123 | **0** |
+
+The biconditional is exact on every axis, not approximate.
+
+Comparison (B)'s pre-re-pin footprint, recorded before the pin moved: 1,274 /
+2,284 / 1,274 / 857 call-free patterns differ whole-file, and `[vm]`'s `same`
+fell to 0 — every VM artifact gains the stamp line whatever its value, which
+is the unconditional rule working as designed.
+
+### 11.3 The rest of stages 2-4
+
+| stage | result |
+|---|---|
+| `make test-codegen` | one red, the [ART-SIZE] bar (§11.4); everything else green |
+| `tests/island/run_island_tests.sh` | **19/19 on its first run** — §8 predicted at least one assertion would need adjusting, and none did |
+| `make test-registry` | 608 PASS after the axis-coverage pin moved 93 -> 96. **+3, not axis J's +5**: `RX_VM_ALT_ISLANDS` gains no value-set pair because it is an activity COUNT, which is `RX_ALTCLS_MERGES`/`_FACTORED`'s own shape |
+| `make test-axes` | **all 22 axes answer-identical**, 2787 s. The new axis reads `agree=22407 budget=0 refused=0 lost=0 gained=0 mismatches=0`, and joined with no edit — the sweep derives its bit list from `lib/pcrec.h` and `cli/main.c`, and reported 20 documented bit mentions in `tuning.md` §2 against 20 derived bits |
+| `make strict` | clean |
+
+### 11.4 The one red left, and it is another row's instrument
+
+`tests/codegen/run_size_term.sh` §9 pins the materiality constant (75%) from
+both sides with two corpus patterns 0.73% apart. Both are alternation-bearing,
+so the island moved both. Measured on the bar's own quantity (argmin rung
+bytes over default-K bytes, `--engine=vm`):
+
+| witness | was | now | cell |
+|---|---|---|---|
+| `((a)\|ab){4000}c` | 0.7475 | 0.7497 | still TAKEN, passes |
+| `(?:aa\|a){8,12}+b` | 0.7548 | **0.7499** | now TAKEN, FAILS |
+
+The constant has not moved; the witnesses have converged onto it and are now
+0.02% apart, so the bracketing property is gone rather than off by one. Not
+re-pinned here: finding a replacement pair means sweeping the corpus at eight
+K values per pattern, it is [ART-SIZE]'s instrument, and a witness whose ratio
+any future emitter change can move is not a pin on the constant. Escalated.
+
+### 11.5 The abi ritual — 17 -> 18, all eight sites
+
+Seven in `9bc7723` (the stamp, `ABI_EXPECT`, the bump narrative, three
+`match_api.md` sentences, `src/gen/CLAUDE.md`); the eighth — `FILEPIN` — in a
+follow-up that touches no `src/`, so `9bc7723` remains the change's last src
+commit and the gate header's own pin rule holds for a lane that writes its own
+bump. **The manager re-pins to the MERGE commit when it lands**, as at every
+bump before this one; the header says so where a merger will read it.
