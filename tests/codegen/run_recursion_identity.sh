@@ -589,7 +589,25 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # always_inline attribute on frameless VM helpers and the uniform-table fold
 # (RX_DFA_UNIFORM_FOLDS) move bytes on 1,090+ VM artifacts and ~370 DFA
 # artifacts; re-pinned to the merge per D76/D94 (readers of the old pin by grep).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"
+#
+# [ENG-ISL] STEP 1, 2026-09-03 — abi 17 -> 18: the VM's ALTERNATION ISLAND.
+# EVERY VM artifact gains a `<PREFIX>_VM_ALT_ISLANDS` line whatever its value,
+# so whole-file bytes move on the entire VM population — island or not — and
+# (B) re-pins for that alone. MEASURED against the previous pin before the
+# re-pin, so the change's own footprint is on the record: 1,274 (default),
+# 2,284 (vm), 1,274 (noprefilter) and 857 (nocaptures) call-free patterns
+# differ whole-file, and the [vm] axis's `same` fell to 0, below the sweep's
+# own 700 floor — which is the stamp being unconditional working as designed.
+# Comparison (A) is a different matter entirely and has its own entry above:
+# it moves ON PURPOSE for the first time in this file's history, under an IFF
+# rather than an allowance.
+#
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (9bc7723, the abi ritual), set in
+# a follow-up commit that touches no src — which is what keeps the rule two
+# paragraphs up ("the pin must always name the change's LAST src commit")
+# true of a lane that writes its own bump. The manager re-pins to the MERGE
+# when it lands, exactly as at every bump before this one.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9bc7723}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
