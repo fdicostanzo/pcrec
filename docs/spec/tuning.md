@@ -1201,12 +1201,33 @@ for (;;) {
 }
 ```
 
-Three consequences a caller can see. The emitted state NUMBERS of an
+Four consequences a caller can see. The emitted state NUMBERS of an
 edge-bearing machine differ from the pre-[OPT-EDGE] compiler's (the heads are
 the top rows); each such machine emits one extra accessor, `<prefix>_<m>_is_stop`
-(folded to the constant `1` where every state is a head); and an artifact with
+(folded to the constant `1` where every state is a head); an artifact with
 no scan edge — which includes every artifact built with this flag — is
-byte-identical to the pre-[OPT-EDGE] compiler's.
+byte-identical to the pre-[OPT-EDGE] compiler's; and, by precondition (8),
+**a small, named population of patterns stops carrying a scan edge at all**.
+
+**THE POPULATION (8) COSTS, MEASURED over every distinct `pattern` line under
+`tests/` (2,539 compiled by both compilers):** ELEVEN artifacts lose an edge,
+TEN of them all of their edges, and every one is a `\b`/`\B` pattern —
+`(\b\w+\b)`, `(foo\B)`, `\Bfoo\B`, `\b\K\w+`, `\b\w+\b`,
+`\b\w+\b$`, `\b\w+\b\z`, `\b\w+\z`, `\b\w\b`, `\bfoo\B`,
+`foo\B`. Those ten stamp `<PREFIX>_DFA_SCAN_EDGE "none"` where the
+pre-[OPT-EDGE] compiler stamped `"range"` or `"bitmap"`, and fall back to the
+ordinary table walk. No answer moves — `make test-axes` is answer-identical on
+all 21 axes — and nothing outside the seed-bearing family is affected: an
+artifact with no seed table cannot lose an edge to (8), which is the bound the
+census asserts rather than discovers.
+
+(8) is deliberately WIDER than the hazard: of those eleven, only TWO carry a
+prefilter that actually reseeds (`offset-set-bounded`); the other nine take a
+`byte-class`/`memchr` prefilter, which advances the position but never writes
+the state variable. Narrowing it needs the pass to know which prefilter form
+the machine will take, and the pass runs before that selection — and the
+refusal cannot move into the emitter, because by then the chain's interior
+states are already deleted.
 
 **Why.** `docs/dev/opt5_step0_profile.md` measured the DFA's ordinary step —
 `state = next_state[state + class]`, whose load ADDRESS is the value the
