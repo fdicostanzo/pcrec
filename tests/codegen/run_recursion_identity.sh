@@ -650,12 +650,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # it moves ON PURPOSE for the first time in this file's history, under an IFF
 # rather than an allowance.
 #
-# THE PIN IS THIS LANE'S OWN LAST src COMMIT (9bc7723, the abi ritual), set in
-# a follow-up commit that touches no src — which is what keeps the rule two
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (a6b94c0, panel r53's checks-lens
+# pass — it moved past 9bc7723, the abi ritual, when the Q4 width knee landed
+# after it and moved 96-141 artifacts per axis), set in a follow-up commit that
+# touches no src — which is what keeps the rule two
 # paragraphs up ("the pin must always name the change's LAST src commit")
 # true of a lane that writes its own bump. The manager re-pins to the MERGE
 # when it lands, exactly as at every bump before this one.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9bc7723}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a6b94c0}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
