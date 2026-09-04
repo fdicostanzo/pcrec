@@ -345,6 +345,7 @@ subset construction or Brzozowski's approach. We evaluate our approach on a
 set of synthetic and real-world examples from automatic sequences and
 observe that we are able to improve especially worst-case scenarios. We
 provide an open-source library implementing our approach."*
+
 **READ IN FULL 2026-09-04 by lane `m5paper` (M5). §6 is the reading; the
 `unverified` marks that stood here are retired and this paragraph is
 rewritten to what the paper says.** The mechanism is classic subset
