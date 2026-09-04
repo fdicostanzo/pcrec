@@ -1112,3 +1112,76 @@ nobody checks. But this claim needs no external oracle: it is a statement about
 the two ARMS of one axis, and both are in hand. The four witnesses are my own,
 found by sweeping subjects rather than transcribed, and python agrees with the
 island (nomatch) on every one of them.
+
+## 18. The cap guard — and why a per-subtree rule could not close it
+
+The manager accepted §17's factor rule and named one guard still missing: the
+factor bounds the island RELATIVE to the chain, while acceptance is bounded by
+an ABSOLUTE cap, so a chain around 300 KB with an island around 550 KB sits
+inside a factor of 2 and is refused where the chain compiles.
+
+**Adding that condition per subtree was not enough, and the witness search is
+what said so.** With the per-subtree guard in place, a 1,360-word ladder was
+still REFUSED under the island at 514,258 bytes where the chain compiles at
+430,442. The top-level island declines on size, `src/opt/altcls.c`'s factoring
+then leaves **fifteen** nested sub-alternations — each individually reasonable,
+each passing its own size test — and their SUM crosses the cap. A per-subtree
+rule cannot bound an artifact-wide quantity, which is the same sentence as
+§17.1's about budgets and quantities, at a third level.
+
+**So the rule has both halves.** The per-subtree guard, and an ARTIFACT-WIDE
+budget accumulated once in the `vm_count_slots` PRE-PASS — which runs before
+both `vm_cost` and emission, so `Vm.isl_over_cap` is a fact all three readers
+of `vm_isl_build` see identically rather than a running total whose answer
+would depend on which reader asked first. Over the budget an artifact takes NO
+islands: coarse, deterministic, and it restores the one property that matters.
+
+**The two sides take different thresholds, and the asymmetry is load-bearing.**
+The ISLAND side is discounted (0.9 × cap). The CHAIN side compares against the
+FULL cap, because its question is "would the chain be refused too" and a
+discounted threshold answers yes too readily — which switches the guard OFF
+exactly where it is needed. Measured: the N=340 rung estimates its chain at
+471,811 and really emits 485,734, so a 0.9 threshold on that side called it
+over-cap, declined to act, and let the artifact be refused.
+
+### 18.1 A correction to my own comment
+
+I had written that the estimate "errs low every time". It does on the
+cross-product shapes it was fitted against — 7 to 10% under — and runs about
+**48% OVER** on wide sets of short words (659,160 against a measured 445,269).
+The comment says so now. The 0.9 is a margin against the LOW direction, where
+being wrong costs the caller a pattern; where the estimate runs high the guard
+fires early and costs only speed on a pattern that still compiles.
+
+### 18.2 A truncating stack, found by the same search
+
+`vm_isl_subtree_nodes` used a FIXED 256-entry stack and returned early past it.
+The walk pushes the right child of every `A_CAT`/`A_ALT` it descends, so its
+depth is the SPINE LENGTH — and `w-256` has 255 `A_ALT` nodes plus a 12-element
+branch. **The chain estimate was being truncated on exactly the shapes the
+island targets**, understating the chain, inflating the ratio and declining
+islands that should be taken. It surfaced as a chain estimate collapsing from
+93,982 to 25,186 as the literals grew past the bound — the shape of a silent
+early return. Arena-allocated and doubling now, so the bound is the pattern's
+own size.
+
+### 18.3 The ladder, and its non-vacuity
+
+`tests/island/run_island_tests.sh` gains a near-cap ladder (N=260/300/340)
+asserting refusal identity AND that each rung's artifact is byte-identical to
+the chain's, since over the budget every island is declined. Nothing in the
+corpus sits near the cap and nothing small enough to embed would, so the
+witnesses are generated.
+
+The cell that keeps it honest is the last one: the top rung's CHAIN must emit
+between 425,000 and 500,000 code bytes. It emits **485,734**. Without that,
+three patterns that were never in danger would pass the ladder forever.
+
+| rung | island | chain |
+|---|---|---|
+| N=260 | 375,157 | 375,157 |
+| N=300 | 430,442 | 430,442 |
+| N=340 | 485,728 | 485,728 |
+
+All three identical, all three compiled, where before the guard N=300 and N=340
+were refused.
