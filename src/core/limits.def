@@ -270,6 +270,14 @@ PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-IS
  * exist only because six entries each honour the attribute; there are three
  * distinct call shapes, so three copies is what the mechanism actually needs.
  *
+ * THE VALUE AND THE DEFAULT RUNG ARE BOTH PROVISIONAL, by manager ruling
+ * (2026-09-04, ruling 2): AUTO's choice of FORWARD below this term rests on
+ * the size and gcc evidence alone. The quiet-box ns/call ladder decides it —
+ * if FORWARD is within noise of INLINE on run time, FORWARD is the default
+ * and INLINE is the dial's max-speed rung only; if INLINE wins measurably,
+ * this number is re-chosen on the exchange rate and stated as such. The
+ * MECHANISM lands either way; only the point on the curve is open.
+ *
  * WHAT THIS NUMBER IS STILL OWED. The run-time arm is isl1's ladder
  * (docs/dev/lanes/isl1_report.md §12.2), which measured INLINE against PLAIN
  * at a flat 16-23% across two width decades. Rungs FORWARD and SHARED are NEW
