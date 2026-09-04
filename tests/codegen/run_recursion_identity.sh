@@ -656,7 +656,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # it moves ON PURPOSE for the first time in this file's history, under an IFF
 # rather than an allowance.
 #
-# THE PIN IS THIS LANE'S OWN LAST src COMMIT (cf95944, panel r53's SEMANTICS
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (cee7c741, the MERGE of lane/isl1 — re-pinned by the manager at landing; the lane's own last src commit was cf95944, panel r53's SEMANTICS
 # lens: the island-vs-chain size rule AND its cap guard, which together decline
 # a population the earlier pins were built with — it moved past 9bc7723, the abi ritual, when the Q4 width knee landed
 # after it and moved 96-141 artifacts per axis), set in a follow-up commit that
@@ -664,7 +664,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # paragraphs up ("the pin must always name the change's LAST src commit")
 # true of a lane that writes its own bump. The manager re-pins to the MERGE
 # when it lands, exactly as at every bump before this one.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cf95944}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cee7c741}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -20832,3 +20832,27 @@ the identity gate. Run logs live under the worktree's build/. isl1
 owes only the cap guard; w13's make test is ~25 min in. Merges: isl1
 (git merge + strict now; its short chain when w13's heavy stages end),
 then edge1, then w13, then the battery, then DONE + OPEN to the bench.
+
+## 2026-09-04 — Fifty-first session, part 44 (00:5x EDT): [ENG-ISL] STEP 1 MERGED (cee7c741, abi 18); FILEPIN → the merge commit; the short chain waits for w13's heavy stages
+
+isl1's last item landed as a cap guard with BOTH halves (cf959446): a
+per-subtree guard was not enough — with it in place a 1,360-word ladder
+was still refused at 514,258 B (chain 430,442) because altcls's
+factoring leaves fifteen nested sub-alternations that each pass and
+whose SUM crosses the cap; so an ARTIFACT-WIDE budget is accumulated
+once in the vm_count_slots pre-pass (all three readers see one fact;
+over budget an artifact takes no islands). Thresholds asymmetric by
+measurement: island side 0.9 × cap, chain side the full cap (a
+discounted chain threshold switched the guard off where needed). The
+estimate runs 7-10% under on cross products and ~48% OVER on wide sets
+of short words — stated at the constant. Found by the same search: the
+subtree walk's FIXED 256-entry stack returned early on w-256's 255-node
+spine, truncating the chain estimate (93,982 → 25,186) and declining
+islands that should be taken — arena-allocated and doubling now. A
+near-cap ladder (N=260/300/340) asserts refusal identity and byte
+identity to the chain. Merged --no-ff as cee7c741 (34 files, +4,528/
+−83; the only conflict a .gitignore comment; make + strict clean); a
+stray 95-byte log the semantics critic wrote into the main tree root
+(a failed python invocation) moved to its scratch dir. FILEPIN
+re-pinned to the merge commit in a src-free follow-up. The short chain
+(test → codegen → registry → axes) runs when w13's heavy stages end.
