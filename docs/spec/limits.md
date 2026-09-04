@@ -470,48 +470,8 @@ wrong.
 **They are EMERGENCY FAILSAFES, not tuned thresholds** (D84 addendum 3).
 Nothing in pcrec's own 2,487-pattern corpus comes near either — the
 worst is 283,083 code bytes and 651,415 total, on every optimization
-axis — and both are checked BEFORE anything is written, so an
-over-limit compile produces a refusal and no file.
-
-**[LIM-2] (2026-09-0x): the TOTAL cap can now be PROVEN and refused
-DURING subset construction, before emission, on the DFA route's
-mandatory forward table build.** Emission is not the expensive step for
-a wide-alternation artifact — subset construction is (measured on
-pcrec-bench's `bench/altwide` set: 8.7-40.2 s of construction against
-well under a second of emission and `gcc`) — so a post-emission-only
-check was paying that whole cost before refusing. `src/ir/dfa.c`'s
-worklist loop now tracks the EXACT text size its own transition table
-is accumulating, folds in the (cheap, built-and-minimized first)
-reverse machine's own exact finished table size as a head start, and
-refuses the moment the running total proves the cap will be exceeded —
-see `pcrec_build_dfa`'s `size_bail`/`size_bail_headstart` parameters for
-the mechanism and docs/dev/lanes/lim2_report.md for the design note. The
-refusal set is unchanged (a pattern that compiles today still compiles;
-a pattern refused today is still refused, for the same reason) and nothing
-is written either way, exactly as before — what moves is WHEN the total
-cap can prove itself, not WHICH patterns it catches.
-
-**The DIAGNOSTIC WORDING deliberately DIFFERS by which check fires,
-because one number is exact and the other is not** (manager's ruling,
-2026-09-04). Where the POST-EMISSION check fires (every route besides
-the DFA total cap, and the DFA route whenever the early bail's own
-margin does not prove the cap crossed before construction finishes),
-the message is unchanged: `"pattern too large: N bytes of emitted C
-source (limit L, ~K KB .o) ..."`, `N` the artifact's TRUE final size.
-Where the DFA route's EARLY bail is the one that fires, the message is
-`"pattern too large: projected at least N bytes of emitted code (limit
-L) ..."` — `N` the running total at the point of refusal, necessarily
-SMALLER than the artifact's true final size would have been (construction
-stopped before reaching it), and worded to say so rather than claim a
-precision the early figure does not have (D26 tier 3: this is pcrec's
-own diagnostic, not a PCRE2 one). Both stamp the SAME refusal category
-(`cx->size_cap_refused`/`_bytes`/`_limit`); only the human-readable text
-and the `.o`-size estimate (calibrated against a final total, so dropped
-from the early wording) differ.
-
-The CODE cap, `PCREC_MAX_VM_EMIT_CODE_BYTES`, is UNCHANGED by [LIM-2]:
-it exists only on a VM artifact (below), which [LIM-2]'s DFA-route bail
-does not touch.
+axis — and both are checked AFTER emission and BEFORE anything is
+written, so an over-limit compile produces a refusal and no file.
 
 **Neither is deniable, both are overridable UPWARD.**
 `-fno-size-term` denies the unroll-ladder SELECTION and never reaches a

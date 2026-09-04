@@ -1136,75 +1136,13 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
     return intern(cx, d, vw[V_BASE], eolvar, endvar);
 }
 
-/* [LIM-2] see internal.h's declaration comment. Same digit-width formula
- * the worklist loop below uses per cell (this file's one other reader of
- * "how many bytes does `emit_tr_table` spend on this cell"), applied once
- * over a FINISHED machine instead of incrementally over a growing one, so
- * the two cannot drift into two formulas that must be kept in step. */
-long pcrec_dfa_indexed_table_bytes(const Dfa *d)
-{
-    long entries = (long)d->n * (long)d->ncls;
-    if (entries <= 0) return 0;
-    if (entries > PREMUL_MAX_ENTRIES) {
-        /* indexed is guaranteed, per dfa_premul's own first conjunct
-         * (emit_dfa.c) -- see this function's own header comment. */
-    } else {
-        return 0;   /* premul may apply; this function does not know which
-                        form emit_dfa.c will pick, so it offers no figure. */
-    }
-    long bytes = 0, k = 0;
-    for (int i = 0; i < d->n; i++) {
-        for (int c = 0; c < d->ncls; c++, k++) {
-            int t = d->st[i].tr[c];
-            int cellv = t < 0 ? -1 : t;
-            int w = 1;
-            { int av = cellv < 0 ? -cellv : cellv;
-              while (av >= 10) { av /= 10; w++; }
-              if (cellv < 0) w++; }
-            if (k % 16 == 0) bytes += 8;
-            bytes += 2 + w;
-        }
-    }
-    return bytes;
-}
-
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
-                     int maxstates, int root, bool optional, bool size_bail,
-                     long size_bail_headstart)
+                     int maxstates, int root, bool optional)
 {
     /* [ENG-ABS] `optional` is placed on the MACHINE before anything can
      * overflow, because `intern` is where it is read and `intern` is reachable
      * from the very first `make_state` below. */
     d->optional = optional;
-    /* [LIM-2] `size_bail` turns on the WORKLIST loop's projected-size check
-     * below, at the point that loop is declared. It is a parameter rather
-     * than a derived fact (e.g. "the caller passed PCREC_MAX_DFA_STATES_TABLE")
-     * because only the ONE MANDATORY forward table-engine build
-     * (`src/core/compile.c`'s `cx.job->dfa`) carries the design note's
-     * safety argument: it is measured to be the dominant construction cost
-     * on every expensive case in the design note's sample. The REVERSE
-     * machine, the ENG_ATTEMPT/goto machine and the ANCHORED machine do not
-     * carry that argument (reverse construction is cheap regardless in the
-     * same sample) and stay off unless a later measurement charters them
-     * (D77).
-     *
-     * `size_bail_headstart` is the EXACT byte count of the machines and
-     * tables this compile has ALREADY FINISHED building when this call
-     * starts -- `src/core/compile.c` now builds and MINIMIZES the reverse
-     * machine before the forward one for exactly this reason, and passes
-     * its finished `rx_..._next_state` table's true byte count in. Without
-     * it, the forward machine's own OWN raw growth has to cross the WHOLE
-     * cap before this bail can prove anything, and on the design note's own
-     * worst witness (`w-2048`) the forward table is only ~60% of the total
-     * artifact -- so a bail gated on forward-alone-vs-cap fires at ~90% of
-     * raw construction and saves ~28% of wall time, far short of the VM
-     * route's cost class. Folding in the reverse machine's OWN exact,
-     * already-known contribution moves the trigger to ~12% of raw states on
-     * that witness (measured; see the design note). It is EXACT, not
-     * projected -- the reverse machine is fully built AND minimized before
-     * this parameter is computed, so it carries none of `bail_bytes`'
-     * raw-vs-minimized uncertainty below. 0 for every caller that either
-     * does not turn `size_bail` on, or has no such head start to offer. */
     d->overflowed = false;
     /* Hoisted once per machine, like `has_end` below and for the same reason.
      * The ALPHABET refinement has to happen before eqclasses returns, so
@@ -1342,73 +1280,6 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                          m.upc_live[u] ? u : UPC_PLAIN, &sc, scratch)
             : d->s1u[u];
 
-    /* [LIM-2] THE PROJECTED-SIZE BAIL's own state. `bail_bytes` mirrors
-     * `src/gen/emit_dfa.c`'s `emit_tr_table` EXACTLY -- same nested order
-     * (state, then class), same " %d," per cell, same 8-byte "\n       "
-     * line break every 16 cells -- so it is the number of bytes that
-     * function WOULD emit for the rows decided so far, computed by
-     * arithmetic instead of by building the string. `bail_k` is that
-     * function's own flat cell index (`k`), kept in step across rows, and
-     * `bail_bytes` STARTS at `size_bail_headstart` (0 where the caller has
-     * none) rather than 0 -- the reverse machine's own finished table is
-     * REAL, not raw, bytes, so it belongs in the same running total, ahead
-     * of anything this loop discovers.
-     *
-     * IT ASSUMES THE INDEXED REPRESENTATION (`cell_type "short"`,
-     * `cell_of = st`) for the ROWS THIS LOOP ADDS, and only ACTS on those
-     * once that assumption is PROVEN: once `(long)d->n * d->ncls` exceeds
-     * `PREMUL_MAX_ENTRIES`, `dfa_premul`'s own first conjunct (`emit_dfa.c`)
-     * rules out pre-multiplication for the REST OF THIS MACHINE'S LIFE
-     * regardless of any deny flag or seed condition -- entries only grow
-     * from here, never shrink, during raw construction -- so indexed is the
-     * guaranteed final form and every row counted so far (even rows decided
-     * before the threshold crossed) is counted in the format that will
-     * actually be emitted.
-     *
-     * WHAT THE HEAD START DOES NOT NEED TO PROVE: it is already the
-     * MINIMIZED machine's true byte count (`src/core/compile.c` builds and
-     * minimizes the reverse machine before calling this one), so it carries
-     * no raw-vs-minimized uncertainty at all.
-     *
-     * WHAT THIS LOOP'S OWN GROWTH DOES NOT PROVE: the bytes THIS call adds
-     * are an exact function of the RAW (pre-minimize) machine, and
-     * `src/opt/minimize.c` runs AFTER this function returns and only ever
-     * REMOVES states -- so raw growth is not a rigorous lower bound on this
-     * machine's own MINIMIZED table bytes. The design note
-     * (docs/dev/lanes/lim2_report.md) measured this machine's own
-     * minimization shrink at <=3.5% on the two largest witnesses in the
-     * altwide set. `BAIL_KEEP` below turns that measurement into a refusal
-     * that survives a shrink several times larger than anything measured --
-     * matching this file's OWN "abort factor" precedent
-     * (`src/core/compile.c`'s size-term ladder scratch bound, also a
-     * multiplier derived from a measured worst case rather than assumed) --
-     * and it is flagged for the manager's ruling, not treated as settled,
-     * because it is a MARGIN and not a proof: refuse once
-     *     headstart + this_loop's_own_bytes * BAIL_KEEP > cap
-     * i.e. once this loop's own raw bytes exceed
-     *     (cap - headstart) / BAIL_KEEP. */
-    long bail_bytes = size_bail_headstart, bail_k = 0;
-    const unsigned long long bail_cap = cx->opt->max_emit_bytes
-                                       ? cx->opt->max_emit_bytes
-                                       : (unsigned long long)PCREC_MAX_EMIT_BYTES;
-    /* BAIL_KEEP as a percent-out-of-100, to stay in integer arithmetic:
-     * 85 means "assume as little as 85% of this loop's own raw bytes
-     * survive minimization" -- a 15-point margin against a measured <=3.5
-     * point shrink. A ruling item; see the comment above.
-     *
-     * [LIM-2] MOVED TO `src/core/internal.h` as `PCREC_LIM2_BAIL_KEEP_PCT`
-     * (ruling 1, docs/dev/lanes/lim2_rulings.md, 2026-09-04): the census in
-     * `tests/resource/run_lim2_sizecap_projection.sh` is a second reader of
-     * this exact number, and a hand-copied literal there would be the
-     * "two things that must be kept in step" shape `PREMUL_MAX_ENTRIES`'s
-     * own move exists to avoid. This file still owns the arithmetic. */
-    enum { BAIL_KEEP_PCT = PCREC_LIM2_BAIL_KEEP_PCT };
-    const unsigned long long bail_at =
-        (unsigned long long)size_bail_headstart >= bail_cap
-            ? 0   /* the head start alone already proves it */
-            : ((bail_cap - (unsigned long long)size_bail_headstart) * 100)
-              / BAIL_KEEP_PCT;
-
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
         /* [ENG-ABS] An OPTIONAL machine that hit a cap stops HERE. Without
@@ -1453,84 +1324,6 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
             int tgt = make_state(cx, nfa, d, &m, pre, npre, false, false, cu,
                                  &sc, scratch);
             d->st[si].tr[c] = tgt;
-
-            if (size_bail) {
-                /* [LIM-2] the cell's INDEXED text width -- `tr_cell`/
-                 * `cell_indexed`'s own value (the raw target index, or -1
-                 * dead) spelled by digit count rather than by sb_printf. */
-                int cellv = tgt < 0 ? -1 : tgt;
-                int w = 1;
-                { int av = cellv < 0 ? -cellv : cellv;
-                  while (av >= 10) { av /= 10; w++; }
-                  if (cellv < 0) w++; }
-                if (bail_k % 16 == 0) bail_bytes += 8;   /* "\n       " */
-                bail_bytes += 2 + w;                     /* " " + digits + "," */
-                bail_k++;
-
-                if ((long)d->n * (long)d->ncls > PREMUL_MAX_ENTRIES &&
-                    (unsigned long long)(bail_bytes - size_bail_headstart)
-                        > bail_at) {
-                    if (d->optional) { d->overflowed = true; return; }
-                    /* [OPT-4] Same two fields the LATE total-cap check sets,
-                     * right before the same `ctx_fail`, so a consumer of
-                     * either (the size rung, a stamp) cannot tell an early
-                     * refusal from a late one -- this is the SAME reason,
-                     * reached sooner. */
-                    cx->size_cap_refused = true;
-                    cx->size_cap_bytes = (unsigned long long)bail_bytes;
-                    cx->size_cap_limit = bail_cap;
-                    /* [LIM-2] FIX (post-.lift `make test`, 2026-09-04):
-                     * ALSO `cx->dfa_overflowed`, reversing the write phase's
-                     * "deliberately not" call. That call reasoned about
-                     * MEANING ("this field says too many STATES") and missed
-                     * an EFFECT: `compile.c`'s `[SEL-1]` retry eligibility
-                     * (`ovf_eligible`) reads ONLY `dfa_overflowed`, with no
-                     * condition on WHICH of `intern()`'s two existing sites
-                     * set it (the state-count cap, K7's subset-elems cap) --
-                     * both already use this ONE field as an umbrella for
-                     * "this DFA build did not reach an artifact", regardless
-                     * of `fit.chosen`, because SEL-1 lets `auto` change its
-                     * mind about the engine reactively when ANY in-progress
-                     * DFA construction turns out not to pan out. A THIRD
-                     * reason within the same construction (this one) is the
-                     * same umbrella's third instance, not a different claim.
-                     * MEASURED regression this fixes, found by `make test`
-                     * (`tests/vm/run_vm_tests.sh`'s `[SEL-1]` section): its
-                     * witness pattern's forward DFA has ALWAYS overflowed
-                     * PCREC_MAX_DFA_STATES_TABLE (>32000 states) on this
-                     * box, and before this fix the projection now reaches
-                     * ITS OWN cap first (fewer states are needed to cross
-                     * the byte cap than the state cap on this witness), so
-                     * `size_cap_refused` fired instead of `dfa_overflowed`
-                     * and `auto` stopped retrying to VM -- a pattern that
-                     * compiles today would have started refusing outright,
-                     * exactly the regression [LIM-2]'s own acceptance bar
-                     * ("the refusal set moves NOT AT ALL") forbids. */
-                    cx->dfa_overflowed = true;
-                    snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
-                             "dfa overflowed: projected emitted size exceeds "
-                             "%llu bytes", bail_cap);
-                    /* [LIM-2] DELIBERATELY NOT the late check's wording
-                     * (compile.c's "%zu bytes of emitted C source ...").
-                     * `bail_bytes` here is `bail_bytes - size_bail_headstart`
-                     * is NOT the true final total -- construction stopped
-                     * before reaching it -- and a number spelled the same
-                     * way as an exact one would claim more precision than
-                     * this call has. Manager's ruling (lim2_rulings.md,
-                     * 2026-09-04): say "projected at least", not "bytes of
-                     * emitted C source", and drop the ~KB .o estimate (that
-                     * conversion is calibrated against a FINAL total too).
-                     * Same stamped category either way -- see the two
-                     * fields just above. */
-                    ctx_fail(cx, 0,
-                             "pattern too large: projected at least %zu "
-                             "bytes of emitted code (limit %llu). Lower a "
-                             "repeat count, try --unroll=1, or raise "
-                             "--max-emit-bytes; see limits.md \"Handling an "
-                             "oversized artifact\"",
-                             (size_t)bail_bytes, bail_cap);
-                }
-            }
         }
     }
 }

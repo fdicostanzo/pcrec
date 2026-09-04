@@ -2037,11 +2037,7 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
  * reserved value moves ONE number where an extra row moves two (its own
  * premultiplied value, and every per-state table's row count). It cannot
  * collide with a real cell BY THE BOUND below, not by convention. */
-/* [LIM-2] `PREMUL_DEAD` MOVED TO `src/core/internal.h`, so this file's
- * `dfa_premul` (the rule) and `src/ir/dfa.c`'s projected-size bail (a
- * second reader of the same number) cannot drift apart into two literals
- * that must be kept in step. The sentinel's own reasoning above is
- * unchanged; only its `#define` moved. */
+#define PREMUL_DEAD 65535
 
 /* THE BOUND, decided PER MACHINE (a forward and a reverse DFA have different
  * `n` and different `ncls`, and each table's own dimensions are what the rule
@@ -2082,9 +2078,7 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
  * sentinel for any `ents <= PREMUL_DEAD + ncls - 1`. Rounding down to
  * PREMUL_DEAD costs at most one row of one machine and removes an `ncls` from
  * the condition a reader has to check. */
-/* [LIM-2] `PREMUL_MAX_ENTRIES` MOVED TO `src/core/internal.h` beside
- * `PREMUL_DEAD`, for the same reason. Still derived FROM the sentinel by
- * that header's own `#define`, never spelled beside it. */
+#define PREMUL_MAX_ENTRIES PREMUL_DEAD
 
 /* ---- [ENG-FORM] THE FORM AS A VALUE ------------------------------------
  *

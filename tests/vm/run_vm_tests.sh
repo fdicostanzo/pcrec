@@ -694,25 +694,6 @@ else
     bad "[SEL-1] identity check: could not build both the auto fallback and the --engine=vm artifact"
 fi
 
-# [LIM-2] 2026-09-04 — INVESTIGATED, UNCHANGED. Between the [LIM-2] write
-# phase's own margin (`BAIL_KEEP_PCT` 85) and the census-ruled move
-# (`PCREC_LIM2_BAIL_KEEP_PCT` 1, docs/dev/lanes/lim2_rulings.md ruling 1 +
-# docs/dev/lanes/lim2_report.md S10), this witness's own bail behaviour was
-# checked at BOTH values. At 85, the projected-size bail fired first for
-# this witness (before the state-count cap) and every assertion in this
-# section needed updating to match; at the RULED value the bail's own
-# `bail_at` threshold (a function of the margin) is far past what this
-# witness's forward machine ever reaches, so its overflow is diagnosed by
-# `intern()`'s state-count cap exactly as before [LIM-2] existed, and this
-# section is BYTE-IDENTICAL to what shipped before this lane. Left as-is
-# rather than re-annotated with the intermediate finding, on this file's own
-# "the row now asserts what shipped" precedent ([OPT-4] 2026-08-29, two
-# comments above). `src/ir/dfa.c`'s size-bail refusal STILL also sets
-# `cx->dfa_overflowed` (that file's own [LIM-2] FIX comment) — a general
-# correctness fix, kept for the population where it DOES fire (docs/dev/
-# lanes/lim2_report.md S10/S11 carry the full account, including that no
-# witness in this suite currently exercises it at the ruled margin).
-
 # ---- 4. the oracle sweep + §3.7 differential -----------------------------
 QUICKFLAG=--quick
 [ "$MODE" = "full" ] && QUICKFLAG=

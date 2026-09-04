@@ -290,38 +290,4 @@ exposure at all, and
 reports H1/H2/H3 all zero over 280 cells beside a control column that violates
 22 times on the same cells.
 
-**[LIM-2] (2026-09-0x) `dfa.c` GAINED A PROJECTED-SIZE BAIL AND A HELPER
-FUNCTION, both about `PCREC_MAX_EMIT_BYTES` rather than about the LANGUAGE.**
-`pcrec_build_dfa` takes two new trailing parameters, `size_bail` and
-`size_bail_headstart` — only `src/core/compile.c`'s ONE mandatory forward
-table-engine call passes `size_bail=true` (see that function's own comment
-for why only that call carries the design note's argument: it is the
-dominant construction cost on every expensive witness measured, and its own
-minimization shrink measured small). The worklist loop tracks, cell by
-cell as each state's row is decided, the EXACT text bytes
-`src/gen/emit_dfa.c`'s `emit_tr_table` would spend on the INDEXED
-representation — acting only once `d->n * d->ncls` exceeds
-`PREMUL_MAX_ENTRIES` (moved to `src/core/internal.h` from `emit_dfa.c` so
-the two files read one symbol, not two that must be kept in step) proves
-indexed is the machine's guaranteed final form — and refuses with the SAME
-stamped fields and diagnostic template `compile.c`'s post-emission check
-uses, the moment a MARGINED threshold proves the cap is exceeded. The
-margin (`BAIL_KEEP_PCT`) is NOT a proof, only a measured-worst-case-derived
-safety factor against raw (pre-minimize) growth overstating the true
-post-minimize table — flagged for the manager's ruling in
-`docs/dev/lanes/lim2_report.md`, which also has the numbers.
-
-`size_bail_headstart` is why `compile.c` now builds and MINIMIZES the
-REVERSE machine BEFORE the forward one (a reorder argued order-independent
-for every other observable — that argument is in `compile.c`'s own comment
-at the reorder) — the reverse machine's finished table is a real, exact
-byte count the forward bail can fold in as a head start, which is most of
-what makes the bail fire early enough to matter (measured: without it, the
-bail could not prove anything until forward's OWN raw growth crossed the
-whole cap, which on the design note's worst witness was ~90% of the way
-through construction). `pcrec_dfa_indexed_table_bytes` (declared beside
-`pcrec_build_dfa` in `internal.h`) computes that exact figure for a
-FINISHED machine, by the same per-cell formula, so the two readers of "how
-many bytes does this cell cost" cannot drift apart.
-
 Maintenance: update this file when files are added/removed or their roles change.

@@ -844,7 +844,6 @@ test-encseam: all
 test-resource: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-resource.ran"; fi
 	bash tests/resource/run_resource_tests.sh
-	bash tests/resource/run_lim2_sizecap_projection.sh
 
 test-known-fail: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-known-fail.ran"; fi

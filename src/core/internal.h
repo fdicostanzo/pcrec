@@ -4377,76 +4377,12 @@ bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
  * not a copy of it. `optional` is documented on `Dfa.optional`. */
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
                      bool prune, bool reverse, int maxstates,
-                     int root, bool optional, bool size_bail,
-                     long size_bail_headstart);
-
-/* [LIM-2] The EXACT byte count `src/gen/emit_dfa.c`'s `emit_tr_table` would
- * emit for a FINISHED (already minimized) machine's transition table,
- * assuming the indexed representation -- computed once, by arithmetic, so
- * `src/core/compile.c` can hand a real number into a LATER `pcrec_build_dfa`
- * call's `size_bail_headstart` (see that parameter's own comment). Returns 0
- * (a safe, if loose, lower bound) rather than guessing where the entries
- * count does not rule out pre-multiplication -- `d->n * d->ncls <=
- * PREMUL_MAX_ENTRIES` -- since this file does not otherwise know which of
- * `emit_dfa.c`'s two forms will be chosen there. Declared beside
- * `pcrec_build_dfa` because it exists for the same lane and the same
- * reason. */
-long pcrec_dfa_indexed_table_bytes(const Dfa *d);   /* src/ir/dfa.c */
+                     int root, bool optional);
 
 /* [ENG-ABS] What `intern` returns to an OPTIONAL machine that has overflowed:
  * the value `DState.tr[]` already carries for "dead", so a partially built
  * optional machine is well-formed rather than corrupt on the way out. */
 enum { PCREC_DFA_DEAD = -1 };
-
-/* [LIM-2] THE INDEXED-REPRESENTATION THRESHOLD, moved here from
- * `src/gen/emit_dfa.c` so `src/ir/dfa.c`'s projected-size bail and the
- * emitter's own representation choice (`dfa_premul`) read the SAME symbol
- * rather than two literals that must be kept in step (this project's
- * most-recorded failure shape, per `emit_dfa.c`'s own comment on this
- * constant). `dfa_premul` still owns the RULE ("`n * ncls <= 65535`
- * disqualifies pre-multiplication"); this is only the NUMBER the rule and
- * the projection both need. `PREMUL_DEAD` is the sentinel a premultiplied
- * cell can never collide with; `PREMUL_MAX_ENTRIES` is derived from it, not
- * spelled beside it — see emit_dfa.c's fuller comment at the original site.
- * `tests/codegen/run_premul_table.sh` still spells 65535 as an
- * independent literal on purpose; that is a second CHECK, not a second
- * DEFINITION. */
-#define PREMUL_DEAD 65535
-#define PREMUL_MAX_ENTRIES PREMUL_DEAD
-
-/* [LIM-2] THE BAIL'S OWN MARGIN, moved here from `src/ir/dfa.c`'s
- * `pcrec_build_dfa` (where it was a function-local `enum`) for the SAME
- * "one symbol, not two that must be kept in step" reason `PREMUL_MAX_ENTRIES`
- * moved: `tests/resource/run_lim2_sizecap_projection.sh`'s CENSUS (ruling 1,
- * docs/dev/lanes/lim2_rulings.md, 2026-09-04) is a SECOND READER of this
- * number — it asserts the margin (`100 - BAIL_KEEP_PCT` points) exceeds
- * twice the measured maximum forward-machine minimization shrink, and a
- * literal re-typed in the check script would be exactly the "control shares
- * a source with what it controls" shape this project's own check-design
- * lessons warn against (were the check to hardcode its own copy of 85, a
- * change to this value would silently stop being validated rather than
- * re-validated). `dfa.c`'s worklist loop still owns the ARITHMETIC that
- * consumes it; this is only the NUMBER. Percent-out-of-100, kept in integer
- * arithmetic: 85 means "assume as little as 85% of the forward machine's own
- * raw bytes survive minimization" — see `pcrec_build_dfa`'s own comment for
- * the full derivation and the measured shrink it is margined against.
- *
- * [LIM-2] MOVED per ruling 1 (docs/dev/lanes/lim2_rulings.md, 2026-09-04):
- * the census (tests/resource/run_lim2_sizecap_projection.sh) measured a
- * real corpus pattern (tests/base/k18_cost_gates.rxt) shrinking 97.062% on
- * minimization. The ruling's own formula (required margin = 2x measured max
- * shrink = 194.124 points) exceeds what this representation can express at
- * all -- a percent-of-raw-bytes margin is bounded at [0,100) points, and no
- * value in that range clears 194.124. CLAMPED to 1 (99-point margin, the
- * tightest this design can express), never reversed toward less caution.
- * See docs/dev/lanes/lim2_report.md S10/S12 for the measured consequence:
- * at this margin the bail no longer fires early for any of the write
- * phase's own altwide/SEL-1 witnesses (their raw bytes never cross the
- * now-enormous bail_at threshold), reverting those to pre-[LIM-2] timing
- * and diagnostics -- reported honestly, not concealed by leaving 85 in
- * place. */
-#define PCREC_LIM2_BAIL_KEEP_PCT 1
-
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 /* [OPT-5] THE SCAN-EDGE PASS (src/opt/scanedge.c). Runs on EVERY machine,
  * immediately after `pcrec_minimize_dfa` on that machine: it needs the
