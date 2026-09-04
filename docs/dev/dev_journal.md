@@ -21071,3 +21071,23 @@ timing post-lift on a quiet box, no abi bump — the manager assigns at
 merge). lim2 idles on :41. Briefs carry the r53 lessons (a check must
 not share a source with what it controls; the population must contain
 the shape) and edge1's ladder lesson (branch-vs-main isolation).
+
+## 2026-09-04 — Fifty-first session, part 58 (11:0x EDT): form0's write phase delivered (98ce1488) — the size half of [FORM-CHAR]/[OPT-CLSPACK] STEP 0; timing owed post-lift
+
+form0 (sonnet, ~40 min): four hand-twin families derived by mechanical
+transforms over the compiler's OWN emitted tables (byte sets parsed off
+the artifact, never re-derived), all answer-checked against their base,
+sized at gcc -O2. (A) VM caseless literal chain: the folded COMPARE wins
+both axes (−38% .text, .rodata gone); the 256-byte table loses both
+(+31% .text, 8× .rodata); the shared-atom form between. (B) general
+[a-zA-Z0-9_] / sparse [aeiou]: the table loses .text at both; range
+compares a wash on general (+2.8%), a win on sparse (−5.6%). (C) DFA
+scan edge, a small witness and ci-256 itself (8 sites, all case-fold
+pairs): the "bitmap" 256-B body costs .text (+24-25% small, +0.8% at
+ci-256's scale) plus .rodata the range/fold forms need none of; range
+vs fold indistinguishable because every measured site is a fold pair
+— a non-fold-pair witness is owed. (D) N=16 distinct classes: the
+shared atom table is SMALLER than both alternatives on .text (−41/−54%)
+and .rodata (2×/16×). All size-only; the timing (isl1's protocol) is
+post-lift; the table form's one-load LATENCY is the untested counter-
+argument. The transforms are to be committed under studies/.
