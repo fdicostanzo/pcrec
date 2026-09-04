@@ -21091,3 +21091,31 @@ shared atom table is SMALLER than both alternatives on .text (−41/−54%)
 and .rodata (2×/16×). All size-only; the timing (isl1's protocol) is
 post-lift; the table form's one-load LATENCY is the untested counter-
 argument. The transforms are to be committed under studies/.
+
+## 2026-09-04 — Fifty-first session, part 59 (11:2x EDT): edge2's write phase — precondition (8) guarded TWO hazards; narrowing it alone would have shipped a LOST-MATCH miscompile; the entry dispatch generalised; all 11 census artifacts regain their edge
+
+edge2 (opus, ~35 min): the brief's demand for a hazard POSITIVE CONTROL
+found that (8) also protected the ENTRY SEED — axis D's seeded form
+initialises the state variable to any seed-family member before the
+loop, and emit_scan_loop's entry dispatch recognised only the start
+state, exact only because (8) refused every other seed target as a
+head (recorded nowhere but a comment about something else). Witness on
+a scratch build with the entry dispatch reverted and (8) narrowed:
+`foo\B` on "xfoofoox" → [] instead of [(1,4) (4,7)] (its reverse seed
+table {0,12,12,12} against a stop floor of 12). Built: the entry
+dispatch generalised to `is_stop(s) && !is_dead(s)` on the wider
+condition; (8) narrowed to "seed AND the prefilter reseeds" with the
+pass running axis B's own selection so pass and emitter cannot
+disagree, plus a read-back check re-deriving the precondition from the
+machine about to be written; a census check (11 named artifacts, 11/13
+rows red against the entry-reverted build and against the STEP 1
+compiler); tuning.md §2.18. Two predictions missed: ALL 11 regain an
+edge (the two offset-set ones on their REVERSE machine, which has no
+prefilter — STEP 1's census read the artifact-level stamp at the wrong
+resolution); and the RESEED hazard has no witness at all (30/30 byte-
+identical with (8) removed; ten constructed shapes never reach an
+edge). Rulings: abi event assigned at merge; (8) KEPT with its zero
+population printed as a finding line; over-answering accepted if test-
+axes is identical; the mech sabotage row written now, run in the next
+battery (S227); the harnesses committed under studies/; timing post-
+lift. Byte identity over 30 patterns: exactly the 11 move.
