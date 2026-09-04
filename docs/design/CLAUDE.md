@@ -1677,6 +1677,29 @@ append-only or historical records.
   revision itself. Companion data: `docs/dev/opt5_step2_premeasure.md` and
   `docs/dev/opt5m2_m2_changed_patterns.txt`.
 
+- `opt_dial_inventory.md` — **[OPT-DIAL] STEP 0** (2026-09-04, lane ccd2):
+  the INVENTORY behind Frank's proposed speed-vs-size dial, and a document
+  rather than a mechanism by construction (D77 — the row's own STEP 0 is the
+  audit, STEP 1 is the option). Every generation-time switch in
+  `docs/spec/tuning.md` §2 with what it trades, its MEASURED exchange rate
+  and citation, and one of three verdicts: PURE WIN (off the dial), MEASURED
+  TRADE (on it), or UNMEASURED (off it until measured, with the specific
+  measurement named). Then a draft policy table with the numbers in its
+  cells, and the spelling question as three alternatives with their
+  trade-offs.
+  **THE FINDING IS THE COUNT.** Four of twenty-one switches carry a
+  two-axis measured rate; two are measured pure wins; fifteen are unmeasured
+  on at least one axis, nearly always on SIZE — pcrec has measured time far
+  more often than bytes. A dial built today would have four rungs of
+  substance and seventeen switches it must not touch. §7 names the one sweep
+  (emitted `.text` per artifact, default against each deny flag, over the
+  corpus) that would move six of them at once; `tests/axes` already walks
+  that product for ANSWERS and records no bytes.
+  Also names the fourth thing that is not a bucket: `-fno-splice-calls` and
+  `-fno-prefilter-collapse` are measured on both axes and REVERSE SIGN on
+  time with the subject population, which a speed-vs-size ordinal cannot
+  express at all.
+
 - `alt_dispatch_study.md` — **[ENG-ISL.S0]**, the alternation-dispatch study
   (2026-09-03, lane altstudy): the measurement note behind `[ENG-ISL]`'s
   first named island candidate ("VM ALTERNATION AS A TRIE DISPATCH",

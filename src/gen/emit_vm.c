@@ -466,6 +466,21 @@ typedef struct {
                            * NOT the pre-pass's npush, whose counter-rung
                            * unbounded arm once went negative and omitted the
                            * dispatch from a program with ten live pushes. */
+    bool emitted_set;     /* [CC-DIFF] STEP 2 — set by vm_set, the ONE
+                           * primitive that writes an `<PREFIX>_SET`, in the
+                           * same call that writes the bytes (emitted_push's
+                           * discipline exactly, and for the same reason).
+                           *
+                           * WHY A SECOND BOOL AND NOT `has_push`. `<PREFIX>_SET`
+                           * expands to `<PREFIX>_TRAIL`, which WRITES
+                           * `run->trail[]` — real working storage — and a
+                           * FRAMELESS artifact can do that: `(abc)(def)`
+                           * pushes nothing and saves two capture slots. So
+                           * `has_push` false does NOT mean the storage is
+                           * untouched, and the entry shapes that bind a NULL
+                           * descriptor (`vm_entry_shape` rungs SHARED and
+                           * FORWARD) need this term as well or they would
+                           * turn a match into a FRAMES give-up. */
     long long maxcopies;  /* the largest REPLICATION FACTOR any one bounded
                            * repeat over a choice-bearing body demands. This is
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
@@ -2901,6 +2916,9 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
         else
             sb_printf(v->b, "    %s_SET(%d, %s);\n", v->up, slot, val);
     }
+    /* [CC-DIFF] STEP 2: in the SAME call that writes the bytes — see the
+     * field's comment for why the trail counts as touched storage. */
+    v->emitted_set = true;
     vm_ev(v, VE_SET, slot, 0, role);
 }
 
@@ -8330,13 +8348,54 @@ static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
  * `<prefix>_match_anchored` and still see `<PREFIX>_R_FRAMES` (§4.4's three
  * layers). Numerically equal today; the layer seam is the reason each is
  * spelled where it belongs. */
-static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered,
+static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
                                   const char *ret, const char *name,
                                   const char *params, const char *storage_tail,
                                   const char *runargs, const char *deepargs,
-                                  const char *frames_code)
+                                  const char *frames_code, const char *fwdargs)
 {
-    if (tiered) {
+    if (fwd) {
+        /* [CC-DIFF] STEP 2, the FORWARD rungs (`vm_entry_shape` SHARED and
+         * FORWARD), and this is Frank's own question answered in the emitter:
+         * "why can't rx_match call rx_match_in with the stack buffer?"
+         *
+         * On an artifact that provably never WRITES the working storage there
+         * is no stack buffer to pass, so this entry has nothing to decide.
+         * The `_in` sibling already accepts a descriptor and binds whatever it
+         * names, so the un-suffixed entry becomes a pure forward through a
+         * static empty one — and every property that made STEP 1(a)'s
+         * attribute worth having survives: NO LOCAL AT ALL here, so no
+         * `<prefix>_run_buffers`, no `<prefix>_run_state`, no array whose
+         * presence trips `-fstack-protector-strong`, and no address escaping
+         * into a callee. gcc emits a `jmp`.
+         *
+         * WHAT IT RE-PAYS is one call per entry, against a matcher body the
+         * size term has already found large. What it BUYS is the copy count:
+         * six inlined bodies become three (FORWARD) or one (SHARED).
+         *
+         * THE DESCRIPTOR IS STATIC AND `const`, so it is one shared read-only
+         * object rather than a per-call store, and it is EMPTY rather than
+         * NULL for one reason: `<prefix>_*_in` reads a NULL descriptor as
+         * "use the un-suffixed sibling's own storage" and would call straight
+         * back here. `{ NULL, 0, NULL, 0 }` takes the binding path instead,
+         * which is correct precisely because `emitted_set` and `has_push` are
+         * both false — nothing in this artifact reads or writes either
+         * region, so a capacity of zero is never consulted. */
+        /* The `_in` sibling is DEFINED below this entry, so the forward needs
+         * its prototype. It is composed from THIS entry's own `params` plus
+         * the descriptor parameter, which is exactly what the definition's
+         * own format string spells — one derivation, two spellings, so a
+         * parameter list that changed at the definition and not here would be
+         * a conflicting declaration rather than a silent mismatch. */
+        sb_printf(c,
+            "%s %s_in(%s, const %s_buffers *buffers);\n"
+            "%s %s(%s)\n"
+            "{\n"
+            "    return %s_in(%s, &%s_no_buffers);\n"
+            "}\n\n",
+            ret, name, params, v->p,
+            ret, name, params, name, fwdargs, v->p);
+    } else if (tiered) {
         sb_printf(c,
             "/* [OPT-1] THE DEEP TIER: the stamped default storage, on a frame\n"
             " * only a FRAMES give-up reaches. `noinline` is load-bearing --\n"
@@ -9621,7 +9680,134 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `v.npush` (an estimate that has gone negative), from a strstr for
      * `goto *` in the emitted buffer (refuted the same day it was written —
      * the traced push is a second spelling), or from the stamp's own text. */
-    const char *ai = has_push ? "" : "inline __attribute__((always_inline)) ";
+    /* [CC-DIFF] STEP 2 — THE ENTRY SHAPE, AS AN ORDINAL RUNG, AND EVERY TERM
+     * OF IT IS READ OFF SOMETHING ALREADY DERIVED.
+     *
+     * STEP 1(a) is the top rung of a four-rung ladder, not a boolean. Its
+     * attribute deletes the entry's frame, canary and out-of-line call — a
+     * measured 0.611 on `dig-upto-16` — and, because SIX entries each honour
+     * it, replicates the matcher body six times. isl1's ladder priced that
+     * replication (§12.2): x2.58 .text at w-8 rising to x6.51 at w-256, for a
+     * run-time benefit that stays flat at 16-23%. The rungs separate the two
+     * effects, which STEP 1 could not:
+     *
+     *   PLAIN   (1)  no attribute — the pre-[CC-DIFF] shape. ONE body, six
+     *                entries, each paying its frame, canary and call.
+     *   SHARED  (2)  matcher `noinline` (ONE body, called), helpers inlined,
+     *                un-suffixed entries FORWARDED — no frame, no canary.
+     *   FORWARD (3)  the same forwards, matcher inlined: THREE bodies.
+     *   INLINE  (4)  STEP 1(a) as shipped: SIX bodies.
+     *
+     * LEGALITY, and a rung not taken is a SELECTION OUTCOME, never a refusal.
+     * Rungs 2-4 need `has_push` false: gcc REFUSES `always_inline` on a
+     * function containing a computed goto (a hard error), and this file's own
+     * invariant is that the `goto *` count is `(has_push ? 1 : 0) +
+     * shared-callee-bodies`, both terms of `has_push`. The measurement agrees
+     * independently — on the three FRAMED cells STEP 0 timed, the attribute
+     * bought 0.990, 0.954 and 1.032, because there the storage is live so
+     * inlining deletes nothing and only inflates the entry. Rungs 2 and 3
+     * need MORE: they forward through a NULL descriptor, so the artifact must
+     * never WRITE the working storage, which is `has_push` AND `emitted_set`
+     * (the trail is storage too — see that field). A framed artifact is
+     * byte-identical to what it was before this change.
+     *
+     * WHY `tiered` DECLINES THE FORWARD. A tiered artifact's un-suffixed
+     * entry is not a binder but a fast-tier run plus a FRAMES escalation
+     * ([OPT-1]); forwarding would delete a mechanism rather than re-spell it.
+     * A storage-untouched artifact can never reach a FRAMES give-up in the
+     * first place — `RX_PUSH` and `RX_TRAIL` are its only two sites — so the
+     * two conditions are expected never to co-occur, and this term is the
+     * belt to that argument's braces rather than a case.
+     *
+     * ONE DERIVATION, on [OPT-VMFL] §4.2's discipline: `has_push` is the same
+     * bool the stamp and the fail label's dispatch omission read, and the
+     * size comparison reads `job->vmsb.len` — the buffer the program was just
+     * emitted into — rather than a second walk of the AST. */
+    const bool touches_storage = has_push || v.emitted_set;
+    /* Which rungs this artifact can legally take, decided before any of them
+     * is wanted, so the request and the legality never argue. */
+    const bool may_attr = !has_push;                   /* rungs 2, 3, 4 */
+    const bool may_fwd  = !touches_storage && !tiered; /* rungs 2, 3    */
+    int shape = cx->opt->vm_entry_shape;
+    if (shape == PCREC_VM_ENTRY_AUTO) {
+        /* AUTO PICKS BETWEEN FORWARD AND SHARED, AND NEVER INLINE, WHICH IS A
+         * CHANGE FROM WHAT STEP 1(a) SHIPPED AND IS MEASURED RATHER THAN
+         * PREFERRED. Rung FORWARD has INLINE's object-code properties exactly
+         * — no entry frame, no canary anywhere in the artifact, no
+         * out-of-line chain symbol — at 0.50x-0.61x of its `.text` and gcc
+         * time at every width from 646 to 305,686 program bytes, 20 artifacts,
+         * no exception (docs/dev/lanes/ccd2_report.md §3). INLINE's six copies
+         * come from six entries each honouring the attribute; the mechanism
+         * needs three, because there are three distinct call shapes. INLINE
+         * remains reachable, as the ladder's max-speed rung, by asking.
+         *
+         * WHERE THE FORWARD RUNGS ARE ILLEGAL there is no ladder to walk and
+         * the artifact takes what it took before this change: INLINE below
+         * the term (STEP 1(a)'s shape) and PLAIN above it (the pre-[CC-DIFF]
+         * shape). Neither step is novel code. */
+        if ((long long)job->vmsb.len <= VM_INLINE_CHAIN_MAX_BYTES)
+            shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
+        else
+            shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;
+    }
+    if (!may_attr) shape = PCREC_VM_ENTRY_PLAIN;
+    else if (!may_fwd && shape == PCREC_VM_ENTRY_SHARED)
+        /* A forward rung was asked for and cannot be spelled. The fallback is
+         * by INTENT, not by ordinal distance: SHARED and PLAIN are the two
+         * ONE-BODY rungs and FORWARD and INLINE the two body-per-entry ones,
+         * so a caller who asked for one body gets the other one-body rung and
+         * a caller who asked for copies gets the other copying rung. Falling
+         * SHARED up to INLINE would answer "min size" with six copies. */
+        shape = PCREC_VM_ENTRY_PLAIN;
+    else if (!may_fwd && shape == PCREC_VM_ENTRY_FORWARD)
+        shape = PCREC_VM_ENTRY_INLINE;
+    /* The thin helpers (bind / init / reset / report_captures / the three
+     * `_run`s): inlined on every rung but PLAIN. They are a handful of
+     * statements each, so their copies are not what the size term prices. */
+    const char *ai = shape == PCREC_VM_ENTRY_PLAIN
+                       ? "" : "inline __attribute__((always_inline)) ";
+    /* The MATCHER BODY, which is the whole of what the size term prices.
+     * `noinline` on the SHARED rung is load-bearing, not a hint: without it
+     * gcc is free to inline a small body into the three `_in` entries and the
+     * rung would silently become FORWARD. */
+    const char *ai_body = shape >= PCREC_VM_ENTRY_FORWARD
+                            ? "inline __attribute__((always_inline)) "
+                            : (shape == PCREC_VM_ENTRY_SHARED
+                                 ? "__attribute__((noinline)) " : "");
+    const bool fwd_entries = (shape == PCREC_VM_ENTRY_SHARED
+                              || shape == PCREC_VM_ENTRY_FORWARD);
+    /* [CC-DIFF] STEP 2 — THE ENTRY-SHAPE STAMPS, §6.3 family (b), and there
+     * are TWO because a selection and the number it was made on are two
+     * facts. `<PREFIX>_VM_ENTRY_SHAPE` names the rung the emitter TOOK — a
+     * CLOSED TOKEN, `_ENGINE_SEL`'s shape, because a consumer cannot bucket
+     * on prose and the value set is fixed at four. `<PREFIX>_VM_PROGRAM_BYTES`
+     * is the quantity the size term compared, so an artifact says which side
+     * of the knee it fell on WITHOUT its command line — the same reason
+     * `_MAX_EMIT_CODE_BYTES` above stamps the effective cap rather than
+     * assuming the default.
+     *
+     * WHY BOTH, and why the second is not decoration. The rung is chosen from
+     * a threshold and a LEGALITY pair, so four different artifacts can take
+     * `plain` for four different reasons: framed, forward-illegal-and-large,
+     * tiered, or asked for. `RX_VM_FRAMELESS` distinguishes the first; the
+     * byte count plus the stamped limit distinguish the rest. Without the
+     * number a reader can see the outcome and cannot check it — the K35 shape
+     * this file's stamps repeatedly exist to prevent.
+     *
+     * ONE DERIVATION: `shape` is the same int the attributes and the entry
+     * emission below read, and the count is the same `job->vmsb.len` the
+     * threshold compared, both read HERE rather than recomputed at the stamp.
+     *
+     * A SCALAR, not a mask, on `_VM_FRAMELESS`'s reason: the entry shape is a
+     * whole-artifact fact with no per-`A_REP` axis to mix. No `rx_info`
+     * mirror, on `RX_DFA_TABLE`'s precedent — no consumer reads either at RUN
+     * time today (D77). */
+    sb_printf(c, "#define %s_VM_ENTRY_SHAPE \"%s\"\n", v.up,
+              shape == PCREC_VM_ENTRY_PLAIN   ? "plain"   :
+              shape == PCREC_VM_ENTRY_SHARED  ? "shared"  :
+              shape == PCREC_VM_ENTRY_FORWARD ? "forward" : "inline");
+    sb_printf(c, "#define %s_VM_PROGRAM_BYTES %lluULL\n", v.up,
+              (unsigned long long)job->vmsb.len);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * because it reports what the VM DID — §6.3's family (b), D81), but
@@ -10382,7 +10568,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    const size_t subject_length = ctx->len;\n"
         "    size_t scan_position = ctx->pos;\n"
         "    ptrdiff_t *const slot_values = run->slot_values;\n",
-        ai, v.p, v.p,
+        /* [CC-DIFF] STEP 2: `ai_body`, not `ai` — THIS is the function the
+         * size term prices, and the SHARED rung keeps exactly one copy of it
+         * while every thin helper above still inlines. */
+        ai_body, v.p, v.p,
         v.nclamp > 0 ? mrl_param : "",
         v.ngst > 0 ? gst_param : "");
     if (v.rungs & vm_rung_bit[VM_RUNG_CURSOR])
@@ -10942,13 +11131,35 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [OPT-1] The FRAMES spelling here is `PCREC_ERR_FRAMES`, not
      * `<PREFIX>_R_FRAMES`: this entry sits above `<prefix>_search_run`, which
      * has already collapsed the private sentinel to the public code (§4.4). */
-    vm_emit_default_entry(c, &v, tiered, "int", g.searchfn,
+    /* [CC-DIFF] STEP 2 — THE EMPTY DESCRIPTOR the forward rungs bind through.
+     * ONE object for all three forwards, `static const` so it lives in
+     * `.rodata` and no call stores it. It is emitted only where those rungs
+     * were selected, so no other artifact gains a byte.
+     *
+     * ZEROED, AND WHY THAT IS SAFE HERE AND NOWHERE ELSE: `has_push` and
+     * `emitted_set` are both false on this rung, so the artifact contains no
+     * `<PREFIX>_PUSH` and no `<PREFIX>_TRAIL` — the only two sites that ever
+     * read a capacity or write through either pointer. A capacity of zero is
+     * therefore never consulted, rather than being consulted and happening to
+     * pass. It is EMPTY and not NULL because a NULL descriptor means "use the
+     * un-suffixed sibling's own storage", which would call straight back into
+     * the entry that is forwarding. */
+    if (fwd_entries)
+        sb_printf(c,
+            "/* [CC-DIFF] the frameless forward's descriptor: this artifact\n"
+            " * writes no resume frame and no trail entry, so the three\n"
+            " * un-suffixed entries below bind nothing and forward. */\n"
+            "static const %s_buffers %s_no_buffers = { (void *)0, 0, (void *)0, 0 };\n\n",
+            v.p, v.p);
+
+    vm_emit_default_entry(c, &v, tiered, fwd_entries, "int", g.searchfn,
         "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
         "       ptrdiff_t (*capture_spans)[2]",
         "   /* this artifact's stamped default */",
         "subject, subject_length, search_from, capture_spans, &run",
         "subject, subject_length, search_from, capture_spans",
-        "PCREC_ERR_FRAMES");
+        "PCREC_ERR_FRAMES",
+        "subject, subject_length, search_from, capture_spans");
 
     sb_printf(c,
         "/* Same search, with the working storage the CALLER supplies. A NULL\n"
@@ -11088,8 +11299,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [OPT-1] `<PREFIX>_R_FRAMES`, not `PCREC_ERR_FRAMES`: these two sit
      * directly on `<prefix>_match_anchored` and still see the private
      * sentinel (§4.4's three layers). */
-    vm_emit_default_entry(c, &v, tiered, "ptrdiff_t", g.matchfn,
-        "const rx_ctx *ctx", "", "ctx, &run", "ctx", frames_sentinel);
+    vm_emit_default_entry(c, &v, tiered, fwd_entries, "ptrdiff_t", g.matchfn,
+        "const rx_ctx *ctx", "", "ctx, &run", "ctx", frames_sentinel, "ctx");
 
     sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
@@ -11102,10 +11313,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "}\n\n",
         g.matchfn, v.p, v.p, g.matchfn, v.p, g.matchfn);
 
-    vm_emit_default_entry(c, &v, tiered, "ptrdiff_t", g.matchcapsfn,
+    vm_emit_default_entry(c, &v, tiered, fwd_entries, "ptrdiff_t", g.matchcapsfn,
         "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
         "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
-        frames_sentinel);
+        frames_sentinel, "ctx, capture_spans_out");
 
     sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"

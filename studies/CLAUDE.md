@@ -71,5 +71,16 @@ re-measure before load-bearing use.
   own README.md for the full finding and CLAUDE.md's usual shape
   (`make` builds `lim2_census` against `../../build/libpcrec.a`, `make
   census` re-runs the sweep).
+- `ccd2_entry_shape_ladder/` — [CC-DIFF] STEP 2's ns/call LADDER: the harness
+  and the RAW DATA behind `docs/dev/lanes/ccd2_report.md` §12 and
+  `src/core/limits.def`'s `VM_INLINE_CHAIN_MAX_BYTES` comment. Twenty
+  artifacts x four entry-shape rungs, quiet box, `load1 < 0.5` gated before
+  EVERY cell and refusing rather than warning, answers checksummed every round.
+  It is adopted rather than left in a scratchpad for the reason the same lane
+  had to rewrite its own answer-identity sweep from scratch: the write phase
+  ran that one ad hoc and it died with its scratchpad, so the branch carried a
+  claim and not a check. See its own CLAUDE.md for the two things that must not
+  be simplified away (every cell is `--engine=vm`, or the rungs reach nothing;
+  the subject is dense, or `ns/call` is not a reading of a per-call cost).
 
 Maintenance: update this file when studies are added/removed.

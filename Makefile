@@ -113,6 +113,18 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # limit rebuilt NOTHING -- `touch src/core/limits.def && make` answered
 # "Nothing to be done", and a new row was absent from `--list-limits` until a
 # `make clean`. Exactly the [MOD-0.3e] shape one file deeper.
+# src/core/limits.def joined at [CC-DIFF] STEP 2 (2026-09-04, lane ccd2), and
+# it is THE SAME DEFECT A SECOND TIME — the warning directly above it is the
+# one that was not heeded when [LIM-1] introduced the file. limits.def is
+# `#include`d by nine translation units (limits.h, internal.h, emit_vm.c,
+# limits_dump.c and five module files), and NONE of them was rebuilt when it
+# changed: `touch src/core/limits.def && make` printed "Nothing to be done".
+# FOUND THE SAME WAY, and it is worth recording because it is how the class
+# always shows up: this lane edited VM_INLINE_CHAIN_MAX_BYTES from 20,000 to
+# 4,096, saw the EMITTER honour 4,096 (its own .c had changed too, so it was
+# recompiled) and `pcrec --list-limits` still report 20,000 — one binary
+# carrying two values of one constant. A lane that changed only a limit and
+# then ran `make test` would have tested the OLD number and read green.
 $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
@@ -147,7 +159,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
-      test-prefilter-collapse test-rxtsource test-definitions
+      test-prefilter-collapse test-rxtsource test-definitions \
+      test-entry-shape-identity
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -350,6 +363,18 @@ test-anchored-match: all
 test-search-pinned: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-search-pinned.ran"; fi
 	bash tests/codegen/run_search_pinned.sh
+
+# [CC-DIFF] STEP 2 the VM ENTRY-SHAPE LADDER's ANSWER-IDENTITY GATE: the four
+# `--vm-entry-shape` rungs against the artifact AUTO emits, span by span and
+# group by group, with a per-witness NON-VACUITY arm and a whole-table census
+# that all four rungs were actually realised. Its OWN section rather than a
+# sixth script in `test-codegen`'s group, on `run_premul_table.sh`'s measured
+# argument: `make smoke` includes `test-codegen` and is already at its 60s
+# target, and this script emits and compiles 70 artifacts (14 witnesses x 5
+# shapes). It IS part of `make test`, which is where the merge standard lives.
+test-entry-shape-identity: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-entry-shape-identity.ran"; fi
+	bash tests/codegen/run_entry_shape_identity.sh
 
 # [OPT-VMFL] `<PREFIX>_VM_FRAMELESS` held to the artifact's own `goto *`
 # count (docs/dev/optvmfl_step0.md §4.2). Its OWN section on
@@ -1260,5 +1285,6 @@ clean:
         test-spec test-premul-table test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
+      test-entry-shape-identity \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

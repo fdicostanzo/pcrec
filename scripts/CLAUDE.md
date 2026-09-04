@@ -195,4 +195,15 @@ pcrec (the Makefile owns that).
   §6: artifacts, never process greps). Does not run the whole battery
   itself when invoked by a lane — see `docs/dev/lanes/tt12b_report.md`.
 
+  **[CC-DIFF] STEP 2 (2026-09-04): THE `axes` STAGE EXPORTS `AXES_FULL=1`,
+  and that one word is where a TIERED axis's full product lives.**
+  `tests/axes/run_axes.sh` runs the `--vm-entry-shape` ordinal's two
+  reachable-by-default rungs on every `make test-axes` and all four only
+  under that env — four permanent full-corpus runs was judged too much for
+  the DAY's suite, and the battery is where the whole product belongs. So
+  the battery's axes stage is no longer the same sweep the day runs, and
+  the sweep says which tier it ran (its own summary line) rather than
+  leaving the two results quotable as one. If a future axis is tiered the
+  same way, this is the line it rides.
+
 Maintenance: update this file when scripts are added/removed or change role.

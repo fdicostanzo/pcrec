@@ -462,6 +462,25 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.unroll_k = (int)v;
         }
+        /* [CC-DIFF] STEP 2 `--vm-entry-shape=N` — the VM entry chain's rung,
+         * an ORDINAL in the dial's own direction (1 min size .. 4 max speed),
+         * `--unroll=`'s value-parameter shape rather than a `-f` bit. 0 is
+         * AUTO, the default, where the size term decides; naming it
+         * explicitly is legal and means the same thing. A rung this artifact
+         * cannot legally take is a SELECTION OUTCOME, not a refusal — see
+         * lib/pcrec.h's `vm_entry_shape` and docs/spec/tuning.md §2.21. */
+        else if (!no_more_opts && !strncmp(a, "--vm-entry-shape=", 17)) {
+            char *end = NULL;
+            long v = strtol(a + 17, &end, 10);
+            if (!end || *end || v < 0 || v > PCREC_VM_ENTRY_INLINE) {
+                fprintf(stderr, "pcrec: --vm-entry-shape wants an integer in "
+                                "0..%d (0 auto, 1 plain, 2 shared, 3 forward, "
+                                "4 inline; got '%s')\n",
+                        PCREC_VM_ENTRY_INLINE, a + 17);
+                return 1;
+            }
+            opt.vm_entry_shape = (int)v;
+        }
         /* [M5-SEAM] (D58) `--encoding=` is the long spelling of `-e`, in the
          * `=value` MODE form `--engine=` already uses (the separate-argument
          * forms are for files and names). Both spellings reach the same

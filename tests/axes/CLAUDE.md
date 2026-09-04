@@ -203,3 +203,42 @@ change.
   ladder's interior rungs earn their cost — it names any pattern whose argmin
   is interior. On its first run it found three, which is why the ladder is
   `[8,6,4,3,2,1]` and not its endpoints.
+
+## [CC-DIFF] STEP 2 (2026-09-04) — the sweep gains an ORDINAL axis
+
+`--vm-entry-shape=1..4` (`docs/spec/tuning.md` §2.21) joins the job list as
+FOUR jobs, appended where `--engine=vm`/`--engine=dfa` are and for the same
+mechanical reason: `RXTFLAGS` takes an arbitrary extra flag, not only a `-f`
+spelling. Four rather than one, because "the answers do not move" is a claim
+about each rung and not about the family.
+
+**`lost_ok` IS 0 ON ALL FOUR, AND THAT IS STRICTLY STRONGER THAN THE COARSE
+AXIS'S CLAIM.** `--engine=dfa` is DO-OR-DIE and legitimately refuses, so its
+LOST population is documented rather than failed. This axis NEVER refuses: a
+rung an artifact cannot legally take is a SELECTION OUTCOME, and the emitter
+falls to the nearest legal rung of the same body-count family. A LOST case
+here therefore means a pattern stopped compiling under a flag that cannot
+make that happen, and it fails.
+
+**THEY ARE TIERED, by the manager's ruling of 2026-09-04**, because four
+permanent full-corpus runs is too much for the DAY's suite:
+
+| tier | rungs | who runs it |
+|---|---|---|
+| default | 3 `forward`, 4 `inline` | every `make test-axes` |
+| `AXES_FULL=1` | all four | the union battery (`scripts/battery.sh`'s axes stage exports it) |
+
+**THE DEFAULT PAIR IS 3+4 AND NOT 1+4, and the reason is coverage rather than
+preference.** The forward entries and the static empty descriptor — the only
+genuinely new emitted code — land on rungs 2 AND 3, so keeping rung 3 keeps
+that half swept by default. What a default run does NOT cover is rung 1's
+no-attribute emission and rung 2's `noinline` matcher.
+
+**SO THE SWEEP MUST SAY WHICH TIER IT RAN, AND IT DOES.** A default-only green
+run is a claim about TWO of this axis's four rungs; the script prints its tier
+when it builds the job list and again in the summary, and the closing
+"all axes answer-identical" sentence names it — otherwise a two-rung result
+reads exactly like a four-rung one to anyone quoting the last line.
+
+[TT-12] STEP 1's pairwise execution absorbs the jobs two at a time, so the
+default costs about one run's wall time and the battery about two.

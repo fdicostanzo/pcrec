@@ -578,6 +578,88 @@ decides whether to perform it — and then run the row through
     — `Ctx *cx,` — never matches) and says in its own comment that it is a
     wiring check.
 
+- **run_inline_capability.sh** — [CC-DIFF] STEP 2 (2026-09-04), the
+  CAPABILITY PROBE: does the compiler about to build an artifact ALREADY
+  inline the VM entry chain, or does the `always_inline` workaround do real
+  work under it? One witness, two arms, `nm`; no corpus sweep.
+  - **WHY IT EXISTS, and why no preprocessor guard can replace it.** Frank
+    asked (2026-09-03 23:0x) whether there is a guard telling us the compiler
+    has the optimisation. `__has_attribute(always_inline)` says the attribute
+    is UNDERSTOOD, never that the inlining WOULD HAVE HAPPENED without it.
+    The capability is observable only in object code. [CC-DIFF] STEP 0's own
+    evidence was exactly this `nm` witness and lived only in its report.
+  - **THE METHOD.** Compile `\d{1,16}` (STEP 0's `dig-upto-16` cell) under
+    the harness's `CC` at rung INLINE and again with the attribute gone, and
+    ask whether `rx_search_run` / `rx_match_anchored` survive as symbols.
+    Absent in the no-attribute arm means REDUNDANT under that compiler;
+    present means NEEDED.
+  - **ARM B IS BUILT TWICE AND THE TWO MUST AGREE** (learnings §3). The
+    convenient spelling is the emitter's own PLAIN rung — the subject's own
+    author. So the file ALSO builds arm B by a TEXTUAL `sed` removal of the
+    attribute, which knows nothing about the emitter, and is RED if the two
+    spellings differ in source or in symbol table beyond TWO lines the file
+    normalises and then asserts POSITIVELY: the paired header's `#include`,
+    and `<PREFIX>_VM_ENTRY_SHAPE`, which MUST differ (the two arms are
+    emitted at different rungs and that stamp's job is to say which). Its
+    own first run caught the second of those as a real difference, which is
+    the check working before it was taught the exception.
+  - **IT IS A CENSUS LINE, NOT A PIN, and never red on a verdict.** Pinning
+    either answer would go red on a compiler upgrade that changed nothing
+    about pcrec. It is red on exactly two things, both failures of the PROBE:
+    the witness stopping being frameless (the [MECH-REACH] shape — a witness
+    that stopped reaching its site), and a symbol table that cannot be read
+    or two arm-B spellings that disagree.
+  - **NON-VACUITY MEASURED AT LANDING, and it is the reason to trust either
+    verdict**: gcc 15.2.0 prints NEEDED (`rx_match_anchored` and
+    `rx_search_run` both out of line without the attribute — STEP 0's own
+    witness reproduced), `CC=clang` 21.1.8 prints REDUNDANT. A probe that
+    could only ever print one of its two answers would be worth nothing.
+
+- **run_entry_shape_identity.sh** + **entry_shape_driver.c** — [CC-DIFF]
+  STEP 2 (2026-09-04), the VM ENTRY-SHAPE LADDER'S ANSWER-IDENTITY GATE.
+  `--vm-entry-shape=1..4` (`docs/spec/tuning.md` §2.21) picks among four
+  emission shapes for the VM entry chain, and all four are supposed to be the
+  SAME MATCHER — the rung moves frames, canaries and body copies, never an
+  answer. Its own section, `make test-entry-shape-identity`, part of `make
+  test` and NOT of `make smoke`: `run_premul_table.sh`'s measured argument
+  (it emits and compiles 70 artifacts).
+  - **WHY IT IS A FILE AND NOT A SCRATCH SWEEP.** The write phase ran exactly
+    this comparison ad hoc — 14 patterns × 409 subjects, 0 mismatches — and
+    the run died with its scratchpad. The branch carried a CLAIM and not a
+    CHECK. What is committed can be re-run after the next change to the
+    emitter; what was run once cannot.
+  - **THE NON-VACUITY ARM IS PER WITNESS AND POSITIVE.** The ad-hoc sweep's
+    own report admitted three of its fourteen witnesses matched NOTHING, so
+    all three hashed to the all-nomatch digest and "agreed" across all five
+    shapes while testing the emitter and not one answer — `docs/dev/
+    learnings.md` §3's [MECH-REACH] shape exactly. The gate now REFUSES to
+    pass a witness whose AUTO arm produced no match.
+  - **AND THAT ARM IS WHAT REPAIRED THEM, over three runs.** `[0-9a-f]{32}`
+    and `(?<=foo)bar` really were vacuous in their SUBJECTS and were
+    re-subjected. **`(?>a*)ab` was not**: the gate reported it vacuous on the
+    new subjects too, which sent the pattern back for a reading — the atomic
+    star never gives back the `a` the following `a` needs, so its LANGUAGE IS
+    EMPTY and no subject set could have rescued it. Replaced by `(?>a*)b`.
+    The run before that found the other class: three witnesses belong to
+    modules that are OFF BY DEFAULT and were being REFUSED rather than
+    compared, so every emit is `--features all`.
+  - **THE SECOND ARM IS THAT THE RUNG REACHED THE EMITTER.** Five builds that
+    all ignored the flag agree with each other perfectly, so each build's own
+    `<PREFIX>_VM_ENTRY_SHAPE` stamp is read back from the emitted .c and the
+    run is RED unless all four tokens are realised somewhere in the table. It
+    is a CENSUS over the table and not a per-cell pin, because a framed
+    artifact legally falls to the nearest legal rung and pinning it to
+    `forward` would be wrong rather than strict.
+  - **THE STAMPS ARE GREPPED FROM THE .c, NOT `#ifdef`-ed IN THE DRIVER.**
+    The emitter writes them to the generated .c and not the paired .h, so a
+    driver `#ifdef`ing them would take its else-branch forever — a check must
+    not read a fact from a place that can quietly stop carrying it.
+  - **EVERY WITNESS IS `--engine=vm`.** The ladder only reaches VM artifacts;
+    under AUTO several of these patterns select the DFA engine and stamp no
+    rung at all, which would make the gate vacuous a second way.
+  - Landing figures: 14 witnesses × 5 shapes, rungs realised
+    plain/shared/forward/inline, 0 differences, every witness matching.
+
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
   `has_push` bool that wrote it. Its own section, `make test-codegen`, one

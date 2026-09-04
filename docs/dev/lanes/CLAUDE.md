@@ -150,6 +150,32 @@ never edited afterwards.
   (`foo\B` on `"xfoofoox"` answers `[]` against `[(1,4) (4,7)]`). The ladder
   and floor are designed, harnessed and rung-verified but NOT TIMED — the box
   was under hold at load 3.5-4.2 for the lane's whole write phase.
+- `ccd2_report.md` — [CC-DIFF] STEP 2 + [OPT-DIAL] STEP 0 (2026-09-04, lane
+  ccd2), written entirely under the box hold, so every number is a SINGLE
+  COMPILE and no ns/call was taken. The entry chain becomes a four-rung
+  ordinal (`plain`/`shared`/`forward`/`inline`) with a `limits.def` size
+  term, two stamps, a capability probe and the dial's inventory. Worth
+  reading for five things. §3.4 is the FINDING: rung `forward` has rung
+  `inline`'s object-code properties EXACTLY — no entry frame, no
+  stack-protector canary anywhere, no out-of-line chain symbol — at
+  0.50-0.61x its `.text` and gcc time over 20 artifacts with no exception,
+  so [CC-DIFF] STEP 1's six body copies were never what the mechanism
+  needed (three distinct call shapes, three copies). §2.1 is the
+  CORRECTNESS term the brief's framing did not have: "a frameless artifact
+  has nothing to bind" is FALSE — the TRAIL is storage a frameless artifact
+  can still write (`(abc)(def)` pushes nothing and saves two capture slots),
+  so forwarding through a zero-capacity descriptor would turn a match into a
+  `FRAMES` give-up. §3.3 is the qualification on rung `shared`: it does NOT
+  delete the canary, only moves it to the three `_in` entries, which is
+  structurally the shape STEP 0 measured at 0.986 (nothing) — so its run
+  time is genuinely open and §6 names it as the number the row turns on.
+  §6b is a BUILD DEFECT the change surfaced and fixed: `src/core/limits.def`
+  was not a Makefile prerequisite, so editing a limit rebuilt nothing and
+  one binary carried two values of one constant — the same defect the rule's
+  own comment records for `cls_bits.inc`, one file later. And §9 carries
+  [OPT-DIAL] STEP 0's count: four of twenty-one switches have a two-axis
+  measured rate, two are pure wins, fifteen are unmeasured — nearly always
+  on SIZE.
 - `w13_runsh_composed_path.patch` — W1.3.1's starting point: lane w13's written-but-UNRUN run.sh composed-block path (dropped from lane/w13 at the manager's ruling 2026-09-04 04:3x because run.sh is the most load-bearing script in the tree and it would have landed behind three merges and a battery without its own make test). The dropped commit was 464f2896 in the w13 worktree's reflog; the patch is the durable copy. Its contract choice (the target's prefix through flush_block's tail vs the CLI allowance W1.2 refused) is Frank's question; report §18.
 
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

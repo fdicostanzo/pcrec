@@ -235,6 +235,121 @@ PCREC_LIMIT(VM_ISL_BYTES_PER_NODE, 180, "bytes", "selection knee", NONE, "", "[E
 PCREC_LIMIT(VM_ISL_BYTES_PER_CHAIN_NODE, 98, "bytes", "selection knee", NONE, "", "[ENG-ISL]: measured marginal emitted-code bytes per AST node of the subtree vm_alt's serial chain would emit instead", EMIT_VM)
 PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-ISL]: how many times the chain's estimated emitted size the island may reach before it declines; on the ESTIMATOR the two populations separate at 2.60 against 4.02, and 2 is validated by the random size census (0 refused, max artifact growth 1.03x) rather than argued", EMIT_VM)
 
+/* [CC-DIFF] STEP 2 — THE ENTRY CHAIN'S SIZE TERM, and it is a POINT ON A
+ * MEASURED CURVE rather than a defect boundary.
+ *
+ * WHAT IT DECIDES. `pcrec_options.vm_entry_shape` AUTO (the default) reads
+ * this: a VM artifact whose emitted program is at or below it takes rung
+ * FORWARD (the matcher body inlined into the three `_in` entries, the three
+ * un-suffixed entries forwarding), one above it takes rung SHARED (one
+ * out-of-line body behind the same three forwards). The quantity compared is
+ * the VM program's own emitted SOURCE bytes — `job->vmsb.len` at the point
+ * the shape is chosen, stamped on every VM artifact as
+ * `<PREFIX>_VM_PROGRAM_BYTES` so the decision is auditable without the
+ * command line — and NOT a second analysis of the AST, for emit_vm.c's
+ * standing "one derivation" rule.
+ *
+ * THE VALUE IS SET AT A MEASURED GAP, AND THE GAP IS WHERE FORWARD STOPS
+ * BEING FREE. `.text` under rung FORWARD as a fraction of rung SHARED's, over
+ * 20 artifacts on this box (gcc 15.2.0 `-O2 -c`; the full table is
+ * docs/dev/lanes/ccd2_report.md §3):
+ *
+ *   program bytes    646    818   3,222   4,024 | 5,183   8,558  79,451  305,686
+ *   FORWARD/SHARED  0.62x  0.65x  0.89x   0.98x | 1.13x   1.45x   1.97x    3.15x
+ *
+ * Below about four kilobytes of program FORWARD is SMALLER than SHARED as
+ * well as structurally better; above it FORWARD starts paying for its two
+ * extra body copies and the price rises without bound. 4,096 sits inside the
+ * one measured gap the crossing falls in (4,024 at 0.98x, 5,183 at 1.13x).
+ *
+ * WHY THE LADDER'S TOP RUNG IS NOT THE DEFAULT ANY MORE. [CC-DIFF] STEP
+ * 1(a) shipped rung INLINE (six body copies). Measured, rung FORWARD has the
+ * IDENTICAL object-code properties — no entry frame, no `-fstack-protector`
+ * canary anywhere in the artifact, no out-of-line chain symbol — at almost
+ * exactly HALF the `.text` and half the gcc time, at every width from 646 to
+ * 305,686 program bytes (0.50x-0.61x, 20 artifacts, no exception). Six copies
+ * exist only because six entries each honour the attribute; there are three
+ * distinct call shapes, so three copies is what the mechanism actually needs.
+ *
+ * THE ns/call LADDER RAN, AND IT PUTS THIS NUMBER ON THE SIGN CHANGE OF THE
+ * TRADE ITSELF (2026-09-04, quiet box; load1 gated < 0.5 BEFORE every cell and
+ * REFUSING rather than warning; find-all over the bench's 131,072-byte
+ * t-128k-dense subject, isl1 §12.2's protocol reused so the numbers are
+ * comparable to the run-time arm already in evidence; 9 rounds x 3 INTERLEAVED
+ * runs per cell; the four rungs' answer CHECKSUMS identical in every cell).
+ *
+ * FORWARD against SHARED — the choice this term actually makes. `.text` delta
+ * and ns/call delta, and their ratio, which is what a size term is FOR:
+ *
+ *   prog     SHARED ns  FORWARD ns  d.text     bytes per ns/call saved
+ *      645       16.5        11.0     -552     PURE WIN (smaller AND faster)
+ *      646      197.0        98.3     -584     PURE WIN
+ *      818    2,980.1     1,132.3     -568     PURE WIN
+ *    3,222    7,244.2     2,834.2     -216     PURE WIN
+ *    4,024    8,937.1     3,265.2      -48     PURE WIN
+ *   ------------------------------------------ 4,096 sits HERE ------------
+ *    5,183    8,901.3     4,592.0     +288                       0.067
+ *    5,985   15,541.6    10,266.7     +320                       0.061
+ *    6,954   16,168.6     9,489.1     +440                       0.066
+ *    8,558   10,231.5     6,983.0   +1,208                       0.372
+ *   12,514   10,988.4     7,282.1   +2,176                       0.587
+ *   17,776   11,602.9     8,274.0   +3,456                       1.038
+ *   26,226   13,684.0     8,983.0   +5,912                       1.258
+ *   36,217   14,184.1     9,675.8   +7,856                       1.743
+ *   55,858   14,447.2    10,837.8  +12,208                       3.382
+ *   79,451   15,093.1    11,078.1  +17,408                       4.336
+ *  119,802   16,035.2    11,517.6  +31,816                       7.043
+ *  305,686   11,999.6     9,853.5 +102,272                      47.656
+ *
+ * THE SIGN CHANGES BETWEEN 4,024 (-48 BYTES) AND 5,183 (+288), AND 4,096 IS
+ * IN THAT GAP. Below it FORWARD is SMALLER than SHARED *and* 1.7x-2.7x faster,
+ * so a default that takes it trades NOTHING and any other choice is strictly
+ * worse. Above it FORWARD buys a real 1.2x-1.9x for `.text` at a rate that
+ * degrades SEVEN HUNDRED FOLD across the range — a genuine two-axis trade, and
+ * therefore a DIAL position rather than a default. That is what
+ * `--vm-entry-shape=3` exists for. THE VALUE IS CONFIRMED, and on a stronger
+ * basis than it was placed: the write phase had only the size crossing, and
+ * the run-time ladder shows that crossing IS the pure-win boundary.
+ *
+ * THE OTHER TWO RESULTS, both open questions this comment asked.
+ *
+ * (1) FORWARD IS WITHIN NOISE OF INLINE — 0.979x-1.016x on sixteen of the
+ * seventeen valid cells, and FASTER at 305,686 bytes (0.979x) at half the
+ * `.text`, which is the three-copies-not-six finding arriving on the run-time
+ * axis. So by ruling 2's stated rule FORWARD IS THE DEFAULT and INLINE is the
+ * dial's max-speed rung. THE FOURTEENTH IS STATED RATHER THAN AVERAGED AWAY:
+ * at prog 645 INLINE is a measured 7% ahead (10.24 against 10.99, the two
+ * cells' round ranges barely overlapping) for +632 bytes of `.text`. That rung
+ * now has a measured rate at the small end instead of an assumption.
+ *
+ * (2) SHARED IS AT PLAIN'S RUN TIME — 0.993x-1.003x on fifteen of seventeen.
+ * Exactly as STEP 0's 0.986 predicted for "elide the buffers without
+ * inlining": moving the canary off three entries and re-paying one call is
+ * not the mechanism. (Two small cells read 0.913x and 0.578x; the second one's
+ * PLAIN rounds span 186-399 against SHARED's 195-197, so the two agree at
+ * their MINIMA and that ratio is the noise in PLAIN's distribution rather than
+ * a SHARED win. Neither is read as a result.) SO THE TERM IS NOT CHOOSING HOW
+ * MUCH OF THE WIN AN ARTIFACT GETS: it is FORWARD OR NOTHING, because the rung
+ * an artifact above the term falls to is at the unoptimised run time.
+ *
+ * THREE CELLS WERE RUN AND ARE EXCLUDED AS VACUOUS, and the harness detected
+ * them rather than the author noticing: `[0-9a-f]{32}`, a 16-byte literal and
+ * an IPv4 shape each make ONE call per pass and match nothing on this subject,
+ * so each measures the SCAN and not the entry chain. One call per pass is the
+ * ladder's [MECH-REACH] shape and such a cell is named, never quoted.
+ *
+ * WHAT THIS HANDS [OPT-DIAL] STEP 1, and ruling 5's ALLOWLIST demands exactly
+ * this before a profile may set the switch: the rate column above. Its shape
+ * says a `--tune=speed` profile should RAISE this term into the 8-13 kB region
+ * rather than remove it — the cells just above 4,096 are the cheapest wins
+ * anywhere in the table (0.061-0.067 B/ns, five times better than the next
+ * cell up), while 305,686 at 47.7 B/ns is not a position any profile should
+ * take by default. Raising the DEFAULT was deliberately NOT done here: it
+ * would make a size-sensitive build regress with no flag passed, and whether a
+ * default may trade size for speed is a policy question rather than a
+ * measurement. The measurement is here; the ruling is the manager's. */
+PCREC_LIMIT(VM_INLINE_CHAIN_MAX_BYTES, 4096, "bytes", "selection knee", FLAG, "", "[CC-DIFF] STEP 2: emitted VM program bytes at or below which the entry chain is inlined into the three _in entries (rung FORWARD); above it one shared out-of-line body (rung SHARED). --vm-entry-shape=N overrides the decision outright", EMIT_VM)
+
 /* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
 
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)
