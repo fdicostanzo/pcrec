@@ -21058,3 +21058,16 @@ the exporter rules), DONE + WINDOW OPEN, lim2's lift.
 Part 56 correction (09:25): the first launch was refused —
 scripts/battery.sh had no execute bit (never run before); fixed and
 committed, relaunched; LOGDIR build/battery_20260904_092529.
+
+## 2026-09-04 — Fifty-first session, part 57 (10:5x EDT): the battery's test/strict/axes GREEN (san running); the NEXT WAVE launched write-only under .hold while it runs — ccd2 ([CC-DIFF] STEP 2 + [OPT-DIAL] STEP 0), edge2 ([OPT-EDGE] STEP 1.1 + ladder + floor), form0 ([FORM-CHAR]/[OPT-CLSPACK] STEP 0)
+
+battery_v5 on main: test rc=0 at 09:45 (20 min at -j4/PROCS=3), strict
+rc=0, axes rc=0 at 10:36 (paired PROCS=12; 0 mismatches), san started
+10:36 (34 scripts, -P4). Frank approved the wave at 08:4x and lanes
+under .hold need no box, so all three launched at 10:5x with the
+standard brief (scope mandate, toplevel check, .hold/.lift/.hold-
+revoke, rulings by file, .stage, own keepalive crons at :47/:53/:59,
+timing post-lift on a quiet box, no abi bump — the manager assigns at
+merge). lim2 idles on :41. Briefs carry the r53 lessons (a check must
+not share a source with what it controls; the population must contain
+the shape) and edge1's ladder lesson (branch-vs-main isolation).
