@@ -20592,3 +20592,27 @@ needs a post-composition deferred-reference kind). RULED: flat-import
 rows keep ref (provenance) and the sort/count key becomes SCOPE (caller
 scope = own + flat imports = the nnames prefix; site scope above), so
 §6's bsearch is unchanged. w13 re-arms its cron; third for suites.
+
+## 2026-09-03 — Fifty-first session, part 34 (20:5x EDT): isl1's heavy stages DONE — 22/22 axes answer-identical, the identity gate's (A) moves for the first time and is excused by an exact biconditional, abi 18 written (9bc7723); timing window granted
+
+isl1: test-axes 2787 s wall, all 22 axes identical (the new
+`-fno-alt-island` bit 23 joined with no edit: 22407/22407 agree, 0
+mismatches; the oracle cross-check OK; tuning.md §2.20 satisfied the
+doc cross-check). tests/island 19/19 first run. test-registry 608 PASS
+after the axis-coverage pin 93 → 96 (+3: an activity COUNT stamp gains
+no value-set pair, RX_ALTCLS_FACTORED's shape). THE GATE FINDING:
+comparison (A) of the identity gate moves for the first time in its
+history — every previous bump sat above `goto <prefix>_L0;` (stamps,
+entry chain, tables, prefilter); the island IS that region. No
+allowance: an IFF — a moved region is excused only where the artifact's
+own RX_VM_ALT_ISLANDS > 0; an artifact stamping an island whose region
+did NOT move FAILS; a non-vacuity floor on the bucket. Measured on all
+four axes: differing 0, island-stamped-unmoved 0, island-moved 166 /
+236 / 166 / 123. abi 17 → 18 across all eight readers in one commit
+(9bc7723) with the FILEPIN re-pin as a src-free follow-up; (B)'s pin
+names the lane commit and is re-pinned to the merge commit by the
+manager. Open: the [ART-SIZE] §9 bracket (the witness pool, ruled).
+The manager's watchdog would have lifted edge1 on `abi-ritual` while
+isl1 still owed its timing — caught by reading isl1's message against
+the .stage file; the trigger is now `timing-done`/`pool`/`DELIVERED`
+and isl1 times on the quiet box first (load1 0.98 → < 0.5).
