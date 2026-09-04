@@ -483,26 +483,31 @@ check was paying that whole cost before refusing. `src/ir/dfa.c`'s
 worklist loop now tracks the EXACT text size its own transition table
 is accumulating, folds in the (cheap, built-and-minimized first)
 reverse machine's own exact finished table size as a head start, and
-refuses with the SAME diagnostic template this section documents the
-moment the running total proves the cap will be exceeded — see
-`pcrec_build_dfa`'s `size_bail`/`size_bail_headstart` parameters for the
-mechanism and docs/dev/lanes/lim2_report.md for the design note. The
+refuses the moment the running total proves the cap will be exceeded —
+see `pcrec_build_dfa`'s `size_bail`/`size_bail_headstart` parameters for
+the mechanism and docs/dev/lanes/lim2_report.md for the design note. The
 refusal set is unchanged (a pattern that compiles today still compiles;
 a pattern refused today is still refused, for the same reason) and nothing
 is written either way, exactly as before — what moves is WHEN the total
-cap can prove itself, not WHICH patterns it catches. **One quoted figure
-does change**: the `%zu bytes of emitted C source` this section's own
-example quotes is the machine's TRUE final size when the post-emission
-check is the one that fires (every route besides the DFA total cap, and
-the DFA total cap itself whenever the early bail's own margin does not
-prove the cap crossed before construction finishes); on the DFA route,
-when the EARLY bail is the one that fires, it is the running total at
-the point of refusal — necessarily somewhat SMALLER than the artifact's
-true final size would have been, since construction stopped before
-reaching it. Both are honest, computed byte counts and both name the
-same limit; the number's PRECISE meaning (final vs. proven-so-far) is
-not currently surfaced to the caller beyond the message text itself —
-flagged as an open question in the design note.
+cap can prove itself, not WHICH patterns it catches.
+
+**The DIAGNOSTIC WORDING deliberately DIFFERS by which check fires,
+because one number is exact and the other is not** (manager's ruling,
+2026-09-04). Where the POST-EMISSION check fires (every route besides
+the DFA total cap, and the DFA route whenever the early bail's own
+margin does not prove the cap crossed before construction finishes),
+the message is unchanged: `"pattern too large: N bytes of emitted C
+source (limit L, ~K KB .o) ..."`, `N` the artifact's TRUE final size.
+Where the DFA route's EARLY bail is the one that fires, the message is
+`"pattern too large: projected at least N bytes of emitted code (limit
+L) ..."` — `N` the running total at the point of refusal, necessarily
+SMALLER than the artifact's true final size would have been (construction
+stopped before reaching it), and worded to say so rather than claim a
+precision the early figure does not have (D26 tier 3: this is pcrec's
+own diagnostic, not a PCRE2 one). Both stamp the SAME refusal category
+(`cx->size_cap_refused`/`_bytes`/`_limit`); only the human-readable text
+and the `.o`-size estimate (calibrated against a final total, so dropped
+from the early wording) differ.
 
 The CODE cap, `PCREC_MAX_VM_EMIT_CODE_BYTES`, is UNCHANGED by [LIM-2]:
 it exists only on a VM artifact (below), which [LIM-2]'s DFA-route bail

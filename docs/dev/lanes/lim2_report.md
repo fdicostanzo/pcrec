@@ -163,11 +163,13 @@ run_lim2_sizecap_projection.sh` uses.
 ### Verdict/reason parity, refused patterns
 
 `w-2048`, `s-4096`, `s-2048`, `sh1-512` — before and after both refuse,
-both cite `"pattern too large: ... bytes of emitted C source (limit
-...)"`. The quoted BYTE FIGURE differs between before/after exactly where
-the early bail actually fires (`w-2048`, `s-4096` — see §6 for the
-disclosed reason) and is IDENTICAL where it does not (`s-2048`,
-`sh1-512`).
+same stamped category either way. §5's table was measured before the
+wording ruling (§6) landed, so its "after msg bytes" column shows the
+OLD same-template wording with a smaller number; post-ruling, `w-2048`
+and `s-4096` (where the bail fires early) now read `"projected at least
+N bytes of emitted code"` instead, while `s-2048` and `sh1-512` (where
+it does not fire) are BYTE-FOR-BYTE identical to "before", wording
+included, since they fall through to the unchanged late check.
 
 ### Byte identity, accepted patterns
 
@@ -179,55 +181,57 @@ is worth recording as a methodology note): `floor`, `w-8`, `sh1-64`,
 `cnt-64`. This is a MANUAL, one-time sweep (not `make test`, not a
 suite — the hold forbids both); the corpus-wide version is a `.lift` item.
 
-## 6. The disclosed diagnostic-text deviation
+## 6. The diagnostic wording — RULED (manager, 2026-09-04, lim2_rulings.md item 2)
 
 The charter asked for "the SAME stamped reason and diagnostic the
-post-emission check gives today." Delivered: the SAME message TEMPLATE,
-the SAME two stamped fields (`cx->size_cap_refused`/`_bytes`/`_limit`,
-never `cx->dfa_overflowed` — that field means "too many STATES", a
-different refusal), and the SAME category of refusal (total-cap). **NOT
-delivered: byte-for-byte identical text**, because the early bail does
-not know the artifact's true final size — construction stopped before
-reaching it. The quoted `%zu bytes of emitted C source` figure is the
-running total (headstart + forward's own raw bytes so far) at the moment
-of refusal: a real, honestly-computed number, always LESS than the true
-final total would have been, and always still over the cap it names. §5's
-table shows both cases (differs when the bail fires early; identical when
-it does not). Whether this is acceptable, or whether the manager wants a
-different wording that does not claim a byte count at all, is flagged for
-ruling — I did not invent new wording without a steer, per D26's "the
-wording is ours, identity is the point."
+post-emission check gives today"; the correction is that the byte figure
+an early refusal has is partial, so the wording should say so rather than
+imitate an exact one. **Ruled and implemented**: the two stamped fields
+(`cx->size_cap_refused`/`_bytes`/`_limit`) and the refusal CATEGORY are
+unchanged and identical either way (never `cx->dfa_overflowed` — that
+field means "too many STATES", a different refusal). The TEXT now
+differs by which check fires:
 
-## 7. Open items needing the manager's ruling
+- post-emission (every route besides the DFA total cap, and the DFA
+  route whenever the bail's margin does not prove the cap crossed
+  early): unchanged, `"pattern too large: N bytes of emitted C source
+  (limit L, ~K KB .o) ..."`, `N` the artifact's true final size.
+- DFA route, early bail fires: `"pattern too large: projected at least
+  N bytes of emitted code (limit L) ..."` — `N` the running total at
+  the point of refusal, always less than the true final size would have
+  been, `.o`-size estimate dropped (it is calibrated against a final
+  total). Measured live: `pcrec: pattern too large: projected at least
+  1256802 bytes of emitted code (limit 1000000). ...` on the §5
+  synthetic witness.
 
-1. **The `BAIL_KEEP_PCT = 85` margin** (§4) — measured on two witnesses,
-   generous relative to both, but not a proof. Ruling: accept as
-   provisional pending a corpus-wide shrink-ratio sweep post-lift, or
-   specify a different derivation.
-2. **The quoted byte figure's meaning** (§6) — real but partial when the
-   bail fires early. Ruling: acceptable as-is, or reword.
-3. **"put it in the reject-table's section"** — I read this as the
-   REFUSAL-IDENTITY idiom generally (this project has one, in
-   `tests/resource/run_resource_tests.sh`'s existing "sizecap" section),
-   not literally `tests/reject/` (which is specifically about SYNTAX
-   rejection — a different mechanism, unrelated cap). Delivered as a new
-   file, `tests/resource/run_lim2_sizecap_projection.sh`, wired into
-   `test-resource` (and so `make test`) via one new `Makefile` line.
-   Ruling: confirm the interpretation, or redirect.
-4. **Scope of `size_bail`** — forward-table-engine build only, not
-   reverse, not ENG_ATTEMPT/goto, not the anchored machine (§1). The
-   anchored machine in particular COULD in principle also be expensive
-   for some pattern shape (build_anchored_dfa reconstructs a forward-style
-   machine); no measured witness in this lane's sample showed it costing
-   meaningfully more than a few ms, so D77 says wait for a measurement,
-   not build it now. Ruling: agree, or name the measurement that would
-   charter it.
-5. **`s-2048`/`sh1-512`-shaped patterns get no benefit** (§5) under the
-   current margin. If the manager wants the bail to reach these too, the
-   margin needs to move closer to the measured worst case (less safety
-   headroom) or the projection needs a third term (e.g., an EXACT
-   accept-table/scaffolding estimate, not just the transition table) —
-   both are real follow-on work, not done tonight (D77).
+`docs/spec/limits.md` §8 has the spec hunk; `tests/resource/
+run_lim2_sizecap_projection.sh` asserts the EARLY wording specifically
+(a witness that refused via the late wording instead would mean the
+bail did not fire — the check's own signal for that regression, not a
+pass).
+
+## 7. Rulings received (manager, 2026-09-04, docs/dev/lanes/lim2_rulings.md)
+
+1. **The `BAIL_KEEP_PCT = 85` margin is PROVISIONAL until a population
+   proves it.** Ruled: the acceptance is a CENSUS built into the check
+   script, post-lift (it needs the corpus) — per machine, over the whole
+   corpus and the bench's altwide set, record raw table size vs. minimized
+   table size, and ASSERT the margin exceeds the measured MAX forward
+   shrink by at least 2×, RED with the distribution table otherwise. If
+   the census ever finds a shrink the current margin does not clear, the
+   margin moves to the census's number — never the reverse. Not yet
+   built (needs `.lift`); §9 below is now sequenced around it.
+2. **The diagnostic wording** — ruled and implemented, §6 above.
+3. **`tests/resource` is the right home** — confirmed; no change needed.
+4. **`size_bail`'s scope (forward table-engine build only)** — accepted
+   per D77. The unmeasured machines (reverse, ENG_ATTEMPT/goto, the
+   anchored machine) stay this row's named follow-on list, not built.
+5. **`s-2048`/`sh1-512` (no benefit under the current margin)** — ruled
+   OUT OF THIS STEP: filed as **[LIM-2] STEP 2 — an accept-table
+   projection term**, with §5's numbers as its own starting measurement.
+   Not built tonight; `docs/dev/plan.md`'s [LIM-2] row should gain a
+   STEP 2 sub-line when that work actually begins (per this repo's own
+   convention: expand into substeps only when work starts).
 
 ## 8. Delivery bar checklist
 
@@ -251,15 +255,27 @@ wording is ours, identity is the point."
 - [ ] `make test` / `make test-codegen` / `make test-registry` — post-lift
       items, per the brief's own phasing.
 
-## 9. What's next (post-`.lift`)
+## 9. What's next (post-`.lift`) — sequenced per lim2_rulings.md
 
 1. `make test` in the background, poll the log (never foreground-block).
-2. Run `tests/resource/run_lim2_sizecap_projection.sh` for real.
-3. `make test-codegen`, `make test-registry`.
-4. A corpus-wide + altwide-wide before/after sweep (the manual one here
-   was 15 witnesses; the real check should be all of `bench/altwide` plus
-   a representative corpus slice) to validate or refute §4's margin.
-5. `make test-axes` only if the manager's lift message asks for it — this
+2. **Build the census (ruling item 1)** into `tests/resource/
+   run_lim2_sizecap_projection.sh`: per DFA machine, over the whole
+   corpus and the bench's altwide set, raw table size vs. minimized
+   table size; assert `BAIL_KEEP_PCT`'s margin exceeds the measured MAX
+   forward shrink by ≥2×, print the distribution, RED with the table
+   otherwise. If it finds a shrink the margin does not clear, move the
+   margin to the census's number and re-measure §5's timings (a tighter
+   margin fires later, so the wins could shrink — report the real
+   numbers, not the ones in this note).
+3. Run `tests/resource/run_lim2_sizecap_projection.sh` for real, census
+   included.
+4. `make test-codegen` — per the ruling, this is where the reverse-first
+   build reorder's OWN acceptance lives: the identity gate proves every
+   accepted artifact byte-identical, which is the real check on the
+   reorder (§5's 11-pattern manual sweep was a spot check, not this).
+5. `make test-registry`.
+6. `make test-axes` only if the manager's lift message asks for it — this
    lane's own view (§7 item 4's D77 answer) is that no new axis is needed
    since the projection changes no accepted artifact's bytes; open to
    correction.
+7. Report final; DELIVERED.

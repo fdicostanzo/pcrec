@@ -1475,13 +1475,25 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                     cx->size_cap_refused = true;
                     cx->size_cap_bytes = (unsigned long long)bail_bytes;
                     cx->size_cap_limit = bail_cap;
+                    /* [LIM-2] DELIBERATELY NOT the late check's wording
+                     * (compile.c's "%zu bytes of emitted C source ...").
+                     * `bail_bytes` here is `bail_bytes - size_bail_headstart`
+                     * is NOT the true final total -- construction stopped
+                     * before reaching it -- and a number spelled the same
+                     * way as an exact one would claim more precision than
+                     * this call has. Manager's ruling (lim2_rulings.md,
+                     * 2026-09-04): say "projected at least", not "bytes of
+                     * emitted C source", and drop the ~KB .o estimate (that
+                     * conversion is calibrated against a FINAL total too).
+                     * Same stamped category either way -- see the two
+                     * fields just above. */
                     ctx_fail(cx, 0,
-                             "pattern too large: %zu bytes of emitted C source "
-                             "(limit %llu, ~%zu KB .o). Lower a repeat count, try "
-                             "--unroll=1, or raise --max-emit-bytes; see "
-                             "limits.md \"Handling an oversized artifact\"",
-                             (size_t)bail_bytes, bail_cap,
-                             (size_t)(bail_bytes * 17 / 100 / 1024));
+                             "pattern too large: projected at least %zu "
+                             "bytes of emitted code (limit %llu). Lower a "
+                             "repeat count, try --unroll=1, or raise "
+                             "--max-emit-bytes; see limits.md \"Handling an "
+                             "oversized artifact\"",
+                             (size_t)bail_bytes, bail_cap);
                 }
             }
         }

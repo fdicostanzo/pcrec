@@ -28,14 +28,20 @@
 #   1. A SELF-CONTAINED (no pcrec-bench dependency; deterministically
 #      python3-generated, matching this suite's own oracle-verification
 #      convention) wide-alternation witness, sized to comfortably cross
-#      the default total cap, still REFUSES with the SAME diagnostic
-#      template every other cap-refusal in this file pins against
-#      ("pattern too large: ... bytes of emitted C source ... limit ...").
-#      This is a REFUSAL-IDENTITY pin, same shape as this file's existing
-#      sizecap section — it is deliberately NOT a byte-for-byte figure pin
-#      (that number is a function of this witness's own random seed and
-#      this box's exact build; pinning it would be a control sharing a
-#      source with what it controls, K35's own shape).
+#      the default total cap, still REFUSES with the EARLY-BAIL diagnostic
+#      ("pattern too large: projected at least ... bytes of emitted code
+#      ... limit ..." — manager's ruling, docs/dev/lanes/lim2_rulings.md
+#      2026-09-04: "projected at least N bytes" rather than the LATE
+#      check's "N bytes of emitted C source", because the early figure is
+#      partial and D26 tier 3 says our own wording should say so). This is
+#      a REFUSAL-IDENTITY pin, same shape as this file's existing sizecap
+#      section — it is deliberately NOT a byte-for-byte figure pin (that
+#      number is a function of this witness's own random seed and this
+#      box's exact build; pinning it would be a control sharing a source
+#      with what it controls, K35's own shape). A witness that refused
+#      with the LATE check's wording instead would mean the early bail did
+#      not fire on it — see check 2, which is this script's real signal
+#      for that.
 #   2. THE COST CLAIM ITSELF: the refusal must complete within a WALL-TIME
 #      CEILING far below what construction-to-completion costs for a
 #      witness this size (measured on the design note's own altwide
@@ -119,10 +125,12 @@ rc=$?
 t1=$(date +%s.%N)
 wall=$(awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.2f", b-a}')
 
-if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
-    ok "the witness refuses with the standard total-cap diagnostic: $(printf '%s' "$log" | head -1 | cut -c1-100)"
+if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'projected at least .* bytes of emitted code'; then
+    ok "the witness refuses with the early-bail diagnostic: $(printf '%s' "$log" | head -1 | cut -c1-100)"
+elif [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
+    bad "the witness refused via the LATE total-cap check, not the early bail -- the projection did not fire on this witness (a regression, or the margin moved): $log"
 else
-    bad "the witness did not refuse with the standard diagnostic (rc $rc): $log"
+    bad "the witness did not refuse with either size-cap diagnostic (rc $rc): $log"
 fi
 
 # THE COST CLAIM. awk's float compare rather than bash's integer one --
