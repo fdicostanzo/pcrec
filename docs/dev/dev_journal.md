@@ -20992,3 +20992,14 @@ which is ruled OPTION 1 (the harness carries the target's prefix).
 [CC-DIFF] STEP 2 scheduled into the next wave. NEXT WAVE after [LIM-2]
 approved: A′ [CC-DIFF] STEP 2 + [OPT-DIAL] STEP 0; B′ [OPT-EDGE] STEP
 1.1 + the ladder and floor; C′ [FORM-CHAR]/[OPT-CLSPACK] STEP 0.
+
+## 2026-09-04 — Fifty-first session, part 54 (08:5x EDT): Frank clarifies "exported" (link-visible or in the .h) and asks for the two-header test — measured: two artifacts' headers in one TU compile clean under -Werror today
+
+`-p rx` and `-p zz` artifacts, one TU including both headers, gcc
+-Wall -Wextra -Werror: rc 0. Why: every type and entry is prefixed;
+the shared constants (PCREC_ERR_*, PCREC_UNSET, PCREC_ENGINE_*) are
+byte-identical #defines in both headers, which C allows. That property
+is unpinned — [PFX-1] STEP 0 gains a codegen check (two headers, one TU,
+-Werror, and a byte-identity pin on the shared block) and weighs
+Frank's shared constant header against APPROACH's self-containment
+promise. D96 addendum records his wording.

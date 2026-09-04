@@ -6601,3 +6601,20 @@ flush_block sites are the known ones). An abi event when it lands (D76/
 D94). Consequence for W1.3.1: option 1 (the harness carries the target's
 prefix) is confirmed, and it shrinks to the exported names once [PFX-1]
 lands — sequence [PFX-1] STEP 0 before W1.3.1's build.
+
+**D96 addendum (08:5x EDT, Frank):** "exported" means (1) visible beyond
+the .c file's compilation — through linking — or (2) in the .h file. And
+a SHARED, CONSTANT higher-level header for the items that are true across
+every artifact (the `PCREC_ERR_*` codes, `PCREC_UNSET`, `PCREC_ENGINE_*`,
+any common types) is to be CONSIDERED, with the question "can a user
+include two artifacts' .h files in one translation unit without conflict?"
+TESTED. Measured at once (manager, two artifacts `-p rx` / `-p zz`, one TU
+including both headers, `gcc -Wall -Wextra -Werror -c`): COMPILES CLEAN
+today — every type and entry is prefixed and the shared constants are
+byte-identical `#define`s in both headers, which C permits (identical
+redefinition). So the mechanism that keeps two headers compatible today
+is "the shared block is emitted identically everywhere", unpinned. [PFX-1]
+STEP 0 gains: (a) a codegen check — two artifacts, one TU, -Werror, plus a
+pin that the shared block is byte-identical across artifacts; (b) the
+shared-header option weighed against APPROACH's self-containment promise
+(a second file the consumer must carry vs identical duplicated blocks).
