@@ -2407,6 +2407,88 @@ compiles under `--engine=vm` where no DFA scan exists — but on the default and
 COMPUTED GOTO. Measured: `(?m)^(a|b)$` carries six `goto *`, every one in
 `rx_prefilter`, none in the VM program.
 
+## [OPT-EDGE] STEP 1 — THE SHARED SENTINEL: the edge dispatch costs the generic path nothing (2026-09-03)
+
+`docs/dev/plan.md`'s `[OPT-EDGE]` row is the charter and carries Frank's
+ruling; `docs/spec/tuning.md` §2.18 is the contract. `src/opt/scanedge.c`
+supplies the renumbering; what lives here is the loop.
+
+**THE MEASURED NEED.** `[OPT-5]` emitted every scan edge as its own
+`if (state == HEAD && more && class_test)` block ON THE LOOP'S GENERIC PATH,
+so a machine with N edges paid N compares per byte whether or not any edge
+could fire. iso-ts emits 8 in `rx_search` and 4 in `rx_match`, and the bench's
+`pcrec-auto` vs `pcrec-auto-noedge` counterfactual sized that at **x1.089 at
+the pinned tier**.
+
+**THE MECHANISM IN ONE SENTENCE.** The loop ALREADY paid one state test per
+iteration — `if (<p>_<m>_is_dead(state)) break;` — so the edge heads are made
+to share THAT test: `scanedge.c` renumbers them to the machine's TOP rows,
+`token_stop` emits `<p>_<m>_is_stop(s)` as `(unsigned)s >= FLOOR` (one compare
+for dead-or-head under BOTH representations, because dead is above every live
+cell either way), and the edge blocks move onto a path reached only from that
+test. The generic path carries NO per-edge compare.
+
+**NO TABLE BASE BIAS.** Frank's ruling sketched biasing the base so negative
+sentinel ids still index their rows; putting the heads at the TOP of the row
+space discharges the same requirement — "a head must remain a valid table
+row", because the ordinary step still reads its row for every class but its
+own — with a bias of ZERO. Nothing about the table's layout, its cell values
+or its dead sentinel moved.
+
+**THE EMITTED SHAPE, and the two things about it that are not obvious.**
+
+```c
+for (;;) {
+    A                                    /* the accept probe */
+    B                                    /* the prefilter, UNLESS s0 is a head */
+    C                                    /* the stay skips */
+  <p>_<m>_scan_views:
+    E; F; G                              /* view select, viewed probe, bound+step */
+    if (!<p>_<m>_is_stop(state)) continue;
+    if (<p>_<m>_is_dead(state)) break;
+  <p>_<m>_scan_edge:                     /* emitted ONLY where s0 is a head */
+    A                                    /* replayed: the head's own accept */
+    B                                    /* only where s0 is a head — MOVED, not copied */
+    D                                    /* the edge if-chain, TEXT UNCHANGED */
+    goto <p>_<m>_scan_views;
+}
+```
+
+- **The generic path leaves through `continue`, not through a fall-through**,
+  and that is what keeps the instruction count identical to the old dead test:
+  `cmp; jb .Ltop` is the same shape `cmp; jne .Ltop` was, and gcc still uses it
+  as the loop's back edge.
+- **The prefilter MOVES rather than being replayed.** It fires at `s0` and
+  nowhere else (`pf_open` writes that guard), so where `s0` is itself a head
+  the generic path can never hold `s0` and a copy there would be a compare
+  that is never true. `dfa_start_is_scan_head` is the ONE predicate both that
+  placement and the loop's entry jump read. The stay skips are not replayed at
+  all, because `pick_skip_states` declines every state carrying an edge — and
+  `dfa_form_derive` now CHECKS that disjointness rather than citing it.
+
+**TWO `-Werror` DEFECTS THE LANE'S OWN SWEEP FOUND, both in emitted C, both
+invisible to an answer check.** (1) The `scan_edge` label is reached by
+FALL-THROUGH from the stop test, so on the (common) artifact whose start state
+is not a head nothing `goto`s it: `-Werror=unused-label`. It is emitted only
+where the loop's entry jumps to it. (2) A machine ALL of whose states are
+heads has `FLOOR == 0`, and `(unsigned)s >= 0u` is `-Werror=type-limits`;
+`is_stop` folds to the constant there, the way [CC-DIFF] folds a uniform
+table. Generated C is compiled `-Wall -Wextra -Werror` by the harness and by
+callers, so both were hard errors on real corpus shapes.
+
+**WHAT DOES NOT MOVE.** `is_dead` — same name, same body, same exact meaning,
+so the dead/which-edge split off the generic path is an EXISTING predicate and
+not a second one to keep in step. The stamps: `RX_DFA_SCAN_EDGE` names axis
+I's body form and `RX_DFA_TABLE` names the representation, and neither names a
+state number, a layout or a sentinel. And every artifact with NO scan edge —
+which includes every `-fno-scan-edge` build — is byte-identical to the
+pre-[OPT-EDGE] compiler's, measured 17/17 on the flag axis.
+
+**THE NEXT RUNG IS NOT THIS ONE.** `PCREC_MAX_SCAN_EDGES` (4) was a HOT-PATH
+budget and is now an emitted-bytes budget; the minimum-chain floor above
+`m >= 2` is measured on THIS loop, never on the old one (the row's SEQUENCING
+ruling). Neither number was re-chosen here (D77).
+
 ## [CC-DIFF] STEP 1 — THE TWO EMITTED-CODE SPELLINGS (2026-09-03), abi 16 -> 17
 
 [CC-DIFF] STEP 0 (`docs/dev/ccdiff_step0.md`) explained the bench ledger's

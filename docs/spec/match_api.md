@@ -156,8 +156,9 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `18`
-([ENG-ISL] STEP 1, the VM's alternation island: a flat alternation whose
+events but never stated the general rule; `rx_info.abi` is `19`
+([OPT-EDGE] STEP 1, the shared-sentinel scan-edge dispatch, atop
+[ENG-ISL] STEP 1's `18` — the VM's alternation island: a flat alternation whose
 language is a finite literal set is emitted as a trie dispatch rather than
 `vm_alt`'s serial resume chain, with its `<PREFIX>_VM_ALT_ISLANDS` count —
 the FIRST bump to move the VM PROGRAM region itself, atop
@@ -1695,8 +1696,24 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `18` on every artifact today ([ENG-ISL] STEP 1 bumped
-  it from 17 with the VM's ALTERNATION ISLAND.** A flat alternation whose
+- **`rx_info.abi` is `19` on every artifact today.** [OPT-EDGE] STEP 1 took
+  it from `17` (18 is [ENG-ISL] STEP 1's, which merges first): on any DFA
+  machine carrying a SCAN EDGE the edge heads are renumbered to the machine's
+  TOP rows, the machine emits one extra accessor `<prefix>_<m>_is_stop`
+  (folded to the constant `1` where every state is a head), the loop's ONE
+  per-iteration state test now answers "dead OR a head", and the per-edge
+  `if (state == HEAD && …)` blocks move off the generic path onto an edge
+  path reached only from that test. So an edge-bearing machine's emitted
+  state NUMBERS move, and an artifact with NO scan edge — which includes
+  every `-fno-scan-edge` build — is byte-identical to abi 17. A new
+  precondition (8) also refuses a head that any SEED family names, which
+  costs 11 of 2,539 corpus artifacts an edge (10 of them all of theirs, every
+  one a `\b`/`\B` pattern) and moves those artifacts'
+  `<PREFIX>_DFA_SCAN_EDGE` to `"none"`. No answer moves on any of it;
+  `docs/spec/tuning.md` §2.18 is the contract.
+
+  **The `18` it replaces was [ENG-ISL] STEP 1's, the VM's ALTERNATION ISLAND
+  (bumped from 17 the same day).** A flat alternation whose
   whole subtree matches a finite set of literal byte strings is lowered as a
   TRIE over those strings' bytes — a byte compare at a node with one child, a
   `switch` at a node with several, one try site per node where an alternative

@@ -664,6 +664,29 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # paragraphs up ("the pin must always name the change's LAST src commit")
 # true of a lane that writes its own bump. The manager re-pins to the MERGE
 # when it lands, exactly as at every bump before this one.
+#
+# [OPT-EDGE] STEP 1, 2026-09-04 — abi 17 -> 19 (18 is [ENG-ISL] STEP 1's, which
+# merges first): the SHARED-SENTINEL SCAN-EDGE DISPATCH. On any DFA machine
+# carrying a scan edge the edge heads are renumbered to the machine's TOP rows,
+# one extra accessor `<prefix>_<m>_is_stop` is emitted, the loop's one
+# per-iteration state test answers dead-or-head, and the per-edge blocks move
+# off the generic path — so whole-file bytes move on every edge-bearing
+# artifact and (B) re-pins. An artifact with NO scan edge is byte-identical to
+# abi 17.
+#
+# (A) IS UNTOUCHED BY THIS ONE TOO, and for the same structural reason the
+# paragraph above gives about spelling (b): `prog_region()` extracts only
+# `goto <p>_L0;` through `<p>_accept:`, the VM's own program, and everything
+# [OPT-EDGE] emits lives inside `pcrec_emit_dfa_engine` — which for a HYBRID is
+# called from emit_vm.c's prefilter block ABOVE that marker, and which a
+# non-hybrid DFA artifact reaches with no `goto <p>_L0;` in the file at all, so
+# `prog_region()` returns empty on both sides. K43 (b) would have moved
+# `<prefix>_run_state_init`, also above the marker; it was DROPPED from this
+# event on measurement and moves nothing now.
+#
+# THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, not this lane's — the lane
+# leaves it at the previous pin, because a pin must name a commit reachable
+# after the merge and a lane branch's is not (opt5i's and ccdiff1's precedent).
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cee7c741}"
 
 WORKDIR="$(mktemp -d)"

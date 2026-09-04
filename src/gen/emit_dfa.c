@@ -1600,7 +1600,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * above the program, or DFA-side text, none of which is inside that
      * region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 18,\n");
+    sb_puts(c,   "    .abi = 19,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -3587,6 +3587,64 @@ static void token_step(StrBuf *c, const DfaForm *f, const char *cell_type,
                  "{ return %s; }\n", p, m, p, m, cell_type, p, m, index_expr);
 }
 
+/* [OPT-EDGE] STEP 1 — THE STOP PREDICATE, the loop's ONE per-iteration state
+ * test, and the third accessor that is emitted only where it is used.
+ *
+ * The generic path used to pay one compare PER SCAN EDGE (`if (state == HEAD
+ * && ...)`, once per edge, every iteration) on top of the one sentinel test
+ * the loop already had. This predicate folds the two together: `scanedge.c`
+ * renumbered the edge heads to the TOP rows of the machine, and the dead
+ * value sits above them under BOTH representations — 65535 above every
+ * premultiplied cell by `PREMUL_MAX_ENTRIES`, and -1 above every indexed row
+ * once it is READ AS UNSIGNED. So "dead, or a head" is `(unsigned)s >= FLOOR`
+ * and nothing else, and which of the two it is costs nothing on the path
+ * where it is neither.
+ *
+ * IT IS SPELLED ONCE FOR BOTH REPRESENTATIONS, from the repr's own
+ * `cell_of`, because the floor is a question about the machine's row
+ * numbering and not about how a row is spelled. `is_dead` is untouched — same
+ * name, same body, same exact meaning — so the split off the generic path is
+ * an existing predicate and not a second one to keep in step. A machine with
+ * no scan edge emits neither this accessor nor any of the loop scaffolding
+ * that reads it, and is byte-identical to the pre-[OPT-EDGE] artifact. */
+static void token_stop(StrBuf *c, const DfaForm *f)
+{
+    if (f->nscan <= 0) return;
+    const char *p = f->p, *m = f->dir->c.name;
+    unsigned floor = (unsigned)f->repr->cell_of(f->d->n - f->nscan, f->d);
+    /* THE COMMENT IS TWO LINES ON PURPOSE. It is emitted once per machine,
+     * i.e. up to three times per artifact, and this file has already had to
+     * cut one per-machine comment for exactly that reason (`emit_scan_edge`'s,
+     * seven lines to four, ~900 emitted bytes on `[a-z]*`). The two facts a
+     * reader cannot get anywhere else are what is left. */
+    /* THE WHOLE-MACHINE CASE IS THE FLOOR AT ZERO, and it is a FOLD rather
+     * than a special case — [CC-DIFF]'s uniform-table fold one accessor over,
+     * spelled the same way. `[a-z]*`'s forward machine is ONE state and that
+     * state is the head, so every value the predicate can see is in the
+     * reserved range and the answer is the constant. Emitting the compare
+     * anyway is `(unsigned)s >= 0u`, which is `-Werror=type-limits` in
+     * generated C the harness and every caller build with `-Wall -Wextra
+     * -Werror`; the loop's own shape does not change, because gcc folds the
+     * inline call and drops the unreachable arm. */
+    if (floor == 0) {
+        sb_printf(c,
+            "/* [OPT-EDGE] EVERY state of this machine is a scan-edge head, so the\n"
+            " * loop's generic path is unreachable and the test IS that constant. */\n"
+            "static inline int %s_%s_is_stop(%s_%s_state s) { (void)s; return 1; }\n",
+            p, m, p, m);
+        return;
+    }
+    char heads[48];
+    if (f->nscan == 1) snprintf(heads, sizeof heads, "the scan-edge head");
+    else snprintf(heads, sizeof heads, "one of the %d scan-edge heads", f->nscan);
+    sb_printf(c,
+        "/* [OPT-EDGE] Dead, or %s -- which %s the machine's\n"
+        " * TOP row%s, so ONE unsigned compare answers both. */\n"
+        "static inline int %s_%s_is_stop(%s_%s_state s) { return (unsigned)s >= %uu; }\n",
+        heads, f->nscan == 1 ? "is" : "are", f->nscan == 1 ? "" : "s",
+        p, m, p, m, floor);
+}
+
 /* The two accept accessors, same rule. `accepts_class` is emitted only under
  * a wide table, which is the same condition `accw_fold` is derived under. */
 static void token_accepts(StrBuf *c, const DfaForm *f, const char *cls_index)
@@ -3627,6 +3685,7 @@ static void token_premul(StrBuf *c, const DfaForm *f)
     token_step(c, f, "unsigned short", "transitions[s + cl]");
     sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s == %d; }\n",
               p, m, p, m, PREMUL_DEAD);
+    token_stop(c, f);
     token_accepts(c, f, "accepting[s + cl]");
     if (f->viewsel) {
         /* THE ONE UN-MULTIPLY, and the reason it is a function rather than a
@@ -3672,6 +3731,7 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
     token_step(c, f, "short", tr_ix);
     sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s < 0; }\n",
               p, m, p, m);
+    token_stop(c, f);
     token_accepts(c, f, acc_ix);
     if (f->viewsel) {
         sb_printf(c, "static inline unsigned %s_%s_row(%s_%s_state s) { return (unsigned)s; }\n",
@@ -5206,6 +5266,33 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      * cannot both fire at one state. */
     for (int i = 0; i < d->n && f->nscan < PCREC_MAX_SCAN_EDGES; i++)
         if (dfa_edge_taken(dfa_edge_of(cx, d, i))) f->scan[f->nscan++] = i;
+    /* [OPT-EDGE] STEP 1 — THE TWO LAYOUT FACTS THE LOOP RESTS ON ARE CHECKED
+     * HERE RATHER THAN ASSUMED, and the check is worth having precisely
+     * because it CANNOT share a source with what it checks: both facts are
+     * produced by `src/opt/scanedge.c` and read by `emit_scan_loop`, and this
+     * is the emitter reading back what the pass claims to have done.
+     *
+     *  (a) THE HEADS ARE THE MACHINE'S TOP ROWS, contiguously and in this
+     *      order, which is what makes `is_stop`'s single unsigned compare
+     *      test "dead or a head" and nothing else. A head left in the middle
+     *      of the row space would make the compare admit ordinary states —
+     *      a WRONG ANSWER (the edge path would run at a state with no edge,
+     *      fall through the whole `if` chain and rejoin, skipping the stay
+     *      skips) rather than a slow one.
+     *  (b) NO STATE CARRIES BOTH A STAY SKIP AND A SCAN EDGE, which is what
+     *      licenses the edge path NOT replaying the skips. `pick_skip_states`
+     *      declines a state carrying an edge, so this is that decline read
+     *      back from the other side. */
+    for (int k = 0; k < f->nscan; k++)
+        if (f->scan[k] != d->n - f->nscan + k)
+            ctx_fail(cx, 0, "internal error: scan-edge head %d sits at row %d, "
+                     "not at %d -- the sentinel range must be the top %d rows",
+                     k, f->scan[k], d->n - f->nscan + k, f->nscan);
+    for (int k = 0; k < f->nskip; k++)
+        for (int j = 0; j < f->nscan; j++)
+            if (f->skip[k] == f->scan[j])
+                ctx_fail(cx, 0, "internal error: state %d carries both a stay "
+                         "skip and a scan edge", f->skip[k]);
     /* [CC-DIFF] (b) THE FOLDS, and this is the ONLY place they are computed.
      * After the repr and acc selections above, because the transition cell's
      * VALUE depends on the representation (pre-multiplied or indexed, and
@@ -5288,11 +5375,55 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
 
 /* ---- THE SCAN LOOP, emitted ONCE and called twice ----------------------- */
 
+/* [OPT-EDGE] STEP 1 — IS THE MACHINE'S START STATE ITSELF A SCAN-EDGE HEAD?
+ *
+ * TWO readers and they must not be able to disagree, which is why this is a
+ * predicate and not a flag computed twice. (1) The candidate-start prefilter
+ * fires at `s0` and NOWHERE ELSE (`pf_open` writes its guard), so when `s0`
+ * is a head the prefilter belongs on the EDGE path and can never fire on the
+ * generic one — it MOVES rather than being replayed, and the generic path
+ * keeps no dead compare. (2) The loop's entry has to send a start state that
+ * is already a head into the edge path, and by precondition (8) the only head
+ * any seed can name is `s0` itself. */
+static bool dfa_start_is_scan_head(const Dfa *d)
+{
+    return d->s0 >= 0 && d->s0 < d->n && d->st[d->s0].scan_span != 0;
+}
+
+/* The edge path's two labels. They are per MACHINE, not per artifact: the
+ * forward and reverse loops are emitted into ONE function and would collide
+ * on a shared name, and `dir->c.name` is the same string the tables and the
+ * accessors are already named after. */
+static void scan_label(char *buf, size_t n, const DfaForm *f, const char *tag)
+{ snprintf(buf, n, "%s_%s_scan_%s", f->p, f->dir->c.name, tag); }
+
 static void emit_scan_loop(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->ind;
+    char lv[PCREC_MAX_EMIT_NAME_LEN + 24], le[PCREC_MAX_EMIT_NAME_LEN + 24];
+    bool edges = f->nscan > 0;
+    bool s0head = edges && dfa_start_is_scan_head(f->d);
+    scan_label(lv, sizeof lv, f, "views");
+    scan_label(le, sizeof le, f, "edge");
 
     f->seed->emit_init(c, f);
+    /* THE ONE ENTRY, and it costs at most one compare PER SEARCH rather than
+     * per byte. `emit_init` is the only writer of the state variable outside
+     * the loop, and a start state that is already a head must reach the edge
+     * body without the generic path's `if` chain — which no longer exists.
+     * Under the `constant` seed the state IS `cell_of(s0)`, so the test folds
+     * away entirely and the jump is unconditional; under the `seeded` form
+     * the value is a runtime table read whose only head-valued outcome is
+     * `cell_of(s0)` (precondition (8) refuses every other seed target as a
+     * head), so an equality against that ONE cell is exact. */
+    if (s0head) {
+        if (f->seed->table)
+            sb_printf(c, "%sif (%s == %d) goto %s;\n", ind, f->dir->statev,
+                      f->repr->cell_of(f->d->s0, f->d), le);
+        else
+            sb_printf(c, "%sgoto %s;   // the start state carries a scan edge\n",
+                      ind, le);
+    }
     sb_printf(c, "%sfor (;;) {\n", ind);
     /* THE EVALUATION ORDER IS AN AXIS, not a tidiness question. Under a view,
      * scan avoidance must run BEFORE the accept evaluation, so that
@@ -5308,29 +5439,76 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * `scalar-plain` object distinct from `scalar-viewed`; do not "simplify"
      * the two into one. */
     if (f->acc->emit_top) f->acc->emit_top(c, f);
-    if (f->pf->emit) f->pf->emit(c, f);
+    /* [OPT-EDGE] THE PREFILTER MOVES RATHER THAN BEING REPLAYED. It fires at
+     * `s0` and nowhere else, and where `s0` is a scan-edge head the generic
+     * path never HOLDS `s0` — the state variable holds a head only on the
+     * edge path. Emitting it in both places would leave a compare on the
+     * generic path that can never be true; emitting it in neither would drop
+     * it. So it is emitted exactly once, on the path that can reach it. */
+    if (f->pf->emit && !s0head) f->pf->emit(c, f);
     {
-        const char *kw = f->pf->emit ? "else if" : "if";
+        const char *kw = f->pf->emit && !s0head ? "else if" : "if";
         for (int k = 0; k < f->nskip; k++) {
             f->dir->emit_skip(c, f, f->skip[k], kw);
             kw = "else if";
         }
     }
-    /* [OPT-5] THE SCAN EDGES, and their POSITION IN THIS BODY IS PART OF
-     * THEIR CORRECTNESS ARGUMENT (src/opt/scanedge.c's header). They come
-     * AFTER everything that can advance the position — the prefilter and the
-     * stay skips — so a prefilter that has just skipped onto a byte of the
-     * edge's class does not leave that byte for the ordinary step; and they
-     * are each their OWN `if` rather than another arm of that chain, for the
-     * same reason. Nothing below moves the position, so what the step reads
-     * is what the scan left. The run's interior states are deleted from the
-     * table, so this is not an accelerator that may be skipped. */
-    for (int k = 0; k < f->nscan; k++) emit_scan_edge(c, f, f->scan[k]);
+    if (edges) sb_printf(c, "%s  %s:\n", ind, lv);
     if (f->view->emit) f->view->emit(c, f);
     if (f->acc->emit_after_view) f->acc->emit_after_view(c, f);
     f->acc->emit_tail(c, f);
+    if (!edges) {
+        sb_printf(c, "%s    if (%s_%s_is_dead(%s)) break;   // dead: no match can continue\n",
+                  ind, f->p, f->dir->c.name, f->dir->statev);
+        sb_printf(c, "%s}\n", ind);
+        return;
+    }
+    /* [OPT-EDGE] STEP 1 — THE SHARED SENTINEL, and this is the whole row.
+     *
+     * The loop ALREADY paid one state test per iteration here. `is_stop`
+     * widens it to "dead OR a scan-edge head" for free (the heads are the top
+     * rows and the dead value is above them, so it is the same single
+     * compare), and the generic path leaves through the same `continue` the
+     * dead test's fall-through was. What used to be `nscan` compares on that
+     * path — one `if (state == HEAD && ...)` per edge, evaluated at every
+     * state whether or not any edge could fire — is now reached ONLY from
+     * here and only when the state really is a head.
+     *
+     * THE EDGE BLOCK'S OWN TEXT IS UNCHANGED, deliberately: it is still the
+     * sequence of independent `if`s in ascending state order, so precondition
+     * (7)'s cascade (a chain whose fall-through is another chain's head fires
+     * both in one pass) is the same mechanism it always was, and the diff at
+     * this landing is a REACHABILITY change rather than a rewrite of the
+     * bodies. Running the chain only where the state is a head is exactly
+     * what running it everywhere did: at any other state no `if` fires.
+     *
+     * IT REJOINS AT THE VIEW SELECT, which is where the old placement left
+     * off — the edges came after everything that can advance the position and
+     * before everything that cannot, and both halves of that still hold
+     * (src/opt/scanedge.c's header carries the argument for both paths). */
+    sb_printf(c, "%s    if (!%s_%s_is_stop(%s)) continue;   // the generic path\n",
+              ind, f->p, f->dir->c.name, f->dir->statev);
     sb_printf(c, "%s    if (%s_%s_is_dead(%s)) break;   // dead: no match can continue\n",
               ind, f->p, f->dir->c.name, f->dir->statev);
+    /* THE LABEL IS EMITTED ONLY WHERE SOMETHING JUMPS TO IT, which is the
+     * loop's entry and nothing else — the stop test reaches this block by
+     * FALLING THROUGH. Emitting it unconditionally is a `-Wunused-label`
+     * error in every artifact whose start state is not a head, and generated
+     * C is compiled `-Wall -Wextra -Werror` by the harness and by callers.
+     * The alternative idiom in this file, `__attribute__((unused))` on the
+     * label (`<p>_dead`'s), would say "nothing may jump here" of a label that
+     * IS jumped to on the other half of the population. */
+    if (s0head) sb_printf(c, "%s  %s:\n", ind, le);
+    /* The head's own accept probe. It is the one loop-top statement the edge
+     * path genuinely REPLAYS: an edge whose class test fails advances nothing
+     * and changes nothing, so without this a head's accepting position would
+     * go unrecorded. The stay skips are NOT replayed — `pick_skip_states`
+     * declines every state carrying an edge, so no skip can fire at a head —
+     * and the prefilter was MOVED here rather than copied where `s0` is one. */
+    if (f->acc->emit_top) f->acc->emit_top(c, f);
+    if (f->pf->emit && s0head) f->pf->emit(c, f);
+    for (int k = 0; k < f->nscan; k++) emit_scan_edge(c, f, f->scan[k]);
+    sb_printf(c, "%s    goto %s;\n", ind, lv);
     sb_printf(c, "%s}\n", ind);
 }
 

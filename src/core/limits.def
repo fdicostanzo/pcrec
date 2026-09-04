@@ -239,7 +239,7 @@ PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-IS
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)
 PCREC_LIMIT(PCREC_OFSK_MAX_SET, 4, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many offsets the selected offset-set prefilter candidate may carry", INTERNAL_H)
 PCREC_LIMIT(PCREC_MINW_MAX, (1LL << 40), "", "compile budget", NONE, "", "src/opt/callgraph.c: the minimum-width analysis' saturation ceiling (== PCREC_W_UNBOUNDED)", INTERNAL_H)
-PCREC_LIMIT(PCREC_MAX_SCAN_EDGES, 4, "count", "selection knee", NONE, "", "[OPT-5]: how many scan edges one DFA machine may carry — src/opt/scanedge.c takes the longest chains first, src/gen/emit_dfa.c sizes its array by it, and each edge costs one compare on the emitted loop's generic path", INTERNAL_H)
+PCREC_LIMIT(PCREC_MAX_SCAN_EDGES, 4, "count", "selection knee", NONE, "", "[OPT-5]: how many scan edges one DFA machine may carry — src/opt/scanedge.c takes the longest chains first, src/gen/emit_dfa.c sizes its array by it; since [OPT-EDGE] STEP 1 an edge costs NO compare on the emitted loop's generic path (the shared sentinel), so this is an emitted-bytes budget awaiting a measured re-choice", INTERNAL_H)
 
 /* ---- home: MOD_RECURSION / MOD_BACKREFS / MOD_LOOKAROUND (3) ----------- *
  * Parse-time saturation/buffer caps local to one module, kept at their own
