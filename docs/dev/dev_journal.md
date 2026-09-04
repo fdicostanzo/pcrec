@@ -20637,3 +20637,13 @@ choose. Sequencing: the manager overwrote isl1's .stage from
 `timing-done` to `codegen-rerun` so the watchdog does not lift edge1
 while isl1 re-runs test-codegen after its abi bump (the gate CLAUDE.md
 names); then the §9 witness pool (`pool` lifts edge1); then delivery.
+Part 35 addendum (21:1x): isl1 re-ran test-codegen after the abi bump
+— 109/0 incl. [DD-14.FB]'s abi-18 sizing fields; the abi gate is
+closed on the branch. FINDING ABOUT MAIN: docs/dev/artifact_size_log.tsv
+is STALE — 2,933/2,933 patterns +31 B (+1.95%) = `#define
+RX_DFA_UNIFORM_FOLDS 0`, [CC-DIFF] STEP 1's stamp at a3f40b1, the log
+last regenerated at 9dd1d4c; verified on a DFA artifact byte-identical
+under -fno-alt-island. isl1 restored the file (dd1a39b's precedent);
+the regeneration is the battery's, on the merged tree, read with that
++31 in mind. The manager's 20:59 rulings did not reach the lane (it
+listed them as open at 21:1x); resent compressed.
