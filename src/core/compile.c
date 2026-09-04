@@ -290,7 +290,14 @@ static void build_anchored_dfa(Ctx *cx)
 
     if (cx->job->adfa.overflowed) return;   /* stays `anchored_ok == false` */
     pcrec_minimize_dfa(cx, &cx->job->adfa);
-    pcrec_scanedge_dfa(cx, &cx->job->adfa);   /* [OPT-5], the third machine */
+    /* [OPT-5], the third machine. [ENG-ABS]'s anchored MATCH-HERE form has no
+     * candidate-start prefilter at all — `anch_start` builds its `UnanchStart`
+     * with `kind = DFA_PF_NONE` unconditionally, because a prefilter CHOOSES
+     * WHERE THE SCAN BEGINS and that is wrong for a match-here — so nothing
+     * can reseed its state variable and precondition (8) has no hazard to
+     * guard. The predicate answers that through the same axis-B walk. */
+    pcrec_scanedge_dfa(cx, &cx->job->adfa,
+                       pcrec_dfa_scan_state_written(cx, &cx->job->adfa));
     cx->job->anchored_ok = true;
 }
 
@@ -1140,8 +1147,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * its being a table property rather than a pattern one
                  * (docs/dev/opt5_step0_profile.md §3.1: the reverse walk is
                  * the identical dependent-load shape). */
-                pcrec_scanedge_dfa(&cx, &cx.job->dfa);
-                pcrec_scanedge_dfa(&cx, &cx.job->rdfa);
+                /* [OPT-EDGE] STEP 1.1 — precondition (8)'s input is the
+                 * EMITTER's axis-B answer for this machine, asked here
+                 * because the pass runs before any form is derived and
+                 * `unanch_start` is invariant under it (the predicate's own
+                 * header carries that argument, and `dfa_form_derive` checks
+                 * the agreement from the other side). The reverse machine
+                 * carries no prefilter — every axis-B candidate requires
+                 * `s->forward` — so it answers false through the axis rather
+                 * than through a constant written here. */
+                pcrec_scanedge_dfa(&cx, &cx.job->dfa,
+                                   pcrec_dfa_scan_state_written(&cx, &cx.job->dfa));
+                pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
+                                   pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa));
                 build_anchored_dfa(&cx);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;

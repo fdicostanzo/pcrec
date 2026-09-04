@@ -942,10 +942,14 @@ construction (src/ir) and emission (src/gen).
   **EIGHT PRECONDITIONS, EVERY ONE A DECLINE, and two of them were
   MEASURED rather than reasoned.** The file's header carries the first five
   and (6)-(8) sit at their own sites; the three worth knowing before editing
-  anything are (8) ([OPT-EDGE] STEP 1) a chain head may not be a state any
-  SEED family (`s1u`/`s1g`) names, because the offset-set prefilter's RESEED
-  writes the state variable MID-BODY and the emitted loop's one stop test
-  cannot see that write — see the [OPT-EDGE] block below; (6) a chain head
+  anything are (8) ([OPT-EDGE] STEP 1, NARROWED at STEP 1.1) a chain head may
+  not be a state any SEED family (`s1u`/`s1g`) names **on a machine whose
+  prefilter RESEEDS** — the offset-set pair, whose skip writes the state
+  variable MID-BODY where the emitted loop's one stop test cannot see it; the
+  answer comes from the emitter's own axis-B selection
+  (`pcrec_dfa_scan_state_written`) rather than from a second derivation here,
+  and `pcrec_scanedge_dfa` takes it as a PARAMETER — see the [OPT-EDGE] block
+  below; (6) a chain head
   may not be any state's `eolvar`/`endvar` target — the emitted loop steps from the
   VIEW-SELECTED state, not from the state variable, so a view pointing at a
   head reaches the killed table cell with the edge never having run
@@ -1000,6 +1004,32 @@ construction (src/ir) and emission (src/gen).
   The emitter CHECKS the layout rather than assuming it (`dfa_form_derive`
   fails loudly if a head is not at `n - nheads + k`), which is the one form
   of check here that cannot share a source with what it checks.
+
+  **[OPT-EDGE] STEP 1.1 (2026-09-04) NARROWED PRECONDITION (8), AND THE
+  NARROWING IS TWO CHANGES BECAUSE (8) TURNED OUT TO GUARD TWO HAZARDS.**
+  Only one was ever named. The state variable is written in three places, and
+  STEP 1 refused both non-step writers with one rule:
+
+  - the offset-set prefilter's RESEED writes MID-BODY, after the loop's stop
+    test has been passed, where nothing can see it. THAT is what (8) is for,
+    and it is now conditioned on the machine's actual prefilter form;
+  - the START SEED (`seed_emit_seeded`) writes `s1u[upc(s[startpos - 1])]`
+    ONCE PER SEARCH, before the loop. `emit_scan_loop`'s entry dispatch asked
+    `state == cell_of(s0)`, which was exact only while (8) refused every
+    other seed target as a head — so the entry's correctness was a fact about
+    THIS PASS, recorded nowhere but in a comment in the emitter. The entry now
+    asks the loop's own question (`is_stop && !is_dead`), and the obligation
+    is discharged where it belongs.
+
+  **MEASURED, and it corrects the STEP 1 census.** All ELEVEN artifacts (8)
+  cost an edge get it back. Seven regain it on the FORWARD machine and four on
+  the REVERSE one — including `\Bfoo\B` and `\bfoo\B`, which the STEP 1
+  census called hazardous from their artifact-level `RX_DFA_PREFILTER` stamp:
+  the edge they lost was never on the machine that carries the prefilter, and
+  the reverse loop has none at all. The narrowed (8) therefore has an EMPTY
+  population on today's corpus, and is kept because the mechanism is real, not
+  because a witness exists. `tests/codegen/run_scan_edge_census.sh` is the
+  check and says in its own header what it cannot see.
 
   **[OPT-5] STEP 2 (2026-09-02) EXPORTED PRECONDITIONS (2) AND (3) AS
   `pcrec_state_view_invariant`**, and the file's own apology for spelling

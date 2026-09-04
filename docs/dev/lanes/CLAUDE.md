@@ -133,6 +133,23 @@ never edited afterwards.
   off a macro's absence), `RX_VM_INLINE_CHAIN` does NOT (it would carry
   `RX_VM_FRAMELESS`'s value by construction). The (B) identity pin is left at
   `da4fe60` and owed to the manager at merge, opt5i's precedent.
+- `edge2_report.md` — [OPT-EDGE] STEP 1.1 (2026-09-04, lane edge2): narrowing
+  precondition (8), plus the ladder and floor STEP 1 left owed. Read §1.1
+  first: (8) turned out to guard TWO hazards where the row named one, and the
+  filed narrowing built alone would have shipped a lost-match miscompile on
+  its own acceptance population — axis D's `seeded` initializer installs any
+  member of the seed family before the loop, while `emit_scan_loop`'s entry
+  dispatch only recognised the start state, a fact about the PASS recorded
+  nowhere but in a comment in the emitter. The report carries the prediction
+  table written before any edit and scored with two MISSES that are its own
+  findings: the two `offset-set` artifacts DO regain an edge (on their REVERSE
+  machine, which has no prefilter — STEP 1's census read the artifact-level
+  prefilter stamp at the wrong resolution), and precondition (8) removed
+  ENTIRELY changes nothing measurable, so the reseed hazard has no witness in
+  the corpus or in ten constructed shapes. §4.2 is the entry hazard's witness
+  (`foo\B` on `"xfoofoox"` answers `[]` against `[(1,4) (4,7)]`). The ladder
+  and floor are designed, harnessed and rung-verified but NOT TIMED — the box
+  was under hold at load 3.5-4.2 for the lane's whole write phase.
 - `w13_runsh_composed_path.patch` — W1.3.1's starting point: lane w13's written-but-UNRUN run.sh composed-block path (dropped from lane/w13 at the manager's ruling 2026-09-04 04:3x because run.sh is the most load-bearing script in the tree and it would have landed behind three merges and a battery without its own make test). The dropped commit was 464f2896 in the w13 worktree's reflog; the patch is the durable copy. Its contract choice (the target's prefix through flush_block's tail vs the CLI allowance W1.2 refused) is Frank's question; report §18.
 
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

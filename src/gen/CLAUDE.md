@@ -2489,6 +2489,44 @@ budget and is now an emitted-bytes budget; the minimum-chain floor above
 `m >= 2` is measured on THIS loop, never on the old one (the row's SEQUENCING
 ruling). Neither number was re-chosen here (D77).
 
+## [OPT-EDGE] STEP 1.1 — the entry dispatch asks the loop's own question (2026-09-04)
+
+**THE ENTRY TEST WAS A SPECIAL CASE AND (8) WAS PAYING FOR IT.** STEP 1's
+loop entry read `if (state == cell_of(s0)) goto <p>_<m>_scan_edge;`, which is
+one compare per SEARCH and is EXACT only while `src/opt/scanedge.c`'s
+precondition (8) refuses every seed target but `s0` as a head. Axis D's
+`seeded` initializer writes `s1u[upc(s[startpos - 1])]` — ANY member of the
+family — so a head installed there was invisible to that test, the generic
+path would run at a head and the step would read the transition cell the pass
+KILLED. The entry now asks `is_stop(s) && !is_dead(s)`, which is the same
+predicate the loop body already spells, and is emitted on the wider condition
+`dfa_seed_can_be_scan_head` rather than on `dfa_start_is_scan_head`.
+
+**THAT PREDICATE KEEPS ITS OTHER READER AND LOSES THIS ONE, WHICH IS THE
+POINT.** `dfa_start_is_scan_head` still places the PREFILTER, and that is
+genuinely a question about `s0` alone (`pf_open`'s guard is `state ==
+cell_of(s0)`). Two different questions had been sharing one predicate, and
+their coincidence was a property of the pass.
+
+**MEASURED IN THE FAILING DIRECTION.** With the `s0` equality restored and (8)
+narrowed, `foo\B` on `"xfoofoox"` answers `[]` where the correct answer is
+`[(1,4) (4,7)]` — its REVERSE seed table is `{0, 12, 12, 12}` against a stop
+floor of 12, so three of four seed classes land exactly on the head and the
+match START is never recovered. `tests/codegen/run_scan_edge_census.sh` goes
+red on 11 of 13 rows against that build.
+
+**`DfaPf` GAINS `reseeds`, AND `pcrec_dfa_scan_state_written` IS ITS ONE
+CONSUMER.** "Does this prefilter write the state variable" is a property of a
+FORM, so it is a field declared in the same struct literal as the form's
+emitter — a seventh form cannot be added without answering it. The exported
+predicate runs the SAME `DFA_SELECT` over `dfa_pfs` that `dfa_form_derive`
+runs (so the deny mask and every `applies` clause are asked once), and
+`src/core/compile.c` calls it before each `pcrec_scanedge_dfa`. Its header
+carries the argument that `unanch_start` is INVARIANT under the pass, which is
+what makes asking early legitimate; `dfa_form_derive` gained a THIRD read-back
+check that re-derives (8) from the machine it is about to write, so a drift
+between the two times is a loud `ctx_fail` naming the state.
+
 ## [CC-DIFF] STEP 1 — THE TWO EMITTED-CODE SPELLINGS (2026-09-03), abi 16 -> 17
 
 [CC-DIFF] STEP 0 (`docs/dev/ccdiff_step0.md`) explained the bench ledger's

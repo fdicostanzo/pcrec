@@ -2277,3 +2277,39 @@ shows the two plants trip DIFFERENT detector lines — S224 a value-mismatch
 assertion in §1/§3, S226 an absence assertion in §1 and an exact-count
 assertion in §3 — so folding them would leave one plant's failing
 direction unexercised by anything the row's own header could point to.
+
+## [OPT-EDGE] STEP 1.1: S227 and the `scanedge` arm (2026-09-04, lane edge2)
+
+**`scanedge` is a new suite word** (registered before the row that names it,
+R31 C11), running `tests/codegen/run_scan_edge_census.sh` — precondition (8)'s
+population and, the half S227 aims at, the scan loop's ONE PER-SEARCH ENTRY
+DISPATCH.
+
+**S227** restores the STEP 1 spelling of that dispatch: `state ==
+cell_of(s0)` instead of the loop's own `is_stop(s) && !is_dead(s)`. Axis D's
+`seeded` initialiser writes `s1u[upc(s[search_from - 1])]` — ANY member of the
+seed family — so a search that seeds straight onto a scan-edge head takes the
+GENERIC path and the step reads `tr[head][C]`, the transition cell
+`src/opt/scanedge.c` killed.
+
+**IT IS ITS OWN ARM RATHER THAN `codegen`**, for `vmframeless`'s reason one
+section up, and its difference FROM `vmframeless` is the point: that arm's
+rows may legitimately score `corpus:0fail`, because a stamp is an
+observability fact. This one is not — the entry dispatch is where the walk
+goes, so a defect is a LOST MATCH and the row names `corpus` too.
+
+**THE WITNESS IS `foo\B`, NOT THE OBVIOUS `\b\w+\b`, and that is worth
+carrying.** On the `\b\w+\b` family the forward seed DOES land on the head,
+the emitted code IS wrong, and the answer STILL does not move: the only
+searches that reach it start mid-word, and no match of `\b\w+\b` begins
+mid-word, so the wrong answer and the right one coincide. `foo\B` on
+`"xfoofoox"` answers `[]` against `[(1,4) (4,7)]` — its edge is on the REVERSE
+machine, whose seed table is `{ 0, 12, 12, 12 }` against a stop floor of 12, so
+three of four seed classes land exactly on the head. A row whose corpus arm
+went green would have been read as "not detected" rather than "the corpus has
+no subject that seeds onto a head at a position a match can start at".
+
+Measured at the landing on a scratch build of the plant: `scanedge`
+11fail/2pass, `reach:ok`. The corpus arm's own figure is OWED to the next
+battery.
+

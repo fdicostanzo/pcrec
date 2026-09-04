@@ -3435,6 +3435,29 @@ typedef struct DfaPf {
      * hybrid's inlined prefilter gets it by construction. */
     void  (*emit_block)(StrBuf *c, const DfaForm *f);
     void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
+    /* [OPT-EDGE] STEP 1.1 — DOES THIS FORM WRITE THE STATE VARIABLE?
+     *
+     * Only the offset-set pair does (`pf_emit_ofs_reseed`): its skip jumps
+     * over bytes that LEAVE the start state, so the landing state has to be
+     * re-seeded from the byte to its left. The `memchr` and `byte-class`
+     * forms jump over bytes the machine provably stays PARKED on, so the
+     * state after the jump is trivially the state before it and they write
+     * nothing.
+     *
+     * IT IS A FIELD ON THE FORM AND NOT A LIST OF NAMES SOMEWHERE ELSE,
+     * because it is a property OF A FORM: it is declared in the same struct
+     * literal that declares the form's emitter, so a seventh form cannot be
+     * added without answering it, and the answer sits where the emitter a
+     * reader would check is. `src/opt/scanedge.c`'s precondition (8) is the
+     * one consumer — a chain head may not be a seed target on a machine whose
+     * prefilter reseeds, because that write happens MID-BODY and the emitted
+     * loop's one stop test cannot see it. See `pcrec_dfa_scan_state_written`.
+     *
+     * THE ENTRY SEED IS NOT THIS FIELD'S BUSINESS and used to be conflated
+     * with it: axis D's `seeded` form also installs an arbitrary member of
+     * the seed family, but it does so ONCE PER SEARCH and BEFORE the loop,
+     * where `emit_scan_loop`'s own entry dispatch sees it. */
+    bool   reseeds;
 } DfaPf;
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
@@ -4474,22 +4497,65 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
+/* The trailing `true`/`false` is `reseeds` — see the field's own note. */
 static const DfaPf dfa_pfs[] = {
     { { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded    },
+      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded,    true  },
     { { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
-      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs            },
-    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, NULL, NULL, pf_emit_memchr_bounded },
-    { { "memchr",             0, pf_memchr_applies         }, NULL, NULL, pf_emit_memchr         },
-    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, pf_tables_bcls, NULL, pf_emit_bcls_bounded   },
-    { { "byte-class",         0, pf_bcls_applies           }, pf_tables_bcls, NULL, pf_emit_bcls           },
-    { { "none",               0, cand_always               }, NULL, NULL, NULL                   },
+      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs,            true  },
+    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, NULL, NULL, pf_emit_memchr_bounded, false },
+    { { "memchr",             0, pf_memchr_applies         }, NULL, NULL, pf_emit_memchr,         false },
+    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, pf_tables_bcls, NULL, pf_emit_bcls_bounded, false },
+    { { "byte-class",         0, pf_bcls_applies           }, pf_tables_bcls, NULL, pf_emit_bcls,         false },
+    { { "none",               0, cand_always               }, NULL, NULL, NULL,                   false },
 };
 
 static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
     DfaSel s = { cx, &cx->job->dfa, us, true, -1 };
     return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags);
+}
+
+/* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
+ * VARIABLE FROM ANYWHERE BUT THE STEP AND THE ENTRY SEED?
+ *
+ * `src/opt/scanedge.c`'s precondition (8) is the only caller and this is the
+ * exact question it wants. Two conjuncts, and each is the same derivation the
+ * emitter itself uses rather than a restatement of it: axis B's own selection
+ * (so the deny mask, the `s->forward` clause and every `applies` predicate are
+ * asked once, here, exactly as `dfa_form_derive` asks them), and
+ * `dfa_needs_seed`, which is `pf_emit_ofs_reseed`'s own guard — with no seed
+ * there is one start state, no context to carry, and the reseed emits nothing.
+ *
+ * IT IS CALLED BEFORE THE PASS RUNS, WHICH IS EARLIER THAN THE EMITTER ASKS,
+ * AND THE ANSWER IS THE SAME ONE. `unanch_start` is INVARIANT under
+ * `pcrec_scanedge_dfa`: the pass rewrites exactly one transition cell
+ * (`tr[head][C] = -1`, and `-1 != s0` exactly as the deleted target was),
+ * permutes the survivors through an INJECTIVE `remap` (so every `!=` and every
+ * equality across `s1u[]` is preserved), drops only states with in-degree 1
+ * whose one in-edge is the chain's (so no seed target, no view target and
+ * never `s0` can be dropped), refuses any state carrying a view as a member,
+ * and touches no accept bit and no NFA. So the candidate set, `start_acc`,
+ * `dfa_needs_seed`, the view flags and `pcrec_prefix_ksets`' inputs all read
+ * the same before and after.
+ *
+ * THAT INVARIANCE IS CHECKED AT THE EMITTER RATHER THAN TRUSTED —
+ * `dfa_form_derive` re-derives the precondition from the machine it is about
+ * to write, which is the one reading that cannot share a source with the
+ * pass's own decision. A drift is a loud `ctx_fail` there.
+ *
+ * `forward` is not a parameter: axis B's candidates all carry an `s->forward`
+ * clause, so the reverse and anchored machines select `none` through the
+ * axis's own machinery and answer false without a branch here. */
+bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
+{
+    if (cx->job->engine != PCREC_ENG_UNANCH) return false;
+    if (!dfa_needs_seed(d)) return false;
+    UnanchStart us;
+    unanch_start(cx, &us);
+    if (us.empty) return false;
+    DfaSel s = { cx, d, &us, d == &cx->job->dfa, -1 };
+    return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags)->reseeds;
 }
 
 /* ---- AXIS F: the two directions ----------------------------------------- */
@@ -5365,6 +5431,35 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
             if (f->skip[k] == f->scan[j])
                 ctx_fail(cx, 0, "internal error: state %d carries both a stay "
                          "skip and a scan edge", f->skip[k]);
+    /*  (c) [OPT-EDGE] STEP 1.1 — PRECONDITION (8), RE-DERIVED FROM THE MACHINE
+     *      THIS FORM IS ABOUT TO BE WRITTEN FROM. The pass narrowed (8) to
+     *      "no seed target may be a head WHEN THE PREFILTER RESEEDS", and it
+     *      decided that BEFORE this selection ran, from
+     *      `pcrec_dfa_scan_state_written`'s claim that `unanch_start` is
+     *      invariant under the pass. This is that claim read back from the
+     *      other side: the form is now chosen, so `f->pf->reseeds` is the
+     *      real answer rather than the predicted one, and the seed families
+     *      are the machine's own.
+     *
+     *      IT IS THE ONE READING HERE THAT CANNOT SHARE A SOURCE WITH WHAT IT
+     *      CHECKS. (a) and (b) above check a layout the pass produced; this
+     *      checks an AGREEMENT between two derivations taken at two times, so
+     *      a pass-time answer that drifts from the emitted one is a loud
+     *      internal error naming the state rather than a scan the loop never
+     *      enters. `s0` is exempt for the pass's own reason: the entry
+     *      dispatch sends it to the edge path, and so it does every other
+     *      head-valued seed since STEP 1.1. */
+    if (f->nscan > 0 && f->pf->reseeds && dfa_needs_seed(d))
+        for (int u = 0; u < UPC_N; u++)
+            for (int fam = 0; fam < 2; fam++) {
+                int t = fam ? d->s1g[u] : d->s1u[u];
+                if (t < 0 || t >= d->n || t == d->s0) continue;
+                if (d->st[t].scan_span != 0)
+                    ctx_fail(cx, 0, "internal error: state %d carries a scan "
+                             "edge and is named by seed family %s[%d], on a "
+                             "machine whose '%s' prefilter reseeds",
+                             t, fam ? "s1g" : "s1u", u, f->pf->c.name);
+            }
     /* [CC-DIFF] (b) THE FOLDS, and this is the ONLY place they are computed.
      * After the repr and acc selections above, because the transition cell's
      * VALUE depends on the representation (pre-multiplied or indexed, and
@@ -5449,17 +5544,46 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
 
 /* [OPT-EDGE] STEP 1 — IS THE MACHINE'S START STATE ITSELF A SCAN-EDGE HEAD?
  *
- * TWO readers and they must not be able to disagree, which is why this is a
- * predicate and not a flag computed twice. (1) The candidate-start prefilter
- * fires at `s0` and NOWHERE ELSE (`pf_open` writes its guard), so when `s0`
- * is a head the prefilter belongs on the EDGE path and can never fire on the
- * generic one — it MOVES rather than being replayed, and the generic path
- * keeps no dead compare. (2) The loop's entry has to send a start state that
- * is already a head into the edge path, and by precondition (8) the only head
- * any seed can name is `s0` itself. */
+ * ONE reader since STEP 1.1, and losing the second one is the point rather
+ * than a tidy-up. The candidate-start prefilter fires at `s0` and NOWHERE ELSE
+ * (`pf_open` writes its guard), so when `s0` is a head the prefilter belongs
+ * on the EDGE path and can never fire on the generic one — it MOVES rather
+ * than being replayed, and the generic path keeps no dead compare. That is a
+ * question about `s0` alone and this predicate answers exactly it.
+ *
+ * IT USED TO ANSWER THE LOOP'S ENTRY DISPATCH TOO, and that was a different
+ * question wearing the same predicate: "can the state variable be holding a
+ * head when the loop is entered". The two coincided only because precondition
+ * (8) refused every seed target but `s0` as a head — i.e. the entry test's
+ * exactness was a fact about the PASS, recorded nowhere but in a comment here.
+ * `dfa_seed_can_be_scan_head` below asks the entry's own question, and (8) is
+ * narrowed to the hazard it is really for. */
 static bool dfa_start_is_scan_head(const Dfa *d)
 {
     return d->s0 >= 0 && d->s0 < d->n && d->st[d->s0].scan_span != 0;
+}
+
+/* [OPT-EDGE] STEP 1.1 — CAN THE STATE VARIABLE BE HOLDING A SCAN-EDGE HEAD
+ * WHEN THE LOOP IS ENTERED?
+ *
+ * `emit_init` is the only writer of the state variable outside the loop, and
+ * under axis D's `seeded` form it writes `s1u[upc(s[startpos - 1])]` — ANY
+ * member of the seed family, chosen at run time. So the entry can hold `s0`,
+ * or any live seed target, and this asks whether any of those is a head.
+ *
+ * `s1g[]` joins `s1u[]` even though only `s1u[]` is emitted as this engine's
+ * seed table: over-answering costs one folded compare per SEARCH, and
+ * under-answering is the miscompile below. */
+static bool dfa_seed_can_be_scan_head(const Dfa *d)
+{
+    if (dfa_start_is_scan_head(d)) return true;
+    if (!dfa_needs_seed(d)) return false;
+    for (int u = 0; u < UPC_N; u++) {
+        int a = d->s1u[u], b = d->s1g[u];
+        if (a >= 0 && a < d->n && d->st[a].scan_span != 0) return true;
+        if (b >= 0 && b < d->n && d->st[b].scan_span != 0) return true;
+    }
+    return false;
 }
 
 /* The edge path's two labels. They are per MACHINE, not per artifact: the
@@ -5475,23 +5599,35 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
     char lv[PCREC_MAX_EMIT_NAME_LEN + 24], le[PCREC_MAX_EMIT_NAME_LEN + 24];
     bool edges = f->nscan > 0;
     bool s0head = edges && dfa_start_is_scan_head(f->d);
+    bool seedhead = edges && dfa_seed_can_be_scan_head(f->d);
     scan_label(lv, sizeof lv, f, "views");
     scan_label(le, sizeof le, f, "edge");
 
     f->seed->emit_init(c, f);
     /* THE ONE ENTRY, and it costs at most one compare PER SEARCH rather than
      * per byte. `emit_init` is the only writer of the state variable outside
-     * the loop, and a start state that is already a head must reach the edge
-     * body without the generic path's `if` chain — which no longer exists.
-     * Under the `constant` seed the state IS `cell_of(s0)`, so the test folds
-     * away entirely and the jump is unconditional; under the `seeded` form
-     * the value is a runtime table read whose only head-valued outcome is
-     * `cell_of(s0)` (precondition (8) refuses every other seed target as a
-     * head), so an equality against that ONE cell is exact. */
-    if (s0head) {
+     * the loop, and a state that is already a head must reach the edge body
+     * without the generic path's `if` chain — which no longer exists.
+     *
+     * [OPT-EDGE] STEP 1.1 — THE TEST IS THE LOOP'S OWN STOP TEST, not an
+     * equality against `s0`. Under the `seeded` form the initializer writes
+     * `s1u[upc(s[startpos - 1])]`, i.e. ANY member of the seed family, so
+     * "the state is a head" is the question and `is_stop && !is_dead` is
+     * exactly how the loop body already spells it. The `s0` equality that
+     * stood here was exact only while precondition (8) refused every other
+     * seed target as a head; asking the general question is what LETS (8)
+     * narrow, and it puts the per-search test and the per-byte test on one
+     * predicate instead of two facts that have to be kept in step.
+     *
+     * Under the `constant` seed the state IS `cell_of(s0)`, so the whole test
+     * folds away and the jump is unconditional — the same text this emitted
+     * before, byte for byte, on that half of the population. */
+    if (seedhead) {
         if (f->seed->table)
-            sb_printf(c, "%sif (%s == %d) goto %s;\n", ind, f->dir->statev,
-                      f->repr->cell_of(f->d->s0, f->d), le);
+            sb_printf(c, "%sif (%s_%s_is_stop(%s) && !%s_%s_is_dead(%s))"
+                         " goto %s;   // seeded straight onto a scan-edge head\n",
+                      ind, f->p, f->dir->c.name, f->dir->statev,
+                      f->p, f->dir->c.name, f->dir->statev, le);
         else
             sb_printf(c, "%sgoto %s;   // the start state carries a scan edge\n",
                       ind, le);
@@ -5570,7 +5706,7 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * The alternative idiom in this file, `__attribute__((unused))` on the
      * label (`<p>_dead`'s), would say "nothing may jump here" of a label that
      * IS jumped to on the other half of the population. */
-    if (s0head) sb_printf(c, "%s  %s:\n", ind, le);
+    if (seedhead) sb_printf(c, "%s  %s:\n", ind, le);
     /* The head's own accept probe. It is the one loop-top statement the edge
      * path genuinely REPLAYS: an edge whose class test fails advances nothing
      * and changes nothing, so without this a head's accepting position would

@@ -1125,6 +1125,37 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            scanedge)
+                # [OPT-EDGE] STEP 1.1
+                # tests/codegen/run_scan_edge_census.sh — precondition (8)'s
+                # population, and the loop's ONE PER-SEARCH entry dispatch.
+                # ITS OWN ARM rather than `codegen`, for `vmframeless`'s
+                # reason one row up: what it guards is the emitted ENTRY TEST
+                # agreeing with the pass's decision about which states are
+                # heads, which is orthogonal to every stamp check in that
+                # group.
+                #
+                # A ROW ON THIS ARM SCORES `corpus:Nfail` TOO, and that is the
+                # difference from `vmframeless`: the entry dispatch is not an
+                # observability fact, it is where the walk goes, so a defect
+                # here is a LOST MATCH. A row scoring `scanedge:Nfail` beside
+                # `corpus:0fail` means the corpus has no subject that seeds
+                # onto a head at a position a match can start at — which is
+                # true of the `\b\w+\b` family and false of `foo\B`, and is
+                # exactly why this arm exists rather than trusting the corpus.
+                #
+                # REGISTERED BEFORE THE ROW THAT NAMES IT (S227), per R31 C11:
+                # this vocabulary is CLOSED, and a row naming a word that does
+                # not exist yet scores UNKNOWN-SUITE rather than "not
+                # detected".
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_scan_edge_census.sh" \
+                    > "$work/scanedge.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/scanedge.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/scanedge.log" | grep -oE '[0-9]+')"
+                suite_bits+=("scanedge:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             anchdiff)
                 # [ENG-ABS] tests/anchored/run_anchored_diff.sh — the ANSWER
                 # half, and the arm whose absence would make an entire class of

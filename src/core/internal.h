@@ -4388,8 +4388,21 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
  * immediately after `pcrec_minimize_dfa` on that machine: it needs the
  * canonical state set, and nothing after it rebuilds a `DState`. It reads
  * `PCREC_NO_SCAN_EDGE` itself, so a denied build is byte-for-byte the
- * compiler that shipped before this row. */
-void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/scanedge.c */
+ * compiler that shipped before this row.
+ *
+ * [OPT-EDGE] STEP 1.1 — `prefilter_reseeds` IS PRECONDITION (8)'s INPUT, and
+ * it is a parameter rather than something the pass derives because the answer
+ * belongs to the EMITTER: it is axis B's own selection for this machine, asked
+ * through `pcrec_dfa_scan_state_written` below. Every caller states it, and
+ * the two that pass a constant say why at the call. */
+void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds);
+/* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
+ * VARIABLE FROM ANYWHERE BUT THE STEP AND THE ENTRY SEED? The pass's own
+ * question, answered by the emitter's axis-B selection so that the two cannot
+ * disagree about which prefilter this machine takes. `src/gen/emit_dfa.c`
+ * carries the invariance argument that makes it safe to ask BEFORE the pass
+ * runs, and `dfa_form_derive` checks the agreement afterwards. */
+bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d);  /* src/gen/emit_dfa.c */
 /* The emitted class test's two forms, ONE predicate and one emission site
  * (D75 addendum: a one-site boolean stays a boolean). True when the class's
  * byte set is a contiguous range, which the emitter writes as a

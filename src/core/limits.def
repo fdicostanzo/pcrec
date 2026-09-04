@@ -7,7 +7,8 @@
  * enumerated in the brief and a REAL population of 44 once every file was
  * grepped (docs/dev/lanes/lim1_report.md carries the survey delta). Every
  * one of those 44 is a row below (45 since [OPT-5] added the scan-edge
- * budget); `pcrec --list-limits` dumps this table as
+ * budget, 54 today -- the manifest in tests/registry/limits_check.sh is the
+ * count that is CHECKED, not this sentence); `pcrec --list-limits` dumps this table as
  * TSV (src/parse/limits_dump.c) and `docs/spec/limits.md` §3's prose is
  * checked against the dump rather than hand-copied from it
  * (tests/registry/limits_check.sh).
@@ -240,6 +241,7 @@ PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/op
 PCREC_LIMIT(PCREC_OFSK_MAX_SET, 4, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many offsets the selected offset-set prefilter candidate may carry", INTERNAL_H)
 PCREC_LIMIT(PCREC_MINW_MAX, (1LL << 40), "", "compile budget", NONE, "", "src/opt/callgraph.c: the minimum-width analysis' saturation ceiling (== PCREC_W_UNBOUNDED)", INTERNAL_H)
 PCREC_LIMIT(PCREC_MAX_SCAN_EDGES, 4, "count", "selection knee", NONE, "", "[OPT-5]: how many scan edges one DFA machine may carry — src/opt/scanedge.c takes the longest chains first, src/gen/emit_dfa.c sizes its array by it; since [OPT-EDGE] STEP 1 an edge costs NO compare on the emitted loop's generic path (the shared sentinel), so this is an emitted-bytes budget awaiting a measured re-choice", INTERNAL_H)
+PCREC_LIMIT(PCREC_MIN_SCAN_CHAIN, 2, "states", "selection knee", NONE, "", "[OPT-5] precondition (5): the SHORTEST bounded counted-class run src/opt/scanedge.c will collapse into a scan edge (the unbounded self-loop is admitted at any length). MEASURED 2026-09-04 against the STEP 1.1 loop -- studies/scan_edge_ladder/run_floor.sh, 3 runs x 15 rounds, edge vs -fno-scan-edge on the same pattern: at m=2, 3 and 4 the two arms are NOT separated by more than the per-round range on either family, so D77 no-gap-no-move keeps this at 2; the only resolvable separation is m=8 nullable, edge/noedge 0.9855 median [IQR 0.0243]. The edge SIZE win is unconditional and is the standing reason to admit m=2", INTERNAL_H)
 
 /* ---- home: MOD_RECURSION / MOD_BACKREFS / MOD_LOOKAROUND (3) ----------- *
  * Parse-time saturation/buffer caps local to one module, kept at their own

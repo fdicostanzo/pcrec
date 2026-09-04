@@ -90,9 +90,14 @@
  *      because a reverse walk's "last accepting position" is the FURTHEST
  *      BACK one.
  *
- *  (5) IT IS WORTH IT: `m >= 2`, or the chain is the unbounded self-loop.
- *      A one-state bounded "chain" is one table step, and collapsing it
- *      would move emitted bytes to buy nothing.
+ *  (5) IT IS WORTH IT: `m >= PCREC_MIN_SCAN_CHAIN` (2, src/core/limits.def),
+ *      or the chain is the unbounded self-loop. A one-state bounded "chain"
+ *      is one table step, and collapsing it would move emitted bytes to buy
+ *      nothing. The 2 is a limits.def row rather than a literal since
+ *      [OPT-EDGE] STEP 1.1, and that row carries the MEASUREMENT that keeps
+ *      it at 2 on the new loop (studies/scan_edge_ladder/run_floor.sh: no
+ *      arm separation at m=2, 3 or 4 beyond the per-round range, so D77's
+ *      "no gap, no move" applies).
  *
  * ================== WHY THE INTERIOR STATES CAN BE DELETED ==================
  *
@@ -114,9 +119,15 @@
  * the generic path at the position-view select. So:
  *
  *   - the state variable holds a head only where the edge path runs. It is
- *     written in exactly three places — the loop's entry seed, the step, and
- *     the offset-set prefilter's RESEED — and the first two are guarded by
- *     the stop test while the third cannot produce a head by precondition (8);
+ *     written in exactly three places — the loop's ENTRY SEED, the STEP, and
+ *     the offset-set prefilter's RESEED — and each is answered by a different
+ *     thing. The step is guarded by the stop test. The entry seed installs an
+ *     arbitrary member of the seed family, and since [OPT-EDGE] STEP 1.1 the
+ *     loop's entry dispatch asks the general question about it (`is_stop &&
+ *     !is_dead`, the loop's own test) instead of an equality against `s0`, so
+ *     a seeded head reaches the edge path. The reseed writes MID-BODY, after
+ *     the stop test has been passed, and nothing can see it — so precondition
+ *     (8) refuses the head outright, on the machines whose prefilter reseeds;
  *   - on the edge path the scan edge still runs AFTER everything that can
  *     advance the position (the prefilter, which is replayed there for
  *     exactly this reason) and BEFORE everything that cannot (the view select
@@ -297,6 +308,7 @@ static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt, bool *seedtgt)
  * common machine, `[a-z]{0,n}`'s own alphabet being exactly two classes. */
 static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
                    const bool *viewtgt, const bool *seedtgt,
+                   bool prefilter_reseeds,
                    const int *exitv, bool *haspred,
                    Chain *out, int cap, int nout)
 {
@@ -338,29 +350,55 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
          * the same one: (3) is about a member's OWN view, this is about
          * being someone else's. */
         if (viewtgt[s]) continue;
-        /* PRECONDITION (8), [OPT-EDGE] STEP 1's own, and it exists because
-         * the emitted loop no longer tests for a head on its generic path.
-         * Under the shared sentinel the loop learns "the state is a head"
-         * from THE STEP'S RESULT — `emit_scan_loop`'s one stop test — so the
-         * edge body is reachable only from there and from the loop's entry.
-         * Anything else that WRITES the state variable mid-body would install
-         * a head the edge block never sees, and the ordinary step would then
-         * read `tr[head][C]`, the cell this pass kills.
+        /* PRECONDITION (8), [OPT-EDGE] STEP 1's, NARROWED AT STEP 1.1 TO THE
+         * HAZARD IT IS ACTUALLY FOR. It exists because the emitted loop no
+         * longer tests for a head on its generic path: under the shared
+         * sentinel the loop learns "the state is a head" from THE STEP'S
+         * RESULT — `emit_scan_loop`'s one stop test — so anything else that
+         * WRITES the state variable would install a head the edge block never
+         * sees, and the ordinary step would then read `tr[head][C]`, the cell
+         * this pass kills.
          *
-         * Exactly one thing does: the offset-set prefilter's RESEED
-         * (`pf_emit_ofs_reseed`, emitted on a machine with a seed), which
-         * writes `s1u[upc(s[cand-1])]` after skipping. Refusing a head that
-         * any seed family can name is exact, is this pass's standing posture
-         * (every precondition DECLINES rather than stretching), and costs
-         * nothing on a machine with no seed — where `seedtgt` is all false.
-         * The neighbouring rule (6) is about being a VIEW target and is not
-         * the same one; the s0 exclusion is in `in_degrees`' own comment. */
-        if (seedtgt[s]) continue;
+         * TWO THINGS WRITE IT, and STEP 1 refused both with one rule while
+         * naming only the first. They are not the same hazard:
+         *
+         *  - the offset-set prefilter's RESEED (`pf_emit_ofs_reseed`) writes
+         *    `s1u[upc(s[cand-1])]` MID-BODY, after skipping. The loop has
+         *    already passed its stop test by then and nothing can see it, so
+         *    the head must not exist in the first place. THAT is what this
+         *    precondition is, and `prefilter_reseeds` is the emitter's own
+         *    axis-B answer for this machine (`pcrec_dfa_scan_state_written`);
+         *  - axis D's `seeded` START INITIALIZER writes the same family, but
+         *    ONCE PER SEARCH and BEFORE the loop, where `emit_scan_loop`'s
+         *    entry dispatch is looking. STEP 1 left that dispatch asking
+         *    `state == cell_of(s0)`, which is exact only while this rule
+         *    refuses every other seed target — so the entry's correctness was
+         *    a fact about this pass, written down in a comment in the
+         *    emitter. STEP 1.1 gave the entry the general question
+         *    (`is_stop && !is_dead`, the loop's own), and the obligation is
+         *    discharged where it belongs.
+         *
+         * MEASURED, which is why the narrowing is a change and not a tidy-up:
+         * 9 of the 11 corpus artifacts this rule cost an edge carry
+         * `byte-class` or `memchr` prefilters, which advance the position and
+         * never write the state — all `\b`/`\B` shapes, and all of them
+         * seeded onto a NON-`s0` head, i.e. exactly the population the entry
+         * dispatch had to be generalised for first.
+         *
+         * `s0` was never refused (`in_degrees`' own comment says why: the
+         * reseed's fallback arm writes `s0` at a point where the state
+         * variable already holds `s0`). The neighbouring rule (6) is about
+         * being a VIEW target and is not this one. `src/gen/emit_dfa.c`'s
+         * `dfa_form_derive` RE-DERIVES this rule from the machine it is about
+         * to emit, so a form that turns out to reseed after all is a loud
+         * internal error rather than a scan the loop never enters. */
+        if (prefilter_reseeds && seedtgt[s]) continue;
         int e = exitv[s], a = acc_of(d, s), nx = d->st[s].tr[cls];
 
         /* THE UNBOUNDED FORM: the head's class edge is its own self-loop.
          * `*` and `+` are exactly this, and it is one state rather than a run,
-         * so precondition (5)'s `m >= 2` does not apply to it. It also needs
+         * so precondition (5)'s `m >= PCREC_MIN_SCAN_CHAIN` does not apply to
+         * it. It also needs
          * no part of the deletion argument, because a chain of one deletes
          * nothing and leaves the self-loop in the table where it was.
          *
@@ -397,7 +435,7 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
             m++;
         }
         int f = d->st[cur].tr[cls];
-        if (m < 2) continue;                         /* precondition (5) */
+        if (m < PCREC_MIN_SCAN_CHAIN) continue;      /* precondition (5) */
         /* Precondition (4): the LANDING state's accept must be the same at
          * every position, so the emitted `if (acc(F)) record` line is right
          * wherever the run happens to end. It need NOT equal the chain's own
@@ -426,7 +464,7 @@ static int chain_cmp(const void *a, const void *b)
     return x->head - y->head;
 }
 
-void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
+void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
 {
     /* THE DENIAL IS HERE AND NOWHERE ELSE THAT MATTERS. The emitter's own
      * axis reports the same flag so `--list-axes` can name it, but the
@@ -457,7 +495,8 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d)
     for (int cls = 0; cls < d->ncls && nfound < n; cls++) {
         for (int s = 0; s < n; s++)
             ok[s] = member_ok(&d->st[s]) && shaped(d, s, cls, &exitv[s]);
-        nfound = collect(d, cls, indeg, ok, vtg, stg, exitv, hp, found, n, nfound);
+        nfound = collect(d, cls, indeg, ok, vtg, stg, prefilter_reseeds,
+                         exitv, hp, found, n, nfound);
     }
     if (nfound == 0) {
         free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
