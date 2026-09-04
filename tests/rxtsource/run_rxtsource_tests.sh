@@ -698,7 +698,14 @@ fi
 # "fix" that is to re-pin, which discards the protection entirely.
 BEGIN_MARK='# --- BEGIN PINNED ARM REGION (w1 N3) ---'
 END_MARK='# --- END PINNED ARM REGION ---'
-ARM_PIN='3e9453908bd3d8d8ea06da6a3008dbe4bef42848c57ea1ab06a1f0b4c6db5001'
+# [DD-13b.W1.3] MOVED 2026-09-04, deliberately and in a reviewed change. The
+# `export` ARM itself is OUTSIDE this region; what moved inside it is the
+# per-block `cur_exports=""` reset, which belongs in the block-reset arm for
+# the reason the comment there gives — a block-scoped directive that carried
+# to the next block would compile the following pattern under something
+# nobody wrote. The pin did its job: it caught an edit inside the arm chain
+# and made someone say why. Previous: 3e945390... (W1.1).
+ARM_PIN='8ea2cd29e4f53d52f1144f65b53c26abac4707e9276405179de835154b95604e'
 
 region="$WORKDIR/armregion.txt"
 awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
@@ -1184,8 +1191,18 @@ fi
 check_refusal_all3 directive_before_pattern.rxt directive-before-pattern \
     'file-level'
 
-# --- sem19: leg C validates 'name'/'encoding' as identifiers too ------
-check_refusal_all3 bad_name_ident.rxt bad-name-ident 'identifier'
+# --- sem19: leg C validates 'name'/'encoding' too --------------------
+#
+# [DD-13b.W1.3] THE NEEDLE MOVED FROM 'identifier' TO 'definition name', and
+# the change is the point rather than an accommodation. A block `name` stopped
+# being an identifier in this step — it admits `-` and `.` — so a refusal that
+# still said "identifier" would be describing a rule the parser no longer
+# applies. What the fixture tests is unchanged and is the half that matters:
+# `9bad` starts with a DIGIT, which no mapping can repair, and all three legs
+# still refuse it. `bad_encoding_ident` below keeps its own needle, because an
+# `encoding` value IS still an identifier — the two rules genuinely parted
+# company here, and these two lines are where a reader sees that.
+check_refusal_all3 bad_name_ident.rxt bad-name-ident 'definition name'
 check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident 'encoding name'
 
 # --- sem20: block name uniqueness, enforced on a HEADLESS file (the
@@ -1656,10 +1673,10 @@ if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_delivers.
     u_nentries="$(grep -m1 '^    \.nentries = ' "$W13/user.c" | tr -dc '0-9')"
     u_ncaps="$(grep -m1 -oE '^#define USER_NCAPS [0-9]+' "$W13/user.h" | awk '{print $3}')"
 
-    if printf '%s\n' "$u_rows" | grep -q '{ "kept", [0-9]*, [0-9]*, "piece" }'; then
-        pass "W1.3 delivery: the definition named group reaches groups[] with ref piece"
+    if printf '%s\n' "$u_rows" | grep -q '{ "d.kept", [0-9]*, [0-9]*, "piece" }'; then
+        pass "W1.3 delivery: the definition exported group reaches groups[] as d.kept with ref piece"
     else
-        fail "W1.3 delivery: no row for kept with ref piece. Rows:
+        fail "W1.3 delivery: no row for d.kept with ref piece. Rows:
 $u_rows"
     fi
     # THE FIRST TIME THE TWO NUMBERS DIFFER. nnames counts the PRIMARY rows
@@ -1670,17 +1687,17 @@ $u_rows"
     else
         fail "W1.3: expected nnames=0 and nentries=1 on a caller that declares no name of its own; got $u_nnames / $u_nentries"
     fi
-    # THE ERASED TIER, AS A NUMBER. The definition has three groups; one is
-    # delivered, one is hidden, one is erased, and the wrapper takes one --
-    # so the caller 0 groups plus 3 spent numbers is RX_NCAPS 4. A build that
-    # numbered the erased group too would read 5, which is exactly what the
-    # PCRE2 textual control emits for the equivalent (?(DEFINE)...) spelling
-    # (MEASURED, 2026-09-03).
-    if [ "$u_ngroups" = "0" ] && [ "$u_ncaps" = "4" ]; then
-        pass "W1.3 erasure: ngroups=0, RX_NCAPS=4 -- the unnamed, unreferenced group spent NO number"
+    # THE ERASED TIER, AS A NUMBER. The definition has three groups: `kept` is
+    # exported AND delivered by the site, `(b)` is reached by the definition's
+    # own \2, and `(c)` is neither -- so `(c)` is ERASED. Four numbers are
+    # spent (wrapper, kept, (b), and the SITE's own slot for d.kept) and the
+    # caller declares none, so RX_NCAPS is 5. A build whose erased tier
+    # stopped erasing would read 6.
+    if [ "$u_ngroups" = "0" ] && [ "$u_ncaps" = "5" ]; then
+        pass "W1.3 erasure: ngroups=0, RX_NCAPS=5 -- the unnamed, unreferenced group spent NO number"
     else
-        fail "W1.3 erasure: expected ngroups=0 and RX_NCAPS=4; got $u_ngroups / $u_ncaps.
-  RX_NCAPS 5 means the erased tier stopped erasing (the naive textual append number)."
+        fail "W1.3 erasure: expected ngroups=0 and RX_NCAPS=5; got $u_ngroups / $u_ncaps.
+  RX_NCAPS 6 means the erased tier stopped erasing."
     fi
 else
     fail "W1.3: --source could not build the composition fixture:

@@ -132,7 +132,15 @@ build_one() {
     local upx; upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
     mkdir -p "$dir"
     local err rc
-    err="$("$TIMEOUT_BIN" 120 "$PCREC" "$@" -o "$dir/gen.c" 2>&1 >/dev/null)"; rc=$?
+    # `-o` GOES FIRST, BEFORE the caller's arguments, and that placement is
+    # the whole of a defect this function shipped with. The flat-control call
+    # ends `-- <pattern>`, so an `-o` appended AFTER it landed past the `--`
+    # and pcrec read the output path as a SECOND pattern: "exactly one pattern
+    # expected". Every flat control failed to build and the comparison had
+    # nothing to compare — which the two non-vacuity guards below caught
+    # (zero delivered spans, zero cells) instead of the section reporting
+    # green on four passes.
+    err="$("$TIMEOUT_BIN" 120 "$PCREC" -o "$dir/gen.c" "$@" 2>&1 >/dev/null)"; rc=$?
     if [ $rc -ne 0 ] || [ ! -f "$dir/gen.h" ]; then
         echo "pcrec failed (exit $rc): $err"
         return 1
@@ -226,6 +234,14 @@ for px in $(LC_ALL=C awk '/^target /{ n=$3; gsub(/[-.]/, "_", n); print n }' "$W
         pyout="$("$TIMEOUT_BIN" 30 python3 -c '
 import re, sys
 pat, subj = sys.argv[1], sys.argv[2]
+# ONE SPELLING DIFFERENCE, TRANSLATED, AND IT IS NOT A SEMANTIC ONE. python
+# writes a named group `(?P<n>...)` where PCRE2 writes `(?<n>...)`; the flat
+# controls are PCRE2 patterns because pcrec compiles them too. The
+# substitution is deliberately narrow — `(?<` followed by a NAME character,
+# never `(?<=` or `(?<!`, which are lookbehind and mean the same thing in
+# both engines. Without it the oracle leg raises on every control that names
+# a group, which is exactly what it did on this file first run.
+pat = re.sub(r"\(\?<(?=[A-Za-z_])", "(?P<", pat)
 subj = subj.encode("utf-8").decode("unicode_escape")
 m = re.compile(pat).search(subj)
 print("match %d %d" % m.span() if m else "nomatch")
@@ -328,12 +344,29 @@ fi
 # that row sits BELOW every row the target pattern itself declared. Read off
 # the emitted artifact as text — never off the composer's own report, which
 # would be the composer checking itself.
-pair_rows="$(LC_ALL=C grep -E '^    \{ "' "$WORKDIR/c_pair/gen.c" 2>/dev/null || true)"
-if printf '%s\n' "$pair_rows" | LC_ALL=C grep -q '{ "word", [0-9]*, [0-9]*, "w" }'; then
-    pass "delivery: a flat import keeps its PROVENANCE — ref \"w\" — while living in the caller's scope"
+# THE DELIVERING TARGET, NOT THE PLAIN ONE. This check named `pair` until its
+# first run: `pair` calls `(?&w)` plainly, and under the ruled model a plain
+# call delivers NOTHING, so it correctly has no rows at all. Reading it here
+# was the check still describing the withdrawn flat-injection model. The
+# delivering twin is `pairdeliv`, and asserting on `pair` is now the OTHER
+# half of the pair below.
+deliv_rows="$(LC_ALL=C grep -E '^    \{ "' "$WORKDIR/c_pairdeliv/gen.c" 2>/dev/null || true)"
+plain_rows="$(LC_ALL=C grep -E '^    \{ "' "$WORKDIR/c_pair/gen.c" 2>/dev/null || true)"
+if printf '%s\n' "$deliv_rows" | LC_ALL=C grep -q '{ "w.word", [0-9]*, [0-9]*, "w" }'; then
+    pass "delivery: a delivering site emits a site-qualified row with its definition as ref"
 else
-    fail "delivery: 'pair' has no groups[] row { \"word\", .., .., \"w\" }. Rows found:
-$pair_rows"
+    fail "delivery: 'pairdeliv' has no groups[] row { \"w.word\", .., .., \"w\" }. Rows found:
+$deliv_rows"
+fi
+# THE CONTROL, and it is the half that makes the assertion above mean
+# something: the SAME definition, called PLAINLY, delivers nothing. A build
+# that injected a library's names regardless of the call would pass the check
+# above and fail this one.
+if [ -z "$plain_rows" ]; then
+    pass "delivery: the CONTROL — the same definition called plainly emits NO row"
+else
+    fail "delivery: 'pair' calls (?&w) plainly and must emit no groups[] row, but has:
+$plain_rows"
 fi
 # THE ORDER IS THE ABI CONTRACT, AND THE KEY IS THE SCOPE — not `ref`.
 # `groups[]` sorts (caller-scope-first, name, number), so the `nnames` prefix
@@ -347,7 +380,7 @@ fi
 # contain a `.` and a site-scoped row always does. Keying this check on `ref`
 # would be the check reproducing the very mistake the ruling corrected — a
 # flat import carries a `ref` and is still caller scope.
-order_bad="$(printf '%s\n' "$pair_rows" | LC_ALL=C awk '
+order_bad="$(printf '%s\n' "$deliv_rows" | LC_ALL=C awk '
     { name = $2; gsub(/[",]/, "", name)
       dotted = (index(name, ".") > 0)
       if (!dotted && seen_dotted) bad++

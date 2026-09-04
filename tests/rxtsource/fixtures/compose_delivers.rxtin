@@ -1,15 +1,23 @@
 # [DD-13b.W1.3] COMPOSITION, and the three tiers in one file.
 #
-# `piece` NAMES one group (DELIVERED: a groups[] row whose ref is "piece"),
-# references one by number (HIDDEN: a slot, no row), and leaves one unnamed
-# and unread (ERASED: the A_CAP is deleted and it spends no number at all).
-# The caller declares no group of its own, so `ngroups` is 0 and every slot
-# above it belongs to the definition — which is what makes `nentries >
-# nnames` observable here for the first time in this tree.
+# `piece` NAMES and EXPORTS one group (DELIVERED at the site below: a
+# groups[] row `d.kept` whose ref is "piece"), references one by number
+# (HIDDEN: a slot, no row), and leaves one unnamed and unreferenced (ERASED:
+# the A_CAP is deleted and it spends no number at all). The caller declares
+# no group of its own, so `ngroups` is 0 and every slot above it belongs to
+# the definition or to the site.
+#
+# [D89 addendum, 2026-09-03] THE CALL IS A DELIVERING ONE, and it has to be.
+# This fixture called `(?&piece)` plainly until the addendum, back when every
+# named group was injected flat; under the ruled model a plain call delivers
+# NOTHING, so the plain form made this file assert an empty table. The plain
+# call's own behaviour is covered by `deliver_forms.rxtin`, where it is one
+# of four shapes over one definition.
 target = user
 
-pattern ^(?&piece)$
+pattern ^(?&d=piece)$
 name user
 
 pattern (?<kept>a)(b)(c)\2
 name piece
+export kept
