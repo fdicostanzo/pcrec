@@ -1751,20 +1751,13 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
  *
  * Conservative in the safe direction throughout: over-estimating cost lowers
  * the stamped ceiling, which under-promises rather than over-promises. */
-/* Below this width the island is not built. TWO branches is the floor because
- * the island's forward pass is never MORE byte tests than the chain it
- * replaces (it is the same tests, factored) and it emits no push at all where
- * the chain emits one per untried branch — so there is no measured width at
- * which the chain is ahead. It is a named constant rather than a bare 2 so
- * that a future measurement moves one line: the region below the study's own
- * narrowest rung is UNMEASURED, and `docs/dev/lanes/isl1_report.md` records
- * what would settle it. */
-#define VM_ISL_MIN_BRANCHES 2
-
-/* The floor for an island that PUSHES — one whose alternatives are not
- * prefix-free, so its candidate chain has a second entry and the artifact
- * stays framed. Measured, not guessed: see the table at the decline itself. */
-#define VM_ISL_MIN_BRANCHES_PREFIXED 4
+/* THE TWO WIDTH KNEES ARE `src/core/limits.def` ROWS (`VM_ISL_MIN_BRANCHES`,
+ * `VM_ISL_MIN_BRANCHES_PREFIXED`), expanded by this file's own EMIT_VM home
+ * dispatch above — not `#define`s here. They were bare defines until panel
+ * r53's doc lens pointed out that a SELECTION KNEE is precisely what that
+ * table catalogues, alongside `PCREC_DEFAULT_UNROLL_K` and
+ * `PCREC_SIZE_TERM_THRESHOLD`. The measurement behind each value is cited at
+ * the row and again at the decline site below. */
 
 typedef struct {
     int idx;      /* the branch's ORIGINAL alternation index (0-based) */

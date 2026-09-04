@@ -173,6 +173,25 @@ PCREC_LIMIT(VM_DEFAULT_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, "
 PCREC_LIMIT(VM_MAX_AUTO_RESUME_FRAMES, 2048, "frames", "runtime capacity", FLAG, "3.2", "[M4.6a]: clamp ceiling for the BOUNDED-depth class's exact auto-sizing under --backtrack-frames", EMIT_VM)
 PCREC_LIMIT(VM_MAX_AUTO_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, "3.2", "[M4.6a]: trail's own clamp ceiling, paired with VM_MAX_AUTO_RESUME_FRAMES", EMIT_VM)
 
+/* [ENG-ISL] STEP 1's two SELECTION KNEES for the VM's alternation island —
+ * `PCREC_DEFAULT_UNROLL_K`/`PCREC_SIZE_TERM_THRESHOLD`'s own kind, and here
+ * for their reason: each steers WHICH lowering fires and neither can refuse a
+ * pattern (over either one the island is simply not built and `vm_alt`'s
+ * serial chain emits the alternation unchanged). They were bare `#define`s in
+ * emit_vm.c until panel r53's doc lens pointed out that a knee is exactly what
+ * this table exists to catalogue.
+ *
+ * The MEASUREMENT behind each is in docs/dev/lanes/isl1_report.md: §3's corpus
+ * census for the floor of 2 (368 of 429 qualifying alternations are width 2,
+ * so a higher floor leaves the mechanism untested by the corpus), and §12.1's
+ * six-cell hand-twin table for the PREFIXED floor of 4 — width 2 prefix-
+ * bearing measured x1.13-1.14 against the chain, width 4 a wash at 1.001, and
+ * width 128 a x99 win, so 4 keeps the mechanism where it is free and declines
+ * where it is not. Width 3 is unmeasured and sits on the losing side of the
+ * knee, so it declines with 2 rather than being admitted on a guess. */
+PCREC_LIMIT(VM_ISL_MIN_BRANCHES, 2, "count", "selection knee", NONE, "", "[ENG-ISL]: fewest literal alternatives an alternation island is built for at all; below it vm_alt's chain emits the alternation", EMIT_VM)
+PCREC_LIMIT(VM_ISL_MIN_BRANCHES_PREFIXED, 4, "count", "selection knee", NONE, "", "[ENG-ISL]: fewest literal alternatives an island that PUSHES is built for -- one whose alternatives are not prefix-free, so its candidate chain has a second entry and the artifact stays framed", EMIT_VM)
+
 /* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
 
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)

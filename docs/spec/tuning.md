@@ -1352,7 +1352,36 @@ alternation is emitted by the chain unchanged:
 | a quantifier, a group, a capture, a backreference, a lookaround, an assertion, a subroutine call | the language is not a finite literal set, or the VM is needed inside the alternation |
 | a **caseless** alternation | D23 folds a caseless literal to a two-member CLASS at parse time, so its alternatives are class-leading before the emitter sees them. This is `[FORM-CHAR]`'s axis, not this one |
 | more literal alternatives, or more total literal bytes, than the emitter's own enumeration budget | the cross product of concatenated alternations is exponential in principle; over the budget the island is not built |
-| fewer than two literal alternatives | there is no dispatch to make |
+| fewer than `VM_ISL_MIN_BRANCHES` (2) literal alternatives | there is no dispatch to make |
+| fewer than `VM_ISL_MIN_BRANCHES_PREFIXED` (4), for an island that PUSHES | measured: an island whose alternatives are NOT prefix-free keeps a resume frame, and below that width the trie walk plus the frame is more work than the chain it replaces |
+
+**THE TWO WIDTH KNEES ARE MEASURED, AND THE DISCRIMINATOR IS PREFIX FREEDOM
+RATHER THAN WIDTH.** Both are `src/core/limits.def` rows of kind
+`selection knee` — `pcrec --list-limits` dumps them beside
+`PCREC_DEFAULT_UNROLL_K` and `PCREC_SIZE_TERM_THRESHOLD`, and like those two
+they carry no `limits.md` anchor, because that document states what pcrec
+promises a CALLER about an emitted matcher's resource bounds and a knee that
+steers which lowering fires promises nothing.
+
+A PREFIX-FREE island's candidate chain has one entry, so it pushes nothing and
+the artifact comes out frameless; a PREFIX-BEARING one keeps a push. Measured
+on a quiet box (`docs/dev/lanes/isl1_report.md` §12.1, island time over chain
+time, 11 interleaved rounds, answers checked every round):
+
+| shape | width | island / chain |
+|---|---|---|
+| `foo\|bar`, prefix-free | 2 | 0.175 |
+| `(?:cat\|dog\|cow)s`, prefix-free | 3 | 0.140 |
+| `fo\|foo`, prefix-bearing | 2 | 1.131 |
+| `(?:ab\|abc)d`, prefix-bearing | 2 | 1.144 |
+| `(?:a\|ab\|abc\|abcd)z`, prefix-bearing | 4 | 1.001 |
+| 128 alternatives, every path prefix-bearing | 128 | 0.010 |
+
+So the floor for a pushing island is 4 and the floor for a prefix-free one
+stays 2: width 4 measured a wash, so it keeps the mechanism at no cost, and a
+width floor applied to every island would have thrown away the prefix-free
+width-2 population, which is where the largest per-pattern win in the table
+is.
 
 **No answer moves either way, and the argument is structural.** Leftmost-first
 over an alternation of literals is `min{ i : alternative i matches here }` — a

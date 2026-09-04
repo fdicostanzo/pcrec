@@ -117,6 +117,8 @@ VM_DEFAULT_RESUME_FRAMES
 VM_DEFAULT_TRAIL_FRAMES
 VM_MAX_AUTO_RESUME_FRAMES
 VM_MAX_AUTO_TRAIL_FRAMES
+VM_ISL_MIN_BRANCHES
+VM_ISL_MIN_BRANCHES_PREFIXED
 PCREC_PREFIX_K_MAX
 PCREC_OFSK_MAX_SET
 PCREC_MINW_MAX
@@ -131,8 +133,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 45 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 45 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 47 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 47 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
@@ -233,6 +235,21 @@ done <<< "$anchored"
 #     rejects or promises, which is this list's own membership rule. The
 #     DEPTH one additionally guards pcrec's own C stack (D10/R-2), the same
 #     argument TRIE_MAX_RDEPTH is on this list for.
+# THE NAME-SHAPE FILTER GAINED `MIN` AND `THRESHOLD` ([ENG-ISL], 2026-09-03,
+# panel r53's doc lens). It read `MAX|CAP|LIMIT|BUDGET|_LEN\b|DEPTH|NEST`,
+# which is a filter over the vocabulary of CEILINGS — and a SELECTION KNEE is
+# just as often spelled as a FLOOR. `VM_ISL_MIN_BRANCHES` and
+# `VM_ISL_MIN_BRANCHES_PREFIXED` sat in emit_vm.c as bare `#define`s and this
+# scan could not see either one, so the D90 rule they break was not being
+# enforced against them at all — the same blind spot would have hidden any
+# future `*_MIN_*` or `*_THRESHOLD` knee. `PCREC_SIZE_TERM_THRESHOLD` is
+# already a row, so adding `THRESHOLD` costs nothing and closes the other half
+# of the same vocabulary gap. `MIN` is spelled `_MIN_|_MIN\b` rather than bare:
+# a bare `MIN` is a SUBSTRING and matched `EXT_NOT_MINE` in internal.h on this
+# widening's first run — the same class of false positive a bare `MAX` would
+# have, if any identifier in this tree happened to contain it. Both knees are limits.def rows now, so they pass
+# through TABLE_NAMES; the point of widening the filter is that deleting those
+# rows would make this check FIRE rather than go quiet.
 ALLOWLIST="TRIE_MAX_RDEPTH
 MAX_GROUPS
 LEGEND_MAX_STATES
@@ -255,12 +272,12 @@ found="$(grep -rnE '#define[[:space:]]+[A-Z_][A-Z0-9_]*[[:space:]]+[0-9]|(^|[{;[
     "$ROOT_DIR/src" "$ROOT_DIR/cli" "$ROOT_DIR/lib" \
     --include=*.c --include=*.h 2>/dev/null \
     | grep -v '/limits\.def:' \
-    | grep -E 'MAX|CAP|LIMIT|BUDGET|_LEN\b|DEPTH|NEST' || true)"
+    | grep -E 'MAX|_MIN_|_MIN\b|CAP|LIMIT|BUDGET|THRESHOLD|_LEN\b|DEPTH|NEST' || true)"
 
 bad_hits=0
 while IFS= read -r line; do
     [ -z "$line" ] && continue
-    ident="$(printf '%s' "$line" | grep -oE '[A-Z_][A-Z0-9_]*' | grep -E 'MAX|CAP|LIMIT|BUDGET|_LEN$|DEPTH|NEST' | head -1)"
+    ident="$(printf '%s' "$line" | grep -oE '[A-Z_][A-Z0-9_]*' | grep -E 'MAX|_MIN_|_MIN$|CAP|LIMIT|BUDGET|THRESHOLD|_LEN$|DEPTH|NEST' | head -1)"
     [ -z "$ident" ] && continue
     grep -qxF "$ident" <<< "$TABLE_NAMES" && continue
     grep -qxF "$ident" <<< "$ALLOWLIST" && continue
