@@ -39,9 +39,20 @@
 # recovered and both matches vanish.
 SAB_ID="S227-scan-edge-entry-s0-only"
 SAB_FILE="src/gen/emit_dfa.c"
-SAB_SUITES="scanedge corpus"
+SAB_SUITES="scanedge harness"
+# THE ARM WORD IS `harness`; `corpus:` is only the LABEL it prints. This row
+# first shipped SAB_SUITES="scanedge corpus", copied from the matrix output's
+# `corpus:Nfail/Mpass` bit -- and `corpus` is not in the closed vocabulary, so
+# the answer arm would have scored UNKNOWN-SUITE (R31 C11) instead of running.
+# Caught statically post-lift, before the row's first matrix run.
+# SCOPED, because the witness has a known home: tests/assertions carries both
+# `foo\B` (wordb_basic.rxt, `m "xfoofoo" 1 4` -- the first-match case whose
+# start is only reachable through the scan edge) and `(foo\B)` (wordb_vm.rxt),
+# which are the census manifest's two reverse-machine rows. A full-corpus arm
+# would cost the whole harness to re-measure the same two witnesses.
+SAB_HARNESS_TARGET="tests/assertions"
 SAB_DESC="emit_scan_loop's one-per-search entry dispatch tests 'state == cell_of(s0)' instead of the loop's own 'is_stop && !is_dead'. Axis D's seeded initialiser installs any member of the seed family, so a search that seeds straight onto a scan-edge head takes the GENERIC path and the step reads tr[head][C] -- the transition cell src/opt/scanedge.c killed. A LOST MATCH, not an observability gap: foo\\B on \"xfoofoox\" answers [] against [(1,4) (4,7)]"
-SAB_DOC_FIGURE="MEASURED 2026-09-04 (lane edge2, scratch build of this exact plant, branch lane/edge2 at 13105657): DETECTED. tests/codegen/run_scan_edge_census.sh goes 11fail/2pass -- every manifest row whose machine has both a seed table and a scan edge reports 'the loop entry is not the general head test'. The ANSWER witness is separate and was run by hand: foo\\B on \"xfoofoox\" [] vs [(1,4) (4,7)] through the spec section3.1 find-all loop. OWED: the corpus arm's own figure, which needs a battery run"
+SAB_DOC_FIGURE="MEASURED 2026-09-04 (lane edge2, scratch build of this exact plant, branch lane/edge2 at 13105657): DETECTED. tests/codegen/run_scan_edge_census.sh goes 11fail/2pass -- every manifest row whose machine has both a seed table and a scan edge reports 'the loop entry is not the general head test'. The ANSWER witness is separate and was run by hand: foo\\B on \"xfoofoox\" [] vs [(1,4) (4,7)] through the spec section3.1 find-all loop. OWED: the harness arm's own figure (target tests/assertions), which needs a battery run"
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree an
 # artifact exists whose machine carries BOTH a seed table and a scan edge and
 # whose loop entry is therefore the general head test. Without such an
