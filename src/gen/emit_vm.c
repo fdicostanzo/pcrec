@@ -480,6 +480,24 @@ typedef struct {
      * itself, in the same call that emits the island, so the stamp cannot
      * drift from the program text. */
     long long nislands;
+    /* [ENG-ISL] THE PER-ARTIFACT ISLAND BUDGET, and it exists because the
+     * PER-SUBTREE size rule does not bound ACCEPTANCE on its own. Measured:
+     * on a 1,200-word alternation the top-level island declines on size, and
+     * `src/opt/altcls.c`'s factoring then leaves FIFTEEN nested sub-alternations
+     * that each pass their own (small) size test — together 514,258 bytes of
+     * emitted code against the chain's 430,442 and a 500,000 cap, so the
+     * artifact is REFUSED where the chain compiles. Each island was individually
+     * reasonable; the artifact was not.
+     *
+     * `isl_est_sum`/`isl_chain_sum` are accumulated ONCE, in the
+     * `vm_count_slots` PRE-PASS, which runs before both `vm_cost` and the real
+     * emission — so `isl_over_cap` is a fact all three readers see the same
+     * way, rather than a running total whose answer would depend on which
+     * reader asked first. That is the same "one analysis, three readers"
+     * discipline the rest of this island keeps; a per-call accumulation would
+     * have broken it. */
+    long long isl_est_sum, isl_chain_sum;
+    bool      isl_over_cap;
     unsigned  rungs;       /* [D46] BITMASK of VmRungKind values PRESENT in
                             * this program — the rung decision is PER
                             * QUANTIFIER BODY (vm_cursor_fits is consulted
@@ -2635,6 +2653,9 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
             VmIsl isl;
             if (vm_isl_build(v, &isl, a)) {
                 v->npush += isl.pushes;
+                /* THE PRE-PASS IS WHERE THE ARTIFACT-WIDE TOTAL IS TAKEN. */
+                v->isl_est_sum   += isl.est_isl;
+                v->isl_chain_sum += isl.est_chain;
                 /* The branches are literal chains by construction: no slot, no
                  * mark, no resume point of their own. Nothing to descend
                  * into, and descending would be the second derivation this
@@ -3384,17 +3405,34 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
  * Walked ITERATIVELY over A_CAT/A_ALT spines for D10/R-2's reason; anything
  * else is counted and not descended, because a subtree the island could not
  * qualify never reaches this function. */
-static long long vm_isl_subtree_nodes(const Ast *a)
+static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
 {
+    /* THE STACK GROWS, and a FIXED one was a live defect rather than a
+     * theoretical one. This walk pushes the right child of every `A_CAT`/
+     * `A_ALT` it descends, so the stack depth is the SPINE LENGTH — which is
+     * the branch count of a flat alternation plus one branch's own length.
+     * A fixed 256 entries truncated at `w-256` (255 `A_ALT` nodes plus a
+     * 12-element branch), and the truncated count UNDERSTATES the chain, which
+     * INFLATES the island-versus-chain ratio and declines islands that should
+     * be taken. It was caught by a witness search whose chain estimate
+     * collapsed from 93,982 to 25,186 as the literals grew past the bound —
+     * the shape of a silent early return. Arena-allocated and doubled, so the
+     * bound is the pattern's own size and there is nothing left to truncate. */
     long long n = 0;
-    const Ast *stk[VM_ISL_MAX_DEPTH * 4];
-    int sp = 0;
+    int cap = 64, sp = 0;
+    const Ast **stk = arena_alloc(&v->cx->arena, (size_t)cap * sizeof *stk);
     stk[sp++] = a;
     while (sp) {
         const Ast *t = stk[--sp];
         while (t->k == A_CAT || t->k == A_ALT) {
             n++;
-            if (sp >= (int)(sizeof stk / sizeof stk[0])) return n;
+            if (sp == cap) {
+                const Ast **nv = arena_alloc(&v->cx->arena,
+                                             (size_t)cap * 2 * sizeof *nv);
+                memcpy(nv, stk, (size_t)cap * sizeof *nv);
+                stk = nv;
+                cap *= 2;
+            }
             stk[sp++] = t->r;
             t = t->l;
         }
@@ -3602,11 +3640,66 @@ static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
          * factor below absorbs. */
         const long long isl_bytes   = ((long long)t->nnd + t->trysites)
                                       * VM_ISL_BYTES_PER_NODE;
-        const long long chain_nodes = vm_isl_subtree_nodes(a);
+        const long long chain_nodes = vm_isl_subtree_nodes(v, a);
         const long long chain_bytes = chain_nodes * VM_ISL_BYTES_PER_CHAIN_NODE;
         t->est_isl = isl_bytes;
         t->est_chain = chain_bytes;
         if (isl_bytes > chain_bytes * VM_ISL_SIZE_FACTOR) return false;
+
+        /* THE CAP GUARD, and the factor alone does NOT imply it. The factor
+         * bounds the island RELATIVE to the chain; acceptance is bounded by an
+         * ABSOLUTE cap. A chain estimated at 300 KB and an island at 550 KB is
+         * comfortably inside a factor of 2 and is REFUSED by
+         * `PCREC_MAX_VM_EMIT_CODE_BYTES` where the chain compiles — the same
+         * acceptance regression the factor was added to prevent, arriving
+         * through the one door it does not cover. So the rule carries both:
+         * relative, and then absolute.
+         *
+         * THE THRESHOLD IS THE CAP TIMES 0.9, AND THE ESTIMATE'S ERROR IS
+         * SHAPE-DEPENDENT RATHER THAN ONE-SIDED — which is worth stating
+         * plainly, because an earlier draft of this comment claimed it "errs
+         * low every time" and the witness search refuted that within the hour.
+         * On the cross-product shapes it was fitted against it reads 7-10%
+         * UNDER the measured program (614,880 against 681,974; 135,180 against
+         * 148,446; 94,140 against 100,719). On a wide set of SHORT words with
+         * prefix extensions it reads ~48% OVER (659,160 against a measured
+         * 445,269). So the 0.9 is a margin against the LOW direction, where
+         * being wrong costs the caller a pattern; where the estimate runs high
+         * the guard simply fires early and costs speed on a pattern that still
+         * compiles. Both errors are absorbed in the direction that keeps
+         * acceptance, which is the only property this guard exists to
+         * protect.
+         *
+         * The `chain_bytes <=` conjunct is what keeps this a claim about the
+         * AXIS rather than a second size cap: where the CHAIN would also cross
+         * the cap, the artifact is oversized whatever this emitter chooses,
+         * and the refusal is not the island's doing. */
+        {
+            const long long cap_guard =
+                (long long)PCREC_MAX_VM_EMIT_CODE_BYTES * 9 / 10;
+            /* THE TWO SIDES TAKE DIFFERENT THRESHOLDS, and that asymmetry is
+             * the point. The ISLAND side is discounted (0.9) because an
+             * estimate that just clears the cap may describe a program that
+             * does not. The CHAIN side is compared against the FULL cap,
+             * because its question is "would the chain be refused too" and a
+             * discounted threshold answers YES too readily — which switches
+             * the guard OFF exactly where it is needed. Measured: at a 1,360-
+             * word ladder the chain estimates 471,811 and really emits
+             * 485,728, so a 0.9 threshold called it over-cap, declined to act,
+             * and let the artifact be refused at 500,000+. */
+            if (isl_bytes > cap_guard
+                && chain_bytes <= (long long)PCREC_MAX_VM_EMIT_CODE_BYTES)
+                return false;
+        }
+    }
+    /* AND THE ARTIFACT-WIDE VERDICT, computed once in the pre-pass and read
+     * here by every caller (see `Vm.isl_over_cap`). A pattern whose islands
+     * COLLECTIVELY cross the cap while its chains do not takes none of them:
+     * declining all is coarse, but it is deterministic, identical across the
+     * three readers, and it restores the one property that matters — pcrec
+     * accepts what it accepted. */
+    if (v->isl_over_cap) return false;
+    {
     }
     return true;
 }
@@ -8616,6 +8709,20 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             snap_after[i] = vm_snap(&v);
         }
     }
+    /* [ENG-ISL] THE ARTIFACT-WIDE ISLAND VERDICT, taken HERE: after every
+     * `vm_count_slots` walk (the root's and each region's) and before both
+     * `vm_cost` and the real emission, so the three readers of
+     * `vm_isl_build` cannot disagree about it. See `Vm.isl_over_cap` for the
+     * measured shape that made a per-subtree rule insufficient — fifteen
+     * individually-reasonable islands whose SUM crossed the cap. */
+    {
+        const long long cap_guard =
+            (long long)PCREC_MAX_VM_EMIT_CODE_BYTES * 9 / 10;
+        v.isl_over_cap = (v.isl_est_sum > cap_guard
+                          && v.isl_chain_sum
+                             <= (long long)PCREC_MAX_VM_EMIT_CODE_BYTES);
+    }
+
     /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
      * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
      * compiler-side bound that stops it, and it is checked here — after the

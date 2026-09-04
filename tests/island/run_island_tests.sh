@@ -432,6 +432,74 @@ BUD_EOF
     fi
 fi
 
+# ---------------------------------------------------------------------------
+# 11. [ENG-ISL / panel r53 S1, second half] THE CAP GUARD.
+#
+# The island-vs-chain FACTOR bounds the island RELATIVE to the chain; what
+# bounds ACCEPTANCE is an ABSOLUTE cap. Both are needed, and the second was
+# missing: a chain around 300 KB with an island around 550 KB sits comfortably
+# inside a factor of 2 and is REFUSED by PCREC_MAX_VM_EMIT_CODE_BYTES where the
+# chain compiles.
+#
+# AND A PER-SUBTREE GUARD IS NOT ENOUGH EITHER, which is what this ladder
+# actually caught. On these patterns the TOP-LEVEL island declines on size and
+# `src/opt/altcls.c`'s factoring then leaves fifteen nested sub-alternations,
+# each individually reasonable, whose SUM crossed the cap: 514,258 bytes
+# against the chain's 430,442. The artifact-wide budget (`Vm.isl_over_cap`,
+# accumulated in the slot pre-pass so all three readers of `vm_isl_build` see
+# one answer) is what closes that.
+#
+# THE LADDER IS THE WITNESS BECAUSE THE NUMBERS HAVE TO BE NEAR THE CAP.
+# Nothing in the corpus is, and nothing small enough to embed here would be.
+# Each rung is N base words of three letters plus three prefix-extensions of
+# each, so the try sites grow faster than the trie and the island's estimate
+# crosses the cap while the chain's does not.
+# ---------------------------------------------------------------------------
+capwit() {   # capwit <N> -- N*4 words, ~15N characters
+    python3 -c '
+import itertools, string, sys
+N = int(sys.argv[1])
+al = string.ascii_lowercase
+base = ["".join(t) for t in itertools.product(al[:14], repeat=3)][:N]
+ws = []
+for b in base:
+    ws += [b, b + "q", b + "qr", b + "qrs"]
+print("(?:" + "|".join(ws) + ")Z")' "$1"
+}
+
+cap_bad=0
+for N in 260 300 340; do
+    pat="$(capwit "$N")"
+    on_ok=1; off_ok=1
+    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/cap_on.c"  -- "$pat" >/dev/null 2>&1 || on_ok=0
+    pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island -o "$WORKDIR/cap_off.c" -- "$pat" >/dev/null 2>&1 || off_ok=0
+    if [ "$off_ok" = "1" ] && [ "$on_ok" = "0" ]; then
+        bad "CAP GUARD: the N=$N rung is REFUSED with the island and ACCEPTED under -fno-alt-island. Its islands cross PCREC_MAX_VM_EMIT_CODE_BYTES where the chain does not — the acceptance regression the guard exists to prevent, and the factor alone does not catch it"
+        cap_bad=$((cap_bad + 1))
+    elif [ "$on_ok" = "1" ] && [ "$off_ok" = "1" ]; then
+        if ! diff <(grep -v '^#include "' "$WORKDIR/cap_on.c") \
+                  <(grep -v '^#include "' "$WORKDIR/cap_off.c") >/dev/null; then
+            bad "CAP GUARD: the N=$N rung compiles both ways but the artifacts DIFFER. Over the cap guard every island in the artifact is declined, so the two builds must be byte-identical; a difference means some island survived the artifact-wide verdict"
+            cap_bad=$((cap_bad + 1))
+        fi
+    fi
+done
+[ "$cap_bad" -eq 0 ] && ok "the cap guard holds over the near-cap ladder (N=260/300/340): no rung is refused with the island and accepted without it, and each declines every island so the artifact is the chain's byte for byte"
+
+# NON-VACUITY: the ladder must actually STRADDLE the cap, or these cells are
+# three patterns that were never in danger. The top rung's CHAIN must be within
+# 15% of PCREC_MAX_VM_EMIT_CODE_BYTES -- close enough that an island's growth
+# would cross it.
+pat="$(capwit 340)"
+pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island --warn-emit-bytes=1 \
+    -o "$WORKDIR/cap_edge.c" -- "$pat" >/dev/null 2>"$WORKDIR/cap_edge.err" || true
+edge="$(sed -n 's/.*(\([0-9]*\) of code).*/\1/p' "$WORKDIR/cap_edge.err" | head -1)"
+if [ -n "$edge" ] && [ "$edge" -gt 425000 ] && [ "$edge" -lt 500000 ]; then
+    ok "the ladder straddles the cap: its top rung's CHAIN emits $edge code bytes against a 500,000 limit, so an island's growth there really would cross it"
+else
+    bad "the ladder's top rung emits ${edge:-<unknown>} chain code bytes, outside (425,000, 500,000): it is no longer near the cap, so the cells above are not testing the guard. Re-scale N"
+fi
+
 echo
 echo "island structural checks: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
