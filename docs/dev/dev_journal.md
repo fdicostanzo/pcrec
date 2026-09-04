@@ -21354,3 +21354,31 @@ test-codegen (a47e133a, 0.52 s, probe OK: always_inline needed on gcc
 DEFAULT may rise (the cells just above 4,096 are the table's cheapest
 wins); the manager recommends keeping 4,096 and making the raise the
 speed profile's first setting.
+
+## 2026-09-04 — Fifty-second session, part 68 (18:4x EDT): the union chain's verdict; three infrastructure reds fixed and re-proven; the size log at abi 22; DONE at 334fd10e — the box is the bench's; the session closes for the machine move
+
+The union chain (16:58-18:17, build/chain_20260904_1700/) ended rc=1
+on three test-infrastructure defects and nothing else: the limits
+manifest lacked ccd2's new row (55 rows now), the capability probe had a
+sort under the ambient locale (K35 — visible only once the probe was
+wired into a target), and the entry-shape gate invoked the compiler
+unbounded (K37). Fixed at 8fc1580c AFTER the chain ended (no edits under
+tests/ during a run), re-proven solo: registry green, codegen 6/6, the
+entry-shape gate 14×5 green, the recursion identity gate green at
+FILEPIN 2706ba6c ((B) whole-file identity on 2,294 patterns per axis).
+The chain's answer-identity stages were green throughout: 44 test
+sections, and all 24 axes (the 21 plus the two entry-shape rungs and the
+oracle cross-check) at 22,455/22,455 keys, 0 mismatches. The size log
+regenerated deliberately on the quiet box (the chain's own write
+discarded) and committed alone as 334fd10e: every VM artifact +68.5 B mean
+(the two stamps + the entry chain), 15 DFA artifacts moved on the edge
+dispatch, 1,244 DFA rows byte-identical. I-44 appended to the bench's
+inbox and committed there: DONE at 334fd10e, the box theirs from now, the
+four rows summarised with what each means for their open asks, the
+machine move's two consequences (cross-box timings never compared; no
+live channel — the inbox/outbox files only). No bench session was
+listed, so the handover is durable only; Frank restarts the bench
+session. All eight idle agents were stopped with TaskStop (it works for
+in-process agents — the accumulation Frank described is cleared for this
+session); every worktree removed. Next: wake.md rewritten for the new
+machine, then the push of main and the lane branches (Frank's ruling).
