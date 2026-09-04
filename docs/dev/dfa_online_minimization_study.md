@@ -8,6 +8,15 @@ and comes from reading that code in this worktree; every claim about the
 literature carries a citation, and the ones I could not verify past an
 abstract or a search snippet are marked **unverified**.
 
+**Revised 2026-09-04, same day, after Frank clarified the charter.** The
+first version ranked §3 under the assumption that the two-pass shape was the
+target; Frank's clarification made clear it is an opportunity, not a
+constraint. §3 is rewritten (a merge taxonomy, full online compaction as a
+first-class candidate, and a new candidate A′), §4 gains brittleness tables
+for the two candidates that were not first-class before, and §5's
+recommendation changes. §1 and §2 are unchanged. The revision's own trigger
+and what it moved are recorded at the head of §3.
+
 Chartered by Frank, 2026-09-04: *"1. as its cutting edge, a websearch on
 the latest would be a good first step. 2. consider if an incremental
 partial followed by a thorough pass at the end would be simpler (simplicity
@@ -408,270 +417,418 @@ Listed for completeness; I read only the title and venue. **Unverified.**
 
 ---
 
-## 3. Candidate mechanisms, ranked by simplicity
+## 3. Candidate mechanisms, ranked on the merits
 
-Simplicity first, per Frank's directive 2. "Simplest" here means: fewest new
-concepts in `src/ir/dfa.c`, fewest existing invariants disturbed, and — the
-one that matters most in this file — fewest places where being wrong is
-silent.
+**Revised 2026-09-04 after Frank's clarification** (14:3x, relayed by the
+manager): he does not dictate the method — *"if it turns out the full
+compaction is the way to go then i'm all for it"* — and the two-pass shape is
+an **opportunity, not a constraint**: an incremental pass that takes the easy
+wins as states are generated, then another pass for the complicated
+equivalences, and that second pass *"might even be optional if expensive and
+the final state of the incremental was usable"*. So this section now ranks on
+simplicity, soundness and brittleness **together**, full online compaction is
+a first-class candidate rather than a long-shot last row, and §3.1-§3.2 answer
+the two questions the clarification opens: which equivalences are the cheap
+and safe incremental wins, and whether the thorough pass is a correctness
+requirement or an optimization.
 
 Line-count estimates are my judgement from reading the code, not measured.
-"Exact" means language- and span-preserving by construction; "heuristic"
-means it can be wrong and needs a checker.
+"Exact" means language- and span-preserving by construction.
 
-### 3.0 Summary table
+### 3.1 Is the thorough pass a correctness requirement or an optimization?
 
-| # | mechanism | new code (est.) | cost per state | exact? | K18 raw/min ratio after | end pass unchanged? |
-|---|---|---|---|---|---|---|
-| **N1** | no compaction; refuse on a deterministic WORK budget instead of a projected size | 10-25 lines | zero | n/a — makes no size claim | unchanged (27×) | yes |
-| **N2** | no compaction; minimize the CLOSED subgraph periodically and project from its block count | 80-120 lines | amortized O(n·ncls) per run | exact as a LOWER bound | unchanged (27×) | yes |
-| **A** | Frank's shape: periodic partial minimization by the existing pass, "an unfilled row is unique" | 200-300 lines | O(rounds · n · ncls) per run | exact | **probably still ≈27× — see 3.2** | mode parameter added |
-| **B** | reduce the subset as it is closed, by a dominance (simulation) preorder computed once on the NFA | 170-270 lines | O(nlist · log) per state, plus one O(\|Q\|·\|δ\|) precompute | exact **if** three pcrec-specific conditions hold (3.3) | plausibly ≈2-5× | yes |
-| **C** | full online equivalence registry (Nicol & Frohme, §2.3) | 500+ lines, a new subsystem | high | exact | ≈1× by construction | replaced |
+**It is an optimization, and the evidence is inside the pass itself.**
 
-### 3.1 N — the null candidate: do not compact; change what is projected
+`pcrec_minimize_dfa` returns immediately when `n <= 1` (`src/opt/minimize.c:69`)
+and rebuilds only when it actually merged something — `if (nparts < n)`
+(`:160`). So **"minimization merged nothing" is already an ordinary, shipped
+outcome**, and every stage downstream of it handles an unmerged machine on
+every compile where the partition happens to be discrete. The pass's own
+header states its role plainly: priority semantics *"are fully baked into the
+transition structure by the time this runs, so behavior-preserving merging
+cannot change any match result"*, and what it buys is that it *"shrinks
+emitted tables / label counts, which is both a code-size and a cache win"*.
 
-Two forms. Both leave `src/ir/dfa.c`'s construction alone, emit not one
-different byte on any artifact that fits today, and are therefore **not**
-`abi` events.
+Three things do depend on it. None of them is correctness:
+
+1. **Ordering, against [OPT-5]'s scan edge.** `src/core/internal.h:4387`:
+   the scan-edge pass *"Runs on EVERY machine, immediately after
+   `pcrec_minimize_dfa` on that machine: it needs the canonical state set,
+   and nothing after it rebuilds a `DState`."* The hard half of that is the
+   ordering — minimize's rebuild `calloc`s fresh `DState`s
+   (`src/opt/minimize.c:164`) and copies the accept bits, `tr`, `eolvar` and
+   `endvar` but **not** `scan_span`, so running minimize *after* scanedge
+   would silently drop every scan edge. Whether **minimality** as opposed to
+   **finality** is a precondition of the chain-finding walk is *not* settled
+   by that sentence: the pass's five preconditions
+   (`src/opt/scanedge.c:43` onward) are local shape tests on `tr[]` and the
+   accept bits, which an unminimized machine can satisfy. **Marked as a
+   question a prototype must answer, not as a fact.**
+2. **Representation.** `dfa_premul` (`src/gen/emit_dfa.c:2518`) reads the
+   finished machine's `n * ncls` against `PREMUL_MAX_ENTRIES`, so skipping
+   the pass changes which table form is emitted. A size and speed effect.
+3. **Size.** The artifact grows by exactly the shrink the pass would have
+   made: 0.75-3.5% forward and 29.5-65.4% reverse on lim2's two altwide
+   witnesses, and **97% on the k18 census witness** (lim2 §2, §10).
+
+So Frank's "might even be optional" is **architecturally available** — an
+unminimized DFA is a correct artifact today. Whether it is *desirable* is
+decided by (3), and (3) decides it firmly: skipping a pass that removes 96%
+of the states would enlarge the artifact 27-fold on precisely the pattern
+this study exists for. **The second pass becomes genuinely optional only in
+proportion to how close the incremental pass gets to minimal** — which,
+§3.2 shows, is a property of exactly one of the candidates.
+
+**And this reframes the size bail, which is the finding I would most want
+Frank to see.** For [LIM-2]'s early refusal you must prove *"the final table
+will be at least X"*, and a lower bound on the final state count comes only
+from a set of states you have proved **pairwise inequivalent** —
+distinguishability is monotone, so states proved distinct stay distinct as
+the machine grows. Compaction proves the **opposite** thing: it proves
+states equivalent. A partially compacted count is an *upper* bound on the
+explored part's final blocks, and upper bounds license nothing. **So
+compaction does not, by itself, make the bail exact — unless the incremental
+result IS the artifact, at which point raw equals emitted, the projection is
+exact by identity, and no bound reasoning is needed at all.** That is the
+one configuration in which Frank's optional-second-pass idea and lim2's
+margin problem solve each other, and it is why §3.8's candidate matters more
+than its position in the original draft suggested.
+
+### 3.2 A taxonomy of the merges: what does each one need to know?
+
+This answers "which equivalences are the cheap-and-safe incremental wins".
+The tiers are ordered by what a merge must know before it can be made.
+
+**Tier 0 — needs nothing. Already built, and worth naming so the baseline is
+honest.** pcrec already performs the cheapest online compaction there is:
+two pre-sets whose closures are identical intern to one state
+(`src/ir/dfa.c:871`), an empty non-accepting closure is not a state at all
+(`:1115`), views that coincide share one list (`:915`), and `eolvar`/`endvar`
+canonicalize to `-1` when they match (`:1126`, `:1132`). The baseline is not
+"no online compaction" — it is "online compaction limited to *syntactic
+identity* of the closure". Everything below extends that reach.
+
+**Tier 1 — needs only facts about the NFA, computable once before the
+worklist runs.** Dropping *dominated positions* from a subset (candidate B,
+§3.7). Reduces the lists themselves, so it reduces `sum(nlist)` and therefore
+the K7 charge, and it reduces how many *distinct* lists exist at all.
+
+**Tier 2 — needs one state's own finished row, and nothing else.** Two states
+whose accept-bit vectors, transition rows (target for target), `eolvar` and
+`endvar` are identical **are equivalent, full stop**: `δ(i,c) = δ(j,c)` for
+every class and equal accepts means equal residuals, with no fixpoint, no
+lookahead and no partition. This is the first round of Moore refinement
+isolated, and it is the cheapest *real* online merge available (candidate A′,
+§3.6).
+
+**Tier 3 — needs the futures of a bounded region.** Moore refinement over the
+subgraph whose reachable set is fully explored (candidate A, §3.5). Exact,
+and its merges are a subset of the final pass's.
+
+**Tier 4 — needs an equivalence *hypothesis* maintained against an unfinished
+machine.** Assume states equivalent, propagate the assumption, and split when
+a counterexample arrives. This is the union-find-plus-refutation shape
+Watson/Daciuk and Almeida–Moreira–Reis use for on-demand pair equivalence
+(§2.1), and it is what Nicol & Frohme's "equivalence registry" appears to be
+(§2.3, **unverified**). Candidate C, §3.8.
+
+**The ranking criterion this taxonomy exposes, which the original draft
+missed:**
+
+> **Only Tiers 1 and 4 can make construction itself cheaper.** Tier 1 shrinks
+> the lists, so fewer distinct subsets are ever formed. Tier 4 can merge two
+> states *before either has been expanded*, which is the only way an
+> *equivalence* saves work. Tiers 2 and 3 merge states that have already been
+> paid for: they shrink the count and the artifact, not the compile.
+
+So the answer to "which are the cheap-and-safe incremental wins" is **Tiers 1
+and 2** — Tier 2 unconditionally (it needs no new theory at all), Tier 1
+subject to §3.7's three conditions. The answer to "which need the thorough
+pass" is **Tier 3 and above**, and specifically the K18 case: two subsets are
+equivalent there because the *union* of their residual languages coincides,
+which no bounded-depth local check can see. If the incremental pass is
+Tiers 1+2, the entire 97% shrink is left to the thorough pass.
+
+### 3.3 The candidates, ranked
+
+| # | mechanism | tier | new code (est.) | exact? | makes construction cheaper? | K18 ratio after | second pass optional? |
+|---|---|---|---|---|---|---|---|
+| **A′** | merge states with identical finished rows | 2 | 40-70 lines | yes, trivially | no | small effect | no |
+| **N1** | no compaction; refuse on a deterministic WORK budget | — | 10-25 lines | n/a — makes no size claim | n/a | unchanged (27×) | n/a |
+| **N2** | no compaction; project from the CLOSED subgraph | 3 (read-only) | 80-120 lines | exact as a LOWER bound | no | unchanged (27×) | n/a |
+| **B** | drop dominated positions from each subset | 1 | 170-270 lines | exact **if** §3.7's three conditions hold | **yes** | plausibly 2-5× | no |
+| **A** | periodic partial minimization, "an unfilled row is unique" | 3 | 200-300 lines | yes | no | probably still ≈27× (§3.5) | no |
+| **C** | full online compaction / equivalence registry | 4 | 500+ lines, new subsystem | yes | **yes** | ≈1× by construction | **yes — uniquely** |
+
+### 3.4 N — the null candidates: do not compact; change what is projected
+
+Both leave `src/ir/dfa.c`'s construction alone, emit not one different byte on
+any artifact that fits today, and are therefore **not** `abi` events.
 
 **N1 — refuse on a deterministic work budget.** The harm [LIM-2] set out to
-cut is a user waiting 10-20 s for a refusal that the VM route delivers in
-0.01-0.07 s (lim2's own framing, `tests/resource/run_lim2_sizecap_projection.sh:15`).
-That harm is a function of *work done*, not of *bytes projected*. pcrec
-already maintains a deterministic work counter on exactly this path:
-`cx->subset_elems`, incremented at `src/ir/dfa.c:933`, capped at 48,000,000
-by K7. A second, much lower threshold on the same counter — routed the way
-`intern`'s two existing refusals are routed, including `cx->dfa_overflowed`
-so `--engine=auto`'s [SEL-1] ladder still sees it (the exact field lim2 §11
-had to add) — refuses early, deterministically, with no claim about size at
-all.
+cut is a user waiting 10-20 s for a refusal the VM route delivers in
+0.01-0.07 s (`tests/resource/run_lim2_sizecap_projection.sh:15`). That harm is
+a function of *work done*, not of *bytes projected*, and pcrec already
+maintains a deterministic work counter on this path: `cx->subset_elems`
+(`src/ir/dfa.c:933`). A second, much lower threshold on it — routed the way
+`intern`'s two existing refusals are, including `cx->dfa_overflowed` so
+`--engine=auto`'s [SEL-1] ladder still sees it (the field lim2 §11 had to add)
+— refuses early and deterministically with no size claim at all. Honest about
+being a *complexity* refusal rather than a *size* one. It does not answer the
+charter's question; it is here because D77 says to name the cheap thing first.
 
-It is honest about what it is: a *complexity* refusal, not a *size* refusal.
-It would say "pattern too complex for the DFA engine", which is a message
-this compiler already has. It does not answer the charter's question. It is
-in this list because it is a five-times-smaller change than anything else
-here and it delivers most of the measured benefit, and because D77 says to
-name the cheaper thing before building the expensive one.
-
-**N2 — project from the closed subgraph.** Call a built state *closed* when
-no state reachable from it has an unfilled row. On the closed subgraph, the
+**N2 — project from the closed subgraph.** Call a built state *closed* when no
+state reachable from it has an unfilled row. On the closed subgraph the
 existing minimization computes exactly the final Nerode partition restricted
-to those states (their futures are fully known and cannot be refined by
-anything built later). The block count is therefore a **sound lower bound**
-on the final minimized state count, and lower bounds are exactly what a
-"refuse once the cap is provably exceeded" check needs — no `BAIL_KEEP_PCT`
-margin, no percentage, no calibration, and lim2 §10's unrepresentable
-"194.124 points" problem disappears.
+to those states, so its blocks are **provably pairwise inequivalent** — which
+§3.1 shows is the property a bail actually needs. The block count is a sound
+**lower bound** on the final minimized state count: no `BAIL_KEEP_PCT`, no
+percentage, no calibration, and lim2 §10's unrepresentable "194.124 points"
+disappears.
 
-**Its weakness is severe and is the reason it is not my recommendation.** In
-a counted-repetition machine the built states form a large region from which
-the frontier stays reachable, so the closed set may be nearly empty for most
-of the construction. The bound would then be sound and useless. Whether that
-is what actually happens on `k18_cost_gates`'s witness is a measurement
-nobody has taken — it is item 1 in §5's plan, and it is cheap.
+Its weakness is that the closed set may be nearly empty for most of the
+construction on exactly the counted-repetition shapes at issue, leaving the
+bound sound and useless. That is measurement M1 (§5.2), and it is cheap.
 
-### 3.2 A — Frank's shape: incremental partial during, thorough at the end
+### 3.5 A — periodic partial minimization (Tier 3)
 
-**The idea, made precise.** Periodically, during the worklist loop, run the
-existing `pcrec_minimize_dfa` on the machine built so far, then continue.
-The end-of-construction call stays exactly where it is
+Periodically run the existing `pcrec_minimize_dfa` on the machine built so
+far, then continue; the end-of-construction call stays where it is
 (`src/core/compile.c:1134`).
 
-**The soundness rule, and it is one line.** A partial machine has unfilled
-transition rows (`tr[cl] == -2`, set at `src/ir/dfa.c:992`). Moore refinement
-on a partial machine is unsound if two unfilled cells compare equal: two
-states could then merge on the strength of two futures neither of which has
-been computed. The fix is to make every unfilled cell **unique to its own
-(state, class)** in `state_sig` (`src/opt/minimize.c:39`) — one extra branch
-in the existing signature loop. With that, no state carrying an unfilled row
-merges with anything, and no state transitioning into one merges with a state
-transitioning elsewhere; the fixpoint propagates the exclusion backwards, and
-what remains merging is precisely the closed subgraph of §3.1's N2. **Every
-merge the online pass makes is therefore a merge the final pass would also
-have made** — which is the premise §1.3(c)'s byte-identity argument needs.
-
-That is the good news, and it is genuinely simple: one branch in
-`state_sig`, plus a call site.
+**The soundness rule is one branch.** A partial machine has unfilled rows
+(`tr[cl] == -2`, `src/ir/dfa.c:992`). Moore refinement on it is unsound if two
+unfilled cells compare equal — two states could merge on the strength of two
+futures neither of which has been computed. Make every unfilled cell **unique
+to its own (state, class)** in `state_sig` (`src/opt/minimize.c:39`), and no
+state carrying an unfilled row merges with anything, no state transitioning
+into one merges with a state transitioning elsewhere, and the fixpoint
+propagates the exclusion backwards. What remains merging is precisely the
+closed subgraph. **Every merge is therefore one the final pass would also
+have made** — the premise §1.3(c)'s byte-identity argument needs.
 
 **Then the rest of it.** Merging mid-construction means renumbering live
-states, and the machine's numbering is load-bearing in five places the
-existing pass does not have to think about, because it runs when nothing is
-live:
+states, and the numbering is load-bearing in five places the existing pass
+never has to think about, because it runs when nothing is live:
 
 1. **The worklist cursor.** `for (int si = 0; si < d->n; si++)`
-   (`src/ir/dfa.c:1284`) indexes states by number. A renumber invalidates
-   `si` and must remap it.
-2. **The intern hash table.** `d->tab` maps a state's hash to its index
-   (`src/ir/dfa.c:827` `tab_insert`, `:835` `tab_grow`). After a renumber it
-   must be rebuilt from scratch — and it can only be rebuilt if the states'
-   NFA lists still exist, which brings us to (3).
-3. **The pass destroys what construction needs.** `minimize.c:183`-`:186`
-   sets every surviving state's `up[u].nlist = 0; up[u].list = NULL`,
-   on the stated ground that *"the NFA-state lists are dead after
-   minimization (nothing downstream reads them)"*. During construction they
-   are not dead: the worklist reads
-   `d->st[si].up[cu].list` at `src/ir/dfa.c:1310` to build the next pre-set,
-   and `view_same` (`:849`) memcmps them on every intern. So the online pass
-   must keep them — which means keeping the representative's lists and
-   discarding the merged-away states' arena storage (arena memory is not
-   individually freeable, so it simply leaks until the compile ends; that is
-   consistent with how the arena is already used, but it means the K7 charge
-   is unchanged, §1.4).
-4. **The start-state family.** `s0`, `s1u[UPC_N]`, `s1g[UPC_N]` are remapped
-   at `minimize.c:202`-`:215`, with a comment recording that forgetting one
-   leaves *"a wrong start state rather than a missing one, and only on
-   patterns that minimize, which is most of them"*. Online, the same remap is
-   needed, plus the `eolvar`/`endvar` re-canonicalization at
-   `minimize.c:193`-`:196` has to be correct against states whose rows are
-   still unfilled.
-5. **The caps.** `d->n` shrinks, so the state cap at `src/ir/dfa.c:886` now
-   measures something different (§1.4). The refusal set moves.
+   (`src/ir/dfa.c:1284`) indexes by number; a renumber invalidates `si`.
+2. **The intern hash table** (`src/ir/dfa.c:827`, `:835`) must be rebuilt —
+   which is only possible if the NFA lists still exist, i.e. (3).
+3. **The pass destroys what construction still needs.**
+   `src/opt/minimize.c:183`-`:186` sets every survivor's
+   `up[u].nlist = 0; up[u].list = NULL`, on the stated ground that the lists
+   are dead afterwards. During construction they are not: the worklist reads
+   `d->st[si].up[cu].list` (`src/ir/dfa.c:1310`) and `view_same` (`:849`)
+   memcmps them on every intern.
+4. **The start-state family.** `s0`, `s1u[]`, `s1g[]` remap at
+   `src/opt/minimize.c:202`-`:215`; the file's own comment records that
+   forgetting one leaves *"a wrong start state rather than a missing one"*.
+5. **The caps.** `d->n` shrinks, so the state cap (`src/ir/dfa.c:886`) now
+   measures something different and the refusal set moves (§1.4).
 
-**The cost, and K25.** `known_issues.md` K25 records that Moore refinement
-needs O(n) rounds on a chain, and that `a{0,25000}` already spends **15.3 s
-of its 15.4 s compile inside minimization**. Running the pass *k* times
-multiplies that. A threshold predicate (Nicol & Frohme's own device, §2.3)
-controls it, but the predicate is then a tuning knob whose calibration is
-another `BAIL_KEEP_PCT`-shaped hazard: a number chosen against a small
-witness set that a wider population invalidates.
+**Cost, and K25.** `known_issues.md` K25 records minimization at **15.3 s of a
+15.4 s compile** on `a{0,25000}` — Moore needs O(n) rounds on a chain. Running
+it k times multiplies that, and the threshold predicate that controls it is
+another `BAIL_KEEP_PCT`-shaped calibration hazard.
 
-**The finding that decides this candidate.** Under the sound rule, the merges
-available online are exactly the closed subgraph's — and on the K18 shapes I
-expect that set to be small until construction is nearly finished, for the
-same reason N2's bound is at risk of being vacuous: the counter's states keep
-the frontier reachable. **If that is right, Frank's shape is simpler than
-full online minimization *and does almost nothing on the population that
-motivated the study*.** I want to be very clear that this is *reasoned, not
-measured* — §1.2's argument about why the states are equivalent says nothing
-directly about when they become *provably* equivalent. It is the single
-cheapest measurement in §5 and it should be taken before any of this is
-built.
+**The finding that decides A.** Under the sound rule the merges available are
+exactly the closed subgraph's — and on the K18 shapes I expect that set to
+stay small until construction is nearly finished, because the counter's states
+keep the frontier reachable. **If that is right, A is simple and does almost
+nothing on the population that motivated the study.** Reasoned, not measured;
+M1 tests it.
 
-**A weaker rule that would merge more is available and I do not recommend
-it**: treat an unfilled cell as a wildcard that matches anything. That gives
-a coarser partition, so more merges — but wildcard-compatibility is not
-transitive, so it is not an equivalence relation, the fixpoint is not
-well-defined, and merges made on it are not merges the final pass would make.
-It is unsound, and it would be unsound in the silent direction.
+A weaker rule that would merge more — treat an unfilled cell as a wildcard —
+**is unsound and unsound silently**: wildcard-compatibility is not transitive,
+so it is not an equivalence relation and the fixpoint is not well defined.
 
-### 3.3 B — reduce the subset as it is closed, by an NFA-level dominance preorder
+### 3.6 A′ — merge states with identical finished rows (Tier 2)
 
-This is the brief's "reduce the NFA/positions by simulation before
-determinizing", in the form that actually fits this construction.
+**New in this revision**, and it is the smallest genuinely-online merge in the
+document. When a state's row is completed in the worklist, hash it on
+(accept bits across `UPC_N`, the whole `tr[]` row, `eolvar`, `endvar`) into a
+second table beside the existing `d->tab`, in the idiom `dhash`/`tab_insert`
+already establish (`src/ir/dfa.c:809`, `:827`). A hit is an equivalence, with
+no fixpoint and no theory: identical targets and identical accepts mean
+identical residuals. Merging can make *another* pair's rows identical, so a
+small worklist propagates it.
 
-**The mechanism.** Compute, once per machine before the worklist runs, a
-preorder `⊑` on the NFA's `N_CLASS` positions such that `p ⊑ q` implies
-every continuation `p` accepts, `q` also accepts, at the same position. Then,
-in `closure` (`src/ir/dfa.c:771`), drop a position from the emitted list when
-a position already in the list dominates it. §2.2's literature calls this
-the right-invariant preorder / simulation reduction (Champarnaud & Coulon;
-Ilie–Navarro–Yu), and §2.2's symbolic-automata work (D'Antoni & Veanes) is
-the version that fits pcrec's byte-equivalence-class alphabet.
+- **Exact**, unconditionally. This is the one candidate whose soundness needs
+  no argument a panel could attack.
+- **40-70 lines**, no new file, no preorder, no partition, no O(n) rounds, no
+  K25 multiplier.
+- **It can record an alias instead of renumbering**, deferring the compaction
+  to the final pass's existing renumber — which sidesteps all five of §3.5's
+  hazards at the price of not shrinking `d->n` for the caps.
+- **It saves no construction work** (Tier 2: the row is already expanded), and
+  it does not shrink the artifact beyond what the thorough pass already
+  achieves. Its value is that the count is available *during* construction.
+- **But the count it makes available is the wrong kind.** Per §3.1, a
+  partially-merged count is an upper bound on the explored part's final
+  blocks, not a lower bound on the final total — so **A′ does not license a
+  bail**, and it does not solve lim2's problem. That is worth stating flatly
+  because A′ looks like it should.
 
-**Why this shape, specifically, is the one that could crush K18.** The
-counter tail is `(X(X(X)?)?)?` (`src/ir/nfa.c:744`-`:745`): a position in
-copy *j* has strictly more iterations remaining than the same position in
-copy *i > j*, so `copy_i ⊑ copy_j` for `j < i` — the inclusion §1.2 already
-established, now used as a *reason to delete* rather than as an obstacle. A
-subset that has reached copies 4 through 30 reduces to `{copy 4}`. The number
-of reachable subsets falls from the number of *ranges* of copies to the
-number of *minima*, i.e. from roughly quadratic in the count to roughly
-linear. That is the right order of magnitude for lim2's measured
-27,575 → 1,010.
+A′ is the honest answer to "what is cheap and safe to take as states are
+generated". It is also, by itself, not worth building: it costs little and
+buys little. Its real role is as a **component of C** (§3.8), where the same
+row-hash is the registry's confirmation step.
 
-It is also the only candidate here that reduces `sum(nlist)` and therefore
-**actually reduces the K7 charge** (§1.4), because it acts before `intern`
-sees the list.
+### 3.7 B — drop dominated positions from each subset (Tier 1)
 
-**It does not reach the minimal machine.** `{copy 4}` and `{copy 5}` are
-still distinct states, and the final minimization is still needed and still
-does real work. Expect the raw/minimized ratio to fall from ~27× to
-something small but not 1×; the end pass stays exactly as it is, unchanged.
+The brief's "reduce the NFA/positions by simulation before determinizing", in
+the form that fits this construction.
 
-**Three pcrec-specific soundness conditions, and every one of them is a way
-this could be quietly wrong.**
+**The mechanism.** Compute once per machine, before the worklist, a preorder
+`⊑` on the NFA's `N_CLASS` positions such that `p ⊑ q` implies every
+continuation `p` accepts, `q` accepts too, at the same position. Then in
+`closure` (`src/ir/dfa.c:771`) drop a position when one already in the list
+dominates it. §2.2's literature calls this the right-invariant preorder /
+simulation reduction; §2.2's symbolic-automata work is the version that fits
+pcrec's byte-equivalence-class alphabet.
 
-1. **Domination must hold in every view.** A position's future is not one
-   language: it is an accept answer in each of `UPC_PLAIN` / `UPC_WORD` /
-   `UPC_NL` and in each of base / EOL / END (§1.3(a)). A preorder computed
-   without the assertion states (`N_WORDB`, `N_EOL_M`, `N_BOT_M`, `N_END`,
-   `N_GSTART` — the kinds scanned at `src/ir/dfa.c:1153`-`:1171`) would
-   dominate across a context boundary and answer a `\b` or a `(?m)$` with the
-   wrong bit. The preorder has to be computed on the assertion-bearing NFA,
-   with assertions as guards, or it is wrong.
-2. **The K18 open-loop context breaks context-freeness of "the future".** The
-   whole point of `src/ir/dfa.c:207`'s memo is that a position's behaviour
-   inside a closure depends on **which loops are open on the path that
-   reached it** — that is PCRE's empty-iteration rule. So "the language of
-   position *p*" is not well-defined independent of context, and a dominance
-   relation computed on the bare NFA may fail under some contexts. Either the
-   preorder must be conditioned on the open-loop context (much more
-   expensive, and the contexts are discovered during closure, not before), or
-   it must be restricted to pairs where no loop entry separates them — a
-   restriction that is easy to state and easy to get subtly wrong.
-3. **Priority.** I believe order is safe here and I want to record the
-   argument so a reviewer can attack it. The DFA route answers spans, not
-   captures (§1.3(a)); its per-state output is a set of accept bits. If
-   `p ⊑ q` and both are in the list, then every accept `p` contributes, `q`
-   contributes at the same position, so no accept bit changes, whichever of
-   the two comes first in preference order. Priority pruning (`prune` on,
-   `src/ir/dfa.c:1`) truncates the list at the first ACCEPT, so dropping `p`
-   can only *lengthen* the surviving list, never change where it truncates.
-   **This is reasoning, not proof, and it is the claim I would most want a
-   D6 panel to attack** — the leftmost-first machinery in this file has
-   already produced three separate corrections (K1, K17, K18) for arguments
-   that looked this clean.
+**Why this shape could crush K18.** The counter tail is `(X(X(X)?)?)?`
+(`src/ir/nfa.c:744`): a position in copy *j* has strictly more iterations
+remaining than the same position in copy *i > j*, so `copy_i ⊑ copy_j` for
+`j < i` — the inclusion §1.2 established, now used as a reason to *delete*.
+A subset that reached copies 4 through 30 reduces to `{copy 4}`, and the
+number of reachable subsets falls from the number of *ranges* to the number of
+*minima*: roughly quadratic to roughly linear in the count. That is the right
+order of magnitude for 27,575 → 1,010.
 
-**Cost.** The simulation preorder is the expensive part: classically
-`O(|Q|·|δ|)`, and the NFAs here reach tens of thousands of states on exactly
-the patterns that need it. A cheaper *bisimulation* quotient (Paige–Tarjan,
-near-linear) is available and **is not the same thing** — bisimilarity would
-merge copies only if their futures coincide exactly, which for an unrolled
-counter they do not, so I expect bisimulation alone to buy approximately
-nothing on K18 shapes. That is worth stating because it is the intuitive
-first thing to reach for and it is the wrong one.
+It is also, with C, one of only two candidates that **reduces the K7 charge**
+(§1.4), because it acts before `intern` sees the list.
+
+**It does not reach the minimal machine.** `{copy 4}` and `{copy 5}` remain
+distinct states. The thorough pass is still needed and still does real work,
+so **B's second pass is not optional**. Expect the ratio to fall from ~27× to
+something small but not 1×.
+
+**Three pcrec-specific soundness conditions, each a way to be quietly wrong.**
+
+1. **Domination must hold in every view.** A position's future is an accept
+   answer in each of `UPC_PLAIN`/`UPC_WORD`/`UPC_NL` and in each of
+   base/EOL/END (§1.3(a)). A preorder computed without the assertion states
+   (`N_WORDB`, `N_NWORDB`, `N_EOL_M`, `N_BOT_M`, `N_END`, `N_GSTART` —
+   `src/ir/dfa.c:1153`-`:1171`) would dominate across a context boundary and
+   answer a `\b` or a `(?m)$` with the wrong bit.
+2. **The K18 open-loop context breaks context-freeness of "the future".**
+   `src/ir/dfa.c:207`: a position's behaviour inside a closure depends on
+   which loops are open on the path that reached it. So "the language of
+   position *p*" is not well defined independently of context, and a preorder
+   computed on the bare NFA may fail under some contexts. Either condition the
+   preorder on the open-loop context (much more expensive; contexts are
+   discovered during closure, not before), or restrict it to pairs no loop
+   entry separates — easy to state, easy to get subtly wrong.
+3. **Priority.** I believe order is safe and record the argument so it can be
+   attacked. The DFA route answers spans, not captures (§1.3(a)); a state's
+   output is a set of accept bits. If `p ⊑ q` and both are in the list, every
+   accept `p` contributes `q` contributes at the same position, so no accept
+   bit changes whichever comes first in preference order; and priority pruning
+   truncates at the first ACCEPT, so dropping `p` can only lengthen the
+   surviving list, never move where it truncates. **This is the claim I would
+   most want a D6 panel to attack** — the leftmost-first machinery in this
+   file has already produced K1, K17 and K18 against arguments that looked
+   this clean.
+
+**Cost.** The simulation preorder is classically `O(|Q|·|δ|)`, on NFAs that
+reach tens of thousands of states precisely when it is needed. A *bisimulation*
+quotient (Paige–Tarjan, near-linear) is cheaper and **is not the same thing**:
+bisimilarity merges copies only if their futures coincide exactly, which for an
+unrolled counter they do not, so I expect it to buy approximately nothing here.
+Worth stating because it is the intuitive first reach and it is the wrong one.
 
 **One tempting shortcut, named so it is not silently taken.** The dominance
-that matters on the K18 shapes is "copy *i* of an unrolled repeat is
-dominated by copy *j < i* of the same repeat", which the NFA builder knows
-by construction and could stamp on each state for free, with no preorder
-computation at all. That is a special case of a general fact, and this
-project's standing rule (memory `pcrec-general-mechanisms-not-special-cases`,
-D75's addendum as the worked example) is that the general form is what gets
-built. It is legitimate as an *implement-then-replace* first prototype for
-the measurement in §5 — where the question is only "how much is there to
-win" — and it is not legitimate as a landing.
+that matters on K18 shapes is "copy *i* is dominated by copy *j < i* of the
+same repeat", which the NFA builder knows by construction and could stamp for
+free. That is a special case of a general fact, and the standing rule
+(memory `pcrec-general-mechanisms-not-special-cases`, D75's addendum) is that
+the general form gets built. It is legitimate as an implement-then-replace
+prototype for M2, where the only question is *how much is there to win*; it is
+not legitimate as a landing.
 
-### 3.4 C — the full online equivalence registry
+### 3.8 C — full online compaction (Tier 4)
 
 Nicol & Frohme's construction (§2.3): an equivalence registry that tracks and
 unifies language-equivalent states as they are discovered, with convexity
-closures and simulation as additional reducers, and a threshold predicate
-that interrupts exploration to minimize. Exact, published, and by
-construction it makes raw size track minimized size — which is precisely what
-the charter asks for.
+closures and simulation as additional reducers and a threshold predicate that
+interrupts exploration to minimize. Exact, published, in a 2026 venue, and it
+reports its gains *"especially [in] worst-case scenarios"* — the population
+pcrec cares about.
 
-It is last because it is a new subsystem, it replaces `src/opt/minimize.c`
-rather than extending it, and it lands every one of §3.2's five
-renumbering hazards *plus* whatever the registry's own invariants are. I
-have not read the paper past its abstract (§2.3, **unverified**), so I
-cannot estimate its code size honestly beyond "500+ lines and a new file",
-and I cannot say what its overhead is on the ordinary patterns that make up
-99% of the corpus. Its authors publish an open-source implementation; reading
-that implementation and the paper is a named, cheap item in §5.
+**Promoted to first-class by Frank's clarification, and on the merits it earns
+the place**, for three reasons the original draft under-weighted:
 
-I would not charter this without B having been measured first. If B gets the
-ratio from 27× to 3×, the remaining 3× is not worth a new subsystem.
+1. **It is the only candidate for which the second pass is genuinely
+   optional.** A registry that unifies equivalent states as they are
+   discovered *is* the canonization; the machine it leaves is minimal or near
+   it, so skipping the thorough pass costs little size (§3.1's objection
+   evaporates) — and at that point **raw equals emitted and lim2's projection
+   is exact by identity**, no margin and no bound reasoning. Frank's
+   optional-second-pass idea and lim2's margin problem solve each other in
+   exactly this configuration and in no other.
+2. **It is one of only two candidates that makes construction cheaper**
+   (§3.2's criterion): a Tier-4 merge can be made before either state's row is
+   expanded, so 96% of the k18 witness's rows would never be walked.
+3. **It subsumes A′ and composes with B.** A′'s row-hash is the registry's
+   confirmation step; B's preorder is exactly the "simulation" the abstract
+   names as an additional reducer. So the cheap candidates are not wasted work
+   if C is where this ends up — they are C's components, which makes an
+   incremental route to C real rather than rhetorical.
 
----
+**Against it:** it is a new subsystem, it replaces rather than extends
+`src/opt/minimize.c`, and it lands every one of §3.5's five renumbering
+hazards plus the registry's own invariants (a hypothesis that must be split
+on refutation is a data structure where being wrong is silent by
+construction). **I have not read the paper past its abstract**
+(§2.3, `unverified`), so "500+ lines and a new file" is a guess, and I cannot
+say what its overhead is on the ordinary patterns that are 99% of the corpus.
+Its authors publish an open-source implementation. Reading both is cheap, needs
+no box time, and is now the **first** item in §5's plan rather than the last.
+
+### 3.9 The two-pass verdict
+
+Frank's three questions, answered directly.
+
+**Which equivalences are the cheap-and-safe incremental wins?** Tier 2 (A′,
+identical finished rows) unconditionally — it needs no new theory and its
+soundness is one line of algebra. Tier 1 (B, dominated positions) subject to
+§3.7's three conditions, and it is the cheaper-construction one of the two.
+Together they are perhaps 250-350 lines and they are the honest content of
+"take the easy wins as states are generated".
+
+**Which need the thorough pass?** Everything at Tier 3 and above, and that
+includes the whole of the K18 case: two subsets are equivalent there because
+the *union* of their residual languages coincides, and no local, bounded-depth
+check can see that. Tiers 1+2 alone would leave most of the 97% shrink on the
+table.
+
+**Is the incremental result alone a usable artifact?**
+
+| property | Tiers 1+2 only | Tier 4 (C) |
+|---|---|---|
+| correct? | **yes** — §3.1: an unminimized DFA is already a shipped, ordinary outcome | yes |
+| smaller? | somewhat; on the k18 witness it would leave most of a 27× on the table | ≈minimal by construction |
+| size bound honest? | **no** — a partially-merged count is an upper bound on the explored part, and a bail needs a lower bound (§3.4) | **yes, and exactly** — raw *is* emitted, so the projection is an identity |
+| second pass optional? | no — skipping it enlarges the k18 artifact ~27× | **yes** |
+
+So the shape Frank described — easy wins during, thorough pass after, second
+pass optional if expensive — **is coherent, and it is a description of
+candidate C.** With the cheap tiers alone the second pass is not optional; it
+is where nearly all the shrink lives. That is not an argument against starting
+with the cheap tiers: A′ and B are C's own components, so building them first
+is a real incremental route rather than throwaway work. It is an argument
+against expecting the cheap tiers to deliver the property that makes the whole
+manoeuvre worth doing.
 
 ## 4. Brittleness (Frank's directive 3, and his stated concern)
 
-The two candidates that actually compact are **A** (Frank's shape) and **B**
-(dominance pruning). This section takes each apart by failure mode and asks
-the project's own question of each one: *what would have to be true for a
-check to fail, and who chose that input* (`docs/dev/learnings.md` §3).
+Four candidates actually compact: **A′** (identical finished rows), **A**
+(periodic partial minimization), **B** (dominance pruning) and **C** (the full
+online registry). This section takes each apart by failure mode and asks the
+project's own question of each one: *what would have to be true for a check to
+fail, and who chose that input* (`docs/dev/learnings.md` §3).
 
 The working definition, from the brief: **a mechanism whose failures nothing
 would catch is brittle.** By that definition the verdicts below are not
@@ -705,7 +862,7 @@ symmetric, and the asymmetry is the useful part of this section.
 
 **Verdict on A: checkable, but only with A1's forced mode, and A1's forced
 mode is the whole difference between "tested" and "tested on twelve
-patterns".** A's real problem is not brittleness. It is that §3.2 expects it
+patterns".** A's real problem is not brittleness. It is that §3.5 expects it
 to merge almost nothing on the population that motivated the study, and that
 prediction is untested. **Measure before building** (§5, M1).
 
@@ -715,7 +872,7 @@ prediction is untested. **Measure before building** (§5, M1).
 |---|---|---|---|
 | B1 | the preorder dominates across an assertion boundary, so a `\b` / `(?m)$` / `\z` accept bit is wrong in one view only | `tests/assertions/` and PC-3 — **only if a corpus pattern combines an unrolled counted repeat with an assertion.** That is a cross-product cell, and learnings §3 records this exact failure ("a corpus needs the axes of the MECHANISM under test, not of the exemplar that motivated it; the cross-product cell neither of two large honest sweeps generates") | **yes, and it is the load-bearing one:** a generated corpus of {counted-repeat shapes} × {`\b`, `\B`, `(?m)^`, `(?m)$`, `\z`, `\Z`, `\G`}, oracle-verified against libpcre2. It does not exist today |
 | B2 | the K18 open-loop context makes "the language of a position" context-dependent, so a preorder computed on the bare NFA is wrong under some contexts | the four `k18_*.rxt` files' 1,459 guard cases — the strongest existing check for this hazard, and `DFA_INVARIANT` (`dfa.c:250`) aborts in shipped builds if loop nesting stops being proper | **yes:** sabotage rows planting an over-relating preorder, asserting the k18 suites go red. If they stay green that is a finding about the population, not a pass (learnings §3) |
-| B3 | priority: §3.3's condition 3 is an argument, and the leftmost-first machinery in this file has already produced K1, K17 and K18 against arguments that looked this clean | the corpus's spans, `counterk`, the lazy-preference witnesses `src/ir/nfa.c:741` names (`(?:ab\|a){0,2}?b`) | a preference differential over dominated-position shapes specifically — lazy and greedy spellings of the same counted repeat |
+| B3 | priority: §3.7's condition 3 is an argument, and the leftmost-first machinery in this file has already produced K1, K17 and K18 against arguments that looked this clean | the corpus's spans, `counterk`, the lazy-preference witnesses `src/ir/nfa.c:741` names (`(?:ab\|a){0,2}?b`) | a preference differential over dominated-position shapes specifically — lazy and greedy spellings of the same counted repeat |
 | B4 | the reverse machine runs with `prune` off and must keep every thread to find the **earliest** accept; the soundness argument there is not the forward one | full-span corpus answers, if such a pattern exists in the corpus | same cross-product corpus as B1, with the reverse machine as an explicit axis |
 | B5 | emitted bytes move wherever domination exists | identity gates, size ratchet | no — but the landing is an `abi` bump plus a re-pin at every reader found by grep (D76/D94) |
 | B6 | the preorder is computed on **every** pattern, including the 99% that gain nothing; classically `O(\|Q\|·\|δ\|)` | `tests/bench/run_bench.sh`'s COMPILE-SPEED budget and `tests/resource/` — both calibrated for cliffs, not for a uniform 3% | **yes:** a corpus-wide compile-time delta, the shape the artifact-size log already has for size |
@@ -734,12 +891,51 @@ With that corpus and the sabotage rows, B stops being brittle. Without it, B
 is a mechanism whose sharpest failure mode nothing in the tree can see, which
 is the definition the brief gave.
 
-### 4.4 The null candidates' brittleness, briefly
+### 4.4 Candidate A′ — identical finished rows
+
+The short table, because there is genuinely little here.
+
+| # | failure mode | caught by | new check needed |
+|---|---|---|---|
+| A′1 | the row hash collides and two unequal rows are treated as equal | nothing would notice a bad *comparison* — but the fix is the existing idiom: `intern` (`src/ir/dfa.c:871`) already confirms every hash hit by full comparison, and A′ must do the same. A hash-only merge would be a defect, not a design choice | no, provided the confirm-on-hit rule is followed |
+| A′2 | a row is hashed before it is complete (`tr[cl] == -2` still present) | nothing — it would merge on an unfinished row, which is §3.5's unsound-wildcard failure wearing a different hat | **yes:** an assertion that every cell is filled at the hash site, in `dfa.c`'s existing `DFA_INVARIANT` idiom (`:250`), which survives a caller's `-DNDEBUG` |
+| A′3 | aliasing without renumbering leaves a stale id somewhere (`s0`/`s1u[]`/`s1g[]`, `eolvar`, `endvar`, a cached `tr` target) | the corpus's spans would go wrong loudly, and `run_*_identity.sh` would show bytes moving | no |
+| A′4 | it changes nothing at all — the merges it finds are ones the final pass finds anyway | **nothing.** A mechanism that is a no-op passes every check in the tree | **yes, and this is the real risk:** a census counting how many merges A′ makes that the final pass does not make *earlier*, over the corpus. A′'s whole claimed value is timing, so timing is what must be measured |
+
+**Verdict on A′: not brittle, and not, on its own, worth building.** Its
+failure modes are either trivially avoided by following an existing idiom or
+loud. Its real risk is A′4 — being a no-op dressed as a mechanism — which is
+the D77 question, not a brittleness question. Build it as a component of C
+(§3.8), or not at all.
+
+### 4.5 Candidate C — the full online registry
+
+| # | failure mode | caught by | new check needed |
+|---|---|---|---|
+| C1 | a hypothesis is never refuted because the refuting input is never explored, so two inequivalent states stay merged | the corpus's spans — **only where the mechanism fires**, and a registry fires everywhere, which is actually the *good* case for coverage compared with A's threshold | **yes:** the same forced-mode-plus-whole-corpus sweep A1 needs, plus a **differential against the existing pipeline** — compile every corpus pattern both ways and assert the two minimized machines are isomorphic. That differential is C's single strongest available check and it has no analogue for A or B |
+| C2 | the split-on-refutation propagation misses a transitive consequence (a merge that depended on a merge that was just undone) | nothing, and this is the failure mode I would expect a registry to have | **yes:** an invariant re-check at the end of construction — every surviving merge re-verified against the finished machine, in the `DFA_INVARIANT`/`abort()` idiom, on by default. Expensive, and it is exactly the "prove the mechanism did what it claimed" check the cheaper candidates cannot afford but this one can, because it replaces the thorough pass and inherits its budget |
+| C3 | inherits every one of §3.5's five renumbering hazards, since it renumbers continuously rather than periodically | items 1-4 fail loudly (wrong start state, wrong spans, corrupt worklist); item 5 (the caps) fails silently and permissively | the refusal-set manifest, as for A2/B7 |
+| C4 | the second pass is skipped (§3.9) and the artifact is *larger* than today on some population nobody looked at | `tests/size/`'s artifact-size log and tripwire — this axis is already built and already loud | no. This is the one place where deciding to skip the thorough pass is well covered before the fact |
+| C5 | overhead on the 99% of patterns that gain nothing — a registry pays per state on every compile | `tests/bench/run_bench.sh`'s COMPILE-SPEED budget, calibrated for cliffs | **yes:** the same corpus-wide compile-time delta B6 needs. One check for both |
+| C6 | emitted bytes move nearly everywhere, since the state set changes wherever anything merges early | identity gates, loudly | no — but the landing is an `abi` bump and a re-pin at every reader found by grep (D76/D94), and it will be a large one |
+
+**Verdict on C: the most dangerous mechanism here and the best-checkable
+one, and those are not in tension.** C2 is a genuinely nasty failure class —
+a hypothesis structure where being wrong is silent by construction. But C is
+also the only candidate that can be checked by **isomorphism against the
+existing pipeline over the whole corpus**, because it computes a quantity the
+current code already computes independently. A and B have no such reference;
+their correctness has to be argued and then sampled. C's can be *diffed*.
+Combined with C4's already-built size axis, C's brittleness is lower than B's
+despite its size — provided C2's end-of-construction invariant re-check is
+built in from the start rather than added after the first defect.
+
+### 4.6 The null candidates' brittleness, briefly
 
 N1 (a work budget) has one failure mode: it refuses a pattern that would have
 compiled. That is loud, deterministic, and caught by the refusal-set manifest
 of A2/B7 — which N1 needs built anyway. N2 (project from the closed subgraph)
-cannot be unsound as a lower bound (§3.1), so its only failure is being
+cannot be unsound as a lower bound (§3.4), so its only failure is being
 *vacuous*, which is a silent failure of a different kind: the bail simply
 never fires and lim2's 10-20 s refusals come back. That is caught by lim2's
 existing cost check (`run_lim2_sizecap_projection.sh`'s check 2, the wall-time
@@ -752,38 +948,61 @@ and was already designed for exactly this.
 
 ### 5.1 Recommendation
 
-**Do not build A. Do not build C yet. Take two measurements, and let them
-decide B.** In order:
+**Separate the two problems first — they are not the same problem — then
+read the paper, then measure.** In order:
 
-1. **Fix lim2's margin problem with N2, as its own small row, now.** The
+1. **Fix lim2's margin problem on its own, now, with N2 or N1.** §3.1's
+   finding is that the size bail needs *provable inequivalence* while
+   compaction proves *equivalence*: they are opposite proofs, and only the
+   configuration in §3.9's right-hand column collapses the distinction.
+   So the bail should not wait on the compaction question at all. N2's
    closed-subgraph block count is a sound lower bound with no percentage in
-   it, which retires lim2 §10's finding that no `BAIL_KEEP_PCT` value can
-   express the required margin. It changes no emitted byte, is not an `abi`
-   event, and is 80-120 lines. **Conditional on M1** below showing the closed
-   set is not empty; if it is empty, fall back to N1 (a deterministic work
-   budget), which is smaller still and delivers most of the measured benefit
-   while making no size claim at all.
-2. **Measure the prize for B (M2). If it is there, charter B; if it is not,
-   the honest answer to the charter's question is "no, not affordably", and
-   that is a legitimate outcome to record rather than a failure to route
-   around.**
-3. **Read the Nicol & Frohme paper and its library (M5).** No box time, and
-   it is the only thing that can retire §2.3's and §3.4's `unverified`
-   marks. Do it regardless of what M1 and M2 say.
+   it, retiring lim2 §10's unrepresentable "194.124 points"; it changes no
+   emitted byte and is 80-120 lines. **Conditional on M1** showing the closed
+   set is not empty — if it is, fall back to N1 (a deterministic work budget),
+   smaller still, no size claim at all.
+2. **Read Nicol & Frohme (M5) before deciding anything else.** Frank's
+   clarification makes full online compaction a live option, and C is the
+   only candidate with the property that makes the whole manoeuvre worth
+   doing — an optional second pass, and with it an *exact* size projection.
+   Its assessment here rests on an abstract. **This is now the first item,
+   not the last**: it costs no box time, and it is unreasonable to rank a
+   first-class candidate on material nobody has read.
+3. **Take M1 and M2.** M1 decides A outright and tells N2 whether it is
+   vacuous. M2 sizes the prize for B and, because B's dominance preorder is
+   the "simulation" C's own abstract names as a reducer, it also puts a floor
+   under what C could achieve. If M2's ratio stays above 10×, the honest
+   answer to the charter's question is "no, not affordably" — a legitimate
+   outcome to record rather than route around.
+4. **Then choose between B and C on the numbers**, with §4.5's verdict in
+   hand: C is the more dangerous mechanism and the better-*checkable* one,
+   because it can be diffed for isomorphism against the existing pipeline
+   over the whole corpus and B cannot.
 
-Frank's directive 2 asked whether "incremental partial during, thorough at
-the end" is simpler than full online minimization. **It is simpler — the
-soundness rule is one branch in `state_sig` — and I believe it is
-ineffective on the population that motivated the study**, because the merges
-it can soundly make are exactly the closed subgraph's, and on a counted
-repetition the frontier stays reachable from nearly everything until the
-end. That belief is the thing M1 tests, and M1 is cheap enough that no
-design work should happen before it.
+**Do not build A.** It is the one candidate this study can rank down on
+merits rather than on missing measurements: it is Tier 3, so it saves no
+construction work (§3.2), its available merges are the same closed subgraph
+N2 only *reads*, and it lands all five renumbering hazards to get them. If
+M1 says the closed set is large, N2 gets the benefit at a third of the cost
+and none of the risk; if M1 says it is small, A does nothing. There is no M1
+outcome that favours A.
 
-Frank's directive 3 asked whether this can be done without getting brittle.
-**For B: yes, but only after the cross-product corpus of §4.3 exists.** For
-A: yes, but only with the forced-threshold mode of §4.2, and the question is
-moot if M1 says A does nothing.
+**Do not build A′ alone.** It is exact, tiny and safe (§4.4), and it is also
+Tier 2, so its merges arrive after the work is already paid for and its count
+is the wrong kind for a bail (§3.6). Build it as C's confirmation step, or
+not at all.
+
+Frank's three questions, answered where he asked them: §3.1 (correctness or
+optimization), §3.2 (which wins are cheap and safe), §3.9 (is the incremental
+result usable alone). The short version is that **his shape is coherent and
+it describes candidate C** — with the cheap tiers alone the second pass is
+not optional, because that is where nearly all the shrink lives.
+
+Frank's original directive 3 asked whether this can be done without getting
+brittle. **For B: yes, but only after the cross-product corpus of §4.3
+exists. For C: yes, and more cheaply than for B**, provided §4.5's C2
+end-of-construction invariant re-check is built in from the start rather
+than added after the first defect.
 
 ### 5.2 The measurements
 
@@ -809,7 +1028,7 @@ built, how many built states have no unfilled row reachable from them.
 **M2 — the dominance prize (decides B).** Instrument the same build with a
 deliberately illegitimate stand-in for the general preorder: drop a position
 when an earlier copy of the same unrolled repeat is present in the list. This
-is the special case §3.3 names and forbids as a landing; it is legitimate
+is the special case §3.7 names and forbids as a landing; it is legitimate
 here because the only question it answers is *how much is there to win*.
 
 - Rows: the same set as M1.
@@ -837,12 +1056,33 @@ the artifact-size log already has for size.
   hazard and should be counted against the candidate's simplicity, not waved
   through.
 
-**M5 — read the literature properly.** Nicol & Frohme, arXiv:2505.10319 /
-TACAS 2026, in full, plus their open-source library: the operational
-definitions of "equivalence registry", "convexity closure" and the threshold
-predicate; the experimental numbers; the overhead on easy inputs. No box
-time, no acceptance bar — it retires four `unverified` marks in this
-document.
+**M5 — read the literature properly. TAKE THIS ONE FIRST.** Nicol & Frohme,
+arXiv:2505.10319 / TACAS 2026, in full, plus their open-source library: the
+operational definitions of "equivalence registry", "convexity closure" and the
+threshold predicate; the experimental numbers; the overhead on easy inputs;
+and specifically **whether their result is minimal or merely reduced**, since
+§3.9's whole right-hand column depends on it. No box time and no acceptance
+bar, but it is the gate on ranking C honestly — it retires four `unverified`
+marks in this document, including the ones under the candidate Frank's
+clarification promoted.
+
+**M6 — is the second pass worth skipping? (decides §3.9's open cell, and only
+after M5/M2 pick a mechanism).** For whichever compaction is prototyped,
+compile the corpus twice — thorough pass on, thorough pass off — and read
+artifact size and compile time both ways, in the shape `tests/size/`'s log
+already has.
+
+- Rows: the whole `.rxt` corpus plus the altwide set plus the k18 witnesses.
+- **Bar:** the second pass may be made optional only if, with it skipped,
+  **no** artifact grows by more than a few percent and the k18 witness in
+  particular does not regress toward its 27×. Anything else and the pass
+  stays mandatory, the projection stays a bound rather than an identity, and
+  §3.1's reframing stands: the bail is a separate row solved by N1/N2.
+- This is also where §3.1's one unsettled code question gets answered — does
+  [OPT-5]'s scan edge require *minimality* or only *finality*
+  (`src/opt/scanedge.c:43`'s five preconditions against
+  `src/core/internal.h:4387`'s "it needs the canonical state set")? A
+  prototype answers it in an afternoon; this study could not.
 
 ### 5.3 The acceptance bar for the step itself, whenever it is chartered
 
@@ -864,7 +1104,16 @@ later:
 
 ### 5.4 What this study does not claim
 
-- That B is sound. §3.3's three conditions are stated as obligations, and
+- That candidate C reaches a *minimal* machine rather than a merely reduced
+  one. §3.9's "second pass optional" column depends on that, and it rests on
+  the word "canonization" in an abstract. M5 settles it.
+- That [OPT-5]'s scan edge tolerates an unminimized machine. §3.1 shows the
+  documented dependency is an *ordering* one and that the pass's five
+  preconditions are local shape tests, but "it needs the canonical state set"
+  is not disproved by that, only unexplained. M6 settles it.
+- That A′ is worth building. It is exact and cheap; §3.6 argues it buys
+  little alone, which is a judgement, not a measurement.
+- That B is sound. §3.7's three conditions are stated as obligations, and
   condition 3 (priority) is an argument I want attacked.
 - That the byte-identity sketch in §1.3(c) holds. It is a plausibility
   argument with three named holes and it must be measured.
