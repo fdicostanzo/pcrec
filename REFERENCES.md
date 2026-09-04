@@ -203,8 +203,9 @@ did **not** append the bracket key inline, and why:
   off-limits to this lane's edits) and in `docs/dev/plan_completed.md`
   (an archive whose own CLAUDE.md states its text is "preserved verbatim").
   Retrofit those three only if/when their own conventions change.
-- **[NF25] (Nicol & Frohme, 2025)** — cited informally (with an inexact
-  "(2023-24)" date) in `docs/dev/plan.md`, off-limits to this lane.
+- **[NF25] (Nicol & Frohme, 2025)** — `docs/dev/plan.md` keyed by the manager
+  2026-09-04; `docs/dev/dev_journal.md` is append-only and keeps its inexact
+  "(2023-24)" mention as written.
 - **[Wan19+] (Wang et al., Hyperscan)** — named repeatedly
   ("Hyperscan", "ripgrep/Hyperscan") in `docs/dev/decisions.md`,
   `docs/dev/plan.md` and `docs/dev/dev_journal.md` as a system/technique
