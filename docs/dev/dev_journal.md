@@ -20900,3 +20900,23 @@ artifact_size_log.tsv (rows 2934, a full run on its own tree) is NOT
 taken — the log is regenerated once on the merged tree after the
 battery. Lane closed. Main's chain: make test 40 min in, one red (the
 K35 sort-locale hygiene gate on isl1's pool, fixed at 47c43e28).
+
+## 2026-09-04 — Fifty-first session, part 47 (04:4x EDT): the isl1 merge's chain finds TWO reds, both in isl1's late landing pass and both test-file-only — fixed on main (47c43e28, 59c91995)
+
+Main's make test (started 03:44 after the cee7c741 merge): (1) the
+codegen section's K35 hygiene gate — two `sort -u` sites in the new §9
+witness pool ran under the ambient locale (fixed: LC_ALL=C); (2)
+test-corpus — 22 cases in tests/counterk/counterk.rxt failed to
+COMPILE: the three possessive pool members isl1 added lacked the per-
+block `features atomic-groups` line every possessive block in
+tests/atomic_groups carries (fixed: three lines). Cause of both: the
+lane's last full `make test` ran at 18:36, before the r53 landing pass
+added those cells and that script; every later run was a single script,
+and the corpus stage and the hygiene gate were never re-run on the
+final branch. Lesson (learnings §3 candidate): a landing pass that adds
+corpus files or test scripts owes a final test-corpus + the section that
+hosts the new script, not the single scripts alone. The chain's make
+test also rewrote docs/dev/artifact_size_log.tsv (2,959 rows) — restored
+with git checkout, per the one-deliberate-commit rule. Next: after the
+chain's make test ends, re-run test-corpus and the hygiene script alone,
+then test-codegen → test-registry → test-axes.
