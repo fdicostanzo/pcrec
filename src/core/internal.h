@@ -4429,8 +4429,23 @@ enum { PCREC_DFA_DEAD = -1 };
  * consumes it; this is only the NUMBER. Percent-out-of-100, kept in integer
  * arithmetic: 85 means "assume as little as 85% of the forward machine's own
  * raw bytes survive minimization" — see `pcrec_build_dfa`'s own comment for
- * the full derivation and the measured shrink it is margined against. */
-#define PCREC_LIM2_BAIL_KEEP_PCT 85
+ * the full derivation and the measured shrink it is margined against.
+ *
+ * [LIM-2] MOVED per ruling 1 (docs/dev/lanes/lim2_rulings.md, 2026-09-04):
+ * the census (tests/resource/run_lim2_sizecap_projection.sh) measured a
+ * real corpus pattern (tests/base/k18_cost_gates.rxt) shrinking 97.062% on
+ * minimization. The ruling's own formula (required margin = 2x measured max
+ * shrink = 194.124 points) exceeds what this representation can express at
+ * all -- a percent-of-raw-bytes margin is bounded at [0,100) points, and no
+ * value in that range clears 194.124. CLAMPED to 1 (99-point margin, the
+ * tightest this design can express), never reversed toward less caution.
+ * See docs/dev/lanes/lim2_report.md S10/S12 for the measured consequence:
+ * at this margin the bail no longer fires early for any of the write
+ * phase's own altwide/SEL-1 witnesses (their raw bytes never cross the
+ * now-enormous bail_at threshold), reverting those to pre-[LIM-2] timing
+ * and diagnostics -- reported honestly, not concealed by leaving 85 in
+ * place. */
+#define PCREC_LIM2_BAIL_KEEP_PCT 1
 
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 /* [OPT-5] THE SCAN-EDGE PASS (src/opt/scanedge.c). Runs on EVERY machine,

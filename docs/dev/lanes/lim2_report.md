@@ -449,14 +449,71 @@ artifact_size_log.tsv` from the interrupted run was reverted
 test` was relaunched from a clean, fully rebuilt tree with no further
 concurrent source edits.
 
-## 12. `make -k -j4 PROCS=3 test`, second (clean) run
+## 12. `make -k -j4 PROCS=3 test`, first full run (at `BAIL_KEEP_PCT=85`) — RESULTS
 
-OWED_MAKE_TEST_SUMMARY
+34/34 sections ran. **5 individual `FAIL:` lines, all found and fixed in
+§11** (3 in `tests/prefilter/run_prefilter_tests.sh`, 2 in `tests/resource/
+run_resource_tests.sh`) — no other section failed. Aggregate: 2,047 checks
+passed across the run's own per-section summaries. `test-codegen` 109/0
+(includes the K35 locale sweep, which found and counted this lane's own
+4 new `sort` sites, all guarded); `test-registry` clean; the abi identity
+gate reports `abi 20` unmoved on every artifact — see §14.
 
-## 13. `make test-codegen`, `make test-registry`, `make test-axes`
+## 13. The margin move, applied for real, and re-validation
 
-OWED_FURTHER_SUITES
+Per the manager's ruling (2026-09-04): `PCREC_LIM2_BAIL_KEEP_PCT` moved
+from 85 to 1 (clamped; the required 194.124-point margin has no
+representable value) in `src/core/internal.h`, on the real worktree,
+rebuilt (`make -j4`, `make strict` clean). Two consequences already
+covered in §11 as INVESTIGATED became the ACTUAL, real state of the
+tree: `tests/vm/run_vm_tests.sh`'s `[SEL-1]` section is now
+byte-identical in behaviour to pre-`[LIM-2]` main (confirmed: re-run
+solo, 48/48, 3/3 scripts passed — no wording mismatch); `tests/resource/
+run_resource_tests.sh` unaffected (still 30/30, the `a{65535}` reorder
+finding is unrelated to the margin and stands as documented). The
+census itself, re-run against the moved margin: population 12 unchanged,
+margin now correctly reads 99pts (was 15), STILL RED — 99 does not clear
+the 194.124pts the 97.062% shrink requires. `tests/resource/
+run_lim2_sizecap_projection.sh`: 4/5, the 1 red being this same expected
+census finding.
+
+**The honest cost of the move, measured on a quiet box (load1
+0.33-0.46), `--engine=dfa`, direct timing, w-2048 and s-4096 (the write
+phase's own headline witnesses):**
+
+| witness | main baseline | branch @ 85% (write phase) | branch @ census margin (=1) |
+|---|---|---|---|
+| w-2048 | 10.81s | 1.33s | **11.39s** |
+| s-4096 | 19.32s | 12.62s | **19.24s** |
+
+At the margin the census's own rule requires, the early bail does not
+fire for either witness — both revert to the post-emission check,
+byte-identical diagnostic wording to main — and the census-margin run is
+NOT faster than main: w-2048 is 0.58s SLOWER (the reverse-first reorder
+still runs, building and minimizing the reverse machine first, even when
+it buys nothing); s-4096 is within noise. **The row's entire measured
+win depended on the 85% margin the census disproved, and no margin
+exists that both clears the census's 2x rule and keeps any part of that
+win** — the arithmetic is unconditional: 2x of any shrink above 50%
+exceeds the representable range. Reported to the manager 2026-09-04;
+their call on whether the row ships, is scoped down, or is withdrawn
+(census + diagnostics only, bail + reorder reverted) is pending as of
+this report.
 
 ## 14. The abi question
 
-OWED_ABI_ANSWER
+**No.** This lane moves no emitted scaffolding — comment, declaration,
+layout, or stamp — on any artifact. Argument: (a) the diagnostic-wording
+changes (§6, §11) are compiler STDERR text at refusal time, never part
+of an emitted artifact; (b) the reverse-then-forward build reorder is
+argued order-independent for every emitted observable in its own
+`compile.c` comment, and is now EMPIRICALLY confirmed by `make test`'s
+own identity gates: every corpus/hybrid identity population in the full
+run (`tests/codegen`, `tests/possessify`, `tests/rungselect`, `tests/
+mrl`, etc.) reports 0 differing, and the abi stamp itself reads `abi 20`
+unmoved (`[DD-14.FB]`'s own check: "rx_info carries the four sizing
+fields with abi 20 on both engines"); (c) `PREMUL_DEAD`/
+`PREMUL_MAX_ENTRIES`/`PCREC_LIM2_BAIL_KEEP_PCT`'s moves into
+`src/core/internal.h`, and `pcrec_dfa_indexed_table_bytes`, are
+compile-time-only source reorganisation with no emitted-text reader.
+No abi bump owed at merge for this lane's own changes.
