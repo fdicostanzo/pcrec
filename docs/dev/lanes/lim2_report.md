@@ -1,15 +1,19 @@
-# lim2 report — [LIM-2] the DFA route's projected-size bail
+# lim2 report — [LIM-2] the DFA route's projected-size bail — WITHDRAWN
 
 Lane `lim2`, worktree `worktrees/lim2`, branch `lane/lim2`, from `main` at
-`56f34b01` (abi 20). **Status (post-`.lift`, 2026-09-04): the census is
-built and run, and it is RED for a real, reported reason (§10). A real
-`--engine=auto` regression the census's own `make test` run surfaced was
-found and fixed (§11) — the write phase's own acceptance bar ("the
-refusal set moves NOT AT ALL") was violated by the delivered code before
-this fix.** Sections 1-8 below are the write-phase report, kept verbatim
-except where a post-lift finding corrects one of its claims (marked
-inline); §9 records what the post-lift sequencing actually found, in
-order.
+`56f34b01` (abi 20). **FINAL STATUS (ruling 7, 2026-09-04): the projected-
+size bail and the reverse-first construction reorder are WITHDRAWN.**
+`git diff main..lane/lim2` carries no `src/`/`tests/` change: everything
+under `src/`, the `Makefile` line, `docs/spec/limits.md`, the touched
+`src/*/CLAUDE.md` notes, and the `tests/resource/run_resource_tests.sh` +
+`tests/vm/run_vm_tests.sh` expectation edits are reverted to `main`'s exact
+content (byte-identical, verified by diff). `docs/dev/plan.md` is dropped
+from the branch. What lands: this report, and `studies/lim2_census/` — the
+census instrument and its committed data, the row's one lasting yield. See
+**§15 for the final account**; §1-§14 below are kept as the historical
+record of how the row got there, corrected inline where a later finding
+supersedes an earlier claim, because the reasoning that produced the
+census's own numbers is worth having, not just the numbers.
 
 Disclosure (scope mandate): the only injected context that shaped a
 decision was the repo `CLAUDE.md` (the situation-index table's rows on
@@ -517,3 +521,104 @@ fields with abi 20 on both engines"); (c) `PREMUL_DEAD`/
 `src/core/internal.h`, and `pcrec_dfa_indexed_table_bytes`, are
 compile-time-only source reorganisation with no emitted-text reader.
 No abi bump owed at merge for this lane's own changes.
+
+## 15. RULING 7 — the withdrawal, the final account
+
+**The bail's entire measured win depended on a margin the row's own
+census disproved, and no representable margin clears the census's
+rule.** Quiet-box (load1 0.33-0.46), `--engine=dfa`, direct timing,
+median of one clean run each (three-way, same box, same session):
+
+| witness | main (56f34b01) | branch @ BAIL_KEEP_PCT=85 | branch @ census-ruled margin (=1) |
+|---|---|---|---|
+| w-2048 | 10.81s | 1.33s | **11.39s** (0.58s SLOWER than main) |
+| s-4096 | 19.32s | 12.62s | **19.24s** (within noise of main) |
+
+At `BAIL_KEEP_PCT=85` (the write phase's own value, before the census
+existed to check it), the bail is a genuine win. But the census (§10)
+measured a real corpus pattern (`tests/base/k18_cost_gates.rxt`, a
+deliberate compile-COST stress witness) shrinking 97.062% on
+minimization — population 12 over the whole corpus + pcrec-bench's
+altwide set, every pattern whose forward machine's raw table crosses
+`PREMUL_MAX_ENTRIES`. Ruling 1's own acceptance rule needs the margin to
+clear `2x` the measured max shrink: `2 x 97.062 = 194.125` points, and a
+percent-of-raw-bytes margin (`BAIL_KEEP_PCT`, this mechanism's whole
+design) is bounded at `[0, 100)` points BY CONSTRUCTION. No value in
+that range clears 194.125 — not a calibration gap, an expressiveness
+one. At the tightest representable value (1, a 99-point margin), the
+bail simply stops firing early for either headline witness: both revert
+to the post-emission check, byte-identical wording to main, and the
+reverse-first reorder (built and minimized to supply a headstart the
+bail can no longer use) runs for no benefit — hence the small
+regression on w-2048.
+
+**abi: NONE.** No `src/` change survives; the tree is byte-identical to
+main.
+
+**The SEL-1/`--engine=auto` regression this lane found (§11, fixed at
+97a4655c) is BRANCH-ONLY and reverts with the bail.** Its fix routes
+exclusively through `src/ir/dfa.c`'s size-bail refusal block, setting
+`cx->dfa_overflowed` there — code that exists only when the bail exists.
+On `main`, the same witness's overflow is diagnosed by `intern()`'s two
+pre-existing "pattern too complex" sites alone (the state-count cap, K7's
+subset-elems cap), unaffected by anything this lane touched. The
+regression could only ever manifest alongside the bail that caused it;
+it does not exist on `main`, needs no separate fix there, and none is
+carried forward.
+
+**The `a{65535}` witness observation (§11, ruling 6(a)) is recorded here
+as a FACT for whoever builds the DFA online-minimization successor
+(N2/N1, `docs/dev/dfa_online_minimization_study.md`'s own naming) rather
+than as an open item of this row's**: under the reverse-first
+construction order this lane built, `a{65535}`'s REVERSE machine — not
+the forward one — is what reaches `PCREC_MAX_DFA_STATES_TABLE` (32,000
+states) first, where under `main`'s forward-only-first order the SAME
+pattern's FORWARD machine reaches `PCREC_MAX_SUBSET_ELEMS` (K7's
+subset-element bound, the shape this exact witness exists to guard) at
+roughly a third the state count. The two machines are not isomorphic
+under this construction's own NFA-reversal mechanics for an exact-count
+repeat — forward's "few states, enormous per-state NFA-state-sets"
+compactness is not a property its reversal shares. Since the bail (and
+its reorder) are withdrawn, this observation has no live consequence
+today; it is filed here because a FUTURE reorder (online minimization
+processes states as they are decided, in some order, and a naive
+version could plausibly reorder forward/reverse construction again) would
+re-encounter exactly this asymmetry, and re-discovering it from scratch
+would cost what this lane already spent finding it.
+
+**Unmeasured machines (ruling item 4, §7):** the census, the bail design,
+and this whole row's own measurement were scoped to the forward
+table-engine build only (`compile.c`'s D7 fast path, `cx.job->dfa`).
+Never measured: the reverse machine's OWN raw-vs-minimized shrink at
+scale (only two witnesses, in the write phase's original manual sweep,
+§2 — both close to the forward numbers, not corpus-verified); the
+ENG_ATTEMPT/goto engine's machine (`PCREC_MAX_DFA_STATES_GOTO`); the
+optional anchored MATCH-HERE machine (`cx.job->adfa`). A successor design
+that revisits any of these should re-measure them fresh rather than
+assume this row's forward-only numbers generalize.
+
+**§5's numbers (the original altwide before/after timing table) are
+this row's OWN measurement and are superseded by this section's
+three-way numbers for the row's OWN verdict** — but they remain the
+correct STARTING measurement for **[LIM-2] STEP 2** (an accept-table
+projection term, ruling item 5, filed and not built here): `s-2048` and
+`sh1-512` showed no benefit under the bail's own margin (§5's table),
+which is a different, still-open question from whether the bail itself
+should exist.
+
+**Lasting yield:** `studies/lim2_census/` — the measuring instrument
+(`lim2_census.c`, adjusted to build against `main`'s own
+`pcrec_build_dfa` signature and a locally-scoped `PREMUL_MAX_ENTRIES`),
+its own `Makefile`/`run_census.sh` (not run by `make test`), and the
+COMMITTED data: `census_data.tsv` (12 rows: id, raw states, `ncls`, raw
+bytes, minimized states, minimized bytes, shrink%) and
+`census_summary.txt`. This is the input `docs/dev/
+dfa_online_minimization_study.md`'s N2/N1 successor design (§5.1 item 1,
+on `main`) cites, and the generalisable finding it rests on: a raw
+subset-construction byte count is not a marginable lower bound on a
+DFA's final table size for the patterns this project actually compiles.
+
+**Disclosure (scope mandate, restated for this final section):** no new
+injected context shaped ruling 7's execution beyond the ruling text
+itself and the situation-index rows already disclosed in this report's
+opening section.
