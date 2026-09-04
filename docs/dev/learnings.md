@@ -202,6 +202,51 @@ distilled forms:
   rule is "measured: <command> → <number>" or "inferred", never a
   measured premise and an inferred conclusion in one sentence.
 
+### 3.x (2026-09-03/04, panel r53 on the alternation island — the same error three times, in code and in checks alike)
+
+- **A quantity bounded at the wrong level cannot bound.** The island's
+  budgets bounded the WORD LIST while the cost was in the TRIE (a 12-node
+  trie with 3,404 try sites emitted 682 KB); the first cap guard bounded a
+  SUBTREE while the refusal was ARTIFACT-WIDE (fifteen factored
+  sub-alternations each passed, their sum crossed the cap); [ART-SIZE]'s
+  bar pinned a RATIO with two fixed witnesses while every byte-invariant
+  change moved the ratio. Ask what the cap actually measures before
+  choosing what to count.
+- **A check that forces the knob it exists to test has removed its own
+  subject.** run_size_term.sh §9 forced `--unroll=K` (the size model never
+  ran) and compared its own arithmetic to a literal 0.75 in the script —
+  change the compiler's constant to 60 or 85 and it stayed green. The
+  assertion must read the decision the compiler makes on its own (the
+  stamp), and the forced ladder is only the instrument that yields the
+  table. Prove it by sabotage (70 → red, 85 → red) in the commit.
+- **"Excused by the subject's own stamp" is a control sharing a source
+  with what it controls.** The identity gate excused any moved byte in an
+  artifact whose own stamp said "island" (an unrelated regression there
+  read green). Excuse by DENYING the axis instead: movement is the
+  island's iff the subject compiler's `-fno-` build restores byte
+  identity — a term the emitter does not write. Same family: an island
+  script that read three stamps one function writes (an emitter that
+  stamps and then emits the chain passed 24/24); a manifest whose comment
+  claimed "every entry verified" without verification (3 of 11 did not
+  stamp, green on the default axis because they routed to the DFA).
+- **A sweep whose POPULATION lacks the shape cannot fail on it.**
+  test-axes read `refused=0` over the corpus while a 109-character
+  cross-product pattern was refused under the island and accepted without
+  it (9% of a random generator's patterns at 4-8 factors); the sweep's
+  budget-bound bucket had NEVER been populated (K47). An axis's acceptance
+  is REFUSAL identity as well as answer identity, and the population must
+  contain the shapes the mechanism can only make worse off-corpus: a
+  synthetic ladder is a legitimate corpus member.
+- **A name-shape filter is an allowlist of spellings.** The limits
+  registry's sabotage scan matched `MAX|CAP|LIMIT|BUDGET|_LEN|DEPTH|NEST`
+  and could never see a `MIN_`/`THRESHOLD` knee; a selection knee is as
+  often a floor as a ceiling.
+- **Lane messages are not a channel for rulings mid-run.** Three rulings
+  to a lane inside a long run went unread until re-sent after its idle
+  notice; the rulings FILE the lane polls at every tick is the reliable
+  channel (and the lane's "delivered" can precede its reading of the
+  inbox — check the branch, not the claim).
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
