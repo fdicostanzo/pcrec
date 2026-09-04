@@ -20920,3 +20920,15 @@ test also rewrote docs/dev/artifact_size_log.tsv (2,959 rows) — restored
 with git checkout, per the one-deliberate-commit rule. Next: after the
 chain's make test ends, re-run test-corpus and the hygiene script alone,
 then test-codegen → test-registry → test-axes.
+
+## 2026-09-04 — Fifty-first session, part 48 (06:0x EDT): the isl1 merge's short chain is GREEN on main — corpus 27,045/0 (re-run), test-codegen 200 PASS / 0, test-registry 0 disagreements, test-axes 22/22 answer-identical (0 mismatches, 48 min); edge1's merge next
+
+After the two test-file fixes (47c43e28, 59c91995) the chain on main
+(cee7c741 + fixes) reads green end to end: test-corpus re-run 27,045
+cases / 0 failed; test-codegen rc 0 with the K35 hygiene gate passing;
+test-registry rc 0; test-axes all 22 axes identical, 0 mismatches. The
+size log rewritten by the corpus stage was restored each time. Next:
+merge lane/edge1 (bcaf14f1, abi 19) — expected conflicts only at the
+abi-ritual sites (emit_dfa.c's producer, run_codegen_tests.sh's
+ABI_EXPECT + narrative, run_recursion_identity.sh's pin block,
+match_api.md's abi paragraphs) — then its chain, then w13.
