@@ -1052,3 +1052,23 @@ one function writes; the identity bucket excused an artifact on its own stamp;
 and the axis sweep looked for a refusal in a corpus with no pattern that could
 produce one. The island's own size budget is the same error inside the
 compiler: it bounded the word list and the cost was in the trie.
+
+### 17.7 The identity gate after the size rule
+
+The island population narrowed again, as the size rule intends, and the
+biconditional holds unchanged on all four axes:
+
+| axis | same | differing | island-moved | stamped-but-deny-is-a-noop | unstamped-but-deny-moves |
+|---|---|---|---|---|---|
+| default | 2209 | 0 | 34 | 0 | 0 |
+| vm | 2198 | 0 | 50 | 0 | 0 |
+| noprefilter | 2210 | 0 | 34 | 0 | 0 |
+| nocaptures | 2225 | 0 | 23 | 0 | 0 |
+
+Read against §16.3's post-Q4 counts (74 / 102 / 74 / 56) and §11.2's pre-Q4
+ones (166 / 236 / 166 / 123), the island's corpus population has fallen by
+about four fifths across the two rulings — the Q4 knee and the S1 size rule
+each declining a shape the measurement said was not worth taking. What is left
+is the population the timing actually measured a win on.
+
+`checks passed: 16, checks failed: 0`.
