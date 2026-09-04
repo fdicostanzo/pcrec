@@ -512,3 +512,92 @@ follow-up that touches no `src/`, so `9bc7723` remains the change's last src
 commit and the gate header's own pin rule holds for a lane that writes its own
 bump. **The manager re-pins to the MERGE commit when it lands**, as at every
 bump before this one; the header says so where a merger will read it.
+
+## 12. The timing (stage 5), measured 2026-09-03 20:5x-21:0x on a quiet box
+
+Protocol as §5 designed it: `<prefix>_search` in a find-all loop over a 131,072-byte
+subject, 11 rounds, arms INTERLEAVED round by round, median reported with the
+per-round range beside it, `load1` recorded and a `load1 < 0.5` gate that
+REFUSES rather than warns (it fired twice on my own gcc's residual load and I
+waited it out rather than caveat a number). Answers are checked EVERY round,
+not sampled: the driver prints a hit count plus a checksum over every span, so
+a build that finds the same NUMBER of matches in different places still parts.
+**Every cell below agreed on every round.**
+
+Subjects are built from an `xy`-only background, which contains no letter any
+target uses — so a "miss" subject is a guaranteed miss and a placed target is
+the only hit. That is why the miss cell is a clean read of the scan path.
+
+### 12.1 The hand-twin, and the discriminator is NOT width
+
+| cell | pattern | width | prefixes | frameless | island / chain | load1 |
+|---|---|---|---|---|---|---|
+| q4a | `foo\|bar` | 2 | free | **1** | **0.175** | 0.31 |
+| pfree | `(?:cat\|dog\|cow)s` | 3 | free | **1** | **0.140** | 0.28 |
+| q4b | `fo\|foo` | 2 | bearing | 0 | 1.131 | 0.30 |
+| p1_fall | `(?:ab\|abc)d` | 2 | bearing | 0 | 1.144 | 0.41 |
+| p1_miss | same, no hit anywhere | 2 | bearing | 0 | 1.146 | 0.46 |
+| p2_fall | `(?:a\|ab\|abc\|abcd)z`, three falls per hit | 4 | bearing | 0 | 1.001 | 0.28 |
+| p3 | `w-64`'s 64 words plus a one-byte-extended copy of each, then `Q` | 128 | bearing, EVERY path | 0 | **0.010** | 0.24 |
+
+**What settles Q3.** The manager pre-agreed a fallback — island for prefix-FREE
+alternations only — if the twin showed prefix-bearing chains not paying. **The
+measurement refuses that fallback.** `p3` is the sharpest prefix-bearing shape I
+could build: 128 alternatives, every root-to-leaf path carrying two accepts, and
+a subject engineered so the FIRST candidate's continuation fails on every hit,
+so the candidate chain runs at every one. The island is **99x faster** there.
+The resumed frame is not reproducing `vm_alt`'s O(n) chain in a different guise;
+it costs one push and an O(1) resume, exactly as §3.2's mechanism predicts.
+
+**What moves Q4, in a direction neither of us named.** The threshold is not
+about width. The only cells the island loses are prefix-BEARING and tiny
+(1.13-1.15 at widths 2), and the loss is gone by width 4 (1.001) and inverted
+by width 128 (0.010). Meanwhile the biggest per-pattern win in the whole set
+outside `p3` is prefix-FREE at **width 2** (0.175), which the current floor of
+2 correctly admits and any width-based raise would throw away.
+
+The mechanism behind the split is visible in the `frameless` column and is not
+a coincidence: a prefix-free island's candidate chain has one entry, so it
+pushes nothing, the artifact is frameless, and [CC-DIFF]'s `always_inline` then
+deletes the entry-chain call and its frame. A prefix-bearing island keeps a
+push, stays framed, and at width 2 the trie walk plus the frame is simply more
+work than two short byte runs.
+
+**A refinement the data supports, NOT applied here** (it is a predicate change
+and Q3/Q4 were ruled "only on the measurement"; this IS the measurement, so it
+is the manager's call): decline where `pushes > 0 && words < 5`. One condition,
+reading two numbers `vm_isl_build` already computes, and it removes every
+losing cell while touching no winning one.
+
+### 12.2 Q1's inline ladder — [CC-DIFF] STEP 2's STEP 0
+
+Single artifacts, island build, `gcc -O2 -c` twice: as emitted, and with the
+`always_inline` attribute hand-removed from the artifact TEXT. No emitter
+change. Runtime is the same find-all loop, 11 interleaved rounds, median.
+
+| pattern | .text as-emitted | .text no-inline | code cost | gcc s (as / no) | peak RSS kB (as / no) | ns/call as / no |
+|---|---|---|---|---|---|---|
+| w-8 | 6,345 | 2,457 | **2.58x** | 0.29 / 0.10 | 35,748 / 32,448 | **0.780** |
+| w-64 | 66,777 | 17,081 | **3.91x** | 2.55 / 0.49 | 111,428 / 54,272 | **0.770** |
+| w-256 | 280,393 | 43,049 | **6.51x** | 11.99 / 1.82 | 364,336 / 102,180 | **0.842** |
+
+**The exchange rate is what a size term needs, and it is not flat.** The
+attribute BUYS a real 16-23% of run time at every rung, and that benefit barely
+decays with size. What explodes is the price: 2.6x the code and 2.9x the
+compile at width 8, against 6.5x the code and 6.6x the compile at width 256.
+At `w-256` an artifact pays six and a half times its machine code and six and a
+half times its gcc for 16% of its run time.
+
+So the honest reading is NOT "turn it off on big programs" — the win is real
+there too. It is that the exchange rate degrades by a factor of two and a half
+across two width decades, so where to stop is a judgement someone has to make
+with these numbers rather than a defect to fix. Three points, no emitter
+change, as chartered.
+
+### 12.3 What the timing does NOT cover
+
+The bench's own altwide arms. Everything above is this box, `gcc -O2`, one
+subject shape (131,072 bytes, 16 placed hits) and a find-all loop. The
+comparative numbers that belong in a ledger are the bench's to take at the next
+pin. `p3` is a pattern I constructed to stress the candidate chain, not a
+corpus or bench pattern, and it is labelled as such wherever it is cited.
