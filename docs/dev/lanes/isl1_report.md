@@ -664,3 +664,105 @@ are `tests/island/`'s own patterns and are real.
 runs against the merged tree, and read the per-pattern movement with
 `scripts/size_diff` knowing that the first regeneration since `a3f40b1`
 carries [CC-DIFF]'s +31 as well as the island's own.
+
+## 14. The manager's rulings on the timing, applied
+
+### 14.1 Q4 APPLIED — a pushing island declines below four alternatives
+
+Ruled on §12.1's table. The predicate gains one condition,
+`pushes > 0 && words < VM_ISL_MIN_BRANCHES_PREFIXED (4)`, reading two numbers
+`vm_isl_build` already computes and read by all three callers through the same
+return.
+
+**The reason it is not a width floor** is the table itself: the discriminator
+is prefix FREEDOM. `foo|bar` at width 2 is the biggest per-pattern win in the
+whole set outside `p3` (0.175) because its chain has one entry, it pushes
+nothing, the artifact is frameless and [CC-DIFF]'s `always_inline` deletes the
+entry frame on top. A plain width floor would have thrown away exactly the
+population that gains most.
+
+**Four and not five** (the manager's call on the same table): width 4 measured
+a wash at 1.001, so it keeps the mechanism at no cost; width 2 loses by 13-14%;
+width 3 is unmeasured and sits on the losing side of the knee, so it declines
+with 2 rather than being admitted on a guess.
+
+The resulting population, verified against the emitter:
+
+| pattern | islands | frameless |
+|---|---|---|
+| `foo\|bar` | 1 | 1 |
+| `cat\|dog\|cow` | 1 | 1 |
+| `fo\|foo` | **0** | 0 |
+| `(?:ab\|abc)d` | **0** | 0 |
+| `(?:a\|ab\|abc\|abcd)z` | 1 | 0 |
+| `(?:abcd\|abc\|ab\|a)z` | 1 | 0 |
+
+`tests/island/run_island_tests.sh` is 24/24 and asserts BOTH directions — the
+two narrow declines AND that a narrow PREFIX-FREE alternation still takes the
+island, because a floor that caught the prefix-free population is the real
+hazard here. Its frame-witness moved from `(ab|abc)d` to `(?:abcd|abc|ab|a)z`:
+at width 2 the former is now the chain's, so it would still read frameless=0
+and the check would have been passing for a reason unrelated to the island.
+Two `island.rxt` comments were corrected for the same reason — those cells are
+now the chain's, and they stay in the file because a decline must answer
+identically too.
+
+### 14.2 [ART-SIZE] §9 — the fixed pair becomes a WITNESS POOL
+
+The manager's ruling: **the instrument is the defect**, and island-free
+witnesses would only move the same fragility to `[OPT-CLSPACK]`. So §9 no
+longer pins two patterns' values. It measures a POOL, prints the whole table
+whatever the verdict, and passes on the EXISTENCE of a straddling pair.
+
+| pattern | ratio | side | moves for |
+|---|---|---|---|
+| `((a)\|ab){4000}c` | 0.7498 | below | alternation (island TAKEN) |
+| `((a)\|ab){17}c` | 0.7008 | below | alternation (island TAKEN) |
+| `((a)\|ab){12}c` | 0.6239 | below | alternation (island TAKEN) |
+| `(?:aa\|a){8,12}+b` | 0.7571 | above | alternation (island DECLINED, narrow) |
+| `(?:aa\|a){8,12}+ab` | 0.7586 | above | alternation (island DECLINED, narrow) |
+| `(?:[ab]a\|[ab]){8,12}+b` | 0.7485 | below | **classes** — island declines it by construction, so `[OPT-CLSPACK]` is what moves it |
+| `(a{1,3}){64}` | 0.7299 | below | **no alternation at all** |
+| `(a{10,20}){10,50}` | 0.5616 | below | **no alternation at all** |
+
+Three of the eight cannot move for an alternation reason, and the taking and
+declining families move in opposite directions, so no single emitter axis can
+flatten every pair. **The band is 0.05** and that is the half that keeps this a
+pin rather than "some two patterns exist": a pair at 0.55 and 0.95 would
+satisfy "one either side" while saying nothing about where the constant is.
+The surviving claim is that a constant of 0.70 or 0.80 fails this file. The
+measured pool brackets far tighter than the band demands — 0.7498 and 0.7571,
+0.0074 apart — so there is real slack before the band needs revisiting.
+
+No straddling pair is **RED with the table**, never a silent pass: that is the
+honest "this population can no longer bracket the constant" finding, and the
+failure text says in as many words not to adjust the constant to make it green.
+Nothing was re-pinned by hand and the constant is untouched.
+
+**A note on why the old cell would have gone green on its own.** Applying Q4
+made `(?:aa|a){8,12}+b` decline the island, which moved it back from 0.7499 to
+0.7571 — so the original fixed pair brackets again by accident. That is exactly
+the argument for the pool rather than against it: the pair's health was a
+coincidence of two unrelated rulings, and the next axis would have broken it
+again.
+
+The class-leading member is NEW to the corpus (`tests/counterk/counterk.rxt`,
+4 `m` and 6 `n` cells, python-verified). §9's pool must be corpus patterns, and
+the corpus had no class-bearing pattern that reaches the ladder.
+
+### 14.3 Final state
+
+| gate | result |
+|---|---|
+| `make strict` | clean |
+| `make test-codegen` | **109 / 31 / 22 / 31 / 7, zero failures** |
+| `tests/island/run_island_tests.sh` | 24 / 0 |
+| `tests/codegen/run_size_term.sh` | rc=0, 31 / 0, pool brackets |
+| `tests/rxtsource/run_rxtsource_tests.sh` | 94 / 0 |
+| `make test-axes` | 22 / 22 answer-identical |
+| identity gate (A) | differing=0, island-stamped-unmoved=0, all four axes |
+| abi | 18 across all eight sites |
+
+**There is no red left anywhere on this branch.** The one item outstanding is
+the manager's at landing: (B)'s pin names `9bc7723`, this lane's last src
+commit, and must become the merge commit.
