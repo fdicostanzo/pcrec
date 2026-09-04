@@ -420,6 +420,64 @@ what each needs:
 
 ---
 
+
+### 13.1 The `run.sh` composed-block path — WRITTEN, WITHDRAWN, and where it is
+
+**Manager's ruling, 2026-09-04 04:3x: this does not ride the branch.** It was
+written on request after the validation cost was separated out, then withdrawn
+because `run.sh` is the most load-bearing script in the tree and this would
+land UN-RUN behind three merges and a battery. The two things in it that most
+want their own run — the H11 tautology and `verify_rxt.py`'s population note —
+are exactly the kind that a merge is the wrong place to discover.
+
+**WHERE IT IS.** Commit **`464f2896`**, `[w13] WIP: [DD-13b.W1.3] the run.sh
+composed-block path`. It is not an ancestor of the branch tip: it was the tip
+and was DROPPED rather than reverted, because nothing was built on it and a
+revert would have put an add-and-undo pair into the merged history for
+something that should not appear there at all. It stays reachable by hash from
+this worktree's reflog, and a patch was written to the lane's scratchpad — a
+session-temporary location, so W1.3.1 should take it from the hash.
+
+**WHAT IT CHANGED**, four sites that assumed the artifact's prefix is `rx`:
+the `pcrec` invocation (a composed block is built through its TARGET), the
+driver build (which passed no `-DRXT_PREFIX` at all), the `RX_NCAPS` grep, and
+`tests/lib/size_count.sh`'s D46 stamp reads. Plus the composed predicate
+(deliberately `verify_rxt.py`'s, including its known over-selection, because
+C1 compares those parsers), and the LOUD floor for a composed block with no
+target (K35 — its cases would otherwise leave the denominator silently).
+
+**THE CONTRACT QUESTION, for Frank.** There are two ways to build a composed
+block from the harness and they are not equivalent:
+
+1. **`run.sh` carries the TARGET's prefix** through `flush_block`'s tail —
+   what `464f2896` does. Changes nothing already shipped, at the cost of
+   threading a prefix through four sites in the corpus runner's hot path.
+2. **A composed block keeps prefix `rx`**, which is simpler in `run.sh` and
+   needs a CLI allowance [DD-13b.W1.2] **deliberately refused**: `-p` conflicts
+   with `--source` by design, and `cli_extras_clean` enforces it, so this
+   option reopens a contract decision rather than implementing one.
+
+I took (1) precisely so the choice stays open — (2) would have settled it by
+picking the easier code.
+
+**THE `size_count_row` VALIDATION, recorded because the third leg is the one
+that matters.** Its prefix became an optional third argument defaulting to
+`RX`, so every caller predating this step passes nothing and its rows are
+byte-unchanged. Three cases, measured:
+
+| artifact | argument | stamps read |
+|---|---|---|
+| `-p rx` | none | `vm  0x1  hybrid  26297` — unchanged |
+| `-p zz` | `ZZ` | `vm  0x1  hybrid  26297` — identical |
+| `-p zz` | none | **empty** |
+
+The third row is why this is a validation and not a smoke test: it proves the
+parameter is load-bearing rather than decorative, and that a caller who
+forgets it gets BLANK stamps — visibly wrong — instead of silently correct
+ones.
+
+---
+
 # PHASE 3 — VALIDATION (2026-09-04, 00:0x–04:2x, the box's suite slot)
 
 ## 14. Status: DELIVERED, VALIDATED
@@ -500,9 +558,11 @@ last src commit, so the pin names a commit that stays true.
 
 ## 18. What is NOT done, and why
 
-**The `run.sh` composed-block path is W1.3.1**, per the manager's own
-"else W1.3.1 and say so". This is not a time report — I sized it and it is not
-contained:
+**The `run.sh` composed-block path is W1.3.1.** It was WRITTEN on request
+after this section was drafted and then WITHDRAWN by ruling — §13.1 carries
+the commit hash, the four sites it touched, the contract question it raises
+for Frank, and the three-way `size_count_row` validation. The sizing below is
+what it was deferred on originally and it still holds:
 
 - At least four sites in `flush_block`'s tail assume the artifact's prefix is
   `rx`/`RX`: the driver build (which passes no `-DRXT_PREFIX`), the
