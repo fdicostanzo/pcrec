@@ -21284,3 +21284,27 @@ directory" → lane refs (sonnet) writes REFERENCES.md at the repo root
 pcrec-cite-papers-in-root-references. edge2 lifted 15:0x (opus; make
 test running). lim2's worktree removed (0 stragglers); lane/lim2 kept
 for the end-of-session push.
+
+## 2026-09-04 — Fifty-second session, part 65 (15:3x EDT): M5 read the paper — candidate C's property is false; REFERENCES.md merged; the study owes its keys
+
+m5paper (opus) read [NF25] and its OTF library in full and revised the
+study in place (merged 4355c90f, +647/−38): the paper itself says a
+final minimization is necessary and its driver runs Hopcroft
+unconditionally, so full online compaction does NOT make the second
+pass optional or the projection exact — the property the study had bet
+C's first-class rank on. C drops below B; step 4 is B-first; the
+paper's Table 1 turns out to be a 2×2 of our own candidates (SC-S = B,
+OTF = A + generalization), and C requires A, so the earlier "do not
+build A / build C" pairing was inconsistent. M1 is re-specified: measure
+the paper's partition rule (unexplored states pinned as singletons)
+rather than the closed fraction. No regex and no counted repeat appears
+in the paper's evaluation — pcrec's K18 shapes are untested territory
+for it. Lane refs (sonnet) delivered REFERENCES.md at the repo root
+(merged 1af99842; 14 entries; root CLAUDE.md pointer; two retrofits);
+the study was written before the keys existed and cites none — lane
+refs2 retrofits it and reconciles [NF25]'s version dates (the lane read
+v2 dated 10 Apr 2026; the arXiv id is a May-2025 submission).
+Housekeeping: worktrees isl1/edge1/w13/refs/lim2/m5paper removed
+(stragglers checked by /proc cwd); the rulings-file convention
+(gitignored by design) documented in docs/dev/lanes/CLAUDE.md after the
+manager tried to commit two of them.
