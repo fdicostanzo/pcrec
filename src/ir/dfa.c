@@ -1394,8 +1394,15 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     /* BAIL_KEEP as a percent-out-of-100, to stay in integer arithmetic:
      * 85 means "assume as little as 85% of this loop's own raw bytes
      * survive minimization" -- a 15-point margin against a measured <=3.5
-     * point shrink. A ruling item; see the comment above. */
-    enum { BAIL_KEEP_PCT = 85 };
+     * point shrink. A ruling item; see the comment above.
+     *
+     * [LIM-2] MOVED TO `src/core/internal.h` as `PCREC_LIM2_BAIL_KEEP_PCT`
+     * (ruling 1, docs/dev/lanes/lim2_rulings.md, 2026-09-04): the census in
+     * `tests/resource/run_lim2_sizecap_projection.sh` is a second reader of
+     * this exact number, and a hand-copied literal there would be the
+     * "two things that must be kept in step" shape `PREMUL_MAX_ENTRIES`'s
+     * own move exists to avoid. This file still owns the arithmetic. */
+    enum { BAIL_KEEP_PCT = PCREC_LIM2_BAIL_KEEP_PCT };
     const unsigned long long bail_at =
         (unsigned long long)size_bail_headstart >= bail_cap
             ? 0   /* the head start alone already proves it */

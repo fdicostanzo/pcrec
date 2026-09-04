@@ -99,6 +99,84 @@ echo "== [LIM-2] DFA PROJECTED-SIZE BAIL =="
 echo
 
 # ---------------------------------------------------------------------------
+# Section 0 — THE CENSUS (ruling 1, docs/dev/lanes/lim2_rulings.md,
+# 2026-09-04): `BAIL_KEEP_PCT` (src/core/internal.h's `PCREC_LIM2_
+# BAIL_KEEP_PCT`) is a MARGIN, not a proof -- it assumes at most that
+# percentage of the forward table-engine machine's own raw (pre-minimize)
+# bytes survive `pcrec_minimize_dfa`. The design note measured that shrink
+# on exactly TWO witnesses (<=3.5%); this section re-measures it FOR REAL,
+# over the whole corpus (every pattern whose forward machine reaches the
+# regime the bail's margin governs -- raw `n * ncls > PREMUL_MAX_ENTRIES`)
+# and pcrec-bench's altwide set, and asserts the margin exceeds the
+# measured MAX shrink by at least 2x, RED with the full distribution
+# otherwise. Built into `lim2_census.c` (own header: methodology, and why
+# reusing the byte-width FORMULA is not the same failure shape as reusing a
+# DECISION -- docs/dev/learnings.md S3).
+#
+# pcrec-bench is READ-ONLY here (patterns only, under
+# bench/altwide/patterns/*.rx) and SKIPPED LOUDLY, never silently, when the
+# sibling repo is absent -- PC-3's own precedent for an optional external
+# dependency. A population that ends up EMPTY (K35's own lesson: a check
+# must not go green over a population of zero) is INCONCLUSIVE, never PASS.
+# ---------------------------------------------------------------------------
+CENSUS_BIN="$WORKDIR/lim2_census"
+LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
+BENCH_ALTWIDE_DIR="/home/duxevents/pcrec-bench/bench/altwide/patterns"
+
+if [ ! -f "$LIB" ]; then
+    bad "census: $LIB not built -- run 'make' first"
+elif ! cc -O1 -g -Wall -Wextra -std=gnu11 \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -o "$CENSUS_BIN" "$SCRIPT_DIR/lim2_census.c" "$LIB" \
+        2>"$WORKDIR/census.build"; then
+    bad "census: FAILED TO BUILD lim2_census.c"
+    sed -n '1,40p' "$WORKDIR/census.build" >&2
+else
+    find "$ROOT_DIR/tests" -name '*.rxt' -print0 | sort -z > "$WORKDIR/census_corpus.list"
+    CENSUS_ARGS=()
+    while IFS= read -r -d '' f; do CENSUS_ARGS+=("$f"); done < "$WORKDIR/census_corpus.list"
+
+    if [ -d "$BENCH_ALTWIDE_DIR" ]; then
+        find "$BENCH_ALTWIDE_DIR" -name '*.rx' -print0 | sort -z > "$WORKDIR/census_altwide.list"
+        while IFS= read -r -d '' f; do CENSUS_ARGS+=("$f"); done < "$WORKDIR/census_altwide.list"
+        ok "census: pcrec-bench's altwide set found and included ($(find "$BENCH_ALTWIDE_DIR" -name '*.rx' | wc -l) patterns)"
+    else
+        echo "SKIP: census: pcrec-bench not reachable at $BENCH_ALTWIDE_DIR -- corpus-only population"
+    fi
+
+    if "$CENSUS_BIN" "${CENSUS_ARGS[@]}" > "$WORKDIR/census.tsv" 2> "$WORKDIR/census.summary"; then
+        cat "$WORKDIR/census.summary"
+        pop=$(wc -l < "$WORKDIR/census.tsv")
+        # column 7 is shrink_pct; the ruler's own worst reading over the
+        # whole population, read from the DATA rather than re-parsing the
+        # binary's own human-readable summary line.
+        max_shrink=$(awk -F'\t' 'BEGIN{m=-1} {if ($7+0>m) m=$7+0} END{printf "%.3f", (m<0?0:m)}' "$WORKDIR/census.tsv")
+        max_shrink_row=$(sort -t$'\t' -k7,7gr "$WORKDIR/census.tsv" | head -1)
+        bail_keep_pct=$(grep -oP '^#define PCREC_LIM2_BAIL_KEEP_PCT \K[0-9]+' "$ROOT_DIR/src/core/internal.h")
+        margin=$((100 - bail_keep_pct))
+        # integer-arithmetic 2x compare against the same 3-decimal figure
+        # printed above, without pulling in bc: compare margin*1000 against
+        # 2*max_shrink*1000 as integers.
+        need_x1000=$(awk -v s="$max_shrink" 'BEGIN{printf "%.0f", s*2*1000}')
+        have_x1000=$((margin * 1000))
+
+        if [ "$pop" -eq 0 ]; then
+            echo "INCONCLUSIVE: census population is ZERO (corpus + altwide) -- the margin assertion below cannot run against an empty population (K35)"
+        elif [ "$have_x1000" -ge "$need_x1000" ]; then
+            ok "census: population $pop, MAX forward shrink ${max_shrink}% ($(printf '%s' "$max_shrink_row" | cut -f1)); margin ${margin}pts clears 2x (>= $(awk -v s="$max_shrink" 'BEGIN{printf "%.3f", s*2}')pts)"
+        else
+            bad "census: population $pop, MAX forward shrink ${max_shrink}% ($(printf '%s' "$max_shrink_row" | cut -f1)) -- margin ${margin}pts (BAIL_KEEP_PCT=$bail_keep_pct) does NOT clear 2x the measured shrink ($(awk -v s="$max_shrink" 'BEGIN{printf "%.3f", s*2}')pts required). Per ruling 1 (docs/dev/lanes/lim2_rulings.md, 2026-09-04) the margin must move to the census's number, never the reverse -- FLAGGED FOR THE MANAGER rather than changed here, because the required margin here exceeds what a percent-of-raw-bytes margin can express (see lim2_report.md). Full distribution:"
+            echo "  id                                                            raw_n   ncls  raw_bytes   min_n   min_bytes   shrink_pct"
+            sort -t$'\t' -k7,7gr "$WORKDIR/census.tsv" | awk -F'\t' '{printf "  %-60s %7d %5d %10d %7d %10d %9.3f\n", $1, $2, $3, $4, $5, $6, $7}'
+        fi
+    else
+        bad "census: lim2_census exited nonzero"
+        sed -n '1,40p' "$WORKDIR/census.summary" >&2
+    fi
+fi
+echo
+
+# ---------------------------------------------------------------------------
 # Section 1+2 — the witness refuses with the standard diagnostic, and does
 # so FAST. A single deterministic pattern serves both checks: 1,600
 # lowercase literal alternatives, 6-14 bytes each, seeded so every run

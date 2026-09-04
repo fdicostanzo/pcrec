@@ -4413,6 +4413,25 @@ enum { PCREC_DFA_DEAD = -1 };
  * DEFINITION. */
 #define PREMUL_DEAD 65535
 #define PREMUL_MAX_ENTRIES PREMUL_DEAD
+
+/* [LIM-2] THE BAIL'S OWN MARGIN, moved here from `src/ir/dfa.c`'s
+ * `pcrec_build_dfa` (where it was a function-local `enum`) for the SAME
+ * "one symbol, not two that must be kept in step" reason `PREMUL_MAX_ENTRIES`
+ * moved: `tests/resource/run_lim2_sizecap_projection.sh`'s CENSUS (ruling 1,
+ * docs/dev/lanes/lim2_rulings.md, 2026-09-04) is a SECOND READER of this
+ * number — it asserts the margin (`100 - BAIL_KEEP_PCT` points) exceeds
+ * twice the measured maximum forward-machine minimization shrink, and a
+ * literal re-typed in the check script would be exactly the "control shares
+ * a source with what it controls" shape this project's own check-design
+ * lessons warn against (were the check to hardcode its own copy of 85, a
+ * change to this value would silently stop being validated rather than
+ * re-validated). `dfa.c`'s worklist loop still owns the ARITHMETIC that
+ * consumes it; this is only the NUMBER. Percent-out-of-100, kept in integer
+ * arithmetic: 85 means "assume as little as 85% of the forward machine's own
+ * raw bytes survive minimization" — see `pcrec_build_dfa`'s own comment for
+ * the full derivation and the measured shrink it is margined against. */
+#define PCREC_LIM2_BAIL_KEEP_PCT 85
+
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 /* [OPT-5] THE SCAN-EDGE PASS (src/opt/scanedge.c). Runs on EVERY machine,
  * immediately after `pcrec_minimize_dfa` on that machine: it needs the

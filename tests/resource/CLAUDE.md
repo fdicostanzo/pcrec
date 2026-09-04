@@ -25,7 +25,39 @@ could see.
   where the cap is never hit. Deliberately does NOT diff against a
   historical "before" compiler — that comparison is real (a one-time
   manual sweep, see docs/dev/lanes/lim2_report.md) but has no stable home
-  in a permanent `make test` pin once this lane merges.
+  in a permanent `make test` pin once this lane merges. **SECTION 0 IS
+  THE CENSUS** (ruling 1, docs/dev/lanes/lim2_rulings.md, 2026-09-04):
+  builds and runs `lim2_census.c` over the whole `tests/**/*.rxt` corpus
+  plus pcrec-bench's altwide set (read-only, SKIPPED LOUDLY if the
+  sibling repo is absent), measures the forward table-engine machine's
+  REAL raw-vs-minimized byte shrink for every pattern that reaches the
+  regime `BAIL_KEEP_PCT` (`src/core/internal.h`'s `PCREC_LIM2_
+  BAIL_KEEP_PCT`) governs, and asserts the margin exceeds 2x the measured
+  MAX shrink, RED with the full distribution otherwise. **MEASURED
+  2026-09-04: RED.** A real corpus pattern (`tests/base/
+  k18_cost_gates.rxt`'s `(1{0,30}?[^]abc][^abc]){28,30}0+|a`, a
+  deliberate compile-COST stress witness) shrinks 97.06% on minimization
+  (27,575 raw states -> 1,010), against the two-witness manual measurement's
+  <=3.5% the margin was calibrated on — 2x that shrink is 194.1 points,
+  which no percent-of-raw-bytes margin can express (max 100). NOT fixed
+  here: the ruling's "the margin moves to the census's number" assumes a
+  representable number exists; this population's number does not, which
+  is a bigger finding than a recalibration and is flagged for the
+  manager rather than resolved unilaterally in this lane — see
+  docs/dev/lanes/lim2_report.md.
+- **lim2_census.c** — the measuring instrument the section above builds
+  and runs (own header: full methodology, and the argument for why
+  sharing the byte-width FORMULA with `pcrec_dfa_indexed_table_bytes`
+  is not the "control shares a source with what it controls" failure
+  shape, docs/dev/learnings.md S3, while sharing a DECISION would be).
+  Links `libpcrec.a` and drives the same internal pipeline
+  `src/core/compile.c`'s D7 fast path calls (parse -> altcls ->
+  discharge_atomic -> callgraph_build -> select_engine -> postresolve ->
+  `pcrec_artifact_has_dfa_scan` gate -> build_nfa -> `nfa_has_bot` gate ->
+  build_dfa with `size_bail=false` -> minimize), under default options,
+  so the population it measures is the real one the bail's own margin
+  must survive — not built or run standalone; the shell script above is
+  its only caller.
 - **run_resource_tests.sh** — the [M4.7b] K7 pin, in three sections:
 
   1. **Bounded outcome.** Eleven large-bounded-repeat shapes (K7's own repro
