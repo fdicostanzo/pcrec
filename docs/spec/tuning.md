@@ -1169,7 +1169,10 @@ Precondition (5)'s threshold — the shortest bounded run worth collapsing — i
 the `PCREC_MIN_SCAN_CHAIN` row of `pcrec --list-limits` (`2` states, a
 `selection knee`, no lever). It was re-measured against the STEP 1.1 loop
 rather than inherited: `edge` against `-fno-scan-edge` on the same pattern is
-not separated by more than the per-round range at `m` = 2, 3 or 4, so D77's
+not separated by more than the per-round range at `m` = 3, 4 or 8; the
+`m` = 2 cell was UNSTABLE on the 2026-09-04 run (median edge/no-edge 1.78,
+IQR 0.87, bimodal rounds — measurement instability, not a measured effect;
+re-measurement owed, docs/dev/lanes/edge2_report.md §9.3), so D77's
 "no gap, no move" leaves it at 2, and the unconditional SIZE win (the chain's
 interior states are deleted) is what admits `m` = 2 at all.
 

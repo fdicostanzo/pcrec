@@ -156,8 +156,12 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `20`
-([DD-13b.W1.3], COMPOSITION: on a composed artifact `groups[]` gains the
+events but never stated the general rule; `rx_info.abi` is `21`
+([OPT-EDGE] STEP 1.1, the scan-edge ENTRY DISPATCH: the entry-seed dispatch is
+generalised to `is_stop && !is_dead` and precondition (8) admits an edge only
+where the seed AND the prefilter reseeds — the entry block's shape moved on
+every edge-bearing artifact and nothing else; before it, 20 = [DD-13b.W1.3],
+COMPOSITION: on a composed artifact `groups[]` gains the
 definitions' delivered rows under a leading SCOPE sort key, so `nentries`
 exceeds `nnames` for the first time; invisible on a non-composed compile — atop
 [OPT-EDGE] STEP 1's `19`, the shared-sentinel scan-edge dispatch, atop
@@ -1798,9 +1802,12 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `20` on every artifact today ([DD-13b.W1.3] bumped it
-  from 17 with COMPOSITION; 18 and 19 were spent by other changes merging
-  ahead of it).** On a COMPOSED artifact (`pcrec --source`) `groups[]` gains
+- **`rx_info.abi` is `21` on every artifact today ([OPT-EDGE] STEP 1.1 bumped
+  it from 20: the scan-edge ENTRY DISPATCH — the entry-seed check generalised
+  to `is_stop && !is_dead`, precondition (8) requiring the seed AND a
+  prefilter reseed — so the entry block's shape moved on every edge-bearing
+  artifact and nothing else. 20 was [DD-13b.W1.3]'s COMPOSITION bump from 17;
+  18 and 19 were spent by other changes merging ahead of it.)** On a COMPOSED artifact (`pcrec --source`) `groups[]` gains
   rows the target pattern did not declare, each carrying a non-NULL `ref`
   naming the definition it came from; the array's sort key gains a leading
   SCOPE term, so `nnames` counts the caller-scope prefix and §6's algorithm
