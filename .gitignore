@@ -43,7 +43,13 @@ docs/design/subroutines_measurements/email_specimen/throughput/
 .lift
 .hold_ack
 .hold
+# 2026-09-03: .stage joined on the same argument — it is the manager's
+# watchdog/next-lane liveness channel (a lane writes its current stage name
+# into it at every boundary), so it is signalling and never content.
+.stage
 /rulings.md
 
-# the manager -> lane rulings channel: polled, never committed (its own header says so)
+# the manager -> lane rulings channel: polled, never committed (its own header
+# says so). A GLOB rather than a line per lane — main already carries this
+# shape at 4101b8b, and two named lines would conflict at the merge.
 docs/dev/lanes/*_rulings.md

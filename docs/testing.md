@@ -49,6 +49,30 @@ PRESENT in the emitted C — see that directory's CLAUDE.md), and
 regression which has started passing). `run.sh` alone certifies only the first
 of the eight.
 
+> **THE SENTENCE ABOVE HAS DRIFTED, AND [ENG-ISL] IS CORRECTING ONLY THE PART
+> IT TOUCHES** (panel r53, 2026-09-03). `make test` runs **33** sections today,
+> not eight — `TEST_SECTIONS` in the Makefile is the list of record, the
+> completion trailer prints `sections ran: N/M` against it, and that is what a
+> reader should consult rather than this paragraph. Two sections this narrative
+> never gained a mention of:
+>
+> - **`make test-island`** ([ENG-ISL] STEP 1, new here):
+>   `tests/island/run_island_tests.sh`, the alternation island's structural
+>   half — that the island fired where the stamp says, declined where
+>   `docs/spec/tuning.md` §2.20 says it must (including both directions of the
+>   measured narrow-width knee), allocated no slot, and left the declined
+>   population byte-identical under `-fno-alt-island`. 24 checks, **0.5 s** —
+>   it compiles ~25 single artifacts and runs none of them, so it is one of the
+>   cheapest sections in the suite. Its `.rxt` corpus rides `test-corpus` like
+>   every other module's and is deliberately BLIND to the island, the axis
+>   being answer-identity-preserving.
+> - **`make test-altcls`** ([OPT-ALTCLS]) — **pre-existing drift**, missing
+>   from this paragraph since that row landed, and noted here rather than
+>   silently added because the gap is older and wider than this change: the
+>   count has been wrong by a growing margin for many rows, and fixing the
+>   sentence properly is a separate pass over `TEST_SECTIONS` that nobody has
+>   taken.
+
 `make strict` is separate and opt-in: it recompiles every source with
 `-Werror` **and, since [M6.5.2], `-Wshadow`**, writes nothing, links nothing, and touches `build/` not at all, so it
 is safe to run while `make test` is in flight. It exists because the project

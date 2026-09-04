@@ -335,49 +335,154 @@ else
     bad "--max-emit-bytes=$HUGE REFUSED a pattern that compiles with no flag — a raise must never make a build fail that would have succeeded (limits.md §8)"
 fi
 
-# --- 9. the MATERIALITY BAR is pinned from BOTH sides ----------------------
-# The constant (75) was pinned by nothing (r42 critic-sem S6): at the shipped
-# threshold only two patterns in the whole tree run the ladder, so 60, 80 and
-# 85 all leave `make test` green. These two cells bracket it, and they bracket
-# it TIGHTLY: the witnesses are the two corpus patterns either side of the bar
-# on the bar's OWN quantity, 0.7475 and 0.7548 — 0.73 % apart, so a materiality
-# constant of 74 fails the first cell and 76 fails the second.
+# --- 9. the MATERIALITY BAR, bracketed by a WITNESS POOL --------------------
+#
+# WHAT THIS BLOCK ASSERTS, and the distinction panel r53's checks critic had to
+# force twice. The forced-`--unroll=K` ladder below is an INSTRUMENT: it yields
+# each member's RATIO (argmin-over-K emitted code bytes / the default K's) so
+# the table can be read. It is NOT the assertion. The ASSERTION is that the
+# COMPILER'S OWN DECISION at the default — `<PREFIX>_UNROLL_K_WHY`, which reads
+# `size-model` when the ladder TOOK a rung and `size-model-declined` /
+# `capacity-declined` when it refused one — agrees with what that ratio
+# PREDICTS against the materiality constant, for members on BOTH sides of it.
+#
+# THE FIRST VERSION OF THIS BLOCK DID NOT DO THAT AND WAS VACUOUS. It computed
+# the ratios itself and compared them against a LITERAL `0.75` written in this
+# script, so `src/core/compile.c`'s constant could be changed to 60 or 85 and
+# every cell stayed green while the failure text still claimed "a constant of
+# 0.70 or 0.80 would fail this file". Nothing in it read the compiler. The
+# sabotage that proves the current shape is not vacuous is recorded in this
+# lane's commit: with the constant at 70 and again at 85 in a scratch build,
+# this block goes RED both ways, naming the members whose stamp stopped
+# matching their prediction.
+#
+# THE POOL, AND WHY IT IS A POOL. This used to pin TWO fixed patterns' values.
+# Both were alternation-bearing, so ONE emitter axis moved them together:
+# [ENG-ISL]'s alternation island took `(?:aa|a){8,12}+b` below the bar and the
+# bracket was gone. Island-free witnesses would only move the fragility to the
+# next axis, so the shape changed instead. Each member carries a SHAPE tag, and
+# the check requires at least two DISTINCT shapes on each side of the bar — one
+# family straddling it on its own (which is what `(?:aa|a){8,12}+` with and
+# without a trailing character amounted to) is one axis away from flattening.
+#
+# TWO MEMBERS ACTUALLY STAMP AN ISLAND, verified from the artifact rather than
+# assumed. The first pool shipped labelled three members "island TAKEN" and NOT
+# ONE of them stamped one — `((a)|ab)` was never eligible, because `(a)` is a
+# capture inside a branch. That mislabel is why the `.island` column below is
+# read off `<PREFIX>_VM_ALT_ISLANDS` and asserted, not written by hand.
+#
+# THE BAND (0.05) IS ASSERTED, NOT DERIVED. A straddling pair at 0.55 and 0.95
+# would satisfy "one either side" while saying nothing about WHERE the constant
+# is; requiring both members within 0.05 of the bar keeps the surviving claim
+# close to "a constant of 0.70 or 0.80 fails this file". The number is a
+# judgement about how tight a claim is worth keeping, and it is written here
+# rather than computed so that moving it is a visible decision.
+#
+# NO STRADDLING PAIR IS RED WITH THE WHOLE TABLE — the honest "this population
+# can no longer bracket the constant" finding, never a silent pass, and the
+# failure says in as many words not to adjust the constant to make it green.
 #
 # THE QUANTITY IS THE ARGMIN RUNG'S BYTES against the default K's, NOT the
-# delivered artifact's. For a DECLINED pattern the delivered artifact IS the
-# K=8 artifact plus a 12-byte-longer stamp, so a ratio taken from it reads
-# 1.0004 for every declined pattern by construction — which is how an earlier
-# version of this row convinced itself the ratios were cleanly separated.
-# `docs/design/artsize_impl/probes/bar_ratio.sh` measures the right one.
+# delivered artifact's: for a DECLINED pattern the delivered artifact IS the
+# K=8 artifact plus a longer stamp, so a ratio taken from it reads ~1.0004 for
+# every declined pattern by construction. `--engine=vm` is load-bearing too —
+# the DFA hybrid's prefilter tables are K-invariant and pull every ratio toward
+# 1. Both run under §7's threshold-1000 reference compiler, because at the
+# shipped threshold no witness reaches the ladder at all.
 #
-# `--engine=vm` IS LOAD-BEARING, not tidiness: the DFA hybrid's prefilter
-# tables are K-invariant, so on the default axis they add the same constant to
-# numerator and denominator and pull every ratio toward 1. Both witnesses sit
-# either side of the bar ON THE vm AXIS; on the default axis the whole
-# population shifts up and different patterns straddle it. A ratio without its
-# axis is not a fact about the pattern.
-#
-# They run under §7's threshold-1000 reference compiler, because at the shipped
-# threshold neither witness reaches the ladder at all.
+# Members are CORPUS patterns (tests/counterk/counterk.rxt) so that another
+# lane's change to the corpus keeps them honest. Fields: pattern, shape tag.
+POOL_PATTERNS='((a)|ab){4000}c	capture-alt
+(?:[ab]a|[ab]){8,12}+b	class-leading
+(?:ab|ba|aa|bb){24}c	island-4lit
+(a{1,3}){64}	no-alternation
+(a{10,20}){10,50}	no-alternation
+(?:cat|cats|dog|dogs){12}z	island-4word
+(?:aa|a){8,12}+b	narrow-aa-a
+(?:[ab]a|[ab]){9,12}+b	class-leading
+(?:ab|a){8,12}+b	narrow-ab-a'
+BAR=0.75
+BAND=0.05
+
 if [ -x "$REF2" ]; then
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bt.c" -- '((a)|ab){4000}c' 2>/dev/null; then
-        w="$(stamp UNROLL_K_WHY "$WORK/bt.c" | tr -d '"')"
-        [ "$w" = "size-model" ] \
-            && ok "the bar TAKES the 0.7475 rung ('((a)|ab){4000}c' -> size-model): a materiality constant of 74 would decline it" \
-            || bad "the bar declined the 0.7475 witness (got '$w') — the materiality constant has risen above 74.75 %, or the ratio this cell was pinned on has moved; re-measure with probes/bar_ratio.sh before touching the constant"
-    else
-        bad "the bar's TAKEN witness did not compile under the threshold-1000 compiler"
-    fi
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bd.c" -- '(?:aa|a){8,12}+b' 2>/dev/null; then
-        w="$(stamp UNROLL_K_WHY "$WORK/bd.c" | tr -d '"')"
-        case "$w" in
-            size-model-declined|capacity-declined)
-                ok "the bar DECLINES the 0.7548 rung ('(?:aa|a){8,12}+b' -> $w): a materiality constant of 76 would take it" ;;
-            *)  bad "the bar took the 0.7548 witness (got '$w') — the materiality constant has fallen below 75.48 %; the two cells here bracket it to 0.73 %, so this is a real move and not noise" ;;
+    pool_rows=""; pool_n=0; pool_band=0; mismatch=0; islanded=0
+    while IFS="$(printf '\t')" read -r ppat pshape; do
+        [ -n "$ppat" ] || continue
+        best=""; dflt=""
+        for k in 1 2 3 4 5 6 7 8; do
+            "$REF2" -p rx --features all --engine=vm --unroll=$k \
+                --warn-emit-bytes=1 -o "$WORK/pool.c" -- "$ppat" \
+                2>"$WORK/pool.err" || continue
+            # [F9] HARD-FAIL rather than fall back to whole-file bytes. The
+            # quantity this block acts on is COMMENT-EXCLUDED code bytes; the
+            # file size is a different number, and silently substituting it is
+            # the [ART-SIZE] quantity confusion learnings §3 records — a ratio
+            # taken from the wrong quantity looked clean and was not.
+            pb="$(sed -n 's/.*(\([0-9]*\) of code).*/\1/p' "$WORK/pool.err" | head -1)"
+            if [ -z "$pb" ]; then
+                echo "run_size_term.sh: FATAL: --warn-emit-bytes printed no '(N of code)' figure for pool member '$ppat' at K=$k. This block acts on COMMENT-EXCLUDED code bytes and must not substitute the file size for them; the warning's wording changed, or the flag stopped taking effect." >&2
+                exit 2
+            fi
+            [ "$k" = 8 ] && dflt="$pb"
+            if [ -z "$best" ] || [ "$pb" -lt "$best" ]; then best="$pb"; fi
+        done
+        if [ -z "$best" ] || [ -z "$dflt" ] || [ "$dflt" -le 0 ]; then
+            bad "the pool member '$ppat' did not compile at the eight K values under the threshold-1000 reference compiler — a member that cannot be measured is not a member, and a pool that silently shrinks is how a bracket stops being one"
+            continue
+        fi
+        r="$(awk "BEGIN{printf \"%.4f\", $best/$dflt}")"
+
+        # THE COMPILER'S OWN DECISION at the default, and the island stamp,
+        # both read off ONE artifact this block did not force a K on.
+        "$REF2" -p rx --features all --engine=vm -o "$WORK/poold.c" -- "$ppat" \
+            2>/dev/null || true
+        why="$(sed -n 's/^#define RX_UNROLL_K_WHY "\([a-z-]*\)"$/\1/p' "$WORK/poold.c" | head -1)"
+        isl="$(sed -n 's/^#define RX_VM_ALT_ISLANDS \([0-9]*\)$/\1/p' "$WORK/poold.c" | head -1)"
+        [ "${isl:-0}" -gt 0 ] && islanded=$((islanded + 1))
+
+        # PREDICTION from the ratio; VERDICT from the stamp.
+        pred="$(awk "BEGIN{print ($r < $BAR) ? \"taken\" : \"declined\"}")"
+        case "$why" in
+            size-model)                         verdict=taken ;;
+            size-model-declined|capacity-declined) verdict=declined ;;
+            *)                                  verdict="none($why)" ;;
         esac
+        inband="$(awk "BEGIN{d=$r-$BAR; if(d<0)d=-d; print (d<=$BAND)?\"y\":\"n\"}")"
+        [ "$inband" = y ] && pool_band=$((pool_band + 1))
+        [ "$verdict" != "$pred" ] && mismatch=$((mismatch + 1))
+        pool_rows="$pool_rows$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+            "$ppat" "$pshape" "$r" "$pred" "$verdict" "$inband" "${isl:-0}")
+"
+        pool_n=$((pool_n + 1))
+    done <<POOL_EOF
+$POOL_PATTERNS
+POOL_EOF
+
+    echo "size-term §9 materiality pool (bar $BAR, band ±$BAND asserted; ratio = argmin-K code bytes / default-K code bytes, --engine=vm, threshold-1000 reference):"
+    printf '  %-26s %-22s %-7s %-9s %-9s %-6s %s\n' pattern shape ratio predicts stamp-says in-band islands
+    printf '%s' "$pool_rows" | while IFS="$(printf '\t')" read -r a b c d e f g; do
+        [ -n "$a" ] || continue
+        printf '  %-26s %-22s %-7s %-9s %-9s %-6s %s\n' "$a" "$b" "$c" "$d" "$e" "$f" "$g"
+    done
+
+    # distinct SHAPES on each side, counted over BAND-ELIGIBLE members only —
+    # an out-of-band member says nothing about where the constant sits.
+    below_shapes="$(printf '%s' "$pool_rows" | awk -F'\t' '$6=="y" && $4=="taken"    {print $2}' | sort -u | wc -l)"
+    above_shapes="$(printf '%s' "$pool_rows" | awk -F'\t' '$6=="y" && $4=="declined" {print $2}' | sort -u | wc -l)"
+
+    if [ "$mismatch" -ne 0 ]; then
+        bad "$mismatch pool member(s) have a UNROLL_K_WHY stamp that disagrees with what their ratio predicts against $BAR. That is the materiality constant not being where this file says it is — read the table above; do NOT adjust the constant to make this green, and do not adjust the bar in this script either, which would only re-break the tie in the other direction."
+    elif [ "$pool_band" -lt 4 ]; then
+        bad "only $pool_band pool member(s) are within ±$BAND of $BAR (want at least 4): the pool still MEASURES the constant but has stopped BRACKETING it tightly, so the surviving claim is weaker than this file states"
+    elif [ "$below_shapes" -lt 2 ] || [ "$above_shapes" -lt 2 ]; then
+        bad "the band-eligible pool has $below_shapes distinct shape(s) below $BAR and $above_shapes above (want at least 2 each): a side carried by ONE shape is one emitter axis away from being flattened, which is exactly how the fixed PAIR this pool replaced failed"
+    elif [ "$islanded" -lt 2 ]; then
+        bad "only $islanded pool member(s) stamp RX_VM_ALT_ISLANDS > 0 (want at least 2): the pool has lost its coverage of the alternation-island axis, and the first version of this block labelled three members 'island TAKEN' when none was"
     else
-        bad "the bar's DECLINED witness did not compile under the threshold-1000 compiler"
+        ok "the materiality bar is bracketed by a $pool_n-member pool: every member's UNROLL_K_WHY stamp matches what its ratio predicts against $BAR, $pool_band are within ±$BAND, both sides carry ≥2 distinct shapes ($below_shapes below / $above_shapes above), and $islanded stamp an alternation island"
     fi
+else
+    bad "the materiality pool needs §7's threshold-1000 reference compiler and it is not built"
 fi
 
 printf '\nchecks passed: %d\nchecks failed: %d\n' "$pass" "$fail"

@@ -1600,7 +1600,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * above the program, or DFA-side text, none of which is inside that
      * region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 17,\n");
+    sb_puts(c,   "    .abi = 18,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1731,7 +1731,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * a comment. `<PREFIX>_DFA_START`
                                            * is where what the emitter DID is
                                            * recorded. */
-                                          PCREC_NO_START_PINNED;
+                                          PCREC_NO_START_PINNED |
+                                          /* [ENG-ISL] the VM's alternation
+                                           * island. It emits a different SHAPE
+                                           * for the same alternation and
+                                           * changes no answer, so it belongs
+                                           * to the mask for the mask's own
+                                           * reason — and concretely, so that
+                                           * an alternation the predicate
+                                           * DECLINES is byte-for-byte the same
+                                           * under the flag, which is what makes
+                                           * the declined population a usable
+                                           * reference. `<PREFIX>_VM_ALT_ISLANDS`
+                                           * is where what the emitter DID is
+                                           * recorded. */
+                                          PCREC_NO_ALT_ISLAND;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

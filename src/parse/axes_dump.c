@@ -521,6 +521,17 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, "", 0, "", "", "always (fallback)");
     }
+    /* [ENG-ISL] alt-island — §2.20. RX_VM_ALT_ISLANDS is an ACTIVITY COUNT,
+     * not a named value — stamp_value left empty on both rows for the reason
+     * altcls-merge's own comment gives one axis up. */
+    {
+        PredAxis p = { "alt-island", NULL, "RX_VM_ALT_ISLANDS", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "island", "",
+                     V(PCREC_NO_ALT_ISLAND), 0, "", "-fno-alt-island",
+                     "per flat alternation on the VM route: the whole subtree's language is a finite set of literal byte strings within the emitter's enumeration budget (a caseless alternation is class-leading by D23 and declines)");
+        emit_pred_row(sb, &p, 2, "denied", "",
+                     0, "", 0, "", "", "always (fallback) — vm_alt's serial resume chain, one frame per untried branch");
+    }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE
      * is the observable consequence when it changes which engine a pattern

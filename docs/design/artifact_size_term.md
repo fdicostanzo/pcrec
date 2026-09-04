@@ -771,6 +771,26 @@ pinned to within 0.7 % by real corpus patterns — "the corpus has no witness
 either side of 0.75", which the previous version of this section asserted, is
 false.
 
+> **[ENG-ISL] STEP 1, 2026-09-03 — THE PAIR ABOVE IS NO LONGER THE
+> INSTRUMENT, AND THE REASON GENERALISES.** Both `--engine=vm` witnesses are
+> ALTERNATION-BEARING, so one emitter axis moved them together: the VM's
+> alternation island took `((a)|ab){4000}c` from 0.7475 to 0.7497 and
+> `(?:aa|a){8,12}+b` from 0.7548 to 0.7499 — **both below the bar, 0.02 %
+> apart**, so the bracket was gone rather than off by one. Replacing them with
+> island-free witnesses would only have moved the same fragility to the next
+> axis (`[OPT-CLSPACK]` will reshape class patterns the same way), so
+> `tests/codegen/run_size_term.sh` §9 stopped pinning a PAIR and became a
+> **witness POOL**: eight corpus patterns measured at the eight K values, the
+> whole table printed whatever the verdict, passing iff SOME pair straddles
+> 0.75 with both members within a stated band of 0.05, and RED with the table
+> otherwise — never a silent pass. Three of the eight cannot move for an
+> alternation reason at all (two carry no alternation; one is class-leading,
+> so the island declines it by construction and `[OPT-CLSPACK]` is what would
+> move it). Measured at that landing: **0.7498 / 0.7571, 0.0074 apart**, well
+> inside the band. The materiality constant itself is untouched. The check is
+> the instrument of record now; the table above is the measurement that
+> justified the constant when it was chosen, and is kept as that.
+
 **AND THE VERDICT IS AXIS-DEPENDENT**, which no earlier version of this note
 said. The DFA hybrid's prefilter tables are K-INVARIANT: on the default axis
 they add the same constant to numerator and denominator, pulling every ratio

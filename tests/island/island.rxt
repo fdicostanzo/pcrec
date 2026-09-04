@@ -1,0 +1,214 @@
+# tests/island/island.rxt -- [ENG-ISL] STEP 1, the VM's ALTERNATION ISLAND
+# (docs/dev/plan.md's [ENG-ISL] row; docs/spec/tuning.md §2.20).
+#
+# EVERY EXPECTATION BELOW WAS PRODUCED BY python3 `re` (the base-tier oracle)
+# against the pattern text -- WHAT each pattern matches, never whether the
+# island fired on it. That is deliberate and it is the whole point of the
+# axis: an alternation the island takes and the same alternation under
+# `-fno-alt-island` must answer identically, so a corpus that could tell them
+# apart would be testing the wrong thing. `make test-axes` sweeps the flag
+# over this file along with every other; tests/island/run_island_tests.sh is
+# what actually SEES the island fire.
+#
+# The file is organised as the hazards first (the shapes where leftmost-first
+# is not longest-match, and where the continuation has to backtrack INTO the
+# alternation), then the shapes the island DECLINES -- which are in this file
+# for the same reason the taken ones are: a decline must answer identically
+# too, and a decline that quietly stopped being a decline would otherwise be
+# invisible here.
+
+
+# the ordinary case: three disjoint literals, one first-byte switch
+pattern cat|dog|cow
+m "cat" 0 3
+m "dog" 0 3
+m "cow" 0 3
+n "cot"
+n ""
+m "xxcatxx" 2 5
+n "ca"
+
+# eight single-byte alternatives -- the whole island is one switch at
+# depth 0
+pattern a|b|c|d|e|f|g|h
+m "a" 0 1
+m "h" 0 1
+n "z"
+n ""
+m "zzzh" 3 4
+
+# src/ir/nfa.c:192 rule 1: a branch that ENDS at a node. The answer is the
+# LOWEST INDEX that matches, never the longest -- 'abd' is the `a` branch
+pattern abc|a|abd
+m "abd" 0 1
+m "abc" 0 3
+m "ab" 0 1
+m "a" 0 1
+m "abx" 0 1
+m "zabc" 1 4
+
+# the shorter alternative is preferred and it is written first
+pattern a|ab
+m "a" 0 1
+m "ab" 0 1
+m "abc" 0 1
+n "b"
+n ""
+
+# and the same pair written the other way round
+pattern ab|a
+m "a" 0 1
+m "ab" 0 2
+m "abc" 0 2
+n "b"
+
+# THE BACKTRACKING-INTO-THE-ALTERNATION CASE. `ab` matches first, `d`
+# fails against 'c', and the island must fall to `abc` -- which is what
+# its candidate chain, in ascending original index, is for
+pattern (ab|abc)d
+m "abcd" 0 4
+g 1 0 3
+m "abd" 0 3
+g 1 0 2
+n "abc"
+n "abcx"
+m "zabcd" 1 5
+g 1 1 4
+
+# four alternatives on ONE root-to-leaf path: the deepest candidate chain
+# the corpus census found (mask depth 4)
+pattern (?:abcd|abc|ab|a)z
+m "abcdz" 0 5
+m "abcz" 0 4
+m "abz" 0 3
+m "az" 0 2
+n "abcd"
+n "zz"
+n "abcdx"
+
+# three accepts on one path, lowest index wins at every subject
+pattern fo|foo|fool
+m "fo" 0 2
+m "foo" 0 2
+m "fool" 0 2
+n "f"
+m "foolish" 0 2
+
+# DUPLICATE alternatives: one trie node carries two accepts. Declined at this
+# width (prefix-bearing, 4 words but only 2 distinct, and the duplicates make
+# it push), so this cell is the chain's -- and the answer is the same either
+# way, which is the file's whole claim
+pattern fo|foo|fo|foo
+m "fo" 0 2
+m "foo" 0 2
+m "fool" 0 2
+
+# the cross product, X-major: `ac`, `abc`, `abc`, `abbc` in preference
+# order
+pattern (?:a|ab)(?:c|bc)
+m "ac" 0 2
+m "abc" 0 3
+m "abbc" 0 4
+m "abc x" 0 3
+n "a"
+
+# an EMPTY alternative -- an accept at the trie's ROOT, depth 0, length 0
+pattern (?:x|)y
+m "xy" 0 2
+m "y" 0 1
+n "x"
+m "zy" 1 2
+
+# a capture around the alternation: the island lowers the alternation, the
+# A_CAP writes the group, and the two do not interact
+pattern (cat|dog)s
+m "cats" 0 4
+g 1 0 3
+m "dogs" 0 4
+g 1 0 3
+n "cat"
+m "dogsx" 0 4
+g 1 0 3
+
+# two islands in one pattern -- RX_VM_ALT_ISLANDS is a COUNT for this
+# reason
+pattern (cat|dog)(s|es)
+m "cats" 0 4
+g 1 0 3
+g 2 3 4
+m "doges" 0 5
+g 1 0 3
+g 2 3 5
+m "dogs" 0 4
+g 1 0 3
+g 2 3 4
+n "cat"
+
+# a deep shared prefix: nine single-child byte compares before the fan-out
+pattern abcdefghij|abcdefghik|abcdefghil
+m "abcdefghij" 0 10
+m "abcdefghik" 0 10
+m "abcdefghil" 0 10
+n "abcdefghim"
+
+# a prefix ladder in written order, four accepts down one path
+pattern thin|think|thinker|thinking
+m "thin" 0 4
+m "think" 0 4
+m "thinker" 0 4
+m "thinking" 0 4
+n "thi"
+
+# DECLINE: src/ir/nfa.c:192 rule 2, overlapping non-identical CLASSES. A
+# trie edge is a byte, so this is the chain's
+pattern [ab]p|[bc]x|[ab]xy
+m "bxy" 0 2
+m "ap" 0 2
+m "bx" 0 2
+m "cx" 0 2
+m "axy" 0 3
+
+# DECLINE: a quantifier -- the language is not a finite literal set
+pattern a+|b
+m "aaa" 0 3
+m "b" 0 1
+n "c"
+n ""
+
+# DECLINE: a capture INSIDE a branch; the island reports spans only
+pattern (a)|(b)
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+m "b" 0 1
+g 1 -1 -1
+g 2 0 1
+n "c"
+
+# DECLINE: `.` is not a one-byte class
+pattern a.|bc
+m "ax" 0 2
+m "bc" 0 2
+n "a"
+
+# DECLINE: an assertion in a branch
+pattern ^a|b
+m "ab" 0 1
+m "ba" 0 1
+m "b" 0 1
+m "a" 0 1
+
+# An EMPTY alternative at a width the narrow-width knee ADMITS. `(?:x|)y`
+# above is the same shape at width 2, where a PUSHING island declines — so
+# this cell is where the empty alternative is actually carried through the
+# trie (an accept at the ROOT, depth 0, length 0) and its candidate chain
+# reached. It is also ISLAND_PATTERNS' witness for that shape in
+# tests/codegen/run_recursion_identity.sh.
+pattern (?:x|xy|xyz|)w
+m "xw" 0 2
+m "xyw" 0 3
+m "xyzw" 0 4
+m "w" 0 1
+m "zw" 1 2
+m "xyzzw" 4 5
+n "xy"

@@ -140,6 +140,42 @@ ELIDED_PATTERNS='(a){0}
 SIZETERM_TOTAL=0
 SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
+
+# [ENG-ISL] THE ISLAND MANIFEST — an ENUMERATED list of corpus patterns that
+# MUST stamp an alternation island, in the same shape and for the same reason
+# as ELIDED_PATTERNS and SIZE_TERM_REGION_MOVERS above: a population RECOMPUTED
+# from the emitter is not a manifest, because it agrees with a narrowed emitter
+# by construction. Panel r53's F4 is the measured version of that complaint —
+# the island bucket's non-vacuity floor was "at least one", so raising
+# VM_ISL_MIN_BRANCHES_PREFIXED to 40, or any other narrowing that left a single
+# island standing anywhere in the corpus, read GREEN.
+#
+# EVERY ENTRY WAS VERIFIED UNDER `--engine=vm` AGAINST THE SHIPPED COMPILER,
+# and the first version of this list was NOT — it was copied from the answer
+# corpus on the assumption that an island-flavoured pattern stamps one, and
+# THREE of its eleven did not: `a|b|c|d|e|f|g|h` (altcls MERGES single-byte
+# alternatives into a class, so no alternation survives to the emitter),
+# `fo|foo|fool` and `(?:x|)y` (both prefix-bearing at widths the narrow-width
+# knee declines). The list read GREEN on the default axis, where those three
+# route to the DFA and are skipped, and failed only under `--engine=vm`. A
+# manifest asserted from memory is the thing this file's other two manifests
+# exist to avoid.
+#
+# They are chosen to span the predicate rather than to be numerous: prefix-free
+# at widths 2/3/8, a deep shared prefix, a prefix LADDER (four alternatives on
+# one root-to-leaf path, so its candidate chain has a second entry), an empty
+# alternative, a cross-product, a capture around the alternation, two
+# alternations in one pattern, and one under a counted repeat. A pattern that
+# stops stamping an island FAILS here whichever direction the emitter moved:
+# either the predicate narrowed — and this list is the record of what that
+# costs — or the analysis broke.
+ISLAND_PATTERNS='cat|dog|cow
+foo|bar
+(cat|dog)s
+(cat|dog)(s|es)
+thin|think|thinker|thinking
+cat|cats|dog|dogs
+(?:ab|ba|aa|bb){24}c'
 #
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
@@ -541,6 +577,61 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # byte offset on a hand-built hybrid (`(x)[a-z]{0,4}\z --engine=vm
 # -fprefilter`) before trusting the corpus run to confirm it at scale.
 #
+# [ENG-ISL] STEP 1, 2026-09-03 — abi 17 -> 18. THE VM'S ALTERNATION ISLAND,
+# AND IT IS THE FIRST CHANGE IN THIS FILE'S HISTORY THAT MOVES COMPARISON (A)
+# ON PURPOSE. Every bump above says "(A) is still expected byte-identical, and
+# here that is a real check rather than a formality"; each of them was a change
+# ABOVE the `goto <p>_L0;` marker — stamps, entry chains, DFA tables, a
+# prefilter. This one is the VM PROGRAM ITSELF: a flat alternation whose whole
+# subtree matches a finite set of literal byte strings is emitted as a TRIE
+# (a byte compare per single-child node, a switch per fan-out node, one try
+# site per node where an alternative ends) instead of `vm_alt`'s serial resume
+# chain. `prog_region` is exactly where that happens, so of course it moves.
+#
+# THE EXEMPTION IS A CLAIM ABOUT THE DENY AXIS, NOT A PER-ARTIFACT ALLOWANCE.
+# The first version of this bucket excused any byte difference anywhere in an
+# artifact whose `RX_VM_ALT_ISLANDS` read > 0 — and `prog_region` extracts the
+# WHOLE program, so an unrelated emitter regression inside an island-bearing
+# artifact read green (panel r53, F3). What is asserted now: a moved region is
+# excused IFF building the SAME pattern with the SUBJECT compiler under
+# `-fno-alt-island` restores the PINNED region byte for byte. Denying the new
+# axis has to put the artifact back where the pin left it; anything else that
+# moved is not the island's to excuse and lands in `rdiff`.
+#
+# THE CONVERSE IS SELF-CONTAINED AGAINST THAT SAME AXIS (F5), because the
+# obvious spelling decays. "Stamped but byte-identical to the August pin"
+# stops being able to fail as soon as any other change lands — the two differ
+# for that reason instead, and the converse passes for the wrong one. Both
+# directions are about THIS compiler: an artifact that STAMPS an island must
+# differ from its own `-fno-alt-island` build, and one that does NOT must be
+# byte-identical to it, which is also what makes the denied build a usable
+# reference for every other check that leans on it.
+#
+# THE NON-VACUITY FLOOR IS AN ENUMERATED MANIFEST (`ISLAND_PATTERNS`), NOT A
+# COUNT (F4). "At least one island moved" was argued rather than measured and
+# read GREEN under any narrowing that left a single island standing anywhere —
+# raising `VM_ISL_MIN_BRANCHES_PREFIXED` to 40 passes it. The manifest is the
+# same staleness assertion `ELIDED_PATTERNS` and `SIZE_TERM_REGION_MOVERS`
+# already carry, and for the same reason: a population recomputed from the
+# emitter agrees with a narrowed emitter by construction.
+#
+# AND THIS IS A BYTE-INEQUALITY GATE, NOT A CORRECTNESS GATE. Nothing here
+# says the island ANSWERS correctly; it says which bytes moved and licenses
+# exactly one reason for them to have moved. Correctness is the answer corpus
+# (`tests/island/`, oracle-verified against python3 `re`) and `make test-axes`
+# (`-fno-alt-island` answer-identical over 22,407 corpus cells). A reader who
+# takes a green run here as evidence the island matches correctly is reading
+# the wrong instrument.
+#
+# WHAT IS **NOT** EXEMPT, and this is what the bucket buys: a call-free
+# pattern whose region moved while its artifact stamps ZERO islands still
+# lands in `rdiff` and still fails. That is the pre-module pin doing exactly
+# the job it has always done, on the population this change does not touch.
+#
+# (B) re-pins as usual: every VM artifact gains a `<PREFIX>_VM_ALT_ISLANDS`
+# line whatever its value, so whole-file bytes move on the whole VM
+# population, island or not.
+#
 # THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, NOT THIS LANE'S: it must be
 # the last src commit of the change as it lands, and a lane branch cannot know
 # that commit. (The lane left it at da4fe60 (abi 16); the manager re-pinned it
@@ -552,7 +643,28 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # always_inline attribute on frameless VM helpers and the uniform-table fold
 # (RX_DFA_UNIFORM_FOLDS) move bytes on 1,090+ VM artifacts and ~370 DFA
 # artifacts; re-pinned to the merge per D76/D94 (readers of the old pin by grep).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"
+#
+# [ENG-ISL] STEP 1, 2026-09-03 — abi 17 -> 18: the VM's ALTERNATION ISLAND.
+# EVERY VM artifact gains a `<PREFIX>_VM_ALT_ISLANDS` line whatever its value,
+# so whole-file bytes move on the entire VM population — island or not — and
+# (B) re-pins for that alone. MEASURED against the previous pin before the
+# re-pin, so the change's own footprint is on the record: 1,274 (default),
+# 2,284 (vm), 1,274 (noprefilter) and 857 (nocaptures) call-free patterns
+# differ whole-file, and the [vm] axis's `same` fell to 0, below the sweep's
+# own 700 floor — which is the stamp being unconditional working as designed.
+# Comparison (A) is a different matter entirely and has its own entry above:
+# it moves ON PURPOSE for the first time in this file's history, under an IFF
+# rather than an allowance.
+#
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (cf95944, panel r53's SEMANTICS
+# lens: the island-vs-chain size rule AND its cap guard, which together decline
+# a population the earlier pins were built with — it moved past 9bc7723, the abi ritual, when the Q4 width knee landed
+# after it and moved 96-141 artifacts per axis), set in a follow-up commit that
+# touches no src — which is what keeps the rule two
+# paragraphs up ("the pin must always name the change's LAST src commit")
+# true of a lane that writes its own bump. The manager re-pins to the MERGE
+# when it lands, exactly as at every bump before this one.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cf95944}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -671,6 +783,16 @@ gen_a() { pcrec_run "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
 gen_c() { "$FILEREF" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+# [ENG-ISL] THE FOURTH BUILD, and the one that turns the island's excuse from a
+# per-artifact exemption into a CLAIM (panel r53, F3): the SUBJECT compiler with
+# the new axis DENIED. It is the only reference that ISOLATES the island — the
+# August pin differs from today for a dozen landed reasons, so "this artifact's
+# region moved and it stamps an island" would otherwise excuse every one of
+# them at once, and an unrelated emitter regression inside an island-bearing
+# artifact would read green. Denying the axis and getting the PINNED bytes back
+# is what says the movement is the island's and nothing else's.
+# shellcheck disable=SC2086
+gen_noisl() { pcrec_run "$PCREC" --features all -p rx $2 -fno-alt-island -o - -- "$1" 2>/dev/null; }
 
 # [DD-14.FB] THE PROGRAM REGION: `goto <p>_L0;` through the accept label. An
 # artifact with no VM program (a DFA-selected pattern) yields the EMPTY region,
@@ -880,6 +1002,12 @@ sweep() { # sweep <label> <extra pcrec args>
     # pre-module pin. Kept in its own variables and printed on its own line so
     # the two claims never blur into one number.
     local rsame=0 rdiff=0 relided=0 rcallbearing=0 rsizeterm=0
+    # [ENG-ISL] the alternation island's own two buckets — see the header's
+    # 2026-09-03 entry. `risland` counts a region that moved AND whose artifact
+    # stamps an island; `rislsame` counts the other direction, an artifact that
+    # stamps one whose region did NOT move, which would mean the stamp claims a
+    # trie the program does not contain.
+    local risland=0 rislsame=0 rnoislmoved=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -918,6 +1046,10 @@ sweep() { # sweep <label> <extra pcrec args>
             ra="$(printf '%s\n' "$a" | stamp_strip | prog_region)"
             rb="$(printf '%s\n' "$r" | stamp_strip | prog_region)"
             case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
+            # [ENG-ISL] the artifact's OWN account of what it contains, read
+            # from the subject side only: the pre-module reference predates the
+            # stamp entirely, so there is nothing to read there.
+            isl_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_ALT_ISLANDS \([0-9]*\)$/\1/p' | head -1)"
             if [ "$ra" = "$rb" ]; then
                 rsame=$((rsame + 1))
             elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
@@ -925,9 +1057,47 @@ sweep() { # sweep <label> <extra pcrec args>
             elif printf '%s\n' "$SIZE_TERM_REGION_MOVERS" | grep -qxF -- "$pat"; then
                 rsizeterm=$((rsizeterm + 1))
                 printf 'REGION MOVED (ruled, [ART-SIZE] size term chose K) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "${isl_a:-0}" -gt 0 ]; then
+                # [ENG-ISL] THE EXCUSE IS A CLAIM ABOUT THE DENY AXIS, NOT A
+                # PER-ARTIFACT EXEMPTION (panel r53, F3). Build the SAME
+                # pattern with the SUBJECT compiler and the island denied: if
+                # that build's region is byte-identical to the pin, the only
+                # thing that moved is the island. If it is NOT, something else
+                # in this artifact moved too and the island is not a licence
+                # for it — that lands in `rdiff` and fails, exactly as it
+                # would on an artifact with no island at all.
+                rn="$(printf '%s\n' "$(gen_noisl "$pat" "$args")" | stamp_strip | prog_region)"
+                if [ "$rn" = "$rb" ]; then
+                    risland=$((risland + 1))
+                    printf 'REGION MOVED (ruled, [ENG-ISL] %s island(s); -fno-alt-island restores the pinned region) %s\n' "$isl_a" "$pat" >> "$WORKDIR/diff.$label"
+                else
+                    rdiff=$((rdiff + 1))
+                    printf 'REGION DIFFERS (island-stamped, but -fno-alt-island does NOT restore the pinned region) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                fi
             else
                 rdiff=$((rdiff + 1))
                 printf 'REGION DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            fi
+            # THE CONVERSE, AND IT IS SELF-CONTAINED AGAINST THE DENY AXIS
+            # RATHER THAN AGAINST THE AUGUST PIN (panel r53, F5). Comparing a
+            # stamped artifact to the pre-island reference goes VACUOUS as the
+            # emitter moves — any other landed change makes the two differ and
+            # the converse passes for the wrong reason. The claim that does not
+            # decay: an artifact that STAMPS an island must differ from ITS OWN
+            # `-fno-alt-island` build, and one that does not must be byte-
+            # identical to it. Both directions are about THIS compiler.
+            if [ "${isl_a:-0}" -gt 0 ]; then
+                rn2="$(printf '%s\n' "$(gen_noisl "$pat" "$args")" | stamp_strip | prog_region)"
+                if [ "$ra" = "$rn2" ]; then
+                    rislsame=$((rislsame + 1))
+                    printf 'ISLAND STAMPED BUT DENYING IT CHANGES NOTHING %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                fi
+            elif [ -n "$a" ]; then
+                rn3="$(printf '%s\n' "$(gen_noisl "$pat" "$args")" | stamp_strip | prog_region)"
+                if [ "$ra" != "$rn3" ]; then
+                    rnoislmoved=$((rnoislmoved + 1))
+                    printf 'NO ISLAND STAMPED YET -fno-alt-island MOVES THE REGION %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                fi
             fi
         fi
 
@@ -961,7 +1131,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -1029,6 +1199,43 @@ sweep() { # sweep <label> <extra pcrec args>
     fi
     if [ "$rcallbearing" -ne 0 ]; then
         bad "[$label] (A) $rcallbearing artifacts in the CALL-FREE population carry RX_VM_CALL_ macros. The two [DD-14.FB] region lines (the region-exit guard's type and capacity operand) are emitted only for a call-BEARING artifact, so this population's asserted count for them is ZERO; a non-zero one means the call-free classifier has leaked, not that the named exception fired"
+    fi
+    if [ "$rislsame" -ne 0 ]; then
+        bad "[$label] (A) $rislsame artifacts stamp RX_VM_ALT_ISLANDS > 0 and yet are BYTE-IDENTICAL to their own -fno-alt-island build. The stamp claims a trie the program does not contain — the direction a merely decorative count fails in, and the reason this is a biconditional against the DENY AXIS rather than against a pin that decays:"
+        grep '^ISLAND STAMPED BUT DENYING IT CHANGES NOTHING' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
+    if [ "$rnoislmoved" -ne 0 ]; then
+        bad "[$label] $rnoislmoved artifacts stamp NO island and yet -fno-alt-island MOVES their program region. Denying an axis that did not fire must change nothing — that byte-identity is what makes the denied build a usable reference for every other check that leans on it:"
+        grep '^NO ISLAND STAMPED YET' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
+    # THE NON-VACUITY FLOOR IS AN ENUMERATED MANIFEST, NOT A NUMBER (panel r53,
+    # F4). "At least one island moved" was argued rather than measured, and it
+    # read GREEN under any narrowing that left a single island standing —
+    # raising VM_ISL_MIN_BRANCHES_PREFIXED to 40 passes that floor. The check
+    # is now the same staleness assertion ELIDED_PATTERNS and
+    # SIZE_TERM_REGION_MOVERS carry: every NAMED pattern must still stamp one.
+    isl_manifest_missing=0
+    while IFS= read -r ipat; do
+        [ -n "$ipat" ] || continue
+        ia="$(gen_a "$ipat" "$args")"
+        [ -n "$ia" ] || continue          # refused on this axis; not this check's claim
+        # THE STAMP IS VM-ROUTE-ONLY (docs/spec/match_api.md §6.3), so a
+        # pattern this axis routes to the DFA carries none and is not this
+        # manifest's claim either. Measured the hard way: without this gate the
+        # list failed 9 of 11 on the default axis, where a capture-free literal
+        # alternation is a DFA artifact — which is the DFA determinizing the
+        # same trie for free, i.e. the island working as designed, not missing.
+        case "$ia" in *'#define RX_ENGINE "vm"'*) ;; *) continue ;; esac
+        in="$(printf '%s\n' "$ia" | sed -n 's/^#define RX_VM_ALT_ISLANDS \([0-9]*\)$/\1/p' | head -1)"
+        if [ "${in:-0}" -lt 1 ]; then
+            isl_manifest_missing=$((isl_manifest_missing + 1))
+            [ "$isl_manifest_missing" -le 6 ] && echo "  ISLAND MANIFEST[$label]: '$ipat' no longer stamps an island" >&2
+        fi
+    done <<ISL_EOF
+$ISLAND_PATTERNS
+ISL_EOF
+    if [ "$isl_manifest_missing" -ne 0 ]; then
+        bad "[$label] $isl_manifest_missing of the ISLAND_PATTERNS manifest no longer stamp an alternation island. Either the predicate narrowed — in which case this list is the record of what that costs and the narrowing must be argued against it — or the analysis broke. Do not silently shorten the list"
     fi
     if [ "$rdiff" -ne 0 ]; then
         bad "[$label] (A) $rdiff call-free patterns emit a DIFFERENT PROGRAM REGION than $REFCOMMIT for a reason no ruling has recorded — this is the claim the pre-module pin exists to defend:"

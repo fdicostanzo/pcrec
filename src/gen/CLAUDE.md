@@ -2266,6 +2266,17 @@ wherever `fit.chosen != ENGM_DFA`.
 `docs/spec/tuning.md` §2.19 is the contract. What lives here is the axis, the
 predicate and the one `if` in `emit_unanchored`.
 
+**"ISLAND" IS TWO DIFFERENT CONSTRUCTS IN THIS TREE, AND THIS IS THE NEWER
+ONE.** `docs/design/engine_m4.md` §6.3-§6.4 uses ISLAND for an EXACT-MATCH DFA
+REGION spliced into the VM's program — determinized, entered from the VM,
+charged one step at its entry, deferred by D50's evidence gate, and carrying
+real transition tables. `[ENG-ISL]`'s ALTERNATION ISLAND carries no DFA and no
+table at all: it is a trie dispatch over one alternation's literal
+alternatives, emitted by this file. They share the idea of a determinized
+region inside the VM program and nothing else, and the plan row's own
+bidirectional framing ("islands of VM in DFA as well as DFA in VM") is what
+put them under one word.
+
 **THE MECHANISM IN ONE SENTENCE.** `<prefix>_search` scans the same bytes
 twice — forward for the match END, backwards over an independently built
 REVERSE machine for the match START — and when the forward machine's start
@@ -2501,3 +2512,99 @@ points at the fold count.
 **THE CHECK IS `tests/codegen/run_dfa_uniform_fold.sh`.** It reads the emitted
 text for the accessor's lost parameter and the table name's absence, asserts
 the biconditional, and only then compares the stamp against their count.
+
+## [ENG-ISL] STEP 1 — THE VM'S ALTERNATION ISLAND (2026-09-03), abi 17 -> 18
+
+`docs/design/alt_dispatch_study.md` is the measurement (algorithm (e));
+`docs/spec/tuning.md` §2.20 is the contract; `docs/dev/lanes/isl1_report.md`
+carries the build's own numbers. What lives here is the lowering, the one
+finding that changed the design, and the two interactions a reader will not
+expect.
+
+**THE MECHANISM IN ONE SENTENCE.** `vm_alt` emits an N-way alternation as a
+CHAIN — one resume frame per untried branch — so matching the LAST of 512
+branches costs 511 push/fail/pop round trips on ONE subject byte; the island
+emits a TRIE over the alternation's literal bytes instead: a byte compare at a
+node with one child, a `switch` at a node with several, one try site per node
+where an alternative ends.
+
+**THE INPUT IS THE SUBTREE'S LANGUAGE, NOT ITS BRANCH LIST, AND THAT IS THIS
+ROW'S ONE REAL FINDING.** The charter says "a sorted trie over the LITERAL
+BRANCHES of a flat alternation", which is right about a pattern as WRITTEN and
+wrong about the AST this emitter is handed. `src/opt/altcls.c`'s stage-2
+factoring runs first and rewrites a wide alternation into a shared first byte
+plus a nested alternation, so every branch it touched is an `A_CAT` ending in
+an `A_ALT` — not a literal run. MEASURED on the bench's own altwide set: the
+branch-test build stamped **eleven** islands on `w-256`, exactly that
+pattern's own `RX_ALTCLS_FACTORED` count, took the island on nothing but
+altcls's residues, and emitted a **3.0% LARGER** artifact than the chain it
+was replacing. It passed every answer check in `tests/island/`.
+`vm_isl_words` asks the general question instead — is this subtree's language
+a finite set of literal byte strings — and a partially factored tree then
+produces the same island as the flat alternation it was factored from.
+`tests/island/run_island_tests.sh` block 3 is the check that sees it, and it
+reads the COUNT.
+
+**THE DEFERRED MASK IS A COMPILE-TIME CONSTANT, so no slot is allocated and
+no mask is emitted.** The study's §3.2 commit rule ("commit only if this
+accept beats everything deeper in the subtree AND the best already deferred")
+is the RUNTIME form of a fact an emitter already knows. Every trie edge is one
+BYTE, so sibling edges are disjoint, the walk is a single deterministic path,
+and the set of alternatives still live where it stops is a function of WHICH
+NODE it stopped at. `vm_isl_cands` writes that list out, ascending original
+index, as a chain of try sites. The corpus census (`scripts/alt_census.py`)
+measured that list at length 1 for 274 of 429 qualifying alternations and
+never longer than 4.
+
+**ONE CHAIN PER END NODE, SHARED DOWNWARD.** A node with no accepts has its
+parent's candidate list, so chains are keyed by the deepest ancestor-or-self
+carrying an accept (`VmIslNode.chain`); the number of chains is the number of
+end nodes, not of nodes. A node whose path carries no accept at all exits
+straight to the fail label.
+
+**`vm_count_slots` CALLS `vm_isl_build`, and that is not laziness.** The
+island's push count is a property of the TRIE, not of the branch count: zero
+where no alternative is a prefix of another, and MORE than `nbr - 1` where
+several are (`a|ab|abc` emits three against the chain's two). An argument from
+branch counts is wrong in both directions, and that walk's own header states
+the site-for-site rule. `vm_cost` needs no arm: the chain shape keeps exactly
+one island frame live, which is what its `1 + max` already charges.
+
+**TWO INTERACTIONS TO KNOW BEFORE MEASURING ANYTHING.**
+
+- **The island makes wide-alternation artifacts FRAMELESS, which arms
+  [CC-DIFF] STEP 1(a)'s `always_inline` on the entry chain.** That attribute's
+  gate is `has_push`, measured on SMALL frameless programs. On `w-256` the
+  island's program is ~70 KB and gets inlined into all six entries: `.text`
+  goes 71,293 -> 270,544 bytes and gcc's own time 1.38 s -> 5.91 s, even
+  though the emitted CODE is 14% SMALLER. The gate wants a size term; that is
+  [CC-DIFF]'s mechanism and its own measurement, not this row's.
+- **It composes with `-fno-altcls-factor` rather than replacing it.** altcls
+  still runs; the island simply no longer depends on how far it got.
+
+**IT MOVES THE EMITTED-SIZE REFUSAL WALL.** Comment-excluded code bytes are
+0.76-0.98 of the chain's from width 64 up, and `w-384` COMPILES on the VM
+route (427,739 code bytes) where the chain is refused (508,477 against the
+500,000 cap). `w-256` and `srt-256` now emit within 2 bytes of each other,
+where the chain differed by 12% — the branch-ORDER effect the bench measured
+at x8.87 is structurally gone, because sort order affects the trie's
+construction only.
+
+**`abi` 17 -> 18, AND IT IS THE FIRST BUMP THAT MOVES THE VM PROGRAM REGION.**
+Every earlier one moved stamps, an entry chain, DFA tables or a prefilter —
+all of which sit ABOVE `goto <prefix>_L0;`, which is why
+`tests/codegen/run_recursion_identity.sh`'s comparison (A) could say "still
+expected byte-identical" at every one of them. The island IS that region. (A)
+therefore carries an IFF now rather than an allowance: a moved region is
+excused only where the artifact's own `RX_VM_ALT_ISLANDS` reads > 0, the
+CONVERSE is asserted in the same pass (an artifact stamping an island whose
+region did not move is claiming a trie the program does not contain), and the
+bucket has a non-vacuity floor so an emitter that stopped building islands
+cannot read green. MEASURED at the landing, all four axes: `differing=0`,
+`island-stamped-unmoved=0`, `island-moved` 166 / 236 / 166 / 123.
+
+**A ROLE COMMENT ON THE ROOT AND THE ACCEPT-BEARING NODES ONLY.** `vm_lbl`
+writes a role as a line comment beside the label, and an island's node count
+is the pattern's: a 55-byte comment on each of `w-256`'s ~3,000 interior nodes
+is ~165 KB against a whole size delta of 53 KB. The listing keeps every node
+either way — `vm_lbl` records `VE_LABEL` whether or not there is a role.

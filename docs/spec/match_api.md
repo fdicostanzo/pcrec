@@ -156,8 +156,12 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `17`
-([CC-DIFF] STEP 1, the two emitted-code spellings: `always_inline` on a
+events but never stated the general rule; `rx_info.abi` is `18`
+([ENG-ISL] STEP 1, the VM's alternation island: a flat alternation whose
+language is a finite literal set is emitted as a trie dispatch rather than
+`vm_alt`'s serial resume chain, with its `<PREFIX>_VM_ALT_ISLANDS` count —
+the FIRST bump to move the VM PROGRAM region itself, atop
+[CC-DIFF] STEP 1's `17`, the two emitted-code spellings: `always_inline` on a
 frameless VM artifact's entry-chain helpers, and the uniform-table fold with
 its `<PREFIX>_DFA_UNIFORM_FOLDS` stamp, atop
 [OPT-5] STEP 2's `16` — the start-pinned search: `rx_info.search_form` +
@@ -1691,9 +1695,25 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `17` on every artifact today ([CC-DIFF] STEP 1 bumped
-  it from 16 with TWO EMITTED-CODE SPELLINGS, taken as ONE event because
-  both are emitter changes on the same landing.
+- **`rx_info.abi` is `18` on every artifact today ([ENG-ISL] STEP 1 bumped
+  it from 17 with the VM's ALTERNATION ISLAND.** A flat alternation whose
+  whole subtree matches a finite set of literal byte strings is lowered as a
+  TRIE over those strings' bytes — a byte compare at a node with one child, a
+  `switch` at a node with several, one try site per node where an alternative
+  ends — instead of `vm_alt`'s chain of one resume frame per untried branch.
+  Every VM artifact gains a `<PREFIX>_VM_ALT_ISLANDS` line whatever its value
+  (§6.3), and on any artifact that takes an island the emitted PROGRAM changes
+  shape. **It is the first bump whose change reaches the VM program region
+  itself**: every earlier one moved stamps, an entry chain, DFA tables or a
+  prefilter, all of which sit above `goto <prefix>_L0;`. No answer moves —
+  `-fno-alt-island` sweeps the axis — and
+  `tests/codegen/run_recursion_identity.sh`'s comparison (A) now carries an
+  IFF for it: a moved region is excused only where the artifact's own
+  `<PREFIX>_VM_ALT_ISLANDS` reads > 0, and an artifact stamping one whose
+  region did NOT move is a failure.
+
+  The `17` it replaces was [CC-DIFF] STEP 1's TWO EMITTED-CODE SPELLINGS,
+  taken as ONE event because both are emitter changes on the same landing.
 
   **(a) The VM entry chain's helpers carry
   `static inline __attribute__((always_inline))` on a FRAMELESS artifact.**
@@ -2153,6 +2173,46 @@ engine-scoped.**
   shape this project has had to unpick twice ([CC-CLANG]'s `strstr` for a
   push needle; the `_FAST_FRAMES` discriminator). A consumer that wants to
   know whether the entry chain is inlined reads this macro.
+
+**[ENG-ISL] STEP 1, 2026-09-03: `<PREFIX>_VM_ALT_ISLANDS`, and it is (b) for
+`RX_ALTCLS_FACTORED`'s reason.** There is no island MODE anywhere upstream of
+the emitter; it is what the emitted program turned out to CONTAIN, decided
+alternation by alternation while `src/gen/emit_vm.c` was standing on the node.
+
+```c
+#define RX_VM_ALT_ISLANDS 1   /* or 0, or more */
+```
+
+**The IFF: it is the number of this artifact's flat alternations that the VM
+lowered as an ALTERNATION ISLAND — a trie dispatch over the alternation's
+literal alternatives — rather than as `vm_alt`'s serial resume chain**
+(`docs/spec/tuning.md` §2.20). It is **UNCONDITIONAL on every VM artifact,
+hybrids included, and never defined on a pure-DFA artifact**: `0` is spelled as
+readily as any other value, because a fact readable by a macro's ABSENCE is the
+discriminator [DD-13] had to go back and remove from two checks. A DFA artifact
+carries no such decision — the DFA route determinizes the same trie for every
+alternation whether or not anyone names it — so there is nothing there to
+report.
+
+**A COUNT and not a boolean**, on `RX_ALTCLS_MERGES`/`_FACTORED`'s precedent:
+the island is selected PER ALTERNATION, so a pattern with two of them can take
+it for one and decline the other, and "did it" would lose which. It is not a
+MASK either, for `_DFA_UNIFORM_FOLDS`'s reason: the three masks in this section
+are masks because a rung, a strategy or a clamp is chosen per `A_REP` and a
+scalar would LIE on a mixed artifact, where "how many alternations took the
+island" is a whole-artifact total with no per-alternation axis to mix.
+
+What a consumer may conclude: the artifact dispatches its alternations by byte
+rather than by trying them in turn, so its cost on a wide alternation does not
+scale with the branch INDEX of the winner, and its emitted size does not depend
+on the ORDER the alternatives were written in. What it may NOT conclude:
+anything about the ANSWERS, which are identical either way — the island reports
+the same alternative, in the same backtracking order, as the chain.
+
+**It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for its
+reason: no consumer reads the fact at RUN time today, so a mirror would be
+built ahead of a measured need (D77). The trigger that would make one owed is
+the same one `RX_DFA_TABLE`'s entry names.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

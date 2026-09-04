@@ -1,0 +1,22 @@
+# tests/island/island_caseless.rxt -- [ENG-ISL] the caseless DECLINE.
+#
+# Its own file rather than a block in island.rxt because `flags` is a
+# BLOCK-scoped directive and the fact under test is about the whole
+# population: D23 folds a caseless literal to a two-member class at parse
+# time, so a caseless alternation is class-leading before src/gen/emit_vm.c
+# sees it and the island never fires. Expectations from python3 `re` with
+# re.IGNORECASE | re.ASCII, which is what the harness's own oracle uses for
+# `flags i`.
+
+
+# DECLINE under `flags i`: D23 folds a caseless literal to a two-member
+# CLASS at parse time, so every alternative is class-leading before the
+# emitter sees it. This is [FORM-CHAR]'s axis, not the island's
+pattern cat|dog
+flags i
+m "cat" 0 3
+m "CAT" 0 3
+m "Cat" 0 3
+m "dog" 0 3
+m "DOG" 0 3
+n "cot"

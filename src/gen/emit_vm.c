@@ -471,6 +471,33 @@ typedef struct {
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
                            * known before emission — which is the point. */
     long long nodes;      /* emitted-node budget, against PCREC_MAX_VM_NODES */
+    /* [ENG-ISL] how many flat alternations this program lowered as an
+     * ALTERNATION ISLAND (a trie dispatch) rather than as `vm_alt`'s serial
+     * frame chain — the source of `<PREFIX>_VM_ALT_ISLANDS`, §6.3 family (b).
+     * An ACTIVITY COUNT for `RX_ALTCLS_FACTORED`'s reason: the island is
+     * selected PER ALTERNATION, so a pattern with two of them can and does
+     * mix, and a boolean "did it" would lose which. Written by `vm_alt`
+     * itself, in the same call that emits the island, so the stamp cannot
+     * drift from the program text. */
+    long long nislands;
+    /* [ENG-ISL] THE PER-ARTIFACT ISLAND BUDGET, and it exists because the
+     * PER-SUBTREE size rule does not bound ACCEPTANCE on its own. Measured:
+     * on a 1,200-word alternation the top-level island declines on size, and
+     * `src/opt/altcls.c`'s factoring then leaves FIFTEEN nested sub-alternations
+     * that each pass their own (small) size test — together 514,258 bytes of
+     * emitted code against the chain's 430,442 and a 500,000 cap, so the
+     * artifact is REFUSED where the chain compiles. Each island was individually
+     * reasonable; the artifact was not.
+     *
+     * `isl_est_sum`/`isl_chain_sum` are accumulated ONCE, in the
+     * `vm_count_slots` PRE-PASS, which runs before both `vm_cost` and the real
+     * emission — so `isl_over_cap` is a fact all three readers see the same
+     * way, rather than a running total whose answer would depend on which
+     * reader asked first. That is the same "one analysis, three readers"
+     * discipline the rest of this island keeps; a per-call accumulation would
+     * have broken it. */
+    long long isl_est_sum, isl_chain_sum;
+    bool      isl_over_cap;
     unsigned  rungs;       /* [D46] BITMASK of VmRungKind values PRESENT in
                             * this program — the rung decision is PER
                             * QUANTIFIER BODY (vm_cursor_fits is consulted
@@ -1742,6 +1769,63 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
  *
  * Conservative in the safe direction throughout: over-estimating cost lowers
  * the stamped ceiling, which under-promises rather than over-promises. */
+/* THE TWO WIDTH KNEES ARE `src/core/limits.def` ROWS (`VM_ISL_MIN_BRANCHES`,
+ * `VM_ISL_MIN_BRANCHES_PREFIXED`), expanded by this file's own EMIT_VM home
+ * dispatch above — not `#define`s here. They were bare defines until panel
+ * r53's doc lens pointed out that a SELECTION KNEE is precisely what that
+ * table catalogues, alongside `PCREC_DEFAULT_UNROLL_K` and
+ * `PCREC_SIZE_TERM_THRESHOLD`. The measurement behind each value is cited at
+ * the row and again at the decline site below. */
+
+typedef struct {
+    int idx;      /* the branch's ORIGINAL alternation index (0-based) */
+    int len;      /* its literal length in bytes */
+    int next;     /* the next accept AT THIS NODE, or -1 */
+} VmIslAcc;
+
+typedef struct {
+    int child;    /* first child, or -1 — children in ASCENDING edge byte */
+    int sib;      /* next sibling, or -1 */
+    int parent;   /* -1 at the root */
+    int acc;      /* first accept record at this node, or -1 */
+    int acclast;  /* last accept record, so appending is O(1) and the list
+                   * stays in ascending original index: branches are inserted
+                   * in index order, so appending IS sorting */
+    int nacc;
+    int nkids;
+    int depth;    /* bytes consumed to reach this node */
+    int npath;    /* accepts on the root..here path, this node's included —
+                   * the study's MASK DEPTH, as a compile-time number */
+    int chain;    /* the node owning the candidate chain this node's
+                   * walk-dies-here exit takes: the deepest ancestor-or-self
+                   * with an accept, or -1 for "no branch matched, fail" */
+    int lbl;      /* the dispatch label */
+    int chainlbl; /* the FIRST candidate's label, on a node with accepts */
+    unsigned char byte; /* the edge byte that reaches this node */
+} VmIslNode;
+
+typedef struct {
+    VmIslNode *nd;
+    int        nnd, ndcap;
+    VmIslAcc  *acc;
+    int        nacc, acccap;
+    int        nbr;
+    int        maxdepth;
+    int        maxpath;    /* the largest npath over the trie */
+    long long  trysites;   /* candidate try sites the emission will write */
+    long long  pushes;     /* RX_PUSH sites the emission will write */
+    /* [ENG-ISL] the size rule's own two numbers, kept so `--emit-ir` can
+     * REPORT them: a reader asking "why did my alternation not get an island"
+     * gets the comparison rather than a shrug, and the factor that separates
+     * the two populations was chosen by reading these off a corpus. */
+    long long  est_isl, est_chain;
+} VmIsl;
+
+
+/* [ENG-ISL] the analysis, defined beside `vm_alt` where it is emitted and
+ * declared here because `vm_count_slots` below must ask the SAME question. */
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a);
+
 struct Cost {
     long long frames, trail;  /* max simultaneously live (bounded part) */
     long long pf, pt;         /* per-ITERATION frames/trail of the outermost
@@ -2115,6 +2199,38 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
     case A_ALT: {
+        /* [ENG-ISL] THE ISLAND'S FRAME REQUIREMENT IS A PROPERTY OF THE TRIE,
+         * and this arm asks the SAME `vm_isl_build` `vm_alt` and
+         * `vm_count_slots` do — the third reader of one analysis.
+         *
+         * IT IS NOT A TIDINESS FIX. `1 + max` is SAFE here in the sense that
+         * over-charging frames only over-sizes the array, but `pf`/`pt` and
+         * `frames` are also what `subject_ceiling` is DIVIDED from, so an
+         * over-charge makes an artifact DECLARE a smaller subject than it can
+         * actually match. MEASURED as a failing check before it was a comment:
+         * `tests/possessify/run_possessify_tests.sh`'s boundary row drives
+         * `(x)(?:a|bc)+d`, whose `-fno-possessify` build stamps a ceiling of
+         * 1024 and must start failing within 64 bytes above it. Under the
+         * island that alternation pushes NOTHING, so the build answered
+         * straight past 1088 and the row read "parted at never" — the stamp
+         * had become an under-promise wide enough to stop measuring anything.
+         *
+         * An island's frame requirement is ZERO where no alternative is a
+         * prefix of another (the candidate chain has one entry, so nothing is
+         * pushed) and ONE where some is (the chain keeps exactly one live, the
+         * serial chain's own shape). `isl.pushes` is the count of chain
+         * entries beyond the first, summed over end nodes, which is positive
+         * on exactly the second case. The branches contribute nothing: they
+         * are literal chains by construction. */
+        {
+            VmIsl isl;
+            if (vm_isl_build(v, &isl, a)) {
+                c.frames = isl.pushes > 0 ? 1 : 0;
+                c.trail = 0;
+                c.pf = c.pt = 0;
+                return c;
+            }
+        }
         /* The chain shape keeps exactly ONE alternation frame live at a time
          * (see vm_alt), and a failed branch's own frames are popped before the
          * next branch runs — so this is max-plus-one, not a sum.
@@ -2522,7 +2638,31 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         v->nmark++;
         vm_count_slots(v, a->l, repl, false);
         return;
-    case A_ALT:
+    case A_ALT: {
+        /* [ENG-ISL] THE ISLAND'S PUSH COUNT IS A PROPERTY OF THE TRIE, not of
+         * the branch count, so this arm asks the SAME `vm_isl_build` `vm_alt`
+         * will — the "site for site" discipline this function's header states.
+         * An island emits one push per pending candidate beyond the first at
+         * each end node, which is ZERO on a branch set where no branch is a
+         * prefix of another (274 of the corpus's 429 qualifying alternations)
+         * and can exceed `nbr - 1` where several are (`a|ab|abc` emits three
+         * against the chain's two) — an argument from branch counts would be
+         * wrong in BOTH directions. A declined alternation falls through to
+         * the chain arithmetic below, unchanged. */
+        {
+            VmIsl isl;
+            if (vm_isl_build(v, &isl, a)) {
+                v->npush += isl.pushes;
+                /* THE PRE-PASS IS WHERE THE ARTIFACT-WIDE TOTAL IS TAKEN. */
+                v->isl_est_sum   += isl.est_isl;
+                v->isl_chain_sum += isl.est_chain;
+                /* The branches are literal chains by construction: no slot, no
+                 * mark, no resume point of their own. Nothing to descend
+                 * into, and descending would be the second derivation this
+                 * arm exists to avoid. */
+                return;
+            }
+        }
         /* Iterative spine walk (R1 R-2 / D10) — see vm_nullable. One push per
          * A_ALT NODE, which for a left-nested flat alternation of k branches
          * is k-1, exactly what vm_alt emits. */
@@ -2533,6 +2673,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         }
         vm_count_slots(v, a, repl, false);
         return;
+    }
     case A_CAT:
         while (a->k == A_CAT) { vm_count_slots(v, a->r, repl, false); a = a->l; }
         vm_count_slots(v, a, repl, false);
@@ -3036,6 +3177,689 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  * which is what keeps `(a|b|c|...)` off the frame-capacity bound. The
  * preference order is identical either way: the frame pushed at branch k
  * resumes branch k+1. */
+/* ---- [ENG-ISL] STEP 1: the ALTERNATION ISLAND ----------------------------
+ *
+ * `docs/design/alt_dispatch_study.md` algorithm (e), built here as the VM's
+ * lowering for a flat alternation whose every branch is a bare literal byte
+ * run. The measured need is the plan row's ([ENG-ISL], bench O-15): branch
+ * ORDER costs `vm_alt`'s serial chain ×8.87 at width 256 and ×20.1 at 512
+ * while the DFA artifact for the same pattern is byte-identical, because the
+ * chain spends one push/fail/pop round trip per untried branch on ONE subject
+ * byte. The island spends a byte compare instead.
+ *
+ * THE SHAPE. The branches are inserted into a TRIE keyed by their literal
+ * bytes, sorted by byte at every node, each end node tagged with the ORIGINAL
+ * alternation indices of the branches that end there. A node with one child
+ * emits a byte compare, a node with several a `switch` on the subject byte.
+ * `scan_position` is NOT advanced during the walk — every test reads
+ * `subject[scan_position + depth]` — so the alternation's entry position is
+ * still in `scan_position` at every point in the island, which is what a
+ * resume frame needs to record and what the try sites add a branch's length
+ * to.
+ *
+ * WHY IT ANSWERS WHAT `vm_alt` ANSWERS. Leftmost-first over an alternation of
+ * literals is `min{ i : branch i matches at this position }` — a pure function
+ * of WHICH branches match, never of their length or of trie depth
+ * (`src/ir/nfa.c:192`'s own counter-example: `abc|a|abd` on "abd" is the `a`
+ * branch, index 1, length 1, not the longer `abd` at index 2). The trie's
+ * construction reorders nothing and discards nothing: a node's accepts are
+ * exactly the branches whose literal equals the prefix consumed to reach it,
+ * so the branches matching at a position are exactly the accepts on the ONE
+ * path the subject selects. And when the continuation fails, PCRE backtracks
+ * INTO the alternation (`(ab|abc)d` on "abcd" must fall from `ab` to `abc`),
+ * so those accepts have to be tried in ASCENDING ORIGINAL INDEX — which is
+ * the order `vm_alt`'s chain tries them in, and the order this emits.
+ *
+ * THE DEFERRED MASK IS A COMPILE-TIME CONSTANT, WHICH IS WHY NO SLOT IS
+ * ALLOCATED AND NO MASK IS EMITTED. Every trie edge here is a single BYTE, so
+ * sibling edges are DISJOINT by construction and the walk is a single
+ * deterministic path — there is no sibling subtree left unvisited that could
+ * still produce a candidate. The set of still-live branches at the point the
+ * walk dies is therefore a function of WHICH NODE it died at, known while the
+ * emitter is standing on that node. The study's §3.2 commit rule ("commit only
+ * if this accept beats everything deeper in the subtree AND the best already
+ * deferred") is the RUNTIME form of the same fact, needed only by a walker
+ * that discovers the path as it goes; an EMITTER already knows the whole path,
+ * so it emits the candidate list itself, in index order, with no runtime
+ * decision and no mask to size. The census (`scripts/alt_census.py`) measured
+ * that list at length 1 for 274 of the corpus's 429 qualifying alternations
+ * and never longer than 4.
+ *
+ * ONE CHAIN PER END NODE, SHARED DOWNWARD. A node with no accepts of its own
+ * has the same candidate list as its parent, so the chains are keyed by the
+ * deepest ancestor-or-self carrying an accept (`chain` below) — the number of
+ * chains is the number of end nodes, not the number of nodes.
+ *
+ * WHAT IT DECLINES, and every one of these is a SCOPE BOUNDARY rather than a
+ * refusal: the alternation is emitted by `vm_alt` unchanged.
+ *   - any branch that is not a chain of SINGLETON byte classes: a class
+ *     (including a caseless literal, which D23 folded to a two-member class at
+ *     parse time long before the emitter sees it), a quantifier, a group, a
+ *     capture, a backreference, a lookaround, an assertion, or an EMPTY
+ *     branch. The trie's edges are bytes; a class edge would break the
+ *     disjoint-siblings property the whole argument above rests on, and is
+ *     `src/ir/nfa.c`'s rule 2 in the emitter's own vocabulary.
+ *   - fewer than `VM_ISL_MIN_BRANCHES` branches.
+ *   - `PCREC_NO_ALT_ISLAND`.
+ *
+ * The analysis is ONE function (`vm_isl_build`), called by `vm_alt` to emit
+ * and by `vm_count_slots` to count the resume points it will emit — the "site
+ * for site" discipline that function's header states, and the reason the push
+ * count is not re-derived from an argument about branch counts. */
+
+/* The byte an A_CLASS admits when it admits EXACTLY ONE, else -1. This is the
+ * emitter's whole literal test: `src/parse/` normalizes a literal to a
+ * singleton class (internal.h's A_CLASS comment), so "is a literal byte" and
+ * "is a one-member class" are the same question asked once. */
+static int vm_isl_single(const Ast *a)
+{
+    int found = -1;
+    if (a->k != A_CLASS) return -1;
+    for (int c = 0; c < 256; c++) {
+        if (!cls_has(a->u.cls.bits, (unsigned)c)) continue;
+        if (found >= 0) return -1;
+        found = c;
+    }
+    return found;
+}
+
+/* ---- the island's INPUT: the subtree's literal words, in PREFERENCE ORDER --
+ *
+ * THE FIRST VERSION OF THIS READ ONE BRANCH AND THE MEASUREMENT REFUTED IT.
+ * It asked "is this branch a bare literal byte run", which is what the charter
+ * says and is right about a pattern AS WRITTEN — and wrong about the AST this
+ * emitter is handed, because `src/opt/altcls.c`'s stage-2 factoring runs first
+ * and rewrites a wide alternation into a PARTIALLY FACTORED tree: a shared
+ * first byte followed by a nested alternation. Every branch altcls touched is
+ * then an `A_CAT` ending in an `A_ALT`, not a literal run, so the branch test
+ * DECLINED the top-level alternation and took the island only on the small
+ * residues altcls had just created. MEASURED on the bench's own altwide set:
+ * `w-256` stamped ELEVEN islands (exactly `RX_ALTCLS_FACTORED`'s own count for
+ * that pattern) and the artifact came out 3.0% LARGER than the chain it was
+ * supposed to replace. The island was firing everywhere except on the shape
+ * the measured need is about.
+ *
+ * SO THE INPUT IS THE SUBTREE'S LANGUAGE, NOT ITS BRANCH LIST: every literal
+ * word the alternation can match, enumerated in the order PCRE would try them.
+ * That is a strictly more general question than "is each branch a literal" —
+ * it asks whether the subtree's language is FINITE AND LITERAL — and it is the
+ * question that survives an upstream pass rearranging the tree, which is the
+ * property the branch test lacked.
+ *
+ * THE ORDER IS PCRE'S OWN, and the concatenation case is the one to check:
+ * `XY` where both are alternations tries X's first branch against every one of
+ * Y's, then X's second, and so on, so the cross product is X-MAJOR. Worked
+ * against a shape where the naive reading differs: `(?:a|ab)(?:c|bc)` on
+ * "abc" enumerates `ac`, `abc`, `abc`, `abbc`; the lowest index that matches
+ * is 1, and PCRE's own answer is X=`a`, Y=`bc` — the same word.
+ *
+ * IT IS BUDGETED IN BOTH DIRECTIONS, and the budget is a DECLINE rather than a
+ * refusal. The cross product is where a literal language gets big
+ * (`(?:a|b)(?:c|d)(?:e|f)…` is 2^k words in 6k characters), and the recursion
+ * is over ALTERNATION NESTING, which a pattern controls — D10/R-2's class, the
+ * one this file has already had to fix three times. Over either bound the
+ * island simply is not built and `vm_alt`'s chain emits the alternation
+ * exactly as it did before. */
+
+/* The three enumeration budgets are `src/core/limits.def` rows too, and they
+ * are COMPILE BUDGETS rather than knees: over any of them the alternation
+ * falls back to a chain that is never SMALLER than the island, so a pattern
+ * can land above the emitted-code cap where the island fit under it — the row
+ * carries the measured witness. */
+
+typedef struct { const uint8_t *b; int len; } VmIslW;
+typedef struct { VmIslW *w; int n; } VmIslWL;
+
+/* `budget` is the REMAINING literal-byte allowance, shared across the whole
+ * enumeration and decremented as words are materialised, so a cross product
+ * cannot spend it twice. */
+static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
+                         long long *budget)
+{
+    static const uint8_t empty[1] = { 0 };
+    if (depth > VM_ISL_MAX_DEPTH) return false;
+
+    switch (a->k) {
+    case A_EMPTY:
+        out->w = arena_alloc(&v->cx->arena, sizeof *out->w);
+        out->w[0].b = empty; out->w[0].len = 0;
+        out->n = 1;
+        return true;
+    case A_CLASS: {
+        int b = vm_isl_single(a);
+        if (b < 0) return false;
+        uint8_t *p = arena_alloc(&v->cx->arena, 1);
+        p[0] = (uint8_t)b;
+        if (--*budget < 0) return false;
+        out->w = arena_alloc(&v->cx->arena, sizeof *out->w);
+        out->w[0].b = p; out->w[0].len = 1;
+        out->n = 1;
+        return true;
+    }
+    case A_ALT: {
+        /* Iterative spine walk (D10): a flat alternation of any width must not
+         * cost pcrec's own C stack one frame per branch. Preference order is
+         * left to right, which for a LEFT-NESTED chain means the deepest `l`
+         * first. */
+        int nbr = 1;
+        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
+        int i = nbr;
+        const Ast *t = a;
+        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+        br[0] = t;
+
+        VmIslWL *sub = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *sub);
+        long long total = 0;
+        for (int j = 0; j < nbr; j++) {
+            if (!vm_isl_words(v, br[j], &sub[j], depth + 1, budget)) return false;
+            total += sub[j].n;
+            if (total > VM_ISL_MAX_WORDS) return false;
+        }
+        out->w = arena_alloc(&v->cx->arena, (size_t)total * sizeof *out->w);
+        out->n = 0;
+        for (int j = 0; j < nbr; j++)
+            for (int k = 0; k < sub[j].n; k++) out->w[out->n++] = sub[j].w[k];
+        return true;
+    }
+    case A_CAT: {
+        int nsp = 1;
+        for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
+        const Ast **el = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
+        int i = nsp;
+        const Ast *t = a;
+        while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
+        el[0] = t;
+
+        if (!vm_isl_words(v, el[0], out, depth + 1, budget)) return false;
+        for (int j = 1; j < nsp; j++) {
+            VmIslWL rhs;
+            if (!vm_isl_words(v, el[j], &rhs, depth + 1, budget)) return false;
+            long long n = (long long)out->n * rhs.n;
+            if (n > VM_ISL_MAX_WORDS) return false;
+            VmIslW *w = arena_alloc(&v->cx->arena, (size_t)n * sizeof *w);
+            int m = 0;
+            for (int x = 0; x < out->n; x++)
+                for (int y = 0; y < rhs.n; y++) {
+                    int len = out->w[x].len + rhs.w[y].len;
+                    *budget -= len;
+                    if (*budget < 0) return false;
+                    uint8_t *p = arena_alloc(&v->cx->arena, (size_t)len + 1);
+                    memcpy(p, out->w[x].b, (size_t)out->w[x].len);
+                    memcpy(p + out->w[x].len, rhs.w[y].b, (size_t)rhs.w[y].len);
+                    w[m].b = p; w[m].len = len; m++;
+                }
+            out->w = w; out->n = m;
+        }
+        return true;
+    }
+    default:
+        return false;
+    }
+}
+
+/* [ENG-ISL] THE CHAIN'S OWN SIZE, in the only unit both arms can be compared
+ * in: AST nodes of the subtree `vm_alt` would otherwise emit. `vm_emit` writes
+ * roughly one test, one label and one goto per node, so the chain's emitted
+ * bytes are linear in this count — measured at ~98 B/node on the shape below.
+ * Walked ITERATIVELY over A_CAT/A_ALT spines for D10/R-2's reason; anything
+ * else is counted and not descended, because a subtree the island could not
+ * qualify never reaches this function. */
+static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
+{
+    /* THE STACK GROWS, and a FIXED one was a live defect rather than a
+     * theoretical one. This walk pushes the right child of every `A_CAT`/
+     * `A_ALT` it descends, so the stack depth is the SPINE LENGTH — which is
+     * the branch count of a flat alternation plus one branch's own length.
+     * A fixed 256 entries truncated at `w-256` (255 `A_ALT` nodes plus a
+     * 12-element branch), and the truncated count UNDERSTATES the chain, which
+     * INFLATES the island-versus-chain ratio and declines islands that should
+     * be taken. It was caught by a witness search whose chain estimate
+     * collapsed from 93,982 to 25,186 as the literals grew past the bound —
+     * the shape of a silent early return. Arena-allocated and doubled, so the
+     * bound is the pattern's own size and there is nothing left to truncate. */
+    long long n = 0;
+    int cap = 64, sp = 0;
+    const Ast **stk = arena_alloc(&v->cx->arena, (size_t)cap * sizeof *stk);
+    stk[sp++] = a;
+    while (sp) {
+        const Ast *t = stk[--sp];
+        while (t->k == A_CAT || t->k == A_ALT) {
+            n++;
+            if (sp == cap) {
+                const Ast **nv = arena_alloc(&v->cx->arena,
+                                             (size_t)cap * 2 * sizeof *nv);
+                memcpy(nv, stk, (size_t)cap * sizeof *nv);
+                stk = nv;
+                cap *= 2;
+            }
+            stk[sp++] = t->r;
+            t = t->l;
+        }
+        n++;
+    }
+    return n;
+}
+
+static int vm_isl_node(Vm *v, VmIsl *t, int parent, int depth, unsigned char byte)
+{
+    if (t->nnd == t->ndcap) {
+        int ncap = t->ndcap ? t->ndcap * 2 : 16;
+        VmIslNode *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        if (t->nnd) memcpy(nv, t->nd, (size_t)t->nnd * sizeof *nv);
+        t->nd = nv;
+        t->ndcap = ncap;
+    }
+    VmIslNode *n = &t->nd[t->nnd];
+    n->child = n->sib = n->acc = n->acclast = -1;
+    n->parent = parent;
+    n->nacc = n->nkids = n->npath = 0;
+    n->depth = depth;
+    n->chain = -1;
+    n->lbl = n->chainlbl = -1;
+    n->byte = byte;
+    return t->nnd++;
+}
+
+/* Insert one branch. `idx` ascends across calls, so appending to a node's
+ * accept list keeps that list in ascending ORIGINAL INDEX with no sort. */
+static void vm_isl_insert(Vm *v, VmIsl *t, const uint8_t *w, int len, int idx)
+{
+    int cur = 0;
+    for (int i = 0; i < len; i++) {
+        int prev = -1, ch = t->nd[cur].child;
+        while (ch >= 0 && t->nd[ch].byte < w[i]) { prev = ch; ch = t->nd[ch].sib; }
+        if (ch < 0 || t->nd[ch].byte != w[i]) {
+            int nn = vm_isl_node(v, t, cur, t->nd[cur].depth + 1, w[i]);
+            t->nd[nn].sib = ch;
+            if (prev < 0) t->nd[cur].child = nn;
+            else          t->nd[prev].sib  = nn;
+            t->nd[cur].nkids++;
+            ch = nn;
+        }
+        cur = ch;
+    }
+    if (t->nacc == t->acccap) {
+        int ncap = t->acccap ? t->acccap * 2 : 16;
+        VmIslAcc *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        if (t->nacc) memcpy(nv, t->acc, (size_t)t->nacc * sizeof *nv);
+        t->acc = nv;
+        t->acccap = ncap;
+    }
+    int ai = t->nacc++;
+    t->acc[ai].idx = idx;
+    t->acc[ai].len = len;
+    t->acc[ai].next = -1;
+    if (t->nd[cur].acc < 0) t->nd[cur].acc = ai;
+    else                    t->acc[t->nd[cur].acclast].next = ai;
+    t->nd[cur].acclast = ai;
+    t->nd[cur].nacc++;
+}
+
+/* Build the island for an alternation, or return false and leave `t` unusable.
+ * `a` is the `A_ALT` node itself: the enumeration above turns its whole
+ * subtree into the ordered word list, so a partially factored tree and the
+ * flat alternation it was factored from produce the SAME island.
+ *
+ * ONE ANALYSIS, TWO READERS. `vm_alt` calls this to emit; `vm_count_slots`
+ * calls it to learn `pushes` before emission, which is the only honest way to
+ * mirror an emission whose push count is a property of the trie rather than of
+ * the branch count. */
+static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
+{
+    memset(t, 0, sizeof *t);
+    if (v->cx->opt->flags & PCREC_NO_ALT_ISLAND) return false;
+
+    long long budget = VM_ISL_MAX_BYTES;
+    VmIslWL wl;
+    if (!vm_isl_words(v, a, &wl, 0, &budget)) return false;
+    if (wl.n < VM_ISL_MIN_BRANCHES) return false;
+
+    t->nbr = wl.n;
+    (void)vm_isl_node(v, t, -1, 0, 0);      /* the root */
+    for (int j = 0; j < wl.n; j++) {
+        vm_isl_insert(v, t, wl.w[j].b, wl.w[j].len, j);
+        if (wl.w[j].len > t->maxdepth) t->maxdepth = wl.w[j].len;
+    }
+
+    /* npath / chain, by an ITERATIVE pre-order walk — the trie is as deep as
+     * the longest branch, which a pattern controls, so a recursion here would
+     * be a stack the pattern sizes. */
+    int *stk = arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
+    int sp = 0;
+    t->nd[0].npath = t->nd[0].nacc;
+    t->nd[0].chain = t->nd[0].nacc ? 0 : -1;
+    stk[sp++] = 0;
+    while (sp) {
+        int x = stk[--sp];
+        if (t->nd[x].npath > t->maxpath) t->maxpath = t->nd[x].npath;
+        if (t->nd[x].nacc) {
+            t->trysites += t->nd[x].npath;
+            t->pushes   += t->nd[x].npath - 1;
+        }
+        for (int c = t->nd[x].child; c >= 0; c = t->nd[c].sib) {
+            t->nd[c].npath = t->nd[x].npath + t->nd[c].nacc;
+            t->nd[c].chain = t->nd[c].nacc ? c : t->nd[x].chain;
+            stk[sp++] = c;
+        }
+    }
+
+    /* [ENG-ISL] THE NARROW WIDTH DECLINE, and it is a MEASUREMENT rather than
+     * a guess — the hand-twin's own table (docs/dev/lanes/isl1_report.md §12.1,
+     * quiet box, 11 interleaved rounds, answers checked every round):
+     *
+     *   foo|bar             width 2, prefix-FREE     island/chain 0.175
+     *   (?:cat|dog|cow)s    width 3, prefix-FREE                  0.140
+     *   fo|foo              width 2, prefix-bearing               1.131
+     *   (?:ab|abc)d         width 2, prefix-bearing               1.144
+     *   (?:a|ab|abc|abcd)z  width 4, prefix-bearing               1.001
+     *   w-64 x2 + a tail    width 128, prefix-bearing             0.010
+     *
+     * THE DISCRIMINATOR IS PREFIX FREEDOM, NOT WIDTH, which is why this reads
+     * `pushes` and not just the count. A prefix-FREE island's candidate chain
+     * has one entry, so it pushes nothing, the artifact comes out frameless
+     * and [CC-DIFF]'s `always_inline` deletes the entry frame on top — that is
+     * the biggest per-pattern win in the table and it happens AT WIDTH 2, so a
+     * width floor alone would throw away exactly the population that gains
+     * most. A prefix-BEARING island keeps a push, stays framed, and below the
+     * knee the trie walk plus that frame is simply more work than two short
+     * byte runs.
+     *
+     * FOUR AND NOT FIVE (the manager's ruling on the table above): width 4
+     * MEASURED a wash at 1.001, so it keeps the mechanism at no cost; width 2
+     * loses by 13-14%; width 3 is unmeasured and sits on the losing side of
+     * the knee, so it declines with 2 rather than being admitted on a guess.
+     *
+     * It is ONE condition on two numbers this function has already computed,
+     * not a second analysis — and it is read by all three callers through the
+     * same return, so the emitter, the slot pre-pass and the cost model cannot
+     * disagree about which alternations are islands. */
+    if (t->pushes > 0 && t->nbr < VM_ISL_MIN_BRANCHES_PREFIXED) return false;
+
+    /* [ENG-ISL] THE SIZE RULE, and it is here because the island SHIPPED A
+     * CALLER-OBSERVABLE REGRESSION without it (panel r53's semantics lens, F1).
+     *
+     * `((?:aa|bb)(?:aa|bb)…×10|zzz)` — 10 factors, 96 characters, default
+     * flags, default engine — was REFUSED under the island at 897,983 bytes of
+     * emitted code against the 500,000 cap, and compiles at 30,179 under
+     * `-fno-alt-island`. An optimization axis had made pcrec REJECT a pattern
+     * it accepts without it, which is not a size regression but an ACCEPTANCE
+     * one, and no answer-identity sweep can see it: `make test-axes` counted
+     * `refused=0` because no corpus pattern has the shape.
+     *
+     * WHY THE BUDGETS DID NOT CATCH IT. `VM_ISL_MAX_WORDS`/`_BYTES` bound the
+     * WORD LIST; the emitted size scales with TRIE NODES, and the A_CAT cross
+     * product blows the second up while the first is still comfortable — at
+     * the byte budget the trie reaches ~200,000 nodes, about 44 MB of C. A
+     * budget on the wrong quantity is not a smaller version of the right one.
+     *
+     * THE RULE: build the island only where its emitted size is NOT LARGER
+     * than the chain's for the same subtree. Both sides are estimated from the
+     * analysis in the same unit, with MEASURED per-node constants (see their
+     * limits.def rows), so the comparison is between two emissions rather than
+     * against an absolute ceiling — which is what makes it hold at every cap,
+     * including a raised one.
+     *
+     * WHY A FACTOR AND NOT "NOT LARGER", which is what the finding asked for.
+     * The island's emitted program is LARGER than the chain's on every narrow
+     * shape — its value there is SPEED, not size (report §12: 0.140-0.175
+     * island/chain ns) — so "not larger" declines the entire population the Q4
+     * knee was just ruled to keep. MEASURED program-region ratios, island over
+     * chain, with the rule disabled:
+     *
+     *   KEEP    cat|dog|cow 1.10   abcdefghij|... 1.12   foo|bar 1.23
+     *           thin|think|thinker|thinking 1.45   w-64 0.97   s-256 0.85
+     *   DECLINE ((?:aa|bb)x4|zzz) 3.06   x6 8.78   x8 27.65
+     *           the census's own worst two 31.67 and 146.95
+     *
+     * THE ESTIMATOR'S OWN RATIO is what the rule compares, and it errs HIGH on
+     * narrow shapes (`abcdefghij|...` estimates 2.57 against a real 1.12) and
+     * tracks at the extremes (145.91 against 146.95). Its populations separate
+     * at 2.60 against 4.02, so the factor is 2: inside that gap, and validated
+     * against the census rather than argued.
+     *
+     * WHAT FACTOR 2 COSTS, stated because it is a real loss: `(?:abcd|abc|ab|a)z`
+     * (estimate 2.34, real 1.66) declines. Its own hand-twin cell measured
+     * 1.001 — a wash — so nothing measured is given up, and 66% of growth is
+     * avoided. Factor 3 keeps it and takes the census's max artifact growth
+     * from 1.03x to 1.18x, which is the trade that was made and refused.
+     *
+     * IT CAN ONLY DECLINE, so it costs no answer and needs no timing: a
+     * declined alternation is emitted by `vm_alt` exactly as before. */
+    {
+        /* NODES **PLUS TRY SITES**, and the second term is not a refinement —
+         * it is where the estimator was WRONG. A trie node and a candidate try
+         * site cost about the same emitted bytes, and with EMPTY alternatives
+         * in the cross product the try sites outnumber the nodes by two orders
+         * of magnitude: the census's worst pattern builds a **12-node** trie
+         * with **3,404 try sites**. A nodes-only estimate saw a 12-node trie,
+         * admitted it, and emitted 682,000 bytes of program. Fitted on three
+         * such shapes plus the narrow and wide populations, `(nodes + try
+         * sites) x 180` tracks the measured program within 10% across four
+         * orders of magnitude, always erring LOW by a few percent — which the
+         * factor below absorbs. */
+        const long long isl_bytes   = ((long long)t->nnd + t->trysites)
+                                      * VM_ISL_BYTES_PER_NODE;
+        const long long chain_nodes = vm_isl_subtree_nodes(v, a);
+        const long long chain_bytes = chain_nodes * VM_ISL_BYTES_PER_CHAIN_NODE;
+        t->est_isl = isl_bytes;
+        t->est_chain = chain_bytes;
+        if (isl_bytes > chain_bytes * VM_ISL_SIZE_FACTOR) return false;
+
+        /* THE CAP GUARD, and the factor alone does NOT imply it. The factor
+         * bounds the island RELATIVE to the chain; acceptance is bounded by an
+         * ABSOLUTE cap. A chain estimated at 300 KB and an island at 550 KB is
+         * comfortably inside a factor of 2 and is REFUSED by
+         * `PCREC_MAX_VM_EMIT_CODE_BYTES` where the chain compiles — the same
+         * acceptance regression the factor was added to prevent, arriving
+         * through the one door it does not cover. So the rule carries both:
+         * relative, and then absolute.
+         *
+         * THE THRESHOLD IS THE CAP TIMES 0.9, AND THE ESTIMATE'S ERROR IS
+         * SHAPE-DEPENDENT RATHER THAN ONE-SIDED — which is worth stating
+         * plainly, because an earlier draft of this comment claimed it "errs
+         * low every time" and the witness search refuted that within the hour.
+         * On the cross-product shapes it was fitted against it reads 7-10%
+         * UNDER the measured program (614,880 against 681,974; 135,180 against
+         * 148,446; 94,140 against 100,719). On a wide set of SHORT words with
+         * prefix extensions it reads ~48% OVER (659,160 against a measured
+         * 445,269). So the 0.9 is a margin against the LOW direction, where
+         * being wrong costs the caller a pattern; where the estimate runs high
+         * the guard simply fires early and costs speed on a pattern that still
+         * compiles. Both errors are absorbed in the direction that keeps
+         * acceptance, which is the only property this guard exists to
+         * protect.
+         *
+         * The `chain_bytes <=` conjunct is what keeps this a claim about the
+         * AXIS rather than a second size cap: where the CHAIN would also cross
+         * the cap, the artifact is oversized whatever this emitter chooses,
+         * and the refusal is not the island's doing. */
+        {
+            const long long cap_guard =
+                (long long)PCREC_MAX_VM_EMIT_CODE_BYTES * 9 / 10;
+            /* THE TWO SIDES TAKE DIFFERENT THRESHOLDS, and that asymmetry is
+             * the point. The ISLAND side is discounted (0.9) because an
+             * estimate that just clears the cap may describe a program that
+             * does not. The CHAIN side is compared against the FULL cap,
+             * because its question is "would the chain be refused too" and a
+             * discounted threshold answers YES too readily — which switches
+             * the guard OFF exactly where it is needed. Measured: at a 1,360-
+             * word ladder the chain estimates 471,811 and really emits
+             * 485,728, so a 0.9 threshold called it over-cap, declined to act,
+             * and let the artifact be refused at 500,000+. */
+            if (isl_bytes > cap_guard
+                && chain_bytes <= (long long)PCREC_MAX_VM_EMIT_CODE_BYTES)
+                return false;
+        }
+    }
+    /* AND THE ARTIFACT-WIDE VERDICT, computed once in the pre-pass and read
+     * here by every caller (see `Vm.isl_over_cap`). A pattern whose islands
+     * COLLECTIVELY cross the cap while its chains do not takes none of them:
+     * declining all is coarse, but it is deterministic, identical across the
+     * three readers, and it restores the one property that matters — pcrec
+     * accepts what it accepted. */
+    if (v->isl_over_cap) return false;
+    {
+    }
+    return true;
+}
+
+/* The candidate list at node `x`: every accept on the root..x path, ASCENDING
+ * ORIGINAL INDEX. Written into `out` (which the caller sized at
+ * `nd[x].npath`), by walking UP to the root and inserting each node's
+ * already-ascending accept list into the right place — an insertion sort over
+ * a list the census measured at length 1 for the overwhelming majority and
+ * never longer than 4. */
+static void vm_isl_cands(VmIsl *t, int x, VmIslAcc *out)
+{
+    int n = 0;
+    for (int y = x; y >= 0; y = t->nd[y].parent) {
+        for (int a = t->nd[y].acc; a >= 0; a = t->acc[a].next) {
+            int i = n++;
+            while (i > 0 && out[i - 1].idx > t->acc[a].idx) {
+                out[i] = out[i - 1];
+                i--;
+            }
+            out[i] = t->acc[a];
+        }
+    }
+}
+
+/* Where a node's walk goes when no child matches the subject byte (or the
+ * subject ran out): its chain, or the fail label. Every exit from the island's
+ * forward walk is one of these, which is why the WORK CHARGE for the bytes the
+ * walk examined is written here and nowhere else. */
+static void vm_isl_die(Vm *v, VmIsl *t, int x)
+{
+    if (t->nd[x].depth > 0) {
+        char cnt[32];
+        snprintf(cnt, sizeof cnt, "%d", t->nd[x].depth);
+        vm_work(v, cnt,
+                "work charge: alternation-island trie bytes examined on this "
+                "path, which the fail label never sees");
+    }
+    if (t->nd[x].chain < 0) vm_fail(v);
+    else                    vm_goto(v, t->nd[t->nd[x].chain].chainlbl);
+}
+
+static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
+{
+    StrBuf *b = v->b;
+
+    /* Labels first, so a node's dispatch can `goto` a child emitted later.
+     * The ROOT takes the caller's `entry` — the island IS the alternation's
+     * entry point, not a region reached from one. */
+    t->nd[0].lbl = entry;
+    for (int x = 1; x < t->nnd; x++) t->nd[x].lbl = vm_label(v);
+    for (int x = 0; x < t->nnd; x++)
+        if (t->nd[x].nacc) t->nd[x].chainlbl = vm_label(v);
+
+    int *stk = arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
+    int sp = 0;
+    stk[sp++] = 0;
+    while (sp) {
+        int x = stk[--sp];
+        const VmIslNode *n = &t->nd[x];
+
+        /* The emitted-node budget, charged per TRIE node. NOTE what this can
+         * and cannot bound (panel r53, S1): `PCREC_MAX_VM_NODES` is 131,072
+         * while the 500,000-byte code cap binds at roughly 2,800 trie nodes at
+         * the measured ~180 B/node — so this charge is ~47x too loose to ever
+         * be what stops an oversized island, and the earlier wording here
+         * ("the island's size is its node count") implied a bound it does not
+         * provide. What bounds it is the island-vs-chain size rule in
+         * `vm_isl_build`; this charge remains the emitter-wide node budget
+         * every other site pays into. */
+        vm_charge(v);
+
+        /* A ROLE ON THE ROOT AND ON THE ACCEPT-BEARING NODES ONLY, and the
+         * silence in between is a size decision measured rather than assumed.
+         * `vm_lbl` writes the role as a line COMMENT beside the label, and an
+         * island's node count is the pattern's: a 55-byte comment on each of
+         * `w-256`'s ~3,000 interior nodes is ~165 KB of an artifact whose
+         * whole emitted-size delta against the chain is 53 KB. An interior
+         * node has nothing to say that its own emitted compare does not
+         * already say; `vm_emit`'s A_CLASS arm passes NULL for the same
+         * reason. The listing keeps every node either way — `vm_lbl` records
+         * the VE_LABEL event whether or not there is a role to print. */
+        if (x == 0)
+            /* [ENG-ISL] THE LISTING'S OWN RECORD, written by the emitter that
+             * writes the island — engine_m4.md S10's rule, and the reason the
+             * ISLANDS section could say "honestly empty" for as long as it
+             * did. `a` is the island's entry label and `b` its width, so the
+             * section can name WHERE and HOW WIDE without re-walking the AST. */
+            vm_ev(v, VE_ISLAND, entry, t->nbr,
+                  vm_rolef(v, "alternation island: %d literal alternatives, "
+                              "%d trie nodes, depth %d, %lld try site%s, "
+                              "%lld resume point%s; size est %lld B vs the "
+                              "chain's %lld B",
+                           t->nbr, t->nnd, t->maxdepth,
+                           t->trysites, t->trysites == 1 ? "" : "s",
+                           t->pushes, t->pushes == 1 ? "" : "s",
+                           t->est_isl, t->est_chain));
+        vm_lbl(v, n->lbl, x == 0
+               ? vm_rolef(v, "alternation island: trie dispatch over %d "
+                             "literal alternatives", t->nbr)
+               : n->nacc
+               ? vm_rolef(v, "island: %d alternative%s end here (depth %d)",
+                          n->nacc, n->nacc == 1 ? "" : "s", n->depth)
+               : NULL);
+
+        if (n->nkids == 1) {
+            int c = n->child;
+            sb_printf(b, "    if (scan_position + %d < subject_length && "
+                         "subject[scan_position + %d] == %d) goto %s_L%d;\n",
+                      n->depth, n->depth, (int)t->nd[c].byte, v->p, t->nd[c].lbl);
+            vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: single-child byte compare");
+        } else if (n->nkids > 1) {
+            sb_printf(b, "    if (scan_position + %d < subject_length) "
+                         "switch (subject[scan_position + %d]) {\n",
+                      n->depth, n->depth);
+            for (int c = n->child; c >= 0; c = t->nd[c].sib) {
+                sb_printf(b, "    case %d: goto %s_L%d;\n",
+                          (int)t->nd[c].byte, v->p, t->nd[c].lbl);
+                vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: first-byte switch arm");
+            }
+            sb_puts(b, "    }\n");
+        }
+        vm_isl_die(v, t, x);
+
+        for (int c = n->child; c >= 0; c = t->nd[c].sib) stk[sp++] = c;
+    }
+
+    /* THE CANDIDATE CHAINS. One per end node, tried in ascending original
+     * index — `vm_alt`'s own resume order, computed at compile time. The push
+     * comes BEFORE the `scan_position` advance so the frame records the
+     * ALTERNATION'S entry position, which is exactly where the next candidate
+     * has to start measuring from. */
+    for (int x = 0; x < t->nnd; x++) {
+        if (!t->nd[x].nacc) continue;
+        int k = t->nd[x].npath;
+        VmIslAcc *cand = arena_alloc(&v->cx->arena, (size_t)k * sizeof *cand);
+        vm_isl_cands(t, x, cand);
+        int *lbl = arena_alloc(&v->cx->arena, (size_t)k * sizeof *lbl);
+        lbl[0] = t->nd[x].chainlbl;
+        for (int j = 1; j < k; j++) lbl[j] = vm_label(v);
+        for (int j = 0; j < k; j++) {
+            vm_charge(v);
+            vm_lbl(v, lbl[j],
+                   vm_rolef(v, "island: branch %d of %d matched here (%d byte%s)"
+                               "%s", cand[j].idx + 1, t->nbr, cand[j].len,
+                            cand[j].len == 1 ? "" : "s",
+                            j + 1 < k ? "; resume tries the next one that did"
+                                      : "; the last candidate on this path"));
+            if (j + 1 < k)
+                vm_push(v, lbl[j + 1],
+                        vm_rolef(v, "island: branch %d preferred; resume tries "
+                                    "branch %d", cand[j].idx + 1,
+                                 cand[j + 1].idx + 1));
+            if (cand[j].len)
+                sb_printf(b, "    scan_position += %d;\n", cand[j].len);
+            vm_goto(v, next);
+        }
+    }
+}
+
 static void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
@@ -3046,6 +3870,22 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     const Ast *t = a;
     while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
     br[0] = t;
+
+    /* [ENG-ISL] the island first, and it is a SELECTION rather than a special
+     * case: `vm_isl_build` either returns the trie for a flat alternation of
+     * literal branches or declines, and a declined alternation falls straight
+     * through to the chain below unchanged — which is what makes
+     * `-fno-alt-island` a byte-identity control on every pattern the predicate
+     * declines. `v->nislands` is bumped HERE, in the call that emits, so
+     * `<PREFIX>_VM_ALT_ISLANDS` cannot drift from the program text. */
+    {
+        VmIsl isl;
+        if (vm_isl_build(v, &isl, a)) {
+            v->nislands++;
+            vm_isl_emit(v, &isl, entry, next);
+            return;
+        }
+    }
 
     int *bentry = arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
     int *resume = arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
@@ -7240,8 +8080,14 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     }
 
     /* ---- ISLANDS / CALLOUTS --------------------------------------------
-     * Honestly empty, and empty by COUNT rather than by a hardcoded blank:
-     * the day a producer exists these sections fill in with no change here. */
+     * Empty by COUNT rather than by a hardcoded blank, which is what let the
+     * ISLANDS section start working the day a producer existed with no change
+     * to this block's shape.
+     *
+     * [ENG-ISL] STEP 1, 2026-09-03: THE PRODUCER EXISTS. Every row below is a
+     * VE_ISLAND event `vm_isl_emit` appended in the same call that wrote the
+     * trie, so this section cannot claim an island the program does not
+     * contain — S10's rule, and the reason a listing is not a second walk. */
     {
         int isl = 0, co = 0;
         for (int i = 0; i < v->nev; i++) {
@@ -7249,10 +8095,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             if (v->ev[i].k == VE_CALLOUT) co++;
         }
         sb_printf(o, "\nDFA ISLANDS (%d)\n", isl);
+        for (int i = 0; i < v->nev; i++) {
+            if (v->ev[i].k != VE_ISLAND) continue;
+            sb_printf(o, "  at L%-6d width %-6d %s\n", v->ev[i].a, v->ev[i].b,
+                      v->ev[i].role ? v->ev[i].role : "");
+        }
         if (isl == 0)
-            sb_puts(o, "  (none: islands are [M4.6]; engine_m4.md S6.3/S6.4 --"
-                       " the auto-possessification that proves an island exact"
-                       " does not exist yet)\n");
+            sb_puts(o, "  (none: no flat alternation in this program has a"
+                       " finite literal language, so src/gen/emit_vm.c's"
+                       " alternation island declined every one --"
+                       " docs/spec/tuning.md S2.20)\n");
         sb_printf(o, "\nCALLOUT SITES (%d)\n", co);
         if (co == 0)
             sb_puts(o, "  (none: module 'callouts' has no producer, so no"
@@ -7857,6 +8709,20 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             snap_after[i] = vm_snap(&v);
         }
     }
+    /* [ENG-ISL] THE ARTIFACT-WIDE ISLAND VERDICT, taken HERE: after every
+     * `vm_count_slots` walk (the root's and each region's) and before both
+     * `vm_cost` and the real emission, so the three readers of
+     * `vm_isl_build` cannot disagree about it. See `Vm.isl_over_cap` for the
+     * measured shape that made a per-subtree rule insufficient — fifteen
+     * individually-reasonable islands whose SUM crossed the cap. */
+    {
+        const long long cap_guard =
+            (long long)PCREC_MAX_VM_EMIT_CODE_BYTES * 9 / 10;
+        v.isl_over_cap = (v.isl_est_sum > cap_guard
+                          && v.isl_chain_sum
+                             <= (long long)PCREC_MAX_VM_EMIT_CODE_BYTES);
+    }
+
     /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
      * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
      * compiler-side bound that stops it, and it is checked here — after the
@@ -8641,6 +9507,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * need (D77). The trigger that would make one owed is the same one
      * `RX_DFA_TABLE`'s spec entry names. */
     sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 0 : 1);
+    /* [ENG-ISL] THE ALTERNATION-ISLAND STAMP — §6.3 family (b), VM route only,
+     * UNCONDITIONAL on every VM artifact including a hybrid, `0` spelled as
+     * readily as any other value. A fact readable by a macro's ABSENCE is the
+     * discriminator [DD-13] had to go back and remove from two checks.
+     *
+     * AN ACTIVITY COUNT AND NOT A BOOLEAN, on `RX_ALTCLS_FACTORED`'s
+     * precedent: the island is selected PER FLAT ALTERNATION, so a pattern
+     * with two alternations can and does take it for one and decline the
+     * other, and "did it" would lose which. `v.nislands` is written by
+     * `vm_alt` in the same call that emits the trie, so this cannot report an
+     * island the program does not contain.
+     *
+     * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
+     * no consumer reads the fact at RUN time today, so a mirror would be built
+     * ahead of a measured need (D77). */
+    sb_printf(c, "#define %s_VM_ALT_ISLANDS %lld\n", v.up, v.nislands);
     /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
      * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
      *

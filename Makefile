@@ -136,7 +136,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-prefilter test-altcls test-assertions \
+      test-counterk test-mrl test-prefilter test-altcls test-island test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
@@ -478,6 +478,18 @@ test-mrl: all
 test-prefilter: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-prefilter.ran"; fi
 	bash tests/prefilter/run_prefilter_tests.sh
+
+# [ENG-ISL] the VM's ALTERNATION ISLAND. Its .rxt corpus (tests/island/) rides
+# test-corpus like every other module's — and is BLIND to the island by
+# construction, since the axis is answer-identity-preserving. This section is
+# the structural half: the island fired where the stamp says it did, declined
+# where docs/spec/tuning.md §2.20 says it must, allocated no slot, and left
+# the declined population byte-identical under -fno-alt-island. See
+# tests/island/CLAUDE.md for why the "one island, not one per factored run"
+# assertion is the load-bearing one.
+test-island: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-island.ran"; fi
+	bash tests/island/run_island_tests.sh
 
 # [OPT-ALTCLS] the pass's two non-.rxt suites, the same shape as
 # test-possessify/test-rungselect/test-counterk/test-mrl above: its .rxt
@@ -1224,7 +1236,7 @@ clean:
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
         test-ksweep \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-        test-counterk test-mrl test-prefilter test-altcls test-assertions \
+        test-counterk test-mrl test-prefilter test-altcls test-island test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
