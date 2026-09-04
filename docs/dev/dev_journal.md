@@ -21055,3 +21055,6 @@ beside it — its script lived in the previous session's scratchpad).
 STAGE START sent live to the bench session. Then: the size-log
 regeneration (one commit), the abi-20 pin (I-43 with O-16's answers and
 the exporter rules), DONE + WINDOW OPEN, lim2's lift.
+Part 56 correction (09:25): the first launch was refused —
+scripts/battery.sh had no execute bit (never run before); fixed and
+committed, relaunched; LOGDIR build/battery_20260904_092529.
