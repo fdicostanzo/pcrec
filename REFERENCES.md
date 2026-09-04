@@ -27,16 +27,16 @@ Marco Almeida, Nelma Moreira, Rogério Reis — "Incremental DFA minimisation",
 *RAIRO — Theoretical Informatics and Applications* 48(2):173-186 (2014).
 DOI/URL: <http://www.numdam.org/item/ITA_2014__48_2_173_0/>.
 Accessed 2026-09-04.
-Cited by: `docs/dev/dfa_online_minimization_study.md` §2.1 (retrofitted by
-lane m5paper, which owns that document).
+Cited by: `docs/dev/dfa_online_minimization_study.md` §2.1, §3.2 (retrofitted
+by lane refs2, 2026-09-04).
 
 ### [BC24] Baburin, I. & Cotterell, R. (2024)
 
 Ivan Baburin, Ryan Cotterell — "A Close Analysis of the Subset
 Construction", arXiv:2407.09891 (2024); DCFS 2025.
 URL: <https://arxiv.org/abs/2407.09891>. Accessed 2026-09-04.
-Cited by: `docs/dev/dfa_online_minimization_study.md` §2.4 (retrofitted by
-lane m5paper).
+Cited by: `docs/dev/dfa_online_minimization_study.md` §2.4, §6.3 (retrofitted
+by lane refs2, 2026-09-04).
 
 ### [Ber13+] Berglund, M., Björklund, H., Drewes, F., van der Merwe, B., Watson, B. (2013)
 
@@ -58,7 +58,7 @@ Application of Automata* (CIAA 2014).
 DOI/URL: <https://link.springer.com/chapter/10.1007/978-3-319-08846-4_20>.
 Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
-lane m5paper).
+lane refs2, 2026-09-04).
 
 ### [CC04] Champarnaud, J-M. & Coulon, F. (2004)
 
@@ -71,7 +71,7 @@ cited in this repo only via this survey)`.
 DOI/URL: <https://www.sciencedirect.com/science/article/pii/S0304397504004803>.
 Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
-lane m5paper).
+lane refs2, 2026-09-04).
 
 ### [DV18] D'Antoni, L. & Veanes, M. (2018)
 
@@ -81,7 +81,7 @@ Automata", *Automated Technology for Verification and Analysis* (ATVA
 DOI/URL: <https://link.springer.com/chapter/10.1007/978-3-030-01090-4_7>,
 technical report <https://arxiv.org/pdf/1807.08487>. Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
-lane m5paper).
+lane refs2, 2026-09-04).
 
 ### [Dus23+] Dusi, N. et al. (2023)
 
@@ -91,7 +91,7 @@ and Experience* (2023).
 DOI/URL: <https://onlinelibrary.wiley.com/doi/full/10.1002/spe.3246>.
 Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.4 (retrofitted by
-lane m5paper).
+lane refs2, 2026-09-04).
 
 ### [Gar13+] García, P., López, D., Vázquez de Parga, M. (2013)
 
@@ -104,7 +104,7 @@ URL: <https://files01.core.ac.uk/download/pdf/14028276.pdf> (the URL this
 repository's citing document reads from), also
 <http://hdl.handle.net/10251/27623>. Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.3 (retrofitted by
-lane m5paper).
+lane refs2, 2026-09-04).
 
 ### [Myt09+] Mytkowicz, T., Diwan, A., Hauswirth, M., Sweeney, P. (2009)
 
@@ -119,15 +119,36 @@ this change).
 ### [NF25] Nicol, J. & Frohme, M. (2025)
 
 J. Nicol, M. Frohme — "Deconstructing Subset Construction: Reducing While
-Determinizing", arXiv:2505.10319 (an April-2025 preprint, v2 read); TACAS
-2026.
+Determinizing", arXiv:2505.10319 (v1 submitted May 2025; v2, dated 10 Apr
+2026, CC BY 4.0, is the version the citing study read in full); to appear
+in TACAS 2026, LNCS, DOI: 10.1007/978-3-032-22749-2_20.
 URL: <https://arxiv.org/abs/2505.10319>, version-pinned
 <https://arxiv.org/html/2505.10319v2> (supplied by Frank), also
 <https://link.springer.com/chapter/10.1007/978-3-032-22749-2_20>.
 Accessed 2026-09-04.
-Cited by: `docs/dev/dfa_online_minimization_study.md` §2.3 (retrofitted by
-lane m5paper); also referenced informally in `docs/dev/plan.md` (out of
-this lane's scope — see "To retrofit" below).
+Cited by: `docs/dev/dfa_online_minimization_study.md` §2.3, §3.2, §3.8,
+§5.1, §5.2, §6 (retrofitted by lane m5paper, 2026-09-04 (refs2 duplicated the retrofit; main carries m5paper's)); also referenced
+informally in `docs/dev/plan.md` (out of this lane's scope — see "To
+retrofit" below).
+
+### [OTF] `jn1z/OTF` — Nicol & Frohme's reference implementation (software, not a paper)
+
+John Nicol, Markus Frohme — the reference implementation of the OTF
+determinization/minimization algorithm from [NF25] ("Deconstructing Subset
+Construction: Reducing While Determinizing"). Java, built on AutomataLib
+0.12.1, MIT licence ("Copyright © 2025 John Nicol and Markus Frohme"). Not
+a peer-reviewed publication; listed here because
+`docs/dev/dfa_online_minimization_study.md` §6 cites it with the same
+weight as the papers above.
+URL: <https://github.com/jn1z/OTF> (default branch `main`, last push
+2026-05-29, read at that state). Also cited: the Zenodo artifact archiving
+the benchmark systems, full results and a Docker image, given alongside
+the repository in the paper's Data-Availability Statement — DOI:
+<https://doi.org/10.5281/zenodo.18163403> (not downloaded or run by the
+citing study).
+Accessed 2026-09-04.
+Cited by: `docs/dev/dfa_online_minimization_study.md` §6 (retrofitted by
+lane refs2, 2026-09-04).
 
 ### [RAhyb] Rust `regex-automata::hybrid` (software documentation, not a paper)
 
@@ -138,7 +159,7 @@ weight as the papers above.
 URL: <https://docs.rs/regex-automata/latest/regex_automata/hybrid/index.html>.
 Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.3 (retrofitted by
-lane m5paper).
+lane refs2, 2026-09-04).
 
 ### [Wan19+] Wang, X., Hong, Y., Chang, H., Park, K., Langdale, G., Hu, J., Zhu, H. (2019)
 
@@ -149,7 +170,7 @@ Implementation* (NSDI 2019).
 URL: <https://www.usenix.org/system/files/nsdi19-wang-xiang.pdf>. Accessed
 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
-lane m5paper); also referenced informally by name ("Hyperscan") in
+lane refs2, 2026-09-04); also referenced informally by name ("Hyperscan") in
 `docs/dev/decisions.md`, `docs/dev/plan.md` and `docs/dev/dev_journal.md`
 without a specific-paper citation — see "To retrofit" below.
 
@@ -160,8 +181,8 @@ Methods and Natural Language Processing* (FSMNLP 2001), Helsinki.
 `(unverified: a stable DOI/URL for this specific 2001 paper, distinct from
 the 2003 journal version below — not found independently of the citing
 study's own secondary description)`. Accessed 2026-09-04.
-Cited by: `docs/dev/dfa_online_minimization_study.md` §2.1 (retrofitted by
-lane m5paper).
+Cited by: `docs/dev/dfa_online_minimization_study.md` §2.1, §3.2 (retrofitted
+by lane refs2, 2026-09-04).
 
 ### [WD03] Watson, B. W. & Daciuk, J. (2003)
 
@@ -169,8 +190,8 @@ Bruce W. Watson, Jan Daciuk — "An efficient incremental DFA minimization
 algorithm", *Natural Language Engineering* 9(1) (2003).
 DOI: <https://dl.acm.org/doi/10.1017/S1351324903003127>. Accessed
 2026-09-04.
-Cited by: `docs/dev/dfa_online_minimization_study.md` §2.1 (retrofitted by
-lane m5paper).
+Cited by: `docs/dev/dfa_online_minimization_study.md` §2.1, §3.2 (retrofitted
+by lane refs2, 2026-09-04).
 
 ---
 
@@ -203,11 +224,13 @@ or title attached. `docs/dev/dfa_online_minimization_study.md` §2 already
 carries the specific papers that connect to these names (e.g. [Gar13+]
 connects Brzozowski's construction to Hopcroft's).
 
-## Owned by another lane
+## Retrofitted 2026-09-04 by lane refs2
 
-`docs/dev/dfa_online_minimization_study.md` is the densest source of
-citations in the repository (§2, ~19 URL-bearing lines) and is being edited
-concurrently by lane `m5paper`; this lane did not touch it. Every entry
-above whose "cited by" says "retrofitted by lane m5paper" already exists
-here with the key that lane should use — it does not need to invent new
-keys, only insert `[Key]` after each citation in its own document.
+`docs/dev/dfa_online_minimization_study.md` was the densest source of
+citations in the repository (§2, plus recap mentions in §3, §5 and the full
+M5 reading in §6) and was finished and unowned by the time this lane ran
+(lane `m5paper`'s M5 work had already merged to `main`). Every paper entry
+above whose "cited by" now says "retrofitted by lane m5paper, 2026-09-04 (refs2 duplicated the retrofit; main carries m5paper's)" was
+keyed by this lane in that document; the new [OTF] entry was added in the
+same change for the reference implementation §6 cites as a source alongside
+the papers.
