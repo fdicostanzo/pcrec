@@ -192,6 +192,30 @@ PCREC_LIMIT(VM_MAX_AUTO_TRAIL_FRAMES, 3072, "frames", "runtime capacity", FLAG, 
 PCREC_LIMIT(VM_ISL_MIN_BRANCHES, 2, "count", "selection knee", NONE, "", "[ENG-ISL]: fewest literal alternatives an alternation island is built for at all; below it vm_alt's chain emits the alternation", EMIT_VM)
 PCREC_LIMIT(VM_ISL_MIN_BRANCHES_PREFIXED, 4, "count", "selection knee", NONE, "", "[ENG-ISL]: fewest literal alternatives an island that PUSHES is built for -- one whose alternatives are not prefix-free, so its candidate chain has a second entry and the artifact stays framed", EMIT_VM)
 
+/* [ENG-ISL]'s ENUMERATION BUDGET — three bounds on turning an alternation's
+ * subtree into its literal word list, and they are COMPILE BUDGETS rather than
+ * selection knees, on a correction panel r53 forced.
+ *
+ * THE ARGUMENT THAT PUT THEM ON THE ALLOWLIST WAS WRONG. It read: over any of
+ * the three the island is simply not built and `vm_alt`'s chain emits the
+ * alternation unchanged, so none of them bounds what pcrec ACCEPTS. The second
+ * half does not follow from the first, and this lane's own §4 refutes it: the
+ * chain is never SMALLER than the island on a qualifying alternation, so a
+ * pattern that falls back to the chain can land above `PCREC_MAX_VM_EMIT_CODE_
+ * BYTES` where the island fit under it — measured on the bench's `w-384`, 427,739
+ * code bytes as an island against 508,477 as a chain, which the 500,000 cap
+ * REFUSES. A budget can only ever trade an accept for a reject at the cap, but
+ * that is exactly what "bounds what pcrec accepts" means. (It also moves
+ * declared sizing: `.frame_capacity` reads 3 against 4 on `(x)(?:a|bc)+d`
+ * under `-fno-possessify`.)
+ *
+ * The DEPTH one additionally guards pcrec's OWN C stack: the enumeration
+ * recurses over alternation NESTING, which a pattern controls — D10/R-2's
+ * class, the one this emitter has had to fix three times. */
+PCREC_LIMIT(VM_ISL_MAX_WORDS, 8192, "count", "compile budget", NONE, "", "[ENG-ISL]: most literal words an alternation's subtree may enumerate to before the island declines (the bench's widest altwide rung is 4096)", EMIT_VM)
+PCREC_LIMIT(VM_ISL_MAX_BYTES, 262144, "bytes", "compile budget", NONE, "", "[ENG-ISL]: total literal bytes across every enumerated word; bounds the cross product of concatenated alternations, which is exponential in principle", EMIT_VM)
+PCREC_LIMIT(VM_ISL_MAX_DEPTH, 64, "levels", "compile budget", NONE, "", "[ENG-ISL]: alternation NESTING the enumeration may recurse through; a pattern controls this depth, so it is a bound on pcrec's own C stack (D10/R-2)", EMIT_VM)
+
 /* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
 
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)

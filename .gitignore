@@ -49,6 +49,7 @@ docs/design/subroutines_measurements/email_specimen/throughput/
 .stage
 /rulings.md
 
-# the manager -> lane rulings channel: polled, never committed (its own header says so)
-docs/dev/lanes/opt5i_rulings.md
-docs/dev/lanes/isl1_rulings.md
+# the manager -> lane rulings channel: polled, never committed (its own header
+# says so). A GLOB rather than a line per lane — main already carries this
+# shape at 4101b8b, and two named lines would conflict at the merge.
+docs/dev/lanes/*_rulings.md

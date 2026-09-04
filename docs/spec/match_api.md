@@ -2165,8 +2165,8 @@ engine-scoped.**
   **[CC-DIFF] STEP 1, 2026-09-03: THIS MACRO NOW REPORTS A SECOND FACT ABOUT
   THE SAME ARTIFACT, and it is deliberately the SAME macro rather than a new
   one.** `1` additionally means that the artifact's eight VM entry-chain
-  statics carry `static inline __attribute__((always_inline))` (the abi-18
-  entry above lists them, under the `17` it replaced); `0` means none of them does. A second stamp —
+  statics carry `static inline __attribute__((always_inline))` (the abi-17
+  entry above lists them); `0` means none of them does. A second stamp —
   `<PREFIX>_VM_INLINE_CHAIN`, say — was considered and REJECTED: it would
   carry the same value as this one BY CONSTRUCTION, since the emitter derives
   both from the one `has_push` bool, and a second spelling of one fact is the

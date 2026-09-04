@@ -96,10 +96,19 @@ n="$(islands "$WORKDIR/two.c")"
 gen factored 'aaa|aab|aac|aba|abb|abc|baa|bab|bac|bba|bbb|bbc'
 n="$(islands "$WORKDIR/factored.c")"
 f="$(sed -n 's/^#define RX_ALTCLS_FACTORED \([0-9]*\)$/\1/p' "$WORKDIR/factored.c")"
-if [ "${n:-}" = "1" ]; then
-    ok "a heavily factored alternation stamps ONE island (RX_ALTCLS_FACTORED=${f:-?}), not one per factored run"
+# THE PRECONDITION IS ASSERTED, NOT PRINTED. This cell's whole claim is that
+# the island reads the alternation's LANGUAGE rather than altcls's residues —
+# which says nothing at all unless altcls actually FACTORED this pattern. The
+# first version printed RX_ALTCLS_FACTORED in the message and never checked it,
+# so an altcls change that stopped factoring here would have left the cell
+# green while testing nothing: [MECH-REACH]'s shape, a witness that stopped
+# reaching its site.
+if [ -z "${f:-}" ] || [ "${f:-0}" -lt 1 ]; then
+    bad "the factoring precondition FAILED: 'aaa|aab|...' has RX_ALTCLS_FACTORED=${f:-<none>}, so altcls did not factor it and the 'one island, not one per factored run' claim below has no population. Find a pattern altcls still factors; do not delete this cell"
+elif [ "${n:-}" = "1" ]; then
+    ok "a heavily factored alternation (RX_ALTCLS_FACTORED=$f, precondition asserted) stamps ONE island, not one per factored run"
 else
-    bad "a heavily factored alternation stamps ${n:-<none>} islands with RX_ALTCLS_FACTORED=${f:-?} — the island is reading altcls's residues instead of the alternation's language"
+    bad "a heavily factored alternation stamps ${n:-<none>} islands with RX_ALTCLS_FACTORED=$f — the island is reading altcls's residues instead of the alternation's language"
 fi
 
 # ---------------------------------------------------------------------------
@@ -205,14 +214,64 @@ n="$(frameless "$WORKDIR/pfree.c")"
 # that has nothing to do with the island. `(?:abcd|abc|ab|a)z` is the same
 # hazard at a width the island takes — four alternatives on one root-to-leaf
 # path, so its candidate chain has a second entry and something must push.
+# [F7b] THE FRAME STAMP DOES NOT DISCRIMINATE HERE, and the first version of
+# this cell passed for a reason unrelated to the island: `(?:abcd|abc|ab|a)z`
+# reads RX_VM_FRAMELESS 0 on BOTH builds, because the CHAIN pushes too. What
+# separates them is HOW MANY frames: a pushing island keeps one live where the
+# chain keeps one per untried branch, so the artifact's declared
+# `.frame_capacity` must be STRICTLY LOWER on the island build. That number is
+# derived by `vm_cost`, which is a third reader of the same analysis, so this
+# also catches a cost model that stopped mirroring the emitter.
 gen pbear '(?:abcd|abc|ab|a)z'
+gen pbear_off '(?:abcd|abc|ab|a)z' -fno-alt-island
 n="$(frameless "$WORKDIR/pbear.c")"
 i="$(islands "$WORKDIR/pbear.c")"
-if [ "${i:-}" = "1" ] && [ "${n:-}" = "0" ]; then
-    ok "'(?:abcd|abc|ab|a)z' takes the island AND keeps a resume frame — its four-deep candidate chain has somewhere to retry from"
+fc_on="$(grep -oE '\.frame_capacity = [0-9]+' "$WORKDIR/pbear.c" | grep -oE '[0-9]+$')"
+fc_off="$(grep -oE '\.frame_capacity = [0-9]+' "$WORKDIR/pbear_off.c" | grep -oE '[0-9]+$')"
+if [ "${i:-}" != "1" ] || [ "${n:-}" != "0" ]; then
+    bad "'(?:abcd|abc|ab|a)z' reads islands='${i:-<none>}' frameless='${n:-<none>}': a prefix-bearing island must both fire at this width and keep a frame to retry its second candidate from"
+elif [ -n "$fc_on" ] && [ -n "$fc_off" ] && [ "$fc_on" -lt "$fc_off" ]; then
+    ok "'(?:abcd|abc|ab|a)z' takes the island and declares STRICTLY FEWER frames than the chain ($fc_on vs $fc_off) — the discriminator the frameless stamp cannot give, since both builds push"
 else
-    bad "'(?:abcd|abc|ab|a)z' reads islands='${i:-<none>}' frameless='${n:-<none>}': a prefix-bearing island must both fire at this width and be able to retry its second candidate"
+    bad "'(?:abcd|abc|ab|a)z' declares frame_capacity $fc_on (island) vs $fc_off (chain): a pushing island keeps ONE frame live where the chain keeps one per untried branch, so the island's number must be strictly lower — equal means vm_cost has stopped mirroring the emitter"
 fi
+
+# ---------------------------------------------------------------------------
+# 8. [F7] THE PROGRAM ITSELF, not just the stamps. Every assertion above this
+# point reads a stamp, and all three stamps (RX_VM_ALT_ISLANDS,
+# RX_VM_FRAMELESS, RX_NSLOTS) are written from `vm_isl_build` — so an emitter
+# that set `nislands` and then fell through to `vm_alt`'s chain would pass all
+# of them. What cannot be faked is the emitted PROGRAM: a taking pattern's
+# region must DIFFER from its own -fno-alt-island region, and a declined one's
+# must be byte-identical.
+# ---------------------------------------------------------------------------
+region() { sed -n '/^    goto rx_L0;$/,/^rx_accept:/p' "$1"; }
+
+for pat in 'cat|dog|cow' '(?:abcd|abc|ab|a)z' 'foo|bar' 'thin|think|thinker|thinking'; do
+    gen reg_on  "$pat"
+    gen reg_off "$pat" -fno-alt-island
+    ion="$(islands "$WORKDIR/reg_on.c")"
+    if [ "${ion:-0}" -lt 1 ]; then
+        bad "region check: '$pat' was chosen as a TAKING witness and stamps ${ion:-<none>} islands — the witness has stopped witnessing"
+    elif diff <(region "$WORKDIR/reg_on.c") <(region "$WORKDIR/reg_off.c") >/dev/null; then
+        bad "region check: '$pat' stamps $ion island(s) and yet its emitted PROGRAM REGION is byte-identical to its own -fno-alt-island build — the stamp is set and no trie was emitted"
+    else
+        ok "taking '$pat': the emitted program region DIFFERS from its own -fno-alt-island build (the stamp is not the only evidence)"
+    fi
+done
+
+for pat in '[ab]p|[bc]x|[ab]xy' 'a+|b' '(a)|(b)' 'fo|foo'; do
+    gen reg_on2  "$pat"
+    gen reg_off2 "$pat" -fno-alt-island
+    ion="$(islands "$WORKDIR/reg_on2.c")"
+    if [ "${ion:-0}" -ne 0 ]; then
+        bad "region check: '$pat' was chosen as a DECLINED witness and stamps $ion island(s)"
+    elif diff <(region "$WORKDIR/reg_on2.c") <(region "$WORKDIR/reg_off2.c") >/dev/null; then
+        ok "declined '$pat': its program region is byte-identical to its own -fno-alt-island build"
+    else
+        bad "region check: '$pat' stamps NO island and yet its program region MOVES under -fno-alt-island — denying an axis that did not fire must change nothing"
+    fi
+done
 
 echo
 echo "island structural checks: $pass passed, $fail failed"

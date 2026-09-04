@@ -119,6 +119,9 @@ VM_MAX_AUTO_RESUME_FRAMES
 VM_MAX_AUTO_TRAIL_FRAMES
 VM_ISL_MIN_BRANCHES
 VM_ISL_MIN_BRANCHES_PREFIXED
+VM_ISL_MAX_WORDS
+VM_ISL_MAX_BYTES
+VM_ISL_MAX_DEPTH
 PCREC_PREFIX_K_MAX
 PCREC_OFSK_MAX_SET
 PCREC_MINW_MAX
@@ -133,8 +136,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 47 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 47 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 50 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 50 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
@@ -226,15 +229,6 @@ done <<< "$anchored"
 #     API SENTINELS (both 0, "use the compiled-in default"), not the limit
 #     value itself; the real defaults are VM_DEFAULT_STEP_BUDGET/_WORK_
 #     BUDGET, both IN the table
-#   VM_ISL_MAX_WORDS, VM_ISL_MAX_BYTES, VM_ISL_MAX_DEPTH (emit_vm.c) —
-#     [ENG-ISL]'s alternation-island ENUMERATION budget, VM_MAX_STRIDE's
-#     category exactly: an emitter-internal selection knob with its proof
-#     beside it (src/gen/CLAUDE.md's [ENG-ISL] section). Over any of the
-#     three the island is simply NOT BUILT and `vm_alt`'s chain emits the
-#     alternation unchanged — so not one of them bounds what pcrec accepts,
-#     rejects or promises, which is this list's own membership rule. The
-#     DEPTH one additionally guards pcrec's own C stack (D10/R-2), the same
-#     argument TRIE_MAX_RDEPTH is on this list for.
 # THE NAME-SHAPE FILTER GAINED `MIN` AND `THRESHOLD` ([ENG-ISL], 2026-09-03,
 # panel r53's doc lens). It read `MAX|CAP|LIMIT|BUDGET|_LEN\b|DEPTH|NEST`,
 # which is a filter over the vocabulary of CEILINGS — and a SELECTION KNEE is
@@ -258,9 +252,6 @@ VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
 VM_MRL_DYN_MAX
-VM_ISL_MAX_WORDS
-VM_ISL_MAX_BYTES
-VM_ISL_MAX_DEPTH
 SELECT_MAX_ROUNDS
 COMPILE_MAX_ATTEMPTS
 PCREC_STEP_BUDGET_DEFAULT

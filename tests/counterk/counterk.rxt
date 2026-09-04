@@ -1909,3 +1909,47 @@ n "ab"
 n "aaaaaaaab"
 n "babababababab"
 n "aaaaaaaaaaaaab"
+
+# [ART-SIZE] §9 witness-pool member — island-bearing (four prefix-free literals), ladder TAKEN.
+# The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
+# why); expectations from python3 `re`.
+pattern (?:ab|ba|aa|bb){24}c
+m "ababababababababababababababababababababababababc" 0 49
+m "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac" 0 49
+m "abbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbac" 0 49
+n ""
+n "z"
+n "abz"
+
+# [ART-SIZE] §9 witness-pool member — island-bearing prefix ladder, four alternatives.
+# The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
+# why); expectations from python3 `re`.
+pattern (?:abcd|abc|ab|a){17}z
+m "aaaaaaaaaaaaaaaaaz" 0 18
+m "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdz" 0 69
+m "abababababababababababababababababz" 0 35
+n ""
+n "z"
+n "abz"
+
+# [ART-SIZE] §9 witness-pool member — class-leading, ladder DECLINED.
+# The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
+# why); expectations from python3 `re`.
+pattern (?:[ab]a|[ab]){9,12}+b
+m "abbbbbbbbbbbb" 0 13
+m "bbbbbbbbbbbbb" 0 13
+m "aaabbbbbbbbbbb" 0 14
+n ""
+n "z"
+n "abz"
+
+# [ART-SIZE] §9 witness-pool member — prefix-bearing width 2 (the island's knee declines it).
+# The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
+# why); expectations from python3 `re`.
+pattern (?:ab|a){8,12}+b
+m "aaaaaaaabb" 0 10
+m "aaaaaaaaabb" 0 11
+m "aaaaaaaabba" 0 10
+n ""
+n "z"
+n "abz"

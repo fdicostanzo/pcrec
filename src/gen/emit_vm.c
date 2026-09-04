@@ -3275,9 +3275,11 @@ static int vm_isl_single(const Ast *a)
  * island simply is not built and `vm_alt`'s chain emits the alternation
  * exactly as it did before. */
 
-#define VM_ISL_MAX_WORDS 8192      /* the bench's widest altwide rung is 4096 */
-#define VM_ISL_MAX_BYTES 262144    /* total literal bytes across every word */
-#define VM_ISL_MAX_DEPTH 64        /* alternation nesting; D10/R-2's stack */
+/* The three enumeration budgets are `src/core/limits.def` rows too, and they
+ * are COMPILE BUDGETS rather than knees: over any of them the alternation
+ * falls back to a chain that is never SMALLER than the island, so a pattern
+ * can land above the emitted-code cap where the island fit under it — the row
+ * carries the measured witness. */
 
 typedef struct { const uint8_t *b; int len; } VmIslW;
 typedef struct { VmIslW *w; int n; } VmIslWL;

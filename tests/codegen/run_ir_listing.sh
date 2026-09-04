@@ -103,11 +103,18 @@ PATTERNS=(
 for pat in "${PATTERNS[@]}"; do
     d="$WORKDIR/$(printf '%s' "$pat" | md5sum | cut -c1-8)"
     mkdir -p "$d"
-    if ! pcrec_run "$PCREC" -p rx -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
+    # [ENG-ISL / panel r53 F11] `--engine=vm` ON BOTH, and it is a correctness
+    # fix rather than tidiness: this block asserts below that the artifact
+    # carries RX_VM_ALT_ISLANDS, which docs/spec/match_api.md §6.3 makes
+    # VM-route-only. Compiled at the DEFAULT engine, a pattern that routes to
+    # the DFA has no such stamp and the assertion fails for a reason that has
+    # nothing to do with the listing. The listing itself is a VM program dump,
+    # so the two invocations must agree about the engine anyway.
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
         bad "ir-listing: pcrec could not compile '$pat'"
         continue
     fi
-    if ! pcrec_run "$PCREC" -p rx --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
+    if ! pcrec_run "$PCREC" -p rx --engine=vm --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
         bad "ir-listing: --emit-ir failed for '$pat': $(head -1 "$d/ir.err")"
         continue
     fi
@@ -283,7 +290,11 @@ for pat in "${PATTERNS[@]}"; do
     elif [ "$isl" != "$stamp_isl" ]; then
         bad "ir-listing[$pat]: the listing counts $isl islands and the artifact stamps $stamp_isl — the VE_ISLAND event stream and Vm.nislands disagree about what was emitted"
     elif [ "$isl_says_some" != "$art_isl" ]; then
-        bad "ir-listing[$pat]: the listing reports $isl islands but the artifact text ${art_isl:+does not }contains no island — the count and the emitted C disagree"
+        if [ "$isl_says_some" = "1" ]; then
+            bad "ir-listing[$pat]: the listing reports $isl island(s) but the artifact text contains no island at all — the count and the emitted C disagree"
+        else
+            bad "ir-listing[$pat]: the listing reports 0 islands but the artifact text DOES contain one — the count and the emitted C disagree"
+        fi
     elif [ "$isl" = "0" ]; then
         ok "ir-listing[$pat]: ISLANDS/CALLOUTS — the listing reports 0 of each, the stamp agrees and the artifact contains neither (honestly empty, not blanked)"
     else
