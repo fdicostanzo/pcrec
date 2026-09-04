@@ -169,7 +169,7 @@ shape_b="$(grep -m1 '^#define RX_VM_ENTRY_SHAPE ' "$Bemit" | awk '{print $3}')"
 
 # ---- compile both arms and read the symbol table -------------------------
 chain_syms() {  # chain_syms <object> -> the surviving chain symbols, one per line
-    "$NM" "$1" 2>/dev/null | awk '$3 == "rx_search_run" || $3 == "rx_match_anchored" { print $3 }' | sort
+    "$NM" "$1" 2>/dev/null | awk '$3 == "rx_search_run" || $3 == "rx_match_anchored" { print $3 }' | LC_ALL=C sort
 }
 
 for arm in a b_emitter b_textual; do

@@ -79,6 +79,8 @@
 set -u
 cd "$(dirname "$0")/../.." || exit 2
 PCREC=${PCREC:-build/pcrec}
+ROOT_DIR="${ROOT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run bounds every compiler call
 CC=${CC:-gcc}
 GENCFLAGS=${GENCFLAGS:-}
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
@@ -130,7 +132,7 @@ for w in "${witnesses[@]}"; do
     d="$TMP/$label"; mkdir -p "$d"
     ok=1
     for s in 0 1 2 3 4; do
-        if ! "$PCREC" -p rx --features all --engine=vm --vm-entry-shape=$s -o "$d/a$s.c" "$pat" >"$d/emit$s.err" 2>&1; then
+        if ! pcrec_run "$PCREC" -p rx --features all --engine=vm --vm-entry-shape=$s -o "$d/a$s.c" -- "$pat" >"$d/emit$s.err" 2>&1; then
             bad "$label: emit at --vm-entry-shape=$s failed: $(head -2 "$d/emit$s.err")"
             ok=0; break
         fi
