@@ -241,8 +241,8 @@ snippet, the row says so; I did not read any of these papers in full.
 ### 2.1 Incremental / anytime / partial DFA minimization
 
 **Watson, B. W. — "An incremental DFA minimization algorithm" (FSMNLP
-2001); Watson & Daciuk, "An efficient incremental DFA minimization
-algorithm", *Natural Language Engineering* (2003).**
+2001) [Wat01]; Watson & Daciuk, "An efficient incremental DFA minimization
+algorithm", *Natural Language Engineering* (2003) [WD03].**
 <https://dl.acm.org/doi/10.1017/S1351324903003127>
 The distinguishing property, in the authors' own framing: the algorithm
 *may be halted at any time, yielding a partially-minimized automaton*, and
@@ -255,7 +255,7 @@ language, merely not fully minimized. *Verified from the search result
 summary and the ACM/Springer abstracts; I did not read the paper.*
 
 **Almeida, M., Moreira, N., Reis, R. — "Incremental DFA minimisation",
-*RAIRO — Theoretical Informatics and Applications* 48(2):173-186 (2014).**
+*RAIRO — Theoretical Informatics and Applications* 48(2):173-186 (2014) [Alm14+].**
 <http://www.numdam.org/item/ITA_2014__48_2_173_0/>
 A newer incremental algorithm in the same family: quadratic for any
 practical application, halted at any point returning a partially minimised
@@ -278,7 +278,7 @@ close it.
 **Ilie, Navarro, Yu / Ilie & Yu — NFA reduction by right- and left-invariant
 preorders; "follow automata".**
 Champarnaud & Coulon, "NFA reduction algorithms by means of regular
-inequalities", *Theoretical Computer Science* (2004),
+inequalities", *Theoretical Computer Science* (2004) [CC04],
 <https://www.sciencedirect.com/science/article/pii/S0304397504004803>,
 surveys the family: reduction is driven by **preorders over states related
 to inclusion of left and right languages**; Ilie, Navarro and Yu compute the
@@ -291,7 +291,7 @@ strictly stronger as a reducer. **Exact** with respect to the language.
 
 **Partial-derivative and position (Glushkov) automata as bisimulation
 quotients.** Broda, Machiavelo, Moreira, Reis, "Partial Derivative and
-Position Bisimilarity Automata" (CIAA 2014),
+Position Bisimilarity Automata" (CIAA 2014) [Bro14+],
 <https://link.springer.com/chapter/10.1007/978-3-319-08846-4_20>: partial
 derivative automata and follow automata are quotients of the **position
 automaton** by particular bisimulations. This is directly relevant because
@@ -303,7 +303,7 @@ collapses when their futures coincide. **Exact.** *Verified from the
 chapter abstract.*
 
 **D'Antoni & Veanes, "Simulation Algorithms for Symbolic Automata" (ATVA
-2018),** <https://link.springer.com/chapter/10.1007/978-3-030-01090-4_7>
+2018) [DV18],** <https://link.springer.com/chapter/10.1007/978-3-030-01090-4_7>
 and the technical report <https://arxiv.org/pdf/1807.08487>. Simulation
 computation lifted to automata whose transitions carry **predicates over a
 large alphabet** rather than single symbols. pcrec's alphabet is exactly
@@ -312,7 +312,7 @@ this shape — byte equivalence classes computed per machine by `eqclasses`
 formulation is the right one to borrow if this route is taken. **Exact.**
 *Verified from the abstracts; algorithm details unverified.*
 
-**Hyperscan (Wang et al., NSDI 2019),**
+**Hyperscan (Wang et al., NSDI 2019) [Wan19+],**
 <https://www.usenix.org/system/files/nsdi19-wang-xiang.pdf>.
 Hyperscan's answer to determinization blow-up is not a better
 determinization: it is **graph decomposition** — find literal (fixed
@@ -331,7 +331,7 @@ own description; the reduction passes' details are unverified.*
 ### 2.3 Minimization interleaved with subset construction
 
 **Nicol, J. & Frohme, M. — "Deconstructing Subset Construction: Reducing
-While Determinizing" (arXiv:2505.10319, 2025; TACAS 2026),**
+While Determinizing" (arXiv:2505.10319, 2025; TACAS 2026) [NF25],**
 <https://arxiv.org/abs/2505.10319>, also
 <https://link.springer.com/chapter/10.1007/978-3-032-22749-2_20>.
 **This is the closest published work to the charter's question.** The
@@ -371,7 +371,7 @@ inputs — the paper gives none.*
 
 **Brzozowski double-reversal** (reverse, determinize, reverse, determinize)
 is the classical way to get a minimal DFA without a separate minimization
-pass; García et al., "DFA minimization: from Brzozowski to Hopcroft",
+pass; García et al., "DFA minimization: from Brzozowski to Hopcroft" [Gar13+],
 <https://files01.core.ac.uk/download/pdf/14028276.pdf>, connects it to
 partition refinement. It is worth naming for one pcrec-specific reason and
 then setting aside: **pcrec already builds a reverse machine** for the D7
@@ -382,7 +382,7 @@ constructed reverse NFA, not the reversal of the forward DFA — and because
 Brzozowski's complexity is exponential in the worst case, which is the case
 at issue.
 
-**Lazy / hybrid DFAs — Rust `regex-automata::hybrid`, RE2.**
+**Lazy / hybrid DFAs — Rust `regex-automata::hybrid` [RAhyb], RE2.**
 <https://docs.rs/regex-automata/latest/regex_automata/hybrid/index.html>.
 The lazy DFA builds itself during the *search*, bounded by a fixed cache
 capacity, constructing at most one new state per input byte and so achieving
@@ -399,7 +399,7 @@ documentation.*
 ### 2.4 Bounded-size determinization, 2020s
 
 **Baburin, I. & Cotterell, R. — "A Close Analysis of the Subset
-Construction" (arXiv:2407.09891, 2024; DCFS 2025),**
+Construction" (arXiv:2407.09891, 2024; DCFS 2025) [BC24],**
 <https://arxiv.org/abs/2407.09891>. Two results that bear directly on §3's
 null candidate. First, a hardness result: computing NFA state complexity
 within polynomial precision is **PSPACE-hard**, and *"it is PSPACE-hard to
@@ -415,7 +415,7 @@ size — which is the relation lim2's census actually needs, so this bounds
 the wrong end.*
 
 **Dusi, N. et al. — "Quick Subset Construction", *Software: Practice and
-Experience* (2023),** <https://onlinelibrary.wiley.com/doi/full/10.1002/spe.3246>.
+Experience* (2023) [Dus23+],** <https://onlinelibrary.wiley.com/doi/full/10.1002/spe.3246>.
 Listed for completeness; I read only the title and venue. **Unverified.**
 
 ### 2.5 What the survey settles
@@ -550,9 +550,9 @@ and its merges are a subset of the final pass's.
 **Tier 4 — needs an equivalence *hypothesis* maintained against an unfinished
 machine.** Assume states equivalent, propagate the assumption, and split when
 a counterexample arrives. This is the union-find-plus-refutation shape
-Watson/Daciuk and Almeida–Moreira–Reis use for on-demand pair equivalence
-(§2.1), and it is what Nicol & Frohme's "equivalence registry" appears to be
-(§2.3). **CONFIRMED by M5, §6.2**: their registry's GET may answer for a
+Watson/Daciuk [WD03] and Almeida–Moreira–Reis [Alm14+] use for on-demand pair
+equivalence (§2.1), and it is what Nicol & Frohme's [NF25] "equivalence
+registry" appears to be (§2.3). **CONFIRMED by M5, §6.2**: their registry's GET may answer for a
 metastate never seen, so the merge is decided before either state's row is
 filled — a Tier-4 merge, and the only part of their construction that reduces
 exploration. Their *other* mechanism, the intermediate minimization, is Tier 3
@@ -776,7 +776,7 @@ not legitimate as a landing.
 
 ### 3.8 C — full online compaction (Tier 4)
 
-Nicol & Frohme's construction (§2.3): an equivalence registry that tracks and
+Nicol & Frohme's [NF25] construction (§2.3): an equivalence registry that tracks and
 unifies language-equivalent states as they are discovered, with convexity
 closures and simulation as additional reducers and a threshold predicate that
 interrupts exploration to minimize. Exact, published, in a 2026 venue, and it
@@ -1001,7 +1001,7 @@ read the paper, then measure.** In order:
    smaller still, no size claim at all.
 2. **[DONE 2026-09-04, lane `m5paper` — see §6, and §6.6 for what it
    changes in this list: step 4 becomes B-first, and C is demoted.]**
-   **Read Nicol & Frohme (M5) before deciding anything else.** Frank's
+   **Read Nicol & Frohme [NF25] (M5) before deciding anything else.** Frank's
    clarification makes full online compaction a live option, and C is the
    only candidate with the property that makes the whole manoeuvre worth
    doing — an optional second pass, and with it an *exact* size projection.
@@ -1112,7 +1112,7 @@ the artifact-size log already has for size.
 **M5 — read the literature properly. TAKE THIS ONE FIRST. — DONE
 2026-09-04, lane `m5paper`; §6 is the result, and its headline is that the
 answer to the "minimal or merely reduced" question below is MERELY REDUCED,
-which withdraws §3.9's right-hand column.** Nicol & Frohme,
+which withdraws §3.9's right-hand column.** Nicol & Frohme [NF25],
 arXiv:2505.10319 / TACAS 2026, in full, plus their open-source library: the
 operational definitions of "equivalence registry", "convexity closure" and the
 threshold predicate; the experimental numbers; the overhead on easy inputs;
@@ -1194,7 +1194,7 @@ Lane `m5paper`, worktree `worktrees/m5paper`, branch `lane/m5paper`,
 under `src/` or `tests/` written. This section discharges §5.2's M5 and
 retires the `unverified` marks in §2.3 and §3.8.
 
-**What was read.** Nicol & Frohme, *Deconstructing Subset Construction:
+**What was read.** Nicol & Frohme [NF25], *Deconstructing Subset Construction:
 Reducing While Determinizing*, arXiv:2505.10319v2 [cs.FL], 10 Apr 2026,
 CC BY 4.0, in full via the arXiv HTML (`https://arxiv.org/html/2505.10319v2`)
 — all of §1-§6, Algorithm 1, Definitions 1-4, Tables 1-3 and the
@@ -1203,7 +1203,7 @@ doi:10.1007/978-3-032-22749-2_20. Figures 1 and 2 are survival (cactus)
 plots and were **not** readable as data: the HTML carries them as images,
 so every claim below about their content comes from the paper's own prose
 about them and is marked where it does. Also read, from the reference
-implementation `github.com/jn1z/OTF` (default branch `main`, last push
+implementation `github.com/jn1z/OTF` [OTF] (default branch `main`, last push
 2026-05-29): `README.md`, `CHANGELOG.md`, `LICENSE.txt`, `pom.xml`, and the
 sources `OTFDeterminization.java`, `OTFCommandLine.java` (the driver) and
 `PTInitializers.java` (the partition initializer). The Zenodo artifact
@@ -1368,7 +1368,7 @@ The paper offers nothing in this direction and says so structurally: §1
 contrasts the canonization problem with universality and inclusion, where
 antichains let you stop early, and concludes *"For the canonization problem,
 however, the construction of the full DFA is necessary."* §2.4's
-Baburin–Cotterell hardness result is not disturbed.
+Baburin–Cotterell [BC24] hardness result is not disturbed.
 
 **One observation for lim2, marked as a sketch and not a result.** The
 monotone quantity is distinguishability, and the sharpest sound lower bound
@@ -1661,7 +1661,7 @@ to §5's.
 
 ### 6.7 Their library (answer 6)
 
-**Name** OTF. **URL** `https://github.com/jn1z/OTF` (given in the paper's
+**Name** OTF [OTF]. **URL** `https://github.com/jn1z/OTF` (given in the paper's
 Data-Availability Statement, alongside the Zenodo artifact
 doi:10.5281/zenodo.18163403 holding the benchmark systems, full results and
 a Docker image — **not downloaded**). **Licence** MIT, *"Copyright © 2025
