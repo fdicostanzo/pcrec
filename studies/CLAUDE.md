@@ -82,5 +82,23 @@ re-measure before load-bearing use.
   claim and not a check. See its own CLAUDE.md for the two things that must not
   be simplified away (every cell is `--engine=vm`, or the rungs reach nothing;
   the subject is dense, or `ns/call` is not a reading of a per-call cost).
+- `form_char_twins/` — [FORM-CHAR] STEP 0 + [OPT-CLSPACK] STEP 0 hand-twins
+  (lane form0, 2026-09-04): four families of mechanical hand-twins over
+  emitted `build/pcrec` artifacts — the VM literal chain under
+  caselessness (fold/table/atom), a single general/sparse VM class site
+  (table/rangecmp), the DFA scan edge including pcrec-bench's `ci-256`
+  witness plus a non-fold-pair control (range/fold), and a synthetic N=16
+  many-class site testing [OPT-CLSPACK]'s ~10-class crossover (table/atom)
+  — each twin's byte set parsed off the base artifact's OWN emitted text,
+  correctness-checked against its base, and sized (`.text`/`.rodata`).
+  Also carries a `gcc -O2 -S` compiler-equivalence check
+  (`asm_evidence.c`/`results/three_spellings.s`) showing every fold-pair
+  spelling compiles to the same branchless mask+compare+sete — which
+  narrows the "table's one-load latency could still win" open question to
+  families B and D only; family A's ranking is closed on `.text` alone.
+  Backs `docs/dev/form_char_step0.md`. See its own CLAUDE.md and README.md.
+  **Size only, no timing** — the study's `make check`/`sizes` targets are
+  answer-identity and static-size, never a stopwatch; the timing run is
+  still owed on a quiet box (the design note's §6).
 
 Maintenance: update this file when studies are added/removed.

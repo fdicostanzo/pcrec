@@ -1,0 +1,7 @@
+=== B_general  subject=/home/duxevents/pcrec/worktrees/form0/studies/form_char_twins/subjects/B_text.bin  arms=[base table rangecmp]  rounds=11 sweeps=20 ===
+REFUSED: load1 0.99 >= 0.5 -- waiting (0s so far, re-check every 60s)
+REFUSED: load1 0.54 >= 0.5 -- waiting (60s so far, re-check every 60s)
+=== B_sparse  subject=/home/duxevents/pcrec/worktrees/form0/studies/form_char_twins/subjects/B_text.bin  arms=[base table rangecmp]  rounds=11 sweeps=20 ===
+=== C_small  subject=/home/duxevents/pcrec/worktrees/form0/studies/form_char_twins/subjects/C_small.bin  arms=[base range fold]  rounds=11 sweeps=20 ===
+=== D_n16  subject=/home/duxevents/pcrec/worktrees/form0/studies/form_char_twins/subjects/D_n16.bin  arms=[base table atom]  rounds=11 sweeps=20 ===
+time_twins.sh: done -- raw rows in /home/duxevents/pcrec/worktrees/form0/studies/form_char_twins/results/timing_raw.tsv

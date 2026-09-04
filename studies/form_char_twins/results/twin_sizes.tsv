@@ -1,0 +1,23 @@
+family	witness	sites	twin	text_bytes	rodata_bytes	table_count	diff_lines_vs_base
+A	abcdef caseless VM	6	base(bitmap)	2950	192	6	0
+A	abcdef caseless VM	6	fold	1822	0	0	48
+A	abcdef caseless VM	6	table	3862	1536	6	240
+A	abcdef caseless VM	6	atom	2062	256	1	70
+B	general [a-zA-Z0-9_]	1	base(bitmap)	1156	32	1	0
+B	general [a-zA-Z0-9_]	1	table	1380	256	1	40
+B	general [a-zA-Z0-9_]	1	rangecmp	1188	0	0	8
+B	sparse [aeiou]	1	base(bitmap)	1151	32	1	0
+B	sparse [aeiou]	1	table	1375	256	1	40
+B	sparse [aeiou]	1	rangecmp	1087	0	0	8
+C	small (?i)a{2,40}Z	4	base(bitmap)	4585	2560	4	0
+C	small (?i)a{2,40}Z	4	range	3473	1536	0	88
+C	small (?i)a{2,40}Z	4	fold	3425	1536	0	88
+C	nonpair [ace]{2,40}Z	4	base(bitmap)	4585	2560	4	0
+C	nonpair [ace]{2,40}Z	4	range	3649	1536	0	88
+C	nonpair [ace]{2,40}Z	4	fold	3649	1536	0	88
+C	ci-256 (pcrec-bench)	8	base(bitmap)	284744	280178	8	0
+C	ci-256 (pcrec-bench)	8	range	282536	278130	0	176
+C	ci-256 (pcrec-bench)	8	fold	282488	278130	0	176
+D	abcdefghijklmnop caseless VM, N=16	16	base(bitmap)	6498	512	16	0
+D	abcdefghijklmnop caseless VM, N=16	16	table	8338	4096	16	670
+D	abcdefghijklmnop caseless VM, N=16	16	atom	3818	256	1	160
