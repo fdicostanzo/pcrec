@@ -900,3 +900,155 @@ constant; the island script read stamps that one function writes; the identity
 bucket excused an artifact on the strength of a stamp that artifact carries.
 The fix in each case was to introduce a term the emitter does not write — the
 compiler's own decision stamp, the emitted program text, and the deny axis.
+
+## 17. Panel r53, semantics lens — the island refused patterns pcrec accepts
+
+The doc lens found five gaps and the checks lens found three checks that could
+not fail. The semantics lens found the thing that actually mattered: **a
+caller-observable acceptance regression**, shipped and invisible.
+
+### 17.1 The regression
+
+`((?:aa|bb)(?:aa|bb)…×10|zzz)` — 96 characters, DEFAULT flags, DEFAULT
+engine — was **REFUSED**:
+
+```
+pcrec: pattern too large: 897,983 bytes of emitted code (limit 500,000)
+```
+
+and compiles at **30,179** bytes under `-fno-alt-island`. An optimization axis
+had made pcrec REJECT a pattern it accepts without that axis. Reproduced on my
+own build across a ladder: k=8 island 204,664 / chain 28,611; k=9 390,274 /
+29,395; k=10 and up REFUSED.
+
+**No check in this tree could see it, and the reason generalises.**
+`make test-axes` sweeps the CORPUS for answer identity, no corpus pattern has
+the cross-product shape, and its refusal counter therefore read 0. A sweep over
+a population that lacks the shape cannot fail on it — the population WAS the
+blind spot, not the assertions.
+
+**The cause.** `vm_isl_words`' `A_CAT` cross product. `VM_ISL_MAX_WORDS` and
+`_BYTES` bound the WORD LIST; the emitted size follows the TRIE, and the cross
+product blows the second up while the first is still comfortable. At the byte
+budget the trie reaches ~200,000 nodes, about 44 MB of C. **A budget on the
+wrong quantity is not a smaller version of the right one** — and this is the
+same sentence as §16's, one layer down: the bound and the thing bounded have to
+be the same quantity.
+
+### 17.2 The rule, and two corrections the estimator needed
+
+Build the island only where its estimated emitted size is within
+`VM_ISL_SIZE_FACTOR` of the chain's for the same subtree. Both sides come from
+the analysis, with per-node constants that are `limits.def` rows and measured
+rather than chosen.
+
+**Correction 1 — nodes alone was the wrong estimate.** The census's worst
+pattern builds a **12-node** trie with **3,404 try sites** and emits 682 KB of
+program; a nodes-only estimator saw twelve nodes and admitted it. A try site
+and a node cost about the same bytes, and with EMPTY alternatives in the cross
+product the try sites outnumber the nodes by two orders of magnitude. Fitted on
+three such shapes plus the narrow and wide populations, `(nodes + try sites) ×
+180` tracks the measured program within 10% across four orders of magnitude.
+
+**Correction 2 — "not larger than the chain" was the wrong rule**, which is
+what the finding literally asked for. Measured program ratios, island over
+chain, with the rule disabled:
+
+| | ratio |
+|---|---|
+| `s-256` | 0.85 |
+| `w-64` | 0.97 |
+| `cat\|dog\|cow` | 1.10 |
+| `abcdefghij\|abcdefghik\|abcdefghil` | 1.12 |
+| `foo\|bar` | 1.23 |
+| `thin\|think\|thinker\|thinking` | 1.45 |
+| `((?:aa\|bb)×4\|zzz)` | 3.06 |
+| `((?:aa\|bb)×6\|zzz)` | 8.78 |
+| `((?:aa\|bb)×8\|zzz)` | 27.65 |
+| the census's worst two | 31.67, 146.95 |
+
+The island's program is LARGER than the chain's on every narrow shape — its
+value there is SPEED (§12: 0.140-0.175 island/chain ns), not size — so "not
+larger" would decline the entire population the Q4 knee had just been ruled to
+keep. The two populations separate cleanly, so the rule is a FACTOR, chosen
+inside the gap and validated rather than argued.
+
+### 17.3 Acceptance: the critic's own random census
+
+Both seeds, 100 patterns each, `--engine=vm`, artifact size island over chain:
+
+| | before | after |
+|---|---|---|
+| seed 77 refused-only-with-island | **9 of 100** (at 4-8 factors) | **0** |
+| seed 77 median / max | 1.77× / **30.04×** | 1.000 / **1.03×** |
+| seed 88 refused / median / max | — / 1.235× / 7.84× | **0** / 1.000 / **1.02×** |
+| above 1.05× | 73% (2-5 factors) | **0 of 200** |
+| above 2× | 20 and 12 | **0** |
+
+**Factor 3 was measured and refused.** It keeps one extra shape and takes the
+census max from 1.03× to 1.18×. What factor 2 costs is stated at the rule
+itself: the prefix LADDER `(?:abcd|abc|ab|a)z` declines, and its own hand-twin
+cell measured **1.001** — a wash — so nothing measured is given up.
+
+**Every measured winner survives**: `foo|bar`, `cat|dog|cow`,
+`thin|think|thinker|thinking`, `w-8`/`w-64`/`w-256`, `srt-256`, `s-256`, and
+`p3` (the 99× cell).
+
+### 17.4 The tests the corpus could not supply
+
+`tests/island/run_island_tests.sh` gains a constructed cross-product ladder,
+because no corpus pattern has the shape:
+
+- **refusal identity** over k=4..14: no rung may be refused with the island and
+  accepted under `-fno-alt-island`. That is the regression as an assertion.
+- **the top-level decline, by an EXACT count**: if the top-level alternation
+  takes the island it subsumes the subtree and the artifact stamps 1; if it
+  declines, each of the k inner factors becomes its own island and it stamps k.
+  Anything else is neither.
+- **non-vacuity**: a 1,024-word cross product, comfortably INSIDE
+  `VM_ISL_MAX_WORDS`, must still decline — so the cell shows the SIZE rule and
+  not the word budget doing the work.
+
+**Three witnesses moved**, because the size rule declines deep prefix ladders,
+and each was replaced with a verified one rather than left to fail: the
+frame-capacity witness, the two-island count cell, and three `ISLAND_PATTERNS`
+entries. The §9 pool's second island member went the same way — and the pool's
+own island-coverage floor is what caught it, which is that floor working.
+
+### 17.5 F4 and F5
+
+**F4 — the census's "lower bound" was wrong in one direction.** `altcls-merge`
+folds single-byte branches into a CLASS and `vm_isl_single` then declines the
+whole subtree: `ab|cd|a|b` stamps 0 islands by default and 1 under
+`-fno-altcls-merge`. So §3's 429 brackets nothing on its own; it is what the
+pattern TEXT admits, not what the emitter takes. `scripts/alt_census.py`'s
+header says so now. Teaching the island to expand a single-byte class into its
+member words is a STEP 2 shape, filed with the tail form.
+
+**F5 — a documented budget-bound class, no code change.** Under a binding step
+budget the island ANSWERS where the chain reads `err:steps`, because the trie
+walk charges the WORK counter while the chain spends a STEP per branch resume.
+Measured at the shipped budget with no flags on three of 4,263 fuzz cells. The
+direction is one-way and that is why it is safe: the island does strictly less
+stepping, so it can only answer where the chain gives up, never the reverse —
+and on those three cells the island's answer is libpcre2's.
+
+**So this report's earlier "answer-identical over 22,407 corpus cells" is
+qualified**: the sweep's budget-bound bucket reads 0 because no corpus cell
+approaches the budget, and off-corpus fuzzing finds budget-bound divergence at
+about 0.07% of cells, every one in the island's favour. The panel found NO
+answer divergence in ~11,400 cells (island = chain = libpcre2 = python), and
+the seven oracle-only disagreements were python-versus-PCRE2 with pcrec
+agreeing with PCRE2.
+
+### 17.6 What the three lenses have in common
+
+The doc lens found stale prose. The checks lens found three checks that could
+not fail. The semantics lens found a regression none of them covered. All three
+reduce to the same defect in different clothes: **the instrument and the thing
+measured shared a source, or the population lacked the shape.** §9 compared the
+script's arithmetic to the script's own constant; the island script read stamps
+one function writes; the identity bucket excused an artifact on its own stamp;
+and the axis sweep looked for a refusal in a corpus with no pattern that could
+produce one. The island's own size budget is the same error inside the
+compiler: it bounded the word list and the cost was in the trie.
