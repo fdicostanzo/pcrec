@@ -597,8 +597,12 @@ decides whether to perform it — and then run the row through
     convenient spelling is the emitter's own PLAIN rung — the subject's own
     author. So the file ALSO builds arm B by a TEXTUAL `sed` removal of the
     attribute, which knows nothing about the emitter, and is RED if the two
-    spellings differ in source or in symbol table. MEASURED at landing: they
-    differ in nothing but the paired header's `#include`.
+    spellings differ in source or in symbol table beyond TWO lines the file
+    normalises and then asserts POSITIVELY: the paired header's `#include`,
+    and `<PREFIX>_VM_ENTRY_SHAPE`, which MUST differ (the two arms are
+    emitted at different rungs and that stamp's job is to say which). Its
+    own first run caught the second of those as a real difference, which is
+    the check working before it was taught the exception.
   - **IT IS A CENSUS LINE, NOT A PIN, and never red on a verdict.** Pinning
     either answer would go red on a compiler upgrade that changed nothing
     about pcrec. It is red on exactly two things, both failures of the PROBE:

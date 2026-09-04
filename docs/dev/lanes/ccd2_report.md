@@ -255,10 +255,19 @@ the emitter's own `plain` rung — the subject's own author, which
 arm B by a textual `sed` removal, which knows nothing about the emitter, and
 is red if the two spellings differ in source or in symbol table.
 
-**MEASURED: the two spellings are byte-identical apart from the paired
-header's `#include`.** `--vm-entry-shape=1` really is `--vm-entry-shape=4`
-with the attribute deleted, which is a stronger statement than the check
-needs and is worth recording.
+**MEASURED: the two spellings are byte-identical apart from TWO lines** —
+the paired header's `#include`, and `RX_VM_ENTRY_SHAPE`, which MUST differ
+because the two arms are emitted at different rungs and that stamp's whole
+job is to say which. Both are normalised out and then asserted POSITIVELY,
+so neither is excused; a THIRD differing line is a failure.
+`--vm-entry-shape=1` really is `--vm-entry-shape=4` with the attribute
+deleted, which is a stronger statement than the check needs.
+
+**THE PROBE'S OWN FIRST RUN AFTER THE STAMPS LANDED WENT RED ON THAT SECOND
+LINE**, which is the check working before it was taught the exception rather
+than a defect in it: it was written before `RX_VM_ENTRY_SHAPE` existed, the
+stamp then legitimately appeared, and the file refused to trust its own
+verdict until the difference was accounted for.
 
 **Both verdicts reproduced, which is the non-vacuity that makes either one
 worth reading:**

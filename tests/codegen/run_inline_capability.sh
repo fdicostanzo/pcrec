@@ -55,8 +55,11 @@
 # MEASURED at the probe's landing: `--vm-entry-shape=1` and
 # `sed 's/inline __attribute__((always_inline)) //'` applied to
 # `--vm-entry-shape=4` differ in NOTHING but the `#include` of the paired
-# header. If a future rung makes them differ for some other reason, this file
-# says so LOUDLY rather than quietly preferring one.
+# header and the `<PREFIX>_VM_ENTRY_SHAPE` stamp — and the stamp differing is
+# REQUIRED rather than excused, since its whole job is to name the rung, so it
+# is asserted positively below rather than merely ignored. If a future rung
+# makes them differ for some THIRD reason, this file says so LOUDLY rather
+# than quietly preferring one.
 #
 # =========================================================================
 # THIS IS A CENSUS LINE, NOT A PIN
@@ -73,8 +76,9 @@
 #   (1) the witness stopped being frameless — then the artifact carries no
 #       attribute at all and the probe measured nothing (the [MECH-REACH]
 #       shape: a witness that stopped reaching its site);
-#   (2) the symbol table could not be read, or the two arm-B spellings
-#       disagree — then the answer, whatever it printed, is not evidence.
+#   (2) the symbol table could not be read, the two arm-B spellings disagree
+#       beyond the two normalised lines, or either arm did not get the rung it
+#       asked for — then the answer, whatever it printed, is not evidence.
 
 set -u
 
@@ -133,17 +137,35 @@ if ! grep -q 'always_inline' "$A"; then
     exit 1
 fi
 
-# (2) THE TWO ARM-B SPELLINGS MUST AGREE. The `#include` of the paired header
-# names the output file, so it legitimately differs; nothing else may.
-sed 's/inline __attribute__((always_inline)) //' "$A" \
-  | sed 's/^#include "arm_a\.h"/#include "arm_b_textual.h"/' > "$Bsed"
-[ -f "${A%.c}.h" ] && sed 's/arm_a/arm_b_textual/g' "${A%.c}.h" > "${Bsed%.c}.h"
-if ! diff -q <(sed 's/arm_b_textual/ARM/g' "$Bsed") \
-             <(sed 's/arm_b_emitter/ARM/g' "$Bemit") >/dev/null; then
-    bad "arm B's two spellings disagree — the emitter's PLAIN rung is no longer 'arm A with the attribute removed', so neither is a control for the other. Diff them before trusting any verdict."
-    diff <(sed 's/arm_b_textual/ARM/g' "$Bsed") <(sed 's/arm_b_emitter/ARM/g' "$Bemit") | head -20 >&2
-    fail=$((fail + 1))
+# (2) THE TWO ARM-B SPELLINGS MUST AGREE, AND EXACTLY TWO LINES MAY DIFFER.
+#
+# The `#include` of the paired header names the output file, so it
+# legitimately differs. So does `<PREFIX>_VM_ENTRY_SHAPE`: the two arms are
+# emitted at DIFFERENT RUNGS (4 and 1), and that stamp's whole job is to say
+# which — a run where it did NOT differ would mean the emitter had stopped
+# distinguishing them. Both are normalised out here and then asserted
+# POSITIVELY below, so neither is excused, and any THIRD differing line is a
+# failure: the textual arm B is the emitter arm B's control precisely because
+# nothing else in the two files moves.
+#
+# MEASURED at the probe's landing: with those two normalised, the files are
+# byte-identical — `--vm-entry-shape=1` really is `--vm-entry-shape=4` with
+# the attribute deleted.
+norm() { sed -e 's/arm_b_textual/ARM/g; s/arm_b_emitter/ARM/g; s/arm_a/ARM/g' \
+             -e '/^#define RX_VM_ENTRY_SHAPE /d' "$1"; }
+sed 's/inline __attribute__((always_inline)) //' "$A" > "$Bsed"
+[ -f "${A%.c}.h" ] && cp "${A%.c}.h" "${Bsed%.c}.h"
+if ! diff -q <(norm "$Bsed") <(norm "$Bemit") >/dev/null; then
+    bad "arm B's two spellings disagree beyond the header include and the entry-shape stamp — the emitter's PLAIN rung is no longer 'arm A with the attribute removed', so neither is a control for the other. Diff them before trusting any verdict."
+    diff <(norm "$Bsed") <(norm "$Bemit") | head -20 >&2
 fi
+
+# ...and the stamp that was normalised out is asserted POSITIVELY, so the
+# exclusion above can never hide a rung the emitter stopped distinguishing.
+shape_a="$(grep -m1 '^#define RX_VM_ENTRY_SHAPE ' "$A" | awk '{print $3}')"
+shape_b="$(grep -m1 '^#define RX_VM_ENTRY_SHAPE ' "$Bemit" | awk '{print $3}')"
+[ "$shape_a" = '"inline"' ] || bad "arm A stamps RX_VM_ENTRY_SHAPE $shape_a, expected \"inline\" — the probe asked for rung 4 and did not get it"
+[ "$shape_b" = '"plain"' ]  || bad "arm B stamps RX_VM_ENTRY_SHAPE $shape_b, expected \"plain\" — the probe asked for rung 1 and did not get it"
 
 # ---- compile both arms and read the symbol table -------------------------
 chain_syms() {  # chain_syms <object> -> the surviving chain symbols, one per line
