@@ -2,3 +2,7 @@ base/
 twins/
 .bin/
 .obj/
+timing_base/
+timing_twins/
+.tbin/
+subjects/

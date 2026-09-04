@@ -390,3 +390,152 @@ see that directory's own `README.md`/`CLAUDE.md` for the reproduction
 recipe and `results/twin_sizes.tsv` for this note's size tables in raw
 form. `make check` there reproduces every correctness cell above (46/46
 agreed); `make sizes` reproduces every `.text`/`.rodata` number.
+
+## 8. Timing (2026-09-04, post-lift)
+
+Run after `.lift`, on the box once load1 fell under the gate. Protocol per
+§1 / §6, copied from `docs/dev/lanes/isl1_report.md` §12: `<prefix>_search`
+in a find-all loop (`studies/form_char_twins/bench_twin.c`, modelled on
+`studies/scan_edge_ladder/bench.c`) over a 131,072-byte subject built per
+family, `N = 11` rounds, arms INTERLEAVED round by round, `/proc/loadavg`'s
+1-minute figure gating at `< 0.5` (REFUSE and wait, never caveat — the
+harness waited twice, 60 s apart, before the box went quiet), median ns/call
+and ns/byte reported with the per-round range, every round's answer
+(hit count + a position/length checksum, not sampled) compared against that
+family's `base` arm. **Zero mismatches across all 132 cells** (4 families ×
+11 rounds × 3 arms); all 11 rounds of all 4 families landed at a steady
+`load1 = 0.39`. Family A is not re-measured here — §2's `gcc -O2 -S` check
+already closed its speed question without a stopwatch.
+
+Driver and orchestration: `studies/form_char_twins/bench_twin.c` +
+`time_twins.sh` (committed). Binaries are compiled against
+`timing_base/*.c` — the SAME `pcrec` invocations as `gen_base.sh` (see that
+script), but WITHOUT `--emit-main`, so `bench_twin.c` supplies its own
+`main()` and find-all loop rather than fighting the artifact's own
+single-call `main`; `timing_twins/*.c` are the same `twin_B.py`/`twin_C.py`/
+`twin_D.py` transforms run against those no-main bases. Both directories are
+gitignored (regenerate byte-for-byte from `build/pcrec` + the committed
+transforms, same discipline as `base/`/`twins/`). Raw per-round rows:
+`results/timing_raw.tsv`; medians/ranges: `results/timing_summary.tsv`.
+Subjects (`studies/form_char_twins/subjects/`, gitignored, regenerate from
+the Python generator embedded in this session's `time_twins.sh` history —
+not itself committed as a separate script for time reasons, see "what
+remains unmeasured" below) are 131,072 bytes each: family B a
+natural-language-ish mixed-case/digit/punctuation text (both `[a-zA-Z0-9_]`
+and `[aeiou]` run over the same text); family C a digit background with
+periodic `a`/`A`-runs of length 2-40 followed by `Z`/`z` (misses AND hits,
+unlike the compile-only correctness subjects); family D a digit background
+with periodic full `abcdefghijklmnop` hits (mixed case) and periodic
+right-prefix near-misses (4-12 correct letters then a digit break), to
+stress the chain beyond bare entry/skip. No CPU pinning (`taskset`) was
+used, unlike `scan_edge_ladder`'s driver — flagged as a real source of the
+variance below, not smoothed over.
+
+### 8.1 Family B — general/sparse VM class (bit array vs table vs range compares)
+
+| pattern | arm | median ns/call | range | median ns/byte | range | rounds | load1 |
+|---|---|---|---|---|---|---|---|
+| general `[a-zA-Z0-9_]` | base (bitmap) | 9.736 | [7.269, 10.368] | 7.8789 | [5.8826, 8.3897] | 11 | 0.39 |
+| general | table | 9.378 | [9.038, 9.950] | 7.5890 | [7.3136, 8.0514] | 11 | 0.39 |
+| general | rangecmp | 9.164 | [5.297, 10.012] | 7.4160 | [4.2869, 8.1021] | 11 | 0.39 |
+| sparse `[aeiou]` | base (bitmap) | 32.524 | [15.771, 36.463] | 6.1507 | [2.9824, 6.8955] | 11 | 0.39 |
+| sparse | table | 31.460 | [14.277, 34.069] | 5.9495 | [2.7000, 6.4427] | 11 | 0.39 |
+| sparse | rangecmp | 36.234 | [19.088, 40.325] | 6.8521 | [3.6097, 7.6259] | 11 | 0.39 |
+
+**general is a wash within the range** — all three medians sit within 6% of
+each other and their ranges overlap almost completely (rangecmp's own range
+dips to 5.297, below every other arm's floor, on what reads as a
+frequency-scaling outlier rather than a real fast round); the size-only
+ranking (`rangecmp` ≈ `base` ≪ `table` on `.text`) does not clearly reverse
+at runtime, but it does not confirm either — `table` is not measurably
+punished for its extra code and 8× the `.rodata`. **sparse instead
+CONTRADICTS the note's tentative size-based prediction**: `rangecmp`, the
+form that was smallest on `.text` (-5.6% vs base), is the clear runtime
+LOSER here (15% slower than `table`, 11% slower than `base`, highest of the
+three arms in 8 of 11 rounds), while `table` — worst on both size axes for
+this family — is at least tied with (nominally faster than) the bit array.
+A 4-term-vs-5-term OR-of-compares chain costs more at runtime on a sparse
+class than either a load-based form, even where it costs fewer bytes.
+
+### 8.2 Family C — the DFA scan edge, small witness (bitmap vs range vs fold)
+
+| witness | arm | median ns/call | range | median ns/byte | range | rounds | load1 |
+|---|---|---|---|---|---|---|---|
+| small `(?i)a{2,40}Z` | base (bitmap/"table") | 375.706 | [369.908, 419.201] | 1.3042 | [1.2841, 1.4552] | 11 | 0.39 |
+| small | range | 378.552 | [372.208, 427.356] | 1.3141 | [1.2921, 1.4835] | 11 | 0.39 |
+| small | fold | 376.800 | [370.487, 402.696] | 1.3080 | [1.2861, 1.3979] | 11 | 0.39 |
+
+**A wash, cleanly.** All three medians sit within 0.8% of each other and
+every range overlaps every other range almost end to end. The scan edge's
+own header comment's LATENCY argument ("the load is VALUE-addressed... the
+dependency-chain property... is intact") is not confirmed as a real win
+here, but it is not refuted either — `base`'s 256-byte table, which lost
+decisively on both `.text` (+24%) and `.rodata` (+1,024 B) against
+`range`/`fold` in §4, is NOT a measurable runtime loser on this witness. At
+real scale (`ci-256`, 8 fold-pair sites) and on the `nonpair` (non-fold-pair,
+range≡fold) witness, timing is still owed — see §8.4.
+
+### 8.3 Family D — N=16 shared atom table (bit array vs table vs atom)
+
+| witness | arm | median ns/call | range | median ns/byte | range | rounds | load1 |
+|---|---|---|---|---|---|---|---|
+| N=16 `abcdefghijklmnop` -i | base (bit array) | 1147.433 | [635.645, 1405.290] | 2.6963 | [1.4937, 3.3022] | 11 | 0.39 |
+| N=16 | table (256B/site) | 874.930 | [485.622, 890.860] | 2.0560 | [1.1411, 2.0934] | 11 | 0.39 |
+| N=16 | atom (shared) | 885.042 | [481.214, 1069.307] | 2.0797 | [1.1308, 2.5127] | 11 | 0.39 |
+
+**The sharpest and noisiest result of the run.** `table` and `atom` are
+tied with each other (within 1.2% median, overlapping ranges) and BOTH are
+~24% faster than the bit array's median — 8 of 11 rounds show this cleanly
+(`table`/`atom` clustered 870-890, `base` clustered 1140-1156); rounds 6, 8
+and 9 swing wide on one or two arms at a time (e.g. round 8: all three drop
+together; round 6: `atom` jumps to 1065 while `base` drops to 646) in a
+pattern consistent with CPU frequency-state noise this run did not pin
+against (no `taskset` — see the caveat above), not with a real per-round
+reversal of which arm wins. **This is the timing question §6 named as open
+for family D, and it resolves against the note's blanket "table is not a
+candidate anywhere" line**: `table` loses decisively on BOTH size axes
+here (§5: +28% `.text`, 16× `.rodata` vs `atom`) yet is a runtime dead heat
+with `atom` and a clear win over `base` — the one-load latency argument
+DOES win here, it is just that `atom`'s shared table gets the same latency
+win at a fraction of the size cost, which is the stronger and more
+actionable version of the same finding. `atom`'s §5 "apparent free win" on
+size is now also a free win on time at N=16: it matches `table`'s speed
+while using 16× less `.rodata` and costing 41% less `.text` than `base`.
+
+### 8.4 What remains unmeasured
+
+Hard stop (17:30 EDT) reached before these could run:
+
+- **Family C at real scale** (`ci-256`, 8 fold-pair sites) and the
+  `nonpair` witness (`table` vs `range`/`fold` where the alternatives are
+  byte-identical to each other) — both twins and binaries were built during
+  `make base`/`make twins` for the size study but were not wired into
+  `time_twins.sh`'s family list for time reasons; the script's
+  `FAM_SUBJ`/`FAM_ARMS` tables are the two lines to add.
+- **CPU pinning** (`taskset -c N`, as `scan_edge_ladder`'s driver does) —
+  family D's per-round swings (§8.3) are the direct evidence this would
+  tighten the range and likely sharpen an already-clear result rather than
+  change its direction.
+- **A disassembly read of family D's `atom` twin** to confirm (not just
+  infer from `.text` bytes and now runtime parity) the CSE mechanism §5
+  proposes for why the shared table costs nothing on either axis.
+- **The subject-generator script itself** was not committed as a separate
+  file — it was written inline for this run (see §1's note above) rather
+  than as a fifth committed `.py`/`.sh`; regenerating the exact three
+  subjects requires re-deriving them from this section's description
+  rather than re-running a checked-in generator. Flagged as a gap in this
+  note's own reproducibility, not hidden.
+
+**Revised recommendation.** Family A (`fold`) is unchanged — closed on
+compiler evidence alone. Family D's `atom` graduates from "contingent on
+timing" to **supported by both axes measured**: smaller on `.text` and
+`.rodata` AND tied with the fastest alternative at runtime, at N=16.
+Family B's `table` is still not a candidate on size grounds it never
+overcomes (§3), but §8.1's `general` cell shows it is at least not a
+runtime loser either — the recommendation against building it stands on
+size alone, unweakened but also not reinforced by time. Family B's
+`rangecmp` on a sparse/few-singleton class is WEAKER than the size table
+alone suggested (§8.1) — a real, if narrow, caution against generalizing
+"fewer bytes → faster" to the range-compare form without checking the
+compare count. Family C stays genuinely open pending the real-scale and
+`nonpair` runs (§8.4).
