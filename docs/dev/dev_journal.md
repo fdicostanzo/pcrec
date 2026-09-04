@@ -20815,3 +20815,20 @@ idle — lesson: a ruling to a lane mid-run must be re-sent after the
 lane's next idle notice, or written into its rulings file (which the
 lanes DO poll). w13 LIFTED at 23:57 (abi 20) — edge1's .stage read
 timing-done and its remaining work (revert, ritual) is light.
+
+## 2026-09-04 — Fifty-first session, part 43 (00:2x EDT): edge1 DELIVERED (bcaf14f1, abi 19, [OPT-EDGE] STEP 1 alone; K43 (b) reverted at 628331aa with the table in the message); K48 filed (the GCC-CPU tripwire is not axis-aware); merge order isl1 → edge1 → w13 stands
+
+edge1 delivered: emit_vm.c back at 9d8401a (VM artifacts byte-identical
+to main, verified on three patterns); both reds gone (run_size_term.sh
+alone 32/0; -fanalyzer clean on the two regressing patterns as single
+artifacts); abi 17→19 in one commit over every re-grepped reader,
+match_api.md:2148 correctly LEFT (a cross-reference to abi 17's own
+entry); FILEPIN left at a3f40b1 for the manager (a pin must name a
+commit reachable after the merge — opt5i/ccdiff1's precedent, the
+better one). The k18 GCC-CPU tripwire re-measured: not load, not this
+change — the pin is not axis-aware (K48). Owed on the row: the 1/2/3/4
+ladder by branch-vs-main isolation, the minimum-chain floor, (A) of
+the identity gate. Run logs live under the worktree's build/. isl1
+owes only the cap guard; w13's make test is ~25 min in. Merges: isl1
+(git merge + strict now; its short chain when w13's heavy stages end),
+then edge1, then w13, then the battery, then DONE + OPEN to the bench.
