@@ -236,13 +236,24 @@ Two consequences worth stating plainly:
 ## 2. Survey (Frank's directive 1: the state of the art)
 
 Searches run 2026-09-04. Where I could only reach an abstract or a search
-snippet, the row says so; I did not read any of these papers in full.
+snippet, the row says so; I did not read any of these papers in full — with
+the exception of [NF25], read in full on the same day by lane `m5paper`
+(§6), which is why its row alone carries no `unverified` mark.
+
+**Citation keys.** Each row below leads with its `/REFERENCES.md` key
+(Frank's ruling, 2026-09-04; keys retrofitted here by lane `m5paper`).
+Workers named inside a row's prose without a key of their own — Ilie,
+Navarro & Yu, whose results reach this study through [CC04]'s survey rather
+than from their own papers; Paige–Tarjan; Hopcroft, Moore and Brzozowski as
+algorithm names; RE2 as a system — are **not** citations and were
+deliberately given no entry, matching `/REFERENCES.md`'s own rule about
+algorithm names used as ordinary technical vocabulary.
 
 ### 2.1 Incremental / anytime / partial DFA minimization
 
-**Watson, B. W. — "An incremental DFA minimization algorithm" (FSMNLP
-2001); Watson & Daciuk, "An efficient incremental DFA minimization
-algorithm", *Natural Language Engineering* (2003).**
+**[Wat01] Watson, B. W. — "An incremental DFA minimization algorithm"
+(FSMNLP 2001); [WD03] Watson & Daciuk, "An efficient incremental DFA
+minimization algorithm", *Natural Language Engineering* (2003).**
 <https://dl.acm.org/doi/10.1017/S1351324903003127>
 The distinguishing property, in the authors' own framing: the algorithm
 *may be halted at any time, yielding a partially-minimized automaton*, and
@@ -254,8 +265,9 @@ practice. **Exact** — the halted result is a correct automaton for the same
 language, merely not fully minimized. *Verified from the search result
 summary and the ACM/Springer abstracts; I did not read the paper.*
 
-**Almeida, M., Moreira, N., Reis, R. — "Incremental DFA minimisation",
-*RAIRO — Theoretical Informatics and Applications* 48(2):173-186 (2014).**
+**[Alm14+] Almeida, M., Moreira, N., Reis, R. — "Incremental DFA
+minimisation", *RAIRO — Theoretical Informatics and Applications*
+48(2):173-186 (2014).**
 <http://www.numdam.org/item/ITA_2014__48_2_173_0/>
 A newer incremental algorithm in the same family: quadratic for any
 practical application, halted at any point returning a partially minimised
@@ -277,7 +289,7 @@ close it.
 
 **Ilie, Navarro, Yu / Ilie & Yu — NFA reduction by right- and left-invariant
 preorders; "follow automata".**
-Champarnaud & Coulon, "NFA reduction algorithms by means of regular
+[CC04] Champarnaud & Coulon, "NFA reduction algorithms by means of regular
 inequalities", *Theoretical Computer Science* (2004),
 <https://www.sciencedirect.com/science/article/pii/S0304397504004803>,
 surveys the family: reduction is driven by **preorders over states related
@@ -290,8 +302,8 @@ strictly stronger as a reducer. **Exact** with respect to the language.
 *Verified from the search summary and the ScienceDirect abstract.*
 
 **Partial-derivative and position (Glushkov) automata as bisimulation
-quotients.** Broda, Machiavelo, Moreira, Reis, "Partial Derivative and
-Position Bisimilarity Automata" (CIAA 2014),
+quotients.** [Bro14+] Broda, Machiavelo, Moreira, Reis, "Partial Derivative
+and Position Bisimilarity Automata" (CIAA 2014),
 <https://link.springer.com/chapter/10.1007/978-3-319-08846-4_20>: partial
 derivative automata and follow automata are quotients of the **position
 automaton** by particular bisimulations. This is directly relevant because
@@ -302,8 +314,8 @@ Copies of one body are precisely the shape a bisimulation quotient
 collapses when their futures coincide. **Exact.** *Verified from the
 chapter abstract.*
 
-**D'Antoni & Veanes, "Simulation Algorithms for Symbolic Automata" (ATVA
-2018),** <https://link.springer.com/chapter/10.1007/978-3-030-01090-4_7>
+**[DV18] D'Antoni & Veanes, "Simulation Algorithms for Symbolic Automata"
+(ATVA 2018),** <https://link.springer.com/chapter/10.1007/978-3-030-01090-4_7>
 and the technical report <https://arxiv.org/pdf/1807.08487>. Simulation
 computation lifted to automata whose transitions carry **predicates over a
 large alphabet** rather than single symbols. pcrec's alphabet is exactly
@@ -312,7 +324,7 @@ this shape — byte equivalence classes computed per machine by `eqclasses`
 formulation is the right one to borrow if this route is taken. **Exact.**
 *Verified from the abstracts; algorithm details unverified.*
 
-**Hyperscan (Wang et al., NSDI 2019),**
+**[Wan19+] Hyperscan (Wang et al., NSDI 2019),**
 <https://www.usenix.org/system/files/nsdi19-wang-xiang.pdf>.
 Hyperscan's answer to determinization blow-up is not a better
 determinization: it is **graph decomposition** — find literal (fixed
@@ -330,8 +342,8 @@ own description; the reduction passes' details are unverified.*
 
 ### 2.3 Minimization interleaved with subset construction
 
-**Nicol, J. & Frohme, M. — "Deconstructing Subset Construction: Reducing
-While Determinizing" (arXiv:2505.10319, 2025; TACAS 2026),**
+**[NF25] Nicol, J. & Frohme, M. — "Deconstructing Subset Construction:
+Reducing While Determinizing" (arXiv:2505.10319, 2025; TACAS 2026),**
 <https://arxiv.org/abs/2505.10319>, also
 <https://link.springer.com/chapter/10.1007/978-3-032-22749-2_20>.
 **This is the closest published work to the charter's question.** The
@@ -373,7 +385,8 @@ inputs — the paper gives none.*
 
 **Brzozowski double-reversal** (reverse, determinize, reverse, determinize)
 is the classical way to get a minimal DFA without a separate minimization
-pass; García et al., "DFA minimization: from Brzozowski to Hopcroft",
+pass; [Gar13+] García et al., "DFA minimization: from Brzozowski to
+Hopcroft",
 <https://files01.core.ac.uk/download/pdf/14028276.pdf>, connects it to
 partition refinement. It is worth naming for one pcrec-specific reason and
 then setting aside: **pcrec already builds a reverse machine** for the D7
@@ -384,7 +397,7 @@ constructed reverse NFA, not the reversal of the forward DFA — and because
 Brzozowski's complexity is exponential in the worst case, which is the case
 at issue.
 
-**Lazy / hybrid DFAs — Rust `regex-automata::hybrid`, RE2.**
+**[RAhyb] Lazy / hybrid DFAs — Rust `regex-automata::hybrid`, RE2.**
 <https://docs.rs/regex-automata/latest/regex_automata/hybrid/index.html>.
 The lazy DFA builds itself during the *search*, bounded by a fixed cache
 capacity, constructing at most one new state per input byte and so achieving
@@ -400,7 +413,7 @@ documentation.*
 
 ### 2.4 Bounded-size determinization, 2020s
 
-**Baburin, I. & Cotterell, R. — "A Close Analysis of the Subset
+**[BC24] Baburin, I. & Cotterell, R. — "A Close Analysis of the Subset
 Construction" (arXiv:2407.09891, 2024; DCFS 2025),**
 <https://arxiv.org/abs/2407.09891>. Two results that bear directly on §3's
 null candidate. First, a hardness result: computing NFA state complexity
@@ -416,8 +429,8 @@ does not, per its abstract, relate subset-construction size to minimal DFA
 size — which is the relation lim2's census actually needs, so this bounds
 the wrong end.*
 
-**Dusi, N. et al. — "Quick Subset Construction", *Software: Practice and
-Experience* (2023),** <https://onlinelibrary.wiley.com/doi/full/10.1002/spe.3246>.
+**[Dus23+] Dusi, N. et al. — "Quick Subset Construction", *Software:
+Practice and Experience* (2023),** <https://onlinelibrary.wiley.com/doi/full/10.1002/spe.3246>.
 Listed for completeness; I read only the title and venue. **Unverified.**
 
 ### 2.5 What the survey settles
@@ -1214,8 +1227,8 @@ appear outside a quotation.
 
 **What was read.** [NF25] in full via the arXiv HTML
 (`https://arxiv.org/html/2505.10319v2`) — all of [NF25] §1-§6, Algorithm 1,
-Definitions 1-4, Tables 1-3 and the Data-Availability Statement. Figures 1 and 2 are survival (cactus)
-plots and were **not** readable as data: the HTML carries them as images,
+Definitions 1-4, Tables 1-3 and the Data-Availability Statement. Figures 1
+and 2 are survival (cactus) plots and were **not** readable as data: the HTML carries them as images,
 so every claim below about their content comes from the paper's own prose
 about them and is marked where it does. Also read, from the reference
 implementation `github.com/jn1z/OTF` (default branch `main`, last push
