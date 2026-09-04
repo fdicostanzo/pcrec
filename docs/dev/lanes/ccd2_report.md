@@ -16,6 +16,7 @@ row most needs is a quiet-box item and is named in §6.
 | **The stamps** | `<PREFIX>_VM_ENTRY_SHAPE` (closed token) and `<PREFIX>_VM_PROGRAM_BYTES` (the number the term compared) |
 | **The probe** | `tests/codegen/run_inline_capability.sh` — NEEDED under gcc 15.2.0, REDUNDANT under clang 21.1.8, both verdicts reproduced |
 | **The inventory** | `docs/design/opt_dial_inventory.md` — 21 switches audited, a draft policy table, the spelling question |
+| **Also fixed** | `src/core/limits.def` was not a Makefile prerequisite — editing a limit rebuilt nothing (§6b) |
 | **Validated** | `make strict` clean; 70 emit-compile-answer runs over 14 patterns x 409 subjects, **0 mismatches**; four rungs compile `-Wall -Wextra -Werror` |
 | **Not validated** | `make test`, `make test-codegen`, `make test-axes`, the identity gate, and every ns/call number — all post-lift |
 
@@ -326,6 +327,47 @@ Two questions, in priority order:
 Also unmeasured, and all post-lift: `make test`, `make test-codegen`,
 `make test-axes` over the new ordinal, the identity gate, and the bench's own
 altwide arms (this box, `gcc -O2`, one subject shape).
+
+---
+
+## 6b. A BUILD DEFECT FOUND BY THIS CHANGE, and it is the same one twice
+
+**`src/core/limits.def` was not a prerequisite of any object file.** Editing a
+limit and running `make` printed *"Nothing to be done for 'all'"*, and none of
+the nine translation units that `#include` it — `limits.h`, `internal.h`,
+`emit_vm.c`, `limits_dump.c` and five module files — was rebuilt.
+
+**HOW IT SURFACED, and this is how the class always shows up.** This lane
+edited `VM_INLINE_CHAIN_MAX_BYTES` from 20,000 to 4,096. The EMITTER honoured
+4,096 (its own `.c` had changed in the same edit, so it was recompiled) while
+`pcrec --list-limits` still reported 20,000. **One binary carrying two values
+of one constant**, with the artifact and the registry dump disagreeing about
+the number that chose the artifact's shape.
+
+**WHY IT MATTERS BEYOND THIS LANE.** A lane that changed ONLY a limit — the
+[LIM-2] shape, the [ART-SIZE] bar, a budget re-choice — and then ran
+`make test` would have tested the OLD number against the NEW expectation, or
+the old number against the old expectation, and read green either way. It is
+the check-design failure in `docs/dev/learnings.md` §3 arriving through the
+build system rather than through a script.
+
+**IT IS THE SAME DEFECT THE MAKEFILE ALREADY WARNS ABOUT, one file later.**
+The comment immediately above the rule records `src/parse/cls_bits.inc`
+joining the prerequisites at MOD-0.3e, *"found the hard way: a PC-4 bitmap
+sabotage produced ZERO disagreements because the edited .inc never entered the
+binary — hand-maintained header deps must grow with every new include"*.
+`[LIM-1]` then introduced `limits.def` and did not add it.
+
+**FIXED ON THIS BRANCH** by adding `src/core/limits.def` to the pattern rule's
+prerequisites, with the history in the comment beside it. Everything in §3,
+§4 and §5 was re-measured after a full rebuild.
+
+**WHAT I DID NOT DO.** Automatic dependency generation (`-MMD -MP`) would
+retire the hand-maintained list entirely and is the real fix; it is out of
+this lane's scope and belongs to whoever owns the build (D2 keeps this a
+plain GNU makefile on purpose, and `-MMD` is portable GNU make, so the
+objection is about scope rather than about the mechanism). Filed here rather
+than done.
 
 ---
 

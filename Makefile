@@ -107,7 +107,20 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # edited .inc never entered the binary — hand-maintained header deps must
 # grow with every new include, or a regenerated table (a libpcre2 version
 # bump is a re-measurement event, D26) silently ships stale.
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h lib/pcrec.h src/parse/cls_bits.inc
+#
+# src/core/limits.def joined at [CC-DIFF] STEP 2 (2026-09-04, lane ccd2), and
+# it is THE SAME DEFECT A SECOND TIME — the warning directly above it is the
+# one that was not heeded when [LIM-1] introduced the file. limits.def is
+# `#include`d by nine translation units (limits.h, internal.h, emit_vm.c,
+# limits_dump.c and five module files), and NONE of them was rebuilt when it
+# changed: `touch src/core/limits.def && make` printed "Nothing to be done".
+# FOUND THE SAME WAY, and it is worth recording because it is how the class
+# always shows up: this lane edited VM_INLINE_CHAIN_MAX_BYTES from 20,000 to
+# 4,096, saw the EMITTER honour 4,096 (its own .c had changed too, so it was
+# recompiled) and `pcrec --list-limits` still report 20,000 — one binary
+# carrying two values of one constant. A lane that changed only a limit and
+# then ran `make test` would have tested the OLD number and read green.
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
