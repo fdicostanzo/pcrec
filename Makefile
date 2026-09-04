@@ -303,7 +303,8 @@ test-codegen: all
 	    'bash tests/codegen/run_dfa_stamps.sh' \
 	    'bash tests/codegen/run_offset_skip.sh' \
 	    'bash tests/codegen/run_size_term.sh' \
-	    'bash tests/codegen/run_trie_identity.sh'
+	    'bash tests/codegen/run_trie_identity.sh' \
+	    'bash tests/codegen/run_scan_edge_census.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

@@ -2311,3 +2311,34 @@ Sabotage rows: S206 (predicate removed) and S207 (predicate inverted), on the
 new `pfcollapse` mech arm. Both are answer-identical, so their corpus arm is
 EXPECTED green — see `tests/mech/CLAUDE.md`'s own section for why that is the
 arm working rather than a half-detection.
+
+## `run_scan_edge_census.sh` — [OPT-EDGE] STEP 1.1's population (2026-09-04)
+
+The eleven artifacts precondition (8) cost a scan edge at [OPT-EDGE] STEP 1,
+with the machine each one regains it on at STEP 1.1 — an ENUMERATED MANIFEST,
+written from the measured artifact rather than harvested at run time, plus a
+STALENESS arm (a listed pattern that is no longer a `pattern` line under
+`tests/` fails) and a non-vacuity floor.
+
+Two things it asserts and one it deliberately does not.
+
+- **The edge count per MACHINE**, read off the artifact's own `[OPT-5] SCAN
+  EDGE` markers attributed by the state variable each block tests. The stamp
+  is the wrong instrument: `RX_DFA_SCAN_EDGE` names axis I's BODY form, so a
+  machine going from two edges to one reads identical — and the whole-artifact
+  marker count is the wrong RESOLUTION, which is how the STEP 1 census came to
+  call two `offset-set` artifacts hazardous when the edge they lost was on
+  their REVERSE machine.
+- **The loop entry is the general head test**, wherever a machine has both a
+  seed table and an edge. That regression is invisible to any answer check
+  whose subjects never seed onto a head, and it is a LOST MATCH when they do.
+- **It is NOT a control on precondition (8) itself.** The narrowed (8) has an
+  empty population on today's corpus, so nothing here goes red if it is
+  deleted; the file's own header says so rather than implying a failing
+  direction it does not have. (8)'s failing direction belongs to a mech row
+  aimed at `dfa_form_derive`'s read-back check.
+
+Failing directions measured at the landing: 11 of 13 rows red against a build
+with the entry dispatch reverted, and 11 of 13 red against the STEP 1
+compiler.
+

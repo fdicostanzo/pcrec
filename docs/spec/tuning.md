@@ -1159,9 +1159,11 @@ of sixteen. The pass is `src/opt/scanedge.c` and its header carries the exact
 criterion and its preconditions — five in the header, three more stated at
 their own sites: (6) a head may not be another state's position-VIEW target,
 (7) two chains that link must have their heads in ascending order, and
-(8) ([OPT-EDGE] STEP 1) a head may not be a state any SEED family names, so
-that nothing but the step and the loop's entry can put a head into the state
-variable.
+(8) ([OPT-EDGE] STEP 1, narrowed at STEP 1.1) a head may not be a state any
+SEED family names **on a machine whose candidate-start prefilter writes the
+state variable** — the `offset-set` pair, whose skip lands past bytes that
+LEAVE the start state and must therefore re-seed. The other prefilter forms
+skip bytes the machine provably stays parked on and write nothing.
 
 **What the artifact does instead.** One `if (state == K) { … }` block per
 edge, counting the class's bytes in a loop whose only carried value is the
@@ -1201,33 +1203,50 @@ for (;;) {
 }
 ```
 
+**A SECOND EMITTED SITE READS THE SAME SENTINEL, and it is the loop's ONE
+PER-SEARCH TEST rather than a per-byte one.** The state variable is also
+written before the loop, by the start seed (§2.x's mechanism 4: a machine whose
+interior start states differ by context class initialises it from
+`seed_state[byte_class[subject[search_from - 1]]]`, i.e. to any member of the
+family). A search that seeds straight onto a head must reach the edge body
+without the generic path, so the loop's entry asks the same question the body
+does:
+
+```c
+if (<m>_is_stop(state) && !<m>_is_dead(state)) goto <prefix>_forward_scan_edge;
+```
+
+folded away entirely on a machine with no seed, where the state IS the start
+state and the jump is unconditional or absent. **This entry test was an
+equality against the start state until [OPT-EDGE] STEP 1.1**, which was exact
+only while precondition (8) refused every other seed target as a head; asking
+the general question is what lets (8) narrow.
+
 Four consequences a caller can see. The emitted state NUMBERS of an
 edge-bearing machine differ from the pre-[OPT-EDGE] compiler's (the heads are
 the top rows); each such machine emits one extra accessor, `<prefix>_<m>_is_stop`
 (folded to the constant `1` where every state is a head); an artifact with
 no scan edge — which includes every artifact built with this flag — is
 byte-identical to the pre-[OPT-EDGE] compiler's; and, by precondition (8),
-**a small, named population of patterns stops carrying a scan edge at all**.
+a machine whose prefilter reseeds may decline an edge it would otherwise take.
 
-**THE POPULATION (8) COSTS, MEASURED over every distinct `pattern` line under
-`tests/` (2,539 compiled by both compilers):** ELEVEN artifacts lose an edge,
-TEN of them all of their edges, and every one is a `\b`/`\B` pattern —
-`(\b\w+\b)`, `(foo\B)`, `\Bfoo\B`, `\b\K\w+`, `\b\w+\b`,
-`\b\w+\b$`, `\b\w+\b\z`, `\b\w+\z`, `\b\w\b`, `\bfoo\B`,
-`foo\B`. Those ten stamp `<PREFIX>_DFA_SCAN_EDGE "none"` where the
-pre-[OPT-EDGE] compiler stamped `"range"` or `"bitmap"`, and fall back to the
-ordinary table walk. No answer moves — `make test-axes` is answer-identical on
-all 21 axes — and nothing outside the seed-bearing family is affected: an
-artifact with no seed table cannot lose an edge to (8), which is the bound the
-census asserts rather than discovers.
-
-(8) is deliberately WIDER than the hazard: of those eleven, only TWO carry a
-prefilter that actually reseeds (`offset-set-bounded`); the other nine take a
-`byte-class`/`memchr` prefilter, which advances the position but never writes
-the state variable. Narrowing it needs the pass to know which prefilter form
-the machine will take, and the pass runs before that selection — and the
-refusal cannot move into the emitter, because by then the chain's interior
-states are already deleted.
+**WHAT (8) COSTS, MEASURED. At STEP 1 it cost ELEVEN artifacts an edge**, over
+every distinct `pattern` line under `tests/` (2,539 compiled by both
+compilers), every one a `\b`/`\B` pattern: `(\b\w+\b)`, `(foo\B)`, `\Bfoo\B`,
+`\b\K\w+`, `\b\w+\b`, `\b\w+\b$`, `\b\w+\b\z`, `\b\w+\z`, `\b\w\b`, `\bfoo\B`,
+`foo\B`. **At STEP 1.1 all eleven get it back**, and the two the STEP 1 census
+called hazardous turn out not to be: the edge each of them lost is on the
+REVERSE machine, which carries no candidate-start prefilter at all (every
+axis-B candidate requires the forward direction), so nothing in that loop can
+reseed. **The narrowed (8) has an EMPTY population on today's corpus** — an
+artifact compiled with the precondition removed entirely is byte-identical —
+because a machine that takes an `offset-set` prefilter has no scan-shaped chain
+in its forward machine to begin with. It is kept, exact and cheap, because the
+mechanism it guards is real: the reseed genuinely writes the state variable
+MID-BODY, after the loop's one stop test has been passed, where nothing can see
+it. `src/gen/emit_dfa.c`'s `dfa_form_derive` re-derives the rule from the
+machine it is about to emit, so the day the population stops being empty the
+pass and the emitter cannot disagree about it silently.
 
 **Why.** `docs/dev/opt5_step0_profile.md` measured the DFA's ordinary step —
 `state = next_state[state + class]`, whose load ADDRESS is the value the
