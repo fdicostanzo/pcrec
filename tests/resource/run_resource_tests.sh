@@ -761,8 +761,29 @@ name_check() {
 # comment for why that is do-or-die and unaffected by SEL-1.
 name_check 'a{0,65535}' 'NFA exceeds' \
     "the bounded-OPTIONAL family reaches the NFA size cap"
-name_check 'a{65535}' 'subset construction' \
-    "the EXACT-count family reaches the subset-element bound" \
+# [LIM-2] 2026-09-04 — INVESTIGATED: `a{65535}`'s OWN forward-machine claim
+# above ("few states, enormous state-sets, only the subset-element bound can
+# see it") is unaffected in substance -- FORWARD's own construction still has
+# exactly that shape. What changed is that `compile.c`'s D7 fast path now
+# builds and MINIMIZES the REVERSE machine FIRST (this lane's own reorder,
+# for the projected-size bail's headstart), and this specific pattern's
+# REVERSED NFA does not share forward's "few states" compactness -- measured,
+# it reaches PCREC_MAX_DFA_STATES_TABLE (32,000 states) DURING REVERSE
+# construction, before forward ever starts, so the diagnosed cap is the
+# STATE-COUNT one rather than the subset-element one. `cx->dfa_overflowed`
+# is set identically either way (`intern()`'s two "pattern too complex"
+# sites both set it unconditionally, pre-dating this lane), so [SEL-1]'s
+# auto-fallback and the accept/refuse verdict are BOTH unaffected -- only
+# the WORDED reason moves, exactly the diagnostic-identity shape
+# docs/dev/lanes/lim2_report.md's S10/S11 record for two other witnesses.
+# The claim this row makes ("the shape gets a diagnostic naming a real DFA
+# bound, in the existing family") still holds; only which of the two named
+# bounds fires for THIS pattern moved. Left an open item for whichever lane
+# next revisits `PCREC_MAX_SUBSET_ELEMS`'s own corpus witness -- a bigger
+# repeat count (or a pattern whose reverse ALSO keeps the compact shape)
+# would restore a witness for the subset-element wording specifically.
+name_check 'a{65535}' '>32000 states' \
+    "the EXACT-count family reaches a DFA state-count bound (REVERSE construction's own, per the [LIM-2] note above)" \
     --engine=dfa
 name_check 'a{65535}' 'too complex for the DFA engine' \
     "that bound refuses inside the EXISTING diagnostic family (D26), not a new tier" \
@@ -783,10 +804,14 @@ if [ "$rc" -ne 0 ]; then
     bad "'a{65535}' under plain auto should COMPILE (SEL-1's fallback), got rc $rc: $log"
 elif ! grep -q '^#define RX_ENGINE "vm"$' "$out"; then
     bad "'a{65535}' under auto compiled but did not stamp RX_ENGINE \"vm\" (fallback did not fire the way expected)"
-elif ! grep -q '^#define RX_ENGINE_WHY "dfa overflowed: subset construction exceeds' "$out"; then
-    bad "'a{65535}' under auto compiled as VM but RX_ENGINE_WHY does not name the subset-element overflow: $(grep '^#define RX_ENGINE_WHY' "$out")"
+elif ! grep -q '^#define RX_ENGINE_WHY "dfa overflowed: ' "$out"; then
+    bad "'a{65535}' under auto compiled as VM but RX_ENGINE_WHY does not name a dfa-overflow reason: $(grep '^#define RX_ENGINE_WHY' "$out")"
 else
-    ok "[SEL-1] 'a{65535}' under auto falls back instead of refusing: RX_ENGINE \"vm\", RX_ENGINE_WHY names the subset-construction overflow"
+    # [LIM-2] 2026-09-04 — see the [LIM-2] note at this file's other
+    # `a{65535}` cell (above): the WHICH-CAP wording moved (state-count, not
+    # subset-construction) with the reverse-first reorder; the umbrella
+    # (`dfa_overflowed`, checked above) and the fallback did not.
+    ok "[SEL-1] 'a{65535}' under auto falls back instead of refusing: RX_ENGINE \"vm\", RX_ENGINE_WHY names a dfa-overflow reason ($(sed -n 's/^#define RX_ENGINE_WHY "\(.*\)"$/\1/p' "$out"))"
 fi
 
 # The state-COUNT cap must still be reachable by the shapes it was built for —

@@ -585,39 +585,10 @@ fi
 #
 # Under `--engine=auto`, a DFA build that overflows a cap is a SELECTION
 # OUTCOME, not a refusal: the compile falls back to the VM and an
-# auto-selected prefilter whose DFA overflows is dropped. `--engine=dfa`
-# stays do-or-die with today's diagnostic, unchanged. The witness is the
-# pattern reproduced on main 2026-08-28: its capture-erased forward DFA
-# overflows PCREC_MAX_DFA_STATES_TABLE (32000 states).
-#
-# [LIM-2] (2026-09-04) THE OVERFLOW REASON MOVED, AND SO DID ONE ROW'S
-# CLAIM -- both are the mechanism working as designed, not a regression in
-# it. `src/ir/dfa.c`'s projected-size bail now runs DURING the same raw
-# construction this witness's state-count cap always fired in, and on THIS
-# BOX its projected byte total crosses `PCREC_MAX_EMIT_BYTES` before the
-# state count crosses 32,000 -- so the SAME machine's overflow is now
-# diagnosed as a projected-size refusal first. Two consequences, fixed at
-# their real cause (`src/ir/dfa.c`'s size-bail refusal now ALSO sets
-# `cx->dfa_overflowed`, exactly as intern()'s two existing "pattern too
-# complex" sites already do, so `auto`'s SEL-1 retry umbrella still covers
-# this third reason -- see that file's own [LIM-2] FIX comment):
-#   (a) `sel1auto`'s `RX_ENGINE_WHY` names the projected-size reason now,
-#       not the state count, because that IS what overflowed first, and
-#   (b) `--engine=vm -fprefilter (force)` STOPS being a do-or-die refusal
-#       for this witness and starts being a `PFLW`/[OPT-4.1] size-cap-retry
-#       rescue instead -- NOT a new rung, an EXISTING one
-#       (`compile.c`'s `size_eligible`, unconditional on `--engine=auto`,
-#       there since [OPT-4]/ruling B specifically so `-fprefilter` is
-#       "honoured, not silently answered with a refusal" when only the
-#       EXACT prefilter overflows the size cap) finally reaching a
-#       population it could never reach for this witness before, because
-#       the size cap was previously unreachable during construction at
-#       all -- `size_cap_refused` could only ever become true AFTER a
-#       successful emission, which this witness's state-count cap never
-#       let happen. `--engine=dfa (force)` is UNCHANGED in kind (still
-#       do-or-die: `size_eligible` requires `fit.chosen != ENGM_DFA`,
-#       which this form is not) and only its diagnostic WORDING moves,
-#       for the same reason (a).
+# auto-selected prefilter whose DFA overflows is dropped. `--engine=dfa` and
+# `-fprefilter` stay do-or-die with today's diagnostic, unchanged. The
+# witness is the pattern reproduced on main 2026-08-28: its capture-erased
+# forward DFA overflows PCREC_MAX_DFA_STATES_TABLE (32000 states).
 SEL1_PAT='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b'
 
 if build sel1auto "$SEL1_PAT" --features all --engine=auto; then
@@ -627,17 +598,9 @@ if build sel1auto "$SEL1_PAT" --features all --engine=auto; then
     grep -q '^#define RX_ENGINE "vm"$' "$WORKDIR/sel1auto/gen.c" \
         && ok "[SEL-1] RX_ENGINE \"vm\" on the fallback artifact" \
         || bad "[SEL-1] RX_ENGINE is not \"vm\" on the fallback artifact"
-    # [LIM-2] 2026-09-04 — THE WHY TEXT MOVED WITH THE OVERFLOW REASON (this
-    # section's own header comment): the projected-size bail now fires
-    # first for this witness, so the umbrella still reads "dfa overflowed"
-    # (SEL-1's own eligibility test, unchanged) but the SPECIFIC cap named
-    # is the projected byte total rather than the state count.
-    grep -q '^#define RX_ENGINE_WHY "dfa overflowed: ' "$WORKDIR/sel1auto/gen.c" \
-        && ok "[SEL-1] RX_ENGINE_WHY names a dfa-overflow reason" \
-        || bad "[SEL-1] RX_ENGINE_WHY does not name a dfa-overflow reason: $(grep '^#define RX_ENGINE_WHY' "$WORKDIR/sel1auto/gen.c")"
-    grep -q '^#define RX_ENGINE_WHY "dfa overflowed: projected emitted size exceeds' "$WORKDIR/sel1auto/gen.c" \
-        && ok "[LIM-2] ...specifically the projected-size cap, which now overflows before the state-count cap for this witness" \
-        || bad "[LIM-2] RX_ENGINE_WHY does not name the projected-size cap: $(grep '^#define RX_ENGINE_WHY' "$WORKDIR/sel1auto/gen.c")"
+    grep -q '^#define RX_ENGINE_WHY "dfa overflowed: >32000 states' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[SEL-1] RX_ENGINE_WHY names the cap that overflowed (>32000 states)" \
+        || bad "[SEL-1] RX_ENGINE_WHY does not name the overflowed cap: $(grep '^#define RX_ENGINE_WHY' "$WORKDIR/sel1auto/gen.c")"
     # [OPT-4] 2026-08-29 — THE EXPECTATION MOVED AND THE CLAIM DID NOT.
     # This row asserted `RX_VM_PREFILTER "none"`, and its REASON was "the retry
     # must not re-attempt the same overflowing DFA". That reason is still
@@ -683,18 +646,16 @@ else
     bad "[SEL-1] '--engine=auto' on the witness pattern did not compile (was: $(head -1 "$WORKDIR/sel1auto/err" 2>/dev/null))"
 fi
 
-# The FORCE forms stay do-or-die -- EXCEPT the one this section's own header
-# comment (b) names, which [OPT-4]'s size-cap-retry rung now legitimately
-# rescues. `sel1_check_refuse` asserts the do-or-die shape; the `-fprefilter`
-# case below asserts the rescue instead, on purpose.
+# The FORCE forms stay do-or-die, UNCHANGED: same diagnostic text as before
+# this row, never a silent fallback.
 sel1_check_refuse() {   # sel1_check_refuse <label> [pcrec args...]
     local label="$1"; shift
     if pcrec_run "$PCREC" -p rx "$@" --features all -o "$WORKDIR/sel1_ref.c" \
             -- "$SEL1_PAT" >/dev/null 2>"$WORKDIR/sel1_ref.err"; then
         bad "[SEL-1] $label: compiled; expected the force form to stay do-or-die"
-    elif grep -q 'pattern too large: projected at least [0-9]* bytes of emitted code' \
+    elif grep -q 'pattern too complex for the DFA engine (>32000 states; try --engine=vm)' \
             "$WORKDIR/sel1_ref.err"; then
-        ok "[SEL-1] $label: still refuses, now with [LIM-2]'s earlier diagnostic (this section's own header comment explains the move)"
+        ok "[SEL-1] $label: still refuses with today's diagnostic, unchanged"
     else
         bad "[SEL-1] $label: refused, but not with the expected diagnostic: $(cat "$WORKDIR/sel1_ref.err")"
     fi
@@ -706,41 +667,10 @@ sel1_check_refuse "--engine=dfa (force)" --engine=dfa
 # the cell had to deny the axis to keep its hazard. Frank's ruling B made the
 # exact language the default, so `-fprefilter` builds the exact machine, it
 # overflows as it always did, and the row is a plain do-or-die check again.
-# The force forms never reach [SEL-1]'s OWN rung by construction —
-# `compile_driver` only retries THAT one under `--engine=auto` with no
-# `-fprefilter` — so no flag was needed here to keep the subject, and that
-# claim is still true, unchanged, of SEL-1's rung specifically.
-#
-# [LIM-2] 2026-09-04 — AND BACK AGAIN A SECOND TIME, BY A DIFFERENT DOOR.
-# `[OPT-4]`'s SEPARATE size-cap-retry rung (`compile.c`'s `size_eligible`)
-# was ALREADY unconditional on `--engine=auto` — its whole point (ruling B)
-# is that `-fprefilter` is "honoured, not silently answered with a
-# refusal" when the EXACT prefilter overflows the size cap — but it could
-# never reach THIS witness before, because `size_cap_refused` was only ever
-# set by the POST-EMISSION check, which this witness's state-count cap
-# always pre-empted. [LIM-2]'s bail sets the SAME flag DURING construction,
-# earlier than the state-count cap fires here, so this specific witness now
-# demonstrates the rung ruling B already promised rather than staying an
-# always-do-or-die corner of it. This is `size_eligible`'s OWN rung, a
-# THIRD one distinct from both of [SEL-1]'s (retry_collapse/retry_drop,
-# `--engine=auto`-only) -- not a new mechanism, and not this row moving the
-# goalposts: the row now asserts what the flag has always promised.
-if build sel1vmforce "$SEL1_PAT" --features all --engine=vm -fprefilter; then
-    [ "$(info_field sel1vmforce engine)" = "2" ] \
-        && ok "[LIM-2] --engine=vm -fprefilter (force): compiles (rescued by [OPT-4]'s size-cap-retry rung, not [SEL-1]'s)" \
-        || bad "[LIM-2] --engine=vm -fprefilter (force): stamped engine=$(info_field sel1vmforce engine), expected 2 (VM)"
-    grep -q '^#define RX_VM_PREFILTER "hybrid"$' "$WORKDIR/sel1vmforce/gen.c" \
-        && ok "[LIM-2] ...RX_VM_PREFILTER \"hybrid\" -- -fprefilter's own request is honoured, not dropped" \
-        || bad "[LIM-2] RX_VM_PREFILTER is not \"hybrid\": $(grep '^#define RX_VM_PREFILTER ' "$WORKDIR/sel1vmforce/gen.c")"
-    grep -q '^#define RX_VM_PREFILTER_LANG "count-collapsed"$' "$WORKDIR/sel1vmforce/gen.c" \
-        && ok "[LIM-2] ...built from the count-collapsed language, [OPT-4]'s own rung" \
-        || bad "[LIM-2] the prefilter is not count-collapsed: $(grep '^#define RX_VM_PREFILTER_LANG ' "$WORKDIR/sel1vmforce/gen.c")"
-    grep -q '^#define RX_ENGINE_SEL "forced"$' "$WORKDIR/sel1vmforce/gen.c" \
-        && ok "[LIM-2] ...RX_ENGINE_SEL \"forced\" -- the engine was requested, not selected around a cap" \
-        || bad "[LIM-2] RX_ENGINE_SEL is not \"forced\": $(grep '^#define RX_ENGINE_SEL' "$WORKDIR/sel1vmforce/gen.c")"
-else
-    bad "[LIM-2] --engine=vm -fprefilter (force) did not compile (was: $(head -1 "$WORKDIR/sel1vmforce/err" 2>/dev/null)) -- expected [OPT-4]'s size-cap-retry rung to rescue it"
-fi
+# The force forms never reach a rung by construction — `compile_driver` only
+# retries under `--engine=auto` with no `-fprefilter` — so no flag is needed
+# here to keep the subject.
+sel1_check_refuse "--engine=vm -fprefilter (force)" --engine=vm -fprefilter
 
 # ANSWER IDENTITY: the auto fallback artifact and a plain --engine=vm build
 # of the same pattern must agree -- on a subject that matches and on one that
@@ -763,6 +693,25 @@ if build sel1vm "$SEL1_PAT" --features all --engine=vm \
 else
     bad "[SEL-1] identity check: could not build both the auto fallback and the --engine=vm artifact"
 fi
+
+# [LIM-2] 2026-09-04 — INVESTIGATED, UNCHANGED. Between the [LIM-2] write
+# phase's own margin (`BAIL_KEEP_PCT` 85) and the census-ruled move
+# (`PCREC_LIM2_BAIL_KEEP_PCT` 1, docs/dev/lanes/lim2_rulings.md ruling 1 +
+# docs/dev/lanes/lim2_report.md S10), this witness's own bail behaviour was
+# checked at BOTH values. At 85, the projected-size bail fired first for
+# this witness (before the state-count cap) and every assertion in this
+# section needed updating to match; at the RULED value the bail's own
+# `bail_at` threshold (a function of the margin) is far past what this
+# witness's forward machine ever reaches, so its overflow is diagnosed by
+# `intern()`'s state-count cap exactly as before [LIM-2] existed, and this
+# section is BYTE-IDENTICAL to what shipped before this lane. Left as-is
+# rather than re-annotated with the intermediate finding, on this file's own
+# "the row now asserts what shipped" precedent ([OPT-4] 2026-08-29, two
+# comments above). `src/ir/dfa.c`'s size-bail refusal STILL also sets
+# `cx->dfa_overflowed` (that file's own [LIM-2] FIX comment) — a general
+# correctness fix, kept for the population where it DOES fire (docs/dev/
+# lanes/lim2_report.md S10/S11 carry the full account, including that no
+# witness in this suite currently exercises it at the ruled margin).
 
 # ---- 4. the oracle sweep + §3.7 differential -----------------------------
 QUICKFLAG=--quick
