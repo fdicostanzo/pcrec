@@ -684,10 +684,10 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<prefix>_run_state_init`, also above the marker; it was DROPPED from this
 # event on measurement and moves nothing now.
 #
-# THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE, not this lane's — the lane
+# THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE (386abf94, the merge of lane/edge1), not this lane's — the lane
 # leaves it at the previous pin, because a pin must name a commit reachable
 # after the merge and a lane branch's is not (opt5i's and ccdiff1's precedent).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cee7c741}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-386abf94}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
