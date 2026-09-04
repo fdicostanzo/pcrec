@@ -28,7 +28,9 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
-#include <link.h>
+#ifndef __APPLE__
+#include <link.h>   /* dlinfo(RTLD_DI_LINKMAP) — glibc/ELF only */
+#endif
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -102,8 +104,18 @@ typedef struct {
  * package), then the unversioned name in case a -dev package is installed on
  * some other box. */
 static const char *const PCRE2_ABI_LIBS[] = {
+#ifdef __APPLE__
+    /* macOS: dlopen's default search does not include Homebrew's prefix,
+     * so the two conventional install locations are listed as absolute
+     * paths after the bare names. */
+    "libpcre2-8.dylib",
+    "libpcre2-8.0.dylib",
+    "/opt/homebrew/lib/libpcre2-8.dylib",
+    "/usr/local/lib/libpcre2-8.dylib",
+#else
     "libpcre2-8.so.0",
     "libpcre2-8.so",
+#endif
     NULL
 };
 
@@ -183,10 +195,20 @@ static inline void pcre2_abi_version(const Pcre2Abi *abi, char *buf, size_t bufs
  * comes from PCRE2 rather than from pcrec. Returns NULL if unavailable. */
 static inline const char *pcre2_abi_path(const Pcre2Abi *abi)
 {
+#ifdef __APPLE__
+    /* No dlinfo(RTLD_DI_LINKMAP) on macOS; dladdr on a symbol the loader
+     * already resolved names the file it came from. dli_fname points at
+     * dyld-owned storage, same lifetime story as the ELF branch's l_name. */
+    Dl_info info;
+    if (!abi->handle || !abi->compile) return NULL;
+    if (dladdr((void *)abi->compile, &info) == 0) return NULL;
+    return (info.dli_fname && info.dli_fname[0]) ? info.dli_fname : NULL;
+#else
     struct link_map *lm = NULL;
     if (!abi->handle) return NULL;
     if (dlinfo(abi->handle, RTLD_DI_LINKMAP, &lm) != 0 || !lm) return NULL;
     return (lm->l_name && lm->l_name[0]) ? lm->l_name : NULL;
+#endif
 }
 
 #endif /* PCREC_TESTS_PCRE2_ABI_H */
