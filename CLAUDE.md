@@ -101,6 +101,9 @@ tier, and PCRE2 is a moving target with no specification.
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
 - `studies/` — adopted exploratory work (reference material, own Makefiles,
   never built or tested by pcrec's make). See studies/CLAUDE.md.
+- `REFERENCES.md` — the repository's reference list for cited external
+  publications. Cite a paper by its key (`[Author##]`); add a new paper's
+  entry there in the same change that first cites it.
 
 ## Conventions
 
