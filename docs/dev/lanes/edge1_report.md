@@ -463,6 +463,79 @@ re-pin.
 Nothing in [OPT-EDGE] STEP 1 itself is red.
 
 
+
+---
+
+## 3.8 THE TIMING (f) — THE ACCEPTANCE IS MET; THE LADDER IS NOT DELIVERED
+
+Method: one artifact per arm compiled `-O2`, driven through spec §3.1's
+find-all loop over a 256 KB subject, `taskset`-pinned to one core, arms
+INTERLEAVED inside each round so a drift moves all three, and the ratio taken
+**per round from that round's own pair** — which is what makes the range
+readable when load1 is not zero. 15 rounds, 10 sweeps each. load1 0.49-0.56.
+
+**THE SUBJECT IS A NEAR-MISS CORPUS, and that choice is the measurement.** On
+the bench's own `t-256k-syslog` the whole loop reads 0.22 ns/byte, because
+the candidate-start prefilter dismisses almost every position and the scan
+loop barely runs — an entry cost cannot be seen there at all. The subject
+used is 256 KB of `NNNN-NN-NNX ` fields: the machine enters the digit chain
+and leaves it over and over without ever completing a match, which is
+precisely the ENTRY cost this row is about.
+
+| ratio | median | per-round range |
+|---|---|---|
+| **main / noedge** | **1.0937** | 1.0706 .. 2.2702 |
+| **branch / noedge** | **0.9995** | 0.9554 .. 1.0378 |
+| **branch / main** | **0.9173** | 0.4357 .. 0.9620 |
+
+**THE FIRST ROW REPRODUCES THE CHARTER'S OWN NUMBER.** [OPT-EDGE] was filed
+on a bench counterfactual of **x1.089** for iso-ts, `pcrec-auto` against
+`pcrec-auto-noedge` at the pinned tier. This harness, on its own subject,
+measures that same counterfactual at **1.0937** on main. That agreement is
+what licenses reading the second row as the row's acceptance:
+
+> **the scan edge's entry cost on iso-ts goes from x1.0937 to x0.9995 — the
+> edge now costs the loop nothing, which is what Frank's ruling asked for.**
+
+The citable number is still the BENCH's, at the pinned tier, on its own
+subjects and harness. This is my instrument agreeing with the bench's on the
+BEFORE, and reporting the AFTER on the same instrument.
+
+### The ladder is NOT delivered, and the design is why
+
+M1 was to fit `entry_cost(k) = a + b*k` over machines with 1, 2, 3 and 4
+forward edges, splitting the fixed-per-artifact cost from the per-edge one.
+Built (`\d{2}y`, `\d{2}y\d{2}`, `\d{2}y\d{2}y\d{2}`,
+`\d{2}y\d{2}y\d{2}y\d{4}`; forward edge counts verified 1/2/3/4 from the
+artifacts) and run, and the result is not usable:
+
+| edges | branch | main | noedge | branch − noedge | main − noedge |
+|---|---|---|---|---|---|
+| 1 | 3.3326 | 4.6867 | 5.0652 | −1.7326 | −0.3785 |
+| 2 | 2.3031 | 2.8399 | 3.8776 | −1.5745 | −1.0377 |
+| 3 | 1.6633 | 2.4003 | 2.3779 | −0.7146 | +0.0224 |
+| 4 | 2.5357 | 2.8958 | 3.2325 | −0.6968 | −0.3367 |
+
+**THE ENTRY COST COMES OUT NEGATIVE, and that is the design being wrong
+rather than the compiler being fast.** Subtracting the `-fno-scan-edge` arm
+does not isolate the entry cost, because that arm is a DIFFERENT MACHINE —
+its chain interiors are not deleted — so the difference carries the scan
+collapse's own per-byte win as well as the entry cost, and the collapse
+dominates. The isolation that would work is branch against MAIN, same
+machine, same edges, only the dispatch differing; on those pairs every rung
+is faster (0.711, 0.811, 0.693, 0.876) but not monotone in k, and the box had
+drifted to load 0.84-1.01, above the ruled 0.5. Reporting four non-monotone
+ratios off a quiet-box condition I did not hold, from a subtraction that
+conflates two effects, would be worse than reporting nothing.
+
+**What the ladder needs**, for whoever runs it: the branch-against-main
+isolation rather than the noedge subtraction, one near-miss subject PER RUNG
+(a rung whose pattern the subject cannot engage reads ~0.04 ns/byte and
+measures nothing — two of my three attempts died exactly there), and a box
+actually below 0.5 for its whole duration. M2, the minimum-chain floor, was
+not reached and is untouched.
+
+
 ---
 
 ## 4. THE PREDICTION TABLE, SCORED
