@@ -696,7 +696,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # leaves it at the previous pin, because a pin must name a commit reachable
 # after the merge and a lane branch's is not (opt5i's and ccdiff1's precedent).
 #
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-386abf94}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8d68ddc2}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

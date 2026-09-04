@@ -20955,3 +20955,14 @@ src/gen/CLAUDE.md (added sections), emit_dfa.c's producer (20),
 run_codegen_tests.sh (ABI_EXPECT 20 + a 19->20 clause), the identity
 gate's pin block (keep all; FILEPIN → the w13 merge). Then its chain,
 [LIM-2]'s launch, the battery, the size-log regeneration, DONE + OPEN.
+
+## 2026-09-04 — Fifty-first session, part 51 (08:2x EDT): [DD-13b.W1.3] MERGED (8d68ddc2, abi 20) — all three evening lanes are on main; FILEPIN → 8d68ddc2; w13's short chain running; then [LIM-2], the battery, the size log, DONE + OPEN
+
+lane/w13 merged --no-ff at 8d68ddc2: seven conflicts (the four abi-ritual sites
+with the narrative now carrying 16->17, 17->18, 18->19 and 19->20; plan.md's
+row = w13's delivery text + the manager's D89 tail; docs/dev/lanes/CLAUDE.md
+and src/gen/CLAUDE.md both sides kept); the branch's artifact_size_log.tsv
+EXCLUDED (main's kept). make + strict clean. FILEPIN → 8d68ddc2 in a src-free
+follow-up. The chain (test → codegen → registry → axes) started 08:2x.
+Main now carries the island (18), the dispatch (19) and composition (20) in
+the merge order isl1 → edge1 → w13, each chain green before the next merge.
