@@ -349,19 +349,21 @@ provide an open-source library implementing our approach."*
 **READ IN FULL 2026-09-04 by lane `m5paper` (M5). §6 is the reading; the
 `unverified` marks that stood here are retired and this paragraph is
 rewritten to what the paper says.** The mechanism is classic subset
-construction plus two changes (paper §3): the metastate→state map is
+construction plus two changes ([NF25] §3; the key resolves in
+`/REFERENCES.md`, and a bare `§N` below is still THIS study's): the
+metastate→state map is
 mediated by an **equivalence registry** (Def. 4: GET/PUT/UNIFY) whose GET may
 answer with an existing state merely *language-equivalent* to a metastate
 never seen, so that metastate is never created or explored (Algorithm 1
 line 19) — this is the only part that reduces exploration; and exploration
 is periodically interrupted by a **threshold predicate**, at which point the
 partial DFA is minimized by Hopcroft with every unexplored state pinned in
-its own block (lines 33-42), each equivalence found being fed back through
+its own block ([NF25] Algorithm 1 lines 33-42), each equivalence fed back through
 UNIFY. The relation is **language equivalence**, not bisimulation;
 simulation appears only as CCLS's preprocessing device for normalizing
-lookup keys (§4.2). **Exact**, and gains do concentrate in worst cases
-(§5.2) — but the headline correction is that the loop's output is
-**reduced, NOT minimal**: paper §3.1 states *"a final minimization is
+lookup keys ([NF25] §4.2). **Exact**, and gains do concentrate in worst
+cases ([NF25] §5.2) — but the headline correction is that the loop's output
+is **reduced, NOT minimal**: [NF25] §3.1 states *"a final minimization is
 necessary for correctly canonizing $A$"* and the reference implementation
 runs an unconditional Hopcroft pass after the loop. See §6.1; §3.8 and §3.9
 are corrected accordingly. *Verified: the whole paper (arXiv HTML v2) and
@@ -807,12 +809,12 @@ the place**, for three reasons the original draft under-weighted:
 `src/opt/minimize.c`, and it lands every one of §3.5's five renumbering
 hazards plus the registry's own invariants (a hypothesis that must be split
 on refutation is a data structure where being wrong is silent by
-construction). **M5 DISCHARGED 2026-09-04 (§6): the paper and the reference
-implementation have now been read, and §6.6 re-ranks this candidate.** The
+construction). **M5 DISCHARGED 2026-09-04 (§6): `[NF25]` (Nicol & Frohme; the key resolves
+in `/REFERENCES.md`) and its reference implementation have now been read, and §6.6 re-ranks this candidate.** The
 `unverified` mark is retired and three of the claims above do not survive it.
 Reason 1 is **false** — a final minimization is mandatory (§6.1), so the
 second pass is not optional, raw does not equal emitted, and lim2's
-projection does not become an identity. Reason 2 is **confirmed** (Algorithm 1
+projection does not become an identity. Reason 2 is **confirmed** ([NF25] Algorithm 1
 lines 19-29). Reason 3 is **half right in the load-bearing half**: C does not
 subsume A′, it *requires* **A** — UNIFY is called only from the intermediate
 minimization — so "do not build A" and "build C" are inconsistent (§6.6).
@@ -1194,12 +1196,25 @@ Lane `m5paper`, worktree `worktrees/m5paper`, branch `lane/m5paper`,
 under `src/` or `tests/` written. This section discharges §5.2's M5 and
 retires the `unverified` marks in §2.3 and §3.8.
 
-**What was read.** Nicol & Frohme, *Deconstructing Subset Construction:
-Reducing While Determinizing*, arXiv:2505.10319v2 [cs.FL], 10 Apr 2026,
-CC BY 4.0, in full via the arXiv HTML (`https://arxiv.org/html/2505.10319v2`)
-— all of §1-§6, Algorithm 1, Definitions 1-4, Tables 1-3 and the
-Data-Availability Statement. To appear in TACAS 2026, LNCS,
-doi:10.1007/978-3-032-22749-2_20. Figures 1 and 2 are survival (cactus)
+**Citation keys resolve in `/REFERENCES.md`** at the repository root
+(Frank's ruling, 2026-09-04). The paper this section is about is **`[NF25]`**
+— J. Nicol and M. Frohme, *"Deconstructing Subset Construction: Reducing
+While Determinizing"*, arXiv:2505.10319 (an April-2025 preprint; v2,
+[cs.FL], 10 Apr 2026, CC BY 4.0, is the version read); TACAS 2026, LNCS,
+doi:10.1007/978-3-032-22749-2_20. **It is very recent work.**
+
+**Two notational cautions for this section.** First, a section number
+written `[NF25] §3.1` is the PAPER's; a bare `§3.1` is THIS STUDY's — the two
+collide constantly and the key is what separates them. `Algorithm 1`,
+`Def. N`, `Eq. N` and `Table N` are always [NF25]'s; this study has none.
+Second, **a bracketed numeral inside a quotation from [NF25] — `[9]`, `[22]`,
+`[32]` — is [NF25]'s OWN bibliography numbering, not a `/REFERENCES.md` key.**
+Those are left as the paper wrote them, and are flagged "its [N]" where they
+appear outside a quotation.
+
+**What was read.** [NF25] in full via the arXiv HTML
+(`https://arxiv.org/html/2505.10319v2`) — all of [NF25] §1-§6, Algorithm 1,
+Definitions 1-4, Tables 1-3 and the Data-Availability Statement. Figures 1 and 2 are survival (cactus)
 plots and were **not** readable as data: the HTML carries them as images,
 so every claim below about their content comes from the paper's own prose
 about them and is marked where it does. Also read, from the reference
@@ -1213,7 +1228,7 @@ sources `OTFDeterminization.java`, `OTFCommandLine.java` (the driver) and
 
 **Candidate C's defining property is false.** The paper's construction does
 *not* leave a minimal machine; a final, full minimization is mandatory, and
-the paper says so in its own words at the end of §3.1:
+[NF25] says so in its own words at the end of its §3.1:
 
 > "While $A'$ may be minimized during exploration, the threshold predicate
 > might not trigger in the last iteration. **Thus, a final minimization is
@@ -1232,7 +1247,7 @@ final DFA<?, Integer> otfDFA = OTFDeterminization.doOTF(nfa.powersetView(), alph
 final CompactDFA<Integer> minimizedDFA = HopcroftMinimizer.minimizeDFA(otfDFA, alphabet);
 ```
 
-(`OTFCommandLine.java`, method `CCL`.) The paper's §5.1 "Parameters" says
+(`OTFCommandLine.java`, method `CCL`.) [NF25] §5.1 "Parameters" says
 the same from the other side: *"All configurations use Hopcroft's algorithm
 [22] to minimize either the intermediate automata (OTF) or the final
 automaton (OTF, SC)."* — OTF appears in both lists.
@@ -1254,7 +1269,7 @@ never created or explored; and exploration is periodically interrupted by a
 *threshold predicate*, at which point the partial DFA is minimized by
 Hopcroft with every unexplored state pinned in its own block, and each
 equivalence the minimizer finds is handed back to the registry to widen
-future lookups. The paper states both in §3: *"First, the NFA state space
+future lookups. [NF25] states both in its §3: *"First, the NFA state space
 exploration may be repeatedly interrupted by a threshold predicate... Second,
 the mapping between NFA metastates and DFA states... is handled by an
 equivalence registry."*
@@ -1272,15 +1287,15 @@ Definition 4 — three operations only:
 > states $q_1$ and $q_2$, which may affect future results of the GET method.
 
 The paper is explicit that a hash-based one-to-one registry with `UNIFY` as
-a no-op reproduces classic subset construction exactly (§3, after Def. 4;
-repeated in §3.2). The registry *is* the mechanism.
+a no-op reproduces classic subset construction exactly ([NF25] §3, after
+Def. 4; repeated in its §3.2). The registry *is* the mechanism.
 
 **What is merged, and on what relation.** **Language equivalence** — not
 bisimulation, not simulation. Def. 4's contract is stated as $L(Q)=L(q)$
 throughout, and the CCL registry's inference rests on the set identity
-$L(A\cup B)=L(A)\cup L(B)$ (§4.1, attributed to [6]), which follows from
-$L(Q)=\bigcup_{q\in Q}L(q)$ in §2.1. Simulation appears in exactly one
-place and in a *subordinate* role: the CCLS registry (§4.2) precomputes the
+$L(A\cup B)=L(A)\cup L(B)$ ([NF25] §4.1, attributed to its [6]), which follows
+from $L(Q)=\bigcup_{q\in Q}L(q)$ in [NF25] §2.1. Simulation appears in exactly one
+place and in a *subordinate* role: the CCLS registry ([NF25] §4.2) precomputes the
 similarity preorder on the input NFA and uses it to *prune* and *saturate*
 metastates before lookup, so that a lookup key is normalized. That is a
 device for finding more equivalences faster, not the equivalence being
@@ -1299,7 +1314,7 @@ work.**
    32-33: `E' ← E' ∪ {c'}` then `if threshold(A')`). The intermediate
    minimization runs on completed rows only, and unexplored states are
    pinned apart by construction (lines 34-42: `sig[i] = i` for a state not in
-   $E'$, a Boolean accept value for one in it). The paper's §3.2 states the
+   $E'$, a Boolean accept value for one in it). [NF25] §3.2 states the
    consequence: *"unexplored states are assigned unique blocks in the initial
    partition, ensuring they remain distinct until their behavior is fully
    determined. Consequently, minimization never merges states with incomplete
@@ -1319,9 +1334,10 @@ pessimistically in §3.5 and that misstatement is what killed A there — see
 
 **What it guarantees about the result.** Language equivalence to the input
 NFA, and nothing stronger about the loop's own output. The paper gives **no
-theorem and no lemma** anywhere; §3.2 "Termination and Correctness" is four
+theorem and no lemma** anywhere; [NF25] §3.2 "Termination and Correctness" is
+four
 paragraphs of prose whose argument is that both modifications preserve what
-classic subset construction already guarantees, and §3.3 explicitly declines
+classic subset construction already guarantees, and its §3.3 explicitly declines
 a real analysis. Minimality of the *final* result comes from the final
 Hopcroft pass, exactly as it does in pcrec today (`src/opt/minimize.c:69`
 onward, called at `src/core/compile.c:1134`-`:1135`).
@@ -1333,13 +1349,13 @@ onward, called at `src/core/compile.c:1134`-`:1135`).
 - **The result of the exploration loop is reduced, not minimal.** The gap
   has two named sources in the paper's own text. (i) The threshold may not
   fire near the end, so states created after the last interrupt were never
-  offered for merging (§3.1's closing paragraph, quoted in §6.1). (ii) Even
+  offered for merging ([NF25] §3.1's closing paragraph, quoted in §6.1). (ii) Even
   immediately after an interrupt, states kept apart *only* because they
   reach distinct unexplored states are not proved distinct; when those
   successors are later explored and merged, their predecessors become
   mergeable and stay unmerged until the next interrupt or the final pass.
 - **The paper measures this gap as a headline metric rather than
-  eliminating it.** §5.1 "Measurements": *"The overhead describes the
+  eliminating it.** [NF25] §5.1 "Measurements": *"The overhead describes the
   difference between the number of states of intermediate automata and the
   final DFA... For OTF and BRZ-OTF, we use the maximum size of the
   intermittently minimized automata as reference point."* That quantity is
@@ -1347,7 +1363,7 @@ onward, called at `src/core/compile.c:1134`-`:1135`).
   *shrinking* it, never as driving it to zero. The strongest claim in the
   evaluation is conditional and partial: *"For SC and OTF, simulation boosts
   performance both by improving runtime and reducing overhead, **sometimes to
-  the point of not introducing any redundant states at all**"* (§5.2,
+  the point of not introducing any redundant states at all**"* ([NF25] §5.2,
   Walnut). "Sometimes", on some systems, and in the *simulation-bearing*
   configurations — which are candidate B, not candidate C.
 
@@ -1364,7 +1380,7 @@ on both counts, and the reason is the one §3.1 already gave.**
   unchanged: compaction proves *equivalence*, a bail needs proved
   *inequivalence*, and OTF supplies no monotone quantity of the second kind.
 
-The paper offers nothing in this direction and says so structurally: §1
+[NF25] offers nothing in this direction and says so structurally: its §1
 contrasts the canonization problem with universality and inclusion, where
 antichains let you stop early, and concludes *"For the canonization problem,
 however, the construction of the full DFA is necessary."* §2.4's
@@ -1382,7 +1398,7 @@ settled here, and nothing in the paper bears on it.**
 
 ### 6.4 Cost (answer 3)
 
-**Complexity, as the paper states it: it does not.** §3.3 declines the
+**Complexity, as [NF25] states it: it does not.** Its §3.3 declines the
 analysis outright — *"Providing a detailed analysis of OTF's complexity is a
 challenge as it highly depends on user-provided parameters... As a result,
 we only want to briefly sketch the worst-case performance"* — and the sketch
@@ -1394,22 +1410,24 @@ bound relating work to the compression ratio, and no theorem.
 
 **Per-operation costs, as stated per registry:**
 
-| operation | CCL (§4.1) | CCLS (§4.2) |
+| operation | CCL ([NF25] §4.1) | CCLS ([NF25] §4.2) |
 |---|---|---|
 | PUT | amortized constant (hash) | + prune and saturate, linear in $\|Q\|$ with cached simulation |
 | UNIFY | merge two lattices; dominated by $\mathcal{O}(\|M_1\|\|M_2\|)$ subset comparisons on the minimal-element antichains | identical to CCL |
-| GET | hash hit if singleton; otherwise scan lattices for one covering $Q$ from above and below. Worst case *"quadratic (in the number of lattices and the number of their minimal elements) number of subset comparisons"* (§4.1 Remarks) | prune first, then as CCL; *"the runtime is still dominated by the quadratic lookup process"* |
+| GET | hash hit if singleton; otherwise scan lattices for one covering $Q$ from above and below. Worst case *"quadratic (in the number of lattices and the number of their minimal elements) number of subset comparisons"* ([NF25] §4.1 Remarks) | prune first, then as CCL; *"the runtime is still dominated by the quadratic lookup process"* |
 
 Preprocessing for CCLS is the similarity relation, $\mathcal{O}(|\delta|\cdot|S|)$
-(§2.2, citing [32]); bisimilarity is $\mathcal{O}(|\delta|\cdot\log|S|)$ (§2.2,
-citing [49]). §4.2's Remarks carry the warning the study's §3.7 arrived at
+([NF25] §2.2, citing its [32]); bisimilarity is
+$\mathcal{O}(|\delta|\cdot\log|S|)$ ([NF25] §2.2, citing its [49]). [NF25]
+§4.2's Remarks carry the warning this study's §3.7 arrived at
 independently: *"Computing the simulation preorder can be prohibitively
 expensive for large or dense NFAs, so the benefit of precomputing simulation
-relations must outweigh the cost."* §5.1 records that they tried the LIGHT-
+relations must outweigh the cost."* [NF25] §5.1 records that they tried the
+LIGHT-
 and HEAVY- reduction methods of [12] and *"found [them] to be impractical in
 our benchmarks due to their worst-case performance on NFAs"*.
 
-The threshold is adaptive (§5.1 "Parameters"): $t$ starts at 5000 and is
+The threshold is adaptive ([NF25] §5.1 "Parameters"): $t$ starts at 5000 and is
 rescaled after each minimization by the ratio of the new to the previous
 minimized size, so poor compression *lengthens* the interval between
 minimizations and good compression shortens it. That is a self-calibrating
@@ -1417,9 +1435,9 @@ answer to §4.2's A7 hazard and is worth borrowing whatever else is.
 
 **Measured results.** Two benchmark families, both on a server with two AMD
 EPYC 7763 CPUs and 2 TB of RAM, single-threaded runs capped at 256 GB
-(§5.1).
+([NF25] §5.1).
 
-- **Use case 1, Walnut (§5.2):** 52 systems from Büchi-based arithmetic on
+- **Use case 1, Walnut ([NF25] §5.2):** 52 systems from Büchi-based arithmetic on
   automatic sequences, one-hour timeout. State counts min/median/max/mean =
   64 / 9,824 / 60,317 / 10,113; alphabet sizes 2 / 8 / 1,323 / 89. OTF
   *"canonizes notably more systems within the set timeout than SC"*, and
@@ -1427,7 +1445,7 @@ EPYC 7763 CPUs and 2 TB of RAM, single-threaded runs capped at 256 GB
   44 and 45, with only two canonized by neither. Minimization triggers
   (Table 2): OTF min 2, median 48, max 145, mean 50.29; OTF-S 0 / 9 / 105 /
   14.93; BRZ-OTF 0 / 2 / 27 / 4.61; BRZ-OTF-S 0 / 1 / 17 / 3.49.
-- **Use case 2, random systems with modular structure (§5.3):** a
+- **Use case 2, random systems with modular structure ([NF25] §5.3):** a
   Tabakov–Vardi variant with a modular partition of the state space,
   $n\in\{20,30,\dots,300\}$, ten seeds each, transition density 2, alphabet
   $k=\max(1,\lfloor\sqrt n\rfloor)$, 1000 s timeout. Triggers (Table 3):
@@ -1439,7 +1457,7 @@ EPYC 7763 CPUs and 2 TB of RAM, single-threaded runs capped at 256 GB
 
 **Overhead on easy inputs — asked for by §5.2's M5, and the answer is a
 qualitative one.** The paper gives no percentage anywhere. The nearest
-statement is §5.2's *"While the additional work of intermediate
+statement is [NF25] §5.2's *"While the additional work of intermediate
 minimizations results in somewhat similar runtimes for the best cases, its
 positive impact on the more complex systems is evident"*, plus the abstract's
 *"we are able to improve especially worst-case scenarios"* and the
@@ -1453,9 +1471,9 @@ of tens of states.** §4.5's C5 and §5.2's M4 stand entirely unretired.
 so are regular expressions.** Neither benchmark family is regex-derived —
 one is automatic-sequence arithmetic from Walnut, the other synthetic
 modular NFAs. String matching appears in the paper exactly once, as a
-motivating citation in §1 ([2], Aho–Corasick). **No K18 shape, no unrolled
+motivating citation in [NF25] §1 (its [2], Aho–Corasick). **No K18 shape, no unrolled
 counter, no `((?:[^a]{1,2}|.{0,2}?)+){0,8}`, nothing of the kind is
-represented.** Worse for transfer: §5.3 states that the OTF idea is
+represented.** Worse for transfer: [NF25] §5.3 states that the OTF idea is
 targeted at *structure* — *"Random models like the ones by Tabakov-Vardi
 [46] typically lack any structure which is what OTF is designed to
 exploit"* — and whether an unrolled counted repeat's copy lattice is
@@ -1484,7 +1502,8 @@ descending order of how fundamental they are.**
 1. **A metastate that is a SET. This is the deepest obstacle and it is not a
    porting detail.** CCL's entire inferential power is the convexity closure
    of a join-semilattice whose join is $\cup$ and whose order is $\subseteq$
-   (§2.3, §4.1 Eqs. 1-2). pcrec's state is a priority-ordered list compared
+   ([NF25] §2.3, §4.1 Eqs. 1-2). pcrec's state is a priority-ordered list
+   compared
    by `memcmp` (`src/ir/dfa.c:849`), and the order is produced by the closure
    walk, not by the membership (`src/ir/dfa.c:533`, `:571`, `:771`). There is
    no $A\cup B$: the union of two ordered lists is not a state the
@@ -1499,7 +1518,8 @@ descending order of how fundamental they are.**
    the instant ACCEPT is reached — lower-priority threads are pruned"*
    (`src/ir/dfa.c:1`-`:6`; the cut is `src/ir/dfa.c:655` and `:794`). The
    interned list is therefore a **truncated** closure, so it is not the
-   closure of the pre-set and $L(Q)=\bigcup_{q\in Q}L(q)$ (§2.1) is not the
+   closure of the pre-set and $L(Q)=\bigcup_{q\in Q}L(q)$ ([NF25] §2.1) is not
+   the
    semantics of the object pcrec interns. The reverse machine runs with
    `prune` off (D7, `src/ir/dfa.c:1`) and is closer to the paper's object,
    which is an interesting asymmetry: **the machine where lim2 measured the
@@ -1546,7 +1566,7 @@ every view's list, and the worklist reads exactly those lists at
 `src/ir/dfa.c:886` and `:934`, so the refusal set moves.
 
 One favourable note: **the alphabet fits.** The paper's systems have a median
-of 8 input symbols and a maximum of 1,323 (§5.2), and its conclusion names
+of 8 input symbols and a maximum of 1,323 ([NF25] §5.2), and its conclusion names
 large alphabets as a known weak spot for the registries ([16], BDDs as
 future work). pcrec's byte equivalence classes (`eqclasses`,
 `src/ir/dfa.c:152`) are in the same range, so this is one axis where pcrec
@@ -1574,7 +1594,7 @@ on top of that.
    (Algorithm 1 lines 43-45; in the implementation, `registry.unify` is
    reachable only from `otfMinimization`). Without periodic partial
    minimization the CCL registry learns nothing and degenerates to the
-   hash map pcrec already has — the paper says so itself in §3.2: a
+   hash map pcrec already has — [NF25] says so itself in its §3.2: a
    constantly-false threshold plus a one-to-one registry *"coincides with
    classic subset construction"*. So **§5.1's "Do not build A" and any
    future "build C" are inconsistent**: A is C's evidence source. The only
@@ -1582,10 +1602,10 @@ on top of that.
    all — and that is candidate B wearing a registry's clothes, which is
    precisely the paper's SC-S configuration.
 
-**The paper's Table 1 is a 2×2 of this study's own candidates**, which is
+**[NF25]'s Table 1 is a 2×2 of this study's own candidates**, which is
 the single most useful thing M5 brought back:
 
-| paper's name | this study |
+| [NF25]'s name | this study |
 |---|---|
 | SC | today's pcrec — Tier 0, syntactic interning only (§3.2) |
 | SC-S | **candidate B** (simulation prune/saturate on metastates) |
@@ -1596,7 +1616,8 @@ the single most useful thing M5 brought back:
 And the paper's own strongest size result lands on the **B** column, not the
 C column: *"For SC and OTF, simulation boosts performance both by improving
 runtime and reducing overhead, sometimes to the point of not introducing any
-redundant states at all"* (§5.2). The configurations that occasionally reach
+redundant states at all"* ([NF25] §5.2). The configurations that occasionally
+reach
 zero overhead — raw equals emitted, the property §3.9 wanted — are the
 simulation-bearing ones.
 
@@ -1614,8 +1635,8 @@ repeat and no pattern of pcrec's shape (§6.4).
 1. **Step 1 (fix lim2's margin with N2 or N1, conditional on M1) is
    unchanged and is now *more* clearly right.** §3.1's finding that the bail
    needs proved inequivalence while compaction proves equivalence is
-   confirmed by §6.3: OTF supplies no bound of either kind, and the paper's
-   §1 says the full DFA must be built.
+   confirmed by §6.3: OTF supplies no bound of either kind, and [NF25] §1
+   says the full DFA must be built.
 2. **Step 2 (read the paper) is discharged by this section.**
 3. **Step 4's "then choose between B and C on the numbers" becomes
    B-first.** B is the paper's SC-S: published, evaluated, the only
@@ -1626,15 +1647,15 @@ repeat and no pattern of pcrec's shape (§6.4).
    build A underneath it. §4.3's cross-product corpus is still the
    precondition for B and is now the critical path.
 4. **"Do not build A" survives, on a corrected reason.** §3.5's rule is
-   confirmed by the paper — but §3.5's claim that under it *"what remains
+   confirmed by [NF25] — but §3.5's claim that under it *"what remains
    merging is precisely the closed subgraph"* is **too pessimistic, and it
    was the sole basis for predicting A does nothing.** Two states each
    carrying an unexplored successor still merge when it is the *same*
    unexplored successor, which is not the closed subgraph; §3.5's own
    parenthetical says as much ("a state transitioning into one merges with a
    state transitioning elsewhere" — the exclusion propagates only for
-   *elsewhere*) and then over-concludes. The paper's median of 48 productive
-   minimization triggers per Walnut system (Table 2) is evidence the yield is
+   *elsewhere*) and then over-concludes. [NF25]'s median of 48 productive
+   minimization triggers per Walnut system (its Table 2) is evidence the yield is
    not vacuous on *some* population. A still is not recommended alone — it is
    Tier 3, it saves no construction work, and it lands all five hazards —
    but it should be declined on those grounds and not on a yield prediction
@@ -1646,28 +1667,28 @@ second pass may be made optional only if, with it skipped, no artifact grows
 by more than a few percent"*. §6.1 settles that no OTF-shaped mechanism
 licenses skipping it: the published construction requires a final
 minimization and its reference implementation runs one unconditionally. M6's
-**second half survives intact and is independent of the paper**: does
+**second half survives intact and is independent of [NF25]**: does
 [OPT-5]'s scan edge require *minimality* or only *finality*
 (`src/opt/scanedge.c:43`'s five local preconditions against
 `src/core/internal.h:4387`'s "it needs the canonical state set")? That is a
 pcrec code question a prototype answers in an afternoon, and it should be
 what M6 is. **M1 also needs restating**: it should measure the yield of the
-paper's partition rule — explored states blocked by accept vector,
+[NF25] partition rule — explored states blocked by accept vector,
 unexplored states pinned singleton — not the closed fraction, because §6.6
 item 4 shows those are not the same set. **M2 gains one row**: report the
-paper's *overhead* metric (maximum intermediate size minus final size), since
-that is lim2's own quantity and it makes pcrec's numbers directly comparable
-to §5's.
+[NF25] *overhead* metric (maximum intermediate size minus final size),
+since that is lim2's own quantity and it makes pcrec's numbers directly
+comparable to [NF25] §5's.
 
 ### 6.7 Their library (answer 6)
 
-**Name** OTF. **URL** `https://github.com/jn1z/OTF` (given in the paper's
+**Name** OTF. **URL** `https://github.com/jn1z/OTF` (given in [NF25]'s
 Data-Availability Statement, alongside the Zenodo artifact
 doi:10.5281/zenodo.18163403 holding the benchmark systems, full results and
 a Docker image — **not downloaded**). **Licence** MIT, *"Copyright © 2025
 John Nicol and Markus Frohme"* (`LICENSE.txt`, read). **Language** Java,
-built on AutomataLib 0.12.1 (`net.automatalib`, `pom.xml`); the paper (§1,
-§6) states it is included in the theorem prover Walnut since version 7.
+built on AutomataLib 0.12.1 (`net.automatalib`, `pom.xml`); [NF25] (§1, §6)
+states it is included in the theorem prover Walnut since version 7.
 **Size**: the GitHub API reports the repository at 375 KB over 70 files; the
 32 files under `src/main/java` total ≈183 KB of source, plus ≈57 KB of
 tests. The core loop, Algorithm 1 itself, is 182 lines
@@ -1676,11 +1697,11 @@ was not cloned and no line count was taken**.
 
 Two things the repository says that the paper does not.
 
-- **The shipped registry is already past §4.1.** The driver instantiates
+- **The shipped registry is already past [NF25] §4.1.** The driver instantiates
   `AntichainForestRegistry`, and the tree carries `AntichainForest`,
   `AntichainForest2`, `AntichainForest5`, `AntichainForest5Idx`,
   `InvertedIndex`, `ACElts`/`ACGlobals`/`ACPlus` and `SmartBitSet` — roughly
-  130 KB of the 183 KB. §4.1's Remarks and §6 name *"more involved
+  130 KB of the 183 KB. [NF25] §4.1's Remarks and its §6 name *"more involved
   structures for antichains [10] or inverse indices [25]"* as future work;
   the implementation has already gone there. **§3.8's estimate of "500+
   lines, a new subsystem" is if anything low**: on this evidence the
