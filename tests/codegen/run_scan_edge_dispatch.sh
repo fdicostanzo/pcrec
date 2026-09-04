@@ -270,10 +270,37 @@ exit $(( fails ? 1 : 0 ))
 #          load stays in the loop — it stays, and it also stops gcc rotating
 #          the loop, so iso-ts reads 33 against the denied arm's 19. The flag
 #          distorts exactly the thing being measured.
-#    What is probably right is to identify the loop STRUCTURALLY (the cycle
-#    containing the transition step AND the accept probe) rather than by a
-#    single anchor instruction, or to measure the emitted C's own basic blocks
-#    before gcc sees them. Neither was attempted tonight.
+#    (d) TRIED 2026-09-03 22:4x, the manager's ruled one-hour attempt:
+#        identify the loop STRUCTURALLY — Tarjan's SCCs over rx_search's CFG,
+#        take the SCC that DEREFERENCES the byte-class register (the
+#        prefilter's and the skips' own loops are NESTED inside the scan loop,
+#        so they fall in the SAME SCC and cannot be mistaken for it), find that
+#        SCC's HEADER (its node with an edge from outside), and take the
+#        shortest cycle THROUGH THE HEADER — which is what (a) and (b) lacked,
+#        since the nested prefilter cycle does not pass through the outer
+#        header. It measures all four witnesses, so it fixes the INCONCLUSIVE.
+#        IT IS ALSO WRONG, and shipping it would be worse than the honest
+#        INCONCLUSIVE it removes:
+#
+#          witness      subject(cycle,|SCC|)   control(cycle,|SCC|)
+#          iso-ts            11, 119                13, 13
+#          http-5xx           7,  42                 6, 26     <- subject > control
+#          two-chain          6,  25                13, 13
+#          digits             15, 107               13, 13
+#
+#        Two independent tells that the instrument, not the compiler, is at
+#        fault. iso-ts's CONTROL reports an SCC of 13 nodes while a HAND COUNT
+#        of that same disassembly walks a 19-instruction cycle — an SCC cannot
+#        be smaller than a cycle inside it, so the CFG or the SCC pass is
+#        losing edges. And http-5xx would read subject > control, a RED on a
+#        change measured not to lengthen that loop at all. A check that is
+#        green on three witnesses by reading the wrong number on all four is
+#        the vacuity this file exists to avoid.
+#
+#    So the anchor stays, with its two INCONCLUSIVE witnesses, and this file
+#    stays out of every make target. What is still untried: fixing the CFG/SCC
+#    pass (the missing-edge bug above is a concrete, findable defect), or
+#    measuring the emitted C's own basic blocks before gcc sees them.
 # 2. A SABOTAGE ROW: reverting `emit_scan_loop` to emit the edge chain on the
 #    generic path. That is the change this file exists to catch, so it is the
 #    right row — but it must be validated as a row (docs/dev/sabotage/), not
