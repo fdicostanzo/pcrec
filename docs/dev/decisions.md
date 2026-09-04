@@ -6564,3 +6564,40 @@ its groups renamed `site_x` (a legal PCRE2 pattern). (3) The flat import
 is spelled `(?&*=name)`, not `*.name` — consistent with `site=name`: the
 left of `=` is the destination scope and `*` is the caller's own. Owes
 the §1.5 libpcre2-refusal measurement before adoption, like `site=`.
+
+## D95 — K43 IS DISCHARGED BY AN EXCLUSION LIST IN THE LINTGEN RUNNER, NOT BY CHANGING EMITTED CODE (2026-09-04 08:4x EDT, Frank, fifty-first session)
+
+Direction (b) (a designated-range initializer) was REFUTED by measurement
+(K43's row: it moves gcc 15's CWE-457 false positive from the slot-array
+read to the trail rewind, 7 artifacts clean / 2 newly red, main and the
+branch exact inverses, +578 B per VM artifact) and never merged. Frank:
+"1.a obviously. i have a vision of you mentioning in the future that it
+turns out there was some code path where the read was uninitialized and
+we didn't see it because we suppressed it. but i will accept that risk.
+remove the previous change if it either harmful or otherwise burdensome."
+RULED: option (a) as a DOCUMENTED EXCLUSION LIST in the LINTGEN runner
+(tests/harness, the -fanalyzer compile pass) naming the false-positive
+SHAPES with the K43 diagnosis beside each — not pragmas in the emitted
+code (the artifacts stay free of analyzer-specific text). The accepted
+risk is recorded here in Frank's words; the list is re-measured whenever
+gcc moves (an entry that stops firing is removed, K35's staleness shape),
+and K48's axis-aware tripwire lands in the same pass. Nothing to remove:
+(b) was dropped from lane/edge1 before its merge.
+
+## D96 — THE PER-ARTIFACT SYMBOL PREFIX APPLIES ONLY TO EXPORTED ITEMS (2026-09-04 08:4x EDT, Frank, fifty-first session; filed as [PFX-1])
+
+Frank: "we set up the prefix naming convention under different assumptions
+(that there were going to be multiple pattern items per .c file). that is
+not the case (as you decided). therefore the only items getting the prefix
+should be the exported items." One artifact per translation unit means
+internal statics, labels and internal macros cannot collide with another
+artifact's; only what a consumer sees — the entries, `rx_info`, the
+documented `RX_*` stamps/macros, the header's contents, i.e. docs/spec/
+match_api.md's contract — needs the per-artifact spelling. RULED as the
+direction; BUILT under [PFX-1] with STEP 0 = a census of every prefixed
+identifier in an artifact classified EXPORTED (in the spec) vs INTERNAL,
+plus every harness site that reads an internal name (W1.3.1's four
+flush_block sites are the known ones). An abi event when it lands (D76/
+D94). Consequence for W1.3.1: option 1 (the harness carries the target's
+prefix) is confirmed, and it shrinks to the exported names once [PFX-1]
+lands — sequence [PFX-1] STEP 0 before W1.3.1's build.

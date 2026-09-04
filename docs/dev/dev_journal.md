@@ -20976,3 +20976,19 @@ over the corpus and the bench's altwide@0.1 table with a main-built
 BEFORE compiler as the control; the cost table on the 26 auto-route
 refusers (8.7-40 s → the VM route's order). Hold/lift/revoke by file,
 rulings by file, `.stage`, keepalive at :41. [LIM-2] STATE → started.
+
+## 2026-09-04 — Fifty-first session, part 53 (08:4x EDT): Frank's morning rulings — K43 → an exclusion list (D95); the prefix applies only to exported items (D96, [PFX-1] filed); W1.3.1 option 1; [CC-DIFF] STEP 2 scheduled; the next wave approved
+
+K43: option (a), the accepted risk in Frank's words ("some code path
+where the read was uninitialized and we didn't see it because we
+suppressed it") — an exclusion list in the LINTGEN runner, not
+pragmas in emitted code; K48 in the same pass; nothing to remove ((b)
+never merged). PREFIX: "the only items getting the prefix should be
+the exported items" — one artifact per TU voids the assumption the
+`-p` convention was built on; filed as [PFX-1] with STEP 0 a census
+(exported vs internal identifiers; every harness site reading an
+internal name), STEP 1 an abi event; sequenced before W1.3.1's build,
+which is ruled OPTION 1 (the harness carries the target's prefix).
+[CC-DIFF] STEP 2 scheduled into the next wave. NEXT WAVE after [LIM-2]
+approved: A′ [CC-DIFF] STEP 2 + [OPT-DIAL] STEP 0; B′ [OPT-EDGE] STEP
+1.1 + the ladder and floor; C′ [FORM-CHAR]/[OPT-CLSPACK] STEP 0.
