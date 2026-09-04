@@ -1475,13 +1475,41 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                      * right before the same `ctx_fail`, so a consumer of
                      * either (the size rung, a stamp) cannot tell an early
                      * refusal from a late one -- this is the SAME reason,
-                     * reached sooner. Deliberately NOT `cx->dfa_overflowed`:
-                     * that field means "too many STATES" ([SEL-1]'s
-                     * auto-mode collapsed-prefilter retry reads it), a
-                     * different refusal this is not. */
+                     * reached sooner. */
                     cx->size_cap_refused = true;
                     cx->size_cap_bytes = (unsigned long long)bail_bytes;
                     cx->size_cap_limit = bail_cap;
+                    /* [LIM-2] FIX (post-.lift `make test`, 2026-09-04):
+                     * ALSO `cx->dfa_overflowed`, reversing the write phase's
+                     * "deliberately not" call. That call reasoned about
+                     * MEANING ("this field says too many STATES") and missed
+                     * an EFFECT: `compile.c`'s `[SEL-1]` retry eligibility
+                     * (`ovf_eligible`) reads ONLY `dfa_overflowed`, with no
+                     * condition on WHICH of `intern()`'s two existing sites
+                     * set it (the state-count cap, K7's subset-elems cap) --
+                     * both already use this ONE field as an umbrella for
+                     * "this DFA build did not reach an artifact", regardless
+                     * of `fit.chosen`, because SEL-1 lets `auto` change its
+                     * mind about the engine reactively when ANY in-progress
+                     * DFA construction turns out not to pan out. A THIRD
+                     * reason within the same construction (this one) is the
+                     * same umbrella's third instance, not a different claim.
+                     * MEASURED regression this fixes, found by `make test`
+                     * (`tests/vm/run_vm_tests.sh`'s `[SEL-1]` section): its
+                     * witness pattern's forward DFA has ALWAYS overflowed
+                     * PCREC_MAX_DFA_STATES_TABLE (>32000 states) on this
+                     * box, and before this fix the projection now reaches
+                     * ITS OWN cap first (fewer states are needed to cross
+                     * the byte cap than the state cap on this witness), so
+                     * `size_cap_refused` fired instead of `dfa_overflowed`
+                     * and `auto` stopped retrying to VM -- a pattern that
+                     * compiles today would have started refusing outright,
+                     * exactly the regression [LIM-2]'s own acceptance bar
+                     * ("the refusal set moves NOT AT ALL") forbids. */
+                    cx->dfa_overflowed = true;
+                    snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
+                             "dfa overflowed: projected emitted size exceeds "
+                             "%llu bytes", bail_cap);
                     /* [LIM-2] DELIBERATELY NOT the late check's wording
                      * (compile.c's "%zu bytes of emitted C source ...").
                      * `bail_bytes` here is `bail_bytes - size_bail_headstart`
