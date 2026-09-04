@@ -590,3 +590,239 @@ generated lands in a gitignored `out/`.
 Smoked under the hold: `make refs` built both compilers, `make rungs` verified
 1/2/3/4 forward edges, `make floorcells` verified all eight cells at 1 (after
 F4's repair), and `run_ladder.sh` REFUSED at `load1 2.26`. Nothing timed.
+
+---
+
+## 9. POST-LIFT RESULTS (2026-09-04, transcribed by edge2b from the artifacts)
+
+edge2b did not run anything: no `make`, no scripts, no timing. Every number
+below is read from a log or an `out/` artifact already on disk under
+`/tmp/claude-1001/-home-duxevents-pcrec/31e3eedd-94e8-4faf-913e-bff7849fc204/scratchpad/logs/`
+or `studies/scan_edge_ladder/out/`, named by path at each figure.
+
+### 9.1 Suites
+
+Neither log carries per-line timestamps; only the files' own mtimes are
+available as a completion proxy (`stat -c '%y'`), so "wall time" below is
+that, not a measured duration — stated as such rather than invented.
+
+**`test.log` (mtime 15:20:53, BEFORE both post-lift commits — it predates
+even `316576be` at 15:23:40, not only `402f637a` at 15:57:15):** one failing
+section.
+
+| section (`run_group` member) | checks passed | checks failed |
+|---|---|---|
+| `bash tests/codegen/run_codegen_tests.sh` | 108 | **1** |
+
+The one failure: `FAIL: [K37] 3 site(s) invoke the compiler with NO bound…`,
+naming `tests/codegen/run_scan_edge_census.sh:127`, `:157` and `:209` — the
+exact defect `316576be`'s commit message says it fixed 3½ minutes later.
+Every other section in `test.log` reads `checks failed: 0`; `run_group:
+5/6 scripts passed` at line 2335. Trailer: `sections ran: 34/34`, but the
+`run_group` failure makes `make: *** [Makefile:186: test] Error 1`. This
+run's own K37 failure is consistent with being the trigger for `316576be`,
+not a re-run after it.
+
+**`test2.log` (mtime 16:18:01, the run that counts — started after
+`402f637a` at 15:57:15):** every `checks failed:` line in the file reads
+`0` (44 occurrences, `grep -n "checks failed:" test2.log`), every `checks
+inconclusive:` line reads `0` (2 occurrences), and every `run_group:` line
+reports every member passing:
+
+```
+2066:run_group: 2/2 scripts passed
+2332:run_group: 6/6 scripts passed   <- test-codegen's group (see below)
+2492:run_group: 3/3 scripts passed
+2577:run_group: 2/2 scripts passed
+2686:run_group: 2/2 scripts passed
+2729:run_group: 2/2 scripts passed
+2770:run_group: 2/2 scripts passed
+2915:run_group: 2/2 scripts passed
+3401:run_group: 8/8 scripts passed
+3721:run_group: 2/2 scripts passed
+```
+
+No `FAIL:` line anywhere in the file (`grep -n "^FAIL" test2.log` is empty).
+Trailer: `sections ran: 34/34`, `trailer: every section in TEST_SECTIONS was
+launched`, and — unlike `test.log` — **no trailing `make: ***` line at all**:
+the run completed clean. `make test` is GREEN on the src commit that ships.
+
+**Correction against this brief's own framing.** The brief states
+test-codegen and test-registry "were NOT run in-lane after `402f637a`." The
+artifacts say otherwise for both:
+
+- **test-codegen** is not a separate invocation in this run, but its six
+  scripts (`run_codegen_tests.sh`, `run_dfa_stamps.sh`, `run_offset_skip.sh`,
+  `run_size_term.sh`, `run_trie_identity.sh`, `run_scan_edge_census.sh` — the
+  Makefile's own `test-codegen:` group, `Makefile:305`) are embedded inside
+  `make test` itself and DID run and pass inside `test2.log` — `run_group:
+  6/6 scripts passed` at line 2332, versus `5/6` in the pre-fix `test.log`.
+  This discharges the root `CLAUDE.md`'s "run `make test-codegen` before
+  delivering" instruction in substance (the identity gate and the census
+  check both ran and passed), even though a standalone `make test-codegen`
+  invocation is not separately logged.
+- **test-registry** DID run standalone: `logs/registry.log` (first line
+  `bash tests/registry/run_registry_tests.sh`, exactly `Makefile:255`'s
+  `test-registry:` recipe) has mtime 16:18:57 — **~56s after `test2.log`
+  finished writing**, i.e. after the post-`402f637a` `make test` completed.
+  It carries five internal `== Summary ==` blocks: `checks passed: 225,
+  201, 96, 21, 54` (sum 597), `checks failed: 0` in every one, zero `FAIL:`
+  lines. Complete PASS.
+- **test-axes** is the one that genuinely did NOT complete:
+  `logs/axes.log` shows `bash tests/axes/run_axes.sh` ran its baseline pass
+  clean (`cases passed: 27045`, `cases failed: 0`, `pattern-compile failures
+  (distinct): 0`, 149s) and then began "pairing two axes at a time,
+  PROCS=6 each" before the file ends `make: *** [Makefile:1210: test-axes]
+  Terminated` — the manager's kill (ruling 8, pids 678612/742966). This one
+  matches the brief's framing exactly: OWED to the union chain.
+
+### 9.2 The ladder
+
+From `studies/scan_edge_ladder/out/work/` (compiled artifacts, mtime 15:41)
+and the three round logs `ladder1.log`/`ladder2.log`/`ladder3.log` (the
+per-round numbers themselves are not in `out/`, only in these logs — the
+script prints to stdout and nothing under `out/` records a round).
+
+Edge-count verification (all three runs, identical): `rung k pattern …
+forward edges = k (want k)` for k=1..4 — no `*** RUNG REFUSED ***` line in
+any of the three logs. `load1` at each run's start: run 1 "waited 10s …
+starting at load1 0.43"; run 2 "waited 20s … starting at load1 0.43"; run 3's
+log has no such preamble line (present for runs 1–2) — its own starting
+`load1` is not recorded in the artifact.
+
+Rounds: run 1 discarded 6, 11, 15 (12/15 valid); run 2 discarded 6 (14/15
+valid); run 3 discarded 7, 10 (13/15 valid). Pooled valid rounds: 39 per
+rung. Medians and IQR computed with:
+
+```
+python3 -c "…re.match each 'round rung before after step11 noedge ab sa' line
+across ladder1/2/3.log, statistics.median + interpolated IQR per rung…"
+```
+(full script run interactively; not saved as a file per the brief's no-write
+scope — reproducible from the same regex against the three logs.)
+
+| rung (edges) | before med | after med | step11 med | noedge med | after/before med [IQR] | step11/after med [IQR] |
+|---|---|---|---|---|---|---|
+| 1 | 3.3336 | 3.1481 | 3.1468 | 1.7786 | 0.9385 [0.3743] | 0.9999 [0.0149] |
+| 2 | 3.1297 | 2.7556 | 2.7560 | 4.0546 | 0.9658 [0.4655] | 0.9984 [0.0097] |
+| 3 | 2.9809 | 2.7374 | 2.7022 | 3.8617 | 0.9125 [0.0448] | 0.9905 [0.0420] |
+| 4 | 1.7501 | 1.4206 | 1.4194 | 1.8070 | 0.8263 [0.0498] | 1.0078 [0.0286] |
+
+(ns/byte; n=39 rounds per rung; `before`=`9d8401a`, `after`=`b048fa61`,
+`step11`=this branch, `noedge`=`after` built `-fno-scan-edge`, never
+subtracted.)
+
+**What this does and does not show.** `step11/after`'s IQR is tight (0.010–
+0.042) at every rung — this branch behaves statistically like the STEP 1
+compiler on all four rungs, consistent with §4/F2's finding that the
+narrowed precondition (8) has no witness among these particular artifacts
+(none of the four rungs is a reseeding `offset-set` machine). `after/before`
+(the entry-cost signal the ladder exists to isolate) has a very wide IQR at
+rungs 1–2 (0.37, 0.47 — more than 3× rungs 3–4's spread) and does not move
+monotonically with edge count (medians 0.94, 0.97, 0.91, 0.83 for k=1..4,
+i.e. drifting DOWN, not up, as edges increase). **No `a + b·k` fit was
+computed in-lane** — the brief's own §2.1 protocol calls for one and it is
+not in any artifact; the raw medians above do not show a clean per-edge
+signal by inspection, and fitting one is owed rather than eyeballed here.
+
+### 9.3 The floor
+
+From `studies/scan_edge_ladder/out/fwork/` (compiled artifacts, mtime
+15:54–15:55) and `floor1.log`/`floor2.log`/`floor3.log`. Edge-count
+verification: `forward edges=1` on all eight `m × family` cells, all three
+runs — no `*** TAKES NO EDGE ***` and no `*** SUBJECT NEVER ENTERED ***`
+line in any of the three logs (F4's repair held). `load1` at each run's
+start: run 1 "waited 60s, load1 0.29"; run 2 "waited 30s, load1 0.29"; run 3
+"waited 60s, load1 0.27".
+
+Rounds: run 1 discarded 3, 6, 11 (12/15 valid); run 2 discarded 1, 3, 6
+(12/15 valid); run 3 discarded 1, 11, 12 (12/15 valid). Pooled valid rounds:
+36 per cell, same python3 method as §9.2 applied to the `edge/noedge`
+column:
+
+| m | family | edge/noedge median | IQR | range |
+|---|---|---|---|---|
+| 2 | exact | **1.7831** | **0.8736** | 0.87 – 2.55 |
+| 2 | nullable | 0.8938 | 0.0967 | 0.69 – 1.90 |
+| 3 | exact | 0.9993 | 0.0189 | 0.90 – 1.34 |
+| 3 | nullable | 0.9569 | 0.0725 | 0.85 – 1.23 |
+| 4 | exact | 1.0017 | 0.0173 | 0.58 – 1.60 |
+| 4 | nullable | 0.9990 | 0.0822 | 0.70 – 1.36 |
+| 8 | exact | 1.0026 | 0.0362 | 0.88 – 2.08 |
+| 8 | nullable | 0.9888 | 0.0238 | 0.92 – 1.06 |
+
+**Does this support `tuning.md`'s and the `limits.def` row's sentence ("not
+separated by more than the per-round range at m=2, 3 or 4")?** For m=3, m=4
+(both families) and m=2 nullable: yes — medians sit close to 1.0 with IQR
+comparable to or smaller than m=8's (the row's own example of a real,
+accepted gap: median 0.9888, IQR 0.0238, matching the commit's cited 0.9855
+[IQR 0.0243] closely enough to be the same measurement re-derived by a
+different median/IQR interpolation — not identical, but not a different
+finding).
+
+**For m=2 EXACT it does not.** The median ratio is 1.78 — the edge arm
+reads ~78% slower than `noedge`, not "no separation" — with an IQR (0.87)
+larger than the entire range of every other cell's IQR combined. Reading
+the raw rows (`floor1.log` round 4: `edge 1.9877 noedge 1.8940 → 1.0495`;
+`floor1.log` round 1: `edge 4.0982 noedge 1.8977 → 2.1595`), the cell is
+**bimodal**: in roughly half the pooled rounds BOTH `edge` and `noedge` read
+~1.9–2.3 ns/byte (ratio near 1.0); in the other half both read ~3.7–4.3 (also
+near-parity when they land together — e.g. `floor1.log` round 12: `4.1952 /
+4.1710 = 1.0058`) but the two arms frequently land in *different* regimes
+within the same round, which is what drives the ratio up. This reads like a
+shared measurement instability (frequency/cache state on the pinned core)
+that happens to hit m=2 exact hardest — plausibly because `[0-9]{2}x`'s
+256 KB sweep is the shortest-running cell of the eight and so the least
+averaged-over — rather than a real, reproducible cost difference between
+the two machines. **Whether the instability or a genuine slowdown is the
+right explanation is not settled by this data; the `limits.def` row's
+`m=2, 3, 4` claim is well supported at m=3 and m=4 but NOT cleanly supported
+at m=2 exact, and this should be flagged to the manager rather than
+silently accepted.** m=2 nullable (the "bare form" precondition (5) actually
+gates against, per the row's own comment on why `m=2` is admitted at all —
+scanedge.c's precondition (5) discussion) is unaffected and reads a normal
+IQR (0.0967).
+
+### 9.4 What `402f637a` changed in `src/`
+
+`src/opt/scanedge.c` (16 lines): precondition (5)'s literal `2` becomes the
+named limit `PCREC_MIN_SCAN_CHAIN` (comparison and comment both updated;
+`src/core/limits.def` gains the row, value unchanged at 2). No control-flow
+or emission change — `collect()`'s `if (m < 2) continue;` becomes `if (m <
+PCREC_MIN_SCAN_CHAIN) continue;`, so this commit is a re-derivation of an
+existing constant, not a new selection; the commit message's own claim of
+byte-identical emission on `foo\B` is consistent with that shape (not
+independently re-verified by edge2b, since it requires a compile).
+
+### 9.5 The abi answer
+
+Site list (§7, by grep, unchanged since the write phase): `src/gen/
+emit_dfa.c:1662`, `tests/codegen/run_codegen_tests.sh:2758`, `:2760`,
+`tests/codegen/run_recursion_identity.sh:699`, `docs/spec/match_api.md:159`,
+`:1801` (plus two historical cross-references that do not move). Bump owed
+at merge: **20 → 21**, assigned by the manager (ruling 1); edge2b bumps
+nothing.
+
+### 9.6 Owed / not done
+
+- **S227, the single-row positive control**: WRITTEN
+  (`tests/mech/sabotages/S227_scan_edge_entry_s0_only.sh`,
+  `SAB_SUITES="scanedge harness"`) but NOT run in a battery. Its own
+  `SAB_DOC_FIGURE` says so explicitly: `"…scanedge` arm — MEASURED 2026-09-04
+  … DETECTED … 11fail/2pass … OWED: the harness arm's own figure (target
+  tests/assertions), which needs a battery run"`. Matches ruling 4's
+  disposition exactly — runs in the next battery's mech stage.
+- **`make test-axes`**: killed twice by the manager (ruling 8); §9.1 covers
+  the artifact. Owed to the union chain on the merged tree.
+- Everything else the rulings file's post-lift list names (`make test` →
+  test-codegen → test-registry → the floor's `limits.def` row → the mech row
+  → report final) has an artifact: §9.1–9.6 above, `src/core/limits.def`'s
+  `PCREC_MIN_SCAN_CHAIN` row (§9.4), and this section itself.
+- Not requested but checked while here: `docs/spec/limits.md` was NOT
+  touched by `402f637a`, and `tests/registry/limits_check.sh`'s doc-cross-
+  check only applies to rows carrying a non-empty anchor column (§2 of that
+  script, "anchored rows only") — both `PCREC_MIN_SCAN_CHAIN` and its
+  sibling `PCREC_MAX_SCAN_EDGES` carry an empty anchor, so no `limits.md`
+  hunk is owed by that mechanism. Not independently verified against
+  `docs/spec/tuning.md`'s own completeness beyond the hunk already in
+  `402f637a` (§9.4).
