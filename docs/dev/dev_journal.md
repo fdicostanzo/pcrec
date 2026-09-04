@@ -20768,3 +20768,29 @@ merge. (B) re-pinned to a6b94c0 (the Q4 knee moved 96-141 artifacts
 per axis after the abi commit). NOT delivered: the semantics lens (S1
 the size-vs-chain rule + the census acceptance + the refusal-identity
 ladder; S2; S4; S5's wording; S6's comment) was re-sent as one list.
+
+## 2026-09-03 — Fifty-first session, part 41 (23:5x EDT): isl1's semantics-lens pass — the refusal regression fixed by a FACTOR rule (island ≤ 2× the chain's estimated program), census 0 refused / max 1.03×; one cap guard requested before merge; edge1 timing
+
+isl1 (tip b3fa26b): S1 reproduced exactly (`((?:aa|bb)×10|zzz)` refused
+at 897,983 B; the chain 30,179). Two measured corrections to the ruled
+rule: (1) NODES alone mis-estimate — the census's worst pattern is a
+12-node trie with 3,404 TRY SITES emitting 682 KB; (nodes + try sites)
+× 180 tracks the program within 10% over four orders of magnitude;
+(2) "not larger than the chain" was WRONG — the island's program is
+LARGER on every narrow shape (cat|dog|cow 1.10×, foo|bar 1.23×,
+thin|think 1.45×) where its value is speed, against blowups at 3.06×
+… 146.95×; the populations separate cleanly, so the rule is a FACTOR
+(2×, chosen inside the gap; factor 3 refused on the census: max 1.03×
+→ 1.18×). Acceptance on the critic's census, both seeds: before 9
+refused / median 1.77× / max 30.04×; after 0 refused / median 1.000 /
+max 1.03× and 1.02×. New tests: the cross-product ladder k=4..14 as
+refusal identity; the top-level decline by exact island count; a
+1,024-word cross product inside the word budget still declines (the
+size rule, not the budget, does the work). Three witnesses moved and
+were replaced with verified ones; the pool's island-coverage floor
+caught its own member moving. Island population: 166/236/166/123
+pre-Q4 → 74/102/74/56 → 34/50/34/23 after the size rule — what the
+timing measured a win on. Manager: one guard requested before merge
+(decline when est(island) > the code cap × 0.9 while est(chain) ≤ it —
+the factor alone admits a refusal where the chain is ~300 KB). edge1:
+axes 21/21 green, in timing; the K43 ruling resent (drop (b)).
