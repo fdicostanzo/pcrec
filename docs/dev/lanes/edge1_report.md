@@ -381,6 +381,60 @@ stopped being a repeated byte, which is the coupling this tree records
 failures about.
 
 
+
+### 3.6b THE CORPUS HALF OF THE CENSUS — 11 artifacts, and (8) is OVER-BROAD BY 9
+
+Ruling item 6's corpus sweep, run after `make test`: every distinct `pattern`
+line under `tests/` (2,827; 2,539 compiled by both compilers, 288 refused by
+one), edge counts from each artifact's own `[OPT-5] SCAN EDGE` markers, main
+`9d8401a` against this branch.
+
+| | |
+|---|---|
+| artifacts whose edge count MOVED | **11** of 2,539 (0.43%) |
+| of those, TOTAL losses to zero edges | 10 |
+| moved artifacts with NO seed table | **0** — the bound holds exactly |
+
+Every one is a `\b`/`\B` pattern, which is the seed-bearing family
+precondition (8) is about, and the bound the census asserts rather than
+discovers came out clean: no artifact moved without a seed, so (8) is the
+cause in all 11 cases and nothing else moved.
+
+```
+main=1 branch=0  (\b\w+\b)      main=1 branch=0  \b\w+\b$     main=1 branch=0  \bfoo\B
+main=1 branch=0  (foo\B)        main=1 branch=0  \b\w+\b\z     main=1 branch=0  foo\B
+main=1 branch=0  \Bfoo\B        main=1 branch=0  \b\w+\z
+main=2 branch=1  \b\K\w+        main=1 branch=0  \b\w\b
+main=1 branch=0  \b\w+\b
+```
+
+**AND ONLY 2 OF THE 11 CARRY THE HAZARD (8) GUARDS AGAINST.** The hazard is
+the offset-set prefilter's RESEED — the one mid-body writer of the state
+variable. Reading each of the eleven's own prefilter stamp and counting its
+emitted reseed sites:
+
+| prefilter | reseed sites | artifacts |
+|---|---|---|
+| `offset-set-bounded` | 2 | 2 (`\Bfoo\B`, `\bfoo\B`) |
+| `byte-class-bounded` | 0 | 7 |
+| `memchr-bounded` | 0 | 2 |
+
+The nine with a `byte-class`/`memchr` prefilter advance the position but never
+WRITE the state variable, so on them the hazard does not exist and (8) is
+declining for nothing. **(8) as written tests "the machine has a seed" where
+the hazard needs "the machine has a seed AND its prefilter reseeds".**
+
+**THE NARROWING IS A REAL CHANGE, NOT A TWEAK, and that is why it is not in
+this branch.** `src/opt/scanedge.c` runs before the emitter's axis-B
+selection, so the pass cannot know which prefilter form the machine will
+take; and the refusal cannot move INTO the emitter, because by then the
+pass has already DELETED the chain's interior states and an emitter filter
+cannot put them back — the same reason `-fno-scan-edge` has to gate the pass
+itself (`docs/spec/tuning.md` §2.18). Narrowing it means giving the pass the
+start analysis, which is its own row. D77's trigger is now named and
+measured: **9 corpus artifacts, all `\b`-family, get their scan edge back.**
+
+
 ---
 
 ## 3.7 THE SUITES (2026-09-03 evening, after the lift)
