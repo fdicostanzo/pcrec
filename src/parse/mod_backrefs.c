@@ -689,12 +689,55 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                 if (strcmp(gp->name, pr->name) == 0)
                     if (first == 0 || gp->number < first) first = gp->number;
             if (first > 0) {
+                /* [DD-13b.W1.3] A DELIVERING CALL WHOSE TARGET IS A LOCAL
+                 * GROUP IS REFUSED. Delivery is a DEFINITION's interface —
+                 * `(?&site=name)` names the exports of a `.rxt` definition
+                 * (D89 addendum point 3) — and a group in this same pattern
+                 * has no export list and is already the caller's own, so
+                 * there is nothing for a site to deliver. Accepting it
+                 * silently as a plain call would be a directive that does
+                 * nothing, which is the population-nobody-counts shape this
+                 * step refused for `encoding` one file over. */
+                if (pr->node->u.call.delivers)
+                    ctx_fail(cx, pr->at,
+                             "%s delivers from '%s', but '%s' is a capture "
+                             "group in this pattern, not a definition; a "
+                             "plain (?&%s) calls it",
+                             pr->what, pr->name, pr->name, pr->name);
                 pr->node->u.call.target = first;
+                /* [DD-13b.W1.3] WRITTEN IN BOTH ARMS, ALWAYS. `deferred` is
+                 * the composer's key and the arena zero is the unsound
+                 * direction: a record that reads "not deferred" is one the
+                 * composer skips, and a skipped FILE reference reaches
+                 * `callgraph.c` with `target == 0`. So this arm says NO
+                 * explicitly rather than relying on nothing having said
+                 * yes — `link`'s own situation and `link`'s own answer
+                 * (`callgraph.c:246`/`:337`). */
+                pr->deferred = false;
                 continue;
             }
+            /* [DD-13b.W1.3] DECIDED (6): DEFER instead of refusing when a
+             * DEFINITION SET is in scope, because the name may be a FILE
+             * reference rather than a group. `src/parse/rxt_compose.c`
+             * resolves it or RE-RAISES this very sentence, at this very
+             * offset — so with no definition set (every compile that is not
+             * `--source`) the flag is off, this arm refuses exactly what it
+             * always refused, and the four `perr` blocks in
+             * `tests/recursion/d27/sr_refusals.rxt` are untouched.
+             *
+             * ONLY THE CALL ARM DEFERS. A by-name BACKREFERENCE (`\k<w>`)
+             * is handled below and keeps today's refusal: a caller's
+             * `\k<w>` must never see a library's `w` (D87 rule 2, and
+             * w1_impl §2.7's three-walker table names this as one of the
+             * three places an injected row could leak). A CALL is how a
+             * pattern reaches a definition; a BACKREFERENCE is how it reaches
+             * its own text, and the two questions are not the same one. */
+            if (cx->defer_file_refs) { pr->deferred = true; continue; }
+            pr->deferred = false;
             if (!worst || pr->at < worst->at) worst = pr;
             continue;
         }
+        pr->deferred = false;
         if (!pr->name) {
             if (pr->number >= 1 && (unsigned long)pr->number <= cx->ncap) {
                 if (pr->kind == PEND_CALL) {

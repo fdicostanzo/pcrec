@@ -823,6 +823,49 @@ struct Ast {
              * sets this for EVERY node before the emitter runs, and wave G's
              * eligibility rule is what may downgrade it. */
             CallLink    link;
+            /* [DD-13b.W1.3, D89 addendum point 3] IS THIS CALL A DELIVERING
+             * ONE, and under what SITE NAME. The call family is three
+             * (addendum 3 closed it):
+             *
+             *   `(?&name)`        plain — capture-transparent, delivers
+             *                     nothing. PCRE2's own meaning (D26), and
+             *                     D87 rule 5's zero-cost default.
+             *   `(?&site=name)`   deliver `name`'s exports under the scope
+             *                     `site`; rows are named `site.group`.
+             *   `(?&=name)`       the same with the definition's own name as
+             *                     the site.
+             *   `(?&*=name)`      deliver them FLAT into the caller's own
+             *                     scope; rows are named as exported, and a
+             *                     clash with a caller group or another flat
+             *                     import is a refusal by name.
+             *
+             * `delivers` IS WRITTEN ON EVERY `A_CALL`, true and false alike,
+             * before selection runs — N3's rule. The arena zero is the
+             * UNSOUND direction here: a missed write reads "not delivering",
+             * which is delivery that quietly does not happen, and no check
+             * downstream can tell it from a site the author never declared.
+             * This is `link`'s own situation and gets `link`'s own answer.
+             *
+             * `deliver_site` is the site name, or the sentinel `"*"` for the
+             * flat import. It is NULL exactly when `delivers` is false. */
+            bool        delivers;
+            const char *deliver_site;
+            /* [DD-13b.W1.3] THE RETENTION PLAN, filled by the composer
+             * (src/parse/rxt_compose.c) and read by the emitter at the
+             * delivering site's RETURN path. `deliver_n` pairs: the callee's
+             * own hidden slot `deliver_from[i]` is copied into the caller's
+             * site slot `deliver_to[i]`, as a TRAILED write, BEFORE the
+             * ordinary restore puts the callee's slots back.
+             *
+             * THE COPY IS PER SITE AND SO ARE THE DESTINATIONS: two
+             * delivering calls of one definition under two site names are two
+             * scopes with two slot sets, which is exactly why the destination
+             * cannot be a property of the callee. `deliver_n == 0` on every
+             * plain call, so a plain call copies nothing and costs nothing —
+             * D87 rule 5 held at the emitter. */
+            int         deliver_n;
+            const int  *deliver_from;
+            const int  *deliver_to;
             /* |W| — HOW MANY SLOTS THE RETURN RESTORES, and `save` is the
              * ascending list of their INDICES. W is the CALLEE REGION's SLOT
              * WRITE SET: EVERY slot family any node in the callee's
@@ -1755,6 +1798,49 @@ typedef struct {
 typedef struct NamedGroup {
     const char         *name;
     int                 number;   /* the group's capture number, 1-based */
+    /* [DD-13b.W1.3] WHICH SCOPE DECLARED THIS NAME: NULL for the pattern's
+     * own — the PRIMARY's — and the DEFINITION's name for a row the composer
+     * injected. It is `rx_group_entry.ref`'s value, the column D61 reserved
+     * and emitted as a literal `NULL` until this step (`emit_dfa.c`).
+     *
+     * IT IS ALSO THE SORT KEY'S LEADING TERM, and that is an ABI contract
+     * rather than a nicety: `match_api.md` §6 documents `nnames` as the
+     * entries in `groups[]` and gives a caller a bsearch that walks a name
+     * RUN. If injected rows sorted AMONG the primary's while `nnames`
+     * counted only the primary's, a caller could miss its own name or land
+     * on a library's private group. Sorting `(ref-is-NULL, name, number)`
+     * makes the primary's rows a genuine PREFIX, so `nnames` keeps its
+     * meaning and the §6 algorithm is correct unchanged over
+     * `groups[0..nnames)` forever (w1_impl §2.7's B4, the manager's ruling). */
+    const char         *scope;
+    /* [DD-13b.W1.3, manager 2026-09-03 19:1x] WHICH SCOPE THE NAME LIVES IN,
+     * and it is a SEPARATE question from which definition the group came
+     * from. The two used to be one field, and a FLAT import is exactly the
+     * case that separates them: `(?&*=name)` puts the exported groups in the
+     * CALLER's own scope — that is the form's whole purpose — while they still
+     * came from a library and a consumer may reasonably want to know it.
+     *
+     *   caller scope (`false`)   the pattern's own named groups AND flat
+     *                            imports. These form the `nnames` PREFIX, in
+     *                            name order, so `match_api.md` §6's shipped
+     *                            bsearch finds a flat import unchanged.
+     *   site scope (`true`)      a `site.group` row from a delivering call.
+     *                            Above `nnames`; reached by the qualified
+     *                            name.
+     *
+     * `scope` above keeps its meaning — the DEFINITION the group came from,
+     * NULL only for the pattern's own — so a flat import carries both: caller
+     * scope AND a non-NULL `ref`. Keying the sort on `scope != NULL` instead
+     * would push flat imports out of the prefix and break the one property
+     * §6's algorithm depends on.
+     *
+     * THE UNSOUND DIRECTION IS `false`, so the composer writes it explicitly
+     * on every row it creates: a site row that missed the write would be
+     * counted by `nnames` and a caller's bsearch could land on a library's
+     * private group, which is D87 rule 2 violated at the artifact tier. The
+     * parser's own declarations are caller scope and the arena zero is both
+     * correct and sound for them. */
+    bool                site_scoped;
     struct NamedGroup  *next;
 } NamedGroup;
 
@@ -1822,6 +1908,20 @@ typedef struct PendingRef {
     const char         *name;    /* NULL selects `number`; else resolve this */
     size_t              at;      /* pattern offset the diagnostic points at */
     const char         *what;    /* the spelling, for that diagnostic */
+    /* [DD-13b.W1.3] THE COMPOSER'S KEY. True when `pcrec_bref_resolve` left
+     * this by-NAME `PEND_CALL` unresolved because a DEFINITION SET was in
+     * scope (`Ctx.defer_file_refs`) — i.e. it may be a FILE reference, and
+     * the composer owns it. Written EXPLICITLY on every pass through the
+     * resolver, in both arms, never left to the arena zero: N3's rule, and
+     * here the unsound direction is the same one — a missed write reads
+     * "not deferred", the composer skips the reference, and the call reaches
+     * `callgraph.c` with `target == 0`, which is `(?R)`'s value and three
+     * other situations' (w1_impl §2.5's deleted carve-out).
+     *
+     * THE `PEND_BREF` NAME ARM IS NEVER DEFERRED. A caller's `\k<w>` must
+     * not see a library's `w` (D87 rule 2; w1_impl §2.7's three-walker
+     * table), so it keeps today's refusal at today's offset. */
+    bool                deferred;
     struct PendingRef  *next;
 } PendingRef;
 
@@ -2057,6 +2157,36 @@ struct Ctx {
      * this decision's evidence). */
     NamedGroup          *named_groups;
     unsigned             n_named_groups;
+    /* [DD-13b.W1.3] THE PRIMARY'S OWN CAPTURE COUNT, frozen by the composer
+     * immediately before its first sub-parse; `ncap` above then keeps
+     * running as definitions are injected above it.
+     *
+     * `rx_info.ngroups` emits THIS and `RX_NCAPS` emits `ncap + 1` (D61,
+     * format_design §2.7): a composed artifact's `ngroups` counts the TARGET
+     * pattern's own groups and the definitions' slots sit above it, so a
+     * caller's `1..ngroups` means what it always did while `RX_NCAPS` may
+     * move when a library changes.
+     *
+     * ON EVERY NON-COMPOSED COMPILE IT EQUALS `ncap` BY CONSTRUCTION —
+     * `compile_driver` seeds it from `ncap` whether or not the composer runs
+     * — which is what makes the identity gate's comparison (A) a real check
+     * of this change rather than a tautology. */
+    unsigned             ncap_primary;
+    /* [DD-13b.W1.3] THE DEFINITION SET this compile may draw from, or NULL.
+     * Non-NULL only on the `--source` path (`pcrec_compile_defs`); a plain
+     * `pcrec_compile` leaves it NULL and the composer returns its argument
+     * unchanged, so nothing about a today's compile moves. */
+    const struct RxtDefs *defs;
+    /* [DD-13b.W1.3] DECIDED (6): defer an unresolved BY-NAME `PEND_CALL`
+     * instead of refusing it, because it may name a DEFINITION rather than a
+     * group. Set from `defs != NULL` at compile entry and read at exactly one
+     * place, `pcrec_bref_resolve`'s call-by-name arm.
+     *
+     * IT IS A FLAG ON `Ctx` AND NOT A CHANGE TO `pcrec_parse_info`, on
+     * purpose: that is the ONE parse entry point, shared by
+     * `--count-groups`, `--explain` and the built-status probe, and making it
+     * composition-aware would put a FILE-level concern inside the parser. */
+    bool                 defer_file_refs;
     /* [M6.5.2] module `backrefs`: every reference this pattern made, in
      * REVERSE declaration order (prepended, like `named_groups` above), and
      * how many. Resolved in one pass by `pcrec_bref_resolve` at the end of
@@ -3902,9 +4032,17 @@ typedef struct {
     const char *with_list;    /* target's `with` config list, as written  */
     const char *from_list;    /* config's `from` config list, as written  */
     const char *pcrec_raw;    /* config's `pcrec` raw flag text           */
+    /* [DD-13b.W1.3] a pattern block's `export` list AS WRITTEN — the
+     * definition's own declared interface (D89 addendum point 2). NULL means
+     * the block declared none, which is the DEFAULT and means nothing is
+     * exported. Validated as a `config-list` here; whether each name is a
+     * group the definition declares is the COMPOSER's question, asked where
+     * the sub-parse's `named_groups` is in hand. */
+    const char *exports;
 } RxtRow;
 
-typedef struct {
+typedef struct RxtSource RxtSource;
+struct RxtSource {
     const char *path;
     RxtRow     *rows;
     size_t      nrows, rowcap;
@@ -3914,8 +4052,26 @@ typedef struct {
      * (a pure library file), and DISTINCT from a failed call, which
      * returns NULL and a diagnostic instead. */
     size_t      first_pattern_line;
+    /* [DD-13b.W1.3] THE `lib` CLOSURE'S OTHER FILES, parsed by
+     * `pcrec_rxt_source_resolve` and OWNED HERE so their arenas — which
+     * hold the definition TEXT the composer parses — outlive the resolve
+     * call and die with this source. W1.2 resolved a `lib` as far as
+     * EXISTENCE and read nothing; a definition set needs the contents, and
+     * a child's pattern text cannot be copied into this arena without
+     * copying a file's worth of strings for a set that may reference two
+     * of them. Freed recursively by `pcrec_rxt_source_free`. */
+    RxtSource **kids;
+    size_t      nkids, kidcap;
     Arena       arena;
-} RxtSource;
+};
+
+/* [DD-13b.W1.3] The definition-name -> C-prefix mapping, with ONE home
+ * because the duplicate-prefix refusal is stated over it: `-` and `.`
+ * become `_`, every other byte is copied. Not injective on purpose (`a-b`
+ * and `a.b` both give `a_b`), which is what the refusal is for. `dst` must
+ * hold `strlen(name) + 1`; the result is truncated to `dstsz` and always
+ * NUL-terminated. */
+void pcrec_rxt_prefix_from_name(const char *name, char *dst, size_t dstsz);
 
 /* Parses `path`. NULL on failure with `err` filled — every diagnostic
  * names the FILE, the LINE and the CONSTRUCT. Free with the call below. */
@@ -3928,6 +4084,55 @@ char      *pcrec_rxt_source_tsv(const RxtSource *src);
  * against the producer rather than against a literal it maintains by
  * hand (the D65 incident's lesson, table_contract.md's History). */
 size_t     pcrec_rxt_source_ncols(void);
+
+/* ---- [DD-13b.W1.3] THE DEFINITION SET — the composer's input ----------
+ *
+ * ONE definition: a `name`d pattern block, wherever in the `lib` closure it
+ * was declared. This is the "definition-shaped record with fields a row has
+ * no place for" `RxtRow`'s own header said W1.3 would earn (D77): a row is
+ * a LINE in one file, a definition is a NAME with a text, a scope and a
+ * provenance, and the composer needs the second.
+ *
+ * `file`/`line` are PROVENANCE and they are the supply for the third state
+ * w1_impl §2.2 gives `first_cap_pos`/`first_vmonly_pos` — a diagnostic
+ * raised inside a definition names the definition's own file and line
+ * rather than an offset into a pattern the author never wrote. */
+typedef struct {
+    const char        *name;      /* the block's `name`, FILE namespace     */
+    const char        *pattern;   /* the block's pattern text, verbatim     */
+    unsigned long long flags;     /* the block's own `flags`, RESOLVED      */
+    /* [DD-13b.W1.3, Q-W4] the block's own `encoding` AS WRITTEN, or NULL.
+     * A definition does NOT inherit the target's config, so a definition
+     * that states an encoding has stated something — and a composed
+     * artifact has exactly ONE encoding (D58 makes it a per-PATTERN
+     * scalar), so an encoding that differs from the target's is a thing
+     * the format CANNOT honour. It is REFUSED at bind time rather than
+     * ignored: a silent ignore is a population nobody counts. */
+    const char        *encoding;
+    /* [DD-13b.W1.3, D89 addendum point 2] the definition's DECLARED
+     * INTERFACE — its `export` list as written, or NULL for none, which is
+     * the default. The list says what MAY be delivered; a DELIVERING CALL
+     * decides what IS (addendum 4(1)). A name here that the definition does
+     * not declare as a group is refused at bind time, naming both. */
+    const char        *exports;
+    const char        *file;      /* the file this block was read from      */
+    size_t             line;      /* its `pattern` line in that file        */
+} RxtDef;
+
+/* The closure: this file's named blocks, then each `lib` file's,
+ * transitively, in `lib` declaration order, deduplicated BY RESOLVED PATH
+ * so a diamond is read once and a cycle terminates. Arena-owned by the
+ * `RxtSource` that produced it. */
+typedef struct RxtDefs {
+    const RxtDef *v;
+    size_t        n;
+} RxtDefs;
+
+/* The `flags`-letter -> flags-word mapping, with ONE home so a letter
+ * cannot mean one thing on a target and another on a definition. Returns 0,
+ * or -1 with `*bad` set to the offending letter. */
+int pcrec_rxt_flags_from_letters(const char *letters, unsigned long long *out,
+                                 char *bad);
 
 /* ---- [DD-13b.W1.2] RESOLUTION: from rows AS WRITTEN to artifacts ------
  *
@@ -3978,6 +4183,11 @@ typedef struct {
                                 * by the CLI's OWN option parser, so a flag
                                 * cannot mean one thing on the command line
                                 * and another in a `config` block (§1.5)     */
+    /* [DD-13b.W1.3] the file's whole definition closure, shared by every
+     * target of one source (it is a property of the FILE, not of a target).
+     * Never NULL — a file with no named block gets an empty set, so the
+     * composer has ONE thing to test and not two. */
+    const RxtDefs *defs;
 } RxtTarget;
 
 /* Resolves `src` into 0..N targets. Returns 0 on success (`*nout` may be
@@ -3990,6 +4200,38 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                              const char *const *libdirs, size_t nlib,
                              RxtTarget **out, size_t *nout,
                              pcrec_error *err);
+
+
+/* ---- [DD-13b.W1.3] THE COMPOSER (src/parse/rxt_compose.c) --------------
+ *
+ * Binds every FILE reference the parse deferred, injecting each named
+ * definition into the caller's tree as `A_REP{0,0}(A_CAP{base}(body))` —
+ * the shape `(?(DEFINE)…)` already desugars to (`mod_recursion.c:418`), so
+ * no downstream pass gains a line for it.
+ *
+ * WHERE IT RUNS IS FORCED FROM BOTH SIDES (w1_impl §2.1): AFTER
+ * `pcrec_parse`, because it needs the caller's `ncap`, `named_groups` and
+ * resolved references; BEFORE `pcrec_callgraph_build` absolutely, because
+ * that pass is the only writer of `u.call.body` and is driven from
+ * `u.call.target` over the FINAL tree; and before `pcrec_altcls` so an
+ * injected definition gets the same optimization every other subtree gets.
+ *
+ * A NO-OP WHEN `cx->defs` IS NULL OR EMPTY, by an early return — every
+ * artifact pcrec emits without `--source` is byte-identical to before this
+ * file existed, which is what the identity gate's comparison (A) checks.
+ *
+ * Returns the (possibly new) root. Refuses through `ctx_fail` exactly as
+ * every other parse-tier pass does. */
+Ast *pcrec_rxt_compose(Ctx *cx, Ast *root);
+
+/* The `--source` compile entry: `pcrec_compile` plus a definition set.
+ * INTERNAL, and deliberately not a `pcrec_options` field — D20 keeps the
+ * public option surface scalar, and a definition set is a FILE's property
+ * that only the `.rxt` reader can build. A library caller that wants
+ * composition gets it through [LIB], not by growing this struct. */
+int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
+                       const RxtDefs *defs, pcrec_output *out,
+                       pcrec_error *err);
 
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means

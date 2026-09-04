@@ -350,11 +350,11 @@ tA1=$(date +%s.%N)
 # three things beyond byte-identity: the exact column NAMES pcrec emits,
 # the exact field COUNT of every data row (the table contract's HEADER
 # TRUTHFULNESS check), and the exact TOTAL row counts against the census.
-MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec'
+MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export'
 hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#' | tail -1)"
 hdr="${hdr#\#}"
 if [ "$hdr" = "$MANIFEST" ]; then
-    pass "C1 manifest: --list-source emits exactly the 15 pinned columns, in order"
+    pass "C1 manifest: --list-source emits exactly the 16 pinned columns, in order"
 else
     fail "C1 manifest: --list-source's header MOVED.
   expected: $MANIFEST
@@ -437,14 +437,24 @@ PROJ_B12="$WORKDIR/projB12.tsv"
 PROJ_B="$WORKDIR/projB.tsv"
 PROJ_C="$WORKDIR/projC.tsv"
 
-# A: <file>\t<15 cols> -> block <file> <line> <name> <desc> <pat> <flags>
-#    <features> <only> <encoding> <engine> <steps> <frames>
+# A: <file>\t<16 cols> -> block <file> <line> <name> <desc> <pat> <flags>
+#    <features> <only> <encoding> <engine> <steps> <frames> <export>
+#
+# [DD-13b.W1.3] BOTH SIDES NOW SELECT FIELDS EXPLICITLY rather than one of
+# them truncating with `NF = 13`. `export` was APPENDED to leg B's row (after
+# `perr`, which leg A cannot know and which this comparison has always
+# dropped), so a truncation would have dropped `export` too — and a directive
+# absent from both sides of a differential leaves it byte-identical while it
+# quietly stops covering that directive, which is the hazard this file's own
+# manifest comment names. Selecting is one line longer and cannot do that.
 awk -F'\t' -v OFS='\t' '$2 == "pattern" {
-    print "block", $1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' \
+    print "block", $1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $17 }' \
     "$DUMP_A_RAW" > "$PROJ_A"
 
-awk -F'\t' -v OFS='\t' '$1 == "block" {
-    NF = 13; print }' "$DUMP_B" > "$PROJ_B12"
+awk -F'\t' '$1 == "block" {
+    printf "%s", $1
+    for (i = 2; i <= 13; i++) printf "\t%s", $i
+    printf "\t%s\n", $15 }' "$DUMP_B" > "$PROJ_B12"
 cp "$DUMP_B" "$PROJ_B"
 cp "$DUMP_C" "$PROJ_C"
 
@@ -699,7 +709,14 @@ fi
 # "fix" that is to re-pin, which discards the protection entirely.
 BEGIN_MARK='# --- BEGIN PINNED ARM REGION (w1 N3) ---'
 END_MARK='# --- END PINNED ARM REGION ---'
-ARM_PIN='3e9453908bd3d8d8ea06da6a3008dbe4bef42848c57ea1ab06a1f0b4c6db5001'
+# [DD-13b.W1.3] MOVED 2026-09-04, deliberately and in a reviewed change. The
+# `export` ARM itself is OUTSIDE this region; what moved inside it is the
+# per-block `cur_exports=""` reset, which belongs in the block-reset arm for
+# the reason the comment there gives — a block-scoped directive that carried
+# to the next block would compile the following pattern under something
+# nobody wrote. The pin did its job: it caught an edit inside the arm chain
+# and made someone say why. Previous: 3e945390... (W1.1).
+ARM_PIN='8ea2cd29e4f53d52f1144f65b53c26abac4707e9276405179de835154b95604e'
 
 region="$WORKDIR/armregion.txt"
 awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
@@ -1185,8 +1202,18 @@ fi
 check_refusal_all3 directive_before_pattern.rxt directive-before-pattern \
     'file-level'
 
-# --- sem19: leg C validates 'name'/'encoding' as identifiers too ------
-check_refusal_all3 bad_name_ident.rxt bad-name-ident 'identifier'
+# --- sem19: leg C validates 'name'/'encoding' too --------------------
+#
+# [DD-13b.W1.3] THE NEEDLE MOVED FROM 'identifier' TO 'definition name', and
+# the change is the point rather than an accommodation. A block `name` stopped
+# being an identifier in this step — it admits `-` and `.` — so a refusal that
+# still said "identifier" would be describing a rule the parser no longer
+# applies. What the fixture tests is unchanged and is the half that matters:
+# `9bad` starts with a DIGIT, which no mapping can repair, and all three legs
+# still refuse it. `bad_encoding_ident` below keeps its own needle, because an
+# `encoding` value IS still an identifier — the two rules genuinely parted
+# company here, and these two lines are where a reader sees that.
+check_refusal_all3 bad_name_ident.rxt bad-name-ident 'definition name'
 check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident 'encoding name'
 
 # --- sem20: block name uniqueness, enforced on a HEADLESS file (the
@@ -1567,6 +1594,352 @@ $(grep -h '^int .*_search(\|^    \.name = ' "$W12/lone.c")"
 else
     fail "W1.2: --source refused a single-unnamed-block file, which is the compatibility default's whole population:
 $(cat "$W12/lone.err")"
+fi
+
+
+# =====================================================================
+# [DD-13b.W1.3] COMPOSITION, THE NAME GRAMMAR, AND THE DOGFOOD
+# =====================================================================
+#
+# Three things this section owns, and each had a population of ZERO before
+# the fixtures beside it existed -- no corpus file declares a "name" at all,
+# measured 0 of 191, which is why they are fixtures and not corpus files:
+#
+#   the NAME GRAMMAR    a definition name admits "-" and "." after its first
+#                       byte, and "target = <name>" derives the C prefix by
+#                       mapping them to "_"; two names mapping to one prefix
+#                       is a refusal that names BOTH
+#   COMPOSITION         a definition own named groups reach groups[] with a
+#                       non-NULL ref, sorted BELOW the primary rows, so
+#                       nentries > nnames for the first time
+#   THE DOGFOOD         pcrec-bench altwide@0.2 as an .rxt source, verbatim,
+#                       33 pattern ids a person chose
+#
+# EVERY ASSERTION HERE READS THE EMITTED ARTIFACT AS TEXT, never the
+# composer own report of what it did. The behavioural half -- a composed
+# artifact answering what a hand-written flat one does -- is a different
+# question and lives in tests/definitions/, with an outside oracle.
+
+W13="$WORKDIR/w13"
+mkdir -p "$W13"
+
+# --- the name grammar, and the derived prefix -------------------------
+#
+# The block names are cls-upto-64 and ctx.lazy; the artifacts must be
+# cls_upto_64 and ctx_lazy, and each must carry its ORIGINAL name. The two
+# are different fields answering different questions: the prefix is what the
+# symbols are called, the name is what the artifact IS
+# (docs/spec/match_api.md section 6), and a build that mapped one into the
+# other would lose the bench id this whole ruling exists to preserve.
+mkdir -p "$W13/nd"
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/name_dashdot.rxt" -o "$W13/nd" 2>"$W13/nd.err"; then
+    nd_files=$(cd "$W13/nd" && ls ./*.c 2>/dev/null | sed 's|^\./||' | sort | tr '\n' ' ')
+    if [ "$nd_files" = "cls_upto_64.c ctx_lazy.c " ]; then
+        pass "W1.3 names: a dash or dot in a definition name maps to underscore in the derived prefix ($nd_files)"
+    else
+        fail "W1.3 names: expected 'cls_upto_64.c ctx_lazy.c ', got '$nd_files'"
+    fi
+    nd_names=$(grep -h '^    \.name = ' "$W13/nd"/*.c | sed 's/.*= "\(.*\)",$/\1/' | sort | tr '\n' ' ')
+    if [ "$nd_names" = "cls-upto-64 ctx.lazy " ]; then
+        pass "W1.3 names: each artifact keeps its ORIGINAL name ($nd_names) while its symbols carry the mapped prefix"
+    else
+        fail "W1.3 names: rx_info.name should be the UNMAPPED block name; got '$nd_names'"
+    fi
+else
+    fail "W1.3 names: --source refused a file whose definitions carry a dash and a dot:
+$(cat "$W13/nd.err")"
+fi
+
+# --- the collision refusal, and it must name BOTH definitions ---------
+#
+# The mapping is deliberately not injective -- one that could not collide
+# would have to mangle a name its author wrote -- so the refusal is where
+# that is paid for. Naming only the shared prefix would leave a reader unable
+# to tell which two of their names produced it, so all three of a-b, a.b and
+# a_b are required in the message.
+coll_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/target_prefix_collision.rxt" 2>&1)"
+coll_rc=$?
+coll_miss=""
+for tok in "a-b" "a.b" "a_b"; do
+    case "$coll_out" in *"$tok"*) ;; *) coll_miss="$coll_miss $tok" ;; esac
+done
+if [ "$coll_rc" != "0" ] && [ -z "$coll_miss" ]; then
+    pass "W1.3 collision: two names mapping to one prefix are refused, naming both definitions and the prefix"
+else
+    fail "W1.3 collision: exit $coll_rc, missing from the message:$coll_miss
+  got: $coll_out"
+fi
+
+# --- composition: the delivered row, its ref, and nentries > nnames ----
+#
+# piece is (?<kept>a)(b)(c)\2 bound into ^(?&piece)$. All three of D89 tiers
+# fire in one artifact: kept is NAMED (delivered), (b) is referenced by the
+# definition own \2 (hidden), (c) is unnamed and unread (erased, spending no
+# number at all).
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_delivers.rxt" \
+        -o "$W13/user.c" 2>"$W13/user.err"; then
+    u_rows="$(grep -E '^    \{ "' "$W13/user.c" || true)"
+    u_ngroups="$(grep -m1 '^    \.ngroups = ' "$W13/user.c" | tr -dc '0-9')"
+    u_nnames="$(grep -m1 '^    \.nnames = ' "$W13/user.c" | tr -dc '0-9')"
+    u_nentries="$(grep -m1 '^    \.nentries = ' "$W13/user.c" | tr -dc '0-9')"
+    u_ncaps="$(grep -m1 -oE '^#define USER_NCAPS [0-9]+' "$W13/user.h" | awk '{print $3}')"
+
+    if printf '%s\n' "$u_rows" | grep -q '{ "d.kept", [0-9]*, [0-9]*, "piece" }'; then
+        pass "W1.3 delivery: the definition exported group reaches groups[] as d.kept with ref piece"
+    else
+        fail "W1.3 delivery: no row for d.kept with ref piece. Rows:
+$u_rows"
+    fi
+    # THE FIRST TIME THE TWO NUMBERS DIFFER. nnames counts the PRIMARY rows
+    # and nentries the whole array; the caller pattern declares no named
+    # group, so 0 and 1 is the strongest possible form of the claim.
+    if [ "$u_nnames" = "0" ] && [ "$u_nentries" = "1" ]; then
+        pass "W1.3: nentries ($u_nentries) > nnames ($u_nnames) -- the injected row is counted by one and not the other"
+    else
+        fail "W1.3: expected nnames=0 and nentries=1 on a caller that declares no name of its own; got $u_nnames / $u_nentries"
+    fi
+    # THE ERASED TIER, AS A NUMBER. The definition has three groups: `kept` is
+    # exported AND delivered by the site, `(b)` is reached by the definition's
+    # own \2, and `(c)` is neither -- so `(c)` is ERASED. Four numbers are
+    # spent (wrapper, kept, (b), and the SITE's own slot for d.kept) and the
+    # caller declares none, so RX_NCAPS is 5. A build whose erased tier
+    # stopped erasing would read 6.
+    if [ "$u_ngroups" = "0" ] && [ "$u_ncaps" = "5" ]; then
+        pass "W1.3 erasure: ngroups=0, RX_NCAPS=5 -- the unnamed, unreferenced group spent NO number"
+    else
+        fail "W1.3 erasure: expected ngroups=0 and RX_NCAPS=5; got $u_ngroups / $u_ncaps.
+  RX_NCAPS 6 means the erased tier stopped erasing."
+    fi
+else
+    fail "W1.3: --source could not build the composition fixture:
+$(cat "$W13/user.err")"
+fi
+
+# --- the three composition refusals -----------------------------------
+#
+# Q-W2 (D89 point 3): whole-pattern recursion inside a bound definition is
+# refused because the RULING is missing, not the meaning. A by-name call the
+# closure cannot satisfy RE-RAISES module backrefs own sentence, which is
+# what keeps the four perr blocks in tests/recursion/d27/sr_refusals.rxt at
+# today wording. And one name declared in two files of the closure is the
+# duplicate-block-name rule one scope out, naming both files.
+w13_refuse() {
+    local fixture="$1" label="$2"; shift 2
+    local out rc miss="" need
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/$fixture" \
+             -o "$W13/refuse.c" 2>&1)"
+    rc=$?
+    for need in "$@"; do
+        case "$out" in *"$need"*) ;; *) miss="$miss [$need]" ;; esac
+    done
+    if [ "$rc" != "0" ] && [ -z "$miss" ]; then
+        pass "W1.3 refusal: $label"
+    else
+        fail "W1.3 refusal ($label): exit $rc, missing:$miss
+  got: $out"
+    fi
+}
+w13_refuse compose_root_recursion.rxt \
+    "whole-pattern recursion inside a bound definition (Q-W2), naming the definition and its file:line" \
+    "selfy" "compose_root_recursion.rxt:" "whole-pattern recursion"
+w13_refuse compose_unknown_name.rxt \
+    "a by-name call the closure cannot satisfy re-raises the parser own sentence, unchanged" \
+    "nosuch" "which this pattern does not declare"
+w13_refuse compose_dup_definition.rxt \
+    "one definition name declared in two files of the closure, naming both" \
+    "word" "common.rxt" "compose_dup_definition.rxt"
+
+# --- [D89 addenda] export, the delivering call, and the five refusals ----
+#
+# EACH OF THESE HAD A POPULATION OF ZERO before its fixture existed, and four
+# of the five are shapes no `.rxt` in the tree can otherwise reach: the export
+# list, the site-qualified row, the flat import and the clash rules all need a
+# COMPOSED build, and the corpus composes nothing.
+w13_refuse deliver_export_nogroup.rxt \
+    "an export naming a group the definition does not declare, naming both" \
+    "nosuch" "piece" "declares no capture group"
+w13_refuse deliver_deliver_noexport.rxt \
+    "a delivering call on a definition that exports nothing (the DEFAULT), naming both" \
+    "piece" "exports nothing"
+w13_refuse deliver_clash_caller.rxt \
+    "a flat import landing on a group the caller already has" \
+    "kept" "already has"
+w13_refuse deliver_clash_twoflat.rxt \
+    "two flat imports exporting one name — neither is the caller's own" \
+    "kept" "already has"
+w13_refuse deliver_clash_samesite.rxt \
+    "two delivering calls sharing a site name (the qualified side of one rule)" \
+    "s.kept" "already has"
+
+# --- the three call forms, as EMITTED ROWS -------------------------------
+#
+# Read off the artifact as text, never off the composer's report. The three
+# assertions are about the three things a caller can see and cannot infer from
+# each other: WHICH rows exist, whether they carry a `ref`, and whether
+# `nnames` counts them.
+w13_rows() {
+    local target="$1" want="$2" label="$3"
+    local out
+    if ! "$TIMEOUT_BIN" 60 "$PCREC" --features all \
+            --source "$FIXRUN/deliver_forms.rxt" --target "$target" \
+            -o "$W13/$target.c" 2>"$W13/$target.err"; then
+        fail "W1.3 forms ($label): --source --target $target failed:
+$(cat "$W13/$target.err")"
+        return
+    fi
+    out="$(LC_ALL=C sed -n 's/^    { "\([^"]*\)".*$/\1/p' "$W13/$target.c" | sort | tr '\n' ' ')"
+    if [ "$out" = "$want" ]; then
+        pass "W1.3 forms: $label emits rows [$out]"
+    else
+        fail "W1.3 forms ($label): expected rows [$want], got [$out]"
+    fi
+}
+w13_rows plaincall "" "a PLAIN call delivers nothing"
+w13_rows sitecall "s.kept s.other " "(?&s=name) delivers site-qualified rows"
+w13_rows selfcall "piece.kept piece.other " "(?&=name) uses the definition's own name as the site"
+w13_rows flatcall "kept other " "(?&*=name) delivers FLAT into the caller's scope"
+
+# THE `ref` COLUMN AND `nnames` TOGETHER, because they are one decision seen
+# twice: a site-qualified row is a LIBRARY row (non-NULL ref, below nnames,
+# invisible to §6's algorithm), a flat row is the CALLER's (NULL ref, counted
+# by nnames, found by that algorithm). Getting one right and the other wrong
+# is the shape that would let a caller's bsearch walk into a library group.
+if grep -q '{ "s.kept", [0-9]*, [0-9]*, "piece" }' "$W13/sitecall.c" &&
+   [ "$(grep -m1 '^    \.nnames = ' "$W13/sitecall.c" | tr -dc '0-9')" = "0" ]; then
+    pass "W1.3 forms: a site-qualified row carries ref=\"piece\" and is NOT counted by nnames"
+else
+    fail "W1.3 forms: the site-qualified row's ref/nnames pair is wrong:
+$(grep -hE '^    \{ \"|^    \.nnames = ' "$W13/sitecall.c")"
+fi
+# A FLAT ROW IS THE CASE THAT SEPARATES THE TWO QUESTIONS, and it is the
+# reason the sort key is the SCOPE and not `ref` (manager's ruling,
+# 2026-09-03 19:1x): it came from a library, so it carries a `ref`, AND it
+# lives in the caller's own scope, so it is inside the `nnames` prefix where
+# §6's bsearch will find it. A build that keyed the sort on `ref` would emit
+# the same row with `nnames` 0 and pass any check that looked at only one of
+# the two numbers.
+if grep -q '{ "kept", [0-9]*, [0-9]*, "piece" }' "$W13/flatcall.c" &&
+   [ "$(grep -m1 '^    \.nnames = ' "$W13/flatcall.c" | tr -dc '0-9')" = "2" ]; then
+    pass "W1.3 forms: a FLAT row keeps ref=\"piece\" (provenance) AND is counted by nnames (the caller's scope)"
+else
+    fail "W1.3 forms: the flat row's ref/nnames pair is wrong — it must carry BOTH:
+$(grep -hE '^    \{ \"|^    \.nnames = ' "$W13/flatcall.c")"
+fi
+
+# THE PER-COMPOSITION ERASURE, as a NUMBER (D89 addendum 4(1)). The definition
+# has three groups and exports two; a PLAIN caller delivers none of them, so
+# all three are erased and only the wrapper spends a number — RX_NCAPS 2. A
+# build that kept an exported-but-undelivered group would read 4, and one that
+# kept every named group (the model the addendum WITHDREW) would read 4 too.
+pc_ncaps="$(grep -m1 -oE '^#define PLAINCALL_NCAPS [0-9]+' "$W13/plaincall.h" | awk '{print $3}')"
+if [ "$pc_ncaps" = "2" ]; then
+    pass "W1.3 erasure: a plain caller of a definition that exports two groups pays for NONE of them (RX_NCAPS 2)"
+else
+    fail "W1.3 erasure: expected RX_NCAPS 2 on the plain-call target, got $pc_ncaps.
+  4 means an exported-but-undelivered group still spends a number, which is the
+  model D89's addendum withdrew."
+fi
+
+# --- Q-W4: a definition's own `encoding` must agree with the artifact's --
+#
+# BOTH DIRECTIONS, because a refusal that fired on ANY `encoding` line on a
+# definition would pass the negative arm while being wrong: `ok` binds a
+# definition that states the encoding the artifact IS built for, and must
+# compose silently. THE HOME OF THIS ROW is here rather than tests/reject/:
+# that table is per-CONSTRUCT and its point is the MODULE name, and this is
+# a `.rxt` source refusal with no construct and no module.
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_encoding_clash.rxt" \
+        --target ok -o "$W13/enc_ok.c" 2>"$W13/enc_ok.err"; then
+    pass "W1.3 Q-W4: a definition stating the encoding the artifact IS built for composes silently"
+else
+    fail "W1.3 Q-W4: a definition whose encoding MATCHES the artifact was refused:
+$(cat "$W13/enc_ok.err")"
+fi
+enc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_encoding_clash.rxt" \
+             --target clash -o "$W13/enc_bad.c" 2>&1)"
+enc_rc=$?
+enc_miss=""
+for tok in "other" "utf8" "byte"; do
+    case "$enc_out" in *"$tok"*) ;; *) enc_miss="$enc_miss $tok" ;; esac
+done
+if [ "$enc_rc" != "0" ] && [ -z "$enc_miss" ]; then
+    pass "W1.3 Q-W4: a definition whose encoding differs is REFUSED, naming the definition and both encodings"
+else
+    fail "W1.3 Q-W4: exit $enc_rc, missing from the message:$enc_miss
+  got: $enc_out"
+fi
+
+# --- THE DOGFOOD: the bench set as a source ---------------------------
+#
+# The claim is NOT that these patterns match anything in particular -- the
+# bench owns those expectations and the oracle that produced them. It is that
+# the FORMAT carries a real consumer real set: 33 ids a person chose, 32 of
+# them not C identifiers, one alternation of 4,096 branches on a single
+# pattern line.
+#
+# THE LOSSLESSNESS IS ASSERTED AGAINST THE BENCH OWN FILES WHERE THEY EXIST,
+# and against the fixture alone where they do not. pcrec-bench is a sibling
+# repo, not a dependency: a checkout without it must not fail this section,
+# so the byte-for-byte arm SKIPS LOUDLY and the structural arm always runs.
+AW="$FIXRUN/bench_altwide_0_2.rxt"
+aw_targets=$(grep -c '^target = ' "$AW")
+aw_blocks=$(grep -c '^pattern ' "$AW")
+if [ "$aw_targets" = "33" ] && [ "$aw_blocks" = "33" ]; then
+    pass "W1.3 dogfood: the altwide fixture carries 33 targets and 33 blocks"
+else
+    fail "W1.3 dogfood: expected 33 targets and 33 blocks, got $aw_targets / $aw_blocks"
+fi
+if "$TIMEOUT_BIN" 120 "$PCREC" --list-source "$AW" > "$W13/aw.tsv" 2>"$W13/aw.err"; then
+    aw_rows=$(grep -vc '^#' "$W13/aw.tsv")
+    aw_dups=$(awk -F'\t' '$1 == "target" { print $3 }' "$W13/aw.tsv" | sort | uniq -d | wc -l)
+    if [ "$aw_rows" = "66" ] && [ "$aw_dups" = "0" ]; then
+        pass "W1.3 dogfood: --list-source reads all 66 rows and the 33 derived prefixes are distinct"
+    else
+        fail "W1.3 dogfood: $aw_rows rows (want 66), $aw_dups colliding prefixes (want 0)"
+    fi
+else
+    fail "W1.3 dogfood: --list-source refused the bench set as a source:
+$(cat "$W13/aw.err")"
+fi
+# The SMALL one, built end to end. A large one would make this section pay
+# the bench own compile cost, which is the bench business and not this
+# suite -- w-8 is 56 bytes and eight branches.
+if "$TIMEOUT_BIN" 120 "$PCREC" --source "$AW" --target w_8 -o "$W13/w8.c" 2>"$W13/w8.err"; then
+    if grep -q '^    \.name = "w-8",' "$W13/w8.c"; then
+        pass "W1.3 dogfood: a bench pattern builds through --source --target, keeping its id w-8 as rx_info.name"
+    else
+        fail "W1.3 dogfood: the w_8 artifact does not carry the name w-8:
+$(grep -h '^    \.name = ' "$W13/w8.c")"
+    fi
+else
+    fail "W1.3 dogfood: --source --target w_8 failed on the bench set:
+$(cat "$W13/w8.err")"
+fi
+# BYTE-FOR-BYTE AGAINST THE BENCH OWN FILES, when they are there. This is
+# the only arm that can catch the fixture drifting away from the set it
+# claims to be a copy of -- a provenance header is a claim, and a claim
+# nothing checks is a comment.
+BENCH_PAT="${PCREC_BENCH_PATTERNS:-/home/duxevents/pcrec-bench/bench/altwide/patterns}"
+if [ -d "$BENCH_PAT" ]; then
+    aw_bad=0 aw_seen=0
+    for bf in "$BENCH_PAT"/*.rx; do
+        bn=$(basename "$bf" .rx)
+        aw_seen=$((aw_seen + 1))
+        want=$(cat "$bf")
+        got=$(awk -v want="$bn" '
+            /^pattern / { p = substr($0, 9); next }
+            /^name /    { if ($2 == want) { print p; exit } }' "$AW")
+        [ "$got" = "$want" ] || aw_bad=$((aw_bad + 1))
+    done
+    if [ "$aw_seen" = "33" ] && [ "$aw_bad" = "0" ]; then
+        pass "W1.3 dogfood: all 33 patterns are byte-for-byte the bench own .rx files (the .rxt round trip is the identity)"
+    else
+        fail "W1.3 dogfood: $aw_bad of $aw_seen patterns differ from the bench own files.
+  The fixture provenance header claims it is a verbatim copy; either it drifted
+  or the bench set moved. Regenerate it or update the header."
+    fi
+else
+    echo "SKIP: W1.3 dogfood byte-for-byte arm: $BENCH_PAT not present (pcrec-bench is a sibling repo, not a dependency)"
 fi
 
 # ---------------------------------------------------------------------

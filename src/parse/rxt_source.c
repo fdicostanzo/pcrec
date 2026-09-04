@@ -161,6 +161,7 @@ static const RxtKeyword block_vocab[] = {
     { "ms",             1 }, { "ns",       1 }, { "g",       1 },
     { "gp",             1 }, { "gu",       1 },
     { "name",           1 }, { "description", 1 }, { "encoding", 1 },
+    { "export",         1 },
     { "tag",            2 }, { "mc",       2 },
     { "oracle",         3 }, { "variant",  3 },
 };
@@ -265,6 +266,45 @@ static int ident_ok(const char *s)
     return 1;
 }
 
+/* [DD-13b.W1.3] A DEFINITION NAME IS NOT AN IDENTIFIER, AND THAT IS THE
+ * MANAGER'S RULING (2026-09-03, `dd13b syntax is the manager's`), taken on
+ * the bench's O-13 §4(a): of the bench's pattern ids, all but a handful
+ * carry a `-` (`cls-upto-64`, `ctx-lazy-256`, `w-512`), so requiring an
+ * identifier here would mean every set that ever became an `.rxt` source
+ * had to carry a name map beside it — a second place a pattern's identity
+ * is written, which is the shape this project refuses everywhere else.
+ *
+ * SO A BLOCK'S `name`, AND A `target` ROW'S DEFINITION REFERENCE, ADMIT
+ * `-` AND `.` AFTER THE FIRST BYTE. The first byte stays `[A-Za-z_]`
+ * because the MAPPED name (below) must be a C identifier and no mapping
+ * can repair a leading digit or `-`.
+ *
+ * IT DOES NOT WIDEN A GROUP NAME, and the boundary is worth stating where
+ * a reader meets the rule: a block's `name` lives in the FILE namespace
+ * (w1_impl DECIDED (7)), never in the pattern's group namespace, so
+ * `(?&some-id)` is still refused by PCRE2's own name grammar
+ * (`pcrec_group_name_scan`, mod_recursion.c) and D26 makes that PCRE2's
+ * rule rather than one this format may widen. A `-`/`.` definition is
+ * therefore BUILDABLE as a target and NOT CALLABLE from a pattern —
+ * exactly what a bench set needs, since its patterns never call each
+ * other, and exactly what a library meant to be composed must avoid.
+ *
+ * THREE PARSERS READ THIS GRAMMAR AND THEY MOVE TOGETHER (D94's rule
+ * applied to a grammar rather than to a number): leg A is here, leg B is
+ * `tests/harness/run.sh`'s `^name[[:space:]]+(...)` arm, leg C is
+ * `tests/harness/verify_rxt.py`'s `NAME_RE`. C1's three-parser
+ * differential is what makes them agree; a fourth reader cannot be added
+ * quietly. */
+static int defname_ok(const char *s)
+{
+    if (!*s) return 0;
+    if (!isalpha((unsigned char)*s) && *s != '_') return 0;
+    for (const char *p = s + 1; *p; p++)
+        if (!isalnum((unsigned char)*p) && *p != '_' && *p != '-' && *p != '.')
+            return 0;
+    return 1;
+}
+
 /* THE SAME RULE, over a BOUNDED span rather than a NUL-terminated string
  * (r46sem finding 8): `config_list_ok` used to copy each element into a
  * fixed `char save[128]` before calling `ident_ok` on it, so an element
@@ -280,6 +320,26 @@ static int ident_ok_n(const char *s, size_t n)
     for (size_t i = 1; i < n; i++)
         if (!isalnum((unsigned char)s[i]) && s[i] != '_') return 0;
     return 1;
+}
+
+/* [DD-13b.W1.3] THE NAME -> PREFIX MAPPING, and it has ONE HOME because
+ * the collision refusal is stated OVER it: `-` and `.` become `_`, every
+ * other byte is copied. A second copy of this loop would be a second
+ * answer to "do these two names collide", which is the whole question the
+ * refusal exists to answer.
+ *
+ * It is total on every name `defname_ok` admits, and it is NOT injective —
+ * `a-b` and `a.b` both map to `a_b`. That is not a defect to design away
+ * (a mapping that never collided would have to mangle the name a reader
+ * wrote); it is the reason the refusal exists, and the reason the
+ * diagnostic names BOTH definitions rather than only the prefix they
+ * share. Writes into `dst`, which must hold `strlen(name) + 1`. */
+void pcrec_rxt_prefix_from_name(const char *name, char *dst, size_t dstsz)
+{
+    size_t j = 0;
+    for (const char *q = name; *q && j + 1 < dstsz; q++)
+        dst[j++] = (*q == '-' || *q == '.') ? '_' : *q;
+    dst[j] = 0;
 }
 
 /* `config-list` = ident { "," [ws] ident } — accepted as written, stored
@@ -725,20 +785,33 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *pe = eq;
     while (pe > v && isspace((unsigned char)pe[-1])) pe--;
     size_t plen = (size_t)(pe - v);
-    if (!plen)
-        return rxt_fail(p, line, "'target' needs a prefix before the '='");
-    /* [DD-13b.W1.1 r46sem finding 8] see parse_config's twin above: a
-     * distinct diagnostic naming the cap, not the "needs a prefix"
-     * message a genuinely missing prefix gets. */
-    if (plen >= sizeof prefix)
-        return rxt_fail(p, line,
-                        "'target' prefix is too long (%zu bytes, max %zu)",
-                        plen, sizeof prefix - 1);
-    memcpy(prefix, v, plen); prefix[plen] = 0;
-    if (!ident_ok(prefix))
-        return rxt_fail(p, line,
-                        "'target' prefix '%s' is not an identifier (it becomes "
-                        "the generated symbols' prefix)", prefix);
+    /* [DD-13b.W1.3] `target = <definition>` — THE PREFIX OMITTED MEANS
+     * "derive it from the definition name". It is the exporter's form: a
+     * bench set's ids carry `-`, a C prefix cannot, and writing the
+     * mapping out by hand 33 times is 33 chances to write it differently
+     * once. An EMPTY left side is now this shorthand and no longer the
+     * "needs a prefix" refusal; a left side that is present is checked
+     * exactly as before, so nothing an author already wrote changes
+     * meaning.
+     *
+     * It does not repeal format_design §2.7's "every other file builds
+     * nothing unless it says so": this IS the file saying so. A `name`d
+     * block alone still declares a definition and builds nothing. */
+    int derived = (plen == 0);
+    if (!derived) {
+        /* [DD-13b.W1.1 r46sem finding 8] see parse_config's twin above: a
+         * distinct diagnostic naming the cap, not the "needs a prefix"
+         * message a genuinely missing prefix gets. */
+        if (plen >= sizeof prefix)
+            return rxt_fail(p, line,
+                            "'target' prefix is too long (%zu bytes, max %zu)",
+                            plen, sizeof prefix - 1);
+        memcpy(prefix, v, plen); prefix[plen] = 0;
+        if (!ident_ok(prefix))
+            return rxt_fail(p, line,
+                            "'target' prefix '%s' is not an identifier (it "
+                            "becomes the generated symbols' prefix)", prefix);
+    }
 
     const char *rest = skip_ws(eq + 1);
     char def[RXT_TARGET_DEF_MAX + 1];
@@ -754,10 +827,23 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
                         "'target %s =' definition name is too long (%zu "
                         "bytes, max %zu)", prefix, dlen, sizeof def - 1);
     memcpy(def, rest, dlen); def[dlen] = 0;
-    if (!ident_ok(def))
+    /* [DD-13b.W1.3] `defname_ok`: a target names a DEFINITION, which is a
+     * file-namespace name and may carry `-`/`.`. The PREFIX above stays an
+     * identifier — it is what the emitted symbols are built from. */
+    if (!defname_ok(def))
         return rxt_fail(p, line,
-                        "'target %s' definition name '%s' is not an "
-                        "identifier", prefix, def);
+                        "'target %s' definition name '%s' is not a definition "
+                        "name (a letter or '_' then letters, digits, '_', '-' "
+                        "or '.')",
+                        derived ? "=" : prefix, def);
+    if (derived) {
+        pcrec_rxt_prefix_from_name(def, prefix, sizeof prefix);
+        if (!ident_ok(prefix))
+            return rxt_fail(p, line,
+                            "'target = %s' cannot derive a prefix: '%s' is not "
+                            "an identifier even with '-' and '.' mapped to "
+                            "'_'", def, prefix);
+    }
 
     RxtRow *r = row_push(p, src, RXT_DECL_TARGET, line);
     r->name = arena_strdup(p->arena, prefix);
@@ -777,12 +863,35 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         r->with_list = rtrim_ws(p->arena, list);
     }
 
+    /* [DD-13b.W1.3] THE COLLISION REFUSAL, and the mapping made it reachable
+     * from two DIFFERENT names. `a-b` and `a.b` are distinct definitions and
+     * both map to `a_b`; before the mapping the only way to collide was to
+     * write one prefix twice, so naming the prefix alone was a complete
+     * answer. It is not any more — a reader shown only `a_b` cannot tell
+     * which two of their names produced it — so the diagnostic names BOTH
+     * definitions when they differ, and keeps the old sentence when they do
+     * not. Two shapes, one check, because they are one collision.
+     *
+     * MEASURED (2026-09-03, over every `patterns` directory under
+     * `/home/duxevents/pcrec-bench/bench`): across the bench's 90 ids the mapping
+     * produces exactly one collision, `floor`, and it is CROSS-SET (each of
+     * the four sets carries its own `floor.rx`) — so no single-set export
+     * collides, and the refusal fires exactly where sets are merged, which
+     * is where it should. */
     for (size_t k = 0; k + 1 < src->nrows; k++)
         if (src->rows[k].kind == RXT_DECL_TARGET &&
-            !strcmp(src->rows[k].name, prefix))
+            !strcmp(src->rows[k].name, prefix)) {
+            if (strcmp(src->rows[k].value, def) != 0)
+                return rxt_fail(p, line,
+                                "definitions '%s' and '%s' (line %zu) both map "
+                                "to target prefix '%s'; a name's '-'/'.' "
+                                "become '_', so give one an explicit prefix",
+                                def, src->rows[k].value, src->rows[k].line,
+                                prefix);
             return rxt_fail(p, line,
                             "duplicate target prefix '%s' (already declared "
                             "on line %zu)", prefix, src->rows[k].line);
+        }
     return 0;
 }
 
@@ -1015,9 +1124,15 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
 
             if (tok_is(l, "name")) {
                 const char *v = value_trimmed(&p, l);
-                if (!ident_ok(v)) {
+                /* [DD-13b.W1.3] `defname_ok`, not `ident_ok`: see that
+                 * function's header for the ruling and for the one
+                 * boundary it draws (buildable as a target, not callable
+                 * from a pattern). */
+                if (!defname_ok(v)) {
                     rxt_fail(&p, line,
-                             "'name' wants an identifier (got '%s')", v);
+                             "'name' wants a definition name — a letter or "
+                             "'_' then letters, digits, '_', '-' or '.' "
+                             "(got '%s')", v);
                     goto fail;
                 }
                 /* A BLOCK'S `name` IS IN THE FILE NAMESPACE (w1_impl
@@ -1034,6 +1149,44 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                         goto fail;
                     }
                 block->name = arena_strdup(&src->arena, v);
+                continue;
+            }
+            if (tok_is(l, "export")) {
+                /* [DD-13b.W1.3, D89 addendum point 2] THE LIBRARY'S OWN
+                 * INTERFACE, DECLARED. Frank: "for library use, the library
+                 * explicitly provides the names it intends to export."
+                 * Delivery stopped being "every named group" — the default
+                 * is now NOTHING exported, and a definition says what it
+                 * offers.
+                 *
+                 * THE `config-list` SHAPE, because `with`/`use`/`from`
+                 * already use it and a fourth list syntax would be a fourth
+                 * thing to get wrong. `config_list_ok` is the SAME validator
+                 * those three run, so a tab or a malformed element is
+                 * refused here in the words it is refused there.
+                 *
+                 * WHAT IS *NOT* CHECKED HERE: whether the definition
+                 * actually declares a group by each name. That is a question
+                 * about the PATTERN, and this parser does not parse
+                 * patterns — the composer answers it at bind time, where the
+                 * sub-parse's own `named_groups` list is in hand, and
+                 * refuses naming both the export and the definition. Asking
+                 * it here would need a second regex parser in the head
+                 * reader, which is the one thing the seam ruling forbids. */
+                const char *v = value_trimmed(&p, l);
+                if (!config_list_ok(v)) {
+                    rxt_fail(&p, line,
+                             "'export' wants a comma-separated list of "
+                             "group names (got '%s')", v);
+                    goto fail;
+                }
+                if (block->exports) {
+                    rxt_fail(&p, line,
+                             "a block has one 'export' line; this one already "
+                             "declared '%s'", block->exports);
+                    goto fail;
+                }
+                block->exports = rtrim_ws(&src->arena, v);
                 continue;
             }
             if (tok_is(l, "description")) {
@@ -1146,6 +1299,13 @@ fail:
 void pcrec_rxt_source_free(RxtSource *src)
 {
     if (!src) return;
+    /* [DD-13b.W1.3] the `lib` closure's other files, freed before this one:
+     * they were parsed into their own `RxtSource`s (each with its own arena)
+     * by `pcrec_rxt_source_resolve`, and the definition set points INTO
+     * their arenas. Recursion depth is the `lib` chain's, which the visited
+     * set bounds at the number of distinct files. */
+    for (size_t i = 0; i < src->nkids; i++) pcrec_rxt_source_free(src->kids[i]);
+    free(src->kids);
     arena_free(&src->arena);
     free(src);
 }
@@ -1371,6 +1531,177 @@ static const char *lib_chain_text(Arena *a, const char *own,
     return out;
 }
 
+/* ---- [DD-13b.W1.3] THE `flags` LETTER MAPPING, with ONE home -----------
+ *
+ * `flags i` means the same thing on a `config` line, on a pattern block and
+ * on a DEFINITION, so the letter -> bit mapping is one function and not one
+ * loop per caller. It moved here rather than staying in `cli/main.c` because
+ * this file is where a definition's letters are read, and a mapping with two
+ * homes is the D24 shape one tier down: a letter added to the CLI's loop and
+ * not to the composer's would make a library mean one thing when built as a
+ * target and another when bound into a caller. */
+int pcrec_rxt_flags_from_letters(const char *letters, unsigned long long *out,
+                                 char *bad)
+{
+    unsigned long long f = 0;
+    if (letters) {
+        for (const char *c = letters; *c; c++) {
+            if (*c == 'i') f |= (unsigned long long)PCREC_CASELESS;
+            else { if (bad) *bad = *c; return -1; }
+        }
+    }
+    *out = f;
+    return 0;
+}
+
+/* ---- [DD-13b.W1.3] THE DEFINITION CLOSURE ------------------------------
+ *
+ * W1.2 resolved a `lib` reference as far as EXISTENCE and deliberately read
+ * nothing: a library's CONTENTS were "the composer's, W1.3". This is that.
+ *
+ * THE WALK IS A FIXPOINT WITH A VISITED SET KEYED ON THE RESOLVED PATH, and
+ * both halves of that matter. Keyed on the RESOLVED path so a diamond — two
+ * files each `lib`-ing a third — reads the third once and its definitions
+ * are one set of definitions rather than two with colliding names; a visited
+ * SET so a cycle terminates, which format_design §2.5 makes legal (a library
+ * may reasonably `lib` a file that `lib`s it back, and refusing that would
+ * be a rule about file layout rather than about meaning).
+ *
+ * ORDER IS `lib` DECLARATION ORDER, DEPTH FIRST, WITH THIS FILE'S OWN BLOCKS
+ * FIRST. It is a stated order rather than an emergent one because a
+ * DUPLICATE NAME refusal names the two files it found, and "which one was
+ * found first" must be a property of the source text and not of a traversal
+ * anyone could change.
+ *
+ * A DUPLICATE DEFINITION NAME ACROSS THE CLOSURE IS A REFUSAL. K42 records
+ * the residual — colliding names have no external oracle — but that is about
+ * names the FORMAT cannot see; this one it can, and refusing it here is what
+ * keeps the residual from growing. Within ONE file the parser already
+ * refuses it (`duplicate block name`); this is the same rule one scope out,
+ * and its diagnostic names both files because the two lines are in different
+ * ones.
+ */
+typedef struct {
+    RxtP               *p;        /* diagnostics, re-pathed per file      */
+    RxtSource          *root;     /* owns the arena and the kid list      */
+    const char *const  *dirs;
+    size_t              ndirs;
+    const char        **seen;     /* resolved paths already read          */
+    size_t              nseen, seencap;
+    RxtDef             *defs;
+    size_t              ndefs, defcap;
+} RxtClosure;
+
+/* The `"path"` form's search, EXACTLY as the existence check walks it: the
+ * naming file's own directory, then each `--lib-path` in order. Returns the
+ * resolved path (arena-owned) or NULL. */
+static const char *lib_resolve(RxtClosure *cl, const char *own,
+                               const char *ref)
+{
+    if (ref[0] == '/') return path_is_file(ref) ? ref : NULL;
+    const char *cand = join_path(&cl->root->arena, own, ref);
+    if (path_is_file(cand)) return cand;
+    for (size_t d = 0; d < cl->ndirs; d++) {
+        cand = join_path(&cl->root->arena, cl->dirs[d], ref);
+        if (path_is_file(cand)) return cand;
+    }
+    return NULL;
+}
+
+static int closure_seen(RxtClosure *cl, const char *path)
+{
+    for (size_t i = 0; i < cl->nseen; i++)
+        if (!strcmp(cl->seen[i], path)) return 1;
+    return 0;
+}
+
+static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath);
+
+/* A `lib` row's reference, unquoted; NULL when the row is a store
+ * reference (which is refused by the caller, in its own words). */
+static const char *lib_ref_text(Arena *a, const char *value)
+{
+    size_t rl = strlen(value);
+    if (rl >= 2 && value[0] == '"' && value[rl - 1] == '"')
+        return arena_strndup(a, value + 1, rl - 2);
+    return value;
+}
+
+static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
+{
+    if (closure_seen(cl, respath)) return 0;
+    if (cl->nseen == cl->seencap) {
+        size_t nc = cl->seencap ? cl->seencap * 2 : 8;
+        const char **nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+        for (size_t i = 0; i < cl->nseen; i++) nv[i] = cl->seen[i];
+        cl->seen = nv; cl->seencap = nc;
+    }
+    cl->seen[cl->nseen++] = respath;
+
+    RxtP fp = *cl->p;
+    fp.path = s->path;
+
+    /* This file's own named blocks, in file order. */
+    for (size_t i = 0; i < s->nrows; i++) {
+        const RxtRow *r = &s->rows[i];
+        if (r->kind != RXT_DECL_PATTERN || !r->name) continue;
+        for (size_t k = 0; k < cl->ndefs; k++)
+            if (!strcmp(cl->defs[k].name, r->name))
+                return rxt_fail(&fp, r->line,
+                                "definition '%s' is declared twice in the lib "
+                                "closure: also at %s:%zu",
+                                r->name, cl->defs[k].file, cl->defs[k].line);
+        unsigned long long f = 0;
+        char badc = 0;
+        if (pcrec_rxt_flags_from_letters(r->flags, &f, &badc) != 0)
+            return rxt_fail(&fp, r->line,
+                            "unknown flag letter '%c' in `flags %s` on "
+                            "definition '%s'", badc, r->flags, r->name);
+        if (cl->ndefs == cl->defcap) {
+            size_t nc = cl->defcap ? cl->defcap * 2 : 8;
+            RxtDef *nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+            for (size_t k = 0; k < cl->ndefs; k++) nv[k] = cl->defs[k];
+            cl->defs = nv; cl->defcap = nc;
+        }
+        RxtDef *d = &cl->defs[cl->ndefs++];
+        d->name = r->name;
+        d->pattern = r->value;
+        d->flags = f;
+        d->encoding = r->encoding;
+        d->exports = r->exports;
+        d->file = s->path;
+        d->line = r->line;
+    }
+
+    /* Then its `lib` rows, in declaration order, depth first. */
+    const char *own = source_dir(s);
+    for (size_t i = 0; i < s->nrows; i++) {
+        const RxtRow *r = &s->rows[i];
+        if (r->kind != RXT_DECL_LIB || !r->value) continue;
+        if (r->value[0] == '<') continue;      /* refused by the caller */
+        const char *ref = lib_ref_text(&cl->root->arena, r->value);
+        const char *rp = lib_resolve(cl, own, ref);
+        if (!rp) continue;                     /* refused by the caller */
+        if (closure_seen(cl, rp)) continue;
+        pcrec_error kerr = { 0 };
+        RxtSource *kid = pcrec_rxt_source_parse(rp, &kerr);
+        if (!kid)
+            return rxt_fail(&fp, r->line,
+                            "'lib %s' does not parse: %s", r->value, kerr.msg);
+        if (cl->root->nkids == cl->root->kidcap) {
+            size_t nc = cl->root->kidcap ? cl->root->kidcap * 2 : 4;
+            RxtSource **nv = realloc(cl->root->kids, nc * sizeof *nv);
+            if (!nv) { pcrec_rxt_source_free(kid);
+                       return rxt_fail(&fp, r->line, "out of memory reading "
+                                       "'lib %s'", r->value); }
+            cl->root->kids = nv; cl->root->kidcap = nc;
+        }
+        cl->root->kids[cl->root->nkids++] = kid;
+        if (closure_walk(cl, kid, rp) != 0) return -1;
+    }
+    return 0;
+}
+
 /* ---- the entry ---- */
 
 int pcrec_rxt_source_resolve(RxtSource *src,
@@ -1426,6 +1757,23 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                             r->value, chain);
     }
 
+    /* (1b) [DD-13b.W1.3] THE DEFINITION CLOSURE. Built ONCE per source and
+     * shared by every target, because it is a property of the FILE. It runs
+     * AFTER the existence loop above so a missing or store-shaped `lib`
+     * keeps its own diagnostic — the closure walk skips exactly those two
+     * cases, which is why they are refused before it rather than inside it.
+     *
+     * NEVER NULL. A file with no named block anywhere in its closure gets an
+     * EMPTY set rather than a NULL one, so the composer has one thing to
+     * test and every `--source` build takes the same path. */
+    RxtDefs *defs = arena_alloc(&src->arena, sizeof *defs);
+    {
+        RxtClosure cl = { .p = &p, .root = src, .dirs = libdirs, .ndirs = nlib };
+        if (closure_walk(&cl, src, src->path) != 0) return -1;
+        defs->v = cl.defs;
+        defs->n = cl.ndefs;
+    }
+
     /* (2) WHICH ARTIFACTS. */
     size_t ntarget = 0, npattern = 0;
     const RxtRow *lone = NULL;
@@ -1465,6 +1813,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
             t->budget_steps = lone->budget_steps;
             t->budget_frames = lone->budget_frames;
             t->pcrec_raw = NULL;
+            t->defs = defs;
             *out = t;
             *nout = 1;
         }
@@ -1541,6 +1890,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->line = tr->line;
         t->block_line = blk->line;
         t->pcrec_raw = s.pcrec_raw;
+        t->defs = defs;
 
         /* THE PER-KIND TABLE (§1.5), applied exactly once. */
         t->features_only = blk->features_only;
@@ -1634,6 +1984,10 @@ static const char *const rxt_columns[] = {
     "kind", "line", "name", "value", "pattern", "flags", "features",
     "features_only", "encoding", "engine", "budget_steps", "budget_frames",
     "with", "from", "pcrec",
+    /* [DD-13b.W1.3] APPENDED, never inserted — `docs/spec/table_contract.md`
+     * and this dump's own rule: a consumer's positional read of columns 1-15
+     * must survive. */
+    "export",
 };
 #define RXT_NCOLS (sizeof rxt_columns / sizeof *rxt_columns)
 
@@ -1706,6 +2060,8 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         if (r->from_list) sb_puts(&sb, r->from_list);           /* 14 from */
         sb_putc(&sb, '\t');
         if (is_cfg) put_escaped(&sb, r->pcrec_raw);             /* 15 pcrec */
+        sb_putc(&sb, '\t');
+        if (r->exports) sb_puts(&sb, r->exports);               /* 16 export */
         sb_putc(&sb, '\n');
     }
     return sb_take(&sb);

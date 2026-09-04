@@ -1,0 +1,14 @@
+# [DD-13b.W1.3] A DELIVERING CALL ON A DEFINITION THAT EXPORTS NOTHING.
+#
+# The default IS nothing exported (D89 addendum point 2), so this is the shape
+# a caller reaches by assuming the old rule — every named group delivered —
+# which is exactly what that addendum withdrew. Refused rather than silently
+# delivering zero rows: a delivering call that delivers nothing is the
+# half-feature these rulings removed.
+target = t
+
+pattern ^(?&s=piece)$
+name t
+
+pattern (?<kept>a)
+name piece

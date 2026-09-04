@@ -1,0 +1,16 @@
+# [DD-13b.W1.3] ONE NAME, TWO FILES IN THE CLOSURE. Within one file the
+# parser already refuses a duplicate block name; this is the same rule one
+# scope out, and the diagnostic names both files because the two lines are
+# in different ones.
+#
+# K42 records the residual — colliding names have no external oracle — but
+# that is about names the FORMAT cannot see. This one it can, and refusing it
+# is what keeps the residual from growing.
+lib "common.rxt"
+target = caller
+
+pattern ^(?&word)$
+name caller
+
+pattern [0-9]+
+name word

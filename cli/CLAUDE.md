@@ -231,3 +231,15 @@ artifact wave B+C shipped, so `A == B` over the corpus compares two genuinely
 different programs from one compiler rather than two spellings of one. The
 option bit is `PCREC_NO_SPLICE_CALLS` (lib/pcrec.h); this file's only job is the
 argv spelling and the one-line reason beside it.
+
+## [DD-13b.W1.3] two small changes, both about single-homing
+
+- `compile_source` calls **`pcrec_compile_defs`** rather than
+  `pcrec_compile`, handing it the file's definition closure. `t->defs` is
+  never NULL (a file with no named block gets an empty set), so there is one
+  call and no branch on whether this source composes.
+- `apply_target`'s `flags`-letter loop is gone, replaced by a call to
+  **`pcrec_rxt_flags_from_letters`** (`src/parse/rxt_source.c`). A
+  DEFINITION's own `flags` are read there too, and a letter added to one
+  loop and not the other would make a library mean one thing built as a
+  target and another bound into a caller — the D24 shape one tier down.

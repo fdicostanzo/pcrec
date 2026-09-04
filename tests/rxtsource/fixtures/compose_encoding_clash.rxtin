@@ -1,0 +1,30 @@
+# [DD-13b.W1.3, Q-W4 — Frank 2026-09-03] A DEFINITION THAT DECLARES AN
+# ENCODING THE ARTIFACT IS NOT BUILT FOR.
+#
+# A definition does not inherit the target's config, so its own `encoding`
+# line is a thing it STATED. But D58 makes encoding a per-PATTERN scalar and
+# a composed artifact has exactly ONE, so a definition asking for a different
+# one is asking for something the format cannot give.
+#
+# REFUSED, not ignored. A silently dropped directive is a population nobody
+# counts, and the author who wrote it has no way to learn it did nothing.
+# Equal or absent is fine — `plain` below states the encoding the artifact IS
+# built for and composes without complaint, which is what stops the refusal
+# from being "any encoding line on a definition".
+target = ok
+target = clash
+
+pattern ^(?&plain)$
+name ok
+m "abc" 0 3
+
+pattern ^(?&other)$
+name clash
+
+pattern [a-z]+
+name plain
+encoding byte
+
+pattern [a-z]+
+name other
+encoding utf8

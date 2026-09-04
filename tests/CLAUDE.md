@@ -593,6 +593,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   pinned census. Read its CLAUDE.md for the two denominators, the two
   DEFERRED sabotage rows and why each waits, and the block-scalar
   contradiction and how it was resolved.
+- **definitions/** — [DD-13b.W1.3] the COMPOSITION IDENTITY PROOF
+  (`make test-definitions`): pcrec's own corpus composing over a shared
+  definitions file, and the check that a composed artifact answers exactly
+  what a HAND-WRITTEN flat one does. THREE SOURCES, no two of which share
+  one — python `re` on the flat pattern, the flat pattern compiled by pcrec,
+  the composed source compiled by pcrec — with the two pcrec legs agreeing
+  AGAINST the oracle reported as a defect below the composer rather than as
+  a pass. Its fixtures are `.rxtin` for `tests/rxtsource/fixtures/`'s reason
+  and one of its own: a composed block cannot be compiled from its own text,
+  so a `.rxt` here would be a corpus file the corpus runner cannot build.
+  See its CLAUDE.md for the open item that leaves (`run.sh` has no
+  composed-block path yet, and `verify_rxt.py` already carries the matching
+  skip predicate with a population of zero).
 - **size/** — [ART-SIZE.1b]'s zero-cost artifact-size metrics log +
   corpus-level tripwire, riding `test-corpus`'s own compile pass (no
   `.rxt` corpus of its own — `run_size_log.sh` wraps `tests/harness/

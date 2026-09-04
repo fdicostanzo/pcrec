@@ -317,6 +317,39 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   previously-dead oracle over 139 never-checked files may surface
   PRE-EXISTING failures, which are a discovery to triage and not a
   regression to fix inside W1.1).
+  **NEW: §8 IS THE [DD-13b.W1.3] STEP BRIEF** (2026-09-03, lane w13),
+  written under the evening box hold. It is the section to read against
+  §2, because **D89 made §2 unbuildable as written**: Frank's Q-W1 ruling
+  replaced the one-tier "the definition's groups are injected" with a
+  THREE-TIER rule (delivered / hidden / **erased**), and the erased tier —
+  a lib group referenced by nothing inside the lib, rewritten to `(?:…)`
+  and spending NO number — is not expressible by §2.5's "add `base` to
+  every `A_CAP`" walk. §8.0 replaces the offset with a **MAP**
+  (`local -> final, or 0`), which is the assignment table §2.7 already
+  names as the one derivation with three readers, and which degenerates
+  to `+base` exactly when nothing is erased — so §2.5's MEASURED cell
+  (`dd` = `(\d)\1`, `\1` -> `\3`) is still the expected answer. §8.0
+  also DECIDES the one rule W1.3 invents: **a definition's group is
+  delivered exactly when the definition NAMES it**, since D89 point 4
+  leaves delivery to "the lib's own names" and every alternative either
+  builds W1.4's syntax early or adds a second place an interface is
+  declared. §8.2 carries the manager's name-grammar ruling with its one
+  real boundary — a `-`/`.` name is buildable as a target but **NOT
+  callable from a pattern**, because `(?&some-id)` goes through PCRE2's
+  own name grammar and D26 makes that PCRE2's rule; §8.1 records that the
+  name grammar has THREE readers found by grep (`rxt_source.c`'s
+  `ident_ok`, `run.sh:1492`, `verify_rxt.py`'s `IDENT_RE`) and that C1 is
+  what makes them agree. §8.4 is the check plan with the column that
+  matters — what each check must NOT share a source with — and seven
+  sabotage rows, of which S-W13c and S-W13d are the pair worth keeping
+  because they fail in OPPOSITE directions on the same number. §8.5 is
+  the six-row D80 delta, including **S9b as D89 revised it** (r45sem's
+  "first delivered group at `ngroups+2`" is WITHDRAWN: a caller never
+  authors a delivered number, so the spec states delivery in NAMES).
+  §8.6/§8.7 are the abi event and its D94 grep. §8.8 carries three
+  questions for Frank (Q-W3 every-named-group-is-delivered, Q-W4 a
+  definition does not inherit the target's config, Q-W5 `target = <name>`
+  rather than an implicit target per named block).
   **REVISION 2.3 CORRECTS THIS NOTE'S OWN ERROR, and the error is worth
   more than the fact it got wrong.** Revision 2.1 reported — truly — that
   `tests/assertions/verify_pcre2.py` has zero Makefile hits, and concluded

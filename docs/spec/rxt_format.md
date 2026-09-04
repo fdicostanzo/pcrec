@@ -45,7 +45,7 @@ Four file-level declarations exist in this build:
 | declaration | means |
 |---|---|
 | `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **The `"path"` form is RESOLVED as far as existence** (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name if it names no readable file; its CONTENTS are not read, so no pattern can call a definition that lives in it. `<store-name>` is refused as NOT IN THIS BUILD |
-| `target <prefix> = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below |
+| `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes |
 
@@ -61,6 +61,35 @@ unknown. They are real, spelled correctly, and simply not implemented
 here; reporting them as unknown would send a reader hunting a typo in a
 word they just read in the format's own documentation.
 
+### The delivering call — reaching a definition's exported groups
+
+**[DD-13b.W1.3]** A definition's `export` line says what it offers; a call
+says what it takes. Three forms, and the plain one is PCRE2's own:
+
+| written in a pattern | meaning |
+|---|---|
+| `(?&name)` | the plain call: run the definition, keep nothing. PCRE2's own capture-transparent meaning, unchanged |
+| `(?&site=name)` | DELIVER: the definition's exported groups become the caller's, named `site.group` |
+| `(?&=name)` | the same, with the definition's own name as the site |
+| `(?&*=name)` | DELIVER FLAT: the exported groups become the caller's under their own names |
+
+All three delivering spellings were checked against libpcre2 10.46 before
+adoption and are refused by it, so adopting them changes the meaning of no
+legal pattern (the constraint `format_design.md` §1.5 states, and the one
+that disqualified an earlier candidate PCRE2 turned out to accept).
+
+- **A site is a scope.** Two delivering calls of one definition under two
+  site names give two independent sets of groups.
+- **A clash is refused by name** — a flat import landing on a group the
+  caller already has, two flat imports exporting one name, or two sites
+  sharing a name.
+- **A delivering call whose target is a group in the SAME pattern is
+  refused.** Delivery is a definition's interface; a local group has no
+  export list and is already the caller's own.
+- **A delivering call on a RECURSIVE definition is refused**, because
+  delivery needs the callee written out at the site.
+- What a caller then reads is `docs/spec/match_api.md` §6's "Composition".
+
 ### Building from a source file
 
 `pcrec --source FILE -o OUT` builds this file's `target` declarations;
@@ -72,6 +101,24 @@ the FORMAT rather than to the CLI is this:
   the FILE namespace — the same namespace a block's `name` is unique in.
   A `target` may name a block that appears later in the file: the head
   precedes the body and resolution is a whole-file pass.
+- **A `target`'s PREFIX is a C identifier** and is never mapped. Written
+  out, it is exactly what the emitted symbols carry.
+- **`target = <definition>` DERIVES the prefix from the definition
+  name**, by replacing every `-` and `.` with `_` and copying every other
+  byte. This is the form an exporter writes: a set of patterns whose ids
+  carry `-` becomes a source with one `target =` row per pattern and no
+  hand-written mapping anywhere.
+- **Two definitions that map to one prefix are REFUSED**, and the
+  diagnostic names BOTH definitions, the line of the first, and the
+  prefix they share. The mapping is deliberately not injective — `a-b`
+  and `a.b` both give `a_b` — because a mapping that could not collide
+  would have to mangle a name its author wrote; the refusal is where that
+  is paid for, and an explicit `target <prefix> = <definition>` on either
+  one settles it. Writing one prefix twice is refused with the older
+  "duplicate target prefix" sentence, which is the same collision seen
+  from the side where naming both definitions would say nothing new.
+- A derived prefix is still subject to every rule a written one is,
+  including the symbol-prefix length bound in `docs/spec/limits.md`.
 - **No `target` and exactly ONE UNNAMED pattern block means `target rx`.**
   That is what makes every file written before this format grew a head
   buildable without declaring anything.
@@ -228,19 +275,64 @@ These bind on every line kind, old and new:
   bug, never a planned outcome a corpus block gets to expect. Scored
   against the driver's exit `3` plus its printed word, the one case kind
   that WANTS that exit — see "The driver protocol" below.
-- `name <ident>` — block-scoped: names the block. An `ident` is a PCRE2
-  group name AND a C identifier (first byte a letter or `_`, then letters,
-  digits or `_`), one rule, so a name that can be a group cannot fail to
-  be a symbol later. **The name is in the FILE namespace**, not the
-  pattern's group namespace, and must be unique within the file.
+- `name <defname>` — block-scoped: names the block, declaring it as a
+  DEFINITION. A `<defname>` is a first byte that is a letter or `_`,
+  then letters, digits, `_`, `-` or `.`. **The name is in the FILE
+  namespace**, not the pattern's group namespace, and must be unique
+  within the file.
+
+  - **A definition name is neither a PCRE2 group name nor a C
+    identifier**, and both halves of that matter. It is not a group name,
+    so a definition whose name carries `-` or `.` **cannot be called from
+    a pattern**: `(?&some-id)` goes through PCRE2's own group-name
+    grammar and is refused there. It is not a C identifier, so it cannot
+    be a symbol prefix as written — `-` and `.` **map to `_`** to produce
+    one (see `target` below). A definition meant to be COMPOSED into
+    another pattern must therefore be named with an identifier; a
+    definition meant only to be BUILT may use the wider set.
+  - The wider set exists because an exported set of patterns carries ids
+    a person chose (`cls-upto-64`, `w-512`), and requiring an identifier
+    would force every such export to carry a name map beside it — a
+    second place a pattern's identity is written.
 - `description <text>` — block-scoped: a machine-readable prose field for
   this block. One-line form only (see "Lexical rules" above).
 - `encoding <ident>` — block-scoped: the subject encoding for this
   block's compile, passed as `--encoding=<ident>`. Per-block, never
   global, exactly as the CLI option is per-compile: two blocks in one file
-  may use different encodings. Whether the named encoding is IMPLEMENTED
+  may use different encodings.
+
+  **[DD-13b.W1.3] ON A BLOCK USED AS A DEFINITION, an `encoding` that
+  differs from the artifact's is REFUSED**, naming the definition, both
+  encodings and the definition's own line. A definition does not inherit
+  the target's config, so its `encoding` line is a thing it stated — but
+  a composed artifact has exactly ONE encoding, so a definition asking for
+  another is asking for something the format cannot give. Equal or absent
+  composes normally. The refusal exists rather than a silent ignore
+  because a dropped directive is a population nobody counts. Whether the named encoding is IMPLEMENTED
   is pcrec's answer, not the harness's — `utf8` is refused until milestone
   M5, and a block asking for it hears that from the compiler.
+- `export <name>{, <name>}` — block-scoped: **the definition's declared
+  INTERFACE**, the group names it offers to a caller that DELIVERS from it.
+  The `config-list` shape `with`/`use`/`from` already use; the names are
+  GROUP names, so they follow PCRE2's group-name grammar (a letter or `_`,
+  then letters, digits or `_`) and not the wider definition-name grammar a
+  block's own `name` uses.
+
+  - **The default is NOTHING exported.** A block with no `export` line
+    offers no names, and a delivering call on it delivers nothing.
+  - **A name the definition does not declare as a group is REFUSED**,
+    naming both the export and the definition. The check happens where the
+    pattern has been parsed, not at the `export` line — this format's head
+    reader does not parse patterns.
+  - Exporting a name does not by itself put anything in an artifact: the
+    list says what MAY be delivered, and a DELIVERING CALL decides what IS
+    (see "Composition" in `docs/spec/match_api.md` §6). An exported name
+    that no site delivers costs nothing at all — no slot, no row.
+  - **A delivering call on a definition that exports nothing is REFUSED.**
+    The default being "nothing" is what makes that a real check rather than
+    a formality: it is the shape a caller reaches by assuming a library
+    publishes its named groups automatically, which this format deliberately
+    does not do.
 - `features only <list>` — as `features`, except that the list REPLACES
   what a `config` would otherwise contribute rather than being unioned
   with it. Parsed and recorded in this build; it becomes operative when
@@ -347,6 +439,7 @@ boundary comes from the one head parser, and the two cannot drift.
 | 13 | `with` | target | the config list, as written |
 | 14 | `from` | config | the config list, as written |
 | 15 | `pcrec` | config | the raw flag text |
+| 16 | `export` | pattern | the block's `export` list, as written ([DD-13b.W1.3]) |
 
 **`kind` carries the DECLARATION NAME**, not a `head`/`body`
 supercategory. There is no column saying whether a row is a head row and

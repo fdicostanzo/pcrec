@@ -1,0 +1,61 @@
+# tests/definitions/defs_common.rxtin — THE SHARED DEFINITIONS FILE.
+#
+# [DD-13b.W1.3] part 3, our own usage: pcrec's corpus composing over a
+# library of its own, rather than only over fixtures written to exercise the
+# format's grammar.
+#
+# A LIBRARY SHIPS NOTHING BY ITSELF (format_design §6.1): no `target` line,
+# several blocks, so `pcrec --source` on this file builds nothing at exit 0.
+# What it ships is NAMES.
+#
+# EACH DEFINITION IS WRITTEN TO EXERCISE ONE TIER of D89's three, so the
+# composed artifacts have something to be right about:
+#
+#   `w`         NAMES and EXPORTS    -> DELIVERABLE: a delivering site gets
+#               its group                a `groups[]` row `site.word`; a PLAIN
+#                                        caller gets nothing and pays nothing
+#   `num`       has no group at all  -> costs the caller nothing but the
+#                                       wrapper's own internal number
+#   `hostname`  NAMES and EXPORTS    -> the same, under whatever site a
+#               its group                caller names
+#   `dotted`    has capturing groups nothing reads and nothing exports ->
+#                                       ERASED: each `A_CAP` is deleted and
+#                                       spends NO number, which is what makes
+#                                       the composed artifact's RX_NCAPS
+#                                       smaller than a naive textual append's
+#   `dd`        references its own group -> HIDDEN: a slot, no row, and it
+#                                       survives because a group-number
+#                                       reference inside a pattern always
+#                                       works (D89 addendum point 1)
+#
+# [D89 addendum, 2026-09-03] NAMING A GROUP NO LONGER EXPORTS IT. Delivery is
+# what a definition DECLARES with `export` and what a SITE asks for with
+# `(?&site=name)`; the default is nothing exported and nothing delivered, so
+# `dotted` and `dd` publish no interface at all and a caller of them pays for
+# no slot they own.
+#
+# ITS EXTENSION IS `.rxtin` AND THAT IS LOAD-BEARING. `tests/harness/run.sh`
+# finds `*.rxt`; a `.rxt` here would join the scored corpus and move four
+# pinned census numbers (`tests/rxtsource/run_rxtsource_tests.sh`'s
+# CENSUS_FILES/BLOCKS/LINES and the RUNSH_* it reconciles against). The
+# identity proof beside this file copies these into a scratch directory as
+# `.rxt` when it needs them, which is `tests/rxtsource/fixtures/`'s own
+# convention.
+description reusable pieces for the composition identity proof. Definitions only.
+
+pattern (?<word>[a-z]+)
+name w
+export word
+
+pattern [0-9]+
+name num
+
+pattern (?<host>[a-z]+(?:\.[a-z]+)+)
+name hostname
+export host
+
+pattern ([a-z]+)\.([a-z]+)
+name dotted
+
+pattern (\d)\1
+name dd

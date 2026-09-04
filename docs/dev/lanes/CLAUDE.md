@@ -73,6 +73,22 @@ never edited afterwards.
   since four is the per-machine ceiling. Its draft structural check is
   DELIVERED RED on two of four witnesses, with the three repairs that were
   tried and measured recorded so nobody re-tries them blind.
+- `w13_report.md` — [DD-13b.W1.3] (2026-09-03, lane w13): the composer,
+  the name grammar, the altwide dogfood and the composition identity proof,
+  written entirely under the evening box hold. **Delivered BUILT, NOT
+  SUITE-VALIDATED**, and its §3 is the list of what that costs. Worth
+  reading for four things: §1's account of why D89 made `w1_impl.md` §2
+  unbuildable as written (a THIRD tier that spends no group number, so the
+  re-basing offset had to become a map); §2's eleven measurements, of which
+  M3 is the sharpest — the erased tier is worth one slot against the PCRE2
+  textual control, whose `groups[]` additionally exposes the wrapper name to
+  the caller, which is what D89(2) forbids — and M4 is identity (A) sampled
+  at 81 artifacts / 0 differing against a compiler built from `main`; §6's
+  five questions, each with the provisional choice implemented and the
+  alternative named, including one the lane declined to build blind (the
+  `run.sh` composed-block path); and §7, the exporter rules to relay to
+  pcrec-bench, with the finding that their `floor` prefix collision is
+  CROSS-SET and therefore never fires on a per-set export.
 - `vmfl0_log.md` — [OPT-VMFL]/[ENG-DIRECT] STEP 0 (2026-09-02, lane vmfl0):
   the census script, the hand-twin transform, and the R1 mid-flight
   ruling's arrival, in order. See `docs/dev/optvmfl_step0.md` for the

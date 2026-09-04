@@ -742,17 +742,22 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         }
     }
 
-    if (t->flags) {
-        for (const char *f = t->flags; *f; f++) {
-            if (*f == 'i') ts.opt.flags |= PCREC_CASELESS;
-            else {
-                fprintf(stderr,
-                        "pcrec: %s:%zu: unknown flag letter '%c' in "
-                        "`flags %s`\n", cli->source, t->block_line, *f,
-                        t->flags);
-                return 1;
-            }
+    /* [DD-13b.W1.3] ONE HOME for the letter -> bit mapping
+     * (`src/parse/rxt_source.c`), because a DEFINITION's own `flags` are
+     * read there too and a letter added to one loop and not the other would
+     * make a library mean one thing built as a target and another bound into
+     * a caller. */
+    {
+        unsigned long long f = 0;
+        char bad = 0;
+        if (pcrec_rxt_flags_from_letters(t->flags, &f, &bad) != 0) {
+            fprintf(stderr,
+                    "pcrec: %s:%zu: unknown flag letter '%c' in "
+                    "`flags %s`\n", cli->source, t->block_line, bad,
+                    t->flags);
+            return 1;
         }
+        ts.opt.flags |= f;
     }
     if (t->encoding && set_encoding(&ts.opt, t->encoding) != 0) {
         fprintf(stderr, "pcrec: %s:%zu: in `encoding %s`\n",
@@ -922,7 +927,11 @@ static int compile_source(const CliState *cli)
 
         pcrec_output out;
         pcrec_error cerr;
-        if (pcrec_compile(t->pattern, &topt, &out, &cerr) != 0) {
+        /* [DD-13b.W1.3] the COMPOSING entry: same pipeline, plus the
+         * file's definition closure. `t->defs` is never NULL (an empty set
+         * for a file with no named block), so there is one call here and no
+         * branch on whether this source composes. */
+        if (pcrec_compile_defs(t->pattern, &topt, t->defs, &out, &cerr) != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
              * A `.rxt` author's coordinates are file:line; the pattern
              * offset is still printed, because it is the only thing that

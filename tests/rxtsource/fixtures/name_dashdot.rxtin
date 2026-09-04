@@ -1,0 +1,20 @@
+# [DD-13b.W1.3] A DEFINITION NAME WITH `-` AND `.` IN IT, and the derived
+# prefix. The manager's syntax ruling on the bench's O-13 §4(a): a block name
+# admits `-` and `.` after its first byte, and `target = <name>` maps them to
+# `_` to produce the C symbol prefix.
+#
+# ITS POPULATION WOULD OTHERWISE BE ZERO. No corpus file declares a `name`
+# at all, so without this fixture the widened grammar, the mapping and the
+# `target =` shorthand would all ship with nothing exercising them, and the
+# three parsers (pcrec, run.sh, verify_rxt.py) would be compared only on
+# names all three already accepted.
+target = cls-upto-64
+target = ctx.lazy
+
+pattern a+
+name cls-upto-64
+m "aaa" 0 3
+
+pattern b+
+name ctx.lazy
+m "bbb" 0 3

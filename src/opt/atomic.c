@@ -749,9 +749,36 @@ bool pcrec_has_live_capture(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
-        /* CAPTURE-TRANSPARENT (§3.1), and no descent — see the header. */
-        case A_CALL:
             return false;
+        /* CAPTURE-TRANSPARENT (§3.1), and no descent — see the header — EXCEPT
+         * WHEN THE SITE DELIVERS.
+         *
+         * [DD-13b.W1.3] THIS ARM IS A NAMED DEVIATION AND IT IS LOAD-BEARING.
+         * A plain call is capture-transparent, so it answers false and the
+         * pattern may take the DFA; that is PCRE2's meaning and D87 rule 5's
+         * zero-cost default. A DELIVERING call is not: its whole purpose is to
+         * leave the callee's exported spans readable after it returns, which
+         * IS a live capture.
+         *
+         * WITHOUT THIS LINE THE FEATURE FAILS SILENTLY AND COMPLETELY, and the
+         * failure was measured before it was written (w1_impl §2.8's B1). A
+         * composed pattern whose captures all live in DEFINITIONS reaches this
+         * predicate as: the caller's own text (no `A_CAP`), plus the injected
+         * `A_REP{0,0}(A_CAP(body))`, which the `A_REP` arm below PRUNES
+         * because zero repetitions emit no code. So the whole pattern looks
+         * capture-DEAD, the DFA takes it, and every delivered slot reads
+         * `(-1,-1)` — a green build delivering nothing.
+         *
+         * IT IS KEYED ON THE CALL AND NEVER ON THE WRAPPER'S SHAPE. Testing
+         * for `A_REP{0,0}` over an `A_CAP` here would be a DEFINE-shaped
+         * special case, which this file's own header forbids, and it would be
+         * wrong in both directions: a hand-written `(?:(?<g>a)){0}` is not a
+         * delivery, and a delivering call whose callee the composer spliced
+         * carries no wrapper at this node at all. The delivering bit is on the
+         * `A_CALL`, written explicitly by every producer, and that is what
+         * this reads. */
+        case A_CALL:
+            return a->u.call.delivers;
         case A_REP:
             /* THE ONE ARM THAT PRUNES. Zero repetitions emit no code, so
              * nothing below can be written.

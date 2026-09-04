@@ -639,6 +639,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # against the PRE-change reference and its (A)/(B) numbers are readable as the
 # change's own footprint. Re-pin to the merge before the merge is called done
 # (D76/D94).
+# [DD-13b.W1.3], 2026-09-04 — abi 17 -> 20 at this step's LAST src-touching
+# commit (d794a8d8, the abi bump itself). THE LAST AND NOT THE FIRST: this
+# file's own rule at :394-406 binds, and getting it backwards cost 952
+# falsely-differing artifacts once. Composition moves NO byte of any artifact
+# built without `--source` — MEASURED at 176 artifacts / 0 differing against a
+# compiler built from main — so comparison (B) is expected to be 0-differing
+# across the whole call-free corpus at this pin, exactly as it was at the last.
+#
 # [CC-DIFF] STEP 1, 2026-09-03 — abi 16 -> 17 at the ccdiff1b MERGE (a3f40b1): the
 # always_inline attribute on frameless VM helpers and the uniform-table fold
 # (RX_DFA_UNIFORM_FOLDS) move bytes on 1,090+ VM artifacts and ~370 DFA
@@ -687,6 +695,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # THE PIN VALUE BELOW IS THE MANAGER'S AT MERGE (386abf94, the merge of lane/edge1), not this lane's — the lane
 # leaves it at the previous pin, because a pin must name a commit reachable
 # after the merge and a lane branch's is not (opt5i's and ccdiff1's precedent).
+#
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-386abf94}"
 
 WORKDIR="$(mktemp -d)"

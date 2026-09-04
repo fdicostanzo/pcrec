@@ -187,11 +187,39 @@ def declares_own_oracle(path):
 
 IDENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 
+# [DD-13b.W1.3] LEG C OF A THREE-LEG GRAMMAR. A DEFINITION NAME IS NOT AN
+# IDENTIFIER any more, and the two rules must stay two: `ident_ok` still
+# governs `encoding` (a C identifier, and a value pcrec maps to a backend),
+# while `name_ok` governs a block's `name`, which lives in the FILE
+# namespace (w1_impl DECIDED (7)) and admits `-` and `.` after the first
+# byte -- the manager's ruling on the bench's O-13 section 4(a), where all
+# but a handful of pattern ids carry a `-`.
+#
+# THE THREE LEGS MOVE TOGETHER OR C1 GOES RED, which is what C1 is for:
+# leg A is `src/parse/rxt_source.c`'s `defname_ok`, leg B is
+# `tests/harness/run.sh`'s `^name[[:space:]]+(...)` arm, leg C is here.
+# `-`/`.` are admitted only after the first byte because the name -> prefix
+# mapping (`-`/`.` -> `_`) cannot repair a leading one.
+NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_.-]*$')
+
 
 def ident_ok(s):
-    """The same rule as src/parse/rxt_source.c's `ident_ok`: a PCRE2 group
-    name AND a C identifier, one rule."""
+    """A C identifier. Still the rule for `encoding`; NOT the rule for a
+    block `name` since [DD-13b.W1.3] -- see `name_ok`."""
     return bool(IDENT_RE.match(s))
+
+
+def name_ok(s):
+    """The same rule as src/parse/rxt_source.c's `defname_ok`: a definition
+    name, which is neither a PCRE2 group name nor (yet) a C identifier."""
+    return bool(NAME_RE.match(s))
+
+
+def prefix_from_name(s):
+    """The same mapping as src/parse/rxt_source.c's
+    `pcrec_rxt_prefix_from_name`: `-` and `.` become `_`. Not injective --
+    that is what the duplicate-prefix refusal exists for."""
+    return s.replace('-', '_').replace('.', '_')
 
 
 def parse_rxt(path):
@@ -329,9 +357,9 @@ def parse_rxt(path):
             # 179 corpus files today), so nothing in the tree enforced it
             # for the population that actually reaches this oracle.
             v = line[len('name '):].strip()
-            if not ident_ok(v):
-                raise ValueError(f"{path}:{lineno}: 'name' wants an "
-                                 f"identifier (got {v!r})")
+            if not name_ok(v):
+                raise ValueError(f"{path}:{lineno}: 'name' wants a definition "
+                                 f"name (got {v!r})")
             if v in seen_names:
                 raise ValueError(
                     f"{path}:{lineno}: duplicate block name {v!r} (already "
@@ -350,6 +378,24 @@ def parse_rxt(path):
                                  "'description' takes the one-line form only: "
                                  "'|' is a head form")
             results.append((lineno, 'description', v))
+        elif line.startswith('export '):
+            # [DD-13b.W1.3] THE DEFINITION'S DECLARED INTERFACE (D89
+            # addendum point 2). A `config-list` of GROUP names — plain
+            # identifiers, because a group name is PCRE2's grammar and not
+            # the file-namespace one a block `name` uses since this step.
+            #
+            # RECORDED, NOT ACTED ON: what a block exports changes what a
+            # COMPOSED artifact delivers, and this oracle verifies a block
+            # against python `re` on its own text. It is parsed here so the
+            # three `.rxt` parsers stay comparable on a line all three see —
+            # the C1 differential's whole purpose.
+            v = line[len('export '):].strip()
+            parts = [e.strip() for e in v.split(',')]
+            if not v or not all(IDENT_RE.match(e) for e in parts):
+                raise ValueError(f"{path}:{lineno}: 'export' wants a "
+                                 f"comma-separated list of group names "
+                                 f"(got {v!r})")
+            results.append((lineno, 'export', ', '.join(parts)))
         elif line.startswith('encoding '):
             # [DD-13b.W1.1 r46sem finding 19] see the 'name' arm above --
             # the same "leg C accepts a strict superset" gap.
@@ -493,11 +539,13 @@ def dump_file(path, entries):
     def flush():
         if blk is None:
             return
-        print('block\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
+        # [DD-13b.W1.3] `export` APPENDED after `perr` — see run.sh's twin
+        # comment for why appending rather than inserting.
+        print('block\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
             path, blk['line'], blk['name'], rxt_escape(blk['desc']),
             rxt_escape(blk['pat']), blk['flags'], blk['features'],
             blk['only'], blk['encoding'], blk['engine'],
-            blk['steps'], blk['frames'], blk['perr']))
+            blk['steps'], blk['frames'], blk['perr'], blk['exports']))
         for c in cases:
             print('case\t%s\t%d\t%s\t%d\t%s' % (path, c[0], c[1], c[2], c[3]))
 
@@ -507,7 +555,8 @@ def dump_file(path, entries):
             del cases[:]
             blk = {'line': lineno, 'pat': data[0], 'name': '', 'desc': '',
                    'flags': '', 'features': '', 'only': '', 'encoding': '',
-                   'engine': '', 'steps': '', 'frames': '', 'perr': ''}
+                   'engine': '', 'steps': '', 'frames': '', 'perr': '',
+                   'exports': ''}
             continue
         if blk is None:
             continue
@@ -516,6 +565,7 @@ def dump_file(path, entries):
         elif kind == 'name':       blk['name'] = data
         elif kind == 'description':blk['desc'] = data
         elif kind == 'encoding':   blk['encoding'] = data
+        elif kind == 'export':     blk['exports'] = data
         elif kind == 'engine':     blk['engine'] = data
         elif kind == 'budget':
             blk['steps' if data[0] == 'steps' else 'frames'] = str(data[1])
