@@ -20944,3 +20944,14 @@ run_recursion_identity.sh; match_api.md's 19 entry atop the 18 entry
 three events. make + strict clean. The chain (test → codegen →
 registry → axes) started 06:1x; then w13's merge (minus its size log),
 its chain, [LIM-2]'s launch, the battery, DONE + OPEN to the bench.
+
+## 2026-09-04 — Fifty-first session, part 50 (08:1x EDT): the edge1 merge's short chain is GREEN on main (make test 33 sections / 0 reds in 62 min; test-codegen 0; test-registry 0; test-axes 22/22, 0 mismatches, 48 min); w13's merge next
+
+Main at 4671c773 (386abf94 + the FILEPIN re-pin): every stage green
+first time. Next: merge lane/w13 (3648d566, abi 20) EXCLUDING its
+regenerated docs/dev/artifact_size_log.tsv; expected conflicts:
+plan.md (the [DD-13b.W1.3] row), match_api.md (the abi paragraphs),
+src/gen/CLAUDE.md (added sections), emit_dfa.c's producer (20),
+run_codegen_tests.sh (ABI_EXPECT 20 + a 19->20 clause), the identity
+gate's pin block (keep all; FILEPIN → the w13 merge). Then its chain,
+[LIM-2]'s launch, the battery, the size-log regeneration, DONE + OPEN.
