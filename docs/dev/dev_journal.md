@@ -20856,3 +20856,19 @@ stray 95-byte log the semantics critic wrote into the main tree root
 (a failed python invocation) moved to its scratch dir. FILEPIN
 re-pinned to the merge commit in a src-free follow-up. The short chain
 (test → codegen → registry → axes) runs when w13's heavy stages end.
+
+## 2026-09-04 — Fifty-first session, part 45 (03:3x EDT): w13's heavy stages GREEN (make test 33/33 sections no red; test-axes 21 axes, 0 mismatches, ~80 min under its own PROCS); the box alternates between w13's remaining stages and main's short chain
+
+w13 (lifted 23:57): its first make test hit its own 3,600 s bound and
+was re-launched at 7,200 s — 33/33 sections, no red section, 02:11;
+test-definitions and the rxtsource W1.3 section green on their first
+real runs (rxtsource 0 failed over 191 files); test-axes 21 axes
+answer-identical, 0 mismatches, done 03:30 (load 20-28 under the
+lane's own PROCS). Slot protocol from here: w13 runs codegen/registry
+now, then writes `waiting-for-slot` and does light work (the run.sh
+composed path written, the abi 17→20 ritual, spec/report); main's
+short chain for the isl1 merge (test → codegen → registry → axes)
+runs alone on that signal, driven by the manager's watchdog stage by
+stage with logs under the scratchpad; then w13 gets the slot back for
+the run.sh path's make test, DELIVERED; then edge1's merge + chain,
+w13's merge + chain, the battery, DONE + OPEN.
