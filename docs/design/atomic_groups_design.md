@@ -198,8 +198,8 @@ CONTEXT-THREADED rather than stored, that the emitter and four pre-passes call
 the free discharge, whose condition is possessify's own §2.2 verdict, MEASURED
 sound at 0 violations over 532 positive-verdict patterns, narrowed after R31 to
 the possessive spellings only (§5) — delivered through **SR-8, which this
-module BUILDS** (M-1). The full DFA cut construction (Berglund et al.) is
-CHARTERED here FOR a follow-on plan row — which does not exist yet and which
+module BUILDS** (M-1). The full DFA cut construction (Berglund et al.
+[Ber13+]) is CHARTERED here FOR a follow-on plan row — which does not exist yet and which
 the manager adds at merge (R31 D4) — not built.
 
 ### 0.3 Measurements this lane produced

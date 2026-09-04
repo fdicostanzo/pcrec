@@ -128,8 +128,8 @@ separately-placed function, and that function's *placement* (its byte offset
 relative to whatever else got linked into the same binary — the built-in
 driver's own code, in this pattern's case) is no longer something the
 compiler treats as tied to the loop's own alignment directives. This is a
-textbook code-layout sensitivity (Mytkowicz et al.'s "measurement bias from
-environment"), not a change in what the DFA does. It is a genuine, structural
+textbook code-layout sensitivity (Mytkowicz et al. [Myt09+]'s "measurement
+bias from environment"), not a change in what the DFA does. It is a genuine, structural
 side effect of 1dbb6ce's refactor (the new in-TU callers are what trigger the
 split at all — see the mnemonic-identical loop body above), not noise: with
 CPU pinning, the split's cost reproduces at ~290 MB/s to within a few percent
