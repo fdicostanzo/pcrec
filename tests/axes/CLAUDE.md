@@ -220,9 +220,25 @@ falls to the nearest legal rung of the same body-count family. A LOST case
 here therefore means a pattern stopped compiling under a flag that cannot
 make that happen, and it fails.
 
-**WHAT IT COSTS AND WHERE TO CUT IF IT IS TOO MUCH.** Four more full-corpus
-runs; [TT-12] STEP 1's pairwise execution absorbs them two at a time, so the
-wall cost is about two runs' worth. The honest reduction is to keep rungs 1
-and 4 and drop 2 and 3 — NOT to keep one representative, because 2 and 3 are
-the rungs that emit the forward entries and the static empty descriptor, i.e.
-the only new emitted code the step adds.
+**THEY ARE TIERED, by the manager's ruling of 2026-09-04**, because four
+permanent full-corpus runs is too much for the DAY's suite:
+
+| tier | rungs | who runs it |
+|---|---|---|
+| default | 3 `forward`, 4 `inline` | every `make test-axes` |
+| `AXES_FULL=1` | all four | the union battery (`scripts/battery.sh`'s axes stage exports it) |
+
+**THE DEFAULT PAIR IS 3+4 AND NOT 1+4, and the reason is coverage rather than
+preference.** The forward entries and the static empty descriptor — the only
+genuinely new emitted code — land on rungs 2 AND 3, so keeping rung 3 keeps
+that half swept by default. What a default run does NOT cover is rung 1's
+no-attribute emission and rung 2's `noinline` matcher.
+
+**SO THE SWEEP MUST SAY WHICH TIER IT RAN, AND IT DOES.** A default-only green
+run is a claim about TWO of this axis's four rungs; the script prints its tier
+when it builds the job list and again in the summary, and the closing
+"all axes answer-identical" sentence names it — otherwise a two-rung result
+reads exactly like a four-rung one to anyone quoting the last line.
+
+[TT-12] STEP 1's pairwise execution absorbs the jobs two at a time, so the
+default costs about one run's wall time and the battery about two.

@@ -5,7 +5,11 @@
 # list at the foot of the file for what actually runs, and the "(bit N)"
 # cross-check for what is required to. What the sweep covers is: every
 # BIT-FLAG member of the deny/force family, the coarse `--engine=` pair, and
-# (since [CC-DIFF] STEP 2) the `--vm-entry-shape=` ORDINAL's four rungs.
+# (since [CC-DIFF] STEP 2) the `--vm-entry-shape=` ORDINAL — TIERED: its two
+# reachable-by-default rungs (`forward`, `inline`) on every run, all four
+# under `AXES_FULL=1`, which `scripts/battery.sh`'s axes stage exports. A
+# default-only green run is a claim about TWO of that axis's four rungs and
+# the run's own tier line says which.
 #
 # docs/spec/tuning.md §2 documented THIRTEEN axes when this was written, and
 # for eleven of the
@@ -642,15 +646,40 @@ fi
 # (`docs/spec/tuning.md` §2.21) — so a LOST case here means a pattern stopped
 # compiling under a flag that cannot make that happen, and it is a failure.
 #
-# WHAT THIS COSTS: four more full-corpus runs. [TT-12] STEP 1's pairwise
-# execution below absorbs them two at a time, so the wall cost is about two
-# runs' worth rather than four. If that is judged too much for the default
-# sweep, the honest reduction is to keep rungs 1 and 4 (the two the AUTO path
-# reaches where the forward rungs are illegal) and drop 2 and 3 — NOT to keep
-# one representative, since 2 and 3 are the rungs that emit the forward
-# entries and the empty descriptor, i.e. the only new emitted code.
+# THE FOUR RUNGS ARE TIERED, and the tiering line is the manager's ruling
+# (2026-09-04) rather than this file's own economy: four permanent
+# full-corpus runs is too much for the DAY's suite.
+#
+#   DEFAULT (`make test-axes`, two extra runs): rungs 3 `forward` and 4
+#     `inline`. Rung 3 is what AUTO SELECTS below the size term, i.e. the
+#     shape most artifacts in the tree are actually built at; rung 4 is the
+#     ladder's max-speed end and the shape [CC-DIFF] STEP 1 shipped.
+#   `AXES_FULL=1` (the BATTERY, four extra runs): adds rungs 1 `plain` and
+#     2 `shared`. `scripts/battery.sh`'s axes stage exports it.
+#
+# THE SPLIT IS BY REACH, NOT BY IMPORTANCE, AND THE SWEEP MUST SAY WHICH IT
+# SWEPT. Rungs 1 and 2 are not the cheap ones to drop — rung 2 is HALF of the
+# new emitted code (the forward entries and the static empty descriptor land
+# on rungs 2 AND 3, so rung 3 keeps that half covered by default, which is why
+# the pair chosen is 3+4 and not 1+4). What the default sweep genuinely does
+# NOT cover is rung 1's no-attribute emission and rung 2's `noinline` matcher.
+# A default-only green run is therefore a claim about TWO rungs, and this
+# script's summary line says so rather than letting "axes: all identical" read
+# as a claim about four.
+#
+# [TT-12] STEP 1's pairwise execution below absorbs the jobs two at a time
+# either way, so the DEFAULT costs about one run's wall time and the BATTERY
+# about two.
+_shape_tier="not run (filtered out by AXES=)"
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
-    for _shape in 1 2 3 4; do
+    _shape_rungs="3 4"
+    _shape_tier="default (rungs forward,inline; AXES_FULL=1 adds plain,shared)"
+    if [ "${AXES_FULL:-0}" = "1" ]; then
+        _shape_rungs="1 2 3 4"
+        _shape_tier="FULL (all four rungs; AXES_FULL=1)"
+    fi
+    echo "axes: --vm-entry-shape tier = $_shape_tier"
+    for _shape in $_shape_rungs; do
         job_label+=("--vm-entry-shape=$_shape (§2.21)")
         job_flags+=("--vm-entry-shape=$_shape")
         job_lost_ok+=("0")
@@ -800,10 +829,15 @@ for r in "${axis_results[@]}"; do
     echo "  $r"
 done
 echo "oracle cross-check: $oracle_verdict"
+echo "--vm-entry-shape tier: $_shape_tier"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then
     echo "run_axes.sh: FAILED — see AXIS FAIL lines above" >&2
     exit 1
 fi
-echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); oracle cross-check $oracle_verdict"
+# THE CLOSING SENTENCE NAMES THE TIER, because since [CC-DIFF] STEP 2 "all
+# axes" is a claim whose SCOPE depends on AXES_FULL: a default run swept two
+# of `--vm-entry-shape`'s four rungs, and a summary that read the same either
+# way would let a two-rung result be quoted as a four-rung one.
+echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict"
 exit 0

@@ -353,12 +353,27 @@ falls to the nearest legal rung of the same body-count family — so a LOST case
 means a pattern stopped compiling under a flag that cannot make that happen,
 and it fails.
 
-**COST, AND WHERE TO CUT IT.** Four more full-corpus runs; [TT-12] STEP 1's
-pairwise execution absorbs them two at a time, so the wall cost is about two
-runs' worth. If that is judged too much for the default sweep, the honest
-reduction is rungs 1 and 4 only — NOT one representative, because rungs 2 and
-3 are the ones that emit the forward entries and the static empty descriptor,
-i.e. the only new emitted code this step adds.
+**RULED TIERED (manager, 2026-09-04), because four permanent full-corpus runs
+is too much for the day's suite.** The default sweep runs rungs `forward` and
+`inline`; `plain` and `shared` run only under `AXES_FULL=1`, which
+`scripts/battery.sh`'s axes stage now exports (one line). [TT-12] STEP 1's
+pairwise execution absorbs the jobs two at a time, so the default costs about
+one run's wall time and the battery about two.
+
+**THE DEFAULT PAIR IS `forward`+`inline`, NOT `plain`+`inline`, and that is a
+coverage argument.** The forward entries and the static empty descriptor — the
+only genuinely new emitted code this step adds — land on rungs `shared` AND
+`forward`, so keeping `forward` keeps that half swept every day. What a default
+run does NOT cover is `plain`'s no-attribute emission and `shared`'s `noinline`
+matcher.
+
+**SO THE SWEEP SAYS WHICH TIER IT RAN.** A default-only green run is a claim
+about two of four rungs, and a summary reading the same either way would let it
+be quoted as a four-rung result. `run_axes.sh` prints its tier when it builds
+the job list, again in the summary block, and in the closing "all axes
+answer-identical" sentence. Recorded in `tuning.md` §2.21 and
+`tests/axes/CLAUDE.md` as well, so the sweep's claim is honest at every place a
+reader meets it.
 
 **THE THREE VACUOUS WITNESSES (§5) ARE REPLACED POST-LIFT.** `[0-9a-f]{32}`,
 `(?<=foo)bar` and `(?>a*)ab` matched nothing on the ad-hoc subject set; the
@@ -540,6 +555,11 @@ abi event's stated cost.
 switch without a measured two-axis rate. Nothing of it is built here.
 
 **RULED 6 — K46 CLOSES at this merge** (§6b).
+
+**RULED 7 (2026-09-04, after the six) — the ordinal's axes jobs are TIERED:**
+`forward` and `inline` on every `make test-axes`, all four under `AXES_FULL=1`
+exported by the battery's axes stage. Applied; see §6 for the coverage argument
+behind the default pair and for where the tier is stated.
 
 ## 10b. The questions as they were put
 

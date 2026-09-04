@@ -1530,6 +1530,21 @@ artifact carries and whether the un-suffixed entries bind storage or forward:
 byte-identical across all five: what moves is the entry scaffolding above
 `goto <prefix>_L0;` and nothing below it.
 
+**WHAT `make test-axes` ACTUALLY SWEEPS, and it is TIERED.** The answer-identity
+sweep runs this axis's two REACHABLE-BY-DEFAULT rungs on every run — `forward`
+(what AUTO selects below the size term, so the shape most artifacts in the tree
+are built at) and `inline` (the ladder's max-speed end) — and all four only
+under `AXES_FULL=1`, which the union battery's axes stage exports
+(`scripts/battery.sh`). Four permanent full-corpus runs was judged too much for
+the day's suite; the battery is where the whole product belongs. **A
+default-only green run is therefore a claim about TWO of the four rungs**, and
+`tests/axes/run_axes.sh` prints its tier on every run and in its own summary so
+a two-rung result cannot be quoted as a four-rung one. What a default run does
+not cover is `plain`'s no-attribute emission and `shared`'s `noinline` matcher;
+the forward entries and the static empty descriptor land on `shared` AND
+`forward`, so that half of the new emitted code is covered by default, which is
+why the default pair is `forward`+`inline` rather than `plain`+`inline`.
+
 **A value the artifact cannot honour is a SELECTION OUTCOME, never a
 refusal** — `-fno-altcls-factor`'s rule. Values 2-4 need a FRAMELESS artifact
 (`<PREFIX>_VM_FRAMELESS 1`): gcc refuses `always_inline` on a function

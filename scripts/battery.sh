@@ -85,7 +85,15 @@ run_battery() {
                 make strict > "$slog" 2>&1
                 ;;
             axes)
-                PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
+                # [CC-DIFF] STEP 2 (2026-09-04, manager's ruling): AXES_FULL=1
+                # is what makes the battery's axes stage sweep the FULL set.
+                # tests/axes/run_axes.sh runs the `--vm-entry-shape` ordinal's
+                # two REACHABLE-BY-DEFAULT rungs unconditionally and its other
+                # two only under this env, so the day's `make test-axes` pays
+                # two extra corpus runs and the battery pays four. The battery
+                # is where the whole product belongs; the day's suite is where
+                # four permanent full-corpus runs were judged too much.
+                AXES_FULL=1 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
                 ;;
             san)
                 SAN_PROCS="$SAN_PROCS" make san > "$slog" 2>&1
