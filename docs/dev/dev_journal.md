@@ -21044,3 +21044,14 @@ ruled PROVISIONAL: the check gains a corpus-wide raw-vs-minimized
 census and asserts the margin exceeds the measured max forward shrink
 by 2×. Diagnostic when early: "projected at least N bytes" (ours, D26).
 The accept-table term is STEP 2. Lift after the battery.
+
+## 2026-09-04 — Fifty-first session, part 56 (09:2x EDT): the w13 merge's make test GREEN (33 sections, 0 reds, 68 min); BATTERY_v5's FIRST end-to-end run STARTED on main (8d68ddc2 + docs, abi 20) — it subsumes the chain's remaining stages
+
+Ruled with Frank at 08:5x: on the last merge the battery IS the chain,
+so codegen/registry/axes are not run twice. scripts/battery.sh
+launched detached at 09:2x (LOGDIR build/battery_tt6.log; stages test → strict →
+axes → san → lint → mech; ~3.5-4 h; the [TT-12] CPU sampler NOT run
+beside it — its script lived in the previous session's scratchpad).
+STAGE START sent live to the bench session. Then: the size-log
+regeneration (one commit), the abi-20 pin (I-43 with O-16's answers and
+the exporter rules), DONE + WINDOW OPEN, lim2's lift.
