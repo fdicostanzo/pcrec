@@ -40,6 +40,9 @@ print_family "family B/sparse (base B_sparse, twins sparse_table/sparse_rangecmp
 print_family "family C/small (base C_small, twins small_range/small_fold)" \
     "$BASE/C_small.c" "$TWINS/small_range.c" "$TWINS/small_fold.c"
 
+print_family "family C/nonpair (base C_nonpair, twins nonpair_range/nonpair_fold -- NOT a case-fold pair, so fold falls back to range's own text: byte-identical objects)" \
+    "$BASE/C_nonpair.c" "$TWINS/nonpair_range.c" "$TWINS/nonpair_fold.c"
+
 print_family "family C/ci256 (base C_ci256, twins ci256_range/ci256_fold)" \
     "$BASE/C_ci256.c" "$TWINS/ci256_range.c" "$TWINS/ci256_fold.c"
 

@@ -70,14 +70,18 @@ for tag in general sparse; do
     fi
 done
 
-echo "=== family C: small/ci256, twins range/fold ==="
-for tag in small ci256; do
+echo "=== family C: small/nonpair/ci256, twins range/fold ==="
+for tag in small nonpair ci256; do
     if [ -f "$BASE/C_$tag.c" ]; then
         compile "$BASE/C_$tag.c" "$BIN/C_${tag}_base"
         for name in range fold; do
             [ -f "$TWINS/${tag}_$name.c" ] || { echo "SKIP  C/$tag $name (not built)"; continue; }
             compile "$TWINS/${tag}_$name.c" "$BIN/C_${tag}_$name"
-            if [ "$tag" = small ]; then subjs=("aaZ" "AAaaAAaaZ" "aZ" "bbZ"); else subjs=("dybf" "DYBF" "DyBf" "LIYKXUH" "notaword"); fi
+            case "$tag" in
+                small)   subjs=("aaZ" "AAaaAAaaZ" "aZ" "bbZ") ;;
+                nonpair) subjs=("aceaceZ" "aZ" "bbbZ") ;;
+                ci256)   subjs=("dybf" "DYBF" "DyBf" "LIYKXUH" "notaword") ;;
+            esac
             for subj in "${subjs[@]}"; do
                 check_cell "C/$tag" "$name" "$BIN/C_${tag}_$name" "$BIN/C_${tag}_base" "$subj"
             done

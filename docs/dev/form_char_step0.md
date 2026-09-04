@@ -13,7 +13,11 @@ a folded COMPARE for a caseless literal chain, and (b) is a 256-byte table
 load faster than the 32-byte bit array's load+shift+and — on both engines,
 with cache footprint (table bytes) counted alongside the runtime cost.
 Nothing here is built to ship; a size table is a fact, a timing table is
-owed.
+owed for (b) and for (a) on the general/many-class VM class sites — **but
+question (a) for the CASELESS LITERAL CHAIN specifically (family A) is
+answered without a stopwatch**: a `gcc -O2 -S` check (§2) shows every
+fold-pair spelling compiles to identical branchless code with no load at
+all, so `table`'s latency argument has nothing to beat there.
 
 ## 1. Protocol
 
@@ -103,6 +107,34 @@ further). **On code size alone, ranking is `fold` > `atom` > `base` >
 `table`, unambiguously** — table is not merely slower-if-anything, it is
 worse on the one axis this STEP 0 can measure without the box.
 
+**The `fold`-vs-`bitarray`/`table` question is CLOSED, not merely
+size-favored, and a `gcc -O2 -S` check settles it without a stopwatch.**
+Three spellings of the caseless-letter test — `c=='a' || c=='A'` (the
+`||` shape `base`'s bit-array test reduces to after the `& 1` masking),
+`(c=='a') | (c=='A')` (the bitwise-or shape) and `(c|0x20)=='a'` (`fold`'s
+own shape) — compile to the IDENTICAL instruction sequence:
+
+```
+andl $-33, %edi   # (or/fold uses `orl $32`)
+xorl %eax, %eax
+cmpb $65, %dil    # (fold compares $97 -- the lowercase constant)
+sete %al
+```
+
+One mask op, one compare, one `sete`, NO LOAD, NO BRANCH — `studies/
+form_char_twins/asm_evidence.c`, reproducible via `make asm`
+(`results/three_spellings.s`, committed). There is therefore no load for
+`table`'s one-load LATENCY argument to beat on a fold-pair site: `fold`'s
+code has no load to begin with. The open "could a value-addressed load
+still win despite losing on size" question this STEP 0's charter poses
+does NOT apply to family A — it is closed here, on `.text` evidence alone,
+in `fold`'s favor. It DOES still apply to family B (§3) and family D
+(§5), where the non-table alternative (the bit array, `rangecmp`) reads
+from memory too. `test_nonpair` (`c=='a' || c=='z'`, not a fold pair) is
+the control: still branchless, but `cmpb $97; sete; cmpb $122; sete; orl`
+— a longer, heavier chain, and exactly the shape family C's `nonpair`
+witness (§4) measures on the DFA scan edge.
+
 ## 3. Family B — a general and a sparse class (bit array vs table vs range compares)
 
 Two patterns, `--engine=vm`, one bitmap-class site each:
@@ -167,32 +199,58 @@ folding is confirmed the cause: every site this pattern's DFA construction
 produced is exactly the shape a caseless letter makes, never an arbitrary
 disjoint set.
 
+**`nonpair` witness**: `[ace]{2,40}Z` under `--engine=dfa --no-captures` —
+the same skeleton as the small witness, but the scanned class is a
+3-member set (`{a,c,e}`) that is NOT a case-fold pair by construction, so
+`fold_expr`'s fallback engages: on this witness `fold`'s emitted text is
+`range`'s own OR-of-runs, VERBATIM. This is the control §6 of the previous
+draft of this note flagged as missing.
+
 **Correctness**: small pattern on `"aaZ"` (match 0 3), `"AAaaAAaaZ"` (match
-0 9), `"aZ"` (nomatch — below `{2,40}`'s floor), `"bbZ"` (nomatch); ci-256
-on four sampled words in mixed case (`dybf`/`DYBF`/`DyBf`, `LIYKXUH`, all
-match) plus a miss (`notaword`, nomatch). All twins agree on every cell.
+0 9), `"aZ"` (nomatch — below `{2,40}`'s floor), `"bbZ"` (nomatch);
+`nonpair` on `"aceaceZ"` (match 0 7), `"aZ"` (nomatch), `"bbbZ"` (nomatch);
+ci-256 on four sampled words in mixed case (`dybf`/`DYBF`/`DyBf`,
+`LIYKXUH`, all match) plus a miss (`notaword`, nomatch). All twins agree
+on every cell (52/52 across the whole note, `studies/form_char_twins`'
+`make check`).
 
 **Size**, `gcc -O2 -c`:
 
 | witness | twin | .text | diff lines vs base |
 |---|---|---|---|
-| small (4 sites) | `base` (bitmap) | 4,585 | — |
+| small (4 sites, fold pair) | `base` (bitmap) | 4,585 | — |
 | small | `range` | 3,473 | 88 |
 | small | `fold` | **3,425** | 88 |
-| ci-256 (8 sites) | `base` (bitmap) | 284,744 | — |
+| nonpair (4 sites, NOT a fold pair) | `base` (bitmap) | 4,585 | — |
+| nonpair | `range` | 3,649 | 88 |
+| nonpair | `fold` | 3,649 (byte-identical object to `range`) | 88 |
+| ci-256 (8 sites, fold pairs) | `base` (bitmap) | 284,744 | — |
 | ci-256 | `range` | 282,536 | 176 |
 | ci-256 | `fold` | **282,488** | 176 |
 
-The 256-byte table body costs real code size at BOTH scales: 24-25% more
-`.text` on the small witness (4 sites), 0.79-0.80% more on `ci-256` (8
-sites, but the artifact is 990 KB total and the scan-edge machinery is a
-small fraction of it). `range` and `fold` are within a few bytes of each
-other on both witnesses — expected, since every site measured here IS a
-case-fold pair, so `range`'s two-compare OR and `fold`'s single masked
-compare cost about the same in instructions; a set that were NOT a
-fold-pair would separate them, and this STEP 0's witnesses cannot show
-that split (§6). What the table form ALSO removes from `.rodata`: 4×256 =
-1,024 B (small) / 8×256 = 2,048 B (ci-256) that `range`/`fold` need none of.
+**The `nonpair` witness is the separation the earlier draft of this note
+was missing, and it confirms the fallback discipline rather than finding a
+new effect**: `range` and `fold` compile to LITERALLY the same object
+(`3,649` bytes both, `diff <(objdump -d range) <(objdump -d fold)` empty)
+because a non-fold-pair site makes `fold_expr` fall back to `range_expr`'s
+own construction — there is nothing for `fold` to do differently. On the
+FOLD-PAIR witnesses (`small`, `ci-256`) the two DO diverge, by a small but
+real and consistent margin (48 bytes over 4 sites = 12 B/site on `small`;
+48 bytes over 8 sites = 6 B/site on `ci-256`) — `fold`'s single
+mask-then-compare (§2's asm evidence: `and/or; cmp; sete`, one compare)
+against `range`'s OR of two singleton compares (`cmp; sete; cmp; sete;
+or`, per §2's `test_nonpair` control). This is the real, if modest,
+divergence a genuine ascii-fold shape buys over the general range form —
+an earlier draft of this note called the two "within noise of each other"
+on the strength of the fold-pair witnesses alone, which understated a
+small but reproducible and now compiler-explained effect.
+
+The 256-byte table body costs real code size at every scale measured: 24%
+(small) / 20% (nonpair) more `.text` than `range`, 0.79-0.80% more on
+`ci-256` (8 sites, but the artifact is 990 KB total and the scan-edge
+machinery is a small fraction of it). What the table form ALSO removes
+from `.rodata`: 4×256 = 1,024 B (small, nonpair) / 8×256 = 2,048 B
+(ci-256) that `range`/`fold` need none of.
 
 **This directly answers the plan row's Frank-question for the DFA side**:
 the "misnomer" 256-byte table's one-load cost is real on `.text` in both
@@ -244,51 +302,78 @@ alone — flagged for the follow-up rather than asserted here.
 
 ## 6. What is owed, and to whom
 
-**Timing, all four families, §1's protocol, on a quiet box post-`.lift`.**
-Nothing in this note is a speed claim; every ranking above is `.text`/
-`.rodata` bytes only. In particular:
+**Timing on a quiet box post-`.lift`, §1's protocol — but SCOPED now, not
+all four families equally.** The `gcc -O2 -S` compiler-equivalence check
+(§2) closes family A's speed question without a stopwatch: every fold-pair
+spelling (`||`, `|`, the ascii-fold compare) compiles branchless with NO
+LOAD, so there is nothing for `table`'s one-load latency to beat there.
+What remains genuinely open:
 
-- Family A's `fold` win and family D's `atom` win are BOTH size wins
-  measured here; whether either is ALSO a speed win (or a speed loss the
-  size win doesn't justify) is untested.
-- Family C's `range`/`fold` vs `bitmap` split is the one this STEP 0's own
-  charter cites the code comment's LATENCY argument against: a
-  value-addressed one-load table might still win ns/byte even after losing
-  on both size axes here. That argument is exactly what needs a number.
-- Family B's `general` `rangecmp` (a near-wash on `.text`) is the cell most
-  likely to flip under timing, since a 4-term OR chain has more branches
-  than a single table load even where it is not larger in bytes.
+- **Family B**: `table` vs the bit array on a general/sparse VM class, and
+  `rangecmp` vs the bit array — BOTH real alternatives here read from
+  memory (`rx_class_bitmapN`/`rx_scan_table0` are tables, not compile-time
+  constants), so the size-only ranking could still flip. `general`'s
+  `rangecmp` (a near-wash on `.text`, +2.8%) is the cell most likely to
+  move, since a 4-term OR chain has more branches than a single table load
+  even where it is not larger in bytes.
+- **Family C**: `table` (the "misnomer" 256-byte scan-edge body) vs
+  `range`/`fold` — the code's own LATENCY argument ("the load is
+  VALUE-addressed... the dependency-chain property... is intact") is
+  exactly the number this needs; nothing size-only settles it, and unlike
+  family A the table form here IS the one genuine load among three real
+  alternatives.
+- **Family D**: the atom table's two dependent loads (`atoms[byte]`, then
+  `mask >> that`) vs the bit array's one load+shift+and — the plan row's
+  own framing (two loads costs more) is what §5's `.text` numbers already
+  contradict at N=16, so timing is what would either confirm the apparent
+  free win or explain why it is not free at runtime despite being free in
+  bytes.
 
 **A disassembly read of family D's `atom` twin**, to confirm or refute the
 CSE mechanism §5 proposes rather than infer it from `.text` bytes alone.
 
-**A witness whose scan-edge classes are NOT a case-fold pair**, to separate
-`range` from `fold` in family C — every site in both of this note's DFA
-witnesses happens to be exactly `{c, c^0x20}`, so `range` and `fold`
-measure the same shape twice there. `[FORM-CHAR]`'s own `ascii-fold` axis
-would need a scan edge over an arbitrary disjoint set (not from
-caselessness) to know whether `range`'s OR-of-runs generalizes as cheaply.
+**DELIVERED since the first draft of this note**: a witness whose
+scan-edge classes are NOT a case-fold pair (family C's `nonpair`,
+`[ace]{2,40}Z`) — it separates `range` from `fold` by CONFIRMING the
+fallback discipline (byte-identical objects when the site is not a fold
+pair) rather than by finding new divergence, and its existence is what let
+the fold-pair witnesses' own small, real `range`/`fold` gap (§4's revised
+reading — the earlier draft called it "noise") get correctly attributed to
+`fold`'s specialized shape rather than dismissed. `studies/form_char_twins/`'s `make check`/`sizes`/`asm`
+reproduces all of §2's and §4's numbers, including this witness.
 
 **The recommendation this STEP 0 can support before timing**: `table`
-(family A/B/C/D's 256-byte-per-site form) is not looking like a candidate
-to build ANYWHERE measured here — it lost on `.text` at every scale in
-every family, and loses on `.rodata` everywhere except being tied with
-nothing. If the timing run reverses that (the value-addressed-load latency
-argument holding up), that would be the finding worth widely reporting,
-because it would mean this STEP 0's `.text`/`.rodata` numbers are the wrong
-axis to have led with. `fold` (family A) and `atom` at N≥16 (family D) are
-the two candidates worth carrying into a real build IF the timing agrees
-with the size numbers; `atom`'s crossover point (is N=16 actually near
-where it starts winning, or does it win even lower?) is unmeasured — this
-note built one point above the plan row's ~10-class estimate, not a curve.
+(every family's 256-byte-per-site form) is not looking like a candidate to
+build ANYWHERE measured here — it lost on `.text` at every scale in every
+family, and loses on `.rodata` everywhere except being tied with nothing.
+Family A's `fold` win is no longer conditional on timing at all — the
+compiler evidence closes it — so `fold` is ready to carry into a real
+build on its own merits, pending only the ordinary review a `src/` change
+gets. `atom` at N≥16 (family D) is the second candidate, still contingent
+on the timing run and the disassembly read confirming its apparent
+zero-cost win is real rather than an artifact of these particular
+witnesses; `atom`'s crossover point (is N=16 actually near where it starts
+winning, or does it win even lower?) is unmeasured — this note built one
+point above the plan row's ~10-class estimate, not a curve. Family B and
+C's rankings stay genuinely undecided pending timing, per the scoped list
+above — table vs range vs fold on the scan edge is exactly the case where
+the LATENCY argument that closed family A has NOT been closed.
 
 ## 7. Disclosure
 
 Nothing from injected context shaped a decision beyond what the brief
-itself specified. The choice of `ci-256` as family C's real-scale witness,
-the small witness pattern `(?i)a{2,40}Z`, family B's two patterns and
-family D's N=16 pattern were all chosen by this lane to satisfy the brief's
-own descriptions (`ci-256` named explicitly; the others match the shapes
+itself specified, with one addition: the manager (relaying a question of
+Frank's) supplied the finding that gcc folds the three fold-pair spellings
+to identical branchless code and asked for it to be recorded, plus the
+framing that the "one-load latency could still win" argument therefore
+scopes to family B/D's `table`/`atom` comparisons rather than family A's
+`fold`. This lane VERIFIED that claim directly (`gcc -O2 -S` on
+`asm_evidence.c`, §2) rather than taking it on faith, and built the
+`nonpair` witness (§4) the same message asked for — both are now part of
+the committed deliverable rather than a note-only addendum. The choice of
+`ci-256` as family C's real-scale witness, the small and `nonpair` witness
+patterns, family B's two patterns and family D's N=16 pattern were all
+chosen by this lane to satisfy the brief's own descriptions (`ci-256` named explicitly; the others match the shapes
 the brief names — "a general class `[a-zA-Z0-9_]` and a sparse class
 `[aeiou]`", "a many-class VM artifact (csv/loglines shapes)" generalized to
 a synthetic 16-class caseless chain once the loglines corpus patterns

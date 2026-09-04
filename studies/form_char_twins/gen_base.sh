@@ -36,6 +36,9 @@ echo "== family B: sparse class [aeiou], 1 site =="
 echo "== family C: DFA scan edge, small witness (?i)a{2,40}Z =="
 "$PCREC" -p rxSM --engine=dfa --no-captures --emit-main -o "$OUT/C_small.c" '(?i)a{2,40}Z'
 
+echo "== family C: DFA scan edge, NON-fold-pair witness [ace]{2,40}Z =="
+"$PCREC" -p rxNP --engine=dfa --no-captures --emit-main -o "$OUT/C_nonpair.c" '[ace]{2,40}Z'
+
 if [ -f "$BENCH_CI256" ]; then
     echo "== family C: DFA scan edge, ci-256 (pcrec-bench, read-only) =="
     CI256="$(cat "$BENCH_CI256")"

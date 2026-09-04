@@ -43,11 +43,16 @@ re-measure before load-bearing use.
   emitted `build/pcrec` artifacts — the VM literal chain under
   caselessness (fold/table/atom), a single general/sparse VM class site
   (table/rangecmp), the DFA scan edge including pcrec-bench's `ci-256`
-  witness (range/fold), and a synthetic N=16 many-class site testing
-  [OPT-CLSPACK]'s ~10-class crossover (table/atom) — each twin's byte set
-  parsed off the base artifact's OWN emitted text, correctness-checked
-  against its base, and sized (`.text`/`.rodata`). Backs
-  `docs/dev/form_char_step0.md`. See its own CLAUDE.md and README.md.
+  witness plus a non-fold-pair control (range/fold), and a synthetic N=16
+  many-class site testing [OPT-CLSPACK]'s ~10-class crossover (table/atom)
+  — each twin's byte set parsed off the base artifact's OWN emitted text,
+  correctness-checked against its base, and sized (`.text`/`.rodata`).
+  Also carries a `gcc -O2 -S` compiler-equivalence check
+  (`asm_evidence.c`/`results/three_spellings.s`) showing every fold-pair
+  spelling compiles to the same branchless mask+compare+sete — which
+  narrows the "table's one-load latency could still win" open question to
+  families B and D only; family A's ranking is closed on `.text` alone.
+  Backs `docs/dev/form_char_step0.md`. See its own CLAUDE.md and README.md.
   **Size only, no timing** — the study's `make check`/`sizes` targets are
   answer-identity and static-size, never a stopwatch; the timing run is
   still owed on a quiet box (the design note's §6).

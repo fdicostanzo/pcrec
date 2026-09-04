@@ -27,6 +27,7 @@ can never disagree with what the compiler actually built.
 | B/general | `[a-zA-Z0-9_]` (`--engine=vm`) | one VM class site, 4 disjoint runs | `table`, `rangecmp` (OR of runs) |
 | B/sparse | `[aeiou]` (`--engine=vm`) | one VM class site, 5 singleton runs | `table`, `rangecmp` |
 | C/small | `(?i)a{2,40}Z` (`--engine=dfa --no-captures`) | DFA scan edge (axis I), 4 sites, all case-fold pairs | `range`, `fold` |
+| C/nonpair | `[ace]{2,40}Z` (`--engine=dfa --no-captures`) | DFA scan edge, 4 sites, NOT case-fold pairs (3-member sets) -- the control that separates `range` from `fold`: `fold` falls back to `range`'s own text here, so the two twins are byte-identical objects | `range`, `fold` |
 | C/ci256 | pcrec-bench's `bench/altwide/patterns/ci-256.rx` (read-only) | DFA scan edge at real scale, 8 sites, all case-fold pairs | `range`, `fold` |
 | D | `abcdefghijklmnop` (`-i --engine=vm`) | 16 distinct VM class sites (above the plan row's ~10-class crossover estimate) | `table`, `atom` |
 
@@ -42,7 +43,30 @@ make twins   # derive twins/*.c from base/*.c (twin_A.py/twin_B.py/twin_C.py/twi
 make check   # compile every base+twin, run the per-family subjects, diff
              # every twin's answer against its OWN base's answer
 make sizes   # `size` + a plain objdump read on every compiled object
+make asm     # gcc -S the three-spelling/non-fold-pair compiler-equivalence
+             # evidence (asm_evidence.c) into results/three_spellings.s
 ```
+
+## The compiler-equivalence evidence (`asm_evidence.c`, `results/three_spellings.s`)
+
+`docs/dev/form_char_step0.md`'s family (A) argues `fold` beats `table`/`atom`
+on `.text` and `.rodata`, but the open question was whether `table`'s
+one-load LATENCY could still win at runtime despite losing on size (the
+scan edge's own header comment makes exactly that argument). `gcc -O2 -S`
+on `asm_evidence.c` answers it for family A specifically: `c=='a'||c=='A'`,
+`(c=='a')|(c=='A')` and `(c|0x20)=='a'` all compile to the IDENTICAL
+shape — one mask (`and`/`or`), one `cmp`, one `sete`, no load, no branch.
+There is no load for a table form to beat; the latency argument does not
+apply here. `test_nonpair` (`c=='a'||c=='z'`, not a fold pair) is the
+control: still branchless, but `cmp;sete;cmp;sete;or` — heavier, and
+exactly the shape family C's `nonpair` witness's `range`/`fold` twins
+compile to on the scan edge (byte-identical to each other there, since a
+non-fold-pair site makes `fold` fall back to `range`'s own construction).
+The open latency question is real only for family B (general/sparse VM
+class, `table` vs the bit array) and family D (the atom table) — both DO
+read from memory (`rx*_class_bitmapN`/`_scan_table`/`_scan_atom` are
+tables, not compile-time constants), so those two are where a timing run
+could still reverse the size-only ranking.
 
 `base/` and `twins/` are gitignored — they regenerate byte-for-byte from
 the pinned compiler (`build/pcrec`) and the four transform scripts, so
