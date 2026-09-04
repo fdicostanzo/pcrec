@@ -8,6 +8,15 @@ and comes from reading that code in this worktree; every claim about the
 literature carries a citation, and the ones I could not verify past an
 abstract or a search snippet are marked **unverified**.
 
+**M5 DONE 2026-09-04 (lane `m5paper`, worktree `worktrees/m5paper`, branch
+`lane/m5paper`): §6 is the full reading of Nicol & Frohme plus their
+reference implementation, and it INVERTS §3.9 — candidate C's defining
+property (an optional second pass, and with it an exact size projection) is
+false. §2.3 and §3.8's `unverified` marks are retired in place, and the
+sites in §3.3, §3.9, §5.1 and §5.4 that rested on the false property carry
+struck-through corrections pointing at §6. §1, §2 (apart from §2.3), §3.1-§3.7
+and §4 are otherwise untouched.**
+
 **Revised 2026-09-04, same day, after Frank clarified the charter.** The
 first version ranked §3 under the assumption that the two-pass shape was the
 target; Frank's clarification made clear it is an opportunity, not a
@@ -336,16 +345,28 @@ subset construction or Brzozowski's approach. We evaluate our approach on a
 set of synthetic and real-world examples from automatic sequences and
 observe that we are able to improve especially worst-case scenarios. We
 provide an open-source library implementing our approach."*
-The mechanism, as far as the abstract and the secondary summaries go:
-exploration is **interrupted by a threshold predicate**, the
-partially-constructed DFA is minimized, and exploration resumes on the
-smaller machine. **Exact** (language-preserving canonization). Headline
-result: improvement concentrated in **worst cases**, which is precisely the
-population pcrec cares about. *Verified: abstract and venue. **Unverified:**
-the operational definitions of "equivalence registry", "convexity closure"
-and the threshold predicate; the experimental numbers; the overhead on easy
-inputs. The PDF's text layer did not extract through WebFetch, and a full
-read is a named item in §5's plan.*
+**READ IN FULL 2026-09-04 by lane `m5paper` (M5). §6 is the reading; the
+`unverified` marks that stood here are retired and this paragraph is
+rewritten to what the paper says.** The mechanism is classic subset
+construction plus two changes (paper §3): the metastate→state map is
+mediated by an **equivalence registry** (Def. 4: GET/PUT/UNIFY) whose GET may
+answer with an existing state merely *language-equivalent* to a metastate
+never seen, so that metastate is never created or explored (Algorithm 1
+line 19) — this is the only part that reduces exploration; and exploration
+is periodically interrupted by a **threshold predicate**, at which point the
+partial DFA is minimized by Hopcroft with every unexplored state pinned in
+its own block (lines 33-42), each equivalence found being fed back through
+UNIFY. The relation is **language equivalence**, not bisimulation;
+simulation appears only as CCLS's preprocessing device for normalizing
+lookup keys (§4.2). **Exact**, and gains do concentrate in worst cases
+(§5.2) — but the headline correction is that the loop's output is
+**reduced, NOT minimal**: paper §3.1 states *"a final minimization is
+necessary for correctly canonizing $A$"* and the reference implementation
+runs an unconditional Hopcroft pass after the loop. See §6.1; §3.8 and §3.9
+are corrected accordingly. *Verified: the whole paper (arXiv HTML v2) and
+the reference implementation's core sources. Unverified: Figures 1-2 (images,
+not read as data), the Zenodo artifact, and any overhead number on easy
+inputs — the paper gives none.*
 
 **Brzozowski double-reversal** (reverse, determinize, reverse, determinize)
 is the classical way to get a minimal DFA without a separate minimization
@@ -530,7 +551,11 @@ machine.** Assume states equivalent, propagate the assumption, and split when
 a counterexample arrives. This is the union-find-plus-refutation shape
 Watson/Daciuk and Almeida–Moreira–Reis use for on-demand pair equivalence
 (§2.1), and it is what Nicol & Frohme's "equivalence registry" appears to be
-(§2.3, **unverified**). Candidate C, §3.8.
+(§2.3). **CONFIRMED by M5, §6.2**: their registry's GET may answer for a
+metastate never seen, so the merge is decided before either state's row is
+filled — a Tier-4 merge, and the only part of their construction that reduces
+exploration. Their *other* mechanism, the intermediate minimization, is Tier 3
+and is this study's candidate A. Candidate C, §3.8.
 
 **The ranking criterion this taxonomy exposes, which the original draft
 missed:**
@@ -558,7 +583,7 @@ Tiers 1+2, the entire 97% shrink is left to the thorough pass.
 | **N2** | no compaction; project from the CLOSED subgraph | 3 (read-only) | 80-120 lines | exact as a LOWER bound | no | unchanged (27×) | n/a |
 | **B** | drop dominated positions from each subset | 1 | 170-270 lines | exact **if** §3.7's three conditions hold | **yes** | plausibly 2-5× | no |
 | **A** | periodic partial minimization, "an unfilled row is unique" | 3 | 200-300 lines | yes | no | probably still ≈27× (§3.5) | no |
-| **C** | full online compaction / equivalence registry | 4 | 500+ lines, new subsystem | yes | **yes** | ≈1× by construction | **yes — uniquely** |
+| **C** | full online compaction / equivalence registry | 4 | 500+ lines, new subsystem | yes | **yes** | ≈1× by construction | ~~yes — uniquely~~ **NO — §6.1** |
 
 ### 3.4 N — the null candidates: do not compact; change what is projected
 
@@ -781,11 +806,19 @@ the place**, for three reasons the original draft under-weighted:
 `src/opt/minimize.c`, and it lands every one of §3.5's five renumbering
 hazards plus the registry's own invariants (a hypothesis that must be split
 on refutation is a data structure where being wrong is silent by
-construction). **I have not read the paper past its abstract**
-(§2.3, `unverified`), so "500+ lines and a new file" is a guess, and I cannot
-say what its overhead is on the ordinary patterns that are 99% of the corpus.
-Its authors publish an open-source implementation. Reading both is cheap, needs
-no box time, and is now the **first** item in §5's plan rather than the last.
+construction). **M5 DISCHARGED 2026-09-04 (§6): the paper and the reference
+implementation have now been read, and §6.6 re-ranks this candidate.** The
+`unverified` mark is retired and three of the claims above do not survive it.
+Reason 1 is **false** — a final minimization is mandatory (§6.1), so the
+second pass is not optional, raw does not equal emitted, and lim2's
+projection does not become an identity. Reason 2 is **confirmed** (Algorithm 1
+lines 19-29). Reason 3 is **half right in the load-bearing half**: C does not
+subsume A′, it *requires* **A** — UNIFY is called only from the intermediate
+minimization — so "do not build A" and "build C" are inconsistent (§6.6).
+The "500+ lines, a new subsystem" estimate is, on the implementation's
+evidence, **low**: the registry is ≈130 KB of a 183 KB Java library, while
+the loop itself is 182 lines (§6.7). The overhead on ordinary patterns
+remains **unmeasured and unstated by the paper** (§6.4).
 
 ### 3.9 The two-pass verdict
 
@@ -809,13 +842,17 @@ table.
 | property | Tiers 1+2 only | Tier 4 (C) |
 |---|---|---|
 | correct? | **yes** — §3.1: an unminimized DFA is already a shipped, ordinary outcome | yes |
-| smaller? | somewhat; on the k18 witness it would leave most of a 27× on the table | ≈minimal by construction |
-| size bound honest? | **no** — a partially-merged count is an upper bound on the explored part, and a bail needs a lower bound (§3.4) | **yes, and exactly** — raw *is* emitted, so the projection is an identity |
-| second pass optional? | no — skipping it enlarges the k18 artifact ~27× | **yes** |
+| smaller? | somewhat; on the k18 witness it would leave most of a 27× on the table | reduced, ~~≈minimal~~ **not minimal — §6.1** |
+| size bound honest? | **no** — a partially-merged count is an upper bound on the explored part, and a bail needs a lower bound (§3.4) | ~~**yes, and exactly**~~ **NO — §6.3**: the intermediate count is neither an exact figure nor a lower bound |
+| second pass optional? | no — skipping it enlarges the k18 artifact ~27× | ~~**yes**~~ **NO — §6.1**, the paper requires a final minimization |
 
-So the shape Frank described — easy wins during, thorough pass after, second
-pass optional if expensive — **is coherent, and it is a description of
-candidate C.** With the cheap tiers alone the second pass is not optional; it
+**CORRECTED BY M5 (§6.1).** The shape Frank described — easy wins during,
+thorough pass after, second pass optional if expensive — **is coherent, and
+its first two thirds describe candidate C; the third does not exist in the
+published work.** No OTF-shaped mechanism makes the thorough pass optional:
+its own authors require a final minimization and their implementation runs
+one unconditionally. What follows below was written before that was known and
+is left standing as the reasoning that M5 was sent to test. With the cheap tiers alone the second pass is not optional; it
 is where nearly all the shrink lives. That is not an argument against starting
 with the cheap tiers: A′ and B are C's own components, so building them first
 is a real incremental route rather than throwaway work. It is an argument
@@ -961,7 +998,9 @@ read the paper, then measure.** In order:
    emitted byte and is 80-120 lines. **Conditional on M1** showing the closed
    set is not empty — if it is, fall back to N1 (a deterministic work budget),
    smaller still, no size claim at all.
-2. **Read Nicol & Frohme (M5) before deciding anything else.** Frank's
+2. **[DONE 2026-09-04, lane `m5paper` — see §6, and §6.6 for what it
+   changes in this list: step 4 becomes B-first, and C is demoted.]**
+   **Read Nicol & Frohme (M5) before deciding anything else.** Frank's
    clarification makes full online compaction a live option, and C is the
    only candidate with the property that makes the whole manoeuvre worth
    doing — an optional second pass, and with it an *exact* size projection.
@@ -974,12 +1013,25 @@ read the paper, then measure.** In order:
    under what C could achieve. If M2's ratio stays above 10×, the honest
    answer to the charter's question is "no, not affordably" — a legitimate
    outcome to record rather than route around.
-4. **Then choose between B and C on the numbers**, with §4.5's verdict in
-   hand: C is the more dangerous mechanism and the better-*checkable* one,
-   because it can be diffed for isomorphism against the existing pipeline
-   over the whole corpus and B cannot.
+4. **~~Then choose between B and C on the numbers~~ — REVISED BY M5 to
+   B-FIRST (§6.6).** B is the paper's own SC-S configuration: published,
+   evaluated, and the only configuration observed to reach zero intermediate
+   overhead. C is reconsidered only if M2 leaves a large residual gap *and*
+   someone is willing to build A underneath it, which C requires. §4.5's
+   verdict is unchanged and still favours C on *checkability* — the
+   isomorphism differential against the existing pipeline is real and B has
+   no analogue — but checkability no longer outweighs a withdrawn headline
+   property, a mandatory A, and a set lattice pcrec's states do not form
+   (§6.5).
 
-**Do not build A.** It is the one candidate this study can rank down on
+**Do not build A** — **on a corrected reason; see §6.6 item 4, which
+withdraws the yield prediction below.** §3.5's soundness rule is confirmed by
+the paper, but §3.5's claim that its merges are "precisely the closed
+subgraph" is too pessimistic, and that claim was the sole basis for "no M1
+outcome favours A". A is still declined, on the grounds that it is Tier 3,
+saves no construction work, and lands all five renumbering hazards. The
+sentence that follows is left as written, with its yield half now known to be
+wrongly derived. It is the one candidate this study can rank down on
 merits rather than on missing measurements: it is Tier 3, so it saves no
 construction work (§3.2), its available merges are the same closed subgraph
 N2 only *reads*, and it lands all five renumbering hazards to get them. If
@@ -1056,7 +1108,10 @@ the artifact-size log already has for size.
   hazard and should be counted against the candidate's simplicity, not waved
   through.
 
-**M5 — read the literature properly. TAKE THIS ONE FIRST.** Nicol & Frohme,
+**M5 — read the literature properly. TAKE THIS ONE FIRST. — DONE
+2026-09-04, lane `m5paper`; §6 is the result, and its headline is that the
+answer to the "minimal or merely reduced" question below is MERELY REDUCED,
+which withdraws §3.9's right-hand column.** Nicol & Frohme,
 arXiv:2505.10319 / TACAS 2026, in full, plus their open-source library: the
 operational definitions of "equivalence registry", "convexity closure" and the
 threshold predicate; the experimental numbers; the overhead on easy inputs;
@@ -1066,7 +1121,11 @@ bar, but it is the gate on ranking C honestly — it retires four `unverified`
 marks in this document, including the ones under the candidate Frank's
 clarification promoted.
 
-**M6 — is the second pass worth skipping? (decides §3.9's open cell, and only
+**M6 — is the second pass worth skipping? — LARGELY ANSWERED IN ADVANCE BY
+M5 (§6.6): no OTF-shaped mechanism licenses skipping it, so M6's size bar
+below is moot for candidate C and only M6's LAST paragraph (the scan-edge
+minimality-vs-finality code question) survives as work. Left as written for
+whatever mechanism is prototyped. (decides §3.9's open cell, and only
 after M5/M2 pick a mechanism).** For whichever compaction is prototyped,
 compile the corpus twice — thorough pass on, thorough pass off — and read
 artifact size and compile time both ways, in the shape `tests/size/`'s log
@@ -1104,9 +1163,10 @@ later:
 
 ### 5.4 What this study does not claim
 
-- That candidate C reaches a *minimal* machine rather than a merely reduced
-  one. §3.9's "second pass optional" column depends on that, and it rests on
-  the word "canonization" in an abstract. M5 settles it.
+- ~~That candidate C reaches a *minimal* machine rather than a merely reduced
+  one.~~ **SETTLED BY M5, 2026-09-04: it does not** (§6.1). The loop's output
+  is reduced; a final minimization is mandatory. §3.9's "second pass
+  optional" column is withdrawn.
 - That [OPT-5]'s scan edge tolerates an unminimized machine. §3.1 shows the
   documented dependency is an *ordering* one and that the pass's five
   preconditions are local shape tests, but "it needs the canonical state set"
@@ -1117,7 +1177,7 @@ later:
   condition 3 (priority) is an argument I want attacked.
 - That the byte-identity sketch in §1.3(c) holds. It is a plausibility
   argument with three named holes and it must be measured.
-- Anything about Nicol & Frohme's algorithm beyond its abstract.
+- ~~Anything about Nicol & Frohme's algorithm beyond its abstract.~~ **RETIRED by M5; §6 is the full reading, and §6.8 lists what that reading still did not settle.**
 - Any number about pcrec that was not read from the code or from lim2's
   report. **No compile, no `make`, and no benchmark was run by this lane**;
   every quantitative claim here is either cited from `lim2_report.md`, from
