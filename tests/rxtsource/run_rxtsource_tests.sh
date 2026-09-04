@@ -117,9 +117,14 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # 114 land in C3_PASS and NO skip bucket moves. That is the file's own claim
 # rather than an accident: the axis is answer-identity-preserving, so a cell
 # python cannot express would be a cell testing the wrong thing.
+# [ART-SIZE] 2026-09-03: +0/+1/+10 for the class-leading witness-pool member
+# appended to tests/counterk/counterk.rxt ((?:[ab]a|[ab]){8,12}+b, 4 m + 6 n).
+# It is a CORPUS pattern because run_size_term.sh §9's pool must be corpus
+# patterns; all 10 cells are python-expressible, so C3_PASS moves and no skip
+# bucket does.
 CENSUS_FILES=193
-CENSUS_BLOCKS=3346
-CENSUS_LINES=27008
+CENSUS_BLOCKS=3347
+CENSUS_LINES=27018
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
 # (tests/base/start_pinned_startpos.rxt, tests/assertions/
 # start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
@@ -128,8 +133,8 @@ CENSUS_LINES=27008
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
 RUNSH_FILES=192
-RUNSH_BLOCKS=3343
-RUNSH_LINES=26997
+RUNSH_BLOCKS=3344
+RUNSH_LINES=27007
 # 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
 # neither new file lands under tests/known_fail/.
 
@@ -563,7 +568,7 @@ C3_FILES=179
 # file under a directory that carries its own verify_*.py, and
 # tests/assertions/ has verify_pcre2.py. So +79 PASS, +16 SKIP, all +16
 # landing in own-oracle; every other reason is unchanged.
-C3_PASS=13394
+C3_PASS=13404
 C3_SKIP=13525
 C3_SKIP_PCRE2ONLY=1357
 C3_SKIP_GIVEUP=23

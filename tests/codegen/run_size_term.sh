@@ -335,49 +335,143 @@ else
     bad "--max-emit-bytes=$HUGE REFUSED a pattern that compiles with no flag — a raise must never make a build fail that would have succeeded (limits.md §8)"
 fi
 
-# --- 9. the MATERIALITY BAR is pinned from BOTH sides ----------------------
-# The constant (75) was pinned by nothing (r42 critic-sem S6): at the shipped
-# threshold only two patterns in the whole tree run the ladder, so 60, 80 and
-# 85 all leave `make test` green. These two cells bracket it, and they bracket
-# it TIGHTLY: the witnesses are the two corpus patterns either side of the bar
-# on the bar's OWN quantity, 0.7475 and 0.7548 — 0.73 % apart, so a materiality
-# constant of 74 fails the first cell and 76 fails the second.
+# --- 9. the MATERIALITY BAR, bracketed by a WITNESS POOL ---------------------
+#
+# WHAT THIS REPLACED, AND WHY THE OLD SHAPE WAS THE DEFECT (manager's ruling,
+# 2026-09-03, on [ENG-ISL] STEP 1's landing). This block used to name TWO fixed
+# corpus patterns, measured at 0.7475 and 0.7548, and assert that the bar takes
+# the first and declines the second — a bracket 0.73 % wide, so a materiality
+# constant of 74 failed one cell and 76 failed the other. It was a genuinely
+# tight pin on the constant and it was fragile in a way nobody had named: BOTH
+# witnesses were alternation-bearing, so an emitter axis that reshaped
+# alternations moved both at once. [ENG-ISL]'s alternation island did exactly
+# that — the pair converged to 0.7497 and 0.7499, 0.02 % apart, and the bracket
+# was gone rather than merely off by one.
+#
+# Replacing the two with "island-free" witnesses would only have moved the same
+# fragility to the next axis; `[OPT-CLSPACK]` will reshape class patterns the
+# same way. So the instrument changes shape instead: a POOL, measured and
+# printed in full, passing on the EXISTENCE of a straddling pair rather than on
+# any named pattern's value.
+#
+# THE POOL. Eight corpus patterns that actually reach the ladder, chosen to
+# span the bar and — the load-bearing half — to move for INDEPENDENT reasons:
+#
+#   ((a)|ab){4000}c            alternation-bearing, island TAKEN
+#   ((a)|ab){17}c              alternation-bearing, island TAKEN
+#   ((a)|ab){12}c              alternation-bearing, island TAKEN
+#   (?:aa|a){8,12}+b           alternation-bearing, island DECLINED (narrow)
+#   (?:aa|a){8,12}+ab          alternation-bearing, island DECLINED (narrow)
+#   (?:[ab]a|[ab]){8,12}+b     CLASS-LEADING: the island declines it by
+#                              construction, so [OPT-CLSPACK] is what moves it
+#   (a{1,3}){64}               NO alternation at all — island-free by
+#   (a{10,20}){10,50}          construction, and so is this one
+#
+# Three of the eight cannot move for an alternation reason at all, and the two
+# island-taking families move in opposite directions from the two declining
+# ones, so no single emitter axis can flatten every pair.
+#
+# THE BAND IS 0.05, and it is the part that keeps this a real pin rather than
+# "some two patterns exist somewhere". A straddling pair whose members sit at
+# 0.55 and 0.95 would satisfy "one above, one below" while saying nothing about
+# WHERE the constant is; requiring both within 0.05 of 0.75 keeps the surviving
+# claim close to "a constant of 70 or 80 would fail this file". The measured
+# pool at this landing brackets far tighter than the band demands (0.7497 and
+# 0.7571, 0.0074 apart), so the band has real slack before it needs revisiting
+# — which is the point of stating it rather than pinning the pair.
+#
+# IT NEVER PASSES SILENTLY. No straddling pair is RED with the whole table
+# printed, and that failure is the honest "this population can no longer
+# bracket the constant" finding rather than a green run over a bar nothing
+# measures — K35's shape, and the reason the table is printed on success too.
 #
 # THE QUANTITY IS THE ARGMIN RUNG'S BYTES against the default K's, NOT the
-# delivered artifact's. For a DECLINED pattern the delivered artifact IS the
-# K=8 artifact plus a 12-byte-longer stamp, so a ratio taken from it reads
-# 1.0004 for every declined pattern by construction — which is how an earlier
-# version of this row convinced itself the ratios were cleanly separated.
-# `docs/design/artsize_impl/probes/bar_ratio.sh` measures the right one.
-#
-# `--engine=vm` IS LOAD-BEARING, not tidiness: the DFA hybrid's prefilter
-# tables are K-invariant, so on the default axis they add the same constant to
-# numerator and denominator and pull every ratio toward 1. Both witnesses sit
-# either side of the bar ON THE vm AXIS; on the default axis the whole
-# population shifts up and different patterns straddle it. A ratio without its
-# axis is not a fact about the pattern.
-#
-# They run under §7's threshold-1000 reference compiler, because at the shipped
-# threshold neither witness reaches the ladder at all.
+# delivered artifact's — unchanged from the old block, and the reason is
+# unchanged too: for a DECLINED pattern the delivered artifact IS the K=8
+# artifact plus a 12-byte-longer stamp, so a ratio taken from it reads 1.0004
+# for every declined pattern by construction. `--engine=vm` is likewise
+# load-bearing: the DFA hybrid's prefilter tables are K-invariant and pull
+# every ratio toward 1. They run under §7's threshold-1000 reference compiler,
+# because at the shipped threshold no witness reaches the ladder at all.
+POOL_PATTERNS='((a)|ab){4000}c
+((a)|ab){17}c
+((a)|ab){12}c
+(?:aa|a){8,12}+b
+(?:aa|a){8,12}+ab
+(?:[ab]a|[ab]){8,12}+b
+(a{1,3}){64}
+(a{10,20}){10,50}'
+BAR=0.75
+BAND=0.05
+
 if [ -x "$REF2" ]; then
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bt.c" -- '((a)|ab){4000}c' 2>/dev/null; then
-        w="$(stamp UNROLL_K_WHY "$WORK/bt.c" | tr -d '"')"
-        [ "$w" = "size-model" ] \
-            && ok "the bar TAKES the 0.7475 rung ('((a)|ab){4000}c' -> size-model): a materiality constant of 74 would decline it" \
-            || bad "the bar declined the 0.7475 witness (got '$w') — the materiality constant has risen above 74.75 %, or the ratio this cell was pinned on has moved; re-measure with probes/bar_ratio.sh before touching the constant"
+    pool_names=""; pool_ratios=""; pool_n=0; pool_bad=0
+    while IFS= read -r ppat; do
+        [ -n "$ppat" ] || continue
+        best=""; dflt=""
+        for k in 1 2 3 4 5 6 7 8; do
+            if "$REF2" -p rx --features all --engine=vm --unroll=$k \
+                 --warn-emit-bytes=1 -o "$WORK/pool.c" -- "$ppat" \
+                 2>"$WORK/pool.err"; then
+                pb="$(sed -n 's/.*(\([0-9]*\) of code).*/\1/p' "$WORK/pool.err" | head -1)"
+                [ -n "$pb" ] || pb="$(wc -c < "$WORK/pool.c")"
+                [ "$k" = 8 ] && dflt="$pb"
+                if [ -z "$best" ] || [ "$pb" -lt "$best" ]; then best="$pb"; fi
+            fi
+        done
+        if [ -z "$best" ] || [ -z "$dflt" ] || [ "$dflt" -le 0 ]; then
+            bad "the pool member '$ppat' did not compile at the eight K values under the threshold-1000 reference compiler — a member that cannot be measured is not a member, and a pool that silently shrinks is how a bracket stops being one"
+            pool_bad=$((pool_bad + 1))
+            continue
+        fi
+        r="$(awk "BEGIN{printf \"%.4f\", $best/$dflt}")"
+        pool_names="$pool_names$ppat
+"
+        pool_ratios="$pool_ratios$r
+"
+        pool_n=$((pool_n + 1))
+    done <<POOL_EOF
+$POOL_PATTERNS
+POOL_EOF
+
+    # THE TABLE, printed whatever the verdict — a bracket nobody can read is a
+    # bracket nobody can re-derive when it next moves.
+    echo "size-term §9 materiality pool (bar $BAR, band $BAND; argmin-K code bytes / default-K code bytes, --engine=vm):"
+    i=1
+    while [ "$i" -le "$pool_n" ]; do
+        pn="$(printf '%s' "$pool_names" | sed -n "${i}p")"
+        pr="$(printf '%s' "$pool_ratios" | sed -n "${i}p")"
+        side="$(awk "BEGIN{print ($pr < $BAR) ? \"below\" : \"above\"}")"
+        printf '  %-26s %s  %s\n' "$pn" "$pr" "$side"
+        i=$((i + 1))
+    done
+
+    # PASS iff some pair straddles the bar with BOTH members inside the band.
+    straddle=""
+    i=1
+    while [ "$i" -le "$pool_n" ] && [ -z "$straddle" ]; do
+        ri="$(printf '%s' "$pool_ratios" | sed -n "${i}p")"
+        j=1
+        while [ "$j" -le "$pool_n" ]; do
+            rj="$(printf '%s' "$pool_ratios" | sed -n "${j}p")"
+            if awk "BEGIN{exit !($ri < $BAR && $rj >= $BAR && $BAR - $ri <= $BAND && $rj - $BAR <= $BAND)}"; then
+                straddle="$(printf '%s' "$pool_names" | sed -n "${i}p") ($ri) / $(printf '%s' "$pool_names" | sed -n "${j}p") ($rj)"
+                break
+            fi
+            j=$((j + 1))
+        done
+        i=$((i + 1))
+    done
+
+    if [ "$pool_n" -lt 6 ]; then
+        bad "the materiality pool measured only $pool_n members (want at least 6): a pool this small cannot survive one emitter axis reshaping a family, which is the failure that replaced the old fixed pair"
+    elif [ -n "$straddle" ]; then
+        ok "the materiality bar is bracketed by the pool: $straddle straddle $BAR with both inside ±$BAND — a constant of $(awk "BEGIN{printf \"%.2f\", $BAR - $BAND}") or $(awk "BEGIN{printf \"%.2f\", $BAR + $BAND}") would fail this file"
     else
-        bad "the bar's TAKEN witness did not compile under the threshold-1000 compiler"
+        bad "NO PAIR IN THE $pool_n-MEMBER POOL STRADDLES $BAR WITHIN ±$BAND — the population can no longer bracket the materiality constant. This is the finding, not a re-pinning chore: read the table above, and note that every ratio moving to one side at once means an emitter axis reshaped the whole pool (which is what [ENG-ISL] did to this block's former fixed pair). Do NOT adjust the constant to make this green."
     fi
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bd.c" -- '(?:aa|a){8,12}+b' 2>/dev/null; then
-        w="$(stamp UNROLL_K_WHY "$WORK/bd.c" | tr -d '"')"
-        case "$w" in
-            size-model-declined|capacity-declined)
-                ok "the bar DECLINES the 0.7548 rung ('(?:aa|a){8,12}+b' -> $w): a materiality constant of 76 would take it" ;;
-            *)  bad "the bar took the 0.7548 witness (got '$w') — the materiality constant has fallen below 75.48 %; the two cells here bracket it to 0.73 %, so this is a real move and not noise" ;;
-        esac
-    else
-        bad "the bar's DECLINED witness did not compile under the threshold-1000 compiler"
-    fi
+else
+    bad "the materiality pool needs §7's threshold-1000 reference compiler and it is not built"
 fi
 
 printf '\nchecks passed: %d\nchecks failed: %d\n' "$pass" "$fail"

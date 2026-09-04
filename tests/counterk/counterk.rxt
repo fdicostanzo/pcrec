@@ -1889,3 +1889,23 @@ g 2 3 4
 n "q"
 n "aq"
 n "bcq"
+
+# [ART-SIZE] §9 WITNESS-POOL MEMBER, and the one shape the corpus did not
+# already have. The materiality bar's pool needs members whose emitted-size
+# ratio moves for reasons OTHER than an alternation lowering, or the bar goes
+# on being re-pinned every time an emitter axis reshapes its witnesses --
+# which is exactly what [ENG-ISL] did to the old fixed pair. This one is
+# CLASS-LEADING (`[ab]a|[ab]`), so the VM's alternation island declines it by
+# construction and [OPT-CLSPACK]'s class work is what would move it instead.
+# Expectations from python3 `re`, which supports possessive quantifiers.
+pattern (?:[ab]a|[ab]){8,12}+b
+m "abbbbbbbbbbbb" 0 13
+m "bbbbbbbbbbbbb" 0 13
+m "aaabbbbbbbbbbb" 0 14
+m "abaabbbbbbbbbb" 0 14
+n ""
+n "b"
+n "ab"
+n "aaaaaaaab"
+n "babababababab"
+n "aaaaaaaaaaaaab"
