@@ -296,8 +296,12 @@ turned out not to carry many DISTINCT bitmap-class sites in one artifact —
 `csv5.rx`/`kv-quoted.rx`/`stack-frame.rx` were read and none exceeds a
 handful of classes, so the ~10-class crossover point needed a constructed
 witness to reach at all). No `src/`, `tests/`, or `docs/spec/` file was
-read from `main` or `pcrec-bench` beyond what is cited above. The scratch
-Python transforms live at `/tmp/claude-1001/-home-duxevents-pcrec/9105b24f-a3da-41e8-ad04-038ddd1351f6/scratchpad/form0/make_twins_A.py`,
-`make_twins_B.py`, `make_twins_C.py` and `make_twin_D_atom.py`, described
-in full in §1-§5 above rather than committed (the scope mandate: scratch
-stays in scratch).
+read from `main` or `pcrec-bench` beyond what is cited above. The four
+Python transforms (`twin_A.py`/`twin_B.py`/`twin_C.py`/`twin_D.py`) plus
+their generation and check harness (`gen_base.sh`, `check_twins.sh`,
+`sizes.sh`, `Makefile`) are committed at `studies/form_char_twins/` per the
+manager's ruling that a scratch-only deliverable dies with the session —
+see that directory's own `README.md`/`CLAUDE.md` for the reproduction
+recipe and `results/twin_sizes.tsv` for this note's size tables in raw
+form. `make check` there reproduces every correctness cell above (46/46
+agreed); `make sizes` reproduces every `.text`/`.rodata` number.

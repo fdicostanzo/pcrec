@@ -38,5 +38,18 @@ re-measure before load-bearing use.
   LANGUAGE rather than per branch — the per-branch form measured wrong,
   because altcls factors the tree before the emitter sees it (the
   eleven-islands defect).**
+- `form_char_twins/` — [FORM-CHAR] STEP 0 + [OPT-CLSPACK] STEP 0 hand-twins
+  (lane form0, 2026-09-04): four families of mechanical hand-twins over
+  emitted `build/pcrec` artifacts — the VM literal chain under
+  caselessness (fold/table/atom), a single general/sparse VM class site
+  (table/rangecmp), the DFA scan edge including pcrec-bench's `ci-256`
+  witness (range/fold), and a synthetic N=16 many-class site testing
+  [OPT-CLSPACK]'s ~10-class crossover (table/atom) — each twin's byte set
+  parsed off the base artifact's OWN emitted text, correctness-checked
+  against its base, and sized (`.text`/`.rodata`). Backs
+  `docs/dev/form_char_step0.md`. See its own CLAUDE.md and README.md.
+  **Size only, no timing** — the study's `make check`/`sizes` targets are
+  answer-identity and static-size, never a stopwatch; the timing run is
+  still owed on a quiet box (the design note's §6).
 
 Maintenance: update this file when studies are added/removed.
