@@ -380,6 +380,35 @@ BYTE PATTERN of `PCREC_UNSET` and would break silently the day that value
 stopped being a repeated byte, which is the coupling this tree records
 failures about.
 
+
+---
+
+## 3.7 THE SUITES (2026-09-03 evening, after the lift)
+
+Run on this branch at `-j4 PROCS=3`, the shape [TT-12] measured and K44's
+ruling adopted. Every number below is from a log under `build/`.
+
+| suite | result |
+|---|---|
+| `make test` | 32/32 sections, **2 reds** |
+| `make test-codegen` | 4/5 scripts, **1 red** (the K37 red fixed at `ccc6142`) |
+| `make test-registry` | **green** — 0 failures; the definitions oracle at 354 cells, 101,244 A==B and 101,244 A==C comparisons, 0 disagreements |
+| `make test LINTGEN=1` | 32/32 sections, **9 reds** |
+| `make test-axes` | (in progress at the time of writing) |
+
+**EVERY SUBSTANTIVE RED TRACES TO K43 (b), and §8 is the finding.** The two
+`make test` reds were K37 (mine, in the draft check, fixed) and the
+[ART-SIZE] materiality bar (K43's bytes). LINTGEN's nine are six analyzer
+build failures from a SECOND false positive K43 (b) exposes, the same
+[ART-SIZE] bar, and one load artifact:
+`tests/base/k18_cost_gates.rxt:103` at 8.803 s of gcc CPU against an 8.0 s
+pin, 1.100x, with the check's own line recording `load1 at measurement:
+10.78` — my own LINTGEN run. K44's class; the solo number is owed, not a
+re-pin.
+
+Nothing in [OPT-EDGE] STEP 1 itself is red.
+
+
 ---
 
 ## 4. THE PREDICTION TABLE, SCORED
