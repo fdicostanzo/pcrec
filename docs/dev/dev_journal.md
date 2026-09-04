@@ -20932,3 +20932,15 @@ merge lane/edge1 (bcaf14f1, abi 19) — expected conflicts only at the
 abi-ritual sites (emit_dfa.c's producer, run_codegen_tests.sh's
 ABI_EXPECT + narrative, run_recursion_identity.sh's pin block,
 match_api.md's abi paragraphs) — then its chain, then w13.
+
+## 2026-09-04 — Fifty-first session, part 49 (06:1x EDT): [OPT-EDGE] STEP 1 MERGED (386abf94, abi 19); FILEPIN → 386abf94 (4671c773); its short chain running
+
+lane/edge1 merged --no-ff; the four conflicts were the abi-ritual
+sites exactly as previewed: the producer takes 19; ABI_EXPECT 19 with
+isl1's (17->18) clause SPLICED into the bump-history narrative before
+edge1's, re-worded (18->19); both pin-comment blocks kept in
+run_recursion_identity.sh; match_api.md's 19 entry atop the 18 entry
+(re-headed "the 18 it replaces"), and §6's opening sentence naming all
+three events. make + strict clean. The chain (test → codegen →
+registry → axes) started 06:1x; then w13's merge (minus its size log),
+its chain, [LIM-2]'s launch, the battery, DONE + OPEN to the bench.
