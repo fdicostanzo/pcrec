@@ -2502,7 +2502,7 @@ points at the fold count.
 text for the accessor's lost parameter and the table name's absence, asserts
 the biconditional, and only then compares the stamp against their count.
 
-## [ENG-ISL] STEP 1 — THE VM'S ALTERNATION ISLAND (2026-09-03)
+## [ENG-ISL] STEP 1 — THE VM'S ALTERNATION ISLAND (2026-09-03), abi 17 -> 18
 
 `docs/design/alt_dispatch_study.md` is the measurement (algorithm (e));
 `docs/spec/tuning.md` §2.20 is the contract; `docs/dev/lanes/isl1_report.md`
@@ -2578,6 +2578,19 @@ route (427,739 code bytes) where the chain is refused (508,477 against the
 where the chain differed by 12% — the branch-ORDER effect the bench measured
 at x8.87 is structurally gone, because sort order affects the trie's
 construction only.
+
+**`abi` 17 -> 18, AND IT IS THE FIRST BUMP THAT MOVES THE VM PROGRAM REGION.**
+Every earlier one moved stamps, an entry chain, DFA tables or a prefilter —
+all of which sit ABOVE `goto <prefix>_L0;`, which is why
+`tests/codegen/run_recursion_identity.sh`'s comparison (A) could say "still
+expected byte-identical" at every one of them. The island IS that region. (A)
+therefore carries an IFF now rather than an allowance: a moved region is
+excused only where the artifact's own `RX_VM_ALT_ISLANDS` reads > 0, the
+CONVERSE is asserted in the same pass (an artifact stamping an island whose
+region did not move is claiming a trie the program does not contain), and the
+bucket has a non-vacuity floor so an emitter that stopped building islands
+cannot read green. MEASURED at the landing, all four axes: `differing=0`,
+`island-stamped-unmoved=0`, `island-moved` 166 / 236 / 166 / 123.
 
 **A ROLE COMMENT ON THE ROOT AND THE ACCEPT-BEARING NODES ONLY.** `vm_lbl`
 writes a role as a line comment beside the label, and an island's node count
