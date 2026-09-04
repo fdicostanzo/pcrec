@@ -83,6 +83,8 @@ set -u
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PCREC="${PCREC:-$ROOT/build/pcrec}"
+. "$ROOT/tests/lib/gen_timeout.sh"   # [K37] pcrec_run: every compiler call is budgeted
+export WATCHDOG_SECTION=codegen
 CC="${CC:-gcc}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -212,9 +214,9 @@ for i in "${!witness_names[@]}"; do
     name="${witness_names[$i]}"; pat="${witness_pats[$i]}"
     d="$WORK/$name"; mkdir -p "$d/on" "$d/off"
 
-    "$PCREC" --features all -p rx -o "$d/on/a.c"  "$pat" >/dev/null 2>&1 || {
+    pcrec_run "$PCREC" --features all -p rx -o "$d/on/a.c"  -- "$pat" >/dev/null 2>&1 || {
         bad "$name: pcrec refused the pattern"; continue; }
-    "$PCREC" --features all -p rx -o "$d/off/a.c" -fno-scan-edge "$pat" >/dev/null 2>&1 || {
+    pcrec_run "$PCREC" --features all -p rx -o "$d/off/a.c" -fno-scan-edge -- "$pat" >/dev/null 2>&1 || {
         bad "$name: pcrec refused the pattern under -fno-scan-edge"; continue; }
 
     # THE VACUITY GUARD. The witness must reach the mechanism.
