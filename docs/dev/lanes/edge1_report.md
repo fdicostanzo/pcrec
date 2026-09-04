@@ -544,7 +544,7 @@ not reached and is untouched.
 |---|---|
 | **P1** the generic path's instruction count equals the `-fno-scan-edge` build's and is today's minus `2 x nscan` | **HIT, and better than predicted on both halves.** iso-ts 29 -> 15 (predicted 29 -> 21) against the control's 19. The extra saving is the prefilter guard leaving the generic path with the edges. |
 | **P2** every zero-edge and every `-fno-scan-edge` artifact is byte-identical to main | **HIT.** 17/17 on the flag axis, 9/9 at the default. |
-| **P3** answers identical on every corpus cell and axis | **OWED** — needs `make test` and `make test-axes`. 3,486 single-artifact cells over ten axes and the python oracle are 0-disagreement. |
+| **P3** answers identical on every corpus cell and axis | **HIT, measured.** `make test-axes`: all 21 axes answer-identical, 22,309 keys each, 0 mismatches / 0 lost / 0 gained, `refused_undoc=0` everywhere, and the oracle cross-check OK against live libpcre2 on both the plain and `-fno-premul-table` PC-4 runs. `make test` 32/32 sections with no answer red. |
 | **P4** `-fanalyzer` clean on K43's shapes, and the initializer's object code is the loop's | **HALF HIT.** Analyzer clean on all eight shapes. The object code is NOT identical: same three stores, one `pcmpeqd` replaced by one `movdqa` load. §3.5. |
 | the byte formula: +95 accessor, +150 scaffolding, +100 A, +330 B ONLY where `s0` is a head, 0 for C, 0 for D | **MISS, low by 20-70%.** Measured 364-612 per edge-bearing machine against a predicted 345 (+330 conditional). Two errors in opposite directions: the prefilter turned out to MOVE rather than be replayed, so its +330 never applies — and the scaffolding (two labels, `if/goto`, the entry jump, the accessor's comment) is bigger than +150. |
 | iso-ts +1,020 source bytes | **MISS**, +1,836. |
@@ -702,10 +702,26 @@ PREDICTION, not a measurement — the gate has not been run.
 
 ## 8. WHAT IS UNVERIFIED, AND WHAT NEEDS A RULING
 
-**Unverified (the box hold; all of it is tomorrow's):** `make test`,
-`make test-codegen`, `make test-axes`, `make test LINTGEN=1`, every timing
-number, comparison (A) of the identity gate, and the corpus-wide byte-identity
-claim for zero-edge artifacts (measured on 9 patterns, not on 2,700).
+**Verified since (2026-09-03 evening, after the lift):** `make test`
+(32/32 sections), `make test-codegen` (4/5), `make test-registry` (green),
+`make test LINTGEN=1` (32/32 sections), `make test-axes` (21/21
+answer-identical, oracle OK), the corpus census (2,539 artifacts), and the
+timing acceptance on a quiet box. §3.6b, §3.7 and §3.8 carry the numbers.
+
+**STILL UNVERIFIED, and each has a reason.**
+- **Comparison (A) of `run_recursion_identity.sh`** — the gate is opt-in
+  (`make test-recursion-identity`) and rides the abi ritual, which is step
+  (g) and is blocked on K43's disposition. §7 predicts (A) does not move and
+  says why; that prediction is untested.
+- **The corpus-wide byte-identity claim for zero-edge artifacts** — measured
+  on 9 patterns plus the census's own 2,528 unmoved artifacts, not asserted
+  by a gate.
+- **The 1/2/3/4 ladder and the minimum-chain floor** — §3.8 reports the
+  ladder NOT DELIVERED with the design fault named; the floor was not
+  reached. `PCREC_MAX_SCAN_EDGES` therefore stays documented-not-rechosen.
+- **`tests/base/k18_cost_gates.rxt:103`'s gcc-CPU tripwire** — red at 1.100x
+  its pin under my own LINTGEN run at load1 10.78. K44's class; the solo
+  number is owed and it is a re-measurement, not a re-pin.
 
 **Needs a ruling.**
 
