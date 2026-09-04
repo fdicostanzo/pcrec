@@ -597,3 +597,88 @@ document and why §6 states what is unmeasured rather than estimating it.
 `wp-K` patterns are constructed from `w-64`'s own word list and are labelled
 as constructed wherever they are cited; they are not bench or corpus patterns.
 Everything read from `/home/duxevents/pcrec-bench` was read-only.
+
+
+---
+
+# POST-LIFT (2026-09-04 16:2x-17:2x EDT) — RULING 8
+
+The write phase's report ends above and is unedited. Everything below is the
+post-`.lift` work: the ns/call ladder on the quiet box, the identity gate's
+three vacuous witnesses, the spec's final state and the abi answer.
+
+`make -j4` reported nothing to be done (the tree was already built) and
+`make strict` is CLEAN. Per RULING 8 this lane ran NO `make test`,
+`test-codegen`, `test-registry` or `test-axes`: the union chain on the merged
+edge2+ccd2 tree proves the merge.
+
+---
+
+## 11. THE IDENTITY GATE — `tests/codegen/run_entry_shape_identity.sh` (RULING 8 item 2)
+
+**The three vacuous witnesses are replaced, and the replacement is a COMMITTED
+GATE rather than a second scratch sweep.** §5's comparison was run ad hoc and
+died with its scratchpad, so what the branch carried was a CLAIM. A green run
+of a sweep nobody can re-run is not a check.
+
+`run_entry_shape_identity.sh` + `entry_shape_driver.c`, wired as its own
+section `make test-entry-shape-identity` and into `TEST_SECTIONS` (so it runs
+in `make test`, and therefore in the union chain), kept out of `make smoke` on
+`run_premul_table.sh`'s measured argument — it emits and compiles 70
+artifacts.
+
+**GREEN: 14 witnesses x 5 shapes, rungs realised `plain shared forward
+inline`, 0 differences, every witness matching at least once.**
+
+### 11.1 The two arms, and why neither alone is worth reading
+
+**(1) NON-VACUITY, per witness, asserted positively.** The AUTO arm must have
+matched something. §5's three vacuous witnesses all hashed to the all-nomatch
+digest and therefore "agreed" across all five shapes while testing the emitter
+and not one answer — `docs/dev/learnings.md` §3's [MECH-REACH] shape exactly.
+
+**(2) THE RUNG REACHED THE EMITTER.** Five builds that all ignored the flag
+agree with each other perfectly. Each build's own `<PREFIX>_VM_ENTRY_SHAPE` is
+read back from the emitted `.c` and the run is RED unless all four tokens are
+realised somewhere in the table. It is a CENSUS over the table and not a
+per-cell pin: a framed artifact legally falls to the nearest legal rung, so
+pinning a lookbehind to `forward` would be wrong rather than strict.
+
+### 11.2 THE GATE FOUND THREE THINGS ABOUT ITS OWN WITNESSES, on three runs
+
+This is the arm working before it was trusted, and the third item is a
+correction to §5.
+
+1. **Three witnesses were being REFUSED, not compared.** `(?<=foo)bar`,
+   `(?>a*)b` and `(\w+)\s+\1` belong to modules that are OFF BY DEFAULT, so
+   every emit now passes `--features all`. Without it the gate would have
+   reported failures rather than a silent pass, but the three populations it
+   most needs would have been absent.
+
+2. **`(?>a*)ab` HAS AN EMPTY LANGUAGE, and §5 understated it.** §5 wrote that
+   it "matched NOTHING on this subject set". The gate reported it vacuous on a
+   fresh subject set too, which sent the pattern back for a reading: `(?>a*)`
+   consumes every available `a` ATOMICALLY and never gives one back, so the
+   following `a` can never be supplied. **It matches nothing on ANY subject
+   set.** No re-subjecting could have rescued it, and the pattern itself is
+   replaced by `(?>a*)b`. The other two really were vacuous in their SUBJECTS
+   and were re-subjected — `[0-9a-f]{32}` given a 32-digit hex run,
+   `(?<=foo)bar` given `foobar`.
+
+3. **`(\w+)\s+\1` cannot match a single word**, and every "subject" in its
+   list was one, because the witness table is space-separated. The driver grew
+   an `@SP` token (beside the `@EMPTY` it already needed) so a
+   whitespace-bearing subject can exist at all.
+
+### 11.3 Two design points a later editor must not simplify away
+
+**THE STAMPS ARE GREPPED FROM THE `.c`, NOT `#ifdef`-ED IN THE DRIVER.** The
+emitter writes `<PREFIX>_VM_ENTRY_SHAPE` and `<PREFIX>_VM_PROGRAM_BYTES` into
+the generated `.c` and NOT the paired `.h`. A driver `#ifdef`-ing them would
+take its else-branch forever and report `-` for every artifact. Found by
+writing it the obvious way first.
+
+**EVERY WITNESS IS `--engine=vm`.** The rung ladder only reaches VM artifacts.
+Under AUTO several of these patterns select the DFA engine and stamp no rung
+at all, which would make the gate vacuous a SECOND way — and this is the same
+fact that made the ladder's first harness measure nothing (§12.1).

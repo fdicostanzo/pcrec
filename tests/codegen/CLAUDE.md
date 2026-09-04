@@ -615,6 +615,51 @@ decides whether to perform it — and then run the row through
     witness reproduced), `CC=clang` 21.1.8 prints REDUNDANT. A probe that
     could only ever print one of its two answers would be worth nothing.
 
+- **run_entry_shape_identity.sh** + **entry_shape_driver.c** — [CC-DIFF]
+  STEP 2 (2026-09-04), the VM ENTRY-SHAPE LADDER'S ANSWER-IDENTITY GATE.
+  `--vm-entry-shape=1..4` (`docs/spec/tuning.md` §2.21) picks among four
+  emission shapes for the VM entry chain, and all four are supposed to be the
+  SAME MATCHER — the rung moves frames, canaries and body copies, never an
+  answer. Its own section, `make test-entry-shape-identity`, part of `make
+  test` and NOT of `make smoke`: `run_premul_table.sh`'s measured argument
+  (it emits and compiles 70 artifacts).
+  - **WHY IT IS A FILE AND NOT A SCRATCH SWEEP.** The write phase ran exactly
+    this comparison ad hoc — 14 patterns × 409 subjects, 0 mismatches — and
+    the run died with its scratchpad. The branch carried a CLAIM and not a
+    CHECK. What is committed can be re-run after the next change to the
+    emitter; what was run once cannot.
+  - **THE NON-VACUITY ARM IS PER WITNESS AND POSITIVE.** The ad-hoc sweep's
+    own report admitted three of its fourteen witnesses matched NOTHING, so
+    all three hashed to the all-nomatch digest and "agreed" across all five
+    shapes while testing the emitter and not one answer — `docs/dev/
+    learnings.md` §3's [MECH-REACH] shape exactly. The gate now REFUSES to
+    pass a witness whose AUTO arm produced no match.
+  - **AND THAT ARM IS WHAT REPAIRED THEM, over three runs.** `[0-9a-f]{32}`
+    and `(?<=foo)bar` really were vacuous in their SUBJECTS and were
+    re-subjected. **`(?>a*)ab` was not**: the gate reported it vacuous on the
+    new subjects too, which sent the pattern back for a reading — the atomic
+    star never gives back the `a` the following `a` needs, so its LANGUAGE IS
+    EMPTY and no subject set could have rescued it. Replaced by `(?>a*)b`.
+    The run before that found the other class: three witnesses belong to
+    modules that are OFF BY DEFAULT and were being REFUSED rather than
+    compared, so every emit is `--features all`.
+  - **THE SECOND ARM IS THAT THE RUNG REACHED THE EMITTER.** Five builds that
+    all ignored the flag agree with each other perfectly, so each build's own
+    `<PREFIX>_VM_ENTRY_SHAPE` stamp is read back from the emitted .c and the
+    run is RED unless all four tokens are realised somewhere in the table. It
+    is a CENSUS over the table and not a per-cell pin, because a framed
+    artifact legally falls to the nearest legal rung and pinning it to
+    `forward` would be wrong rather than strict.
+  - **THE STAMPS ARE GREPPED FROM THE .c, NOT `#ifdef`-ed IN THE DRIVER.**
+    The emitter writes them to the generated .c and not the paired .h, so a
+    driver `#ifdef`ing them would take its else-branch forever — a check must
+    not read a fact from a place that can quietly stop carrying it.
+  - **EVERY WITNESS IS `--engine=vm`.** The ladder only reaches VM artifacts;
+    under AUTO several of these patterns select the DFA engine and stamp no
+    rung at all, which would make the gate vacuous a second way.
+  - Landing figures: 14 witnesses × 5 shapes, rungs realised
+    plain/shared/forward/inline, 0 differences, every witness matching.
+
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
   `has_push` bool that wrote it. Its own section, `make test-codegen`, one

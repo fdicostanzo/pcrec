@@ -270,24 +270,77 @@ PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-IS
  * exist only because six entries each honour the attribute; there are three
  * distinct call shapes, so three copies is what the mechanism actually needs.
  *
- * THE VALUE AND THE DEFAULT RUNG ARE BOTH PROVISIONAL, by manager ruling
- * (2026-09-04, ruling 2): AUTO's choice of FORWARD below this term rests on
- * the size and gcc evidence alone. The quiet-box ns/call ladder decides it —
- * if FORWARD is within noise of INLINE on run time, FORWARD is the default
- * and INLINE is the dial's max-speed rung only; if INLINE wins measurably,
- * this number is re-chosen on the exchange rate and stated as such. The
- * MECHANISM lands either way; only the point on the curve is open.
+ * THE ns/call LADDER RAN (2026-09-04, quiet box; load1 gated < 0.5 BEFORE
+ * every cell and REFUSING rather than warning; find-all over the bench's
+ * 131,072-byte t-128k-dense subject, isl1 §12.2's protocol reused so the
+ * numbers are comparable to the run-time arm already in evidence; 9 rounds x
+ * 3 interleaved runs per cell; the four rungs' answer CHECKSUMS identical in
+ * every cell). ns/call, medians:
  *
- * WHAT THIS NUMBER IS STILL OWED. The run-time arm is isl1's ladder
- * (docs/dev/lanes/isl1_report.md §12.2), which measured INLINE against PLAIN
- * at a flat 16-23% across two width decades. Rungs FORWARD and SHARED are NEW
- * points and their ns/call is NOT YET MEASURED — SHARED in particular keeps a
- * canary in each `_in` entry (`<prefix>_run_state`'s own slot array trips
- * `-fstack-protector-strong`, which is why STEP 0's "elide the buffers
- * without inlining" measured 0.986, i.e. nothing). If the quiet-box ladder
- * finds SHARED at PLAIN's run time, this term moves down; if it finds it at
- * FORWARD's, the term becomes nearly moot. It is placed on the size and gcc
- * evidence that exists and is stated as such. */
+ *   prog      calls    PLAIN    SHARED   FORWARD   INLINE   fwd/inl  shd/pln
+ *     645     47,704    16.81    16.46     10.99    10.24    1.073    0.979
+ *     646      3,722   340.93   197.04     98.27    96.71    1.016    0.578*
+ *   5,183         65  8,903.9  8,901.3   4,592.0  4,592.6    1.000    1.000
+ *   6,954         65 16,171.3 16,168.6   9,489.1  9,489.8    1.000    1.000
+ *   8,558        129 10,204.7 10,231.5   6,983.0  6,948.3    1.005    1.003
+ *  79,451        129 15,168.5 15,093.1  11,078.1 11,017.3    1.006    0.995
+ * 305,686        193 12,035.2 11,999.6   9,853.5 10,069.2    0.979    0.997
+ *
+ * (*) THAT ONE CELL'S PLAIN MEDIAN IS UNSTABLE AND IS NOT READ AS A RESULT:
+ * its rounds span 186.4-399.4 while SHARED's cluster at 195.4-197.0, so the
+ * two agree at their MINIMA (186.4 vs 195.4) and the 0.578 is the noise in
+ * PLAIN's distribution, not a SHARED win. Every other cell reads 0.98-1.00.
+ *
+ * AN EIGHTH CELL WAS RUN AND IS EXCLUDED AS VACUOUS, which the harness
+ * detects rather than the author noticing: `[0-9a-f]{32}` makes ONE call per
+ * pass and matches NOTHING on this subject, so it measures the SCAN and not
+ * the entry chain at all. A cell with one call per pass is the ladder's
+ * [MECH-REACH] shape and is named, never quoted.
+ *
+ * TWO RESULTS, AND BOTH WERE OPEN QUESTIONS THIS COMMENT ASKED.
+ *
+ * (1) FORWARD IS WITHIN NOISE OF INLINE on six of the seven valid cells
+ * (0.979-1.016) — at 305,686 bytes FORWARD is the FASTER of the two at half
+ * the `.text`, the three-copies-not-six finding arriving on the run-time axis.
+ * The SEVENTH is the exception and is stated rather than averaged away: at
+ * prog 645 INLINE is a measured 7% ahead (10.24 against 10.99, ranges barely
+ * overlapping) for +632 bytes of `.text`. So by ruling 2's stated rule FORWARD
+ * IS THE DEFAULT and INLINE is the dial's max-speed rung — and that rung now
+ * has a measured rate at the small end instead of an assumption.
+ *
+ * (2) SHARED IS AT PLAIN'S RUN TIME, everywhere: 0.979-1.003 once the noisy
+ * median above is read at its minimum. Exactly as STEP 0's 0.986 predicted for
+ * "elide the buffers without inlining". THIS CHANGES WHAT THIS TERM MEANS. The
+ * choice it makes is not "how much inlining" but FORWARD OR NOTHING: an
+ * artifact above this term forgoes the WHOLE 18%-52% win, because the rung it
+ * falls to buys none of it.
+ *
+ * THE VALUE IS CONFIRMED AT 4,096, and the reason is now a two-axis one
+ * rather than a size crossing. At or below it FORWARD is both SMALLER than
+ * SHARED (the table above, 0.62x-0.98x) and 33%-50% faster, so a default that
+ * takes it TRADES NOTHING. Above it FORWARD costs `.text` for a real win, and
+ * a measured two-axis trade is a DIAL position rather than a default — which
+ * is what `--vm-entry-shape=3` exists for.
+ *
+ * THE EXCHANGE RATE, which ruling 5's ALLOWLIST demands before any profile may
+ * set this switch. Extra `.text` bytes per ns/call saved, FORWARD over SHARED:
+ *
+ *   prog   5,183:    +288 B for  4,309 ns  =   0.067 B/ns
+ *   prog   6,954:    +440 B for  6,679 ns  =   0.066 B/ns
+ *   prog   8,558:  +1,208 B for  3,248 ns  =   0.372 B/ns
+ *   prog  79,451: +17,408 B for  4,015 ns  =   4.335 B/ns
+ *   prog 305,686:+102,272 B for  2,146 ns  =  47.657 B/ns
+ *
+ * IT DEGRADES BY SEVEN HUNDRED FOLD ACROSS THE RANGE, which is why one scalar
+ * term is the right shape here at all. It also says something this lane did
+ * NOT act on and hands to [OPT-DIAL] STEP 1 as a named input: the two cells
+ * JUST ABOVE the term (5,183 and 6,954) are the CHEAPEST wins anywhere in the
+ * table — 0.066 B/ns, five times better than the next cell up — so a
+ * `--tune=speed` profile should RAISE this term into the 8-10 kB region rather
+ * than remove it. Raising the DEFAULT there was deliberately not done: it
+ * would make a size-sensitive build regress by default, and whether a default
+ * may trade size for speed is a policy question rather than a measurement. The
+ * measurement is here; the ruling is the manager's. */
 PCREC_LIMIT(VM_INLINE_CHAIN_MAX_BYTES, 4096, "bytes", "selection knee", FLAG, "", "[CC-DIFF] STEP 2: emitted VM program bytes at or below which the entry chain is inlined into the three _in entries (rung FORWARD); above it one shared out-of-line body (rung SHARED). --vm-entry-shape=N overrides the decision outright", EMIT_VM)
 
 /* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
