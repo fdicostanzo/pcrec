@@ -20666,3 +20666,30 @@ trades stay off. STEP 0 = the inventory from ledgers we already have.
 Frank's clarification on the ladder's .text: the artifact's own object
 only (`gcc -O2 -c`, no driver), the two arms differing only in the
 hand-removed attribute.
+
+## 2026-09-03 — Fifty-first session, part 37 (21:3x EDT): isl1 DELIVERED (22 commits, no red); panel r53 launched on the island (three read-only critics) while edge1 runs its suites
+
+isl1 delivered at 21:19: Q4 applied (decline where pushes > 0 && words
+< 4; tests/island 24/24 asserting BOTH directions — the narrow declines
+and that a narrow prefix-FREE alternation still takes the island; the
+frame witness moved to `(?:abcd|abc|ab|a)z` because `(ab|abc)d` is the
+chain's at width 2 now); run_size_term.sh §9 is a WITNESS POOL of eight
+corpus patterns (table printed on every run; PASS iff a pair straddles
+0.75 within 0.05; RED with the table and a "do not adjust the
+constant" text otherwise) — bracketing at 0.7498/0.7571; the lane's own
+caveat: applying Q4 moved the declining witness back to 0.7571, so the
+old pair brackets again on its own and the pool did not "fix" the cell
+(it fixes the instrument). A class-leading pool member was added to the
+corpus (tests/counterk/counterk.rxt, python-verified; census +1/+10).
+Final gates: strict clean; test-codegen 109/31/22/31/7 zero failures;
+island 24/0; size_term 31/0; rxtsource 94/0; test-axes 22/22; the
+identity gate's IFF at differing 0 / stamped-unmoved 0; abi 18 across
+eight readers; (B) pinned to 9bc7723 pending the merge commit. Panel
+r53 launched (D6): r53sem (opus, engine semantics vs oracle — leftmost-
+first, backtracking into the island, the language predicate's X-major
+order, caseless/classes, cost accounting, the Q4 boundary), r53chk
+(opus, checks — the identity IFF, the pool, the island script, the
+three re-pins, the abi readers, the stamping population), r53doc
+(sonnet, spec/doc contract + abi readers + staleness). Read-only, no
+make, scratch under the session scratchpad. Merge after triage; the
+merge's short chain waits for edge1's heavy stages.
