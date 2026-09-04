@@ -1899,6 +1899,7 @@ n "bcq"
 # construction and [OPT-CLSPACK]'s class work is what would move it instead.
 # Expectations from python3 `re`, which supports possessive quantifiers.
 pattern (?:[ab]a|[ab]){8,12}+b
+features atomic-groups
 m "abbbbbbbbbbbb" 0 13
 m "bbbbbbbbbbbbb" 0 13
 m "aaabbbbbbbbbbb" 0 14
@@ -1936,6 +1937,7 @@ n "abz"
 # The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
 # why); expectations from python3 `re`.
 pattern (?:[ab]a|[ab]){9,12}+b
+features atomic-groups
 m "abbbbbbbbbbbb" 0 13
 m "bbbbbbbbbbbbb" 0 13
 m "aaabbbbbbbbbbb" 0 14
@@ -1947,6 +1949,7 @@ n "abz"
 # The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
 # why); expectations from python3 `re`.
 pattern (?:ab|a){8,12}+b
+features atomic-groups
 m "aaaaaaaabb" 0 10
 m "aaaaaaaaabb" 0 11
 m "aaaaaaaabba" 0 10
