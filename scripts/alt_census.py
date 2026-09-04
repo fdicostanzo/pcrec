@@ -26,9 +26,23 @@ CONSERVATIVE recursive-descent reader of the PCRE surface syntax: it
 recognizes grouping, alternation, quantifiers, classes and escapes well
 enough to decide "is this branch a bare literal run", and ANY construct it
 is not certain about makes the branch (hence the alternation) unqualified.
-Every number this prints is therefore a LOWER BOUND on what the emitter's own
-analysis will qualify — which is the safe direction for a sizing census, and
-is the reason the report cross-checks a sample against the compiler itself.
+Every number this prints is therefore a LOWER BOUND *ON THE SCANNER'S SIDE*.
+
+IT IS NOT A LOWER BOUND OVERALL, and that claim (which this header used to
+make flatly) is wrong in one direction — panel r53's semantics lens, F4. Two
+upstream passes move the count the OTHER way before `src/gen/emit_vm.c` ever
+sees a pattern:
+
+  - `src/opt/altcls.c` stage 1 MERGES a run of single-byte alternatives into a
+    CLASS, and a class is not a one-byte literal, so the island declines the
+    whole subtree. MEASURED: `ab|cd|a|b` stamps 0 islands by default and 1
+    under `-fno-altcls-merge`. This scanner counts it as qualifying.
+  - the emitter's own SIZE RULE declines an alternation whose trie would cost
+    more than the chain it replaces, which this scanner does not model at all.
+
+So the qualifying count below brackets nothing on its own: it is what the
+pattern text admits, not what the emitter takes. Read it as the shape census
+it is, and read `RX_VM_ALT_ISLANDS` for what actually fired.
 
 NOT ORACLE-VERIFIED SEMANTICS, and it does not need to be: nothing here
 decides what a pattern MATCHES.  It counts shapes.

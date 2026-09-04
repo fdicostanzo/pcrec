@@ -216,6 +216,24 @@ PCREC_LIMIT(VM_ISL_MAX_WORDS, 8192, "count", "compile budget", NONE, "", "[ENG-I
 PCREC_LIMIT(VM_ISL_MAX_BYTES, 262144, "bytes", "compile budget", NONE, "", "[ENG-ISL]: total literal bytes across every enumerated word; bounds the cross product of concatenated alternations, which is exponential in principle", EMIT_VM)
 PCREC_LIMIT(VM_ISL_MAX_DEPTH, 64, "levels", "compile budget", NONE, "", "[ENG-ISL]: alternation NESTING the enumeration may recurse through; a pattern controls this depth, so it is a bound on pcrec's own C stack (D10/R-2)", EMIT_VM)
 
+/* [ENG-ISL] THE TWO MEASURED PER-NODE COSTS the island-vs-chain size rule
+ * compares. They are not tuning knobs: each is the MARGINAL emitted-code bytes
+ * per node, read off a ladder where only that node count moves.
+ *
+ * MEASURED on `((?:aa|bb)x k|zzz)`, k = 4..9 (trie nodes 64/128/256/512/1024/
+ * 2048; island code bytes 32,600/43,906/66,796/112,566/204,664/390,274; chain
+ * 25,471/26,255/27,039/27,823/28,611/29,395). The island's marginal cost is
+ * 178.8, 179.9 and 181.3 B per trie node across the last three steps -> 180.
+ * The chain grows 784 B per added factor, which is 8 AST nodes -> 98.
+ *
+ * A TOTALS-BASED reading gives the island ~222 B/node instead, because the
+ * artifact's fixed scaffolding is folded in; the MARGINAL figure is the one a
+ * comparison between two emissions of the SAME pattern wants, since the
+ * scaffolding is common to both arms and cancels. */
+PCREC_LIMIT(VM_ISL_BYTES_PER_NODE, 180, "bytes", "selection knee", NONE, "", "[ENG-ISL]: measured marginal emitted-code bytes per alternation-island trie node, for the island-vs-chain size comparison", EMIT_VM)
+PCREC_LIMIT(VM_ISL_BYTES_PER_CHAIN_NODE, 98, "bytes", "selection knee", NONE, "", "[ENG-ISL]: measured marginal emitted-code bytes per AST node of the subtree vm_alt's serial chain would emit instead", EMIT_VM)
+PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-ISL]: how many times the chain's estimated emitted size the island may reach before it declines; on the ESTIMATOR the two populations separate at 2.60 against 4.02, and 2 is validated by the random size census (0 refused, max artifact growth 1.03x) rather than argued", EMIT_VM)
+
 /* ---- home: INTERNAL_H (4) — src/core/internal.h's own compile-side caps */
 
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)

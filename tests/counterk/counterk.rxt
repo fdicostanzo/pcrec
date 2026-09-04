@@ -1953,3 +1953,18 @@ m "aaaaaaaabba" 0 10
 n ""
 n "z"
 n "abz"
+
+# [ART-SIZE] §9 witness-pool member, and the pool's second ISLAND-STAMPING one.
+# The first was a prefix LADDER, which the island's size rule now declines (a
+# ladder's try sites grow quadratically in its depth) — the pool check caught
+# that loss itself, which is what its island-coverage floor is for. This one
+# is a four-word set with one prefix relation, so it stamps an island AND
+# reaches the unroll ladder.
+pattern (?:cat|cats|dog|dogs){12}z
+m "catcatcatcatcatcatcatcatcatcatcatcatz" 0 37
+m "catscatscatscatscatscatscatscatscatscatscatscatsz" 0 49
+m "dogdogdogdogdogdogdogdogdogdogdogdogz" 0 37
+m "catdogcatdogcatdogcatdogcatdogcatdogz" 0 37
+n ""
+n "catz"
+n "z"

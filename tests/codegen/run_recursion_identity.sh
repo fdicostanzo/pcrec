@@ -170,13 +170,11 @@ SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}
 # either the predicate narrowed — and this list is the record of what that
 # costs — or the analysis broke.
 ISLAND_PATTERNS='cat|dog|cow
+foo|bar
 (cat|dog)s
 (cat|dog)(s|es)
-abcdefghij|abcdefghik|abcdefghil
 thin|think|thinker|thinking
-(?:abcd|abc|ab|a)z
-(?:x|xy|xyz|)w
-(?:a|ab)(?:c|bc)
+cat|cats|dog|dogs
 (?:ab|ba|aa|bb){24}c'
 #
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s

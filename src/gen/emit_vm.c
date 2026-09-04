@@ -1796,6 +1796,11 @@ typedef struct {
     int        maxpath;    /* the largest npath over the trie */
     long long  trysites;   /* candidate try sites the emission will write */
     long long  pushes;     /* RX_PUSH sites the emission will write */
+    /* [ENG-ISL] the size rule's own two numbers, kept so `--emit-ir` can
+     * REPORT them: a reader asking "why did my alternation not get an island"
+     * gets the comparison rather than a shrug, and the factor that separates
+     * the two populations was chosen by reading these off a corpus. */
+    long long  est_isl, est_chain;
 } VmIsl;
 
 
@@ -3372,6 +3377,32 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
     }
 }
 
+/* [ENG-ISL] THE CHAIN'S OWN SIZE, in the only unit both arms can be compared
+ * in: AST nodes of the subtree `vm_alt` would otherwise emit. `vm_emit` writes
+ * roughly one test, one label and one goto per node, so the chain's emitted
+ * bytes are linear in this count — measured at ~98 B/node on the shape below.
+ * Walked ITERATIVELY over A_CAT/A_ALT spines for D10/R-2's reason; anything
+ * else is counted and not descended, because a subtree the island could not
+ * qualify never reaches this function. */
+static long long vm_isl_subtree_nodes(const Ast *a)
+{
+    long long n = 0;
+    const Ast *stk[VM_ISL_MAX_DEPTH * 4];
+    int sp = 0;
+    stk[sp++] = a;
+    while (sp) {
+        const Ast *t = stk[--sp];
+        while (t->k == A_CAT || t->k == A_ALT) {
+            n++;
+            if (sp >= (int)(sizeof stk / sizeof stk[0])) return n;
+            stk[sp++] = t->r;
+            t = t->l;
+        }
+        n++;
+    }
+    return n;
+}
+
 static int vm_isl_node(Vm *v, VmIsl *t, int parent, int depth, unsigned char byte)
 {
     if (t->nnd == t->ndcap) {
@@ -3506,6 +3537,77 @@ static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
      * same return, so the emitter, the slot pre-pass and the cost model cannot
      * disagree about which alternations are islands. */
     if (t->pushes > 0 && t->nbr < VM_ISL_MIN_BRANCHES_PREFIXED) return false;
+
+    /* [ENG-ISL] THE SIZE RULE, and it is here because the island SHIPPED A
+     * CALLER-OBSERVABLE REGRESSION without it (panel r53's semantics lens, F1).
+     *
+     * `((?:aa|bb)(?:aa|bb)…×10|zzz)` — 10 factors, 96 characters, default
+     * flags, default engine — was REFUSED under the island at 897,983 bytes of
+     * emitted code against the 500,000 cap, and compiles at 30,179 under
+     * `-fno-alt-island`. An optimization axis had made pcrec REJECT a pattern
+     * it accepts without it, which is not a size regression but an ACCEPTANCE
+     * one, and no answer-identity sweep can see it: `make test-axes` counted
+     * `refused=0` because no corpus pattern has the shape.
+     *
+     * WHY THE BUDGETS DID NOT CATCH IT. `VM_ISL_MAX_WORDS`/`_BYTES` bound the
+     * WORD LIST; the emitted size scales with TRIE NODES, and the A_CAT cross
+     * product blows the second up while the first is still comfortable — at
+     * the byte budget the trie reaches ~200,000 nodes, about 44 MB of C. A
+     * budget on the wrong quantity is not a smaller version of the right one.
+     *
+     * THE RULE: build the island only where its emitted size is NOT LARGER
+     * than the chain's for the same subtree. Both sides are estimated from the
+     * analysis in the same unit, with MEASURED per-node constants (see their
+     * limits.def rows), so the comparison is between two emissions rather than
+     * against an absolute ceiling — which is what makes it hold at every cap,
+     * including a raised one.
+     *
+     * WHY A FACTOR AND NOT "NOT LARGER", which is what the finding asked for.
+     * The island's emitted program is LARGER than the chain's on every narrow
+     * shape — its value there is SPEED, not size (report §12: 0.140-0.175
+     * island/chain ns) — so "not larger" declines the entire population the Q4
+     * knee was just ruled to keep. MEASURED program-region ratios, island over
+     * chain, with the rule disabled:
+     *
+     *   KEEP    cat|dog|cow 1.10   abcdefghij|... 1.12   foo|bar 1.23
+     *           thin|think|thinker|thinking 1.45   w-64 0.97   s-256 0.85
+     *   DECLINE ((?:aa|bb)x4|zzz) 3.06   x6 8.78   x8 27.65
+     *           the census's own worst two 31.67 and 146.95
+     *
+     * THE ESTIMATOR'S OWN RATIO is what the rule compares, and it errs HIGH on
+     * narrow shapes (`abcdefghij|...` estimates 2.57 against a real 1.12) and
+     * tracks at the extremes (145.91 against 146.95). Its populations separate
+     * at 2.60 against 4.02, so the factor is 2: inside that gap, and validated
+     * against the census rather than argued.
+     *
+     * WHAT FACTOR 2 COSTS, stated because it is a real loss: `(?:abcd|abc|ab|a)z`
+     * (estimate 2.34, real 1.66) declines. Its own hand-twin cell measured
+     * 1.001 — a wash — so nothing measured is given up, and 66% of growth is
+     * avoided. Factor 3 keeps it and takes the census's max artifact growth
+     * from 1.03x to 1.18x, which is the trade that was made and refused.
+     *
+     * IT CAN ONLY DECLINE, so it costs no answer and needs no timing: a
+     * declined alternation is emitted by `vm_alt` exactly as before. */
+    {
+        /* NODES **PLUS TRY SITES**, and the second term is not a refinement —
+         * it is where the estimator was WRONG. A trie node and a candidate try
+         * site cost about the same emitted bytes, and with EMPTY alternatives
+         * in the cross product the try sites outnumber the nodes by two orders
+         * of magnitude: the census's worst pattern builds a **12-node** trie
+         * with **3,404 try sites**. A nodes-only estimate saw a 12-node trie,
+         * admitted it, and emitted 682,000 bytes of program. Fitted on three
+         * such shapes plus the narrow and wide populations, `(nodes + try
+         * sites) x 180` tracks the measured program within 10% across four
+         * orders of magnitude, always erring LOW by a few percent — which the
+         * factor below absorbs. */
+        const long long isl_bytes   = ((long long)t->nnd + t->trysites)
+                                      * VM_ISL_BYTES_PER_NODE;
+        const long long chain_nodes = vm_isl_subtree_nodes(a);
+        const long long chain_bytes = chain_nodes * VM_ISL_BYTES_PER_CHAIN_NODE;
+        t->est_isl = isl_bytes;
+        t->est_chain = chain_bytes;
+        if (isl_bytes > chain_bytes * VM_ISL_SIZE_FACTOR) return false;
+    }
     return true;
 }
 
@@ -3566,9 +3668,15 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
         int x = stk[--sp];
         const VmIslNode *n = &t->nd[x];
 
-        /* the emitted-node budget, charged per TRIE node: the island's size is
-         * its node count, and PCREC_MAX_VM_NODES is what bounds an emission a
-         * pattern controls the size of. */
+        /* The emitted-node budget, charged per TRIE node. NOTE what this can
+         * and cannot bound (panel r53, S1): `PCREC_MAX_VM_NODES` is 131,072
+         * while the 500,000-byte code cap binds at roughly 2,800 trie nodes at
+         * the measured ~180 B/node — so this charge is ~47x too loose to ever
+         * be what stops an oversized island, and the earlier wording here
+         * ("the island's size is its node count") implied a bound it does not
+         * provide. What bounds it is the island-vs-chain size rule in
+         * `vm_isl_build`; this charge remains the emitter-wide node budget
+         * every other site pays into. */
         vm_charge(v);
 
         /* A ROLE ON THE ROOT AND ON THE ACCEPT-BEARING NODES ONLY, and the
@@ -3590,10 +3698,12 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             vm_ev(v, VE_ISLAND, entry, t->nbr,
                   vm_rolef(v, "alternation island: %d literal alternatives, "
                               "%d trie nodes, depth %d, %lld try site%s, "
-                              "%lld resume point%s",
+                              "%lld resume point%s; size est %lld B vs the "
+                              "chain's %lld B",
                            t->nbr, t->nnd, t->maxdepth,
                            t->trysites, t->trysites == 1 ? "" : "s",
-                           t->pushes, t->pushes == 1 ? "" : "s"));
+                           t->pushes, t->pushes == 1 ? "" : "s",
+                           t->est_isl, t->est_chain));
         vm_lbl(v, n->lbl, x == 0
                ? vm_rolef(v, "alternation island: trie dispatch over %d "
                              "literal alternatives", t->nbr)

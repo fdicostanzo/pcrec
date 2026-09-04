@@ -397,7 +397,7 @@ POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (?:ab|ba|aa|bb){24}c	island-4lit
 (a{1,3}){64}	no-alternation
 (a{10,20}){10,50}	no-alternation
-(?:abcd|abc|ab|a){17}z	island-prefix-ladder
+(?:cat|cats|dog|dogs){12}z	island-4word
 (?:aa|a){8,12}+b	narrow-aa-a
 (?:[ab]a|[ab]){9,12}+b	class-leading
 (?:ab|a){8,12}+b	narrow-ab-a'

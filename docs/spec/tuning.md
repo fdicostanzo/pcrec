@@ -1401,6 +1401,36 @@ alternatives still live when the walk stops is a compile-time function of the
 node it stopped at. The emitter writes that list out as a chain of try sites
 instead of computing it at run time, so the island allocates no slot.
 
+**IDENTITY IS MODULO WHICH BUDGET BINDS**, exactly as §2.5 states for the
+prefilter, and this axis is the second instance. The island charges its trie
+walk to the WORK counter; `vm_alt`'s chain spends a STEP per branch resume. So
+on a subject where the chain's step budget binds and the island's does not, the
+island ANSWERS where the chain returns `PCREC_ERR_STEPS` — measured at the
+shipped budget with no flags on three of 4,263 fuzz cells (e.g.
+`(?:aabb|baba|abab||ba|aa|bab|b|aabbb|aba|ab)+?q` over a 64-byte a/b subject),
+and under a small `--step-budget` on ordinary patterns.
+
+**THE DIRECTION IS ONE-WAY AND THAT IS WHY IT IS SAFE:** the island does
+strictly less stepping than the chain for the same alternation, so it can only
+answer where the chain gives up, never the reverse — and on the three measured
+cells the island's answer is libpcre2's. The axis is answer-identical wherever
+neither arm's budget binds, which is every corpus cell: `make test-axes`'s
+budget-bound bucket reads 0 over 22,407 of them because no corpus cell
+approaches the budget at all.
+
+**THE EMITTED SIZE IS BOUNDED AGAINST THE CHAIN, not against a cap.** The
+island is built only where its estimated emitted size is within
+`VM_ISL_SIZE_FACTOR` of what `vm_alt` would emit for the same subtree. Without
+that rule the axis was able to REFUSE a pattern pcrec accepts without it — a
+10-factor cross product, 96 characters, at 897,983 bytes of emitted code
+against the 500,000 cap where the chain compiles at 30,179 — because the
+enumeration budgets bound the WORD LIST while the emitted size follows the
+TRIE, and a cross product blows the second up while the first is comfortable.
+**An optimization axis must never narrow what pcrec accepts**;
+`tests/island/run_island_tests.sh` carries a cross-product ladder asserting
+refusal identity, which no corpus sweep can supply because no corpus pattern
+has the shape.
+
 **Deny-only**, `-fno-altcls-factor`'s shape: the emitter takes the island
 wherever the predicate holds, so there is nothing for a caller to address and
 nothing to force.

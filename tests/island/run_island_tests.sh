@@ -79,10 +79,13 @@ n="$(islands "$WORKDIR/one.c")"
 [ "${n:-}" = "1" ] && ok "'cat|dog|cow' stamps exactly 1 island" \
                    || bad "'cat|dog|cow': expected 1 island, got '${n:-<none>}'"
 
-gen two '(cat|dog)(s|es)'
+# `(cat|dog)(cow|pig)` and not `(cat|dog)(s|es)`: the size rule declines the
+# second alternation of the latter, so it stamps 1 and would make this cell
+# assert the wrong number for a reason unrelated to counting.
+gen two '(cat|dog)(cow|pig)'
 n="$(islands "$WORKDIR/two.c")"
-[ "${n:-}" = "2" ] && ok "'(cat|dog)(s|es)' stamps 2 islands — the stamp is a COUNT" \
-                   || bad "'(cat|dog)(s|es)': expected 2 islands, got '${n:-<none>}'"
+[ "${n:-}" = "2" ] && ok "'(cat|dog)(cow|pig)' stamps 2 islands — the stamp is a COUNT" \
+                   || bad "'(cat|dog)(cow|pig)': expected 2 islands, got '${n:-<none>}'"
 
 # ---------------------------------------------------------------------------
 # 3. THE PREDICATE IS ABOUT THE LANGUAGE, NOT THE BRANCH LIST, and this check
@@ -151,10 +154,14 @@ for pat in 'foo|bar' 'cat|dog|cow'; do
     fi
 done
 
-gen narrow_ok '(?:a|ab|abc|abcd)z'
+# The width-4 prefix-bearing witness is `cat|cats|dog|dogs` and NOT the prefix
+# LADDER `(?:a|ab|abc|abcd)z`: a ladder's try sites grow quadratically in its
+# depth, so the SIZE RULE declines it, and asserting the knee against a shape a
+# different rule rejects would test neither.
+gen narrow_ok 'cat|cats|dog|dogs'
 n="$(islands "$WORKDIR/narrow_ok.c")"
-[ "${n:-}" = "1" ] && ok "'(?:a|ab|abc|abcd)z' is prefix-bearing AT the knee (width 4, measured a wash at 1.001) and keeps the island" \
-                   || bad "'(?:a|ab|abc|abcd)z' should keep the island at width 4 — the knee is 4, not 5, and width 4 measured a wash rather than a loss"
+[ "${n:-}" = "1" ] && ok "'cat|cats|dog|dogs' is prefix-bearing AT the knee (width 4, measured a wash at 1.001) and keeps the island" \
+                   || bad "'cat|cats|dog|dogs' should keep the island at width 4 — the knee is 4, not 5, and width 4 measured a wash rather than a loss"
 
 # ---------------------------------------------------------------------------
 # 5. THE DECLINED POPULATION IS BYTE-IDENTICAL UNDER THE FLAG. This is what
@@ -222,18 +229,18 @@ n="$(frameless "$WORKDIR/pfree.c")"
 # `.frame_capacity` must be STRICTLY LOWER on the island build. That number is
 # derived by `vm_cost`, which is a third reader of the same analysis, so this
 # also catches a cost model that stopped mirroring the emitter.
-gen pbear '(?:abcd|abc|ab|a)z'
-gen pbear_off '(?:abcd|abc|ab|a)z' -fno-alt-island
+gen pbear 'cat|cats|dog|dogs'
+gen pbear_off 'cat|cats|dog|dogs' -fno-alt-island
 n="$(frameless "$WORKDIR/pbear.c")"
 i="$(islands "$WORKDIR/pbear.c")"
 fc_on="$(grep -oE '\.frame_capacity = [0-9]+' "$WORKDIR/pbear.c" | grep -oE '[0-9]+$')"
 fc_off="$(grep -oE '\.frame_capacity = [0-9]+' "$WORKDIR/pbear_off.c" | grep -oE '[0-9]+$')"
 if [ "${i:-}" != "1" ] || [ "${n:-}" != "0" ]; then
-    bad "'(?:abcd|abc|ab|a)z' reads islands='${i:-<none>}' frameless='${n:-<none>}': a prefix-bearing island must both fire at this width and keep a frame to retry its second candidate from"
+    bad "'cat|cats|dog|dogs' reads islands='${i:-<none>}' frameless='${n:-<none>}': a prefix-bearing island must both fire at this width and keep a frame to retry its second candidate from"
 elif [ -n "$fc_on" ] && [ -n "$fc_off" ] && [ "$fc_on" -lt "$fc_off" ]; then
-    ok "'(?:abcd|abc|ab|a)z' takes the island and declares STRICTLY FEWER frames than the chain ($fc_on vs $fc_off) — the discriminator the frameless stamp cannot give, since both builds push"
+    ok "'cat|cats|dog|dogs' takes the island and declares STRICTLY FEWER frames than the chain ($fc_on vs $fc_off) — the discriminator the frameless stamp cannot give, since both builds push"
 else
-    bad "'(?:abcd|abc|ab|a)z' declares frame_capacity $fc_on (island) vs $fc_off (chain): a pushing island keeps ONE frame live where the chain keeps one per untried branch, so the island's number must be strictly lower — equal means vm_cost has stopped mirroring the emitter"
+    bad "'cat|cats|dog|dogs' declares frame_capacity $fc_on (island) vs $fc_off (chain): a pushing island keeps ONE frame live where the chain keeps one per untried branch, so the island's number must be strictly lower — equal means vm_cost has stopped mirroring the emitter"
 fi
 
 # ---------------------------------------------------------------------------
@@ -247,7 +254,7 @@ fi
 # ---------------------------------------------------------------------------
 region() { sed -n '/^    goto rx_L0;$/,/^rx_accept:/p' "$1"; }
 
-for pat in 'cat|dog|cow' '(?:abcd|abc|ab|a)z' 'foo|bar' 'thin|think|thinker|thinking'; do
+for pat in 'cat|dog|cow' 'cat|cats|dog|dogs' 'foo|bar' 'thin|think|thinker|thinking'; do
     gen reg_on  "$pat"
     gen reg_off "$pat" -fno-alt-island
     ion="$(islands "$WORKDIR/reg_on.c")"
@@ -272,6 +279,75 @@ for pat in '[ab]p|[bc]x|[ab]xy' 'a+|b' '(a)|(b)' 'fo|foo'; do
         bad "region check: '$pat' stamps NO island and yet its program region MOVES under -fno-alt-island — denying an axis that did not fire must change nothing"
     fi
 done
+
+# ---------------------------------------------------------------------------
+# 9. [ENG-ISL / panel r53 S1] THE SIZE RULE, AND REFUSAL IDENTITY.
+#
+# The island shipped a CALLER-OBSERVABLE ACCEPTANCE REGRESSION and no check in
+# this tree could see it: `((?:aa|bb)x10|zzz)` — 96 characters, default flags,
+# default engine — was REFUSED at 897,983 bytes of emitted code against the
+# 500,000 cap, and compiles at 30,179 under `-fno-alt-island`. An optimization
+# axis had made pcrec REJECT a pattern it accepts without it.
+#
+# `make test-axes` cannot see this class: it sweeps the CORPUS, no corpus
+# pattern has the cross-product shape, and its refusal counter read 0. So the
+# population has to be constructed, and it lives here.
+#
+# THE LADDER IS THE WITNESS. Each rung concatenates one more 2-way alternation
+# inside an alternation branch, so the word list doubles while the subtree
+# barely grows — the exact shape whose emitted size the WORD/BYTE budgets do
+# not bound.
+# ---------------------------------------------------------------------------
+mkpat() {   # mkpat <k>
+    local k="$1" out="(" i=0
+    while [ "$i" -lt "$k" ]; do out="$out(?:aa|bb)"; i=$((i + 1)); done
+    printf '%s|zzz)' "$out"
+}
+
+refusal_bad=0
+for k in 4 6 8 10 12 14; do
+    pat="$(mkpat "$k")"
+    on_ok=1; off_ok=1
+    pcrec_run "$PCREC" -p rx -o "$WORKDIR/lad_on.c"  -- "$pat" >/dev/null 2>&1 || on_ok=0
+    pcrec_run "$PCREC" -p rx -fno-alt-island -o "$WORKDIR/lad_off.c" -- "$pat" >/dev/null 2>&1 || off_ok=0
+    if [ "$off_ok" = "1" ] && [ "$on_ok" = "0" ]; then
+        bad "REFUSAL IDENTITY: k=$k is REFUSED with the island and ACCEPTED under -fno-alt-island. An optimization axis must never narrow what pcrec accepts — this is the regression the size rule exists to prevent"
+        refusal_bad=$((refusal_bad + 1))
+    fi
+done
+[ "$refusal_bad" -eq 0 ] && ok "refusal identity holds over the cross-product ladder (k=4..14): no rung is refused with the island and accepted without it"
+
+# The rule must also DECLINE the blowup rather than merely survive it, and the
+# artifact must then be the chain's byte for byte.
+for k in 10 12; do
+    pat="$(mkpat "$k")"
+    gen lad2_on  "$pat"
+    gen lad2_off "$pat" -fno-alt-island
+    n="$(islands "$WORKDIR/lad2_on.c")"
+    # THE DISCRIMINATOR IS THE COUNT, and it is exact rather than a threshold.
+    # If the TOP-LEVEL alternation takes the island it subsumes the whole
+    # subtree and the artifact stamps exactly ONE. If it declines, `vm_emit`
+    # recurses and each of the k inner `(?:aa|bb)` factors becomes its own
+    # small island, so the artifact stamps exactly k. Anything else means the
+    # emitter is doing something neither of those.
+    if [ "${n:-0}" = "$k" ]; then
+        ok "the k=$k cross-product DECLINES at the top level (its k inner 2-way factors are each still an island, so the stamp reads exactly $k) — the size rule acting per subtree"
+    elif [ "${n:-0}" = "1" ]; then
+        bad "the k=$k cross-product stamps 1 island: the TOP-LEVEL alternation took it, which is the 2^$k word list the size rule exists to decline — this is the acceptance regression returning"
+    else
+        bad "the k=$k cross-product stamps ${n:-?} islands, which is neither 1 (top-level taken) nor $k (top-level declined, inner factors taken): the emitter is doing something this check does not model"
+    fi
+done
+
+# NON-VACUITY: the ladder must actually reach the region the rule governs, or
+# these cells prove nothing. k=14's word list is 16,384 -- above
+# VM_ISL_MAX_WORDS -- and k=10's is 1,024, below it: the two rungs are on
+# opposite sides of the WORD budget, which is what shows the SIZE rule and not
+# the budget is doing the work.
+gen budge '(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)(?:aa|bb)|zzz'
+n="$(islands "$WORKDIR/budge.c")"
+[ "${n:-0}" = "10" ] && ok "a 1,024-word cross product (well inside VM_ISL_MAX_WORDS) still declines at the top level — the SIZE rule is what bounds it, not the word budget" \
+                     || bad "a 1,024-word cross product stamps ${n:-?} islands where 10 (top-level declined, the ten inner factors taken) is expected: it is INSIDE the word budget, so if the top level is admitted the size rule is not acting and the acceptance regression can return"
 
 echo
 echo "island structural checks: $pass passed, $fail failed"
