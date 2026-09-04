@@ -21202,3 +21202,58 @@ population. Proposed: tier mech by cadence via rows_for.sh (per-merge =
 touched rows; full matrix scheduled), overlap san+mech after one
 measured run, an allowlist for what a lane adds to the per-merge set.
 Nothing built.
+
+## 2026-09-04 — Fifty-second session, part 63 (14:5x EDT): the bench session closed for the day; [TT-13] filed; the two-machine split; [LIM-2] STUDY-1 chartered, delivered and MERGED (1e5133d6); lim2's census finding and its consequences
+
+The bench (pcrecdev2) acked I-43 at 817362e, then CLOSED on Frank's
+word with nothing on the box; Frank restarts it before tonight's run,
+and the new session launches the 288d505 STEP 2 AFTER on our "box free"
+line — which now goes BOTH live (the new session's address will differ)
+and durably to the inbox. Their [B37] (the abi-20 re-pin) waits for
+Frank's ruling on its window shape: four abi steps in one pin, so its
+AFTER splits by deny flag (-fno-alt-island / -fno-scan-edge / the
+[CC-DIFF] witnesses).
+
+Frank's rulings (13:5x-14:0x): mech tiering is SCHEDULED FOR LATER —
+filed as [TT-13] (the battery's growth law: per-merge mech runs the
+touched rows via rows_for.sh, the full matrix on a schedule; then
+san+mech overlap after one measured run; then the allowlist). Freeing
+the box for the nightly bench comes first. THE TWO-MACHINE SPLIT: Frank
+is setting up pcrecdev1 on another machine so pcrec develops while the
+bench owns this box; it happens once this session is done. Found at the
+split: main 1,493 commits ahead of origin (tip 2026-08-24), no lane
+branch pushed, pcrec-bench has NO remote; wake.md (gitignored) and the
+memory dir do not travel by git; the box-calibrated budgets must be
+re-read on the new box. Frank: "push main and the lane branches after
+the merges" — queued for session end. Memory: pcrec-two-machine-split.
+
+lim2's post-lift census (ruling 1) went RED on a REAL finding:
+tests/base/k18_cost_gates.rxt's nested counted repetitions build a raw
+subset construction ~33× the minimized machine (97% shrink), so a raw-
+byte projection cannot bound the emitted table — the 85% margin cannot
+be made honest by any percentage (clearing 97% by 2× puts the bail past
+the existing entries cap). Its early re-measurement shows w-2048
+refusing in 14.6 s under the moved margin, worse than the 10.97 s
+baseline: if it holds on a quiet box, the bail never fires and the
+reverse-first reorder costs time. The lane also EDITED two test scripts
+(resource, vm) while its make test was running in the same worktree
+with a .stage line claiming no concurrent edits — the 2026-09-02 hazard;
+told to stop and re-run those sections solo after the run.
+
+Frank on the finding ("would it be possible to compact the states as
+they are generated?") → a STUDY, not a build: "i don't want to dictate
+method"; the two-pass shape (incremental easy wins + a thorough pass
+that "might even be optional") is an opportunity, and brittleness is his
+concern. Lane dfamin (opus, read-only, no make) delivered
+docs/dev/dfa_online_minimization_study.md in ~35 min; merged 1e5133d6.
+Its answer, in one line: do not build Frank's shape A (sound with one
+branch, but its sound merges are the closed subgraph's, which on a
+counted repetition is nearly empty until the end), the prize is B
+(dominance pruning of each subset as it is closed — the only shape that
+matches the 27×) but B is brittle as the tree stands (a counted-repeat ×
+assertion cross-product no sweep generates), and lim2's margin has a
+cheap sound fix that needs no compaction at all: N2, project a LOWER
+bound from the closed subgraph's minimized block count. Two cheap
+measurements decide (M1 the closed fraction during construction; M2
+the dominance prize). The plan row carries the whole recommendation.
+OPEN FOR FRANK: charter M1 and/or N2; the [B37] window shape.
