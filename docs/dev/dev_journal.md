@@ -20966,3 +20966,13 @@ EXCLUDED (main's kept). make + strict clean. FILEPIN → 8d68ddc2 in a src-free
 follow-up. The chain (test → codegen → registry → axes) started 08:2x.
 Main now carries the island (18), the dispatch (19) and composition (20) in
 the merge order isl1 → edge1 → w13, each chain green before the next merge.
+
+## 2026-09-04 — Fifty-first session, part 52 (08:3x EDT): lane C `lim2` LAUNCHED ([LIM-2], sonnet) under .hold; w13's chain running
+
+Brief: the projection of the DFA artifact's emitted size DURING subset
+construction (the table part exact, the rest bounded), refusing with the
+identical stamped reason; the acceptance is a refusal-identity CHECK
+over the corpus and the bench's altwide@0.1 table with a main-built
+BEFORE compiler as the control; the cost table on the 26 auto-route
+refusers (8.7-40 s → the VM route's order). Hold/lift/revoke by file,
+rulings by file, `.stage`, keepalive at :41. [LIM-2] STATE → started.
