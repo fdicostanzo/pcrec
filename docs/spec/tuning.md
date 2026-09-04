@@ -1165,6 +1165,14 @@ state variable** — the `offset-set` pair, whose skip lands past bytes that
 LEAVE the start state and must therefore re-seed. The other prefilter forms
 skip bytes the machine provably stays parked on and write nothing.
 
+Precondition (5)'s threshold — the shortest bounded run worth collapsing — is
+the `PCREC_MIN_SCAN_CHAIN` row of `pcrec --list-limits` (`2` states, a
+`selection knee`, no lever). It was re-measured against the STEP 1.1 loop
+rather than inherited: `edge` against `-fno-scan-edge` on the same pattern is
+not separated by more than the per-round range at `m` = 2, 3 or 4, so D77's
+"no gap, no move" leaves it at 2, and the unconditional SIZE win (the chain's
+interior states are deleted) is what admits `m` = 2 at all.
+
 **What the artifact does instead.** One `if (state == K) { … }` block per
 edge, counting the class's bytes in a loop whose only carried value is the
 cursor:

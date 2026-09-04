@@ -107,7 +107,13 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # edited .inc never entered the binary — hand-maintained header deps must
 # grow with every new include, or a regenerated table (a libpcre2 version
 # bump is a re-measurement event, D26) silently ships stale.
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h lib/pcrec.h src/parse/cls_bits.inc
+#
+# src/core/limits.def joined at [OPT-EDGE] STEP 1.1, the same way: limits.h
+# was a prerequisite but the X-macro TABLE it includes was not, so editing a
+# limit rebuilt NOTHING -- `touch src/core/limits.def && make` answered
+# "Nothing to be done", and a new row was absent from `--list-limits` until a
+# `make clean`. Exactly the [MOD-0.3e] shape one file deeper.
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 

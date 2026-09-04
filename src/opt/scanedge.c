@@ -90,9 +90,14 @@
  *      because a reverse walk's "last accepting position" is the FURTHEST
  *      BACK one.
  *
- *  (5) IT IS WORTH IT: `m >= 2`, or the chain is the unbounded self-loop.
- *      A one-state bounded "chain" is one table step, and collapsing it
- *      would move emitted bytes to buy nothing.
+ *  (5) IT IS WORTH IT: `m >= PCREC_MIN_SCAN_CHAIN` (2, src/core/limits.def),
+ *      or the chain is the unbounded self-loop. A one-state bounded "chain"
+ *      is one table step, and collapsing it would move emitted bytes to buy
+ *      nothing. The 2 is a limits.def row rather than a literal since
+ *      [OPT-EDGE] STEP 1.1, and that row carries the MEASUREMENT that keeps
+ *      it at 2 on the new loop (studies/scan_edge_ladder/run_floor.sh: no
+ *      arm separation at m=2, 3 or 4 beyond the per-round range, so D77's
+ *      "no gap, no move" applies).
  *
  * ================== WHY THE INTERIOR STATES CAN BE DELETED ==================
  *
@@ -392,7 +397,8 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
 
         /* THE UNBOUNDED FORM: the head's class edge is its own self-loop.
          * `*` and `+` are exactly this, and it is one state rather than a run,
-         * so precondition (5)'s `m >= 2` does not apply to it. It also needs
+         * so precondition (5)'s `m >= PCREC_MIN_SCAN_CHAIN` does not apply to
+         * it. It also needs
          * no part of the deletion argument, because a chain of one deletes
          * nothing and leaves the self-loop in the table where it was.
          *
@@ -429,7 +435,7 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
             m++;
         }
         int f = d->st[cur].tr[cls];
-        if (m < 2) continue;                         /* precondition (5) */
+        if (m < PCREC_MIN_SCAN_CHAIN) continue;      /* precondition (5) */
         /* Precondition (4): the LANDING state's accept must be the same at
          * every position, so the emitted `if (acc(F)) record` line is right
          * wherever the run happens to end. It need NOT equal the chain's own
