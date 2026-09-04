@@ -20744,3 +20744,27 @@ floor/upper side; emit-ir engine; a garbled message; the gitignore
 glob; one abi pointer). r53doc (sonnet): D1-D5 done at 15701e4. All
 with isl1 in one landing pass; K46 filed on the way. The review file
 carries every finding with its disposition.
+
+## 2026-09-03 — Fifty-first session, part 40 (23:1x EDT): isl1 lands r53's checks lens (C1-C14) at 2336ee5 with both sabotages run; the semantics lens (S1 size rule) is next; edge1's axes at 60 min
+
+isl1: F1-F14 landed (strict clean; recursion_identity 16/0; size_term
+31/0; island 32/0; limits 21/21; rxtsource 94/0). §9 reads the
+compiler's UNROLL_K_WHY decision; the sabotage proves it (constant 70 →
+RED, 4 members; 85 → RED, 3; 75 green). The identity gate excuses only
+where the deny axis restores identity, with an enumerated
+ISLAND_PATTERNS manifest; a scratch build that stamps and falls through
+to the chain → 13 failures. F2's instrument correction: on main
+`((a)|ab){4000}c` reads 0.7495 and `(?:aa|a){8,12}+b` 0.7569 — the old
+comment's 0.7475/0.7548 were another instrument's numbers; only one
+witness ever moved for an island reason. Post-Q4 island population
+per axis 74/103/74/56 (pre-Q4 166/236/166/123). The budgets are
+limits.def rows (manifest 50). The lane found a FOURTH could-not-fail
+check in its own pass (the manifest's unverified "every entry stamps"
+claim: 3 of 11 did not, green on the default axis because they route
+to the DFA) and wrote the failure into the manifest's comment. §16.5's
+lesson (a control sharing a source with what it controls; each fix
+adds a term the emitter does not write) goes into learnings §3 at
+merge. (B) re-pinned to a6b94c0 (the Q4 knee moved 96-141 artifacts
+per axis after the abi commit). NOT delivered: the semantics lens (S1
+the size-vs-chain rule + the census acceptance + the refusal-identity
+ladder; S2; S4; S5's wording; S6's comment) was re-sent as one list.
