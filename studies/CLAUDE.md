@@ -22,6 +22,26 @@ re-measure before load-bearing use.
   test`, and a batching prototype (`proto/`) measuring three compile-shapes
   at several batch sizes on the two worst sections the census names. Backs
   docs/dev/tt4_measurement.md. See its own CLAUDE.md.
+- `scan_edge_ladder/` — [OPT-EDGE]'s two owed measurements (lane edge2,
+  2026-09-04): the 1/2/3/4 EDGE LADDER and the MINIMUM-CHAIN FLOOR STEP 1 left
+  owed. Committed rather than left in a session scratchpad because a harness
+  that dies with its session cannot be re-run against the next compiler.
+  Carries `make refs` (both reference compilers from `git archive`:
+  `9d8401a`'s per-edge `if` chain and `b048fa61`'s shared-sentinel dispatch),
+  `make rungs`/`make floorcells` (regenerate AND VERIFY the artifacts), and
+  the two run scripts. Read its README for why edge1's ladder design was
+  wrong — subtracting the `-fno-scan-edge` arm subtracts a DIFFERENT MACHINE,
+  so the entry cost read negative at every rung — and for the three REFUSALS
+  the harness makes instead of caveats (`load1 >= 0.5`; a rung whose forward
+  edge count is not `k`; a subject that never entered the chain).
+  **THE VERIFICATION ARM EARNED ITS KEEP BEFORE ANY TIMING RAN**: the floor's
+  nullable family was first written `[a-z]{0,m}9` and takes NO forward edge —
+  a literal on either side of the chain gives the counting states a
+  class-dependent exit and breaks the pass's precondition (1). Measured over
+  eight spellings, only the bare `[a-z]{0,m}` and the exact `[0-9]{m}x` take
+  one; timing the first version would have compared two identical machines and
+  reported 1.000 as a finding. NOT TIMED YET — the box was held for the lane's
+  whole write phase.
 - `alt_dispatch/` — [ENG-ISL.S0] the alternation-dispatch study (chartered
   by Frank 2026-09-03): five dispatch algorithms for a wide literal
   alternation — today's serial try (`vm_alt`), first-byte grouping, a

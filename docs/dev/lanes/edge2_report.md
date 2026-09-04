@@ -271,6 +271,8 @@ different number from the old loop's, which is the row's own SEQUENCING ruling.
 | `2cfe6e1f` | §1's design and prediction table, committed before any edit |
 | `5025e795` | the mechanism: the entry dispatch generalises, (8) narrows, `DfaPf.reseeds`, `pcrec_dfa_scan_state_written`, the emitter's third read-back check |
 | `29e7d0a3` | `tests/codegen/run_scan_edge_census.sh`, wired into `test-codegen`; `docs/spec/tuning.md` §2.18; `src/opt/`, `src/gen/`, `tests/codegen/` CLAUDE.md rows |
+| `13105657`, `e8d68945` | the report and its `docs/dev/lanes/CLAUDE.md` row |
+| *(this one)* | the manager's rulings: the census check's K35 population count, `scanedge` registered in mech + row S227, and `studies/scan_edge_ladder/` |
 
 `make -j2` and `make strict` are clean. **NO abi bump** — §7 is the site list
 and the number is the manager's.
@@ -382,7 +384,13 @@ something else (`emit_dfa.c:5488`). The cure is what this lane did — make the
 second site ask its own question — not a longer comment.
 
 **F2 — THE HAZARD (8) NOW GUARDS HAS NO WITNESS, AND THE STEP 1 CENSUS'S
-"2 of 11 carry it" IS WRONG.** Measured three ways:
+"2 of 11 carry it" IS WRONG.** The precise statement, because "empty
+population" is two different claims and only one of them is true: (8) IS
+evaluated non-trivially on a real set of machines — those pairing a reseeding
+`offset-set` prefilter with a seed table — and it REFUSES NOTHING on them,
+because none of them has a scan-shaped chain in its forward machine to refuse.
+The census check now COUNTS both numbers (§3.2) rather than leaving the second
+an assumption. Measured three ways:
 
 - an artifact compiled with (8) **removed entirely** is byte-identical to this
   branch's on all 30 patterns, and answer-identical on the subject sweep;
@@ -402,14 +410,38 @@ day its population stops being empty loud rather than silent. **It is not a
 check with a failing direction, and `run_scan_edge_census.sh` says so in its
 own header rather than implying otherwise.**
 
-**F3 — THE CENSUS INSTRUMENT HAS TO BE PER MACHINE.** edge1's census counted
-`[OPT-5] SCAN EDGE` markers per ARTIFACT and read the prefilter stamp per
-artifact; an artifact has up to three machines and only the forward one has a
-prefilter. Every conclusion about which artifacts "carry the hazard" was drawn
-at the wrong resolution. The check in this branch attributes each marker by the
-state variable its block tests.
+**F3 — THE CENSUS INSTRUMENT HAS TO BE PER MACHINE, AND THIS IS THE FORM FOR
+`learnings.md` §3** (manager ruling 5). edge1's census counted `[OPT-5] SCAN
+EDGE` markers per ARTIFACT and read `RX_DFA_PREFILTER` per ARTIFACT — but an
+artifact holds up to THREE machines and only the forward one has a prefilter.
+So a reverse-machine edge was attributed to the forward machine's prefilter
+form, and "2 of the 11 carry the hazard" followed from it. Nothing was wrong
+with the measurement; the RESOLUTION was wrong.
 
-**F4 — A COMPILE-TIME COST NOBODY IS PAYING ATTENTION TO.**
+The general shape, which is not about scan edges: **a per-ARTIFACT stamp is a
+composition over the artifact's machines, so it cannot be used to attribute a
+per-MACHINE fact.** This tree already knows the sharp end of that rule from the
+other direction — `[OPT-5]` STEP 2's own note says the two stamp FOLDS must
+stop reading `job->rdfa` on a pinned artifact "or the artifact stamps a fact
+about text it does not contain" — and this is the same error read backwards: a
+consumer taking a per-machine fact OUT of a composed stamp. The instrument for
+a per-machine question is the emitted text of that machine, keyed by something
+only that machine writes; here that is the state variable each edge block
+tests.
+
+**F4 — THE FLOOR'S NULLABLE FAMILY MEASURED NOTHING, AND THE VERIFICATION ARM
+CAUGHT IT BEFORE ANY TIMING RAN.** `[a-z]{0,m}9` — the obvious "nullable
+straddling a bound" cell — takes NO forward scan edge, so both its arms would
+have been the SAME MACHINE and the harness would have reported a ratio of 1.000
+as a finding. Measured over eight spellings: a literal on EITHER side of the
+chain gives the counting states a class-dependent exit and breaks precondition
+(1)'s uniformity, and the only forms that take an edge are the BARE nullable
+`[a-z]{0,m}` and the exact `[0-9]{m}x`. This is edge1's own lesson ("a subject
+that never enters the chain measures nothing") one level up — the PATTERN can
+fail to engage the mechanism as easily as the subject can — and it is why the
+study's `make rungs`/`make floorcells` verify rather than merely generate.
+
+**F5 — A COMPILE-TIME COST NOBODY IS PAYING ATTENTION TO.**
 `pcrec_dfa_scan_state_written` calls `unanch_start`, which calls
 `pcrec_prefix_ksets` (an NFA walk). It is gated on `dfa_needs_seed(d)` first,
 so the overwhelming majority of compiles skip it entirely, but on a seeded
@@ -417,6 +449,35 @@ machine it is up to three extra `unanch_start` calls per compile on top of the
 two `dfa_engine_is_empty` already makes. Not measured. If it matters, the fix
 is memoising `unanch_start` on the `Job`, which is a general improvement and
 not this row's.
+
+---
+
+## 5.1 WHAT THE CENSUS CHECK COUNTS, AND WHY IT COUNTS IT (manager ruling 2)
+
+`run_scan_edge_census.sh` §4 sweeps the corpus and prints three NESTED
+populations as FINDING lines:
+
+| | |
+|---|---|
+| **P1** | artifacts whose FORWARD prefilter is an `offset-set` form — the only forms that write the state variable |
+| **P2** | of those, the ones that also emit a forward seed table — **where (8) is live** |
+| **P3** | of those, the ones whose forward machine carries a scan edge — **must be 0** |
+
+P3 is a RED; P1 and P2 are FINDINGS and deliberately not pinned to a number,
+because they are properties of the CORPUS and pinning them would make adding a
+pattern look like a regression. What they buy is K35's own lesson: a
+precondition whose population is silently zero is indistinguishable from one
+that has quietly stopped being evaluated, and this tree has been wrong about an
+uncounted population twice. If P2 ever reads 0 the check says so in words —
+(8) has become unreachable and somebody should know.
+
+**P3 HAS NO FAILING DIRECTION TODAY AND THE FILE SAYS SO.** Run against the
+(8)-removed compiler it still reads 0, because those machines have no forward
+chain either way. It is asserted anyway: it restates `dfa_form_derive`'s
+read-back check at corpus scale for the cost of one `grep`.
+
+Validated under the hold on an 8-pattern list through the new `POP_PATTERNS`
+override (a corpus sweep is forbidden while `.hold` exists): P1 4, P2 4, P3 0.
 
 ---
 
@@ -447,13 +508,42 @@ mechanism.**
    it, the precondition costs one bool, and the emitter's read-back check makes
    a future population loud. Deleting it would be relying on a co-occurrence
    nobody is enforcing.
-3. **`dfa_seed_can_be_scan_head` reads `s1g[]` as well as `s1u[]`**, though
-   only `s1u` is emitted as this engine's seed table. Deliberate
-   over-answering; costs a folded compare. Say if the tree prefers the narrow
-   read plus a comment.
-4. **A mech sabotage row for (i)** is owed and not written (mech is forbidden
-   under the hold). §4.2's sabotage A is the row's content, and the census
-   check is already red on it — the row would aim at the emitted entry test.
+3. **ACCEPTED (ruling 3), conditional on `test-axes`.** See §6.1 for why the
+   wider set is safe.
+4. **S227 IS WRITTEN** (ruling 4) —
+   `tests/mech/sabotages/S227_scan_edge_entry_s0_only.sh`, with a new
+   `scanedge` arm registered in `tests/mech/run_sabotage_matrix.sh` AHEAD of
+   it (R31 C11: the suite vocabulary is closed, and a row naming a word that
+   does not exist scores UNKNOWN-SUITE rather than "not detected"). Its
+   `SAB_BEFORE` was checked to match the source exactly once, and its
+   `[MECH-REACH]` probe was exercised on the clean tree and answers
+   `REACH-SEEDED-HEAD-ENTRY-PRESENT`. It RUNS in the next battery; its
+   `SAB_DOC_FIGURE` carries the census figure measured at this landing
+   (11fail/2pass) and marks the corpus arm's own figure OWED.
+
+## 6.1 WHY `dfa_seed_can_be_scan_head` READS `s1g[]` TOO (ruling 3)
+
+The predicate answers "can the state variable be holding a head when the loop
+is entered". Only `s1u[]` is emitted as ENG_UNANCH's seed table, so on today's
+emitter reading `s1g[]` can only ever make the predicate answer TRUE where the
+narrow read would answer FALSE.
+
+**BOTH DIRECTIONS OF THAT ERROR ARE HARMLESS, AND THEY ARE NOT SYMMETRIC.**
+Over-answering emits one extra `is_stop && !is_dead` test at the top of a
+search, on a machine that carries an edge; the test is exact wherever it fires
+(it asks the real question), so it can only ever send a real head to the edge
+path, and on a state that is not a head it does not fire. The cost is one
+compare per SEARCH, and on the constant-seed half it folds away entirely.
+Under-answering omits the test on a machine that needed it, which is F1's
+lost-match miscompile.
+
+**AND THE WIDER SET IS THE ONE THAT SURVIVES A CHANGE OF EMITTER.** `s1g[]` is
+`\G`'s own start family, equal to `s1u[]` entry for entry on every machine with
+no `N_GSTART`, and `emit_attempt` already dispatches on it. The narrow read
+would be correct only while ENG_UNANCH's seed table is `s1u`-only — a property
+of one emitter arm, not of the machine — which is precisely the kind of
+unstated dependency F1 is about. The conditional is `test-axes` reading
+answer-identical, which is OWED.
 
 ---
 
@@ -490,9 +580,13 @@ ABOVE the program marker, and a non-hybrid DFA artifact has no `goto <p>_L0;`.
 
 ## 8. WHERE THE MEASUREMENT HARNESSES ARE
 
-Scratch, not the tree:
-`.../scratchpad/edge2/lad/` — `bench.c` (the find-all timing driver),
-`run_ladder.sh`, `run_floor.sh`, and `c_before/` (`9d8401a`) and `c_after/`
-(`b048fa61`) built. Both scripts REFUSE on `load1 >= 0.5` rather than
-caveating, discard a round whose load rose, and drop a rung whose subject
-never entered the chain (edge1's lesson as a floor rather than a note).
+**`studies/scan_edge_ladder/`** (manager ruling 6 — scratch dies with the
+session). `bench.c` is the find-all timing driver; `run_ladder.sh` and
+`run_floor.sh` are the two runs; the Makefile has `refs` (both reference
+compilers from `git archive`), `rungs` and `floorcells` (regenerate AND
+VERIFY), `ladder` and `floor`. `PCREC` has no default on purpose. Everything
+generated lands in a gitignored `out/`.
+
+Smoked under the hold: `make refs` built both compilers, `make rungs` verified
+1/2/3/4 forward edges, `make floorcells` verified all eight cells at 1 (after
+F4's repair), and `run_ladder.sh` REFUSED at `load1 2.26`. Nothing timed.
