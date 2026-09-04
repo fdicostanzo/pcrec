@@ -1,7 +1,8 @@
 # lane w13 — [DD-13b.W1.3] report
 
-**Branch `lane/w13`, 16 commits on `main` 9d8401a. Status: BUILT, NOT
-SUITE-VALIDATED.** Two phases on 2026-09-03, both entirely under the box
+**Branch `lane/w13`, 24 commits on `main` 9d8401a, abi 20. Status:
+DELIVERED AND VALIDATED — see §14 for the suite results; §§1-13 are the
+build record written before they ran.** Two phases on 2026-09-03, both entirely under the box
 hold, which forbids every script under `tests/`. So nothing here rests on
 `make test`; what it rests on is `make strict`, ~260 single compiles, and a
 set of matcher runs against outside oracles, each named below with what it
@@ -415,6 +416,110 @@ what each needs:
    than a widening of an existing one, since the name is a PATH and the
    target does not exist until the delivering site has been assigned its
    slots. Nothing in the rows or the retention forecloses it.
+
+
+---
+
+# PHASE 3 — VALIDATION (2026-09-04, 00:0x–04:2x, the box's suite slot)
+
+## 14. Status: DELIVERED, VALIDATED
+
+**Everything §3 owed has been run.** The branch is `lane/w13`, abi 20.
+
+| suite | result |
+|---|---|
+| `make test` | **33/33 sections, 0 failures**, 2,444 PASS lines, 68 min |
+| `make test-axes` | **21 axes, every one answer-identical to default, 0 mismatches**, plus the form census (1/0), 75 min + 206 s |
+| `make test-definitions` | **22 passed, 0 failed** — first run ever |
+| `make test-rxtsource` | **121 passed, 0 failed** |
+| identity gate | **16 passed, 0 failed** — (B) 2,276 call-free patterns 0-differing at the new pin; (A) 2,226 against the unchanged pre-module pin |
+| `make strict` | clean |
+
+**The corpus census did not move**: 191 files / 3,325 blocks / 26,894
+expectation lines, matching the pin. This branch added no `.rxt` to the
+corpus, which is what it claimed.
+
+## 15. The prediction I got WRONG, and why it matters
+
+**I predicted `[M6.5-DUPNAMES]`'s `groups[]` order check would be the likeliest
+red. It passed, untouched.** The reason is worth more than the prediction:
+that check's population is artifacts built from PLAIN single patterns, where
+the new leading SCOPE term is CONSTANT (every row is caller scope). A leading
+key that never varies cannot reorder anything, so `(name, number)` still
+describes its rows exactly and the check is still true.
+
+**The consequence is the part to keep: that check does NOT cover the new
+ordering.** Its population has no site-scoped rows and never will. The
+coverage for the scope term lives in `tests/definitions/`'s own order check,
+which is written over composed artifacts and which I validated in both
+directions before landing. A reader who saw only "dupnames passed" would
+conclude the new key was tested; it was not, and it is tested elsewhere.
+
+## 16. The defects validation found
+
+**One genuine defect, in my own runner.** `build_one` appended `-o` AFTER the
+caller's arguments, and the flat-control call ends `-- <pattern>` — so the
+output path landed past the `--` and pcrec read it as a second pattern. Every
+flat control failed to build. **My hand-verification could not have caught
+it**: I had invoked pcrec directly with the arguments in the right order, so
+the function's own ordering was the one thing the hand runs never exercised.
+
+**What caught it was the two non-vacuity guards**, reporting "ZERO delivered
+spans were compared" and "identity ran 0 cells, pinned 23". Without them the
+section would have reported four passes and no failures on a run that compared
+nothing.
+
+**Four stale expectations**, each a place the tree still described a model that
+had been ruled away: the python oracle leg (python spells a named group
+`(?P<n>…)`, PCRE2 `(?<n>…)` — translated narrowly, never touching `(?<=`/
+`(?<!`); the delivery check reading the PLAIN target, which correctly has no
+rows (it became the CONTROL, and the delivering twin became the assertion);
+`compose_delivers.rxtin` still calling its definition plainly; and the
+bad-name-ident needle still saying "identifier" when a block name had stopped
+being one.
+
+**The arm pin moved, deliberately.** The `export` ARM is outside the pinned
+region; what moved inside it is the per-block reset, which belongs in the
+block-reset arm. The pin did its job — it caught an edit inside the arm chain
+and made someone say why.
+
+## 17. The abi ritual, and the one thing it caught
+
+`17 → 20` (18 and 19 were spent by lanes merging ahead). All six readers from
+§8.7's grep, re-run over the branch: the `.abi` stamp, `ABI_EXPECT`, the
+ledger clause, both `match_api.md` sentences, and the gate's (B) pin. The two
+non-readers stayed untouched.
+
+**The pin landed in a SECOND commit that touches no source, and that is
+structural rather than tidy.** The pin must name this change's LAST
+src-touching commit — but the bump itself is a src change, so pinning it
+inside the bump commit is impossible and pinning it to the commit before was
+what I tried first. The gate caught that immediately: subject stamped 20, pin
+stamped 17. A follow-up commit touching only `tests/` leaves the bump as the
+last src commit, so the pin names a commit that stays true.
+
+## 18. What is NOT done, and why
+
+**The `run.sh` composed-block path is W1.3.1**, per the manager's own
+"else W1.3.1 and say so". This is not a time report — I sized it and it is not
+contained:
+
+- At least four sites in `flush_block`'s tail assume the artifact's prefix is
+  `rx`/`RX`: the driver build (which passes no `-DRXT_PREFIX`), the
+  `RX_NCAPS` grep, and the size-log row's own macro reads. Making the prefix a
+  variable there touches the corpus runner's hot path — the most load-bearing
+  code in the suite, which every one of 3,325 blocks goes through.
+- It carries a design question I should not settle alone: either a composed
+  block's artifact keeps prefix `rx` (which needs a CLI allowance that
+  [DD-13b.W1.2] deliberately refused — `-p` conflicts with `--source` by
+  design, and `cli_extras_clean` enforces it), or `run.sh` carries the
+  target's prefix through its whole tail. That is a contract choice.
+- It needs a full `make test` behind it, measured tonight at 68 minutes, and
+  any red needs another.
+
+**`(?&site.group)` is W1.3.1** for the reason already recorded: measured free,
+but it needs a reference class resolving after composition against the site
+table.
 
 ## 8. Disclosure
 
