@@ -726,9 +726,8 @@ timing acceptance on a quiet box. §3.6b, §3.7 and §3.8 carry the numbers.
 - **The 1/2/3/4 ladder and the minimum-chain floor** — §3.8 reports the
   ladder NOT DELIVERED with the design fault named; the floor was not
   reached. `PCREC_MAX_SCAN_EDGES` therefore stays documented-not-rechosen.
-- **`tests/base/k18_cost_gates.rxt:103`'s gcc-CPU tripwire** — red at 1.100x
-  its pin under my own LINTGEN run at load1 10.78. K44's class; the solo
-  number is owed and it is a re-measurement, not a re-pin.
+- **`tests/base/k18_cost_gates.rxt:103`'s gcc-CPU tripwire** — RE-MEASURED,
+  and it is neither this branch's nor load's. See §11.
 
 **Needs a ruling.**
 
@@ -829,3 +828,37 @@ red on two of four witnesses, with its four attempted repairs and their wrong
 numbers recorded in its own §6 (F6, and the ruled one-hour SCC attempt at
 `5f4af3ef`). Green on three witnesses by reading the wrong number on four is
 the vacuity the file exists to avoid.
+
+---
+
+## 11. THE GCC-CPU TRIPWIRE: NOT THIS BRANCH, AND NOT LOAD EITHER
+
+`make test LINTGEN=1` reported
+`check_size_tripwire.sh: GCC-CPU TRIPWIRE — 'tests/base/k18_cost_gates.rxt:103'
+took 8.803s of gcc CPU compiling, 1.100x the 8.0s pin (load1 at measurement:
+10.78)`. Re-measured directly on the cell's own artifact
+(`((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}`), three runs
+each, at load1 1.75-2.14:
+
+| compile | gcc CPU |
+|---|---|
+| `-O1 -Wall -Wextra -Werror` — the harness's ordinary GENCFLAGS | **0.30 s** |
+| the same **plus `-fanalyzer`** — the LINTGEN axis | **5.08 s** |
+| the same, on MAIN's artifact for this cell | **5.08 s** |
+
+**THE BRANCH IS NOT INVOLVED: this cell's artifact is BYTE-IDENTICAL between
+main and this branch (70,636 bytes both), and compiles in the same time.**
+It is a VM artifact with no scan edge, so [OPT-EDGE] emits nothing into it.
+
+**AND LOAD IS ONLY THE LAST 1.7x OF IT.** The pin is 8.0 s and the ordinary
+compile is 0.30 s — a 26x margin no contention closes. What closes it is
+`-fanalyzer`, which costs **17x** on this cell; 5.08 s then inflated to
+8.803 s under the LINTGEN run's own load1 of 10.78.
+
+So this is neither K44's load-marginal class nor a regression: **the pin is
+not axis-aware.** It was calibrated against plain-GENCFLAGS runs and the log
+it reads is written by whichever axis ran, so any `LINTGEN=1` run will red it
+on whatever the corpus's slowest analyzer cell happens to be. Nothing to
+re-pin here, and it is not [OPT-EDGE]'s to fix — recorded for whoever owns
+`tests/size/check_size_tripwire.sh`, with the two numbers that separate the
+causes.
