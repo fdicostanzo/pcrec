@@ -1123,3 +1123,198 @@ later:
   every quantitative claim here is either cited from `lim2_report.md`, from
   `known_issues.md`, from `limits.def`, or marked as an expectation to be
   measured.
+
+---
+
+## 6. M5 — the paper, read
+
+Lane `m5paper`, worktree `worktrees/m5paper`, branch `lane/m5paper`,
+**2026-09-04**. READ-ONLY: no `make`, no compile, no benchmark, nothing
+under `src/` or `tests/` written. This section discharges §5.2's M5 and
+retires the `unverified` marks in §2.3 and §3.8.
+
+**What was read.** Nicol & Frohme, *Deconstructing Subset Construction:
+Reducing While Determinizing*, arXiv:2505.10319v2 [cs.FL], 10 Apr 2026,
+CC BY 4.0, in full via the arXiv HTML (`https://arxiv.org/html/2505.10319v2`)
+— all of §1-§6, Algorithm 1, Definitions 1-4, Tables 1-3 and the
+Data-Availability Statement. To appear in TACAS 2026, LNCS,
+doi:10.1007/978-3-032-22749-2_20. Figures 1 and 2 are survival (cactus)
+plots and were **not** readable as data: the HTML carries them as images,
+so every claim below about their content comes from the paper's own prose
+about them and is marked where it does. Also read, from the reference
+implementation `github.com/jn1z/OTF` (default branch `main`, last push
+2026-05-29): `README.md`, `CHANGELOG.md`, `LICENSE.txt`, `pom.xml`, and the
+sources `OTFDeterminization.java`, `OTFCommandLine.java` (the driver) and
+`PTInitializers.java` (the partition initializer). The Zenodo artifact
+(doi:10.5281/zenodo.18163403) was **not** downloaded or run.
+
+### 6.1 The headline, first, because it inverts §3.9
+
+**Candidate C's defining property is false.** The paper's construction does
+*not* leave a minimal machine; a final, full minimization is mandatory, and
+the paper says so in its own words at the end of §3.1:
+
+> "While $A'$ may be minimized during exploration, the threshold predicate
+> might not trigger in the last iteration. **Thus, a final minimization is
+> necessary for correctly canonizing $A$.** This step is omitted from
+> Algorithm 1 to allow for utilizing the presented technique directly in
+> [9]'s approach as well (cf. Section 5) which does not require an explicit
+> minimization."
+
+The reference implementation agrees without qualification. `doOTF`'s own
+javadoc calls its return value *"(Partially) minimized DFA; output of
+Algorithm 1"* (`OTFDeterminization.java`), and the driver runs a full
+Hopcroft pass on it unconditionally, on every configuration:
+
+```java
+final DFA<?, Integer> otfDFA = OTFDeterminization.doOTF(nfa.powersetView(), alphabet, threshold, registry);
+final CompactDFA<Integer> minimizedDFA = HopcroftMinimizer.minimizeDFA(otfDFA, alphabet);
+```
+
+(`OTFCommandLine.java`, method `CCL`.) The paper's §5.1 "Parameters" says
+the same from the other side: *"All configurations use Hopcroft's algorithm
+[22] to minimize either the intermediate automata (OTF) or the final
+automaton (OTF, SC)."* — OTF appears in both lists.
+
+So §3.8's reason 1 and the whole right-hand column of §3.9's table are
+withdrawn. **The second pass is not optional under this construction, raw
+does not equal emitted, and lim2's size projection does not become an
+identity.** The one configuration in which "Frank's optional-second-pass
+idea and lim2's margin problem solve each other" does not exist in the
+published work. §6.6 re-ranks C on what is left.
+
+### 6.2 What the algorithm actually is (answer 1)
+
+**In two sentences.** OTF is classic subset construction with two changes:
+the metastate → DFA-state map is mediated by an *equivalence registry*
+whose lookup may answer with an already-built state that is merely
+*language-equivalent* to a metastate never seen before, so that metastate is
+never created or explored; and exploration is periodically interrupted by a
+*threshold predicate*, at which point the partial DFA is minimized by
+Hopcroft with every unexplored state pinned in its own block, and each
+equivalence the minimizer finds is handed back to the registry to widen
+future lookups. The paper states both in §3: *"First, the NFA state space
+exploration may be repeatedly interrupted by a threshold predicate... Second,
+the mapping between NFA metastates and DFA states... is handled by an
+equivalence registry."*
+
+**What is tracked per state.** Nothing is tracked *on* the DFA state. The
+state is an integer counter (Algorithm 1 lines 21-23) and the DFA is an
+ordinary `CompactDFA`. Everything is in the registry, whose interface is
+Definition 4 — three operations only:
+
+> GET$(Q)$ returns a state $q\in S'$ such that $L(Q)=L(q)$. The method may
+> also return undefined if it is not aware of such state yet.
+> PUT$(Q,q)$ links the behavior of metastate $Q$ to state $q$ with the
+> precondition that $L(Q)=L(q)$.
+> UNIFY$(q_1,q_2)$ informs the registry about the language equivalence of
+> states $q_1$ and $q_2$, which may affect future results of the GET method.
+
+The paper is explicit that a hash-based one-to-one registry with `UNIFY` as
+a no-op reproduces classic subset construction exactly (§3, after Def. 4;
+repeated in §3.2). The registry *is* the mechanism.
+
+**What is merged, and on what relation.** **Language equivalence** — not
+bisimulation, not simulation. Def. 4's contract is stated as $L(Q)=L(q)$
+throughout, and the CCL registry's inference rests on the set identity
+$L(A\cup B)=L(A)\cup L(B)$ (§4.1, attributed to [6]), which follows from
+$L(Q)=\bigcup_{q\in Q}L(q)$ in §2.1. Simulation appears in exactly one
+place and in a *subordinate* role: the CCLS registry (§4.2) precomputes the
+similarity preorder on the input NFA and uses it to *prune* and *saturate*
+metastates before lookup, so that a lookup key is normalized. That is a
+device for finding more equivalences faster, not the equivalence being
+tested.
+
+**When a merge is decided — two distinct events, and only one of them saves
+work.**
+
+1. **At lookup, before the metastate exists** (Algorithm 1 line 19,
+   `n' ← getR(N)`). If the registry can prove $L(N)=L(n')$ for an existing
+   state $n'$, no state is created, nothing is pushed on the stack
+   (lines 20-29 are skipped), and $N$'s successors are never computed. **This
+   is the only part of OTF that reduces exploration**, and it is a Tier-4
+   merge in §3.2's vocabulary: decided before *either* row is filled.
+2. **At the interrupt, strictly after a row is filled** (Algorithm 1 lines
+   32-33: `E' ← E' ∪ {c'}` then `if threshold(A')`). The intermediate
+   minimization runs on completed rows only, and unexplored states are
+   pinned apart by construction (lines 34-42: `sig[i] = i` for a state not in
+   $E'$, a Boolean accept value for one in it). The paper's §3.2 states the
+   consequence: *"unexplored states are assigned unique blocks in the initial
+   partition, ensuring they remain distinct until their behavior is fully
+   determined. Consequently, minimization never merges states with incomplete
+   information."* The reference implementation adds a condition the paper's
+   Algorithm 1 does not show: `if (complete && threshold.test(out))`, where
+   `complete` is false if *any* successor of the state just popped was newly
+   created (`OTFDeterminization.java`) — so a minimization is attempted only
+   at a moment when the frontier did not grow.
+
+**This is exactly the study's candidate A, with the study's own soundness
+rule.** §3.5 derived "make every unfilled cell unique in `state_sig`" from
+first principles; Algorithm 1 lines 34-42 are that rule, published. The
+study's §3.5 is therefore *correct as a rule* and is confirmed by an
+independent source. One consequence of it, though, is stated too
+pessimistically in §3.5 and that misstatement is what killed A there — see
+§6.6.
+
+**What it guarantees about the result.** Language equivalence to the input
+NFA, and nothing stronger about the loop's own output. The paper gives **no
+theorem and no lemma** anywhere; §3.2 "Termination and Correctness" is four
+paragraphs of prose whose argument is that both modifications preserve what
+classic subset construction already guarantees, and §3.3 explicitly declines
+a real analysis. Minimality of the *final* result comes from the final
+Hopcroft pass, exactly as it does in pcrec today (`src/opt/minimize.c:69`
+onward, called at `src/core/compile.c:1134`-`:1135`).
+
+### 6.3 The property the study bet on (answer 2)
+
+**It does not hold**, per §6.1. What remains, stated precisely:
+
+- **The result of the exploration loop is reduced, not minimal.** The gap
+  has two named sources in the paper's own text. (i) The threshold may not
+  fire near the end, so states created after the last interrupt were never
+  offered for merging (§3.1's closing paragraph, quoted in §6.1). (ii) Even
+  immediately after an interrupt, states kept apart *only* because they
+  reach distinct unexplored states are not proved distinct; when those
+  successors are later explored and merged, their predecessors become
+  mergeable and stay unmerged until the next interrupt or the final pass.
+- **The paper measures this gap as a headline metric rather than
+  eliminating it.** §5.1 "Measurements": *"The overhead describes the
+  difference between the number of states of intermediate automata and the
+  final DFA... For OTF and BRZ-OTF, we use the maximum size of the
+  intermittently minimized automata as reference point."* That quantity is
+  lim2's quantity — raw-carried minus emitted — and OTF is presented as
+  *shrinking* it, never as driving it to zero. The strongest claim in the
+  evaluation is conditional and partial: *"For SC and OTF, simulation boosts
+  performance both by improving runtime and reducing overhead, **sometimes to
+  the point of not introducing any redundant states at all**"* (§5.2,
+  Walnut). "Sometimes", on some systems, and in the *simulation-bearing*
+  configurations — which are candidate B, not candidate C.
+
+**Can a size bail use the reduced count as an exact or a lower bound? No,
+on both counts, and the reason is the one §3.1 already gave.**
+
+- Not exact: §6.1.
+- Not an upper bound on the final total: exploration continues after any
+  interrupt, so more states are still coming.
+- **Not a lower bound**: two blocks of an intermediate partition may be
+  separated only by witnesses that run into distinct unexplored states.
+  Those separations are not proofs of distinguishability, so the block count
+  is not a count of provably-distinct states. §3.1's finding stands
+  unchanged: compaction proves *equivalence*, a bail needs proved
+  *inequivalence*, and OTF supplies no monotone quantity of the second kind.
+
+The paper offers nothing in this direction and says so structurally: §1
+contrasts the canonization problem with universality and inclusion, where
+antichains let you stop early, and concludes *"For the canonization problem,
+however, the construction of the full DFA is necessary."* §2.4's
+Baburin–Cotterell hardness result is not disturbed.
+
+**One observation for lim2, marked as a sketch and not a result.** The
+monotone quantity is distinguishability, and the sharpest sound lower bound
+is not necessarily N2's closed subgraph: a pair separated by a witness path
+whose every transition is *filled* is genuinely distinguishable even if
+unexplored states exist elsewhere in the machine. Turning that into a
+*count* needs pairwise-distinguishability across blocks rather than a
+partition (wildcard-compatibility is not transitive — §3.5's own warning),
+so it is not obviously a refinement step. Named so it is not lost; **not
+settled here, and nothing in the paper bears on it.**
