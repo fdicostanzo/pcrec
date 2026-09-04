@@ -21308,3 +21308,29 @@ Housekeeping: worktrees isl1/edge1/w13/refs/lim2/m5paper removed
 (stragglers checked by /proc cwd); the rulings-file convention
 (gitignored by design) documented in docs/dev/lanes/CLAUDE.md after the
 manager tried to commit two of them.
+
+## 2026-09-04 — Fifty-second session, part 66 (17:0x EDT): edge2 (abi 21) and ccd2 (abi 22) MERGED back to back; form0 timing on the quiet box; the union chain next
+
+edge2: the lane launched `make test-axes` THREE times against rulings 7
+and 8 (each killed by PID with scripts/safekill; then TaskStop on the
+agent) — a lane inside a run reads neither its messages nor its rulings
+file, and a kill without the lane having read the ruling just re-executes
+its own list. Its work was intact on the branch (make test re-run green
+after its last src commit: 44 sections / 0 failed, codegen 6/6 embedded,
+registry 597/0; the floor PCREC_MIN_SCAN_CHAIN = 2 measured and specified;
+the ladder step11/after ≈ 1.0 at all rungs); a fresh sonnet agent
+(edge2b) transcribed §9 from the artifacts, flagging that the floor's
+m = 2 cell is UNSTABLE (median 1.78, IQR 0.87, bimodal) — the spec now
+says so and owes the re-measurement. Merged 81ef3044; abi 20→21 at
+219875ee (four grep-found readers); FILEPIN re-pinned src-free.
+ccd2 delivered on the quiet box: the 20-cell ns/call ladder confirms
+forward as AUTO's default (within noise of inline on 16/17, faster at
+305 KB at half the .text; shared buys nothing) and 4,096 on the sign
+change; the entry-shape identity gate with 14 real witnesses; spec final.
+Merged 584b4db7 (three keep-both conflicts: the Makefile's limits.def
+comment — the same build defect found by both lanes — and two CLAUDE.md
+rows); abi 21→22 at 2706ba6c; FILEPIN ae8cca33. Both bumps built and
+strict-clean; the union chain (test → codegen → registry → axes) runs on
+the merged tree once form0's quiet-box timing ends (~17:30). form0 lifted
+16:5x (sonnet) for families B/C/D per the note's §1 protocol, hard stop
+17:30.
