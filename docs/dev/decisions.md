@@ -6639,3 +6639,30 @@ one definition (the guard skips the second copy) and makes two artifacts at
 DIFFERENT abis fail loudly on the type redefinition, which is the right
 outcome; a pin asserts the embedded block is byte-identical across
 artifacts. [PFX-1] STEP 1 builds whichever STEP 0 chooses; an abi event.
+
+**D96 addendum 3 (09:1x EDT) — VALIDATED, and addendum 2's type claim RETRACTED.**
+Measured on two artifacts (`-p rx`, `-p zz`): the emitted header ALREADY
+carries a shared block under `#ifndef PCREC_RX_ABI_H` (h1.h lines 9-169)
+holding `rx_ctx`, the `PCREC_ERR_*` codes, `PCREC_UNSET`, `rx_callout_ref`,
+`rx_group_entry` and `struct rx_info` — with a FIXED `rx_` spelling that
+does NOT follow `-p`, byte-identical across the two artifacts (md5 equal).
+So consumer code is ALREADY generic over artifacts: one `rx_ctx`, one
+`struct rx_info` (the manager's "rx_ctx vs zz_ctx are distinct types" in
+addendum 2 was wrong — the failing test compiled against a type name that
+does not exist). What IS per-artifact and prefixed: the entries
+(`zz_search` …), the `zz_info` instance, `zz_buffers` (sized per artifact),
+the `ZZ_NCAPS`/frame macros, and the outer guard `PCREC_GEN_ZZ_H`. What is
+MISSING against Frank's ideal: (1) the shared block's guard is not
+abi-VERSIONED — two artifacts at different abis in one TU would silently
+take the first's block (a layout change in `struct rx_info` between abis
+would go unnoticed); a guard carrying the abi number makes that a loud
+redefinition error (validated on a synthetic pair: same guard shares,
+different guard collides); (2) nothing PINS the block byte-identical across
+artifacts (true today by construction of one emitter, unasserted); (3) it is
+embedded, not a separate file — which is the self-contained delivery of
+exactly the "constant additional .h" Frank described; an optional
+`--emit-abi-header` could write the same block as a standalone file for
+consumers who want one. [PFX-1] STEP 0 therefore measures the SMALLER
+change: version the guard, pin the block, classify the remaining prefixed
+identifiers (internal statics/labels/macros in the .c) for the fixed
+spelling.

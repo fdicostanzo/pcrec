@@ -21012,3 +21012,14 @@ shared runtime header versioned with the abi, delivered either as a
 file or as the same block embedded under an abi-versioned guard in
 every header (self-contained; same-abi artifacts share, different-abi
 artifacts fail loudly); STEP 0 chooses.
+Part 54 addendum 2 (09:1x): Frank asked for validation. Measured: the
+shared block Frank described ALREADY EXISTS — `#ifndef PCREC_RX_ABI_H`
+in every header holds rx_ctx, the PCREC_ERR_* codes, rx_callout_ref,
+rx_group_entry and struct rx_info with a fixed `rx_` spelling, byte-
+identical across artifacts (md5), so consumer code is already generic
+over artifacts; the manager's "rx_ctx vs zz_ctx" claim was WRONG
+(retracted in D96 addendum 3). Per-artifact: entries, `<p>_info`,
+`<p>_buffers`, the NCAPS/frame macros, the outer guard. Missing: an
+abi-versioned guard (silent sharing across abis today; validated that a
+versioned guard collides loudly), a byte-identity pin on the block, an
+optional standalone export. [PFX-1] STEP 0 shrinks accordingly.
