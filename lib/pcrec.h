@@ -542,6 +542,18 @@ enum {
     PCREC_UNROLL_K_DEFAULT = 0
 };
 
+/* [CC-DIFF] STEP 2 — the four rungs of `pcrec_options.vm_entry_shape`, in the
+ * dial's own direction (min size .. max speed). The field's own comment below
+ * carries the derivation, the legality rule and the measurement; these are
+ * only its spelling. AUTO (0) is the default and lets the size term choose. */
+enum {
+    PCREC_VM_ENTRY_AUTO    = 0,
+    PCREC_VM_ENTRY_PLAIN   = 1,  /* one body, six framed entries          */
+    PCREC_VM_ENTRY_SHARED  = 2,  /* one body, three forwards, no frames   */
+    PCREC_VM_ENTRY_FORWARD = 3,  /* three bodies, three forwards          */
+    PCREC_VM_ENTRY_INLINE  = 4   /* six bodies — [CC-DIFF] STEP 1(a)      */
+};
+
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.
  * AUTO is APPROACH §2's "automatic per pattern"; the other two are diagnostic
  * (reproduce a bug, measure the hybrid against VM-only) and REFUSE cleanly
@@ -641,6 +653,57 @@ typedef struct {
                                  value per artifact, never per quantifier
                                  (D47 ADDENDUM). Ignored on a DFA artifact and
                                  wherever the counter rung is not selected. */
+    /* [CC-DIFF] STEP 2 — THE VM ENTRY SHAPE, AS AN ORDINAL RUNG.
+     *
+     * WHAT IT SELECTS. A VM artifact's six entries (`<prefix>_search`,
+     * `_search_in`, `_match`, `_match_in`, `_match_caps`, `_match_caps_in`)
+     * sit on three thin `_run` helpers which sit on one matcher body,
+     * `<prefix>_match_anchored`. STEP 1(a) put `always_inline` on every one
+     * of those helpers on a FRAMELESS artifact, which deletes the entry's
+     * 152-byte frame, its stack-protector canary and its out-of-line call —
+     * measured 0.611 on `dig-upto-16` — and, because six entries each honour
+     * it, replicates the matcher body SIX TIMES. On a small program that
+     * SHRINKS the artifact (.text 1,561 -> 1,417 B). On an [ENG-ISL] island
+     * of width 256 it costs x6.5 `.text` and x6.6 gcc for 16% of run time
+     * (docs/dev/lanes/isl1_report.md §12.2). The copy count is therefore a
+     * DIAL, not a fact, and this is its per-artifact control.
+     *
+     * THE RUNGS, ordered min-size .. max-speed, which is the direction
+     * [OPT-DIAL]'s dial runs in:
+     *
+     *   1 PLAIN     no attribute anywhere — the pre-[CC-DIFF] shape. One
+     *               matcher body, six entries, each with its frame, canary
+     *               and call.
+     *   2 SHARED    the matcher body `noinline` (ONE copy, called), the thin
+     *               helpers inlined, and the three un-suffixed entries
+     *               emitted as plain FORWARDS to their `_in` siblings
+     *               through a static empty descriptor — no local whose
+     *               address escapes, so no frame and no canary.
+     *   3 FORWARD   the same forwards, matcher inlined: THREE copies, in the
+     *               three `_in` entries.
+     *   4 INLINE    what [CC-DIFF] STEP 1(a) shipped: SIX copies.
+     *
+     * 0 = AUTOMATIC, and automatic is what every caller that predates this
+     * field gets: the emitter picks the rung from the artifact itself, by
+     * the size term `PCREC_VM_INLINE_CHAIN_MAX_BYTES` (src/core/limits.def).
+     *
+     * WHERE A RUNG IS NOT LEGAL IT IS NOT TAKEN, and that is a SELECTION
+     * OUTCOME, never a refusal — the same rule `-fno-altcls-factor` and the
+     * island axis follow. Rungs 2-4 need a FRAMELESS artifact (gcc refuses
+     * `always_inline` on a function containing a computed goto, and a framed
+     * artifact's storage is live, so inlining deletes nothing and only
+     * inflates the entry — STEP 0 measured 1.032 there). Rungs 2 and 3 need
+     * more than that: the forward binds a NULL descriptor, so they are taken
+     * only where the artifact provably never WRITES the working storage —
+     * no `RX_PUSH`, no linked call, and no `RX_SET` (the trail is real
+     * storage even on a frameless artifact: `(abc)(def)` is frameless and
+     * saves two capture slots). A request the artifact cannot honour falls
+     * back to the highest rung it can, and every rung ANSWERS IDENTICALLY.
+     *
+     * NOT A BIT of `flags`: it is an ORDINAL, like `unroll_k`, and it is
+     * documented at docs/spec/tuning.md §2.21 with the measurement that
+     * placed the size term. */
+    int         vm_entry_shape;
     int         frame_capacity; /* [M4.5b] <PREFIX>_BT_FRAMES, the resume-stack
                                  capacity (engine_m4.md §4.5's SECOND bound);
                                  0 = let the compiler size it (exactly, where
