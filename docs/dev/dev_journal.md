@@ -21152,3 +21152,14 @@ VALUE turns on it), the suites, the identity gate (3 of 14 witnesses
 vacuous on its subject set, named). 70 emit-compile-answer runs, 0
 mismatches; all rungs -Werror-clean under gcc and clang. Rulings
 pending its truncated item 4.
+
+## 2026-09-04 — Fifty-first session, part 61 (12:2x EDT): SESSION RESTART on Frank's request — the battery (detached, pid 3011580, mech 110/223) survives it; the four lanes' write phases are committed; wake.md rewritten; I-43 draft committed
+
+Verified: the battery runs under setsid with parent 1 and its own
+session id — independent of this session. The lane agents and every
+cron die with the session; each lane's branch is clean and its rulings
+file carries the post-lift list, so the next session re-spawns fresh
+agents per lane at the lift. The I-43 draft moved from the scratchpad
+into docs/dev/lanes/I-43_draft.md. wake.md rewritten from scratch (the
+first-things-on-wake sequence: read the trailer → size-log commit →
+I-43 → serial lifts/merges → DONE at ~18:00).
