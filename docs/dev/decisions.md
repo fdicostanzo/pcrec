@@ -6618,3 +6618,24 @@ STEP 0 gains: (a) a codegen check — two artifacts, one TU, -Werror, plus a
 pin that the shared block is byte-identical across artifacts; (b) the
 shared-header option weighed against APPROACH's self-containment promise
 (a second file the consumer must carry vs identical duplicated blocks).
+
+**D96 addendum 2 (09:0x EDT, Frank):** "the value of a constant additional
+.h file is that there are some values that are going to be the same across
+all patterns. those now get a separate version so that their header values
+don't collide. ideally, we should have one version so that the same value
+can be used across multiple patterns rather than different for each one."
+READ AS THE DESIGN: the cross-artifact items — the error codes, `PCREC_UNSET`,
+the engine ids, AND the common TYPES (today `rx_ctx` and `zz_ctx` are
+distinct types of the same shape, so a consumer cannot write one routine
+that drives two artifacts) — live ONCE, unprefixed (`pcrec_*`), in a shared
+runtime header (`pcrec_rt.h`-shaped, versioned with the abi); a per-artifact
+header carries only that artifact's exported entries and its `rx_info`.
+Consumer code then becomes generic over artifacts. DELIVERY is STEP 0's
+question: a separate file the consumer carries, or the same block EMBEDDED
+verbatim in every artifact's header under an abi-versioned include guard
+(`PCREC_RT_ABI_<n>_H`) — the second keeps APPROACH's self-containment (each
+artifact still compiles alone), makes two artifacts at the SAME abi share
+one definition (the guard skips the second copy) and makes two artifacts at
+DIFFERENT abis fail loudly on the type redefinition, which is the right
+outcome; a pin asserts the embedded block is byte-identical across
+artifacts. [PFX-1] STEP 1 builds whichever STEP 0 chooses; an abi event.

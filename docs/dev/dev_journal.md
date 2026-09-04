@@ -21003,3 +21003,12 @@ is unpinned — [PFX-1] STEP 0 gains a codegen check (two headers, one TU,
 -Werror, and a byte-identity pin on the shared block) and weighs
 Frank's shared constant header against APPROACH's self-containment
 promise. D96 addendum records his wording.
+Part 54 addendum (09:0x): Frank on the shared header — the cross-
+artifact values (and, the manager adds, the common TYPES: rx_ctx vs
+zz_ctx are distinct types of one shape, so no consumer routine can
+drive two artifacts) should exist ONCE so the same value serves every
+pattern. Recorded as [PFX-1]'s design direction (D96 addendum 2): a
+shared runtime header versioned with the abi, delivered either as a
+file or as the same block embedded under an abi-versioned guard in
+every header (self-contained; same-abi artifacts share, different-abi
+artifacts fail loudly); STEP 0 chooses.
