@@ -53,3 +53,4 @@ docs/design/subroutines_measurements/email_specimen/throughput/
 # says so). A GLOB rather than a line per lane — main already carries this
 # shape at 4101b8b, and two named lines would conflict at the merge.
 docs/dev/lanes/*_rulings.md
+studies/lim2_census/lim2_census

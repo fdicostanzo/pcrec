@@ -21257,3 +21257,30 @@ bound from the closed subgraph's minimized block count. Two cheap
 measurements decide (M1 the closed fraction during construction; M2
 the dominance prize). The plan row carries the whole recommendation.
 OPEN FOR FRANK: charter M1 and/or N2; the [B37] window shape.
+
+## 2026-09-04 — Fifty-second session, part 64 (15:2x EDT): [LIM-2] STEP 1 closed by measurement and merged (86e66dcd); Plan A ruled; M5 (the paper) and REFERENCES.md chartered; edge2 lifted
+
+lim2 delivered under ruling 7: the bail and the reverse-first reorder
+reverted, the census moved to studies/lim2_census/ with its data
+(population 12 of 3,386 blocks; max shrink 97.062% at
+k18_cost_gates.rxt:66; the required 194-pt margin unrepresentable), the
+report final (S1-S14), src/ and tests/ byte-identical to main — merged
+86e66dcd with strict clean and the study's own `make` building against
+build/libpcrec.a; no suite needed. The three-way w-2048 numbers are on
+the plan row. Frank read the outcome as the process working ("we
+theorized and tested and made the best choice"); recorded in memory
+pcrec-build-under-measurement.
+
+Frank's afternoon rulings: PLAN A (quiet-box timings edge2 → ccd2 ladder
+→ form0 to an 18:00 hard stop; edge2+ccd2 merged back to back with ONE
+union chain; DONE to the bench ~19:30); the paper STUDY-1 ranks C on is
+https://arxiv.org/html/2505.10319v2 (April 2025, TACAS 2026) — M5
+chartered as lane m5paper (opus, read-only; it had the paper and its
+OTF library read in full within 10 min and is writing §6); "if we are
+going to use papers, lets cite them appropriately in the /root
+directory" → lane refs (sonnet) writes REFERENCES.md at the repo root
+(stable keys, full citations, date accessed, cited-by), the study cites
+[NF25] by key; convention saved in memory
+pcrec-cite-papers-in-root-references. edge2 lifted 15:0x (opus; make
+test running). lim2's worktree removed (0 stragglers); lane/lim2 kept
+for the end-of-session push.
