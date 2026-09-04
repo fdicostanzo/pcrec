@@ -1720,5 +1720,27 @@ append-only or historical records.
   recommends between (c) and (e) for the VM island and states the D77
   trigger. See its own README.md/CLAUDE.md for reproduction.
 
+  **SHIPPED 2026-09-03 as `[ENG-ISL]` STEP 1** — algorithm (e), the VM-native
+  trie walk, is the VM's alternation lowering now (`src/gen/emit_vm.c`'s
+  `vm_isl_*`, `docs/spec/tuning.md` §2.20). TWO DEVIATIONS from the study, both
+  recorded because a reader comparing the two will notice them:
+
+  1. **No runtime deferred mask.** The study sizes one and reports its depth. An
+     EMITTER does not need it: every trie edge is a single byte, so sibling edges
+     are disjoint, the walk is a single deterministic path, and the set of
+     alternatives still live where the walk stops is a compile-time function of
+     the node it stopped at. §3.2's two-sided commit rule is the RUNTIME form of
+     that fact; the emitter writes the candidate list out instead, in ascending
+     original index, and allocates no slot.
+  2. **The predicate is over the LANGUAGE, not per branch.** The study asks
+     whether each BRANCH is a literal; the emitter asks whether the alternation's
+     whole subtree matches a finite set of literal byte strings. The per-branch
+     form was built first and measured wrong: `src/opt/altcls.c` factors a wide
+     alternation before the emitter sees it, so every branch it touched is a
+     concatenation ending in a nested alternation. That build stamped ELEVEN
+     islands on the bench's `w-256` — exactly its own `RX_ALTCLS_FACTORED` count
+     — fired on nothing but altcls's residues, emitted a 3.0% LARGER artifact,
+     and passed every answer check. `docs/dev/lanes/isl1_report.md` §2.2.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

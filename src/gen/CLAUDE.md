@@ -2266,6 +2266,17 @@ wherever `fit.chosen != ENGM_DFA`.
 `docs/spec/tuning.md` §2.19 is the contract. What lives here is the axis, the
 predicate and the one `if` in `emit_unanchored`.
 
+**"ISLAND" IS TWO DIFFERENT CONSTRUCTS IN THIS TREE, AND THIS IS THE NEWER
+ONE.** `docs/design/engine_m4.md` §6.3-§6.4 uses ISLAND for an EXACT-MATCH DFA
+REGION spliced into the VM's program — determinized, entered from the VM,
+charged one step at its entry, deferred by D50's evidence gate, and carrying
+real transition tables. `[ENG-ISL]`'s ALTERNATION ISLAND carries no DFA and no
+table at all: it is a trie dispatch over one alternation's literal
+alternatives, emitted by this file. They share the idea of a determinized
+region inside the VM program and nothing else, and the plan row's own
+bidirectional framing ("islands of VM in DFA as well as DFA in VM") is what
+put them under one word.
+
 **THE MECHANISM IN ONE SENTENCE.** `<prefix>_search` scans the same bytes
 twice — forward for the match END, backwards over an independently built
 REVERSE machine for the match START — and when the forward machine's start

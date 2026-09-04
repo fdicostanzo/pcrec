@@ -31,6 +31,12 @@ re-measure before load-bearing use.
   exactness (answer-identity against the serial oracle at every subject
   position, zero mismatches everywhere) and cost, on pcrec-bench's
   `bench/altwide/` patterns and subjects. Backs
-  docs/design/alt_dispatch_study.md. See its own CLAUDE.md.
+  docs/design/alt_dispatch_study.md. See its own CLAUDE.md. **Algorithm (e)
+  SHIPPED 2026-09-03 as [ENG-ISL] STEP 1, with two deviations: no runtime
+  deferred mask (the walk is single-path, so the live set is a compile-time
+  function of the node reached), and a predicate over the alternation's
+  LANGUAGE rather than per branch — the per-branch form measured wrong,
+  because altcls factors the tree before the emitter sees it (the
+  eleven-islands defect).**
 
 Maintenance: update this file when studies are added/removed.
