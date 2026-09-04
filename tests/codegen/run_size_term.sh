@@ -467,8 +467,8 @@ POOL_EOF
 
     # distinct SHAPES on each side, counted over BAND-ELIGIBLE members only —
     # an out-of-band member says nothing about where the constant sits.
-    below_shapes="$(printf '%s' "$pool_rows" | awk -F'\t' '$6=="y" && $4=="taken"    {print $2}' | sort -u | wc -l)"
-    above_shapes="$(printf '%s' "$pool_rows" | awk -F'\t' '$6=="y" && $4=="declined" {print $2}' | sort -u | wc -l)"
+    below_shapes="$(printf '%s' "$pool_rows" | awk -F'\t' '$6=="y" && $4=="taken"    {print $2}' | LC_ALL=C sort -u | wc -l)"
+    above_shapes="$(printf '%s' "$pool_rows" | awk -F'\t' '$6=="y" && $4=="declined" {print $2}' | LC_ALL=C sort -u | wc -l)"
 
     if [ "$mismatch" -ne 0 ]; then
         bad "$mismatch pool member(s) have a UNROLL_K_WHY stamp that disagrees with what their ratio predicts against $BAR. That is the materiality constant not being where this file says it is — read the table above; do NOT adjust the constant to make this green, and do not adjust the bar in this script either, which would only re-break the tie in the other direction."
