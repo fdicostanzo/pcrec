@@ -21334,3 +21334,23 @@ strict-clean; the union chain (test → codegen → registry → axes) runs on
 the merged tree once form0's quiet-box timing ends (~17:30). form0 lifted
 16:5x (sonnet) for families B/C/D per the note's §1 protocol, hard stop
 17:30.
+
+## 2026-09-04 — Fifty-second session, part 67 (17:0x EDT): form0 timed and merged (c7288a59); the UNION CHAIN running detached on the merged tree
+
+form0 delivered at 16:57, inside the 17:30 stop: families B/C/D timed on
+the quiet box (132 cells, 0 checksum mismatches, load1 0.39 steady) — one
+size-only prediction overturned (B/sparse: rangecmp 15% slower than the
+table it undercuts on .text), two washes, and family D's atom table
+graduating to a supported win on both axes (~24% over the bit array at
+N=16). Merged docs+studies only. The union chain (test -j4/PROCS=3 →
+test-codegen → test-registry PROCS=4 → test-axes PROCS=12 paired)
+launched detached at 16:58 on c7288a59 (build/chain_20260904_1700/, pid
+in chain.pid, trailer.log's last line '== CHAIN DONE rc=N'); ~85 min.
+On rc=0: DONE + the box to the bench (live + a durable I-44), then the
+session close (journal, wake.md, push main + lane branches). ccd2's
+capability probe was in no make target at merge — wired into
+test-codegen (a47e133a, 0.52 s, probe OK: always_inline needed on gcc
+15.2). Open for Frank on [OPT-DIAL]: whether the entry-shape term's
+DEFAULT may rise (the cells just above 4,096 are the table's cheapest
+wins); the manager recommends keeping 4,096 and making the raise the
+speed profile's first setting.
