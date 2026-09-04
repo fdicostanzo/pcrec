@@ -3599,3 +3599,5 @@ reference (opt5i's `axes2.log`, 2026-09-02) plus exactly the two new
 tower cells each, every other AGREE/BUDGET/REFUSED count byte-identical.
 `make test-axes` is green on a clean tree (both from this fix and from
 the corpus-wide pairing run that exercised it).
+
+## K46 — INFRASTRUCTURE (2026-09-03, fifty-first session, found by lane isl1 during r53's landing pass): the Makefile does not list src/core/limits.def as a dependency, so adding a limits row and rebuilding can ship a binary whose `--list-limits` dump disagrees with its own table. WITNESS: after adding two rows (manifest 45 → 47) the first rebuild's dump still printed 45; caught only because the lane checked the dump rather than trusting the build. STATUS: open; fix = the Makefile dependency (a change touching every object that includes the table; not a landing item). RISK: a stale build's registry dump lies silently — the registry check (tests/registry) reads the dump, so a stale build could pass a check it should fail.
