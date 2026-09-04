@@ -1,0 +1,12 @@
+== [LIM-2] census summary ==
+  .rxt files                       : 193
+  .rx files (bench altwide)         : 33
+  pattern blocks seen                : 3386
+  refused / K7-class cap              : 389
+  no DFA route at all (VM-only)       : 406
+  ENG_ATTEMPT route (bot; would-be bail N/A) : 433
+  DFA route, below premul threshold   : 2146
+  POPULATION (crossed the threshold)  : 12
+  representation-ambiguous after min. : 5
+  MAX forward shrink                  : 97.062% (tests/base/k18_cost_gates.rxt:66)
+  required margin (2x max shrink)     : 194.125pts (representable range: [0,100))

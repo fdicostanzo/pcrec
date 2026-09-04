@@ -1,0 +1,13 @@
+id	raw_n	raw_ncls	raw_bytes	min_n	min_bytes	shrink_pct
+tests/base/k18_cost_gates.rxt:66	27575	6	976729	1010	28693	97.062
+/home/duxevents/pcrec-bench/bench/altwide/patterns/ci-512.rx	2608	27	338405	2570	333445	1.466
+/home/duxevents/pcrec-bench/bench/altwide/patterns/nar4-512.rx	2496	27	256203	2114	218690	14.642
+/home/duxevents/pcrec-bench/bench/altwide/patterns/s-2048.rx	4520	27	655090	4422	640966	2.156
+/home/duxevents/pcrec-bench/bench/altwide/patterns/s-4096.rx	8269	27	1235347	7976	1191721	3.531
+/home/duxevents/pcrec-bench/bench/altwide/patterns/sfx-512.rx	3390	27	443408	2062	267051	39.773
+/home/duxevents/pcrec-bench/bench/altwide/patterns/sh1-512.rx	2457	27	243149	1941	192661	20.764
+/home/duxevents/pcrec-bench/bench/altwide/patterns/srt-512.rx	2608	27	338405	2570	333445	1.466
+/home/duxevents/pcrec-bench/bench/altwide/patterns/w-1024.rx	5147	27	715791	5106	710055	0.801
+/home/duxevents/pcrec-bench/bench/altwide/patterns/w-2048.rx	9872	27	1438414	9798	1427704	0.745
+/home/duxevents/pcrec-bench/bench/altwide/patterns/w-512.rx	2608	27	338405	2570	333445	1.466
+/home/duxevents/pcrec-bench/bench/altwide/patterns/wb-512.rx	2609	28	263424	2043	206229	21.712
