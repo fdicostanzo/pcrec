@@ -1,0 +1,300 @@
+From 464f28969ec52708a85fa389f9d13a1090cdfb9f Mon Sep 17 00:00:00 2001
+From: fdicostanzo <95878694+fdicostanzo@users.noreply.github.com>
+Date: Fri, 4 Sep 2026 04:27:16 -0400
+Subject: [PATCH] =?UTF-8?q?[w13]=20WIP:=20[DD-13b.W1.3]=20the=20run.sh=20c?=
+ =?UTF-8?q?omposed-block=20path=20=E2=80=94=20WRITTEN,=20its=20make=20test?=
+ =?UTF-8?q?=20still=20owed?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The manager asked for this WRITTEN with its validation separated, which
+removes the cost objection my delivery raised. The CONTRACT question it also
+raised stands, and I took the option that leaves the shipped contract
+untouched: run.sh carries the TARGET's prefix through flush_block's tail,
+rather than letting a composed block keep prefix rx — which would need a CLI
+allowance [DD-13b.W1.2] deliberately refused, since -p conflicts with --source
+by design and cli_extras_clean enforces it.
+
+FOUR SITES ASSUMED THE rx/RX PREFIX and all four are now parameterized:
+the pcrec invocation, the driver build (which passed no -DRXT_PREFIX at all),
+the NCAPS grep, and tests/lib/size_count.sh's D46 stamp reads.
+
+size_count_row's prefix is an OPTIONAL THIRD ARGUMENT defaulting to RX, so
+every caller that existed before this step passes nothing and its rows are
+unchanged. VALIDATED THREE WAYS rather than two, because the third is the one
+that matters: an rx artifact with no argument reads its stamps as before; a zz
+artifact WITH the argument reads the same stamps; and a zz artifact WITHOUT it
+reads EMPTY — which proves the parameter is load-bearing rather than
+decorative, and that a caller who forgets it gets blank stamps instead of
+silently correct ones.
+
+THE COMPOSED PREDICATE IS verify_rxt.py's, DELIBERATELY THE SAME ONE: the file
+declares a block name AND this block's pattern carries a by-name reference.
+It over-selects in one known way, exactly as leg C's does; keeping the two
+identical is worth more than narrowing one, because C1 compares these parsers
+and a divergence here would be a divergence there.
+
+THE LOUD FLOOR (K35): a composed block with no target naming it can be built
+neither from its own text nor through --source, so it FAILS per case and, when
+it has no cases, on its own line. Skipping it quietly would drop its cases
+from the denominator and leave the file looking green.
+
+ONE THING I CHOSE NOT TO LEAVE SILENT. H11 builds every target naming a block
+and requires each to answer identically to the block's own compile. For a
+composed block the first such target IS the block's own artifact, so rebuilding
+it would compare an artifact with itself — a tautology wearing a control's
+clothes. It is skipped and still COUNTED as built, because it was; the genuine
+control for a composed block is a SECOND target naming it, which this loop
+still builds and still compares.
+
+verify_rxt.py's skip predicate had a documented population of ZERO. It has one
+now — tests/definitions/composed.rxtin is seven blocks that satisfy it — and
+the comment says where, and why the corpus total is still 0.
+
+NOT RUN: this needs a full make test behind it and the box belongs to main's
+chain. make strict is clean; bash -n and the K37 guard self-check pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01VMRXczPFTZ2zcv2sTzH91X
+---
+ tests/harness/run.sh        | 97 +++++++++++++++++++++++++++++++++++--
+ tests/harness/verify_rxt.py | 19 ++++++--
+ tests/lib/size_count.sh     | 21 +++++---
+ 3 files changed, 120 insertions(+), 17 deletions(-)
+
+diff --git a/tests/harness/run.sh b/tests/harness/run.sh
+index 5c758848..afe3a703 100755
+--- a/tests/harness/run.sh
++++ b/tests/harness/run.sh
+@@ -605,13 +605,72 @@ flush_block() {
+     # shellcheck disable=SC2206
+     [ -n "$RXTFLAGS" ] && pflags+=($RXTFLAGS)
+ 
++    # ---- [DD-13b.W1.3] IS THIS BLOCK COMPOSED? ------------------------
++    #
++    # A COMPOSED block calls a DEFINITION by name, and a definition is a
++    # FILE-level fact — so its pattern text alone does not compile, and the
++    # `-p rx` invocation below would refuse it. Such a block is built the way
++    # `--source` builds it: through a TARGET.
++    #
++    # THE PREDICATE IS verify_rxt.py's, DELIBERATELY THE SAME ONE: the file
++    # declares at least one block `name`, AND this block's pattern carries a
++    # by-name reference. Both halves are needed — a by-name reference in a
++    # file with no definitions is an ordinary unresolvable pattern and must
++    # still FAIL rather than be skipped. It over-selects in one known way (a
++    # pattern whose `(?&x)` names its OWN group, in a file that also declares
++    # definitions), exactly as leg C's does; keeping the two predicates
++    # identical is worth more than narrowing one of them, because C1 compares
++    # these parsers and a divergence here would be a divergence there.
++    local cur_is_composed=0 cur_px="rx" cur_upx="RX"
++    if [ "$head_ndefs" -gt 0 ] && \
++       printf '%s' "$cur_pattern" | LC_ALL=C grep -qE '\(\?&|\(\?P>|\\g<[A-Za-z_]|\\g'"'"'[A-Za-z_]'; then
++        cur_is_composed=1
++        local ci
++        for ci in "${!head_target_def[@]}"; do
++            if [ -n "$cur_name" ] && [ "${head_target_def[$ci]}" = "$cur_name" ]; then
++                cur_px="${head_target_prefix[$ci]}"
++                cur_upx="$(printf '%s' "$cur_px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
++                break
++            fi
++        done
++        # THE LOUD FLOOR (K35: never a silently unscored population). A
++        # composed block with no target naming it cannot be built AT ALL —
++        # not from its own text, because the definitions are a file fact, and
++        # not through `--source`, because nothing asked for it. Skipping it
++        # quietly would drop every one of its cases from the denominator and
++        # leave the file's summary looking green; so it fails, per case AND
++        # on the block's own line when it has none.
++        if [ "$cur_px" = "rx" ]; then
++            local ni
++            for ni in "${!case_kind[@]}"; do
++                record_fail "$cur_file" "${case_line[$ni]}" \
++                    "HARNESS FAILURE: this block calls a definition by name but no 'target' names it, so it can be built neither from its own text nor through --source; add 'target = ${cur_name:-<name this block>}'"
++            done
++            if [ "${#case_kind[@]}" -eq 0 ]; then
++                record_fail "$cur_file" "$cur_pattern_line" \
++                    "HARNESS FAILURE: composed block with no target and no cases"
++            fi
++            return 0
++        fi
++    fi
++
+     local pcrec_err
+     # The budget is AXIS-AWARE (R23 V1): pcrec's own invocation used to carry a
+     # bare hardcoded `timeout 60` that did not scale with the sanitizer axes,
+     # which is the one compile a change to the compiler can actually slow down.
+     # gen_timeout.sh derives it from the same flags everything else does, and
+     # carries the measurement the numbers come from.
+-    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
++    # A COMPOSED BLOCK IS BUILT THROUGH ITS TARGET and an ordinary one from
++    # its own text, which is the only difference between the two paths. The
++    # composed form passes no `-p`: `--source` takes the prefix from the
++    # target row, and `-p` alongside it is a conflict the CLI refuses by
++    # design ([DD-13b.W1.2]) — which is why `cur_px` is carried through this
++    # function's tail instead of the prefix being forced back to `rx`.
++    if [ "$cur_is_composed" = "1" ]; then
++        pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" "${pflags[@]+"${pflags[@]}"}" --source "$cur_file" --target "$cur_px" -o "$bdir/gen.c" 2>&1 >/dev/null)"
++    else
++        pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
++    fi
+     local pcrec_rc=$?
+ 
+     if [ "$cur_is_perr" = "1" ]; then
+@@ -704,7 +763,7 @@ flush_block() {
+     _sz_tf="$WORKDIR/.sz_time.$$"
+     {
+         TIMEFORMAT='ARTSIZE_TIME %3R %3U %3S'
+-        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
++        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$bdir" -DRXT_PREFIX="$cur_px" -DRXT_UPREFIX="$cur_upx" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+     } 2> "$_sz_tf"
+     build_rc=$?
+     build_log="$GEN_CC_LOG"
+@@ -725,7 +784,7 @@ flush_block() {
+         _sz_cpu_ms=$(( 10#${_sz_ums:-0} + 10#${_sz_sms:-0} ))
+         printf -v _sz_cpu '%d.%03d' "$((_sz_cpu_ms / 1000))" "$((_sz_cpu_ms % 1000))"
+         read -r _sz_load1 _ < /proc/loadavg
+-        _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h")"
++        _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h" "$cur_upx")"
+         # Pattern id is ROOT-RELATIVE, never absolute: a no-args (full
+         # corpus) run discovers files via `find "$ROOT_DIR/tests" ...`
+         # (absolute paths), while a targeted run's own argv is whatever
+@@ -766,9 +825,9 @@ flush_block() {
+     # slot self-activate into a real check the moment RX_NCAPS grows to cover
+     # it, with no corpus edit required.
+     local artifact_ncaps
+-    artifact_ncaps="$(grep -oE '^#define RX_NCAPS [0-9]+' "$bdir/gen.h" | awk '{print $3}')"
++    artifact_ncaps="$(grep -oE "^#define ${cur_upx}_NCAPS [0-9]+" "$bdir/gen.h" | awk '{print $3}')"
+     if [ -z "$artifact_ncaps" ]; then
+-        echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: RX_NCAPS not found in generated gen.h for pattern '$cur_pattern'" >&2
++        echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: ${cur_upx}_NCAPS not found in generated gen.h for pattern '$cur_pattern'" >&2
+         local i
+         for i in "${!case_kind[@]}"; do
+             record_fail "$cur_file" "${case_line[$i]}" "HARNESS FAILURE: RX_NCAPS not found in gen.h"
+@@ -795,6 +854,25 @@ flush_block() {
+         for ti in "${!head_target_def[@]}"; do
+             [ "${head_target_def[$ti]}" = "$cur_name" ] || continue
+             px="${head_target_prefix[$ti]}"
++            # [DD-13b.W1.3] THE TARGET THAT IS ALREADY THIS BLOCK'S OWN
++            # ARTIFACT IS NOT REBUILT, and saying why matters more than the
++            # build it saves. A COMPOSED block cannot be compiled from its own
++            # text, so it was built through THIS target a few dozen lines up —
++            # rebuilding it would produce a byte-identical artifact and then
++            # "require it to answer identically to the block's own compile",
++            # which is the same artifact compared with itself: a tautology
++            # wearing a control's clothes.
++            #
++            # It still COUNTS as built, because it was. The per-file floor
++            # below is about targets that never got built at all, and this one
++            # did. The genuine control for a composed block is a SECOND target
++            # naming it — two configs over one definition — which this loop
++            # still builds and still compares, exactly as it does for an
++            # ordinary block.
++            if [ "$cur_is_composed" = "1" ] && [ "$px" = "$cur_px" ]; then
++                head_targets_built=$((head_targets_built + 1))
++                continue
++            fi
+             upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
+             tdir="$bdir/tgt_$px"
+             mkdir -p "$tdir"
+@@ -1116,6 +1194,7 @@ for file in "${files[@]}"; do
+     # a stale inventory would make one file's targets fire on the next.
+     head_target_prefix=()
+     head_target_def=()
++    head_ndefs=0
+     head_targets_built=0
+     while IFS= read -r probe_line || [ -n "$probe_line" ]; do
+         case $probe_line in
+@@ -1166,7 +1245,15 @@ for file in "${files[@]}"; do
+         # target an `m` line meant; agreement needs no vocabulary at all.
+         head_target_prefix=()
+         head_target_def=()
++        head_ndefs=0
+         while IFS=$'\t' read -r _k _l _n _v _rest; do
++            if [ "$_k" = "pattern" ] && [ -n "$_n" ]; then
++                # [DD-13b.W1.3] THE FILE DECLARES A DEFINITION. Read off the
++                # SAME `--list-source` call, like the target rows above: this
++                # script owns no head grammar, only the columns' names.
++                head_ndefs=$((head_ndefs + 1))
++                continue
++            fi
+             [ "$_k" = "target" ] || continue
+             head_target_prefix+=("$_n")
+             head_target_def+=("$_v")
+diff --git a/tests/harness/verify_rxt.py b/tests/harness/verify_rxt.py
+index 91b3c316..ea3935bd 100755
+--- a/tests/harness/verify_rxt.py
++++ b/tests/harness/verify_rxt.py
+@@ -121,11 +121,20 @@ def parse_group_tail(line, prefix):
+ # by-name reference in a file with no definitions is an ordinary
+ # unresolvable pattern and should FAIL, not skip.
+ #
+-# ITS POPULATION IS ZERO TODAY and this file says so rather than letting
+-# a green run imply coverage: no corpus file declares a `name`, so the
+-# skip never fires. It is built now because the SKIP TOTAL is what C3
+-# compares, and a total that has never had a second contributor is a
+-# number with one input.
++# ITS POPULATION IS ZERO ON THE CORPUS and this file says so rather than
++# letting a green run imply coverage: no corpus `.rxt` declares a `name`, so
++# the skip never fires there. It is built because the SKIP TOTAL is what C3
++# compares, and a total that has never had a second contributor is a number
++# with one input.
++#
++# [DD-13b.W1.3] IT HAS A POPULATION NOW, just not in the corpus:
++# `tests/definitions/composed.rxtin` is seven blocks that all satisfy this
++# predicate, and `tests/rxtsource/fixtures/`'s composition fixtures are more.
++# They are `.rxtin` rather than `.rxt` precisely so they do NOT join the
++# corpus (a composed block cannot be compiled from its own text, and
++# `tests/definitions/`'s own section builds them through `--source` instead),
++# so the corpus skip total stays 0 and the predicate is nonetheless exercised
++# — by the section that copies those files in and runs this parser over them.
+ BY_NAME_REF = re.compile(r"\(\?&|\(\?P>|\\g<[A-Za-z_]|\\g'[A-Za-z_]")
+ 
+ 
+diff --git a/tests/lib/size_count.sh b/tests/lib/size_count.sh
+index 1ffc3f79..c403f055 100644
+--- a/tests/lib/size_count.sh
++++ b/tests/lib/size_count.sh
+@@ -118,7 +118,14 @@ size_count_bytes() {
+ #   Net: 8 subprocess spawns per compile down to 1.
+ size_count_row() {
+     local fc="$1" fh="$2"
+-    LC_ALL=C awk -v FC="$fc" '
++    # [DD-13b.W1.3] AN OPTIONAL THIRD ARGUMENT: the artifact's UPPERCASE
++    # symbol prefix, defaulting to `RX`. Every caller before this step
++    # compiled with `-p rx` and passes nothing, so their rows are unchanged
++    # byte for byte; a COMPOSED block is built through `--source --target`
++    # and carries the TARGET's prefix instead, which is the one thing the
++    # stamp greps below cannot infer from the file.
++    local up="${3:-RX}"
++    LC_ALL=C awk -v FC="$fc" -v UP="$up" '
+         BEGIN { in_comment = 0; t = 0; prose = 0; engine = ""; rungs = ""; prefilter = "" }
+         FNR == 1 { in_comment = 0 }
+         {
+@@ -139,17 +146,17 @@ size_count_row() {
+             }
+             if (line ~ /^\/\//) { prose += lb; next }
+             if (FILENAME == FC) {
+-                if ($0 ~ /^#define RX_ENGINE "/) {
++                if ($0 ~ "^#define " UP "_ENGINE \"") {
+                     engine = $0
+-                    sub(/^#define RX_ENGINE "/, "", engine)
++                    sub("^#define " UP "_ENGINE \"", "", engine)
+                     sub(/"$/, "", engine)
+-                } else if ($0 ~ /^#define RX_VM_PREFILTER "/) {
++                } else if ($0 ~ "^#define " UP "_VM_PREFILTER \"") {
+                     prefilter = $0
+-                    sub(/^#define RX_VM_PREFILTER "/, "", prefilter)
++                    sub("^#define " UP "_VM_PREFILTER \"", "", prefilter)
+                     sub(/"$/, "", prefilter)
+-                } else if ($0 ~ /^#define RX_VM_RUNGS /) {
++                } else if ($0 ~ "^#define " UP "_VM_RUNGS ") {
+                     rungs = $0
+-                    sub(/^#define RX_VM_RUNGS /, "", rungs)
++                    sub("^#define " UP "_VM_RUNGS ", "", rungs)
+                     sub(/u$/, "", rungs)
+                 }
+             }
+-- 
+2.53.0
+

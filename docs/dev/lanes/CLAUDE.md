@@ -100,3 +100,4 @@ never edited afterwards.
   off a macro's absence), `RX_VM_INLINE_CHAIN` does NOT (it would carry
   `RX_VM_FRAMELESS`'s value by construction). The (B) identity pin is left at
   `da4fe60` and owed to the manager at merge, opt5i's precedent.
+- `w13_runsh_composed_path.patch` — W1.3.1's starting point: lane w13's written-but-UNRUN run.sh composed-block path (dropped from lane/w13 at the manager's ruling 2026-09-04 04:3x because run.sh is the most load-bearing script in the tree and it would have landed behind three merges and a battery without its own make test). The dropped commit was 464f2896 in the w13 worktree's reflog; the patch is the durable copy. Its contract choice (the target's prefix through flush_block's tail vs the CLI allowance W1.2 refused) is Frank's question; report §18.
