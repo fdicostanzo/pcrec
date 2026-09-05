@@ -284,7 +284,7 @@ from their logs.
 
 | gate | result |
 |---|---|
-| `tests/codegen/run_recursion_identity.sh` (`PROCS=4`) | **12 PASS / 0 FAIL.** (B) whole-file byte identity `differing=0` on all four axes — `default` 2423, `vm` 2424, `noprefilter` 2423, `nocaptures` 2423 — against pin `05b2fe8a`. (A) program region `differing=0` on all four |
+| `tests/codegen/run_recursion_identity.sh` (`PROCS=4`) | **16 PASS / 0 FAIL, exit 0.** (B) whole-file byte identity `differing=0` on all four axes — `default` 2423, `vm` 2424, `noprefilter` 2423, `nocaptures` 2423 — against pin `05b2fe8a`. (A) program region `differing=0` on all four. This is a CLEAN re-run on the final tree; §5.1 says why there was an earlier one |
 | `tests/harness/run.sh tests/utf8` | **1336 passed / 0 failed**, 0 compile failures. That is the expected 1335 plus the restored K49 cell |
 | `make test-encoding-checks` | **11 passed / 0 failed.** The suite's original 7 plus this change's 4. §8.5: 250 ASCII blocks, **0 divergences**; CHK3 0 stamp differences; DD12a(i) 0 differing engine bodies; DD12a(ii) signatures identical |
 | — its K49 section | `byte` advance agrees with `next_pos` on **10,738/10,738** cells and is `pos + 1` on every one; `utf8` agrees on **10,738/10,738** and differs from `pos + 1` on **2,268** of them (the non-vacuity control) |
