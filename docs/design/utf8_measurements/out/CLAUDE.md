@@ -79,3 +79,47 @@ on all 28 rows.** The section was rewritten to say so rather than keeping a
 plausible hazard nobody had checked. The version axis IS live — `\p{L}` is 648
 intervals under Unicode 14.0.0 and 677 under 16.0.0 — but on *property data*,
 not on the engine-semantic cells that list is made of.
+
+## TWO MORE, FOUND BY THE r54 PANEL — AND THEY ARE THE SAME DEFECT TWICE
+
+Defects 1-4 above were found by the lane running its own probes. These two
+were found by a reader, and they share a shape the first four do not:
+**a provenance field that is COMPUTED and then not consumed reads exactly like
+a field that was never there.** Every transcript in this directory was
+re-archived after fixing them.
+
+**5. `_BUNDLED_SHA` — computed, embedded, never printed** (r54 meas-1,
+MUST-FIX). `bundle.py` hashes every borrowed file and embeds the dict in the
+payload; its own docstring says the hashes exist *"so an archived transcript
+names the exact bytes of every borrowed file that produced it — a bundle is
+not reconstructible from the transcript otherwise."* **No reader existed.**
+Not `u8_oracle.header()`, not `archive.sh`, not any probe; zero hash hits in
+all six remote transcripts. And the field a reader would fall back on was no
+better: every `RUN FROM REPO COMMIT: 0346e344` named a commit at which
+`utf8_measurements/` was **untracked**, so the transcripts pinned neither the
+probe nor the borrowed chain. Fixed by `u8_oracle.source_shas()` and a header
+block, in two labelled modes; re-verified agreeing across the ssh boundary.
+
+**6. `archive.sh`'s `|| echo uncommitted` never fired** (r54 meas-3). `git log`
+on a never-tracked path exits **0** with empty stdout, so the fallback tested
+exit status where the fact lives in emptiness, and `PROBE LAST CHANGED AT
+COMMIT` came out **blank** — see this directory's own `sizing.txt` before the
+re-run. A blank field reads as a formatting glitch; "UNCOMMITTED" reads as the
+fact. Fixed with an emptiness test.
+
+**WHY THEY BELONG TOGETHER.** Both are R30 finding M7 one turn further on.
+M7's rule is *a header hand-written to imitate the archiver is worse than
+absent provenance*, because the reader cannot tell stamped from asserted. **A
+computed-but-unprinted hash and a silently-blank field are the same failure
+from the other side**: the machinery is real, the discipline is real, and the
+reader still cannot tell. The lesson this directory adds to M7 is that
+**provenance needs a consumer, and the consumer needs a failing direction** —
+neither field had one, which is why both survived a lane that found four other
+instrument defects by looking.
+
+**A third, smaller, same session** (r54 meas-2): `sizing.txt`'s `RUN DATE` was
+blank, and the cause turned out to be already-fixed — an earlier `archive.sh`
+used GNU `date -Is`, which fails on this Mac's BSD `date`. The spelled-out
+replacement was in the script by the time the panel read it, so only a re-run
+could show it. Recorded because "the fix is already in and the evidence is
+stale" is itself a state a reader has to be told about.

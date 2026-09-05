@@ -151,6 +151,43 @@ and (per row) the options word that produced it.
 | `out/divergence.txt` | charter (vi): the D27 goal-facts list, 28 rows four ways | libpcre2 10.46 + python |
 | `out/divergence_local_py311.txt` | the same 28 rows on the OTHER python this project uses | libpcre2 + python 3.11 |
 
+> **ALL EIGHT TRANSCRIPTS WERE RE-ARCHIVED AT r54 (MUST-FIX M1/meas-1, SHOULD
+> meas-2/meas-3), and the reason is that the first round's provenance was
+> decorative.** `probes/bundle.py` computed a `_BUNDLED_SHA` of every borrowed
+> file and embedded it in the payload, and **nothing ever read it** — not
+> `u8_oracle.header()`, not `archive.sh`, not any probe. Meanwhile every
+> header's `RUN FROM REPO COMMIT` named a commit at which
+> `utf8_measurements/` was **untracked**, so the commit line pinned nothing
+> either: a reader could not recover the bytes that produced any number in
+> this document.
+>
+> Three fixes, then a re-run of all eight:
+>
+> - `u8_oracle.header()` now prints a **source sha256 block** in one of two
+>   labelled modes — `bundled` (the hashes of the bytes that actually executed
+>   on the far end, which is the authoritative case) or `local` (hashed from
+>   disk, weaker, and it says so). Verified agreeing across the machine
+>   boundary: `probe_width.py` produces the identical four hashes run locally
+>   and run over `ssh`.
+> - `archive.sh`'s `PROBE LAST CHANGED AT COMMIT` field had a
+>   `|| echo uncommitted` fallback that **never fired**, because `git log` on
+>   a never-tracked path exits 0 with empty stdout — the test was on exit
+>   status where the fact lives in emptiness. It came out **blank**, which
+>   reads as a formatting glitch rather than as the fact it is.
+> - `probe_uprops.py`'s dead ternary (meas-5) removed.
+>
+> **meas-2's blank `RUN DATE` on `sizing.txt` had a cause, now found**: that
+> transcript was archived by a version of `archive.sh` that used GNU
+> `date -Is`, which fails on this Mac's BSD `date` and emitted nothing. The
+> spelled-out `date +%Y-%m-%dT%H:%M:%S%z` that replaced it was already in the
+> script by the time the panel read it, so only a re-run could show it. Every
+> header now carries a real date, a real probe commit, and the source hashes.
+>
+> **`probe_sizing.py` also gained sections (h)-(k)** — the alphabet partition,
+> the premultiplied entry count, the same with `\b`'s refinement, and the
+> interned subset-element count — which is MUST-FIX E6's measurement and is
+> what §2.4.1 reports.
+
 ### 0.4 THE ORACLE PROBLEM THIS LANE HAD, and why it is worth a section
 
 Every earlier design gate in this house ran its probes on the machine that had
@@ -1523,11 +1560,44 @@ which are the cells a naive `toupper`/`tolower` table gets wrong in both
 directions. **The full sweep becomes a version-bump ritual, not a suite
 member**, which is what ASK 3 is already asking about for §4.1's own result.
 
+---
+
+## 5. THE SEAM'S SECOND INSTANCE (charter (iv))
+
+### 5.0 The headline, RETRACTED and re-stated (r54 E2)
+
 The seam is `src/gen/enc/enc.h`'s `PcrecEncEntry` table, four entries today.
-**The headline of this section is that the seam needs no interface change** —
-D58's revisit clause is honoured by having nothing to record — **and that the
-one thing that does have to change is an ANALYSIS outside the backend, which
-the seam was never going to catch.**
+
+> **THE FIRST VERSION'S HEADLINE WAS: "the seam needs no interface change —
+> D58's revisit clause is honoured by having nothing to record." THAT IS
+> FALSE**, and §2.7.1 is why: the complement universe must be per-encoding,
+> `PcrecEnc` carries `{id, name, entries}` and nothing else
+> (`enc.h:98-106`, verified), so **one scalar field is added** and that is a
+> D58 seam change with something to record (ASK 7).
+
+**What survives is the claim the third-encoding recipe actually makes, and it
+is the load-bearing half:**
+
+- **THE ENTRIES TABLE'S INTERFACE IS UNCHANGED.** Four residual entries get
+  UTF-8 bodies under their existing signatures; no `PcrecEncEntry` field is
+  added; `pcrec_enc_ready` is untouched; both emit functions are untouched.
+  That is the property `[M6.6.2]` wave D demonstrated when `back_step` landed,
+  and §12 P-1′ is what keeps it falsifiable.
+- **`PcrecEnc` ITSELF GAINS ONE SCALAR** (`max_cp`), read by exactly one
+  caller — the parser's negation site.
+- **AND THE ONE THING THAT HAS TO CHANGE OUTSIDE THE BACKEND IS AN ANALYSIS,
+  WHICH THE SEAM WAS NEVER GOING TO CATCH** — the lookbehind width rule
+  (§5.6), which is the original headline's real content and is unaffected by
+  the retraction.
+
+**Why the distinction is worth a section rather than a footnote.** "No
+interface change" and "no change to the entries table" are different promises,
+and the first version used the stronger one as a summary of the weaker one's
+evidence. The seam's VALUE is the entries table — that is what a third backend
+plugs into, and it is what `enc.h`'s recipe describes. A scalar on the
+registry struct is a much smaller thing, but it is not nothing, and D58's
+revisit clause exists precisely so that "much smaller" is written down rather
+than assumed.
 
 ### 5.1 `next_pos` — the entry the seam was built for
 
@@ -3174,6 +3244,33 @@ acceptance. Three cross-cutting obligations belong to every wave:
    house is a check whose population nobody counted (`learnings.md` §3); the
    sizing sub-lane in this very lane found a construction bug only because
    its self-check counted 10,916 samples rather than asserting correctness.
+   **And r54 adds the sharper form of the same rule**: §8.5 counts the ASCII
+   corpus at 3,319 blocks through the harness's own parser, where the obvious
+   text scan says 3,349 and misses 30 — so "state your population" is not
+   enough, the instrument that counts it must be able to express what it is
+   counting.
+
+**FOUR OBLIGATIONS ADDED AT r54**, each because a repair in this revision is
+the kind of thing an implementation wave silently drops:
+
+4. **The lowering's POSITION is a reviewable fact, not an implementation
+   detail.** §2.1.2 derives one line in `compile.c` from three constraints.
+   A wave that puts it elsewhere has either found a constraint this document
+   got wrong — which is P-12 and is welcome — or has reintroduced E1. The
+   pass-chain comment at the call site says which constraints it satisfies,
+   in the style `compile.c`'s existing pass comments already use.
+5. **`pcrec_cls_bits`'s assertion ships ENABLED, or §8.1.1's check 2 is the
+   only thing standing between the tree and E1's recurrence.** An assertion
+   compiled out in the build everyone runs is a comment.
+6. **Both width timings move in ONE change** (§5.6.4), and `pcrec_maxw`'s
+   retirement is part of that change rather than a follow-up. A tree with
+   `la_widths` on the character pair and `pcrec_maxw` still present is a tree
+   with a dead analysis that a later reader will assume is live.
+7. **Every sabotage row is born with its `SAB_REACH`/`SAB_REACH_POP`**
+   (§8.2), not retrofitted. `[MECH-REACH]` has been standing since
+   2026-08-25 and `opt5_step2_twopass.md` is the precedent for adopting it at
+   birth; this milestone is unusually exposed because eight of its ten rows
+   have no population at all until stage 2's corpus exists.
 
 ---
 

@@ -51,12 +51,37 @@ never the archiver's `local host` line.
   D27 list turns on which one a cell needs. `SELFCHECK` is behavioural and
   runs at import — six checks, each asserting a constant does what its name
   says rather than trusting the value.
+  **[r54] `source_shas()` + the header's SOURCE SHA BLOCK.** `bundle.py` had
+  always computed a `_BUNDLED_SHA` of every borrowed file and embedded it in
+  the payload, and **nothing read it** — so no archived transcript named the
+  bytes that produced it, and the archiver's commit line could not stand in
+  because `utf8_measurements/` was untracked at every commit the first round
+  stamped. `header()` now prints the hashes in one of two LABELLED modes:
+  `bundled` (read out of the payload's own `__main__` globals — the hashes of
+  the bytes that actually executed on the far end, and the authoritative
+  case) and `local` (hashed from disk here, weaker by construction, and the
+  label says so rather than letting a reader assume otherwise). Verified
+  agreeing across the machine boundary: `probe_width.py` prints the identical
+  four hashes run locally and run over `ssh`.
 - `probes/bundle.py` — the remote-payload builder described above. Its
-  docstring carries the borrowing argument in full.
+  docstring carries the borrowing argument in full. **Unchanged at r54** —
+  the defect was never in this file: it computed the right thing and the
+  consumer did not exist.
 - `probes/archive.sh` — the ONLY writer of `out/` (R30 finding M7: a header
   hand-written to imitate the archiver is *"worse than absent provenance"*).
   `--local` selects the comparison mode; `.sh` probes are always local because
   they measure pcrec, which is built here.
+  **[r54] THE `PROBE LAST CHANGED AT COMMIT` FIELD COULD GO SILENTLY BLANK.**
+  Its `git log … || echo uncommitted` fallback **never fired**: `git log` on a
+  path that has never been tracked exits **0** with empty stdout — asking
+  about a path with no history is not an error — so the `||` tested exit
+  status where the fact lives in EMPTINESS. Every transcript archived before
+  the probes were committed carried a blank field, which reads as a formatting
+  glitch rather than as "this transcript pins nothing". Now an explicit
+  emptiness test whose message says so. **This is R30 M7's rule one turn
+  further on**: a provenance line that can go blank is the same defect as one
+  hand-written to imitate the archiver, because in both cases the reader
+  cannot tell stamped from absent.
 - `probes/probe_premises.sh` — the pcrec side on HEAD: the refusals, the
   registry rows, and the three source sites `../utf8_design.md` argues
   against, quoted from the tree rather than paraphrased.
@@ -84,10 +109,32 @@ never the archiver's `local host` line.
   from the run rather than transcribed.
 - `probes/probe_sizing.py` — charter (v): the byte-automaton construction,
   built from scratch and **self-checked before it is believed** (10,916 sample
-  points; it caught a real construction bug at 5,460 mismatches before any
-  number left the probe). Stdlib only, no oracle: the question is a property
-  of the construction, and answering it with libpcre2 would measure libpcre2's
-  automaton rather than the one pcrec would build.
+  points, 0 mismatches, reproduced at every re-run). Stdlib only, no oracle:
+  the question is a property of the construction, and answering it with
+  libpcre2 would measure libpcre2's automaton rather than the one pcrec would
+  build. (The lane's "caught a real construction bug at 5,460 mismatches"
+  story is a LANE ANECDOTE about a build that no longer exists and that no
+  transcript captured — r54 meas-4 re-marked it ASSERTED in the design, since
+  it had been sitting under the same MEASURED banner as the 0.)
+  **[r54] SECTIONS (h)-(k), THE BINDING CAPS' OWN UNITS.** The probe sized in
+  STATES and **none of the caps that binds an emitted DFA is denominated in
+  states** (r54 E6). It now also computes, per machine: the `eqclasses`
+  partition `ncls` by `src/ir/dfa.c`'s own rule (two bytes are one class iff
+  every MINIMIZED state sends them to the same target — minimized, because
+  minimization runs before emission and the raw machine's alphabet is not the
+  one any cap sees); the premultiplied entry count `min-states × ncls` against
+  `PREMUL_MAX_ENTRIES`; the same with `dfa.c:173`'s `\b` word refinement
+  applied; and the interned state-set ELEMENT count against K7's
+  `PCREC_MAX_SUBSET_ELEMS`. **The verdict column reads `premul`/`PLAIN`, not
+  `fits`/`REFUSES`, and the distinction is deliberate**: `emit_dfa.c:2522`
+  sits inside `dfa_premul`, an `[ENG-FORM]`/D82 FORM-SELECTION predicate, so
+  exceeding it removes the pre-multiplied table from the candidate list and
+  costs `[OPT-3]`'s measured 1.27× — it is **not** a compile refusal, and a
+  transcript saying "REFUSES" would be a confidently wrong label of exactly
+  the kind this directory's `out/CLAUDE.md` catalogues. The minimization is
+  computed **once** and shared with the cap block rather than re-run, so the
+  addition costs nothing on the two rows (`\p{L}`, `\w`) whose run time is why
+  the phase budget exists.
 - `out/` — archived output; see its own CLAUDE.md, which carries the FOUR
   instrument defects this lane found by running its own probes.
 
