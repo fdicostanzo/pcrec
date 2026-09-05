@@ -105,7 +105,18 @@ lane `macport` falling into.
 §2.6.1's entry-promise table from ARGUED into MEASURED, and the measurement
 found **three oracle answers where the design had assumed two** — plus a
 **second, independent witness for §5.2.1's `back_step` repair on a WELL-FORMED
-subject**, which widens P-9's instrument. ASK 3 and ASK 6 remain open.
+subject**, which widens P-9's instrument.
+
+**A SECOND RULINGS BLOCK (R-ASKS-2) LANDED MINUTES LATER**, and closes the
+list:
+
+| ASK | ruling | consumed at |
+|---|---|---|
+| **3** — standing fold check | **RULED: YES.** The 11 one-to-many candidates become a permanent cell on the PC-3/PC-4 differential | **§4.1.1** specifies it (22 assertions, both option words); **§8.2 row S-U11**; **§9.2 places it at STAGE 1**, four stages before the fold it defends, because its subject is libpcre2 rather than pcrec |
+| **6** — the `.rxt` oracle value | **RULED: the small `rxt_format.md` amendment route**; the manager charters it, spelling is the manager's, §7.1.1's predicate is the input | **§7.4.1** — this lane does not write the spec, and hands over the correction that the amendment needs **at least four** states, not the three the ASK asked for |
+| — | **NEW, from Frank's width question**: record what the door to UTF-16/32 costs | **§5.7**, a note beside the seam discussion — and §11 now carries the technical reason beside the policy one |
+
+**All seven ASKs are now ruled.**
 
 **What SURVIVED adversarial reading**, verified independently and unchanged
 here: §5.6's refutation of the `[M5.0]` cross-note (confirmed at
@@ -1563,6 +1574,48 @@ whole job.
 **D23's rule therefore survives verbatim**: the fold is applied to the SET, in
 the one constructor, at parse time. Only the set is now code points.
 
+#### 4.1.1 The 0-of-11 becomes a STANDING CHECK (ASK 3, RULED 2026-09-04)
+
+> **Frank's ruling**: the eleven one-to-many candidates become **a permanent
+> cell riding the existing PC-3/PC-4 differential**, firing the day the
+> oracle's folding behaviour changes.
+
+**WHY THIS IS THE RIGHT SHAPE AND NOT BELT-AND-BRACES.** §12 P-8 already
+called this *"the single result the most design depends on"*, and the
+dependency is structural rather than incidental: **the absence of 1:n folding
+is what lets a caseless class stay a CLASS.** A 1:n fold is a sequence, so
+its existence would force a caseless literal into an alternation and a
+caseless class into something a class cannot hold — which is not a tuning
+change, it is a different lowering. **And the failure would be silent**: a
+future PCRE2 that added full folding would simply start matching cells pcrec
+answers `no` to, with nothing in this tree noticing, because a one-time
+measurement leaves no instrument behind.
+
+**THE CHECK, specified** (the implementation wave builds it; this is what it
+must be):
+
+| | |
+|---|---|
+| **rides** | PC-3/PC-4's existing libpcre2 differential (`tests/registry/pcre2_check.c`, `tests/registry/pc4_check.c`), so it inherits their *skip-loudly-if-libpcre2-is-absent* convention rather than inventing one |
+| **population** | the **11 measured cells** of `out/caseless.txt` §2, by name — ß/SS, ß/ss, SS/ß, ss/ß, U+FB01/fi, fi/U+FB01, U+FB03/ffi, U+0149, U+01F0, U+1E96, U+0390 — **each under both `PCRE2_UTF\|PCRE2_CASELESS` and `…\|PCRE2_UCP`**, which is 22 assertions, because §4.1 measured both and a check that dropped the UCP arm would not cover what the design read |
+| **asserts** | every cell does **not** match. A cell that starts matching is a **RED**, not a skip |
+| **the diagnostic** | must name what it means, not just what failed: *"libpcre2 has gained 1:n case folding; `docs/design/utf8_design.md` §4.1 and `[FORM-CHAR]` object (5) are invalidated"* — the D26 re-measurement event this fires for is a design event, and a check that says only "cell 7 failed" makes a reader rediscover that |
+
+**WHICH STAGE — AND IT IS NOT THE ONE THE FOLD LANDS IN.** The obvious home is
+stage 4, where the fold closure is built. **That is wrong, and the design says
+so rather than defaulting**: this check tests **the ORACLE's behaviour, not
+pcrec's**, so it has no dependency on any pcrec code and can run today. Put it
+at stage 4 and stages 1-3 are built on an unwatched premise for the whole
+milestone — precisely the window in which a libpcre2 bump would be cheapest to
+absorb and most expensive to discover late.
+
+> **The standing fold check lands at STAGE 1**, with the rest of §4 unbuilt.
+> It is the only check in this plan whose subject is not pcrec, and that is
+> exactly why it can and should go first.
+
+§8.2 gives it sabotage row **S-U11** with the `SAB_REACH`/`SAB_REACH_POP`
+discipline every other row now carries, and §14 ASK 3 records the ruling.
+
 ### 4.2 It is a CLOSURE, not a pairing — and it reaches outside the range
 
 **MEASURED** (`out/caseless.txt` §3, §3b, §5). Three findings that constrain
@@ -2353,6 +2406,111 @@ which `emit_vm.c`'s own note 3 predicts in those words. §5.2.1 is the other
 half of that sentence: the end-check only stops being a **trap** once
 `back_step` validates declared length, so E3 and E4 are one change, not two.
 
+### 5.7 THE DOOR TO UTF-16/32 — what stays open, and what it costs
+
+> **A NOTE, NOT A DESIGN (Frank's width question, 2026-09-04, relayed with
+> R-ASKS-2).** UTF-16/32 are out of scope (§11) and `[DD-12] (6)` rules them
+> out. This section exists because "out of scope" and "architecturally
+> foreclosed" are different states, and the first version of this document
+> said only the first. **Nothing here is built or proposed for building**;
+> D77 governs, and the trigger is at the end.
+
+#### 5.7.1 What the architecture already carries
+
+**The expensive half of a 16/32 backend is already paid for, and paid for by
+this milestone rather than by that one.** The reason is §2.1's spine: code
+points exist above the encoding, and only below it does anything become
+units.
+
+| what | where it sits | transfers? |
+|---|---|---|
+| the UCD interval tables (§3.3) | compile-time data in `libpcrec.a`, indexed by CODE POINT | **YES, unchanged** — `\p{L}` is the same set of code points whatever the encoding |
+| the fold closure (§4.2) | applied to the interval SET, before any lowering, in the one constructor (D23) | **YES, unchanged** — §4.2(c)'s whole point is that the fold must happen while the set is still code points, which is encoding-agnostic by construction |
+| the character-width analysis `cwmin`/`cwmax` (§5.6.3) | over the code-point AST, `A_CLASS` answering exactly 1 | **YES** — "a class is one character" is true in every encoding, which is the property that made §5.6's repair work |
+| `PcrecEnc.max_cp` (§2.7.1) | the complement universe | **YES** — it is already a per-encoding field; UTF-16/32 read `0x10FFFF`, the same value utf8 reads |
+| the residual entries table (§5.0) | four bodies per backend | **YES** — the third-encoding recipe is what it is for |
+| the CharSet→unit-sequence lowering (§2.3) | one instance per backend | **THE SHAPE TRANSFERS**; the instance does not, and §5.7.2 is why |
+
+**AND THE NATURAL SHAPE FOR A UTF-16 BACKEND HERE IS UNITS-AS-BYTE-PAIRS, NOT
+A 16-BIT ALPHABET ENGINE.** This is the observation worth recording, because
+the instinct runs the other way. §2.3's construction decomposes a code-point
+interval into sequences of RANGES over the alphabet; nothing in it requires
+the alphabet to be bytes — but everything BELOW it does. The subset
+construction, `eqclasses`, `d->rep[c]`, the 256-entry class bitmaps, both
+emitters, `memchr`, the premultiplied table: all of it is a byte machine, and
+§2.4.1 has just measured how sensitive its caps are to the alphabet's size. A
+native 16-bit alphabet would multiply `ncls`'s domain by 256 against a
+65,535-**entry** cap that a single `\p{L}` class already spends 41% of.
+
+> So a UTF-16 backend's lowering emits **two byte-range steps per code unit**
+> — the unit's high byte then its low byte — and everything below the lowering
+> is the machine that already exists. A code point becomes 2 or 4 byte steps
+> instead of UTF-8's 1 to 4. **The architecture does not need a second engine;
+> it needs a second lowering instance**, which is exactly what the seam
+> promises.
+
+#### 5.7.2 The three transfer-blockers, which are not small
+
+A 16/32 author re-checks these three before anything else. Each is stated as
+the blocker it is rather than as a caveat.
+
+**(1) THE PREFILTER'S SELF-SYNCHRONIZATION PREMISE FAILS.** §6.3 establishes
+that pcrec's candidate-start scan is sound under UTF-8 *and* useful, and the
+useful half rests on a property UTF-8 has and **UTF-16 does not**: a lead byte
+never appears mid-character. In UTF-16-as-byte-pairs, **any byte value can
+appear in either position of a unit** — `0x00 0x41` is `A`, and `0x41` is also
+the high byte of U+41xx — so a byte-level scan can land inside a code unit and
+report a candidate start that is not a character boundary. **The scan stays
+SOUND** (it reads the machine, §6.3's one-line argument does not mention
+UTF-8) **and stops being a filter**: every second byte is a false candidate,
+and the verification cost that §6.3's quality table prices goes with it. This
+is E11's finding stated as what it is — **not a note about UTF-16, but the
+named premise §6.3 depends on**, and the reason a 16/32 backend cannot inherit
+§6.3's conclusion by reading it.
+
+**(2) THE ENDIANNESS AXIS APPEARS, AND IT IS A NEW AXIS.** UTF-8 has one byte
+order. UTF-16 has two (and a BOM convention), and PCRE2 ships them as
+**separate libraries** (`libpcre2-16`), not as a mode. For pcrec that is a
+question `--encoding` alone cannot answer: either `utf16le`/`utf16be` are two
+registry rows (two lowering instances differing by byte order, which is
+cheap and D18-honest — each earns its name) or one row plus a parameter,
+which D18's earn-its-axis rule would have to be argued against. **The design
+has no recommendation**; it records that the axis exists and that the
+one-scalar-per-compile `--encoding` shape already accommodates the two-row
+answer.
+
+**(3) SURROGATES MOVE FROM "EXCLUDED CODE POINTS" TO LIVE MECHANICS.** Under
+UTF-8, U+D800–U+DFFF are simply **absent** from every lowered set (§2.3), and
+that absence is a one-line exclusion plus S-U7's sabotage row. Under UTF-16
+they are **the encoding of every astral code point** — a surrogate PAIR is how
+U+10000+ is spelled — so the same range flips from "has no encoding" to "is
+the mechanism". Everything §2.3, §8.2 (S-U7) and §8.3.1's subject witness say
+about surrogates is UTF-8-specific and **must be re-derived, not ported**. A
+16/32 author who carried S-U7 across unchanged would be asserting the opposite
+of what that encoding requires.
+
+#### 5.7.3 D77: built when a consumer exists, and here is where one comes from
+
+**No UTF-16/32 backend is built, designed, or scheduled**, and §11 keeps it
+out of scope. D77's rule is that a mechanism is built when a measurement or a
+consumer demands it, and this one has neither today — `[DD-12] (6)`'s original
+reason (no consumer asks) is unchanged and is still the operative one.
+
+**Where a consumer would come from, so the trigger is nameable rather than
+hypothetical**: `[V-A]` (the PCRE2 compatibility layer, including the POSIX
+`regex.h` shim) and `[V-B]` (bindings for other languages). A caller who
+already speaks PCRE2 may hold `PCRE2_SPTR16` buffers, and a language binding
+for a runtime whose native string is UTF-16 — Java, C#, JavaScript — hands
+pcrec UTF-16 without being asked. **That is the shape of a real consumer**:
+not "someone wants UTF-16 regexes" but "a caller already has UTF-16 bytes and
+transcoding them is the cost we would be imposing." Neither row is started.
+
+**What this note buys, stated plainly**: if that day comes, the answer is a
+lowering instance, a registry row or two, and §5.7.2's three re-derivations —
+**not** a second engine and not a re-architecture. And if it does not come,
+this section cost a page and prevented a future reader from concluding, from
+§11's one line, that the door had been shut.
+
 ---
 
 ## 6. Engine and selection consequences (charter (v))
@@ -2720,6 +2878,36 @@ The charter says to flag rather than write, and the flag has three parts:
 
 `docs/spec/rxt_format.md` is not edited by this lane. §14 ASK 6 routes it.
 
+#### 7.4.1 ASK 6 RULED (2026-09-04): the small amendment route
+
+> **Frank's ruling**: the small `rxt_format.md` amendment route. The manager
+> charters it with the implementation waves; **spelling is the manager's**,
+> per the standing `[DD-13b]` ruling; **and §7.1.1's match-units predicate is
+> the input.**
+
+**This lane still does not write the spec** — that is the ruling's own
+division — but it owes the amendment a correct statement of what must be
+expressible, and **r54 changed that statement**. The first version asked for
+a third value beside python-verifiable and `# pcre2-only`:
+*python-verifiable through the `str` engine only.* §7.1.1 found that the
+oracle question is **not a three-valued label at all**:
+
+> A cell's oracle depends on **which unit the candidate oracle counts in**.
+> python-`bytes` verifies a `UCP-SPLIT` cell **unless the expected answer is a
+> MATCH that consumes a multi-byte character** — the complemented forms
+> (`\W`, `\D`, `\S`, `[^…]`) over non-ASCII, and only when they match.
+> `\W` over a Greek letter is `UCP-SPLIT` by VERDICT and `PCRE2-ONLY` by
+> ORACLE, and the two are different partitions of the same table.
+
+So the amendment has **at least four** states to express, not three
+(python-str, python-bytes, either, neither), and the honest observation is
+that a flat label set may be the wrong shape entirely — the fact is a
+property of the CELL's expected answer, which the format could in principle
+derive rather than have an author declare. **This design does not know which
+of those the format should do**, and §10 records that as an open item rather
+than guessing on the format owner's behalf. What it hands the amendment is
+§7.1.1's predicate and the measured 7-of-8 that produced it.
+
 ---
 
 ## 8. The validation plan (charter (vii))
@@ -2858,7 +3046,19 @@ possible answer").
 | S-U6 | `next_pos` finds a boundary (§5.1) | make it `pos + 1` | only a find-all over an empty match on a multi-byte subject sees it | find-all over `αβγ` with `pcrec -e utf8 ''` reports 4 matches | `tests/utf8/nextpos.rxt` \| `^pattern` \| **14** | 2 |
 | S-U7 | the surrogate range is excluded from every lowered set (§2.3) | include it | **at the SUBJECT level** — a compiled `.`-artifact must REJECT `ED A0 BD` (§8.3's C5 note) | artifact for `-e utf8 '^.$'` rejects `ED A0 BD` | `tests/utf8/invalid.rxt` \| `^m\|^n .*ED A0` \| **9** | 2 |
 | S-U8 | `pcrec_minw` is per-class exact (§5.6.1) | return the old constant 1 | **changes no answer** — a looser MRL bound prunes less and can never delete a match. Only a stamp-reading check sees it: the `RX_PRUNE_*` literal moves | `pcrec -e utf8 --emit-ir '(?:α){3}x'` prints a prune bound > 3 | `tests/utf8/mrl.rxt` \| `^pattern` \| **8** | **2** (C4) |
+| **S-U11** | **the standing 1:n fold check is live (§4.1.1, ASK 3 RULED)** | **invert one of the 22 assertions** (assert that ß/SS DOES match caseless) | the check's subject is **libpcre2, not pcrec**, so no corpus cell and no identity gate can see it — the only row here whose sabotage is a change to a check's own expectation rather than to the compiler | `run_pc4.sh` (or the PC-3 arm) prints the fold-cell block and its count | `tests/registry/pc4_check.c` \| `1:n fold` \| **22** | **1** |
 | **S-U10** | **the `cwmin` fixpoint runs to settlement (§5.6.2)** | **`break` after one round** (S171's own shape, re-aimed) | a one-round fixpoint is right for a call graph of depth 1, so only a lookbehind whose body calls a group that itself calls one sees it | `pcrec -e utf8 --features all '(?<=(?1))x(a(?2))(b)'` compiles | `tests/utf8/lookbehind.rxt` \| `^pattern .*\(\?<.*\(\?[0-9&]` \| **4** | 2 |
+
+**S-U11 IS THE ODD ONE AND IS DELIBERATELY IN THIS TABLE.** Every other row
+sabotages the COMPILER and asks whether a check notices. S-U11 sabotages a
+CHECK'S OWN EXPECTATION and asks whether the matrix notices — because the fact
+it defends is a fact about libpcre2, which no amount of pcrec-side testing can
+reach. It is in this table rather than filed elsewhere so that the count of
+load-bearing claims and the count of sabotage rows stay equal, which is the
+property D69's shape exists for. Its `SAB_REACH_POP` floor of **22** is the
+number §4.1.1 specifies (11 cells × 2 option words); **a floor of 11 would
+pass a check that had silently dropped the UCP arm**, which is the arm §4.1
+measured second and a later reader is likeliest to lose.
 
 **S-U8 IS THE ONE WORTH NOTICING, AND IT WAS ORPHANED (C4).** It changes no
 answer at all, so neither the corpus nor the identity gate can see it — the
@@ -3142,6 +3342,12 @@ here**, not in stage 2, because stage 1's negation needs it — under `byte` it
 reads `0xFF` and every answer is unchanged, which is the whole of §2.7.1's
 byte-identity argument.
 
+**AND THE STANDING 1:n FOLD CHECK LANDS HERE TOO** (§4.1.1, ASK 3 RULED), with
+sabotage row **S-U11** — four stages before the fold it defends. Its subject is
+libpcre2, not pcrec, so it depends on nothing stage 1 builds, and deferring it
+to stage 4 would leave the milestone's most load-bearing measured premise
+unwatched for three stages.
+
 **STAGE 2 — the utf8 backend.** `enc_utf8.c` (four residual bodies,
 `back_step` per §5.2.1), the byte-sequence lowering placed at
 `compile.c:1000` per §2.1.2, `\x{...}` above 0xFF under `--encoding=utf8`,
@@ -3256,10 +3462,16 @@ variable-length sequence with its own break algorithm, and it would be the
 first construct whose width is unbounded at the character level. It belongs to
 its own module and its own design gate.
 
-UTF-16 and UTF-32 (`[DD-12] (6)`) — and §6.3 now records the technical reason
-as well as the policy one: **UTF-16 is not byte-self-synchronizing**, so the
-prefilter argument this design gets for free does not transfer, and a third
-backend would owe an alignment argument nothing here provides. PCRE2's
+UTF-16 and UTF-32 (`[DD-12] (6)`) — **and §5.7 is the note recording that
+"out of scope" is not "architecturally foreclosed"** (Frank's width question,
+2026-09-04). What transfers (the UCD data, the fold closure, the character
+widths, `max_cp`, the entries table, and the lowering's SHAPE — with
+units-as-byte-pairs the natural in-architecture form), the three
+transfer-blockers a 16/32 author re-checks (**self-synchronization FAILS for
+UTF-16**, which is E11's premise stated as the blocker it is; the endianness
+axis; surrogates moving from excluded code points to live mechanics), and the
+D77 trigger — `[V-A]`/`[V-B]` interop is where a real consumer would come
+from. **Still not built, designed or scheduled.** PCRE2's
 `PCRE2_UCP` as a pcrec axis (§14 ASK 4, **re-priced at r54** — it costs
 `upc_of_class`'s mechanism replaced, not a seam entry added; §5.4.1).
 Optimising `ENG_ATTEMPT`'s start loop for character boundaries (§5.5). A
@@ -3529,11 +3741,26 @@ time, as `cls_bits.inc` already is. This would be the first non-PCRE2
 third-party data in the repository. Approve, and approve the pin (16.0.0,
 matching libpcre2 10.46)?
 
-**ASK 3 — should "simple folding only" become a standing check? (§4.1)** The
-whole of §4 rests on a one-time measurement that 10.46 does no 1:n folding.
-A future PCRE2 could add full folding, and the failure would be silent. Worth
-a permanent cell in the PC-3/PC-4 differential, or accept it as a
-re-measurement event on version bump (D26's addendum)?
+**ASK 3 — should "simple folding only" become a standing check? (§4.1)
+RULED 2026-09-04: YES, THE STANDING CHECK.**
+
+> **Frank's ruling**: the 11 one-to-many fold candidates become **a permanent
+> cell riding the existing PC-3/PC-4 differential**, firing the day the
+> oracle's folding behaviour changes.
+>
+> **§4.1.1 specifies it** — 11 cells × 2 option words = 22 assertions, the
+> skip-loudly convention inherited from PC-3, and a diagnostic that names the
+> DESIGN consequence rather than the failing cell. **§8.2 gives it sabotage
+> row S-U11** with the `SAB_REACH`/`SAB_REACH_POP` discipline every other row
+> now carries. **And the design places it at STAGE 1, not stage 4** — its
+> subject is libpcre2 rather than pcrec, so it depends on nothing the fold
+> stage builds, and holding it back would leave §4's whole foundation
+> unwatched for three stages. That placement is this design's call on the
+> ruling's implementation, and §9.2 states it where the wave will find it.
+
+The original question: the whole of §4 rests on a one-time measurement that
+10.46 does no 1:n folding, a future PCRE2 could add full folding, and the
+failure would be silent.
 
 **ASK 4 — is a UCP axis owed? RULED 2026-09-04: NO UCP AXIS AT M5, DOOR
 EXPLICITLY OPEN.**
@@ -3617,11 +3844,19 @@ mid-character starts, which are harmless (no path) but wasted, up to 3 per
 character. Fixing it means routing a shared emitter loop through a residual
 entry, which S68 and `engine_callable = false` currently forbid.
 
-**ASK 6 — the `.rxt` third oracle value (§7.4).** The format has
-python-verifiable and `# pcre2-only`. UTF needs a third: python-verifiable
-**through the `str` engine only** (5 of 28 measured cells). This lane did not
-edit `docs/spec/rxt_format.md`. Route it to `[DD-13b]`, or charter a small
-amendment now so stage 2's corpus has somewhere to live?
+**ASK 6 — the `.rxt` third oracle value (§7.4). RULED 2026-09-04: THE SMALL
+AMENDMENT ROUTE.**
+
+> **Frank's ruling**: the small `rxt_format.md` amendment; the manager
+> charters it with the implementation waves, spelling is the manager's per the
+> standing `[DD-13b]` ruling, and **§7.1.1's match-units predicate is the
+> input**. **This lane does not write the spec**, and §7.4.1 is what it hands
+> over instead — including the correction that the amendment needs **at least
+> four** states rather than the three the ASK asked for, because §7.1.1 found
+> the oracle question is a predicate about match UNITS and not a label.
+
+The original question: the format has python-verifiable and `# pcre2-only`,
+and UTF needs at least one more.
 
 ---
 
@@ -3699,6 +3934,13 @@ stay inline where they bit, and this section is the index to them.
   answers to a pre-M5 compiler transitively).
 - **§15** — where this document is still weakest, written after the revision
   as §12 was written before the panel.
+- **§4.1.1** — the standing 1:n fold check (ASK 3 RULED), placed at stage 1
+  rather than at the stage that builds the fold, because its subject is the
+  ORACLE and not pcrec.
+- **§5.7** — the UTF-16/32 door note (Frank's width question): what the
+  architecture already carries, the three transfer-blockers, and the D77
+  trigger. It is the one section written to prevent a future MIS-reading
+  rather than to fix a present defect.
 
 ### 16.3 Findings this revision made against ITSELF
 
