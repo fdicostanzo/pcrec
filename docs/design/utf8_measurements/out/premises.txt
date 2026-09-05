@@ -8,11 +8,19 @@
 #   NOTE      : this is NOT the reference oracle unless the
 #               libpcre2 line below reads 10.46. A local run is a
 #               deliberate version COMPARISON, or a pcrec probe.
-# PROBE LAST CHANGED AT COMMIT: 
-# RUN FROM REPO COMMIT        : 0346e344 (lane/utf8design)
+# PROBE LAST CHANGED AT COMMIT: c767ae25 2026-09-04
+# RUN FROM REPO COMMIT        : c8c08e18 (lane/utf8design)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/utf8_measurements/
-# RUN DATE   : 2026-09-04T21:54:12-0400
+#      M docs/design/utf8_measurements/out/caseless.txt
+#      M docs/design/utf8_measurements/out/divergence.txt
+#      M docs/design/utf8_measurements/out/divergence_local_py311.txt
+#      M docs/design/utf8_measurements/out/invalid_utf.txt
+#      M docs/design/utf8_measurements/out/premises.txt
+#      M docs/design/utf8_measurements/out/sizing.txt
+#      M docs/design/utf8_measurements/out/uprops.txt
+#      M docs/design/utf8_measurements/out/width.txt
+#      M docs/design/utf8_measurements/probes/probe_sizing.py
+# RUN DATE   : 2026-09-04T22:31:42-0400
 # local python3 : 3.11.4  (the BUNDLER's)
 # local gcc     : 16
 # local host    : Darwin 25.6.0
@@ -28,7 +36,7 @@
 [M5.0] pcrec-side premises, on HEAD
 ======================================================================
 pcrec       : 610904 bytes
-built from  : 0346e344 (lane/utf8design)
+built from  : c8c08e18 (lane/utf8design)
 gcc         : 16
 ======================================================================
 

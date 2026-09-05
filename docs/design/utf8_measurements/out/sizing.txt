@@ -8,11 +8,19 @@
 #   NOTE      : this is NOT the reference oracle unless the
 #               libpcre2 line below reads 10.46. A local run is a
 #               deliberate version COMPARISON, or a pcrec probe.
-# PROBE LAST CHANGED AT COMMIT: 
-# RUN FROM REPO COMMIT        : 0346e344 (lane/utf8design)
+# PROBE LAST CHANGED AT COMMIT: c767ae25 2026-09-04
+# RUN FROM REPO COMMIT        : c8c08e18 (lane/utf8design)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/utf8_measurements/
-# RUN DATE   : 
+#      M docs/design/utf8_measurements/out/caseless.txt
+#      M docs/design/utf8_measurements/out/divergence.txt
+#      M docs/design/utf8_measurements/out/divergence_local_py311.txt
+#      M docs/design/utf8_measurements/out/invalid_utf.txt
+#      M docs/design/utf8_measurements/out/premises.txt
+#      M docs/design/utf8_measurements/out/sizing.txt
+#      M docs/design/utf8_measurements/out/uprops.txt
+#      M docs/design/utf8_measurements/out/width.txt
+#      M docs/design/utf8_measurements/probes/probe_sizing.py
+# RUN DATE   : 2026-09-04T22:33:35-0400
 # local python3 : 3.11.4  (the BUNDLER's)
 # local gcc     : 16
 # local host    : Darwin 25.6.0
@@ -31,7 +39,7 @@ probe_sizing.py -- [M5.0] UTF-8 design gate, sizing lane
 host machine   : macOS-26.6.2-arm64-arm-64bit
 python version : 3.11.4 (/Users/fdicostanzo/miniconda3/bin/python3)
 unicodedata    : unidata_version=14.0.0
-run timestamp  : 2026-09-04 21:43:54 -0400
+run timestamp  : 2026-09-04 22:33:35 -0400
 
 CAVEAT (stated once, applies to every \p{} row below): the Unicode version this python's unicodedata module knows (14.0.0) may differ from the version libpcre2 10.46 (the project's reference oracle, per u8_oracle.py's header) was built against. This probe does not attempt to reconcile that -- a different probe in this lane owns that question. Any \p{}-derived row's interval count and all downstream sizes are only as good as this python's Unicode data.
 
@@ -41,7 +49,7 @@ CONVENTIONS used throughout (read before comparing numbers to pcrec's real caps)
   (e)/(f) DFA/minimized-DFA counts are of a PARTIAL transition function: a byte outside every live transition from a state is an implicit reject and is NOT materialized as a counted state (no explicit trap/dead state). This matches how a fragment-composition compiler like pcrec represents 'no match' (fallthrough), not a total automaton with an explicit dead state -- stated so these numbers are not silently off-by-one against a reader's different convention.
   Every (e)/(f)/(g) figure is for the BASE class alone unless labelled '* form' or '{1,3} form'.
 
-(unicodedata.category() precomputed for all 1114112 codepoints in 0.062s)
+(unicodedata.category() precomputed for all 1114112 codepoints in 0.061s)
 
 ------------------------------------------------------------------------------
 1. [a-z] (ASCII control)
@@ -53,8 +61,12 @@ intervals (1): U+0061-U+007A
 (c) NFA states, unshared (naive)    : 2
 (d) NFA states, suffix-shared       : 4  (ratio d/c = 2.0000)
 (e) DFA states (subset construction): 2  (subset-construct wall time 0.000s)
-(f) minimized DFA states            : 2  (minimize wall time 0.000s)
+(f) minimized DFA states            : 2  (minimize wall time 0.001s)
 (g) lead byte set                   : 26 distinct byte value(s): 0x61-0x7A
+(h) alphabet classes (ncls)         : 2   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 2 x 2 = 4   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 2 -> 3, entries 2 x 3 = 6   (-> premul)
+(k) subset ELEMENTS interned        : 4   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 283 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -69,6 +81,10 @@ intervals (1): U+0080-U+07FF
 (e) DFA states (subset construction): 3  (subset-construct wall time 0.000s)
 (f) minimized DFA states            : 3  (minimize wall time 0.000s)
 (g) lead byte set                   : 30 distinct byte value(s): 0xC2-0xDF
+(h) alphabet classes (ncls)         : 3   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 3 x 3 = 9   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 3 -> 4, entries 3 x 4 = 12   (-> premul)
+(k) subset ELEMENTS interned        : 5   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 279 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -83,6 +99,10 @@ intervals (1): U+03B1-U+03C9
 (e) DFA states (subset construction): 4  (subset-construct wall time 0.000s)
 (f) minimized DFA states            : 4  (minimize wall time 0.000s)
 (g) lead byte set                   : 2 distinct byte value(s): 0xCE-0xCF
+(h) alphabet classes (ncls)         : 5   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 4 x 5 = 20   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 5 -> 6, entries 4 x 6 = 24   (-> premul)
+(k) subset ELEMENTS interned        : 7   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 281 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -95,8 +115,12 @@ intervals (2): U+0100-U+D7FF, U+E000-U+10FFFF
 (c) NFA states, unshared (naive)    : 27
 (d) NFA states, suffix-shared       : 18  (ratio d/c = 0.6667)
 (e) DFA states (subset construction): 9  (subset-construct wall time 0.000s)
-(f) minimized DFA states            : 9  (minimize wall time 0.000s)
+(f) minimized DFA states            : 9  (minimize wall time 0.001s)
 (g) lead byte set                   : 49 distinct byte value(s): 0xC4-0xF4
+(h) alphabet classes (ncls)         : 11   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 9 x 11 = 99   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 11 -> 12, entries 9 x 12 = 108   (-> premul)
+(k) subset ELEMENTS interned        : 18   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 282 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -109,8 +133,12 @@ intervals (3): U+0000-U+0009, U+000B-U+D7FF, U+E000-U+10FFFF
 (c) NFA states, unshared (naive)    : 29
 (d) NFA states, suffix-shared       : 20  (ratio d/c = 0.6897)
 (e) DFA states (subset construction): 9  (subset-construct wall time 0.000s)
-(f) minimized DFA states            : 9  (minimize wall time 0.000s)
+(f) minimized DFA states            : 9  (minimize wall time 0.001s)
 (g) lead byte set                   : 178 distinct byte value(s): 0x00-0x09, 0x0B-0x7F, 0xC2-0xF4
+(h) alphabet classes (ncls)         : 12   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 9 x 12 = 108   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 12 -> 13, entries 9 x 13 = 117   (-> premul)
+(k) subset ELEMENTS interned        : 20   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 286 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -123,8 +151,12 @@ intervals (3): U+0000-U+0060, U+0062-U+D7FF, U+E000-U+10FFFF
 (c) NFA states, unshared (naive)    : 29
 (d) NFA states, suffix-shared       : 20  (ratio d/c = 0.6897)
 (e) DFA states (subset construction): 9  (subset-construct wall time 0.000s)
-(f) minimized DFA states            : 9  (minimize wall time 0.000s)
+(f) minimized DFA states            : 9  (minimize wall time 0.001s)
 (g) lead byte set                   : 178 distinct byte value(s): 0x00-0x60, 0x62-0x7F, 0xC2-0xF4
+(h) alphabet classes (ncls)         : 12   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 9 x 12 = 108   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 12 -> 14, entries 9 x 14 = 126   (-> premul)
+(k) subset ELEMENTS interned        : 20   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 285 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -137,8 +169,12 @@ intervals (648): U+0041-U+005A, U+0061-U+007A, U+00AA, U+00B5, U+00BA, U+00C0-U+
 (c) NFA states, unshared (naive)    : 2636
 (d) NFA states, suffix-shared       : 2205  (ratio d/c = 0.8365)
 (e) DFA states (subset construction): 283  (subset-construct wall time 0.003s)
-(f) minimized DFA states            : 283  (minimize wall time 0.008s)
+(f) minimized DFA states            : 283  (minimize wall time 0.014s)
 (g) lead byte set                   : 97 distinct byte value(s): 0x41-0x5A, 0x61-0x7A, 0xC2-0xCB, 0xCD-0xED, 0xEF-0xF0
+(h) alphabet classes (ncls)         : 95   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 283 x 95 = 26885   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 95 -> 96, entries 283 x 96 = 27168   (-> premul)
+(k) subset ELEMENTS interned        : 2533   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 2972 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -151,8 +187,12 @@ intervals (646): U+0041-U+005A, U+00C0-U+00D6, U+00D8-U+00DE, U+0100, U+0102, U+
 (c) NFA states, unshared (naive)    : 1752
 (d) NFA states, suffix-shared       : 1246  (ratio d/c = 0.7112)
 (e) DFA states (subset construction): 74  (subset-construct wall time 0.002s)
-(f) minimized DFA states            : 74  (minimize wall time 0.001s)
+(f) minimized DFA states            : 74  (minimize wall time 0.003s)
 (g) lead byte set                   : 47 distinct byte value(s): 0x41-0x5A, 0xC3-0xC9, 0xCD-0xD5, 0xE1-0xE2, 0xEA, 0xEF-0xF0
+(h) alphabet classes (ncls)         : 87   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 74 x 87 = 6438   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 87 -> 88, entries 74 x 88 = 6512   (-> premul)
+(k) subset ELEMENTS interned        : 1655   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 1832 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -166,8 +206,12 @@ NOTE: APPROXIMATION, NOT Script=Greek: python's stdlib unicodedata module carrie
 (c) NFA states, unshared (naive)    : 122
 (d) NFA states, suffix-shared       : 120  (ratio d/c = 0.9836)
 (e) DFA states (subset construction): 26  (subset-construct wall time 0.000s)
-(f) minimized DFA states            : 26  (minimize wall time 0.000s)
+(f) minimized DFA states            : 26  (minimize wall time 0.001s)
 (g) lead byte set                   : 7 distinct byte value(s): 0xCD-0xCF, 0xE1-0xE2, 0xEA, 0xF0
+(h) alphabet classes (ncls)         : 49   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 26 x 49 = 1274   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 49 -> 50, entries 26 x 50 = 1300   (-> premul)
+(k) subset ELEMENTS interned        : 123   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 422 sample points checked, 0 mismatches
 
 ------------------------------------------------------------------------------
@@ -181,8 +225,12 @@ NOTE: ASSUMPTION (to be checked against the real PCRE2 oracle by a different pro
 (c) NFA states, unshared (naive)    : 3572
 (d) NFA states, suffix-shared       : 2958  (ratio d/c = 0.8281)
 (e) DFA states (subset construction): 332  (subset-construct wall time 0.004s)
-(f) minimized DFA states            : 332  (minimize wall time 0.009s)
+(f) minimized DFA states            : 332  (minimize wall time 0.017s)
 (g) lead byte set                   : 110 distinct byte value(s): 0x30-0x39, 0x41-0x5A, 0x5F, 0x61-0x7A, 0xC2-0xED, 0xEF-0xF0, 0xF3
+(h) alphabet classes (ncls)         : 96   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
+(i) premul table ENTRIES            : 332 x 96 = 31872   (PREMUL_MAX_ENTRIES 65535 -> premul)
+(j) with \b's word refinement       : ncls 96 -> 96, entries 332 x 96 = 31872   (-> premul)
+(k) subset ELEMENTS interned        : 3476   (PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines -> this is one machine's share)
 SELF-CHECK: 3994 sample points checked, 0 mismatches
 
 ==============================================================================
@@ -193,20 +241,26 @@ QUANTIFIED FORMS: X* and X{1,3} for classes 4, 5, 7
 ------------------------------------------------------------------------------
 4. [\x{100}-\x{10FFFF}] (charter stress case)
 ------------------------------------------------------------------------------
-  X*       raw NFA states (pre-determinize): 19 ; (e) DFA states: 9 (0.000s) ; (f) minimized: 8 (0.000s)
-  X{1,3}   raw NFA states (pre-determinize): 52 ; (e) DFA states: 25 (0.000s) ; (f) minimized: 25 (0.001s)
+  X*       raw NFA states (pre-determinize): 19 ; (e) DFA states: 9 (0.000s) ; (f) minimized: 8 (0.001s)
+           (h/i/j/k) ncls 11 -> entries 8 x 11 = 88 (65535: premul) ; +\b ncls 12 -> 96 (premul) ; subset elems 29
+  X{1,3}   raw NFA states (pre-determinize): 52 ; (e) DFA states: 25 (0.000s) ; (f) minimized: 25 (0.002s)
+           (h/i/j/k) ncls 11 -> entries 25 x 11 = 275 (65535: premul) ; +\b ncls 12 -> 300 (premul) ; subset elems 54
 
 ------------------------------------------------------------------------------
 5. . under UTF, not DOTALL (all U+0000-U+10FFFF except U+000A)
 ------------------------------------------------------------------------------
-  X*       raw NFA states (pre-determinize): 21 ; (e) DFA states: 9 (0.000s) ; (f) minimized: 8 (0.000s)
-  X{1,3}   raw NFA states (pre-determinize): 58 ; (e) DFA states: 25 (0.000s) ; (f) minimized: 25 (0.001s)
+  X*       raw NFA states (pre-determinize): 21 ; (e) DFA states: 9 (0.000s) ; (f) minimized: 8 (0.001s)
+           (h/i/j/k) ncls 12 -> entries 8 x 12 = 96 (65535: premul) ; +\b ncls 13 -> 104 (premul) ; subset elems 33
+  X{1,3}   raw NFA states (pre-determinize): 58 ; (e) DFA states: 25 (0.000s) ; (f) minimized: 25 (0.002s)
+           (h/i/j/k) ncls 12 -> entries 25 x 12 = 300 (65535: premul) ; +\b ncls 13 -> 325 (premul) ; subset elems 60
 
 ------------------------------------------------------------------------------
 7. \p{L} (category starts with L)
 ------------------------------------------------------------------------------
-  X*       raw NFA states (pre-determinize): 2206 ; (e) DFA states: 283 (0.059s) ; (f) minimized: 282 (0.008s)
-  X{1,3}   raw NFA states (pre-determinize): 6613 ; (e) DFA states: 847 (0.118s) ; (f) minimized: 847 (0.046s)
+  X*       raw NFA states (pre-determinize): 2206 ; (e) DFA states: 283 (0.060s) ; (f) minimized: 282 (0.014s)
+           (h/i/j/k) ncls 95 -> entries 282 x 95 = 26790 (65535: premul) ; +\b ncls 96 -> 27072 (premul) ; subset elems 3322
+  X{1,3}   raw NFA states (pre-determinize): 6613 ; (e) DFA states: 847 (0.120s) ; (f) minimized: 847 (0.067s)
+           (h/i/j/k) ncls 95 -> entries 847 x 95 = 80465 (65535: PLAIN) ; +\b ncls 96 -> 81312 (PLAIN) ; subset elems 7599
 
 ==============================================================================
 SUMMARY TABLE (base classes)
@@ -237,6 +291,65 @@ class                                            NFA-shrd    fit-NFA    min-DFA 
 8. \p{Lu} (category exactly Lu)                      1246        yes         74    yes/yes
 9. \p{Greek} (SCRIPT APPROXIMATION -- read the        120        yes         26    yes/yes
 10. \w under UCP (approx: L*, N*, Mn, '_')           2958        yes        332    yes/yes
+
+==============================================================================
+CAP-FIT IN THE CAPS' OWN UNITS (r54 E6)
+==============================================================================
+The table above sizes in STATES. None of the three caps that actually
+bind an emitted DFA is denominated in states:
+
+  PREMUL_MAX_ENTRIES     65,535 ENTRIES = min-states x ncls
+                         (src/gen/emit_dfa.c:2081, tested at :2522)
+                         WHAT EXCEEDING IT COSTS, because the word
+                         'cap' invites the wrong reading: :2522 sits
+                         in `dfa_premul`, an [ENG-FORM]/D82 FORM-
+                         SELECTION predicate. `return false` removes
+                         the pre-multiplied table from the candidate
+                         list; the machine still compiles, in the
+                         plain-table form, losing [OPT-3]'s measured
+                         1.27x. It is NOT a compile refusal, and the
+                         'PLAIN' column below means exactly that.
+  PCREC_MAX_SUBSET_ELEMS 48,000,000 interned state-set ELEMENTS,
+                         summed over BOTH machines (src/ir/dfa.c:934)
+  D84                    500,000 code / 1,000,000 total emitted BYTES
+
+`ncls` is dfa.c's own eqclasses partition: two bytes are one class iff
+every minimized state sends them to the same target. THE ALPHABET IS
+THE AXIS THE LOWERING MOVES -- a UTF-8 decomposition's transitions are
+lead-byte and continuation-byte RANGES, so it refines the byte alphabet
+where an ASCII class does not. `+\b` applies dfa.c:173's second
+refinement (`refine_by(d, ncls, pcrec_cls_word_esc)`) on top.
+
+class                                   minSt  ncls     entries      fit    +\b  entries+\b   subsetEl
+------------------------------------------------------------------------------------------------------
+1. [a-z] (ASCII control)                    2     2     2 x   2   premul      3     2 x   3          4
+2. [\x{80}-\x{7FF}] (pure 2-byte band)      3     3     3 x   3   premul      4     3 x   4          5
+3. [α-ω] = U+03B1-U+03C9 (small non-AS      4     5     4 x   5   premul      6     4 x   6          7
+4. [\x{100}-\x{10FFFF}] (charter stres      9    11     9 x  11   premul     12     9 x  12         18
+5. . under UTF, not DOTALL (all U+0000      9    12     9 x  12   premul     13     9 x  13         20
+6. [^a] under UTF (U+0000-U+10FFFF min      9    12     9 x  12   premul     14     9 x  14         20
+7. \p{L} (category starts with L)         283    95   283 x  95   premul     96   283 x  96       2533
+8. \p{Lu} (category exactly Lu)            74    87    74 x  87   premul     88    74 x  88       1655
+9. \p{Greek} (SCRIPT APPROXIMATION --      26    49    26 x  49   premul     50    26 x  50        123
+10. \w under UCP (approx: L*, N*, Mn,     332    96   332 x  96   premul     96   332 x  96       3476
+
+  (the `entries` column is printed as its own multiplication so a
+   reader redoes the arithmetic rather than trusting the product)
+
+READ THE `entries` COLUMN, NOT THE STATE COLUMN, for the premultiplied
+form's headroom. The two disagree by more than an order of magnitude:
+a row at 1% of the 32,000-state cap can sit at ~50% of this one,
+because `ncls` is what the lowering moves and states are not.
+
+WORST BASE-CLASS ROW: 31872 entries (48.63% of PREMUL_MAX_ENTRIES 65535);
+                      31872 entries with \b (48.63%);
+                      3476 subset elements (0.0072% of 48,000,000).
+
+WHAT THIS PROBE CANNOT MEASURE, stated rather than estimated silently:
+D84's two caps are on EMITTED C BYTES and this probe emits no C. The
+design derives a byte figure from these dimensions and marks it ARGUED,
+not MEASURED; only pcrec's own emitter can settle it, and it cannot
+compile a UTF-8 pattern until stage 2 lands. That is P-5's territory.
 
 QUANTIFIED-FORM CAP-FIT
 class                                          form        raw-NFA        DFA    min/cap-fit
@@ -271,4 +384,4 @@ NOT VERIFIED by this probe (out of scope for the sizing lane):
   - Runtime/memory cost of the DFA, only state COUNT.
   - Whether pcrec's actual code generator would produce the same shared-NFA structure this probe's hash-consing produces (this is a sizing upper/lower bound exercise, not pcrec's real construction).
 
-Total probe wall time: 0.77s
+Total probe wall time: 0.82s

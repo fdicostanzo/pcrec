@@ -412,7 +412,89 @@ def minimize_dfa(order, transitions, accepting, deadline):
         if len(sig_map) == len(set(classof)):
             break
         classof = newclass
-    return len(set(classof))
+    return len(set(classof)), classof, full
+
+
+# --- r54 E6: THE CAPS' OWN UNITS -------------------------------------------
+#
+# The panel's E6: this probe sized in STATES, and not one of the caps that
+# actually binds is denominated in states.
+#
+#   PREMUL_MAX_ENTRIES      65,535 ENTRIES  = states x ncls
+#                                             (src/gen/emit_dfa.c:2081/:2522)
+#   PCREC_MAX_SUBSET_ELEMS  48,000,000 ELEMENTS, summed over both machines
+#                                             (src/ir/dfa.c:934)
+#   D84 code/total          500,000 / 1,000,000 BYTES of emitted C
+#   PCREC_MAX_DFA_STATES_*  10,000 / 32,000 states (the ones we already had)
+#
+# And the LOWERING'S CHARACTERISTIC EFFECT IS ON `ncls`, not on the state
+# count: a UTF-8 decomposition's transitions are lead-byte and
+# continuation-byte RANGES, which refine the byte alphabet in a way an ASCII
+# class never does. Sizing in states measured the one axis the lowering
+# barely moves.
+#
+# `ncls` here is computed exactly as `src/ir/dfa.c` computes it: two bytes are
+# in one equivalence class iff EVERY state sends them to the same target. The
+# `+word` column then applies dfa.c:173's own second refinement (`refine_by(d,
+# ncls, pcrec_cls_word_esc)`), which a pattern containing `\b` pays on top.
+
+
+WORD_BYTES = frozenset(
+    list(range(0x30, 0x3A)) + list(range(0x41, 0x5B))
+    + list(range(0x61, 0x7B)) + [0x5F])
+
+
+def alphabet_classes(nstates, rows, extra_refine=None):
+    """The `eqclasses` partition of the 256-byte alphabet, dfa.c's own rule:
+    byte b and byte c are equivalent iff they agree on every state's row.
+    `rows[i][b]` is the target state (or -1 for the implicit dead sink).
+
+    `extra_refine` is a byte SET that must not be merged across -- dfa.c:173's
+    `refine_by(d, ncls, pcrec_cls_word_esc)`, i.e. what a `\\b`-bearing
+    pattern additionally pays."""
+    sigs = {}
+    for b in range(256):
+        key = tuple(rows[i][b] for i in range(nstates))
+        if extra_refine is not None:
+            key = key + (b in extra_refine,)
+        sigs.setdefault(key, []).append(b)
+    return len(sigs)
+
+
+def minimized_rows(nstates, classof, full):
+    """Collapse the raw table onto the minimized state set, so `ncls` and the
+    entry count are measured on the machine that would actually be EMITTED --
+    minimization runs before emission, so the raw machine's alphabet is not
+    the one any cap sees."""
+    reps = {}
+    for i in range(nstates):
+        reps.setdefault(classof[i], i)
+    ids = sorted(reps)
+    renum = {c: k for k, c in enumerate(ids)}
+    rows = []
+    for c in ids:
+        src = full[reps[c]]
+        rows.append([(-1 if t == -1 else renum[classof[t]]) for t in src])
+    return len(ids), rows
+
+
+def cap_units(nraw, classof, full, subset_elems):
+    """Every binding cap's number for one built machine, with the arithmetic
+    a reader can redo. Takes the ALREADY-COMPUTED minimization (classof/full)
+    rather than re-running it: a second Moore refinement here would double
+    this probe's cost on exactly the rows (`\\p{L}`, `\\w`) whose run time is
+    the reason the phase budget exists."""
+    nmin, rows = minimized_rows(nraw, classof, full)
+    ncls = alphabet_classes(nmin, rows)
+    ncls_w = alphabet_classes(nmin, rows, WORD_BYTES)
+    return {
+        "min_states": nmin,
+        "ncls": ncls,
+        "ncls_word": ncls_w,
+        "entries": nmin * ncls,
+        "entries_word": nmin * ncls_w,
+        "subset_elems": subset_elems,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -509,16 +591,25 @@ def measure_automaton(auto, deadline, label):
     except TimedOut:
         return {"dnf_stage": "subset_construct", "elapsed": time.time() - t0}
     dfa_states = len(order)
+    # r54 E6: K7's cap is on INTERNED STATE-SET ELEMENTS, not on states. This
+    # is the same sum `src/ir/dfa.c` accumulates into `cx->subset_elems`
+    # (:934) -- the size of every interned state SET, summed, which is why a
+    # machine with few states can still refuse.
+    subset_elems = sum(len(st) for st in order)
     t1 = time.time()
     try:
-        min_states = minimize_dfa(order, transitions, accepting, deadline)
+        min_states, classof, full = minimize_dfa(
+            order, transitions, accepting, deadline)
     except TimedOut:
         return {"dnf_stage": "minimize", "elapsed": time.time() - t1,
-                "dfa_states": dfa_states, "subset_time": t1 - t0}
+                "dfa_states": dfa_states, "subset_time": t1 - t0,
+                "subset_elems": subset_elems}
+    caps = cap_units(len(order), classof, full, subset_elems)
     return {
         "dfa_states": dfa_states, "min_states": min_states,
         "subset_time": t1 - t0, "minimize_time": time.time() - t1,
         "order": order, "transitions": transitions, "accepting": accepting,
+        "subset_elems": subset_elems, "caps": caps,
     }
 
 
@@ -867,6 +958,25 @@ def main():
           % (lead_count, ", ".join("0x%02X-0x%02X" % (lo, hi) if lo != hi else "0x%02X" % lo
                                     for lo, hi in lead_ranges)))
 
+        # r54 E6: the caps' OWN units, per row, with the arithmetic shown.
+        caps = res.get("caps")
+        if caps:
+            p("(h) alphabet classes (ncls)         : %d   [dfa.c's eqclasses "
+              "partition: bytes agreeing on every minimized state's row]"
+              % caps["ncls"])
+            p("(i) premul table ENTRIES            : %d x %d = %d   "
+              "(PREMUL_MAX_ENTRIES 65535 -> %s)"
+              % (caps["min_states"], caps["ncls"], caps["entries"],
+                 "premul" if caps["entries"] <= 65535 else "PLAIN"))
+            p("(j) with \\b's word refinement       : ncls %d -> %d, "
+              "entries %d x %d = %d   (-> %s)"
+              % (caps["ncls"], caps["ncls_word"], caps["min_states"],
+                 caps["ncls_word"], caps["entries_word"],
+                 "premul" if caps["entries_word"] <= 65535 else "PLAIN"))
+            p("(k) subset ELEMENTS interned        : %d   "
+              "(PCREC_MAX_SUBSET_ELEMS 48000000, summed over BOTH machines "
+              "-> this is one machine's share)" % caps["subset_elems"])
+
         checked, mismatches, examples = self_check_class(name, intervals, res, rng)
         total_checked += checked
         total_mismatches += mismatches
@@ -880,6 +990,7 @@ def main():
             "name": name, "n_ivs": len(intervals), "n_alt": n_alt,
             "naive": naive_states, "shared": shared_states, "ratio": ratio,
             "dfa": dfa_states, "min": min_states, "lead_count": lead_count,
+            "caps": res.get("caps"),
         })
         p("")
 
@@ -910,7 +1021,8 @@ def main():
                 p("  %-8s (e) DFA states: DNF at stage '%s' after %.1fs (budget %.0fs)"
                   % (form_label, res["dnf_stage"], res["elapsed"], PHASE_TIMEOUT))
                 dnf_notes.append("%s %s form: %s DNF after %.1fs" % (name, form_label, res["dnf_stage"], res["elapsed"]))
-                quant_rows.append((name, form_label, auto["raw_nfa_states"], None, None))
+                quant_rows.append((name, form_label, auto["raw_nfa_states"],
+                                   None, None, None))
             else:
                 dfa_states = res["dfa_states"]
                 line = "  %-8s raw NFA states (pre-determinize): %d ; (e) DFA states: %d (%.3fs)" % (
@@ -923,7 +1035,17 @@ def main():
                     line += " ; (f) minimized: DNF after %.1fs" % res["elapsed"]
                     dnf_notes.append("%s %s form: minimize DNF after %.1fs" % (name, form_label, res["elapsed"]))
                 p(line)
-                quant_rows.append((name, form_label, auto["raw_nfa_states"], dfa_states, min_states))
+                c = res.get("caps")
+                if c:
+                    p("           (h/i/j/k) ncls %d -> entries %d x %d = %d "
+                      "(65535: %s) ; +\\b ncls %d -> %d (%s) ; subset elems %d"
+                      % (c["ncls"], c["min_states"], c["ncls"], c["entries"],
+                         "premul" if c["entries"] <= 65535 else "PLAIN",
+                         c["ncls_word"], c["entries_word"],
+                         "premul" if c["entries_word"] <= 65535 else "PLAIN",
+                         c["subset_elems"]))
+                quant_rows.append((name, form_label, auto["raw_nfa_states"],
+                                   dfa_states, min_states, res.get("caps")))
         p("")
 
     # ---- summary table -----------------------------------------------------
@@ -960,12 +1082,87 @@ def main():
                                           "DNF" if r["min"] is None else r["min"], fit_dfa))
     p("")
 
+    # --- r54 E6: THE SAME ROWS IN THE BINDING CAPS' OWN UNITS ---------------
+    p("=" * 78)
+    p("CAP-FIT IN THE CAPS' OWN UNITS (r54 E6)")
+    p("=" * 78)
+    p("The table above sizes in STATES. None of the three caps that actually")
+    p("bind an emitted DFA is denominated in states:")
+    p("")
+    p("  PREMUL_MAX_ENTRIES     65,535 ENTRIES = min-states x ncls")
+    p("                         (src/gen/emit_dfa.c:2081, tested at :2522)")
+    p("                         WHAT EXCEEDING IT COSTS, because the word")
+    p("                         'cap' invites the wrong reading: :2522 sits")
+    p("                         in `dfa_premul`, an [ENG-FORM]/D82 FORM-")
+    p("                         SELECTION predicate. `return false` removes")
+    p("                         the pre-multiplied table from the candidate")
+    p("                         list; the machine still compiles, in the")
+    p("                         plain-table form, losing [OPT-3]'s measured")
+    p("                         1.27x. It is NOT a compile refusal, and the")
+    p("                         'PLAIN' column below means exactly that.")
+    p("  PCREC_MAX_SUBSET_ELEMS 48,000,000 interned state-set ELEMENTS,")
+    p("                         summed over BOTH machines (src/ir/dfa.c:934)")
+    p("  D84                    500,000 code / 1,000,000 total emitted BYTES")
+    p("")
+    p("`ncls` is dfa.c's own eqclasses partition: two bytes are one class iff")
+    p("every minimized state sends them to the same target. THE ALPHABET IS")
+    p("THE AXIS THE LOWERING MOVES -- a UTF-8 decomposition's transitions are")
+    p("lead-byte and continuation-byte RANGES, so it refines the byte alphabet")
+    p("where an ASCII class does not. `+\\b` applies dfa.c:173's second")
+    p("refinement (`refine_by(d, ncls, pcrec_cls_word_esc)`) on top.")
+    p("")
+    header3 = ("%-38s %6s %5s %11s %8s %6s %11s %10s" %
+               ("class", "minSt", "ncls", "entries", "fit", "+\\b", "entries+\\b",
+                "subsetEl"))
+    p(header3)
+    p("-" * len(header3))
+    for r in rows:
+        c = r.get("caps")
+        if not c:
+            p("%-38s %6s %5s %11s %8s %6s %11s %10s"
+              % (r["name"][:38], "DNF", "-", "-", "-", "-", "-", "-"))
+            continue
+        p("%-38s %6d %5d %5d x%4d %8s %6d %5d x%4d %10d"
+          % (r["name"][:38], c["min_states"], c["ncls"],
+             c["min_states"], c["ncls"],
+             "premul" if c["entries"] <= 65535 else "PLAIN",
+             c["ncls_word"], c["min_states"], c["ncls_word"],
+             c["subset_elems"]))
+    p("")
+    p("  (the `entries` column is printed as its own multiplication so a")
+    p("   reader redoes the arithmetic rather than trusting the product)")
+    p("")
+    p("READ THE `entries` COLUMN, NOT THE STATE COLUMN, for the premultiplied")
+    p("form's headroom. The two disagree by more than an order of magnitude:")
+    p("a row at 1% of the 32,000-state cap can sit at ~50% of this one,")
+    p("because `ncls` is what the lowering moves and states are not.")
+    p("")
+    worst = max((r["caps"]["entries"] for r in rows if r.get("caps")),
+                default=0)
+    worst_w = max((r["caps"]["entries_word"] for r in rows if r.get("caps")),
+                  default=0)
+    worst_e = max((r["caps"]["subset_elems"] for r in rows if r.get("caps")),
+                  default=0)
+    p("WORST BASE-CLASS ROW: %d entries (%.2f%% of PREMUL_MAX_ENTRIES 65535);"
+      % (worst, 100.0 * worst / 65535.0))
+    p("                      %d entries with \\b (%.2f%%);"
+      % (worst_w, 100.0 * worst_w / 65535.0))
+    p("                      %d subset elements (%.4f%% of 48,000,000)."
+      % (worst_e, 100.0 * worst_e / 48000000.0))
+    p("")
+    p("WHAT THIS PROBE CANNOT MEASURE, stated rather than estimated silently:")
+    p("D84's two caps are on EMITTED C BYTES and this probe emits no C. The")
+    p("design derives a byte figure from these dimensions and marks it ARGUED,")
+    p("not MEASURED; only pcrec's own emitter can settle it, and it cannot")
+    p("compile a UTF-8 pattern until stage 2 lands. That is P-5's territory.")
+    p("")
+
     p("QUANTIFIED-FORM CAP-FIT")
     header3 = ("%-46s %-8s %10s %10s %14s" %
                ("class", "form", "raw-NFA", "DFA", "min/cap-fit"))
     p(header3)
     p("-" * len(header3))
-    for name, form_label, raw_nfa, dfa_states, min_states in quant_rows:
+    for name, form_label, raw_nfa, dfa_states, min_states, _caps in quant_rows:
         if min_states is None:
             fitstr = "DNF"
         else:
