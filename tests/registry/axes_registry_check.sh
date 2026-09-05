@@ -251,7 +251,7 @@ check_tuning_bit_documented() {
 
 seen_dumped_bits=""   # accumulates "N" per bit this dump names, for direction 2
 
-while IFS=$'\x01' read -r axis order candidate kind stamp_macro stamp_value \
+while IFS=$'\x1f' read -r axis order candidate kind stamp_macro stamp_value \
                         deny_macro deny_bit force_macro force_bit cli_flag applies; do
     [ -n "$axis" ] || continue
     if [ -n "$deny_macro" ]; then
@@ -296,16 +296,23 @@ while IFS=$'\x01' read -r axis order candidate kind stamp_macro stamp_value \
     if [ -n "$force_bit" ]; then
         check_tuning_bit_documented "$force_bit" "$axis" "$candidate"
     fi
-# Field separator here is \001 (SOH), NOT \t: bash's `IFS=$'\t' read`
-# treats tab as IFS WHITESPACE regardless of what IFS is set to, so runs of
-# empty tab-delimited fields (every row with an unset deny/force column)
-# silently COLLAPSE and every field after the first empty one shifts left —
-# reproduced live while writing this check, and the exact bug
-# tests/lib/table.sh's own header comment names ("never on IFS whitespace,
-# which is why this is not a bash `read -a` on the raw line"). \001 is not
+# Field separator here is \037 (US, ASCII Unit Separator), NOT \t: bash's
+# `IFS=$'\t' read` treats tab as IFS WHITESPACE regardless of what IFS is
+# set to, so runs of empty tab-delimited fields (every row with an unset
+# deny/force column) silently COLLAPSE and every field after the first
+# empty one shifts left — reproduced live while writing this check, and
+# the exact bug tests/lib/table.sh's own header comment names ("never on
+# IFS whitespace, which is why this is not a bash `read -a` on the raw
+# line"). [MACPORT] NOT \001 (SOH) either, despite also being outside the
+# whitespace class: verified live that bash 3.2's own `read` builtin does
+# not split fields on IFS=$'\x01' at all (the whole line lands in the
+# first variable, every other variable empty) while bash 4+/5+ splits it
+# correctly — a narrow, previously-undiscovered bash 3.2 `read`/IFS bug
+# specific to that one byte. \037 was verified to split identically on
+# both bash versions, on both `read` and `awk -F`. \037 is not
 # in bash's whitespace class, so empty fields survive.
 done < <(awk -F'\t' $MAP '!/^#/ {
-    print $axis"\001"$order"\001"$candidate"\001"$kind"\001"$stamp_macro"\001"$stamp_value"\001"$deny_macro"\001"$deny_bit"\001"$force_macro"\001"$force_bit"\001"$cli_flag"\001"$applies
+    print $axis"\037"$order"\037"$candidate"\037"$kind"\037"$stamp_macro"\037"$stamp_value"\037"$deny_macro"\037"$deny_bit"\037"$force_macro"\037"$force_bit"\037"$cli_flag"\037"$applies
 }' "$TSV")
 
 # Every "list"/"both" axis's candidates must have an authored applies() —
@@ -525,16 +532,16 @@ check_value_set() {
 
 dump_stamp_vals() {
     local macro="$1"
-    awk -F'\001' -v m="$macro" '$5 == m && $6 != "" {print $6}' <<< "$axes_rows_dump"
+    awk -F'\037' -v m="$macro" '$5 == m && $6 != "" {print $6}' <<< "$axes_rows_dump"
 }
 
-# One extra pass over the dump, keyed the same \001 way the main loop reads
+# One extra pass over the dump, keyed the same \037 way the main loop reads
 # it, so this direction does not have to re-run `pcrec --list-axes` (the
 # TSV in $TSV is already read once above; re-deriving it here from the same
 # file keeps this direction independent of the main loop's bash variables,
 # which the main loop's own `while` has already consumed).
 axes_rows_dump="$(awk -F'\t' $MAP '!/^#/ {
-    print $axis"\001"$order"\001"$candidate"\001"$kind"\001"$stamp_macro"\001"$stamp_value
+    print $axis"\037"$order"\037"$candidate"\037"$kind"\037"$stamp_macro"\037"$stamp_value
 }' "$TSV")"
 
 check_value_set "RX_DFA_TABLE" \
