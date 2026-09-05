@@ -120,17 +120,28 @@ more than it usually does.
 The parser stops producing a 256-bit byte bitmap and starts producing a
 **sorted list of code-point intervals**; the encoding becomes a **lowering
 instance** that turns that list into byte-level NFA fragments, and the byte
-backend's instance is the identity map it already is. Everything downstream —
-subset construction, minimisation, both emitters, every prefilter — stays
-byte-wise and never learns that UTF-8 exists. `\p{...}` is a producer of
-intervals and is therefore **not gated on the encoding at all**; case folding
-is a **closure over the interval set** applied in the one constructor that
-already applies it (D23), before negation, exactly as today. The seam gains no
-new interface: its four residual entries get UTF-8 bodies under their existing
-signatures, and the one place the design has to change something outside the
-backend is an **analysis**, not a mechanism — the lookbehind width rule is
-measured to be in CHARACTERS where pcrec computes BYTES, and under the byte
-encoding nothing can tell those apart.
+backend's instance is the identity map it already is. The lowering is an
+**AST→AST rewrite at one forced point in `compile.c`'s pass chain** (§2.1.2),
+because both the IR builder and the VM emitter read the class payload and the
+VM emitter is handed the AST itself. Everything below that point — subset
+construction, minimisation, both emitters, every prefilter — stays byte-wise
+and never learns that UTF-8 exists; **three passes above it** (`altcls`,
+`possessify`, `revdet`) see code points and are widened or decline (§2.5.1).
+`\p{...}` is a producer of intervals and is therefore **not gated on the
+encoding at all**; case folding is a **closure over the interval set** applied
+in the one constructor that already applies it (D23), before negation, exactly
+as today, where negation complements within **the encoding's own universe**
+(§2.7.1). The seam's **entries table** gains no new interface — its four
+residual entries get UTF-8 bodies under their existing signatures — while
+`PcrecEnc` itself gains one scalar for that universe; and the one place the
+design has to change an ANALYSIS rather than a mechanism is the lookbehind
+width rule, measured to be in CHARACTERS where pcrec computes BYTES, under the
+byte encoding indistinguishable.
+
+> **This paragraph was re-written at r54.** The first version said "the seam
+> gains no new interface" and placed the lowering "between the parser and the
+> IR", and both were load-bearing and wrong. Read the PANEL OUTCOME block
+> above before trusting any summary sentence in this document.
 
 ### 0.3 Measurements this lane produced
 
@@ -295,7 +306,12 @@ length"*. §5.6 shows, from a measurement, that doing exactly that would refuse
 **every** lookbehind under UTF-8 including `(?<=a)`. The cross-note is right
 that the arm is a hazard and right that the byte refusal is what makes it
 exact today; its cure is wrong. This is the sharpest single finding in the
-document.
+document, and **it was the one headline result the r54 panel confirmed
+independently** — the engine critic reproduced it at
+`mod_lookaround.c:298`/`mrl.c:282-284` without relying on this document's
+citations. **What r54 changed is the RESOLUTION, not the refutation**: §5.6.2
+finds `pcrec_maxw` has no consumer at all besides the rule being moved, so the
+cross-note's arm does not get a new value — the whole chain retires.
 
 **(c) `[DD-12] (3)`'s characterisation of `PCRE2_MATCH_INVALID_UTF` is
 REFUTED as worded.** The row says that mode *"is essentially the byte-wise
@@ -602,8 +618,23 @@ and the whole construction is that table generalised.
 **THIS IS ALL EXISTING IR VOCABULARY.** A byte-range is a 256-bit bitmap with
 a contiguous run set; a sequence is an `A_CAT` of them; a set of sequences is
 an `A_ALT`. The lowering emits nodes `src/ir/nfa.c` already knows how to
-compile, which is why §6 finds no downstream consequences: **there is nothing
-downstream to change.**
+compile.
+
+> **AND THE CONCLUSION THE FIRST VERSION DREW FROM THAT IS NARROWED (r54).**
+> It read: *"which is why §6 finds no downstream consequences: there is
+> nothing downstream to change."* **The premise is right and the conclusion
+> over-reached in two directions**, both of which this revision found by
+> looking rather than by argument. **DOWNSTREAM** of §2.1.2's forced position
+> there is indeed nothing to change *in kind* — but §2.4.1 measures that the
+> ALPHABET those nodes induce is a different size, and `\p{L}{1,3}` drops off
+> `[OPT-3]`'s premultiplied form because of it, which is a downstream
+> consequence in every sense except node kinds. And **UPSTREAM** of it,
+> §2.5.1 finds six sites in three files that see code points and must widen or
+> decline, which the phrase "nothing downstream" quietly excluded by choosing
+> the word "downstream". The honest form: **the lowering introduces no new
+> node kind, so no consumer needs a new case; what it changes is the SIZE and
+> SHAPE of what existing consumers see, and §2.4.1, §2.5.1 and §6.4 are where
+> that is priced.**
 
 #### 2.3.1 The near-linearity claim, re-priced (r54 E7)
 
@@ -851,12 +882,17 @@ exactly what a Unicode general category is.
 
 ### 2.5 What happens to the byte-tier class machinery
 
-Four consumers were named in the charter. **STRUCTURAL** in each case:
+Four consumers were named in the charter, and they are answered below.
+**STRUCTURAL** in each case — but **the charter's four are not the tree's
+nine**, which is r54 E5 and is why §2.5.1 exists. Read this list for what each
+named consumer does, and §2.5.1 for the census that decides them.
 
 - **The 256-entry class bitmap machinery** is *below* the lowering and is
   untouched. `NState.cls[32]`, the DFA's `eqclasses` partition and its
   `d->rep[c]` representative-byte trick all operate on the byte alphabet, and
-  after lowering the byte alphabet is all there is.
+  after lowering the byte alphabet is all there is. (**Its SIZE is not
+  untouched** — §2.4.1 measures `ncls` at 95-96 for a `\p`-sized class where
+  an ASCII class gives a handful — but no code changes.)
 - **The class-axis views** (`upc_of_class`, `Dfa.s1w`, the `\b` context bit)
   ask "is the byte this class selects a word byte / a newline byte". Under
   UTF-8 the classes reaching them are byte-RANGE classes, and the question
@@ -2954,11 +2990,26 @@ row should touch **nothing** in `src/core`, `src/gen`, `cli/` or `lib/`.
 
 **But the recipe does not cover the lowering**, and the design should be
 honest that this is where DD-12 (7)'s "derailment signal" needs
-interpretation. §2.1 puts the encoding lowering behind the same one-file-per-
-backend rule; whether it lives in `src/gen/enc/` alongside the residual text
-or in `src/ir/` behind a table of function pointers is an implementation
-choice the panel should rule on. What is NOT negotiable is that no shared file
-acquires an `if (enc == UTF8)`.
+interpretation. **This paragraph was right and §12 P-1 contradicted it; r54
+resolved the contradiction in this paragraph's favour** (§12 P-1(iii)).
+
+**WHAT r54 SETTLED, AND WHAT IT DID NOT.** The first version left *"whether it
+lives in `src/gen/enc/` … or in `src/ir/` behind a table of function
+pointers"* as a question for the panel, and §10 listed it as unresolved. **It
+is resolved, and not by choosing** — the question was mis-posed. §2.1.2 shows
+**WHEN the lowering runs is forced** to one line of `compile.c`, from three
+ordering constraints in the shipped tree. Given that, *where the code lives*
+follows from the rule §2.1 already states — a per-backend instance, one
+instance per backend, dispatched through the encoding — rather than being an
+independent decision anyone needs to rule on. The lowering's **call site** is
+`compile.c:1000`; its **bodies** live with their backends in `src/gen/enc/`,
+beside the residual text that is the other thing a backend owns.
+
+**What is NOT negotiable is unchanged and is the only part that was ever
+DD-12 (7)'s**: no shared file acquires an `if (enc == UTF8)`. The dispatch at
+`compile.c:1000` selects an instance from the encoding; it does not branch on
+which one. §12 P-1′ is that promise made falsifiable by grep, replacing the
+P-1 that predicted the wrong rule.
 
 ### 9.2 The staged landing order
 
