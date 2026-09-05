@@ -2774,14 +2774,31 @@ the rule that file's own header states.
 ### 8.4 The compatibility question the cross-note names
 
 The `[M5.0]` row asks this design to own the `maxw` change. §5.6 owns it, and
-the **compatibility** half is: under `--encoding=byte`, `pcrec_minw` and
-`pcrec_maxw` must answer **exactly what they answer today** for every pattern
-in the corpus. That is not an argument, it is §8.1's gate — the MRL bound is
-baked into emitted literals (`RX_PRUNE_*`), so a changed bound is a changed
-artifact and the byte-identity gate fails. **The gate is the check; no
-separate instrument is needed.**
+the **compatibility** half is: under `--encoding=byte`, **`pcrec_minw` must
+answer exactly what it answers today** for every pattern in the corpus. That
+is not an argument, it is §8.1's gate — the MRL bound is baked into emitted
+literals (`RX_PRUNE_*`), so a changed bound is a changed artifact and the
+byte-identity gate fails. **The gate is the check; no separate instrument is
+needed.**
 
----
+**REVISED AT r54.** The first version wrote *"`pcrec_minw` and `pcrec_maxw`
+must answer exactly what they answer today"*, and §5.6.2 **retires
+`pcrec_maxw`** — so half of that sentence names a function the change deletes.
+The compatibility obligation splits accordingly, and the second half is not
+the gate's:
+
+- **`pcrec_minw`** — unchanged answers under `byte`, proved by the identity
+  gate through the `RX_PRUNE_*` literals, exactly as above.
+- **`pcrec_maxw`'s consumer** — the lookbehind fixed-width rule — must reach
+  the same VERDICT on every corpus pattern under `byte` after moving to
+  `cwmin`/`cwmax`. Under `byte` one character is one byte, so the two analyses
+  are numerically equal and every verdict coincides; but **the artifact does
+  not record the verdict**, only its consequence (a refusal, or an emitted
+  back-step literal), so the identity gate sees it only where a lookbehind
+  exists. The gate's population is therefore the check for lookbehind-bearing
+  patterns and **S-U4 is the check for the rest** — which is why §8.2's S-U4
+  row carries a `SAB_REACH_POP` floor of 18 rather than trusting the gate to
+  have reached the rule at all.
 
 ### 8.5 The pcrec-vs-pcrec differential (r54 SHOULD C10)
 
@@ -2878,21 +2895,50 @@ acquires an `if (enc == UTF8)`.
 Five stages, each with an acceptance that can be run before the next opens.
 
 **STAGE 1 — the CharSet widening.** `A_CLASS` becomes intervals; every
-producer (`\d`, `\w`, POSIX classes, ranges, literals) emits intervals; the
-byte backend's lowering turns intervals back into the 32-byte bitmap.
-`\x{...}` above 0xFF still refuses. **Nothing user-visible changes.**
-*Acceptance:* §8.1's identity gate at 100% byte-identity on all four axes —
-the whole corpus, since every pattern goes through this. This stage is a pure
-refactor and its gate is total.
+producer (`\d`, `\w`, POSIX classes, ranges, literals, `.`, **and both
+negation sites, complementing within `[0, MAXCP(enc)]` per §2.7.1**) emits
+intervals; the byte backend's lowering turns intervals back into the 32-byte
+bitmap through §2.1.4's render helper. `\x{...}` above 0xFF still refuses.
+**Nothing user-visible changes.**
 
-**STAGE 2 — the utf8 backend.** `enc_utf8.c` (four residual bodies), the
-byte-sequence lowering, `\x{...}` above 0xFF under `--encoding=utf8`,
-`-e utf8` starts compiling. §5.6's `pcrec_cwmin`/`pcrec_cwmax` land here
-because lookbehind is already shipped and would otherwise be wrong the moment
-utf8 compiles. *Acceptance:* the UTF `.rxt` corpus green; identity gate still
-100% on `byte`; DD-12 (7)(a)'s **two M5-time structural checks** — hot-loop
-shape identity ASCII-vs-UTF-8, and the second-backend validation of D58's
-"revisit-when" names; S-U4/5/6/7 detected.
+*Acceptance:* §8.1's identity gate at 100% byte-identity on all four axes —
+the whole corpus, since every pattern goes through this — **AND §8.1.1's
+checks 1 and 2**, which are what a no-op refactor fails and the gate does not
+(r54 C1). Check 1 must be demonstrated RED against `git archive HEAD` in the
+same wave, or it is a check nobody has seen fail. **`PcrecEnc.max_cp` lands
+here**, not in stage 2, because stage 1's negation needs it — under `byte` it
+reads `0xFF` and every answer is unchanged, which is the whole of §2.7.1's
+byte-identity argument.
+
+**STAGE 2 — the utf8 backend.** `enc_utf8.c` (four residual bodies,
+`back_step` per §5.2.1), the byte-sequence lowering placed at
+`compile.c:1000` per §2.1.2, `\x{...}` above 0xFF under `--encoding=utf8`,
+`-e utf8` starts compiling. §5.6's `pcrec_cwmin`/`pcrec_cwmax` land here —
+at **both timings together** (§5.6.4) — because lookbehind is already shipped
+and would otherwise be wrong the moment utf8 compiles; `pcrec_maxw` and its
+chain retire in the same change (§5.6.2), with S171 re-pointed.
+
+*Acceptance:* the UTF `.rxt` corpus green; identity gate still 100% on `byte`;
+DD-12 (7)(a)'s **two M5-time structural checks** — hot-loop shape identity
+ASCII-vs-UTF-8, and the second-backend validation of D58's "revisit-when"
+names; **§8.5's ASCII-corpus encoding differential** at 3,319 blocks / 0
+divergences with its 31-block exclusion asserted; **§8.1.1's check 3**, the
+stamp census, reviewed as a diff rather than as a threshold; and sabotage rows
+**S-U4, S-U5, S-U6, S-U7, S-U8, S-U9, S-U10** detected (r54 C3/C4 — S-U8 and
+the two new rows are stage 2's, and S-U8's detector is check 3, not the
+corpus).
+
+> **STAGE 2's CORPUS BAR HAS A PRECONDITION (r54 C11).** Roughly **27 of its
+> 423 blocks** — the invalid-UTF-8 axis, §8.3's third row — encode §2.6's
+> ruling that an ill-formed sequence matches nothing. **That ruling is
+> §14 ASK 1 and it is Frank's, not this design's.** If ASK 1 is ruled the
+> other way (an error return, or an opt-in validation entry point), those 27
+> blocks' expectations INVERT and the seam gains a fifth entry. So stage 2
+> cannot open until ASK 1 is ruled — not because the code depends on it, but
+> because the blinded corpus author would write 27 blocks against a promise
+> that had changed. §8.3.2's extract includes §2.6 for exactly this reason,
+> and this is the sentence that says the extract is not safe to cut until the
+> ASK is answered.
 
 **STAGE 3 — `unicode-props`, general categories.** The UCD vendoring (§3.3),
 the generated `.inc`, the category families of §3.4. **This stage does not
@@ -2950,29 +2996,93 @@ opportunity, declined under D77 until a UTF corpus exists to measure it on.
 
 Written before the panel rather than after. Each is falsifiable.
 
-- **P-1 — the third-encoding recipe holds.** Adding `enc_utf8.c` plus its
-  registry row touches no file in `src/core`, `src/gen`, `cli/` or `lib/`.
-  *Refuted by:* any shared file needing an edit. **If refuted, that is the
-  design-stop signal DD-12 names, not a patch to write** — and the honest
-  prediction is that the LOWERING (§9.1) is where it will bite, because the
-  recipe was written for residual text and a lowering is not text.
+- **P-1 — REFUTED AT r54, BY THIS REVISION'S OWN FINDINGS (r54 E15).** The
+  prediction read: *"Adding `enc_utf8.c` plus its registry row touches no file
+  in `src/core`, `src/gen`, `cli/` or `lib/`."* Three things are wrong with
+  it and the third is the one that matters.
+
+  **(i) It was unsatisfiable as WORDED.** `enc_utf8.c` lives in
+  `src/gen/enc/`, so adding it touches `src/gen` by construction. The panel's
+  restatement — *"no file outside `src/gen/enc/`"* — is what was meant, and
+  the file list also omitted **`src/parse/`**, which is where §2.2 and §2.7
+  put real work.
+
+  **(ii) Restated, it is REFUTED by three findings of this revision**, each
+  naming a file outside `src/gen/enc/`: E1 puts the lowering call in
+  `src/core/compile.c` and a render helper at nine sites across `src/ir/`,
+  `src/opt/` and `src/gen/` (§2.1, §2.5.1); E2 adds a field to
+  `src/gen/enc/enc.h` and changes three sites in `src/parse/parse.c`
+  (§2.7.1); E3 retires a function in `src/opt/mrl.c` and re-aims a fixpoint
+  in `src/opt/callgraph.c` (§5.6.2).
+
+  **(iii) AND THAT IS NOT THE DESIGN-STOP SIGNAL, because the prediction
+  conflated two different rules.** The first version said a refutation *"is
+  the design-stop signal DD-12 names"*. It is not. DD-12 (7)'s derailment
+  signal is **`if (enc == UTF8)` in a shared file** — a CONDITIONAL on the
+  encoding in code that serves every backend. The third-encoding recipe in
+  `enc.h` is a separate and narrower promise about the **entries table**, and
+  that promise **HOLDS**: four residual entries get UTF-8 bodies under their
+  existing signatures, no `PcrecEncEntry` field is added, `pcrec_enc_ready` is
+  untouched, both emit functions are untouched (§2.7.2). What the recipe never
+  covered is the LOWERING, and §9.1 already said so in its own words — *"the
+  recipe does not cover the lowering"* — while §12 P-1 predicted it would.
+  **The two sections contradicted each other and §9.1 was right.**
+
+  **P-1 is therefore REPLACED, not repaired**, by the prediction that carries
+  the rule that actually matters:
+
+  > **P-1′ — no shared file acquires an encoding CONDITIONAL.** After stage 2,
+  > `grep -rn 'ENC_UTF8\|enc == \|enc->id ==' src/` outside `src/gen/enc/`
+  > returns nothing but the one dispatch site that selects the backend
+  > instance. *Refuted by:* one `if` on the encoding in `src/core`, `src/ir`,
+  > `src/opt` or `src/gen` outside `enc/`. **That** is DD-12 (7)'s signal, and
+  > unlike P-1 it is a property this design can actually keep.
+
+  **This is the design's own prediction mechanism working**, and it is worth
+  saying plainly: P-1 was written before the panel, it was falsifiable, and it
+  was falsified — by reading `compile.c` rather than by an argument. §12's
+  value is entirely in that being possible.
 - **P-2 — the identity gate is 100% at stage 1.** *Refuted by:* one
   non-identical artifact. The likeliest cause is an ordering difference in
   interval→bitmap conversion for a class whose producers overlap.
 - **P-3 — pcrec's own lowering produces state counts within 2× of
   `out/sizing.txt`.** *Refuted by:* a `\p{L}` DFA over 566 states. The
   prototype shares no code with pcrec, so this is a real prediction.
-- **P-4 — `\b` needs no seam entry without UCP** (§5.4). *Refuted by:* one
-  subject where the byte-level word test and the character-level test disagree
-  under `--encoding=utf8` at `\w = [A-Za-z0-9_]`. I believe no such subject
-  exists; a sweep over multi-byte characters adjacent to word characters is
-  the instrument.
-- **P-5 — no corpus pattern's minimised DFA grows past a cap under utf8.**
-  *Refuted by:* any corpus pattern that compiles under `byte` and hits
-  `PCREC_MAX_DFA_STATES_TABLE` under `utf8`. §2.4 measures classes in
-  isolation, **not** the products a real pattern builds — this is the
-  measurement §2.4 does not make and the most likely place its comfort is
-  misplaced.
+- **P-4 — SPLIT INTO TWO, one per leg (r54 E12, §5.4.1).** The first version
+  stated one prediction where the position rests on two facts that fail under
+  the same trigger but with opposite visibility.
+  - **P-4a — the PREDICATE agrees.** Without UCP, no subject exists where
+    "is this byte a word byte" and "is this character a word character"
+    disagree under `--encoding=utf8` at `\w = [A-Za-z0-9_]`. *Refuted by:* one
+    such subject; the instrument is a sweep over multi-byte characters
+    adjacent to word characters. I believe none exists.
+  - **P-4b — the REPRESENTATIVE is exact.** Every equivalence class in
+    `Dfa.clsmap` is homogeneous in word-ness, so `upc_of_class`'s
+    `d->rep[c]` test is a proof and not a sample. *Refuted by:* one
+    `--encoding=utf8` machine with an equivalence class containing both a word
+    byte and a non-word byte. **This one has an assertion, not just a
+    prediction**: `dfa.c:173`'s `refine_by` establishes it and nothing checks
+    it, so stage 2 adds the assertion at `upc_of_class` — the cheapest
+    possible instrument for the leg that fails silently.
+- **P-5 — RE-STATED IN THE BINDING CAPS' UNITS (r54 E6, §2.4.1).** The first
+  version predicted about **states**, which §2.4.1 shows is not the unit that
+  binds. Three sub-predictions, in increasing order of how much I doubt them:
+  - **P-5a (states)** — no corpus pattern's minimised DFA hits
+    `PCREC_MAX_DFA_STATES_TABLE` (32,000) under `utf8` having cleared it under
+    `byte`. *Refuted by:* one. This one I believe.
+  - **P-5b (entries)** — **I EXPECT THIS TO BE REFUTED.** §2.4.1 measures
+    `\p{L}{1,3}` at 80,465 entries against `PREMUL_MAX_ENTRIES` 65,535, so any
+    corpus pattern of that shape drops off the premultiplied form. The
+    prediction is stated in the direction that makes the census meaningful:
+    **fewer than 5% of `utf8` artifacts lose `RX_DFA_TABLE`'s premultiplied
+    value relative to their `byte` twin.** *Refuted by:* a census above 5%.
+    §8.1.1's check 3 is the census, and this is the number it exists to
+    produce.
+  - **P-5c (bytes)** — no corpus pattern crosses D84's 1,000,000-byte total
+    cap under `utf8` having cleared it under `byte`. *Refuted by:* one. §2.4.1
+    states plainly that this is the one figure no measurement in this document
+    reaches, so it is a prediction in the weakest sense — a thing to go and
+    look at, not a thing I have evidence for.
 - **P-6 — the `(?i)^(ss)\1$` witness in `enc_byte.c` is wrong and
   `^(k)\1$` is right** (§5.3). *Refuted by:* 10.46 matching the sharp-s cell
   under some options word this lane did not try.
@@ -2985,6 +3095,39 @@ Written before the panel rather than after. Each is falsifiable.
   cell matching under any options word. This is the single result the most
   design depends on; §14 ASK 3 asks whether to make it a standing check rather
   than a one-time measurement, since a future PCRE2 could add full folding.
+
+**FOUR PREDICTIONS ADDED AT r54**, one per repair that could be wrong in a way
+its own section cannot see:
+
+- **P-9 — no subject makes a `(?<!X)` artifact return `RX_R_INTERNAL`**
+  (§5.2.1). *Refuted by:* one. This is E4's repair stated as a property rather
+  than as a code change, and it is the strongest form the claim can take,
+  because `RX_R_INTERNAL` is below `PCREC_ERR_FLOOR` and a composed site traps
+  on it — so a refutation is an ABORT, not a wrong answer, and no answer sweep
+  finds it. The instrument is a sweep of the nine measured ill-formed kinds ×
+  every position × both lookbehind polarities, which is §8.3's invalid-UTF-8
+  axis crossed with its lookbehind axis — **a product neither axis generates
+  on its own**, which is why it is written here.
+- **P-10 — the VM's replication product does not move** (§6.4). No corpus
+  pattern's VM artifact crosses `PCREC_MAX_VM_REPLICATION_PRODUCT` (131,072)
+  under `utf8` having cleared it under `byte`. *Refuted by:* one — **and §6.4
+  predicts `\p{L}{1,50}` will refute it** the moment such a pattern exists,
+  since a ~2,600-node body at 50 copies crosses. The prediction is stated
+  anyway because the question that matters is whether it happens on the
+  CORPUS, i.e. on shapes people write, or only on shapes constructed to break
+  it.
+- **P-11 — the ASCII corpus is answer-identical across encodings** (§8.5).
+  3,319 blocks, `-e byte` against `-e utf8`, 0 divergences. *Refuted by:* one
+  differing cell — and the likeliest cause, stated so a debugger starts in the
+  right place, is the length-split boundary at exactly `0x7F`.
+- **P-12 — the lowering's position is the only one that works** (§2.1.2).
+  Each of the three ordering constraints is load-bearing: moving the lowering
+  above `pcrec_callgraph_build` (`:961`) produces a stale `.body` on a
+  call-bearing pattern whose lookbehind contains a class, and moving it below
+  `pcrec_postresolve` (`:999`) makes `cwmax` answer 2 for a two-byte character.
+  *Refuted by:* a working pass order this document did not consider — which is
+  the most valuable thing a reader could find here, since §2.1.3 pays a real
+  price (three passes widened or declined) for constraint 2 alone.
 
 ---
 
@@ -3009,7 +3152,7 @@ acceptance. Three cross-cutting obligations belong to every wave:
 
 ## 14. ASKs for Frank
 
-Six. None is a ruling contradiction; each is a decision this lane deliberately
+**Seven** (r54 added ASK 7). None is a ruling contradiction; each is a decision this lane deliberately
 did not take.
 
 **ASK 1 — invalid UTF-8 semantics (§2.6).** The design proposes that a
@@ -3035,13 +3178,48 @@ A future PCRE2 could add full folding, and the failure would be silent. Worth
 a permanent cell in the PC-3/PC-4 differential, or accept it as a
 re-measurement event on version bump (D26's addendum)?
 
-**ASK 4 — is a UCP axis owed? (§4.5, §5.4, §7.1)** `PCRE2_UCP` re-defines
-`\w \d \s \b` over the whole code-point space and accounts for **8 of 28**
-measured divergence rows. pcrec has no such axis. Without one, pcrec's UTF-8
-answers for those constructs are the non-UCP ones and the corpus must say so.
-With one, §5.4's word-classification seam entry becomes necessary. The design
-recommends **no UCP axis at M5** (D18 earn-its-axis; no consumer has asked)
-and flags that it is the largest single divergence family.
+**ASK 4 — is a UCP axis owed? (§4.5, §5.4, §5.4.1, §7.1, §7.1.1)**
+`PCRE2_UCP` re-defines `\w \d \s \b` over the whole code-point space and
+accounts for **8 of 28** measured divergence rows. pcrec has no such axis.
+Without one, pcrec's UTF-8 answers for those constructs are the non-UCP ones,
+the corpus must say so, and **python `re` over `bytes` verifies 7 of those 8
+rows** (§7.1.1) — so the absence is checkable rather than merely asserted. The
+design recommends **no UCP axis at M5** (D18 earn-its-axis; no consumer has
+asked) and flags that it is the largest single divergence family.
+
+> **RE-PRICED AT r54 (E12, §5.4.1), because the first version understated what
+> a UCP axis costs and an ASK priced wrong is an ASK answered wrong.** It said
+> *"with one, §5.4's word-classification seam entry becomes necessary"* — as
+> though the cost were one more row in the entries table, which is the cheap
+> and well-understood shape this milestone has already demonstrated twice.
+> **It is not.** `upc_of_class`'s representative-byte test (`internal.h:2850`)
+> is exact only because `dfa.c:173` refines the byte alphabet by
+> `pcrec_cls_word_esc` first, and **under UCP the word set is not a set of
+> bytes at all** — the continuation bytes `0x80-0xBF` appear inside both word
+> and non-word characters, so no `refine_by` over any 32-byte table can make
+> the equivalence classes homogeneous. A UCP axis therefore needs
+> **`upc_of_class`'s mechanism replaced, which is a change to DFA STATE
+> IDENTITY**, not a seam entry added beside it. That is a different order of
+> work, and Frank should be answering this ASK with that number rather than
+> with the seam-entry one.
+
+**ASK 7 — the D58 seam-field record (§2.7.1, §2.7.2). NEW AT r54.**
+E2 established that the complement universe must be per-encoding, and the
+design chooses a scalar `max_cp` field on `PcrecEnc` over symbolic negation,
+with the argument in §2.7.2. **The MECHANISM is this design's call and is not
+what is being asked.** What is asked is the record: `PcrecEnc` has carried
+`{id, name, entries}` since D58, whose revisit clause the first version of
+this document claimed to honour *"by having nothing to record"*. There is now
+something to record —
+
+> the **entries table**'s interface is unchanged (the third-encoding recipe
+> holds, and `[M6.6.2]` wave D's property is preserved); **`PcrecEnc` itself
+> gains one scalar**, read by exactly one caller, the parser's negation site.
+
+— and the question is whether that lands as a D58 **addendum** (the shape D47
+and D71 used for rulings that narrow an existing decision) or as its **own
+decision row**. The design has no preference and states the fact rather than
+choosing the filing.
 
 **ASK 5 — `ENG_ATTEMPT`'s start loop (§5.5).** Under UTF-8 it tries
 mid-character starts, which are harmless (no path) but wasted, up to 3 per
