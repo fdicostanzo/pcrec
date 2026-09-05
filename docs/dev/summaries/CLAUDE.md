@@ -17,5 +17,13 @@ each cites the ledger/review it summarises and never replaces it.
   it changes. Cites `pcrec-bench`'s ledger
   `docs/dev/ledgers/2026-09-03-altwide-0.2-noedge-ccrerun-1989c62.md`,
   outbox `O-15`, and pcrec's own answer `I-39`.
+- `2026-09-05-exec-bench-b37-denysplit-after-334fd10e.md` — the [B37]
+  deny-flag AFTER at pin `334fd10e` (abi 22): a dedicated "big win,
+  explained" section on the [ENG-ISL] alternation island (Frank's ask),
+  an ahead/behind table vs PCRE2's JIT, then findings, surprises, impact,
+  next steps. Cites `pcrec-bench`'s ledger
+  `docs/dev/ledgers/2026-09-05-b37-denysplit-after-334fd10e.md`, outbox
+  `O-17`, and pcrec's own answer `I-50`. Published as an artifact page
+  the same day.
 
 Maintenance: update this file when files are added or removed.
