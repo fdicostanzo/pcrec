@@ -3803,6 +3803,14 @@ void pcrec_postresolve(Ctx *cx, Ast *root);
  * carries the derivation and the call site restates which constraints it
  * satisfies. Returns the (possibly new) root, which `compile.c` PUBLISHES. */
 Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
+/* [M5.0 stage 2] Decode ONE pattern character at byte offset `at`, per the
+ * compile's encoding; `*len` gets its byte length (>= 1). Under `byte` this
+ * is the byte itself; under `utf8` a full decode that `ctx_fail`s on
+ * ill-formed pattern text (truncation, bad lead, overlong, surrogate,
+ * above U+10FFFF). Lives in lower_enc.c — the one place that knows how an
+ * encoding spells a character — and is the parser's literal reader for any
+ * byte >= 0x80 (utf8_design.md §2.7). */
+unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the two fixpoints
  * whose RECURRENCE lives in the emitter — `vm_nullable`'s (a `static` there,
