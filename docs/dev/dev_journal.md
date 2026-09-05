@@ -21517,3 +21517,71 @@ Session close: tree clean, all pushed (main + lane branches), no lanes,
 no worktrees, watchdog cron torn down. OWED at wake: O-16's answers +
 the 13:00 battery slot (macport's Linux arm + N1 + M5.0-stage-1 on real
 Linux, PC-3 green against 10.46 there); M5.0 stage 2 on Frank's word.
+
+## 2026-09-05 (EDT), fifty-fourth session (overnight, autonomous) — M5.0 STAGE 2 SHIPPED and [FORM-CHAR] STEP 1 SHIPPED, both merged; the D27 UTF corpus delivered; the channel's slot went firm
+
+Frank's directive at 02:00: "finish utf and one other chosen lane. End
+session at close. Autonomous dev tonight." Stage 2 was thereby cleared;
+the chosen lane was [FORM-CHAR] STEP 1 (measurement closed, the
+recommendation of record). Three worker lanes + a cutter ran; both
+implementation lanes merged before 04:30.
+
+**[M5.0] STAGE 2 (lane utf8s2, opus) — merged 05b2fe8a.** The utf8
+backend exactly on §9.2's list: enc_utf8.c validating the third-encoding
+recipe (nothing outside src/gen/enc/ + one table row); lower_enc.c as a
+LowerOps instance table doing the range→byte-seq decomposition;
+splice-in-place with the group-root-address check IN the compiler
+(cap_sig); u.rep.revbody resolved the general way (byte-confined bodies
+keep the revdet rung by identity — all 413 corpus classes; non-ASCII
+bodies drop the rung, priced as throughput); the width chain re-aimed to
+characters (maxw RETIRED → cwmax/cwmin at both timings, the [M6.6.2]
+cross-note's hazard closed by the design's OWN cure, not the cross-note's
+refuted one); \x{} became base grammar range-checked per encoding. The
+byte-path proof: identity gate 14/14 at .abi=22 UNCHANGED, plus
+27,045/0 corpus + 395,757 rungdiff cells 0 diverged + size-log columns
+identical on 2,962 rows. S-U4..S-U10 all detected. Owed to the Linux
+slot: the full §8.5 sweep and the 10.46 three-way.
+
+**[FORM-CHAR] STEP 1 (lane formchar1, opus) — merged, abi 22→23.** The
+ascii-fold class-match form: fold-pair classes emit (byte|0x20)==lower,
+bitmap tables deleted, ONE classifier (retiring a latent inline
+re-spelling). Full D82 ritual; answer identity 22,488/22,488 both arms
+oracle-cross-checked; -31% __TEXT on the witness; S228 detected; the
+identity gate gained the fold deny-axis IFF. The lane also fixed the
+grep -P mech row-filter macport residual — BSD grep assembled a ZERO-ROW
+matrix and scored every requested sabotage a lost measurement (K35's
+shape, one line).
+
+**The D27 blinded corpus (lane utf8corpus, sonnet, cell) — delivered,
+held for promotion.** 524 blocks / 10 axes, independent checker 5/5
+plants, one real authoring bug caught by live-oracle discipline. THE
+FIND: the ctypes chain's find_library loaded a Miniconda libpcre2
+**10.37** (2021) silently — never a dlopen failure — so every
+expectation's provenance is stamped 10.37 and the 10.46 re-verification
+is now MANDATORY on the slot (the load-path pin is an admin item).
+Promotion pass (lane utfprom) is wiring tests/utf8/ against the merged
+tree as this entry is written. Cell infrastructure: mk_d27_cell.sh's
+--relative copy failed its own hygiene check on first Mac run (openrsync
+ignores GNU rsync's /./ anchor) — fixed portably; the hygiene check
+earned its keep.
+
+**The box (macport residuals, all found tonight by real work):** grep -P
+(mech filter), xargs -a + sed -i (mrl), a case-insensitive-FS collision
+(run_expansion_diff's $d/b vs $d/B), and FIVE inherited test-codegen
+reds on unmodified main (OS-0b trio, K24 de-sugar, S199's stale anchor —
+macport's own run.sh rewrite — inline_capability's Mach-O nm underscore).
+An admin slice is chartered in wake.md; local test-codegen baselines
+103/5 until it lands.
+
+**The channel.** O-16 landed (the [OPT-5] STEP 2 AFTER): the match-axis
+customers did NOT move — and per our own premeasure M3 + §5.6b they were
+never reachable (the \z forms decline on precondition (3); I-38
+over-promised, owned in I-49); the real win is the PLAIN ladder ×0.506
+on letters, which is [OPT-2]'s measured reverse-pass-≈50% deleted, to
+two decimals. w-256 == srt-256 byte-identical at abi 22 confirms
+[ENG-ISL]'s trie already shipped candidate 2 (no sort pass needed). The
+13:00-17:00 EDT battery slot is FIRM (grant in O-16; ack'd live); the
+--list-syntax seed at their pin committed (46670125). ASK (iii) (the
+forced-VM _match-not-_in movement) is owed honestly as a probe, not a
+guess. I-49 (slot SHA + answers + abi-23 bump note) goes to the inbox at
+close.
