@@ -51,8 +51,11 @@ encoding nothing can tell those apart.
 
 ### 0.3 Measurements this lane produced
 
-Seven probes, each archived with a provenance header naming the host, the
-libpcre2, the python and the options word that produced it.
+**Seven probes, eight transcripts** — the divergence probe is archived twice,
+once against each of the two pythons this project's machines carry, because
+§7.2 needed that comparison rather than an assumption. Each transcript
+carries a provenance header naming the oracle host, the libpcre2, the python
+and (per row) the options word that produced it.
 
 | file | what it settles | oracle |
 |---|---|---|
@@ -180,6 +183,41 @@ semantics"*. §2.6 measures it and it is not — it is essentially the byte-wise
 **UTF-8 automaton's** semantics, which is a different thing and happens to be
 the one pcrec wants. The row's conclusion (*measure against THAT mode and pick
 deliberately*) survives; its reason does not.
+
+### 1.3 THE CONSTRUCT TABLE
+
+D26's obligation: for every construct in this milestone's neighbourhood,
+whether it SHIPS, whether it REFUSES, and **which module owns it** — the tier
+that is exact. `refuses today` is **MEASURED** (`out/premises.txt` §2);
+`10.46` is **MEASURED** (`out/uprops.txt` §1, `out/width.txt` §1); the landing
+column is this design's **ASSERTED** staging (§9.2).
+
+| construct | 10.46 | owner | refuses today as | lands |
+|---|---|---|---|---|
+| `--encoding=utf8` | n/a (an option there) | **encoding**, not a module | `encoding 'utf8' arrives with milestone M5 (an engine axis, not a module)` | **stage 2** |
+| `\x{HH...}` ≤ 0xFF | compiles at any options | base grammar | `\x{...} requires module 'unicode-props'` | **stage 1** |
+| `\x{HH...}` > 0xFF | UTF only (err 134 otherwise) | base grammar, encoding-sensitive | same | **stage 2** (refuses under `byte`, as 10.46 does) |
+| `\xHH` (bare, 2 digits) | compiles | base grammar | **already ships** | — |
+| `\p{X}` / `\P{X}`, general categories | compiles at ANY options (§3.2) | `unicode-props` | `\p requires module 'unicode-props'` | **stage 3** |
+| `\p{X}`, `Xan Xps Xsp Xuc Xwd L& Any Assigned` | compiles | `unicode-props` | same | **stage 3** (derived, no new data) |
+| `\p{Greek}`, `\p{Script=…}`, `\p{sc=…}` | compiles | `unicode-props` | same | **stage 5** |
+| `\p{scx=…}`, `\p{Script_Extensions=…}` | compiles | `unicode-props` | same | **stage 5** |
+| `\p{Alphabetic}` and the boolean family | compiles | `unicode-props` | same | **REFUSES** at first landing (§3.4) |
+| `\p{bc=…}`, `\p{Bidi_Class=…}` | compiles | `unicode-props` | same | **REFUSES** at first landing |
+| `\p{InGreek}`, `\p{blk=…}` — **blocks** | **err 147** | `unicode-props` | same | **REFUSES PERMANENTLY** — reproducing 10.46's own refusal |
+| `\p{^L}` (caret inside braces) | compiles | `unicode-props` | same | **stage 3**, with its family |
+| `\N{U+HHHH}` | compiles under UTF | `unicode-props` | `\N requires module 'unicode-props'` | **stage 2** (it is `\x{}` by another spelling) |
+| `(?i)` over non-ASCII | simple fold only (§4.1) | the one class constructor — **not a module** | n/a (the fold ships; its non-ASCII half does not exist yet) | **stage 4** |
+| `\w \d \s \b` under UCP semantics | needs `PCRE2_UCP` | — | pcrec has **no UCP axis** (§4.5) | **NOT IN M5** — §14 ASK 4 |
+| `\X` (grapheme cluster) | compiles under UTF | **`misc`** — a different module | `\X requires module 'misc'` | **out of scope** (§11) |
+| `\R` | compiles | **`misc`** | `\R requires module 'misc'` | **out of scope** |
+| UTF-16 / UTF-32 | PCRE2 has separate libraries | — | `unknown encoding 'utf16' (want byte, utf8)` | **never** — `[DD-12] (6)`, D18 earn-its-axis |
+
+Two rows are worth reading twice. **`\p` is owned by a module and gated on
+nothing else** — §3.2 measures that it works without `PCRE2_UTF`, which is
+what lets stage 3 be independent of stage 2. And **`\X`/`\R` belong to
+`misc`**, measured, not to `unicode-props` — so the natural-looking
+"everything Unicode" scope is not the module boundary this tree actually has.
 
 ---
 
@@ -423,6 +461,19 @@ the hot path, which is the thing the seam exists to forbid.
 design does not hide it: a caller who wants "tell me the subject is broken"
 gets "no match" instead. §14 ASK 1 asks whether that is acceptable or whether
 an opt-in validation entry point is owed.
+
+**AND THAT ANSWERS THE CHARTER'S "IS A NO-VALIDATE MODE A GENERATION AXIS?"
+IN THE ONLY WAY THAT KEEPS D18.** The charter asks whether validation should
+be a generation-time switch. Under the ruling above **there is no validation
+to switch off**, so a `--no-validate` flag would be an axis with one value —
+the definition of an axis that has not earned itself (D18), and a flag whose
+`-fno-` form is a no-op is worse than no flag because it implies a behaviour
+that does not exist. The axis becomes real only if ASK 1 is ruled the other
+way, and in that case it is not a *no-validate* axis but a *validate* one:
+the default stays the automaton's free answer and the opt-in adds a pass. The
+design records the direction because getting it backwards would put the cost
+on every artifact by default, which is exactly what `PCRE2_UTF` does and what
+§2.6(b) measures as an O(n) pass per match call.
 
 **(e) The mid-character cursor.** `out/invalid_utf.txt` §E: a `startoffset`
 inside a character is `ERRM -36 "bad offset into UTF string"` under
