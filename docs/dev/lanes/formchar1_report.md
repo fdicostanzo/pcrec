@@ -166,9 +166,13 @@ build restores bitmaps and stamps 0.
 
 ### 4a. Form census run
 
-RUNNING at report commit (PROCS=4, launched in the manager's targeted
-window); its two new floors are §2's. Result appended in a follow-up
-commit the moment the log's completion line lands.
+**GREEN** (PROCS=4, 295 s wall, EXIT:0, every floor OK including the two
+new ones): `D:RX_VM_CLS_FOLDS=>0` = **16** against floor 6,
+`V:RX_VM_CLS_FOLDS=>0` = **28** against floor 12 (the census's
+`--features all` per-artifact banding counts a few more than this lane's
+own pre-landing sweep's 11/23 — same direction, comfortably above both
+floors either way; bands: D 16 `>0` / 1,501 `0`, V 28 `>0` / 2,593 `0`).
+Every pre-existing floor also OK on this tree.
 
 ## 5. Deviations and findings for the manager
 
