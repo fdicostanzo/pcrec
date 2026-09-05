@@ -1445,29 +1445,93 @@ static int vm_cls(Vm *v, const uint8_t *bits)
     return v->ncls++;
 }
 
-/* The membership test for class `ci` on byte expression `byte`.
+/* The SHAPE of a class's membership test — [FORM-CHAR] STEP 1's one
+ * derivation with three readers: `vm_cls_test` (the test expression), the
+ * class-bitmap table emission in `pcrec_emit_vm` (which must emit a table
+ * for EXACTLY the classes whose test reads one — the two used to be two
+ * inline spellings of the same condition, the drift this enum retires), and
+ * the `<PREFIX>_VM_CLS_FOLDS` stamp (an aggregation over the pool).
  *
- * Three shapes, cheapest first, and the choice is a property of the SET, not a
- * heuristic: a singleton is one compare, a contiguous range is the standard
- * unsigned-subtract trick (one subtract, one compare, no branch), and anything
- * else reads the 32-byte bitmap. A full 256-byte set needs no test at all
- * beyond the caller's own bounds check. The bitmap is the same 256-bit
+ * The choice is a property of the SET, not a heuristic (this function's
+ * standing rule, one shape older than it): a singleton is one compare, a
+ * contiguous range is the unsigned-subtract trick, an ASCII FOLD PAIR is one
+ * or-mask-and-compare, and anything else reads the 32-byte bitmap.
+ *
+ * THE FOLD SHAPE ([FORM-CHAR] object 2, `ascii-fold`): a two-member set
+ * {B, B|0x20} with both members letters — exactly what D23's parse-time
+ * folding makes of every caseless letter — tests as `(byte | 0x20) == lower`,
+ * which gcc -O2 compiles to one mask + one compare + sete with NO LOAD
+ * (docs/dev/form_char_step0.md §2, asm evidence in studies/form_char_twins/).
+ * That deletes the 32-byte bitmap per site and is why a caseless literal
+ * chain keeps its shape at 38% less .text and zero .rodata. The letters
+ * conjunct is the recognizer for what caseless folding PRODUCES; the compare
+ * itself would be exact for any 0x20-pair, but a non-letter pair is not a
+ * fold and stays on the bitmap until someone measures a reason to widen.
+ * `PCREC_NO_CLS_FOLD` (docs/spec/tuning.md §2.22) denies the shape here, at
+ * the one derivation, so denied builds re-classify to BITMAP and emit the
+ * pre-[FORM-CHAR] bytes.
+ *
+ * [FORM-CHAR] objects (4)/(5) — `utf8-simple-fold`, `utf8-full-fold` — are
+ * M5.0's to add as members here when its stages land; nothing is built for
+ * them now (the plan row's own sequencing). */
+typedef enum {
+    VM_CLS_SHAPE_ALL,     /* 256 members: no test beyond the bounds check */
+    VM_CLS_SHAPE_SINGLE,  /* 1 member: one compare */
+    VM_CLS_SHAPE_RANGE,   /* contiguous run: unsigned-subtract trick */
+    VM_CLS_SHAPE_FOLD,    /* ASCII fold pair: (byte | 0x20) == lower */
+    VM_CLS_SHAPE_BITMAP   /* anything else: the 32-byte bitmap read */
+} VmClsShape;
+
+static VmClsShape vm_cls_shape(const Vm *v, const uint8_t *bits,
+                               int *lo_out, int *hi_out)
+{
+    int lo = -1, hi = -1, count = 0;
+    for (int c = 0; c < 256; c++)
+        if (cls_has(bits, (unsigned)c)) { if (lo < 0) lo = c; hi = c; count++; }
+    *lo_out = lo;
+    *hi_out = hi;
+    if (count == 256) return VM_CLS_SHAPE_ALL;
+    if (count == 1)   return VM_CLS_SHAPE_SINGLE;
+    if (count == hi - lo + 1) return VM_CLS_SHAPE_RANGE;
+    if (count == 2 && (lo ^ hi) == 0x20 && lo >= 'A' && lo <= 'Z'
+        && !(v->cx->opt->flags & PCREC_NO_CLS_FOLD))
+        return VM_CLS_SHAPE_FOLD;
+    return VM_CLS_SHAPE_BITMAP;
+}
+
+/* The membership test for class `ci` on byte expression `byte`. Shapes and
+ * their selection: `vm_cls_shape` above. The bitmap is the same 256-bit
  * representation the AST and the DFA already use (§2.9), so nothing here has
  * to agree with a second encoding of "which bytes". */
 static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
 {
-    const uint8_t *bits = v->cls[ci];
-    int lo = -1, hi = -1, count = 0;
-    for (int c = 0; c < 256; c++)
-        if (cls_has(bits, (unsigned)c)) { if (lo < 0) lo = c; hi = c; count++; }
-
-    if (count == 256) { sb_puts(b, "1"); return; }
-    if (count == 1)   { sb_printf(b, "%s == %d", byte, lo); return; }
-    if (count == hi - lo + 1) {
+    int lo, hi;
+    switch (vm_cls_shape(v, v->cls[ci], &lo, &hi)) {
+    case VM_CLS_SHAPE_ALL:    sb_puts(b, "1"); return;
+    case VM_CLS_SHAPE_SINGLE: sb_printf(b, "%s == %d", byte, lo); return;
+    case VM_CLS_SHAPE_RANGE:
         sb_printf(b, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
         return;
+    case VM_CLS_SHAPE_FOLD:
+        /* hi == lo | 0x20 by the shape's own condition: the lowercase
+         * member is the compare constant, the mask folds the other onto it. */
+        sb_printf(b, "(%s | 0x20) == %d", byte, hi);
+        return;
+    case VM_CLS_SHAPE_BITMAP: break;
     }
     sb_printf(b, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1", v->p, ci, byte, byte);
+}
+
+/* [FORM-CHAR] the `<PREFIX>_VM_CLS_FOLDS` stamp's one derivation: how many
+ * pool classes take the FOLD shape. Distinct pool entries are distinct sets,
+ * so distinct fold classes have distinct compare constants — which is what
+ * lets a structural check count the stamp against the artifact's own text. */
+static int vm_cls_fold_count(const Vm *v)
+{
+    int n = 0, lo, hi;
+    for (int i = 0; i < v->ncls; i++)
+        if (vm_cls_shape(v, v->cls[i], &lo, &hi) == VM_CLS_SHAPE_FOLD) n++;
+    return n;
 }
 
 /* ---- §2.5's cursor ladder: is this body a deterministic fixed-length run? --
@@ -9664,6 +9728,23 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * no consumer reads the fact at RUN time today, so a mirror would be built
      * ahead of a measured need (D77). */
     sb_printf(c, "#define %s_VM_ALT_ISLANDS %lld\n", v.up, v.nislands);
+    /* [FORM-CHAR] STEP 1 — THE FOLD-FORM STAMP, §6.3 family (b), VM route
+     * only, UNCONDITIONAL on every VM artifact including a hybrid, `0`
+     * spelled as readily as any other value (the `_FAST_FRAMES`/[DD-13]
+     * absence-discriminator rule, verbatim from the two stamps above).
+     *
+     * AN ACTIVITY COUNT AND NOT A BOOLEAN, on `RX_VM_ALT_ISLANDS`'
+     * precedent: the shape is selected PER POOL CLASS by `vm_cls_shape`, so
+     * a pattern can and does mix fold-pair positions with bitmap classes,
+     * and "did it" would lose which. The count is `vm_cls_shape`'s own
+     * aggregation over the pool — the SAME derivation `vm_cls_test` and the
+     * table-emission loop read — so it cannot report a fold the program does
+     * not contain. The pool is FINAL here for `has_push`'s reason above: the
+     * program was emitted into the scratch buffer before this line runs.
+     *
+     * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
+     * no consumer reads the fact at RUN time today (D77). */
+    sb_printf(c, "#define %s_VM_CLS_FOLDS %d\n", v.up, vm_cls_fold_count(&v));
     /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
      * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
      *
@@ -10523,19 +10604,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* ---- the class bitmaps ------------------------------------------------
      * File-scope `static const` (TS-1: all-const tables, no mutable globals),
      * named under --prefix like every other file-scope symbol this project
-     * emits, and only for classes that actually needed a bitmap — singletons
-     * and contiguous ranges compile to a compare and never reach the pool. */
+     * emits, and only for classes whose TEST reads a bitmap — `vm_cls_shape`
+     * is the one derivation both this loop and `vm_cls_test` consult, so a
+     * class that compiles to a compare (singleton, range, [FORM-CHAR]'s fold
+     * pair) can never leave an unread table behind, and a class whose test
+     * reads a table can never find it missing. (This loop used to re-spell
+     * the shape condition inline; the shared classifier retired that.) */
     {
         bool any = false;
         for (int i = 0; i < v.ncls; i++) {
-            int lo = -1, hi = -1, count = 0;
-            for (int cb = 0; cb < 256; cb++)
-                if (cls_has(v.cls[i], (unsigned)cb)) {
-                    if (lo < 0) lo = cb;
-                    hi = cb;
-                    count++;
-                }
-            if (count == 256 || count == 1 || count == hi - lo + 1) continue;
+            int lo, hi;
+            if (vm_cls_shape(&v, v.cls[i], &lo, &hi) != VM_CLS_SHAPE_BITMAP)
+                continue;
             any = true;
             sb_printf(c, "static const unsigned char %s_class_bitmap%d[32] = {", v.p, i);
             for (int j = 0; j < 32; j++) {

@@ -156,8 +156,10 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `22`
-([CC-DIFF] STEP 2, the VM ENTRY SHAPE: every VM artifact gains the
+events but never stated the general rule; `rx_info.abi` is `23`
+([FORM-CHAR] STEP 1, the VM's ASCII-FOLD class test — see §6.3's
+`_VM_CLS_FOLDS` entry and `docs/spec/tuning.md` §2.22; `22` was
+[CC-DIFF] STEP 2, the VM ENTRY SHAPE: every VM artifact gains the
 `<PREFIX>_VM_ENTRY_SHAPE` and `<PREFIX>_VM_PROGRAM_BYTES` stamps, and at rungs
 `shared`/`forward` the entry chain's own shape moves — the three `_in` entries
 carry the body, the un-suffixed entries forward to them, and a static empty
@@ -1807,7 +1809,18 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `22` on every artifact today ([CC-DIFF] STEP 2 bumped it
+- **`rx_info.abi` is `23` on every artifact today ([FORM-CHAR] STEP 1 bumped
+  it from 22: the VM's ASCII-FOLD CLASS TEST — a two-member pool class that
+  is an ASCII fold pair (differing only in bit 0x20, both letters, what
+  D23's parse-time caseless folding produces) tests as
+  `(byte | 0x20) == lower` and its 32-byte `class_bitmap` table is not
+  emitted; every VM artifact gains a `<PREFIX>_VM_CLS_FOLDS` line whatever
+  its value (§6.3); the VM PROGRAM REGION moves on exactly the fold-bearing
+  population, the second change ever to do so, and
+  `tests/codegen/run_recursion_identity.sh`'s comparison (A) carries the
+  fold as a second deny-axis IFF on the island's own terms; no answer moves
+  — `-fno-cls-fold` sweeps the axis, `docs/spec/tuning.md` §2.22 is the
+  contract. `22` was [CC-DIFF] STEP 2's, which bumped it
   from 21: the VM ENTRY SHAPE — two stamps on every VM artifact,
   `<PREFIX>_VM_ENTRY_SHAPE` and `<PREFIX>_VM_PROGRAM_BYTES`, and the entry
   chain's shape at rungs `shared`/`forward`; the VM program region is unmoved;
@@ -2276,7 +2289,7 @@ engine-scoped.**
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
-  `_VM_FRAMELESS`, the
+  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
   such activity to report. This is the half the old rule was right about.
@@ -2411,6 +2424,42 @@ the same alternative, in the same backtracking order, as the chain.
 reason: no consumer reads the fact at RUN time today, so a mirror would be
 built ahead of a measured need (D77). The trigger that would make one owed is
 the same one `RX_DFA_TABLE`'s entry names.
+
+**[FORM-CHAR] STEP 1, 2026-09-05: `<PREFIX>_VM_CLS_FOLDS`, and it is (b) for
+`_VM_ALT_ISLANDS`' reason.** There is no fold MODE anywhere upstream of the
+emitter; it is what the emitted program turned out to CONTAIN, decided pool
+class by pool class by `vm_cls_shape` while `src/gen/emit_vm.c` had the set
+in hand.
+
+```c
+#define RX_VM_CLS_FOLDS 6   /* or 0, or any count */
+```
+
+**The IFF: it is the number of this artifact's VM class-pool entries whose
+membership test takes the ASCII-FOLD shape — a two-member set differing only
+in bit `0x20`, both members letters, tested as `(byte | 0x20) == lower` with
+NO 32-byte bitmap table emitted for it** (`docs/spec/tuning.md` §2.22). It is
+**UNCONDITIONAL on every VM artifact, hybrids included, and never defined on
+a pure-DFA artifact**: `0` is spelled as readily as any other value, for the
+absence-discriminator rule every (b) entry above cites. The DFA route's class
+machinery (its byte-class partition, its scan-edge bodies) never consults
+`vm_cls_shape`, so there is nothing there to report.
+
+**A COUNT and not a boolean**, on `_VM_ALT_ISLANDS`' precedent: the shape is
+selected PER POOL CLASS, so a pattern can mix fold-pair positions with
+bitmap classes, and "did it" would lose which. Distinct pool entries are
+distinct sets, so distinct fold classes carry distinct compare constants —
+which is what lets a structural check hold this number to the artifact's own
+text.
+
+What a consumer may conclude: the artifact's caseless-letter positions test
+by one or-mask-and-compare each (no load), and it carries that many fewer
+32-byte class tables. What it may NOT conclude: anything about the ANSWERS,
+which are identical either way — the fold compare and the bitmap read are
+the same predicate over the set's own two bytes.
+
+**It has no `rx_info` mirror**, on the same precedent and for the same
+reason as the entry above (D77).
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the

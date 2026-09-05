@@ -521,6 +521,13 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * unchanged. See lib/pcrec.h's PCREC_NO_ALT_ISLAND comment. */
         else if (!no_more_opts && !strcmp(a, "-fno-alt-island"))
             opt.flags |= PCREC_NO_ALT_ISLAND;
+        /* [FORM-CHAR] STEP 1: the VM's ascii-fold class test. Deny-only, and
+         * for the same reason as the island above: each fold-pair class is
+         * its own selection point, the emitter takes the fold wherever the
+         * set is one, and a declined set keeps its existing shape. See
+         * lib/pcrec.h's PCREC_NO_CLS_FOLD comment. */
+        else if (!no_more_opts && !strcmp(a, "-fno-cls-fold"))
+            opt.flags |= PCREC_NO_CLS_FOLD;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

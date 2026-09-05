@@ -1659,7 +1659,33 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * above the program, or DFA-side text, none of which is inside that
      * region. Comparison (B) compares whole files and is re-pinned in this
      * same change, per D76. */
-    sb_puts(c,   "    .abi = 22,\n");
+    /* [FORM-CHAR] STEP 1 abi 22 -> 23 (D76): the VM's ASCII-FOLD class test
+     * and its stamp. Per artifact kind, r37 A12's lesson:
+     *
+     *  - EVERY VM artifact, a hybrid included, gains one
+     *    `<PREFIX>_VM_CLS_FOLDS` stamp line whatever its value (0 spelled).
+     *    That line alone is why the whole VM population's bytes move.
+     *  - On a VM artifact whose class pool holds an ASCII fold pair — what
+     *    D23's parse-time caseless folding produces — every test site for
+     *    that class emits `(byte | 0x20) == lower` instead of the 32-byte
+     *    bitmap read, and the class's `<prefix>_class_bitmap<N>` table is NOT
+     *    emitted. The VM PROGRAM REGION moves on exactly that population, so
+     *    run_recursion_identity.sh's comparison (A) carries a second
+     *    deny-axis IFF for it (`-fno-cls-fold` must restore the pinned
+     *    region), the island's own shape one axis over.
+     *  - NO DFA artifact's bytes move except through this shared function's
+     *    `.abi` digit: the fold is `vm_cls_shape`'s, the DFA scan edge
+     *    (form_char_step0.md family C) is deliberately untouched pending its
+     *    own timing, and `src/core/compile.c`/the encoding lowering are a
+     *    concurrent lane's tonight ([M5.0] stage 2).
+     *  - No struct offset moves, no `rx_info` member is added, and no answer
+     *    moves either way — that is the deny flag's whole job
+     *    (`-fno-cls-fold`, `make test-axes`).
+     *
+     * Comparison (B) compares whole files and is re-pinned in this same
+     * change, per D76/D94 (the lane pins its own last src commit; the
+     * manager re-pins to the merge). */
+    sb_puts(c,   "    .abi = 23,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1804,7 +1830,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * reference. `<PREFIX>_VM_ALT_ISLANDS`
                                            * is where what the emitter DID is
                                            * recorded. */
-                                          PCREC_NO_ALT_ISLAND;
+                                          PCREC_NO_ALT_ISLAND |
+                                          /* [FORM-CHAR] the VM's ascii-fold
+                                           * class test. The fold and the
+                                           * bitmap read are the same
+                                           * predicate over the same two-byte
+                                           * set, so it changes no answer and
+                                           * belongs to the mask for the
+                                           * mask's own reason — and
+                                           * concretely, so that an artifact
+                                           * with no fold pair is
+                                           * byte-for-byte the same under the
+                                           * flag. `<PREFIX>_VM_CLS_FOLDS` is
+                                           * where what the emitter DID is
+                                           * recorded. */
+                                          PCREC_NO_CLS_FOLD;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

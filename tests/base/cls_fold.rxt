@@ -1,0 +1,109 @@
+# tests/base/cls_fold.rxt — [FORM-CHAR] STEP 1: the VM's ASCII-FOLD class
+# test (docs/spec/tuning.md §2.22), as ANSWERS.
+#
+# Every pattern here is CAPTURE-BEARING on purpose: a capture routes the
+# default compile to the VM, which is the one engine `vm_cls_shape`'s fold
+# form reaches — a capture-free caseless literal is a DFA artifact and
+# exercises nothing this file is about. The pairs of blocks are the two
+# sides of the recognizer:
+#
+#   - a class that IS an ASCII fold pair ([Aa], [Zz], and what (?i) makes of
+#     a letter) takes the fold compare `(byte | 0x20) == lower`;
+#   - a two-member class that is NOT one ([ac] — same size, not a 0x20-pair)
+#     keeps the bitmap, and its cells are the CONTROL population: sabotage
+#     S228 (the recognizer widened to any two-member set) loses `ax`'s match
+#     in the first block below while every fold-pair block stays green.
+#
+# The `` `x ``/`@x` cells pin the fold CONSTANT: 0x60/0x40 are the letters'
+# 0x20-neighbours one bit off, so an off-by-one-bit compare admits them.
+#
+# All expectations python3-re verified (2026-09-05, this file's authoring
+# sweep; re.search spans and group spans, transcribed unmodified).
+
+# case: fold-control-nonpair
+pattern ([ac])x
+# {a,c}: two members, NOT a 0x20-pair — stays on the bitmap. S228's detector.
+m "ax" 0 2
+g 1 0 1
+m "cx" 0 2
+g 1 0 1
+n "Cx"
+n "bx"
+m "xax" 1 3
+g 1 1 2
+m "acx" 1 3
+g 1 1 2
+
+# case: fold-pair-explicit
+pattern ([Aa])x
+# {A,a} spelled as a class, no caseless flag anywhere: the SET is what the
+# recognizer reads, not where it came from.
+m "Ax" 0 2
+g 1 0 1
+m "ax" 0 2
+g 1 0 1
+n "bx"
+n "@x"
+n "`x"
+m "Zax" 1 3
+g 1 1 2
+
+# case: fold-pair-caseless-inline
+pattern (?i)(q)r
+# what D23's parse-time folding makes of a caseless letter — two fold-pair
+# positions, one captured.
+m "qr" 0 2
+g 1 0 1
+m "QR" 0 2
+g 1 0 1
+m "Qr" 0 2
+g 1 0 1
+m "qR" 0 2
+g 1 0 1
+n "xr"
+m "aQRb" 1 3
+g 1 1 2
+
+# case: fold-pair-quantified
+pattern ([Zz]){2,4}y
+# the fold class under a counted repeat: the shape rides whichever rung the
+# quantifier takes, and the LAST iteration's capture is what survives.
+m "zZy" 0 3
+g 1 1 2
+m "ZzzZy" 0 5
+g 1 3 4
+n "Zy"
+m "zzzzzy" 1 6
+g 1 4 5
+n "ay"
+
+# case: fold-and-nonpair-mixed
+pattern ([Aa])([ac])d
+# one artifact holding BOTH shapes: a fold class and a bitmap class whose
+# members overlap on 'a' — cross-class confusion is a wrong answer here.
+m "Aad" 0 3
+g 1 0 1
+g 2 1 2
+m "acd" 0 3
+g 1 0 1
+g 2 1 2
+n "AAd"
+n "aCd"
+m "xacd" 1 4
+g 1 1 2
+g 2 2 3
+
+# case: fold-chain-uncaptured
+pattern ((?i:abc))
+# the family-A witness shape itself, captured so the default engine is the
+# VM: three fold-pair positions in a row — the literal chain the form
+# exists to keep.
+m "abc" 0 3
+g 1 0 3
+m "ABC" 0 3
+g 1 0 3
+m "aBc" 0 3
+g 1 0 3
+n "abd"
+m "xAbCy" 1 4
+g 1 1 4
