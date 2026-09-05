@@ -1,0 +1,3 @@
+=== loglines iso-ts auto vs -fno-scan-edge, SYNTHESIZED subject (not bench's own) ===
+median_ns_per_set=72000.0 min=72000.0 max=77000.0 trials=25
+median_ns_per_set=125000.0 min=124000.0 max=132000.0 trials=25
