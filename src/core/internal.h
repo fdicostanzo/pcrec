@@ -273,7 +273,7 @@ typedef enum {
      * FIELDS encode parse-resolved state. The measured budget for THIS
      * enumerator was taken before it was added: 23 `-Wswitch` sites in 10
      * files ([M6.6.2] wave A's dummy-enumerator run, which counted 24 with
-     * `pcrec_maxw`'s own new arm included).
+     * the width analysis's own new arm included).
      *
      * `l` is the body; `r` is unused. The payload is `u.look` below, and D62
      * control 3's obligation comes WITH those fields: an analysis that
@@ -284,8 +284,9 @@ typedef enum {
      * ITS MINIMUM AND MAXIMUM WIDTH ARE BOTH 0, and 0 BECAUSE IT WAS CHECKED
      * rather than because it was inherited (design §3.1(d)). A LOOKAHEAD
      * inspects bytes ahead of the cursor and consumes none; a LOOKBEHIND's
-     * bytes are BEHIND the cursor, and `pcrec_minw`/`pcrec_maxw` count bytes
-     * still to be CONSUMED. `vm_nullable` must answer TRUE for the same fact,
+     * bytes are BEHIND the cursor, and `pcrec_minw` (bytes) and the character
+     * pair `pcrec_cwmin`/`pcrec_cwmax` all count what is still to be
+     * CONSUMED. `vm_nullable` must answer TRUE for the same fact,
      * or a quantified lookaround loses its empty-iteration guard — and design
      * §2.6 measured that quantified lookaround SHIPS (all fourteen forms
      * compile in both oracles, and the empty-iteration cells terminate).
@@ -738,17 +739,18 @@ struct Ast {
              * compile must be rejected with a pattern OFFSET, not discovered
              * by the emitter — and once the hook has computed the widths,
              * recomputing them downstream is a second derivation that can
-             * disagree with the first. `pcrec_maxw`/`pcrec_minw` (src/opt/mrl.c)
-             * are what the hook computes them WITH: a branch qualifies exactly
-             * when `minw == maxw`, which is also why an under-estimating
-             * `pcrec_maxw` is a silent miscompile rather than a lost
-             * optimisation. WRITTEN by the parse hook (wave D), READ by §3.4's
+             * disagree with the first. `pcrec_cwmin`/`pcrec_cwmax` (src/opt/mrl.c;
+             * CHARACTERS since [M5.0] stage 2, the unit 10.46 measures
+             * lookbehind length in) are what the hook computes them WITH: a
+             * branch qualifies exactly when `cwmin == cwmax`, which is also
+             * why an under-estimating `pcrec_cwmax` is a silent miscompile
+             * rather than a lost optimisation. WRITTEN by the parse hook (wave D), READ by §3.4's
              * emitted back-step. Sabotage row S-LA11.
              *
              * [DD-14.LB] `NULL` ON A LOOKBEHIND MEANS **PENDING**, and that is
              * this field's one extra state rather than a second field. The
              * hook cannot compute the table when the body carries an `A_CALL`
-             * — `pcrec_maxw`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` there
+             * — `pcrec_cwmax`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` there
              * because the callee is not bound until `pcrec_callgraph_build`
              * runs over the FINAL tree — so it records the assertion instead
              * (`at` below) and `pcrec_postresolve` (src/opt/postresolve.c)
@@ -850,7 +852,7 @@ struct Ast {
              * READ by `callgraph.c`, `vm_nullable`, `vm_cost`,
              * `vm_count_slots`, `vm_emit` and — ONLY once
              * `lookaround_design.md` §11 wave A has built it, P13 measured it
-             * has not — `pcrec_maxw`. */
+             * has not — the character width pair. */
             const Ast  *body;
             /* HOW THE CALLEE REACHES THE ARTIFACT — `CALL_SPLICE` (inline the
              * subtree here) or `CALL_LINKAGE` (jump to one emitted region and
@@ -970,50 +972,57 @@ struct Ast {
              *                 safe and why `pcrec_emit_vm` fills them for
              *                 every node before it emits a byte.
              *
-             * `maxw` WAS DELIBERATELY ABSENT UNTIL [DD-14.LB], and the
-             * paragraph that argued for its absence is kept here because the
-             * half of it that was right is still right. `pcrec_maxw`'s safe
-             * direction is the OPPOSITE of `minw`'s, so a plain `long long
-             * maxw` whose arena zero is `0` would be its SILENT MISCOMPILE —
-             * an under-estimated maximum lets a variable-width branch through
-             * the lookbehind rule as fixed, which on a NEGATIVE lookbehind is
-             * a false match. That is why the pair below is TWO fields and not
-             * one: `maxw_known` is the arena-zero-safe half, exactly as
-             * `nonnullable`'s inverted polarity is, and `pcrec_maxw`'s arm
-             * reads `maxw` ONLY through it.
+             * `cwmax` WAS `maxw` (bytes) UNTIL [M5.0] STAGE 2 RE-AIMED THE
+             * FIXPOINT INTO CHARACTERS (utf8_design.md §5.6.2/§5.6.3) — the
+             * consumer, module `lookaround`'s fixed-width rule, always wanted
+             * the number 10.46 measures lookbehind length in (CHARACTERS,
+             * §5.6's table: `(?<=[a\x{3b1}])x` compiles at MAXLOOKBEHIND 1),
+             * and under `byte` the two units coincide so every published
+             * value is numerically what `maxw` published. The paragraph that
+             * argued for the pair shape is kept because it is still exactly
+             * right: `pcrec_cwmax`'s safe direction is the OPPOSITE of
+             * `minw`'s/`cwmin`'s, so a plain `long long cwmax` whose arena
+             * zero is `0` would be its SILENT MISCOMPILE — an under-estimated
+             * maximum lets a variable-width branch through the lookbehind
+             * rule as fixed, which on a NEGATIVE lookbehind is a false match.
+             * That is why it is TWO fields and not one: `cwmax_known` is the
+             * arena-zero-safe half, exactly as `nonnullable`'s inverted
+             * polarity is, and `pcrec_cwmax`'s arm reads `cwmax` ONLY
+             * through it.
              *
-             * WHAT CHANGED IS THE "no customer" HALF. The customer is module
-             * `lookaround`'s fixed-width rule, and the timing objection this
-             * paragraph used to raise — "it would need a writer that runs
-             * before the parse-time lookbehind width rule, which the call
-             * graph cannot" — is answered by moving the CONSUMER rather than
-             * the writer: `pcrec_postresolve` (src/opt/postresolve.c) re-asks
-             * the width question after `pcrec_callgraph_build`, so the memo is
-             * read where it exists. See `pcrec_postresolve`'s declaration and
-             * docs/design/subroutines_design.md §3.4(d)'s 2026-08-24
-             * amendment.
+             * THE CONSUMER RUNS AT TWO TIMINGS (the parse hook, and
+             * `pcrec_postresolve` after `pcrec_callgraph_build` — see that
+             * declaration and docs/design/subroutines_design.md §3.4(d)'s
+             * 2026-08-24 amendment), and the memo is read where it exists.
              *
-             *   `maxw`       the callee's greatest width, VALID ONLY when
-             *                `maxw_known`. `PCREC_W_UNBOUNDED` is a legal
-             *                value and is the fixpoint's answer for every
-             *                callee in a cycle and every callee that can
-             *                reach one.
-             *   `maxw_known` false — i.e. "answer PCREC_W_UNBOUNDED". The
+             *   `cwmin`      the callee's least width in CHARACTERS. The
+             *                arena's zero is SOUND (an under-estimate makes
+             *                `cwmin != cwmax` and the rule REFUSES — an
+             *                over-rejection, never a false match), which is
+             *                `minw`'s own argument one unit over.
+             *   `cwmax`      the callee's greatest width in CHARACTERS,
+             *                VALID ONLY when `cwmax_known`.
+             *                `PCREC_W_UNBOUNDED` is a legal value and is the
+             *                fixpoint's answer for every callee in a cycle
+             *                and every callee that can reach one.
+             *   `cwmax_known` false — i.e. "answer PCREC_W_UNBOUNDED". The
              *                arena's zero is the SOUND direction for this
-             *                pair for the reason above, and it is the answer
-             *                `pcrec_maxw` gave for every call before this
-             *                field existed, so a walker that legitimately
-             *                runs before the fixpoint (the parse hook itself)
-             *                sees exactly the old behaviour.
+             *                pair for the reason above, so a walker that
+             *                legitimately runs before the fixpoint (the
+             *                parse hook itself) sees the pre-memo behaviour.
              *
-             * WRITTEN by `src/opt/callgraph.c`'s two fixpoints (`minw`,
-             * `maxw`/`maxw_known`) and by `src/gen/emit_vm.c` (`nonnullable`,
-             * whose recurrence is `vm_nullable` and lives there; `save`/
-             * `nsave`, whose SLOT INDICES are the emitter's own layout and
-             * exist nowhere else). */
+             * WRITTEN by `src/opt/callgraph.c`'s three fixpoints (`minw` —
+             * BYTES, the MRL prune's; `cwmin`; `cwmax`/`cwmax_known`) and by
+             * `src/gen/emit_vm.c` (`nonnullable`, whose recurrence is
+             * `vm_nullable` and lives there; `save`/`nsave`, whose SLOT
+             * INDICES are the emitter's own layout and exist nowhere else).
+             * `minw` (bytes) and the character pair are TWO FACTS for TWO
+             * consumers, numerically equal under `byte` — see mrl.c's header
+             * for why a unit-parameterised single walk was declined. */
             long long   minw;
-            long long   maxw;
-            bool        maxw_known;
+            long long   cwmin;
+            long long   cwmax;
+            bool        cwmax_known;
             bool        nonnullable;
         } call;
     } u;
@@ -3755,8 +3764,10 @@ bool pcrec_has_live_capture(const Ast *a);
  * an infinite emitter); runs §4.4b's `minw` Kleene fixpoint; and runs
  * [DD-14.LB]'s `maxw` fixpoint, its MIRROR IN EVERY SENSE INCLUDING THE ONE
  * THAT MATTERS (it descends from `PCREC_W_UNBOUNDED` where `minw` descends
- * from `PCREC_MINW_MAX`, because over-estimating is `pcrec_maxw`'s free
- * direction and under-estimating is its miscompile).
+ * from `PCREC_MINW_MAX`, because over-estimating is `pcrec_cwmax`'s free
+ * direction and under-estimating is its miscompile); and runs [M5.0] stage
+ * 2's `cwmin` fixpoint beside them (CHARACTERS — the `maxw` fixpoint became
+ * `cwmax` in the same change, utf8_design.md §5.6.2).
  *
  * IT ASKS NO MODULE'S QUESTION. Wave B+C's draft re-asked module
  * `lookaround`'s §2.7 `\K` refusal here, and MEASUREMENT deleted the check
@@ -3803,6 +3814,14 @@ void pcrec_postresolve(Ctx *cx, Ast *root);
  * carries the derivation and the call site restates which constraints it
  * satisfies. Returns the (possibly new) root, which `compile.c` PUBLISHES. */
 Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
+/* [M5.0 stage 2] Decode ONE pattern character at byte offset `at`, per the
+ * compile's encoding; `*len` gets its byte length (>= 1). Under `byte` this
+ * is the byte itself; under `utf8` a full decode that `ctx_fail`s on
+ * ill-formed pattern text (truncation, bad lead, overlong, surrogate,
+ * above U+10FFFF). Lives in lower_enc.c — the one place that knows how an
+ * encoding spells a character — and is the parser's literal reader for any
+ * byte >= 0x80 (utf8_design.md §2.7). */
+unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the two fixpoints
  * whose RECURRENCE lives in the emitter — `vm_nullable`'s (a `static` there,
@@ -4728,22 +4747,26 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * [LIM-1] (D90): generated earlier in this file (PCREC_PREFIX_K_MAX's own
  * limits.def include, home INTERNAL_H) — value unchanged, (1LL << 40). */
 
-/* [M6.6.2 wave A] The MAXIMUM number of subject bytes any match of `a` can
- * consume — `pcrec_minw`'s twin, and its DIRECTION IS THE OPPOSITE ONE.
+/* [M5.0 stage 2] The CHARACTER width pair — the two numbers module
+ * `lookaround`'s fixed-width rule consumes at both of its timings
+ * (utf8_design.md §5.6: 10.46 measures lookbehind length in CHARACTERS, and
+ * the emitted back-step walks characters through the encoding seam).
  *
- * `pcrec_minw` may UNDER-estimate for free (a bound below the truth prunes
- * less). `pcrec_maxw` may OVER-estimate for free, and under-estimating is the
- * silent-miscompile direction: its first consumer is the lookaround module's
- * FIXED-WIDTH rule (`lookaround_design.md` §2.5 — a lookbehind branch is
- * admitted only when `minw == maxw`), so a maxw below the truth admits a
- * VARIABLE-width branch as fixed and the emitted back-step steps the wrong
- * distance. Every conservative arm in src/opt/mrl.c's `pcrec_maxw` therefore
- * rounds UP, and `PCREC_W_UNBOUNDED` is where rounding up runs out.
+ * `pcrec_cwmin` may UNDER-estimate for free (the pair opens and the rule
+ * REFUSES — an over-rejection). `pcrec_cwmax` may OVER-estimate for free,
+ * and under-estimating is the silent-miscompile direction: a cwmax below the
+ * truth admits a VARIABLE-width branch as fixed and the emitted back-step
+ * steps the wrong distance. Every conservative arm in src/opt/mrl.c's
+ * `pcrec_cwmax` therefore rounds UP, and `PCREC_W_UNBOUNDED` is where
+ * rounding up runs out. (`pcrec_cwmax` was `pcrec_maxw`, in BYTES, until
+ * [M5.0] stage 2 re-aimed the whole chain — §5.6.2; under `byte` the units
+ * coincide and nothing observable moved.)
  *
- * `maxw(a) >= minw(a)` for every node of every tree, and that is checked
- * rather than asserted: tests/mrl/maxw_check.c sweeps it over every node of
+ * `cwmax(a) >= cwmin(a)` for every node of every tree, and that is checked
+ * rather than asserted: tests/mrl/cwmax_check.c sweeps it over every node of
  * every pattern in the whole `.rxt` corpus. */
-long long pcrec_maxw(const Ast *a);                  /* src/opt/mrl.c */
+long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
+long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
 
 /* "This node's maximum width has no static bound" — an unbounded quantifier,
  * a backreference, or any arithmetic that ran off the top.

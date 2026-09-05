@@ -1,36 +1,43 @@
-/* tests/mrl/maxw_check.c — [M6.6.2 wave A] `pcrec_maxw` against the corpus.
+/* tests/mrl/cwmax_check.c — [M6.6.2 wave A; re-aimed at [M5.0] stage 2] the
+ * CHARACTER width pair `pcrec_cwmin`/`pcrec_cwmax` against the corpus.
  *
- * `pcrec_maxw` is an ANALYSIS, so its errors are silent by construction: it
+ * BORN `maxw_check.c`, sweeping the BYTE pair; when stage 2 re-aimed the cwmax
+ * chain into characters (utf8_design.md §5.6.2 — `pcrec_cwmax` retired, its
+ * fixpoint became `cwmax`) this instrument moved with its subject, unchanged
+ * in spirit: under the `byte` encoding this file parses with, one character
+ * is one byte, so every number below is what the byte sweep measured.
+ *
+ * `pcrec_cwmax` is an ANALYSIS, so its errors are silent by construction: it
  * has no output of its own, and until the lookaround module's fixed-width rule
  * consumes it (`lookaround_design.md` §2.5) nothing in the artifact changes
  * when it is wrong. That is `src/opt/mrl.c`'s own stated reason for existing
  * as a separate file with its own corpus, one function later.
  *
- * TWO CHECKS, AND THEY CONSTRAIN maxw FROM OPPOSITE SIDES. This matters more
- * than the count of patterns: a check that only bounds maxw from BELOW is
+ * TWO CHECKS, AND THEY CONSTRAIN cwmax FROM OPPOSITE SIDES. This matters more
+ * than the count of patterns: a check that only bounds cwmax from BELOW is
  * passed by `return PCREC_W_UNBOUNDED;` — the exact degenerate implementation
  * that would make the fixed-width rule reject everything — and a check that
  * only bounds it from ABOVE is passed by `return 0;`, the degenerate one that
  * makes the rule accept everything. Neither degenerate survives both.
  *
- *   CHECK 1 (the lower side, from pcrec) — `maxw(n) >= minw(n)` at EVERY NODE
+ *   CHECK 1 (the lower side, from pcrec) — `cwmax(n) >= cwmin(n)` at EVERY NODE
  *   of every pattern in the corpus, not just at the root. Per-node because the
- *   two functions recurse differently (minw takes a `min` at A_ALT, maxw a
- *   `max`; minw multiplies by `rmin`, maxw by `rmax`), so a subtree can
+ *   two functions recurse differently (cwmin takes a `min` at A_ALT, cwmax a
+ *   `max`; cwmin multiplies by `rmin`, cwmax by `rmax`), so a subtree can
  *   violate the invariant while the root's numbers still look ordered.
  *
  *   CHECK 2 (the upper side, from the ORACLE) — for every `m`/`ms` expectation
- *   in the corpus, `end - start <= maxw(root)`. The spans in the `.rxt` files
+ *   in the corpus, `end - start <= cwmax(root)`. The spans in the `.rxt` files
  *   are oracle-verified against python `re` (docs/testing.md), so this is the
- *   one side of maxw that is checked against something that is NOT pcrec: a
- *   maxw below the truth is a span the corpus already knows about. That is
+ *   one side of cwmax that is checked against something that is NOT pcrec: a
+ *   cwmax below the truth is a span the corpus already knows about. That is
  *   also the direction that miscompiles — an under-estimate makes a
  *   variable-width lookbehind branch look fixed.
  *
- * WHY CHECK 2 DOES NOT ALSO ASSERT `end - start >= minw(root)`: `\K` makes it
+ * WHY CHECK 2 DOES NOT ALSO ASSERT `end - start >= cwmin(root)`: `\K` makes it
  * false. The reported span STARTS at the `\K`, so it is a SUBSET of what the
  * match consumed and can be shorter than the minimum width — `a\Kb` on "ab"
- * reports (1,2) with minw 2. The `<=` direction survives `\K` untouched for
+ * reports (1,2) with cwmin 2. The `<=` direction survives `\K` untouched for
  * the same reason (a subset is no wider), which is why one half is asserted
  * unconditionally and the other is not asserted at all.
  *
@@ -47,12 +54,12 @@
  * nothing would otherwise pass. The totals are printed and the pattern count
  * is asserted against a floor.
  *
- * PROVE THE CHECK IS LIVE. PCREC_MAXW_SABOTAGE corrupts what the check reads
- * — `zero` clamps maxw to 0 (the "accept everything" degenerate), `unbounded`
+ * PROVE THE CHECK IS LIVE. PCREC_CWMAX_SABOTAGE corrupts what the check reads
+ * — `zero` clamps cwmax to 0 (the "accept everything" degenerate), `unbounded`
  * pins it to PCREC_W_UNBOUNDED (the "reject everything" one), `swap` returns
- * minw. Each must make this binary FAIL, and run_mrl_tests.sh requires it.
+ * cwmin. Each must make this binary FAIL, and run_mrl_tests.sh requires it.
  * `unbounded` must be caught by CHECK 1's own strictness rather than by the
- * inequality, so CHECK 1 additionally requires that maxw is not unbounded
+ * inequality, so CHECK 1 additionally requires that cwmax is not unbounded
  * everywhere: the corpus contains bounded patterns and it must say so.
  */
 
@@ -68,20 +75,20 @@
 enum { SAB_NONE = 0, SAB_ZERO, SAB_UNBOUNDED, SAB_SWAP };
 static int sabotage;
 
-static long long maxw_of(const Ast *a)
+static long long cwmax_of(const Ast *a)
 {
     switch (sabotage) {
     case SAB_ZERO:      return 0;
     case SAB_UNBOUNDED: return PCREC_W_UNBOUNDED;
-    case SAB_SWAP:      return pcrec_minw(a);
-    default:            return pcrec_maxw(a);
+    case SAB_SWAP:      return pcrec_cwmin(a);
+    default:            return pcrec_cwmax(a);
     }
 }
 
 /* ---- counters -------------------------------------------------------------- */
 
 static long n_files, n_blocks, n_parsed, n_skipped, n_nodes, n_spans;
-static long n_bounded_nodes;      /* nodes whose maxw is NOT unbounded */
+static long n_bounded_nodes;      /* nodes whose cwmax is NOT unbounded */
 static long n_viol_order, n_viol_span;
 static long n_neg;
 
@@ -89,8 +96,8 @@ static void viol_order(const char *file, int line, const char *pat,
                        long long mn, long long mx, int kind)
 {
     if (n_viol_order < 20)
-        fprintf(stderr, "FAIL %s:%d: maxw < minw at a node (kind %d): "
-                "minw=%lld maxw=%lld  pattern '%s'\n",
+        fprintf(stderr, "FAIL %s:%d: cwmax < cwmin at a node (kind %d): "
+                "cwmin=%lld cwmax=%lld  pattern '%s'\n",
                 file, line, kind, mn, mx, pat);
     n_viol_order++;
 }
@@ -120,11 +127,11 @@ static void sweep(const Ast *root, const char *file, int line, const char *pat)
     push(&s, root);
     while (s.n) {
         const Ast *a = s.v[--s.n];
-        long long mn = pcrec_minw(a), mx = maxw_of(a);
+        long long mn = pcrec_cwmin(a), mx = cwmax_of(a);
         n_nodes++;
         if (mn < 0 || mx < 0) {
             if (n_neg < 20)
-                fprintf(stderr, "FAIL %s:%d: negative width (minw=%lld maxw=%lld) "
+                fprintf(stderr, "FAIL %s:%d: negative width (cwmin=%lld cwmax=%lld) "
                         "pattern '%s'\n", file, line, mn, mx, pat);
             n_neg++;
         }
@@ -264,13 +271,13 @@ static void block_run(Block *b, const char *path, const char *default_features)
 
     sweep(root, path, b->patline, b->pat);
 
-    long long mx = maxw_of(root);
+    long long mx = cwmax_of(root);
     for (size_t i = 0; i < b->nsp; i++) {
         long w = b->sp_end[i] - b->sp_start[i];
         n_spans++;
         if (w > mx) {
             if (n_viol_span < 20)
-                fprintf(stderr, "FAIL %s:%d: ORACLE span %ld bytes EXCEEDS maxw=%lld "
+                fprintf(stderr, "FAIL %s:%d: ORACLE span %ld bytes EXCEEDS cwmax=%lld "
                         "for pattern '%s'\n", path, b->sp_line[i], w, mx, b->pat);
             n_viol_span++;
         }
@@ -330,12 +337,12 @@ static void do_file(const char *path, const char *default_features)
 
 int main(int argc, char **argv)
 {
-    const char *sab = getenv("PCREC_MAXW_SABOTAGE");
+    const char *sab = getenv("PCREC_CWMAX_SABOTAGE");
     if (sab && *sab) {
         if      (!strcmp(sab, "zero"))      sabotage = SAB_ZERO;
         else if (!strcmp(sab, "unbounded")) sabotage = SAB_UNBOUNDED;
         else if (!strcmp(sab, "swap"))      sabotage = SAB_SWAP;
-        else { fprintf(stderr, "unknown PCREC_MAXW_SABOTAGE '%s'\n", sab); return 2; }
+        else { fprintf(stderr, "unknown PCREC_CWMAX_SABOTAGE '%s'\n", sab); return 2; }
         printf("  (SABOTAGE '%s' installed — this run MUST fail)\n", sab);
     }
 
@@ -344,7 +351,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    printf("=== [M6.6.2 wave A] pcrec_maxw over the .rxt corpus ===\n");
+    printf("=== [M6.6.2 wave A / M5.0 s2] pcrec_cwmax over the .rxt corpus ===\n");
 
     /* the fallback for a block with no `features` line: exactly what the CLI
      * installs when no --features flag is given (D37's mapping point). */
@@ -357,10 +364,10 @@ int main(int argc, char **argv)
     printf("  patterns parsed           : %ld\n", n_parsed);
     printf("  patterns skipped (refused): %ld\n", n_skipped);
     printf("  AST nodes swept           : %ld\n", n_nodes);
-    printf("    of which maxw is BOUNDED: %ld\n", n_bounded_nodes);
+    printf("    of which cwmax is BOUNDED: %ld\n", n_bounded_nodes);
     printf("  oracle spans checked      : %ld\n", n_spans);
-    printf("  CHECK 1 violations (maxw < minw)      : %ld\n", n_viol_order);
-    printf("  CHECK 2 violations (span > maxw)      : %ld\n", n_viol_span);
+    printf("  CHECK 1 violations (cwmax < cwmin)      : %ld\n", n_viol_order);
+    printf("  CHECK 2 violations (span > cwmax)      : %ld\n", n_viol_span);
     printf("  negative widths                       : %ld\n", n_neg);
 
     int bad = 0;
@@ -383,15 +390,15 @@ int main(int argc, char **argv)
                 n_spans);
         bad = 1;
     }
-    /* and maxw must actually be BOUNDED somewhere: `return PCREC_W_UNBOUNDED;`
+    /* and cwmax must actually be BOUNDED somewhere: `return PCREC_W_UNBOUNDED;`
      * satisfies both inequalities and is useless. */
     if (n_bounded_nodes * 2 < n_nodes) {
-        fprintf(stderr, "FAIL: only %ld of %ld nodes have a BOUNDED maxw — maxw is "
+        fprintf(stderr, "FAIL: only %ld of %ld nodes have a BOUNDED cwmax — cwmax is "
                 "degenerate (everything unbounded passes both inequalities)\n",
                 n_bounded_nodes, n_nodes);
         bad = 1;
     }
 
-    printf("%s\n", bad ? "=== maxw check FAILED ===" : "=== maxw check PASSED ===");
+    printf("%s\n", bad ? "=== cwmax check FAILED ===" : "=== cwmax check PASSED ===");
     return bad;
 }

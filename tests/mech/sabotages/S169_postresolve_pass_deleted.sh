@@ -1,7 +1,7 @@
 # S169 ([DD-14.LB]) -- THE POST-RESOLUTION PASS IS NEVER CALLED.
 #
 # THE CLAIM: a lookbehind whose body carries a call is RECORDED by module
-# `lookaround`'s parse hook rather than measured there — `pcrec_maxw`'s A_CALL
+# `lookaround`'s parse hook rather than measured there — `pcrec_cwmax`'s A_CALL
 # arm cannot answer at that timing, because `u.call.body` is bound over the
 # FINAL tree and a forward call's target is not parsed yet — and
 # `pcrec_postresolve` (src/opt/postresolve.c) re-asks the module's own rule

@@ -14,24 +14,14 @@
 
 #include "gen/enc/enc.h"
 
-static const PcrecEnc enc_utf8_pending = {
-    /* NOT a backend: the NAME exists so `--encoding=utf8` is a recognised
-     * member refused for a stated reason, rather than an unknown value. The
-     * backend (lowering instance + this row's residual text) is M5's. */
-    /* [M5.0] `max_cp` is Unicode's own maximum even though this row has no
-     * backend: the field answers "what does `[^x]` mean under this encoding",
-     * which is a fact about the ENCODING and not about whether pcrec can yet
-     * compile it. A pending row carrying 0 here would be a zero that means
-     * "complement within {0}" the moment the backend lands — a wrong value
-     * waiting for a reader, which is the shape D67 contract note 2 calls
-     * failing in the unsound direction. `pcrec_enc_ready` still refuses the
-     * encoding by name (`entries == NULL`), so nothing reads it today. */
-    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, NULL
-};
-
+/* [M5.0 stage 2] The `utf8` row stopped being the PENDING one this table
+ * carried from [M5-SEAM] through stage 1 (a name with `entries == NULL`,
+ * refused by `pcrec_enc_ready`) and became a real backend — enc_utf8.c, the
+ * third-encoding recipe's first execution: one new file in this directory,
+ * one extern in enc.h, this one row. */
 static const PcrecEnc *const enc_table[] = {
     &pcrec_enc_backend_byte,
-    &enc_utf8_pending
+    &pcrec_enc_backend_utf8
 };
 
 const PcrecEnc *pcrec_enc_by_id(int id)

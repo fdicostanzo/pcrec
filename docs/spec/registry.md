@@ -525,9 +525,13 @@ and bare `\xHH` are declared ONE construct with two spellings, sharing
 ONE row — the pre-existing bare-`\x` `RK_ESC`/`RS_BASE` row, whose
 `DEFK_TEXTFN` template now names both forms (`\xHH or \x{HHHH} = byte
 HH..HHHH (hex)`) and whose textfn (`pcrec_def_text_hex`) is the one
-decode site for both. `parse.c`'s own braced-form diagnostic is
-unmoved — it stays exactly where it was, a base `\x` special case with
-no doorway, per `src/parse/CLAUDE.md`'s registry section.
+decode site for both. `parse.c` still handles the braced form as a base
+`\x` special case with no doorway and no row — **but [M5.0] stage 2
+changed what it DECIDES**: `\x{…}` is base grammar now, range-checked
+against the compile's encoding universe (compiles up to `0x10FFFF` under
+`utf8`, refuses above `0xFF` under `byte` with the err-134 analogue), where
+before it always refused with "requires module 'unicode-props'". The row
+and the no-doorway placement are unchanged; the diagnostic is not.
 
 `\Q...\E` stays excluded from this table, and by a different rule than
 either of the above: it is LEXICAL — a delimiter pair the lexer strips

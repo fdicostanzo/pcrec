@@ -166,5 +166,6 @@ void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);
 
 /* The backends themselves, one file each. */
 extern const PcrecEnc pcrec_enc_backend_byte;   /* enc_byte.c */
+extern const PcrecEnc pcrec_enc_backend_utf8;   /* enc_utf8.c, [M5.0] stage 2 */
 
 #endif /* PCREC_GEN_ENC_H */

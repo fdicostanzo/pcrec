@@ -15,10 +15,13 @@
  * `(?:` performs ZERO, not one, because the line below answers it first. See
  * D24's R6 correction.
  *
- * Two "requires module" diagnostics stay, deliberately: `\x{...}` and the
- * possessive `+` suffix are sub-cases of BASE constructs (the `\x` decoder and
- * the quantifier suffix), not doorways, and giving them a doorway would cost
- * the base tier a lookup for nothing. */
+ * One "requires module" diagnostic stays, deliberately: the possessive `+`
+ * suffix is a sub-case of a BASE construct (the quantifier suffix), not a
+ * doorway, and giving it one would cost the base tier a lookup for nothing.
+ * `\x{...}` used to be this list's other member; at [M5.0] stage 2 it became
+ * what 10.46 says it is — BASE GRAMMAR, range-checked against the encoding's
+ * own universe in the `\x` decoder (utf8_design.md §2.7.3) — still with no
+ * doorway and no registry lookup. */
 
 #include <stdio.h>
 #include <string.h>
@@ -471,10 +474,30 @@ static Ast *char_node(Ctx *cx, unsigned c)
     Ast *a = node(cx, A_CLASS);
     PcrecCpSet s;
     pcrec_cpset_init(&s, &cx->arena);
-    pcrec_cpset_add(&s, c & 0xff, c & 0xff);
+    /* [M5.0 stage 2] no `& 0xff` mask any more: `c` is a CODE POINT. Every
+     * pre-stage-2 caller passed a byte, for which the mask was the identity;
+     * the new callers (`\x{...}`, the multi-byte literal reader) pass values
+     * the parser has already range-checked against the encoding's universe,
+     * and masking one would silently alias U+0141 onto 'A'. */
+    pcrec_cpset_add(&s, c, c);
     if (cx->mods->caseless) cls_casefold(&s);
     pcrec_cpset_publish(&s, a);
     return a;
+}
+
+/* [M5.0 stage 2] Read ONE pattern character at cx->pos and advance past it.
+ * Under `byte` this is the byte; under `utf8` it decodes the encoding's own
+ * character and refuses ill-formed pattern text (`pcrec_pat_char`,
+ * src/opt/lower_enc.c — the one place that knows how an encoding spells a
+ * character). Called exactly where a byte >= 0x80 was about to become a
+ * LITERAL: no byte >= 0x80 is a metacharacter under any encoding, so the
+ * dispatch sites stay byte-wise and only the literal arm widens. */
+static unsigned lit_next_cp(Ctx *cx)
+{
+    int len;
+    unsigned cp = pcrec_pat_char(cx, cx->pos, &len);
+    cx->pos += (size_t)len;
+    return cp;
 }
 
 /* [M6.5.2] The SAME constructor, exposed for module TUs, and exposed for the
@@ -545,8 +568,51 @@ static int esc_char_value(Ctx *cx, size_t epos)
     case 'a': return '\a';
     case 'e': return 0x1b;
     case 'x': {
-        if (peekc(cx) == '{')
-            ctx_fail(cx, epos, "\\x{...} requires module 'unicode-props'");
+        /* [M5.0 stage 2] THE BRACED FORM IS BASE GRAMMAR NOW (utf8_design.md
+         * §1.3 row 2/3, §2.7.3), range-checked against the ENCODING'S OWN
+         * UNIVERSE rather than gated behind a module: 10.46 accepts `\x{41}`
+         * at options=0 and refuses `\x{3b1}` there with err 134 ("character
+         * code point value in \x{} or \o{} is too large"), accepting it only
+         * under PCRE2_UTF — so the same spelling is legal or not depending on
+         * a per-compile scalar, and the rule is a RANGE CHECK on the WRITTEN
+         * value (§2.7.3: a derived set never passes through it — `[^a]`
+         * under `byte` compiles while `\x{100}` under `byte` refuses).
+         * Surrogates have no encoding and 10.46 refuses them in `\x{}` under
+         * UTF; under `byte` they are above the universe anyway. */
+        if (peekc(cx) == '{') {
+            long long v = 0;
+            int ndig = 0;
+            cx->pos++;                                     /* the '{' */
+            while (pcrec_hexval(peekc(cx)) >= 0) {
+                v = v * 16 + pcrec_hexval(nextc(cx));
+                if (v > 0x7FFFFFFFll) v = 0x7FFFFFFFll;    /* saturate: any
+                    value this large is refused below, and saturating keeps
+                    a 100-digit operand from overflowing the accumulator */
+                ndig++;
+            }
+            if (peekc(cx) != '}') {
+                /* Not '}' and not a hex digit (the loop above consumed those)
+                 * — 10.46's err-167 shape, which also covers the unclosed
+                 * form ending the pattern. */
+                ctx_fail(cx, cx->pos,
+                         "non-hex character in \\x{...} (closing brace "
+                         "missing?)");
+            }
+            if (ndig == 0)                                 /* the empty \x{} */
+                ctx_fail(cx, epos, "digits missing after \\x");
+            cx->pos++;                                     /* the '}' */
+            if (v > (long long)cls_universe(cx))
+                ctx_fail(cx, epos,
+                         "character code point value in \\x{...} is too "
+                         "large (max U+%04X under encoding '%s')",
+                         cls_universe(cx),
+                         pcrec_enc_by_id(cx->opt->encoding)->name);
+            if (v >= 0xD800 && v <= 0xDFFF)
+                ctx_fail(cx, epos,
+                         "disallowed Unicode surrogate code point in "
+                         "\\x{...}");
+            return (int)v;
+        }
         int v = 0, ndig = 0;
         while (ndig < 2 && pcrec_hexval(peekc(cx)) >= 0) {
             v = v * 16 + pcrec_hexval(nextc(cx));
@@ -559,6 +625,12 @@ static int esc_char_value(Ctx *cx, size_t epos)
     default:
         if (c >= '0' && c <= '9') return -2;               /* backref/octal */
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return -3;
+        /* [M5.0 stage 2] an escaped byte >= 0x80 is the start of a LITERAL
+         * character in the pattern's own encoding — `\α` is the literal α,
+         * exactly as an unescaped one is (the ASCII-letter reservation above
+         * does not extend past ASCII). Decode it rather than returning its
+         * first byte as if it were the character. */
+        if (c >= 0x80) { cx->pos--; return (int)lit_next_cp(cx); }
         return c;                                          /* escaped punct */
     }
 }
@@ -585,6 +657,10 @@ static Ast *p_quote_next(Ctx *cx)
         ctx_fail(cx, cx->pos,
                  "internal error: quote mode reached a boundary its "
                  "caller (cat_ends/xskip) should already have resolved");
+    /* [M5.0 stage 2] a quoted byte >= 0x80 is still one CHARACTER of the
+     * pattern's encoding — `\Q` suppresses metacharacters, not the
+     * encoding — so it decodes exactly as an unquoted literal does. */
+    if (c >= 0x80) return char_node(cx, lit_next_cp(cx));
     cx->pos++;
     return char_node(cx, (unsigned)c);
 }
@@ -839,7 +915,14 @@ static Ast *p_class(Ctx *cx)
         int lo;
         ExtResult loclaim = { .what = EXT_NOT_MINE };
         cx->pos++;
-        lo = (!quoted && c == '\\') ? esc_class_value(cx, &loclaim) : c;
+        /* [M5.0 stage 2] a member byte >= 0x80 (quoted or not — a quote
+         * suppresses metacharacters, not the encoding) is the start of one
+         * literal CHARACTER; back onto it and decode (§2.7). */
+        if (!quoted && c == '\\')
+            lo = esc_class_value(cx, &loclaim);
+        else if (c >= 0x80) { cx->pos--; lo = (int)lit_next_cp(cx); }
+        else
+            lo = c;
 
         /* xx: deletion precedes RANGE PARSING (measured: [a\t-\tz] is the
          * range a-z), and the dash-vs-literal lookahead must see through it
@@ -928,7 +1011,14 @@ static Ast *p_class(Ctx *cx)
             bool hi_quoted = cx->in_quote;
             int hc = nextc(cx);
             ExtResult hiclaim = { .what = EXT_NOT_MINE };
-            int hi = (!hi_quoted && hc == '\\') ? esc_class_value(cx, &hiclaim) : hc;
+            int hi;
+            /* [M5.0 stage 2] the high endpoint decodes exactly as the low
+             * member above does: a byte >= 0x80 starts one character. */
+            if (!hi_quoted && hc == '\\')
+                hi = esc_class_value(cx, &hiclaim);
+            else if (hc >= 0x80) { cx->pos--; hi = (int)lit_next_cp(cx); }
+            else
+                hi = hc;
             if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
                 pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
             /* step 4 — either side SET-shaped -> invalid range. A claim
@@ -1254,6 +1344,11 @@ static Ast *p_atom(Ctx *cx)
         return char_node(cx, (unsigned)c);
     }
     default:
+        /* [M5.0 stage 2] a byte >= 0x80 is never a metacharacter, but under a
+         * multi-byte encoding it STARTS a character rather than being one:
+         * back up onto it and read the whole literal (lit_next_cp; §2.7).
+         * Under `byte` that is this same byte and the same one-byte advance. */
+        if (c >= 0x80) { cx->pos = apos; return char_node(cx, lit_next_cp(cx)); }
         return char_node(cx, (unsigned)c);
     }
 }

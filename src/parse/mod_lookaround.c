@@ -7,8 +7,8 @@
  *
  * WHAT A LOOKAROUND IS, in one sentence (design §0.2): a SUB-MATCH whose
  * result is a VERDICT and whose POSITION is discarded. Everything this file
- * does follows from that — the node consumes nothing (`pcrec_minw` and
- * `pcrec_maxw` both answer 0, and `vm_nullable` answers true), it is not a
+ * does follows from that — the node consumes nothing (the width analyses
+ * all answer 0, and `vm_nullable` answers true), it is not a
  * capturing construct (`cx->ncap` is untouched here; groups INSIDE the body
  * capture exactly as they would anywhere else, measured: `(?=(a))a` on "a" is
  * (0,1) with g1=(0,1)), and the lowering is `vm_atomic`'s shape plus a saved
@@ -36,8 +36,10 @@
  * is §2.5's WIDTH RULE, and nothing else.
  *
  * §2.5's WIDTH RULE, WHICH IS THIS FILE's THIRD AND LAST CHECK. A lookbehind
- * body's every TOP-LEVEL BRANCH must have a FIXED width: `pcrec_minw(branch)
- * == pcrec_maxw(branch)`, both finite. Widths may DIFFER between branches —
+ * body's every TOP-LEVEL BRANCH must have a FIXED width in CHARACTERS —
+ * `pcrec_cwmin(branch) == pcrec_cwmax(branch)`, both finite ([M5.0] stage 2:
+ * 10.46 measures lookbehind length in characters, utf8_design.md §5.6, and
+ * the seam's `back_step` walks characters). Widths may DIFFER between branches —
  * `(?<=a|bc)x` ships and is a python `re` ERROR (design §7 G1) — and a body
  * with any variable-width branch is refused HERE, with a pattern offset,
  * rather than discovered by the emitter.
@@ -246,7 +248,7 @@ static bool la_has_kreset(const Ast *a)
 
 /* §2.5's WIDTH RULE, as a table. Fills `out[0..nbr-1]` with each TOP-LEVEL
  * branch's fixed width IN WRITTEN ORDER and returns true; on the first branch
- * that is NOT fixed-width, writes that branch's `minw`/`maxw` through `bad_lo`
+ * that is NOT fixed-width, writes that branch's `cwmin`/`cwmax` through `bad_lo`
  * / `bad_hi` and returns false.
  *
  * WRITTEN ORDER IS THE WHOLE POINT AND IT IS THE REVERSE OF THE WALK (§2.4
@@ -266,14 +268,16 @@ static bool la_has_kreset(const Ast *a)
  * `(?<=(a|bc))x` and `(?<=a|bc)x` exactly backwards, which are the two cells
  * §2.5 exists to distinguish.
  *
- * FIXED MEANS `minw == maxw`, BOTH FINITE, and it is `pcrec_maxw` that makes
- * this analysis new (src/opt/mrl.c, wave A). `pcrec_minw` may UNDER-estimate
- * for free and `pcrec_maxw` may OVER-estimate for free; the direction that is
- * NOT free is an under-estimating `maxw`, which would let a variable-width
+ * FIXED MEANS `cwmin == cwmax`, BOTH FINITE, IN CHARACTERS — the unit 10.46
+ * measures lookbehind length in ([M5.0] stage 2, utf8_design.md §5.6; under
+ * `byte` one character is one byte and every verdict is what the byte pair
+ * gave). `pcrec_cwmin` may UNDER-estimate
+ * for free and `pcrec_cwmax` may OVER-estimate for free; the direction that is
+ * NOT free is an under-estimating `cwmax`, which would let a variable-width
  * branch through as fixed. That is a silent miscompile rather than a lost
  * optimisation — and on a NEGATIVE lookbehind it is a FALSE MATCH — which is
  * why §3.4's end-check is emitted on both polarities and why sabotage row
- * S136 accepts a `minw != maxw` branch on purpose.
+ * S136 accepts a `cwmin != cwmax` branch on purpose.
  *
  * A NESTED LOOKAROUND INSIDE A BRANCH CONTRIBUTES 0 AT BOTH ENDS (§3.1(d),
  * wave A's arms), so `(?<=a(?=b))x` stays fixed width 1 — it is not a special
@@ -295,7 +299,7 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
             ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
                             "spine is longer than its reported branch count");
         i--;
-        long long lo = pcrec_minw(a->r), hi = pcrec_maxw(a->r);
+        long long lo = pcrec_cwmin(a->r), hi = pcrec_cwmax(a->r);
         if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
             *bad_lo = lo; *bad_hi = hi;
             return false;
@@ -306,7 +310,7 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
         ctx_fail(cx, 0, "internal error: a lookbehind body's alternation spine "
                         "is shorter than its reported branch count");
     {
-        long long lo = pcrec_minw(a), hi = pcrec_maxw(a);
+        long long lo = pcrec_cwmin(a), hi = pcrec_cwmax(a);
         if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
             *bad_lo = lo; *bad_hi = hi;
             return false;
@@ -387,9 +391,9 @@ bool pcrec_lookaround_width_pending(const Ast *a)
  * a second caller from re-deriving a table that already exists — §3.1(c)'s
  * whole reason for storing it.
  *
- * `pcrec_maxw` IS THE SAME FUNCTION THE HOOK CALLED, and that is the point of
+ * `pcrec_cwmax` IS THE SAME FUNCTION THE HOOK CALLED, and that is the point of
  * doing this here rather than teaching the hook to look through a call: by
- * this timing `src/opt/callgraph.c` has published `u.call.maxw`, so the arm
+ * this timing `src/opt/callgraph.c` has published `u.call.cwmax`, so the arm
  * that answered `PCREC_W_UNBOUNDED` at parse time answers the callee's real
  * maximum — UNBOUNDED still, and exactly, for a callee in a cycle (design
  * §3.4(d): libpcre2 refuses that itself, err 125). Nothing about the RULE
@@ -509,8 +513,8 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
     } else if (pcrec_has_call(body)) {
         /* [DD-14.LB] THE DEFERRAL. A body carrying an `A_CALL` cannot be
          * measured HERE, and the obstacle is TIMING rather than analysis:
-         * `pcrec_maxw`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` at this
-         * instant because `u.call.maxw_known` is still the arena's false —
+         * `pcrec_cwmax`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` at this
+         * instant because `u.call.cwmax_known` is still the arena's false —
          * the callee is not bound, and a FORWARD call's target has not been
          * parsed at all — so asking the rule now would refuse
          * `^(?:(?<g>ab)){0}ab(?<=(?&g))$`, which libpcre2 10.46 compiles and
@@ -532,7 +536,7 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
          * into `A_LOOK` and says "call" anyway. The deferred ask returns the
          * identical table, and a second, narrower predicate ("a call on a
          * width-bearing path") would be a third place this module decides what
-         * contributes width, for the `A_LOOK` arm of `pcrec_maxw` to disagree
+         * contributes width, for the `A_LOOK` arm of `pcrec_cwmax` to disagree
          * with. The cost is one visit in a pass that runs anyway. */
         a->u.look.widths  = NULL;
         a->u.look.nbranch = info.nbr;

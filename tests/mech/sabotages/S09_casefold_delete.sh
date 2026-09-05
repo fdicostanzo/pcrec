@@ -19,13 +19,23 @@ SAB_COUNT=1
 SAB_BEFORE="    Ast *a = node(cx, A_CLASS);
     PcrecCpSet s;
     pcrec_cpset_init(&s, &cx->arena);
-    pcrec_cpset_add(&s, c & 0xff, c & 0xff);
+    /* [M5.0 stage 2] no `& 0xff` mask any more: `c` is a CODE POINT. Every
+     * pre-stage-2 caller passed a byte, for which the mask was the identity;
+     * the new callers (`\x{...}`, the multi-byte literal reader) pass values
+     * the parser has already range-checked against the encoding's universe,
+     * and masking one would silently alias U+0141 onto 'A'. */
+    pcrec_cpset_add(&s, c, c);
     if (cx->mods->caseless) cls_casefold(&s);
     pcrec_cpset_publish(&s, a);
     return a;"
 SAB_AFTER="    Ast *a = node(cx, A_CLASS);
     PcrecCpSet s;
     pcrec_cpset_init(&s, &cx->arena);
-    pcrec_cpset_add(&s, c & 0xff, c & 0xff);
+    /* [M5.0 stage 2] no `& 0xff` mask any more: `c` is a CODE POINT. Every
+     * pre-stage-2 caller passed a byte, for which the mask was the identity;
+     * the new callers (`\x{...}`, the multi-byte literal reader) pass values
+     * the parser has already range-checked against the encoding's universe,
+     * and masking one would silently alias U+0141 onto 'A'. */
+    pcrec_cpset_add(&s, c, c);
     pcrec_cpset_publish(&s, a);
     return a;"

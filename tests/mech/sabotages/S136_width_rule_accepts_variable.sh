@@ -3,8 +3,9 @@
 #
 # THE CLAIM: design §2.5's rule is per-BRANCH and TOP-LEVEL, and the WIDTH
 # TABLE `Ast.u.look.widths` is right (C1-8). `la_widths` refuses a branch whose
-# `pcrec_minw` and `pcrec_maxw` disagree; this row accepts it and uses `maxw`
-# as if it were the width.
+# `pcrec_cwmin` and `pcrec_cwmax` (CHARACTERS since [M5.0] stage 2 — the row
+# moved with the rule, utf8_design.md §5.6.2/§8.2 S-U4's kin) disagree; this
+# row accepts it and uses `cwmax` as if it were the width.
 #
 # WHAT GOES WRONG, AND IT IS TWO DIFFERENT FAILURES ON THE TWO POLARITIES —
 # which is why this row carries a `(?<!` cell as well as a `(?<=` one (R33
@@ -35,16 +36,16 @@
 # primary signal, and the two paragraphs above are what the row is DEFENDING
 # rather than what the harness measures first.
 #
-# WHY `maxw` AND NOT `minw` FOR THE SABOTAGED WIDTH: `pcrec_maxw` is this
+# WHY `cwmax` AND NOT `cwmin` FOR THE SABOTAGED WIDTH: `pcrec_cwmax` is this
 # module's one piece of genuinely new analysis and over-estimating is its safe
-# direction, so taking `maxw` is the edit a reader would actually make ("use
+# direction, so taking `cwmax` is the edit a reader would actually make ("use
 # the bigger one, it can only be conservative") — and it is wrong here because
 # a lookbehind's width is not a bound, it is a POSITION.
 SAB_ID="S136-width-rule-accepts-variable"
 SAB_FILE="src/parse/mod_lookaround.c"
 SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
-SAB_DESC="la_widths accepts a top-level branch whose pcrec_minw and pcrec_maxw disagree, storing maxw as if it were the branch's fixed width. §2.5's refusal disappears and (?<=(a|bc))x compiles, stepping back two characters for a branch that may match one"
+SAB_DESC="la_widths accepts a top-level branch whose pcrec_cwmin and pcrec_cwmax disagree, storing cwmax as if it were the branch's fixed width. §2.5's refusal disappears and (?<=(a|bc))x compiles, stepping back two characters for a branch that may match one"
 SAB_DOC_FIGURE="PREDICTED: tests/lookaround/refused.rxt RED on the variable-width perr blocks (they now compile); gated.rxt RED on its capability cell; and on the (?<! spelling the emitted end-check returns HARD, which the harness scores as an error rather than a span. The same-width cells in lookbehind.rxt stay GREEN. Canonical figure owed from run_sabotage_matrix.sh S136."
 SAB_COUNT=2
 SAB_BEFORE='        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {

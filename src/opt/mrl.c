@@ -1,12 +1,25 @@
 /* [M4.6d] MINIMUM-REMAINING-LENGTH (MRL) pruning: the width analysis.
  *
- * TWO FUNCTIONS LIVE HERE, and the second arrived long after the first.
- * `pcrec_minw` is [M4.6d]'s and is what this header describes; `pcrec_maxw`
- * ([M6.6.2] wave A, at the bottom of the file) is its mirror, with the SAME
- * saturating arithmetic, the SAME exhaustive-switch obligation, and the
- * OPPOSITE sound direction. Everything below about under-estimating being
- * safe is about `pcrec_minw` ALONE; read `pcrec_maxw`'s own header before
- * touching an arm there.
+ * THREE FUNCTIONS LIVE HERE, in two units. `pcrec_minw` is [M4.6d]'s BYTE
+ * minimum and is what this header describes. `pcrec_cwmin`/`pcrec_cwmax`
+ * (further down) are the CHARACTER pair module `lookaround`'s fixed-width
+ * rule consumes — same saturating arithmetic, same exhaustive-switch
+ * obligation, and for `cwmax` the OPPOSITE sound direction; read each one's
+ * own header before touching an arm. (`pcrec_cwmax` was born `pcrec_maxw`,
+ * documented as bytes, at [M6.6.2] wave A; [M5.0] stage 2 re-aimed it into
+ * characters — utf8_design.md §5.6.2 — after a grep found its ONLY consumer
+ * was the rule that needed characters all along. Two units under `byte` are
+ * one number, which is why nothing observable moved at the re-aim.)
+ *
+ * WHY TWO UNITS ARE TWO FUNCTIONS AND NOT A PARAMETER (§5.6.5): an exhaustive
+ * switch per analysis is the alarm that fires when a node kind is added, and
+ * a unit parameter threaded through every arm makes each arm answer two
+ * questions where today it answers one. `minw` (bytes) serves the MRL prune,
+ * whose emitter walks the LOWERED tree — where a multi-byte character is an
+ * `A_CAT` of byte classes and the constant-1 class arm is EXACT per byte
+ * class, so the prune bound counts real encoded bytes with no arm changing.
+ * The character pair serves the lookbehind width rule, asked of the
+ * UN-lowered tree — where a class is one CHARACTER by definition.
  *
  * docs/design/k23_impl/k23_design.md §4.3, adopted by D51 ruling 1 as K23's
  * fix of record. `pcrec_minw(a)` is the least number of subject bytes any
@@ -235,37 +248,47 @@ long long pcrec_minw(const Ast *a)
     }
 }
 
-/* [M6.6.2 wave A] THE MAXIMUM WIDTH, and it is `pcrec_minw` MIRRORED IN EVERY
- * SENSE INCLUDING THE ONE THAT MATTERS: the sound direction is REVERSED.
+/* [M6.6.2 wave A, RE-AIMED AT M5.0 STAGE 2] THE MAXIMUM WIDTH IN
+ * **CHARACTERS** — `pcrec_cwmax`, which until the utf8 backend landed was
+ * spelled `pcrec_maxw` and documented as BYTES. utf8_design.md §5.6 measured
+ * that the unit its ONE consumer (module `lookaround`'s fixed-width rule, at
+ * both of its timings) always needed is the one 10.46 measures lookbehind
+ * length in — CHARACTERS: `(?<=[a\x{3b1}])x`, one branch that is one
+ * character and one-OR-two bytes, compiles there with MAXLOOKBEHIND = 1 —
+ * and that the recurrence already computed it (every class counted 1, which
+ * in bytes was an assumption the encoding could break and in characters is a
+ * DEFINITION no encoding can). Under `byte` the two units coincide, so the
+ * re-aim moved no published value; `pcrec_maxw` the BYTE-unit function
+ * RETIRED with the rename, because §5.6.2's grep found it had no other
+ * consumer in the product at all.
  *
- * `pcrec_minw` may under-estimate for free. This function may OVER-estimate
- * for free, and an UNDER-estimate here is the silent miscompile. The reason is
- * its consumer: `lookaround_design.md` §2.5 admits a lookbehind branch only
- * when `minw == maxw`, and emits a back-step of exactly that many bytes. A
- * maxw below the truth makes a VARIABLE-width branch look fixed, and the
- * artifact then steps the wrong distance with no diagnostic anywhere. So every
- * arm below that cannot answer exactly rounds UP, and PCREC_W_UNBOUNDED is
- * where rounding up runs out.
+ * It is `pcrec_cwmin` MIRRORED IN EVERY SENSE INCLUDING THE ONE THAT
+ * MATTERS: the sound direction is REVERSED. `pcrec_cwmin` may under-estimate
+ * for free. This function may OVER-estimate for free, and an UNDER-estimate
+ * here is the silent miscompile. The reason is its consumer:
+ * `lookaround_design.md` §2.5 admits a lookbehind branch only when
+ * `cwmin == cwmax`, and the artifact back-steps exactly that many CHARACTERS
+ * (the seam's `back_step` entry walks characters — enc_byte.c's is `pos - k`
+ * because there one character IS one byte). A cwmax below the truth makes a
+ * VARIABLE-width branch look fixed, and the artifact then steps the wrong
+ * distance with no diagnostic anywhere. So every arm below that cannot
+ * answer exactly rounds UP, and PCREC_W_UNBOUNDED is where rounding up runs
+ * out.
  *
  * THE SWITCH IS EXHAUSTIVE WITH NO DEFAULT ARM for `pcrec_minw`'s reason, one
  * step stronger: a new kind inheriting a `default: return 0` here would claim
  * a new construct is ZERO-WIDTH, which is not merely a loose bound but a false
- * one, and it is the direction that deletes bytes from a back-step.
+ * one, and it is the direction that deletes characters from a back-step.
  *
- * THE ENCODING. `A_CLASS` answers 1 byte, which is EXACT for everything pcrec
- * can compile today and not merely conservative: `PCREC_ENC_UTF8` has no
- * backend and `src/core/compile.c:196` REFUSES it by name, so no artifact
- * exists in which a class consumes two bytes. That refusal is this arm's
- * guard. When the utf8 backend lands, `pcrec_minw`'s 1 STAYS SOUND (it is an
- * under-estimate, its safe side) and THIS ONE DOES NOT — it must become the
- * encoding's maximum code-unit length, or the fixed-width rule silently
- * accepts variable-width branches. The two functions look identical here and
- * have opposite obligations, which is exactly why it is written on both.
+ * `A_CLASS` IS EXACTLY 1 IN EVERY ENCODING — a class is one character by
+ * definition (utf8_design.md §5.6.3), which is what makes §5.6's whole
+ * measured population (`.`, `[^a]`, `\w`, `[a\x{3b1}]`, all fixed at one
+ * character and variable in bytes) compile as fixed-width lookbehinds.
  *
  * WHAT IS UNBOUNDED, and each is a decision rather than a fallthrough:
  *   - `rmax == -1`: no static ceiling on the repetition count.
- *   - `A_BREF`: a backreference consumes `ref_end - ref_start` bytes, a
- *     MATCH-TIME quantity. `pcrec_minw` answers 0 EXACTLY (a group can
+ *   - `A_BREF`: a backreference consumes its referenced capture, a
+ *     MATCH-TIME quantity. `pcrec_cwmin` answers 0 EXACTLY (a group can
  *     publish an empty capture); the upper end has no such exact answer,
  *     because the referenced group's own width is not reachable from this
  *     node (it holds candidate NUMBERS, not the group's AST) and a quantified
@@ -273,14 +296,14 @@ long long pcrec_minw(const Ast *a)
  *     unbounded, deliberately, and a lookbehind branch containing a
  *     backreference is therefore never fixed-width — which is the answer
  *     libpcre2 gives too. */
-long long pcrec_maxw(const Ast *a)
+long long pcrec_cwmax(const Ast *a)
 {
     long long acc = 0;
 
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            /* One byte, exactly — see the header's ENCODING paragraph. */
+            /* One CHARACTER, exactly and by definition — see the header. */
             return mrl_sat_add(acc, 1);
         case A_EMPTY:
         case A_BOL:
@@ -331,12 +354,12 @@ long long pcrec_maxw(const Ast *a)
          * deriving it here by following `u.call.body` is design §4.4's hang,
          * and an under-estimate is this file's silent miscompile."
          *
-         * `maxw_known` IS WHAT MAKES READING IT SAFE AT EVERY TIMING. This
+         * `cwmax_known` IS WHAT MAKES READING IT SAFE AT EVERY TIMING. This
          * function is called from module `lookaround`'s parse hook, where the
          * fixpoint has NOT run and `.body` is NULL — and the arena zeroes
-         * `maxw_known` to false, so at that timing this arm answers exactly
+         * `cwmax_known` to false, so at that timing this arm answers exactly
          * what it answered before the memo existed. The flag is the field, not
-         * a guard on it: a bare `maxw` would have an arena zero of 0, which is
+         * a guard on it: a bare `cwmax` would have an arena zero of 0, which is
          * an UNDER-estimate, which is this file's silent miscompile and on a
          * negative lookbehind a false match.
          *
@@ -346,16 +369,16 @@ long long pcrec_maxw(const Ast *a)
          * written; the pair is symmetric here and, since [DD-14.LB], in
          * `src/opt/callgraph.c` as well. */
         case A_CALL:
-            return mrl_sat_add(acc, a->u.call.maxw_known ? a->u.call.maxw
-                                                         : PCREC_W_UNBOUNDED);
+            return mrl_sat_add(acc, a->u.call.cwmax_known ? a->u.call.cwmax
+                                                          : PCREC_W_UNBOUNDED);
         case A_CAT:
-            acc = mrl_sat_add(acc, pcrec_maxw(a->r));
+            acc = mrl_sat_add(acc, pcrec_cwmax(a->r));
             a = a->l;
             continue;
         case A_CAP:
             a = a->l;
             continue;
-        /* `maxw(A_ATOMIC(X)) <= maxw(X)`, and the bound is used as an upper
+        /* `cwmax(A_ATOMIC(X)) <= cwmax(X)`, and the bound is used as an upper
          * one so `<=` is all this file needs. `pcrec_minw`'s arm calls the
          * atomic group TRANSPARENT because the cut removes MATCHES and never
          * BYTES; the same sentence read from the other end says every string
@@ -367,7 +390,7 @@ long long pcrec_maxw(const Ast *a)
             a = a->l;
             continue;
         case A_ALT: {
-            long long l = pcrec_maxw(a->l), r = pcrec_maxw(a->r);
+            long long l = pcrec_cwmax(a->l), r = pcrec_cwmax(a->r);
             return mrl_sat_add(acc, l > r ? l : r);
         }
         case A_REP: {
@@ -383,7 +406,7 @@ long long pcrec_maxw(const Ast *a)
              * lookbehind branch made of them is legitimately fixed-width. */
             long long reps = a->u.rep.rmax < 0 ? PCREC_W_UNBOUNDED
                                                : (long long)a->u.rep.rmax;
-            return mrl_sat_add(acc, mrl_sat_mul(reps, pcrec_maxw(a->l)));
+            return mrl_sat_add(acc, mrl_sat_mul(reps, pcrec_cwmax(a->l)));
         }
         }
         /* No default arm: see `pcrec_minw`'s trap and the header. Returning
@@ -391,5 +414,79 @@ long long pcrec_maxw(const Ast *a)
          * suppresses -Wswitch, the trap must answer in the SAFE direction for
          * THIS function, which is the opposite of minw's 0. */
         return PCREC_W_UNBOUNDED;
+    }
+}
+
+/* [M5.0 stage 2] THE MINIMUM WIDTH IN CHARACTERS — `pcrec_cwmax`'s partner
+ * and `pcrec_minw`'s twin one unit over (utf8_design.md §5.6.3). Its one
+ * consumer is the same fixed-width rule `pcrec_cwmax` serves: a lookbehind
+ * branch is admitted only when `cwmin == cwmax`, so this function's safe
+ * direction is DOWN — an under-estimate opens the pair (`cwmin != cwmax`)
+ * and the rule REFUSES, an over-rejection and never a false match. That is
+ * also what makes `u.call.cwmin`'s arena zero sound with no companion flag,
+ * where `cwmax` needs `cwmax_known` (internal.h's own table).
+ *
+ * `A_CLASS` IS EXACTLY 1 IN EVERY ENCODING — a class is one character by
+ * definition — which with `cwmax`'s identical arm is what makes every
+ * fixed-character variable-byte body (`.`, `[^a]`, `[a\x{3b1}]`) read
+ * `cwmin == cwmax == 1` and compile as a fixed-width lookbehind, the §5.6
+ * population 10.46 accepts at MAXLOOKBEHIND 1.
+ *
+ * The switch is exhaustive with no default arm, `pcrec_minw`'s reason; the
+ * iterative spine discipline is `pcrec_minw`'s too (K20). */
+long long pcrec_cwmin(const Ast *a)
+{
+    long long acc = 0;
+
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS:
+            return mrl_sat_add(acc, 1);
+        case A_EMPTY:
+        case A_BOL:
+        case A_EOL:
+        case A_END:
+        case A_WORDB:
+        case A_NWORDB:
+        /* A backreference's minimum is 0 EXACTLY, `pcrec_minw`'s own measured
+         * argument (a group can publish an empty capture), and the unit does
+         * not change it: zero bytes is zero characters. */
+        case A_BREF:
+        case A_GSTART:
+        case A_KRESET:
+        /* A lookaround consumes nothing in either unit; the body is not
+         * descended into, `pcrec_minw`'s arm's reason. */
+        case A_LOOK:
+            return acc;
+        /* The callee's own minimum in CHARACTERS, read off the node —
+         * `u.call.cwmin`, filled by src/opt/callgraph.c's third fixpoint.
+         * The arena's zero is this function's SAFE direction (see the
+         * header), so a walker running before the fixpoint reads a sound 0. */
+        case A_CALL:
+            return mrl_sat_add(acc, a->u.call.cwmin);
+        case A_CAT:
+            acc = mrl_sat_add(acc, pcrec_cwmin(a->r));
+            a = a->l;
+            continue;
+        case A_CAP:
+            a = a->l;
+            continue;
+        /* Transparent for `pcrec_minw`'s A_ATOMIC reason: the cut removes
+         * MATCHES, never characters, so a lower bound on the body is a lower
+         * bound on the group. */
+        case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_ALT: {
+            long long l = pcrec_cwmin(a->l), r = pcrec_cwmin(a->r);
+            return mrl_sat_add(acc, l < r ? l : r);
+        }
+        case A_REP:
+            return mrl_sat_add(acc,
+                               mrl_sat_mul(a->u.rep.rmin, pcrec_cwmin(a->l)));
+        }
+        /* No default arm: `pcrec_minw`'s trap, same safe value (0 under-
+         * estimates, which for THIS consumer means refuse). */
+        return 0;
     }
 }

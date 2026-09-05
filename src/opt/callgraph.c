@@ -260,13 +260,19 @@ static void cg_minw_publish(void *ud, const Ast *a)
     ((Ast *)a)->u.call.minw = i >= 0 ? m->val[i] : 0;
 }
 
-/* ---- the maxw fixpoint ([DD-14.LB]) --------------------------------------
+/* ---- the cwmax fixpoint ([DD-14.LB]; CHARACTERS since [M5.0] stage 2) ----
  *
- * `minw`'s MIRROR, and mirrored in the sense that matters: `pcrec_minw`'s free
- * direction is DOWN and `pcrec_maxw`'s is UP, so this iteration starts at
+ * Born as the `maxw` (byte) fixpoint; re-recurred in CHARACTERS when
+ * utf8_design.md §5.6.2's grep found its only transitive consumer was module
+ * `lookaround`'s width rule, which always wanted the unit 10.46 measures
+ * lookbehind length in. Under `byte` the units coincide, so every published
+ * value is what `maxw` published.
+ *
+ * `minw`'s MIRROR, and mirrored in the sense that matters: `pcrec_cwmin`'s
+ * free direction is DOWN and `pcrec_cwmax`'s is UP, so this iteration starts at
  * `PCREC_W_UNBOUNDED` and descends where that one starts at `PCREC_MINW_MAX`
  * and descends too — both begin at the value that is SAFE to be wrong with and
- * approach the truth from the safe side, which for `maxw` is from ABOVE.
+ * approach the truth from the safe side, which for `cwmax` is from ABOVE.
  *
  * A TARGET IN A CYCLE IS A FIXED POINT AT UNBOUNDED, WITH NO CYCLE TEST. The
  * `reach` closure two functions up could answer "is target i in a cycle"
@@ -280,7 +286,7 @@ static void cg_minw_publish(void *ud, const Ast *a)
  * mechanism, and the cycle test would have been a second one.
  *
  * TERMINATION AND THE ROUND BOUND are `minw`'s argument unchanged, read in the
- * other direction: every arm of `pcrec_maxw`'s recurrence is a sum, a max or a
+ * other direction: every arm of `pcrec_cwmax`'s recurrence is a sum, a max or a
  * constant — a superior-function system in Knuth's sense — the values are
  * non-increasing and bounded below by 0, and each round settles at least one
  * more target, so `n` rounds suffice and the `n + 1`-th is ASSERTED to change
@@ -289,27 +295,47 @@ static void cg_minw_publish(void *ud, const Ast *a)
  * accepts is the tier-2 over-rejection this wave is removing, never a
  * miscompile); an over-run one is impossible.
  *
- * `maxw_known` IS PUBLISHED WITH `maxw` AND ONLY BY THIS LOOP. It is what
- * makes `pcrec_maxw`'s arm answer the OLD, sound `PCREC_W_UNBOUNDED` at every
+ * `cwmax_known` IS PUBLISHED WITH `cwmax` AND ONLY BY THIS LOOP. It is what
+ * makes `pcrec_cwmax`'s arm answer the OLD, sound `PCREC_W_UNBOUNDED` at every
  * timing before this pass — the parse hook's, above all, which is exactly
  * where the deferred re-check exists to avoid answering. */
 
-typedef struct { const struct CallGraph *cg; const long long *val; } CgMaxw;
+typedef struct { const struct CallGraph *cg; const long long *val; } CgCwmax;
 
-static void cg_maxw_publish(void *ud, const Ast *a)
+static void cg_cwmax_publish(void *ud, const Ast *a)
 {
-    CgMaxw *m = ud;
+    CgCwmax *m = ud;
     if (a->k != A_CALL) return;
     int i = cg_index(m->cg, a->u.call.target);
     /* A target the graph does not carry cannot happen (`cg_scan` collected
      * every `A_CALL`'s target and `cg_bind` has already failed loudly for a
-     * target with no body), and if it somehow did, `maxw_known = false` is the
-     * answer that costs an over-estimate rather than a miscompile — the same
-     * polarity choice the field itself is. */
+     * target with no body), and if it somehow did, `cwmax_known = false` is
+     * the answer that costs an over-estimate rather than a miscompile — the
+     * same polarity choice the field itself is. */
     Ast *n = (Ast *)a;
-    if (i >= 0) { n->u.call.maxw = m->val[i]; n->u.call.maxw_known = true; }
-    else        { n->u.call.maxw = PCREC_W_UNBOUNDED;
-                  n->u.call.maxw_known = false; }
+    if (i >= 0) { n->u.call.cwmax = m->val[i]; n->u.call.cwmax_known = true; }
+    else        { n->u.call.cwmax = PCREC_W_UNBOUNDED;
+                  n->u.call.cwmax_known = false; }
+}
+
+/* ---- the cwmin fixpoint ([M5.0] stage 2) ---------------------------------
+ *
+ * The character pair's OTHER half, and `minw`'s shape verbatim one unit over:
+ * Kleene iteration from `PCREC_MINW_MAX` downward, `pcrec_cwmin` as the
+ * recurrence, the same superior-function round bound with the extra round
+ * asserted. Its safe direction is `minw`'s (an under-published value opens
+ * `cwmin != cwmax` and the width rule REFUSES — an over-rejection, never a
+ * false match), which is why the memo needs no `_known` companion and the
+ * arena's zero is a sound pre-fixpoint read. */
+
+typedef struct { const struct CallGraph *cg; const long long *val; } CgCwmin;
+
+static void cg_cwmin_publish(void *ud, const Ast *a)
+{
+    CgCwmin *m = ud;
+    if (a->k != A_CALL) return;
+    int i = cg_index(m->cg, a->u.call.target);
+    ((Ast *)a)->u.call.cwmin = i >= 0 ? m->val[i] : 0;
 }
 
 /* ---- [DD-14 wave G] SPLICE ELIGIBILITY (design §6.3) ---------------------
@@ -783,16 +809,37 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
         cg_walk(root, cg_minw_publish, &m);
     }
 
-    /* ---- THE `maxw` FIXPOINT ([DD-14.LB]) — see cg_maxw_publish above --- */
+    /* ---- THE `cwmin` FIXPOINT ([M5.0] stage 2) — see cg_cwmin_publish --- */
+    {
+        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        for (int i = 0; i < n; i++) val[i] = PCREC_MINW_MAX;
+        CgCwmin m = { cg, val };
+        for (int round = 0; round <= n; round++) {
+            bool changed = false;
+            cg_walk(root, cg_cwmin_publish, &m);
+            for (int i = 0; i < n; i++) {
+                long long nv = pcrec_cwmin(cg->body[i]);
+                if (nv < val[i]) { val[i] = nv; changed = true; }
+            }
+            if (!changed) break;
+            if (round == n)
+                ctx_fail(cx, 0, "internal error: the subroutine minimum-"
+                                "character-width fixpoint did not settle in "
+                                "%d rounds", n);
+        }
+        cg_walk(root, cg_cwmin_publish, &m);
+    }
+
+    /* ---- THE `cwmax` FIXPOINT ([DD-14.LB]) — see cg_cwmax_publish above - */
     {
         long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_W_UNBOUNDED;
-        CgMaxw m = { cg, val };
+        CgCwmax m = { cg, val };
         for (int round = 0; round <= n; round++) {
             bool changed = false;
-            cg_walk(root, cg_maxw_publish, &m);
+            cg_walk(root, cg_cwmax_publish, &m);
             for (int i = 0; i < n; i++) {
-                long long nv = pcrec_maxw(cg->body[i]);
+                long long nv = pcrec_cwmax(cg->body[i]);
                 if (nv < val[i]) { val[i] = nv; changed = true; }
             }
             if (!changed) break;
@@ -800,7 +847,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                 ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
-        cg_walk(root, cg_maxw_publish, &m);
+        cg_walk(root, cg_cwmax_publish, &m);
     }
 }
 
