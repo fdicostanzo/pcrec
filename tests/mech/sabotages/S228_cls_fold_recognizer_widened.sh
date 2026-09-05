@@ -25,7 +25,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/base/cls_fold.rxt"
 SAB_DESC="vm_cls_shape's FOLD arm loses its (lo ^ hi) == 0x20 and letters conjuncts, so ANY two-member class takes the ascii-fold compare (byte | 0x20) == lower — exact for a fold pair, a two-direction miscompile for every other two-member set ([ac] loses 'a' and admits 'C')"
-SAB_DOC_FIGURE="MEASURED 2026-09-05 (lane formchar1, solo single-row mech run at the row's landing): DETECTED — harness 6fail/52pass on tests/base/cls_fold.rxt, the fold-control-nonpair and fold-and-nonpair-mixed blocks' match cells (the lost-match direction), with every fold-PAIR block green. Read the current figure from a run."
+SAB_DOC_FIGURE="MEASURED 2026-09-05 (lane formchar1, solo single-row mech run at the row's landing, tree 8da8e68558f861c7a3e5f7dbc6d3984044cf59e7): DETECTED, unexpected: 0 — reach:ok(1/1), corpus:7fail/51pass on tests/base/cls_fold.rxt: the fold-control-nonpair and fold-and-nonpair-mixed blocks' match cells (the lost-match direction), every fold-PAIR block green. Read the current figure from a run."
 # [MECH-REACH] the probe says BOTH sides of the recognizer still answer on a
 # CLEAN tree: a nonpair two-member class keeps its bitmap (the conjunct this
 # plant deletes is live), and a fold pair takes the fold compare and stamps
