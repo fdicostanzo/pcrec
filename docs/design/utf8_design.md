@@ -1511,6 +1511,56 @@ with a binary search, 1.2% of D84's total cap. That is the whole of what a
 user's compiled matcher inherits from the vendored data, and §4.6 constrains
 the form (a direct-indexed map would be 4.4 MB and D84 refuses it outright).
 
+#### 3.3.2 `third_party/` GETS A GENERAL SHAPE FROM DAY ONE (R-ASKS-3(a))
+
+> **Frank's extension to ASK 2's ruling**: do **not** architect as if UCD is
+> the only outside data file this repository will ever hold. `third_party/`
+> gets a general organizational shape from day one, and the derivation step is
+> named in its general form — *"a data source compiles to generated tables"* —
+> with **UCD properties as the FIRST INSTANCE, not as the pattern.**
+
+**THE SHAPE**, and the point of writing it down before there is a second
+source is that the second source is when it becomes expensive to change:
+
+```
+third_party/
+  README.md                  the index: one row per source, what it is for
+  ucd-16.0.0/                ONE DIRECTORY PER SOURCE, versioned in its name
+    PROVENANCE.md            source URL, version, licence, retrieval date,
+                             and WHAT DERIVES FROM IT (the generated tables,
+                             by name, so a reader can go the other way)
+    UnicodeData.txt          the vendored files, unmodified
+    Scripts.txt
+    ...
+  <next-source>-<version>/   the same five things, whatever it is
+```
+
+Two properties are the whole of the requirement, and neither is about
+Unicode:
+
+1. **One directory per SOURCE, version in the directory name.** Two versions
+   of one source can coexist during a bump, and nothing has to be renamed to
+   make that true. `pcre2-testdata/` — the repository's existing vendored
+   data — is retro-fitted into the same shape rather than left as the
+   exception that proves a rule nobody wrote down.
+2. **`PROVENANCE.md` names what DERIVES from the source**, not only where the
+   source came from. That direction is the one a maintainer actually needs
+   ("this table looks wrong — what produced it, and from what?") and it is the
+   direction a licence audit needs too. The generation step reads it; nothing
+   else does.
+
+**AND THE DERIVATION IS NAMED GENERICALLY.** The build rule is *"a data source
+compiles to generated tables"* — the same shape `src/parse/cls_bits.inc`
+already has, which `[DD-11]`/D85 rules is a DERIVED artifact. The UCD
+interval tables are the first instance of that rule and are **not** its
+definition: a rule spelled `ucd_to_intervals` would have to be renamed the day
+a second source arrives, which is exactly the re-plumbing this ruling exists
+to prevent.
+
+**§5.7.3 is the other half of this ruling** — the data KINDS beyond
+interval-shaped property tables, which is where a second source most plausibly
+comes from.
+
 **WHY THE RELUCTANCE IS THE RIGHT INSTINCT AND THE ANSWER IS STILL YES.**
 Vendoring third-party data is a permanent maintenance and licensing surface,
 and `third_party/` today holds only PCRE2's BSD-licensed testdata. The two
@@ -2406,14 +2456,21 @@ which `emit_vm.c`'s own note 3 predicts in those words. §5.2.1 is the other
 half of that sentence: the end-check only stops being a **trap** once
 `back_step` validates declared length, so E3 and E4 are one change, not two.
 
-### 5.7 THE DOOR TO UTF-16/32 — what stays open, and what it costs
+### 5.7 THE DOOR TO OTHER ENCODINGS — what stays open, and what it costs
 
-> **A NOTE, NOT A DESIGN (Frank's width question, 2026-09-04, relayed with
-> R-ASKS-2).** UTF-16/32 are out of scope (§11) and `[DD-12] (6)` rules them
-> out. This section exists because "out of scope" and "architecturally
-> foreclosed" are different states, and the first version of this document
-> said only the first. **Nothing here is built or proposed for building**;
-> D77 governs, and the trigger is at the end.
+> **A NOTE, NOT A DESIGN (Frank's width question, 2026-09-04, R-ASKS-2;
+> WIDENED by R-ASKS-3(b) the same evening).** UTF-16/32 are out of scope
+> (§11) and `[DD-12] (6)` rules them out. This section exists because "out of
+> scope" and "architecturally foreclosed" are different states, and the first
+> version of this document said only the first. **Nothing here is built or
+> proposed for building**; D77 governs, and the trigger is at the end.
+>
+> **AND THE DOOR IS NOT 16/32-WIDE, IT IS ENCODING-WIDE** (R-ASKS-3(b),
+> Frank: *"some freak might want to build in native support for that IBM
+> encoding or some non-US encoding"*). §5.7.3 is that half: single-byte
+> codepages, and multi-byte legacy encodings. It is where this note earns its
+> page, because the codepage case turns out to be nearly free **and** to be
+> the first thing that would strain a field §2.7.1 introduces.
 
 #### 5.7.1 What the architecture already carries
 
@@ -2489,7 +2546,77 @@ about surrogates is UTF-8-specific and **must be re-derived, not ported**. A
 16/32 author who carried S-U7 across unchanged would be asserting the opposite
 of what that encoding requires.
 
-#### 5.7.3 D77: built when a consumer exists, and here is where one comes from
+#### 5.7.3 THE OTHER ENCODINGS — codepages are nearly free, legacy multi-byte is not (R-ASKS-3(b))
+
+**A SINGLE-BYTE CODEPAGE (EBCDIC, KOI8-R, Latin-N) IS ALMOST A NO-OP UNDER
+THIS ARCHITECTURE, and that is a real result rather than a compliment.** Such
+an encoding is a **256-entry byte ↔ code-point mapping** — a different data
+KIND from §3.3's intervals, and a nearly-free backend:
+
+- the parser produces code-point intervals, exactly as for UTF-8 (§2.2);
+- the **lowering** maps each code point in the set to its single byte, and
+  drops the ones the repertoire does not contain;
+- the output is a plain 256-bit byte set — **byte-for-byte the same shape
+  `enc_byte`'s lowering already emits.** Everything below is unchanged, and
+  unlike UTF-8 there is not even a sequence: one character is one byte.
+
+> **So a codepage backend is `enc_byte` with a different classification and
+> fold mapping.** `pcrec`'s existing `byte` encoding is the IDENTITY codepage
+> (Latin-1, "every byte is a character" — D58's own rename rationale), which
+> means this is not a new mechanism at all: it is the shipped one with its
+> table made a parameter.
+
+**AND IT IS THE FIRST THING THAT STRAINS `PcrecEnc.max_cp`** — a finding of
+this note's own, recorded because §2.7.1 introduced that field one section
+ago and this is the case that outgrows it. The complement universe for
+`byte`/`utf8`/`utf16`/`utf32` is a **contiguous range** `[0, max_cp]`, which
+is why one scalar suffices. **A codepage's repertoire is 256 code points
+SCATTERED across Unicode** — KOI8-R holds ASCII plus a block of Cyrillic — so
+`[^a]` under it complements within an arbitrary SET, and no maximum describes
+it.
+
+> `max_cp` is therefore the **contiguous-repertoire form** of a more general
+> question ("what does this encoding's universe contain"), and a codepage
+> backend is what would generalize it — most cheaply by letting the field be a
+> repertoire descriptor whose contiguous case is a range. **This design keeps
+> the scalar** (D77: every encoding this milestone and its named successors
+> need has a contiguous repertoire) and names the trigger rather than building
+> for it. **The seam's shape is unaffected either way** — it is one field's
+> type, not an interface.
+
+**MULTI-BYTE LEGACY ENCODINGS (Shift-JIS, GB18030) RIDE THE SAME
+CharSet→UNIT-SEQUENCE LOWERING** — the shape transfers exactly as it does for
+UTF-16 (§5.7.1). Two costs are theirs alone and are worth stating so nobody
+prices them at UTF-8's rate:
+
+1. **THE MAPPING IS A TABLE, NOT ARITHMETIC — so the lowering itself becomes a
+   DATA SOURCE.** UTF-8/16/32 compute a code point's units from the code point
+   (§2.3's mixed-radix decomposition); Shift-JIS and GB18030 need a vendored
+   mapping table. **This is exactly where R-ASKS-3's two halves meet**: such a
+   backend's lowering is a `third_party/` source compiled to generated tables
+   by the same generic derivation §3.3.2 names, and it is the second instance
+   that rule exists for.
+2. **THE DECOMPOSITION STOPS BEING SMALL, because it depends on ORDER
+   PRESERVATION nobody stated.** §2.3's efficiency — an interval becomes *"a
+   small set of byte-range sequences"* — rests on the encoding being
+   **monotone**: contiguous code points encode to contiguous unit sequences,
+   so a range stays a range. UTF-8 and UTF-32 are monotone; **UTF-16 is not**
+   (astral code points encode as surrogate pairs numerically below
+   U+E000–U+FFFF's units), and legacy encodings are wildly non-monotone. A
+   non-monotone encoding turns one interval into many alternatives, so
+   §2.4.1's `ncls` and entry counts — already the binding term — get worse in
+   a way this document has measured for nobody. **That is the number a legacy
+   backend owes before it is chartered**, and §2.4.1's probe is the instrument
+   that would produce it.
+
+**Blocker (1) of §5.7.2 applies to them too, and harder**: Shift-JIS is not
+self-synchronizing either — a trail byte can hold a value that is also a lead
+byte — so the prefilter's usefulness argument fails for the same reason it
+fails for UTF-16, which is the point at which "self-synchronization" stops
+looking like a UTF-8 detail and starts looking like the property §6.3 should
+have named from the beginning.
+
+#### 5.7.4 D77: built when a consumer exists, and here is where one comes from
 
 **No UTF-16/32 backend is built, designed, or scheduled**, and §11 keeps it
 out of scope. D77's rule is that a mechanism is built when a measurement or a
@@ -2498,7 +2625,10 @@ reason (no consumer asks) is unchanged and is still the operative one.
 
 **Where a consumer would come from, so the trigger is nameable rather than
 hypothetical**: `[V-A]` (the PCRE2 compatibility layer, including the POSIX
-`regex.h` shim) and `[V-B]` (bindings for other languages). A caller who
+`regex.h` shim) and `[V-B]` (bindings for other languages) — **and, for the
+codepage family, a caller with legacy data rather than a legacy runtime**
+(mainframe EBCDIC records, KOI8 archives), which is a different and more
+plausible consumer than "someone wants EBCDIC regexes". A caller who
 already speaks PCRE2 may hold `PCRE2_SPTR16` buffers, and a language binding
 for a runtime whose native string is UTF-16 — Java, C#, JavaScript — hands
 pcrec UTF-16 without being asked. **That is the shape of a real consumer**:
@@ -2506,8 +2636,9 @@ not "someone wants UTF-16 regexes" but "a caller already has UTF-16 bytes and
 transcoding them is the cost we would be imposing." Neither row is started.
 
 **What this note buys, stated plainly**: if that day comes, the answer is a
-lowering instance, a registry row or two, and §5.7.2's three re-derivations —
-**not** a second engine and not a re-architecture. And if it does not come,
+lowering instance, a registry row or two, §5.7.2's three re-derivations, and —
+for a codepage — a repertoire descriptor where §2.7.1 has a scalar. **Not** a
+second engine and not a re-architecture. And if it does not come,
 this section cost a page and prevented a future reader from concluding, from
 §11's one line, that the door had been shut.
 
