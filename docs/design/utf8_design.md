@@ -2968,13 +2968,40 @@ Stated plainly so the panel attacks the right things:
   §3.3, ASK 2. Everything in §3.4 and §4.4 depends on the answer.
 - **Whether pcrec may diverge from PCRE2's default UTF mode on ill-formed
   subjects** — §2.6, ASK 1. The design recommends yes and the recommendation
-  is a user-visible semantic.
-- **Where the encoding lowering lives** — §9.1. `src/gen/enc/` and `src/ir/`
-  are both defensible; the panel should rule.
-- **Whether one parameterised width function beats two** — §5.6.
-- **The `.rxt` third oracle value** — §7.4, ASK 6, owned by the format.
+  is a user-visible semantic. **r54 adds a consequence**: §9.2 makes it a
+  PRECONDITION on stage 2 opening, because ~27 corpus blocks encode it.
+- ~~**Where the encoding lowering lives** — §9.1.~~ **RESOLVED AT r54 (E1).**
+  Not by choosing between `src/gen/enc/` and `src/ir/`, which was the wrong
+  question: **WHEN it runs is forced** (§2.1.2, between `compile.c:999` and
+  `:1018`), and where the code lives follows from the per-backend-instance
+  rule rather than being an independent decision. The panel does not need to
+  rule; the tree already did.
+- ~~**Whether one parameterised width function beats two** — §5.6.~~
+  **NARROWED AT r54.** §5.6.2 retires `pcrec_maxw`, so the question is no
+  longer "two functions or one parameterised one" but "does `cwmin`/`cwmax`
+  share a walk with `minw`". The design says no, on `mrl.c`'s exhaustive-switch
+  argument (§5.6.5), and this stays open for Frank if he disagrees — but the
+  scope shrank with the chain.
+- **The `.rxt` third oracle value** — §7.4, ASK 6, owned by the format. **r54
+  makes it larger**: §7.1.1 finds the oracle question is a PREDICATE about
+  match units, not a three-valued label, so the format amendment has more to
+  express than "python-str-only" and the design does not know what shape that
+  should take.
 
----
+**ADDED AT r54, each a thing this revision surfaced and deliberately did not
+settle:**
+
+- **The FILING of the `PcrecEnc` seam change** — ASK 7. The mechanism is
+  chosen (§2.7.2); whether it is a D58 addendum or its own row is not.
+- **Whether the three DECLINE verdicts (§2.5.1) should be widened at first
+  landing.** The design defers under D77 with the measurement named, and the
+  measurement cannot run until stage 2 exists. A reader who thinks the verdict
+  cost is unacceptable should say so before stage 2, not after.
+- **`\p{L}{1,3}`'s premultiplied decline (§2.4.1).** The design records it,
+  states the cost precisely, and proposes **no cap change** — 65,535 is a
+  `short`-range constraint, not a tuning knob. Whether `[OPT-3]` should gain a
+  wider-index form for UTF-8-sized machines is a question for that row, and
+  P-5b is the census that would open it.
 
 ## 11. Explicitly out of scope
 
@@ -3232,3 +3259,103 @@ python-verifiable and `# pcre2-only`. UTF needs a third: python-verifiable
 **through the `str` engine only** (5 of 28 measured cells). This lane did not
 edit `docs/spec/rxt_format.md`. Route it to `[DD-13b]`, or charter a small
 amendment now so stage 2's corpus has somewhere to live?
+
+---
+
+## 15. Where this document is still weakest
+
+Not the same list as §10, which is about decisions deferred. This is about
+**claims that are load-bearing and thin**, ranked by how much would break if
+each were wrong — written after the r54 revision, in the same spirit §12 was
+written before the panel.
+
+1. **§2.1.2's three constraints.** The whole pass position rests on them, and
+   two are read off comments (`compile.c:947-955` on `.body`, and §5.6.4's
+   two-timings rule) rather than off a check. If constraint 2 is weaker than
+   its comment claims — if a `.body` captured before the lowering is in fact
+   fine — the lowering can move above `altcls` and §2.5.1's three WIDEN rows
+   and three DECLINE rows all disappear. **That is the single largest
+   simplification available to this design**, and P-12 is the invitation to
+   find it.
+2. **§6.4 entire.** Every row is ARGUED or ASSERTED, none is measured, and the
+   `vm_cost` row is flagged in its own table as the most likely to be wrong.
+3. **§2.4.1's byte figure.** The entries and elements columns are measured;
+   the D84 byte column is a back-of-envelope derivation stated as such. P-5c
+   is a prediction with no evidence behind it and the document says so.
+4. **§8.3's subjects-per-block multiplier of 4.** It is a judgement, stated so
+   it can be argued with, and it moves the case total by ±400 if it is wrong.
+5. **§4.6's 12 KB fold-table figure**, derived from a mapping count rather
+   than from an emitted artifact, because no emitted artifact exists.
+
+---
+
+---
+
+## 16. THE r54 WHAT-CHANGED RECORD
+
+The panel-outcome block at the top maps finding → disposition → section. This
+is the other direction: what a reader of the first version must **un-learn**,
+and what is genuinely new. House convention (R33's shape): the refutations
+stay inline where they bit, and this section is the index to them.
+
+### 16.1 Claims of the first version that are now FALSE
+
+| first version said | now | where |
+|---|---|---|
+| the lowering sits "between the parser and the IR" | it sits between `pcrec_postresolve` and `pcrec_build_nfa`, at `compile.c:1000`, and the position is **forced** by three constraints | §2.1.2 |
+| negation "complements within the code-point space" | it complements within `[0, MAXCP(enc)]`; the unqualified form refuses every negated class under `byte` | §2.7.1 |
+| "the seam needs no interface change" | the **entries table** needs none; `PcrecEnc` gains one scalar | §2.7.2, ASK 7 |
+| `minw`/`maxw`'s "real consumer is `[M4.6d]`'s MRL pruning" | true of `minw` (7 sites); **`maxw` has no MRL consumer at all** and its whole chain retires | §5.6.2 |
+| suffix sharing "keeps a `\p{L}`-sized set near-linear" | a tree cannot share suffixes; sharing is worth **16%** and nothing in the artifact | §2.3.1 |
+| "every row clears every cap by more than an order of magnitude" | true in **states**; `\p{L}{1,3}` is **123%** of the entries cap | §2.4.1 |
+| "there is no mechanism by which an encoding could make a pattern VM-only" | `[SEL-1]`'s `forces_dfa_overflow` is one — it reads a machine size, and size is what the encoding changes | §6.2.1 |
+| the byte-tier class machinery "is below the lowering and is untouched" | true of six sites; **six others sit above it** and are enumerated | §2.5.1 |
+| `pcrec_cls_word_esc` "becomes an interval literal" | its PRODUCER form does; the table **survives as bytes** for `\b`'s mechanism | §2.2.2 |
+| P-1 (the third-encoding recipe touches nothing outside the backend) | **REFUTED**, and it was the wrong rule to predict on | §12 P-1 |
+| §8.3's "~420 cells, comparable to lookaround's 457 blocks / 1,819 cases" | **423 blocks / ≈1,559 cases**, against 457 / 1,819 — like against like | §8.3 |
+| S-U7's witness is the ~27 invalid-UTF-8 cells | those are **compile-time refusals** and cannot see S-U7; the witness is a subject | §8.3.1 |
+| a UCP axis costs "a word-classification seam entry" | it costs `upc_of_class`'s mechanism **replaced** — a DFA state-identity change | §5.4.1, ASK 4 |
+
+### 16.2 What is genuinely new
+
+- **§2.1.4's render helper and its assertion** — the mechanism that makes E1's
+  miscompile inexpressible rather than merely absent. Not asked for by the
+  panel; it is the difference between fixing a bug and closing a class.
+- **§2.4.1/§2.4.2** — the caps' own units, and the alphabet-refinement
+  argument for why `ncls` is the term to watch.
+- **§4.6** — the artifact's run-time fold table, sized against D84, with the
+  agreement check redesigned rather than re-run at 1.1M cells.
+- **§5.2.1's `back_step`** — the length-validating body, its invariant, and
+  the deliberate decision that it be a LENGTH test rather than a second
+  UTF-8 validator.
+- **§6.4** — the VM's cost and capacity axes, priced for the first time.
+- **§7.1.1** — the UCP-SPLIT oracle, and the finding that VERDICT and ORACLE
+  are different partitions of the divergence table.
+- **§8.1.1, §8.1.2, §8.5** — the structural checks, the floors, and the
+  encoding differential (which composes with the identity gate to pin `utf8`
+  answers to a pre-M5 compiler transitively).
+- **§15** — where this document is still weakest, written after the revision
+  as §12 was written before the panel.
+
+### 16.3 Findings this revision made against ITSELF
+
+Recorded separately because they were not the panel's, and the panel-outcome
+block would otherwise take credit for them:
+
+1. **`[SEL-1]` is an encoding→engine mechanism** (§6.2.1) — found by
+   re-deriving §6.2 under the forced position rather than by re-reading the
+   critique.
+2. **The UCP-SPLIT oracle is 7 of 8, not 8 of 8** (§7.1.1) — the panel cited
+   one agreeing example and the family holds, but working the whole column
+   found `\W` over a Greek letter, where python-bytes disagrees for a UNIT
+   reason and python-str disagrees for the opposite reason. That row also
+   produced the verdict-vs-oracle finding.
+3. **E13 is right about a different consumer than the design was** (§2.2.2) —
+   both readings were correct, which makes the two-representation hazard the
+   actual finding.
+4. **The `maxw` chain can be RE-AIMED rather than retired-and-replaced**
+   (§5.6.2), which halves E3(b)'s stated cost.
+5. **The ASCII-corpus population is 3,319, not 3,349** (§8.5) — the obvious
+   text scan cannot see escaped high bytes in subjects, and the 30 blocks it
+   misses are exactly the ones the differential must exclude. R13's lesson,
+   reproduced in this lane after being cited in it.
