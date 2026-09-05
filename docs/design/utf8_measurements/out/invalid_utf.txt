@@ -1,0 +1,240 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_invalid.py
+# ARGS       : (none)
+# RUN MODE   : remote
+# ORACLE HOST: duxevents@192.168.1.100 (the REFERENCE libpcre2 10.46)
+#   mechanism : bundle.py | ssh ... 'python3 -' — the program
+#               arrives on stdin; nothing is written on that box.
+# PROBE LAST CHANGED AT COMMIT: 9559bed8 2026-09-04
+# RUN FROM REPO COMMIT        : 9559bed8 (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/utf8_measurements/out/invalid_utf.txt
+# RUN DATE   : 2026-09-04T23:04:47-0400
+# PROBE sha256[:16] (launcher-side, this disk):
+#     probe_invalid.py     fbb0047debb3e62f
+#     u8_oracle.py         5527218d03f44b7c
+#     br_oracle.py         01e7911086540381
+#     pcre2_ctypes.py      4e46fa4058f5c4ae
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+==========================================================================
+[M5.0] charter (i): INVALID UTF-8, three modes
+--------------------------------------------------------------------------
+host      : Linux 7.0.0-29-generic (x86_64)
+python3   : 3.14.4
+libpcre2  : 10.46 2025-08-27
+selfcheck : clean
+--------------------------------------------------------------------------
+source sha256[:16] (bundled) — the bytes that produced this run:
+  br_oracle.py         01e7911086540381
+  pcre2_ctypes.py      4e46fa4058f5c4ae
+  probe_invalid.py     fbb0047debb3e62f
+  u8_oracle.py         5527218d03f44b7c
+==========================================================================
+
+
+==========================================================================
+A. WHERE VALIDATION HAPPENS: the PATTERN's own bytes, at COMPILE
+==========================================================================
+A pattern is itself a byte string. Under PCRE2_UTF an ill-formed
+PATTERN is a COMPILE error -- pcrec's own compiler would owe this,
+and it costs the emitted artifact nothing.
+
+  pattern bytes            options=0                    PCRE2_UTF
+  ----------------------------------------------------------------------
+  lone continuation        compiles                     err -22 @1: UTF-8 error: isolated byte with 0x80 bit set
+  bare FF (never legal)    compiles                     err -23 @1: UTF-8 error: illegal byte (0xfe or 0xff)
+  truncated 2-byte         compiles                     err -8 @1: UTF-8 error: byte 2 top bits not 0x80
+  truncated 3-byte         compiles                     err -9 @1: UTF-8 error: byte 3 top bits not 0x80
+  overlong 'a' (2-byte)    compiles                     err -17 @1: UTF-8 error: overlong 2-byte sequence
+  overlong NUL (2-byte)    compiles                     err -17 @1: UTF-8 error: overlong 2-byte sequence
+  surrogate U+D800         compiles                     err -16 @1: UTF-8 error: code points 0xd800-0xdfff are not defined
+  above U+10FFFF           compiles                     err -15 @1: UTF-8 error: code points greater than 0x10ffff are not defined
+  5-byte form              compiles                     err -13 @1: UTF-8 error: 5-byte character is not allowed (RFC 3629)
+
+  (the pattern is `x<bad>y` so the bad bytes are interior, never
+   confusable with a truncated pattern buffer)
+
+==========================================================================
+B. THE SUBJECT, under PCRE2_UTF -- validation at MATCH time
+==========================================================================
+Pattern `a` against a subject that CONTAINS an `a` and also
+contains ill-formed bytes. If PCRE2 errored only when the match
+touched the bad bytes, the `a` would be found; it is not, which is
+what makes this a whole-subject precondition rather than a local
+one.
+
+  subject                  bytes              PCRE2_UTF
+  ----------------------------------------------------------------------
+  lone continuation        61 80 61           ERRM -22: UTF-8 error: isolated byte with 0x80 bit set
+  bare FF (never legal)    61 FF 61           ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff)
+  truncated 2-byte         61 CE 61           ERRM -8: UTF-8 error: byte 2 top bits not 0x80
+  truncated 3-byte         61 E0 A0 61        ERRM -9: UTF-8 error: byte 3 top bits not 0x80
+  overlong 'a' (2-byte)    61 C1 A1 61        ERRM -17: UTF-8 error: overlong 2-byte sequence
+  overlong NUL (2-byte)    61 C0 80 61        ERRM -17: UTF-8 error: overlong 2-byte sequence
+  surrogate U+D800         61 ED A0 80 61     ERRM -16: UTF-8 error: code points 0xd800-0xdfff are not defined
+  above U+10FFFF           61 F5 80 80 80 61  ERRM -15: UTF-8 error: code points greater than 0x10ffff are not defined
+  5-byte form              61 F8 88 80 80 80 61 ERRM -13: UTF-8 error: 5-byte character is not allowed (RFC 3629)
+
+  CONTROL, the same subjects with NO options (pcrec's `byte`
+  encoding semantics -- every byte is a character):
+  subject                  options=0
+  ----------------------------------------------------------------------
+  lone continuation        match (0, 1) groups=()
+  bare FF (never legal)    match (0, 1) groups=()
+  truncated 2-byte         match (0, 1) groups=()
+  truncated 3-byte         match (0, 1) groups=()
+  overlong 'a' (2-byte)    match (0, 1) groups=()
+  overlong NUL (2-byte)    match (0, 1) groups=()
+  surrogate U+D800         match (0, 1) groups=()
+  above U+10FFFF           match (0, 1) groups=()
+  5-byte form              match (0, 1) groups=()
+
+==========================================================================
+C. PCRE2_UTF|PCRE2_MATCH_INVALID_UTF -- the mode DD-12 (3) says to measure against
+==========================================================================
+DD-12's claim under test: this is 'essentially the byte-wise
+semantics'. Row by row against B.
+
+  subject                  UTF                    UTF|MATCH_INVALID_UTF
+  ----------------------------------------------------------------------
+  lone continuation        ERRM -22: UTF-8 error: isolated byte with 0x80 bit set match (0, 1) groups=()
+  bare FF (never legal)    ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) match (0, 1) groups=()
+  truncated 2-byte         ERRM -8: UTF-8 error: byte 2 top bits not 0x80 match (0, 1) groups=()
+  truncated 3-byte         ERRM -9: UTF-8 error: byte 3 top bits not 0x80 match (0, 1) groups=()
+  overlong 'a' (2-byte)    ERRM -17: UTF-8 error: overlong 2-byte sequence match (0, 1) groups=()
+  overlong NUL (2-byte)    ERRM -17: UTF-8 error: overlong 2-byte sequence match (0, 1) groups=()
+  surrogate U+D800         ERRM -16: UTF-8 error: code points 0xd800-0xdfff are not defined match (0, 1) groups=()
+  above U+10FFFF           ERRM -15: UTF-8 error: code points greater than 0x10ffff are not defined match (0, 1) groups=()
+  5-byte form              ERRM -13: UTF-8 error: 5-byte character is not allowed (RFC 3629) match (0, 1) groups=()
+
+  identical: 0    differing: 9
+
+  Does it need PCRE2_UTF to be set as well?
+    compile `a` under PCRE2_MATCH_INVALID_UTF -> compiles
+
+  C.2 WHAT AN INVALID SEQUENCE DOES TO A MATCH THAT SPANS IT.
+  The interesting question is not whether a match beside the bad
+  bytes is found, but whether one THROUGH them is -- i.e. whether
+  the bad bytes are a BARRIER or merely skipped.
+
+  `.` over one bad byte  on 61 FF 63       : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=no match
+  `.*` over one bad byte on 61 FF 63       : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=no match
+  literal pair split by a bad byte on 61 FF 62       : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=no match
+  \w+ across a bad byte  on 61 62 FF 63 64 : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=match (0, 2) groups=()
+  \B across a bad byte   on 61 FF 62       : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=no match
+  match AFTER the bad byte on FF 63          : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=match (1, 2) groups=()
+  match BEFORE the bad byte on 61 FF          : UTF=ERRM -23: UTF-8 error: illegal byte (0xfe or 0xff) UTF|INV=match (0, 1) groups=()
+
+  C.3 THE SAME CELLS UNDER options=0 -- what a BYTE-WISE automaton
+  does by construction, which is the comparison DD-12 asks for.
+  (pcrec's `byte` encoding today. A byte-wise UTF-8 automaton is
+  NOT this: it has no path for an ill-formed sequence at all, so
+  the row to compare against is 'no match through the bad bytes'.)
+
+  `.` over one bad byte  on 61 FF 63       : match (0, 3) groups=()
+  `.*` over one bad byte on 61 FF 63       : match (0, 3) groups=()
+  literal pair split by a bad byte on 61 FF 62       : no match
+  match AFTER the bad byte on FF 63          : match (1, 2) groups=()
+
+==========================================================================
+D. PCRE2_NO_UTF_CHECK over a WELL-FORMED subject
+==========================================================================
+The ill-formed cell is NOT measured: PCRE2 documents that
+combination as undefined behaviour, and measuring UB would report
+one build's accident as a semantic. This cell says only what the
+check costs when there is nothing wrong -- i.e. that skipping it
+is answer-neutral on valid input.
+
+  `.` on 61 CE B1 62      under PCRE2_UTF                                -> match (0, 1) groups=()
+  `.` on 61 CE B1 62      under PCRE2_UTF|PCRE2_NO_UTF_CHECK             -> match (0, 1) groups=()
+
+==========================================================================
+E. A STARTOFFSET IN THE MIDDLE OF A CHARACTER
+==========================================================================
+The subject is well-formed; the CURSOR is not on a boundary. This
+is the cell pcrec's own find-all loop and its `next_pos` residual
+exist to make unreachable, so what PCRE2 does here is the
+behaviour pcrec's contract has to either reproduce or forbid.
+
+  start=0 (boundary) : UTF=match (0, 2) groups=() UTF|INV=match (0, 2) groups=()
+  start=1 (MID-CHARACTER) : UTF=ERRM -36: bad offset into UTF string UTF|INV=match (2, 4) groups=()
+  start=2 (boundary) : UTF=match (2, 4) groups=() UTF|INV=match (2, 4) groups=()
+  start=3 (MID-CHARACTER) : UTF=ERRM -36: bad offset into UTF string UTF|INV=no match
+  start=4 (boundary) : UTF=no match               UTF|INV=no match
+
+  and under options=0 (every offset is a boundary):
+  start=0 : match (0, 1) groups=()
+  start=1 : match (1, 2) groups=()
+  start=2 : match (2, 3) groups=()
+  start=3 : match (3, 4) groups=()
+  start=4 : no match
+
+==========================================================================
+E2. THE SAME CURSOR, BUT A NEGATIVE ASSERTION -- WHERE IT INVERTS
+==========================================================================
+`(?!X)` succeeds when X does NOT match, so 'a mid-character cursor
+has no path' -- safe for a positive pattern -- becomes a SUCCESS
+here. These are the cells pcrec's contract must state a promise
+about (design 2.6.1), and the ones a corpus must carry.
+
+  subject: 'αβ' = CE B1 CE B2; boundaries at 0, 2, 4
+
+  pattern                start     UTF                    UTF|INV                options=0
+  --------------------------------------------------------------------------------------------
+  (?!\x{3b1})            0 bnd     match (2, 2) groups=() match (2, 2) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?!\x{3b1})            1 MID     ERRM -36: bad offset into UTF string match (2, 2) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?!\x{3b1})            2 bnd     match (2, 2) groups=() match (2, 2) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?!\x{3b1})            3 MID     ERRM -36: bad offset into UTF string match (4, 4) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+
+  (?!.)                  0 bnd     match (4, 4) groups=() match (4, 4) groups=() match (4, 4) groups=()
+  (?!.)                  1 MID     ERRM -36: bad offset into UTF string match (4, 4) groups=() match (4, 4) groups=()
+  (?!.)                  2 bnd     match (4, 4) groups=() match (4, 4) groups=() match (4, 4) groups=()
+  (?!.)                  3 MID     ERRM -36: bad offset into UTF string match (4, 4) groups=() match (4, 4) groups=()
+
+  (?<!\x{3b1})           0 bnd     match (0, 0) groups=() match (0, 0) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?<!\x{3b1})           1 MID     ERRM -36: bad offset into UTF string match (2, 2) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?<!\x{3b1})           2 bnd     match (4, 4) groups=() match (4, 4) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?<!\x{3b1})           3 MID     ERRM -36: bad offset into UTF string match (4, 4) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+
+  (?<!.)                 0 bnd     match (0, 0) groups=() match (0, 0) groups=() match (0, 0) groups=()
+  (?<!.)                 1 MID     ERRM -36: bad offset into UTF string match (2, 2) groups=() no match
+  (?<!.)                 2 bnd     no match               no match               no match
+  (?<!.)                 3 MID     ERRM -36: bad offset into UTF string match (4, 4) groups=() no match
+
+  (?=\x{3b1})            0 bnd     match (0, 0) groups=() match (0, 0) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  (?=\x{3b1})            1 MID     ERRM -36: bad offset into UTF string no match               ERRC 134: character code point value in \x{} or \o{} is too large
+  (?=\x{3b1})            2 bnd     no match               no match               ERRC 134: character code point value in \x{} or \o{} is too large
+  (?=\x{3b1})            3 MID     ERRM -36: bad offset into UTF string no match               ERRC 134: character code point value in \x{} or \o{} is too large
+
+  \x{3b2}                0 bnd     match (2, 4) groups=() match (2, 4) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  \x{3b2}                1 MID     ERRM -36: bad offset into UTF string match (2, 4) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  \x{3b2}                2 bnd     match (2, 4) groups=() match (2, 4) groups=() ERRC 134: character code point value in \x{} or \o{} is too large
+  \x{3b2}                3 MID     ERRM -36: bad offset into UTF string no match               ERRC 134: character code point value in \x{} or \o{} is too large
+
+  VACUITY GUARD: mid-character vs the boundary below it differs on
+  8 of 8 negative-assertion cells under PCRE2_UTF.
+  (0 would mean this table cannot see the phenomenon it is for.)
+
+==========================================================================
+F. SELF-CHECK / VACUITY GUARDS
+==========================================================================
+Each of these would be true even if this probe were measuring
+nothing, so each is stated in the FAILING direction.
+  F1 all 9 BAD entries rejected by python's own UTF-8 decoder: yes
+  F2 a well-formed non-ASCII subject matches under UTF: yes (match (0, 1) groups=())
+  F3 subjects where options=0 answers and UTF does not: 9 of 9
+
+  PROBLEMS: none

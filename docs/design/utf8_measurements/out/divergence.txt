@@ -1,0 +1,125 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_divergence.py
+# ARGS       : (none)
+# RUN MODE   : remote
+# ORACLE HOST: duxevents@192.168.1.100 (the REFERENCE libpcre2 10.46)
+#   mechanism : bundle.py | ssh ... 'python3 -' — the program
+#               arrives on stdin; nothing is written on that box.
+# PROBE LAST CHANGED AT COMMIT: c767ae25 2026-09-04
+# RUN FROM REPO COMMIT        : 660f796e (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/utf8_measurements/out/caseless.txt
+#      M docs/design/utf8_measurements/out/divergence.txt
+#      M docs/design/utf8_measurements/out/invalid_utf.txt
+#      M docs/design/utf8_measurements/out/premises.txt
+#      M docs/design/utf8_measurements/out/sizing.txt
+#      M docs/design/utf8_measurements/out/uprops.txt
+#      M docs/design/utf8_measurements/out/width.txt
+# RUN DATE   : 2026-09-04T23:03:10-0400
+# PROBE sha256[:16] (launcher-side, this disk):
+#     probe_divergence.py  6b8805f61cf564ac
+#     u8_oracle.py         5527218d03f44b7c
+#     br_oracle.py         01e7911086540381
+#     pcre2_ctypes.py      4e46fa4058f5c4ae
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+==========================================================================
+[M5.0] charter (vi): the D27 goal-facts list
+--------------------------------------------------------------------------
+host      : Linux 7.0.0-29-generic (x86_64)
+python3   : 3.14.4
+libpcre2  : 10.46 2025-08-27
+selfcheck : clean
+--------------------------------------------------------------------------
+source sha256[:16] (bundled) — the bytes that produced this run:
+  br_oracle.py         01e7911086540381
+  pcre2_ctypes.py      4e46fa4058f5c4ae
+  probe_divergence.py  6b8805f61cf564ac
+  u8_oracle.py         5527218d03f44b7c
+==========================================================================
+
+
+Spans are BYTE offsets in every column (python's character spans
+are converted -- see u8_oracle.pyre_str). A row whose columns
+differ only in report convention is NOT a divergence, and that
+conversion is what keeps such rows out of the list.
+
+  cell                             pcre2/UTF      pcre2/UTF|UCP  py/str         py/bytes       VERDICT
+  ------------------------------------------------------------------------------------------------------------
+  \w over a Greek letter           no             MATCH(0, 2)    MATCH(0, 2)    no             UCP-SPLIT
+  \w over an Arabic-Indic digit    no             MATCH(0, 2)    MATCH(0, 2)    no             UCP-SPLIT
+  \w over an underscore            MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    ALL-AGREE
+  \d over an Arabic-Indic digit    no             MATCH(0, 2)    MATCH(0, 2)    no             UCP-SPLIT
+  \d over ASCII 5                  MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    ALL-AGREE
+  \s over NBSP U+00A0              no             MATCH(0, 2)    MATCH(0, 2)    no             UCP-SPLIT
+  \s over U+2028 line sep          no             MATCH(0, 3)    MATCH(0, 3)    no             UCP-SPLIT
+  \b before a Greek letter         no             MATCH(0, 0)    MATCH(0, 0)    no             UCP-SPLIT
+  \b between ASCII and Greek       MATCH(0, 3)    no             no             MATCH(0, 3)    UCP-SPLIT
+  \W over a Greek letter           MATCH(0, 2)    no             no             no             UCP-SPLIT
+  . over a 2-byte character        MATCH(0, 2)    MATCH(0, 2)    MATCH(0, 2)    no             PY-STR-ONLY
+  . over a 4-byte character        MATCH(0, 4)    MATCH(0, 4)    MATCH(0, 4)    no             PY-STR-ONLY
+  .{2} over two 2-byte chars       MATCH(0, 4)    MATCH(0, 4)    MATCH(0, 4)    no             PY-STR-ONLY
+  [^a] over a 2-byte character     MATCH(0, 2)    MATCH(0, 2)    MATCH(0, 2)    no             PY-STR-ONLY
+  a caseless multi-byte pair       MATCH(0, 2)    MATCH(0, 2)    ERRC           ERRC           PCRE2-ONLY
+  caseless KELVIN vs k             MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    ALL-AGREE
+  caseless LONG S vs s             MATCH(0, 2)    MATCH(0, 2)    MATCH(0, 2)    no             PY-STR-ONLY
+  caseless [a-z] over KELVIN       MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    ALL-AGREE
+  caseless sharp s vs SS           no             no             ERRC           ERRC           PCRE2-ONLY
+  \p{L} over a Greek letter        MATCH(0, 2)    MATCH(0, 2)    ERRC           ERRC           PCRE2-ONLY
+  \p{Greek} over a Greek letter    MATCH(0, 2)    MATCH(0, 2)    ERRC           ERRC           PCRE2-ONLY
+  \x{3b1} literal                  MATCH(0, 2)    MATCH(0, 2)    ERRC           ERRC           PCRE2-ONLY
+  \X grapheme over a+combining     MATCH(0, 3)    MATCH(0, 3)    ERRC           ERRC           PCRE2-ONLY
+  $ before a trailing newline      MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    MATCH(0, 1)    ALL-AGREE
+  an ILL-FORMED subject            ERRM           ERRM           PY-CANNOT      no             PCRE2-ONLY
+  a 2-byte char in a class range   MATCH(0, 2)    MATCH(0, 2)    ERRC           ERRC           PCRE2-ONLY
+  quantified 2-byte char           MATCH(0, 4)    MATCH(0, 4)    ERRC           ERRC           PCRE2-ONLY
+  \R over CRLF                     MATCH(0, 2)    MATCH(0, 2)    ERRC           ERRC           PCRE2-ONLY
+
+  VERDICT TALLY: [('PCRE2-ONLY', 10), ('UCP-SPLIT', 8), ('ALL-AGREE', 5), ('PY-STR-ONLY', 5)]
+
+  HOW THE BLINDED AUTHOR READS THIS:
+    ALL-AGREE    write the cell, python verifies it
+    UCP-SPLIT    the cell depends on whether the build sets UCP --
+                 pcrec has NO UCP axis today, so state which
+                 semantics the corpus expects
+    PY-STR-ONLY  python's `str` engine is the right oracle; the
+                 suite's BYTES engine is not
+    PCRE2-ONLY   mark `# pcre2-only`; libpcre2 rules the cell
+    PY-CANNOT    python cannot express it (an ill-formed subject
+                 has no `str` form) -- libpcre2 or nothing
+
+==========================================================================
+2. THE PYTHON VERSION IS ITSELF AN AXIS
+==========================================================================
+  This run's python : 3.14.4 (unicodedata 16.0.0)
+
+  The suite's oracle is 'python3 `re`' with no version pinned, and
+  the two machines this project uses do not carry the same one.
+  Any \w / \p / caseless expectation is a function of the
+  Unicode version behind it, so a corpus generated on one box and
+  verified on another can disagree with itself. Run this probe
+  --local as well as remote and compare the two headers; the
+  design's section 7 quotes both.
+
+==========================================================================
+3. SELF-CHECK / VACUITY GUARDS
+==========================================================================
+  3a rows that are NOT all-agree: 23 of 28
+  3b at least one row in each of the interesting verdicts:
+       UCP-SPLIT    8
+       PCRE2-ONLY   10
+  3c rows where py/str and py/bytes differ: 13
+
+  PROBLEMS: none

@@ -1,0 +1,202 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_premises.sh
+# ARGS       : (none)
+# RUN MODE   : local
+# ORACLE HOST: this machine (Darwin arm64)
+#   NOTE      : this is NOT the reference oracle unless the
+#               libpcre2 line below reads 10.46. A local run is a
+#               deliberate version COMPARISON, or a pcrec probe.
+# PROBE LAST CHANGED AT COMMIT: c767ae25 2026-09-04
+# RUN FROM REPO COMMIT        : 660f796e (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/utf8_measurements/out/premises.txt
+#      M docs/design/utf8_measurements/out/sizing.txt
+# RUN DATE   : 2026-09-04T23:02:43-0400
+# PROBE sha256[:16] (launcher-side, this disk):
+#     probe_premises.sh    8be3cf7fd650798b
+#     u8_oracle.py         5527218d03f44b7c
+#     br_oracle.py         01e7911086540381
+#     pcre2_ctypes.py      4e46fa4058f5c4ae
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+[M5.0] pcrec-side premises, on HEAD
+======================================================================
+pcrec       : 610904 bytes
+built from  : 660f796e (lane/utf8design)
+gcc         : 16
+======================================================================
+
+======================================================================
+1. THE ENCODING AXIS AS IT SHIPS TODAY ([M5-SEAM], D58)
+======================================================================
+The seam is BUILT; what this lane adds is the second backend. These
+are the refusals the design must replace, quoted from the binary.
+
+  -e byte     :   -e utf8     : pcrec: encoding 'utf8' arrives with milestone M5 (an engine axis, not a module: no --features name enables it) (pattern offset 0)
+  -e utf16    : pcrec: unknown encoding 'utf16' (want byte, utf8)
+  -e UTF8     : pcrec: unknown encoding 'UTF8' (want byte, utf8)
+  -e <empty>  : pcrec: unknown encoding '' (want byte, utf8)
+
+  --help's encoding line:
+      -e ENCODING, --encoding=ENCODING
+                     subject encoding for THIS pattern: byte (default)
+                     or utf8. Per-compile, never global: two patterns
+                     in one binary may use different encodings. utf8
+                     is refused until milestone M5
+
+======================================================================
+2. WHAT REFUSES TODAY, and with WHICH module name
+======================================================================
+D26 tier: a construct's EXISTENCE and its OWNING MODULE are exact.
+These are the rows this milestone changes from refusal to producer.
+
+  \x{3b1}          : pcrec: \x{...} requires module 'unicode-props' (pattern offset 0)
+  \x41             :   \p{L}            : pcrec: \p requires module 'unicode-props' (pattern offset 5)
+  \pL              : pcrec: \p requires module 'unicode-props' (pattern offset 3)
+  \P{L}            : pcrec: \P requires module 'unicode-props' (pattern offset 5)
+  \N{U+41}         : pcrec: \N requires module 'unicode-props' (pattern offset 0)
+  \X               : pcrec: \X requires module 'misc' (pattern offset 0)
+  \R               : pcrec: \R requires module 'misc' (pattern offset 0)
+  [\x{3b1}]        : pcrec: \x{...} requires module 'unicode-props' (pattern offset 1)
+  [\p{L}]          : pcrec: \p requires module 'unicode-props' (pattern offset 6)
+  (?i)\x{3b1}      : pcrec: \x{...} requires module 'unicode-props' (pattern offset 4)
+
+======================================================================
+3. THE REGISTRY ROWS this milestone owns
+======================================================================
+  (from --list-syntax; the 'built' column is D65's derived answer)
+
+  # pcrec syntax construct registry (D24). Empty field = none.
+  esc	N	\N{U+0041}	unicode-props	0x0008	pcre2	dfa|vm	module	module		requires module 'unicode-props'	a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection
+  esc	p	\p{L}	unicode-props	0x0008	pcre2	dfa|vm	module	module		requires module 'unicode-props'	a character with the given Unicode property	planned	yes	set 117	unbuilt	
+  esc	P	\P{L}	unicode-props	0x0008	pcre2	dfa|vm	module	module		requires module 'unicode-props'	a character without the given Unicode property	planned	yes	set 139	unbuilt	
+  esc	x	\x41		0x0000	pcre2	dfa|vm	base	none			hex: bare \xHH (exactly 2 digits) or braced \x{HHHH} (\x{...} requires module 'unicode-props')	-	yes	char 0x41	-	
+
+  the module names --features accepts (from --help):
+      --features LIST   enable feature modules for this invocation:
+                        comma-separated names from --list-syntax's
+                        module column, a frozen named set ('std1'),
+                        'all', or 'none' (default: std1 — an explicit
+                        --features always wins over the default; see
+                        docs/dev/decisions.md D37). Composes with
+                        every mode. Most modules have no producer
+                        yet, so enabling one changes no verdict —
+                        the gate's state is visible via --probe-ask's
+                        answered_at either way
+      --list-source FILE
+
+  --features unicode-props on \p{L} : pcrec: \p requires module 'unicode-props' (pattern offset 5)
+
+======================================================================
+4. THE CLASS STRUCTURE IS 8-BIT, and who owns widening it
+======================================================================
+D33 section 7 states the structure is uint8_t cls[32] and that MOD-0.6
+owns widening -- then AMENDS itself (2026-08-12, Frank): widening
+DEFERS to the first milestone that PRODUCES a wide set, which is this
+one. The [DD-12] row still says MOD-0.6. Quoted from the tree so the
+design cites the code and the amendment, not the stale row:
+
+  src/core/internal.h, the A_CLASS payload:
+    509:        struct { uint8_t bits[32]; } cls;
+
+  src/ir/nfa.c, the A_CLASS lowering (one NFA state, one byte):
+        case A_CLASS: {
+            Frag f = frag_single(b, N_CLASS);
+            memcpy(b->nfa->st[f.start].cls, a->u.cls.bits, 32);
+            return f;
+
+  D33 section 7's amendment:
+    ### 7. The class structure is 8-BIT NOW, and MOD-0.6 owns widening
+    
+    `uint8_t cls[32]`, matching the `Ast` node today. `\p{...}` needs more than 256
+    bits and `\v` under UTF reaches U+2028/2029. Designing the wide form now is the
+    unexercised structure D24/SR-2 warns about ("lost more to unexercised structure
+    than to missing structure"); leaving it unsaid is how MOD-0.6 discovers it.
+    Stated here so it is a decision.
+    
+    > **AMENDED 2026-08-12 (Frank, thirteenth session).** Widening DEFERS to the
+    > first milestone that PRODUCES a wide set (M5-era `\p` matching). MOD-0.6 as
+    > scoped in plan.md is recogniser-only — no producer lands, so a widened
+    > structure built there would itself be the unexercised structure this section
+    > warns about. Ownership split: MOD-0.6 owns the `\p`/`\P`/`\N{U+` REFUSAL
+    > surface; the first wide producer owns the structure.
+    
+    ### 8. What this deletes
+
+======================================================================
+5. THE CROSS-NOTE'S SITE: pcrec_maxw's A_CLASS arm
+======================================================================
+The [M5.0] row says this arm 'must become the encoding's maximum
+code-unit length'. Quoted here so the design can argue against its own
+plan row with the code in front of the reader.
+
+  src/opt/mrl.c, pcrec_maxw's A_CLASS arm and its header paragraph:
+     * THE ENCODING. `A_CLASS` answers 1 byte, which is EXACT for everything pcrec
+     * can compile today and not merely conservative: `PCREC_ENC_UTF8` has no
+     * backend and `src/core/compile.c:196` REFUSES it by name, so no artifact
+     * exists in which a class consumes two bytes. That refusal is this arm's
+     * guard. When the utf8 backend lands, `pcrec_minw`'s 1 STAYS SOUND (it is an
+     * under-estimate, its safe side) and THIS ONE DOES NOT — it must become the
+     * encoding's maximum code-unit length, or the fixed-width rule silently
+     * accepts variable-width branches. The two functions look identical here and
+     * have opposite obligations, which is exactly why it is written on both.
+     *
+     * WHAT IS UNBOUNDED, and each is a decision rather than a fallthrough:
+
+  and the CONSUMER that makes it load-bearing --
+  src/parse/mod_lookaround.c's la_widths, the fixed-width rule:
+    299:        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
+    310:        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
+
+  ...whose number is handed to a residual entry whose contract is in
+  CHARACTERS (src/gen/enc/enc_byte.c):
+    218:" * Returns the position exactly `k` CHARACTERS before `pos`, or\n"
+
+  THE TWO UNITS COINCIDE ONLY UNDER THE BYTE BACKEND. Nothing in the
+  tree can tell them apart today, which is why this is a design
+  question and not a bug report.
+
+======================================================================
+6. THE SEAM'S ENTRIES, as they ship
+======================================================================
+  residual entry points in a freshly emitted artifact:
+    43: * anchored entry points, rx_next_pos is caller-facing encoding
+    698:size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos)
+
+  entry ids declared by the seam (src/gen/enc/enc.h):
+    79:    PCREC_ENCE_NEXT_POS       = 1u << 0,
+    84:    PCREC_ENCE_BREF           = 1u << 1,
+    85:    PCREC_ENCE_BREF_CASELESS  = 1u << 2,
+    95:    PCREC_ENCE_BACK_STEP      = 1u << 3
+
+======================================================================
+7. THE STATE CAPS the sizing measurement is compared against
+======================================================================
+  # pcrec numeric-limits registry (docs/spec/table_contract.md, the
+  PCREC_MAX_NFA_STATES	131072	states	compile budget	none	3.3	M2.8: NFA state-count ceiling; a memory backstop, the DFA caps below usually bind first
+  PCREC_MAX_DFA_STATES_GOTO	10000	states	compile budget	none	3.3	computed-goto DFA attempt engine's state ceiling
+  PCREC_MAX_DFA_STATES_TABLE	32000	states	compile budget	none	3.3	table-engine DFA state ceiling; must fit in a C short
+  PCREC_MAX_VM_EMIT_CODE_BYTES	500000	bytes	size cap	-D	8	[ART-SIZE]/D84: emitted C bytes OUTSIDE table initializers; --max-emit-code-bytes ALSO raises it per-com
+  PCREC_DEFAULT_WARN_EMIT_BYTES	250000	bytes	size cap	-D	8	[OPT-4]: the advisory --warn-emit-bytes default (never refuses, 0 disables) ALSO settable per-compile; 
+  PCREC_MAX_EMIT_BYTES	1000000	bytes	size cap	-D	8	[ART-SIZE]/D84: the whole comment-excluded artifact; --max-emit-bytes ALSO raises it per-compile (raise-only); 
+
+======================================================================
+8. SELF-CHECK
+======================================================================
+  8a -eyes
+  8b -eyes
+  8c \p{L} is REFUSED: yes
+
+  PROBLEMS: 0

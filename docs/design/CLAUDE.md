@@ -1765,5 +1765,92 @@ append-only or historical records.
      — fired on nothing but altcls's residues, emitted a 3.0% LARGER artifact,
      and passed every answer check. `docs/dev/lanes/isl1_report.md` §2.2.
 
+- `utf8_design.md` — **PROPOSED, NOT YET PANELED** ([M5.0]'s design gate,
+  2026-09-04; the UTF-8 milestone: byte-wise UTF-8 automata, `\p{...}`, and
+  [DD-1]'s Unicode folding). Its spine is that **the parser stops producing a
+  256-bit byte bitmap and starts producing sorted CODE-POINT INTERVALS**,
+  after which the encoding is a LOWERING INSTANCE and everything downstream —
+  subset construction, minimisation, both emitters, every prefilter — stays
+  byte-wise and never learns UTF-8 exists. **Its three sharpest results are
+  all refutations of documents the lane was handed.**
+
+  **(1) THE [M5.0] ROW'S OWN CROSS-NOTE PRESCRIBES A CURE THAT WOULD BREAK
+  EVERY LOOKBEHIND.** The row says `pcrec_maxw`'s `A_CLASS` arm "must become
+  the encoding's maximum code-unit length". MEASURED: 10.46 measures
+  lookbehind length in **CHARACTERS** — `(?<=[a\x{3b1}])x`, ONE branch that is
+  one character and one-OR-two bytes, COMPILES with
+  `PCRE2_INFO_MAXLOOKBEHIND` = 1 — so setting that arm to 4 makes
+  `la_widths`' `minw == maxw` test read `1 != 4` for every class and refuses
+  `(?<=a)x`, a pure-ASCII lookbehind that works today. The hazard the row
+  names is real; its cure is wrong. The resolution is TWO quantities for two
+  consumers: `minw`/`maxw` stay BYTES and become per-class EXACT (a strict
+  improvement for the MRL prune), and a new character-width pair serves
+  `la_widths`. **6 of 6** measured bodies (`.`, `[^a]`, `\w`, `\p{L}`,
+  `[a\x{3b1}]`, the full range) are fixed-one-character and variable-byte-width.
+
+  **(2) [DD-12] (3)'s characterisation of `PCRE2_MATCH_INVALID_UTF` is
+  REFUTED as worded and right in its instinct.** The row calls that mode
+  "essentially the byte-wise semantics"; MEASURED, it differs from
+  `PCRE2_UTF` on all 9 ill-formed subjects AND from `options=0` — under
+  `options=0` `a.c` on `61 FF 63` MATCHES (a byte engine eats 0xFF happily)
+  while `MATCH_INVALID_UTF` does not. It is the byte-wise **UTF-8 AUTOMATON's**
+  semantics, which is what §2.3 builds and what pcrec therefore gets for free.
+  Also measured: `PCRE2_UTF` validates the whole SUBJECT before matching (a
+  valid `a` before the bad bytes is NOT returned), which is an O(n) pass per
+  call that pcrec's ruling declines to inherit.
+
+  **(3) `\p{...}` DOES NOT REQUIRE `PCRE2_UTF`** — `\p{L}` matches the single
+  byte 0xE9 at `options=0` — so module `unicode-props` is **not encoding-gated**
+  and can land before the utf8 backend, as an ordinary bitmap producer needing
+  no widening. A corollary the lane returns to [DD-11]: that row's chartered
+  "UTF/UCP" second predicate is keyed on the wrong axis — it is **UCP**, not
+  UTF, that redefines `\w`/`\d`/`\s`/`\b`.
+
+  Also: **10.46 does SIMPLE (1:1) folding ONLY** (0 of 11 one-to-many cells
+  match), which DELETES [FORM-CHAR]'s object (5) `utf8-full-fold` — there is
+  no PCRE2 behaviour for it to reproduce — while the fold is a **CLOSURE**
+  (k/K/U+212A are one class) that **reaches outside the written range**
+  (`[a-z]` caseless matches U+212A), so it must run while the set is still
+  code points, confirming [DD-12] (5). **`enc_byte.c`'s own predicted witness
+  for why the backref residual returns a LENGTH is REFUTED and its design
+  decision VINDICATED by a different cell**: `(?i)^(ss)\1$` on `"ss\xdf"` is
+  no match under UTF, but `^(k)\1$` on `k`+U+212A MATCHES `(0,4)` — a 1:1 fold
+  that is not length-preserving. **There is no state blowup**: `\p{L}` is a
+  283-state minimised DFA, `\p{L}*` is **282**, and UTF-8 `.*` is **9**, all
+  against a 10,000/32,000 cap. And the D27 goal-facts list is 28 cells four
+  ways — 10 PCRE2-ONLY, 8 UCP-SPLIT, 5 PY-STR-ONLY — where the four-column
+  shape is itself the finding, since python has one engine per subject type and
+  PCRE2 has two UTF modes, so "python disagrees" would mark the wrong cells.
+  Six ASKs for Frank, headed by the invalid-UTF semantic and by **vendoring
+  UCD data files** (both other sources are disqualified: python drifts by a
+  measured 648-vs-677 intervals on `\p{L}`, and generating from libpcre2 would
+  make the differential check its own generator's output — `mod_uprops.c`'s
+  own rule). Measurements: `utf8_measurements/`.
+- `utf8_measurements/` — the [M5.0] lane's SEVEN probes, its oracle helper,
+  its **remote-execution bundler** and its archiver; see its own CLAUDE.md.
+  **This is the first lane in this house whose reference oracle is on another
+  machine** (libpcre2 10.46 lives on the old box; this Mac's library is a
+  different version and PC-3 measured them diverging), so the oracle probes
+  execute over `ssh` with the borrowed binding chain embedded VERBATIM into a
+  stdin payload — borrowed and not copied, so `br_oracle.py`'s "a lane that
+  re-implements the binding it is checking cannot detect that the original
+  moved" survives the machine boundary — and nothing is written on that box.
+  Every archived header names the ORACLE HOST. Its `out/CLAUDE.md` carries
+  FOUR instrument defects, of which two are worth the shape: a transcript that
+  rendered its pattern column with `.decode("latin-1")` and so **named
+  patterns nobody ran** while the results beside them were correct, and a
+  vacuity guard whose pass condition was **unsatisfiable** (`not
+  isinstance(r, tuple)` where an error row IS a tuple), which reported a clean
+  0-of-9 against a column that differs on all nine and announced itself only
+  because it was written in the failing direction. A third — `-o /dev/null`
+  making every COMPILING cell read as a refusal, because pcrec also writes
+  `OUT.h` — was **reproduced verbatim from `subroutines_measurements/`'s own
+  recorded entry**, which is the argument for a shared fixture over a shared
+  lesson. It also records one NON-defect at the same length: the
+  python-version alarm (3.11/Unicode 14.0.0 here vs 3.14/16.0.0 there) was
+  rung by re-running the whole 28-row table under both and **did not sound** —
+  identical cell for cell — so the design says so instead of keeping a
+  plausible hazard nobody had checked.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

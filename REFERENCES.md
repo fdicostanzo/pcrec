@@ -85,6 +85,59 @@ Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §2.2 (retrofitted by
 lane m5paper).
 
+### [Cox07] Cox, R. (2007)
+
+Russ Cox — "Regular Expression Matching Can Be Simple And Fast (but is slow
+in Java, Perl, PHP, Python, Ruby, ...)", self-published article, January
+2007. The first of the author's RE2 article series, and this repository's
+citation of record for the automaton-based approach RE2 embodies, including
+its treatment of UTF-8 as a **byte-level** automaton rather than a decoded
+code-point one — the design pcrec's `APPROACH.md` §4 already names as the
+model for its own utf8 backend.
+DOI/URL: <https://swtch.com/~rsc/regexp/regexp1.html>.
+`(unverified: the specific code-point-range → byte-range-sequence
+decomposition cited by docs/design/utf8_design.md §2.3 is described in RE2's
+own source — `re2/unicode.py` and the `UTF8Fragment`/`Rune` range walk — and
+in the author's series generally, rather than being given as a named
+algorithm with a proof in this article. The citation is to the approach, not
+to a numbered theorem.)`
+Accessed 2026-09-04.
+Cited by: `docs/design/utf8_design.md` §2.3.
+
+### [Ragel] Ragel State Machine Compiler (software, not a paper)
+
+Adrian Thurston's Ragel — a state-machine compiler that generates
+byte-oriented recognisers from regular languages, and which performs the same
+code-point-range → byte-range-sequence expansion for its UTF-8 alphabet mode.
+Listed here on the `[AutomataLib]`/`[OTF]` precedent: not a peer-reviewed
+publication, cited because it is a second independent implementation of the
+construction `docs/design/utf8_design.md` §2.3 adopts, which is what makes
+that construction "classic" rather than one project's trick.
+DOI/URL: <https://www.colm.net/open-source/ragel/>.
+`(unverified: exact version whose UTF-8 expansion was inspected — this
+repository cites the construction as documented by the project generally, and
+has not read a pinned release's source.)`
+Accessed 2026-09-04.
+Cited by: `docs/design/utf8_design.md` §2.3.
+
+### [UCD] The Unicode Character Database (data files, not a paper)
+
+The Unicode Consortium's machine-readable property data — `UnicodeData.txt`,
+`Scripts.txt`, `ScriptExtensions.txt`, `PropList.txt`,
+`DerivedCoreProperties.txt`, `CaseFolding.txt` — published per Unicode
+version. Cited because `docs/design/utf8_design.md` §3.3 and §4.4 propose
+vendoring these files at a pinned version as the SOURCE for pcrec's `\p{...}`
+membership and case-fold closure tables, deliberately in preference to
+deriving them from python's `unicodedata` (version drift, measured) or from
+libpcre2 itself (which would make the differential check its own generator's
+output).
+DOI/URL: <https://www.unicode.org/ucd/>.
+**Version relevant to this repository: 16.0.0**, which is the version
+libpcre2 10.46 reports (measured — `docs/design/utf8_measurements/out/
+uprops.txt` §0, derived by sweeping `pcre2_config_8`).
+Accessed 2026-09-04.
+Cited by: `docs/design/utf8_design.md` §3.3, §4.4, §14 ASK 2.
+
 ### [DV18] D'Antoni, L. & Veanes, M. (2018)
 
 Loris D'Antoni, Margus Veanes — "Simulation Algorithms for Symbolic
