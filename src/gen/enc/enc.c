@@ -92,3 +92,46 @@ void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)
         else           sb_putc(sb, *q);
     }
 }
+
+/* [K49] Append `s` at `*len`, tracking overflow rather than truncating into a
+ * plausible-looking half statement. */
+static void adv_put(char *buf, size_t cap, size_t *len, const char *s)
+{
+    size_t k = strlen(s);
+    if (*len + k < cap) memcpy(buf + *len, s, k);
+    *len += k;
+}
+
+bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
+                       const char *indent, const char *posvar,
+                       const char *subjvar, const char *lenvar)
+{
+    size_t len = 0;
+    bool at_line_start = true;
+
+    if (cap == 0) return false;
+    if (!e || !e->advance) return false;
+
+    for (const char *q = e->advance; *q; q++) {
+        if (at_line_start) { adv_put(buf, cap, &len, indent); at_line_start = false; }
+        if (*q == '@' && q[1]) {
+            /* The three tokens enc.h documents. An `@` before anything else is
+             * a defect in a backend's own text, not a character to pass
+             * through: emitted C has no use for a bare `@`, so answering false
+             * turns a typo into an internal error at the call site rather than
+             * into an artifact that does not compile. */
+            switch (q[1]) {
+                case 'P': adv_put(buf, cap, &len, posvar);  q++; continue;
+                case 'S': adv_put(buf, cap, &len, subjvar); q++; continue;
+                case 'N': adv_put(buf, cap, &len, lenvar);  q++; continue;
+                default:  return false;
+            }
+        }
+        if (len + 1 < cap) buf[len] = *q;
+        len++;
+        if (*q == '\n') at_line_start = true;
+    }
+    if (len >= cap) return false;
+    buf[len] = '\0';
+    return true;
+}

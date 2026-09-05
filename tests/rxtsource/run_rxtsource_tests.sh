@@ -130,7 +130,15 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # silently 0/0/0 on darwin (`xargs -a` has no BSD spelling — the identical
 # bug utf8s2 fixed in run_mrl_tests.sh the same night), so the previous pin
 # had been failing on this box for macport-era reasons, not corpus ones.
-CENSUS_FILES=208
+# 2026-09-05 (lane k49fix, K49 FIXED) — -1 file, +-0 blocks, +-0 lines. The
+# ratchet file tests/known_fail/k49_utf8_lookbehind_retry.rxt is DELETED and
+# its one block / one `ns` line is restored to its authored position in
+# tests/utf8/axis09_nextpos_findall.rxt, an existing file. So the corpus loses
+# a FILE and keeps the block and the expectation line: the two totals below are
+# unchanged, and a reader who expects a fix to shrink the corpus should read
+# the reconciliation below instead — what moved is which POPULATION the cell
+# belongs to (known_fail -> run.sh's), not how many cells exist.
+CENSUS_FILES=207
 CENSUS_BLOCKS=3883
 CENSUS_LINES=28450
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
@@ -141,13 +149,19 @@ CENSUS_LINES=28450
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
 RUNSH_FILES=206
-RUNSH_BLOCKS=3879
-RUNSH_LINES=28438
+RUNSH_BLOCKS=3880
+RUNSH_LINES=28439
 # 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
 # neither new file lands under tests/known_fail/.
 # 2026-09-05 — moved alongside CENSUS_* above (the three-merge night);
 # k49_utf8_lookbehind_retry.rxt lands under known_fail, hence the census
 # and run.sh populations diverge by 2 files / 4 blocks / 12 lines now.
+# 2026-09-05 (lane k49fix) — moved alongside CENSUS_* above, and this is the
+# pair that MOVES when a known_fail file is retired: the census loses the file
+# while run.sh GAINS its block and its line, so the two pins move in opposite
+# directions and the divergence falls back to 1 file / 3 blocks / 11 lines
+# (k34_leftrec_giveup.rxt alone). Deriving one of these from the other would
+# have hidden exactly that.
 
 echo "== [DD-13b.W1.1] .rxt source / INV-COMPAT =="
 

@@ -248,8 +248,30 @@ static const PcrecEncEntry entries_utf8[] = {
     { 0, false, NULL, NULL }
 };
 
+/* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field), and it is this
+ * backend's own `next_pos` rule written as an inline step because DD-12 (7)
+ * forbids an engine body calling the entry.
+ *
+ * A position is a character boundary under UTF-8 iff its byte is not a
+ * CONTINUATION byte — `0` and `n` counting as boundaries — so "the next
+ * boundary strictly after pos" is one step plus a skip over continuations.
+ * The skip is bounded by `n` rather than by 3 for `next_pos`'s own reason: an
+ * ill-formed run then degrades to "the next non-continuation byte" instead of
+ * to a position inside the garbage, and, per utf8_design.md §2.6(c), an
+ * ill-formed byte must remain something a search can advance PAST — matches
+ * after a bad byte are found, matches through it are not. */
+static const char advance_utf8[] =
+"/* [K49] The retry advance is this ENCODING's step, not `+ 1`: an\n"
+" * unanchored search may only ever try LATER CHARACTER BOUNDARIES as\n"
+" * match starts, or it can report a position inside a character. A\n"
+" * boundary here is any position whose byte is not a continuation\n"
+" * byte, so the step is one forward and then over the continuations. */\n"
+"@P++;\n"
+"while (@P < @N\n"
+"       && (@S[@P] & 0xC0) == 0x80) @P++;\n";
+
 const PcrecEnc pcrec_enc_backend_utf8 = {
     /* `max_cp` is Unicode's maximum: the complement universe `[^x]` means
      * under this encoding (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8
+    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8, advance_utf8
 };

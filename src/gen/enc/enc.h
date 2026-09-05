@@ -126,6 +126,53 @@ typedef struct {
      * yet compile; `pcrec_enc_ready()` is that test, and the refusal reads the
      * row's own `name` rather than a hand-written literal. */
     const PcrecEncEntry *entries;
+    /* [K49] THE UNANCHORED RETRY ADVANCE — the statements an emitted engine
+     * runs to move a failed attempt's START position to the next position the
+     * search is allowed to try.
+     *
+     * IT IS A THIRD KIND OF CONTRIBUTION, and saying why is the point. The
+     * entries above are FUNCTIONS a caller (or, where `engine_callable`, an
+     * engine) calls. This is INLINE TEXT spliced into an engine body, and it
+     * has to be, for two independent reasons that happen to agree:
+     *
+     *   - `next_pos` computes exactly this position and carries
+     *     `engine_callable = false`. DD-12 (7), the [M5-SEAM] codegen check
+     *     and sabotage row S68 all forbid an engine body calling it.
+     *   - Even if they did not, a call would MOVE THE BYTE ARTIFACT. The byte
+     *     advance is `pos++` and must stay `pos++`, byte for byte, or the
+     *     identity gate is a re-pin rather than a proof.
+     *
+     * WHAT K49 REFUTED, and why the field exists at all. `docs/design/
+     * utf8_design.md` §5.5 ASSERTED that a byte-granular retry "cannot produce
+     * a wrong answer" under UTF-8 because a mid-character start "has no path".
+     * That holds for a POSITIVE pattern only, and §2.6.1 of the same document
+     * had already recorded the inversion: a NEGATIVE assertion succeeds
+     * exactly where a body has no path, so a mid-character retry answers, and
+     * answers with a reported position inside a character. K49's witness is
+     * `(?<!.)` at a boundary startpos over `CE B1 CE B2` reporting `(3,3)`.
+     *
+     * THE RULE THIS TEXT SPELLS, one backend at a time: an unanchored search
+     * may only ever try LATER CHARACTER BOUNDARIES of its own encoding as
+     * match starts. Under `byte` every position is a boundary, so the step is
+     * `pos++` and this backend contributes what the emitter used to hard-code.
+     *
+     * SUBSTITUTION. Three tokens, and `$` is NOT one of them (an advance names
+     * no artifact symbol): `@P` the position variable, `@S` the subject
+     * variable, `@N` the subject-length variable. A line's own leading spaces
+     * are RELATIVE indentation; `pcrec_enc_advance` prefixes every line with
+     * the caller's base indent, so one backend text serves call sites at
+     * different depths.
+     *
+     * IT DUPLICATES `next_pos`'s RULE IN A SECOND SPELLING, deliberately and
+     * with the same guard the fold already has. `enc_byte.c`'s caseless
+     * compare and `cls_casefold` are two spellings of one fold, tied by
+     * `tests/backrefs/fold_agreement_check.c`; this text and this backend's
+     * `next_pos` are two spellings of one boundary rule, tied by
+     * `tests/codegen/run_encoding_checks.sh`'s advance-agreement check, which
+     * reads BOTH out of an artifact pcrec actually emitted. A backend that
+     * changes one and not the other fails there rather than in a corpus cell
+     * nobody wrote. */
+    const char *advance;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a
@@ -163,6 +210,18 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
 
 /* Copy `text` into `sb`, replacing every `$` with `prefix`. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);
+
+/* [K49] Render this backend's `advance` text into a CALLER-owned buffer, with
+ * `@P`/`@S`/`@N` replaced by the three variable names and every line prefixed
+ * by `indent`. A caller-owned buffer for `pcrec_enc_names`' reason (TS-3:
+ * `pcrec_compile()` is called concurrently, so no static scratch) and because
+ * the one call site splices the result into an `sb_printf` beside its
+ * siblings. Truncation is not silently tolerated: the function returns false
+ * when the text did not fit, and the caller raises an internal error rather
+ * than emitting a half-written advance. */
+bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
+                       const char *indent, const char *posvar,
+                       const char *subjvar, const char *lenvar);
 
 /* The backends themselves, one file each. */
 extern const PcrecEnc pcrec_enc_backend_byte;   /* enc_byte.c */

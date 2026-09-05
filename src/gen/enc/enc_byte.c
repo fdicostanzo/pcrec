@@ -245,9 +245,21 @@ static const PcrecEncEntry entries_byte[] = {
     { 0, false, NULL, NULL }
 };
 
+/* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field). One byte is
+ * one character here, so EVERY position is a character boundary and the next
+ * one after `pos` is `pos + 1` — which is the text the emitter hard-coded
+ * before this field existed, reproduced here character for character. That is
+ * the whole of this backend's stake in K49: the byte artifact does not move.
+ *
+ * No comment rides into the artifact. A `byte` artifact's advance is the
+ * obvious one, and a comment explaining why it is obvious would be new
+ * emitted scaffolding on the path D76's identity gate pins. */
+static const char advance_byte[] =
+"@P++;\n";
+
 const PcrecEnc pcrec_enc_backend_byte = {
     /* [M5.0] `max_cp` is `0xFF`: this backend's repertoire IS the byte range,
      * so complementing within it is the `~bits[i]` loop the parser used to
      * write by hand (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte
+    PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte, advance_byte
 };
