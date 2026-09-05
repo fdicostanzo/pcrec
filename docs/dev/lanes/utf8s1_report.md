@@ -36,6 +36,7 @@ Everything else below is ordinary lane work and is green.
 | §8.1.1 check 2 | `pcrec_cls_bits` the sole path to a bitmap, floor + negative needle | same, §2a/2b | **PASS** — family floor 6/6, `pcrec_cls_bits` proper 5/5, no file outside the allowlist touches `u.cls` |
 | §13 obl. 5 | the assertion **ships enabled** | same, §2c **and §2d** | **PASS**, and §2d *runs* it: it fires by name on a scratch build whose byte backend claims `max_cp = 0x10FFFF` |
 | §8.1.1 check 3 | the stamp census **manifest** | same, §3 | **PASS** (stage-1 half — see §6) |
+| — | the interval **algebra** against an independent oracle | same, §4 (`cpset_model_check.c`) | **PASS** — 400 × 60 random ops + 7 edge cases, membership AND the invariant, 0 disagreements. Added by the lane; see §6b |
 | §8.1.2 | positive control | — | **n/a by the design's own table**; refusal agreement + population floors stand in, both asserted per axis |
 | §2.2.3 | the D70 clobber survey **re-derived in the same change** | `offsetof` probe + two sweeps | **DONE — and it changed the answer.** §5 |
 | r54 (a) | constraint 2 confirmed **empirically** | scratch rebuilding lowering, two positions | **DONE — and it CONTRADICTS the design.** §4 |
@@ -53,7 +54,7 @@ if the manager prefers the log regenerated at merge instead.
 
 **Local sections run** (Frank's light-testing rule; the battery rides the next
 Linux slot): `test-corpus` **27,045 cases passed / 0 failed**, 0 compile
-failures, size tripwire OK; `test-cpset-structure` 25/0,
+failures, size tripwire OK; `test-cpset-structure` 26/0,
 `test-encoding-identity` 14/0,
 `test-definitions` 22/0, `test-parse` 96/0, `test-cli` 54/0,
 `run_definitions_oracle.sh` 354 cells / 101,244 A==B / 101,244 A==C /
@@ -299,6 +300,38 @@ at least one sample artifact, or those needles would report an empty census at
 stage 2 while looking like coverage. It is a MANIFEST and not a threshold
 (r49): nothing asserts a stamp's VALUE, and a drifted manifest is a diff to
 review.
+
+### 6b. ONE CHECK THE BRIEF DID NOT ASK FOR, and why it is here
+
+`tests/codegen/cpset_model_check.c`, run as `run_cpset_structure.sh`'s §4.
+
+Checks 1-3 and the identity gate are all statements about a POPULATION. None
+of them exercises the new set algebra outside the narrow slice the corpus
+reaches: `pcrec_cpset_complement` is only ever called at `max_cp == 0xFF`,
+`pcrec_cpset_remove` has exactly one caller (`.` removing `\n`), and no corpus
+pattern builds a list long enough to reach the absorb-many path in
+`pcrec_cpset_add`.
+
+**Stage 2's `0x10FFFF` universe and stage 3's ~770-interval property classes
+will.** A bug in any of those is invisible today and a miscompile then — and it
+would arrive in a wave whose own acceptance is a corpus that did not exist when
+the bug shipped. So the algebra is model-checked against a flat byte array,
+which has no intervals, no ordering and no invariant and therefore cannot fail
+the same way the subject does; the universe is 4,096 so every point can be
+compared after every operation rather than sampled.
+
+It checks **two** properties, and the second is what a membership-only check
+would miss: membership agrees everywhere, **and** the list stays sorted,
+disjoint and **non-adjacent**. A representation answering every query correctly
+while leaving `[a-m][n-z]` as two intervals passes the first and breaks
+§2.7.2's argument that the artifact does not depend on the pattern's spelling.
+
+Seven edge cases are written out rather than left to the walk: the complement
+of the empty set and of the full universe, double complement as the identity,
+adjacency coalescing, a mid-interval split, the complement of an interval
+touching 0 (where a careless `lo - 1` underflows), and absorbing 100 intervals
+in one `add`. **All pass**, including the two that would otherwise first have
+been exercised in stage 3.
 
 ---
 

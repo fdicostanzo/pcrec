@@ -488,6 +488,37 @@ else
     bad "[3] tests/codegen/manifests/ does not exist; the manifest has nowhere to live"
 fi
 
+# ===========================================================================
+# CHECK 4 — THE INTERVAL ALGEBRA, AGAINST AN ORACLE THAT SHARES NOTHING WITH IT
+# ===========================================================================
+#
+# Checks 1-3 and the identity gate are all statements about a POPULATION: the
+# payload exists, the accessors are the only readers, and the corpus's
+# artifacts did not move. None of them exercises `src/core/cpset.c`'s SET
+# ALGEBRA outside the narrow slice the corpus happens to reach —
+# `pcrec_cpset_complement` is only ever called at `max_cp == 0xFF`,
+# `pcrec_cpset_remove` has one caller, and no corpus pattern builds a list long
+# enough to reach the absorb-many path in `add`.
+#
+# Stage 2's 0x10FFFF universe and stage 3's ~770-interval property classes
+# will. `cpset_model_check.c` carries the full argument; what runs here is the
+# check itself, so the algebra is defended by `make test` from the wave that
+# introduced it rather than from the wave that first breaks it.
+echo
+echo "== CHECK 4: the interval algebra, model-checked against a bitset oracle =="
+if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
+        -I "$ROOT_DIR/lib" -I "$ROOT_DIR/src" \
+        -o "$WORKDIR/cpsetmodel" "$SCRIPT_DIR/cpset_model_check.c" \
+        "$ROOT_DIR/build/libpcrec.a" 2>"$WORKDIR/cpsetmodel.log"; then
+    bad "[4] cpset_model_check.c does not build:"
+    head -10 "$WORKDIR/cpsetmodel.log" >&2
+elif ! MODEL_OUT="$("$WORKDIR/cpsetmodel" 2>&1)"; then
+    bad "[4] the interval algebra DISAGREES with the bitset oracle:"
+    printf '%s\n' "$MODEL_OUT" | head -10 >&2
+else
+    ok "[4] $(printf '%s' "$MODEL_OUT" | head -1)"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"
