@@ -555,3 +555,24 @@ the PATTERN SPELLING that asks the oracle the same question.
   computes the markings rather than trusting a plan, and libpcre2 10.46 is the
   oracle of record for every cell python cannot arbitrate — which for this
   module is 62 of 112 blocks.
+
+## U13 — libpcre2 VERSION DRIFT 10.46 → 10.48: option-run acceptance (PC-3, found by [MACPORT], 2026-09-04)
+
+**The divergence.** Option runs libpcre2 10.46 ACCEPTS, 10.48 REJECTS with
+error 111 ("unrecognised character after (?"): measured probe (ctypes,
+2026-09-04) — `(?a:a)`, `(?r)`, `(?aU)a`, `(?aD:x)` all ACCEPTED by 10.46
+(2025-08-27, the old box's libpcre2-8-0) and all REJECTED by 10.48
+(Homebrew, the Mac dev box); `(?i:a)` accepted by both. pcrec's registry
+was measured against 10.46 and agrees with it, so on a 10.48 box PC-3's
+"GATED T1 [option runs]" family reads 119 failures that are NOT pcrec
+regressions — reproduced deterministically, identical split across runs
+([MACPORT]'s report, docs/dev/lanes/macport_report.md, has the discovery;
+the classifying probe is in the journal, fifty-third session).
+
+**Disposition.** The reference oracle stays 10.46 (the old box, where the
+battery runs). PC-3 red on a 10.48 box is EXPECTED and this entry is the
+citable reason; do not "fix" pcrec toward 10.48 without a ruling —
+adopting a new reference version is a deliberate re-measurement event
+(the pcre2_options.md standing constraint, D26's moving-target clause).
+Revisit when: the reference box's libpcre2 upgrades, or Frank rules a
+version adoption, or a PC-2 re-survey fires.

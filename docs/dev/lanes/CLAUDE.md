@@ -178,4 +178,20 @@ never edited afterwards.
   on SIZE.
 - `w13_runsh_composed_path.patch` — W1.3.1's starting point: lane w13's written-but-UNRUN run.sh composed-block path (dropped from lane/w13 at the manager's ruling 2026-09-04 04:3x because run.sh is the most load-bearing script in the tree and it would have landed behind three merges and a battery without its own make test). The dropped commit was 464f2896 in the w13 worktree's reflog; the patch is the durable copy. Its contract choice (the target's prefix through flush_block's tail vs the CLI allowance W1.2 refused) is Frank's question; report §18.
 
+- `macport_report.md` — [MACPORT] (2026-09-04, lane macport, the Mac
+  move's port of the test/validation infrastructure to darwin/arm64):
+  watchdog and safekill's darwin arms (ps-based stats, the perl-setsid
+  wrapper, and the load-bearing `exec` finding), the four shared
+  tests/lib shims (assoc/loadavg/ncpu/cc_resolve), the `wait -n` FIFO
+  throttle at 5 sites, tests/resource's darwin skip, and FOUR real
+  latent bugs found only under genuine bash 3.2 (mapfile, a safekill
+  ps-fork TOCTOU, descendant self-exclusion, and `IFS=$'\x01'` not
+  splitting — the last silently no-op'ing 67 of axes_registry_check's
+  96 checks). Its "unexplained bash 5.3" headline was resolved at merge
+  (Frank's deliberate install, ruling R3, which the lane never consumed
+  — a rulings-file poll gap); its PC-3 escalation became
+  upstream_issues.md U13 (10.46→10.48 drift, classified by the
+  manager's probe). The Linux arm was verified green (16/16 + 13/13) on
+  ubuntubudu by the manager at landing; the shrunk item-8 shebang sweep
+  was finished by the manager (six `#!/bin/bash` → `env bash`).
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

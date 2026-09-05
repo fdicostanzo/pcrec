@@ -3979,3 +3979,39 @@ already passing; the ruling moved it because 7% headroom makes a pin a
 drift detector rather than a blowup one), with the reasoning and the
 manager's own sabotage transcript recorded above under "The tripwire and
 its pins". Nothing here was moved to paper over a red result.
+
+## The boxes (calibration record)
+
+Every runtime, budget and pin in this file was calibrated on the box that
+measured it; state the box when citing a number (memory: cross-box timings
+are never compared).
+
+- **ubuntubudu** (through 2026-09-04, now the bench's machine + pcrec's
+  full-suite/battery venue by slot request — see the fifty-third session's
+  journal): Ryzen 5 1600, 12 threads, x86_64 Ubuntu, gcc 15.2, GNU
+  userland, libpcre2-8-0 **10.46 (the reference oracle)**, GNU timeout at
+  /usr/bin/gnutimeout (default `timeout` is uutils). All D45 budgets, the
+  load-guard thresholds, K32's compile pin, the battery shapes
+  (-j4/PROCS=3 test, PROCS=6 mech, -P4 san, paired axes) are THIS box's
+  numbers.
+- **The Mac dev box** (from 2026-09-04, [MACPORT]): Apple M1 Max, 10
+  cores, arm64, macOS. Real GNU gcc = Homebrew `gcc-16` (bare `gcc` is
+  Apple clang; tests/lib/cc_resolve.sh resolves); bare `timeout` IS GNU
+  coreutils 9.11 (no `gnutimeout` name; timeout_bin.sh resolves at its
+  step 2); `bash` on PATH is Homebrew 5.3.15 — a box DEPENDENCY (Frank's
+  install, 2026-09-04); /bin/bash stays 3.2 forever and six formerly
+  hardcoded `#!/bin/bash` shebangs were moved to `env bash`; libpcre2 is
+  Homebrew **10.48, NOT the reference** — PC-3 reads 119 expected reds
+  here (upstream_issues.md U13); `ulimit -v` does not bind, so
+  tests/resource Section 2 SKIPS loudly (its CLAUDE.md); no /proc — the
+  watchdog/safekill/loadavg darwin arms ([MACPORT], validated 16/16 +
+  13/13 on BOTH platforms at the merge). MEASURED 2026-09-04: serial
+  `make test-corpus` 1,717.5 s wall for 27,045/0 (old box 64.1 s at
+  22,358 cases) — the gap is macOS's ~10x process-spawn cost across
+  ~100k per-case execs, NOT compute (user+sys is only 1,067 s of that
+  wall; the worst gcc cell needs 1.416 s CPU against the 8.0 s
+  Ryzen-sized pin; all 2,962 size-log rows byte-identical to the old
+  box's log). Budgets/pins are CEILINGS calibrated on the slower box and
+  pass here; quiet-box timing floors stay on ubuntubudu. Frank's rule:
+  light/targeted testing locally, never the whole suite — full validation
+  goes to ubuntubudu by slot ([TT-15] PARKED is the chartered exit).

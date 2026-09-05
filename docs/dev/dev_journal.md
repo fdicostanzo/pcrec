@@ -21386,3 +21386,73 @@ machine, then the push of main and the lane branches (Frank's ruling).
 Part 68 addendum (19:3x): the restarted bench session (pcrecdev2) launched its held 288d505 STEP 2 AFTER suite at 19:28 on I-44 — quiet gate verdict quiet (load1 0.2), four passes, ~7.3 h, expected done ~03:00 EDT; [B37]'s re-pin target moves to 334fd10e / abi 22; its WINDOW CLOSED goes to the outbox. Acked live; nothing of pcrec's runs on the box from here.
 
 Part 68 addendum 2 (19:5x): the NEW-MACHINE pcrecdev1 is already live — it wrote I-45 into the bench inbox at 19:45 (the cross-machine convention: the inbox/outbox files stay canonical in the bench repo; Remote Control is the live channel; D78 roles unchanged), which the bench recorded as its BD8. This old-box session is therefore superseded; its wake.md is the hand-off the new session should reconcile against (committed docs win).
+
+## 2026-09-04 (EDT), fifty-third session (part 1, evening) — THE MAC: wake on the new box, the [MACPORT] port merged, the channel rebuilt, two lanes launched
+
+The new box is not the Linux machine anyone assumed: an Apple M1 Max
+(10 cores, arm64, macOS), bare `gcc` = Apple clang, /bin/bash = 3.2, no
+setsid, no /proc, no nproc, `ulimit -v` non-binding — and, the good
+half, bare `timeout` IS GNU 9.11, Homebrew has gcc-16 + libpcre2 + a
+mid-session bash 5.3 (Frank's install), and the compiler itself built
+clean on the first try with a matcher running end to end. The clone was
+1,578 commits stale; fast-forwarded to a440aa69 with the lanes/ files
+byte-verified and the two gitignored rulings files restored. Memory
+copied by Frank after the wake found it empty.
+
+[MACPORT] (sonnet, one lane, ~2.5 h): the port merged as 0346e344 —
+watchdog/safekill darwin arms, four tests/lib shims (assoc/loadavg/
+ncpu/cc_resolve wired into 44 CC sites), wait -n FIFO throttle at 5
+sites, tests/resource darwin skip, and FOUR real latent bugs found only
+under genuine bash 3.2 (the sharpest: IFS=$'\x01' does not split fields
+on 3.2, which had 67 of axes_registry_check's 96 checks silently
+no-op'ing; and safekill's ps-fork TOCTOU — bash's own fork-to-exec
+window makes the ps child momentarily indistinguishable from safekill
+itself, fixed by descendant exclusion). Validated on BOTH platforms at
+landing: scripts tests 16/16 + 13/13 on the Mac AND on ubuntubudu (the
+Linux arm run in a throwaway in-repo worktree, the bench's checkout
+untouched). The manager finished the lane's shebang sweep (six
+#!/bin/bash → env bash, 1f4b5d49). Process notes: the lane never
+consumed rulings R3/R4 mid-flight (its report shipped a solved mystery
+as an escalation — the poll-gap lesson recurs); its leaked CPU-burner
+test fixtures were its OWN kill-hygiene, self-diagnosed.
+
+PC-3's 119 reds on this box are UPSTREAM DRIFT, not a regression:
+manager probe against the old box's 10.46 — (?a:a), (?r), (?aU)a,
+(?aD:x) all ACCEPTED there, all REJECTED err 111 by Homebrew's 10.48.
+Filed as U13; the reference oracle stays 10.46; PC-3 red on 10.48
+boxes is expected and citable.
+
+THE MEASURED FACTOR (Frank's ask, serial test-corpus): 27,045/0 GREEN
+— and all 2,962 size-log rows byte-identical to the old box's log, the
+emitter proven host-independent for free — at 1,717.5 s wall vs the
+old box's 64.1 s: macOS's ~10x process-spawn cost across ~100k
+per-case execs, not compute (the worst gcc cell needs 1.4 s CPU
+against its 8.0 s Ryzen pin). Chartered from it: [TT-14] exec-batching
+(demoted to inner-loop QoL), [TT-15] the ephemeral cloud battery
+(PARKED for Frank's travel). The interim ruling: full suites return to
+ubuntubudu over ssh by SLOT REQUEST (I-48; Frank's scope rule — stay
+inside /home/duxevents/{pcrec,pcrec-bench} there).
+
+THE CHANNEL, rebuilt in three rounds with pcrecdev2 (live via Remote
+Control now; the old UDS is gone): I-45 (files stay canonical on their
+box; ssh transport) → I-46 (the new GitHub remote joins; they push
+after every channel commit, we read by pulling the Mac's clone) → I-47
+(Frank rules [B37]: run as proposed; the box is theirs, continuous
+benches allowed) → I-48 (tests return by slot request — inverted
+handshake). Their acks: BD8 + two amendments. Provisional battery slot
+2026-09-05 13:00-17:00 EDT, firm grant in O-16. A STALE pcrecdev1
+session on the old box pushed two journal addenda mid-evening (4d7bacf6
+— it marked itself superseded; merged in) and should be closed.
+
+Frank's rulings this session: port the infra (not interim/VM); keep
+the [OPT-DIAL] defaults ("the dial is a theoretical at this point");
+[B37] as proposed; bash 5.3 installed deliberately; light local
+testing only, never the whole suite; M1 + the M5.0 UTF-8 design gate
+chartered ("agree with your lane plan. will be interesting to see
+utf"). LAUNCHED at ~21:2x: m1part (sonnet — the [NF25] partition-rule
+instrument over the lim2 census population, the monotonicity question
+N2 needs) and utf8design (opus — the eight-question design gate,
+probes against 10.46 over ssh per U13). Statusline ported to 3.2 as a
+side task (two mapfile sites). Mac-side post-merge validation running
+(scripts green; identity gate + registry in flight) as this entry
+closes.
