@@ -761,8 +761,12 @@ UTF-8 backend supplies a boundary-aware body for this same entry under
 this same signature, and no caller's find-all loop changes a character —
 which is the entire point of the residual seam. What a consumer must NOT
 do is inline the `+ 1` back: that is the one edit that would make a
-byte-compiled caller wrong against a UTF-8-compiled artifact. (The
-caveat's other half — "the ASCII encoding, `PCREC_ENC_ASCII`" — is also
+byte-compiled caller wrong against a UTF-8-compiled artifact. **[M5.0]
+stage 2 landed that UTF-8 body** — `$_next_pos` under `utf8` skips forward
+over continuation bytes to the next character boundary — so the seam's
+prediction is now a shipped fact rather than a plan, and the loop above
+compiles unchanged against a `-e utf8` artifact. (The caveat's other half —
+"the ASCII encoding, `PCREC_ENC_ASCII`" — is also
 gone by rename: the constant is `PCREC_ENC_BYTE` and the CLI value is
 `byte`, since the semantics were always "every byte is a character",
 which is not what ASCII says. §8.2 records the rename.)
@@ -3012,13 +3016,16 @@ cannot behave like a program:
 
 ### 8.2 The option and error structures
 
-**`byte` is the only encoding pcrec implements today.** `utf8` is a
-recognised NAME with no backend — refused until milestone M5 — stated
-here first because the fact otherwise sits three paragraphs down, behind
-the field table below: this is `lib/pcrec.h`'s own enum comment
-("not yet implemented (arrives with milestone M5)") and `cli/main.c
---help`'s own wording ("utf8 ... is refused until milestone M5") said
-once, up front, rather than left for a reader to find in either.
+**Two encodings compile: `byte` (the default) and `utf8`** ([M5.0]
+stage 2), stated here first because the fact otherwise sits three
+paragraphs down, behind the field table below. Under `utf8` a character
+is one to four bytes and `.`/a class match a whole character; an
+ill-formed byte sequence in the SUBJECT matches nothing (no validation
+pass, no error return), and a `startpos` passed to `<prefix>_search` must
+be a character boundary of the encoding — `<prefix>_next_pos` (§3.1.1) is
+the supported way to produce one, and the find-all loop of §3.1 already
+uses it. The full semantic contract is `docs/design/utf8_design.md` §2.6
+/ §2.6.1.
 
 ```c
 typedef struct {
@@ -3046,13 +3053,15 @@ construction — each artifact is self-contained, carries its own prefix, and
 embeds exactly one encoding's residual block (§3.1.1). The CLI spells it
 `-e NAME` or `--encoding=NAME`.
 
-`PCREC_ENC_BYTE` (0, the default) is the only encoding implemented; the
-value is what `rx_info.encoding` reports (§6). `PCREC_ENC_UTF8` (1) is a
-recognised NAME with no backend: `pcrec_compile()` refuses it with
-`err.msg == "encoding 'utf8' arrives with milestone M5 (an engine axis, not
-a module: no --features name enables it)"`, and any other value is refused
-with `"unknown encoding (want byte, utf8)"`. Both refusals are ordinary
-`-1`-with-diagnostic returns and write no C.
+`PCREC_ENC_BYTE` (0, the default) and `PCREC_ENC_UTF8` (1) both compile;
+the value is what `rx_info.encoding` reports (§6). Any other value is
+refused with `"unknown encoding (want byte, utf8)"`, an ordinary
+`-1`-with-diagnostic return that writes no C. (Through [M5.0] stage 1
+`PCREC_ENC_UTF8` was a recognised NAME with no backend and refused by name;
+stage 2 landed the backend.) A code point above `0xFF` written as `\x{…}`
+is a compile error under `byte` and compiles under `utf8` — the one place
+the encoding reaches the parser (a range check on a written value,
+`docs/design/utf8_design.md` §2.7.3).
 
 **`PCREC_ENC_BYTE` was spelled `PCREC_ENC_ASCII` before [M5-SEAM]**, and
 `-e ascii` was the CLI value. It is a RENAME, not an alias — `-e ascii` is

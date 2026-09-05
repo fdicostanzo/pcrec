@@ -61,21 +61,37 @@ leading digit rejected, empty rejected). Default: `rx`.
 
 ### `-e ENCODING`, `--encoding=ENCODING` — subject encoding
 
-**Byte-only today.** The only encoding that compiles is `byte` (the
-default); `utf8` is a real, registered name that is refused by name with
-the milestone that delivers it, not by an unknown-name error
-(`cli/main.c:113-124`, resolved through the encoding registry at
-`src/gen/enc/enc.h` rather than hand-mapped in the CLI — see
-`cli/CLAUDE.md`'s `[M5-SEAM]` note for why that used to be two hand-written
-tables that could drift). Verified live: `--encoding=ascii` is an unknown
-encoding (D58 renamed it `byte`, one spelling, one namespace member) and
-`--encoding=utf8`/`-e utf8` both refuse naming milestone M5, never writing
-any C (`tests/cli/run_cli_tests.sh` case13). The encoding is a **per-compile
-scalar** (D58 ruling 2) — two patterns in one binary may use different
-encodings, since there is no process-global to set; `docs/spec/match_api.md`
-§8.2 states the library-level rule this flag is the CLI spelling of.
-`-e byte` and the bare default are BYTE-IDENTICAL artifacts (case13), not
-merely equivalent-behaving ones — the default IS the explicit request.
+**Two encodings compile: `byte` (the default) and `utf8`** ([M5.0] stage 2).
+An unknown value is refused with the registry's rendered menu
+(`--encoding=ascii` is unknown — D58 renamed it `byte`, one spelling, one
+namespace member); a real name with no backend would refuse by its own name,
+which is what `utf8` did through stage 1 and no longer does. Both are resolved
+through the encoding registry (`src/gen/enc/enc.h`) rather than hand-mapped in
+the CLI — see `cli/CLAUDE.md`'s `[M5-SEAM]` note for why that used to be two
+hand-written tables that could drift.
+
+**Under `-e utf8`** the pattern's subjects are matched as UTF-8 text: a
+character is one to four bytes, `.` and a class match a whole character, `\x{…}`
+accepts code points above `0xFF`, and an ill-formed byte sequence in the
+subject **matches nothing** — there is no validation pass and no error return
+(the byte-wise UTF-8 automaton simply has no path through malformed input;
+`docs/design/utf8_design.md` §2.6, ruled 2026-09-04). One consequence a caller
+must observe: **`startpos` passed to `<prefix>_search` must be a character
+boundary of the encoding.** A non-boundary start gets a defined but
+PCRE2-divergent answer; `<prefix>_next_pos` is the supported way to produce a
+valid `startpos`, and the find-all loop of `docs/spec/match_api.md` §3.1
+already uses it.
+
+**Under `-e byte`** a code point above `0xFF` written as `\x{…}` is a compile
+error (as PCRE2's `options=0` gives error 134); a NEGATED class or `.`
+complements within `[0, 0xFF]`, unchanged from before this milestone.
+
+The encoding is a **per-compile scalar** (D58 ruling 2) — two patterns in one
+binary may use different encodings, since there is no process-global to set;
+`docs/spec/match_api.md` §8.2 states the library-level rule this flag is the
+CLI spelling of. `-e byte` and the bare default are BYTE-IDENTICAL artifacts
+(`tests/cli/run_cli_tests.sh` case13), not merely equivalent-behaving ones —
+the default IS the explicit request.
 
 ### `-i` — ASCII case-insensitivity
 

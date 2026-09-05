@@ -141,16 +141,32 @@ construction (src/ir) and emission (src/gen).
   the one pass in this compiler that knows how an encoding spells a character.
   (`docs/design/utf8_design.md` §2.1, §2.1.2, §2.3.)
 
-  **STAGE 1 SHIPS THE BYTE INSTANCE, WHICH IS A CHECK AND NOT A PLACEHOLDER.**
-  Under `--encoding=byte` a code point IS a byte, so an interval list already
-  inside `[0, 0xFF]` is the confined form and the rewrite is the identity —
-  what the pass does is enforce §2.1's rule that anything above the backend's
-  `max_cp` is a compile error. That arm is UNREACHABLE in stage 1 by
-  construction (the parser range-checks `\x{...}` on its literal input, and a
-  complement cannot exceed `max_cp`), which makes it the assertion that those
-  two facts stay true. Stage 2 replaces the check on the `utf8` side with
-  §2.3's byte-sequence decomposition, at the same line, under the same
-  signature.
+  **[M5.0] STAGE 2 LANDED THE UTF8 INSTANCE.** The file is now a `LowerOps`
+  TABLE — one row per encoding, selected once by id, no `if (enc == UTF8)`
+  anywhere (DD-12 (7) in the pass, mirroring the emitter's sealed backends).
+  A row carries `lower_class` (byte: the identity + §2.1's confinement check;
+  utf8: §2.3's range-to-byte-sequence decomposition, an `A_ALT` of `A_CAT`s of
+  byte-range classes, surrogate range absent), `identity_max` (the bound below
+  which the rewrite is the identity — 0xFF byte, 0x7F utf8), and `pat_char`
+  (the parser's literal reader, exported as `pcrec_pat_char` — a byte under
+  `byte`, a full UTF-8 decode that `ctx_fail`s on ill-formed pattern text under
+  `utf8`, §2.7). Under `byte` the utf8 row is never selected and every artifact
+  is byte-identical, which is why the identity gate stays 100%.
+
+  **THE `u.rep.revbody` GAP STAGE 1 MEASURED IS RESOLVED HERE (stage-2
+  finding, report §4).** `revdet.c` builds a reversed COPY of a quantifier body
+  BEFORE this pass; reversal and lowering do not commute (a two-byte char
+  reversed at the byte level is `B1 CE`, but revbody is reversed at the
+  code-point level), so lowering the reversed copy would emit the wrong byte
+  order. The `A_REP` arm therefore CLEARS `revbody` (drops the
+  reverse-deterministic rung to a correct fallback) for any body the lowering
+  WOULD CHANGE — `subtree_is_identity` decides, keyed on `identity_max`. Under
+  `byte` no body is ever above `identity_max`, so the clear is unreachable and
+  the identity gate holds; under `utf8` the 413 corpus revdet classes are ASCII
+  (below `identity_max`), so their reverse machines are kept and consistent by
+  IDENTITY with their forward twins — which §8.5's differential exercises at 0
+  divergences. Only a genuinely non-ASCII revdet body drops the rung, trading
+  throughput for correctness (§2.5.1's decline discipline).
 
   **ITS POSITION IN `compile.c` IS A REVIEWABLE FACT, NOT AN IMPLEMENTATION
   DETAIL** (§13 obligation 4). The file's header derives it from three ordering
@@ -162,17 +178,21 @@ construction (src/ir) and emission (src/gen).
   (which asks lookbehind widths in CHARACTERS, and after lowering a two-byte
   character is an `A_CAT` of two byte classes).
 
-  **THE THIRD CONSTRAINT IS OPEN AND THE LANE ESCALATED IT RATHER THAN TAKING
-  IT.** §2.1.2 says the lowering "cannot run before :961" (`pcrec_callgraph_
-  build`) because a pass that REBUILDS nodes makes `u.call.body` stale. The
-  reasoning is right and the conclusion inverts it: a rebuilding pass must run
-  BEFORE the graph binds, exactly as `altcls` and `discharge_atomic` do.
-  MEASURED with a scratch rebuilding lowering — at the design's position it
-  moves **45 of `tests/recursion`'s 179** artifacts (the call site's
-  activation-private `W` save/restore block comes out EMPTY), and above :961
-  it moves **none**. Stage 1 is unaffected because its byte instance rebuilds
-  nothing; stage 2 is not, and the position needs a ruling before that wave
-  opens. See `docs/dev/lanes/utf8s1_report.md`, wave-task (a).
+  **THE THIRD CONSTRAINT WAS RESOLVED AS A PROPERTY, NOT A POSITION (stage-1
+  ruling R2).** §2.1.2's original text said the lowering "cannot run before
+  :961" (`pcrec_callgraph_build`) because a pass that REBUILDS nodes makes
+  `u.call.body` stale — right rule, inverted conclusion (a rebuilding pass would
+  have to run ABOVE the graph, colliding with the postresolve constraint and
+  leaving no legal slot). MEASURED with a scratch rebuilding lowering: at
+  `:1000` it moved 45 of `tests/recursion`'s 179 artifacts (empty `W`
+  save/restore), above :961 none. R2's cure is the pass's SHAPE:
+  `pcrec_lower_enc` SPLICES IN PLACE (mutates the parent's child pointer,
+  never reallocates a node that is or contains a group root), so `:1000`
+  stands and the staleness is inexpressible. Stage 2 built it that way and
+  added the owed group-root-ADDRESS check: `cap_sig` snapshots the count and a
+  mixed hash of every `A_CAP` address before and after the pass and `ctx_fail`s
+  if either moved — the invariant as a diagnosed fact rather than a shape a
+  reviewer reads.
 
   **THE WALK IS ITERATIVE ON `A_CAT`/`A_ALT` SPINES** (D10/DD-10/K20) and does
   NOT follow `u.call.body` — `postresolve.c`'s walk header carries both
@@ -821,6 +841,21 @@ construction (src/ir) and emission (src/gen).
 
 - **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half, and
   since [M6.6.2] wave A the WIDTH analysis in both directions
+
+  **[M5.0] STAGE 2 RE-AIMED THE MAX-WIDTH CHAIN INTO CHARACTERS, so this file
+  now holds THREE functions in TWO units.** `pcrec_minw` is unchanged (BYTES,
+  the MRL prune, EXACT per byte-class on the LOWERED tree). `pcrec_maxw`
+  RETIRED — a grep found its only transitive consumer was the lookbehind
+  width rule, which always wanted the unit 10.46 measures lookbehind length in
+  (CHARACTERS) — and became `pcrec_cwmax`, its `A_CLASS` arm answering exactly
+  1 in every encoding (a class is one character by definition); `pcrec_cwmin`
+  is its new partner. `u.call.maxw`/`maxw_known` are `cwmax`/`cwmax_known`, and
+  `callgraph.c` runs a third fixpoint (`cwmin`) beside them. Under `byte` the
+  two units coincide, so every published value and every lookbehind verdict is
+  what the byte pair gave — the identity gate is the proof. The paragraphs
+  below are the wave-A/DD-14.LB history read in BYTES; the mechanism is
+  identical one unit over, and "the one thing a utf8 backend must revisit"
+  below IS this change. `tests/mrl/cwmax_check.c` is the re-aimed census.
 
   **[M6.6.2 wave A] `pcrec_maxw` JOINED `pcrec_minw` IN THIS FILE, AND ITS
   SOUND DIRECTION IS THE OPPOSITE ONE.** Everything below about

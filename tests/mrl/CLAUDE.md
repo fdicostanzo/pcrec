@@ -22,16 +22,17 @@ and `tests/counterk/` inherited:
 
 **A FOURTH ARRIVED WITH [M6.6.2] wave A** and it does not fit the shape above,
 which is why it is called out rather than folded into the list:
-`maxw_check.c` (run as `run_mrl_tests.sh` §8) reads a number the compiler
-NEVER EMITS. `src/opt/mrl.c` gained `pcrec_maxw` — `pcrec_minw`'s twin with the
+`cwmax_check.c` (run as `run_mrl_tests.sh` §8; born `maxw_check.c`) reads a
+number the compiler NEVER EMITS. `src/opt/mrl.c` has `pcrec_cwmax` (born
+`pcrec_maxw`, re-aimed into CHARACTERS at [M5.0] stage 2) — `pcrec_minw`'s twin with the
 opposite sound direction — whose only consumer is the lookaround module's
 fixed-width rule. When this paragraph was written that rule DID NOT EXIST, so
 none of the three instruments above could be red because of it: no bound to
 emit, no differential arm to disagree, no `.rxt` cell whose answer depended on
 it. **[M6.6] LANDED THE CONSUMER AND THAT HALF EXPIRED** (verified at the
 [DD-14] close, 2026-08-25: `src/parse/mod_lookaround.c:298/309` calls
-`pcrec_maxw` beside `pcrec_minw` to decide FIXED; `src/opt/callgraph.c:722`
-carries the call-aware fixpoint) — a wrong `maxw` is now an answer-level
+`pcrec_cwmax`/`pcrec_cwmin` to decide FIXED; `src/opt/callgraph.c`
+carries their call-aware fixpoints) — a wrong `cwmax` is now an answer-level
 defect, a lookbehind wrongly accepted or wrongly refused. What did NOT expire
 is the reason the check exists: it reads the number DIRECTLY, so it goes red
 for causes no answer-comparison reaches — an over-estimate that is still SOUND
@@ -125,18 +126,24 @@ above, and found nothing.
   `../possessify/possdiff_driver.c` (as the rung-select and counter-K suites
   do) because the claim is identical for every member of D47.3's deny family.
 - `run_mrl_tests.sh` — the structural checks and acceptance cells.
-- `maxw_check.c` — [M6.6.2 wave A] `pcrec_maxw` against the whole `.rxt`
-  corpus, from BOTH SIDES, because either inequality alone is passed by a
-  degenerate implementation: `maxw >= minw` at every NODE (passed by
+- `cwmax_check.c` — [M6.6.2 wave A; RE-AIMED at [M5.0] stage 2] the CHARACTER
+  width pair `pcrec_cwmin`/`pcrec_cwmax` against the whole `.rxt` corpus. Born
+  `maxw_check.c` sweeping the BYTE pair; when stage 2 re-aimed the maxw chain
+  into characters (`pcrec_maxw` retired, `pcrec_cwmax` and its `cwmin` partner
+  are the lookbehind width rule's consumers), this instrument moved with its
+  subject, unchanged in spirit — this file parses under `byte`, where one
+  character is one byte, so every number below is what the byte sweep measured.
+  Checks from BOTH SIDES, because either inequality alone is passed by a
+  degenerate implementation: `cwmax >= cwmin` at every NODE (passed by
   `return PCREC_W_UNBOUNDED;`) AND every oracle-verified span in the corpus
-  within the root's `maxw` (passed by `return 0;`). The second is the only
-  constraint on maxw in this tree that does not come from pcrec — the spans
+  within the root's `cwmax` (passed by `return 0;`). The second is the only
+  constraint on cwmax in this tree that does not come from pcrec — the spans
   are python-`re`- and libpcre2-verified — and it is the direction that
-  miscompiles, since an under-estimated maxw makes a variable-width
-  lookbehind branch look fixed. `PCREC_MAXW_SABOTAGE={zero,unbounded,swap}`
+  miscompiles, since an under-estimated cwmax makes a variable-width
+  lookbehind branch look fixed. `PCREC_CWMAX_SABOTAGE={zero,unbounded,swap}`
   corrupts what the check reads — `zero` and `unbounded` are the two
   degenerate implementations that pass one inequality each, `swap` returns
-  `minw` — and `run_mrl_tests.sh` §8 requires all three to make it FAIL, on
+  `cwmin` — and `run_mrl_tests.sh` §8 requires all three to make it FAIL, on
   `tests/parse/branch_count_check.c`'s rule that an unsabotaged green check is
   worth nothing. Measured at wave A: 122 files, 2168 blocks,
   1914 patterns parsed, 254 refused, 12,637 nodes swept (9,583 with a bounded

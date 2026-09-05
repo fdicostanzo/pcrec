@@ -55,6 +55,23 @@ describes it and this field is the contiguous-repertoire special case of "what
 set does a complement complement within". Recorded with its trigger under D77,
 not built for.
 
+**[M5.0] STAGE 2: `enc_utf8.c` LANDED — THE SEAM'S SECOND BACKEND, AND THE
+THIRD-ENCODING RECIPE'S FIRST EXECUTION.** One new file in this directory, one
+`extern` in `enc.h`, one row swap in `enc.c` (the pending `entries == NULL`
+row became `&pcrec_enc_backend_utf8`); NOTHING in `src/core`, `src/gen` outside
+this directory, `cli/` or `lib/` was touched to make `-e utf8` compile — which
+is the recipe below working as ruled. The entries table's INTERFACE is
+unchanged (D58's revisit clause honoured by having nothing to record there):
+the four residual entries carry UTF-8 bodies under their existing signatures,
+no `PcrecEncEntry` field was added, `pcrec_enc_ready` is untouched, both emit
+functions are untouched. `back_step` carries §5.2.1's declared-length repair
+(the line that makes a malformed run answer `BACK_STEP_NONE` rather than a
+position the forward parse disagrees with); the two `bref` compares are the
+byte backend's bodies verbatim (`utf8-exact`, UTF-8 being a prefix code) plus
+an ASCII-only fold (the non-ASCII closure is stage 4's). `tests/codegen/
+run_encoding_checks.sh`'s DD12a(ii) is the second-backend validation that the
+signatures match across both backends.
+
 - **enc.h** — the seam's whole interface: the `PcrecEnc` row (id, the ONE
   spelling of the encoding's name, and a NULL-terminated table of
   `PcrecEncEntry` rows), the entry ids that are also the bits of a
@@ -118,8 +135,19 @@ not built for.
   motivating instance was compile.c's diagnostic and cli/main.c's name
   mapping drifting apart, and neither of those sites maps an encoding name
   of its own any more.
-- **enc_byte.c** — the `PCREC_ENC_BYTE` backend, and the only one built.
-  One byte is one character, so every residual entry is the identity shape or
+- **enc_utf8.c** — the `PCREC_ENC_UTF8` backend ([M5.0] stage 2). Four
+  residual bodies where a character is one to four bytes: `next_pos` skips
+  forward over continuation bytes; `back_step` walks back one
+  DECLARED-LENGTH-validated run per step (§5.2.1's repair — a malformed run
+  answers `BACK_STEP_NONE`); the case-sensitive `bref_match` is `enc_byte.c`'s
+  body verbatim (UTF-8 is a prefix code, so an exact compare is a byte
+  compare); the caseless one folds the 52 ASCII letters and nothing else (the
+  non-ASCII simple-fold closure is stage 4's, and the LENGTH-return protocol is
+  what will let that land without the shared emitter changing). Text, not
+  emitter code, ASCII-only, `$` the one substituted character — `enc_byte.c`'s
+  rules.
+- **enc_byte.c** — the `PCREC_ENC_BYTE` backend. One byte is one character, so
+  every residual entry is the identity shape or
   close to it. FOUR entries today, each with its contract comment emitted
   into the artifact alongside its declaration — the contract lives with the
   backend so a future backend cannot land a residual declaration nobody wrote

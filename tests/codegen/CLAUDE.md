@@ -2553,3 +2553,41 @@ Failing directions measured at the landing: 11 of 13 rows red against a build
 with the entry dispatch reverted, and 11 of 13 red against the STEP 1
 compiler.
 
+
+## [M5.0] stage 2's structural + differential acceptance: `run_encoding_checks.sh`
+
+The encoding BACKEND's acceptance, the half the `.rxt` corpus and the identity
+gate cannot make (`docs/design/utf8_design.md` §8.5, §8.1.1 check 3, §9.2's
+DD-12(7)(a) pair). `make test-encoding-checks`, OPT-IN for
+`test-encoding-identity`'s reason and one more: its §8.5 differential compiles
+and RUNS two artifacts per ASCII corpus block (~6,600 compiles at
+`ENC_MAX_BLOCKS=0`, the whole corpus, which rides a Linux slot), and
+`ENC_MAX_BLOCKS` bounds it for a light local run. Four sections:
+
+- **§8.5 THE ASCII-CORPUS ENCODING DIFFERENTIAL.** Every ASCII-only corpus
+  pattern is compiled under BOTH encodings and run on its subjects; the two
+  artifacts must agree. With §8.1's identity gate (the `byte` artifact did not
+  move) this is TRANSITIVE to the pre-M5 compiler over the whole ASCII corpus.
+  The oracle is the OTHER ENCODING, not pcrec reading its own analysis. Its
+  positive control is the exclusion COUNT read from the harness's own DECODE —
+  a nonzero subject-exclusion count, which a text scan (reading a `\xNN`
+  subject escape as ASCII) would read as 0 (§8.5's own method-note trap).
+- **CHK3 THE STAMP CENSUS + DD12a(i) HOT-LOOP SHAPE IDENTITY.** On an ASCII
+  pattern the utf8 stamps EQUAL the byte ones and the engine BODY is
+  byte-identical (compared as `.text`+`.rodata` object bytes, comment- and
+  prefix-immune — `run_object_neutrality.sh`'s instrument), because the
+  lowering is the identity below 0x7F. This is the only instrument that would
+  see §2.4.1's premultiplied decline / §6.2.1's engine change / §6.4's island
+  claim, none of which changes an answer.
+- **DD12a(ii) THE SECOND-BACKEND VALIDATION of D58's revisit-when names.** The
+  seam's four residual entries appear in a utf8 artifact under the SAME
+  signatures the byte backend emits — the property [M6.6.2] wave D
+  demonstrated for `back_step` alone (P-1), now for a whole second backend.
+- **S-U8 THE CLAMP-STRIDE PROBE.** `(a)(?:\x{3b1}){0,3}x` under utf8 emits
+  `RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)` — the stride 2 IS α's encoded
+  length, the one readable witness that the MRL prune counts ENCODED bytes.
+
+The group-root-ADDRESS check (R2's owed stage-2 check) is NOT here — it is in
+the COMPILER (`src/opt/lower_enc.c`'s `cap_sig`), asserting on every compile
+that no `A_CAP`'s address moves across the lowering, which is stronger than a
+corpus sweep of it.
