@@ -526,7 +526,42 @@ enum {
      *
      * What the emitter DID is reported by `<PREFIX>_VM_ALT_ISLANDS`, an
      * activity COUNT (docs/spec/match_api.md §6.3 family (b)). */
-    PCREC_NO_ALT_ISLAND = 1u << 23
+    PCREC_NO_ALT_ISLAND = 1u << 23,
+
+    /* [FORM-CHAR] STEP 1 `-fno-cls-fold` — deny the VM's ASCII-FOLD class
+     * test (docs/dev/form_char_step0.md family A; docs/spec/tuning.md
+     * §2.22). A VM-route axis: which SHAPE `src/gen/emit_vm.c`'s
+     * `vm_cls_shape` gives a two-member class's membership test.
+     *
+     * WHAT IT DENIES. D23 folds a caseless letter to a two-member CLASS at
+     * parse time (`(?i)a` becomes {'A','a'}), so every VM test site for such
+     * a position used to read a 32-byte bitmap. The FOLD shape recognizes
+     * exactly an ASCII fold pair — two members differing only in bit 0x20,
+     * both letters — and emits `(byte | 0x20) == lower` instead: gcc -O2
+     * compiles that to one mask + one compare with NO LOAD (the same code it
+     * emits for the two-compare OR spelling), the per-site bitmap table
+     * disappears, and a caseless literal chain keeps its chain shape at
+     * measurably smaller .text and zero table .rodata (form_char_step0.md
+     * §2: -38% .text on the six-site witness, family A's speed question
+     * CLOSED by compiler evidence, not by a stopwatch).
+     *
+     * ANSWER-IDENTITY-preserving by construction: `(b | 0x20) == (lo|0x20)`
+     * holds for exactly the two bytes {lo, lo|0x20} — the set's own two
+     * members — so the fold test and the bitmap read are the same predicate.
+     *
+     * DENY-ONLY, `-fno-alt-island`'s shape: the emitter takes the fold
+     * wherever the class IS a fold pair, so there is nothing for a caller to
+     * ADDRESS and nothing to force. A class the shape declines (any
+     * non-fold-pair set) keeps its singleton/range/bitmap form unchanged —
+     * a selection outcome, never a refusal.
+     *
+     * It joins `emit_info_def`'s `strategy_denials` mask for that mask's own
+     * reason: the axis changes no answer, so an artifact with no fold pair
+     * is byte-for-byte the same under the flag, which is what makes the
+     * denied population a usable reference. What the emitter DID is reported
+     * by `<PREFIX>_VM_CLS_FOLDS`, an activity COUNT (docs/spec/match_api.md
+     * §6.3 family (b)). */
+    PCREC_NO_CLS_FOLD = 1u << 24
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

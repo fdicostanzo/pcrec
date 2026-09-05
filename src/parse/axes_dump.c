@@ -532,6 +532,16 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, "", 0, "", "", "always (fallback) — vm_alt's serial resume chain, one frame per untried branch");
     }
+    /* [FORM-CHAR] cls-fold — §2.22. RX_VM_CLS_FOLDS is an ACTIVITY COUNT,
+     * stamp_value left empty on both rows for alt-island's reason above. */
+    {
+        PredAxis p = { "cls-fold", NULL, "RX_VM_CLS_FOLDS", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "fold", "",
+                     V(PCREC_NO_CLS_FOLD), 0, "", "-fno-cls-fold",
+                     "per VM pool class: the set is exactly an ASCII fold pair (two members differing only in bit 0x20, both letters — what D23's parse-time caseless folding produces), so the test is one or-mask-and-compare and the 32-byte bitmap is not emitted");
+        emit_pred_row(sb, &p, 2, "denied", "",
+                     0, "", 0, "", "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
+    }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE
      * is the observable consequence when it changes which engine a pattern
