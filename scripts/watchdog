@@ -187,7 +187,14 @@ if [ -n "$mem_spec" ]; then
     if [[ "$mem_spec" =~ ^([0-9]+)([kKmMgG]?)[bB]?$ ]]; then
         num="${BASH_REMATCH[1]}"
         unit="${BASH_REMATCH[2]}"
-        case "${unit,,}" in
+        # Portable lowercase: `${unit,,}` (bash 4+ case-conversion) is a
+        # PARSE ERROR on bash 3.2, this box's own /bin/bash and the only
+        # bash installed here — verified live, not assumed. `tr` gives the
+        # identical one-byte lowercase on every bash this project targets,
+        # Linux included, so this is a straight portability fix rather
+        # than a platform branch.
+        unit_lc="$(printf '%s' "$unit" | tr '[:upper:]' '[:lower:]')"
+        case "$unit_lc" in
             k) mem_limit_kb=$(( num )) ;;
             m) mem_limit_kb=$(( num * 1024 )) ;;
             g) mem_limit_kb=$(( num * 1024 * 1024 )) ;;
@@ -198,10 +205,43 @@ if [ -n "$mem_spec" ]; then
     fi
 fi
 
-if ! command -v setsid >/dev/null 2>&1; then
-    printf '%s: setsid not found (util-linux required)\n' "$prog" >&2
+# ---- portability probes (resolved ONCE; every branch below reads these
+# rather than re-testing) --------------------------------------------------
+#
+# _WD_HAVE_PROC: Linux's /proc is the fast, already-proven path (collect_stats
+# /proc_running below); this project's other supported box (macOS/arm64) has
+# none, so those two functions gain a `ps`-based twin instead of requiring it.
+if [ -d /proc ] && [ -r /proc/self/stat ]; then
+    _WD_HAVE_PROC=1
+else
+    _WD_HAVE_PROC=0
+fi
+
+# _WD_HAVE_SETSID: util-linux's setsid(1) is what gives the child its own
+# session (pid == sid == pgid, load-bearing for the whole-tree TERM/KILL
+# below) — absent on macOS, which ships no util-linux at all. _wd_setsid
+# below falls back to a one-line perl wrapper around the SAME setsid(2)
+# syscall (POSIX::setsid, present in every macOS system perl) rather than a
+# job-control approximation (`set -m` + backgrounding): perl's setsid()-then-
+# exec-in-place reproduces "pid == sid == pgid" exactly, so `pgid="$child_pid"`
+# below stays true on both platforms with no ps-query-for-pgid fallback
+# needed — verified live on this box (a perl-launched child reparents to
+# pid 1 with pgid == its own pid, the same signature setsid(1) gives on
+# Linux).
+_WD_HAVE_SETSID=0
+command -v setsid >/dev/null 2>&1 && _WD_HAVE_SETSID=1
+if [ "$_WD_HAVE_SETSID" -eq 0 ] && ! command -v perl >/dev/null 2>&1; then
+    printf '%s: neither setsid nor perl found (need one to give the child its own session)\n' "$prog" >&2
     exit 125
 fi
+
+_wd_setsid() {
+    if [ "$_WD_HAVE_SETSID" -eq 1 ]; then
+        exec setsid "$@"
+    else
+        exec perl -e 'use POSIX qw(setsid); setsid(); exec { $ARGV[0] } @ARGV or exit 127;' -- "$@"
+    fi
+}
 
 mkdir -p "$(dirname -- "$logfile")" 2>/dev/null || {
     printf '%s: cannot create log directory for %s\n' "$prog" "$logfile" >&2
@@ -220,46 +260,89 @@ clk_tck="$(getconf CLK_TCK 2>/dev/null || echo 100)"
 # proc_running PID: true if PID exists and is not a zombie (i.e. still
 # actually running, not merely un-reaped).
 proc_running() {
-    local pid="$1" line="" state
-    { read -r line < "/proc/$pid/stat"; } 2>/dev/null
-    [ -n "$line" ] || return 1
-    line="${line##*) }"
-    state="${line%% *}"
-    [ "$state" != "Z" ]
+    if [ "$_WD_HAVE_PROC" -eq 1 ]; then
+        local pid="$1" line="" state
+        { read -r line < "/proc/$pid/stat"; } 2>/dev/null
+        [ -n "$line" ] || return 1
+        line="${line##*) }"
+        state="${line%% *}"
+        [ "$state" != "Z" ]
+    else
+        # darwin: no /proc. `ps -o stat=` is the same "does it exist, is
+        # it a zombie" question BSD ps answers directly — first character
+        # 'Z' is zombie in ps(1)'s STAT column on every BSD derivative,
+        # macOS included (verified live on this box).
+        local pid="$1" stat
+        stat="$(ps -o stat= -p "$pid" 2>/dev/null)"
+        [ -n "$stat" ] || return 1
+        case "$stat" in
+            Z*) return 1 ;;
+            *)  return 0 ;;
+        esac
+    fi
 }
 
-# collect_stats PGID: prints "RSS_KB CPU_TICKS" summed over every /proc
-# entry whose pgrp (field 5 of /proc/PID/stat) equals PGID. Best-effort:
-# entries that vanish mid-scan (race with process exit) are silently
-# skipped rather than treated as an error.
+# collect_stats PGID: prints "RSS_KB CPU_TICKS" summed over every process
+# whose process group is PGID. Best-effort: entries that vanish mid-scan
+# (race with process exit) are silently skipped rather than treated as an
+# error, on both platforms.
 collect_stats() {
-    local pgid="$1" rss_kb=0 ticks=0
-    local statfile pid line rest state ppid pgrp session tty tpgid flags \
-          minflt cminflt majflt cmajflt utime stime
-    for statfile in /proc/[0-9]*/stat; do
-        line=""
-        { read -r line < "$statfile"; } 2>/dev/null
-        [ -n "$line" ] || continue
-        rest="${line##*) }"
-        read -r state ppid pgrp session tty tpgid flags minflt cminflt \
-                majflt cmajflt utime stime _rest <<<"$rest"
-        [ "$pgrp" = "$pgid" ] || continue
-        pid="${statfile#/proc/}"
-        pid="${pid%/stat}"
-        ticks=$(( ticks + utime + stime ))
-        {
-            while IFS=: read -r key val; do
-                if [ "$key" = "VmRSS" ]; then
-                    val="${val//kB/}"
-                    val="${val// /}"
-                    val="${val//$'\t'/}"
-                    [ -n "$val" ] && rss_kb=$(( rss_kb + val ))
-                    break
-                fi
-            done < "/proc/$pid/status"
-        } 2>/dev/null
-    done
-    printf '%s %s\n' "$rss_kb" "$ticks"
+    if [ "$_WD_HAVE_PROC" -eq 1 ]; then
+        local pgid="$1" rss_kb=0 ticks=0
+        local statfile pid line rest state ppid pgrp session tty tpgid flags \
+              minflt cminflt majflt cmajflt utime stime
+        for statfile in /proc/[0-9]*/stat; do
+            line=""
+            { read -r line < "$statfile"; } 2>/dev/null
+            [ -n "$line" ] || continue
+            rest="${line##*) }"
+            read -r state ppid pgrp session tty tpgid flags minflt cminflt \
+                    majflt cmajflt utime stime _rest <<<"$rest"
+            [ "$pgrp" = "$pgid" ] || continue
+            pid="${statfile#/proc/}"
+            pid="${pid%/stat}"
+            ticks=$(( ticks + utime + stime ))
+            {
+                while IFS=: read -r key val; do
+                    if [ "$key" = "VmRSS" ]; then
+                        val="${val//kB/}"
+                        val="${val// /}"
+                        val="${val//$'\t'/}"
+                        [ -n "$val" ] && rss_kb=$(( rss_kb + val ))
+                        break
+                    fi
+                done < "/proc/$pid/status"
+            } 2>/dev/null
+        done
+        printf '%s %s\n' "$rss_kb" "$ticks"
+    else
+        # darwin: no /proc, so this is one `ps` call for the WHOLE box
+        # (never one per process — that would be the same per-call-
+        # subprocess cost tests/lib/timeout_bin.sh's own header measured
+        # and rejected for `timeout`) filtered and summed in one awk pass.
+        # `rss` is already kB in BSD ps's own units (no clock-tick/getconf
+        # dance needed there); `cputime` is `[[dd-]hh:]mm:ss[.ss]` and is
+        # parsed into seconds, then reported as TICKS at $clk_tck (== 100
+        # on this box, same as Linux's own getconf CLK_TCK default) so
+        # every caller below — which divides by $clk_tck to get seconds —
+        # reads an identical unit regardless of platform.
+        local pgid="$1"
+        ps -axo pgid=,rss=,cputime= 2>/dev/null | awk -v pg="$pgid" -v tck="$clk_tck" '
+            $1 != pg { next }
+            {
+                rss_sum += $2
+                t = $3
+                days = 0; rest = t
+                if (index(t, "-") > 0) { split(t, da, "-"); days = da[1] + 0; rest = da[2] }
+                n = split(rest, p, ":")
+                secs  = p[n] + 0
+                mins  = (n >= 2) ? p[n-1] + 0 : 0
+                hours = (n >= 3) ? p[n-2] + 0 : 0
+                cpu_sum += days*86400 + hours*3600 + mins*60 + secs
+            }
+            END { printf "%d %d\n", rss_sum + 0, (cpu_sum * tck) + 0.5 }
+        '
+    fi
 }
 
 # sq_quote STRING: single-quote-escape STRING for a one-line, shell-parseable
@@ -280,9 +363,10 @@ now_epoch() { date +%s.%N; }
 # read zero subjects from its redirected stdin and its cell count fell to 0
 # while every other number stayed plausible. Explicitly duplicating fd 0 onto
 # itself is the defined way to defeat the implicit redirect.
-setsid "$@" <&0 &
+_wd_setsid "$@" <&0 &
 child_pid=$!
-pgid="$child_pid"   # setsid() with no forced fork makes pid==sid==pgid
+pgid="$child_pid"   # setsid() with no forced fork makes pid==sid==pgid,
+                    # on both the util-linux binary and the perl fallback
 
 # The child (forked above) has already inherited the real stderr on fd 2.
 # From here on, silence the PARENT's own fd 2 and keep a saved duplicate on
@@ -377,15 +461,38 @@ exec 2>&3 3>&-   # restore real stderr; drop the saved duplicate
 end_epoch="$(now_epoch)"
 wall="$(awk -v a="$end_epoch" -v b="$start_epoch" 'BEGIN{printf "%.2f", a-b}')"
 cpu="$(awk -v t="$peak_cpu_ticks" -v c="$clk_tck" 'BEGIN{printf "%.2f", t/c}')"
-ts="$(date -Is)"
+# -Iseconds (not GNU's -Is shorthand): identical output on GNU date, and the
+# only spelling BSD/macOS date accepts — verified live on this box, both
+# spellings produce the same "YYYY-MM-DDTHH:MM:SS+HHMM"-shaped string on
+# GNU coreutils. Not a platform branch: this line is unchanged on Linux.
+ts="$(date -Iseconds)"
 cmd_str="$*"
 
 log_line="$(printf 'ts=%s section=%s label=%s verdict=%s wall=%s cpu=%s peak_rss_kb=%s exit=%s cmd=%s' \
     "$ts" "$(sq_quote "$section")" "$(sq_quote "$label")" "$verdict" "$wall" "$cpu" "$peak_rss_kb" "$exit_code" "$(sq_quote "$cmd_str")")"
 
-(
-    flock -x 200
+if command -v flock >/dev/null 2>&1; then
+    (
+        flock -x 200
+        printf '%s\n' "$log_line" >> "$logfile"
+    ) 200>>"$logfile.lock" 2>/dev/null || printf '%s\n' "$log_line" >> "$logfile"
+else
+    # No util-linux flock (macOS ships none, and this project's mandate
+    # forbids installing one via Homebrew just for this). `mkdir` is
+    # atomic on every filesystem this project runs on (APFS included) and
+    # doubles as a portable mutex; bounded spin (never a fixed sleep) so a
+    # loaded box slows this down rather than flaking it, and a lock that
+    # somehow never clears (a killed holder) cannot wedge every future
+    # watchdog invocation forever.
+    _wd_lockdir="$logfile.lockdir"
+    _wd_tries=0
+    while ! mkdir "$_wd_lockdir" 2>/dev/null; do
+        _wd_tries=$((_wd_tries + 1))
+        [ "$_wd_tries" -ge 500 ] && break   # ~5s worst case at the 0.01s poll below
+        sleep 0.01
+    done
     printf '%s\n' "$log_line" >> "$logfile"
-) 200>>"$logfile.lock" 2>/dev/null || printf '%s\n' "$log_line" >> "$logfile"
+    rmdir "$_wd_lockdir" 2>/dev/null
+fi
 
 exit "$exit_code"

@@ -78,10 +78,16 @@ if [ "$rc" -eq 7 ]; then pass "case1: exit 7 passes through"; else fail "case1: 
 log2="$SCRATCH/case2.log"
 timeout 10 "$WD" -l case2 -L "$log2" -- bash -c 'kill -USR1 $$; sleep 5'
 rc=$?
-if [ "$rc" -eq 138 ]; then
-    pass "case2: self-SIGUSR1 -> exit 138"
+# [MACPORT] SIGUSR1's NUMBER is not portable (10 on Linux, 30 on
+# BSD/macOS) — the exit code this test wants is always 128+that number,
+# never a hardcoded 138. `kill -l` (a bash builtin on both platforms)
+# answers it directly rather than this file guessing per-OS.
+sigusr1_num="$(kill -l USR1)"
+want_rc=$((128 + sigusr1_num))
+if [ "$rc" -eq "$want_rc" ]; then
+    pass "case2: self-SIGUSR1 -> exit $want_rc"
 else
-    fail "case2: self-SIGUSR1 -> got $rc, want 138"
+    fail "case2: self-SIGUSR1 -> got $rc, want $want_rc"
 fi
 
 # ---- case 3: timeout kill ---------------------------------------------------
