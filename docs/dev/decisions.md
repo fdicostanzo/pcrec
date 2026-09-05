@@ -6666,3 +6666,34 @@ consumers who want one. [PFX-1] STEP 0 therefore measures the SMALLER
 change: version the guard, pin the block, classify the remaining prefixed
 identifiers (internal statics/labels/macros in the .c) for the fixed
 spelling.
+
+## D58 ADDENDUM (2026-09-04, [M5.0] design merge — the seam narrows twice, ASK 7's ruled filing)
+
+Two facts recorded against D58 in one addendum (the D47/D71 shape:
+narrowings, not reversals), both surfaced by the UTF-8 design gate
+(docs/design/utf8_design.md, r54-paneled and verifier-passed):
+
+(1) **PcrecEnc gains one scalar, `max_cp`** — the per-encoding complement
+universe (byte = 0xFF, utf8 = 0x10FFFF), read by exactly one caller, the
+parser's negation site. Chosen over symbolic negation on three legs
+(§2.7.2); the entries TABLE's interface is unchanged and [M6.6.2] wave D's
+third-encoding recipe holds. The design's own §5.7.3 records the field as
+the CONTIGUOUS-repertoire form of a more general question (a codepage's
+repertoire is a scattered SET) — kept scalar under D77 with the trigger
+named.
+
+(2) **D58's rationale sentence is narrower than its wording**: "the hot
+path has NO external advance loop" is true of ENG_UNANCH only.
+ENG_ATTEMPT's start loop is a genuine external byte-arithmetic advance in
+shared emitter code — harmless under the byte encoding, exposed (as wasted
+mid-character starts) by the second encoding, which the first structurally
+could not expose. Ruled with ASK 5: LEAVE, with oracle-validated
+mid-character-startpos corpus cells as the measured record (D77 names the
+loss measurement as the reopen trigger).
+
+Why: the seam's contract is the architecture's load-bearing reuse promise;
+its decision record must move the day the contract does, in the same
+change (D80's spirit applied to the seam's own log). Revisit-when: a
+third encoding lands (the set-complement generalisation of (1); the
+self-synchronization premise per §5.7); or ENG_ATTEMPT's start loop is
+measured to cost real throughput under utf8.
