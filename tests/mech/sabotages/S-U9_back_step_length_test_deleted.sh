@@ -24,7 +24,12 @@ SAB_DESC="the utf8 back_step's want != end - pos declared-length test is deleted
 SAB_DOC_FIGURE="PREDICTED (§8.2): tests/utf8/invalid.rxt's (?<! cells over C2 80 80-shaped subjects red as ERROR returns rather than spans. DEMONSTRATED at stage 2 pre-corpus: (?<!.)x on C2 80 80 78 answers match(3,4) clean; sabotaged, rx_search returns the internal-error code."
 SAB_REACH='"$PCREC" --features lookaround -e utf8 -p rx -o - -- "(?<!.)x"'
 SAB_REACH_EXPECT='Pattern: (?<!.)x'
-SAB_REACH_POP='tests/utf8/invalid.rxt|^pattern .*\(\?<!|6'
+# RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
+# GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed
+# with the axis naming, so the pop line named a file that does not exist and
+# the first full mech run read the row UNREACHED-UNEXPECTED. Floor unchanged
+# where it still holds (K35: rounded down); measured count in parens.
+SAB_REACH_POP='tests/utf8/axis08_lookbehind_varwidth.rxt|^pattern .*\(\?<!|6'  # measured 8; the ill-formed SUBJECTS live in axis03/axis10, reached via the directory-wide harness target
 SAB_COUNT=1
 SAB_BEFORE='"        if (want != end - pos) return $_BACK_STEP_NONE;\n"'
 SAB_AFTER='"        (void)want; (void)end;  /* SABOTAGE S-U9: length test deleted */\n"'

@@ -20,7 +20,12 @@ SAB_DESC="the utf8 backend's next_pos body becomes pos + 1, so the find-all loop
 SAB_DOC_FIGURE="PREDICTED (§8.2): tests/utf8 find-all cells over multi-byte subjects red. DEMONSTRATED at stage 2 pre-corpus: the match_api §3.1 loop over CE B1 CE B2 with pattern '' reports boundaries 0,2,4 clean and 0,1,2,3,4 sabotaged."
 SAB_REACH='"$PCREC" -e utf8 -p rx -o - -- ""'
 SAB_REACH_EXPECT='Pattern:  */'
-SAB_REACH_POP='tests/utf8/nextpos.rxt|^pattern|14'
+# RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
+# GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed
+# with the axis naming, so the pop line named a file that does not exist and
+# the first full mech run read the row UNREACHED-UNEXPECTED. Floor unchanged
+# where it still holds (K35: rounded down); measured count in parens.
+SAB_REACH_POP='tests/utf8/axis09_nextpos_findall.rxt|^pattern|14'  # measured 20
 SAB_COUNT=1
 SAB_BEFORE='"    size_t i = pos + 1;\n"
 "    while (i < n && (s[i] & 0xC0) == 0x80) i++;\n"

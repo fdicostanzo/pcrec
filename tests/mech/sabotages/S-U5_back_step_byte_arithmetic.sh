@@ -20,7 +20,12 @@ SAB_DESC="the utf8 backend's back_step body becomes the byte backend's pos - k, 
 SAB_DOC_FIGURE="PREDICTED (§8.2): every tests/utf8 lookbehind cell behind a multi-byte character goes red (lost match); ASCII-only lookbehind cells are unmoved. DEMONSTRATED at stage 2 pre-corpus: (?<=\x{3b1})x on CE B1 78 answers match(2,3) clean and nomatch sabotaged."
 SAB_REACH='"$PCREC" --features lookaround -e utf8 -p rx -o - -- "(?<=\x{3b1})x"'
 SAB_REACH_EXPECT='Pattern: (?<=\x{3b1})x'
-SAB_REACH_POP='tests/utf8/lookbehind.rxt|^pattern .*\(\?<|18'
+# RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
+# GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed
+# with the axis naming, so the pop line named a file that does not exist and
+# the first full mech run read the row UNREACHED-UNEXPECTED. Floor unchanged
+# where it still holds (K35: rounded down); measured count in parens.
+SAB_REACH_POP='tests/utf8/axis08_lookbehind_varwidth.rxt|^pattern .*\(\?<|18'  # measured 24
 SAB_COUNT=1
 SAB_BEFORE='"    (void)n;                 /* reads only below pos, as the contract says */\n"
 "    while (k--) {\n"'

@@ -23,7 +23,12 @@ SAB_DESC="the utf8 decomposition's band table loses its surrogate gap, so a lowe
 SAB_DOC_FIGURE="PREDICTED (§8.3.1): the 9 surrogate-subject blocks of tests/utf8/invalid.rxt red (the artifact ACCEPTS ED A0 80 / ED BF BF where the expectation is reject); every compile-time cell green, which is the row's own point. DEMONSTRATED at stage 2 pre-corpus: -e utf8 '^.$' rejects ED A0 80 clean and matches (0,3) sabotaged."
 SAB_REACH='"$PCREC" -e utf8 -p rx -o - -- "^.$"'
 SAB_REACH_EXPECT='Pattern: ^.$'
-SAB_REACH_POP='tests/utf8/invalid.rxt|ED A0|9'
+# RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
+# GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed
+# with the axis naming, so the pop line named a file that does not exist and
+# the first full mech run read the row UNREACHED-UNEXPECTED. Floor unchanged
+# where it still holds (K35: rounded down); measured count in parens.
+SAB_REACH_POP='tests/utf8/axis10_surrogate_witness.rxt|ED A0|9'  # measured 16; axis03_invalid_utf8.rxt carries 27 more
 SAB_COUNT=1
 SAB_BEFORE='        { 0x800,   0xD7FF,   3 },
         /* U+D800–U+DFFF: no encoding — deliberately no band. */
