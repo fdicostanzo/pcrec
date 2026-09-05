@@ -452,7 +452,8 @@ recalled. **STRUCTURAL.**
 ────────────────────────────────────────────────────────────────────────────
  ????   ◄══════ THE ENCODING LOWERING GOES HERE ══════►
 ────────────────────────────────────────────────────────────────────────────
- :1018  pcrec_build_nfa(&cx, root, ...);            reads u.cls.bits ×2
+ :1017  if (chosen == ENGM_DFA || fit.prefilter)    ← the NFA build is GUARDED
+ :1018      pcrec_build_nfa(&cx, root, ...);        reads u.cls.bits ×2
         (:1128/:1134 forward+reverse, :1135/:1138 subset, :1141/:1142 minimise)
  :1228  if (chosen == ENGM_VM) pcrec_emit_vm(&cx, root);   ← THE AST, NOT THE IR
  :1229  else                   pcrec_emit_dfa(&cx);        ← reads the machines
@@ -2321,21 +2322,33 @@ and its arena zero stays sound.
 #### 5.6.2 `pcrec_maxw`'s WHOLE CHAIN RETIRES (r54 E3(a))
 
 **MEASURED by grep**, and it is the finding that changes the shape of this
-section. `pcrec_maxw` has exactly **three** call sites in the tree:
+section. `pcrec_maxw` has exactly **four** call sites — three in `src/`
+and one shipped INSTRUMENT in `tests/` the verifier pass (r54) caught this
+census omitting, the panel's E5 defect recurring one directory over:
 
 | site | what it is |
 |---|---|
 | `src/parse/mod_lookaround.c:298` | `la_widths`, per top-level branch — **the rule §5.6 is moving** |
 | `src/parse/mod_lookaround.c:309` | `la_widths`, the whole body — **the same rule** |
 | `src/opt/callgraph.c:795` | the `maxw` fixpoint, which exists **only** to publish `u.call.maxw` for the arm those two read |
+| `tests/mrl/maxw_check.c:77` | the [M6.6.2] wave-A instrument reading `pcrec_maxw` over the whole `.rxt` corpus — `run_mrl_tests.sh` section 8, with its own three-way sabotage channel |
 
-Every other occurrence in `src/` is a COMMENT (`emit_vm.c:6128`, `:6152`,
+Every other occurrence in `src/` (the scope actually grepped, plus the one
+test-side consumer named above) is a COMMENT (`emit_vm.c:6128`, `:6152`,
 `internal.h`'s field documentation, `mrl.c`'s own header) or `mrl.c`'s
 internal recursion. **So once `la_widths` moves to the character pair,
-`pcrec_maxw` has no reader at all** — and neither does anything downstream of
-it: `u.call.maxw`, `u.call.maxw_known`, `cg_maxw_publish`, the fixpoint at
-`callgraph.c:786-800`, and sabotage row `S171`
-(`tests/mech/sabotages/S171_maxw_fixpoint_one_round.sh`).
+`pcrec_maxw` has no reader in the product at all** — and neither does
+anything downstream of it: `u.call.maxw`, `u.call.maxw_known`,
+`cg_maxw_publish`, the fixpoint at `callgraph.c:786-800`, and sabotage row
+`S171` (`tests/mech/sabotages/S171_maxw_fixpoint_one_round.sh`). The
+retirement therefore also RETIRES OR RE-AIMS the test side in the same
+change: `maxw_check.c` and its `run_mrl_tests.sh` section 8 (re-aim at
+`pcrec_cwmax` — the corpus-wide over-estimate assertion transfers to the
+character pair unchanged in spirit), and
+`tests/mech/sabotages/S136_width_rule_accepts_variable.sh`, whose
+`SAB_DESC` names both functions and moves with the rule. `tests/mrl/CLAUDE.md`
+and `tests/CLAUDE.md` document `maxw_check` as a shipped instrument and are
+updated in the same change.
 
 **D77 says a mechanism with no consumer does not stay.** But the honest move
 is not deletion, because the character pair needs a fixpoint of exactly this
@@ -3413,7 +3426,7 @@ patterns and subjects are ASCII, re-run under `-e utf8`. Its properties:
 proves the `byte` artifact did not move. This differential proves the `utf8`
 artifact AGREES with it. **Together they are transitive to the pre-M5
 binary** — a `utf8` artifact's answers are pinned to a compiler that predates
-the milestone entirely, over 3,152 patterns, without any new expectation being
+the milestone entirely, over 3,319 patterns, without any new expectation being
 authored. That is a stronger statement than either half, and it costs one
 harness axis.
 
@@ -3824,7 +3837,11 @@ the kind of thing an implementation wave silently drops:
 6. **Both width timings move in ONE change** (§5.6.4), and `pcrec_maxw`'s
    retirement is part of that change rather than a follow-up. A tree with
    `la_widths` on the character pair and `pcrec_maxw` still present is a tree
-   with a dead analysis that a later reader will assume is live.
+   with a dead analysis that a later reader will assume is live. The
+   retirement INCLUDES the test side (§5.6.2, the r54 verifier's insisted
+   addition): `tests/mrl/maxw_check.c` + `run_mrl_tests.sh` section 8
+   (re-aimed at `pcrec_cwmax`), S136's re-aim, and the two CLAUDE.md
+   entries documenting the instrument — same change, never a follow-up.
 7. **Every sabotage row is born with its `SAB_REACH`/`SAB_REACH_POP`**
    (§8.2), not retrofitted. `[MECH-REACH]` has been standing since
    2026-08-25 and `opt5_step2_twopass.md` is the precedent for adopting it at
@@ -3965,7 +3982,16 @@ something to record —
 — and the question is whether that lands as a D58 **addendum** (the shape D47
 and D71 used for rulings that narrow an existing decision) or as its **own
 decision row**. The design has no preference and states the fact rather than
-choosing the filing.
+choosing the filing. **The r54 verifier folded a SECOND D58 fact into the
+same ask** (its lens-3 finding): §5.5 establishes that D58's rationale
+sentence — "the hot path has NO external advance loop" — is true of
+`ENG_UNANCH` only, and `ENG_ATTEMPT`'s start loop is a genuine external
+byte-arithmetic advance in shared emitter code that the second encoding
+exposes (the first structurally could not). Whatever filing shape ASK 7
+gets, it records both: the `max_cp` field and the rationale's narrowing.
+**RULED AT MERGE (manager, 2026-09-04): a D58 ADDENDUM carrying both
+facts** — the seam's own decision record is where seam-contract changes
+live, and neither fact reverses D58, both narrow it (D47/D71's shape).
 
 **ASK 5 — `ENG_ATTEMPT`'s start loop (§5.5). RULED 2026-09-04: LEAVE IT,
 WITH AN ADDENDUM THAT COST THIS LANE A MEASUREMENT.**
