@@ -1000,7 +1000,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * decided until the graph exists is asked HERE, from the offsets the parse
          * hooks recorded on the nodes. Today the list is module `lookaround`'s
          * §2.5 fixed-width rule for a lookbehind whose body carries a call —
-         * `pcrec_maxw`'s `A_CALL` arm cannot answer at parse time, because the
+         * `pcrec_cwmax`'s `A_CALL` arm cannot answer at parse time, because the
          * callee is bound by the line above. It runs BEFORE the machine builds so
          * a refused pattern still costs no automaton, and it is a walk and an
          * early return for every pattern that recorded nothing. */

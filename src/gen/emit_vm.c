@@ -1190,7 +1190,7 @@ static bool vm_nullable(const Ast *a)
          *
          * A lookaround consumes nothing on EVERY path, whatever its body is:
          * that is the construct's definition (keep the verdict, throw the
-         * position away), and it is why `pcrec_minw` and `pcrec_maxw` both
+         * position away), and it is why the byte and character width analyses both
          * answer 0. `false` here would deny the empty-iteration guard to a
          * quantifier above one, and design §2.6 measured that quantified
          * lookaround SHIPS — all fourteen forms compile in both oracles, and
@@ -6138,11 +6138,11 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  *    push was written for.
  *
  * 3. THE END-CHECK IS PROVABLY REDUNDANT FOR THE SUBSET THIS MODULE SHIPS AND
- *    IS EMITTED ANYWAY. A branch with `minw == maxw == k` consumes exactly k
+ *    IS EMITTED ANYWAY. A branch with `cwmin == cwmax == k` consumes exactly k
  *    bytes on every successful path, so a body started at `pos - k` that
  *    succeeds ends at `pos` and this comparison cannot fail on a correct
  *    compiler. It is emitted because it is THE ONLY RUNTIME EVIDENCE that
- *    `pcrec_maxw` — this module's one piece of genuinely new analysis — agrees
+ *    `pcrec_cwmax` — this module's one piece of genuinely new analysis — agrees
  *    with what the emitter did with it, and because it stops being redundant
  *    the day the variable-length follow-on lands.
  *
@@ -6166,7 +6166,7 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  *    reserves everything strictly below `PCREC_ERR_FLOOR` for "a future
  *    abort semantic", and THIS IS EXACTLY THAT SEMANTIC: not a give-up (no
  *    resource was exhausted) but the artifact catching its own analysis
- *    disagreeing with its own emission — `pcrec_maxw` said one width, the
+ *    disagreeing with its own emission — `pcrec_cwmax` said one width, the
  *    emitter walked another. `RX_R_INTERNAL` (`PCREC_ERR_INTERNAL`, -6, BELOW
  *    the floor) is minted for exactly this shape. A composed call site
  *    honouring F2's `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` traps on
@@ -8514,7 +8514,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * all** (grep is empty), so that sentence was a false premise defending a
      * true conclusion — deleted rather than patched, because a wrong reason is
      * worse than none. THE ACTUAL ARGUMENT is an enumeration of who reads the
-     * two memos and when: `u.call.minw`/`maxw` are read by THIS FILE (after
+     * two memos and when: `u.call.minw`/the character pair are read by THIS FILE (after
      * the graph, in both orders) and by `mod_lookaround`'s parse hook (before
      * the graph, in both orders) — and by nobody in between. Engine selection's
      * only NEW read is `Ast.u.call.link` (src/opt/select_engine.c's

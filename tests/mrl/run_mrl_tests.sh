@@ -130,7 +130,11 @@ build_run() {   # build_run <name> <byte> <count> [suffix]
     mkdir -p "$d"
     cp "$WORKDIR/$name.c" "$d/gen.c"
     [ -f "$WORKDIR/$name.h" ] && cp "$WORKDIR/$name.h" "$d/gen.h"
-    sed -i "s/#include \"$name\.h\"/#include \"gen.h\"/" "$d/gen.c"
+    # -i.bak (attached suffix) rather than bare -i: BSD sed reads a bare
+    # `-i EXPR FILE` as extension=EXPR script=FILE, so on this Mac the include
+    # was never rewritten and every cell in this file read "cc-fail" — found
+    # at [M5.0] stage 2, pre-existing since the Mac move.
+    sed -i.bak "s/#include \"$name\.h\"/#include \"gen.h\"/" "$d/gen.c" && rm -f "$d/gen.c.bak"
     # shellcheck disable=SC2086
     gen_cc "mrl $name" "$CC" ${GENCFLAGS:-} -O1 -w -I "$d" \
            -o "$d/t" "$DRV" "$d/gen.c" >/dev/null 2>&1 || { echo "cc-fail"; return 9; }
@@ -493,15 +497,17 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 8. [M6.6.2 wave A] `pcrec_maxw` OVER THE WHOLE .rxt CORPUS (maxw_check.c).
+# 8. [M6.6.2 wave A / M5.0 stage 2] THE CHARACTER WIDTH PAIR `pcrec_cwmin`/
+#    `pcrec_cwmax` OVER THE WHOLE .rxt CORPUS (cwmax_check.c).
 #
 # The only check in this directory that reads a number the compiler never
-# emits. `pcrec_maxw` has no artifact of its own until the lookaround module's
-# fixed-width rule consumes it, so nothing above — not the corpus, not the
-# differential, not sections 1-7 — can be red because of it. maxw_check.c
+# emits directly. The lookaround width rule consumes the pair; nothing above —
+# not the corpus, not the differential, not sections 1-7 — sweeps it per node.
+# cwmax_check.c
 # links libpcrec.a, parses every `pattern` line in tests/ to an AST and calls
-# the two analyses directly: `maxw >= minw` at every NODE, and every
-# ORACLE-VERIFIED span in the corpus within the root's maxw. See its header
+# the two analyses directly: `cwmax >= cwmin` at every NODE, and every
+# ORACLE-VERIFIED span in the corpus within the root's cwmax (parsed under
+# `byte`, where a byte span IS a character count). See its header
 # for why one inequality alone is worthless.
 #
 # THREE SABOTAGES, each of which must make it FAIL. `zero` and `unbounded` are
@@ -510,42 +516,45 @@ fi
 # check is worth nothing (branch_count_check.c's rule).
 # ---------------------------------------------------------------------------
 LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
-MAXWBIN="$WORKDIR/maxw_check"
+MAXWBIN="$WORKDIR/cwmax_check"
 if [ ! -f "$LIB" ]; then
-    bad "maxw: $LIB not built — run 'make' first"
+    bad "cwmax: $LIB not built — run 'make' first"
 elif ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
         -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" ${SANFLAGS:-} \
-        -o "$MAXWBIN" "$SCRIPT_DIR/maxw_check.c" "$LIB" 2>"$WORKDIR/maxw.build"; then
-    bad "maxw: FAILED TO BUILD maxw_check.c"
-    sed -n '1,20p' "$WORKDIR/maxw.build" >&2
+        -o "$MAXWBIN" "$SCRIPT_DIR/cwmax_check.c" "$LIB" 2>"$WORKDIR/cwmax.build"; then
+    bad "cwmax: FAILED TO BUILD cwmax_check.c"
+    sed -n '1,20p' "$WORKDIR/cwmax.build" >&2
 else
     # every .rxt in the tree, so the population grows with the corpus rather
     # than with this script (section 7's rule).
     find "$ROOT_DIR/tests" -name '*.rxt' -print0 | sort -z > "$WORKDIR/rxt.list"
-    if xargs -0 -a "$WORKDIR/rxt.list" "$MAXWBIN" > "$WORKDIR/maxw.out" 2>&1; then
+    # `xargs -0 < file` rather than GNU-only `-a` — BSD xargs (this Mac) has
+    # no -a, and the section had been dying on the option error here, with the
+    # three sabotage arms below "catching" on that same error, vacuously.
+    if xargs -0 "$MAXWBIN" < "$WORKDIR/rxt.list" > "$WORKDIR/cwmax.out" 2>&1; then
         # ONE INVOCATION, ASSERTED. `xargs` SPLITS when the argument list
         # outgrows ARG_MAX, and a split run would print two summaries and
         # apply the non-vacuity floors to two partial populations — each of
         # which could pass while neither saw the whole corpus. Today the list
         # is ~5 KB against a 2 MB limit; this line is what makes the day it
         # is not a loud failure instead of a quietly weaker check.
-        nrun="$(grep -c '^=== \[M6' "$WORKDIR/maxw.out")"
+        nrun="$(grep -c '^=== \[M6' "$WORKDIR/cwmax.out")"
         if [ "$nrun" = "1" ]; then
-            ok "maxw: maxw >= minw at every node, and every oracle span within maxw"
-            sed -n 's/^  /    maxw: /p' "$WORKDIR/maxw.out"
+            ok "cwmax: cwmax >= cwmin at every node, and every oracle span within cwmax"
+            sed -n 's/^  /    cwmax: /p' "$WORKDIR/cwmax.out"
         else
-            bad "maxw: xargs SPLIT the corpus into $nrun invocations — the floors saw partial populations"
+            bad "cwmax: xargs SPLIT the corpus into $nrun invocations — the floors saw partial populations"
         fi
     else
-        bad "maxw: the sweep FAILED"
-        sed -n '1,25p' "$WORKDIR/maxw.out" >&2
+        bad "cwmax: the sweep FAILED"
+        sed -n '1,25p' "$WORKDIR/cwmax.out" >&2
     fi
     for sab in zero unbounded swap; do
-        if PCREC_MAXW_SABOTAGE="$sab" xargs -0 -a "$WORKDIR/rxt.list" "$MAXWBIN" \
+        if PCREC_CWMAX_SABOTAGE="$sab" xargs -0 "$MAXWBIN" < "$WORKDIR/rxt.list" \
                 >/dev/null 2>&1; then
-            bad "maxw sabotage '$sab' PASSED — the sweep is not reading maxw"
+            bad "cwmax sabotage '$sab' PASSED — the sweep is not reading cwmax"
         else
-            ok "maxw sabotage '$sab' correctly caught"
+            ok "cwmax sabotage '$sab' correctly caught"
         fi
     done
 fi
