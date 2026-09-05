@@ -35,7 +35,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 PCREC="${PCREC:-$ROOT/build/pcrec}"
 . "${ROOT}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
-CC="${CC:-gcc}"
+. "${ROOT}/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 : "${TMPDIR:=/var/tmp}"
 export TMPDIR
 

@@ -158,6 +158,17 @@
 # process that exits mid-scan is silently skipped rather than treated as
 # an error, and a candidate whose cwd this UID cannot read is excluded
 # from --cwd matching rather than aborting the run.
+#
+# [MACPORT] darwin has no /proc at all, so candidate discovery there reads
+# three WHOLE-BOX `ps` calls (never one per candidate) plus, for --cwd
+# only, one `lsof -d cwd` call PER CANDIDATE already narrowed by the
+# pattern match (never over the whole box). Neither is the hole the /proc
+# design avoids: every one of those commands' own argv is a FIXED literal
+# (`ps -axo pid=,ppid=,pgid=`, `lsof -a -p N -d cwd -Fn`, ...) that never
+# contains the CALLER's search pattern, so none of them can self-match the
+# way a `pgrep -f PATTERN` polling wrapper's argv does — the property this
+# file's header is protecting stays true, the mechanism finding it is just
+# not /proc.
 
 set -u
 
@@ -269,11 +280,53 @@ if [ "$opt_termonly" -eq 1 ] && [ "$opt_killnow" -eq 1 ]; then
     die_usage "--term-only and --kill-now are mutually exclusive"
 fi
 
-# ---- /proc snapshot: pure reads, zero subprocesses (see header) -----------
+# ---- portability probes ([MACPORT]; resolved once, every branch below
+# reads these rather than re-testing) ---------------------------------------
+#
+# _SK_HAVE_PROC: this project's other supported box (macOS/arm64) has no
+# /proc at all — scan_procs below gains a `ps`-based twin instead of
+# requiring it (three whole-box `ps` calls total, never one per pid — the
+# same "no subprocess whose own argv could self-match" discipline this
+# file's header already states for /proc, extended to a bulk `ps` read
+# rather than a per-candidate one).
+if [ -d /proc ] && [ -r /proc/self/stat ]; then
+    _SK_HAVE_PROC=1
+else
+    _SK_HAVE_PROC=0
+fi
+# _SK_HAVE_ASSOC: bash 3.2 (this box's own /bin/bash, verified — no newer
+# bash was installed by this lane) has NO associative arrays at all
+# (`declare -A` errors "invalid option", confirmed live). Every key this
+# file uses — PGRP/PPIDOF/START/CMD/CHILDREN/SELF_CHAIN/pgset/under_set/
+# seen — is always a PID or a PGID, i.e. already a non-negative integer, so
+# a PLAIN INDEXED array (which bash 3.2 has always supported) answers every
+# lookup and iteration here identically to an associative one; `-A` stays
+# on bash 4+ so nothing changes there.
+#
+# EVERY declare/local BELOW BRANCHES ON THIS WITH A LITERAL -A/-a, never a
+# variable holding the flag (`declare "$flag" NAME=()`) — verified live to
+# be a genuine bash parser gotcha, not a style choice: bash parses the
+# `NAME=()` compound-assignment operand as an INDEXED-array literal
+# whenever the preceding flag is not the literal token `-A` at PARSE time,
+# regardless of what a substituted flag variable holds at RUN time, and
+# then refuses to convert the just-created indexed array to associative
+# ("declare: NAME: cannot convert indexed to associative array") — this
+# reproduces on a trivial two-line script (`v=-A; declare "$v" x=()`) with
+# no other code involved.
+_SK_HAVE_ASSOC=1
+[ "${BASH_VERSINFO:-0}" -ge 4 ] 2>/dev/null || _SK_HAVE_ASSOC=0
 
-declare -A PGRP=() PPIDOF=() START=() CMD=()
-declare -A CHILDREN=()     # ppid -> space-separated child pids
-declare -A SELF_CHAIN=()   # safekill's own pid + every ancestor up to pid 1
+# ---- process snapshot: pure reads, minimal subprocesses (see header) ------
+
+if [ "$_SK_HAVE_ASSOC" -eq 1 ]; then
+    declare -A PGRP=() PPIDOF=() START=() CMD=()
+    declare -A CHILDREN=()     # ppid -> space-separated child pids
+    declare -A SELF_CHAIN=()   # safekill's own pid + every ancestor up to pid 1
+else
+    declare -a PGRP=() PPIDOF=() START=() CMD=()
+    declare -a CHILDREN=()
+    declare -a SELF_CHAIN=()
+fi
 BOOT_EPOCH=""
 CLK_TCK=""
 
@@ -289,6 +342,14 @@ read_cmdline() {
 }
 
 scan_procs() {
+    if [ "$_SK_HAVE_PROC" -eq 1 ]; then
+        scan_procs_linux
+    else
+        scan_procs_darwin
+    fi
+}
+
+scan_procs_linux() {
     local statfile pid line rest comm state ppid pgrp session tty tpgid flags \
           minflt cminflt majflt cmajflt utime stime cutime cstime priority nice \
           numthreads itrealvalue starttime _rest
@@ -312,6 +373,44 @@ scan_procs() {
     done
 }
 
+# scan_procs_darwin: ONE whole-box `ps` call (never one per candidate —
+# that would reproduce the very "subprocess whose argv could self-match"
+# shape this file's header rules out for /proc). pid/ppid/pgid are kept as
+# fixed-width NUMERIC columns and command is requested LAST, so
+# `read -r pid ppid pgrp rest` can safely slurp "everything after the
+# first three fields, embedded spaces included" for the one column that
+# needs it.
+#
+# [MACPORT] THIS USED TO BE THREE SEPARATE `ps` CALLS (pid/ppid/pgid,
+# lstart, command), and the gap between the FIRST and THIRD widened this
+# tool's own inherent TOCTOU race far enough to matter, measured live: a
+# transient process born after call 1 but still alive at call 3 got a CMD
+# entry with no PGRP/PPIDOF entry, which (a) crashed `pgset[...]=1` under
+# `set -u` with no default (fixed separately, see below) and (b) — the
+# sharper finding — was a WRAPPER PROCESS CARRYING THE CALLER'S OWN
+# PATTERN IN ITS ARGV that self-chain exclusion never got a chance to
+# examine, because it only ever existed in the `matched` list, never in
+# `PPIDOF`, so the ancestor walk could not find it. That is precisely the
+# self-match hazard this file's header exists to rule out, reopened by an
+# avoidable multi-call race rather than by anything fundamental about
+# lacking /proc. One call for the three array-populating fields closes
+# that specific gap; `lstart` (the one field that does NOT feed a safety
+# decision, only the printed audit line) moved to a per-candidate lazy
+# fetch in `iso_of` below, off the hot/wide scan entirely.
+scan_procs_darwin() {
+    local pid ppid pgrp rest
+    while read -r pid ppid pgrp rest; do
+        [ -n "${pid:-}" ] || continue
+        PGRP[$pid]="$pgrp"
+        PPIDOF[$pid]="$ppid"
+        CHILDREN[$ppid]="${CHILDREN[$ppid]:-}${CHILDREN[$ppid]:+ }$pid"
+        # `-ww`: unlimited width, or a long argv silently truncates — the
+        # same false-negative shape a truncated /proc/PID/cmdline would be.
+        CMD[$pid]="$rest"
+        [ -n "${CMD[$pid]}" ] || CMD[$pid]="[?]"
+    done < <(ps -axwwo pid=,ppid=,pgid=,command= 2>/dev/null)
+}
+
 build_self_chain() {
     local cur="$$" guard=0
     while [ -n "$cur" ] && [ "$guard" -lt 10000 ]; do
@@ -326,7 +425,7 @@ build_self_chain() {
 # (PID itself excluded), one per line.
 descendants_of() {
     local root="$1" cur kids k
-    local -A seen=()
+    if [ "$_SK_HAVE_ASSOC" -eq 1 ]; then local -A seen=(); else local -a seen=(); fi
     local queue=("$root")
     seen[$root]=1
     while [ "${#queue[@]}" -gt 0 ]; do
@@ -365,15 +464,37 @@ members_of_pgids() {
 }
 
 iso_of() {
-    if [ -z "$BOOT_EPOCH" ]; then
-        local up
-        read -r up _ < /proc/uptime
-        BOOT_EPOCH="$(awk -v n="$(date +%s.%N)" -v u="$up" 'BEGIN{printf "%.0f", n-u}')"
-        CLK_TCK="$(getconf CLK_TCK 2>/dev/null || echo 100)"
+    if [ "$_SK_HAVE_PROC" -eq 1 ]; then
+        if [ -z "$BOOT_EPOCH" ]; then
+            local up
+            read -r up _ < /proc/uptime
+            BOOT_EPOCH="$(awk -v n="$(date +%s.%N)" -v u="$up" 'BEGIN{printf "%.0f", n-u}')"
+            CLK_TCK="$(getconf CLK_TCK 2>/dev/null || echo 100)"
+        fi
+        local ticks="${START[$1]:-0}" epoch
+        epoch=$(( BOOT_EPOCH + ticks / CLK_TCK ))
+        # -Iseconds (not GNU's -Is shorthand): identical output on GNU
+        # date, verified the only spelling BSD/macOS date accepts — kept
+        # here too (not just the darwin branch below) so both branches
+        # emit the same field shape.
+        date -d "@$epoch" -Iseconds 2>/dev/null || printf 'unknown'
+    else
+        # darwin: fetched LAZILY, per candidate, via `ps -o lstart=` — one
+        # call per pid actually printed in an audit line (a handful, at
+        # most the size of `matched`), never a bulk whole-box call. Moved
+        # off scan_procs_darwin's hot path deliberately: `lstart` feeds
+        # only the printed audit line, never a safety decision, so it does
+        # not need to share that function's single-call TOCTOU-narrowing
+        # argument — see that function's own header. BSD date's `-j -f`
+        # (parse-without-setting-the-clock) reads `ps`'s exact format; a
+        # trailing-space warning from its fixed-width padding is cosmetic
+        # and thrown away like every other diagnostic here.
+        local lstart
+        lstart="$(ps -o lstart= -p "$1" 2>/dev/null)"
+        [ -n "$lstart" ] || { printf 'unknown'; return; }
+        date -j -f '%a %b %e %H:%M:%S %Y' "$lstart" +%Y-%m-%dT%H:%M:%S%z 2>/dev/null \
+            || printf 'unknown'
     fi
-    local ticks="${START[$1]:-0}" epoch
-    epoch=$(( BOOT_EPOCH + ticks / CLK_TCK ))
-    date -d "@$epoch" -Is 2>/dev/null || printf 'unknown'
 }
 
 audit_line() {
@@ -393,6 +514,28 @@ proc_alive() {
 scan_procs
 build_self_chain
 
+# [MACPORT] SELF_CHAIN ALSO COVERS EVERY DESCENDANT OF $$, not only its
+# ancestors — verified live to be load-bearing, not defensive belt: darwin's
+# scan_procs_darwin uses `ps` via process substitution (`< <(ps ...)`),
+# which bash implements by FORKING a child to run `ps`. In the narrow
+# window between that fork() and its execve() into the real `ps` binary,
+# the forked child is still a byte-for-byte copy of safekill's OWN process
+# image — same argv, same command text — and `ps`'s own system-wide
+# snapshot can catch that child in exactly this pre-exec instant,
+# reporting a PID that is neither $$ nor an ancestor of it but whose
+# reported cmdline is "bash .../safekill -f PATTERN" all the same.
+# Reproduced live, deterministically, with a plain `-f` search matching
+# NOTHING else on the box: the transient fork's own pid still matched the
+# pattern (since it echoed safekill's own invocation), ancestor-chain
+# exclusion could not see it (it is a CHILD, not a parent), and safekill
+# went on to SIGTERM its own process GROUP — which on this fork-heavy
+# scan path includes its own still-running `ps` helper. A descendant is
+# exactly as safe to exclude as an ancestor: nothing this process forked
+# for its OWN bookkeeping is ever a legitimate kill target.
+while IFS= read -r _sk_d; do
+    [ -n "$_sk_d" ] && SELF_CHAIN[$_sk_d]=1
+done < <(descendants_of "$$")
+
 # ---- resolve the target set -------------------------------------------------
 
 doomed_pgids=()
@@ -403,7 +546,7 @@ case "$mode" in
             printf '%s: no such PID: %s\n' "$prog" "$target_pid" >&2
             exit 1
         fi
-        declare -A pgset=()
+        if [ "$_SK_HAVE_ASSOC" -eq 1 ]; then declare -A pgset=(); else declare -a pgset=(); fi
         pgset["${PGRP[$target_pid]}"]=1
         while IFS= read -r d; do
             [ -n "$d" ] && pgset["${PGRP[$d]:-0}"]=1
@@ -425,7 +568,7 @@ case "$mode" in
             fi
         done
         if [ -n "$opt_under" ]; then
-            declare -A under_set=()
+            if [ "$_SK_HAVE_ASSOC" -eq 1 ]; then declare -A under_set=(); else declare -a under_set=(); fi
             while IFS= read -r d; do [ -n "$d" ] && under_set[$d]=1; done \
                 < <(descendants_of "$opt_under")
             filtered=()
@@ -439,14 +582,26 @@ case "$mode" in
                 || die_usage "--cwd: no such directory: $opt_cwd"
             filtered=()
             for p in "${matched[@]}"; do
-                pcwd="$(readlink -f "/proc/$p/cwd" 2>/dev/null)" || {
+                if [ "$_SK_HAVE_PROC" -eq 1 ]; then
+                    pcwd="$(readlink -f "/proc/$p/cwd" 2>/dev/null)" || pcwd=""
+                else
+                    # darwin: no /proc/PID/cwd. `lsof`'s own `-d cwd` fd
+                    # selector answers the identical question — it ships
+                    # standard on macOS, so this needs no new dependency.
+                    # `-Fn` gives one 'n'-prefixed line with the path; a
+                    # process this UID cannot inspect (or one already gone)
+                    # prints nothing, the same "unreadable" shape /proc's
+                    # readlink failure has on Linux.
+                    pcwd="$(lsof -a -p "$p" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')"
+                fi
+                if [ -z "$pcwd" ]; then
                     # cwd unreadable (permission, or the process already
                     # exited) — excluded, not a hard error, but COUNTED so
                     # a caller can tell "no match" from "matches existed
                     # but were unreadable" without a new exit code.
                     cwd_unreadable_count=$((cwd_unreadable_count + 1))
                     continue
-                }
+                fi
                 case "$pcwd" in
                     "$want_dir"|"$want_dir"/*) filtered+=("$p") ;;
                 esac
@@ -481,7 +636,12 @@ if [ "$opt_list" -eq 1 ]; then
     if [ "$mode" = "pattern" ]; then
         list_pids=("${matched[@]}")
     else
-        mapfile -t list_pids < <(members_of_pgids "${doomed_pgids[@]}")
+        # [MACPORT] `mapfile` (bash 4.0+) does not exist on bash 3.2
+        # (this box's own /bin/bash) — verified live ("command not found").
+        # A portable read loop is the bash-3.0-safe equivalent.
+        list_pids=()
+        while IFS= read -r _sk_p; do list_pids+=("$_sk_p"); done \
+            < <(members_of_pgids "${doomed_pgids[@]}")
     fi
     for p in "${list_pids[@]}"; do
         audit_line "$p"
@@ -510,12 +670,24 @@ if [ "$mode" = "pattern" ]; then
         done
         exit 2
     fi
-    declare -A pgset=()
-    for p in "${matched[@]}"; do pgset["${PGRP[$p]}"]=1; done
+    if [ "$_SK_HAVE_ASSOC" -eq 1 ]; then declare -A pgset=(); else declare -a pgset=(); fi
+    # [MACPORT] `:-0`: on darwin, PGRP/CMD come from two SEPARATE `ps`
+    # snapshots (scan_procs_darwin), not one atomic /proc walk, so a
+    # process that appears in the command scan can legitimately be absent
+    # from the earlier pgid scan (a race, same TOCTOU class this file's
+    # header already accepts elsewhere) — verified live under bash 3.2,
+    # not a hypothetical: an unguarded reference here crashed with
+    # "unbound variable" under `set -u`. `0` is a safe sentinel (matches no
+    # real pgid), same fallback line ~523's descendant-walk already uses.
+    for p in "${matched[@]}"; do pgset["${PGRP[$p]:-0}"]=1; done
     doomed_pgids=("${!pgset[@]}")
 fi
 
-mapfile -t kill_pids < <(members_of_pgids "${doomed_pgids[@]}")
+# [MACPORT] mapfile (bash 4.0+) is absent on bash 3.2 — same portable
+# read-loop replacement as the --list branch above.
+kill_pids=()
+while IFS= read -r _sk_p; do kill_pids+=("$_sk_p"); done \
+    < <(members_of_pgids "${doomed_pgids[@]}")
 if [ "${#kill_pids[@]}" -eq 0 ]; then
     printf '%s: nothing left to kill (already gone)\n' "$prog" >&2
     exit 1

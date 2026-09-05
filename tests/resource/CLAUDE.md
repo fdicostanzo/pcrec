@@ -55,6 +55,23 @@ this. Validated solo (19/0/0, unchanged) and under an 8-way `yes`-spinner
 artificial load (green-or-INCONCLUSIVE, never FAIL — see
 `docs/dev/dev_journal.md` for the run's numbers).
 
+## [MACPORT] Section 2 is a loud SKIP on darwin (2026-09-04)
+
+`ulimit -v` (RLIMIT_AS) is not enforceable on macOS at all — verified live:
+`ulimit -v N` itself errors ("cannot modify limit: Invalid argument")
+rather than merely failing to bind. Section 2's own positive control
+already treats an unbinding limit as a FAILURE (K7's own "a silently
+vacuous control" rule), which is correct on Linux and would score every
+cell FAIL on darwin for a platform limitation, not a real regression.
+Frank's ruling (interim disposition): `run_resource_tests.sh` detects
+`uname -s = Darwin` and prints one `SKIP:` line naming the whole section,
+counted in a new fourth bucket (`sections skipped`) distinct from
+pass/fail/inconclusive — never a fabricated pass, never a red run for
+something this platform cannot do. The Linux path (including the "limit
+did not bind" FAILURE branch) is unchanged. Section 1 and Section 3 are
+unaffected and run identically on both platforms (26 checks, 0 failures,
+measured on Apple M1 Max/Darwin 25.6, CC=gcc-16).
+
 ## Why this suite is not on the sanitizer axes
 
 `make ubsan`/`asan`/`lint` do not run it, by design. Section 2 needs

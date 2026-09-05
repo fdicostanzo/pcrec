@@ -31,12 +31,12 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="registry"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
 SANFLAGS="${SANFLAGS:-}"
-ncpu="$(nproc 2>/dev/null || echo 2)"
+. "$ROOT_DIR/tests/lib/ncpu.sh"; ncpu="$NCPU"   # [MACPORT] a real reading on a box with no `nproc` on PATH at all
 JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-definitions-oracle.XXXXXX")"
@@ -78,7 +78,13 @@ if ! "$WORKDIR/gen" > "$CELLS" 2> "$WORKDIR/gen.log"; then
     exit 1
 fi
 cat "$WORKDIR/gen.log" >&2
-ncells=$(wc -l < "$CELLS")
+# [MACPORT] `tr -d ' '`: BSD/macOS `wc -l < file` right-justifies its
+# count with LEADING SPACES (verified live: "       3" for a 3-line file
+# via stdin redirection); GNU wc does not. Untrimmed, this broke
+# run_registry_tests.sh's own downstream `grep -qE
+# "^definitions-oracle: [0-9]+ cells generated"` needle, which requires
+# exactly one space before the digits.
+ncells=$(wc -l < "$CELLS" | tr -d ' ')
 if [ "$ncells" -lt 1 ]; then
     echo "FAIL: definitions-oracle: 0 cells generated — the table is" >&2
     echo "FAIL: definitions-oracle: populated but nothing reached this sweep" >&2
@@ -118,10 +124,21 @@ one_cell() {
 }
 
 running=0
+# [MACPORT] `wait -n` is bash 4.3+ and silently no-ops on this box's bash
+# 3.2 — this was the concrete failure the manager's box survey named
+# ("run_definitions_oracle.sh fails all 354 cells with 'result file
+# truncated'", compounded by watchdog's own darwin gap). FIFO-throttle on
+# tracked pids instead, tests/lib/run_san_group.sh's own precedent.
+pids=()
 while IFS=$'\t' read -r id pa pb _oracle_a _desc; do
     one_cell "$id" "$pa" "$pb" &
+    pids+=("$!")
     running=$((running + 1))
-    if [ "$running" -ge "$JOBS" ]; then wait -n || true; running=$((running - 1)); fi
+    if [ "$running" -ge "$JOBS" ]; then
+        wait "${pids[0]}" 2>/dev/null || true
+        pids=("${pids[@]:1}")
+        running=$((running - 1))
+    fi
 done < "$CELLS"
 wait
 

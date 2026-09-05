@@ -5,6 +5,48 @@ section targets depend on.
 
 ## Files
 
+- **assoc.sh** — [MACPORT] a bash-3.2-safe `declare -A` shim, for the
+  handful of maps in this tree whose keys are genuinely STRINGS (filenames,
+  feature-set text, C macro names, CLI flag spellings) rather than
+  scripts/safekill's more common PID/PGID pattern (fixed there by switching
+  `-A` to `-a` under a bash-version guard instead — a real associative
+  array is needless when every key is already numeric). This box's
+  `/bin/bash` is 3.2.57 and has no associative arrays at all
+  (`declare -A` errors "invalid option", verified live); `assoc_set`/
+  `assoc_get`/`assoc_has`/`assoc_keys`/`assoc_count` are pass-throughs to a
+  real global `declare -A` array on bash 4+ (byte-identical to the
+  original inline syntax there) and an `od`-hex-mangled-scalar + companion
+  indexed-array emulation on bash 3.2. Used by tests/harness/run.sh
+  (file_fail_count/features_seen/declared_names) and
+  tests/registry/axes_registry_check.sh (HDR_BIT/CLI_MACRO).
+- **loadavg.sh** — [MACPORT] `load1`/`load3`: a real load-average reading on
+  darwin (`sysctl -n vm.loadavg`, no `/proc` at all) instead of the
+  `2>/dev/null || echo 0` fallback several call sites already had — which
+  on darwin was ALWAYS the fallback path, silently. Used by
+  tests/lib/load_guard.sh, tests/harness/run.sh's SIZELOG timing line,
+  tests/size/run_size_log.sh, scripts/battery.sh.
+- **ncpu.sh** — [MACPORT] `$NCPU`, resolved once: `nproc` (present via
+  Homebrew on this box) else `sysctl -n hw.ncpu` else
+  `getconf _NPROCESSORS_ONLN` else the project's pre-existing fallback
+  constant (2). Most `nproc 2>/dev/null || echo N` call sites in this tree
+  already degrade safely without this — it exists for a box with no
+  `nproc` on PATH at all, which `|| echo N` alone cannot distinguish from
+  "nproc ran and said N". Wired into tests/registry/run_definitions_oracle.sh,
+  run_pc4.sh, scripts/battery.sh, tests/lib/load_guard.sh,
+  tests/size/run_size_log.sh; ~30 other `nproc`-using sites in the tree were
+  left unwired (all already degrade gracefully via their own `|| echo N` or
+  a subsequent `-ge 1` guard, and `nproc` is present on this box) — see
+  docs/dev/lanes/macport_report.md for the full list.
+- **cc_resolve.sh** — [MACPORT] resolves a real GNU gcc when the bare `gcc`
+  on PATH is Apple clang wearing gcc's name (verified: `/usr/bin/gcc
+  --version` prints "Apple clang"). Tries `gcc-16`/`gcc-15`/`gcc-14`/
+  `gcc-13` (Homebrew's versioned naming) in that order, newest first; falls
+  back to plain `gcc` if none is a real GNU compiler (never a hard
+  failure). Does NOT touch the top-level Makefile's own `CC ?= gcc`
+  default (escalated in the lane report instead). Wired into every test
+  script whose own `CC="${CC:-gcc}"` default this lane found (see the
+  report for the full list and the two files using `$ROOT` instead of
+  `$ROOT_DIR`).
 - **timeout_bin.sh** — [TT-6] resolves `TIMEOUT_BIN` ONCE per process: the
   coreutils `timeout` binary every suite should invoke instead of a bare
   `timeout`. THE FINDING (docs/dev/tt4_measurement.md, "The `timeout`
@@ -186,7 +228,11 @@ section targets depend on.
   CPU-accounted through `scripts/watchdog -c` and still measured going RED
   under real contention (K31 addendum, docs/dev/plan.md): CPU-time
   ACCOUNTING itself inflates under contention, not merely wall stretching.
-  `load_guard_ratio` reads the 1-minute load average / `nproc`;
+  `load_guard_ratio` reads the 1-minute load average / `nproc` (via
+  tests/lib/loadavg.sh/ncpu.sh since [MACPORT] — the old direct
+  `/proc/loadavg` read fell back to a hardcoded "0.00, never trips" on any
+  box without `/proc`, which on darwin was every single call, silently
+  defeating the guard);
   `load_guard_tripped` compares it against `LOAD_GUARD_RATIO` (default
   2.0, justified in the file's own header from this project's measured
   "~2x CPU inflation" figure and the K31 addendum's own 2.58 failure

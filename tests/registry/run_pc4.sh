@@ -45,7 +45,7 @@ GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 # add -Werror too, or LINTGEN's "must fail loudly" promise breaks here alone.
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
 SANFLAGS="${SANFLAGS:-}"
-ncpu="$(nproc 2>/dev/null || echo 2)"
+. "$ROOT_DIR/tests/lib/ncpu.sh"; ncpu="$NCPU"   # [MACPORT] a real reading on a box with no `nproc` on PATH at all
 JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-pc4.XXXXXX")"
@@ -141,10 +141,20 @@ one_pattern() {
 }
 
 running=0
+# [MACPORT] `wait -n` is bash 4.3+ and silently no-ops on this box's bash
+# 3.2 (invalid-option error swallowed by `|| true`, never actually
+# waiting) — FIFO-throttle on tracked pids instead, tests/lib/
+# run_san_group.sh's own precedent for the identical gap.
+pids=()
 while IFS=$'\t' read -r pid iflag pat; do
     one_pattern "$pid" "$iflag" "$pat" &
+    pids+=("$!")
     running=$((running + 1))
-    if [ "$running" -ge "$JOBS" ]; then wait -n || true; running=$((running - 1)); fi
+    if [ "$running" -ge "$JOBS" ]; then
+        wait "${pids[0]}" 2>/dev/null || true
+        pids=("${pids[@]:1}")
+        running=$((running - 1))
+    fi
 done < "$PATS"
 wait
 

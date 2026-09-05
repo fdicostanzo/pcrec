@@ -47,6 +47,27 @@ set -u
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR" || exit 9
 
+# [MACPORT] util-linux setsid (used below to detach) is absent on macOS.
+# Same perl POSIX::setsid() replacement scripts/watchdog uses — see that
+# script's own comment for the verification (pid==sid==pgid, identical to
+# setsid(1)) and for why the wrapper below needs `exec`: without it, the
+# backgrounded `bash -c "..."` job's own subshell would be a SEPARATE,
+# un-killable process from the detached battery run, which is exactly the
+# failure this file's whole "detached, self-logging" design depends on
+# not happening.
+if command -v setsid >/dev/null 2>&1; then
+    _battery_setsid() { exec setsid "$@"; }
+else
+    _battery_setsid() {
+        exec perl -e 'use POSIX qw(setsid); setsid(); exec { $ARGV[0] } @ARGV or exit 127;' -- "$@"
+    }
+fi
+# [MACPORT] tests/lib/ncpu.sh / loadavg.sh: real darwin sources for
+# `nproc`/`/proc/loadavg` (this file's own AXES_PROCS default and the
+# trailer's load line, below) instead of a silent 2/0.
+. "$ROOT_DIR/tests/lib/ncpu.sh"
+. "$ROOT_DIR/tests/lib/loadavg.sh"
+
 TS="$(date +%Y%m%d_%H%M%S)"
 LOGDIR="${1:-$ROOT_DIR/build/battery_$TS}"
 mkdir -p "$LOGDIR"
@@ -64,19 +85,19 @@ MECH_PROCS="${MECH_PROCS:-6}"
 SAN_PROCS="${SAN_PROCS:-4}"
 # item 1 — pairwise axes; run_axes.sh derives PROCS/2 itself from whatever
 # PROCS it is given, so this is the PRE-pairing width (nproc by default).
-AXES_PROCS="${AXES_PROCS:-$(nproc 2>/dev/null || echo 12)}"
+AXES_PROCS="${AXES_PROCS:-$NCPU}"
 
 run_battery() {
     local overall=0 rc
     {
-        echo "== battery_v5 start $(date -Is) on $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+        echo "== battery_v5 start $(date -Iseconds) on $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
         echo "== load at start: $(uptime)"
         echo "== shape: test -j$TEST_MAKE_J PROCS=$TEST_PROCS | axes PROCS=$AXES_PROCS (paired) | san -P$SAN_PROCS | mech PROCS=$MECH_PROCS"
     } >> "$TRAILER"
 
     for stage in test strict axes san lint mech; do
         local slog="$LOGDIR/$stage.log"
-        echo "== stage $stage START $(date -Is) load=$(cut -d' ' -f1-3 /proc/loadavg)" >> "$TRAILER"
+        echo "== stage $stage START $(date -Iseconds) load=$(load3)" >> "$TRAILER"
         case "$stage" in
             test)
                 make -k -j"$TEST_MAKE_J" PROCS="$TEST_PROCS" test > "$slog" 2>&1
@@ -106,17 +127,17 @@ run_battery() {
                 ;;
         esac
         rc=$?
-        echo "== stage $stage rc=$rc END $(date -Is)" >> "$TRAILER"
+        echo "== stage $stage rc=$rc END $(date -Iseconds)" >> "$TRAILER"
         [ "$rc" -ne 0 ] && overall=1
     done
 
-    echo "== BATTERY DONE rc=$overall $(date -Is)" >> "$TRAILER"
+    echo "== BATTERY DONE rc=$overall $(date -Iseconds)" >> "$TRAILER"
 }
 
 echo "battery.sh: logging to $LOGDIR (trailer: $TRAILER)"
 echo "battery.sh: poll the trailer for stage START/END/rc lines and the final '== BATTERY DONE rc=' line"
 
-setsid bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); run_battery" \
+_battery_setsid bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); run_battery" \
     < /dev/null > "$LOGDIR/setsid.log" 2>&1 &
 echo $! > "$PIDFILE"
 disown

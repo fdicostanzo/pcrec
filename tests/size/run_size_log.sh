@@ -47,11 +47,13 @@ OUT="$(mktemp "${TMPDIR:-/tmp}/artsize_out.XXXXXX")"
 cleanup() { rm -f "$RAW" "$OUT"; }
 trap cleanup EXIT
 
-load1_start="$(awk '{print $1}' /proc/loadavg 2>/dev/null || echo 0)"
+. "$ROOT_DIR/tests/lib/loadavg.sh"   # [MACPORT] real darwin load1, not "|| echo 0"
+. "$ROOT_DIR/tests/lib/ncpu.sh"      # [MACPORT] a box with no `nproc` on PATH at all still gets a real NCPU
+load1_start="$(load1)"
 
 # Same defaults `test-corpus:`'s own Makefile recipe line uses — this
 # script is a drop-in replacement for that line, not a new invocation shape.
-TMPDIR="${TMPDIR:-/var/tmp}" PROCS="${PROCS:-$(nproc)}" SIZELOG="$RAW" \
+TMPDIR="${TMPDIR:-/var/tmp}" PROCS="${PROCS:-$NCPU}" SIZELOG="$RAW" \
     bash "$ROOT_DIR/tests/harness/run.sh" "$@" 2>&1 | tee "$OUT"
 run_rc="${PIPESTATUS[0]}"
 

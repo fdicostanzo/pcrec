@@ -232,11 +232,20 @@ WORKER
 
 export ROOT_DIR WORKDIR PCREC
 running=0
+# [MACPORT] `wait -n` is bash 4.3+ and silently no-ops on this box's bash
+# 3.2 — FIFO-throttle on tracked pids instead (tests/lib/run_san_group.sh's
+# own precedent for the identical gap).
+pids=()
 for f in "$WORKDIR"/sh/p*; do
     [ -f "$f" ] || continue
     bash "$WORKDIR/worker.sh" < "$f" > "$WORKDIR/tally/$(basename "$f").out" 2>"$WORKDIR/tally/$(basename "$f").err" &
+    pids+=("$!")
     running=$((running + 1))
-    if [ "$running" -ge "$NSHARD" ]; then wait -n || true; running=$((running - 1)); fi
+    if [ "$running" -ge "$NSHARD" ]; then
+        wait "${pids[0]}" 2>/dev/null || true
+        pids=("${pids[@]:1}")
+        running=$((running - 1))
+    fi
 done
 wait
 

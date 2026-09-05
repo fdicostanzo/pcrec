@@ -69,6 +69,25 @@ pcrec (the Makefile owns that).
   `peak_rss_kb=0`/`cpu=0.00` means the child finished inside one poll
   interval — a fast-run marker, not a measurement.
 
+  **[MACPORT] darwin port (2026-09-04), 16/16 self-test green.** macOS has
+  no util-linux `setsid` (perl's `POSIX::setsid()`, then `exec`-in-place
+  into the target, reproduces the identical pid==sid==pgid signature —
+  verified live) and no `/proc` (a `ps`-based `collect_stats`/
+  `proc_running` twin, ONE whole-box `ps` call per poll rather than one per
+  process). **The `exec` in the setsid wrapper is load-bearing, not
+  cosmetic**: without it, backgrounding the wrapper FUNCTION forks a
+  subshell that then forks the actual detached target as ITS OWN child —
+  two processes, not one — so `child_pid=$!` (the subshell) is never the
+  process-group leader `kill -TERM "-$pgid"` targets, and every wall/CPU/
+  memory kill silently hits an empty group. This was a real bug the
+  function-wrapping refactor would have introduced on LINUX too, not a
+  darwin-only gap; `exec` restores the original single-process design on
+  both platforms. Also: `${unit,,}` (bash 4+, a parse error on this box's
+  bash 3.2) replaced with a portable `tr`; `date -Is` → `-Iseconds`
+  (identical output on GNU date, the only spelling BSD/macOS date
+  accepts); the log-append `flock` (util-linux, absent on darwin) falls
+  back to an `mkdir`-based atomic lock when `flock` is not on PATH.
+
 - **size_diff** — [ART-SIZE.1b]'s post-test examination tool: reports every
   pattern whose `docs/dev/artifact_size_log.tsv`-shaped row moved between
   two log files (`scripts/size_diff OLD.tsv NEW.tsv`), by name, with
@@ -171,6 +190,58 @@ pcrec (the Makefile owns that).
   way a `pgrep -f` polling wrapper does. Self-test:
   `tests/safekill.test` (see below).
 
+  **[MACPORT] darwin port (2026-09-04), 13/13 self-test green (verified
+  under genuine bash 3.2 — see below).** No `/proc` on macOS, so candidate
+  discovery reads ONE whole-box `ps -axwwo pid=,ppid=,pgid=,command=` call
+  (never one per candidate) instead of the `/proc` scan (`lstart` is
+  fetched lazily, per printed audit line, from a separate `ps -o lstart=`
+  call — it feeds only the audit line, never a safety decision), and
+  `--cwd` resolution uses `lsof -a -p N -d cwd -Fn` per already-pattern-
+  narrowed candidate (never a box-wide scan) in place of
+  `readlink /proc/N/cwd`. Neither introduces a subprocess whose own argv
+  could self-match a caller's `-f` pattern — both are fixed literal
+  commands, which is the property the header's `/proc` design exists to
+  protect. `declare -A` (bash 3.2 has none) is fixed with a literal-flag
+  `if/else` at every array-declaration site, NOT a variable holding
+  `-A`/`-a` (`declare "$flag" NAME=()`) — verified live to be a genuine
+  bash parser gotcha: bash parses the `NAME=()` operand as an
+  INDEXED-array literal whenever the preceding flag isn't the literal
+  token `-A` at parse time, then refuses to convert it
+
+  **A Homebrew bash (5.3.15) appeared on this box mid-lane, unexplained
+  and NOT installed by this lane — see docs/dev/lanes/macport_report.md's
+  headline finding — and shadowed `/bin/bash` (3.2.57) on `PATH`, which
+  masked two more real bugs for a while** since this script's own
+  `#!/usr/bin/env bash` shebang re-resolves via `PATH` regardless of the
+  caller: (1) `mapfile` (bash 4.0+, "command not found" on 3.2, verified
+  live) at both of this file's call sites, replaced with a portable
+  `while read` loop; (2) a TOCTOU race sharpened by three separate `ps`
+  snapshots (pid/ppid/pgid, `lstart`, `command`) instead of one atomic
+  `/proc` walk — merged to the single call above, closing the specific gap
+  where a process born between the first and third scan crashed
+  `pgset[...]=1` under `set -u`. **The sharpest of the three**: even after
+  the merge, self/ancestor exclusion could still be defeated, reproduced
+  deterministically — `ps` (invoked via process substitution) is itself
+  spawned by bash FORKING a child, and in the window between that `fork()`
+  and its own `execve()` into the real `ps` binary, the forked child is a
+  byte-for-byte copy of safekill's OWN process image (identical argv),
+  which `ps`'s own snapshot can catch mid-transition. That pid is neither
+  `$$` nor an ancestor of it, so ancestor-chain exclusion could not see
+  it, and safekill went on to `SIGTERM` its own process group — including
+  its own still-running `ps` helper. Fixed by extending self-protection to
+  cover every DESCENDANT of `$$` too (reusing `descendants_of()`),
+  symmetric with the ancestor exclusion already there: nothing this
+  process forked for its own bookkeeping is ever a legitimate kill target.
+  All three fixes verified with `PATH` forced so this script's own shebang
+  resolves to the real `/bin/bash` 3.2.57, not the shadowing 5.3 — 13/13,
+  four repeated runs (the descendant-exclusion race is narrow enough that
+  repetition matters).
+
+  ("cannot convert indexed to associative array"), independent of this
+  file. `iso_of()`'s darwin branch reads `ps`'s own `lstart` string
+  directly rather than the `/proc/uptime`-derived boot-epoch/tick
+  arithmetic.
+
 - **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
   full suite, not a tier) and blocks the push on failure. Installed ONLY by
   `make hooks`, which copies it to `git rev-parse --git-path hooks` (not a
@@ -205,5 +276,12 @@ pcrec (the Makefile owns that).
   the sweep says which tier it ran (its own summary line) rather than
   leaving the two results quotable as one. If a future axis is tiered the
   same way, this is the line it rides.
+
+  **[MACPORT] darwin port (2026-09-04), mechanisms validated but NOT run
+  end-to-end** (a full battery is hours long — out of this lane's
+  validation bar): the `setsid` detach uses the same perl
+  `POSIX::setsid()`+`exec`-in-place wrapper watchdog/safekill.test use;
+  `AXES_PROCS`/the trailer's load line use `tests/lib/ncpu.sh`/
+  `loadavg.sh`; `date -Is` → `-Iseconds`.
 
 Maintenance: update this file when scripts are added/removed or change role.

@@ -23,7 +23,6 @@
 
 set -u
 
-CC="${CC:-gcc}"
 
 # LC_ALL=C, and it is not cosmetic: the corpus sweep below counts DISTINCT
 # patterns, and a UTF-8 locale's collation merges strings differing only in
@@ -35,6 +34,7 @@ export LC_ALL=C
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"

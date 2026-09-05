@@ -49,7 +49,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REF="${1:-}"
 CUR="${2:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 NEUT_CFLAGS="${NEUT_CFLAGS:--O2 -g0 -std=gnu11}"
 NEUT_N="${NEUT_N:-0}"
 KEEP="${KEEP:-0}"

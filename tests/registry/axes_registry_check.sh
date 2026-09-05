@@ -86,6 +86,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/table.sh"
 . "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [K37] resolves TIMEOUT_BIN for this file's own bare compiler call below
+. "$ROOT_DIR/tests/lib/assoc.sh"   # [MACPORT] HDR_BIT/CLI_MACRO below are string-keyed (C macro names, CLI flag text) — bash 3.2 (this box) has no declare -A at all
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
@@ -166,13 +167,13 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # dump-vs-header agreement checked FROM OUTSIDE the compiled binary, over a
 # plain-text re-read, which catches the case a stale BUILT binary would hide
 # (a header edit with no rebuild).
-declare -A HDR_BIT=()   # macro -> bit
+assoc_new HDR_BIT   # macro -> bit
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
-    HDR_BIT[$macro]="$bit"
+    assoc_set HDR_BIT "$macro" "$bit"
 done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
           | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u << ([0-9]+)$/\1\t\3/')
-if [ "${#HDR_BIT[@]}" -eq 0 ]; then
+if [ "$(assoc_count HDR_BIT)" -eq 0 ]; then
     echo "axes_registry: FATAL: derived ZERO PCREC_(NO|FORCE)_* bit constants from lib/pcrec.h" >&2
     exit 1
 fi
@@ -181,9 +182,9 @@ fi
 # (tests/axes/run_axes.sh's own header comment: "remembers the most
 # recently seen `strcmp(a, "-...")` literal, and pairs it with the next
 # `opt.flags |= MACRO` line").
-declare -A CLI_MACRO=()   # cli flag text -> macro
+assoc_new CLI_MACRO   # cli flag text -> macro
 while IFS=$'\t' read -r macro flagtext; do
-    [ -n "$macro" ] && CLI_MACRO["$flagtext"]="$macro"
+    [ -n "$macro" ] && assoc_set CLI_MACRO "$flagtext" "$macro"
 done < <(awk '
     /strcmp\(a, "-/ {
         if (match($0, /"-[^"]+"/)) pending = substr($0, RSTART + 1, RLENGTH - 2)
@@ -215,12 +216,12 @@ doc_bits_raw="$(sed -n '/^## 2\./,/^## 3\./p' "$TUNING" \
 # ============================================================================
 check_macro_bit() {
     local macro="$1" dumped_bit="$2" axis="$3" cand="$4"
-    if [ -z "${HDR_BIT[$macro]:-}" ]; then
+    if ! assoc_has HDR_BIT "$macro"; then
         bad "[$axis/$cand] dumped deny/force macro '$macro' is not defined in lib/pcrec.h at all"
         return
     fi
-    if [ "${HDR_BIT[$macro]}" != "$dumped_bit" ]; then
-        bad "[$axis/$cand] dumped bit $dumped_bit for '$macro' disagrees with lib/pcrec.h's own bit ${HDR_BIT[$macro]}"
+    if [ "$(assoc_get HDR_BIT "$macro")" != "$dumped_bit" ]; then
+        bad "[$axis/$cand] dumped bit $dumped_bit for '$macro' disagrees with lib/pcrec.h's own bit $(assoc_get HDR_BIT "$macro")"
         return
     fi
     ok "[$axis/$cand] '$macro' (bit $dumped_bit) matches lib/pcrec.h"
@@ -228,12 +229,12 @@ check_macro_bit() {
 
 check_cli_flag() {
     local flagtext="$1" macro="$2" axis="$3" cand="$4"
-    if [ -z "${CLI_MACRO[$flagtext]:-}" ]; then
+    if ! assoc_has CLI_MACRO "$flagtext"; then
         bad "[$axis/$cand] cli_flag '$flagtext' is not a spelling cli/main.c's parser accepts (or the awk pairing missed it)"
         return
     fi
-    if [ "${CLI_MACRO[$flagtext]}" != "$macro" ]; then
-        bad "[$axis/$cand] cli_flag '$flagtext' pairs with '${CLI_MACRO[$flagtext]}' in cli/main.c, not the dumped '$macro'"
+    if [ "$(assoc_get CLI_MACRO "$flagtext")" != "$macro" ]; then
+        bad "[$axis/$cand] cli_flag '$flagtext' pairs with '$(assoc_get CLI_MACRO "$flagtext")' in cli/main.c, not the dumped '$macro'"
         return
     fi
     ok "[$axis/$cand] cli_flag '$flagtext' pairs with '$macro' in cli/main.c"
@@ -250,7 +251,7 @@ check_tuning_bit_documented() {
 
 seen_dumped_bits=""   # accumulates "N" per bit this dump names, for direction 2
 
-while IFS=$'\x01' read -r axis order candidate kind stamp_macro stamp_value \
+while IFS=$'\x1f' read -r axis order candidate kind stamp_macro stamp_value \
                         deny_macro deny_bit force_macro force_bit cli_flag applies; do
     [ -n "$axis" ] || continue
     if [ -n "$deny_macro" ]; then
@@ -295,16 +296,23 @@ while IFS=$'\x01' read -r axis order candidate kind stamp_macro stamp_value \
     if [ -n "$force_bit" ]; then
         check_tuning_bit_documented "$force_bit" "$axis" "$candidate"
     fi
-# Field separator here is \001 (SOH), NOT \t: bash's `IFS=$'\t' read`
-# treats tab as IFS WHITESPACE regardless of what IFS is set to, so runs of
-# empty tab-delimited fields (every row with an unset deny/force column)
-# silently COLLAPSE and every field after the first empty one shifts left —
-# reproduced live while writing this check, and the exact bug
-# tests/lib/table.sh's own header comment names ("never on IFS whitespace,
-# which is why this is not a bash `read -a` on the raw line"). \001 is not
+# Field separator here is \037 (US, ASCII Unit Separator), NOT \t: bash's
+# `IFS=$'\t' read` treats tab as IFS WHITESPACE regardless of what IFS is
+# set to, so runs of empty tab-delimited fields (every row with an unset
+# deny/force column) silently COLLAPSE and every field after the first
+# empty one shifts left — reproduced live while writing this check, and
+# the exact bug tests/lib/table.sh's own header comment names ("never on
+# IFS whitespace, which is why this is not a bash `read -a` on the raw
+# line"). [MACPORT] NOT \001 (SOH) either, despite also being outside the
+# whitespace class: verified live that bash 3.2's own `read` builtin does
+# not split fields on IFS=$'\x01' at all (the whole line lands in the
+# first variable, every other variable empty) while bash 4+/5+ splits it
+# correctly — a narrow, previously-undiscovered bash 3.2 `read`/IFS bug
+# specific to that one byte. \037 was verified to split identically on
+# both bash versions, on both `read` and `awk -F`. \037 is not
 # in bash's whitespace class, so empty fields survive.
 done < <(awk -F'\t' $MAP '!/^#/ {
-    print $axis"\001"$order"\001"$candidate"\001"$kind"\001"$stamp_macro"\001"$stamp_value"\001"$deny_macro"\001"$deny_bit"\001"$force_macro"\001"$force_bit"\001"$cli_flag"\001"$applies
+    print $axis"\037"$order"\037"$candidate"\037"$kind"\037"$stamp_macro"\037"$stamp_value"\037"$deny_macro"\037"$deny_bit"\037"$force_macro"\037"$force_bit"\037"$cli_flag"\037"$applies
 }' "$TSV")
 
 # Every "list"/"both" axis's candidates must have an authored applies() —
@@ -353,12 +361,13 @@ fi
 # it exists to assert, silently. `tests/axes/run_axes.sh` had the identical
 # defect and was caught only because its PROSE anchor broke loudly first.
 hdr_bits_family=""
-for macro in "${!HDR_BIT[@]}"; do
-    b="${HDR_BIT[$macro]}"
+while IFS= read -r macro; do
+    [ -n "$macro" ] || continue
+    b="$(assoc_get HDR_BIT "$macro")"
     if [ "$b" -ge 4 ] 2>/dev/null; then
         hdr_bits_family="$hdr_bits_family $b"
     fi
-done
+done < <(assoc_keys HDR_BIT)
 hdr_bits_sorted="$(printf '%s\n' $hdr_bits_family | sort -n -u)"
 hdr_bits_lo="$(printf '%s' "$hdr_bits_sorted" | head -1)"
 hdr_bits_hi="$(printf '%s' "$hdr_bits_sorted" | tail -1)"
@@ -523,16 +532,16 @@ check_value_set() {
 
 dump_stamp_vals() {
     local macro="$1"
-    awk -F'\001' -v m="$macro" '$5 == m && $6 != "" {print $6}' <<< "$axes_rows_dump"
+    awk -F'\037' -v m="$macro" '$5 == m && $6 != "" {print $6}' <<< "$axes_rows_dump"
 }
 
-# One extra pass over the dump, keyed the same \001 way the main loop reads
+# One extra pass over the dump, keyed the same \037 way the main loop reads
 # it, so this direction does not have to re-run `pcrec --list-axes` (the
 # TSV in $TSV is already read once above; re-deriving it here from the same
 # file keeps this direction independent of the main loop's bash variables,
 # which the main loop's own `while` has already consumed).
 axes_rows_dump="$(awk -F'\t' $MAP '!/^#/ {
-    print $axis"\001"$order"\001"$candidate"\001"$kind"\001"$stamp_macro"\001"$stamp_value
+    print $axis"\037"$order"\037"$candidate"\037"$kind"\037"$stamp_macro"\037"$stamp_value
 }' "$TSV")"
 
 check_value_set "RX_DFA_TABLE" \

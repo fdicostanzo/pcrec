@@ -68,7 +68,7 @@ export LC_ALL=C
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 DRIVER="$ROOT_DIR/tests/possessify/possdiff_driver.c"
 
 # D45: every compile of GENERATED C in this tree runs under the one shared
