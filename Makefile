@@ -406,6 +406,20 @@ test-cpset-structure: all
 test-encoding-identity: all
 	bash tests/codegen/run_encoding_identity.sh
 
+# [M5.0 stage 2] `test-encoding-checks` IS OPT-IN, the encoding backend's
+# behavioural + structural acceptance (docs/design/utf8_design.md §8.5, §8.1.1
+# check 3, §9.2's DD-12(7)(a) pair). Opt-in for `test-encoding-identity`'s
+# reason and one more: its §8.5 differential compiles and runs TWO artifacts
+# per ASCII corpus block, which at ENC_MAX_BLOCKS=0 is ~6,600 compiles — the
+# full sweep rides a Linux slot, and a light local run bounds it with
+# ENC_MAX_BLOCKS (the default). CHK3/DD12a/S-U8 are compile-only and run in
+# full either way.
+#
+#     make test-encoding-checks                            # bounded local run
+#     ENC_MAX_BLOCKS=0 make test-encoding-checks           # whole corpus (slot)
+test-encoding-checks: all
+	bash tests/codegen/run_encoding_checks.sh
+
 # [OPT-VMFL] `<PREFIX>_VM_FRAMELESS` held to the artifact's own `goto *`
 # count (docs/dev/optvmfl_step0.md §4.2). Its OWN section on
 # `test-search-pinned`'s argument one block up — it sweeps the whole corpus
@@ -1316,6 +1330,6 @@ clean:
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-identity \
+        test-encoding-identity test-encoding-checks \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
