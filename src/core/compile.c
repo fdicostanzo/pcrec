@@ -1012,13 +1012,27 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          *   interval list would compile to a silent miscompile rather than a
          *   refusal.
          *
-         *   AFTER `pcrec_callgraph_build` (above), by the SAME rule that pass
-         *   states for itself: it caches `u.call.body`, which names a subtree
-         *   IN THE TREE THE EMITTER WILL WALK, so every pass that REBUILDS a
-         *   node must already have run. This one does — an `A_CLASS` becomes
-         *   an `A_CAT`/`A_ALT` of byte-range classes under a multi-byte
-         *   encoding — which is what rules out the otherwise-attractive
-         *   "lower immediately after the parser".
+         *   AND IT MAY SIT BELOW `pcrec_callgraph_build` (above) BECAUSE OF
+         *   WHAT THE PASS IS, NOT WHERE IT IS. That pass caches
+         *   `u.call.body`, which names a subtree IN THE TREE THE EMITTER WILL
+         *   WALK, so a pass that REBUILDS nodes must run above it — and the
+         *   design (utf8_design.md §2.1.2) drew the opposite conclusion from
+         *   that same rule and put the lowering here anyway, which is a
+         *   collision: a rebuilding pass cannot be both above :961 and below
+         *   :999. MEASURED (docs/dev/lanes/utf8s1_report.md §4): a scratch
+         *   REBUILDING lowering at this line moves 45 of tests/recursion's
+         *   179 artifacts, emitting an EMPTY activation-private save set at
+         *   every call site, and moves none above the graph.
+         *
+         *   RULED (manager R2): the cure is the pass's SHAPE.
+         *   `pcrec_lower_enc` SPLICES IN PLACE — it replaces a leaf
+         *   `A_CLASS` by mutating the parent's child pointer, and never
+         *   reallocates a node that IS or CONTAINS a group root. Leaves are
+         *   not group roots, so every pointer the graph captured still names
+         *   the subtree the emitter walks, and the ordering question does not
+         *   arise. See that file's header for the invariant and the walk that
+         *   makes it structural; stage 2 owes a check that no group root's
+         *   node ADDRESS moves across this call.
          *
          *   AFTER `pcrec_postresolve` (immediately above), which asks module
          *   `lookaround`'s fixed-width rule in CHARACTERS: after this line a
@@ -1031,9 +1045,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * spelling out, and here the consequence would be `pcrec_emit_vm`
          * walking the UN-lowered tree, which is E1 arriving by a second route.
          *
-         * A CHANGE THAT MOVES THIS LINE has either found one of the three
-         * constraints wrong — which is the design's own prediction P-12, and
-         * is welcome — or has reintroduced E1. */
+         * A CHANGE THAT MOVES THIS LINE, or that makes the pass rebuild
+         * rather than splice, owes the measurement in report §4 a new answer
+         * — the two are the same question now, which is the point of stating
+         * the invariant instead of the position. */
         root = pcrec_lower_enc(&cx, root);
 
         /* The DFA pair is built when the DFA IS the engine, and also when the VM

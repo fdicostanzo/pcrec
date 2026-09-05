@@ -180,19 +180,42 @@ else
     else
         bad "[1d] constraint 3 VIOLATED: the lowering ($LO_LINE) runs before pcrec_postresolve ($PR_LINE), which would make a character-width walk count BYTES"
     fi
-    # CONSTRAINT 2 IS DELIBERATELY NOT ASSERTED HERE, and the absence is a
-    # finding rather than an omission. §2.1.2 states it as "the lowering
-    # cannot run before :961"; this wave's own experiment
-    # (docs/dev/lanes/utf8s1_report.md, wave-task (a)) MEASURED the opposite —
-    # a REBUILDING lowering at the design's position moves 45 of
-    # tests/recursion's 179 artifacts and moves none above the call graph. The
-    # constraint is real and points the other way, it collides with constraint
-    # 3, and which position survives is a ruling this lane escalated rather
-    # than took. Asserting today's order here would pin a position the
-    # measurement does not support; asserting the other would pin one the
-    # design does not. So the check states the two constraints it can stand
-    # behind and NAMES the third as open, which is the honest shape.
-    echo "NOTE: constraint 2 is not asserted — see docs/dev/lanes/utf8s1_report.md wave-task (a); the measurement contradicts the design and the position is escalated, not settled"
+    # CONSTRAINT 2 IS NOT AN ORDERING CHECK, AND THAT IS A RULING RATHER THAN
+    # AN OMISSION (manager R2, docs/dev/lanes/utf8s1_rulings.md). The design
+    # stated it as a POSITION — "the lowering cannot run before :961" — and
+    # this wave MEASURED that the underlying rule points the other way and
+    # collides with constraint 3, leaving no legal slot (report §4: a scratch
+    # REBUILDING lowering moves 45 of tests/recursion's 179 artifacts at
+    # :1000 and none above :961).
+    #
+    # The ruled cure is the pass's SHAPE: `pcrec_lower_enc` SPLICES IN PLACE,
+    # so no node that is or contains a group root is ever reallocated and
+    # `pcrec_callgraph_build`'s captures stay valid wherever the pass sits.
+    # That turns constraint 2 from an ordering fact into a NODE-IDENTITY
+    # PROPERTY.
+    #
+    # WHAT IS ASSERTED HERE IS THE SHAPE, not the property. The property's own
+    # check — no group root's ADDRESS changes across the pass — belongs to
+    # STAGE 2 and is deliberately not written now, because stage 1 splices
+    # nothing and it would assert over an EMPTY POPULATION: the [MECH-REACH]
+    # shape this house has twice had to retire. What can be checked today is
+    # that the mechanism capable of violating it does not exist in the file.
+    if grep -q 'static void lower_walk(LowerCtx \*lc, Ast \*\*slot)' "$SRC/opt/lower_enc.c"; then
+        ok "[1d] constraint 2 (R2): the lowering walks by SLOT (Ast **), so its only write is one pointer in a parent it never rebuilt"
+    else
+        bad "[1d] constraint 2 (R2) VIOLATED IN SHAPE: src/opt/lower_enc.c no longer walks by slot. The in-place-splice discipline is what lets this pass sit below pcrec_callgraph_build at all — a walk that returns rebuilt subtrees reallocates group roots and strands u.call.body (report §4: 45 of 179 recursion artifacts)"
+    fi
+    # THE NEGATIVE HALF, and it is the one that catches a stage-2 author
+    # reaching for the obvious shape: a rebuilding lowering is spelled by
+    # allocating a node inside this pass. There is no legitimate reason for
+    # `arena_alloc` to appear in this file — stage 2 allocates its byte-range
+    # classes through `pcrec_cpset_publish` onto nodes made by
+    # `pcrec_ast_node`, which is itself the parent-preserving path.
+    if grep -q 'arena_alloc' "$SRC/opt/lower_enc.c"; then
+        bad "[1d] src/opt/lower_enc.c calls arena_alloc directly. If that is a rebuilt PARENT it reintroduces the staleness R2 ruled out; if it is a new leaf it should go through pcrec_ast_node. Either way this needs re-reading against the in-place-splice invariant before the needle is widened"
+    else
+        ok "[1d] src/opt/lower_enc.c allocates no node of its own — nothing in it can rebuild a parent"
+    fi
 fi
 
 # ---------------------------------------------------------------------------

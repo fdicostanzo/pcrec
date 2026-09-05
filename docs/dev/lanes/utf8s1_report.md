@@ -13,13 +13,26 @@ this lane's to rule.
 
 ## 0. READ THIS FIRST — the two escalations
 
-**(1) §2.1.2's CONSTRAINT 2 IS CONTRADICTED BY MEASUREMENT, and it collides
-with constraint 3.** The lowering's position is a ruling this lane did not
-take. Stage 1 is unaffected; stage 2 cannot open until it is settled. §4.
+**BOTH WERE RULED WHILE THE LANE RAN** (`utf8s1_rulings.md` R2, manager,
+2026-09-04) **and both rulings are CONSUMED in the delivered branch.**
 
-**(2) THE D70 CLOBBER HAS GONE LATENT, so sabotage row S121 detects nothing.**
-The guard is still correct and goes live again at stage 3, but its witness is
-gone and the row will score while certifying nothing. §5.
+**(1) §2.1.2's CONSTRAINT 2 IS CONTRADICTED BY MEASUREMENT, and it collides
+with constraint 3** — a rebuilding lowering has no legal slot at all.
+**RULED: resolution (a), the lane's recommendation.** The pass now SPLICES IN
+PLACE, `:1000` stands, and constraint 2 is a node-identity property rather
+than an ordering fact. Implemented, checked, and re-measured at 100%. §4.
+**The DESIGN-TEXT hunks are flagged for the manager to apply at merge, not
+edited here** — the exact list is at the end of §4.
+
+**(2) THE D70 CLOBBER HAS GONE LATENT, so sabotage row S121 detected nothing.**
+**RULED: re-aim via `SAB_REACH`, in this wave.** Done, with both reach
+declarations verified in both directions; the row now scores UNREACHED
+(honest) and self-activates at stage 3. §5.
+
+**ONE NEW FINDING came out of consuming ruling 1**, and it is stage 2's:
+`u.rep.revbody` holds a REVERSED COPY built before this pass, which the walk
+does not visit — **413 classes across the corpus**, measured. Inert in stage 1,
+loud (never silent) if stage 2 ignores it. §4, last two subsections.
 
 Everything else below is ordinary lane work and is green.
 
@@ -39,7 +52,9 @@ Everything else below is ordinary lane work and is green.
 | — | the interval **algebra** against an independent oracle | same, §4 (`cpset_model_check.c`) | **PASS** — 400 × 60 random ops + 7 edge cases, membership AND the invariant, 0 disagreements. Added by the lane; see §6b |
 | §8.1.2 | positive control | — | **n/a by the design's own table**; refusal agreement + population floors stand in, both asserted per axis |
 | §2.2.3 | the D70 clobber survey **re-derived in the same change** | `offsetof` probe + two sweeps | **DONE — and it changed the answer.** §5 |
-| r54 (a) | constraint 2 confirmed **empirically** | scratch rebuilding lowering, two positions | **DONE — and it CONTRADICTS the design.** §4 |
+| r54 (a) | constraint 2 confirmed **empirically** | scratch rebuilding lowering, two positions | **DONE — it CONTRADICTS the design; RULED R2(a) and CONSUMED.** §4 |
+| R2 (1) | the in-place-splice discipline **implemented** | `run_cpset_structure.sh` §1d (shape + negative needle), gate re-run | **PASS** — walk is slot-based, no allocation in the file, identity gate still 14/14 after the rewrite |
+| R2 (2) | S121 **re-aimed** via `SAB_REACH` | the row itself, both directions verified | **DONE** — scores UNREACHED with its reason; wakes at stage 3 |
 | r54 (b) | the render helper's per-site cost **measured** | corpus delta + microbenchmark + call census | **DONE — 0.024% of compile time.** §7 |
 | §13 obl. 1 | D80 spec hunk | — | **none owed**: stage 1 changes nothing a caller can observe, which is what the gate's refusal-agreement column asserts |
 | — | `make strict` clean | `make strict CC=gcc-16` | **PASS** — "whole tree compiles clean with -Werror -Wshadow" |
@@ -54,7 +69,7 @@ if the manager prefers the log regenerated at merge instead.
 
 **Local sections run** (Frank's light-testing rule; the battery rides the next
 Linux slot): `test-corpus` **27,045 cases passed / 0 failed**, 0 compile
-failures, size tripwire OK; `test-cpset-structure` 26/0,
+failures, size tripwire OK; `test-cpset-structure` 28/0,
 `test-encoding-identity` 14/0,
 `test-definitions` 22/0, `test-parse` 96/0, `test-cli` 54/0,
 `run_definitions_oracle.sh` 354 cells / 101,244 A==B / 101,244 A==C /
@@ -200,29 +215,101 @@ mis-stated clause.
 `pcrec_lower_enc` returns `root` unchanged, and the identity gate reads 100%.
 Stage 2 is affected, so this wants ruling before that wave opens.
 
-### Three resolutions, for the manager to rule between (none implemented)
+### Three resolutions offered — RULING R2 TOOK (a)
 
-1. **THE LOWERING MUST NOT REBUILD** — rewrite in place (mutate the parent's
-   `->l`/`->r`; never reallocate a node that is or contains a group root), so
-   `.body` never goes stale and constraint 2 evaporates. `:1000` stands, §2.1.4
-   stands, nothing else in the design moves. **This is the lane's
-   recommendation**: smallest change, keeps postresolve's character-width
-   timing, and turns the constraint into a checkable property of the pass
-   rather than of its position. Cost: the pass may not publish a new ROOT, so a
-   root-level `A_CLASS` needs the parent-mutation trick or a permanent wrapper.
-2. **RE-BIND AFTER LOWERING** — run at `:1000` and re-run
-   `pcrec_callgraph_build` (or a `.body` fixup) behind it. Honest; makes the
-   graph pass run twice on every call-bearing compile.
-3. **MOVE POSTRESOLVE BELOW THE LOWERING** and teach it byte-vs-character.
-   §2.1.2 rejects this and the lane agrees: it is the option that makes a width
-   rule read the wrong unit.
+1. **THE LOWERING MUST NOT REBUILD** — splice in place, so `.body` never goes
+   stale and the ordering question does not arise. **← RULED, and implemented
+   in this wave.**
+2. Re-bind after lowering (run the graph pass twice).
+3. Move postresolve below the lowering — rejected by §2.1.2 and by this lane.
 
-`run_cpset_structure.sh` asserts constraints **1 and 3** and prints a NOTE
-naming constraint 2 as open. Asserting today's order would pin a position the
-measurement does not support; asserting the other would pin one the design does
-not.
+### RULING R2, AND WHAT IT COST TO CONSUME
 
----
+> **THE RULED INVARIANT** (manager, `utf8s1_rulings.md` R2): `pcrec_lower_enc`
+> splices IN PLACE — it replaces a leaf `A_CLASS` by MUTATING THE PARENT'S
+> child pointer (or, for a root-level bare class, by reassigning the driver's
+> `root`), and NEVER reallocates a node that IS or CONTAINS a group root.
+> `:1000` stands; constraint 2 becomes a node-identity PROPERTY.
+
+**Implemented, and written so the invariant is STRUCTURAL rather than
+remembered.** `lower_walk` takes `Ast **slot` — the ADDRESS of the pointer
+holding the current node — so the only write it can make is `*slot = repl`:
+one pointer, in a parent it does not otherwise touch. There is no expression in
+the file that allocates a node at all. Stage 2 extends it by filling in
+`lower_class`, whose signature (`Ast *` in, replacement-or-NULL out) cannot
+reach a parent even by accident.
+
+**THE ROOT IS THE SAME MECHANISM**, not a special case: `pcrec_lower_enc`
+passes `&root`, so a root-level bare class splices exactly like any other leaf.
+The ruling's soundness argument — a bare-class root has no group construct,
+hence no `A_CALL`, hence no capture to strand — is **asserted rather than
+argued**, at the one moment it could stop being true:
+
+```c
+if (root != was && cx->callgraph)
+    ctx_fail(cx, 0, "internal error: the encoding lowering replaced the "
+                    "AST root of a call-bearing pattern — group 0's "
+                    "cached body now names an abandoned node");
+```
+
+**Two checks landed with it**, both in `run_cpset_structure.sh` §1d. The
+positive one asserts the walk is still slot-shaped; the negative one asserts
+`arena_alloc` appears nowhere in the file, which is how a stage-2 author
+reaching for the obvious rebuilding shape would spell it. Verified the needle
+can match (`revdet.c` reads 2). **The property's own check — that no group
+root's ADDRESS moves across the pass — is deliberately NOT written**, because
+stage 1 splices nothing and it would assert over an empty population; that is
+stage 2's, and the ruling places it there.
+
+**MEASURED AFTER THE REWRITE:** identity gate still 14/14, all four axes,
+0 differing. `make strict` clean. Structural checks 28/28.
+
+### AN INDEPENDENT COVERAGE MEASUREMENT OF THE NEW WALK, and a STAGE-2 GAP it found
+
+A slot-based walk is easy to get subtly wrong on the `A_CAT`/`A_ALT` spine, so
+its reach was measured rather than reviewed: an instrumented build counts the
+classes `lower_walk` visits, against a **separately written** census that
+follows every child edge.
+
+| | over 2,565 compiles |
+|---|---|
+| classes REACHED by the slot walk | **6,697** |
+| classes reachable by any child edge | **7,110** |
+| — of which reachable ONLY via `u.rep.revbody` | **413** |
+| compiles where `reached != total − revbody` | **0** |
+
+Forward coverage is **exact on every compile**. And the residual is a real
+**stage-2 gap, now with a number**: `src/opt/revdet.c` builds a REVERSED COPY
+of a quantifier body at `compile.c:988` — *before* this pass — and the walk
+does not follow `u.rep.revbody`. Under stage 2 the forward body would be
+lowered and those **413** copies would not, so the backward walk would hand
+`pcrec_cls_bits` a code-point class.
+
+**That fails LOUD rather than silent** — the render helper `ctx_fail`s by name,
+which is exactly what §2.1.4 built it for — and it is inert in stage 1, where
+nothing splices. It is recorded at `lower_walk`'s `A_REP` arm rather than fixed,
+because the fix is a stage-2 decision (lower the reversed copy too, or move the
+rung's analysis below the lowering) and building either now would be
+unexercised structure.
+
+### THE DESIGN-TEXT HUNKS THE MANAGER ASKED ME TO FLAG (not edited by this lane)
+
+Per R2, code and design move together at merge and the design edit is the
+manager's. The exact hunks:
+
+| file · location | current text | what it should become |
+|---|---|---|
+| `utf8_design.md` §2.1.2, **constraint 2** | *"`pcrec_callgraph_build` (:961) must run AFTER the lowering — so the lowering cannot run before :961."* plus its paragraph | The REALLOCATION property: `.body` is invalidated by a pass that REBUILDS nodes, so `pcrec_lower_enc` splices in place and never reallocates a node that is or contains a group root. Position ceases to be the mechanism. |
+| `utf8_design.md` §2.1.2, **the closing sentence** | *"Constraints 2 and 3 put the lowering after :999; constraint 1 puts it before :1018. **There is exactly one line between them.**"* | Delete the "exactly one line" claim — it is an artifact of the mis-stated clause. Two constraints (1 and 3) bound the slot; the third is now a property. |
+| `utf8_design.md` §2.1.2, **the diagram** | the three-constraint framing above the `:1000` line | two constraints + the invariant |
+| `utf8_design.md` §13, **obligation 4** | *"A wave that puts it elsewhere has either found a constraint this document got wrong — which is P-12 and is welcome — or has reintroduced E1."* | The obligation becomes the INVARIANT: a wave that makes the pass rebuild rather than splice owes §4's measurement a new answer. P-12 is discharged — a constraint was wrong, and this is it. |
+| `utf8_design.md` §9.2, **stage 2** | *"the byte-sequence lowering placed at `compile.c:1000` per §2.1.2"* | unchanged in position; add the in-place-splice discipline and the group-root-address check as stage 2's own acceptance |
+| `utf8_design.md` §9.2, **stage 2** | — | ADD: the `u.rep.revbody` gap above (413 classes measured), which stage 2 must resolve |
+
+`src/opt/lower_enc.c`'s header, `compile.c`'s call site and
+`src/opt/CLAUDE.md` already carry the corrected account; only `docs/design/`
+is outstanding.
+
 
 ## 5. THE D70 RE-DERIVATION (§2.2.3) — the clobber went LATENT
 
@@ -264,13 +351,38 @@ the `byte` backend can produce.
 | whole corpus, 2,845 patterns | **2,845 byte-identical, 0 differing** |
 | `tests/rungselect/revdet_highbytes.rxt` — the file written *specifically* to detect this clobber | **7/7 identical** |
 
-### Consequence: sabotage row S121 is currently UNDETECTABLE
+### Consequence: sabotage row S121 was UNDETECTABLE — RULED and RE-AIMED
 
 Its mechanism (clobber bitmap bytes 9 and 16-23) describes a layout that no
-longer exists; its detector corpus cannot see the new one. It will score while
-certifying nothing — the S70/S155 shape `[MECH-REACH]` was built for.
-**Not touched by this lane**; the repair (re-aim, or an explicit
-"dormant until stage 3" note) is a ruling.
+longer exists; its detector corpus cannot see the new one. Left alone it would
+score while certifying nothing — the S70/S155 shape `[MECH-REACH]` exists to
+retire.
+
+**RULING R2: re-aim via `SAB_REACH`, in this wave. Done.** The row now declares
+the two things that must BOTH hold for it to detect anything again, separately,
+because they can arrive separately:
+
+| | declaration | today | wakes when |
+|---|---|---|---|
+| (1) the COMPILER can build a class with `n >= 256` at all | `SAB_REACH` compiles `\p{L}` and requires the emitted pattern comment | refuses (`requires module 'unicode-props'`) → no match | stage 3 lands `unicode-props` |
+| (2) this row's own DETECTOR carries such a pattern on the revdet rung | `SAB_REACH_POP` = `revdet_highbytes.rxt \| ^pattern .*\\p\{ \| 1` | **0** matches | stage 3 adds one there |
+
+plus `SAB_EXPECT=UNREACHED` with a `SAB_EXPECT_REASON` carrying the
+re-derivation, so the matrix reports the row as **honestly dormant** rather
+than as a failure — and the runner's own reverse check (`NOW REACHED`) fires
+the day either declaration starts holding.
+
+**BOTH DECLARATIONS VERIFIED IN BOTH DIRECTIONS**, because a reach declaration
+that can never wake is as dead as the green it replaced: the `SAB_REACH` probe
+does not match today (the refusal) and its expect string is the verbatim
+comment a compiled artifact carries (confirmed against `a\db`, whose backslash
+renders unescaped); the `SAB_REACH_POP` regex reads **0** on the real detector
+file and **1** on a synthetic `\p`-bearing one.
+
+`SAB_DOC_FIGURE` was also corrected — it claimed "61 of 127 cases fail", a
+figure that no longer reproduces — and now records that as HISTORICAL with the
+measurement that replaced it. Whoever lands stage 3 owes declaration (2) in the
+same change; the row says so at the site.
 
 **The guard stays, and not on sentiment.** It goes live again at stage 3:
 `\p{L}` is ~770 intervals, so `n > 255` becomes ordinary, and then clearing
@@ -421,12 +533,57 @@ which a transcription error into a payload with different types would not.
 - **Did not unlock `PCREC_ENC_UTF8`.** `compile.c` still refuses it by name;
   `pcrec_enc_ready` is untouched. The pending row's `max_cp` is `0x10FFFF` and
   nothing reads it.
-- **Did not re-architect around the constraint-2 finding** (§4).
-- **Did not touch S121** (§5).
+- **Did not edit `docs/design/utf8_design.md`** — R2 reserves the design-text
+  fix for the manager at stage-1 merge so code and design move together (D80).
+  The exact hunks are flagged at the end of §4.
+- **Did not write the group-root-address check** that R2 places on stage 2: it
+  would assert over an empty population today (stage 1 splices nothing), which
+  is the [MECH-REACH] shape. What IS asserted now is the pass's SHAPE.
+- **Did not fix the `u.rep.revbody` gap** (§4): inert in stage 1, and the fix is
+  a stage-2 decision between two designs.
 - **Did not run the full `make test`, `mech`, or the sanitizer battery** —
   Frank's light-local-testing rule; those ride the next Linux slot. The four
   re-aimed sabotage rows were validated individually (§8), so what the battery
   owes here is the ordinary full-matrix confirmation rather than a gap.
+
+---
+
+## 9b. RULINGS RECEIVED
+
+`docs/dev/lanes/utf8s1_rulings.md` is gitignored by design and does not travel,
+so every ruling that shaped the delivered work is restated here.
+
+**R2 (manager, 2026-09-04 late) — on this lane's wave-task-(a) escalation.
+Two rulings, both CONSUMED in the delivered branch.**
+
+**R2 FINDING 1 — the pass position. RULED: resolution (a).** The diagnosis was
+accepted: constraint 2 is not weaker but MIS-STATED, and the real invariant is
+about node REALLOCATION rather than position.
+
+> `pcrec_lower_enc` splices IN PLACE — it replaces a leaf `A_CLASS` by mutating
+> the parent's `->l`/`->r` (or, for a root-level bare class, by reassigning the
+> driver's `root`, sound because a bare-class root is never a group root and
+> nothing captured a pointer to it), and it NEVER reallocates a node that IS or
+> CONTAINS a group root. Leaves are never group roots, so a leaf-only in-place
+> splice keeps every group root's identity and `callgraph_build`'s bindings
+> valid — the lowering runs at :1000, after postresolve's character-width read,
+> with no staleness. Constraint 2 becomes a CHECKABLE PROPERTY, and stage 2
+> gains a check that no group-root node's ADDRESS changes across the pass.
+
+Owed and delivered: (1) the byte instance implemented under that discipline
+even though it rebuilds nothing today, so the SHAPE is right for stage 2, with
+a comment stating the invariant and why — §4; (2) the design-text correction
+FLAGGED, not applied, because the manager applies it at stage-1 merge so code
+and design move together (D80) — the hunk list is at the end of §4.
+
+**R2 FINDING 2 — S121 undetectable. RULED: re-aim via `SAB_REACH`, in this
+wave.** Keyed on the population that makes the guard LIVE (a class with
+`n >= 256`, empty until stage 3), so the row scores UNREACHED rather than green
+over a no-op, and self-activates when stage 3 lands the population. The guard
+stays; only its witness's reach declaration changes. Delivered — §5.
+
+Both rulings were noted as manager-tier design mechanism rather than
+milestone/semantics, with Frank watching and able to override.
 
 ---
 

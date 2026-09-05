@@ -30,56 +30,70 @@
  * that would notice them stopping.
  *
  * ============================================================================
- * THE POSITION IS A REVIEWABLE FACT (§13 obligation 4)
+ * THE POSITION, AND THE INVARIANT THAT REPLACES THE ORDERING ARGUMENT
  * ============================================================================
  *
  * `pcrec_lower_enc` runs at `src/core/compile.c:1000`, between
- * `pcrec_postresolve` and the guarded `pcrec_build_nfa`, and that line is
- * FORCED by three ordering constraints that together admit exactly one slot:
+ * `pcrec_postresolve` and the guarded `pcrec_build_nfa`. Two ordering
+ * constraints hold it there:
  *
- *   1. IT MUST RUN BEFORE `pcrec_build_nfa` (:1018) AND BEFORE
- *      `pcrec_emit_vm` (:1228). Those are the two consumers that can only
- *      express bytes, and the second one is handed the AST ROOT rather than
- *      the IR — which is why "between the parser and the IR" is not a
- *      position at all for the VM half of this compiler.
- *   2. IT MUST RUN AFTER `pcrec_callgraph_build` (:961). That pass is the
- *      only writer of `Ast.u.call.body`, and `.body` caches "which subtree is
- *      that group's, IN THE TREE THE EMITTER WILL WALK" — so it must run
- *      after the last pass that REBUILDS a node, and this pass will be exactly
- *      such a pass the moment stage 2's decomposition replaces an `A_CLASS`
- *      with an `A_CAT`/`A_ALT` of byte-range classes. Lowering immediately
- *      after the parser is the attractive position this constraint kills.
- *   3. IT MUST RUN AFTER `pcrec_postresolve` (:999). That pass asks module
- *      `lookaround`'s fixed-width rule in CHARACTERS; after the lowering a
- *      two-byte character is an `A_CAT` of two byte classes, and a
+ *   1. IT MUST RUN BEFORE `pcrec_build_nfa` AND BEFORE `pcrec_emit_vm`.
+ *      Those are the two consumers that can only express bytes, and the
+ *      second is handed the AST ROOT rather than the IR — which is why
+ *      "between the parser and the IR" is not a position at all for the VM
+ *      half of this compiler. Getting this wrong is r54 E1: a silent
+ *      miscompile, not a refusal.
+ *   2. IT MUST RUN AFTER `pcrec_postresolve` (:999), which asks module
+ *      `lookaround`'s fixed-width rule in CHARACTERS. After the lowering a
+ *      two-byte character is an `A_CAT` of two byte classes, so a
  *      character-width walk over a lowered tree would answer 2 where the
  *      truth is 1.
  *
- * CONSTRAINT 2 WAS CONFIRMED EMPIRICALLY RATHER THAN INHERITED, because the
- * design rests it on `compile.c:947-956`'s comment and a comment is not a
- * check. The experiment (this wave, docs/dev/lanes/utf8s1_report.md): move the
- * call above :961 in a scratch build and compile a call-bearing pattern whose
- * callee body this pass REBUILDS. The result is recorded there; the position
- * below is what it supports.
+ * THE DESIGN NAMED A THIRD CONSTRAINT AND IT WAS MIS-STATED — utf8_design.md
+ * §2.1.2 argued the pass must sit below `pcrec_callgraph_build` (:961)
+ * because a `.body` captured before a REBUILDING pass goes stale. The rule is
+ * real and the conclusion inverted: a rebuilding pass would have to run
+ * ABOVE the graph, which collides head-on with constraint 2 and leaves no
+ * legal slot at all. MEASURED in this wave (docs/dev/lanes/utf8s1_report.md
+ * §4): a scratch REBUILDING lowering at :1000 moves 45 of `tests/recursion`'s
+ * 179 artifacts — the call site's activation-private `W` save/restore block
+ * comes out EMPTY, because `u.call.save` is derived through a `.body` that
+ * now names abandoned nodes — and the same pass above :961 moves none.
  *
- * A WAVE THAT MOVES THIS CALL has either found one of the three constraints
- * wrong — which is design prediction P-12 and is welcome — or has
- * reintroduced r54 E1. There is no third possibility, which is why the
- * constraints are written at the call site as well as here.
+ * **RULED (manager, R2): the cure is this pass's SHAPE, not its slot.**
  *
- * ============================================================================
- * WHY THE WALK PUBLISHES A ROOT
- * ============================================================================
+ *   THE INVARIANT — `pcrec_lower_enc` SPLICES IN PLACE. It replaces a leaf
+ *   `A_CLASS` by MUTATING THE PARENT'S CHILD POINTER, never by rebuilding
+ *   the parent, and it NEVER REALLOCATES A NODE THAT IS OR CONTAINS A GROUP
+ *   ROOT.
  *
- * It returns the (possibly new) root and `compile.c` assigns it back, even
- * though today's byte instance never rewrites anything. `compile.c:942`'s own
- * comment records the bug that makes that worth doing from the start:
- * `discharge_atomic` "now PUBLISHES the rewritten root — inside `select_engine`
- * the assignment was to a local, so a discharge at the very root was
- * discarded." A lowering that rewrote to a local would leave `emit_vm` walking
- * the UN-lowered tree, which is r54 E1 arriving by a second route. Getting the
- * plumbing right while it carries nothing is free; getting it right later,
- * under a rewrite that mostly works, is how that bug happened the first time.
+ * That makes the staleness inexpressible rather than merely avoided. A group
+ * root is an `A_CAP` node (plus the whole `root` for group 0), a leaf
+ * `A_CLASS` is neither, and every node on the path from the root down to a
+ * replaced leaf keeps its address — so every pointer
+ * `pcrec_callgraph_build` captured at :961 still names the subtree the
+ * emitter will walk, and the pass may sit below the graph after all.
+ *
+ * THE WALK IS WRITTEN SO THAT THE INVARIANT IS STRUCTURAL RATHER THAN
+ * REMEMBERED. `lower_walk` is handed `Ast **slot` — the ADDRESS of the
+ * pointer that holds the current node — so the only write it can make is
+ * `*slot = repl`, one pointer, in a parent it does not otherwise touch.
+ * There is no expression in this file that allocates a parent, and stage 2
+ * extends it by filling in `lower_class` alone.
+ *
+ * THE ROOT IS THE ONE SLOT THAT IS NOT A PARENT'S FIELD, and it is handled
+ * by the same mechanism: `pcrec_lower_enc` passes `&root` and returns it, so
+ * a root-level bare class splices exactly like any other leaf and
+ * `compile.c` publishes the result. That is sound for group 0's own `.body`
+ * because a pattern whose ROOT is a bare `A_CLASS` has no group construct in
+ * it at all, hence no `A_CALL`, hence no capture to strand — and rather than
+ * leave that as an argument, the assertion at the bottom of this file checks
+ * it at the one moment it could stop being true.
+ *
+ * STAGE 2 GAINS A CHECK FOR THE INVARIANT ITSELF (R2): no group root's node
+ * ADDRESS may change across this pass. It is not written here because stage 1
+ * splices nothing, so it would assert over an empty population — the
+ * [MECH-REACH] shape this house has twice had to retire.
  *
  * ITERATIVE ON `A_CAT`/`A_ALT` SPINES (D10/DD-10/K20): a flat concatenation is
  * as long as the PATTERN and this project has segfaulted its own compiler on a
@@ -87,7 +101,10 @@
  * `src/opt/postresolve.c`'s walk header has the full argument, and both halves
  * apply here: following the back edge does not terminate on a recursive call,
  * and it is redundant because a class inside a called group is visited at its
- * own LEXICAL position by this same walk. */
+ * own LEXICAL position by this same walk.
+ *
+ * IT DOES NOT FOLLOW `u.rep.revbody` EITHER, AND THAT IS A STAGE-2 GAP RATHER
+ * THAN A DECISION — see the note at `lower_walk`'s `A_REP` arm. */
 
 #include "core/internal.h"
 #include "gen/enc/enc.h"
@@ -97,41 +114,86 @@ typedef struct {
     unsigned  max_cp;    /* the BACKEND's, never a constant here */
 } LowerCtx;
 
-static void lower_node(LowerCtx *lc, const Ast *a)
+/* THE PER-CLASS RULE, and the ONE function stage 2 replaces.
+ *
+ * Returns the node that must REPLACE `a`, or NULL for "leave it alone". The
+ * caller does the splicing, so this function cannot reach a parent even by
+ * accident — which is the invariant in this file's header, expressed as a
+ * signature rather than as a comment.
+ *
+ * THE BYTE INSTANCE ANSWERS NULL ALWAYS. Under `--encoding=byte` a code point
+ * IS a byte, so an interval list already inside `[0, max_cp]` is the confined
+ * form the render helper wants and the rewrite is the identity. What remains
+ * is §2.1's rule stated where it can fire — and the arm is UNREACHABLE in
+ * stage 1 by construction, because the parser range-checks `\x{...}` on its
+ * literal input (§2.7.3) and a complement cannot exceed `max_cp`. That makes
+ * it the assertion that those two facts stay true.
+ *
+ * `max_cp` is read from the backend rather than written as `0xFF` here so the
+ * diagnostic names the encoding's own bound, and so this is the line stage 2
+ * replaces rather than the one it has to remember to update. */
+static Ast *lower_class(LowerCtx *lc, Ast *a)
+{
+    for (int i = 0; i < a->u.cls.n; i++)
+        if (a->u.cls.iv[i].hi > lc->max_cp)
+            ctx_fail(lc->cx, 0,
+                     "internal error: a class holding code point U+%04X "
+                     "survived to the encoding lowering, whose universe ends "
+                     "at U+%04X", a->u.cls.iv[i].hi, lc->max_cp);
+    return NULL;
+}
+
+/* `slot` is the ADDRESS of the pointer holding the current node — its
+ * parent's `->l` or `->r`, or `&root` at the top. Writing through it is the
+ * whole of the in-place splice, and it is the only write this walk makes. */
+static void lower_walk(LowerCtx *lc, Ast **slot)
 {
     for (;;) {
-        if (a->k == A_CLASS) {
-            /* THE BYTE INSTANCE. Every interval inside `[0, 0xFF]` is already
-             * the confined form the render helper wants, so the rewrite is the
-             * identity and what remains is §2.1's rule stated where it can
-             * fire. `max_cp` is read from the backend rather than written as
-             * `0xFF` here so that the diagnostic names the encoding's own
-             * bound, and so that this line is the one stage 2 replaces rather
-             * than the one it has to remember to update. */
-            for (int i = 0; i < a->u.cls.n; i++)
-                if (a->u.cls.iv[i].hi > lc->max_cp)
-                    ctx_fail(lc->cx, 0,
-                             "internal error: a class holding code point "
-                             "U+%04X survived to the encoding lowering, whose "
-                             "universe ends at U+%04X",
-                             a->u.cls.iv[i].hi, lc->max_cp);
+        Ast *a = *slot;
+        switch (a->k) {
+        case A_CLASS: {
+            Ast *repl = lower_class(lc, a);
+            /* THE SPLICE: one pointer, in a parent this walk never rebuilt. */
+            if (repl) *slot = repl;
             return;
         }
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
         /* THE BACK EDGE STOPS HERE — see this file's header. */
         case A_CALL:
             return;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
+            /* [M5.0 STAGE-2 GAP, RECORDED WHERE IT BITES] `A_REP` also carries
+             * `u.rep.revbody`, a REVERSED COPY of its body built by
+             * `src/opt/revdet.c` inside `pcrec_select_engine` (compile.c:988)
+             * — i.e. BEFORE this pass. This walk does not visit it, so under
+             * stage 2 the forward body would be lowered and the reversed copy
+             * would not, and the backward walk would hand `pcrec_cls_bits` a
+             * code-point class.
+             *
+             * THAT IS LOUD RATHER THAN SILENT — the render helper `ctx_fail`s
+             * by name, which is exactly what §2.1.4 built it for — and it is
+             * harmless in stage 1, where nothing is spliced and every class is
+             * byte-confined. It is named here rather than fixed because the
+             * fix is a stage-2 decision (lower the reversed copy too, or move
+             * the rung's analysis below the lowering) and building either now
+             * would be unexercised structure. */
+            slot = &a->l;
             continue;
         case A_CAT: case A_ALT: {
+            /* The spine is walked ITERATIVELY with the slot carried down it,
+             * so a 20,000-element concatenation costs no stack (K20). `s`
+             * always holds the address of the pointer to the current spine
+             * node, and recursion is into the ITEMS only. */
             const AKind k = a->k;
-            const Ast *t = a;
-            for (; t->k == k; t = t->l) lower_node(lc, t->r);
-            a = t;
+            Ast **s = slot;
+            while ((*s)->k == k) {
+                Ast *t = *s;
+                lower_walk(lc, &t->r);
+                s = &t->l;
+            }
+            slot = s;
             continue;
         }
         }
@@ -153,6 +215,26 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root)
         ctx_fail(cx, 0, "internal error: no encoding row for id %d",
                  cx->opt->encoding);
     LowerCtx lc = { cx, e->max_cp };
-    lower_node(&lc, root);
+    Ast *was = root;
+    lower_walk(&lc, &root);
+
+    /* THE ROOT ASSERTION — the one place the in-place-splice invariant could
+     * stop holding, checked rather than argued.
+     *
+     * Replacing the ROOT is legal only because a pattern whose root is a bare
+     * `A_CLASS` contains no group construct, hence no `A_CALL`, hence nothing
+     * that captured group 0's `.body` at `pcrec_callgraph_build`. That is a
+     * claim about a coincidence of two facts, and coincidences are what stop
+     * being true — so it is asserted here, at the moment the root moves,
+     * rather than left in a comment for stage 2 to rediscover.
+     *
+     * Unreachable in stage 1 (nothing splices), which is why it is written as
+     * an internal error and not as a refusal: if it ever fires, the finding is
+     * that the invariant needs a different repair, not that the pattern is
+     * bad. */
+    if (root != was && cx->callgraph)
+        ctx_fail(cx, 0, "internal error: the encoding lowering replaced the "
+                        "AST root of a call-bearing pattern — group 0's "
+                        "cached body now names an abandoned node");
     return root;
 }

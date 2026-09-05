@@ -232,8 +232,24 @@ never edited afterwards.
   rebuilds nothing: at the design's position it moves 45 of `tests/recursion`'s
   179 artifacts (the call site's `W` save/restore block comes out EMPTY —
   `u.call.save` derived through a stale `.body`), above the call graph it moves
-  none. Stage 1 is unaffected; stage 2 cannot open until it is ruled. Three
-  resolutions are named with the lane's recommendation.
+  none.
+
+  **RULED R2 while the lane ran, and CONSUMED: resolution (a).** The cure is
+  the pass's SHAPE, not its slot — `pcrec_lower_enc` splices IN PLACE and never
+  reallocates a node that is or contains a group root, so `:1000` stands and
+  constraint 2 becomes a node-identity PROPERTY. The walk takes `Ast **slot`,
+  which makes the invariant structural rather than remembered: its only
+  possible write is one pointer in a parent it never rebuilt. The DESIGN-TEXT
+  hunks are flagged in the report for the manager to apply at merge (D80), not
+  edited by the lane.
+
+  **§4's last two subsections carry a NEW stage-2 finding that came out of
+  consuming the ruling**: `u.rep.revbody` is a reversed COPY built at
+  `compile.c:988`, before the pass, and the walk does not follow it — **413
+  classes across the corpus**, measured against an independently written
+  census that also confirmed the walk's forward coverage EXACT (6,697 =
+  7,110 − 413, zero mismatches on 2,565 compiles). Inert in stage 1; loud
+  rather than silent if stage 2 ignores it.
 
   **§5 is the one a future reader is most likely to need: the D70 clobber has
   gone LATENT and sabotage row S121 now detects NOTHING.** `u.cls` shrank
@@ -245,6 +261,11 @@ never edited afterwards.
   detect this — reports 7/7 identical. The guard is still correct and goes live
   again at stage 3 (`\p{L}` is ~770 intervals, where a cleared byte turns
   n=256 into the EMPTY class, a LOST match), but its witness is gone.
+  **RULED R2 and re-aimed in the same wave**: the row declares `SAB_REACH`
+  (can the compiler build such a class at all — `\p{L}` must compile) and
+  `SAB_REACH_POP` (does its own detector file carry one), both verified in
+  BOTH directions, so it scores UNREACHED honestly today and the runner's
+  `NOW REACHED` check fires the day stage 3 lands.
 
   Also worth reading: §2's account of a latent NULL deref this milestone made
   real (three probe `Ctx`es in `syntax_dump.c` reached the parser with no
