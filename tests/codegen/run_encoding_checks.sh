@@ -219,11 +219,11 @@ while IFS=$'\t' read -r patb subs; do
     pat="$(printf '%s' "$patb" | base64 -d)"
     d="$WORKDIR/b_$diffn"; mkdir -p "$d"
     # emit both encodings with features all (ASCII patterns may use modules)
-    if ! "$PCREC" --features all -e byte -p b -o "$d/b.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" --features all -e byte -p b -o "$d/b.c" -- "$pat" >/dev/null 2>&1; then
         continue   # a pattern byte refuses (perr already filtered; a gated
                    # construct under some feature set) — not this check's subject
     fi
-    if ! "$PCREC" --features all -e utf8 -p u -o "$d/u.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" --features all -e utf8 -p u -o "$d/u.c" -- "$pat" >/dev/null 2>&1; then
         bad "§8.5 pattern compiled under byte but NOT utf8: $pat"
         diverge=$((diverge + 1)); diffn=$((diffn + 1)); continue
     fi
@@ -266,7 +266,7 @@ fi
 # or whose body differs, would mean an encoding conditional reached a path it
 # must not.
 # ---------------------------------------------------------------------------
-stamp_of() { grep -oE "#define (RX_ENGINE|RX_ENGINE_SEL|RX_DFA_TABLE|RX_VM_STRATS|RX_VM_RUNGS) [^ ]*.*" "$1" 2>/dev/null | sort; }
+stamp_of() { grep -oE "#define (RX_ENGINE|RX_ENGINE_SEL|RX_DFA_TABLE|RX_VM_STRATS|RX_VM_RUNGS) [^ ]*.*" "$1" 2>/dev/null | LC_ALL=C sort; }
 shape_diff=0; stamp_diff=0; shape_checked=0
 for d in "$WORKDIR"/b_*; do
     [ -f "$d/b.c" ] && [ -f "$d/u.c" ] || continue
@@ -326,9 +326,9 @@ fi
 sigpat='(?i)(?<=a)(b)\1x'
 db="$WORKDIR/sigb"; du="$WORKDIR/sigu"; mkdir -p "$db" "$du"
 sigs_of() { grep -oE '(size_t|ptrdiff_t) [A-Za-z]+_(next_pos|back_step|bref_match|bref_match_caseless)\(' "$1" \
-            | sed -E 's/ [bu]_/ PFX_/' | sort -u; }
-if "$PCREC" --features all -e byte -p b -o "$db/a.c" -- "$sigpat" >/dev/null 2>&1 \
-   && "$PCREC" --features all -e utf8 -p u -o "$du/a.c" -- "$sigpat" >/dev/null 2>&1; then
+            | sed -E 's/ [bu]_/ PFX_/' | LC_ALL=C sort -u; }
+if pcrec_run "$PCREC" --features all -e byte -p b -o "$db/a.c" -- "$sigpat" >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" --features all -e utf8 -p u -o "$du/a.c" -- "$sigpat" >/dev/null 2>&1; then
     nsig="$(sigs_of "$db/a.c" | grep -c .)"
     if diff -q <(sigs_of "$db/a.c") <(sigs_of "$du/a.c") >/dev/null 2>&1 && [ "$nsig" -ge 3 ]; then
         ok "DD12a(ii) the seam's residual entries appear under identical signatures across both backends ($nsig entries; D58 P-1)"
@@ -345,7 +345,7 @@ fi
 # ---------------------------------------------------------------------------
 # S-U8  THE CLAMP-STRIDE PROBE
 # ---------------------------------------------------------------------------
-if "$PCREC" --features all -e utf8 -p rx -o - -- '(a)(?:\x{3b1}){0,3}x' 2>/dev/null \
+if pcrec_run "$PCREC" --features all -e utf8 -p rx -o - -- '(a)(?:\x{3b1}){0,3}x' 2>/dev/null \
         | grep -q 'RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)'; then
     ok "S-U8 the utf8 MRL clamp stride is the encoded length (RX_PRUNE_CLAMP_SPAN ... 1, 2) — the prune counts encoded bytes (§5.6.1)"
 else
