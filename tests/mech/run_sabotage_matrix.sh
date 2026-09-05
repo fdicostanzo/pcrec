@@ -2166,7 +2166,11 @@ else
 fi
 # run_one's stdout IS the tsv row; tee above sent it to stderr for a progress
 # view too, so re-extract just the tab-separated rows for the table below
-grep -P '^\S+\t' "$results_file" > "$results_file.rows" || true
+# [MACPORT] was `grep -P '^\S+\t'` — BSD grep has no -P, so on this box the
+# row filter emitted a usage error and ZERO rows, which the completeness
+# check below then (correctly) treated as lost measurements. Same selection,
+# ERE + bash ANSI-C quoting for the tab.
+grep -E $'^[^[:space:]]+\t' "$results_file" > "$results_file.rows" || true
 
 echo
 echo "== detection matrix =="
