@@ -1462,9 +1462,66 @@ design does not change it. It is recorded because §7's corpus author will meet
 it as eight `UCP-SPLIT` rows and needs to know pcrec has no lever there.
 §14 ASK 4 asks whether a UCP axis is owed at all.
 
----
+### 4.6 Where the fold DATA lives, and it is two places (r54 SHOULD E9)
 
-## 5. THE SEAM'S SECOND INSTANCE (charter (iv))
+**ACCEPTED, and the finding is that §4.4 conflated two costs.** §4.4 named
+`CaseFolding.txt` as *"the data"*, singular. There are two consumers with two
+different lifetimes, and only one of them was priced.
+
+**(a) pcrec's own binary — a COMPILE-TIME table.** The fold closure is applied
+to the interval set at parse time (§4.2c, D23), inside pcrec. This is §3.3's
+cost one axis over, it lives in `libpcrec.a`, and it never reaches an
+artifact. Simple case folding is ~1,500 mappings; as sorted pairs that is a
+few tens of KB, on the same order as §3.3's general-category tables and priced
+by the same ASK 2.
+
+**(b) THE EMITTED ARTIFACT — a RUN-TIME table, and this is the one that was
+missing.** A caseless **backreference** cannot fold at compile time, because
+the thing being folded is subject bytes read at match time. That is the whole
+reason `PCREC_ENCE_BREF_CASELESS` is a seam entry at all
+(`backrefs_design.md`'s spine: *"a backreference is not a class-membership
+test, so caselessness cannot fold away at parse time"*). Under `byte` the
+entry's body carries `src/core/fold.c`'s 52-byte ASCII set. **Under `utf8` it
+must fold arbitrary code points, in the artifact's own residual text.**
+
+**Sized against D84** (`limits.def:157`/`:159` — 500,000 code bytes,
+1,000,000 total), **ARGUED**:
+
+| form | size | against D84 |
+|---|---|---|
+| a full 0x110000-entry mapping | ~4.4 MB | **4.4× the TOTAL cap** — impossible |
+| the ~1,500 simple-fold pairs, as a sorted `{from, to}` table with a binary search | ~12 KB of table text | 1.2% of the total cap; **outside** the code cap, since D84 excludes table initializers by definition |
+| the pairs, restricted to code points the PATTERN's referenced groups can contain | pattern-dependent, usually 0 | free where it applies, and it does not apply to `(\w+)\1` |
+
+**So the design's answer is the middle row and it is a real constraint on the
+entry's body**: the UTF-8 `bref_match_caseless` decodes one character from
+each side, folds each through a sorted table with a binary search, and
+compares — it may **not** carry a direct-indexed map. That is a sentence the
+first version owed and did not write, and it is the difference between a
+12 KB artifact and one D84 refuses outright.
+
+**AND `fold_agreement_check.c` MUST BE REDESIGNED, NOT RE-RUN.** Its present
+population is the 52 ASCII letters, and it checks byte-for-byte that pcrec's
+fold set and libpcre2's agree. Under UTF-8 the domain is 1.1M code points, so:
+
+- **re-running it as written is a 1.1M-cell sweep** on every `make test`,
+  which is §3.3's own oracle-sweep cost (3.8-4.1 s per property, measured) and
+  is not a per-suite price this project pays;
+- and the sweep would compare **pcrec's vendored `CaseFolding.txt` against
+  libpcre2's own Unicode data**, which is a version comparison wearing a
+  correctness check's clothes — it would go red on a libpcre2 bump for a
+  reason that is not a pcrec defect. That is D26's addendum territory (a
+  re-measurement event), not a `make test` failure.
+
+The design's proposal: the check keeps its **byte-tier** population exactly as
+it is (it is cheap and it guards `fold.c`, which does not move), and the UTF-8
+tier gets a **pinned-version equality check** against the vendored data plus a
+**sampled** differential against libpcre2 whose sample is the measured
+interesting set — §4.2's cross-block pairs (K/U+212A, S/U+017F, ω/U+2126,
+µ/U+00B5, å/U+212B, σ/ς/Σ) and the two measured NON-folds (U+0130, U+0131),
+which are the cells a naive `toupper`/`tolower` table gets wrong in both
+directions. **The full sweep becomes a version-bump ritual, not a suite
+member**, which is what ASK 3 is already asking about for §4.1's own result.
 
 The seam is `src/gen/enc/enc.h`'s `PcrecEncEntry` table, four entries today.
 **The headline of this section is that the seam needs no interface change** —
@@ -1764,6 +1821,63 @@ the seam's entries table grows by one row, per `enc.h`'s own third-encoding
 recipe, with no interface change — the property `[M6.6.2]` wave D already
 demonstrated (prediction P-1).
 
+#### 5.4.1 P-4's SECOND leg, written down (r54 NOTE E12)
+
+**ACCEPTED.** The position above rests on **two** structural facts and the
+first version wrote only one of them. Both must hold; they break under
+different conditions, and the one that was written down is not the fragile
+one.
+
+**LEG 1 — the one §5.4 states.** Without `UCP`, `\w` is `[A-Za-z0-9_]`; every
+member is a one-byte character; and every byte of a multi-byte character is a
+continuation byte or a lead byte, none of which is in that set. So "is the
+byte a word byte" and "is the character a word character" agree on every
+input. **Breaks when:** a UCP axis lands (§14 ASK 4) — at which point the
+question is about characters and no byte answers it.
+
+**LEG 2 — the one that was missing.** `upc_of_class` (`internal.h:2850`)
+answers the class-axis context by testing a **representative byte**:
+
+```c
+if (cls_has(pcrec_cls_word_esc, d->rep[c])) return UPC_WORD;
+```
+
+`d->rep[c]` is one byte standing for a whole equivalence class, and a
+representative is only a legitimate answer if the class is **homogeneous** in
+the property being tested. It is — but not by luck, and not because of
+anything about `\w`. It is because `src/ir/dfa.c:173` refines the alphabet by
+that very set first:
+
+```c
+if (has_word) ncls = refine_by(d, ncls, pcrec_cls_word_esc);
+```
+
+`internal.h:1144` says so in its own words — *"`upc_of_class` is exact rather
+than a sample"*. **The refinement is what makes the representative exact**, and
+it is a step in a different file from the test that depends on it.
+
+**Breaks when:** the word set stops being expressible as a set of BYTES. Under
+`UCP` it is not — "this character is a word character" partitions
+*characters*, and the bytes `0x80-0xBF` appear inside both word and non-word
+characters, so no `refine_by` over a 32-byte table can make the equivalence
+classes homogeneous. **`refine_by` would still run and still return an answer**,
+and `upc_of_class` would still test a representative, and the representative
+would be a sample rather than a proof — silently.
+
+**Why writing this down matters more than it looks.** Leg 1's failure under
+UCP is obvious and §4.5 already flags it. **Leg 2's failure is the same
+trigger and is invisible**, because nothing asserts homogeneity: the code that
+establishes it and the code that consumes it are in two files and connected
+only by a comment. So the UCP axis, if it is ever chartered, does not merely
+need a seam entry for word classification (§5.4's own conclusion) — **it needs
+`upc_of_class`'s representative-byte mechanism replaced, not extended**, and
+that is a DFA state-identity change rather than a seam addition. §14 ASK 4 is
+re-worded to say so, because "a word-classification seam entry becomes
+necessary" understated what a UCP axis costs.
+
+**P-4 accordingly becomes two predictions** (§12), one per leg, each with its
+own refutation.
+
 ### 5.5 `\G` and the other advances
 
 **STRUCTURAL.** `\G` is `pos == startpos`, an absolute position test that
@@ -2042,11 +2156,51 @@ sequences is an alternation. Subset construction, Hopcroft minimisation, the
 what they see today.
 
 So the answer to "DFA-eligible day one or VM-first" is **day one, and not as a
-choice** — there is no mechanism by which an encoding could make a pattern
-VM-only, because engine selection reads node kinds and registry rows and this
-lowering introduces neither. The one thing that *would* force the VM is a
-construct, not an encoding: `\X` (grapheme clusters) is module `misc` and out
-of scope (§11).
+choice**. The one thing that *would* force the VM by CONSTRUCT is `\X`
+(grapheme clusters), which is module `misc` and out of scope (§11).
+
+#### 6.2.1 Re-derived under §2.1.2's forced position (r54 E1)
+
+The conclusion above survives, and under the forced position it gets a
+**better reason than the one the first version gave** — plus one exception the
+first version's reason concealed.
+
+**The better reason: engine selection never sees the lowering's output at
+all.** `pcrec_select_engine` runs at `compile.c:988`, the lowering at `:1000`,
+so selection reads the CODE-POINT tree — which is structurally the same tree
+as today (the same `A_CLASS`/`A_CAT`/`A_ALT`/`A_REP` kinds, differing only in
+one node's payload). The forcing analyses `forces_captures` and
+`forces_registry` read node kinds and registry rows, and the lowering
+introduces neither, so their verdicts are **byte-identical to today's on every
+pattern** — which is stronger than "the lowering emits nodes the IR already
+has", because it does not depend on the lowering's output being benign. It
+depends on selection not having run yet.
+
+**THE EXCEPTION, which is my own finding against §6.2's first version.** It
+said *"there is no mechanism by which an encoding could make a pattern
+VM-only."* **There is one, and `[SEL-1]` is it.**
+`forces_dfa_overflow` (`src/opt/select_engine.c:356`, in the same fixpoint at
+`:396`) excludes `ENGM_DFA` when a DFA build has already overflowed a state
+cap, and `compile.c:1000`'s comment records the retry. That path reads a
+MACHINE SIZE, and a machine size is exactly what the encoding changes. So:
+
+> Under `--encoding=utf8` a pattern whose lowered DFA exceeds
+> `PCREC_MAX_DFA_STATES_TABLE` (32,000) falls back to the VM through
+> `[SEL-1]`'s retry — **a pattern that is DFA-compiled under `byte` and
+> VM-compiled under `utf8`, decided by the encoding.** The claim "the encoding
+> cannot change the engine" is false; the true claim is "the encoding cannot
+> change the engine *except through size*, which is `[SEL-1]`'s existing and
+> already-designed path."
+
+**This is not a defect** — `[SEL-1]` exists precisely to make a cap overflow a
+selection outcome rather than a refusal, and the fallback is correct. It is a
+**consequence that must be stated**, for two reasons. It means §6.1's "no
+blowup" and §2.4.1's entries table are not merely comfort: they are the
+argument that this path is rarely taken. And it means a UTF-8 artifact's
+`RX_ENGINE_WHY` stamp can read `dfa_overflow` where the same pattern under
+`byte` reads otherwise, which stage 2's acceptance should **expect** rather
+than treat as a regression. §8.1.1's check 3 is the census that measures how
+often it happens; **P-5 is refuted-or-confirmed by exactly that number.**
 
 ### 6.3 The prefilter: is `memchr` on a lead byte still sound?
 
@@ -2056,6 +2210,27 @@ pcrec built. Under UTF-8 that automaton's start states are lead-byte ranges.
 The derivation is unchanged and its output is correct **by construction**,
 because it reads the machine rather than the pattern. There is no
 "superset" step to justify: it is the same computation on a different machine.
+
+**AND THE PREMISE THAT MAKES IT USEFUL HAS A NAME (r54 E11).** The argument
+above establishes that the filter is SOUND. It does not establish that it is
+worth running, and the property that does is **self-synchronization**: in
+UTF-8, **a lead byte or an ASCII byte never occurs in the middle of a
+character** — the two ranges are disjoint (`0x00-0x7F` and `0xC2-0xF4` for
+leads, `0x80-0xBF` for continuations). So a candidate-start scan that finds a
+lead byte has found a real character boundary, and it can never be led to a
+mid-character position that a subsequent scan has to re-synchronise from.
+
+**This is worth writing down because it is the property the SEAM exists for,
+and the next backend does not have it.** UTF-16 is not self-synchronizing in
+the byte sense: a high surrogate's second byte can equal a low surrogate's
+first, so a byte-level scan can land inside a code unit and a byte-oriented
+prefilter is unsound there without an alignment argument this design never
+has to make. `[DD-12] (6)` rules UTF-16 out and §11 keeps it out — but the
+reason a UTF-8 backend gets the prefilter for free is a property of UTF-8, not
+a property of "encodings", and a future reader porting this section to a third
+backend must re-derive it rather than inherit it. **STRUCTURAL** (the byte
+ranges are the encoding's definition), and it is the one premise of §6.3 that
+does not survive a change of encoding.
 
 What changes is the filter's **quality**, and that is measured
 (`out/sizing.txt`, lead-byte column):
@@ -2080,6 +2255,58 @@ a UTF-8 corpus, and that corpus does not exist until stage 2.
 second byte is a continuation byte in `80-BF`, so a UTF-8 pattern starting
 with a specific non-ASCII character has an *exact* byte at offset 1 — the
 richest possible input for that mechanism. **ASSERTED**; same trigger.
+
+### 6.4 The VM's cost and capacity axes (r54 SHOULD E8)
+
+**ACCEPTED, and this section is new.** §6 priced the DFA and said nothing
+about the VM, which E1 has just made the more urgent half: the VM emitter is
+handed the lowered AST directly (`compile.c:1228`), so **the lowering's output
+shape is the VM's input shape**, and §2.4.1's alphabet argument does not
+transfer — the VM has no alphabet, it has nodes and frames.
+
+**WHAT THE LOWERING HANDS THE VM.** A class becomes an `A_ALT` of `A_CAT`s of
+byte classes: §2.4's own table gives the alternative counts —
+`.` and `[^a]` are **10-way**, `[\x{100}-\x{10FFFF}]` is **8-way**, `\p{L}` is
+**786-way**, `\w` under UCP is **1,056-way**. Where the byte tier gave the VM
+one `A_CLASS` node, UTF-8 gives it an alternation.
+
+| axis | cap / cost | consequence, and its mark |
+|---|---|---|
+| `PCREC_MAX_VM_NODES` | 131,072 nodes | a `\p{L}` class alone is ~2,600 nodes unshared (§2.3.1's naive column). **2.0%** — comfortable alone, and the term to watch is the product below. **ARGUED** from §2.3.1 |
+| `PCREC_MAX_VM_REPEAT_COPIES` | 64 copies | unchanged: it counts ITERATIONS of a bounded repeat, not the body's size. **STRUCTURAL** |
+| `PCREC_MAX_VM_REPLICATION_PRODUCT` | 131,072 (a literal alias of `MAX_VM_NODES`, `limits.def:143`) | **this is the one that moves.** The product is body-nodes × copies, so a `\p{L}`-bodied bounded repeat multiplies a ~2,600-node body: `\p{L}{2,4}` is a quantified 786-way alternation and **`\p{L}{1,50}` crosses the cap** at ~50 copies where an ASCII class would cross at ~43,000. **ARGUED**; K22's shape, one class wider |
+| `vm_alt` resume frames | `VM_DEFAULT_RESUME_FRAMES` / `VM_DEFAULT_TRAIL_FRAMES` 3072 | **a byte-sequence alternation is DETERMINISTIC on its first byte** — the lead-byte ranges of the decomposition's alternatives are disjoint by construction — so `[ENG-ISL]`'s trie walk resolves it in one path and pushes at most one frame (`alt_dispatch_study.md` §3.2). **ARGUED**, and it is the reason this row is not the disaster the 786 suggests |
+| `vm_cost`'s charge | selection input | 786 alternatives read as 786 branches by a cost model that has never seen one. **ASSERTED** — this is the row most likely to be wrong |
+
+**THE TWO INTERACTIONS THE PANEL NAMED, each answered.**
+
+**`[ENG-ISL]`'s island predicate.** Its predicate is *"does this alternation's
+whole subtree match a finite set of literal byte strings"* (the LANGUAGE form,
+which `isl1_report.md` §2.2 records was chosen after the per-branch form
+measured wrong). **A lowered class is exactly that** — a finite set of literal
+byte strings, by construction — so **every lowered non-ASCII class becomes an
+island**, and the trie walk is what makes the frame row above benign. This is
+the happiest interaction in the milestone and it is also **the one to
+distrust**: `[ENG-ISL]`'s own landing found a build that stamped eleven
+islands, fired on nothing, and grew the artifact 3.0% while passing every
+answer check. §8.1.1's check 3 reads the `RX_VM_ISLANDS` stamp for that
+reason.
+
+**`possessify`'s (U1)/(U2) verdicts** are §2.5.1 row 4/5's **DECLINE**, so
+they are unaffected here: a non-ASCII class never reaches the island question
+with a possessification verdict attached, because possessify ran before the
+lowering and declined. Under `--encoding=byte` nothing changes at all.
+
+**WHAT THIS SECTION DOES NOT DO, deliberately.** It does not propose a cap
+change, a cost-model change or an island-predicate change. Every row above is
+**ARGUED or ASSERTED**, none is measured, and the measurement that would
+settle all five is the same one §2.5.1 and §6.3 already owe: a form and stamp
+census over a UTF-8 corpus, which does not exist until stage 2. **D77 applies
+to this whole section**: it is written so the implementation wave knows where
+to look, not so it can build against it. §8.1.1's check 3 is the census, and
+§12 gains **P-10**: no corpus pattern's VM artifact crosses
+`PCREC_MAX_VM_REPLICATION_PRODUCT` under `utf8` that does not cross it under
+`byte`. Refuted by one, and the `\p{L}{1,50}` row above predicts it will be.
 
 ---
 
