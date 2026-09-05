@@ -98,6 +98,29 @@ enum {
 typedef struct {
     int         id;      /* PCREC_ENC_* (lib/pcrec.h) */
     const char *name;    /* the ONE spelling: CLI value and diagnostics */
+    /* [M5.0] THE COMPLEMENT UNIVERSE — the greatest code point this encoding
+     * has, and the ONE question that reads it is "what does `[^x]` mean here"
+     * (docs/design/utf8_design.md §2.7.1/§2.7.2, D58's addendum).
+     *
+     * IT IS NOT A CODE-UNIT WIDTH AND NOT A VALIDITY PREDICATE. `byte` reads
+     * `0xFF` because a byte encoding's repertoire is exactly `0..0xFF`, so
+     * `negate(S) = [0, 0xFF] \ S` is the SAME FUNCTION as the `~bits[i]` loop
+     * it replaces — which is what makes stage 1's byte-identity gate an
+     * argument rather than a hope. `utf8` reads `0x10FFFF`.
+     *
+     * IT IS THIS FIELD, AND NOT THE ENTRIES TABLE, THAT MAKES [M5.0] A D58
+     * SEAM EVENT. The design's §5 opened "the seam needs no interface change"
+     * and r54 E2 retracted it: the entries table above is untouched by the
+     * second backend (four residual bodies under their existing signatures),
+     * and `PcrecEnc` itself gains this one scalar. Recorded rather than
+     * quietly added, because D58's revisit clause asks for exactly that.
+     *
+     * A FUTURE CODEPAGE BACKEND WILL NOT FIT IT (§5.7.3, R-ASKS-3(b)): a
+     * codepage's repertoire is 256 code points SCATTERED across Unicode, so no
+     * maximum describes it and the field becomes the contiguous-repertoire
+     * special case of "what set does a complement complement within". That is
+     * D77-recorded with its trigger, not built for. */
+    unsigned    max_cp;
     /* The backend's entries, terminated by a row with `decls == NULL`. An
      * EMPTY table (or none) is a NAME pcrec knows and an encoding it cannot
      * yet compile; `pcrec_enc_ready()` is that test, and the refusal reads the

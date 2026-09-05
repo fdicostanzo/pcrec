@@ -165,7 +165,15 @@ static First first_of(const Ast *a)
     switch (a->k) {
     case A_CLASS: {
         First r;
-        memcpy(r.f, a->u.cls.bits, 32);
+        /* [M5.0 stage 1] §2.5.1's DECLINE row 4. This pass runs inside
+         * `pcrec_select_engine` (compile.c:988), ABOVE the encoding lowering
+         * at :1000, so the class carries CODE POINTS — and a node reaching
+         * outside the byte range widens to ALL BYTES rather than refusing.
+         * That makes the disjointness test harder to satisfy, so the cost is a
+         * lost possessification and never a wrong answer; under
+         * `--encoding=byte` no interval can exceed 0xFF and the cost is zero,
+         * which is why the identity gate still reads 100%. */
+        pcrec_cls_bits_widen(a, r.f);
         r.nullable = false;
         return r;
     }
@@ -526,7 +534,15 @@ static GkParts gk_build(Gk *g, const Ast *a)
 
     switch (a->k) {
     case A_CLASS: {
-        int p = gk_newpos(g, a->u.cls.bits);
+        /* [M5.0 stage 1] §2.5.1's DECLINE row 5, `first_of`'s argument
+         * verbatim one rung down: a Glushkov position's LABEL is a byte set,
+         * and a class reaching outside the byte range labels the position with
+         * ALL BYTES. A wider label makes (U1)'s at-most-one-live-position test
+         * and (U2)'s follow-set disjointness harder to prove, so the verdict
+         * is lost and no answer moves. */
+        uint8_t lab[32];
+        pcrec_cls_bits_widen(a, lab);
+        int p = gk_newpos(g, lab);
         if (p < 0) return gk_parts_empty(true);
         GkParts r = gk_parts_empty(false);
         cls_set(r.first, (unsigned)p);

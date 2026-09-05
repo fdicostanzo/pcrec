@@ -136,6 +136,51 @@ construction (src/ir) and emission (src/gen).
   it is widened into exactly this propagation. One mechanism instead of two,
   with a cell for each half in `tests/recursion/inlookaround.rxt`.
 
+- **lower_enc.c** — [M5.0] THE ENCODING LOWERING: the AST→AST rewrite that
+  turns a tree of CODE-POINT classes into one the byte tier can express, and
+  the one pass in this compiler that knows how an encoding spells a character.
+  (`docs/design/utf8_design.md` §2.1, §2.1.2, §2.3.)
+
+  **STAGE 1 SHIPS THE BYTE INSTANCE, WHICH IS A CHECK AND NOT A PLACEHOLDER.**
+  Under `--encoding=byte` a code point IS a byte, so an interval list already
+  inside `[0, 0xFF]` is the confined form and the rewrite is the identity —
+  what the pass does is enforce §2.1's rule that anything above the backend's
+  `max_cp` is a compile error. That arm is UNREACHABLE in stage 1 by
+  construction (the parser range-checks `\x{...}` on its literal input, and a
+  complement cannot exceed `max_cp`), which makes it the assertion that those
+  two facts stay true. Stage 2 replaces the check on the `utf8` side with
+  §2.3's byte-sequence decomposition, at the same line, under the same
+  signature.
+
+  **ITS POSITION IN `compile.c` IS A REVIEWABLE FACT, NOT AN IMPLEMENTATION
+  DETAIL** (§13 obligation 4). The file's header derives it from three ordering
+  constraints and the call site restates them. Two are settled and asserted by
+  `tests/codegen/run_cpset_structure.sh`: it must run BEFORE `pcrec_build_nfa`
+  and `pcrec_emit_vm` (the two byte-only consumers — and note `emit_vm` is
+  handed the AST ROOT, which is why "between the parser and the IR" is not a
+  position at all for half this compiler), and AFTER `pcrec_postresolve`
+  (which asks lookbehind widths in CHARACTERS, and after lowering a two-byte
+  character is an `A_CAT` of two byte classes).
+
+  **THE THIRD CONSTRAINT IS OPEN AND THE LANE ESCALATED IT RATHER THAN TAKING
+  IT.** §2.1.2 says the lowering "cannot run before :961" (`pcrec_callgraph_
+  build`) because a pass that REBUILDS nodes makes `u.call.body` stale. The
+  reasoning is right and the conclusion inverts it: a rebuilding pass must run
+  BEFORE the graph binds, exactly as `altcls` and `discharge_atomic` do.
+  MEASURED with a scratch rebuilding lowering — at the design's position it
+  moves **45 of `tests/recursion`'s 179** artifacts (the call site's
+  activation-private `W` save/restore block comes out EMPTY), and above :961
+  it moves **none**. Stage 1 is unaffected because its byte instance rebuilds
+  nothing; stage 2 is not, and the position needs a ruling before that wave
+  opens. See `docs/dev/lanes/utf8s1_report.md`, wave-task (a).
+
+  **THE WALK IS ITERATIVE ON `A_CAT`/`A_ALT` SPINES** (D10/DD-10/K20) and does
+  NOT follow `u.call.body` — `postresolve.c`'s walk header carries both
+  arguments, and both apply. It has no `default:` arm, so a new node kind is a
+  COMPILE ERROR here: "can this construct contain a character set" is a
+  question only that kind's author can answer, and inheriting "no" would leave
+  a code-point class in a subtree the emitter reads as bytes.
+
 - **postresolve.c** — [DD-14.LB] THE POST-RESOLUTION CHECKS: the pass for every
   rule that must refuse a pattern AT A PATTERN OFFSET and cannot be decided
   until the call graph exists. Run from `pcrec_compile` immediately after

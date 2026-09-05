@@ -23,15 +23,22 @@ SAB_SUITES="altdiff harness"
 SAB_DESC="stage 1's OR loop that unions every branch's class bitmap into the merged node is removed, so a merged run keeps only its FIRST branch's byte set -- 'b|c' silently compiles to '[b]' and the 'c' alternative is deleted from the language entirely"
 SAB_DOC_FIGURE="src/opt/altcls.c's file header (STAGE 1 soundness paragraph: 'the bitmap is the union'); docs/dev/plan.md's [OPT-ALTCLS] row"
 SAB_COUNT=1
-SAB_BEFORE='                    uint8_t bits[32];
-                    memcpy(bits, br[k]->u.cls.bits, 32);
-                    for (size_t x = k + 1; x < j; x++)
-                        for (int b = 0; b < 32; b++) bits[b] |= br[x]->u.cls.bits[b];
-                    out[m++] = altcls_class_from_bits(cx, bits);
+# [M5.0 stage 1] RE-AIMED at the interval payload. The nested bitmap OR became
+# a merge of interval lists (docs/design/utf8_design.md §2.5.1's WIDEN row 3),
+# so the union is now the loop bound rather than an inner loop — and the
+# sabotage is correspondingly a change to the bound rather than a deleted loop.
+# What it plants is identical: only the FIRST branch of the run survives the
+# merge, and every other branch's members are silently dropped.
+SAB_BEFORE='                    PcrecCpSet u;
+                    pcrec_cpset_init(&u, &cx->arena);
+                    for (size_t x = k; x < j; x++)
+                        pcrec_cpset_add_set(&u, br[x]->u.cls.iv, br[x]->u.cls.n);
+                    out[m++] = altcls_class_from_set(cx, &u);
 '
-SAB_AFTER='                    /* SABOTAGE S66: the union loop is gone -- only the
-                     * first branch survives the merge. */
-                    uint8_t bits[32];
-                    memcpy(bits, br[k]->u.cls.bits, 32);
-                    out[m++] = altcls_class_from_bits(cx, bits);
+SAB_AFTER='                    /* SABOTAGE S66: the merge stops at the FIRST
+                     * branch -- only its members survive the union. */
+                    PcrecCpSet u;
+                    pcrec_cpset_init(&u, &cx->arena);
+                    pcrec_cpset_add_set(&u, br[k]->u.cls.iv, br[k]->u.cls.n);
+                    out[m++] = altcls_class_from_set(cx, &u);
 '

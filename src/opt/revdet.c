@@ -448,7 +448,14 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            memcpy(out, a->u.cls.bits, 32);
+            /* [M5.0 stage 1] §2.5.1's DECLINE row 6. This runs inside
+             * `pcrec_select_engine` (compile.c:988), above the encoding
+             * lowering, so the class carries CODE POINTS — and this function's
+             * own documented safe direction (internal.h: "WIDENS to all bytes,
+             * the sound answer") is exactly what a class reaching outside the
+             * byte range gets. The fallback already existed; all that is new
+             * is a second reason to take it. */
+            pcrec_cls_bits_widen(a, out);
             return;
         case A_CAP: case A_REP:
             a = a->l;

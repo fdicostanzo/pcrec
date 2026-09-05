@@ -216,4 +216,63 @@ never edited afterwards.
   recorded that shape, which the report argues means the durable fix is a
   shared fixture rather than another entry. Six ASKs, headed by the
   invalid-UTF semantic and by vendoring UCD data files.
+- `utf8s1_report.md` — [M5.0] STAGE 1, the INTERVAL-PAYLOAD REFACTOR
+  (2026-09-04/05, lane utf8s1). `A_CLASS` becomes a code-point interval list,
+  `pcrec_lower_enc` lands at its derived position, `pcrec_cls_bits` becomes the
+  sole path to a bitmap, `PcrecEnc` gains `max_cp`, and the identity gate reads
+  100% on all four axes. Read it for the TWO ESCALATIONS in its §0, both of
+  which are rulings the lane deliberately did not take.
+
+  **§4 is the sharp one: `utf8_design.md` §2.1.2's constraint 2 is INVERTED,
+  and inverted it collides with constraint 3, leaving no valid slot for the
+  lowering.** The constraint's own sentence contradicts itself ("callgraph must
+  run AFTER the lowering — so the lowering cannot run before :961") and the
+  diagram follows the wrong half. MEASURED with a scratch REBUILDING lowering,
+  which is the only kind that can test it since stage 1's byte instance
+  rebuilds nothing: at the design's position it moves 45 of `tests/recursion`'s
+  179 artifacts (the call site's `W` save/restore block comes out EMPTY —
+  `u.call.save` derived through a stale `.body`), above the call graph it moves
+  none.
+
+  **RULED R2 while the lane ran, and CONSUMED: resolution (a).** The cure is
+  the pass's SHAPE, not its slot — `pcrec_lower_enc` splices IN PLACE and never
+  reallocates a node that is or contains a group root, so `:1000` stands and
+  constraint 2 becomes a node-identity PROPERTY. The walk takes `Ast **slot`,
+  which makes the invariant structural rather than remembered: its only
+  possible write is one pointer in a parent it never rebuilt. The DESIGN-TEXT
+  hunks are flagged in the report for the manager to apply at merge (D80), not
+  edited by the lane.
+
+  **§4's last two subsections carry a NEW stage-2 finding that came out of
+  consuming the ruling**: `u.rep.revbody` is a reversed COPY built at
+  `compile.c:988`, before the pass, and the walk does not follow it — **413
+  classes across the corpus**, measured against an independently written
+  census that also confirmed the walk's forward coverage EXACT (6,697 =
+  7,110 − 413, zero mismatches on 2,565 compiles). Inert in stage 1; loud
+  rather than silent if stage 2 ignores it.
+
+  **§5 is the one a future reader is most likely to need: the D70 clobber has
+  gone LATENT and sabotage row S121 now detects NOTHING.** `u.cls` shrank
+  32→16 bytes, so `u.rep.possessive` (+49) lands on byte 1 of `n` and
+  `u.rep.revbody` (+56..+63) falls outside the payload entirely — and `n <= 128`
+  under `byte`, so the unguarded clear zeroes a byte that is provably already
+  zero. MEASURED: with the kind guard REMOVED, 2,845/2,845 corpus patterns are
+  byte-identical and `revdet_highbytes.rxt` — the file written specifically to
+  detect this — reports 7/7 identical. The guard is still correct and goes live
+  again at stage 3 (`\p{L}` is ~770 intervals, where a cleared byte turns
+  n=256 into the EMPTY class, a LOST match), but its witness is gone.
+  **RULED R2 and re-aimed in the same wave**: the row declares `SAB_REACH`
+  (can the compiler build such a class at all — `\p{L}` must compile) and
+  `SAB_REACH_POP` (does its own detector file carry one), both verified in
+  BOTH directions, so it scores UNREACHED honestly today and the runner's
+  `NOW REACHED` check fires the day stage 3 lands.
+
+  Also worth reading: §2's account of a latent NULL deref this milestone made
+  real (three probe `Ctx`es in `syntax_dump.c` reached the parser with no
+  options, harmless only while nothing on a parse path read `opt`), §7's
+  pricing of the render helper at 0.024% of compile time from three separate
+  measurements, and §8's re-aim of four sabotage anchors — the three caseless
+  rows reproducing their recorded counts (6/14/8) exactly, which is what makes
+  a re-aim verifiable rather than merely resolvable.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

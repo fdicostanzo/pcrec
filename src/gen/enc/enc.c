@@ -18,7 +18,15 @@ static const PcrecEnc enc_utf8_pending = {
     /* NOT a backend: the NAME exists so `--encoding=utf8` is a recognised
      * member refused for a stated reason, rather than an unknown value. The
      * backend (lowering instance + this row's residual text) is M5's. */
-    PCREC_ENC_UTF8, "utf8", NULL
+    /* [M5.0] `max_cp` is Unicode's own maximum even though this row has no
+     * backend: the field answers "what does `[^x]` mean under this encoding",
+     * which is a fact about the ENCODING and not about whether pcrec can yet
+     * compile it. A pending row carrying 0 here would be a zero that means
+     * "complement within {0}" the moment the backend lands — a wrong value
+     * waiting for a reader, which is the shape D67 contract note 2 calls
+     * failing in the unsound direction. `pcrec_enc_ready` still refuses the
+     * encoding by name (`entries == NULL`), so nothing reads it today. */
+    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, NULL
 };
 
 static const PcrecEnc *const enc_table[] = {

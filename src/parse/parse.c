@@ -25,6 +25,12 @@
 
 #include "core/internal.h"
 #include "parse/parse_mods.h"
+/* [M5.0 stage 1] the ENCODING REGISTRY, for `PcrecEnc.max_cp` alone — the
+ * complement universe `[^...]` and `.` are defined over (§2.7.1). This is the
+ * one place an encoding fact reaches the parser, and `[DD-12] (1)` still
+ * holds: it is a RANGE CHECK on a value, not a conditional on behaviour, and
+ * there is no encoding parameter anywhere in the grammar. */
+#include "gen/enc/enc.h"
 
 /* ---- cursor helpers ---- */
 
@@ -400,7 +406,7 @@ static int cls_peek_past_dash(Ctx *cx)
  * AST depth is unbounded in pattern length (a long concatenation is a left-deep
  * A_CAT chain), so it would add exactly the recursion DD-10/TS-4 is trying to
  * remove. A new class-producing construct must call this itself. */
-static void cls_casefold(uint8_t *b)
+static void cls_casefold(PcrecCpSet *s)
 {
     /* [M6.5.2] DERIVED FROM `pcrec_ascii_fold` (src/core/fold.c) rather than
      * from its own `'A'..'Z'` loop, and the change is behaviour-preserving by
@@ -413,15 +419,61 @@ static void cls_casefold(uint8_t *b)
      * `tests/backrefs/fold_agreement_check.c` ties the two over all 65,536
      * byte pairs. See fold.c for why two unchecked spellings were the shape
      * R32 E8 refused. */
+    /* [M5.0 stage 1] THE SET IS AN INTERVAL LIST NOW, and the loop is still
+     * over the 256 BYTES rather than over the set's members, which is the
+     * honest spelling of the "ASCII only, deliberately" paragraph above: the
+     * table has 256 entries and 52 non-identity ones, so a code point outside
+     * that range has no partner to add and the loop that would look for one
+     * would be a claim this function does not make. DD-1/§4 is where the
+     * Unicode closure lands, and it is a different function over a different
+     * table (`CaseFolding.txt`, stage 4), not a wider bound on this one.
+     *
+     * THE PARTNERS ARE COLLECTED BEFORE ANY IS ADDED. Adding while iterating
+     * would read the set the loop is mutating — `[a]` under `-i` would gain
+     * `A`, and a membership test later in the same sweep would then see `A`
+     * and add `a` back. Harmless here (the fold is an involution, so the
+     * fixpoint is one step away) and exactly the kind of thing that stops
+     * being harmless when the table changes; 52 is the whole bound. */
+    unsigned add[52];
+    int nadd = 0;
     for (unsigned c = 0; c < 256; c++)
-        if (cls_has(b, c)) cls_set(b, pcrec_ascii_fold[c]);
+        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(s, c))
+            add[nadd++] = pcrec_ascii_fold[c];
+    for (int i = 0; i < nadd; i++) pcrec_cpset_add(s, add[i], add[i]);
+}
+
+/* [M5.0 stage 1] THE COMPLEMENT UNIVERSE, ASKED OF THE ENCODING (§2.7.1).
+ *
+ * `[^a]` means "every code point THIS ENCODING HAS except a", and until this
+ * milestone there was no other universe available: a 256-bit bitmap's
+ * complement is `~bits[i]` and the question could not be posed. Under `byte`
+ * this returns 0xFF and every negation is the identical set; under `utf8` it
+ * is 0x10FFFF. It is a RANGE, never a code-unit width and never a validity
+ * predicate — enc.h's own field comment.
+ *
+ * `src/core/compile.c` refuses an unknown or not-yet-implemented encoding
+ * before `pcrec_parse` runs, so the lookup succeeds on every path that can
+ * reach a class; the refusal here is the loud form of "that stopped being
+ * true" rather than a fallback, because a silent default would answer 0xFF
+ * for an encoding whose universe is larger and quietly narrow every negated
+ * class in the pattern. */
+static unsigned cls_universe(Ctx *cx)
+{
+    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
+    if (!e)
+        ctx_fail(cx, 0, "internal error: no encoding row for id %d",
+                 cx->opt->encoding);
+    return e->max_cp;
 }
 
 static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
-    cls_set(a->u.cls.bits, c & 0xff);
-    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
+    PcrecCpSet s;
+    pcrec_cpset_init(&s, &cx->arena);
+    pcrec_cpset_add(&s, c & 0xff, c & 0xff);
+    if (cx->mods->caseless) cls_casefold(&s);
+    pcrec_cpset_publish(&s, a);
     return a;
 }
 
@@ -443,10 +495,18 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
                                bool negate)
 {
     Ast *a = node(cx, A_CLASS);
-    memcpy(a->u.cls.bits, bits, 32);
-    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
-    if (negate)
-        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
+    PcrecCpSet s;
+    pcrec_cpset_init(&s, &cx->arena);
+    /* [M5.0 stage 1] The 32-byte table a port hands in is CONVERTED here, once
+     * (§2.2.2): the generated `pcrec_cls_*[32]` tables keep existing — `\b`'s
+     * mechanism and the DFA's alphabet refinement genuinely want BYTES — and
+     * the `\w`/`\W` PRODUCER rows' output format becomes an interval list.
+     * Both are renderings of one generated source, which is what stops the
+     * word set from acquiring a second hand-maintained spelling. */
+    pcrec_cpset_add_bits(&s, bits);
+    if (cx->mods->caseless) cls_casefold(&s);
+    if (negate) pcrec_cpset_complement(&s, cls_universe(cx));
+    pcrec_cpset_publish(&s, a);
     return a;
 }
 
@@ -678,6 +738,13 @@ static Ast *p_class(Ctx *cx)
 {
     size_t opening = cx->pos - 1; /* at '[' */
     Ast *a = node(cx, A_CLASS);
+    /* [M5.0 stage 1] THE ACCUMULATOR IS A BUILDER AND THE NODE IS PUBLISHED
+     * ONCE, at the bottom. The node is still allocated here because the loop
+     * below `ctx_fail`s out of the middle of its own accumulation on half a
+     * dozen paths and every one of them abandons this node — publishing early
+     * would leave a node carrying a set that is not the class. */
+    PcrecCpSet set;
+    pcrec_cpset_init(&set, &cx->arena);
     bool neg = false;
 
     cls_skip(cx);   /* xx deletes BEFORE the negation check: [ ^a] negates */
@@ -758,7 +825,7 @@ static Ast *p_class(Ctx *cx)
              * module classes is enabled, so a set followed by a range dash
              * refuses HERE with the same offset the refusal path uses. */
             if (r.what == EXT_MEMBERS) {
-                for (int i = 0; i < 32; i++) a->u.cls.bits[i] |= r.node->u.cls.bits[i];
+                pcrec_cpset_add_set(&set, r.node->u.cls.iv, r.node->u.cls.n);
                 cx->pos = r.end;
                 cls_skip(cx);   /* xx: [[:alpha:]\t-\tz] still hits the 150 */
                 if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
@@ -876,7 +943,11 @@ static Ast *p_class(Ctx *cx)
                          "invalid range in character class"); /* step 4 */
             if (lo > hi)
                 ctx_fail(cx, dashpos, "range out of order in character class");
-            for (int i = lo; i <= hi; i++) cls_set(a->u.cls.bits, (unsigned)i);
+            /* A RANGE IS ONE INTERVAL, which is the payload change showing its
+             * hand: `[\x00-\xff]` was 256 bit-sets and is now a single `add`,
+             * and `\p{L}`'s 700-odd ranges will be 700 rather than a walk over
+             * the code-point space. */
+            pcrec_cpset_add(&set, (unsigned)lo, (unsigned)hi);
         } else {
             /* Not a range endpoint: a deferred REFUSAL fires exactly as it
              * always did — `[\d]` keeps its module promise while classes is
@@ -885,17 +956,27 @@ static Ast *p_class(Ctx *cx)
             if (loclaim.what == EXT_REFUSAL)
                 pcrec_ext_finish(cx, &loclaim);
             if (loclaim.what == EXT_MEMBERS)
-                for (int i = 0; i < 32; i++) a->u.cls.bits[i] |= loclaim.node->u.cls.bits[i];
+                pcrec_cpset_add_set(&set, loclaim.node->u.cls.iv,
+                                    loclaim.node->u.cls.n);
             else
-                cls_set(a->u.cls.bits, (unsigned)lo);
+                pcrec_cpset_add(&set, (unsigned)lo, (unsigned)lo);
         }
     }
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
-     * silently wrong and downstream cannot detect it */
-    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
-    if (neg)
-        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
+     * silently wrong and downstream cannot detect it.
+     *
+     * [M5.0 stage 1] THE NEGATION IS THE SAME TWO LINES IN THE SAME ORDER, and
+     * the ONLY thing that moved is what "everything else" means: the
+     * complement is taken within `[0, MAXCP(enc)]` instead of within a
+     * bitmap's implicit 0..255 (§2.7.1). Under `--encoding=byte` the two are
+     * the same function on the same set. Keeping the complement EAGER and in
+     * this one constructor — rather than carrying a `negated` flag to the
+     * lowering — is what keeps this ordering rule checkable by sabotage row
+     * S08 swapping two adjacent lines (§2.7.2's third argument). */
+    if (cx->mods->caseless) cls_casefold(&set);
+    if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
+    pcrec_cpset_publish(&set, a);
     return a;
 }
 
@@ -1114,12 +1195,21 @@ static Ast *p_atom(Ctx *cx)
     case '[': return p_class(cx);
     case '.': {
         Ast *a = node(cx, A_CLASS);
-        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = 0xff;
+        PcrecCpSet s;
+        pcrec_cpset_init(&s, &cx->arena);
+        /* [M5.0 stage 1] `.` IS "EVERY CODE POINT THIS ENCODING HAS", which is
+         * the same universe `[^...]` complements within and is asked of the
+         * same place (§2.7.1). Under `byte` that is `[0,0xFF]` and the two
+         * lines below render to the identical 32 bytes the fill-and-clear pair
+         * produced; under `utf8` it is `[0,0x10FFFF]`, and `.` matching one
+         * CHARACTER rather than one byte is then a property of the lowering
+         * rather than of this constructor. */
+        pcrec_cpset_add(&s, 0, cls_universe(cx));
         /* NEWLINE_LF, oracle-anchored (DD-11). Under `(?s)` the clear is
          * skipped and `.` is the full 256-set — measured census 255 vs 256,
          * probe_mod05.c (MOD-0.5c). */
-        if (!cx->mods->dotall)
-            a->u.cls.bits['\n' >> 3] &= (uint8_t)~(1u << ('\n' & 7));
+        if (!cx->mods->dotall) pcrec_cpset_remove(&s, '\n', '\n');
+        pcrec_cpset_publish(&s, a);
         return a;
     }
     /* [M6.2 wave A] MULTILINE IS RESOLVED HERE, at the assertion itself, and

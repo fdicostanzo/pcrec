@@ -27,6 +27,34 @@ exactly why a structural check is the only instrument that can see it.
 
 ## Files
 
+**[M5.0] `PcrecEnc` GAINED ONE SCALAR, AND THAT IS A D58 SEAM EVENT.**
+`max_cp` — the greatest code point the encoding has, `0xFF` for `byte` and
+`0x10FFFF` for `utf8` — and the ONE question that reads it is "what does
+`[^x]` mean here" (`docs/design/utf8_design.md` §2.7.1, §2.7.2). It is not a
+code-unit width and not a validity predicate.
+
+**IT IS RECORDED RATHER THAN QUIETLY ADDED, because the design's §5 opened by
+claiming the opposite.** r54 E2 retracted "the seam needs no interface change":
+what survives is the claim the third-encoding recipe below actually makes — the
+ENTRIES TABLE is untouched by the second backend (four residual bodies under
+their existing signatures, no `PcrecEncEntry` field, `pcrec_enc_ready`
+untouched, both emit functions untouched, this directory's recipe unchanged) —
+and `PcrecEnc` itself gains this one scalar. D58's revisit clause asks for
+exactly that distinction to be written down.
+
+**THE PENDING `utf8` ROW CARRIES `0x10FFFF` THOUGH IT HAS NO BACKEND.** The
+field answers a question about the ENCODING, not about whether pcrec can
+compile it, and a `0` there would mean "complement within `{0}`" the day the
+backend lands — a wrong value waiting for a reader, which is D67 contract note
+2's unsound direction. `pcrec_enc_ready` still refuses the encoding by name, so
+nothing reads it today.
+
+**A CODEPAGE BACKEND WILL NOT FIT IT** (§5.7.3, R-ASKS-3(b)): a codepage's
+repertoire is 256 code points SCATTERED across Unicode, so no maximum
+describes it and this field is the contiguous-repertoire special case of "what
+set does a complement complement within". Recorded with its trigger under D77,
+not built for.
+
 - **enc.h** — the seam's whole interface: the `PcrecEnc` row (id, the ONE
   spelling of the encoding's name, and a NULL-terminated table of
   `PcrecEncEntry` rows), the entry ids that are also the bits of a

@@ -1688,6 +1688,92 @@ convention): forcing the new check's condition to `0 && ...` in
 `src/ir/dfa.c` reproduces exactly the two expected symptoms (checks (2) and
 its stderr-note sibling go red, `RX_ENGINE` reads `"dfa"` where `"vm"` was
 required) with every other check unaffected — reverted before delivery.
+## [M5.0] stage 1's PAIR: `run_encoding_identity.sh` + `run_cpset_structure.sh`
+
+The interval-payload refactor's acceptance is TWO instruments and the pairing
+is r54 BLOCKING C1's whole point: **byte-identity is exactly the bar a NO-OP
+passes.** A branch that changed nothing, or that built the interval pipeline
+and never used it, scores 100% on the gate. So the gate is the claim and the
+structural checks are the control on the gate, and neither is the acceptance
+alone. `make test-encoding-identity` / `make test-cpset-structure`.
+
+**`run_encoding_identity.sh` — the FOURTH gate here whose reference is a
+PINNED COMMIT, and the only one that filters NOTHING.** Its four siblings each
+strip the D37 feature stamps, or carry a named exception list, or extract a
+PROGRAM REGION because an `abi` event moved the scaffolding out from under a
+whole-file compare. None of that applies: the pin (`cb546b3a`) is this change's
+own immediate parent, so the two compilers agree about every feature, every
+stamp and every `abi` digit, and stage 1 takes NO `abi` bump — which the gate
+asserts STRUCTURALLY by reading both compilers' `.abi` stamps off an artifact
+before it sweeps anything. The comparison is the whole file, and a gate that
+ever needs an exception here has found something.
+
+**ITS PIN MUST NOT BE MOVED FORWARD LIKE A MODULE PIN.** The siblings' pins
+name the commit before a MODULE existed; this one names the commit before a
+REPRESENTATION changed, and its claim is about exactly that boundary. A future
+`abi` event does not re-pin it — if a later change moves emitted bytes this
+gate goes red and the correct response is to RETIRE it (its claim is
+discharged, the boundary is behind us), never to re-pin, which would silently
+convert a refactor gate into a rebuild compared with itself.
+
+**STAGE 1 HAS NO POSITIVE CONTROL, and §8.1.2's table says so in its own row
+rather than leaving a reader to wonder.** Every sibling's control is "the
+pre-module reference REFUSES every pattern the new corpus adds"; stage 1 adds
+no such pattern (`\x{>FF}` still refuses, `-e utf8` still refuses by name, the
+grammar is unchanged), so inventing one would mean inventing a property stage 1
+promises does not exist. What stands in for it is asserted per axis: refusal
+agreement EXACT in both directions at zero, and a population FLOOR (K35).
+Landing figures, all four axes: 2,557 / 2,558 / 2,557 / 2,557 compiled and
+byte-identical, 0 differing, 0 refusal mismatches, 288 refused by both.
+
+**`run_cpset_structure.sh` — what a no-op fails, and every needle reads the
+TREE rather than an artifact.** That division of labour is forced, not chosen:
+what stage 1 changed is a REPRESENTATION, and a correctly refactored
+representation is by construction invisible in the emitted text. There is
+nothing for an artifact-reading check to see, which is precisely why the gate
+alone cannot tell a refactor from a no-op.
+
+- **CHECK 1R IS THE PART TO COPY.** §9.2 makes it an obligation rather than a
+  nicety — *"Check 1 must be demonstrated RED against `git archive HEAD` in the
+  same wave, or it is a check nobody has seen fail"* — so all nine CHECK 1
+  needles are re-run against the pin and EVERY ONE must fail there. It costs a
+  `git archive` rather than a build, because every needle reads source text.
+- **THE NEEDLES READ CODE, NOT PROSE.** `src/core/CLAUDE.md` and two source
+  comments legitimately QUOTE `u.cls.bits` to explain what the D70 clobber
+  survey was about, and §2.2.3 requires that narration KEPT and re-derived. A
+  needle that could not tell a quotation from a read would force those
+  comments deleted or misspelled — the check's convenience bought with a real
+  explanation. Scoped to `*.c`/`*.h` with comment lines filtered.
+- **CHECK 2's FLOOR COUNTS THE ACCESSOR FAMILY, and the reason is a finding
+  against the design's own census.** §8.1.1 words it as six sites calling
+  `pcrec_cls_bits`; FIVE want a bitmap and the sixth does not — `emit_vm.c`'s
+  `vm_isl_single` asks "is this class one literal byte", which scanned 256
+  values through `cls_has` and is now one comparison through
+  `pcrec_cls_single`. Rendering a bitmap there so a grep would find the word
+  would be writing code for the check. Two floors instead: the family at 6,
+  and `pcrec_cls_bits` proper at 5.
+- **CHECK 2d RUNS THE ASSERTION RATHER THAN GREPPING FOR IT.** No pattern can
+  reach the render helper out-of-range under `byte` — that is stage 1's whole
+  point — so the witness is built the one honest way: a scratch compiler whose
+  BYTE backend claims `max_cp = 0x10FFFF`, one `sed` and nothing else, which
+  makes `[^a]` produce intervals reaching 0x10FFFF and drives one straight into
+  a render site. A check on an assertion's PRESENCE is a check on a string.
+- **CHECK 3 IS STAGE 1's HALF OF A STAGE-2 CHECK, and says so.** §8.1.1 places
+  the stamp census at stage 2, where it diffs each `utf8` artifact against its
+  `byte` twin — and there is no twin yet. What stage 1 can do is ESTABLISH the
+  manifest (`manifests/m5_stage1_stamps.tsv`, the file stage 2 diffs against
+  rather than a memory) and demonstrate [MECH-REACH]: every stamp the census
+  names must be found on at least one sample artifact, or those needles would
+  report an empty census at stage 2 while looking like coverage. It is a
+  MANIFEST and not a threshold (r49): nothing asserts a stamp's VALUE, and a
+  drifted manifest is a diff to REVIEW, not a number to bump.
+- **CONSTRAINT 2 IS DELIBERATELY NOT ASSERTED**, and the absence is a finding.
+  This wave MEASURED the design's stated position wrong (see
+  `src/opt/CLAUDE.md`'s `lower_enc.c` entry) and escalated rather than
+  re-architecting. Asserting today's order would pin a position the
+  measurement does not support; asserting the other would pin one the design
+  does not. The check states the two constraints it can stand behind and NAMES
+  the third as open.
 
 ## Conventions
 

@@ -151,6 +151,43 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   actually emitted. `cls_casefold` derives its widening from it, so the
   parse-time fold IS this table by construction.
 
+- **cpset.c** — [M5.0 stage 1] THE CODE-POINT INTERVAL SET: the `A_CLASS`
+  payload's one representation, its arena-backed builder, and the ONE function
+  in this compiler that turns a class node back into a 32-byte bitmap.
+  (`docs/design/utf8_design.md` §2.2, §2.1.4, §2.7.1.)
+
+  **WHY IT IS A FILE AND NOT A HEADER OF INLINES.** Its whole value is that the
+  render is in ONE place with an assertion in it. r54 E1 found that under the
+  design's first pipeline `src/gen/emit_vm.c`'s `vm_cls` would have interned
+  the first 32 bytes of a code-point interval array AS a membership bitmap —
+  an artifact that compiles, matches something, and is invisible to every
+  answer check in this project, because those all compare pcrec against an
+  oracle on a pattern both understand. `pcrec_cls_bits` REFUSES a node whose
+  intervals are not byte-confined, by `ctx_fail` and not `assert` (§13
+  obligation 5; and K7's rule that a library must not kill its caller), so a
+  lowering that did not run is a diagnosed internal error at the site that
+  would have committed the miscompile.
+
+  **THE BUILDER IS ARENA-BACKED BECAUSE OF `ctx_fail`.** Every class in this
+  compiler is accumulated inside code that can refuse mid-accumulation —
+  `p_class` raises "invalid range in character class" from the middle of its
+  own loop — and `ctx_fail` longjmps to `compile_driver`, which frees the arena
+  wholesale. A `malloc`/`realloc` builder would leak on every diagnosed
+  pattern, and the leak would be found by the ASan/LSan axis rather than by
+  review. Growing through `arena_alloc` abandons the smaller block (under a
+  kilobyte for a class reaching 64 intervals) and cannot leak by construction.
+
+  **THE INVARIANT IS SORTED, DISJOINT AND NON-ADJACENT**, and non-adjacency is
+  the half that is easy to drop and expensive to lose: without it `[a-mn-z]`
+  and `[a-z]` are two lists denoting one set, and §2.7.2's argument that the
+  artifact does not depend on the pattern's SPELLING stops being true.
+
+  Two types, deliberately: a WRITE-ONLY `PcrecCpSet` builder and a READ-ONLY
+  published `const PcrecCpRange *`, so "publish once, never mutate" is
+  compiler-checked rather than a convention — which is what lets two nodes
+  share one list (`revdet.c`'s copy constructor copies the pointer).
+  `tests/codegen/run_cpset_structure.sh` is the standing check.
+
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
   calls `ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
@@ -219,7 +256,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
   **[M6.6.2 wave 0, D70] `struct Ast` IS A TAGGED UNION.** The per-kind fields
   live in `union { ... } u`, keyed by the existing `AKind k`:
-  `n->u.cls.bits`, `n->u.rep.{rmin,rmax,greedy,possessive,revbody}`,
+  `n->u.cls` (a 32-byte bitmap through [M6.6]; `{iv, n}` code-point intervals
+  since [M5.0] stage 1 — see the re-derivation below),
+  `n->u.rep.{rmin,rmax,greedy,possessive,revbody}`,
   `n->u.cap.no`, `n->u.anch.multiline`, `n->u.bref.{refs,nrefs,caseless}`.
   `k`, `l`, `r`, `not_repeatable` and `reg` stay COMMON.
 
@@ -233,7 +272,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   because a flexible array cannot live in a union, cannot be preceded by
   another member, and would make `sizeof(Ast)` a lie for the zeroing arena
   that allocates every node at one fixed size. The union member is 24 bytes
-  against `u.cls.bits`'s 32, so `sizeof(Ast)` is unchanged. The rule D70 makes
+  against the then-largest member's 32, so `sizeof(Ast)` is unchanged. (Since
+  [DD-14] `u.call`'s 96 bytes set the union's size, and [M5.0] stage 1's
+  16-byte `u.cls` therefore moves no other member's offset.) The rule D70 makes
   operative: **no module may add a new top-level per-kind field** — a new kind
   adds a union MEMBER, and a field joins the common block only when a survey
   MEASURES it cross-kind. The union buys reading and containment, NOT
@@ -286,8 +327,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   the edge is redundant, and on `(a(?1))` it is a non-terminating compile in a
   predicate asked of every pattern. A genuinely subtree-relative analysis goes
   through `src/opt/callgraph.c`'s memoised SCC fixpoint (wave B+C).
-  `sizeof(Ast)` is unchanged: the member is 32 bytes on LP64, which is
-  `u.cls.bits`'s own 32.
+  `sizeof(Ast)` is unchanged: the member is 32 bytes on LP64, matching the
+  then-largest member.
 
   **[DD-14 wave B+C] `u.call` GAINED TWO MORE FIELDS, AND THEIR POLARITY IS
   THE WHOLE OF THE DESIGN.** `minw` and `nonnullable` are the two derived
@@ -444,7 +485,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
   | field | kind(s) the sites reason about | Ast sites | disposition |
   |---|---|---|---|
-  | `cls[32]` | A_CLASS | 25 | `u.cls.bits` |
+  | `cls[32]` | A_CLASS | 25 | `u.cls.bits` (widened to `u.cls.{iv,n}` at [M5.0] stage 1) |
   | `rmin` | A_REP | 61 | `u.rep.rmin` |
   | `rmax` | A_REP | 54 | `u.rep.rmax` |
   | `greedy` | A_REP | 28 | `u.rep.greedy` |
@@ -492,7 +533,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   A_EMPTY, the six position predicates, A_CAP, A_REP, A_CAT, A_ALT, plus the
   function-tail fallthrough — and it unconditionally cleared two A_REP-only
   fields on all of them. The arithmetic: the union sits at `+40` and
-  `u.cls.bits` spans `+40..+71`, so through `u.rep` the clear writes
+  `u.cls` spanned `+40..+71` AT THE TIME — it is 16 bytes now, and the [M5.0]
+  section below is where this arithmetic's CURRENT answer lives — so through
+  `u.rep` the clear wrote
   `possessive` at `+49` (class bitmap BYTE 9, i.e. bytes `0x48`-`0x4F`, `H`-`O`)
   and `revbody` at `+56..+63` (bitmap BYTES 16-23, `0x80`-`0xBF`). On a
   reversed A_CLASS node it therefore ZEROES the body's membership for those
@@ -506,6 +549,68 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   python3 `re` give `(2,3)(2,3)`; `((I)|J){2}K` on `"IJK"` and
   `((H)|b){0,4}c` on `"HHc"` are the same shape. **The whole-match span is
   unchanged in every case**, which is why a span-only driver sees nothing.
+
+### [M5.0 stage 1] THE SURVEY RE-ASKED AGAINST THE NEW LAYOUT — and the clobber went LATENT
+
+  **`u.cls` IS 16 BYTES NOW**, not 32: `{const PcrecCpRange *iv; int n;}`
+  (`docs/design/utf8_design.md` §2.2). §2.2.3 makes re-asking the survey's own
+  QUESTION — *which generic walker writes a per-kind field without switching on
+  `k`* — an obligation of the same change, on the stated ground that *"a
+  16-byte `u.cls` puts different fields over different bytes and the second
+  finding above is explicitly a clobber waiting for its payload."* Re-asked,
+  and the answer is more interesting than "the guards still hold".
+
+  **THE NEW ARITHMETIC**, measured with `offsetof` on the built tree rather
+  than reasoned from the declaration:
+
+  | | old (32-byte bitmap) | new (16-byte interval list) |
+  |---|---|---|
+  | `u.cls` spans | `+40..+71` | `+40..+55` (`iv` `+40..+47`, `n` `+48..+51`, 4 bytes tail padding) |
+  | `u.rep.greedy` `+48` | bitmap byte 8 | **byte 0 of `n`** |
+  | `u.rep.possessive` `+49` | bitmap byte 9 (`H`-`O`) | **byte 1 of `n`** |
+  | `u.rep.revbody` `+56..+63` | bitmap bytes 16-23 (`0x80`-`0xBF`) | **outside `u.cls` entirely** |
+  | `sizeof(Ast)` | 136 | **136, unchanged** |
+
+  `sizeof(Ast)` does not move because the union's size is set by `u.call` (96
+  bytes), not by `u.cls` — so this re-layout moves NO other member's offset,
+  which is the narrower true statement where §2.2.3 predicted "every offset in
+  the `Ast` union moves".
+
+  **THE GENERIC-WRITER SURVEY, RE-RUN over every `u.<member>.<field> =` in
+  `src/`.** Exactly one generic-path writer survives — `rd_node`, still guarded
+  on `n->k == A_REP` — and `mod_assertions.c`'s pin is still guarded on
+  `k == A_BOL || k == A_EOL`. Every other write is inside a producer that owns
+  the kind. So the guards hold and nothing new needs one.
+
+  **BUT THE HAZARD THE GUARD DEFENDS AGAINST HAS GONE LATENT, AND THAT IS THE
+  FINDING.** `rd_node` clears — it writes ZEROS. Under the new layout
+  `possessive` lands on byte 1 of `n` and `revbody` lands outside the payload,
+  so the unguarded clear zeroes a byte of `n` that is **provably already
+  zero**: a class over `[0, 0xFF]` can hold at most 128 disjoint non-adjacent
+  intervals, so `n <= 128 < 256` and its byte 1 is 0 on every artifact the
+  `byte` backend can produce. The clear is a no-op.
+
+  **MEASURED, because "provably" deserves a number.** With the `n->k == A_REP`
+  guard REMOVED, all **2,845** distinct corpus patterns compile
+  **byte-identically** to the guarded build, and
+  `tests/rungselect/revdet_highbytes.rxt` — the file written specifically to
+  detect this clobber, whose own header records that an all-lowercase corpus
+  could not express it — reports **7/7 identical**.
+
+  **SO SABOTAGE ROW S121 IS CURRENTLY UNDETECTABLE**, and it is recorded here
+  rather than quietly re-aimed, because which repair it gets is a ruling and
+  not an implementation detail. The row's mechanism (clobber the class bitmap's
+  bytes 9 and 16-23) describes a layout that no longer exists; its detector
+  corpus cannot see the new one; and the row will go on scoring while
+  certifying nothing, which is precisely the S70/S155 failure `[MECH-REACH]`
+  was built for.
+
+  **THE GUARD STAYS, AND NOT ON SENTIMENT.** It goes LIVE again at stage 3.
+  `\p{L}` is ~770 intervals, so `n > 255` becomes ordinary the moment
+  `unicode-props` lands — and then clearing byte 1 of `n` turns `n = 256` into
+  `n = 0`, the EMPTY class, which is a LOST MATCH rather than a corrupted one.
+  The guard is correct for a reason that is about `k` and never about offsets,
+  which is exactly why it survives a re-layout that erased its symptom.
 
   It is now guarded on `n->k == A_REP`, behaviour-preserving because those
   values are only ever read for A_REP.

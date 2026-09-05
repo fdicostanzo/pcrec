@@ -252,10 +252,19 @@ static void respell(unsigned byte, bool prefer_literal, char *out, size_t outsz)
 static int textfn_byte(const Ast *out)
 {
     if (!out || out->k != A_CLASS) return -1;
-    int found = -1, count = 0;
-    for (unsigned c = 0; c < 256; c++)
-        if (cls_has(out->u.cls.bits, c)) { found = (int)c; count++; }
-    return count == 1 ? found : -1;
+    /* [M5.0 stage 1] The A_CLASS payload is a code-point INTERVAL LIST now
+     * (docs/design/utf8_design.md §2.2), so "exactly one bit set" is asked
+     * through `pcrec_cls_single` — the same accessor `src/opt/altcls.c` and
+     * `src/gen/emit_vm.c` ask it with. The 256-value scan this replaced was
+     * the same question spelled a third time, and the ruling's own words
+     * ("the decoded value comes off the textfn's own output AST") are
+     * satisfied more directly by the exact predicate than by a scan of it.
+     *
+     * A code point above 0xFF declines to -1, which is this function's own
+     * "any other shape" answer and the right one: the caller reports it as a
+     * harness defect, and a textfn producing one under `--encoding=byte`
+     * would be exactly that. */
+    return pcrec_cls_single(out);
 }
 
 /* One DEFK_TEXTFN row, over its sampled operand set (or all 256 for bare

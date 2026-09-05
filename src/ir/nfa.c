@@ -531,10 +531,15 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
         if (leaf[k]->k != A_CLASS) return false;
 
     uint8_t *seq = arena_alloc(&b->cx->arena, (size_t)nsp * 32);
-    for (int k = 0; k < nsp; k++) {
-        const uint8_t *src = leaf[b->rev ? (nsp - 1 - k) : k]->u.cls.bits;
-        memcpy(seq + (size_t)k * 32, src, 32);
-    }
+    for (int k = 0; k < nsp; k++)
+        /* [M5.0 stage 1] §2.5.1's AFTER row 7. This builder runs at
+         * `compile.c:1018`, BELOW the encoding lowering, so every interval on
+         * every leaf is byte-confined and the render is total — and if it is
+         * not, `pcrec_cls_bits` says so by name rather than letting the trie
+         * intern whatever the first 32 bytes of an interval list happen to
+         * be. */
+        pcrec_cls_bits(b->cx, leaf[b->rev ? (nsp - 1 - k) : k],
+                       seq + (size_t)k * 32);
     out->seq = seq;
     out->len = nsp;
     return true;
@@ -546,7 +551,14 @@ static Frag compile_ast(NB *b, const Ast *a)
     switch (a->k) {
     case A_CLASS: {
         Frag f = frag_single(b, N_CLASS);
-        memcpy(b->nfa->st[f.start].cls, a->u.cls.bits, 32);
+        /* [M5.0 stage 1] §2.5.1's AFTER row 8, and the one place the whole
+         * milestone's shape is visible in three lines: an `N_CLASS` state's
+         * `cls[32]` is a BYTE set and stays one — the 256-entry class
+         * machinery, the DFA's equivalence classes and `d->rep[c]` are all
+         * below the lowering and none of them changes. What changed is that
+         * the 32 bytes are now RENDERED from a code-point interval list
+         * instead of copied from one. */
+        pcrec_cls_bits(b->cx, a, b->nfa->st[f.start].cls);
         return f;
     }
     case A_EMPTY: return frag_single(b, N_EPS);
