@@ -331,7 +331,7 @@ from their logs.
 | `make strict` | **clean** — "whole tree compiles clean with -Werror -Wshadow" |
 | `make test-codegen` | **at the darwin baseline, ZERO new.** `run_codegen_tests.sh` **103 passed / 5 failed** — the exact figure the lane entry named. Every other group unchanged (`dfa_stamps` 31/1, `offset_skip` 22/0, `size_term` 31/0, `trie_identity` 7/0, `scan_edge_census` 14/0, `n1_budget` 13/0). I ran the same target on a `git archive` of `ba7a58cb` and the FAIL sets are identical apart from the sabotage-row COUNT (231 → 232), which is S229 being counted |
 | `make test-encseam` | **2 passed / 0 failed** |
-| `make test-mrl` | **26 passed / 1 failed — IDENTICAL to the lane's base commit**, 21 FAIL lines matching line for line. Not mine; see §5.2 |
+| `make test-mrl` | **27 passed / 0 failed, exit 0.** It was 26/1 at the lane's base with 21 identical FAIL lines; the manager ruled the repair into this lane and §5.2 is the record |
 | `tests/rxtsource` | 108 PASS / 14 FAIL, **identical to the lane's base commit** (§4.4) |
 | hybrid composition | a clamp-bearing prefiltered `utf8` artifact puts the advance immediately above the retry-window recompute and compiles `-O1 -Wall -Wextra -Werror` clean |
 
@@ -344,36 +344,84 @@ before any further gate ran. (I also learned the hard way not to rebuild while
 the identity gate is running; the gate was re-run clean afterwards, and the
 numbers in the table above are from the clean run.)
 
-### 5.2 A SECOND pre-existing red, and this one is a real defect nobody has filed
+### 5.2 THE SECOND FINDING, and the manager ruled its repair into this lane
 
-`make test-mrl` is red at the lane's base and red after it, with the same 21
-lines. It is NOT the `wc`-padding family — it is `tests/mrl/maxw_check.c`, the
-instrument that reads `pcrec_maxw` DIRECTLY and requires every oracle-verified
-span in the whole `.rxt` corpus to fit inside its pattern's max width:
+`make test-mrl` was red at the lane's base and red after the K49 fix, with the
+same 21 lines. It is NOT the `wc`-padding family — it is `tests/mrl/
+cwmax_check.c`, the instrument that reads `pcrec_cwmax` DIRECTLY and requires
+every oracle-verified span in the whole `.rxt` corpus to fit inside its
+pattern's max width:
 
 ```
 FAIL: cwmax: the sweep FAILED
 FAIL tests/utf8/axis01_encoded_length.rxt:50:  ORACLE span 2 bytes EXCEEDS cwmax=1 for pattern '[^a]'
-FAIL tests/utf8/axis01_encoded_length.rxt:451: ORACLE span 3 bytes EXCEEDS cwmax=1 for pattern '[€]'
-FAIL tests/utf8/axis01_encoded_length.rxt:466: ORACLE span 4 bytes EXCEEDS cwmax=1 for pattern '[^€]'
+FAIL tests/utf8/axis01_encoded_length.rxt:451: ORACLE span 3 bytes EXCEEDS cwmax=1 for pattern '[EUR]'
+FAIL tests/utf8/axis01_encoded_length.rxt:466: ORACLE span 4 bytes EXCEEDS cwmax=1 for pattern '[^EUR]'
 ```
 
-**This is the `[M5.0]` cross-note firing exactly as it was written**: *"`pcrec_maxw`'s
-`A_CLASS` arm answers 1 BYTE and is EXACT only because `src/core/compile.c`
-refuses `PCREC_ENC_UTF8` by name; the day a UTF-8 backend lands that arm must
-become the encoding's maximum code-unit length, or the lookbehind fixed-width
-rule silently accepts variable-width branches."* The backend landed at stage 2
-and the D27 utf8 corpus landed the day before this lane, which is what gave the
-check a population that can see it. `docs/design/utf8_design.md` §5.6/§5.6.2
-argues that cross-note's PRESCRIPTION was refuted and that the `maxw` chain
-retires into `cwmax`/`cwmin` — but `cwmax` is what is answering 1 here.
+**I VERIFIED THE TRIAGE BEFORE TOUCHING THE CHECK, because the ruling's stop
+condition made that the load-bearing step.** If cwmax were genuinely
+under-estimating in characters anywhere, this would be an ENGINE bug in the
+silent direction — the lookaround fixed-width rule reads this number, and an
+under-estimate makes a variable-width lookbehind branch look fixed. It is not.
+Every one of the 21 failing cells is a whole-subject span over exactly ONE
+multi-byte character (or one character against a `{1,2}`'s cwmax of 2), read
+cell by cell off the corpus lines themselves before any code changed:
 
-**It is not in `docs/dev/known_issues.md` and not in the journal.** I did not
-file it: it is not this lane's slice, `make test` has been red on it since the
-merge regardless of my change, and the failure direction matters (the
-lookbehind fixed-width rule reads this number, and under-estimating a width is
-the silent-miscompile direction, not the safe one). **Flagged for the manager
-as needing its own row.**
+| pattern | subject | span | in characters | cwmax |
+|---|---|---|---|---|
+| `[^a]` | `CE B1` | 0..2 | **1** | 1 |
+| `[^\x{61}]`, `[^A-a]`, `[α]`, `[Α-α]`, `[αβ]` | 2-byte | 0..2 | **1** | 1 |
+| `[€]`, `[₠-€]`, `[^€]`, `[^₠-€]` | 3-byte | 0..3 | **1** | 1 |
+| `[^€]`, `[^₠-€]` | 4-byte | 0..4 | **1** | 1 |
+| `[^α]{1,2}`, `[€]{1,2}`, `[^€]{1,2}` | 3-byte | 0..3 | **1** | 2 |
+
+So the mismatch was a UNIT mismatch inside the check, exactly as triaged, and
+the repair carries **no `src/` change at all**. The second half of the stop
+condition is also discharged: no NEW violation appeared under the repair.
+
+**THE PREMISE THAT EXPIRED.** The file's own header said its re-aim into
+characters was sound because *"under the `byte` encoding this file parses with,
+one character is one byte."* True when written; false the moment `tests/utf8/`
+merged, since those blocks carry `encoding utf8` and their oracle spans are
+BYTE offsets into multi-byte subjects. The header now carries the new rule,
+dated, with that sentence quoted as the thing that stopped being true.
+
+**THE REPAIR IS TWO HALVES THAT MUST MOVE TOGETHER.** A block is now PARSED
+under its own `encoding` — so cwmax is computed on the AST the block MEANS,
+which matters because under `byte` a literal `[€]` is a class of three BYTES
+and under `utf8` it is one CHARACTER — and its oracle span is MEASURED in the
+same unit. `byte` blocks keep the byte comparison unchanged to the line. The
+encoding name is resolved through `pcrec_enc_by_name`, the seam's own registry,
+so this file cannot drift from `enc.c`'s spelling.
+
+**THE CHARACTER COUNT SHARES NO SOURCE WITH WHAT IT CHECKS** (learnings §3):
+it is one predicate over the subject's own bytes — non-continuation bytes in
+`subject[start..end)` — and never asks pcrec, `next_pos`, or the lowering. A
+span counted by the compiler's own notion of a boundary would have made
+CHECK 2 a comparison of pcrec against itself. The subject decoder is
+transcribed from `tests/harness/verify_rxt.py`'s `decode_subject`, and an
+undecodable subject is counted, reported and fails rather than falling through
+silently.
+
+**TWO NEW NON-VACUITY FLOORS, both validated in the failing direction**, on
+the same rule the file's three existing sabotage modes follow:
+
+| floor | why | validated by |
+|---|---|---|
+| the `utf8` block population is NONZERO | a lost corpus or a broken `encoding` reader would leave the whole character path unentered and GREEN | disabling the reader → "ZERO utf8 blocks seen", check FAILS |
+| at least one compared span's BYTE width EXCEEDS its character width | the first floor alone is satisfied by a `utf8` corpus of ASCII-only subjects, where the two counts coincide and the decode proves nothing | turning the character count back into a byte count → floor fires, and it is caught TWICE (that sabotage also produces 84 CHECK 2 violations) |
+
+MEASURED after the repair: 208 files, 3884 blocks, 3293 parsed, 591 refused,
+23,820 nodes (18,698 bounded), 11,222 oracle spans, **216 utf8 blocks / 307
+utf8 spans, 101 of them with a byte width exceeding their character width, 0
+violations**. `make test-mrl` reads **27/0**. The three existing
+`PCREC_CWMAX_SABOTAGE` modes (`zero`, `unbounded`, `swap`) still each make the
+binary FAIL, re-verified after the change.
+
+**The Linux arm should follow.** The battery read 26/1 there with the identical
+FAIL set, so this is what makes the owed Linux `make test` re-run green; the
+repair is platform-neutral (no `wc`, no `xargs`, no shell at all — it is C).
 
 ---
 
