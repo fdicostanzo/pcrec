@@ -122,9 +122,17 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # It is a CORPUS pattern because run_size_term.sh §9's pool must be corpus
 # patterns; all 10 cells are python-expressible, so C3_PASS moves and no skip
 # bucket does.
-CENSUS_FILES=193
-CENSUS_BLOCKS=3353
-CENSUS_LINES=27056
+# 2026-09-05 (the manager, at the fifty-fourth session's three merges) —
+# moved for: tests/base/cls_fold.rxt ([FORM-CHAR] STEP 1), the 13-file D27
+# utf8 corpus under tests/utf8/ ([M5.0] stage 2, lane utfprom), and
+# tests/known_fail/k49_utf8_lookbehind_retry.rxt (K49): +15 files. The SAME
+# commit also fixes this script's own census derivation, which had been
+# silently 0/0/0 on darwin (`xargs -a` has no BSD spelling — the identical
+# bug utf8s2 fixed in run_mrl_tests.sh the same night), so the previous pin
+# had been failing on this box for macport-era reasons, not corpus ones.
+CENSUS_FILES=208
+CENSUS_BLOCKS=3883
+CENSUS_LINES=28450
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
 # (tests/base/start_pinned_startpos.rxt, tests/assertions/
 # start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
@@ -132,11 +140,14 @@ CENSUS_LINES=27056
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
-RUNSH_FILES=192
-RUNSH_BLOCKS=3350
-RUNSH_LINES=27045
+RUNSH_FILES=206
+RUNSH_BLOCKS=3879
+RUNSH_LINES=28438
 # 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
 # neither new file lands under tests/known_fail/.
+# 2026-09-05 — moved alongside CENSUS_* above (the three-merge night);
+# k49_utf8_lookbehind_retry.rxt lands under known_fail, hence the census
+# and run.sh populations diverge by 2 files / 4 blocks / 12 lines now.
 
 echo "== [DD-13b.W1.1] .rxt source / INV-COMPAT =="
 
@@ -168,7 +179,7 @@ nfiles=$(wc -l < "$FILES")
 # corpus and then compare it against the pin, which is the "populations
 # nobody counts" failure wearing a denominator.
 read -r awk_files awk_blocks awk_lines <<EOF
-$(xargs -a "$FILES" awk '
+$(xargs awk < "$FILES" '
     FNR == 1 { files++ }
     /^pattern[ \t]/ { blocks++; next }
     /^(m|n|ms|ns|gu|perr|g|gp)([ \t]|$)/ { lines++ }
