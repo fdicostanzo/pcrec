@@ -735,7 +735,16 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # touches no src, [ENG-ISL]'s precedent for a lane that writes its own
 # bump); the manager re-pins to the MERGE when it lands.
 #
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2f1ab563}"
+# MANAGER RE-PIN AT MERGE, 2026-09-05 (05b2fe8a — the merge of lane/utf8s2,
+# the SECOND lane of the same night): the pin names the first commit whose
+# tree carries BOTH the fold form (abi 23, the entry above) and [M5.0]
+# STAGE 2's utf8 backend. Stage 2 moved NO byte-encoding artifact byte —
+# its own gate ran 14/14 with `.abi = 22` unchanged pre-merge, and its
+# confirmatory size-log diff was column-identical on all 2,962 rows — so
+# the abi number stays 23 and this re-pin is the ordinary merge-serialization
+# move, not a second event. Later same-night commits touch tests/docs only.
+#
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-05b2fe8a}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
