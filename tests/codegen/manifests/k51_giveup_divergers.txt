@@ -19,3 +19,12 @@
 # diverging (K51 partially fixed — re-measure, then RETIRE the row
 # deliberately). Add a row only with a K-number-backed mechanism note.
 ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
+# [same day, the manifest's SECOND FACE] the witness's three lower-count
+# siblings: the identical rung loss inflates their utf8 artifacts past the
+# 500,000 code-bytes cap (measured: {0,2} = 781,605 B under utf8), so byte
+# COMPILES and utf8 REFUSES — the same K51 mechanism surfacing at compile
+# time instead of match time. Same discipline: excused as exactly this
+# shape, expiring loudly via the swept-and-not-excused guard.
+((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,2}(){2,3}){1,2}){2,3}
+((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,4}(){2,3}){1,2}){2,3}
+((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,6}(){2,3}){1,2}){2,3}

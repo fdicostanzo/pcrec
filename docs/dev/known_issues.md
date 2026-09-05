@@ -3700,6 +3700,40 @@ violated by the DFA's start-anywhere self-loop, reachable from an ordinary
 `startpos=0`, and closing it is a structural change this lane did not have
 the charter for.
 
+## K52 — INFRASTRUCTURE (2026-09-05, found by the FULL §8.5 sweep's first LINUX run): DD12a(i), the byte-vs-utf8 hot-loop shape-identity check, is VACUOUS ON DARWIN and MIS-SCOPED FOR ITS CLAIM everywhere — it has never made its measurement.
+
+TWO DEFECTS, one instrument. (1) VACUITY: the compare extracts `.text`/
+`.rodata` via `objdump -s -j .text` — on Mach-O the section is
+`__TEXT,__text`, `-j .text` matches NOTHING, both sides extract EMPTY and
+2,961 empty-vs-empty diffs read "0 differing". Every green reading this
+check has ever produced (the stage-2 landing's, the k49fix lane's, the
+post-merge 7/7s) was taken on the Mac and is VACUOUS — K35's shape, an
+instrument whose population nobody counted, in the check written to guard
+the encoding seam. (2) SCOPE: on Linux, where the extraction works, the
+whole-object compare can NEVER pass by design — the four encoding residual
+bodies (next_pos, back_step, bref_match, bref_match_caseless) differ per
+encoding BY THE SEAM'S OWN CONTRACT, and since K49 the retry advance is
+the encoding's text too, always_inline-smeared across the entry chain at
+any -O level. First real run: 2,961/2,961 ASCII artifacts "differing",
+i.e. the check restated the seam's design as a failure.
+
+STATE: DD12a(i) now SKIPS LOUDLY citing this entry (the section's other
+checks are unaffected and real). The CLAIM it was written for — no
+encoding CONDITIONAL leaks into the hot path beyond the named
+encoding-owned texts — is still worth a check and currently has NO
+instrument.
+
+FIX DIRECTION (chartered, admin queue): an instrument that (a) asserts
+its own extraction NON-EMPTY per artifact (vacuity impossible by
+construction), (b) scopes the compare to the engine MINUS the named
+encoding-owned regions — marker-delimited source regions (the emitted
+residual block and the [K49] advance carry their own markers) normalized
+on both sides with the normalization COUNTED and pinned, or per-symbol
+object compare with the exclusion list printed — and (c) has a real
+darwin story (a working Mach-O section read, or a loud SKIP naming this
+entry, never an empty compare). Validated in the failing direction with a
+planted encoding conditional in the hot loop before it is trusted.
+
 ## K51 — [M5.0] STAGE 2 (2026-09-05, found by the FULL §8.5 sweep on ubuntubudu — the 250-block slice ran 0 divergences twice and could not see it): under `-e utf8` an artifact can return a TYPED GIVE-UP where the byte artifact ANSWERS, on a pattern whose byte-tier viability depends on a rung the utf8 lowering declines.
 
 WITNESS: `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}` (the
@@ -3725,6 +3759,14 @@ resolution), and this is the edge of that pricing: on a shape that only
 completes BY the rung, the throughput price surfaces as a typed give-up. It
 is NOT a wrong answer (the give-up is honest and typed), and no non-adversarial
 pattern is known to reach it.
+
+SECOND FACE (same day, same sweep): the witness's three lower-count
+siblings ({0,2}/{0,4}/{0,6} in place of {0,8}) hit the SAME rung loss at
+COMPILE time — the utf8 lowering inflates their emitted code past the
+500,000-byte cap (measured: the {0,2} sibling is 781,605 B under utf8
+where byte fits), so byte COMPILES and utf8 REFUSES. One mechanism, two
+surfaces: match-time typed give-up where the artifact fits, compile-time
+cap refusal where it does not. All four patterns are manifest rows.
 
 HELD BY: tests/codegen/manifests/k51_giveup_divergers.txt — §8.5's named
 give-up-divergence manifest (this pattern, exactly; excused in exactly one
