@@ -21585,3 +21585,31 @@ two decimals. w-256 == srt-256 byte-identical at abi 22 confirms
 forced-VM _match-not-_in movement) is owed honestly as a probe, not a
 guess. I-49 (slot SHA + answers + abi-23 bump note) goes to the inbox at
 close.
+
+ADDENDUM (close, ~05:2x): the THIRD merge — lane utfprom's corpus
+promotion (tests/utf8/, 523 blocks: 311 real / 212 staged-perr for
+stages 3-5; 255 pcre2-only under U14, the python tier's byte-oriented
+subject decoder) — landed after the gates: **the blinded corpus CAUGHT
+A REAL STAGE-2 BUG, K49** (utf8 unanchored retry after a failed
+leading zero-width lookbehind advances by BYTE and reports a match at
+a mid-character offset; witness `(?<!.)` startpos=2 on αβ → (3,3);
+known_fail regression pinned to the ARGUED answer; fix chartered, not
+attempted at 05:00). D27's fourth catch of what the implementation's
+own green acceptance missed — the stage-2 lane's 7/7 encoding checks
+and 27,045/0 corpus ran the same night and saw nothing, because they
+were derived from the same model. Post-merge validation:
+run_encoding_checks 7/7 on the merged tree (§8.5 at 250 blocks, 0
+divergences), FULL recursion identity gate GREEN at the manager's
+re-pin 05b2fe8a (RI-EXIT=0; comparison (A) still against ac4917d, the
+fold deny-axis IFF live), test-codegen exactly the five known darwin
+reds (zero new), mrl 27/0, tests/utf8 1335/0, ratchet 2 expected / 0
+now-passing. run_encoding_identity.sh RETIRED per its own written
+contract after the fold form moved every VM artifact past its pin and
+the K35 floor said so — the claim it defended is discharged on the
+record (14/14 at stage 1 AND at stage 2 pre-merge). The rxtsource
+census re-pinned (208/3883/28450; its xargs -a derivation had been
+silently 0/0/0 on darwin — the third BSD residue caught by a floor
+tonight). Close: all pushed, lanes/worktrees removed, I-49 (slot SHA +
+O-16 answers + abi-23 bump note) written to the bench inbox, watchdog
+torn down. The 13:00 slot is the day session's job; wake.md carries
+the procedure.
