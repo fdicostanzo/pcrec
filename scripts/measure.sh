@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # scripts/measure.sh — build and run a design probe from tests/probes/,
 # archiving its output as a diffable report in docs/measurements/ (D35).
 #

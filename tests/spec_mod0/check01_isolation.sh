@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # check01_isolation.sh — INVARIANT 1: enabled-set isolation, mechanical.
 #
 # THE PROMISE. "Recognisers and extent scans live in translation units that do

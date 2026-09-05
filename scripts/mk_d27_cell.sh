@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # mk_d27_cell.sh — a D27 test writer's environment: a git worktree for
 # DELIVERY plus a parallel, allowlist-filtered, non-git CELL for the WORK.
 #

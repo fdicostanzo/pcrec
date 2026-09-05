@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # check06_cursor.sh — INVARIANT 6: the cursor rule.
 #
 # THE PROMISE. "cx->pos moves only under WANT_RESULT — harness computes both

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # run_spec_mod0.sh — the single entry point for the SPEC-MOD0 (D27) checks.
 #
 # Builds every check from source into a scratch directory, runs them, and exits

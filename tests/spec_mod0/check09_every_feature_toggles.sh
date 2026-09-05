@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # check09_every_feature_toggles.sh — INVARIANT 9: every feature toggles.
 #
 # THE PROMISE. "Every feature toggles — subsumed into 7's population machinery;
