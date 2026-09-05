@@ -116,7 +116,23 @@ list:
 | **6** — the `.rxt` oracle value | **RULED: the small `rxt_format.md` amendment route**; the manager charters it, spelling is the manager's, §7.1.1's predicate is the input | **§7.4.1** — this lane does not write the spec, and hands over the correction that the amendment needs **at least four** states, not the three the ASK asked for |
 | — | **NEW, from Frank's width question**: record what the door to UTF-16/32 costs | **§5.7**, a note beside the seam discussion — and §11 now carries the technical reason beside the policy one |
 
-**All seven ASKs are now ruled.**
+**All seven ASKs are now ruled.** **A THIRD BLOCK (R-ASKS-3) then extended
+ASK 2 and widened the width note**, and it is the one that changed a claim
+rather than adding a section:
+
+| ruling | consumed at |
+|---|---|
+| **(a)** `third_party/` gets a GENERAL organizational shape from day one — one directory per source, a `PROVENANCE.md` naming what DERIVES from it, and the derivation step named generically (*"a data source compiles to generated tables"*), **UCD being the first instance and not the pattern** | **§3.3.2** |
+| **(b)** the door is not 16/32-wide but **ENCODING-wide** — single-byte codepages are a different data KIND and a nearly-free backend; multi-byte legacy encodings ride the same lowering | **§5.7.3**, and §5.7 is retitled |
+
+**AND (b) PRODUCED TWO FINDINGS AGAINST THE REST OF THIS REVISION.** A
+codepage's repertoire is 256 code points **scattered** across Unicode, so
+`[^a]` complements within an arbitrary SET and **no maximum describes it** —
+`PcrecEnc.max_cp`, introduced one section earlier by E2's own repair, is the
+CONTIGUOUS-repertoire form of a more general question. And §2.3's *"an
+interval becomes a small set of byte-range sequences"* rests on an unstated
+**MONOTONICITY** premise that UTF-16 and every legacy encoding lack. Both are
+recorded with their triggers rather than built for (D77).
 
 **What SURVIVED adversarial reading**, verified independently and unchanged
 here: §5.6's refutation of the `[M5.0]` cross-note (confirmed at
@@ -3593,16 +3609,19 @@ variable-length sequence with its own break algorithm, and it would be the
 first construct whose width is unbounded at the character level. It belongs to
 its own module and its own design gate.
 
-UTF-16 and UTF-32 (`[DD-12] (6)`) — **and §5.7 is the note recording that
-"out of scope" is not "architecturally foreclosed"** (Frank's width question,
-2026-09-04). What transfers (the UCD data, the fold closure, the character
-widths, `max_cp`, the entries table, and the lowering's SHAPE — with
-units-as-byte-pairs the natural in-architecture form), the three
+UTF-16, UTF-32, **and every other encoding** (`[DD-12] (6)`) — **and §5.7 is
+the note recording that "out of scope" is not "architecturally foreclosed"**
+(Frank's width question, 2026-09-04, widened by R-ASKS-3(b) to codepages and
+legacy multi-byte encodings). What transfers (the UCD data, the fold closure,
+the character widths, `max_cp`, the entries table, and the lowering's SHAPE —
+with units-as-byte-pairs the natural in-architecture form), the three
 transfer-blockers a 16/32 author re-checks (**self-synchronization FAILS for
 UTF-16**, which is E11's premise stated as the blocker it is; the endianness
-axis; surrogates moving from excluded code points to live mechanics), and the
-D77 trigger — `[V-A]`/`[V-B]` interop is where a real consumer would come
-from. **Still not built, designed or scheduled.** PCRE2's
+axis; surrogates moving from excluded code points to live mechanics), the
+codepage and legacy-multi-byte cases (§5.7.3 — a codepage is nearly free and
+is what would outgrow `max_cp`'s scalar), and the D77 trigger —
+`[V-A]`/`[V-B]` interop, and for codepages a caller with legacy DATA rather
+than a legacy runtime. **Still not built, designed or scheduled.** PCRE2's
 `PCRE2_UCP` as a pcrec axis (§14 ASK 4, **re-priced at r54** — it costs
 `upc_of_class`'s mechanism replaced, not a seam entry added; §5.4.1).
 Optimising `ENG_ATTEMPT`'s start loop for character boundaries (§5.5). A
@@ -4068,10 +4087,15 @@ stay inline where they bit, and this section is the index to them.
 - **§4.1.1** — the standing 1:n fold check (ASK 3 RULED), placed at stage 1
   rather than at the stage that builds the fold, because its subject is the
   ORACLE and not pcrec.
-- **§5.7** — the UTF-16/32 door note (Frank's width question): what the
-  architecture already carries, the three transfer-blockers, and the D77
+- **§5.7** — the OTHER-ENCODINGS door note (Frank's width question, widened by
+  R-ASKS-3(b)): what the architecture already carries, the three
+  transfer-blockers, the codepage and legacy-multi-byte cases, and the D77
   trigger. It is the one section written to prevent a future MIS-reading
-  rather than to fix a present defect.
+  rather than to fix a present defect — and §5.7.3 nonetheless produced two
+  findings against the rest of the document (`max_cp`'s contiguity
+  assumption, and §2.3's unstated monotonicity premise).
+- **§3.3.2** — `third_party/`'s general shape (R-ASKS-3(a)), with UCD named
+  as the first instance rather than as the pattern.
 
 ### 16.3 Findings this revision made against ITSELF
 
