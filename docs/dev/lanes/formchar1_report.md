@@ -61,7 +61,13 @@ named here rather than buried.
   lib/pcrec.h bits, so the axis joins `make test-axes` with no list edit.
 - **Answer identity**: `tests/axes/run_axes.sh AXES="-fno-cls-fold"`,
   default vs denied over the whole corpus (the fold-bearing population
-  rides it, including every `flags i` cell). RESULT: see §4.
+  rides it, including every `flags i` cell). RESULT (2026-09-05, manager's
+  window, PROCS=4, CC=gcc-16, 2,200 s wall): **OK —
+  keys_base=22488 keys_axis=22488 agree=22488, mismatches=0, lost=0,
+  gained=0, budget-bound=0, refusals 0/0**; the run's PC-4 live-libpcre2
+  oracle cross-check 0-failure on both arms. Log:
+  `axes_clsfold.log` (session scratchpad; summary line quoted here is the
+  record).
 - **Form-census floor**: `run_form_census.sh` collects
   `RX_VM_CLS_FOLDS` as banded tokens (`>0`/`0`) on both populations and
   floors them — measured 11 default-axis / 23 vm-axis corpus patterns
@@ -129,11 +135,40 @@ build restores bitmaps and stamps 0.
 - `tests/harness/run.sh tests/base/cls_fold.rxt`: 58/58;
   `verify_rxt.py`: ALL CHECKS PASSED.
 - mech single row S228: DETECTED (figure above), 0 anomalies.
-- `make test-codegen`: PENDING-AT-WRITING — result appended below.
-- `run_form_census.sh`: PENDING-AT-WRITING — result appended below.
-- `run_recursion_identity.sh`: PENDING-AT-WRITING — result appended below.
-- `run_axes.sh AXES="-fno-cls-fold"`: awaiting the manager's window;
-  result appended below.
+- `make test-codegen` (CC=gcc-16): 103 passed / 5 failed — and the SAME
+  FIVE fail on an unmodified MAIN tree on this box (verified by running
+  `run_codegen_tests.sh` + the anchor script there read-only): OS-0b's
+  two-engine compile trio, [K24]'s de-sugar control, [SABANCHOR]'s S199
+  stale anchor (main: 223 rows, 1 stale; branch: 224 rows, same 1 —
+  S228's own anchor resolves). All five are inherited Mac-box residuals
+  (§5 items 2/6), ZERO from this branch. Every check my change touches is
+  green: the abi expectation reads 23 on both engines, the bump narrative
+  parses, rule 3's extractor still reports exactly one distinct
+  membership test, and `run_dfa_stamps.sh`/`run_trie_identity.sh` (500
+  patterns × 2, `-i` included)/`run_offset_skip.sh`/`run_size_term.sh`/
+  `run_scan_edge_census.sh`/`run_n1_budget.sh` all pass in full.
+- `run_form_census.sh` (PROCS=4): result in §4a below.
+- `run_recursion_identity.sh`: full run NOT taken here (whole-corpus; see
+  the gate-machinery bullet below).
+- `run_axes.sh AXES="-fno-cls-fold"`: **GREEN** — 22,488/22,488 cells
+  agree on the denied arm against default, 0 mismatches/lost/gained/
+  budget-bound, PC-4 oracle cross-check 0-failure both arms (§2's answer-
+  identity item has the full line).
+- Gate-machinery witnesses (hand-driven, this box): a fold-stamped
+  artifact's program region DIFFERS under `-fno-cls-fold`
+  (`(?i)(?>abc)`, folds=3) and a zero-stamped VM artifact's is
+  byte-IDENTICAL (`(a)(b)c`, folds=0) — the two converse directions the
+  gate asserts, plus `bash -n` on the edited script. The FULL
+  `run_recursion_identity.sh` run (5 axes, two reference builds) is a
+  whole-corpus job and was NOT run in this lane's window — it is owed at
+  the merge (it rides utf8s2's queued "identity gate full arm" acceptance
+  or its own slot, the manager's call), with the FILEPIN re-pinned per §2.
+
+### 4a. Form census run
+
+RUNNING at report commit (PROCS=4, launched in the manager's targeted
+window); its two new floors are §2's. Result appended in a follow-up
+commit the moment the log's completion line lands.
 
 ## 5. Deviations and findings for the manager
 
@@ -154,12 +189,21 @@ build restores bitmaps and stamps 0.
    (a label-adjacent declaration), not the harness.
 3. **The letters conjunct** (§1's flagged narrowing) — reviewable in one
    line if Frank wants the general 0x20-pair.
-4. **The bump-history narrative** in `run_codegen_tests.sh` had already
+4. **Pre-existing test-codegen failures on this box** (same five on main,
+   measured): OS-0b's two-engine fixture fails to compile and both its
+   dependents fail with it; [K24]'s de-sugared control retains 4 accessor
+   calls; [SABANCHOR] reports S199's anchor stale against
+   tests/harness/run.sh; and (under `make test-codegen`'s group)
+   `run_inline_capability.sh` cannot read `rx_search` out of `nm` —
+   Mach-O prefixes symbols with `_`, so the probe reads no symbol even
+   under gcc-16. None are this branch's; all look like macport residuals
+   worth their own admin slice.
+5. **The bump-history narrative** in `run_codegen_tests.sh` had already
    stopped at 19->20 while ABI_EXPECT read 22 (events 20->21, 21->22 are
    absent from the prose). My 22->23 clause is appended; the two missing
    clauses are the manager's call (I did not invent text for other lanes'
    events).
-5. **Merge order**: hunks on shared files (tuning.md, axes_dump.c,
+6. **Merge order**: hunks on shared files (tuning.md, axes_dump.c,
    pcrec.h, run_codegen_tests.sh, run_recursion_identity.sh) are minimal
    and self-contained; expect clean rebase onto utf8s2's merge, with the
    abi number and FILEPIN the two things to re-check there (D94).

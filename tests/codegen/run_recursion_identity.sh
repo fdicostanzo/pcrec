@@ -735,7 +735,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # touches no src, [ENG-ISL]'s precedent for a lane that writes its own
 # bump); the manager re-pins to the MERGE when it lands.
 #
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2706ba6c}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2f1ab563}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
