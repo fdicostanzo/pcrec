@@ -628,9 +628,16 @@ C3_FILES=179
 # REFERENCE BOX's numbers (Linux, where the battery must be green); the
 # local delta is catalogued in the darwin admin slice (wake.md) beside
 # this section's other known local reds.
-C3_PASS=13877
-C3_SKIP=14484
-C3_SKIP_PCRE2ONLY=2266
+# [K49/K50 re-pin, 2026-09-05 evening] -1 PASS / +2 SKIP (+2 pcre2-only):
+# the K49 merge restored its cell into tests/utf8/axis09 and filed K50's
+# new known_fail regression (verify_rxt has NO known_fail exclusion, so
+# both count here). The lane re-pinned the census pair and could not see
+# C3 move — C3 is deliberately red on its own box (the delta above) — so
+# the reference-box re-pin lands here, from the Linux re-run's own
+# numbers at the merge commit.
+C3_PASS=13876
+C3_SKIP=14486
+C3_SKIP_PCRE2ONLY=2268
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1891
