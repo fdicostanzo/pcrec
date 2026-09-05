@@ -721,14 +721,24 @@ fi
 # UNMOVED by this row. Naming it here rather than in bench prose is r49's
 # item 11 — an in-tree named witness, not a sentence in a ledger.
 nomove_fail=0
-nomove() { # nomove <label> <pattern> <expected start>
-    local lbl="$1" pat="$2" want="$3"
-    emit "$WORKDIR/nm.c" "$pat" || { bad "§9 [$lbl] '$pat' did not compile"; nomove_fail=1; return; }
+nomove() { # nomove <label> <pattern> <expected start> [extra pcrec args...]
+    local lbl="$1" pat="$2" want="$3"; shift 3
+    emit "$WORKDIR/nm.c" "$pat" "$@" || { bad "§9 [$lbl] '$pat' did not compile"; nomove_fail=1; return; }
     local got; got="$(stamp "$WORKDIR/nm.c")"
     [ "$got" = "$want" ] || { bad "§9 [$lbl] '$pat' stamps \"$got\", expected \"$want\" — this witness is pinned BECAUSE it must not move"; nomove_fail=1; }
 }
 nomove "cls-atleast-4096"   '[a-z]{4096,}'          reverse-pass
-nomove "whole form, big"    '(?:[a-z]{0,8192})\z'   reverse-pass
+# [LIM-2] N1 (2026-09-05, first full battery after the fallback landed): the
+# whole form's DFA attempt costs more K7 elements than the AUTO route's new
+# 30,000,000 work budget, so under plain auto it now falls back to the VM BY
+# DESIGN and stamps no RX_DFA_START at all ("" — which is what this row read
+# the day the fallback landed). This witness pins [OPT-5]'s predicate (the \z
+# view-decline KEEPS the reverse pass), not the [LIM-2] budget, so the budget
+# is raised for this one emit to let the DFA attempt complete; the fallback
+# itself is run_n1_budget.sh's subject, never §9's. Verified at the raise:
+# the artifact is the same reverse-pass machine (937 KB emitted, as at the
+# pre-fallback pin 334fd10e).
+nomove "whole form, big"    '(?:[a-z]{0,8192})\z'   reverse-pass --max-auto-dfa-elems=100000000
 nomove "counted ladder 4096" '[a-z]{0,4096}'        pinned
 nomove "counted ladder 8192" '[a-z]{0,8192}'        pinned
 nomove "counted ladder 16k"  '[a-z]{0,16384}'       pinned

@@ -589,12 +589,31 @@ C3_FILES=179
 # file under a directory that carries its own verify_*.py, and
 # tests/assertions/ has verify_pcre2.py. So +79 PASS, +16 SKIP, all +16
 # landing in own-oracle; every other reason is unchanged.
-C3_PASS=13442
-C3_SKIP=13525
-C3_SKIP_PCRE2ONLY=1357
+# [M5.0 utfprom re-pin, 2026-09-05] +435 PASS / +959 SKIP for the promoted
+# D27 utf8 corpus (tests/utf8/, 523 blocks, merge 698eea61) — caught by
+# the first full battery after the merge, not at the merge itself (the
+# light local tier never ran this section). The skip growth decomposes
+# exactly: +909 pcre2-only (U14 — verify_rxt.py's subject decoder is
+# byte-oriented, so the corpus's non-ASCII-subject blocks carry
+# `# pcre2-only` and their oracle is the libpcre2 differential owed as a
+# corpus follow-up) and +50 no-python-expression; every other reason
+# is unchanged. NOT lost coverage: the pcre2-only marks were COMPUTED by
+# the blinded author's oracle run, and the 435 python-expressible cells
+# are verified here like any other.
+# BOX SENSITIVITY, FIRST SEEN AT THIS RE-PIN: C3_SKIP_NOPYTHON is now
+# python-VERSION-sensitive — the utf8 corpus holds 16 expectations that
+# python 3.14 (ubuntubudu, the reference box) can express and python 3.11
+# (the Mac's) cannot, so the Mac reads PASS 13861 / SKIP 14500 /
+# no-python-expression 1907 against the pins below. The pins are the
+# REFERENCE BOX's numbers (Linux, where the battery must be green); the
+# local delta is catalogued in the darwin admin slice (wake.md) beside
+# this section's other known local reds.
+C3_PASS=13877
+C3_SKIP=14484
+C3_SKIP_PCRE2ONLY=2266
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1841
+C3_SKIP_NOPYTHON=1891
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=10290
 C3_TIMEOUT=1
@@ -780,12 +799,23 @@ fi
 #
 # The 32 are format_design §1.1's own list, verbatim, so this check
 # reproduces that note's measurement rather than a paraphrase of it.
-# FOUR MORE ARE ADDED HERE, and the addition is the point rather than
-# drift: `description`, `encoding`, `only` and `pcrec` are words THIS
+# MORE ARE ADDED HERE, and the addition is the point rather than
+# drift: `description`, `only` and `pcrec` are words THIS
 # STEP appends arms for, and a census that did not cover them would not
 # cover what it exists to make safe.
+# `encoding` GRADUATED OUT OF THE CENSUS 2026-09-05: its arm is LANDED
+# grammar (run.sh's [DD-13b.W1.1] per-pattern encoding axis) and the
+# promoted utf8 corpus (merge 698eea61) legitimately begins 325+ lines
+# with it as head declarations — parsed, not hard errors. This census
+# protects words whose arm has NOT landed (appending it would flip an
+# existing line's meaning); a landed keyword the corpus uses is the
+# opposite case, and keeping it here made the check red on correct
+# corpus growth (caught by the first full battery after the merge). A
+# word graduates ONLY with its arm demonstrably landed and the collision
+# population being that arm's own legitimate uses — say so here, dated,
+# as this note does.
 CENSUS_WORDS_32="name target lib include config use variant oracle tag mc freq gap def with from testee option repl s sg serr unsupported analysis question reader exemplar bytes sha256 analyzer date row groups"
-CENSUS_WORDS_W1="description encoding only pcrec"
+CENSUS_WORDS_W1="description only pcrec"
 
 collisions=""
 ncensus=0
@@ -801,7 +831,7 @@ if [ "$n32" != "32" ]; then
     fail "keyword census: the pinned 32-word list has $n32 words.
   It is format_design §1.1's list verbatim; if it changed, say so there too."
 else
-    pass "keyword census: the pinned list is 32 words (format_design §1.1) plus W1's 4"
+    pass "keyword census: the pinned list is 32 words (format_design §1.1) plus W1's 3 still-candidate words (encoding graduated 2026-09-05)"
 fi
 
 if [ -z "$collisions" ]; then

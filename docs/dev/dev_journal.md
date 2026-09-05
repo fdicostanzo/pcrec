@@ -21613,3 +21613,61 @@ tonight). Close: all pushed, lanes/worktrees removed, I-49 (slot SHA +
 O-16 answers + abi-23 bump note) written to the bench inbox, watchdog
 torn down. The 13:00 slot is the day session's job; wake.md carries
 the procedure.
+
+## 2026-09-05 (EDT), fifty-fifth session part 1 (daytime) — I-50 answered from source; the battery started EARLY on Frank's word; its stage-test rc=2 triaged to FIVE landing items owed from last night's merges, all fixed
+
+Morning: O-17 read (their [B37] AFTER — the island window; exec summary
+written to docs/dev/summaries/ + published page, Frank's ask, with the
+big-win explainer and the ahead/behind table). I-50 committed to the
+bench inbox (e23b782): the RX_VM_PROGRAM_BYTES reconcile VERIFIED TO THE
+BYTE at their pin (a fact-gathering lane rebuilt w-256/floor/dig-upto-16
+at 334fd10e — 305,686 / 236 B / 646 B all exact), asks (i)-(v) answered
+from source, (vi) a cited suspect list, (vii)'s verdict owed via the
+battery, O-16 (iii) scheduled honestly. Keepalive cadence REVERSED to
+30 minutes (Frank: hourly jitters past the TTL and re-charges every
+tick — memory updated, lanes' briefs to carry it).
+
+**The battery started 11:45 (not 13:00) — pcrecdev2 relayed Frank's
+word that the box was free.** Stage test: **rc=2**, five check failures
+in three sections — ALL fallout the light local tier could not see, and
+the triage matters more than the fixes:
+
+1. **rxtsource C3 pins** — the utf8 corpus promotion grew the verify
+   population (+435 verified / +909 pcre2-only / +50 no-python); a
+   legitimate move nobody re-pinned at the merge. Re-pinned to the
+   REFERENCE BOX's numbers, and the re-pin FOUND a new box-sensitivity:
+   16 expectations are python-3.14-expressible (ubuntubudu) and
+   3.11-inexpressible (Mac) — documented at the pin, catalogued for the
+   darwin admin slice.
+2. **keyword census `encoding` collision** — the census still listed
+   `encoding` as a CANDIDATE keyword while its arm is landed grammar
+   (run.sh's W1.1 per-pattern axis) and the utf8 corpus legitimately
+   begins 325+ head lines with it. `encoding` GRADUATED out of the
+   census, with the graduation rule written where the next word will
+   need it.
+3. **search-pinned §9's whole-form witness stamped ""** — NOT a stage-2
+   regression: [LIM-2] N1's designed auto-route work-budget fallback
+   (852bb15e, same window) sends the witness's ~34M-elem DFA attempt to
+   the VM. The witness pins [OPT-5]'s predicate, not the budget, so its
+   emit now raises --max-auto-dfa-elems and the DFA artifact is verified
+   the same reverse-pass machine as at 334fd10e. Bisected via the
+   o17facts worktree (pre-merge binary stamps reverse-pass; a cwd trap
+   en route — the shell sat in the worktree and ran the OLD binary,
+   CLAUDE.md's own cd-persists warning, self-inflicted).
+4. **cpset [1d] arena_alloc needle** — stage 2's lower_enc.c has ONE
+   direct arena_alloc: u8_push_branch's Ast** scratch branch array,
+   never a node (all nodes via pcrec_ast_node). Re-read done as the
+   check's own FAIL text demands; needle narrowed to "an arena_alloc
+   that is not the Ast** scratch shape", dated.
+5. **cpset [3] manifest drift** — five rows, +26 B each, exactly
+   `#define RX_VM_CLS_FOLDS 0\n` (26 bytes) on exactly the five
+   VM-selected samples: [FORM-CHAR]'s stamp line, un-re-recorded at the
+   merge (a D94 reader-found-by-grep miss). Re-recorded deliberately.
+
+Validation: cpset 28/0, search-pinned 17/0 local; rxtsource local =
+known darwin reds + the documented C3 box delta. Linux make test re-run
+owed at the fix commit after the battery drains. Lesson (again, and now
+with a worked example): "merged with gates green at the light tier" is
+not "the suite passes" — the full battery caught five landing items the
+same night's gates could not reach, and every one was a READER of a
+changed surface that no grep enumerated at the change.

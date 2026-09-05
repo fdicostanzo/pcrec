@@ -207,14 +207,20 @@ else
     fi
     # THE NEGATIVE HALF, and it is the one that catches a stage-2 author
     # reaching for the obvious shape: a rebuilding lowering is spelled by
-    # allocating a node inside this pass. There is no legitimate reason for
-    # `arena_alloc` to appear in this file — stage 2 allocates its byte-range
-    # classes through `pcrec_cpset_publish` onto nodes made by
-    # `pcrec_ast_node`, which is itself the parent-preserving path.
-    if grep -q 'arena_alloc' "$SRC/opt/lower_enc.c"; then
-        bad "[1d] src/opt/lower_enc.c calls arena_alloc directly. If that is a rebuilt PARENT it reintroduces the staleness R2 ruled out; if it is a new leaf it should go through pcrec_ast_node. Either way this needs re-reading against the in-place-splice invariant before the needle is widened"
+    # allocating a NODE inside this pass raw. RE-READ 2026-09-05 (the first
+    # full battery after stage 2 landed): the file's ONE direct arena_alloc
+    # is u8_push_branch's growable `Ast **` BRANCH ARRAY — scratch pointer
+    # storage, arena-backed for cpset.c's own ctx_fail-unwind reason, never
+    # an Ast — and every node this pass creates goes through pcrec_ast_node
+    # (u8_byte_class, u8_seq's cats, the alt/seal makes), the
+    # parent-preserving path. Constraint 2's slot-walk check above stands
+    # beside this one. So the needle is narrowed, deliberately, from
+    # "arena_alloc appears" to "an arena_alloc that is NOT the `Ast **`
+    # scratch-array shape appears": a node allocated raw still fails here.
+    if grep 'arena_alloc' "$SRC/opt/lower_enc.c" | grep -vq 'Ast \*\*[A-Za-z_]* = arena_alloc'; then
+        bad "[1d] src/opt/lower_enc.c calls arena_alloc directly for something other than the reviewed Ast** scratch branch array. If that is a rebuilt PARENT it reintroduces the staleness R2 ruled out; if it is a new leaf it should go through pcrec_ast_node. Re-read it against the in-place-splice invariant before widening this needle (last re-read 2026-09-05)"
     else
-        ok "[1d] src/opt/lower_enc.c allocates no node of its own — nothing in it can rebuild a parent"
+        ok "[1d] src/opt/lower_enc.c's only direct arena_alloc is the Ast** scratch branch array (re-read 2026-09-05) — every node goes through pcrec_ast_node, so nothing in it can rebuild a parent"
     fi
 fi
 
