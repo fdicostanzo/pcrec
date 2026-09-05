@@ -13,6 +13,89 @@ already shipped.
 
 ---
 
+## PANEL OUTCOME — r54, and READ THIS BEFORE ANY SECTION
+
+`docs/dev/reviews/2026-09-04-r54-utf8-design.md`. Three read-only critics
+(engine semantics against the shipped tree, checks/validation, measurement
+verification): **5 BLOCKING, 10 MUST-FIX, 8 SHOULD, 6 NOTE.** Verdict: the
+design revises before it merges (the R33 lookaround precedent). This block is
+the revision's map; every row names where the change landed.
+
+**THE THREE THINGS A READER OF THE FIRST VERSION MUST NOT TRUST THEIR MEMORY
+OF**, because the revision moved them rather than annotating them:
+
+1. **§2.1's pipeline diagram was wrong about where the lowering runs, and the
+   position it implied silently miscompiles every VM artifact.** `compile.c`
+   hands the VM emitter the **AST ROOT**, not the IR, and `emit_vm.c` reads
+   the class payload directly at four sites. §2.1 is rewritten against
+   `compile.c`'s real pass chain with a pass-order diagram, and the position
+   is **forced** rather than chosen — §2.1.2 derives it from three ordering
+   constraints that admit exactly one slot. Everything §2.3, §2.5, §5.6 and
+   §6.2 concluded is re-derived under it.
+2. **§2.4's "there is no blowup" was measured in the wrong unit, and the
+   design's own quantified table contained the refuting row.** The binding cap
+   for an emitted DFA is `PREMUL_MAX_ENTRIES` (65,535 **entries** =
+   states × ncls), and the lowering's characteristic effect is on **ncls**,
+   not on states. `\p{L}{1,3}` reads 847 states — 2.6% of the 32,000-state cap
+   — and **80,465 entries, 123% of the entries cap**. §2.4 is re-stated in
+   every binding cap's own units with the arithmetic shown per row.
+3. **§5's headline "the seam needs no interface change" is RETRACTED.** It is
+   true of the ENTRIES TABLE, which is what the third-encoding recipe is
+   about, and false of `PcrecEnc` itself, which must carry a per-encoding
+   maximum code point or every negated class refuses under `--encoding=byte`.
+   §2.7 and §5.0 carry the corrected claim; ASK 7 routes the D58 record.
+
+### Disposition table
+
+| # | finding | disposition | where |
+|---|---|---|---|
+| **E1** | the lowering never reaches the VM emitter | **ACCEPTED**, repaired as an AST→AST rewrite at a **forced** position | §2.1, §2.1.2, §2.1.3, §6.2 |
+| **E2** | negation universe refuses every negated class under `byte` | **ACCEPTED**; per-encoding complement universe chosen over symbolic negation, with the argument | §2.7.1, §2.7.2, ASK 7 |
+| **C1** | stage 1's identity gate stands alone | **ACCEPTED**; paired with three structural checks | §8.1.1 |
+| **C2** | the §8.1 positive control is unfloored (K35) | **ACCEPTED**; floors stated on lookaround §9.2's model | §8.1.2 |
+| **C3** | no sabotage row declares `SAB_REACH` | **ACCEPTED**; all eight rows gain reach declarations at birth | §8.2 |
+| **M1/meas-1** | `_BUNDLED_SHA` computed, never printed | **FIXED AND RE-RUN**; all eight transcripts re-archived | `probes/u8_oracle.py`, `out/` |
+| **E3** | §5.6 unimplementable in three ways | **ACCEPTED**; the maxw chain RETIRES, the fixpoints and both timings are specified | §5.6.3, §5.6.4, §5.6.5 |
+| **E4** | §2.6 collides with the negative lookbehind end-check | **ACCEPTED**; `back_step` validates declared length | §5.2, §5.2.1 |
+| **E5** | the consumer census is incomplete by six files | **ACCEPTED**; full grep-derived census, per-site verdict | §2.5.1 |
+| **E6** | §2.4 sizes in the wrong unit | **ACCEPTED**, and it **changes a conclusion** | §2.4.1, §2.4.2 |
+| **C4** | S-U8 orphaned | **ACCEPTED**; assigned to stage 2 | §8.2, §9.2 |
+| **C5** | S-U7 needs a subject-level witness | **ACCEPTED** | §8.2, §8.3 |
+| **C6** | §8.3 compares mismatched units | **ACCEPTED**; blocks vs cases separated | §8.3 |
+| **C7** | five population rows show no arithmetic | **ACCEPTED**; derivation per row | §8.3 |
+| **C8** | the UCP-SPLIT row names no oracle | **ACCEPTED**; python-**bytes** named and defended | §7.1.1 |
+| meas-2 | `sizing.txt`'s blank RUN DATE | **FIXED**; cause found (a `date -Is` that fails on BSD), re-run | `out/sizing.txt` |
+| meas-3 | `archive.sh`'s dead fallback | **FIXED**; the test was on exit status, the fact is emptiness | `probes/archive.sh` |
+| E7 | suffix sharing vs the A_CAT/A_ALT vocabulary | **ACCEPTED**; near-linearity re-priced, Frag-direct declined | §2.3.1 |
+| E8 | the VM's cost/capacity axes unpriced | **ACCEPTED**; §6.4 is new | §6.4 |
+| E9 | the caseless fold table in emitted text | **ACCEPTED**; artifact vs compiler separated, the agreement check redesigned | §4.6 |
+| E10 | §2.2's re-layout re-derives the D70 survey | **ACCEPTED** | §2.2.3 |
+| E11 | self-synchronization is the prefilter premise | **ACCEPTED** | §6.3 |
+| C9 | curate the D27 extract with an exclusion list | **ACCEPTED** | §8.3.1 |
+| C10 | justify the absence of a pcrec-vs-pcrec differential | **ACCEPTED**, and one is **designed** rather than declined | §8.5 |
+| meas-4 | a "5,460 mismatches" anecdote under a MEASURED banner | **FOLDED**; re-marked | §2.4 |
+| meas-5 | dead ternary in `probe_uprops.py` | **FIXED** | `probes/probe_uprops.py` |
+| E12 | write down P-4's second leg | **ACCEPTED** | §5.4.1, P-4 |
+| E13 | `pcrec_cls_word_esc` survives as bytes | **ACCEPTED WITH A REFINEMENT** — both readings are right about different consumers, and that is itself the hazard | §2.2.2 |
+| E14 | mid-character "no path" inverts for negative assertions | **ACCEPTED**; per-entry promise stated | §2.6.1 |
+| E15 | P-1's file list omits `src/parse/` | **ACCEPTED, and P-1 is REFUTED** — by this revision's own findings, which is the prediction working | §12 P-1 |
+| C11 | stage 2's corpus bar depends on ASK 1 | **ACCEPTED**; precondition named | §9.2 |
+
+**Nothing was refuted outright.** One finding is accepted with a correction to
+its reasoning (E13, §2.2.2), and one prediction of the design's own is refuted
+by the revision rather than by the panel (P-1). §16 is the full what-changed
+record.
+
+**What SURVIVED adversarial reading**, verified independently and unchanged
+here: §5.6's refutation of the `[M5.0]` cross-note (confirmed at
+`mod_lookaround.c:298`/`mrl.c:282-284` by the engine lens on its own), §2.6's
+`MATCH_INVALID_UTF`-for-free semantics, `\p`-without-`PCRE2_UTF`,
+simple-fold-only at 10.46, the 283-state `\p{L}` machine, and the
+refuted-then-vindicated backref cell. All five headline numbers reproduced
+number-for-number by the measurement lens.
+
+---
+
 ## 0. How to read this
 
 ### 0.1 Claim marking
@@ -225,34 +308,141 @@ what lets stage 3 be independent of stage 2. And **`\X`/`\R` belong to
 
 ### 2.1 Where code points live, and where they stop
 
-`[DD-12] (1)` and `(2)` fix this and the measurements do not disturb it, so
-this section states the shape and moves on:
+> **REWRITTEN AT r54 (BLOCKING E1).** The first version drew this pipeline
+> from `APPROACH.md`'s architecture rather than from `src/core/compile.c`, and
+> the two are not the same shape. **The IR is not the only thing downstream of
+> the parser: `compile.c:1228` reads
+> `if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);` — the VM
+> emitter is handed the AST ROOT.** A lowering placed "between the parser and
+> the IR" is therefore not between the parser and the VM emitter at all, and
+> `emit_vm.c` reads the class payload directly at four sites (`:1515`
+> `out[0] = a->u.cls.bits`, `:3287` `cls_has(a->u.cls.bits, c)`, `:4608` and
+> `:7055` `vm_cls(v, a->u.cls.bits)` interning a 256-entry table). Under the
+> position the old diagram implied, **every VM artifact — every
+> capture-bearing pattern, and modules `backrefs`, `lookaround`,
+> `atomic-groups`, `recursion` — would compile a code-point interval list
+> through a path that can only express bytes.** `vm_cls` interns whatever the
+> first 32 bytes of the widened payload happen to be, so the failure is a
+> **silent miscompile, not a refusal**, which is the one outcome
+> `CLAUDE.md`'s module rule forbids by name. All four citations were
+> re-verified against this tree before this rewrite; so was the pass chain
+> below, line by line.
+
+#### 2.1.1 The pass chain as it actually is
+
+Every line number is `src/core/compile.c` at this tree, read rather than
+recalled. **STRUCTURAL.**
 
 ```
-pattern bytes ─► [parser] ─► AST with CODE-POINT INTERVAL sets
-                                     │
-                                     │  ◄── the ONE place code points exist
-                                     ▼
-                             [encoding lowering]      one instance per backend
-                                     │
-                                     ▼
-                       IR: byte-class NFA states, exactly as today
-                                     │
-                    subset construction, minimisation, both emitters,
-                    every prefilter, the artifact  —  ALL BYTE-WISE
+ :901   root = pcrec_parse(&cx);                    AST, CODE-POINT intervals
+ :924   root = pcrec_rxt_compose(&cx, root);        injects definition subtrees
+ :926   root = pcrec_altcls(&cx, root);             reads u.cls.bits ×4
+ :942   root = pcrec_discharge_atomic(&cx, root);   no class payload
+ :961   pcrec_callgraph_build(&cx, root);           binds u.call.body — MUST
+                                                    run after the last pass
+                                                    that REBUILDS a node
+ :988   pcrec_select_engine(&cx, root);             → possessify (:456) reads
+                                                      u.cls.bits ×2
+                                                    → revdet   (:477) reads
+                                                      u.cls.bits ×1
+ :999   pcrec_postresolve(&cx, root);               the lookbehind WIDTH rule,
+                                                    2nd timing — needs
+                                                    CHARACTERS (§5.6)
+────────────────────────────────────────────────────────────────────────────
+ ????   ◄══════ THE ENCODING LOWERING GOES HERE ══════►
+────────────────────────────────────────────────────────────────────────────
+ :1018  pcrec_build_nfa(&cx, root, ...);            reads u.cls.bits ×2
+        (:1128/:1134 forward+reverse, :1135/:1138 subset, :1141/:1142 minimise)
+ :1228  if (chosen == ENGM_VM) pcrec_emit_vm(&cx, root);   ← THE AST, NOT THE IR
+ :1229  else                   pcrec_emit_dfa(&cx);        ← reads the machines
 ```
 
-**Code points exist only between the parser and lowering.** That is where the
-"convert everything to UTF-32" instinct belongs and it is the whole of its
-territory: the subject is never converted, offsets are permanently bytes
-(`[DD-12]`'s stated invariant, and `docs/spec/match_api.md` already promises
-it), and the hot loop never decodes.
+#### 2.1.2 The position is FORCED, not chosen
 
-**The lowering is a per-backend instance, not a conditional.** DD-12 (7)
-forbids `if (enc == UTF8)` anywhere. The byte backend's instance is
-"code point *c* ≤ 0xFF becomes the one-byte sequence *c*, and an interval
-touching anything above 0xFF is a compile error"; the utf8 backend's instance
-is §2.3. Both live in `src/gen/enc/`, which is where §9 puts them.
+Three ordering constraints, each read off the tree, and together they admit
+exactly one slot. This is the section to attack: if one constraint is wrong,
+the position moves.
+
+1. **The lowering must run before `pcrec_build_nfa` (:1018) and before
+   `pcrec_emit_vm` (:1228)**, which is E1 itself. Those are the two consumers
+   that can only express bytes.
+2. **`pcrec_callgraph_build` (:961) must run AFTER the lowering — so the
+   lowering cannot run before :961.** `compile.c:947-955` states the rule and
+   its reason: `.body` is a cache of *"which subtree is that group's, IN THE
+   TREE THE EMITTER WILL WALK"*, and a `.body` captured before a pass that
+   REBUILDS nodes names a subtree that is no longer there — *"two programs for
+   one group"*. **The lowering is exactly such a pass**: it replaces an
+   `A_CLASS` with an `A_CAT`/`A_ALT` of byte-range classes. So it is bound by
+   the same rule `altcls` and `discharge_atomic` are bound by. This is the
+   constraint that kills the otherwise-attractive "lower immediately after the
+   parser" position.
+3. **`pcrec_postresolve` (:999) must run BEFORE the lowering.** It asks the
+   lookbehind fixed-width rule in **CHARACTERS** (§5.6), and after the
+   lowering a two-byte character is an `A_CAT` of two byte classes, so a
+   character-width walk over a lowered tree would answer 2 where the truth is
+   1. It cannot run earlier than :961 either, because its whole reason for
+   existing is that a call's width cannot be answered until the graph binds
+   the callee.
+
+Constraints 2 and 3 put the lowering after :999; constraint 1 puts it before
+:1018. **There is exactly one line between them.**
+
+```
+ :999   pcrec_postresolve(&cx, root);
+ :1000  root = pcrec_lower_enc(&cx, root);   ◄── the encoding lowering
+ :1018  pcrec_build_nfa(&cx, root, ...);
+```
+
+**And the assignment is to `root`, not to a local.** `compile.c:942`'s own
+comment records the bug that makes this worth writing down: `discharge_atomic`
+"now PUBLISHES the rewritten root — inside `select_engine` the assignment was
+to a local, so a discharge at the very root was discarded." A lowering that
+did the same would leave `emit_vm` walking the un-lowered tree, which is E1
+again by a different route.
+
+#### 2.1.3 What the position costs, stated rather than hidden
+
+The position is forced, and it is **not** the convenient one. Three passes run
+BEFORE it and therefore see code-point intervals rather than bytes:
+`pcrec_altcls` (:926), and `possessify`/`revdet` through `pcrec_select_engine`
+(:988). §2.5.1 gives each site its own verdict. That is the honest cost of
+constraint 2, and the first version of this document avoided it only by
+placing the lowering somewhere that miscompiles.
+
+**A second-lowering-in-the-VM-emitter is not an option and is named here so
+nobody proposes it later.** Two lowerings for one rule is the parallel
+mechanism `CLAUDE.md`'s situation index forbids, and it would put the DFA path
+and the VM path on two independently-maintained decompositions of the same
+character set — a divergence no answer check could localise, because both
+would be *plausible* UTF-8.
+
+#### 2.1.4 Making E1's failure mode inexpressible
+
+The repair above puts the lowering in the right place. This makes it
+**impossible to have put it in the wrong one**, which is the stronger form and
+costs one function.
+
+After the lowering every `A_CLASS` still carries an interval list (§2.2 keeps
+one representation), but every interval is confined to `0..0xFF`. Consumers
+that need the 32-byte bitmap — `nfa.c:542`, `emit_vm.c:1515/:3287/:4608/:7055`
+— do not read `u.cls.bits`; they call
+
+```c
+/* Render a BYTE-CONFINED class node into the 32-byte bitmap every byte-tier
+ * consumer wants. The assertion is the point: an interval above 0xFF here
+ * means the encoding lowering did not run on this subtree, and the caller is
+ * about to intern the first 32 bytes of a code-point interval list as if it
+ * were a bitmap. That is r54 E1's silent miscompile, and this turns it into a
+ * compiler assertion at the site that would have committed it. */
+void pcrec_cls_bits(const Ctx *cx, const Ast *a, uint8_t out[32]);
+```
+
+**This is what turns E1 from a bug that shipped once into a bug that cannot
+ship.** The failure the panel found is invisible to every answer check —
+`vm_cls` interns *something* and the artifact compiles and matches *something*
+— so an assertion at the read site is the only instrument that sees it. §8.1.1
+makes it a structural check as well, because an assertion in a build nobody
+runs with assertions on is a comment.
 
 ### 2.2 The class structure widens HERE
 
@@ -278,14 +468,76 @@ Three notes, each of which is a decision rather than a detail:
   deciding which — the special-case shape this project has a standing rule
   against. The byte backend's lowering reads intervals and emits a bitmap;
   the bitmap survives where it belongs, in the IR.
-- **What this deletes.** `cls_set`/`cls_has` and the `pcrec_cls_*[32]`
-  tables (`pcrec_cls_word_esc` and its eighteen siblings) are the byte-tier
-  producers' output format. They become interval literals. §8.1 makes the
-  no-op-ness of that conversion a gate rather than a claim.
+- **What this deletes** — and the first version overstated it; see §2.2.2.
+  `cls_set`/`cls_has` and the `pcrec_cls_*[32]` tables are the byte-tier
+  producers' OUTPUT FORMAT, and that format becomes interval literals. It does
+  **not** follow that the tables stop existing. §8.1 makes the no-op-ness of
+  the conversion a gate rather than a claim.
 
 **The parser is otherwise unchanged**, and that is `[DD-12] (1)`'s point:
 there is no encoding parameter in the grammar. The parser changes only where
 UTF changes the LANGUAGE (§2.7).
+
+#### 2.2.2 `pcrec_cls_word_esc` survives AS BYTES (r54 E13)
+
+**ACCEPTED, with a correction to the finding's reasoning that makes it a
+sharper point than either version had.** The panel says the table must come
+off the deletion list because `\b`'s mechanism consumes it. **Both readings
+are right, about different consumers**, and that is the finding:
+
+| consumer | what it wants | fate |
+|---|---|---|
+| `src/parse/registry.c:507`/`:508` — the `\w`/`\W` PRODUCER rows | a set of characters, to build an `A_CLASS` | becomes an **interval literal**; the design's bullet is right here |
+| `src/ir/dfa.c:173` — `refine_by(d, ncls, pcrec_cls_word_esc)` | a set of BYTES, to refine the byte alphabet | **survives as bytes**; runs after the lowering, on the byte alphabet |
+| `src/gen/emit_vm.c:7247` — `vm_cls(v, pcrec_cls_word_esc)` | a set of BYTES, to intern `\b`'s class | **survives as bytes**, same reason |
+
+**STRUCTURAL**, all three by grep at this tree; `emit_vm.c:7244`'s own comment
+names it *"the SAME table `\w` compiles from"*.
+
+**So the set acquires two representations — which is the hazard §2.2's second
+bullet exists to forbid.** The resolution is not to pick one: the two
+consumers genuinely want different things, and under `--encoding=utf8` they
+are no longer even the same set (`\w`'s characters vs the BYTES a `\b` context
+partitions on, which §5.4's ASCII ruling makes the ASCII word bytes and
+nothing else). The resolution is that **both forms are generated from ONE
+source**, which is a mechanism this tree already has: `src/parse/cls_bits.inc`
+is a generated file, and `[DD-11]`/D85 already rules it *"a DERIVED
+artifact"*. The interval literal and the 32-byte table become two renderings
+of one generator's input, and a second hand-maintained spelling of the word
+set is what would be forbidden.
+
+#### 2.2.3 The re-layout re-derives the D70 clobber survey (r54 E10)
+
+**ACCEPTED.** `u.cls` shrinks from 32 bytes to 16 (a pointer and an `int`),
+so **every offset in the `Ast` union moves**, and `internal.h:487-500` records
+what depends on those offsets — the D70 migration survey, whose two findings
+were both *unconditional per-kind writes on generic paths*:
+
+- `src/opt/revdet.c`'s `rd_node` cleared `A_REP`'s `revbody`/`possessive` on
+  every kind it copies. Through `u.rep` that landed on `u.cls.bits` —
+  `possessive` at `+49` is bitmap byte 9, `revbody` at `+56..+63` is bitmap
+  bytes 16-23 — and the measured symptom was that a reversed `A_CLASS`'s
+  bitmap lost those bytes, so the backward walk's class tests read all-zero
+  and `((H)|I){3}J` on `"HHHJ"` came back with **groups UNSET and the
+  whole-match span unchanged**. Only a capture-aware check saw it.
+  `revdet.c:255-266` now guards on `n->k == A_REP` — **verified present at
+  this tree.**
+- `src/parse/mod_assertions.c`'s multiline pin, harmless only because five of
+  its eight kinds had no payload yet.
+
+**The obligation this milestone inherits is not "keep the guards".** It is
+that the survey's QUESTION — *which generic walker writes a per-kind field
+without switching on `k`* — must be **re-asked against the new layout in the
+same change**, because a 16-byte `u.cls` puts different fields over different
+bytes and the second finding above is explicitly *"a clobber waiting for its
+payload"*. A guard that is correct today is correct for a reason that is about
+`k`, not about offsets, so the guards survive; what does not survive is the
+SURVEY's coverage claim, which was taken over a layout that no longer exists.
+`internal.h`'s own note that *"the arena zeroes the whole allocation, union
+included"* also needs re-reading: a 16-byte `u.cls` read as all-zero is
+`{iv = NULL, n = 0}`, the EMPTY class — where a 32-byte all-zero bitmap was
+also the empty class, so this one happens to survive, and saying so is
+cheaper than leaving a reader to work it out.
 
 ### 2.3 CharSet → byte-sequence fragments: the construction
 
@@ -308,9 +560,7 @@ ED     80-9F  80-BF
 EE-EF  80-BF  80-BF
 ```
 
-and the whole construction is that table generalised. **Suffix sharing** — a
-trie built from the END, so alternatives with common trailing byte-range
-chains share states — is what keeps a `\p{L}`-sized set near-linear.
+and the whole construction is that table generalised.
 
 **THIS IS ALL EXISTING IR VOCABULARY.** A byte-range is a 256-bit bitmap with
 a contiguous run set; a sequence is an `A_CAT` of them; a set of sequences is
@@ -318,15 +568,77 @@ an `A_ALT`. The lowering emits nodes `src/ir/nfa.c` already knows how to
 compile, which is why §6 finds no downstream consequences: **there is nothing
 downstream to change.**
 
+#### 2.3.1 The near-linearity claim, re-priced (r54 E7)
+
+**ACCEPTED; the claim as written was incoherent with the vocabulary four
+lines above it.** The first version said *"**Suffix sharing** — a trie built
+from the END, so alternatives with common trailing byte-range chains share
+states — is what keeps a `\p{L}`-sized set near-linear."* **A TREE CANNOT
+SHARE SUFFIXES.** `A_CAT`/`A_ALT` is a tree; the measured 2,205 comes from
+`probe_sizing.py`'s own hash-consed **DAG**, which the probe discloses in its
+conventions block (*"(d) suffix-shared NFA states = a trie built from the END
+… hash-consing identical (byte-range, target) pairs"*) and which caveat 1
+already flagged as *not pcrec's lowering*. And `src/ir/nfa.c:192`'s trie is a
+**PREFIX** trie keyed on bitmaps, factoring lead bytes — the other end of the
+string.
+
+Two ways out, and the design takes the second:
+
+- **Emit `Frag`s directly**, bypassing the AST so the lowering can build a DAG
+  the way `nfa.c` builds one internally. **DECLINED.** It contradicts §2.1.2:
+  a `Frag`-direct lowering has no AST to hand `pcrec_emit_vm` at `:1228`, so
+  it re-creates E1 exactly — the DFA path would get the shared machine and the
+  VM path would get nothing. The whole reason the lowering is an AST→AST
+  rewrite is that the AST is what BOTH backends read.
+- **Drop the near-linearity claim and re-price on the tree.** **TAKEN.** The
+  lowering emits an `A_ALT` of `A_CAT`s with no sharing, and the sharing is
+  recovered where this tree already recovers it: `nfa.c:192`'s prefix trie
+  factors the lead bytes on the way into the NFA, and **subset construction
+  and Hopcroft minimisation recover the rest** — which is why the numbers that
+  matter are the DFA ones and not the NFA ones.
+
+**The re-priced claim, MEASURED** (`out/sizing.txt` summary table): the tree
+the lowering emits for `\p{L}` is 786 alternatives, whose **unshared** NFA is
+**2,636** states against the DAG's 2,205 — **a ratio of 0.836, so the suffix
+sharing the first version credited with near-linearity is worth 16%.** Both
+determinise to the same **283**-state DFA and the same 283-state minimal DFA.
+The sharing is therefore worth a small constant in the NFA and **nothing at
+all** in the artifact, which is what §6.1 and §2.4 size against.
+`PCREC_MAX_NFA_STATES` (131,072) is the only cap the unshared count is visible
+to, and 2,636 sits at **2.0%** of it.
+
+The same column is worth reading down: on four of the ten rows the "shared"
+count is **larger** than the naive one (`[a-z]` 4 vs 2, `\p{Greek}` 120 vs
+122 the other way), because the DAG pays a shared start and a shared terminal
+that the private-chain form does not. **A construction whose sharing is worth
+16% at its best and negative at its worst was never what kept these numbers
+small.** What keeps them small is determinisation, which is where the
+2,636 → 283 factor of 9.3 actually happens — and that is a pass this design
+does not touch.
+
+**What this costs honestly**: the compiler builds a bigger intermediate than
+it needed to, on `\p`-bearing patterns only. It is a compile-TIME question,
+it has no artifact consequence, and §12 P-3 is the prediction that catches it
+if the constant factor is worse than the probe suggests.
+
 Ill-formed input needs no handling because it has no path: an overlong
 encoding, a truncated sequence, a surrogate encoding and a byte above 0xF4 are
 all simply absent from the automaton. §2.6 turns that into a promise.
 
-### 2.4 The sizing measurement: there is no blowup
+### 2.4 The sizing measurement: no blowup IN STATES
+
+> **RE-STATED AT r54 (MUST-FIX E6), and the conclusion moved.** This section
+> sized in STATES. **Not one of the caps that actually binds an emitted DFA is
+> denominated in states**, and the lowering's characteristic effect is on the
+> other factor. §2.4.1 is the same measurement in the binding caps' own units,
+> and it contains a row that **does not fit** — a row that was printed in this
+> section's own quantified table all along, reading 2.6% of a cap it clears
+> and 123% of a cap nobody had asked it about. The state numbers below are
+> unchanged and correct; what was wrong was calling them the answer.
 
 **MEASURED** (`out/sizing.txt`), and this is the result that most changes the
 shape of the milestone, because the charter asks about "state-count blowup"
-and the honest answer is that there is none.
+and the honest answer is that there is none **in that unit**.
 
 | class | intervals | byte-seq alternatives | NFA (shared) | DFA | min-DFA | lead bytes |
 |---|---|---|---|---|---|---|
@@ -361,16 +673,130 @@ accept state into the start state, and a DFA over a self-similar byte
 structure has almost nothing left to distinguish. **A UTF-8 `.*` does not
 blow the DFA cap; it is nine states.**
 
-**The self-check is what makes these numbers usable.** 10,916 sample points —
-every interval endpoint and its neighbours, interior points, out-of-class
-points, hand-built surrogate encodings, truncations of every multi-byte
-sample, and deliberate overlong re-encodings at every extra length — checked
-for accept/reject against the built automaton: **0 mismatches**. It was not 0
-on the first run. The construction had a real bug (the shared start state
-consumed each alternative's first byte twice, so `[a-z]` could not match
-`'a'`), found by the self-check at 5,460 mismatches and fixed. A sizing number
-from a wrong construction is worse than no number, and this is the instrument
-that separated the two.
+**The self-check is what makes these numbers usable.** **MEASURED**, and it is
+the only claim in this paragraph that is: 10,916 sample points — every interval
+endpoint and its neighbours, interior points, out-of-class points, hand-built
+surrogate encodings, truncations of every multi-byte sample, and deliberate
+overlong re-encodings at every extra length — checked for accept/reject
+against the built automaton, **0 mismatches**, reproduced at every re-run
+including this revision's.
+
+> **r54 meas-4, folded.** The sentences that followed — *"It was not 0 on the
+> first run… found by the self-check at 5,460 mismatches and fixed"* — sat
+> under the same **MEASURED** banner as the 0, and they are not the same kind
+> of claim. The 5,460 is a **LANE ANECDOTE**: it describes a build of the
+> probe that no longer exists and that nothing archived ever captured, so a
+> reader cannot check it and a re-run cannot reproduce it. It is kept, because
+> the lesson (*a sizing number from a wrong construction is worse than no
+> number, and the self-check is what separated the two*) is worth more than
+> the number — but it is marked **ASSERTED (lane record)**, and the panel's
+> point stands: an unverifiable figure printed in the same voice as a verified
+> one borrows the verified one's authority. The current result is independently
+> verified; the story of how it got there is not, and now says so.
+
+#### 2.4.1 The same rows in the BINDING caps' own units (r54 E6)
+
+**MEASURED** (`out/sizing.txt`, "CAP-FIT IN THE CAPS' OWN UNITS" — sections
+(h)-(k), added to `probe_sizing.py` in this revision). The caps, read off the
+tree rather than recalled:
+
+| cap | value | unit | site |
+|---|---|---|---|
+| `PREMUL_MAX_ENTRIES` | 65,535 | **entries** = min-states × ncls | `emit_dfa.c:2081`, tested `:2522` |
+| `PCREC_MAX_SUBSET_ELEMS` | 48,000,000 | **interned state-set elements**, summed over BOTH machines | `dfa.c:934` |
+| D84 code / total | 500,000 / 1,000,000 | **emitted C bytes** | `limits.def:157`/`:159` |
+| `PCREC_MAX_DFA_STATES_GOTO`/`_TABLE` | 10,000 / 32,000 | states | `limits.def:137`/`:138` |
+
+`ncls` is `src/ir/dfa.c`'s own `eqclasses` partition — two bytes are one class
+iff every state sends them to the same target — computed by the probe by the
+same rule. **This is the axis the lowering moves.** A UTF-8 decomposition's
+transitions are lead-byte and continuation-byte RANGES, so it refines the byte
+alphabet in a way an ASCII class never does; sizing in states measured the one
+factor the lowering barely touches.
+
+| class | min-states | ncls | entries | vs 65,535 | +`\b` ncls | entries +`\b` | subset elems |
+|---|---|---|---|---|---|---|---|
+| `[a-z]` | 2 | 2 | 2×2 = 4 | premul | 3 | 6 | 4 |
+| `[\x{80}-\x{7FF}]` | 3 | 3 | 3×3 = 9 | premul | 4 | 12 | 5 |
+| `[α-ω]` | 4 | 5 | 4×5 = 20 | premul | 6 | 24 | 7 |
+| `[\x{100}-\x{10FFFF}]` | 9 | 11 | 9×11 = 99 | premul | 12 | 108 | 18 |
+| `.` (UTF, no DOTALL) | 9 | 12 | 9×12 = 108 | premul | 13 | 117 | 20 |
+| `[^a]` (UTF) | 9 | 12 | 9×12 = 108 | premul | 14 | 126 | 20 |
+| `\p{L}` | 283 | 95 | 283×95 = **26,885** | premul (41.0%) | 96 | 27,168 | 2,533 |
+| `\p{Lu}` | 74 | 87 | 74×87 = 6,438 | premul | 88 | 6,512 | 1,655 |
+| `\p{Greek}` | 26 | 49 | 26×49 = 1,274 | premul | 50 | 1,300 | 123 |
+| `\w` (UCP, approximated) | 332 | 96 | 332×96 = **31,872** | premul (48.6%) | 96 | 31,872 | 3,476 |
+
+and the quantified forms, which is where it bites:
+
+| form | min-states | ncls | entries | vs 65,535 |
+|---|---|---|---|---|
+| `\p{L}*` | 282 | 95 | 26,790 | premul (40.9%) |
+| **`\p{L}{1,3}`** | **847** | **95** | **847×95 = 80,465** | **PLAIN — 122.8%** |
+| `.*` (UTF) | 8 | 12 | 96 | premul |
+| `.{1,3}` (UTF) | 25 | 12 | 300 | premul |
+
+**THREE THINGS FOLLOW, AND ONLY THE FIRST IS COMFORTABLE.**
+
+**(a) K7's element cap is not in the conversation.** The worst row interns
+3,476 elements against 48,000,000 — **0.0072%**, four orders of magnitude of
+headroom, and that is the cap `[M4.7b]` added because the subset construction
+could exhaust memory. Nothing here goes near it.
+
+**(b) `PREMUL_MAX_ENTRIES` IS THE BINDING CAP AND IT IS ALREADY HALF SPENT BY
+ONE CLASS IN ISOLATION.** `\w` under UCP reads **48.6%** of it — where the
+state column reads 332 against 32,000, which is 1.0%. The two units disagree
+by a factor of 47, and the state column is the one the first version of this
+section reported.
+
+**(c) `\p{L}{1,3}` EXCEEDS IT — 80,465 against 65,535 — and this row was
+printed in §2.4's own quantified table from the first draft, reading "847"
+next to a 32,000-state cap.** The number was never wrong; it was never
+converted into the unit that decides anything.
+
+**WHAT EXCEEDING IT COSTS, precisely, because "cap" invites the wrong
+reading.** `emit_dfa.c:2522` sits inside `dfa_premul`, which is an
+`[ENG-FORM]`/D82 **form-selection predicate**: `return false` removes the
+pre-multiplied table from the candidate list. **The machine still compiles**,
+in the plain-table form, and what is lost is `[OPT-3]`'s measured 1.27×. It is
+a THROUGHPUT consequence, not a refusal and not a miscompile. So the honest
+statement is:
+
+> Under UTF-8, a quantified property class can silently drop off `[OPT-3]`'s
+> premultiplied form. Nothing breaks; the artifact is slower than a reader of
+> §2.4's state table would predict, and no existing check would say so.
+
+**AND IT PROMOTES P-5 FROM A CAUTION TO THE MILESTONE'S LIKELIEST SURPRISE.**
+§12 P-5 already said §2.4 measures classes in isolation and not the products a
+real pattern builds. With `ncls` at 95-96 for any `\p`-sized class, a product
+of two such classes multiplies STATES while `ncls` stays high, so the entries
+figure is where a two-class pattern lands first. P-5 is re-stated in entries
+and bytes in §12 accordingly, and stage 2's acceptance gains a **stamp
+census** (§8.1.1 check 3) rather than trusting this table.
+
+**WHAT THIS MEASUREMENT CANNOT REACH, stated rather than estimated quietly.**
+D84's two caps are on EMITTED C BYTES, and `probe_sizing.py` emits no C.
+A derived figure — 80,465 entries × ~6 bytes per `short` initializer cell and
+separator ≈ 480 KB of table text, against D84's 1,000,000-byte total cap and
+outside its 500,000-byte CODE cap by construction (table initializers are
+excluded from the code figure by D84's own definition) — is **ARGUED, not
+MEASURED**, and is in this document only so nobody mistakes its absence for
+comfort. Only pcrec's own emitter settles it, and it cannot compile a UTF-8
+pattern until stage 2 lands. That is P-5's territory and §8.1.1's check 3.
+
+#### 2.4.2 Why the alphabet refinement is the term to watch
+
+**ARGUED**, from §2.3's construction. An ASCII class contributes at most a
+handful of equivalence classes because its transitions are one contiguous
+byte range. A UTF-8 lowered class contributes one class per distinct
+lead-byte range plus one per distinct continuation-byte range **per position**,
+and the decomposition's whole job is to produce many such ranges — the
+canonical 3-byte table alone has four lead ranges. The measured 95-96 for
+`\p{L}`/`\w` is that, and it is close to the ceiling a single class can reach:
+`.` under UTF, which touches every encodable code point, reads only 12,
+because a class that covers everything needs almost no distinctions. **The
+refinement is worst for a class that is large and IRREGULAR**, which is
+exactly what a Unicode general category is.
 
 **TWO CAVEATS, both stated rather than buried.**
 
