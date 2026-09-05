@@ -279,9 +279,12 @@ ms 1 "\xce\xb1\xce\xb2" 1 1
 # answered a MATCH at (3,3), a byte offset inside beta's own encoding; the
 # emitted VM's unanchored retry advanced one BYTE past the failed startpos
 # instead of to the next character boundary. See docs/dev/known_issues.md K49.
-# THE CELL'S VALUE IS THAT IT IS A RETRY CELL: its neighbours below start at a
-# position that answers on the FIRST attempt, so they never exercise the
-# advance at all -- which is why row4 was green throughout.
+# THE CELL'S VALUE IS THAT IT IS A RETRY CELL, the only one in this block:
+# rows 1, 2 and 4 all ANSWER ON THEIR FIRST ATTEMPT, so none of them executes
+# the retry advance at all. Row 4's `(?!.)` at a mid-character startpos is the
+# sharp case -- `.` has no path from a continuation byte, so the negative
+# lookahead succeeds immediately -- and that is why it was green throughout
+# while this cell was not.
 # measured for context (NOT the expected value): PCRE2_UTF=None  MATCH_INVALID_UTF=None  options=0(byte)=None
 # EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): None
 #   ns 2 "\xce\xb1\xce\xb2"   # oracle=pcrec-ARGUED (no oracle produces this)
