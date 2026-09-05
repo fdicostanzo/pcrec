@@ -283,6 +283,46 @@ Five probes ran **remotely against libpcre2 10.46** over
 pcrec, and `divergence_local_py311.txt` is the deliberate python-version
 comparison). **Nothing was written on the reference box.**
 
+## 4b. Rulings received DURING the revision (2026-09-04 late)
+
+**The rulings file grew from 10,381 to 11,707 bytes while this lane was
+running.** Polling it at a stage boundary — the discipline
+`lanes/CLAUDE.md` records lane `macport` missing, which cost that lane its
+headline — caught four of Frank's §14 rulings in time to consume them.
+
+| ASK | ruling | what this lane did |
+|---|---|---|
+| **1** invalid-UTF | **AGREED** | §2.6's block is no longer a proposal; **§9.2's stage-2 precondition (r54 C11) is DISCHARGED**; the 27 invalid-UTF corpus blocks can be written and §8.3.2's extract is safe to cut |
+| **2** vendor UCD | **AGREED, reluctantly**, conditional on the usage summary being prominent **at the specification** | wrote **§3.3.1** — what the data is (compile-time tables in `libpcrec.a`), what an artifact carries of it (**nothing**; the lowered automaton is a byte machine), and the one exception (§4.6's ~12 KB caseless-backref fold pairs). The condition was that the reluctance stay priced; §3.3.1 prices it |
+| **4** UCP axis | **NO axis at M5, door EXPLICITLY open** | recorded, with §5.4.1's re-priced cost named as the charter price for whoever opens it |
+| **5** `ENG_ATTEMPT` start loop | **AGREED, leave it** — addendum **VALIDATE AGAINST ORACLES** | **discharged with a measurement**, below |
+
+**ASK 5's addendum was the expensive one, and it is the best thing in this
+revision that the panel did not ask for.** It required the
+`startpos`-at-mid-character cells to become oracle-checked corpus rows rather
+than design assumptions. This lane added **section E2 to `probe_invalid.py`**
+and ran it against 10.46. It found more than the addendum asked:
+
+1. **THREE oracle answers on one cell, where the design assumed two.**
+   `PCRE2_UTF` refuses **uniformly** (`ERRM -36`, every pattern);
+   `MATCH_INVALID_UTF` advances to the next boundary **but does not answer
+   what a start AT that boundary answers** — `(?<!.)` at start=1 gives
+   `(2,2)` where start=2 gives **no match**, because the mid-character entry
+   acts as a barrier the lookbehind cannot cross. A reader who assumed "it
+   rounds the offset up" would have written that cell wrong.
+2. **A SECOND, INDEPENDENT WITNESS FOR §5.2.1's `back_step` REPAIR, on a
+   WELL-FORMED SUBJECT.** Against the un-repaired body, `(?<!.)` at
+   `startpos=1` on `αβ` returns `RX_R_INTERNAL` — the same abort the panel's
+   `C2 80 80` cell produces, reached through a caller-supplied `startpos`
+   instead of through ill-formed input. **§12 P-9's instrument is widened
+   accordingly**: the defect is not confined to the nine ill-formed kinds.
+3. A vacuity guard in the failing direction: mid-character differs from the
+   boundary below it on **8 of 8** negative-assertion cells.
+
+**ASK 3 and ASK 6 remain open** (manager recommends the standing differential
+cell for 3, the small `rxt_format.md` amendment for 6). This lane did not
+touch either.
+
 ## 5. What was NOT done
 
 - **No merge, no push** — the brief's instruction.
