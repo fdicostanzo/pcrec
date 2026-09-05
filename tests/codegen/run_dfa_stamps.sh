@@ -679,7 +679,16 @@ echo "population: $npat distinct corpus patterns extracted (floor 2620; LC_ALL=C
 # into REFUSED would leave every agreement check green with nothing to
 # agree on. Measured 2026-08-25: 995 DFA / 1,488 VM / 289 refused.
 [ "$ndfa" -ge 900 ] || bad "[population] only $ndfa DFA artifacts (floor 900; 995 measured 2026-08-25) — the population moved, find out why before re-pinning"
-[ "$nrefused" -le 400 ] || bad "[population] $nrefused patterns REFUSED (ceiling 400; 289 measured 2026-08-25) — a feature gate or a compiler bound is eating the population"
+# CEILING RE-PINNED 2026-09-05 (the first full battery after the utf8 corpus
+# merged): 289 -> 468 measured, and the growth is EXPLAINED before re-pinned —
+# this sweep compiles bare pattern LINES under the DEFAULT (byte) encoding,
+# and tests/utf8/'s patterns carrying \x{>FF} or raw multi-byte literals are
+# range-REFUSED there by design ([M5.0] stage 2: \x{} is base grammar
+# range-checked per encoding). Those patterns' stamp coverage lives in their
+# own encoding-aware suites; here they are honest refusals, not eaten
+# population. Ceiling 550 keeps the guard's headroom shape (~1.18x, as 400
+# was to 289).
+[ "$nrefused" -le 550 ] || bad "[population] $nrefused patterns REFUSED (ceiling 550; 468 measured 2026-09-05, 289 2026-08-25) — a feature gate or a compiler bound is eating the population"
 echo "artifacts : $ndfa DFA ($nempty of them the empty engine: body is one \`return 0\`), $nvm VM ($nvmhy of them hybrids that inline a DFA scan, $nvmhyempty of THOSE inlining an empty one; $nvmpl plain), $nrefused refused"
 echo "DFA artifacts     prefilter: $(dist "$WORKDIR/seen_pf")"
 echo "DFA artifacts     scan     : $(dist "$WORKDIR/seen_scan")"

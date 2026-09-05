@@ -21671,3 +21671,61 @@ with a worked example): "merged with gates green at the light tier" is
 not "the suite passes" — the full battery caught five landing items the
 same night's gates could not reach, and every one was a READER of a
 changed surface that no grep enumerated at the change.
+
+## 2026-09-05 (EDT), fifty-fifth session part 2 — K49 MERGED (the retry advance is the ENCODING'S text now); K50 filed oracle-backed; repair slice 2 (the battery's OTHER three reds — cli case13, the two registry coverage pins, S199/S09)
+
+**K49 merged** (lane k49fix, 16 commits, opus): the emitted VM retry
+advance comes from the encoding backend (PcrecEnc.advance — byte is the
+old `attempt_position++` character for character, utf8 steps to the next
+boundary, bounded by n so ill-formed runs degrade per §2.6(c)); an
+advance-agreement check ties the field to next_pos over an exhaustive
+alphabet (10,738/10,738 both backends, utf8-differs-on-2,268 as the
+non-vacuity control); identity gate 16/0 with whole-file differing=0 on
+all four axes — NO abi bump; tests/utf8 1336/0 with the K49 cell
+restored; S229. The lane also: FOUND AND FILED K50 (the DFA start-loop's
+mid-character starts — oracle-backed, 10.46 reference transcript: UTF
+says (3,3), options=0 says (2,2), so D26 settles the expectation with no
+ruling; known_fail/k50_utf8_dfa_midchar_start.rxt fires when fixed;
+§5.5's refuted premise annotated in the design), EXPLAINED the
+(?!.)-asymmetry (never reaches the retry), MEASURED the hybrid handoff
+disjointness (374 cells, 0 mid-char starts — by coincidence of two
+unrelated decisions, recorded as such), and FIXED the cwmax red as its
+second slice (a UNIT MISMATCH in cwmax_check.c — utf8 blocks' byte
+spans compared against a character quantity; now encoding-aware with
+both floors sabotage-validated; mrl 27/0; NO engine bug — cwmax is
+right in characters throughout). Lane process notes recorded in its
+report; the pcrec-ARGUED-vs-oracle-backed correction was the lane's,
+accepted.
+
+**Frank's rulings today, all in plan rows**: [K50-BNDSTART] chartered
+(next engine lane after this merge, before stages 3-5) with the
+default-ON startpos-boundary guard (new RX_ERR_* code; deny-flag arm
+keeps §2.6.1.1's semantics; corpus blind to the axis — both-arm cells
+only where the arms differ + the startpos-sweeping differential as the
+primary instrument). [UTF-PAT] and [READ-BYTES] chartered unscheduled.
+[UTF-RW] chartered (real-world non-English-locale utf regex harvest +
+the class-shape census pricing the cluster-bitmap candidate).
+
+**Repair slice 2 — the battery test stage had EIGHT failing targets,
+not five.** The morning grep window missed three (the lesson from mrl,
+recurring within the day): (6) test-cli case13 still pinned "-e utf8
+is refused ... names milestone M5" — rewritten to the stage-2 contract
+(compiles, stamps .encoding=1, both spellings byte-identical; the
+refused-known-encoding population is EMPTY so the unknown-name arm is
+the refusal witness; 13/13, cli 284 green). (7) test-registry = TWO
+coverage pins: axes_registry_check 96→99 ([FORM-CHAR]'s cls-fold axis
++3) and limits_check 21→22 ([LIM-2]'s PCREC_MAX_AUTO_DFA_ELEMS row) —
+both benign growth, re-pinned with history. (8) test-codegen =
+[SABANCHOR]: S199's anchor was stale EVERYWHERE, not darwin-only
+(macport's assoc shim is merged code — re-anchored to the assoc_get
+spelling), and S09 DID NOT SOURCE (the stage-2 re-aim pasted
+backticked prose into a double-quoted field — the S115 trap; escaped,
+anchor verified against live parse.c). Tripwire: 232 rows, all
+anchors resolve. run_dfa_stamps' refused ceiling 400→550 (utf8's
+\x{>FF} patterns are honest byte-encoding refusals in a default-
+encoding sweep; 468 measured, headroom shape kept). Darwin's
+test-codegen known-red count drops 5→4 (S199 was never darwin's).
+
+Owed: the Linux make test re-run at THIS commit (mech stage runs until
+~16:45); the utf8-owed items + capability probe + DONE; a small admin
+row for the cwmax floors' mech row + run_encoding_checks' suite token.

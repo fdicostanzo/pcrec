@@ -340,7 +340,15 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 -> 93 -> 96.
+# [REG-SV] 73 -> 75 -> 79 -> 83 -> 91 -> 88 -> 93 -> 96 -> 99.
+#
+# 96 -> 99 ([FORM-CHAR] STEP 1, abi 23; pinned 2026-09-05 by the first full
+# battery AFTER the merge night — the merge itself missed this reader, the
+# same class as the manifest/census re-pins that battery caught). The
+# `cls-fold` axis contributes the +3 in the alt-island shape exactly:
+# `PCREC_NO_CLS_FOLD` (bit 24) matches lib/pcrec.h, the `-fno-cls-fold`
+# cli pairing, and the bit's tuning.md documentation; `RX_VM_CLS_FOLDS`
+# gains no value-set pair (an activity count, `RX_ALTCLS_MERGES`' shape).
 #
 # 93 -> 96 ([ENG-ISL] STEP 1, 2026-09-03, READ FROM A RUN per this guard's own
 # standing rule). The `alt-island` axis contributes +3 and NOT axis J's +5,
@@ -462,9 +470,9 @@ fi
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 96 ]; then
+if [ "$axesn" -ne 99 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 96." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 99." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
@@ -488,14 +496,16 @@ limitsrc=${PIPESTATUS[0]}
 if [ "$limitsrc" -ne 0 ]; then
     rc=1
 fi
-# 21 checks: 1 (row count) + 19 (anchored-row doc checks, one per anchored
-# row in the 44-row table) + 1 (the bare-#define code sweep). Moves only when
-# a row's `anchor` field is added/removed or the table gains/loses a row —
-# update this number in the same commit.
+# 22 checks: 1 (row count) + 20 (anchored-row doc checks, one per anchored
+# row in the table — [LIM-2] N1's PCREC_MAX_AUTO_DFA_ELEMS row joined
+# 2026-09-04 and this pin was missed at that landing; caught and re-pinned
+# 2026-09-05 by the first full battery after) + 1 (the bare-#define code
+# sweep). Moves only when a row's `anchor` field is added/removed or the
+# table gains/loses a row — update this number in the same commit.
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 21 ]; then
+if [ "$limitsn" -ne 22 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 21." >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 22." >&2
         echo "registry:   if you added/removed a limits.def row or an anchor on purpose," >&2
         echo "registry:   update this number in the same commit; if not, coverage was removed" >&2
     else

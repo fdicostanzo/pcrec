@@ -1621,40 +1621,43 @@ case13() {
     assert_contains "case13: ...and the refusal offers the real menu" \
         "$(cat "$d/eold.txt")" "want byte, utf8"
 
-    # -e utf8 is refused, cleanly, with no C written.
-    pcrec_run "$PCREC" -e utf8 -o "$d/no.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
-    err="$(cat "$d/e1.txt")"
-    assert_eq "case13: -e utf8 is refused" "1" "$rc" "stderr: $err"
-    if [ -s "$d/no.c" ]; then
-        fail "case13: a refused encoding writes no C" "wrote $(wc -c <"$d/no.c") bytes"
+    # [M5.0] STAGE 2 (re-pinned 2026-09-05, the first full battery after the
+    # merge): `-e utf8` COMPILES — the refusal this case pinned from D58 until
+    # stage 2 ("names the milestone that delivers UTF-8") retired when the
+    # milestone delivered, and this case was the reader the landing missed.
+    # The refused-KNOWN-encoding population is EMPTY now (byte and utf8 are
+    # both built; UTF-16/32 are ruled out of the namespace entirely, [DD-12]
+    # (6)), so the refusal path's standing witness is the unknown-name arm
+    # above (`-e ascii` -> the menu), which never expired.
+    pcrec_run "$PCREC" -e utf8 -o "$d/u8.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+    assert_eq "case13: -e utf8 compiles (stage 2 delivered the encoding)" "0" "$rc" "stderr: $(cat "$d/e1.txt")"
+    if grep -q '^    \.encoding = 1,$' "$d/u8.c"; then
+        pass "case13: the utf8 artifact stamps .encoding = 1 (PCREC_ENC_UTF8)"
     else
-        pass "case13: a refused encoding writes no C"
+        fail "case13: the utf8 artifact does not stamp PCREC_ENC_UTF8" \
+             "$(grep -n 'encoding' "$d/u8.c" | head -3)"
     fi
 
-    # THE FIX: it must not promise a module that does not exist.
-    if printf '%s' "$err" | grep -q "module 'utf8'"; then
-        fail "case13: -e utf8 must not promise a module the namespace lacks" \
-             "stderr: $err" \
-             "K14's shape: --features utf8 answers 'unknown module'"
-    else
-        pass "case13: -e utf8 does not promise a module the namespace lacks"
-    fi
-    assert_contains "case13: ...it names the milestone that delivers UTF-8" \
-        "$err" "milestone M5"
-
-    # AND THE CROSS-CHECK, which is what stops the fix being a reword: the
-    # module namespace really has no 'utf8', so any diagnostic naming one is
-    # over-promising. If a future M5 registers the name, this flips and the
-    # pin above must be revisited deliberately rather than deleted.
+    # Kept from the refusal era, because it outlives the refusal: the module
+    # namespace STILL has no 'utf8' — encodings are `-e`'s namespace, never
+    # `--features`' — so a diagnostic naming a module by that name is still
+    # over-promising (K14's shape).
     out="$(pcrec_run "$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
     assert_eq "case13: --features utf8 is still refused by name" "1" "$rc"
     assert_contains "case13: ...as an unknown module" "$out" "unknown module 'utf8'"
 
-    # [M5-SEAM] the LONG spelling refuses identically. Both spellings reach
-    # one lookup and one refusal, so they cannot drift into two answers.
-    out="$(pcrec_run "$PCREC" --encoding=utf8 -o "$d/no2.c" 'ab' 2>&1)"; rc=$?
-    assert_eq "case13: --encoding=utf8 is refused too" "1" "$rc"
-    assert_contains "case13: ...with the same milestone diagnostic" "$out" "milestone M5"
+    # [M5-SEAM] the LONG spelling compiles IDENTICALLY. Both spellings reach
+    # one lookup, so they cannot drift into two answers — the same
+    # both-spellings-one-request claim the byte arms above make, asserted the
+    # same way (`-o -`, case9/case10's basename idiom).
+    pcrec_run "$PCREC" -e utf8 -o - 'ab' > "$d/u8a.c" 2>/dev/null
+    pcrec_run "$PCREC" --encoding=utf8 -o - 'ab' > "$d/u8b.c" 2>/dev/null
+    if cmp -s "$d/u8a.c" "$d/u8b.c"; then
+        pass "case13: -e utf8 and --encoding=utf8 are the SAME request (byte-identical artifacts)"
+    else
+        fail "case13: the two utf8 spellings diverge" \
+             "$(diff "$d/u8a.c" "$d/u8b.c" | head -4)"
+    fi
 
     # [M5-SEAM] (D58/DD-12 (8)) encoding is PER-PATTERN, so two artifacts with
     # different prefixes compiled by SEPARATE invocations must compose in one

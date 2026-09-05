@@ -25,5 +25,11 @@ SAB_SUITES="rxtsource"
 SAB_DESC="run.sh stops failing on a features list pcrec rejects, so a typo'd module name turns every perr block in that block's file into a test of the typo rather than of the pattern"
 SAB_REACH_POP="tests/rxtsource/fixtures/bad_features.rxtin|^features |1"
 SAB_COUNT=1
-SAB_BEFORE='        if [ "${features_seen[$cur_features]}" = "bad" ]; then'
+# RE-ANCHORED 2026-09-05: [MACPORT]'s bash-3.2 assoc shim rewrote run.sh's
+# associative-array reads (`${features_seen[...]}` -> `$(assoc_get
+# features_seen ...)`), and this anchor was the reader the rewrite missed —
+# catalogued as a darwin-local red (wake's S199 note) but the rewrite is
+# MERGED code, so the stale anchor was red on every platform; the first full
+# Linux battery after is what said so. Intent unchanged.
+SAB_BEFORE='        if [ "$(assoc_get features_seen "$cur_features")" = "bad" ]; then'
 SAB_AFTER='        if false; then   # SABOTAGE S199: an unknown module name is accepted'
