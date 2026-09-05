@@ -732,6 +732,42 @@ typedef struct {
     uint64_t    max_emit_code_bytes;
     uint64_t    max_emit_bytes;
 
+    /* [LIM-2] N1 GENERALIZES THE SAME RAISE-ONLY SHAPE onto four more caps,
+     * all of them COMPILE budgets (what the compiler itself spends analyzing
+     * a pattern) rather than the pair above's SIZE caps (what the emitted
+     * artifact costs a caller). Same rule as `max_emit_code_bytes`/
+     * `max_emit_bytes`: 0 means "the built-in default"
+     * (`PCREC_MAX_NFA_STATES` / `PCREC_MAX_DFA_STATES_GOTO` /
+     * `PCREC_MAX_SUBSET_ELEMS` / `PCREC_MAX_AUTO_DFA_ELEMS`,
+     * src/core/limits.def), and a value BELOW that default is refused as a
+     * malformed option rather than honoured (RAISE-ONLY: cli/main.c's ONE
+     * generic table drives every one of these six flags now, replacing what
+     * had been two hand-written `--max-emit-*` blocks -- see cli/main.c's
+     * `raise_only_limits[]`). `PCREC_MAX_DFA_STATES_TABLE` is DELIBERATELY
+     * ABSENT from this list: its consumer is the table-engine's EMITTED cell
+     * type, a C `short`/`unsigned short` (src/gen/emit_dfa.c), so the cap is
+     * a structural fact about what the ARTIFACT can represent rather than a
+     * tunable compiler analysis budget, and raising the CHECK past what the
+     * emitted format can hold would be a lever whose numerator lies. See
+     * docs/spec/limits.md §3.3/§3.6 and docs/dev/lanes/n1budget_report.md
+     * for the survey and the derivation of `PCREC_MAX_AUTO_DFA_ELEMS`'s
+     * default. */
+    uint64_t    max_nfa_states;
+    uint64_t    max_dfa_states_goto;
+    uint64_t    max_subset_elems;
+    /* [LIM-2] N1's own new cap: the AUTO route's DFA-attempt work budget, in
+     * K7's already-counted subset-element unit (`Ctx.subset_elems`). Applies
+     * ONLY under `--engine=auto` (the default); an explicit `--engine=dfa`
+     * request is unaffected and pays the full `max_subset_elems`/
+     * `PCREC_MAX_SUBSET_ELEMS` cap above -- the caller asked for the DFA
+     * engine specifically and accepts its full cost. Over budget under auto,
+     * the DFA attempt is abandoned and the compile falls back to the VM
+     * through the SAME `dfa_overflowed` umbrella a hard `PCREC_MAX_SUBSET_
+     * ELEMS` refusal uses (SEL-1) -- today's engine selections do not move,
+     * because the default sits above every corpus/bench artifact's measured
+     * spend (docs/dev/lanes/n1budget_report.md). */
+    uint64_t    max_auto_dfa_elems;
+
     /* [OPT-4] AN ADVISORY SIZE WARNING, and the word advisory is the whole
      * design (Frank, 2026-08-29). When an ACCEPTED artifact's total emitted
      * bytes exceed this, pcrec writes ONE line to stderr naming the size, this

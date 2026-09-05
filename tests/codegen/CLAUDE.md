@@ -1648,6 +1648,47 @@ composer is what will separate them; what the check pins is that the field
 EXISTS and is not hard-wired to 0 beside a real `nnames`, which is the shape
 a caller switching to `nentries` would silently lose every row to.
 
+## `run_n1_budget.sh` — [LIM-2] N1's structural check (2026-09-04)
+
+The AUTO route's own DFA-attempt work budget (`PCREC_MAX_AUTO_DFA_ELEMS`,
+K7's `Ctx.subset_elems` counter) and its raise surface, in
+`run_size_term.sh`'s exact §5 shape: the natural population is ZERO (the
+shipped default, 30,000,000, sits above every corpus/bench artifact's
+measured spend — `docs/dev/lanes/n1budget_report.md`) and the CLI override
+is raise-only, so the branch is driven through a REFERENCE COMPILER built
+with `-DPCREC_MAX_AUTO_DFA_ELEMS` lowered at pcrec's own compile time (a
+`BUILD_D` row for precisely this reason, matching
+`PCREC_MAX_VM_EMIT_CODE_BYTES`'s own precedent).
+
+**THE WITNESS AND ITS BISECTED THRESHOLDS.** `a{0,2000}` is ordinary,
+capture-free and DFA-eligible; `studies/n1budget/n1_measure` reports 6,000
+K7 elements TOTAL (forward + reverse + the optional [ENG-ABS] anchored
+machine, which this budget deliberately excludes — an optional machine's
+overflow already never refuses). The two MANDATORY machines alone were
+bisected directly against a reference compiler: a budget of 3,500 trips,
+4,000 does not — so 2,000 (lowered) trips reliably and 5,000 (raised) does
+not, which is what the six checks below drive.
+
+**SIX CLAIMS, EACH WITH ITS OWN NEGATIVE CONTROL.** (0) the shipped
+default moves nothing on the witness, and prints no note (the natural
+population is zero, asserted rather than assumed). (2) under `auto`, the
+lowered reference compiler falls back to the VM (`RX_ENGINE "vm"`) and
+prints the one-line stderr note naming both the limit and
+`--max-auto-dfa-elems`. (2c) the fallback artifact ANSWERS CORRECTLY — a
+`--emit-main` build run against two subjects, not merely "compiles". (3)
+the SAME lowered reference compiler under `--engine=dfa` is UNAFFECTED —
+`RX_ENGINE` stays `"dfa"`, no note — proving the budget is auto-only by
+construction rather than by a lucky default. (4) the raise flag ROUND
+TRIPS: `--max-auto-dfa-elems=5000` (above the mandatory spend) cancels the
+fallback. (5)/(6) raise-only against both the reference build's own
+lowered floor and the shipped default.
+
+**VALIDATED IN THE FAILING DIRECTION** (this file's own standing
+convention): forcing the new check's condition to `0 && ...` in
+`src/ir/dfa.c` reproduces exactly the two expected symptoms (checks (2) and
+its stderr-note sibling go red, `RX_ENGINE` reads `"dfa"` where `"vm"` was
+required) with every other check unaffected — reverted before delivery.
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the

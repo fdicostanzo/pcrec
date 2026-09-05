@@ -697,7 +697,7 @@
 #undef PCREC_LIMIT_LIMITS_H_FLAG
 #undef PCREC_LIMIT_LIMITS_H_BUILD_D
 
-/* The five BUILD_D rows need a REAL `#ifndef`/`#define`/`#endif` at their
+/* The six BUILD_D rows need a REAL `#ifndef`/`#define`/`#endif` at their
  * site — a preprocessor DIRECTIVE, which no macro expansion can generate,
  * is the one shape limits.def's table rows cannot produce by themselves.
  * Each block below references only the SYMBOLIC `_DEFAULT` name the table
@@ -720,6 +720,9 @@
 #endif
 #ifndef PCREC_SIZE_TERM_THRESHOLD
 #define PCREC_SIZE_TERM_THRESHOLD PCREC_SIZE_TERM_THRESHOLD_DEFAULT
+#endif
+#ifndef PCREC_MAX_AUTO_DFA_ELEMS
+#define PCREC_MAX_AUTO_DFA_ELEMS PCREC_MAX_AUTO_DFA_ELEMS_DEFAULT
 #endif
 
 #endif /* PCREC_LIMITS_H */

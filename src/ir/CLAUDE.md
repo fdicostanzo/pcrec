@@ -21,7 +21,12 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   (`patch_to` writes one target into every entry and reads nothing about
   order) and `nst` is called in the same places, so the NFA is bit-identical —
   verified byte-for-byte on 572 corpus artifacts. `frag_cat2` already used
-  this idiom; that loop was the one site that had not. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
+  this idiom; that loop was the one site that had not. **[LIM-2] N1 (2026-09-04):
+`nst`'s state-count check reads a raise-only per-compile override**
+(`b->cx->opt->max_nfa_states`, 0 = `PCREC_MAX_NFA_STATES`) — the same
+`cli/main.c` `raise_only_limits[]` table also raises `PCREC_MAX_DFA_STATES_
+GOTO` and `PCREC_MAX_SUBSET_ELEMS`; see `lib/pcrec.h`'s comment on the four
+new `pcrec_options` fields. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
 - **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start);
   **[ENG-ABS] (2026-08-29) `pcrec_build_dfa` TAKES ITS ROOT AND ITS
   OPTIONALITY AS PARAMETERS, and neither is a special case.** `root` used to be
@@ -51,7 +56,26 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   `src/opt/select_engine.c`'s `forces_dfa_overflow`, `src/core/compile.c`'s
   retry): the build reports "over budget" as a RESULT a later pass consumes,
   never a special case at this site itself — the diagnostic text and the
-  `ctx_fail` call are byte-for-byte what they were before this row. **[M6.2
+  `ctx_fail` call are byte-for-byte what they were before this row.
+  **[LIM-2] N1 (2026-09-04) A THIRD SITE, checking a SMALLER threshold
+  FIRST.** Right before the `PCREC_MAX_SUBSET_ELEMS` check, `intern()` now
+  asks whether `!d->optional && cx->opt->engine == PCREC_ENGINE_AUTO &&
+  cx->subset_elems > PCREC_MAX_AUTO_DFA_ELEMS` — the SAME counter, a
+  SMALLER auto-only budget, joining the identical `dfa_overflowed`/
+  `dfa_overflow_why` recording shape (a fourth field, `Ctx.dfa_overflow_
+  is_budget`, marks WHICH site fired, read only by `compile_driver`'s
+  stderr note). `!d->optional` excludes [ENG-ABS]'s anchored third
+  machine (its overflow never refuses regardless); the AUTO conjunct
+  excludes an explicit `--engine=dfa` request, which pays the full cap
+  below in full. The default (30,000,000) is derived, not chosen —
+  docs/dev/lanes/n1budget_report.md's corpus+bench sweep found the worst
+  currently-compiling artifact's spend at 24,050,003 elements
+  (`tests/counterk/counterk.rxt:1845`). Gate: `tests/codegen/
+  run_n1_budget.sh`, a `-DPCREC_MAX_AUTO_DFA_ELEMS`-lowered reference
+  compiler (this row's OWN raise-only default is BUILD_D, `[ART-SIZE]`'s
+  own two-lever shape, since the natural population at the shipped
+  default is zero and the CLI override can only raise it).
+  **[M6.2
   wave A] A THIRD CLOSURE VIEW**, `end_ok`, for `\z` (N_END): true
   only at `pos == n`, where `eol_ok` is true at `n` AND before a final
   newline. `make_state` computes three closures and interns up to two

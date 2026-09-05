@@ -931,13 +931,53 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
      * are one list. */
     for (int u = 0; u < UPC_N; u++)
         if (owner[u] == u) cx->subset_elems += up[u].nlist;
-    if (cx->subset_elems > PCREC_MAX_SUBSET_ELEMS) {
+    /* [LIM-2] N1: raise-only per-compile overrides (0 = the built-in
+     * default) for BOTH the hard cap below and the new AUTO-only work
+     * budget right after it — the same shape the two ART-SIZE emit-byte
+     * caps use, generalized through cli/main.c's `raise_only_limits[]`. */
+    const long long max_subset_elems = cx->opt->max_subset_elems
+                                      ? (long long)cx->opt->max_subset_elems
+                                      : PCREC_MAX_SUBSET_ELEMS;
+    /* [LIM-2] N1 THE WORK-BUDGET FALLBACK. Same charge (`cx->subset_elems`),
+     * same site, a SMALLER threshold that applies ONLY to a MANDATORY
+     * machine (`!d->optional` — an optional machine's overflow already never
+     * refuses, so this budget can only ever cost it nothing) built under
+     * `--engine=auto` (`cx->opt->engine == PCREC_ENGINE_AUTO` — an explicit
+     * `--engine=dfa` request pays the full cap below in full: the caller
+     * asked for the DFA engine specifically and accepts its cost). Checked
+     * BEFORE the hard cap so an auto compile that is going to fall back to
+     * the VM anyway does so at the CHEAPER threshold rather than grinding on
+     * toward the more expensive one first. Default sized (docs/dev/lanes/
+     * n1budget_report.md) above every corpus/bench artifact's measured
+     * spend, so this is a fallback for construction the CURRENT corpus never
+     * reaches, not a lowered cap on what compiles today. */
+    if (!d->optional && cx->opt->engine == PCREC_ENGINE_AUTO) {
+        const long long max_auto_dfa_elems = cx->opt->max_auto_dfa_elems
+                                            ? (long long)cx->opt->max_auto_dfa_elems
+                                            : PCREC_MAX_AUTO_DFA_ELEMS;
+        if (cx->subset_elems > max_auto_dfa_elems) {
+            /* [SEL-1] Same recording shape as every other overflow site in
+             * this function: unconditional, read only by compile_driver's
+             * one-shot auto-mode retry (`forces_dfa_overflow`). */
+            cx->dfa_overflowed = true;
+            cx->dfa_overflow_is_budget = true;
+            snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
+                     "dfa overflowed: subset construction exceeds %lld "
+                     "elements (N1 auto budget)", max_auto_dfa_elems);
+            ctx_fail(cx, 0, "auto-route DFA attempt exceeds the work budget "
+                     "(%lld state-set elements; raise with "
+                     "--max-auto-dfa-elems, or use --engine=dfa for the "
+                     "full %lld-element cap)",
+                     max_auto_dfa_elems, max_subset_elems);
+        }
+    }
+    if (cx->subset_elems > max_subset_elems) {
         /* [SEL-1] Same shape as the state-count site above: recorded
          * unconditionally, read only by an auto-mode retry. */
         cx->dfa_overflowed = true;
         snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
                  "dfa overflowed: subset construction exceeds %lld "
-                 "state-set elements (K7)", (long long)PCREC_MAX_SUBSET_ELEMS);
+                 "state-set elements (K7)", max_subset_elems);
         /* [ENG-ABS] Same one line as the state-count site above, for the same
          * reason and with the same placement. Note that `cx->subset_elems` is
          * a per-COMPILE budget and is NOT rolled back by the optional build's
@@ -947,8 +987,8 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
-                 "try --engine=vm)",
-                 (long long)PCREC_MAX_SUBSET_ELEMS);
+                 "try --engine=vm, or raise with --max-subset-elems)",
+                 max_subset_elems);
     }
     if (d->n == d->cap) {
         int ncap = d->cap ? d->cap * 2 : 64;

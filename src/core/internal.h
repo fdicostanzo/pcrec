@@ -2134,6 +2134,16 @@ struct Ctx {
     bool                 dfa_was_engine;
     bool                 dfa_overflowed;
     char                 dfa_overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
+    /* [LIM-2] N1: true iff THIS overflow is the auto-route work-budget
+     * fallback (PCREC_MAX_AUTO_DFA_ELEMS) rather than a hard cap
+     * (PCREC_MAX_SUBSET_ELEMS, the two state-count caps). Set ONLY at
+     * dfa.c's new check, alongside `dfa_overflowed`/`dfa_overflow_why` and
+     * with the same "recorded unconditionally, read only by the retry"
+     * discipline. `compile_driver` reads it once, at the same point it
+     * reads `dfa_was_engine`, to decide whether the one-line stderr note
+     * belongs on a successful fallback -- a hard-cap overflow's own
+     * successful fallback prints nothing new, exactly as it does today. */
+    bool                 dfa_overflow_is_budget;
     /* [DD-14 wave B+C] THE CALL GRAPH, or NULL for a call-free pattern.
      * Built by `pcrec_callgraph_build` (src/opt/callgraph.c) AFTER every
      * rewriting pass and before emission — see that function's declaration for

@@ -256,3 +256,19 @@ does: in the generated `.c`/`.h`, never here, because they are
 PER-ARTIFACT-EMITTED (a resume frame is 24 bytes on a call-free artifact and
 40 on a call-bearing one, MEASURED). The authoritative contract is
 docs/spec/match_api.md §10.
+
+## [LIM-2] N1: FOUR MORE RAISE-ONLY FIELDS (2026-09-04)
+
+`pcrec_options` gains `max_nfa_states`/`max_dfa_states_goto`/
+`max_subset_elems`/`max_auto_dfa_elems` (all `uint64_t`, APPENDED after the
+existing `max_emit_code_bytes`/`max_emit_bytes` pair), the identical
+raise-only shape: 0 means "the built-in default", a value below the
+built-in default is refused rather than honoured, and a real build sets
+these in the pattern-source file's `config` block exactly as the two
+emit-cap fields already do. The last one, `max_auto_dfa_elems`, is the ONLY
+new field with behaviour of its own — it bounds the `--engine=auto` route's
+DFA-attempt work budget, never the explicit `--engine=dfa` request — and is
+documented at length in its own comment rather than repeated here.
+`PCREC_MAX_DFA_STATES_TABLE` gets no field: see `src/core/limits.def`'s
+comment on that row for why raising it is not a lever this project can
+safely offer.

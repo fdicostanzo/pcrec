@@ -535,6 +535,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* [OPT-4] the failing attempt's ROLE for the DFA, for `<PREFIX>_ENGINE_SEL`
      * (see `Ctx.dfa_was_engine`). Recorded where it is still knowable. */
     volatile bool dfa_was_engine = false;
+    /* [LIM-2] N1: true iff the retry this loop is about to run was caused by
+     * the auto-route work budget specifically (Ctx.dfa_overflow_is_budget)
+     * rather than a hard cap. Read once, at the SAME point `dfa_was_engine`
+     * is (the first overflow only), and used only to decide whether the
+     * one-line stderr note belongs on a successful fallback attempt. */
+    volatile bool budget_fallback = false;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
@@ -790,6 +796,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * is latched rather than recomputed. */
                 if (!dfa_disabled && cx.job)
                     dfa_was_engine = cx.job->fit.chosen == ENGM_DFA;
+                if (!dfa_disabled)
+                    budget_fallback = cx.dfa_overflow_is_budget;
                 job_cleanup(&cx);
                 dfa_disabled = true;
                 collapse_reason = retry_collapse ? CR_SEL1 : CR_NONE;
@@ -1163,9 +1171,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 build_anchored_dfa(&cx);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
-                pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
-                                PCREC_MAX_DFA_STATES_GOTO,
-                                cx.job->nfa.start, false);
+                /* [LIM-2] N1: raise-only per-compile override (0 = the
+                 * built-in default). `pcrec_build_dfa`'s `maxstates` is an
+                 * `int`; clamped rather than truncated, since a caller who
+                 * raised the cap past INT_MAX asked for "as large as this
+                 * parameter can express", not for wraparound. */
+                {
+                    unsigned long long v = defo.max_dfa_states_goto
+                                          ? defo.max_dfa_states_goto
+                                          : (unsigned long long)PCREC_MAX_DFA_STATES_GOTO;
+                    int mg = v > (unsigned long long)INT_MAX ? INT_MAX : (int)v;
+                    pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
+                                    mg, cx.job->nfa.start, false);
+                }
                 pcrec_minimize_dfa(&cx, &cx.job->dfa);
                 /* [OPT-5] NOT run on ENG_ATTEMPT's machine, and the reason is
                  * [OPT-3]'s own for exempting that engine one row earlier:
@@ -1432,6 +1450,21 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K,
                     kwhy, lwhy);
         }
+        /* [LIM-2] N1 THE AUTO-FALLBACK NOTE. Printed HERE, past the recovery
+         * point, on the attempt that is about to succeed — the WARN_EMIT_
+         * BYTES block's own placement rule, applied to a different event:
+         * never on a ladder trial the driver discarded, and never when the
+         * eventual success has nothing to do with the budget (`budget_
+         * fallback` is set only when THIS success followed a retry the
+         * auto-route work budget itself triggered — a hard-cap overflow's
+         * own successful fallback prints nothing new here, matching today's
+         * behaviour). One line, naming the limit and its raise flag. */
+        if (budget_fallback)
+            fprintf(stderr,
+                    "pcrec: note: auto route's DFA attempt exceeded the "
+                    "work budget (--max-auto-dfa-elems); falling back to "
+                    "the VM instead of refusing. --engine=dfa pays the "
+                    "full --max-subset-elems cap instead.\n");
         cx.job->out_c  = sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;

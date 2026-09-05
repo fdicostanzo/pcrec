@@ -83,6 +83,35 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   without it, since the loop calls `setjmp` fresh each iteration — more than
   gcc's conservative liveness analysis can see through.
 
+  **[LIM-2] N1 (2026-09-04) THE AUTO-ROUTE WORK BUDGET'S OWN STDERR NOTE.**
+  `src/ir/dfa.c`'s `intern()` gains a SMALLER, auto-only budget
+  (`PCREC_MAX_AUTO_DFA_ELEMS`) on the same `Ctx.subset_elems` counter K7
+  already charges, checked before the hard `PCREC_MAX_SUBSET_ELEMS` cap and
+  joining the IDENTICAL `[SEL-1]` umbrella (`dfa_overflowed`/
+  `dfa_overflow_why`) a hard-cap overflow uses — see that file's own
+  comment for the full mechanism and why it is scoped to `!d->optional`
+  (an optional machine's overflow already never refuses) and to
+  `cx->opt->engine == PCREC_ENGINE_AUTO` (an explicit `--engine=dfa` pays
+  the full cap in full). `Ctx.dfa_overflow_is_budget` is the ONE new field
+  this needed: it distinguishes "this retry followed the auto budget" from
+  "this retry followed a hard cap" so the one-line stderr note can be
+  printed on the SUCCESSFUL fallback attempt only — `volatile bool
+  budget_fallback`, captured at the same point and under the same
+  first-overflow-only guard `dfa_was_engine` already is, read at the
+  WARN_EMIT_BYTES block's own placement (past the recovery point, on the
+  attempt about to succeed, never on a discarded ladder trial). A hard-cap
+  overflow's own successful fallback prints nothing new, unchanged from
+  before this row.
+
+  **[LIM-2] N1 ALSO GENERALIZES THE RAISE-ONLY OVERRIDE onto three more
+  caps.** `defo.max_nfa_states`/`max_dfa_states_goto`/`max_subset_elems`
+  (0 = the built-in default) read exactly like `max_emit_code_bytes`/
+  `max_emit_bytes` already did — see `lib/pcrec.h`'s own comment on the
+  four new fields and `cli/main.c`'s `raise_only_limits[]`, the one table
+  now driving all six raise-only flags. `PCREC_MAX_DFA_STATES_GOTO`'s own
+  raise (the ENG_ATTEMPT route's build call, this file) clamps a
+  raised-past-`INT_MAX` value rather than truncating it, since
+  `pcrec_build_dfa`'s `maxstates` parameter is a plain `int`.
 
   **[ENG-ABS] (2026-08-29) `build_anchored_dfa` — THE OPTIONAL THIRD MACHINE.**
   A DFA artifact's `<prefix>_match` promises a match at exactly `ctx->pos` and
@@ -166,6 +195,16 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   because it has to survive `job_cleanup`'s `arena_free` on the failed
   attempt compile.c's retry reads it after. K38-precedent margin over the
   76-byte worst-case text src/ir/dfa.c's two overflow sites emit.
+  **[LIM-2] N1 adds `PCREC_MAX_AUTO_DFA_ELEMS`** (30,000,000; `limits.def`,
+  home LIMITS_H, override BUILD_D + a runtime raise flag — the two-lever
+  shape `PCREC_MAX_VM_EMIT_CODE_BYTES` already has, for the identical
+  reason: `tests/codegen/run_n1_budget.sh`'s reference compiler needs a
+  `-D`-lowered build to drive its positive control, since the natural
+  population at the shipped default is zero (docs/dev/lanes/
+  n1budget_report.md carries the derivation). A SMALLER budget on the SAME
+  `Ctx.subset_elems` counter `PCREC_MAX_SUBSET_ELEMS` bounds, checked ONLY
+  under `--engine=auto` and only against the two mandatory machines — see
+  src/ir/dfa.c's own comment at the check site.
 - **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa,
   **[M4.5b]'s `A_CAP` AST node and `EngineFit`**, the
   syntax construct registry types (RegRow and its FEAT_/FLAV_/ENGM_/RS_/RD_

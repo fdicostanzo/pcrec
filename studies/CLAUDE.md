@@ -131,4 +131,26 @@ re-measure before load-bearing use.
   answer-identity and static-size, never a stopwatch; the timing run is
   still owed on a quiet box (the design note's §6).
 
+- `n1budget/` — [LIM-2] N1's default-sizing measurement (lane n1budget,
+  2026-09-04): what does the CURRENT corpus + pcrec-bench altwide set spend
+  in K7's own unit (`Ctx.subset_elems`) under default (auto) options, over
+  every pattern that does NOT already refuse? `n1_measure.c` drives the
+  same D7-fast-path pipeline `lim2_census.c` and `lim2_m1.c` already
+  established as sound methodology (parse -> altcls -> discharge_atomic ->
+  callgraph_build -> select_engine -> postresolve -> the DFA-scan gate ->
+  build_nfa -> build the mandatory forward+reverse machines AND, for a
+  DFA-chosen artifact, the [ENG-ABS] optional third machine too, mirrored
+  inline rather than calling the static `build_anchored_dfa` — so the
+  reported MAX is the real total spend a corpus artifact pays today, not an
+  under-count of it), reading `cx.subset_elems` off the finished `Ctx`
+  rather than computing anything of its own. MEASURED over 3,386 pattern
+  blocks (193 `.rxt` files + 33 pcrec-bench altwide patterns): the worst
+  currently-compiling (non-refused) spend is 24,050,003 elements
+  (`tests/counterk/counterk.rxt:1845`, one of three near-identical
+  8,002-raw-state exact-repeat witnesses), against `PCREC_MAX_SUBSET_ELEMS`
+  = 48,000,000 — the derivation behind `PCREC_MAX_AUTO_DFA_ELEMS`'s
+  30,000,000 default. Backs `docs/dev/lanes/n1budget_report.md`. See its
+  own CLAUDE.md/README.md (`make CC=gcc-16` builds it against
+  `../../build/libpcrec.a`, `make sweep` re-runs the population).
+
 Maintenance: update this file when studies are added/removed.

@@ -243,3 +243,30 @@ argv spelling and the one-line reason beside it.
   DEFINITION's own `flags` are read there too, and a letter added to one
   loop and not the other would make a library mean one thing built as a
   target and another bound into a caller — the D24 shape one tier down.
+
+## [LIM-2] N1: THE GENERAL RAISE-ONLY SURFACE (2026-09-04)
+
+`--max-emit-code-bytes=N`/`--max-emit-bytes=N` (D84 ruling 1) used to be two
+hand-written `else if` blocks, each calling the shared `parse_raise_only`
+helper with its own flag string, floor and destination field. N1 needed four
+more such flags (`--max-nfa-states=N`, `--max-dfa-states-goto=N`,
+`--max-subset-elems=N`, `--max-auto-dfa-elems=N`) and generalized the
+DISPATCH rather than writing four more blocks: `raise_only_limits[]` is one
+table of `{flag, floor, offsetof(pcrec_options, field)}` rows, and
+`raise_only_match(a)` (called once per argv token, into a local computed
+before the whole `else if` chain begins) tells the ONE new branch below
+whether `a` is spelled `<flag>=<value>` for any row. `parse_raise_only`
+itself is unchanged — it still owns the one "below the built-in default is
+malformed" rule and its one error message.
+
+`PCREC_MAX_DFA_STATES_TABLE` carries NO row, deliberately: its consumer is
+the table-engine's emitted transition cell, a C `short`/`unsigned short`
+(`src/gen/emit_dfa.c`), so raising the CHECK past what that format can
+represent would be a lever whose number the artifact cannot honour. See
+`src/core/limits.def`'s own comment on that row and `docs/spec/limits.md`
+§3.3.
+
+`--help`'s wording for the new flags sits beside the existing
+`--max-emit-*` block, in the same style. None of the six flags is
+data-driven at the `--help` text level — only the PARSING dispatch is
+generalized, per this file's own "one general shape" convention.
