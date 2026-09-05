@@ -31,12 +31,12 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="registry"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
 SANFLAGS="${SANFLAGS:-}"
-ncpu="$(nproc 2>/dev/null || echo 2)"
+. "$ROOT_DIR/tests/lib/ncpu.sh"; ncpu="$NCPU"   # [MACPORT] a real reading on a box with no `nproc` on PATH at all
 JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-definitions-oracle.XXXXXX")"

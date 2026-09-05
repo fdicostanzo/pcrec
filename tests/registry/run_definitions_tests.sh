@@ -26,7 +26,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 SANFLAGS="${SANFLAGS:-}"   # SAN-1: the sanitizer axis passes the flags the library was built with; a driver linked against the ASan library without them fails at link time (union battery 3, 2026-08-30)
 KEEP="${KEEP:-0}"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"

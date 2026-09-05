@@ -45,7 +45,7 @@ GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 # add -Werror too, or LINTGEN's "must fail loudly" promise breaks here alone.
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
 SANFLAGS="${SANFLAGS:-}"
-ncpu="$(nproc 2>/dev/null || echo 2)"
+. "$ROOT_DIR/tests/lib/ncpu.sh"; ncpu="$NCPU"   # [MACPORT] a real reading on a box with no `nproc` on PATH at all
 JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-pc4.XXXXXX")"
