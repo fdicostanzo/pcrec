@@ -468,16 +468,28 @@ the position moves.
 1. **The lowering must run before `pcrec_build_nfa` (:1018) and before
    `pcrec_emit_vm` (:1228)**, which is E1 itself. Those are the two consumers
    that can only express bytes.
-2. **`pcrec_callgraph_build` (:961) must run AFTER the lowering — so the
-   lowering cannot run before :961.** `compile.c:947-955` states the rule and
-   its reason: `.body` is a cache of *"which subtree is that group's, IN THE
-   TREE THE EMITTER WILL WALK"*, and a `.body` captured before a pass that
-   REBUILDS nodes names a subtree that is no longer there — *"two programs for
-   one group"*. **The lowering is exactly such a pass**: it replaces an
-   `A_CLASS` with an `A_CAT`/`A_ALT` of byte-range classes. So it is bound by
-   the same rule `altcls` and `discharge_atomic` are bound by. This is the
-   constraint that kills the otherwise-attractive "lower immediately after the
-   parser" position.
+2. **The lowering must not REALLOCATE a node that is or contains a group
+   root** — a PROPERTY of the pass, not a constraint on its position.
+   [CORRECTED 2026-09-05, stage-1 lane utf8s1's wave-task-(a) measurement +
+   ruling R2; the original clause here read "callgraph_build (:961) must run
+   AFTER the lowering — so the lowering cannot run before :961", which was a
+   non-sequitur that MEASURED FALSE: a rebuilding lowering placed at :1000
+   differs on 45 of 179 recursion artifacts and is byte-identical only ABOVE
+   :961, and taken with constraint 3 it left NO legal slot at all.]
+   `compile.c:947-955` states the real rule: `.body` is a cache of *"which
+   subtree is that group's, IN THE TREE THE EMITTER WILL WALK"*, captured by
+   `pcrec_callgraph_build` at :961, and a `.body` captured before a pass that
+   REALLOCATES those nodes names a subtree that is no longer there — *"two
+   programs for one group"* (empty `W`, §5.3b's lost match). The cure is the
+   pass's SHAPE: `pcrec_lower_enc` SPLICES IN PLACE — it replaces a leaf
+   `A_CLASS` by mutating the parent's child pointer (or reassigns the driver's
+   `root` for a bare-class root, which is never a group root), and never
+   reallocates a node that is or contains a group root. Leaves are never group
+   roots, so callgraph_build's bindings stay valid and the lowering runs at
+   :1000, AFTER the graph binds — the position `altcls` and `discharge_atomic`
+   would have forced is not required once the pass cannot strand a capture.
+   Stage 2 enforces this with a check that no group-root node's ADDRESS moves
+   across the pass (§9.2).
 3. **`pcrec_postresolve` (:999) must run BEFORE the lowering.** It asks the
    lookbehind fixed-width rule in **CHARACTERS** (§5.6), and after the
    lowering a two-byte character is an `A_CAT` of two byte classes, so a
@@ -486,8 +498,12 @@ the position moves.
    existing is that a call's width cannot be answered until the graph binds
    the callee.
 
-Constraints 2 and 3 put the lowering after :999; constraint 1 puts it before
-:1018. **There is exactly one line between them.**
+Constraint 3 puts the lowering after :999; constraint 1 puts it before
+:1018; constraint 2 is now a PROPERTY (splice-in-place) the pass carries at
+whatever slot those two allow. `:1000` is that slot. [The original text here
+claimed "there is exactly one line between them" from three positional
+constraints; that was an artifact of constraint 2's mis-statement — corrected
+with constraint 2 above, stage-1 lane utf8s1 / R2.]
 
 ```
  :999   pcrec_postresolve(&cx, root);
@@ -3510,13 +3526,28 @@ unwatched for three stages.
 
 **STAGE 2 — the utf8 backend.** `enc_utf8.c` (four residual bodies,
 `back_step` per §5.2.1), the byte-sequence lowering placed at
-`compile.c:1000` per §2.1.2, `\x{...}` above 0xFF under `--encoding=utf8`,
+`compile.c:1000` per §2.1.2 — and now GENUINELY REBUILDING (stage 1's byte
+instance was a no-op) **UNDER THE SPLICE-IN-PLACE INVARIANT**: the
+decomposition replaces a leaf `A_CLASS` by mutating the parent's child pointer
+and never reallocates a node that is or contains a group root (§2.1.2
+constraint 2 as corrected). `\x{...}` above 0xFF under `--encoding=utf8`,
 `-e utf8` starts compiling. §5.6's `pcrec_cwmin`/`pcrec_cwmax` land here —
 at **both timings together** (§5.6.4) — because lookbehind is already shipped
 and would otherwise be wrong the moment utf8 compiles; `pcrec_maxw` and its
-chain retire in the same change (§5.6.2), with S171 re-pointed.
+chain retire in the same change (§5.6.2, incl. the test-side census —
+`tests/mrl/maxw_check.c`, `run_mrl_tests.sh` §8 re-aimed at `cwmax`, S136),
+with S171 re-pointed. **AND it must resolve `u.rep.revbody`** — stage 1
+measured 413 corpus classes whose reversed copy (`revdet`) is built BEFORE
+the lowering and is NOT visited by the splice walk, so a stage-2
+decomposition that ignores it lowers the forward class and leaves the reverse
+one byte-wise (inert in stage 1, a miscompile in stage 2); the lane's finding,
+loud never silent.
 
 *Acceptance:* the UTF `.rxt` corpus green; identity gate still 100% on `byte`;
+**the group-root-address check** (no group-root node's address moves across
+`pcrec_lower_enc` — the splice-in-place invariant made mechanical, R2); the
+`u.rep.revbody` resolution proven (the 413 classes' reverse machines lowered
+consistently with their forward ones);
 DD-12 (7)(a)'s **two M5-time structural checks** — hot-loop shape identity
 ASCII-vs-UTF-8, and the second-backend validation of D58's "revisit-when"
 names; **§8.5's ASCII-corpus encoding differential** at 3,319 blocks / 0
@@ -3825,12 +3856,17 @@ acceptance. Three cross-cutting obligations belong to every wave:
 **FOUR OBLIGATIONS ADDED AT r54**, each because a repair in this revision is
 the kind of thing an implementation wave silently drops:
 
-4. **The lowering's POSITION is a reviewable fact, not an implementation
-   detail.** §2.1.2 derives one line in `compile.c` from three constraints.
-   A wave that puts it elsewhere has either found a constraint this document
-   got wrong — which is P-12 and is welcome — or has reintroduced E1. The
-   pass-chain comment at the call site says which constraints it satisfies,
-   in the style `compile.c`'s existing pass comments already use.
+4. **The lowering's SPLICE-IN-PLACE INVARIANT is a reviewable fact, not an
+   implementation detail.** [P-12 DISCHARGED, 2026-09-05, stage-1 lane utf8s1:
+   a constraint WAS wrong — the original obligation asked a wave that moved
+   the pass to justify itself against three positional constraints, and the
+   measurement found constraint 2 mis-stated; the reviewable fact is now the
+   PROPERTY (§2.1.2 constraint 2 as corrected), not the position.] The pass
+   splices in place and never reallocates a node that is or contains a group
+   root; a wave that makes it REBUILD instead owes §4's recursion-artifact
+   measurement a new answer (it differs on 45 of 179 at :1000). The
+   pass-chain comment at the call site states the invariant it upholds, in
+   the style `compile.c`'s existing pass comments already use.
 5. **`pcrec_cls_bits`'s assertion ships ENABLED, or §8.1.1's check 2 is the
    only thing standing between the tree and E1's recurrence.** An assertion
    compiled out in the build everyone runs is a comment.
