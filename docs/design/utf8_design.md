@@ -837,6 +837,83 @@ Four consumers were named in the charter. **STRUCTURAL** in each case:
   does simple folding only, so object (5) `utf8-full-fold` has no PCRE2
   behaviour to reproduce.
 
+#### 2.5.1 The FULL class-payload consumer census (r54 E5)
+
+**ACCEPTED.** The four consumers above came from the charter's list, and the
+charter's list is not the tree's. The census below is **grep-derived**, run in
+this revision:
+
+```
+$ grep -rn 'u\.cls' src/            # every reader and writer, whole tree
+```
+
+**Nine live sites in six files**, plus two definition/comment sites. Each gets
+a verdict against §2.1.2's forced position, and **the position is what decides
+every row**: a site after `compile.c:1000` sees byte-confined intervals and
+needs only the render helper; a site before it sees code points and must
+widen or decline.
+
+| # | site | what it reads it for | runs | verdict |
+|---|---|---|---|---|
+| 1 | `src/opt/altcls.c:158` | `memcpy(c->u.cls.bits, bits, 32)` — writes a merged class | :926, **BEFORE** | **WIDEN** |
+| 2 | `src/opt/altcls.c:189` | `altcls_single_bit(arr[0]->u.cls.bits)` — is this branch one character? | :926, **BEFORE** | **WIDEN** |
+| 3 | `src/opt/altcls.c:331`/`:333` | copies then ORs branch bitmaps — the union that factors an alternation | :926, **BEFORE** | **WIDEN** |
+| 4 | `src/opt/possessify.c:168` | `memcpy(r.f, a->u.cls.bits, 32)` — the FIRST set | :988 → `:456`, **BEFORE** | **DECLINE** |
+| 5 | `src/opt/possessify.c:529` | `gk_newpos(g, a->u.cls.bits)` — a Glushkov position's label | :988 → `:456`, **BEFORE** | **DECLINE** |
+| 6 | `src/opt/revdet.c:451` | `memcpy(out, a->u.cls.bits, 32)` in `pcrec_revdet_first` | :988 → `:477`, **BEFORE** | **DECLINE** (the fallback already exists) |
+| 7 | `src/ir/nfa.c:524-528` | `leaf[...]->u.cls.bits` — the trie's per-leaf bitmap | :1018, **AFTER** | render helper |
+| 8 | `src/ir/nfa.c:542` | `memcpy(st[f.start].cls, a->u.cls.bits, 32)` — the `A_CLASS` arm | :1018, **AFTER** | render helper |
+| 9 | `src/gen/emit_vm.c:1515`, `:3287`, `:4608`, `:7055` | the four sites E1 is about | :1228, **AFTER** | render helper |
+
+Two further `u.cls` mentions are **not consumers**: `src/core/internal.h:487`
+is the D70 layout comment (§2.2.3) and `src/opt/revdet.c:261` is the comment
+on the kind guard beside it. Sites reading a `bits` PARAMETER rather than a
+node — `emit_vm.c:1462`, `:7573`, `:7581`, `:7583`, `:10510`, and
+`:7247`'s `pcrec_cls_word_esc` — are inside the emitter on already-rendered
+arrays and are untouched (§2.2.2).
+
+**THE THREE WIDEN ROWS (altcls).** All three operations have exact
+interval-list forms, and none is new machinery: a union of two sorted
+interval lists is a merge; "is this branch a single character" is
+`n == 1 && iv[0].lo == iv[0].hi`; a copy is a copy. **Under
+`--encoding=byte` every answer is identical to today's by construction**,
+because complementing and unioning within `[0, 0xFF]` (§2.7.1) is the same
+function as `~bits[i]` and `bits[b] |= …`. §8.1's identity gate is what
+proves it rather than this sentence.
+
+**THE THREE DECLINE ROWS (possessify, revdet), and why declining is honest
+here and not lazy.** Both passes compute a FIRST-byte set to prove a
+disjointness property, and **both have a safe direction that already exists in
+the tree**: `internal.h:595` records that `pcrec_revdet_first` *"WIDENS to all
+bytes, the sound"* answer, and possessify's whole §2.2 verdict is one it may
+always decline to give. So the first landing's rule is:
+
+> A node whose interval list touches anything above `0xFF` contributes the
+> ALL-BYTES set to `pcrec_revdet_first`, and makes `possessify`'s
+> disjointness test answer "not disjoint".
+
+**The cost is a VERDICT, not an answer** — fewer possessifications and fewer
+reverse-deterministic rungs on non-ASCII patterns, which is throughput and
+artifact size, never correctness. **The cost is also entirely absent under
+`--encoding=byte`**, where no interval can exceed `0xFF`, which is why §8.1's
+identity gate still reads 100%.
+
+**Widening them is DEFERRED under D77, with the measurement named.** The
+trigger is a form census over a UTF-8 corpus reporting what fraction of
+non-ASCII patterns lose a rung to the decline — and **that corpus does not
+exist until stage 2 lands**, which is the same reason §2.5's `[OPT-CLSPACK]`
+bullet and §6.3's two-value scan are recorded rather than built. Building the
+interval-disjointness analysis now, against no measured loss, is the
+unexercised structure D24/SR-2 warns about.
+
+**WHAT THE CENSUS CHANGES ABOUT §2.5's OPENING CLAIM.** The first version said
+the byte-tier class machinery *"is below the lowering and is untouched"*. That
+is true of the six AFTER rows and **false of the three altcls rows and the
+three verdict rows**, which sit above it because `pcrec_callgraph_build`
+forces the lowering down past them (§2.1.2 constraint 2). The claim now reads:
+everything below `compile.c:1000` is untouched, and everything above it is
+enumerated in this table.
+
 ### 2.6 Invalid UTF-8: the decision, taken deliberately
 
 `[DD-12] (3)` leaves this open and asks for a measurement against
@@ -909,6 +986,55 @@ out of the same rule as (d) — a cursor mid-character has no path — but §5.1
 shows this is exactly what `next_pos` exists to make unreachable for the one
 caller who could hit it.
 
+#### 2.6.1 "No path" INVERTS for a negative assertion (r54 E14)
+
+**ACCEPTED, and it narrows (e) rather than contradicting it.** "A cursor
+mid-character has no path" is a SAFE answer for a positive match — no path
+means no match, which is a miss and never a false hit. **For a negative
+assertion it is the opposite.** `(?!X)` succeeds exactly when `X` has no
+path, so at a mid-character position `(?!α)` **SUCCEEDS**, where a validating
+engine skips the position (`MATCH_INVALID_UTF`, measured: start=1 on `αβ`
+returns `(2,4)`) or refuses it (`PCRE2_UTF`, `ERRM -36`). The same inversion
+applies to `(?<!X)`, and §5.2.1's repaired `back_step` is where it is actually
+delivered.
+
+**§2.6(e)'s cure covers ONE of the three ways a cursor gets to a
+mid-character position, and the first version implied it covered all three.**
+Stated per entry, which is what `docs/spec/match_api.md` §3.1 needs to gain
+under D80:
+
+| how the cursor gets there | protected by | the artifact's promise under `utf8` |
+|---|---|---|
+| the **find-all loop's own advance** (`match_api.md` §3.1) | **YES** — the loop advances by `<prefix>_next_pos`, which §5.1 makes a boundary walk. This is the entry `[M5-SEAM]` was built for | boundary by construction; the `+1` a pre-seam caller would have written is exactly the bug the entry deletes |
+| a **caller-supplied `startpos`** to `<prefix>_search` | **NO** | the automaton's answer, which for a negative assertion differs from both PCRE2 UTF modes |
+| `<prefix>_match`'s **anchored** entry at a caller-supplied position | **NO** | same |
+
+**THE DESIGN'S POSITION, and it is the one §2.6's ruling forces.** Adding a
+boundary check to the entries would be a validation pass by another name — a
+branch on every call, encoding-conditional, on the hot path, which is what
+§2.6 declines and what DD-12 (7) forbids. So:
+
+> **`startpos` must be a character boundary of the artifact's encoding.**
+> A caller who passes a non-boundary gets a DEFINED answer — the automaton's
+> — which is not PCRE2's answer in either UTF mode, and which for a leading
+> negative assertion differs in the SUCCEEDING direction. `next_pos` is the
+> supported way to produce a valid `startpos`, and the find-all loop already
+> uses it.
+
+**This is a contract sentence, not an implementation note**, so it lands in
+`docs/spec/match_api.md` §3.1 in stage 2's own change (§13 obligation 1), not
+later. And **it is contingent on ASK 1**: if Frank rules that ill-formed input
+must be reported rather than silently unmatched, this row changes with it, and
+the opt-in validation entry that ASK 1 names is also where a `startpos`
+boundary check would belong.
+
+**What makes this cheap to get wrong**: every instrument a corpus author
+naturally writes starts at `startpos = 0`, which is a boundary on every
+subject. §8.3's `next_pos`/find-all axis therefore gains an explicit
+**non-zero mid-character `startpos`** cell on a leading `(?!` and a leading
+`(?<!` — the two shapes where the answer inverts — rather than leaving the
+axis to be covered by find-all cells that structurally cannot reach it.
+
 ### 2.7 The parser changes, and only where UTF changes the language
 
 `[DD-12] (1)`'s rule. **MEASURED** boundaries from `out/premises.txt` §2 and
@@ -925,9 +1051,157 @@ caller who could hit it.
   quantified atom and the atom lowers to a fragment. Nothing in `p_rep` cares
   how many bytes a fragment consumes.
 - **`.` and `[^...]` change what they mean**, but only through the interval
-  set — `.` becomes `[\x{0}-\x{10FFFF}]` minus newline, negation complements
-  within the code-point space rather than within 0..255. This is the interval
-  representation doing its job, not a parser change.
+  set. **The first version wrote that negation "complements within the
+  code-point space rather than within 0..255" and that sentence is a
+  BLOCKING defect — see §2.7.1.**
+
+#### 2.7.1 The complement universe is PER ENCODING (r54 BLOCKING E2)
+
+**ACCEPTED. As written, §2.1 and §2.7 together refuse every negated class
+under `--encoding=byte` — which is stage 1's entire acceptance corpus.**
+
+The collision, in two sentences that were four hundred lines apart:
+
+- §2.1: the byte backend's lowering is *"code point c ≤ 0xFF becomes the
+  one-byte sequence c, and **an interval touching anything above 0xFF is a
+  compile error**"*.
+- §2.7: *"negation complements within the **code-point space**"*.
+
+So under `--encoding=byte`, `[^a]` becomes
+`[\x{0}-\x{60}\x{62}-\x{10FFFF}]`, whose top interval touches `0x10FFFF`, and
+the lowering **refuses it**. The same for `\D`, `\W`, `\S`, `\H`, `\V` and
+`.`. **STRUCTURAL**, and the producers are three lines in one file, verified
+at this tree: `src/parse/parse.c:449` and `:898` are the two
+`a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i]` negation loops (the
+`from_bits` constructor and `p_class`'s own), and `:1115` is `.`, which fills
+all 32 bytes and clears `\n`. Every one of them complements within `0..255`
+TODAY, because a 256-bit bitmap has no other universe available — which is
+exactly why nothing in the tree could have caught the design's error.
+
+**THE REPAIR: the complement universe is a property of the ENCODING, and the
+parser asks for it.**
+
+```
+negate(S)  =  [0, MAXCP(enc)] \ S
+```
+
+with `MAXCP(byte) = 0xFF` and `MAXCP(utf8) = 0x10FFFF`.
+
+**Under `--encoding=byte` this is byte-identical to today by construction**,
+not by measurement: complementing within `[0, 0xFF]` and `~bits[i]` are the
+same function on the same set, so `[^a]`, `\D`, `\W`, `\S`, `\H`, `\V` and `.`
+all produce the interval list whose rendering (§2.1.4's `pcrec_cls_bits`) is
+the identical 32 bytes. §8.1's identity gate is the check; the argument is
+that there is nothing for it to catch.
+
+**THE BLAST RADIUS, MEASURED**, because "stage 1's whole acceptance corpus" is
+a claim with a number behind it and the number is worth having. Over the
+`pattern` lines of every `.rxt` file in `tests/` at this tree, excluding
+`known_fail/`:
+
+| | count | of 3,350 |
+|---|---|---|
+| patterns containing a negation-producing construct | **198** | 5.9% |
+| — `[^…]` | 105 | |
+| — an unescaped `.` (approximate: an in-class `.` is counted) | 95 | |
+| — `\D` / `\S` / `\W` / `\H` / `\V` | 2 / 1 / 1 / 1 / 1 | |
+
+**198 patterns is the direct damage and it is not the interesting number.**
+Stage 1's acceptance is §8.1's identity gate at **100% byte-identity over the
+whole corpus** (§9.2), so 198 refusals do not fail 5.9% of the bar — they fail
+**the bar**, entirely, and stage 1 cannot land. That is what the panel meant,
+and the 5.9% is the honest way to say it: a small population, a total
+consequence.
+
+**Note also what this population is NOT.** It is not exotic. `.` and `[^…]`
+are the two most ordinary constructs in the list, present in a twentieth of a
+corpus that was never built to exercise negation — so the un-repaired rule
+would have been caught by the first patterns anyone tried, which is a fair
+criticism of the design and not a defence of it. The defect survived because
+the two sentences that produce it are four hundred lines apart and each is
+correct in isolation.
+
+#### 2.7.2 Why a universe field and not symbolic negation
+
+The panel offered two repairs. **The design takes the universe field**, and
+the argument against the other one is §2.2's own:
+
+**REJECTED — carry negation symbolically to the lowering** (`A_CLASS` gains a
+`negated` flag; the complement is taken where the encoding is known). It is
+the more obviously encoding-agnostic shape, and it fails three ways:
+
+1. **It reintroduces two representations of one set**, which is precisely
+   what §2.2's second bullet refuses for the bitmap. Every consumer in
+   §2.5.1's census — `altcls`'s union and single-character test,
+   `possessify`'s FIRST set, `revdet_first` — would need a second code path
+   for the negated case, and a predicate deciding which. That is the
+   special-case shape `CLAUDE.md`'s situation index has a standing rule
+   against.
+2. **It breaks set identity, and the identity gate is what would report it.**
+   `[^a]` and `[\x{0}-\x{60}\x{62}-\x{10FFFF}]` denote one set and would
+   become two distinct nodes, so the artifact would depend on which SPELLING
+   the pattern used. §8.1's gate is byte-identity over the whole corpus; a
+   representation that varies with spelling makes that gate's 100% an
+   accident of which spellings the corpus happens to contain.
+3. **It puts D23's ordering rule at risk for no gain.** OS-1/D23 requires the
+   caseless fold to be applied to the set BEFORE the negation, and §4.3
+   measures that PCRE2 agrees including across blocks (`[^k]` caseless does
+   not match U+212A). With an eager complement the order is visible in one
+   constructor and §4.3's cells check it. With a deferred one, the fold is at
+   parse time and the complement is at the lowering, a thousand lines apart in
+   two files, and S-U1's sabotage — *"swap the order in the one constructor"*
+   — no longer has one constructor to swap.
+
+**TAKEN — a per-encoding maximum code point, read from the encoding.**
+`PcrecEnc` gains one scalar:
+
+```c
+typedef struct {
+    int         id;
+    const char *name;
+    unsigned    max_cp;   /* [M5.0] the complement universe: 0xFF for byte,
+                           * 0x10FFFF for utf8. NOT a code-unit width and not
+                           * a validity predicate — it is the answer to
+                           * "what does `[^x]` mean here", and that is the
+                           * only question that reads it. */
+    const PcrecEncEntry *entries;
+} PcrecEnc;
+```
+
+**AND THIS RETRACTS §5's HEADLINE, which the revision states plainly rather
+than qualifying.** §5 opened *"the seam needs no interface change — D58's
+revisit clause is honoured by having nothing to record."* **That is now false
+as written.** What survives, and it is the claim the third-encoding recipe
+actually makes, is:
+
+> The seam's **ENTRIES TABLE** needs no interface change: four residual
+> entries get UTF-8 bodies under their existing signatures, no
+> `PcrecEncEntry` field is added, `pcrec_enc_ready` is untouched, and both
+> emit functions are untouched — the property `[M6.6.2]` wave D demonstrated
+> for `back_step`. **`PcrecEnc` itself gains one scalar**, which IS a D58
+> seam change and IS a thing to record.
+
+§12 P-1 is re-stated accordingly, and **ASK 7 routes the D58 record to
+Frank** — not the mechanism, which is this design's call, but the decision-log
+event.
+
+#### 2.7.3 The explicit-`\x{>FF}` refusal stays DISTINCT
+
+**And keeping the two apart is the whole of E2's second half.** The rule is on
+the parser's LITERAL INPUT, never on a derived set:
+
+| what | under `byte` | under `utf8` | why |
+|---|---|---|---|
+| `\x{3b1}`, or a range endpoint, WRITTEN above `MAXCP(enc)` | **compile error** | compiles | 10.46's own answer: err 134 *"character code point value in \x{} or \o{} is too large"* at `options=0`, accepted under `PCRE2_UTF` (`out/premises.txt` §2, `out/width.txt` §1) |
+| an interval reaching `MAXCP(enc)` because a COMPLEMENT put it there | compiles | compiles | the user wrote `[^a]`; nothing above `0xFF` was named, and there is nothing to refuse |
+
+**One test, one place, and it is the range check §2.7 already describes** —
+*"a RANGE CHECK on a value, not a conditional on behaviour"* — applied at the
+escape's own parse site, where the written value is in hand. A derived set
+never passes through it, because by then there is no written value to check.
+The two cells above are the discriminating pair a stage-2 corpus owes
+(§8.3), and they are one line apart in the same file: `\x{3b1}` under `byte`
+refuses, `[^a]` under `byte` compiles.
 
 ---
 
@@ -1234,7 +1508,14 @@ CHARACTERS before `pos`"* — and `enc_byte.c`'s own comment explains that `s`
 and `n` are parameters this backend ignores *because* "a UTF-8 backend walking
 back over continuation bytes must reject a MALFORMED sequence". The body:
 
+> **THE BODY BELOW IS THE FIRST VERSION'S AND IT IS WRONG (r54 MUST-FIX E4).**
+> It is kept for one paragraph because the defect is instructive and the
+> repair is a two-line addition to it, not a rewrite. §5.2.1 is the shipping
+> body.
+
 ```c
+/* r54: SUPERSEDED — see §5.2.1. Walks back over continuation bytes without
+ * ever checking that the lead byte DECLARES the length of the run it walked. */
 size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)
 {
     (void)n;
@@ -1252,6 +1533,142 @@ succeeds; nothing precedes → clean fail; **a continuation byte precedes with
 no lead byte** → PCRE2 answers `ERRM -22`, and this body answers
 `BACK_STEP_NONE`, which under §2.6's ruling is the right pcrec answer (no
 path, no match). Fewer than `k` characters precede → clean fail.
+
+#### 5.2.1 The malformed-run defect, and the repair (r54 E4)
+
+**ACCEPTED.** §2.6's ruling is that an ill-formed sequence *"matches
+nothing"*, and §2.3's argument is that this costs nothing because ill-formed
+input *"has no path"*. **That is true of the forward automaton and NOT of
+`back_step`**, which is not the automaton — it is byte arithmetic that walks
+the other way. Where the two disagree, the artifact does not silently
+no-match: it **traps**.
+
+**THE WORKED CELL**, from the panel and re-derived here against the body
+above. Subject `C2 80 80` (a two-byte lead followed by *two* continuations —
+one continuation byte too many), `pos = 3`, `k = 1`, body `.`:
+
+| step | value |
+|---|---|
+| `pos=3`, not 0; walk back | `pos=2` (`0x80`, continuation), `pos=1` (`0x80`), `pos=0` (`0xC2`, not a continuation) — loop exits on `pos > 0` |
+| lead check `(s[0] & 0xC0) == 0x80`? | `0xC2 & 0xC0 == 0xC0` — **not** a continuation, so no `BACK_STEP_NONE` |
+| **returns** | **0** |
+| the body `.` runs forward from 0 | `C2 80` is a well-formed 2-byte character; the automaton accepts it and **ends at 2** |
+| the emitted end-check (`emit_vm.c:6335-6352`) | `scan_position (2) != slot_values[…] (3)` |
+| on `(?<=` | `goto rx_fail` — a clean decline |
+| **on `(?<!`** | **`return RX_R_INTERNAL`** |
+
+`RX_R_INTERNAL` is `PCREC_ERR_INTERNAL`, `-6`, deliberately **below**
+`PCREC_ERR_FLOOR`, and `emit_vm.c`'s own note 3 says why: it means *"the
+artifact catching its own analysis disagreeing with its own emission"*, and
+a composed call site honouring F2's `if (ret < PCREC_ERR_FLOOR)
+__builtin_trap();` **traps on it**. So a subject §2.6 promises will merely not
+match aborts the process instead. **STRUCTURAL**, all three sites verified at
+this tree.
+
+**THE CAUSE IS ONE MISSING CHECK, and `enc_byte.c` predicted it by name.**
+The shipped comment at `src/gen/enc/enc_byte.c:205-209` explains why `s` and
+`n` are parameters a byte backend ignores:
+
+> *"a UTF-8 backend walking back over continuation bytes must reject a
+> MALFORMED sequence, which is a failure mode the byte backend cannot have
+> and needs the subject's bounds to detect."*
+
+The first version's body rejects **one** malformed shape — a continuation run
+with no lead byte at all — and misses the other: a run whose lead byte
+declares a length different from the number of bytes actually walked. It never
+reads the lead byte's declared length.
+
+**THE REPAIR: `back_step` validates the declared length of every character it
+steps over.**
+
+```c
+size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)
+{
+    (void)n;                       /* reads only below `pos`, as the contract says */
+    while (k--) {
+        size_t end = pos;          /* one past the character being stepped over */
+        size_t want;
+        unsigned char lead;
+
+        if (pos == 0) return $_BACK_STEP_NONE;
+        /* At most 3 continuation bytes may precede a lead byte. Stopping at 3
+         * is not a guard against long runs -- it is the encoding: a 5-byte
+         * form is not UTF-8, so a 4th continuation means the run is malformed
+         * and the length test below rejects it anyway. */
+        do { pos--; } while (pos > 0 && (s[pos] & 0xC0) == 0x80 && end - pos < 4);
+
+        lead = s[pos];
+        if      (lead < 0x80)            want = 1;
+        else if ((lead & 0xE0) == 0xC0)  want = 2;
+        else if ((lead & 0xF0) == 0xE0)  want = 3;
+        else if ((lead & 0xF8) == 0xF0)  want = 4;
+        else return $_BACK_STEP_NONE;   /* a continuation byte, or 0xF8..0xFF */
+
+        /* THE LINE THE FIRST VERSION DID NOT HAVE. The lead byte must DECLARE
+         * exactly the run this loop walked. Without it a `C2 80 80` run
+         * answers "one character back = 0", the forward body consumes the
+         * well-formed `C2 80` and ends at 1 past where it started, and the
+         * lookbehind end-check -- whose redundancy proof assumes back_step and
+         * the forward parse agree -- fires. On a NEGATIVE lookbehind that is
+         * RX_R_INTERNAL, below PCREC_ERR_FLOOR, and a composed site traps.
+         * r54 E4. */
+        if (want != end - pos) return $_BACK_STEP_NONE;
+    }
+    return pos;
+}
+```
+
+**THE INVARIANT IT BUYS, which is the thing worth having and is stronger than
+"the E4 cell now passes".**
+
+> If `back_step(s, n, pos, k)` returns `q`, then `s[q..pos)` decomposes into
+> exactly `k` length-consistent UTF-8 runs. A `k`-character-wide body started
+> at `q` therefore ends at `pos` **on every input**, well-formed or not — so
+> `emit_vm.c`'s note-3 redundancy proof, which the first version made true
+> only on well-formed subjects, becomes true unconditionally, and
+> `RX_R_INTERNAL` becomes unreachable from this construct.
+
+**ARGUED**, and the step is: each iteration validates its own run
+independently and the runs tile `[q, pos)` exactly (each iteration's `end` is
+the previous `pos`), so the backward decomposition is forced; UTF-8 is a
+prefix code, so a forward parse of a well-formed run agrees with it; and where
+a run is NOT well-formed the forward automaton has no accepting path over it
+(§2.3), so there is no body success to mis-check.
+
+**Worked, in both directions:**
+
+| subject | `pos`,`k` | old body | repaired body | why |
+|---|---|---|---|---|
+| `C2 80 80` (E4's cell) | 3, 1 | **0** → trap | `BACK_STEP_NONE` | lead `C2` declares 2, run is 3 |
+| `61 CE B1` (`"aα"`) | 3, 1 | 1 | **1** | `CE` declares 2, run is 2 — unchanged |
+| `61 CE B1` | 3, 2 | 0 | **0** | second run: `61` declares 1, run is 1 — unchanged |
+| `80 80` (no lead) | 2, 1 | `NONE` | `NONE` | `0x80` is a continuation — unchanged |
+| `C0 80` (overlong NUL) | 2, 1 | 0 | **0** | length-consistent, so `back_step` accepts it; **the forward automaton does not** (overlongs are absent, §2.3), the body fails, the end-check is never reached |
+
+The last row is deliberate and is where the invariant is doing real work.
+`back_step` is a **length** test, not a validity test, and it is a strict
+SUPERSET of the automaton's character set — it accepts overlong and surrogate
+encodings. That is safe, and stronger than making it a validator would be: the
+invariant only needs "body success implies end == pos", and length-tiling
+gives it, while a full validity check in `back_step` would be a second,
+independently-maintained UTF-8 decoder beside the automaton — two definitions
+of well-formedness that could drift, which is the parallel mechanism §2.1.3
+already refuses once.
+
+**Consequences for the rest of the document, all applied:**
+
+- §5.2's "**MEASURED** boundary cells" list gains a fourth row — a
+  length-inconsistent run → `BACK_STEP_NONE` — and it is **ARGUED**, not
+  measured, because PCRE2 has no comparable entry point to measure it against;
+  what `out/width.txt` §4b measures is PCRE2's whole-match answer on those
+  subjects, which is a different question.
+- **S-U5's sabotage is now under-powered and is strengthened** (§8.2): "make
+  it `pos - k`" is detected by any multi-byte subject. The failure this
+  section is about needs its own row, **S-U9**, deleting the length test
+  alone — which is invisible on every well-formed subject and, on the E4 cell
+  under `(?<!`, is an abort rather than a wrong answer.
+- §12 gains **P-9**: no subject exists on which a `(?<!X)` artifact returns
+  `RX_R_INTERNAL`. Refuted by one.
 
 **AND NOW THE FINDING.** `k` is in CHARACTERS. Where does pcrec's `k` come
 from? `src/parse/mod_lookaround.c`'s `la_widths`:
