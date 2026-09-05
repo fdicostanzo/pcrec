@@ -2334,7 +2334,7 @@ level):
 | verdict | count | what the author does |
 |---|---|---|
 | `PCRE2-ONLY` | 10 | mark `# pcre2-only`; libpcre2 rules the cell. These are `\p{...}`, `\x{...}`, `\X`, `\R`, class ranges over non-ASCII, quantified multi-byte characters, an ill-formed subject — **python `re` cannot express the syntax at all**, which is a stronger reason than "disagrees" |
-| `UCP-SPLIT` | 8 | `\w \d \s \b \W` over non-ASCII. **pcrec has no UCP axis** (§4.5), so the corpus must state which semantics it expects — pcrec's answer is the non-UCP column |
+| `UCP-SPLIT` | 8 | `\w \d \s \b \W` over non-ASCII. **pcrec has no UCP axis** (§4.5), so the corpus must state which semantics it expects — pcrec's answer is the non-UCP column, and **python `re` over BYTES is the arbitrating oracle; see §7.1.1** |
 | `PY-STR-ONLY` | 5 | `.`, `.{2}`, `[^a]` over multi-byte characters, caseless LONG S. python's `str` engine is the right oracle; **the suite's `bytes` engine is not** |
 | `ALL-AGREE` | 5 | write the cell, python verifies it |
 
@@ -2342,6 +2342,94 @@ level):
 is why §7.4 exists: the suite's python oracle today compares bytes, which is
 correct for the byte tier and wrong for the UTF tier on 5 of 28 measured
 cells — silently, in the direction that loses the oracle (R32 C3's shape).
+
+#### 7.1.1 The UCP-SPLIT rows' ARBITRATING ORACLE (r54 MUST-FIX C8)
+
+**ACCEPTED, and the table above already contained the answer.** The
+`UCP-SPLIT` row said what pcrec's answer IS (the non-UCP column) and named no
+oracle to check it against — the one shape R32 C3 exists to prevent, and the
+panel is right that leaving it would be its third recurrence.
+
+**THE ORACLE IS PYTHON `re` OVER `bytes` ON SEVEN OF THE EIGHT ROWS, AND THE
+EIGHTH IS THE INTERESTING ONE.** The panel's evidence pointed at python-bytes
+and it was right; **working the whole column rather than the cited example
+found one row where it is wrong**, and the reason it is wrong generalises.
+
+`out/divergence.txt` lines 54-63, every `UCP-SPLIT` row, `py/bytes` against
+`pcre2/UTF` — the non-UCP column, which is pcrec's semantics (§4.5):
+
+| cell | `pcre2/UTF` = pcrec | `py/bytes` | |
+|---|---|---|---|
+| `\w` over a Greek letter | no | no | ✓ |
+| `\w` over an Arabic-Indic digit | no | no | ✓ |
+| `\d` over an Arabic-Indic digit | no | no | ✓ |
+| `\s` over NBSP U+00A0 | no | no | ✓ |
+| `\s` over U+2028 line sep | no | no | ✓ |
+| `\b` before a Greek letter | no | no | ✓ |
+| **`\b` between ASCII and Greek** | **MATCH(0,3)** | **MATCH(0,3)** | ✓ |
+| **`\W` over a Greek letter** | **MATCH(0,2)** | **no** | **✗** |
+
+**7 of 8.**
+
+**THE SEVENTH ROW IS WHY THE SEVEN ARE A RESULT AND NOT A COINCIDENCE.** Six
+of the agreeing cells are `no` on both sides, and an oracle that simply
+refused everything non-ASCII would score six. `\b` between ASCII and Greek is
+the **discriminating** one: the non-UCP answer is MATCH and the UCP answer is
+`no` — the opposite direction from every other row — and `py/bytes` gives
+MATCH. So it is tracking the non-UCP SEMANTICS, not exhibiting a bias that
+happens to agree. **That row is the control**, and a corpus that drops it
+loses the evidence for this ruling; §8.3 pins it by name.
+
+**THE EIGHTH ROW FAILS FOR A UNIT REASON, AND THE UNIT REASON IS THE WHOLE
+POINT OF THIS MILESTONE.** `\W` over `α` (`CE B1`):
+
+- **PCRE2/UTF** — and pcrec under `--encoding=utf8` — asks "is this
+  CHARACTER a non-word character", answers yes, and **consumes both bytes**:
+  `MATCH(0, 2)`.
+- **python-bytes** asks "is this BYTE a non-word byte", answers yes for `0xCE`,
+  and consumes **one** byte; against the probe's anchored `^\W$` that leaves
+  `0xB1` unmatched, so the cell reads `no`.
+
+The two agree perfectly on the PREDICATE (α is not a word character) and
+disagree on the UNIT. **python-bytes has no character notion at all**, so it
+can verify a UCP-SPLIT cell exactly when the cell's answer does not depend on
+one class consuming a multi-byte character.
+
+**AND `py/str` DOES NOT RESCUE IT** — the same row reads `no` there too, for
+the opposite reason: python's `str` engine gives `\w` Unicode semantics, so α
+IS a word character and `\W` does not match at all. **Neither python engine
+gives pcrec's answer on this cell.**
+
+**SO THE RULE THE BLINDED AUTHOR GETS IS A PREDICATE, NOT A VERDICT LABEL:**
+
+> A `UCP-SPLIT` cell is **python-verifiable through the `bytes` engine** — and
+> must NOT be marked `# pcre2-only` — **unless the expected answer is a MATCH
+> that consumes a multi-byte character.** Those cells are `# pcre2-only`:
+> `\W`, `\D`, `\S` and `[^…]` over non-ASCII. The complemented forms, in other
+> words, and only when they match.
+
+**THIS IS A FINDING AGAINST §7.1's OWN TAXONOMY**, and the design states it
+rather than patching one row. **The verdict column and the oracle column are
+different partitions.** `VERDICT` answers *"which engines' semantics diverge
+here"* — an engine-comparison question, computed by the probe. `ORACLE`
+answers *"who can check pcrec's expected answer"* — a corpus-authoring
+question, and it depends on the UNIT each candidate oracle counts in, which no
+verdict label carries. The `\W`-over-Greek cell is `UCP-SPLIT` by verdict and
+`PCRE2-ONLY` by oracle, and the first version's table let the label imply the
+oracle. **`PY-STR-ONLY`'s own row already contained the same phenomenon** —
+it lists *"`[^a]` over multi-byte characters"*, which is `\W`'s cell one
+spelling over — and nothing connected the two.
+
+`probe_divergence.py` computes the verdict from the columns, which is right,
+and **it does not compute an oracle**; §8.3.1's extract carries the predicate
+above in prose, and §7.4's third `.rxt` oracle value (ASK 6) is where this
+eventually becomes machine-checked rather than a rule an author applies by
+hand.
+
+**THE ONE THING THIS DOES NOT SETTLE**, stated so nobody reads it as more than
+it is: the oracle confirms pcrec's answer is *self-consistent with the
+non-UCP definition*. It does not make the non-UCP answer the RIGHT one for a
+user who wanted UCP — that is §14 ASK 4, and no oracle decides it.
 
 ### 7.2 The python version is itself an axis
 
