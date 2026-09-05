@@ -373,40 +373,42 @@ scan_procs_linux() {
     done
 }
 
-# scan_procs_darwin: three whole-box `ps` calls (never one per candidate —
+# scan_procs_darwin: ONE whole-box `ps` call (never one per candidate —
 # that would reproduce the very "subprocess whose argv could self-match"
-# shape this file's header rules out for /proc), joined by pid. Two
-# variable-width text fields (the start-time string, the full command
-# line) each go in their OWN call as the LAST requested column, so
-# `read -r pid rest` can safely slurp "everything after the first field,
-# embedded spaces included" — the same trick as `ps -axo pid=,ppid=,pgid=`
-# below being kept to fixed-width NUMERIC columns only, so no field ever
-# needs that treatment more than once per line.
+# shape this file's header rules out for /proc). pid/ppid/pgid are kept as
+# fixed-width NUMERIC columns and command is requested LAST, so
+# `read -r pid ppid pgrp rest` can safely slurp "everything after the
+# first three fields, embedded spaces included" for the one column that
+# needs it.
+#
+# [MACPORT] THIS USED TO BE THREE SEPARATE `ps` CALLS (pid/ppid/pgid,
+# lstart, command), and the gap between the FIRST and THIRD widened this
+# tool's own inherent TOCTOU race far enough to matter, measured live: a
+# transient process born after call 1 but still alive at call 3 got a CMD
+# entry with no PGRP/PPIDOF entry, which (a) crashed `pgset[...]=1` under
+# `set -u` with no default (fixed separately, see below) and (b) — the
+# sharper finding — was a WRAPPER PROCESS CARRYING THE CALLER'S OWN
+# PATTERN IN ITS ARGV that self-chain exclusion never got a chance to
+# examine, because it only ever existed in the `matched` list, never in
+# `PPIDOF`, so the ancestor walk could not find it. That is precisely the
+# self-match hazard this file's header exists to rule out, reopened by an
+# avoidable multi-call race rather than by anything fundamental about
+# lacking /proc. One call for the three array-populating fields closes
+# that specific gap; `lstart` (the one field that does NOT feed a safety
+# decision, only the printed audit line) moved to a per-candidate lazy
+# fetch in `iso_of` below, off the hot/wide scan entirely.
 scan_procs_darwin() {
     local pid ppid pgrp rest
-    while read -r pid ppid pgrp; do
+    while read -r pid ppid pgrp rest; do
         [ -n "${pid:-}" ] || continue
         PGRP[$pid]="$pgrp"
         PPIDOF[$pid]="$ppid"
         CHILDREN[$ppid]="${CHILDREN[$ppid]:-}${CHILDREN[$ppid]:+ }$pid"
-    done < <(ps -axo pid=,ppid=,pgid= 2>/dev/null)
-
-    # START[pid] holds ps's own `lstart` STRING on darwin (there is no
-    # /proc-style tick count to store instead) — iso_of's darwin branch
-    # parses it directly via `date -j -f`, never through BOOT_EPOCH/CLK_TCK
-    # (that arithmetic is Linux-only and stays untouched).
-    while read -r pid rest; do
-        [ -n "${pid:-}" ] || continue
-        START[$pid]="$rest"
-    done < <(ps -axo pid=,lstart= 2>/dev/null)
-
-    # `-ww`: unlimited width, or a long argv silently truncates — the same
-    # false-negative shape a truncated /proc/PID/cmdline would be.
-    while read -r pid rest; do
-        [ -n "${pid:-}" ] || continue
+        # `-ww`: unlimited width, or a long argv silently truncates — the
+        # same false-negative shape a truncated /proc/PID/cmdline would be.
         CMD[$pid]="$rest"
         [ -n "${CMD[$pid]}" ] || CMD[$pid]="[?]"
-    done < <(ps -axwwo pid=,command= 2>/dev/null)
+    done < <(ps -axwwo pid=,ppid=,pgid=,command= 2>/dev/null)
 }
 
 build_self_chain() {
@@ -477,13 +479,18 @@ iso_of() {
         # emit the same field shape.
         date -d "@$epoch" -Iseconds 2>/dev/null || printf 'unknown'
     else
-        # darwin: START[pid] holds `ps -o lstart=`'s own fixed-format
-        # string directly (scan_procs_darwin above) — there is no
-        # /proc-style boot-epoch/tick arithmetic to do at all. BSD date's
-        # `-j -f` (parse-without-setting-the-clock) reads that exact
-        # format; a trailing-space warning from ps's fixed-width padding
-        # is cosmetic and thrown away like every other diagnostic here.
-        local lstart="${START[$1]:-}"
+        # darwin: fetched LAZILY, per candidate, via `ps -o lstart=` — one
+        # call per pid actually printed in an audit line (a handful, at
+        # most the size of `matched`), never a bulk whole-box call. Moved
+        # off scan_procs_darwin's hot path deliberately: `lstart` feeds
+        # only the printed audit line, never a safety decision, so it does
+        # not need to share that function's single-call TOCTOU-narrowing
+        # argument — see that function's own header. BSD date's `-j -f`
+        # (parse-without-setting-the-clock) reads `ps`'s exact format; a
+        # trailing-space warning from its fixed-width padding is cosmetic
+        # and thrown away like every other diagnostic here.
+        local lstart
+        lstart="$(ps -o lstart= -p "$1" 2>/dev/null)"
         [ -n "$lstart" ] || { printf 'unknown'; return; }
         date -j -f '%a %b %e %H:%M:%S %Y' "$lstart" +%Y-%m-%dT%H:%M:%S%z 2>/dev/null \
             || printf 'unknown'
@@ -506,6 +513,28 @@ proc_alive() {
 
 scan_procs
 build_self_chain
+
+# [MACPORT] SELF_CHAIN ALSO COVERS EVERY DESCENDANT OF $$, not only its
+# ancestors — verified live to be load-bearing, not defensive belt: darwin's
+# scan_procs_darwin uses `ps` via process substitution (`< <(ps ...)`),
+# which bash implements by FORKING a child to run `ps`. In the narrow
+# window between that fork() and its execve() into the real `ps` binary,
+# the forked child is still a byte-for-byte copy of safekill's OWN process
+# image — same argv, same command text — and `ps`'s own system-wide
+# snapshot can catch that child in exactly this pre-exec instant,
+# reporting a PID that is neither $$ nor an ancestor of it but whose
+# reported cmdline is "bash .../safekill -f PATTERN" all the same.
+# Reproduced live, deterministically, with a plain `-f` search matching
+# NOTHING else on the box: the transient fork's own pid still matched the
+# pattern (since it echoed safekill's own invocation), ancestor-chain
+# exclusion could not see it (it is a CHILD, not a parent), and safekill
+# went on to SIGTERM its own process GROUP — which on this fork-heavy
+# scan path includes its own still-running `ps` helper. A descendant is
+# exactly as safe to exclude as an ancestor: nothing this process forked
+# for its OWN bookkeeping is ever a legitimate kill target.
+while IFS= read -r _sk_d; do
+    [ -n "$_sk_d" ] && SELF_CHAIN[$_sk_d]=1
+done < <(descendants_of "$$")
 
 # ---- resolve the target set -------------------------------------------------
 
@@ -607,7 +636,12 @@ if [ "$opt_list" -eq 1 ]; then
     if [ "$mode" = "pattern" ]; then
         list_pids=("${matched[@]}")
     else
-        mapfile -t list_pids < <(members_of_pgids "${doomed_pgids[@]}")
+        # [MACPORT] `mapfile` (bash 4.0+) does not exist on bash 3.2
+        # (this box's own /bin/bash) — verified live ("command not found").
+        # A portable read loop is the bash-3.0-safe equivalent.
+        list_pids=()
+        while IFS= read -r _sk_p; do list_pids+=("$_sk_p"); done \
+            < <(members_of_pgids "${doomed_pgids[@]}")
     fi
     for p in "${list_pids[@]}"; do
         audit_line "$p"
@@ -637,11 +671,23 @@ if [ "$mode" = "pattern" ]; then
         exit 2
     fi
     if [ "$_SK_HAVE_ASSOC" -eq 1 ]; then declare -A pgset=(); else declare -a pgset=(); fi
-    for p in "${matched[@]}"; do pgset["${PGRP[$p]}"]=1; done
+    # [MACPORT] `:-0`: on darwin, PGRP/CMD come from two SEPARATE `ps`
+    # snapshots (scan_procs_darwin), not one atomic /proc walk, so a
+    # process that appears in the command scan can legitimately be absent
+    # from the earlier pgid scan (a race, same TOCTOU class this file's
+    # header already accepts elsewhere) — verified live under bash 3.2,
+    # not a hypothetical: an unguarded reference here crashed with
+    # "unbound variable" under `set -u`. `0` is a safe sentinel (matches no
+    # real pgid), same fallback line ~523's descendant-walk already uses.
+    for p in "${matched[@]}"; do pgset["${PGRP[$p]:-0}"]=1; done
     doomed_pgids=("${!pgset[@]}")
 fi
 
-mapfile -t kill_pids < <(members_of_pgids "${doomed_pgids[@]}")
+# [MACPORT] mapfile (bash 4.0+) is absent on bash 3.2 — same portable
+# read-loop replacement as the --list branch above.
+kill_pids=()
+while IFS= read -r _sk_p; do kill_pids+=("$_sk_p"); done \
+    < <(members_of_pgids "${doomed_pgids[@]}")
 if [ "${#kill_pids[@]}" -eq 0 ]; then
     printf '%s: nothing left to kill (already gone)\n' "$prog" >&2
     exit 1
