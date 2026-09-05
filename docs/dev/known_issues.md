@@ -3811,14 +3811,30 @@ should be taken together with `ENG_ATTEMPT`'s `start++`
 
 **IT IS NOT `pcrec-ARGUED` — IT HAS A REAL ORACLE, and that is the sharpest
 difference from K49.** K49's cell was a design position no engine produces.
-This one is measured, against libpcre2 10.37 through
-`docs/design/subroutines_measurements/probes/sr_oracle.py`:
+This one is measured, and measured against the REFERENCE build rather than a
+local one — libpcre2 10.46 (2025-08-27), ubuntubudu's system libpcre2 via
+ctypes, run by the manager 2026-09-05:
 
 | option word | `\B` on `61 CE B1`, startpos 0 |
 |---|---|
 | `PCRE2_UTF` | `(3,3)` |
+| `options=0` (byte) | `(2,2)` |
+
+The DISCOVERY reading (lane k49fix, libpcre2 **10.37** through
+`docs/design/subroutines_measurements/probes/sr_oracle.py` on the Mac dev box)
+agrees cell for cell and adds the third option word:
+
+| option word | answer |
+|---|---|
+| `PCRE2_UTF` | `(3,3)` |
 | `PCRE2_UTF｜PCRE2_MATCH_INVALID_UTF` | `(3,3)` |
 | `options=0` (byte) | `(2,2)` |
+
+**The 10.37 line is NOT the citation** — it is the local Miniconda build, which
+is exactly the hazard U13/U14 record and memory `pcrec-cross-platform-
+verification` names; the 10.46 row above is what this entry rests on. That the
+two agree means the divergence is not a version artefact, which is worth
+knowing separately.
 
 Both UTF option words agree on `(3,3)`, and `(2,2)` is precisely the
 `options=0` BYTE answer — so **pcrec under `-e utf8` is returning byte

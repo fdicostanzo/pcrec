@@ -4,8 +4,44 @@
  * BORN `maxw_check.c`, sweeping the BYTE pair; when stage 2 re-aimed the cwmax
  * chain into characters (utf8_design.md §5.6.2 — `pcrec_cwmax` retired, its
  * fixpoint became `cwmax`) this instrument moved with its subject, unchanged
- * in spirit: under the `byte` encoding this file parses with, one character
- * is one byte, so every number below is what the byte sweep measured.
+ * in spirit.
+ *
+ * **THAT RE-AIM RESTED ON A PREMISE THAT EXPIRED, AND THIS IS THE REPAIR
+ * (2026-09-05, lane k49fix).** The sentence here used to read: *"under the
+ * `byte` encoding this file parses with, one character is one byte, so every
+ * number below is what the byte sweep measured."* True when it was written and
+ * FALSE the moment `tests/utf8/` merged. That corpus's blocks carry
+ * `encoding utf8`, their oracle spans are BYTE offsets into subjects holding
+ * MULTI-BYTE characters, and CHECK 2 was comparing those bytes against a
+ * CHARACTER quantity — so `[^a]` matching one 2-byte character read as "span 2
+ * EXCEEDS cwmax=1" on 21 cells. **The unit mismatch was in THIS FILE, not in
+ * the analysis**: verified cell by cell before the repair, every one of those
+ * 21 spans is exactly ONE character (or one character against a `{1,2}`'s
+ * cwmax of 2), so cwmax was right in characters throughout and no
+ * under-estimate exists in this population. An under-estimate would have been
+ * an ENGINE bug in the silent direction (the lookaround fixed-width rule reads
+ * this number) and is what the repair had to rule out before touching the
+ * check.
+ *
+ * THE RULE NOW, and both halves are needed or the comparison still mixes
+ * units:
+ *
+ *   - **A block is parsed under ITS OWN encoding.** `pcrec_options.encoding`
+ *     comes from the block's `encoding` directive, so cwmax is computed on the
+ *     AST the block MEANS. Under `byte` a literal `[EUR]` is a class of three
+ *     BYTES; under `utf8` it is one CHARACTER. The two are different languages
+ *     and only one of them is the block's.
+ *   - **The oracle span is measured in the same unit.** Under `utf8` the span
+ *     is counted in CHARACTERS — non-continuation bytes in
+ *     `subject[start..end)` — and under `byte` it stays the byte count it
+ *     always was, unchanged to the line.
+ *
+ * THE CHARACTER COUNT SHARES NO SOURCE WITH WHAT IT CHECKS (learnings §3).
+ * It is a one-line predicate over the subject's own bytes — `(b & 0xC0) !=
+ * 0x80` — and never asks pcrec, `next_pos`, the lowering or any decoder. That
+ * is deliberate: this file exists to check an ANALYSIS from outside, and a
+ * span counted by the compiler's own notion of a character boundary would make
+ * CHECK 2 a comparison of pcrec against itself.
  *
  * `pcrec_cwmax` is an ANALYSIS, so its errors are silent by construction: it
  * has no output of its own, and until the lookaround module's fixed-width rule
@@ -61,6 +97,19 @@
  * `unbounded` must be caught by CHECK 1's own strictness rather than by the
  * inequality, so CHECK 1 additionally requires that cwmax is not unbounded
  * everywhere: the corpus contains bounded patterns and it must say so.
+ *
+ * PROVE THE DECODE IS LIVE TOO, and in BOTH directions — a character count
+ * that is never exercised is dead code that makes the mismatch above
+ * un-reproducible, and it would pass silently. Two floors, both asserted:
+ *
+ *   (i)  the `utf8` block population must be NONZERO. A corpus that lost
+ *        tests/utf8/, or a reader that stopped seeing `encoding` lines, would
+ *        otherwise leave this whole path unentered and green.
+ *   (ii) at least one COMPARED span's byte length must EXCEED its character
+ *        count. (i) alone is satisfied by a `utf8` corpus of ASCII-only
+ *        subjects, where the two counts coincide and the decode proves
+ *        nothing. This is the floor that fails if someone "simplifies" the
+ *        character count back into a byte count.
  */
 
 #include <stdio.h>
@@ -69,6 +118,7 @@
 #include <setjmp.h>
 
 #include "core/internal.h"
+#include "gen/enc/enc.h"   /* pcrec_enc_by_name — the encoding namespace's one table */
 
 /* ---- the sabotage channel (see the header) --------------------------------- */
 
@@ -91,6 +141,9 @@ static long n_files, n_blocks, n_parsed, n_skipped, n_nodes, n_spans;
 static long n_bounded_nodes;      /* nodes whose cwmax is NOT unbounded */
 static long n_viol_order, n_viol_span;
 static long n_neg;
+/* [2026-09-05] the encoding-aware half's own population, so it cannot be dead
+ * code that passes silently — see the header's two floors. */
+static long n_utf8_blocks, n_utf8_spans, n_multibyte_spans, n_undecodable;
 
 static void viol_order(const char *file, int line, const char *pat,
                        long long mn, long long mx, int kind)
@@ -149,11 +202,20 @@ static void sweep(const Ast *root, const char *file, int line, const char *pat)
  * because ParseMods is incomplete outside src/parse/, and `setjmp` for the
  * refusal path. The arena is freed either way. Returns NULL when pcrec
  * refuses the pattern under the feature set currently installed. */
-static Ast *parse_one(const char *pat, bool caseless, Ctx *cx, pcrec_options *defo)
+static Ast *parse_one(const char *pat, bool caseless, int encoding,
+                      Ctx *cx, pcrec_options *defo)
 {
     memset(cx, 0, sizeof(*cx));
     pcrec_default_options(defo);
     if (caseless) defo->flags |= PCREC_CASELESS;
+    /* [2026-09-05] The block's OWN encoding, so cwmax is computed on the AST
+     * the block means. The parser's literal reader is per-encoding
+     * (`pcrec_pat_char`, src/opt/lower_enc.c), so this is what makes a literal
+     * multi-byte character in the pattern text ONE class rather than a
+     * concatenation of byte classes. The lowering is deliberately NOT run —
+     * this file never compiles — which is exactly what keeps the AST at the
+     * CHARACTER tier the cwmax pair is defined on. */
+    defo->encoding = encoding;
     cx->pat = pat;
     cx->patlen = strlen(pat);
     cx->opt = defo;
@@ -194,10 +256,69 @@ static void trim_nl(char *s)
     while (n && (s[n - 1] == '\n' || s[n - 1] == '\r')) s[--n] = 0;
 }
 
-/* `m "subject" START END` / `ms "subject" START END STARTPOS` — only the two
- * offsets are read. The subject's own escapes are irrelevant here because the
- * offsets in an .rxt file are already DECODED byte offsets. */
-static bool span_of(const char *line, long *start, long *end)
+/* The subject's escape grammar, transcribed from tests/harness/verify_rxt.py's
+ * `decode_subject` (the harness's own reader): `\"` `\\` `\n` `\t` `\r` `\f`
+ * `\v` `\xHH`, anything else literal. Decoding into `dst` (a byte buffer, NOT
+ * a string — a subject may legally contain NUL) and returning its length, or
+ * -1 on a malformed escape.
+ *
+ * THIS FILE DID NOT USED TO DECODE AT ALL, and the comment that stood here
+ * said why: *"the offsets in an .rxt file are already DECODED byte offsets."*
+ * Still true, and no longer sufficient — a CHARACTER count needs the bytes
+ * those offsets point at, not just the offsets. */
+static long decode_subject(const char *s, size_t len, unsigned char *dst, size_t cap)
+{
+    size_t i = 0, n = 0;
+    while (i < len) {
+        if (n >= cap) return -1;
+        if (s[i] != '\\') { dst[n++] = (unsigned char)s[i++]; continue; }
+        if (i + 1 >= len) return -1;
+        switch (s[i + 1]) {
+        case '"':  dst[n++] = '"';  i += 2; break;
+        case '\\': dst[n++] = '\\'; i += 2; break;
+        case 'n':  dst[n++] = '\n'; i += 2; break;
+        case 't':  dst[n++] = '\t'; i += 2; break;
+        case 'r':  dst[n++] = '\r'; i += 2; break;
+        case 'f':  dst[n++] = '\f'; i += 2; break;
+        case 'v':  dst[n++] = '\v'; i += 2; break;
+        case 'x': {
+            if (i + 3 >= len) return -1;
+            char h[3] = { s[i + 2], s[i + 3], 0 };
+            char *e;
+            long v = strtol(h, &e, 16);
+            if (*e || v < 0 || v > 0xFF) return -1;
+            dst[n++] = (unsigned char)v; i += 4;
+            break;
+        }
+        default: return -1;
+        }
+    }
+    return (long)n;
+}
+
+/* The CHARACTER count of `b[start..end)`, and it is one predicate: a UTF-8
+ * character boundary is any position whose byte is not a continuation byte
+ * (`(b & 0xC0) == 0x80`), so the count is the number of NON-continuation bytes
+ * in the range. Shares no source with pcrec — see the header. An ill-formed
+ * run degrades to "one character per non-continuation byte", which is the same
+ * self-synchronizing reading `next_pos` uses and never over-counts a
+ * well-formed one. */
+static long char_width(const unsigned char *b, long n, long start, long end)
+{
+    if (start < 0) start = 0;
+    if (end > n) end = n;
+    long w = 0;
+    for (long i = start; i < end; i++)
+        if ((b[i] & 0xC0) != 0x80) w++;
+    return w;
+}
+
+/* `m "subject" START END` / `ms "subject" START END STARTPOS`. Returns the two
+ * offsets AND both widths of the span — bytes as before, plus characters — so
+ * `block_run` can pick the unit its block's encoding calls for. The block's
+ * `encoding` line may legally follow the `m` lines, so BOTH are always
+ * computed and the choice is made once the block is complete. */
+static bool span_of(const char *line, long *wbytes, long *wchars)
 {
     const char *p = line;
     if (strncmp(p, "ms ", 3) == 0) p += 3;
@@ -209,6 +330,8 @@ static bool span_of(const char *line, long *start, long *end)
      * escaped quote, and the trailing fields are all numeric. */
     const char *q = strrchr(p, '"');
     if (!q || q == p) return false;
+    const char *body = p + 1;              /* first byte inside the quotes */
+    size_t bodylen = (size_t)(q - body);
     q++;
     char *endp;
     long a = strtol(q, &endp, 10);
@@ -216,7 +339,16 @@ static bool span_of(const char *line, long *start, long *end)
     const char *r = endp;
     long b = strtol(r, &endp, 10);
     if (endp == r) return false;
-    *start = a; *end = b;
+
+    *wbytes = b - a;
+    static unsigned char subj[65536];
+    long slen = decode_subject(body, bodylen, subj, sizeof subj);
+    /* A subject this file cannot decode falls back to the byte width, which is
+     * the PRE-repair behaviour and is never smaller than the character width —
+     * so the fallback can only make CHECK 2 stricter, never let a violation
+     * through. Counted and printed rather than silent. */
+    if (slen < 0) { *wchars = -1; return true; }
+    *wchars = char_width(subj, slen, a, b);
     return true;
 }
 
@@ -230,25 +362,26 @@ typedef struct {
     char  pat[65536];
     char  feats[512];
     bool  caseless;
+    int   encoding;              /* PCREC_ENC_*, from the block's own directive */
     int   patline;
-    long *sp_start, *sp_end;
+    long *sp_bytes, *sp_chars;   /* both widths; the encoding picks one */
     int  *sp_line;
     size_t nsp, capsp;
 } Block;
 
-static void block_span(Block *b, long st, long en, int line)
+static void block_span(Block *b, long wbytes, long wchars, int line)
 {
     if (b->nsp == b->capsp) {
         b->capsp = b->capsp ? b->capsp * 2 : 16;
-        b->sp_start = realloc(b->sp_start, b->capsp * sizeof *b->sp_start);
-        b->sp_end   = realloc(b->sp_end,   b->capsp * sizeof *b->sp_end);
+        b->sp_bytes = realloc(b->sp_bytes, b->capsp * sizeof *b->sp_bytes);
+        b->sp_chars = realloc(b->sp_chars, b->capsp * sizeof *b->sp_chars);
         b->sp_line  = realloc(b->sp_line,  b->capsp * sizeof *b->sp_line);
-        if (!b->sp_start || !b->sp_end || !b->sp_line) {
+        if (!b->sp_bytes || !b->sp_chars || !b->sp_line) {
             fprintf(stderr, "FAIL: out of memory\n"); exit(2);
         }
     }
-    b->sp_start[b->nsp] = st;
-    b->sp_end[b->nsp]   = en;
+    b->sp_bytes[b->nsp] = wbytes;
+    b->sp_chars[b->nsp] = wchars;   /* -1 when the subject would not decode */
     b->sp_line[b->nsp]  = line;
     b->nsp++;
 }
@@ -265,27 +398,39 @@ static void block_run(Block *b, const char *path, const char *default_features)
     }
 
     Ctx cx; pcrec_options defo;
-    Ast *root = parse_one(b->pat, b->caseless, &cx, &defo);
+    Ast *root = parse_one(b->pat, b->caseless, b->encoding, &cx, &defo);
     if (!root) { n_skipped++; release(&cx); return; }
     n_parsed++;
 
     sweep(root, path, b->patline, b->pat);
 
+    const bool chars = (b->encoding != PCREC_ENC_BYTE);
+    if (chars) n_utf8_blocks++;
+
     long long mx = cwmax_of(root);
     for (size_t i = 0; i < b->nsp; i++) {
-        long w = b->sp_end[i] - b->sp_start[i];
+        long wb = b->sp_bytes[i], wc = b->sp_chars[i];
+        long w;
+        const char *unit;
+        if (chars && wc >= 0) { w = wc; unit = "characters"; n_utf8_spans++; if (wb > wc) n_multibyte_spans++; }
+        else if (chars)       { w = wb; unit = "bytes (UNDECODABLE subject)"; n_undecodable++; }
+        else                  { w = wb; unit = "bytes"; }
         n_spans++;
         if (w > mx) {
             if (n_viol_span < 20)
-                fprintf(stderr, "FAIL %s:%d: ORACLE span %ld bytes EXCEEDS cwmax=%lld "
-                        "for pattern '%s'\n", path, b->sp_line[i], w, mx, b->pat);
+                fprintf(stderr, "FAIL %s:%d: ORACLE span %ld %s EXCEEDS cwmax=%lld "
+                        "for pattern '%s'\n", path, b->sp_line[i], w, unit, mx, b->pat);
             n_viol_span++;
         }
     }
     release(&cx);
 }
 
-static void block_reset(Block *b) { b->nsp = 0; b->feats[0] = 0; b->caseless = false; }
+static void block_reset(Block *b)
+{
+    b->nsp = 0; b->feats[0] = 0; b->caseless = false;
+    b->encoding = PCREC_ENC_BYTE;   /* run.sh's own default for a block with no directive */
+}
 
 static void do_file(const char *path, const char *default_features)
 {
@@ -296,6 +441,7 @@ static void do_file(const char *path, const char *default_features)
     static char line[65536];
     Block b;
     memset(&b, 0, sizeof b);
+    b.encoding = PCREC_ENC_BYTE;
     bool have = false;
     int lineno = 0;
 
@@ -323,13 +469,29 @@ static void do_file(const char *path, const char *default_features)
             if (strchr(line + 6, 'i')) b.caseless = true;
             continue;
         }
+        if (strncmp(line, "encoding ", 9) == 0) {
+            /* Resolved through the SEAM's own registry rather than by
+             * comparing the string here, so this file cannot drift from
+             * `src/gen/enc/enc.c`'s spelling of an encoding's name — the
+             * single-namespace rule ([SR-10]) that table owns. An unknown
+             * name is a corpus bug and is reported, not defaulted. */
+            const PcrecEnc *e = pcrec_enc_by_name(line + 9);
+            if (!e) {
+                fprintf(stderr, "FAIL %s:%d: unknown encoding '%s'\n",
+                        path, lineno, line + 9);
+                n_viol_order++;
+            } else {
+                b.encoding = e->id;
+            }
+            continue;
+        }
 
-        long st, en;
-        if (span_of(line, &st, &en)) block_span(&b, st, en, lineno);
+        long wb, wc;
+        if (span_of(line, &wb, &wc)) block_span(&b, wb, wc, lineno);
     }
     if (have) block_run(&b, path, default_features);
 
-    free(b.sp_start); free(b.sp_end); free(b.sp_line);
+    free(b.sp_bytes); free(b.sp_chars); free(b.sp_line);
     fclose(f);
 }
 
@@ -366,6 +528,10 @@ int main(int argc, char **argv)
     printf("  AST nodes swept           : %ld\n", n_nodes);
     printf("    of which cwmax is BOUNDED: %ld\n", n_bounded_nodes);
     printf("  oracle spans checked      : %ld\n", n_spans);
+    printf("    utf8 blocks / spans      : %ld / %ld\n", n_utf8_blocks, n_utf8_spans);
+    printf("    of those, spans whose BYTE width exceeds their CHARACTER width: %ld\n",
+           n_multibyte_spans);
+    printf("    undecodable subjects (fell back to bytes): %ld\n", n_undecodable);
     printf("  CHECK 1 violations (cwmax < cwmin)      : %ld\n", n_viol_order);
     printf("  CHECK 2 violations (span > cwmax)      : %ld\n", n_viol_span);
     printf("  negative widths                       : %ld\n", n_neg);
@@ -396,6 +562,32 @@ int main(int argc, char **argv)
         fprintf(stderr, "FAIL: only %ld of %ld nodes have a BOUNDED cwmax — cwmax is "
                 "degenerate (everything unbounded passes both inequalities)\n",
                 n_bounded_nodes, n_nodes);
+        bad = 1;
+    }
+    /* [2026-09-05] THE ENCODING-AWARE HALF'S OWN TWO FLOORS (see the header).
+     * (i) the population exists at all. */
+    if (n_utf8_blocks == 0) {
+        fprintf(stderr, "FAIL: ZERO utf8 blocks seen — the `encoding` directive reader "
+                "is not working, or the utf8 corpus is gone; either way CHECK 2's "
+                "character path is dead code and this run certifies nothing about it\n");
+        bad = 1;
+    }
+    /* (ii) and the two units actually DIFFER somewhere, or the character count
+     * is indistinguishable from the byte count it replaced. */
+    if (n_multibyte_spans == 0) {
+        fprintf(stderr, "FAIL: NO compared span has a byte width exceeding its character "
+                "width — every utf8 span checked was ASCII, so the character count is "
+                "untested and CHECK 2 would read identically with the pre-repair byte "
+                "comparison\n");
+        bad = 1;
+    }
+    /* An undecodable subject is a corpus bug rather than a check bug, and the
+     * fallback is sound (bytes >= characters, so CHECK 2 only gets stricter) —
+     * but it must never be SILENT. */
+    if (n_undecodable) {
+        fprintf(stderr, "FAIL: %ld utf8 span(s) had a subject this reader could not "
+                "decode and fell back to the byte width — the escape grammar here has "
+                "drifted from tests/harness/verify_rxt.py's\n", n_undecodable);
         bad = 1;
     }
 

@@ -22,12 +22,26 @@
 # required to honour). This one is an ordinary unanchored search from
 # offset 0, which every engine answers.
 #
-# MEASURED (lane k49fix, 2026-09-05) against libpcre2 10.37 through
-# docs/design/subroutines_measurements/probes/sr_oracle.py:
+# THE REFERENCE ORACLE (libpcre2 10.46, ubuntubudu's system libpcre2 via
+# ctypes; run by the manager 2026-09-05). Subject 61 CE B1, pattern \B,
+# startoffset 0:
+#
+#     10.46 2025-08-27  options=0    rc=1  span=(2,2)
+#     10.46 2025-08-27  PCRE2_UTF    rc=1  span=(3,3)
+#
+# DISCOVERY reading, kept because it is what found the bug and because the
+# agreement across versions is itself worth recording (lane k49fix, same day,
+# libpcre2 10.37 through docs/design/subroutines_measurements/probes/
+# sr_oracle.py on the Mac dev box):
 #
 #     PCRE2_UTF                    startpos=0 -> (3,3)
 #     PCRE2_UTF|MATCH_INVALID_UTF  startpos=0 -> (3,3)
 #     options=0 (byte)             startpos=0 -> (2,2)
+#
+# The 10.37 reading is the LOCAL Miniconda build and is not this project's
+# reference (memory `pcrec-cross-platform-verification`; U13/U14 are the
+# recorded hazard of citing it as one) — the 10.46 line above is. They agree
+# cell for cell, so the divergence is not a version artefact.
 #
 # Both UTF option words answer (3,3). pcrec under `-e utf8` answers
 # (2,2) — which is exactly the `options=0` BYTE answer — so this is
