@@ -21382,3 +21382,7 @@ session. All eight idle agents were stopped with TaskStop (it works for
 in-process agents — the accumulation Frank described is cleared for this
 session); every worktree removed. Next: wake.md rewritten for the new
 machine, then the push of main and the lane branches (Frank's ruling).
+
+Part 68 addendum (19:3x): the restarted bench session (pcrecdev2) launched its held 288d505 STEP 2 AFTER suite at 19:28 on I-44 — quiet gate verdict quiet (load1 0.2), four passes, ~7.3 h, expected done ~03:00 EDT; [B37]'s re-pin target moves to 334fd10e / abi 22; its WINDOW CLOSED goes to the outbox. Acked live; nothing of pcrec's runs on the box from here.
+
+Part 68 addendum 2 (19:5x): the NEW-MACHINE pcrecdev1 is already live — it wrote I-45 into the bench inbox at 19:45 (the cross-machine convention: the inbox/outbox files stay canonical in the bench repo; Remote Control is the live channel; D78 roles unchanged), which the bench recorded as its BD8. This old-box session is therefore superseded; its wake.md is the hand-off the new session should reconcile against (committed docs win).
