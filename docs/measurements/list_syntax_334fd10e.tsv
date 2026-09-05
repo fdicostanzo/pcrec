@@ -1,0 +1,146 @@
+# --list-syntax seed for pcrec-bench (I-42/[B36]), generated at pin 334fd10e (abi 22)
+# date: 2026-09-05 | box: Mac M1 (gcc-16) | generator: build/pcrec --list-syntax at that commit
+# pcrec syntax construct registry (D24). Empty field = none.
+# `syntax` is a valid probe pattern for the construct.
+# `expect` is the text the diagnostic must contain, for the rows that reject.
+# `built` (D65): has the owning module's producer landed for THIS construct, derived live by driving `syntax` through a gate-forced-open doorway call — 'built'/'unbuilt' for RS_MODULE rows, '-' where the question does not arise (RS_BASE/RS_REJECTED). Orthogonal to `status`/`roadmap`, which stay PCRE2/base-grammar facts.
+# `family` (D71 item 3): the CANONICAL SYNTAX of the family this row is a spelling of, empty when the row is its own family. Members of a family are the rows sharing a key, where a row's key is its `family` if it has one and its own `syntax` otherwise; `--list-families` prints one line per family with `built` ANDed across the members. Grouping is an INDEX-layer fact and never dispatch: a row's dispatch identity is unchanged (R6).
+#kind	selector	syntax	module	feature	flavours	engines	status	diag	flags	expect	note	roadmap	quantifiable	class_expect	built	family
+esc	d	\d	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any decimal digit	planned	yes	set 10	built	
+esc	D	\D	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any character that is not a decimal digit	planned	yes	set 246	built	
+esc	s	\s	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any whitespace character	planned	yes	set 6	built	
+esc	S	\S	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any character that is not whitespace	planned	yes	set 250	built	
+esc	w	\w	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any word character (letter, digit or underscore)	planned	yes	set 63	built	
+esc	W	\W	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any character that is not a word character	planned	yes	set 193	built	
+esc	h	\h	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any horizontal whitespace character	planned	yes	set 3	built	
+esc	H	\H	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any character that is not horizontal whitespace	planned	yes	set 253	built	
+esc	v	\v	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any vertical whitespace character (NOT vertical tab; python re disagrees)	planned	yes	set 5	built	
+esc	V	\V	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any character that is not vertical whitespace	planned	yes	set 251	built	
+esc	N	\N	classes	0x0001	pcre2	dfa|vm	module	module		requires module 'classes'	any character except newline (PCRE2 forbids it inside a class)	planned	yes	err 171	built	
+esc	N	\N{name}		0x0000	pcre2		rejected	fixed		PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u	\N{name} — PCRE2 states it does not support this Perl construct	never	no	err 137	-	
+esc	N	\N{U+0041}	unicode-props	0x0008	pcre2	dfa|vm	module	module		requires module 'unicode-props'	a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection	planned	no	err 193	unbuilt	
+esc	b	\b	assertions	0x0002	pcre2	dfa|vm	module	module		requires module 'assertions'	word boundary — but inside a class it is BASE syntax: backspace (0x08)	planned	no	char 0x08	built	
+esc	B	\B	assertions	0x0002	pcre2	dfa|vm	module	module		requires module 'assertions'	not a word boundary	planned	no	err 107	built	
+esc	A	\A	assertions	0x0002	pcre2	dfa|vm	module	module		requires module 'assertions'	start of subject	planned	no	err 107	built	
+esc	Z	\Z	assertions	0x0002	pcre2	dfa|vm	module	module		requires module 'assertions'	end of subject, or before a final newline	planned	no	err 107	built	
+esc	z	\z	assertions	0x0002	pcre2	dfa|vm	module	module		requires module 'assertions'	end of subject	planned	no	err 107	built	
+esc	G	\G	assertions	0x0002	pcre2	dfa|vm	module	module		requires module 'assertions'	first matching position in the subject	planned	no	err 107	built	
+esc	K	\K	assertions	0x0002	pcre2	vm	module	module		requires module 'assertions'	reset the reported start of the match	planned	no	err 107	built	
+esc	k	\k<name>	backrefs	0x0004	pcre2	vm	module	module		requires module 'backrefs'	backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class	planned	no	set 7	built	
+esc	g	\g{-1}	backrefs	0x0004	pcre2	vm	module	module		requires module 'backrefs'	backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class	planned	no	err 108	built	
+esc	g	\g<1>	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern)	planned	yes	set 4	built	
+esc	g	\g'1'	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference	planned	yes	set 3	built	
+esc	g	\g<0>	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	subroutine call to the WHOLE PATTERN, angle-bracket spelling -- \g<0> and \g<00> are the root, \g<01> is group 1	planned	yes	set 4	built	\g<1>
+esc	g	\g<01>	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	subroutine call into group 1, LEADING-ZERO angle-bracket spelling -- the whole digit run is read as decimal	planned	yes	set 5	built	\g<1>
+esc	g	\g'0'	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	subroutine call to the WHOLE PATTERN, quoted spelling -- \g'0' and \g'00' are the root, \g'01' is group 1	planned	yes	set 3	built	\g'1'
+esc	g	\g'01'	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	subroutine call into group 1, LEADING-ZERO quoted spelling -- the whole digit run is read as decimal	planned	yes	set 4	built	\g'1'
+esc	p	\p{L}	unicode-props	0x0008	pcre2	dfa|vm	module	module		requires module 'unicode-props'	a character with the given Unicode property	planned	yes	set 117	unbuilt	
+esc	P	\P{L}	unicode-props	0x0008	pcre2	dfa|vm	module	module		requires module 'unicode-props'	a character without the given Unicode property	planned	yes	set 139	unbuilt	
+esc	Q	\Q	quoting	0x0010	pcre2	dfa|vm	module	module	lexical	requires module 'quoting'	begin literal quoting, until \E	planned	lexical	err 106	built	
+esc	E	\E	quoting	0x0010	pcre2	dfa|vm	module	module	lexical	requires module 'quoting'	end literal quoting begun by \Q	planned	lexical	err 106	built	
+esc	R	\R	misc	0x0020	pcre2	dfa|vm	module	module		requires module 'misc'	any Unicode newline sequence	planned	yes	err 107	unbuilt	
+esc	X	\X	misc	0x0020	pcre2	dfa|vm	module	module		requires module 'misc'	a Unicode extended grapheme cluster	planned	yes	err 107	unbuilt	
+esc	C	\C	misc	0x0020	pcre2	dfa|vm	module	module		requires module 'misc'	one data unit (byte), even in UTF mode	planned	yes	err 107	unbuilt	
+esc	c	\cX	misc	0x0020	pcre2	dfa|vm	module	module		requires module 'misc'	control character: \cX is X (uppercased first) xor 0x40	planned	yes	char 0x18	unbuilt	
+esc	o	\o{101}	misc	0x0020	pcre2	dfa|vm	module	module		requires module 'misc'	character with the given octal code	planned	yes	char 0x41	unbuilt	
+esc	0	\0	backrefs	0x0004	pcre2	dfa|vm	module	module-octal		requires module 'backrefs'	octal escape \0dd — never a backreference (there is no group 0)	planned	yes	char 0x00	built	
+esc	1	\1	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 1 (PCRE2 error 115 if no such group)	planned	no	char 0x01	built	
+esc	2	\2	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 2 (PCRE2 error 115 if no such group)	planned	no	char 0x02	built	
+esc	3	\3	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 3 (PCRE2 error 115 if no such group)	planned	no	char 0x03	built	
+esc	4	\4	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 4 (PCRE2 error 115 if no such group)	planned	no	char 0x04	built	
+esc	5	\5	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 5 (PCRE2 error 115 if no such group)	planned	no	char 0x05	built	
+esc	6	\6	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 6 (PCRE2 error 115 if no such group)	planned	no	char 0x06	built	
+esc	7	\7	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 7 (PCRE2 error 115 if no such group)	planned	no	char 0x07	built	
+esc	8	\8	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 8 (PCRE2 error 115 if no such group)	planned	no	char 0x38	built	
+esc	9	\9	backrefs	0x0004	pcre2	vm	module	module-octal		requires module 'backrefs'	backreference to capture group 9 (PCRE2 error 115 if no such group)	planned	no	char 0x39	built	
+esc	a	\a		0x0000	pcre2	dfa|vm	base	none			alarm, hex 07	-	yes	char 0x07	-	
+esc	e	\e		0x0000	pcre2	dfa|vm	base	none			escape, hex 1B (not backslash-escape, the ASCII ESC character)	-	yes	char 0x1b	-	
+esc	f	\f		0x0000	pcre2	dfa|vm	base	none			form feed, hex 0C	-	yes	char 0x0c	-	
+esc	n	\n		0x0000	pcre2	dfa|vm	base	none			linefeed, hex 0A	-	yes	char 0x0a	-	
+esc	r	\r		0x0000	pcre2	dfa|vm	base	none			carriage return, hex 0D	-	yes	char 0x0d	-	
+esc	t	\t		0x0000	pcre2	dfa|vm	base	none			tab, hex 09	-	yes	char 0x09	-	
+esc	x	\x41		0x0000	pcre2	dfa|vm	base	none			hex: bare \xHH (exactly 2 digits) or braced \x{HHHH} (\x{...} requires module 'unicode-props')	-	yes	char 0x41	-	
+group	:	(?:...)		0x0000	pcre2	dfa|vm	base	none			non-capturing group	-	yes		-	
+group	=	(?=...)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	positive lookahead	planned	yes		built	
+group	!	(?!...)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	negative lookahead	planned	yes		built	
+group	<	(?<=...)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	positive lookbehind	planned	yes		built	
+group	<	(?<!...)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	negative lookbehind	planned	yes		built	
+group	<	(?<*a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	non-atomic positive lookbehind — the (? spelling of (*naplb:...)	planned	yes		built	
+group	<	(?<name>a)	named-groups	0x0080	pcre2	dfa|vm	module	module		requires module 'named-groups'	named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows	planned	yes		built	
+group	'	(?'name'...)	named-groups	0x0080	pcre2	dfa|vm	module	module		requires module 'named-groups'	named capture group, Perl-style quoting	planned	yes		built	
+group	P	(?P<name>a)	named-groups	0x0080	pcre2	dfa|vm	module	module		requires module 'named-groups'	python-style named capture group	planned	yes		built	
+group	P	(?P=n)	backrefs	0x0004	pcre2	vm	module	module		requires module 'backrefs'	python-style backreference to a named group	planned	no		built	
+group	P	(?P>n)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	python-style subroutine call into a named group	planned	yes		built	
+group	P	(?PX)		0x0000	pcre2		rejected	fixed		unrecognized character after (?P	only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141	never	no		-	
+group	>	(?>...)	atomic-groups	0x0100	pcre2	vm	module	module		requires module 'atomic-groups'	atomic (non-backtracking) group	planned	yes		built	
+group	*	(?*a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	non-atomic positive lookahead — the (? spelling of (*napla:...)	planned	yes		built	
+group	#	(?#...)	comments	0x0200	pcre2	dfa|vm	module	module	lexical	requires module 'comments'	comment, discarded up to the next ')'	planned	lexical		unbuilt	
+group	C	(?C1)	callouts	0x0400	pcre2	vm	module	module		requires module 'callouts'	callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at	planned	no		unbuilt	
+group	|	(?|...)	branch-reset	0x0800	pcre2	vm	module	module		requires module 'branch-reset'	branch reset group: alternatives reuse the same capture numbers	planned	yes		unbuilt	
+group	(	(?(1)a|b)	conditionals	0x1000	pcre2	vm	module	module		requires module 'conditionals'	conditional group (?(condition)yes|no)	planned	no		unbuilt	
+group	(	(?(DEFINE)(?<w>a))	recursion	0x2000	pcre2	dfa|vm	module	module		requires module 'recursion'	define-only group: the body never runs where it is written and exists to be called -- the same thing (?:BODY){0} means	planned	yes		built	
+group	&	(?&name)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into the named group	planned	yes		built	
+group	R	(?R)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse the whole pattern	planned	yes		built	
+group	0	(?0)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1	planned	yes		built	
+group	0	(?00)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse the whole pattern, leading-zero spelling -- any all-zero digit run is the root	planned	yes		built	(?0)
+group	1	(?1)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 1	planned	yes		built	
+group	2	(?2)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 2	planned	yes		built	(?1)
+group	3	(?3)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 3	planned	yes		built	(?1)
+group	4	(?4)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 4	planned	yes		built	(?1)
+group	5	(?5)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 5	planned	yes		built	(?1)
+group	6	(?6)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 6	planned	yes		built	(?1)
+group	7	(?7)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 7	planned	yes		built	(?1)
+group	8	(?8)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 8	planned	yes		built	(?1)
+group	9	(?9)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 9	planned	yes		built	(?1)
+group	1	(?10)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 10 -- a MULTI-DIGIT absolute call; the whole digit run after (? is read as decimal, so nine byte-keyed rows serve every group number	planned	yes		built	(?1)
+group	0	(?01)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	recurse into capture group 1, LEADING-ZERO spelling -- (?01) is group 1 and NOT the root, which (?0)'s own note is qualified for	planned	yes		built	(?1)
+group	+	(?+1)(a)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call to the Nth group to the RIGHT	planned	yes		built	
+group	+	(?+2)(a)(b)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative forward subroutine call, 2 to the right -- (?+1) has a byte-keyed row and its eight siblings ride it, the whole digit run being read as decimal	planned	yes		built	(?+1)(a)
+group	-	(a)(?-01)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, leading zero	planned	yes		built	(a)(?-1)
+group	-	(a)(?-1)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call to the group 1 to the LEFT	planned	yes		built	
+group	-	(a)(a)(?-2)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 2 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(?-3)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 3 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(?-4)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 4 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(a)(?-5)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 5 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(a)(a)(?-6)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 6 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(a)(a)(a)(?-7)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 7 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(a)(a)(a)(a)(?-8)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 8 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative subroutine call, 9 to the left	planned	yes		built	(a)(?-1)
+group	-	(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)	recursion	0x2000	pcre2	vm	module	module		requires module 'recursion'	relative backward subroutine call, 10 to the left -- a MULTI-DIGIT relative call; the ten byte-keyed digit rows serve every distance	planned	yes		built	(a)(?-1)
+group	[	(?[[a]])	extended-classes	0x10000	pcre2	dfa|vm	module	module		requires module 'extended-classes'	extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]])	planned	yes		unbuilt	
+group	)	(?)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	empty option setting	planned	form		built	
+group	-	(?-i)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	unset options: (?-i) (?-im:...)	planned	form		built	
+group	^	(?^)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	reset all options to their default	planned	form		built	
+group	J	(?J)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	allow duplicate names (PCRE2_DUPNAMES)	planned	form		built	
+group	U	(?U)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	ungreedy: invert the greediness of quantifiers	planned	form		built	
+group	a	(?a)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*)	planned	form		built	
+group	i	(?i)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	caseless	planned	form		built	
+group	m	(?m)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	multiline: ^ and $ match at internal newlines	planned	form		built	
+group	n	(?n)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	no auto-capture: plain (...) stops capturing	planned	form		built	
+group	r	(?r)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	restrict caseless matching to within ASCII or non-ASCII	planned	form		built	
+group	s	(?s)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	dotall: . matches newline	planned	form		built	
+group	x	(?x)	modifiers	0x4000	pcre2	dfa|vm	module	module		requires module 'modifiers'	extended: ignore unescaped whitespace and # comments	planned	form		built	
+group	*	(?q)		0x0000	pcre2		rejected	fixed		unrecognized character after (? or (?-	no construct begins with this byte — PCRE2 error 111	never	no		-	
+verb	*	(*pla:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	positive lookahead, alpha spelling of (?=...)	planned	yes		built	(?=...)
+verb	*	(*positive_lookahead:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	positive lookahead, long alpha spelling of (?=...)	planned	yes		built	(?=...)
+verb	*	(*nla:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	negative lookahead, alpha spelling of (?!...)	planned	yes		built	(?!...)
+verb	*	(*negative_lookahead:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	negative lookahead, long alpha spelling of (?!...)	planned	yes		built	(?!...)
+verb	*	(*plb:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	positive lookbehind, alpha spelling of (?<=...)	planned	yes		built	(?<=...)
+verb	*	(*positive_lookbehind:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	positive lookbehind, long alpha spelling of (?<=...)	planned	yes		built	(?<=...)
+verb	*	(*nlb:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	negative lookbehind, alpha spelling of (?<!...)	planned	yes		built	(?<!...)
+verb	*	(*negative_lookbehind:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	negative lookbehind, long alpha spelling of (?<!...)	planned	yes		built	(?<!...)
+verb	*	(*napla:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	non-atomic positive lookahead, alpha spelling of (?*...)	planned	yes		built	(?*a)
+verb	*	(*non_atomic_positive_lookahead:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	non-atomic positive lookahead, long alpha spelling of (?*...)	planned	yes		built	(?*a)
+verb	*	(*naplb:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	non-atomic positive lookbehind, alpha spelling of (?<*...)	planned	yes		built	(?<*a)
+verb	*	(*non_atomic_positive_lookbehind:a)	lookaround	0x0040	pcre2	vm	module	module		requires module 'lookaround'	non-atomic positive lookbehind, long alpha spelling of (?<*...)	planned	yes		built	(?<*a)
+verb	*	(*ACCEPT)	verbs	0x8000	pcre2	vm	module	fixed		(*...) requires module 'verbs'	backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...))	planned	form		unbuilt	
+class-bracket	:	[[:alpha:]]	classes	0x0001	pcre2	dfa|vm	module	fixed	class-delim	POSIX class [:...:] requires module 'classes'	POSIX character class	planned	yes	set 52	built	
+class-bracket	.	[[.a.]]		0x0000	pcre2		rejected	fixed	class-delim	POSIX collating elements are not supported	POSIX collating element — PCRE2 rejects it, and so must we	never	no	err 113	-	
+class-bracket	=	[[=a=]]		0x0000	pcre2		rejected	fixed	class-delim	POSIX collating elements are not supported	POSIX equivalence class — PCRE2 rejects it, and so must we	never	no	err 113	-	
+quant-suffix	*	a*+	atomic-groups	0x0100	pcre2	vm	module	module		requires module 'atomic-groups'	possessive `*` — `X*+` is PCRE2's own spelling of `(?>X*)`	planned	no		built	
+quant-suffix	+	a++	atomic-groups	0x0100	pcre2	vm	module	module		requires module 'atomic-groups'	possessive `+` — `X++` is PCRE2's own spelling of `(?>X+)`	planned	no		built	
+quant-suffix	?	a?+	atomic-groups	0x0100	pcre2	vm	module	module		requires module 'atomic-groups'	possessive `?` — `X?+` is PCRE2's own spelling of `(?>X?)`	planned	no		built	
+quant-suffix	{	a{1,2}+	atomic-groups	0x0100	pcre2	vm	module	module		requires module 'atomic-groups'	possessive braces — `X{n,m}+` is `(?>X{n,m})`; also {n}+ {n,}+ {,n}+	planned	no		built	
+bare	^	^		0x0000	pcre2	dfa|vm	base	none			start of subject, or after an internal newline under (?m) — D62's field+fold lowering; already core (A_BOL, the same node \A builds) outside (?m)	-	no		-	
+bare	$	$		0x0000	pcre2	dfa|vm	base	none			end of subject (or before a final newline), or before an internal newline under (?m) — D62's field+fold lowering outside (?m) it aliases \Z (A_EOL), which is NOT core under full reduction (unlike ^/A_BOL) — \Z itself reduces to (?=\n?\z), so this row's DEF_ALWAYS entry is a real substitution, not an identity	-	no		-	
+bare	(	(a)		0x0000	pcre2	dfa|vm	base	none			a capturing group — already core (A_CAP) unless (?n) is scoped over it, in which case it is (?:...)'s identity (D31's erasure: no A_CAP wrapper)	-	yes		-	
