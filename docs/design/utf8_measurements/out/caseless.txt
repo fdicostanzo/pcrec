@@ -1,0 +1,200 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_caseless.py
+# ARGS       : (none)
+# RUN MODE   : remote
+# ORACLE HOST: duxevents@192.168.1.100 (the REFERENCE libpcre2 10.46)
+#   mechanism : bundle.py | ssh ... 'python3 -' — the program
+#               arrives on stdin; nothing is written on that box.
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : 0346e344 (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/utf8_measurements/
+# RUN DATE   : 2026-09-04T21:54:29-0400
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+==========================================================================
+[M5.0] charter (iii): DD-1 -- caseless under UTF
+--------------------------------------------------------------------------
+host      : Linux 7.0.0-29-generic (x86_64)
+python3   : 3.14.4
+libpcre2  : 10.46 2025-08-27
+selfcheck : clean
+==========================================================================
+
+
+Every cell is an ANCHORED whole-subject match `^(?:PAT)$`, so a
+partial match cannot be misread as a successful fold. Options are
+stated per column.
+
+==========================================================================
+1. MULTI-BYTE 1:1 FOLD PAIRS -- both directions
+==========================================================================
+  If these fold, a caseless class over code points still works:
+  each member simply brings its partner in, exactly as D23's ASCII
+  rule does.
+
+  pair                               UTF          UTF|CI       UTF|CI|UCP
+  ------------------------------------------------------------------------
+  U+00C9/U+00E9  E-acute  ->         no           MATCH(0, 2)  MATCH(0, 2)
+    <-                               no           MATCH(0, 2)  MATCH(0, 2)
+  U+0391/U+03B1  Greek alpha  ->     no           MATCH(0, 2)  MATCH(0, 2)
+    <-                               no           MATCH(0, 2)  MATCH(0, 2)
+  U+0410/U+0430  Cyrillic A  ->      no           MATCH(0, 2)  MATCH(0, 2)
+    <-                               no           MATCH(0, 2)  MATCH(0, 2)
+  U+1E9E/U+00DF  capital sharp s  -> no           MATCH(0, 2)  MATCH(0, 2)
+    <-                               no           MATCH(0, 3)  MATCH(0, 3)
+  U+0130/U+0069  dotted capital I  -> no           no           no
+    <-                               no           no           no
+  U+0131/U+0049  dotless i  ->       no           no           no
+    <-                               no           no           no
+
+==========================================================================
+2. THE 1:n CASES -- the section that decides SIMPLE vs FULL
+==========================================================================
+  A 1:n fold cannot be a class member. If ANY cell here matches,
+  pcrec's caseless lowering needs an alternation branch and
+  [FORM-CHAR] object (5) is real work. If none does, 10.46 does
+  SIMPLE folding only and object (5) is unnecessary -- which is
+  the cheaper world and must not be assumed.
+
+  cell                     subject          UTF          UTF|CI       UTF|CI|UCP
+  ------------------------------------------------------------------------
+  sharp s vs SS            53 53            no           no           no
+  sharp s vs ss            73 73            no           no           no
+  SS vs sharp s            C3 9F            no           no           no
+  ss vs sharp s            C3 9F            no           no           no
+  U+FB01 fi vs fi          66 69            no           no           no
+  fi vs U+FB01             EF AC 81         no           no           no
+  U+FB03 ffi vs ffi        66 66 69         no           no           no
+  U+0149 vs 'n             CA BC 6E         no           no           no
+  U+01F0 vs j+caron        6A CC 8C         no           no           no
+  U+1E96 vs h+line         68 CC B1         no           no           no
+  U+0390 vs 3-cp form      CE B9 CC 88 CC 81 no           no           no
+
+  1:n cells that matched under some caseless option: 0 of 11
+
+  2b. THE SAME QUESTION FROM THE OTHER SIDE -- a 1:n fold inside a
+  CLASS. If [ß] caseless matched "ss", a class would have to hold
+  a sequence, which a set cannot do:
+    [\xc3\x9f]       on ss         -> no
+    [\xc3\x9f]       on SS         -> no
+    [s]              on \xc3\x9f   -> no
+
+==========================================================================
+3. THE ASYMMETRIC / CROSS-BLOCK FOLDS
+==========================================================================
+  These are the cells where a naive 'add the other case' rule
+  built from a single case-mapping table gets the wrong answer:
+  the partner is in a different block, or there are THREE members
+  in the equivalence class rather than two.
+
+  cell                                   UTF          UTF|CI       UTF|CI|UCP
+  ------------------------------------------------------------------------
+  Kelvin U+212A vs k                     no           MATCH(0, 1)  MATCH(0, 1)
+  Kelvin U+212A vs K                     no           MATCH(0, 1)  MATCH(0, 1)
+  k vs Kelvin                            no           MATCH(0, 3)  MATCH(0, 3)
+  Angstrom U+212B vs a-ring U+00E5       no           MATCH(0, 2)  MATCH(0, 2)
+  A-ring U+00C5 vs U+212B                no           MATCH(0, 3)  MATCH(0, 3)
+  long s U+017F vs s                     no           MATCH(0, 1)  MATCH(0, 1)
+  s vs long s                            no           MATCH(0, 2)  MATCH(0, 2)
+  final sigma U+03C2 vs sigma U+03C3     no           MATCH(0, 2)  MATCH(0, 2)
+  SIGMA U+03A3 vs final sigma            no           MATCH(0, 2)  MATCH(0, 2)
+  ohm U+2126 vs omega U+03C9             no           MATCH(0, 2)  MATCH(0, 2)
+  micro U+00B5 vs mu U+03BC              no           MATCH(0, 2)  MATCH(0, 2)
+  dotted I U+0130 vs I                   no           no           no
+  dotless i U+0131 vs i                  no           no           no
+
+  3b. THE THREE-MEMBER CLASSES, made explicit. If k / K / U+212A
+  are one equivalence class, then folding is a CLOSURE and not a
+  pairing -- pcrec's constructor would have to close the set, not
+  just add a partner.
+    'k'        vs 'K'        -> MATCH(0, 1)
+    'k'        vs 'K'        -> MATCH(0, 3)
+    'K'        vs 'K'        -> MATCH(0, 3)
+    's'        vs 'S'        -> MATCH(0, 1)
+    's'        vs 'ſ'        -> MATCH(0, 2)
+    'S'        vs 'ſ'        -> MATCH(0, 2)
+
+==========================================================================
+4. FOLD BEFORE NEGATE, over UTF
+==========================================================================
+  OS-1/D23's rule, restated: the fold is applied to the class
+  BEFORE the negation, so [^k] caseless excludes every member of
+  k's fold class. Measured rather than assumed, because the
+  opposite order is a silently different language and only
+  behaviour can tell them apart.
+
+    [^k]           on 4B             (the ASCII partner               ) -> no
+    [^k]           on E2 84 AA       (the KELVIN partner -- the whole test) -> no
+    [^K]           on 6B             (other direction                 ) -> no
+    [^K]           on E2 84 AA       (other direction, Kelvin         ) -> no
+    [^s]           on C5 BF          (long s                          ) -> no
+    [^a-z]         on 41             (a negated RANGE                 ) -> no
+    [^\p{Ll}]      on 41             (a negated PROPERTY under caseless) -> no
+
+==========================================================================
+5. CLASS RANGES UNDER CASELESS -- does a range pull in a fold
+   partner that lies OUTSIDE the range?
+==========================================================================
+  This is the sharpest lowering question in the section: if
+  [a-z] caseless matches U+212A, then the caseless closure must be
+  computed over the CODE POINT SET and can add intervals far from
+  the ones written -- so the fold cannot be a post-pass over byte
+  ranges, it has to happen while the set is still code points.
+
+    [a-z]                    on 41           (ASCII, the control          ) -> MATCH(0, 1)
+    [a-z]                    on E2 84 AA     (KELVIN -- outside the range ) -> MATCH(0, 3)
+    [a-z]                    on C5 BF        (LONG S -- outside the range ) -> MATCH(0, 2)
+    [k]                      on E2 84 AA     (singleton                   ) -> MATCH(0, 3)
+    [\x{3b1}-\x{3c9}]        on CE 91        (Greek range -> capital      ) -> MATCH(0, 2)
+    [\x{3b1}-\x{3c9}]        on CF 82        (Greek range -> final sigma  ) -> MATCH(0, 2)
+    [0-9]                    on 35           (no-letter range, the vacuity control) -> MATCH(0, 1)
+
+==========================================================================
+6. THE BACKREF CELL src/gen/enc/enc_byte.c PREDICTS BY NAME
+==========================================================================
+  That file's comment says: `(?i)^(ss)\1$` on "ss\xdf" is the
+  cell a UTF-8 build has to answer differently, with one captured
+  character folding to two and the consumed length no longer
+  equalling the captured one -- which is WHY the residual returns
+  a LENGTH. Measured, in both encodings:
+
+    ^(ss)\1$               on 73 73 DF         PCRE2_CASELESS (byte-ish (no UTF)   ) -> no
+    ^(ss)\1$               on 73 73 C3 9F      PCRE2_UTF|PCRE2_CASELESS (UTF, sharp s        ) -> no
+    ^(ss)\1$               on 73 73 73 73      PCRE2_UTF|PCRE2_CASELESS (UTF, control        ) -> MATCH(0, 4)
+    ^(\xc3\x9f)\1$         on C3 9F 73 73      PCRE2_UTF|PCRE2_CASELESS (the reverse         ) -> no
+    ^(\xc3\x9f)\1$         on C3 9F C3 9F      PCRE2_UTF|PCRE2_CASELESS (the control         ) -> MATCH(0, 4)
+    ^(k)\1$                on 6B E2 84 AA      PCRE2_UTF|PCRE2_CASELESS (1:1 multi-byte fold ) -> MATCH(0, 4)
+
+==========================================================================
+7. CASELESS WITHOUT PCRE2_UTF, for bytes >= 0x80
+==========================================================================
+  pcrec's `byte` backend folds exactly the 52 ASCII letters and
+  says so in its residual's own contract. This measures whether
+  10.46 agrees at the same options word (0|CASELESS) -- and what
+  PCRE2_UCP does to that answer WITHOUT UTF.
+
+    61         on 41         (ASCII control                   ) PCRE2_CASELESS=MATCH(0, 1)  PCRE2_UCP|PCRE2_CASELESS=MATCH(0, 1)
+    E9         on C9         (Latin-1 e-acute as single bytes ) PCRE2_CASELESS=no  PCRE2_UCP|PCRE2_CASELESS=MATCH(0, 1)
+    C9         on E9         (the other direction             ) PCRE2_CASELESS=no  PCRE2_UCP|PCRE2_CASELESS=MATCH(0, 1)
+
+==========================================================================
+8. SELF-CHECK / VACUITY GUARDS
+==========================================================================
+  8a `a` vs `A`: UTF=no  UTF|CI=MATCH(0, 1)
+  8b bytes of U+03B1 as passed: CE B1 (want CE B1)
+  8c `a` vs `b` under UTF|CI: no
+
+  PROBLEMS: none

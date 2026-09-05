@@ -1,0 +1,173 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_width.py
+# ARGS       : (none)
+# RUN MODE   : remote
+# ORACLE HOST: duxevents@192.168.1.100 (the REFERENCE libpcre2 10.46)
+#   mechanism : bundle.py | ssh ... 'python3 -' — the program
+#               arrives on stdin; nothing is written on that box.
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : 0346e344 (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/utf8_measurements/
+# RUN DATE   : 2026-09-04T21:51:29-0400
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+==========================================================================
+[M5.0] charter (iv): lookbehind WIDTH, and the seam's residual entries
+--------------------------------------------------------------------------
+host      : Linux 7.0.0-29-generic (x86_64)
+python3   : 3.14.4
+libpcre2  : 10.46 2025-08-27
+selfcheck : clean
+==========================================================================
+
+
+==========================================================================
+1. IS A LOOKBEHIND'S LENGTH MEASURED IN CHARACTERS OR IN BYTES?
+==========================================================================
+  The discriminating cell is a SINGLE branch that is fixed at one
+  CHARACTER and variable at one-or-two BYTES. `[a\x{3b1}]` is
+  exactly that: 'a' is one byte, U+03B1 is two.
+
+  pattern                          under UTF                          under options=0
+  ------------------------------------------------------------------------
+  (?<=a)x                          COMPILES                           COMPILES
+  (?<=\x{3b1})x                    COMPILES                           err 134: character code point value in \x{} or \o{} is too large
+  (?<=[a\x{3b1}])x                 COMPILES                           err 134: character code point value in \x{} or \o{} is too large
+  (?<=[\x{3b1}\x{10000}])x         COMPILES                           err 134: character code point value in \x{} or \o{} is too large
+  (?<=.)x                          COMPILES                           COMPILES
+  (?<=\w)x                         COMPILES                           COMPILES
+  (?<=[^a])x                       COMPILES                           COMPILES
+  (?<=ab)x                         COMPILES                           COMPILES
+  (?<=a\x{3b1})x                   COMPILES                           err 134: character code point value in \x{} or \o{} is too large
+  (?<=a|\x{3b1})x                  COMPILES                           err 134: character code point value in \x{} or \o{} is too large
+  (?<=a{2})x                       COMPILES                           COMPILES
+  (?<=a*)x                         err 125: length of lookbehind assertion is not limited err 125: length of lookbehind assertion is not limited
+  (?<=a{1,3})x                     COMPILES                           COMPILES
+
+  pattern                          note
+  ------------------------------------------------------------------------
+  (?<=a)x                          1 char / 1 byte -- the control
+  (?<=\x{3b1})x                    1 char / 2 bytes
+  (?<=[a\x{3b1}])x                 1 char / 1-OR-2 bytes  <-- THE CELL
+  (?<=[\x{3b1}\x{10000}])x         1 char / 2-OR-4 bytes
+  (?<=.)x                          `.` -- 1 char / 1-4 bytes
+  (?<=\w)x                         \w -- 1 char, width depends on UCP
+  (?<=[^a])x                       negated class -- 1 char / 1-4 bytes
+  (?<=ab)x                         2 chars / 2 bytes
+  (?<=a\x{3b1})x                   2 chars / 3 bytes
+  (?<=a|\x{3b1})x                  two branches, 1 char each
+  (?<=a{2})x                       bounded rep, fixed
+  (?<=a*)x                         VARIABLE -- the control that must fail
+  (?<=a{1,3})x                     variable-length lookbehind (>=10.43)
+
+==========================================================================
+2. PCRE2_INFO_MAXLOOKBEHIND -- THE UNIT, read off PCRE2's own
+   published number
+==========================================================================
+  If the answer for `(?<=\x{3b1})x` is 1, the unit is CHARACTERS.
+  If it is 2, the unit is BYTES. This is the same quantity
+  pcrec's back-step takes as `k`, so it settles what pcrec's own
+  analysis must produce.
+
+  pattern                               UTF options=0
+  ----------------------------------------------------
+  (?<=a)x                                 1        1
+  (?<=\x{3b1})x                           1        -
+  (?<=[a\x{3b1}])x                        1        -
+  (?<=[\x{3b1}\x{10000}])x                1        -
+  (?<=.)x                                 1        1
+  (?<=\w)x                                1        1
+  (?<=[^a])x                              1        1
+  (?<=ab)x                                2        2
+  (?<=a\x{3b1})x                          2        -
+  (?<=a|\x{3b1})x                         1        -
+  (?<=a{2})x                              2        2
+  (?<=a*)x                                -        -
+  (?<=a{1,3})x                            3        3
+
+  VACUITY GUARD (la_oracle.py's own, re-run here so this index is
+  not an unchecked copy): the field must read 3 / 0 / 2 for
+  `(?<=abc)x` / `abc` / `(?<=ab)x`, which is what separates it
+  from MINLENGTH -- a one-cell check would confuse the two.
+    index 15: OK
+
+==========================================================================
+3. THE POPULATION: fixed in CHARACTERS, variable in BYTES
+==========================================================================
+  Every row here is a pattern whose lookbehind 10.46 accepts as
+  fixed-width and whose BYTE width is not a single number. Each is
+  therefore a pattern a byte-width `minw == maxw` test refuses.
+  The `bytes consumed` column is measured by running the body
+  alone and reading the match span, over subjects that exercise
+  each width.
+
+  body                       maxlb(UTF) byte widths observed
+  --------------------------------------------------------------------
+  [a\x{3b1}]                 1          [1, 2]  <-- variable
+  .                          1          [1, 2, 3, 4]  <-- variable
+  [^a]                       1          [1, 2, 4]  <-- variable
+  \w                         1          [1, 2]  <-- variable
+  \p{L}                      1          [1, 2, 4]  <-- variable
+  [\x{0}-\x{10FFFF}]         1          [1, 2, 4]  <-- variable
+
+  AND THE CASELESS ONES, which are the same phenomenon arriving
+  through a different door (out/caseless.txt section 5: the fold
+  closure reaches OUTSIDE the written range):
+  (?i)k                      1          [1]   (?i)k -- ASCII vs KELVIN
+       lookbehind compiles under UTF|CI: COMPILES
+  (?i)s                      1          [1, 2]   (?i)s -- ASCII vs LONG S
+       lookbehind compiles under UTF|CI: COMPILES
+  (?i)[a-z]                  1          [1, 2]   (?i)[a-z]
+       lookbehind compiles under UTF|CI: COMPILES
+
+==========================================================================
+4. THE OTHER RESIDUAL ENTRIES, on the cells that separate a UTF-8
+   body from the identity
+==========================================================================
+  4a. next_pos -- the find-all advance over an EMPTY match. The
+  contract is 'the smallest position strictly greater than pos
+  that is a character boundary'. These cells show what a caller
+  gets when the advance is wrong (i.e. +1) versus right.
+
+    subject CE B1 CE B2 CE B3 (3 chars, 6 bytes), empty-matching pattern `(?=)`:
+    PCRE2's own find-all over it, at PCRE2_UTF:
+      spans: [(0, 0), ('stop', ('ERRM', -36, 'bad offset into UTF string'))]
+      (a +1 advance lands MID-CHARACTER; section E of
+       out/invalid_utf.txt measures what PCRE2 does there:
+       error -36 'bad offset into UTF string')
+
+  4b. back_step at the SUBJECT START and MID-CHARACTER -- the two
+  cases enc_byte.c's contract names but cannot exhibit.
+    (?<=\x{3b1})x            on CE B1 78       -> ((2, 3), ())             one char precedes: SUCCEEDS
+    (?<=\x{3b1})x            on 78             -> None                     nothing precedes: fails cleanly
+    (?<=\x{3b1})x            on B1 78          -> ('ERRM', -22, 'UTF-8 error: isolated byte with 0x80 bit set') a CONTINUATION byte precedes
+    (?<=aa)x                 on 61 78          -> None                     fewer chars than k precede
+
+  4c. \b -- word-character classification is a CHARACTER question
+  and the seam has no entry for it today. These cells say what a
+  UTF-8 build must answer:
+    \bx        on CE B1 78       UTF=((2, 3), ())  UTF|UCP=None   (boundary between a Greek letter and x)
+    \Bx        on CE B1 78       UTF=None  UTF|UCP=((2, 3), ())   (the complement)
+    \b         on CE B1 CE B2    UTF=None  UTF|UCP=((0, 0), ())   (inside a run of non-ASCII letters)
+
+==========================================================================
+5. SELF-CHECK / VACUITY GUARDS
+==========================================================================
+  5a `(?<=a*)x` is refused under UTF: yes (err 125)
+  5b MAXLOOKBEHIND index guard: OK
+  5c bodies with more than one observed byte width: 6 of 6
+
+  PROBLEMS: none

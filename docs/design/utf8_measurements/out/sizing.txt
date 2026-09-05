@@ -1,0 +1,274 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_sizing.py
+# ARGS       : (none)
+# RUN MODE   : local
+# ORACLE HOST: this machine (Darwin arm64)
+#   NOTE      : this is NOT the reference oracle unless the
+#               libpcre2 line below reads 10.46. A local run is a
+#               deliberate version COMPARISON, or a pcrec probe.
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : 0346e344 (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/utf8_measurements/
+# RUN DATE   : 
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+==============================================================================
+probe_sizing.py -- [M5.0] UTF-8 design gate, sizing lane
+==============================================================================
+host machine   : macOS-26.6.2-arm64-arm-64bit
+python version : 3.11.4 (/Users/fdicostanzo/miniconda3/bin/python3)
+unicodedata    : unidata_version=14.0.0
+run timestamp  : 2026-09-04 21:43:54 -0400
+
+CAVEAT (stated once, applies to every \p{} row below): the Unicode version this python's unicodedata module knows (14.0.0) may differ from the version libpcre2 10.46 (the project's reference oracle, per u8_oracle.py's header) was built against. This probe does not attempt to reconcile that -- a different probe in this lane owns that question. Any \p{}-derived row's interval count and all downstream sizes are only as good as this python's Unicode data.
+
+CONVENTIONS used throughout (read before comparing numbers to pcrec's real caps):
+  (c) naive/unshared NFA states = 1 shared start (S) + a fully private chain per byte-sequence alternative (no sharing at all, not even the accept state -- each alternative's own last state is its own private accept).
+  (d) suffix-shared NFA states = a trie built from the END of every alternative, hash-consing identical (byte-range, target) pairs, plus one shared start (S) and one shared terminal accept (F) that the hash-consing merges automatically.
+  (e)/(f) DFA/minimized-DFA counts are of a PARTIAL transition function: a byte outside every live transition from a state is an implicit reject and is NOT materialized as a counted state (no explicit trap/dead state). This matches how a fragment-composition compiler like pcrec represents 'no match' (fallthrough), not a total automaton with an explicit dead state -- stated so these numbers are not silently off-by-one against a reader's different convention.
+  Every (e)/(f)/(g) figure is for the BASE class alone unless labelled '* form' or '{1,3} form'.
+
+(unicodedata.category() precomputed for all 1114112 codepoints in 0.062s)
+
+------------------------------------------------------------------------------
+1. [a-z] (ASCII control)
+------------------------------------------------------------------------------
+intervals (1): U+0061-U+007A
+
+(a) codepoint intervals            : 1
+(b) byte-sequence alternatives      : 1
+(c) NFA states, unshared (naive)    : 2
+(d) NFA states, suffix-shared       : 4  (ratio d/c = 2.0000)
+(e) DFA states (subset construction): 2  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 2  (minimize wall time 0.000s)
+(g) lead byte set                   : 26 distinct byte value(s): 0x61-0x7A
+SELF-CHECK: 283 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+2. [\x{80}-\x{7FF}] (pure 2-byte band)
+------------------------------------------------------------------------------
+intervals (1): U+0080-U+07FF
+
+(a) codepoint intervals            : 1
+(b) byte-sequence alternatives      : 1
+(c) NFA states, unshared (naive)    : 3
+(d) NFA states, suffix-shared       : 5  (ratio d/c = 1.6667)
+(e) DFA states (subset construction): 3  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 3  (minimize wall time 0.000s)
+(g) lead byte set                   : 30 distinct byte value(s): 0xC2-0xDF
+SELF-CHECK: 279 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+3. [α-ω] = U+03B1-U+03C9 (small non-ASCII range)
+------------------------------------------------------------------------------
+intervals (1): U+03B1-U+03C9
+
+(a) codepoint intervals            : 1
+(b) byte-sequence alternatives      : 2
+(c) NFA states, unshared (naive)    : 5
+(d) NFA states, suffix-shared       : 7  (ratio d/c = 1.4000)
+(e) DFA states (subset construction): 4  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 4  (minimize wall time 0.000s)
+(g) lead byte set                   : 2 distinct byte value(s): 0xCE-0xCF
+SELF-CHECK: 281 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+4. [\x{100}-\x{10FFFF}] (charter stress case)
+------------------------------------------------------------------------------
+intervals (2): U+0100-U+D7FF, U+E000-U+10FFFF
+
+(a) codepoint intervals            : 2
+(b) byte-sequence alternatives      : 8
+(c) NFA states, unshared (naive)    : 27
+(d) NFA states, suffix-shared       : 18  (ratio d/c = 0.6667)
+(e) DFA states (subset construction): 9  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 9  (minimize wall time 0.000s)
+(g) lead byte set                   : 49 distinct byte value(s): 0xC4-0xF4
+SELF-CHECK: 282 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+5. . under UTF, not DOTALL (all U+0000-U+10FFFF except U+000A)
+------------------------------------------------------------------------------
+intervals (3): U+0000-U+0009, U+000B-U+D7FF, U+E000-U+10FFFF
+
+(a) codepoint intervals            : 3
+(b) byte-sequence alternatives      : 10
+(c) NFA states, unshared (naive)    : 29
+(d) NFA states, suffix-shared       : 20  (ratio d/c = 0.6897)
+(e) DFA states (subset construction): 9  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 9  (minimize wall time 0.000s)
+(g) lead byte set                   : 178 distinct byte value(s): 0x00-0x09, 0x0B-0x7F, 0xC2-0xF4
+SELF-CHECK: 286 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+6. [^a] under UTF (U+0000-U+10FFFF minus 'a')
+------------------------------------------------------------------------------
+intervals (3): U+0000-U+0060, U+0062-U+D7FF, U+E000-U+10FFFF
+
+(a) codepoint intervals            : 3
+(b) byte-sequence alternatives      : 10
+(c) NFA states, unshared (naive)    : 29
+(d) NFA states, suffix-shared       : 20  (ratio d/c = 0.6897)
+(e) DFA states (subset construction): 9  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 9  (minimize wall time 0.000s)
+(g) lead byte set                   : 178 distinct byte value(s): 0x00-0x60, 0x62-0x7F, 0xC2-0xF4
+SELF-CHECK: 285 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+7. \p{L} (category starts with L)
+------------------------------------------------------------------------------
+intervals (648): U+0041-U+005A, U+0061-U+007A, U+00AA, U+00B5, U+00BA, U+00C0-U+00D6, U+00D8-U+00F6, U+00F8-U+02C1, U+02C6-U+02D1, U+02E0-U+02E4, U+02EC, U+02EE, ... (636 more)
+
+(a) codepoint intervals            : 648
+(b) byte-sequence alternatives      : 786
+(c) NFA states, unshared (naive)    : 2636
+(d) NFA states, suffix-shared       : 2205  (ratio d/c = 0.8365)
+(e) DFA states (subset construction): 283  (subset-construct wall time 0.003s)
+(f) minimized DFA states            : 283  (minimize wall time 0.008s)
+(g) lead byte set                   : 97 distinct byte value(s): 0x41-0x5A, 0x61-0x7A, 0xC2-0xCB, 0xCD-0xED, 0xEF-0xF0
+SELF-CHECK: 2972 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+8. \p{Lu} (category exactly Lu)
+------------------------------------------------------------------------------
+intervals (646): U+0041-U+005A, U+00C0-U+00D6, U+00D8-U+00DE, U+0100, U+0102, U+0104, U+0106, U+0108, U+010A, U+010C, U+010E, U+0110, ... (634 more)
+
+(a) codepoint intervals            : 646
+(b) byte-sequence alternatives      : 659
+(c) NFA states, unshared (naive)    : 1752
+(d) NFA states, suffix-shared       : 1246  (ratio d/c = 0.7112)
+(e) DFA states (subset construction): 74  (subset-construct wall time 0.002s)
+(f) minimized DFA states            : 74  (minimize wall time 0.001s)
+(g) lead byte set                   : 47 distinct byte value(s): 0x41-0x5A, 0xC3-0xC9, 0xCD-0xD5, 0xE1-0xE2, 0xEA, 0xEF-0xF0
+SELF-CHECK: 1832 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+9. \p{Greek} (SCRIPT APPROXIMATION -- read the note)
+------------------------------------------------------------------------------
+intervals (36): U+0342-U+0345, U+0370-U+0377, U+037A-U+037F, U+0384-U+038A, U+038C, U+038E-U+03A1, U+03A3-U+03E1, U+03F0-U+03FF, U+1D26-U+1D2A, U+1D5E, U+1D60, U+1D66-U+1D6A, ... (24 more)
+NOTE: APPROXIMATION, NOT Script=Greek: python's stdlib unicodedata module carries no Script property at all. This proxies it as 'every assigned codepoint whose unicodedata.name() contains the substring GREEK' -- e.g. GREEK SMALL LETTER ALPHA, GREEK CAPITAL LETTER ALPHA WITH TONOS, GREEK QUESTION MARK. Known divergence from real Script=Greek (stated, not measured against it here): misses any Greek-script character whose Unicode NAME happens not to contain the word GREEK (rare but not provably zero, e.g. some Greek Extended combining-diacritic forms are named via their base letter); may include a false positive if a non-Greek character's name happens to contain the substring GREEK (none found in Unicode 14.0.0 at the time of this run, but that is an empirical observation of THIS run, not a guarantee). Use for rough sizing only.
+
+(a) codepoint intervals            : 36
+(b) byte-sequence alternatives      : 41
+(c) NFA states, unshared (naive)    : 122
+(d) NFA states, suffix-shared       : 120  (ratio d/c = 0.9836)
+(e) DFA states (subset construction): 26  (subset-construct wall time 0.000s)
+(f) minimized DFA states            : 26  (minimize wall time 0.000s)
+(g) lead byte set                   : 7 distinct byte value(s): 0xCD-0xCF, 0xE1-0xE2, 0xEA, 0xF0
+SELF-CHECK: 422 sample points checked, 0 mismatches
+
+------------------------------------------------------------------------------
+10. \w under UCP (approx: L*, N*, Mn, '_')
+------------------------------------------------------------------------------
+intervals (883): U+0030-U+0039, U+0041-U+005A, U+005F, U+0061-U+007A, U+00AA, U+00B2-U+00B3, U+00B5, U+00B9-U+00BA, U+00BC-U+00BE, U+00C0-U+00D6, U+00D8-U+00F6, U+00F8-U+02C1, ... (871 more)
+NOTE: ASSUMPTION (to be checked against the real PCRE2 oracle by a different probe, not here): \w under UCP == every codepoint whose unicodedata.category() starts with 'L' or 'N', plus category exactly 'Mn' (nonspacing mark), plus the literal character '_' (U+005F). This is a commonly-cited approximation of PCRE2's UCP \w, not a verified one.
+
+(a) codepoint intervals            : 883
+(b) byte-sequence alternatives      : 1056
+(c) NFA states, unshared (naive)    : 3572
+(d) NFA states, suffix-shared       : 2958  (ratio d/c = 0.8281)
+(e) DFA states (subset construction): 332  (subset-construct wall time 0.004s)
+(f) minimized DFA states            : 332  (minimize wall time 0.009s)
+(g) lead byte set                   : 110 distinct byte value(s): 0x30-0x39, 0x41-0x5A, 0x5F, 0x61-0x7A, 0xC2-0xED, 0xEF-0xF0, 0xF3
+SELF-CHECK: 3994 sample points checked, 0 mismatches
+
+==============================================================================
+QUANTIFIED FORMS: X* and X{1,3} for classes 4, 5, 7
+(does a UTF-8 '.*' blow the DFA cap?)
+==============================================================================
+
+------------------------------------------------------------------------------
+4. [\x{100}-\x{10FFFF}] (charter stress case)
+------------------------------------------------------------------------------
+  X*       raw NFA states (pre-determinize): 19 ; (e) DFA states: 9 (0.000s) ; (f) minimized: 8 (0.000s)
+  X{1,3}   raw NFA states (pre-determinize): 52 ; (e) DFA states: 25 (0.000s) ; (f) minimized: 25 (0.001s)
+
+------------------------------------------------------------------------------
+5. . under UTF, not DOTALL (all U+0000-U+10FFFF except U+000A)
+------------------------------------------------------------------------------
+  X*       raw NFA states (pre-determinize): 21 ; (e) DFA states: 9 (0.000s) ; (f) minimized: 8 (0.000s)
+  X{1,3}   raw NFA states (pre-determinize): 58 ; (e) DFA states: 25 (0.000s) ; (f) minimized: 25 (0.001s)
+
+------------------------------------------------------------------------------
+7. \p{L} (category starts with L)
+------------------------------------------------------------------------------
+  X*       raw NFA states (pre-determinize): 2206 ; (e) DFA states: 283 (0.059s) ; (f) minimized: 282 (0.008s)
+  X{1,3}   raw NFA states (pre-determinize): 6613 ; (e) DFA states: 847 (0.118s) ; (f) minimized: 847 (0.046s)
+
+==============================================================================
+SUMMARY TABLE (base classes)
+==============================================================================
+class                                            ivs   alt    naive   shared   ratio      dfa      min  lead
+------------------------------------------------------------------------------------------------------------
+1. [a-z] (ASCII control)                           1     1        2        4   2.000        2        2    26
+2. [\x{80}-\x{7FF}] (pure 2-byte band)             1     1        3        5   1.667        3        3    30
+3. [α-ω] = U+03B1-U+03C9 (small non-ASCII rang     1     2        5        7   1.400        4        4     2
+4. [\x{100}-\x{10FFFF}] (charter stress case)      2     8       27       18   0.667        9        9    49
+5. . under UTF, not DOTALL (all U+0000-U+10FFF     3    10       29       20   0.690        9        9   178
+6. [^a] under UTF (U+0000-U+10FFFF minus 'a')      3    10       29       20   0.690        9        9   178
+7. \p{L} (category starts with L)                648   786     2636     2205   0.836      283      283    97
+8. \p{Lu} (category exactly Lu)                  646   659     1752     1246   0.711       74       74    47
+9. \p{Greek} (SCRIPT APPROXIMATION -- read the    36    41      122      120   0.984       26       26     7
+10. \w under UCP (approx: L*, N*, Mn, '_')       883  1056     3572     2958   0.828      332      332   110
+
+CAP-FIT TABLE (against pcrec's real caps: NFA<=131072, DFA-goto<=10000, DFA-table<=32000)
+class                                            NFA-shrd    fit-NFA    min-DFA fit-DFAgoto/table
+-------------------------------------------------------------------------------------------------
+1. [a-z] (ASCII control)                                4        yes          2    yes/yes
+2. [\x{80}-\x{7FF}] (pure 2-byte band)                  5        yes          3    yes/yes
+3. [α-ω] = U+03B1-U+03C9 (small non-ASCII rang          7        yes          4    yes/yes
+4. [\x{100}-\x{10FFFF}] (charter stress case)          18        yes          9    yes/yes
+5. . under UTF, not DOTALL (all U+0000-U+10FFF         20        yes          9    yes/yes
+6. [^a] under UTF (U+0000-U+10FFFF minus 'a')          20        yes          9    yes/yes
+7. \p{L} (category starts with L)                    2205        yes        283    yes/yes
+8. \p{Lu} (category exactly Lu)                      1246        yes         74    yes/yes
+9. \p{Greek} (SCRIPT APPROXIMATION -- read the        120        yes         26    yes/yes
+10. \w under UCP (approx: L*, N*, Mn, '_')           2958        yes        332    yes/yes
+
+QUANTIFIED-FORM CAP-FIT
+class                                          form        raw-NFA        DFA    min/cap-fit
+--------------------------------------------------------------------------------------------
+4. [\x{100}-\x{10FFFF}] (charter stress case)  X*               19          9 8 (g=yes/t=yes)
+4. [\x{100}-\x{10FFFF}] (charter stress case)  X{1,3}           52         25 25 (g=yes/t=yes)
+5. . under UTF, not DOTALL (all U+0000-U+10FFF X*               21          9 8 (g=yes/t=yes)
+5. . under UTF, not DOTALL (all U+0000-U+10FFF X{1,3}           58         25 25 (g=yes/t=yes)
+7. \p{L} (category starts with L)              X*             2206        283 282 (g=yes/t=yes)
+7. \p{L} (category starts with L)              X{1,3}         6613        847 847 (g=yes/t=yes)
+
+==============================================================================
+SELF-CHECK TOTALS
+==============================================================================
+total sample points checked across all base classes: 10916
+total mismatches                                   : 0
+No mismatches: every sampled in-class codepoint's reference UTF-8 encoding was accepted, every sampled out-of-class codepoint's encoding was rejected, every tested surrogate-scalar encoding was rejected, every tested truncation was rejected, every tested overlong re-encoding was rejected.
+
+Surrogate handling: U+D800-U+DFFF is excluded from every class's interval list before any lowering (exclude_surrogates() is called on every class built above), and the self-check separately constructs the 3-byte 'CESU-8-shaped' encoding of 5 surrogate scalars per class by hand (python's chr(cp).encode('utf-8') raises UnicodeEncodeError for surrogates, so this cannot be done via the normal encoder) and confirms none are accepted.
+
+No phase hit the 300s wall-clock budget.
+
+ASSUMPTIONS / APPROXIMATIONS made in this run (repeated from inline notes above, collected here for visibility):
+  [9. \p{Greek} (SCRIPT APPROXIMATION -- read the note)]
+    APPROXIMATION, NOT Script=Greek: python's stdlib unicodedata module carries no Script property at all. This proxies it as 'every assigned codepoint whose unicodedata.name() contains the substring GREEK' -- e.g. GREEK SMALL LETTER ALPHA, GREEK CAPITAL LETTER ALPHA WITH TONOS, GREEK QUESTION MARK. Known divergence from real Script=Greek (stated, not measured against it here): misses any Greek-script character whose Unicode NAME happens not to contain the word GREEK (rare but not provably zero, e.g. some Greek Extended combining-diacritic forms are named via their base letter); may include a false positive if a non-Greek character's name happens to contain the substring GREEK (none found in Unicode 14.0.0 at the time of this run, but that is an empirical observation of THIS run, not a guarantee). Use for rough sizing only.
+  [10. \w under UCP (approx: L*, N*, Mn, '_')]
+    ASSUMPTION (to be checked against the real PCRE2 oracle by a different probe, not here): \w under UCP == every codepoint whose unicodedata.category() starts with 'L' or 'N', plus category exactly 'Mn' (nonspacing mark), plus the literal character '_' (U+005F). This is a commonly-cited approximation of PCRE2's UCP \w, not a verified one.
+
+NOT VERIFIED by this probe (out of scope for the sizing lane):
+  - Whether these byte-sequence alternatives match what pcrec's own lowering will actually emit (this is an independent from-scratch construction of the standard algorithm, built to cross-check against, not a test of pcrec code -- pcrec has no UTF-8 lowering yet).
+  - Whether \p{L}/\p{Lu}/\p{Greek}/\w's interval lists match libpcre2 10.46's idea of those properties (different Unicode version, and \p{Greek}/\w are stated approximations here) -- a different probe in this lane owns the oracle differential.
+  - Runtime/memory cost of the DFA, only state COUNT.
+  - Whether pcrec's actual code generator would produce the same shared-NFA structure this probe's hash-consing produces (this is a sizing upper/lower bound exercise, not pcrec's real construction).
+
+Total probe wall time: 0.77s

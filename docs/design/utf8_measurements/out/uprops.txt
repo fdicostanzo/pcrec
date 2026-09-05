@@ -1,0 +1,271 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M5.0] UTF-8 design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/utf8_measurements/probes/probe_uprops.py
+# ARGS       : (none)
+# RUN MODE   : remote
+# ORACLE HOST: duxevents@192.168.1.100 (the REFERENCE libpcre2 10.46)
+#   mechanism : bundle.py | ssh ... 'python3 -' — the program
+#               arrives on stdin; nothing is written on that box.
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : 0346e344 (lane/utf8design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/utf8_measurements/
+# RUN DATE   : 2026-09-04T21:47:26-0400
+# local python3 : 3.11.4  (the BUNDLER's)
+# local gcc     : 16
+# local host    : Darwin 25.6.0
+# ------------------------------------------------------------
+# The probe's own header below states the python3, the libpcre2 and
+# the host that actually ANSWERED — read those, not these, for any
+# oracle claim. These name the machine that LAUNCHED the run.
+#
+# Evidence for the [M5.0] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+<stdin>:74: SyntaxWarning: "\p" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\p"? A raw string is also an option.
+==========================================================================
+[M5.0] charter (ii): module `unicode-props` scope
+--------------------------------------------------------------------------
+host      : Linux 7.0.0-29-generic (x86_64)
+python3   : 3.14.4
+libpcre2  : 10.46 2025-08-27
+selfcheck : clean
+==========================================================================
+
+
+==========================================================================
+0. WHICH UNICODE DOES THIS LIBRARY KNOW?
+==========================================================================
+  pcre2_config_8 slot 10 answers '16.0.0'
+  -> PCRE2's Unicode version, derived by sweep (no pcre2.h on
+     this box; pcre2_ctypes.py's own method).
+  this python's unicodedata.unidata_version: 16.0.0
+
+  THIS IS A CAVEAT ON EVERY \p CLAIM IN THIS LANE: if the two
+  differ, a property table derived from python is NOT the table
+  10.46 matches with, and the census in section 3 (which sweeps
+  the ORACLE) is the one to trust.
+
+==========================================================================
+1. WHICH SPELLINGS COMPILE, under PCRE2_UTF
+==========================================================================
+  err 146 = malformed \P or \p sequence (the SHAPE is not
+            attemptable); err 147 = unknown property (a
+            WELL-FORMED body 10.46 does not recognise).
+  pcrec ships exactly that split today as its refusal surface.
+
+  --- one-letter general category (the 7 pcrec already knows)
+    \p{C                       } COMPILES
+    \p{L                       } COMPILES
+    \p{M                       } COMPILES
+    \p{N                       } COMPILES
+    \p{P                       } COMPILES
+    \p{S                       } COMPILES
+    \p{Z                       } COMPILES
+
+  --- one-letter, the 19 pcrec measured as NOT accepted
+    \p{A                       } err 147: unknown property after \P or \p
+    \p{B                       } err 147: unknown property after \P or \p
+    \p{D                       } err 147: unknown property after \P or \p
+    \p{E                       } err 147: unknown property after \P or \p
+    \p{F                       } err 147: unknown property after \P or \p
+    \p{G                       } err 147: unknown property after \P or \p
+    \p{H                       } err 147: unknown property after \P or \p
+    \p{I                       } err 147: unknown property after \P or \p
+    \p{J                       } err 147: unknown property after \P or \p
+    \p{K                       } err 147: unknown property after \P or \p
+    \p{O                       } err 147: unknown property after \P or \p
+    \p{Q                       } err 147: unknown property after \P or \p
+    \p{R                       } err 147: unknown property after \P or \p
+    \p{T                       } err 147: unknown property after \P or \p
+    \p{U                       } err 147: unknown property after \P or \p
+    \p{V                       } err 147: unknown property after \P or \p
+    \p{W                       } err 147: unknown property after \P or \p
+    \p{X                       } err 147: unknown property after \P or \p
+    \p{Y                       } err 147: unknown property after \P or \p
+
+  --- two-letter general category
+    \p{Lu                      } COMPILES
+    \p{Ll                      } COMPILES
+    \p{Lt                      } COMPILES
+    \p{Lm                      } COMPILES
+    \p{Lo                      } COMPILES
+    \p{Mn                      } COMPILES
+    \p{Mc                      } COMPILES
+    \p{Me                      } COMPILES
+    \p{Nd                      } COMPILES
+    \p{Nl                      } COMPILES
+    \p{No                      } COMPILES
+    \p{Pc                      } COMPILES
+    \p{Pd                      } COMPILES
+    \p{Ps                      } COMPILES
+    \p{Pe                      } COMPILES
+    \p{Pi                      } COMPILES
+    \p{Pf                      } COMPILES
+    \p{Po                      } COMPILES
+    \p{Sm                      } COMPILES
+    \p{Sc                      } COMPILES
+    \p{Sk                      } COMPILES
+    \p{So                      } COMPILES
+    \p{Zs                      } COMPILES
+    \p{Zl                      } COMPILES
+    \p{Zp                      } COMPILES
+    \p{Cc                      } COMPILES
+    \p{Cf                      } COMPILES
+    \p{Cs                      } COMPILES
+    \p{Co                      } COMPILES
+    \p{Cn                      } COMPILES
+
+  --- category aliases / specials
+    \p{L&                      } COMPILES
+    \p{Any                     } COMPILES
+    \p{Xan                     } COMPILES
+    \p{Xps                     } COMPILES
+    \p{Xsp                     } COMPILES
+    \p{Xuc                     } COMPILES
+    \p{Xwd                     } COMPILES
+    \p{Assigned                } err 147: unknown property after \P or \p
+
+  --- BARE script names
+    \p{Greek                   } COMPILES
+    \p{Latin                   } COMPILES
+    \p{Cyrillic                } COMPILES
+    \p{Han                     } COMPILES
+    \p{Arabic                  } COMPILES
+    \p{Hebrew                  } COMPILES
+    \p{Hiragana                } COMPILES
+    \p{Katakana                } COMPILES
+    \p{Common                  } COMPILES
+    \p{Inherited               } COMPILES
+    \p{Unknown                 } COMPILES
+    \p{Thai                    } COMPILES
+    \p{Deseret                 } COMPILES
+
+  --- Script= / sc= (the SCRIPT axis, explicit)
+    \p{Script=Greek            } COMPILES
+    \p{sc=Greek                } COMPILES
+    \p{Script:Greek            } COMPILES
+    \p{sc:Greek                } COMPILES
+    \p{Script=Latin            } COMPILES
+    \p{sc=Nonesuch             } err 147: unknown property after \P or \p
+
+  --- Script_Extensions / scx (the charter names scx: by name)
+    \p{Script_Extensions=Greek } COMPILES
+    \p{scx=Greek               } COMPILES
+    \p{scx:Greek               } COMPILES
+    \p{Script_Extensions:Greek } COMPILES
+    \p{scx=Nonesuch            } err 147: unknown property after \P or \p
+
+  --- BOOLEAN properties (a whole axis, if it exists here)
+    \p{Alphabetic              } COMPILES
+    \p{Uppercase               } COMPILES
+    \p{Lowercase               } COMPILES
+    \p{White_Space             } COMPILES
+    \p{Bidi_Control            } COMPILES
+    \p{Math                    } COMPILES
+    \p{Emoji                   } COMPILES
+    \p{ASCII_Hex_Digit         } COMPILES
+    \p{Alpha                   } COMPILES
+    \p{Upper                   } COMPILES
+
+  --- Bidi_Class / bc
+    \p{Bidi_Class=AL           } COMPILES
+    \p{bc=AL                   } COMPILES
+    \p{bc=L                    } COMPILES
+    \p{bc:R                    } COMPILES
+    \p{Bidi_Class=Nonesuch     } err 147: unknown property after \P or \p
+
+  --- BLOCKS -- the axis most engines have and PCRE2 may not
+    \p{InGreek                 } err 147: unknown property after \P or \p
+    \p{Block=Greek             } err 147: unknown property after \P or \p
+    \p{blk=Greek               } err 147: unknown property after \P or \p
+    \p{IsGreek                 } err 147: unknown property after \P or \p
+
+  --- shape / malformed -- the 146-vs-147 split pcrec already ships
+    \p{                        } err 147: unknown property after \P or \p
+    \p{{                       } err 146: malformed \P or \p sequence
+    \p{Nonesuch                } err 147: unknown property after \P or \p
+    \p{^L                      } COMPILES
+    \p{Greek Extended          } err 147: unknown property after \P or \p
+    \p{grEEk                   } COMPILES
+    \p{l a t i n               } COMPILES
+
+  tally by outcome (0 = compiles): [(0, 83), (147, 30), (146, 1)]
+
+  and the NEGATED form \P{...} on one accepted body:
+    \p{L       } COMPILES     \P{L       } COMPILES
+    \p{Greek   } COMPILES     \P{Greek   } COMPILES
+
+==========================================================================
+2. DOES \p REQUIRE PCRE2_UTF? -- the module-gating question
+==========================================================================
+If \p compiles and MATCHES without PCRE2_UTF, then module
+`unicode-props` is NOT gated on the encoding, and charter (viii)'s
+staging table has to say so: it would be landable under the `byte`
+backend for the sub-0x100 part of every property.
+
+  options        compile \p{L}                  match on...
+  ----------------------------------------------------------------------
+  options=0      yes                            a=MATCH  U+00E9 as UTF-8=MATCH  U+00E9 as one byte=MATCH  U+03B1 as UTF-8=MATCH
+  PCRE2_UCP      yes                            a=MATCH  U+00E9 as UTF-8=MATCH  U+00E9 as one byte=MATCH  U+03B1 as UTF-8=MATCH
+  PCRE2_UTF      yes                            a=MATCH  U+00E9 as UTF-8=MATCH  U+00E9 as one byte=ERRM-4  U+03B1 as UTF-8=MATCH
+  PCRE2_UTF|PCRE2_UCP yes                            a=MATCH  U+00E9 as UTF-8=MATCH  U+00E9 as one byte=ERRM-4  U+03B1 as UTF-8=MATCH
+
+  The same question for \w, \d, \s and \b -- these are the
+  constructs PCRE2_UCP RE-DEFINES, and pcrec ships all of them
+  today with ASCII bit tables (pcrec_cls_word_esc and friends):
+
+  esc    options=0      UTF            UTF|UCP        on
+  ----------------------------------------------------------------------
+  \w     no             no             MATCH          U+03B1
+  \w     no             no             MATCH          U+0660 arabic-indic 0
+  \w     no             no             no             U+00A0 nbsp
+  \d     no             no             no             U+03B1
+  \d     no             no             MATCH          U+0660 arabic-indic 0
+  \d     no             no             no             U+00A0 nbsp
+  \s     no             no             no             U+03B1
+  \s     no             no             no             U+0660 arabic-indic 0
+  \s     no             no             MATCH          U+00A0 nbsp
+  \W     no             MATCH          no             U+03B1
+  \W     no             MATCH          no             U+0660 arabic-indic 0
+  \W     no             MATCH          MATCH          U+00A0 nbsp
+  \D     no             MATCH          MATCH          U+03B1
+  \D     no             MATCH          no             U+0660 arabic-indic 0
+  \D     no             MATCH          MATCH          U+00A0 nbsp
+
+==========================================================================
+3. THE TABLE-SIZE PROBLEM: intervals per property, swept from the
+   ORACLE ITSELF under PCRE2_UTF|PCRE2_UCP
+==========================================================================
+  Each row sweeps all 1,114,112 code points against a compiled
+  `^\p{X}$`. Slow on purpose: this is 10.46's OWN membership, not
+  python's unicodedata, so it is immune to the version caveat in
+  section 0. Surrogates are unencodable and are counted as SKIPPED
+  rather than assumed absent.
+
+  property    intervals  code points   skipped     secs
+  ------------------------------------------------------------
+  L                 677       141028      2048      4.1
+  Lu                651         1858      2048      3.8
+  Nd                 71          760      2048      3.8
+  Greek              44          531      2048      3.8
+  Han                42        99338      2048      4.0
+  Xan               770       142939      2048      4.1
+
+  READ THIS AS A SIZE INPUT, not a table format: an interval is
+  two code points. A 32-bit-per-endpoint table is 8 bytes per
+  interval, so `L` at N intervals is ~8N bytes of emitted data
+  BEFORE any lowering -- and the lowering (see out/sizing.txt)
+  turns intervals into byte-range chains, which is the number the
+  artifact actually pays for.
+
+==========================================================================
+4. SELF-CHECK / VACUITY GUARDS
+==========================================================================
+  4a distinct refusal codes actually observed: [146, 147]
+  4b compiles / refuses: 83 / 31
+  4c census matcher: \p{L} on 'a' -> MATCH ; on '5' -> no
+
+  PROBLEMS: none
