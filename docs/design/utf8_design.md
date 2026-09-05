@@ -86,6 +86,27 @@ its reasoning (E13, §2.2.2), and one prediction of the design's own is refuted
 by the revision rather than by the panel (P-1). §16 is the full what-changed
 record.
 
+### FRANK RULED FOUR ASKs WHILE THIS REVISION WAS RUNNING (2026-09-04)
+
+Relayed by the manager into `docs/dev/lanes/utf8design_rulings.md`, polled and
+consumed here. **Each ruling is written into the section it governs as well as
+into §14** — a ruling that lives only in the ASK list is a ruling the
+implementation wave will not find, which is the gap `lanes/CLAUDE.md` records
+lane `macport` falling into.
+
+| ASK | ruling | consumed at |
+|---|---|---|
+| **1** — invalid-UTF semantics | **AGREED**: ill-formed matches nothing, no validation pass, no error return | §2.6, and §9.2's stage-2 precondition (C11) is **DISCHARGED** |
+| **2** — vendor UCD 16.0.0 | **AGREED, RELUCTANTLY**, conditional on the usage summary being carried prominently at the specification | **§3.3.1 is that condition discharged** |
+| **4** — a UCP axis | **NO AXIS AT M5, door EXPLICITLY open** — r54's re-priced cost (§5.4.1) is the charter price for whoever opens it | §14 ASK 4, §5.4.1 |
+| **5** — `ENG_ATTEMPT`'s start loop | **AGREED, leave it** — with the addendum **VALIDATE AGAINST ORACLES** | **§2.6.1.1**, a new probe section run against 10.46 |
+
+**ASK 5's addendum was the expensive one and it earned its cost.** It turned
+§2.6.1's entry-promise table from ARGUED into MEASURED, and the measurement
+found **three oracle answers where the design had assumed two** — plus a
+**second, independent witness for §5.2.1's `back_step` repair on a WELL-FORMED
+subject**, which widens P-9's instrument. ASK 3 and ASK 6 remain open.
+
 **What SURVIVED adversarial reading**, verified independently and unchanged
 here: §5.6's refutation of the `[M5.0]` cross-note (confirmed at
 `mod_lookaround.c:298`/`mrl.c:282-284` by the engine lens on its own), §2.6's
@@ -1108,6 +1129,58 @@ subject. §8.3's `next_pos`/find-all axis therefore gains an explicit
 `(?<!` — the two shapes where the answer inverts — rather than leaving the
 axis to be covered by find-all cells that structurally cannot reach it.
 
+##### 2.6.1.1 MEASURED — and there are THREE answers, not two
+
+**Frank's ASK 5 ruling (below, §14) is "leave `ENG_ATTEMPT`'s start loop
+alone" with the addendum "VALIDATE AGAINST ORACLES", so this stopped being an
+argument and became a measurement.** `out/invalid_utf.txt` **§E2**, added in
+this revision: subject `αβ` (`CE B1 CE B2`, boundaries at 0/2/4), every cell
+in all three option words.
+
+The first version's §2.6(e) measured only `.` — **a POSITIVE pattern, which is
+the direction that cannot invert.** §E2 measures the direction that does:
+
+| pattern | start | `PCRE2_UTF` | `MATCH_INVALID_UTF` | `options=0` (byte) | **pcrec/utf8 (ARGUED)** |
+|---|---|---|---|---|---|
+| `(?<!.)` | 0 bnd | `(0,0)` | `(0,0)` | `(0,0)` | `(0,0)` |
+| **`(?<!.)`** | **1 MID** | **`ERRM -36`** | **`(2,2)`** | **no match** | **`(1,1)`** |
+| `(?<!.)` | 2 bnd | no match | no match | no match | no match |
+| `(?!.)` | 1 MID | `ERRM -36` | `(4,4)` | `(4,4)` | `(1,1)` |
+
+**THREE DIFFERENT ANSWERS ON ONE CELL, and pcrec's is a fourth.**
+
+- **`PCRE2_UTF` REFUSES** — `ERRM -36 "bad offset into UTF string"`, and
+  **uniformly**: every mid-character start in §E2's table is `-36` regardless
+  of pattern. It never answers at all.
+- **`MATCH_INVALID_UTF` ADVANCES to the next boundary and then answers** —
+  and it does **not** give the same answer as starting at that boundary. At
+  start=1 it reports `(2,2)` where a start of 2 reports **no match**. The
+  mid-character entry point acts as a **barrier** the lookbehind cannot cross,
+  which is `MATCH_INVALID_UTF`'s own ill-formed-bytes rule applied to a
+  truncated leading character. A reader who assumed "it just rounds the offset
+  up" would have got this wrong.
+- **`options=0`** has no notion of a boundary, so every offset is one.
+- **pcrec under `--encoding=utf8`** answers `(1,1)`: §5.2.1's `back_step` at
+  `pos=1, k=1` walks to 0, finds lead `0xCE` declaring 2 bytes against a run
+  of 1, and returns `BACK_STEP_NONE` — so the lookbehind body cannot run, the
+  negative assertion succeeds, and the match is the empty one at 1.
+
+**THE VACUITY GUARD, in the failing direction as this lane's own rule
+requires**: a mid-character start differs from the boundary below it on
+**8 of 8** negative-assertion cells under `PCRE2_UTF`. A 0 would have meant
+the table could not see the phenomenon it exists for.
+
+**AND THIS CELL IS A SECOND, INDEPENDENT WITNESS FOR §5.2.1's REPAIR** — one
+this revision did not go looking for. Run `(?<!.)` at `startpos=1` against the
+**un-repaired** `back_step` of §5.2: it walks to 0, sees `0xCE` is not a
+continuation byte, and returns **0**; the body `.` then matches `α` and ends
+at **2 ≠ 1**; the end-check fires; and on the negative arm that is
+`RX_R_INTERNAL`, below `PCREC_ERR_FLOOR`, so a composed site **traps**. The
+E4 defect is therefore reachable **on a well-formed subject** through a
+caller-supplied `startpos`, not only on ill-formed input as the panel's cell
+had it. **§12 P-9's instrument is widened accordingly**: mid-character
+`startpos` cells, not just the nine ill-formed kinds.
+
 ### 2.7 The parser changes, and only where UTF changes the language
 
 `[DD-12] (1)`'s rule. **MEASURED** boundaries from `out/premises.txt` §2 and
@@ -1401,6 +1474,44 @@ are three sources and two of them are disqualified:
 The version pin is itself a decision: pinning to 16.0.0 matches 10.46 today
 and will drift when the reference libpcre2 moves, which D26's addendum already
 treats as a re-measurement event.
+
+#### 3.3.1 WHAT THE VENDORED DATA IS ACTUALLY USED FOR — the ruling's own condition
+
+> **ASK 2 IS RULED (2026-09-04): AGREED, RELUCTANTLY** — and the reluctance is
+> part of the ruling. Frank's condition, verbatim in intent: *the design should
+> carry the usage summary prominently where the vendoring is specified, so the
+> reluctance stays priced.* **This subsection is that condition discharged.**
+> It is here, at the specification, and not only in §14.
+
+**THE VENDORED UCD FILES ARE COMPILE-TIME DATA IN `libpcrec.a`. THEY ARE NOT
+SHIPPED TO USERS AND THEY ARE NOT EMBEDDED IN ARTIFACTS.** Concretely:
+
+| where | what | size |
+|---|---|---|
+| `third_party/ucd-16.0.0/` | the source files: `UnicodeData.txt`, `Scripts.txt`, `ScriptExtensions.txt`, `PropList.txt`, `DerivedCoreProperties.txt`, `CaseFolding.txt` | vendored text, built into a `.inc` exactly as `cls_bits.inc` already is |
+| `libpcrec.a` | the generated interval tables — what `pcrec` consults to turn `\p{L}` into an interval list | ~40 KB for the general categories; scripts and `scx` add more at stage 5 |
+| **a generated artifact** | **nothing of it.** The artifact carries the LOWERED AUTOMATON (§2.4 — `\p{L}` is 283 DFA states), which is a machine over bytes and contains no property data at all | — |
+
+**THE ONE EXCEPTION, stated because a summary that hid it would be worthless**:
+§4.6(b), the **caseless backreference fold table**. A caseless backref folds
+subject bytes at MATCH time, so it cannot fold away at compile time, and its
+fold pairs do reach the artifact's residual text — **~12 KB** as sorted pairs
+with a binary search, 1.2% of D84's total cap. That is the whole of what a
+user's compiled matcher inherits from the vendored data, and §4.6 constrains
+the form (a direct-indexed map would be 4.4 MB and D84 refuses it outright).
+
+**WHY THE RELUCTANCE IS THE RIGHT INSTINCT AND THE ANSWER IS STILL YES.**
+Vendoring third-party data is a permanent maintenance and licensing surface,
+and `third_party/` today holds only PCRE2's BSD-licensed testdata. The two
+alternatives were **disqualified on measurement, not on taste**: generating
+from python's `unicodedata` makes the table depend on which machine ran the
+generator (**measured: `\p{L}` is 648 intervals under Unicode 14.0.0 and 677
+under 16.0.0**, and this project's two boxes carry both), and generating from
+libpcre2 would make PC-3/PC-4's differential check its own generator's output
+— *"one source wearing two hats"*, `mod_uprops.c`'s own rule. **The pin is
+16.0.0 because that is what the reference oracle is**, derived by sweep rather
+than assumed (`out/uprops.txt` §0), and a libpcre2 version bump is a D26
+re-measurement event that moves the pin deliberately.
 
 ### 3.4 What ships, what refuses
 
@@ -3049,17 +3160,29 @@ stamp census, reviewed as a diff rather than as a threshold; and sabotage rows
 the two new rows are stage 2's, and S-U8's detector is check 3, not the
 corpus).
 
-> **STAGE 2's CORPUS BAR HAS A PRECONDITION (r54 C11).** Roughly **27 of its
-> 423 blocks** — the invalid-UTF-8 axis, §8.3's third row — encode §2.6's
-> ruling that an ill-formed sequence matches nothing. **That ruling is
-> §14 ASK 1 and it is Frank's, not this design's.** If ASK 1 is ruled the
+> **STAGE 2's CORPUS BAR HAD A PRECONDITION (r54 C11) — NOW DISCHARGED.**
+> Roughly **27 of its 423 blocks** — the invalid-UTF-8 axis, §8.3's third row
+> — encode §2.6's ruling that an ill-formed sequence matches nothing, and that
+> ruling was §14 ASK 1: Frank's, not this design's. Had it been ruled the
 > other way (an error return, or an opt-in validation entry point), those 27
-> blocks' expectations INVERT and the seam gains a fifth entry. So stage 2
-> cannot open until ASK 1 is ruled — not because the code depends on it, but
-> because the blinded corpus author would write 27 blocks against a promise
-> that had changed. §8.3.2's extract includes §2.6 for exactly this reason,
-> and this is the sentence that says the extract is not safe to cut until the
-> ASK is answered.
+> blocks' expectations would INVERT and the seam would gain a fifth entry — so
+> stage 2 could not open until it was answered, not because the code depended
+> on it but because the blinded author would have written 27 blocks against a
+> promise that had changed.
+>
+> **RULED 2026-09-04: AGREED** (§14 ASK 1). Ill-formed matches nothing, no
+> validation pass, no error return. **The precondition is discharged, the 27
+> blocks can be written, §8.3.2's extract is safe to cut, and no fifth seam
+> entry is owed.** The paragraph is kept rather than deleted because the
+> DEPENDENCY is still real and a future re-opening of ASK 1 re-opens these 27
+> blocks with it.
+>
+> **Stage 2's acceptance additionally gains ASK 5's addendum** (Frank, same
+> ruling set): the `startpos`-at-mid-character cells are **corpus rows checked
+> against the oracle**, not design assumptions. §2.6.1.1 is the measurement
+> they are written from — and it is worth noting for whoever writes them that
+> the three oracle columns there give three different answers, so a cell that
+> names no options word names nothing.
 
 **STAGE 3 — `unicode-props`, general categories.** The UCD vendoring (§3.3),
 the generated `.inc`, the category families of §3.4. **This stage does not
@@ -3350,10 +3473,37 @@ the kind of thing an implementation wave silently drops:
 
 ## 14. ASKs for Frank
 
-**Seven** (r54 added ASK 7). None is a ruling contradiction; each is a decision this lane deliberately
-did not take.
+**Seven** (r54 added ASK 7). None is a ruling contradiction; each is a decision
+this lane deliberately did not take.
 
-**ASK 1 — invalid UTF-8 semantics (§2.6).** The design proposes that a
+> **FOUR ARE NOW RULED (2026-09-04, Frank, relayed by the manager into
+> `docs/dev/lanes/utf8design_rulings.md` while this revision was running).**
+> ASK 1 **AGREED**, ASK 2 **AGREED reluctantly** with a documentation
+> obligation, ASK 4 **RULED** (no axis at M5, door explicitly open), ASK 5
+> **AGREED** with a validate-against-oracles addendum this lane discharged.
+> **ASK 3 and ASK 6 remain OPEN**; the manager's recommendations are recorded
+> at each. Each ruling is written into its own ASK below AND into the section
+> it governs, rather than only here — a ruling that lives only in the ASK list
+> is a ruling the implementation wave will not find.
+
+**ASK 1 — invalid UTF-8 semantics (§2.6). RULED 2026-09-04: AGREED.**
+
+> **Frank's ruling, relayed by the manager**: ill-formed matches nothing, no
+> validation pass, no error return. **The design's proposal is the ruling.**
+> So §2.6's ruling block is no longer a proposal, §9.2's stage-2 precondition
+> (r54 C11) is **DISCHARGED**, the ~27 invalid-UTF blocks of §8.3 can be
+> written, and §8.3.2's extract is safe to cut. The `--no-validate` axis stays
+> dead for §2.6's own reason — there is no validation to switch off — and D18
+> keeps its earn-its-axis rule intact.
+>
+> **Two obligations follow and are recorded here rather than left implicit**:
+> the divergence from PCRE2's default `PCRE2_UTF` mode is now a RULED,
+> user-visible semantic and belongs in `docs/spec/match_api.md` in stage 2's
+> own change (D80, §13 obligation 1); and §2.6.1's per-entry `startpos`
+> promise rides with it, since both describe what the artifact does at a
+> position PCRE2 would refuse.
+
+The design proposed that a
 pcrec UTF-8 artifact treats an ill-formed sequence as **matching nothing**,
 with no validation pass and no error return — which is what the automaton does
 for free, what `PCRE2_MATCH_INVALID_UTF` does, and what M3 streaming requires.
@@ -3361,7 +3511,16 @@ It **diverges from PCRE2's default `PCRE2_UTF` mode**, which reports an error
 for the whole subject. Accept the divergence? If not, an opt-in validation
 entry point is owed and it is a new seam entry.
 
-**ASK 2 — vendoring UCD data (§3.3).** `\p{...}` needs Unicode property
+**ASK 2 — vendoring UCD data (§3.3). RULED 2026-09-04: AGREED, RELUCTANTLY.**
+
+> **Frank's ruling**: agreed after the usage explanation, and the reluctance is
+> part of the ruling — *"the design should carry that usage summary
+> prominently where the vendoring is specified, so the reluctance stays
+> priced."* **§3.3.1 is that summary**, placed at the vendoring specification
+> rather than here. The pin is **16.0.0**, matching the reference oracle's own
+> Unicode version.
+
+`\p{...}` needs Unicode property
 tables. Generating them from python is disqualified (version drift, measured);
 generating them from libpcre2 is disqualified (one source wearing two hats —
 `mod_uprops.c`'s own rule). The recommendation is to **vendor the UCD data
@@ -3376,7 +3535,19 @@ A future PCRE2 could add full folding, and the failure would be silent. Worth
 a permanent cell in the PC-3/PC-4 differential, or accept it as a
 re-measurement event on version bump (D26's addendum)?
 
-**ASK 4 — is a UCP axis owed? (§4.5, §5.4, §5.4.1, §7.1, §7.1.1)**
+**ASK 4 — is a UCP axis owed? RULED 2026-09-04: NO UCP AXIS AT M5, DOOR
+EXPLICITLY OPEN.**
+
+> **Frank's ruling**: no UCP axis at M5, and the door is *explicitly* open —
+> *"our forms were meant for this"*: the module/axis architecture accommodates
+> it on demand, and **r54's re-priced cost note (§5.4.1) is the charter price
+> for whoever opens it.** So the design's recommendation stands, the corpus
+> states the non-UCP semantics (§7.1.1's oracle predicate verifies 7 of the 8
+> rows), and §5.4's "no fifth seam entry" holds — but the price of the door is
+> now recorded as a DFA state-identity change rather than a seam addition, and
+> that number travels with the row that opens it.
+
+The original text and its analysis: (§4.5, §5.4, §5.4.1, §7.1, §7.1.1)
 `PCRE2_UCP` re-defines `\w \d \s \b` over the whole code-point space and
 accounts for **8 of 28** measured divergence rows. pcrec has no such axis.
 Without one, pcrec's UTF-8 answers for those constructs are the non-UCP ones,
@@ -3419,11 +3590,32 @@ and D71 used for rulings that narrow an existing decision) or as its **own
 decision row**. The design has no preference and states the fact rather than
 choosing the filing.
 
-**ASK 5 — `ENG_ATTEMPT`'s start loop (§5.5).** Under UTF-8 it tries
+**ASK 5 — `ENG_ATTEMPT`'s start loop (§5.5). RULED 2026-09-04: LEAVE IT,
+WITH AN ADDENDUM THAT COST THIS LANE A MEASUREMENT.**
+
+> **Frank's ruling**: agreed, leave it — the design's recommendation, D77,
+> measure the loss first. **Addendum: VALIDATE AGAINST ORACLES.** The corpus
+> must carry `startpos`-at-mid-character cells checked against the oracle, so
+> §5.5's and §2.6.1's entry-promise cells become **measured corpus rows, not
+> assumptions.**
+>
+> **DISCHARGED IN THIS REVISION**, and it was worth the addendum: probe
+> section `E2` was added and run against 10.46, and §2.6.1.1 is the result.
+> **It found more than the addendum asked for.** There are THREE oracle
+> answers on one cell, not two — `PCRE2_UTF` refuses uniformly, and
+> `MATCH_INVALID_UTF` advances to the next boundary but does **not** answer
+> what a start AT that boundary answers, because the mid-character entry acts
+> as a barrier the lookbehind cannot cross. And the cell is a **second,
+> independent witness for §5.2.1's `back_step` repair**, on a WELL-FORMED
+> subject — so E4's abort is reachable through a caller-supplied `startpos`
+> and not only through ill-formed input, which widens §12 P-9's instrument.
+> The addendum found a real thing; the assumption it replaced was wrong about
+> the shape of the answer, not just unverified.
+
+The original question: under UTF-8 the loop tries
 mid-character starts, which are harmless (no path) but wasted, up to 3 per
 character. Fixing it means routing a shared emitter loop through a residual
-entry, which S68 and `engine_callable = false` currently forbid. Leave it
-(the design's recommendation, D77 — measure the loss first), or charter it?
+entry, which S68 and `engine_callable = false` currently forbid.
 
 **ASK 6 — the `.rxt` third oracle value (§7.4).** The format has
 python-verifiable and `# pcre2-only`. UTF needs a third: python-verifiable
