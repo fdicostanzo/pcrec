@@ -436,6 +436,10 @@ repair is platform-neutral (no `wc`, no `xargs`, no shell at all — it is C).
 | Name the hybrid prefilter handoff (`emit_vm.c:11080-11089`) in K50's site list; state whether K49's fix closes it, measuring a witness if cheap | done and MEASURED; §3.1 |
 | Put the `back_step` malformed-run-repair interaction in K50's entry as the general amplifier | done — it is the paragraph that generalises the defect off lookbehind and onto the whole negative-assertion family plus `\B` |
 | S223 is taken; renumber | **S229** (the highest existing is S228, not S226 — `S227_scan_edge_entry_s0_only.sh` and `S228_cls_fold_recognizer_widened.sh` are both present). Re-verified: `m6read_check_sab_anchors.py` reads 232 rows and flags only the two pre-existing ones (S09, S199) |
+| Make `cwmax_check` encoding-aware; verify the triage first and STOP if cwmax genuinely under-estimates | triage VERIFIED (§5.2's table) and NOT refuted, so the repair proceeded. mrl 26/1 → **27/0** |
+| Non-vacuity both ways on the new path | both floors added AND validated in the failing direction (§5.2) |
+| Update the header's premise sentence, dated | done — the expired sentence is quoted in place as the thing that stopped being true |
+| Fold the REFERENCE 10.46 transcript into the known_fail header and the K50 entry | done. The 10.37 discovery reading is KEPT but explicitly marked as not the citation (local Miniconda build — U13/U14's hazard, memory `pcrec-cross-platform-verification`); the two agree cell for cell, which is itself recorded |
 
 ---
 
@@ -445,12 +449,12 @@ repair is platform-neutral (no `wc`, no `xargs`, no shell at all — it is C).
    together with `ENG_ATTEMPT`'s `start++` and the hybrid prefilter handoff so
    all three "try the next start" mechanisms end up spelling one rule.
 2. **ASK 5** — re-openable on a refuted premise. Frank's call, not mine.
-3. **`make test-mrl` is RED at this lane's base and nobody has filed it** —
-   `pcrec_maxw`/`cwmax` answers 1 byte for `[^a]` under `-e utf8` while the
-   oracle span is 2, on 21 cells of `tests/utf8/axis01_encoded_length.rxt`.
-   §5.2 has the detail. It needs its own row, and its failure direction
-   (under-estimating a width, which the lookbehind fixed-width rule reads) is
-   the unsound one.
+3. **The `cwmax_check` repair has no sabotage row of its own.** Its two new
+   floors are validated by hand (§5.2) but not in the mech matrix, for the
+   same reason S229 scores on one arm only — `run_mrl_tests.sh` §8 is reachable
+   from the matrix's `mrl` suite token, so a row IS possible here and was left
+   out only because this lane had already grown two slices past its charter.
+   Named rather than quietly skipped.
 4. **The advance-agreement check is not in the mech matrix.**
    `run_encoding_checks.sh` has no suite token in
    `tests/mech/run_sabotage_matrix.sh`, so sabotage row **S229** (K49 planted:
