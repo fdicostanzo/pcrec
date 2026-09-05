@@ -219,6 +219,59 @@ def main():
               % (st, show(O.match(b".", subj, start=st, options=0))))
     print()
 
+    # ---- E2: THE DIRECTION THAT INVERTS (r54 E14; Frank's ASK 5 addendum)
+    #
+    # Everything above measures a POSITIVE pattern, and for a positive
+    # pattern "the cursor is mid-character" degrades safely: no path means no
+    # match, which is a miss and never a false hit. FOR A NEGATIVE ASSERTION
+    # IT IS THE OPPOSITE -- `(?!X)` succeeds exactly when X has no path -- so
+    # the cells below are the ones a pcrec artifact answers DIFFERENTLY from
+    # both PCRE2 UTF modes, and they were the one direction section E did not
+    # ask about. Frank's ruling on ASK 5 (leave ENG_ATTEMPT's start loop
+    # alone) carries the addendum "VALIDATE AGAINST ORACLES", so these become
+    # measured corpus rows rather than a design assumption.
+    print("=" * 74)
+    print("E2. THE SAME CURSOR, BUT A NEGATIVE ASSERTION -- WHERE IT INVERTS")
+    print("=" * 74)
+    print("`(?!X)` succeeds when X does NOT match, so 'a mid-character cursor")
+    print("has no path' -- safe for a positive pattern -- becomes a SUCCESS")
+    print("here. These are the cells pcrec's contract must state a promise")
+    print("about (design 2.6.1), and the ones a corpus must carry.")
+    print()
+    print("  subject: 'αβ' = CE B1 CE B2; boundaries at 0, 2, 4")
+    print()
+    hdr = "  %-22s %-9s %-22s %-22s %s"
+    print(hdr % ("pattern", "start", "UTF", "UTF|INV", "options=0"))
+    print("  " + "-" * 92)
+    for pat in (b"(?!\\x{3b1})", b"(?!.)", b"(?<!\\x{3b1})", b"(?<!.)",
+                b"(?=\\x{3b1})", b"\\x{3b2}"):
+        for st in (0, 1, 2, 3):
+            print(hdr % (pat.decode(),
+                         "%d %s" % (st, "bnd" if st % 2 == 0 else "MID"),
+                         show(O.match(pat, subj, start=st, options=UTF)),
+                         show(O.match(pat, subj, start=st, options=UTF | INV)),
+                         show(O.match(pat, subj, start=st, options=0))))
+        print()
+
+    # A vacuity guard IN THE FAILING DIRECTION, this lane's own rule (out/
+    # CLAUDE.md defect 2 was a guard whose pass condition could not be met):
+    # the table above is worth nothing unless a MID-character start actually
+    # answers differently from a boundary start SOMEWHERE in it. Count the
+    # disagreements rather than assert them.
+    diff = 0
+    total = 0
+    for pat in (b"(?!\\x{3b1})", b"(?!.)", b"(?<!\\x{3b1})", b"(?<!.)"):
+        for st in (1, 3):
+            total += 1
+            a = show(O.match(pat, subj, start=st, options=UTF))
+            b = show(O.match(pat, subj, start=st - 1, options=UTF))
+            if a != b:
+                diff += 1
+    print("  VACUITY GUARD: mid-character vs the boundary below it differs on")
+    print("  %d of %d negative-assertion cells under PCRE2_UTF." % (diff, total))
+    print("  (0 would mean this table cannot see the phenomenon it is for.)")
+    print()
+
     # ---------------------------------------------------------------- F
     print("=" * 74)
     print("F. SELF-CHECK / VACUITY GUARDS")
