@@ -59,6 +59,7 @@ constant or a missing feature must announce itself rather than silently
 measure something else. Probes print `u8_oracle.SELFCHECK` in their header.
 """
 import ctypes
+import hashlib
 import importlib.util
 import os
 import platform
@@ -325,10 +326,74 @@ def host():
                            platform.machine())
 
 
+def source_shas():
+    """The sha256 (16 hex) of every python file whose bytes produced this run
+    — the borrowed oracle chain plus the probe itself.
+
+    r54 meas-1: `bundle.py` COMPUTED this dict and embedded it as
+    `_BUNDLED_SHA` and NOTHING EVER READ IT, so not one archived transcript
+    named the code that produced it — and every one of them was archived at a
+    repo commit where `utf8_measurements/` was untracked, so the header's
+    commit line could not stand in for it either. A provenance field that is
+    written and never printed is the same as an absent one.
+
+    Two modes, and the mode is printed, because they are not equally strong:
+
+      BUNDLED — the payload ran on the far end from bytes embedded at bundle
+        time, and `_BUNDLED_SHA` in the payload's own `__main__` globals is
+        the hash of exactly those bytes. This is the authoritative case: it
+        names what RAN, not what is on a disk somewhere.
+
+      LOCAL — no bundle, so the files are hashed FROM DISK here. Weaker by
+        construction (it hashes what is on disk now, which a `--local` run
+        makes the same thing only because nothing moved between), and the
+        label says so rather than letting a reader assume otherwise.
+    """
+    m = sys.modules.get("__main__")
+    bundled = getattr(m, "_BUNDLED_SHA", None)
+    if isinstance(bundled, dict) and bundled:
+        return "bundled", dict(bundled)
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    paths = [
+        os.path.normpath(os.path.join(
+            here, "..", "..", "eng_brep_measurements", "probes",
+            "pcre2_ctypes.py")),
+        os.path.normpath(os.path.join(
+            here, "..", "..", "backrefs_measurements", "probes",
+            "br_oracle.py")),
+        os.path.join(here, "u8_oracle.py"),
+    ]
+    argv0 = sys.argv[0] if sys.argv and sys.argv[0] else ""
+    if argv0 and os.path.basename(argv0).startswith("probe_"):
+        cand = argv0 if os.path.isabs(argv0) else os.path.join(here,
+                                                    os.path.basename(argv0))
+        paths.append(cand)
+
+    out = {}
+    for p in paths:
+        try:
+            with open(p, "rb") as fh:
+                out[os.path.basename(p)] = hashlib.sha256(
+                    fh.read()).hexdigest()[:16]
+        except OSError as e:
+            out[os.path.basename(p)] = "UNREADABLE (%s)" % e.strerror
+    return "local", out
+
+
 def header(title):
     """Every probe's first lines. The options-word legend is printed once
-    here so per-row words can be short."""
-    return "\n".join([
+    here so per-row words can be short.
+
+    r54 meas-1: the SOURCE SHA block below is not decoration. `archive.sh`'s
+    header names the repo commit the run was LAUNCHED from; these name the
+    bytes that ANSWERED. For a remote run those are different machines, and
+    for this lane they were different repositories' worth of state — the
+    probes were untracked at every commit the first round of transcripts
+    stamped, so the commit line pinned nothing at all.
+    """
+    mode, shas = source_shas()
+    lines = [
         "=" * 74,
         title,
         "-" * 74,
@@ -336,9 +401,13 @@ def header(title):
         "python3   : %s" % sys.version.split()[0],
         "libpcre2  : %s" % version(),
         "selfcheck : %s" % (SELFCHECK or "clean"),
-        "=" * 74,
-        "",
-    ])
+        "-" * 74,
+        "source sha256[:16] (%s) — the bytes that produced this run:" % mode,
+    ]
+    for name in sorted(shas):
+        lines.append("  %-20s %s" % (name, shas[name]))
+    lines += ["=" * 74, ""]
+    return "\n".join(lines)
 
 
 def require_1046():

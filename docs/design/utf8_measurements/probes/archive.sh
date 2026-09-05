@@ -61,7 +61,17 @@ TO="timeout 600"
     echo "#               libpcre2 line below reads 10.46. A local run is a"
     echo "#               deliberate version COMPARISON, or a pcrec probe."
   fi
-  echo "# PROBE LAST CHANGED AT COMMIT: $(git log -1 --format='%h %ad' --date=short -- "$PROBES/$(basename "$PROBE")" 2>/dev/null || echo 'uncommitted')"
+  # r54 meas-3: THE `|| echo uncommitted` FALLBACK NEVER FIRED. `git log` on a
+  # path that has never been tracked EXITS 0 with EMPTY stdout — it is not an
+  # error to ask about a path with no history — so `||` tested the wrong
+  # thing and the field came out BLANK on every transcript archived before the
+  # probes were committed (see out/sizing.txt's first archive). A blank field
+  # reads as a formatting glitch; "uncommitted" reads as the fact it is. The
+  # test has to be on EMPTINESS, not on exit status. (R30 M7's rule one turn
+  # further: a provenance line that can go silently blank is the same defect
+  # as a hand-written one.)
+  PROBE_COMMIT=$(git log -1 --format='%h %ad' --date=short -- "$PROBES/$(basename "$PROBE")" 2>/dev/null)
+  echo "# PROBE LAST CHANGED AT COMMIT: ${PROBE_COMMIT:-UNCOMMITTED (this probe is not tracked at the run commit below — the transcript pins nothing)}"
   echo "# RUN FROM REPO COMMIT        : $(git rev-parse --short HEAD) ($(git rev-parse --abbrev-ref HEAD))"
   echo "#   working tree at run time  : $(test -z "$(git status --porcelain)" && echo clean || echo 'DIRTY — see below')"
   test -z "$(git status --porcelain)" || git status --porcelain | sed 's/^/#     /'

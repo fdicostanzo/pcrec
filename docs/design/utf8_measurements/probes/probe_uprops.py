@@ -257,8 +257,15 @@ def main():
                             ("U+00A0 nbsp", O.u(" "))]:
             row = []
             for w in (0, UTF, UTF | UCP):
-                s = subj if w else subj    # same bytes either way
-                r = O.match(b"^" + esc + b"$", s, options=w)
+                # r54 meas-5: this line used to read
+                #   s = subj if w else subj    # same bytes either way
+                # — a ternary whose two arms are the same expression, which is
+                # a comment claiming a deliberate choice where no choice is
+                # made. The subject bytes ARE the same across the three option
+                # words (that is the point of the row: one byte sequence, three
+                # readings of it), so the variable is deleted rather than
+                # spelled as a fake decision.
+                r = O.match(b"^" + esc + b"$", subj, options=w)
                 if isinstance(r, tuple) and r and r[0] in ("ERRC", "ERRM"):
                     row.append("%s%d" % (r[0], r[1]))
                 else:
