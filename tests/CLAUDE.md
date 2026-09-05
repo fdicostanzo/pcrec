@@ -612,6 +612,20 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   run.sh` with `SIZELOG` set; `check_size_tripwire.sh` reads the assembled
   `docs/dev/artifact_size_log.tsv`, `make test-size`). See its own
   CLAUDE.md for the log format and the measured per-compile overhead.
+- **utf8/** — the [M5.0] `utf8`-encoding corpus: D27-blinded (cell
+  `utf8corpus`, authored against the pre-stage-2 tree) then PROMOTED (lane
+  `utfprom`, 2026-09-05) against the merged stage-2 tree. 523 blocks / 13
+  files, rides `test-corpus` like every other plain per-module directory
+  (no dedicated `make test-utf8` — no structural/differential check exists
+  for it yet). The SECOND directory in the tree with its own oracle rule
+  beyond the python default (after `tests/assertions/`), for a different
+  measured reason: `verify_rxt.py`'s subject decoder is byte-oriented, not
+  UTF-8-aware, so 255 blocks carry `# pcre2-only` — docs/dev/
+  upstream_issues.md U14 is the citable record. One genuine divergence the
+  blinded corpus found moved to `tests/known_fail/` (K49); axis06/07 are
+  deliberately PINNED to today's real (ASCII-only fold) behaviour rather
+  than promoted to their recorded oracle, a known stage-4 gap, not a
+  finding. See its own CLAUDE.md and `docs/dev/lanes/utfprom_report.md`.
 
 ## Conventions
 

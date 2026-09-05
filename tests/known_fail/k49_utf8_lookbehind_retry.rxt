@@ -1,0 +1,29 @@
+# [K49] (docs/dev/known_issues.md), found 2026-09-05 by lane utfprom while
+# promoting the D27 blinded utf8 corpus (tests/utf8/) against the
+# just-merged [M5.0] stage 2 tree. Moved from
+# tests/utf8/axis09_nextpos_findall.rxt's "midstart-row3-boundary" block —
+# see that file's own pointer comment at the block's former position.
+#
+# `(?<!.)` at startpos=2 over a subject whose byte 2 is a real UTF-8
+# CHARACTER BOUNDARY (alpha ends there, beta begins) is ARGUED by the D27
+# extract (Sec 2.6.1.1's mid-character-startpos table) to answer NO MATCH:
+# the assertion is false at position 2 (alpha precedes it), and an
+# unanchored retry from there must only ever try LATER CHARACTER
+# BOUNDARIES — the next of which is position 4 (subject end), where the
+# assertion is false again (beta precedes it). No PCRE2 oracle produces
+# this cell directly; `pcrec-ARGUED` is this project's own design position,
+# not a measured libpcre2 answer.
+#
+# pcrec's LIVE answer today is a MATCH at (3,3) — byte offset 3 sits
+# INSIDE beta's own two-byte encoding, not a character boundary at all.
+# Kept HERE, pinning the ARGUED/correct expectation (not pcrec's current
+# answer), per this directory's own convention: "the cells stay, they stay
+# loud, and if pcrec is ever changed to reproduce it this file FIRES."
+
+# pcre2-only (byte-vs-utf8 subject-decode mismatch in the default python
+# oracle — see tests/utf8/CLAUDE.md; not a python-verifiability question
+# about the CONSTRUCT itself)
+pattern (?<!.)
+encoding utf8
+features lookaround
+ns 2 "\xce\xb1\xce\xb2"

@@ -1,0 +1,368 @@
+# [M5.0] D27 axis 3 -- invalid UTF-8 (extract Sec 2.6(a)-(e)/2.6.1). 27 blocks
+# (9 measured ill-formed kinds x 3 positions: before/after/through the bad
+# bytes), 4 subjects each -> 108 cases.
+#
+# PROMOTED (lane utfprom, [M5.0] stage 2 close): all 27 blocks compile and
+# match under `-e utf8` now, zero divergences from pcrec's own live
+# behaviour across all 108 cases -- the ill-formed-subject barrier ruling
+# below holds exactly as measured.
+#
+# RULING UNDER TEST (2.6): an ill-formed byte sequence matches NOTHING under
+# pcrec's `utf8` encoding -- no validation pass, no error return -- which is
+# PCRE2_MATCH_INVALID_UTF's barrier answer "for free from the automaton's
+# structure". So the oracle for every case below is libpcre2 under
+# PCRE2_MATCH_INVALID_UTF, never plain PCRE2_UTF (which would ERRM-refuse the
+# whole subject and is NOT what pcrec promises).
+# 9 measured kinds (this cell's libpcre2 10.37 2021-05-26, error code under PLAIN PCRE2_UTF -- 2.6(b)'s whole-subject precondition, NOT the MATCH_INVALID_UTF barrier the corpus's own oracle uses below): isolated-continuation=-22, illegal-fe-ff=-23, trunc-missing-1=-3, trunc-missing-2=-4, overlong-2byte=-17, overlong-3byte=-18, surrogate=-16, above-10ffff=-15, five-byte-form=-13
+
+# axis3 block isolated-continuation-before | kind=isolated-continuation bad=80 | pattern: a
+#   [canonical] m "a\x80" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\x80z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\x80" 0 1
+m "a\x80z" 0 1
+n "b\x80"
+n "\x80"
+
+# axis3 block isolated-continuation-after | kind=isolated-continuation bad=80 | pattern: a
+#   [canonical] m "\x80a" 1 2   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\x80a" 2 3   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\x80b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\x80a" 1 2
+m "z\x80a" 2 3
+n "\x80b"
+n "\x80"
+
+# axis3 block isolated-continuation-through | kind=isolated-continuation bad=80 | pattern: a.+a
+#   [canonical] n "a\x80a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\x80zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\x80z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\x80a"
+n "a\x80zza"
+n "a\x80z"
+n "\x80"
+
+# axis3 block illegal-fe-ff-before | kind=illegal-fe-ff bad=FE | pattern: a
+#   [canonical] m "a\xfe" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xfez" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xfe"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xfe"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xfe" 0 1
+m "a\xfez" 0 1
+n "b\xfe"
+n "\xfe"
+
+# axis3 block illegal-fe-ff-after | kind=illegal-fe-ff bad=FE | pattern: a
+#   [canonical] m "\xfea" 1 2   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xfea" 2 3   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xfeb"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xfe"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xfea" 1 2
+m "z\xfea" 2 3
+n "\xfeb"
+n "\xfe"
+
+# axis3 block illegal-fe-ff-through | kind=illegal-fe-ff bad=FE | pattern: a.+a
+#   [canonical] n "a\xfea"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xfezza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xfez"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xfe"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xfea"
+n "a\xfezza"
+n "a\xfez"
+n "\xfe"
+
+# axis3 block trunc-missing-1-before | kind=trunc-missing-1 bad=CE | pattern: a
+#   [canonical] m "a\xce" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xcez" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xce" 0 1
+m "a\xcez" 0 1
+n "b\xce"
+n "\xce"
+
+# axis3 block trunc-missing-1-after | kind=trunc-missing-1 bad=CE | pattern: a
+#   [canonical] m "\xcea" 1 2   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xcea" 2 3   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xceb"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xcea" 1 2
+m "z\xcea" 2 3
+n "\xceb"
+n "\xce"
+
+# axis3 block trunc-missing-1-through | kind=trunc-missing-1 bad=CE | pattern: a.+a
+#   [canonical] n "a\xcea"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xcezza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xcez"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xcea"
+n "a\xcezza"
+n "a\xcez"
+n "\xce"
+
+# axis3 block trunc-missing-2-before | kind=trunc-missing-2 bad=E2 | pattern: a
+#   [canonical] m "a\xe2" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xe2z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xe2"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xe2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xe2" 0 1
+m "a\xe2z" 0 1
+n "b\xe2"
+n "\xe2"
+
+# axis3 block trunc-missing-2-after | kind=trunc-missing-2 bad=E2 | pattern: a
+#   [canonical] m "\xe2a" 1 2   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xe2a" 2 3   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xe2b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xe2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xe2a" 1 2
+m "z\xe2a" 2 3
+n "\xe2b"
+n "\xe2"
+
+# axis3 block trunc-missing-2-through | kind=trunc-missing-2 bad=E2 | pattern: a.+a
+#   [canonical] n "a\xe2a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xe2zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xe2z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xe2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xe2a"
+n "a\xe2zza"
+n "a\xe2z"
+n "\xe2"
+
+# axis3 block overlong-2byte-before | kind=overlong-2byte bad=C0 80 | pattern: a
+#   [canonical] m "a\xc0\x80" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xc0\x80z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xc0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xc0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xc0\x80" 0 1
+m "a\xc0\x80z" 0 1
+n "b\xc0\x80"
+n "\xc0\x80"
+
+# axis3 block overlong-2byte-after | kind=overlong-2byte bad=C0 80 | pattern: a
+#   [canonical] m "\xc0\x80a" 2 3   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xc0\x80a" 3 4   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xc0\x80b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xc0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xc0\x80a" 2 3
+m "z\xc0\x80a" 3 4
+n "\xc0\x80b"
+n "\xc0\x80"
+
+# axis3 block overlong-2byte-through | kind=overlong-2byte bad=C0 80 | pattern: a.+a
+#   [canonical] n "a\xc0\x80a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xc0\x80zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xc0\x80z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xc0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xc0\x80a"
+n "a\xc0\x80zza"
+n "a\xc0\x80z"
+n "\xc0\x80"
+
+# axis3 block overlong-3byte-before | kind=overlong-3byte bad=E0 80 80 | pattern: a
+#   [canonical] m "a\xe0\x80\x80" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xe0\x80\x80z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xe0\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xe0\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xe0\x80\x80" 0 1
+m "a\xe0\x80\x80z" 0 1
+n "b\xe0\x80\x80"
+n "\xe0\x80\x80"
+
+# axis3 block overlong-3byte-after | kind=overlong-3byte bad=E0 80 80 | pattern: a
+#   [canonical] m "\xe0\x80\x80a" 3 4   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xe0\x80\x80a" 4 5   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xe0\x80\x80b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xe0\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xe0\x80\x80a" 3 4
+m "z\xe0\x80\x80a" 4 5
+n "\xe0\x80\x80b"
+n "\xe0\x80\x80"
+
+# axis3 block overlong-3byte-through | kind=overlong-3byte bad=E0 80 80 | pattern: a.+a
+#   [canonical] n "a\xe0\x80\x80a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xe0\x80\x80zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xe0\x80\x80z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xe0\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xe0\x80\x80a"
+n "a\xe0\x80\x80zza"
+n "a\xe0\x80\x80z"
+n "\xe0\x80\x80"
+
+# axis3 block surrogate-before | kind=surrogate bad=ED A0 80 | pattern: a
+#   [canonical] m "a\xed\xa0\x80" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xed\xa0\x80z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xed\xa0\x80" 0 1
+m "a\xed\xa0\x80z" 0 1
+n "b\xed\xa0\x80"
+n "\xed\xa0\x80"
+
+# axis3 block surrogate-after | kind=surrogate bad=ED A0 80 | pattern: a
+#   [canonical] m "\xed\xa0\x80a" 3 4   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xed\xa0\x80a" 4 5   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xed\xa0\x80b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xed\xa0\x80a" 3 4
+m "z\xed\xa0\x80a" 4 5
+n "\xed\xa0\x80b"
+n "\xed\xa0\x80"
+
+# axis3 block surrogate-through | kind=surrogate bad=ED A0 80 | pattern: a.+a
+#   [canonical] n "a\xed\xa0\x80a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xed\xa0\x80zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xed\xa0\x80z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xed\xa0\x80a"
+n "a\xed\xa0\x80zza"
+n "a\xed\xa0\x80z"
+n "\xed\xa0\x80"
+
+# axis3 block above-10ffff-before | kind=above-10ffff bad=F4 90 80 80 | pattern: a
+#   [canonical] m "a\xf4\x90\x80\x80" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xf4\x90\x80\x80z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xf4\x90\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xf4\x90\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xf4\x90\x80\x80" 0 1
+m "a\xf4\x90\x80\x80z" 0 1
+n "b\xf4\x90\x80\x80"
+n "\xf4\x90\x80\x80"
+
+# axis3 block above-10ffff-after | kind=above-10ffff bad=F4 90 80 80 | pattern: a
+#   [canonical] m "\xf4\x90\x80\x80a" 4 5   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xf4\x90\x80\x80a" 5 6   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xf4\x90\x80\x80b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xf4\x90\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xf4\x90\x80\x80a" 4 5
+m "z\xf4\x90\x80\x80a" 5 6
+n "\xf4\x90\x80\x80b"
+n "\xf4\x90\x80\x80"
+
+# axis3 block above-10ffff-through | kind=above-10ffff bad=F4 90 80 80 | pattern: a.+a
+#   [canonical] n "a\xf4\x90\x80\x80a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xf4\x90\x80\x80zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xf4\x90\x80\x80z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xf4\x90\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xf4\x90\x80\x80a"
+n "a\xf4\x90\x80\x80zza"
+n "a\xf4\x90\x80\x80z"
+n "\xf4\x90\x80\x80"
+
+# axis3 block five-byte-form-before | kind=five-byte-form bad=F8 88 80 80 80 | pattern: a
+#   [canonical] m "a\xf8\x88\x80\x80\x80" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-trailing-valid] m "a\xf8\x88\x80\x80\x80z" 0 1   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "b\xf8\x88\x80\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xf8\x88\x80\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "a\xf8\x88\x80\x80\x80" 0 1
+m "a\xf8\x88\x80\x80\x80z" 0 1
+n "b\xf8\x88\x80\x80\x80"
+n "\xf8\x88\x80\x80\x80"
+
+# axis3 block five-byte-form-after | kind=five-byte-form bad=F8 88 80 80 80 | pattern: a
+#   [canonical] m "\xf8\x88\x80\x80\x80a" 5 6   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [with-leading-valid] m "z\xf8\x88\x80\x80\x80a" 6 7   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [non-member] n "\xf8\x88\x80\x80\x80b"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone-no-a] n "\xf8\x88\x80\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a
+encoding utf8
+m "\xf8\x88\x80\x80\x80a" 5 6
+m "z\xf8\x88\x80\x80\x80a" 6 7
+n "\xf8\x88\x80\x80\x80b"
+n "\xf8\x88\x80\x80\x80"
+
+# axis3 block five-byte-form-through | kind=five-byte-form bad=F8 88 80 80 80 | pattern: a.+a
+#   [canonical] n "a\xf8\x88\x80\x80\x80a"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [longer-gap] n "a\xf8\x88\x80\x80\x80zza"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [no-trailing-a] n "a\xf8\x88\x80\x80\x80z"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [bad-alone] n "\xf8\x88\x80\x80\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern a.+a
+encoding utf8
+n "a\xf8\x88\x80\x80\x80a"
+n "a\xf8\x88\x80\x80\x80zza"
+n "a\xf8\x88\x80\x80\x80z"
+n "\xf8\x88\x80\x80\x80"
+

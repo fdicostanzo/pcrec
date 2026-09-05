@@ -1,0 +1,102 @@
+# [M5.0] D27 axis 10 -- the surrogate SUBJECT witness (extract Sec 7.1.1/8.3.1).
+# 9 blocks (3 surrogate encodings x 3 patterns), 3 cases each (member-shaped
+# subject expected to be REJECTED, plus 2 controls) -> 27 cases. A
+# correct artifact rejects every one of these subjects: the surrogate range
+# has no path in a correctly-lowered automaton.
+#
+# PROMOTED (lane utfprom, [M5.0] stage 2 close): 6 of 9 blocks (`^.$` and
+# `^[^a]$` over all three surrogate encodings) compile and match under
+# `-e utf8`, zero divergences -- the surrogate-subject rejection holds
+# exactly as measured, on every encoding shape tried. The 3 `^\p{L}$`
+# blocks stay `perr`: module `unicode-props` is still unbuilt (stage 3).
+
+# axis10 block low-dot | surrogate=low (ED A0 80) | pattern: ^.$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] m "a" 0 1   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^.$
+encoding utf8
+n "\xed\xa0\x80"
+m "a" 0 1
+m "!" 0 1
+
+# axis10 block low-neg-class | surrogate=low (ED A0 80) | pattern: ^[^a]$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] n "a"   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^[^a]$
+encoding utf8
+n "\xed\xa0\x80"
+n "a"
+m "!" 0 1
+
+# axis10 block low-p-L | surrogate=low (ED A0 80) | pattern: ^\p{L}$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] m "A" 0 1   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] n "!"   # oracle=PCRE2_UTF
+pattern ^\p{L}$
+encoding utf8
+perr
+
+# axis10 block high-dot | surrogate=high (ED BF BF) | pattern: ^.$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xbf\xbf"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] m "a" 0 1   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^.$
+encoding utf8
+n "\xed\xbf\xbf"
+m "a" 0 1
+m "!" 0 1
+
+# axis10 block high-neg-class | surrogate=high (ED BF BF) | pattern: ^[^a]$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xbf\xbf"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] n "a"   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^[^a]$
+encoding utf8
+n "\xed\xbf\xbf"
+n "a"
+m "!" 0 1
+
+# axis10 block high-p-L | surrogate=high (ED BF BF) | pattern: ^\p{L}$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xbf\xbf"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] m "A" 0 1   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] n "!"   # oracle=PCRE2_UTF
+pattern ^\p{L}$
+encoding utf8
+perr
+
+# axis10 block cesu8-pair-dot | surrogate=cesu8-pair (ED A0 80 ED B0 80) | pattern: ^.$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80\xed\xb0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] m "a" 0 1   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^.$
+encoding utf8
+n "\xed\xa0\x80\xed\xb0\x80"
+m "a" 0 1
+m "!" 0 1
+
+# axis10 block cesu8-pair-neg-class | surrogate=cesu8-pair (ED A0 80 ED B0 80) | pattern: ^[^a]$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80\xed\xb0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] n "a"   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^[^a]$
+encoding utf8
+n "\xed\xa0\x80\xed\xb0\x80"
+n "a"
+m "!" 0 1
+
+# axis10 block cesu8-pair-p-L | surrogate=cesu8-pair (ED A0 80 ED B0 80) | pattern: ^\p{L}$
+#   [SURROGATE WITNESS, must be rejected] n "\xed\xa0\x80\xed\xb0\x80"   # oracle=PCRE2_MATCH_INVALID_UTF
+#   [vacuity: well-formed member still matches] m "A" 0 1   # oracle=PCRE2_UTF
+#   [vacuity: well-formed non-member still fails] n "!"   # oracle=PCRE2_UTF
+pattern ^\p{L}$
+encoding utf8
+perr
+

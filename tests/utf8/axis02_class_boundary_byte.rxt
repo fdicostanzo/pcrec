@@ -1,0 +1,182 @@
+# [M5.0] D27 axis 2 MIRROR -- byte-encoding control arm for axis02_class_boundary.rxt.
+# Literal-UTF-8 shapes compile under byte and are byte-DECOMPOSED (see axis 1
+# mirror's header for why); real cases are the LIVE agreement of pcrec/byte
+# and python's bytes `re` engine.
+#
+# UPDATED (lane utfprom, [M5.0] stage 2 close): `\x{}` is BASE-grammar
+# range-checked per encoding now, not a permanent module gate (D27 corpus
+# assumed the latter and carried no future-case comment for these 10
+# `\x{}`/`\p{}` blocks). The 4 `edge-esc-*` blocks (both members <=U+00FF)
+# now compile and are promoted with FRESH live-derived cases (python
+# bytes-`re` on the byte-for-byte-equivalent translated pattern, cross-
+# checked against pcrec's own compiled output). The 4 `worked-example-esc-*`
+# blocks (one member, U+03B1, is >U+00FF) still refuse, but with a RANGE
+# error now, not the module-gate error this file originally pinned -- see
+# each block's own updated comment. The 2 `\p{L}`/`\p{N}` property blocks
+# are genuinely unaffected -- still `perr` under module `unicode-props`
+# (stage 3, unbuilt) -- and keep their original comment unchanged.
+
+# axis2 mirror edge-lit-class | pattern: [] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern []
+encoding byte
+m "\x7f" 0 1
+m "\xc2\x80" 0 1
+n "0"
+
+# axis2 mirror edge-esc-class | pattern: [\x{7f}\x{80}] | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern [\x{7f}\x{80}]
+m "\x7f" 0 1
+m "\xc2\x80" 1 2
+n "0"
+
+# axis2 mirror edge-lit-range | pattern: [-] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [-]
+encoding byte
+m "\x7f" 0 1
+m "\xc2\x80" 0 1
+n "0"
+
+# axis2 mirror edge-esc-range | pattern: [\x{7f}-\x{80}] | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern [\x{7f}-\x{80}]
+m "\x7f" 0 1
+m "\xc2\x80" 1 2
+n "0"
+
+# axis2 mirror edge-lit-neg-class | pattern: [^] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^]
+encoding byte
+n "\x7f"
+n "\xc2\x80"
+m "0" 0 1
+
+# axis2 mirror edge-esc-neg-class | pattern: [^\x{7f}\x{80}] | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern [^\x{7f}\x{80}]
+n "\x7f"
+m "\xc2\x80" 0 1
+m "0" 0 1
+
+# axis2 mirror edge-lit-neg-range | pattern: [^-] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^-]
+encoding byte
+n "\x7f"
+n "\xc2\x80"
+m "0" 0 1
+
+# axis2 mirror edge-esc-neg-range | pattern: [^\x{7f}-\x{80}] | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern [^\x{7f}-\x{80}]
+n "\x7f"
+m "\xc2\x80" 0 1
+m "0" 0 1
+
+# axis2 mirror edge-lit-quantified | pattern: []+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern []+
+encoding byte
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+
+# axis2 mirror edge-range-quantified | pattern: [-]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [-]+
+encoding byte
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+
+# axis2 mirror edge-alternation | pattern: (?:|) | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern (?:|)
+encoding byte
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+
+# axis2 mirror edge-property | pattern: \p{L} | module-gated under byte too
+pattern \p{L}
+perr
+
+# axis2 mirror worked-example-lit-class | pattern: [aα] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [aα]
+encoding byte
+m "a" 0 1
+m "\xce\xb1" 0 1
+n "5"
+
+# axis2 mirror worked-example-esc-class | pattern: [\x{61}\x{3b1}] | still refuses under byte (one member >U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [\x{61}\x{3b1}]
+perr
+
+# axis2 mirror worked-example-lit-range | pattern: [a-α] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [a-α]
+encoding byte
+m "a" 0 1
+m "\xce\xb1" 0 1
+n "5"
+
+# axis2 mirror worked-example-esc-range | pattern: [\x{61}-\x{3b1}] | still refuses under byte (one member >U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [\x{61}-\x{3b1}]
+perr
+
+# axis2 mirror worked-example-lit-neg-class | pattern: [^aα] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^aα]
+encoding byte
+n "a"
+n "\xce\xb1"
+m "5" 0 1
+
+# axis2 mirror worked-example-esc-neg-class | pattern: [^\x{61}\x{3b1}] | still refuses under byte (one member >U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [^\x{61}\x{3b1}]
+perr
+
+# axis2 mirror worked-example-lit-neg-range | pattern: [^a-α] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^a-α]
+encoding byte
+n "a"
+n "\xce\xb1"
+m "5" 0 1
+
+# axis2 mirror worked-example-esc-neg-range | pattern: [^\x{61}-\x{3b1}] | still refuses under byte (one member >U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [^\x{61}-\x{3b1}]
+perr
+
+# axis2 mirror worked-example-lit-quantified | pattern: [aα]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [aα]+
+encoding byte
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+
+# axis2 mirror worked-example-range-quantified | pattern: [a-α]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [a-α]+
+encoding byte
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+
+# axis2 mirror worked-example-alternation | pattern: (?:a|α) | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern (?:a|α)
+encoding byte
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+
+# axis2 mirror worked-example-property | pattern: \p{N} | module-gated under byte too
+pattern \p{N}
+perr
+

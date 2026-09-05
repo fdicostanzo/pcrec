@@ -1,0 +1,500 @@
+# [M5.0] D27 axis 1 MIRROR -- byte-encoding control arm for axis01_encoded_length.rxt.
+# Same 64 pattern shapes, `encoding byte`. A bare literal multi-byte sequence
+# compiles and matches identically to the byte-literal reading (LIVE-verified
+# against build/pcrec, cross-checked against python re's bytes engine). A
+# class/quantifier/range/alternation wrapping a multi-byte literal ALSO
+# compiles under byte encoding, but is BYTE-DECOMPOSED -- each byte of the
+# literal becomes its own independent class member / quantified unit -- which
+# is neither a refusal nor an identity match with the utf8-encoded promise.
+# Both outcomes are recorded here as real cases. UPDATED (lane utfprom,
+# [M5.0] stage 2 close): `\x{}` is no longer a permanent module gate under
+# `byte` -- it is BASE-grammar range-checked per encoding (D27 corpus was
+# authored before this landed and assumed the gate was permanent, so its
+# 16 `\x{}` blocks carried no future-case comment at all). The 4 L1-esc-*
+# blocks (code point <=U+00FF) now compile and are promoted here with
+# FRESH live-derived cases (python bytes-`re` on the byte-for-byte-equivalent
+# translated pattern, cross-checked against pcrec's own compiled output --
+# same "LIVE pcrec/byte == python/re-bytes" methodology this file's other
+# real cases use). The 12 L2/L3/L4-esc-* blocks (code point >U+00FF) still
+# refuse, but with a RANGE error now, not the module-gate error this file
+# originally pinned -- see each such block's own updated comment. Every
+# real case's expected value is the LIVE agreement of pcrec's own byte-mode
+# output and python re's bytes engine; disagreement is asserted never to
+# occur below, not assumed.
+
+# axis1 mirror L1-bare | pattern: a | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern a
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-class | pattern: [a] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [a]
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-neg-class | pattern: [^a] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^a]
+encoding byte
+n "a"
+m "z" 0 1
+m "\xce\xb1" 0 1
+
+# axis1 mirror L1-quantified | pattern: a+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern a+
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-esc-bare | pattern: \x{61} | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern \x{61}
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-esc-class | pattern: [\x{61}] | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern [\x{61}]
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-esc-neg-class | pattern: [^\x{61}] | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern [^\x{61}]
+encoding byte
+n "a"
+m "z" 0 1
+m "\xce\xb1" 0 1
+
+# axis1 mirror L1-esc-quantified | pattern: \x{61}+ | <=U+00FF: BASE-grammar range check compiles under byte too since [M5.0] stage 2 (LIVE pcrec/byte == python/re-bytes)
+# pcre2-only
+pattern \x{61}+
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-range-class | pattern: [A-a] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [A-a]
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-range-neg-class | pattern: [^A-a] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^A-a]
+encoding byte
+n "a"
+m "z" 0 1
+m "\xce\xb1" 0 1
+
+# axis1 mirror L1-range-quantified | pattern: [A-a]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [A-a]+
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-bounded-bare | pattern: a{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern a{1,2}
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-bounded-class | pattern: [a]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [a]{1,2}
+encoding byte
+m "a" 0 1
+n "z"
+n "\xce\xb1"
+
+# axis1 mirror L1-bounded-neg-class | pattern: [^a]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^a]{1,2}
+encoding byte
+n "a"
+m "z" 0 1
+m "\xce\xb1" 0 2
+
+# axis1 mirror L1-alternation | pattern: (?:a|z) | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern (?:a|z)
+encoding byte
+m "a" 0 1
+m "z" 0 1
+n "\xce\xb1"
+
+# axis1 mirror L1-two-member-class | pattern: [az] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [az]
+encoding byte
+m "a" 0 1
+m "z" 0 1
+n "\xce\xb1"
+
+# axis1 mirror L2-bare | pattern: α | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern α
+encoding byte
+m "\xce\xb1" 0 2
+n "\xce\xb2"
+n "\xe2\x82\xac"
+
+# axis1 mirror L2-class | pattern: [α] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [α]
+encoding byte
+m "\xce\xb1" 0 1
+m "\xce\xb2" 0 1
+n "\xe2\x82\xac"
+
+# axis1 mirror L2-neg-class | pattern: [^α] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^α]
+encoding byte
+n "\xce\xb1"
+m "\xce\xb2" 1 2
+m "\xe2\x82\xac" 0 1
+
+# axis1 mirror L2-quantified | pattern: α+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern α+
+encoding byte
+m "\xce\xb1" 0 2
+n "\xce\xb2"
+n "\xe2\x82\xac"
+
+# axis1 mirror L2-esc-bare | pattern: \x{3b1} | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern \x{3b1}
+encoding byte
+perr
+
+# axis1 mirror L2-esc-class | pattern: [\x{3b1}] | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [\x{3b1}]
+encoding byte
+perr
+
+# axis1 mirror L2-esc-neg-class | pattern: [^\x{3b1}] | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [^\x{3b1}]
+encoding byte
+perr
+
+# axis1 mirror L2-esc-quantified | pattern: \x{3b1}+ | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern \x{3b1}+
+encoding byte
+perr
+
+# axis1 mirror L2-range-class | pattern: [Α-α] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [Α-α]
+encoding byte
+m "\xce\xb1" 0 1
+m "\xce\xb2" 0 1
+m "\xe2\x82\xac" 2 3
+
+# axis1 mirror L2-range-neg-class | pattern: [^Α-α] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^Α-α]
+encoding byte
+n "\xce\xb1"
+n "\xce\xb2"
+m "\xe2\x82\xac" 0 1
+
+# axis1 mirror L2-range-quantified | pattern: [Α-α]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [Α-α]+
+encoding byte
+m "\xce\xb1" 0 2
+m "\xce\xb2" 0 2
+m "\xe2\x82\xac" 2 3
+
+# axis1 mirror L2-bounded-bare | pattern: α{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern α{1,2}
+encoding byte
+m "\xce\xb1" 0 2
+n "\xce\xb2"
+n "\xe2\x82\xac"
+
+# axis1 mirror L2-bounded-class | pattern: [α]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [α]{1,2}
+encoding byte
+m "\xce\xb1" 0 2
+m "\xce\xb2" 0 1
+n "\xe2\x82\xac"
+
+# axis1 mirror L2-bounded-neg-class | pattern: [^α]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^α]{1,2}
+encoding byte
+n "\xce\xb1"
+m "\xce\xb2" 1 2
+m "\xe2\x82\xac" 0 2
+
+# axis1 mirror L2-alternation | pattern: (?:α|β) | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern (?:α|β)
+encoding byte
+m "\xce\xb1" 0 2
+m "\xce\xb2" 0 2
+n "\xe2\x82\xac"
+
+# axis1 mirror L2-two-member-class | pattern: [αβ] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [αβ]
+encoding byte
+m "\xce\xb1" 0 1
+m "\xce\xb2" 0 1
+n "\xe2\x82\xac"
+
+# axis1 mirror L3-bare | pattern: € | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern €
+encoding byte
+m "\xe2\x82\xac" 0 3
+n "\xe2\x98\x83"
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-class | pattern: [€] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [€]
+encoding byte
+m "\xe2\x82\xac" 0 1
+m "\xe2\x98\x83" 0 1
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-neg-class | pattern: [^€] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^€]
+encoding byte
+n "\xe2\x82\xac"
+m "\xe2\x98\x83" 1 2
+m "\xf0\x9f\x98\x80" 0 1
+
+# axis1 mirror L3-quantified | pattern: €+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern €+
+encoding byte
+m "\xe2\x82\xac" 0 3
+n "\xe2\x98\x83"
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-esc-bare | pattern: \x{20ac} | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern \x{20ac}
+encoding byte
+perr
+
+# axis1 mirror L3-esc-class | pattern: [\x{20ac}] | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [\x{20ac}]
+encoding byte
+perr
+
+# axis1 mirror L3-esc-neg-class | pattern: [^\x{20ac}] | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [^\x{20ac}]
+encoding byte
+perr
+
+# axis1 mirror L3-esc-quantified | pattern: \x{20ac}+ | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern \x{20ac}+
+encoding byte
+perr
+
+# axis1 mirror L3-range-class | pattern: [₠-€] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [₠-€]
+encoding byte
+m "\xe2\x82\xac" 0 1
+m "\xe2\x98\x83" 0 1
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-range-neg-class | pattern: [^₠-€] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^₠-€]
+encoding byte
+n "\xe2\x82\xac"
+m "\xe2\x98\x83" 1 2
+m "\xf0\x9f\x98\x80" 0 1
+
+# axis1 mirror L3-range-quantified | pattern: [₠-€]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [₠-€]+
+encoding byte
+m "\xe2\x82\xac" 0 3
+m "\xe2\x98\x83" 0 1
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-bounded-bare | pattern: €{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern €{1,2}
+encoding byte
+m "\xe2\x82\xac" 0 3
+n "\xe2\x98\x83"
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-bounded-class | pattern: [€]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [€]{1,2}
+encoding byte
+m "\xe2\x82\xac" 0 2
+m "\xe2\x98\x83" 0 1
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-bounded-neg-class | pattern: [^€]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^€]{1,2}
+encoding byte
+n "\xe2\x82\xac"
+m "\xe2\x98\x83" 1 3
+m "\xf0\x9f\x98\x80" 0 2
+
+# axis1 mirror L3-alternation | pattern: (?:€|☃) | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern (?:€|☃)
+encoding byte
+m "\xe2\x82\xac" 0 3
+m "\xe2\x98\x83" 0 3
+n "\xf0\x9f\x98\x80"
+
+# axis1 mirror L3-two-member-class | pattern: [€☃] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [€☃]
+encoding byte
+m "\xe2\x82\xac" 0 1
+m "\xe2\x98\x83" 0 1
+m "\xf0\x9f\x98\x80" 2 3
+
+# axis1 mirror L4-bare | pattern: 😀 | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern 😀
+encoding byte
+m "\xf0\x9f\x98\x80" 0 4
+n "\xf0\x9f\x98\x81"
+n "a"
+
+# axis1 mirror L4-class | pattern: [😀] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [😀]
+encoding byte
+m "\xf0\x9f\x98\x80" 0 1
+m "\xf0\x9f\x98\x81" 0 1
+n "a"
+
+# axis1 mirror L4-neg-class | pattern: [^😀] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^😀]
+encoding byte
+n "\xf0\x9f\x98\x80"
+m "\xf0\x9f\x98\x81" 3 4
+m "a" 0 1
+
+# axis1 mirror L4-quantified | pattern: 😀+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern 😀+
+encoding byte
+m "\xf0\x9f\x98\x80" 0 4
+n "\xf0\x9f\x98\x81"
+n "a"
+
+# axis1 mirror L4-esc-bare | pattern: \x{1f600} | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern \x{1f600}
+encoding byte
+perr
+
+# axis1 mirror L4-esc-class | pattern: [\x{1f600}] | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [\x{1f600}]
+encoding byte
+perr
+
+# axis1 mirror L4-esc-neg-class | pattern: [^\x{1f600}] | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern [^\x{1f600}]
+encoding byte
+perr
+
+# axis1 mirror L4-esc-quantified | pattern: \x{1f600}+ | still refuses under byte (>U+00FF): [M5.0] stage 2 made this a BASE-grammar RANGE error ("too large... max U+00FF"), not the module-gate error this comment originally pinned
+pattern \x{1f600}+
+encoding byte
+perr
+
+# axis1 mirror L4-range-class | pattern: [🌀-😀] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [🌀-😀]
+encoding byte
+m "\xf0\x9f\x98\x80" 0 1
+m "\xf0\x9f\x98\x81" 0 1
+n "a"
+
+# axis1 mirror L4-range-neg-class | pattern: [^🌀-😀] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^🌀-😀]
+encoding byte
+n "\xf0\x9f\x98\x80"
+n "\xf0\x9f\x98\x81"
+m "a" 0 1
+
+# axis1 mirror L4-range-quantified | pattern: [🌀-😀]+ | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [🌀-😀]+
+encoding byte
+m "\xf0\x9f\x98\x80" 0 4
+m "\xf0\x9f\x98\x81" 0 4
+n "a"
+
+# axis1 mirror L4-bounded-bare | pattern: 😀{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern 😀{1,2}
+encoding byte
+m "\xf0\x9f\x98\x80" 0 4
+n "\xf0\x9f\x98\x81"
+n "a"
+
+# axis1 mirror L4-bounded-class | pattern: [😀]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [😀]{1,2}
+encoding byte
+m "\xf0\x9f\x98\x80" 0 2
+m "\xf0\x9f\x98\x81" 0 2
+n "a"
+
+# axis1 mirror L4-bounded-neg-class | pattern: [^😀]{1,2} | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [^😀]{1,2}
+encoding byte
+n "\xf0\x9f\x98\x80"
+m "\xf0\x9f\x98\x81" 3 4
+m "a" 0 1
+
+# axis1 mirror L4-alternation | pattern: (?:😀|😁) | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern (?:😀|😁)
+encoding byte
+m "\xf0\x9f\x98\x80" 0 4
+m "\xf0\x9f\x98\x81" 0 4
+n "a"
+
+# axis1 mirror L4-two-member-class | pattern: [😀😁] | LIVE pcrec/byte == python/re-bytes
+# pcre2-only
+pattern [😀😁]
+encoding byte
+m "\xf0\x9f\x98\x80" 0 1
+m "\xf0\x9f\x98\x81" 0 1
+n "a"
+

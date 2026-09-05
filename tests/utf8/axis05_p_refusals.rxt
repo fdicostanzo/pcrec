@@ -1,0 +1,145 @@
+# [M5.0] D27 axis 5 -- \p refusals (extract Sec 3.1's 30-measured-error-147
+# survey + the 4 block spellings). 34 blocks, ONE case each (a refusal has one
+# case -- extract's own note) = 34 cases. These are PERMANENT refusals: once
+# 'unicode-props' lands, PCRE2 itself still refuses every one of these bodies
+# (error 147, "unknown property name") -- so today's `perr` (currently for the
+# module-gate reason) IS this block's enduring correct shape; only the
+# diagnostic WORDING changes, which D26 rules out of scope. Confirmed live,
+# this cell's libpcre2 10.37 2021-05-26, against BOTH options=0 and PCRE2_UTF.
+
+# axis5 block p-refusal-A | pattern: \p{A} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{A}
+perr
+
+# axis5 block p-refusal-B | pattern: \p{B} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{B}
+perr
+
+# axis5 block p-refusal-D | pattern: \p{D} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{D}
+perr
+
+# axis5 block p-refusal-E | pattern: \p{E} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{E}
+perr
+
+# axis5 block p-refusal-F | pattern: \p{F} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{F}
+perr
+
+# axis5 block p-refusal-G | pattern: \p{G} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{G}
+perr
+
+# axis5 block p-refusal-H | pattern: \p{H} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{H}
+perr
+
+# axis5 block p-refusal-I | pattern: \p{I} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{I}
+perr
+
+# axis5 block p-refusal-J | pattern: \p{J} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{J}
+perr
+
+# axis5 block p-refusal-K | pattern: \p{K} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{K}
+perr
+
+# axis5 block p-refusal-O | pattern: \p{O} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{O}
+perr
+
+# axis5 block p-refusal-Q | pattern: \p{Q} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Q}
+perr
+
+# axis5 block p-refusal-R | pattern: \p{R} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{R}
+perr
+
+# axis5 block p-refusal-T | pattern: \p{T} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{T}
+perr
+
+# axis5 block p-refusal-U | pattern: \p{U} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{U}
+perr
+
+# axis5 block p-refusal-V | pattern: \p{V} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{V}
+perr
+
+# axis5 block p-refusal-W | pattern: \p{W} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{W}
+perr
+
+# axis5 block p-refusal-X | pattern: \p{X} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{X}
+perr
+
+# axis5 block p-refusal-Y | pattern: \p{Y} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Y}
+perr
+
+# axis5 block p-refusal-Foo | pattern: \p{Foo} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Foo}
+perr
+
+# axis5 block p-refusal-Bar | pattern: \p{Bar} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Bar}
+perr
+
+# axis5 block p-refusal-XYZ | pattern: \p{XYZ} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{XYZ}
+perr
+
+# axis5 block p-refusal-Frobnicate | pattern: \p{Frobnicate} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Frobnicate}
+perr
+
+# axis5 block p-refusal-Digit | pattern: \p{Digit} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Digit}
+perr
+
+# axis5 block p-refusal-Number | pattern: \p{Number} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Number}
+perr
+
+# axis5 block p-refusal-Punct | pattern: \p{Punct} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Punct}
+perr
+
+# axis5 block p-refusal-Emoji_Modifier | pattern: \p{Emoji_Modifier} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Emoji_Modifier}
+perr
+
+# axis5 block p-refusal-Grapheme_Base | pattern: \p{Grapheme_Base} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Grapheme_Base}
+perr
+
+# axis5 block p-refusal-Grapheme_Extend | pattern: \p{Grapheme_Extend} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Grapheme_Extend}
+perr
+
+# axis5 block p-refusal-Word_Break | pattern: \p{Word_Break} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
+pattern \p{Word_Break}
+perr
+
+# axis5 block block-spelling-InGreek | pattern: \p{InGreek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
+pattern \p{InGreek}
+perr
+
+# axis5 block block-spelling-Block=Greek | pattern: \p{Block=Greek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
+pattern \p{Block=Greek}
+perr
+
+# axis5 block block-spelling-blk=Greek | pattern: \p{blk=Greek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
+pattern \p{blk=Greek}
+perr
+
+# axis5 block block-spelling-IsGreek | pattern: \p{IsGreek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
+pattern \p{IsGreek}
+perr
+

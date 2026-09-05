@@ -1,0 +1,664 @@
+# [M5.0] D27 axis 6 -- caseless fold: cross-block pairs, non-folds, closure,
+# fold-before-negate (extract Sec 4.1-4.3). 48 blocks (see generator header for
+# the count discrepancy vs the table's ~60), 4 subjects each -> 192 cases.
+# Oracle: libpcre2, options=PCRE2_UTF|PCRE2_CASELESS (pcrec has no UCP axis,
+# so the non-UCP column is pcrec's own promised semantics throughout).
+#
+# PINNED TO TODAY'S BEHAVIOUR, NOT PROMOTED TO THE ORACLE ABOVE (lane
+# utfprom, [M5.0] stage 2 close, on the manager's explicit instruction):
+# non-ASCII caseless folding is not implemented yet (stage 4) -- pcrec's
+# `(?i)`/`flags i` under `-e utf8` does ASCII-only fold today (k<->K, a<->A,
+# ..., the pre-existing VM ascii-fold form), so every "partner"/"closure"/
+# "fold-before-negate" cell that needs a REAL Unicode fold (KELVIN
+# SIGN<->k, LONG S<->s, etc.) does not match. 44 of 48 blocks compile (4
+# stay `perr`: `[^\p{Ll}]`-bodied fold-before-negate cells still need
+# module `unicode-props`, stage 3). Of the 44, 20 blocks (29 cells)
+# disagree with the PCRE2_UTF|PCRE2_CASELESS oracle recorded in each
+# block's own comment above -- **that oracle comment is left UNCHANGED
+# for provenance**, and the LIVE case lines below it are pcrec's REAL
+# observed answer today, added with `flags i` (missing from every block as
+# authored -- the corpus's own future-case comments assume it). This is a
+# KNOWN, pre-identified gap (stage 4), not a stage-2 finding: landing full
+# Unicode case folding is "restore the oracle values from the comments
+# above, drop the ASCII-fold values, re-run."
+
+# axis6 block pair-KELVIN-lower-bare | pattern: k
+#   [lower U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern k
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block pair-KELVIN-upper-bare | pattern: K
+#   [lower U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern K
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block pair-KELVIN-lower-esc | pattern: \x{6b}
+#   [lower U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{6b}
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block pair-KELVIN-upper-esc | pattern: \x{4b}
+#   [lower U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{4b}
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block pair-ANGSTROM-lower-bare | pattern: a
+#   [lower U+0061] m "a" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212B] n "\xe2\x84\xab"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern a
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "\xe2\x84\xab"
+n "x"
+
+# axis6 block pair-ANGSTROM-upper-bare | pattern: A
+#   [lower U+0061] m "a" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212B] n "\xe2\x84\xab"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern A
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "\xe2\x84\xab"
+n "x"
+
+# axis6 block pair-ANGSTROM-lower-esc | pattern: \x{61}
+#   [lower U+0061] m "a" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212B] n "\xe2\x84\xab"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{61}
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "\xe2\x84\xab"
+n "x"
+
+# axis6 block pair-ANGSTROM-upper-esc | pattern: \x{41}
+#   [lower U+0061] m "a" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+212B] n "\xe2\x84\xab"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{41}
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "\xe2\x84\xab"
+n "x"
+
+# axis6 block pair-OHM-lower-bare | pattern: o
+#   [lower U+006F] m "o" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004F] m "O" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+2126] n "\xe2\x84\xa6"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern o
+encoding utf8
+flags i
+m "o" 0 1
+m "O" 0 1
+n "\xe2\x84\xa6"
+n "x"
+
+# axis6 block pair-OHM-upper-bare | pattern: O
+#   [lower U+006F] m "o" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004F] m "O" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+2126] n "\xe2\x84\xa6"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern O
+encoding utf8
+flags i
+m "o" 0 1
+m "O" 0 1
+n "\xe2\x84\xa6"
+n "x"
+
+# axis6 block pair-OHM-lower-esc | pattern: \x{6f}
+#   [lower U+006F] m "o" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004F] m "O" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+2126] n "\xe2\x84\xa6"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{6f}
+encoding utf8
+flags i
+m "o" 0 1
+m "O" 0 1
+n "\xe2\x84\xa6"
+n "x"
+
+# axis6 block pair-OHM-upper-esc | pattern: \x{4f}
+#   [lower U+006F] m "o" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004F] m "O" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+2126] n "\xe2\x84\xa6"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{4f}
+encoding utf8
+flags i
+m "o" 0 1
+m "O" 0 1
+n "\xe2\x84\xa6"
+n "x"
+
+# axis6 block pair-MICRO-lower-bare | pattern: μ
+#   [lower U+03BC] m "\xce\xbc" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+039C] m "\xce\x9c" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+00B5] m "\xc2\xb5" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern μ
+encoding utf8
+flags i
+m "\xce\xbc" 0 2
+n "\xce\x9c"
+n "\xc2\xb5"
+n "x"
+
+# axis6 block pair-MICRO-upper-bare | pattern: Μ
+#   [lower U+03BC] m "\xce\xbc" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+039C] m "\xce\x9c" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+00B5] m "\xc2\xb5" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern Μ
+encoding utf8
+flags i
+n "\xce\xbc"
+m "\xce\x9c" 0 2
+n "\xc2\xb5"
+n "x"
+
+# axis6 block pair-MICRO-lower-esc | pattern: \x{3bc}
+#   [lower U+03BC] m "\xce\xbc" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+039C] m "\xce\x9c" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+00B5] m "\xc2\xb5" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{3bc}
+encoding utf8
+flags i
+m "\xce\xbc" 0 2
+n "\xce\x9c"
+n "\xc2\xb5"
+n "x"
+
+# axis6 block pair-MICRO-upper-esc | pattern: \x{39c}
+#   [lower U+03BC] m "\xce\xbc" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+039C] m "\xce\x9c" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+00B5] m "\xc2\xb5" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{39c}
+encoding utf8
+flags i
+n "\xce\xbc"
+m "\xce\x9c" 0 2
+n "\xc2\xb5"
+n "x"
+
+# axis6 block pair-LONGS-lower-bare | pattern: s
+#   [lower U+0073] m "s" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] m "S" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+017F] m "\xc5\xbf" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern s
+encoding utf8
+flags i
+m "s" 0 1
+m "S" 0 1
+n "\xc5\xbf"
+n "x"
+
+# axis6 block pair-LONGS-upper-bare | pattern: S
+#   [lower U+0073] m "s" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] m "S" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+017F] m "\xc5\xbf" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern S
+encoding utf8
+flags i
+m "s" 0 1
+m "S" 0 1
+n "\xc5\xbf"
+n "x"
+
+# axis6 block pair-LONGS-lower-esc | pattern: \x{73}
+#   [lower U+0073] m "s" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] m "S" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+017F] m "\xc5\xbf" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{73}
+encoding utf8
+flags i
+m "s" 0 1
+m "S" 0 1
+n "\xc5\xbf"
+n "x"
+
+# axis6 block pair-LONGS-upper-esc | pattern: \x{53}
+#   [lower U+0073] m "s" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] m "S" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+017F] m "\xc5\xbf" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{53}
+encoding utf8
+flags i
+m "s" 0 1
+m "S" 0 1
+n "\xc5\xbf"
+n "x"
+
+# axis6 block pair-FINALSIGMA-lower-bare | pattern: σ
+#   [lower U+03C3] m "\xcf\x83" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+03A3] m "\xce\xa3" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+03C2] m "\xcf\x82" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern σ
+encoding utf8
+flags i
+m "\xcf\x83" 0 2
+n "\xce\xa3"
+n "\xcf\x82"
+n "x"
+
+# axis6 block pair-FINALSIGMA-upper-bare | pattern: Σ
+#   [lower U+03C3] m "\xcf\x83" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+03A3] m "\xce\xa3" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+03C2] m "\xcf\x82" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern Σ
+encoding utf8
+flags i
+n "\xcf\x83"
+m "\xce\xa3" 0 2
+n "\xcf\x82"
+n "x"
+
+# axis6 block pair-FINALSIGMA-lower-esc | pattern: \x{3c3}
+#   [lower U+03C3] m "\xcf\x83" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+03A3] m "\xce\xa3" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+03C2] m "\xcf\x82" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{3c3}
+encoding utf8
+flags i
+m "\xcf\x83" 0 2
+n "\xce\xa3"
+n "\xcf\x82"
+n "x"
+
+# axis6 block pair-FINALSIGMA-upper-esc | pattern: \x{3a3}
+#   [lower U+03C3] m "\xcf\x83" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+03A3] m "\xce\xa3" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [partner-0 U+03C2] m "\xcf\x82" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{3a3}
+encoding utf8
+flags i
+n "\xcf\x83"
+m "\xce\xa3" 0 2
+n "\xcf\x82"
+n "x"
+
+# axis6 block nonfold-dotted-I-vs-i-lower-bare | pattern: i
+#   [self U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0130] n "\xc4\xb0"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern i
+encoding utf8
+flags i
+m "i" 0 1
+m "I" 0 1
+n "\xc4\xb0"
+n "x"
+
+# axis6 block nonfold-dotted-I-vs-i-upper-bare | pattern: I
+#   [self U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0130] n "\xc4\xb0"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern I
+encoding utf8
+flags i
+m "i" 0 1
+m "I" 0 1
+n "\xc4\xb0"
+n "x"
+
+# axis6 block nonfold-dotted-I-vs-i-lower-esc | pattern: \x{69}
+#   [self U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0130] n "\xc4\xb0"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{69}
+encoding utf8
+flags i
+m "i" 0 1
+m "I" 0 1
+n "\xc4\xb0"
+n "x"
+
+# axis6 block nonfold-dotted-I-vs-i-upper-esc | pattern: \x{49}
+#   [self U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0130] n "\xc4\xb0"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{49}
+encoding utf8
+flags i
+m "i" 0 1
+m "I" 0 1
+n "\xc4\xb0"
+n "x"
+
+# axis6 block nonfold-dotless-i-vs-I-lower-bare | pattern: I
+#   [self U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0131] n "\xc4\xb1"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern I
+encoding utf8
+flags i
+m "I" 0 1
+m "i" 0 1
+n "\xc4\xb1"
+n "x"
+
+# axis6 block nonfold-dotless-i-vs-I-upper-bare | pattern: i
+#   [self U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0131] n "\xc4\xb1"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern i
+encoding utf8
+flags i
+m "I" 0 1
+m "i" 0 1
+n "\xc4\xb1"
+n "x"
+
+# axis6 block nonfold-dotless-i-vs-I-lower-esc | pattern: \x{49}
+#   [self U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0131] n "\xc4\xb1"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{49}
+encoding utf8
+flags i
+m "I" 0 1
+m "i" 0 1
+n "\xc4\xb1"
+n "x"
+
+# axis6 block nonfold-dotless-i-vs-I-upper-esc | pattern: \x{69}
+#   [self U+0049] m "I" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [case-partner U+0069] m "i" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [oddball-nonfold U+0131] n "\xc4\xb1"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern \x{69}
+encoding utf8
+flags i
+m "I" 0 1
+m "i" 0 1
+n "\xc4\xb1"
+n "x"
+
+# axis6 block closure-bare-k | pattern: k | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
+#   [k U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [K U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern k
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block closure-class-k | pattern: [k] | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
+#   [k U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [K U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern [k]
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block closure-class-K | pattern: [K] | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
+#   [k U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [K U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern [K]
+encoding utf8
+flags i
+m "k" 0 1
+m "K" 0 1
+n "\xe2\x84\xaa"
+n "x"
+
+# axis6 block closure-class-kelvin | pattern: [\x{212a}] | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
+#   [k U+006B] m "k" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [K U+004B] m "K" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] n "x"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern [\x{212a}]
+encoding utf8
+flags i
+n "k"
+n "K"
+m "\xe2\x84\xaa" 0 3
+n "x"
+
+# axis6 block negate-neg-k-lower-bare | pattern: [^k]
+#   [lower U+006B] n "k"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^k]
+encoding utf8
+flags i
+n "k"
+n "K"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-k-upper-bare | pattern: [^K]
+#   [lower U+006B] n "k"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^K]
+encoding utf8
+flags i
+n "k"
+n "K"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-k-lower-esc | pattern: [^\x{6b}]
+#   [lower U+006B] n "k"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\x{6b}]
+encoding utf8
+flags i
+n "k"
+n "K"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-k-upper-esc | pattern: [^\x{4b}]
+#   [lower U+006B] n "k"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\x{4b}]
+encoding utf8
+flags i
+n "k"
+n "K"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-s-lower-bare | pattern: [^s]
+#   [lower U+0073] n "s"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^s]
+encoding utf8
+flags i
+n "s"
+n "S"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-s-upper-bare | pattern: [^S]
+#   [lower U+0073] n "s"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^S]
+encoding utf8
+flags i
+n "s"
+n "S"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-s-lower-esc | pattern: [^\x{73}]
+#   [lower U+0073] n "s"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\x{73}]
+encoding utf8
+flags i
+n "s"
+n "S"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-s-upper-esc | pattern: [^\x{53}]
+#   [lower U+0073] n "s"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\x{53}]
+encoding utf8
+flags i
+n "s"
+n "S"
+m "x" 0 1
+m "5" 0 1
+
+# axis6 block negate-neg-Ll-bare | pattern: [^\p{Ll}]
+#   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\p{Ll}]
+perr
+
+# axis6 block negate-neg-Ll-dup1 | pattern: [^\p{Ll}]
+#   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\p{Ll}]
+perr
+
+# axis6 block negate-neg-Ll-dup2 | pattern: [^\p{Ll}]
+#   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\p{Ll}]
+perr
+
+# axis6 block negate-neg-Ll-dup3 | pattern: [^\p{Ll}]
+#   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+pattern [^\p{Ll}]
+perr
+

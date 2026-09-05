@@ -1,0 +1,321 @@
+# [M5.0] D27 axis 2 -- the 1-byte<->multi-byte class boundary (extract Sec 8.3
+# row 2 / Sec 5.6's `[a\x{3b1}]` example). 24 blocks (12 shapes x 2 boundary
+# pairs), 4 subjects each -> 96 cases.
+# Oracle: libpcre2, options=PCRE2_UTF (well-formed subjects) /
+# PCRE2_MATCH_INVALID_UTF (the one ill-formed-neighbour subject per block).
+#
+# PROMOTED (lane utfprom, [M5.0] stage 2 close): 22 of 24 blocks now compile
+# and match under `-e utf8`, zero divergences from pcrec's own live
+# behaviour. The 2 `\p{L}`/`\p{N}` property blocks stay `perr` -- module
+# `unicode-props` is still unbuilt (stage 3). CORPUS FIX applied here: every
+# `\x{}` block in this file (8 of the 22 promoted) was missing its own
+# `encoding utf8` line -- present on every LITERAL sibling block in this
+# same file, and implied by the file's own stated PCRE2_UTF oracle basis --
+# so as authored it would have compiled (if at all) under the bare BYTE
+# default instead of utf8. Added `encoding utf8` to match the sibling
+# pattern and the file's stated intent; this is a corpus-authoring omission
+# fixed at promotion time, not a pcrec finding (the exact `tests/recursion/
+# dupnames.rxt` `features` precedent -- see that directory's CLAUDE.md).
+
+# axis2 block edge-lit-class | pattern: []
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern []
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-esc-class | pattern: [\x{7f}\x{80}]
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [\x{7f}\x{80}]
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-lit-range | pattern: [-]
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [-]
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-esc-range | pattern: [\x{7f}-\x{80}]
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [\x{7f}-\x{80}]
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-lit-neg-class | pattern: [^]
+#   [x-member] n "\x7f"   # oracle=PCRE2_UTF
+#   [y-member] n "\xc2\x80"   # oracle=PCRE2_UTF
+#   [non-member] m "0" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^]
+encoding utf8
+n "\x7f"
+n "\xc2\x80"
+m "0" 0 1
+n "\xc2"
+
+# axis2 block edge-esc-neg-class | pattern: [^\x{7f}\x{80}]
+#   [x-member] n "\x7f"   # oracle=PCRE2_UTF
+#   [y-member] n "\xc2\x80"   # oracle=PCRE2_UTF
+#   [non-member] m "0" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^\x{7f}\x{80}]
+encoding utf8
+n "\x7f"
+n "\xc2\x80"
+m "0" 0 1
+n "\xc2"
+
+# axis2 block edge-lit-neg-range | pattern: [^-]
+#   [x-member] n "\x7f"   # oracle=PCRE2_UTF
+#   [y-member] n "\xc2\x80"   # oracle=PCRE2_UTF
+#   [non-member] m "0" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^-]
+encoding utf8
+n "\x7f"
+n "\xc2\x80"
+m "0" 0 1
+n "\xc2"
+
+# axis2 block edge-esc-neg-range | pattern: [^\x{7f}-\x{80}]
+#   [x-member] n "\x7f"   # oracle=PCRE2_UTF
+#   [y-member] n "\xc2\x80"   # oracle=PCRE2_UTF
+#   [non-member] m "0" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^\x{7f}-\x{80}]
+encoding utf8
+n "\x7f"
+n "\xc2\x80"
+m "0" 0 1
+n "\xc2"
+
+# axis2 block edge-lit-quantified | pattern: []+
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern []+
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-range-quantified | pattern: [-]+
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [-]+
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-alternation | pattern: (?:|)
+#   [x-member] m "\x7f" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern (?:|)
+encoding utf8
+m "\x7f" 0 1
+m "\xc2\x80" 0 2
+n "0"
+n "\xc2"
+
+# axis2 block edge-property | pattern: \p{L}
+#   [x-member] n "\x7f"   # oracle=PCRE2_UTF
+#   [y-member] n "\xc2\x80"   # oracle=PCRE2_UTF
+#   [non-member] n "0"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xc2"   # oracle=PCRE2_MATCH_INVALID_UTF
+pattern \p{L}
+perr
+
+# axis2 block worked-example-lit-class | pattern: [aα]
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [aα]
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-esc-class | pattern: [\x{61}\x{3b1}]
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [\x{61}\x{3b1}]
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-lit-range | pattern: [a-α]
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [a-α]
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-esc-range | pattern: [\x{61}-\x{3b1}]
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [\x{61}-\x{3b1}]
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-lit-neg-class | pattern: [^aα]
+#   [x-member] n "a"   # oracle=PCRE2_UTF
+#   [y-member] n "\xce\xb1"   # oracle=PCRE2_UTF
+#   [non-member] m "5" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^aα]
+encoding utf8
+n "a"
+n "\xce\xb1"
+m "5" 0 1
+n "\xce"
+
+# axis2 block worked-example-esc-neg-class | pattern: [^\x{61}\x{3b1}]
+#   [x-member] n "a"   # oracle=PCRE2_UTF
+#   [y-member] n "\xce\xb1"   # oracle=PCRE2_UTF
+#   [non-member] m "5" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^\x{61}\x{3b1}]
+encoding utf8
+n "a"
+n "\xce\xb1"
+m "5" 0 1
+n "\xce"
+
+# axis2 block worked-example-lit-neg-range | pattern: [^a-α]
+#   [x-member] n "a"   # oracle=PCRE2_UTF
+#   [y-member] n "\xce\xb1"   # oracle=PCRE2_UTF
+#   [non-member] m "5" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^a-α]
+encoding utf8
+n "a"
+n "\xce\xb1"
+m "5" 0 1
+n "\xce"
+
+# axis2 block worked-example-esc-neg-range | pattern: [^\x{61}-\x{3b1}]
+#   [x-member] n "a"   # oracle=PCRE2_UTF
+#   [y-member] n "\xce\xb1"   # oracle=PCRE2_UTF
+#   [non-member] m "5" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [^\x{61}-\x{3b1}]
+encoding utf8
+n "a"
+n "\xce\xb1"
+m "5" 0 1
+n "\xce"
+
+# axis2 block worked-example-lit-quantified | pattern: [aα]+
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [aα]+
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-range-quantified | pattern: [a-α]+
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern [a-α]+
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-alternation | pattern: (?:a|α)
+#   [x-member] m "a" 0 1   # oracle=PCRE2_UTF
+#   [y-member] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+#   [non-member] n "5"   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+# pcre2-only
+pattern (?:a|α)
+encoding utf8
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "5"
+n "\xce"
+
+# axis2 block worked-example-property | pattern: \p{N}
+#   [x-member] n "a"   # oracle=PCRE2_UTF
+#   [y-member] n "\xce\xb1"   # oracle=PCRE2_UTF
+#   [non-member] m "5" 0 1   # oracle=PCRE2_UTF
+#   [ill-formed-neighbour] n "\xce"   # oracle=PCRE2_MATCH_INVALID_UTF
+pattern \p{N}
+perr
+

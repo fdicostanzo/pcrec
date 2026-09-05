@@ -576,3 +576,46 @@ adopting a new reference version is a deliberate re-measurement event
 (the pcre2_options.md standing constraint, D26's moving-target clause).
 Revisit when: the reference box's libpcre2 upgrades, or Frank rules a
 version adoption, or a PC-2 re-survey fires.
+
+## U14 — `tests/harness/verify_rxt.py`'s subject decoder is byte-oriented, not UTF-8-aware (`encoding utf8`, [M5.0] stage 2, found by lane utfprom promoting tests/utf8/)
+
+**Not a divergence in python `re`'s own semantics** — every other entry in
+this file is about the regex ENGINE; this one is about the shared
+harness's own oracle TOOLING. `verify_rxt.py`'s `decode_subject` maps
+every `\xHH` escape to one python `str` character one-for-one (correct for
+the project's byte-tier default), while the block's PATTERN text is read
+from the `.rxt` file as real UTF-8 and compiled by `re.compile` as a true
+Unicode string. Under `encoding utf8` (and, measured, under `encoding
+byte` too whenever a LITERAL multi-byte character sits directly in the
+pattern source — the byte-decomposition axis1/2/3 mirror files exist to
+exercise) a multi-byte UTF-8 sequence therefore compiles or matches as the
+WRONG NUMBER of "characters" under python, independent of whether pcrec's
+own answer is right.
+
+**Repro**: pattern `α` (one real Unicode character U+03B1, `-e utf8`)
+against subject `"\xce\xb1"` (alpha's own UTF-8 bytes) — `re.compile`
+compiles a 1-character pattern; `decode_subject` turns `\xce\xb1` into
+the 2-character python string `"Î±"`. The two can never align at
+the right byte offset, so a correct pcrec answer reads as a python
+"failure" that is really a decode-scale mismatch, not a semantic one.
+MEASURED at promotion: 211 spurious failures across `tests/utf8/`'s 13
+files under the DEFAULT sweep, on cells `tests/harness/run.sh` (the real,
+live oracle) answers correctly.
+
+**Impact**: every affected block in `tests/utf8/` carries `# pcre2-only`
+(255 blocks marked at promotion) — see that directory's own CLAUDE.md.
+`python3 tests/harness/verify_rxt.py tests/utf8` is 100% PASS on what's
+left (376/376, 959 skipped for this and the ordinary
+`no-python-expression` reason combined).
+
+**Not fixed here**: a UTF-8-aware subject decoder in `verify_rxt.py`
+(decode a block's subject as UTF-8 bytes when its `encoding` directive
+says `utf8`, and re-encode the pattern to bytes and compile in BYTES mode
+throughout — the fix has to touch both sides, not just the subject, since
+python's `re` module does not mix `str` patterns with `bytes` subjects) is
+shared harness infrastructure outside this lane's `tests/utf8/`-only
+scope; filed as the natural next step for whoever builds this corpus's
+own libpcre2 differential (`tests/utf8/CLAUDE.md`'s "Maintenance" section)
+— that instrument needs UTF-8-aware oracle machinery anyway; teaching
+`verify_rxt.py` the same trick may or may not be worth a second
+implementation once it exists.

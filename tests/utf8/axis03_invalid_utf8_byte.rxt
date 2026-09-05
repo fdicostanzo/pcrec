@@ -1,0 +1,227 @@
+# [M5.0] D27 axis 3 MIRROR -- byte-encoding control arm for axis03_invalid_utf8.rxt.
+# Every primary pattern ('a' / 'a.+a') is plain base grammar, so it compiles
+# under `-e byte` today. For before/after positions the byte-mode answer
+# usually agrees with the utf8-promised barrier answer (a bare 'a' does not
+# care what follows/precedes it). For the THROUGH position it does NOT: a byte
+# engine's `.` has no notion of an ill-formed sequence and happily consumes
+# the "bad" bytes as ordinary bytes, so `a.+a` MATCHES through them under byte
+# encoding where the utf8 promise is NO MATCH -- exactly the reason the utf8
+# encoding axis needs to exist. Every real case below is the LIVE agreement of
+# pcrec/byte and python's bytes `re` engine.
+
+# axis3 mirror isolated-continuation-before | kind=isolated-continuation | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\x80" 0 1
+m "a\x80z" 0 1
+n "b\x80"
+n "\x80"
+
+# axis3 mirror isolated-continuation-after | kind=isolated-continuation | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\x80a" 1 2
+m "z\x80a" 2 3
+n "\x80b"
+n "\x80"
+
+# axis3 mirror isolated-continuation-through | kind=isolated-continuation | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\x80a" 0 3
+m "a\x80zza" 0 5
+n "a\x80z"
+n "\x80"
+
+# axis3 mirror illegal-fe-ff-before | kind=illegal-fe-ff | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xfe" 0 1
+m "a\xfez" 0 1
+n "b\xfe"
+n "\xfe"
+
+# axis3 mirror illegal-fe-ff-after | kind=illegal-fe-ff | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xfea" 1 2
+m "z\xfea" 2 3
+n "\xfeb"
+n "\xfe"
+
+# axis3 mirror illegal-fe-ff-through | kind=illegal-fe-ff | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xfea" 0 3
+m "a\xfezza" 0 5
+n "a\xfez"
+n "\xfe"
+
+# axis3 mirror trunc-missing-1-before | kind=trunc-missing-1 | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xce" 0 1
+m "a\xcez" 0 1
+n "b\xce"
+n "\xce"
+
+# axis3 mirror trunc-missing-1-after | kind=trunc-missing-1 | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xcea" 1 2
+m "z\xcea" 2 3
+n "\xceb"
+n "\xce"
+
+# axis3 mirror trunc-missing-1-through | kind=trunc-missing-1 | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xcea" 0 3
+m "a\xcezza" 0 5
+n "a\xcez"
+n "\xce"
+
+# axis3 mirror trunc-missing-2-before | kind=trunc-missing-2 | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xe2" 0 1
+m "a\xe2z" 0 1
+n "b\xe2"
+n "\xe2"
+
+# axis3 mirror trunc-missing-2-after | kind=trunc-missing-2 | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xe2a" 1 2
+m "z\xe2a" 2 3
+n "\xe2b"
+n "\xe2"
+
+# axis3 mirror trunc-missing-2-through | kind=trunc-missing-2 | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xe2a" 0 3
+m "a\xe2zza" 0 5
+n "a\xe2z"
+n "\xe2"
+
+# axis3 mirror overlong-2byte-before | kind=overlong-2byte | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xc0\x80" 0 1
+m "a\xc0\x80z" 0 1
+n "b\xc0\x80"
+n "\xc0\x80"
+
+# axis3 mirror overlong-2byte-after | kind=overlong-2byte | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xc0\x80a" 2 3
+m "z\xc0\x80a" 3 4
+n "\xc0\x80b"
+n "\xc0\x80"
+
+# axis3 mirror overlong-2byte-through | kind=overlong-2byte | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xc0\x80a" 0 4
+m "a\xc0\x80zza" 0 6
+n "a\xc0\x80z"
+n "\xc0\x80"
+
+# axis3 mirror overlong-3byte-before | kind=overlong-3byte | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xe0\x80\x80" 0 1
+m "a\xe0\x80\x80z" 0 1
+n "b\xe0\x80\x80"
+n "\xe0\x80\x80"
+
+# axis3 mirror overlong-3byte-after | kind=overlong-3byte | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xe0\x80\x80a" 3 4
+m "z\xe0\x80\x80a" 4 5
+n "\xe0\x80\x80b"
+n "\xe0\x80\x80"
+
+# axis3 mirror overlong-3byte-through | kind=overlong-3byte | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xe0\x80\x80a" 0 5
+m "a\xe0\x80\x80zza" 0 7
+n "a\xe0\x80\x80z"
+n "\xe0\x80\x80"
+
+# axis3 mirror surrogate-before | kind=surrogate | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xed\xa0\x80" 0 1
+m "a\xed\xa0\x80z" 0 1
+n "b\xed\xa0\x80"
+n "\xed\xa0\x80"
+
+# axis3 mirror surrogate-after | kind=surrogate | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xed\xa0\x80a" 3 4
+m "z\xed\xa0\x80a" 4 5
+n "\xed\xa0\x80b"
+n "\xed\xa0\x80"
+
+# axis3 mirror surrogate-through | kind=surrogate | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xed\xa0\x80a" 0 5
+m "a\xed\xa0\x80zza" 0 7
+n "a\xed\xa0\x80z"
+n "\xed\xa0\x80"
+
+# axis3 mirror above-10ffff-before | kind=above-10ffff | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xf4\x90\x80\x80" 0 1
+m "a\xf4\x90\x80\x80z" 0 1
+n "b\xf4\x90\x80\x80"
+n "\xf4\x90\x80\x80"
+
+# axis3 mirror above-10ffff-after | kind=above-10ffff | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xf4\x90\x80\x80a" 4 5
+m "z\xf4\x90\x80\x80a" 5 6
+n "\xf4\x90\x80\x80b"
+n "\xf4\x90\x80\x80"
+
+# axis3 mirror above-10ffff-through | kind=above-10ffff | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xf4\x90\x80\x80a" 0 6
+m "a\xf4\x90\x80\x80zza" 0 8
+n "a\xf4\x90\x80\x80z"
+n "\xf4\x90\x80\x80"
+
+# axis3 mirror five-byte-form-before | kind=five-byte-form | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "a\xf8\x88\x80\x80\x80" 0 1
+m "a\xf8\x88\x80\x80\x80z" 0 1
+n "b\xf8\x88\x80\x80\x80"
+n "\xf8\x88\x80\x80\x80"
+
+# axis3 mirror five-byte-form-after | kind=five-byte-form | pattern: a | LIVE pcrec/byte == python/re-bytes
+pattern a
+encoding byte
+m "\xf8\x88\x80\x80\x80a" 5 6
+m "z\xf8\x88\x80\x80\x80a" 6 7
+n "\xf8\x88\x80\x80\x80b"
+n "\xf8\x88\x80\x80\x80"
+
+# axis3 mirror five-byte-form-through | kind=five-byte-form | pattern: a.+a | LIVE pcrec/byte == python/re-bytes
+pattern a.+a
+encoding byte
+m "a\xf8\x88\x80\x80\x80a" 0 7
+m "a\xf8\x88\x80\x80\x80zza" 0 9
+n "a\xf8\x88\x80\x80\x80z"
+n "\xf8\x88\x80\x80\x80"
+
