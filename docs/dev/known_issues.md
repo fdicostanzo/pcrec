@@ -3700,6 +3700,46 @@ violated by the DFA's start-anywhere self-loop, reachable from an ordinary
 `startpos=0`, and closing it is a structural change this lane did not have
 the charter for.
 
+## K51 — [M5.0] STAGE 2 (2026-09-05, found by the FULL §8.5 sweep on ubuntubudu — the 250-block slice ran 0 divergences twice and could not see it): under `-e utf8` an artifact can return a TYPED GIVE-UP where the byte artifact ANSWERS, on a pattern whose byte-tier viability depends on a rung the utf8 lowering declines.
+
+WITNESS: `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}` (the
+corpus's K23-family step-explosion shape). Byte artifact: MATCH on every §8.5
+subject (empty, "a", "aa", "ab"). utf8 artifact: rc -3 = RX_ERR_FRAMES on all
+of them — 8 divergence cells, the full sweep's ONLY diverging pattern out of
+2,964 ASCII blocks (run log: ubuntubudu build/encsweep_full.log, 2026-09-05).
+
+MECHANISM, measured not guessed: the artifacts' own stamps say it — byte
+RX_VM_RUNGS 0x11 (the cursor span-loop rung is what tames the nested
+quantifiers), utf8 RX_VM_RUNGS 0x10 (the rung DECLINED: `[^a]`/`.` bodies
+stop being single-class cursor-scannable once the code-point complement
+lowers to the multi-byte sequence alternation). The iteration falls to the
+frames rung and the exponential shape exhausts ANY capacity —
+--backtrack-frames=65536 still returns `frames` (probe, same box, same day)
+— so this is RUNG LOSS, not marginal sizing, and no budget re-calibration
+fixes it. RX_VM_PRUNES also differs (0x2 vs 0x3).
+
+WHAT IT FALSIFIES, and what it does not: utf8_design.md §12 P-11 ("the ASCII
+corpus is answer-identical across encodings") is FALSE as stated — the design
+priced rung loss as "throughput, never correctness" (the u.rep.revbody
+resolution), and this is the edge of that pricing: on a shape that only
+completes BY the rung, the throughput price surfaces as a typed give-up. It
+is NOT a wrong answer (the give-up is honest and typed), and no non-adversarial
+pattern is known to reach it.
+
+HELD BY: tests/codegen/manifests/k51_giveup_divergers.txt — §8.5's named
+give-up-divergence manifest (this pattern, exactly; excused in exactly one
+direction — byte answers, utf8 typed give-up — with staleness and
+now-agrees guards so the row expires loudly, never silently).
+
+FIX DIRECTION (unscheduled): generalize the cursor rung to byte-sequence
+bodies (a bounded scan over a lowered sequence alternation is still a scan —
+the cluster-bitmap candidate in plan row [UTF-RW]'s census is the same
+territory), or an MRL/possessify precondition that survives the lowering.
+Revisit at stage 3's opening (whose \p corpus will multiply the lowered-class
+population) or when [UTF-RW]'s harvest says whether real patterns reach the
+class. A fix retires the manifest row deliberately (the NOW-AGREES guard
+fires the day it lands).
+
 ## K50 — [M5.0] STAGE 2 (2026-09-05, lane k49fix, found while fixing K49 by asking whether the OTHER engine's "try the next start" mechanism had the same hazard): under `-e utf8` the DFA's start-anywhere self-loop steps one BYTE, so an unanchored search can report a match at a byte offset INSIDE a multi-byte character — **from an ordinary `startpos=0`, with no mid-character `startpos` anywhere in the call.**
 
 WITNESS: `\B` (`--features assertions`) over subject `"a\xce\xb1"` (`61 CE

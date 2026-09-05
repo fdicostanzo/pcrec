@@ -1,0 +1,21 @@
+# tests/codegen/manifests/k51_giveup_divergers.txt — §8.5's NAMED give-up
+# divergence manifest (K51, docs/dev/known_issues.md).
+#
+# Each non-comment line is a corpus pattern, VERBATIM, whose byte and utf8
+# artifacts are EXCUSED from §8.5's agreement bar in exactly ONE direction:
+# byte ANSWERS (rc >= 0) while utf8 returns a TYPED GIVE-UP (rc < 0). Any
+# other divergence on these patterns — answer vs answer, spans, utf8
+# answering where byte gives up — still fails. Mechanism (K51): the utf8
+# class decomposition defeats the cursor rung's precondition (witness
+# stamps: byte RX_VM_RUNGS 0x11, utf8 0x10), the iteration falls to the
+# frames rung, and an exponential shape exhausts ANY frame capacity
+# (measured: --backtrack-frames=65536 still gives up) where the byte
+# artifact completes only BY the rung. The design priced rung loss as
+# throughput (utf8_design.md, u.rep.revbody resolution); this manifest is
+# where that price surfaces as a typed give-up, named per pattern.
+#
+# DISCIPLINE: a row here is a K51 CLAIM, not a licence. The check fails if
+# a row stops appearing in the corpus (stale), or if a swept row stops
+# diverging (K51 partially fixed — re-measure, then RETIRE the row
+# deliberately). Add a row only with a K-number-backed mechanism note.
+((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}

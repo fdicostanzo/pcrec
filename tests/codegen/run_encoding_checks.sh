@@ -213,6 +213,14 @@ int main(int argc, char **argv)
 }
 DRV
 
+# [K51] the give-up divergence manifest (see the manifest's own header):
+# byte-answers-vs-utf8-typed-give-up on a NAMED pattern is excused, counted
+# and printed; everything else on those patterns still fails.
+K51_MANIFEST="$ROOT_DIR/tests/codegen/manifests/k51_giveup_divergers.txt"
+grep -v '^#' "$K51_MANIFEST" | grep -v '^$' > "$WORKDIR/k51_rows.txt" || true
+: > "$WORKDIR/k51_excused_pats.txt"
+k51cells=0
+
 diffn=0; diverge=0; ccfail=0
 while IFS=$'\t' read -r patb subs; do
     [ -z "$patb" ] && continue
@@ -239,14 +247,40 @@ while IFS=$'\t' read -r patb subs; do
             slen="$(printf '%s' "$subj" | wc -c | tr -d ' ')"
             out="$("$d/t" "$subj" "$slen" 2>/dev/null)"
             if [ "$out" != "ok" ]; then
-                bad "§8.5 byte/utf8 DIVERGE on ASCII: pat=[$pat] subj=[$subj] -> $out"
-                diverge=$((diverge + 1))
+                # [K51] excuse ONLY byte-answers / utf8-typed-give-up on a
+                # manifest pattern; the regex pins that exact shape.
+                if grep -qxF "$pat" "$WORKDIR/k51_rows.txt" \
+                   && printf '%s' "$out" | grep -qE '^R [0-9]+ -[0-9]+$'; then
+                    echo "  §8.5 K51-excused give-up divergence: pat=[$pat] subj=[$subj] -> $out"
+                    k51cells=$((k51cells + 1))
+                    printf '%s\n' "$pat" >> "$WORKDIR/k51_excused_pats.txt"
+                else
+                    bad "§8.5 byte/utf8 DIVERGE on ASCII: pat=[$pat] subj=[$subj] -> $out"
+                    diverge=$((diverge + 1))
+                fi
             fi
         done
     fi
     diffn=$((diffn + 1))
 done < "$WORKDIR/blocks.tsv"
 
+# [K51] manifest accounting: every row is a claim with two expiry guards.
+k51n=$(grep -c '' "$WORKDIR/k51_rows.txt" 2>/dev/null || echo 0)
+k51pats=$(LC_ALL=C sort -u "$WORKDIR/k51_excused_pats.txt" | grep -c '' || true)
+while IFS= read -r row; do
+    [ -z "$row" ] && continue
+    rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"
+    if ! grep -q "^$rowb64	" "$WORKDIR/blocks.tsv"; then
+        if grep -rqxF "pattern $row" "$ROOT_DIR/tests" --include='*.rxt' 2>/dev/null; then
+            echo "  §8.5 K51 manifest row not reached in this slice (ENC_MAX_BLOCKS=$ENC_MAX_BLOCKS; the full sweep covers it)"
+        else
+            bad "§8.5 K51 manifest row names a pattern no longer in the corpus (STALE — retire or re-point it): $row"
+        fi
+    elif ! grep -qxF "$row" "$WORKDIR/k51_excused_pats.txt"; then
+        bad "§8.5 K51 manifest row was SWEPT and produced no excused give-up cell — K51 may be (partly) fixed: re-measure, then retire the row deliberately: $row"
+    fi
+done < "$WORKDIR/k51_rows.txt"
+echo "  §8.5 K51-excused: $k51cells cell(s) across $k51pats pattern(s) (manifest rows: $k51n)"
 echo "  §8.5 ran $diffn ASCII blocks ($ccfail cc-skipped), $diverge divergences"
 if [ "$diverge" -eq 0 ]; then
     ok "§8.5 byte and utf8 artifacts agree on every ASCII subject ($diffn blocks)"
