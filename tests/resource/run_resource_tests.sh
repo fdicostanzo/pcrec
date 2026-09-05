@@ -96,9 +96,13 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 export WATCHDOG_SECTION="resource"
 
-pass=0; fail=0; inconc=0
+pass=0; fail=0; inconc=0; skip=0
 ok()   { echo "PASS: $*"; pass=$((pass + 1)); }
 bad()  { echo "FAIL: $*"; fail=$((fail + 1)); }
+# [MACPORT] a FOURTH outcome, distinct from INCONCLUSIVE: a whole SECTION
+# this box cannot run at all (Section 2 needs a BINDING `ulimit -v`, which
+# darwin does not have), never a per-cell load-contention reclassification.
+skip() { echo "SKIP: $*"; skip=$((skip + 1)); }
 # [TT-10] a THIRD outcome, counted and printed separately — never folded
 # into pass (that would misreport an unreliable reading as validated) or
 # into fail (that would misreport box contention as a regression).
@@ -686,10 +690,26 @@ enomem_case() {   # enomem_case <vlimKB> <pattern> [pcrec flags...]
 # "needs 111 MB", reproduced). The flag is removed rather than left as a
 # harmless belt — a flag whose reason has gone is a flag the next reader has to
 # re-derive.
-enomem_case 100000 'a{9000}'                 # needs 175 MB
-enomem_case  60000 '((a)|bc){0,4000}d'       # needs 112 MB (VM route + prefilter)
-enomem_case  80000 '[a-zA-Z0-9_.-]{9000}'    # needs 175 MB, wide alphabet
-enomem_case  60000 'a{8000}'                 # needs 140 MB
+# [MACPORT] `ulimit -v` (RLIMIT_AS) is not enforceable on macOS at all —
+# verified live on this box: `ulimit -v N` itself errors ("cannot modify
+# limit: Invalid argument") rather than merely failing to bind, so every
+# enomem_case call below would run the compile with NO limit whatsoever
+# and hit the FIRST branch ("did not bind"), which `enomem_case` scores as
+# a FAILURE by design (K7's own "an unbinding limit is a silently vacuous
+# control" rule) — not because the allocator-failure path this section
+# tests is broken, but because this platform has no instrument that can
+# reach it at all. Frank's ruling (interim disposition): a loud, named
+# SKIP of the whole section, never a fabricated pass and never a red run
+# for a platform limitation nothing here can fix. The Linux path is
+# unchanged — this is a guard around the section, not a rewrite of it.
+if [ "$(uname -s)" = "Darwin" ]; then
+    skip "Section 2 (allocation-failure diagnosis under ulimit -v) — RLIMIT_AS is not enforceable on macOS (ulimit -v itself errors here, verified live); this section needs a BINDING address-space limit and has none on this platform. Linux is unaffected."
+else
+    enomem_case 100000 'a{9000}'                 # needs 175 MB
+    enomem_case  60000 '((a)|bc){0,4000}d'       # needs 112 MB (VM route + prefilter)
+    enomem_case  80000 '[a-zA-Z0-9_.-]{9000}'    # needs 175 MB, wide alphabet
+    enomem_case  60000 'a{8000}'                 # needs 140 MB
+fi
 
 echo
 
@@ -816,4 +836,5 @@ echo "== Summary =="
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 echo "checks inconclusive: $inconc"
+echo "sections skipped: $skip"
 [ "$fail" -eq 0 ]
