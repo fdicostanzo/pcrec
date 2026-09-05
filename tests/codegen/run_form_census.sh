@@ -193,6 +193,11 @@ while IFS= read -r pat; do
         af="$(stamp "$art" RX_ALTCLS_FACTORED)"
         [ -n "$am" ] && echo "D:RX_ALTCLS_MERGES=$([ "$am" -gt 0 ] && echo '>0' || echo '0')"
         [ -n "$af" ] && echo "D:RX_ALTCLS_FACTORED=$([ "$af" -gt 0 ] && echo '>0' || echo '0')"
+        # [FORM-CHAR] the fold form's activity count, RX_ALTCLS_MERGES'
+        # banded shape (>0 / 0): the census's job is "can the form still be
+        # reached", not the per-artifact count.
+        cf="$(stamp "$art" RX_VM_CLS_FOLDS)"
+        [ -n "$cf" ] && echo "D:RX_VM_CLS_FOLDS=$([ "$cf" -gt 0 ] && echo '>0' || echo '0')"
     else
         echo "D:REFUSED=1"
     fi
@@ -201,6 +206,8 @@ while IFS= read -r pat; do
     if pcrec_run "$PCREC" --features all --engine=vm -p rx -o "$art" -- "$pat" >/dev/null 2>&1; then
         vmpf="$(stamp "$art" RX_VM_PREFILTER)"
         [ -n "$vmpf" ] && echo "V:RX_VM_PREFILTER=$vmpf"
+        cf="$(stamp "$art" RX_VM_CLS_FOLDS)"
+        [ -n "$cf" ] && echo "V:RX_VM_CLS_FOLDS=$([ "$cf" -gt 0 ] && echo '>0' || echo '0')"
         ceil="$(stamp "$art" RX_VM_PRUNE_CEILING)"
         [ -n "$ceil" ] && echo "V:RX_VM_PRUNE_CEILING=$ceil"
         rungs="$(stamp "$art" RX_VM_RUNGS)"
@@ -322,6 +329,17 @@ floor_check "D:RX_VM_PRUNE_CEILING=none"      500
 # The WIDER --engine=vm-forced population.
 floor_check "V:RX_VM_PREFILTER=none"          2000
 floor_check "V:RX_VM_PRUNE_CEILING=subject-end" 100
+# [FORM-CHAR] the fold form's floor — THE row the plan's D82 ritual owes:
+# the fold silently ceasing to be selected leaves every answer right and
+# every sweep green (the form is answer-identity-preserving by
+# construction), so a COUNT is the only instrument that sees it. Measured
+# 2026-09-05 at landing: 11 default-axis / 23 vm-axis corpus patterns stamp
+# RX_VM_CLS_FOLDS > 0 — floored generously (K35: a floor a later change can
+# only cross LOUDLY). The default-axis population is small because a
+# capture-free caseless literal routes to the DFA; the vm-forced one is the
+# wider population the fold actually serves.
+floor_check "D:RX_VM_CLS_FOLDS=>0"            6
+floor_check "V:RX_VM_CLS_FOLDS=>0"            12
 
 # ---------------------------------------------------------------------------
 # §4 SYNTHETIC WITNESSES — required for every §6.3 value with ZERO corpus

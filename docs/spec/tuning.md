@@ -1643,6 +1643,71 @@ and an explicit `--vm-entry-shape=N` OVERRIDES the profile — explicit beats
 profile, as D93's file-wins beats the command line — so nothing documented above
 is withdrawn; what may change is that most callers stop spelling it.
 
+### 2.22 `-fno-cls-fold` — `PCREC_NO_CLS_FOLD` (bit 24)
+
+**What it controls.** Which SHAPE `src/gen/emit_vm.c`'s `vm_cls_shape` gives
+a two-member VM pool class's membership test — `[FORM-CHAR]` STEP 1, the
+char-match form family's first built object beyond today's exact forms.
+`--list-axes` reports it as `cls-fold`.
+
+D23 folds a caseless letter into a two-member CLASS at parse time (`(?i)a`
+becomes `{'A','a'}`), so before this axis every VM test site for such a
+position read a per-class 32-byte bitmap (`load + shift + and`, 32 B of
+`.rodata` per class). The FOLD shape recognizes exactly an **ASCII fold
+pair** — two members differing only in bit `0x20`, both letters, which is
+what caseless folding produces and nothing else in the base grammar makes —
+and emits `(byte | 0x20) == lower` instead: one or-mask and one compare, no
+table. The class's `<prefix>_class_bitmap<N>` declaration is then not
+emitted at all (`vm_cls_shape` is the ONE derivation the test emitter, the
+table emitter and the `<PREFIX>_VM_CLS_FOLDS` stamp all read, so a test and
+its table cannot disagree about the shape).
+
+**The measured basis** (`docs/dev/form_char_step0.md` §2, family A;
+asm evidence committed at `studies/form_char_twins/`): gcc -O2 compiles
+`c=='a'||c=='A'`, `(c=='a')|(c=='A')` and `(c|0x20)=='a'` to the SAME
+branchless mask+compare+sete with NO LOAD, so the fold gives up nothing at
+run time against any spelling of the two-member test — the family's speed
+question is closed by compiler evidence, not a stopwatch — while deleting
+38% of the six-site witness's `.text` and its entire class-table `.rodata`.
+A caseless literal chain keeps its chain shape ([OPT-VMLIT]); what changes
+is only each position's test expression and the disappearance of its table.
+
+**Answer identity is structural**: `(b | 0x20) == (lo | 0x20)` holds for
+exactly the two bytes `{lo, lo|0x20}` — the set's own members — so the fold
+test and the bitmap read are the same predicate over bytes. `make
+test-axes` sweeps the flag against the default over the whole corpus.
+
+**What it declines**, each a selection outcome and never a refusal — the
+class keeps its singleton/range/bitmap shape unchanged:
+
+| declined | why |
+|---|---|
+| any set that is not exactly two members | the fold identity is about a pair |
+| a two-member set NOT differing only in bit `0x20` (`[ac]`) | the or-mask would admit bytes outside the set |
+| a `0x20`-pair of NON-letters (`` [@`] ``) | the compare would be exact, but the pair is not a FOLD — the recognizer names what caseless folding produces, and a wider two-member-compare form is unbuilt pending a measured need (D77) |
+| the DFA scan edge's class bodies | `form_char_step0.md` family C — its `table`-vs-`range`/`fold` ranking is still open pending timing, so `emit_dfa.c` is deliberately untouched by this axis |
+
+**`[FORM-CHAR]`'s utf8 objects (4)/(5)** (`utf8-simple-fold`,
+`utf8-full-fold`) are M5.0's to add as `vm_cls_shape` members when its
+stages land; this axis reserves the enum and name space and builds nothing
+for them.
+
+**Deny-only**, `-fno-alt-island`'s shape: the emitter takes the fold
+wherever the set is a fold pair, so there is nothing for a caller to
+address and nothing to force.
+
+**It joins `emit_info_def`'s `strategy_denials` mask**, for that mask's own
+reason: the axis changes no answer, so two artifacts that behave
+identically must not differ in their reflection surface over it — and
+concretely, so that an artifact with no fold pair is byte-for-byte the same
+under the flag, which is what makes the denied population a usable
+reference. What the emitter DID is reported by `<PREFIX>_VM_CLS_FOLDS`
+(`docs/spec/match_api.md` §6.3 family (b)), an activity COUNT.
+
+**VM route only.** The DFA route's class machinery is the byte-class
+partition and the scan edge's own axis-I bodies; nothing there reads
+`vm_cls_shape`, and no DFA artifact carries the stamp.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while

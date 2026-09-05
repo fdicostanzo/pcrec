@@ -177,6 +177,23 @@ thin|think|thinker|thinking
 cat|cats|dog|dogs
 (?:ab|ba|aa|bb){24}c'
 #
+# [FORM-CHAR] THE FOLD MANIFEST, `ISLAND_PATTERNS`' shape for the second
+# region-moving axis: corpus patterns MEASURED (2026-09-05, this lane's
+# whole-corpus stamp census: 11 default-axis / 23 vm-axis patterns stamp
+# folds > 0) to stamp `RX_VM_CLS_FOLDS > 0` on the DEFAULT axis — each is
+# VM-routed there because it carries a capture, a backreference or an atomic
+# group beside its caseless letters, since a capture-free caseless literal is
+# a DFA artifact and carries no VM stamp (the same DFA gate the island
+# manifest's own comment records the hard way). Chosen to span the
+# recognizer rather than to be numerous: a whole-pattern `(?i)` over an
+# atomic literal run, a scoped `(?i:...)` on one position feeding a
+# backreference, a mid-pattern `(?i)` turning exactly one position into a
+# pair, and a caseless possessive whose fold class sits under a quantifier.
+FOLD_PATTERNS='(?i)(?>abc)
+^(?i:(a))\1$
+(a(?i)b)C
+(?i)a*+A'
+#
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
 # ASSERTED, NOT TRUSTED: exactly three stamp lines must be removed from each
@@ -696,6 +713,28 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # leaves it at the previous pin, because a pin must name a commit reachable
 # after the merge and a lane branch's is not (opt5i's and ccdiff1's precedent).
 #
+# [FORM-CHAR] STEP 1, 2026-09-05 — abi 22 -> 23 (or later if a concurrent
+# lane's event serializes ahead; the merging session renumbers, D94): the
+# VM's ASCII-FOLD CLASS TEST. A two-member pool class that is an ASCII fold
+# pair (differing only in bit 0x20, both letters — what D23's parse-time
+# caseless folding produces) tests as `(byte | 0x20) == lower` and its
+# 32-byte `<prefix>_class_bitmap<N>` table is NOT emitted; EVERY VM artifact
+# gains a `<PREFIX>_VM_CLS_FOLDS` activity-count line whatever its value, so
+# (B) re-pins on the whole VM population. The VM PROGRAM REGION moves on
+# exactly the fold-bearing population — the SECOND change in this file's
+# history to move comparison (A) on purpose — so (A)'s excuse machinery
+# gains the fold as a second deny axis on the island's own terms: a moved
+# region is excused IFF denying exactly the stamped region-moving axes
+# (`-fno-alt-island` and/or `-fno-cls-fold`, per the artifact's own stamps)
+# restores the PINNED region byte for byte, both converse directions are
+# asserted against the deny axis, and `FOLD_PATTERNS` is the enumerated
+# non-vacuity manifest (11 default-axis / 23 vm-axis corpus patterns stamp
+# folds > 0, measured 2026-09-05).
+#
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (set in a follow-up commit that
+# touches no src, [ENG-ISL]'s precedent for a lane that writes its own
+# bump); the manager re-pins to the MERGE when it lands.
+#
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-2706ba6c}"
 
 WORKDIR="$(mktemp -d)"
@@ -825,6 +864,17 @@ gen_c() { "$FILEREF" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # is what says the movement is the island's and nothing else's.
 # shellcheck disable=SC2086
 gen_noisl() { pcrec_run "$PCREC" --features all -p rx $2 -fno-alt-island -o - -- "$1" 2>/dev/null; }
+# [FORM-CHAR] THE FIFTH AND SIXTH BUILDS, the fold axis's own copies of the
+# island's shape one paragraph up: the SUBJECT compiler with the ascii-fold
+# class test denied, and with BOTH region-moving deny axes denied for the
+# artifact that stamps both an island and a fold (each excuse build denies
+# exactly the axes whose stamps read > 0, because denying an axis that did
+# not fire is asserted a byte-level no-op by the converse arms below, and
+# the restore claim is sharpest when the deny set names what fired).
+# shellcheck disable=SC2086
+gen_nofold() { pcrec_run "$PCREC" --features all -p rx $2 -fno-cls-fold -o - -- "$1" 2>/dev/null; }
+# shellcheck disable=SC2086
+gen_denyboth() { pcrec_run "$PCREC" --features all -p rx $2 -fno-alt-island -fno-cls-fold -o - -- "$1" 2>/dev/null; }
 
 # [DD-14.FB] THE PROGRAM REGION: `goto <p>_L0;` through the accept label. An
 # artifact with no VM program (a DFA-selected pattern) yields the EMPTY region,
@@ -1040,6 +1090,12 @@ sweep() { # sweep <label> <extra pcrec args>
     # stamps one whose region did NOT move, which would mean the stamp claims a
     # trie the program does not contain.
     local risland=0 rislsame=0 rnoislmoved=0
+    # [FORM-CHAR] the fold axis's own three, the island trio's shape exactly:
+    # `rfold` counts a moved region excused by the fold (its deny restores the
+    # pin), `rfoldsame` an artifact stamping folds whose own `-fno-cls-fold`
+    # build is byte-identical (a stamp claiming a compare the program does not
+    # contain), `rnofoldmoved` a fold-free VM artifact the deny flag moves.
+    local rfold=0 rfoldsame=0 rnofoldmoved=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -1082,6 +1138,10 @@ sweep() { # sweep <label> <extra pcrec args>
             # from the subject side only: the pre-module reference predates the
             # stamp entirely, so there is nothing to read there.
             isl_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_ALT_ISLANDS \([0-9]*\)$/\1/p' | head -1)"
+            # [FORM-CHAR] the fold stamp, read the same way. Empty on a DFA
+            # artifact (the stamp is VM-route-only), which the arithmetic
+            # below treats as 0.
+            fold_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_CLS_FOLDS \([0-9]*\)$/\1/p' | head -1)"
             if [ "$ra" = "$rb" ]; then
                 rsame=$((rsame + 1))
             elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
@@ -1089,22 +1149,30 @@ sweep() { # sweep <label> <extra pcrec args>
             elif printf '%s\n' "$SIZE_TERM_REGION_MOVERS" | grep -qxF -- "$pat"; then
                 rsizeterm=$((rsizeterm + 1))
                 printf 'REGION MOVED (ruled, [ART-SIZE] size term chose K) %s\n' "$pat" >> "$WORKDIR/diff.$label"
-            elif [ "${isl_a:-0}" -gt 0 ]; then
-                # [ENG-ISL] THE EXCUSE IS A CLAIM ABOUT THE DENY AXIS, NOT A
-                # PER-ARTIFACT EXEMPTION (panel r53, F3). Build the SAME
-                # pattern with the SUBJECT compiler and the island denied: if
-                # that build's region is byte-identical to the pin, the only
-                # thing that moved is the island. If it is NOT, something else
-                # in this artifact moved too and the island is not a licence
-                # for it — that lands in `rdiff` and fails, exactly as it
-                # would on an artifact with no island at all.
-                rn="$(printf '%s\n' "$(gen_noisl "$pat" "$args")" | stamp_strip | prog_region)"
+            elif [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ]; then
+                # [ENG-ISL]/[FORM-CHAR] THE EXCUSE IS A CLAIM ABOUT THE DENY
+                # AXES, NOT A PER-ARTIFACT EXEMPTION (panel r53, F3). Build
+                # the SAME pattern with the SUBJECT compiler and exactly the
+                # region-moving axes whose stamps read > 0 DENIED: if that
+                # build's region is byte-identical to the pin, the only
+                # things that moved are what those axes moved. If it is NOT,
+                # something else in this artifact moved too and neither axis
+                # is a licence for it — that lands in `rdiff` and fails,
+                # exactly as it would on an artifact stamping neither.
+                if [ "${isl_a:-0}" -gt 0 ] && [ "${fold_a:-0}" -gt 0 ]; then
+                    rn="$(printf '%s\n' "$(gen_denyboth "$pat" "$args")" | stamp_strip | prog_region)"
+                elif [ "${isl_a:-0}" -gt 0 ]; then
+                    rn="$(printf '%s\n' "$(gen_noisl "$pat" "$args")" | stamp_strip | prog_region)"
+                else
+                    rn="$(printf '%s\n' "$(gen_nofold "$pat" "$args")" | stamp_strip | prog_region)"
+                fi
                 if [ "$rn" = "$rb" ]; then
-                    risland=$((risland + 1))
-                    printf 'REGION MOVED (ruled, [ENG-ISL] %s island(s); -fno-alt-island restores the pinned region) %s\n' "$isl_a" "$pat" >> "$WORKDIR/diff.$label"
+                    [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
+                    [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
+                    printf 'REGION MOVED (ruled, islands=%s folds=%s; denying the stamped axes restores the pinned region) %s\n' "${isl_a:-0}" "${fold_a:-0}" "$pat" >> "$WORKDIR/diff.$label"
                 else
                     rdiff=$((rdiff + 1))
-                    printf 'REGION DIFFERS (island-stamped, but -fno-alt-island does NOT restore the pinned region) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                    printf 'REGION DIFFERS (islands=%s folds=%s stamped, but denying them does NOT restore the pinned region) %s\n' "${isl_a:-0}" "${fold_a:-0}" "$pat" >> "$WORKDIR/diff.$label"
                 fi
             else
                 rdiff=$((rdiff + 1))
@@ -1129,6 +1197,31 @@ sweep() { # sweep <label> <extra pcrec args>
                 if [ "$ra" != "$rn3" ]; then
                     rnoislmoved=$((rnoislmoved + 1))
                     printf 'NO ISLAND STAMPED YET -fno-alt-island MOVES THE REGION %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                fi
+            fi
+            # [FORM-CHAR] THE FOLD CONVERSE, the island pair's shape exactly
+            # and SCOPED TO ARTIFACTS THAT CARRY THE STAMP (i.e. VM
+            # artifacts): the flag's one consumer is `vm_cls_shape` in
+            # emit_vm.c, so a DFA artifact is byte-identical under it BY
+            # CONSTRUCTION rather than by sweep — running the deny build
+            # there would double this gate's compile count to re-derive a
+            # structural fact. An artifact that STAMPS folds must differ from
+            # its own `-fno-cls-fold` build; a VM artifact that stamps 0 must
+            # be byte-identical to it, which is what makes the denied build a
+            # usable reference for every other check that leans on it.
+            if [ -n "${fold_a:-}" ]; then
+                if [ "$fold_a" -gt 0 ]; then
+                    rn4="$(printf '%s\n' "$(gen_nofold "$pat" "$args")" | stamp_strip | prog_region)"
+                    if [ "$ra" = "$rn4" ]; then
+                        rfoldsame=$((rfoldsame + 1))
+                        printf 'FOLDS STAMPED BUT DENYING THEM CHANGES NOTHING %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                    fi
+                else
+                    rn5="$(printf '%s\n' "$(gen_nofold "$pat" "$args")" | stamp_strip | prog_region)"
+                    if [ "$ra" != "$rn5" ]; then
+                        rnofoldmoved=$((rnofoldmoved + 1))
+                        printf 'NO FOLD STAMPED YET -fno-cls-fold MOVES THE REGION %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                    fi
                 fi
             fi
         fi
@@ -1163,7 +1256,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -1240,6 +1333,16 @@ sweep() { # sweep <label> <extra pcrec args>
         bad "[$label] $rnoislmoved artifacts stamp NO island and yet -fno-alt-island MOVES their program region. Denying an axis that did not fire must change nothing — that byte-identity is what makes the denied build a usable reference for every other check that leans on it:"
         grep '^NO ISLAND STAMPED YET' "$WORKDIR/diff.$label" | head -10 >&2
     fi
+    # [FORM-CHAR] the fold axis's two converse directions, the island pair's
+    # wording and reasons one axis over.
+    if [ "$rfoldsame" -ne 0 ]; then
+        bad "[$label] (A) $rfoldsame artifacts stamp RX_VM_CLS_FOLDS > 0 and yet are BYTE-IDENTICAL to their own -fno-cls-fold build. The stamp claims a fold compare the program does not contain — the direction a merely decorative count fails in:"
+        grep '^FOLDS STAMPED BUT DENYING THEM CHANGES NOTHING' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
+    if [ "$rnofoldmoved" -ne 0 ]; then
+        bad "[$label] $rnofoldmoved VM artifacts stamp ZERO folds and yet -fno-cls-fold MOVES their program region. Denying an axis that did not fire must change nothing:"
+        grep '^NO FOLD STAMPED YET' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
     # THE NON-VACUITY FLOOR IS AN ENUMERATED MANIFEST, NOT A NUMBER (panel r53,
     # F4). "At least one island moved" was argued rather than measured, and it
     # read GREEN under any narrowing that left a single island standing —
@@ -1268,6 +1371,25 @@ $ISLAND_PATTERNS
 ISL_EOF
     if [ "$isl_manifest_missing" -ne 0 ]; then
         bad "[$label] $isl_manifest_missing of the ISLAND_PATTERNS manifest no longer stamp an alternation island. Either the predicate narrowed — in which case this list is the record of what that costs and the narrowing must be argued against it — or the analysis broke. Do not silently shorten the list"
+    fi
+    # [FORM-CHAR] the fold manifest, ISLAND_PATTERNS' check verbatim one axis
+    # over (same VM-route gate, same do-not-silently-shorten rule).
+    fold_manifest_missing=0
+    while IFS= read -r fpat; do
+        [ -n "$fpat" ] || continue
+        fa="$(gen_a "$fpat" "$args")"
+        [ -n "$fa" ] || continue          # refused on this axis; not this check's claim
+        case "$fa" in *'#define RX_ENGINE "vm"'*) ;; *) continue ;; esac
+        fn="$(printf '%s\n' "$fa" | sed -n 's/^#define RX_VM_CLS_FOLDS \([0-9]*\)$/\1/p' | head -1)"
+        if [ "${fn:-0}" -lt 1 ]; then
+            fold_manifest_missing=$((fold_manifest_missing + 1))
+            [ "$fold_manifest_missing" -le 6 ] && echo "  FOLD MANIFEST[$label]: '$fpat' no longer stamps a fold" >&2
+        fi
+    done <<FOLD_EOF
+$FOLD_PATTERNS
+FOLD_EOF
+    if [ "$fold_manifest_missing" -ne 0 ]; then
+        bad "[$label] $fold_manifest_missing of the FOLD_PATTERNS manifest no longer stamp an ascii-fold class test. Either vm_cls_shape's recognizer narrowed — in which case this list is the record of what that costs — or the classification broke. Do not silently shorten the list"
     fi
     if [ "$rdiff" -ne 0 ]; then
         bad "[$label] (A) $rdiff call-free patterns emit a DIFFERENT PROGRAM REGION than $REFCOMMIT for a reason no ruling has recorded — this is the claim the pre-module pin exists to defend:"
