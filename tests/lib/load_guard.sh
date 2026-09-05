@@ -64,15 +64,26 @@
 
 LOAD_GUARD_RATIO="${LOAD_GUARD_RATIO:-2.0}"
 
-# load_guard_ratio — 1-minute load average / nproc, as a decimal (2 places).
-# Prints "0.00" (never trips the guard) if either reading is unavailable,
-# so a box with no /proc/loadavg (not this project's target platform, but
-# cheap to fail open on) never silently starts reporting every cell
-# INCONCLUSIVE.
+# [MACPORT] tests/lib/loadavg.sh / ncpu.sh give darwin (no /proc at all) a
+# REAL reading (sysctl vm.loadavg / hw.ncpu) instead of this function's own
+# old "0.00, never trips" fallback — which would have meant the guard could
+# never fire under real contention on this box, silently. `caller's own
+# ROOT_DIR` is already how every existing sourcer of this file resolves
+# its sibling libs (gen_timeout.sh, timeout_bin.sh, ...); `${BASH_SOURCE[0]%/*}`
+# is this file's OWN directory, used here instead so load_guard.sh keeps
+# working for a caller that sources it without having set ROOT_DIR first.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/loadavg.sh"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ncpu.sh"
+
+# load_guard_ratio — 1-minute load average / ncpu, as a decimal (2 places).
+# Prints "0.00" (never trips the guard) only if load1/NCPU themselves come
+# back empty/non-positive, which loadavg.sh/ncpu.sh already guard against
+# on every platform this project targets — this is now a true last resort,
+# not the darwin path.
 load_guard_ratio() {
     local avg1 n
-    avg1="$(cut -d' ' -f1 /proc/loadavg 2>/dev/null)"
-    n="$(nproc 2>/dev/null)"
+    avg1="$(load1)"
+    n="$NCPU"
     if [ -z "$avg1" ] || [ -z "$n" ] || [ "$n" -le 0 ]; then
         echo "0.00"
         return
