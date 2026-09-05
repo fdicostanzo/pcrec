@@ -8,19 +8,16 @@
 #   NOTE      : this is NOT the reference oracle unless the
 #               libpcre2 line below reads 10.46. A local run is a
 #               deliberate version COMPARISON, or a pcrec probe.
-# PROBE LAST CHANGED AT COMMIT: c767ae25 2026-09-04
-# RUN FROM REPO COMMIT        : c8c08e18 (lane/utf8design)
+# PROBE LAST CHANGED AT COMMIT: 1201c87c 2026-09-04
+# RUN FROM REPO COMMIT        : 660f796e (lane/utf8design)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/utf8_measurements/out/caseless.txt
-#      M docs/design/utf8_measurements/out/divergence.txt
-#      M docs/design/utf8_measurements/out/divergence_local_py311.txt
-#      M docs/design/utf8_measurements/out/invalid_utf.txt
-#      M docs/design/utf8_measurements/out/premises.txt
 #      M docs/design/utf8_measurements/out/sizing.txt
-#      M docs/design/utf8_measurements/out/uprops.txt
-#      M docs/design/utf8_measurements/out/width.txt
-#      M docs/design/utf8_measurements/probes/probe_sizing.py
-# RUN DATE   : 2026-09-04T22:33:35-0400
+# RUN DATE   : 2026-09-04T23:02:42-0400
+# PROBE sha256[:16] (launcher-side, this disk):
+#     probe_sizing.py      c47331f0d0b9d756
+#     u8_oracle.py         5527218d03f44b7c
+#     br_oracle.py         01e7911086540381
+#     pcre2_ctypes.py      4e46fa4058f5c4ae
 # local python3 : 3.11.4  (the BUNDLER's)
 # local gcc     : 16
 # local host    : Darwin 25.6.0
@@ -39,7 +36,7 @@ probe_sizing.py -- [M5.0] UTF-8 design gate, sizing lane
 host machine   : macOS-26.6.2-arm64-arm-64bit
 python version : 3.11.4 (/Users/fdicostanzo/miniconda3/bin/python3)
 unicodedata    : unidata_version=14.0.0
-run timestamp  : 2026-09-04 22:33:35 -0400
+run timestamp  : 2026-09-04 23:02:42 -0400
 
 CAVEAT (stated once, applies to every \p{} row below): the Unicode version this python's unicodedata module knows (14.0.0) may differ from the version libpcre2 10.46 (the project's reference oracle, per u8_oracle.py's header) was built against. This probe does not attempt to reconcile that -- a different probe in this lane owns that question. Any \p{}-derived row's interval count and all downstream sizes are only as good as this python's Unicode data.
 
@@ -49,7 +46,7 @@ CONVENTIONS used throughout (read before comparing numbers to pcrec's real caps)
   (e)/(f) DFA/minimized-DFA counts are of a PARTIAL transition function: a byte outside every live transition from a state is an implicit reject and is NOT materialized as a counted state (no explicit trap/dead state). This matches how a fragment-composition compiler like pcrec represents 'no match' (fallthrough), not a total automaton with an explicit dead state -- stated so these numbers are not silently off-by-one against a reader's different convention.
   Every (e)/(f)/(g) figure is for the BASE class alone unless labelled '* form' or '{1,3} form'.
 
-(unicodedata.category() precomputed for all 1114112 codepoints in 0.061s)
+(unicodedata.category() precomputed for all 1114112 codepoints in 0.063s)
 
 ------------------------------------------------------------------------------
 1. [a-z] (ASCII control)
@@ -169,7 +166,7 @@ intervals (648): U+0041-U+005A, U+0061-U+007A, U+00AA, U+00B5, U+00BA, U+00C0-U+
 (c) NFA states, unshared (naive)    : 2636
 (d) NFA states, suffix-shared       : 2205  (ratio d/c = 0.8365)
 (e) DFA states (subset construction): 283  (subset-construct wall time 0.003s)
-(f) minimized DFA states            : 283  (minimize wall time 0.014s)
+(f) minimized DFA states            : 283  (minimize wall time 0.015s)
 (g) lead byte set                   : 97 distinct byte value(s): 0x41-0x5A, 0x61-0x7A, 0xC2-0xCB, 0xCD-0xED, 0xEF-0xF0
 (h) alphabet classes (ncls)         : 95   [dfa.c's eqclasses partition: bytes agreeing on every minimized state's row]
 (i) premul table ENTRIES            : 283 x 95 = 26885   (PREMUL_MAX_ENTRIES 65535 -> premul)
@@ -257,9 +254,9 @@ QUANTIFIED FORMS: X* and X{1,3} for classes 4, 5, 7
 ------------------------------------------------------------------------------
 7. \p{L} (category starts with L)
 ------------------------------------------------------------------------------
-  X*       raw NFA states (pre-determinize): 2206 ; (e) DFA states: 283 (0.060s) ; (f) minimized: 282 (0.014s)
+  X*       raw NFA states (pre-determinize): 2206 ; (e) DFA states: 283 (0.061s) ; (f) minimized: 282 (0.014s)
            (h/i/j/k) ncls 95 -> entries 282 x 95 = 26790 (65535: premul) ; +\b ncls 96 -> 27072 (premul) ; subset elems 3322
-  X{1,3}   raw NFA states (pre-determinize): 6613 ; (e) DFA states: 847 (0.120s) ; (f) minimized: 847 (0.067s)
+  X{1,3}   raw NFA states (pre-determinize): 6613 ; (e) DFA states: 847 (0.121s) ; (f) minimized: 847 (0.068s)
            (h/i/j/k) ncls 95 -> entries 847 x 95 = 80465 (65535: PLAIN) ; +\b ncls 96 -> 81312 (PLAIN) ; subset elems 7599
 
 ==============================================================================
@@ -384,4 +381,4 @@ NOT VERIFIED by this probe (out of scope for the sizing lane):
   - Runtime/memory cost of the DFA, only state COUNT.
   - Whether pcrec's actual code generator would produce the same shared-NFA structure this probe's hash-consing produces (this is a sizing upper/lower bound exercise, not pcrec's real construction).
 
-Total probe wall time: 0.82s
+Total probe wall time: 0.85s

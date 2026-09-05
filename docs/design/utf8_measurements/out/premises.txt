@@ -9,18 +9,16 @@
 #               libpcre2 line below reads 10.46. A local run is a
 #               deliberate version COMPARISON, or a pcrec probe.
 # PROBE LAST CHANGED AT COMMIT: c767ae25 2026-09-04
-# RUN FROM REPO COMMIT        : c8c08e18 (lane/utf8design)
+# RUN FROM REPO COMMIT        : 660f796e (lane/utf8design)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/utf8_measurements/out/caseless.txt
-#      M docs/design/utf8_measurements/out/divergence.txt
-#      M docs/design/utf8_measurements/out/divergence_local_py311.txt
-#      M docs/design/utf8_measurements/out/invalid_utf.txt
 #      M docs/design/utf8_measurements/out/premises.txt
 #      M docs/design/utf8_measurements/out/sizing.txt
-#      M docs/design/utf8_measurements/out/uprops.txt
-#      M docs/design/utf8_measurements/out/width.txt
-#      M docs/design/utf8_measurements/probes/probe_sizing.py
-# RUN DATE   : 2026-09-04T22:31:42-0400
+# RUN DATE   : 2026-09-04T23:02:43-0400
+# PROBE sha256[:16] (launcher-side, this disk):
+#     probe_premises.sh    8be3cf7fd650798b
+#     u8_oracle.py         5527218d03f44b7c
+#     br_oracle.py         01e7911086540381
+#     pcre2_ctypes.py      4e46fa4058f5c4ae
 # local python3 : 3.11.4  (the BUNDLER's)
 # local gcc     : 16
 # local host    : Darwin 25.6.0
@@ -36,7 +34,7 @@
 [M5.0] pcrec-side premises, on HEAD
 ======================================================================
 pcrec       : 610904 bytes
-built from  : c8c08e18 (lane/utf8design)
+built from  : 660f796e (lane/utf8design)
 gcc         : 16
 ======================================================================
 

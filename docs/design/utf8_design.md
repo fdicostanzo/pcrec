@@ -3133,10 +3133,33 @@ variable-length sequence with its own break algorithm, and it would be the
 first construct whose width is unbounded at the character level. It belongs to
 its own module and its own design gate.
 
-UTF-16 and UTF-32 (`[DD-12] (6)`). PCRE2's `PCRE2_UCP` as a pcrec axis
-(§14 ASK 4). Optimising `ENG_ATTEMPT`'s start loop for character boundaries
-(§5.5). A two-value scan arm for the prefilter (§6.3) — measured as an
-opportunity, declined under D77 until a UTF corpus exists to measure it on.
+UTF-16 and UTF-32 (`[DD-12] (6)`) — and §6.3 now records the technical reason
+as well as the policy one: **UTF-16 is not byte-self-synchronizing**, so the
+prefilter argument this design gets for free does not transfer, and a third
+backend would owe an alignment argument nothing here provides. PCRE2's
+`PCRE2_UCP` as a pcrec axis (§14 ASK 4, **re-priced at r54** — it costs
+`upc_of_class`'s mechanism replaced, not a seam entry added; §5.4.1).
+Optimising `ENG_ATTEMPT`'s start loop for character boundaries (§5.5). A
+two-value scan arm for the prefilter (§6.3) — measured as an opportunity,
+declined under D77 until a UTF corpus exists to measure it on.
+
+**ADDED AT r54, three things this revision deliberately did not build:**
+
+- **Widening `possessify`/`revdet` to interval FIRST-sets** (§2.5.1). They
+  DECLINE on any class touching above `0xFF` — a verdict cost, never a
+  correctness one, and absent entirely under `--encoding=byte`. Deferred under
+  D77 with the measurement named: a form census over a UTF-8 corpus, which
+  does not exist until stage 2.
+- **Any change to `PREMUL_MAX_ENTRIES` or to `[OPT-3]`'s index width**
+  (§2.4.1). `\p{L}{1,3}` exceeds the cap and falls back to the plain table;
+  65,535 is a `short`-range constraint rather than a tuning knob, and whether
+  `[OPT-3]` should gain a wider-index form is that row's question. P-5b is the
+  census that would open it.
+- **A `startpos` boundary check at the entries** (§2.6.1). It would be a
+  validation branch on every call, encoding-conditional, on the hot path —
+  which is what §2.6's ruling declines and DD-12 (7) forbids. The contract
+  says `startpos` must be a character boundary; ASK 1 is where that could
+  change.
 
 ---
 

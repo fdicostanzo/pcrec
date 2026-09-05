@@ -8,12 +8,19 @@
 #   mechanism : bundle.py | ssh ... 'python3 -' — the program
 #               arrives on stdin; nothing is written on that box.
 # PROBE LAST CHANGED AT COMMIT: c8c08e18 2026-09-04
-# RUN FROM REPO COMMIT        : c8c08e18 (lane/utf8design)
+# RUN FROM REPO COMMIT        : 660f796e (lane/utf8design)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/utf8_measurements/out/invalid_utf.txt
+#      M docs/design/utf8_measurements/out/premises.txt
+#      M docs/design/utf8_measurements/out/sizing.txt
 #      M docs/design/utf8_measurements/out/uprops.txt
 #      M docs/design/utf8_measurements/out/width.txt
-# RUN DATE   : 2026-09-04T22:26:45-0400
+# RUN DATE   : 2026-09-04T23:02:45-0400
+# PROBE sha256[:16] (launcher-side, this disk):
+#     probe_uprops.py      02be4d711e951b6f
+#     u8_oracle.py         5527218d03f44b7c
+#     br_oracle.py         01e7911086540381
+#     pcre2_ctypes.py      4e46fa4058f5c4ae
 # local python3 : 3.11.4  (the BUNDLER's)
 # local gcc     : 16
 # local host    : Darwin 25.6.0
@@ -255,8 +262,8 @@ backend for the sub-0x100 part of every property.
 
   property    intervals  code points   skipped     secs
   ------------------------------------------------------------
-  L                 677       141028      2048      4.1
-  Lu                651         1858      2048      3.8
+  L                 677       141028      2048      4.2
+  Lu                651         1858      2048      3.9
   Nd                 71          760      2048      3.8
   Greek              44          531      2048      3.8
   Han                42        99338      2048      4.0
