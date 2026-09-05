@@ -56,7 +56,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 DRIVER="$ROOT_DIR/tests/harness/driver.c"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 GENCFLAGS="${GENCFLAGS:-}"
 
 # EVERY BLOCK IS COMPILED UNDER THE SAME FEATURE SET, on both sides. It is

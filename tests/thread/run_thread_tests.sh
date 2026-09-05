@@ -101,7 +101,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="thread"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"
 TIMEOUT="${THREAD_TEST_TIMEOUT:-60}"
 ITERS="${THREAD_TEST_ITERS:-300}"

@@ -74,7 +74,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O2 -std=gnu11 -Wall -Wextra -Werror}"
 

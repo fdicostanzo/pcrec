@@ -36,7 +36,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"
 
 # Pinned deliberately: this is a REGRESSION GATE, not a search for new

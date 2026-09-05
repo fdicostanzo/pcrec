@@ -287,7 +287,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"
 # [MECH-REACH] VALIDATE_ONLY=1 -- source every selected definition, run the
 # FIELD VALIDATIONS, and stop. It exists because those validations are FATALs

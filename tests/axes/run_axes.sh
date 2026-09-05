@@ -151,7 +151,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export WATCHDOG_SECTION="axes"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 PROCS="${PROCS:-$(nproc 2>/dev/null || echo 1)}"
 KEEP="${KEEP:-0}"

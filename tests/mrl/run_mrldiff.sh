@@ -58,7 +58,7 @@ export LC_ALL=C
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 
 # The step budget is PINNED on both arms. This differential compares the
 # ANSWER, and a run-time give-up budget is not an answer: at the shipped

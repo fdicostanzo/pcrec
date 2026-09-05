@@ -85,7 +85,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PCREC="${PCREC:-$ROOT/build/pcrec}"
 . "$ROOT/tests/lib/gen_timeout.sh"   # [K37] pcrec_run: every compiler call is budgeted
 export WATCHDOG_SECTION=codegen
-CC="${CC:-gcc}"
+. "$ROOT/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 

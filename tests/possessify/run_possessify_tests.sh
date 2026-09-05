@@ -23,7 +23,6 @@
 
 set -u
 
-CC="${CC:-gcc}"
 
 # LC_ALL=C, and it is NOT cosmetic. R24 M-F1/M-F2 found every "distinct" figure
 # in the [ENG-BREP] rung census to be an undercount with ONE cause: a `sort -u`
@@ -37,6 +36,7 @@ export LC_ALL=C
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 # D45's shared generated-code compile budget (this file compiles emitted C in

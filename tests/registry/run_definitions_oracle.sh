@@ -78,7 +78,13 @@ if ! "$WORKDIR/gen" > "$CELLS" 2> "$WORKDIR/gen.log"; then
     exit 1
 fi
 cat "$WORKDIR/gen.log" >&2
-ncells=$(wc -l < "$CELLS")
+# [MACPORT] `tr -d ' '`: BSD/macOS `wc -l < file` right-justifies its
+# count with LEADING SPACES (verified live: "       3" for a 3-line file
+# via stdin redirection); GNU wc does not. Untrimmed, this broke
+# run_registry_tests.sh's own downstream `grep -qE
+# "^definitions-oracle: [0-9]+ cells generated"` needle, which requires
+# exactly one space before the digits.
+ncells=$(wc -l < "$CELLS" | tr -d ' ')
 if [ "$ncells" -lt 1 ]; then
     echo "FAIL: definitions-oracle: 0 cells generated — the table is" >&2
     echo "FAIL: definitions-oracle: populated but nothing reached this sweep" >&2
