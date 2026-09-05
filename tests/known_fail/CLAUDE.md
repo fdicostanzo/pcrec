@@ -40,7 +40,7 @@ and it does not get to break the build either.
   **The one-day residency is itself the argument for this directory**: the
   cell was found by a blinded corpus, parked rather than argued away, and
   the park is what made it a schedulable piece of work instead of a note.
-- **`k50_utf8_dfa_selfloop_start.rxt`** — [K50] (`docs/dev/known_issues.md`),
+- **`k50_utf8_dfa_midchar_start.rxt`** — [K50] (`docs/dev/known_issues.md`),
   landed 2026-09-05 by lane `k49fix`, which found it while fixing K49 by
   asking whether the OTHER engine's "try the next start" mechanism had the
   same hazard. One cell: `\B` (`--features assertions`, `-e utf8`) at
@@ -49,7 +49,9 @@ and it does not get to break the build either.
   DFA's start-anywhere self-loop (`src/ir/nfa.c:965`, a class of every byte)
   lets a match START at any byte offset under `-e utf8`.
   **UNLIKE ITS PREDECESSOR ABOVE, THIS CELL IS ORACLE-BACKED RATHER THAN
-  ARGUED**, which is the distinction worth carrying: K49's expectation was
+  ARGUED — and the filing instruction said to mark it ARGUED, so the
+  correction is recorded here rather than silently applied.** The
+  distinction is the useful part: K49's expectation was
   `pcrec-ARGUED` because no engine produces that cell at all, whereas
   libpcre2 10.37 answers `(3,3)` here under BOTH `PCRE2_UTF` and
   `PCRE2_UTF|PCRE2_MATCH_INVALID_UTF`, and `(2,2)` only under `options=0`.

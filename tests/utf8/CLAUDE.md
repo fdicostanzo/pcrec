@@ -128,7 +128,7 @@ first.
 
 **AND IT HAD A SIBLING THE CORPUS COULD NOT SEE**: `\B` under `-e utf8`
 reports a mid-character position from an ordinary `startpos=0` on the DFA
-(K50, `tests/known_fail/k50_utf8_dfa_selfloop_start.rxt`), because the DFA
+(K50, `tests/known_fail/k50_utf8_dfa_midchar_start.rxt`), because the DFA
 implements "try the next start" with a byte-granular self-loop rather than
 with the VM's retry loop. This corpus has no `\B`-under-`utf8` cell; the
 natural place for one is a future axis, and the byte-mirror libpcre2

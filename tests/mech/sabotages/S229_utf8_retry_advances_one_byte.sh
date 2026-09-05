@@ -1,4 +1,4 @@
-# S223 — [K49] THE UNANCHORED RETRY ADVANCE STEPS ONE BYTE UNDER utf8.
+# S229 — [K49] THE UNANCHORED RETRY ADVANCE STEPS ONE BYTE UNDER utf8.
 #
 # This is K49 itself, planted: the `utf8` backend's `advance` text loses its
 # continuation-byte skip and becomes the `byte` backend's step. It is the exact
@@ -39,7 +39,7 @@
 # advance on the backend at all: `SAB_FILE` is the utf8 backend's own file, so
 # every `byte` artifact in the tree is byte-identical under the sabotage and
 # every byte-identity gate stays green.
-SAB_ID="S223-utf8-retry-advances-one-byte"
+SAB_ID="S229-utf8-retry-advances-one-byte"
 SAB_FILE="src/gen/enc/enc_utf8.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8/axis09_nextpos_findall.rxt"
@@ -49,6 +49,6 @@ SAB_COUNT=1
 SAB_BEFORE='"@P++;\n"
 "while (@P < @N\n"
 "       && (@S[@P] & 0xC0) == 0x80) @P++;\n";'
-SAB_AFTER='/* SABOTAGE S223: the advance is the byte backend'"'"'s step, so a retry
+SAB_AFTER='/* SABOTAGE S229: the advance is the byte backend'"'"'s step, so a retry
  * lands on the next BYTE rather than the next character boundary. */
 "@P++;\n";'

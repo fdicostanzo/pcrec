@@ -192,15 +192,55 @@ and the hybrid prefilter's candidate handoff, and is an `abi`-adjacent design
 decision rather than a lane decision.
 
 Filed as `docs/dev/known_issues.md` K50 with
-`tests/known_fail/k50_utf8_dfa_selfloop_start.rxt`.
+`tests/known_fail/k50_utf8_dfa_midchar_start.rxt`.
 
 **NOTE ON THE RATCHET COUNT.** The entry expected the known-fail population to
 go 2 → 1 (K34 only). It is 2 → 2: K49's file is deleted and K50's is added.
 That is a new bug filed, not K49's fix failing to land — K49's own cell is
-live and green in `tests/utf8/axis09_nextpos_findall.rxt`. I judged that
-filing it is what this directory is FOR (a confirmed, oracle-backed answer
-pcrec disagrees with), and that documenting a bug only in prose is what
-known_fail exists to prevent.
+live and green in `tests/utf8/axis09_nextpos_findall.rxt`. MEASURED after the
+change: `still failing: 2    now passing: 0`, naming K34 and K50. The manager
+ruled the same arithmetic independently.
+
+### 3.1 K50's three sites, and whether K49's fix closed the hybrid one
+
+A fix must reach all three "try the next start" mechanisms:
+`src/ir/nfa.c:965` (the self-loop, K50's own witness),
+`src/gen/emit_dfa.c:6234` (`ENG_ATTEMPT`'s `start++`, ASK 5's loop), and
+`src/gen/emit_vm.c:11080-11089` (the HYBRID's retry-window recompute, which
+re-seeds `attempt_position` from the inlined DFA prefilter's `window[0][0]`
+and therefore inherits the self-loop).
+
+**The manager asked whether my VM fix closes (3). MEASURED: no wrong answer
+is reachable through it today — but not because of the fix. The two
+populations are disjoint, by coincidence.**
+
+- **MEASURED.** 11 hybrid `-e utf8` artifacts (`RX_VM_PREFILTER "hybrid"`)
+  × 6 multi-byte subjects × every startpos = **374 cells, 0 mid-character
+  reported starts**. And every nullable VM pattern tried reads
+  `RX_VM_PREFILTER "none"` / `RX_ENGINE_SEL "declined-nullable-default"` —
+  6 of 6, including `(?<!q)`, `(?<!.)`, `(?!.)`, `(?:(?<!q)a)*`.
+- **REASONED** (flagged as an argument, not a measurement): to REPORT a
+  mid-character start the VM must MATCH anchored at one, and under `utf8`
+  no lowered pattern begins by consuming a continuation byte — so only a
+  pattern matching EMPTY there can, and [OPT-4.2]'s
+  `declined-nullable-default` gives exactly those no prefilter.
+
+**Nobody wrote that disjointness down**, and it rests on two unrelated
+decisions (the UTF-8 lowering's alphabet, and a prefilter decline chosen for
+throughput in [OPT-4.2]). So (3) stays on K50's list: a fix for (1) closes it
+for free, a fix touching only (2) does not.
+
+### 3.2 One instruction recorded rather than followed
+
+The filing ruling said to mark K50's cell `pcrec-ARGUED` like K49's. **It is
+not argued — it has a real oracle**, and the cell and the K50 entry both say
+so with the measurement. K49's expectation was ARGUED because no engine
+produces that cell at all; K50's witness is an ordinary unanchored search from
+offset 0 that every engine answers, and libpcre2 answers `(3,3)` under both
+UTF option words. Writing `pcrec-ARGUED` there would have put a false
+provenance in the corpus and understated the finding. §2.6.1.1's inversion is
+cited in the cell as the SUPPORTING reasoning, which is what it is. Flagged to
+the manager rather than decided silently.
 
 ---
 
@@ -289,15 +329,15 @@ from their logs.
 | `make test-encoding-checks` | **11 passed / 0 failed.** The suite's original 7 plus this change's 4. §8.5: 250 ASCII blocks, **0 divergences**; CHK3 0 stamp differences; DD12a(i) 0 differing engine bodies; DD12a(ii) signatures identical |
 | — its K49 section | `byte` advance agrees with `next_pos` on **10,738/10,738** cells and is `pos + 1` on every one; `utf8` agrees on **10,738/10,738** and differs from `pos + 1` on **2,268** of them (the non-vacuity control) |
 | `make strict` | **clean** — "whole tree compiles clean with -Werror -Wshadow" |
-| `make test-codegen` | **at the darwin baseline, ZERO new.** `run_codegen_tests.sh` **103 passed / 5 failed** — the exact figure the lane entry named. Every other group unchanged (`dfa_stamps` 31/1, `offset_skip` 22/0, `size_term` 31/0, `trie_identity` 7/0, `scan_edge_census` 14/0, `n1_budget` 13/0). I ran the same target on a `git archive` of `ba7a58cb` and the FAIL sets are identical apart from the sabotage-row COUNT (231 → 232), which is S223 being counted |
+| `make test-codegen` | **at the darwin baseline, ZERO new.** `run_codegen_tests.sh` **103 passed / 5 failed** — the exact figure the lane entry named. Every other group unchanged (`dfa_stamps` 31/1, `offset_skip` 22/0, `size_term` 31/0, `trie_identity` 7/0, `scan_edge_census` 14/0, `n1_budget` 13/0). I ran the same target on a `git archive` of `ba7a58cb` and the FAIL sets are identical apart from the sabotage-row COUNT (231 → 232), which is S229 being counted |
 | `make test-encseam` | **2 passed / 0 failed** |
 | `make test-mrl` | **26 passed / 1 failed — IDENTICAL to the lane's base commit**, 21 FAIL lines matching line for line. Not mine; see §5.2 |
 | `tests/rxtsource` | 108 PASS / 14 FAIL, **identical to the lane's base commit** (§4.4) |
 | hybrid composition | a clamp-bearing prefiltered `utf8` artifact puts the advance immediately above the retry-window recompute and compiles `-O1 -Wall -Wextra -Werror` clean |
 
-### 5.1 S223's failing direction, measured
+### 5.1 S229's failing direction, measured
 
-I applied S223 to the working tree by hand, rebuilt, and ran its own arm:
+I applied S229 to the working tree by hand, rebuilt, and ran its own arm:
 `tests/utf8/axis09_nextpos_findall.rxt` goes from 0 failures to **1** — the
 restored K49 cell, which is the row's declared detector. Reverted and rebuilt
 before any further gate ran. (I also learned the hard way not to rebuild while
@@ -337,6 +377,20 @@ as needing its own row.**
 
 ---
 
+## 5.5 Rulings received
+
+| ruling | disposition |
+|---|---|
+| Fix the VM retry advance per the charter; file the DFA half as K50; annotate §5.5/ASK 5 with the refutation; do NOT start the DFA fix in this lane | done, all four |
+| K50 gets its own regression, `k50_utf8_dfa_midchar_start.rxt`, pinning `(3,3)` for the `\B` witness | done, under that filename |
+| Mark it `pcrec-ARGUED` like K49's | **RECORDED, NOT FOLLOWED** — it is oracle-backed; §3.2 |
+| Keep the ratchet's expected-failing count at 2 (K34 + K50); re-pin the ratchet against that arithmetic and say so in the commit | count MEASURED at 2. **There is no ratchet pin to re-pin** — `run_known_fail.sh` enumerates the directory with `find` and pins no counts. The census that DID need re-pinning is `tests/rxtsource/`'s, and the commit says so |
+| Name the hybrid prefilter handoff (`emit_vm.c:11080-11089`) in K50's site list; state whether K49's fix closes it, measuring a witness if cheap | done and MEASURED; §3.1 |
+| Put the `back_step` malformed-run-repair interaction in K50's entry as the general amplifier | done — it is the paragraph that generalises the defect off lookbehind and onto the whole negative-assertion family plus `\B` |
+| S223 is taken; renumber | **S229** (the highest existing is S228, not S226 — `S227_scan_edge_entry_s0_only.sh` and `S228_cls_fold_recognizer_widened.sh` are both present). Re-verified: `m6read_check_sab_anchors.py` reads 232 rows and flags only the two pre-existing ones (S09, S199) |
+
+---
+
 ## 6. What is owed
 
 1. **K50** — the DFA half. Needs a design ruling (§3), and should be taken
@@ -351,9 +405,9 @@ as needing its own row.**
    the unsound one.
 4. **The advance-agreement check is not in the mech matrix.**
    `run_encoding_checks.sh` has no suite token in
-   `tests/mech/run_sabotage_matrix.sh`, so sabotage row **S223** (K49 planted:
+   `tests/mech/run_sabotage_matrix.sh`, so sabotage row **S229** (K49 planted:
    the utf8 advance reverts to the byte step) scores on the `harness` arm
-   against the restored corpus cell only. I validated S223 fires there
+   against the restored corpus cell only. I validated S229 fires there
    directly — applied it, rebuilt, and `tests/utf8/axis09_nextpos_findall.rxt`
    goes to 1 failure — and reverted. Wiring the encoding checks into the
    matrix is a separate, larger change to that dispatch.

@@ -139,7 +139,7 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # the reconciliation below instead — what moved is which POPULATION the cell
 # belongs to (known_fail -> run.sh's), not how many cells exist.
 # 2026-09-05 (lane k49fix, K50 FILED) — +1/+1/+1 for
-# tests/known_fail/k50_utf8_dfa_selfloop_start.rxt, the DFA-side sibling K49's
+# tests/known_fail/k50_utf8_dfa_midchar_start.rxt, the DFA-side sibling K49's
 # fix exposed (one `m` line). It lands under known_fail, so the census moves
 # and RUNSH_* below does NOT — the opposite of the K49 movement one comment up,
 # and the two together are why these pins are kept as a pair rather than one

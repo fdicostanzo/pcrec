@@ -3721,9 +3721,63 @@ builds the lowest-priority start self-loop as `memset(nfa->st[any].cls,
 any byte offset. The artifact for `\B` carries no retry loop at all (it is
 `RX_ENGINE "dfa"`, `match_form "unwrapped"`, the forward+reverse two-pass
 form), so K49's fix cannot reach it: the two engines implement "try the next
-start" by two different mechanisms and K49 fixed one of them. The hybrid
-prefilter's candidate handoff (`src/gen/emit_vm.c`'s retry-window recompute)
-re-windows through the same DFA and inherits the same property.
+start" by two different mechanisms and K49 fixed one of them.
+
+**THE AMPLIFIER, and it is the general fact rather than a lookbehind
+detail.** What turns a mid-character start from a WASTED ATTEMPT into a
+WRONG ANSWER is that a NEGATIVE assertion succeeds exactly where its body
+has no path. `enc_utf8.c`'s `back_step` carries §5.2.1's declared-length
+repair, so at a mid-character position it correctly answers
+`BACK_STEP_NONE` on the truncated leading character — and a negative
+lookbehind therefore becomes VACUOUSLY TRUE there. Nothing is wrong with
+`back_step`; it is behaving exactly as specified. The same inversion reaches
+the whole negative-assertion family and `\B` (true exactly where `\b` finds
+no boundary), which is why K50's witness needs no lookbehind at all. This is
+`utf8_design.md` §2.6.1's inversion, and it is the sentence §5.5 needed and
+did not have.
+
+### K50's SITE LIST — three mechanisms, one rule
+
+A fix must reach all three or it will close one door and leave two:
+
+1. **`src/ir/nfa.c:965`** — `ENG_UNANCH`'s start-anywhere self-loop. K50's
+   own witness.
+2. **`src/gen/emit_dfa.c:6234`** — `ENG_ATTEMPT`'s `for (start = search_from;
+   start <= start_max; start++)`. This is the loop `utf8_design.md` §5.5 and
+   ASK 5 are about.
+3. **`src/gen/emit_vm.c:11080-11089`** — the HYBRID's retry-window recompute,
+   which re-seeds `attempt_position` from `<prefix>_prefilter(...)`'s
+   `window[0][0]`. That prefilter is a full DFA emitted through
+   `pcrec_emit_dfa_engine`, so it carries (1) and can hand the VM a
+   mid-character candidate even now that K49 has made the retry step itself
+   boundary-correct.
+
+**DOES K49's FIX CLOSE (3)? MEASURED: no wrong answer is reachable through
+it today, but not because of K49's fix — because the two populations are
+disjoint.** Two legs, one measured and one reasoned, stated separately
+because they are not equally strong:
+
+- **MEASURED (lane k49fix, 2026-09-05).** 11 hybrid `-e utf8` artifacts
+  (`RX_VM_PREFILTER "hybrid"`) × 6 multi-byte subjects × every startpos =
+  374 cells, checking every REPORTED match start against the boundary
+  predicate: **0 mid-character reports.** Separately, every nullable VM
+  pattern tried under `-e utf8` reads `RX_VM_PREFILTER "none"` with
+  `RX_ENGINE_SEL "declined-nullable-default"` — 6 of 6, including
+  `(?<!q)`, `(?<!.)`, `(?!.)` and `(?:(?<!q)a)*`.
+- **REASONED, and this is the part that is an argument rather than a
+  measurement.** For the VM to REPORT a mid-character start it must MATCH
+  anchored at one, and under `utf8` no lowered pattern can begin by
+  consuming a continuation byte — so only a pattern that matches EMPTY
+  there can do it. [OPT-4.2]'s `declined-nullable-default` gives exactly
+  those patterns no prefilter at all. So "hands a mid-character candidate"
+  and "can answer at a mid-character position" are disjoint populations.
+
+**THAT DISJOINTNESS IS NOT A GUARANTEE ANYONE WROTE DOWN**, which is why (3)
+stays on this list: it is a coincidence of two independent decisions (the
+UTF-8 lowering's alphabet and a prefilter decline chosen for a throughput
+reason in [OPT-4.2]), and either could move without anyone noticing this
+depended on it. A fix for (1) closes (3) for free; a fix that touches only
+(2) does not.
 
 **IT REFUTES A DESIGN ASSERTION AND THE RULING THAT RESTS ON IT, and that
 is the part worth keeping.** `docs/design/utf8_design.md` §5.5 says of
@@ -3772,11 +3826,29 @@ semantics from a UTF-8 build**, which D26 makes an ordinary compatibility
 defect rather than anything needing a ruling to call wrong. A hand
 derivation agrees with the oracle independently.
 
-STATUS: open. Filed as `tests/known_fail/k50_utf8_dfa_selfloop_start.rxt`
+**THE FILING INSTRUCTION SAID `pcrec-ARGUED` AND THAT IS RECORDED RATHER
+THAN FOLLOWED**, because the difference from K49 is the useful part. K49's
+expectation was ARGUED because NO ENGINE PRODUCES THAT CELL — a mid-loop
+retry past a caller-supplied `startpos` is pcrec's own `next_pos`-driven
+protocol, not something `pcre2_match`'s `startoffset` is required to honour
+the same way. K50's witness is an ordinary unanchored search from offset 0,
+which every engine answers, and the answers are in the table above. Marking
+it ARGUED would put a false provenance in the corpus and would understate
+the finding: an oracle-backed divergence is strictly stronger evidence than
+a design position. §2.6.1.1's inversion is cited in the cell as the
+SUPPORTING reasoning, which is what it is.
+
+STATUS: open. Filed as `tests/known_fail/k50_utf8_dfa_midchar_start.rxt`
 per this file's own convention — a confirmed answer pcrec disagrees with,
 held loud, with the ratchet firing red-to-green the moment the DFA half is
-fixed. **NOTE FOR WHOEVER READS THE RATCHET COUNT NEXT:** `make test`'s
-known-fail population is 2 files again (K34 and this), not the 1 that K49's
-retirement alone would have left. That is a new bug filed, not K49's fix
-failing to land — K49's own cell is live and green in
+fixed. **THE RATCHET PINS NO COUNTS TO RE-PIN**:
+`tests/known_fail/run_known_fail.sh` enumerates `tests/known_fail/*.rxt`
+with `find` and inverts each file's verdict, so the arithmetic (K49's file
+out, K50's file in, `still failing: 2` = K34 + K50) needs no edit there.
+What DID need re-pinning is `tests/rxtsource/run_rxtsource_tests.sh`'s
+corpus census, and the two movements are in opposite directions — see the
+comments at its `CENSUS_*`/`RUNSH_*` pins. **NOTE FOR WHOEVER READS THE
+RATCHET COUNT NEXT:** the known-fail population is 2 files, not the 1 that
+K49's retirement alone would have left. That is a new bug filed, not K49's
+fix failing to land — K49's own cell is live and green in
 `tests/utf8/axis09_nextpos_findall.rxt`.
