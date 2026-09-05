@@ -152,26 +152,22 @@ static Ast *altcls_rebuild_alt(Ctx *cx, Ast **arr, size_t n)
     return res;
 }
 
-static Ast *altcls_class_from_bits(Ctx *cx, const uint8_t bits[32])
+/* [M5.0 stage 1] THIS PASS RUNS ABOVE THE ENCODING LOWERING (`compile.c:926`
+ * against `:1000`), so every class it touches carries CODE POINTS and not
+ * bytes — §2.5.1's three WIDEN rows, and the position is forced by
+ * `pcrec_callgraph_build` rather than chosen (§2.1.2 constraint 2).
+ *
+ * ALL THREE OPERATIONS HAVE EXACT INTERVAL FORMS AND NONE IS NEW MACHINERY: a
+ * copy is a copy, a union of sorted interval lists is a merge, and "is this
+ * branch a single character" is `n == 1 && lo == hi`. Under `--encoding=byte`
+ * every answer is identical to the bitmap's by construction, because unioning
+ * within `[0, 0xFF]` and `bits[b] |= …` are the same function — which is what
+ * makes this pass invisible to the identity gate rather than merely quiet. */
+static Ast *altcls_class_from_set(Ctx *cx, PcrecCpSet *s)
 {
     Ast *c = pcrec_ast_node(cx, A_CLASS);
-    memcpy(c->u.cls.bits, bits, 32);
+    pcrec_cpset_publish(s, c);
     return c;
-}
-
-/* Exactly one bit set in a 256-bit class bitmap -> that byte value; -1
- * otherwise (empty, or more than one byte can start this branch). */
-static int altcls_single_bit(const uint8_t cls[32])
-{
-    int found = -1;
-    for (int byte = 0; byte < 32; byte++) {
-        uint8_t v = cls[byte];
-        if (!v) continue;
-        if (v & (uint8_t)(v - 1)) return -1;   /* >1 bit in this byte */
-        if (found >= 0) return -1;             /* a bit already found elsewhere */
-        found = byte * 8 + __builtin_ctz((unsigned)v);
-    }
-    return found;
 }
 
 /* A branch is PEELABLE when its first atom (the flattened spine's element 0)
@@ -186,7 +182,12 @@ static bool altcls_branch_peel(Ctx *cx, Ast *branch, int *byte0_out, Ast **rest_
     Ast **arr;
     size_t n = altcls_cat_flatten(cx, branch, &arr);
     if (arr[0]->k != A_CLASS) return false;
-    int bit = altcls_single_bit(arr[0]->u.cls.bits);
+    /* [M5.0 stage 1] `pcrec_cls_single` is the interval form of the popcount
+     * this line used to do, and it DECLINES on a single code point above
+     * 0xFF — which is right rather than conservative: `*byte0_out` is a BYTE
+     * the factored prefix will be emitted as, and a two-byte character is not
+     * one. */
+    int bit = pcrec_cls_single(arr[0]);
     if (bit < 0) return false;
     *byte0_out = bit;
     *rest_out = altcls_rebuild_cat(cx, arr + 1, n - 1);
@@ -237,9 +238,13 @@ static Ast *altcls_extend_prefix(Ctx *cx, Ast **cur, size_t n)
             prefix = grown;
             pcap = ncap;
         }
-        uint8_t bits[32] = {0};
-        cls_set(bits, (unsigned)byte0);
-        prefix[plen++] = altcls_class_from_bits(cx, bits);
+        /* [M5.0 stage 1] the factored prefix byte as a one-member class. It
+         * comes from `pcrec_cls_single`, which already refused anything above
+         * 0xFF, so the interval is a byte by construction. */
+        PcrecCpSet p;
+        pcrec_cpset_init(&p, &cx->arena);
+        pcrec_cpset_add(&p, (unsigned)byte0, (unsigned)byte0);
+        prefix[plen++] = altcls_class_from_set(cx, &p);
 
         for (size_t i = 0; i < n; i++) cur[i] = next[i];
     }
@@ -327,11 +332,15 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
                 size_t j = k + 1;
                 while (j < n && br[j]->k == A_CLASS) j++;
                 if (j - k >= 2) {
-                    uint8_t bits[32];
-                    memcpy(bits, br[k]->u.cls.bits, 32);
-                    for (size_t x = k + 1; x < j; x++)
-                        for (int b = 0; b < 32; b++) bits[b] |= br[x]->u.cls.bits[b];
-                    out[m++] = altcls_class_from_bits(cx, bits);
+                    /* [M5.0 stage 1] the union that factors an alternation,
+                     * as a merge of interval lists. The result is normalised
+                     * by the builder, so `a|b` and `[ab]` produce the same
+                     * payload — the set-identity property §2.7.2 rests on. */
+                    PcrecCpSet u;
+                    pcrec_cpset_init(&u, &cx->arena);
+                    for (size_t x = k; x < j; x++)
+                        pcrec_cpset_add_set(&u, br[x]->u.cls.iv, br[x]->u.cls.n);
+                    out[m++] = altcls_class_from_set(cx, &u);
                     cx->job->altcls_merges++;
                     any_rewritten = true;
                     k = j;

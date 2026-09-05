@@ -998,6 +998,44 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * early return for every pattern that recorded nothing. */
         pcrec_postresolve(&cx, root);
 
+        /* [M5.0] THE ENCODING LOWERING, and its POSITION IS THE DESIGN rather
+         * than a convenience (docs/design/utf8_design.md §2.1.2; the full
+         * derivation is at src/opt/lower_enc.c's header). Three ordering
+         * constraints, each read off this very pass chain, together admit
+         * EXACTLY THIS LINE:
+         *
+         *   BEFORE `pcrec_build_nfa` (below) and before `pcrec_emit_vm`
+         *   (further below, and note it is handed `root` — the AST, not the
+         *   IR), because those are the two consumers that can only express
+         *   BYTES. A lowering placed after either is r54 E1: `vm_cls` interns
+         *   the first 32 bytes of whatever it is handed, so a code-point
+         *   interval list would compile to a silent miscompile rather than a
+         *   refusal.
+         *
+         *   AFTER `pcrec_callgraph_build` (above), by the SAME rule that pass
+         *   states for itself: it caches `u.call.body`, which names a subtree
+         *   IN THE TREE THE EMITTER WILL WALK, so every pass that REBUILDS a
+         *   node must already have run. This one does — an `A_CLASS` becomes
+         *   an `A_CAT`/`A_ALT` of byte-range classes under a multi-byte
+         *   encoding — which is what rules out the otherwise-attractive
+         *   "lower immediately after the parser".
+         *
+         *   AFTER `pcrec_postresolve` (immediately above), which asks module
+         *   `lookaround`'s fixed-width rule in CHARACTERS: after this line a
+         *   two-byte character is an `A_CAT` of two byte classes, and a
+         *   character-width walk over a lowered tree would answer 2 where the
+         *   truth is 1.
+         *
+         * AND THE ASSIGNMENT IS TO `root`, NOT TO A LOCAL — `pcrec_discharge_
+         * atomic`'s own comment above records the bug that makes that worth
+         * spelling out, and here the consequence would be `pcrec_emit_vm`
+         * walking the UN-lowered tree, which is E1 arriving by a second route.
+         *
+         * A CHANGE THAT MOVES THIS LINE has either found one of the three
+         * constraints wrong — which is the design's own prediction P-12, and
+         * is welcome — or has reintroduced E1. */
+        root = pcrec_lower_enc(&cx, root);
+
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the
          * prefilter is deliberately off (D44/R21 E-6) and so nothing needs an

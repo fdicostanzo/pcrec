@@ -160,7 +160,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
       test-prefilter-collapse test-rxtsource test-definitions \
-      test-entry-shape-identity
+      test-entry-shape-identity test-cpset-structure
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -376,6 +376,34 @@ test-search-pinned: all
 test-entry-shape-identity: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-entry-shape-identity.ran"; fi
 	bash tests/codegen/run_entry_shape_identity.sh
+
+# [M5.0] stage 1's TWO INSTRUMENTS, and they are wired DIFFERENTLY on purpose
+# (docs/design/utf8_design.md §8.1.1, §9.2).
+#
+# `test-cpset-structure` IS IN `make test`. It reads the SOURCE TREE — no
+# corpus sweep, no reference compiler beyond a `git archive` for its
+# failing-direction demonstration and one scratch build for its assertion
+# witness — and measures ~35 s. It is the half a NO-OP refactor fails, so it is
+# a standing invariant: the day someone adds an emitter site that reaches past
+# `pcrec_cls_bits` for a class payload, this is what says so.
+#
+# `test-encoding-identity` IS OPT-IN, on the ruling `test-atomic-identity`,
+# `test-backrefs-identity` and `test-recursion-identity` already carry: it
+# builds a whole second compiler from a pinned commit and sweeps 2,845 patterns
+# on four axes (~6 min), and its answer cannot change unless someone edits code
+# at or before the pin. It is a ONE-SHOT LANDING gate for a boundary that is
+# now behind us — see tests/codegen/CLAUDE.md on why its pin must be RETIRED
+# rather than moved forward if a later change ever makes it red.
+#
+#     make test-cpset-structure                                # in `make test`
+#     make test-encoding-identity                          # the gate, on demand
+#     ENCODING_IDENTITY_REF=<sha> make test-encoding-identity   # a moved base
+test-cpset-structure: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cpset-structure.ran"; fi
+	bash tests/codegen/run_cpset_structure.sh
+
+test-encoding-identity: all
+	bash tests/codegen/run_encoding_identity.sh
 
 # [OPT-VMFL] `<PREFIX>_VM_FRAMELESS` held to the artifact's own `goto *`
 # count (docs/dev/optvmfl_step0.md §4.2). Its OWN section on
@@ -1286,6 +1314,7 @@ clean:
         test-spec test-premul-table test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
-      test-entry-shape-identity \
+      test-entry-shape-identity test-cpset-structure \
+        test-encoding-identity \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

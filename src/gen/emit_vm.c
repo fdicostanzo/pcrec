@@ -1506,18 +1506,25 @@ static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
  * a strict improvement over falling back to frames, none is needed for
  * correctness, and the last two need a per-quantifier reversed automaton this
  * milestone has no other customer for. */
-static int vm_det_seq(const Ast *a, const uint8_t **out, int cap)
+/* [M5.0 stage 1] `out` IS STORAGE NOW, NOT A LIST OF BORROWED POINTERS
+ * (§2.5.1's AFTER row 9, the first of the four sites r54 E1 is about). It used
+ * to hand back `&a->u.cls.bits[0]` — a pointer INTO the node, valid because a
+ * class payload WAS 32 bytes of bitmap. There is no bitmap in a node to point
+ * at any more, so each approved leaf RENDERS into the caller's row. The
+ * caller's array grew from 32 pointers to 32x32 bytes (1 KB of stack at three
+ * sites), which is the whole cost of removing the aliasing. */
+static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
 {
     a = bare(a);
     switch (a->k) {
     case A_CLASS:
         if (cap < 1) return 0;
-        out[0] = a->u.cls.bits;
+        pcrec_cls_bits(cx, a, out[0]);
         return 1;
     case A_CAT: {
-        int nl = vm_det_seq(a->l, out, cap);
+        int nl = vm_det_seq(cx, a->l, out, cap);
         if (nl == 0) return 0;
-        int nr = vm_det_seq(a->r, out + nl, cap - nl);
+        int nr = vm_det_seq(cx, a->r, out + nl, cap - nl);
         if (nr == 0) return 0;
         return nl + nr;
     }
@@ -1527,7 +1534,7 @@ static int vm_det_seq(const Ast *a, const uint8_t **out, int cap)
         if (a->u.rep.rmin != a->u.rep.rmax || a->u.rep.rmin <= 0) return 0;
         int total = 0;
         for (int i = 0; i < a->u.rep.rmin; i++) {
-            int nl = vm_det_seq(a->l, out + total, cap - total);
+            int nl = vm_det_seq(cx, a->l, out + total, cap - total);
             if (nl == 0) return 0;
             total += nl;
         }
@@ -1632,11 +1639,11 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
  * wrong span, the one failure mode this project's compatibility standard
  * refuses outright. Falling back to the frames rung costs frames and is
  * always correct. */
-static bool vm_cursor_fits(const Ast *rep, const uint8_t **seq, int *stride,
-                           CapOff *caps, int *ncaps)
+static bool vm_cursor_fits(Ctx *cx, const Ast *rep, uint8_t (*seq)[32],
+                           int *stride, CapOff *caps, int *ncaps)
 {
     int n = 0;
-    int len = vm_det_seq(rep->l, seq, VM_MAX_STRIDE);
+    int len = vm_det_seq(cx, rep->l, seq, VM_MAX_STRIDE);
     if (len <= 0) return false;
     if (vm_cap_offsets(rep->l, 0, caps, &n, VM_MAX_BODY_CAPS) < 0) return false;
     *stride = len;
@@ -1867,7 +1874,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic);
 static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
-    const uint8_t *seq[VM_MAX_STRIDE];
+    uint8_t seq[VM_MAX_STRIDE][32];
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, nc = 0;
     Cost c = { 0, 0, 0, 0, false, false };
@@ -1906,7 +1913,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * Counting the EMITTED copies here instead of the ITERATIONS would be a
      * silent cap of precisely the kind the revdet arm below records finding the
      * hard way: the artifact would size for 8 iterations and take 4000. */
-    if (!vm_cursor_fits(a, seq, &stride, caps, &nc)
+    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
         && !vm_revdet_fits(a, under_atomic)
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l, false);
@@ -1989,7 +1996,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
 
-    if (!vm_cursor_fits(a, seq, &stride, caps, &nc)
+    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
         && vm_revdet_fits(a, under_atomic)) {
         const bool move = vm_rev_canmove(a, cuts);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
@@ -2042,7 +2049,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 
     Cost body = vm_cost(v, a->l, false);
 
-    if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
+    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
          * plus one write per capture in the body per (re)try — all of which
          * the resume frame's own mark rewinds, so they do not accumulate.
@@ -2495,7 +2502,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 static void vm_count_slots(Vm *v, const Ast *a, long long repl,
                            bool under_atomic)
 {
-    const uint8_t *seq[VM_MAX_STRIDE];
+    uint8_t seq[VM_MAX_STRIDE][32];
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, nc = 0;
     switch (a->k) {
@@ -2706,7 +2713,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
     case A_REP: {
         const bool cuts = vm_cuts(a, under_atomic);
         if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
-        if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
+        if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
             /* [ENG-BREP] the possessive span loop allocates NEITHER — no
              * low-water slot and no resume point. Mirrors vm_cursor_rep's own
              * branch; the two are the same condition read twice, which is the
@@ -3281,14 +3288,16 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  * "is a one-member class" are the same question asked once. */
 static int vm_isl_single(const Ast *a)
 {
-    int found = -1;
     if (a->k != A_CLASS) return -1;
-    for (int c = 0; c < 256; c++) {
-        if (!cls_has(a->u.cls.bits, (unsigned)c)) continue;
-        if (found >= 0) return -1;
-        found = c;
-    }
-    return found;
+    /* [M5.0 stage 1] §2.5.1's AFTER row 9, second site. The 256-value scan
+     * this replaced asked "does exactly one bit stand", which is the interval
+     * list's `n == 1 && lo == hi` — one comparison instead of 256, and the
+     * SAME question rather than an approximation of it. It shares
+     * `pcrec_cls_single` with `src/opt/altcls.c`'s peelable-branch test on the
+     * one-mechanism rule: an island literal and a factored prefix byte are the
+     * same fact ("this class is one literal character") asked twice, and the
+     * two spellings had already drifted into a popcount and a scan. */
+    return pcrec_cls_single(a);
 }
 
 /* ---- the island's INPUT: the subtree's literal words, in PREFERENCE ORDER --
@@ -3962,7 +3971,7 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
  * relative offset `off`. The writes go AFTER the push, so the frame's own mark
  * rewinds them on every retreat and they never accumulate on the trail. */
 static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
-                          const uint8_t **seq, int stride,
+                          const uint8_t (*seq)[32], int stride,
                           const CapOff *caps, int ncaps, bool under_atomic)
 {
     StrBuf *b = v->b;
@@ -4605,7 +4614,15 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
 
     switch (a->k) {
     case A_CLASS: {
-        int ci = vm_cls(v, a->u.cls.bits);
+        /* [M5.0 stage 1] §2.5.1's AFTER row 9, third site — the BACKWARD walk.
+         * `vm_cls` interns "the 32 bytes at this address", which is exactly the
+         * read r54 E1 found: handed an interval list it would have interned its
+         * first 32 bytes and emitted a class test for a set nobody wrote. It is
+         * handed a rendered bitmap instead, and `pcrec_cls_bits` refuses a node
+         * the lowering has not confined. */
+        uint8_t bits[32];
+        pcrec_cls_bits(v->cx, a, bits);
+        int ci = vm_cls(v, bits);
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_CLASS, ci, next, "consumed BACKWARD");
         sb_printf(b, "    if (%s > %s && (", R->cur, R->floor);
@@ -5606,7 +5623,7 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
 
 static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
 {
-    const uint8_t *seq[VM_MAX_STRIDE];
+    uint8_t seq[VM_MAX_STRIDE][32];
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, ncaps = 0;
     const bool cuts = vm_cuts(a, under_atomic);
@@ -5620,7 +5637,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
         return;
     }
 
-    if (vm_cursor_fits(a, seq, &stride, caps, &ncaps)) {
+    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &ncaps)) {
         vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps, under_atomic);
         return;
     }
@@ -7052,7 +7069,13 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
 
     switch (a->k) {
     case A_CLASS: {
-        int ci = vm_cls(v, a->u.cls.bits);
+        /* [M5.0 stage 1] §2.5.1's AFTER row 9, fourth site — the FORWARD walk,
+         * and the one every capture-bearing pattern in the corpus goes
+         * through. See the backward arm above for what the render is
+         * defending. */
+        uint8_t bits[32];
+        pcrec_cls_bits(v->cx, a, bits);
+        int ci = vm_cls(v, bits);
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_CLASS, ci, next, NULL);
         sb_puts(b, "    if (scan_position < subject_length && (");

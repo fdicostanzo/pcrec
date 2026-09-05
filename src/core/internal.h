@@ -394,6 +394,23 @@ typedef enum {
     CALL_LINKAGE
 } CallLink;
 
+/* [M5.0 stage 1] ONE CODE-POINT INTERVAL, inclusive at both ends
+ * (docs/design/utf8_design.md §2.2). The `A_CLASS` payload is a sorted,
+ * disjoint, NON-ADJACENT list of these — `lo[i] <= hi[i] < lo[i+1] - 1` — and
+ * that invariant is what keeps every consumer simple: a union is a merge, "is
+ * this a single character" is `n == 1 && iv[0].lo == iv[0].hi`, and set
+ * equality is list equality, so two spellings of one set cannot produce two
+ * different artifacts (§2.7.2's second argument against symbolic negation).
+ *
+ * WHY INTERVALS AND NOT A WIDER BITSET (§2.2): a bitset over 0x110000 code
+ * points is 136 KB per class node, and the measured interval counts for the
+ * Unicode property classes M5 is heading for are 44 to 770.
+ *
+ * `unsigned` and not a code-unit type: this is a CODE POINT, whose universe is
+ * the ENCODING's (`PcrecEnc.max_cp` — 0xFF for `byte`, 0x10FFFF for `utf8`),
+ * never a byte and never a width. */
+typedef struct { unsigned lo, hi; } PcrecCpRange;
+
 typedef struct Ast Ast;
 struct Ast {
     /* ---- COMMON FIELDS ----------------------------------------------------
@@ -504,9 +521,33 @@ struct Ast {
      * verbatim: a node nothing wrote reads as all-zero through whichever
      * member its kind selects. */
     union {
-        /* A_CLASS: 256-bit membership bitmap. `cls_set`/`cls_has` below take
-         * the array, so they are unchanged by D70. */
-        struct { uint8_t bits[32]; } cls;
+        /* [M5.0 stage 1] A_CLASS: a set of CODE POINTS as sorted, disjoint,
+         * non-adjacent intervals (docs/design/utf8_design.md §2.2). It was a
+         * 256-bit membership bitmap through [M6.6]; the widening is what lets
+         * one representation carry both `[a-z]` and `\p{L}`, and §2.2's second
+         * bullet is why the bitmap did not SURVIVE ALONGSIDE it — two
+         * representations means two code paths in every consumer and a
+         * predicate deciding which.
+         *
+         * THE BITMAP STILL EXISTS, one layer down, and `pcrec_cls_bits` below
+         * is the ONLY thing that makes one. Every byte-tier consumer — the NFA
+         * builder's `N_CLASS` states, the VM emitter's interned class tables —
+         * wants 32 bytes, and gets them by RENDERING this list at a point in
+         * the pass chain where the encoding lowering guarantees every interval
+         * is confined to `0..0xFF`. Reading these two fields AS a bitmap is
+         * r54 E1's silent miscompile and is why `bits` is gone rather than
+         * renamed: the read that committed it no longer type-checks.
+         *
+         * `iv` IS ARENA-ALLOCATED AND THE NODE DOES NOT OWN IT. Two nodes may
+         * share one list (a copy constructor copies the pointer), which is
+         * sound because nothing mutates a published list — every producer
+         * builds into a `PcrecCpSet` and publishes once.
+         *
+         * THE ARENA'S ZERO IS `{NULL, 0}`, THE EMPTY CLASS, which is what the
+         * all-zero 32-byte bitmap also meant, so every "the arena zeroes, so
+         * ..." argument in this header survives the re-layout unchanged
+         * (§2.2.3). */
+        struct { const PcrecCpRange *iv; int n; } cls;
 
         /* A_REP: `l{rmin,rmax}`, rmax == -1 for unbounded. */
         struct {
@@ -980,6 +1021,55 @@ struct Ast {
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
 static inline bool cls_has(const uint8_t *b, unsigned c){ return (b[c >> 3] >> (c & 7)) & 1u; }
+
+/* ---- [M5.0 stage 1] THE CODE-POINT INTERVAL SET (src/core/cpset.c) --------
+ *
+ * The `A_CLASS` payload's builder and its readers. `cpset.c`'s header carries
+ * the whole account — what the representation is, why the builder is
+ * arena-backed, and why `pcrec_cls_bits` is the only thing in the compiler
+ * that makes a 32-byte bitmap out of a class node. Design:
+ * docs/design/utf8_design.md §2.2, §2.1.4, §2.7.1.
+ *
+ * THE BUILDER IS WRITE-ONLY AND THE PAYLOAD IS READ-ONLY, and keeping them
+ * two types is what makes that a compiler-checked fact rather than a
+ * convention: a producer accumulates into a `PcrecCpSet` and `publish`es once,
+ * and a published `const PcrecCpRange *` can be shared by two nodes because
+ * nothing can mutate it in place. */
+typedef struct {
+    Arena        *ar;
+    PcrecCpRange *iv;
+    int           n, cap;
+} PcrecCpSet;
+
+void pcrec_cpset_init(PcrecCpSet *s, Arena *ar);
+/* Union one CLOSED interval in, restoring sorted/disjoint/non-adjacent. */
+void pcrec_cpset_add(PcrecCpSet *s, unsigned lo, unsigned hi);
+void pcrec_cpset_remove(PcrecCpSet *s, unsigned lo, unsigned hi);
+void pcrec_cpset_add_set(PcrecCpSet *s, const PcrecCpRange *iv, int n);
+/* The bridge from the byte-tier `pcrec_cls_*[32]` tables (§2.2.2): those
+ * tables survive AS BYTES for `\b`'s own consumers and become interval
+ * literals for the `\w`/`\W` PRODUCER rows, both rendered from one source. */
+void pcrec_cpset_add_bits(PcrecCpSet *s, const unsigned char bits[32]);
+/* `negate(S) = [0, max_cp] \ S`, the universe read from the ENCODING. */
+void pcrec_cpset_complement(PcrecCpSet *s, unsigned max_cp);
+bool pcrec_cpset_has(const PcrecCpSet *s, unsigned c);
+void pcrec_cpset_publish(PcrecCpSet *s, Ast *a);
+
+/* THE RENDER HELPER (§2.1.4) — the SOLE path from a class node to a 32-byte
+ * bitmap, for the six consumer sites BELOW the encoding lowering. Refuses, by
+ * `ctx_fail`, a node carrying a code point above 0xFF: that is r54 E1's silent
+ * miscompile turned into a diagnosed internal error at the site that would
+ * have committed it, and §13 obligation 5 is why it is a `ctx_fail` and not an
+ * `assert`. */
+void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
+/* The same render for the three analyses ABOVE the lowering (§2.5.1's DECLINE
+ * rows), which see code points and must not refuse: a node reaching outside
+ * the byte range widens to ALL BYTES, the sound direction for both callers'
+ * disjointness tests. */
+void pcrec_cls_bits_widen(const Ast *a, uint8_t out[32]);
+/* "Exactly one code point, and it is a byte?" — the code point, or -1. */
+int  pcrec_cls_single(const Ast *a);
+bool pcrec_cls_has(const Ast *a, unsigned c);
 
 /* ---- NFA (priority Thompson) ---- */
 
@@ -3694,6 +3784,15 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root);
  * ever recorded), which is what keeps such a pattern's compile byte-identical
  * to what it was before module `recursion` existed. */
 void pcrec_postresolve(Ctx *cx, Ast *root);
+
+/* [M5.0] THE ENCODING LOWERING (src/opt/lower_enc.c) — the AST→AST rewrite that
+ * turns CODE-POINT classes into a tree the byte tier can express. Its position
+ * in `compile.c`'s pass chain is derived from three ordering constraints and
+ * is a REVIEWABLE FACT rather than an implementation detail
+ * (docs/design/utf8_design.md §2.1.2, §13 obligation 4); the file's header
+ * carries the derivation and the call site restates which constraints it
+ * satisfies. Returns the (possibly new) root, which `compile.c` PUBLISHES. */
+Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the two fixpoints
  * whose RECURRENCE lives in the emitter — `vm_nullable`'s (a `static` there,

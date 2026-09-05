@@ -246,5 +246,8 @@ static const PcrecEncEntry entries_byte[] = {
 };
 
 const PcrecEnc pcrec_enc_backend_byte = {
-    PCREC_ENC_BYTE, "byte", entries_byte
+    /* [M5.0] `max_cp` is `0xFF`: this backend's repertoire IS the byte range,
+     * so complementing within it is the `~bits[i]` loop the parser used to
+     * write by hand (enc.h's field comment, utf8_design.md §2.7.1). */
+    PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte
 };
