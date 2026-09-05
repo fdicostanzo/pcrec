@@ -79,6 +79,27 @@ TO="timeout 600"
   # "invalid argument 's' for -I"). Spelled out so the header is identical on
   # either platform rather than empty on one of them.
   echo "# RUN DATE   : $(date +%Y-%m-%dT%H:%M:%S%z)"
+  # r54 meas-1, SECOND HALF. `u8_oracle.header()` prints the hashes of the
+  # bytes that ANSWERED, which is the authoritative record -- but only for
+  # probes that import it, and TWO here do not: `probe_premises.sh` is a shell
+  # script and `probe_sizing.py` is deliberately standalone (stdlib only, no
+  # oracle, so a bug in the shared oracle cannot leak into its numbers). Those
+  # two transcripts would have carried no source hash at all, which is exactly
+  # the gap the whole fix is about -- so the ARCHIVER, which every transcript
+  # passes through, hashes the probe file itself. For an oracle probe this is
+  # the LAUNCHER-side view (what is on disk here); the probe's own block below
+  # is what executed, and on a remote run they are two different machines.
+  # They should agree, and a reader who finds them differing has found
+  # something.
+  echo "# PROBE sha256[:16] (launcher-side, this disk):"
+  for f in "$PROBES/$(basename "$PROBE")" \
+           "$PROBES/u8_oracle.py" \
+           "docs/design/backrefs_measurements/probes/br_oracle.py" \
+           "docs/design/eng_brep_measurements/probes/pcre2_ctypes.py"; do
+    [ -f "$f" ] || continue
+    printf '#     %-20s %s\n' "$(basename "$f")" \
+      "$(shasum -a 256 "$f" 2>/dev/null | cut -c1-16)"
+  done
   echo "# local python3 : $(python3 -V 2>&1 | sed 's/^Python //')  (the BUNDLER's)"
   echo "# local gcc     : $(gcc-16 -dumpversion 2>/dev/null || echo n/a)"
   echo "# local host    : $(uname -sr)"
