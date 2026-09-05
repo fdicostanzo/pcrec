@@ -54,4 +54,37 @@ docs/dev/dfa_online_minimization_study.md §6)
   now tests; our first draft had assumed only the closed subgraph could
   merge, which is more pessimistic than their rule.
 
-## Notes from building (none yet)
+## Notes from building
+
+- **2026-09-04, lane `m1part` (M1, the partition-rule measurement,
+  `docs/dev/lim2_m1_partition_measurement.md`).** Measured your Algorithm 1
+  lines 34-42 rule (unexplored states pinned as singleton, Hopcroft over the
+  rest) at five checkpoints during construction, on 119 real pcrec patterns
+  (counted repeats, character classes, wide alternations — a population your
+  own evaluation contains none of). Two findings that might interest you.
+  **First**, the rule's intermediate block count is not monotone toward the
+  final answer on our population at all — on 25% of the patterns measured it
+  *exceeds* the true minimized count before the final checkpoint, by up to
+  3,001× on one witness (8,002 raw states, 2 minimized — the intermediate
+  count reads 6,002 at the 75% checkpoint). This is the concrete number
+  behind your own §3.2's *"minimization never merges states with incomplete
+  information"* read from the other side: incomplete information also means
+  the intermediate count carries no information about how much *further*
+  merging is coming, so it cannot serve as any kind of size bound on the
+  final machine — we had hoped it might, for an early-refusal mechanism, and
+  it cannot. **Second**, on the same population your rule's own
+  "already-merged" fraction (how much of the existing partial machine it has
+  folded together, relative to the pessimistic "only the closed subgraph can
+  merge" baseline we had assumed before reading you) reaches 33-49% at the
+  midpoint of our worst witness, against under 0.01% for the closed-subgraph
+  baseline — a measured, two-orders-of-magnitude confirmation that your rule
+  really is doing the less-pessimistic thing your Table 1's SC-S/OTF split
+  implies, on a population (unrolled counted repeats) your paper's own
+  evaluation never exercises. Both findings together read, to us, as: your
+  rule finds real structure early that a closed-subgraph-only approach
+  cannot see, but that structure is not yet a *bound* — which is presumably
+  why your own construction never treats it as one and always runs the
+  final pass. We have not yet built anything resembling your registry
+  (Tier 4 in our own vocabulary) — this measurement used only your
+  intermediate-minimization rule (our "candidate A") reconstructed post-hoc
+  from a finished raw machine, never a live GET-before-create lookup.

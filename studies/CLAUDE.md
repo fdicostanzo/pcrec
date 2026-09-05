@@ -82,6 +82,36 @@ re-measure before load-bearing use.
   claim and not a check. See its own CLAUDE.md for the two things that must not
   be simplified away (every cell is `--engine=vm`, or the rungs reach nothing;
   the subject is dense, or `ns/call` is not a reading of a per-call cost).
+- `lim2_m1/` — [LIM-2] M1, the [NF25] partition-rule measurement (lane
+  `m1part`, 2026-09-04): does the paper's own intermediate-minimization rule
+  (Hopcroft on the partial DFA, every unexplored state pinned as a
+  singleton, `docs/dev/dfa_online_minimization_study.md` §6.6 item 4's
+  re-scoping of M1 away from the study's original closed-subgraph-only
+  reading) give a usable size-bail lower bound on pcrec's real population —
+  counted repeats, a shape [NF25]'s own evaluation contains none of? NO:
+  measured on 119 patterns (the lim2 census's 12 plus a broader `raw
+  states > 1000` sweep plus `tests/counterk/`'s tower plus a 41-pattern
+  control set), the intermediate block count EXCEEDS the true minimized
+  count on 25.2% of the population before the final checkpoint, by up to
+  3,001× on one witness — not even loosely bounded in the direction a bail
+  needs. The comparison finding: the paper's rule sees dramatically more
+  than the study's original closed-subgraph reading (a measured 33-49%
+  "already merged" at the census witness's midpoint against under 0.01%
+  closed) — confirming §6.6's re-ranking of candidate A quantitatively
+  rather than by hand-reading one witness, and confirming N2 (the
+  closed-subgraph lower bound) is vacuous on this population. The
+  instrument (`lim2_m1.c`) reconstructs its own construction timeline
+  POST-HOC from ONE real, unmodified `pcrec_build_dfa` call — exact rather
+  than approximate, because the worklist's processing order is index order
+  by inspection of `src/ir/dfa.c` and `eolvar`/`endvar` never point forward
+  (checked as an invariant on every population member) — and self-checks
+  against the real `pcrec_minimize_dfa` at the 100% checkpoint (zero
+  mismatches over 119 patterns); its failing-direction control
+  (`--sabotage-selftest`) plants two wrong-block-count bugs and demonstrates
+  the self-check catches one of them on the census witness. Backs
+  `docs/dev/lim2_m1_partition_measurement.md`. See its own README.md/CLAUDE.md
+  (`make CC=gcc-16` builds it against `../../build/libpcrec.a`, `make sweep`
+  re-runs the population).
 - `form_char_twins/` — [FORM-CHAR] STEP 0 + [OPT-CLSPACK] STEP 0 hand-twins
   (lane form0, 2026-09-04): four families of mechanical hand-twins over
   emitted `build/pcrec` artifacts — the VM literal chain under

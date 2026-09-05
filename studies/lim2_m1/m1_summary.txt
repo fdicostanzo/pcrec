@@ -1,0 +1,8 @@
+== [LIM-2] M1 summary ==
+  pattern blocks seen         : 3383
+  refused / K7-class cap      : 389
+  no DFA route (VM-only)      : 403
+  ENG_ATTEMPT route (bot)     : 433
+  below size cut, excluded    : 2039
+  INCLUDED in M1 population   : 119
+  of which force-included     : 85 (below the size cut but named explicitly)

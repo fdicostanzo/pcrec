@@ -54,3 +54,5 @@ docs/design/subroutines_measurements/email_specimen/throughput/
 # shape at 4101b8b, and two named lines would conflict at the merge.
 docs/dev/lanes/*_rulings.md
 studies/lim2_census/lim2_census
+studies/lim2_m1/lim2_m1
+studies/lim2_m1/lim2_m1.dSYM/
