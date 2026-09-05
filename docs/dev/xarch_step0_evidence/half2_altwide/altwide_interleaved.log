@@ -1,0 +1,6 @@
+w_8_vm               n=8 median_ns=4521500.0 min=4396000.0 max=4620000.0 spread_pct=4.95
+w_8_auto             n=8 median_ns=1819500.0 min=1769000.0 max=1846000.0 spread_pct=4.23
+w_64_vm              n=8 median_ns=9545500.0 min=9252000.0 max=9672000.0 spread_pct=4.40
+w_64_auto            n=8 median_ns=3661500.0 min=3554000.0 max=3722000.0 spread_pct=4.59
+w_256_vm             n=8 median_ns=10779000.0 min=10484000.0 max=10975000.0 spread_pct=4.56
+w_256_auto           n=8 median_ns=3182500.0 min=3090000.0 max=3215000.0 spread_pct=3.93

@@ -1,0 +1,6 @@
+shape=plain(1)   median_ns=43108.0  min=42346.0 max=43424.0
+shape=shared(2)  median_ns=129292.0  min=128202.0 max=129994.0
+shape=forward(3) median_ns=43296.0  min=42608.0 max=43804.0
+ratio forward/plain  = 1.0044
+ratio forward/shared = 0.3349
+ratio shared/plain   = 2.9993

@@ -1,0 +1,40 @@
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2881: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2882: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2883: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2884: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2885: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2885: group slot 1: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2887: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2887: group slot 1: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2889: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2889: group slot 1: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2891: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2892: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2893: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2893: group slot 1: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2895: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2895: group slot 1: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2897: compile failure (see above)
+/Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt:2897: group slot 1: compile failure (see above)
+
+== Summary ==
+cases passed: 26294
+cases failed: 751
+failures by file:
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/assertions/absolute.rxt: 44
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/assertions/gate.rxt: 152
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/assertions/multiline.rxt: 78
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/assertions/wordb_empty_compose.rxt: 288
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/base/eol_engine.rxt: 11
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/base/eol_scan_avoidance.rxt: 15
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/base/review_r1.rxt: 2
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/base/review_r2.rxt: 1
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/captures/structure_anchors_misc.rxt: 2
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/mrl/01_trailing.rxt: 8
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/mrl/08_nomatch.rxt: 2
+  /Users/fdicostanzo/pcrec/worktrees/xarch0a/tests/possessify/possessify.rxt: 148
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 2925
+parallel: 192 of 192 file workers reported (PROCS=10)
+run_size_log.sh: wrote 2925 rows to /Users/fdicostanzo/pcrec/worktrees/xarch0a/docs/dev/artifact_size_log.tsv (commit 81731547)

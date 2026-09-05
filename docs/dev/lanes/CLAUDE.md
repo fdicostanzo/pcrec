@@ -299,4 +299,10 @@ never edited afterwards.
   is red at the lane's base on `cwmax` answering 1 byte for `[^a]` under
   `-e utf8`.
 
+- `xarch0_report.md` — [XARCH] STEP 0 (2026-09-05, lane xarch0,
+  measurement only): the delivery summary for `docs/dev/xarch_step0.md`
+  (Mac/M1/gcc-16 vs the bench's Linux/Ryzen/gcc-15.2 pin, compile-rate join
+  plus matcher-throughput ratios). No `_log.md` — the lane's ordering is
+  in its commits.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

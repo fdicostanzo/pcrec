@@ -1,0 +1,9 @@
+=== cls-upto-4/32/1024 d-01024 whole-subject match (forced-VM) ===
+-- cls_upto_4_vm --
+median_ns_per_set=2.042 min=1.725 max=2.403
+-- cls_upto_32_vm --
+median_ns_per_set=1.583 min=1.550 max=1.662
+-- cls_upto_1024_vm --
+median_ns_per_set=1.550 min=1.549 max=1.560
+=== dig-upto-16 d-00016 whole-subject match (forced-VM) ===
+median_ns_per_set=8.527 min=8.523 max=8.545
