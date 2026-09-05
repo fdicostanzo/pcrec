@@ -190,20 +190,53 @@ pcrec (the Makefile owns that).
   way a `pgrep -f` polling wrapper does. Self-test:
   `tests/safekill.test` (see below).
 
-  **[MACPORT] darwin port (2026-09-04), 13/13 self-test green.** No `/proc`
-  on macOS, so candidate discovery reads three WHOLE-BOX `ps` calls
-  (`pid=,ppid=,pgid=`, `pid=,lstart=`, `pid=,command=` — never one per
-  candidate) instead of the `/proc` scan, and `--cwd` resolution uses
-  `lsof -a -p N -d cwd -Fn` per already-pattern-narrowed candidate (never a
-  box-wide scan) in place of `readlink /proc/N/cwd`. Neither introduces a
-  subprocess whose own argv could self-match a caller's `-f` pattern — both
-  are fixed literal commands, which is the property the header's `/proc`
-  design exists to protect. `declare -A` (bash 3.2 has none) is fixed with
-  a literal-flag `if/else` at every array-declaration site, NOT a variable
-  holding `-A`/`-a` (`declare "$flag" NAME=()`) — verified live to be a
-  genuine bash parser gotcha: bash parses the `NAME=()` operand as an
+  **[MACPORT] darwin port (2026-09-04), 13/13 self-test green (verified
+  under genuine bash 3.2 — see below).** No `/proc` on macOS, so candidate
+  discovery reads ONE whole-box `ps -axwwo pid=,ppid=,pgid=,command=` call
+  (never one per candidate) instead of the `/proc` scan (`lstart` is
+  fetched lazily, per printed audit line, from a separate `ps -o lstart=`
+  call — it feeds only the audit line, never a safety decision), and
+  `--cwd` resolution uses `lsof -a -p N -d cwd -Fn` per already-pattern-
+  narrowed candidate (never a box-wide scan) in place of
+  `readlink /proc/N/cwd`. Neither introduces a subprocess whose own argv
+  could self-match a caller's `-f` pattern — both are fixed literal
+  commands, which is the property the header's `/proc` design exists to
+  protect. `declare -A` (bash 3.2 has none) is fixed with a literal-flag
+  `if/else` at every array-declaration site, NOT a variable holding
+  `-A`/`-a` (`declare "$flag" NAME=()`) — verified live to be a genuine
+  bash parser gotcha: bash parses the `NAME=()` operand as an
   INDEXED-array literal whenever the preceding flag isn't the literal
   token `-A` at parse time, then refuses to convert it
+
+  **A Homebrew bash (5.3.15) appeared on this box mid-lane, unexplained
+  and NOT installed by this lane — see docs/dev/lanes/macport_report.md's
+  headline finding — and shadowed `/bin/bash` (3.2.57) on `PATH`, which
+  masked two more real bugs for a while** since this script's own
+  `#!/usr/bin/env bash` shebang re-resolves via `PATH` regardless of the
+  caller: (1) `mapfile` (bash 4.0+, "command not found" on 3.2, verified
+  live) at both of this file's call sites, replaced with a portable
+  `while read` loop; (2) a TOCTOU race sharpened by three separate `ps`
+  snapshots (pid/ppid/pgid, `lstart`, `command`) instead of one atomic
+  `/proc` walk — merged to the single call above, closing the specific gap
+  where a process born between the first and third scan crashed
+  `pgset[...]=1` under `set -u`. **The sharpest of the three**: even after
+  the merge, self/ancestor exclusion could still be defeated, reproduced
+  deterministically — `ps` (invoked via process substitution) is itself
+  spawned by bash FORKING a child, and in the window between that `fork()`
+  and its own `execve()` into the real `ps` binary, the forked child is a
+  byte-for-byte copy of safekill's OWN process image (identical argv),
+  which `ps`'s own snapshot can catch mid-transition. That pid is neither
+  `$$` nor an ancestor of it, so ancestor-chain exclusion could not see
+  it, and safekill went on to `SIGTERM` its own process group — including
+  its own still-running `ps` helper. Fixed by extending self-protection to
+  cover every DESCENDANT of `$$` too (reusing `descendants_of()`),
+  symmetric with the ancestor exclusion already there: nothing this
+  process forked for its own bookkeeping is ever a legitimate kill target.
+  All three fixes verified with `PATH` forced so this script's own shebang
+  resolves to the real `/bin/bash` 3.2.57, not the shadowing 5.3 — 13/13,
+  four repeated runs (the descendant-exclusion race is narrow enough that
+  repetition matters).
+
   ("cannot convert indexed to associative array"), independent of this
   file. `iso_of()`'s darwin branch reads `ps`'s own `lstart` string
   directly rather than the `/proc/uptime`-derived boot-epoch/tick
