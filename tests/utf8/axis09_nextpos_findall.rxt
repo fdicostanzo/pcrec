@@ -24,9 +24,13 @@
 # docs/dev/known_issues.md K49 and moved to
 # tests/known_fail/k49_utf8_lookbehind_retry.rxt per this project's own
 # "disputed answer, not a construct that's merely unbuilt" convention
-# (docs/spec/rxt_format.md step 5); see the pointer comment at its former
-# position below. This file's own population is therefore 19 blocks / 20
-# original minus the one moved, all green.
+# (docs/spec/rxt_format.md step 5).
+#
+# **K49 IS FIXED (2026-09-05, lane k49fix) AND THE CELL IS BACK**, in its
+# authored position below, answering the ARGUED expectation. The known_fail
+# file is deleted. This file's population is 20 blocks / 80 cases again --
+# the count the generator header above states, which is now true of the file
+# for the first time since promotion.
 
 # axis9 block all-ascii-empty | subject=all-ascii (boundaries [0, 1, 2, 3, 4]) | pattern: (?:)
 #   [boundary P=0] m "abcd" 0 0   # oracle=PCRE2_UTF
@@ -269,15 +273,26 @@ features lookaround
 ms 1 "\xce\xb1\xce\xb2" 1 1
 
 # axis9 block midstart-row3-boundary | pattern: (?<!.) startpos=2 subject=alpha-beta (CE B1 CE B2)
-# [K49] MOVED to tests/known_fail/k49_utf8_lookbehind_retry.rxt, 2026-09-05
-# (lane utfprom): pcrec's live answer at this cell is a MATCH at (3,3),
-# disagreeing with the ARGUED expectation below (NO MATCH) -- a genuine,
-# disputed answer, not a construct that's merely unbuilt, so it belongs in
-# known_fail per docs/spec/rxt_format.md step 5, not here. See
-# docs/dev/known_issues.md K49 for the full write-up.
+# [K49] RESTORED HERE 2026-09-05 (lane k49fix) — this is the cell that found
+# the bug and it is back in its authored position, green. It was moved to
+# tests/known_fail/k49_utf8_lookbehind_retry.rxt at promotion because pcrec
+# answered a MATCH at (3,3), a byte offset inside beta's own encoding; the
+# emitted VM's unanchored retry advanced one BYTE past the failed startpos
+# instead of to the next character boundary. See docs/dev/known_issues.md K49.
+# THE CELL'S VALUE IS THAT IT IS A RETRY CELL, the only one in this block:
+# rows 1, 2 and 4 all ANSWER ON THEIR FIRST ATTEMPT, so none of them executes
+# the retry advance at all. Row 4's `(?!.)` at a mid-character startpos is the
+# sharp case -- `.` has no path from a continuation byte, so the negative
+# lookahead succeeds immediately -- and that is why it was green throughout
+# while this cell was not.
 # measured for context (NOT the expected value): PCRE2_UTF=None  MATCH_INVALID_UTF=None  options=0(byte)=None
 # EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): None
 #   ns 2 "\xce\xb1\xce\xb2"   # oracle=pcrec-ARGUED (no oracle produces this)
+# pcre2-only
+pattern (?<!.)
+encoding utf8
+features lookaround
+ns 2 "\xce\xb1\xce\xb2"
 
 # axis9 block midstart-row4-MID-leading-neg | pattern: (?!.) startpos=1 subject=alpha-beta (CE B1 CE B2)
 # measured for context (NOT the expected value): PCRE2_UTF=('ERRM', -36, 'bad offset into UTF string')  MATCH_INVALID_UTF=((4, 4), ())  options=0(byte)=((4, 4), ())

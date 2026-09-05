@@ -1,0 +1,79 @@
+# [K50] (docs/dev/known_issues.md), found 2026-09-05 by lane k49fix while
+# fixing K49 — by asking whether the OTHER engine's "try the next start"
+# mechanism had the same hazard. It does, and unlike K49 it is reachable
+# from an ORDINARY startpos=0.
+#
+# Under `-e utf8` the DFA's start-anywhere self-loop (src/ir/nfa.c:965,
+# `nfa_wrap_unanchored`, a class of EVERY BYTE) lets an unanchored match
+# START at any byte offset, so a zero-width match can be reported at an
+# offset INSIDE a multi-byte character. `\B` over `61 CE B1` (ASCII `a`
+# then alpha; character boundaries 0, 1 and 3) is reported at (2,2), and
+# byte 2 is the second byte of alpha.
+#
+# ---------------------------------------------------------------------
+# PROVENANCE: THIS CELL IS NOT `pcrec-ARGUED`. IT HAS A REAL ORACLE.
+#
+# The manager's filing instruction asked for this to be marked
+# `pcrec-ARGUED` like K49's cell was. That would be wrong here and the
+# difference is worth keeping, so it is recorded rather than followed:
+# K49's expectation was ARGUED because NO ENGINE PRODUCES THAT CELL AT
+# ALL (a mid-loop retry past a caller-supplied startpos is pcrec's own
+# next_pos-driven protocol, not something pcre2_match's startoffset is
+# required to honour). This one is an ordinary unanchored search from
+# offset 0, which every engine answers.
+#
+# THE REFERENCE ORACLE (libpcre2 10.46, ubuntubudu's system libpcre2 via
+# ctypes; run by the manager 2026-09-05). Subject 61 CE B1, pattern \B,
+# startoffset 0:
+#
+#     10.46 2025-08-27  options=0    rc=1  span=(2,2)
+#     10.46 2025-08-27  PCRE2_UTF    rc=1  span=(3,3)
+#
+# DISCOVERY reading, kept because it is what found the bug and because the
+# agreement across versions is itself worth recording (lane k49fix, same day,
+# libpcre2 10.37 through docs/design/subroutines_measurements/probes/
+# sr_oracle.py on the Mac dev box):
+#
+#     PCRE2_UTF                    startpos=0 -> (3,3)
+#     PCRE2_UTF|MATCH_INVALID_UTF  startpos=0 -> (3,3)
+#     options=0 (byte)             startpos=0 -> (2,2)
+#
+# The 10.37 reading is the LOCAL Miniconda build and is not this project's
+# reference (memory `pcrec-cross-platform-verification`; U13/U14 are the
+# recorded hazard of citing it as one) — the 10.46 line above is. They agree
+# cell for cell, so the divergence is not a version artefact.
+#
+# Both UTF option words answer (3,3). pcrec under `-e utf8` answers
+# (2,2) — which is exactly the `options=0` BYTE answer — so this is
+# pcrec returning byte semantics from a UTF-8 build, and D26 (PCRE2 is
+# the source of truth for semantics) settles it without anyone ruling.
+# An oracle-backed cell is STRICTLY STRONGER evidence than an argued
+# one; calling it ARGUED would understate the finding and would put a
+# false provenance marker in the corpus.
+#
+# The design-side reasoning agrees independently, and is the reason the
+# whole family is reachable: utf8_design.md Sec 2.6.1's inversion —
+# "'No path' INVERTS for a negative assertion" — is what turns a
+# mid-character start from a WASTED ATTEMPT into a WRONG ANSWER. `\B`
+# is the same shape: it is true exactly where `\b` has no boundary, so
+# a position no forward automaton can legitimately start at still
+# ANSWERS. Sec 2.6.1.1's table is the measured form of the same point.
+# A hand derivation gives (3,3) too: `\B` is false at 0 (start of
+# subject beside the word character `a` IS a boundary), false at 1 (`a`
+# then alpha crosses word/non-word), and true at 3 (alpha precedes, end
+# of subject follows, neither is a word character).
+# ---------------------------------------------------------------------
+#
+# THE VM HALF OF THIS WAS K49 AND IS FIXED; this is the DFA half, and the
+# two engines implement "try the next start" by different mechanisms, so
+# K49's fix does not reach it. Before K49 both engines answered (2,2) —
+# wrong in agreement, which is why no cross-engine check caught either.
+#
+# Kept HERE per this directory's convention: the cell stays, it stays
+# loud, and the ratchet FIRES the moment the DFA half is fixed.
+
+# pcre2-only
+pattern \B
+encoding utf8
+features assertions
+m "a\xce\xb1" 3 3

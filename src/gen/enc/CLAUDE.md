@@ -72,10 +72,54 @@ an ASCII-only fold (the non-ASCII closure is stage 4's). `tests/codegen/
 run_encoding_checks.sh`'s DD12a(ii) is the second-backend validation that the
 signatures match across both backends.
 
+**[K49] `PcrecEnc` GAINED A SECOND SCALAR — `advance` — AND IT IS A THIRD KIND
+OF CONTRIBUTION, not a fifth entry.** D58's revisit clause asks for exactly
+this to be written down, so: the entries table above is a table of FUNCTIONS an
+artifact exports; `advance` is INLINE TEXT spliced into an engine body, the
+statements that move a failed unanchored attempt's START to the next position
+the search may try. `pos++` under `byte`, `pos++` then skip continuation bytes
+under `utf8`. The entries table's interface is again untouched — no
+`PcrecEncEntry` field, no signature change, `pcrec_enc_ready` untouched, both
+emit functions untouched — and the third-encoding recipe below grows by one
+line: a backend now also writes its `advance`.
+
+**WHY IT COULD NOT BE A CALL TO `next_pos`, which computes exactly this
+position.** Two independent reasons that happen to agree. `next_pos` carries
+`engine_callable = false`, and DD-12 (7), `tests/codegen`'s [M5-SEAM] check and
+sabotage row S68 all forbid an engine body calling it. And a call would have
+MOVED THE BYTE ARTIFACT, turning D76's identity gate from a proof into a
+re-pin.
+
+**WHAT K49 REFUTED, because the rationale one paragraph down was the thing
+that was wrong.** `next_pos`' `engine_callable = false` is justified below by
+*"unanchoredness is the automaton's own self-loop, so there is no external
+advance for an engine to route through."* **There is.** The emitted VM's
+`<prefix>_search_run` has always carried `attempt_position++`, a genuine
+external advance in shared emitter code, and while it stepped one byte a
+`utf8` search could retry inside a character and — on a leading negative
+assertion, which succeeds exactly where its body has no path — report a match
+there. The CONCLUSION (`engine_callable = false`) survives and the REASON is
+replaced: the engine does not call the entry because the advance is emitted
+inline from this field instead. `docs/design/utf8_design.md` §5.5 carries the
+same refutation for its own version of the claim, and the DFA half of it is
+still open as K50.
+
+**THE RULE IS NOW SPELLED TWICE PER BACKEND** (`advance` and `next_pos`), and
+that is a drift hazard this directory already has a precedent for: the caseless
+compare and `cls_casefold` are two spellings of one fold, tied by
+`tests/backrefs/fold_agreement_check.c`. The tie here is
+`tests/codegen/run_encoding_checks.sh`'s K49 advance-agreement section, which
+EXTRACTS the advance from an emitted artifact, compiles it, and compares it
+against that same artifact's linked `next_pos` over an exhaustive sweep of a
+role-complete byte alphabet — with non-vacuity asserted in both directions
+(`byte` must answer `pos + 1` everywhere, `utf8` must not, somewhere).
+
 - **enc.h** — the seam's whole interface: the `PcrecEnc` row (id, the ONE
-  spelling of the encoding's name, and a NULL-terminated table of
-  `PcrecEncEntry` rows), the entry ids that are also the bits of a
-  per-artifact MASK, the registry accessors, and `pcrec_enc_emit_text`. Read
+  spelling of the encoding's name, the complement universe `max_cp`, a
+  NULL-terminated table of `PcrecEncEntry` rows, and [K49]'s `advance` text),
+  the entry ids that are also the bits of a
+  per-artifact MASK, the registry accessors, `pcrec_enc_emit_text` and
+  `pcrec_enc_advance`. Read
   its header comment before adding a backend; it carries the third-encoding
   recipe and the reason a backend is TEXT rather than emitter code.
 
@@ -143,12 +187,19 @@ signatures match across both backends.
   body verbatim (UTF-8 is a prefix code, so an exact compare is a byte
   compare); the caseless one folds the 52 ASCII letters and nothing else (the
   non-ASCII simple-fold closure is stage 4's, and the LENGTH-return protocol is
-  what will let that land without the shared emitter changing). Text, not
+  what will let that land without the shared emitter changing). [K49] added its
+  `advance`: `next_pos`' boundary rule written as an inline step, because an
+  engine may not call the entry — the two are tied by the advance-agreement
+  check named above rather than left to drift. Text, not
   emitter code, ASCII-only, `$` the one substituted character — `enc_byte.c`'s
   rules.
 - **enc_byte.c** — the `PCREC_ENC_BYTE` backend. One byte is one character, so
   every residual entry is the identity shape or
-  close to it. FOUR entries today, each with its contract comment emitted
+  close to it, and [K49]'s `advance` is the bare `@P++;` the emitter used to
+  hard-code — reproduced character for character, which is the whole of this
+  backend's stake in that fix: the byte artifact does not move. It carries no
+  comment into the artifact on purpose; a comment there would be new emitted
+  scaffolding on exactly the path D76's identity gate pins. FOUR entries today, each with its contract comment emitted
   into the artifact alongside its declaration — the contract lives with the
   backend so a future backend cannot land a residual declaration nobody wrote
   a contract for:
@@ -202,7 +253,8 @@ signatures match across both backends.
 ## Adding a backend (the DD-12 third-encoding recipe)
 
 One new `enc_<name>.c` here, plus its `extern` in `enc.h` and its row in
-`enc.c`'s table. Both of those are files in THIS directory; the Makefile
+`enc.c`'s table. The row carries the backend's residual ENTRIES, its `max_cp`,
+and (since [K49]) its `advance` text — all three in this directory. Both of those are files in THIS directory; the Makefile
 already globs `src/gen/enc/*.c`. **Nothing in `src/core`, `src/gen`, `cli/`
 or `lib/` is touched.** If a backend ever requires touching a shared file
 outside this directory, that is the derailment DD-12 names — stop and take

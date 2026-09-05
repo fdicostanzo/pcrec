@@ -1718,6 +1718,22 @@ emitters, so the definitions land in the `.c` once). There is no encoding
 test in either, and adding one is a design stop rather than a patch. The
 first residual entry is `<prefix>_next_pos` (docs/spec/match_api.md §3.1.1).
 
+**[K49] (2026-09-05) A THIRD SITE ASKS THE BACKEND SOMETHING, and it is in
+`emit_vm.c` rather than here: the emitted `<prefix>_search_run`'s UNANCHORED
+RETRY ADVANCE.** It was a literal `attempt_position++`, and one byte is not one
+character under every encoding — `(?<!.)` over `CE B1 CE B2` at startpos 2
+retried at offset 3, inside a character, and the leading negative assertion
+succeeded there. It now comes from `PcrecEnc.advance` through
+`pcrec_enc_advance`, so there is still no encoding test in the emitter and the
+`byte` backend's text is the old line character for character. It is INLINE
+TEXT and not a call to `next_pos` (which computes the same position) for two
+reasons that agree: `next_pos` is `engine_callable = false`, and a call would
+have moved every byte artifact. `enc/CLAUDE.md` carries the rest, including
+what K49 refuted about `engine_callable`'s own stated rationale and the
+agreement check that keeps the two spellings of the boundary rule in step. The
+DFA's own "try the next start" mechanism has the same defect and is OPEN as
+K50.
+
 **[M6.5.2] BOTH FUNCTIONS TAKE A MASK NOW**, because the seam gained its
 SECOND and THIRD entries (`<prefix>_bref_match` and its caseless twin) and an
 artifact with no backreference must not carry them. `Job.enc_mask` starts at

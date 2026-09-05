@@ -131,8 +131,34 @@ above, and found nothing.
   `maxw_check.c` sweeping the BYTE pair; when stage 2 re-aimed the maxw chain
   into characters (`pcrec_maxw` retired, `pcrec_cwmax` and its `cwmin` partner
   are the lookbehind width rule's consumers), this instrument moved with its
-  subject, unchanged in spirit — this file parses under `byte`, where one
-  character is one byte, so every number below is what the byte sweep measured.
+  subject, unchanged in spirit.
+
+  **THAT MOVE CARRIED A PREMISE THAT EXPIRED, AND IT WAS RED IN `make test`
+  FOR A DAY BEFORE ANYONE FILED IT** (repaired 2026-09-05, lane k49fix, which
+  found it as a side finding while fixing K49). The re-aim rested on "this
+  file parses under `byte`, where one character is one byte" — true until
+  `tests/utf8/` merged, and false the moment it did: those blocks carry
+  `encoding utf8`, their oracle spans are BYTE offsets into multi-byte
+  subjects, and CHECK 2 was comparing bytes against a CHARACTER quantity. 21
+  cells of `axis01_encoded_length.rxt` went red, all of them the same shape
+  (`[^a]` matching one 2-byte character read as "span 2 EXCEEDS cwmax=1").
+  **THE MISMATCH WAS IN THE CHECK, AND THAT WAS VERIFIED BEFORE THE CHECK WAS
+  TOUCHED** — every one of the 21 spans is exactly one character, so cwmax was
+  right in characters throughout. An under-estimate would have been an ENGINE
+  bug in the silent direction (the lookbehind fixed-width rule reads this
+  number), which is why ruling it out came first and why the repair carries no
+  `src/` change at all.
+
+  The rule now is two halves that must move together: a block is PARSED under
+  its own `encoding` (so cwmax is computed on the AST the block means — under
+  `byte` a literal `[EUR]` is three byte classes, under `utf8` one character
+  class), and its oracle span is MEASURED in the same unit (characters under
+  `utf8`, bytes under `byte`, the latter unchanged to the line). The character
+  count is a one-line predicate over the subject's own bytes — non-continuation
+  bytes in `subject[start..end)` — deliberately sharing no source with pcrec's
+  own notion of a boundary, since this file exists to check an analysis from
+  outside. MEASURED after the repair: 216 utf8 blocks / 307 utf8 spans, 101 of
+  them with a byte width exceeding their character width, 0 violations.
   Checks from BOTH SIDES, because either inequality alone is passed by a
   degenerate implementation: `cwmax >= cwmin` at every NODE (passed by
   `return PCREC_W_UNBOUNDED;`) AND every oracle-verified span in the corpus
@@ -145,9 +171,19 @@ above, and found nothing.
   degenerate implementations that pass one inequality each, `swap` returns
   `cwmin` — and `run_mrl_tests.sh` §8 requires all three to make it FAIL, on
   `tests/parse/branch_count_check.c`'s rule that an unsabotaged green check is
-  worth nothing. Measured at wave A: 122 files, 2168 blocks,
-  1914 patterns parsed, 254 refused, 12,637 nodes swept (9,583 with a bounded
-  maxw), 8,901 oracle spans, 0 violations.
+  worth nothing. **THE ENCODING-AWARE HALF HAS TWO FLOORS OF ITS OWN**, on the
+  same rule, because a character count that is never exercised is dead code
+  that passes silently: the utf8 block population must be NONZERO, and at least
+  one compared span's BYTE width must EXCEED its character width (the first
+  alone is satisfied by a utf8 corpus of ASCII-only subjects, where the two
+  counts coincide and the decode proves nothing). Both were validated in the
+  failing direction — disabling the `encoding` reader trips the first, and
+  turning the character count back into a byte count trips the second (and is
+  caught twice, since it also produces 84 CHECK 2 violations). Measured at wave
+  A: 122 files, 2168 blocks, 1914 patterns parsed, 254 refused, 12,637 nodes
+  swept (9,583 with a bounded maxw), 8,901 oracle spans, 0 violations. Measured
+  after the 2026-09-05 repair: 208 files, 3884 blocks, 3293 parsed, 591
+  refused, 23,820 nodes (18,698 bounded), 11,222 oracle spans, 0 violations.
 
 ## What the two scripts carry that the corpus cannot
 

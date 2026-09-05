@@ -1,6 +1,6 @@
 # tests/utf8 — the [M5.0] utf8-encoding corpus (D27 blinded, promoted)
 
-Thirteen `.rxt` files, 523 blocks, authored BLIND (D27: denied `src/`,
+Thirteen `.rxt` files, 524 blocks, authored BLIND (D27: denied `src/`,
 `tests/`, everything beyond `docs/design/utf8_d27_extract.md`) against the
 PRE-stage-2 tree by cell `utf8corpus`, then PROMOTED against the merged
 [M5.0] stage 2 tree by lane `utfprom` (2026-09-05). No `.rxt` directive
@@ -88,28 +88,51 @@ whole reason the utf8 encoding module needs to exist).
 | axis06_caseless_fold.rxt | 48 | 4 | 44 | PINNED TO TODAY'S BEHAVIOUR, not promoted to the oracle — see below |
 | axis07_caseless_1ton.rxt | 11 | 0 | 11 | pinned to today's behaviour; agrees with the oracle on every cell |
 | axis08_lookbehind_varwidth.rxt | 24 | 3 | 21 | promoted; `features` line added per block (missing as authored) |
-| axis09_nextpos_findall.rxt | 19 | 0 | 19 | promoted; 1 block (of the original 20) moved to `known_fail` — see below |
+| axis09_nextpos_findall.rxt | 20 | 0 | 20 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed) — see below |
 | axis10_surrogate_witness.rxt | 9 | 3 | 6 | promoted clean |
 
-**523 blocks here** (524 authored minus the 1 moved to `known_fail`), 311
-real / 212 `perr`. Full per-axis reasoning, including every `features`/
+**524 blocks here** — the full authored population. It read 523 between
+promotion and K49's fix on the same day, while axis09's "midstart-row3-boundary"
+block sat in `tests/known_fail/`; that block is restored, so 312 real / 212
+`perr`. Full per-axis reasoning, including every `features`/
 `encoding` line added at promotion and why, is each file's own header
 comment plus `docs/dev/lanes/utfprom_report.md`.
 
-## The one genuine divergence: K49
+## The one genuine divergence: K49 — FOUND, PARKED, AND FIXED (2026-09-05)
 
 `axis09_nextpos_findall.rxt`'s "midstart-row3-boundary" block
 (`(?<!.)` at startpos=2 over a subject whose byte 2 is a real character
-boundary) disagreed with its ARGUED expectation: pcrec answers a match at
+boundary) disagreed with its ARGUED expectation: pcrec answered a match at
 `(3,3)`, an illegal mid-character byte offset, where the design position
 says no match. Filed as `docs/dev/known_issues.md` K49 and moved to
-`tests/known_fail/k49_utf8_lookbehind_retry.rxt` per
-`docs/spec/rxt_format.md`'s own rule ("a cell whose correct answer is
-DISPUTED, not merely unbuilt, is not a `perr` case... move it to
-`tests/known_fail/`") — this is a possible stage-2 bug the blinded corpus
-found, not a construct that's merely unbuilt, and moving it keeps `make
-test` green while keeping the finding loud (the ratchet fires the moment
-it's fixed). A pointer comment sits at the block's former position.
+`tests/known_fail/` at promotion per `docs/spec/rxt_format.md`'s own rule
+("a cell whose correct answer is DISPUTED, not merely unbuilt, is not a
+`perr` case... move it to `tests/known_fail/`").
+
+**Lane `k49fix` fixed it the same day and the cell is back here, live and
+green**, in its authored position with the pointer comment gone; the
+known_fail file is deleted and this file is 20 blocks / 80 cases again — the
+count its own generator header always claimed. The bug was the emitted VM's
+unanchored retry advancing one BYTE past a failed startpos instead of to the
+next character boundary; the advance now comes from the encoding backend
+(`src/gen/enc/enc.h`'s `advance` field).
+
+**WHY THIS BLOCK AND NOT ITS THREE NEIGHBOURS, which is the part to
+remember when adding to this axis.** Rows 1, 2 and 4 all answer on their
+FIRST attempt — row 4's `(?!.)` at a mid-character startpos succeeds
+immediately because `.` has no path from a continuation byte — so none of
+them exercises the retry advance at all. Row 3 is the only cell in the block
+whose first attempt FAILS, and that is exactly why it was the only one that
+could see the defect. A cell that tests a retry has to be built to fail
+first.
+
+**AND IT HAD A SIBLING THE CORPUS COULD NOT SEE**: `\B` under `-e utf8`
+reports a mid-character position from an ordinary `startpos=0` on the DFA
+(K50, `tests/known_fail/k50_utf8_dfa_midchar_start.rxt`), because the DFA
+implements "try the next start" with a byte-granular self-loop rather than
+with the VM's retry loop. This corpus has no `\B`-under-`utf8` cell; the
+natural place for one is a future axis, and the byte-mirror libpcre2
+differential named below would have found it.
 
 ## The known, pre-identified gap: axis06/axis07 (non-ASCII caseless folding)
 

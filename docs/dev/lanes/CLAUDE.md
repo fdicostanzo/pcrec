@@ -275,4 +275,28 @@ never edited afterwards.
   rows reproducing their recorded counts (6/14/8) exactly, which is what makes
   a re-aim verifiable rather than merely resolvable.
 
+- `k49fix_report.md` — [K49] (2026-09-05, lane k49fix): the unanchored RETRY
+  ADVANCE moved off a hard-coded `pos++` onto the encoding seam, so under
+  `-e utf8` a retry lands on the next CHARACTER BOUNDARY. Read it for three
+  things. **§3 is a FINDING against a ruling, not against code**:
+  `utf8_design.md` §5.5 asserts a mid-character start "cannot produce a wrong
+  answer", Frank's **ASK 5** ruling ("leave `ENG_ATTEMPT`'s start loop alone")
+  is recorded against exactly that claim, and it is FALSE — §2.6.1 of the same
+  document already carried the counterexample ("'No path' INVERTS for a
+  negative assertion") and the two sections were never reconciled. The lane
+  filed the refutation and the re-openable marker and did NOT treat the ruling
+  as overturned. **The DFA half is a separate defect, K50**, oracle-backed
+  (libpcre2 answers `(3,3)` for `\B` over `61 CE B1` under both UTF option
+  words; pcrec answers the `options=0` BYTE answer `(2,2)`) and reachable from
+  an ordinary `startpos=0`, so the known-fail population went 2 → 2 rather than
+  the 2 → 1 the brief predicted. **And §2.3 is the shape worth reusing**: the
+  fix spells the boundary rule TWICE per backend (once as `next_pos`, once as
+  inline `advance` text, because DD-12 (7) forbids an engine calling the
+  entry), and pays for that with an agreement check that extracts the advance
+  from an emitted artifact and compares it against that same artifact's
+  `next_pos` — `fold_agreement_check.c`'s shape, one seam over. §5.2 flags a
+  SECOND pre-existing red the lane measured and did not file: `make test-mrl`
+  is red at the lane's base on `cwmax` answering 1 byte for `[^a]` under
+  `-e utf8`.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

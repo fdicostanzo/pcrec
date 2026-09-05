@@ -11069,6 +11069,35 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "            < %s_VM_ROOT_MINW) return 0;\n",
             v.up, v.up);
 
+    /* [K49] THE RETRY ADVANCE, asked of the encoding rather than hard-coded.
+     *
+     * This loop is an EXTERNAL advance in shared emitter code — the one thing
+     * `next_pos`' `engine_callable = false` rationale says does not exist
+     * ("unanchoredness is the automaton's own self-loop, so there is no
+     * external advance for an engine to route through"). It does exist, here,
+     * and while it stepped one BYTE an unanchored search under a multi-byte
+     * encoding could retry at an offset inside a character and — on a leading
+     * NEGATIVE assertion, which succeeds exactly where its body has no path —
+     * report a match there. K49's witness is `(?<!.)` over `CE B1 CE B2` at
+     * startpos 2 reporting `(3,3)`, three being mid-character.
+     *
+     * The advance is the BACKEND's text, so there is no encoding test here and
+     * must never be one (DD-12 (7)); under `byte` it is `attempt_position++;`
+     * and this artifact is byte-identical to every one that came before.
+     *
+     * The buffer is 1 KB where its `retry_win` sibling uses 512: an advance
+     * carries its own explanatory comment into the artifact, and the utf8
+     * backend's text measures 535 bytes once indented. Overflow is a loud
+     * internal error rather than a truncation, and it FIRED during this fix's
+     * own bring-up at 512 — the guard is measured, not assumed. */
+    char retry_adv[1024];
+    if (!pcrec_enc_advance(pcrec_enc_by_id(v.cx->opt->encoding),
+                           retry_adv, sizeof retry_adv, "        ",
+                           "attempt_position", "subject", "subject_length"))
+        ctx_fail(v.cx, 0,
+                 "internal error: this encoding's unanchored retry advance is "
+                 "missing or does not fit the emitter's buffer");
+
     /* The recompute, spelled once and used only where a bound reads it. */
     char retry_win[512];
     retry_win[0] = 0;
@@ -11198,7 +11227,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
         "        if (attempt_position >= subject_length) return 0;\n"
-        "        attempt_position++;\n"
+        "%s"
         "%s"
         "    }\n"
         "    if (capture_spans) %s_report_captures(run, capture_spans, attempt_position, result);\n"
@@ -11213,7 +11242,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v.ngst > 0 ? ", search_from" : "",
-        v.up, v.up, v.up, v.up, v.up, v.p, retry_win, v.p);
+        v.up, v.up, v.up, v.up, v.up, v.p, retry_adv, retry_win, v.p);
 
     /* [DD-14.FB] THE TWO SEARCH ENTRIES (spec §10.2/§10.3).
      *
