@@ -2532,48 +2532,244 @@ the corpus and the differential, not by identity. Saying so is the point:
 `[M6.6.2]` wave E's identity gate caught a 37-byte generated-comment
 regression precisely because its scope was known.
 
+#### 8.1.1 The gate does NOT stand alone (r54 BLOCKING C1)
+
+**ACCEPTED.** Stage 1 is a pure refactor whose acceptance was *one* instrument
+— byte-identity — and **byte-identity is exactly the bar a NO-OP passes.**
+A stage-1 branch that changed nothing at all, or that built the interval
+pipeline and then never used it, scores 100%. `learnings.md` §4 names the
+combination this house has found necessary rather than either half:
+
+> *"The nets that work: structural/codegen checks, byte-identity gates against
+> a pristine `git archive HEAD` build, output-preserving differentials with
+> positive controls…"*
+
+The gate is the second of those. Stage 1 gains the first, and **the three
+checks below are what a no-op refactor fails**:
+
+**CHECK 1 — THE INTERVAL PIPELINE EXISTS AND EVERY PRODUCER GOES THROUGH IT.**
+A structural check that `struct Ast`'s `A_CLASS` payload is the interval form
+(no `bits[32]` member survives), and that the byte-tier producers
+(`\d`, `\w`, `\s`, POSIX classes, ranges, literals, `.`, the two negation
+sites) reach it. Its failing direction is the whole point: **on today's tree
+it must go RED**, and the wave that lands stage 1 runs it against
+`git archive HEAD` first to prove that.
+
+**CHECK 2 — THE RENDER HELPER IS THE ONLY READER, AND IT ASSERTS.** §2.1.4's
+`pcrec_cls_bits` is the sole path from a class node to a 32-byte bitmap. The
+check is a **grep with a floor and a negative needle**: every site in §2.5.1's
+AFTER rows calls it (count ≥ 6), and **no site outside it reads `u.cls.bits`
+directly** — the negative half is the one that catches E1's recurrence, since
+a new emitter site added later would otherwise reintroduce exactly the read
+the panel found. `registry_check`'s own count/manifest guard is the model
+(R15), and the negative-needle discipline is R15's too.
+
+**CHECK 3 — THE STAMP CENSUS, and it belongs to stage 2 rather than stage 1.**
+Over the corpus compiled under BOTH encodings, record per artifact:
+`RX_ENGINE`/`RX_ENGINE_WHY` (§6.2.1's `[SEL-1]` fallback), `RX_DFA_TABLE`
+(§2.4.1's premultiplied decline), `RX_VM_ISLANDS` (§6.4), `RX_VM_STRATS`
+(§2.5.1's possessify declines) and the emitted size. **This is a MANIFEST, not
+a threshold** — r49's ruling that a check pinned to a count expires when the
+count is re-measured — so it names the shape (*"no `byte`-encoding artifact's
+stamps move; every `utf8` artifact whose stamps differ from its `byte` twin is
+listed with its reason"*) and the list is a reviewed diff. It is the only
+instrument that would see §2.4.1's premul decline, §6.2.1's engine change or
+§6.4's island claim, **none of which changes an answer.**
+
+#### 8.1.2 The positive control's FLOORS (r54 BLOCKING C2)
+
+**ACCEPTED — K35's shape, and the design had it.** "The pinned pre-module
+binary refuses every pattern the new corpus adds" is a control with **no
+stated population**, so it passes identically whether the corpus adds four
+hundred such patterns or zero. `lookaround_design.md` §9.2 is the model, and
+it states its own: *"Floors: ≥ 700 lookaround-free patterns, ≥ 60
+lookaround-bearing."*
+
+**The floors, per stage**, derived from §8.3's population and stated so a
+corpus that silently stops reaching the control fails rather than passes:
+
+| stage | the control | floor |
+|---|---|---|
+| 1 | (none — stage 1 adds no pattern the old binary refuses; **that is why §8.1.1's structural checks are stage 1's real control**, and saying so is C1's answer) | n/a |
+| 2 | pinned pre-M5 binary REFUSES every `-e utf8` and every `\x{>FF}` pattern | **≥ 200** utf8-bearing, **≥ 2,800** byte-encoding patterns unchanged |
+| 3 | …refuses every `\p{…}` pattern | **≥ 150** `\p`-bearing |
+| 4 | …refuses every non-ASCII caseless pattern the fold corpus adds | **≥ 60** fold-bearing |
+| 5 | …refuses every script/`scx` pattern | **≥ 40** script-bearing |
+
+and in every stage the control must additionally read `ctl_bad == 0` — the
+pre-module binary refuses **all** of them and miscompiles **none** — which is
+`run_backref_identity.sh`'s own shape and is what proves the reference is a
+different compiler rather than a rebuild of the same tree compared with
+itself.
+
+**A floor is a floor and not a target.** Each is set at roughly 70% of §8.3's
+own sized population for that stage, so ordinary authoring variance does not
+trip it and a corpus that loses a third of an axis does.
+
 ### 8.2 The sabotage rows
 
-One per load-bearing claim, following D69's shape. **ASSERTED** list, with the
-failing direction each needs:
+One per load-bearing claim, following D69's shape.
 
-| # | claim | sabotage | why only this instrument sees it |
-|---|---|---|---|
-| S-U1 | the fold is applied BEFORE negation (§4.3) | swap the order in the one constructor | both orders produce case-closed sets; only behaviour on `[^k]`/U+212A differs |
-| S-U2 | the fold is a CLOSURE, not a pairing (§4.2a) | replace the closure with one round of "add the partner" | `k`↔`K` still works; only U+212A fails |
-| S-U3 | the fold happens on CODE POINTS, before lowering (§4.2c) | move it after the byte lowering | `[a-z]` still folds to `[A-Z]`; only U+212A/U+017F are lost |
-| S-U4 | `la_widths` uses CHARACTER width (§5.6) | point it back at `pcrec_maxw` | every ASCII lookbehind still compiles; only `(?<=[a\x{3b1}])` refuses |
-| S-U5 | `back_step` walks characters (§5.2) | make it `pos - k` | identical under `byte`; under utf8 it lands mid-character |
-| S-U6 | `next_pos` finds a boundary (§5.1) | make it `pos + 1` | only a find-all over an empty match on a multi-byte subject sees it |
-| S-U7 | the surrogate range is excluded from every lowered set (§2.3) | include it | only a subject containing a CESU-8-shaped sequence sees it |
-| S-U8 | `minw`/`maxw` are per-class exact (§5.6.1) | return the old constant 1 | answers unchanged (a looser bound is sound); only the MRL stamp moves |
+> **REVISED AT r54 (BLOCKING C3, MUST-FIX C4).** The first version's table had
+> **no `SAB_REACH`/`SAB_REACH_POP` on any row**, which is `[MECH-REACH]`'s
+> standing obligation since 2026-08-25 and which
+> `opt5_step2_twopass.md` (S218-S222) already shows adopted at BIRTH rather
+> than retrofitted. It also left **S-U8 assigned to no stage's acceptance**.
+> Both fixed below; the table gains three columns and two rows.
 
-**S-U8 is the one worth noticing**: it changes **no answer**, because a looser
-MRL bound prunes less and can never delete a match. Only a structural or
-stamp-reading check can see it — the S68 shape, and the reason the design
-names it rather than assuming the corpus covers it.
+**WHY A REACH DECLARATION AT BIRTH IS NOT PAPERWORK.** A sabotage row proves a
+check can go red. `SAB_REACH` proves the WITNESS still arrives at the SITE,
+and `SAB_REACH_POP` proves the POPULATION is still there — on a **clean
+reference tree, before the sabotage** (`tests/mech/CLAUDE.md`). Without them a
+row silently becomes vacuous when the corpus moves, and the matrix reports
+DETECTED for a check nothing reaches. **This milestone is unusually exposed to
+that**: eight of these ten rows are invisible under `--encoding=byte` by
+construction, so their whole population lives in a corpus that does not exist
+until stage 2 — precisely the shape `lookaround_measurements`' own ninth
+instrument defect records ("a sweep population that could not contain a
+qualifying shape, reporting 0 qualifying over a space in which 0 was the only
+possible answer").
+
+| # | claim | sabotage | why only this instrument sees it | `SAB_REACH` (clean-tree witness) | `SAB_REACH_POP` (`FILE\|EREGEX\|MIN`) | stage |
+|---|---|---|---|---|---|---|
+| S-U1 | the fold is applied BEFORE negation (§4.3) | swap the order in the one constructor | both orders produce case-closed sets; only behaviour on `[^k]`/U+212A differs | `pcrec -e utf8 '(?i)[^k]'` compiles and its artifact rejects `E2 84 AA` | `tests/utf8/fold.rxt` \| `^pattern .*\(\?i\).*\[\^` \| **6** | 4 |
+| S-U2 | the fold is a CLOSURE, not a pairing (§4.2a) | replace the closure with one round of "add the partner" | `k`↔`K` still works; only U+212A fails | artifact for `(?i)k` matches `E2 84 AA` | `tests/utf8/fold.rxt` \| `^pattern .*\(\?i\)` \| **20** | 4 |
+| S-U3 | the fold happens on CODE POINTS, before lowering (§4.2c) | move it after the byte lowering | `[a-z]` still folds to `[A-Z]`; only U+212A/U+017F are lost | artifact for `(?i)[a-z]` matches `E2 84 AA` **and** `C5 BF` | `tests/utf8/fold.rxt` \| `^pattern .*\[a-z\]` \| **4** | 4 |
+| S-U4 | `la_widths` uses CHARACTER width (§5.6) — **sabotage ONE timing only** (§5.6.4) | point the **parse hook** back at a byte-width walk, leaving `postresolve` on the character pair | every ASCII lookbehind still compiles; only `(?<=[a\x{3b1}])` refuses, **and only through the hook** — a call-bearing body still compiles, so the row detects the DIVERGENCE between the two paths | `pcrec -e utf8 --features all '(?<=[a\x{3b1}])x'` compiles | `tests/utf8/lookbehind.rxt` \| `^pattern .*\(\?<` \| **18** | 2 |
+| S-U5 | `back_step` walks characters (§5.2) | make it `pos - k` | identical under `byte`; under utf8 it lands mid-character | artifact for `(?<=α)x` matches `CE B1 78` | `tests/utf8/lookbehind.rxt` \| `^pattern .*\(\?<` \| **18** | 2 |
+| **S-U9** | **`back_step` validates each run's DECLARED LENGTH (§5.2.1)** | **delete the `want != end - pos` test alone** | **invisible on every well-formed subject; on `(?<!.)` over `C2 80 80` the unsabotaged artifact answers, the sabotaged one returns `RX_R_INTERNAL` — an ABORT at a composed site, not a wrong answer** | **artifact for `(?<!.)x` returns 0 (no abort) on `C2 80 80 78`** | `tests/utf8/invalid.rxt` \| `^pattern .*\(\?<!` \| **6** | 2 |
+| S-U6 | `next_pos` finds a boundary (§5.1) | make it `pos + 1` | only a find-all over an empty match on a multi-byte subject sees it | find-all over `αβγ` with `pcrec -e utf8 ''` reports 4 matches | `tests/utf8/nextpos.rxt` \| `^pattern` \| **14** | 2 |
+| S-U7 | the surrogate range is excluded from every lowered set (§2.3) | include it | **at the SUBJECT level** — a compiled `.`-artifact must REJECT `ED A0 BD` (§8.3's C5 note) | artifact for `-e utf8 '^.$'` rejects `ED A0 BD` | `tests/utf8/invalid.rxt` \| `^m\|^n .*ED A0` \| **9** | 2 |
+| S-U8 | `pcrec_minw` is per-class exact (§5.6.1) | return the old constant 1 | **changes no answer** — a looser MRL bound prunes less and can never delete a match. Only a stamp-reading check sees it: the `RX_PRUNE_*` literal moves | `pcrec -e utf8 --emit-ir '(?:α){3}x'` prints a prune bound > 3 | `tests/utf8/mrl.rxt` \| `^pattern` \| **8** | **2** (C4) |
+| **S-U10** | **the `cwmin` fixpoint runs to settlement (§5.6.2)** | **`break` after one round** (S171's own shape, re-aimed) | a one-round fixpoint is right for a call graph of depth 1, so only a lookbehind whose body calls a group that itself calls one sees it | `pcrec -e utf8 --features all '(?<=(?1))x(a(?2))(b)'` compiles | `tests/utf8/lookbehind.rxt` \| `^pattern .*\(\?<.*\(\?[0-9&]` \| **4** | 2 |
+
+**S-U8 IS THE ONE WORTH NOTICING, AND IT WAS ORPHANED (C4).** It changes no
+answer at all, so neither the corpus nor the identity gate can see it — the
+S68 shape. It is now **assigned to stage 2's acceptance** alongside
+S-U4/5/6/7/9/10, and its detector is named: §8.1.1's **check 3**, the stamp
+census, which is the only instrument in the plan that reads a number no answer
+depends on. An unassigned sabotage row is a row nobody runs, which is worse
+than no row, because it reads as coverage.
+
+**Note also what S-U8 lost in the r54 revision**: the first version's claim was
+about `minw`/`maxw` together, and §5.6.2 retires `pcrec_maxw`. The row is
+`minw`-only now, and `maxw`'s replacement is covered by S-U4 (the character
+pair's consumer) and S-U10 (its fixpoint).
+
+**Every row above is `SAB_EXPECT=DETECTED` at birth except none** — there is no
+`UNREACHED` row in this plan, deliberately. Where `opt5i` had to ship S219
+`UNREACHED` with a derivation, every row here has a witness that exists once
+its stage's corpus does, which is why the `stage` column is part of the table:
+a row whose stage has not landed is not yet added, rather than added and
+declared unreachable.
 
 ### 8.3 Population sizing for the blinded corpus
 
-**ASSERTED**, sized from the measured surfaces rather than guessed:
+> **RE-DERIVED AT r54 (MUST-FIX C6, C7).** The first version's table compared
+> its total against **mismatched units** — "~420 cells, comparable to
+> lookaround's 457 blocks / 1,819 cases" puts one number beside two of
+> different kinds — and **five of its nine rows showed no arithmetic**, which
+> is ASSERTED dressed as sized. Both fixed: the unit is stated, the
+> multiplier is stated, and every row shows its derivation.
 
-| axis | cells | source |
-|---|---|---|
-| encoded-length coverage (1/2/3/4-byte characters × literal/class/quantified/negated) | ~64 | §2.3 |
-| the 1-byte↔multi-byte class boundary (`[a\x{3b1}]` shapes) | ~24 | §5.6's population |
-| invalid UTF-8 (9 ill-formed kinds × before/after/through) | ~27 | `out/invalid_utf.txt` |
-| `\p{...}` general categories (37 accepted spellings × 2 polarities × in/out members) | ~150 | `out/uprops.txt` §1 |
-| `\p` refusals (30 measured error-147 bodies + blocks) | ~34 | `out/uprops.txt` §1 |
-| caseless: 1:1 pairs, cross-block folds, the closure, fold-before-negate | ~60 | `out/caseless.txt` §1/§3/§4 |
-| caseless 1:n NON-matching (the §4.1 result as tests) | ~11 | `out/caseless.txt` §2 |
-| lookbehind over variable-byte-width bodies | ~24 | `out/width.txt` §3 |
-| `next_pos` / find-all over multi-byte subjects | ~20 | §5.1 |
-| the byte-encoding control arm (every above pattern under `-e byte`) | mirror | §8.1 |
+**THE UNIT, first, because C6 is really about that.** `lookaround`'s §10.1
+separates **457 BLOCKS** from **1,819 CASES** with the multiplier shown
+(≈ 6 × 9 × 7 ≈ 380 blocks from its axes, ~4 subjects per block). A `.rxt`
+**block** is one `pattern` plus its directives; a **case** is one `m`/`n`/`g`
+line. **This design sizes in BLOCKS**, and the case count follows from a
+subjects-per-block multiplier that has to be stated rather than assumed:
 
-**~420 cells**, comparable to `lookaround`'s 457 blocks / 1,819 cases. The
-D27 author gets an extract of §2.6, §3.1, §4.1–4.3, §5.6 and §7.1 — the
-construct table, the measured semantics and the oracle rules — and **not**
-§2.3, §5, §8 or §9, which are the implementation.
+> **Subjects per block: 4** — for a UTF-8 axis the discriminating subjects are
+> a member, a non-member, a member at a different encoded length, and a
+> boundary or ill-formed neighbour. That is the smallest set that
+> distinguishes "the class is right" from "the class is right for one-byte
+> members", which is the failure §2.3's decomposition actually risks.
+
+| axis | derivation | blocks | cases (×4) |
+|---|---|---|---|
+| encoded-length coverage | 4 lengths × 4 contexts (literal / class / quantified / negated) × 4 shapes (bare, in a class, in a range, after a quantifier) | **64** | 256 |
+| the 1-byte↔multi-byte class boundary (`[a\x{3b1}]`) | 6 boundary shapes × 4 spellings (explicit `\x{}`, literal UTF-8, range endpoint, `\p`) | **24** | 96 |
+| invalid UTF-8 | 9 measured ill-formed kinds × 3 positions (before / after / through the bad bytes) | **27** | 108 |
+| `\p{…}` general categories | 30 two-letter + 7 one-letter = **37** accepted spellings × 2 polarities (`\p`/`\P`) × 2 (in-member, out-member) = 148, rounded | **150** | 600 |
+| `\p` refusals | 30 measured error-147 bodies + 4 block spellings (`InGreek`, `Block=Greek`, `blk=Greek`, `IsGreek`) | **34** | 34 (a refusal has one case) |
+| caseless: pairs, cross-block folds, closure, fold-before-negate | 6 measured cross-block pairs + 2 measured non-folds + 4 closure shapes (`k`/`K`/U+212A three ways) + 3 fold-before-negate shapes × 4 spellings ≈ 60 | **60** | 240 |
+| caseless 1:n NON-matching | the 11 measured cells of `out/caseless.txt` §2, one block each | **11** | 22 (match + reverse direction) |
+| lookbehind over variable-byte-width bodies | the 8 measured bodies of `out/width.txt` §3 × 3 (positive, negative, call-bearing per §5.6.4) | **24** | 96 |
+| `next_pos` / find-all over multi-byte subjects | 4 subject shapes × 4 patterns (empty, nullable, anchored, unanchored) + **4 mid-character-`startpos` cells on leading `(?!`/`(?<!`** (§2.6.1) | **20** | 80 |
+| **the surrogate SUBJECT witness (C5)** | **3 surrogate encodings (`ED A0 80` low, `ED BF BF` high, a CESU-8 pair) × 3 patterns (`.`, `[^a]`, `\p{L}`)** | **9** | 27 |
+| the byte-encoding control arm | every block above re-run under `-e byte`, expecting refusal-or-identity | mirror | mirror |
+| **TOTAL** | | **423 blocks** | **≈ 1,559 cases** |
+
+**423 blocks against `lookaround`'s 457 blocks, and ≈1,559 cases against its
+1,819** — like against like, which is what C6 asked for, and the comparison
+now says something: this corpus is about 93% of the lookaround corpus's size
+on both axes, which is the right order for a milestone of comparable surface.
+
+#### 8.3.1 S-U7 needs a SUBJECT witness, not a compile-time one (r54 C5)
+
+**ACCEPTED, and the first version cited the wrong population.** S-U7's claim
+is that *the surrogate range is excluded from every lowered set*, and the
+sabotage is *include it*. §8.3's original table pointed at the ~27
+invalid-UTF-8 cells, and **those are COMPILE-TIME refusals** read from
+`out/invalid_utf.txt` — patterns PCRE2 rejects at compile. They cannot see
+S-U7, because S-U7 does not change what compiles: it changes what a compiled
+automaton **accepts**.
+
+> The witness is a **SUBJECT**: `ED A0 80` … `ED BF BF` (the UTF-8-shaped
+> encoding of a surrogate scalar, which is not valid UTF-8 and has no path)
+> fed to a compiled `-e utf8 '^.$'`, `'^[^a]$'` and `'^\p{L}$'`. The
+> unsabotaged artifact **rejects**; the sabotaged one **accepts**. Nothing in
+> a compile-time refusal corpus distinguishes them.
+
+That is the new row in §8.3's table (9 blocks), and it is what S-U7's
+`SAB_REACH` in §8.2 asserts.
+
+#### 8.3.2 The D27 extract is CURATED, with an exclusion list (r54 C9)
+
+**ACCEPTED.** The first version named the sections to hand the blinded author
+— §2.6, §3.1, §4.1–4.3, §5.6, §7.1 — and named them by NUMBER, which after
+this revision is a different set of text than it was when it was written.
+`lookaround_design.md` §7.3's curated extract with an explicit negative space
+is the model (`la_d27_extract.md` is the artifact).
+
+**INCLUDED** (the promise, and the measured semantics that define it):
+
+- §1.3's construct table — what ships, what refuses, and which module owns it
+- §2.6(a)-(e) **and §2.6.1** — the invalid-UTF-8 ruling and the per-entry
+  `startpos` promise, both of which are user-visible semantics
+- §2.7.3's two-cell refusal rule — `\x{>FF}` under `byte` refuses, `[^a]`
+  under `byte` compiles
+- §3.1's measured `\p` acceptance surface and §3.4's ship/refuse staging
+- §4.1-§4.3 — simple-folding-only, the closure, fold-before-negate
+- §5.6's **measured population table** (the 8 variable-byte-width bodies) —
+  the *table*, not the resolution
+- §7.1 **and §7.1.1** — the verdict tally and the oracle predicate, which the
+  author cannot write correct expectations without
+
+**EXCLUDED, and the reason each is excluded is that knowing it would let the
+author derive tests from the implementation rather than from the promise —
+which is the whole of D27:**
+
+| excluded | why |
+|---|---|
+| §2.1, §2.1.2-§2.1.4 | the pass position and the render helper — the mechanism, and §2.1.4's assertion is a thing the author might otherwise test FOR rather than testing the behaviour it protects |
+| §2.2, §2.3, §2.3.1 | the payload shape and the decomposition. **An author who knows the four-row canonical table writes tests at its boundaries**, which is the code author's alphabet arriving by the back door |
+| §2.4, §2.4.1, §2.4.2 | sizing; no promise in it |
+| §2.5.1 | the consumer census — names files |
+| §2.7.1, §2.7.2 | the universe field and the rejected alternative; the author gets §2.7.3's cells, which are the promise |
+| §5.1-§5.5, §5.6's resolution (§5.6.1-§5.6.5) | seam bodies and the width analysis. **§5.2.1's `back_step` body is the sharpest exclusion**: an author holding it writes the `C2 80 80` cell from the code, and that cell is exactly the one D27 exists to have found independently |
+| §6 entire | engine and selection consequences |
+| §8 entire | the validation plan — an author who knows the sabotage rows writes the corpus that detects them, which inverts the instrument |
+| §9, §12, §13 | staging, predictions, brief |
+
+**THE ONE JUDGEMENT CALL, recorded rather than hidden.** §5.6's population
+table is IN and §5.6's resolution is OUT, which splits one section. The table
+is a measured fact about PCRE2 (*these 8 bodies are fixed-width to 10.46 and
+have 1-4 byte widths*) and the author needs it to know that
+`(?<=[a\x{3b1}])x` must compile. The resolution is pcrec's mechanism. Cutting
+mid-section is what `la_d27_extract.md` already does, and the extract is
+**regenerated by re-cutting, never edited independently of this document** —
+the rule that file's own header states.
 
 ### 8.4 The compatibility question the cross-note names
 
@@ -2586,6 +2782,68 @@ artifact and the byte-identity gate fails. **The gate is the check; no
 separate instrument is needed.**
 
 ---
+
+### 8.5 The pcrec-vs-pcrec differential (r54 SHOULD C10)
+
+**ACCEPTED, and the answer is that one EXISTS — the first version simply did
+not look for it.** The panel's observation is right and sharp: every recent
+module pairs its corpus with a `-fno-X` or two-lowering differential, this one
+does not, and **§2.2's single-representation ruling looks like it forecloses
+the possibility** — with one representation there is no second lowering to
+compare against.
+
+**That reasoning is correct about CLASSES and wrong about the milestone**,
+because this design has a second axis that is not a representation choice:
+
+> **THE ENCODING ITSELF IS THE TWO LOWERINGS.** Every ASCII-only pattern has a
+> `byte` artifact and a `utf8` artifact, and **on an ASCII-only subject they
+> must give the same answer** — same span, same captures, same give-up
+> behaviour. The `utf8` artifact reaches that answer through the byte-sequence
+> decomposition (a one-byte "sequence" per character) and the `byte` artifact
+> through the identity map. Two independently-derived machines, one expected
+> answer.
+
+**This is a real differential and it is nearly free**, because its population
+is a corpus that already exists: the whole existing `.rxt` corpus, whose
+patterns and subjects are ASCII, re-run under `-e utf8`. Its properties:
+
+| | |
+|---|---|
+| **population** | **MEASURED at this tree: 3,319 of 3,350 blocks** are fully ASCII — pattern and every decoded subject. 1 block is excluded for a non-ASCII pattern, **30 for non-ASCII subjects** |
+| **what it catches** | any lowering bug on the one-byte path: an off-by-one in the length split at 0x7F, a mis-set lead-byte range, a start state that consumes its first byte twice (**the exact bug `probe_sizing.py`'s self-check caught, §2.4**) |
+| **what it CANNOT catch** | anything the multi-byte path does. It is a control on the boundary case, not a proof of the construction — the new corpus is what tests the rest |
+| **its positive control** | the 31 excluded blocks must be excluded **by the harness's own decode**, not by a text scan, and the count is asserted rather than assumed: `ctl_ascii == 3319 && ctl_excluded == 31` |
+
+> **THE POPULATION COUNT HAS A METHOD NOTE, because getting it wrong was one
+> line of code away and this house has a name for the failure.** Counting
+> "blocks whose bytes are all below 0x80" by scanning the `.rxt` FILES gives
+> **3,349 of 3,350, with zero subject exclusions** — and it is wrong, because
+> a subject containing a high byte is WRITTEN as an escape (`\xNN`), which is
+> ASCII text. Decoding through `tests/harness/verify_rxt.py`'s own parser
+> gives 3,319 and finds the **30 subject exclusions the text scan could not
+> see** — and those 30 are exactly the blocks most likely to differ between
+> the two encodings, i.e. the ones whose exclusion the differential depends
+> on. R13's lesson, third recurrence in this document's own lane:
+> *counting a population by an instrument that cannot express it counts the
+> instrument.* The check reads the corpus the way the harness does, or it does
+> not read it.
+
+**AND IT HAS A SECOND ARM WORTH MORE THAN THE FIRST.** §8.1's identity gate
+proves the `byte` artifact did not move. This differential proves the `utf8`
+artifact AGREES with it. **Together they are transitive to the pre-M5
+binary** — a `utf8` artifact's answers are pinned to a compiler that predates
+the milestone entirely, over 3,152 patterns, without any new expectation being
+authored. That is a stronger statement than either half, and it costs one
+harness axis.
+
+**Where it goes**: stage 2's acceptance, beside the identity gate, as a new
+`--encoding=utf8` arm of `make test-axes` (which already walks the
+optimization-axis product for ANSWER identity and is the right home — its own
+`docs/testing.md` entry calls it "answer-identical to default over the whole
+corpus"). **§9.2's stage-2 acceptance gains it**, and §12 gains **P-11**: the
+ASCII corpus is answer-identical under `-e byte` and `-e utf8`. Refuted by one
+differing cell — and the likeliest cause, stated so a debugger starts in the
+right place, is the length-split boundary at exactly 0x7F.
 
 ## 9. Module and staging (charter (viii))
 
