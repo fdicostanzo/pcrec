@@ -99,7 +99,7 @@ lane `macport` falling into.
 | **1** — invalid-UTF semantics | **AGREED**: ill-formed matches nothing, no validation pass, no error return | §2.6, and §9.2's stage-2 precondition (C11) is **DISCHARGED** |
 | **2** — vendor UCD 16.0.0 | **AGREED, RELUCTANTLY**, conditional on the usage summary being carried prominently at the specification | **§3.3.1 is that condition discharged** |
 | **4** — a UCP axis | **NO AXIS AT M5, door EXPLICITLY open** — r54's re-priced cost (§5.4.1) is the charter price for whoever opens it | §14 ASK 4, §5.4.1 |
-| **5** — `ENG_ATTEMPT`'s start loop | **AGREED, leave it** — with the addendum **VALIDATE AGAINST ORACLES** | **§2.6.1.1**, a new probe section run against 10.46 |
+| **5** — `ENG_ATTEMPT`'s start loop | **AGREED, leave it** — with the addendum **VALIDATE AGAINST ORACLES**. ⚠ **RE-OPENABLE (2026-09-05, K49/K50)**: the ruling was given §5.5's claim that a mid-character start "cannot produce a wrong answer", and that claim is REFUTED — see the boxed note at §5.5. The addendum was the half that held | **§2.6.1.1**, a new probe section run against 10.46; §5.5's refutation box |
 
 **ASK 5's addendum was the expensive one and it earned its cost.** It turned
 §2.6.1's entry-promise table from ARGUED into MEASURED, and the measurement
@@ -2248,6 +2248,39 @@ wrong answer; they are wasted attempts, at up to 3 per character.
 `next_pos`'s rule) is deliberately NOT taken here, because routing that loop
 through a residual entry is precisely what `engine_callable = false` and
 sabotage row S68 forbid. §14 ASK 5 raises it; §11 puts it out of scope.
+
+> ### ⚠ THE PARAGRAPH ABOVE IS REFUTED (2026-09-05, lane `k49fix`, K49/K50)
+>
+> **"Those starts have no path, so they cannot produce a wrong answer" is
+> FALSE**, and this document had already written down the reason one section
+> earlier without connecting it. §2.6.1 — *"'No path' INVERTS for a negative
+> assertion"* — is exactly the counterexample: an assertion that succeeds
+> where its body has no path SUCCEEDS at a mid-character start, so such a
+> start does not merely waste an attempt, it ANSWERS, with a reported position
+> inside a character. The paragraph above was written from the positive-only
+> premise §2.6(e) measured (`.`), which is the direction that cannot invert.
+>
+> **The two witnesses**, both measured on the shipped stage-2 tree:
+>
+> - **K49** — `(?<!.)` over `CE B1 CE B2` at `startpos=2` reported `(3,3)`.
+>   The VM's own external advance (`attempt_position++` in the emitted
+>   `<prefix>_search_run`), not `ENG_ATTEMPT`'s, which means this section
+>   under-counted the external advance loops that exist: there are at least
+>   three (the VM retry, `ENG_ATTEMPT`'s `start++`, and the DFA self-loop that
+>   plays the same role in `ENG_UNANCH`). **FIXED** — the advance is now the
+>   encoding backend's own text, `enc.h`'s `advance` field.
+> - **K50** — `\B` over `61 CE B1` at `startpos=0` reports `(2,2)`, a
+>   mid-character position from an ORDINARY boundary-aligned start, on the
+>   DFA. libpcre2 answers `(3,3)` under both UTF option words and `(2,2)` under
+>   `options=0`, so pcrec's UTF-8 build is returning the BYTE answer. **OPEN.**
+>
+> **§14 ASK 5's ruling rests on the refuted claim and is re-openable on that
+> ground** — see the note in its row. Nothing here says Frank would rule
+> differently; it says the ruling was given the wrong facts. What replaces the
+> claim: a mid-character start is not merely suboptimal, it is unsound for any
+> pattern that can match empty at it, and the general rule the fix spells is
+> that an unanchored search's candidate match STARTS are exactly the
+> encoding's character boundaries.
 
 ### 5.6 The cross-note answered — and its prescription refuted
 

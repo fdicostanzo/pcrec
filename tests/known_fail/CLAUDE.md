@@ -31,23 +31,36 @@ and it does not get to break the build either.
   lands and this directory's ratchet flags it; move the cells to
   `tests/recursion/leftrec.rxt` or `sr_depth.rxt` per the "Removing one"
   convention below.
-- **`k49_utf8_lookbehind_retry.rxt`** — [K49] (`docs/dev/known_issues.md`),
-  landed 2026-09-05 by lane `utfprom` while promoting the D27 blinded
-  `tests/utf8/` corpus against the merged [M5.0] stage 2 tree. One cell,
-  moved from `tests/utf8/axis09_nextpos_findall.rxt`'s "midstart-row3-
-  boundary" block (pointer comment left at its former position): `(?<!.)`
-  (`--features lookaround`, `-e utf8`) at explicit `startpos=2` over
-  `"\xce\xb1\xce\xb2"` (two 2-byte UTF-8 characters — position 2 is a real
-  CHARACTER boundary, alpha ends there and beta begins). The D27 corpus's
-  own ARGUED design position (extract Sec 2.6.1.1's mid-character-startpos
-  table) says the correct answer is NO MATCH — the assertion is false at
-  position 2, and an unanchored retry must only try LATER CHARACTER
-  boundaries (the next is position 4, where the assertion is false again).
-  pcrec's live answer is a MATCH at `(3,3)`, an offset INSIDE beta's own
-  2-byte encoding and not a character boundary at all — suspected to be
-  the unanchored search's zero-width-assertion retry stepping by BYTE
-  rather than by CHARACTER under `-e utf8`. See the known_issues.md entry
-  for the full mechanism writeup and what's needed to close it.
+- **`k49_utf8_lookbehind_retry.rxt` — GONE, 2026-09-05, by the front door.**
+  It lived here for one day. Lane `utfprom` parked it at promotion (the
+  `(?<!.)` mid-character retry, `(3,3)`); lane `k49fix` FIXED K49 the same
+  day and the cell went back to its authored position in
+  `tests/utf8/axis09_nextpos_findall.rxt`, green, with the pointer comment
+  removed. The mechanism and the fix are in `docs/dev/known_issues.md` K49.
+  **The one-day residency is itself the argument for this directory**: the
+  cell was found by a blinded corpus, parked rather than argued away, and
+  the park is what made it a schedulable piece of work instead of a note.
+- **`k50_utf8_dfa_selfloop_start.rxt`** — [K50] (`docs/dev/known_issues.md`),
+  landed 2026-09-05 by lane `k49fix`, which found it while fixing K49 by
+  asking whether the OTHER engine's "try the next start" mechanism had the
+  same hazard. One cell: `\B` (`--features assertions`, `-e utf8`) at
+  `startpos=0` over `"a\xce\xb1"` (`61 CE B1`; character boundaries 0, 1
+  and 3). pcrec reports `(2,2)` — inside alpha's own encoding — because the
+  DFA's start-anywhere self-loop (`src/ir/nfa.c:965`, a class of every byte)
+  lets a match START at any byte offset under `-e utf8`.
+  **UNLIKE ITS PREDECESSOR ABOVE, THIS CELL IS ORACLE-BACKED RATHER THAN
+  ARGUED**, which is the distinction worth carrying: K49's expectation was
+  `pcrec-ARGUED` because no engine produces that cell at all, whereas
+  libpcre2 10.37 answers `(3,3)` here under BOTH `PCRE2_UTF` and
+  `PCRE2_UTF|PCRE2_MATCH_INVALID_UTF`, and `(2,2)` only under `options=0`.
+  So pcrec's UTF-8 build is returning the BYTE answer, and D26 settles it
+  without anyone needing to rule. It also reaches from an ORDINARY
+  `startpos=0`, where K49 needed an explicit mid-loop `startpos`. Closes
+  when the DFA's candidate match starts are confined to character
+  boundaries — see K50's entry for the constraint any fix must respect
+  (§2.6(c) requires a search to still find matches after an ill-formed
+  byte, so the loop must keep traversing them; only the SPLIT into the
+  pattern may be gated).
 - **(EMPTY of `.rxt` from 2026-08-24 [DD-14.LB] until the same day's K34
   park, above)** — the legitimate good
   state this directory's own header describes: no confirmed bug and no owed
