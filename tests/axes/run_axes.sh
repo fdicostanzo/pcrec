@@ -296,8 +296,15 @@ done
 # rounded down generously, so a later change that stops an axis refusing
 # its known population is caught loudly rather than silently reading as
 # "fewer refusals, must be an improvement".
-REFUSAL_DELIM=$'\x01'   # joins multiple documented substrings per axis; an
+REFUSAL_DELIM=$'\x1f'   # joins multiple documented substrings per axis; an
                         # axis can have more than one distinct diagnostic
+                        # [MACPORT] \x1f (US), not \x01 (SOH): verified live
+                        # that bash 3.2's own `read -a` (like plain `read`,
+                        # see tests/registry/axes_registry_check.sh's own
+                        # note) does not split on IFS=$'\x01' at all — the
+                        # whole string lands in element 0 — while bash 4+/5+
+                        # splits it correctly. \x1f splits identically on
+                        # both versions.
                         # shape, and a REFUSED case matches if it contains
                         # ANY of them (never all — they are ALTERNATIVES,
                         # not conjuncts).
