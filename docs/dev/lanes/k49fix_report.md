@@ -279,8 +279,29 @@ things worth passing on:
 
 ## 5. Gate results
 
-*(Filled in as the runs completed; see the summary in my final message for
-anything still in flight at hand-off.)*
+All runs `CC=gcc-16` on the Mac dev box, launched in the background and polled
+from their logs.
+
+| gate | result |
+|---|---|
+| `tests/codegen/run_recursion_identity.sh` (`PROCS=4`) | **12 PASS / 0 FAIL.** (B) whole-file byte identity `differing=0` on all four axes — `default` 2423, `vm` 2424, `noprefilter` 2423, `nocaptures` 2423 — against pin `05b2fe8a`. (A) program region `differing=0` on all four |
+| `tests/harness/run.sh tests/utf8` | **1336 passed / 0 failed**, 0 compile failures. That is the expected 1335 plus the restored K49 cell |
+| `make test-encoding-checks` | **11 passed / 0 failed.** The suite's original 7 plus this change's 4. §8.5: 250 ASCII blocks, **0 divergences**; CHK3 0 stamp differences; DD12a(i) 0 differing engine bodies; DD12a(ii) signatures identical |
+| — its K49 section | `byte` advance agrees with `next_pos` on **10,738/10,738** cells and is `pos + 1` on every one; `utf8` agrees on **10,738/10,738** and differs from `pos + 1` on **2,268** of them (the non-vacuity control) |
+| `make strict` | **clean** — "whole tree compiles clean with -Werror -Wshadow" |
+| `make test-codegen` | see below |
+| `tests/mrl`, `tests/encseam` | see below |
+| `tests/rxtsource` | 108 PASS / 14 FAIL, **identical to the lane's base commit** (§4.4) |
+| hybrid composition | a clamp-bearing prefiltered `utf8` artifact puts the advance immediately above the retry-window recompute and compiles `-O1 -Wall -Wextra -Werror` clean |
+
+### 5.1 S223's failing direction, measured
+
+I applied S223 to the working tree by hand, rebuilt, and ran its own arm:
+`tests/utf8/axis09_nextpos_findall.rxt` goes from 0 failures to **1** — the
+restored K49 cell, which is the row's declared detector. Reverted and rebuilt
+before any further gate ran. (I also learned the hard way not to rebuild while
+the identity gate is running; the gate was re-run clean afterwards, and the
+numbers in the table above are from the clean run.)
 
 ---
 
