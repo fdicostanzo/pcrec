@@ -178,4 +178,26 @@ never edited afterwards.
   on SIZE.
 - `w13_runsh_composed_path.patch` — W1.3.1's starting point: lane w13's written-but-UNRUN run.sh composed-block path (dropped from lane/w13 at the manager's ruling 2026-09-04 04:3x because run.sh is the most load-bearing script in the tree and it would have landed behind three merges and a battery without its own make test). The dropped commit was 464f2896 in the w13 worktree's reflog; the patch is the durable copy. Its contract choice (the target's prefix through flush_block's tail vs the CLI allowance W1.2 refused) is Frank's question; report §18.
 
+- `utf8design_report.md` — [M5.0] the UTF-8 DESIGN GATE (2026-09-04, lane
+  utf8design; design only, nothing under `src/`/`tests/`/`docs/spec/`).
+  Delivers `docs/design/utf8_design.md` + `utf8_measurements/`. Worth reading
+  for three things. **It refutes its own charter in three places**: the
+  `[M5.0]` row's CROSS-NOTE prescribes a `pcrec_maxw` cure that would refuse
+  every lookbehind under UTF-8 (10.46 measures lookbehind length in
+  CHARACTERS, so the byte-width `minw == maxw` test is the wrong instrument);
+  `[DD-12]` assigns the CharSet widening to MOD-0.6 where D33 §7's own
+  amendment reassigns it to this milestone; and `[DD-12] (3)` calls
+  `PCRE2_MATCH_INVALID_UTF` "essentially the byte-wise semantics" when it is
+  measurably not (a byte engine matches `a.c` through an `0xFF`; that mode
+  does not). **Its method is new to this house** — the first lane whose
+  reference oracle is on another machine, solved by bundling the borrowed
+  binding chain verbatim into a stdin payload rather than copying it, so
+  `br_oracle.py`'s no-second-binding rule survives the machine boundary and
+  nothing is written on the old box. And **its instrument-defect list
+  includes one reproduced verbatim** from `subroutines_measurements/`'s own
+  recorded entry (`-o /dev/null` making compiling cells read as refusals,
+  because pcrec also writes `OUT.h`) — the second time this house has
+  recorded that shape, which the report argues means the durable fix is a
+  shared fixture rather than another entry. Six ASKs, headed by the
+  invalid-UTF semantic and by vendoring UCD data files.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

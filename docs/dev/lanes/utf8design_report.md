@@ -72,6 +72,14 @@ report's own.
 6. **The `.rxt` third oracle value** (python-verifiable through `str` only).
    Route to `[DD-13b]` or charter a small amendment?
 
+## Rulings received
+
+**None.** `docs/dev/lanes/utf8design_rulings.md` was polled at each section
+boundary (after the premises probe, after the oracle probes, before writing
+§5's resolution, and before delivery) and never existed. Every decision in the
+document is therefore the lane's own, and the six §14 ASKs are exactly the
+places it declined to decide.
+
 ## Escalations and corrections owed at merge
 
 - **`[DD-12]` is stale in two places.** It assigns the CharSet widening to
