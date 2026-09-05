@@ -28,7 +28,12 @@ SAB_REACH_EXPECT='Pattern: ^.$'
 # with the axis naming, so the pop line named a file that does not exist and
 # the first full mech run read the row UNREACHED-UNEXPECTED. Floor unchanged
 # where it still holds (K35: rounded down); measured count in parens.
-SAB_REACH_POP='tests/utf8/axis10_surrogate_witness.rxt|ED A0|9'  # measured 16; axis03_invalid_utf8.rxt carries 27 more
+# [second correction, same day]: the first re-point's floor came from counting
+# BOTH spellings ('ED A0' hex-comment + '\\xed\\xa0' escape) while this
+# EREGEX matches only the first — 6 measured under it (the other 10 are the
+# escaped spelling; the field's |-delimited format cannot carry an
+# alternation). Floor 5 per K35's generous round-down.
+SAB_REACH_POP='tests/utf8/axis10_surrogate_witness.rxt|ED A0|5'  # measured 6 exact-spelling; 16 both spellings
 SAB_COUNT=1
 SAB_BEFORE='        { 0x800,   0xD7FF,   3 },
         /* U+D800–U+DFFF: no encoding — deliberately no band. */

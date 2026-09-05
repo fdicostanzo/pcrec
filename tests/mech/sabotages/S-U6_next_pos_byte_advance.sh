@@ -26,6 +26,19 @@ SAB_REACH_EXPECT='Pattern:  */'
 # the first full mech run read the row UNREACHED-UNEXPECTED. Floor unchanged
 # where it still holds (K35: rounded down); measured count in parens.
 SAB_REACH_POP='tests/utf8/axis09_nextpos_findall.rxt|^pattern|14'  # measured 20
+# [2026-09-05, first solo run after the re-point]: REACHED but UNDETECTED —
+# a next_pos byte-advance is observable only through the find-all protocol
+# AFTER AN EMPTY MATCH AT A MULTI-BYTE BOUNDARY, and axis09 holds no such
+# cell (its K49 cell is a nomatch; its ms cells' matches are nonzero-width,
+# so the caller advances by the match, never through next_pos). The
+# S150-family holding state per ../CLAUDE.md's doctrine: the row stays, the
+# claim is stated, and the WITNESS THAT CLOSES IT is named below — an
+# oracle-backed axis09 cell 'empty match, then a multi-byte character,
+# find-all must continue at the character boundary', blocked on the
+# tests/utf8 libpcre2 differential instrument (the corpus follow-up in the
+# admin queue) for its oracle. When that cell lands, this flips NOW
+# DETECTED and the expectation is re-measured and changed.
+SAB_EXPECT=UNDETECTED
 SAB_COUNT=1
 SAB_BEFORE='"    size_t i = pos + 1;\n"
 "    while (i < n && (s[i] & 0xC0) == 0x80) i++;\n"
