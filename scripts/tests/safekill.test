@@ -29,6 +29,15 @@ SK="$SELF_DIR/../safekill"
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/sk_test.XXXXXX")"
 SPAWNED_PGIDS=()
 
+# [MACPORT] util-linux setsid is absent on macOS. Same perl POSIX::setsid()
+# replacement scripts/watchdog uses (that script's own comment has the
+# verification: pid==sid==pgid, identical to setsid(1)). No `exec` needed
+# here, unlike watchdog's own wrapper FUNCTION: the `&` below backgrounds
+# this one simple command directly rather than a function call, so there
+# is no extra subshell layer for `exec` to collapse.
+_SK_TEST_HAVE_SETSID=0
+command -v setsid >/dev/null 2>&1 && _SK_TEST_HAVE_SETSID=1
+
 cleanup() {
     local pg
     for pg in "${SPAWNED_PGIDS[@]:-}"; do
@@ -51,7 +60,12 @@ fail() { printf 'FAIL: %s\n' "$1"; fail_count=$((fail_count + 1)); }
 spawn_leader() {
     local snippet="$1" marker waited=0 pid=""
     marker="$SCRATCH/marker.$$.$RANDOM"
-    setsid bash -c "echo \$\$ > '$marker'; $snippet" </dev/null >/dev/null 2>&1 &
+    if [ "$_SK_TEST_HAVE_SETSID" -eq 1 ]; then
+        setsid bash -c "echo \$\$ > '$marker'; $snippet" </dev/null >/dev/null 2>&1 &
+    else
+        perl -e 'use POSIX qw(setsid); setsid(); exec { $ARGV[0] } @ARGV or exit 127;' \
+            -- bash -c "echo \$\$ > '$marker'; $snippet" </dev/null >/dev/null 2>&1 &
+    fi
     disown
     while [ ! -s "$marker" ] && [ "$waited" -lt 100 ]; do
         sleep 0.1
