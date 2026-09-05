@@ -146,6 +146,33 @@ any of them and compilation FAILS cleanly, naming the ceiling
 OOM, or a silent truncation. These are a CONTRACT: pcrec commits to
 rejecting rather than mis-serving an over-large pattern.
 
+**[LIM-2] N1 (2026-09-04): FOUR OF THESE SIX GAIN A RAISE SURFACE** — a
+per-compile override that can only move the number UP, never down, the
+same shape §8's two emitted-size caps already use. `--max-nfa-states=N`,
+`--max-dfa-states-goto=N` and `--max-subset-elems=N` raise
+`PCREC_MAX_NFA_STATES`/`PCREC_MAX_DFA_STATES_GOTO`/`PCREC_MAX_SUBSET_ELEMS`
+per compile; a value below the built-in default is refused as a malformed
+option (RAISE-ONLY, D84 ruling 1's rule generalized: these overrides exist
+to let a caller accept a larger artifact, never to manufacture a refusal on
+someone else's build). `pcrec --list-limits`'s `override` column reads
+`flag` for all four. **`PCREC_MAX_DFA_STATES_TABLE` is DELIBERATELY
+NOT RAISABLE**, and this is a real structural fact rather than an
+oversight: the table-engine's emitted transition cell is a C
+`short`/`unsigned short` (`src/gen/emit_dfa.c`; `PREMUL_DEAD` = 65,535 is
+the pre-multiplied form's reserved dead sentinel, `-1` the indexed form's),
+so a state number the format itself cannot represent is not a check this
+document could safely relax — 32,000 already sits just under that ceiling.
+Raising it would need a wider emitted cell type, an `abi` event this row
+does not take.
+
+`cli/main.c`'s `raise_only_limits[]` is ONE table driving all six
+raise-only flags (the two `--max-emit-*` size caps plus these four),
+addressed by `offsetof` into `pcrec_options` rather than four more
+hand-written parsing blocks — the general mechanism the two-flag precedent
+had not yet needed. See `docs/dev/lanes/n1budget_report.md` for the survey
+that found the emit-cap plumbing was itself two near-identical blocks
+before this generalization.
+
 **[SEL-1] (2026-08-28) exception, scoped to the THREE DFA-side siblings
 alone** (`PCREC_MAX_DFA_STATES_TABLE`/`_GOTO`, `PCREC_MAX_TABLE_ENTRIES`,
 `PCREC_MAX_SUBSET_ELEMS` — never `PCREC_MAX_NFA_STATES` or
@@ -171,6 +198,34 @@ patterns pcrec ACCEPTS is unchanged by this machine in either direction —
 which is why it adds no ceiling of its own to the list above, and why the
 paragraph it follows still describes every way a state-count ceiling can
 refuse a pattern.
+
+**[LIM-2] N1 (2026-09-04) A THIRD, PRE-EMPTIVE EXCEPTION, IN A NEW UNIT OF
+ITS OWN.** `PCREC_MAX_AUTO_DFA_ELEMS` (30,000,000) is a SMALLER budget on the
+exact same running count `PCREC_MAX_SUBSET_ELEMS` bounds — K7's subset-
+construction element total — checked at the same site, only under
+`--engine=auto` (the default), and only against the two MANDATORY machines a
+compile builds (never the [ENG-ABS] optional third machine above, whose
+overflow already never refuses). Crossing it abandons the DFA attempt and
+falls back to the VM through the identical `dfa_overflowed` mechanism the
+[SEL-1] exception above uses — same diagnostic shape, same cost bound — plus
+ONE LINE on stderr naming the limit and its raise flag,
+`--max-auto-dfa-elems`. An explicit `--engine=dfa` request is UNAFFECTED and
+pays the full `PCREC_MAX_SUBSET_ELEMS` budget above, in full: the caller
+asked for the DFA engine specifically and accepts its cost.
+
+**WHY A SMALLER BUDGET BELOW THE HARD CAP AT ALL.** [SEL-1]'s own exception
+still lets an `auto` compile spend the FULL K7 budget on a DFA attempt before
+falling back — construction that can cost seconds on a pattern the corpus
+measures nowhere near (docs/dev/lim2_m1_partition_measurement.md's
+`counterk.rxt:1845` witness alone spends 24,050,003 elements and ~1.5s wall
+even though it compiles today). N1 gives the auto route a cheaper bail: the
+SAME fallback [SEL-1] already promises, reached before the full budget is
+paid rather than after. **The default is derived, not guessed**: a corpus +
+pcrec-bench sweep (docs/dev/lanes/n1budget_report.md) found the current
+population's worst measured spend at 24,050,003 elements, and 30,000,000
+sits comfortably above it — proven by a before/after engine-selection census
+over the whole corpus, not merely by the arithmetic. **Today's engine
+selections do not move.**
 
 **[OPT-4] (2026-08-29, as re-ruled) THE PREFILTER-LANGUAGE RETRY, AND IT IS NOT
 AN EXCEPTION TO ANY CEILING — it is what happens AFTER one fires.** An earlier

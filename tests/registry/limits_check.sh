@@ -91,6 +91,7 @@ PCREC_MAX_DFA_STATES_GOTO
 PCREC_MAX_DFA_STATES_TABLE
 PCREC_MAX_TABLE_ENTRIES
 PCREC_MAX_SUBSET_ELEMS
+PCREC_MAX_AUTO_DFA_ELEMS
 PCREC_MAX_VM_NODES
 PCREC_MAX_VM_REPEAT_COPIES
 PCREC_MAX_VM_REPLICATION_PRODUCT
@@ -141,8 +142,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 55 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 55 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 56 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 56 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true

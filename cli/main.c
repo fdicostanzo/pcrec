@@ -4,6 +4,7 @@
  *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
  */
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,57 @@ static int parse_raise_only(const char *arg, const char *flag,
     }
     *slot = (uint64_t)v;
     return 0;
+}
+
+/* [LIM-2] N1 THE GENERAL RAISE-ONLY SURFACE (D84 ruling 1, generalized here
+ * rather than hand-copied four more times). `parse_raise_only` above still
+ * owns the ONE "below the built-in default is a malformed option" rule and
+ * its ONE error message; this table is what DISPATCHES an argv token to it —
+ * a flag's argv spelling, the built-in floor it may only rise above, and the
+ * `pcrec_options` field it writes, addressed by `offsetof` rather than a
+ * hand-written setter. A seventh raise-only cap costs one row here, not one
+ * more `else if` block in `cli_parse`'s chain below.
+ *
+ * `PCREC_MAX_DFA_STATES_TABLE` carries NO row: its consumer is the
+ * table-engine's EMITTED cell type (a C `short`/`unsigned short`,
+ * src/gen/emit_dfa.c), so raising the CHECK here past what that format can
+ * represent would be a lever whose number the artifact cannot honour — see
+ * limits.def's own comment on that row and docs/spec/limits.md §3.6. */
+typedef struct {
+    const char *flag;   /* argv spelling, no trailing '=' */
+    unsigned long long floor;
+    size_t offset;      /* offsetof(pcrec_options, <field>) */
+} RaiseOnlyLimit;
+
+static const RaiseOnlyLimit raise_only_limits[] = {
+    { "--max-emit-code-bytes", PCREC_MAX_VM_EMIT_CODE_BYTES,
+      offsetof(pcrec_options, max_emit_code_bytes) },
+    { "--max-emit-bytes",      PCREC_MAX_EMIT_BYTES,
+      offsetof(pcrec_options, max_emit_bytes) },
+    { "--max-nfa-states",      PCREC_MAX_NFA_STATES,
+      offsetof(pcrec_options, max_nfa_states) },
+    { "--max-dfa-states-goto", PCREC_MAX_DFA_STATES_GOTO,
+      offsetof(pcrec_options, max_dfa_states_goto) },
+    { "--max-subset-elems",    PCREC_MAX_SUBSET_ELEMS,
+      offsetof(pcrec_options, max_subset_elems) },
+    { "--max-auto-dfa-elems",  PCREC_MAX_AUTO_DFA_ELEMS,
+      offsetof(pcrec_options, max_auto_dfa_elems) },
+};
+#define N_RAISE_ONLY_LIMITS \
+    ((int)(sizeof raise_only_limits / sizeof raise_only_limits[0]))
+
+/* Is argv token `a` spelled "<flag>=<value>" for one of the rows above?
+ * Returns the row index, or -1. Called once per argv token regardless of
+ * match — the same shape every other flag in this file's `else if` chain
+ * already costs on a non-matching token. */
+static int raise_only_match(const char *a)
+{
+    for (int i = 0; i < N_RAISE_ONLY_LIMITS; i++) {
+        size_t n = strlen(raise_only_limits[i].flag);
+        if (!strncmp(a, raise_only_limits[i].flag, n) && a[n] == '=')
+            return i;
+    }
+    return -1;
 }
 
 static void usage(FILE *f)
@@ -100,6 +152,22 @@ static void usage(FILE *f)
           "                 built-in limit is refused. Defaults 500,000 code\n"
           "                 / 1,000,000 total. For a real build put these in\n"
           "                 the pattern source's config block instead\n"
+          "  --max-nfa-states=N, --max-dfa-states-goto=N, --max-subset-elems=N\n"
+          "                 [LIM-2] RAISE three compile-time construction\n"
+          "                 budgets (NFA states, the computed-goto attempt\n"
+          "                 engine's DFA state ceiling, and K7's subset-\n"
+          "                 construction element total). Same raise-only\n"
+          "                 rule as above. Defaults 131,072 / 10,000 /\n"
+          "                 48,000,000. --engine=dfa pays whichever of\n"
+          "                 these applies in full; see docs/spec/limits.md\n"
+          "  --max-auto-dfa-elems=N\n"
+          "                 [LIM-2] RAISE the AUTO route's own DFA-attempt\n"
+          "                 work budget (K7 elements; default 30,000,000,\n"
+          "                 below --max-subset-elems by design). Only\n"
+          "                 applies under --engine=auto: over budget there,\n"
+          "                 the DFA attempt is abandoned and the compile\n"
+          "                 falls back to the VM. --engine=dfa is unaffected\n"
+          "                 and pays --max-subset-elems' own cap instead\n"
           "  --backtrack-frames=N  the resume-stack capacity. Default: sized\n"
           "                 exactly where the pattern's depth is statically\n"
           "                 bounded, a stamped default otherwise\n"
@@ -289,6 +357,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
     int no_more_opts = 0;
     for (int i = 0; i < argc; i++) {
         const char *a = argv[i];
+        /* [LIM-2] N1: computed once per token so the dispatch below and its
+         * body read the SAME match rather than re-scanning the table. */
+        const int rom_idx = raise_only_match(a);
         if (!no_more_opts && !strcmp(a, "--")) no_more_opts = 1;
         /* `-h` sets a FLAG rather than printing and exiting, because this
          * function has a second caller: a `config` block's `pcrec -h` must
@@ -529,15 +600,11 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * the override belongs in the pattern-source file's `config` block
          * (D84 addendum 3); this flag is for one-off compiles and the
          * harness. */
-        else if (!no_more_opts && !strncmp(a, "--max-emit-code-bytes=", 22)) {
-            if (parse_raise_only(a + 22, "--max-emit-code-bytes",
-                                 PCREC_MAX_VM_EMIT_CODE_BYTES,
-                                 &opt.max_emit_code_bytes) != 0) return 1;
-        }
-        else if (!no_more_opts && !strncmp(a, "--max-emit-bytes=", 17)) {
-            if (parse_raise_only(a + 17, "--max-emit-bytes",
-                                 PCREC_MAX_EMIT_BYTES,
-                                 &opt.max_emit_bytes) != 0) return 1;
+        else if (!no_more_opts && rom_idx >= 0) {
+            const RaiseOnlyLimit *r = &raise_only_limits[rom_idx];
+            uint64_t *slot = (uint64_t *)((char *)&opt + r->offset);
+            if (parse_raise_only(a + strlen(r->flag) + 1, r->flag, r->floor,
+                                 slot) != 0) return 1;
         }
         /* [OPT-4] THE ADVISORY WARNING, and it is deliberately NOT
          * `parse_raise_only`. The two caps above are raise-only so no caller

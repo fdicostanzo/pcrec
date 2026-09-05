@@ -1,0 +1,10 @@
+== [LIM-2] N1 default-sizing measurement ==
+  .rxt files                  : 193
+  .rx files (bench altwide)    : 33
+  pattern blocks seen           : 3386
+  refused (any ctx_fail)         : 390
+  route=unanch, not refused      : 2157
+  route=attempt, not refused     : 433
+  route=none (VM-only), not refused : 406
+  DFA-chosen, anchored 3rd machine built : 1074
+  MAX subset_elems over NON-REFUSED rows : 24050003 (tests/counterk/counterk.rxt:1845)

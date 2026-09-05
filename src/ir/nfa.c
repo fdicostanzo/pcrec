@@ -122,8 +122,15 @@ typedef struct { int start; Patch out; } Frag;
 static int nst(NB *b, NKind k)
 {
     Nfa *nfa = b->nfa;
-    if (nfa->n >= PCREC_MAX_NFA_STATES)
-        ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %d states)", PCREC_MAX_NFA_STATES);
+    /* [LIM-2] N1: raise-only per-compile override (0 = the built-in
+     * default), the same shape the two ART-SIZE emit-byte caps use --
+     * cli/main.c's `raise_only_limits[]` is the one place a value gets in. */
+    const long long max_nfa_states = b->cx->opt->max_nfa_states
+                                    ? (long long)b->cx->opt->max_nfa_states
+                                    : PCREC_MAX_NFA_STATES;
+    if (nfa->n >= max_nfa_states)
+        ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %lld states; "
+                 "raise with --max-nfa-states)", max_nfa_states);
     if (nfa->n == nfa->cap) {
         int ncap = nfa->cap ? nfa->cap * 2 : 64;
         /* [M4.7b/K7] realloc into a TEMPORARY, so a failure leaves the live
