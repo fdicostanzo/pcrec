@@ -319,9 +319,55 @@ and ran it against 10.46. It found more than the addendum asked:
 3. A vacuity guard in the failing direction: mid-character differs from the
    boundary below it on **8 of 8** negative-assertion cells.
 
-**ASK 3 and ASK 6 remain open** (manager recommends the standing differential
-cell for 3, the small `rxt_format.md` amendment for 6). This lane did not
-touch either.
+### R-ASKS-2, and the poll gap that nearly cost it
+
+**A SECOND rulings block landed minutes before this lane reported, and the
+lane's last poll missed it** — the manager flagged it, and it was consumed in
+a follow-up pass. Recording the miss rather than only the fix: the first poll
+was made at a stage boundary and the second block arrived after it, so the
+discipline worked once and the WINDOW is what failed. The practical lesson for
+the next lane is that the poll belongs at the *end* as well as at stage
+boundaries, because a rulings file is written by someone who does not know
+when the lane is finishing.
+
+| ASK | ruling | what this lane did |
+|---|---|---|
+| **3** standing fold check | **RULED: YES** — the 11 one-to-many candidates become a permanent cell on the PC-3/PC-4 differential | wrote **§4.1.1** (22 assertions — 11 cells × **both** option words, since a floor of 11 would pass a check that had dropped the UCP arm; a diagnostic naming the DESIGN consequence, not the cell), sabotage row **S-U11**, and **placed it at STAGE 1** |
+| **6** `.rxt` oracle value | **RULED: the small amendment route**; manager charters, spelling is the manager's, §7.1.1's predicate is the input | wrote **§7.4.1**; **did not touch `docs/spec/`** |
+| — | **NEW**, Frank's width question: record what the UTF-16/32 door costs | wrote **§5.7** |
+
+**Two judgement calls this lane made inside those rulings, flagged because
+they are the lane's and not Frank's:**
+
+1. **The standing fold check lands at STAGE 1, not stage 4.** The obvious home
+   is the stage that builds the fold. **Its subject is libpcre2, not pcrec**,
+   so it depends on nothing any stage builds — and deferring it would leave
+   §4's entire foundation (and §12 P-8, "the single result the most design
+   depends on") unwatched for three stages, in exactly the window where a
+   libpcre2 bump would be cheapest to absorb.
+2. **The `.rxt` amendment needs at least FOUR states, not three.** The ASK
+   asked for one more value beside python-verifiable and `# pcre2-only`.
+   §7.1.1 found the oracle question is a **predicate about match units**, not
+   a label — `\W` over a Greek letter is `UCP-SPLIT` by verdict and
+   `PCRE2-ONLY` by oracle — so the amendment's input is that predicate and the
+   honest observation that a flat label set may be the wrong shape entirely.
+   **This lane does not guess on the format owner's behalf**; §10 records it
+   as open.
+
+**§5.7 is a NOTE, not a design**, per the ruling's own wording. Its content:
+the UCD data, the fold closure, the character-width analysis, `max_cp` and the
+entries table all sit **above** the encoding and transfer unchanged; the
+lowering's SHAPE transfers while its instance does not; **units-as-byte-pairs
+is the natural in-architecture form** rather than a 16-bit-alphabet engine,
+because §2.4.1 has just measured how sensitive the 65,535-**entry** cap is to
+alphabet size; the three transfer-blockers are self-synchronization (**E11's
+premise stated as the blocker it is** — it FAILS for UTF-16, so §6.3's
+conclusion cannot be inherited by reading it), the endianness axis, and
+surrogates flipping from excluded code points to the encoding mechanism, which
+**inverts S-U7**; and D77's trigger is `[V-A]`/`[V-B]` interop. Nothing built,
+designed or scheduled.
+
+**All seven ASKs are now ruled.**
 
 ## 5. What was NOT done
 
