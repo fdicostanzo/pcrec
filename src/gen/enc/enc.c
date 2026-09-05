@@ -114,12 +114,13 @@ bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
 
     for (const char *q = e->advance; *q; q++) {
         if (at_line_start) { adv_put(buf, cap, &len, indent); at_line_start = false; }
-        if (*q == '@' && q[1]) {
-            /* The three tokens enc.h documents. An `@` before anything else is
-             * a defect in a backend's own text, not a character to pass
-             * through: emitted C has no use for a bare `@`, so answering false
-             * turns a typo into an internal error at the call site rather than
-             * into an artifact that does not compile. */
+        if (*q == '@') {
+            /* The three tokens enc.h documents. An `@` before anything else —
+             * including at the very end of the text — is a defect in a
+             * backend's own text, not a character to pass through: emitted C
+             * has no use for a bare `@`, so answering false turns a typo into
+             * an internal error at the call site rather than into an artifact
+             * that does not compile. */
             switch (q[1]) {
                 case 'P': adv_put(buf, cap, &len, posvar);  q++; continue;
                 case 'S': adv_put(buf, cap, &len, subjvar); q++; continue;

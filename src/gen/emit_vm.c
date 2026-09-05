@@ -11083,12 +11083,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      *
      * The advance is the BACKEND's text, so there is no encoding test here and
      * must never be one (DD-12 (7)); under `byte` it is `attempt_position++;`
-     * and this artifact is byte-identical to every one that came before. */
-    /* 1 KB, not the 512 its `retry_win` sibling uses: an advance carries its
-     * own explanatory comment into the artifact, and the utf8 backend's text
-     * measures 535 bytes once indented. The overflow is a loud internal error
-     * rather than a truncation, and it FIRED during this fix's own bring-up at
-     * 512 — the guard is measured, not assumed. */
+     * and this artifact is byte-identical to every one that came before.
+     *
+     * The buffer is 1 KB where its `retry_win` sibling uses 512: an advance
+     * carries its own explanatory comment into the artifact, and the utf8
+     * backend's text measures 535 bytes once indented. Overflow is a loud
+     * internal error rather than a truncation, and it FIRED during this fix's
+     * own bring-up at 512 — the guard is measured, not assumed. */
     char retry_adv[1024];
     if (!pcrec_enc_advance(pcrec_enc_by_id(v.cx->opt->encoding),
                            retry_adv, sizeof retry_adv, "        ",
