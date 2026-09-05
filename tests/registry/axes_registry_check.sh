@@ -86,6 +86,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/table.sh"
 . "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [K37] resolves TIMEOUT_BIN for this file's own bare compiler call below
+. "$ROOT_DIR/tests/lib/assoc.sh"   # [MACPORT] HDR_BIT/CLI_MACRO below are string-keyed (C macro names, CLI flag text) — bash 3.2 (this box) has no declare -A at all
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
@@ -166,13 +167,13 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # dump-vs-header agreement checked FROM OUTSIDE the compiled binary, over a
 # plain-text re-read, which catches the case a stale BUILT binary would hide
 # (a header edit with no rebuild).
-declare -A HDR_BIT=()   # macro -> bit
+assoc_new HDR_BIT   # macro -> bit
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
-    HDR_BIT[$macro]="$bit"
+    assoc_set HDR_BIT "$macro" "$bit"
 done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
           | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u << ([0-9]+)$/\1\t\3/')
-if [ "${#HDR_BIT[@]}" -eq 0 ]; then
+if [ "$(assoc_count HDR_BIT)" -eq 0 ]; then
     echo "axes_registry: FATAL: derived ZERO PCREC_(NO|FORCE)_* bit constants from lib/pcrec.h" >&2
     exit 1
 fi
@@ -181,9 +182,9 @@ fi
 # (tests/axes/run_axes.sh's own header comment: "remembers the most
 # recently seen `strcmp(a, "-...")` literal, and pairs it with the next
 # `opt.flags |= MACRO` line").
-declare -A CLI_MACRO=()   # cli flag text -> macro
+assoc_new CLI_MACRO   # cli flag text -> macro
 while IFS=$'\t' read -r macro flagtext; do
-    [ -n "$macro" ] && CLI_MACRO["$flagtext"]="$macro"
+    [ -n "$macro" ] && assoc_set CLI_MACRO "$flagtext" "$macro"
 done < <(awk '
     /strcmp\(a, "-/ {
         if (match($0, /"-[^"]+"/)) pending = substr($0, RSTART + 1, RLENGTH - 2)
@@ -215,12 +216,12 @@ doc_bits_raw="$(sed -n '/^## 2\./,/^## 3\./p' "$TUNING" \
 # ============================================================================
 check_macro_bit() {
     local macro="$1" dumped_bit="$2" axis="$3" cand="$4"
-    if [ -z "${HDR_BIT[$macro]:-}" ]; then
+    if ! assoc_has HDR_BIT "$macro"; then
         bad "[$axis/$cand] dumped deny/force macro '$macro' is not defined in lib/pcrec.h at all"
         return
     fi
-    if [ "${HDR_BIT[$macro]}" != "$dumped_bit" ]; then
-        bad "[$axis/$cand] dumped bit $dumped_bit for '$macro' disagrees with lib/pcrec.h's own bit ${HDR_BIT[$macro]}"
+    if [ "$(assoc_get HDR_BIT "$macro")" != "$dumped_bit" ]; then
+        bad "[$axis/$cand] dumped bit $dumped_bit for '$macro' disagrees with lib/pcrec.h's own bit $(assoc_get HDR_BIT "$macro")"
         return
     fi
     ok "[$axis/$cand] '$macro' (bit $dumped_bit) matches lib/pcrec.h"
@@ -228,12 +229,12 @@ check_macro_bit() {
 
 check_cli_flag() {
     local flagtext="$1" macro="$2" axis="$3" cand="$4"
-    if [ -z "${CLI_MACRO[$flagtext]:-}" ]; then
+    if ! assoc_has CLI_MACRO "$flagtext"; then
         bad "[$axis/$cand] cli_flag '$flagtext' is not a spelling cli/main.c's parser accepts (or the awk pairing missed it)"
         return
     fi
-    if [ "${CLI_MACRO[$flagtext]}" != "$macro" ]; then
-        bad "[$axis/$cand] cli_flag '$flagtext' pairs with '${CLI_MACRO[$flagtext]}' in cli/main.c, not the dumped '$macro'"
+    if [ "$(assoc_get CLI_MACRO "$flagtext")" != "$macro" ]; then
+        bad "[$axis/$cand] cli_flag '$flagtext' pairs with '$(assoc_get CLI_MACRO "$flagtext")' in cli/main.c, not the dumped '$macro'"
         return
     fi
     ok "[$axis/$cand] cli_flag '$flagtext' pairs with '$macro' in cli/main.c"
@@ -353,12 +354,13 @@ fi
 # it exists to assert, silently. `tests/axes/run_axes.sh` had the identical
 # defect and was caught only because its PROSE anchor broke loudly first.
 hdr_bits_family=""
-for macro in "${!HDR_BIT[@]}"; do
-    b="${HDR_BIT[$macro]}"
+while IFS= read -r macro; do
+    [ -n "$macro" ] || continue
+    b="$(assoc_get HDR_BIT "$macro")"
     if [ "$b" -ge 4 ] 2>/dev/null; then
         hdr_bits_family="$hdr_bits_family $b"
     fi
-done
+done < <(assoc_keys HDR_BIT)
 hdr_bits_sorted="$(printf '%s\n' $hdr_bits_family | sort -n -u)"
 hdr_bits_lo="$(printf '%s' "$hdr_bits_sorted" | head -1)"
 hdr_bits_hi="$(printf '%s' "$hdr_bits_sorted" | tail -1)"

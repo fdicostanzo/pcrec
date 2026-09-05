@@ -2138,12 +2138,18 @@ results_file="$(mktemp "$MECH_SCRATCH/results.XXXXXX")"
 if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
     rowdir="$(mktemp -d "$MECH_SCRATCH/rows.XXXXXX")"
     running=0
+    # [MACPORT] `wait -n` is bash 4.3+ and silently no-ops on this box's
+    # bash 3.2 — FIFO-throttle on tracked pids instead (tests/lib/
+    # run_san_group.sh's own precedent for the identical gap).
+    pids=()
     for f in "${sab_files[@]}"; do
         echo "-- running $(basename "$f") --" >&2
         run_one "$f" > "$rowdir/$(basename "$f").row" &
+        pids+=("$!")
         running=$((running + 1))
         if [ "$running" -ge "$PROCS" ]; then
-            wait -n || true
+            wait "${pids[0]}" 2>/dev/null || true
+            pids=("${pids[@]:1}")
             running=$((running - 1))
         fi
     done

@@ -144,6 +144,17 @@ RUN_SECS="$(gen_run_secs)"   # per-cell matcher-run budget; see the run site
 # depth-aware classifier byte for byte.
 . "$ROOT_DIR/tests/lib/size_count.sh"
 
+# [MACPORT] a bash-3.2-safe declare -A shim (this box's own /bin/bash has
+# no associative arrays at all) — see its own header. file_fail_count/
+# features_seen/declared_names below are all string-keyed (filenames,
+# feature-set text, block names), the one shape scripts/safekill's own
+# fix (declare -a under a bash-version guard) cannot cover.
+. "$ROOT_DIR/tests/lib/assoc.sh"
+
+# [MACPORT] a real load1 reading on a box with no /proc (used by the
+# SIZELOG timing line below) instead of a silent zero.
+. "$ROOT_DIR/tests/lib/loadavg.sh"
+
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 # [CC-CLANG] CLANGGEN=1 defaults the COMPILEE axis to clang, same shape as
 # LINTGEN's -fanalyzer append: opt-in, and an explicit CC always wins.
@@ -258,6 +269,15 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
 
     running=0
     idx=0
+    # [MACPORT] FIFO throttling, not a true "whichever finishes first" pool
+    # (`wait -n` is bash 4.3+ and silently no-ops — invalid-option error
+    # swallowed by `|| true`, `running` decremented anyway — on this box's
+    # bash 3.2, which never actually caps concurrency). `pids[0]` is always
+    # the OLDEST still-tracked worker, so waiting on it specifically is
+    # portable back to bash 3.0 at the cost of occasionally waiting a
+    # little past the first-to-finish when jobs complete out of order —
+    # tests/lib/run_san_group.sh's own header note on the identical idiom.
+    pids=()
     for f in "${files[@]}"; do
         idx=$((idx + 1))
         # RXTDUMP: each worker gets its OWN path ($RXTDUMP.$idx) — the
@@ -278,9 +298,11 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
             KEEP="$KEEP" VERBOSE="$VERBOSE" \
             bash "${BASH_SOURCE[0]}" "$f" \
             > "$pardir/$idx.out" 2> "$pardir/$idx.err" &
+        pids+=("$!")
         running=$((running + 1))
         if [ "$running" -ge "$PROCS" ]; then
-            wait -n || true
+            wait "${pids[0]}" 2>/dev/null || true
+            pids=("${pids[@]:1}")
             running=$((running - 1))
         fi
     done
@@ -368,8 +390,8 @@ total_pending=0        # [M4.5a] 'gp' (pending-VM) capture-group cases: out of
 total_sizelog=0         # [ART-SIZE.1b] SIZELOG rows actually written — read
                         # back by the PROCS>1 aggregation above and by
                         # tests/size/run_size_log.sh's own header stamp.
-declare -A file_fail_count=()
-declare -A features_seen=()
+assoc_new file_fail_count
+assoc_new features_seen
 compile_fail_set=()   # distinct "file:line" pattern-compile failures
 block_counter=0
 
@@ -383,10 +405,11 @@ contains_fail() {
 
 record_fail() {
     # record_fail <file> <line> <message...>
-    local f="$1" ln="$2"
+    local f="$1" ln="$2" _rf_cur
     shift 2
     echo "$f:$ln: $*" >&2
-    file_fail_count["$f"]=$(( ${file_fail_count["$f"]:-0} + 1 ))
+    _rf_cur="$(assoc_get file_fail_count "$f")"
+    assoc_set file_fail_count "$f" "$(( ${_rf_cur:-0} + 1 ))"
     total_fail=$(( total_fail + 1 ))
 }
 
@@ -549,14 +572,14 @@ flush_block() {
     # a perr block would read that as its expected rejection — a typo'd
     # features line must be a loud harness failure, never a quiet pass.
     if [ -n "$cur_features" ]; then
-        if [ -z "${features_seen[$cur_features]:-}" ]; then
+        if ! assoc_has features_seen "$cur_features"; then
             if pcrec_run "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" -- 'a' >/dev/null 2>&1; then
-                features_seen[$cur_features]=ok
+                assoc_set features_seen "$cur_features" ok
             else
-                features_seen[$cur_features]=bad
+                assoc_set features_seen "$cur_features" bad
             fi
         fi
-        if [ "${features_seen[$cur_features]}" = "bad" ]; then
+        if [ "$(assoc_get features_seen "$cur_features")" = "bad" ]; then
             local i
             for i in "${!case_kind[@]}"; do
                 record_fail "$cur_file" "${case_line[$i]}" \
@@ -724,7 +747,7 @@ flush_block() {
         _sz_ums="${_sz_user//./}"; _sz_sms="${_sz_sys//./}"
         _sz_cpu_ms=$(( 10#${_sz_ums:-0} + 10#${_sz_sms:-0} ))
         printf -v _sz_cpu '%d.%03d' "$((_sz_cpu_ms / 1000))" "$((_sz_cpu_ms % 1000))"
-        read -r _sz_load1 _ < /proc/loadavg
+        _sz_load1="$(load1)"
         _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h")"
         # Pattern id is ROOT-RELATIVE, never absolute: a no-args (full
         # corpus) run discovers files via `find "$ROOT_DIR/tests" ...`
@@ -1080,7 +1103,7 @@ for file in "${files[@]}"; do
     # (docs/spec/rxt_format.md) and must be unique within the file. Reset
     # PER FILE, never per block -- the whole point is to catch a SECOND
     # block naming itself the same thing.
-    declare -A declared_names=()
+    assoc_new declared_names
 
     # ---- [DD-13b.W1.1] THE SEAM (w1_impl §1.1, the manager's ruling) ----
     #
@@ -1545,12 +1568,12 @@ for file in "${files[@]}"; do
             blk_name="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
                 record_fail "$file" "$lineno" "'name' line before any pattern block"
-            elif [ -n "${declared_names[$blk_name]:-}" ]; then
+            elif assoc_has declared_names "$blk_name"; then
                 record_fail "$file" "$lineno" \
-                    "duplicate block name '$blk_name' (already named on line ${declared_names[$blk_name]})"
+                    "duplicate block name '$blk_name' (already named on line $(assoc_get declared_names "$blk_name"))"
             else
                 cur_name="$blk_name"
-                declared_names[$blk_name]="$lineno"
+                assoc_set declared_names "$blk_name" "$lineno"
             fi
         elif [[ "$line" =~ ^description[[:space:]]+(.*)$ ]]; then
             # [DD-13b.W1] `description` is a FIELD, not a comment (Frank,
@@ -1649,11 +1672,12 @@ echo
 echo "== Summary =="
 echo "cases passed: $total_pass"
 echo "cases failed: $total_fail"
-if [ ${#file_fail_count[@]} -gt 0 ]; then
+if [ "$(assoc_count file_fail_count)" -gt 0 ]; then
     echo "failures by file:"
-    for f in "${!file_fail_count[@]}"; do
-        echo "  $f: ${file_fail_count[$f]}"
-    done | LC_ALL=C sort
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        echo "  $f: $(assoc_get file_fail_count "$f")"
+    done < <(assoc_keys file_fail_count) | LC_ALL=C sort
 fi
 echo "pattern-compile failures (distinct): ${#compile_fail_set[@]}"
 echo "group cases pending-vm: $total_pending"

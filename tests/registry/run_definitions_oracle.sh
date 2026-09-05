@@ -118,10 +118,21 @@ one_cell() {
 }
 
 running=0
+# [MACPORT] `wait -n` is bash 4.3+ and silently no-ops on this box's bash
+# 3.2 — this was the concrete failure the manager's box survey named
+# ("run_definitions_oracle.sh fails all 354 cells with 'result file
+# truncated'", compounded by watchdog's own darwin gap). FIFO-throttle on
+# tracked pids instead, tests/lib/run_san_group.sh's own precedent.
+pids=()
 while IFS=$'\t' read -r id pa pb _oracle_a _desc; do
     one_cell "$id" "$pa" "$pb" &
+    pids+=("$!")
     running=$((running + 1))
-    if [ "$running" -ge "$JOBS" ]; then wait -n || true; running=$((running - 1)); fi
+    if [ "$running" -ge "$JOBS" ]; then
+        wait "${pids[0]}" 2>/dev/null || true
+        pids=("${pids[@]:1}")
+        running=$((running - 1))
+    fi
 done < "$CELLS"
 wait
 
