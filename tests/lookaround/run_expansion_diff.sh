@@ -194,12 +194,12 @@ if [ -n "${EXPAND_WORKER:-}" ]; then
             "$bid" "$origin" "$pat" "$(head -1 "$d/b.err")"; exit 0
     fi
     ncaps_b="$(grep -m1 '^#define RX_NCAPS' "$d/B/gen.h" | awk '{print $3}')"
-    if ! "$TIMEOUT_BIN" 120 $CC $GENCFLAGS -I"$d/B" -o "$d/b" \
+    if ! "$TIMEOUT_BIN" 120 $CC $GENCFLAGS -I"$d/B" -o "$d/runb" \
             "$BATCH" "$d/B/gen.c" 2>"$d/bcc.err"; then
         printf 'E\t%s\t%s\tthe folded artifact did not compile: %s\n' \
             "$bid" "$origin" "$(head -1 "$d/bcc.err")"; exit 0
     fi
-    if ! "$TIMEOUT_BIN" 120 "$d/b" < "$bdir/cells" > "$d/b.out"; then
+    if ! "$TIMEOUT_BIN" 120 "$d/runb" < "$bdir/cells" > "$d/b.out"; then
         printf 'E\t%s\t%s\tthe folded artifact did not run\n' "$bid" "$origin"
         exit 0
     fi
@@ -297,13 +297,13 @@ if [ -n "${EXPAND_WORKER:-}" ]; then
                 "$bid" "$origin" "$pol" "$ncaps_b" "$ncaps_a" "$gpat"
             continue
         fi
-        if ! "$TIMEOUT_BIN" 120 $CC $GENCFLAGS -I"$d/A" -o "$d/a" \
+        if ! "$TIMEOUT_BIN" 120 $CC $GENCFLAGS -I"$d/A" -o "$d/runa" \
                 "$BATCH" "$d/A/gen.c" 2>"$d/acc.err"; then
             printf 'E\t%s\t%s\tthe %s artifact did not compile: %s\n' \
                 "$bid" "$origin" "$pol" "$(head -1 "$d/acc.err")"
             continue
         fi
-        if ! "$TIMEOUT_BIN" 120 "$d/a" < "$bdir/cells" > "$d/a.out"; then
+        if ! "$TIMEOUT_BIN" 120 "$d/runa" < "$bdir/cells" > "$d/a.out"; then
             printf 'E\t%s\t%s\tthe %s artifact did not run\n' \
                 "$bid" "$origin" "$pol"
             continue

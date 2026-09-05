@@ -590,12 +590,16 @@ static int esc_char_value(Ctx *cx, size_t epos)
                     a 100-digit operand from overflowing the accumulator */
                 ndig++;
             }
-            if (ndig == 0)
-                ctx_fail(cx, epos, "digits missing after \\x");
-            if (peekc(cx) != '}')
+            if (peekc(cx) != '}') {
+                /* Not '}' and not a hex digit (the loop above consumed those)
+                 * — 10.46's err-167 shape, which also covers the unclosed
+                 * form ending the pattern. */
                 ctx_fail(cx, cx->pos,
                          "non-hex character in \\x{...} (closing brace "
                          "missing?)");
+            }
+            if (ndig == 0)                                 /* the empty \x{} */
+                ctx_fail(cx, epos, "digits missing after \\x");
             cx->pos++;                                     /* the '}' */
             if (v > (long long)cls_universe(cx))
                 ctx_fail(cx, epos,

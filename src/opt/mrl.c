@@ -303,7 +303,7 @@ long long pcrec_cwmax(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            /* One byte, exactly — see the header's ENCODING paragraph. */
+            /* One CHARACTER, exactly and by definition — see the header. */
             return mrl_sat_add(acc, 1);
         case A_EMPTY:
         case A_BOL:
