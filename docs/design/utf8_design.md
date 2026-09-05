@@ -1843,40 +1843,184 @@ of `pcrec_maxw` to 4 (UTF-8's maximum code-unit length) and:
 the same phenomenon arriving through §4.2(c)'s fold closure.
 
 **THE RESOLUTION.** Two quantities, because there are two consumers asking
-different questions:
+different questions.
 
-1. **`pcrec_minw` / `pcrec_maxw` stay in BYTES and become EXACT per class.**
-   Their real consumer is `[M4.6d]`'s MRL pruning ("how many subject bytes
-   must any accepting continuation still consume"), which genuinely wants
-   bytes. Under UTF-8, `minw(A_CLASS)` = the minimum encoded length over the
-   class's intervals; `maxw(A_CLASS)` = the maximum. Both are **exact**, both
-   are computable from the interval list at the lowering, and both are a
-   strict improvement over today's constant `1` — the MRL bound gets *tighter*
-   for a non-ASCII class, not looser. Each arm keeps its own safe direction.
-2. **`la_widths` moves to a CHARACTER-width analysis.** A new
-   `pcrec_cwmin`/`pcrec_cwmax` over the same AST, identical in shape to
-   `mrl.c`'s pair (same saturating arithmetic, same `default:`-less exhaustive
-   switch, same opposite-direction obligation), whose `A_CLASS` arm answers
-   **exactly 1 in every encoding** — because a class is one character by
-   definition. That is what makes the whole table above compile.
+> **REWRITTEN AT r54 (MUST-FIX E3).** The first version's resolution was right
+> about the SHAPE and wrong about three concrete things, and one of them
+> reverses a claim: it said `minw`/`maxw`'s *"real consumer is `[M4.6d]`'s MRL
+> pruning"*. **`pcrec_maxw` has no MRL consumer and never had one.**
+> §5.6.2 is the census. The other two are the callgraph memo fields the
+> character pair needs (§5.6.3) and the fact that the width rule has had TWO
+> TIMINGS since `[DD-14.LB]` and the first version moved one of them
+> (§5.6.4).
 
-**Why this is not two sources for one fact.** They are two different facts.
-Under `--encoding=byte` they are numerically equal, and §8.1's identity gate is
-what proves the byte-encoding answers did not move. A panel should attack
-whether one parameterised function (`pcrec_width(a, UNIT_BYTES|UNIT_CHARS)`)
-is better than two; the argument for two is `mrl.c`'s own — an exhaustive
-switch per analysis is the alarm that fires when a node kind is added, and a
-unit parameter threaded through every arm makes each arm answer two questions
-where today it answers one.
+#### 5.6.1 `pcrec_minw` stays, in BYTES, and becomes exact per class
 
-**A consequence worth pricing before the panel does.** Making `maxw` exact
-means `maxw(A_CLASS)` under UTF-8 can be 4, so a lookbehind's *byte* width
-becomes variable — but no consumer of `maxw` asks for a lookbehind's byte
-width any more, because §5.6(2) moved that consumer. The `end-check` the
-emitter emits on both arms (`[M6.6.2]` wave D, ASK 2's ruling) keeps working
-and gets *more* valuable: it is the runtime evidence that the character
-analysis agrees with what the emitter did, and under UTF-8 it stops being
-redundant, which `emit_vm.c`'s own comment predicts in those words.
+**Unchanged from the first version and its consumer census holds.**
+`pcrec_minw` has seven live callers, verified by grep at this tree:
+`src/gen/emit_vm.c:4845`, `:5420`, `:5553`, `:5677`, `:7495`, `:8511` — the
+MRL prune's own sites — plus `src/opt/select_engine.c:653`
+(`prefilter_lang_nullable`), plus `src/opt/callgraph.c:775`'s fixpoint that
+serves them. It genuinely wants BYTES ("how many subject bytes must any
+accepting continuation still consume"), and under UTF-8
+`minw(A_CLASS)` = the minimum encoded length over the class's intervals is
+**exact** where today's constant `1` is a sound under-estimate. The MRL bound
+gets *tighter* for a non-ASCII class. Its safe direction (down) is unchanged,
+and its arena zero stays sound.
+
+#### 5.6.2 `pcrec_maxw`'s WHOLE CHAIN RETIRES (r54 E3(a))
+
+**MEASURED by grep**, and it is the finding that changes the shape of this
+section. `pcrec_maxw` has exactly **three** call sites in the tree:
+
+| site | what it is |
+|---|---|
+| `src/parse/mod_lookaround.c:298` | `la_widths`, per top-level branch — **the rule §5.6 is moving** |
+| `src/parse/mod_lookaround.c:309` | `la_widths`, the whole body — **the same rule** |
+| `src/opt/callgraph.c:795` | the `maxw` fixpoint, which exists **only** to publish `u.call.maxw` for the arm those two read |
+
+Every other occurrence in `src/` is a COMMENT (`emit_vm.c:6128`, `:6152`,
+`internal.h`'s field documentation, `mrl.c`'s own header) or `mrl.c`'s
+internal recursion. **So once `la_widths` moves to the character pair,
+`pcrec_maxw` has no reader at all** — and neither does anything downstream of
+it: `u.call.maxw`, `u.call.maxw_known`, `cg_maxw_publish`, the fixpoint at
+`callgraph.c:786-800`, and sabotage row `S171`
+(`tests/mech/sabotages/S171_maxw_fixpoint_one_round.sh`).
+
+**D77 says a mechanism with no consumer does not stay.** But the honest move
+is not deletion, because the character pair needs a fixpoint of exactly this
+shape for exactly this consumer:
+
+> **`maxw`'s fixpoint is RE-AIMED, not retired.** Its recurrence changes from
+> bytes to characters and it becomes `cwmax`; `u.call.maxw`/`maxw_known`
+> become `u.call.cwmax`/`cwmax_known`; `S171` keeps its row and re-points its
+> `SAB_FILE` at the renamed fixpoint. `pcrec_maxw` the FUNCTION — `mrl.c`'s
+> byte-maximum recurrence — is what actually goes, along with its header's
+> claim to a consumer it does not have.
+
+**The net cost is therefore much smaller than the panel's count**, and the
+difference is worth stating because it changes whether this is a big change:
+not *"two more fixpoints and two more memo fields"* on top of what exists, but
+**one new fixpoint (`cwmin`) and one new memo field**, with the `maxw` pair
+renamed and re-recurred in place.
+
+| | today | after |
+|---|---|---|
+| callgraph fixpoints | `minw`, `maxw` | `minw` (bytes, MRL), `cwmin` (chars, **new**), `cwmax` (chars, **re-aimed from `maxw`**) |
+| `A_CALL` memo fields | `minw`, `maxw`, `maxw_known` | `minw`, `cwmin` (**new**), `cwmax`, `cwmax_known` (**renamed**) |
+| sabotage rows | S171 | S171 (**re-pointed**) + S-U10 (§8.2, the `cwmin` fixpoint's own round bound) |
+
+#### 5.6.3 The character pair, and its arena-zero obligation (r54 E3(b))
+
+`pcrec_cwmin`/`pcrec_cwmax` are a new pair over the same AST, identical in
+shape to `mrl.c`'s (same saturating arithmetic, same `default:`-less
+exhaustive switch — `mrl.c:18-24`'s rule, so a node kind added later is a
+compile error here). The `A_CLASS` arm answers **exactly 1 in every
+encoding**, because a class is one character by definition, and that is what
+makes §5.6's whole population table compile.
+
+**THE OBLIGATION THE FIRST VERSION DID NOT DISCHARGE**, and
+`internal.h:934-963` states it for `maxw` in terms that transfer verbatim:
+
+> *"`pcrec_maxw`'s safe direction is the OPPOSITE of `minw`'s, so a plain
+> `long long maxw` whose arena zero is `0` would be its SILENT MISCOMPILE — an
+> under-estimated maximum lets a variable-width branch through the lookbehind
+> rule as fixed, which on a NEGATIVE lookbehind is a false match."*
+
+The arena zeroes every allocation, so a memo field's zero is the answer any
+walker legitimately running before the fixpoint sees. Therefore:
+
+| field | safe direction | arena zero is | shape |
+|---|---|---|---|
+| `u.call.cwmin` | DOWN (under-estimate is free) | `0` — sound | **one** `long long` |
+| `u.call.cwmax` | UP (over-estimate is free; under-estimating is a false match on `(?<!`) | `0` — **an under-estimate, UNSOUND** | **two** fields: `cwmax` plus `cwmax_known`, and the arm reads `cwmax` ONLY through it |
+
+This is not a new pattern, it is `maxw`/`maxw_known`'s own, and the reason it
+transfers exactly is that the consumer is the same consumer. `cwmax_known`
+false means "answer `PCREC_W_UNBOUNDED`", which is what `la_widths` already
+treats as "refuse this body" — so a walker running before the fixpoint gets
+the refusal, never a false fixed-width verdict.
+
+#### 5.6.4 BOTH TIMINGS MOVE TOGETHER (r54 E3(c))
+
+**ACCEPTED, and it was a real gap.** Since `[DD-14.LB]` the width rule is
+asked **twice**, and `src/parse/mod_lookaround.c:319-338` is the comment that
+says so — *"§2.5's REFUSAL SENTENCE — ONE HOME, TWO TIMINGS"*:
+
+1. **the parse hook**, `la_widths` inside the `(?<` doorway, which owes an
+   `ExtResult`; and
+2. **`pcrec_postresolve`** (`compile.c:999`), which re-asks it for a
+   lookbehind body containing a subroutine call, because `maxw`'s `A_CALL` arm
+   cannot answer until `pcrec_callgraph_build` (`:961`) binds the callee, and
+   which calls `ctx_fail`.
+
+The two *"must produce the SAME BYTES"*, and the file's own comment explains
+that this is byte-identical **by construction and not by transcription** —
+the doorway epilogue is `ctx_fail(cx, r->at, "%s", r->msg)`, so `REFUSE(at,
+"%s", buf)` and `ctx_fail(cx, at, "%s", buf)` render the same string through
+the same formatter, and the three-arm ORDER (unbounded first) is part of the
+rule rather than of either caller.
+
+> **So the move is to the RULE, not to a call site.** Both timings switch to
+> `cwmin`/`cwmax` in the same change, the shared refusal text is unchanged
+> (the rule's WORDING is about fixed-vs-variable width, which is still what it
+> refuses), and the three-arm order is untouched. Moving one timing and not
+> the other would make a lookbehind containing a call refuse differently from
+> one that does not — the exact divergence `[DD-14.LB]` built this structure
+> to prevent.
+
+**And S-U4's sabotage gets sharper for it** (§8.2): "point it back at
+`pcrec_maxw`" must be applied at **one** timing, so the row detects the
+divergence between the two paths as well as the refusal itself. A row that
+sabotaged both would be detected by any `(?<=[a\x{3b1}])` cell; a row that
+sabotages one is detected only by a cell whose lookbehind body carries a
+call, which is a population the corpus must be told to contain.
+
+#### 5.6.5 Why this is coherent with §2.1.2's forced position
+
+This is the join between the two BLOCKING findings, and it is the reason
+§2.1.2's position works at all.
+
+**Both timings run BEFORE the lowering**, and they must:
+
+```
+ :901   pcrec_parse            → the parse hook's la_widths runs in here
+ :961   pcrec_callgraph_build  → the cwmin/cwmax fixpoints run here
+ :999   pcrec_postresolve      → the second timing runs here
+ :1000  pcrec_lower_enc        ◄── the lowering
+```
+
+**After `:1000` a character is not a node.** A two-byte character is an
+`A_CAT` of two byte classes, so a character-width walk over a lowered tree
+would answer 2 where the truth is 1 — and it would do so *plausibly*, which is
+the worst kind of wrong. Constraint 3 of §2.1.2 IS this fact, and §5.6 is
+where it comes from.
+
+**This also disposes of the tempting alternative.** One could imagine lowering
+immediately after the parser (§2.1.2 shows why `callgraph_build` forbids it)
+and having the lowering STAMP each lowered character's width onto its node so
+`cwmax` could recover it. That is a marker node or a shadow field carrying a
+fact the tree used to hold structurally — a parallel mechanism, and one whose
+failure mode is a wrong lookbehind width, which on `(?<!` is a false match.
+**The position that avoids it is free**, so the design takes the free one.
+
+**Why this is not two sources for one fact.** `minw` (bytes) and
+`cwmin`/`cwmax` (characters) are two different facts with two different
+consumers. Under `--encoding=byte` they are numerically equal, and §8.1's
+identity gate is what proves the byte-encoding answers did not move. The
+alternative — one parameterised `pcrec_width(a, UNIT_BYTES|UNIT_CHARS)` — is
+**declined** on `mrl.c`'s own argument: an exhaustive switch per analysis is
+the alarm that fires when a node kind is added, and a unit parameter threaded
+through every arm makes each arm answer two questions where today it answers
+one. §10 keeps this open for Frank if he disagrees.
+
+**A consequence worth pricing.** The `end-check` the emitter emits on both
+lookbehind arms (`[M6.6.2]` wave D, ASK 2's ruling) keeps working and gets
+**more** valuable: it is the runtime evidence that the character analysis
+agrees with what the emitter did, and under UTF-8 it stops being redundant —
+which `emit_vm.c`'s own note 3 predicts in those words. §5.2.1 is the other
+half of that sentence: the end-check only stops being a **trap** once
+`back_step` validates declared length, so E3 and E4 are one change, not two.
 
 ---
 
