@@ -1,0 +1,295 @@
+# [M5.0] D27 axis 8 -- lookbehind over variable-byte-width bodies (extract Sec
+# 5.6). 24 blocks (8 measured bodies x 3 shapes: positive/negative/
+# call-bearing -- see this generator's header for the "call-bearing" reading,
+# a disclosed interpretation of excluded material), 4 subjects each -> 96
+# cases. All fixed at PCRE2_INFO_MAXLOOKBEHIND==1 CHARACTER while
+# spanning multiple BYTE WIDTHS -- the discriminating promise this axis exists
+# to pin. Oracle: libpcre2, options=PCRE2_UTF
+# (pcrec has no UCP axis, so \w/\p{L}'s own membership is measured under
+# PCRE2_UTF ALONE, never |UCP -- this correctly makes a Greek letter a
+# NON-member of `\w` for this corpus's purposes, matching pcrec's real
+# promised semantics).
+#
+# PROMOTED (lane utfprom, [M5.0] stage 2 close): 21 of 24 blocks compile and
+# match under `-e utf8`, zero divergences from pcrec's own live behaviour.
+# As authored, NO block in this file carried a `features` line at all (the
+# blinded author never got past `-e utf8`'s own unconditional refusal to
+# discover module `lookaround` needs it explicitly, off the std1 default);
+# a `features` line is ADDED at promotion, derived per block from its own
+# body: `lookaround` on every block, `+classes` for a `\w`-bodied one,
+# `+modifiers` for an `(?i)`-bodied one, `+named-groups,recursion` for the
+# call-bearing shape (`(?&g)` needs module `recursion`, not `named-groups`
+# as the author's own live measurement guessed at the time -- their
+# REPORT.md Sec 2 found the FIRST gate, the group DECLARATION `(?<g>...)`
+# needing `named-groups`; the CALL `(?&g)` needs `recursion` on top, a
+# second, later gate the pre-stage-2 build never let them reach). The 3
+# `\p{L}`-bodied blocks (positive/negative/call-bearing) stay `perr` --
+# module `unicode-props` is still unbuilt (stage 3).
+
+# axis8 block [a\x{3b1}]-positive | body=[a\x{3b1}] shape=positive | pattern: (?<=[a\x{3b1}])x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [alpha-2B U+03B1] m "\xce\xb1x" 2 3   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern (?<=[a\x{3b1}])x
+encoding utf8
+features lookaround
+m "ax" 1 2
+m "\xce\xb1x" 2 3
+n "zx"
+n "!x"
+
+# axis8 block [a\x{3b1}]-negative | body=[a\x{3b1}] shape=negative | pattern: (?<![a\x{3b1}])x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [alpha-2B U+03B1] n "\xce\xb1x"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] m "!x" 1 2   # oracle=PCRE2_UTF
+# pcre2-only
+pattern (?<![a\x{3b1}])x
+encoding utf8
+features lookaround
+n "ax"
+n "\xce\xb1x"
+m "zx" 1 2
+m "!x" 1 2
+
+# axis8 block [a\x{3b1}]-call-bearing | body=[a\x{3b1}] shape=call-bearing | pattern: (?<g>[a\x{3b1}])(?<=(?&g))x
+#   [a-1B U+0061] m "ax" 0 2   # oracle=PCRE2_UTF
+#   [alpha-2B U+03B1] m "\xce\xb1x" 0 3   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern (?<g>[a\x{3b1}])(?<=(?&g))x
+encoding utf8
+features lookaround,named-groups,recursion
+m "ax" 0 2
+m "\xce\xb1x" 0 3
+n "zx"
+n "!x"
+
+# axis8 block .-positive | body=. shape=positive | pattern: (?<=.)x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<=.)x
+encoding utf8
+features lookaround
+m "ax" 1 2
+m "zx" 1 2
+n "\nx"
+
+# axis8 block .-negative | body=. shape=negative | pattern: (?<!.)x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] m "\nx" 1 2   # oracle=PCRE2_UTF
+pattern (?<!.)x
+encoding utf8
+features lookaround
+n "ax"
+n "zx"
+m "\nx" 1 2
+
+# axis8 block .-call-bearing | body=. shape=call-bearing | pattern: (?<g>.)(?<=(?&g))x
+#   [a-1B U+0061] m "ax" 0 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 0 2   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<g>.)(?<=(?&g))x
+encoding utf8
+features lookaround,named-groups,recursion
+m "ax" 0 2
+m "zx" 0 2
+n "\nx"
+
+# axis8 block [^a]-positive | body=[^a] shape=positive | pattern: (?<=[^a])x
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] m "!x" 1 2   # oracle=PCRE2_UTF
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+pattern (?<=[^a])x
+encoding utf8
+features lookaround
+m "zx" 1 2
+m "!x" 1 2
+n "ax"
+
+# axis8 block [^a]-negative | body=[^a] shape=negative | pattern: (?<![^a])x
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+pattern (?<![^a])x
+encoding utf8
+features lookaround
+n "zx"
+n "!x"
+m "ax" 1 2
+
+# axis8 block [^a]-call-bearing | body=[^a] shape=call-bearing | pattern: (?<g>[^a])(?<=(?&g))x
+#   [z-1B U+007A] m "zx" 0 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] m "!x" 0 2   # oracle=PCRE2_UTF
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+pattern (?<g>[^a])(?<=(?&g))x
+encoding utf8
+features lookaround,named-groups,recursion
+m "zx" 0 2
+m "!x" 0 2
+n "ax"
+
+# axis8 block \w-positive | body=\w shape=positive | pattern: (?<=\w)x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<=\w)x
+encoding utf8
+features classes,lookaround
+m "ax" 1 2
+m "zx" 1 2
+n "!x"
+n "\nx"
+
+# axis8 block \w-negative | body=\w shape=negative | pattern: (?<!\w)x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] m "!x" 1 2   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] m "\nx" 1 2   # oracle=PCRE2_UTF
+pattern (?<!\w)x
+encoding utf8
+features classes,lookaround
+n "ax"
+n "zx"
+m "!x" 1 2
+m "\nx" 1 2
+
+# axis8 block \w-call-bearing | body=\w shape=call-bearing | pattern: (?<g>\w)(?<=(?&g))x
+#   [a-1B U+0061] m "ax" 0 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 0 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<g>\w)(?<=(?&g))x
+encoding utf8
+features classes,lookaround,named-groups,recursion
+m "ax" 0 2
+m "zx" 0 2
+n "!x"
+n "\nx"
+
+# axis8 block \p{L}-positive | body=\p{L} shape=positive | pattern: (?<=\p{L})x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<=\p{L})x
+encoding utf8
+perr
+
+# axis8 block \p{L}-negative | body=\p{L} shape=negative | pattern: (?<!\p{L})x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] m "!x" 1 2   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] m "\nx" 1 2   # oracle=PCRE2_UTF
+pattern (?<!\p{L})x
+encoding utf8
+perr
+
+# axis8 block \p{L}-call-bearing | body=\p{L} shape=call-bearing | pattern: (?<g>\p{L})(?<=(?&g))x
+#   [a-1B U+0061] m "ax" 0 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 0 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<g>\p{L})(?<=(?&g))x
+encoding utf8
+perr
+
+# axis8 block [\x{0}-\x{10FFFF}]-positive | body=[\x{0}-\x{10FFFF}] shape=positive | pattern: (?<=[\x{0}-\x{10FFFF}])x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+pattern (?<=[\x{0}-\x{10FFFF}])x
+encoding utf8
+features lookaround
+m "ax" 1 2
+m "zx" 1 2
+
+# axis8 block [\x{0}-\x{10FFFF}]-negative | body=[\x{0}-\x{10FFFF}] shape=negative | pattern: (?<![\x{0}-\x{10FFFF}])x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+pattern (?<![\x{0}-\x{10FFFF}])x
+encoding utf8
+features lookaround
+n "ax"
+n "zx"
+
+# axis8 block [\x{0}-\x{10FFFF}]-call-bearing | body=[\x{0}-\x{10FFFF}] shape=call-bearing | pattern: (?<g>[\x{0}-\x{10FFFF}])(?<=(?&g))x
+#   [a-1B U+0061] m "ax" 0 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 0 2   # oracle=PCRE2_UTF
+pattern (?<g>[\x{0}-\x{10FFFF}])(?<=(?&g))x
+encoding utf8
+features lookaround,named-groups,recursion
+m "ax" 0 2
+m "zx" 0 2
+
+# axis8 block (?i)s-positive | body=(?i)s shape=positive | pattern: (?<=(?i)s)x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+pattern (?<=(?i)s)x
+encoding utf8
+features lookaround,modifiers
+n "ax"
+n "zx"
+
+# axis8 block (?i)s-negative | body=(?i)s shape=negative | pattern: (?<!(?i)s)x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+pattern (?<!(?i)s)x
+encoding utf8
+features lookaround,modifiers
+m "ax" 1 2
+m "zx" 1 2
+
+# axis8 block (?i)s-call-bearing | body=(?i)s shape=call-bearing | pattern: (?<g>(?i)s)(?<=(?&g))x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+pattern (?<g>(?i)s)(?<=(?&g))x
+encoding utf8
+features lookaround,modifiers,named-groups,recursion
+n "ax"
+n "zx"
+
+# axis8 block (?i)[a-z]-positive | body=(?i)[a-z] shape=positive | pattern: (?<=(?i)[a-z])x
+#   [a-1B U+0061] m "ax" 1 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 1 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<=(?i)[a-z])x
+encoding utf8
+features lookaround,modifiers
+m "ax" 1 2
+m "zx" 1 2
+n "!x"
+n "\nx"
+
+# axis8 block (?i)[a-z]-negative | body=(?i)[a-z] shape=negative | pattern: (?<!(?i)[a-z])x
+#   [a-1B U+0061] n "ax"   # oracle=PCRE2_UTF
+#   [z-1B U+007A] n "zx"   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] m "!x" 1 2   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] m "\nx" 1 2   # oracle=PCRE2_UTF
+pattern (?<!(?i)[a-z])x
+encoding utf8
+features lookaround,modifiers
+n "ax"
+n "zx"
+m "!x" 1 2
+m "\nx" 1 2
+
+# axis8 block (?i)[a-z]-call-bearing | body=(?i)[a-z] shape=call-bearing | pattern: (?<g>(?i)[a-z])(?<=(?&g))x
+#   [a-1B U+0061] m "ax" 0 2   # oracle=PCRE2_UTF
+#   [z-1B U+007A] m "zx" 0 2   # oracle=PCRE2_UTF
+#   [bang-1B U+0021] n "!x"   # oracle=PCRE2_UTF
+#   [nl-1B U+000A] n "\nx"   # oracle=PCRE2_UTF
+pattern (?<g>(?i)[a-z])(?<=(?&g))x
+encoding utf8
+features lookaround,modifiers,named-groups,recursion
+m "ax" 0 2
+m "zx" 0 2
+n "!x"
+n "\nx"
+

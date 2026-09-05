@@ -3609,3 +3609,51 @@ the corpus-wide pairing run that exercised it).
 ## K47 — CHECK DESIGN (2026-09-03, fifty-first session, found by panel r53's semantics critic): `make test-axes`' BUDGET-BOUND bucket has never been populated (every axis reads `budget=0`), so the sweep's "answer-identical" verdict is untested on exactly the cells where two arms of an axis can legitimately differ — no corpus cell approaches the shipped step budget. WITNESS: the alternation island axis (`-fno-alt-island`) diverges at DEFAULT budgets off the corpus at ~0.07% of fuzz cells (3 of 4,263: island answers, the chain reads err:steps, libpcre2 agrees with the island), the documented "identity modulo which budget binds" class (tuning.md §2.5) — invisible to the sweep. STATUS: open; fix = a synthetic budget-binding ladder in the sweep's population (patterns whose work approaches the step budget on both arms), so the bucket is non-empty and its classification is exercised; K35's shape (a population nobody counts).
 
 ## K48 — CHECK DESIGN (2026-09-04 00:1x, fifty-first session, found by lane edge1 under `make test LINTGEN=1`): the GCC-CPU tripwire on tests/base/k18_cost_gates.rxt:103 is NOT AXIS-AWARE — its 8.0 s pin is read against whatever compile the harness's axis performs, and `-fanalyzer` costs that artifact ×17 (0.30 s plain, 5.08 s under the analyzer; load added ×1.7 to 8.8 s). Any LINTGEN=1 run reds the corpus's slowest analyzer cell regardless of the change under test (the artifact was byte-identical between main and the branch). STATUS: open; fix = the tripwire reads the axis (a separate pin per compile axis, or skip under LINTGEN with the reason printed). Not a re-pin: the plain compile has a 26× margin.
+
+## K49 — [M5.0] STAGE 2 (2026-09-05, lane utfprom, found while promoting the D27 blinded utf8 corpus against the just-merged stage-2 tree): an unanchored search for a zero-width lookbehind assertion under `-e utf8`, retried past a startpos that already failed, can land on a BYTE OFFSET INSIDE a multi-byte character — not a valid UTF-8 character boundary at all — rather than stepping to the next real character boundary.
+
+WITNESS: `(?<!.)` (`--features lookaround`) over subject `"\xce\xb1\xce\xb2"` (two
+2-byte UTF-8 characters, alpha then beta) at explicit `startpos=2` (a real
+character boundary — alpha ends there, beta begins). The D27 utf8 corpus's
+own extract (Sec 2.6.1.1's mid-character-`startpos` table) ARGUES the
+correct answer is NO MATCH: `(?<!.)` is false at position 2 (there IS a
+preceding character, alpha), and an unanchored search retrying later
+positions must only ever try LATER CHARACTER BOUNDARIES — the next of
+which is position 4 (end of subject), where `(?<!.)` is false again (beta
+precedes it). No real PCRE2 oracle produces this cell directly (the
+corpus's own comment marks it `oracle=pcrec-ARGUED (no oracle produces
+this)` — `startpos` mid-loop retry is pcrec's own `next_pos`-driven
+find-all protocol, not something `pcre2_match`'s own `startoffset`
+argument is required to honour the same way). Measured live
+(`build/pcrec` at this session's merge point): the search instead reports
+a MATCH at `(3,3)` — byte offset 3 sits INSIDE beta's own two-byte
+encoding (bytes 2-3 are beta), which is not a character boundary under any
+reading. `(?!.)` at the same startpos (`midstart-row4`, a different block)
+answers correctly (position 1 -> retries to a real boundary), so this is
+not a wholesale defect in the unanchored-retry path — it is specific to
+`(?<!.)` (or lookbehind assertions generally) at this startpos/subject
+shape.
+
+SUSPECTED MECHANISM (not yet traced into `src/`, filed as found rather
+than diagnosed): the unanchored search loop, on failing a zero-width
+assertion at the given startpos, appears to advance by ONE BYTE rather
+than by one CHARACTER (via the encoding's own `next_pos` entry,
+`docs/spec/match_api.md` §3.1.1) before retrying — landing on offset 3,
+tries the assertion there, and (apparently) succeeds where a
+character-boundary-only walk would have skipped straight to offset 4.
+
+STATUS: open; filed here rather than fixed in this lane (out of the
+utfprom promotion lane's scope — corpus integration, not engine surgery).
+The corpus cell moved to `tests/known_fail/k49_utf8_lookbehind_retry.rxt`
+(this file's own convention: an ANSWER pcrec currently disagrees with,
+not a construct that's merely unbuilt) with a pointer comment left at its
+former position in `tests/utf8/axis09_nextpos_findall.rxt`; the ratchet
+fires red-to-green the moment this is fixed. Needed to close: confirm the
+suspected mechanism against the actual unanchored-search/`next_pos` call
+sites in `src/`, then either bound the retry to character boundaries
+under `-e utf8` or correct the corpus's own ARGUED expectation if a design
+review concludes byte offset 3 is in fact an acceptable answer (it is not
+obviously so — `caps[0][0]`/`caps[0][1]` = 3 would be a REPORTED position
+inside a multi-byte character, which `docs/spec/limits.md`/`match_api.md`
+do not currently license for anything other than `\K`'s own documented
+exception).

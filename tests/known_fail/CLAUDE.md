@@ -31,6 +31,23 @@ and it does not get to break the build either.
   lands and this directory's ratchet flags it; move the cells to
   `tests/recursion/leftrec.rxt` or `sr_depth.rxt` per the "Removing one"
   convention below.
+- **`k49_utf8_lookbehind_retry.rxt`** — [K49] (`docs/dev/known_issues.md`),
+  landed 2026-09-05 by lane `utfprom` while promoting the D27 blinded
+  `tests/utf8/` corpus against the merged [M5.0] stage 2 tree. One cell,
+  moved from `tests/utf8/axis09_nextpos_findall.rxt`'s "midstart-row3-
+  boundary" block (pointer comment left at its former position): `(?<!.)`
+  (`--features lookaround`, `-e utf8`) at explicit `startpos=2` over
+  `"\xce\xb1\xce\xb2"` (two 2-byte UTF-8 characters — position 2 is a real
+  CHARACTER boundary, alpha ends there and beta begins). The D27 corpus's
+  own ARGUED design position (extract Sec 2.6.1.1's mid-character-startpos
+  table) says the correct answer is NO MATCH — the assertion is false at
+  position 2, and an unanchored retry must only try LATER CHARACTER
+  boundaries (the next is position 4, where the assertion is false again).
+  pcrec's live answer is a MATCH at `(3,3)`, an offset INSIDE beta's own
+  2-byte encoding and not a character boundary at all — suspected to be
+  the unanchored search's zero-width-assertion retry stepping by BYTE
+  rather than by CHARACTER under `-e utf8`. See the known_issues.md entry
+  for the full mechanism writeup and what's needed to close it.
 - **(EMPTY of `.rxt` from 2026-08-24 [DD-14.LB] until the same day's K34
   park, above)** — the legitimate good
   state this directory's own header describes: no confirmed bug and no owed

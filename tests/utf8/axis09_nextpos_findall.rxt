@@ -1,0 +1,291 @@
+# [M5.0] D27 axis 9 -- next_pos / find-all over multi-byte subjects (extract
+# Sec 2.6.1/2.6.1.1). 16 blocks (4 subject shapes x 4 patterns), one `ms` case
+# per CHARACTER BOUNDARY of the subject (a proxy for a find-all loop's
+# `next_pos`-driven visits -- `.rxt` has no native find-all directive; see
+# generator header), plus 4 more blocks for the mid-character-`startpos` table
+# (Sec 2.6.1.1's own measured 4-row table, leading `(?!`/`(?<!`) -> 20 blocks /
+# 80 cases total. Oracle: libpcre2, options=
+# PCRE2_UTF for the 16 boundary-walk blocks. The 4 mid-character-startpos
+# blocks use pcrec's OWN ARGUED design position (Sec 2.6.1.1's fourth column),
+# NOT any single PCRE2 oracle answer -- no real engine produces it; the other
+# three measured columns (PCRE2_UTF / MATCH_INVALID_UTF / options=0) are kept
+# alongside as comments for context, clearly labelled as NOT the expected
+# value.
+#
+# PROMOTED (lane utfprom, [M5.0] stage 2 close): 19 of the resulting 19
+# live blocks compile under `-e utf8` (the mid-character-startpos blocks
+# additionally need `features lookaround` for their `(?<!.)`/`(?!.)`
+# bodies -- added at promotion; missing as authored, same shape as
+# axis08) and agree with their recorded expectation, 0 divergences. **ONE
+# GENUINE DIVERGENCE WAS FOUND AND MOVED, not papered over**: the
+# "midstart-row3-boundary" block disagreed with its ARGUED expectation
+# (pcrec answers a match at (3,3), an illegal mid-character byte offset,
+# where the design position says no match) -- filed as
+# docs/dev/known_issues.md K49 and moved to
+# tests/known_fail/k49_utf8_lookbehind_retry.rxt per this project's own
+# "disputed answer, not a construct that's merely unbuilt" convention
+# (docs/spec/rxt_format.md step 5); see the pointer comment at its former
+# position below. This file's own population is therefore 19 blocks / 20
+# original minus the one moved, all green.
+
+# axis9 block all-ascii-empty | subject=all-ascii (boundaries [0, 1, 2, 3, 4]) | pattern: (?:)
+#   [boundary P=0] m "abcd" 0 0   # oracle=PCRE2_UTF
+#   [boundary P=1] ms 1 "abcd" 1 1   # oracle=PCRE2_UTF
+#   [boundary P=2] ms 2 "abcd" 2 2   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "abcd" 3 3   # oracle=PCRE2_UTF
+#   [boundary P=4] ms 4 "abcd" 4 4   # oracle=PCRE2_UTF
+pattern (?:)
+encoding utf8
+m "abcd" 0 0
+ms 1 "abcd" 1 1
+ms 2 "abcd" 2 2
+ms 3 "abcd" 3 3
+ms 4 "abcd" 4 4
+
+# axis9 block all-ascii-nullable | subject=all-ascii (boundaries [0, 1, 2, 3, 4]) | pattern: .{0,1}
+#   [boundary P=0] m "abcd" 0 1   # oracle=PCRE2_UTF
+#   [boundary P=1] ms 1 "abcd" 1 2   # oracle=PCRE2_UTF
+#   [boundary P=2] ms 2 "abcd" 2 3   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "abcd" 3 4   # oracle=PCRE2_UTF
+#   [boundary P=4] ms 4 "abcd" 4 4   # oracle=PCRE2_UTF
+pattern .{0,1}
+encoding utf8
+m "abcd" 0 1
+ms 1 "abcd" 1 2
+ms 2 "abcd" 2 3
+ms 3 "abcd" 3 4
+ms 4 "abcd" 4 4
+
+# axis9 block all-ascii-anchored | subject=all-ascii (boundaries [0, 1, 2, 3, 4]) | pattern: ^.
+#   [boundary P=0] m "abcd" 0 1   # oracle=PCRE2_UTF
+#   [boundary P=1] ns 1 "abcd"   # oracle=PCRE2_UTF
+#   [boundary P=2] ns 2 "abcd"   # oracle=PCRE2_UTF
+#   [boundary P=3] ns 3 "abcd"   # oracle=PCRE2_UTF
+#   [boundary P=4] ns 4 "abcd"   # oracle=PCRE2_UTF
+pattern ^.
+encoding utf8
+m "abcd" 0 1
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+
+# axis9 block all-ascii-unanchored | subject=all-ascii (boundaries [0, 1, 2, 3, 4]) | pattern: .
+#   [boundary P=0] m "abcd" 0 1   # oracle=PCRE2_UTF
+#   [boundary P=1] ms 1 "abcd" 1 2   # oracle=PCRE2_UTF
+#   [boundary P=2] ms 2 "abcd" 2 3   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "abcd" 3 4   # oracle=PCRE2_UTF
+#   [boundary P=4] ns 4 "abcd"   # oracle=PCRE2_UTF
+pattern .
+encoding utf8
+m "abcd" 0 1
+ms 1 "abcd" 1 2
+ms 2 "abcd" 2 3
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+
+# axis9 block all-2byte-empty | subject=all-2byte (boundaries [0, 2, 4, 6, 8]) | pattern: (?:)
+#   [boundary P=0] m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 0   # oracle=PCRE2_UTF
+#   [boundary P=2] ms 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 2 2   # oracle=PCRE2_UTF
+#   [boundary P=4] ms 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 4 4   # oracle=PCRE2_UTF
+#   [boundary P=6] ms 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 6 6   # oracle=PCRE2_UTF
+#   [boundary P=8] ms 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 8 8   # oracle=PCRE2_UTF
+# pcre2-only
+pattern (?:)
+encoding utf8
+m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 0
+ms 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 2 2
+ms 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 4 4
+ms 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 6 6
+ms 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 8 8
+
+# axis9 block all-2byte-nullable | subject=all-2byte (boundaries [0, 2, 4, 6, 8]) | pattern: .{0,1}
+#   [boundary P=0] m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 2   # oracle=PCRE2_UTF
+#   [boundary P=2] ms 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 2 4   # oracle=PCRE2_UTF
+#   [boundary P=4] ms 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 4 6   # oracle=PCRE2_UTF
+#   [boundary P=6] ms 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 6 8   # oracle=PCRE2_UTF
+#   [boundary P=8] ms 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 8 8   # oracle=PCRE2_UTF
+# pcre2-only
+pattern .{0,1}
+encoding utf8
+m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 2
+ms 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 2 4
+ms 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 4 6
+ms 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 6 8
+ms 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 8 8
+
+# axis9 block all-2byte-anchored | subject=all-2byte (boundaries [0, 2, 4, 6, 8]) | pattern: ^.
+#   [boundary P=0] m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 2   # oracle=PCRE2_UTF
+#   [boundary P=2] ns 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"   # oracle=PCRE2_UTF
+#   [boundary P=4] ns 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"   # oracle=PCRE2_UTF
+#   [boundary P=6] ns 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"   # oracle=PCRE2_UTF
+#   [boundary P=8] ns 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^.
+encoding utf8
+m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 2
+ns 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"
+ns 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"
+ns 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"
+ns 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"
+
+# axis9 block all-2byte-unanchored | subject=all-2byte (boundaries [0, 2, 4, 6, 8]) | pattern: .
+#   [boundary P=0] m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 2   # oracle=PCRE2_UTF
+#   [boundary P=2] ms 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 2 4   # oracle=PCRE2_UTF
+#   [boundary P=4] ms 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 4 6   # oracle=PCRE2_UTF
+#   [boundary P=6] ms 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 6 8   # oracle=PCRE2_UTF
+#   [boundary P=8] ns 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern .
+encoding utf8
+m "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 0 2
+ms 2 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 2 4
+ms 4 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 4 6
+ms 6 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4" 6 8
+ns 8 "\xce\xb1\xce\xb2\xce\xb3\xce\xb4"
+
+# axis9 block mixed-width-empty | subject=mixed-width (boundaries [0, 1, 3, 6, 10]) | pattern: (?:)
+#   [boundary P=0] m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 0   # oracle=PCRE2_UTF
+#   [boundary P=1] ms 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 1 1   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 3 3   # oracle=PCRE2_UTF
+#   [boundary P=6] ms 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 6 6   # oracle=PCRE2_UTF
+#   [boundary P=10] ms 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 10 10   # oracle=PCRE2_UTF
+# pcre2-only
+pattern (?:)
+encoding utf8
+m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 0
+ms 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 1 1
+ms 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 3 3
+ms 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 6 6
+ms 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 10 10
+
+# axis9 block mixed-width-nullable | subject=mixed-width (boundaries [0, 1, 3, 6, 10]) | pattern: .{0,1}
+#   [boundary P=0] m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 1   # oracle=PCRE2_UTF
+#   [boundary P=1] ms 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 1 3   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 3 6   # oracle=PCRE2_UTF
+#   [boundary P=6] ms 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 6 10   # oracle=PCRE2_UTF
+#   [boundary P=10] ms 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 10 10   # oracle=PCRE2_UTF
+# pcre2-only
+pattern .{0,1}
+encoding utf8
+m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 1
+ms 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 1 3
+ms 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 3 6
+ms 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 6 10
+ms 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 10 10
+
+# axis9 block mixed-width-anchored | subject=mixed-width (boundaries [0, 1, 3, 6, 10]) | pattern: ^.
+#   [boundary P=0] m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 1   # oracle=PCRE2_UTF
+#   [boundary P=1] ns 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
+#   [boundary P=3] ns 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
+#   [boundary P=6] ns 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
+#   [boundary P=10] ns 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^.
+encoding utf8
+m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 1
+ns 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"
+ns 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"
+ns 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"
+ns 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"
+
+# axis9 block mixed-width-unanchored | subject=mixed-width (boundaries [0, 1, 3, 6, 10]) | pattern: .
+#   [boundary P=0] m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 1   # oracle=PCRE2_UTF
+#   [boundary P=1] ms 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 1 3   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 3 6   # oracle=PCRE2_UTF
+#   [boundary P=6] ms 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 6 10   # oracle=PCRE2_UTF
+#   [boundary P=10] ns 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern .
+encoding utf8
+m "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 0 1
+ms 1 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 1 3
+ms 3 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 3 6
+ms 6 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80" 6 10
+ns 10 "a\xce\xb1\xe4\xb8\x80\xf0\x9f\x98\x80"
+
+# axis9 block ill-formed-embedded-empty | subject=ill-formed-embedded (boundaries [0, 1, 2, 3]) | pattern: (?:)
+#   [boundary P=0] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=1] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=2] ms 2 "a\xffb" 2 2   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "a\xffb" 3 3   # oracle=PCRE2_UTF
+# pcre2-only
+pattern (?:)
+encoding utf8
+ms 2 "a\xffb" 2 2
+ms 3 "a\xffb" 3 3
+
+# axis9 block ill-formed-embedded-nullable | subject=ill-formed-embedded (boundaries [0, 1, 2, 3]) | pattern: .{0,1}
+#   [boundary P=0] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=1] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=2] ms 2 "a\xffb" 2 3   # oracle=PCRE2_UTF
+#   [boundary P=3] ms 3 "a\xffb" 3 3   # oracle=PCRE2_UTF
+# pcre2-only
+pattern .{0,1}
+encoding utf8
+ms 2 "a\xffb" 2 3
+ms 3 "a\xffb" 3 3
+
+# axis9 block ill-formed-embedded-anchored | subject=ill-formed-embedded (boundaries [0, 1, 2, 3]) | pattern: ^.
+#   [boundary P=0] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=1] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=2] ns 2 "a\xffb"   # oracle=PCRE2_UTF
+#   [boundary P=3] ns 3 "a\xffb"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern ^.
+encoding utf8
+ns 2 "a\xffb"
+ns 3 "a\xffb"
+
+# axis9 block ill-formed-embedded-unanchored | subject=ill-formed-embedded (boundaries [0, 1, 2, 3]) | pattern: .
+#   [boundary P=0] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=1] [NO PCREC-PROMISED VALUE -- oracle returned ('ERRM', -23, 'UTF-8 error: illegal byte (0xfe or 0xff)'); see note]
+#   [boundary P=2] ms 2 "a\xffb" 2 3   # oracle=PCRE2_UTF
+#   [boundary P=3] ns 3 "a\xffb"   # oracle=PCRE2_UTF
+# pcre2-only
+pattern .
+encoding utf8
+ms 2 "a\xffb" 2 3
+ns 3 "a\xffb"
+
+# axis9 block midstart-row1-boundary-control | pattern: (?<!.) startpos=0 subject=alpha-beta (CE B1 CE B2)
+# measured for context (NOT the expected value): PCRE2_UTF=((0, 0), ())  MATCH_INVALID_UTF=((0, 0), ())  options=0(byte)=((0, 0), ())
+# EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): ((0, 0), ())
+#   m "\xce\xb1\xce\xb2" 0 0   # oracle=pcrec-ARGUED (no oracle produces this)
+# pcre2-only
+pattern (?<!.)
+encoding utf8
+features lookaround
+m "\xce\xb1\xce\xb2" 0 0
+
+# axis9 block midstart-row2-MID-la | pattern: (?<!.) startpos=1 subject=alpha-beta (CE B1 CE B2)
+# measured for context (NOT the expected value): PCRE2_UTF=('ERRM', -36, 'bad offset into UTF string')  MATCH_INVALID_UTF=((2, 2), ())  options=0(byte)=None
+# EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): ((1, 1), ())
+#   ms 1 "\xce\xb1\xce\xb2" 1 1   # oracle=pcrec-ARGUED (no oracle produces this)
+# pcre2-only
+pattern (?<!.)
+encoding utf8
+features lookaround
+ms 1 "\xce\xb1\xce\xb2" 1 1
+
+# axis9 block midstart-row3-boundary | pattern: (?<!.) startpos=2 subject=alpha-beta (CE B1 CE B2)
+# [K49] MOVED to tests/known_fail/k49_utf8_lookbehind_retry.rxt, 2026-09-05
+# (lane utfprom): pcrec's live answer at this cell is a MATCH at (3,3),
+# disagreeing with the ARGUED expectation below (NO MATCH) -- a genuine,
+# disputed answer, not a construct that's merely unbuilt, so it belongs in
+# known_fail per docs/spec/rxt_format.md step 5, not here. See
+# docs/dev/known_issues.md K49 for the full write-up.
+# measured for context (NOT the expected value): PCRE2_UTF=None  MATCH_INVALID_UTF=None  options=0(byte)=None
+# EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): None
+#   ns 2 "\xce\xb1\xce\xb2"   # oracle=pcrec-ARGUED (no oracle produces this)
+
+# axis9 block midstart-row4-MID-leading-neg | pattern: (?!.) startpos=1 subject=alpha-beta (CE B1 CE B2)
+# measured for context (NOT the expected value): PCRE2_UTF=('ERRM', -36, 'bad offset into UTF string')  MATCH_INVALID_UTF=((4, 4), ())  options=0(byte)=((4, 4), ())
+# EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): ((1, 1), ())
+#   ms 1 "\xce\xb1\xce\xb2" 1 1   # oracle=pcrec-ARGUED (no oracle produces this)
+# pcre2-only
+pattern (?!.)
+encoding utf8
+features lookaround
+ms 1 "\xce\xb1\xce\xb2" 1 1
+

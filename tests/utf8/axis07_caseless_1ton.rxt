@@ -1,0 +1,129 @@
+# [M5.0] D27 axis 7 -- caseless 1:n NON-matching (extract Sec 4.1). 11 blocks,
+# 2 cases each -> 22 future cases: pcrec's fold is SIMPLE (1:1) like PCRE2's,
+# so none of these 11 historically-tempting one-to-many candidates may match
+# under `flags i`. Case 1 is a vacuity-guarding positive control (the pattern
+# still matches its own literal text); case 2 is the actual 0-of-11 assertion.
+# Oracle: libpcre2, PCRE2_UTF|PCRE2_CASELESS.
+#
+# PROMOTED (lane utfprom, [M5.0] stage 2 close), pinned to today's real
+# behaviour per the same stage-4 rule axis06 states in full: all 11 blocks
+# compile under `-e utf8 flags i` (the `flags i` line, missing as authored,
+# added at promotion) and agree with the oracle on EVERY cell, 0 gaps.
+# Unlike axis06, this is NOT a coincidence of today's ASCII-only fold being
+# too weak to test the claim: pcrec's ascii-fold trivially can't unify a
+# non-ASCII pair, but PCRE2's REAL fold agrees these 11 candidates don't
+# unify either (that is the whole point of the "1:n non-matching" design --
+# see the extract citation above), so this axis is expected to stay 11/0
+# once stage 4 lands too, for its own (checked) reason rather than by
+# construction of today's narrower fold.
+
+# axis7 block 1ton-szlig-SS | pattern literal: 'ß' vs partner 'SS'
+#   [vacuity: matches itself] m "\xc3\x9f" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "SS"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ß
+encoding utf8
+flags i
+m "\xc3\x9f" 0 2
+n "SS"
+
+# axis7 block 1ton-szlig-ss | pattern literal: 'ß' vs partner 'ss'
+#   [vacuity: matches itself] m "\xc3\x9f" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "ss"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ß
+encoding utf8
+flags i
+m "\xc3\x9f" 0 2
+n "ss"
+
+# axis7 block 1ton-SS-szlig | pattern literal: 'SS' vs partner 'ß'
+#   [vacuity: matches itself] m "SS" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "\xc3\x9f"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern SS
+encoding utf8
+flags i
+m "SS" 0 2
+n "\xc3\x9f"
+
+# axis7 block 1ton-ss-szlig | pattern literal: 'ss' vs partner 'ß'
+#   [vacuity: matches itself] m "ss" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "\xc3\x9f"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ss
+encoding utf8
+flags i
+m "ss" 0 2
+n "\xc3\x9f"
+
+# axis7 block 1ton-fi-lig-fi | pattern literal: 'ﬁ' vs partner 'fi'
+#   [vacuity: matches itself] m "\xef\xac\x81" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "fi"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ﬁ
+encoding utf8
+flags i
+m "\xef\xac\x81" 0 3
+n "fi"
+
+# axis7 block 1ton-fi-fi-lig | pattern literal: 'fi' vs partner 'ﬁ'
+#   [vacuity: matches itself] m "fi" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "\xef\xac\x81"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern fi
+encoding utf8
+flags i
+m "fi" 0 2
+n "\xef\xac\x81"
+
+# axis7 block 1ton-ffi-lig-ffi | pattern literal: 'ﬃ' vs partner 'ffi'
+#   [vacuity: matches itself] m "\xef\xac\x83" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "ffi"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ﬃ
+encoding utf8
+flags i
+m "\xef\xac\x83" 0 3
+n "ffi"
+
+# axis7 block 1ton-U0149 | pattern literal: 'ŉ' vs partner 'ʼn'
+#   [vacuity: matches itself] m "\xc5\x89" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "\xca\xbcn"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ŉ
+encoding utf8
+flags i
+m "\xc5\x89" 0 2
+n "\xca\xbcn"
+
+# axis7 block 1ton-U01F0 | pattern literal: 'ǰ' vs partner 'ǰ'
+#   [vacuity: matches itself] m "\xc7\xb0" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "j\xcc\x8c"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ǰ
+encoding utf8
+flags i
+m "\xc7\xb0" 0 2
+n "j\xcc\x8c"
+
+# axis7 block 1ton-U1E96 | pattern literal: 'ẖ' vs partner 'ẖ'
+#   [vacuity: matches itself] m "\xe1\xba\x96" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "h\xcc\xb1"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ẖ
+encoding utf8
+flags i
+m "\xe1\xba\x96" 0 3
+n "h\xcc\xb1"
+
+# axis7 block 1ton-U0390 | pattern literal: 'ΐ' vs partner 'ΐ'
+#   [vacuity: matches itself] m "\xce\x90" 0 2   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#   [1:n partner, must NOT match] n "\xcf\x8a\xcc\x81"   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
+pattern ΐ
+encoding utf8
+flags i
+m "\xce\x90" 0 2
+n "\xcf\x8a\xcc\x81"
+
