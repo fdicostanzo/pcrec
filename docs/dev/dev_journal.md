@@ -21456,3 +21456,64 @@ probes against 10.46 over ssh per U13). Statusline ported to 3.2 as a
 side task (two mapfile sites). Mac-side post-merge validation running
 (scripts green; identity gate + registry in flight) as this entry
 closes.
+
+## 2026-09-04/05 (EDT), fifty-third session (part 2, overnight, CLOSE) — three lanes merged on the Mac: N1, macport landed + validated, and M5.0 opened AND stage-1 shipped
+
+The evening ran long and productive. FOUR merges after the macport
+close (part 1): [LIM-2] N1, the UTF-8 DESIGN GATE, and M5.0 STAGE 1 —
+plus a chartered-then-parked EC2 row and a chartered-then-dormant B/M2.
+
+**[LIM-2]: M1 measured, N1 shipped, the practical problem CLOSED.** M1
+(lane m1part, c88ada5d) REFUTED monotonicity — the [NF25] partition-rule
+count exceeds the true minimum on 30/119 patterns, up to 3,001× — so
+N2's naive lower-bound projection is dead, and candidate A's death is now
+quantitative (closed fraction <0.04% on every shrinking pattern). Frank
+reframed on the measurement: the goal is static compilation, so "run,
+fail late, say raise-this-limit" solves it without prediction. N1 (lane
+n1budget, d7c64fbb) built it: PCREC_MAX_AUTO_DFA_ELEMS = 30M checked
+before the K7 hard cap, auto-only, joining the SEL-1 fallback umbrella;
+default above the measured worst spend (24,050,003) and PROVEN inert by a
+0-difference before/after engine census; the raise surface GENERALIZED
+cli/main.c's two --max-emit-* blocks into one offsetof table over six
+flags. B/M2 go dormant (D77 — "we may never need to measure it"). A
+stale-binary false alarm at merge (mine) resolved on rebuild.
+
+**M5.0 (UTF-8): design gate → panel → revision → verifier → APPROVED →
+stage 1 SHIPPED, all in one night.** The design (lane utf8design,
+16d5adc2) refuted THREE handed-down documents (the [M5.0] cross-note's
+maxw cure would refuse every lookbehind — PCRE2 measures in CHARACTERS;
+[DD-12](3)'s MATCH_INVALID_UTF characterisation; \p not requiring
+PCRE2_UTF). R54 panel (three critics): 5 BLOCKING / 10 MUST-FIX, the
+sharpest being the lowering never reaching the VM emitter (a miscompile
+class) and the code-point complement refusing every negated class under
+byte; all five headline results survived. Frank ruled all seven ASKs
+(incl. UCD vendored reluctantly, the data-architecture GENERALITY ruling
+— third_party per-source, non-interval kinds anticipated — and the
+encoding-wide door note). The verifier (14/15 discharged, one paragraph
+partial fixed at merge) applied Frank's FOUR STANDING LENSES (now memory
+pcrec-design-evaluation-lenses) and returned MERGE; approved c9fcfa01.
+STAGE 1 (lane utf8s1, f22b65c4): the interval-payload refactor, identity
+gate 14/14 four axes / 2,557 byte-identical / 0 differing, no abi bump,
+check-1-RED on the pin, the interval algebra model-checked. Its
+wave-task REFUTED the design's own constraint 2 (mis-stated, no legal
+slot); RULED R2(a) splice-in-place, a node-identity PROPERTY, design
+corrected at merge (30de9e3a, P-12 discharged). Surfaced stage 2's
+u.rep.revbody hazard (413 classes). STAGE 2 awaits Frank's word.
+
+**The channel + the box.** pcrecdev2 (Remote Control, live) acked the
+comms convention across four rounds (I-45..I-48 / their BD8+amendments):
+D78 files canonical on their box, GitHub remote as read transport (they
+push, we pull the Mac clone), inbox writes over ssh, and — EC2 parked
+for Frank's travel — pcrec full suites RETURN to ubuntubudu by SLOT
+REQUEST (inverted handshake). Provisional battery slot 2026-09-05
+13:00-17:00 EDT, firm in O-16 (morning). The Mac is characterised:
+serial test-corpus 27,045/0 at 1,717s vs the old box's 64s — macOS
+spawn tax, not compute; [TT-14] exec-batching demoted, [TT-15] ephemeral
+cloud battery parked. Two process lessons banked to memory: a lane's
+rulings file must live in its OWN worktree (SendMessage saved every
+ruling tonight); rebuild before post-merge checks.
+
+Session close: tree clean, all pushed (main + lane branches), no lanes,
+no worktrees, watchdog cron torn down. OWED at wake: O-16's answers +
+the 13:00 battery slot (macport's Linux arm + N1 + M5.0-stage-1 on real
+Linux, PC-3 green against 10.46 there); M5.0 stage 2 on Frank's word.
