@@ -1688,7 +1688,22 @@ convention): forcing the new check's condition to `0 && ...` in
 `src/ir/dfa.c` reproduces exactly the two expected symptoms (checks (2) and
 its stderr-note sibling go red, `RX_ENGINE` reads `"dfa"` where `"vm"` was
 required) with every other check unaffected — reverted before delivery.
-## [M5.0] stage 1's PAIR: `run_encoding_identity.sh` + `run_cpset_structure.sh`
+## [M5.0] stage 1's PAIR: `run_encoding_identity.sh` (RETIRED 2026-09-05) + `run_cpset_structure.sh`
+
+**`run_encoding_identity.sh` IS RETIRED — deleted at the [FORM-CHAR] STEP 1
+merge, exactly per its own contract two paragraphs below.** The ascii-fold
+form's stamp line reaches every VM artifact, so the whole-file compare against
+the pre-stage-1 pin went red on the whole [vm]-axis population and the K35
+floor said so (`only 0 artifacts were actually compared`) — the anticipated
+"later change moves emitted bytes" case, and the ruled response is RETIRE,
+never re-pin forward. The claim is DISCHARGED on the record: 14/14 four axes
+at stage 1 (f22b65c4: 2,557 byte-identical / 0 differing / exact refusal
+agreement over 2,845) and again at stage 2 pre-merge (lane utf8s2's report,
+.abi = 22 unchanged — the byte-path proof of the genuinely-rebuilding
+lowering). The script is in git history at 05b2fe8a. `run_cpset_structure.sh`
+(below) is pin-light, still live, still in `make test`; the encoding
+backend's living acceptance is `run_encoding_checks.sh` / `make
+test-encoding-checks`. The entry below is kept as the historical record.
 
 The interval-payload refactor's acceptance is TWO instruments and the pairing
 is r54 BLOCKING C1's whole point: **byte-identity is exactly the bar a NO-OP

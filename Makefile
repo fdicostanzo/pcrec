@@ -388,23 +388,20 @@ test-entry-shape-identity: all
 # a standing invariant: the day someone adds an emitter site that reaches past
 # `pcrec_cls_bits` for a class payload, this is what says so.
 #
-# `test-encoding-identity` IS OPT-IN, on the ruling `test-atomic-identity`,
-# `test-backrefs-identity` and `test-recursion-identity` already carry: it
-# builds a whole second compiler from a pinned commit and sweeps 2,845 patterns
-# on four axes (~6 min), and its answer cannot change unless someone edits code
-# at or before the pin. It is a ONE-SHOT LANDING gate for a boundary that is
-# now behind us — see tests/codegen/CLAUDE.md on why its pin must be RETIRED
-# rather than moved forward if a later change ever makes it red.
+# `test-encoding-identity` is RETIRED (2026-09-05, at the [FORM-CHAR] STEP 1
+# merge): the one-shot landing gate for [M5.0] stage 1's interval-payload
+# boundary went red exactly the way its own header anticipated — a later,
+# legitimate byte-moving change (the ascii-fold form's stamp reaches every VM
+# artifact) — and its contract says RETIRE, never re-pin forward into a
+# rebuild-compared-with-itself. Its claim is DISCHARGED on the record: 14/14
+# four axes at stage 1 (f22b65c4) AND at stage 2 pre-merge (utf8s2 report),
+# .abi unchanged both times. The script lives in git history; the living
+# encoding checks are `test-encoding-checks` below.
 #
 #     make test-cpset-structure                                # in `make test`
-#     make test-encoding-identity                          # the gate, on demand
-#     ENCODING_IDENTITY_REF=<sha> make test-encoding-identity   # a moved base
 test-cpset-structure: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cpset-structure.ran"; fi
 	bash tests/codegen/run_cpset_structure.sh
-
-test-encoding-identity: all
-	bash tests/codegen/run_encoding_identity.sh
 
 # [M5.0 stage 2] `test-encoding-checks` IS OPT-IN, the encoding backend's
 # behavioural + structural acceptance (docs/design/utf8_design.md §8.5, §8.1.1
@@ -1330,6 +1327,6 @@ clean:
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-identity test-encoding-checks \
+        test-encoding-checks \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
