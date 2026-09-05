@@ -343,6 +343,142 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# K49   THE ADVANCE-AGREEMENT CHECK — the emitted unanchored RETRY ADVANCE
+#       against the same artifact's own `next_pos`.
+#
+# WHY IT EXISTS. K49 was an unanchored search retrying at the next BYTE rather
+# than the next character boundary, so `(?<!.)` over `CE B1 CE B2` reported a
+# match at offset 3 — inside a character. The fix routes the advance through
+# the encoding backend (src/gen/enc/, enc.h's `advance` field), which means the
+# boundary rule is now spelled TWICE per backend: once as the caller-facing
+# `next_pos` entry, and once as inline text spliced into the engine body,
+# because DD-12 (7) and sabotage row S68 forbid an engine calling the entry.
+#
+# TWO SPELLINGS OF ONE RULE NEED A TIE, and this project already has the shape:
+# `tests/backrefs/fold_agreement_check.c` ties `enc_byte.c`'s caseless compare
+# to `pcrec_ascii_fold` over all 65,536 ordered byte pairs, with the residual
+# side read out of an artifact pcrec actually emitted. This does the same for
+# the boundary rule, and it reads BOTH sides out of one emitted artifact: the
+# inline advance is EXTRACTED FROM THE EMITTED C and compiled as a function,
+# and it is compared against that same artifact's linked `next_pos`. A backend
+# that changes one spelling and not the other fails HERE, rather than in a
+# corpus cell nobody thought to write.
+#
+# THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS: the two sides come
+# from different files of the backend (`advance` vs the `PCREC_ENCE_NEXT_POS`
+# entry) and are compared through a compiler, not by reading the emitter.
+#
+# NON-VACUITY, in both directions, because an alphabet without continuation
+# bytes would make this pass on a compiler that never fixed anything: under
+# `byte` every answer MUST be `pos + 1` (that is the encoding), and under
+# `utf8` at least one answer MUST NOT be, or the sweep never reached a
+# multi-byte shape and is certifying nothing.
+#
+# SCOPE OF THE CLAIM: `pos < n` only. The emitted loop's own guard
+# (`if (attempt_position >= subject_length) return 0;`) means the advance is
+# never reached at or past the end, so agreement there is not asserted — and
+# `next_pos`' documented `pos + 1` answer for `pos >= n` is a promise to the
+# find-all caller, not to this loop.
+# ---------------------------------------------------------------------------
+adv_witness='a*'      # nullable => no prefilter, so no retry-window recompute
+                      # follows the advance and the extraction below is exact.
+for aenc in byte utf8; do
+    d="$WORKDIR/adv_$aenc"; mkdir -p "$d"
+    if ! pcrec_run "$PCREC" --engine=vm -e "$aenc" -p a -o "$d/a.c" \
+            -- "$adv_witness" >/dev/null 2>&1; then
+        bad "K49 the advance witness '$adv_witness' did not compile under -e $aenc"
+        continue
+    fi
+    # Extract the advance: the lines between the loop's own end guard and the
+    # close of the for(;;) body. Anchored on emitted text, so a change to the
+    # loop's shape breaks the extraction loudly instead of silently matching
+    # nothing (the empty-extraction case is caught below).
+    awk '/if \(attempt_position >= subject_length\) return 0;/{f=1;next}
+         f&&/^    \}/{exit} f' "$d/a.c" > "$d/adv.inc"
+    if ! grep -q 'attempt_position' "$d/adv.inc"; then
+        bad "K49 the advance could not be extracted from the -e $aenc artifact — the emitted retry loop's shape moved and this check stopped reading it (an empty extraction would otherwise PASS vacuously)"
+        continue
+    fi
+    cat > "$d/agree.c" <<'AGREE'
+#include <stddef.h>
+#include <stdio.h>
+extern size_t a_next_pos(const unsigned char *s, size_t n, size_t pos);
+
+/* The artifact's OWN emitted advance, verbatim, as a callable function. */
+static size_t adv_inline(const unsigned char *subject, size_t subject_length,
+                         size_t attempt_position)
+{
+#include "adv.inc"
+    return attempt_position;
+}
+
+/* One byte per UTF-8 structural role, plus an invalid one: the sweep is
+ * exhaustive over THIS alphabet rather than over 256 bytes, because what the
+ * rule reads is a byte's ROLE (continuation or not) and nothing else. */
+static const unsigned char ALPHA[] = { 0x41, 0xC2, 0xE0, 0xF0, 0x80, 0xBF, 0xFF };
+#define NA ((int)(sizeof ALPHA / sizeof ALPHA[0]))
+
+int main(void)
+{
+    unsigned char s[4];
+    long cells = 0, disagree = 0, nontrivial = 0;
+    int len;
+    for (len = 0; len <= 4; len++) {
+        long total = 1, k;
+        int i;
+        for (i = 0; i < len; i++) total *= NA;
+        for (k = 0; k < total; k++) {
+            long q = k;
+            size_t pos;
+            for (i = 0; i < len; i++) { s[i] = ALPHA[q % NA]; q /= NA; }
+            for (pos = 0; pos < (size_t)len; pos++) {
+                size_t a = adv_inline(s, (size_t)len, pos);
+                size_t b = a_next_pos(s, (size_t)len, pos);
+                cells++;
+                if (a != b) {
+                    if (disagree < 5)
+                        printf("DISAGREE len=%d pos=%zu advance=%zu next_pos=%zu\n",
+                               len, pos, a, b);
+                    disagree++;
+                }
+                if (a != pos + 1) nontrivial++;
+            }
+        }
+    }
+    printf("CELLS=%ld DISAGREE=%ld NONTRIVIAL=%ld\n", cells, disagree, nontrivial);
+    return disagree ? 1 : 0;
+}
+AGREE
+    if ! gen_cc "encadv $aenc" "$CC" -O1 -w -I "$d" -o "$d/agree" \
+            "$d/agree.c" "$d/a.c" >/dev/null 2>&1; then
+        bad "K49 the -e $aenc advance-agreement driver did not compile"
+        continue
+    fi
+    aout="$("$d/agree" 2>&1)"; arc=$?
+    acells="$(printf '%s\n' "$aout" | sed -n 's/.*CELLS=\([0-9]*\).*/\1/p')"
+    antriv="$(printf '%s\n' "$aout" | sed -n 's/.*NONTRIVIAL=\([0-9]*\).*/\1/p')"
+    if [ "$arc" != 0 ]; then
+        bad "K49 the emitted -e $aenc retry advance DISAGREES with the same artifact's next_pos — the boundary rule has two spellings and they have drifted"
+        printf '%s\n' "$aout" | head -6 >&2
+        continue
+    fi
+    ok "K49 the emitted -e $aenc retry advance agrees with the artifact's own next_pos on all $acells cells (pos < n)"
+    if [ "$aenc" = byte ]; then
+        if [ "${antriv:-1}" -eq 0 ]; then
+            ok "K49 non-vacuity control: every -e byte advance IS pos + 1 ($acells cells) — the byte artifact's step did not move"
+        else
+            bad "K49 the -e byte advance answered something other than pos + 1 on $antriv cell(s) — under this encoding every position is a boundary, so the byte artifact has MOVED"
+        fi
+    else
+        if [ "${antriv:-0}" -ge 1 ]; then
+            ok "K49 non-vacuity control: the -e utf8 advance differs from pos + 1 on $antriv of $acells cells — the sweep reached the multi-byte shape the rule is about"
+        else
+            bad "K49 the -e utf8 advance is pos + 1 EVERYWHERE — either the fix is not in this artifact or the alphabet never produced a continuation byte, and the agreement above certifies nothing"
+        fi
+    fi
+done
+
+# ---------------------------------------------------------------------------
 # S-U8  THE CLAMP-STRIDE PROBE
 # ---------------------------------------------------------------------------
 if pcrec_run "$PCREC" --features all -e utf8 -p rx -o - -- '(a)(?:\x{3b1}){0,3}x' 2>/dev/null \

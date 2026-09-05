@@ -3642,18 +3642,141 @@ than by one CHARACTER (via the encoding's own `next_pos` entry,
 tries the assertion there, and (apparently) succeeds where a
 character-boundary-only walk would have skipped straight to offset 4.
 
-STATUS: open; filed here rather than fixed in this lane (out of the
-utfprom promotion lane's scope — corpus integration, not engine surgery).
-The corpus cell moved to `tests/known_fail/k49_utf8_lookbehind_retry.rxt`
-(this file's own convention: an ANSWER pcrec currently disagrees with,
-not a construct that's merely unbuilt) with a pointer comment left at its
-former position in `tests/utf8/axis09_nextpos_findall.rxt`; the ratchet
-fires red-to-green the moment this is fixed. Needed to close: confirm the
-suspected mechanism against the actual unanchored-search/`next_pos` call
-sites in `src/`, then either bound the retry to character boundaries
-under `-e utf8` or correct the corpus's own ARGUED expectation if a design
-review concludes byte offset 3 is in fact an acceptable answer (it is not
-obviously so — `caps[0][0]`/`caps[0][1]` = 3 would be a REPORTED position
-inside a multi-byte character, which `docs/spec/limits.md`/`match_api.md`
-do not currently license for anything other than `\K`'s own documented
-exception).
+**STATUS: FIXED 2026-09-05, lane `k49fix`.** The suspected mechanism was
+right about the SITE and wrong about nothing that mattered: the emitted
+`<prefix>_search_run`'s retry loop advanced with a literal
+`attempt_position++` (`src/gen/emit_vm.c`, the `sb_printf` that writes the
+search loop). The advance now comes from the ENCODING BACKEND — a new
+`advance` field on `PcrecEnc` (`src/gen/enc/enc.h`), `pos++` under `byte`
+and "`pos++` then skip continuation bytes" under `utf8` — so the rule is
+general, there is no encoding conditional in the emitter (DD-12 (7)), and
+**every byte-encoding artifact is unmoved**: the identity gate's whole-file
+comparison (B) is 2423/2423 identical against pin `05b2fe8a`, so this is
+NOT an `abi` event and nothing was re-pinned.
+
+**WHY IT IS INLINE TEXT AND NOT A CALL TO `next_pos`, which computes exactly
+this position.** `next_pos` carries `engine_callable = false`; DD-12 (7),
+`tests/codegen/run_codegen_tests.sh`'s `[M5-SEAM]` check and sabotage row
+S68 all forbid an engine body calling it. Independently, a call would have
+changed the byte artifact and turned the identity gate into a re-pin. The
+cost is that the boundary rule is spelled TWICE per backend, and that cost
+is paid the way this tree already pays it for the ASCII fold: a new
+advance-agreement section in `tests/codegen/run_encoding_checks.sh`
+EXTRACTS the advance from an emitted artifact, compiles it, and compares it
+against that same artifact's linked `next_pos` over an exhaustive sweep of a
+role-complete byte alphabet — with non-vacuity asserted in both directions
+(`byte` must answer `pos + 1` everywhere; `utf8` must NOT, somewhere).
+
+**THE ASYMMETRY THE ENTRY ASKED ABOUT HAS A PLAIN ANSWER, and it is not
+"lookbehind".** `(?!.)` at `startpos=1` (`midstart-row4`) was green
+throughout because it NEVER REACHES THE RETRY: position 1 is mid-alpha, `.`
+has no path from a continuation byte, so the negative lookahead succeeds on
+the FIRST attempt and `(1,1)` is reported. `(?<!.)` at `startpos=2` fails its
+first attempt (alpha really does precede a real boundary) and is therefore
+the only cell in the block that exercises the advance at all. The defect was
+never lookbehind-specific: it belongs to every pattern whose first attempt
+fails and whose answer at the next BYTE differs from its answer at the next
+BOUNDARY.
+
+The corpus cell is restored to its authored position in
+`tests/utf8/axis09_nextpos_findall.rxt` and
+`tests/known_fail/k49_utf8_lookbehind_retry.rxt` is deleted. The ratchet
+pins no counts of its own (it enumerates `tests/known_fail/*.rxt` with
+`find`), so nothing there needed re-pinning; `tests/rxtsource/`'s corpus
+census did, and moved -1 file / +-0 blocks / +-0 lines, with run.sh's
+population moving the opposite way.
+
+**NO SPEC HUNK TRAVELS WITH THIS FIX, and that is a positive claim rather
+than an omission (D80).** `docs/spec/match_api.md` never licensed a reported
+position inside a character, `<prefix>_next_pos` and the find-all protocol of
+§3.1 are untouched, and the caller-supplied mid-character `startpos` whose
+answer utf8_design.md §2.6.1 rules DEFINED is unchanged — verified live:
+`(?<!.)` at `startpos` 1 and 3 still answer `(1,1)` and `(3,3)`. What moved
+is behaviour the contract did not describe and the design position said was
+wrong.
+
+**IT HAS A SIBLING THAT IS NOT FIXED — see K50 below.** The same rule is
+violated by the DFA's start-anywhere self-loop, reachable from an ordinary
+`startpos=0`, and closing it is a structural change this lane did not have
+the charter for.
+
+## K50 — [M5.0] STAGE 2 (2026-09-05, lane k49fix, found while fixing K49 by asking whether the OTHER engine's "try the next start" mechanism had the same hazard): under `-e utf8` the DFA's start-anywhere self-loop steps one BYTE, so an unanchored search can report a match at a byte offset INSIDE a multi-byte character — **from an ordinary `startpos=0`, with no mid-character `startpos` anywhere in the call.**
+
+WITNESS: `\B` (`--features assertions`) over subject `"a\xce\xb1"` (`61 CE
+B1` — ASCII `a` then alpha; character boundaries are 0, 1 and 3, and byte 2
+is the second byte of alpha). At `startpos=0` pcrec reports a MATCH at
+`(2,2)`. Two is not a position: it is inside alpha's own two-byte encoding.
+The correct answer is `(3,3)` — `\B` is false at 0 (start-of-subject next to
+a word character is a boundary), false at 1 (`a` then alpha crosses
+word/non-word), and true at 3 (alpha precedes, end of subject follows,
+neither is a word character). `\Bx?` gives the same answer, and
+`--engine=vm` gave `(2,2)` too until K49's fix, which is why nothing caught
+it: **both engines were wrong in agreement.** Post-K49 the VM answers
+`(3,3)` and the DFA still answers `(2,2)`, so this is now also a live
+cross-engine divergence.
+
+MECHANISM (traced, not suspected). `src/ir/nfa.c:965` `nfa_wrap_unanchored`
+builds the lowest-priority start self-loop as `memset(nfa->st[any].cls,
+0xff, 32)` — a class of EVERY BYTE. Under `utf8` that lets a match start be
+any byte offset. The artifact for `\B` carries no retry loop at all (it is
+`RX_ENGINE "dfa"`, `match_form "unwrapped"`, the forward+reverse two-pass
+form), so K49's fix cannot reach it: the two engines implement "try the next
+start" by two different mechanisms and K49 fixed one of them. The hybrid
+prefilter's candidate handoff (`src/gen/emit_vm.c`'s retry-window recompute)
+re-windows through the same DFA and inherits the same property.
+
+**IT REFUTES A DESIGN ASSERTION AND THE RULING THAT RESTS ON IT, and that
+is the part worth keeping.** `docs/design/utf8_design.md` §5.5 says of
+`ENG_ATTEMPT`'s byte start loop: *"Under UTF-8 it would try starts
+mid-character. **Those starts have no path** (§2.6) so they cannot produce a
+wrong answer; they are wasted attempts... **ASSERTED**: correct but not
+optimal."* That is false. "No path" is a safe answer only for a POSITIVE
+pattern — and §2.6.1 of the SAME DOCUMENT, one section earlier, had already
+written down the inversion (*"'No path' INVERTS for a negative assertion"*):
+an assertion that succeeds exactly where its body has no path SUCCEEDS at a
+mid-character position. §5.5 was written from the positive-only premise and
+never reconciled with §2.6.1. Frank's **ASK 5** ruling — *"AGREED, leave
+`ENG_ATTEMPT`'s start loop alone"* — is recorded against exactly that
+"cannot produce a wrong answer" claim, so the ruling stands on a refuted
+premise and is re-openable on that ground. A note to this effect sits at
+§5.5 and in ASK 5's row.
+
+WHAT A FIX MUST RESPECT, so whoever takes it does not start in the wrong
+place. The self-loop CANNOT simply be made to consume whole characters:
+§2.6(c)'s ruled semantics require a search to find matches AFTER an
+ill-formed byte (`a` on `FF 63` gives `(1,2)`), so the loop must still
+traverse ill-formed bytes. The condition is on the SPLIT into the pattern,
+not on the loop's step — a match may START only where the byte is not a
+continuation byte (`(s[p] & 0xC0) != 0x80`, with 0 and n boundaries), which
+is the same local predicate `next_pos` and K49's advance already implement.
+That is an IR/DFA structural change: it moves every unanchored `utf8` DFA
+artifact, so it is an `abi`-adjacent event needing a design decision, and it
+should be taken together with `ENG_ATTEMPT`'s `start++`
+(`src/gen/emit_dfa.c:6234`) and the prefilter handoff so that all three
+"try the next start" mechanisms end up spelling one rule.
+
+**IT IS NOT `pcrec-ARGUED` — IT HAS A REAL ORACLE, and that is the sharpest
+difference from K49.** K49's cell was a design position no engine produces.
+This one is measured, against libpcre2 10.37 through
+`docs/design/subroutines_measurements/probes/sr_oracle.py`:
+
+| option word | `\B` on `61 CE B1`, startpos 0 |
+|---|---|
+| `PCRE2_UTF` | `(3,3)` |
+| `PCRE2_UTF｜PCRE2_MATCH_INVALID_UTF` | `(3,3)` |
+| `options=0` (byte) | `(2,2)` |
+
+Both UTF option words agree on `(3,3)`, and `(2,2)` is precisely the
+`options=0` BYTE answer — so **pcrec under `-e utf8` is returning byte
+semantics from a UTF-8 build**, which D26 makes an ordinary compatibility
+defect rather than anything needing a ruling to call wrong. A hand
+derivation agrees with the oracle independently.
+
+STATUS: open. Filed as `tests/known_fail/k50_utf8_dfa_selfloop_start.rxt`
+per this file's own convention — a confirmed answer pcrec disagrees with,
+held loud, with the ratchet firing red-to-green the moment the DFA half is
+fixed. **NOTE FOR WHOEVER READS THE RATCHET COUNT NEXT:** `make test`'s
+known-fail population is 2 files again (K34 and this), not the 1 that K49's
+retirement alone would have left. That is a new bug filed, not K49's fix
+failing to land — K49's own cell is live and green in
+`tests/utf8/axis09_nextpos_findall.rxt`.

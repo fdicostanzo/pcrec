@@ -138,9 +138,15 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # unchanged, and a reader who expects a fix to shrink the corpus should read
 # the reconciliation below instead — what moved is which POPULATION the cell
 # belongs to (known_fail -> run.sh's), not how many cells exist.
-CENSUS_FILES=207
-CENSUS_BLOCKS=3883
-CENSUS_LINES=28450
+# 2026-09-05 (lane k49fix, K50 FILED) — +1/+1/+1 for
+# tests/known_fail/k50_utf8_dfa_selfloop_start.rxt, the DFA-side sibling K49's
+# fix exposed (one `m` line). It lands under known_fail, so the census moves
+# and RUNSH_* below does NOT — the opposite of the K49 movement one comment up,
+# and the two together are why these pins are kept as a pair rather than one
+# derived from the other.
+CENSUS_FILES=208
+CENSUS_BLOCKS=3884
+CENSUS_LINES=28451
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
 # (tests/base/start_pinned_startpos.rxt, tests/assertions/
 # start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
