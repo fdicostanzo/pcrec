@@ -24,5 +24,12 @@ SAB_COUNT=1
 # widens `[A]` to nothing and `[a]` to nothing, so a caseless class stops
 # being case-closed -- the same asymmetry the old anchor produced by dropping
 # one arm of its `||`.
-SAB_BEFORE="        if (cls_has(b, c)) cls_set(b, pcrec_ascii_fold[c]);"
-SAB_AFTER="        if (cls_has(b, c) && c >= 'a') cls_set(b, pcrec_ascii_fold[c]);"
+# [M5.0 stage 1] RE-AIMED at the interval payload. `cls_casefold` collects the
+# partners over the 256 BYTES before adding any (the loop must not read the set
+# it is mutating), so the row's edit lands on the collection's own condition
+# rather than on a bit-set call. The asymmetry it plants is identical: only the
+# lowercase half of the partition acquires its partner.
+SAB_BEFORE="        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(s, c))
+            add[nadd++] = pcrec_ascii_fold[c];"
+SAB_AFTER="        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(s, c) && c >= 'a')
+            add[nadd++] = pcrec_ascii_fold[c];"

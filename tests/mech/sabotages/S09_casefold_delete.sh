@@ -12,16 +12,20 @@ SAB_COUNT=1
 # Ctx.mods became a pointer to ParseMods at [M6.2] wave A, so
 # `cx->mods.caseless` became `cx->mods->caseless`. Intent (delete the
 # fold call) unchanged.
-SAB_BEFORE="static Ast *char_node(Ctx *cx, unsigned c)
-{
-    Ast *a = node(cx, A_CLASS);
-    cls_set(a->u.cls.bits, c & 0xff);
-    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
-    return a;
-}"
-SAB_AFTER="static Ast *char_node(Ctx *cx, unsigned c)
-{
-    Ast *a = node(cx, A_CLASS);
-    cls_set(a->u.cls.bits, c & 0xff);
-    return a;
-}"
+# [M5.0 stage 1] RE-AIMED at the interval payload: `char_node` builds into a
+# `PcrecCpSet` and publishes once. The deletion this row makes, and everything
+# it detects, is unchanged — a literal stops folding while classes keep doing
+# it, which is what makes its symptom disjoint from S08's.
+SAB_BEFORE="    Ast *a = node(cx, A_CLASS);
+    PcrecCpSet s;
+    pcrec_cpset_init(&s, &cx->arena);
+    pcrec_cpset_add(&s, c & 0xff, c & 0xff);
+    if (cx->mods->caseless) cls_casefold(&s);
+    pcrec_cpset_publish(&s, a);
+    return a;"
+SAB_AFTER="    Ast *a = node(cx, A_CLASS);
+    PcrecCpSet s;
+    pcrec_cpset_init(&s, &cx->arena);
+    pcrec_cpset_add(&s, c & 0xff, c & 0xff);
+    pcrec_cpset_publish(&s, a);
+    return a;"

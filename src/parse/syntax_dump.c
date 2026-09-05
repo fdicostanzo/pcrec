@@ -733,6 +733,30 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
     cx.pat = r->syntax;
     cx.patlen = strlen(r->syntax);
     cx.arena.cx = &cx;
+    /* [M5.0 stage 1] EVERY PROBE Ctx CARRIES OPTIONS, and this is a latent
+     * hazard the interval refactor turned into a real one rather than a new
+     * requirement. This file builds three `Ctx`es by `memset` and hands each
+     * to the parser; none of them set `opt`, which was harmless only while
+     * nothing on a parse path read it. `[^...]`, `.` and every negating
+     * registry row now ask the ENCODING for their complement universe
+     * (`cls_universe`, docs/design/utf8_design.md §2.7.1), so a Ctx with no
+     * options is a NULL dereference on the first negated class a probe
+     * reaches — MEASURED as a segfault in
+     * `tests/registry/definitions_oracle_gen.c` through
+     * `pcrec_construct_built_status`.
+     *
+     * The fix is the DEFAULTS rather than a NULL check in `cls_universe`,
+     * because "which encoding is this parse for" has a right answer here and
+     * it is the default one: these probes ask what the REGISTRY does, and the
+     * registry's answers are the default encoding's. A tolerant
+     * `cls_universe` would instead let a genuinely optionless Ctx reach the
+     * parser and silently answer for `byte` whatever the caller meant.
+     *
+     * Set BEFORE the `setjmp` and never mutated after, so it is not one of
+     * the indeterminate-after-longjmp locals C's rule is about. */
+    pcrec_options probe_opt;
+    pcrec_default_options(&probe_opt);
+    cx.opt = &probe_opt;
     if (setjmp(cx.jb)) {
         /* the row's own well-formed `syntax` (SR-1's own rule: every row's
          * `syntax` really reaches its doorway) RAISED instead of cleanly
@@ -1006,6 +1030,11 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
     cx.pat = construct;
     cx.patlen = strlen(construct);
     cx.arena.cx = &cx;   /* [M4.7b/K7] arena OOM -> this setjmp, not abort() */
+    /* [M5.0 stage 1] see `built_status_probe`'s note: a probe Ctx reaching the
+     * parser with no options is a NULL deref on the first negated class. */
+    pcrec_options probe_opt;
+    pcrec_default_options(&probe_opt);
+    cx.opt = &probe_opt;
     if (setjmp(cx.jb)) {
         arena_free(&cx.arena);      /* a raising port allocated, then left */
         return NULL;
@@ -1494,6 +1523,11 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
     memset(&cx, 0, sizeof cx);
     cx.err = err;
     cx.arena.cx = &cx;   /* [M4.7b/K7] arena OOM -> this setjmp, not abort() */
+    /* [M5.0 stage 1] see `built_status_probe`'s note: a probe Ctx reaching the
+     * parser with no options is a NULL deref on the first negated class. */
+    pcrec_options probe_opt;
+    pcrec_default_options(&probe_opt);
+    cx.opt = &probe_opt;
     if (err) { err->msg[0] = '\0'; err->pos = 0; }
 
     /* ABANDON THE WHOLE ANSWER, rather than render the raise per line and

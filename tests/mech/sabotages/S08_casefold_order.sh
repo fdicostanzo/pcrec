@@ -15,11 +15,19 @@ SAB_COUNT=1
 # `cx->mods->FIELD`. Anchor text updated to match; the sabotage's intent
 # (move the fold call from before the negation loop to after it) is
 # unchanged.
-SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
-    if (neg)
-        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
+# [M5.0 stage 1] RE-AIMED at the interval payload. The RULE is unchanged and
+# so is this row's whole point — fold the POSITIVE set, then complement — but
+# the two lines that spell it moved from a bitmap loop to `pcrec_cpset_*`
+# calls, and the complement's universe now comes from the ENCODING
+# (`cls_universe(cx)`, docs/design/utf8_design.md §2.7.1) rather than being the
+# bitmap's implicit 0..255. Under `--encoding=byte` the two are the same
+# function on the same set, which is why this row's detector corpus
+# (tests/base/caseless.rxt) is unchanged and its cells are the same cells.
+SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(&set);
+    if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
+    pcrec_cpset_publish(&set, a);
     return a;"
-SAB_AFTER="    if (neg)
-        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
-    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
+SAB_AFTER="    if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
+    if (cx->mods->caseless) cls_casefold(&set);
+    pcrec_cpset_publish(&set, a);
     return a;"
