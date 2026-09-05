@@ -369,6 +369,44 @@ designed or scheduled.
 
 **All seven ASKs are now ruled.**
 
+### R-ASKS-3 — the data-architecture generality ruling
+
+A **third** block arrived after that one. Consumed in the same pass.
+
+| ruling | what this lane did |
+|---|---|
+| **(a)** `third_party/` gets a general organizational shape from day one; the derivation step named generically, **UCD as the FIRST INSTANCE, not the pattern** | wrote **§3.3.2** — one directory per source with the version in its name, a `PROVENANCE.md` naming what **DERIVES** from the source (not only where it came from), and the build rule spelled *"a data source compiles to generated tables"*. A rule spelled `ucd_to_intervals` would need renaming the day a second source arrives, which is the re-plumbing the ruling exists to prevent. `pcre2-testdata/` is retro-fitted rather than left as the exception proving an unwritten rule |
+| **(b)** the door is **encoding-wide**, not 16/32-wide — codepages are a different data KIND; legacy multi-byte rides the same lowering | retitled §5.7 and wrote **§5.7.3** |
+
+**(b) TURNED OUT TO BE THE MOST PRODUCTIVE RULING OF THE THREE, because it
+attacked this revision's own new material.** Two findings, both the lane's:
+
+1. **`PcrecEnc.max_cp` — added one section earlier by E2's own repair — is
+   the CONTIGUOUS-repertoire form of a more general question.** A codepage's
+   256 code points are **scattered** across Unicode (KOI8-R is ASCII plus a
+   Cyrillic block), so `[^a]` complements within an arbitrary SET and no
+   maximum describes it. Scalar kept under D77 with the trigger named; the
+   seam's SHAPE is unaffected either way, since it is one field's type and not
+   an interface.
+2. **§2.3's "an interval becomes a SMALL set of byte-range sequences" rests on
+   an unstated MONOTONICITY premise** — contiguous code points encoding to
+   contiguous unit sequences. UTF-8 and UTF-32 have it; **UTF-16 does not**
+   (astral surrogate pairs sit numerically below U+E000–U+FFFF's units), and
+   legacy encodings are wildly non-monotone, which attacks §2.4.1's `ncls`
+   term directly. Named as the number a legacy backend owes before it is
+   chartered.
+
+The happier half is that **a single-byte codepage is nearly free**: its
+lowering emits exactly `enc_byte`'s output shape, so it is `enc_byte` with its
+table made a parameter — and pcrec's own `byte` encoding **is** the identity
+codepage (D58's rename rationale, read back). Two smaller observations
+recorded: a legacy encoding's lowering is a TABLE rather than arithmetic, so
+it is itself a `third_party/` source — **which is where (a) and (b) meet**,
+and the second instance (a)'s generic rule exists for; and Shift-JIS is not
+self-synchronizing either, which is where §5.7.2's blocker (1) stops looking
+like a UTF-8 detail and starts looking like the property §6.3 should have
+named from the start.
+
 ## 5. What was NOT done
 
 - **No merge, no push** — the brief's instruction.
