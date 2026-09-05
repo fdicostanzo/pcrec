@@ -77,9 +77,14 @@ echo "== cell (allowlist copy, non-git) =="
 mkdir -p "$CELL"
 for p in "${ALLOW[@]}"; do
     [ -e "$WT/$p" ] || { echo "mk_d27_cell: '$p' exists at HEAD's root but not in the worktree" >&2; exit 1; }
-    rsync -a --relative "$WT/./$p" "$CELL/"
+    # Run rsync FROM the worktree with a relative source: macOS's openrsync
+    # does not honor GNU rsync's "/./" insertion-point spelling of --relative
+    # (an absolute source reproduced the full /Users/... path inside the cell,
+    # caught by the hygiene check below, 2026-09-05); a relative source means
+    # the same thing to both implementations.
+    ( cd "$WT" && rsync -a --relative "./$p" "$CELL/" )
 done
-rsync -a --relative "$WT/./build" "$CELL/"
+( cd "$WT" && rsync -a --relative "./build" "$CELL/" )
 
 echo "== hygiene verification (the point of the cell) =="
 BAD=0
