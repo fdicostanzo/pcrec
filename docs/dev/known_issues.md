@@ -3942,7 +3942,7 @@ search's candidate match STARTS are exactly the encoding's character
 boundaries. `\B` over `61 CE B1` from `startpos 0` answers `(3,3)` on both
 engines, which is libpcre2 10.46's answer under both UTF option words.
 
-**SITE (2) WAS A LIVE WRONG ANSWER AND THIS ENTRY DID NOT KNOW IT.** The site
+**K50 HAS A SECOND FACE, AND THIS ENTRY DID NOT KNOW IT.** The site
 list above calls `ENG_ATTEMPT`'s `start++` loop *"the loop `utf8_design.md`
 §5.5 and ASK 5 are about"* and files no witness for it, because §5.5 and the
 ASK 5 ruling both say such starts merely waste attempts. Measured on the
@@ -3962,7 +3962,18 @@ interior start state live so the loop runs past its first iteration. **A pure
 newline and a newline is a character-start byte; `\G` gives `start_max ==
 search_from`, one attempt at the caller's own position — which is why the site
 survived a whole milestone unwitnessed. A fix that closed only mechanism (1)
-would have left this standing.
+would have left this standing — so this is not a detail of the fix, it is a
+SECOND FACE of the same defect, filed here beside the first because a reader
+who takes "K50 is the DFA half" from the heading would look for one witness
+and there are two.
+
+WHERE EACH FACE IS PINNED: face 1 (the self-loop) in
+`tests/utf8/axis11_startpos_boundary.rxt`'s `\B` cells and
+`run_startbnd_diff.sh` §5's three `dfa-selfloop` widths; face 2
+(`ENG_ATTEMPT`) in that same file's `(?m)^a|\B` cells and §5's
+`attempt-startloop`. Sabotage rows S230 and S231 fire on DISJOINT cells (4 of
+7 and exactly 1 of 7), which is the matrix telling the two faces apart rather
+than scoring one of them twice.
 
 **HOW EACH MECHANISM WAS CLOSED.** One datum, `PcrecEnc.start_cls` (the bytes
 a character may start at, NULL under `byte`), plus its expression twin

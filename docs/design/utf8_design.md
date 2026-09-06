@@ -2306,8 +2306,14 @@ sabotage row S68 forbid. §14 ASK 5 raises it; §11 puts it out of scope.
 > ### BOTH HALVES ARE NOW CLOSED, AND THE SECOND HALF CAME WITH A WITNESS
 > THIS BOX DID NOT HAVE (2026-09-06, lane `k50bnd`)
 >
+> **THE WASTED-ATTEMPT CLAIM UNDERSTATED IT, and the box above understated it
+> too.** This annotation was written after K49 and it refuted §5.5's *reason*
+> — "no path" inverts — while leaving the impression that
+> `ENG_ATTEMPT`'s loop was the remaining THEORETICAL case, K50's own site list
+> filing no witness for it. It is not theoretical.
+>
 > `ENG_ATTEMPT`'s `start++` loop — the loop this section is actually about —
-> was a LIVE WRONG ANSWER and not a wasted attempt. `(?m)^a|\B` over
+> was a LIVE WRONG-ANSWER PRODUCER and not a wasted attempt. `(?m)^a|\B` over
 > `61 CE B1` at `startpos = 1`, a real character boundary, reported `(2,2)`
 > where libpcre2 10.46 under `PCRE2_UTF` answers `(3,3)`. The witness needs
 > two branches and neither is optional: the BOT-family branch is what routes
@@ -2316,6 +2322,33 @@ sabotage row S68 forbid. §14 ASK 5 raises it; §11 puts it out of scope.
 > `(?m)^` or `\G` pattern is SELF-GATING** — `(?m)^` can hold only after a
 > newline and a newline is a character-start byte — which is why the site
 > stood unwitnessed while this section asserted it was harmless.
+>
+> ### THE TWO PLACEMENTS THAT LOOK RIGHT AND ARE NOT
+>
+> Recorded here so a reviewer starts from the refutations rather than
+> re-deriving them, and because both are the first thing a reader proposes.
+> The gate is on the SPLIT INTO THE PATTERN — the placement K50's own entry
+> recommends — and the alternatives fail for reasons that are about the
+> automaton rather than about taste:
+>
+> - **Gate the self-loop's RE-ENTRY** (`any -> gate -> sp`) rather than the
+>   split. It kills the scan: the self-loop is the only forward advance, so a
+>   thread blocked at a continuation byte DIES, and `a` on `CE B1 61` is never
+>   found at all. The gate must sit where a thread is CHOOSING, not where it
+>   is travelling.
+> - **Make the self-loop consume whole CHARACTERS.** "Consume the lead, then
+>   its continuations" needs a greedy, deterministic skip, and a priority
+>   SPLIT cannot force one — the nondeterministic spelling still reaches every
+>   byte offset, so the wrong answers survive the restructure. (It also has to
+>   handle `CE 61`, where the lead's declared length and the boundary
+>   predicate disagree; §2.6(c) is what makes the predicate the authority.)
+>
+> A third refinement is forced by the DENY ARM rather than by the automaton,
+> and it is why the wrap has TWO split states: gating the caller's own entry
+> too would make `-fno-startpos-guard` answer no-match where §2.6.1.1 rules
+> `(1,1)`, i.e. the axis would become a second AUTOMATON rather than a guard
+> on the entries. Keeping `nfa->start` ungated is what lets ONE machine serve
+> both arms.
 >
 > ### AND THE OPTIMISATION THIS SECTION CLAIMED IS REFUTED TOO — MEASURED
 >

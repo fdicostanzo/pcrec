@@ -89,6 +89,17 @@ m "a\xf0\x9f\x98\x80" 5 5
 # treat it as merely wasteful. Measured wrong on 2026-09-06: this pattern at
 # `startpos = 1` (a REAL character boundary) reported (2,2).
 #
+# THE DENY ARM OF THIS CELL IS IN THE DIFFERENTIAL, AND FOR A REASON WORTH
+# READING rather than the usual one. Every other both-arm pair in this fix
+# lives there because no `.rxt` directive spells a compile flag. This pair
+# additionally has NO DIVERGENCE TO CARRY: `startpos = 1` is a real character
+# boundary, so the caller-startpos guard is transparent at it and BOTH arms
+# must answer (3,3). That sameness IS the claim — the axis governs where a
+# CALLER may point the entry and moves no position the ENGINE invented — and
+# it is asserted in `run_startbnd_diff.sh` §5, which runs every engine cell
+# under both flag settings and requires the same answer. A `.rxt` pair could
+# only have restated this cell twice.
+#
 # THE PATTERN IS TWO BRANCHES ON PURPOSE AND NEITHER IS OPTIONAL. The
 # BOT-family branch is what routes the pattern to `ENG_ATTEMPT` at all; the
 # nullable second branch is what keeps an interior start state live, so
