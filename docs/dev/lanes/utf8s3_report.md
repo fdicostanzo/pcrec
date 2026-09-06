@@ -73,10 +73,54 @@ No wrong span, no wrong membership, no wrong negation, on a corpus the
 implementation had never seen. `axis05`'s 34 permanent error-147 refusals
 still refuse, unchanged.
 
-**Other suites**, all with the numbers from a run on this branch:
-reject 610/0 (gated 80 -> 92, re-pinned), registry_check 225/0, known-fail
-ratchet 2 still-failing / 0 now-passing, `make strict` clean, S121 solo mech
-run UNREACHED-as-expected with 0 anomalies.
+### The full targeted run, and the A/B that separates mine from the box's
+
+Every section below was run on this branch's final commit. **The two red ones
+are red at the branch point too, with the SAME failure counts**, measured
+against a scratch `git archive` build of `d71a03c9` on this box.
+
+| section | result | vs branch point |
+|---|---|---|
+| `make strict` | clean | — |
+| `test-corpus` | **28,759 cases / 0 failed**, 0 compile failures | includes the promoted 462 |
+| `test-uprops` (byte) | **14 / 0**, 45 properties, 0 drift | new |
+| `test-uprops-utf8` | **14 / 0**, 45 properties x whole space, 62,121 drift, 0 unexplained | new |
+| `test-reject` | **610 checks / 0 failed**, gated 80 -> 92 | clean both sides |
+| `test-cli` | clean | — |
+| `test-known-fail` | 2 still failing / **0 now passing** | +1 file (K53) |
+| `test-codegen` | 1 failure | **base 1** — `nm could not read arm_a.o`, a known darwin red |
+| `test-registry` | registry_check 225/0; PC-3 **119 failures** | **base 119**, identical set |
+| `test-rxtsource` | **14 failures** | **base 14**, identical set |
+| `make mech S121` | UNREACHED (EXPECTED), 0 anomalies | re-aimed, §6 |
+
+**The two red sections, named so nobody re-investigates them.** PC-3's 119 are
+the `(?a)`/`(?r)` option-run family (U13) and the verb differential, both
+libpcre2-version artefacts, plus `could not read
+'/usr/lib/libpcre2-8.0.dylib'` — which is literally §4b's finding printing
+itself. `test-rxtsource`'s 14 are **`xargs -a`, a GNU-only option BSD xargs
+refuses**: legs B and C and everything downstream of them have never run on
+this box. A `[MACPORT]` residual, not this lane's, and worth its own admin
+row.
+
+**Three pins this lane moved and re-pinned in the same delivery**, per the
+delivery bar: `tests/reject/`'s gated count (80 -> 92, with the narrative),
+`registry_check.c`'s built-status tally (`138 = 108+14+16` -> `110+12+16`),
+PC-3's expected PASS count (201 -> 207, A/B-measured), `tests/rxtsource/`'s
+corpus census (208/3888/28456 -> 209/3888/28814 plus the `RUNSH_*` half), and
+`run_dfa_stamps.sh`'s empty-engine manifest (4 -> 16 named members). The
+compliance page's generated index was regenerated and its `\p` survey rows
+moved `REJECTED` -> `OK-GATED`; `--check`, `--names` and `--check-annotations`
+all pass.
+
+**One movement was a real finding rather than a re-pin.** `run_dfa_stamps.sh`
+asserts the empty-engine bucket is EXACTLY a named manifest, and it gained
+TWELVE members: `\p{Cn} \p{Co} \p{Cs} \p{Lm} \p{Lt} \p{M} \p{Mc} \p{Me}
+\p{Mn} \p{Nl} \p{Zl} \p{Zp}` compile to a proven-no-match artifact under
+`byte`, because every member of each lies above 0xFF and the encoding clamp
+empties the set. A different KIND of empty from the four contradicting-
+assertion patterns already there, and oracle-verified: `tests/uprops/`
+compares exactly those twelve against libpcre2 over all 256 bytes at zero
+disagreements.
 
 ---
 
