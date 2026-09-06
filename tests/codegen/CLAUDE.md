@@ -2587,13 +2587,29 @@ and RUNS two artifacts per ASCII corpus block (~6,600 compiles at
   positive control is the exclusion COUNT read from the harness's own DECODE —
   a nonzero subject-exclusion count, which a text scan (reading a `\xNN`
   subject escape as ASCII) would read as 0 (§8.5's own method-note trap).
-- **CHK3 THE STAMP CENSUS + DD12a(i) HOT-LOOP SHAPE IDENTITY.** On an ASCII
-  pattern the utf8 stamps EQUAL the byte ones and the engine BODY is
-  byte-identical (compared as `.text`+`.rodata` object bytes, comment- and
-  prefix-immune — `run_object_neutrality.sh`'s instrument), because the
-  lowering is the identity below 0x7F. This is the only instrument that would
-  see §2.4.1's premultiplied decline / §6.2.1's engine change / §6.4's island
-  claim, none of which changes an answer.
+- **CHK3 THE STAMP CENSUS.** On an ASCII pattern the utf8 stamps EQUAL the
+  byte ones, because the lowering is the identity below 0x7F. This is the
+  only instrument that would see §2.4.1's premultiplied decline / §6.2.1's
+  engine change / §6.4's island claim, none of which changes an answer.
+- **DD12a(i) THE HOT-LOOP SHAPE IDENTITY, REBUILT** (docs/dev/known_issues.md
+  K52, [ENCCHK-DD12A]). The original instrument compared whole-object
+  `.text`/`.rodata` bytes and was VACUOUS on darwin (`objdump -j .text`
+  matches nothing on Mach-O) and mis-scoped everywhere (the whole-object
+  scope cannot admit the seam's own per-encoding residual bodies or K49's
+  retry advance). The repair compares emitted SOURCE TEXT instead — never an
+  object, never a compiler, never `objdump` — with both artifacts re-emitted
+  under the SAME prefix and basename (`run_trie_identity.sh`'s own
+  documented trap, avoided by construction) and the four residual entries
+  plus the K49 advance splice plus the `.encoding` stamp EXCISED from both
+  sides before the compare, each excision counted and floored non-empty by
+  construction. Source-text comparison is what makes a real darwin arm
+  possible at all — the check needs no working Mach-O section reader,
+  because it never reads an object file — and it sidesteps the
+  `always_inline` smear that defeated a per-symbol object-exclusion attempt
+  (K52's own finding): the smear is a compiler-inlining phenomenon that does
+  not exist in source text read before any compiler sees it. See
+  `run_encoding_checks.sh`'s own DD12a(i) section header for the full
+  account and docs/dev/lanes/encchk_report.md for the validation transcript.
 - **DD12a(ii) THE SECOND-BACKEND VALIDATION of D58's revisit-when names.** The
   seam's four residual entries appear in a utf8 artifact under the SAME
   signatures the byte backend emits — the property [M6.6.2] wave D
