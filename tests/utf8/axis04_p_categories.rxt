@@ -12,1101 +12,1742 @@
 # surrogate scalar has no valid UTF-8 encoding, so every subject in its two
 # blocks is (correctly) a non-member; that absence IS the measurement.
 
-# axis4 block C-\p{C}-A | pattern: \p{C}
-#   [ctrl01-Cc-1B U+0001] m "\x01" 0 1   # oracle=PCRE2_UTF
-#   [softhyphen-Cf-2B U+00AD] m "\xc2\xad" 0 2   # oracle=PCRE2_UTF
-#   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
-#   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
-pattern \p{C}
-perr
-
-# axis4 block C-\p{C}-B | pattern: \p{C}
-#   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
-#   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
-#   [c1ctrl-Cc-2B U+0080] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
-#   [privateuse-Co-3B U+E000] m "\xee\x80\x80" 0 3   # oracle=PCRE2_UTF
-pattern \p{C}
-perr
-
-# axis4 block C-\P{C}-A | pattern: \P{C}
-#   [ctrl01-Cc-1B U+0001] n "\x01"   # oracle=PCRE2_UTF
-#   [softhyphen-Cf-2B U+00AD] n "\xc2\xad"   # oracle=PCRE2_UTF
-#   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
-#   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
-pattern \P{C}
-perr
-
-# axis4 block C-\P{C}-B | pattern: \P{C}
-#   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
-#   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
-#   [c1ctrl-Cc-2B U+0080] n "\xc2\x80"   # oracle=PCRE2_UTF
-#   [privateuse-Co-3B U+E000] n "\xee\x80\x80"   # oracle=PCRE2_UTF
-pattern \P{C}
-perr
-
-# axis4 block L-\p{L}-A | pattern: \p{L}
-#   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
-#   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
-#   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
-#   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
-pattern \p{L}
-perr
-
-# axis4 block L-\p{L}-B | pattern: \p{L}
-#   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
-#   [underscore-Pc-1B U+005F] n "_"   # oracle=PCRE2_UTF
-#   [alpha-Ll-2B U+03B1] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
-#   [Alpha-Lu-2B U+0391] m "\xce\x91" 0 2   # oracle=PCRE2_UTF
-pattern \p{L}
-perr
-
-# axis4 block L-\P{L}-A | pattern: \P{L}
-#   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
-#   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
-#   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
-#   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
-pattern \P{L}
-perr
-
-# axis4 block L-\P{L}-B | pattern: \P{L}
-#   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
-#   [underscore-Pc-1B U+005F] m "_" 0 1   # oracle=PCRE2_UTF
-#   [alpha-Ll-2B U+03B1] n "\xce\xb1"   # oracle=PCRE2_UTF
-#   [Alpha-Lu-2B U+0391] n "\xce\x91"   # oracle=PCRE2_UTF
-pattern \P{L}
-perr
-
 # axis4 block M-\p{M}-A | pattern: \p{M}
 #   [combacute-Mn-2B U+0301] m "\xcc\x81" 0 2   # oracle=PCRE2_UTF
 #   [devanagarivisarga-Mc-2B U+0903] m "\xe0\xa4\x83" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{M}
-perr
+encoding utf8
+features unicode-props
+m "\xcc\x81" 0 2
+m "\xe0\xa4\x83" 0 3
+n "A"
+n "a"
 
 # axis4 block M-\p{M}-B | pattern: \p{M}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [enclosingcircle-Me-3B U+20DD] m "\xe2\x83\x9d" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{M}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x83\x9d" 0 3
 
 # axis4 block M-\P{M}-A | pattern: \P{M}
 #   [combacute-Mn-2B U+0301] n "\xcc\x81"   # oracle=PCRE2_UTF
 #   [devanagarivisarga-Mc-2B U+0903] n "\xe0\xa4\x83"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{M}
-perr
+encoding utf8
+features unicode-props
+n "\xcc\x81"
+n "\xe0\xa4\x83"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block M-\P{M}-B | pattern: \P{M}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [enclosingcircle-Me-3B U+20DD] n "\xe2\x83\x9d"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{M}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x83\x9d"
 
 # axis4 block N-\p{N}-A | pattern: \p{N}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [arabic1-Nd-2B U+0661] m "\xd9\xa1" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{N}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "\xd9\xa1" 0 2
+n "A"
+n "a"
 
 # axis4 block N-\p{N}-B | pattern: \p{N}
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [half-No-2B U+00BD] m "\xc2\xbd" 0 2   # oracle=PCRE2_UTF
 #   [romannum-Nl-3B U+2160] m "\xe2\x85\xa0" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{N}
-perr
+encoding utf8
+features unicode-props
+n "!"
+n " "
+m "\xc2\xbd" 0 2
+m "\xe2\x85\xa0" 0 3
 
 # axis4 block N-\P{N}-A | pattern: \P{N}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [arabic1-Nd-2B U+0661] n "\xd9\xa1"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{N}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "\xd9\xa1"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block N-\P{N}-B | pattern: \P{N}
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [half-No-2B U+00BD] n "\xc2\xbd"   # oracle=PCRE2_UTF
 #   [romannum-Nl-3B U+2160] n "\xe2\x85\xa0"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{N}
-perr
+encoding utf8
+features unicode-props
+m "!" 0 1
+m " " 0 1
+n "\xc2\xbd"
+n "\xe2\x85\xa0"
 
 # axis4 block P-\p{P}-A | pattern: \p{P}
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [underscore-Pc-1B U+005F] m "_" 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{P}
-perr
+encoding utf8
+features unicode-props
+m "!" 0 1
+m "_" 0 1
+n "A"
+n "a"
 
 # axis4 block P-\p{P}-B | pattern: \p{P}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [lparen-Ps-1B U+0028] m "(" 0 1   # oracle=PCRE2_UTF
 #   [rparen-Pe-1B U+0029] m ")" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{P}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n " "
+m "(" 0 1
+m ")" 0 1
 
 # axis4 block P-\P{P}-A | pattern: \P{P}
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [underscore-Pc-1B U+005F] n "_"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{P}
-perr
+encoding utf8
+features unicode-props
+n "!"
+n "_"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block P-\P{P}-B | pattern: \P{P}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [lparen-Ps-1B U+0028] n "("   # oracle=PCRE2_UTF
 #   [rparen-Pe-1B U+0029] n ")"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{P}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m " " 0 1
+n "("
+n ")"
 
 # axis4 block S-\p{S}-A | pattern: \p{S}
 #   [plus-Sm-1B U+002B] m "+" 0 1   # oracle=PCRE2_UTF
 #   [dollar-Sc-1B U+0024] m "$" 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{S}
-perr
+encoding utf8
+features unicode-props
+m "+" 0 1
+m "$" 0 1
+n "A"
+n "a"
 
 # axis4 block S-\p{S}-B | pattern: \p{S}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [times-Sm-2B U+00D7] m "\xc3\x97" 0 2   # oracle=PCRE2_UTF
 #   [diaeresis-Sk-2B U+00A8] m "\xc2\xa8" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{S}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xc3\x97" 0 2
+m "\xc2\xa8" 0 2
 
 # axis4 block S-\P{S}-A | pattern: \P{S}
 #   [plus-Sm-1B U+002B] n "+"   # oracle=PCRE2_UTF
 #   [dollar-Sc-1B U+0024] n "$"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{S}
-perr
+encoding utf8
+features unicode-props
+n "+"
+n "$"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block S-\P{S}-B | pattern: \P{S}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [times-Sm-2B U+00D7] n "\xc3\x97"   # oracle=PCRE2_UTF
 #   [diaeresis-Sk-2B U+00A8] n "\xc2\xa8"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{S}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xc3\x97"
+n "\xc2\xa8"
 
 # axis4 block Z-\p{Z}-A | pattern: \p{Z}
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [nbsp-Zs-2B U+00A0] m "\xc2\xa0" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Z}
-perr
+encoding utf8
+features unicode-props
+m " " 0 1
+m "\xc2\xa0" 0 2
+n "A"
+n "a"
 
 # axis4 block Z-\p{Z}-B | pattern: \p{Z}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [linesep-Zl-3B U+2028] m "\xe2\x80\xa8" 0 3   # oracle=PCRE2_UTF
 #   [parasep-Zp-3B U+2029] m "\xe2\x80\xa9" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Z}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x80\xa8" 0 3
+m "\xe2\x80\xa9" 0 3
 
 # axis4 block Z-\P{Z}-A | pattern: \P{Z}
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [nbsp-Zs-2B U+00A0] n "\xc2\xa0"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Z}
-perr
+encoding utf8
+features unicode-props
+n " "
+n "\xc2\xa0"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Z-\P{Z}-B | pattern: \P{Z}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [linesep-Zl-3B U+2028] n "\xe2\x80\xa8"   # oracle=PCRE2_UTF
 #   [parasep-Zp-3B U+2029] n "\xe2\x80\xa9"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Z}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x80\xa8"
+n "\xe2\x80\xa9"
 
 # axis4 block Lu-\p{Lu}-A | pattern: \p{Lu}
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [Alpha-Lu-2B U+0391] m "\xce\x91" 0 2   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lu}
-perr
+encoding utf8
+features unicode-props
+m "A" 0 1
+m "\xce\x91" 0 2
+n "a"
+n "5"
 
 # axis4 block Lu-\p{Lu}-B | pattern: \p{Lu}
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [Alpha-Lu-2B U+0391] m "\xce\x91" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lu}
-perr
+encoding utf8
+features unicode-props
+n "!"
+n " "
+m "A" 0 1
+m "\xce\x91" 0 2
 
 # axis4 block Lu-\P{Lu}-A | pattern: \P{Lu}
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [Alpha-Lu-2B U+0391] n "\xce\x91"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lu}
-perr
+encoding utf8
+features unicode-props
+n "A"
+n "\xce\x91"
+m "a" 0 1
+m "5" 0 1
 
 # axis4 block Lu-\P{Lu}-B | pattern: \P{Lu}
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [Alpha-Lu-2B U+0391] n "\xce\x91"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lu}
-perr
+encoding utf8
+features unicode-props
+m "!" 0 1
+m " " 0 1
+n "A"
+n "\xce\x91"
 
 # axis4 block Ll-\p{Ll}-A | pattern: \p{Ll}
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
 #   [alpha-Ll-2B U+03B1] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Ll}
-perr
+encoding utf8
+features unicode-props
+m "a" 0 1
+m "\xce\xb1" 0 2
+n "A"
+n "5"
 
 # axis4 block Ll-\p{Ll}-B | pattern: \p{Ll}
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
 #   [alpha-Ll-2B U+03B1] m "\xce\xb1" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Ll}
-perr
+encoding utf8
+features unicode-props
+n "!"
+n " "
+m "a" 0 1
+m "\xce\xb1" 0 2
 
 # axis4 block Ll-\P{Ll}-A | pattern: \P{Ll}
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
 #   [alpha-Ll-2B U+03B1] n "\xce\xb1"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Ll}
-perr
+encoding utf8
+features unicode-props
+n "a"
+n "\xce\xb1"
+m "A" 0 1
+m "5" 0 1
 
 # axis4 block Ll-\P{Ll}-B | pattern: \P{Ll}
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
 #   [alpha-Ll-2B U+03B1] n "\xce\xb1"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Ll}
-perr
+encoding utf8
+features unicode-props
+m "!" 0 1
+m " " 0 1
+n "a"
+n "\xce\xb1"
 
 # axis4 block Lt-\p{Lt}-A | pattern: \p{Lt}
 #   [titlecase-Lt-2B U+01C5] m "\xc7\x85" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lt}
-perr
+encoding utf8
+features unicode-props
+m "\xc7\x85" 0 2
+n "A"
+n "a"
 
 # axis4 block Lt-\p{Lt}-B | pattern: \p{Lt}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [titlecase-Lt-2B U+01C5] m "\xc7\x85" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lt}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xc7\x85" 0 2
 
 # axis4 block Lt-\P{Lt}-A | pattern: \P{Lt}
 #   [titlecase-Lt-2B U+01C5] n "\xc7\x85"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lt}
-perr
+encoding utf8
+features unicode-props
+n "\xc7\x85"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Lt-\P{Lt}-B | pattern: \P{Lt}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [titlecase-Lt-2B U+01C5] n "\xc7\x85"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lt}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xc7\x85"
 
 # axis4 block Lm-\p{Lm}-A | pattern: \p{Lm}
 #   [modletter-Lm-2B U+02B0] m "\xca\xb0" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lm}
-perr
+encoding utf8
+features unicode-props
+m "\xca\xb0" 0 2
+n "A"
+n "a"
 
 # axis4 block Lm-\p{Lm}-B | pattern: \p{Lm}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [modletter-Lm-2B U+02B0] m "\xca\xb0" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lm}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xca\xb0" 0 2
 
 # axis4 block Lm-\P{Lm}-A | pattern: \P{Lm}
 #   [modletter-Lm-2B U+02B0] n "\xca\xb0"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lm}
-perr
+encoding utf8
+features unicode-props
+n "\xca\xb0"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Lm-\P{Lm}-B | pattern: \P{Lm}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [modletter-Lm-2B U+02B0] n "\xca\xb0"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lm}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xca\xb0"
 
 # axis4 block Lo-\p{Lo}-A | pattern: \p{Lo}
 #   [cjk-Lo-3B U+4E00] m "\xe4\xb8\x80" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lo}
-perr
+encoding utf8
+features unicode-props
+m "\xe4\xb8\x80" 0 3
+n "A"
+n "a"
 
 # axis4 block Lo-\p{Lo}-B | pattern: \p{Lo}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [cjk-Lo-3B U+4E00] m "\xe4\xb8\x80" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Lo}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe4\xb8\x80" 0 3
 
 # axis4 block Lo-\P{Lo}-A | pattern: \P{Lo}
 #   [cjk-Lo-3B U+4E00] n "\xe4\xb8\x80"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lo}
-perr
+encoding utf8
+features unicode-props
+n "\xe4\xb8\x80"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Lo-\P{Lo}-B | pattern: \P{Lo}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [cjk-Lo-3B U+4E00] n "\xe4\xb8\x80"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Lo}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe4\xb8\x80"
 
 # axis4 block Mn-\p{Mn}-A | pattern: \p{Mn}
 #   [combacute-Mn-2B U+0301] m "\xcc\x81" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Mn}
-perr
+encoding utf8
+features unicode-props
+m "\xcc\x81" 0 2
+n "A"
+n "a"
 
 # axis4 block Mn-\p{Mn}-B | pattern: \p{Mn}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [combacute-Mn-2B U+0301] m "\xcc\x81" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Mn}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xcc\x81" 0 2
 
 # axis4 block Mn-\P{Mn}-A | pattern: \P{Mn}
 #   [combacute-Mn-2B U+0301] n "\xcc\x81"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Mn}
-perr
+encoding utf8
+features unicode-props
+n "\xcc\x81"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Mn-\P{Mn}-B | pattern: \P{Mn}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [combacute-Mn-2B U+0301] n "\xcc\x81"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Mn}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xcc\x81"
 
 # axis4 block Mc-\p{Mc}-A | pattern: \p{Mc}
 #   [devanagarivisarga-Mc-2B U+0903] m "\xe0\xa4\x83" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Mc}
-perr
+encoding utf8
+features unicode-props
+m "\xe0\xa4\x83" 0 3
+n "A"
+n "a"
 
 # axis4 block Mc-\p{Mc}-B | pattern: \p{Mc}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [devanagarivisarga-Mc-2B U+0903] m "\xe0\xa4\x83" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Mc}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe0\xa4\x83" 0 3
 
 # axis4 block Mc-\P{Mc}-A | pattern: \P{Mc}
 #   [devanagarivisarga-Mc-2B U+0903] n "\xe0\xa4\x83"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Mc}
-perr
+encoding utf8
+features unicode-props
+n "\xe0\xa4\x83"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Mc-\P{Mc}-B | pattern: \P{Mc}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [devanagarivisarga-Mc-2B U+0903] n "\xe0\xa4\x83"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Mc}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe0\xa4\x83"
 
 # axis4 block Me-\p{Me}-A | pattern: \p{Me}
 #   [enclosingcircle-Me-3B U+20DD] m "\xe2\x83\x9d" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Me}
-perr
+encoding utf8
+features unicode-props
+m "\xe2\x83\x9d" 0 3
+n "A"
+n "a"
 
 # axis4 block Me-\p{Me}-B | pattern: \p{Me}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [enclosingcircle-Me-3B U+20DD] m "\xe2\x83\x9d" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Me}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x83\x9d" 0 3
 
 # axis4 block Me-\P{Me}-A | pattern: \P{Me}
 #   [enclosingcircle-Me-3B U+20DD] n "\xe2\x83\x9d"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Me}
-perr
+encoding utf8
+features unicode-props
+n "\xe2\x83\x9d"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Me-\P{Me}-B | pattern: \P{Me}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [enclosingcircle-Me-3B U+20DD] n "\xe2\x83\x9d"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Me}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x83\x9d"
 
 # axis4 block Nd-\p{Nd}-A | pattern: \p{Nd}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [arabic1-Nd-2B U+0661] m "\xd9\xa1" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Nd}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "\xd9\xa1" 0 2
+n "A"
+n "a"
 
 # axis4 block Nd-\p{Nd}-B | pattern: \p{Nd}
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [arabic1-Nd-2B U+0661] m "\xd9\xa1" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Nd}
-perr
+encoding utf8
+features unicode-props
+n "!"
+n " "
+m "5" 0 1
+m "\xd9\xa1" 0 2
 
 # axis4 block Nd-\P{Nd}-A | pattern: \P{Nd}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [arabic1-Nd-2B U+0661] n "\xd9\xa1"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Nd}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "\xd9\xa1"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Nd-\P{Nd}-B | pattern: \P{Nd}
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [arabic1-Nd-2B U+0661] n "\xd9\xa1"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Nd}
-perr
+encoding utf8
+features unicode-props
+m "!" 0 1
+m " " 0 1
+n "5"
+n "\xd9\xa1"
 
 # axis4 block Nl-\p{Nl}-A | pattern: \p{Nl}
 #   [romannum-Nl-3B U+2160] m "\xe2\x85\xa0" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Nl}
-perr
+encoding utf8
+features unicode-props
+m "\xe2\x85\xa0" 0 3
+n "A"
+n "a"
 
 # axis4 block Nl-\p{Nl}-B | pattern: \p{Nl}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [romannum-Nl-3B U+2160] m "\xe2\x85\xa0" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Nl}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x85\xa0" 0 3
 
 # axis4 block Nl-\P{Nl}-A | pattern: \P{Nl}
 #   [romannum-Nl-3B U+2160] n "\xe2\x85\xa0"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Nl}
-perr
+encoding utf8
+features unicode-props
+n "\xe2\x85\xa0"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Nl-\P{Nl}-B | pattern: \P{Nl}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [romannum-Nl-3B U+2160] n "\xe2\x85\xa0"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Nl}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x85\xa0"
 
 # axis4 block No-\p{No}-A | pattern: \p{No}
 #   [half-No-2B U+00BD] m "\xc2\xbd" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{No}
-perr
+encoding utf8
+features unicode-props
+m "\xc2\xbd" 0 2
+n "A"
+n "a"
 
 # axis4 block No-\p{No}-B | pattern: \p{No}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [half-No-2B U+00BD] m "\xc2\xbd" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{No}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xc2\xbd" 0 2
 
 # axis4 block No-\P{No}-A | pattern: \P{No}
 #   [half-No-2B U+00BD] n "\xc2\xbd"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{No}
-perr
+encoding utf8
+features unicode-props
+n "\xc2\xbd"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block No-\P{No}-B | pattern: \P{No}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [half-No-2B U+00BD] n "\xc2\xbd"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{No}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xc2\xbd"
 
 # axis4 block Pc-\p{Pc}-A | pattern: \p{Pc}
 #   [underscore-Pc-1B U+005F] m "_" 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pc}
-perr
+encoding utf8
+features unicode-props
+m "_" 0 1
+n "A"
+n "a"
 
 # axis4 block Pc-\p{Pc}-B | pattern: \p{Pc}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [underscore-Pc-1B U+005F] m "_" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pc}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "_" 0 1
 
 # axis4 block Pc-\P{Pc}-A | pattern: \P{Pc}
 #   [underscore-Pc-1B U+005F] n "_"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pc}
-perr
+encoding utf8
+features unicode-props
+n "_"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Pc-\P{Pc}-B | pattern: \P{Pc}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [underscore-Pc-1B U+005F] n "_"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pc}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "_"
 
 # axis4 block Pd-\p{Pd}-A | pattern: \p{Pd}
 #   [hyphen-Pd-1B U+002D] m "-" 0 1   # oracle=PCRE2_UTF
 #   [emdash-Pd-3B U+2014] m "\xe2\x80\x94" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pd}
-perr
+encoding utf8
+features unicode-props
+m "-" 0 1
+m "\xe2\x80\x94" 0 3
+n "A"
+n "a"
 
 # axis4 block Pd-\p{Pd}-B | pattern: \p{Pd}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [hyphen-Pd-1B U+002D] m "-" 0 1   # oracle=PCRE2_UTF
 #   [emdash-Pd-3B U+2014] m "\xe2\x80\x94" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pd}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "-" 0 1
+m "\xe2\x80\x94" 0 3
 
 # axis4 block Pd-\P{Pd}-A | pattern: \P{Pd}
 #   [hyphen-Pd-1B U+002D] n "-"   # oracle=PCRE2_UTF
 #   [emdash-Pd-3B U+2014] n "\xe2\x80\x94"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pd}
-perr
+encoding utf8
+features unicode-props
+n "-"
+n "\xe2\x80\x94"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Pd-\P{Pd}-B | pattern: \P{Pd}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [hyphen-Pd-1B U+002D] n "-"   # oracle=PCRE2_UTF
 #   [emdash-Pd-3B U+2014] n "\xe2\x80\x94"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pd}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "-"
+n "\xe2\x80\x94"
 
 # axis4 block Ps-\p{Ps}-A | pattern: \p{Ps}
 #   [lparen-Ps-1B U+0028] m "(" 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Ps}
-perr
+encoding utf8
+features unicode-props
+m "(" 0 1
+n "A"
+n "a"
 
 # axis4 block Ps-\p{Ps}-B | pattern: \p{Ps}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [lparen-Ps-1B U+0028] m "(" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Ps}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "(" 0 1
 
 # axis4 block Ps-\P{Ps}-A | pattern: \P{Ps}
 #   [lparen-Ps-1B U+0028] n "("   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Ps}
-perr
+encoding utf8
+features unicode-props
+n "("
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Ps-\P{Ps}-B | pattern: \P{Ps}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [lparen-Ps-1B U+0028] n "("   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Ps}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "("
 
 # axis4 block Pe-\p{Pe}-A | pattern: \p{Pe}
 #   [rparen-Pe-1B U+0029] m ")" 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pe}
-perr
+encoding utf8
+features unicode-props
+m ")" 0 1
+n "A"
+n "a"
 
 # axis4 block Pe-\p{Pe}-B | pattern: \p{Pe}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [rparen-Pe-1B U+0029] m ")" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pe}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m ")" 0 1
 
 # axis4 block Pe-\P{Pe}-A | pattern: \P{Pe}
 #   [rparen-Pe-1B U+0029] n ")"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pe}
-perr
+encoding utf8
+features unicode-props
+n ")"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Pe-\P{Pe}-B | pattern: \P{Pe}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [rparen-Pe-1B U+0029] n ")"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pe}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n ")"
 
 # axis4 block Pi-\p{Pi}-A | pattern: \p{Pi}
 #   [lsquote-Pi-3B U+2018] m "\xe2\x80\x98" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pi}
-perr
+encoding utf8
+features unicode-props
+m "\xe2\x80\x98" 0 3
+n "A"
+n "a"
 
 # axis4 block Pi-\p{Pi}-B | pattern: \p{Pi}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [lsquote-Pi-3B U+2018] m "\xe2\x80\x98" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pi}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x80\x98" 0 3
 
 # axis4 block Pi-\P{Pi}-A | pattern: \P{Pi}
 #   [lsquote-Pi-3B U+2018] n "\xe2\x80\x98"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pi}
-perr
+encoding utf8
+features unicode-props
+n "\xe2\x80\x98"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Pi-\P{Pi}-B | pattern: \P{Pi}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [lsquote-Pi-3B U+2018] n "\xe2\x80\x98"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pi}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x80\x98"
 
 # axis4 block Pf-\p{Pf}-A | pattern: \p{Pf}
 #   [rsquote-Pf-3B U+2019] m "\xe2\x80\x99" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pf}
-perr
+encoding utf8
+features unicode-props
+m "\xe2\x80\x99" 0 3
+n "A"
+n "a"
 
 # axis4 block Pf-\p{Pf}-B | pattern: \p{Pf}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [rsquote-Pf-3B U+2019] m "\xe2\x80\x99" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Pf}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x80\x99" 0 3
 
 # axis4 block Pf-\P{Pf}-A | pattern: \P{Pf}
 #   [rsquote-Pf-3B U+2019] n "\xe2\x80\x99"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pf}
-perr
+encoding utf8
+features unicode-props
+n "\xe2\x80\x99"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Pf-\P{Pf}-B | pattern: \P{Pf}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [rsquote-Pf-3B U+2019] n "\xe2\x80\x99"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Pf}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x80\x99"
 
 # axis4 block Po-\p{Po}-A | pattern: \p{Po}
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Po}
-perr
+encoding utf8
+features unicode-props
+m "!" 0 1
+n "A"
+n "a"
 
 # axis4 block Po-\p{Po}-B | pattern: \p{Po}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Po}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n " "
+m "!" 0 1
 
 # axis4 block Po-\P{Po}-A | pattern: \P{Po}
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Po}
-perr
+encoding utf8
+features unicode-props
+n "!"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Po-\P{Po}-B | pattern: \P{Po}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Po}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m " " 0 1
+n "!"
 
 # axis4 block Sm-\p{Sm}-A | pattern: \p{Sm}
 #   [plus-Sm-1B U+002B] m "+" 0 1   # oracle=PCRE2_UTF
 #   [times-Sm-2B U+00D7] m "\xc3\x97" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Sm}
-perr
+encoding utf8
+features unicode-props
+m "+" 0 1
+m "\xc3\x97" 0 2
+n "A"
+n "a"
 
 # axis4 block Sm-\p{Sm}-B | pattern: \p{Sm}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [plus-Sm-1B U+002B] m "+" 0 1   # oracle=PCRE2_UTF
 #   [times-Sm-2B U+00D7] m "\xc3\x97" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Sm}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "+" 0 1
+m "\xc3\x97" 0 2
 
 # axis4 block Sm-\P{Sm}-A | pattern: \P{Sm}
 #   [plus-Sm-1B U+002B] n "+"   # oracle=PCRE2_UTF
 #   [times-Sm-2B U+00D7] n "\xc3\x97"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Sm}
-perr
+encoding utf8
+features unicode-props
+n "+"
+n "\xc3\x97"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Sm-\P{Sm}-B | pattern: \P{Sm}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [plus-Sm-1B U+002B] n "+"   # oracle=PCRE2_UTF
 #   [times-Sm-2B U+00D7] n "\xc3\x97"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Sm}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "+"
+n "\xc3\x97"
 
 # axis4 block Sc-\p{Sc}-A | pattern: \p{Sc}
 #   [dollar-Sc-1B U+0024] m "$" 0 1   # oracle=PCRE2_UTF
 #   [euro-Sc-3B U+20AC] m "\xe2\x82\xac" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Sc}
-perr
+encoding utf8
+features unicode-props
+m "$" 0 1
+m "\xe2\x82\xac" 0 3
+n "A"
+n "a"
 
 # axis4 block Sc-\p{Sc}-B | pattern: \p{Sc}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [dollar-Sc-1B U+0024] m "$" 0 1   # oracle=PCRE2_UTF
 #   [euro-Sc-3B U+20AC] m "\xe2\x82\xac" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Sc}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "$" 0 1
+m "\xe2\x82\xac" 0 3
 
 # axis4 block Sc-\P{Sc}-A | pattern: \P{Sc}
 #   [dollar-Sc-1B U+0024] n "$"   # oracle=PCRE2_UTF
 #   [euro-Sc-3B U+20AC] n "\xe2\x82\xac"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Sc}
-perr
+encoding utf8
+features unicode-props
+n "$"
+n "\xe2\x82\xac"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Sc-\P{Sc}-B | pattern: \P{Sc}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [dollar-Sc-1B U+0024] n "$"   # oracle=PCRE2_UTF
 #   [euro-Sc-3B U+20AC] n "\xe2\x82\xac"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Sc}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "$"
+n "\xe2\x82\xac"
 
 # axis4 block Sk-\p{Sk}-A | pattern: \p{Sk}
 #   [diaeresis-Sk-2B U+00A8] m "\xc2\xa8" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Sk}
-perr
+encoding utf8
+features unicode-props
+m "\xc2\xa8" 0 2
+n "A"
+n "a"
 
 # axis4 block Sk-\p{Sk}-B | pattern: \p{Sk}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [diaeresis-Sk-2B U+00A8] m "\xc2\xa8" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Sk}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xc2\xa8" 0 2
 
 # axis4 block Sk-\P{Sk}-A | pattern: \P{Sk}
 #   [diaeresis-Sk-2B U+00A8] n "\xc2\xa8"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Sk}
-perr
+encoding utf8
+features unicode-props
+n "\xc2\xa8"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Sk-\P{Sk}-B | pattern: \P{Sk}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [diaeresis-Sk-2B U+00A8] n "\xc2\xa8"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Sk}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xc2\xa8"
 
 # axis4 block So-\p{So}-A | pattern: \p{So}
 #   [copyright-So-2B U+00A9] m "\xc2\xa9" 0 2   # oracle=PCRE2_UTF
 #   [emoji4B-So-4B U+1F600] m "\xf0\x9f\x98\x80" 0 4   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{So}
-perr
+encoding utf8
+features unicode-props
+m "\xc2\xa9" 0 2
+m "\xf0\x9f\x98\x80" 0 4
+n "A"
+n "a"
 
 # axis4 block So-\p{So}-B | pattern: \p{So}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [copyright-So-2B U+00A9] m "\xc2\xa9" 0 2   # oracle=PCRE2_UTF
 #   [emoji4B-So-4B U+1F600] m "\xf0\x9f\x98\x80" 0 4   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{So}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xc2\xa9" 0 2
+m "\xf0\x9f\x98\x80" 0 4
 
 # axis4 block So-\P{So}-A | pattern: \P{So}
 #   [copyright-So-2B U+00A9] n "\xc2\xa9"   # oracle=PCRE2_UTF
 #   [emoji4B-So-4B U+1F600] n "\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{So}
-perr
+encoding utf8
+features unicode-props
+n "\xc2\xa9"
+n "\xf0\x9f\x98\x80"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block So-\P{So}-B | pattern: \P{So}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [copyright-So-2B U+00A9] n "\xc2\xa9"   # oracle=PCRE2_UTF
 #   [emoji4B-So-4B U+1F600] n "\xf0\x9f\x98\x80"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{So}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xc2\xa9"
+n "\xf0\x9f\x98\x80"
 
 # axis4 block Zs-\p{Zs}-A | pattern: \p{Zs}
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [nbsp-Zs-2B U+00A0] m "\xc2\xa0" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Zs}
-perr
+encoding utf8
+features unicode-props
+m " " 0 1
+m "\xc2\xa0" 0 2
+n "A"
+n "a"
 
 # axis4 block Zs-\p{Zs}-B | pattern: \p{Zs}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] m " " 0 1   # oracle=PCRE2_UTF
 #   [nbsp-Zs-2B U+00A0] m "\xc2\xa0" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Zs}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m " " 0 1
+m "\xc2\xa0" 0 2
 
 # axis4 block Zs-\P{Zs}-A | pattern: \P{Zs}
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [nbsp-Zs-2B U+00A0] n "\xc2\xa0"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Zs}
-perr
+encoding utf8
+features unicode-props
+n " "
+n "\xc2\xa0"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Zs-\P{Zs}-B | pattern: \P{Zs}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [space-Zs-1B U+0020] n " "   # oracle=PCRE2_UTF
 #   [nbsp-Zs-2B U+00A0] n "\xc2\xa0"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Zs}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n " "
+n "\xc2\xa0"
 
 # axis4 block Zl-\p{Zl}-A | pattern: \p{Zl}
 #   [linesep-Zl-3B U+2028] m "\xe2\x80\xa8" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Zl}
-perr
+encoding utf8
+features unicode-props
+m "\xe2\x80\xa8" 0 3
+n "A"
+n "a"
 
 # axis4 block Zl-\p{Zl}-B | pattern: \p{Zl}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [linesep-Zl-3B U+2028] m "\xe2\x80\xa8" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Zl}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x80\xa8" 0 3
 
 # axis4 block Zl-\P{Zl}-A | pattern: \P{Zl}
 #   [linesep-Zl-3B U+2028] n "\xe2\x80\xa8"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Zl}
-perr
+encoding utf8
+features unicode-props
+n "\xe2\x80\xa8"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Zl-\P{Zl}-B | pattern: \P{Zl}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [linesep-Zl-3B U+2028] n "\xe2\x80\xa8"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Zl}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x80\xa8"
 
 # axis4 block Zp-\p{Zp}-A | pattern: \p{Zp}
 #   [parasep-Zp-3B U+2029] m "\xe2\x80\xa9" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Zp}
-perr
+encoding utf8
+features unicode-props
+m "\xe2\x80\xa9" 0 3
+n "A"
+n "a"
 
 # axis4 block Zp-\p{Zp}-B | pattern: \p{Zp}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [parasep-Zp-3B U+2029] m "\xe2\x80\xa9" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Zp}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xe2\x80\xa9" 0 3
 
 # axis4 block Zp-\P{Zp}-A | pattern: \P{Zp}
 #   [parasep-Zp-3B U+2029] n "\xe2\x80\xa9"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Zp}
-perr
+encoding utf8
+features unicode-props
+n "\xe2\x80\xa9"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Zp-\P{Zp}-B | pattern: \P{Zp}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [parasep-Zp-3B U+2029] n "\xe2\x80\xa9"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Zp}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xe2\x80\xa9"
 
 # axis4 block Cc-\p{Cc}-A | pattern: \p{Cc}
 #   [ctrl01-Cc-1B U+0001] m "\x01" 0 1   # oracle=PCRE2_UTF
 #   [c1ctrl-Cc-2B U+0080] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Cc}
-perr
+encoding utf8
+features unicode-props
+m "\x01" 0 1
+m "\xc2\x80" 0 2
+n "A"
+n "a"
 
 # axis4 block Cc-\p{Cc}-B | pattern: \p{Cc}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [ctrl01-Cc-1B U+0001] m "\x01" 0 1   # oracle=PCRE2_UTF
 #   [c1ctrl-Cc-2B U+0080] m "\xc2\x80" 0 2   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Cc}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\x01" 0 1
+m "\xc2\x80" 0 2
 
 # axis4 block Cc-\P{Cc}-A | pattern: \P{Cc}
 #   [ctrl01-Cc-1B U+0001] n "\x01"   # oracle=PCRE2_UTF
 #   [c1ctrl-Cc-2B U+0080] n "\xc2\x80"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Cc}
-perr
+encoding utf8
+features unicode-props
+n "\x01"
+n "\xc2\x80"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Cc-\P{Cc}-B | pattern: \P{Cc}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [ctrl01-Cc-1B U+0001] n "\x01"   # oracle=PCRE2_UTF
 #   [c1ctrl-Cc-2B U+0080] n "\xc2\x80"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Cc}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\x01"
+n "\xc2\x80"
 
 # axis4 block Cf-\p{Cf}-A | pattern: \p{Cf}
 #   [softhyphen-Cf-2B U+00AD] m "\xc2\xad" 0 2   # oracle=PCRE2_UTF
 #   [zerowidthspace-Cf-3B U+200B] m "\xe2\x80\x8b" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Cf}
-perr
+encoding utf8
+features unicode-props
+m "\xc2\xad" 0 2
+m "\xe2\x80\x8b" 0 3
+n "A"
+n "a"
 
 # axis4 block Cf-\p{Cf}-B | pattern: \p{Cf}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [softhyphen-Cf-2B U+00AD] m "\xc2\xad" 0 2   # oracle=PCRE2_UTF
 #   [zerowidthspace-Cf-3B U+200B] m "\xe2\x80\x8b" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Cf}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xc2\xad" 0 2
+m "\xe2\x80\x8b" 0 3
 
 # axis4 block Cf-\P{Cf}-A | pattern: \P{Cf}
 #   [softhyphen-Cf-2B U+00AD] n "\xc2\xad"   # oracle=PCRE2_UTF
 #   [zerowidthspace-Cf-3B U+200B] n "\xe2\x80\x8b"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Cf}
-perr
+encoding utf8
+features unicode-props
+n "\xc2\xad"
+n "\xe2\x80\x8b"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Cf-\P{Cf}-B | pattern: \P{Cf}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [softhyphen-Cf-2B U+00AD] n "\xc2\xad"   # oracle=PCRE2_UTF
 #   [zerowidthspace-Cf-3B U+200B] n "\xe2\x80\x8b"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Cf}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xc2\xad"
+n "\xe2\x80\x8b"
 
 # axis4 block Cs-\p{Cs}-A | pattern: \p{Cs}
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Cs}
-perr
+encoding utf8
+features unicode-props
+n "A"
+n "a"
 
 # axis4 block Cs-\p{Cs}-B | pattern: \p{Cs}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Cs}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
 
 # axis4 block Cs-\P{Cs}-A | pattern: \P{Cs}
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Cs}
-perr
+encoding utf8
+features unicode-props
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Cs-\P{Cs}-B | pattern: \P{Cs}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Cs}
-perr
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
 
 # axis4 block Co-\p{Co}-A | pattern: \p{Co}
 #   [privateuse-Co-3B U+E000] m "\xee\x80\x80" 0 3   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Co}
-perr
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "A"
+n "a"
 
 # axis4 block Co-\p{Co}-B | pattern: \p{Co}
 #   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
 #   [privateuse-Co-3B U+E000] m "\xee\x80\x80" 0 3   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \p{Co}
-perr
+encoding utf8
+features unicode-props
+n "5"
+n "!"
+m "\xee\x80\x80" 0 3
 
 # axis4 block Co-\P{Co}-A | pattern: \P{Co}
 #   [privateuse-Co-3B U+E000] n "\xee\x80\x80"   # oracle=PCRE2_UTF
 #   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
 #   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Co}
-perr
+encoding utf8
+features unicode-props
+n "\xee\x80\x80"
+m "A" 0 1
+m "a" 0 1
 
 # axis4 block Co-\P{Co}-B | pattern: \P{Co}
 #   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
 #   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
 #   [privateuse-Co-3B U+E000] n "\xee\x80\x80"   # oracle=PCRE2_UTF
+# pcre2-only
 pattern \P{Co}
-perr
-
-# axis4 block Cn-\p{Cn}-A | pattern: \p{Cn}
-#   [unassigned-Cn-? U+0378] m "\xcd\xb8" 0 2   # oracle=PCRE2_UTF
-#   [A-Lu-1B U+0041] n "A"   # oracle=PCRE2_UTF
-#   [a-Ll-1B U+0061] n "a"   # oracle=PCRE2_UTF
-pattern \p{Cn}
-perr
-
-# axis4 block Cn-\p{Cn}-B | pattern: \p{Cn}
-#   [5-Nd-1B U+0035] n "5"   # oracle=PCRE2_UTF
-#   [bang-Po-1B U+0021] n "!"   # oracle=PCRE2_UTF
-#   [unassigned-Cn-? U+0378] m "\xcd\xb8" 0 2   # oracle=PCRE2_UTF
-pattern \p{Cn}
-perr
-
-# axis4 block Cn-\P{Cn}-A | pattern: \P{Cn}
-#   [unassigned-Cn-? U+0378] n "\xcd\xb8"   # oracle=PCRE2_UTF
-#   [A-Lu-1B U+0041] m "A" 0 1   # oracle=PCRE2_UTF
-#   [a-Ll-1B U+0061] m "a" 0 1   # oracle=PCRE2_UTF
-pattern \P{Cn}
-perr
-
-# axis4 block Cn-\P{Cn}-B | pattern: \P{Cn}
-#   [5-Nd-1B U+0035] m "5" 0 1   # oracle=PCRE2_UTF
-#   [bang-Po-1B U+0021] m "!" 0 1   # oracle=PCRE2_UTF
-#   [unassigned-Cn-? U+0378] n "\xcd\xb8"   # oracle=PCRE2_UTF
-pattern \P{Cn}
-perr
-
+encoding utf8
+features unicode-props
+m "5" 0 1
+m "!" 0 1
+n "\xee\x80\x80"

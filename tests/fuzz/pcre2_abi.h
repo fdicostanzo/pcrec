@@ -189,6 +189,31 @@ static inline void pcre2_abi_version(const Pcre2Abi *abi, char *buf, size_t bufs
         snprintf(buf, bufsz, "unknown");
 }
 
+/* [M5.0 stage 3] THE UNICODE VERSION, which is a DIFFERENT fact from the
+ * library version above and the one a `\p{...}` differential turns on: the
+ * property tables pcrec generates are pinned at one Unicode version
+ * (`third_party/ucd-16.0.0/`), libpcre2 carries its own, and this project's
+ * two boxes measurably disagree — 10.46 on the Linux reference is Unicode
+ * 16.0.0 (the pin) and 10.48 on the Mac is 17.0.0. A membership check that
+ * did not read this would report the environment rather than the code.
+ * `PCRE2_CONFIG_UNICODE_VERSION` is 10 (9 is `PCRE2_CONFIG_UNICODE`, a
+ * uint32 whose value written into a char buffer reads as an empty string —
+ * measured, and the reason this constant is stated with its neighbour); a
+ * build without Unicode support
+ * returns a negative code, which surfaces as "unknown" exactly as the
+ * library-version accessor's own failure does. */
+static inline void pcre2_abi_unicode_version(const Pcre2Abi *abi, char *buf,
+                                             size_t bufsz)
+{
+    fn_config cfg = abi->handle ? (fn_config)dlsym(abi->handle, "pcre2_config_8")
+                                : NULL;
+    char tmp[64] = {0};
+    if (cfg && cfg(10 /* PCRE2_CONFIG_UNICODE_VERSION */, tmp) >= 0)
+        snprintf(buf, bufsz, "%s", tmp);
+    else
+        snprintf(buf, bufsz, "unknown");
+}
+
 /* The filesystem path dlopen actually resolved. Two uses: attributing a result
  * to a file rather than to a SONAME, and — for pcre2_check.c — reading the
  * shared object's own string table as a source of candidate verb names that

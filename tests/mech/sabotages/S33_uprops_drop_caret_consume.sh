@@ -30,7 +30,25 @@ SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\p{^AAAAAAAA
 SAB_REACH_EXPECT="\\p requires module 'unicode-props' (pattern offset 53)
 \\p: malformed property escape — requires module 'unicode-props' (pattern offset 53)"
 SAB_COUNT=1
-SAB_BEFORE="    if (i < n && p[i] == '^')
+# [M5.0 stage 3] RE-ANCHORED, intent re-verified. The site gained a `caret`
+# flag (the producer needs to know, because `\P{X}` and `\p{^X}` XOR: the
+# selector is a property of the ESCAPE and the caret of the BODY), so the two
+# lines became a braced block. THE SABOTAGE IS UNCHANGED IN WHAT IT DOES —
+# the caret is not consumed and falls into the main scan loop as an ordinary
+# significant character — and `caret` is left DECLARED and false, because it
+# is read below and a sabotage that does not compile measures nothing.
+#
+# Leaving `caret` false additionally makes `\p{^L}` non-negated under the
+# sabotage, which changes NOTHING this row observes and is consistent with its
+# own §8 history: with the caret in the count, `^L` is a two-significant-
+# character name, misses the table, and takes the generic message either way.
+# What moves is still the 48/49 boundary, still by one offset byte.
+SAB_BEFORE="    bool caret = false;
+    if (i < n && p[i] == '^') {
         i++;   /* negation caret: consumed, does NOT enter the 48-char
-                  budget below (measured — see this file's header) */"
-SAB_AFTER=""
+                  budget below (measured — see this file's header) */
+        caret = true;
+    }"
+SAB_AFTER="    bool caret = false;
+    /* SABOTAGE S33: the caret consume dropped — ^ now falls into the main
+       scan loop as an ordinary significant character */"

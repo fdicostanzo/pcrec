@@ -178,3 +178,29 @@ and true — at the same offset. Nothing else about the cell changed.
 - **A parked cell's stated CAUSE is a claim, and it can be wrong even when the
   disagreement is real** (cell 2). Discharging the named cause is not the same
   as closing the cell; re-measure before assuming the two coincide.
+
+## `k53_uprops_oversize.rxt` ([M5.0] stage 3, 2026-09-06)
+
+Twelve blocks lifted out of `tests/utf8/axis04_p_categories.rxt` at that
+corpus's promotion — the D27-blinded `\p` axis — for `\p{C}`, `\p{Cn}`,
+`\p{L}` and their `\P` forms.
+
+**They are here rather than downgraded to `perr`, and the distinction is the
+whole point.** `perr` asserts that pcrec refuses, which pcrec does; but WHY it
+refuses is a resource cap, not a fact about the language, and pinning it as a
+refusal would record a limitation as if it were a promise. The blocks carry
+the oracle's own answers (unchanged since the corpus was written) and the
+ratchet fires the day the limitation lifts.
+
+`docs/dev/known_issues.md` K53 has the diagnosis, which is an ENGINE one:
+the OPTIONAL anchored DFA machine's bytes count toward `max_emit_bytes`, so it
+refuses patterns that compile without it — `\p{L}` under `-e utf8` is
+1,076,640 bytes at default axes and **772,412 with `-fno-anchored-dfa`**,
+against a 1,000,000 cap. That contradicts that machine's own design promise
+(`anchored_match_unwrapped.md` §2/§5.2: *"built OPTIONAL — an overflow is a
+selection outcome, never a diagnostic"*), which `src/core/compile.c` keeps for
+the subset-elems budget and not for this one.
+
+**So the file's own "does it start passing" signal is pointed at an engine
+change, not at module `unicode-props`.** A future reader seeing it go green
+should look for the emit-bytes retry, not for a table edit.

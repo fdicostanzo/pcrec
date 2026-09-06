@@ -21977,4 +21977,104 @@ K50-BNDSTART, ENCCHK-DD12A, the interim, NULLGATE and the sed fixes in
 one arm). **Stage 3 LAUNCHED** (lane utf8s3, opus, the first engine
 lane briefed under the BOILERPLATE regime; four traps pre-named:
 10.46/10.48 oracle split, S121 going live, the \x boundary, generated
-UCD tables), silent watcher up.
+---
+
+## 2026-09-06 — [M5.0] STAGE 3: module `unicode-props` PRODUCES (lane utf8s3)
+
+`\p{L}` compiles. 45 property names, both encodings, both polarities, in a
+class, under `-i`. Branch `lane/utf8s3` off `d71a03c9`; full record in
+`docs/dev/lanes/utf8s3_report.md`, which is the file to read — this entry is
+the session's own summary of what moved and what it cost.
+
+**The three acceptance criteria are met**, and one of them had to be BUILT
+before it could be met: PC-3's closed-gate `\p` differential still reads green
+and **stopped certifying what its name claims** the day a producer landed (its
+own per-cell wall asserts "`\p`/`\P` has no producer this phase"). Rather than
+rewrite a tuned sweep, stage 3 added `check_gated_uprops_space` beside it —
+the T1 clause (pcrec never accepts a name libpcre2 rejects), the
+unshipped-name wording clause, two vacuity floors. 118 probes; pcrec accepted
+exactly the 28 libpcre2 accepted. The PC-3 count moved 201 -> 207, A/B-measured
+against a scratch build of the branch point (187 -> 193 passing with the SAME
+119 pre-existing failures on both sides).
+
+**The sharpest result is the blinded corpus.** `tests/utf8/
+axis04_p_categories.rxt` was written by a D27-blinded author against the
+pre-stage-2 tree, with each block's oracle answer carried as a comment above a
+`perr` line. Promoted mechanically and run: **462 of 506 cases green on the
+first run, ZERO semantic divergences**, and all 44 failures the same
+compile-size refusal on six patterns.
+
+**Six findings, and three of them are about something other than Unicode.**
+
+**K53 is an ENGINE issue found through `\p`.** Five of the 45 names refuse
+under `-e utf8` at default axes. The cause is not the property tables (which
+are compile-time data reaching no artifact) but that a DFA artifact carries
+THREE tables of `states x byte-equivalence-classes`, and the OPTIONAL anchored
+machine's bytes count toward `max_emit_bytes`: `\p{L}` is 1,076,640 bytes at
+default axes and **772,412 with `-fno-anchored-dfa`**, against a 1,000,000
+cap. `anchored_match_unwrapped.md` says that machine is "built OPTIONAL — an
+overflow is a selection outcome, never a diagnostic", and `compile.c` keeps
+that promise for the subset-elems budget and not for this one. The cure is a
+`[SEL-1]`-shaped retry and wants its own row. It also **refutes
+`utf8_design.md` §3.3's sizing conclusion**, which measured STATES where the
+emitted size is states x CLASSES x digits — one factor of three.
+
+**U15(b) is about the whole tree, not about this lane.** `tests/fuzz/
+pcre2_abi.h` lists bare SONAMEs before the Homebrew absolute paths, and on
+macOS a bare name resolves through the dyld shared cache — so **every
+dlopen-based oracle in this repository loads `/usr/lib/libpcre2-8.0.dylib`,
+which is 10.42 / Unicode 14.0.0**, not the Homebrew 10.48 that
+`BOILERPLATE.md` and the `[MACPORT]` report both name. The pkg-config/header
+toolchain IS 10.48, so a probe written with `#include <pcre2.h>` sees one
+library and the suite sees another — and U13's classifying probe was of the
+first kind, which **re-opens what U13's 119 PC-3 failures actually measured**
+(10.42 predates 10.43, where U2's `{,n}` change landed). A ruling is owed and
+the lane deliberately did not take it: reordering that list re-baselines the
+whole suite's oracle in one line.
+
+**A cursor bug the differential could not see.** `esc_class_value` never
+advanced past a produced `EXT_MEMBERS`, so `[^\p{L}]` excluded `{` and `}` as
+well as the letters and `[\p{L}-z]` never saw its own dash. Found by
+`tests/uprops/` §4's ORACLE-FREE invariant `[^\p{L}] == \P{L}` — **both sides
+of the membership differential compile `\p{L}` at an ATOM**, where the bug does
+not live, and the blinded corpus's `\p` blocks are atom-position too. It is
+`esc_atom`'s [M6.5.2] lesson at the class position, predicted verbatim by that
+entry, and the transferable form is: an agreement check between two engines is
+blind to a construct's other POSITION.
+
+**S121 did not wake up, and stage 1's reach probe would have said it had.**
+That probe asked whether `\p{L}` COMPILES, reasoning that ~770 intervals means
+`n > 255` exists — and stage 3's own encoding CLAMP (a property set is
+intersected with the encoding's universe, PCRE2's own 8-bit behaviour) makes
+`\p{L}` eight Latin-1 runs under the default encoding. The runner would have
+reported `NOW REACHED` over a population that does not exist: the S70/S155
+shape one level down, in a REACH DECLARATION rather than in a check.
+Re-measured, the hazard is **structurally unreachable** — `n > 255` needs a
+code point above 0xFF, and such a class DECLINES the revdet rung because
+`pcrec_cls_bits_widen` answers all bytes for an out-of-range class, proven
+with a `\p`-free control (`((\x{100}|H)|I){3}J` stamps `0x2u` where
+`((H)|I){3}J` stamps `0x8u`).
+
+**The caseless rule is not a fold closure**, which is why stage 4 turned out
+not to be a precondition. Measured two ways: under `-i`, `\p{Lu}`/`\p{Ll}`/
+`\p{Lt}` are EXACTLY `\p{L&}` and every other property is caseless-invariant.
+U+0345 (`Mn`, uppercases to U+0399) is the cell a general closure gets wrong.
+An earlier draft of the lane was going to refuse caseless `\p` until stage 4;
+measuring the rule instead of the symptom made the refusal unnecessary.
+
+**And the Makefile prerequisite defect happened a THIRD time** — after
+`cls_bits.inc` (MOD-0.3e) and `limits.def` (twice, the second with the first's
+warning directly above it). Adding the `Lc` row to the generated `.inc`
+rebuilt nothing and the binary went on refusing `\p{Lc}`. Caught within
+minutes only because the row had just been added deliberately. `GEN_TABLES` is
+now a LIST in the prerequisite line, so a fourth generated table is one edit
+rather than another hand-maintained line.
+
+**Three `utf8_design.md` §3.4 claims refuted**: `Assigned` is error 147 on all
+three reachable libpcre2 versions (not shipped; `\P{Cn}` is the same set),
+`Lc` compiles on all three (shipped; §3.1's survey never tried it), and
+`Xps`/`Xsp` are not a pure category union (U+0085 and U+180E). And §3.3.2's
+instruction to "retro-fit" PCRE2's vendored testdata describes a repository
+state that does not exist — there is no `third_party/` before this change.
+
+`third_party/ucd-16.0.0/` directory, which is what the shape was built for).

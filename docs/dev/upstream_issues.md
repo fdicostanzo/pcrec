@@ -619,3 +619,84 @@ own libpcre2 differential (`tests/utf8/CLAUDE.md`'s "Maintenance" section)
 — that instrument needs UTF-8-aware oracle machinery anyway; teaching
 `verify_rxt.py` the same trick may or may not be worth a second
 implementation once it exists.
+
+## U15 — libpcre2's OWN property definitions move between versions, and the dlopen shim resolves an OLDER library than anyone thought ([M5.0] stage 3, lane utf8s3, 2026-09-06)
+
+Two findings, filed together because the second is why the first was noticed
+at all and neither is a pcrec defect.
+
+### (a) `\p{Xwd}` changed meaning between 10.42 and 10.46
+
+**The divergence.** `Xwd` is a PCRE2 invention with no UCD definition, and
+libpcre2 has changed what it denotes:
+
+| libpcre2 | `\p{Xwd}` is |
+|---|---|
+| 10.42 | `Xan` plus underscore |
+| 10.46 (**the reference**), 10.48 | `Xan` plus `Mn` plus `Pc` |
+
+**Measured** (light ctypes probe of the reference box, transcript in the lane
+report): 10.46 matches `\p{Xwd}` against U+0300 COMBINING GRAVE ACCENT (`Mn`),
+U+005F LOW LINE (`Pc`) and U+203F UNDERTIE (a non-ASCII `Pc`), and does not
+match U+0021 (`Po`). `man pcre2pattern` on 10.48 states the newer rule
+outright — *"Xwd matches the same characters as Xan, plus those that match Mn
+... or Pc"* — so the change is documented, not silent.
+
+The SAME probe found the same shape one property over: `\p{Xps}` on 10.46
+matches U+0085 NEXT LINE and U+180E MONGOLIAN VOWEL SEPARATOR, neither of
+which is in the `Z` category the man page's `Xps` sentence names. That
+sentence is incomplete rather than wrong — the complete rule is `Z` unioned
+with PCRE2's own documented horizontal- and vertical-space lists — and pcrec's
+generator states it that way with the correction recorded at the definition.
+
+**Disposition.** pcrec follows the REFERENCE (10.46) and therefore ships the
+newer `Xwd`. Against an older oracle this shows up as a real, large membership
+disagreement — 1,958 code points on the `utf8` arm — which
+`tests/uprops/uprops_compare.py`'s `PCRE2_SEMANTIC_DRIFT` tier excuses, and
+excuses TIGHTLY: the residue must lie inside `Mn` ∪ `Pc` as pcrec's own sweep
+reports them in the same run, so a table bug outside that set still fails and
+names its code points. Do not "fix" pcrec toward 10.42. Revisit when: the
+reference box's libpcre2 upgrades, or Frank rules a version adoption.
+
+### (b) the dlopen shim resolves macOS's SYSTEM libpcre2, not Homebrew's
+
+**Not a divergence in another engine at all** — like U14, this is about the
+shared harness's own oracle tooling, and it changes what several existing
+entries in this file are actually describing.
+
+`tests/fuzz/pcre2_abi.h`'s candidate list puts bare SONAMEs first and the
+Homebrew absolute paths after. On macOS a bare name resolves through the dyld
+shared cache, so **every dlopen-based oracle in this tree — PC-3, PC-4, the
+fuzzer, and every module differential built on the shim — loads
+`/usr/lib/libpcre2-8.0.dylib` on the Mac dev box.** Measured 2026-09-06 by
+dlopening each candidate in turn and reading `pcre2_config`:
+
+| candidate | resolves to | libpcre2 | Unicode |
+|---|---|---|---|
+| `libpcre2-8.dylib` | `/usr/lib/libpcre2-8.0.dylib` | **10.42** | 14.0.0 |
+| `libpcre2-8.0.dylib` | `/usr/lib/libpcre2-8.0.dylib` | 10.42 | 14.0.0 |
+| `/opt/homebrew/lib/libpcre2-8.dylib` | Homebrew Cellar | 10.48 | 17.0.0 |
+| `/usr/local/lib/libpcre2-8.dylib` | (not loadable) | — | — |
+
+**This is not what the project's own notes say.** `docs/dev/lanes/
+BOILERPLATE.md` states "local libpcre2 is 10.48-Homebrew"; the `[MACPORT]`
+report's PC-3 escalation is filed above as **U13, "VERSION DRIFT 10.46 →
+10.48"** — and the pkg-config/header toolchain IS 10.48, so a probe written
+with `#include <pcre2.h>` sees 10.48 while the suite sees 10.42. U13's
+classifying probe was of the first kind. **Whether U13's 119 PC-3 failures are
+10.48 behaviour or 10.42 behaviour is therefore an OPEN question this entry
+re-opens**, and it matters: 10.42 predates 10.43, which is where U2's `{,n}`
+change landed, so a pre-10.43 oracle is a materially different reference from
+a post-10.46 one. It is also the same shape the `utfprom` lane already hit
+from the python side ("oracle provenance is LOCAL 10.37 — the `find_library`
+hazard").
+
+**Disposition — a RULING IS OWED, and this lane deliberately did not take
+it.** Reordering the candidate list (absolute Homebrew paths first) would
+change which oracle the WHOLE suite compares against, on one box, in one line
+— a project-wide re-baseline, not a stage-3 edit. What stage 3 did instead:
+added `pcre2_abi_unicode_version()` to the shim (`PCRE2_CONFIG_UNICODE_VERSION`
+is **10**; 9 is `PCRE2_CONFIG_UNICODE`, a uint32 that reads as an empty string
+in a char buffer, which is how the constant was got wrong the first time), and
+made `tests/uprops/` read the resolved oracle's version and PRINT it on every
+run, so a result can be attributed rather than assumed.

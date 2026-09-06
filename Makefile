@@ -125,9 +125,42 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # recompiled) and `pcrec --list-limits` still report 20,000 — one binary
 # carrying two values of one constant. A lane that changed only a limit and
 # then ran `make test` would have tested the OLD number and read green.
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc
+# src/parse/uprops_tables.inc joined at [M5.0] stage 3, AND IT IS THE SAME
+# DEFECT A THIRD TIME — caught the same way, within minutes of the table
+# growing a row: `\p{Lc}` was added to the generated .inc, `make` printed a
+# clean build, and `pcrec --features unicode-props '\p{Lc}'` still answered
+# "not implemented yet", because nothing had recompiled mod_uprops.c. The two
+# warnings above were both written after the same discovery and neither
+# prevented it, which is the argument for the `gen-tables` rule below being a
+# LIST rather than another hand-maintained line: a fourth generated table will
+# join `GEN_TABLES` and this prerequisite in one edit.
+GEN_TABLES := src/parse/uprops_tables.inc
+
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
+
+# [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
+# source compiles to generated tables** (third_party/README.md; Frank's
+# extension to the ASK 2 ruling, utf8_design.md §3.3.2). The rule iterates
+# `third_party/*/generate.py` and mentions no source by name, so a second
+# vendored source is a directory and nothing else — a rule spelled
+# `ucd_to_intervals` would have to be renamed the day one arrives, which is
+# the re-plumbing that ruling exists to prevent.
+#
+# The generated files are COMMITTED (src/parse/cls_bits.inc's precedent), so
+# this target is for regenerating after a source bump, never a build step a
+# stranger's `make` depends on — a clone with no python3 still builds. What
+# `make test` runs is each generator's `--check` mode, inside
+# tests/uprops/run_uprops_tests.sh, which fails if a committed table has
+# drifted from what its source produces.
+.PHONY: gen-tables
+gen-tables:
+	@for g in third_party/*/generate.py; do \
+	    [ -e "$$g" ] || continue; \
+	    echo "  gen-tables: $$g"; \
+	    python3 "$$g" || exit 1; \
+	done
 
 $(BUILD_DIR)/libpcrec.a: $(LIBOBJS)
 	ar rcs $@ $^
@@ -160,7 +193,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
       test-prefilter-collapse test-rxtsource test-definitions \
-      test-entry-shape-identity test-cpset-structure test-startbnd
+      test-entry-shape-identity test-cpset-structure test-startbnd \
+      test-uprops
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -929,6 +963,28 @@ test-encseam: all
 test-startbnd: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startbnd.ran"; fi
 	bash tests/utf8/run_startbnd_diff.sh
+
+# [M5.0 stage 3] module `unicode-props`: the generated table's staleness check,
+# the shipped name set, the whole-code-point-space membership differential
+# against libpcre2, and the oracle-free semantic invariants. See
+# tests/uprops/CLAUDE.md for what each section can see that the others cannot.
+#
+# `ENC` SELECTS THE ENCODING ARM AND `make test` TAKES THE BYTE ONE ONLY.
+# MEASURED: the `byte` arm is 33 s (45 properties, 256 code points a sweep)
+# and the `utf8` arm is minutes (45 properties x 1.1M code points x two
+# independent sweeps each), which is battery-scale, not `make test`-scale.
+# Both arms check the same claim at different resolutions and the utf8 one is
+# where the interesting disagreements live, so it is an opt-in target rather
+# than dropped:
+#
+#     make test-uprops        # byte arm, rides `make test`
+#     make test-uprops-utf8   # the whole code-point space, on demand
+test-uprops: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-uprops.ran"; fi
+	ENC=byte bash tests/uprops/run_uprops_tests.sh
+
+test-uprops-utf8: all
+	ENC=utf8 bash tests/uprops/run_uprops_tests.sh
 
 test-resource: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-resource.ran"; fi

@@ -158,9 +158,18 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # by a DIFFERENT amount (+1 file, +5 blocks, +6 lines): the deleted file was
 # under known_fail and the new one is not, which is exactly the
 # opposite-directions case the k49fix comment above records.
-CENSUS_FILES=208
+CENSUS_FILES=209
 CENSUS_BLOCKS=3888
-CENSUS_LINES=28456
+CENSUS_LINES=28814
+# 2026-09-06 (lane utf8s3, [M5.0] stage 3) — +1 file, +0 blocks, +358 lines.
+# THE BLOCK COUNT NOT MOVING IS THE INFORMATIVE PART: the D27-blinded
+# `tests/utf8/axis04_p_categories.rxt` was PROMOTED (148 `perr` blocks became
+# 136 live ones) and its twelve oversized blocks MOVED to a new file,
+# `tests/known_fail/k53_uprops_oversize.rxt` — so blocks net zero while the
+# file count and the line count both rise, the latter because a promoted
+# block carries four `m`/`n` lines where a `perr` block carried one. RUNSH_*
+# below moves by a DIFFERENT amount again (+0 files, -12 blocks, +314 lines):
+# the twelve blocks left run.sh's population for known_fail's.
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
 # (tests/base/start_pinned_startpos.rxt, tests/assertions/
 # start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
@@ -169,8 +178,11 @@ CENSUS_LINES=28456
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
 RUNSH_FILES=207
-RUNSH_BLOCKS=3885
-RUNSH_LINES=28445
+RUNSH_BLOCKS=3873
+RUNSH_LINES=28759
+# 2026-09-06 (lane utf8s3) — see CENSUS_* above: the promotion moved twelve
+# blocks OUT of run.sh's population and into known_fail's, so the file count
+# is unchanged here while the census's rose.
 # 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
 # neither new file lands under tests/known_fail/.
 # 2026-09-05 — moved alongside CENSUS_* above (the three-merge night);

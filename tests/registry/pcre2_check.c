@@ -2925,6 +2925,179 @@ static void check_gated_option_space(const char *set)
     }
 }
 
+/* ---- [M5.0 stage 3]: THE SAME NAME SPACE, GATE OPEN --------------------
+ *
+ * WHY THE SWEEP ABOVE IS NO LONGER ENOUGH, and it is worth stating because
+ * that sweep still reads GREEN. Every cell it generates runs at the DEFAULT
+ * enabled set, which is empty, so `\p` is refused at the gate before any
+ * producer runs — and its own per-cell wall says so: *"pcrec COMPILED '%s' —
+ * \p/\P has no producer this phase, so a compile here can only mean the
+ * doorway was never reached"*. That sentence was true for three milestones
+ * and stopped being true the day stage 3 landed a producer. The sweep did not
+ * fail; it stopped certifying what its name claims, which is exactly the
+ * S70/S155 shape `[MECH-REACH]` exists for.
+ *
+ * SO THE ARM IS ADDED RATHER THAN THE SWEEP REWRITTEN. The closed-gate sweep
+ * keeps its whole job — the malformed-vs-unknown-name refusal taxonomy and its
+ * load-bearing offsets, which do not change when the gate opens — and this arm
+ * asks the question only an open gate can: **pcrec must not ACCEPT a property
+ * name libpcre2 REJECTS.** That is check14's T1 clause, the one the section
+ * below spends an open gate on for module `modifiers`, and it is the honest
+ * bar here for the same reason: a name PCRE2 refuses has no meaning to be
+ * faithful to, so a matcher pcrec emits for it matches a language nobody
+ * defined.
+ *
+ * T2 IS DELIBERATELY NOT ASSERTED, and the reason is sharper here than in the
+ * section below. Stage 3 ships a SUBSET of the names libpcre2 has, on purpose
+ * (`utf8_design.md` §3.4 stages scripts to stage 5 and declines the boolean
+ * and `Bidi_Class` families outright), so "pcrec must not refuse what
+ * libpcre2 accepts" would fire on every one of those deliberate decisions.
+ * What IS asserted about that direction is weaker and true: a name libpcre2
+ * accepts and pcrec does not ship must be refused with the UNBUILT wording —
+ * never with the "not a one-letter Unicode property code pcrec recognises"
+ * text, which is a claim about the NAME rather than about the module and would
+ * be a lie about `\p{Greek}`.
+ *
+ * THE POPULATION IS THE ORACLE'S, NOT PCREC'S TABLE. The names swept are the
+ * closed-gate sweep's own generated space plus a hand-written list of REAL
+ * PCRE2 property families this stage does not ship — read from `man
+ * pcre2pattern`, never from `src/parse/uprops_tables.inc`, because a
+ * population derived from the table under test could not contain a name the
+ * table forgot. Both floors below are what stop the arm going vacuous if the
+ * gate silently fails to open. */
+static void check_gated_uprops_space(const char *set)
+{
+    char err[256];
+    unsigned mask_before = pcrec_enabled_mask();
+    struct GateTally t = {0};
+
+    if (mask_before != 0)
+        bad("gated[%s]: the enabled set was ALREADY non-empty (0x%x) on entry",
+            set, mask_before);
+    if (pcrec_enabled_set_spec(set, err, sizeof err) != 0) {
+        bad("gated[%s]: could not open the module gate: %s. The whole pass "
+            "measured nothing.", set, err);
+        return;
+    }
+    if (pcrec_enabled_mask() == 0) {
+        bad("gated[%s]: that set installed an EMPTY enabled mask, so this pass "
+            "is a second copy of the closed-gate sweep wearing an open-gate "
+            "name.", set);
+        return;
+    }
+    printf("  gated[%s]: focused enabled set installed (feature mask 0x%x)\n",
+           set, pcrec_enabled_mask());
+
+    /* REAL PCRE2 property families stage 3 does not ship, read from `man
+     * pcre2pattern` rather than from pcrec's own table. Each must be REFUSED,
+     * and refused by the module rather than by the name. */
+    static const char *const UNSHIPPED[] = {
+        "Greek", "Latin", "Cyrillic", "Han", "Arabic",       /* scripts (stage 5) */
+        "Script=Greek", "sc=Latin", "scx=Greek",             /* the script axes   */
+        "Alphabetic", "Uppercase", "White_Space", "Math",    /* booleans (declined) */
+        "Bidi_Class=L", "bc=R",                              /* Bidi_Class (declined) */
+    };
+    /* Bodies libpcre2 refuses outright — the T1 population. */
+    static const char *const UNKNOWN[] = {
+        "Foo", "Q", "Bogus", "InGreek", "Block=Greek", "blk=Greek", "IsGreek",
+    };
+    static const char *const SELS = "pP";
+
+    long shipped = 0, unshipped_refused = 0, misworded = 0;
+
+    for (const char *s = SELS; *s; s++) {
+        /* (1) THE T1 CLAUSE over every body the closed-gate sweep generates
+         *     plus the outright-unknown list: pcrec must never accept what
+         *     libpcre2 rejects. */
+        for (size_t i = 0; i < sizeof UNKNOWN / sizeof UNKNOWN[0]; i++) {
+            char pat[96];
+            snprintf(pat, sizeof pat, "\\%c{%s}", *s, UNKNOWN[i]);
+            gate_cell(&t, "uprops unknown names", pat);
+        }
+        for (int c = 'A'; c <= 'Z'; c++) {
+            char pat[16];
+            snprintf(pat, sizeof pat, "\\%c%c", *s, c);
+            gate_cell(&t, "uprops bare letters", pat);
+            snprintf(pat, sizeof pat, "\\%c{%c}", *s, c);
+            gate_cell(&t, "uprops braced letters", pat);
+            if (pcrec_try(pat, err, sizeof err) == 0) shipped++;
+        }
+
+        /* (2) THE UNSHIPPED-NAME WORDING. libpcre2 has these; pcrec does not
+         *     ship them yet, so it must refuse — and must do so as its own
+         *     module's gap, never as an unknown name. */
+        for (size_t i = 0; i < sizeof UNSHIPPED / sizeof UNSHIPPED[0]; i++) {
+            char pat[96];
+            snprintf(pat, sizeof pat, "\\%c{%s}", *s, UNSHIPPED[i]);
+            int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
+            if (p2 != 0)
+                continue;   /* this libpcre2 does not have it either — nothing owed */
+            if (pcrec_try(pat, err, sizeof err) == 0) {
+                bad("GATED [uprops unshipped]: '%s' — pcrec COMPILES a property "
+                    "stage 3 does not ship. Either the table gained it without "
+                    "this list being updated, or it is matching the wrong set.",
+                    pat);
+                continue;
+            }
+            unshipped_refused++;
+            if (strstr(err, "not a one-letter Unicode property code")) {
+                bad("GATED [uprops unshipped]: '%s' — libpcre2 HAS this property "
+                    "and pcrec refused it as a name it does not recognise: "
+                    "\"%s\". That claim is about the NAME and it is false; a "
+                    "real property this stage has not built is the module's own "
+                    "gap and must say so.", pat, err);
+                misworded++;
+            }
+        }
+    }
+
+    printf("  gated[%s]: %ld probes, libpcre2 accepted %ld / rejected %ld, "
+           "pcrec accepted %ld; %ld real-but-unshipped names refused\n",
+           set, t.probes, t.p2_accept, t.p2_reject, t.pc_accept,
+           unshipped_refused);
+
+    if (t.t1 == 0)
+        ok("gated[unicode-props] T1: pcrec accepted no property name libpcre2 rejects");
+    if (t.t3 == 0)
+        ok("gated[unicode-props] T3: every refusal emitted no C source");
+    if (misworded == 0 && unshipped_refused > 0)
+        ok("gated[unicode-props]: every real-but-unshipped property is refused as "
+           "the MODULE's gap, never as an unknown name");
+
+    /* THE TWO VACUITY FLOORS. Without the first, a gate that failed to open
+     * would make every cell refuse and every clause pass; without the second,
+     * an UNSHIPPED list gone stale (every entry silently shipped, or this
+     * libpcre2 having none of them) would make the wording clause vacuous.
+     * The numbers are FLOORS, not pins: they are properties of the shipped
+     * design (7 one-letter general categories, at least one real unshipped
+     * family per selector), so a table that grows does not have to edit them. */
+    if (shipped < 14)
+        bad("gated[unicode-props] is NOT LIVE: only %ld of the 52 braced single "
+            "letters compiled, and the seven general-category codes across both "
+            "selectors are 14 — the gate did not open, or the producer is gone",
+            shipped);
+    else
+        ok("gated[unicode-props] liveness: the producer really compiles property "
+           "names with the gate open");
+    if (unshipped_refused < 2)
+        bad("gated[unicode-props] is NOT LIVE: only %ld real-but-unshipped "
+            "property names were found, so the wording clause certified nothing "
+            "— this libpcre2 has none of the listed families, or they all ship "
+            "now and the list is stale", unshipped_refused);
+    else
+        ok("gated[unicode-props] liveness: real-but-unshipped names exist to "
+           "check the wording against");
+
+    if (pcrec_enabled_set_spec("none", err, sizeof err) != 0)
+        bad("gated[%s]: could not restore the empty enabled set: %s", set, err);
+    else if (pcrec_enabled_mask() != 0)
+        bad("gated[%s]: the enabled set did not return to empty (0x%x) — every "
+            "check after this line would run at an open gate",
+            set, pcrec_enabled_mask());
+    else
+        ok("gated[unicode-props]: enabled set restored to empty");
+}
+
 int main(void)
 {
     char why[512], ver[64];
@@ -2974,6 +3147,14 @@ int main(void)
      * ordering it last means nothing above can be re-scoped by a bug in that
      * restore rather than merely reported by it. */
     check_gated_option_space("modifiers");
+    /* [M5.0 stage 3] The SECOND focused gated pass, and it is a second CALL
+     * rather than a second bit in the first one — the section's own rule:
+     * "when a second module gains producers at this doorway, it gets its OWN
+     * call with its OWN name, not an extra bit in this one". Each installs
+     * and restores the global itself, and each asserts both transitions, so
+     * running two in sequence is safe by the same argument that makes one
+     * safe. */
+    check_gated_uprops_space("unicode-props");
 
     printf("\n== Summary (PC-3) ==\nchecks passed: %d\nchecks failed: %d\n", pass, fail);
     return fail ? 1 : 0;

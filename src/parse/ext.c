@@ -237,11 +237,25 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
      * `recognise`, mirroring GROUP_OPT's `pcrec_registry_option_run_recognise`
      * marker (mod_modifiers.c) rather than a hardcoded `c == 'p'` special
      * case, so the connection lives in the registry row, not here.
-     * Position-invariant on purpose (mod_uprops.c's own header): still
-     * ALWAYS refuses — no aport/cport wiring this phase (D33 §9.3's "nothing
-     * that refuses today may start COMPILING"). */
+     * [M5.0 stage 3] IT PRODUCES NOW, and the marker dispatch is still what
+     * reaches it — `aport`/`cport` stay `NO_PORT` on both rows, because the
+     * port block below fires only at post-gate WANT_RESULT while this
+     * function must also answer at VERDICT, must answer for a malformed
+     * body at any level, and must answer differently at the two positions
+     * (internal.h's declaration carries the full argument). `in_class` is
+     * therefore passed through: the produced set is EXT_MEMBERS inside a
+     * class and EXT_NODE at an atom, the same mapping the PORT_SET branch
+     * below applies to the byte-set rows. It is deliberately passed rather
+     * than re-derived, so the two branches cannot come to disagree about
+     * what position they are at.
+     *
+     * IT SITS ABOVE THE RF_CLASS_INVALID CHECK AND THAT IS CORRECT, not an
+     * ordering accident this stage inherited: `[\p{L}]` is a construct PCRE2
+     * ACCEPTS, so neither row carries the flag and the check would decline
+     * to fire anyway — but the produced-members path must not be reachable
+     * only by that coincidence, and the marker's own position states it. */
     if (r->recognise == pcrec_registry_uprops_recognise)
-        return pcrec_modport_uprops(cx, r, want, at, cx->pos);
+        return pcrec_modport_uprops(cx, r, want, in_class, at, cx->pos);
 
     /* PCRE2 forbids some of these INSIDE a class and always will, so naming a
      * module there is the over-promise D26 calls a defect: module `assertions`

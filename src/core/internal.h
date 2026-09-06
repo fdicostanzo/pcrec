@@ -3093,6 +3093,15 @@ bool pcrec_is_bare_anchor(const Ast *a);
 Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body);
 Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
                                bool negate);
+/* [M5.0 stage 3] The same constructor for a set that arrives as SORTED
+ * intervals rather than as 32 bytes — module `unicode-props`' generated
+ * property tables. It INTERSECTS the set with the encoding's universe (a set
+ * operation, not the refusal `\x{...}` gives for naming an absent code point)
+ * and applies NO case fold: a caseless property escape is a SPAN SUBSTITUTION
+ * the caller has already made, not an ASCII widening. parse.c's comment at
+ * the definition carries both measurements. */
+Ast *pcrec_ast_class_from_iv(Ctx *cx, const PcrecCpRange *iv, int n,
+                             bool negate);
 /* [M6.5.2] One byte as an atom, with the caseless fold applied — the same
  * one-constructor rule as the line above, for module TUs that produce a
  * CHARACTER rather than a set (module `backrefs`' octal readings). */
@@ -3929,12 +3938,22 @@ bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
  * pcrec_modport_uprops instead of the generic RD_MODULE fallback text. */
 bool pcrec_registry_uprops_recognise(const char *at, size_t avail,
                                      const char *tail);
-/* The \p/\P body scanner (see mod_uprops.c's header for the full algorithm
- * and its measured basis). Called DIRECTLY from pcrec_ext_escape — not
- * through r->aport/r->cport, which stay NO_PORT on both rows this phase —
- * keyed on the recogniser marker above. Always returns EXT_REFUSAL. */
+/* The \p/\P body scanner AND, since [M5.0] stage 3, its PRODUCER (see
+ * mod_uprops.c's header for the algorithm, the tables and their measured
+ * basis). Called DIRECTLY from pcrec_ext_escape — not through
+ * r->aport/r->cport, which stay NO_PORT on both rows — keyed on the
+ * recogniser marker above.
+ *
+ * IT IS THE ONE FUNCTION IN THIS HEADER THAT IS NOT AN `ExtPortFn`, and stage
+ * 3 is where that stopped being an accident. The port block ext.c runs below
+ * the marker fires only at post-gate WANT_RESULT, and this function must also
+ * answer at WANT_VERDICT, must answer for a MALFORMED body at any level, and
+ * must answer differently at the two POSITIONS — so wiring it as a port would
+ * leave three of its four jobs on a second path. `in_class` is the parameter a
+ * port could not have carried: it selects EXT_MEMBERS over EXT_NODE, exactly
+ * as ext.c's own PORT_SET branch does for the byte-set rows. */
 ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
-                               size_t at, size_t from);
+                               bool in_class, size_t at, size_t from);
 
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *

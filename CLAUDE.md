@@ -101,6 +101,13 @@ tier, and PCRE2 is a moving target with no specification.
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
 - `studies/` — adopted exploratory work (reference material, own Makefiles,
   never built or tested by pcrec's make). See studies/CLAUDE.md.
+- `third_party/` — VENDORED OUTSIDE DATA, and the shape it lives in
+  ([M5.0] stage 3, Frank's ASK 2 ruling): one directory per source with the
+  version in its name, a `PROVENANCE.md` naming **what derives from** it, and
+  a `generate.py` beside the data. The general rule is *a data source
+  compiles to generated tables* — `make gen-tables` iterates
+  `third_party/*/generate.py` and names no source. Nothing here reaches a
+  generated artifact. See its own README.md and CLAUDE.md.
 - `REFERENCES.md` — the repository's reference list for cited external
   publications. Cite a paper by its key (`[Author##]`); add a new paper's
   entry there in the same change that first cites it.

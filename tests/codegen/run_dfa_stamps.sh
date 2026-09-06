@@ -749,10 +749,40 @@ fi
 # floor stayed green. So the bucket is an EXACT, NAMED set: the four
 # provably-empty patterns the corpus carries today. A fifth member is a
 # finding (name it here after reading why), a missing one is a regression.
+# [M5.0 stage 3] TWELVE NEW MEMBERS, NAMED, and they are a DIFFERENT KIND of
+# empty from the four above. Those four are empty because two assertions
+# CONTRADICT (`\B\b` can never both hold). These twelve are empty because a
+# PROPERTY SET INTERSECTED WITH THE `byte` ENCODING'S UNIVERSE IS EMPTY:
+# `pcrec_ast_class_from_iv` clamps a property to [0, max_cp] (PCRE2's own
+# 8-bit non-UTF behaviour), and every member of these twelve lies above 0xFF.
+# Titlecase letters start at U+01C5; the surrogates and the private-use area
+# are wholly above it; Latin-1 is fully ASSIGNED, so `Cn` has nothing there;
+# and no Latin-1 code point is a combining mark, a letter modifier, a
+# letter-number, or a line/paragraph separator.
+#
+# **ORACLE-VERIFIED, not reasoned**: `tests/uprops/`'s membership differential
+# compares exactly these twelve against libpcre2 over all 256 bytes and
+# reports ZERO disagreements, so an empty artifact is the RIGHT artifact here.
+#
+# They land in this bucket rather than being routed past the scan comparison
+# by accident: the assertion directly above this one confirms all 16 stamp
+# `RX_DFA_PREFILTER "none"`, i.e. all 16 really are loop-free.
 EMPTY_MANIFEST='\B\b
 \b\B
 \d\b\w
-a\bb'
+a\bb
+\p{Cn}
+\p{Co}
+\p{Cs}
+\p{Lm}
+\p{Lt}
+\p{M}
+\p{Mc}
+\p{Me}
+\p{Mn}
+\p{Nl}
+\p{Zl}
+\p{Zp}'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then
