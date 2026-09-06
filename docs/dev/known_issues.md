@@ -3734,6 +3734,25 @@ darwin story (a working Mach-O section read, or a loud SKIP naming this
 entry, never an empty compare). Validated in the failing direction with a
 planted encoding conditional in the hot loop before it is trusted.
 
+**STATUS: FIXED 2026-09-06, lane `encchk` / [ENCCHK-DD12A].** The rebuilt
+DD12a(i) compares emitted SOURCE TEXT (no compiler, no objdump — real on
+darwin, not a SKIP): both artifacts re-emitted under the same
+prefix+basename, the four residual entries + the [K49] advance splice +
+the `.encoding` scalar excised from both sides with every excision
+COUNTED and floored non-empty by construction. The rebuild surfaced an
+honest scope fact: patterns with an unescaped `.` or negated class
+compile to a structurally different automaton under utf8 even on ASCII
+subjects (state count and table shape both move), so an independent
+pattern-text classifier (`widens_under_utf8`) exempts exactly that
+population, counted and floored (243 strict-identity / 10 exempt at the
+ENC_MAX_BLOCKS=250 slice, 11/0 checks). Failing direction shown before
+trust: a one-line encoding conditional planted in emit_vm.c (throwaway
+git-archive tree) caught on 5/5 VM-selected witnesses — transcript in
+docs/dev/lanes/encchk_report.md. Residue, stated: validated on darwin
+only at the slice; the Linux confirmation and the full ENC_MAX_BLOCKS=0
+sweep ride the next merge battery, and the `.encoding` assertion assumes
+rx_info is emitted once per file (true today, a named closed assumption).
+
 ## K51 — [M5.0] STAGE 2 (2026-09-05, found by the FULL §8.5 sweep on ubuntubudu — the 250-block slice ran 0 divergences twice and could not see it): under `-e utf8` an artifact can return a TYPED GIVE-UP where the byte artifact ANSWERS, on a pattern whose byte-tier viability depends on a rung the utf8 lowering declines.
 
 WITNESS: `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}` (the

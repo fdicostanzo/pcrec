@@ -197,3 +197,13 @@ re-derived to its own named manifest, and three new rows S224-S226 on the
 `vmframeless` arm. See `../CLAUDE.md`'s own "[OPT-5]/[OPT-VMFL] r51fix" section
 for the per-row narrative — this file carries the field reference and traps,
 not the row history.
+
+**Newest (encchk / [ENCCHK-DD12A], 2026-09-06):** two cwmax-floor rows —
+S230 (the encoding-directive reader dropped from cwmax_check) and S231
+(character-count width reverts to byte spans, K49-lane's unit-mismatch
+shape re-planted) — both SAB_REACH-equipped from birth, both solo
+DETECTED at their branch tree; and the new `encoding` SUITE TOKEN
+(run_encoding_checks.sh) added to S229's and S-U8's `SAB_SUITES`, closing
+the gap both rows' own headers had documented (they scored on
+harness/codegen arms only). Per-row history in each file's header;
+delivery narrative in docs/dev/lanes/encchk_report.md.
