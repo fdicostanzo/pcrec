@@ -345,6 +345,74 @@ accident of an uninitialised buffer, and it is the same family as
 
 ---
 
+## 6b. BLOCKING AFTER THE MERGE: K50's gate falsifies DD12a(i)'s strict bucket
+
+**`make test-encoding-checks` is RED at the merged tree — 10 passed / 1 failed
+— and it was green on both sides before the merge.** It is not a merge
+mistake; it is my change meeting encchk's rebuilt DD12a(i), which landed hours
+earlier. I have NOT touched that check: re-scoping someone else's
+just-landed instrument is a ruling, not a lane's edit.
+
+```
+FAIL: DD12a(i) 243 of 243 strict-identity pairs differ OUTSIDE the named
+      encoding-owned regions — an encoding conditional reached the hot path
+```
+
+**THE DIAGNOSIS.** DD12a(i) compiles each ASCII pattern under both encodings,
+excises the named encoding-owned regions (`next_pos`, `back_step`, the two
+`bref` compares, K49's `advance`, `.encoding`) and requires the rest to be
+textually identical. Its STRICT bucket is patterns whose lowering is a no-op
+under utf8 — no `.`, no negated class — so any remaining difference was a
+leak. **K50's boundary gate is a real automaton state on EVERY unanchored
+machine regardless of the pattern's alphabet**, so the utf8 tables now differ
+from the byte ones for `b|c`, `frank|fred`, `a(b|c)+d` and 240 others.
+
+**It is not excisable the way the others are.** `advance` is TEXT and gets
+excised 182 times; the gate is distributed through the transition tables and
+the state numbering. This is precisely the scope problem K52 recorded when it
+retired the old instrument (*"since K49 the retry advance is the encoding's
+text too"*) arriving one row later against the new one.
+
+**TWO DISPOSITIONS, and I recommend the second.**
+
+**(A) Re-scope the check.** Exempt unanchored machines and keep the claim for
+the machines that carry no gate (`ENG_ATTEMPT`, anchored). Honest, but it
+moves most of the corpus out of the strict bucket, and a bucket that small is
+the K35 shape the rebuild existed to escape.
+
+**(B) NARROW THE GATE to nullable patterns, which is very likely right on its
+own merits.** A reported match must CONSUME a byte at its start, and under
+utf8 no lowered path begins with a continuation byte — so **only a pattern
+that can match EMPTY at a mid-character position can ever answer there.** That
+is not a new argument: it is the one K50's own entry uses to show the hybrid
+handoff was safe (*"only a pattern that matches EMPTY there can do it"*). I
+did not narrow it because building the general form first is the house rule,
+but the general form here may simply BE "gate where an empty match is
+possible".
+
+MEASURED, on the exact patterns that broke the check:
+
+| pattern | empty match at 0? | gate needed? |
+|---|---|---|
+| `b\|c`, `frank\|fred`, `a(b\|c)+d` | **no** (`rc=0`) | no — cannot answer mid-character |
+| `\B` | **yes** (`(0,0)`) | yes — K50's own witness |
+
+**What (B) would buy beyond unblocking the check**: fewer moved artifacts at
+the abi bump, and it removes the §5 throughput cost from every non-nullable
+pattern — the 1.33× `ENG_ATTEMPT` regression I measured is paid today by
+patterns that provably cannot need the gate.
+
+**What it would cost**: a real design round — the DFA already knows the
+property (the unanchored start's closure accepts without consuming), but it is
+a new gate condition, a new sabotage direction ("gate omitted on a nullable
+pattern"), and its own validation pass. Not something to do unilaterally at
+handback.
+
+Everything else at the merged tree is green: `make strict`, `test-startbnd`
+7/0, `tests/utf8` 1342/0, the ratchet, and all four sabotage rows DETECTED.
+
+---
+
 ## 7. Open questions for the manager
 
 **(a) TWO `.rxt` FORMAT DECISIONS, which are yours under dd13b, not a lane's.**
