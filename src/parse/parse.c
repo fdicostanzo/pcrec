@@ -533,6 +533,60 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
     return a;
 }
 
+/* [M5.0 stage 3] THE SAME CONSTRUCTOR FOR A SET THAT ARRIVES AS INTERVALS —
+ * module `unicode-props`' generated property tables, and every later producer
+ * whose set is not byte-confined. Same fold-before-negate order, same single
+ * home for it; the ONE thing it adds is the clamp.
+ *
+ * THE CLAMP IS THE ENCODING'S UNIVERSE AND IT IS NOT AN ERROR, which is the
+ * opposite of what `\x{...}` does one function over, so the difference is
+ * worth stating rather than leaving as an inconsistency a reader has to
+ * reconcile. `\x{100}` under `--encoding=byte` NAMES a code point the
+ * encoding does not have, and naming a thing that is not there is a mistake
+ * worth refusing (§2.7.3). `\p{L}` names a SET, and a set intersected with a
+ * smaller universe is a perfectly good smaller set — which is also, measured,
+ * exactly what PCRE2's own 8-bit non-UTF build does: `\p{L}` there matches the
+ * single byte 0xE9, because that build treats bytes 0..255 as code points
+ * 0..255 (`utf8_design.md` §3.2's table). Refusing instead would make
+ * `unicode-props` an encoding-gated module, which §3.2 measures it is not.
+ *
+ * THE CLAMP RUNS BEFORE THE NEGATION, so `\P{L}` is the complement of the
+ * CLAMPED set within the same universe — the only reading under which
+ * `\p{L}` and `\P{L}` partition the encoding's alphabet.
+ *
+ * AND IT APPLIES NO CASE FOLD, which is the one place this constructor
+ * DIFFERS from `pcrec_ast_class_from_bits` rather than merely taking a
+ * different input shape. `cls_casefold` widens a set by its members' ASCII
+ * partners, and MEASURED that is not what a caseless property escape means:
+ * PCRE2 under `-i` reads `\p{Lu}`, `\p{Ll}` and `\p{Lt}` as `\p{L&}` and
+ * leaves every other property untouched (a 44-name × 12,290-code-point
+ * differential and a full-space interval comparison, both with no
+ * exception). An ASCII fold of `\p{Lu}` gives `A-Z` plus `a-z` plus the
+ * non-ASCII uppercase letters, which is neither `Lu` nor `L&` and is wrong
+ * on every non-ASCII cased letter. So the CALLER owns caselessness — module
+ * `unicode-props` picks the right span before it gets here (mod_uprops.c's
+ * `uprops_lookup`) — and this function must not fold on top of a set that
+ * already answered the question.
+ *
+ * The input list is required to be SORTED (the generator emits it canonical
+ * and asserts the invariant), which is what lets the scan stop at the first
+ * interval past the universe instead of testing every one. */
+Ast *pcrec_ast_class_from_iv(Ctx *cx, const PcrecCpRange *iv, int n,
+                             bool negate)
+{
+    Ast *a = node(cx, A_CLASS);
+    PcrecCpSet s;
+    pcrec_cpset_init(&s, &cx->arena);
+    unsigned uni = cls_universe(cx);
+    for (int i = 0; i < n; i++) {
+        if (iv[i].lo > uni) break;
+        pcrec_cpset_add(&s, iv[i].lo, iv[i].hi > uni ? uni : iv[i].hi);
+    }
+    if (negate) pcrec_cpset_complement(&s, uni);
+    pcrec_cpset_publish(&s, a);
+    return a;
+}
+
 /* ---- escapes ---- */
 
 /* [DD-11.3-prep] exported (was `static hexval`) so the DEFK_TEXTFN definition
