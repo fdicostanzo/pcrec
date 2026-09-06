@@ -21876,3 +21876,27 @@ compile-flag) DEFERRED to their own row; the lane's §6 pins hold.
 Owed: the Linux full battery at the next slot (local make test running
 at the merge as this is written); M5.0 stage 3 opens on its green per
 Frank's standing go.
+
+## 2026-09-06 (EDT), fifty-sixth session part 2b — CORRECTION: the K50 merge was PREMATURE, and it carried a red onto main
+
+The part-2 entry above reads as a clean landing; the truth is the
+manager merged BEFORE the lane's handback. The lane's worktree was
+clean with the merge+renumber commit and the report carried the matrix
+evidence, and the manager read that as the handback — while the lane
+was composing a "do not merge yet": test-encoding-checks is 10/1 AT THE
+MERGED TREE (green on both sides before), DD12a(i)'s strict bucket
+finding the K50 boundary gate on every unanchored utf8 machine
+(243/243 pairs differing — a deliberate machine change meeting the
+just-rebuilt instrument, not a leak). The red is live on main as this
+is written. LESSON (the encchk precedent inverted): take-over-on-idle
+requires the landing bar RE-RUN BY THE TAKER — the manager ran
+startbnd/ratchet/anchors/strict but not the encoding-checks suite the
+lane's own §8 listed, and the missing one was the one that mattered.
+"Idle + committed evidence" is not a handback; a handback names its
+validation COMPLETE. Repair: interim K51-shape manifest excusal on
+DD12a(i) (lane implementing under the manager's ruling), and
+[K50-NULLGATE] chartered as the correct-scope resolution (the lane's
+own disposition (B), with the machine-level nullability predicate
+sharpening — empty-subject probes are insufficient for the
+context-nullable lookbehind family). Frank's general rule holds
+observably; the gate narrows to machines that can observe it.
