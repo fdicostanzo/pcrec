@@ -807,3 +807,47 @@ could see this, because every plant moved a pair that was ALREADY a member. The
 defect was in who ELSE was in the class, and no sabotage of the subject can
 reveal an over-broad population. What revealed it was changing the compiler so
 the population SHOULD have moved, and finding that it did not.
+
+### 10.6 P8 SCORED: **NO abi bump.** The ritual was measured, not performed
+
+The charter expected `abi` 24 → 25 with the full D76/D94 ritual. **Measured, it
+is not an abi event, and bumping would have been wrong.**
+
+D76's rule is that a change to the emitted SCAFFOLDING — comments,
+declarations, layout — is an `abi` bump plus a re-pin of comparison (B). The
+authoritative instrument for that question is
+`tests/codegen/run_recursion_identity.sh`, whose (B) leg is a WHOLE-FILE byte
+comparison against the pin. Run at this change:
+
+```
+recursion-identity[default] (B) whole-file vs 8e0fe77f: same=2424 differing=0
+recursion-identity[vm]      (B) whole-file vs 8e0fe77f: same=2425 differing=0
+16 checks passed / 0 failed, all four axes
+```
+
+**Not one byte moved**, and the reason is structural rather than lucky: under
+`byte` the backend's `start_cls` is NULL, so in `nfa_wrap_unanchored` the first
+conjunct short-circuits before the predicate is consulted at all, and at site 2
+`pcrec_enc_start_guard` contributes no text whichever order the conjuncts are
+evaluated in. The `byte` artifact cannot move under this change.
+
+**And the utf8 side is not an abi event either.** `abi` versions the artifact
+FORMAT — the entries, the macros, the `rx_info` fields, the stamps — and none of
+those moves. `<PREFIX>_STARTPOS_GUARD` still reads `"guarded"` on every utf8
+artifact, because the CALLER-entry guard (§3.1's contract) is deliberately left
+unconditional: narrowing it per pattern would make one caller error diagnosed
+here and silently accepted there, which is a worse contract than the one we
+have. What changed is which patterns receive an internal, answer-identity-
+preserving optimization — the same category as a scan-edge population moving or
+a minimization becoming more effective, neither of which bumps `abi`.
+
+**So the correct D76 action is NO bump and NO re-pin**, and the pin
+`8e0fe77f` still names the commit that introduced `abi` 24. Bumping anyway
+would have been actively harmful: it would re-pin (B) forward across a change
+that moved nothing, which is exactly how a byte-identity gate quietly becomes a
+build compared with itself.
+
+**The obligation the charter was really protecting is discharged by a different
+instrument.** The utf8 artifacts DO move, and what accounts for them is
+`run_encoding_checks.sh`'s DD12a(i) class with its re-derived manifest (§10.5),
+which now names all 13 remaining divergent patterns exactly.
