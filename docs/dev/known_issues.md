@@ -4136,3 +4136,72 @@ RATCHET COUNT NEXT:** the known-fail population is 2 files, not the 1 that
 K49's retirement alone would have left. That is a new bug filed, not K49's
 fix failing to land — K49's own cell is live and green in
 `tests/utf8/axis09_nextpos_findall.rxt`.
+
+## K53 — an OPTIONAL DFA machine's bytes can refuse a pattern that compiles without it (`\p{C}`, `\p{Cn}`, `\p{L}` under `-e utf8`; [M5.0] stage 3, 2026-09-06)
+
+**Filed as an ENGINE issue, not a Unicode one.** `\p{L}` is where it was
+found and is not where it lives.
+
+**The symptom.** Under `--encoding=utf8` at default axes, six patterns refuse:
+
+| pattern | emitted bytes | cap (D84 `max_emit_bytes`) |
+|---|---:|---:|
+| `\p{L}` / `\P{L}` | 1,076,640 / 1,056,392 | 1,000,000 |
+| `\p{C}` / `\P{C}` | over | 1,000,000 |
+| `\p{Cn}` / `\P{Cn}` | 1,003,035 / 1,023,690 | 1,000,000 |
+
+`\p{Xan}` and `\p{Xwd}` are the same shape (measured; they have no corpus
+blocks because the D27 axis covers general categories only). **5 of the 45
+shipped property names** exceed the cap under `utf8`; all 45 compile
+comfortably under `byte` (the largest is 23,350 bytes), and 40 compile under
+`utf8`.
+
+**The diagnosis, and it names a cure.** The artifact is three DFA tables —
+forward, reverse and ANCHORED — of `states x byte-equivalence-classes`
+entries each. For `\p{L}` that is 299 x 100 twice and 453 x 100 once, and
+under the default premultiplied table the values run to five and six digits.
+With the OPTIONAL anchored machine dropped (`-fno-anchored-dfa`) the same
+pattern emits **772,412 bytes and compiles**; with `-fno-premul-table`,
+478,719.
+
+`docs/design/anchored_match_unwrapped.md` §2/§5.2 says that third machine is
+**"built OPTIONAL (an overflow is a selection outcome, never a
+diagnostic)"**, and `src/core/compile.c`'s `build_anchored_dfa` keeps that
+promise for the SUBSET-ELEMS budget — it saves and restores
+`Ctx.dfa_overflowed` around the build precisely so the optional machine
+cannot turn into a refusal. It does NOT keep it for the emit-BYTES budget,
+because that cap is applied to the whole artifact after all three machines
+are emitted. **So an optional machine is refusing patterns that compile
+without it, which is exactly what its own design forbids.**
+
+**The cure this points at** (NOT built by stage 3, and it wants its own row):
+when the emitted artifact exceeds `max_emit_bytes` and an optional anchored
+machine is present, drop it and re-emit — the `[SEL-1]` retry's shape, one
+budget over. That is a strictly better outcome than a refusal (the artifact
+loses `[OPT-2]`'s anchored-entry speed-up and keeps every answer), and it is
+observable: `RX_DFA_MATCH` stamps `unwrapped` vs the wrapped form, so the
+drop is not silent.
+
+**What this is NOT.** It is not a case for raising D84's caps — the caps are
+doing their job, and `\p{Lo}` at 809,079 bytes shows the population sits
+right at the boundary rather than far past it. It is not a `\p` bug: the
+membership is correct on every one of these patterns under `byte`, and
+`tests/uprops/`'s differential compares them under `utf8` too by taking the
+answer-identical `-fno-premul-table` axis.
+
+**It also refutes a design claim.** `docs/design/utf8_design.md` §3.3
+concludes *"the 'table-size problem' the charter names is, for the DFA route,
+measured not to be a problem"* on the strength of `\p{L}` being 283 minimized
+states. The state count was right and the conclusion does not follow: the
+emitted size is `states x CLASSES x digits`, and under a multi-byte encoding
+the byte-equivalence-class count is ~100 rather than the handful an ASCII
+pattern has. The design measured one factor of a three-factor product.
+
+**Regression**: `tests/known_fail/k53_uprops_oversize.rxt` — the twelve
+D27-blinded axis-4 blocks for these patterns, carrying the oracle's own
+answers, excluded from `make test` and run by the ratchet.
+
+**Repro**: `build/pcrec --features unicode-props -e utf8 -p rx -o /tmp/x.c --
+'\p{L}'`. **Scheduled**: an engine row after [M5.0] closes; Frank's call
+whether it opens sooner, since it is the difference between `\p{L}` working
+and not working under UTF-8 at default settings.
