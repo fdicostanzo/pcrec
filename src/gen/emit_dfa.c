@@ -1887,7 +1887,36 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * (src/gen/emit_dfa.c's `pcrec_emit_prologue`, above — shared by both
      * engines since this pass runs before either is built). */
     {
-        const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
+        /* [K50] `PCREC_NO_STARTPOS_GUARD` JOINS THE MASK ON EXACTLY THE
+         * ARTIFACTS WHERE THE MASK'S OWN RULE PUTS IT, and nowhere else.
+         *
+         * The rule this mask states is about OBSERVABLE EFFECT, not about
+         * spelling: a denial that changed nothing must not make two
+         * identically-behaving artifacts differ in their reflection surface.
+         * `-fno-startpos-guard` is the first flag in the family for which
+         * that question has TWO answers depending on the artifact. Under an
+         * encoding with non-boundary positions it selects between two ruled
+         * SEMANTICS and a caller must be able to read which one it got, so it
+         * is stamped. Under `byte` — where every position is a character
+         * boundary — the flag could not have acted, no guard exists under
+         * either setting, and stamping it would make a byte artifact move
+         * over a knob with no effect on it. So it is masked THERE.
+         *
+         * That is the mask's own rule applied per artifact rather than a new
+         * rule, and it is what makes `tests/utf8/run_startbnd_diff.sh` §4's
+         * claim the strong one — a byte artifact is BYTE-IDENTICAL under
+         * either setting, not merely guard-free — which is what lets a denied
+         * byte build stand as a reference for anything else.
+         *
+         * The predicate is the BACKEND's, asked the same way the guard itself
+         * asks it, so the two cannot disagree about which artifacts have a
+         * guard to deny. */
+        const PcrecEnc *k50_enc = pcrec_enc_by_id(cx->opt->encoding);
+        const uint64_t startpos_guard_inert =
+            (k50_enc && k50_enc->start_guard) ? 0u
+                                              : (uint64_t)PCREC_NO_STARTPOS_GUARD;
+        const uint64_t strategy_denials = startpos_guard_inert |
+                                          PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
                                           PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
