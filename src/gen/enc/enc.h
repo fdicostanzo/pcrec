@@ -173,6 +173,71 @@ typedef struct {
      * changes one and not the other fails there rather than in a corpus cell
      * nobody wrote. */
     const char *advance;
+    /* [K50] WHERE A MATCH MAY BEGIN — the same boundary rule as `advance` and
+     * `next_pos`, asked as a PREDICATE instead of as a step, because the two
+     * consumers that need it cannot use a step.
+     *
+     * K49 fixed the VM's retry loop by asking the encoding how to MOVE a
+     * failed attempt's start. K50 is the other half of the same rule and the
+     * other two "try the next start" mechanisms:
+     *
+     *   - `src/ir/nfa.c`'s `nfa_wrap_unanchored` self-loop, which is not a
+     *     loop the emitter can see at all — it is an AUTOMATON, and the
+     *     positions it "generates" are wherever its lowest-priority split
+     *     enters the pattern. Gating that split needs the boundary rule as a
+     *     BYTE SET, evaluated inside the subset construction.
+     *   - `src/gen/emit_dfa.c`'s `ENG_ATTEMPT` start loop, which cannot take
+     *     the `advance` text without moving every byte artifact: its step is
+     *     the `start++` of a `for` header, and replacing a header increment
+     *     with a trailing statement is exactly the emitted-scaffolding move
+     *     D76 makes an abi event. A `continue` guard at the top of the body
+     *     is additive — a backend with no restriction contributes nothing and
+     *     the byte artifact does not move.
+     *
+     * TWO FIELDS FOR ONE RULE, which is this seam's existing bargain rather
+     * than a new one. `advance` and `next_pos` are already two spellings of
+     * the boundary rule (see `advance`'s own comment), tied by
+     * `tests/codegen/run_encoding_checks.sh`'s advance-agreement check
+     * because a backend that changes one and not the other must fail at a
+     * check and not in a corpus cell. These two join that arrangement: the
+     * check now reads FOUR spellings out of one emitted artifact and requires
+     * all four to agree over an exhaustive byte alphabet.
+     *
+     * WHY NOT DERIVE THE TEXT FROM THE SET. The emitter does own a general
+     * class-test renderer (`vm_cls_test`), and for utf8's start set — every
+     * byte except the 64 continuation bytes — it selects the BITMAP shape,
+     * because the set is the complement of a range and `VmClsShape` has no
+     * complement-of-range member. That would put a 32-byte table and a
+     * shift-and-mask in an entry guard whose whole promise is O(1) and free,
+     * and adding the missing shape moves bytes on every artifact that has a
+     * class of that form ([FORM-CHAR] territory, its own gate-bearing
+     * change). Measured, not assumed — and recorded here so the next reader
+     * does not re-derive it.
+     *
+     * BOTH ARE OPTIONAL AND `NULL` MEANS "NO RESTRICTION": every position of
+     * every subject is a character boundary. That is `byte`'s answer, it is
+     * what makes the IR build no gate node and the emitters emit no guard,
+     * and it is therefore what keeps every byte artifact byte-identical
+     * across this change BY CONSTRUCTION rather than by a comparison.
+     *
+     * `start_cls` is a 32-byte class in the same 256-bit representation the
+     * AST, the NFA and the DFA all use, so nothing has to agree with a second
+     * encoding of "which bytes".
+     *
+     * THE DISJOINTNESS THIS SET OWES, checked and not assumed. The subset
+     * construction carries the boundary property on its CLASS AXIS
+     * (`UPC_NOSTART`, core/internal.h), which is a PARTITION — so a byte that
+     * is not a character start must be neither a word byte nor a newline. UTF-8
+     * satisfies this (continuation bytes are 0x80..0xBF; both other sets are
+     * ASCII). A future backend that does not is refused at
+     * `pcrec_enc_start_cls_ok()` with an internal error naming this comment,
+     * rather than silently classifying a non-start byte as a word byte and
+     * re-opening K50. */
+    const unsigned char *start_cls;
+    /* The same predicate as C text, true when `@P` is a position a match may
+     * begin at. Substitution is `advance`'s, minus the indentation rule: this
+     * is ONE EXPRESSION, spliced into an `if`, never a statement list. */
+    const char *start_guard;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a
@@ -222,6 +287,22 @@ void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);
 bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
                        const char *indent, const char *posvar,
                        const char *subjvar, const char *lenvar);
+
+/* [K50] Render this backend's `start_guard` EXPRESSION into a caller-owned
+ * buffer, with `@P`/`@S`/`@N` replaced. Returns false when the backend has no
+ * restriction (`start_guard == NULL`) — which is not an error and is the
+ * common case: the caller emits nothing. Truncation IS an error and is
+ * reported the same way `pcrec_enc_advance` reports it, through
+ * `*truncated`, so the two outcomes a `false` covers stay distinguishable. */
+bool pcrec_enc_start_guard(const PcrecEnc *e, char *buf, size_t cap,
+                           const char *posvar, const char *subjvar,
+                           const char *lenvar, bool *truncated);
+
+/* [K50] The disjointness `start_cls` owes the DFA's class axis (see the
+ * field's comment): a byte that is not a character start must be neither a
+ * word byte nor a newline, because `UPC_NOSTART` is a member of a PARTITION.
+ * True when the backend has no restriction at all. */
+bool pcrec_enc_start_cls_ok(const PcrecEnc *e);
 
 /* The backends themselves, one file each. */
 extern const PcrecEnc pcrec_enc_backend_byte;   /* enc_byte.c */

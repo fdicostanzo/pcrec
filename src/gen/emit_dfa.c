@@ -6232,6 +6232,56 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
               anchored ? "0 /* fully ^-anchored */"
                        : a_bot ? "search_from /* fully \\G-anchored */" : "subject_length");
     sb_puts(c, "    for (start = search_from; start <= start_max; start++) {\n");
+
+    /* [K50] SITE 2 OF THE THREE "TRY THE NEXT START" MECHANISMS. K49 fixed the
+     * VM's retry, K50's IR gate fixed the DFA self-loop, and this loop is the
+     * third: `start++` steps one BYTE, so under a multi-byte encoding it
+     * offers attempts at offsets inside a character.
+     *
+     * IT IS NOT MERELY A WASTED ATTEMPT, WHICH IS WHAT utf8_design.md §5.5 AND
+     * ASK 5 BOTH SAY IT IS. Measured on this tree before the fix:
+     * `(?m)^a|\B` over `61 CE B1` at `startpos = 1` — a REAL boundary —
+     * reported `(2,2)`, and byte 2 is inside alpha. libpcre2 10.46 under
+     * `PCRE2_UTF` answers `(3,3)`. The BOT-family branch is what routes the
+     * pattern to this engine; the second branch is what keeps an interior
+     * start state live so the loop actually runs past its first iteration.
+     * (A pure `(?m)^` pattern is self-gating and hid this: `(?m)^` can only
+     * hold after a newline, and a newline is a character-start byte.)
+     *
+     * A `continue` GUARD RATHER THAN THE `advance` TEXT, and the reason is
+     * D76 rather than taste. K49's field carries the STEP, and taking it here
+     * means replacing this `for` header's increment with a trailing statement
+     * — a change to emitted scaffolding on EVERY byte artifact, i.e. an abi
+     * event for the encoding that has no bug. A guard is ADDITIVE: a backend
+     * with no restriction contributes no text and the byte artifact does not
+     * move. The two spellings are held to one rule by
+     * `tests/codegen/run_encoding_checks.sh`'s agreement check.
+     *
+     * `start > search_from` IS THE WHOLE OF THE CALLER/ENGINE SPLIT, and it is
+     * the same line `nfa_wrap_unanchored` draws with its two split states: the
+     * first iteration IS the position the caller supplied, which the entry
+     * guard (§3.1) owns and the `-fno-startpos-guard` arm may leave
+     * mid-character on purpose; every later iteration is a position this loop
+     * INVENTED, and those are the encoding's boundaries unconditionally. */
+    {
+        char sbnd[256];
+        bool trunc;
+        if (pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
+                                  sbnd, sizeof sbnd, "start", "subject",
+                                  "subject_length", &trunc))
+            sb_printf(c,
+                "        /* [K50] A match may begin only at a character\n"
+                "         * boundary of this artifact's encoding. The first\n"
+                "         * iteration is the caller's own start position and\n"
+                "         * is never skipped; every later one is a position\n"
+                "         * this loop invented. */\n"
+                "        if (start > search_from && !(%s)) continue;\n", sbnd);
+        else if (trunc)
+            ctx_fail(cx, 0,
+                     "internal error: this encoding's character-start guard "
+                     "does not fit the emitter's buffer");
+    }
+
     if (cpre) {
         /* [D63] LOOP INTEGRATION, ENG_ATTEMPT's shape: an advance BETWEEN
          * attempts, not a skip inside one. It composes with the three-way

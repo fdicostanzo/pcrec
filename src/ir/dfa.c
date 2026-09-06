@@ -106,6 +106,9 @@
 #include <string.h>
 
 #include "core/internal.h"
+/* [K50] the encoding's character-start set: the gate's class (nfa.c) and
+ * the class axis's fourth value (dfa.c) both come from the backend row. */
+#include "gen/enc/enc.h"
 
 /* ---- byte equivalence classes ---- */
 
@@ -149,7 +152,8 @@ static int refine_by(Dfa *d, int ncls, const uint8_t *bits)
  * `\N` compiles from, so `(?m)`'s idea of a line break and the rest of the
  * front end's cannot drift apart, and the day DD-11's typed definition lands
  * there is one table to rebind rather than a scatter of literals. */
-static void eqclasses(Nfa *nfa, Dfa *d, bool has_word, bool has_nl)
+static void eqclasses(Nfa *nfa, Dfa *d, bool has_word, bool has_nl,
+                      const unsigned char *startcls)
 {
     memset(d->clsmap, 0, 256);
     int ncls = 1;
@@ -179,6 +183,23 @@ static void eqclasses(Nfa *nfa, Dfa *d, bool has_word, bool has_nl)
 #else
     (void)has_nl;
 #endif
+    /* [K50] The gate's own refinement, and it is the SAME rule as the two
+     * above: `upc_of_class` reads the answer off a class's representative
+     * byte, which is exact only if every byte of the class agrees. `startcls`
+     * is non-NULL only when this machine carries an `N_CSTART`, so a machine
+     * that asks no boundary question gains no split — which is what keeps
+     * every artifact without the gate (every `byte` one, and every utf8
+     * anchored/reverse/ENG_ATTEMPT one) at the alphabet it had.
+     *
+     * NO REFERENCE KNOB WRAPS THIS LINE, and that is deliberate rather than an
+     * omission: the [M6.2] repair slice put `#ifndef`s here because those two
+     * axes have identity gates that need a pre-wave reference compiler. K50's
+     * gate has no pre-K50 reference to build — its whole point is that the
+     * pre-K50 answer was WRONG, so the reference build would be the bug. What
+     * stands in for it is the deny arm, which is a runtime flag on the ENTRY
+     * GUARD and never on this refinement, plus the sabotage rows that delete
+     * the gate outright. */
+    if (startcls) ncls = refine_by(d, ncls, startcls);
     d->ncls = ncls;
     for (int c = 255; c >= 0; c--) d->rep[d->clsmap[c]] = (uint8_t)c;
 }
@@ -512,6 +533,15 @@ typedef struct {
     bool      right_word;
     bool      left_nl;
     bool      right_nl;
+    /* [K50] "the byte at `pos` is one this encoding may start a character at",
+     * i.e. `pos` is a character boundary — the operand of `N_CSTART`.
+     *
+     * ONE SIDE ONLY, like `right_nl` and unlike `left_word`/`right_word`: the
+     * boundary property of a position is a fact about the byte AT it, so there
+     * is no left twin to carry and no symmetry question. A position past the
+     * end of the subject is a boundary, and that half is `end_ok` — read in
+     * the arm rather than folded in here, exactly as `N_EOL_M` reads it. */
+    bool      right_cstart;
     bool      prune;
 } Clo;
 
@@ -748,6 +778,15 @@ static void clo_walk(Clo *cl, int s)
                 if (cl->left_word != cl->right_word) break;
                 s = st->t1;
                 continue;
+            /* [K50] "this position is a character boundary of the artifact's
+             * encoding" — `N_EOL_M`'s shape three arms up, with the encoding's
+             * start set in place of the newline set. `end_ok` is the "or the
+             * end of the subject" half: there is no byte at `n` to ask about,
+             * and `n` is a boundary. */
+            case N_CSTART:
+                if (!cl->end_ok && !cl->right_cstart) break;
+                s = st->t1;
+                continue;
             }
             break;   /* the path ends here */
         }
@@ -766,6 +805,8 @@ static void clo_walk(Clo *cl, int s)
  * call site (which is what wave B's four-bool signature would have become). */
 typedef struct {
     bool left_word, right_word, left_nl, right_nl;
+    /* [K50] one side only — see Clo.right_cstart. */
+    bool right_cstart;
 } Sides;
 
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
@@ -789,7 +830,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
                out, 0, false, eol_ok, end_ok, bot_ok, gst_ok,
                sd.left_word, sd.right_word, sd.left_nl, sd.right_nl,
-               prune };
+               sd.right_cstart, prune };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_walk(&cl, pre[i]);
@@ -1069,6 +1110,15 @@ static Sides sides_of(const Mach *m, int cons_upc, int up_upc)
     sd.right_word = (rgt == UPC_WORD);
     sd.left_nl    = (lft == UPC_NL);
     sd.right_nl   = (rgt == UPC_NL);
+    /* [K50] The boundary property is a fact about the byte AT the position,
+     * i.e. the RIGHT side in subject order, for both machine directions —
+     * `sides_of`'s swap above has already put it there. A context that is not
+     * UPC_NOSTART is a byte a character may start at, which includes "there is
+     * no byte on this side" (UPC_PLAIN): out of subject reads as a BOUNDARY
+     * here, the opposite of what the word and newline properties want and the
+     * right answer for this one. The `pos == n` case does not rely on it — the
+     * arm reads `end_ok` — but a reverse machine's `pos == 0` does. */
+    sd.right_cstart = (rgt != UPC_NOSTART);
     return sd;
 }
 
@@ -1184,13 +1234,34 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * from the very first `make_state` below. */
     d->optional = optional;
     d->overflowed = false;
+    /* [K50] Cleared here rather than trusted to be zero: a `Dfa` is reused
+     * across the forward/reverse/anchored builds of one compile ([OPT-4]'s
+     * rebuild-in-place is the same reason `n` is reset), and a machine with no
+     * gate must not inherit the previous machine's start set — that would give
+     * it a fourth alphabet refinement it never asked for. */
+    d->startcls = NULL;
     /* Hoisted once per machine, like `has_end` below and for the same reason.
      * The ALPHABET refinement has to happen before eqclasses returns, so
      * these cannot wait until the worklist. */
     bool has_word = false, has_nl = false, has_end = false, has_gst = false;
+    /* [K50] Does this machine carry a character-boundary gate? Hoisted with
+     * its three siblings and for their reason — the alphabet refinement has to
+     * happen before `eqclasses` returns. Only `nfa_wrap_unanchored` builds an
+     * N_CSTART, so this is false on the anchored MATCH-HERE machine, on the
+     * reverse machine and on every ENG_ATTEMPT machine, and false under any
+     * encoding whose backend places no restriction. */
+    bool has_cstart = false;
     for (int i = 0; i < nfa->n; i++) {
         switch (nfa->st[i].k) {
         case N_WORDB: case N_NWORDB: has_word = true; break;
+        /* [K50] The gate makes the `pos == n` view live for `N_EOL_M`'s own
+         * reason: "or the end of the subject" is wave A's `end_ok`, and a
+         * machine that could not see `pos == n` would refuse the empty match
+         * at the end of every subject. */
+        case N_CSTART:
+            has_cstart = true;
+            has_end = true;
+            break;
         /* [M6.2 wave C] BOTH `(?m)` kinds refine by the newline set, and both
          * make the `pos == n` view live. `(?m)^` needs the refinement because
          * its operand is the byte to the LEFT — which is a per-CLASS fact of
@@ -1228,7 +1299,27 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
 #endif
     d->clsctx = has_word || has_nl;
 
-    eqclasses(nfa, d, has_word, has_nl);
+    /* [K50] The class axis's fourth value exists for this machine only if the
+     * machine has a gate to read it. The backend is asked once, here, and the
+     * answer is the ONLY thing about an encoding this construction knows.
+     *
+     * THE PARTITION PRECONDITION IS CHECKED, NOT ASSUMED (enc.h's `start_cls`
+     * comment): `upc_of_class` returns ONE value, so a non-start byte that
+     * were also a word byte would classify UPC_WORD, read as a character start
+     * to the gate, and re-open K50 silently. A backend that violates it is an
+     * internal error at the site that would have committed the miscompile. */
+    if (has_cstart) {
+        const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
+        if (!pcrec_enc_start_cls_ok(e))
+            ctx_fail(cx, 0,
+                     "internal error: encoding '%s' has a character-start set "
+                     "that overlaps the word or newline sets, which the DFA "
+                     "class axis represents as one partition",
+                     e && e->name ? e->name : "?");
+        d->startcls = e ? e->start_cls : NULL;
+    }
+
+    eqclasses(nfa, d, has_word, has_nl, d->startcls);
     /* R1 A-3: the binding constraint for table machines is total emitted
      * table entries (gcc time is flat in data size), not state count alone */
     d->maxstates = maxstates;
@@ -1258,7 +1349,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     Mach m = { prune, reverse, has_end, has_gst,
-               { true, has_word, has_nl } };
+               { true, has_word, has_nl, has_cstart } };
 
     /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the
      * state `nfa_wrap_unanchored` installs — the start-anywhere self-loop. The

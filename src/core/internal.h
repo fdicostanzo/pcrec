@@ -1132,6 +1132,24 @@ typedef enum {
      * the bit clear and mid-pattern `\G` (`a\Gb`) dies in the closure with no
      * special case (assertions_design.md §4.2). */
     N_GSTART,
+    /* [K50] "this position is a CHARACTER BOUNDARY of the artifact's
+     * encoding", goto t1. The gate `nfa_wrap_unanchored` puts in front of the
+     * pattern on the self-loop's own re-entry, so that the positions the
+     * ENGINE generates are exactly the encoding's boundaries.
+     *
+     * IT IS `N_EOL_M`'s SHAPE, not a new mechanism. `N_EOL_M` is "end of
+     * subject, or the byte to the RIGHT is a newline"; this is "end of
+     * subject, or the byte to the RIGHT is one this encoding may start a
+     * character at". One `end_ok` read, one class-axis read, no direction and
+     * no second byte — strictly simpler than `N_WORDB`, which needs both
+     * sides.
+     *
+     * NO NODE OF THIS KIND EXISTS UNDER AN ENCODING THAT PLACES NO
+     * RESTRICTION, which is what `byte` is: `PcrecEnc.start_cls` is NULL
+     * there, the wrap builds its pre-K50 two-state shape, and every byte
+     * artifact is unmoved. A gate whose class were every byte would be a
+     * tautology and the builder does not emit tautological assertions. */
+    N_CSTART,
     N_ACCEPT
 } NKind;
 
@@ -1236,9 +1254,24 @@ unsigned pcrec_byte_freq_total_ppm(void);
  *   UPC_WORD   a word character
  *   UPC_NL     a newline (the D64 definition, `pcrec_cls_newline`)
  *
- * THE THREE ARE DISJOINT AND EXHAUSTIVE because a newline is not a word
- * character; there is no fourth combination to represent. src/ir/dfa.c's
- * `eqclasses` refines the byte-equivalence partition by whichever of the two
+ * [K50] A FOURTH VALUE, and it is a REFINEMENT OF UPC_PLAIN rather than a new
+ * dimension:
+ *
+ *   UPC_NOSTART  a byte this artifact's encoding may not begin a character
+ *                at (`PcrecEnc.start_cls`'s complement; under UTF-8 the
+ *                continuation bytes 0x80..0xBF)
+ *
+ * `N_CSTART` reads it, and it is a partition member for the same reason the
+ * other three are: a byte that is not a character start is neither a word
+ * byte nor a newline. THAT IS A PRECONDITION ON THE BACKEND, not a fact about
+ * bytes in general — `pcrec_enc_start_cls_ok()` checks it and
+ * `pcrec_build_dfa` refuses a backend that violates it, because the failure
+ * mode is silent: a non-start byte classified UPC_WORD would read as a
+ * character start to the gate and re-open K50.
+ *
+ * THE THREE — now four — ARE DISJOINT AND EXHAUSTIVE because a newline is not
+ * a word character; there is no further combination to represent. src/ir/dfa.c's
+ * `eqclasses` refines the byte-equivalence partition by whichever of the
  * sets the machine actually needs, so every byte of a class has the same
  * answer and `upc_of_class` is exact rather than a sample.
  *
@@ -1249,7 +1282,7 @@ unsigned pcrec_byte_freq_total_ppm(void);
  * a per-state array. One enum, two uses, and the symmetry is real: the
  * forward and reverse machines swap which side is which, which is what
  * make_state's `reverse` mapping is for. */
-enum { UPC_PLAIN = 0, UPC_WORD = 1, UPC_NL = 2, UPC_N = 3 };
+enum { UPC_PLAIN = 0, UPC_WORD = 1, UPC_NL = 2, UPC_NOSTART = 3, UPC_N = 4 };
 
 
 /* One closure of a pre-set under one class-axis context. */
@@ -1409,6 +1442,20 @@ typedef struct {
      *
      * Named `wordctx` through wave B, when `\b` was the only customer. */
     bool     clsctx;
+    /* [K50] THE ENCODING'S CHARACTER-START SET, or NULL — the datum
+     * `upc_of_class` reads to answer UPC_NOSTART, and the ONLY thing in this
+     * structure that knows an encoding exists.
+     *
+     * Set by `pcrec_build_dfa` from `PcrecEnc.start_cls`, and set ONLY when
+     * this machine's NFA actually carries an `N_CSTART` — same discipline as
+     * `has_word`/`has_nl`, and for the same reason: a machine that asks no
+     * boundary question must not gain a fourth alphabet refinement or a
+     * fourth column in any derived table. NULL on every `byte` machine (the
+     * backend expresses no restriction) and on every utf8 machine with no
+     * gate — the anchored MATCH-HERE machine, the reverse machine, and every
+     * ENG_ATTEMPT machine, none of which carry the self-loop the gate rides
+     * on. */
+    const unsigned char *startcls;
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
     /* [ENG-ABS] IS THIS MACHINE OPTIONAL, i.e. may the compile continue
@@ -2958,6 +3005,12 @@ static inline int upc_of_class(const Dfa *d, int c)
 {
     if (cls_has(pcrec_cls_word_esc, d->rep[c])) return UPC_WORD;
     if (cls_has(pcrec_cls_newline,  d->rep[c])) return UPC_NL;
+    /* [K50] `startcls` is set only when this machine actually HAS a gate node
+     * — `pcrec_build_dfa` scans for `N_CSTART` exactly as it scans for
+     * `N_WORDB` — so a machine with no gate asks no fourth question and every
+     * derived table emits its pre-K50 column. Under `byte` the field is never
+     * set at all, the backend having no restriction to express. */
+    if (d->startcls && !cls_has(d->startcls, d->rep[c])) return UPC_NOSTART;
     return UPC_PLAIN;
 }
 

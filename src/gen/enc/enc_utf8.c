@@ -270,8 +270,42 @@ static const char advance_utf8[] =
 "while (@P < @N\n"
 "       && (@S[@P] & 0xC0) == 0x80) @P++;\n";
 
+/* [K50] WHERE A MATCH MAY BEGIN — the two spellings enc.h's `start_cls` and
+ * `start_guard` document, and they are the SAME predicate `next_pos` and the
+ * `advance` above already implement: a position is a character boundary iff it
+ * is the end of the subject or its byte is not a continuation byte.
+ *
+ * THE SET IS "NOT A CONTINUATION BYTE", NOT "A VALID LEAD BYTE", and the
+ * difference is utf8_design.md §2.6(c) rather than sloppiness. An ill-formed
+ * byte — 0xFE, 0xFF, an overlong lead, a lead whose continuations are missing
+ * — is a POSITION A SEARCH MAY START AT, because §2.6(c)'s ruled semantics
+ * require matches after an ill-formed byte to be found (`a` on `FF 63` gives
+ * `(1,2)`). K50's fix gates where attempts BEGIN; it does not make the search
+ * refuse to walk past garbage, and a lead-byte set would have done the latter.
+ * The bytes excluded are exactly 0x80..0xBF.
+ *
+ * THE PARTITION PRECONDITION enc.h states is satisfied and is worth checking
+ * by eye as well as by `pcrec_enc_start_cls_ok`: 0x80..0xBF holds no word byte
+ * and no newline, both of which are ASCII. */
+static const unsigned char start_cls_utf8[32] = {
+    /* 0x00..0x7F: every ASCII byte starts a character */
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    /* 0x80..0xBF: the continuation bytes — the ONLY positions excluded */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    /* 0xC0..0xFF: leads, and the ill-formed bytes §2.6(c) keeps startable */
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+};
+
+/* The same rule as an expression. `@P >= @N` first so the subject is never
+ * read at `@N`: match_api.md §3.1 promises the matcher never reads `s[n]`, and
+ * the end of the subject is a boundary. */
+static const char start_guard_utf8[] =
+    "@P >= @N || (@S[@P] & 0xC0) != 0x80";
+
 const PcrecEnc pcrec_enc_backend_utf8 = {
     /* `max_cp` is Unicode's maximum: the complement universe `[^x]` means
      * under this encoding (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8, advance_utf8
+    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8, advance_utf8,
+    start_cls_utf8, start_guard_utf8
 };

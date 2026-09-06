@@ -30,6 +30,9 @@
 #include <string.h>
 
 #include "core/internal.h"
+/* [K50] the encoding's character-start set: the gate's class (nfa.c) and
+ * the class axis's fourth value (dfa.c) both come from the backend row. */
+#include "gen/enc/enc.h"
 
 typedef struct {
     Ctx *cx; Nfa *nfa; bool rev;
@@ -961,9 +964,58 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
 /* Lowest-priority start self-loop: new_start = SPLIT(pattern [preferred],
  * any-byte -> new_start). Threads from earlier subject positions always
  * outrank later ones, so D3's accept-pruning yields the leftmost-first
- * match end in one pass (D7). */
+ * match end in one pass (D7).
+ *
+ * ===================================================================
+ * [K50] THE POSITIONS THIS LOOP GENERATES ARE THE ENCODING'S CHARACTER
+ * BOUNDARIES, and the caller's own position is NOT one of them.
+ *
+ * THE DEFECT. The self-loop consumes ONE BYTE, so the split above offered the
+ * pattern at every byte offset. Under a multi-byte encoding that includes
+ * offsets INSIDE a character, and utf8_design.md §5.5 asserted such offsets
+ * were harmless because they "have no path". §2.6.1 of the same document had
+ * already written down the refutation one section earlier: "no path" INVERTS
+ * for a negative assertion, which succeeds exactly where its body has none.
+ * So a mid-character offset does not waste an attempt, it ANSWERS — K50's
+ * witness is `\B` over `61 CE B1` reporting `(2,2)` from an ordinary
+ * `startpos = 0`, where libpcre2 10.46 under `PCRE2_UTF` answers `(3,3)` and
+ * `(2,2)` is precisely its `options=0` BYTE answer.
+ *
+ * THE GATE IS ON THE SPLIT INTO THE PATTERN, NOT ON THE LOOP'S STEP. The loop
+ * must still TRAVERSE ill-formed bytes: §2.6(c)'s ruled semantics require a
+ * search to find matches AFTER one (`a` on `FF 63` gives `(1,2)`), so the
+ * self-loop's class stays every byte and only the entry into the pattern is
+ * conditioned. Two placements that look plausible and are not, recorded so
+ * they are refuted once rather than re-derived:
+ *
+ *   - gating the loop's RE-ENTRY (`any -> gate -> sp`) kills the scan: the
+ *     self-loop is the only forward advance, so a thread blocked at a
+ *     continuation byte dies and `a` on `CE B1 61` is never found at all;
+ *   - making the loop consume whole CHARACTERS needs a greedy, deterministic
+ *     continuation skip, and a priority split cannot force one — the
+ *     nondeterministic spelling still reaches every byte offset.
+ *
+ * WHY THERE ARE TWO SPLIT STATES. `sp0` is `nfa->start` and is UNGATED; the
+ * self-loop returns to `sp1`, which is gated. So the position the CALLER
+ * supplied enters the pattern whatever it is, and every position this loop
+ * GENERATES is a boundary — which is exactly the rule Frank ruled (the engine
+ * owns the positions it invents; the caller's own position is the caller's).
+ *
+ * That split of responsibility is what lets ONE machine serve both arms of
+ * the `-fno-startpos-guard` axis: the deny arm keeps §2.6.1.1's permissive
+ * mid-character answers VERBATIM because the automaton never had an opinion
+ * about the caller's position, and the default arm refuses such a position at
+ * the emitted ENTRY instead. A gate on `sp0` too would have made the deny arm
+ * answer no-match where §2.6.1.1 rules `(1,1)`, and the axis would have been
+ * a second automaton rather than a guard.
+ *
+ * UNDER AN ENCODING THAT RESTRICTS NOTHING there is no gate node and no
+ * second split: `start_cls` is NULL, the construction below is the pre-K50
+ * one state for state, and every `byte` artifact is unmoved. A tautological
+ * gate is not emitted. */
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
+    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     NB b = { cx, nfa, false, 0, false };
     int sp = nst(&b, N_SPLIT);
     int any = nst(&b, N_CLASS);
@@ -971,6 +1023,20 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
     nfa->st[sp].t1 = nfa->start;
     nfa->st[sp].t2 = any;
     nfa->st[any].t1 = sp;
+
+    if (e && e->start_cls) {
+        /* The loop's own split, and the gate in front of its pattern branch.
+         * `sp` above keeps naming the caller's ungated entry and stays
+         * `nfa->start`; the self-loop is re-pointed at `sp1`. */
+        int gate = nst(&b, N_CSTART);
+        int sp1  = nst(&b, N_SPLIT);
+        memcpy(nfa->st[gate].cls, e->start_cls, 32);
+        nfa->st[gate].t1 = nfa->start;   /* still the pattern's own start */
+        nfa->st[sp1].t1  = gate;
+        nfa->st[sp1].t2  = any;
+        nfa->st[any].t1  = sp1;
+    }
+
     nfa->start = sp;
     /* [OPT-K] `anch_start` deliberately does NOT move: it keeps naming the
      * pattern's own first state, which is what the offset-k prefix walk
