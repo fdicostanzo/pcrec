@@ -332,12 +332,23 @@ per artifact rather than a new rule — but it is the first conditional member,
 and it is what makes the differential's §4 claim the strong one (a byte
 artifact is BYTE-IDENTICAL under either setting, not merely guard-free).
 
-**(d) The full battery is yours.** I ran the targeted suites named in §4 and
+**(d) TWO CHECKS IN THE TREE WERE PINNED TO THINGS THAT MOVE, and both cost
+me a red before I understood them.** Recorded as a pattern rather than as two
+incidents: `run_offset_skip.sh` §4 pinned a PREAMBLE LENGTH (`tail -n +8`),
+and my own differential's first driver pinned a BUFFER'S CONTENT (a zero byte
+at `s[n]`, which made a guard that reads past the end of the subject read
+green). Both are the same shape — a check whose claim is about CONTENT
+expressed as a position or an accident — and the tree has a name for the
+family already (docs/dev/learnings.md §3). Worth a row in that file if you
+agree; I did not add one, because a lane adding to the digest on the strength
+of its own two instances is how a digest gets noisy.
+
+**(e) The full battery is yours.** I ran the targeted suites named in §4 and
 §8. `make test`, `make mech` (the four new rows have never run through the real
 matrix, only as hand-planted edits), `make test-axes` in full, and the Linux
 arm are all unrun here.
 
-**(e) `make test-axes` full-corpus run is OWED.** I ran it scoped to
+**(f) `make test-axes` full-corpus run is OWED.** I ran it scoped to
 `tests/utf8` (which is where it found §6's defect) and the roster/derivation
 cross-check on the whole tree (22 bits, matching `tuning.md`'s 22 documented
 mentions). The FULL sweep needs to classify this axis's divergence population
@@ -383,16 +394,49 @@ this event added none.
 | `make test-startbnd` (new) | **5 / 0** (§1/§2, §3, §4, §5, §6) |
 | known-fail ratchet | `still failing: 1` (K34 alone) `now passing: 0` — K50's file retired |
 | `bash tests/harness/run.sh tests/utf8` | **1342 cases / 0 failures** |
-| `make test-codegen` | see below |
+| `make test-codegen` | **6/8 scripts, and `run_codegen_tests.sh` reads 104/4 — byte-identical to a build of the branch point.** See the triage below |
+| `make strict` | clean (`-Werror -Wshadow`, whole tree) |
 
-**`make test-codegen`: `run_group: 5/8 scripts passed`, and the three reds are
-NOT triaged as mine — see §10(a), which is an owed item rather than a
-conclusion.** The two scripts whose output the block captured were green
-(`run_scan_edge_census.sh` 14/0, `run_n1_budget.sh` 13/0). The brief names
-four known darwin-only reds in this target, but I have not matched the three
-observed against that list, and `run_codegen_tests.sh` is where `ABI_EXPECT`
-lives — so this is the one result in this table a reviewer should not take on
-trust.
+### `make test-codegen`, triaged against a build of the branch point
+
+The first run read `run_group: 5/8 scripts passed`. **I did not assume the
+reds were the brief's known darwin ones** — I built `1c4c91b4` in a scratch
+worktree and ran the same three scripts there. That is what separated them:
+
+| script | branch point | this lane | verdict |
+|---|---|---|---|
+| `run_codegen_tests.sh` | 104 pass / **4 fail** (OS-0b ×3, K24 de-sugaring) | 103 / **5** | 4 pre-existing (the brief's known darwin reds); the 5th was **MINE** and is fixed |
+| `run_offset_skip.sh` | **22 / 0 GREEN** | 21 / 1 | **MINE**, and fixed |
+| `run_inline_capability.sh` | `nm could not read arm_a.o` | identical | pre-existing (darwin) |
+
+**The two that were mine, both real and both worth reading:**
+
+**(a) `[TT-9]`: a new `run_*_diff.sh` must be in `tests/lib/san_scripts.txt`
+or carry a stated exclusion.** Mine was in neither. It has the manifest's
+usual reason (two artifacts per witness in one TU, compiled and run) and one
+of its own: its drivers do raw byte-buffer arithmetic over deliberately
+ill-formed UTF-8, **including a continuation byte parked at `s[n]`** to catch
+a guard that reads past the end of the subject. That planted read is exactly
+what a sanitizer axis is for, and the check it feeds would be worth little
+unwatched.
+
+**(b) `run_offset_skip.sh` §4 was pinned to a PREAMBLE LENGTH.** It compares
+two artifacts built to `p1.c` and `p2.c` — each including its own header, so
+that one line differs for a reason nothing to do with the flag — and it
+skipped it with `tail -n +8`, the preamble's length on the day it was written.
+The `<PREFIX>_STARTPOS_GUARD` stamp joins the SHARED prologue, so the
+`#include` moved to line 8, stopped being skipped, and the check went red on a
+pair of artifacts that are **byte-identical everywhere the flag could reach**
+(verified by hand: `diff` of the two is empty).
+
+I fixed the CHECK rather than moving the stamp, and the reasoning matters
+because "edit the check until it passes" is the wrong instinct: a line count is
+a pin on every stamp anyone adds later, and the check's own claim — "compare
+past each artifact's own header include" — is expressible by CONTENT
+(`grep -v '^#include "'`) without that coupling. The stamp belongs in the
+prologue with the other selection facts. **A reviewer who disagrees should look
+at this one first**; moving the stamp below the include is the alternative and
+it would leave the magic number armed for the next lane.
 
 ---
 

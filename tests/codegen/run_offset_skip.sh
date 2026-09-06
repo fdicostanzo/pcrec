@@ -382,8 +382,20 @@ done
 
 # ...and it must not be a blanket off-switch for the whole prefilter axis:
 # a pattern that never had an offset-k form must be UNCHANGED by the flag.
+#
+# THE COMPARISON SKIPS THE ARTIFACT'S OWN `#include "<name>.h"` LINE, and it
+# does so BY CONTENT rather than by line NUMBER. The two builds go to `p1.c`
+# and `p2.c`, so each includes its own header and that one line differs for a
+# reason that has nothing to do with the flag. This read `tail -n +8` — the
+# preamble's length on the day it was written — and [K50] broke it by adding a
+# `<PREFIX>_STARTPOS_GUARD` selection stamp to the SHARED prologue: the
+# `#include` moved to line 8, stopped being skipped, and this check went red on
+# a pair of artifacts that are byte-identical everywhere the flag could reach.
+# A line count is a pin on every stamp anyone adds later; dropping the include
+# by its own shape is the same claim without that coupling.
+drop_own_header() { grep -v '^#include "' "$1"; }
 if emit p1 '\b[0-9a-f]{32}\b' && emit p2 '\b[0-9a-f]{32}\b' -fno-offset-skip; then
-    if cmp -s <(tail -n +8 "$WORKDIR/p1.c") <(tail -n +8 "$WORKDIR/p2.c"); then
+    if cmp -s <(drop_own_header "$WORKDIR/p1.c") <(drop_own_header "$WORKDIR/p2.c"); then
         ok "§4 a DECLINED pattern is byte-identical across the flag (the flag denies this axis and nothing else)"
     else
         bad "§4 '\\b[0-9a-f]{32}\\b' is not byte-identical across -fno-offset-skip, and it selects no offset-k form either way — the flag is reaching something that is not its axis"
