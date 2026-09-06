@@ -313,4 +313,50 @@ never edited afterwards.
   plus matcher-throughput ratios). No `_log.md` — the lane's ordering is
   in its commits.
 
+- `utf8s3_report.md` — [M5.0] STAGE 3, module `unicode-props`' PRODUCER
+  (2026-09-06, lane utf8s3). `\p{L}` compiles: 45 names, both encodings, both
+  polarities, in a class, under `-i`; the UCD vendored at
+  `third_party/ucd-16.0.0/` behind a generic `make gen-tables`. Read it for
+  five things.
+
+  **§2's headline is the D27 corpus, not the acceptance table.**
+  `tests/utf8/axis04_p_categories.rxt` was written by a BLINDED author
+  against the pre-stage-2 tree with each block's oracle answer carried as a
+  comment above a `perr` line. Promoted mechanically: **462 of 506 cases
+  green on the first run, ZERO semantic divergences**, and all 44 failures
+  the SAME compile-size refusal on six patterns.
+
+  **§3 is K53, an ENGINE issue found through `\p`**: the OPTIONAL anchored
+  DFA machine's bytes count toward `max_emit_bytes`, so it refuses patterns
+  that compile without it (`\p{L}` under `-e utf8` is 1,076,640 bytes at
+  default axes and **772,412** with `-fno-anchored-dfa`) — contradicting that
+  machine's own design promise that its overflow is a selection outcome and
+  never a diagnostic. It also refutes `utf8_design.md` §3.3's sizing
+  conclusion, which measured STATES where the emitted size is
+  `states x CLASSES x digits`.
+
+  **§4b is about the whole tree and a RULING IS OWED**: the shared dlopen
+  shim resolves macOS's SYSTEM libpcre2 **10.42 / Unicode 14.0.0** on this
+  box, not the Homebrew 10.48 that `BOILERPLATE.md` and the `[MACPORT]`
+  report both name — bare SONAMEs precede the Homebrew absolute paths. Every
+  dlopen-based oracle in this repository is affected, and it re-opens what
+  U13's 119 PC-3 failures actually measured. The lane added a
+  Unicode-version accessor and made its own suite PRINT the resolved version
+  rather than reordering the list, which would re-baseline the whole suite.
+
+  **§5 is a cursor bug the differential structurally could not see**:
+  `esc_class_value` never advanced past a produced `EXT_MEMBERS`, so
+  `[^\p{L}]` excluded `{` and `}` as well as the letters. Found by the
+  ORACLE-FREE invariant `[^\p{L}] == \P{L}`, because both sides of the
+  membership differential compile `\p{L}` at an ATOM. `esc_atom`'s
+  [M6.5.2] lesson at the class position, predicted verbatim by that entry.
+
+  **§6 scores the brief's four traps and TWO fired inverted.** S121 did NOT
+  wake at stage 3 as stage 1 predicted — and stage 1's reach probe would have
+  said it had, because it asked only whether `\p{L}` COMPILES and stage 3's
+  own encoding clamp makes that eight Latin-1 runs. The hazard is now proven
+  STRUCTURALLY unreachable with a `\p`-free control. §9 is the caseless rule
+  (`Lu`/`Ll`/`Lt` are `L&`, everything else invariant), which is why stage 4
+  turned out not to be a precondition.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
