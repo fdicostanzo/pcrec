@@ -21729,3 +21729,54 @@ test-codegen known-red count drops 5→4 (S199 was never darwin's).
 Owed: the Linux make test re-run at THIS commit (mech stage runs until
 ~16:45); the utf8-owed items + capability probe + DONE; a small admin
 row for the cwmax floors' mech row + run_encoding_checks' suite token.
+
+## 2026-09-05 (EDT), fifty-fifth session part 3 (evening) — the FULL §8.5 sweep found K51 and K52; the slot closed with an unconditional green and BOTH halves of ask (i); I-51/DONE in the bench inbox
+
+**The full §8.5 sweep (2,964 ASCII blocks, its first run ever) earned
+its keep twice.** K51: ONE adversarial family (the K23 step-explosion
+shape, 4 corpus rows) where byte ANSWERS and utf8 gives up typed
+(RX_ERR_FRAMES) or refuses at the code-bytes cap (781,605 B on the {0,2}
+sibling) — rung loss proven by the artifacts' own stamps (0x11 vs 0x10;
+65,536 frames still exhausts), P-11 falsified as stated, the design's
+rung-loss-is-throughput pricing surfacing at its edge. Held by a named
+manifest with expiry guards (two faces: give-up + cap-refusal). K52:
+DD12a(i) was VACUOUS — objdump -j .text is EMPTY on Mach-O, every
+historical green was empty-vs-empty, and the whole-object scope can
+never pass by design (the seam's residual bodies + K49's advance ARE
+per-encoding text). Now a loud KNOWN-K52 skip; [ENCCHK-DD12A] chartered
+(bundling the cwmax mech row + the encoding-checks suite token).
+Sweep at the fix commit: 10/0, manifest reconciling exactly (8 cells /
+4 rows, no guard fired).
+
+**The slot's record**: final full make test at 201e0b1c — 36/36
+sections, zero errors, UNCONDITIONAL GREEN (the day started at eight
+failing targets). Expansion diff discharged inside it (29,111 three-way
+cells vs 10.46 over 890 patterns, 0 disagreements). Capability probe on
+the bench box: NEEDED under gcc 15.2.0, verbatim in DONE. Solo mech
+re-runs: S-U5/7/9 DETECTED clean, S-U6 held expected-UNDETECTED with
+its closing witness named, S219/S220 confirmed expected-UNDETECTED at
+the fixed tree (the battery's NOW-DETECTED was the dirty-baseline §9
+red — no flips).
+
+**The floor probe (ask (i)) got BOTH halves in one day and they agree
+against the regression's stability**: ARM (xarch0): forward TIES plain
+(<1%, x3 runs). Linux (tonight, their own box, load 0.11, single-
+artifact binaries): plain 0.2945 / forward 0.2943 ns/B — A TIE AT THE
+ABI-16 VALUE; the bench's x2.0 DOES NOT REPRODUCE under our instrument
+(the ccdiff floor/match/auto precedent's class; their [B39] re-runs the
+cell free — the artifact is byte-identical). The robust cross-arch fact
+is SHARED: ~5x on x86, ~3x on ARM — a governor-relevant line.
+
+**I-51/DONE committed to the bench inbox (63712e3)**: the full slot
+account, both K-numbers, the verdict line, both ask-(i) halves, honest
+deferrals (O-16 (iii) to a proper probe session; the D27 10.46
+re-verification to its chartered instrument — the promotion tooling was
+scratch and midnight one-off oracles are how bad oracles happen), the
+[B39] pin note (their prep valid; 37f5ae02-vs-tip is Frank's one-liner).
+Box released idle; no bench night window (their session closed).
+
+Day's ledger, one line: three merges reviewed/landed (K49, xarch0, plus
+the morning's two repair slices and the evening's three), four rows
+chartered from Frank's asks + two from findings, two K-numbers filed
+with held witnesses, ten merge-night landing debts repaired, and the
+suite went eight-red to unconditionally green on the reference box.
