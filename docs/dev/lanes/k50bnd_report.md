@@ -438,9 +438,10 @@ this event added none.
 
 | suite | result |
 |---|---|
-| identity gate | **16 passed / 0 failed** |
+| identity gate | **16 passed / 0 failed** (re-run after the landing-condition changes: 16/0 again) |
+| `make test-axes` scoped to `tests/utf8` | **1130 cases, agree=1130, gained=0, mismatches=0** — see §7(f) |
 | `make test-encoding-checks` | **10 / 0** — including K49's advance-agreement in both directions (10,738 cells each, utf8 differing from `pos+1` on 2,268 of them) and §8.5's byte-vs-utf8 ASCII agreement over 250 blocks |
-| `make test-startbnd` (new) | **5 / 0** (§1/§2, §3, §4, §5, §6) |
+| `make test-startbnd` (new) | **7 / 0** (§1/§2, §3, §4, §5, §5b, §6, §7) |
 | known-fail ratchet | `still failing: 1` (K34 alone) `now passing: 0` — K50's file retired |
 | `bash tests/harness/run.sh tests/utf8` | **1342 cases / 0 failures** |
 | `make test-codegen` | **6/8 scripts, and `run_codegen_tests.sh` reads 104/4 — byte-identical to a build of the branch point.** See the triage below |
