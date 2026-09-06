@@ -144,9 +144,23 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # and RUNSH_* below does NOT — the opposite of the K49 movement one comment up,
 # and the two together are why these pins are kept as a pair rather than one
 # derived from the other.
+# 2026-09-06 (lane k50bnd, K50 FIXED) — +-0 files, +4 blocks, +5 lines, and
+# the arithmetic is worth writing out because THREE movements cancel into it.
+# tests/known_fail/k50_utf8_dfa_midchar_start.rxt is DELETED (-1 file, -1
+# block, -1 line) now that the DFA half is fixed and the ratchet fired on it;
+# tests/utf8/axis11_startpos_boundary.rxt is NEW (+1 file, +7 blocks, +8
+# lines); and tests/utf8/axis09_nextpos_findall.rxt loses its two
+# mid-character-`startpos` blocks (+-0 files, -2 blocks, -2 lines), which move
+# to tests/utf8/run_startbnd_diff.sh Sec 6 because no `.rxt` directive spells
+# a compile flag. So the FILE count is unchanged for a reason — a retirement
+# and an addition happening to cancel — and a reader who reads "no file
+# movement" as "no corpus movement" has the wrong picture. RUNSH_* below moves
+# by a DIFFERENT amount (+1 file, +5 blocks, +6 lines): the deleted file was
+# under known_fail and the new one is not, which is exactly the
+# opposite-directions case the k49fix comment above records.
 CENSUS_FILES=208
-CENSUS_BLOCKS=3884
-CENSUS_LINES=28451
+CENSUS_BLOCKS=3888
+CENSUS_LINES=28456
 # 2026-09-02 — moved for [OPT-5] STEP 2's two corpus files
 # (tests/base/start_pinned_startpos.rxt, tests/assertions/
 # start_pinned_startpos.rxt): +2 files, +5 blocks, +95 lines.
@@ -154,9 +168,9 @@ CENSUS_LINES=28451
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
-RUNSH_FILES=206
-RUNSH_BLOCKS=3880
-RUNSH_LINES=28439
+RUNSH_FILES=207
+RUNSH_BLOCKS=3885
+RUNSH_LINES=28445
 # 2026-09-02 — moved alongside CENSUS_* above, same cause: +2/+5/+95,
 # neither new file lands under tests/known_fail/.
 # 2026-09-05 — moved alongside CENSUS_* above (the three-merge night);
