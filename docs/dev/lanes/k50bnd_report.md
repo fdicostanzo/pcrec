@@ -674,3 +674,83 @@ it would leave the magic number armed for the next lane.
 box, §2.6.1.1); `docs/dev/known_issues.md` (K50 → FIXED);
 `docs/design/utf8_measurements/probes/probe_startbnd.py` +
 `out/startbnd.txt`; four directory `CLAUDE.md`s.
+
+---
+
+## 10. [K50-NULLGATE]: the placement analysis and the PREDICTION TABLE
+
+**Written before any measurement and before any engine edit** (commit order is
+the evidence: this section lands alone, ahead of the implementation).
+
+### 10.1 Placement count: ONE survives
+
+The charter's D6 trigger is "more than one candidate placement". Three were
+considered and two are refuted, so no panel is convened — the same shape as
+the two dead gate placements in §5.
+
+**(A) AST-level, pre-NFA — `pcrec_minw(root) == 0`. SURVIVES.**
+
+**(B) DFA-level — `state_acc_any` over the unanchored start closure. REFUTED
+by a structural fact, not by preference.** It is genuinely the only mechanism
+in the tree that models surrounding-character context (`DState.up[UPC_N]
+.accept`, `src/gen/emit_dfa.c:2682`); every other candidate treats assertions
+as unconditionally satisfied. But `nfa_wrap_unanchored` is called only inside
+`if (!nfa_has_bot(...))` (`src/core/compile.c:1191-1194`), the branch that
+selects `PCREC_ENG_UNANCH` — **so for an ENG_ATTEMPT pattern there is no gate
+node and no unanchored-DFA start closure to read at all**, while site 2 (the
+ENG_ATTEMPT `continue`, `src/gen/emit_dfa.c:6450-6462`) is emitted from
+`pcrec_enc_start_guard` and reads no NFA or DFA state whatever. Since the
+measured 1.33× regression is ENG_ATTEMPT's, (B) is unavailable at exactly the
+site the optimization is for, and adopting it would leave site 2 to a second
+predicate — two derivations of one fact.
+
+**(C) NFA-level ε/assertion reachability from the pattern's own start.
+REFUTED as redundant**: a walk that passes every assertion as though it held
+is `pcrec_minw`'s answer computed a second time, one representation later, and
+it is still unavailable to site 2 for (B)'s reason.
+
+### 10.2 Why (A) is sound — the argument that must become a check
+
+A reported NON-empty match consumes a byte at its start, and no lowered utf8
+path begins with a continuation byte — which is exactly what `start_cls_utf8`
+asserts. So for a non-nullable pattern the first-byte test already does the
+gate's job and **the gate is REDUNDANT, not merely unnecessary**. Generalized
+past utf8: *the gate is needed iff the pattern is nullable, because a
+non-nullable match's first byte is in `start_cls` by the backend's own
+contract.* That is a proof rather than a heuristic, and it is prose until it
+is an invariant over the NFA — every `N_CLASS` reachable from the pattern's
+own start must have an empty intersection with the complement of `start_cls`.
+It lands as a check, per the manager's standing condition on the byte
+tautology (§7).
+
+`pcrec_minw`'s sound direction is already the one this needs and is documented
+at `src/opt/mrl.c:47`: it under-estimates the minimum, hence over-reports
+nullable, hence **over-builds the gate — today's answers preserved whenever
+the analysis is uncertain.**
+
+It is NOT the empty-subject probe the manager rejected. `pcrec_minw` returns 0
+for `A_LOOK` unconditionally, so `(?<=x)` reads nullable and KEEPS its gate —
+the exact case the runtime probe gets wrong.
+
+### 10.3 THE PREDICTION TABLE (stated before measurement)
+
+| # | prediction | scored |
+|---|---|---|
+| P1 | the DD12a(i) `[K50]` gate-refinement class (238 pairs today) shrinks to the nullable subset: **fewer than 20 members remain** | |
+| P2 | the 3 `#UNDECLARED` rows (`\Z`, `\b`, `\B`) are all nullable and **all three REMAIN** in the class | |
+| P3 | of the 4 stamp-declared moved-form pairs, **at least 3 are non-nullable and leave** | |
+| P4 | `b\|c`, `frank\|fred`, `a(b\|c)+d` — §6b's three named breakers — **all leave** | |
+| P5 | the manifest's floor (200) and ceiling (20) both become WRONG and must be re-derived; the floor was written for a 238-member class and cannot survive the narrowing | |
+| P6 | ENG_ATTEMPT's 1.33× regression disappears for non-nullable patterns; the `(?m)^a\|\B` witness keeps its guard | |
+| P7 | byte artifacts still unmoved — 0 differences, claim unchanged | |
+| P8 | abi 24 → 25; every unanchored utf8 artifact of a NON-nullable pattern moves (back toward its pre-K50 shape), nullable ones do not move | |
+
+### 10.4 Implementation shape
+
+`fit.prefilter_lang_nullable` (`src/opt/select_engine.c:653`) is ALREADY
+`pcrec_minw(root) == 0`, already on `EngineFit`, already reachable as
+`cx->job->fit.*` at all three sites, and already computed before the NFA
+build. Adding a second field with an identical definition would be the
+parallel mechanism memory `pcrec-general-mechanisms-not-special-cases`
+forbids, so the fact is RENAMED to what it is (`lang_nullable`) and read by
+both rows: one derivation, one name, two consumers.
