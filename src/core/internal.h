@@ -4560,9 +4560,9 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
  * larger `sb_printf` rather than appending it. Returns `buf`, which is the
  * EMPTY STRING wherever the guard is not emitted — so a `%s` at the splice
  * point contributes nothing and no call site needs its own conditional. Size
- * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX`; overflow is a loud internal
- * error, never a truncated half-guard. */
-#define PCREC_STARTPOS_GUARD_TEXT_MAX 1024
+ * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX` — a `limits.def` row (home
+ * INTERNAL_H, D90), expanded by this file's own include above, NOT spelled
+ * here; overflow is a loud internal error, never a truncated half-guard. */
 const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
                                       const char *indent, const char *posvar,
                                       const char *subjvar, const char *lenvar);
