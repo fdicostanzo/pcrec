@@ -1157,7 +1157,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool pfc_prefilter_forced =
                 (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
             bool collapse = pfc_wanted && (pfc_prefilter_forced ||
-                                           !cx.job->fit.prefilter_lang_nullable);
+                                           !cx.job->fit.lang_nullable);
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
              * from the SAME conjuncts (D81). The ladder branches on the
              * DECISION rather than re-walking them, which is what makes

@@ -449,7 +449,7 @@ neither can move the scan's entry position (sound A3).
 A POPULATION** (r49 item 12 / sound B2, the K35 shape). M1's census ran default
 flags. `pfc_prefilter_forced` (`src/core/compile.c:1060-1063`) lets
 `-fprefilter` build a prefilter whose collapsed language is nullable —
-do-or-die overrides the `prefilter_lang_nullable` decline, and the comment at
+do-or-die overrides the `lang_nullable` decline, and the comment at
 `:1051-1059` says so. A nullable prefilter language is precisely the pinned
 shape, as P5's `\Ka*` witness demonstrates. And `make test-axes`
 (`Makefile`'s `test-axes` target → `tests/axes/run_axes.sh`) derives its sweep
@@ -1324,7 +1324,7 @@ M1 measured 0 hybrids. **That is a DEFAULT-AXIS number and §5.2 may not assert
 it as a population** (r49 item 12 / sound B2, and this is K35's shape: a claim
 stated over a narrower set than the check runs on). `pfc_prefilter_forced`
 (`src/core/compile.c:1060-1063`) lets `-fprefilter` override the
-`prefilter_lang_nullable` decline, and `make test-axes` derives its sweep from
+`lang_nullable` decline, and `make test-axes` derives its sweep from
 the `PCREC_(NO|FORCE)_*` bits — so `-fprefilter` is INSIDE the gate's own
 population, over a corpus holding both `\K` patterns and nullable patterns.
 P5's `\Ka*` witness is a member.

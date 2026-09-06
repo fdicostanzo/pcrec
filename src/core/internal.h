@@ -1558,8 +1558,25 @@ typedef struct {
      * ACCEPTS, so `src/gen/emit_dfa.c`'s `unanch_start` can select no
      * candidate-byte skip and the inlined scan stamps `<PREFIX>_DFA_PREFILTER
      * "none"` — which is a genuine second derivation of this predicate and not
-     * a restatement of it. */
-    bool        prefilter_lang_nullable;
+     * a restatement of it.
+     *
+     * [K50-NULLGATE], 2026-09-06 — RENAMED from `prefilter_lang_nullable`,
+     * because it acquired a SECOND consumer and the old spelling scoped it to
+     * the first. It is `pcrec_minw(root) == 0` and nothing else: the empty
+     * string is in the pattern's language. [OPT-4.1] reads it to decline a
+     * collapsed prefilter; [K50-NULLGATE] reads it through
+     * `pcrec_startgate_needed` to decide whether the caller-startpos boundary
+     * gate is needed at all. Adding a second field with an identical
+     * definition would have been the parallel mechanism this tree keeps having
+     * to un-fork, so the FACT is named once and read twice.
+     *
+     * The old name's recorded reason does not survive the move and that was
+     * checked rather than assumed: `docs/dev/lanes/opt41_report.md` §1 says
+     * the `prefilter_` prefix contrasted with `collapsed_lang_nullable` — the
+     * EXACT pattern's language against the count-collapsed one, which are the
+     * same predicate — not with a general reading. Dropping it loses nothing
+     * that sentence was protecting. */
+    bool        lang_nullable;
 
     /* [OPT-4.1] AND THE DECISION IT DROVE: a collapse RUNG asked for the
      * count-collapsed prefilter and nullability declined it, so this artifact
@@ -4595,7 +4612,7 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start sel
  * so two rows can share one derivation rather than forking it. */
 static inline bool pcrec_startgate_needed(const Ctx *cx)
 {
-    return cx->job->fit.prefilter_lang_nullable;
+    return cx->job->fit.lang_nullable;
 }
 
 /* [K50] The caller-startpos boundary guard, emitted by src/gen/emit_dfa.c and

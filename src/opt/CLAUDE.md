@@ -1236,7 +1236,7 @@ Maintenance: update this file when passes are added/removed.
 
 ## [OPT-4.1] the nullability predicate — ONE derivation, THREE readers
 
-`select_engine.c`'s fit site writes `EngineFit.prefilter_lang_nullable` as
+`select_engine.c`'s fit site writes `EngineFit.lang_nullable` as
 `pcrec_minw(root) == 0` and nothing else in the tree computes that fact. Three
 sites read it: the `fit.prefilter` clause in this file (a collapse RUNG's
 rescue is DECLINED, and what stands in its place is no prefilter at all — on a
@@ -1289,7 +1289,7 @@ the [OPT-4] size rung's own decline above) now compile inside every cap and
 never reach a rung at all.
 
 `select_engine.c`'s fit site derives ONE shared local,
-`lang_nullable_declinable` (`prefilter_lang_nullable && !has_bref &&
+`lang_nullable_declinable` (`lang_nullable && !has_bref &&
 !has_call && !force_on` — the exact conjuncts [OPT-4.1]'s field above
 already had, minus `prefilter_has_collapsible_rep`, which is meaningless off
 a rung: the ordinary path never collapses anything, so there is always a
