@@ -21780,3 +21780,48 @@ the morning's two repair slices and the evening's three), four rows
 chartered from Frank's asks + two from findings, two K-numbers filed
 with held witnesses, ten merge-night landing debts repaired, and the
 suite went eight-red to unconditionally green on the reference box.
+
+## 2026-09-06 (EDT), fifty-sixth session — the open-questions pass: six rulings from Frank in one sitting; a stale registry row found BY the re-seed's own diff; I-52 live on the new channel flow; two lanes launched
+
+Session reset (the prior one tripped to opus); woke clean at 1eecc461.
+Frank walked the whole open-questions docket one at a time and ruled:
+(1) [B39] pin ADVANCES TO TIP; (2) [B36] CLEARED FULLY (merge + first
+sample night); (3) [K50-BNDSTART] GO; (4) M5.0 STANDING GO to
+completion (stages 3-5 sequential, each on the prior's battery-green,
+no per-stage round-trip; K50 lane stays sequenced before stage 3);
+(5) [XARCH] TABLED — "there will be a round in the future for
+architecture specific opt" (plan row deferred, step-0 memo is that
+round's seed); (6) admin scheduling as proposed — [ENCCHK-DD12A] now,
+the utf8 differential instrument next (before stage 4), darwin slice
+queued.
+
+**The [B36] re-seed EARNED ITS DIFF**: regenerating --list-syntax at
+tip produced output byte-identical to the abi-22 seed, which
+contradicted the "[registry rows move at stage 2]" expectation — probe
+showed \x{1F600} refusing with the ENCODING-range wording (base
+grammar, correct) while the registry row's description STILL said
+"requires module 'unicode-props'". Stage 2 moved the behaviour and
+never the prose. De-staled at 9a1583ba (registry.c string + the
+compliance survey row REJECTED→OK + the annotation record; index and
+annotation blocks regenerated, all five compliance checks green, make
+strict clean). Machine columns never moved — the bench's coverage
+tiers are untouched; only the prose is truer. Seed
+list_syntax_9a1583ba.tsv committed (d34c9131, pushed) — exactly one
+row differs from 334fd10e's, the de-staled description.
+
+**Channel flow re-ruled by Frank**: the bench account is
+frank@192.168.1.100 (memory corrected); inbox writes now happen on the
+Mac clone → push origin → ff-pull their checkout. Found their I-51
+(63712e3) sitting UNPUSHED on their checkout — fetched it over ssh
+read-only to linearize, wrote I-52 on top (both rulings + the re-seed
++ the flow change + a K50/XARCH heads-up), pushed 954fdd9, ff-pulled
+their checkout. Frank is starting bench dev; their day work is the
+[B39] re-pin build + [B36] check/merge, nights are the AFTER + first
+sample.
+
+Lanes launched: [K50-BNDSTART] (opus, worktrees/k50bnd — the
+startpos-boundary guard per the full charter) and [ENCCHK-DD12A]
+(sonnet, worktrees/encchk — K52's rebuilt instrument + the cwmax mech
+row + the suite token). Watchdog cron up. AskUserQuestion UI dropped
+mid-session on Frank's note (questions weren't rendering) — rulings
+taken in prose from here.
