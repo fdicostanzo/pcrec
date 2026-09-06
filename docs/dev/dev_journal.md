@@ -21900,3 +21900,45 @@ own disposition (B), with the machine-level nullability predicate
 sharpening — empty-subject probes are insufficient for the
 context-nullable lookbehind family). Frank's general rule holds
 observably; the gate narrows to machines that can observe it.
+
+## 2026-09-06 (EDT), fifty-sixth session part 3 — the token-economics overhaul: tokenscan + delegaudit measured it, Frank ruled it, the skill/boilerplate/memories carry it
+
+Two sonnet side-quest lanes measured where tokens go (Frank's ask).
+tokenscan (window since Fri morning ≈ $1,100 equiv; manager-model 61%,
+output-driven): (1) subagent caches are 5-MIN TTL, so the 30-min lane
+self-keepalive doctrine guaranteed a full context rewrite per tick —
+small turns were 57% of all turns and 82% of all 5-min cache-writes;
+(2) parallel context-inheriting agents from a ~900k-token session each
+paid a full cache-write of the inherited context (the battery day's
+worst class); (3) cold-rewrite waste ~15%/window. delegaudit (sessions
+55/56 by actual usage telemetry): the 10-min watchdog's ticks re-read
+the manager's ENTIRE context (~650-800K) to say "no change" — ~73M
+cache-read tokens across two sessions — THE IRONY RULED INTO THE
+RECORD: the watchdog existed partly to stop tasks idling/wasting and
+became the waste; battery triage done inline was 35% of session 55
+(twice, same procedure); doc-drift re-diagnosed by hand twice in one
+session with compliance-refresh sitting unused.
+
+FRANK'S RULINGS, all landed: aggressive agent closure (summarize iff
+follow-up expected, then END; closure is the MANAGER'S act — TaskStop
+explicitly; caught me preaching it with two delivered lanes still
+alive); operations delegated hard; docs/dev/lanes/BOILERPLATE.md as
+the read-first standing-rules file (briefs shrink to task/tier/
+deliverable); stall watching by SCRIPT never model turns (the 10-min
+CronCreate replaced by a background watcher that exits only on
+actionable state — old skill bullet rewritten, Frank's catch); lane
+keepalives dead everywhere; main-session hold-keepalive (1h TTL)
+survives alone. Mirrored to the BENCH under Frank's direct
+authorization (their skill + their lanes/BOILERPLATE.md, pushed
+58778c0/91a528a — the one sanctioned write outside the inbox); bench
+manager runs SONNET from next start (I-54, acked). Memory
+pcrec-subagent-cache-warmth rewritten as superseded doctrine; the six
+delegaudit rules pasted into the skill with their measured basis.
+Also: the bench census case-collision fully closed (their rename
+landed; skip-worktree workaround retired; the push crossed the rename
+via reset+cherry-pick).
+
+In flight as this is written: k50bnd mid-[K50-NULLGATE] (core commit
+"gate built only for NULLABLE patterns" landed on its branch;
+prediction table stated before measurement; abi 24->25 ritual ahead)
+under the new silent watcher. Frank away, checking in later.
