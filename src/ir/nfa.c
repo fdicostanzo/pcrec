@@ -1020,6 +1020,70 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
  * so only a NULLABLE pattern can ever answer at a position this loop would
  * otherwise have to gate. A non-nullable pattern's artifact is therefore the
  * pre-K50 one under every encoding, not just under `byte`. */
+/* [K50-NULLGATE] THE OMISSION'S OWN SOUNDNESS ARGUMENT, CHECKED RATHER THAN
+ * ASSERTED IN PROSE, at the exact site that would commit the miscompile.
+ *
+ * `pcrec_startgate_needed` says the gate is unnecessary because a match that
+ * CONSUMES a byte begins on a byte `start_cls` admits — so every class the
+ * pattern can reach WITHOUT consuming must be a subset of `start_cls`, and no
+ * accept may be reachable without consuming at all. Both are properties of the
+ * MACHINE; the predicate is a property of the AST. Checking one against the
+ * other here is two independent derivations meeting, not a restatement:
+ * `pcrec_minw` walks `Ast` nodes and this walks `NState`s.
+ *
+ * `ctx_fail` and not `assert`: K7's rule that a library must not kill its
+ * caller, and the same choice `pcrec_cls_bits` makes for the same reason — a
+ * lowering that did not run is a diagnosed internal error at the site that
+ * would have committed the miscompile, never a wrong answer in the field.
+ *
+ * The walk is the epsilon+assertion closure of the pattern's own start, which
+ * is bounded by the state count and visits each state once. */
+static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
+{
+    unsigned char *seen = arena_alloc(&cx->arena, (size_t)nfa->n);
+    int *stack = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    int top = 0, c;
+
+    memset(seen, 0, (size_t)nfa->n);
+    stack[top++] = nfa->start;
+    seen[nfa->start] = 1;
+
+    while (top > 0) {
+        int s = stack[--top];
+        const NState *st = &nfa->st[s];
+
+        if (st->k == N_CLASS) {
+            /* Reached WITHOUT consuming, so this is a first byte of some
+             * match. Every byte it admits must be one a character may start
+             * at, or a match could begin mid-character and the gate we just
+             * declined to build was load-bearing. */
+            for (c = 0; c < 256; c++)
+                if (cls_has(st->cls, (unsigned)c) && !cls_has(scls, (unsigned)c))
+                    ctx_fail(cx, 0,
+                             "internal error: [K50-NULLGATE] omitted the "
+                             "character-boundary gate on a pattern whose first "
+                             "byte may be 0x%02x, which this encoding does not "
+                             "admit as a character start", (unsigned)c);
+            continue;   /* consuming state: its successors are not first bytes */
+        }
+        if (st->k == N_ACCEPT)
+            ctx_fail(cx, 0,
+                     "internal error: [K50-NULLGATE] omitted the "
+                     "character-boundary gate on a pattern that can ACCEPT "
+                     "without consuming — the nullability predicate and the "
+                     "machine disagree");
+
+        /* Every other kind is an epsilon or an assertion: it advances the
+         * walk without consuming a byte. Assertions are passed AS THOUGH THEY
+         * HELD, which is the sound direction here — it can only widen the set
+         * of classes the check inspects. */
+        if (st->t1 >= 0 && !seen[st->t1]) { seen[st->t1] = 1; stack[top++] = st->t1; }
+        if (st->k == N_SPLIT && st->t2 >= 0 && !seen[st->t2]) {
+            seen[st->t2] = 1; stack[top++] = st->t2;
+        }
+    }
+}
+
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
@@ -1030,6 +1094,9 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
     nfa->st[sp].t1 = nfa->start;
     nfa->st[sp].t2 = any;
     nfa->st[any].t1 = sp;
+
+    if (e && e->start_cls && !pcrec_startgate_needed(cx))
+        cstart_check_omission(cx, nfa, e->start_cls);
 
     if (e && e->start_cls && pcrec_startgate_needed(cx)) {
         /* The loop's own split, and the gate in front of its pattern branch.
