@@ -1214,6 +1214,27 @@ requires**: a mid-character start differs from the boundary below it on
 **8 of 8** negative-assertion cells under `PCRE2_UTF`. A 0 would have meant
 the table could not see the phenomenon it exists for.
 
+> **WHERE THIS TABLE'S CELLS LIVE NOW (2026-09-06, [K50], lane `k50bnd`).**
+> The mid-character rows are still RULED and still checked, and they moved
+> rather than changed. Frank's 2026-09-05 follow-up gives the emitted entries a
+> DEFAULT-ON boundary guard that refuses a mid-character caller `startpos` with
+> `PCREC_ERR_STARTPOS` — which is what `PCRE2_UTF` does, measured uniform over
+> ten patterns (`out/startbnd.txt` §2) — and retains the permissive answers
+> above VERBATIM behind `-fno-startpos-guard`. So the `pcrec/utf8 (ARGUED)`
+> column is this document's position for the DENIED arm, and the default arm's
+> column would read `REFUSED` throughout. `tests/utf8/axis09_nextpos_findall.rxt`'s
+> two mid-character blocks moved to `tests/utf8/run_startbnd_diff.sh` §6, which
+> can express the flag where a `.rxt` block cannot; that file carries a pointer
+> where each stood.
+>
+> One clause of the guard is NOT in the table above and is worth knowing here,
+> because this table is where a reader looks for the rule: **offset 0 is always
+> a valid start**, even on a subject that begins with a continuation byte. The
+> local byte test alone refused it, which turns §2.6's ruled "an ill-formed
+> sequence matches nothing" into "ill-formed input is an error" — libpcre2 can
+> ask the local question safely only because its whole-subject validation pass
+> has already rejected such a subject, and §2.6 declines that pass.
+
 **AND THIS CELL IS A SECOND, INDEPENDENT WITNESS FOR §5.2.1's REPAIR** — one
 this revision did not go looking for. Run `(?<!.)` at `startpos=1` against the
 **un-repaired** `back_step` of §5.2: it walks to 0, sees `0xCE` is not a
@@ -2281,6 +2302,51 @@ sabotage row S68 forbid. §14 ASK 5 raises it; §11 puts it out of scope.
 > pattern that can match empty at it, and the general rule the fix spells is
 > that an unanchored search's candidate match STARTS are exactly the
 > encoding's character boundaries.
+>
+> ### BOTH HALVES ARE NOW CLOSED, AND THE SECOND HALF CAME WITH A WITNESS
+> THIS BOX DID NOT HAVE (2026-09-06, lane `k50bnd`)
+>
+> `ENG_ATTEMPT`'s `start++` loop — the loop this section is actually about —
+> was a LIVE WRONG ANSWER and not a wasted attempt. `(?m)^a|\B` over
+> `61 CE B1` at `startpos = 1`, a real character boundary, reported `(2,2)`
+> where libpcre2 10.46 under `PCRE2_UTF` answers `(3,3)`. The witness needs
+> two branches and neither is optional: the BOT-family branch is what routes
+> the pattern to this engine, and the nullable second branch is what keeps an
+> interior start state live so `start_max` is the subject length. **A pure
+> `(?m)^` or `\G` pattern is SELF-GATING** — `(?m)^` can hold only after a
+> newline and a newline is a character-start byte — which is why the site
+> stood unwitnessed while this section asserted it was harmless.
+>
+> ### AND THE OPTIMISATION THIS SECTION CLAIMED IS REFUTED TOO — MEASURED
+>
+> The paragraph calls the fix *"the optimisation (step the loop by
+> `next_pos`'s rule)"*, and K50's own entry repeated it (*"skipping
+> mid-character starts is also the OPTIMIZATION §5.5 called not optimal"*).
+> **It is not an optimisation.** Nine interleaved trials per cell, gcc-16 -O2,
+> M1, against a scratch build of the same tree with the gate removed:
+>
+> | route | witness | subject | gated vs ungated |
+> |---|---|---|---|
+> | `ENG_ATTEMPT` | `(?m)^zzz\|\bqqq` | 4,000 × 2-byte chars | **1.33× SLOWER** (10,450 vs 7,865 ns/search, no trial overlapping) |
+> | `ENG_ATTEMPT` | same | 4,000 × 4-byte chars | a wash (15,468 vs 15,538 ns, 0.4%) |
+> | `ENG_UNANCH` | `\Bqqq` | 4,000 × 2-byte chars | a wash (194.6 vs 195.6 ns, inside the spread) |
+>
+> **The mechanism is a branch, not the skipped work.** The guard is evaluated
+> on EVERY iteration and skips work on only some, and the work it skips is one
+> seed dispatch into a computed goto that dies immediately — a few
+> instructions. On a 2-byte-character subject the guard's own branch alternates
+> taken/not-taken every iteration, which is the worst case for a predictor; on
+> a 4-byte subject it is taken 3 times in 4, more predictable and skipping
+> more, and the two effects cancel. The DFA route pays nothing in TIME and pays
+> in SIZE instead: the gate is a real automaton state, and `\Bqqq`'s forward
+> transition table grows from 15 entries to 20.
+>
+> **This changes nothing about the fix**, which is a correctness fix and is
+> paid for whatever it costs. What it changes is the sentence: the cost is
+> real, small, and on the shape where mid-character starts are commonest it is
+> a LOSS rather than the saving this section predicted. Anyone reaching for
+> §5.5 as evidence that a boundary-stepping loop is faster should read this
+> table instead.
 
 ### 5.6 The cross-note answered — and its prescription refuted
 

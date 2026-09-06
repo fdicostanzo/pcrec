@@ -88,13 +88,15 @@ whole reason the utf8 encoding module needs to exist).
 | axis06_caseless_fold.rxt | 48 | 4 | 44 | PINNED TO TODAY'S BEHAVIOUR, not promoted to the oracle — see below |
 | axis07_caseless_1ton.rxt | 11 | 0 | 11 | pinned to today's behaviour; agrees with the oracle on every cell |
 | axis08_lookbehind_varwidth.rxt | 24 | 3 | 21 | promoted; `features` line added per block (missing as authored) |
-| axis09_nextpos_findall.rxt | 20 | 0 | 20 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed) — see below |
+| axis09_nextpos_findall.rxt | 18 | 0 | 18 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed). **-2 at [K50]**: the two mid-character-`startpos` blocks moved to `run_startbnd_diff.sh` §6, which can express the deny arm — see below |
 | axis10_surrogate_witness.rxt | 9 | 3 | 6 | promoted clean |
+| axis11_startpos_boundary.rxt | 7 | 0 | 7 | **NEW at [K50]**, and the first file here outside the D27 extract's axes — see below |
 
-**524 blocks here** — the full authored population. It read 523 between
-promotion and K49's fix on the same day, while axis09's "midstart-row3-boundary"
-block sat in `tests/known_fail/`; that block is restored, so 312 real / 212
-`perr`. Full per-axis reasoning, including every `features`/
+**529 blocks here.** The authored population was 524; [K50] moved 2 out of
+axis09 (to `run_startbnd_diff.sh` §6, which can express the deny arm) and
+added 7 in axis11, so 317 real / 212 `perr` (counted, not derived: `grep -c '^pattern' tests/utf8/*.rxt` and the same for `^perr`). It read 523 between promotion and
+K49's fix on the same day, while axis09's "midstart-row3-boundary" block sat
+in `tests/known_fail/`; that block is restored. Full per-axis reasoning, including every `features`/
 `encoding` line added at promotion and why, is each file's own header
 comment plus `docs/dev/lanes/utfprom_report.md`.
 
@@ -127,12 +129,55 @@ could see the defect. A cell that tests a retry has to be built to fail
 first.
 
 **AND IT HAD A SIBLING THE CORPUS COULD NOT SEE**: `\B` under `-e utf8`
-reports a mid-character position from an ordinary `startpos=0` on the DFA
-(K50, `tests/known_fail/k50_utf8_dfa_midchar_start.rxt`), because the DFA
-implements "try the next start" with a byte-granular self-loop rather than
-with the VM's retry loop. This corpus has no `\B`-under-`utf8` cell; the
-natural place for one is a future axis, and the byte-mirror libpcre2
-differential named below would have found it.
+reported a mid-character position from an ordinary `startpos=0` on the DFA
+(K50), because the DFA implements "try the next start" with a byte-granular
+self-loop rather than with the VM's retry loop. This corpus had no
+`\B`-under-`utf8` cell; the natural place for one was a future axis, and the
+byte-mirror libpcre2 differential named below would have found it.
+
+## [K50] FIXED 2026-09-06 (lane `k50bnd`), and it left this directory THREE things
+
+**`axis11_startpos_boundary.rxt` — the first file here outside the D27
+extract's axes.** The paragraph above predicted where the cell would go and
+this is it: K50's own `\B` witness (restored from `tests/known_fail/`, which
+is now empty of it), the 3- and 4-byte-character widths, an ill-formed-byte
+row for `utf8_design.md` §2.6(c), and a witness for a SECOND site the K50
+entry's own site list had filed no witness for — `ENG_ATTEMPT`'s `start++`
+loop, measured wrong at `(?m)^a|\B` over `61 CE B1` at `startpos = 1`. That
+file's header carries why the family is exactly this shape; the short form is
+that only a pattern which can match EMPTY at a mid-character position can
+ANSWER there, so a positive pattern cannot detect any of it.
+
+**`run_startbnd_diff.sh` — the directory's FIRST non-`.rxt` suite**
+(`make test-startbnd`). It is NOT the byte-mirror libpcre2 differential the
+section below still owes; it is the caller-startpos AXIS's own instrument,
+plus a cross-engine §5 whose cells are pinned to libpcre2 10.46 rather than to
+the other engine. That pinning is the point: for a whole milestone BOTH
+ENGINES ANSWERED THE SAME WRONG THING, so no cross-engine comparison could
+have caught K50 and nothing that compares pcrec against itself ever will.
+
+**TWO `axis09` CELLS MOVED INTO IT, and the move is a RULING rather than a
+consequence.** `midstart-row2-MID-la` and `midstart-row4-MID-leading-neg`
+assert §2.6.1.1's permissive answer at a MID-CHARACTER `startpos`, which the
+new default-on boundary guard now refuses; Frank's 2026-09-05 ruling moves
+those semantics to the `-fno-startpos-guard` arm VERBATIM rather than retiring
+them, so they are pinned in `run_startbnd_diff.sh` §6 and `axis09` carries a
+pointer where each stood. **They could not stay as `.rxt` cells**: no
+directive spells a compile flag, and none spells a give-up at a NON-ZERO
+startpos (`gu` is offset-0 only). Both are `.rxt` FORMAT questions — the
+manager's call under dd13b — so the cells moved to an instrument that can
+express them rather than acquiring invented syntax. If the format grows either
+directive, the blocks come back.
+
+**ONE THING THIS DIRECTORY FOUND FOR THE FIX, which is the reason to keep
+these files honest.** The guard's first version refused OFFSET 0 of a subject
+that begins with a continuation byte — 21 cells across `axis01`, `axis03` and
+`axis09` stopped answering, `a` on the one-byte subject `\x80` among them.
+That is `utf8_design.md` §2.6/ASK 1's ruled semantics ("an ill-formed sequence
+matches nothing, no validation pass, no error return") turned into "ill-formed
+input is an error", and it was caught by wiring the axis into
+`make test-axes`, not by the new suite — whose own subject list had no subject
+beginning with a continuation byte until this found the gap.
 
 ## The known, pre-identified gap: axis06/axis07 (non-ASCII caseless folding)
 

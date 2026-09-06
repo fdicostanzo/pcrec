@@ -114,9 +114,58 @@ against that same artifact's linked `next_pos` over an exhaustive sweep of a
 role-complete byte alphabet — with non-vacuity asserted in both directions
 (`byte` must answer `pos + 1` everywhere, `utf8` must not, somewhere).
 
+**[K50] `PcrecEnc` GAINED A THIRD AND FOURTH CONTRIBUTION — `start_cls` AND
+`start_guard` — AND THEY ARE ONE RULE ASKED AS A PREDICATE RATHER THAN AS A
+STEP.** D58's revisit clause again, so: `advance` says how to MOVE a failed
+attempt's start; these say WHERE a match may BEGIN. Two consumers need the
+predicate and neither can use a step. `src/ir/nfa.c`'s `nfa_wrap_unanchored`
+is not a loop the emitter can see at all — it is an AUTOMATON, and gating its
+split needs the rule as a BYTE SET evaluated inside the subset construction.
+`src/gen/emit_dfa.c`'s `ENG_ATTEMPT` start loop cannot take the `advance` text
+without moving every byte artifact: its step is a `for` header's increment, and
+replacing that with a trailing statement is exactly the emitted-scaffolding
+move D76 makes an abi event, so it takes a `continue` guard instead — which is
+ADDITIVE, and a backend with no restriction contributes nothing.
+
+**BOTH ARE NULL UNDER `byte`, AND THAT IS THE ANSWER RATHER THAN A DEFAULT.**
+Every position is a character boundary there, so the IR builds no gate node,
+neither emitter emits a guard, and `PCREC_NO_STARTPOS_GUARD` is masked out of
+`rx_info.flags` because it could not have acted — which is what makes "the
+encoding with no defect pays nothing for K50's fix" a construction rather than
+a comparison. A backend that wrote out the tautology instead would be honest
+and would move every artifact in the tree for nothing.
+
+**THE RULE IS NOW SPELLED FOUR TIMES PER BACKEND** (`next_pos`, `advance`,
+`start_cls`, `start_guard`), which is the drift hazard this directory already
+had at two and has a precedent for at both. The tie is the same one:
+`tests/codegen/run_encoding_checks.sh`'s advance-agreement section, plus
+`tests/utf8/run_startbnd_diff.sh`, which reads the emitted guard out of a real
+artifact and sweeps it against an INDEPENDENTLY WRITTEN boundary predicate in
+its driver — never against the backend's own text.
+
+**AND `start_cls` OWES A DISJOINTNESS THE DFA CHECKS RATHER THAN ASSUMES.** The
+subset construction carries the boundary property on its CLASS AXIS
+(`UPC_NOSTART`), which is a PARTITION, so a byte that is not a character start
+must be neither a word byte nor a newline. UTF-8 satisfies it (continuation
+bytes are 0x80..0xBF; both other sets are ASCII). A backend that does not is
+refused at `pcrec_enc_start_cls_ok()` with an internal error, because the
+failure mode is SILENT: a non-start byte classified `UPC_WORD` would read as a
+character start to the gate and re-open K50.
+
+**ONE CLAUSE OF THE utf8 GUARD IS A RULING AND NOT ARITHMETIC.** It opens
+`@P == 0 ||`, because offset 0 is always a valid start even on a subject that
+begins with a continuation byte. The byte test is LOCAL, which is what libpcre2
+asks under `PCRE2_UTF` — but libpcre2 asks it only after a whole-subject
+validation pass has already rejected such a subject, and `utf8_design.md`
+§2.6/ASK 1 rules that pcrec has NO such pass ("no validation pass, no error
+return"). Without the clause the guard turns "an ill-formed sequence matches
+nothing" into "ill-formed input is an error". MEASURED as a defect before it
+was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
+
 - **enc.h** — the seam's whole interface: the `PcrecEnc` row (id, the ONE
   spelling of the encoding's name, the complement universe `max_cp`, a
-  NULL-terminated table of `PcrecEncEntry` rows, and [K49]'s `advance` text),
+  NULL-terminated table of `PcrecEncEntry` rows, [K49]'s `advance` text, and
+  [K50]'s `start_cls`/`start_guard` pair),
   the entry ids that are also the bits of a
   per-artifact MASK, the registry accessors, `pcrec_enc_emit_text` and
   `pcrec_enc_advance`. Read
@@ -254,7 +303,11 @@ role-complete byte alphabet — with non-vacuity asserted in both directions
 
 One new `enc_<name>.c` here, plus its `extern` in `enc.h` and its row in
 `enc.c`'s table. The row carries the backend's residual ENTRIES, its `max_cp`,
-and (since [K49]) its `advance` text — all three in this directory. Both of those are files in THIS directory; the Makefile
+(since [K49]) its `advance` text, and (since [K50]) its `start_cls` byte set
+and `start_guard` expression — all five in this directory. A backend that
+restricts no position writes NULL for the last two and is complete.
+
+Both of those files are in THIS directory; the Makefile
 already globs `src/gen/enc/*.c`. **Nothing in `src/core`, `src/gen`, `cli/`
 or `lib/` is touched.** If a backend ever requires touching a shared file
 outside this directory, that is the derailment DD-12 names — stop and take
