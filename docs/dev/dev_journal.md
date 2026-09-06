@@ -21942,3 +21942,39 @@ In flight as this is written: k50bnd mid-[K50-NULLGATE] (core commit
 "gate built only for NULLABLE patterns" landed on its branch;
 prediction table stated before measurement; abi 24->25 ritual ahead)
 under the new silent watcher. Frank away, checking in later.
+
+## 2026-09-06 (EDT), fifty-sixth session part 4 — [K50-NULLGATE] MERGED (no abi bump, K49's precedent); the interim instrument's K35 self-catch; codegen 109/0 for the first time on this box; stage 3 LAUNCHED
+
+**[K50-NULLGATE] merged** (lane k50bnd's final arc, 8 commits): the
+boundary gate is built only for lang_nullable patterns (pcrec_minw==0 —
+ONE derivation, the [OPT-4.1] field renamed prefilter_lang_nullable ->
+lang_nullable, 11 readers by grep, S206 hand-replanted and biting; the
+manager's machine-level predicate REFUTED by the lane on structure:
+ENG_ATTEMPT has no unanchored closure to read). NO abi bump — (B)
+differing=0 at the current pin, no scaffolding moved; K49's utf8-
+machine-content precedent. cstart_check_omission (both arms
+demonstrated red) carries the soundness argument as a compiled
+invariant. THE SELF-CATCH: the narrowing exposed a K35 defect in the
+INTERIM instrument merged hours earlier — raw-text class membership had
+admitted ~95% prose-only pairs (197/207 rows carried no gate);
+comments_only membership repaired it, strict byte-identical 9->233,
+manifest 207->13 all-nullable. No subject-side sabotage could have seen
+it; a predicted-movement-that-didn't-happen did. Prediction table: 6
+hits, 1 partial, P3 a scored MISS (class-varying accept placement IS a
+nullable property — the model was backwards).
+
+**Also in the arc**: the BSD-sed fixes (portable spellings verified on
+both dialects) took run_codegen_tests.sh 104/4 -> 109/0 — first-ever
+green on this box — including the SECOND darwin layer: the K24 block
+was the last script not sourcing cc_resolve, so its gcc-specific
+control had been asked of Apple clang since the Mac move and fired for
+the first time today. docs/testing.md gains "The sed binary itself"
+(GNU-only BRE constructs SILENTLY NO-OP on BSD sed). Solo mech at the
+merge commit d71a03c9: S236, S234, S05 all DETECTED, 0 anomalies.
+
+**Owed**: the Linux full battery + make mech at the next slot (covers
+K50-BNDSTART, ENCCHK-DD12A, the interim, NULLGATE and the sed fixes in
+one arm). **Stage 3 LAUNCHED** (lane utf8s3, opus, the first engine
+lane briefed under the BOILERPLATE regime; four traps pre-named:
+10.46/10.48 oracle split, S121 going live, the \x boundary, generated
+UCD tables), silent watcher up.
