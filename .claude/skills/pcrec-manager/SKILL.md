@@ -142,22 +142,25 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   landing, check the worktree for fresh mtimes AND send a status message
   first; only take over on silence or an explicit handback.
 - **A lane's background-run completion notice is NOT a reliable wake-up** (2026-09-02/03: opt5i, landing and r51fix each sat idle 10-20 min after their run had ended, "waiting for the notification"). Brief every lane: the run's LOG is the trigger — at each keepalive tick, check the log's tail for the completion line (`checks failed:`, `== mech run COMPLETE`, `run_group:`) and proceed the moment it is there; never arm a Monitor on a progress log (opt5i's per-minute flood). The manager's watchdog reads the same logs and pings on "run ended, lane silent".
-- **STALL WATCHDOG (Frank, 2026-08-15, twenty-first session): whenever
-  subagents or async background processes are in flight, set up a
-  10-minute cron** (CronCreate) that checks for stalls — lanes or
-  background scripts that are dead, stalled, or running longer than
-  their work justifies. LIVENESS SIGNALS in order of trust: the lane's
-  WIP-commit age (`git log -1 --format=%cr` in its worktree) +
-  uncommitted-delta mtimes, background-log tails, process table.
-  ListAgents does NOT show spawned lanes even when alive — never
-  declare death from it. (`find -newermt` needs ISO timestamps on this
-  box; relative strings silently fail.) Stale >20 min with no process →
-  SendMessage ping; stale AND silent one tick later → dead, take over
-  the landing (the twenty-first session lost a lane for eleven hours
-  by "waiting" with no watchdog). Tear the cron down when no lanes or
-  background work remain. Brief every lane to COMMIT INCREMENTALLY
-  (WIP commits) — the watchdog's best signal, and a death then strands
-  minutes, not hours.
+- **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN** (Frank, 2026-09-06,
+  superseding the twenty-first session's 10-minute CronCreate watchdog —
+  which was built partly to stop tasks idling and wasting tokens and
+  became the waste itself: each prompt tick re-read the manager's whole
+  context to say "no change"). Whenever lanes or background runs are in
+  flight, launch a plain BACKGROUND WATCHER SCRIPT (Bash run_in_background,
+  zero model calls) that loops on the liveness artifacts and EXITS —
+  producing one notification — only on actionable state. LIVENESS SIGNALS
+  in order of trust, unchanged: the lane's WIP-commit age (`git log -1
+  --format=%ct` in its worktree) + uncommitted-delta mtimes
+  (`find -newermt` with ISO timestamps — relative strings silently fail
+  on this box), background-log completion lines, process table. ListAgents
+  does NOT show spawned lanes — never declare death from it. The ladder,
+  unchanged: quiet >20-25 min → SendMessage ping; quiet AND silent after
+  the ping → dead, take over the landing (RE-RUNNING the lane's own full
+  stated validation list — the K50 premature-merge lesson). Cap the
+  watcher (~4h) and relaunch on cap. Kill it when nothing is in flight.
+  Brief every lane to COMMIT INCREMENTALLY — still the watcher's best
+  signal, and a death then strands minutes, not hours.
 - **`timeout` on every command of uncertain run length** — yours AND
   your subagents' (put it in every brief). Anything you cannot bound
   from experience gets a timeout sized generously from what the work
