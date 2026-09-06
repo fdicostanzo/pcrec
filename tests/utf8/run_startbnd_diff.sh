@@ -41,6 +41,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+LIBA="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="startbnd"
 
@@ -300,32 +301,48 @@ done
 # second branch keeps its interior start live), row 3 is the VM's retry (K49's
 # site, checked here so a change that re-broke it fails in K50's own suite too).
 eng_ok=1
+#
+# EACH CELL RUNS UNDER BOTH FLAG SETTINGS AND MUST GIVE THE SAME ANSWER, which
+# is a claim in its own right and not thoroughness: the axis governs where a
+# CALLER may point the entry and nothing else, so `-fno-startpos-guard` must
+# not move a position the ENGINE invented. That is the difference between a
+# correctness fix (no flag) and a semantics choice (this flag), stated as a
+# check rather than as a sentence — and it is the both-arm form of site (2)'s
+# witness, whose startpos is a real boundary and therefore has no divergence
+# for a `.rxt` cell pair to carry.
 check_engine_cell() {   # <label> <pattern> <modules> <hexsubject> <startpos> <expected> [extra pcrec args...]
     local label="$1" pat="$2" mods="$3" subj="$4" sp="$5" want="$6"; shift 6
     local feat=""
     [ -n "$mods" ] && feat="--features $mods"
-    local d="$WORKDIR/eng_$label"
-    mkdir -p "$d"
-    # shellcheck disable=SC2086
-    if ! gen "eng_$label/engine" "$pat" -p e -e utf8 $feat "$@"; then
-        bad "§5 [$label] did not compile — $(head -1 "$d/engine.err")"
-        eng_ok=0; return
-    fi
-    if ! gen_cc "startbnd:eng:$label" "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror \
-            ${GENCFLAGS:-} -I"$d" -o "$d/drv" \
-            "$d/engine.c" "$SCRIPT_DIR/startbnd_engine_driver.c" \
-            > "$d/cc.log" 2>&1; then
-        bad "§5 [$label] did not build — $(tail -2 "$d/cc.log" | tr '\n' ' ')"
-        eng_ok=0; return
-    fi
-    local got
-    got=$(gen_run "startbnd:eng:$label" "$d/drv" "$subj" "$sp")
-    if [ "$got" = "$want" ]; then
-        echo "  §5 [$label] $got"
-    else
-        bad "§5 [$label] pattern '$pat' on $subj at startpos $sp answered $got, reference libpcre2 10.46 under PCRE2_UTF answers $want — a position the ENGINE generated is not a character boundary"
-        eng_ok=0
-    fi
+    local arm
+    for arm in guarded permissive; do
+        local d="$WORKDIR/eng_${label}_$arm" denyflag=""
+        [ "$arm" = permissive ] && denyflag="-fno-startpos-guard"
+        mkdir -p "$d"
+        # shellcheck disable=SC2086
+        if ! gen "eng_${label}_$arm/engine" "$pat" -p e -e utf8 $feat $denyflag "$@"; then
+            bad "§5 [$label/$arm] did not compile — $(head -1 "$d/engine.err")"
+            eng_ok=0; continue
+        fi
+        if ! gen_cc "startbnd:eng:$label:$arm" "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror \
+                ${GENCFLAGS:-} -I"$d" -o "$d/drv" \
+                "$d/engine.c" "$SCRIPT_DIR/startbnd_engine_driver.c" \
+                > "$d/cc.log" 2>&1; then
+            bad "§5 [$label/$arm] did not build — $(tail -2 "$d/cc.log" | tr '\n' ' ')"
+            eng_ok=0; continue
+        fi
+        local got
+        got=$(gen_run "startbnd:eng:$label:$arm" "$d/drv" "$subj" "$sp")
+        if [ "$got" = "$want" ]; then
+            [ "$arm" = guarded ] && echo "  §5 [$label] $got (both arms)"
+        elif [ "$arm" = permissive ]; then
+            bad "§5 [$label] under -fno-startpos-guard answered $got where the guarded arm answers $want — the deny flag MOVED a position the ENGINE generated. It governs where a CALLER may point the entry and nothing else; K49's and K50's fix has no flag"
+            eng_ok=0
+        else
+            bad "§5 [$label] pattern '$pat' on $subj at startpos $sp answered $got, reference libpcre2 10.46 under PCRE2_UTF answers $want — a position the ENGINE generated is not a character boundary"
+            eng_ok=0
+        fi
+    done
 }
 
 check_engine_cell dfa-selfloop      '\B'         assertions           61CEB1     0 '(3,3)'
@@ -336,7 +353,75 @@ check_engine_cell vm-retry          '(?<!.)'     lookaround           CEB1CEB2  
 check_engine_cell dfa-forced        '\B'         assertions           61CEB1     0 '(3,3)' --engine=dfa
 check_engine_cell vm-forced         '\B'         assertions           61CEB1     0 '(3,3)' --engine=vm
 
-[ "$eng_ok" -eq 1 ] && ok "§5 CROSS-ENGINE: every candidate match start the engine generates is a character boundary, on the DFA self-loop, ENG_ATTEMPT's start loop and the VM's retry, and both engines agree with libpcre2 10.46 on the CORRECT answer (before this fix they agreed on the wrong one, which is why nothing caught K50)"
+[ "$eng_ok" -eq 1 ] && ok "§5 CROSS-ENGINE: every candidate match start the engine generates is a character boundary, on the DFA self-loop, ENG_ATTEMPT's start loop and the VM's retry; both engines agree with libpcre2 10.46 on the CORRECT answer (before this fix they agreed on the wrong one, which is why nothing caught K50); and every cell answers IDENTICALLY under -fno-startpos-guard, so the axis moves no position the engine invented"
+
+# ---------------------------------------------------------------------------
+# §5b  THE ORDERING AGAINST `startpos > n`, PINNED
+# ---------------------------------------------------------------------------
+# `match_api.md` §3.1 has always promised `<prefix>_search` returns 0 for a
+# `startpos` past the end of the subject, and libpcre2 under `PCRE2_UTF`
+# answers `PCRE2_ERROR_BADOFFSET` there instead (measured,
+# `docs/design/utf8_measurements/out/startbnd.txt` §2) — so a boundary guard
+# that ran FIRST would silently convert a documented 0 into a refusal, and the
+# conversion would look exactly like the guard working.
+#
+# It cannot happen today for a reason stronger than placement: the utf8
+# backend's guard text opens `@P == 0 || @P >= @N`, so every position the range
+# test owns passes it untouched. **That is a property of the BACKEND'S TEXT,
+# which is precisely why it needs a pin** — a future backend, or a rewrite of
+# this one that dropped the `>= @N` clause, would move the answer with nothing
+# else in the tree noticing. `n`, `n+1` and `n+7` are asserted separately: the
+# first is the boundary case the guard must ACCEPT, the other two are the ones
+# the range test owns.
+ord_ok=1
+for sp in 4 5 11; do
+    want='no-match'
+    [ "$sp" = 4 ] && want='(4,4)'      # startpos == n IS a boundary and answers
+    d="$WORKDIR/ord_$sp"; mkdir -p "$d"
+    if ! gen "ord_$sp/engine" 'x*' -p e -e utf8; then
+        bad "§5b [startpos=$sp] did not compile — $(head -1 "$d/engine.err")"
+        ord_ok=0; continue
+    fi
+    if ! gen_cc "startbnd:ord:$sp" "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror \
+            ${GENCFLAGS:-} -I"$d" -o "$d/drv" \
+            "$d/engine.c" "$SCRIPT_DIR/startbnd_engine_driver.c" \
+            > "$d/cc.log" 2>&1; then
+        bad "§5b [startpos=$sp] did not build — $(tail -2 "$d/cc.log" | tr '\n' ' ')"
+        ord_ok=0; continue
+    fi
+    got=$(gen_run "startbnd:ord:$sp" "$d/drv" CEB1CEB2 "$sp")
+    if [ "$got" = "$want" ]; then
+        echo "  §5b [startpos=$sp of a 4-byte subject] $got"
+    else
+        bad "§5b startpos=$sp answered $got, want $want — match_api.md §3.1 promises 0 (rendered 'no-match' here) for startpos > n, and the boundary guard must not reach it. If this reads 'rc=-7' the guard is running AHEAD of the range test, or its own '@P >= @N' clause is gone"
+        ord_ok=0
+    fi
+done
+[ "$ord_ok" -eq 1 ] && ok "§5b the boundary guard does not reach startpos > n: startpos n answers (a boundary), n+1 and n+7 return 0 and not PCREC_ERR_STARTPOS (match_api.md §3.1's long-standing promise, which libpcre2 does NOT share)"
+
+# ---------------------------------------------------------------------------
+# §7  THE BYTE-TAUTOLOGY CLAIM, AS A STRUCTURAL ASSERTION
+# ---------------------------------------------------------------------------
+# §4 above proves the CONSEQUENCE from emitted text, and the identity gate
+# proves it over the whole corpus. Neither proves the CONSTRUCTION: a gate
+# could be built under `byte` and then happen to compile away, and both would
+# read green. `startbnd_backend_check.c` reads the backend rows directly —
+# every other statement of "byte pays nothing" is derived from those two
+# pointers — so a reviewer has something to attack that is not an adjective.
+# See that file's header for what each of its five assertions catches.
+bk="$WORKDIR/backend"; mkdir -p "$bk"
+if [ ! -f "$LIBA" ]; then
+    bad "§7 $LIBA not found — the backend structural check cannot link (run make first)"
+elif ! gen_cc "startbnd:backend" "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror \
+        ${GENCFLAGS:-} -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
+        -o "$bk/chk" "$SCRIPT_DIR/startbnd_backend_check.c" "$LIBA" \
+        > "$bk/cc.log" 2>&1; then
+    bad "§7 the backend structural check did not compile: $(tail -5 "$bk/cc.log" | tr '\n' ' ')"
+elif bkout=$(gen_run "startbnd:backend" "$bk/chk" 2>&1); then
+    ok "§7 $bkout"
+else
+    bad "§7 BYTE-TAUTOLOGY: $(printf '%s' "$bkout" | head -5 | tr '\n' ' ')"
+fi
 
 # ---------------------------------------------------------------------------
 # §6  §2.6.1.1's RULED PERMISSIVE TABLE, PINNED ON THE DENY ARM
