@@ -4013,9 +4013,11 @@ WHERE EACH FACE IS PINNED: face 1 (the self-loop) in
 `tests/utf8/axis11_startpos_boundary.rxt`'s `\B` cells and
 `run_startbnd_diff.sh` §5's three `dfa-selfloop` widths; face 2
 (`ENG_ATTEMPT`) in that same file's `(?m)^a|\B` cells and §5's
-`attempt-startloop`. Sabotage rows S230 and S231 fire on DISJOINT cells (4 of
-7 and exactly 1 of 7), which is the matrix telling the two faces apart rather
-than scoring one of them twice.
+`attempt-startloop`. Sabotage rows S234 and S235 fire very different
+footprints — MEASURED through the matrix, S234 reds 8 `startbnd` checks and 4
+corpus cells, S235 reds 2 and 1, S235's landing on the `ENG_ATTEMPT` cells
+alone — which is the matrix telling the two faces apart rather than scoring
+one of them twice.
 
 **HOW EACH MECHANISM WAS CLOSED.** One datum, `PcrecEnc.start_cls` (the bytes
 a character may start at, NULL under `byte`), plus its expression twin

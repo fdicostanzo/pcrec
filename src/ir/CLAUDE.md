@@ -316,7 +316,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   K50's gate has no pre-K50 reference to build: its whole point is that the
   pre-K50 answer was WRONG, so the reference build would be the bug. What
   stands in for it is the deny arm (a runtime flag on the ENTRY guard, never
-  on this refinement) plus sabotage rows S230/S231, which delete the gate
+  on this refinement) plus sabotage rows S234/S235, which delete the gate
   outright and are caught by `tests/utf8/run_startbnd_diff.sh` §5 — whose
   cells are pinned to libpcre2 10.46 rather than to the other engine, because
   for a whole milestone both engines answered the same wrong thing.

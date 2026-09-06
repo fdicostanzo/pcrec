@@ -36,7 +36,7 @@ directory's conventions and the traps that have actually been hit.
 |---|---|
 | `SAB_ID` | the row's identity in the matrix. Conventionally `S<NN>-<kebab-name>`; it is NOT the selector (see "Numbering" below) |
 | `SAB_FILE` | the file the edit lands in, repo-relative |
-| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `vmframeless` ([OPT-VMFL] STEP 0, registered with the arm and before S224-S226, which name it); before it `searchpinned` ([OPT-5] STEP 2, registered with the arm and before S218-S222, which name it); before that `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207) and `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
+| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `startbnd` ([K50], registered with the arm and before S232-S235, which name it); before it `vmframeless` ([OPT-VMFL] STEP 0, registered with the arm and before S224-S226, which name it); before it `searchpinned` ([OPT-5] STEP 2, registered with the arm and before S218-S222, which name it); before that `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207) and `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
 | `SAB_DESC` | one sentence: what the edit makes the compiler do wrong |
 | `SAB_BEFORE` / `SAB_AFTER` | the literal edit. `lib/replace.py` refuses unless BEFORE occurs exactly `SAB_COUNT` times and AFTER is present afterwards |
 
@@ -190,6 +190,52 @@ When a row is added or re-pointed, say so IN THE ROW'S OWN HEADER with the
 measurement — this directory's rows carry their history, and the matrix output
 is the citation, never a number copied into prose. When a corpus edit moves a
 figure a row's `SAB_REACH_POP` states, move the row in the same change.
+
+**Newest ([K50], 2026-09-06, lane k50bnd):** four rows on the caller-startpos
+boundary axis and the engine gate behind it, all on the new `startbnd` arm
+(`tests/utf8/run_startbnd_diff.sh`), all carrying `SAB_REACH` from birth.
+
+- **S232** — the emitted guard stops reading `PCREC_NO_STARTPOS_GUARD`, so
+  `-fno-startpos-guard` emits the guard anyway and `utf8_design.md` §2.6.1.1's
+  ruled permissive semantics has no build that carries it. Caught by the
+  arm's TEXT check, which reads the deny artifact BEFORE anything runs — the
+  driver's own leak bucket can only see a leak that FIRES, and a guard emitted
+  with a tautological condition would not.
+- **S233** — the `byte` backend declares a character-start guard, so a byte
+  artifact grows a startpos check for an encoding in which every position is a
+  valid start. Planted in the almost-always-true shape a real mistake takes
+  (refuses only on a NUL, which `match_api.md` §3.1 calls an ordinary byte).
+  Caught THREE independent ways on one artifact (the mask, the emitter, the
+  stamp), which is deliberate: they fail for three different reasons and a fix
+  for one leaves the others red.
+- **S234** — `nfa_wrap_unanchored` skips the character-boundary gate, i.e.
+  K50's own defect restored. A REVERSION rather than an invention: it is what
+  the file said for all of [M5.0] stage 2, it compiles clean, and it changes
+  nothing under `byte`, so every identity gate and the whole non-utf8 corpus
+  stay green. Caught by the arm's §5, whose cells are pinned to libpcre2 10.46
+  rather than to the other engine — for a milestone BOTH ENGINES answered the
+  same wrong thing, which is why nothing caught K50.
+- **S235** — `ENG_ATTEMPT`'s emitted start loop loses its boundary
+  `continue`. K50's SECOND FACE, which the entry's own site list had no
+  witness for.
+
+**S234 AND S235 FIRE VERY DIFFERENT FOOTPRINTS**, and that is the pair's value
+rather than a coincidence: a matrix in which both fired the same cells would be
+scoring one mechanism twice instead of telling two apart. MEASURED through the
+matrix at the merge (`reach:ok(1/1)` on all four rows, all DETECTED):
+
+| row | `startbnd` | `corpus` |
+|---|---|---|
+| S234 (the IR gate) | 8 fail / 6 pass | 4 fail / 4 pass |
+| S235 (`ENG_ATTEMPT`'s continue) | 2 fail / 6 pass | 1 fail / 7 pass |
+
+S235's is a strict subset and lands on the `ENG_ATTEMPT` cells alone — the
+site it names — while S234 takes the three DFA self-loop widths and the
+forced-DFA cell with it.
+**They were numbered S230/S231 until the [ENCCHK-DD12A] merge**, whose own
+S230/S231 (the `cwmax` pair, arm `mrl`) landed the same morning — the
+filenames never collided, the `SAB_ID`s did, and an id is what the matrix
+reports under.
 
 **Newest ([ENCCHK-DD12A], 2026-09-06, lane encchk):** two new rows plus the
 `encoding` arm reaching two existing ones. See `../CLAUDE.md`'s own

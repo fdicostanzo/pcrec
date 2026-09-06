@@ -1,4 +1,4 @@
-# S230 — [K50] THE IR BOUNDARY GATE IS NOT BUILT, i.e. K50's own defect
+# S234 — [K50] THE IR BOUNDARY GATE IS NOT BUILT, i.e. K50's own defect
 # restored.
 #
 # `nfa_wrap_unanchored` builds a SECOND split state whose pattern branch sits
@@ -21,15 +21,15 @@
 # MEASURED at the landing: §5 goes red on 4 of its 7 cells (the three DFA
 # self-loop widths and the forced-DFA one) and the corpus file fails its `\B`
 # cells; the ENG_ATTEMPT cell stays green, which is correct — that site is a
-# different mechanism and has its own row (S231).
-SAB_ID="S230-startpos-gate-deleted"
+# different mechanism and has its own row (S235).
+SAB_ID="S234-startpos-gate-deleted"
 SAB_FILE="src/ir/nfa.c"
 SAB_SUITES="startbnd harness"
 SAB_HARNESS_TARGET="tests/utf8/axis11_startpos_boundary.rxt"
 SAB_DESC="nfa_wrap_unanchored skips the character-boundary gate, so the unanchored DFA's start-anywhere self-loop offers the pattern at every BYTE offset again — K50's own defect, which changes nothing under the byte encoding and which both engines used to agree on"
 SAB_DOC_FIGURE="docs/dev/known_issues.md K50 (site 1); docs/design/utf8_design.md 5.5's refutation box; docs/design/utf8_measurements/out/startbnd.txt 1"
 SAB_COUNT=1
-SAB_REACH='$PCREC -p rx -e utf8 --features assertions -o probe.c "\\B" && grep -c "forward_next_state" probe.c'
+SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions -o - -- "\\B" | grep -o "forward_next_state" | head -1'
 SAB_REACH_EXPECT='forward_next_state'
 SAB_BEFORE='    if (e && e->start_cls) {'
-SAB_AFTER='    if (0 && e && e->start_cls) {   /* SABOTAGE S230 */'
+SAB_AFTER='    if (0 && e && e->start_cls) {   /* SABOTAGE S234 */'

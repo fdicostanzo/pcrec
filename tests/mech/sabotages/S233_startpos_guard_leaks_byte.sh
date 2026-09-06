@@ -27,7 +27,7 @@ SAB_SUITES="startbnd"
 SAB_DESC="the byte backend declares a character-start guard, so a byte artifact grows a startpos check for an encoding in which every position is a valid start — the leak K50's fix must not have, planted in the almost-always-true shape a real mistake would take"
 SAB_DOC_FIGURE="src/gen/enc/enc.h's start_cls/start_guard field comment; src/gen/enc/enc_byte.c's own NULL-is-the-answer paragraph; docs/spec/tuning.md 2.23's inert-under-byte row"
 SAB_COUNT=1
-SAB_REACH='$PCREC -p rx --features assertions -o probe.c "\\B" && grep -c "_STARTPOS_GUARD" probe.c'
+SAB_REACH='"$PCREC" -p rx --features assertions -o - -- "\\B" | grep -o "_STARTPOS_GUARD \"permissive\"" | head -1'
 SAB_REACH_EXPECT='_STARTPOS_GUARD "permissive"'
 SAB_BEFORE='    NULL, NULL   /* [K50] start_cls / start_guard: every position is a start */'
 SAB_AFTER='    NULL, "@P >= @N || @S[@P] != 0"   /* SABOTAGE S233 */'

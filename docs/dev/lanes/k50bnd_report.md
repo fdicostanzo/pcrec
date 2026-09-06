@@ -221,7 +221,7 @@ caught K50.
 | condition | where it landed |
 |---|---|
 | site (2) as both-arm cells | `axis11`'s `(?m)^a\|\B` cells (default) + `run_startbnd_diff.sh` §5, which now runs **every** engine cell under BOTH flag settings. There is no divergence for a `.rxt` pair to carry — `startpos = 1` is a real boundary, so both arms must answer `(3,3)` — and that SAMENESS is the claim: the axis moves no position the engine invented |
-| K50 gains the second face | `known_issues.md`: "**K50 HAS A SECOND FACE**", with the measurement, where each face is pinned, and the note that S230/S231 fire disjoint cells |
+| K50 gains the second face | `known_issues.md`: "**K50 HAS A SECOND FACE**", with the measurement, where each face is pinned, and the note that S234/S235 fire disjoint cells |
 | §5.5 says the claim UNDERSTATED it | done, and the annotation now also says the BOX understated it — written after K49, it refuted §5.5's reason while leaving `ENG_ATTEMPT` looking theoretical |
 | self-gating kept in the entry | kept: `(?m)^` can hold only after a newline, `\G` gives one attempt at the caller's position — this is the "why did nothing catch it" and the blast-radius scope |
 | below-floor/composed-trap in the spec | `match_api.md` §4, stated as a contract statement with no live trap today |
@@ -238,17 +238,38 @@ caught K50.
 | over-firing on lead bytes | classification defect |
 | leaking into the deny arm | the artifact TEXT check, before anything runs |
 | leaking into byte artifacts | §4, **three independent ways** (mask, emitter, stamp) |
-| IR gate deleted (K50's own defect) | §5, 4 of 7 cells |
-| `ENG_ATTEMPT`'s continue deleted | §5, **exactly 1 of 7 cells** |
+| IR gate deleted (K50's own defect) | §5's DFA cells — matrix: 8 `startbnd` checks + 4 corpus cells |
+| `ENG_ATTEMPT`'s continue deleted | §5's `attempt-startloop` cell **alone** — matrix: 2 + 1 |
 | the guard loses its end-of-subject clause | §5b, exactly (`startpos=4 answered rc=-7, want (4,4)`) |
 | `byte` declares both backend pointers | §7 and §4 |
 | the deny flag reaches the ENGINE's gate | §5's both-arm, naming each cell |
 
 The last two firing DISJOINT cells is the matrix telling two mechanisms apart
-rather than scoring one twice. Permanent rows: **S230** (IR gate), **S231**
+rather than scoring one twice. Permanent rows: **S234** (IR gate), **S235**
 (`ENG_ATTEMPT`), **S232** (deny-arm leak), **S233** (byte leak), each with
 `SAB_REACH` from birth, plus the `startbnd` matrix arm registered before the
 rows that name it (R31 C11).
+
+**ALL FOUR ROWS RAN THROUGH THE REAL MATRIX at the merged tree** —
+`reach:ok(1/1)`, DETECTED, with 0 unexpected / 0 undetected / 0 unreached /
+0 anomalies on each.
+
+**AND THE MATRIX CAUGHT A DEFECT IN MY OWN ROWS ON ITS FIRST RUN, which is the
+part worth reading.** All four `SAB_REACH` probes were written as
+`... -o probe.c "PAT" && grep -c "NEEDLE" probe.c` — and `grep -c` prints a
+COUNT, not the needle, so `SAB_REACH_EXPECT` could never match. Every one of
+them would have scored **UNREACHED** forever: not a false green (the matrix
+fails loudly on it, which is exactly what `[MECH-REACH]` was built for), but
+four rows certifying nothing. Rewritten to the house idiom (`-o -` piped
+through `grep -o … | head -1`) and re-run. **I had validated these four
+directions by hand before writing the rows, so the sabotages were real — what
+was broken was the rows' own reachability probe**, and only running them
+through the matrix could show it.
+
+**S234/S235 were S230/S231 until the merge.** Lane `encchk` landed its own
+`S230`/`S231` (the `cwmax` pair, arm `mrl`) the same morning; the FILENAMES do
+not collide but the `SAB_ID`s do, and an id is what the matrix reports under.
+Renumbered here rather than there because encchk merged first.
 
 ---
 
@@ -500,7 +521,7 @@ it would leave the magic number armed for the next lane.
 **Tests:** `tests/utf8/run_startbnd_diff.sh`, `startbnd_driver.c`,
 `startbnd_engine_driver.c`, `axis11_startpos_boundary.rxt`,
 `axis09_nextpos_findall.rxt`; `tests/known_fail/k50_utf8_dfa_midchar_start.rxt`
-(deleted); `tests/mech/sabotages/S230..S233`;
+(deleted); `tests/mech/sabotages/S232..S235`;
 `tests/mech/run_sabotage_matrix.sh`; `tests/rxtsource/run_rxtsource_tests.sh`;
 `tests/codegen/run_recursion_identity.sh`, `run_codegen_tests.sh`; `Makefile`.
 
