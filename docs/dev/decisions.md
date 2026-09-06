@@ -6697,3 +6697,26 @@ change (D80's spirit applied to the seam's own log). Revisit-when: a
 third encoding lands (the set-complement generalisation of (1); the
 self-synchronization premise per §5.7); or ENG_ATTEMPT's start loop is
 measured to cost real throughput under utf8.
+
+## D97 — PCREC_ERR_STARTPOS IS BELOW THE FLOOR: A CALLER-ARGUMENT REFUSAL IS NOT A GIVE-UP (2026-09-06, Frank's ratification "Agree with new error", fifty-sixth session; landed with [K50-BNDSTART], abi 24)
+
+**Decision.** The startpos-boundary guard's typed code is
+`PCREC_ERR_STARTPOS = (-7)`, placed BELOW `PCREC_ERR_FLOOR` (-5) beside
+`PCREC_ERR_INTERNAL` (-6) — in the space D49 reserved for "a future abort
+semantic" — and NOT in the give-up family above the floor.
+
+**Why.** A mid-character caller `startpos` under `-e utf8` is a refusal of
+the CALL's argument: nothing was attempted and no budget was spent. The
+give-up family's contract tells a caller "retry with a larger capacity",
+which is exactly the wrong signal for an argument that will never become
+valid. Consequence, stated in match_api.md §4 as a contract: composed call
+sites trap below the floor, so a composed callee seeing this code means the
+engine broke its own boundary rule — after [K50-BNDSTART], every
+engine-generated position IS a character boundary. No composed call sites
+are emitted today; the trap is a contract statement, not live machinery.
+The spelling is PCREC_* (shared ABI block) — the per-artifact
+`<PREFIX>_ERR_*` form was deleted, not aliased, by D60/[ABI-NS].
+
+**Revisit when.** A composed-call-site emitter lands (the trap goes live —
+re-read this entry before softening it); or a second below-floor candidate
+arrives and the refusal-vs-give-up test needs restating as a rule.

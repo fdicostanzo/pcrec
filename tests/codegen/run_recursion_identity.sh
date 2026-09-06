@@ -771,7 +771,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # THE PIN IS THIS LANE'S OWN LAST src COMMIT (set in a follow-up commit that
 # touches no src, [ENG-ISL]'s precedent); the manager re-pins to the MERGE
 # when it lands.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9e276472}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e0fe77f}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
