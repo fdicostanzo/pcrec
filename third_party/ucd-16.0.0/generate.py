@@ -33,9 +33,10 @@ THE THREE FAMILIES THIS FILE DERIVES, and the source for each:
      it is UNASSIGNED, so it is the complement of everything the file does
      list, which is why it is derived here rather than parsed.
 
-  2. THE MAJOR categories and `L&` — unions of (1) fixed by Unicode itself.
+  2. THE MAJOR categories, `L&` and its second spelling `Lc` — unions of (1)
+     fixed by Unicode itself.
 
-  3. PCRE2'S OWN `X`-FAMILY (`Xan Xps Xsp Xwd Xuc`) and `Any`/`Assigned`.
+  3. PCRE2'S OWN `X`-FAMILY (`Xan Xps Xsp Xwd Xuc`) and `Any`.
      These have NO UCD definition — they are PCRE2 inventions — so the source
      for them is PCRE2's OWN DOCUMENTATION (`man pcre2pattern`, quoted at each
      definition below), not its binary.  That distinction is the whole of the
@@ -45,11 +46,13 @@ THE THREE FAMILIES THIS FILE DERIVES, and the source for each:
 
      NOTE FOR A FUTURE READER: `docs/design/utf8_design.md` §3.4 calls this
      family "defined in terms of the categories above — derived, no new data".
-     That is TRUE of `Xan`, `Xwd`, `Any` and `Assigned`, and FALSE of `Xps`/
-     `Xsp` (which add five control characters no category holds) and of `Xuc`
-     (which is a code-point RANGE rule plus three ASCII characters).  The
-     design's claim is corrected here rather than in the design, because this
-     is where a reader meets it.
+     That is TRUE of `Xan`, `Xwd` and `Any`, and FALSE of `Xps`/`Xsp` (which
+     add controls no category holds, U+0085 and U+180E among them) and of
+     `Xuc` (a code-point RANGE rule plus three ASCII characters).  Two other
+     §3.4 claims are refuted here too: `\p{Assigned}` is NOT SHIPPED because
+     no libpcre2 this project can reach has the name (measured error 147 on
+     10.42, 10.46 and 10.48), and `Lc` IS shipped although §3.1's accept list
+     does not name it, because all three do.
 """
 
 import os
@@ -207,10 +210,14 @@ def build(cats):
     for major, members in MAJOR.items():
         props[major] = union(*[props[m] for m in members])
 
-    # `L&` — the cased letters.  PCRE2 spells the same set `Lc` in some
-    # versions; only `L&` is in 10.46's measured accept list (design §3.1),
-    # so only `L&` is emitted and an `Lc` spelling stays an unknown name.
+    # `L&` — the cased letters.  `Lc` is PCRE2's SECOND SPELLING of the same
+    # set and it is shipped too: MEASURED 2026-09-06, `\p{Lc}` compiles on all
+    # three libpcre2 builds this project can reach (10.42, 10.46 the reference,
+    # 10.48).  `utf8_design.md` §3.1's measured accept list does not name it —
+    # the design's sweep did not try it — so this is a name the design would
+    # have left unshipped for no reason.
     props["L&"] = union(props["Lu"], props["Ll"], props["Lt"])
+    props["Lc"] = props["L&"]
 
     # `Any` — every code point.  Note it includes the surrogates and the
     # unassigned: it is the universe, not `Assigned`.
@@ -268,7 +275,7 @@ def build(cats):
     props["Xuc"] = union([(0x24, 0x24), (0x40, 0x40), (0x60, 0x60)],
                          [(0xA0, 0xD7FF), (0xE000, MAXCP)])
 
-    order = (["Any", "L&"] + sorted(MAJOR) + CATEGORIES + ["Cn"] +
+    order = (["Any", "L&", "Lc"] + sorted(MAJOR) + CATEGORIES + ["Cn"] +
              ["Xan", "Xps", "Xsp", "Xuc", "Xwd"])
     seen, out = set(), []
     for name in order:
@@ -327,6 +334,7 @@ def build(cats):
 # cased letter.  `mod_uprops.c` therefore takes this substitution instead of
 # the fold, and takes NO fold at all for every other row.
 CASELESS_AS = {"Lu": "L&", "Ll": "L&", "Lt": "L&"}
+
 
 
 def normalise(name):

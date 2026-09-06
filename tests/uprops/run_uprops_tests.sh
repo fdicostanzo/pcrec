@@ -62,7 +62,7 @@ bad()  { fail=$((fail+1)); echo "FAIL: $*"; }
 # ships that is NOT here is caught by the count assertion in §2.
 NAMES_MAJOR="C L M N P S Z"
 NAMES_SUB="Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn"
-NAMES_DERIVED="L& Any Xan Xps Xsp Xuc Xwd"
+NAMES_DERIVED="L& Lc Any Xan Xps Xsp Xuc Xwd"
 NAMES="${UPROPS_NAMES:-$NAMES_MAJOR $NAMES_SUB $NAMES_DERIVED}"
 NAMES_N=$(printf '%s\n' $NAMES | wc -l | tr -d ' ')
 

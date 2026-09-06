@@ -69,7 +69,39 @@ import sys
 # the bug's own address down.
 RECLASSIFIED = {
     0x0295: "U+0295 LATIN LETTER PHARYNGEAL VOICED FRICATIVE — Ll in "
-            "Unicode 16.0.0, Lo in 17.0.0",
+            "Unicode 16.0.0, Lo in 17.0.0 (measured against 10.48)",
+    0x1171E: "U+1171E AHOM CONSONANT SIGN MEDIAL RA — Mn in Unicode 14.0.0, "
+             "Mc in 16.0.0 (measured: 10.42 says Mn, 10.46 says Mc, and the "
+             "pin agrees with 10.46)",
+}
+
+# ---------------------------------------------------------------------------
+# THE SECOND EXCEPTION TIER: PCRE2 CHANGED WHAT THE PROPERTY MEANS.
+#
+# `RECLASSIFIED` above covers Unicode moving a code point between categories.
+# This covers something the `Cn` budget structurally cannot: libpcre2 changing
+# the DEFINITION of one of its own invented properties, where both versions
+# agree about every code point's category and disagree about which of them the
+# property holds.
+#
+# MEASURED 2026-09-06, and it has exactly one member.  `Xwd` on libpcre2 10.42
+# is `Xan` plus underscore; on 10.46 (the REFERENCE) and 10.48 it is `Xan` plus
+# `Mn` plus `Pc` — confirmed by a direct probe of the reference box, which
+# matches `\p{Xwd}` against U+0300 (Mn), U+005F (Pc) and U+203F (a non-ASCII
+# Pc).  pcrec follows the reference, so an OLDER oracle disagrees on the whole
+# `Mn`+`Pc` residue and a table bug would look identical if this tier said only
+# "ignore Xwd".
+#
+# SO IT DOES NOT SAY THAT.  Each entry names the properties whose union the
+# residue must lie INSIDE, taken from pcrec's own sweep of those same
+# properties in the same run — so the exception admits exactly the code points
+# the old definition can explain and fails, naming addresses, on anything else.
+# `docs/dev/upstream_issues.md` U15 is the citable record.
+PCRE2_SEMANTIC_DRIFT = {
+    "Xwd": (["Mn", "Pc"],
+            "libpcre2 changed Xwd from `Xan + underscore` (10.42) to "
+            "`Xan + Mn + Pc` (10.46, the reference, and 10.48); pcrec follows "
+            "the reference — upstream_issues.md U15"),
 }
 
 
@@ -145,8 +177,20 @@ def main():
                          % (name, len(diff),
                             [hex(c) for c in sorted(diff)[:8]]))
             continue
-        unexplained = sorted(c for c in diff
-                             if c not in unassigned and c not in RECLASSIFIED)
+        allowed = set(unassigned) | set(RECLASSIFIED)
+        if name in PCRE2_SEMANTIC_DRIFT:
+            props, _why = PCRE2_SEMANTIC_DRIFT[name]
+            missing = [p for p in props
+                       if mine.get(p, ("ERR", 0))[0] != "SET"]
+            if missing:
+                fails.append("%s: its semantic-drift exception is stated over "
+                             "%s and this run has no pcrec sweep for %s, so "
+                             "the exception cannot be applied"
+                             % (name, props, missing))
+                continue
+            for p in props:
+                allowed |= mine[p][1]
+        unexplained = sorted(c for c in diff if c not in allowed)
         drifted += len(diff) - len(unexplained)
         if unexplained:
             fails.append("%s: %d of %d differing code points are NOT explained "
