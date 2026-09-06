@@ -855,7 +855,7 @@ ESC_BASE_D('t', "\\t", "tab, hex 09", "char 0x09", t_def),
  * convention), and `class_expect` is measured against THAT example's
  * literal text, same as `\cX`'s "char 0x18" is measured against the
  * literal `X`. */
-ESC_BASE_D('x', "\\x41", "hex: bare \\xHH (exactly 2 digits) or braced \\x{HHHH} (\\x{...} requires module 'unicode-props')", "char 0x41", bare_x_def),
+ESC_BASE_D('x', "\\x41", "hex: bare \\xHH (exactly 2 digits) or braced \\x{HHHH} (base grammar, code point range-checked per encoding)", "char 0x41", bare_x_def),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */

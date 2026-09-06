@@ -299,7 +299,7 @@ model.
 |---|---|---|
 | `\a` `\e` `\f` `\n` `\r` `\t` | `OK` | — |
 | `\xhh` | `OK` | — |
-| `\x{hh..}` | `REJECTED` | — |
+| `\x{hh..}` | `OK` | — |
 | `\cx` | `REJECTED` | — |
 | `\0dd`, `\ddd` as an ATOM | `OK-GATED` | — |
 | `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — |
@@ -324,7 +324,10 @@ Each verified byte-for-byte against libpcre2 during this survey.
 
 **`base:hex-escape-braced`**
 
-Module `unicode-props`.
+Base grammar since [M5.0] stage 2: the code point is range-checked
+against the encoding's max (U+00FF under `byte`, U+10FFFF under `utf8`)
+and the refusal names the encoding. Was module `unicode-props` before
+stage 2.
 
 **`\cX`**
 
@@ -2193,7 +2196,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 138 rows 
 | after `\` | `\n` | `OK` | — | — | — | dfa|vm | linefeed, hex 0A |
 | after `\` | `\r` | `OK` | — | — | — | dfa|vm | carriage return, hex 0D |
 | after `\` | `\t` | `OK` | — | — | — | dfa|vm | tab, hex 09 |
-| after `\` | `\x41` | `OK` | — | — | — | dfa|vm | hex: bare \xHH (exactly 2 digits) or braced \x{HHHH} (\x{...} requires module 'unicode-props') |
+| after `\` | `\x41` | `OK` | — | — | — | dfa|vm | hex: bare \xHH (exactly 2 digits) or braced \x{HHHH} (base grammar, code point range-checked per encoding) |
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
 | after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead — also spelled `(*pla:a)`, `(*positive_lookahead:a)` |
 | after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead — also spelled `(*nla:a)`, `(*negative_lookahead:a)` |
