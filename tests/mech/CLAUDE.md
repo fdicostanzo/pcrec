@@ -2313,3 +2313,70 @@ Measured at the landing on a scratch build of the plant: `scanedge`
 11fail/2pass, `reach:ok`. The corpus arm's own figure is OWED to the next
 battery.
 
+## [ENCCHK-DD12A]: the `encoding` arm and two cwmax-floor rows (2026-09-06, lane encchk)
+
+Registered `encoding` — runs `tests/codegen/run_encoding_checks.sh` at its
+own `ENC_MAX_BLOCKS` default (250, the light-local-run bound the script
+already documents) — for a reason two EXISTING rows had already named and
+could not reach: S229's own header states that the K49 advance-agreement
+section of that script is its second, independent detector, and records in
+the same breath "that suite is not wired into this matrix's dispatch
+today." S-U8's header carries the identical unfulfilled claim about the
+clamp-stride probe. Registered before the two rows that name it, per the
+R31 C11 convention. Both were re-run solo against a GREEN post-rewrite
+baseline (`run_encoding_checks.sh` itself was rebuilt in the same lane, K52
+below — journal 2026-09-05 lesson 3's "a dirty baseline gives a false
+NOW-DETECTED" is exactly the trap a stale-baseline solo run here would have
+been) and both now score DETECTED with the new arm's own line firing:
+
+    S229  harness encoding  corpus:1fail/71pass,encoding:1fail/9pass                DETECTED
+    S-U8  codegen encoding  pop:tests/codegen/run_encoding_checks.sh:/RX_PRUNE_CLAMP_SPAN/=3(want>=1),
+                            reach:ok(1/1),codegen:6fail/102pass,encoding:1fail/10pass DETECTED
+
+**S230 and S231 give `run_mrl_tests.sh` §8's two cwmax population floors a
+permanent row**, closing the admin half of K52's charter alongside DD12a(i)
+itself. `tests/mrl/CLAUDE.md`'s account of the 2026-09-05 K49-adjacent
+repair to `cwmax_check.c` (the byte-vs-character unit mismatch) named two
+floors — (i) the utf8 block population is nonzero, (ii) at least one
+compared span's byte width exceeds its character width — validated by hand
+at the repair and never encoded as permanent rows until now.
+
+- **S230** drops the resolved encoding before it reaches the block
+  (`b.encoding = e->id;` deleted from `cwmax_check.c`'s directive reader),
+  so every `.rxt` block sweeps as `byte`. Trips BOTH floors (floor (ii) has
+  nothing left to trip on) and reproduces 40 real CHECK 2 violations on the
+  whole corpus as a side effect. Solo run, tree `5991a6b2`: `mrl arm,
+  pop:tests/utf8/axis01_encoded_length.rxt:/^encoding utf8/=64(want>=50),
+  reach:ok(1/1), mrl:1fail/26pass` — DETECTED.
+- **S231** reverts `char_width`'s independent non-continuation-byte scan to
+  `return end - start;`, the literal pre-repair spelling — a REAL PAST
+  DEFECT restored (S69/S229's own shape), not an invented one. Trips floor
+  (ii) ALONE (floor (i)'s population stays intact, which is the reason this
+  is a second row rather than a second hunk of S230) and reproduces
+  EXACTLY 84 CHECK 2 violations, matching `tests/mrl/CLAUDE.md`'s own
+  historical figure to the digit. Solo run, same tree: `mrl arm,
+  pop:...=64(want>=50), reach:ok(1/1), mrl:1fail/26pass` — DETECTED.
+
+Both carry `SAB_REACH` (build and run the real `cwmax_check.c` against the
+clean tree on `tests/utf8/axis01_encoded_length.rxt`, requiring the exact
+printed counter line each plant defeats) and `SAB_REACH_POP` (that file's
+own `encoding utf8` directive count, floored at 50 against a measured 64) —
+[MECH-REACH] from birth, since both floors are named, nameable witnesses in
+`tests/mech/CLAUDE.md`'s own sense.
+
+Full per-row detail, including why the exclusion cannot fold into one row
+and the exact SAB_REACH strings, is in `sabotages/CLAUDE.md`'s "Newest"
+entry and in the two row files themselves
+(`sabotages/S230_cwmax_encoding_reader_dropped.sh`,
+`sabotages/S231_cwmax_char_width_reverts_to_bytes.sh`). Full transcripts:
+`docs/dev/lanes/encchk_report.md`.
+
+**DD12a(i) itself (K52) is not a mech row** — its rebuild is a rewrite of
+`run_encoding_checks.sh`'s own instrument, validated by a scratch plant in
+a throwaway `git archive` tree rather than by a permanent sabotage
+definition (see `docs/dev/known_issues.md` K52's FIXED marker and
+`docs/dev/lanes/encchk_report.md` for the transcript: a one-line
+encoding-conditional planted immediately before the VM's `_accept:` label,
+outside every named region the rebuilt check excises, caught on all 5
+VM-selected witnesses in a 10-pattern mixed set).
+

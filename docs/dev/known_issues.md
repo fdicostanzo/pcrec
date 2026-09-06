@@ -3700,7 +3700,7 @@ violated by the DFA's start-anywhere self-loop, reachable from an ordinary
 `startpos=0`, and closing it is a structural change this lane did not have
 the charter for.
 
-## K52 — INFRASTRUCTURE (2026-09-05, found by the FULL §8.5 sweep's first LINUX run): DD12a(i), the byte-vs-utf8 hot-loop shape-identity check, is VACUOUS ON DARWIN and MIS-SCOPED FOR ITS CLAIM everywhere — it has never made its measurement.
+## K52 — INFRASTRUCTURE (2026-09-05, found by the FULL §8.5 sweep's first LINUX run): DD12a(i), the byte-vs-utf8 hot-loop shape-identity check, is VACUOUS ON DARWIN and MIS-SCOPED FOR ITS CLAIM everywhere — it has never made its measurement. **STATUS: FIXED on branch `lane/encchk` ([ENCCHK-DD12A], 2026-09-06); CLOSES AT MERGE.**
 
 TWO DEFECTS, one instrument. (1) VACUITY: the compare extracts `.text`/
 `.rodata` via `objdump -s -j .text` — on Mach-O the section is
@@ -3734,24 +3734,47 @@ darwin story (a working Mach-O section read, or a loud SKIP naming this
 entry, never an empty compare). Validated in the failing direction with a
 planted encoding conditional in the hot loop before it is trusted.
 
-**STATUS: FIXED 2026-09-06, lane `encchk` / [ENCCHK-DD12A].** The rebuilt
-DD12a(i) compares emitted SOURCE TEXT (no compiler, no objdump — real on
-darwin, not a SKIP): both artifacts re-emitted under the same
-prefix+basename, the four residual entries + the [K49] advance splice +
-the `.encoding` scalar excised from both sides with every excision
-COUNTED and floored non-empty by construction. The rebuild surfaced an
-honest scope fact: patterns with an unescaped `.` or negated class
-compile to a structurally different automaton under utf8 even on ASCII
-subjects (state count and table shape both move), so an independent
-pattern-text classifier (`widens_under_utf8`) exempts exactly that
-population, counted and floored (243 strict-identity / 10 exempt at the
-ENC_MAX_BLOCKS=250 slice, 11/0 checks). Failing direction shown before
-trust: a one-line encoding conditional planted in emit_vm.c (throwaway
-git-archive tree) caught on 5/5 VM-selected witnesses — transcript in
-docs/dev/lanes/encchk_report.md. Residue, stated: validated on darwin
-only at the slice; the Linux confirmation and the full ENC_MAX_BLOCKS=0
-sweep ride the next merge battery, and the `.encoding` assertion assumes
-rx_info is emitted once per file (true today, a named closed assumption).
+**FIXED 2026-09-06, lane `encchk` / [ENCCHK-DD12A].** The rebuilt
+instrument compares emitted SOURCE TEXT, never an object — no compiler, no
+`.o`, no `objdump` on either platform, which is what makes (c) a real
+darwin arm rather than a second attempt at a Mach-O section read: there is
+no section to read. Both artifacts are re-emitted under the SAME prefix
+and basename (`run_trie_identity.sh`'s own documented `#include`-line
+trap, avoided by construction), and three named encoding-owned regions —
+the four residual entries, the [K49] retry-advance splice, and the
+`.encoding` scalar — are excised from both sides before the compare, each
+anchored on text confirmed identical across backends. (a) is discharged by
+a hard floor: `next_pos` (unconditional on every artifact) must be found
+exactly once per side, plus an aggregate floor that all six excised
+regions were reached at least once across the run (three explicit
+witnesses guarantee this rather than trusting the corpus's luck).
+
+Validation surfaced a genuine scope finding beyond the charter's own
+wording: a pattern using an unescaped dot or a negated class compiles to a
+STRUCTURALLY DIFFERENT automaton under utf8 even on ASCII-only subjects
+(direct diff confirmed state count and table shape both moving, 7→28
+states on one witness) — correct behaviour, not a leak, since the
+construct means "any code point [not in the set]" and lowers to a class
+spanning the whole encoded space. An independent pattern-text classifier
+(`widens_under_utf8`, scoped like `lookaround_classify.py`'s own rule —
+never decided by anything pcrec computes) exempts exactly that population
+from the strict identity claim while still counting and flooring it: at
+`ENC_MAX_BLOCKS=250` the real corpus split 243 strict-identity pairs (0
+diverging) against 10 widens-under-utf8 pairs (10 diverging, as expected —
+§8.5's answer differential already covers correctness for that bucket).
+
+(d) validated in the failing direction: a scratch plant (one line of
+encoding-conditional text immediately before the `_accept:` label in
+`src/gen/emit_vm.c`, outside every named region) was built in a throwaway
+`git archive` tree — never the live worktree — and caught on all 5
+VM-selected witnesses in a 10-pattern mixed set; every DFA-selected
+witness in the same set correctly stayed clean, since the plant's site is
+VM-only. Full transcript: `docs/dev/lanes/encchk_report.md`.
+
+RESIDUE, honestly stated: validated on darwin only (this lane's box). A
+Linux confirmation — that the same source-text comparison reads
+identically there, and that the full `ENC_MAX_BLOCKS=0` sweep stays green
+— rides the merge-time battery, per the report's own open questions.
 
 ## K51 — [M5.0] STAGE 2 (2026-09-05, found by the FULL §8.5 sweep on ubuntubudu — the 250-block slice ran 0 divergences twice and could not see it): under `-e utf8` an artifact can return a TYPED GIVE-UP where the byte artifact ANSWERS, on a pattern whose byte-tier viability depends on a rung the utf8 lowering declines.
 

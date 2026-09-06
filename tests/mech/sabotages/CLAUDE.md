@@ -191,19 +191,39 @@ measurement — this directory's rows carry their history, and the matrix output
 is the citation, never a number copied into prose. When a corpus edit moves a
 figure a row's `SAB_REACH_POP` states, move the row in the same change.
 
-**Newest (r51fix, 2026-09-03):** S219 flipped `UNREACHED` → `UNDETECTED` (a
-mis-declared reach claim, not a falsified derivation), S220's `SAB_REACH_POP`
-re-derived to its own named manifest, and three new rows S224-S226 on the
-`vmframeless` arm. See `../CLAUDE.md`'s own "[OPT-5]/[OPT-VMFL] r51fix" section
-for the per-row narrative — this file carries the field reference and traps,
-not the row history.
+**Newest ([ENCCHK-DD12A], 2026-09-06, lane encchk):** two new rows plus the
+`encoding` arm reaching two existing ones. See `../CLAUDE.md`'s own
+"[ENCCHK-DD12A]" section for the per-row narrative — this file carries the
+field reference and traps, not the row history. In brief:
 
-**Newest (encchk / [ENCCHK-DD12A], 2026-09-06):** two cwmax-floor rows —
-S230 (the encoding-directive reader dropped from cwmax_check) and S231
-(character-count width reverts to byte spans, K49-lane's unit-mismatch
-shape re-planted) — both SAB_REACH-equipped from birth, both solo
-DETECTED at their branch tree; and the new `encoding` SUITE TOKEN
-(run_encoding_checks.sh) added to S229's and S-U8's `SAB_SUITES`, closing
-the gap both rows' own headers had documented (they scored on
-harness/codegen arms only). Per-row history in each file's header;
-delivery narrative in docs/dev/lanes/encchk_report.md.
+- **S230** (`tests/mrl/cwmax_check.c`, arm `mrl`) — the `encoding` directive
+  reader resolves the name but never assigns it to the block (`b.encoding =
+  e->id;` dropped), so every `.rxt` block sweeps as `byte` regardless of its
+  own directive. Detector: `run_mrl_tests.sh` §8's floor (i), "the utf8 block
+  population is nonzero" — trips it, plus floor (ii) vacuously (no utf8
+  population left to have a multi-byte span) and 40 real CHECK 2 violations
+  as a side effect. `SAB_REACH` builds and runs `cwmax_check.c` itself
+  against the clean tree on `tests/utf8/axis01_encoded_length.rxt`, requiring
+  the printed `utf8 blocks / spans      : 64 / 88` line; `SAB_REACH_POP`
+  floors that file's `encoding utf8` directive count at 50 (measured 64).
+- **S231** (`tests/mrl/cwmax_check.c`, arm `mrl`) — `char_width`'s
+  independent non-continuation-byte scan reverts to `return end - start;`,
+  the literal pre-2026-09-05-repair spelling (a REAL PAST DEFECT restored,
+  S69/S229's shape). Detector: floor (ii) ALONE — "at least one compared
+  span's byte width exceeds its character width" — trips (floor (i)'s
+  population stays intact, which is why this is a second row rather than a
+  second hunk of S230), plus exactly 84 real CHECK 2 violations, matching
+  `tests/mrl/CLAUDE.md`'s own historical figure to the digit. `SAB_REACH`
+  requires the printed `spans whose BYTE width exceeds their CHARACTER
+  width: 66` line; same `SAB_REACH_POP` as S230.
+- **S229 and S-U8 gained the `encoding` arm** (`tests/codegen/
+  run_encoding_checks.sh`, newly registered — see `../CLAUDE.md`'s own
+  "SUITE VOCABULARY" list). Both rows' own headers already named this
+  script as their real second detector (S229's K49 advance-agreement
+  section, S-U8's clamp-stride probe) and recorded that the suite was not
+  wired into this matrix's dispatch; it is now. Solo runs: S229 —
+  `harness encoding` / `corpus:1fail/71pass,encoding:1fail/9pass`; S-U8 —
+  `codegen encoding` / `pop:...RX_PRUNE_CLAMP_SPAN.../=3(want>=1),
+  reach:ok(1/1),codegen:6fail/102pass,encoding:1fail/10pass`. Both
+  DETECTED, with the new `encoding:1fail` line firing alongside the arm
+  that already caught them.
