@@ -56,6 +56,19 @@ Keep for yourself: architectural judgement, briefs, review-and-merge,
 rulings to escalate to Frank, and design of key pieces (or design via
 subagents and judge the results).
 
+**EVERY LANE BRIEF STARTS: "Read docs/dev/lanes/BOILERPLATE.md FIRST and
+follow it"** (Frank, 2026-09-06) — the standing rules (scope, worktree
+ritual, box facts, process, lifecycle) live THERE; the brief carries only
+the task, tier, charter pointers and deliverable. Do not restate boilerplate
+content in briefs. LIFECYCLE (same ruling): lanes get NO self-keepalive
+crons (subagent caches are 5-min TTL — ticks are pure cost); close agents
+AGGRESSIVELY — an agent not needed within a few minutes summarizes (iff a
+follow-up is expected) and ENDS; follow-ups go to FRESH agents resuming
+from the committed report. And DELEGATE OPERATIONS HARD: the manager's
+model is the most expensive in the ledger — mechanical runs, sweeps,
+re-pins, triage, doc maintenance all go to lanes; the manager keeps
+judgment, briefs, review, merges.
+
 Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
 
 - **Limit subagents doing significant work to 3 concurrent lanes** — more

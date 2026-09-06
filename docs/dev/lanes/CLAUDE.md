@@ -1,5 +1,13 @@
 # docs/dev/lanes/ — per-lane restart records and delivery reports
 
+**`BOILERPLATE.md` (2026-09-06, Frank's ruling) is the standing rules every
+lane reads FIRST** — scope mandate, worktree ritual, box facts, process
+rules, and the lifecycle policy (NO self-keepalive crons: subagent caches
+are 5-minute TTL, measured by the tokenscan analysis 2026-09-06; finish,
+hand back complete, END — never idle). Briefs name only the task, tier and
+deliverable, and point here. Update it when a rule changes rather than
+growing briefs back.
+
 One `<lane>_log.md` (the lane's own running log: what it did, in order,
 for its restart) and one `<lane>_report.md` (the delivery: commits, the
 brief's acceptance table filled with MEASURED values, findings) per lane
