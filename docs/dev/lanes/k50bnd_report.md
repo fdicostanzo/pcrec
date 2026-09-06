@@ -350,11 +350,49 @@ completed**, and it is the first thing to finish at merge.
 
 ## 8. Delivery-block results
 
-Logs under the session scratchpad; the block ran with the tree settled and
-nothing else touching `build/`.
+Run with the tree settled and nothing else touching `build/` — the sequencing
+matters, and I got it wrong twice earlier in the lane before running this
+block cleanly (see §10).
 
-> Filled in by the run whose log is
-> `.../scratchpad/validate.log`; see §9.
+**THE IDENTITY GATE: 16/16, all four axes, ZERO DIFFERING on both
+comparisons.** This is acceptance condition (d) discharged, and (A) is the one
+that carries it:
+
+| axis | (A) program region vs the UNCHANGED pre-module pin `ac4917d` | (B) whole file vs `9e276472` |
+|---|---|---|
+| default | 2300 identical, **differing=0** | 2424 identical, differing=0 |
+| `--engine=vm` | 2279 identical, **differing=0** | 2425 identical, differing=0 |
+| `-fno-prefilter` | 2301 identical, **differing=0** | 2424 identical, differing=0 |
+| `--no-captures` | 2324 identical, **differing=0** | 2424 identical, differing=0 |
+
+The corpus this gate walks is entirely `byte`-compiled, so **(A) at
+`differing=0` IS the proof that no byte artifact's program moved.** It is a
+real check here rather than a formality: K50's whole risk was that a fix for a
+`utf8` defect would move the encoding that has no defect, and nothing in the
+change is `byte`-conditional — the backend supplies no character-start set, so
+the IR builds no gate, the class axis never produces `UPC_NOSTART`,
+`eqclasses` performs no fourth refinement, `ENG_ATTEMPT`'s loop gains no
+`continue`, and the entries emit no guard. The (A) excuse counters
+(`island-moved`, `fold-moved`, `size-term-moved`) are the pre-existing ones and
+this event added none.
+
+| suite | result |
+|---|---|
+| identity gate | **16 passed / 0 failed** |
+| `make test-encoding-checks` | **10 / 0** — including K49's advance-agreement in both directions (10,738 cells each, utf8 differing from `pos+1` on 2,268 of them) and §8.5's byte-vs-utf8 ASCII agreement over 250 blocks |
+| `make test-startbnd` (new) | **5 / 0** (§1/§2, §3, §4, §5, §6) |
+| known-fail ratchet | `still failing: 1` (K34 alone) `now passing: 0` — K50's file retired |
+| `bash tests/harness/run.sh tests/utf8` | **1342 cases / 0 failures** |
+| `make test-codegen` | see below |
+
+**`make test-codegen`: `run_group: 5/8 scripts passed`, and the three reds are
+NOT triaged as mine — see §10(a), which is an owed item rather than a
+conclusion.** The two scripts whose output the block captured were green
+(`run_scan_edge_census.sh` 14/0, `run_n1_budget.sh` 13/0). The brief names
+four known darwin-only reds in this target, but I have not matched the three
+observed against that list, and `run_codegen_tests.sh` is where `ABI_EXPECT`
+lives — so this is the one result in this table a reviewer should not take on
+trust.
 
 ---
 
