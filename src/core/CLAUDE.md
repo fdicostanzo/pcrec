@@ -182,6 +182,17 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   and `[a-z]` are two lists denoting one set, and §2.7.2's argument that the
   artifact does not depend on the pattern's SPELLING stops being true.
 
+  **[M5.0 stage 3] `pcrec_ast_class_from_iv` (src/parse/parse.c) is the
+  interval-shaped sibling of `pcrec_ast_class_from_bits`**, and it differs in
+  two ways that are both about what a NAMED SET means. It INTERSECTS the set
+  with the encoding's universe rather than refusing — `\p{L}` under `byte` is
+  the Latin-1 letters, which is measurably what PCRE2's own 8-bit non-UTF
+  build does, where `\x{100}` under `byte` REFUSES because naming an absent
+  code point is a mistake and naming a set is not. And it applies NO case
+  fold: MEASURED, a caseless `\p{Lu}` is `\p{L&}` and every other property
+  is caseless-invariant, so the caller owns caselessness and an ASCII fold on
+  top would be wrong on every non-ASCII cased letter.
+
   Two types, deliberately: a WRITE-ONLY `PcrecCpSet` builder and a READ-ONLY
   published `const PcrecCpRange *`, so "publish once, never mutate" is
   compiler-checked rather than a convention — which is what lets two nodes
@@ -605,12 +616,42 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   certifying nothing, which is precisely the S70/S155 failure `[MECH-REACH]`
   was built for.
 
-  **THE GUARD STAYS, AND NOT ON SENTIMENT.** It goes LIVE again at stage 3.
-  `\p{L}` is ~770 intervals, so `n > 255` becomes ordinary the moment
-  `unicode-props` lands — and then clearing byte 1 of `n` turns `n = 256` into
-  `n = 0`, the EMPTY class, which is a LOST MATCH rather than a corrupted one.
+  **THE GUARD STAYS, AND NOT ON SENTIMENT** — but the reason given here at
+  stage 1 was WRONG about when, and [M5.0] stage 3 measured it. Stage 1 said:
+  *"It goes LIVE again at stage 3. `\p{L}` is ~770 intervals, so `n > 255`
+  becomes ordinary the moment `unicode-props` lands."* Stage 3 landed and the
+  hazard is **structurally unreachable**, which is a stronger statement than
+  stage 1's arithmetic one:
+
+  * `n > 255` REQUIRES a code point above 0xFF — a byte-confined class holds
+    at most 128 disjoint non-adjacent intervals over [0, 0xFF], this file's
+    own invariant. And under `--encoding=byte` a property set is CLAMPED to
+    the encoding's universe (`pcrec_ast_class_from_iv`, PCRE2's own 8-bit
+    behaviour), so `\p{L}` there is EIGHT Latin-1 runs, not 677.
+  * A class holding a code point above 0xFF **DECLINES the
+    reverse-deterministic rung**, because `pcrec_cls_bits_widen` answers ALL
+    BYTES for an out-of-range class — the SOUND direction for a FIRST set,
+    deliberately — so disjointness can never be proven. MEASURED with a
+    `\p`-FREE control, so this is a fact about wide classes and not about
+    the module: `((H)|I){3}J` under `-e utf8` stamps `RX_VM_RUNGS 0x8u`
+    while `((\x{100}|H)|I){3}J` stamps `0x2u`.
+  * Therefore `rd_node` never copies a class with `n > 255` at any encoding
+    or cap setting — `((\p{Ll})|1){3}!` stamps `0x2u` with the emit caps
+    raised twentyfold.
+
   The guard is correct for a reason that is about `k` and never about offsets,
-  which is exactly why it survives a re-layout that erased its symptom.
+  which is exactly why it survives a re-layout that erased its symptom — and
+  why it stays now that the symptom is provably unreachable rather than merely
+  absent.
+
+  **THE STAGE-1 REACH PROBE WOULD HAVE SAID THE ROW HAD WOKEN UP**, and that
+  is the transferable lesson. It asked whether `\p{L}` COMPILES, on the
+  reasoning that compiling it implies `n > 255`. Stage 3's own clamp makes
+  that implication false, the probe now matches, and the runner would have
+  reported `NOW REACHED` over a population that does not exist — the S70/S155
+  shape one level down, in a REACH DECLARATION rather than in a check. S121's
+  probe is re-aimed at the real question (does a >255-interval class reach the
+  revdet rung) and fails honestly.
 
   It is now guarded on `n->k == A_REP`, behaviour-preserving because those
   values are only ever read for A_REP.

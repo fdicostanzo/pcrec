@@ -612,6 +612,25 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   run.sh` with `SIZELOG` set; `check_size_tripwire.sh` reads the assembled
   `docs/dev/artifact_size_log.tsv`, `make test-size`). See its own
   CLAUDE.md for the log format and the measured per-compile overhead.
+- **uprops/** — module `unicode-props` ([M5.0] stage 3): the structural and
+  differential checks its corpus cannot make. Four sections — the generated
+  UCD table's STALENESS check, the shipped name set from a HAND-WRITTEN
+  (promise-side) list with the count asserted against the `.inc` in both
+  directions, the MEMBERSHIP differential over the WHOLE code-point space on
+  both encodings against libpcre2, and the ORACLE-FREE semantic invariants
+  (negation duality, the caseless `Lu`/`Ll`/`Lt` -> `L&` substitution) each
+  with a non-vacuity control that must DISAGREE. `make test-uprops` (the
+  `byte` arm, 33 s, in `make test`) and `make test-uprops-utf8` (opt-in). The
+  differential is affordable at whole-space resolution because neither side
+  calls the matcher per code point — both do ONE find-all pass over a subject
+  that is every code point in order. Its own CLAUDE.md carries the
+  Unicode-version DRIFT POLICY, which exists because no libpcre2 this project
+  can reach is at the pinned version (and the one the suite's dlopen shim
+  actually resolves on the Mac is two majors behind — `upstream_issues.md`
+  U15). **§4 is the section that found a real bug** and the reason the suite
+  has four rather than three: `esc_class_value` never advanced the cursor for
+  a produced `EXT_MEMBERS`, which the membership differential structurally
+  could not see because both its sides compile `\p{L}` at an ATOM.
 - **utf8/** — the [M5.0] `utf8`-encoding corpus: D27-blinded (cell
   `utf8corpus`, authored against the pre-stage-2 tree) then PROMOTED (lane
   `utfprom`, 2026-09-05) against the merged stage-2 tree. 529 blocks / 14

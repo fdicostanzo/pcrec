@@ -234,8 +234,43 @@ no module is split):
 | `extended-classes` | not built | nested/set-operation character classes |
 | `misc` | not built | scattered rarer constructs |
 | `quoting` | **built** | `\Q…\E` literal quoting, including inside a character class |
-| `unicode-props` | not built | `\p{…}`/`\P{…}` (recogniser-only, no producer — D37) |
+| `unicode-props` | **built (partial)** | `\p{…}`/`\P{…}` — the Unicode GENERAL CATEGORIES and PCRE2's derived families ([M5.0] stage 3). See the note below for exactly which names |
 | `verbs` | not built (per-name; the 12 alpha-spelled lookaround verbs are attributed to `lookaround`/`assertions` instead, D71 item 3) | `(*PRUNE)`/`(*COMMIT)`/etc. |
+
+**`unicode-props` is the first module in this table to ship a PROPER SUBSET
+of its own construct, so "built" needs a sentence.** 45 property names
+compile: the seven one-letter general categories (`C L M N P S Z`), all 30
+two-letter ones (`Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po Sm
+Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn`), the cased-letter set under both its
+spellings (`L&`, `Lc`), `Any`, and PCRE2's own `Xan Xps Xsp Xuc Xwd`. Every
+one works at both `--encoding=byte` and `--encoding=utf8`, negated as
+`\P{X}` or `\p{^X}` (the two compose: `\P{^X}` is `\p{X}`), and inside a
+character class.
+
+**Names libpcre2 has that this does not ship yet REFUSE, and refuse as the
+MODULE's gap rather than as unknown names** — scripts (`\p{Greek}`,
+`\p{Script=Greek}`, `\p{scx=…}`) are [M5.0] stage 5; the boolean-property
+and `Bidi_Class` families are declined by design. A name no libpcre2 has
+(`\p{Foo}`, block spellings like `\p{InGreek}`) refuses too, and on the
+one-letter axis — where pcrec's table is exhaustive — it says so as an
+unknown NAME with no module clause, because no module will ever implement
+it.
+
+**Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}`** and every
+other property is unchanged — measured against libpcre2 over the whole
+code-point space, not inferred. The Unicode case-fold CLOSURE that a
+caseless non-property construct would need is [M5.0] stage 4.
+
+**Five names exceed the emitted-artifact size cap under `--encoding=utf8`
+at default settings** (`\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`,
+`\p{Xwd}`, and their `\P` forms) and refuse with the ordinary
+"pattern too large" diagnostic. `-fno-premul-table` compiles all of them;
+`docs/dev/known_issues.md` K53 has the cause and the cure.
+
+**The property tables are pinned at Unicode 16.0.0** (`third_party/
+ucd-16.0.0/`), which is the reference oracle's version. A libpcre2 whose
+Unicode version differs will disagree about recently-assigned code points;
+that is a re-measurement event under D26, not a defect.
 
 For what any one construct under a module actually does today —
 per-construct divergences, `OK-LIMITED` caveats, the ones with known
