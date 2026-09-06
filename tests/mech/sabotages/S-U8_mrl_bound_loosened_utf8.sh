@@ -25,9 +25,9 @@
 # run_encoding_checks.sh's clamp-stride probe), not any answer.
 SAB_ID="S-U8-mrl-bound-loosened-utf8"
 SAB_FILE="src/opt/lower_enc.c"
-SAB_SUITES="codegen"
+SAB_SUITES="codegen encoding"
 SAB_DESC="the utf8 lowering adds a matches-nothing empty-class branch to every multi-byte class's alternation; the language is identical, every answer is identical, and the emitted MRL prune bound quietly loosens from the true encoded byte count — only a bound-reading check sees it"
-SAB_DOC_FIGURE="PREDICTED: 0 corpus failures, 0 identity-gate failures, and run_encoding_checks.sh's clamp-stride probe RED ((a)(?:\x{3b1}){0,3}x stops emitting RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2) — the stride-2 clamp that proves the bound counts ENCODED bytes — and its RX_VM_RUNGS stamp moves). DEMONSTRATED at stage 2: the clamp literal present clean, absent sabotaged, answers identical on every subject tried."
+SAB_DOC_FIGURE="PREDICTED: 0 corpus failures, 0 identity-gate failures, and run_encoding_checks.sh's clamp-stride probe RED ((a)(?:\x{3b1}){0,3}x stops emitting RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2) — the stride-2 clamp that proves the bound counts ENCODED bytes — and its RX_VM_RUNGS stamp moves). DEMONSTRATED at stage 2: the clamp literal present clean, absent sabotaged, answers identical on every subject tried. [ENCCHK-DD12A], 2026-09-06: the prediction is now a SCORED arm (the encoding suite word, newly wired) rather than an unfulfilled claim in this header — see docs/dev/lanes/encchk_report.md for the solo-run transcript against a green baseline."
 SAB_REACH='"$PCREC" -e utf8 -p rx -o - -- "(a)(?:\x{3b1}){0,3}x" | grep -o "RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)" | head -1'
 SAB_REACH_EXPECT='RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)'
 SAB_REACH_POP='tests/codegen/run_encoding_checks.sh|RX_PRUNE_CLAMP_SPAN|1'
