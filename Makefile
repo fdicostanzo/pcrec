@@ -160,7 +160,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
       test-prefilter-collapse test-rxtsource test-definitions \
-      test-entry-shape-identity test-cpset-structure
+      test-entry-shape-identity test-cpset-structure test-startbnd
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -914,6 +914,22 @@ test-encseam: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-encseam.ran"; fi
 	bash tests/encseam/run_encseam_tests.sh
 
+# [K50] the caller-startpos boundary axis's differential plus the cross-engine
+# check that every position the ENGINE generates is a character boundary. The
+# FIRST non-.rxt suite tests/utf8/ has — that directory's own CLAUDE.md
+# records the absence of one as an owed gap, and this is not the byte-mirror
+# differential it names (that one is still owed) but the axis's own.
+#
+# It is its own section rather than part of `test-corpus` because the two
+# things it checks are structurally beyond a `.rxt` corpus: where the two ARMS
+# of a non-answer-identical axis diverge (no directive spells the flag), and
+# whether the engine's own invented positions agree with libpcre2 rather than
+# with each other (both engines agreed on the WRONG answer for a milestone,
+# which is why nothing caught K50).
+test-startbnd: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startbnd.ran"; fi
+	bash tests/utf8/run_startbnd_diff.sh
+
 test-resource: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-resource.ran"; fi
 	bash tests/resource/run_resource_tests.sh
@@ -1327,6 +1343,6 @@ clean:
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks \
+        test-encoding-checks test-startbnd \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

@@ -262,15 +262,28 @@ encoding utf8
 features lookaround
 m "\xce\xb1\xce\xb2" 0 0
 
-# axis9 block midstart-row2-MID-la | pattern: (?<!.) startpos=1 subject=alpha-beta (CE B1 CE B2)
-# measured for context (NOT the expected value): PCRE2_UTF=('ERRM', -36, 'bad offset into UTF string')  MATCH_INVALID_UTF=((2, 2), ())  options=0(byte)=None
-# EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): ((1, 1), ())
-#   ms 1 "\xce\xb1\xce\xb2" 1 1   # oracle=pcrec-ARGUED (no oracle produces this)
-# pcre2-only
-pattern (?<!.)
-encoding utf8
-features lookaround
-ms 1 "\xce\xb1\xce\xb2" 1 1
+# axis9 block midstart-row2-MID-la — MOVED 2026-09-06 ([K50], lane k50bnd),
+# NOT DELETED, and this comment is the pointer the move owes.
+#
+#   pattern (?<!.)  encoding utf8  features lookaround
+#   ms 1 "\xce\xb1\xce\xb2" 1 1     # oracle=pcrec-ARGUED (Sec 2.6.1.1)
+#
+# WHY IT LEFT. `startpos = 1` is a MID-CHARACTER offset of `CE B1 CE B2`, and
+# K50's caller-startpos guard — default ON — now REFUSES such a position with
+# PCREC_ERR_STARTPOS, which is what libpcre2 does under PCRE2_UTF (the
+# `('ERRM', -36, ...)` this block's own comment already recorded). The answer
+# the cell asserts is still RULED and still owed: Frank's 2026-09-05 ruling
+# moves Sec 2.6.1.1's permissive semantics to the `-fno-startpos-guard` arm
+# VERBATIM rather than retiring it.
+#
+# WHERE IT WENT: `tests/utf8/run_startbnd_diff.sh` Sec 6, which compiles this
+# pattern under `-fno-startpos-guard` and pins `(1,1)` at this startpos.
+#
+# WHY IT COULD NOT STAY HERE. No `.rxt` directive spells a compile flag, and
+# none spells a give-up at a NON-ZERO startpos (`gu` is offset-0 only). Both
+# are `.rxt` FORMAT questions — the manager's call, not a lane's — so the cell
+# moved to an instrument that can express it rather than acquiring invented
+# syntax. If the format later grows either directive, this block comes back.
 
 # axis9 block midstart-row3-boundary | pattern: (?<!.) startpos=2 subject=alpha-beta (CE B1 CE B2)
 # [K49] RESTORED HERE 2026-09-05 (lane k49fix) — this is the cell that found
@@ -294,13 +307,17 @@ encoding utf8
 features lookaround
 ns 2 "\xce\xb1\xce\xb2"
 
-# axis9 block midstart-row4-MID-leading-neg | pattern: (?!.) startpos=1 subject=alpha-beta (CE B1 CE B2)
-# measured for context (NOT the expected value): PCRE2_UTF=('ERRM', -36, 'bad offset into UTF string')  MATCH_INVALID_UTF=((4, 4), ())  options=0(byte)=((4, 4), ())
-# EXPECTED (pcrec's own ARGUED design position, Sec 2.6.1.1): ((1, 1), ())
-#   ms 1 "\xce\xb1\xce\xb2" 1 1   # oracle=pcrec-ARGUED (no oracle produces this)
-# pcre2-only
-pattern (?!.)
-encoding utf8
-features lookaround
-ms 1 "\xce\xb1\xce\xb2" 1 1
+# axis9 block midstart-row4-MID-leading-neg — MOVED 2026-09-06 ([K50], lane
+# k50bnd), NOT DELETED, for row 2's reason above.
+#
+#   pattern (?!.)  encoding utf8  features lookaround
+#   ms 1 "\xce\xb1\xce\xb2" 1 1     # oracle=pcrec-ARGUED (Sec 2.6.1.1)
+#
+# THIS IS THE ROW THE K49 ENTRY CALLED "the sharp case" — `.` has no path from
+# a continuation byte, so the negative lookahead succeeds on the FIRST attempt
+# and the cell was green throughout K49's whole episode. It is now refused for
+# a different reason entirely: not because the answer is wrong, but because
+# the caller named a position the artifact no longer accepts.
+#
+# WHERE IT WENT: `tests/utf8/run_startbnd_diff.sh` Sec 6, cell `ahead-mid`.
 

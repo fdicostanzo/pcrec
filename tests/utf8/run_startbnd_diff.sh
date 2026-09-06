@@ -91,6 +91,12 @@ PATTERNS=$(printf '%b\n' \
 # position a search may START at (0xFF is not a continuation byte), and a
 # continuation byte stranded after one is not — the fix must keep both, and
 # a subject holding only well-formed text cannot tell.
+#
+# THE LAST TWO SUBJECTS BEGIN WITH A CONTINUATION BYTE, and they were added
+# after the first version of this list could not see a real defect: with every
+# subject starting at a legal boundary, the guard's treatment of OFFSET 0 was
+# unexercised, and the guard was refusing it. `make test-axes` found that on
+# the existing corpus; this list should not have needed the corpus to find it.
 SUBJECTS='
 61CEB1
 CEB1CEB2
@@ -101,6 +107,8 @@ CEB161CEB2
 FF61
 61FFB1
 E4B8AD61CEB1
+B161
+8080
 '
 
 # gen <out> <pattern> [args...] — compile one arm.
@@ -208,7 +216,7 @@ fi
 # DERIVED rather than observed, which is what makes it a check instead of a
 # transcription of one run: each witness is swept over the same subjects, so
 # the count is (patterns) x (continuation-byte positions across the subject
-# list) = 10 x 14 = 140. The 14 is
+# list) = 10 x 15 = 150. The 15 is
 #
 #   61CEB1        1   (B1 at index 2)
 #   CEB1CEB2      2   (indices 1, 3)
@@ -224,11 +232,18 @@ fi
 #   61FFB1        1   (index 2: a continuation byte stranded after an
 #                      illegal one is still not a character start)
 #   E4B8AD61CEB1  3   (indices 1, 2, 5)
+#   B161          0   -- index 0 IS a continuation byte and is NOT refused:
+#   8080          1      offset 0 is always a valid start (match_api.md 3.1),
+#                        so 8080 contributes only its index 1. These two exist
+#                        to exercise that clause, and a run in which they
+#                        started contributing 1 and 2 would mean the guard had
+#                        gone back to refusing offset 0 -- the defect
+#                        `make test-axes` found on the corpus.
 #
 # It is a TRIPWIRE and not a target, so it is compared with `>=`: a run that
 # finds MORE (a witness or a subject added) is fine and a run that finds FEWER
 # means something stopped reaching the guard.
-REFUSED_FLOOR="${STARTBND_REFUSED_FLOOR:-140}"
+REFUSED_FLOOR="${STARTBND_REFUSED_FLOOR:-150}"
 if [ "$total_refused" -ge "$REFUSED_FLOOR" ]; then
     ok "§3 non-vacuity: $total_refused mid-character cells actually diverged (floor $REFUSED_FLOOR) — the guard is live and the sweep reaches it"
 else
@@ -322,6 +337,74 @@ check_engine_cell dfa-forced        '\B'         assertions           61CEB1    
 check_engine_cell vm-forced         '\B'         assertions           61CEB1     0 '(3,3)' --engine=vm
 
 [ "$eng_ok" -eq 1 ] && ok "§5 CROSS-ENGINE: every candidate match start the engine generates is a character boundary, on the DFA self-loop, ENG_ATTEMPT's start loop and the VM's retry, and both engines agree with libpcre2 10.46 on the CORRECT answer (before this fix they agreed on the wrong one, which is why nothing caught K50)"
+
+# ---------------------------------------------------------------------------
+# §6  §2.6.1.1's RULED PERMISSIVE TABLE, PINNED ON THE DENY ARM
+# ---------------------------------------------------------------------------
+# Frank's ruling is that the guard's arrival MOVES `utf8_design.md` §2.6.1.1's
+# oracle-validated mid-character-`startpos` cells to the denied arm, VERBATIM,
+# and never deletes them. §1-§3 above sweep both arms and classify WHERE they
+# differ, which is not the same claim: they would stay green if the permissive
+# arm answered `(2,2)` instead of the ruled `(1,1)`, because that is still "a
+# divergence at a mid-character position". This section pins the VALUES.
+#
+# THE TWO CELLS CAME OUT OF `tests/utf8/axis09_nextpos_findall.rxt`, where the
+# D27-blinded author wrote them and where they were green until the guard
+# landed. The corpus has no directive that spells a compile flag, so a `.rxt`
+# block cannot express "under -fno-startpos-guard"; that is a `.rxt` FORMAT
+# question rather than this lane's to invent, so the cells live here and
+# axis09 carries a pointer where they stood.
+#
+# THE EXPECTATIONS ARE §2.6.1.1'S OWN, and that section marks them
+# `pcrec-ARGUED`: no oracle produces this cell (`PCRE2_UTF` refuses with
+# BADUTFOFFSET, `MATCH_INVALID_UTF` advances to the next boundary and answers
+# `(2,2)`, and `options=0` has no notion of a boundary at all). §5's cells
+# above are the ones with a real oracle; these are a DESIGN POSITION, and the
+# difference is marked here for the same reason the corpus marks it.
+perm_ok=1
+check_permissive() {   # <label> <pattern> <modules> <hexsubject> <startpos> <expected>
+    local label="$1" pat="$2" mods="$3" subj="$4" sp="$5" want="$6"
+    local feat="" d="$WORKDIR/perm_$label"
+    [ -n "$mods" ] && feat="--features $mods"
+    mkdir -p "$d"
+    # shellcheck disable=SC2086
+    if ! gen "perm_$label/engine" "$pat" -p e -e utf8 $feat -fno-startpos-guard; then
+        bad "§6 [$label] did not compile — $(head -1 "$d/engine.err")"
+        perm_ok=0; return
+    fi
+    if ! gen_cc "startbnd:perm:$label" "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror \
+            ${GENCFLAGS:-} -I"$d" -o "$d/drv" \
+            "$d/engine.c" "$SCRIPT_DIR/startbnd_engine_driver.c" \
+            > "$d/cc.log" 2>&1; then
+        bad "§6 [$label] did not build — $(tail -2 "$d/cc.log" | tr '\n' ' ')"
+        perm_ok=0; return
+    fi
+    local got
+    got=$(gen_run "startbnd:perm:$label" "$d/drv" "$subj" "$sp")
+    if [ "$got" = "$want" ]; then
+        echo "  §6 [$label] $got"
+    else
+        bad "§6 [$label] pattern '$pat' on $subj at startpos $sp under -fno-startpos-guard answered $got, utf8_design.md §2.6.1.1 rules $want — the permissive arm must retain the ruled semantics VERBATIM, which is the whole condition on which the default arm was allowed to refuse"
+        perm_ok=0
+    fi
+}
+
+# §2.6.1.1's table, row by row. Rows 2 and 4 are the mid-character cells
+# (startpos 1 of `CE B1 CE B2`); the boundary rows are here too, because a
+# permissive arm that had quietly become a REFUSING arm would fail them and a
+# table with only its interesting rows cannot say the rest still hold.
+check_permissive behind-mid   '(?<!.)' lookaround CEB1CEB2 1 '(1,1)'
+check_permissive ahead-mid    '(?!.)'  lookaround CEB1CEB2 1 '(1,1)'
+check_permissive behind-bnd0  '(?<!.)' lookaround CEB1CEB2 0 '(0,0)'
+check_permissive behind-bnd2  '(?<!.)' lookaround CEB1CEB2 2 'no-match'
+check_permissive ahead-bnd0   '(?!.)'  lookaround CEB1CEB2 0 '(4,4)'
+# The K49 shape at the OTHER mid-character offset, which §2.6.1.1's table does
+# not list and the same reasoning covers: `back_step` at pos 3 walks to 2,
+# finds lead 0xCE declaring 2 bytes against a run of 1, and answers
+# BACK_STEP_NONE, so the negative lookbehind succeeds vacuously.
+check_permissive behind-mid3  '(?<!.)' lookaround CEB1CEB2 3 '(3,3)'
+
+[ "$perm_ok" -eq 1 ] && ok "§6 utf8_design.md §2.6.1.1's ruled permissive table is retained VERBATIM on the -fno-startpos-guard arm: 6 cells, including both mid-character rows the guard's default arm now refuses"
 
 # The matrix scrapes these two lines by name (tests/mech/run_sabotage_matrix.sh's
 # `startbnd` arm), so they are spelled the way every other suite in the tree

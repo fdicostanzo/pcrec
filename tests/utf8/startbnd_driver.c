@@ -51,9 +51,23 @@
 #error "this artifact defines no PCREC_ERR_STARTPOS: it predates [K50]"
 #endif
 
-/* The encoding's own rule, written out here rather than asked of anything. */
+/* THE CONTRACT, written out here rather than asked of anything — the whole
+ * reason this driver exists rather than a `.rxt` block. It must state the rule
+ * `docs/spec/match_api.md` §3.1 promises, not the rule the backend happens to
+ * implement, or the check can only ever confirm the compiler agrees with
+ * itself.
+ *
+ * THREE CLAUSES, AND THE FIRST ONE IS A RULING. `p == 0` is a valid start
+ * ALWAYS, even on a subject that begins with a continuation byte: no character
+ * precedes offset 0, so a caller naming it cannot have pointed inside one, and
+ * refusing it would turn §2.6/ASK 1's "an ill-formed sequence matches nothing,
+ * with no error return" into "ill-formed input is an error". MEASURED as a
+ * defect before it was a clause: without it the guard refused offset 0 on 21
+ * oracle-verified cells of this corpus (`a` on the one-byte subject 0x80 among
+ * them), found by wiring the axis into `make test-axes`. */
 static int is_boundary(const unsigned char *s, size_t n, size_t p)
 {
+    if (p == 0) return 1;              /* nothing precedes it to be inside of */
     if (p >= n) return 1;              /* the end of the subject, and past it */
     return (s[p] & 0xC0) != 0x80;      /* not a continuation byte */
 }
