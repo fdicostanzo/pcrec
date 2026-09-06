@@ -2171,8 +2171,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 138 rows 
 | after `\` | `\g{-1}` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
 | after `\` | `\g<1>` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) — also spelled `\g<0>`, `\g<01>` |
 | after `\` | `\g'1'` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference — also spelled `\g'0'`, `\g'01'` |
-| after `\` | `\p{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
-| after `\` | `\P{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
+| after `\` | `\p{L}` | `REJECTED` | `built` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
+| after `\` | `\P{L}` | `REJECTED` | `built` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
 | after `\` | `\Q` | `REJECTED` | `built` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
 | after `\` | `\E` | `REJECTED` | `built` | planned | `quoting` | dfa|vm | end literal quoting begun by \Q |
 | after `\` | `\R` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | any Unicode newline sequence |

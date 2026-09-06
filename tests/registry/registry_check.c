@@ -2953,7 +2953,24 @@ static void check_built_status_defects(void)
      * joins the n/a bucket, same as the other 6 fixed base-tier escapes. */
     /* 135 = 106 + 16 + 13 -> 138 = 106 + 16 + 16: the 3 new RK_BARE rows
      * join the n/a bucket, same as every other RS_BASE row. */
-    /* [M4-QUOTING] 138 = 106 + 16 + 16 -> 138 = 108 + 14 + 16: module
+    /* [M5.0 stage 3] 138 = 108 + 14 + 16 -> 138 = 110 + 12 + 16: module
+     * `unicode-props` gained its first PRODUCER, so `\p{L}` and `\P{L}`
+     * flip `unbuilt -> built` and nothing else moves. `\N{U+0041}` — the
+     * module's THIRD row — stays `unbuilt`, which is the discriminating
+     * fact rather than an omission: it is a different construct (a code
+     * point by number, not a property) and stage 3 did not build it, so a
+     * tally that moved all three would mean the classifier had stopped
+     * looking at the row.
+     *
+     * Worth knowing when this next moves: module `unicode-props` does NOT
+     * route through ext.c's shared ENABLED-BUT-UNBUILT epilogue (it has a
+     * direct marker dispatch — mod_uprops.c), which is one of the three
+     * rows this tally's own classifier comment names as the reason
+     * classification reads `answered_at` rather than the refusal TEXT.
+     * Stage 3 changed that refusal's WORDING at the open gate and the
+     * classifier is unaffected, exactly as that comment predicts.
+     *
+     * [M4-QUOTING] 138 = 106 + 16 + 16 -> 138 = 108 + 14 + 16: module
      * `quoting`'s two rows (`\Q`, `\E`) flip `unbuilt -> built`, NO ROW IS
      * ADDED OR REMOVED, and NO ROW OUTSIDE MODULE `quoting` MOVES. The
      * shape is unlike every module above it: both rows carry `RF_LEXICAL`
@@ -2980,9 +2997,9 @@ static void check_built_status_defects(void)
      * it enabled but esc_atom's/p_class's quote-mode dispatch reverted,
      * both derive `unbuilt` again; with everything in place, both derive
      * `built`. */
-    else if (checked != 138 || built != 108 || unbuilt != 14 || na != 16)
+    else if (checked != 138 || built != 110 || unbuilt != 12 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 138 = 108 + 14 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 138 = 110 + 12 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
