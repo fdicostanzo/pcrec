@@ -223,7 +223,18 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     # [manager ruling, 2026-08-29] 198 -> 201: the new RK_BARE kind's 3
     # rows, each RS_BASE, tested the same way `(?:...)`'s own RS_BASE row
     # always has been (PC-3's RS_BASE/RS_MODULE branch is shared).
-    if [ "$pc3n" -ne 201 ]; then
+    # [M5.0 stage 3] 201 -> 207: `check_gated_uprops_space`'s six `ok()`
+    # lines (T1, T3, the unshipped-name WORDING clause, its two vacuity
+    # floors, and the enabled-set restore). MEASURED as +6 by A/B against a
+    # scratch build of this lane's branch point on the same box: 187 -> 193
+    # passing with the SAME 119 failures on both sides, so the delta is this
+    # arm and nothing else. **The 119 are PRE-EXISTING and are not stage 3's**
+    # — the `(?a)`/`(?r)` option-run family is upstream_issues.md U13 and the
+    # verb differential's are U15(b)'s: on this box the dlopen shim resolves
+    # macOS's SYSTEM libpcre2 10.42, not the Homebrew 10.48 every note in the
+    # tree assumes, which is also why "could not read
+    # '/usr/lib/libpcre2-8.0.dylib'" appears above.
+    if [ "$pc3n" -ne 207 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -232,14 +243,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 201." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 207." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (201 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (207 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 201 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 207 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
@@ -302,6 +313,9 @@ K15 exclusion: fired|K15 (2026-08-12): the exclusion is a dead branch reading as
 uprops differential: pcrec matched libpcre2|MOD-0.6 slice 4: the \p/\P shape-space differential, obligation-mapped against a LIVE oracle per cell; its 52-letter axis is the independent drift guard on mod_uprops.c's hand-written 14-of-52 short-name table (manager ruling 2) — measured to fail 20/20 when the table drops a letter
 gated[modifiers] recognition (OPTRUN-B3)|R20/OPTRUN-B3 (MOD-0.8c slice 2): every other differential in this file runs at the DEFAULT (empty) enabled set, so all 48.7M probes of the (? doorway measure recognition and never acceptance. SPEC-1 was a gate-open-only miscompile — a(?i)* accepted, libpcre2 err 109, matcher really matching — and no closed-gate sweep could see it. Reverting the fix in a scratch build fires this check 672 times while registry_check and cli stay green (2026-08-12). The set is FOCUSED per docs/testing.md's differential gate principle -- one module per pass; a second producing module at this doorway gets its own call and its own needle here
 gated[modifiers] liveness: pcrec ACCEPTED|the gated pass's own vacuity guard: if pcrec accepts nothing with the gate open, the producers never ran and T1 cannot fail, so the pass reads as coverage while measuring the closed-gate space twice — OPTRUN-B3's defect reproduced by the check written to close it
+gated[unicode-props] T1|[M5.0 stage 3]: the SECOND focused gated pass, and the needle exists because the CLOSED-gate uprops differential above still reads GREEN and stopped certifying what its name claims the day a producer landed (its own per-cell wall asserts "\p/\P has no producer this phase"). This arm is what asks the acceptance question: pcrec must never emit a matcher for a property name libpcre2 rejects
+gated[unicode-props]: every real-but-unshipped property|[M5.0 stage 3]: stage 3 ships a SUBSET of the names libpcre2 has, deliberately, so T2 cannot be asserted here — this is the half of that direction that CAN be: a real property this stage has not built (Greek, Alphabetic, Script=Greek) must be refused as the MODULE's gap and never as a name pcrec does not recognise, which would be a false claim about the NAME. It is K14's shape, one module over
+gated[unicode-props] liveness: the producer really compiles|[M5.0 stage 3]: the gated pass's own vacuity guard, and the sharper of its two — a gate that failed to open makes every cell refuse and every clause above pass. The floor is the seven general-category codes across both selectors
 gated[modifiers] quantifier cross: both spelling lists full|SPEC-1's own family, and the reason it is generated rather than listed: check11 owns this module and missed the defect because its structural table is 21 hand-written spellings with not one quantified form. The floor is what stops the family going quiet — check14 measured a refuse-everything pcrec collapsing it to zero cells with no disagreement reported
 MANIFEST
     fi
