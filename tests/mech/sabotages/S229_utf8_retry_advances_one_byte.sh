@@ -30,10 +30,14 @@
 # tests/codegen/run_encoding_checks.sh is a STRUCTURAL check that extracts the
 # advance from an emitted artifact and compares it against that same artifact's
 # own `next_pos` — it goes red on this row too, and it would still be red if
-# the corpus had no such cell. That suite is not wired into this matrix's
-# dispatch today (there is no `encoding` suite token in
-# run_sabotage_matrix.sh), so it is named here rather than claimed as a scored
-# arm.
+# the corpus had no such cell.
+#
+# [ENCCHK-DD12A], 2026-09-06: THE SECOND DETECTOR IS NOW A SCORED ARM. The
+# `encoding` suite token (run_sabotage_matrix.sh) did not exist when this row
+# was written; it does now, wired to tests/codegen/run_encoding_checks.sh.
+# MEASURED against a GREEN baseline before this row's own scoring changed
+# (journal 2026-09-05 lesson 3: a dirty baseline gives a false NOW-DETECTED) —
+# see this row's own SAB_DOC_FIGURE for the solo run.
 #
 # THE BYTE PATH IS UNTOUCHED by this row, which is the point of putting the
 # advance on the backend at all: `SAB_FILE` is the utf8 backend's own file, so
@@ -41,10 +45,10 @@
 # every byte-identity gate stays green.
 SAB_ID="S229-utf8-retry-advances-one-byte"
 SAB_FILE="src/gen/enc/enc_utf8.c"
-SAB_SUITES="harness"
+SAB_SUITES="harness encoding"
 SAB_HARNESS_TARGET="tests/utf8/axis09_nextpos_findall.rxt"
 SAB_DESC="the utf8 backend's unanchored RETRY ADVANCE loses its continuation-byte skip and becomes the byte backend's pos++, so an unanchored search under -e utf8 retries at offsets inside a character. Invisible on every positive pattern (a mid-character start has no path); on a leading negative assertion it REPORTS a match at a mid-character offset. This is K49 as it shipped"
-SAB_DOC_FIGURE="docs/dev/known_issues.md K49 (FIXED marker); src/gen/enc/enc.h's \`advance\` field comment; docs/design/utf8_design.md §5.5's refutation box"
+SAB_DOC_FIGURE="docs/dev/known_issues.md K49 (FIXED marker); src/gen/enc/enc.h's \`advance\` field comment; docs/design/utf8_design.md §5.5's refutation box. [ENCCHK-DD12A] SOLO RUN, encoding arm newly wired, measured against a green pre-sabotage baseline (2026-09-06): see docs/dev/lanes/encchk_report.md for the transcript."
 SAB_COUNT=1
 SAB_BEFORE='"@P++;\n"
 "while (@P < @N\n"

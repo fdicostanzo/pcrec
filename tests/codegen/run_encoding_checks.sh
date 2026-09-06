@@ -300,44 +300,23 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# CHK3  THE STAMP CENSUS + DD12a(i) HOT-LOOP SHAPE IDENTITY
+# CHK3  THE STAMP CENSUS
 #
-# For each ASCII pattern already emitted above: (CHK3) record the byte and
-# utf8 stamps and confirm the byte stamps are unchanged from the identity
-# gate's expectation implicitly (they are the same compiler); the interesting
-# half is that on an ASCII pattern the utf8 stamps EQUAL the byte ones, since
-# the lowering is the identity below 0x7F. (DD12a-i) the engine bodies are
-# byte-identical. A utf8 artifact of an ASCII pattern that stamps differently,
-# or whose body differs, would mean an encoding conditional reached a path it
-# must not.
+# For each ASCII pattern already emitted above: record the byte and utf8
+# stamps and confirm the byte stamps are unchanged from the identity gate's
+# expectation implicitly (they are the same compiler); the interesting half
+# is that on an ASCII pattern the utf8 stamps EQUAL the byte ones, since the
+# lowering is the identity below 0x7F. A utf8 artifact of an ASCII pattern
+# that stamps differently would mean an encoding conditional reached a path
+# it must not.
 # ---------------------------------------------------------------------------
 stamp_of() { grep -oE "#define (RX_ENGINE|RX_ENGINE_SEL|RX_DFA_TABLE|RX_VM_STRATS|RX_VM_RUNGS) [^ ]*.*" "$1" 2>/dev/null | LC_ALL=C sort; }
-shape_diff=0; stamp_diff=0; shape_checked=0
+stamp_diff=0
 for d in "$WORKDIR"/b_*; do
     [ -f "$d/b.c" ] && [ -f "$d/u.c" ] || continue
     if ! diff -q <(stamp_of "$d/b.c") <(stamp_of "$d/u.c") >/dev/null 2>&1; then
         stamp_diff=$((stamp_diff + 1))
         echo "  CHK3 stamp differs (ASCII pattern, byte vs utf8): $d" >> "$WORKDIR/stampdiff.txt"
-    fi
-    # hot-loop shape: compare EXECUTED CODE, not source text. The two artifacts
-    # differ in source only by the artifact prefix (`b_`/`B_` vs `u_`/`U_`, in
-    # symbol names and the `.h` include) and by orientation-comment prose that
-    # legitimately names the byte automaton either way — neither is code. So
-    # compile both to `.o` and compare `.text` + `.rodata` bytes with addresses
-    # stripped (run_object_neutrality.sh's own instrument): the prefix lives in
-    # the symbol table, not in executed bytes, and the embedded pattern string
-    # is identical. A real encoding conditional on the hot path would move a
-    # `.text` byte. `--engine=vm` and `-e` are already fixed; -O0 keeps the
-    # compile fast and the comparison faithful to the emitter's own output.
-    shape_checked=$((shape_checked + 1))
-    if gen_cc "encshape b $shape_checked" "$CC" -O0 -c -w -I "$d" -o "$d/b.o" "$d/b.c" >/dev/null 2>&1 \
-       && gen_cc "encshape u $shape_checked" "$CC" -O0 -c -w -I "$d" -o "$d/u.o" "$d/u.c" >/dev/null 2>&1; then
-        objdump -s -j .text -j .rodata "$d/b.o" 2>/dev/null | sed -E 's/^ *[0-9a-f]+ //; 1,2d' > "$d/b.obj"
-        objdump -s -j .text -j .rodata "$d/u.o" 2>/dev/null | sed -E 's/^ *[0-9a-f]+ //; 1,2d' > "$d/u.obj"
-        if ! diff -q "$d/b.obj" "$d/u.obj" >/dev/null 2>&1; then
-            shape_diff=$((shape_diff + 1))
-            [ "$shape_diff" -le 3 ] && { echo "== $d"; diff "$d/b.obj" "$d/u.obj" | head -6; } >> "$WORKDIR/shapediff.txt"
-        fi
     fi
 done
 echo "  CHK3 ASCII stamp differences: $stamp_diff (expected 0 — lowering is identity below 0x7F)"
@@ -346,15 +325,332 @@ if [ "$stamp_diff" -eq 0 ]; then
 else
     bad "CHK3 $stamp_diff ASCII patterns stamp differently under utf8 (see stampdiff.txt) — an encoding conditional reached the stamp"
 fi
-# [K52] DD12a(i) IS SKIPPED, LOUDLY, and the skip is the honest state
-# (docs/dev/known_issues.md K52): the whole-object .text/.rodata compare was
-# VACUOUS on darwin (objdump -j .text is empty on Mach-O — every historical
-# green was empty-vs-empty) and can never pass on Linux by DESIGN (the four
-# residual bodies and, since K49, the retry advance are encoding-owned text
-# the compare cannot admit). The repaired instrument is chartered; until it
-# lands this line is the check's whole output and a reader must not mistake
-# the section's other greens for hot-loop-shape coverage.
-echo "  DD12a(i) SKIPPED — KNOWN K52 (instrument vacuous-on-darwin / mis-scoped; repair chartered). Raw whole-object differing count this run: $shape_diff of $shape_checked (expected == VM+residual population by design, NOT a defect count)"
+
+# ---------------------------------------------------------------------------
+# DD12a(i)  THE HOT-LOOP SHAPE IDENTITY -- REBUILT (K52's repair)
+#
+# The old instrument compiled both artifacts to `.o` and compared whole-object
+# `.text`/`.rodata` bytes: VACUOUS on darwin (`objdump -j .text` matches
+# nothing on Mach-O -- every historical green was empty-vs-empty) and WRONG
+# EVERYWHERE ELSE (the whole-object scope cannot admit the seam's own
+# per-encoding residual bodies or K49's retry advance, which are legitimate
+# per-encoding text -- see docs/dev/known_issues.md K52 for the full account).
+#
+# THE REPAIR OPERATES ON EMITTED SOURCE TEXT, NEVER ON OBJECT BYTES, and that
+# choice is what makes a real darwin arm possible at all rather than a second
+# attempt at reading a Mach-O section: there is no compiler, no object format
+# and no objdump anywhere in this section. Both artifacts are re-emitted with
+# the SAME PREFIX ("rx") into per-encoding subdirectories sharing the SAME
+# BASENAME ("rx.c") -- run_trie_identity.sh's and run_vm_identity.sh's own
+# documented trap (a differing `#include "<name>.h"` line dominating an
+# otherwise-identical diff) is avoided BY CONSTRUCTION rather than by a
+# post-hoc filter, because there is only one prefix and one basename to write.
+#
+# THE NAMED ENCODING-OWNED REGIONS -- excised from BOTH texts before the
+# compare, never trusted to cancel by accident:
+#   (1) each of the four residual entries (next_pos, back_step, bref_match,
+#       bref_match_caseless), whose SIGNATURE is identical across backends
+#       (D58 P-1, DD12a(ii) below) but whose BODY is the backend's own text by
+#       design. Found by the signature line (a closed, four-name list) and
+#       swallowed together with its own immediately-preceding descriptive
+#       comment (which is prose that legitimately differs -- "byte encoding:
+#       one byte is one character..." vs "utf8 encoding: skip forward...").
+#   (2) the [K49] unanchored retry advance, the one splice DD-12 (7) admits
+#       into shared emitter code outside the entries table (its own comment,
+#       in `src/gen/emit_vm.c`, says so: "there is no encoding test here").
+#       Anchored on the SAME guard line the K49 advance-agreement check above
+#       already uses (`if (attempt_position >= subject_length) return 0;`)
+#       through the enclosing block's own closing `    }` -- both anchor lines
+#       are confirmed identical text on both backends and are KEPT, not
+#       excised; only the span between them is.
+#   (3) the `.encoding = N,` scalar in the `rx_info` initializer -- a single
+#       field whose VALUE legitimately differs and whose LINE always exists,
+#       so it is normalized (value replaced by a placeholder) rather than
+#       deleted.
+#
+# WHY NAIVE PER-SYMBOL OBJECT EXCLUSION WAS TRIED AND REJECTED (K52's own
+# finding): under `always_inline` the K49 advance's inlined body SMEARS across
+# the VM entry chain at the object level, so a symbol-table exclusion list can
+# no longer name "the one function this text lives in" -- the exclusion moves
+# with the inliner's mood. Source-text excision, applied BEFORE any compiler
+# sees the file, has no inliner to smear across: the K49 splice is one
+# physical span in one physical function in the .c text regardless of what
+# `-O2` later does to it.
+#
+# (a) NON-EMPTY BY CONSTRUCTION. `next_pos` is UNCONDITIONAL on every VM and
+#     DFA artifact alike (DD-12's own promise), so its excision is required
+#     to fire EXACTLY ONCE per side on every compiled pair -- zero is a hard
+#     FAIL, never a silent pass. The other three residuals and the retry
+#     advance are conditional on the pattern's shape, so three explicit
+#     witnesses are added to the swept population (the corpus alone is not
+#     trusted to reach all four by luck): `a*` (VM, unanchored -- forces the
+#     retry advance, reusing the K49 check's own witness for consistency),
+#     `(?i)(?<=a)(b)\1x` (DD12a(ii)'s own witness -- back_step +
+#     bref_match_caseless) and its case-sensitive twin `(?<=a)(b)\1x`
+#     (back_step + bref_match). Aggregate floors below assert each of the six
+#     counters (four residuals, the advance, the encoding field) is reached
+#     at least once across the whole run -- a check that never exercised
+#     `bref_match` would be dead code passing silently on that population.
+# (b) THE NORMALIZATION COUNT IS PINNED AND PRINTED, per pattern: a pattern
+#     whose byte and utf8 sides disagree on HOW MANY of a given region they
+#     each contain is itself a finding (an asymmetric residual population is
+#     not a text mismatch a diff would show -- the two sides could still
+#     agree on everything else) and is reported by name rather than folded
+#     into the aggregate.
+# (c) DARWIN: this whole section reads and writes only `.c` text, so it needs
+#     no working section reader on any platform. It is not a SKIP naming a
+#     limitation; it is the same instrument on both boxes.
+# (d) VALIDATION: a scratch plant of one line of encoding-conditional text
+#     into the shared engine body (`src/gen/emit_vm.c`, immediately before the
+#     `_accept:` label -- outside every named region above) was built in a
+#     throwaway `git archive` tree and confirmed to turn this section red on
+#     every VM-selected witness while leaving CHK3, DD12a(ii) and the K49
+#     check untouched; see docs/dev/lanes/encchk_report.md for the transcript.
+# ---------------------------------------------------------------------------
+python3 - "$ROOT_DIR" "$PCREC" "$WORKDIR/blocks.tsv" "$ENC_MAX_BLOCKS" > "$WORKDIR/dd12ai.out" 2>"$WORKDIR/dd12ai.err" <<'PY'
+import sys, os, re, subprocess, base64, tempfile, shutil, difflib
+
+root, pcrec, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless)\(')
+ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
+GUARD = 'if (attempt_position >= subject_length) return 0;'
+
+# WIDENS_UNDER_UTF8: a pattern using an unescaped dot or a negated class is
+# NOT covered by "the lowering is the identity below 0x7F" -- both mean "any
+# code point [not in the set]", which lowers to a class spanning the WHOLE
+# encoded space, not the ASCII-restricted one, so the compiled AUTOMATON
+# genuinely differs in STATE COUNT and TABLE SHAPE from its byte twin even
+# though the two answer identically on every ASCII subject (which is exactly
+# what section 8.5 above already confirms for this same population). This
+# was MEASURED, not assumed: the check's own first run against the real
+# corpus found exactly ten diverging pairs, and every one of them was a
+# dot- or negation-bearing pattern (`.*\z`, `[^c]{1,3}\z` and its siblings,
+# `\G.` among them) whose class table grew from 2 classes to 14 and whose
+# whole state machine grew with it (7 states -> 28 on one witness) -- not a
+# stray conditional, a different (and correctly compiled) machine. Scoped
+# from the PATTERN TEXT, independent of anything pcrec computes
+# (`lookaround_classify.py`'s own rule): a pattern in this bucket is EXCLUDED
+# from the strict text-identity claim below (§8.5's answer differential is
+# the right instrument for it and already covers it) but COUNTED and
+# FLOORED, never silently dropped.
+def widens_under_utf8(pat):
+    i, n = 0, len(pat)
+    in_class = False
+    while i < n:
+        c = pat[i]
+        if c == '\\':
+            i += 2
+            continue
+        if not in_class:
+            if c == '[':
+                in_class = True
+                if i + 1 < n and pat[i + 1] == '^':
+                    return True
+                i += 1
+                continue
+            if c == '.':
+                return True
+        else:
+            if c == ']':
+                in_class = False
+        i += 1
+    return False
+
+def excise(text, label):
+    lines = text.splitlines(keepends=True)
+    counts = {'next_pos': 0, 'back_step': 0, 'bref_match': 0,
+              'bref_match_caseless': 0, 'advance': 0, 'encoding': 0}
+    out = []
+    i, n = 0, len(lines)
+    while i < n:
+        line = lines[i]
+        m = SIG_RE.match(line)
+        if m:
+            name = m.group(1)
+            if out and out[-1].rstrip().endswith('*/'):
+                k = len(out) - 1
+                while k >= 0 and not out[k].lstrip().startswith('/*'):
+                    k -= 1
+                if k >= 0:
+                    del out[k:]
+            fi = i
+            while fi < n and lines[fi].strip() != '{':
+                fi += 1
+            if fi >= n:
+                print("EXTRACT-FAIL %s: no opening brace for rx_%s" % (label, name))
+                sys.exit(2)
+            depth, fe = 1, fi + 1
+            while fe < n and depth > 0:
+                depth += lines[fe].count('{') - lines[fe].count('}')
+                fe += 1
+            if depth != 0:
+                print("EXTRACT-FAIL %s: unbalanced braces for rx_%s" % (label, name))
+                sys.exit(2)
+            out.append("/* [ENCCHK-DD12A] residual entry %s excised for comparison */\n" % name)
+            counts[name] += 1
+            i = fe
+            continue
+        if GUARD in line:
+            out.append(line)
+            i += 1
+            gi = i
+            while gi < n and lines[gi].rstrip('\n') != '    }':
+                gi += 1
+            if gi >= n:
+                print("EXTRACT-FAIL %s: no closing brace for the retry advance" % label)
+                sys.exit(2)
+            out.append("/* [ENCCHK-DD12A] retry advance excised for comparison */\n")
+            counts['advance'] += 1
+            i = gi
+            continue
+        me = ENC_RE.match(line.rstrip('\n'))
+        if me:
+            out.append(me.group(1) + "N" + me.group(2) + "\n")
+            counts['encoding'] += 1
+            i += 1
+            continue
+        out.append(line)
+        i += 1
+    return ''.join(out), counts
+
+def compile_pair(pat, workdir, idx):
+    db = os.path.join(workdir, "p%d" % idx, "byte")
+    du = os.path.join(workdir, "p%d" % idx, "utf8")
+    os.makedirs(db, exist_ok=True)
+    os.makedirs(du, exist_ok=True)
+    rb = subprocess.run([pcrec, "--features", "all", "-e", "byte", "-p", "rx",
+                         "-o", os.path.join(db, "rx.c"), "--", pat],
+                        capture_output=True, text=True)
+    if rb.returncode != 0:
+        return None
+    ru = subprocess.run([pcrec, "--features", "all", "-e", "utf8", "-p", "rx",
+                         "-o", os.path.join(du, "rx.c"), "--", pat],
+                        capture_output=True, text=True)
+    if ru.returncode != 0:
+        return "byte-only"
+    with open(os.path.join(db, "rx.c")) as f:
+        tb = f.read()
+    with open(os.path.join(du, "rx.c")) as f:
+        tu = f.read()
+    return (tb, tu)
+
+def main():
+    patterns, emitted = [], 0
+    with open(blocks_tsv) as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            patb = line.split("\t", 1)[0]
+            patterns.append(base64.b64decode(patb).decode("latin-1"))
+            emitted += 1
+            if max_blocks and emitted >= max_blocks:
+                break
+    # explicit witnesses: guarantee non-vacuity for each named region (a) --
+    # the corpus is not trusted to reach all four residuals plus the advance
+    # by luck alone.
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x']
+
+    workdir = tempfile.mkdtemp(prefix="dd12ai_")
+    agg = {'next_pos': 0, 'back_step': 0, 'bref_match': 0,
+           'bref_match_caseless': 0, 'advance': 0, 'encoding': 0}
+    npairs = nstrict = nwidens = 0
+    ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
+    findings = []
+    try:
+        for idx, pat in enumerate(patterns):
+            r = compile_pair(pat, workdir, idx)
+            if r is None:
+                continue
+            if r == "byte-only":
+                nbyteonly += 1
+                continue
+            tb, tu = r
+            nb, cb = excise(tb, "byte#%d" % idx)
+            nu, cu = excise(tu, "utf8#%d" % idx)
+            npairs += 1
+            for k in agg:
+                agg[k] += cb[k] + cu[k]
+            if cb['next_pos'] != 1 or cu['next_pos'] != 1:
+                nnextpos_bad += 1
+                if len(findings) < 20:
+                    findings.append("pat=[%s]: next_pos not exactly 1 per side (byte=%d utf8=%d)"
+                                     % (pat, cb['next_pos'], cu['next_pos']))
+            for k in ('back_step', 'bref_match', 'bref_match_caseless', 'advance'):
+                if cb[k] != cu[k] and len(findings) < 20:
+                    findings.append("pat=[%s]: asymmetric %s (byte=%d utf8=%d) -- (b) the normalization count"
+                                     % (pat, k, cb[k], cu[k]))
+            if cb['encoding'] != 1 or cu['encoding'] != 1:
+                if len(findings) < 20:
+                    findings.append("pat=[%s]: .encoding field not exactly 1 per side (byte=%d utf8=%d)"
+                                     % (pat, cb['encoding'], cu['encoding']))
+
+            widens = widens_under_utf8(pat)
+            if widens:
+                nwidens += 1
+            else:
+                nstrict += 1
+            if nb != nu:
+                if widens:
+                    ndiverge_widens += 1
+                else:
+                    ndiverge_strict += 1
+                    if len(findings) < 20:
+                        d = list(difflib.unified_diff(nb.splitlines(), nu.splitlines(), lineterm=""))
+                        findings.append("pat=[%s] (STRICT bucket -- an encoding conditional reached the hot path): TEXT DIFFERS:\n    "
+                                         % pat + "\n    ".join(d[:12]))
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+    print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d" %
+          (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad))
+    for k in ('next_pos', 'back_step', 'bref_match', 'bref_match_caseless', 'advance', 'encoding'):
+        print("EXCISED %s=%d" % (k, agg[k]))
+    for f in findings:
+        print("FINDING " + f)
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+PY
+py12_rc=$?
+if [ "$py12_rc" != 0 ]; then
+    bad "DD12a(i) the rebuilt instrument itself failed to run: $(head -3 "$WORKDIR/dd12ai.err")"
+else
+    d12_line="$(grep -o 'PAIRS=[0-9]* STRICT=[0-9]* WIDENS=[0-9]* DIVERGE_STRICT=[0-9]* DIVERGE_WIDENS=[0-9]* BYTEONLY=[0-9]* NEXTPOS_BAD=[0-9]*' "$WORKDIR/dd12ai.out")"
+    eval "$d12_line"
+    echo "  DD12a(i) pairs compared: $PAIRS (byte-only: $BYTEONLY) — strict-identity bucket: $STRICT, widens-under-utf8 bucket: $WIDENS"
+    grep '^EXCISED ' "$WORKDIR/dd12ai.out" | sed 's/^/    /'
+    if grep -q '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null; then
+        bad "DD12a(i) extraction FAILED on at least one artifact (an anchor did not match -- see dd12ai.out/.err): $(grep '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null | head -1)"
+    elif [ "$PAIRS" -lt 200 ]; then
+        bad "DD12a(i) only $PAIRS pairs compared — the population collapsed (floor 200)"
+    elif [ "$NEXTPOS_BAD" -gt 0 ]; then
+        bad "DD12a(i) $NEXTPOS_BAD pattern(s) did not carry exactly one next_pos residual per side — (a)'s non-empty-by-construction floor failed"
+    elif [ "$WIDENS" -eq 0 ]; then
+        bad "DD12a(i) the widens-under-utf8 bucket (dot/negated-class patterns) is EMPTY — the exemption is dead code, certifying nothing about the population it exists for"
+    elif [ "$STRICT" -lt 150 ]; then
+        bad "DD12a(i) only $STRICT pairs took the strict identity path (floor 150) — the widens exemption may be over-classifying"
+    else
+        # (a) non-vacuity: every named region reached at least once.
+        vac=0
+        for k in next_pos back_step bref_match bref_match_caseless advance encoding; do
+            v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
+            if [ "${v:-0}" -eq 0 ]; then
+                bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
+                vac=1
+            fi
+        done
+        if [ "$DIVERGE_STRICT" -eq 0 ] && [ "$vac" -eq 0 ]; then
+            ok "DD12a(i) the engine minus its named encoding-owned regions is byte-identical between byte and utf8 artifacts on $STRICT strict-identity pairs ($WIDENS widens-under-utf8 pairs correctly exempted, source-text comparison, darwin and linux alike)"
+        elif [ "$DIVERGE_STRICT" -gt 0 ]; then
+            bad "DD12a(i) $DIVERGE_STRICT of $STRICT strict-identity pairs differ OUTSIDE the named encoding-owned regions — an encoding conditional reached the hot path (see dd12ai.out FINDING lines)"
+            grep '^FINDING' "$WORKDIR/dd12ai.out" | head -10 | sed 's/^/    /' >&2
+        fi
+        echo "  DD12a(i) widens-under-utf8 pairs differing (expected — different automaton, not a defect): $DIVERGE_WIDENS of $WIDENS"
+    fi
+fi
 
 # ---------------------------------------------------------------------------
 # DD12a(ii)  THE SECOND-BACKEND VALIDATION OF D58's REVISIT-WHEN NAMES

@@ -239,6 +239,14 @@
 #     coverage guard fires on a changed PASS COUNT, and limits_check.sh's
 #     row-count-by-manifest check IS such a guard. Registered before S208/
 #     S209, its two consumers.
+#   encoding — added 2026-09-06 ([ENCCHK-DD12A]); runs tests/codegen/
+#     run_encoding_checks.sh, [M5.0] stage 2's structural + differential
+#     acceptance for the encoding backend. Registered because it never
+#     existed at all: S229's own header names this script's advance-
+#     agreement section as ITS detector and records, in the same breath,
+#     "that suite is not wired into this matrix's dispatch today". S229 and
+#     S-U8 (whose header carries the identical unfulfilled claim about the
+#     clamp-stride probe) both gain it in the same change.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1692,6 +1700,32 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/assertions.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/assertions.log" | grep -oE '[0-9]+')"
                 suite_bits+=("asrt:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            encoding)
+                # [M5.0] STAGE 2 tests/codegen/run_encoding_checks.sh — the
+                # encoding BACKEND's structural + differential acceptance
+                # (the §8.5 ASCII-corpus differential, the CHK3 stamp
+                # census, the two DD12a(i)/(ii) structural checks, the K49
+                # advance-agreement check/S229's own detector, S-U8's
+                # clamp-stride probe). [ENCCHK-DD12A]'s own charter: neither
+                # existed until this row, so a sabotage of the encoding seam
+                # whose only real detector is THIS script — S229's own
+                # header already said so — scored on `harness`/`codegen`
+                # alone, which is coverage by a different net. Its own arm
+                # rather than folded into `codegen`, for the reason every
+                # other structural-check arm here is separate: what this
+                # script guards is orthogonal to run_codegen_tests.sh's
+                # optimization-present checks. ENC_MAX_BLOCKS is left at the
+                # script's own default (250) — a mech row's detector, not
+                # the ~6,600-compile full sweep the Linux slot runs.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/codegen/run_encoding_checks.sh" \
+                    > "$work/encoding.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/encoding.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/encoding.log" | grep -oE '[0-9]+')"
+                suite_bits+=("encoding:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
