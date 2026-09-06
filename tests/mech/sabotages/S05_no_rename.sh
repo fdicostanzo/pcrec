@@ -8,5 +8,12 @@ SAB_SUITES="codegen"
 SAB_DESC="fixture rename: sed replacement target changed from rx_search_b back to rx_search"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 1 fail (compile, redefinition of 'rx_search')"
 SAB_COUNT=1
-SAB_BEFORE="        sed 's/\\brx_search\\b/rx_search_b/g' \"\$WORKDIR/engb.body\""
-SAB_AFTER="        sed 's/\\brx_search\\b/rx_search/g' \"\$WORKDIR/engb.body\""
+#
+# [MACPORT], 2026-09-06 — RE-ANCHORED. The rename dropped GNU sed's `\b`,
+# which BSD sed does not implement and silently ignores, for a POSIX
+# not-followed-by-an-identifier-character spelling verified byte-identical to
+# `\b` on this exact body. The row's MECHANISM is unchanged: it still renames
+# engine B's entry to itself, so the two-engine fixture keeps one `rx_search`
+# and the compile fails.
+SAB_BEFORE="        sed 's/rx_search\\([^_A-Za-z0-9]\\)/rx_search_b\\1/g' \"\$WORKDIR/engb.body\""
+SAB_AFTER="        sed 's/rx_search\\([^_A-Za-z0-9]\\)/rx_search\\1/g' \"\$WORKDIR/engb.body\""
