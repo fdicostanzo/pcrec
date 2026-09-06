@@ -528,6 +528,12 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * lib/pcrec.h's PCREC_NO_CLS_FOLD comment. */
         else if (!no_more_opts && !strcmp(a, "-fno-cls-fold"))
             opt.flags |= PCREC_NO_CLS_FOLD;
+        /* [K50] The caller-startpos boundary guard. The one flag in this
+         * chain that selects between two SEMANTICS rather than two emitted
+         * shapes — see lib/pcrec.h's PCREC_NO_STARTPOS_GUARD comment for why
+         * that makes it the only member NOT masked out of rx_info.flags. */
+        else if (!no_more_opts && !strcmp(a, "-fno-startpos-guard"))
+            opt.flags |= PCREC_NO_STARTPOS_GUARD;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

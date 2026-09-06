@@ -542,6 +542,20 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, "", 0, "", "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
+    /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
+     * ANSWER-IDENTICAL: both rows describe a real semantics for a
+     * mid-character caller startpos, and which one an artifact carries is a
+     * contract fact rather than a shape choice. Its stamp is a closed TOKEN,
+     * so `stamp_value` is spelled on both rows — unlike the two activity
+     * counts above, where there is no per-row value to name. */
+    {
+        PredAxis p = { "startpos-guard", NULL, "RX_STARTPOS_GUARD", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "guarded", "guarded",
+                     V(PCREC_NO_STARTPOS_GUARD), 0, "", "-fno-startpos-guard",
+                     "per artifact: this encoding has positions that are not character boundaries (PcrecEnc.start_cls), so the entries refuse a mid-character caller startpos with PCREC_ERR_STARTPOS — libpcre2's own PCRE2_UTF behaviour (BADUTFOFFSET)");
+        emit_pred_row(sb, &p, 2, "permissive", "permissive",
+                     0, "", 0, "", "", "always (fallback) — the artifact answers at whatever position the caller named (utf8_design.md §2.6.1.1's ruled semantics), and on a byte artifact this row is the ONLY one reachable: every position is a boundary there and neither setting emits a guard");
+    }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE
      * is the observable consequence when it changes which engine a pattern

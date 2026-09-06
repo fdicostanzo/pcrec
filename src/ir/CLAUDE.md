@@ -279,6 +279,48 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   §8.3's approximation, restored only for SPLICEABLE (acyclic) calls, against
   the 21x-350x prefilter loss §8.3 measured.
 
+  **[K50] (2026-09-06) THE CLASS AXIS GAINS A FOURTH VALUE AND THE UNANCHORED
+  WRAP GAINS A SECOND SPLIT STATE**, and the two together are what make an
+  unanchored search's candidate match STARTS the encoding's character
+  boundaries. Four things to know before editing either:
+  (a) **`nfa_wrap_unanchored` builds TWO splits, not one.** `nfa->start` stays
+  the UNGATED split — the caller's own position enters the pattern whatever it
+  is — and the self-loop returns to a second split whose pattern branch sits
+  behind a new `N_CSTART` node. That split of responsibility is the whole
+  design: the engine owns the positions it INVENTS and the caller owns the one
+  it supplied, which is what lets ONE machine serve both arms of the
+  `-fno-startpos-guard` axis (the flag moves only the emitted ENTRY guard,
+  never the automaton). A gate on the first split too would make the deny arm
+  answer no-match where `utf8_design.md` §2.6.1.1 rules `(1,1)`.
+  (b) **`N_CSTART` is `N_EOL_M`'s shape**, not a new mechanism: one `end_ok`
+  read plus one class-axis read, and no direction — strictly simpler than
+  `N_WORDB`, which needs both sides. Its class comes from
+  `PcrecEnc.start_cls`, which is NULL under `byte`, so no such node is ever
+  built there and every byte artifact is unmoved BY CONSTRUCTION.
+  (c) **`UPC_NOSTART` is a REFINEMENT of `UPC_PLAIN`, and its partition
+  precondition is CHECKED.** A byte that is not a character start must be
+  neither a word byte nor a newline, or `upc_of_class` would classify it
+  `UPC_WORD` and the gate would read it as a character start — re-opening K50
+  silently. `pcrec_build_dfa` refuses such a backend by name
+  (`pcrec_enc_start_cls_ok`) rather than trusting the property.
+  (d) **`Dfa.startcls` is set ONLY when the machine carries an `N_CSTART`**,
+  the same discipline `has_word`/`has_nl` follow and for their reason: a
+  machine that asks no boundary question must not gain a fourth alphabet
+  refinement or a fourth column in any derived table. It is NULL on every
+  anchored MATCH-HERE machine, every reverse machine and every `ENG_ATTEMPT`
+  machine, none of which carry the self-loop the gate rides on — and it is
+  cleared at the top of `pcrec_build_dfa` rather than trusted to be zero,
+  because one `Dfa` is reused across a compile's several builds.
+  **THIS AXIS SHIPS NO `-D` REFERENCE KNOB, deliberately.** Waves A-D each got
+  one because each had an identity gate needing a pre-wave reference compiler.
+  K50's gate has no pre-K50 reference to build: its whole point is that the
+  pre-K50 answer was WRONG, so the reference build would be the bug. What
+  stands in for it is the deny arm (a runtime flag on the ENTRY guard, never
+  on this refinement) plus sabotage rows S234/S235, which delete the gate
+  outright and are caught by `tests/utf8/run_startbnd_diff.sh` §5 — whose
+  cells are pinned to libpcre2 10.46 rather than to the other engine, because
+  for a whole milestone both engines answered the same wrong thing.
+
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

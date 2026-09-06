@@ -413,6 +413,82 @@ static int dfa_artifact_ncaps(Ctx *cx)
     return cx->want_caps ? (int)cx->ncap + 1 : 1;
 }
 
+/* [K50] THE CALLER-STARTPOS BOUNDARY GUARD — one emitter, four call sites
+ * (this file's search-entry head, and `emit_vm.c`'s three `_run` statics).
+ *
+ * WHAT IT IS FOR. `docs/design/utf8_design.md` §2.6.1's table lists three ways
+ * a cursor reaches a mid-character position: the find-all loop's own advance
+ * (protected since [M5-SEAM] — the loop steps by `<prefix>_next_pos`), a
+ * caller-supplied `startpos` to `<prefix>_search`, and `<prefix>_match`'s
+ * anchored entry at a caller-supplied position. The second and third were
+ * marked "NO". This is that "NO" answered, per Frank's 2026-09-05 ruling.
+ *
+ * IT IS THE CALLER'S HALF AND NOTHING ELSE. The positions the ENGINE invents
+ * are made boundaries unconditionally and with no flag (`nfa_wrap_unanchored`'s
+ * gate, `ENG_ATTEMPT`'s `continue`, K49's retry advance). This guard governs
+ * only where a caller may point an entry, which is why it — alone in the
+ * `-fno-` family — has a flag that changes an answer.
+ *
+ * ORDERING AGAINST `startpos > n`: THERE IS NONE TO GET WRONG, and that is a
+ * property of the backend's text rather than of this placement. `match_api.md`
+ * §3.1 promises `<prefix>_search` returns 0 for `startpos > n`, and libpcre2
+ * under `PCRE2_UTF` answers `BADOFFSET` there instead (measured,
+ * `docs/design/utf8_measurements/out/startbnd.txt` §2) — so a guard that
+ * refused it would silently convert a documented 0 into a refusal. The utf8
+ * backend's guard opens `@P >= @N`, which is TRUE at and beyond the end of the
+ * subject, so every position the range test owns passes this one untouched. A
+ * backend whose guard did not have that property would need this comment to
+ * become a placement rule.
+ *
+ * EMITTED ONLY WHEN THE BACKEND RESTRICTS SOMETHING AND THE FLAG IS ABSENT, so
+ * a `byte` artifact is byte-identical under either setting and a `utf8` one
+ * denied the guard is byte-identical to what it emitted before K50's entry
+ * half. `ret` is the caller's own refusal spelling — the entries do not share
+ * a return type. */
+const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
+                                     const char *indent, const char *posvar,
+                                     const char *subjvar, const char *lenvar)
+{
+    char g[256];
+    bool trunc;
+
+    buf[0] = '\0';
+    if (cx->opt->flags & PCREC_NO_STARTPOS_GUARD) return buf;
+    if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
+                               g, sizeof g, posvar, subjvar, lenvar, &trunc)) {
+        if (trunc)
+            ctx_fail(cx, 0,
+                     "internal error: this encoding's character-start guard "
+                     "does not fit the emitter's buffer");
+        return buf;   /* this encoding places no restriction: emit nothing */
+    }
+    if ((size_t)snprintf(buf, cap,
+        "%s/* [K50] A caller's start position must be a CHARACTER BOUNDARY of\n"
+        "%s * this artifact's encoding. A mid-character position is REFUSED\n"
+        "%s * rather than answered: nothing is attempted and no resource is\n"
+        "%s * spent, which is why the code sits below PCREC_ERR_FLOOR and is\n"
+        "%s * not a give-up. libpcre2 under PCRE2_UTF refuses the same\n"
+        "%s * positions (PCRE2_ERROR_BADUTFOFFSET). Compile with\n"
+        "%s * -fno-startpos-guard for the permissive semantics instead. */\n"
+        "%sif (!(%s)) return PCREC_ERR_STARTPOS;\n",
+        indent, indent, indent, indent, indent, indent, indent, indent, g)
+            >= cap)
+        ctx_fail(cx, 0,
+                 "internal error: the character-start guard's emitted text "
+                 "does not fit the emitter's buffer");
+    return buf;
+}
+
+void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar)
+{
+    char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
+    sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
+                                         posvar, subjvar, lenvar));
+}
+
+
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              const char *storage)
 {
@@ -438,6 +514,21 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                "#endif\n");
     sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n", storage, fn);
+    /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
+     * fill below uses, and for the same reason: this emitter has TWO customers
+     * and only one of them is a caller-facing entry. The other is the VM
+     * hybrid's internal `static <prefix>_prefilter`, whose `search_from` comes
+     * from the VM's own retry loop — a position K49's advance already makes a
+     * boundary — so guarding it would be the engine checking its own
+     * arithmetic on the hot path. Both of THIS engine's caller-facing bodies
+     * come through here (the unanchored search entry and, under axis G's
+     * unwrapped form, the anchored match-here entry), so one placement covers
+     * all six public entries: `<prefix>_match`/`_match_caps` reach the guard
+     * through the body they call, and the three `_in` entries through their
+     * un-suffixed siblings. */
+    if (cx->job->fit.chosen == ENGM_DFA)
+        pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
+                                  "subject_length");
     /* [DD-14 wave G] THE DEAD GROUPS, DECLARED AND PERMANENTLY UNSET. Emitted
      * only when this artifact promises more than the whole match, which on
      * this engine means every promised group is dead (a live one would have
@@ -609,6 +700,28 @@ static void emit_rx_abi_types(StrBuf *sb)
          * collapse in emit_vm.c. */
         "#define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: "
         "NOT a give-up, D71 item 1 */\n"
+        /* [K50] THE SECOND BELOW-THE-FLOOR PRODUCER, and it is the abort
+         * semantic D49 reserved the region for rather than a give-up wearing
+         * a new number. `PCREC_ERR_STARTPOS` means the CALLER named a start
+         * position that is not a character boundary of this artifact's
+         * encoding: the call is REFUSED, no attempt is made, and no resource
+         * was exhausted. Every give-up in [FLOOR, -2] says the engine tried
+         * and ran out; this one says it never started.
+         *
+         * NO BYTE ARTIFACT CAN RETURN IT — under an encoding where every
+         * position is a character boundary the guard is not emitted at all —
+         * but every artifact DEFINES it, on the same rule that makes a
+         * DFA-only artifact define `PCREC_ERR_FRAMES`: a caller's `switch`
+         * written today must survive a later compile of the same pattern
+         * under a different encoding.
+         *
+         * A COMPOSED CALL SITE TRAPS ON IT, by §4's existing below-the-floor
+         * rule, and that is correct rather than incidental: after K50 every
+         * position the ENGINE generates is a boundary, so a composed callee
+         * handed a non-boundary means the engine broke its own rule, which is
+         * exactly what a trap is for. */
+        "#define PCREC_ERR_STARTPOS (-7)  /* [K50] below PCREC_ERR_FLOOR: "
+        "NOT a give-up -- a mid-character startpos was REFUSED */\n"
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */
@@ -1685,7 +1798,49 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * Comparison (B) compares whole files and is re-pinned in this same
      * change, per D76/D94 (the lane pins its own last src commit; the
      * manager re-pins to the merge). */
-    sb_puts(c,   "    .abi = 23,\n");
+    /* [K50] abi 23 -> 24 (D76/D94): CANDIDATE MATCH STARTS ARE THE ENCODING'S
+     * CHARACTER BOUNDARIES, plus the caller-startpos guard. Per artifact kind,
+     * r37 A12's lesson:
+     *
+     *  - EVERY artifact of both engines gains TWO lines:
+     *    `#define PCREC_ERR_STARTPOS (-7)` in the shared `PCREC_RX_ABI_H`
+     *    block, and a `<PREFIX>_STARTPOS_GUARD` selection stamp in the shared
+     *    prologue. Those two alone move the whole population's bytes, which is
+     *    what makes this a bump at all — a `byte` artifact gains nothing else
+     *    anywhere, and its stamp honestly reads `"permissive"` because that
+     *    backend restricts no position rather than because a flag was passed.
+     *  - NO `byte` ARTIFACT'S PROGRAM MOVES, and that is the acceptance
+     *    condition rather than an observation. The gate's `start_cls` is NULL
+     *    under that backend, so `nfa_wrap_unanchored` builds its pre-K50 two
+     *    states, the class axis never produces UPC_NOSTART, `eqclasses`
+     *    performs no fourth refinement, `ENG_ATTEMPT`'s loop gains no
+     *    `continue`, and the entries emit no guard. Comparison (A) is
+     *    expected byte-identical on the whole byte population against the
+     *    UNCHANGED `ac4917d` pin.
+     *  - A `utf8` UNANCHORED DFA artifact's MACHINE moves — the gate is a real
+     *    NFA state, so the subset construction sees a different automaton and
+     *    the transition tables, the state numbering and (where a class had not
+     *    already been split at 0x80/0xC0) the byte-equivalence partition all
+     *    change. That is the second bump in this file's history to move a
+     *    MACHINE rather than emitted text, [OPT-5]'s scan edge being the
+     *    first.
+     *  - A `utf8` ENG_ATTEMPT artifact gains the loop's boundary `continue`,
+     *    and every `utf8` artifact of either engine gains the entry guard —
+     *    one line in `<prefix>_search` on the DFA route, one in each of the
+     *    three `_run` statics on the VM route.
+     *  - No struct offset moves and no `rx_info` member is added.
+     *  - AN ANSWER MOVES, WHICH NO EARLIER BUMP IN THIS LIST CAN SAY. K50 is a
+     *    wrong-answer fix: `\B` over `61 CE B1` from `startpos 0` answered
+     *    `(2,2)` and answers `(3,3)`, which is what libpcre2 10.46 answers
+     *    under both UTF option words. So `-fno-startpos-guard` does NOT sweep
+     *    this to identity and is not meant to — it addresses the CALLER-side
+     *    half only, and `make test-axes` carries that half as a documented,
+     *    floored divergence class rather than as an identity claim.
+     *
+     * Comparison (B) compares whole files and is re-pinned in this same
+     * change, per D76/D94 (the lane pins its own last src commit; the
+     * manager re-pins to the merge). */
+    sb_puts(c,   "    .abi = 24,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1732,7 +1887,36 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * (src/gen/emit_dfa.c's `pcrec_emit_prologue`, above — shared by both
      * engines since this pass runs before either is built). */
     {
-        const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
+        /* [K50] `PCREC_NO_STARTPOS_GUARD` JOINS THE MASK ON EXACTLY THE
+         * ARTIFACTS WHERE THE MASK'S OWN RULE PUTS IT, and nowhere else.
+         *
+         * The rule this mask states is about OBSERVABLE EFFECT, not about
+         * spelling: a denial that changed nothing must not make two
+         * identically-behaving artifacts differ in their reflection surface.
+         * `-fno-startpos-guard` is the first flag in the family for which
+         * that question has TWO answers depending on the artifact. Under an
+         * encoding with non-boundary positions it selects between two ruled
+         * SEMANTICS and a caller must be able to read which one it got, so it
+         * is stamped. Under `byte` — where every position is a character
+         * boundary — the flag could not have acted, no guard exists under
+         * either setting, and stamping it would make a byte artifact move
+         * over a knob with no effect on it. So it is masked THERE.
+         *
+         * That is the mask's own rule applied per artifact rather than a new
+         * rule, and it is what makes `tests/utf8/run_startbnd_diff.sh` §4's
+         * claim the strong one — a byte artifact is BYTE-IDENTICAL under
+         * either setting, not merely guard-free — which is what lets a denied
+         * byte build stand as a reference for anything else.
+         *
+         * The predicate is the BACKEND's, asked the same way the guard itself
+         * asks it, so the two cannot disagree about which artifacts have a
+         * guard to deny. */
+        const PcrecEnc *k50_enc = pcrec_enc_by_id(cx->opt->encoding);
+        const uint64_t startpos_guard_inert =
+            (k50_enc && k50_enc->start_guard) ? 0u
+                                              : (uint64_t)PCREC_NO_STARTPOS_GUARD;
+        const uint64_t strategy_denials = startpos_guard_inert |
+                                          PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
                                           PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
@@ -6232,6 +6416,56 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
               anchored ? "0 /* fully ^-anchored */"
                        : a_bot ? "search_from /* fully \\G-anchored */" : "subject_length");
     sb_puts(c, "    for (start = search_from; start <= start_max; start++) {\n");
+
+    /* [K50] SITE 2 OF THE THREE "TRY THE NEXT START" MECHANISMS. K49 fixed the
+     * VM's retry, K50's IR gate fixed the DFA self-loop, and this loop is the
+     * third: `start++` steps one BYTE, so under a multi-byte encoding it
+     * offers attempts at offsets inside a character.
+     *
+     * IT IS NOT MERELY A WASTED ATTEMPT, WHICH IS WHAT utf8_design.md §5.5 AND
+     * ASK 5 BOTH SAY IT IS. Measured on this tree before the fix:
+     * `(?m)^a|\B` over `61 CE B1` at `startpos = 1` — a REAL boundary —
+     * reported `(2,2)`, and byte 2 is inside alpha. libpcre2 10.46 under
+     * `PCRE2_UTF` answers `(3,3)`. The BOT-family branch is what routes the
+     * pattern to this engine; the second branch is what keeps an interior
+     * start state live so the loop actually runs past its first iteration.
+     * (A pure `(?m)^` pattern is self-gating and hid this: `(?m)^` can only
+     * hold after a newline, and a newline is a character-start byte.)
+     *
+     * A `continue` GUARD RATHER THAN THE `advance` TEXT, and the reason is
+     * D76 rather than taste. K49's field carries the STEP, and taking it here
+     * means replacing this `for` header's increment with a trailing statement
+     * — a change to emitted scaffolding on EVERY byte artifact, i.e. an abi
+     * event for the encoding that has no bug. A guard is ADDITIVE: a backend
+     * with no restriction contributes no text and the byte artifact does not
+     * move. The two spellings are held to one rule by
+     * `tests/codegen/run_encoding_checks.sh`'s agreement check.
+     *
+     * `start > search_from` IS THE WHOLE OF THE CALLER/ENGINE SPLIT, and it is
+     * the same line `nfa_wrap_unanchored` draws with its two split states: the
+     * first iteration IS the position the caller supplied, which the entry
+     * guard (§3.1) owns and the `-fno-startpos-guard` arm may leave
+     * mid-character on purpose; every later iteration is a position this loop
+     * INVENTED, and those are the encoding's boundaries unconditionally. */
+    {
+        char sbnd[256];
+        bool trunc;
+        if (pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
+                                  sbnd, sizeof sbnd, "start", "subject",
+                                  "subject_length", &trunc))
+            sb_printf(c,
+                "        /* [K50] A match may begin only at a character\n"
+                "         * boundary of this artifact's encoding. The first\n"
+                "         * iteration is the caller's own start position and\n"
+                "         * is never skipped; every later one is a position\n"
+                "         * this loop invented. */\n"
+                "        if (start > search_from && !(%s)) continue;\n", sbnd);
+        else if (trunc)
+            ctx_fail(cx, 0,
+                     "internal error: this encoding's character-start guard "
+                     "does not fit the emitter's buffer");
+    }
+
     if (cpre) {
         /* [D63] LOOP INTEGRATION, ENG_ATTEMPT's shape: an advance BETWEEN
          * attempts, not a skip inside one. It composes with the three-way
@@ -6704,6 +6938,28 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     emit_feature_comment(c);
     emit_feature_macros(c);
     emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
+    /* [K50] THE CALLER-STARTPOS AXIS'S STAMP — a §6.3 family (a) SELECTION
+     * FACT: unconditional, on every artifact of both engines, with an
+     * engine-appropriate value on each. It rides the SHARED prologue rather
+     * than either engine's own stamp block because the axis is neither
+     * engine's: it is a property of the ENTRIES, which both emitters write.
+     *
+     * A CLOSED TOKEN AND NOT A BOOLEAN, `<PREFIX>_ENGINE_SEL`'s shape: a
+     * consumer buckets on a value, and "guarded"/"permissive" name the two
+     * SEMANTICS §3.1 documents rather than the state of a flag. It is
+     * deliberately NOT derived from the flag alone — an artifact whose
+     * encoding restricts no position emits no guard whatever the caller
+     * asked, so `byte` reads "permissive" honestly and a reader is not
+     * invited to conclude the flag was passed. The value therefore comes from
+     * the SAME text the guard is emitted from, which is what stops a stamp
+     * and its body drifting apart (this file's `unanch_start` rule). */
+    {
+        char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
+        sb_printf(c, "#define %s_STARTPOS_GUARD \"%s\"\n", g->upper,
+                  *pcrec_startpos_guard_text(cx, probe, sizeof probe, "",
+                                             "p", "s", "n")
+                      ? "guarded" : "permissive");
+    }
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {

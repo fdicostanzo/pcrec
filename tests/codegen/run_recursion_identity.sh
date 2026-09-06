@@ -744,7 +744,34 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # the abi number stays 23 and this re-pin is the ordinary merge-serialization
 # move, not a second event. Later same-night commits touch tests/docs only.
 #
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-05b2fe8a}"
+# [K50], 2026-09-06 — abi 23 -> 24 (or later if a concurrent lane's event
+# serializes ahead; the merging session renumbers, D94): CANDIDATE MATCH
+# STARTS ARE THE ENCODING'S CHARACTER BOUNDARIES, plus the caller-startpos
+# guard. EVERY artifact of both engines gains two lines — the
+# `PCREC_ERR_STARTPOS (-7)` define in the shared ABI block and a
+# `<PREFIX>_STARTPOS_GUARD` selection stamp in the shared prologue — so (B)
+# re-pins on the whole population, `byte` artifacts included.
+#
+# **COMPARISON (A) IS EXPECTED BYTE-IDENTICAL AND THAT IS THIS ROW'S OWN
+# ACCEPTANCE CONDITION, not a formality.** K50's whole risk is that a fix for
+# a `utf8` defect moves the encoding that has no defect. Nothing here is
+# `byte`-conditional: the `byte` backend supplies no character-start set, so
+# `nfa_wrap_unanchored` builds its pre-K50 two states, the class axis never
+# produces `UPC_NOSTART`, `eqclasses` performs no fourth refinement,
+# `ENG_ATTEMPT`'s loop gains no boundary `continue`, and the entries emit no
+# guard. A red (A) on this corpus — which is entirely `byte`-compiled — means
+# a `byte` path acquired the gate, and is the finding, not a re-pin.
+#
+# **NO NEW DENY-AXIS EXCUSE RIDES THIS EVENT**, unlike [ENG-ISL]'s and
+# [FORM-CHAR]'s. Those two move (A)'s region on a population a `-fno-` flag
+# can restore, so each had to teach (A) an IFF. `-fno-startpos-guard` restores
+# nothing on this corpus, because nothing on this corpus was moved: the flag
+# addresses the CALLER-side half and this corpus compiles for `byte`.
+#
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (set in a follow-up commit that
+# touches no src, [ENG-ISL]'s precedent); the manager re-pins to the MERGE
+# when it lands.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9e276472}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

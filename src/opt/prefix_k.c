@@ -201,6 +201,16 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
         case N_WORDB:
         case N_NWORDB:
         case N_GSTART:
+        /* [K50] The character-boundary gate is an assertion like the rest, and
+         * PASSING it is the sound direction here for this file's own reason: a
+         * passed assertion widens the frontier, and a wider frontier skips
+         * less. It is also UNREACHABLE from this walk's root — the walk starts
+         * at `Nfa.anch_start`, the pattern's own first state, and
+         * `nfa_wrap_unanchored` builds the gate on the SELF-LOOP's split,
+         * which `anch_start` deliberately does not name. The arm is here
+         * because the absent `default:` above requires every kind to be
+         * classified, and an unreachable kind still has a right answer. */
+        case N_CSTART:
             wpush(w, st->t1);
             break;
         }

@@ -614,10 +614,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   CLAUDE.md for the log format and the measured per-compile overhead.
 - **utf8/** — the [M5.0] `utf8`-encoding corpus: D27-blinded (cell
   `utf8corpus`, authored against the pre-stage-2 tree) then PROMOTED (lane
-  `utfprom`, 2026-09-05) against the merged stage-2 tree. 524 blocks / 13
-  files, rides `test-corpus` like every other plain per-module directory
-  (no dedicated `make test-utf8` — no structural/differential check exists
-  for it yet). The SECOND directory in the tree with its own oracle rule
+  `utfprom`, 2026-09-05) against the merged stage-2 tree. 529 blocks / 14
+  files, rides `test-corpus` like every other plain per-module directory —
+  **plus, since [K50] (2026-09-06), ONE structural/differential suite of its
+  own**, `run_startbnd_diff.sh` (`make test-startbnd`): the caller-startpos
+  boundary axis's two-arm differential, and a cross-engine section pinned to
+  libpcre2 10.46 rather than to the other engine. That pinning is the point
+  rather than a detail — for a whole milestone BOTH ENGINES ANSWERED THE SAME
+  WRONG THING (K50), so nothing comparing pcrec against itself could have
+  caught it. It is NOT the byte-mirror libpcre2 differential this directory
+  still owes. The SECOND directory in the tree with its own oracle rule
   beyond the python default (after `tests/assertions/`), for a different
   measured reason: `verify_rxt.py`'s subject decoder is byte-oriented, not
   UTF-8-aware, so 255 blocks carry `# pcre2-only` — docs/dev/

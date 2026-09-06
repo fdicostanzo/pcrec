@@ -3978,7 +3978,111 @@ the finding: an oracle-backed divergence is strictly stronger evidence than
 a design position. §2.6.1.1's inversion is cited in the cell as the
 SUPPORTING reasoning, which is what it is.
 
-STATUS: open. Filed as `tests/known_fail/k50_utf8_dfa_midchar_start.rxt`
+**STATUS: FIXED 2026-09-06, lane `k50bnd`.** All three site-list mechanisms
+now spell one rule, and the rule is the one this entry proposed: an unanchored
+search's candidate match STARTS are exactly the encoding's character
+boundaries. `\B` over `61 CE B1` from `startpos 0` answers `(3,3)` on both
+engines, which is libpcre2 10.46's answer under both UTF option words.
+
+**K50 HAS A SECOND FACE, AND THIS ENTRY DID NOT KNOW IT.** The site
+list above calls `ENG_ATTEMPT`'s `start++` loop *"the loop `utf8_design.md`
+§5.5 and ASK 5 are about"* and files no witness for it, because §5.5 and the
+ASK 5 ruling both say such starts merely waste attempts. Measured on the
+shipped tree before the fix:
+
+| | |
+|---|---|
+| pattern | `(?m)^a\|\B` (`--features assertions,modifiers`) |
+| subject | `61 CE B1`, `startpos = 1` — a REAL character boundary |
+| pcrec `-e utf8` | `(2,2)` — mid-character, `RX_ENGINE "dfa"`, `start_max = subject_length` |
+| libpcre2 10.46 `PCRE2_UTF` | `(3,3)` |
+
+Two branches and neither is optional: the BOT-family branch is what routes the
+pattern to `ENG_ATTEMPT`, and the nullable second branch is what keeps an
+interior start state live so the loop runs past its first iteration. **A pure
+`(?m)^` or `\G` pattern is SELF-GATING** — `(?m)^` can hold only after a
+newline and a newline is a character-start byte; `\G` gives `start_max ==
+search_from`, one attempt at the caller's own position — which is why the site
+survived a whole milestone unwitnessed. A fix that closed only mechanism (1)
+would have left this standing — so this is not a detail of the fix, it is a
+SECOND FACE of the same defect, filed here beside the first because a reader
+who takes "K50 is the DFA half" from the heading would look for one witness
+and there are two.
+
+WHERE EACH FACE IS PINNED: face 1 (the self-loop) in
+`tests/utf8/axis11_startpos_boundary.rxt`'s `\B` cells and
+`run_startbnd_diff.sh` §5's three `dfa-selfloop` widths; face 2
+(`ENG_ATTEMPT`) in that same file's `(?m)^a|\B` cells and §5's
+`attempt-startloop`. Sabotage rows S234 and S235 fire very different
+footprints — MEASURED through the matrix, S234 reds 8 `startbnd` checks and 4
+corpus cells, S235 reds 2 and 1, S235's landing on the `ENG_ATTEMPT` cells
+alone — which is the matrix telling the two faces apart rather than scoring
+one of them twice.
+
+**HOW EACH MECHANISM WAS CLOSED.** One datum, `PcrecEnc.start_cls` (the bytes
+a character may start at, NULL under `byte`), plus its expression twin
+`start_guard`:
+
+1. **`nfa_wrap_unanchored`** builds TWO split states instead of one. `nfa->start`
+   stays the ungated split — the caller's own position enters the pattern
+   whatever it is — and the self-loop returns to a second split whose pattern
+   branch is gated by a new `N_CSTART` node. So the positions the ENGINE
+   generates are gated and the caller's is not, which is the split of
+   responsibility Frank's ruling draws. `N_CSTART` is `N_EOL_M`'s shape (one
+   `end_ok` read, one class-axis read) and the class axis gains a fourth
+   partition value, `UPC_NOSTART`, with the disjointness it needs CHECKED
+   (`pcrec_enc_start_cls_ok`) rather than assumed.
+2. **`ENG_ATTEMPT`'s loop** gains `if (start > search_from && !(guard)) continue;`
+   — a guard rather than K49's `advance` text, because taking the step here
+   means replacing a `for` header's increment with a trailing statement, which
+   moves every byte artifact and is an abi event for the encoding that has no
+   bug. `start > search_from` is the same caller/engine line the two split
+   states draw.
+3. **The hybrid handoff** needed no change and the entry's own reasoning is why:
+   a fix for (1) closes (3) for free, since the prefilter IS a DFA emitted
+   through `pcrec_emit_dfa_engine` and therefore carries the gate. The
+   disjointness argument this entry flagged as *"not a guarantee anyone wrote
+   down"* is no longer load-bearing — it is now a boundary by construction
+   rather than by two independent decisions happening to agree.
+
+**AND THE CALLER'S OWN POSITION GAINED A GUARD, which is a separate ruling
+riding the same fix** (Frank, 2026-09-05). The emitted entries refuse a
+mid-character `startpos` with `PCREC_ERR_STARTPOS` (−7, below
+`PCREC_ERR_FLOOR`: a refusal of the call, not a give-up), default on, with
+`-fno-startpos-guard` retaining `utf8_design.md` §2.6.1.1's ruled permissive
+semantics verbatim. **The shape was measured before it was chosen**: under
+`PCRE2_UTF` libpcre2 refuses every mid-character `startoffset` UNIFORMLY —
+20 of 20 cells across ten patterns, with the same ten answering normally at
+all three boundary offsets — so an O(1) entry test reproduces it exactly
+(`docs/design/utf8_measurements/out/startbnd.txt` §2). One ordering detail is
+recorded at the emitter: `startpos > n` still returns `0` as `match_api.md`
+§3.1 has always promised (libpcre2 answers `BADOFFSET` there and pcrec does
+not follow), and the guard is safe at any position ≥ n because the backend's
+text opens `@P >= @N`.
+
+**§2.6(c) SURVIVES, and it is checked rather than asserted.** The self-loop's
+class is still every byte, so an ill-formed byte remains a position a search
+may START at — `a` on `FF 61` still answers `(1,2)` — because the gate is on
+"is not a CONTINUATION byte" and not on "is a valid LEAD byte". A cell for
+exactly that sits in the new corpus file, and a fix spelled the other way
+would pass every other cell and fail it.
+
+**`abi` 23 → 24.** Every artifact of both engines gains two lines (the
+`PCREC_ERR_STARTPOS` define and a `<PREFIX>_STARTPOS_GUARD` selection stamp);
+no `byte` artifact's PROGRAM moves, which the identity gate's comparison (A)
+proves against the unchanged `ac4917d` pin.
+
+**WHERE IT IS PINNED NOW.** `tests/utf8/axis11_startpos_boundary.rxt` (this
+witness plus the site-2 one, the 3- and 4-byte subjects, and the ill-formed
+row), and `tests/utf8/run_startbnd_diff.sh` (the two-arm differential and the
+cross-engine §5). The differential was validated in six failing directions,
+and validating it found a defect in the instrument worth recording: with a
+zero byte at `s[n]` the sweep could not see a guard that reads past the end of
+the subject, and read 4/4 green on a compiler whose guard had lost its
+end-of-subject arm. The driver parks `0x80` there now.
+
+THE ORIGINAL FILING FOLLOWS. Filed as
+`tests/known_fail/k50_utf8_dfa_midchar_start.rxt`
 per this file's own convention — a confirmed answer pcrec disagrees with,
 held loud, with the ratchet firing red-to-green the moment the DFA half is
 fixed. **THE RATCHET PINS NO COUNTS TO RE-PIN**:

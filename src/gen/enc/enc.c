@@ -136,3 +136,54 @@ bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
     buf[len] = '\0';
     return true;
 }
+
+/* [K50] The start guard. Shares `adv_put`'s overflow discipline and the same
+ * three tokens; it does NOT share the indentation rule, because the text is
+ * one expression spliced into an `if` rather than a statement list.
+ *
+ * TWO FALSE OUTCOMES, KEPT APART. "This backend has no restriction" is the
+ * common, correct answer (`byte`) and the caller emits nothing; "the text did
+ * not fit" is an internal error the caller must raise. Returning false for
+ * both and letting the caller guess is how the second one would ship as the
+ * first — so `*truncated` carries the difference, and it is written on every
+ * path rather than only on the failing one. */
+bool pcrec_enc_start_guard(const PcrecEnc *e, char *buf, size_t cap,
+                           const char *posvar, const char *subjvar,
+                           const char *lenvar, bool *truncated)
+{
+    size_t len = 0;
+
+    *truncated = false;
+    if (cap == 0) { *truncated = true; return false; }
+    buf[0] = '\0';
+    if (!e || !e->start_guard) return false;
+
+    for (const char *q = e->start_guard; *q; q++) {
+        if (*q == '@') {
+            switch (q[1]) {
+                case 'P': adv_put(buf, cap, &len, posvar);  q++; continue;
+                case 'S': adv_put(buf, cap, &len, subjvar); q++; continue;
+                case 'N': adv_put(buf, cap, &len, lenvar);  q++; continue;
+                default:  *truncated = true; return false;
+            }
+        }
+        if (len + 1 < cap) buf[len] = *q;
+        len++;
+    }
+    if (len >= cap) { *truncated = true; return false; }
+    buf[len] = '\0';
+    return true;
+}
+
+/* [K50] The partition precondition enc.h's `start_cls` comment states. A
+ * backend with no restriction passes trivially — there is no set to check. */
+bool pcrec_enc_start_cls_ok(const PcrecEnc *e)
+{
+    if (!e || !e->start_cls) return true;
+    for (int c = 0; c < 256; c++) {
+        if (cls_has(e->start_cls, (unsigned)c)) continue;
+        if (cls_has(pcrec_cls_word_esc, (unsigned)c)) return false;
+        if (cls_has(pcrec_cls_newline,  (unsigned)c)) return false;
+    }
+    return true;
+}

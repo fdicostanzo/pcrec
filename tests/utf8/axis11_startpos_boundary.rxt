@@ -1,0 +1,133 @@
+# tests/utf8/axis11_startpos_boundary.rxt — [K50] CANDIDATE MATCH STARTS ARE
+# CHARACTER BOUNDARIES.
+#
+# THE FIRST FILE IN THIS DIRECTORY THAT IS NOT ONE OF THE D27 EXTRACT'S AXES,
+# and it exists because the extract had no section for this: the blinded
+# author wrote from `docs/design/utf8_d27_extract.md`, whose §2.6.1 covers a
+# CALLER-supplied mid-character `startpos` and says nothing about the
+# positions the ENGINE invents — because until K50 nobody knew the engine
+# invented any bad ones. This directory's own CLAUDE.md named the gap after
+# the fact: *"This corpus has no `\B`-under-`utf8` cell; the natural place for
+# one is a future axis."* This is that axis.
+#
+# WHAT IT PINS. Under `-e utf8` an unanchored search's candidate match starts
+# are exactly the encoding's character boundaries, so no reported span begins
+# inside a multi-byte character. That was FALSE until 2026-09-06: the DFA's
+# start-anywhere self-loop stepped one BYTE (`nfa_wrap_unanchored`) and
+# `ENG_ATTEMPT`'s attempt loop stepped one byte (`start++`), so a pattern that
+# can match EMPTY answered at mid-character offsets.
+#
+# WHY THE FAMILY IS EXACTLY THIS SHAPE, which is the part to keep when adding
+# to the file. A mid-character start is only reachable as an ANSWER for a
+# pattern that can match empty there: under UTF-8 no lowered pattern begins by
+# consuming a continuation byte, so a positive pattern simply finds nothing
+# and the wasted attempt is invisible. `utf8_design.md` §2.6.1's inversion is
+# what makes the empty case different — a NEGATIVE assertion succeeds exactly
+# where its body has no path — and `\B` is the same shape without needing an
+# assertion body at all. A cell built from a positive pattern cannot detect
+# any of this, which is why there are none here.
+#
+# ORACLE: libpcre2 10.46 under `PCRE2_UTF`, the project's reference build, run
+# over ssh and archived at `docs/design/utf8_measurements/out/startbnd.txt` §1
+# — every expectation below is a row of that transcript rather than a
+# derivation. `# pcre2-only` throughout, for this directory's own standing
+# reason (its CLAUDE.md: `verify_rxt.py`'s subject decoder is byte-oriented,
+# so a multi-byte subject is the wrong number of characters under python).
+#
+# WHAT IS NOT HERE, and where it is instead. The CALLER-startpos half of K50 —
+# the default-on boundary guard and its `-fno-startpos-guard` arm — cannot be
+# written as `.rxt` cells today: a refusal at a NON-ZERO startpos has no
+# directive (`gu` is offset-0 only) and no directive spells the flag. Both are
+# `.rxt`-format questions rather than this lane's to invent, so that half is
+# carried by `tests/utf8/run_startbnd_diff.sh`, which sweeps both arms over
+# every startpos of every subject. See that script's header.
+
+# pcre2-only
+# K50's OWN WITNESS, restored from tests/known_fail/ where it was filed on
+# 2026-09-05 and held loud until the DFA half was fixed. `61 CE B1` is ASCII
+# `a` then alpha; the character boundaries are 0, 1 and 3, and byte 2 is
+# alpha's continuation byte. pcrec reported (2,2) — which is precisely
+# libpcre2's `options=0` BYTE answer, i.e. byte semantics from a UTF-8 build.
+#
+# `\B` is false at 0 (start-of-subject beside the word character `a` IS a
+# boundary), false at 1 (`a` then alpha crosses word/non-word) and true at 3
+# (alpha precedes, end of subject follows, neither is a word character).
+pattern \B
+encoding utf8
+features assertions
+m "a\xce\xb1" 3 3
+
+# pcre2-only
+# The same defect with a consuming tail behind the assertion, which is what
+# says the fix is about where an attempt BEGINS rather than about `\B`'s own
+# emission: `x?` matches empty, so the reported span is unchanged.
+pattern \Bx?
+encoding utf8
+features assertions
+m "a\xce\xb1" 3 3
+
+# pcre2-only
+# THE REPORTED POSITION MOVES FURTHER INSIDE THE CHARACTER AS THE ENCODING
+# WIDENS, so a three-byte subject has two wrong answers available and a
+# four-byte one has three. A fix that happened to skip only ONE byte would
+# pass the two-byte cells above and fail here.
+pattern \B
+encoding utf8
+features assertions
+m "a\xe4\xb8\xad" 4 4
+
+# pcre2-only
+pattern \B
+encoding utf8
+features assertions
+m "a\xf0\x9f\x98\x80" 5 5
+
+# pcre2-only
+# SITE 2, AND THE CHARTER HAD NO WITNESS FOR IT. `ENG_ATTEMPT`'s `start++`
+# loop is a SECOND "try the next start" mechanism, in the emitter rather than
+# the automaton, and `utf8_design.md` §5.5 plus Frank's ASK 5 ruling both
+# treat it as merely wasteful. Measured wrong on 2026-09-06: this pattern at
+# `startpos = 1` (a REAL character boundary) reported (2,2).
+#
+# THE DENY ARM OF THIS CELL IS IN THE DIFFERENTIAL, AND FOR A REASON WORTH
+# READING rather than the usual one. Every other both-arm pair in this fix
+# lives there because no `.rxt` directive spells a compile flag. This pair
+# additionally has NO DIVERGENCE TO CARRY: `startpos = 1` is a real character
+# boundary, so the caller-startpos guard is transparent at it and BOTH arms
+# must answer (3,3). That sameness IS the claim — the axis governs where a
+# CALLER may point the entry and moves no position the ENGINE invented — and
+# it is asserted in `run_startbnd_diff.sh` §5, which runs every engine cell
+# under both flag settings and requires the same answer. A `.rxt` pair could
+# only have restated this cell twice.
+#
+# THE PATTERN IS TWO BRANCHES ON PURPOSE AND NEITHER IS OPTIONAL. The
+# BOT-family branch is what routes the pattern to `ENG_ATTEMPT` at all; the
+# nullable second branch is what keeps an interior start state live, so
+# `start_max` is the subject length and the loop runs past its first
+# iteration. A pure `(?m)^` pattern is SELF-GATING — `(?m)^` can only hold
+# after a newline and a newline is a character-start byte — which is why this
+# site went unwitnessed for a whole milestone.
+pattern (?m)^a|\B
+encoding utf8
+features assertions,modifiers
+ms 1 "a\xce\xb1" 3 3
+
+# pcre2-only
+# The same pattern's other startpos values, so the cell above is a fact about
+# position 1 rather than about the pattern. At 0 the `(?m)^a` branch answers
+# immediately; at 3 (end of subject) `\B` holds.
+pattern (?m)^a|\B
+encoding utf8
+features assertions,modifiers
+ms 0 "a\xce\xb1" 0 1
+ms 3 "a\xce\xb1" 3 3
+
+# pcre2-only
+# ILL-FORMED BYTES STAY STARTABLE — `utf8_design.md` §2.6(c), the rule the fix
+# had to preserve while gating everything else. 0xFF is not a continuation
+# byte, so offset 1 of `61 FF` IS a character boundary and a search must still
+# find a match there. A fix that gated on "is a valid LEAD byte" instead of
+# "is not a CONTINUATION byte" would pass every cell above and fail this one.
+pattern a
+encoding utf8
+m "\xffa" 1 2

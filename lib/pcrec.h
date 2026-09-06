@@ -561,7 +561,58 @@ enum {
      * denied population a usable reference. What the emitter DID is reported
      * by `<PREFIX>_VM_CLS_FOLDS`, an activity COUNT (docs/spec/match_api.md
      * §6.3 family (b)). */
-    PCREC_NO_CLS_FOLD = 1u << 24
+    PCREC_NO_CLS_FOLD = 1u << 24,
+
+    /* [K50] `-fno-startpos-guard` — deny the emitted entries' CALLER-STARTPOS
+     * BOUNDARY GUARD (docs/spec/match_api.md §3.1; docs/spec/tuning.md §2.23;
+     * docs/dev/known_issues.md K50).
+     *
+     * **THIS IS THE FIRST MEMBER OF THIS ENUM THAT CHANGES AN ANSWER, AND
+     * EVERYTHING ODD ABOUT IT FOLLOWS FROM THAT.** Every other `-fno-` flag
+     * here is answer-identity-preserving by construction — it picks a
+     * different emitted SHAPE for the same language, which is why they are all
+     * masked out of `rx_info.flags` and why `make test-axes` can sweep them
+     * against the default and demand identity. This one selects between two
+     * SEMANTICS for one input class, so it is NOT masked out (a caller must be
+     * able to read which contract the artifact carries) and the answer-identity
+     * sweep carries a DOCUMENTED, FLOORED divergence class for it.
+     *
+     * WHAT THE GUARD DOES. Under an encoding with multi-byte characters the
+     * emitted entries refuse a `startpos` that is not a character boundary,
+     * returning `PCREC_ERR_STARTPOS`. That is the DEFAULT, and it is what
+     * libpcre2 10.46 does under `PCRE2_UTF` — measured uniform over 10
+     * patterns x 2 mid-character offsets, `PCRE2_ERROR_BADUTFOFFSET`
+     * (docs/design/utf8_measurements/out/startbnd.txt §2), which is what makes
+     * an O(1) entry test the right shape rather than a guess.
+     *
+     * WHAT DENYING IT BUYS. `docs/design/utf8_design.md` §2.6.1.1 RULED a
+     * defined permissive answer for a mid-character `startpos` — the
+     * automaton's own, which for a leading negative assertion differs from
+     * both PCRE2 UTF modes in the SUCCEEDING direction (`(?<!.)` at offset 1
+     * of `CE B1 CE B2` answers `(1,1)`). That ruling is not withdrawn; it
+     * moves behind this flag, with its oracle-validated cells moved to the
+     * denied arm rather than deleted.
+     *
+     * NEITHER ARM ROUNDS THE CALLER'S `startpos`. The default refuses it and
+     * the denied arm honours it exactly; silently advancing to the next
+     * boundary — `PCRE2_MATCH_INVALID_UTF`'s behaviour — is a THIRD semantics
+     * this flag does not offer, because a caller who gets an answer for a
+     * position it did not ask about cannot tell that from an answer for the
+     * one it did.
+     *
+     * IT DENIES NOTHING ON A `byte` ARTIFACT, and that is a property rather
+     * than an exemption: every position is a character boundary there, so no
+     * guard is emitted under either setting and the two builds are
+     * byte-identical. The flag is accepted and inert, exactly as
+     * `-fno-cls-fold` is inert on a pattern with no fold pair.
+     *
+     * THE ENGINE'S OWN POSITIONS ARE NOT AFFECTED BY IT IN EITHER DIRECTION.
+     * K50's fix makes the unanchored search's candidate starts the encoding's
+     * boundaries unconditionally — that is a correctness fix and has no
+     * flag — and this axis governs only where the CALLER may point the entry.
+     * A build that denied both would be the K50 bug, and there is no way to
+     * ask for it. */
+    PCREC_NO_STARTPOS_GUARD = 1u << 25
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

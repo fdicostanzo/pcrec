@@ -67,5 +67,13 @@ tests/recursion/run_recursion_diff.sh
 # compiles and RUNS generated C (two artifacts per pattern in one TU), which
 # is the same reason every diff script above is here.
 tests/anchored/run_anchored_diff.sh
+# [K50] the caller-startpos boundary axis's differential. Same reason again —
+# two artifacts per witness in ONE TU, compiled and RUN — and it has a second
+# one of its own: its drivers do raw byte-buffer arithmetic over subjects that
+# are deliberately ill-formed UTF-8, including a continuation byte parked at
+# `s[n]` to catch a guard that reads past the end of the subject. That is
+# exactly the read a sanitizer axis exists to police, and the check it feeds
+# would be worth little if the read it plants were never watched.
+tests/utf8/run_startbnd_diff.sh
 tests/lib/run_gen_timeout_tests.sh
 tests/known_fail/run_known_fail.sh

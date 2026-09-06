@@ -270,8 +270,70 @@ static const char advance_utf8[] =
 "while (@P < @N\n"
 "       && (@S[@P] & 0xC0) == 0x80) @P++;\n";
 
+/* [K50] WHERE A MATCH MAY BEGIN — the two spellings enc.h's `start_cls` and
+ * `start_guard` document, and they are the SAME predicate `next_pos` and the
+ * `advance` above already implement: a position is a character boundary iff it
+ * is the end of the subject or its byte is not a continuation byte.
+ *
+ * THE SET IS "NOT A CONTINUATION BYTE", NOT "A VALID LEAD BYTE", and the
+ * difference is utf8_design.md §2.6(c) rather than sloppiness. An ill-formed
+ * byte — 0xFE, 0xFF, an overlong lead, a lead whose continuations are missing
+ * — is a POSITION A SEARCH MAY START AT, because §2.6(c)'s ruled semantics
+ * require matches after an ill-formed byte to be found (`a` on `FF 63` gives
+ * `(1,2)`). K50's fix gates where attempts BEGIN; it does not make the search
+ * refuse to walk past garbage, and a lead-byte set would have done the latter.
+ * The bytes excluded are exactly 0x80..0xBF.
+ *
+ * THE PARTITION PRECONDITION enc.h states is satisfied and is worth checking
+ * by eye as well as by `pcrec_enc_start_cls_ok`: 0x80..0xBF holds no word byte
+ * and no newline, both of which are ASCII. */
+static const unsigned char start_cls_utf8[32] = {
+    /* 0x00..0x7F: every ASCII byte starts a character */
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    /* 0x80..0xBF: the continuation bytes — the ONLY positions excluded */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    /* 0xC0..0xFF: leads, and the ill-formed bytes §2.6(c) keeps startable */
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+};
+
+/* The same rule as an expression, and the two clauses in front of the byte
+ * test are each there for a stated reason rather than for safety.
+ *
+ * `@P >= @N` SO THE SUBJECT IS NEVER READ AT `@N`: match_api.md §3.1 promises
+ * the matcher never reads `s[n]`, and the end of the subject is a character
+ * boundary.
+ *
+ * `@P == 0` BECAUSE OFFSET 0 IS ALWAYS A VALID START, AND THAT IS A RULING
+ * ABOUT ILL-FORMED INPUT RATHER THAN AN EXEMPTION. The byte test is LOCAL —
+ * "is this a continuation byte" — which is exactly what libpcre2 asks under
+ * `PCRE2_UTF`, but libpcre2 asks it only AFTER a whole-subject validation pass
+ * has already rejected an ill-formed subject (§2.6(b)). pcrec has no such
+ * pass: Frank's ASK 1 ruling is that an ill-formed sequence MATCHES NOTHING,
+ * with "no validation pass, no error return". So this guard sees subjects
+ * libpcre2's would never reach, and on a subject that BEGINS with a
+ * continuation byte the local test alone refuses offset 0 — turning
+ * "ill-formed input matches nothing" into "ill-formed input is an error",
+ * which is that ruling inverted.
+ *
+ * Two independent reasons agree. A caller naming offset 0 cannot have pointed
+ * INSIDE a character, because none precedes it, so it is not the caller error
+ * this guard exists to catch. And MEASURED: without the clause, 21
+ * oracle-verified cells across `tests/utf8/axis01`, `axis03` and `axis09` stop
+ * answering and return `PCREC_ERR_STARTPOS` — `a` on the one-byte subject
+ * `\x80` among them. Those cells ARE §2.6's ruled semantics, and what found it
+ * was wiring this axis into `make test-axes`.
+ *
+ * It costs the guard nothing anywhere else: `ENG_ATTEMPT`'s use of this same
+ * text is already gated on `start > search_from`, so `@P == 0` cannot be true
+ * there, and the IR gate is a different mechanism that never sees position 0
+ * (the ungated split is the one the caller's own position enters). */
+static const char start_guard_utf8[] =
+    "@P == 0 || @P >= @N || (@S[@P] & 0xC0) != 0x80";
+
 const PcrecEnc pcrec_enc_backend_utf8 = {
     /* `max_cp` is Unicode's maximum: the complement universe `[^x]` means
      * under this encoding (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8, advance_utf8
+    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8, advance_utf8,
+    start_cls_utf8, start_guard_utf8
 };

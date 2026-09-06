@@ -257,9 +257,24 @@ static const PcrecEncEntry entries_byte[] = {
 static const char advance_byte[] =
 "@P++;\n";
 
+/* [K50] WHERE A MATCH MAY BEGIN. Under this backend one byte is one
+ * character, so EVERY position is a character boundary and there is no
+ * restriction to express: both fields are NULL.
+ *
+ * That is not a stub. `NULL` is the value both consumers read as "contribute
+ * nothing" — `nfa_wrap_unanchored` builds the pre-K50 two-state wrap with no
+ * gate node, and the emitters emit no guard text — so every byte artifact
+ * that existed before K50 is byte-identical to the one this compiler emits
+ * now, and the identity gate proves it rather than the comment claiming it.
+ * A backend that wrote out the tautology instead (`start_cls` = all 256 bits,
+ * `start_guard` = "1") would be honest and would move every artifact in the
+ * tree for nothing, which is what enc.h's field comment means by NULL being
+ * the answer rather than a default. */
+
 const PcrecEnc pcrec_enc_backend_byte = {
     /* [M5.0] `max_cp` is `0xFF`: this backend's repertoire IS the byte range,
      * so complementing within it is the `~bits[i]` loop the parser used to
      * write by hand (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte, advance_byte
+    PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte, advance_byte,
+    NULL, NULL   /* [K50] start_cls / start_guard: every position is a start */
 };
