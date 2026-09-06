@@ -1087,7 +1087,29 @@ spine, not before):
   surface lives in pcrec's own clearly-flagged namespace (SR-10's rule) so
   the D26 compatibility story stays clean — PCRE2-compatible core,
   pcrec-extended templates opt-in; non-portability is a non-issue for the
-  embedded niche, which is compiling in anyway
+  embedded niche, which is compiling in anyway. **RE-AFFIRMED + SHARPENED
+  (Frank, 2026-09-06, fifty-sixth session: "extremely fast search/replace
+  engine ... no allocation ... stream or in-place ... the replace front
+  end would know the group output so it wouldn't have to interpret the
+  replacement string. thats pretty cool stuff"): two MODES join the
+  charter with their honest boundaries stated up front.** (1) IN-PLACE:
+  free exactly when replacement length <= match length (the write cursor
+  trails the read cursor and the invariant holds left-to-right); a
+  GROWING replacement cannot be in-place left-to-right without a gap —
+  the mode's contract states the boundary rather than letting a caller
+  discover it. (2) STREAMING, with the AOT-specific win: a streaming
+  replace needs a HOLDBACK buffer for a partial match at the chunk
+  boundary, and pcrec knows the pattern's maximum width AT COMPILE TIME
+  (cwmax/maxw, already load-bearing for lookbehind) — so a bounded-width
+  pattern's artifact STAMPS ITS OWN REQUIRED HOLDBACK CAPACITY (caller
+  supplies a fixed buffer of stamped size, zero allocation; the
+  [DD-14.FB] BufSurface precedent for caller-provided capacity), and an
+  unbounded-width pattern REFUSES streaming mode honestly by name. No
+  runtime engine can promise a compile-time holdback bound; it falls out
+  of the architecture. Positioning note: this is a completeness-category
+  differentiator (memory pcrec-post-spine-direction, 09-06) — subst is
+  where full PCRE semantics + AOT beats both the subset engines (no
+  captures/templates) and pcre2 (runtime template interpretation)
 
 ## Design-debt ledger (from R1; resolve before the milestone that hits each)
 
