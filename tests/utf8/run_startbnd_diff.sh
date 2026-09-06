@@ -323,5 +323,10 @@ check_engine_cell vm-forced         '\B'         assertions           61CEB1    
 
 [ "$eng_ok" -eq 1 ] && ok "§5 CROSS-ENGINE: every candidate match start the engine generates is a character boundary, on the DFA self-loop, ENG_ATTEMPT's start loop and the VM's retry, and both engines agree with libpcre2 10.46 on the CORRECT answer (before this fix they agreed on the wrong one, which is why nothing caught K50)"
 
+# The matrix scrapes these two lines by name (tests/mech/run_sabotage_matrix.sh's
+# `startbnd` arm), so they are spelled the way every other suite in the tree
+# spells them rather than in this script's own words.
+echo "checks passed: $pass"
+echo "checks failed: $fail"
 echo "startbnd-diff: $pass passed, $fail failed"
 [ "$fail" -eq 0 ] || exit 1

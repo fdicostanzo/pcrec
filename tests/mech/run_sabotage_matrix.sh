@@ -2014,6 +2014,39 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            startbnd)
+                # [K50] tests/utf8/run_startbnd_diff.sh — the caller-startpos
+                # boundary axis's differential AND the cross-engine check that
+                # every position the ENGINE generates is a character boundary.
+                #
+                # ITS OWN ARM RATHER THAN `harness`, and the reason is the one
+                # that makes K50 the bug it was: for the whole of the corpus's
+                # existence BOTH ENGINES ANSWERED THE SAME WRONG THING, so no
+                # cross-engine comparison could see it, and every `.rxt` cell
+                # in the tree starts at offset 0 where the caller guard passes
+                # trivially. `harness` asks whether the corpus still gets the
+                # answers it recorded; this asks two questions the corpus
+                # cannot pose — where the two ARMS of a non-answer-identical
+                # axis diverge, and whether the engine's own invented
+                # positions agree with libpcre2 rather than with each other.
+                #
+                # THE §5 CELLS ARE PINNED TO THE REFERENCE ORACLE, not to the
+                # other engine, which is what makes them able to fail when
+                # both engines are wrong together — the exact failure mode
+                # that hid K50 for a milestone.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE, which is "not measured"
+                # rather than "not detected".
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/utf8/run_startbnd_diff.sh" \
+                    > "$work/startbnd.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
+                suite_bits+=("startbnd:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             limits)
                 # [LIM-1] tests/registry/limits_check.sh — the numeric-limits
                 # table (D90) against docs/spec/limits.md §3/§8 (forward) and
