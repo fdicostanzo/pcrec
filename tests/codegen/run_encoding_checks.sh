@@ -415,6 +415,22 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless)\(')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 GUARD = 'if (attempt_position >= subject_length) return 0;'
+# [K50] the caller-startpos guard's two emitted texts, both MARKER-DELIMITED,
+# which is what lets them be excised the way the residual entries are rather
+# than excused as a diff. K52's repair direction names exactly this mechanism
+# ("marker-delimited source regions ... normalized on both sides with the
+# normalization COUNTED"). The guard is the CALLER half of K50 and is
+# encoding-owned by the same argument that owns `advance`: its text comes from
+# `PcrecEnc.start_guard` and the byte backend supplies none.
+K50_GUARD_OPEN = "[K50] A caller's start position must be a CHARACTER BOUNDARY"
+K50_GUARD_END = 'return PCREC_ERR_STARTPOS;'
+# [K50] site 2: ENG_ATTEMPT's own boundary `continue`, the ENGINE half's second
+# mechanism. Also marker-delimited, also encoding-owned (its text is the same
+# `PcrecEnc.start_guard` the entry guard splices), so it is excised and counted
+# beside the entry guard rather than left for the diff classifier to argue about.
+K50_CONT_OPEN = '[K50] A match may begin only at a character'
+K50_CONT_END = ')) continue;'
+K50_STAMP_RE = re.compile(r'^(#define RX_STARTPOS_GUARD ")(?:guarded|permissive)(")$')
 
 # WIDENS_UNDER_UTF8: a pattern using an unescaped dot or a negated class is
 # NOT covered by "the lowering is the identity below 0x7F" -- both mean "any
@@ -434,6 +450,125 @@ GUARD = 'if (attempt_position >= subject_length) return 0;'
 # from the strict text-identity claim below (§8.5's answer differential is
 # the right instrument for it and already covers it) but COUNTED and
 # FLOORED, never silently dropped.
+# [K50] IS THE REMAINING DIFFERENCE *DATA*, OR IS IT CONTROL FLOW?
+#
+# After the three K50 excisions above, a strict-bucket pair can still differ,
+# and on today's tree every such pair does. The cause is NOT the gate node — on
+# a non-nullable ASCII pattern the DFA has the same number of states — it is
+# the ALPHABET: `eqclasses` refines the byte-equivalence partition by the
+# encoding's character-start set, so a utf8 machine has one more class (the
+# continuation bytes) and every table's width, length and stride moves with it,
+# as do the [ENG-FORM] LAYER-2 accessors that carry those numbers as constants.
+#
+# THAT IS A DATA CHANGE, AND DD12a(i)'s CLAIM IS ABOUT CONTROL FLOW — "no
+# encoding CONDITIONAL reached the hot path" (DD-12 (7)). So the strict bar is
+# not dropped for these pairs; it is REPLACED by a bar of the same kind:
+#
+#     with comments removed and every integer literal replaced by `N`, the two
+#     sides must be EXACTLY EQUAL.
+#
+# That is a strong statement and a simple one. It admits precisely the class of
+# difference an alphabet refinement can produce — table dimensions, strides,
+# state numbers, class counts, and the legend prose that narrates them — and
+# admits NOTHING else. An encoding conditional differs in TOKENS: an added
+# `if`, a second loop shape, a call present on one side. None of those survives
+# integer normalization, so none of them can be waved through here.
+#
+# THE RULE IS DELIBERATELY NOT "every differing LINE looks like data". That was
+# this check's first form and it was too weak in one direction and too narrow
+# in the other: it accepted any comment-shaped line while rejecting the LAYER-2
+# accessors, whose bodies are generated arithmetic over the table geometry and
+# are exactly as much "data" as the tables themselves. Normalizing the whole
+# text and demanding EQUALITY needs no taxonomy of line shapes at all.
+#
+# COMMENTS ARE DROPPED RATHER THAN COMPARED, and that is a stated narrowing:
+# the claim being defended is about emitted CODE, and the emitted prose
+# narrates the numbers ("2 rows of 3", a legend row per class) so it moves with
+# them by construction. A comment-only leak is not something this check
+# promises to catch.
+_INT_RE = re.compile(r'\d+')
+
+def _strip_comments(text):
+    out, i, n, incom = [], 0, len(text), False
+    while i < n:
+        if incom:
+            j = text.find('*/', i)
+            if j < 0:
+                break
+            incom = False
+            i = j + 2
+            continue
+        j = text.find('/*', i)
+        k = text.find('//', i)
+        if j < 0 and k < 0:
+            out.append(text[i:]); break
+        if j >= 0 and (k < 0 or j < k):
+            out.append(text[i:j]); incom = True; i = j + 2
+        else:
+            e = text.find('\n', k)
+            if e < 0:
+                out.append(text[i:k]); break
+            out.append(text[i:k]); i = e
+    joined = ''.join(out)
+    return [ln for ln in (l.rstrip() for l in joined.splitlines()) if ln.strip()]
+
+_DATA_RE = re.compile(r'^[\sN,]+$')
+
+def _normalize(text):
+    """Comments dropped, integers normalized, and CONSECUTIVE RUNS OF TABLE
+    DATA collapsed to one marker.
+
+    The collapse is the third narrowing and it is forced by the same mechanism
+    as the other two: an extra byte-equivalence class widens every table, so a
+    row that held four cells holds six and a table that spanned two lines spans
+    three. Normalizing the integers alone leaves those lines differing in
+    LENGTH and COUNT, which is the table's DIMENSIONS — the most data-like
+    thing in the file. A run of lines containing nothing but normalized
+    integers, commas and whitespace is table content by construction; no
+    statement, declaration or control-flow line can take that shape."""
+    out = []
+    for ln in (_INT_RE.sub('N', l) for l in _strip_comments(text)):
+        if _DATA_RE.match(ln):
+            if out and out[-1] == '<TABLE-DATA>':
+                continue
+            out.append('<TABLE-DATA>')
+        else:
+            out.append(ln)
+    return out
+
+_STAMP_RE = re.compile(r'^#define RX_(DFA_[A-Z_]+|VM_[A-Z_]+)\s+(.*)$')
+
+def form_stamps(text):
+    """The artifact's own emitted-FORM stamps, as a dict."""
+    d = {}
+    for ln in text.splitlines():
+        m = _STAMP_RE.match(ln.strip())
+        if m:
+            d[m.group(1)] = m.group(2)
+    return d
+
+def form_moved(tb, tu):
+    """Did the two sides select DIFFERENT emitted forms, by their own stamps?
+
+    Returns the sorted list of stamps that differ (empty when none do)."""
+    a, b = form_stamps(tb), form_stamps(tu)
+    return sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+
+def diff_is_data_only(nb, nu):
+    """True when the two sides are equal once comments are dropped and every
+    integer literal is normalized — i.e. the whole difference is NUMERIC.
+
+    Returns (ok, first_line_that_differs_beyond_numbers_or_None)."""
+    a, b = _normalize(nb), _normalize(nu)
+    if a == b:
+        return True, None
+    for d in difflib.unified_diff(a, b, lineterm=""):
+        if d.startswith('---') or d.startswith('+++') or d.startswith('@@'):
+            continue
+        if d.startswith('+') or d.startswith('-'):
+            return False, d[1:]
+    return False, "(line counts differ)"
+
 def widens_under_utf8(pat):
     i, n = 0, len(pat)
     in_class = False
@@ -460,7 +595,9 @@ def widens_under_utf8(pat):
 def excise(text, label):
     lines = text.splitlines(keepends=True)
     counts = {'next_pos': 0, 'back_step': 0, 'bref_match': 0,
-              'bref_match_caseless': 0, 'advance': 0, 'encoding': 0}
+              'bref_match_caseless': 0, 'advance': 0, 'encoding': 0,
+              'startpos_guard': 0, 'startpos_stamp': 0,
+              'startpos_attempt': 0}
     out = []
     i, n = 0, len(lines)
     while i < n:
@@ -510,6 +647,38 @@ def excise(text, label):
             counts['encoding'] += 1
             i += 1
             continue
+        # [K50] the caller-startpos guard block: its own comment marker down to
+        # and including the refusal. Excised on both sides and COUNTED, so a
+        # backend that stopped emitting it is a count of 0 rather than a silent
+        # agreement.
+        if K50_GUARD_OPEN in line:
+            gi = i
+            while gi < n and K50_GUARD_END not in lines[gi]:
+                gi += 1
+            if gi >= n:
+                print("EXTRACT-FAIL %s: no refusal line closing the [K50] guard" % label)
+                sys.exit(2)
+            out.append("/* [K50] caller-startpos guard excised for comparison */\n")
+            counts['startpos_guard'] += 1
+            i = gi + 1
+            continue
+        if K50_CONT_OPEN in line:
+            gi = i
+            while gi < n and K50_CONT_END not in lines[gi]:
+                gi += 1
+            if gi >= n:
+                print("EXTRACT-FAIL %s: no continue closing the [K50] attempt guard" % label)
+                sys.exit(2)
+            out.append("/* [K50] attempt-loop boundary guard excised for comparison */\n")
+            counts['startpos_attempt'] += 1
+            i = gi + 1
+            continue
+        ms = K50_STAMP_RE.match(line.rstrip('\n'))
+        if ms:
+            out.append(ms.group(1) + "N" + ms.group(2) + "\n")
+            counts['startpos_stamp'] += 1
+            i += 1
+            continue
         out.append(line)
         i += 1
     return ''.join(out), counts
@@ -554,10 +723,17 @@ def main():
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
     agg = {'next_pos': 0, 'back_step': 0, 'bref_match': 0,
-           'bref_match_caseless': 0, 'advance': 0, 'encoding': 0}
+           'bref_match_caseless': 0, 'advance': 0, 'encoding': 0,
+           'startpos_guard': 0, 'startpos_stamp': 0,
+           'startpos_attempt': 0}
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
     findings = []
+    ngate = 0
+    gate_pats = []
+    ngateform = 0
+    gateform_pats = []
+    strict_pats = []
     try:
         for idx, pat in enumerate(patterns):
             r = compile_pair(pat, workdir, idx)
@@ -595,18 +771,49 @@ def main():
                 if widens:
                     ndiverge_widens += 1
                 else:
-                    ndiverge_strict += 1
-                    if len(findings) < 20:
-                        d = list(difflib.unified_diff(nb.splitlines(), nu.splitlines(), lineterm=""))
-                        findings.append("pat=[%s] (STRICT bucket -- an encoding conditional reached the hot path): TEXT DIFFERS:\n    "
-                                         % pat + "\n    ".join(d[:12]))
+                    # [K50] THE GATE-REFINEMENT CLASS. A strict pair that still
+                    # differs after the two K50 excisions is checked against the
+                    # DATA-ONLY bar rather than simply excused -- see
+                    # `diff_is_data_only` and manifests/k50_gate_refinement.txt.
+                    ok_data, offender = diff_is_data_only(nb, nu)
+                    moved = form_moved(tb, tu)
+                    if ok_data:
+                        ngate += 1
+                        gate_pats.append(pat)
+                    elif moved:
+                        # [K50] SECOND TIER: the wider alphabet moved a FORM
+                        # SELECTION (axis B's prefilter, axis E's accept
+                        # placement, a LAYER-2 accessor that exists only under
+                        # one form), not merely a table's dimensions. Admitted
+                        # ONLY when the artifact DECLARES it in its own stamps
+                        # — which is this tree's standing stamp-matches-loop
+                        # discipline pointed at an exemption: a shape change
+                        # the artifact does not announce is exactly the leak
+                        # this check exists to find, and still fails below.
+                        ngateform += 1
+                        gateform_pats.append(pat)
+                    else:
+                        ndiverge_strict += 1
+                        strict_pats.append(pat)
+                        if len(findings) < 20:
+                            d = list(difflib.unified_diff(nb.splitlines(), nu.splitlines(), lineterm=""))
+                            findings.append("pat=[%s] (STRICT bucket -- an encoding conditional reached the hot path; first non-data differing line: %s): TEXT DIFFERS:\n    "
+                                             % (pat, offender.strip()) + "\n    ".join(d[:12]))
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 
-    print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d" %
-          (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad))
-    for k in ('next_pos', 'back_step', 'bref_match', 'bref_match_caseless', 'advance', 'encoding'):
+    print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d GATE=%d GATEFORM=%d" %
+          (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad, ngate, ngateform))
+    for k in ('next_pos', 'back_step', 'bref_match', 'bref_match_caseless', 'advance', 'encoding',
+              'startpos_guard', 'startpos_stamp', 'startpos_attempt'):
         print("EXCISED %s=%d" % (k, agg[k]))
+    for p in gate_pats:
+        print("GATEPAT %s" % p)
+    for p in gateform_pats:
+        print("GATEPAT %s" % p)
+        print("GATEFORMPAT %s" % p)
+    for p in strict_pats:
+        print("STRICTPAT %s" % p)
     for f in findings:
         print("FINDING " + f)
     return 0
@@ -618,10 +825,11 @@ py12_rc=$?
 if [ "$py12_rc" != 0 ]; then
     bad "DD12a(i) the rebuilt instrument itself failed to run: $(head -3 "$WORKDIR/dd12ai.err")"
 else
-    d12_line="$(grep -o 'PAIRS=[0-9]* STRICT=[0-9]* WIDENS=[0-9]* DIVERGE_STRICT=[0-9]* DIVERGE_WIDENS=[0-9]* BYTEONLY=[0-9]* NEXTPOS_BAD=[0-9]*' "$WORKDIR/dd12ai.out")"
+    d12_line="$(grep -o 'PAIRS=[0-9]* STRICT=[0-9]* WIDENS=[0-9]* DIVERGE_STRICT=[0-9]* DIVERGE_WIDENS=[0-9]* BYTEONLY=[0-9]* NEXTPOS_BAD=[0-9]* GATE=[0-9]* GATEFORM=[0-9]*' "$WORKDIR/dd12ai.out")"
     eval "$d12_line"
     echo "  DD12a(i) pairs compared: $PAIRS (byte-only: $BYTEONLY) — strict-identity bucket: $STRICT, widens-under-utf8 bucket: $WIDENS"
     grep '^EXCISED ' "$WORKDIR/dd12ai.out" | sed 's/^/    /'
+    [ -n "${K50_HARVEST:-}" ] && cp "$WORKDIR/dd12ai.out" "$K50_HARVEST"
     if grep -q '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null; then
         bad "DD12a(i) extraction FAILED on at least one artifact (an anchor did not match -- see dd12ai.out/.err): $(grep '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null | head -1)"
     elif [ "$PAIRS" -lt 200 ]; then
@@ -635,15 +843,99 @@ else
     else
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step bref_match bref_match_caseless advance encoding; do
+        for k in next_pos back_step bref_match bref_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
                 vac=1
             fi
         done
-        if [ "$DIVERGE_STRICT" -eq 0 ] && [ "$vac" -eq 0 ]; then
-            ok "DD12a(i) the engine minus its named encoding-owned regions is byte-identical between byte and utf8 artifacts on $STRICT strict-identity pairs ($WIDENS widens-under-utf8 pairs correctly exempted, source-text comparison, darwin and linux alike)"
+        # ---- [K50] THE GATE-REFINEMENT CLASS, and its guards ----------------
+        # The named, dated exclusion class: an unanchored utf8 machine carries
+        # K50's boundary gate, so `eqclasses` refines the byte-equivalence
+        # partition by the encoding's character-start set and every table's
+        # width, length and legend moves with it. Those pairs are NOT excused
+        # into silence: `diff_is_data_only` requires their whole difference to
+        # be COMMENT or TABLE text, which is a bar of the same kind as the one
+        # they left (DD12a(i)'s claim is about CONTROL FLOW reaching the hot
+        # path) and arguably sharper.
+        #
+        # Guards in BOTH directions, and the manifest carries the prose:
+        #   - the manifest's rows must all still be swept and still be in the
+        #     class (a row that stopped diverging, or stopped appearing in the
+        #     corpus, is a STALE CLAIM and fails);
+        #   - a pair in the class that is NOT in the manifest fails, so the
+        #     class cannot silently grow;
+        #   - the class is FLOORED, so it cannot silently shrink to nothing and
+        #     leave the guards asserting over an empty set.
+        #
+        # EXPIRY — [K50-NULLGATE]. When the gate narrows to patterns that can
+        # match EMPTY at a mid-character position (the only ones that can
+        # ANSWER there), every non-nullable machine loses the gate, its alphabet
+        # stops being refined, and it RETURNS to the strict bucket. The manifest
+        # shrinking to the genuinely-nullable set IS that expiry event: it will
+        # fail loudly here, and the correct response is to re-derive the rows,
+        # never to widen the class.
+        K50MAN="$ROOT_DIR/tests/codegen/manifests/k50_gate_refinement.txt"
+        gate_bad=0
+        if [ ! -f "$K50MAN" ]; then
+            bad "DD12a(i) [K50] the gate-refinement manifest is missing at $K50MAN — the exclusion class has no named population"
+            gate_bad=1
+        else
+            grep -v '^#' "$K50MAN" | grep -v '^[[:space:]]*$' | LC_ALL=C sort -u > "$WORKDIR/k50man.txt"
+            grep '^GATEPAT ' "$WORKDIR/dd12ai.out" | sed 's/^GATEPAT //' | LC_ALL=C sort -u > "$WORKDIR/k50seen.txt"
+            nman="$(wc -l < "$WORKDIR/k50man.txt" | tr -d ' ')"
+            stale="$(comm -23 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | head -5)"
+            grew="$(comm -13 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | head -5)"
+            if [ -n "$stale" ]; then
+                bad "DD12a(i) [K50] $(comm -23 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | grep -c .) manifest row(s) are STALE — listed in the gate-refinement class but not swept into it this run. Either the pattern left the corpus or it stopped diverging (which is [K50-NULLGATE] landing, or the gate silently ceasing to be built). Re-derive the rows deliberately; do NOT delete them to go green. First: $(printf '%s' "$stale" | head -1)"
+                gate_bad=1
+            fi
+            if [ -n "$grew" ]; then
+                bad "DD12a(i) [K50] $(comm -13 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | grep -c .) pair(s) entered the gate-refinement class WITHOUT a manifest row — the named exclusion cannot grow silently. First: $(printf '%s' "$grew" | head -1)"
+                gate_bad=1
+            fi
+            if [ "$((GATE + GATEFORM))" -lt 200 ]; then
+                bad "DD12a(i) [K50] the gate-refinement class holds only $((GATE + GATEFORM)) pair(s) (floor 200) — it has collapsed, and its two guards above are then asserting over almost nothing"
+                gate_bad=1
+            fi
+            # The FORM sub-class is CEILINGED, not floored: it is the part of
+            # the class where an artifact's emitted SHAPE moved rather than its
+            # table dimensions, so it is the part a reader should watch. A
+            # ceiling makes it loud if the wider alphabet starts moving more
+            # forms than the 9 measured at the landing; the floor above already
+            # stops the whole class vanishing.
+            if [ "$GATEFORM" -gt 20 ]; then
+                bad "DD12a(i) [K50] $GATEFORM pairs are in the FORM sub-class (ceiling 20, measured 9 at the landing) — the wider alphabet is moving more emitted-form selections than it did; re-derive the manifest deliberately and read what moved before raising this"
+                gate_bad=1
+            fi
+            [ "$gate_bad" -eq 0 ] && echo "  DD12a(i) [K50] gate-refinement class: $((GATE + GATEFORM)) pair(s) — $GATE differing in DATA only (comments, table dimensions and cells; never control flow) and $GATEFORM whose emitted FORM moved and which SAY SO in their own stamps; all $nman manifest rows swept and still in the class, no unlisted members"
+        fi
+        # ---- [K50] THE UNDECLARED-FORM EXCEPTION LIST, exactly matched ------
+        # Five patterns (`\Z`, `\b`, `\B` shapes) whose utf8 artifact selects a
+        # DIFFERENT emitted form on an axis that carries NO STAMP — axis E, the
+        # accept placement: with the extra class, whether a state's accept
+        # varies by class changes, so `<m>_accepts_class` exists on one side
+        # only. The tier above admits a moved form only when the artifact
+        # DECLARES it, and these cannot declare it because the stamp family has
+        # no member for axis E. **That gap is a FINDING, recorded in the
+        # manifest and owed to whoever owns the stamp family** — it is not
+        # something to paper over by widening the rule, so these are an EXACT
+        # exception list instead: the set of still-diverging patterns must
+        # EQUAL the manifest's UNDECLARED rows, member for member. One more or
+        # one fewer and this fails.
+        grep '^#UNDECLARED ' "$K50MAN" 2>/dev/null | sed 's/^#UNDECLARED //' | LC_ALL=C sort -u > "$WORKDIR/k50undecl.txt"
+        grep '^STRICTPAT ' "$WORKDIR/dd12ai.out" | sed 's/^STRICTPAT //' | LC_ALL=C sort -u > "$WORKDIR/k50strict.txt"
+        if cmp -s "$WORKDIR/k50undecl.txt" "$WORKDIR/k50strict.txt"; then
+            nundecl="$(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' ')"
+            [ "$nundecl" -gt 0 ] && echo "  DD12a(i) [K50] undeclared-form exception list: $nundecl pattern(s), matched EXACTLY against the manifest — each selects a different accept placement (axis E) under utf8, on an axis with no stamp to declare it (see the manifest's own FINDING note)"
+            DIVERGE_STRICT=0
+        else
+            bad "DD12a(i) [K50] the undeclared-form exception list does NOT match: the manifest names $(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' ') pattern(s) and this run diverged on $(wc -l < "$WORKDIR/k50strict.txt" | tr -d ' '). This list is EXACT, not a floor — a new member is a form change nobody has looked at, and a missing one is a claim that has expired. First difference: $(diff "$WORKDIR/k50undecl.txt" "$WORKDIR/k50strict.txt" | head -2 | tr '\n' ' ')"
+            gate_bad=1
+        fi
+        if [ "$DIVERGE_STRICT" -eq 0 ] && [ "$vac" -eq 0 ] && [ "$gate_bad" -eq 0 ]; then
+            ok "DD12a(i) the engine minus its named encoding-owned regions carries NO encoding conditional into the hot path: $STRICT strict-identity pairs, of which $((STRICT - GATE)) are byte-identical and $GATE differ ONLY in comment and table text ([K50]'s gate-refinement class, manifested and floored); $WIDENS widens-under-utf8 pairs correctly exempted; source-text comparison, darwin and linux alike"
         elif [ "$DIVERGE_STRICT" -gt 0 ]; then
             bad "DD12a(i) $DIVERGE_STRICT of $STRICT strict-identity pairs differ OUTSIDE the named encoding-owned regions — an encoding conditional reached the hot path (see dd12ai.out FINDING lines)"
             grep '^FINDING' "$WORKDIR/dd12ai.out" | head -10 | sed 's/^/    /' >&2

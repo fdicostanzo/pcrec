@@ -345,6 +345,150 @@ accident of an uninitialised buffer, and it is the same family as
 
 ---
 
+## 6b. K50's gate falsified DD12a(i)'s strict bucket — DIAGNOSED, then REPAIRED under ruling
+
+**STATUS: CLOSED by the interim repair in §6c.** `make test-encoding-checks`
+went RED at the merged tree — 10 passed / 1 failed — where it had been green on
+both sides before the merge, and the manager ruled the interim re-scope to this
+lane. §6b below is the diagnosis as it stood at handback; §6c is what landed.
+
+**It was not a merge mistake**; it was my change meeting encchk's rebuilt
+DD12a(i), which landed hours earlier. I did not touch that check on my own
+authority — re-scoping someone else's just-landed instrument is a ruling, not a
+lane's edit — and did it only once the ruling arrived.
+
+```
+FAIL: DD12a(i) 243 of 243 strict-identity pairs differ OUTSIDE the named
+      encoding-owned regions — an encoding conditional reached the hot path
+```
+
+**THE DIAGNOSIS.** DD12a(i) compiles each ASCII pattern under both encodings,
+excises the named encoding-owned regions (`next_pos`, `back_step`, the two
+`bref` compares, K49's `advance`, `.encoding`) and requires the rest to be
+textually identical. Its STRICT bucket is patterns whose lowering is a no-op
+under utf8 — no `.`, no negated class — so any remaining difference was a
+leak. **K50's boundary gate is a real automaton state on EVERY unanchored
+machine regardless of the pattern's alphabet**, so the utf8 tables now differ
+from the byte ones for `b|c`, `frank|fred`, `a(b|c)+d` and 240 others.
+
+**It is not excisable the way the others are.** `advance` is TEXT and gets
+excised 182 times; the gate is distributed through the transition tables and
+the state numbering. This is precisely the scope problem K52 recorded when it
+retired the old instrument (*"since K49 the retry advance is the encoding's
+text too"*) arriving one row later against the new one.
+
+**TWO DISPOSITIONS, and I recommend the second.**
+
+**(A) Re-scope the check.** Exempt unanchored machines and keep the claim for
+the machines that carry no gate (`ENG_ATTEMPT`, anchored). Honest, but it
+moves most of the corpus out of the strict bucket, and a bucket that small is
+the K35 shape the rebuild existed to escape.
+
+**(B) NARROW THE GATE to nullable patterns, which is very likely right on its
+own merits.** A reported match must CONSUME a byte at its start, and under
+utf8 no lowered path begins with a continuation byte — so **only a pattern
+that can match EMPTY at a mid-character position can ever answer there.** That
+is not a new argument: it is the one K50's own entry uses to show the hybrid
+handoff was safe (*"only a pattern that matches EMPTY there can do it"*). I
+did not narrow it because building the general form first is the house rule,
+but the general form here may simply BE "gate where an empty match is
+possible".
+
+MEASURED, on the exact patterns that broke the check:
+
+| pattern | empty match at 0? | gate needed? |
+|---|---|---|
+| `b\|c`, `frank\|fred`, `a(b\|c)+d` | **no** (`rc=0`) | no — cannot answer mid-character |
+| `\B` | **yes** (`(0,0)`) | yes — K50's own witness |
+
+**What (B) would buy beyond unblocking the check**: fewer moved artifacts at
+the abi bump, and it removes the §5 throughput cost from every non-nullable
+pattern — the 1.33× `ENG_ATTEMPT` regression I measured is paid today by
+patterns that provably cannot need the gate.
+
+**What it would cost**: a real design round — the DFA already knows the
+property (the unanchored start's closure accepts without consuming), but it is
+a new gate condition, a new sabotage direction ("gate omitted on a nullable
+pattern"), and its own validation pass. Not something to do unilaterally at
+handback.
+
+Everything else at the merged tree is green: `make strict`, `test-startbnd`
+7/0, `tests/utf8` 1342/0, the ratchet, and all four sabotage rows DETECTED.
+
+---
+
+## 6c. THE INTERIM REPAIR AS LANDED (ruling: named manifest exclusion, K51 shape)
+
+The manager ruled disposition (A′) — **not** the (A) I described above and
+**not** (B), which is chartered separately as `[K50-NULLGATE]`: a **named,
+dated, manifest-backed exclusion class** in the shape §8.5's K51 manifest
+established, guarded in both directions, with an expiry note naming the row
+that retires it. Commit `4cc65230`, `tests/codegen/run_encoding_checks.sh` +
+`tests/codegen/manifests/k50_gate_refinement.txt`. **11 passed / 0 failed.**
+
+**What the mechanism actually excuses, and what it does not.** Three new
+excisions cover the gate's own TEXT (`startpos_guard` 435 hits,
+`startpos_stamp` 506, `startpos_attempt` 93, beside the pre-existing
+`next_pos` 506 / `back_step` 4 / `bref_match` 2 / `bref_match_caseless` 2 /
+`advance` 182 / `encoding` 506). What text alone cannot reach is the
+**alphabet refinement**: `UPC_NOSTART` is a fourth class, so the utf8 machine's
+transition tables differ from the byte machine's in DIMENSION and in CELL
+VALUES on patterns whose lowering is otherwise a no-op. The class admits a pair
+only when, after normalising every integer to `N` and collapsing runs of pure
+table data, **the two texts are EQUAL** — so the excusal is confined to
+comments, table dimensions and table cells, and any difference in control flow,
+in a declaration, or in an emitted statement still lands in the strict bucket
+and still fails. That is the manager's "confined to transition-table regions"
+condition made structural rather than asserted.
+
+A second tier admits **4** pairs whose emitted FORM genuinely moved — and only
+because the artifact **SAYS SO IN ITS OWN STAMPS** (`RX_DFA_*`/`RX_VM_*`): the
+declaration is read off the artifact, never off the manifest, so a form that
+moves silently cannot buy its way in. **3 patterns move a form that has NO
+stamp** (`\Z`, `\b`, `\B` — axis E is unstamped, recorded as a FINDING block in
+the manifest header) and those three are an EXACT set match against the
+manifest's `#UNDECLARED` rows: not a floor, because a new member is a form
+change nobody has looked at and a missing one is a claim that has expired.
+
+**The verdict line at the restored tree:**
+
+```
+DD12a(i) [K50] gate-refinement class: 238 pair(s) — 234 differing in DATA only
+  (comments, table dimensions and cells; never control flow) and 4 whose
+  emitted FORM moved and which SAY SO in their own stamps; all 207 manifest
+  rows swept and still in the class, no unlisted members
+DD12a(i) [K50] undeclared-form exception list: 3 pattern(s), matched EXACTLY
+  against the manifest
+PASS: DD12a(i) ... 243 strict-identity pairs, of which 9 are byte-identical
+  and 234 differ ONLY in comment and table text
+```
+
+**Both-direction guards** (the manager's condition, and the reason this is not
+a blanket excusal): a **staleness** guard (a manifest row that stops diverging
+fails, naming `[K50-NULLGATE]` landing as the legitimate cause and forbidding
+deletion-to-go-green), an **unlisted-member** guard (the class cannot grow
+silently), a **floor of 200** on the class (it cannot collapse to nothing while
+its guards go on asserting over almost nothing — K35), a **CEILING of 20** on
+the moved-form tier, and the exact `#UNDECLARED` set match. The manifest header
+is dated 2026-09-06 and names `[K50-NULLGATE]` as the row that shrinks or
+retires it; `K50_HARVEST=1` regenerates its rows.
+
+**Sabotage-validated in three failing directions**, each caught:
+
+| plant | caught by | message |
+|---|---|---|
+| A: a real encoding conditional planted in `ENG_ATTEMPT`'s emitted loop under utf8 only | the exact `#UNDECLARED` set match, the floor AND the staleness guard | 82 diverged against 3 named; class collapsed to 148 (floor 200); 79 rows stale |
+| B: a manifest row naming a pattern that does not exist | the staleness guard | "1 manifest row(s) are STALE … First: `zzz_no_such_pattern_zzz`" |
+| C: a class member with its manifest row removed | the unlisted-member guard | "1 pair(s) entered the gate-refinement class WITHOUT a manifest row … First: `b\|c`" |
+
+A is the one worth reading: the plant is a *genuine* leak of an encoding
+conditional into the hot path, and it does not merely trip one guard — it
+leaves the data-only class entirely, which is the property that makes this an
+exclusion rather than a hole. The tree was restored after each plant and the
+check re-verified 11/0 at the restored tree.
+
+---
+
 ## 7. Open questions for the manager
 
 **(a) TWO `.rxt` FORMAT DECISIONS, which are yours under dd13b, not a lane's.**
