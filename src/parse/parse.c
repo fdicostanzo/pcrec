@@ -818,6 +818,32 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
         *claim = (ExtResult){ .what = EXT_NOT_MINE };
         return val;
     }
+    /* [M5.0 stage 3] A PRODUCED MEMBER SET MOVES THE CURSOR TO ITS OWN `end`,
+     * and until this stage nothing here needed to.
+     *
+     * Every earlier class producer's construct IS its two-byte escape — `\d`,
+     * `\w`, `[[:alpha:]]`'s own doorway one branch up — so the cursor already
+     * sat past it and the advance was invisible. `\p{L}` is the first member
+     * producer with a BODY, and without this line the `{`, `L` and `}` are
+     * re-read as ordinary class members: `[^\p{L}]` came out excluding `{` and
+     * `}` as well as the letters, and `[\p{L}-z]` never saw its own dash.
+     *
+     * IT IS `esc_atom`'s [M6.5.2] LESSON AT THE CLASS POSITION, and that entry
+     * predicted this one in advance ("a LONGER-BODIED ATOM PRODUCER must carry
+     * its own end and advance here"). The failure has the same shape too: not
+     * a refusal, a silently different language. The SCALAR branch above has
+     * always advanced; this is the members branch catching up, and it is
+     * `esc_class_value` rather than `p_class` that does it for the same reason
+     * the scalar branch is here — this function owns the cursor from the
+     * moment it consumes the backslash.
+     *
+     * FOUND BY tests/uprops/run_uprops_tests.sh's ORACLE-FREE invariant
+     * `[^\p{L}] == \P{L}`, not by the membership differential: both sides of
+     * that differential compile `\p{L}` at an ATOM, where the bug does not
+     * live. */
+    if (claim->what == EXT_MEMBERS)
+        cx->pos = claim->end;
+
     if (claim->what != EXT_REFUSAL && claim->what != EXT_MEMBERS)
         /* The wall — see esc_atom. EXT_REFUSAL and EXT_MEMBERS travel UP:
          * p_class decides whether they fire/OR as-is or trip the endpoint
