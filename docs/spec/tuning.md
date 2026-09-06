@@ -23,7 +23,9 @@ document remains the promise about what denying/forcing one DOES.
 A tuning flag is a **generation-time choice** (D18: options are compiled
 away, never a runtime parameter) that selects among machinery the compiler
 could otherwise choose on its own. The defining contract, true of every
-flag in §2 below except the two named ENGINE-SELECTING there:
+flag in §2 below except the two named ENGINE-SELECTING there **and §2.23,
+the one SEMANTIC axis** (added by [K50], 2026-09-06 — read its section
+before assuming the sentence below covers it):
 
 > **Denying (or forcing) a tuning axis must not change what the emitted
 > matcher answers for any subject.** The span, every capture slot, and the
@@ -1707,6 +1709,72 @@ reference. What the emitter DID is reported by `<PREFIX>_VM_CLS_FOLDS`
 **VM route only.** The DFA route's class machinery is the byte-class
 partition and the scan edge's own axis-I bodies; nothing there reads
 `vm_cls_shape`, and no DFA artifact carries the stamp.
+
+### 2.23 `-fno-startpos-guard` — `PCREC_NO_STARTPOS_GUARD` (bit 25)
+
+**THIS IS THE ONE AXIS IN THIS DOCUMENT THAT IS NOT ANSWER-IDENTITY-PRESERVING,
+AND EVERY OTHER ODDITY ABOUT IT FOLLOWS FROM THAT.** Read §1's contract, then
+read this: the two builds give DIFFERENT ANSWERS on one input class, on
+purpose. It is not an engine-selecting axis either (§2.8's family) — both arms
+compile to the same automaton and select the same engine. It selects between
+two SEMANTICS for a caller-supplied start position, both of which are ruled,
+so the axis is a contract choice wearing a tuning flag's spelling.
+
+| | |
+|---|---|
+| **What it denies** | the caller-startpos boundary guard at the emitted entries (`docs/spec/match_api.md` §3.1) |
+| **Default** | the guard is ON |
+| **Stamp** | `<PREFIX>_STARTPOS_GUARD`, a closed token: `"guarded"` or `"permissive"` |
+| **Answer-identical?** | **NO** — see below |
+| **Engine-selecting?** | no |
+| **Inert under** | the `byte` encoding, where every position is a character boundary; the two builds are byte-identical there |
+
+**WHAT THE TWO ARMS ANSWER.** Under an encoding with multi-byte characters:
+
+- **guarded (default)** — a `startpos` inside a character is refused with
+  `PCREC_ERR_STARTPOS` (`match_api.md` §4). This is libpcre2's own behaviour
+  under `PCRE2_UTF`, which answers `PCRE2_ERROR_BADUTFOFFSET` for every
+  mid-character `startoffset` regardless of pattern (measured 20/20;
+  `docs/design/utf8_measurements/out/startbnd.txt` §2, 10.46).
+- **permissive (`-fno-startpos-guard`)** — the artifact answers at whatever
+  position the caller named, with the automaton's own answer. On a leading
+  NEGATIVE assertion that differs from BOTH PCRE2 UTF modes in the
+  SUCCEEDING direction: `(?<!.)` at offset 1 of `CE B1 CE B2` reports
+  `(1,1)`, because a truncated leading character has no path and a negative
+  assertion succeeds exactly where its body has none.
+
+Neither arm ROUNDS the caller's position to the next boundary. That third
+semantics (`PCRE2_MATCH_INVALID_UTF`'s) is deliberately not on offer —
+`match_api.md` §3.1 says why.
+
+**IT IS NOT MASKED OUT OF `rx_info.flags`,** and it is the only `-fno-` flag
+in this document that is not. Every other member of that mask changes an
+emitted SHAPE for one language, so stamping it would make two
+identically-behaving artifacts differ in their reflection surface over a knob
+with no observable effect. Here the effect IS observable, and a caller reading
+an artifact needs to be able to tell which contract it carries.
+
+**WHAT IT DOES NOT TOUCH, and this is the half a reader is most likely to get
+wrong.** The positions the ENGINE generates — an unanchored search's candidate
+match starts, a failed attempt's retry — are the encoding's character
+boundaries under BOTH arms, unconditionally. That is K49's and K50's
+wrong-answer fix and it has no flag; a build that denied it would be the K50
+defect and there is no way to ask for one. The axis governs where a CALLER may
+point the entry, and nothing else.
+
+**THE DIFFERENTIAL, and its non-vacuity floor.** `tests/utf8/run_startbnd_diff.sh`
+compiles one witness family both ways into ONE translation unit and sweeps
+every `startpos` of every subject: the two arms must be IDENTICAL at every
+character boundary (so the guard is transparent where it should be) and must
+DIVERGE at exactly the mid-character set with the typed code. An EMPTY
+divergence population is a dead guard and a RED result, not a pass. A third
+arm compiles the same family under `byte` and asserts the artifact is
+guard-free under either flag.
+
+**`make test-axes` CARRIES IT AS A DOCUMENTED DIVERGENCE CLASS**, not as an
+identity claim — the one axis in that sweep's roster that cannot be swept for
+identity. The class is floored (a run in which no cell diverges fails), which
+is what stops the exemption from quietly becoming a hole.
 
 ## 3. The DFA side's own stamps
 

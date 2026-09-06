@@ -1798,7 +1798,49 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * Comparison (B) compares whole files and is re-pinned in this same
      * change, per D76/D94 (the lane pins its own last src commit; the
      * manager re-pins to the merge). */
-    sb_puts(c,   "    .abi = 23,\n");
+    /* [K50] abi 23 -> 24 (D76/D94): CANDIDATE MATCH STARTS ARE THE ENCODING'S
+     * CHARACTER BOUNDARIES, plus the caller-startpos guard. Per artifact kind,
+     * r37 A12's lesson:
+     *
+     *  - EVERY artifact of both engines gains TWO lines:
+     *    `#define PCREC_ERR_STARTPOS (-7)` in the shared `PCREC_RX_ABI_H`
+     *    block, and a `<PREFIX>_STARTPOS_GUARD` selection stamp in the shared
+     *    prologue. Those two alone move the whole population's bytes, which is
+     *    what makes this a bump at all — a `byte` artifact gains nothing else
+     *    anywhere, and its stamp honestly reads `"permissive"` because that
+     *    backend restricts no position rather than because a flag was passed.
+     *  - NO `byte` ARTIFACT'S PROGRAM MOVES, and that is the acceptance
+     *    condition rather than an observation. The gate's `start_cls` is NULL
+     *    under that backend, so `nfa_wrap_unanchored` builds its pre-K50 two
+     *    states, the class axis never produces UPC_NOSTART, `eqclasses`
+     *    performs no fourth refinement, `ENG_ATTEMPT`'s loop gains no
+     *    `continue`, and the entries emit no guard. Comparison (A) is
+     *    expected byte-identical on the whole byte population against the
+     *    UNCHANGED `ac4917d` pin.
+     *  - A `utf8` UNANCHORED DFA artifact's MACHINE moves — the gate is a real
+     *    NFA state, so the subset construction sees a different automaton and
+     *    the transition tables, the state numbering and (where a class had not
+     *    already been split at 0x80/0xC0) the byte-equivalence partition all
+     *    change. That is the second bump in this file's history to move a
+     *    MACHINE rather than emitted text, [OPT-5]'s scan edge being the
+     *    first.
+     *  - A `utf8` ENG_ATTEMPT artifact gains the loop's boundary `continue`,
+     *    and every `utf8` artifact of either engine gains the entry guard —
+     *    one line in `<prefix>_search` on the DFA route, one in each of the
+     *    three `_run` statics on the VM route.
+     *  - No struct offset moves and no `rx_info` member is added.
+     *  - AN ANSWER MOVES, WHICH NO EARLIER BUMP IN THIS LIST CAN SAY. K50 is a
+     *    wrong-answer fix: `\B` over `61 CE B1` from `startpos 0` answered
+     *    `(2,2)` and answers `(3,3)`, which is what libpcre2 10.46 answers
+     *    under both UTF option words. So `-fno-startpos-guard` does NOT sweep
+     *    this to identity and is not meant to — it addresses the CALLER-side
+     *    half only, and `make test-axes` carries that half as a documented,
+     *    floored divergence class rather than as an identity claim.
+     *
+     * Comparison (B) compares whole files and is re-pinned in this same
+     * change, per D76/D94 (the lane pins its own last src commit; the
+     * manager re-pins to the merge). */
+    sb_puts(c,   "    .abi = 24,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -6867,6 +6909,28 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     emit_feature_comment(c);
     emit_feature_macros(c);
     emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
+    /* [K50] THE CALLER-STARTPOS AXIS'S STAMP — a §6.3 family (a) SELECTION
+     * FACT: unconditional, on every artifact of both engines, with an
+     * engine-appropriate value on each. It rides the SHARED prologue rather
+     * than either engine's own stamp block because the axis is neither
+     * engine's: it is a property of the ENTRIES, which both emitters write.
+     *
+     * A CLOSED TOKEN AND NOT A BOOLEAN, `<PREFIX>_ENGINE_SEL`'s shape: a
+     * consumer buckets on a value, and "guarded"/"permissive" name the two
+     * SEMANTICS §3.1 documents rather than the state of a flag. It is
+     * deliberately NOT derived from the flag alone — an artifact whose
+     * encoding restricts no position emits no guard whatever the caller
+     * asked, so `byte` reads "permissive" honestly and a reader is not
+     * invited to conclude the flag was passed. The value therefore comes from
+     * the SAME text the guard is emitted from, which is what stops a stamp
+     * and its body drifting apart (this file's `unanch_start` rule). */
+    {
+        char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
+        sb_printf(c, "#define %s_STARTPOS_GUARD \"%s\"\n", g->upper,
+                  *pcrec_startpos_guard_text(cx, probe, sizeof probe, "",
+                                             "p", "s", "n")
+                      ? "guarded" : "permissive");
+    }
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {

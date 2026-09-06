@@ -156,8 +156,13 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `23`
-([FORM-CHAR] STEP 1, the VM's ASCII-FOLD class test — see §6.3's
+events but never stated the general rule; `rx_info.abi` is `24`
+([K50], CANDIDATE MATCH STARTS ARE CHARACTER BOUNDARIES — every artifact
+gains `#define PCREC_ERR_STARTPOS (-7)` in the shared ABI block, and under a
+multi-byte encoding the unanchored machine, `ENG_ATTEMPT`'s start loop and
+the entries' new boundary guard all move; see §3.1's startpos paragraph,
+§4's below-the-floor block and `docs/spec/tuning.md` §2.23; `23` was
+[FORM-CHAR] STEP 1, the VM's ASCII-FOLD class test — see §6.3's
 `_VM_CLS_FOLDS` entry and `docs/spec/tuning.md` §2.22; `22` was
 [CC-DIFF] STEP 2, the VM ENTRY SHAPE: every VM artifact gains the
 `<PREFIX>_VM_ENTRY_SHAPE` and `<PREFIX>_VM_PROGRAM_BYTES` stamps, and at rungs
@@ -498,6 +503,7 @@ Searches `s[startpos..n)` for the leftmost match and returns:
 | `0` | no match; `caps` (if non-NULL) is left **untouched** — the `int` return alone communicates match/no-match |
 | `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` / `_RECURSE` | engine gave up (§4); `caps` also left **untouched**. `_RECURSE` is reserved with no producer yet ([DD-14] wave A, D71 item 1) |
 | `PCREC_ERR_INTERNAL` | NOT a give-up (§4) — the artifact detected its own analysis/emission inconsistency (module `lookaround`'s negative-polarity end-check is the one producer today); `caps` left **untouched** like every other negative return ([DD-14] wave A commit 2, D71 item 1) |
+| `PCREC_ERR_STARTPOS` | NOT a give-up (§4) — `startpos` is not a character boundary of this artifact's encoding, so the call is REFUSED and nothing is attempted; `caps` left **untouched**. Only an artifact compiled for an encoding with multi-byte characters can return it, and only when the guard is not denied ([K50], the paragraph below) |
 
 Note that `0` here means **no match**, not a zero-length match. A
 zero-length match is a success: it returns `1` with
@@ -509,6 +515,56 @@ IS a zero-length match, and no-match is `-1`.)
 did exactly this, and the signature costs them nothing new).
 `startpos > n` returns `0`. `^` anchors to absolute offset `0` regardless
 of `startpos`. `s` may be `NULL` only when `n == 0`.
+
+**`startpos` MUST BE A CHARACTER BOUNDARY OF THE ARTIFACT'S ENCODING, AND BY
+DEFAULT THE ARTIFACT ENFORCES IT** ([K50]; the axis is
+`docs/spec/tuning.md` §2.23). Under the `byte` encoding every position is a
+character boundary, so this sentence costs a byte-compiled caller nothing and
+no guard is emitted at all. Under an encoding with multi-byte characters a
+`startpos` inside a character is **refused** with `PCREC_ERR_STARTPOS` — a
+negative return below `PCREC_ERR_FLOOR` (§4), and not a give-up: nothing was
+attempted and no budget was spent. The test is O(1) and reads at most one
+byte of `s`.
+
+- **This is what libpcre2 does, and the shape was chosen after measuring it.**
+  Under `PCRE2_UTF` every mid-character `startoffset` returns
+  `PCRE2_ERROR_BADUTFOFFSET`, uniformly — measured over ten patterns at both
+  mid-character offsets of a two-character subject, 20 of 20 refused, with
+  the same ten patterns answering normally at all three boundary offsets
+  (`docs/design/utf8_measurements/out/startbnd.txt` §2, libpcre2 10.46).
+  Under D26 pcrec owes the refusal, not the number.
+- **The order against `startpos > n` is the one stated above**: a `startpos`
+  past the end of the subject still returns `0`, as it always has. Every
+  position at or beyond `n` counts as a character boundary. (libpcre2 answers
+  `PCRE2_ERROR_BADOFFSET` there instead; pcrec does not change its own
+  long-standing answer to match, and this is a deliberate divergence rather
+  than an oversight.)
+- **The anchored entries of §3.2/§3.3 carry the same guard** against
+  `ctx->pos`, so a caller cannot reach the permissive behaviour by choosing a
+  different entry; §10's `_in` entries inherit it from the bodies they share.
+- **`<prefix>_next_pos` (§3.1.1) is the supported way to produce a valid
+  `startpos`**, and the find-all loop above already uses it — which is why
+  that loop is unaffected by this rule in either direction.
+- **`-fno-startpos-guard` selects the other semantics**, and it is a real
+  alternative rather than a way to switch a check off: the artifact then
+  answers at whatever position the caller named, with the automaton's own
+  answer. For a leading NEGATIVE assertion that answer differs from both of
+  PCRE2's UTF modes in the SUCCEEDING direction — `(?<!.)` at offset 1 of the
+  four bytes `CE B1 CE B2` reports `(1,1)` — because a truncated leading
+  character has no path and a negative assertion succeeds exactly where its
+  body has none. **Neither arm ROUNDS the caller's `startpos`.** Refusing it
+  and honouring it are the two choices on offer; silently advancing to the
+  next boundary (which is `PCRE2_MATCH_INVALID_UTF`'s behaviour) is not one,
+  because a caller handed an answer for a position it did not ask about
+  cannot tell that from an answer for the one it did.
+
+**WHAT THE ARTIFACT PROMISES ABOUT ITS OWN POSITIONS IS NOT PART OF THIS
+AXIS.** Every position the ENGINE generates — an unanchored search's candidate
+match starts, a failed attempt's retry — is a character boundary of the
+encoding, unconditionally and under either setting of the flag. That is K49's
+and K50's fix, and it has no knob: a reported match span never begins inside a
+character on any subject, whichever arm the artifact carries. The flag governs
+only where a CALLER may point the entry.
 
 **Every offset written to `caps` is an ABSOLUTE offset into `s`, never
 relative to `startpos`** — measured, and the property a find-all loop
@@ -1128,6 +1184,7 @@ bound on the work ONE call may do uses `_in` or `-fno-tiered-entry`
 #define PCREC_ERR_RECURSE  (-5)  /* [DD-14] reserved: no producer yet (D71 item 1) */
 #define PCREC_ERR_FLOOR    (-5)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
 #define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
+#define PCREC_ERR_STARTPOS (-7)  /* [K50] below PCREC_ERR_FLOOR: NOT a give-up -- a mid-character startpos was REFUSED */
 ```
 
 **[ABI-NS], 2026-08-18 (D60).** These four were spelled `<PREFIX>_ERR_STEPS`/
@@ -1190,6 +1247,31 @@ own internal `return`. No such call sites are emitted by pcrec today
 here for whichever future work (callouts, composition) first emits one.
 `PCREC_ERR_INTERNAL` now gives that future trap a real value it would
 actually fire on — trapping on it there IS the design, not a gap.
+
+**[K50], 2026-09-06. `PCREC_ERR_STARTPOS` IS THE SECOND BELOW-THE-FLOOR CODE,
+AND IT IS A REFUSAL OF THE CALL RATHER THAN A REPORT ABOUT THE ENGINE.** Every
+value in `[PCREC_ERR_FLOOR, -2]` says the engine ran and exhausted something.
+`PCREC_ERR_INTERNAL` says the artifact caught its own inconsistency. This one
+says the CALLER named a `startpos` (or a `ctx->pos`) that is not a character
+boundary of the artifact's encoding, so no attempt was made and no budget was
+touched — §3.1 states the rule and `docs/spec/tuning.md` §2.23 states the axis
+that selects the other semantics.
+
+Three consequences, in the order a caller meets them:
+
+- **Every artifact DEFINES it and only some can RETURN it.** Under the `byte`
+  encoding every position is a character boundary, so no guard is emitted and
+  the value is unreachable — exactly as `PCREC_ERR_FRAMES` is unreachable on a
+  DFA-only artifact, and for the same reason the constant is emitted anyway: a
+  caller's `switch` written today must survive a later compile of the same
+  pattern under a different encoding.
+- **A composed call site traps on it**, by the below-the-floor rule stated
+  above, and that is the design rather than a gap. After K50 every position an
+  ENGINE generates is a character boundary, so a composed callee handed a
+  non-boundary means the engine broke its own rule.
+- **It does not renumber anything.** `PCREC_ERR_FLOOR` is unchanged at −5 and
+  the give-up partition is unchanged; this is a new value in the region D49
+  already reserved.
 
 **`PCREC_ERR_FRAMES` names a RESOURCE, not an array and not an owner.**
 Two distinct capacities can exhaust and both report this one code: the
@@ -1813,8 +1895,19 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `23` on every artifact today ([FORM-CHAR] STEP 1 bumped
-  it from 22: the VM's ASCII-FOLD CLASS TEST — a two-member pool class that
+- **`rx_info.abi` is `24` on every artifact today ([K50] bumped it from 23:
+  CANDIDATE MATCH STARTS ARE THE ENCODING'S CHARACTER BOUNDARIES. Every
+  artifact of both engines gains one line in the shared ABI block —
+  `#define PCREC_ERR_STARTPOS (-7)`, §4's second below-the-floor code — and
+  NO `byte` artifact moves in any other way. Under `utf8` the unanchored
+  machine itself moves (the boundary gate is a real automaton state), an
+  `ENG_ATTEMPT` artifact's start loop gains a boundary `continue`, and every
+  artifact's entries gain the caller-startpos guard §3.1 documents. It is
+  the first bump in this list carried by a change that moves an ANSWER —
+  K50 was a wrong-answer defect, not a shape change — so unlike every deny
+  flag before it, `-fno-startpos-guard` restores only the CALLER-side
+  semantics and not identity. `23` was [FORM-CHAR] STEP 1: the VM's
+  ASCII-FOLD CLASS TEST — a two-member pool class that
   is an ASCII fold pair (differing only in bit 0x20, both letters, what
   D23's parse-time caseless folding produces) tests as
   `(byte | 0x20) == lower` and its 32-byte `class_bitmap` table is not
