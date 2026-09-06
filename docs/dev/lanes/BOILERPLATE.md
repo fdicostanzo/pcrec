@@ -67,5 +67,7 @@ of your branch point before claiming a red as yours or pre-existing.
 
 ## Delivery bar
 Branch lane/<lane>, committed, report committed, targeted validation run
-with numbers in the handback. The full battery is the manager's at merge.
+with numbers in the handback. RE-PIN EVERY MANIFEST/COUNT/PIN YOUR CHANGE
+MOVES in the same delivery (readers found by grep) — post-merge manager
+cleanup of your pins is a delivery failure. The full battery is the manager's at merge.
 Never merge to main yourself.

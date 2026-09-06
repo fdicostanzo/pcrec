@@ -69,6 +69,31 @@ model is the most expensive in the ledger — mechanical runs, sweeps,
 re-pins, triage, doc maintenance all go to lanes; the manager keeps
 judgment, briefs, review, merges.
 
+**STANDING DELEGATION RULES (delegaudit, 2026-09-06 — measured on sessions
+55/56; ranked by savings):**
+1. **Liveness polling never spends a manager turn.** No prompt-firing
+   watchdog crons: run a plain background WATCHER SCRIPT (zero model calls)
+   that exits — producing ONE notification — only on actionable state
+   (lane quiet >20-25 min, completion marker, worktree gone). Each old
+   10-min tick re-read the manager's entire context (~650-800K cache
+   tokens) to say "no change" (~73M tokens across two sessions).
+2. **A red battery/suite stage launches a TRIAGE LANE before the manager
+   reads the log** (diagnose each failure, real-regression vs stale pin,
+   fix in a worktree, re-validate, report fix-by-fix). Done inline this
+   was 35% of session 55's entire cost, twice over.
+3. **A stale-doc finding goes to `compliance-refresh` or a lane, never
+   re-diagnosed by hand** (17.9% of session 56, two incidents).
+4. **A lane's delivery bar includes re-pinning its own manifests/pins** —
+   never post-merge manager cleanup (in BOILERPLATE.md).
+5. **Unexplained repo/workspace state gets ONE read-only fact-finding
+   agent before any recovery command** — one round trip, not 19 serial
+   shell probes.
+6. **Long-document fact-gathering for a downstream artifact goes to a lane
+   that returns only extracted facts.**
+Correctly inline (the audit's counter-cases): orientation, briefs,
+review verdicts on delivered reports, merges, rulings, design
+conversation with Frank.
+
 Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
 
 - **Limit subagents doing significant work to 3 concurrent lanes** — more
