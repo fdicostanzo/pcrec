@@ -21825,3 +21825,54 @@ startpos-boundary guard per the full charter) and [ENCCHK-DD12A]
 row + the suite token). Watchdog cron up. AskUserQuestion UI dropped
 mid-session on Frank's note (questions weren't rendering) — rulings
 taken in prose from here.
+
+## 2026-09-06 (EDT), fifty-sixth session part 2 — K50 MERGED (abi 24): the boundary rule on all three mechanisms, a SECOND live wrong-answer site the charter called theoretical, and D97's below-floor error family
+
+**[K50-BNDSTART] merged** (lane k50bnd, opus, 20 commits, 8e0fe77f):
+candidate match starts are the encoding's character boundaries. The IR
+gains the two-split wrap (nfa->start ungated = the caller's position;
+the self-loop returns through a split gated by N_CSTART, N_EOL_M's
+shape, class axis gains UPC_NOSTART with its partition precondition
+CHECKED); ENG_ATTEMPT's start loop gains a guarded continue; the hybrid
+handoff is covered by construction (its prefilter IS an emitted DFA).
+Under byte both backend pointers are NULL so no gate node exists — "the
+encoding with no defect pays nothing" as construction, proven by the
+identity gate at 16/16, differing=0, all four axes. abi 23->24, full
+D76/D94 ritual, (B) re-pinned to the merge commit by the manager.
+
+**The lane's two findings beyond the charter**: (1) site 2 was a LIVE
+wrong-answer producer — witness (?m)^a|\B at a VALID startpos answering
+mid-character, needing both branches (BOT-family routes to ENG_ATTEMPT,
+nullable second branch keeps interior starts live); pure (?m)^/\G are
+self-gating, which is why it stood unwitnessed. K50's entry carries the
+second face. (2) Its own guard REFUSED OFFSET 0 on subjects starting
+with a continuation byte — make test-axes caught it; root cause is the
+real pcrec/libpcre2 asymmetry (their local boundary test runs after
+whole-subject validation; ours sees subjects theirs never reaches, per
+ASK 1's no-validation ruling). Fixed with the @P==0 clause; the same
+blind spot (no continuation byte at s[n]) was found and fixed in BOTH
+of its own drivers — the check-content-resting-on-a-buffer-accident
+shape, recorded in the report as a pattern.
+
+**D97**: PCREC_ERR_STARTPOS = -7 BELOW the floor, Frank's ratification
+same day — a caller-argument refusal is not a give-up (the give-up
+family's "retry bigger" is the wrong signal for an argument that never
+becomes valid); composed sites trap below the floor as a contract
+statement. PCREC_NO_STARTPOS_GUARD is bit 25, the FIRST answer-changing
+axis member; test-axes carries it as a documented non-identity axis
+(scoped sweep: 1130/1130 agree — the corpus is blind to the axis by
+construction, exactly as chartered). §5.5's "skipping mid-char starts
+is also an optimization" REFUTED by interleaved measurement (the guard
+is a branch cost: 1.33x slower on 2-byte-char ENG_ATTEMPT subjects) —
+a correctness fix paid for what it costs, the design box carries the
+table. 10.46's BADUTFOFFSET measured uniform (20/20 refuse mid-char,
+30/30 answer at boundaries) — the transcript licenses the O(1) guard
+shape. The sabotage-id collision with encchk's morning merge was
+resolved by the lane (S230/S231 -> S234/S235); all four rows DETECTED
+through the real matrix, which also caught their reach probes' grep -c
+defect on first run. Two .rxt directives (startpos-bearing give-up +
+compile-flag) DEFERRED to their own row; the lane's §6 pins hold.
+
+Owed: the Linux full battery at the next slot (local make test running
+at the merge as this is written); M5.0 stage 3 opens on its green per
+Frank's standing go.
