@@ -1762,6 +1762,23 @@ wrong-answer fix and it has no flag; a build that denied it would be the K50
 defect and there is no way to ask for one. The axis governs where a CALLER may
 point the entry, and nothing else.
 
+**AND SINCE [K50-NULLGATE] THAT GUARANTEE IS ABOUT WHAT IS REPORTED, NOT ABOUT
+WHICH POSITIONS ARE OFFERED.** The sentence above is the CONTRACT and is
+unchanged: no match is ever reported starting at a non-boundary, under either
+arm, for any pattern. What changed is the mechanism's population — the gate is
+built only where it can matter, which is where the pattern can match EMPTY. For
+a pattern that cannot, the gate is not merely unnecessary but REDUNDANT: a
+reported match consuming a byte already begins on a byte the encoding admits as
+a character start, so the pattern's own first-byte test refuses every
+mid-character start on its own. A non-nullable pattern's unanchored machine
+therefore offers the interior byte offsets again and none of them can answer.
+The compiler CHECKS that rather than asserting it — `src/ir/nfa.c`'s
+`cstart_check_omission` refuses, at the omission site, any pattern whose first
+byte could fall outside the encoding's character-start set or that can accept
+without consuming. A caller observes nothing; what moves is throughput on
+non-nullable patterns (the measured 1.33× `ENG_ATTEMPT` cost the gate carried
+is now a nullable-pattern-only price).
+
 **THE DIFFERENTIAL, and its non-vacuity floor.** `tests/utf8/run_startbnd_diff.sh`
 compiles one witness family both ways into ONE translation unit and sweeps
 every `startpos` of every subject: the two arms must be IDENTICAL at every
