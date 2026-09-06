@@ -216,7 +216,20 @@ and that is the section's whole value: for a milestone BOTH ENGINES ANSWERED
 THE SAME WRONG THING, so nothing comparing pcrec against itself could have
 caught K50.
 
-### Sabotage validation — seven directions, all detected
+### The manager's landing conditions (2026-09-06)
+
+| condition | where it landed |
+|---|---|
+| site (2) as both-arm cells | `axis11`'s `(?m)^a\|\B` cells (default) + `run_startbnd_diff.sh` §5, which now runs **every** engine cell under BOTH flag settings. There is no divergence for a `.rxt` pair to carry — `startpos = 1` is a real boundary, so both arms must answer `(3,3)` — and that SAMENESS is the claim: the axis moves no position the engine invented |
+| K50 gains the second face | `known_issues.md`: "**K50 HAS A SECOND FACE**", with the measurement, where each face is pinned, and the note that S230/S231 fire disjoint cells |
+| §5.5 says the claim UNDERSTATED it | done, and the annotation now also says the BOX understated it — written after K49, it refuted §5.5's reason while leaving `ENG_ATTEMPT` looking theoretical |
+| self-gating kept in the entry | kept: `(?m)^` can hold only after a newline, `\G` gives one attempt at the caller's position — this is the "why did nothing catch it" and the blast-radius scope |
+| below-floor/composed-trap in the spec | `match_api.md` §4, stated as a contract statement with no live trap today |
+| **guard ordering PINNED** | **new §5b**: `startpos = n` answers, `n+1` and `n+7` return `0` and not `-7`. It cannot fail today for a reason stronger than placement (the guard opens `@P == 0 \|\| @P >= @N`) — which is exactly why it needs a pin, since that is a property of the BACKEND'S TEXT |
+| **byte-tautology as a structural claim** | **new §7 + `startbnd_backend_check.c`**: reads the backend ROWS, because every other statement of "byte pays nothing" is derived from those two pointers. Five assertions; the sharpest is that `start_cls` and `start_guard` agree **per backend** — the IR reads one and the emitters read the other, so supplying one without the other builds a machine whose gate no entry guard matches, which is a wrong answer on no subject a corpus would think to try |
+| refutations recorded for the panel | `utf8_design.md` §5.5's box now carries both dead placements with their refutations |
+
+### Sabotage validation — ten directions, all detected
 
 | direction | caught by |
 |---|---|
@@ -227,6 +240,9 @@ caught K50.
 | leaking into byte artifacts | §4, **three independent ways** (mask, emitter, stamp) |
 | IR gate deleted (K50's own defect) | §5, 4 of 7 cells |
 | `ENG_ATTEMPT`'s continue deleted | §5, **exactly 1 of 7 cells** |
+| the guard loses its end-of-subject clause | §5b, exactly (`startpos=4 answered rc=-7, want (4,4)`) |
+| `byte` declares both backend pointers | §7 and §4 |
+| the deny flag reaches the ENGINE's gate | §5's both-arm, naming each cell |
 
 The last two firing DISJOINT cells is the matrix telling two mechanisms apart
 rather than scoring one twice. Permanent rows: **S230** (IR gate), **S231**
@@ -296,6 +312,15 @@ A second instrument defect surfaced the same way. **With a zero byte at
 `s[n]`, the driver could not see a guard that reads past the end of the
 subject** — a guard spelled without its end-of-subject arm read 4/4 GREEN.
 The driver now parks `0x80` there.
+
+**AND IT RECURRED IN THE SECOND DRIVER, which is why I am reporting it as a
+pattern rather than as two bugs.** Validating the new §5b — the check written
+FOR the ordering defect — found it PASSING while only §1/§2 went red, for the
+identical reason: `startbnd_engine_driver.c` had no byte at `s[n]` either, so
+a guard reading there decided on a zero and accepted. Both drivers park `0x80`
+now. The general shape is a check whose claim is about CONTENT resting on an
+accident of an uninitialised buffer, and it is the same family as
+`run_offset_skip.sh` §4's `tail -n +8` (§10(d)).
 
 ---
 
