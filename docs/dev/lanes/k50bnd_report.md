@@ -736,14 +736,22 @@ the exact case the runtime probe gets wrong.
 
 | # | prediction | scored |
 |---|---|---|
-| P1 | the DD12a(i) `[K50]` gate-refinement class (238 pairs today) shrinks to the nullable subset: **fewer than 20 members remain** | |
-| P2 | the 3 `#UNDECLARED` rows (`\Z`, `\b`, `\B`) are all nullable and **all three REMAIN** in the class | |
-| P3 | of the 4 stamp-declared moved-form pairs, **at least 3 are non-nullable and leave** | |
-| P4 | `b\|c`, `frank\|fred`, `a(b\|c)+d` — §6b's three named breakers — **all leave** | |
-| P5 | the manifest's floor (200) and ceiling (20) both become WRONG and must be re-derived; the floor was written for a 238-member class and cannot survive the narrowing | |
-| P6 | ENG_ATTEMPT's 1.33× regression disappears for non-nullable patterns; the `(?m)^a\|\B` witness keeps its guard | |
-| P7 | byte artifacts still unmoved — 0 differences, claim unchanged | |
-| P8 | abi 24 → 25; every unanchored utf8 artifact of a NON-nullable pattern moves (back toward its pre-K50 shape), nullable ones do not move | |
+| P1 | the class (238 today) shrinks to the nullable subset: **fewer than 20 remain** | **HIT** — 14 |
+| P2 | the 3 `#UNDECLARED` rows (`\Z`, `\b`, `\B`) are all nullable and **all three REMAIN** | **HIT** — exact set match, still 3 |
+| P3 | of the 4 stamp-declared moved-form pairs, **at least 3 are non-nullable and leave** | **MISS** — all 4 are NULLABLE (`a*$`, `a*\Z`, `a{0,4}$`, `a{0,4}\Z`) and all 4 REMAIN. GATEFORM is unmoved at 4. I reasoned that a moved FORM implied a bigger machine and so a consuming pattern; it implies the opposite here — axis E's accept placement moves precisely when a state's accept VARIES BY CLASS, which is a nullable-pattern property |
+| P4 | `b\|c`, `frank\|fred`, `a(b\|c)+d` — §6b's three named breakers — **all leave** | **HIT** — all three gone; `b\|c`'s utf8 table is now `[4]`, identical to byte |
+| P5 | the floor (200) and ceiling (20) both become WRONG and must be re-derived | **PARTIAL** — the floor became wrong and FIRED (class 14 < 200). The ceiling did NOT: 4 is still under 20. Re-derived anyway (floor 10, ceiling 8) so both sit near their measured values |
+| P6 | ENG_ATTEMPT's 1.33× goes away for non-nullable patterns; `(?m)^a\|\B` keeps its guard | **HIT** — measured: `(?m)^a\|\B` utf8 emits 1 guard site, `(?m)^a` emits 0, byte emits 0 for both |
+| P7 | byte artifacts still unmoved — 0 differences | **HIT** — `start_cls` is NULL under `byte`, so neither conjunct can fire; the check's byte-identical bucket grew 9 → 233 |
+| P8 | abi 24 → 25; non-nullable unanchored utf8 artifacts move, nullable ones do not | pending — the ritual is the next commit |
+
+**AND THE PREDICTION TABLE EARNED ITS KEEP ON P3.** The miss is not a rounding
+error, it is a wrong model: I expected a moved emitted FORM to imply a larger
+machine and therefore a consuming pattern. Axis E moves when a state's accept
+VARIES BY CLASS, which is a property of patterns that can accept without
+consuming — so the form-movers are exactly the nullable ones and the sub-class
+was never going to shrink. Had I not written the number down first I would have
+read "GATEFORM unchanged at 4" as the narrowing failing to reach them.
 
 ### 10.4 Implementation shape
 
@@ -754,3 +762,48 @@ build. Adding a second field with an identical definition would be the
 parallel mechanism memory `pcrec-general-mechanisms-not-special-cases`
 forbids, so the fact is RENAMED to what it is (`lang_nullable`) and read by
 both rows: one derivation, one name, two consumers.
+
+### 10.5 A DEFECT IN THE INTERIM INSTRUMENT, found by narrowing past it
+
+The narrowing was expected to empty most of DD12a(i)'s gate-refinement class.
+On the first run it emptied NONE of it: the class stayed at exactly 238, with
+identical sub-counts, while direct measurement showed `b|c`'s utf8 transition
+table had become byte-identical. Both readings were correct, and reconciling
+them found the defect.
+
+**MEMBERSHIP WAS `nb != nu` ON THE RAW EXCISED TEXT, and comments were dropped
+only later, in the CLASSIFICATION step.** The `next_pos` residual's own
+explanatory prose legitimately differs per encoding — "byte encoding: one byte
+is one character…" against "utf8 encoding: skip forward over continuation
+bytes…" — so essentially every strict pair differed for a reason that has
+nothing to do with the boundary gate, was admitted to a class named for the
+gate, and counted toward its floor of 200.
+
+**MEASURED over the 207 manifest rows: 97 named artifacts with NO DFA TABLE AT
+ALL, and 100 more now compile to byte-identical tables. 197 of 207 rows were in
+a gate class carrying no gate.** The floor was asserting over a population that
+was ~95% prose. That is K35's shape — a population nobody counted — inside an
+instrument I wrote to escape it, and it was mine, landed three commits earlier
+and merged.
+
+**THE REPAIR is `comments_only` as the membership test** (`nb != nu && not
+comments_only(nb, nu)`): a pair whose whole difference disappears with comments
+is not a member. **Nothing is weakened** — the strict bar is untouched, and a
+pair that reaches equality by dropping comments has no token difference left
+for an encoding conditional to hide in. What changed is that the class now
+contains only what it is named for.
+
+The instrument got sharply stronger as a result: **233 of 243 strict pairs are
+now byte-identical after excision, against 9 before**, and the excused class is
+13 named nullable patterns instead of 207 mostly-arbitrary ones. Its two
+guards (staleness, unlisted-member) are together an EXACT set match at that
+size, which is what now carries the load; the floor is demoted to a collapse
+tripwire and says so in the manifest.
+
+**WHY IT SURVIVED ITS OWN SABOTAGE VALIDATION.** All three plants (§6c) were
+caught, and correctly — a real encoding conditional still leaves the data-only
+class, a stale row still fails, an unlisted member still fails. None of them
+could see this, because every plant moved a pair that was ALREADY a member. The
+defect was in who ELSE was in the class, and no sabotage of the subject can
+reveal an over-broad population. What revealed it was changing the compiler so
+the population SHOULD have moved, and finding that it did not.

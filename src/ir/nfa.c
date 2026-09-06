@@ -1012,7 +1012,14 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
  * UNDER AN ENCODING THAT RESTRICTS NOTHING there is no gate node and no
  * second split: `start_cls` is NULL, the construction below is the pre-K50
  * one state for state, and every `byte` artifact is unmoved. A tautological
- * gate is not emitted. */
+ * gate is not emitted.
+ *
+ * [K50-NULLGATE] AND NEITHER IS A REDUNDANT ONE. `pcrec_startgate_needed`
+ * (internal.h, which carries the proof) is the second conjunct: a match that
+ * CONSUMES a byte already begins on a byte the backend's `start_cls` admits,
+ * so only a NULLABLE pattern can ever answer at a position this loop would
+ * otherwise have to gate. A non-nullable pattern's artifact is therefore the
+ * pre-K50 one under every encoding, not just under `byte`. */
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
@@ -1024,7 +1031,7 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
     nfa->st[sp].t2 = any;
     nfa->st[any].t1 = sp;
 
-    if (e && e->start_cls) {
+    if (e && e->start_cls && pcrec_startgate_needed(cx)) {
         /* The loop's own split, and the gate in front of its pattern branch.
          * `sp` above keeps naming the caller's ungated entry and stays
          * `nfa->start`; the self-loop is re-pointed at `sp1`. */

@@ -554,6 +554,32 @@ def form_moved(tb, tu):
     a, b = form_stamps(tb), form_stamps(tu)
     return sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
 
+def comments_only(nb, nu):
+    """True when the two sides are equal once COMMENTS are dropped — nothing
+    else normalized, so table dimensions and cells still count as differences.
+
+    [K50-NULLGATE] THIS IS THE MEMBERSHIP TEST, AND IT IS A CORRECTION.
+    Membership used to be the raw `nb != nu`, which is true for very nearly
+    every pair in the corpus for a reason that has NOTHING to do with the
+    gate: the `next_pos` residual's own explanatory PROSE legitimately differs
+    per encoding ("byte encoding: one byte is one character..." vs "utf8
+    encoding: skip forward over continuation bytes..."), and comments were
+    only dropped later, inside the CLASSIFICATION step. So a pair whose whole
+    difference was that prose was admitted to a class named for the boundary
+    gate and counted toward its floor.
+
+    MEASURED at the [K50-NULLGATE] narrowing: of the 207 manifest rows, 97
+    have no DFA table at all and 100 more have BYTE-IDENTICAL tables, so 197
+    of 207 were in a "gate-refinement class" carrying no gate. The floor of
+    200 was therefore asserting over a population that was 95% prose — K35's
+    shape (a population nobody counted) inside an instrument written to
+    escape it, which is why this is corrected rather than re-pinned.
+
+    Excluding them WEAKENS NOTHING: the strict bar below is unchanged, and a
+    pair that reaches equality by dropping comments has no token difference
+    left for an encoding conditional to hide in."""
+    return _strip_comments(nb) == _strip_comments(nu)
+
 def diff_is_data_only(nb, nu):
     """True when the two sides are equal once comments are dropped and every
     integer literal is normalized — i.e. the whole difference is NUMERIC.
@@ -767,7 +793,7 @@ def main():
                 nwidens += 1
             else:
                 nstrict += 1
-            if nb != nu:
+            if nb != nu and not comments_only(nb, nu):
                 if widens:
                     ndiverge_widens += 1
                 else:
@@ -895,8 +921,8 @@ else
                 bad "DD12a(i) [K50] $(comm -13 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | grep -c .) pair(s) entered the gate-refinement class WITHOUT a manifest row — the named exclusion cannot grow silently. First: $(printf '%s' "$grew" | head -1)"
                 gate_bad=1
             fi
-            if [ "$((GATE + GATEFORM))" -lt 200 ]; then
-                bad "DD12a(i) [K50] the gate-refinement class holds only $((GATE + GATEFORM)) pair(s) (floor 200) — it has collapsed, and its two guards above are then asserting over almost nothing"
+            if [ "$((GATE + GATEFORM))" -lt 10 ]; then
+                bad "DD12a(i) [K50] the gate-refinement class holds only $((GATE + GATEFORM)) pair(s) (floor 10, measured 14 after [K50-NULLGATE]) — it has collapsed. NOTE the floor is a tripwire, not the load-bearing guard: the staleness and unlisted-member guards above are together an EXACT set match against the manifest, which is what certifies this class at its post-narrowing size"
                 gate_bad=1
             fi
             # The FORM sub-class is CEILINGED, not floored: it is the part of
@@ -905,8 +931,8 @@ else
             # ceiling makes it loud if the wider alphabet starts moving more
             # forms than the 9 measured at the landing; the floor above already
             # stops the whole class vanishing.
-            if [ "$GATEFORM" -gt 20 ]; then
-                bad "DD12a(i) [K50] $GATEFORM pairs are in the FORM sub-class (ceiling 20, measured 9 at the landing) — the wider alphabet is moving more emitted-form selections than it did; re-derive the manifest deliberately and read what moved before raising this"
+            if [ "$GATEFORM" -gt 8 ]; then
+                bad "DD12a(i) [K50] $GATEFORM pairs are in the FORM sub-class (ceiling 8, measured 4 after [K50-NULLGATE]) — the wider alphabet is moving more emitted-form selections than it did; re-derive the manifest deliberately and read what moved before raising this"
                 gate_bad=1
             fi
             [ "$gate_bad" -eq 0 ] && echo "  DD12a(i) [K50] gate-refinement class: $((GATE + GATEFORM)) pair(s) — $GATE differing in DATA only (comments, table dimensions and cells; never control flow) and $GATEFORM whose emitted FORM moved and which SAY SO in their own stamps; all $nman manifest rows swept and still in the class, no unlisted members"

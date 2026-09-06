@@ -4549,6 +4549,55 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
+
+/* [K50-NULLGATE] IS A BOUNDARY GATE ON ENGINE-INVENTED START POSITIONS NEEDED
+ * FOR THIS PATTERN AT ALL? ONE derivation, read by the three consumers that
+ * would otherwise each decide it (`nfa_wrap_unanchored`'s gate node,
+ * `src/ir/dfa.c`'s `startcls`, and `src/gen/emit_dfa.c`'s ENG_ATTEMPT
+ * `continue`).
+ *
+ * THE ARGUMENT, and it is a proof rather than a heuristic. A reported match
+ * that CONSUMES a byte begins on a byte the encoding admits as a character
+ * start — that is exactly what a backend's `start_cls` asserts — so the
+ * pattern's own first-byte test already refuses every mid-character start.
+ * The gate can therefore only ever matter for a match that consumes NOTHING.
+ * Hence: THE GATE IS NEEDED IFF THE PATTERN IS NULLABLE. For a non-nullable
+ * pattern it is not merely unnecessary, it is REDUNDANT with a test the
+ * machine already performs.
+ *
+ * WHY THE PREDICATE IS AT THIS LEVEL AND NOT THE MACHINE'S. The sharper
+ * question — does any attempt-entry state accept without consuming, in any
+ * class context — is answerable, by `state_acc_any` over the unanchored DFA's
+ * start closure, and it would keep the gate off `\b` (a continuation byte is
+ * no word character on either side). It is NOT USABLE AS THE PREDICATE:
+ * `nfa_wrap_unanchored` runs only inside `src/core/compile.c`'s
+ * `!nfa_has_bot(...)` branch, so an ENG_ATTEMPT pattern has no gate node and
+ * no unanchored start closure at all, while the ENG_ATTEMPT `continue` — the
+ * site carrying the measured cost — reads no machine state whatsoever. A
+ * machine-level predicate could narrow one engine and would leave the other
+ * to a second derivation of one fact.
+ *
+ * THE SOUND DIRECTION IS ALREADY RIGHT AND IS NOT A COINCIDENCE.
+ * `pcrec_minw` under-estimates by design (`src/opt/mrl.c`), so this
+ * OVER-reports nullable, so it OVER-builds the gate: when the analysis is
+ * uncertain the artifact keeps K50's behaviour exactly. The failure direction
+ * is a slower artifact, never a wrong answer.
+ *
+ * IT IS NOT THE EMPTY-SUBJECT PROBE, which is unsound here: a
+ * context-dependent zero-width pattern can answer nomatch on the empty
+ * subject and still accept mid-character. `pcrec_minw` answers 0 for `A_LOOK`
+ * unconditionally, so `(?<=x)` reads nullable and KEEPS its gate.
+ *
+ * THE FIELD IT READS is [OPT-4.1]'s, whose spelling is consumer-scoped for a
+ * reason that does not apply here (`docs/dev/lanes/opt41_report.md` §1: the
+ * name contrasts with `collapsed_lang_nullable`, not with a general one). It
+ * is `pcrec_minw(root) == 0` and nothing else; this accessor names the FACT
+ * so two rows can share one derivation rather than forking it. */
+static inline bool pcrec_startgate_needed(const Ctx *cx)
+{
+    return cx->job->fit.prefilter_lang_nullable;
+}
+
 /* [K50] The caller-startpos boundary guard, emitted by src/gen/emit_dfa.c and
  * called from BOTH emitters — one derivation, four call sites. Emits nothing
  * under an encoding that restricts no position, and nothing under
