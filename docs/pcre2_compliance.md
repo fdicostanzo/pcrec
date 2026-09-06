@@ -460,14 +460,36 @@ earliest.
 
 | syntax | status | becomes |
 |---|---|---|
-| `\p{L}` `\p{Lu}` … (general categories) | `REJECTED` | — |
-| `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `REJECTED` | — |
+| `\p{L}` `\p{Lu}` … (general categories) | `OK-GATED` | a code-point interval set, lowered per encoding |
+| `\p{L&}` `\p{Lc}` `\p{Any}` | `OK-GATED` | as above |
+| `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `OK-GATED` | as above |
 | `\p{<binary property>}` | `REJECTED` | — |
 | `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `REJECTED` | — |
 | `\p{Bidi_Class:..}` `\p{BC:..}` | `REJECTED` | — |
+| `\p{Assigned}` | `REJECTED` | — |
+
+**[M5.0] stage 3 (2026-09-06) built the first three rows** — 45 property names
+under `--features unicode-props`, at both encodings, negated as `\P{X}` or
+`\p{^X}`, and inside a character class. The sentence that stood here — *"the
+blocker is table generation and size, not matching"* — was HALF RIGHT and the
+half it got wrong is now `docs/dev/known_issues.md` K53: table generation was
+indeed the work (the UCD is vendored at `third_party/ucd-16.0.0/` and compiles
+to `src/parse/uprops_tables.inc`), and SIZE turned out to be a real blocker for
+five of the 45 names under `--encoding=utf8` at default axes — not because the
+property tables are large (they are compile-time data and reach no artifact)
+but because the emitted DFA is `states x byte-equivalence-CLASSES`, and a
+multi-byte encoding makes the second factor ~100 where an ASCII pattern's is a
+handful.
+
+The three `REJECTED` rows are deliberate and staged, not blocked: scripts and
+`Script_Extensions` are [M5.0] stage 5, the binary-property and `Bidi_Class`
+families are declined by design (`utf8_design.md` §3.4, no measured demand),
+and `\p{Assigned}` is refused by every libpcre2 this project can reach
+(measured error 147 on 10.42, 10.46 and 10.48) although the design's own §3.1
+survey lists it as accepted — `\P{Cn}` is the same set on all three.
 
 All of these lower to byte-range sets over UTF-8, which APPROACH §4/§10 already
-commits to. The blocker is table generation and size, not matching.
+commits to.
 
 <!-- BEGIN GENERATED ANNOTATIONS: unicode-properties -->
 

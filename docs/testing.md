@@ -4064,3 +4064,84 @@ K24's control check is only reachable once the de-sugaring works.
 **The generalisable half**: when a check on this box reports that the tree has
 drifted, rule out the TOOL before believing it. Both of these named an emitter
 change that had not happened.
+
+## The `\p{...}` membership differential (`tests/uprops/`, [M5.0] stage 3, 2026-09-06)
+
+`make test-uprops` (the `byte` arm, **33 s measured**, part of `make test`);
+`make test-uprops-utf8` (the whole code-point space, opt-in). Four sections;
+`tests/uprops/CLAUDE.md` carries the per-section argument and this entry
+carries the process record.
+
+### A whole-space differential that is affordable
+
+The differential compares pcrec's emitted matcher against libpcre2 for every
+shipped property over **every code point**, both encodings, and it is a
+`make test` section rather than a battery because neither side calls the
+matcher per code point. Both build ONE subject that is every code point in
+order and do a single FIND-ALL pass, turning 45 x 1,112,064 membership
+questions into 45 scans of a 3.3 MB string per side. The first version did
+call per code point and was still unfinished after ten minutes **on one
+property** — libpcre2 re-validates the whole UTF subject on every resumed
+call unless `PCRE2_NO_UTF_CHECK` is passed, which is why that flag is a
+correctness-of-the-instrument matter here and not an optimisation.
+
+### The Unicode-version drift policy, and why it is not a skip
+
+**No libpcre2 this project can reach is at pcrec's pinned Unicode version**,
+measured 2026-09-06:
+
+| | libpcre2 | Unicode |
+|---|---|---|
+| Linux reference (`ubuntubudu`) | 10.46 | 16.0.0 — **the pin** |
+| Mac, Homebrew (headers, `pkg-config`) | 10.48 | 17.0.0 |
+| Mac, what the suite's dlopen shim RESOLVES | **10.42** | **14.0.0** |
+
+The third row is `docs/dev/upstream_issues.md` U15(b) and is a fact about
+every dlopen-based oracle in this tree, not about this suite.
+
+So `uprops_compare.py` reads the oracle's Unicode version at run time and
+applies EXACT agreement when it matches the pin, and otherwise a stated
+budget: every disagreement must be a code point UNASSIGNED on one side or the
+other — read from both sides' own `\p{Cn}` line, out of the same sweep, so the
+rule is symmetric and consults no version number — or appear in one of two
+small NAMED exception lists (`RECLASSIFIED`, per code point;
+`PCRE2_SEMANTIC_DRIFT`, per property and bounded INSIDE properties pcrec's own
+sweep reports in the same run).
+
+**Deliberately not a skip.** A skipped check certifies nothing, and the value
+of stating a budget is that the residue after drift is still checked.
+Measured at landing against 10.42/14.0.0: `byte` **14/0 with ZERO code points
+attributed to drift**; `utf8` **14/0 with 62,121 attributed and none
+unexplained**.
+
+### §4 is why the suite has four sections and not three
+
+The oracle-free invariants (`\P{X}` is the complement of `\p{X}`; `\p{^X}` is
+`\P{X}`; `[^\p{X}]` agrees with `\P{X}`; under `-i`, `\p{Lu}`/`\p{Ll}`/`\p{Lt}`
+are `\p{L&}` and nothing else moves) hold at every Unicode version, so they
+never degrade to a drift budget — and each has a **non-vacuity control that
+must DISAGREE**, because a compiler answering one set for everything would
+satisfy the agreements alone.
+
+**§4 found a real bug on its first run** that no other instrument here could
+have: `[^\p{L}] == \P{L}` went red because `esc_class_value` never advanced
+the cursor for a produced `EXT_MEMBERS`, so `[^\p{L}]` excluded `{` and `}`
+as well as the letters. Both sides of the MEMBERSHIP differential compile
+`\p{L}` at an ATOM, where the bug does not live, and the corpus's `\p` blocks
+are atom-position too. The general shape is this tree's own recurring one:
+**an agreement check between two engines is blind to a construct's other
+POSITION.**
+
+### What lives elsewhere, and why
+
+- **Refusal wordings** — `tests/reject/` (twelve `reject_gated unicode-props`
+  rows). A `perr` block asserts only that compilation failed.
+- **The name axis over a generated space** — PC-3
+  (`tests/registry/pcre2_check.c`). Its CLOSED-gate uprops differential still
+  reads green and stopped certifying what its name claims the day a producer
+  landed, so stage 3 ADDED `check_gated_uprops_space` rather than rewriting
+  it: the closed-gate sweep's refusal taxonomy and offsets do not change when
+  the gate opens, and the open gate is the only place the ACCEPTANCE question
+  (T1) can be asked.
+- **The answers themselves** — `tests/utf8/axis04_p_categories.rxt`, the
+  D27-blinded corpus, promoted at this stage.

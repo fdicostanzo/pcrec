@@ -83,14 +83,26 @@ whole reason the utf8 encoding module needs to exist).
 | axis02_class_boundary_byte.rxt | 24 | 6 | 18 | 4 newly promoted; 4 still refuse (range), 2 still refuse (`\p`, unaffected) |
 | axis03_invalid_utf8.rxt | 27 | 0 | 27 | promoted clean |
 | axis03_invalid_utf8_byte.rxt | 27 | 0 | 27 | untouched (already fully real as authored) |
-| axis04_p_categories.rxt | 148 | 148 | 0 | untouched (`\p`/`\P`, module `unicode-props`, stage 3) |
-| axis05_p_refusals.rxt | 34 | 34 | 0 | untouched (permanent PCRE2 error-147 refusals) |
+| axis04_p_categories.rxt | 136 | 0 | 136 | **PROMOTED at [M5.0] stage 3** — 462 cases, ZERO semantic divergences against the oracle answers the blinded author carried in each block's comment. 12 blocks moved to `tests/known_fail/k53_uprops_oversize.rxt` (see below), so the file's own population went 148 -> 136 |
+| axis05_p_refusals.rxt | 34 | 34 | 0 | untouched, and CONFIRMED at stage 3 rather than assumed: all 34 are permanent PCRE2 error-147 refusals and all 34 still refuse with the producer live |
 | axis06_caseless_fold.rxt | 48 | 4 | 44 | PINNED TO TODAY'S BEHAVIOUR, not promoted to the oracle — see below |
 | axis07_caseless_1ton.rxt | 11 | 0 | 11 | pinned to today's behaviour; agrees with the oracle on every cell |
 | axis08_lookbehind_varwidth.rxt | 24 | 3 | 21 | promoted; `features` line added per block (missing as authored) |
 | axis09_nextpos_findall.rxt | 18 | 0 | 18 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed). **-2 at [K50]**: the two mid-character-`startpos` blocks moved to `run_startbnd_diff.sh` §6, which can express the deny arm — see below |
 | axis10_surrogate_witness.rxt | 9 | 3 | 6 | promoted clean |
 | axis11_startpos_boundary.rxt | 7 | 0 | 7 | **NEW at [K50]**, and the first file here outside the D27 extract's axes — see below |
+
+**[M5.0 stage 3] AXIS 4 IS THE LANE'S SHARPEST ACCEPTANCE RESULT, and it is
+worth saying why rather than only that it passed.** The 148 blocks were written
+by a D27-BLINDED author against the pre-stage-2 tree, from the goal, with each
+block's oracle-measured answer carried as a comment above a `perr` line —
+`tests/recursion/`'s wave-D mechanism, one module over. The stage-3 promotion
+turned those comments back into `m`/`n` lines mechanically and ran them: **462
+of 506 cases green on the first run, 44 failures, and every one of the 44 was
+the SAME compile-size refusal on six patterns** — no wrong span, no wrong
+membership, no wrong negation, on a corpus the implementation had never seen.
+The six went to `known_fail` as K53, which is an ENGINE issue (an OPTIONAL DFA
+machine's bytes refusing patterns that compile without it) and not a `\p` one.
 
 **529 blocks here.** The authored population was 524; [K50] moved 2 out of
 axis09 (to `run_startbnd_diff.sh` §6, which can express the deny arm) and
