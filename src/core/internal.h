@@ -4549,6 +4549,23 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
+/* [K50] The caller-startpos boundary guard, emitted by src/gen/emit_dfa.c and
+ * called from BOTH emitters — one derivation, four call sites. Emits nothing
+ * under an encoding that restricts no position, and nothing under
+ * `-fno-startpos-guard`. See the function's own comment. */
+void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar);
+/* The same text into a CALLER-OWNED buffer, for a site that splices it into a
+ * larger `sb_printf` rather than appending it. Returns `buf`, which is the
+ * EMPTY STRING wherever the guard is not emitted — so a `%s` at the splice
+ * point contributes nothing and no call site needs its own conditional. Size
+ * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX`; overflow is a loud internal
+ * error, never a truncated half-guard. */
+#define PCREC_STARTPOS_GUARD_TEXT_MAX 1024
+const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
+                                      const char *indent, const char *posvar,
+                                      const char *subjvar, const char *lenvar);
 bool nfa_has_asserts(const Nfa *nfa);
 bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
 /* [ENG-ABS] `root` and `optional` are PARAMETERS rather than a second

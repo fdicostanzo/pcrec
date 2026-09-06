@@ -11013,6 +11013,20 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         ai, g.searchfn, v.p,
         v.nclamp > 0 ? "    size_t window_end;\n" : "");
 
+    /* [K50] The caller-startpos boundary guard, site 1 of 3 on this engine.
+     * It goes AFTER the range test above by placement and does not depend on
+     * being there — see `pcrec_emit_startpos_guard`'s own comment on why the
+     * backend's text makes the ordering unforced. All three of this engine's
+     * caller-facing bodies get it here rather than at the six public entries,
+     * because the entry SHAPE is a four-rung ladder ([CC-DIFF] STEP 2) whose
+     * rungs delegate in opposite directions: `plain`/`shared` run
+     * `_in` -> un-suffixed and `forward`/`inline` run un-suffixed -> `_in`.
+     * The `_run` statics are the one point every rung of that ladder passes
+     * through, so guarding here is what makes the six entries agree by
+     * construction instead of by six copies of one test. */
+    pcrec_emit_startpos_guard(v.cx, c, "    ", "search_from", "subject",
+                              "subject_length");
+
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
      * width cannot fit in what is left of the subject.
@@ -11348,6 +11362,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact's own entry is unchanged. A `\K` pattern never HAS a DFA
      * entry (it is VM-forced), which is why the second half has to be
      * checked on a `\K`-free artifact. */
+    /* [K50] Sites 2 and 3: the two ANCHORED bodies. Their caller-supplied
+     * position is `ctx->pos` rather than a `startpos` argument, which is
+     * §2.6.1's third row — the one the design's table marked "NO" beside the
+     * search entry's. Rendered ONCE into a buffer and spliced into both, so
+     * the two anchored entries cannot acquire different guards. */
+    char mguard[PCREC_STARTPOS_GUARD_TEXT_MAX];
+    pcrec_startpos_guard_text(v.cx, mguard, sizeof mguard, "    ",
+                              "ctx->pos", "ctx->subject", "ctx->len");
+
     sb_printf(c,
         "/* F1's unconditional export, typed rx_matchfn.\n"
         " *\n"
@@ -11372,6 +11395,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "{\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
+        "%s"
         "    %s_run_state_init(run);\n"
         "    result = %s_match_anchored(ctx, run%s%s);\n"
         "    /* No translation and no clamp: the impl's return space IS this\n"
@@ -11383,7 +11407,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "     * would be dead code pretending to be a safeguard. */\n"
         "    return result;\n"
         "}\n\n",
-        ai, g.matchfn, v.p, v.p, v.p,
+        ai, g.matchfn, v.p, mguard, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
          * `ctx->pos` — it is threaded, not absent — so `\G` here is
@@ -11408,13 +11432,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "{\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
+        "%s"
         "    %s_run_state_init(run);\n"
         "    result = %s_match_anchored(ctx, run%s%s);\n"
         "    if (result < 0) return result;\n"
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        ai, g.matchcapsfn, v.p, v.p, v.p,
+        ai, g.matchcapsfn, v.p, mguard, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
         v.ngst > 0 ? ", ctx->pos" : "", v.p);
 

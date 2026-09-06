@@ -413,6 +413,82 @@ static int dfa_artifact_ncaps(Ctx *cx)
     return cx->want_caps ? (int)cx->ncap + 1 : 1;
 }
 
+/* [K50] THE CALLER-STARTPOS BOUNDARY GUARD — one emitter, four call sites
+ * (this file's search-entry head, and `emit_vm.c`'s three `_run` statics).
+ *
+ * WHAT IT IS FOR. `docs/design/utf8_design.md` §2.6.1's table lists three ways
+ * a cursor reaches a mid-character position: the find-all loop's own advance
+ * (protected since [M5-SEAM] — the loop steps by `<prefix>_next_pos`), a
+ * caller-supplied `startpos` to `<prefix>_search`, and `<prefix>_match`'s
+ * anchored entry at a caller-supplied position. The second and third were
+ * marked "NO". This is that "NO" answered, per Frank's 2026-09-05 ruling.
+ *
+ * IT IS THE CALLER'S HALF AND NOTHING ELSE. The positions the ENGINE invents
+ * are made boundaries unconditionally and with no flag (`nfa_wrap_unanchored`'s
+ * gate, `ENG_ATTEMPT`'s `continue`, K49's retry advance). This guard governs
+ * only where a caller may point an entry, which is why it — alone in the
+ * `-fno-` family — has a flag that changes an answer.
+ *
+ * ORDERING AGAINST `startpos > n`: THERE IS NONE TO GET WRONG, and that is a
+ * property of the backend's text rather than of this placement. `match_api.md`
+ * §3.1 promises `<prefix>_search` returns 0 for `startpos > n`, and libpcre2
+ * under `PCRE2_UTF` answers `BADOFFSET` there instead (measured,
+ * `docs/design/utf8_measurements/out/startbnd.txt` §2) — so a guard that
+ * refused it would silently convert a documented 0 into a refusal. The utf8
+ * backend's guard opens `@P >= @N`, which is TRUE at and beyond the end of the
+ * subject, so every position the range test owns passes this one untouched. A
+ * backend whose guard did not have that property would need this comment to
+ * become a placement rule.
+ *
+ * EMITTED ONLY WHEN THE BACKEND RESTRICTS SOMETHING AND THE FLAG IS ABSENT, so
+ * a `byte` artifact is byte-identical under either setting and a `utf8` one
+ * denied the guard is byte-identical to what it emitted before K50's entry
+ * half. `ret` is the caller's own refusal spelling — the entries do not share
+ * a return type. */
+const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
+                                     const char *indent, const char *posvar,
+                                     const char *subjvar, const char *lenvar)
+{
+    char g[256];
+    bool trunc;
+
+    buf[0] = '\0';
+    if (cx->opt->flags & PCREC_NO_STARTPOS_GUARD) return buf;
+    if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
+                               g, sizeof g, posvar, subjvar, lenvar, &trunc)) {
+        if (trunc)
+            ctx_fail(cx, 0,
+                     "internal error: this encoding's character-start guard "
+                     "does not fit the emitter's buffer");
+        return buf;   /* this encoding places no restriction: emit nothing */
+    }
+    if ((size_t)snprintf(buf, cap,
+        "%s/* [K50] A caller's start position must be a CHARACTER BOUNDARY of\n"
+        "%s * this artifact's encoding. A mid-character position is REFUSED\n"
+        "%s * rather than answered: nothing is attempted and no resource is\n"
+        "%s * spent, which is why the code sits below PCREC_ERR_FLOOR and is\n"
+        "%s * not a give-up. libpcre2 under PCRE2_UTF refuses the same\n"
+        "%s * positions (PCRE2_ERROR_BADUTFOFFSET). Compile with\n"
+        "%s * -fno-startpos-guard for the permissive semantics instead. */\n"
+        "%sif (!(%s)) return PCREC_ERR_STARTPOS;\n",
+        indent, indent, indent, indent, indent, indent, indent, indent, g)
+            >= cap)
+        ctx_fail(cx, 0,
+                 "internal error: the character-start guard's emitted text "
+                 "does not fit the emitter's buffer");
+    return buf;
+}
+
+void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar)
+{
+    char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
+    sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
+                                         posvar, subjvar, lenvar));
+}
+
+
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              const char *storage)
 {
@@ -438,6 +514,21 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                "#endif\n");
     sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n", storage, fn);
+    /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
+     * fill below uses, and for the same reason: this emitter has TWO customers
+     * and only one of them is a caller-facing entry. The other is the VM
+     * hybrid's internal `static <prefix>_prefilter`, whose `search_from` comes
+     * from the VM's own retry loop — a position K49's advance already makes a
+     * boundary — so guarding it would be the engine checking its own
+     * arithmetic on the hot path. Both of THIS engine's caller-facing bodies
+     * come through here (the unanchored search entry and, under axis G's
+     * unwrapped form, the anchored match-here entry), so one placement covers
+     * all six public entries: `<prefix>_match`/`_match_caps` reach the guard
+     * through the body they call, and the three `_in` entries through their
+     * un-suffixed siblings. */
+    if (cx->job->fit.chosen == ENGM_DFA)
+        pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
+                                  "subject_length");
     /* [DD-14 wave G] THE DEAD GROUPS, DECLARED AND PERMANENTLY UNSET. Emitted
      * only when this artifact promises more than the whole match, which on
      * this engine means every promised group is dead (a live one would have
@@ -609,6 +700,28 @@ static void emit_rx_abi_types(StrBuf *sb)
          * collapse in emit_vm.c. */
         "#define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: "
         "NOT a give-up, D71 item 1 */\n"
+        /* [K50] THE SECOND BELOW-THE-FLOOR PRODUCER, and it is the abort
+         * semantic D49 reserved the region for rather than a give-up wearing
+         * a new number. `PCREC_ERR_STARTPOS` means the CALLER named a start
+         * position that is not a character boundary of this artifact's
+         * encoding: the call is REFUSED, no attempt is made, and no resource
+         * was exhausted. Every give-up in [FLOOR, -2] says the engine tried
+         * and ran out; this one says it never started.
+         *
+         * NO BYTE ARTIFACT CAN RETURN IT — under an encoding where every
+         * position is a character boundary the guard is not emitted at all —
+         * but every artifact DEFINES it, on the same rule that makes a
+         * DFA-only artifact define `PCREC_ERR_FRAMES`: a caller's `switch`
+         * written today must survive a later compile of the same pattern
+         * under a different encoding.
+         *
+         * A COMPOSED CALL SITE TRAPS ON IT, by §4's existing below-the-floor
+         * rule, and that is correct rather than incidental: after K50 every
+         * position the ENGINE generates is a boundary, so a composed callee
+         * handed a non-boundary means the engine broke its own rule, which is
+         * exactly what a trap is for. */
+        "#define PCREC_ERR_STARTPOS (-7)  /* [K50] below PCREC_ERR_FLOOR: "
+        "NOT a give-up -- a mid-character startpos was REFUSED */\n"
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */
