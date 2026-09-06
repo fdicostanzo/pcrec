@@ -32,6 +32,18 @@ int main(int argc, char **argv)
         subj[n++] = (unsigned char)strtoul(t, NULL, 16);
     }
 
+    /* A CONTINUATION BYTE PARKED AT s[n], for `startbnd_driver.c`'s reason and
+     * because THE SAME BLIND SPOT RECURRED HERE. §5b asserts that the boundary
+     * guard does not reach `startpos > n`, and its sharpest cell is
+     * `startpos == n` — which a guard spelled without its `@P >= @N` clause
+     * decides by READING `s[n]`, undefined behaviour the matcher's own
+     * contract forbids (match_api.md §3.1: "the matcher never reads s[n]").
+     * With a zero byte there such a guard ACCEPTS and §5b reads green.
+     * MEASURED: dropping that clause from the utf8 backend left §5b passing
+     * while only §1/§2 went red — the check written for the defect was the one
+     * that could not see it. */
+    subj[n] = 0x80;
+
     rc = e_search(subj, n, (size_t)strtoul(argv[2], NULL, 10), caps);
     if (rc == 1)      printf("(%td,%td)\n", caps[0][0], caps[0][1]);
     else if (rc == 0) printf("no-match\n");
