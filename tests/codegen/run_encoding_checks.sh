@@ -407,10 +407,10 @@ fi
 #     every VM-selected witness while leaving CHK3, DD12a(ii) and the K49
 #     check untouched; see docs/dev/lanes/encchk_report.md for the transcript.
 # ---------------------------------------------------------------------------
-python3 - "$ROOT_DIR" "$PCREC" "$WORKDIR/blocks.tsv" "$ENC_MAX_BLOCKS" > "$WORKDIR/dd12ai.out" 2>"$WORKDIR/dd12ai.err" <<'PY'
+python3 - "$PCREC" "$ROOT_DIR" "$WORKDIR/blocks.tsv" "$ENC_MAX_BLOCKS" > "$WORKDIR/dd12ai.out" 2>"$WORKDIR/dd12ai.err" <<'PY'
 import sys, os, re, subprocess, base64, tempfile, shutil, difflib
 
-root, pcrec, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 
 SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless)\(')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
@@ -521,12 +521,12 @@ def compile_pair(pat, workdir, idx):
     os.makedirs(du, exist_ok=True)
     rb = subprocess.run([pcrec, "--features", "all", "-e", "byte", "-p", "rx",
                          "-o", os.path.join(db, "rx.c"), "--", pat],
-                        capture_output=True, text=True)
+                        capture_output=True, text=True, timeout=30)
     if rb.returncode != 0:
         return None
     ru = subprocess.run([pcrec, "--features", "all", "-e", "utf8", "-p", "rx",
                          "-o", os.path.join(du, "rx.c"), "--", pat],
-                        capture_output=True, text=True)
+                        capture_output=True, text=True, timeout=30)
     if ru.returncode != 0:
         return "byte-only"
     with open(os.path.join(db, "rx.c")) as f:
