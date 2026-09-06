@@ -373,14 +373,38 @@ of its own two instances is how a digest gets noisy.
 matrix, only as hand-planted edits), `make test-axes` in full, and the Linux
 arm are all unrun here.
 
-**(f) `make test-axes` full-corpus run is OWED.** I ran it scoped to
-`tests/utf8` (which is where it found §6's defect) and the roster/derivation
-cross-check on the whole tree (22 bits, matching `tuning.md`'s 22 documented
-mentions). The FULL sweep needs to classify this axis's divergence population
-under the harness's `refused-documented` vocabulary — I have not added that
-classification, because the population to floor it against is a full-corpus
-number I do not have. **This is the one charter item (iii) I have not
-completed**, and it is the first thing to finish at merge.
+**(f) `make test-axes`: CHARTER ITEM (iii) IS DISCHARGED, AND THE ANSWER IS
+THAT NO DIVERGENCE CLASS IS NEEDED.** I reported this as owed before measuring
+it; measured, it is not.
+
+- The roster derivation picks bit 25 up with no edit (22 bits, matching
+  `tuning.md` §2's 22 documented `(bit N)` mentions — the sweep cross-checks
+  those two lists and fails if they disagree).
+- **`tests/utf8/` is the ONLY directory in the tree with `encoding utf8`
+  blocks** (measured by grep; the one other hit is a `.rxtin` fixture, not part
+  of a corpus run). Everywhere else compiles under `byte`, where the flag is
+  inert AND masked out of `rx_info.flags`, so the two builds are
+  byte-identical — which the identity gate independently proves at
+  `differing=0`.
+- **Scoped to that directory the sweep is CLEAN**: 1,130 cases, `agree=1130`,
+  `gained=0`, `mismatches=0`, `refused=0`.
+
+So the population that could diverge is exactly `tests/utf8/`, and within it
+nothing does: every corpus cell starts at offset 0 or at a boundary, where the
+guard is transparent. That is the charter's own prediction ("corpus BLIND to
+the axis by construction") holding, not a gap.
+
+**The distinction that makes this honest** — and it is now stated in
+`tuning.md` §2.23 rather than left implicit: an empty divergence population in
+the DIFFERENTIAL means a dead guard and is a RED check (§3's floor is 150); an
+empty one in the corpus sweep means the corpus cannot see the axis, which was
+known before the guard was built. The axis is watched by the instrument that
+can see it and swept for identity by the one that cannot.
+
+**Still yours:** the FULL-corpus `make test-axes` run. My scoped run covers the
+whole population that can reach the axis, and the remaining ~2,900 patterns are
+byte-compiled and provably identical — but "provably" is my argument and the
+full sweep is the measurement.
 
 ---
 

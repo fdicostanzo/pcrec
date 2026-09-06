@@ -1771,10 +1771,28 @@ divergence population is a dead guard and a RED result, not a pass. A third
 arm compiles the same family under `byte` and asserts the artifact is
 guard-free under either flag.
 
-**`make test-axes` CARRIES IT AS A DOCUMENTED DIVERGENCE CLASS**, not as an
-identity claim — the one axis in that sweep's roster that cannot be swept for
-identity. The class is floored (a run in which no cell diverges fails), which
-is what stops the exemption from quietly becoming a hole.
+**`make test-axes` SWEEPS IT FOR IDENTITY LIKE EVERY OTHER AXIS, AND THAT IS A
+MEASUREMENT RATHER THAN AN EXEMPTION.** This section opened by saying the axis
+is not answer-identity-preserving, so a reader expects the sweep to need a
+documented divergence class for it. **It does not, because the corpus cannot
+reach the divergence.** Two facts, both measured:
+
+- **`tests/utf8/` is the only directory in the tree with `encoding utf8`
+  blocks.** Everywhere else compiles under `byte`, where the flag is inert AND
+  masked out of `rx_info.flags`, so the two builds are byte-identical.
+- **Within `tests/utf8/`, the sweep is CLEAN**: 1,130 cases, `agree=1130`,
+  `gained=0`, `mismatches=0`, `refused=0`. Every corpus cell starts at offset 0
+  or at a character boundary, where the guard is transparent — which is
+  exactly what makes a corpus a poor instrument for this axis and why the
+  differential exists.
+
+So the divergence class is EMPTY here, and an empty population is normally a
+red flag in this tree. It is not one here, and the distinction is worth
+stating: an empty divergence population in the DIFFERENTIAL means a dead
+guard and is a failure (§3's floor is 150 and rising), while an empty one in
+the corpus sweep means the corpus is blind to the axis by construction — which
+was known before the guard was built. The axis is watched by the instrument
+that can see it, and swept for identity by the one that cannot.
 
 ## 3. The DFA side's own stamps
 
