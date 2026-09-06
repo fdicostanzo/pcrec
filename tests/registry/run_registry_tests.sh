@@ -483,17 +483,23 @@ fi
 # `PCREC_NO_ANCHORED_DFA` bit 17 joins the two bit-set sweeps as a member
 # rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
 # (dump->spec, spec->dump) beside the four macros that already had one.
+# +3 at [K50-BNDSTART] (2026-09-06), 99 -> 102: axis bit 25
+# (`PCREC_NO_STARTPOS_GUARD` / `-fno-startpos-guard`, the first
+# answer-changing axis member) self-registered in the generic sweeps —
+# the [startpos-guard/guarded] triple (bit constant, cli pairing,
+# tuning.md documentation). Re-pinned by the manager at the stage-3
+# battery, where the miss surfaced; the K50 merge should have moved it.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 99 ]; then
+if [ "$axesn" -ne 102 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 99." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 102." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (88 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (102 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 88 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 102 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

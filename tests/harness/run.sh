@@ -160,7 +160,16 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 # LINTGEN's -fanalyzer append: opt-in, and an explicit CC always wins.
 CC="${CC:-}"
 if [ -z "$CC" ]; then
-    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
+    if [ "${CLANGGEN:-0}" = "1" ]; then
+        CC="clang"
+    else
+        # [MACPORT] resolve a real GNU gcc — bare `gcc` on macOS is Apple
+        # clang wearing gcc's name, which rejects emitted GNU/C23 shapes
+        # (label-then-declaration) under this file's -Werror GENCFLAGS.
+        # tests/lib/cc_resolve.sh is the ONE implementation (the
+        # run_codegen_tests.sh shape); no-op on Linux and under explicit CC.
+        . "$ROOT_DIR/tests/lib/cc_resolve.sh"
+    fi
 fi
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
