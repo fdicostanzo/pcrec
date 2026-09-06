@@ -122,7 +122,50 @@ never applied to the real worktree; it lived and died in
 `/private/tmp/.../scratchpad/encchk/plant_tree`.
 
 **Clean-tree run, this worktree, `ENC_MAX_BLOCKS=250` (the light local run
-default):** <FILL IN FROM full_run.log>
+default), full log at
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/473e6e37-7956-4ed9-ba50-50a475f1a231/scratchpad/encchk/full_run2.log`:**
+
+```
+§8.5 ran 250 ASCII blocks (0 cc-skipped), 0 divergences
+PASS: §8.5 byte and utf8 artifacts agree on every ASCII subject (250 blocks)
+CHK3 ASCII stamp differences: 0
+PASS: CHK3 every ASCII pattern's utf8 stamps equal its byte stamps
+DD12a(i) pairs compared: 253 (byte-only: 0) — strict-identity bucket: 243, widens-under-utf8 bucket: 10
+EXCISED next_pos=506  back_step=4  bref_match=2  bref_match_caseless=2  advance=182  encoding=506
+PASS: DD12a(i) the engine minus its named encoding-owned regions is byte-identical
+      between byte and utf8 artifacts on 243 strict-identity pairs
+      (10 widens-under-utf8 pairs correctly exempted, source-text comparison,
+      darwin and linux alike)
+DD12a(i) widens-under-utf8 pairs differing (expected): 10 of 10
+PASS: DD12a(ii) the seam's residual entries appear under identical signatures (3 entries)
+PASS: K49 the emitted -e byte retry advance agrees with next_pos on all 10738 cells
+PASS: K49 non-vacuity control: every -e byte advance IS pos + 1 (10738 cells)
+PASS: K49 the emitted -e utf8 retry advance agrees with next_pos on all 10738 cells
+PASS: K49 non-vacuity control: -e utf8 differs from pos+1 on 2268 of 10738 cells
+PASS: S-U8 the utf8 MRL clamp stride is the encoded length
+checks passed: 11
+checks failed: 0
+```
+
+**A genuine finding surfaced mid-repair and had to be resolved before this
+was trustworthy**, not merely a bug in the new instrument: the FIRST version
+(no `widens_under_utf8` exemption) reported `checks failed: 1` with 10
+diverging pairs, ALL ten patterns using `.` or a negated class (`.*\z`,
+`[^c]{1,3}\z` and five siblings, `\G.`). Direct same-prefix diffs of
+`[^c]{1,3}\z` and `\G.` (both saved in the scratchpad's `investigate/`
+directory during the session, not committed) showed the class table growing
+from 2 classes to 14 and the whole state machine growing with it (7 states
+→ 28 on one witness) — a real, correct structural difference in the
+compiled automaton, not a hot-loop conditional, because a negated class or
+`.` means "any code point [not in the set]" and lowers to a class spanning
+the whole encoded space under utf8, even when the SUBJECT stays ASCII. The
+`widens_under_utf8` pattern-text classifier (independent of anything pcrec
+computes, `lookaround_classify.py`'s own precedent) exempts exactly that
+population from the strict claim while counting and flooring it — `WIDENS`
+must be nonzero (never dead code) and `STRICT` must clear a floor of 150 (so
+the exemption cannot swallow the whole population). §8.5's own answer
+differential already covers correctness for the widens bucket; DD12a(i) now
+states its scope honestly rather than asserting something false about it.
 
 ## 2. The cwmax floors' mech row (S230, S231)
 
@@ -183,26 +226,72 @@ S229 and S-U8's `SAB_SUITES`.
 **Green baseline established BEFORE any solo sabotage run** (this lane's
 own DD12a(i) rewrite changes the check count, so the pre-rewrite baseline
 was stale and re-measured after landing — journal 2026-09-05 lesson 3, "a
-dirty baseline gives a false NOW-DETECTED"): <FILL IN — checks passed/failed
-count from full_run.log>
+dirty baseline gives a false NOW-DETECTED"): the post-rewrite, post-K37-fix
+clean tree (commit `4081a775`) reads `checks passed: 11, checks failed: 0`
+on `run_encoding_checks.sh` at `ENC_MAX_BLOCKS=250` (log above).
 
-**Solo mech runs of S229 and S-U8 against that green baseline:**
-<FILL IN>
+**Solo mech runs of S229 and S-U8 against that baseline**, tree
+`f6f8a51b95b319a475c0980fb16caddb56df872e` (the commit at the time these
+ran, one commit before the K37 fix — the K37 finding is a `run_codegen_tests.sh`
+scoring artifact unrelated to `run_encoding_checks.sh`'s own checks passed/
+failed count, which was already 11/0 at that commit too), full log at
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/473e6e37-7956-4ed9-ba50-50a475f1a231/scratchpad/encchk/mech_solo.log`:
+
+```
+S229  harness encoding  corpus:1fail/71pass,encoding:1fail/9pass          DETECTED
+S-U8  codegen encoding  pop:tests/codegen/run_encoding_checks.sh:/RX_PRUNE_CLAMP_SPAN/=3(want>=1),
+                        reach:ok(1/1),codegen:6fail/102pass,encoding:1fail/10pass   DETECTED
+```
+
+Both new arms fire (`encoding:1fail`) alongside their pre-existing detector
+(`corpus`/`codegen`), confirming the previously-unfulfilled claim in each
+row's own header — S229's advance-agreement section and S-U8's clamp-stride
+probe are now SCORED, not merely named. Both
+`== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0,
+anomalies: 0, oracle-skipped: 0)`.
 
 ## Validation summary
 
 | deliverable | instrument shown to fail | commit |
 |---|---|---|
-| DD12a(i) rebuilt | scratch plant in emit_vm.c, `git archive` tree, never landed | <FILL> |
-| cwmax floor (i) | S230, solo mech run, DETECTED | <FILL> |
-| cwmax floor (ii) | S231, solo mech run, DETECTED | <FILL> |
-| `encoding` mech arm | S229/S-U8 solo mech runs against a green post-rewrite baseline | <FILL> |
+| DD12a(i) rebuilt | scratch plant in emit_vm.c, `git archive` tree, never landed (transcript §1 above) | `f6f8a51b` (DD12a(i) itself); `4081a775` (K37 fix, no functional change) |
+| cwmax floor (i) | S230, solo mech run, DETECTED | `5991a6b2` |
+| cwmax floor (ii) | S231, solo mech run, DETECTED | `5991a6b2` |
+| `encoding` mech arm | S229/S-U8 solo mech runs, DETECTED, against the real detector for the first time | `f6f8a51b` |
 
 ## Targeted validation run (delivery)
 
-- `PCREC=... CC=gcc-16 ENC_MAX_BLOCKS=250 bash tests/codegen/run_encoding_checks.sh`: <FILL>
-- `bash tests/mech/run_sabotage_matrix.sh S230` / `S231` / `S229` / `S-U8`: DETECTED (see above)
-- `make test-codegen`: <FILL — owed if touched further>
+- `PCREC="$PWD/build/pcrec" CC=gcc-16 ENC_MAX_BLOCKS=250 bash tests/codegen/run_encoding_checks.sh`
+  at commit `4081a775`: **checks passed: 11, checks failed: 0** (§1 log above).
+- `bash tests/mech/run_sabotage_matrix.sh S230` / `S231` / `S229` / `S-U8`
+  at commit `f6f8a51b`/`5991a6b2`: **all four DETECTED** (§2/§3 transcripts above,
+  full log `mech_solo.log`).
+- `bash tests/codegen/run_codegen_tests.sh` alone (fast re-run to confirm the
+  K37 fix, not the full `test-codegen` group a second time): **104 passed / 4
+  failed**, log `codegen_only.log`. The 4 failures are PRE-EXISTING and
+  unrelated to this lane's changes — none of them touch `tests/codegen/
+  run_encoding_checks.sh`, `tests/mech/run_sabotage_matrix.sh`, or either
+  `cwmax_check.c` sabotage row:
+  - `FAIL: OS-0b: two-engine file failed to compile` / `FAIL: OS-0b [M4.4]:
+    duplicating the guarded ABI-types block broke the build` / `FAIL: OS-0b:
+    could not extract both engine bodies` — three lines of ONE OS-0b
+    multi-engine-fixture compile failure on this darwin/gcc-16 box.
+  - `FAIL: [K24]: the de-sugaring left 4 accessor call(s) in the CONTROL's
+    rx_search body` — the noclone control's sed-based de-sugaring, outrun by
+    an emitter change unrelated to this lane.
+- `make test-codegen` (the full run_group, before the K37 fix, log
+  `test_codegen.log`): `run_codegen_tests.sh` 103/5 (the 4 above + the K37
+  finding this lane's own code caused and then fixed in commit `4081a775`,
+  confirmed above); `run_dfa_stamps.sh` 31/0; `run_offset_skip.sh` 22/0;
+  `run_size_term.sh` 31/0; `run_inline_capability.sh` — **FAIL: nm could not
+  read arm_a.o (no rx_search symbol)** on this box, a PRE-EXISTING
+  darwin/gcc-16 nm-reading issue in a script this lane never touched (no
+  `checks passed`/`failed` line — the script's own non-vacuity guard refuses
+  to render a verdict rather than reading a broken symbol table as a
+  pass/fail); `run_trie_identity.sh` 7/0; `run_scan_edge_census.sh` 14/0;
+  `run_n1_budget.sh` 13/0. Per the manager's own note, these are the
+  known darwin-only reds — not chased further, and not caused by anything in
+  this diff.
 
 ## Open questions for the manager
 
