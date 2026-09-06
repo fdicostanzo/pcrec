@@ -64,7 +64,12 @@ content in briefs. LIFECYCLE (same ruling): lanes get NO self-keepalive
 crons (subagent caches are 5-min TTL — ticks are pure cost); close agents
 AGGRESSIVELY — an agent not needed within a few minutes summarizes (iff a
 follow-up is expected) and ENDS; follow-ups go to FRESH agents resuming
-from the committed report. And DELEGATE OPERATIONS HARD: the manager's
+from the committed report. **Closure is the MANAGER'S ACT, not the
+agent's**: an "idle" agent is still alive and billable — after accepting
+its delivery, `TaskStop(task_id: "<lane-name>")` it explicitly. The first
+day of this policy the manager preached it while two delivered lanes sat
+alive (Frank caught it); check for live agents at every delivery
+acceptance and at session pause. And DELEGATE OPERATIONS HARD: the manager's
 model is the most expensive in the ledger — mechanical runs, sweeps,
 re-pins, triage, doc maintenance all go to lanes; the manager keeps
 judgment, briefs, review, merges.
