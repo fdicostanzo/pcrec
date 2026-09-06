@@ -1790,6 +1790,14 @@ alone cannot tell a refactor from a no-op.
   does not. The check states the two constraints it can stand behind and NAMES
   the third as open.
 
+## TRAPS THIS DIRECTORY HAS PAID FOR — read before writing a `sed` or resolving a `CC`
+
+| about to… | know this |
+|---|---|
+| write a `sed` in a check | **this box's `sed` is BSD sed and GNU-only constructs SILENTLY NO-OP** — no error, exit 0, text unchanged. `\b` and `\|`-inside-`\(...\)` are the two MEASURED instances, both of which sat red here since the Mac move while naming an emitter change that had not happened (`docs/testing.md`, "The `sed` binary itself"). Spell it portably, never `case $(uname)` — the harness runs these on Linux too |
+| resolve a `CC` in a script here | source `tests/lib/cc_resolve.sh` BEFORE your own defaulting — it acts only when `CC` is unset, so an assignment above it makes it a no-op. `run_codegen_tests.sh` was the tree's last straggler, and the cost was the GCC-SPECIFIC [K24] block being asked of Apple clang |
+| believe a check that says the emitter drifted | rule out the TOOL first. Both traps above reported exactly that, and both were wrong |
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the

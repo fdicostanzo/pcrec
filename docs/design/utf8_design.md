@@ -2459,7 +2459,7 @@ different questions.
 `pcrec_minw` has seven live callers, verified by grep at this tree:
 `src/gen/emit_vm.c:4845`, `:5420`, `:5553`, `:5677`, `:7495`, `:8511` — the
 MRL prune's own sites — plus `src/opt/select_engine.c:653`
-(`prefilter_lang_nullable`), plus `src/opt/callgraph.c:775`'s fixpoint that
+(`lang_nullable`), plus `src/opt/callgraph.c:775`'s fixpoint that
 serves them. It genuinely wants BYTES ("how many subject bytes must any
 accepting continuation still consume"), and under UTF-8
 `minw(A_CLASS)` = the minimum encoded length over the class's intervals is

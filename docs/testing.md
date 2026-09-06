@@ -4015,3 +4015,52 @@ are never compared).
   pass here; quiet-box timing floors stay on ubuntubudu. Frank's rule:
   light/targeted testing locally, never the whole suite — full validation
   goes to ubuntubudu by slot ([TT-15] PARKED is the chartered exit).
+
+### The `sed` binary itself — GNU-only constructs SILENTLY NO-OP on this box
+
+[MACPORT] follow-on, 2026-09-06 (lane k50bnd), and it is the same shape as
+"The `timeout` binary itself" one tool over: **this box's `sed` is BSD sed**
+(no `--version`, no `gsed` installed), and the failure mode is worse than a
+missing feature.
+
+**A GNU-only construct does not fail here. It matches nothing, exits 0, and
+passes the text through unchanged.** So a substitution that is the whole point
+of a step becomes a no-op, and what surfaces is a downstream symptom several
+steps away that names the wrong cause. Two measured instances, both in
+`tests/codegen/run_codegen_tests.sh`, both red on this box since the Mac move:
+
+| construct | where | what actually happened |
+|---|---|---|
+| `\b` (word boundary) | the OS-0b two-engine fixture's `sed 's/\brx_search\b/rx_search_b/g'` | engine B's entry was never renamed, so the fixture carried a DUPLICATE `rx_search` and all three OS-0b checks failed on a compile error |
+| `\|` (alternation inside `\(...\)`) | the [K24] de-sugaring's `rx_\(forward\|reverse\)_accepts(...)` rules | the accessor calls were never de-sugared, and the check reported "the sed above has been outrun by an emitter change" when nothing had changed but the sed dialect. The two `_step` rules carry no alternation and DID fire, which is why the residue read as 4 stray calls rather than as an extraction failure |
+
+Verify either directly:
+
+```
+$ echo "int rx_search(void)" | sed 's/\brx_search\b/rx_search_b/g'
+int rx_search(void)          # unchanged — no error, no diagnostic
+```
+
+**THE RULE: spell test-script `sed` portably, never darwin-conditionally** —
+the harness runs these on Linux too, so a `case $(uname)` fork would double the
+thing under test. `\b` becomes "not followed by an identifier character"
+(`rx_search\([^_A-Za-z0-9]\)`, verified byte-identical to GNU `\b` on the real
+body before landing); `\|` becomes one rule per alternative, which needs no
+`-E` and therefore no re-escaping of the literal parens these patterns are full
+of.
+
+**AND THE SAME RUN FOUND A SECOND, INDEPENDENT DARWIN LAYER UNDER THE FIRST.**
+`run_codegen_tests.sh` resolved its own `CC` and was the one straggler NOT
+sourcing `tests/lib/cc_resolve.sh`, so on a box where bare `gcc` is Apple clang
+the **[K24] block — which is GCC-SPECIFIC BY DESIGN** — was being asked of a
+compiler with no partial-inlining pass at all. With the shim sourced (before
+the script's own defaulting, since `cc_resolve` acts only when `CC` is unset)
+the block runs under real GNU gcc and its control fires for the first time on
+this box: *"the de-sugared, attribute-stripped control DOES split (1 clone) —
+the partial-inlining pass is live."* The file goes **104 passed / 4 failed →
+109 passed / 0 failed**; the count rises by five rather than four because
+K24's control check is only reachable once the de-sugaring works.
+
+**The generalisable half**: when a check on this box reports that the tree has
+drifted, rule out the TOOL before believing it. Both of these named an emitter
+change that had not happened.

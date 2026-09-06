@@ -237,6 +237,32 @@ S230/S231 (the `cwmax` pair, arm `mrl`) landed the same morning — the
 filenames never collided, the `SAB_ID`s did, and an id is what the matrix
 reports under.
 
+
+**Newest ([K50-NULLGATE], 2026-09-06, lane k50bnd):** one new row, **S236**,
+and a RE-ANCHORING of S234 that is worth reading as a lesson rather than as
+bookkeeping.
+
+**S236 — the gate omitted on a NULLABLE pattern**, i.e. the narrowing's UNSAFE
+direction. `pcrec_startgate_needed` (src/core/internal.h) forced to `false`.
+It is not a second hunk of S234: S234 deletes the gate for every pattern and is
+caught by ANSWERS; S236 deletes it only where the predicate is consulted and is
+caught FIRST BY THE COMPILER — `cstart_check_omission` refuses at the omission
+site, so a nullable pattern does not miscompile, it fails to compile, naming
+the disagreement between the AST-level predicate and the machine. The
+answer-level detectors behind it stay armed for the case where the invariant is
+removed too.
+
+**S234's ANCHOR MOVED, AND RE-ANCHORING IT WAS NOT ENOUGH.** The narrowing gave
+the gate's guard a second conjunct, so `scripts/m6read_check_sab_anchors.py`
+reported `ANCHOR NOT FOUND` — [SABANCHOR] doing exactly its job. The part that
+is not mechanical: the row's WITNESS had to be re-checked against the new
+mechanism. `\B` is NULLABLE, so it is still a pattern that BUILDS the gate and
+the row still detects. **A non-nullable witness would now score UNDETECTED for
+a reason that is not a defect** — the gate it deletes is one the compiler no
+longer builds — which is the [MECH-REACH] shape arriving through a narrowing
+rather than through a module landing. Re-anchor, then ask whether the row's
+witness is still inside the population the mechanism acts on.
+
 **Newest ([ENCCHK-DD12A], 2026-09-06, lane encchk):** two new rows plus the
 `encoding` arm reaching two existing ones. See `../CLAUDE.md`'s own
 "[ENCCHK-DD12A]" section for the per-row narrative — this file carries the

@@ -2,7 +2,7 @@
 # COUNT-COLLAPSED RESCUE IS BUILT AGAIN ON EVERY PATTERN THAT CANNOT USE IT,
 # AND EVERY ANSWER IN THE TREE IS STILL RIGHT.
 #
-# WHAT IT BREAKS. `EngineFit.prefilter_lang_nullable` is written once, at
+# WHAT IT BREAKS. `EngineFit.lang_nullable` is written once, at
 # `src/opt/select_engine.c`'s fit site, as `pcrec_minw(root) == 0` — the one
 # derivation both readers of the decision consult (the `fit.prefilter` clause,
 # which drops the prefilter on a ladder RUNG, and `src/core/compile.c`'s build
@@ -65,5 +65,5 @@ SAB_REACH_POP="tests/codegen/run_prefilter_collapse.sh|^declined_default_witness
 tests/codegen/run_prefilter_collapse.sh|\[sel1n\]|10
 tests/resource/run_resource_tests.sh|^size_rung_cell |2"
 SAB_COUNT=1
-SAB_BEFORE='        fit.prefilter_lang_nullable = pcrec_minw(root) == 0;'
-SAB_AFTER='        fit.prefilter_lang_nullable = false;   /* SABOTAGE S206 */'
+SAB_BEFORE='        fit.lang_nullable = pcrec_minw(root) == 0;'
+SAB_AFTER='        fit.lang_nullable = false;   /* SABOTAGE S206 */'

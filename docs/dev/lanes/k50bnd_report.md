@@ -674,3 +674,180 @@ it would leave the magic number armed for the next lane.
 box, §2.6.1.1); `docs/dev/known_issues.md` (K50 → FIXED);
 `docs/design/utf8_measurements/probes/probe_startbnd.py` +
 `out/startbnd.txt`; four directory `CLAUDE.md`s.
+
+---
+
+## 10. [K50-NULLGATE]: the placement analysis and the PREDICTION TABLE
+
+**Written before any measurement and before any engine edit** (commit order is
+the evidence: this section lands alone, ahead of the implementation).
+
+### 10.1 Placement count: ONE survives
+
+The charter's D6 trigger is "more than one candidate placement". Three were
+considered and two are refuted, so no panel is convened — the same shape as
+the two dead gate placements in §5.
+
+**(A) AST-level, pre-NFA — `pcrec_minw(root) == 0`. SURVIVES.**
+
+**(B) DFA-level — `state_acc_any` over the unanchored start closure. REFUTED
+by a structural fact, not by preference.** It is genuinely the only mechanism
+in the tree that models surrounding-character context (`DState.up[UPC_N]
+.accept`, `src/gen/emit_dfa.c:2682`); every other candidate treats assertions
+as unconditionally satisfied. But `nfa_wrap_unanchored` is called only inside
+`if (!nfa_has_bot(...))` (`src/core/compile.c:1191-1194`), the branch that
+selects `PCREC_ENG_UNANCH` — **so for an ENG_ATTEMPT pattern there is no gate
+node and no unanchored-DFA start closure to read at all**, while site 2 (the
+ENG_ATTEMPT `continue`, `src/gen/emit_dfa.c:6450-6462`) is emitted from
+`pcrec_enc_start_guard` and reads no NFA or DFA state whatever. Since the
+measured 1.33× regression is ENG_ATTEMPT's, (B) is unavailable at exactly the
+site the optimization is for, and adopting it would leave site 2 to a second
+predicate — two derivations of one fact.
+
+**(C) NFA-level ε/assertion reachability from the pattern's own start.
+REFUTED as redundant**: a walk that passes every assertion as though it held
+is `pcrec_minw`'s answer computed a second time, one representation later, and
+it is still unavailable to site 2 for (B)'s reason.
+
+### 10.2 Why (A) is sound — the argument that must become a check
+
+A reported NON-empty match consumes a byte at its start, and no lowered utf8
+path begins with a continuation byte — which is exactly what `start_cls_utf8`
+asserts. So for a non-nullable pattern the first-byte test already does the
+gate's job and **the gate is REDUNDANT, not merely unnecessary**. Generalized
+past utf8: *the gate is needed iff the pattern is nullable, because a
+non-nullable match's first byte is in `start_cls` by the backend's own
+contract.* That is a proof rather than a heuristic, and it is prose until it
+is an invariant over the NFA — every `N_CLASS` reachable from the pattern's
+own start must have an empty intersection with the complement of `start_cls`.
+It lands as a check, per the manager's standing condition on the byte
+tautology (§7).
+
+`pcrec_minw`'s sound direction is already the one this needs and is documented
+at `src/opt/mrl.c:47`: it under-estimates the minimum, hence over-reports
+nullable, hence **over-builds the gate — today's answers preserved whenever
+the analysis is uncertain.**
+
+It is NOT the empty-subject probe the manager rejected. `pcrec_minw` returns 0
+for `A_LOOK` unconditionally, so `(?<=x)` reads nullable and KEEPS its gate —
+the exact case the runtime probe gets wrong.
+
+### 10.3 THE PREDICTION TABLE (stated before measurement)
+
+| # | prediction | scored |
+|---|---|---|
+| P1 | the class (238 today) shrinks to the nullable subset: **fewer than 20 remain** | **HIT** — 14 |
+| P2 | the 3 `#UNDECLARED` rows (`\Z`, `\b`, `\B`) are all nullable and **all three REMAIN** | **HIT** — exact set match, still 3 |
+| P3 | of the 4 stamp-declared moved-form pairs, **at least 3 are non-nullable and leave** | **MISS** — all 4 are NULLABLE (`a*$`, `a*\Z`, `a{0,4}$`, `a{0,4}\Z`) and all 4 REMAIN. GATEFORM is unmoved at 4. I reasoned that a moved FORM implied a bigger machine and so a consuming pattern; it implies the opposite here — axis E's accept placement moves precisely when a state's accept VARIES BY CLASS, which is a nullable-pattern property |
+| P4 | `b\|c`, `frank\|fred`, `a(b\|c)+d` — §6b's three named breakers — **all leave** | **HIT** — all three gone; `b\|c`'s utf8 table is now `[4]`, identical to byte |
+| P5 | the floor (200) and ceiling (20) both become WRONG and must be re-derived | **PARTIAL** — the floor became wrong and FIRED (class 14 < 200). The ceiling did NOT: 4 is still under 20. Re-derived anyway (floor 10, ceiling 8) so both sit near their measured values |
+| P6 | ENG_ATTEMPT's 1.33× goes away for non-nullable patterns; `(?m)^a\|\B` keeps its guard | **HIT** — measured: `(?m)^a\|\B` utf8 emits 1 guard site, `(?m)^a` emits 0, byte emits 0 for both |
+| P7 | byte artifacts still unmoved — 0 differences | **HIT** — `start_cls` is NULL under `byte`, so neither conjunct can fire; the check's byte-identical bucket grew 9 → 233 |
+| P8 | abi 24 → 25; non-nullable unanchored utf8 artifacts move, nullable ones do not | pending — the ritual is the next commit |
+
+**AND THE PREDICTION TABLE EARNED ITS KEEP ON P3.** The miss is not a rounding
+error, it is a wrong model: I expected a moved emitted FORM to imply a larger
+machine and therefore a consuming pattern. Axis E moves when a state's accept
+VARIES BY CLASS, which is a property of patterns that can accept without
+consuming — so the form-movers are exactly the nullable ones and the sub-class
+was never going to shrink. Had I not written the number down first I would have
+read "GATEFORM unchanged at 4" as the narrowing failing to reach them.
+
+### 10.4 Implementation shape
+
+`fit.prefilter_lang_nullable` (`src/opt/select_engine.c:653`) is ALREADY
+`pcrec_minw(root) == 0`, already on `EngineFit`, already reachable as
+`cx->job->fit.*` at all three sites, and already computed before the NFA
+build. Adding a second field with an identical definition would be the
+parallel mechanism memory `pcrec-general-mechanisms-not-special-cases`
+forbids, so the fact is RENAMED to what it is (`lang_nullable`) and read by
+both rows: one derivation, one name, two consumers.
+
+### 10.5 A DEFECT IN THE INTERIM INSTRUMENT, found by narrowing past it
+
+The narrowing was expected to empty most of DD12a(i)'s gate-refinement class.
+On the first run it emptied NONE of it: the class stayed at exactly 238, with
+identical sub-counts, while direct measurement showed `b|c`'s utf8 transition
+table had become byte-identical. Both readings were correct, and reconciling
+them found the defect.
+
+**MEMBERSHIP WAS `nb != nu` ON THE RAW EXCISED TEXT, and comments were dropped
+only later, in the CLASSIFICATION step.** The `next_pos` residual's own
+explanatory prose legitimately differs per encoding — "byte encoding: one byte
+is one character…" against "utf8 encoding: skip forward over continuation
+bytes…" — so essentially every strict pair differed for a reason that has
+nothing to do with the boundary gate, was admitted to a class named for the
+gate, and counted toward its floor of 200.
+
+**MEASURED over the 207 manifest rows: 97 named artifacts with NO DFA TABLE AT
+ALL, and 100 more now compile to byte-identical tables. 197 of 207 rows were in
+a gate class carrying no gate.** The floor was asserting over a population that
+was ~95% prose. That is K35's shape — a population nobody counted — inside an
+instrument I wrote to escape it, and it was mine, landed three commits earlier
+and merged.
+
+**THE REPAIR is `comments_only` as the membership test** (`nb != nu && not
+comments_only(nb, nu)`): a pair whose whole difference disappears with comments
+is not a member. **Nothing is weakened** — the strict bar is untouched, and a
+pair that reaches equality by dropping comments has no token difference left
+for an encoding conditional to hide in. What changed is that the class now
+contains only what it is named for.
+
+The instrument got sharply stronger as a result: **233 of 243 strict pairs are
+now byte-identical after excision, against 9 before**, and the excused class is
+13 named nullable patterns instead of 207 mostly-arbitrary ones. Its two
+guards (staleness, unlisted-member) are together an EXACT set match at that
+size, which is what now carries the load; the floor is demoted to a collapse
+tripwire and says so in the manifest.
+
+**WHY IT SURVIVED ITS OWN SABOTAGE VALIDATION.** All three plants (§6c) were
+caught, and correctly — a real encoding conditional still leaves the data-only
+class, a stale row still fails, an unlisted member still fails. None of them
+could see this, because every plant moved a pair that was ALREADY a member. The
+defect was in who ELSE was in the class, and no sabotage of the subject can
+reveal an over-broad population. What revealed it was changing the compiler so
+the population SHOULD have moved, and finding that it did not.
+
+### 10.6 P8 SCORED: **NO abi bump.** The ritual was measured, not performed
+
+The charter expected `abi` 24 → 25 with the full D76/D94 ritual. **Measured, it
+is not an abi event, and bumping would have been wrong.**
+
+D76's rule is that a change to the emitted SCAFFOLDING — comments,
+declarations, layout — is an `abi` bump plus a re-pin of comparison (B). The
+authoritative instrument for that question is
+`tests/codegen/run_recursion_identity.sh`, whose (B) leg is a WHOLE-FILE byte
+comparison against the pin. Run at this change:
+
+```
+recursion-identity[default] (B) whole-file vs 8e0fe77f: same=2424 differing=0
+recursion-identity[vm]      (B) whole-file vs 8e0fe77f: same=2425 differing=0
+16 checks passed / 0 failed, all four axes
+```
+
+**Not one byte moved**, and the reason is structural rather than lucky: under
+`byte` the backend's `start_cls` is NULL, so in `nfa_wrap_unanchored` the first
+conjunct short-circuits before the predicate is consulted at all, and at site 2
+`pcrec_enc_start_guard` contributes no text whichever order the conjuncts are
+evaluated in. The `byte` artifact cannot move under this change.
+
+**And the utf8 side is not an abi event either.** `abi` versions the artifact
+FORMAT — the entries, the macros, the `rx_info` fields, the stamps — and none of
+those moves. `<PREFIX>_STARTPOS_GUARD` still reads `"guarded"` on every utf8
+artifact, because the CALLER-entry guard (§3.1's contract) is deliberately left
+unconditional: narrowing it per pattern would make one caller error diagnosed
+here and silently accepted there, which is a worse contract than the one we
+have. What changed is which patterns receive an internal, answer-identity-
+preserving optimization — the same category as a scan-edge population moving or
+a minimization becoming more effective, neither of which bumps `abi`.
+
+**So the correct D76 action is NO bump and NO re-pin**, and the pin
+`8e0fe77f` still names the commit that introduced `abi` 24. Bumping anyway
+would have been actively harmful: it would re-pin (B) forward across a change
+that moved nothing, which is exactly how a byte-identity gate quietly becomes a
+build compared with itself.
+
+**The obligation the charter was really protecting is discharged by a different
+instrument.** The utf8 artifacts DO move, and what accounts for them is
+`run_encoding_checks.sh`'s DD12a(i) class with its re-derived manifest (§10.5),
+which now names all 13 remaining divergent patterns exactly.

@@ -2146,7 +2146,7 @@ different files — the second occurrence of that shape in this tree.
 
 Two rows for the nullability gate on [OPT-4]'s count-collapsed rescue, running
 the new `pfcollapse` arm alongside `resource` and `harness`. Both plants are
-ONE TOKEN at the same site — `EngineFit.prefilter_lang_nullable`'s single
+ONE TOKEN at the same site — `EngineFit.lang_nullable`'s single
 derivation in `src/opt/select_engine.c` — and that is deliberate: the predicate
 has TWO readers (the `fit.prefilter` clause that drops the prefilter on a
 ladder RUNG, and `src/core/compile.c`'s build gate that declines the collapse

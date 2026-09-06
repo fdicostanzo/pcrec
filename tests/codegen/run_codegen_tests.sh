@@ -392,9 +392,18 @@ fi
 # (clang performs no such pass), so that one check is expected to read
 # differently, not wrongly, under CLANGGEN=1.
 CC="${CC:-}"
-if [ -z "$CC" ]; then
-    if [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; else CC="gcc"; fi
-fi
+if [ -z "$CC" ] && [ "${CLANGGEN:-0}" = "1" ]; then CC="clang"; fi
+# [MACPORT] RESOLVE A REAL GNU gcc, the shim every other CC-resolving script
+# in this tree already sources. This file was a straggler, and the cost was
+# not cosmetic: on a box where bare `gcc` is Apple clang, the [K24] block
+# below — which is GCC-SPECIFIC BY DESIGN, asserting gcc's own partial-
+# inlining pass clones its control — was being asked of a compiler that has
+# no such pass, and its de-sugared control failed to build on a clang-only
+# `-Wunused-function` for the `static inline` accessors the de-sugaring
+# correctly leaves unused. An explicit CC in the environment still wins, so
+# `CLANGGEN=1` and `make test CC=...` are unaffected.
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"
+[ -n "$CC" ] || CC="gcc"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 # SAN-1 LINTGEN: ride this GENCFLAGS compile with gcc -fanalyzer, opt-in.
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
@@ -408,7 +417,17 @@ elif pcrec_run "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
     {
         echo
         echo "int rx_search_b(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2]);"
-        sed 's/\brx_search\b/rx_search_b/g' "$WORKDIR/engb.body"
+        # [MACPORT] PORTABLE WORD BOUNDARY, and this is not a style change.
+        # `\b` is a GNU sed extension. BSD sed (this box's `sed`) does not
+        # implement it and DOES NOT ERROR — it passes the text through
+        # unchanged, so engine B's entry was never renamed, the two-engine
+        # fixture carried a duplicate `rx_search`, and all three OS-0b checks
+        # failed on a compile error whose cause was three steps away.
+        # `rx_search` followed by a non-identifier character is the same set
+        # here: no emitted identifier ENDS in `rx_search`, and `rx_search_in`
+        # / `rx_search_run` are excluded by the `_`. VERIFIED byte-identical
+        # to GNU `\b` semantics on this exact body before landing.
+        sed 's/rx_search\([^_A-Za-z0-9]\)/rx_search_b\1/g' "$WORKDIR/engb.body"
     } >> "$WORKDIR/multi.c"
 
     if [ "$(grep -c '^#define PCREC_RX_ABI_H$' "$WORKDIR/multi.c")" -eq 1 ]; then
@@ -806,12 +825,25 @@ elif pcrec_run "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|eps
     # The de-sugaring is asserted to be COMPLETE (no accessor call may survive
     # in the control) so that a future emitter change which outruns this sed
     # fails HERE, naming the sed, instead of quietly turning the control off.
+    # [MACPORT] NO `\|` ALTERNATION, and this is not a style change. `\|`
+    # inside `\(...\)` is a GNU sed extension; BSD sed does not implement it
+    # and DOES NOT ERROR — it silently matches nothing, so the de-sugaring left
+    # exactly the accessor calls the `accepts`/`is_dead` rules were meant to
+    # remove and the control below reported "the sed has been outrun by an
+    # emitter change" when nothing had changed but the sed dialect. The two
+    # `_step` rules carry no alternation and always fired, which is why the
+    # residue was 4 and not an extraction failure. Spelled as one rule per
+    # machine instead: identical semantics on every POSIX sed, no dialect
+    # dependence, and no `-E` (which would need every literal `(` re-escaped).
     sed -e 's/__attribute__((noclone))//' \
-        -e 's/rx_\(forward\|reverse\)_accepts(\(rx_[a-z_]*\), \([a-z_]*\))/\2[\3]/g' \
-        -e 's/rx_\(forward\|reverse\)_is_dead(\([a-z_]*\))/\2 == 65535/g' \
+        -e 's/rx_forward_accepts(\(rx_[a-z_]*\), \([a-z_]*\))/\1[\2]/g' \
+        -e 's/rx_reverse_accepts(\(rx_[a-z_]*\), \([a-z_]*\))/\1[\2]/g' \
+        -e 's/rx_forward_is_dead(\([a-z_]*\))/\1 == 65535/g' \
+        -e 's/rx_reverse_is_dead(\([a-z_]*\))/\1 == 65535/g' \
         -e 's/rx_forward_step(rx_forward_next_state, \([a-z_]*\), \(.*\));/rx_forward_next_state[\1 + \2];/' \
         -e 's/rx_reverse_step(rx_reverse_next_state, \([a-z_]*\), \(.*\));/rx_reverse_next_state[\1 + \2];/' \
-        -e 's/rx_\(forward\|reverse\)_state \([a-z_]*_state\) =/unsigned \2 =/' \
+        -e 's/rx_forward_state \([a-z_]*_state\) =/unsigned \1 =/' \
+        -e 's/rx_reverse_state \([a-z_]*_state\) =/unsigned \1 =/' \
         "$WORKDIR/k24.c" > "$WORKDIR/k24_stripped.c"
     # [landing, 2026-09-02] `grep -c` exits 1 (not 0) when it counts zero
     # matches — and zero IS the success value this check wants (a fully

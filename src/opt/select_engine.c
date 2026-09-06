@@ -650,7 +650,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * `internal.h`'s field comment carries the argument that `minw == 0`
          * answers for the PREFILTER's lowering, and that the collapsed
          * language is nullable exactly when the exact one is. */
-        fit.prefilter_lang_nullable = pcrec_minw(root) == 0;
+        fit.lang_nullable = pcrec_minw(root) == 0;
         /* [OPT-4.1] AND WHETHER THERE IS ANYTHING TO COLLAPSE, derived here
          * for the same reason and read by the same two sites (internal.h). */
         fit.prefilter_has_collapsible_rep = pcrec_has_collapsible_rep(root);
@@ -886,7 +886,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * internal.h's own field comments carry the full argument for each;
          * this is the ONE site that derives both, off the one local. */
         bool lang_nullable_declinable =
-            fit.prefilter_lang_nullable && !has_bref && !has_call && !force_on;
+            fit.lang_nullable && !has_bref && !has_call && !force_on;
         /* [OPT-4.2] "would this compile build a prefilter at all, absent the
          * nullability decline" — the SAME condition the final ternary below
          * falls through to when nothing declines it, read once here so the

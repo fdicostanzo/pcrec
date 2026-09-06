@@ -4075,7 +4075,47 @@ proves against the unchanged `ac4917d` pin.
 **WHERE IT IS PINNED NOW.** `tests/utf8/axis11_startpos_boundary.rxt` (this
 witness plus the site-2 one, the 3- and 4-byte subjects, and the ill-formed
 row), and `tests/utf8/run_startbnd_diff.sh` (the two-arm differential and the
-cross-engine §5). The differential was validated in six failing directions,
+cross-engine §5).
+
+**[K50-NULLGATE], 2026-09-06 — THE FIX IS NARROWED TO THE PATTERNS THAT CAN
+NEED IT, AND THE NARROWING IS A PROOF RATHER THAN A HEURISTIC.** A reported
+match that CONSUMES a byte already begins on a byte the backend's `start_cls`
+admits, so the pattern's own first-byte test refuses every mid-character start
+on its own and the gate can matter only for a match consuming NOTHING. The gate
+is therefore built iff the pattern is nullable (`pcrec_startgate_needed`,
+src/core/internal.h, reading `pcrec_minw(root) == 0`); for a non-nullable
+pattern it was REDUNDANT, not merely unnecessary.
+
+Sound direction is inherited and correct: `pcrec_minw` under-estimates, so the
+predicate over-reports nullable and OVER-builds the gate — uncertainty keeps
+K50's behaviour exactly. It is NOT the empty-subject probe, which is unsound
+here: `pcrec_minw` answers 0 for `A_LOOK` unconditionally, so `(?<=x)` reads
+nullable and keeps its gate.
+
+**NO `abi` BUMP, MEASURED.** `run_recursion_identity.sh` is 16/0 with
+comparison (B) whole-file byte identity at `same=2424/2425 differing=0` against
+the current pin — under `byte` the backend's `start_cls` is NULL, so the
+predicate is never consulted. No entry, macro, `rx_info` field or stamp moves
+on the utf8 side either; `<PREFIX>_STARTPOS_GUARD` still reads `"guarded"`,
+because the CALLER-entry guard is deliberately left unconditional (narrowing
+§3.1's contract per pattern would diagnose one caller error and silently accept
+another). What moves is which patterns receive an internal,
+answer-identity-preserving optimization.
+
+**THE OMISSION IS CHECKED AT ITS OWN SITE.** `cstart_check_omission`
+(src/ir/nfa.c) walks the epsilon+assertion closure of the pattern's own start
+wherever the gate is declined and refuses, by `ctx_fail`, if any class reachable
+without consuming admits a non-start byte or if an accept is reachable without
+consuming at all. That second arm is the AST-level predicate checked against the
+MACHINE — two independent derivations meeting — and it is what sabotage **S236**
+plants against. Both arms were demonstrated red: with the predicate forced
+false, `\B`, `a*` and `(?:a||b)` are refused under `-e utf8` while `b|c`
+compiles unchanged; with `start_cls` missing the bit for `b`, `b|c` is refused
+and `c` is not.
+
+Measured: `b|c` and `a(b|c)+d` utf8 tables are now byte-identical to their byte
+twins, `(?:a||b)` keeps its refinement, `(?m)^a|\B` keeps its ENG_ATTEMPT guard
+and `(?m)^a` no longer pays for one. The differential was validated in six failing directions,
 and validating it found a defect in the instrument worth recording: with a
 zero byte at `s[n]` the sweep could not see a guard that reads past the end of
 the subject, and read 4/4 green on a compiler whose guard had lost its

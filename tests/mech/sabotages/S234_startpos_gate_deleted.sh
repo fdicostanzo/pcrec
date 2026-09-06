@@ -22,6 +22,14 @@
 # self-loop widths and the forced-DFA one) and the corpus file fails its `\B`
 # cells; the ENG_ATTEMPT cell stays green, which is correct — that site is a
 # different mechanism and has its own row (S235).
+#
+# [K50-NULLGATE], 2026-09-06 — THE ANCHOR MOVED and this row's WITNESS had to
+# be re-checked, not merely re-anchored. The gate's guard gained a second
+# conjunct (`pcrec_startgate_needed`), so the anchor is re-spelled to match.
+# The witness `\B` is NULLABLE, so it is exactly a pattern that still BUILDS
+# the gate after the narrowing — which is what keeps this row detecting.
+# A non-nullable witness would now score UNDETECTED for a reason that is not a
+# defect: the gate it deletes is one the compiler no longer builds.
 SAB_ID="S234-startpos-gate-deleted"
 SAB_FILE="src/ir/nfa.c"
 SAB_SUITES="startbnd harness"
@@ -31,5 +39,5 @@ SAB_DOC_FIGURE="docs/dev/known_issues.md K50 (site 1); docs/design/utf8_design.m
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions -o - -- "\\B" | grep -o "forward_next_state" | head -1'
 SAB_REACH_EXPECT='forward_next_state'
-SAB_BEFORE='    if (e && e->start_cls) {'
-SAB_AFTER='    if (0 && e && e->start_cls) {   /* SABOTAGE S234 */'
+SAB_BEFORE='    if (e && e->start_cls && pcrec_startgate_needed(cx)) {'
+SAB_AFTER='    if (0 && e && e->start_cls && pcrec_startgate_needed(cx)) {   /* SABOTAGE S234 */'

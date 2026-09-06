@@ -6447,10 +6447,22 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * guard (§3.1) owns and the `-fno-startpos-guard` arm may leave
      * mid-character on purpose; every later iteration is a position this loop
      * INVENTED, and those are the encoding's boundaries unconditionally. */
+    /* [K50-NULLGATE] `pcrec_startgate_needed` (internal.h, which carries the
+     * proof) is asked FIRST, and this is the site the narrowing is for: a
+     * match consuming a byte already begins on a byte the backend's
+     * `start_cls` admits, so a non-nullable pattern's attempt at a
+     * mid-character `start` cannot answer and the `continue` is redundant with
+     * a test the machine already performs. `(?m)^a|\B` — this loop's own
+     * witness — is nullable and keeps its guard; `(?m)^a` alone is not and no
+     * longer pays for one. The measured 1.33x ENG_ATTEMPT regression this
+     * guard cost is a nullable-pattern-only price now. */
     {
         char sbnd[256];
-        bool trunc;
-        if (pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
+        /* Initialised because the short-circuit below can leave
+         * `pcrec_enc_start_guard` — its only writer — uncalled. */
+        bool trunc = false;
+        if (pcrec_startgate_needed(cx) &&
+            pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                   sbnd, sizeof sbnd, "start", "subject",
                                   "subject_length", &trunc))
             sb_printf(c,

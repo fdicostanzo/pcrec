@@ -917,7 +917,7 @@ and asserted rather than exported. See `src/gen/CLAUDE.md`'s [DD-14.FB] section.
 The gate's four conjuncts were one `bool collapse`. They are now
 `pfc_wanted` (the DFA is not the engine, the axis is not denied, there is a
 collapsible repeat, and either the force flag or a ladder rung asked) and
-`collapse = pfc_wanted && (force_prefilter || !prefilter_lang_nullable)`. The split is what lets
+`collapse = pfc_wanted && (force_prefilter || !lang_nullable)`. The split is what lets
 the `_LANG_WHY` ladder branch on WHICH of the two happened without re-walking
 anything (D81): `!collapse && pfc_wanted` is the decline and stamps
 `PFLW_NULLABLE`, `!collapse && !pfc_wanted` is the old `PFLW_EXACT`/

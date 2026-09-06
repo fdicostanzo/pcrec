@@ -46,5 +46,5 @@ SAB_REACH_POP="tests/codegen/run_prefilter_collapse.sh|^lang_witness count-colla
 tests/codegen/run_prefilter_collapse.sh|\[sel1\]|8
 tests/resource/run_resource_tests.sh|^size_rung_cell |2"
 SAB_COUNT=1
-SAB_BEFORE='        fit.prefilter_lang_nullable = pcrec_minw(root) == 0;'
-SAB_AFTER='        fit.prefilter_lang_nullable = pcrec_minw(root) != 0;   /* SABOTAGE S207 */'
+SAB_BEFORE='        fit.lang_nullable = pcrec_minw(root) == 0;'
+SAB_AFTER='        fit.lang_nullable = pcrec_minw(root) != 0;   /* SABOTAGE S207 */'
