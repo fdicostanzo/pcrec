@@ -22078,3 +22078,70 @@ instruction to "retro-fit" PCRE2's vendored testdata describes a repository
 state that does not exist — there is no `third_party/` before this change.
 
 `third_party/ucd-16.0.0/` directory, which is what the shape was built for).
+
+## 2026-09-06 (EDT), fifty-sixth session part 5 — STAGE 3 MERGED; the battery's two catches (harness compiled generated code with CLANG since the Mac move; K50's axes re-pin missed); bench history rewritten; the travel-month topology
+
+**[M5.0] STAGE 3 MERGED** (819ec889, lane utf8s3, 15 commits): module
+`unicode-props` produces — 45 names, both encodings, both polarities,
+in-class, caseless (the measured span-substitution rule, NOT a fold
+closure — stage 4 was not a precondition). UCD 16.0.0 vendored under
+the new third_party/ shape behind a generic `make gen-tables`. The
+lane's evidence: whole-space membership differential (byte 0 drift,
+utf8 62,121 all version-attributed), the D27-blinded axis04 corpus
+462/506 first-run with ZERO semantic divergences, PC-3 gate-open arm
++6. Filed: K53 (the optional anchored machine's bytes count toward
+max_emit_bytes — [K53-SELRETRY] chartered), U15 (a: Xwd definition
+drift 10.42→10.46; b: THE DLOPEN SHIM RESOLVES SYSTEM 10.42 ON MACOS,
+not Homebrew 10.48 — every dlopen oracle on this box; RULING OWED,
+queued for Frank), and the esc_class_value cursor bug (a produced
+EXT_MEMBERS never advanced — [^\p{L}] excluded { and }; found by the
+oracle-free invariant, invisible to both differentials; [M6.5.2]'s
+entry predicted it verbatim). Lane TaskStopped at acceptance, worktree
+and branch removed; watcher stopped. The BOILERPLATE-regime lane worked
+exactly as designed — no keepalives, complete handback, nothing owed.
+
+**THE FULL BATTERY AT THE MERGE CAUGHT TWO PRE-EXISTING DEFECTS** (both
+fixed at c480414c, re-run 38/38 green modulo the known darwin slice):
+(1) tests/harness/run.sh hardcoded CC="gcc" — bare gcc is APPLE CLANG
+on this box, so EVERY harness section had compiled generated code with
+clang since the Mac move; it surfaced as 37 "C23 extension" -Werror
+failures on view-carrying assertions artifacts (label followed by a
+declaration — emitted since [ENG-FORM], gcc-silent, clang-warned).
+run.sh now sources cc_resolve.sh (run_codegen_tests.sh's shape,
+morning's K24 fix one suite over); absolute.rxt 869/0 under gcc-16.
+Residue chartered to ride the next abi event: emit `label:;` so
+artifacts are warning-clean under BOTH compilers' -Werror (K24's
+cannot-dictate-users'-CFLAGS lesson; Frank's question surfaced it).
+(2) axes_registry_check 99→102: K50's bit-25 startpos-guard triple
+self-registered in the generic sweep and the K50 merge missed the
+re-pin (verified the +3 are exactly [startpos-guard/guarded] before
+moving the number; the else-branch's stale 88 corrected too).
+
+**BENCH**: their sample night REFUSED AT WRITE (KB-12, id-case rule
+checked only after 259 min of measurement; nothing salvaged — right
+call; re-runs 09-07 21:00). Ask-(v) slot GRANTED 09-07 10:00-11:00.
+Frank ruled the .rejected-blobs filter-repo (typed into pcrecdev2's
+session, confirmed); their rewrite verified on our side (old-tip tree
+identical, diff = their ack only) and the Mac clone reset onto 43fdf8d.
+
+**THE TRAVEL MONTH (Frank, tonight)**: leaving 09-07 08:00 with the
+Mac; Linux box stays up, no terminal for him; pcrecdev2 stays up and
+reachable. Ruled: (a) TAILNET tonight — Tailscale both machines, ssh
+over it for the month (install script placed on the box; Frank runs
+both sudo halves); (b) pcrecdev2 IS THE EXECUTOR for pcrec's Linux
+runs (SONNET from its next start — briefs are exact-command,
+expected-count, no judgment); (c) the Mac closes 08:00 daily-ish,
+resumes evenings. The 10:00 ask-(v) probe hands to pcrecdev2. Tonight:
+push main, the owed Linux arm (battery+mech over the six merges +
+stage 3 + the 10.46 exact-agreement differential), probe package,
+topology docs.
+
+**[OPT-DIAL] DIRECTION (Frank)**: FIVE settings (2 size / middle / 2
+speed); tier assignment by threshold rule-shape (penalty<x% &
+savings>y% = tier-one size notch; extreme = savings>y% under a larger
+penalty bound; constants unruled); default-middle takes only near-free
+trades (asymmetric — size pays a stricter bar); always_inline
+provisionally one notch toward speed; cls-fold the worked example of
+notch-one-size. [FORM-CHAR2] (iii) reframed as a dial placement;
+[SEL-SIZE]'s trade half folds into the policy table, its pure-win half
+(N1's witness) is ordinary selection correctness pending the census.
