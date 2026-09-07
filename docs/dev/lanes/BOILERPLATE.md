@@ -71,3 +71,13 @@ with numbers in the handback. RE-PIN EVERY MANIFEST/COUNT/PIN YOUR CHANGE
 MOVES in the same delivery (readers found by grep) — post-merge manager
 cleanup of your pins is a delivery failure. The full battery is the manager's at merge.
 Never merge to main yourself.
+
+## Travel-month topology (2026-09-07 .. ~10-07)
+
+The Linux box (ubuntubudu, the 10.46 reference oracle) is reachable
+ONLY over the tailnet: `duxevents@100.69.121.107` (never 192.168.1.100
+— that address only resolves from the home LAN). Light ops only, as
+ever; heavy Linux runs go through the manager (pcrecdev2's executor
+channel — never run one yourself over ssh, and never assume the box is
+free). The Mac session is closed mornings; a lane needing a ruling
+mid-morning parks and polls its rulings file.
