@@ -26,7 +26,7 @@ SAB_ID="S-U11-fold-1n-check-inverted"
 SAB_FILE="tests/registry/pc4_check.c"
 SAB_SUITES="registry"
 SAB_DESC="the standing 1:n fold check asserts that ss-ligature cells DO match caseless, inverting the result the whole DD-1 lowering rests on"
-SAB_DOC_FIGURE="PREDICTED (§4.1.1): run_pc4.sh prints the fold-cell block and 22 assertions; inverted, all 22 fail against a healthy libpcre2."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-08: clean run prints `pc4: 1:n fold — 22 assertions (11 cells x 2 option words), 0 matching` and PASSES; inverted, run_pc4.sh exits 1 with exactly 22 FAIL lines naming the design event."
 # THE REACH QUESTION FOR A ROW WHOSE SUBJECT IS A CHECK is whether the check
 # is still WIRED, not whether the compiler can do something -- so the probe
 # greps its call site. The POPULATION floor is 11 (the cells) rather than
