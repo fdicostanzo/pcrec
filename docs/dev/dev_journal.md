@@ -22145,3 +22145,61 @@ provisionally one notch toward speed; cls-fold the worked example of
 notch-one-size. [FORM-CHAR2] (iii) reframed as a dial placement;
 [SEL-SIZE]'s trade half folds into the policy table, its pure-win half
 (N1's witness) is ordinary selection correctness pending the census.
+
+## 2026-09-08 (EDT, Buffalo NY), fifty-seventh session part 1 — the night run read + triaged; DO-THEN-FINISH policy; B13 cross-review opened
+
+**PROCESS (Frank's rulings, all landed)**: (1) the manager session's 1h
+cache TTL is confirmed from session config — a 30-MIN HEARTBEAT CRON is
+live this session as the test (job at :13/:43, minimal-action prompt).
+(2) DO-THEN-FINISH lane structure adopted (BOILERPLATE.md, 139bcc63): a
+>4-min run is a lane's LAST act — commit + report (OWED numbers, log
+path, completion line) first, launch in background, END; never idle-wait
+across the 5-min subagent cache TTL. (3) The monitoring ladder: liveness
+= zero-model watcher script; post-run mechanical follow-up = fresh
+small-context agent; genuine mid-run judgment = a concise-brief
+haiku/sonnet watcher agent (tiny context, cache busts near-free);
+merge/ruling = manager. Chosen over 10-min lane crons because the fix is
+keeping the MONITORING context small, not keeping the big context warm.
+Memory updated (pcrec-subagent-cache-warmth items 6-7). Budget: fable at
+80%, hold the remainder through Thursday; sonnet/haiku for everything
+delegable.
+
+**NIGHT RUNNER (2786497c on ubuntubudu, trailer COMPLETE 07:42, no
+overrun note; read via sonnet fact-finder tailfacts over the tailnet)**:
+strict/san/axes GREEN (san 35/35; axes 24080/24080 on -fno-start-pinned).
+FOUR REDS, triage lane ntriage (sonnet) launched on all four: (1)
+test-uprops BOTH encodings rc=2 — tests/fuzz/pcre2_abi.h:234 dlinfo/
+RTLD_DI_LINKMAP undeclared on glibc (missing _GNU_SOURCE), so THE TIER-1
+10.46 EXACT-AGREEMENT DIFFERENTIAL NEVER RAN — stage 3's Linux
+confirmation is still OWED and STAGE 4 DOES NOT OPEN YET; (2)
+test-rxtsource 120/1 — population pins (PASS 13876→13728, SKIP
+14486→14997, pcre2-only 2268→2779) are pre-stage-3 Linux pins, stage 3
+moved the populations; (3) encchk 10/4, all four inside DD12a(i) — the
+rebuilt instrument's FIRST full-population run (ENC_MAX_BLOCKS=0) vs its
+Mac 250-block calibration (164 unmanifested K50-class pairs, FORM 29 vs
+ceiling 8, exception list 3 vs 13, 24 strict-identity diffs on boundary
+constructs citing rx_forward_accepts_class/rx_forward_row); (4) mech
+S-U9 UNDETECTED-UNEXPECTED (utf8 back_step length check gap; likely
+re-class expected-UNDETECTED blocked on the chartered utf8 differential
+instrument, S-U6's shape — lane to determine). ask-(v) PROBE:
+fixed=-10.9ns (~0), per-byte 0.2956 ns/B FLAT across 64K..1M — does NOT
+reproduce the bench's 31.6µs fixed-cost hypothesis, and CONTRADICTS
+their own O-21 instrument (44-62µs fixed, ns/B 1.475→0.59 falling, ~2x
+our asymptote) — reconciliation owed, queued, not this session's fable.
+FALSE ALARM defused: the remote clone's HEAD 201e0b1c is an ANCESTOR of
+our main (stale checkout), not new commits; nothing to merge.
+
+**[B13] CROSS-REVIEW (Frank's ask)**: the bench's interpreter design
+(docs/design/interpreter_v1.md v1.1, 2391 lines) read END-TO-END before
+the panel docs. Panel-process issues confirmed: the consolidation
+DROPPED two numbered critic findings (build#11, F10 — recovered by the
+revision lane from the raw critic files), one row/cell conflation in the
+review's framing, and the r4 STEP-2 CONFIRMATION PASS NEVER RAN. Six
+independent findings (four must-fix spec edits: the header-parse
+"equivalently" claim is false; R-STATUS-3 contradicts P-2 under the
+raising-view contract; the selector grammar omits `section` which P1
+uses; R-DELTA aggregate keys reference undeclared decompositions; plus
+two minors). Verifier lane b13verify (sonnet) is running the owed
+step-2 pass against scp'd bench sources. Draft verdict: APPROVE
+conditional on the spec edits + P-1/P-2 landing first; full review to
+the bench inbox when the verifier reports.
