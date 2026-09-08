@@ -300,3 +300,32 @@ change.
   (`half2_loglines/`). Text/driver-source only; no generated
   `.c`/`.h`/`.o` artifacts (they regenerate from the pinned compiler and
   pattern text cited in the memo).
+- `tt4m_darwin_validation.md` — [TT-4M] STEP 1 (2026-09-08, lane tt4m,
+  measurement + prototype only, nothing under `tests/harness/`/`src/`):
+  re-opens [TT-4]'s closed batched-build question on darwin, where [TT-14]/
+  [XARCH] find the Mac's cost is process-dispatch spawn tax, not gcc CPU.
+  Shape L (one gcc invocation naming N pcrec-emitted `.c` sources plus a
+  generated dispatch `main()`, never concatenating source — each `.c` its
+  own translation unit by construction) beats the harness's
+  one-gcc-call-per-pattern shape at every batch size tried, up to **4.28x
+  wall / 2.79x CPU at N=64** on a 126-pattern/413-case `tests/base` slice,
+  zero answer-identity mismatches at any N, and a confirmed structural
+  win over [TT-4.1]'s TU-concatenation approach (no `--features`
+  homogeneity restriction needed — checked directly with a genuinely
+  heterogeneous pair). **The bigger of two levers was not the one this row
+  set out to isolate**: of N=64's 4.28x, the gcc-invocation-count lever
+  contributes 2.65x on its own, while an UNPLANNED second lever — fewer
+  DISTINCT executables launched at case-run time (126 binaries → 2)
+  collapsing macOS's per-binary first-launch cost — contributes 11.79x on
+  its own, confirmed directly by a same-binary-reuse microbenchmark
+  (4.72ms/call warm vs. baseline's 75.4ms/call average across mostly-cold
+  binaries). Degradation (one bad batch member) reproduces [TT-4.1]'s
+  Linux shape exactly: cheap to detect, expensive to recover (linear in
+  N). D77's residual trigger for a multi-pattern pcrec CLI mode is NOT
+  met — pcrec's own spawn cost is ~1.5-2.8% of the batched path's total
+  wall at every N, cross-validated by an independent standalone
+  measurement. Serial-only (box-coordination held the box for a
+  concurrent encoding-checks run for the whole construction phase) — does
+  NOT replicate [TT-4.1]'s Linux finding that too-large N regresses under
+  PARALLEL dispatch; that replication is owed to STEP 2. Evidence and
+  reproduction harness at `studies/tt4m_batchrun/` (own CLAUDE.md).
