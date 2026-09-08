@@ -22251,3 +22251,53 @@ groupings.
 
 **Heartbeat test**: 30-min ticks at :13/:43 ran all afternoon at
 one-line cost each — the 1h-TTL premise holds so far.
+
+## 2026-09-08 (EDT), fifty-seventh session part 3 — STAGE-4 GATE GREEN (I-59: tier-1 EXACT agreement on real 10.46) and STAGE 4 OPENED (lane utf8s4, opus); [TT-4M] 2a+2b merged (N=64/P=8; the design note) + r55 panel launched; bench back to FABLE (I-60)
+
+**I-59 EXECUTOR RUN GREEN at 9ddf634e** (pcrecdev2, same evening; their
+ack under I-59, logs build/ntriage_reval_20260908/): the tier-1
+uprops-utf8 differential on REAL 10.46 reads "compared 45 properties;
+0 code points attributed to version drift" — oracle Unicode 16.0.0 =
+pcrec's pinned 16.0.0, EXACT agreement, the drift budget unneeded.
+uprops byte 14/0, rxtsource 121/0, encchk full 11/0, S-U9
+UNDETECTED(EXPECTED), strict clean. The one flag (my "25 expected" vs
+their 14) was a criterion-authoring slip — make test-uprops runs
+ENC=byte only, the bare script runs both encodings; make -n confirms.
+The executor's report-don't-diagnose protocol handled it exactly as
+designed. **STAGE 4 OPENED under the standing go** — lane utf8s4
+(OPUS, engine tier per Frank's same-evening "opus is on the table"):
+DD-1's fold closure, CaseFolding.txt beside UnicodeData.txt in
+third_party/ucd-16.0.0/, the caseless constructor widening for
+ORDINARY classes/literals under -i -e utf8 (stage 3's §9 rule means \p
+rows are not customers); byte identity a hard constraint; S-U11
+DETECTED in the acceptance; 10.46 arm via the executor. Watcher armed.
+
+**[TT-4M] 2a+2b DELIVERED + MERGED** (lane tt4m2, sonnet; merge
+pushed): the N×P sweep (1,022 patterns/7,729 cases, 9 cells, ZERO
+answer-identity mismatches) finds the knee at P=8 = this box's
+perf-core count at every N; recommendation N=64/P=8 (wall plateau
+~9% across N=16-128 at P=8, half N=128's recovery blast radius;
+sensitivity asymmetric — wrong P costs 1.5-1.7x, wrong N costs
+recovery only). 18.65x end-to-end vs same-pool serial WITH the
+composition caveat stated (batching+parallelism vs neither; the
+decomposed baseline is named owed). K44 relief suggestive (peak load1
+10.44 vs 47.6) not conclusive. The design note answers all eight
+charter items; its two found-not-assumed facts: SIZELOG option (c) is
+STRUCTURALLY UNAVAILABLE (test-corpus threads SIZELOG unconditionally)
+so option (a) -c-per-TU is the pick, and the studies Makefile's
+`CC ?= gcc-16` was a silent no-op (CC is a make built-in — the smoke
+pool had compiled under Apple clang and passed anyway); axes survive
+with -fsanitize riding the reintroduced link; all eight
+harness-anchored mech rows clear by grep. **r55 LIGHT PANEL LAUNCHED**
+(two sonnet critics, read-only: method/numbers lens; harness-reality
+lens) on the merged note; 2c (implementation) opens on its
+dispositions.
+
+**BENCH GOVERNANCE (Frank)**: pcrecdev2 returns to FABLE at next start
+(I-60, supersedes I-54's Sonnet ruling) carrying the discipline
+package (do-then-finish, monitoring ladder, closure-as-manager-act,
+completion contracts from the B13 post-mortem); lanes stay
+Sonnet/Haiku BY DEFAULT with opus on the table when needed (I-60
+addendum, both repos). Their ack: package adopted into their committed
+session_discipline.md (21fbbf7) same evening. Memory updated all
+three places.
