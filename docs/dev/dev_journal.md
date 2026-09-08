@@ -22203,3 +22203,51 @@ two minors). Verifier lane b13verify (sonnet) is running the owed
 step-2 pass against scp'd bench sources. Draft verdict: APPROVE
 conditional on the spec edits + P-1/P-2 landing first; full review to
 the bench inbox when the verifier reports.
+
+## 2026-09-08 (EDT), fifty-seventh session part 2 — ntriage MERGED + PUSHED (9ddf634e); I-58 (B13 verdict) + I-59 (executor re-validation) delivered; [TT-4M] chartered + lane running; [V-E] gains Frank's organizer inputs
+
+**[B13] DELIVERED**: step-2 verification (lane b13verify, sonnet) came
+back 19/19 dispositions resolved, zero unflagged deviations, one stale
+reduce.py citation the only defect (~25 line citations otherwise exact;
+every Report-A numeric claim reproduced). Verdict committed to the bench
+inbox as I-58 (cac76aa): APPROVED CONDITIONAL on four spec edits (the
+false header-parse "equivalently"; R-STATUS-3 vs P-2 under the raising
+view; selector grammar missing `section`; R-DELTA aggregate keys'
+undeclared decompositions) — one revision commit, no re-panel;
+P-1/P-2 sequence first; plus the consolidation-completeness process fix
+(two critic findings had been dropped in r4's consolidation).
+
+**ntriage MERGED (9ddf634e, PUSHED)**: all four night reds fixed. The
+full-population ENC_MAX_BLOCKS=0 encchk run the lane launched as its
+do-then-finish last act completed 11/0 (the first lane run under the new
+policy — the shape worked: lane ended, watcher script caught completion,
+manager merged). Post-merge chain green: strict clean, uprops 25/0,
+encchk-250 11/0, codegen 109/0. Review notes: the rxtsource re-pin's
+per-file derivation sums exactly to the Linux got-numbers and answers
+the coverage question head-on (refusal-agreement PASSes replaced by the
+stronger tests/uprops differential); the encchk truncation fix reuses
+K51's own reached-slice precedent and documents its first-draft bug
+(#UNDECLARED excluded from the reachability set); one minor noted for
+the record — widens_under_utf8's POSIX-negated test (`:^` inside a
+class) can false-positive on a literal `[a:^b]`, rare, bounded by the
+exact-match manifest. I-59 (executor request, 1f6ac3d) sent: the
+authoritative Linux arm at 9ddf634e — uprops byte + THE TIER-1
+UPROPS-UTF8 DIFFERENTIAL (0 unexplained disagreements = the stage-4
+gate), rxtsource 121/0, encchk full 11/0, mech S-U9 solo. Worktree +
+branch removed clean.
+
+**[TT-4M] CHARTERED (Frank): batched-build validation ON DARWIN** — re-
+opens [TT-4]'s closed levers where the profile is now spawn tax
+([TT-14]/[XARCH]), Frank's shape: N pcrec emissions, one gcc link, one
+executable with dispatch main(). Lane tt4m (sonnet) running step 1
+(measurement + prototype in studies/, held off timing until the box
+cleared). **[V-E] = Frank's rx organizer** (re-proposed independently;
+row already existed from 2026-08-26) — addendum + tonight's design
+inputs recorded: error attribution first-class (compiler-like per-block
+diagnostics; D88 makes gcc-side attribution free), organizer a single
+unit regardless of build shape (sorted-array vs linker-section
+self-registration to the design pass), independent sets as link-time
+groupings.
+
+**Heartbeat test**: 30-min ticks at :13/:43 ran all afternoon at
+one-line cost each — the 1h-TTL premise holds so far.
