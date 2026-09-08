@@ -32,9 +32,20 @@ of your branch point before claiming a red as yours or pre-existing.
 
 ## Process rules (each has cost a lane before)
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
-- Long validation (>~2 min) runs in a BACKGROUND task writing a log; poll
-  the log TAIL and proceed the moment the completion line appears. Never a
-  blocking foreground call; never a Monitor on a progress log.
+- Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
+  a blocking foreground call; never a Monitor on a progress log.
+- DO-THEN-FINISH (Frank 2026-09-08): your context cache lives 5 MINUTES; an
+  idle wait longer than that busts it and every later turn re-pays your
+  whole context at full price. So: a run ≤~4 min you may poll (log tail)
+  and proceed. A run LONGER than that is the LAST thing you launch —
+  sequence the work so all heavy-context phases (design, code, review)
+  end at a commit + report FIRST; the report marks its validation numbers
+  OWED and names the log path + exact completion line; launch the run in
+  background and END. The manager's watcher catches completion; a fresh
+  agent (or the manager) reads the log and completes the delivery. If a
+  long run's results feed your own later work, fill the wait with
+  independent items — never idle-wait — or deliver in stages and let a
+  fresh agent resume from your report.
 - `timeout` (sized generously) on every command of uncertain length; a
   firing timeout is a FINDING.
 - Kill only by `scripts/safekill PID`; wrap hang/allocation risks in
@@ -52,7 +63,9 @@ of your branch point before claiming a red as yours or pre-existing.
 
 ## Lifecycle (Frank's ruling 2026-09-06 — replaces all keepalive guidance)
 - NO self-keepalive crons. Subagent caches are 5-minute TTL; periodic ticks
-  buy nothing and pay a full context rewrite each time.
+  buy nothing and pay a full context rewrite each time. (The MAIN session's
+  cache is 1-hour TTL — its 30-min heartbeat is legitimate and is not a
+  precedent for lanes.)
 - Work continuously to your deliverable. When blocked on a ruling, send the
   question and KEEP WORKING on whatever does not depend on it if anything;
   otherwise say you are stopping and why.
