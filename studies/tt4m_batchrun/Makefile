@@ -8,7 +8,18 @@
 # each run, not a fixed target.
 
 PCREC   ?= ../../build/pcrec
-CC      ?= gcc-16
+# CC is one of make's built-in variables (implicitly already defined as
+# "cc" before this file is even read), so a plain `CC ?= gcc-16` is a
+# SILENT NO-OP -- `?=` only assigns when the variable is UNSET, and CC
+# never is. Found live (2026-09-08, lane tt4m2): `make check` was
+# compiling the smoke pool with Apple clang (`/usr/bin/cc`) instead of
+# gcc-16 the whole time, and happened to pass anyway since the 8-pattern
+# smoke pool contains no shape clang rejects. `origin` distinguishes
+# make's own built-in default from a caller's explicit `make CC=...`, so
+# only the former is overridden here.
+ifeq ($(origin CC),default)
+CC := gcc-16
+endif
 POOL    ?= /tmp/tt4m_smoke_pool
 DRIVER  ?= ../../tests/harness/driver.c
 

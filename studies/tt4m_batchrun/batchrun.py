@@ -27,6 +27,26 @@ Subcommands:
              (dispatch.c + the N gen.c files named as separate arguments)
              + one timeout-wrapped matcher-run spawn per case (same
              per-case shape as baseline -- see module docstring).
+  parallel   [TT-4M] STEP 2 (2a): P CONCURRENT shape-L batch pipelines,
+             each an independent `batched` SUBPROCESS (self-reinvocation,
+             own sub-pool + own workdir -- the SAME shape tests/harness/
+             run.sh's own PROCS>1 fan-out uses: N.B. that PROCS shards
+             FILES, this shards BATCHES, which is the harness-adoption
+             analogue since a batch here is the harness's proposed
+             dispatch unit). The corpus's BATCHES (not raw rows) are
+             round-robined across P workers so worker shard sizes stay
+             even regardless of how batch-size N divides the pool. Wall
+             is the PARENT's own outer wall clock (workers genuinely
+             overlap; summing each worker's own wall would double-count
+             concurrent time); CPU is read via THIS process's
+             RUSAGE_CHILDREN after every worker is reaped, which per
+             POSIX wait(2) semantics cascades a worker's own
+             RUSAGE_CHILDREN (its pcrec/gcc/run grandchildren) up into
+             this total the moment the worker itself terminates -- cross-
+             checked against the SUM of each worker's own self-reported
+             cpu total (should closely agree; a gap beyond interpreter-
+             startup noise would be a bug in this reasoning, not just a
+             number to report).
   failure-iso  plants a syntax error in one batch member's gen.c COPY and
              measures shape L's all-or-nothing compile-failure cost
              against the per-pattern fallback cost to recover the batch's
@@ -239,6 +259,108 @@ def cmd_batched(args):
         json.dump(results, f, indent=1)
     print(json.dumps(results["spawns"], indent=1))
 
+def _write_subpool(dst_pool, shard_rows, cases_by_prefix):
+    os.makedirs(dst_pool, exist_ok=True)
+    with open(os.path.join(dst_pool, "manifest.tsv"), "w") as f:
+        f.write("prefix\tsource_file\tfeatures\tflags\tpattern\n")
+        for row in shard_rows:
+            f.write("\t".join([row["prefix"], row["source_file"], row["features"], row["flags"], row["pattern"]]) + "\n")
+    with open(os.path.join(dst_pool, "cases.tsv"), "w") as f:
+        for row in shard_rows:
+            for subj, pos in cases_by_prefix.get(row["prefix"], []):
+                f.write(f"{row['prefix']}\t{subj}\t{pos}\n")
+
+def cmd_parallel(args):
+    rows = read_manifest(args.pool)
+    if args.limit:
+        rows = rows[:args.limit]
+    cases_by_prefix = read_cases(args.pool)
+    N = args.batch_size
+    P = args.procs
+    batches = [rows[i:i + N] for i in range(0, len(rows), N)]
+    # Shard BATCHES (not raw rows) round-robin across P workers, so worker
+    # shard sizes stay even regardless of how N divides len(rows) -- a
+    # trailing short batch cannot pile onto one worker.
+    shards = [[] for _ in range(P)]
+    for i, b in enumerate(batches):
+        shards[i % P].extend(b)
+
+    workdir = args.workdir or "/tmp/tt4m_parallel"
+    if os.path.isdir(workdir):
+        shutil.rmtree(workdir)
+    os.makedirs(workdir)
+
+    script = os.path.abspath(__file__)
+    procs = []
+    worker_outs = []
+    worker_shard_batches = []
+    t0 = time.perf_counter()
+    ru0 = resource.getrusage(resource.RUSAGE_CHILDREN)
+    for wi, shard_rows in enumerate(shards):
+        if not shard_rows:
+            continue
+        n_shard_batches = sum(1 for i, b in enumerate(batches) if i % P == wi)
+        worker_shard_batches.append(n_shard_batches)
+        subpool = os.path.join(workdir, f"pool{wi}")
+        _write_subpool(subpool, shard_rows, cases_by_prefix)
+        wworkdir = os.path.join(workdir, f"work{wi}")
+        wout = os.path.join(workdir, f"out{wi}.json")
+        werr = os.path.join(workdir, f"err{wi}.log")
+        worker_outs.append((wout, werr))
+        cmd = [sys.executable, script, "batched",
+               "--pool", subpool, "--pcrec", args.pcrec, "--cc", args.cc,
+               "--timeout-bin", args.timeout_bin, "--gencflags", args.gencflags,
+               "--run-secs", str(args.run_secs), "--batch-size", str(N),
+               "--out", wout, "--workdir", wworkdir]
+        with open(werr, "w") as ef:
+            procs.append(subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=ef))
+    rcs = [p.wait() for p in procs]
+    t1 = time.perf_counter()
+    ru1 = resource.getrusage(resource.RUSAGE_CHILDREN)
+    wall_elapsed = t1 - t0
+    cpu_outer = (ru1.ru_utime - ru0.ru_utime) + (ru1.ru_stime - ru0.ru_stime)
+
+    merged_cases = {}
+    compile_failures = []
+    agg_counts, agg_wall, agg_cpu = {}, {}, {}
+    worker_summaries = []
+    for wi, ((wout, werr), rc) in enumerate(zip(worker_outs, rcs)):
+        entry = {"worker": wi, "rc": rc, "batches": worker_shard_batches[wi]}
+        if rc != 0 or not os.path.exists(wout):
+            with open(werr) as ef:
+                entry["stderr_tail"] = ef.read()[-2000:]
+            worker_summaries.append(entry)
+            continue
+        d = json.load(open(wout))
+        merged_cases.update(d["cases"])
+        compile_failures.extend(d.get("compile_failures", []))
+        for k, v in d["spawns"]["counts"].items():
+            agg_counts[k] = agg_counts.get(k, 0) + v
+        for k, v in d["spawns"]["wall_by_kind"].items():
+            agg_wall[k] = agg_wall.get(k, 0) + v
+        for k, v in d["spawns"]["cpu_by_kind"].items():
+            agg_cpu[k] = agg_cpu.get(k, 0) + v
+        entry["spawns"] = d["spawns"]
+        worker_summaries.append(entry)
+
+    results = {
+        "n": N, "procs": P,
+        "n_batches": len(batches), "n_workers_used": len(worker_outs),
+        "wall_elapsed": round(wall_elapsed, 4),
+        "cpu_outer_rusage_children": round(cpu_outer, 4),
+        "agg_counts": agg_counts,
+        "agg_wall_by_kind": {k: round(v, 4) for k, v in agg_wall.items()},
+        "agg_cpu_by_kind": {k: round(v, 4) for k, v in agg_cpu.items()},
+        "agg_cpu_sum": round(sum(agg_cpu.values()), 4),
+        "n_patterns": len(rows),
+        "cases": merged_cases,
+        "compile_failures": compile_failures,
+        "worker_summaries": worker_summaries,
+    }
+    with open(args.out, "w") as f:
+        json.dump(results, f, indent=1)
+    print(json.dumps({k: v for k, v in results.items() if k not in ("cases",)}, indent=1))
+
 def cmd_failure_iso(args):
     """Plants a syntax error in ONE batch member's gen.c COPY, measures
     shape L's all-or-nothing compile-failure cost, then measures the
@@ -375,6 +497,12 @@ def main():
     add_common(p, ["pool", "pcrec", "cc", "timeout_bin", "gencflags", "run_secs", "out", "workdir", "limit"])
     p.add_argument("--batch-size", type=int, required=True)
     p.set_defaults(func=cmd_batched)
+
+    p = sub.add_parser("parallel")
+    add_common(p, ["pool", "pcrec", "cc", "timeout_bin", "gencflags", "run_secs", "out", "workdir", "limit"])
+    p.add_argument("--batch-size", type=int, required=True)
+    p.add_argument("--procs", type=int, required=True)
+    p.set_defaults(func=cmd_parallel)
 
     p = sub.add_parser("failure-iso")
     add_common(p, ["pool", "pcrec", "cc", "gencflags", "out", "workdir"])
