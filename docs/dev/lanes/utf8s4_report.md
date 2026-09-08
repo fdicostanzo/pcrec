@@ -62,8 +62,15 @@ scaffolding, the bump and its D94 grep are a merge-time act.
 | **S-U3** | **DETECTED** — 207 / 30 |
 | **S-U11** | **DETECTED** — `run_pc4.sh` exits 1 with exactly 22 FAIL lines naming the design event |
 
+| `make strict` | **clean** — whole tree under `-Werror -Wshadow` |
+| `tests/uprops/run_uprops_tests.sh` | **25 / 0**, including the generator's staleness check, which now covers all three products |
+| **S08 / S09 / S10 re-aimed** | intent re-verified at **6 / 14 / 8** `tests/base/caseless.rxt` cases — the rows' OWN recorded counts, reproduced exactly (clean baseline 56/0) |
+| `scripts/m6read_check_sab_anchors.py` | **243 rows / 256 anchor sites, all resolve** (`[SABANCHOR]` PASSES) |
+| `make test-codegen` | every script `checks failed: 0` EXCEPT `run_inline_capability.sh`, which is **PRE-EXISTING** and A/B'd against the branch point — §3.13 |
+
 **Owed, and named:** the `make test`/`san`/`mech` battery is the manager's at
-merge, per the delivery bar. The 10.46 reference arm is §6.
+merge, per the delivery bar. The 10.46 reference arm is §6. One PRE-EXISTING
+red is measured and attributed in §3.13.
 
 ---
 
@@ -262,7 +269,63 @@ region identified by the NAME OF ITS ENTRY POINT stops covering that region the
 moment the entry needs a helper. The next backend whose residual body needs
 more than one function will meet it again.
 
-### 3.12 A PROCESS NEAR-MISS, recorded because it is the mandate
+### 3.12 REWRITING `cls_casefold` STALED THREE SABOTAGE ANCHORS, and re-aiming them reproduced their own recorded counts
+
+`make test-codegen`'s `[SABANCHOR]` tripwire caught it: **S08** (fold before
+negate), **S09** (the literal constructor must fold) and **S10** (the fold is
+symmetric) all anchor on `src/parse/parse.c` text this stage rewrote — the fold
+became a parameter, the produced-set union moved between the fold and the
+negation, and S10's loop moved into `src/core/fold.c` when the fold became an
+object. All three re-aimed, and **the re-aim is verified by its own numbers
+rather than by the anchors resolving**: solo, they fail 6, 14 and 8
+`tests/base/caseless.rxt` cases against a 56/0 clean baseline — **exactly the
+counts each row's own `SAB_DOC_FIGURE` has always claimed.** (Stage 1's report
+records the same three rows reproducing the same 6/14/8 through its own
+re-aim, so the property is now twice-confirmed.)
+
+**S09's anchor was tightened rather than transcribed.** It was `char_node`'s
+whole body including a nine-line comment, so an edit to the PROSE staled it.
+It is now the one line that folds.
+
+**S08 and S-U1 are ONE EDIT with TWO DETECTORS, and both headers say so.** The
+byte tier's witness (`[^a]` on `A`, `tests/base/caseless.rxt`) and the
+cross-block one (`[^k]` on U+212A, `tests/utf8`) are different populations; a
+single row would certify only one of them.
+
+**And S-U11 did not source at all** — its `SAB_DOC_FIGURE` was a double-quoted
+string containing a backtick, so the shell read the quoted text as a command
+substitution and choked on a `(`. The tripwire reported it as UNREADABLE, which
+is the right severity: a row that does not source is a row the matrix cannot
+run. **This is lane w12's recorded defect verbatim** ("a backtick inside a
+double-quoted message"), met again in a different file.
+
+### 3.13 ONE PRE-EXISTING RED, A/B'd rather than claimed
+
+`tests/codegen/run_inline_capability.sh` reports
+`FAIL: nm could not read arm_a.o (no rx_search symbol)` on the witness
+`\d{1,16}` at `--engine=vm --vm-entry-shape=4`. **Reproduced identically in a
+scratch build of the branch point (`b14c89a4`)**, which contains none of this
+stage's code and nothing to do with folding. Not this lane's, not investigated
+further, reported rather than absorbed.
+
+### 3.14 THE HARNESS UNDER-COUNTED 57 CASES AND STILL READ GREEN
+
+Worth one line because it is a vacuity shape. Running
+`tests/harness/run.sh tests/utf8/fold.rxt tests/utf8/axis06_caseless_fold.rxt`
+**while `make test-codegen` was running** reported `cases passed: 180 / cases
+failed: 0`. On a quiet box the same command reports **237 / 0** (45 + 192,
+each file's own solo count). So 57 cases silently did not run and the summary
+still read green.
+
+The cause was mine — I started a second heavy suite against the one-at-a-time
+rule and then measured against it — and the numbers in §2 are all from quiet
+runs. But the OBSERVATION is about the harness: a starved or lost worker
+appears to reduce the case COUNT rather than fail, and nothing in the summary
+says so. `tests/lib/run_group.sh` has an explicit lost-worker-hard-fails
+discipline; whether `run.sh`'s own per-file dispatch has the equivalent is a
+question this lane raises and does not answer.
+
+### 3.15 A PROCESS NEAR-MISS, recorded because it is the mandate
 
 At 17:16 I ran `cd <worktree> && (heavy run) & git add -A && git commit …`.
 The `&` backgrounds only the first half, so **`git add -A` and `git commit` ran

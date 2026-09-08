@@ -359,4 +359,42 @@ never edited afterwards.
   (`Lu`/`Ll`/`Lt` are `L&`, everything else invariant), which is why stage 4
   turned out not to be a precondition.
 
+- `utf8s4_report.md` — [M5.0] STAGE 4, DD-1's FOLD CLOSURE (2026-09-08, lane
+  utf8s4). `(?i)k` under `-e utf8` matches U+212A: `CaseFolding.txt` vendored,
+  the fold published as two `PcrecFold` objects the ENCODING chooses between,
+  the caseless backreference folding code points in the artifact, S-U11 (owed
+  since stage 1) live, and S-U1/2/3 DETECTED. Read it for five things.
+
+  **§3.1 is the stage's real result and it is not in the design at all**: the
+  fold applies PER CONTRIBUTION, not to a class's merged set. Folding the
+  merged set is wrong in BOTH directions at once — `(?i)[\p{Lu}x]` would match
+  U+0345 and `(?i)[[:lower:]]` would match U+212A, neither of which libpcre2
+  does, while `(?i)[\p{Lu}k]` and `(?i)[[:lower:]k]` must still reach U+212A
+  through the literal beside the produced set. So `p_class` folds its OWN
+  members and unions the produced ones after; `utf8_design.md` §4.2/§4.3 say
+  "the SET" and owe a hunk.
+
+  **§3.2 is the trap an implementer walks into**: one Unicode table clamped to
+  `max_cp` looks right and folds Latin-1 under `byte`. The two relations
+  DISAGREE rather than nest, so the fold is a per-encoding object.
+
+  **§3.4 is a WRONG ORACLE in the D27 corpus**, and the provenance explains it:
+  axis06's four `[^\p{Ll}]` blocks were `perr` from authoring until this stage,
+  so their recorded oracle had never been exercised against anything — and it
+  contradicts `utf8_design.md` §4.3's own measured table, which was right.
+  **A parked cell's carried oracle is an unchecked claim until the construct
+  compiles.**
+
+  **§3.11 is the seam check's own limit**: DD12a(i) excises encoding-owned
+  regions by a CLOSED LIST OF ENTRY NAMES, so an entry whose body needs a
+  helper grows the region without the check knowing — it reported "an encoding
+  conditional reached the hot path" for three private helpers of the caseless
+  compare. The check was right to fire; its region definition needed widening.
+
+  **§3.12/§3.14 are two process findings**: rewriting `cls_casefold` staled
+  S08/S09/S10, whose re-aim is verified by reproducing their own recorded
+  6/14/8 counts; and the harness reported `180 passed / 0 failed` where a quiet
+  box reports 237/0, so a starved worker reduces the case COUNT rather than
+  failing.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
