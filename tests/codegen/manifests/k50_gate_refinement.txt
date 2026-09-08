@@ -3,6 +3,14 @@
 #
 # DATED: 2026-09-06, RE-DERIVED at the [K50-NULLGATE] narrowing (the expiry
 # event the first revision of this header predicted; see "HOW THIS SHRANK").
+# RE-DERIVED AGAIN 2026-09-08 (lane ntriage, night_20260907 triage) at the
+# FULL corpus population (ENC_MAX_BLOCKS=0, 2,994 ASCII blocks) -- the
+# [M5.0] stage 3 / [K50-BNDSTART]/[K50-NULLGATE] merges between the two
+# dates never re-ran this check at that scale, so the manifest (calibrated
+# at the ENC_MAX_BLOCKS=250 light-local-run sample) was never checked
+# against the population it claims to be exact over. See "THE 2026-09-08
+# RE-HARVEST" below for the derivation and the one real classifier fix it
+# found along the way.
 #
 # Each non-comment line is a corpus pattern, VERBATIM, whose byte and utf8
 # artifacts are EXCUSED from DD12a(i)'s strict byte-identity bar and held to a
@@ -65,12 +73,16 @@
 # any more than it can rot. Those two guards together are an EXACT set match,
 # which is what carries the load at this size; the floor below them is now a
 # collapse tripwire rather than a population claim, and is set at 10 against a
-# measured 14.
+# measured 164 (153 GATE + 11 GATEFORM) at full population -- see "THE
+# 2026-09-08 RE-HARVEST" below.
 #
 # ---------------------------------------------------------------------
 # A FINDING THIS CLASS SURFACED, owed to whoever owns the stamp family.
 #
-# Three patterns below are marked `#UNDECLARED`. Their utf8 artifact selects
+# ELEVEN patterns below are marked `#UNDECLARED` (grew from 3 at the
+# 2026-09-08 full-population re-harvest -- same mechanism, more spellings
+# reaching it: `$`, `\B`, `\B\B`, `\Bx*`, `\Z`, `(?m)\Z`, `\b`, `\b\b`,
+# `\b\w*`, `\bx*`, `\bx?`). Their utf8 artifact selects
 # a DIFFERENT emitted FORM on AXIS E (the accept placement: whether a state's
 # accept is class-indexed), because the extra byte-equivalence class changes
 # whether any state's accept varies by class — so `<m>_accepts_class` exists
@@ -81,28 +93,232 @@
 # than a wider rule here.
 # ---------------------------------------------------------------------
 #
-# THE FORM SUB-CLASS (4 pairs) is not listed separately: those rows are in the
+# THE FORM SUB-CLASS (11 pairs, measured 2026-09-08 at full population, up
+# from 4) is not listed separately: those rows are in the
 # population below and the check counts them from the artifacts' own stamps,
-# with a CEILING of 8 so a growing form population is loud.
+# with a CEILING of 16 so a growing form population is loud. All eleven are
+# EOL/anchor-nullable shapes (`$|\n`, `[a-z]*$`, `[ab]{0,4}$`, `a*$`,
+# `a*\Z`, `a*b*$`, `a{0,4}$`, `a{0,4}\Z`, `a{0,5}b{0,5}$`, `b*$`, `x*$`) --
+# the same axis-E accept-placement mechanism the original 4 witnesses named,
+# just more corpus spellings of it reaching the class at full population.
 #
 # EXPIRY. This class empties only if the boundary gate stops being built for
 # nullable patterns too, which would be K50 re-opening. Do not delete rows to
 # go green; re-derive them from a measured run (`K50_HARVEST=file`).
 #
+# ---------------------------------------------------------------------
+# THE 2026-09-08 RE-HARVEST (lane ntriage, night_20260907 triage).
+#
+# The overnight Linux run (ENC_MAX_BLOCKS=0, the whole 2,994-ASCII-block
+# corpus) found 164 pairs in the gate-refinement class with no manifest
+# row, the FORM sub-class over its ceiling (29 against 8), and the
+# UNDECLARED exception list stale (13 diverging against 3 declared) --
+# reproduced EXACTLY on this Mac (source-text comparison, byte-identical
+# population both boxes: PAIRS=2990 STRICT=2793 DIVERGE_STRICT=24 GATE=194
+# GATEFORM=29, matching the Linux numbers digit for digit), which is what
+# makes the re-derivation below a measurement rather than a guess.
+#
+# ONE REAL FIX FELL OUT OF DERIVING IT, and it SHRANK the class rather than
+# growing it further: `widens_under_utf8()` (run_encoding_checks.sh)
+# recognised only literal `.` and `[^...]` as encoding-widening, and missed
+# `\D \S \W \H \V \N` (negated-by-meaning shorthand escapes), `\h`/`\v`
+# (lowercase, POSITIVE horizontal/vertical whitespace, MEASURED to widen
+# anyway -- pcrec admits non-ASCII members for them where `\d`/`\s`/`\w`
+# stay on the project's ASCII-only fold), `\p{...}`/`\P{...}` (module
+# unicode-props, unborn when this classifier was first written), and a
+# POSIX negated class (`[:^...:]`) -- all MEASURED to widen the
+# byte-equivalence-class count under utf8 exactly as `.`/`[^...]` do
+# (`\D+` byte 2 classes -> utf8 14; `\p{Pc}+` byte 2 -> utf8 13; `[\D]+`
+# byte 2 -> utf8 14; `[[:^alpha:]]+` byte 2 -> utf8 15). Fixed in the same
+# change; re-measured at full population: STRICT 2793 -> 2754 (39 patterns
+# correctly moved to WIDENS, which needs no manifest row at all), GATE 194
+# -> 174, GATEFORM 29 -> 14 (2 of the 14 were the newly-recognised widening
+# spellings `^[[:^lower:]]$` and `^\N{2,3}$`, leaving 11 -- see above),
+# DIVERGE_STRICT (the UNDECLARED-list population) 24 -> 22, of which 11
+# distinct pattern texts remain (was 13; the same two moved out).
+#
+# THE REMAINING 153 GATE MEMBERS (11 of them the FORM sub-class above) are
+# genuinely nullable, unanchored corpus patterns whose whole remaining
+# difference IS table dimensions/legend, none of them a NEW mechanism: 46
+# are `tests/base/k18_deep_nesting.rxt`'s deeply-nested `(?:...)*` towers
+# and `tests/base/k18_split_shapes.rxt`'s small alternation/quantifier
+# generator patterns (K18's own regression corpus -- heavily `a*`/optional-
+# branch shaped, so K50-NULLGATE's nullability gate reaches nearly all of
+# it), the rest scattered across the corpus's other nullable/unanchored
+# patterns (`\Q\E`, `(a){0}`, `x*y*`, and similar). None was traced to a
+# source outside the tree's own existing test corpus; every one is a
+# LEGITIMATE population member the ENC_MAX_BLOCKS=250 calibration sample
+# never reached, not a new defect class.
+#
+# Local darwin re-derivation only (CENSUS is source-text comparison,
+# platform-independent by the check's own design -- "darwin and linux
+# alike" -- and confirmed byte-identical to the Linux run's raw numbers
+# above); the Linux re-validation with this manifest is owed to the
+# manager's executor channel, see docs/dev/lanes/ntriage_report.md.
+# ---------------------------------------------------------------------
+#
+$|\n
+(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*
+(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a*?)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*
+(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*
+(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*
+(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*
+(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*)*
+(?:(?:(?:(?:a*)*)*)*)*
+(?:(?:(?:b|)|a)?)*
+(?:(?:(?:|b)|a)?)*
+(?:(?:[a]|[b]*?)?)*
+(?:(?:[b]*?|[a])?)*
+(?:(?:[b]*|a)?)*
+(?:(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*(?:a*)*)*
+(?:(?:a*|[a-c]){0,2})*
+(?:(?:a+|[a-c]*?){0,2})*
+(?:(?:a+|[a-c]??){0,2})*
+(?:(?:a+|[a-c]{0,2}?){0,2})*
+(?:(?:a+|b*?)?)*
+(?:(?:a+|b*?){0,2})*
+(?:(?:a+|b??){0,2})*
+(?:(?:a+|b{0,2}?){0,2})*
+(?:(?:a?|[a-c]){0,2})*
+(?:(?:a?|[a-c]){0,2})+
+(?:(?:a?|b*?)?)*
+(?:(?:a{0,2}|[a-c]){0,2})*
+(?:(?:a{0,2}|[a-c]){0,2})+
+(?:(?:a|(?:b|))?)*
+(?:(?:a|(?:|b))?)*
+(?:(?:a|)?)*
+(?:(?:a|[a-c]*?){0,2})*
+(?:(?:a|[a-c]*?){0,2})+
+(?:(?:a|[a-c]??){0,2})*
+(?:(?:a|[a-c]??){0,2})+
+(?:(?:a|[a-c]{0,2}?){0,2})*
+(?:(?:a|[a-c]{0,2}?){0,2})+
+(?:(?:a|[b]*)?)*
+(?:(?:a|b*)?)*
+(?:(?:a|b*)?)+
+(?:(?:a|b*?))*
+(?:(?:a|b*?)*)*
+(?:(?:a|b*?)?)
+(?:(?:a|b*?)?)*
+(?:(?:a|b*?)?)+
+(?:(?:a|b*?){0,2})*
+(?:(?:a|b*?){0,2})+
+(?:(?:a|b?)(?:d|b?))*
+(?:(?:a|b?)?)*
+(?:(?:a|b??)?)*
+(?:(?:a|b??){0,2})*
+(?:(?:a|b??){0,2})+
+(?:(?:a|b{0,2})?)*
+(?:(?:a|b{0,2}?)?)*
+(?:(?:a|b{0,2}?){0,2})*
+(?:(?:a|b{0,2}?){0,2})+
+(?:(?:a|c|b*?)?)*
+(?:(?:b*?|a)(?:b*?|d))*
+(?:(?:b*?|a)?)*
+(?:(?:b*?|a)?)+
+(?:(?:b*?|a+)?)*
+(?:(?:b*?|a?)?)*
+(?:(?:b*?|a|c)?)*
+(?:(?:b*|[a-c]){0,2})*
+(?:(?:b*|a)(?:b*|d))*
+(?:(?:b*|a)?)*
+(?:(?:b*|a)?)+
+(?:(?:b*|a){0,2})*
+(?:(?:b*|a+){0,2})*
+(?:(?:b??|a)?)*
+(?:(?:b?|[a-c]){0,2})*
+(?:(?:b?|[a-c]){0,2})+
+(?:(?:b?|a)(?:b?|d))*
+(?:(?:b?|a)?)*
+(?:(?:b?|a){0,2})*
+(?:(?:b?|a){0,2})+
+(?:(?:b?|a+){0,2})*
+(?:(?:b?|a+){0,2})+
+(?:(?:b{0,2}?|a)?)*
+(?:(?:b{0,2}|[a-c]){0,2})*
+(?:(?:b{0,2}|[a-c]){0,2})+
+(?:(?:b{0,2}|a)?)*
+(?:(?:b{0,2}|a){0,2})*
+(?:(?:b{0,2}|a){0,2})+
+(?:(?:b{0,2}|a+){0,2})*
+(?:(?:b{0,2}|a+){0,2})+
+(?:)
+(?:a(?:b*?)?)*
+(?:a*|b*){3}
+(?:ab)*+
+(?:ab)?+
+(?:a|)
+(?:a|)*
 (?:a||b)
+(?:b*?(?:(?:a*)*)*)*
+(?:b*?(?:a*)*)*
+(?:x|y|)
+(?:|a)*
+(?:|a)+
+(?>[ab]*)
+(?>a?)
+(?i)a*
 (?i:\B)*
 (?i:\b)*
 (?i:\z)*
 (?m)$
+(?m)[a-z]{0,4}$
+(?m)\bx*$
+(?m)\w*$
+(?m)\z
+(?m)a*$
+(?m)a{0,4}$
+(?m)a{0,4}$(?-m)
+(?m)x*$
+(a){0}
+[a-z]*$
+[a-z]{0,64}
+[ab]*+
+[ab]{0,4}$
+\Q\E
+\w*
 \z
 a*
 a*$
+a*+
+a*?
 a*\Z
 a*\z
+a*b*$
+a*|b
+a?
+a?+
+a??
+a?b?c?
+a{ ,2}
+a{,3}
+a{,3}+
+a{0,0}
+a{0,3}
 a{0,4}$
+a{0,4}?
 a{0,4}\Z
 a{0,4}\z
+a{0,5}b{0,5}$
+a{0,}
+a{0}
+a|
+a|b*
+b*$
+q||a
+x*
+x*$
+x*y*
+|a
 
+#UNDECLARED $
+#UNDECLARED (?m)\Z
 #UNDECLARED \B
+#UNDECLARED \B\B
+#UNDECLARED \Bx*
 #UNDECLARED \Z
 #UNDECLARED \b
+#UNDECLARED \b\b
+#UNDECLARED \b\w*
+#UNDECLARED \bx*
+#UNDECLARED \bx?

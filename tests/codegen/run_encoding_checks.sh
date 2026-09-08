@@ -595,12 +595,39 @@ def diff_is_data_only(nb, nu):
             return False, d[1:]
     return False, "(line counts differ)"
 
+# [ntriage, 2026-09-08] `\D \S \W \H \V` (the negated shorthand escapes)
+# and `\N` (any-char-except-newline) are NEGATED CLASSES BY MEANING, exactly
+# the same shape as a literal `[^...]` or `.`; `\h`/`\v` (lowercase,
+# POSITIVE horizontal/vertical whitespace) are NOT negated but MEASURED to
+# widen anyway — pcrec's utf8 backend admits non-ASCII members for them
+# where `\d`/`\s`/`\w` stay on this project's standing ASCII-only fold (no
+# diff at all for those three; `\h+`/`\v+` byte 2 classes -> utf8 6/6). And
+# `\p{...}`/`\P{...}` (module unicode-props, [M5.0] stage 3, unborn when
+# this classifier was first written) are wide by CONTENT even when not
+# negated, since a real property class's members are overwhelmingly
+# non-ASCII code points that need a byte-equivalence class per UTF-8
+# lead-byte range a byte-only machine never allocates (`\p{Pc}+` byte 2 ->
+# utf8 13). ALL of these widen from INSIDE a class too (`[\D]+` byte 2 ->
+# utf8 14; `[\h\d]+` byte 2 -> utf8 6), as does a POSIX negated class
+# (`[[:^alpha:]]+` byte 2 -> utf8 15) — every number MEASURED directly
+# (this file's own method), not assumed. Without this, every one of these
+# constructs falls into the STRICT bucket and has to be excused one at a
+# time through the [K50] gate-refinement machinery below, which is a claim
+# about an unrelated mechanism (the caller-startpos boundary gate) being
+# asked to carry a population that was never its own.
+_WIDENING_ESCAPES = set('DSWHVNhv')
+
 def widens_under_utf8(pat):
     i, n = 0, len(pat)
     in_class = False
     while i < n:
         c = pat[i]
         if c == '\\':
+            nc = pat[i + 1] if i + 1 < n else ''
+            if nc in ('p', 'P') and i + 2 < n and pat[i + 2] == '{':
+                return True
+            if nc in _WIDENING_ESCAPES:
+                return True
             i += 2
             continue
         if not in_class:
@@ -613,6 +640,8 @@ def widens_under_utf8(pat):
             if c == '.':
                 return True
         else:
+            if c == ':' and i + 1 < n and pat[i + 1] == '^':
+                return True
             if c == ']':
                 in_class = False
         i += 1
@@ -895,13 +924,29 @@ else
         #   - the class is FLOORED, so it cannot silently shrink to nothing and
         #     leave the guards asserting over an empty set.
         #
-        # EXPIRY — [K50-NULLGATE]. When the gate narrows to patterns that can
+# EXPIRY — [K50-NULLGATE]. When the gate narrows to patterns that can
         # match EMPTY at a mid-character position (the only ones that can
         # ANSWER there), every non-nullable machine loses the gate, its alphabet
         # stops being refined, and it RETURNS to the strict bucket. The manifest
         # shrinking to the genuinely-nullable set IS that expiry event: it will
         # fail loudly here, and the correct response is to re-derive the rows,
         # never to widen the class.
+        #
+        # [ntriage, 2026-09-08] "NOT SWEPT INTO IT THIS RUN" HAS TWO CAUSES,
+        # AND THIS FILE ALREADY DISTINGUISHES THEM ELSEWHERE. The manifest is
+        # derived from the WHOLE corpus (ENC_MAX_BLOCKS=0); a light local run
+        # (the ENC_MAX_BLOCKS=250 default) compiles only the corpus's first
+        # 250 ASCII blocks, so most manifest rows are legitimately absent
+        # from a light run's own $WORKDIR/dd12ai.out for a reason that is
+        # not staleness at all. §8.5's own K51 manifest (above in this file)
+        # already has this exact problem and its own fix: a row is STALE
+        # only when its pattern is no longer anywhere in the corpus; a row
+        # whose pattern still exists but was not among the blocks THIS run
+        # actually compiled is merely NOT REACHED IN THIS SLICE, printed as
+        # information rather than scored a failure. Applied here the same
+        # way — checked against `blocks.tsv` (this run's own compiled block
+        # list, which IS ENC_MAX_BLOCKS-scoped) OR the three explicit
+        # witnesses `main()` always appends regardless of ENC_MAX_BLOCKS.
         K50MAN="$ROOT_DIR/tests/codegen/manifests/k50_gate_refinement.txt"
         gate_bad=0
         if [ ! -f "$K50MAN" ]; then
@@ -911,10 +956,26 @@ else
             grep -v '^#' "$K50MAN" | grep -v '^[[:space:]]*$' | LC_ALL=C sort -u > "$WORKDIR/k50man.txt"
             grep '^GATEPAT ' "$WORKDIR/dd12ai.out" | sed 's/^GATEPAT //' | LC_ALL=C sort -u > "$WORKDIR/k50seen.txt"
             nman="$(wc -l < "$WORKDIR/k50man.txt" | tr -d ' ')"
-            stale="$(comm -23 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | head -5)"
+            : > "$WORKDIR/k50_reachable.txt"
+            while IFS= read -r row; do
+                [ -z "$row" ] && continue
+                case "$row" in
+                    'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x')
+                        printf '%s\n' "$row" >> "$WORKDIR/k50_reachable.txt"; continue ;;
+                esac
+                rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"
+                if grep -q "^$rowb64	" "$WORKDIR/blocks.tsv" 2>/dev/null; then
+                    printf '%s\n' "$row" >> "$WORKDIR/k50_reachable.txt"
+                fi
+            done < "$WORKDIR/k50man.txt"
+            LC_ALL=C sort -u "$WORKDIR/k50_reachable.txt" -o "$WORKDIR/k50_reachable.txt"
+            stale="$(comm -23 "$WORKDIR/k50_reachable.txt" "$WORKDIR/k50seen.txt" | head -5)"
+            nstale="$(comm -23 "$WORKDIR/k50_reachable.txt" "$WORKDIR/k50seen.txt" | grep -c .)"
+            nnotreached="$(comm -23 "$WORKDIR/k50man.txt" "$WORKDIR/k50_reachable.txt" | grep -c .)"
+            [ "$nnotreached" -gt 0 ] && echo "  DD12a(i) [K50] $nnotreached manifest row(s) not reached in this slice (ENC_MAX_BLOCKS=$ENC_MAX_BLOCKS; the full sweep covers all $nman)"
             grew="$(comm -13 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | head -5)"
             if [ -n "$stale" ]; then
-                bad "DD12a(i) [K50] $(comm -23 "$WORKDIR/k50man.txt" "$WORKDIR/k50seen.txt" | grep -c .) manifest row(s) are STALE — listed in the gate-refinement class but not swept into it this run. Either the pattern left the corpus or it stopped diverging (which is [K50-NULLGATE] landing, or the gate silently ceasing to be built). Re-derive the rows deliberately; do NOT delete them to go green. First: $(printf '%s' "$stale" | head -1)"
+                bad "DD12a(i) [K50] $nstale manifest row(s) are STALE — reached this run (their pattern was among the compiled blocks) but not swept into the gate-refinement class. Either the pattern stopped diverging (which is [K50-NULLGATE] landing, or the gate silently ceasing to be built) — this is NEVER a truncation artifact, since only rows this run actually compiled are checked. Re-derive the rows deliberately; do NOT delete them to go green. First: $(printf '%s' "$stale" | head -1)"
                 gate_bad=1
             fi
             if [ -n "$grew" ]; then
@@ -922,23 +983,28 @@ else
                 gate_bad=1
             fi
             if [ "$((GATE + GATEFORM))" -lt 10 ]; then
-                bad "DD12a(i) [K50] the gate-refinement class holds only $((GATE + GATEFORM)) pair(s) (floor 10, measured 14 after [K50-NULLGATE]) — it has collapsed. NOTE the floor is a tripwire, not the load-bearing guard: the staleness and unlisted-member guards above are together an EXACT set match against the manifest, which is what certifies this class at its post-narrowing size"
+                bad "DD12a(i) [K50] the gate-refinement class holds only $((GATE + GATEFORM)) pair(s) (floor 10, measured 164 at full population, [ntriage] 2026-09-08) — it has collapsed. NOTE the floor is a tripwire, not the load-bearing guard: the staleness and unlisted-member guards above are together an EXACT set match against the manifest, which is what certifies this class at its post-narrowing size"
                 gate_bad=1
             fi
             # The FORM sub-class is CEILINGED, not floored: it is the part of
             # the class where an artifact's emitted SHAPE moved rather than its
             # table dimensions, so it is the part a reader should watch. A
             # ceiling makes it loud if the wider alphabet starts moving more
-            # forms than the 9 measured at the landing; the floor above already
-            # stops the whole class vanishing.
-            if [ "$GATEFORM" -gt 8 ]; then
-                bad "DD12a(i) [K50] $GATEFORM pairs are in the FORM sub-class (ceiling 8, measured 4 after [K50-NULLGATE]) — the wider alphabet is moving more emitted-form selections than it did; re-derive the manifest deliberately and read what moved before raising this"
+            # forms than the 11 measured at full population ([ntriage]
+            # 2026-09-08); the floor above already stops the whole class
+            # vanishing.
+            if [ "$GATEFORM" -gt 16 ]; then
+                bad "DD12a(i) [K50] $GATEFORM pairs are in the FORM sub-class (ceiling 16, measured 11 at full population, [ntriage] 2026-09-08) — the wider alphabet is moving more emitted-form selections than it did; re-derive the manifest deliberately and read what moved before raising this"
                 gate_bad=1
             fi
-            [ "$gate_bad" -eq 0 ] && echo "  DD12a(i) [K50] gate-refinement class: $((GATE + GATEFORM)) pair(s) — $GATE differing in DATA only (comments, table dimensions and cells; never control flow) and $GATEFORM whose emitted FORM moved and which SAY SO in their own stamps; all $nman manifest rows swept and still in the class, no unlisted members"
+            nreached="$(wc -l < "$WORKDIR/k50_reachable.txt" | tr -d ' ')"
+            [ "$gate_bad" -eq 0 ] && echo "  DD12a(i) [K50] gate-refinement class: $((GATE + GATEFORM)) pair(s) — $GATE differing in DATA only (comments, table dimensions and cells; never control flow) and $GATEFORM whose emitted FORM moved and which SAY SO in their own stamps; all $nreached of $nman manifest rows reached this slice swept and still in the class, no unlisted members"
         fi
         # ---- [K50] THE UNDECLARED-FORM EXCEPTION LIST, exactly matched ------
-        # Five patterns (`\Z`, `\b`, `\B` shapes) whose utf8 artifact selects a
+        # Eleven patterns (`\Z`, `\b`, `\B` shapes and their small
+        # combinations; grew from 3-5 at the [ntriage] 2026-09-08 full-
+        # population re-derivation — same mechanism, more spellings) whose
+        # utf8 artifact selects a
         # DIFFERENT emitted form on an axis that carries NO STAMP — axis E, the
         # accept placement: with the extra class, whether a state's accept
         # varies by class changes, so `<m>_accepts_class` exists on one side
@@ -950,14 +1016,43 @@ else
         # exception list instead: the set of still-diverging patterns must
         # EQUAL the manifest's UNDECLARED rows, member for member. One more or
         # one fewer and this fails.
+        # [ntriage, 2026-09-08] SAME TRUNCATION FIX AS THE GATE CLASS ABOVE:
+        # an exact match against the WHOLE manifest is only meaningful when
+        # every manifest row was actually reachable this run. Restrict the
+        # manifest side to the rows this run's own `blocks.tsv` (or the
+        # three explicit witnesses) actually compiled before comparing.
+        # NOTE: this is NOT `k50_reachable.txt` from the GATE class above —
+        # that set was built by walking `k50man.txt`, which is `grep -v
+        # '^#'`-filtered and therefore structurally EXCLUDES every
+        # `#UNDECLARED` line; reusing it here would silently read every
+        # UNDECLARED row as unreached regardless of `blocks.tsv` (measured:
+        # exactly this bug, on the first draft of this fix — 0 of 11 read
+        # reachable while 3 were visibly diverging in `k50strict.txt`,
+        # which can only mean they compiled). Recomputed from
+        # `k50undecl.txt` instead.
         grep '^#UNDECLARED ' "$K50MAN" 2>/dev/null | sed 's/^#UNDECLARED //' | LC_ALL=C sort -u > "$WORKDIR/k50undecl.txt"
         grep '^STRICTPAT ' "$WORKDIR/dd12ai.out" | sed 's/^STRICTPAT //' | LC_ALL=C sort -u > "$WORKDIR/k50strict.txt"
-        if cmp -s "$WORKDIR/k50undecl.txt" "$WORKDIR/k50strict.txt"; then
-            nundecl="$(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' ')"
-            [ "$nundecl" -gt 0 ] && echo "  DD12a(i) [K50] undeclared-form exception list: $nundecl pattern(s), matched EXACTLY against the manifest — each selects a different accept placement (axis E) under utf8, on an axis with no stamp to declare it (see the manifest's own FINDING note)"
+        : > "$WORKDIR/k50undecl_reachable.txt"
+        while IFS= read -r row; do
+            [ -z "$row" ] && continue
+            case "$row" in
+                'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x')
+                    printf '%s\n' "$row" >> "$WORKDIR/k50undecl_reachable.txt"; continue ;;
+            esac
+            rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"
+            if grep -q "^$rowb64	" "$WORKDIR/blocks.tsv" 2>/dev/null; then
+                printf '%s\n' "$row" >> "$WORKDIR/k50undecl_reachable.txt"
+            fi
+        done < "$WORKDIR/k50undecl.txt"
+        LC_ALL=C sort -u "$WORKDIR/k50undecl_reachable.txt" -o "$WORKDIR/k50undecl_reachable.txt"
+        nundecl_notreached="$(comm -23 "$WORKDIR/k50undecl.txt" "$WORKDIR/k50_reachable.txt" | grep -c .)"
+        [ "$nundecl_notreached" -gt 0 ] && echo "  DD12a(i) [K50] $nundecl_notreached undeclared-form manifest row(s) not reached in this slice (ENC_MAX_BLOCKS=$ENC_MAX_BLOCKS; the full sweep covers all $(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' '))"
+        if cmp -s "$WORKDIR/k50undecl_reachable.txt" "$WORKDIR/k50strict.txt"; then
+            nundecl="$(wc -l < "$WORKDIR/k50undecl_reachable.txt" | tr -d ' ')"
+            [ "$nundecl" -gt 0 ] && echo "  DD12a(i) [K50] undeclared-form exception list: $nundecl pattern(s) reached this slice, matched EXACTLY against the manifest — each selects a different accept placement (axis E) under utf8, on an axis with no stamp to declare it (see the manifest's own FINDING note)"
             DIVERGE_STRICT=0
         else
-            bad "DD12a(i) [K50] the undeclared-form exception list does NOT match: the manifest names $(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' ') pattern(s) and this run diverged on $(wc -l < "$WORKDIR/k50strict.txt" | tr -d ' '). This list is EXACT, not a floor — a new member is a form change nobody has looked at, and a missing one is a claim that has expired. First difference: $(diff "$WORKDIR/k50undecl.txt" "$WORKDIR/k50strict.txt" | head -2 | tr '\n' ' ')"
+            bad "DD12a(i) [K50] the undeclared-form exception list does NOT match: of the manifest's $(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' ') pattern(s), $(wc -l < "$WORKDIR/k50undecl_reachable.txt" | tr -d ' ') were reached this run and this run diverged on $(wc -l < "$WORKDIR/k50strict.txt" | tr -d ' '). This list is EXACT over the REACHED subset, not a floor — a new member is a form change nobody has looked at, and a missing reached one is a claim that has expired. First difference: $(diff "$WORKDIR/k50undecl_reachable.txt" "$WORKDIR/k50strict.txt" | head -2 | tr '\n' ' ')"
             gate_bad=1
         fi
         if [ "$DIVERGE_STRICT" -eq 0 ] && [ "$vac" -eq 0 ] && [ "$gate_bad" -eq 0 ]; then
