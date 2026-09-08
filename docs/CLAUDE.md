@@ -139,6 +139,17 @@ Process and status documents for pcrec. The architecture itself lives in
   consolidating to one subprocess per compile), the size definition's
   byte-exact agreement with the `[ART-SIZE]` census's own classifier, the
   tripwire pins and their headroom reasoning, and the sabotage transcripts.
+  Also (added [TT-4M] STEP 2c, 2026-09-08) "`HARNESS_BATCH` — batched
+  compilation+dispatch": the opt-in axis that groups fixed-N chunks of
+  consecutive eligible `pattern` blocks per file into one gcc
+  invocation/executable (`tests/harness/dispatch_gen.sh`'s generated
+  selector), the three per-block exclusions (`perr`/H11/routed cells), the
+  free per-member compile-failure attribution and the rare solo-relink
+  fallback, the SIZELOG caveats (CPU/wall now compile-only, byte count
+  prefix-length-sensitive), and two general findings the landing surfaced
+  and fixed (`size_count_row`'s hardcoded `RX_*` macro names; bash `read`
+  collapsing TAB-delimited empty fields even under a single-character
+  `IFS`, fixed by packing with `\x01` instead).
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and
