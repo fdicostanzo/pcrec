@@ -164,3 +164,117 @@ light D6 panel on the design note, then STEP 2c (implementation, tier
 decided off this note) and 2d (acceptance: full `make test`
 answer-identical on darwin AND the Linux executor arm, per item 8's flip
 condition).
+
+## 2026-09-08 CORRECTION (lane tt4m2f, revision on the r55 panel)
+
+The above delivery record is UNCHANGED (house style: this section is
+appended, not edited into the original text). `docs/dev/reviews/
+2026-09-08-r55-tt4m-batching.md` reviewed the two deliverables above and
+found nine dispositions (R55-1 through R55-9, plus R55-10 moved to
+STEP 2c/2d's own brief); lane `tt4m2f` (sonnet) chartered R55-1..9 as one
+revision commit. Every finding was real; none refuted this lane's central
+recommendation (N=64, P=8 for 2a; the eight design decisions in 2b) —
+each narrowed a specification gap, a wording ambiguity, a framing
+overreach, or a keying bug in the supporting tooling. Disposition by
+disposition:
+
+- **R55-1 (harn-1, routed-block exclusion)**: `tt4m_harness_batching.md`
+  item 1 gained a THIRD exclusion (beside `perr`/H11) — any block
+  carrying a routed cell (`frames-buffer=` OR a non-default `RXTROUTE`
+  floor; the route grammar enumerated from `driver.c`'s `parse_route`/
+  `run.sh`'s `valid_route`, not just the one directive spelling) is
+  excluded from batching, detected per-block at parse. Item 2's dispatch
+  scope note was reworded from "not modeled" (implying silent mishandling
+  if reached) to "explicitly enforced" (the exclusion is what keeps it
+  from being reached at all).
+- **R55-2 (num-F2/F3, timeout rewrite)**: item 6's degradation/timeout
+  section is REWRITTEN. The N-scaled `batch_gen_cpu_secs = N *
+  gen_cpu_secs()` this lane originally proposed diluted D45's own guard
+  N-fold. Now: each batch member's own `-c` sub-compile and the link step
+  each get their OWN UNSCALED per-pattern `gen_cc` budget (free via
+  `_gen_cc_run`'s existing split-then-link shape and RLIMIT_CPU's
+  per-process, unscaled-per-child inheritance — no new plumbing needed),
+  with the N-scaled number surviving only as an outer wall backstop
+  around the whole batch sequence. This also resolves the shape
+  contradiction between item 3 (N x `-c` + link) and the old item 6 (one
+  wrapped invocation): item 6 now explicitly builds on item 3's own
+  split structure. S43's note in item 5 updated to match.
+- **R55-3 (num-F1, foreordained cell)**: `tt4m_step2a_parallel_sizing.md`'s
+  Pool section and its "does darwin reproduce non-monotonicity" section
+  both gained a correction — the N=128/P=12 starvation cell was
+  foreordained by the pool's own arithmetic (1,022/128 = 8 batches,
+  always short of 12 workers, by construction) rather than an
+  independent hardware-driven discovery. The mechanism stays; the
+  framing of that one cell as confirming it is corrected. `docs/dev/
+  CLAUDE.md`'s entry updated to match. The optional pool-enlargement
+  re-run named in the review is NOT chartered here (the box belongs to
+  tonight's stage-4 lane) and is recorded as available future work; the
+  N=64/P=8 recommendation never rested on this cell.
+- **R55-4 (num-F7, phantom census)**: the per-file block-count census the
+  design note cited to the 2a memo (1-357, mean 18.7 over 207 files) was
+  real but UNARCHIVED — the memo carried no such numbers. Run for real
+  (read-only `grep -c '^pattern '` over the exact 207-file population),
+  archived as a new Appendix in the 2a memo with the reproducible
+  command: **files=207, sum=3,873, mean=18.71, median=12, min=1, max=357**
+  — the design note's citation was CORRECT and does not move; it is now
+  backed by an archived measurement instead of an uncited claim.
+- **R55-5 (num-F4, extract_cases.py keying)**: `studies/tt4m_batchrun/
+  extract_cases.py` matched a pattern's cases by regex TEXT alone against
+  the first same-text block in its source file, silently misattributing
+  cases on 54 files across the corpus carrying two same-text blocks under
+  different `flags`/`features`. Fixed to key on (pattern, flags,
+  features), the same triple `collect_patterns.py`'s own `dedup_key`
+  already uses. Reproduced the 2a memo's exact 1,022-pattern pool and
+  re-extracted: 12 of 1,022 patterns (1.17%) have different case content
+  under the fix (10 with a different count), but the aggregate count
+  moves by only +1 (7,729 -> 7,730, a coincidence of this population) so
+  the 7.56 cases/pattern density line is UNCHANGED after re-derivation.
+  The wall/CPU/knee cells and the zero-mismatch answer-identity claim
+  were never at risk (every cell reused the same misattributed population
+  identically). Restated in the memo with the learnings.md sec3 caveat
+  ("a population nobody counted," here in its narrowest form — the
+  population's total SIZE read almost right while its CONTENT was wrong
+  for twelve members).
+- **R55-6 (harn-2, dispatch_gen.py decode fix)**: `dispatch_gen.py`'s
+  `decode()` fell through to a plain byte copy on a trailing lone
+  backslash where `driver.c`'s own `decode()` refuses it as a malformed
+  escape — the "byte-identical to driver.c's" claim was false on that one
+  input. Fixed to match (refuse identically, same error shape);
+  population ~zero in every pool run to date, so the defect was in the
+  untested claim rather than in any observed divergence.
+- **R55-7 (harn-3, SAB_FILE= wording)**: item 5's "grepped for every row
+  naming `run.sh`/`driver.c`" reworded to "every row whose OWN `SAB_FILE=`
+  names" the two files, with the false-recount warning stated explicitly
+  (a raw text-grep returns 13 hits, six of them mere comment mentions
+  anchored on a `src/` file — verified directly: S108/S157/S159/S173/
+  S213/S214 all have `SAB_FILE=` pointing at `src/`, not `tests/harness/`).
+- **R55-8 (num-F5, 18.65x direction)**: the memo, the report entries in
+  `docs/dev/CLAUDE.md` and `docs/design/CLAUDE.md`, and the design note's
+  own citation all gained the DIRECTION of the contention caveat: the
+  serial baseline ran concurrently with the tail of the N x P sweep and
+  so absorbed MORE contention than the (separately, serially measured)
+  batched cells did — biasing 18.65x as a FAVORABLE overestimate, not a
+  neutral approximation.
+- **R55-9 (num-F6, exact ratio)**: "~1.5-1.7x" corrected to the table's
+  own exact figures, 1.48-1.66x (50.18/30.26=1.658 at N=16,
+  43.80/29.36=1.492 at N=64, 47.50/32.05=1.482 at N=128), in both places
+  it was cited.
+- **R55-10 (archive gap)**: NOT this lane's charter (moved to 2c/2d's
+  brief per the panel's own outcome) — stated in the memo's "What is
+  still owed" as a named, unfixed gap rather than silently carried
+  forward.
+
+**Validation**: `studies/tt4m_batchrun/make check` (both fixes applied) —
+`cases: 15 mismatches: 0`, `check: OK (tooling smoke test passed, answer
+identity confirmed)`, 5.8s wall. `python3 -c "import ast; ast.parse(...)"`
+syntax-checked both edited `.py` files. The corrected `extract_cases.py`
+was additionally exercised against a hand-built two-block fixture (same
+text, different `flags`) confirming the fix resolves each block to its
+own cases, and against a REPRODUCTION of the 2a memo's exact 1,022-pattern
+pool (rebuilt from the same file list and `collect_patterns.py`
+invocation) to measure the R55-5 correction's real effect, reported
+above. No suite run against the main tree — this revision touches only
+`studies/tt4m_batchrun/`, `docs/dev/`, and `docs/design/`.
+
+Branch `lane/tt4m2f`, report at `docs/dev/lanes/tt4m2f_report.md`. Never
+merged by this lane.

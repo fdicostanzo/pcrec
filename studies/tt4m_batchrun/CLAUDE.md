@@ -16,20 +16,39 @@ modified) for the baseline and a purpose-built dispatch driver
 
 ## Prior art reused (not re-derived)
 
-`collect_patterns.py` and `extract_cases.py` are adapted, logic-unchanged,
-from `studies/tt4_batching/proto/` ([TT-4.1], the Linux census/prototype
-that closed [TT-4] on 2026-08-23 — see docs/dev/tt4_measurement.md). Their
-job (pull real `pattern`/`flags`/`features` blocks and real `m`/`n`/`ms`/
-`ns` cases straight from `.rxt` source, compile through the live
-`build/pcrec`) is machine-independent; only the docstring header is
-re-dated for this lane.
+`collect_patterns.py` and `extract_cases.py` were adapted, logic-unchanged
+at the time, from `studies/tt4_batching/proto/` ([TT-4.1], the Linux
+census/prototype that closed [TT-4] on 2026-08-23 — see
+docs/dev/tt4_measurement.md). Their job (pull real `pattern`/`flags`/
+`features` blocks and real `m`/`n`/`ms`/`ns` cases straight from `.rxt`
+source, compile through the live `build/pcrec`) is machine-independent;
+only the docstring header was re-dated for this lane. **`extract_cases.py`
+NO LONGER MATCHES ITS ORIGIN'S LOGIC as of the r55 revision (lane tt4m2f,
+2026-09-08, `docs/dev/reviews/2026-09-08-r55-tt4m-batching.md` finding
+R55-5/num-F4)**: the inherited logic matched a pattern's cases by regex
+TEXT ALONE against the first same-text block in its source file, silently
+misattributing cases whenever a later block in the same file repeats the
+same text under different `flags`/`features` (54 files carry this shape
+across the corpus). Now keyed on the (pattern, flags, features) TRIPLE —
+the same key `collect_patterns.py`'s own `dedup_key` already dedups the
+manifest on — so a block this function resolves is always the SAME block
+`collect_patterns.py` compiled the manifest's prefix from. See
+`docs/dev/tt4m_step2a_parallel_sizing.md`'s R55-5 correction for the
+measured effect (12 of 1,022 pool patterns misattributed; aggregate case
+count barely moved by coincidence).
 
 `dispatch_gen.py` is NOT reused from that prototype — it predates DD-14.FB
 (the `frames-buffer=` route argument) and the current typed give-up codes
 (`work`/`recurse`/`internal`), so a straight copy would silently mis-decode
 today's `tests/harness/driver.c` protocol. This file's `dispatch_gen.py`
 is written directly against the driver.c in this tree, decode()
-byte-identical, give-up naming byte-identical, DEFAULT ROUTE ONLY (see its
+behaviorally identical (R55-6/harn-2 FIXED, 2026-09-08, lane tt4m2f: the
+first version fell through to a plain byte copy on a TRAILING LONE
+BACKSLASH where driver.c's own decode() refuses it as a malformed escape
+— now refuses it identically, `free`+`NULL`, "trailing backslash in
+subject"; population ~zero in every pool run so far, the divergence was
+in the untested claim rather than in any observed result), give-up naming
+byte-identical, DEFAULT ROUTE ONLY (see its
 own header for the stated scope limit — no `_search_in`/`_match_in`
 cross-check, since every pool here is drawn from `tests/base`, which has
 no `frames-buffer=` blocks).

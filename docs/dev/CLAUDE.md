@@ -332,27 +332,43 @@ change.
 - `tt4m_step2a_parallel_sizing.md` — [TT-4M] STEP 2 (2a) (2026-09-08, lane
   tt4m2, measurement only, extends the STEP 1 prototype with a new
   `parallel` subcommand in `studies/tt4m_batchrun/batchrun.py` -- nothing
-  under `tests/harness/`/`src/` touched): the owed PARALLEL-dispatch N x P
+  under `tests/harness/`/`src/` touched; REVISED 2026-09-08 by the r55
+  panel and lane tt4m2f -- two corrections below, `docs/dev/reviews/
+  2026-09-08-r55-tt4m-batching.md`): the owed PARALLEL-dispatch N x P
   sizing STEP 1 left serial-only. On a 1,022-pattern/7,729-case
   cross-corpus pool (larger than STEP 1's `tests/base`-only slice, sized
-  so N=128 x P=12 has enough batches to be meaningful), sweeps N in
-  {16,64,128} x P in {4,8,12}: the knee is **P=8 at every N** (this box's
-  own performance-core count, 8 of 10 `hw.ncpu` -- going P=8->P=12 buys
-  0-5% wall and COSTS up to 15% more CPU to contention, and at N=128
-  starves 4 of 12 requested workers outright, reproducing [TT-4.1]'s
-  Linux non-monotonicity in the form this box's population produces it).
-  Wall time is a near-flat plateau across N=16-128 at P=8 (~9% spread) while
-  worst-case degradation-recovery cost scales linearly with N (3.6s to
-  29.2s) -- recommends **N=64, P=8** on that asymmetry. Zero answer-identity
-  mismatches across all 9 cells. K44 relief (S5): this sweep's peak load1
-  (10.44) is ~4.4x below K44's documented 47.6-at-PROCS=12, suggestive but
-  NOT apples-to-apples (K44 is a full multi-section `make -j12 test`, this
-  is an isolated corpus-compile prototype) -- named as owed to STEP 2c/2d.
-  Addendum: the same-pool serial baseline landed at 547.52s wall / 320.60s
-  CPU, giving **18.65x wall speedup** at the recommended N=64/P=8 cell
-  end to end (bigger than STEP 1's 4.28x because it combines STEP 1's two
-  levers WITH this row's own parallel-dispatch lever) -- with the honest
-  caveat that this compares batching+parallelism TOGETHER against
-  NEITHER, since `run.sh` today is already unbatched-but-PARALLEL and this
-  tool has no unbatched-parallel mode to isolate that middle ground
-  (named as owed, not built, D77).
+  to give N=64 and N=16 several batches per worker at every P swept),
+  sweeps N in {16,64,128} x P in {4,8,12}: the knee is **P=8 at every N**
+  (this box's own performance-core count, 8 of 10 `hw.ncpu` -- going
+  P=8->P=12 buys 0-5% wall and COSTS up to 15% more CPU to contention, and
+  at N=128 starves 4 of 12 requested workers outright, reproducing
+  [TT-4.1]'s Linux non-monotonicity MECHANISM in the form this box's
+  population produces it -- **but the N=128/P=12 cell's own starvation was
+  FOREORDAINED by the pool size** (1,022 patterns / 128 = 8 batches,
+  always short of 12 workers, regardless of the box's core count or
+  scheduler) rather than an independently emergent hardware-driven
+  finding; the mechanism is real, the specific cell is not a fresh
+  confirmation of it -- R55-3, num-F1). Wall time is a near-flat plateau
+  across N=16-128 at P=8 (~9% spread) while worst-case degradation-recovery
+  cost scales linearly with N (3.6s to 29.2s) -- recommends **N=64, P=8**
+  on that asymmetry, which does NOT rest on the N=128/P=12 cell. Zero
+  answer-identity mismatches across all 9 cells. K44 relief (S5): this
+  sweep's peak load1 (10.44) is ~4.4x below K44's documented
+  47.6-at-PROCS=12, suggestive but NOT apples-to-apples (K44 is a full
+  multi-section `make -j12 test`, this is an isolated corpus-compile
+  prototype) -- named as owed to STEP 2c/2d. Addendum: the same-pool serial
+  baseline landed at 547.52s wall / 320.60s CPU, giving **18.65x wall
+  speedup** at the recommended N=64/P=8 cell end to end (bigger than
+  STEP 1's 4.28x because it combines STEP 1's two levers WITH this row's
+  own parallel-dispatch lever) -- with the honest caveat that this compares
+  batching+parallelism TOGETHER against NEITHER, since `run.sh` today is
+  already unbatched-but-PARALLEL and this tool has no unbatched-parallel
+  mode to isolate that middle ground (named as owed, not built, D77), AND
+  a DIRECTIONAL caveat (R55-8, num-F5): the serial baseline ran concurrently
+  with the tail of the N x P sweep and so absorbed MORE contention than a
+  quiet-box run would, inflating its own wall number and biasing 18.65x
+  FAVORABLY (an overestimate), not neutrally. Per-pattern case-extraction
+  keying was fixed (R55-5, num-F4: matched on pattern TEXT alone, not
+  (pattern, flags, features) -- 12 of 1,022 patterns misattributed,
+  aggregate case count barely moved by coincidence, the 7.56
+  cases/pattern density line unchanged after re-derivation).
