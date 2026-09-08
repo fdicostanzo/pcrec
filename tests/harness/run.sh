@@ -824,6 +824,334 @@ run_case_loop() {
     done
 }
 
+# [TT-4M] STEP 2c HARNESS_BATCH — unpack_batch_member <mi>
+#
+# Populates cur_pattern, artifact_ncaps and the case_* arrays (case_kind/
+# case_line/case_subject/case_start/case_end/case_startpos/case_gspec/
+# case_gucode/case_route) from batch member <mi>'s own staged data
+# (bm_pattern/bm_ncaps/bm_cases) — the SAME variables run_case_loop,
+# record_fail and record_case_group_fail already read for the unbatched
+# path, populated here from a batch member's packed state instead of
+# directly from the .rxt parse. Relies on bash's dynamic scoping: this is
+# called only from within flush_batch, whose own `local` declarations of
+# these exact names are what the unqualified assignments below reach.
+# case_route is always "" (default) for every batch member by construction
+# — a block carrying a routed cell never joins a batch (item 1's third
+# exclusion) — so no route data needs packing at all.
+#
+# bm_cases[mi] is one line per case, \x01-separated (SOH, not TAB —
+# MEASURED: bash's `read` treats TAB/SPACE/NEWLINE as "IFS whitespace" and
+# COLLAPSES consecutive delimiters and strips them at field boundaries even
+# when IFS is set to nothing but a single tab character, silently shifting
+# every field after the first empty one — an "n"/"ns" case's case_start/
+# case_end are ALWAYS empty, so this bit on the very first case tried
+# during construction, landing case_startpos into case_subject's slot one
+# field over. \x01 is not classified as IFS whitespace, so it delimits
+# exactly like a comma would — this project's own tests/lib/CLAUDE.md
+# macport entry independently records the mirror-image bug (`IFS=$'\x01'`
+# not splitting AT ALL under a stale bash), which is the reason this
+# comment states the fact measured on THIS shell rather than assuming it):
+# (kind,line,subject,start,end,startpos,gspec,gucode) — safe with \x01/
+# NEWLINE delimiters because none of those eight fields can themselves
+# contain a raw \x01 byte or a newline (case_subject is a single .rxt
+# line's C-escaped text, the same guarantee RXTDUMP's own format comment
+# already relies on for TAB; the rest are digits/kind-words/gspec's own
+# comma+semicolon grammar). The trailing empty line `<<<` itself appends is
+# skipped by the `-n "${_l:-}"` guard (a real case's line number is never
+# empty).
+unpack_batch_member() {
+    local mi="$1"
+    cur_pattern="${bm_pattern[$mi]}"
+    artifact_ncaps="${bm_ncaps[$mi]}"
+    case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=()
+    case_startpos=(); case_gspec=(); case_gucode=(); case_route=()
+    local _k _l _s _st _e _p _g _u
+    while IFS=$'\x01' read -r _k _l _s _st _e _p _g _u; do
+        [ -n "${_l:-}" ] || continue
+        case_kind+=("$_k"); case_line+=("$_l"); case_subject+=("$_s")
+        case_start+=("$_st"); case_end+=("$_e"); case_startpos+=("$_p")
+        case_gspec+=("$_g"); case_gucode+=("$_u"); case_route+=("")
+    done <<< "${bm_cases[$mi]}"
+}
+
+# [TT-4M] STEP 2c HARNESS_BATCH — batch_member_compile <mi>
+#
+# Compiles batch member <mi>'s own gen.c to gen.o via a `-c` sub-compile at
+# gen_cc's ordinary UNSCALED per-pattern D45 budget (item 3's option (a) /
+# item 6 step 1: the split that keeps SIZELOG's per-pattern gcc CPU/wall
+# EXACT even under batching, and keeps the compile budget from being
+# diluted N-fold). Returns gen_cc's own exit status; $GEN_CC_LOG carries
+# its diagnostic on failure, exactly as every other gen_cc call site.
+batch_member_compile() {
+    local mi="$1"
+    local px="${bm_prefix[$mi]}"
+    local mc="$batch_bdir/$px.c" mh="$batch_bdir/$px.h" mo="$batch_bdir/$px.o"
+    local _sz_tf="$WORKDIR/.sz_time.$$.$mi"
+    local rc
+    {
+        TIMEFORMAT='ARTSIZE_TIME %3R %3U %3S'
+        time gen_cc "${bm_pattern[$mi]}" "$CC" $GENCFLAGS -I"$batch_bdir" -c -o "$mo" "$mc"
+    } 2> "$_sz_tf"
+    rc=$?
+    # [ART-SIZE.1b] option (a): this per-member `-c` compile IS "the
+    # existing gen_cc call site" SIZELOG already rides, just at member
+    # granularity instead of whole-file granularity — same shape, same
+    # single `time` wrapper, same size_count_row call.
+    if [ -n "$SIZELOG" ] && [ "$rc" -eq 0 ]; then
+        local _sz_tag _sz_wall _sz_user _sz_sys _sz_cpu _sz_cpu_ms _sz_load1 _sz_row
+        read -r _sz_tag _sz_wall _sz_user _sz_sys < "$_sz_tf"
+        local _sz_ums _sz_sms
+        _sz_ums="${_sz_user//./}"; _sz_sms="${_sz_sys//./}"
+        _sz_cpu_ms=$(( 10#${_sz_ums:-0} + 10#${_sz_sms:-0} ))
+        printf -v _sz_cpu '%d.%03d' "$((_sz_cpu_ms / 1000))" "$((_sz_cpu_ms % 1000))"
+        _sz_load1="$(load1)"
+        _sz_row="$(size_count_row "$mc" "$mh" "$px")"
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "${cur_file#$ROOT_DIR/}:${bm_line[$mi]}" "$_sz_row" "$_sz_cpu" "${_sz_wall:-}" "${_sz_load1:-0}" \
+            >> "$SIZELOG"
+        total_sizelog=$((total_sizelog + 1))
+    fi
+    rm -f "$_sz_tf"
+    return "$rc"
+}
+
+# [TT-4M] STEP 2c HARNESS_BATCH — flush_batch
+#
+# Compiles and runs the pending batch (up to HARNESS_BATCH members, or the
+# file's own trailing remainder — a smaller final chunk is a clean,
+# unremarkable degenerate case of the same mechanism). Shape per
+# docs/design/tt4m_harness_batching.md items 2/3/6: N independent `-c`
+# sub-compiles (each at the UNSCALED per-pattern D45 budget), a generated
+# dispatch.c sub-compiled the same way, then ONE link — with an N-scaled
+# WALL BACKSTOP around the whole sequence (item 6 step 3, rarely expected to
+# fire) and TWO-TIER degradation (item 6): a member whose own `-c` compile
+# fails is dropped and reported EXACTLY as an unbatched compile failure
+# would be, and the batch relinks without it (free per-member attribution —
+# no stderr-parsing heuristic needed, because option (a)'s own per-member
+# split already isolates a compile failure to its one source file before
+# the link is ever attempted). The RARE case where the LINK itself fails
+# despite every surviving member's own `-c` succeeding (a dispatch.c bug, a
+# cross-TU symbol collision — gcc's diagnostic there does not, in general,
+# name one file) falls back to relinking each survivor SOLO (reusing its
+# already-compiled .o, a fresh 1-member dispatch.c) to isolate the cause,
+# exactly as an unbatched recompile would.
+flush_batch() {
+    # Snapshot the pending batch, then IMMEDIATELY clear the GLOBAL pending-
+    # batch state (batch_n/bm_*/batch_bdir) before doing any compile/link
+    # work below — this function has several early `return`s (no
+    # survivors, dispatch.c's own failure), and every one of them must
+    # leave the global state clean for the NEXT stage_block_for_batch call
+    # to start a fresh batch, not merely the code path that falls off the
+    # end. The re-declared LOCAL bm_prefix/bm_line/bm_pattern/bm_ncaps/
+    # bm_cases/batch_bdir below shadow the (now-empty) globals of the same
+    # name for the rest of THIS call — batch_member_compile, called from
+    # within this function, sees these locals via bash's ordinary dynamic
+    # scoping, exactly as it would see the globals if nothing were reset.
+    local _fb_prefix=("${bm_prefix[@]}") _fb_line=("${bm_line[@]}") \
+          _fb_pattern=("${bm_pattern[@]}") _fb_ncaps=("${bm_ncaps[@]}") \
+          _fb_cases=("${bm_cases[@]}") _fb_bdir="$batch_bdir"
+    batch_n=0; bm_prefix=(); bm_line=(); bm_pattern=(); bm_ncaps=(); bm_cases=(); batch_bdir=""
+    local -a bm_prefix=("${_fb_prefix[@]}") bm_line=("${_fb_line[@]}") \
+             bm_pattern=("${_fb_pattern[@]}") bm_ncaps=("${_fb_ncaps[@]}") \
+             bm_cases=("${_fb_cases[@]}")
+    local batch_bdir="$_fb_bdir"
+
+    local cur_pattern artifact_ncaps
+    local -a case_kind case_line case_subject case_start case_end \
+             case_startpos case_gspec case_gucode case_route
+
+    local n_members=${#bm_prefix[@]}
+    local -a member_ok=()
+    local mi
+    # item 6 step 3: sized off THIS batch's real member count (a trailing
+    # partial chunk is smaller than HARNESS_BATCH) plus one extra unit of
+    # slack for the link step, wall-only — each step's OWN unscaled budget
+    # (gen_cc, below) is what actually catches a pathological single
+    # compile; this is the rarely-firing aggregate-only backstop.
+    local _bwall=$(( (n_members + 1) * $(gen_timeout_secs) ))
+    local _bt0=$SECONDS
+    local _backstop=0
+
+    for mi in "${!bm_prefix[@]}"; do
+        member_ok[$mi]=0
+        if [ "$_backstop" = "0" ] && [ $((SECONDS - _bt0)) -gt "$_bwall" ]; then
+            _backstop=1
+        fi
+        if [ "$_backstop" = "1" ]; then
+            unpack_batch_member "$mi"
+            local ci
+            for ci in "${!case_kind[@]}"; do
+                record_fail "$cur_file" "${case_line[$ci]}" \
+                    "D45 BATCH WALL BACKSTOP: this batch (N=$n_members, $cur_file) exceeded ${_bwall}s of aggregate wall time across its own sub-compiles — see docs/dev/decisions.md D45; this is the OUTER backstop, not a per-pattern budget breach (each member's own -c compile stays under its own unscaled budget on its own)"
+                record_case_group_fail "$cur_file" "$ci" "batch wall backstop"
+            done
+            continue
+        fi
+        if batch_member_compile "$mi"; then
+            member_ok[$mi]=1
+        else
+            echo "$cur_file:${bm_line[$mi]}: HARNESS FAILURE: $CC failed to compile generated code for pattern '${bm_pattern[$mi]}'" >&2
+            echo "$GEN_CC_LOG" >&2
+            unpack_batch_member "$mi"
+            local ci
+            for ci in "${!case_kind[@]}"; do
+                record_fail "$cur_file" "${case_line[$ci]}" "compile failure (see above)"
+                record_case_group_fail "$cur_file" "$ci" "compile failure (see above)"
+            done
+        fi
+    done
+
+    local -a survivors=()
+    for mi in "${!bm_prefix[@]}"; do
+        [ "${member_ok[$mi]}" = "1" ] && survivors+=("$mi")
+    done
+    [ "${#survivors[@]}" -eq 0 ] && return 0
+
+    local -a surv_px=() surv_objs=()
+    for mi in "${survivors[@]}"; do
+        surv_px+=("${bm_prefix[$mi]}")
+        surv_objs+=("$batch_bdir/${bm_prefix[$mi]}.o")
+    done
+    local dc="$batch_bdir/dispatch.c" dobj="$batch_bdir/dispatch.o" exe="$batch_bdir/t"
+    gen_dispatch_c "${surv_px[@]}" > "$dc"
+    if ! gen_cc "batch dispatch ($cur_file)" "$CC" $GENCFLAGS -I"$batch_bdir" -c -o "$dobj" "$dc"; then
+        # Our OWN generated glue failed to compile — a HARD HARNESS
+        # FAILURE attributable to no single pattern, same shape as H11's
+        # "$CC failed to build the driver for target" message one section
+        # up. Should never happen on a healthy tree; not a member's fault.
+        echo "$cur_file: HARNESS FAILURE: $CC failed to compile the batch's own dispatch.c: $GEN_CC_LOG" >&2
+        for mi in "${survivors[@]}"; do
+            unpack_batch_member "$mi"
+            local ci
+            for ci in "${!case_kind[@]}"; do
+                record_fail "$cur_file" "${case_line[$ci]}" "HARNESS FAILURE: batch dispatch.c failed to compile (see above)"
+                record_case_group_fail "$cur_file" "$ci" "batch dispatch.c failed to compile"
+            done
+        done
+        return 0
+    fi
+    if gen_cc "batch link ($cur_file)" "$CC" $GENCFLAGS -o "$exe" "$dobj" "${surv_objs[@]}"; then
+        local newidx=0
+        for mi in "${survivors[@]}"; do
+            unpack_batch_member "$mi"
+            run_case_loop "$exe" batched "$newidx"
+            newidx=$((newidx + 1))
+        done
+        return 0
+    fi
+
+    # RARE slow fallback (item 6's link-only-failure path): every member
+    # compiled on its own but the SHARED link failed for a reason gcc did
+    # not attribute to one file. Relink each survivor SOLO — its own
+    # already-compiled .o, a fresh 1-member dispatch.c — never a second
+    # -c recompile (that step already succeeded and its object is still on
+    # disk).
+    echo "$cur_file: HARNESS FAILURE: $CC failed to link the batch (N=${#survivors[@]} surviving members, dispatch.c: $dc); falling back to per-pattern relink to isolate the cause: $GEN_CC_LOG" >&2
+    for mi in "${survivors[@]}"; do
+        local px="${bm_prefix[$mi]}"
+        local sdc="$batch_bdir/${px}_solo.c" sdobj="$batch_bdir/${px}_solo.o" sexe="$batch_bdir/${px}_t"
+        gen_dispatch_c "$px" > "$sdc"
+        unpack_batch_member "$mi"
+        if gen_cc "solo dispatch ($px)" "$CC" $GENCFLAGS -I"$batch_bdir" -c -o "$sdobj" "$sdc" \
+            && gen_cc "solo link ($px)" "$CC" $GENCFLAGS -o "$sexe" "$sdobj" "$batch_bdir/$px.o"; then
+            run_case_loop "$sexe" batched 0
+        else
+            local ci
+            for ci in "${!case_kind[@]}"; do
+                record_fail "$cur_file" "${case_line[$ci]}" "compile failure (see above; batch link failed, isolated to this member on a solo relink)"
+                record_case_group_fail "$cur_file" "$ci" "compile failure (see above)"
+            done
+        fi
+    done
+}
+
+# [TT-4M] STEP 2c HARNESS_BATCH — stage_block_for_batch
+#
+# Called from flush_block in place of the unbatched compile+build+run path,
+# for a block this run's HARNESS_BATCH eligibility check has already
+# cleared (see flush_block, right before this function is invoked). Reads
+# the caller's own dynamically-scoped state (pflags/cur_file/cur_pattern/
+# cur_pattern_line/case_kind and siblings) exactly as the unbatched path
+# does. Compiles THIS block's own pcrec artifact under a fresh, RUN-WIDE
+# unique prefix and appends it to the pending batch; a pcrec-level compile
+# failure (the compiler's OWN refusal) is reported HERE, immediately, in
+# the identical shape the unbatched path reports it — it never reaches gcc
+# either way, so it never becomes (or costs) a batch member at all.
+stage_block_for_batch() {
+    if [ "$batch_n" -eq 0 ]; then
+        batch_dir_seq=$((batch_dir_seq + 1))
+        batch_bdir="$WORKDIR/hb$(printf '%04d' "$batch_dir_seq")"
+        mkdir -p "$batch_bdir"
+    fi
+    batch_seq=$((batch_seq + 1))
+    local px; px="$(printf 'hb%06d' "$batch_seq")"
+    local upx; upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
+    local mc="$batch_bdir/$px.c"
+    local pcrec_err pcrec_rc
+    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p "$px" "${pflags[@]+"${pflags[@]}"}" -o "$mc" -- "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_rc=$?
+
+    if [ $pcrec_rc -ne 0 ]; then
+        if [ $pcrec_rc -ge 124 ]; then
+            echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: pcrec crashed or timed out (exit $pcrec_rc) on pattern '$cur_pattern'" >&2
+        fi
+        local key="$cur_file:$cur_pattern_line"
+        contains_fail "$key" || compile_fail_set+=("$key")
+        local ci
+        for ci in "${!case_kind[@]}"; do
+            record_fail "$cur_file" "${case_line[$ci]}" \
+                "pattern '$cur_pattern' failed to compile: $pcrec_err"
+            record_case_group_fail "$cur_file" "$ci" "pattern failed to compile"
+            if [ -n "$RXTDUMP" ]; then
+                local flat_err
+                flat_err="$(printf '%s' "$pcrec_err" | tr '\n\t' '  ')"
+                printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+                    "$cur_file" "${case_line[$ci]}" "${case_kind[$ci]}" "refused" \
+                    "REFUSED" "$flat_err" \
+                    >> "$RXTDUMP"
+            fi
+        done
+        return 0
+    fi
+
+    if [ ! -f "$mc" ] || [ ! -f "$batch_bdir/$px.h" ]; then
+        local ci
+        for ci in "${!case_kind[@]}"; do
+            record_fail "$cur_file" "${case_line[$ci]}" \
+                "pcrec exited 0 but did not produce gen.c/gen.h for pattern '$cur_pattern'"
+            record_case_group_fail "$cur_file" "$ci" "gen.c/gen.h not produced"
+        done
+        return 0
+    fi
+
+    local ncaps
+    ncaps="$(grep -oE "^#define ${upx}_NCAPS [0-9]+" "$batch_bdir/$px.h" | awk '{print $3}')"
+    if [ -z "$ncaps" ]; then
+        echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: ${upx}_NCAPS not found in generated $px.h for pattern '$cur_pattern'" >&2
+        local ci
+        for ci in "${!case_kind[@]}"; do
+            record_fail "$cur_file" "${case_line[$ci]}" "HARNESS FAILURE: ${upx}_NCAPS not found in $px.h"
+            record_case_group_fail "$cur_file" "$ci" "${upx}_NCAPS not found in $px.h"
+        done
+        return 0
+    fi
+
+    bm_prefix+=("$px")
+    bm_line+=("$cur_pattern_line")
+    bm_pattern+=("$cur_pattern")
+    bm_ncaps+=("$ncaps")
+    local packed="" ci
+    for ci in "${!case_kind[@]}"; do
+        packed+="${case_kind[$ci]}"$'\x01'"${case_line[$ci]}"$'\x01'"${case_subject[$ci]}"$'\x01'"${case_start[$ci]}"$'\x01'"${case_end[$ci]}"$'\x01'"${case_startpos[$ci]}"$'\x01'"${case_gspec[$ci]}"$'\x01'"${case_gucode[$ci]}"$'\n'
+    done
+    bm_cases+=("$packed")
+    batch_n=$((batch_n + 1))
+
+    if [ "$batch_n" -ge "$HARNESS_BATCH" ]; then
+        flush_batch
+    fi
+}
+
 flush_block() {
     # [DD-13b.W1.1] leg B: report what the parse understood and compile
     # NOTHING. Placed at the top of the one function every block already
@@ -903,6 +1231,45 @@ flush_block() {
     # LAST, so a directive on the same axis wins — see the env-var block above.
     # shellcheck disable=SC2206
     [ -n "$RXTFLAGS" ] && pflags+=($RXTFLAGS)
+
+    # [TT-4M] STEP 2c — HARNESS_BATCH's batching-eligibility decision,
+    # computed HERE (before this block's own compile-time decision is made,
+    # exactly where run.sh already computes cur_route per case), per
+    # docs/design/tt4m_harness_batching.md item 1's three exclusions. A
+    # `perr` block never reaches gcc at all (checked by pcrec's own exit
+    # code); an H11 target block gets a SEPARATE `pcrec --source --target`
+    # artifact from a different pcrec invocation than the one that would
+    # join a batch; a block carrying a routed cell (a `frames-buffer=`
+    # directive, or a non-`default`/non-empty `RXTROUTE` floor) cannot be
+    # served by this landing's dispatch.c, which only reproduces the
+    # DEFAULT route. All three stay OUT of the batching unit entirely,
+    # compiling/running exactly as today.
+    if [ "$HARNESS_BATCH" -ge 1 ] && [ "$cur_is_perr" != "1" ]; then
+        local _batch_excluded=0
+        if [ "${#head_target_def[@]}" -gt 0 ] && [ -n "$cur_name" ]; then
+            local _hti
+            for _hti in "${!head_target_def[@]}"; do
+                if [ "${head_target_def[$_hti]}" = "$cur_name" ]; then
+                    _batch_excluded=1
+                    break
+                fi
+            done
+        fi
+        if [ "$_batch_excluded" = "0" ]; then
+            local _bri
+            for _bri in "${!case_kind[@]}"; do
+                local _brt="${case_route[$_bri]:-}"
+                if [ -n "$_brt" ] && [ "$_brt" != "default" ]; then
+                    _batch_excluded=1
+                    break
+                fi
+            done
+        fi
+        if [ "$_batch_excluded" = "0" ]; then
+            stage_block_for_batch
+            return 0
+        fi
+    fi
 
     local pcrec_err
     # The budget is AXIS-AWARE (R23 V1): pcrec's own invocation used to carry a
@@ -1024,7 +1391,7 @@ flush_block() {
         _sz_cpu_ms=$(( 10#${_sz_ums:-0} + 10#${_sz_sms:-0} ))
         printf -v _sz_cpu '%d.%03d' "$((_sz_cpu_ms / 1000))" "$((_sz_cpu_ms % 1000))"
         _sz_load1="$(load1)"
-        _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h")"
+        _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h" rx)"
         # Pattern id is ROOT-RELATIVE, never absolute: a no-args (full
         # corpus) run discovers files via `find "$ROOT_DIR/tests" ...`
         # (absolute paths), while a targeted run's own argv is whatever
@@ -1163,6 +1530,15 @@ for file in "${files[@]}"; do
     case_route=()
     have_block=0
     blocks_in_file=0
+    # [TT-4M] STEP 2c — the pending HARNESS_BATCH batch, reset PER FILE: a
+    # batch never spans two files (docs/design/tt4m_harness_batching.md
+    # item 1). By the time this loop reaches a new file, the previous
+    # file's own end-of-file flush (below, alongside its own
+    # `flush_block` call) has already emptied it — this reset is the
+    # defensive floor, not the only place it happens.
+    batch_n=0
+    batch_bdir=""
+    bm_prefix=(); bm_line=(); bm_pattern=(); bm_ncaps=(); bm_cases=()
     # [DD-13b.W1.1 r46sem finding 20] `name` IS IN THE FILE NAMESPACE
     # (docs/spec/rxt_format.md) and must be unique within the file. Reset
     # PER FILE, never per block -- the whole point is to catch a SECOND
@@ -1696,6 +2072,12 @@ for file in "${files[@]}"; do
     done < "$file"
 
     [ "$have_block" = "1" ] && flush_block
+    # [TT-4M] STEP 2c: a batch never spans two files, so whatever this
+    # file's own parse staged (possibly a partial, less-than-N final chunk
+    # — "the file's own trailing remainder forming a smaller final chunk",
+    # docs/design/tt4m_harness_batching.md item 1) is flushed HERE, before
+    # the outer loop moves to the next file.
+    [ "$batch_n" -gt 0 ] && flush_batch
     if [ "$blocks_in_file" -eq 0 ]; then
         record_fail "$file" 0 "no pattern blocks parsed from file (P-C2 floor)"
     fi
