@@ -348,5 +348,11 @@ change.
   (10.44) is ~4.4x below K44's documented 47.6-at-PROCS=12, suggestive but
   NOT apples-to-apples (K44 is a full multi-section `make -j12 test`, this
   is an isolated corpus-compile prototype) -- named as owed to STEP 2c/2d.
-  A same-pool serial-baseline re-run was still running when this memo was
-  written; see its own "What is still owed" section.
+  Addendum: the same-pool serial baseline landed at 547.52s wall / 320.60s
+  CPU, giving **18.65x wall speedup** at the recommended N=64/P=8 cell
+  end to end (bigger than STEP 1's 4.28x because it combines STEP 1's two
+  levers WITH this row's own parallel-dispatch lever) -- with the honest
+  caveat that this compares batching+parallelism TOGETHER against
+  NEITHER, since `run.sh` today is already unbatched-but-PARALLEL and this
+  tool has no unbatched-parallel mode to isolate that middle ground
+  (named as owed, not built, D77).

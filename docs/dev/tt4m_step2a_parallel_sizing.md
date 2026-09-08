@@ -258,25 +258,56 @@ harness/`).
   pressure from N simultaneous cc1 processes at higher optimization
   levels) turned out to matter, and nothing measured here shows that."
 
+## Addendum: the same-pool serial baseline (landed after the grid above)
+
+The unbatched serial baseline (one pcrec spawn + one gcc spawn per
+pattern, `tests/harness/driver.c` unmodified, same per-case run shape) on
+the IDENTICAL 1,022-pattern/7,729-case pool, run concurrently with the
+tail of the sweep above (so its own wall number carries some contention
+from that overlap — read it as directionally reliable, not a quiet-box
+floor): **547.52s wall / 320.60s CPU** (`counts`: pcrec 1022, gcc 1022,
+run 7729 — `gcc` wall 255.32s, `run` wall 280.19s, `pcrec` wall 12.01s;
+zero compile failures, 7,706 cases matching the batched cells' own case
+count exactly).
+
+**Against this design's own recommended cell (N=64, P=8: 29.36s wall):
+18.65x wall speedup end to end** — bigger than STEP 1's own 4.28x because
+this number combines BOTH of STEP 1's measured levers (gcc-invocation
+count, distinct-executable count) WITH 2a's own parallel-dispatch lever
+(P=8 concurrency) multiplicatively, where STEP 1's serial-only sweep could
+only ever show the first two. A rough cross-check that the pieces are
+consistent with each other: this pool's total CPU (320.60s) against
+N=64's own aggregated CPU at any P (139.91-156.87 core-seconds across the
+P=4-12 cells) gives a CPU-only multiple of ~2.1-2.3x, close to STEP 1's
+own 2.79x CPU figure measured on a different, smaller pool — the two
+independent measurements agree on ORDER OF MAGNITUDE for the lever they
+share, which is the right cross-check to make before trusting either.
+
+**What this number does NOT isolate, named rather than glossed over**:
+today's REAL `run.sh` is not this serial baseline — it already runs
+UNBATCHED but PARALLEL (`PROCS=nproc`). This tool has no "unbatched,
+parallel" mode (`cmd_baseline` is serial-only by construction, STEP 1's
+own scope decision), so the 18.65x figure compares batching+parallelism
+together against NEITHER alone, not "what batching adds on top of what
+`run.sh` already does today." A rough sanity estimate (spawn/launch tax
+dominates over CPU-bound work in this population, so parallel dispatch
+should scale close to linearly with P before hitting the same P=8 knee
+found above) suggests an unbatched-but-`PROCS=8` run would land
+considerably below 547.52s and somewhat above 29.36s — but that is an
+estimate, not a measurement, and is named as the one remaining gap before
+this design's numbers fully decompose into "parallelism's share" and
+"batching's share" separately. **Building `cmd_baseline --procs P`
+(the unbatched analogue of `parallel`) is the natural next probe if that
+decomposition is ever load-bearing for a decision** (D77: named, not
+built, since 2a's own recommendation does not depend on it — the
+recommended cell's absolute numbers stand regardless of how the
+speedup decomposes between its two contributing levers).
+
 ## What is still owed (not blocking STEP 2b, named for STEP 2c/2d)
 
-- **A same-pool SERIAL BASELINE re-run** (unbatched, one pcrec+one gcc
-  spawn per pattern, no batching at all) was launched on this box
-  alongside the parallel sweep above and is still running at the time
-  this memo was written — the 1,022-pattern / 7,729-case population is
-  ~8x STEP 1's own baseline slice, and a fully serial unbatched run at
-  that scale is genuinely slow (STEP 1's own 126-pattern baseline was
-  61.69s; this pool scaled up predicts several minutes). This memo's own
-  claims (the P knee, the N plateau, degradation cost, answer identity)
-  do not depend on it — they are all comparisons WITHIN the batched shape
-  across N and P — but the absolute "how many x faster than today's
-  harness" multiple at this pool's scale is not yet in hand from THIS
-  run (STEP 1's own 2.41x-4.28x figures, measured on a different,
-  smaller pool, are the standing reference until this one lands). Log:
-  `/tmp/tt4m_pool2a/sweep/baseline_serial.json` (scratch, not committed);
-  completion is `baseline_serial.json` existing / `check: OK`-style
-  process exit. If it lands before this document is superseded, the
-  number belongs in a short addendum here, not a rewrite.
+- **An unbatched-but-parallel baseline** (`cmd_baseline` extended with its
+  own `--procs`), to decompose the 18.65x figure above into "how much is
+  parallelism, how much is batching" — see the addendum immediately above.
 - **A quiet-box re-run.** Per BOILERPLATE and the STEP 1 memo's own
   caveat, this box was not fully idle during the sweep (this session's
   other lanes were doing light, non-`make` work) — the deltas here are

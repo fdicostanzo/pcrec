@@ -54,6 +54,16 @@ no `frames-buffer=` blocks).
   - `failure-iso` — plants a syntax error in one batch member's `gen.c`
     copy, measures the batch link's all-or-nothing failure and the
     per-pattern fallback cost to recover the batch's other members.
+  - `parallel` — [TT-4M] STEP 2 (2a), added 2026-09-08 (lane tt4m2): P
+    CONCURRENT shape-L batch pipelines. Shards the pool's BATCHES (not raw
+    rows) round-robin across P workers, writes each a private sub-pool,
+    and launches each as an independent `batched` SUBPROCESS (the same
+    self-reinvocation shape `tests/harness/run.sh`'s own `PROCS>1` fan-out
+    uses). Wall is the parent's own outer wall clock; CPU is read two ways
+    (each worker's own self-reported total, summed, AND the parent's own
+    `RUSAGE_CHILDREN` after every worker is reaped) and cross-checked
+    against each other. See `docs/dev/tt4m_step2a_parallel_sizing.md` for
+    the N x P sweep this subcommand exists to run.
   Every subcommand writes a JSON file (spawn counts by kind, wall/CPU by
   kind, and every case's `(stdout, exit code)` for the answer-identity
   diff) and prints the spawn summary to stdout.
