@@ -36,11 +36,16 @@
  * and is a separate axis pcrec has deliberately not taken
  * (`utf8_design.md` §14 ASK 4); it does not alter `\p`. */
 
+/* pcre2_abi.h defines _GNU_SOURCE, needed before any libc header — it MUST
+ * be the first #include (tests/registry/pcre2_check.c's own header comment
+ * states the same rule; this file violated it until K-uprops-abi-order,
+ * 2026-09-08, which is why dlinfo()/RTLD_DI_LINKMAP failed to declare on
+ * Linux/glibc while compiling clean on darwin's different code path). */
+#include "pcre2_abi.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "pcre2_abi.h"
 
 #define PCRE2_ZERO_TERMINATED_OPT (~(PCRE2_SIZE)0)
 #define PCRE2_UTF_OPT             0x00080000u
