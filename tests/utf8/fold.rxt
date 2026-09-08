@@ -1,0 +1,229 @@
+# [M5.0] STAGE 4 — DD-1's FOLD CLOSURE, the cells the D27 corpus does not have.
+#
+# `tests/utf8/axis06_caseless_fold.rxt` is the blinded author's fold axis and
+# it is entirely about SINGLE CHARACTERS: bare literals and `\x{...}` escapes,
+# their partners, and negated singletons. Measured after promotion, it holds
+# ZERO range blocks and ZERO class blocks mixing a literal with a produced set
+# — so the two results `docs/design/utf8_design.md` §4 calls its sharpest had
+# no witness anywhere in the tree. This file is those witnesses.
+#
+# WHAT IT COVERS, and each section says which design result it is:
+#
+#   1. §4.2(c) — THE CLOSURE REACHES OUTSIDE THE WRITTEN RANGE. `[a-z]`
+#      caseless matches U+212A and U+017F, neither of which is adjacent to
+#      anything in `[a-z]` once the set is byte ranges. This is the cell that
+#      forces the fold to run while the set is still CODE POINTS, and it is
+#      sabotage row S-U3's whole population.
+#   2. §4.3 — FOLD BEFORE NEGATE, over a RANGE rather than a singleton
+#      (axis06 has the singleton form). Sabotage row S-U1.
+#   3. §4.5 / the `byte` arm — the fold pcrec applies is THE ENCODING'S. Under
+#      `byte`, 0xE9 must NOT fold to 0xC9, which is what libpcre2's own 8-bit
+#      non-UTF build does and what pcrec's `options=0`-family semantics owe.
+#      A stage-4 defect that reached for one universal fold table passes every
+#      cell in section 1 and fails here.
+#   4. THE PER-CONTRIBUTION RULE, which is stage 4's own finding and has no
+#      section in the design at all: the fold applies to what the pattern
+#      WRITES, not to what a producer NAMES. `[\p{Lu}k]` matches U+212A (the
+#      literal `k`'s partner) while `[\p{Lu}x]` does not match U+0345 (which
+#      folds with Greek iota and would arrive from folding `L&`'s span), and
+#      `[[:lower:]]` does not match U+212A while `[[:lower:]k]` does. Only a
+#      fold applied per contribution answers all four; folding the merged set
+#      gets cells 2 and 3 wrong, and folding nothing gets cells 1 and 4 wrong.
+#
+# ORACLE: libpcre2, `PCRE2_UTF|PCRE2_CASELESS` for the utf8 sections and
+# `PCRE2_CASELESS` alone for section 3 — pcrec has no `UCP` axis (§4.5), so
+# the non-UCP column is pcrec's promised semantics throughout. Every cell here
+# was READ FROM THE ORACLE before it was written, not reasoned out; the four
+# `[^\p{Ll}]` blocks in axis06 are what reasoning it out looks like.
+#
+# `# pcre2-only` throughout: `verify_rxt.py`'s subject decoder is byte-oriented
+# (U14), which is this directory's standing exclusion.
+
+# ---------------------------------------------------------------------------
+# 1. §4.2(c) — the closure reaches outside the written range
+# ---------------------------------------------------------------------------
+
+# `[a-z]` caseless: A (in range's fold), U+212A KELVIN and U+017F LONG S (both
+# far outside it), z (the range itself), 5 (not a letter).
+# pcre2-only
+pattern [a-z]
+encoding utf8
+flags i
+m "A" 0 1
+m "\xe2\x84\xaa" 0 3
+m "\xc5\xbf" 0 2
+m "z" 0 1
+n "5"
+
+# The same range with the fold OFF — the control that says section 1 is about
+# caselessness and not about the range.
+# pcre2-only
+pattern [a-z]
+encoding utf8
+n "A"
+n "\xe2\x84\xaa"
+m "z" 0 1
+
+# A singleton CLASS, not a bare literal: the class constructor and the literal
+# constructor are different functions and both must fold.
+# pcre2-only
+pattern [k]
+encoding utf8
+flags i
+m "\xe2\x84\xaa" 0 3
+m "K" 0 1
+m "k" 0 1
+n "x"
+
+# A non-ASCII range reaching its own capitals AND final sigma — a three-member
+# fold class entered through a range endpoint neither member is.
+# pcre2-only
+pattern [\x{3b1}-\x{3c9}]
+encoding utf8
+flags i
+m "\xce\x91" 0 2
+m "\xcf\x82" 0 2
+m "\xce\xb1" 0 2
+n "z"
+
+# VACUITY CONTROL: a range with no cased member folds to nothing. Without this
+# a compiler that added U+212A to every class would pass every cell above.
+# pcre2-only
+pattern [0-9]
+encoding utf8
+flags i
+m "5" 0 1
+n "\xe2\x84\xaa"
+
+# CONTROL: the same three bytes outside a class are three literals, not a
+# range — so nothing here is testing the dash.
+# pcre2-only
+pattern a-z
+encoding utf8
+flags i
+m "A-Z" 0 3
+
+# ---------------------------------------------------------------------------
+# 2. §4.3 — fold before negate, over a RANGE
+# ---------------------------------------------------------------------------
+
+# `[^a-z]` caseless excludes the CLOSED set, so it rejects A and U+212A alike.
+# Folding after the negation instead yields every code point, and both results
+# are case-closed — only behaviour tells them apart.
+# pcre2-only
+pattern [^a-z]
+encoding utf8
+flags i
+n "A"
+n "\xe2\x84\xaa"
+m "5" 0 1
+
+# The singleton form of the same rule, with its cross-block partner.
+# pcre2-only
+pattern [^k]
+encoding utf8
+flags i
+n "K"
+n "\xe2\x84\xaa"
+m "x" 0 1
+
+# ---------------------------------------------------------------------------
+# 3. §4.5 — the `byte` encoding's fold is ASCII, and 0xE9 is the cell
+# ---------------------------------------------------------------------------
+
+# THE DISCRIMINATING CELL FOR "one fold table, clamped to the universe": that
+# design folds 0xE9 to 0xC9 under `byte`, because both are under 0xFF. PCRE2's
+# 8-bit non-UTF build folds neither, and so must pcrec.
+# pcre2-only
+pattern \xe9
+encoding byte
+flags i
+m "\xe9" 0 1
+n "\xc9"
+
+# The ASCII half of the same encoding, unchanged since D23.
+# pcre2-only
+pattern k
+encoding byte
+flags i
+m "k" 0 1
+m "K" 0 1
+n "x"
+
+# pcre2-only
+pattern [a-z]
+encoding byte
+flags i
+m "A" 0 1
+m "z" 0 1
+n "5"
+
+# Negation under the byte fold: `[^\xe9]` still matches 0xC9, because 0xC9 was
+# never in the folded set to be excluded.
+# pcre2-only
+pattern [^\xe9]
+encoding byte
+flags i
+m "\xc9" 0 1
+n "\xe9"
+
+# ---------------------------------------------------------------------------
+# 4. THE PER-CONTRIBUTION RULE (stage 4's own finding)
+# ---------------------------------------------------------------------------
+
+# A literal inside a class with a produced property set: the LITERAL folds.
+# pcre2-only
+pattern [\p{Lu}k]
+encoding utf8
+features unicode-props
+flags i
+m "\xe2\x84\xaa" 0 3
+m "A" 0 1
+
+# The property span does NOT fold: U+0345 (Mn) folds with Greek iota, so a
+# general closure over `L&`'s span would admit it. PCRE2 does not, and neither
+# does pcrec — the caller (module `unicode-props`) already answered the
+# caseless question by substituting `L&` for `Lu`.
+# pcre2-only
+pattern [\p{Lu}x]
+encoding utf8
+features unicode-props
+flags i
+n "\xcd\x85"
+m "X" 0 1
+
+# The same split for a NAMED BYTE SET. `[[:lower:]]` is an ASCII-named class,
+# so its caseless widening is the ASCII fold at every encoding; the literal `k`
+# beside it still reaches U+212A.
+# pcre2-only
+pattern [[:lower:]]
+encoding utf8
+features classes
+flags i
+n "\xe2\x84\xaa"
+m "A" 0 1
+
+# pcre2-only
+pattern [[:lower:]k]
+encoding utf8
+features classes
+flags i
+m "\xe2\x84\xaa" 0 3
+
+# `\w` at the atom position, same rule, different producer.
+# pcre2-only
+pattern \w
+encoding utf8
+features classes
+flags i
+n "\xe2\x84\xaa"
+m "K" 0 1
+
+# The substitution itself, so the section is not only about what does NOT
+# happen: caseless `\p{Lu}` IS `\p{L&}`, which contains lowercase.
+# pcre2-only
+pattern [\p{Lu}]
+encoding utf8
+features unicode-props
+flags i
+m "a" 0 1

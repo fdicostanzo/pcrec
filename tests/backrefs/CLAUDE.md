@@ -118,7 +118,7 @@ comment and the row's header.
   publication disciplines), §4 (the `--no-captures` arm, the only place §6.3's
   "keeps internal slots, reports none" ruling is exercised) and §8 (the
   SPAN-DIVERGENCE section, the only possible detector for a prefilter planted
-  on a backref pattern). §9 is the 65,536-pair fold agreement.
+  on a backref pattern). §9 is the 65,536-pair fold agreement and §9b ([M5.0] stage 4) its `utf8` sibling over the Unicode relation.
   §10 (added 2026-08-22) is STRUCTURAL and is the lane's own lesson: it reads
   the empty-iteration guard off the ARTIFACT for 4 unbounded-over-nullable-
   backreference fixtures and asserts its ABSENCE on 3 bounded controls,
@@ -160,6 +160,29 @@ comment and the row's header.
   `rx_bref_match_caseless` — compiled out of an artifact pcrec actually
   emitted — against `pcrec_ascii_fold`, which `cls_casefold` derives from.
   Neither side can be edited into agreement with the other.
+- **fold_agreement_utf8_check.c** — the same obligation for the `utf8`
+  encoding ([M5.0] stage 4, `utf8_design.md` §4.6), run as
+  `run_backref_diff.sh` §9b. **A SECOND FILE rather than a wider sweep in the
+  first**: the byte check's domain is byte PAIRS and the utf8 residual
+  compares CHARACTERS, so neither its loop nor its buffer layout transfers.
+
+  **§4.6 proposed a hand-picked SAMPLE and this file sweeps the RELATION**,
+  which is both cheaper and stronger — 2,938 members across 1,454 classes is a
+  few milliseconds, and the eight cells §4.6 lists are a subset of it by
+  construction. Two directions, because a relation has two ways to be wrong:
+  every member of every class must compare EQUAL (a residual folding too
+  little), and 63,486 adjacent-pair controls must compare as the compiler says
+  (a residual folding too MUCH — a question a sample cannot ask at all, since
+  a sample only ever names pairs that do fold).
+
+  **Part C is the one §4.6 does not have, because stage 4 created the hazard
+  it guards.** There are two fold relations in the compiler now — one
+  hand-written and measured against libpcre2, one GENERATED from a vendored
+  file — and the `byte` encoding's answers must not move when that file's
+  VERSION does. Part C asserts the vendored relation restricted to ASCII is
+  `pcrec_ascii_fold`'s 26 pairs exactly. Measured at the landing: 2,938
+  folding code points / 5,972 ordered pairs equal, 63,486 controls, 52 ASCII
+  bytes tied.
 
 `tests/codegen/run_backref_identity.sh` is the module's byte-identity gate and
 lives there with its four siblings; it is OPT-IN (`make test-backrefs-identity`)

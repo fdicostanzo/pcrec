@@ -349,7 +349,11 @@ fi
 # THE NAMED ENCODING-OWNED REGIONS -- excised from BOTH texts before the
 # compare, never trusted to cancel by accident:
 #   (1) each of the four residual entries (next_pos, back_step, bref_match,
-#       bref_match_caseless), whose SIGNATURE is identical across backends
+#       bref_match_caseless) -- and, since [M5.0] stage 4, the private helpers
+#       and fold table the caseless compare's UTF-8 body needs beside it,
+#       counted under that entry because they ARE its implementation and a
+#       counter of their own would be a vacuity row the `byte` backend can
+#       never satisfy -- whose SIGNATURE is identical across backends
 #       (D58 P-1, DD12a(ii) below) but whose BODY is the backend's own text by
 #       design. Found by the signature line (a closed, four-name list) and
 #       swallowed together with its own immediately-preceding descriptive
@@ -412,7 +416,17 @@ import sys, os, re, subprocess, base64, tempfile, shutil, difflib
 
 pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless)\(')
+# [M5.0 stage 4] `bref_match_caseless`'s UTF-8 body needs two private
+# helpers and a table beside it (decode a character, fold it through the
+# generated pair map). They are the SAME encoding-owned region as the
+# entry they implement -- they exist only in that backend's own text --
+# so they are excised under its counter rather than getting one of their
+# own, which would give the vacuity guard below a row the `byte` backend
+# can never satisfy. The table is matched by its own line because its
+# initializer's brace is deliberately on the following line (see
+# `src/gen/enc/enc_utf8.c`), which is what lets one brace-matching walk
+# serve a function body and an array initializer alike.
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless|bref_ci_fold|bref_ci_decode|bref_ci_fold_pairs)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 GUARD = 'if (attempt_position >= subject_length) return 0;'
 # [K50] the caller-startpos guard's two emitted texts, both MARKER-DELIMITED,
@@ -660,6 +674,8 @@ def excise(text, label):
         m = SIG_RE.match(line)
         if m:
             name = m.group(1)
+            if name.startswith('bref_ci_'):
+                name = 'bref_match_caseless'
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1
                 while k >= 0 and not out[k].lstrip().startswith('/*'):

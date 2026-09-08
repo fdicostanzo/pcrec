@@ -2,8 +2,16 @@
 # so a class containing only the uppercase letter does not gain the
 # lowercase one (OS-1 section of tests/codegen/CLAUDE.md table, row 3).
 # Documented result: 1 codegen check + 8 caseless.rxt cases.
+# [M5.0 stage 4, lane utf8s4] RE-ANCHORED. Stage 4 made `cls_casefold` take the
+# fold as a PARAMETER (the relation is the ENCODING's now, `PcrecEnc.fold`) and
+# put the produced sets' union between the fold and the negation, so this row's
+# recorded anchor no longer exists. The CLAIM is unchanged and was re-verified
+# against the live source, not carried over: the fold is SYMMETRIC — folding only one direction leaves a set that is not
+# case-closed. The loop moved from `cls_casefold` into `ascii_partners`
+# (src/core/fold.c) when the fold became a `PcrecFold` object; it is the same
+# loop over the same table and the same `c >= 'a'` narrowing.
 SAB_ID="S10-casefold-one-direction"
-SAB_FILE="src/parse/parse.c"
+SAB_FILE="src/core/fold.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="cls_casefold: 'cls_has(b,c) || cls_has(b,c+32)' -> 'cls_has(b,c+32)' (fold one direction only)"
@@ -29,7 +37,7 @@ SAB_COUNT=1
 # it is mutating), so the row's edit lands on the collection's own condition
 # rather than on a bit-set call. The asymmetry it plants is identical: only the
 # lowercase half of the partition acquires its partner.
-SAB_BEFORE="        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(s, c))
-            add[nadd++] = pcrec_ascii_fold[c];"
-SAB_AFTER="        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(s, c) && c >= 'a')
-            add[nadd++] = pcrec_ascii_fold[c];"
+SAB_BEFORE="        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(in, c))
+            pcrec_cpset_add(out, pcrec_ascii_fold[c], pcrec_ascii_fold[c]);"
+SAB_AFTER="        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(in, c) && c >= 'a')
+            pcrec_cpset_add(out, pcrec_ascii_fold[c], pcrec_ascii_fold[c]);  /* SABOTAGE S10 */"

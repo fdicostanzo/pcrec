@@ -33,7 +33,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block pair-KELVIN-upper-bare | pattern: K
@@ -47,7 +47,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block pair-KELVIN-lower-esc | pattern: \x{6b}
@@ -61,7 +61,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block pair-KELVIN-upper-esc | pattern: \x{4b}
@@ -75,7 +75,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block pair-ANGSTROM-lower-bare | pattern: a
@@ -200,8 +200,8 @@ pattern μ
 encoding utf8
 flags i
 m "\xce\xbc" 0 2
-n "\xce\x9c"
-n "\xc2\xb5"
+m "\xce\x9c" 0 2
+m "\xc2\xb5" 0 2
 n "x"
 
 # axis6 block pair-MICRO-upper-bare | pattern: Μ
@@ -213,9 +213,9 @@ n "x"
 pattern Μ
 encoding utf8
 flags i
-n "\xce\xbc"
+m "\xce\xbc" 0 2
 m "\xce\x9c" 0 2
-n "\xc2\xb5"
+m "\xc2\xb5" 0 2
 n "x"
 
 # axis6 block pair-MICRO-lower-esc | pattern: \x{3bc}
@@ -228,8 +228,8 @@ pattern \x{3bc}
 encoding utf8
 flags i
 m "\xce\xbc" 0 2
-n "\xce\x9c"
-n "\xc2\xb5"
+m "\xce\x9c" 0 2
+m "\xc2\xb5" 0 2
 n "x"
 
 # axis6 block pair-MICRO-upper-esc | pattern: \x{39c}
@@ -241,9 +241,9 @@ n "x"
 pattern \x{39c}
 encoding utf8
 flags i
-n "\xce\xbc"
+m "\xce\xbc" 0 2
 m "\xce\x9c" 0 2
-n "\xc2\xb5"
+m "\xc2\xb5" 0 2
 n "x"
 
 # axis6 block pair-LONGS-lower-bare | pattern: s
@@ -257,7 +257,7 @@ encoding utf8
 flags i
 m "s" 0 1
 m "S" 0 1
-n "\xc5\xbf"
+m "\xc5\xbf" 0 2
 n "x"
 
 # axis6 block pair-LONGS-upper-bare | pattern: S
@@ -271,7 +271,7 @@ encoding utf8
 flags i
 m "s" 0 1
 m "S" 0 1
-n "\xc5\xbf"
+m "\xc5\xbf" 0 2
 n "x"
 
 # axis6 block pair-LONGS-lower-esc | pattern: \x{73}
@@ -285,7 +285,7 @@ encoding utf8
 flags i
 m "s" 0 1
 m "S" 0 1
-n "\xc5\xbf"
+m "\xc5\xbf" 0 2
 n "x"
 
 # axis6 block pair-LONGS-upper-esc | pattern: \x{53}
@@ -299,7 +299,7 @@ encoding utf8
 flags i
 m "s" 0 1
 m "S" 0 1
-n "\xc5\xbf"
+m "\xc5\xbf" 0 2
 n "x"
 
 # axis6 block pair-FINALSIGMA-lower-bare | pattern: σ
@@ -312,8 +312,8 @@ pattern σ
 encoding utf8
 flags i
 m "\xcf\x83" 0 2
-n "\xce\xa3"
-n "\xcf\x82"
+m "\xce\xa3" 0 2
+m "\xcf\x82" 0 2
 n "x"
 
 # axis6 block pair-FINALSIGMA-upper-bare | pattern: Σ
@@ -325,9 +325,9 @@ n "x"
 pattern Σ
 encoding utf8
 flags i
-n "\xcf\x83"
+m "\xcf\x83" 0 2
 m "\xce\xa3" 0 2
-n "\xcf\x82"
+m "\xcf\x82" 0 2
 n "x"
 
 # axis6 block pair-FINALSIGMA-lower-esc | pattern: \x{3c3}
@@ -340,8 +340,8 @@ pattern \x{3c3}
 encoding utf8
 flags i
 m "\xcf\x83" 0 2
-n "\xce\xa3"
-n "\xcf\x82"
+m "\xce\xa3" 0 2
+m "\xcf\x82" 0 2
 n "x"
 
 # axis6 block pair-FINALSIGMA-upper-esc | pattern: \x{3a3}
@@ -353,9 +353,9 @@ n "x"
 pattern \x{3a3}
 encoding utf8
 flags i
-n "\xcf\x83"
+m "\xcf\x83" 0 2
 m "\xce\xa3" 0 2
-n "\xcf\x82"
+m "\xcf\x82" 0 2
 n "x"
 
 # axis6 block nonfold-dotted-I-vs-i-lower-bare | pattern: i
@@ -481,7 +481,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block closure-class-k | pattern: [k] | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
@@ -495,7 +495,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block closure-class-K | pattern: [K] | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
@@ -509,7 +509,7 @@ encoding utf8
 flags i
 m "k" 0 1
 m "K" 0 1
-n "\xe2\x84\xaa"
+m "\xe2\x84\xaa" 0 3
 n "x"
 
 # axis6 block closure-class-kelvin | pattern: [\x{212a}] | tests the 3-member closure is SYMMETRIC regardless of which member anchors the pattern
@@ -521,8 +521,8 @@ n "x"
 pattern [\x{212a}]
 encoding utf8
 flags i
-n "k"
-n "K"
+m "k" 0 1
+m "K" 0 1
 m "\xe2\x84\xaa" 0 3
 n "x"
 
@@ -531,6 +531,7 @@ n "x"
 #   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^k]
 encoding utf8
 flags i
@@ -544,6 +545,7 @@ m "5" 0 1
 #   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^K]
 encoding utf8
 flags i
@@ -557,6 +559,7 @@ m "5" 0 1
 #   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^\x{6b}]
 encoding utf8
 flags i
@@ -570,6 +573,7 @@ m "5" 0 1
 #   [upper U+004B] n "K"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^\x{4b}]
 encoding utf8
 flags i
@@ -583,6 +587,7 @@ m "5" 0 1
 #   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^s]
 encoding utf8
 flags i
@@ -596,6 +601,7 @@ m "5" 0 1
 #   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^S]
 encoding utf8
 flags i
@@ -609,6 +615,7 @@ m "5" 0 1
 #   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^\x{73}]
 encoding utf8
 flags i
@@ -622,6 +629,7 @@ m "5" 0 1
 #   [upper U+0053] n "S"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-x U+0078] m "x" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [control-digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+# pcre2-only
 pattern [^\x{53}]
 encoding utf8
 flags i
@@ -635,30 +643,121 @@ m "5" 0 1
 #   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#
+# [M5.0 stage 4] THE RECORDED ORACLE ABOVE IS WRONG ON TWO CELLS, and the
+# comment is kept UNCHANGED above for provenance exactly as axis06's own
+# promotion rule says. These four blocks were `perr` from authoring until
+# stage 4, so their oracle values had never been exercised against anything.
+# RE-MEASURED against libpcre2 under PCRE2_UTF|PCRE2_CASELESS (and again
+# with |PCRE2_UCP, same answers): `[^\p{Ll}]` caseless matches NEITHER "A"
+# NOR U+212A. `docs/design/utf8_design.md` Â§4.3's own measured table already
+# carries the "A" cell as `no match` -- the corpus and the design disagreed
+# and the design is the one that was measured.
+#
+# THE CELL IS THE FOLD-BEFORE-NEGATE RULE OVER A PROPERTY, and reasoning it
+# out is exactly how it goes wrong: under `-i` module `unicode-props`
+# substitutes `\p{L&}` for `\p{Ll}` (stage 3's measured caseless rule), "A"
+# and U+212A are both IN `L&`, and the negation is over that closed set --
+# so both are excluded. "5" is not a cased letter and matches.
+# pcre2-only
 pattern [^\p{Ll}]
-perr
+encoding utf8
+features unicode-props
+flags i
+n "A"
+n "a"
+n "\xe2\x84\xaa"
+m "5" 0 1
 
 # axis6 block negate-neg-Ll-dup1 | pattern: [^\p{Ll}]
 #   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#
+# [M5.0 stage 4] THE RECORDED ORACLE ABOVE IS WRONG ON TWO CELLS, and the
+# comment is kept UNCHANGED above for provenance exactly as axis06's own
+# promotion rule says. These four blocks were `perr` from authoring until
+# stage 4, so their oracle values had never been exercised against anything.
+# RE-MEASURED against libpcre2 under PCRE2_UTF|PCRE2_CASELESS (and again
+# with |PCRE2_UCP, same answers): `[^\p{Ll}]` caseless matches NEITHER "A"
+# NOR U+212A. `docs/design/utf8_design.md` Â§4.3's own measured table already
+# carries the "A" cell as `no match` -- the corpus and the design disagreed
+# and the design is the one that was measured.
+#
+# THE CELL IS THE FOLD-BEFORE-NEGATE RULE OVER A PROPERTY, and reasoning it
+# out is exactly how it goes wrong: under `-i` module `unicode-props`
+# substitutes `\p{L&}` for `\p{Ll}` (stage 3's measured caseless rule), "A"
+# and U+212A are both IN `L&`, and the negation is over that closed set --
+# so both are excluded. "5" is not a cased letter and matches.
+# pcre2-only
 pattern [^\p{Ll}]
-perr
+encoding utf8
+features unicode-props
+flags i
+n "A"
+n "a"
+n "\xe2\x84\xaa"
+m "5" 0 1
 
 # axis6 block negate-neg-Ll-dup2 | pattern: [^\p{Ll}]
 #   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#
+# [M5.0 stage 4] THE RECORDED ORACLE ABOVE IS WRONG ON TWO CELLS, and the
+# comment is kept UNCHANGED above for provenance exactly as axis06's own
+# promotion rule says. These four blocks were `perr` from authoring until
+# stage 4, so their oracle values had never been exercised against anything.
+# RE-MEASURED against libpcre2 under PCRE2_UTF|PCRE2_CASELESS (and again
+# with |PCRE2_UCP, same answers): `[^\p{Ll}]` caseless matches NEITHER "A"
+# NOR U+212A. `docs/design/utf8_design.md` Â§4.3's own measured table already
+# carries the "A" cell as `no match` -- the corpus and the design disagreed
+# and the design is the one that was measured.
+#
+# THE CELL IS THE FOLD-BEFORE-NEGATE RULE OVER A PROPERTY, and reasoning it
+# out is exactly how it goes wrong: under `-i` module `unicode-props`
+# substitutes `\p{L&}` for `\p{Ll}` (stage 3's measured caseless rule), "A"
+# and U+212A are both IN `L&`, and the negation is over that closed set --
+# so both are excluded. "5" is not a cased letter and matches.
+# pcre2-only
 pattern [^\p{Ll}]
-perr
+encoding utf8
+features unicode-props
+flags i
+n "A"
+n "a"
+n "\xe2\x84\xaa"
+m "5" 0 1
 
 # axis6 block negate-neg-Ll-dup3 | pattern: [^\p{Ll}]
 #   [A-Lu U+0041] m "A" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [a-Ll U+0061] n "a"   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [KELVIN U+212A] m "\xe2\x84\xaa" 0 3   # oracle=PCRE2_UTF|PCRE2_CASELESS
 #   [digit U+0035] m "5" 0 1   # oracle=PCRE2_UTF|PCRE2_CASELESS
+#
+# [M5.0 stage 4] THE RECORDED ORACLE ABOVE IS WRONG ON TWO CELLS, and the
+# comment is kept UNCHANGED above for provenance exactly as axis06's own
+# promotion rule says. These four blocks were `perr` from authoring until
+# stage 4, so their oracle values had never been exercised against anything.
+# RE-MEASURED against libpcre2 under PCRE2_UTF|PCRE2_CASELESS (and again
+# with |PCRE2_UCP, same answers): `[^\p{Ll}]` caseless matches NEITHER "A"
+# NOR U+212A. `docs/design/utf8_design.md` Â§4.3's own measured table already
+# carries the "A" cell as `no match` -- the corpus and the design disagreed
+# and the design is the one that was measured.
+#
+# THE CELL IS THE FOLD-BEFORE-NEGATE RULE OVER A PROPERTY, and reasoning it
+# out is exactly how it goes wrong: under `-i` module `unicode-props`
+# substitutes `\p{L&}` for `\p{Ll}` (stage 3's measured caseless rule), "A"
+# and U+212A are both IN `L&`, and the negation is over that closed set --
+# so both are excluded. "5" is not a cased letter and matches.
+# pcre2-only
 pattern [^\p{Ll}]
-perr
-
+encoding utf8
+features unicode-props
+flags i
+n "A"
+n "a"
+n "\xe2\x84\xaa"
+m "5" 0 1

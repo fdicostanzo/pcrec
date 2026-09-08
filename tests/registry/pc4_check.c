@@ -79,6 +79,117 @@ static const char *shown(const char *pat)
     return pat; /* generator emits printable ASCII patterns only */
 }
 
+/* ---- THE STANDING 1:n FOLD CHECK (S-U11) --------------------------------
+ *
+ * `docs/design/utf8_design.md` §4.1.1, ASK 3 RULED by Frank 2026-09-04. It is
+ * the ONE check in this file whose SUBJECT IS libpcre2 rather than pcrec, and
+ * that is exactly why it exists.
+ *
+ * WHAT IT DEFENDS. [M5.0]'s whole caseless lowering rests on one measured
+ * fact: libpcre2 10.46 implements SIMPLE case folding and no one-to-many
+ * folding at all (0 of 11 cells, `utf8_measurements/out/caseless.txt` §2). A
+ * 1:n fold is a SEQUENCE, so its existence would force a caseless literal
+ * into an alternation and a caseless class to hold something a set cannot
+ * hold — not a tuning change, a different lowering. `src/core/fold.c` reads
+ * `C` and `S` status lines only for the same reason, and `[FORM-CHAR]`
+ * object (5) `utf8-full-fold` is NOT BUILT on the strength of this result.
+ *
+ * WHY A STANDING CHECK AND NOT A ONE-TIME MEASUREMENT. The failure would be
+ * SILENT: a future libpcre2 that added full folding would simply start
+ * matching cells pcrec answers `no` to, with nothing in this tree noticing,
+ * because a measurement leaves no instrument behind.
+ *
+ * THE POPULATION IS THE ELEVEN MEASURED CELLS x BOTH OPTION WORDS = 22
+ * ASSERTIONS, and the second arm is not padding: §4.1 measured `UTF|CASELESS`
+ * and `UTF|CASELESS|UCP` separately, and a check that dropped the UCP arm
+ * would stop watching the arm a full-folding implementation is likeliest to
+ * reach first. Sabotage row S-U11's `SAB_REACH_POP` floor is 22 for that
+ * reason; a floor of 11 would pass a check that had lost half its space.
+ *
+ * A CELL THAT STARTS MATCHING IS A RED, NOT A SKIP, and the diagnostic names
+ * the DESIGN EVENT rather than the cell — a message saying only "cell 7
+ * failed" makes the next reader rediscover what §4.1 is for. It lands here
+ * rather than in stage 4's own suite because it has no dependency on any
+ * pcrec code and could (and should) have run from stage 1. */
+
+#define PCRE2_UTF_OPT 0x00080000u
+#define PCRE2_UCP_OPT 0x00020000u
+
+/* Every cell is an ANCHORED whole-subject match, so a partial match cannot be
+ * misread as a successful fold. Bytes are OCTAL escapes throughout: a `\x`
+ * escape has no digit-count limit in C and would glue onto a following literal
+ * hex digit, where a three-digit octal escape self-terminates. */
+static const struct { const char *name, *pat, *subj; } fold_1n_cells[] = {
+    { "sharp s vs SS",        "^(?:\303\237)$",     "SS"                     },
+    { "sharp s vs ss",        "^(?:\303\237)$",     "ss"                     },
+    { "SS vs sharp s",        "^(?:SS)$",           "\303\237"               },
+    { "ss vs sharp s",        "^(?:ss)$",           "\303\237"               },
+    { "U+FB01 fi vs fi",      "^(?:\357\254\201)$", "fi"                     },
+    { "fi vs U+FB01",         "^(?:fi)$",           "\357\254\201"           },
+    { "U+FB03 ffi vs ffi",    "^(?:\357\254\203)$", "ffi"                    },
+    { "U+0149 vs 'n",         "^(?:\305\211)$",     "\312\274n"              },
+    { "U+01F0 vs j+caron",    "^(?:\307\260)$",     "j\314\214"              },
+    { "U+1E96 vs h+line",     "^(?:\341\272\226)$", "h\314\261"              },
+    { "U+0390 vs 3-cp form",  "^(?:\316\220)$",     "\316\271\314\210\314\201" }
+};
+
+/* Returns the number of ASSERTIONS made, so the caller can print the count
+ * the sabotage row's reach floor is stated against. */
+static long check_1n_fold(void)
+{
+    static const struct { const char *label; unsigned opts; } arms[] = {
+        { "UTF|CASELESS",     PCRE2_UTF_OPT | PCRE2_CASELESS_OPT },
+        { "UTF|CASELESS|UCP", PCRE2_UTF_OPT | PCRE2_CASELESS_OPT | PCRE2_UCP_OPT }
+    };
+    const size_t ncell = sizeof fold_1n_cells / sizeof fold_1n_cells[0];
+    const size_t narm  = sizeof arms / sizeof arms[0];
+    long asserted = 0;
+
+    for (size_t a = 0; a < narm; a++) {
+        for (size_t c = 0; c < ncell; c++) {
+            int err = 0;
+            PCRE2_SIZE eoff = 0;
+            pcre2_code_8 *code = abi.compile(
+                (PCRE2_SPTR)fold_1n_cells[c].pat,
+                strlen(fold_1n_cells[c].pat), arms[a].opts, &err, &eoff, NULL);
+            if (!code) {
+                /* A cell that stops COMPILING is a red too: the space this
+                 * check watches would silently shrink to nothing. */
+                fail("1:n fold: cell '%s' [%s] no longer compiles (err %d) — "
+                     "the standing check's own population is eroding",
+                     fold_1n_cells[c].name, arms[a].label, err);
+                continue;
+            }
+            pcre2_match_data_8 *md = abi.match_data_create(4, NULL);
+            int rc = abi.match(code, (PCRE2_SPTR)fold_1n_cells[c].subj,
+                               strlen(fold_1n_cells[c].subj), 0, 0, md, NULL);
+            abi.match_data_free(md);
+            abi.code_free(code);
+            asserted++;
+            if (rc >= 0)
+                fail("1:n fold: cell '%s' MATCHES under %s. libpcre2 has "
+                     "gained 1:n case folding; docs/design/utf8_design.md "
+                     "§4.1 and [FORM-CHAR] object (5) are invalidated — "
+                     "a caseless class can no longer stay a class, and "
+                     "src/core/fold.c's C/S-only subset is no longer the "
+                     "oracle's whole behaviour. This is a D26 re-measurement "
+                     "event, not a cell to re-pin",
+                     fold_1n_cells[c].name, arms[a].label);
+        }
+    }
+    /* THE POPULATION IS ASSERTED HERE, EXACTLY, and that is stronger than the
+     * grep floor §8.2 proposes for sabotage row S-U11. That row's stated
+     * hazard is a check that has silently lost the `PCRE2_UCP` arm, and a
+     * floor counting occurrences of a STRING in this file cannot see the
+     * difference between eleven cells over two arms and eleven over one. The
+     * number the row is really about is the one this function actually made. */
+    if (asserted != 22)
+        fail("1:n fold: %ld assertions, 22 owed (11 measured cells x 2 option "
+             "words) — the standing check's space has changed size, which is "
+             "the S-U11 hazard rather than a count to re-pin", asserted);
+    return asserted;
+}
+
 int main(int argc, char **argv)
 {
     char why[256];
@@ -94,6 +205,13 @@ int main(int argc, char **argv)
         fprintf(stderr, "SKIP: pc4: %s\n", why);
         return 2;
     }
+
+    /* [M5.0 stage 4 / S-U11] the standing 1:n fold check, run BEFORE the
+     * differential's own work: its subject is the ORACLE, so it is the fact
+     * every cell below is compared under. */
+    long fold_asserts = check_1n_fold();
+    printf("pc4: 1:n fold — %ld assertions (11 cells x 2 option words), "
+           "%ld matching\n", fold_asserts, (long)failures);
 
     FILE *pf = fopen(argv[1], "r");
     if (!pf) { fprintf(stderr, "pc4_check: cannot open %s\n", argv[1]); return 2; }

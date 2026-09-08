@@ -151,6 +151,33 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   actually emitted. `cls_casefold` derives its widening from it, so the
   parse-time fold IS this table by construction.
 
+  **[M5.0 stage 4] THE FILE HOLDS TWO FOLDS NOW, AS `PcrecFold` OBJECTS
+  (internal.h), AND `pcrec_ascii_fold` DID NOT WIDEN.** DD-1
+  (`docs/design/utf8_design.md` §4) adds Unicode DEFAULT SIMPLE case folding
+  for the `utf8` encoding, from `CaseFolding.txt`'s `C` and `S` status lines,
+  generated into `fold_tables.inc` beside this file. The two relations
+  DISAGREE rather than nest — libpcre2's 8-bit non-UTF build folds 0xE9 to
+  nothing while its UTF build folds it to 0xC9 — so no clamp derives one from
+  the other and the ENCODING names which one it uses (`PcrecEnc.fold`,
+  src/gen/enc/enc.h). `cls_casefold` (src/parse/parse.c) takes the fold as a
+  PARAMETER and has no encoding test in it, which is `src/opt/lower_enc.c`'s
+  `LowerOps` shape one seam over.
+
+  **THE GENERATED TABLE IS A CYCLIC NEXT-MEMBER RELATION, NOT A PARTNER MAP**,
+  because folding is a CLOSURE: `k`/`K`/U+212A is one class of three and 27 of
+  the 1,454 classes have three or four members. `pcrec_ascii_fold` is the
+  degenerate case where every class has exactly two, so it IS its own cyclic
+  link table and one walker serves both with no second spelling of the ASCII
+  data. Both walkers iterate the RELATION's domain rather than the SET, so a
+  caseless `[\x{0}-\x{10FFFF}]` costs the table's size and not the class's.
+
+  **A UCD VERSION BUMP MUST NOT MOVE `byte`'s ANSWERS, and that is CHECKED
+  rather than argued**: `tests/backrefs/fold_agreement_utf8_check.c` part C
+  asserts the vendored relation RESTRICTED TO ASCII is exactly this table's 26
+  pairs and that no byte >= 0x80 has an ASCII fold partner, so a bump that
+  moved either is a loud failure naming the byte — D26's re-measurement event
+  — rather than a silent re-baselining of every `--encoding=byte` answer.
+
 - **cpset.c** — [M5.0 stage 1] THE CODE-POINT INTERVAL SET: the `A_CLASS`
   payload's one representation, its arena-backed builder, and the ONE function
   in this compiler that turns a class node back into a 32-byte bitmap.

@@ -134,7 +134,8 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # prevented it, which is the argument for the `gen-tables` rule below being a
 # LIST rather than another hand-maintained line: a fourth generated table will
 # join `GEN_TABLES` and this prerequisite in one edit.
-GEN_TABLES := src/parse/uprops_tables.inc
+GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
+              src/gen/enc/utf8_fold_pairs.inc
 
 $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)

@@ -3116,6 +3116,45 @@ Ast *pcrec_ast_char(Ctx *cx, unsigned c);
  * them instead of a comment (R32 E8; sabotage row S116). */
 extern const unsigned char pcrec_ascii_fold[256];
 
+/* [M5.0 stage 4] THE ENCODING'S CASE-FOLD RELATION (DD-1, utf8_design.md §4).
+ *
+ * A caseless class is a class the fold has already been applied to — D23's
+ * rule, unchanged — and stage 4's only change is that WHICH fold is a question
+ * asked of the encoding rather than a constant. It has to be: under `utf8` a
+ * caseless `[a-z]` matches U+212A and U+017F (§4.2c, MEASURED), while under
+ * `byte` it must not match 0xC9 for 0xE9, because libpcre2's own 8-bit non-UTF
+ * build folds exactly the 52 ASCII letters and nothing else (§4.5, MEASURED).
+ * So the ASCII fold is not a SUBSET of the Unicode one that a clamp could
+ * recover — the two disagree on Latin-1 — and each encoding names its own.
+ *
+ * `partners` is a FUNCTION and the two instances walk different data, which is
+ * `src/opt/lower_enc.c`'s `LowerOps` shape one seam over: the alternative is
+ * an `if (enc == UTF8)` inside `cls_casefold`, which is exactly what stage 2
+ * removed from the lowering. The contract is narrow on purpose — the walk is
+ * over the RELATION's domain and never over `in`, so a caseless `[\x{0}-
+ * \x{10FFFF}]` costs the table's size and not the set's.
+ *
+ * `PcrecFoldLink` is a CYCLIC next-member link: following `next` from any
+ * member of a fold class visits every member once and returns. That is the
+ * representation because folding is a CLOSURE and not a pairing (§4.2a):
+ * `k`/`K`/U+212A is one class of three, and a partner map cannot say so.
+ * `pcrec_ascii_fold` is the degenerate case where every class has two members,
+ * so it IS its own cyclic link table and needs no second spelling. */
+typedef struct { unsigned cp, next; } PcrecFoldLink;
+
+typedef struct {
+    const char *name;
+    /* Add to `out` every fold partner of every member of `in`. Reads `in`,
+     * never writes it; writes `out`, never reads it. The caller unions the
+     * two afterwards, so no partner can seed another partner — the fixpoint
+     * is one step by construction rather than by the relation happening to
+     * be an involution. */
+    void (*partners)(const PcrecCpSet *in, PcrecCpSet *out);
+} PcrecFold;
+
+extern const PcrecFold pcrec_fold_ascii;        /* the 52 ASCII letters */
+extern const PcrecFold pcrec_fold_ucd_simple;   /* Unicode simple folding */
+
 /* [DD-11.1] THE REPLACEMENT/DEFINITION TABLE (D85, docs/design/
  * definitions_table.md, r43-revised). For a row whose construct stands for
  * another construct expressible in CORE syntax (D85's own words) under some

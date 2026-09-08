@@ -10,7 +10,7 @@ source is the only source there will ever be.**
 
 | source | what it is | what derives from it |
 |---|---|---|
-| `ucd-16.0.0/` | the Unicode Character Database at 16.0.0 | `src/parse/uprops_tables.inc` — module `unicode-props`' general-category interval tables |
+| `ucd-16.0.0/` | the Unicode Character Database at 16.0.0 | `src/parse/uprops_tables.inc` — module `unicode-props`' general-category interval tables; `src/core/fold_tables.inc` and `src/gen/enc/utf8_fold_pairs.inc` — DD-1's simple case-fold relation, in its compiler form and its EMITTED form (the one derived artifact that reaches a user's matcher; see `ucd-16.0.0/PROVENANCE.md`) |
 
 One row per source. Add a row in the same change that adds a directory.
 

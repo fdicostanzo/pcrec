@@ -39,7 +39,20 @@
  * self-contained matcher APPROACH promises. UTF-8's fold is a different
  * question with a different answer (one-to-many foldings, partners of
  * different byte lengths) and belongs to M5's backend, whose residual entry
- * replaces the byte one's body without the emitter changing a character. */
+ * replaces the byte one's body without the emitter changing a character.
+ *
+ * [M5.0 stage 4] THE FILE NOW HOLDS TWO FOLDS, AND THE SECOND ONE IS WHY THE
+ * FIRST ONE'S SHAPE SURVIVED. DD-1 (`utf8_design.md` §4) adds Unicode default
+ * SIMPLE case folding for the `utf8` encoding; it does NOT widen this table,
+ * and the paragraph above is the reason — libpcre2's 8-bit non-UTF build folds
+ * 0xE9 to nothing, so `byte` and `utf8` genuinely disagree about Latin-1 and
+ * neither fold is the other's restriction. Both are published as `PcrecFold`
+ * objects (internal.h), the ENCODING names which one it uses, and
+ * `cls_casefold` has no encoding test in it. The measured claim that ties them
+ * — the Unicode relation restricted to ASCII is exactly this table's 26 pairs
+ * — is asserted by `tests/backrefs/fold_agreement_check.c` rather than assumed
+ * here, because it is a fact about a vendored file that a version bump can
+ * move, and a version bump must not move `byte`'s answers silently. */
 
 #include "core/internal.h"
 
@@ -74,3 +87,58 @@ const unsigned char pcrec_ascii_fold[256] = {
     0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
     0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
 };
+
+/* ---- [M5.0 stage 4] the two folds as PcrecFold objects ------------------ */
+
+#include "fold_tables.inc"      /* GENERATED: pcrec_ucd_fold_links */
+
+/* THE WALK IS OVER THE RELATION, NOT OVER THE SET, in both instances, and
+ * that is the property the `partners` contract states rather than an
+ * optimisation either one chose. The alternative — iterate the set's members
+ * and look each up — is O(|set|) on a set that can hold 1.1M code points
+ * (`(?i)[\x{0}-\x{10FFFF}]` is a legal pattern), while the relation's domain
+ * is 52 entries here and 2,938 there whatever the pattern says. It is also
+ * what the pre-stage-4 spelling of `cls_casefold` already did, so the byte
+ * arm below is that loop moved, not rewritten. */
+
+static void ascii_partners(const PcrecCpSet *in, PcrecCpSet *out)
+{
+    for (unsigned c = 0; c < 256; c++)
+        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(in, c))
+            pcrec_cpset_add(out, pcrec_ascii_fold[c], pcrec_ascii_fold[c]);
+}
+
+/* `cp`'s next fold-class member, or `cp` when it has none. Binary search: the
+ * generator emits the links sorted by `cp` and nothing else may write them. */
+static unsigned ucd_fold_next(unsigned cp)
+{
+    size_t lo = 0, hi = sizeof pcrec_ucd_fold_links / sizeof *pcrec_ucd_fold_links;
+    while (lo < hi) {
+        size_t mid = lo + (hi - lo) / 2;
+        if (pcrec_ucd_fold_links[mid].cp < cp) lo = mid + 1;
+        else if (pcrec_ucd_fold_links[mid].cp > cp) hi = mid;
+        else return pcrec_ucd_fold_links[mid].next;
+    }
+    return cp;
+}
+
+static void ucd_partners(const PcrecCpSet *in, PcrecCpSet *out)
+{
+    size_t n = sizeof pcrec_ucd_fold_links / sizeof *pcrec_ucd_fold_links;
+    for (size_t i = 0; i < n; i++) {
+        unsigned cp = pcrec_ucd_fold_links[i].cp, m;
+        int guard = 0;
+        if (!pcrec_cpset_has(in, cp)) continue;
+        /* Walk the cycle back to `cp`, adding every OTHER member. The bound is
+         * belt to the generator's braces: it asserts no class exceeds
+         * PCREC_FOLD_MAX_ORBIT, and a cycle that did not close would otherwise
+         * be an infinite loop inside a library rather than a diagnosed one. */
+        for (m = pcrec_ucd_fold_links[i].next;
+             m != cp && guard < PCREC_FOLD_MAX_ORBIT;
+             m = ucd_fold_next(m), guard++)
+            pcrec_cpset_add(out, m, m);
+    }
+}
+
+const PcrecFold pcrec_fold_ascii      = { "ascii", ascii_partners };
+const PcrecFold pcrec_fold_ucd_simple = { "ucd-simple", ucd_partners };
