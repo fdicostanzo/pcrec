@@ -22301,3 +22301,36 @@ Sonnet/Haiku BY DEFAULT with opus on the table when needed (I-60
 addendum, both repos). Their ack: package adopted into their committed
 session_discipline.md (21fbbf7) same evening. Memory updated all
 three places.
+
+## 2026-09-08 (EDT), fifty-seventh session part 4 — STAGE 4 MERGED (fold closure; the per-contribution rule); battery detached overnight; TT-4M 2c building; r55 revision merged
+
+**[M5.0] STAGE 4 MERGED** (lane utf8s4, opus, 7 commits, merge on main;
+docs/dev/lanes/utf8s4_report.md): DD-1's fold closure — CaseFolding.txt
+16.0.0 vendored (generate.py emits three products, all in GEN_TABLES),
+two PcrecFold objects, PcrecEnc.fold (the second D58 seam event),
+cls_casefold parameterized, the caseless backref residual folding per
+character; (?i)k matches U+212A. THE STAGE'S REAL RESULT (§3.1): the
+fold applies PER CONTRIBUTION, not to a class's merged set — folding
+the merged set is wrong in BOTH directions at once, measured against
+libpcre2 cell by cell; p_class folds its own members and unions
+produced sets after; the byte-identity gate (0 differing / 3,120
+patterns, four axes, .abi 24 both sides) is the restructure's control.
+Acceptance measured: tests/utf8 1,668/0, fold.rxt 45/0 first run,
+axis06 promoted 178/178 zero divergences, encchk 11/0 after the
+DD12a(i) region-definition widening (§3.11 — the closed entry-name
+list couldn't see a residual's private helpers; the check was RIGHT to
+fire), backref_diff §9b (2,938 fold points/5,972 pairs/63,486
+controls/52 ASCII bytes), PC-4's 1:n arm PASS, S-U1/2/3/11 all
+DETECTED, S08/09/10 re-aimed at their own recorded counts. §3.4: a
+WRONG ORACLE in the D27 corpus (axis06's four [^\p{Ll}] blocks,
+perr-parked since authoring — a parked cell's carried oracle is an
+unchecked claim). §3.13: run_inline_capability.sh RED is PRE-EXISTING
+(A/B'd at the branch point) — triage owed. §3.14: a starved harness
+worker reduces case COUNT rather than failing (180/0 vs a quiet box's
+237/0) — a vacuity shape for the check-design ledger. **BATTERY
+DETACHED** at the merge commit (scripts/battery.sh →
+build/battery_20260908_stage4/, trailer-watched, zero-model). Design
+hunks lane foldhunks (sonnet, docs-only) applying report §4's six
+hunks to utf8_design.md in parallel. PUSH DEFERRED to battery green
+(the standing rule). The 10.46 arm (I-61) goes to the executor after
+the push. tt4m3 (2c) held to construction until the battery trailer.
