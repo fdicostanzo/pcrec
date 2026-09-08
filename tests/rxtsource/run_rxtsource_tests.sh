@@ -661,9 +661,56 @@ C3_FILES=179
 # C3 move — C3 is deliberately red on its own box (the delta above) — so
 # the reference-box re-pin lands here, from the Linux re-run's own
 # numbers at the merge commit.
-C3_PASS=13876
-C3_SKIP=14486
-C3_SKIP_PCRE2ONLY=2268
+# [ntriage re-pin, 2026-09-08] -148 PASS / +511 SKIP (+511 pcre2-only), from
+# EVERY corpus edit landed since the 0c34f5e0 pin above through the
+# [M5.0] stage 3 merge (819ec889) -- the [K50-BNDSTART]/[K50-NULLGATE] lane
+# merges sit chronologically BETWEEN those two commits (K50 was fixed and
+# stage 3 launched only after), so this is the pin's first re-run since
+# BOTH landed, not stage 3 alone. Derived per-file, not copied from the
+# battery log, and confirmed to sum to the Linux run's exact "got" numbers
+# (PASS 13728, SKIP 14997, pcre2-only 2779):
+#   axis04_p_categories.rxt (stage 3 promotion, 6798b9ec): 148 `perr` blocks
+#     (each an agreeing "both engines refuse \p" PASS, since python also
+#     raises re.error on \p{...} with no gate to open) became 136 live
+#     `# pcre2-only` blocks (462 m/n lines) plus 12 blocks moved verbatim to
+#     tests/known_fail/k53_uprops_oversize.rxt (44 m/n lines, also
+#     `# pcre2-only`, counted here because verify_rxt.py has no known_fail
+#     exclusion) -> -148 PASS, +506 pcre2-only/SKIP.
+#   axis09_nextpos_findall.rxt (K50 fix, 8e0fe77f): the two now-invalid
+#     mid-character `ms` cells (`(?<!.)`/`(?!.)` at startpos=1, both
+#     `# pcre2-only`) were REMOVED -- the boundary guard refuses that
+#     startpos now, so the cells assert nothing reachable -- with a comment
+#     pointing at their replacement, run_startbnd_diff.sh Sec 6, which
+#     sweeps the same positions under `-fno-startpos-guard` -> -2
+#     pcre2-only/SKIP, RELOCATED not lost.
+#   tests/known_fail/k50_utf8_dfa_midchar_start.rxt (K50 fix): DELETED -- its
+#     one `# pcre2-only` cell was K50's own bug witness, obsolete once fixed
+#     -> -1 pcre2-only/SKIP.
+#   axis11_startpos_boundary.rxt (K50 fix, NEW file): K50's regression proof,
+#     7 pattern blocks / 8 cases, all `# pcre2-only` (libpcre2-oracle-backed,
+#     this directory's standing reason -- U14) -> +8 pcre2-only/SKIP.
+#   Net: -148 PASS; 506-2-1+8 = +511 SKIP, all of it in the pcre2-only
+#   bucket; every other C3_SKIP_* reason is unchanged (no `gu`/composed/
+#   own-oracle/no-python-expression population moved by any of these edits
+#   -- pcre2-only is checked before kind dispatch, so it swallows perr/ms/ns
+#   lines identically to m/n).
+#   NOT LOST COVERAGE: axis04's -148 PASS were trivial refusal-agreements
+#   (the module wasn't wired; both sides merely declined \p); the 506
+#   replacing them are real membership assertions checked by a STRONGER
+#   oracle this python run cannot run at all (tests/uprops/'s whole-code-
+#   point-space libpcre2 differential, 0 divergences at landing). The
+#   axis09/known_fail movement is a relocation to a purpose-built
+#   differential (run_startbnd_diff.sh), not a deletion of a checked claim.
+#   axis11 is net new coverage (K50's own regression proof). VERIFIED
+#   LOCALLY (darwin): CENSUS_FILES/BLOCKS/LINES and RUNSH_* already correct
+#   (re-pinned by lane utf8s3, 0b314761) -- this commit's own C3 arithmetic
+#   is confirmed by hand against the file diffs above, not by a local C3
+#   run (C3 is deliberately red on this box, see the BOX SENSITIVITY note
+#   above); the Linux re-validation OWED is the manager's, see
+#   docs/dev/lanes/ntriage_report.md.
+C3_PASS=13728
+C3_SKIP=14997
+C3_SKIP_PCRE2ONLY=2779
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1891
