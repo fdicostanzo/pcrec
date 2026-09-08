@@ -10,6 +10,7 @@
 | **Retrieved by** | lane `utf8s3`, [M5.0] stage 3 |
 | **Licence** | Unicode License v3 (see LICENSE below) |
 | **Modified?** | **No.** The files are byte-for-byte as retrieved. |
+| **Stage-4 addition** | `CaseFolding.txt` retrieved 2026-09-08 by lane `utf8s4`, [M5.0] stage 4, from the same directory at the same version. |
 
 ### Files, with the checksum each was retrieved at
 

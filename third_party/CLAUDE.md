@@ -7,9 +7,20 @@ must have. This file is the maintenance note beside it.
 
 Chartered 2026-09-06 by [M5.0] stage 3, on Frank's ruling on
 `docs/design/utf8_design.md` §14 ASK 2 (*"agreed, reluctantly"*) plus its
-§3.3.2 extension. **Nothing here reaches a generated artifact** — the data
-compiles to tables inside `libpcrec.a`; a user's matcher is an automaton over
-bytes and holds none of it.
+§3.3.2 extension. **Almost nothing here reaches a generated artifact** — the
+data compiles to tables inside `libpcrec.a`; a user's matcher is an automaton
+over bytes and holds none of it.
+
+**[M5.0] STAGE 4 ADDED THE ONE EXCEPTION, and it is ruled rather than taken.**
+A caseless BACKREFERENCE folds subject bytes read at match time, so unlike
+every other consumer its fold cannot compile away — `utf8_design.md` §4.6(b)
+sizes the alternatives and rules that the artifact carries the ~1,500-entry
+simple-fold map as TEXT (about 26 KB, and only in an artifact that HAS such a
+backreference). `src/gen/enc/utf8_fold_pairs.inc` is that text. The licence
+obligation is unchanged and discharged the same way: the Unicode License v3
+permits redistribution of the Data Files and of derived works, and
+`LICENSE.txt` ships here unmodified. `ucd-16.0.0/PROVENANCE.md` states it at
+the row.
 
 ## Contents
 
@@ -18,7 +29,8 @@ bytes and holds none of it.
 - `ucd-16.0.0/` — the Unicode Character Database, pinned at 16.0.0. Holds
   `PROVENANCE.md` (source URL, version, checksums, licence, and **what derives
   from it**), `LICENSE.txt`, `generate.py` and the vendored `.txt` files
-  unmodified. Derives `src/parse/uprops_tables.inc`.
+  unmodified. Derives `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc`
+  and `src/gen/enc/utf8_fold_pairs.inc`.
 
 ## Adding a source
 

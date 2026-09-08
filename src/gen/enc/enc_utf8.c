@@ -150,7 +150,12 @@ static const char u8_defs_bref_ci[] =
 " * `S` status lines only (simple folding). Full folding is 1:n and would not\n"
 " * fit a character-to-character compare; pcrec's reference oracle implements\n"
 " * none of it. */\n"
-"static const unsigned $_bref_ci_fold_pairs[][2] = {\n"
+"static const unsigned $_bref_ci_fold_pairs[][2] =\n"
+/* The brace is on its own line so ONE brace-matching walk serves both a
+ * function body and this initializer -- `tests/codegen/run_encoding_
+ * checks.sh`'s DD12a(i) excision, which must treat this table as part of
+ * the residual entry it belongs to. */
+"{\n"
 #include "utf8_fold_pairs.inc"
 "};\n"
 "\n"

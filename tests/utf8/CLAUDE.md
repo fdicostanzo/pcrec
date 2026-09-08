@@ -191,7 +191,38 @@ input is an error", and it was caught by wiring the axis into
 `make test-axes`, not by the new suite — whose own subject list had no subject
 beginning with a continuation byte until this found the gap.
 
-## The known, pre-identified gap: axis06/axis07 (non-ASCII caseless folding)
+## THE STAGE-4 GAP IS CLOSED — axis06 PROMOTED, and one finding came out of it
+
+**[M5.0] stage 4 landed 2026-09-08 (lane `utf8s4`) and axis06 was promoted
+exactly as the paragraph below predicted**: the recorded
+`PCRE2_UTF|PCRE2_CASELESS` values restored from each block's own comment, the
+ASCII-fold-pinned values dropped, `features unicode-props` added to the four
+`[^\p{Ll}]` blocks that had been `perr` since authoring. **178 of 178 cells
+that did not need module `unicode-props` were GREEN ON THE FIRST RUN** — the
+Unicode fold agrees with the blinded author's recorded oracle cell for cell.
+
+**AND THE PREDICTED "fifth finding" IS REAL, in the four `\p`-bodied blocks.**
+Their recorded oracle is WRONG on two cells each: it says `[^\p{Ll}]` caseless
+MATCHES "A" and U+212A, and the live oracle says it matches NEITHER (nor "a";
+it matches "5"). `docs/design/utf8_design.md` §4.3's own measured table already
+carried the "A" cell as `no match`, so the corpus and the design disagreed and
+the design is the one that was measured. **The cause is visible in the
+provenance**: those four blocks were `perr` from authoring until stage 4, so
+their oracle values had never been exercised against anything — they were
+reasoned out rather than read off. Under `-i` module `unicode-props`
+substitutes `\p{L&}` for `\p{Ll}`, "A" and U+212A are both IN `L&`, and the
+negation is over that closed set. The comment is left UNCHANGED for provenance
+with the correction recorded beside it, per this directory's own rule.
+
+**`fold.rxt` is new and is NOT part of the blinded corpus** — it is the
+implementation lane's own file, named for the design's §8.2 sabotage table, and
+it holds the cells the D27 axis structurally could not: axis06 is entirely
+about SINGLE CHARACTERS, so the tree had no witness for §4.2(c) (a RANGE
+pulling in a partner outside itself), for fold-before-negate over a range, for
+the `byte` arm's §4.5 discriminator (0xE9 must NOT fold to 0xC9), or for
+stage 4's own per-contribution finding. 45 cells, oracle-first, 45/45.
+
+## The gap as it stood before stage 4 (kept for the record)
 
 Per the manager's explicit instruction at promotion time: `axis06_
 caseless_fold.rxt` and `axis07_caseless_1ton.rxt` are PINNED TO TODAY'S
