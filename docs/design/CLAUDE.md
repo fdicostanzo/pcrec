@@ -1826,6 +1826,16 @@ append-only or historical records.
   measured 648-vs-677 intervals on `\p{L}`, and generating from libpcre2 would
   make the differential check its own generator's output — `mod_uprops.c`'s
   own rule). Measurements: `utf8_measurements/`.
+  **AMENDED AT STAGE 4 (2026-09-08, lane utf8s4, applied at merge, lane
+  foldhunks):** §4.2/§4.3 gain the PER-CONTRIBUTION fold rule; §4.6's sampled
+  differential is superseded by a relation sweep, its size estimate corrected
+  to 25,675 measured bytes, and an ASCII-restriction tie is added; §8.2's
+  S-U11/S-U3 rows are corrected against what stage 4 actually built (a
+  self-asserting count rather than a grep floor; a clamp rather than the
+  spelled sabotage); §9.2 records `tests/utf8/fold.rxt`'s landing and S-U11's
+  actual stage (4, not 1 as planned); and §4.1.1's standing-instrument ask is
+  marked discharged. See `docs/dev/lanes/utf8s4_report.md` §4 and
+  `docs/dev/lanes/foldhunks_report.md`.
 - `utf8_measurements/` — the [M5.0] lane's SEVEN probes, its oracle helper,
   its **remote-execution bundler** and its archiver; see its own CLAUDE.md.
   **This is the first lane in this house whose reference oracle is on another
