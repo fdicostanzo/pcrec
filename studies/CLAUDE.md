@@ -153,4 +153,17 @@ re-measure before load-bearing use.
   own CLAUDE.md/README.md (`make CC=gcc-16` builds it against
   `../../build/libpcrec.a`, `make sweep` re-runs the population).
 
+- `tt4m_batchrun/` — [TT-4M] STEP 1's darwin re-open of the batched-build
+  question (lane tt4m, 2026-09-08): does linking N pcrec-generated
+  matchers into ONE gcc invocation (distinct prefixes, a generated
+  dispatch `main()`, each member its own translation unit by construction)
+  beat the harness's one-gcc-call-per-pattern shape on THIS Mac, where the
+  profile is process-dispatch spawn tax ([TT-14]/[XARCH] half 1), not gcc
+  CPU the way [TT-4.1]'s Linux census found. Reuses `collect_patterns.py`/
+  `extract_cases.py` from `tt4_batching/proto/` unchanged; writes a new
+  `dispatch_gen.py` against the CURRENT `tests/harness/driver.c` protocol
+  (the old one predates DD-14.FB's route argument and the current typed
+  give-up codes). Backs `docs/dev/tt4m_darwin_validation.md`. See its own
+  CLAUDE.md (`make check` is a smoke test, not the load-bearing sweep).
+
 Maintenance: update this file when studies are added/removed.
