@@ -29,6 +29,22 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #ifndef __APPLE__
+/* glibc locks in the feature-test-macro decision the FIRST time <features.h>
+ * is pulled in (via any libc header), for the rest of the translation unit —
+ * a later #define _GNU_SOURCE, even this one, has no effect once that has
+ * happened. So this file's #include of <dlfcn.h> just above only actually
+ * unlocks __USE_GNU (and therefore dlinfo()/RTLD_DI_LINKMAP below) if this
+ * header was the FIRST include in its .c file — the discipline every
+ * consumer's own header comment states ("pcre2_abi.h defines _GNU_SOURCE,
+ * needed before any libc header") but that only this check enforces. A
+ * consumer that includes <stdio.h>/<stdlib.h>/etc. before this header fails
+ * here with a clear message instead of two cryptic "implicit declaration of
+ * dlinfo" / "RTLD_DI_LINKMAP undeclared" errors on Linux only, invisible on
+ * darwin (K-uprops-abi-order, found 2026-09-08: tests/uprops/uprops_oracle.c
+ * included <stdio.h> etc. before this header). */
+#ifndef __USE_GNU
+#error "pcre2_abi.h must be the FIRST #include in its .c file (before <stdio.h> etc.) so its _GNU_SOURCE define reaches <features.h> before anything else — see this file's own header comment"
+#endif
 #include <link.h>   /* dlinfo(RTLD_DI_LINKMAP) — glibc/ELF only */
 #endif
 #include <stdint.h>
