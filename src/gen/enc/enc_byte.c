@@ -275,6 +275,9 @@ const PcrecEnc pcrec_enc_backend_byte = {
     /* [M5.0] `max_cp` is `0xFF`: this backend's repertoire IS the byte range,
      * so complementing within it is the `~bits[i]` loop the parser used to
      * write by hand (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte, advance_byte,
+    /* [M5.0 stage 4] the fold is `pcrec_fold_ascii` — this backend's residual
+     * caseless compare below folds exactly the 52 ASCII letters, and one
+     * artifact carries one definition of caselessness. */
+    PCREC_ENC_BYTE, "byte", 0xFFu, &pcrec_fold_ascii, entries_byte, advance_byte,
     NULL, NULL   /* [K50] start_cls / start_guard: every position is a start */
 };

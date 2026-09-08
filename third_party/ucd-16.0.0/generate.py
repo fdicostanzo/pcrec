@@ -8,13 +8,31 @@ and the thing doing the deriving cannot drift apart.  A second source arriving
 tomorrow brings its own `generate.py`; nothing here is renamed, and no rule in
 the Makefile mentions Unicode.
 
-WHAT IT READS   `UnicodeData.txt`, beside this file, at the pinned version.
-WHAT IT WRITES  `src/parse/uprops_tables.inc` — the general-category interval
-                tables module `unicode-props` consults.  GENERATED; never
-                hand-edited (`src/parse/cls_bits.inc`'s precedent).
+WHAT IT READS   `UnicodeData.txt` and `CaseFolding.txt`, beside this file, at
+                the pinned version.
+WHAT IT WRITES  three GENERATED files, never hand-edited
+                (`src/parse/cls_bits.inc`'s precedent):
 
-    python3 third_party/ucd-16.0.0/generate.py        # writes the .inc
+  `src/parse/uprops_tables.inc`      the general-category interval tables
+                                     module `unicode-props` consults.
+  `src/core/fold_tables.inc`         [M5.0 stage 4] the simple case-fold
+                                     ORBIT relation `src/core/fold.c` walks
+                                     to close a caseless class.
+  `src/gen/enc/utf8_fold_pairs.inc`  [M5.0 stage 4] the same fold as a sorted
+                                     `{from, to}` map, spelled as C SOURCE
+                                     TEXT for the UTF-8 backend's caseless
+                                     backreference residual to embed in an
+                                     artifact.
+
+    python3 third_party/ucd-16.0.0/generate.py        # writes them
     python3 third_party/ucd-16.0.0/generate.py --check # exits 1 if stale
+
+THE LAST TWO ARE THE SAME FACT IN TWO FORMS, and design §4.6 is why there are
+two: a caseless CLASS folds at compile time and never reaches the artifact,
+while a caseless BACKREFERENCE folds subject bytes nobody has seen yet, so its
+fold has to be TEXT the artifact carries.  Deriving both here, from one file,
+in one run is what stops them being two spellings that could drift —
+`tests/backrefs/fold_agreement_check.c` is the check that says so out loud.
 
 WHY THE DATA IS VENDORED AT ALL, and why it is not read from somewhere else,
 is `docs/design/utf8_design.md` §3.3: python's `unicodedata` makes the table
@@ -62,7 +80,10 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 SOURCE = os.path.join(HERE, "UnicodeData.txt")
+FOLD_SOURCE = os.path.join(HERE, "CaseFolding.txt")
 OUT = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
+FOLD_OUT = os.path.join(REPO, "src", "core", "fold_tables.inc")
+FOLD_TEXT_OUT = os.path.join(REPO, "src", "gen", "enc", "utf8_fold_pairs.inc")
 
 UNICODE_VERSION = "16.0.0"
 MAXCP = 0x10FFFF
@@ -429,27 +450,194 @@ def emit(props):
     return "".join(out)
 
 
+# ---------------------------------------------------------------------------
+# (4) [M5.0 stage 4] the SIMPLE case-fold relation
+# ---------------------------------------------------------------------------
+#
+# `CaseFolding.txt` gives four statuses.  Only `C` (common) and `S` (simple)
+# are read, and that is the whole of the subset ruling in `utf8_design.md`
+# §4.1/§4.4: `F` (full) and `T` (Turkic) are 1:n and locale mappings, and the
+# design MEASURED that libpcre2 10.46 implements neither — 0 of 11 one-to-many
+# cells match under any caseless option word.  A `T` line is why U+0130 and
+# U+0131 fold to nothing here, which is the pair a naive `toupper`/`tolower`
+# table gets wrong in opposite directions.
+#
+# WHAT COMES OUT IS AN EQUIVALENCE RELATION, NOT A PAIRING (§4.2a).  Grouping
+# by fold TARGET is what makes `k`/`K`/U+212A one class rather than two pairs,
+# and a constructor that added "the other case" from a case-mapping table
+# would get exactly those 27 larger classes wrong.
+
+def read_casefolding(path):
+    """The SIMPLE fold map: {code point: its fold target}, `C` and `S` only."""
+    f = {}
+    with open(path, "r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            parts = [p.strip() for p in line.split(";")]
+            if len(parts) < 3:
+                continue
+            status = parts[1]
+            if status not in ("C", "S"):
+                continue
+            mapped = parts[2].split()
+            if len(mapped) != 1:
+                raise SystemExit("%s: status %s is not 1:1: %r"
+                                 % (path, status, line))
+            f[int(parts[0], 16)] = int(mapped[0], 16)
+    if not f:
+        raise SystemExit("%s: no C/S fold lines — wrong file?" % path)
+    return f
+
+
+def fold_orbits(f):
+    """The fold's equivalence classes with more than one member, each sorted,
+    the list itself sorted by first member."""
+    groups = {}
+    for cp in f:
+        groups.setdefault(f[cp], set()).add(cp)
+    for target in list(groups):
+        groups[target].add(target)          # a target is in its own class
+    orbits = [sorted(v) for v in groups.values() if len(v) > 1]
+    orbits.sort()
+    for o in orbits:
+        if len(o) > PCREC_FOLD_MAX_ORBIT:
+            raise SystemExit("orbit larger than PCREC_FOLD_MAX_ORBIT: %r" % o)
+    return orbits
+
+
+# The C side sizes one stack buffer by this; the generator asserts the data
+# fits rather than letting the C discover it. Measured at 16.0.0: 4.
+PCREC_FOLD_MAX_ORBIT = 8
+
+
+FOLD_BANNER = """\
+/* fold_tables.inc — GENERATED, DO NOT EDIT.
+ *
+ * Written by `third_party/ucd-16.0.0/generate.py` from that directory's
+ * vendored `CaseFolding.txt` at Unicode {version}.  Regenerate with
+ * `make gen-tables`; `make test` re-checks staleness (`--check`).
+ * Provenance and licence: `third_party/ucd-16.0.0/PROVENANCE.md`.
+ *
+ * WHAT IT IS: Unicode DEFAULT SIMPLE case folding, as a CYCLIC NEXT-MEMBER
+ * relation.  `pcrec_ucd_fold_links` is sorted by `cp`; following `next` from
+ * any member visits every member of that code point's fold equivalence class
+ * exactly once and returns to where it started.  A code point NOT in this
+ * table folds to nothing and is its own class.
+ *
+ * WHY A CYCLE AND NOT A PARTNER (§4.2a): {n3} of these classes have three
+ * members and {n4} have four — `k`/`K`/U+212A, `s`/`S`/U+017F,
+ * SIGMA/sigma/final-sigma, and the four-member iota class that includes
+ * U+0345.  `src/core/fold.c`'s ASCII relation is the degenerate case where
+ * every class has exactly two members, which is why the same walker serves
+ * both and `pcrec_ascii_fold` needs no second spelling.
+ *
+ * WHY `C` AND `S` ONLY, and what that DELETES: `F` (full) folding is 1:n
+ * and would force a caseless literal into an alternation and a caseless class
+ * to hold a sequence.  `utf8_design.md` §4.1 MEASURED that libpcre2 10.46
+ * implements no 1:n folding at all (0 of 11 cells), and the standing check
+ * that fires the day that stops being true is sabotage row S-U11's.
+ *
+ * SUMMARY: {norbits} classes, {nlinks} members, largest class {maxorbit}.
+ */
+"""
+
+
+def emit_fold_tables(orbits):
+    out = [FOLD_BANNER.format(version=UNICODE_VERSION, norbits=len(orbits),
+                              nlinks=sum(len(o) for o in orbits),
+                              maxorbit=max(len(o) for o in orbits),
+                              n3=sum(1 for o in orbits if len(o) == 3),
+                              n4=sum(1 for o in orbits if len(o) == 4))]
+    links = []
+    for o in orbits:
+        for i, cp in enumerate(o):
+            links.append((cp, o[(i + 1) % len(o)]))
+    links.sort()
+    out.append("\n#define PCREC_FOLD_MAX_ORBIT %d\n" % PCREC_FOLD_MAX_ORBIT)
+    out.append("\nstatic const PcrecFoldLink pcrec_ucd_fold_links[] = {\n")
+    for i in range(0, len(links), 4):
+        chunk = links[i:i + 4]
+        out.append("    " + " ".join("{0x%X,0x%X}," % (a, b) for a, b in chunk) + "\n")
+    out.append("};\n")
+    return "".join(out)
+
+
+FOLD_TEXT_BANNER = """\
+/* utf8_fold_pairs.inc — GENERATED, DO NOT EDIT.
+ *
+ * Written by `third_party/ucd-16.0.0/generate.py` from that directory's
+ * vendored `CaseFolding.txt` at Unicode {version}.  Regenerate with
+ * `make gen-tables`; `make test` re-checks staleness (`--check`).
+ *
+ * THIS FILE IS NOT COMPILED — IT IS EMITTED.  Every line below is a C string
+ * literal, and `src/gen/enc/enc_utf8.c` `#include`s the file in the MIDDLE of
+ * the string-literal initialiser for the caseless backreference residual, so
+ * these lines become part of the TEXT an artifact carries.  Design §4.6(b):
+ * a caseless backreference folds subject bytes read at match time, so unlike
+ * a caseless class its fold cannot compile away.
+ *
+ * IT IS THE SORTED `{{from, to}}` MAP, NOT THE ORBIT RELATION, and §4.6 rules
+ * out the alternative it is easy to reach for: a direct-indexed 0x110000-entry
+ * map is ~4.4 MB, four times `limits.def`'s TOTAL emitted-bytes cap.  Equality
+ * under folding is `fold(x) == fold(y)`, so a canonical representative is all
+ * an artifact needs and the {npairs} non-identity entries are all there are.
+ *
+ * SUMMARY: {npairs} pairs, {nbytes} bytes of emitted table text.
+ */
+"""
+
+
+def emit_fold_artifact_text(f):
+    pairs = sorted(f.items())
+    body, emitted = [], 0
+    for i in range(0, len(pairs), 6):
+        chunk = pairs[i:i + 6]
+        content = "    " + " ".join("{0x%X,0x%X}," % (a, b) for a, b in chunk)
+        body.append('"%s\\n"\n' % content)
+        emitted += len(content) + 1          # the line, plus its newline
+    nbytes = emitted
+    out = [FOLD_TEXT_BANNER.format(version=UNICODE_VERSION, npairs=len(pairs),
+                                   nbytes=nbytes)]
+    out.append("\n")
+    out.extend(body)
+    return "".join(out)
+
+
 def main():
     check = "--check" in sys.argv[1:]
     cats = read_unicodedata(SOURCE)
-    text = emit(build(cats))
+    fold = read_casefolding(FOLD_SOURCE)
+    orbits = fold_orbits(fold)
+    products = [
+        (OUT, SOURCE, emit(build(cats))),
+        (FOLD_OUT, FOLD_SOURCE, emit_fold_tables(orbits)),
+        (FOLD_TEXT_OUT, FOLD_SOURCE, emit_fold_artifact_text(fold)),
+    ]
     if check:
-        try:
-            with open(OUT, "r", encoding="utf-8") as f:
-                have = f.read()
-        except OSError:
-            have = None
-        if have != text:
-            sys.stderr.write(
-                "STALE: %s does not match what %s produces from %s.\n"
-                "Regenerate with: python3 %s\n"
-                % (os.path.relpath(OUT, REPO), os.path.relpath(__file__, REPO),
-                   os.path.relpath(SOURCE, REPO), os.path.relpath(__file__, REPO)))
-            return 1
-        return 0
-    with open(OUT, "w", encoding="utf-8") as f:
-        f.write(text)
-    sys.stderr.write("wrote %s\n" % os.path.relpath(OUT, REPO))
+        stale = 0
+        for path, src, text in products:
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    have = f.read()
+            except OSError:
+                have = None
+            if have != text:
+                stale = 1
+                sys.stderr.write(
+                    "STALE: %s does not match what %s produces from %s.\n"
+                    % (os.path.relpath(path, REPO),
+                       os.path.relpath(__file__, REPO),
+                       os.path.relpath(src, REPO)))
+        if stale:
+            sys.stderr.write("Regenerate with: python3 %s\n"
+                             % os.path.relpath(__file__, REPO))
+        return stale
+    for path, _src, text in products:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        sys.stderr.write("wrote %s\n" % os.path.relpath(path, REPO))
     return 0
 
 

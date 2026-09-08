@@ -381,7 +381,25 @@ static int cls_peek_past_dash(Ctx *cx)
     return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
 }
 
-/* ---- ASCII case folding (OS-1, D18 case 1: the option folds into the front
+/* [M5.0 stage 1/4] THE ENCODING ROW, resolved once for the two questions the
+ * parser asks it: what does `[^x]` complement within (`max_cp`), and what does
+ * `(?i)x` also match (`fold`). `src/core/compile.c` refuses an unknown or
+ * not-yet-implemented encoding before `pcrec_parse` runs, so the lookup
+ * succeeds on every path that can reach a class; the refusal here is the loud
+ * form of "that stopped being true" rather than a fallback, because a silent
+ * default would answer `byte`'s 0xFF and `byte`'s ASCII fold for an encoding
+ * whose repertoire is larger — quietly narrowing every negated class and
+ * quietly dropping every non-ASCII fold partner in the pattern. */
+static const PcrecEnc *cls_enc(Ctx *cx)
+{
+    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
+    if (!e)
+        ctx_fail(cx, 0, "internal error: no encoding row for id %d",
+                 cx->opt->encoding);
+    return e;
+}
+
+/* ---- case folding (OS-1, D18 case 1: the option folds into the front
  * end and never reaches run time) ----
  *
  * Caselessness is not a mode the matcher is in; it changes what the automaton
@@ -391,8 +409,37 @@ static int cls_peek_past_dash(Ctx *cx)
  * classes, minimization, emission — is unchanged and unaware. The generated
  * code has no flag, no branch and no tolower().
  *
- * ASCII only, deliberately: in the C locale bytes >= 0x80 have no case, and
- * Unicode folding is DD-1/M5's question, not this one.
+ * [M5.0 stage 4] WHICH FOLD IS NOW A PARAMETER, AND EVERY CALLER STATES IT.
+ * DD-1 (utf8_design.md §4) adds Unicode simple folding, and the two relations
+ * disagree on Latin-1 rather than nesting — so there is no "the" fold and no
+ * clamp that derives one from the other. Two answers, measured against
+ * libpcre2 10.46 and reconfirmed on 10.48:
+ *
+ *   - a LITERAL or a RANGE written in the pattern folds by THE ENCODING'S
+ *     relation (`cls_universe`'s own `PcrecEnc`), because it denotes code
+ *     points in that encoding's repertoire. `[a-z]` under `-i -e utf8`
+ *     matches U+212A and U+017F (§4.2c).
+ *   - a NAMED BYTE SET — `\d`, `\w`, `\s`, a POSIX bracket, anything arriving
+ *     through `pcrec_ast_class_from_bits` — folds by `pcrec_fold_ascii` AT
+ *     EVERY ENCODING, because the set is named in the ASCII alphabet and
+ *     PCRE2 widens it no further without `PCRE2_UCP`, which pcrec has no axis
+ *     for (§4.5). MEASURED: under `PCRE2_UTF|PCRE2_CASELESS`, `[[:lower:]]`
+ *     and `\w` do NOT match U+212A while `[a-z]` and `[k]` do — and both DO
+ *     match it under `|PCRE2_UCP`, which is the arm pcrec does not implement.
+ *
+ * A PROPERTY SET IS NOT FOLDED HERE AT ALL, by either relation, and stage 3
+ * measured why: `\p{Lu}` under `-i` IS `\p{L&}` (the substitution module
+ * `unicode-props` already made) and every other property is caseless-
+ * invariant. Folding `\p{Lu}`'s span would add U+0345, an Mn that folds with
+ * Greek iota — MEASURED not to match `[\p{Lu}]` or `[\p{Lu}x]` on either
+ * reachable libpcre2. That is what makes `p_class` fold its OWN members and
+ * union the produced ones afterwards rather than folding the merged set:
+ * `[\p{Lu}k]` matches U+212A (the literal `k`'s doing) while `[\p{Lu}x]` does
+ * not match U+0345, and only a per-contribution fold gets both right.
+ *
+ * ASCII-ONLY WAS DELIBERATE AND STILL IS, for the relation this file used to
+ * hard-code: in the C locale bytes >= 0x80 have no case, which is exactly why
+ * `byte` keeps it and `utf8` does not inherit it.
  *
  * ORDER MATTERS, AND IT IS EASY TO GET BACKWARDS: fold the POSITIVE set,
  * BEFORE negation. `[^a]` caseless means "neither a nor A" — fold {a} to
@@ -409,7 +456,7 @@ static int cls_peek_past_dash(Ctx *cx)
  * AST depth is unbounded in pattern length (a long concatenation is a left-deep
  * A_CAT chain), so it would add exactly the recursion DD-10/TS-4 is trying to
  * remove. A new class-producing construct must call this itself. */
-static void cls_casefold(PcrecCpSet *s)
+static void cls_casefold(Ctx *cx, PcrecCpSet *s, const PcrecFold *f)
 {
     /* [M6.5.2] DERIVED FROM `pcrec_ascii_fold` (src/core/fold.c) rather than
      * from its own `'A'..'Z'` loop, and the change is behaviour-preserving by
@@ -422,27 +469,27 @@ static void cls_casefold(PcrecCpSet *s)
      * `tests/backrefs/fold_agreement_check.c` ties the two over all 65,536
      * byte pairs. See fold.c for why two unchecked spellings were the shape
      * R32 E8 refused. */
-    /* [M5.0 stage 1] THE SET IS AN INTERVAL LIST NOW, and the loop is still
-     * over the 256 BYTES rather than over the set's members, which is the
-     * honest spelling of the "ASCII only, deliberately" paragraph above: the
-     * table has 256 entries and 52 non-identity ones, so a code point outside
-     * that range has no partner to add and the loop that would look for one
-     * would be a claim this function does not make. DD-1/§4 is where the
-     * Unicode closure lands, and it is a different function over a different
-     * table (`CaseFolding.txt`, stage 4), not a wider bound on this one.
+    /* [M5.0 stage 4] THE PARTNERS ARE COLLECTED INTO A SECOND SET BEFORE ANY
+     * IS ADDED, which is stage 1's `unsigned add[52]` generalised rather than
+     * replaced. Adding while iterating would read the set the loop is
+     * mutating — `[a]` under `-i` gains `A`, and a membership test later in
+     * the same sweep would then see `A` and add `a` back. Harmless for the
+     * ASCII relation (an involution, so the fixpoint is one step away) and
+     * NOT harmless for a relation with three- and four-member classes, where
+     * a partner seeding another partner is how a walk over `{k, K, U+212A}`
+     * turns into a walk over whatever those three's partners are. The
+     * separate `out` set makes one-step the SHAPE of the operation instead of
+     * a property of the data.
      *
-     * THE PARTNERS ARE COLLECTED BEFORE ANY IS ADDED. Adding while iterating
-     * would read the set the loop is mutating — `[a]` under `-i` would gain
-     * `A`, and a membership test later in the same sweep would then see `A`
-     * and add `a` back. Harmless here (the fold is an involution, so the
-     * fixpoint is one step away) and exactly the kind of thing that stops
-     * being harmless when the table changes; 52 is the whole bound. */
-    unsigned add[52];
-    int nadd = 0;
-    for (unsigned c = 0; c < 256; c++)
-        if (pcrec_ascii_fold[c] != c && pcrec_cpset_has(s, c))
-            add[nadd++] = pcrec_ascii_fold[c];
-    for (int i = 0; i < nadd; i++) pcrec_cpset_add(s, add[i], add[i]);
+     * The bound is gone with the array: a code-point set has no 52.
+     *
+     * `partners` walks the RELATION and never the SET (internal.h), so this
+     * costs the fold table's size and not the class's — `(?i)[\x{0}-\x{10FFFF}]`
+     * is a legal pattern and pays 2,938 membership probes, not 1.1M lookups. */
+    PcrecCpSet out;
+    pcrec_cpset_init(&out, &cx->arena);
+    f->partners(s, &out);
+    pcrec_cpset_add_set(s, out.iv, out.n);
 }
 
 /* [M5.0 stage 1] THE COMPLEMENT UNIVERSE, ASKED OF THE ENCODING (§2.7.1).
@@ -452,22 +499,9 @@ static void cls_casefold(PcrecCpSet *s)
  * complement is `~bits[i]` and the question could not be posed. Under `byte`
  * this returns 0xFF and every negation is the identical set; under `utf8` it
  * is 0x10FFFF. It is a RANGE, never a code-unit width and never a validity
- * predicate — enc.h's own field comment.
- *
- * `src/core/compile.c` refuses an unknown or not-yet-implemented encoding
- * before `pcrec_parse` runs, so the lookup succeeds on every path that can
- * reach a class; the refusal here is the loud form of "that stopped being
- * true" rather than a fallback, because a silent default would answer 0xFF
- * for an encoding whose universe is larger and quietly narrow every negated
- * class in the pattern. */
-static unsigned cls_universe(Ctx *cx)
-{
-    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
-    if (!e)
-        ctx_fail(cx, 0, "internal error: no encoding row for id %d",
-                 cx->opt->encoding);
-    return e->max_cp;
-}
+ * predicate — enc.h's own field comment. `cls_enc` above carries the argument
+ * for why a missing row is a loud internal error rather than a default. */
+static unsigned cls_universe(Ctx *cx) { return cls_enc(cx)->max_cp; }
 
 static Ast *char_node(Ctx *cx, unsigned c)
 {
@@ -480,7 +514,13 @@ static Ast *char_node(Ctx *cx, unsigned c)
      * the parser has already range-checked against the encoding's universe,
      * and masking one would silently alias U+0141 onto 'A'. */
     pcrec_cpset_add(&s, c, c);
-    if (cx->mods->caseless) cls_casefold(&s);
+    /* [M5.0 stage 4] THE ENCODING'S fold: `c` is a code point this encoding
+     * has, so its partners are the ones this encoding calls partners. Under
+     * `utf8` this is where `(?i)k` becomes `{k, K, U+212A}` — a class whose
+     * members encode to one and three bytes, which §2.3's lowering already
+     * builds as an alternation of byte sequences with no new machinery
+     * (§4.2d). Under `byte` it is the 52-letter table, unchanged. */
+    if (cx->mods->caseless) cls_casefold(cx, &s, cls_enc(cx)->fold);
     pcrec_cpset_publish(&s, a);
     return a;
 }
@@ -527,7 +567,17 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
      * Both are renderings of one generated source, which is what stops the
      * word set from acquiring a second hand-maintained spelling. */
     pcrec_cpset_add_bits(&s, bits);
-    if (cx->mods->caseless) cls_casefold(&s);
+    /* [M5.0 stage 4] `pcrec_fold_ascii` AND NOT THE ENCODING'S, and that is a
+     * fact about the INPUT rather than an encoding conditional: a 32-byte
+     * bitmap is a set named in the ASCII alphabet — `\d`, `\w`, `\s`, a POSIX
+     * bracket — and PCRE2 widens such a set no further under UTF unless
+     * `PCRE2_UCP` is set, which pcrec has no axis for (§4.5). MEASURED under
+     * `PCRE2_UTF|PCRE2_CASELESS`: `[[:lower:]]` and `\w` do NOT match U+212A,
+     * while `[a-z]` and `[k]` DO — and all four match it once `PCRE2_UCP` is
+     * added. Handing this constructor the encoding's fold would implement
+     * that UCP arm by accident, on the one axis pcrec deliberately does not
+     * have, and would do it silently. */
+    if (cx->mods->caseless) cls_casefold(cx, &s, &pcrec_fold_ascii);
     if (negate) pcrec_cpset_complement(&s, cls_universe(cx));
     pcrec_cpset_publish(&s, a);
     return a;
@@ -901,6 +951,24 @@ static Ast *p_class(Ctx *cx)
      * would leave a node carrying a set that is not the class. */
     PcrecCpSet set;
     pcrec_cpset_init(&set, &cx->arena);
+    /* [M5.0 stage 4] THE PRODUCED MEMBERS ACCUMULATE SEPARATELY, because the
+     * caseless fold applies to this function's OWN members and not to a set a
+     * producer already answered the caseless question for. `[\p{Lu}k]` must
+     * match U+212A (the literal `k`'s fold partner) and `[\p{Lu}x]` must NOT
+     * match U+0345 (which folds with Greek iota and would arrive from folding
+     * `L&`'s span) — MEASURED both ways, and only a per-contribution fold
+     * gets both. Every producer folds its own contribution at its own
+     * constructor (`pcrec_ast_class_from_bits` by ASCII, `pcrec_ast_class_
+     * from_iv` not at all, each with its reason stated there), so the union
+     * below adds a set that is already as folded as it should be.
+     *
+     * UNDER `byte` THIS CHANGES NOTHING, and that is checkable rather than
+     * hoped: the fold that used to run over the merged set was the ASCII one,
+     * and every produced set reaching it was either already ASCII-closed by
+     * its own constructor or a property span containing both cases of every
+     * ASCII letter it holds. The byte identity gate is the check. */
+    PcrecCpSet prod;
+    pcrec_cpset_init(&prod, &cx->arena);
     bool neg = false;
 
     cls_skip(cx);   /* xx deletes BEFORE the negation check: [ ^a] negates */
@@ -981,7 +1049,7 @@ static Ast *p_class(Ctx *cx)
              * module classes is enabled, so a set followed by a range dash
              * refuses HERE with the same offset the refusal path uses. */
             if (r.what == EXT_MEMBERS) {
-                pcrec_cpset_add_set(&set, r.node->u.cls.iv, r.node->u.cls.n);
+                pcrec_cpset_add_set(&prod, r.node->u.cls.iv, r.node->u.cls.n);
                 cx->pos = r.end;
                 cls_skip(cx);   /* xx: [[:alpha:]\t-\tz] still hits the 150 */
                 if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
@@ -1126,7 +1194,7 @@ static Ast *p_class(Ctx *cx)
             if (loclaim.what == EXT_REFUSAL)
                 pcrec_ext_finish(cx, &loclaim);
             if (loclaim.what == EXT_MEMBERS)
-                pcrec_cpset_add_set(&set, loclaim.node->u.cls.iv,
+                pcrec_cpset_add_set(&prod, loclaim.node->u.cls.iv,
                                     loclaim.node->u.cls.n);
             else
                 pcrec_cpset_add(&set, (unsigned)lo, (unsigned)lo);
@@ -1144,7 +1212,16 @@ static Ast *p_class(Ctx *cx)
      * this one constructor — rather than carrying a `negated` flag to the
      * lowering — is what keeps this ordering rule checkable by sabotage row
      * S08 swapping two adjacent lines (§2.7.2's third argument). */
-    if (cx->mods->caseless) cls_casefold(&set);
+    /* [M5.0 stage 4] fold THIS FUNCTION'S OWN members, then union the
+     * produced ones, then negate. The ORDER of the last two is unchanged and
+     * is what §4.3 measured (`[^k]` caseless rejects U+212A, so the negation
+     * is over the CLOSED set); what moved is that the union now happens
+     * between them instead of before both. A produced set is already folded
+     * as its own producer decided, so unioning after the fold is what makes
+     * "the caller owns caselessness" true of `\p` inside a class as well as
+     * at an atom — see this function's own `prod` declaration. */
+    if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);
+    pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
     pcrec_cpset_publish(&set, a);
     return a;

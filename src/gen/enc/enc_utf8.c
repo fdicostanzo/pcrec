@@ -334,6 +334,12 @@ static const char start_guard_utf8[] =
 const PcrecEnc pcrec_enc_backend_utf8 = {
     /* `max_cp` is Unicode's maximum: the complement universe `[^x]` means
      * under this encoding (enc.h's field comment, utf8_design.md §2.7.1). */
-    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, entries_utf8, advance_utf8,
+    /* [M5.0 stage 4] the fold is Unicode DEFAULT SIMPLE case folding — the
+     * relation `CaseFolding.txt`'s `C` and `S` lines define, which §4.1
+     * MEASURED to be the whole of libpcre2 10.46's caseless behaviour under
+     * `PCRE2_UTF` (0 of 11 one-to-many cells match). The residual caseless
+     * compare below folds through the SAME data, generated in the same run. */
+    PCREC_ENC_UTF8, "utf8", 0x10FFFFu, &pcrec_fold_ucd_simple,
+    entries_utf8, advance_utf8,
     start_cls_utf8, start_guard_utf8
 };
