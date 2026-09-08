@@ -177,6 +177,16 @@ static long check_1n_fold(void)
                      fold_1n_cells[c].name, arms[a].label);
         }
     }
+    /* THE POPULATION IS ASSERTED HERE, EXACTLY, and that is stronger than the
+     * grep floor §8.2 proposes for sabotage row S-U11. That row's stated
+     * hazard is a check that has silently lost the `PCRE2_UCP` arm, and a
+     * floor counting occurrences of a STRING in this file cannot see the
+     * difference between eleven cells over two arms and eleven over one. The
+     * number the row is really about is the one this function actually made. */
+    if (asserted != 22)
+        fail("1:n fold: %ld assertions, 22 owed (11 measured cells x 2 option "
+             "words) — the standing check's space has changed size, which is "
+             "the S-U11 hazard rather than a count to re-pin", asserted);
     return asserted;
 }
 
