@@ -33,10 +33,11 @@ trailing remainder forming a smaller final chunk.** Not per-`.rxt`-file
 spanning multiple files).
 
 **Why not per-file.** `run.sh`'s own corpus is wildly uneven — a census
-over the 207 non-`known_fail` `.rxt` files this lane took while sizing the
-2a pool found block counts from 1 to 357 per file, mean 18.7
-(`docs/dev/tt4m_step2a_parallel_sizing.md`'s pool-sizing section has the
-raw numbers). A "one batch per file" policy would make almost every batch
+over the 207 non-`known_fail` `.rxt` files (R55-4: RUN for real and
+archived, not merely cited — `docs/dev/tt4m_step2a_parallel_sizing.md`'s
+"Appendix: per-file block-count census" has the reproducible command and
+the raw numbers) found block counts from 1 to 357 per file, mean 18.7,
+median 12. A "one batch per file" policy would make almost every batch
 far SMALLER than N=64 (mean 18.7 blocks) while three files
 (`tests/lookaround/d27/matrix.rxt` at 357, `tests/utf8/
 axis04_p_categories.rxt` at 136, `tests/assertions/multiline.rxt` at 89)
@@ -104,6 +105,42 @@ unbatched costs literally nothing and is the D77-correct move (revisit
 if H11 populations ever grow beyond zero, with the measurement that
 would trigger it, rather than build for it now).
 
+**A THIRD exclusion, added by revision (R55-1, `docs/dev/reviews/
+2026-09-08-r55-tt4m-batching.md`): a block carrying ANY routed cell stays
+OUT of the batching unit too, exactly as `perr`/H11 do, detected PER-BLOCK
+at parse.** Item 1's first draft named only `perr` and H11; nothing kept a
+`frames-buffer=` block out of a batch, and this dispatch protocol's own
+scope (item 2, below) only reproduces the DEFAULT route — a batch member
+whose cases run through `<prefix>_search_in`/`<prefix>_match_in`/
+`<prefix>_match_caps_in` cannot be served by `dispatch.c` as designed at
+all. Live population today: `tests/recursion/framebuffer.rxt`'s
+`^(a(?1)?b)$ / engine vm` block (9 directives). **"Routed" is read off
+the route GRAMMAR, not off one spelling of one directive** — `tests/
+harness/driver.c`'s `parse_route` (driver.c:231-261) and `run.sh`'s own
+`valid_route` (run.sh:429-444, the ONE definition of the grammar the two
+share so they cannot drift) recognize exactly FOUR shapes: `default`
+(or the empty string), `null`, `<n>` (a single positive integer — frame
+capacity, trail capacity implied equal), and `<frames>,<trail>` (two
+positive integers, one comma). A block's cases run a non-default route
+two ways, not one: an explicit `frames-buffer=<spec>` directive inside
+the block naming any of the last three shapes (`run.sh`:1331-1355,
+`cur_route` set per-case from the position of that line downward), OR —
+the one a text-grep for the directive's own spelling would miss — the
+run-wide `RXTROUTE` env var, which is each block's `cur_route` FLOOR
+before any in-block directive is seen (`run.sh`:1106/1266-1269, reset to
+`$RXTROUTE` at every file and block boundary, never to the literal string
+`"default"`) — so a corpus-wide `RXTROUTE=null` sweep (the NULL-equivalence
+control `tests/harness/CLAUDE.md`'s run.sh entry names) makes EVERY block
+in that run carry a routed cell, `frames-buffer=` line or not. The
+implementation lane's exclusion predicate is therefore: a block is
+batching-ineligible if its resolved `cur_route` for ANY of its cases is
+not `default`/empty — computed exactly where `run.sh` already computes
+`cur_route` per case today, before this design's own compile-time
+decision (batch vs. standalone) is made. The fuller dispatch driver that
+COULD serve a routed block (modeling `_search_in`/`_match_in`/
+`_match_caps_in` and the buffer-descriptor protocol, `driver.c`:281-380+)
+is a later increment, not built here.
+
 ## 2. Dispatch protocol
 
 **A harness-local generated file, `dispatch.c`, one per batch, following
@@ -116,12 +153,16 @@ IDENTICAL to today's `driver.c` (decode() byte-for-byte, match/nomatch/
 give-up printing byte-for-byte, including the four give-up words and the
 `"internal"` fifth outcome — `tests/harness/CLAUDE.md`'s `driver.c`
 entry has the full protocol this must reproduce). **Scope limit carried
-forward from STEP 1/2a unchanged**: default route only (bare
-`<prefix>_search`, no third `route` argument) for the FIRST landing;
-`_search_in`/`_match_in`'s cross-check and `frames-buffer=` routed cases
-need a fuller dispatch driver a later increment builds when a batch
-actually needs to contain one (see item 6's per-case behavior for what
-"needs one" means precisely).
+forward from STEP 1/2a, NOW EXPLICITLY ENFORCED rather than merely
+unexercised (R55-1)**: default route only (bare `<prefix>_search`, no
+third `route` argument) for the FIRST landing — `_search_in`/`_match_in`'s
+cross-check and `frames-buffer=`/`RXTROUTE` routed cases are not
+"unmodeled and hoped never to arrive," they are item 1's own THIRD
+exclusion, checked per block before that block is ever offered to a
+batch, exactly as `perr`/H11 already are. A fuller dispatch driver
+(modeling every route the grammar admits) is the later increment that
+lets a routed block join a batch at all; until it lands, a routed block
+always runs the STANDALONE per-pattern path, same as today.
 
 **[V-E] replaces this file when that row opens (implement-then-replace,
 D75's own worked example is the precedent this rule cites) — the selector
@@ -266,9 +307,16 @@ one actually reaches `run.sh`'s compile line, not assumed.**
 
 ## 5. Mech (sabotage rows anchored on the harness)
 
-**Grepped `tests/mech/sabotages/*.sh` for every row naming
-`tests/harness/run.sh` or `tests/harness/driver.c`: eight rows
-(S11, S43, S194, S196, S198, S199, S203, S205). None of them anchor on
+**Grepped `tests/mech/sabotages/*.sh` for every row whose OWN
+`SAB_FILE=` NAMES `tests/harness/run.sh` or `tests/harness/driver.c`
+(R55-7: `SAB_FILE=`-anchored, not a raw text-grep for the two paths —
+a plain name-grep over every sabotage file's PROSE returns 13 hits, not
+eight, since six of them (S108, S157, S159, S173, S213, S214) merely
+MENTION `run.sh` in a comment while anchoring on a `src/` file; the false
+recount is exactly the trap this note's own first draft walked into and
+back out of): eight rows (S11, S194, S196, S198, S199, S203, S205 —
+`SAB_FILE="tests/harness/run.sh"` — plus S43 — `SAB_FILE="tests/lib/
+gen_timeout.sh"`). None of them anchor on
 the COMPILE/LINK invocation line (`gen_cc "$cur_pattern" "$CC" ...
 driver.c gen.c`) — every one anchors inside the `.rxt`-PARSING arm chain
 (`flush_block`'s directive handling: `g`/`gp` line drop, `flags`
@@ -289,12 +337,13 @@ anything about compile GRANULARITY. **Per row**: S11/S194/S196/S198/S199/
 S203/S205 are UNMOVED (their anchors sit in code paths batching never
 touches). **S43 needs one stated adjustment, not a re-derivation**: its
 detector (`run_gen_timeout_tests.sh`'s CPU fire control) proves the D45
-wrapper still FIRES on an over-budget compile; item 6 below scales the
-wrapper's budget by N for a batch, and S43's own sabotage (removing BOTH
-clocks from `gen_cc`) still removes them from whatever budget value is
-passed in, batched or not — the row's anchor and mechanism are unchanged,
-it is simply exercised against a (correctly) larger number when the
-positive-control compile it fires on happens to be inside a batch.
+wrapper still FIRES on an over-budget compile; item 6 below (REVISED per
+R55-2) keeps every `gen_cc` call's budget UNSCALED at the per-member `-c`
+sub-compile and at the link, with the N-scaled number surviving only as
+an outer wall backstop — S43's own sabotage (removing BOTH clocks from
+`gen_cc`) still removes them from whichever `gen_cc` invocation it
+targets, unscaled per-member call or scaled outer backstop alike, so the
+row's anchor and mechanism are unchanged either way.
 
 No new mech row is needed for batching's OWN correctness — that is what
 2a's own zero-mismatch answer-identity sweep (9 cells, 7,706 distinct
@@ -366,36 +415,70 @@ pattern. This is the same "no vacuous pass, no spurious fail" bar every
 other check in this tree holds itself to (K35's general-fix precedent);
 it is the acceptance criterion 2d's answer-identity gate directly tests.
 
-**Timeout story.** Per-case matcher-run timeout wrapping
-(`"$TIMEOUT_BIN" "$RUN_SECS" "$bdir/t" ...`, run.sh:889) is **completely
-unchanged** — it wraps the same per-case spawn shape regardless of
-whether the executable behind `$bdir/t` came from a batch or not (STEP
-2a's own scope decision, inherited from STEP 1, holds this shape
-identical on purpose). **The batch COMPILE gets its own, scaled budget**,
-derived from D45's existing per-pattern numbers rather than re-measured
-from scratch: `gen_cpu_secs`/`gen_timeout_secs` (`tests/lib/
-gen_timeout.sh:96-111`) already give a CPU-primary budget (10s plain/200s
-sanitizer) with a wall backstop (60s/180s) for ONE compile; **a batch of
-N members' worst-case legitimate cost is bounded by N independent
-compiles' worst-case cost (compiling N unrelated TUs in one gcc process
-is, to first order, additive in gcc's own per-file front-end/back-end
-work — the only shared cost is one process startup and one link, both
-small relative to N real TU compiles at any N this note considers)**, so
-`batch_gen_cpu_secs = N * gen_cpu_secs()` and `batch_gen_timeout_secs =
-N * gen_timeout_secs()` is the natural, SAFE generalization: it preserves
-D45's own two-clock distinction (a batch that genuinely needs N times the
-per-pattern CPU is still let through; a batch that is STUCK, not working,
-still dies at N times the wall backstop) without re-deriving either
-constant, because the derivation is linear-additive rather than a
-re-guessed number. `gen_cc`'s own diagnostic text (`D45 CPU BUDGET:
-compiling generated C for [$what] exceeded ...`) should name the BATCH
-(e.g. `batch <file>:<first-line>-<last-line>, N=64`) rather than a single
-pattern when it fires at this level — a batch-level budget breach cannot
-name one pattern the way a per-pattern breach does, unless/until the
-fast-path attribution above has already isolated a specific member (in
-which case that member's OWN, unscaled budget applies to its individual
-relink attempt, and the ordinary per-pattern diagnostic is exactly
-right).
+**Timeout story — REWRITTEN (R55-2, `docs/dev/reviews/
+2026-09-08-r55-tt4m-batching.md`, num-F2/num-F3): the N-scaled number is
+no longer the PRIMARY guard, because scaling the wrapper's own budget by N
+dilutes the exact guard D45 exists to be — a single pathological compile
+(D45's own motivating incident) would run for up to N times its own
+budget before the ceiling fired, inside a batch built specifically to
+group N-1 INNOCENT members around it.**
+
+Per-case matcher-run timeout wrapping (`"$TIMEOUT_BIN" "$RUN_SECS"
+"$bdir/t" ...`, run.sh:889) is **completely unchanged**, as before — it
+wraps the same per-case spawn shape regardless of whether the executable
+behind `$bdir/t` came from a batch or not (STEP 2a's own scope decision,
+inherited from STEP 1, holds this shape identical on purpose).
+
+**The batch COMPILE's guard is built on item 3's own split-then-link
+STRUCTURE (option (a): N `-c` sub-compiles, then one link), not on a
+single wrapped invocation of the whole sequence** — resolving the
+contradiction the first draft left open between this section's
+one-wrapped-call framing and item 3's N-`-c`-plus-link shape. Concretely:
+
+1. **Each member's own `-c` sub-compile runs under `gen_cc` at the
+   UNSCALED per-pattern budget** (`gen_cpu_secs()`/`gen_timeout_secs()`,
+   `tests/lib/gen_timeout.sh:96-111`, unchanged from every other compile
+   site in the tree) — no plumbing invention needed, because this is
+   `_gen_cc_run`'s own already-shipped split-then-link precedent
+   (`tests/lib/gen_timeout.sh:294-360`, gated on `CCACHE=1` today; item 3
+   generalizes the SAME split to every batch, always) generalized from 2
+   sources (driver.c, gen.c) to N. RLIMIT_CPU is a per-PROCESS limit set
+   once on the wrapping `bash -c` subshell and inherited unscaled by
+   every forked child (`gen_cc`'s own `ulimit -S -t "$cpu"` comment
+   already states this is per-process, not cumulative) — so each of the
+   N `-c` sub-compiles gets the FULL, ordinary per-pattern CPU ceiling on
+   its own, catching a pathological single member within roughly ITS OWN
+   budget rather than diluted N-fold. This is **strictly better than
+   today's per-pattern shape, not merely equivalent to it**: same guard,
+   fewer processes (N members share one link and one outer wrapper
+   instead of each paying its own).
+2. **The link step gets ONE additional unscaled budget** (its own
+   ordinary `gen_cc` call at `gen_cpu_secs()`/`gen_timeout_secs()`, not
+   N times either number) — linking N objects is not expected to cost
+   anywhere near N compiles' worth of budget, so scaling it by N would
+   only re-open the same dilution this rewrite exists to close, on the
+   one step where a genuine link-level hang (a `dispatch.c` bug, a
+   pathological symbol table) is exactly the kind of "stuck, not
+   working" case D45's wall backstop is for.
+3. **The batch-level N-scaled number SURVIVES, but only as an OUTER
+   BACKSTOP around the whole per-batch sequence** (all N sub-compiles
+   plus the link), stated as such rather than as the primary guard:
+   `batch_gen_timeout_secs = N * gen_timeout_secs()` (wall only — the
+   per-member/per-link CPU ceilings above are what does the real
+   catching work) bounds the case where every INDIVIDUAL step stays
+   under its own budget yet the AGGREGATE still runs unacceptably long
+   (contention inflating every step by a little, rather than one step
+   pathologically). This is a strict backstop, expected to fire rarely
+   if ever, not the number that catches D45's own motivating incident —
+   that job now belongs entirely to step 1 above's per-member budget.
+
+`gen_cc`'s own diagnostic text (`D45 CPU BUDGET: compiling generated C
+for [$what] exceeded ...`) names the FAILING MEMBER exactly as it does
+for an unbatched pattern today when a per-member `-c` sub-compile breaches
+its own budget (step 1 above) — a batch-level diagnostic naming
+`batch <file>:<first-line>-<last-line>, N=64` is needed only for the link
+step (step 2) or the outer backstop (step 3), where no single member's
+name is the failure's own.
 
 ## 7. Linux parity
 

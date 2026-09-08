@@ -57,8 +57,21 @@ population was trusted.
 
 **Pool**: STEP 1 used a 126-pattern `tests/base`-only slice. That
 population is too small to give N=128 more than one batch per worker at
-P=12 (128 x 12 = 1,536 patterns needed for even one batch each), so this
-row collects a LARGER, CROSS-CORPUS pool: every `.rxt` file under `tests/`
+P=12 (128 x 12 = 1,536 patterns needed for even one batch each). **[R55-3
+correction: the pool below does NOT reach that target either, and saying
+"so this row collects a larger pool" without saying so reads as if it
+did.]** 1,536 was never the number this row actually sized for — the
+round number chosen below (1,024) was picked for even divisibility across
+every N in {16, 64, 128}, which structurally caps N=128 at exactly
+`1024/128 = 8` batches, still 4 short of P=12's 12 workers. The pool is
+genuinely LARGER than STEP 1's 126 patterns and genuinely enough to make
+N=16 and N=64 meaningful at every P swept (64 and 16 batches
+respectively, both >= P=12), but at N=128 it guarantees the SAME
+one-batch-per-worker shortfall STEP 1's pool had, just at a fixed count
+of 8 instead of fewer — which is why Section 2's N=128/P=12 starvation
+finding below is a demonstration of the mechanism, not an independent
+discovery that this box starves there. So: this row collects a LARGER,
+CROSS-CORPUS pool: every `.rxt` file under `tests/`
 except `tests/known_fail/` (the same exclusion `run.sh`'s own no-args
 discovery uses), `--require-features ""` (STEP 1's homogeneity filter,
 unchanged), first 1,024 compilable/non-`perr` distinct patterns (a round
@@ -73,7 +86,38 @@ affects both shapes equally, so it does not bias any comparison below).
 7.56 cases/pattern, richer than STEP 1's `tests/base`-only slice (3.2/
 pattern) because this pool draws from every module directory, several of
 which (assertions, lookaround, recursion) carry denser per-pattern case
-coverage than `tests/base`.
+coverage than `tests/base`. (The 7,729 figure is what the sweep below
+actually ran on — see the correction immediately below for the keying bug
+that number carries and why it survives re-derivation almost unchanged.)
+
+**[R55-5 (num-F4) correction, 2026-09-08, lane tt4m2f]**: the case count above
+is RE-DERIVED after fixing `extract_cases.py`'s keying (r55 panel finding
+num-F4, `docs/dev/reviews/2026-09-08-r55-tt4m-batching.md`) — it used to
+attribute a pattern's cases by matching its regex TEXT alone against the
+first same-text block in its source file, silently misattributing cases
+whenever a later block in the same file repeats the same text under
+different `flags`/`features` (measured 54 files carrying this shape across
+the whole corpus). Fixed to key on (pattern, flags, features), the same
+triple `collect_patterns.py`'s own `dedup_key` already uses. Reproducing
+this memo's exact 1,022-pattern pool (same file list, same `--count 1024
+--require-features ""`) and re-extracting: **12 of 1,022 patterns (1.17%)
+have DIFFERENT case content under the fix** (`rx0114/0115/0116/0671/0737/
+0739/0793..0798`), 10 of those with a different case COUNT — six patterns
+lost 1-2 misattributed cases each and six patterns that read 0 cases before
+(silently contributing nothing to the pool despite compiling successfully)
+gained their own real cases. The aggregate count moves by only **+1**
+(7,729 -> 7,730) because the losses and gains happen to net out on this
+particular pool — a coincidence of this population, not a property of the
+fix — so the **7.56 cases/pattern density line is UNCHANGED** (7,730/1,022
+= 7.5636 against the original 7,729/1,022 = 7.5626, both round to 7.56).
+The wall/CPU/knee cells and the zero-mismatch answer-identity claim were
+never at risk: every cell of the N x P grid below reused the SAME
+(misattributed, pre-fix) case set identically, so a systematic
+misattribution could not favor one cell over another. This is
+`docs/dev/learnings.md` sec3's "a population nobody counted" shape, here in
+its narrowest form — the population (which cases belong to which pattern)
+was silently WRONG for twelve pool members while its total SIZE happened
+to read almost right.
 
 **Sweep**: the brief's full grid, N in {16, 64, 128} x P in {4, 8, 12},
 9 cells, each a fresh `parallel` invocation over the SAME 1,022-pattern /
@@ -156,6 +200,25 @@ compares against an unbatched serial baseline at matched population; see
 reproduced Linux's non-monotonicity) undersold the mechanism because it
 never gave the box more than one pipeline to schedule at all** — this
 row's grid is what actually exercises it.
+
+**[R55-3 reframe, 2026-09-08, lane tt4m2f] — the N=128/P=12 starvation
+was FOREORDAINED BY THE POOL, not an emergent sizing discovery, and
+saying so is a correction to the framing above, not to the number.**
+Filling all 12 workers with at least one batch each at N=128 needs
+128 x 12 = 1,536 patterns; this row's pool is 1,022, which makes
+`ceil(1022/128) = 8` batches by construction — 4 short of 12 REGARDLESS
+of this box's core count, its scheduler, or anything else about darwin.
+The mechanism the starvation demonstrates (too few batches to fill a
+requested worker count) is real and worth keeping exactly as stated
+above; what the pool size means is that at N=128 this memo could not
+have measured anything OTHER than starvation at P=12 — the cell does
+not independently confirm that P=12 is oversubscribed relative to a
+hardware-driven ceiling, only that this pool cannot fill 12 workers at
+this N. A pool enlarged to >=1,536 patterns would be needed to ask
+whether N=128/P=12 still starves once batch COUNT stops being the
+binding constraint — optional future work, not chartered here (the
+N=64/P=8 recommendation does not rest on this cell either way, and the
+box belongs to another lane's stage tonight).
 
 ### 3. Answer identity
 
@@ -241,8 +304,10 @@ harness/`).
 
 **Sensitivity, stated plainly**: the two knobs are NOT symmetric.
 - **Getting P wrong (too small)** costs a lot, uniformly: P=4 is
-  ~1.5-1.7x slower than P=8 at every N tested. This is the knob to get
-  right.
+  1.48-1.66x slower than P=8 at every N tested (50.18/30.26=1.658 at
+  N=16, 43.80/29.36=1.492 at N=64, 47.50/32.05=1.482 at N=128 — r55
+  panel finding num-F6, the table's own numbers rather than a rounded
+  restatement). This is the knob to get right.
 - **Getting P wrong (too large)** costs little in wall time (0-5%) but
   real, measured CPU (contention inflation, up to 15% more core-seconds
   for zero-to-negative wall benefit) and, at a large N whose batch count
@@ -265,7 +330,8 @@ pattern, `tests/harness/driver.c` unmodified, same per-case run shape) on
 the IDENTICAL 1,022-pattern/7,729-case pool, run concurrently with the
 tail of the sweep above (so its own wall number carries some contention
 from that overlap — read it as directionally reliable, not a quiet-box
-floor): **547.52s wall / 320.60s CPU** (`counts`: pcrec 1022, gcc 1022,
+floor, and see the DIRECTION note right below): **547.52s wall / 320.60s
+CPU** (`counts`: pcrec 1022, gcc 1022,
 run 7729 — `gcc` wall 255.32s, `run` wall 280.19s, `pcrec` wall 12.01s;
 zero compile failures, 7,706 cases matching the batched cells' own case
 count exactly).
@@ -275,7 +341,18 @@ count exactly).
 this number combines BOTH of STEP 1's measured levers (gcc-invocation
 count, distinct-executable count) WITH 2a's own parallel-dispatch lever
 (P=8 concurrency) multiplicatively, where STEP 1's serial-only sweep could
-only ever show the first two. A rough cross-check that the pieces are
+only ever show the first two. **The contention caveat above has a
+DIRECTION, not just a magnitude (R55-8, num-F5)**: this
+baseline is a single SERIAL pipeline that ran concurrently with the tail
+of the N x P grid's own multi-worker cells, so it absorbed MORE
+contention than a quiet-box run would — its 547.52s wall number is
+therefore inflated ABOVE what an uncontended baseline would read, which
+makes the 18.65x ratio a FAVORABLE (larger) overestimate of the true
+speedup, not a neutral approximation in either direction. The batched
+cell it is divided against (29.36s) was ALSO measured serially against
+its sibling cells (never two cells concurrently, per this memo's own
+Method), so it did not receive the same inflation — the bias sits
+entirely in the numerator. A rough cross-check that the pieces are
 consistent with each other: this pool's total CPU (320.60s) against
 N=64's own aggregated CPU at any P (139.91-156.87 core-seconds across the
 P=4-12 cells) gives a CPU-only multiple of ~2.1-2.3x, close to STEP 1's
@@ -311,9 +388,48 @@ speedup decomposes between its two contributing levers).
 - **A quiet-box re-run.** Per BOILERPLATE and the STEP 1 memo's own
   caveat, this box was not fully idle during the sweep (this session's
   other lanes were doing light, non-`make` work) — the deltas here are
-  large enough (1.5-1.7x at the P knee) to trust directionally, but a
+  large enough (1.48-1.66x at the P knee) to trust directionally, but a
   quiet-box confirmation is worth doing before this memo's specific
   numbers are cited as a floor.
+- **[R55-10, stated not fixed here] this memo's own raw sweep evidence is scratch**
+  (the `/tmp` pool + per-cell JSON outputs, per `studies/tt4m_batchrun/
+  CLAUDE.md`'s "Results/logs are NOT committed" convention) and is not
+  archived anywhere durable — unlike this house's other measurement lanes
+  (`docs/dev/*_impl/` directories), no 2a number here can be independently
+  re-checked against its own raw data today. Named rather than fixed by
+  this revision: STEP 2c/2d MUST archive their own acceptance numbers
+  under a `docs/dev/` evidence directory when they land (the flip-to-
+  default-on decision rides 2d's fresh, archived numbers, not 2a's
+  scratch ones) — the bar itself is 2c/2d's brief, not this memo's.
 - **A real multi-section `make -j12 test` load1 comparison** for the K44
   relief question (§5) — this row's own prototype cannot produce that
   number by construction.
+
+## Appendix: per-file block-count census (R55-4, num-F7)
+
+`docs/design/tt4m_harness_batching.md` item 1 cites "a census over the
+207 non-`known_fail` `.rxt` files this lane took while sizing the 2a pool
+found block counts from 1 to 357 per file, mean 18.7" to THIS memo's
+pool-sizing section above — but the section as originally written carried
+no such numbers (r55 panel finding num-F7, phantom citation,
+`docs/dev/reviews/2026-09-08-r55-tt4m-batching.md`). Run for real here,
+read-only, over the exact population the citation names:
+
+    find tests -name '*.rxt' -not -path 'tests/known_fail/*' \
+        | while read -r f; do echo -e "$(grep -c '^pattern ' "$f")\t$f"; done \
+        | awk -F'\t' '{s+=$1; n++; if(NR==1||$1<mn)mn=$1; if($1>mx)mx=$1}
+                      END{printf "files=%d sum=%d mean=%.2f min=%d max=%d\n",
+                          n,s,s/n,mn,mx}'
+
+**Result: files=207, sum=3,873, mean=18.71, min=1, max=357** — the design
+note's citation is CORRECT (1-357, mean 18.7), so item 1's own numbers do
+not move; what moves is that they are now backed by an archived,
+reproducible command rather than an uncited claim. The three named
+outliers check out exactly: `tests/lookaround/d27/matrix.rxt` 357,
+`tests/utf8/axis04_p_categories.rxt` 136, `tests/assertions/multiline.rxt`
+89. The distribution is heavily right-skewed (median 12, well below the
+mean of 18.71): 87 of the 207 files (42%) carry 10 or fewer blocks, and
+the single largest file (357) alone accounts for 9.2% of the corpus's
+total 3,873 blocks — which is the concrete population behind item 1's own
+"three files would form one oversized batch each" argument for fixed-N
+chunking over one-batch-per-file.

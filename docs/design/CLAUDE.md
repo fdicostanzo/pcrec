@@ -1853,37 +1853,52 @@ append-only or historical records.
   plausible hazard nobody had checked.
 
 - `tt4m_harness_batching.md` — [TT-4M] STEP 2 (2b) (2026-09-08, lane
-  tt4m2): the `tests/harness/run.sh` batched-compilation ADOPTION design,
+  tt4m2; REVISED 2026-09-08 by the r55 panel and lane tt4m2f, `docs/dev/
+  reviews/2026-09-08-r55-tt4m-batching.md` -- three corrections below):
+  the `tests/harness/run.sh` batched-compilation ADOPTION design,
   gated on STEP 1's validation (`docs/dev/tt4m_darwin_validation.md`) and
   STEP 2a's N x P sizing (`docs/dev/tt4m_step2a_parallel_sizing.md`).
   Rules: BATCHING UNIT = fixed-N (64) chunks of consecutive `pattern`
   blocks within one FILE's own parse (not per-file, not cross-file -- a
   general mechanism that degenerates correctly at both a file's small and
   large ends), with 2a's P mapping onto `run.sh`'s EXISTING `PROCS` knob
-  rather than a new one; DISPATCH PROTOCOL = a harness-local
-  `dispatch.c` per batch (STEP 1/2a's `dispatch_gen.py` shape,
-  default-route only), selector kept by-name-lookup-compatible for
-  `[V-E]`'s later implement-then-replace; SIZELOG = option (a),
-  `-c`-per-TU compiles inside the batch's one gcc process so per-pattern
-  gcc CPU/wall stays EXACT (found, not merely chosen: option (c),
-  "SIZELOG stays unbatched," is actually UNAVAILABLE -- `test-corpus:`'s
-  own Makefile recipe threads SIZELOG through EVERY full-corpus run
-  unconditionally, so "unbatched SIZELOG" would mean `make test-corpus`
-  itself never sees batching's win at all); AXES/GENCFLAGS/LINTGEN/
-  CLANGGEN/the san axes all survive unmodified (confirmed by reading the
-  actual env-var threading, not assumed) -- explicitly flags that
-  `-fsanitize=` runtime linkage must ride option (a)'s reintroduced
-  separate link step, copying `[TT-3]`'s own `_gen_cc_run` split-then-link
-  precedent; MECH grep of all eight `tests/harness`-anchored sabotage rows
-  finds none anchored on the compile/link line itself (all eight sit in
-  the `.rxt`-PARSING arm chain, upstream of and unaffected by batching),
-  S43 needing only a stated (not re-derived) budget-scaling note;
-  DEGRADATION = a two-tier attribution (D88's per-TU gcc diagnostics
-  attribute a common single-member failure for free, relink minus that
-  member -- 2a's own measured linear-in-N recovery cost is the RARE
-  link-only-failure fallback's worst case, not the typical cost) with a
-  batch compile budget derived by MULTIPLYING D45's existing per-pattern
-  GENCPU/GENTIMEOUT by N rather than re-measuring; LINUX PARITY names shape
+  rather than a new one, PLUS a THIRD exclusion beside `perr`/H11 (R55-1):
+  any block carrying a routed cell (a `frames-buffer=` directive, or a
+  non-default `RXTROUTE` floor -- the route grammar is exactly `default`/
+  `null`/`<n>`/`<frames>,<trail>`, `run.sh`'s own `valid_route`) stays out
+  of the batching unit entirely, detected per-block at parse, since this
+  landing's dispatch driver only reproduces the default route; DISPATCH
+  PROTOCOL = a harness-local `dispatch.c` per batch (STEP 1/2a's
+  `dispatch_gen.py` shape, default-route only), selector kept
+  by-name-lookup-compatible for `[V-E]`'s later implement-then-replace;
+  SIZELOG = option (a), `-c`-per-TU compiles inside the batch's one gcc
+  process so per-pattern gcc CPU/wall stays EXACT (found, not merely
+  chosen: option (c), "SIZELOG stays unbatched," is actually UNAVAILABLE
+  -- `test-corpus:`'s own Makefile recipe threads SIZELOG through EVERY
+  full-corpus run unconditionally, so "unbatched SIZELOG" would mean
+  `make test-corpus` itself never sees batching's win at all); AXES/
+  GENCFLAGS/LINTGEN/CLANGGEN/the san axes all survive unmodified
+  (confirmed by reading the actual env-var threading, not assumed) --
+  explicitly flags that `-fsanitize=` runtime linkage must ride option
+  (a)'s reintroduced separate link step, copying `[TT-3]`'s own
+  `_gen_cc_run` split-then-link precedent; MECH grep of every sabotage
+  row whose OWN `SAB_FILE=` names `tests/harness/run.sh` or `driver.c`
+  (R55-7: `SAB_FILE=`-anchored, not a raw text-grep, which returns 13
+  hits, not eight, on comment mentions alone) finds eight such rows, none
+  anchored on the compile/link line itself (all sit in the `.rxt`-PARSING
+  arm chain, upstream of and unaffected by batching); DEGRADATION/TIMEOUT
+  REWRITTEN (R55-2): the N-scaled budget is NO LONGER the primary guard
+  (it would dilute D45's own guard N-fold, letting one pathological
+  compile run N times its budget behind N-1 innocent batch neighbors) --
+  each member's own `-c` sub-compile and the link step each get their OWN
+  UNSCALED per-pattern `gen_cc` budget (free via `_gen_cc_run`'s own
+  split-then-link precedent, RLIMIT_CPU being per-process and inherited
+  unscaled by every forked child), with the N-scaled number surviving
+  only as an OUTER WALL BACKSTOP around the whole batch sequence; a
+  two-tier attribution (D88's per-TU gcc diagnostics attribute a common
+  single-member failure for free, relink minus that member -- 2a's own
+  measured linear-in-N recovery cost is the RARE link-only-failure
+  fallback's worst case, not the typical cost); LINUX PARITY names shape
   L as darwin-clean and predicts Linux's win is dominated by the SMALLER
   of STEP 1's two levers (the bigger, ~11.79x per-binary-launch lever may
   not exist on Linux at all) -- stated as a prediction for the executor
@@ -1893,7 +1908,10 @@ append-only or historical records.
   answer-identical on BOTH platforms. Cites a measured 18.65x end-to-end
   wall speedup at its recommended N=64/P=8 cell against a same-pool serial
   baseline (2a's own addendum), with the honest caveat that this compares
-  batching+parallelism TOGETHER against neither in isolation.
+  batching+parallelism TOGETHER against neither in isolation, PLUS a
+  directional caveat (R55-8): the serial baseline's own wall number
+  absorbed more contention than the batched cells did, biasing 18.65x as
+  a FAVORABLE overestimate, not a neutral one.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

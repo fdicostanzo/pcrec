@@ -50,6 +50,16 @@ static unsigned char *decode(const char *src, size_t *out_len) {
     if (!buf) { fprintf(stderr, "dispatch: out of memory\n"); return NULL; }
     size_t o = 0;
     for (size_t i = 0; i < srclen; ) {
+        if (src[i] == '\\' && i + 1 >= srclen) {
+            /* [r55harn-2 fix, 2026-09-08, lane tt4m2f] driver.c's decode()
+             * refuses a trailing lone backslash rather than copying it
+             * literally -- this arm now matches that (previously fell to
+             * the plain-byte-copy branch below and diverged from the
+             * claim that decode() is byte-identical to driver.c's). */
+            fprintf(stderr, "dispatch: trailing backslash in subject\n");
+            free(buf);
+            return NULL;
+        }
         if (src[i] == '\\' && i + 1 < srclen) {
             char c = src[i + 1];
             switch (c) {
