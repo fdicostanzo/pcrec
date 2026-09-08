@@ -1,6 +1,13 @@
 # S09 — char_node stops folding: classes still fold (via p_class) but bare
 # literal escapes/chars do not (OS-1 section of tests/codegen/CLAUDE.md
 # table, row 2). Documented result: 1 codegen check + 14 caseless.rxt cases.
+# [M5.0 stage 4, lane utf8s4] RE-ANCHORED. Stage 4 made `cls_casefold` take the
+# fold as a PARAMETER (the relation is the ENCODING's now, `PcrecEnc.fold`) and
+# put the produced sets' union between the fold and the negation, so this row's
+# recorded anchor no longer exists. The CLAIM is unchanged and was re-verified
+# against the live source, not carried over: a literal atom's own constructor must fold. The anchor is now the ONE line
+# that does it in `char_node`, which is tighter than the whole-body anchor the
+# row carried before and cannot be staled by an edit to the comment above it.
 SAB_ID="S09-casefold-delete"
 SAB_FILE="src/parse/parse.c"
 SAB_SUITES="codegen harness"
@@ -16,26 +23,5 @@ SAB_COUNT=1
 # \`PcrecCpSet\` and publishes once. The deletion this row makes, and everything
 # it detects, is unchanged — a literal stops folding while classes keep doing
 # it, which is what makes its symptom disjoint from S08's.
-SAB_BEFORE="    Ast *a = node(cx, A_CLASS);
-    PcrecCpSet s;
-    pcrec_cpset_init(&s, &cx->arena);
-    /* [M5.0 stage 2] no \`& 0xff\` mask any more: \`c\` is a CODE POINT. Every
-     * pre-stage-2 caller passed a byte, for which the mask was the identity;
-     * the new callers (\`\x{...}\`, the multi-byte literal reader) pass values
-     * the parser has already range-checked against the encoding's universe,
-     * and masking one would silently alias U+0141 onto 'A'. */
-    pcrec_cpset_add(&s, c, c);
-    if (cx->mods->caseless) cls_casefold(&s);
-    pcrec_cpset_publish(&s, a);
-    return a;"
-SAB_AFTER="    Ast *a = node(cx, A_CLASS);
-    PcrecCpSet s;
-    pcrec_cpset_init(&s, &cx->arena);
-    /* [M5.0 stage 2] no \`& 0xff\` mask any more: \`c\` is a CODE POINT. Every
-     * pre-stage-2 caller passed a byte, for which the mask was the identity;
-     * the new callers (\`\x{...}\`, the multi-byte literal reader) pass values
-     * the parser has already range-checked against the encoding's universe,
-     * and masking one would silently alias U+0141 onto 'A'. */
-    pcrec_cpset_add(&s, c, c);
-    pcrec_cpset_publish(&s, a);
-    return a;"
+SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(cx, &s, cls_enc(cx)->fold);"
+SAB_AFTER="    /* SABOTAGE S09: the literal constructor stops folding */"

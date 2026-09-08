@@ -53,7 +53,7 @@ scaffolding, the bump and its D94 grep are a merge-time act.
 | `tests/utf8/` (whole directory) | **1,668 passed / 0 failed** |
 | `tests/utf8/fold.rxt` (new) | **45 / 0**, green on its first run |
 | `tests/utf8/axis06` promotion | **178 of 178 non-`\p` cells green on the FIRST run**, zero semantic divergences; the 8 remaining were the corpus's own wrong oracle (§3.4) |
-| `tests/codegen/run_encoding_checks.sh` | **10 / 0** |
+| `tests/codegen/run_encoding_checks.sh` | **11 / 0** — after the DD12a(i) region fix of §3.11, which the first run found |
 | `tests/backrefs/run_backref_diff.sh` | **checks failed: 0**, including §9 (byte, unchanged) and the new §9b |
 | §9b's own numbers | 2,938 folding code points / 5,972 ordered pairs compare EQUAL; 63,486 adjacent-pair controls agree; the ASCII restriction ties to 52 bytes exactly |
 | PC-4 with the fold check | `pc4: 1:n fold — 22 assertions (11 cells x 2 option words), 0 matching`; PASS |
@@ -228,7 +228,41 @@ round" sabotage does: from `k` it adds U+212A and LOSES `K`, which is a
 different wrong answer from the partner-map one the design imagined and is red
 on the same cells.
 
-### 3.11 A PROCESS NEAR-MISS, recorded because it is the mandate
+### 3.11 THE SEAM'S STRUCTURAL CHECK KEYS ON ENTRY NAMES, and an entry that grows a helper grows the region without it
+
+**Found by the check going red, and it is the most interesting red in the
+delivery.** `run_encoding_checks.sh`'s DD12a(i) is DD-12(7)(a)'s instrument:
+it excises the NAMED encoding-owned regions from a byte artifact and a utf8
+one and requires what is left to be identical, so that an encoding conditional
+reaching the hot path is a loud failure. The named regions are found by a
+CLOSED LIST OF ENTRY SIGNATURES (`next_pos`, `back_step`, `bref_match`,
+`bref_match_caseless`).
+
+The stage-4 caseless compare needs a fold TABLE and two private helpers beside
+it — a character decode and a binary search — because folding a code point is
+not expressible inline. Those are encoding-owned by construction (they exist
+only in that backend's text and nowhere else), but they carry none of the four
+names, so they landed in the compared text and the check reported
+**"6 of 243 strict-identity pairs differ OUTSIDE the named encoding-owned
+regions — an encoding conditional reached the hot path"** plus an
+undeclared-form list mismatch. Both were the same cause and neither was a real
+encoding conditional.
+
+**The check was right to fire and its region definition was what needed
+widening**, so the fix is on both sides and each half is small: `SIG_RE` gains
+the three helper names and folds them into `bref_match_caseless`'s own counter
+(a counter of their own would be a vacuity row the `byte` backend can never
+satisfy, which the check's own guard would then fail), and the emitted table's
+opening brace moved to its own line so ONE brace-matching walk serves a
+function body and an array initializer alike. **11 / 0 after**, with the
+gate-refinement and undeclared-form manifests matching exactly and unmoved.
+
+The generalisable form, and it is this directory's own lesson one level up: a
+region identified by the NAME OF ITS ENTRY POINT stops covering that region the
+moment the entry needs a helper. The next backend whose residual body needs
+more than one function will meet it again.
+
+### 3.12 A PROCESS NEAR-MISS, recorded because it is the mandate
 
 At 17:16 I ran `cd <worktree> && (heavy run) & git add -A && git commit …`.
 The `&` backgrounds only the first half, so **`git add -A` and `git commit` ran
