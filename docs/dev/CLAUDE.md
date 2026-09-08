@@ -329,3 +329,24 @@ change.
   NOT replicate [TT-4.1]'s Linux finding that too-large N regresses under
   PARALLEL dispatch; that replication is owed to STEP 2. Evidence and
   reproduction harness at `studies/tt4m_batchrun/` (own CLAUDE.md).
+- `tt4m_step2a_parallel_sizing.md` — [TT-4M] STEP 2 (2a) (2026-09-08, lane
+  tt4m2, measurement only, extends the STEP 1 prototype with a new
+  `parallel` subcommand in `studies/tt4m_batchrun/batchrun.py` -- nothing
+  under `tests/harness/`/`src/` touched): the owed PARALLEL-dispatch N x P
+  sizing STEP 1 left serial-only. On a 1,022-pattern/7,729-case
+  cross-corpus pool (larger than STEP 1's `tests/base`-only slice, sized
+  so N=128 x P=12 has enough batches to be meaningful), sweeps N in
+  {16,64,128} x P in {4,8,12}: the knee is **P=8 at every N** (this box's
+  own performance-core count, 8 of 10 `hw.ncpu` -- going P=8->P=12 buys
+  0-5% wall and COSTS up to 15% more CPU to contention, and at N=128
+  starves 4 of 12 requested workers outright, reproducing [TT-4.1]'s
+  Linux non-monotonicity in the form this box's population produces it).
+  Wall time is a near-flat plateau across N=16-128 at P=8 (~9% spread) while
+  worst-case degradation-recovery cost scales linearly with N (3.6s to
+  29.2s) -- recommends **N=64, P=8** on that asymmetry. Zero answer-identity
+  mismatches across all 9 cells. K44 relief (S5): this sweep's peak load1
+  (10.44) is ~4.4x below K44's documented 47.6-at-PROCS=12, suggestive but
+  NOT apples-to-apples (K44 is a full multi-section `make -j12 test`, this
+  is an isolated corpus-compile prototype) -- named as owed to STEP 2c/2d.
+  A same-pool serial-baseline re-run was still running when this memo was
+  written; see its own "What is still owed" section.
