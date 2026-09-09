@@ -577,6 +577,22 @@ adopting a new reference version is a deliberate re-measurement event
 Revisit when: the reference box's libpcre2 upgrades, or Frank rules a
 version adoption, or a PC-2 re-survey fires.
 
+**OUTCOME ([ORACLE-LINK], D98, 2026-09-09).** This entry's own 119-failure
+figure was measured against the WRONG library the whole time — U15(b) found
+that the dlopen shim resolving this comparison was darwin's system 10.42, not
+the Homebrew 10.48 this entry's own probe used to classify the drift. Direct
+linking makes the two the same library by construction; re-measured on the
+same darwin box, PC-3 with the retirement applied is **209 passing / 0
+failing** — the 119 U13-attributed failures are gone, not because pcrec or
+the reference changed, but because the oracle now genuinely IS what every
+other probe on this box already believed it was. The underlying 10.46→10.48
+option-run drift this entry documents is real and unchanged (see
+`pcre2_check.c`'s `u15b_excluded()` for its own sibling drift, the truncated
+alpha-assertion near-miss family, now handled the same way: a version-keyed
+exclusion rather than a silent failure) — what closed is the MEASUREMENT
+ambiguity, not the PCRE2-side behaviour change. Still revisit per the
+disposition above if a version adoption is ever ruled.
+
 ## U14 — `tests/harness/verify_rxt.py`'s subject decoder is byte-oriented, not UTF-8-aware (`encoding utf8`, [M5.0] stage 2, found by lane utfprom promoting tests/utf8/)
 
 **Not a divergence in python `re`'s own semantics** — every other entry in
@@ -701,6 +717,58 @@ in a char buffer, which is how the constant was got wrong the first time), and
 made `tests/uprops/` read the resolved oracle's version and PRINT it on every
 run, so a result can be attributed rather than assumed.
 
+**RESOLVED-BY-RETIREMENT ([ORACLE-LINK], D98, 2026-09-09).** The ruling this
+entry left owed turned out to be the wrong question: a candidate-ORDER fix
+cannot exist that both makes the dlopen shim consistent AND survives the next
+box, because the shim's whole mechanism is "guess which library the runtime
+loader will hand back," and a guess has no version to be right about ahead of
+time. The retirement replaces the guess with a fact — `#include <pcre2.h>` and
+`-lpcre2-8` resolve through the SAME toolchain search
+(`tests/lib/resolve_pcre2.sh`, pkg-config-driven) that the build already
+trusts for every other header pcrec uses, so there is exactly one libpcre2 in
+the picture per box, by construction, and "which one did the suite actually
+compare against" stops being a question a report has to answer. Measured
+directly (`docs/dev/lanes/oralink_report.md`): the linked binary on THIS box
+resolves Homebrew's 10.48 — the same library `pcre2_abi_unicode_version()`'s
+own print line already named as this box's `pcre2.h`, closing the
+header-vs-loader gap this entry is about. PC-3 on this box moved from
+194 passing / 119 failing (all U13/U15b) to **209 passing / 0 failing**,
+i.e. every failure this entry and U13 describe is gone on the same box with
+no change to pcrec's own behaviour. This does not answer the ruling this
+entry deferred ("is the reference 10.46 or something else") — it makes the
+question unable to recur FOR THIS REASON: whichever library a box's own
+toolchain resolves is now, unambiguously, the one every oracle check on that
+box uses, named in its own `PCRE2_VERSION` print line every run. See D98.
+
+### (c) U15b's own sibling: a genuine 10.46→10.48 alpha-assertion drift, now visible for the first time
+
+Retiring the shim did not make PC-3 clean by making the box's real library
+younger disappear — it made a REAL 10.46→10.48 PCRE2-side change visible for
+the first time, because the old shim never compared against a library new
+enough to show it. `pool_from_mutations()`'s truncated-verb form (`"(*%s"`,
+no closing punctuation at all) generates single-character mutations of
+pcrec's own alpha-assertion names — e.g. `(*atomiq_script_run` (one letter
+off `atomic_script_run`) and `(*posihtive_lookahead` (one letter off
+`positive_lookahead`) — and asks libpcre2 what a truncated near-miss of a
+real name means. **10.46 answers error 195** ("(*alpha_assertion) not
+recognized"), which is exactly pcrec's own message for the same shape — no
+divergence, ever, on the reference. **10.48 answers error 114** ("missing
+closing parenthesis") for the identical candidate text: its parser reads far
+enough into the near-miss to believe it might be completing a REAL
+alpha-assertion name and runs off the end of the pattern looking for the
+rest, rather than giving up early the way 10.46's scan does. 20 such
+candidates measured on this box (`docs/dev/lanes/oralink_report.md`), 0 on
+libpcre2 <= 10.46 in the reachable sample.
+
+**Disposition.** `pcre2_check.c`'s `u15b_excluded()` scopes the exception
+exactly to this cell — rc==114 AND pcrec's own message is the unchanged,
+correct `"(*alpha_assertion) not recognized"` text AND the resolved library
+is 10.47+ — with its own liveness guard asserting the exclusion fires on
+10.47+ and does NOT fire on the 10.46 reference (K15's own "a control that
+cannot fail is worse than none" shape, one library version over). Revisit
+when: the reference box's libpcre2 upgrades past 10.46, at which point this
+exclusion's 10.46-must-stay-clean half needs re-deriving against whatever
+the new reference answers.
 
 ## U16 — libpcre2 refuses one Script value the UCD declares (`Katakana_Or_Hiragana`/`Hrkt`; [M5.0] stage 5, lane utf8s5, 2026-09-09)
 

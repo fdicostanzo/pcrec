@@ -23,6 +23,7 @@ silently reporting nothing.
 """
 import ctypes
 import ctypes.util
+import os
 import platform
 
 PCRE2_ZERO_TERMINATED = ctypes.c_size_t(-1).value
@@ -38,6 +39,22 @@ _CANDIDATES = ["libpcre2-8.so.0", "libpcre2-8.so"]
 
 
 def _load():
+    # [ORACLE-LINK] (D98, 2026-09-09): PCREC_PCRE2_PATH, consulted FIRST, is
+    # the one-resolution-point override -- tests/lib/resolve_pcre2.sh (the
+    # DIRECT-LINKED C oracles' resolver) exports it from the SAME resolution
+    # a harness/runner script already did, so this binding and every C oracle
+    # in the tree read the SAME library rather than independently guessing
+    # (the exact U13/U15b skew [ORACLE-LINK] retired one level over, for a
+    # ctypes consumer instead of a linked one). Falls back to the candidate
+    # search below when unset, so a bare probe invocation is unchanged.
+    override = os.environ.get("PCREC_PCRE2_PATH")
+    if override:
+        try:
+            return ctypes.CDLL(override)
+        except OSError as e:
+            raise RuntimeError(
+                "PCREC_PCRE2_PATH=%r set but ctypes.CDLL could not load it: %s"
+                % (override, e))
     last_err = None
     for name in _CANDIDATES:
         try:

@@ -6720,3 +6720,107 @@ The spelling is PCREC_* (shared ABI block) — the per-artifact
 **Revisit when.** A composed-call-site emitter lands (the trap goes live —
 re-read this entry before softening it); or a second below-floor candidate
 arrives and the refusal-vs-give-up test needs restating as a rule.
+
+## D98 — THE LIBPCRE2 ORACLE BINDING IS LINK-TIME, NOT DLOPEN (Frank,
+2026-09-09, "if your test/evaluation passes then make it so" — lane
+linktest's P1-P5 prototype passed; lane oralink carried out the retirement)
+
+**Decision.** Every check in this tree that compares pcrec against libpcre2
+now `#include <pcre2.h>` and links `-lpcre2-8` directly
+(`tests/fuzz/pcre2_abi.h`, resolved at build time by
+`tests/lib/resolve_pcre2.sh` via pkg-config, with a bare compile+link
+fallback). The old shape — a hand-declared ABI slice, resolved at RUNTIME by
+dlopen'ing a hard-coded candidate SONAME list — is deleted, not deprecated:
+no dlsym, no candidate list, no `dlinfo(RTLD_DI_LINKMAP)` ELF introspection,
+no `_GNU_SOURCE`-must-be-first-`#include` ordering trap for that mechanism
+(`pcre2_abi_path()`'s remaining need for `dladdr`, used for attribution and
+for `pcre2_check.c`'s anti-circularity candidate pool, keeps a narrower
+version of that same ordering discipline — see the header's own comment).
+
+**Why.** Three real incidents, all downstream of ONE structural fact: dlopen's
+runtime search can resolve a DIFFERENT libpcre2 than the one any
+`#include <pcre2.h>`-based tool on the same box sees, because dyld/ld.so's
+search order has no way to prefer "whichever library the BUILD environment
+has a header for." U13 (10.46→10.48 option-run drift, classified against the
+wrong library for over two weeks) and U15b (the dlopen shim resolving
+darwin's SYSTEM 10.42 while every `pcre2.h`-based probe on the same box saw
+Homebrew's 10.48) are the same skew measured twice; K-uprops-abi-order (a
+`_GNU_SOURCE`-ordering footgun baked into the old header's Linux dlinfo path)
+is the shim's OWN fragility, orthogonal to which library it found. Direct
+linking cannot have the first two skews AT ALL — the compiler's header
+search and the linker's library search are the SAME resolution
+`resolve_pcre2.sh` queries, so there is exactly one libpcre2 in the picture,
+by construction, on every box — and structurally narrows the third (dladdr
+alone, no ELF-specific link-map walk, needed by only one platform's `#ifndef
+__APPLE__` branch now instead of two). The linktest prototype
+(`docs/dev/lanes/linktest_report.md`) measured the conversion's mechanical
+cost as a one-`#include`-line diff per consumer and its behavioural cost as
+a WASH (P5: bind/resolve is 3.604ms vs 3.530ms over 20 trials, inside noise;
+the apparent 21%-slower full-sweep number is a candidate-POOL-SIZE confound —
+the richer Homebrew binary yields more real ASCII runs to probe, not a
+per-call linking cost). The retirement (lane oralink) measured PC-3 on this
+darwin box moving from 194 passing / 119 failing (all attributable to
+U13/U15b) to **209 passing / 0 failing**, with the residual 10.47+-only
+drift (a truncated alpha-assertion near-miss family, U15b's sibling)
+handled by a version-keyed exclusion (`u15b_excluded()`, `pcre2_check.c`) in
+K15's own established shape rather than a new mechanism, and the POSIX
+candidate-pool probe count similarly re-pinned per resolved version (149804
+at 10.46, 187872 at 10.48) rather than forced to one number no real library
+produces on both boxes.
+
+**Every call is type-checked at compile time now** (the real `<pcre2.h>`
+prototypes, not hand-transcribed ones) and the whole tree has **one
+resolution point** — the C side via `tests/lib/resolve_pcre2.sh`, the python
+ctypes side (`tests/assertions/d27/lib_pcre2.py`,
+`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`) via a
+`PCREC_PCRE2_PATH` env override the same shell resolver exports — so a C
+oracle and a python oracle on the same box are guaranteed to read the same
+library file rather than two independently-guessed ones.
+
+**What changed shape, disclosed rather than hidden.** ABSENCE now surfaces
+at BUILD time: a box with no libpcre2-8 dev headers/lib fails to LINK, full
+stop, so every caller in the tree probes `resolve_pcre2.sh`'s
+`PCRE2_AVAILABLE` BEFORE attempting the compile and prints its own SKIP
+banner instead (D2's stranger's-`make`-must-not-fail posture is unchanged;
+only WHEN the check happens moved, since a link failure cannot be caught
+inside the binary the way a missing dlopen symbol could). One shape widened
+as a direct, accepted consequence: `tests/registry/
+definitions_oracle_check.c` used to build unconditionally via dlopen (no
+header needed) and skip only its A==C libpcre2 leg at runtime when absent;
+it now `#include`s the real header unconditionally too, so on a box without
+libpcre2 the WHOLE comparator — including A==B, which needs no external
+oracle at all — fails to build and skips with it. Splitting that binary in
+two to keep A==B header-free was judged not worth the duplication for one
+self-consistency leg; revisit if that leg's value is ever measured to
+matter on a libpcre2-less box.
+
+**Scope of the retirement**: every ACTIVE `make test`/`make fuzz` oracle
+build (`tests/registry/pcre2_check.c`/`pc4_check.c`/
+`definitions_oracle_check.c`, `tests/uprops/uprops_oracle.c`,
+`tests/fuzz/pcre2_oracle.c` and `fuzz.py`'s own build of it). The header's
+drop-in-compatible design (identical `Pcre2Abi` struct field names and
+`pcre2_abi_load`/`_version`/`_unicode_version`/`_path` signatures) means
+every OTHER file that `#include`s it (`tests/probes/*.c`, historical
+one-off design-measurement tools, never part of `make test`) needs no
+source change at all — only their own manual build recipe
+(`tests/probes/CLAUDE.md`) gained the new `-I`/`-l` flags, since three of
+those probes make an independent second `dlopen()` call for a symbol
+beyond the header's own set, unaffected by how the header itself binds.
+`docs/design/k18_measurements/capdiff/pcre2_batch_oracle.c` and
+`tests/parse/branch_count_check.c` (a from-scratch dlopen, never routed
+through this header) are deliberately untouched — the first is a frozen
+historical evidence artifact like the probes, the second is an independent
+oracle this charter's shared-header scope does not reach. `tests/backrefs/
+fold_agreement_check.c`/`fold_agreement_utf8_check.c` were checked and are
+NOT consumers of this header at all (they compare pcrec's own compiled
+fold table against pcrec's own emitted residual — no runtime libpcre2
+access on either side, only a comment citing a past measurement against
+it), so nothing there needed conversion. `tests/mech/`'s san/lint stages
+(K54) are orthogonal to this charter and untouched.
+
+**Revisit when.** A need arises for RUNTIME multi-version swapping
+(comparing the same suite run against two different libpcre2 builds without
+recompiling) that a `PKG_CONFIG_PATH`/`--prefix`-rebuilt libpcre2 cannot
+serve — direct linking pins one library per BUILD, which the old dlopen
+shape could in principle avoid (in practice it never did: the shim always
+resolved whatever ONE library its candidate list found first).

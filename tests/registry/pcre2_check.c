@@ -73,6 +73,17 @@
 static Pcre2Abi pcre2;
 static int pass = 0, fail = 0;
 
+/* [ORACLE-LINK]/D98: the resolved library's own major.minor, parsed once in
+ * main() from pcre2_abi_version()'s printed string ("10.48 2026-08-31" ->
+ * 10, 48). Two checks below (`check_verb_names`'s U15b exclusion,
+ * `expected_posix_probes`) are pinned PER RESOLVED VERSION rather than to one
+ * number, because direct linking means the reference (10.46) and this box's
+ * local library (10.48, Homebrew) are BOTH real, reachable outcomes of a
+ * clone of this repo — not a one-time migration where only the new number
+ * matters. An unrecognized version fails loudly naming itself (see both call
+ * sites) rather than silently accepting whatever it measures. */
+static int g_lib_major, g_lib_minor;
+
 static void ok(const char *what)  { printf("PASS: %s\n", what); pass++; }
 static void bad(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 static void bad(const char *fmt, ...)
@@ -542,6 +553,48 @@ static int k15_excluded(const char *nm, int rc, const char *cmsg)
     return rc == 160 && strlen(nm) > 128 && strcmp(cmsg, K15_TOO_LONG_MSG) == 0;
 }
 
+/* U15b (docs/dev/upstream_issues.md), found on [ORACLE-LINK]'s FIRST real
+ * measurement against 10.48 (D98) rather than ruled in advance — this file's
+ * whole point is that a divergence like this could not have been SEEN
+ * through the old dlopen shim, which never resolved a library newer than
+ * the darwin system copy (10.42, itself missing several of these alpha-
+ * assertion names outright). K15's shape, one library version over: a
+ * candidate that is a single-character MUTATION of a real alpha-assertion
+ * long name (`non_atomic_positive_lookahead`, `atomic_script_run`, ...),
+ * truncated with no closing punctuation at all (FORMS[5], `"(*%s"`).
+ *
+ * Under 10.46 libpcre2's alpha-assertion name scan gives up on this shape
+ * quickly and answers 195 ("(*alpha_assertion) not recognized") — an
+ * OBL_EXACT bucket pcrec's own "(*alpha_assertion) not recognized" message
+ * already matches character for character, so this cell has never been a
+ * mismatch against the reference. Under 10.48 the SAME candidate text
+ * answers 114 ("missing closing parenthesis") instead — `required_answer()`
+ * has no named bucket for 114 (nothing in the 10.46-authored table expected
+ * a truncated near-miss to ever reach it), so it falls to the generic
+ * OBL_MODULE "must name a module" default, which pcrec's ANSWER — still the
+ * exact same "(*alpha_assertion) not recognized" text, still correct for
+ * what happened — does not satisfy (it names no module, because it isn't
+ * one). Twenty candidates measured, D98: `docs/dev/lanes/oralink_report.md`
+ * for the full run, `docs/dev/upstream_issues.md` U15b for the ruling.
+ *
+ * Deliberately narrow, one cell more than K15's:
+ *   - fires ONLY on 10.47+ (this project's 10.46 reference must still
+ *     score these cells OBL_EXACT the ordinary way — a real regression
+ *     there is NOT covered by this exclusion and must still fail);
+ *   - fires ONLY when libpcre2 answers 114 AND pcrec's own message is
+ *     EXACTLY the alpha-assertion "not recognized" text (never a wider
+ *     rc==114 exemption — this project owes a rejection naming a module
+ *     for every OTHER real "missing closing parenthesis" divergence, and
+ *     nothing here touches those);
+ *   - does not touch pcrec's OWN answer text at all — the exclusion is
+ *     entirely about which bucket libpcre2's rc gets sorted into on a
+ *     newer library, not about relaxing what pcrec must say. */
+static int u15b_excluded(int rc, const char *cmsg)
+{
+    return g_lib_major == 10 && g_lib_minor >= 47 && rc == 114 &&
+           strcmp(cmsg, "(*alpha_assertion) not recognized") == 0;
+}
+
 /* K14 (MOD-0.1): for a name pcrec's tables mark ROADMAP_NEVER, the owed
  * OBL_MODULE answer is the scope refusal, never a module promise. The name is
  * re-derived from the probe by ext.c's own rule (runs to `)` `:` `=`; an
@@ -863,7 +916,7 @@ static void check_verb_names(void)
     size_t nforms = sizeof FORMS / sizeof FORMS[0];
     unsigned long probes = 0, mismatches = 0;
     unsigned long buckets[7] = {0};   /* accept, 160, 195, 166, 109, defer, 148 */
-    unsigned long k15_cells = 0;
+    unsigned long k15_cells = 0, u15b_cells = 0;
     int reported = 0;
 
     for (unsigned h = 0; h < NAMESET_CAP; h++) {
@@ -901,6 +954,10 @@ static void check_verb_names(void)
                 k15_cells++;
                 continue;
             }
+            if (u15b_excluded(rc, cmsg)) {
+                u15b_cells++;
+                continue;
+            }
             int nev = obl != OBL_EXACT && verb_probe_is_never(pat);
             if (nev)
                 want = "a refusal stating the construct is outside pcrec's scope (ROADMAP_NEVER, K14)";
@@ -935,6 +992,39 @@ static void check_verb_names(void)
            "and nowhere else (see docs/dev/known_issues.md K15)");
     printf("  K15 cells excluded (over-cap non-identifier verb names, "
            "category divergence ruled acceptable): %lu\n", k15_cells);
+
+    /* U15b's own liveness, in BOTH directions — the same "a control sharing
+     * a source with the thing it controls" lesson K15's comment states,
+     * applied to a control that is also VERSION-gated. On 10.47+ it must
+     * fire (the divergence is real and reproducible on this box; a silent
+     * zero means the pool or the mutation alphabet moved and stopped
+     * generating the shape, not that the divergence closed) — and on 10.46
+     * it must NOT fire, because on the reference these same candidates are
+     * supposed to already agree via the ordinary OBL_EXACT path, and a
+     * cell reaching this exclusion there would mean the reference itself
+     * regressed onto 10.48's answer. */
+    if (g_lib_major == 10 && g_lib_minor >= 47) {
+        if (u15b_cells == 0)
+            bad("the U15b exclusion never fired on libpcre2 %d.%d (0 cells) "
+                "— either the mutation pool stopped generating alpha-"
+                "assertion near-misses, or the drift has closed. Investigate "
+                "before trusting this run (docs/dev/upstream_issues.md U15b).",
+                g_lib_major, g_lib_minor);
+        else
+            ok("U15b exclusion: fired on truncated alpha-assertion "
+               "near-misses and nowhere else (docs/dev/upstream_issues.md U15b)");
+    } else if (u15b_cells != 0) {
+        bad("the U15b exclusion fired %lu time(s) on libpcre2 %d.%d, which "
+            "this project treats as the 10.46 REFERENCE — U15b is scoped to "
+            "10.47+ only; either the reference regressed onto 10.48's answer "
+            "(real news) or this pin needs widening (docs/dev/upstream_issues.md "
+            "U15b, docs/dev/decisions.md D98)", u15b_cells, g_lib_major, g_lib_minor);
+    } else {
+        ok("U15b exclusion: correctly inert on the 10.46 reference "
+           "(docs/dev/upstream_issues.md U15b)");
+    }
+    printf("  U15b cells excluded (truncated alpha-assertion near-misses, "
+           "10.46->10.48 category divergence): %lu\n", u15b_cells);
 
     printf("  verb names probed: %u candidates x %zu forms = %lu probes\n",
            ns_count, nforms, probes);
@@ -1558,8 +1648,27 @@ static void check_posix_names(void)
      * non-identifier names to the shared source-4 pool this check also
      * draws on (5 lengths x 3 fillers), each probed here in both the bare
      * and negated ("^") forms — +30, mechanical, not a new divergence
-     * (`every name deferred or refused as libpcre2 does` still holds). */
-    expect_probes("POSIX class names", probed, 149804);
+     * (`every name deferred or refused as libpcre2 does` still holds).
+     *
+     * [ORACLE-LINK]/D98: this count moves with the RESOLVED LIBRARY's own
+     * binary, not with pcrec — `pool_from_library()` (source 1) recovers
+     * however many real ASCII runs the linked library's string table
+     * happens to contain (34 on Homebrew's richer 10.48 build vs 6 on the
+     * old dlopen shim's darwin-system 10.42 one, docs/dev/lanes/
+     * oralink_report.md), and every recovered run gets fed through the
+     * SAME prefix/suffix expansion as every other source before landing
+     * here — more real names in means more total probes out, mechanically,
+     * with no change to what "agrees with libpcre2" means for any one of
+     * them. So the pin is PER RESOLVED VERSION, the smallest honest
+     * mechanism (no parallel pin table — a version this project has not
+     * measured yet fails loudly naming itself rather than guessing). */
+    unsigned long want_probes = 0;
+    if (g_lib_major == 10 && g_lib_minor == 46) want_probes = 149804;
+    else if (g_lib_major == 10 && g_lib_minor == 48) want_probes = 187872;
+    else bad("POSIX class names: no probe-count pin for libpcre2 %d.%d — "
+             "measure it and add one beside the 10.46/10.48 pins "
+             "(docs/dev/decisions.md D98)", g_lib_major, g_lib_minor);
+    if (want_probes) expect_probes("POSIX class names", probed, want_probes);
     if (!wrong) ok("POSIX class names: every name deferred or refused as libpcre2 does");
 
     /* Liveness, both directions. A pool that produced no real name would make
@@ -3223,6 +3332,10 @@ int main(void)
     }
 
     pcre2_abi_version(&pcre2, ver, sizeof ver);
+    if (sscanf(ver, "%d.%d", &g_lib_major, &g_lib_minor) != 2)
+        bad("could not parse a major.minor out of the resolved libpcre2 "
+            "version string \"%s\" — the U15b/D98 version-conditional pins "
+            "below cannot key off it", ver);
     const char *path = pcre2_abi_path(&pcre2);
     printf("== registry vs libpcre2 (PC-3) ==\n");
     printf("  libpcre2 version: %s\n", ver);

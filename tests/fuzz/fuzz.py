@@ -584,10 +584,43 @@ def pattern_alphabet(pattern_text):
 # Oracle / pcrec invocation plumbing
 # ---------------------------------------------------------------------------
 
+def resolve_pcre2_flags():
+    """[ORACLE-LINK] (D98, 2026-09-09): pcre2_oracle.c direct-links libpcre2
+    now (tests/fuzz/pcre2_abi.h), so this fuzzer's own oracle build needs
+    real -I/-l flags instead of the old dlopen shim's bare `-ldl`.
+
+    Inherits PCRE2_CFLAGS/PCRE2_LIBS from the environment if a shell caller
+    (run_capturediff_gate.sh) already sourced tests/lib/resolve_pcre2.sh and
+    exported PCRE2_AVAILABLE=1 -- one resolution point, not re-derived. A
+    bare `python3 fuzz.py` invocation (this tool's normal, manual use) has
+    neither set, so this falls back to calling pkg-config directly; if THAT
+    fails too it tries the bare `-lpcre2-8` link fallback and lets the real
+    gcc error surface if even that does not work. Deliberately no SKIP path
+    here: this fuzzer's oracle is FAIL HARD by design (tests/fuzz/CLAUDE.md:
+    "a missing oracle means no ground truth") -- direct linking only moves
+    WHERE that failure surfaces (a build error now, a dlopen runtime error
+    before), never whether it does."""
+    if os.environ.get("PCRE2_AVAILABLE") == "1":
+        return os.environ.get("PCRE2_CFLAGS", "").split(), \
+               os.environ.get("PCRE2_LIBS", "-lpcre2-8").split()
+    try:
+        cflags = subprocess.run(["pkg-config", "--cflags", "libpcre2-8"],
+                                 capture_output=True, text=True, timeout=5)
+        libs = subprocess.run(["pkg-config", "--libs", "libpcre2-8"],
+                               capture_output=True, text=True, timeout=5)
+        if cflags.returncode == 0 and libs.returncode == 0:
+            return cflags.stdout.split(), libs.stdout.split()
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return [], ["-lpcre2-8"]
+
+
 def build_oracle(workdir):
     binpath = os.path.join(workdir, "pcre2_oracle")
+    cflags, libs = resolve_pcre2_flags()
     r = subprocess.run(
-        [CC, "-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-o", binpath, ORACLE_SRC, "-ldl"],
+        [CC, "-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror"] + cflags +
+        ["-o", binpath, ORACLE_SRC] + libs,
         capture_output=True, text=True, timeout=CC_TIMEOUT,
     )
     if r.returncode != 0:

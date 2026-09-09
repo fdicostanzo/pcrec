@@ -10,10 +10,17 @@ that hand-off is the reason this directory exists (plan step SPEC-MOD0).
 
 Build any of them:
 
-    TMPDIR=/var/tmp gcc -I tests/fuzz -o /var/tmp/probe tests/probes/<file> -ldl
+    eval "$(tests/lib/resolve_pcre2.sh 2>/dev/null; echo "export PCRE2_CFLAGS PCRE2_LIBS")"
+    TMPDIR=/var/tmp gcc -I tests/fuzz $PCRE2_CFLAGS -o /var/tmp/probe tests/probes/<file> $PCRE2_LIBS -ldl
 
-(`TMPDIR` matters on the project box — /tmp is a quota'd tmpfs. libpcre2 is
-runtime-only here: no header, no -dev link, hence the dlopen shim.)
+(`TMPDIR` matters on the project box — /tmp is a quota'd tmpfs.
+[ORACLE-LINK] (D98, 2026-09-09): `../fuzz/pcre2_abi.h` direct-links libpcre2
+now, so a probe needs `tests/lib/resolve_pcre2.sh`'s real `-I`/`-l` flags
+rather than the old dlopen shim's bare `-ldl` — `-ldl` stays in the recipe
+regardless, since three probes (`probe_digit_sweep.c`,
+`probe_altcls_pcre2norm.c`, `probe_subst.c`) make their OWN separate
+`dlopen()` call for a symbol beyond the header's own set, independent of how
+the header itself binds and unaffected by this change.)
 
 Since D35 (2026-08-12) a probe's full OUTPUT is archived as a diffable,
 source-stamped report via `scripts/measure.sh <probe>` →

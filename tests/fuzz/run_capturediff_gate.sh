@@ -215,27 +215,37 @@ if [ ! -f "$ROOT_DIR/build/pcrec" ]; then
     exit 1
 fi
 
+# [ORACLE-LINK] (D98, 2026-09-09): pcre2_oracle.c direct-links libpcre2 now,
+# so the probe moves to BUILD time (tests/lib/resolve_pcre2.sh) rather than
+# building unconditionally (the old dlopen shim needed no header/lib) and
+# calling its own `--version` to detect absence at runtime.
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    echo "SKIP: run_capturediff_gate (M4.7e): libpcre2 not resolvable" >&2
+    echo "SKIP: (pkg-config libpcre2-8 absent or its .pc file not on" >&2
+    echo "SKIP: PKG_CONFIG_PATH, and a bare '-lpcre2-8' compile+link probe" >&2
+    echo "SKIP: with \$CC also failed)." >&2
+    echo "SKIP: the capture differential did NOT run. Everything else in" >&2
+    echo "SKIP: \`make test\` compares pcrec with pcrec." >&2
+    echo "SKIP: install the PCRE2 8-bit runtime + headers (Debian/Ubuntu" >&2
+    echo "SKIP: packages 'libpcre2-8-0 libpcre2-dev', Homebrew 'pcre2') to" >&2
+    echo "SKIP: enable it." >&2
+    exit 0
+fi
 ORACLE_BIN="$WORKDIR/pcre2_oracle"
-if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
-        -o "$ORACLE_BIN" "$SCRIPT_DIR/pcre2_oracle.c" -ldl; then
+if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror $PCRE2_CFLAGS \
+        -o "$ORACLE_BIN" "$SCRIPT_DIR/pcre2_oracle.c" $PCRE2_LIBS; then
     echo "capturediff-gate: FAILED TO BUILD pcre2_oracle.c" >&2
     exit 1
 fi
-
-if ! "$ORACLE_BIN" --version >/dev/null 2>"$WORKDIR/oracle_probe.err"; then
-    echo "SKIP: run_capturediff_gate (M4.7e): $(cat "$WORKDIR/oracle_probe.err" | head -1)" >&2
-    echo "SKIP: the capture differential did NOT run. Everything else in" >&2
-    echo "SKIP: \`make test\` compares pcrec with pcrec." >&2
-    echo "SKIP: install the PCRE2 8-bit runtime (Debian/Ubuntu package" >&2
-    echo "SKIP: 'libpcre2-8-0') to enable it." >&2
-    exit 0
-fi
+"$ORACLE_BIN" --version >/dev/null   # sanity: the binary really runs
 
 KEEPARG=()
 [ "$KEEP" = "1" ] && KEEPARG=(--keep)
 
 GATEOUT="$WORKDIR/gate.out"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}" CC="$CC" \
+    PCRE2_AVAILABLE="$PCRE2_AVAILABLE" PCRE2_CFLAGS="$PCRE2_CFLAGS" PCRE2_LIBS="$PCRE2_LIBS" \
     python3 "$SCRIPT_DIR/fuzz.py" --seed "$GATE_SEED" --patterns "$GATE_PATTERNS" \
         --subjects "$GATE_SUBJECTS" "${KEEPARG[@]}" 2>&1 | tee "$GATEOUT"
 rc="${PIPESTATUS[0]}"
