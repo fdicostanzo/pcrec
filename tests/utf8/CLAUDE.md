@@ -91,6 +91,7 @@ whole reason the utf8 encoding module needs to exist).
 | axis09_nextpos_findall.rxt | 18 | 0 | 18 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed). **-2 at [K50]**: the two mid-character-`startpos` blocks moved to `run_startbnd_diff.sh` §6, which can express the deny arm — see below |
 | axis10_surrogate_witness.rxt | 9 | 3 | 6 | promoted clean |
 | axis11_startpos_boundary.rxt | 7 | 0 | 7 | **NEW at [K50]**, and the first file here outside the D27 extract's axes — see below |
+| axis12_scripts.rxt | 26 | 7 | 19 | **NEW at [M5.0] stage 5** — the SCRIPT properties, and the first file in this directory whose every expectation is the 10.46 REFERENCE's own answer rather than a local library's; see below |
 
 **[M5.0 stage 3] AXIS 4 IS THE LANE'S SHARPEST ACCEPTANCE RESULT, and it is
 worth saying why rather than only that it passed.** The 148 blocks were written
@@ -104,13 +105,39 @@ membership, no wrong negation, on a corpus the implementation had never seen.
 The six went to `known_fail` as K53, which is an ENGINE issue (an OPTIONAL DFA
 machine's bytes refusing patterns that compile without it) and not a `\p` one.
 
-**529 blocks here.** The authored population was 524; [K50] moved 2 out of
+**555 blocks here** (529 before [M5.0] stage 5's `axis12_scripts.rxt` added
+26). The authored population was 524; [K50] moved 2 out of
 axis09 (to `run_startbnd_diff.sh` §6, which can express the deny arm) and
-added 7 in axis11, so 317 real / 212 `perr` (counted, not derived: `grep -c '^pattern' tests/utf8/*.rxt` and the same for `^perr`). It read 523 between promotion and
+added 7 in axis11, so 317 real / 212 `perr` at that point, and 336 real / 219 `perr` after stage 5 (counted, not derived: `grep -c '^pattern' tests/utf8/*.rxt` and the same for `^perr`). It read 523 between promotion and
 K49's fix on the same day, while axis09's "midstart-row3-boundary" block sat
 in `tests/known_fail/`; that block is restored. Full per-axis reasoning, including every `features`/
 `encoding` line added at promotion and why, is each file's own header
 comment plus `docs/dev/lanes/utfprom_report.md`.
+
+## [M5.0 stage 5] axis12 IS ORACLED FROM THE REFERENCE, not from this box
+
+Every other file here carries expectations produced by whatever libpcre2 the
+authoring box had. `axis12_scripts.rxt`'s do not: the cells were bundled into
+one stdin payload and driven on the 10.46 REFERENCE over the tailnet (reading
+and writing nothing there), and its answers are what the file pins. The two
+local libraries were then asked the SAME 57 cells for comparison — Homebrew
+10.48 agrees on 57, macOS's system 10.42 on 54.
+
+**Those three disagreeing cells are the reason it was done this way.** They
+are U+00B7 and U+0300 under `\p{Greek}`/`\p{scx=Greek}`: Unicode revised the
+Script_Extensions of both between 14.0.0 and the 16.0.0 pin, so a file oracled
+from `/usr/lib` on this Mac would have pinned three cells against the version
+pcrec's own tables are NOT at. `tests/uprops/uprops_compare.py`'s
+`SCX_REVISED` is the same fact on the membership side.
+
+The file's own point is one measured behaviour: **`\p{Greek}` is
+`Script | Script_Extensions` and `\p{sc=Greek}` is `Script` alone.** Its first
+two blocks are the same four subjects under the two spellings, and U+0342 and
+U+0300 are the ones that flip. `\p{Unknown}` is absent — it exceeds the
+emitted-source cap under `utf8` at default axes and lives in
+`tests/known_fail/k53_uprops_oversize.rxt` with the reference's answers —
+while `\P{Unknown}` is a live block, which is what exercises the derived
+complement.
 
 ## The one genuine divergence: K49 — FOUND, PARKED, AND FIXED (2026-09-05)
 

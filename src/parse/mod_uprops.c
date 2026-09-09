@@ -115,6 +115,14 @@
  * pcrec cannot verify is not the same claim as a well-formed shape pcrec
  * has checked and rejected.
  *
+ * STAGE 5 NARROWED THAT SENTENCE RATHER THAN CHANGING THE RULE: a `Script=`/
+ * `sc=`/`scx=`-shaped body IS looked up now, because the table covers those
+ * two axes exhaustively (every `sc` value in the vendored
+ * `PropertyValueAliases.txt`, in every spelling, minus the one all three
+ * libpcre2 versions refuse). Every OTHER prefix — `bc=`, `blk=`, a name with
+ * no axis at all — still promises the module without any lookup, for the same
+ * reason as before.
+ *
  * STAGE 3 SPLIT EACH OF THOSE REFUSALS BY GATE STATE, and the reason is the
  * same one ext.c's UNBUILT epilogue was built for: at an OPEN gate,
  * "requires module 'unicode-props'" asks the user to do what they have
@@ -155,17 +163,92 @@
  * sweeps), while an ASCII fold of `\p{Lu}` would produce a set that is
  * neither. So the substitution IS the caseless rule, and no fold is applied
  * on top of it. */
+/* `ns` is the NAMESPACE the body's prefix selected — one of the three
+ * `PCREC_UPROP_NS_*` bits the generated table defines.  It is a parameter
+ * rather than a search over every row because the same NAME denotes different
+ * sets in different namespaces: MEASURED ([M5.0] stage 5, and the generator's
+ * own header carries the cell), `\p{Greek}` and `\p{scx=Greek}` are
+ * `Script | Script_Extensions` while `\p{sc=Greek}` is `Script` alone, and
+ * U+0342 is in the first and not the second.  A lookup that ignored the
+ * namespace would answer the wrong SET rather than fail to find a row. */
 static const PcrecCpRange *uprops_lookup(const char *name, size_t len,
-                                         bool caseless, int *n)
+                                         unsigned ns, bool caseless, int *n)
 {
     for (size_t i = 0; i < pcrec_uprop_names_n; i++) {
         const char *k = pcrec_uprop_names[i].name;
+        if (!(pcrec_uprop_names[i].ns & ns)) continue;
         if (strlen(k) != len || memcmp(k, name, len) != 0) continue;
         *n = caseless ? pcrec_uprop_names[i].ci_n : pcrec_uprop_names[i].n;
         return pcrec_uprop_iv + (caseless ? pcrec_uprop_names[i].ci_off
                                           : pcrec_uprop_names[i].off);
     }
     return NULL;
+}
+
+/* THE PREFIX AXIS, and the one place a body's `=`/`:` is interpreted.
+ *
+ * `body`/`len` is the whole normalised accumulator and `sep` the offset of
+ * its FIRST `=` or `:`.  Answers the namespace the prefix names, or 0 for a
+ * prefix pcrec's table does not cover — which is NOT the same as an unknown
+ * name and must not be reported as one: `\p{bc=L}` is a real PCRE2 property
+ * axis this module declines (utf8_design.md §3.4), `\p{blk=Greek}` is one
+ * PCRE2 refuses too, and `\p{Foo=Bar}` is nothing at all.  Nothing here can
+ * tell those apart, which is exactly why they share the module's own
+ * UNBUILT-tier answer below.
+ *
+ * BOTH SEPARATORS, and they are interchangeable: MEASURED on 10.42, 10.46 and
+ * 10.48, `\p{sc=Greek}`, `\p{sc:Greek}`, `\p{Script=Greek}` and
+ * `\p{Script:Greek}` all compile to the same thing.  A SECOND separator is
+ * not special-cased — `\p{sc=scx=Greek}` leaves `SCX=GREEK` as the value,
+ * which is in no table, so it refuses (measured: libpcre2 error 147). */
+static unsigned uprops_namespace(const char *body, size_t sep)
+{
+    static const struct { const char *prefix; unsigned ns; } PREFIXES[] = {
+        { "SC",                PCREC_UPROP_NS_SC  },
+        { "SCRIPT",            PCREC_UPROP_NS_SC  },
+        { "SCX",               PCREC_UPROP_NS_SCX },
+        { "SCRIPTEXTENSIONS",  PCREC_UPROP_NS_SCX },
+    };
+    for (size_t i = 0; i < sizeof PREFIXES / sizeof PREFIXES[0]; i++)
+        if (strlen(PREFIXES[i].prefix) == sep
+            && memcmp(PREFIXES[i].prefix, body, sep) == 0)
+            return PREFIXES[i].ns;
+    return 0;
+}
+
+/* THE TABLE, READ-ONLY, FOR THE ONE CHECK THAT MUST ASK THE ORACLE ABOUT
+ * EVERY NAME PCREC SHIPS.
+ *
+ * `tests/registry/pcre2_check.c`'s `check_gated_uprops_space` sweeps this
+ * table and asks the LIVE libpcre2 whether each name is real.  That question
+ * cannot be answered from a hand-written list (171 script values in four
+ * spellings each is not a list a human keeps right) and must not be answered
+ * from the vendored UCD, which is where the table came from — the whole point
+ * of the check is that its arbiter is a source the table did not come from.
+ *
+ * So these three accessors exist for a test, and say so.  They expose nothing
+ * a caller could depend on: `src/parse/internal.h` is internal, `lib/pcrec.h`
+ * gains nothing, and the row ORDER they iterate is the generator's, which is
+ * not a contract. */
+size_t pcrec_uprops_row_count(void)
+{
+    return pcrec_uprop_names_n;
+}
+
+const char *pcrec_uprops_row_name(size_t i, unsigned *ns)
+{
+    if (i >= pcrec_uprop_names_n) return NULL;
+    if (ns) *ns = pcrec_uprop_names[i].ns;
+    return pcrec_uprop_names[i].name;
+}
+
+/* The Unicode version pcrec's tables are PINNED at, beside
+ * `pcre2_abi_unicode_version()`'s report of the ORACLE's.  A check comparing
+ * the two decides whether it may demand EXACT agreement or must fall back to
+ * a drift budget — see `uprops_compare.py`'s header for the policy. */
+const char *pcrec_uprops_unicode_version(void)
+{
+    return PCREC_UPROPS_UNICODE_VERSION;
 }
 
 static int uprops_fold(int c)
@@ -278,8 +361,8 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
     if ((c0 >= 'A' && c0 <= 'Z') || (c0 >= 'a' && c0 <= 'z')) {
         char folded = (char)uprops_fold(c0);
         int nv;
-        const PcrecCpRange *iv = uprops_lookup(&folded, 1, cx->mods->caseless,
-                                               &nv);
+        const PcrecCpRange *iv = uprops_lookup(&folded, 1, PCREC_UPROP_NS_BARE,
+                                               cx->mods->caseless, &nv);
         i++;
         if (iv && want == WANT_RESULT)
             return uprops_produce(cx, want, in_class, at, i, iv, nv,
@@ -316,7 +399,9 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
     char name[PCREC_UPROP_NAME_MAX];   /* fixed buffer, never an arena (D29:
                                           arena_alloc aborts under a memory
                                           limit, K7) */
-    bool has_eq = false;
+    int sep_at = -1;                   /* the FIRST `=` or `:`, in significant
+                                          characters — [M5.0] stage 5's prefix
+                                          axis; -1 is "no prefix" */
 
     for (;;) {
         if (i >= n)
@@ -334,8 +419,8 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
         if (c == ' ' || c == '\t' || c == '-' || c == '_')
             continue;   /* insignificant — measured exhaustively for
                            \p{L}-vs-variants; does not enter the count */
-        if (c == '=')
-            has_eq = true;
+        if ((c == '=' || c == ':') && sep_at < 0)
+            sep_at = sig_count;
         if (sig_count == PCREC_UPROP_NAME_MAX)
             /* the 49th significant character: pcrec's own blame convention
              * is "right after the byte that overflowed the budget", which
@@ -372,12 +457,14 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      *     one-letter codes. Manager ruling 3, phase-2 authorization, intact.
      *
      * (3) OTHERWISE THE MISS IS UNCLASSIFIABLE BY PCREC and must not be
-     *     dressed up as either. `\p{Greek}` and `\p{Alphabetic}` are REAL
-     *     PCRE2 properties this stage does not ship (§3.4 stages scripts to
-     *     [M5.0] stage 5 and declines booleans outright); `\p{Script=Greek}`
-     *     is a whole axis the table does not cover; `\p{Foo}` is genuinely
-     *     unknown — and nothing here can tell them apart, so all three get
-     *     the same answer, which names the MODULE and never the name.
+     *     dressed up as either. `\p{Alphabetic}` is a REAL PCRE2 property
+     *     this module does not ship (§3.4 declines the booleans outright);
+     *     `\p{bc=L}` is a whole axis the table does not cover; `\p{Foo}` is
+     *     genuinely unknown — and nothing here can tell them apart, so all
+     *     three get the same answer, which names the MODULE and never the
+     *     name. ([M5.0] stage 5 moved `\p{Greek}` and `\p{Script=Greek}` out
+     *     of this paragraph and into (1); `\p{sc=Nosuch}` arrives here, since
+     *     a known axis with an unknown value is a miss like any other.)
      *
      * WHAT STAGE 3 CHANGED IN THE WORDING, AND WHY IT HAD TO. Before the
      * producer, every one of these refusals ended in "requires module
@@ -400,16 +487,29 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      * every pre-stage-3 `tests/reject/` pin green rather than re-baselined —
      * and the open-gate texts get their own `reject_gated` pins beside them. */
     int nv = 0;
+    /* THE PREFIX SPLIT ([M5.0] stage 5). Before it, any `=` meant "an axis
+     * pcrec's table does not cover" and the lookup was skipped outright.
+     * Now the two axes it DOES cover are read here, and everything else
+     * reaches the same refusal it always did — including `\p{bc=L}`, whose
+     * namespace is 0. */
+    unsigned ns = PCREC_UPROP_NS_BARE;
+    const char *key = name;
+    size_t keylen = (size_t)sig_count;
+    if (sep_at >= 0) {
+        ns = uprops_namespace(name, (size_t)sep_at);
+        key = name + sep_at + 1;
+        keylen = (size_t)(sig_count - sep_at - 1);
+    }
     const PcrecCpRange *iv =
-        has_eq ? NULL
-               : uprops_lookup(name, (size_t)sig_count, cx->mods->caseless, &nv);
+        ns == 0 ? NULL
+                : uprops_lookup(key, keylen, ns, cx->mods->caseless, &nv);
     if (iv && want == WANT_RESULT)
         return uprops_produce(cx, want, in_class, at, i, iv, nv,
                               (sel == 'P') ^ caret);
     if (iv)
         REFUSE(i, "\\%c requires module '%s'", sel, rw->module);
 
-    bool verifiable_axis = !has_eq && sig_count <= 1;
+    bool verifiable_axis = sep_at < 0 && sig_count <= 1;
     if (verifiable_axis) {
         if (want == WANT_RESULT)
             REFUSE(i, "\\%c{...}: not a one-letter Unicode property code "

@@ -56,15 +56,42 @@ pass=0; fail=0
 ok()   { pass=$((pass+1)); echo "  ok: $*"; }
 bad()  { fail=$((fail+1)); echo "FAIL: $*"; }
 
-# THE HAND-WRITTEN NAME LIST — the PROMISE side (design §3.4 + the UCD's own
-# general-category vocabulary), deliberately not read from the generated
+# THE HAND-WRITTEN CATEGORY LIST — the PROMISE side (design §3.4 + the UCD's
+# own general-category vocabulary), deliberately not read from the generated
 # table.  A name here that pcrec cannot compile is a red cell; a name pcrec
-# ships that is NOT here is caught by the count assertion in §2.
+# ships that is NOT promised is caught by `uprops_names.py` in §2.
 NAMES_MAJOR="C L M N P S Z"
 NAMES_SUB="Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn"
 NAMES_DERIVED="L& Lc Any Xan Xps Xsp Xuc Xwd"
-NAMES="${UPROPS_NAMES:-$NAMES_MAJOR $NAMES_SUB $NAMES_DERIVED}"
-NAMES_N=$(printf '%s\n' $NAMES | wc -l | tr -d ' ')
+CATEGORIES="$NAMES_MAJOR $NAMES_SUB $NAMES_DERIVED"
+
+# THE SCRIPT NAMES ([M5.0] stage 5) come from the VENDORED SOURCE rather than
+# from a fourth hand-written list, and the honest reason is that 171 values in
+# four spellings each is not a list a human keeps right.  What that costs is
+# stated where it is enforced (`uprops_names.py`'s own header): the source and
+# the generated table share an origin, so this half cannot see a name PCRE2
+# has and the UCD does not — that is the LIVE ORACLE's question, and PC-3's
+# `check_gated_uprops_space` is where it is asked.
+script_values() {
+    awk -F';' '/^sc ;/ { gsub(/ /, "", $3);
+                         if ($3 != "Katakana_Or_Hiragana") print $3 }' \
+        "$ROOT_DIR/third_party/ucd-16.0.0/PropertyValueAliases.txt"
+}
+
+# THE DIFFERENTIAL'S POPULATION, per encoding, and the split is measured
+# rather than tidy.  Under `byte` the universe is Latin-1, and only SEVENTEEN
+# scripts have a code point at or below U+00FF (fifteen of them only through
+# Script_Extensions, via U+00B7 MIDDLE DOT's fifteen-script list) — every
+# other script's byte set is emptied by the encoding clamp, so 300-odd
+# empty-vs-empty comparisons would buy the `make test` path minutes and one
+# fact.  The byte arm therefore sweeps the seventeen plus a named EMPTY
+# CONTROL, and `uprops_names.py` asserts the seventeen are exactly the scripts
+# with a low code point, in both directions, so this list cannot silently stop
+# being the right one.  The utf8 arm — opt-in — sweeps every value.
+BYTE_SCRIPTS="Avestan Carian Common Coptic Duployan Elbasan Georgian \
+Glagolitic Gothic Greek Gunjala_Gondi Han Latin Lydian Mahajani Old_Permic \
+Shavian"
+BYTE_SCRIPT_CONTROLS="Cyrillic Hiragana Katakana Kawi Thaana Unknown"
 
 echo "== §1 the generated table is not stale =="
 if python3 "$ROOT_DIR/third_party/ucd-16.0.0/generate.py" --check; then
@@ -74,21 +101,35 @@ else
 fi
 
 echo "== §2 the shipped name set =="
-inc_rows=$(grep -c '^    { "' "$ROOT_DIR/src/parse/uprops_tables.inc")
 if [ -z "${UPROPS_NAMES:-}" ]; then
-    if [ "$inc_rows" = "$NAMES_N" ]; then
-        ok "the generated table holds exactly the $NAMES_N names this script asks for"
+    if python3 "$SCRIPT_DIR/uprops_names.py" "$ROOT_DIR/third_party/ucd-16.0.0" \
+            "$ROOT_DIR/src/parse/uprops_tables.inc" $CATEGORIES; then
+        pass=$((pass+2))   # the script prints its own two ok: lines
     else
-        bad "the generated table holds $inc_rows rows and this script's hand-written list has $NAMES_N — one of them changed without the other"
+        bad "the shipped name set and the promise disagree (above)"
     fi
 fi
-for n in $NAMES; do
-    if "$TIMEOUT_BIN" 30 "$PCREC" --features unicode-props -p rx \
-            -o "$WORKDIR/n.c" -- "\\p{$n}" >/dev/null 2>&1; then :; else
-        bad "\\p{$n} does not compile with module unicode-props enabled"
-    fi
+compiles() {    # compiles <spelling> — with module unicode-props enabled
+    "$TIMEOUT_BIN" 30 "$PCREC" --features unicode-props -p rx \
+        -o "$WORKDIR/n.c" -- "\\p{$1}" >/dev/null 2>&1
+}
+cat_n=0
+for n in $CATEGORIES; do
+    cat_n=$((cat_n+1))
+    compiles "$n" || bad "\\p{$n} does not compile with module unicode-props enabled"
 done
-[ "$fail" = "0" ] && ok "all $NAMES_N promised property names compile"
+[ "$fail" = "0" ] && ok "all $cat_n promised general-category names compile"
+# EVERY SCRIPT VALUE IN EVERY NAMESPACE, because the three spellings are three
+# different lookups over three different masks and a value can be reachable in
+# one and missing from another.
+script_n=0
+for n in $(script_values); do
+    script_n=$((script_n+1))
+    for spell in "$n" "sc=$n" "scx=$n"; do
+        compiles "$spell" || bad "\\p{$spell} does not compile with module unicode-props enabled"
+    done
+done
+[ "$fail" = "0" ] && ok "all $script_n script values compile in all three namespaces (bare, sc=, scx=)"
 
 echo "== §3 the membership differential =="
 if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror -I "$ROOT_DIR/tests/fuzz" \
@@ -115,6 +156,19 @@ else
         # nobody can compile is a size finding, not a reason to stop checking
         # what it matches.
         extra=""; [ "$enc" = "utf8" ] && extra="-fno-premul-table"
+        # THE POPULATION, per encoding — see BYTE_SCRIPTS above for why the
+        # two differ.  Both namespaces of each script are swept, because the
+        # bare/`scx=` set and the `sc=` set are DIFFERENT sets on 151 of the
+        # 171 values and a differential over one of them says nothing about
+        # the other.
+        if [ "$enc" = "byte" ]; then
+            scripts="$BYTE_SCRIPTS $BYTE_SCRIPT_CONTROLS"
+        else
+            scripts="$(script_values)"
+        fi
+        NAMES="$CATEGORIES"
+        for s in $scripts; do NAMES="$NAMES $s sc=$s"; done
+        NAMES="${UPROPS_NAMES:-$NAMES}"
         : > "$WORKDIR/pcrec-$enc.txt"
         for n in $NAMES; do
             if ! "$TIMEOUT_BIN" 60 "$PCREC" --features unicode-props -e "$enc" $extra \
@@ -191,6 +245,29 @@ for enc in ${ENC:-byte utf8}; do
     same   "$enc" '[^\p{L}]' '\P{L}'   "class negation of a property agrees with \\P"
     differ "$enc" '\p{L}'    '\P{L}'   "\\p and \\P are not the same set"
 done
+# [M5.0] stage 5 — THE SPELLING IDENTITIES AND THE ONE THAT MUST DISAGREE.
+#
+# The `differ` cell is the stage's whole finding as a check, and it is the
+# only one of these that can be red for an interesting reason: `\p{Greek}` is
+# `Script | Script_Extensions` and `\p{sc=Greek}` is `Script` alone, so an
+# implementation that read `Scripts.txt` and wired every namespace to it
+# passes all four `same` cells and fails this one.  U+0342 COMBINING GREEK
+# PERISPOMENI is the code point it turns on, and it is in the corpus as a
+# match cell too.
+#
+# It holds under `byte` as well, for a reason worth stating rather than
+# relying on: U+00B7 MIDDLE DOT's Script is Common and its Script_Extensions
+# name fifteen scripts including Greek, so the two sets differ inside Latin-1
+# and the byte arm is not quietly comparing two empty sets.
+for enc in ${ENC:-byte utf8}; do
+    same   "$enc" '\p{scx=Greek}'    '\p{Greek}'      "the bare spelling IS scx="
+    same   "$enc" '\p{Script=Greek}' '\p{sc=Greek}'   "Script= is sc="
+    same   "$enc" '\p{scx:Greek}'    '\p{scx=Greek}'  "the : separator is the = separator"
+    same   "$enc" '\p{Grek}'         '\p{Greek}'      "the four-letter alias is the long name"
+    same   "$enc" '\p{sc=Grek}'      '\p{sc=Greek}'   "the alias carries into the sc= namespace"
+    same   "$enc" '\p{^Greek}'       '\P{Greek}'      "caret negation works on a script"
+    differ "$enc" '\p{sc=Greek}'     '\p{Greek}'      "sc= is NOT the bare spelling"
+done
 # THE CASELESS RULE, measured (mod_uprops.c's `uprops_lookup`): under `-i`,
 # `Lu`/`Ll`/`Lt` ARE `L&` and every other property is unchanged.  Both
 # directions are asserted, because a build that ignored caselessness entirely
@@ -208,6 +285,13 @@ for enc in ${ENC:-byte utf8}; do
     ci_same "$enc" '\p{Lt}' '\p{L&}' "caseless \\p{Lt} is \\p{L&}"
     ci_same "$enc" '\p{L}'  '\p{L}'  "caseless \\p{L} is unchanged"
     ci_same "$enc" '\p{Nd}' '\p{Nd}' "caseless \\p{Nd} is unchanged"
+    # SCRIPTS ARE CASELESS-INVARIANT, in every namespace.  MEASURED
+    # exhaustively at the stage (171 values x 3 spellings over every code
+    # point CaseFolding.txt names, zero differences), which is what makes the
+    # generator right to give a script row the same span twice.
+    ci_same "$enc" '\p{Greek}'     '\p{Greek}'     "caseless \\p{Greek} is unchanged"
+    ci_same "$enc" '\p{sc=Greek}'  '\p{sc=Greek}'  "caseless \\p{sc=Greek} is unchanged"
+    ci_same "$enc" '\p{scx=Latin}' '\p{scx=Latin}' "caseless \\p{scx=Latin} is unchanged"
     differ  "$enc" '\p{Lu}' '\p{L&}' "\\p{Lu} and \\p{L&} differ WITHOUT -i"
 done
 

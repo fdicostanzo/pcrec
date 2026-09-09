@@ -11,6 +11,7 @@
 | **Licence** | Unicode License v3 (see LICENSE below) |
 | **Modified?** | **No.** The files are byte-for-byte as retrieved. |
 | **Stage-4 addition** | `CaseFolding.txt` retrieved 2026-09-08 by lane `utf8s4`, [M5.0] stage 4, from the same directory at the same version. |
+| **Stage-5 addition** | `Scripts.txt`, `ScriptExtensions.txt` and `PropertyValueAliases.txt` retrieved 2026-09-09 by lane `utf8s5`, [M5.0] stage 5, from the same directory at the same version. |
 
 ### Files, with the checksum each was retrieved at
 
@@ -18,6 +19,9 @@
 |---|---|---|
 | `UnicodeData.txt` | `ff58e5823bd095166564a006e47d111130813dcf8bf234ef79fa51a870edb48f` | 2,175,362 |
 | `CaseFolding.txt` | `6f1f9c588eb4a5c718d9e8f93b782685e5c7fec872cf05e8e6878053599e09bb` | 86,092 |
+| `Scripts.txt` | `9e88f0a677df47311106340be8ede2ecdacd9c1c931831218d2be6d5508e0039` | 189,588 |
+| `ScriptExtensions.txt` | `049117ce26b9769fe2749b06eef51a50a89faef4a97764dd2d81daa715980700` | 20,576 |
+| `PropertyValueAliases.txt` | `440fd3e5460b9bfe31da67b6f923992e1989d31fe2ed91e091c4b8f8e2620bf9` | 80,773 |
 
 Verify with `shasum -a 256 third_party/ucd-16.0.0/*.txt`.
 
@@ -28,7 +32,7 @@ audit both actually need — from the source outward.
 
 | derived artifact | produced by | consumed by |
 |---|---|---|
-| `src/parse/uprops_tables.inc` | `third_party/ucd-16.0.0/generate.py` | `src/parse/mod_uprops.c` — module `unicode-props`' `\p{...}` / `\P{...}` name lookup |
+| `src/parse/uprops_tables.inc` | `third_party/ucd-16.0.0/generate.py` | `src/parse/mod_uprops.c` — module `unicode-props`' `\p{...}` / `\P{...}` name lookup. From `UnicodeData.txt` (the general categories) and, since [M5.0] stage 5, from `Scripts.txt` + `ScriptExtensions.txt` + `PropertyValueAliases.txt` (the 171 script values, their spellings, and the two sets each answers to) |
 | `src/core/fold_tables.inc` | the same generator, from `CaseFolding.txt` | `src/core/fold.c` — the `pcrec_fold_ucd_simple` relation the `utf8` encoding's caseless class constructor closes over ([M5.0] stage 4, DD-1) |
 | `src/gen/enc/utf8_fold_pairs.inc` | the same generator, from `CaseFolding.txt` | `src/gen/enc/enc_utf8.c` — **the one derived artifact that IS emitted**, as C source text inside the caseless-backreference residual (see below) |
 
@@ -76,11 +80,22 @@ version, and add their rows to the table above:
 - ~~**[M5.0] stage 4** (the DD-1 fold closure) needs `CaseFolding.txt`.~~
   **DONE 2026-09-08** — `CaseFolding.txt` is vendored above, at the same
   version, and its two derived artifacts are in the table.
-- **[M5.0] stage 5** (scripts and `Script_Extensions`) needs `Scripts.txt`
-  and `ScriptExtensions.txt`.
+- ~~**[M5.0] stage 5** (scripts and `Script_Extensions`) needs `Scripts.txt`
+  and `ScriptExtensions.txt`.~~ **DONE 2026-09-09**, and it needed a THIRD
+  file the design did not list: `PropertyValueAliases.txt`. Two reasons, both
+  measured. Every script value answers to a four-letter code as well as a long
+  name (`\p{Grek}` compiles on all three libpcre2 versions) and `Scripts.txt`
+  carries only the long names; and `ScriptExtensions.txt` names its scripts BY
+  CODE, so the code-to-name map is what makes it readable at all. It also
+  supplies the one value `Scripts.txt` cannot — `Unknown`/`Zzzz`, which is the
+  complement of everything that file lists — and the one this directory
+  DECLINES, `Katakana_Or_Hiragana`/`Hrkt`, a UCD `sc` value no libpcre2 this
+  project can reach accepts.
 
-`utf8_design.md` §3.3's table lists all six files as the vendored set; that is
-the milestone's total, not stage 3's.
+`utf8_design.md` §3.3's table lists five files as the vendored set (and does
+not list `PropertyValueAliases.txt`); `PropList.txt` and
+`DerivedCoreProperties.txt`, which it does list, are for the BOOLEAN
+properties — declined by §3.4 — and are deliberately still absent.
 
 ## Why the version is 16.0.0, and why that is not what the local oracle says
 

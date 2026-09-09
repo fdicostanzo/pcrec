@@ -29,8 +29,20 @@ the row.
 - `ucd-16.0.0/` — the Unicode Character Database, pinned at 16.0.0. Holds
   `PROVENANCE.md` (source URL, version, checksums, licence, and **what derives
   from it**), `LICENSE.txt`, `generate.py` and the vendored `.txt` files
-  unmodified. Derives `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc`
-  and `src/gen/enc/utf8_fold_pairs.inc`.
+  unmodified — six of them since [M5.0] stage 5 added `Scripts.txt`,
+  `ScriptExtensions.txt` and `PropertyValueAliases.txt`. Derives
+  `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc` and
+  `src/gen/enc/utf8_fold_pairs.inc`.
+
+  **A SOURCE FILE CAN ARRIVE FOR A REASON THE DESIGN DID NOT NAME**, and stage
+  5 is the worked example: `utf8_design.md` §3.3 lists the files it expects
+  each stage to need and does not list `PropertyValueAliases.txt`, which stage
+  5 turned out to need twice over (every script answers to a four-letter code
+  the long-name file does not carry, and `ScriptExtensions.txt` names its
+  scripts by that code). The vendoring shape absorbed it with no re-plumbing —
+  one more file in the same directory, one more row in `PROVENANCE.md`, no
+  change to `make gen-tables` — which is exactly what §3.3.2's
+  "name the derivation generically" ruling was for.
 
 ## Adding a source
 

@@ -2988,12 +2988,16 @@ static void check_gated_uprops_space(const char *set)
     printf("  gated[%s]: focused enabled set installed (feature mask 0x%x)\n",
            set, pcrec_enabled_mask());
 
-    /* REAL PCRE2 property families stage 3 does not ship, read from `man
+    /* REAL PCRE2 property families this module does not ship, read from `man
      * pcre2pattern` rather than from pcrec's own table. Each must be REFUSED,
-     * and refused by the module rather than by the name. */
+     * and refused by the module rather than by the name.
+     *
+     * [M5.0] STAGE 5 REMOVED THE FIVE SCRIPT NAMES AND THE THREE SCRIPT AXES
+     * FROM THIS LIST — they ship now, and the sweep below is what replaced
+     * them: every name pcrec's own table holds, asked of the live oracle.
+     * What is left is the two families `utf8_design.md` §3.4 declines
+     * outright, which is still more than the vacuity floor's two. */
     static const char *const UNSHIPPED[] = {
-        "Greek", "Latin", "Cyrillic", "Han", "Arabic",       /* scripts (stage 5) */
-        "Script=Greek", "sc=Latin", "scx=Greek",             /* the script axes   */
         "Alphabetic", "Uppercase", "White_Space", "Math",    /* booleans (declined) */
         "Bidi_Class=L", "bc=R",                              /* Bidi_Class (declined) */
     };
@@ -3051,10 +3055,117 @@ static void check_gated_uprops_space(const char *set)
         }
     }
 
+    /* (3) [M5.0 stage 5] EVERY NAME PCREC'S OWN TABLE SHIPS, ASKED OF THE
+     *     LIVE ORACLE.  The stage-3 shape — a hand-written list of names to
+     *     probe — does not scale past 45: the table now holds 171 script
+     *     values in four spellings across three namespaces, and a hand list
+     *     of those would be a second copy of the generator's output that
+     *     could only ever agree with it or be stale.  So the population is
+     *     read from the table (`pcrec_uprops_row_name`) and the ARBITER is
+     *     libpcre2, which did not produce it.  That is the same independence
+     *     argument `uprops_lookup`'s own comment makes, one level up.
+     *
+     *     THE NAME AXIS DRIFTS BETWEEN UNICODE VERSIONS AND IT DID NOT
+     *     BEFORE.  Every stage-3 name is a general category that has existed
+     *     since Unicode 1.0; Unicode ADDS SCRIPTS, so an oracle older than
+     *     the pin genuinely refuses `\p{Kawi}` while `Kawi` is real at the
+     *     pin and on the reference.  Two resolutions, and neither is a skip:
+     *     when the oracle IS at the pin the demand is exact, and otherwise a
+     *     name the oracle refuses must be a SCRIPT row (a category may never
+     *     drift) and is counted and named in the output.  The sharper
+     *     per-code-point form of the same question — that every member of a
+     *     drifting name is unassigned on the oracle's side — needs a UTF
+     *     sweep this byte-oriented check has no machinery for, and lives in
+     *     `tests/uprops/uprops_compare.py`. */
+    char oracle_uni[64] = "", pin_uni[64] = "";
+    pcre2_abi_unicode_version(&pcre2, oracle_uni, sizeof oracle_uni);
+    snprintf(pin_uni, sizeof pin_uni, "%s", pcrec_uprops_unicode_version());
+    bool same_unicode = strcmp(oracle_uni, pin_uni) == 0;
+    long shipped_names = 0, name_drift = 0, name_under = 0;
+    for (size_t i = 0; i < pcrec_uprops_row_count(); i++) {
+        unsigned ns = 0;
+        const char *nm = pcrec_uprops_row_name(i, &ns);
+        static const struct { unsigned bit; const char *prefix; } NSPFX[] = {
+            { 1u, "" }, { 2u, "sc=" }, { 4u, "scx=" },
+        };
+        for (size_t k = 0; k < sizeof NSPFX / sizeof NSPFX[0]; k++) {
+            if (!(ns & NSPFX[k].bit)) continue;
+            char pat[128];
+            snprintf(pat, sizeof pat, "\\p{%s%s}", NSPFX[k].prefix, nm);
+            int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
+            char err2[256];
+            int pc = pcrec_try(pat, err2, sizeof err2);
+            shipped_names++;
+            if (pc != 0) {
+                if (name_under++ < 6)
+                    bad("GATED [uprops shipped]: '%s' is in pcrec's own "
+                        "property table and pcrec REFUSES it: %s", pat, err2);
+                continue;
+            }
+            if (p2 == 0)
+                continue;
+            if (same_unicode) {
+                if (name_drift++ < 6)
+                    bad("GATED [uprops shipped]: '%s' — pcrec ships this name "
+                        "and libpcre2 rejects it (error %d) at the SAME "
+                        "Unicode version (%s), so it is not version drift: "
+                        "pcrec is claiming a property PCRE2 does not have",
+                        pat, p2, pin_uni);
+                continue;
+            }
+            if (!(ns & (2u | 4u))) {
+                if (name_drift++ < 6)
+                    bad("GATED [uprops shipped]: '%s' — pcrec ships this name "
+                        "and libpcre2 rejects it (error %d). It is a general "
+                        "CATEGORY, not a script, and categories do not appear "
+                        "between Unicode versions, so the version gap "
+                        "(%s vs %s) does not explain it",
+                        pat, p2, pin_uni, oracle_uni);
+                continue;
+            }
+            if (name_drift++ < 6)
+                printf("  gated[%s]: NOTE '%s' is a script name this oracle "
+                       "(Unicode %s) does not have and the pin (%s) does — "
+                       "counted as name drift; tests/uprops is where its "
+                       "members are held to being unassigned here\n",
+                       set, pat, oracle_uni, pin_uni);
+        }
+    }
+    if (name_under == 0 && name_drift == 0)
+    {
+        char line[320];
+        snprintf(line, sizeof line,
+                 "gated[unicode-props]: every one of the %ld property names "
+                 "pcrec ships compiles in pcrec AND in libpcre2 (oracle "
+                 "Unicode %s, pin %s)", shipped_names, oracle_uni, pin_uni);
+        ok(line);
+    } else if (name_under == 0 && !same_unicode) {
+        char line[320];
+        snprintf(line, sizeof line,
+                 "gated[unicode-props]: %ld of the %ld property names pcrec "
+                 "ships compile in libpcre2 too; the other %ld are SCRIPT "
+                 "names this oracle (Unicode %s) does not have, and no "
+                 "category drifted", shipped_names - name_drift,
+                 shipped_names, name_drift, oracle_uni);
+        ok(line);
+    }
+    /* THE VACUITY FLOOR FOR THE SWEEP ITSELF. A table accessor returning 0
+     * rows, or a build where every name refuses, would satisfy every clause
+     * above by having nothing to check. The floor is the SHIPPED DESIGN's own
+     * shape — 45 categories plus 171 script values in at least two namespaces
+     * — not a pin that has to move when the table grows. */
+    if (shipped_names < 400)
+        bad("gated[unicode-props] name sweep is NOT LIVE: pcrec's table "
+            "offered only %ld names across all namespaces, and the shipped "
+            "design has 45 categories plus 171 script values in three "
+            "namespaces — the accessor is empty or the table is gone",
+            shipped_names);
+
     printf("  gated[%s]: %ld probes, libpcre2 accepted %ld / rejected %ld, "
-           "pcrec accepted %ld; %ld real-but-unshipped names refused\n",
+           "pcrec accepted %ld; %ld real-but-unshipped names refused; "
+           "%ld shipped names asked of the oracle\n",
            set, t.probes, t.p2_accept, t.p2_reject, t.pc_accept,
-           unshipped_refused);
+           unshipped_refused, shipped_names);
 
     if (t.t1 == 0)
         ok("gated[unicode-props] T1: pcrec accepted no property name libpcre2 rejects");

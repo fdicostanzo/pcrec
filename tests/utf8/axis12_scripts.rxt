@@ -1,0 +1,297 @@
+# [M5.0] STAGE 5 -- SCRIPT properties as `\p{...}` / `\P{...}` values.
+#
+# EVERY EXPECTATION BELOW IS THE 10.46 REFERENCE'S OWN ANSWER, not this box's.
+# The cells were bundled into one stdin payload and driven on the reference
+# (libpcre2 10.46 2025-08-27 / Unicode 16.0.0, which IS the pinned Unicode version), reading and
+# writing nothing there; the two locally reachable versions were then asked the
+# same 59 cells for comparison -- Homebrew 10.48 2026-08-31 / Unicode 17.0.0 agrees on 57 of them
+# and macOS's system 10.42 2022-12-11 / Unicode 14.0.0 on 54.
+#
+# THAT SPREAD IS THE POINT OF PINNING TO THE REFERENCE RATHER THAN TO WHAT IS
+# INSTALLED. The cells the older library answers differently are Script
+# _Extensions revisions Unicode made between its version and the pin (U+00B7
+# and U+0300 are both in that class) -- real drift, on code points assigned in
+# every version, which no `\p{Cn}` budget can excuse. See
+# tests/uprops/uprops_compare.py's RECLASSIFIED/SCX_REVISED.
+#
+# THE FILE'S ONE FACT: `\p{Greek}` is `Script | Script_Extensions` and
+# `\p{sc=Greek}` is `Script` alone. The first two blocks are the SAME four
+# subjects under the two spellings; U+0342 and U+0300 are the ones that flip.
+
+# THE STAGE'S FINDING, as four subjects: the bare spelling is `Script | Script_Extensions`
+#   m "\xcd\x82" 0 2             U+0342 COMBINING GREEK PERISPOMENI - sc=Inherited, scx={Grek}
+#   m "\xce\xb1" 0 2             U+03B1 GREEK SMALL ALPHA - sc=Greek
+#   m "\xcc\x80" 0 2             U+0300 COMBINING GRAVE - sc=Inherited, scx names Grek at the pin
+#   n "a"                        U+0061 - sc=Latin
+# pcre2-only
+pattern \p{Greek}
+encoding utf8
+features unicode-props
+m "\xcd\x82" 0 2
+m "\xce\xb1" 0 2
+m "\xcc\x80" 0 2
+n "a"
+
+# `sc=` is the Script property ALONE - the SAME four subjects, and three of them flip
+#   n "\xcd\x82"                 the discriminator
+#   m "\xce\xb1" 0 2
+#   n "\xcc\x80"
+#   n "a"
+# pcre2-only
+pattern \p{sc=Greek}
+encoding utf8
+features unicode-props
+n "\xcd\x82"
+m "\xce\xb1" 0 2
+n "\xcc\x80"
+n "a"
+
+# `scx=` is the bare spelling
+#   m "\xcd\x82" 0 2
+#   m "\xce\xb1" 0 2
+#   m "\xcc\x80" 0 2
+#   n "a"
+# pcre2-only
+pattern \p{scx=Greek}
+encoding utf8
+features unicode-props
+m "\xcd\x82" 0 2
+m "\xce\xb1" 0 2
+m "\xcc\x80" 0 2
+n "a"
+
+# the `:` separator is the `=` separator
+#   n "\xcd\x82"
+#   m "\xce\xb1" 0 2
+# pcre2-only
+pattern \p{Script:Greek}
+encoding utf8
+features unicode-props
+n "\xcd\x82"
+m "\xce\xb1" 0 2
+
+# the four-letter alias, bare
+#   m "\xcd\x82" 0 2
+#   m "\xce\xb1" 0 2
+#   n "a"
+# pcre2-only
+pattern \p{Grek}
+encoding utf8
+features unicode-props
+m "\xcd\x82" 0 2
+m "\xce\xb1" 0 2
+n "a"
+
+# the four-letter alias in the `sc=` namespace
+#   n "\xcd\x82"
+#   m "\xce\xb1" 0 2
+# pcre2-only
+pattern \p{sc=Grek}
+encoding utf8
+features unicode-props
+n "\xcd\x82"
+m "\xce\xb1" 0 2
+
+# PCRE2's loose matching reaches the PREFIX as well as the value
+#   m "\xcd\x82" 0 2
+#   m "\xce\xb1" 0 2
+#   n "a"
+# pcre2-only
+pattern \p{S c r i p t _ Extensions = G-r-e-e-k}
+encoding utf8
+features unicode-props
+m "\xcd\x82" 0 2
+m "\xce\xb1" 0 2
+n "a"
+
+# a deprecated alias: Qaai is Inherited
+#   m "\xcc\x80" 0 2             U+0300, sc=Inherited
+#   n "\xce\xb1"
+# pcre2-only
+pattern \p{Qaai}
+encoding utf8
+features unicode-props
+m "\xcc\x80" 0 2
+n "\xce\xb1"
+
+# a second script reached only through Script_Extensions: U+0660's Script is Arabic and its scx names Thaana
+#   m "\xd9\xa0" 0 2             U+0660 ARABIC-INDIC DIGIT ZERO
+#   m "\xde\x80" 0 2             U+0780 THAANA LETTER HAA
+# pcre2-only
+pattern \p{Thaana}
+encoding utf8
+features unicode-props
+m "\xd9\xa0" 0 2
+m "\xde\x80" 0 2
+
+# and its `sc=` form, where U+0660 is not a member
+#   n "\xd9\xa0"
+#   m "\xde\x80" 0 2
+# pcre2-only
+pattern \p{sc=Thaana}
+encoding utf8
+features unicode-props
+n "\xd9\xa0"
+m "\xde\x80" 0 2
+
+# Han
+#   m "\xe4\xb8\xad" 0 3         U+4E2D
+#   n "\xe3\x81\x82"             U+3042 HIRAGANA A
+# pcre2-only
+pattern \p{Han}
+encoding utf8
+features unicode-props
+m "\xe4\xb8\xad" 0 3
+n "\xe3\x81\x82"
+
+# negation by selector
+#   n "\xce\xb1"
+#   m "a" 0 1
+#   n "\xcd\x82"
+# pcre2-only
+pattern \P{Greek}
+encoding utf8
+features unicode-props
+n "\xce\xb1"
+m "a" 0 1
+n "\xcd\x82"
+
+# negation by caret, inside a prefixed namespace
+#   n "\xce\xb1"
+#   m "\xcd\x82" 0 2
+# pcre2-only
+pattern \p{^sc=Greek}
+encoding utf8
+features unicode-props
+n "\xce\xb1"
+m "\xcd\x82" 0 2
+
+# a script inside a class, beside a literal
+#   m "\xce\xb1" 0 2
+#   m "x" 0 1
+#   n "a"
+# pcre2-only
+pattern [\p{Greek}x]
+encoding utf8
+features unicode-props
+m "\xce\xb1" 0 2
+m "x" 0 1
+n "a"
+
+# a NEGATED class over a script - the position stage 3's cursor bug lived at
+#   n "\xce\xb1"
+#   m "{" 0 1
+#   m "}" 0 1
+#   m "a" 0 1
+# pcre2-only
+pattern [^\p{Greek}]
+encoding utf8
+features unicode-props
+n "\xce\xb1"
+m "{" 0 1
+m "}" 0 1
+m "a" 0 1
+
+# caseless leaves a script set alone
+#   m "\xce\xb1" 0 2
+#   m "\xce\x91" 0 2             U+0391 GREEK CAPITAL ALPHA
+#   n "k"
+#   n "\xe2\x84\xaa"             U+212A KELVIN SIGN - sc=Latin
+# pcre2-only
+pattern \p{Greek}
+encoding utf8
+features unicode-props
+flags i
+m "\xce\xb1" 0 2
+m "\xce\x91" 0 2
+n "k"
+n "\xe2\x84\xaa"
+
+# under `byte` the universe is Latin-1, and U+00B7's fifteen-script scx list is the whole reason a script is non-empty there
+#   m "\xb7" 0 1                 0xB7 MIDDLE DOT
+#   n "a"
+# pcre2-only
+pattern \p{Greek}
+encoding byte
+features unicode-props
+m "\xb7" 0 1
+n "a"
+
+# and the `sc=` form is EMPTY under byte, so the same byte does not match
+#   n "\xb7"
+#   n "a"
+# pcre2-only
+pattern \p{sc=Greek}
+encoding byte
+features unicode-props
+n "\xb7"
+n "a"
+
+# REFUSALS. Each is a body the REFERENCE itself refuses (error 147), so
+# pcrec refusing it is agreement rather than a capability gap. Which MODULE
+# each refusal names is tests/reject/'s question -- a `perr` block asserts
+# only that compilation failed.
+
+# the one `sc` value in the UCD that no libpcre2 accepts
+# pcre2-only
+pattern \p{Hrkt}
+encoding utf8
+features unicode-props
+perr
+
+# its long spelling
+# pcre2-only
+pattern \p{Katakana_Or_Hiragana}
+encoding utf8
+features unicode-props
+perr
+
+# a general category is not a Script value
+# pcre2-only
+pattern \p{sc=L}
+encoding utf8
+features unicode-props
+perr
+
+# nor is `Any`
+# pcre2-only
+pattern \p{scx=Any}
+encoding utf8
+features unicode-props
+perr
+
+# a known axis with an unknown value
+# pcre2-only
+pattern \p{sc=Nosuch}
+encoding utf8
+features unicode-props
+perr
+
+# blocks - refused by libpcre2 too
+# pcre2-only
+pattern \p{blk=Greek}
+encoding utf8
+features unicode-props
+perr
+
+# a second separator
+# pcre2-only
+pattern \p{sc=scx=Greek}
+encoding utf8
+features unicode-props
+perr
+
+# `Unknown` is DERIVED as the complement of every script in Scripts.txt, which
+# is `Cn`'s own shape one property over — so a private-use code point and an
+# unassigned one are members and a Greek letter is not.  Only the NEGATED form
+# is here: `\p{Unknown}` itself exceeds the emitted-source cap under `utf8` at
+# default axes and lives in tests/known_fail/k53_uprops_oversize.rxt with the
+# reference's answers.  (These three cells came from the same 10.46 reference
+# probe as the rest of this file, in its second batch.)
+# pcre2-only
+pattern \P{Unknown}
+encoding utf8
+features unicode-props
+n "\xee\x80\x80"
+m "\xce\xb1" 0 2
+n "\xcd\xb8"

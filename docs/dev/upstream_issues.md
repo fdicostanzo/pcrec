@@ -700,3 +700,38 @@ is **10**; 9 is `PCRE2_CONFIG_UNICODE`, a uint32 that reads as an empty string
 in a char buffer, which is how the constant was got wrong the first time), and
 made `tests/uprops/` read the resolved oracle's version and PRINT it on every
 run, so a result can be attributed rather than assumed.
+
+
+## U16 — libpcre2 refuses one Script value the UCD declares (`Katakana_Or_Hiragana`/`Hrkt`; [M5.0] stage 5, lane utf8s5, 2026-09-09)
+
+**Not a bug, and filed because it is the citable reason a name pcrec could
+have shipped is deliberately absent.**
+
+`PropertyValueAliases.txt` at Unicode 16.0.0 declares 172 `sc` values.
+libpcre2 accepts 171 of them. The exception is `Katakana_Or_Hiragana` (short
+code `Hrkt`), and the refusal is uniform: **error 147 ("unknown property") for
+all three spellings — bare, `sc=`, `scx=` — on 10.42, 10.46 (the reference)
+and 10.48.** Measured by sweeping every declared value in every namespace on
+each version (1,038 spellings; 6 refused, and all six are this value).
+
+**Why PCRE2 is arguably right.** `Hrkt` is a script CODE in ISO 15924 and a
+declared `sc` property value, but no code point has it as its Script and no
+`Script_Extensions` list names it — it is the union alias for Hiragana and
+Katakana, and a regex property with an empty member set is of no use to
+anyone. `\p{Any}`'s inverse case (`\P{Any}` matching nothing) shows PCRE2 is
+willing to ship a degenerate set when the name is real, so this looks like a
+deliberate omission from its own tables rather than an oversight.
+
+**pcrec follows PCRE2**, per D26 (PCRE2 is the source of truth for whether a
+construct is REAL), and records the exclusion where the table is generated —
+`third_party/ucd-16.0.0/generate.py`'s `SCRIPT_DECLINED`, with the
+measurement, and a second time in `tests/uprops/uprops_names.py`'s own
+`DECLINED` so the promise side is not reading the exclusion from the thing it
+checks. It is `\p{Assigned}` (U15's neighbour, stage 3) in the other
+direction: there the UCD had no name PCRE2 was expected to have; here PCRE2
+lacks a name the UCD does have.
+
+**Revisit when** the reference libpcre2 moves and its own accept list is
+re-swept — D26's re-measurement rule. `tests/registry/pcre2_check.c`'s
+shipped-name sweep is what would notice the day it starts accepting it: the
+name would appear as a real-but-unshipped property refused by the module.

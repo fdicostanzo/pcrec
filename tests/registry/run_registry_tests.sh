@@ -234,7 +234,15 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     # macOS's SYSTEM libpcre2 10.42, not the Homebrew 10.48 every note in the
     # tree assumes, which is also why "could not read
     # '/usr/lib/libpcre2-8.0.dylib'" appears above.
-    if [ "$pc3n" -ne 207 ]; then
+    # [M5.0 stage 5] 207 -> 208: ONE `ok()` line, the shipped-name sweep that
+    # asks the live oracle about every name pcrec's own property table holds
+    # (1,053 of them across the three namespaces, up from 45 hand-listed
+    # category names). Its two branches are mutually exclusive — exact
+    # agreement when the oracle is at the pin, and "no CATEGORY drifted" with
+    # a count when it is not — so the arm contributes exactly one PASS line
+    # either way. MEASURED on this box: 194 passing with the SAME 119
+    # failures as the branch point, i.e. 193 + 1.
+    if [ "$pc3n" -ne 208 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -243,14 +251,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 207." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 208." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (207 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (208 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 207 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 208 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi

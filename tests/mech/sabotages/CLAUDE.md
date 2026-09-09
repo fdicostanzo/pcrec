@@ -343,3 +343,34 @@ bug would have argued for touching the shared driver, a one-row bug argues
 for fixing the row. S-U11's `pc4` arm IS a mechanism-level fix, because its
 gap (no suite runs `pc4_check.c`) was never row-local to begin with. Full
 account: `docs/dev/lanes/mechreach_report.md`.
+
+**Newest ([M5.0] stage 5, 2026-09-09, lane utf8s5):** one row, **S-U12**, on
+the existing `harness` arm scoped to `tests/utf8`. Highest S-U id on `main`
+at the lane's branch point was S-U11, so S-U12 was free from this worktree's
+view — the id range is still the MANAGER's to arbitrate if another lane
+minted one concurrently (this file's own [OPT-4.1] trap, one family over).
+
+**S-U12 — the bare spelling silently becomes the Script property.**
+`uprops_lookup`'s namespace test deleted, which is the MINIMAL edit with that
+effect rather than an invented one: the generated table is sorted by
+(name, namespace) and the `sc=` row sorts before the bare/`scx=` row, so with
+the mask ignored the first matching row wins and `\p{Greek}` answers `Script`
+alone. `\p{sc=Greek}` still answers correctly — **the two spellings simply
+stop disagreeing**, which is what makes it silent.
+
+**IT IS THE ROW FOR THE ONE FACT AN IMPLEMENTATION CAN GET WRONG WHILE LOOKING
+RIGHT.** `utf8_design.md` §3.4 budgets scripts as "purely table weight", which
+describes a generator that reads `Scripts.txt` and wires every namespace to
+it. That build compiles every script name, refuses none, passes every refusal
+pin and every name-set check in both directions, and answers a smaller set
+than PCRE2 on 151 of the 171 values. MEASURED: **1763 passed / 10 FAILED over
+`tests/utf8/`, all ten in `axis12_scripts.rxt`** and zero compile failures —
+the sabotage changes a LANGUAGE, not a refusal, so no refusal-shaped
+instrument anywhere can see it.
+
+**ITS REACH PROBE ASKS WHETHER THE TWO NAMESPACES CAN STILL DISAGREE**, which
+is the question that would expire it: a tree in which every script's two sets
+were equal would make the edit a no-op. The probe compiles `\p{Greek}` under
+`-e byte`, where the ONLY member is U+00B7 MIDDLE DOT and its presence IS the
+Script_Extensions contribution the row defends — so a narrowing that dropped
+the extended set would fail the probe rather than silently score UNDETECTED.

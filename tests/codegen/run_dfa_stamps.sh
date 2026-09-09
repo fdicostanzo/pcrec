@@ -765,8 +765,35 @@ fi
 # reports ZERO disagreements, so an empty artifact is the RIGHT artifact here.
 #
 # They land in this bucket rather than being routed past the scan comparison
-# by accident: the assertion directly above this one confirms all 16 stamp
-# `RX_DFA_PREFILTER "none"`, i.e. all 16 really are loop-free.
+# by accident: the assertion directly above this one confirms all of them stamp
+# `RX_DFA_PREFILTER "none"`, i.e. all of them really are loop-free.
+#
+# [M5.0 stage 5] TEN MORE, same KIND as stage 3's twelve — a set clamped to the
+# `byte` universe and left empty — and they are worth naming individually
+# because the SPLIT among them is the stage's own finding restated by a check
+# that knows nothing about scripts.
+#
+#   `\p{sc=Greek}`, `\p{sc=Grek}`, `\p{Script:Greek}`  the STRICT Script set,
+#       which starts at U+0370 and so is empty in Latin-1.
+#   `\p{Greek}` is NOT HERE, and that is the point: the bare spelling is
+#       `Script | Script_Extensions`, and U+00B7 MIDDLE DOT carries Greek in
+#       its scx list, so the bare set has a Latin-1 member and the `sc=` set
+#       does not. Same script, same encoding, two buckets.
+#   `\p{Thaana}`, `\p{sc=Thaana}`   a script wholly above 0xFF under BOTH
+#       spellings — the control that the split above is about the U+00B7 cell
+#       and not about `sc=` being empty in general.
+#   `\p{Qaai}`   the deprecated alias for Inherited, whose lowest member is
+#       U+0300.
+#   `\p{Unknown}`, `\p{Zzzz}`, `\p{sc=Unknown}`, `\p{scx=Unknown}`   the
+#       DERIVED complement of every script Scripts.txt lists. Every Latin-1
+#       code point has a script, so under `byte` this is empty in all three
+#       namespaces — while under `utf8` it is the one script property that
+#       exceeds the emitted-bytes cap (K53, tests/known_fail/).
+#
+# The last four reach this sweep from `tests/known_fail/`, which this check
+# harvests along with the rest of the corpus and compiles at the DEFAULT
+# encoding — where they compile perfectly well. Their K53 refusal is a
+# `-e utf8` fact and does not follow them here.
 EMPTY_MANIFEST='\B\b
 \b\B
 \d\b\w
@@ -782,13 +809,23 @@ a\bb
 \p{Mn}
 \p{Nl}
 \p{Zl}
-\p{Zp}'
+\p{Zp}
+\p{Qaai}
+\p{Script:Greek}
+\p{Thaana}
+\p{Unknown}
+\p{Zzzz}
+\p{sc=Greek}
+\p{sc=Grek}
+\p{sc=Thaana}
+\p{sc=Unknown}
+\p{scx=Unknown}'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then
     ok "[agreement] the empty-engine bucket is EXACTLY its named manifest ($(wc -l < "$WORKDIR/empty_want") patterns: $(paste -sd' ' "$WORKDIR/empty_want"))"
 else
-    bad "[agreement] the empty-engine bucket differs from its named manifest -- only: $(LC_ALL=C comm -23 "$WORKDIR/empty_seen" "$WORKDIR/empty_want" | paste -sd' ') ; missing: $(LC_ALL=C comm -13 "$WORKDIR/empty_seen" "$WORKDIR/empty_want" | paste -sd' ') -- a new member is a finding to name here, a lost one a regression; either way the scan comparison's population moved"
+    bad "[agreement] the empty-engine bucket differs from its named manifest -- only: $(LC_ALL=C comm -23 "$WORKDIR/empty_seen" "$WORKDIR/empty_want" | paste -sd' ' -) ; missing: $(LC_ALL=C comm -13 "$WORKDIR/empty_seen" "$WORKDIR/empty_want" | paste -sd' ' -) -- a new member is a finding to name here, a lost one a regression; either way the scan comparison's population moved"
 fi
 [ "$nempty" -eq 0 ] && bad "[agreement] the empty-engine bucket is EMPTY — \`\\B\\b\` and its three siblings are in the corpus and must land here; a zero means the text marker stopped matching and the bucket is silently exempting nothing (or, worse, everything)" \
                     || ok "[agreement] the empty-engine bucket holds $nempty artifact(s), asserted non-vacuous"

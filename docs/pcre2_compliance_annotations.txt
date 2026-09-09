@@ -234,12 +234,23 @@ behavior, not oracle agreement, until then.
 section: unicode-properties
 M5.
 This annotation is keyed to `\p{L}` and covers the survey's general-
-category row (`\p{L}` `\p{Lu}` …); the four rows beneath it in the same
-table (`\p{Xan}` etc., binary properties, script names, `Bidi_Class`) carry
-no distinct content of their own — each reads only "same" in the
-source prose, pointing back to this one. See the [DOC-DRV] migration
-manifest: those four rows are disposition dropped-trivial, not silently
-omitted.
+category row (`\p{L}` `\p{Lu}` …). Three of the four rows beneath it in the
+same table (`\p{Xan}` etc., binary properties, `Bidi_Class`) carry no
+distinct content of their own — each reads only "same" in the source
+prose, pointing back to this one. See the [DOC-DRV] migration manifest:
+those rows are disposition dropped-trivial, not silently omitted.
+
+THE SCRIPT ROW IS NO LONGER ONE OF THEM ([M5.0] stage 5, 2026-09-09). It
+built, and it has content this row does not: a script value denotes TWO
+sets, because a bare `\p{Greek}` is `Script | Script_Extensions` while
+`\p{sc=Greek}` is `Script` alone — measured on 10.42, 10.46 and 10.48, and
+stated by `man pcre2pattern`'s "Script properties" section. 171 values,
+each answering to its long name, four-letter code and deprecated aliases,
+across three namespaces (bare, `sc=`, `scx=`; either separator). The one
+UCD `sc` value NOT shipped is `Katakana_Or_Hiragana`/`Hrkt`, refused by
+every libpcre2 reachable here. Under `--encoding=byte` a script clamps to
+Latin-1 and 154 of the 171 are empty there — the seventeen that are not
+are mostly U+00B7 MIDDLE DOT's fifteen-script Script_Extensions list.
 
 === base:class-brackets-basic
 section: character-classes
