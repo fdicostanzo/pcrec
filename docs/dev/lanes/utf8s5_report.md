@@ -127,9 +127,17 @@ span twice and `\p` still never meets `cls_casefold`.
 
 ---
 
-## 4. Acceptance, with numbers
+## 4. Acceptance, against the brief's shape
 
-*(filled in §7 below; the heavy arms are named there with what is owed.)*
+| the brief asked for | result |
+|---|---|
+| the membership differential extended over the script names, both encodings, oracle tier structure unchanged | DONE — §3's population split per encoding, and the tier structure gained the two drift widenings §5.2/§5.3 name rather than being relaxed |
+| the gated-space check updated for the new names | DONE, and re-shaped: it sweeps every name pcrec ships (1,053) rather than a hand list — §5.7 |
+| PC-3/PC-4 arms as stage 3 did them | PC-3 done (above). **PC-4 is deliberately untouched**: its pattern space is `options=0` byte-mode escape/POSIX classes, and a script property there is either empty or Latin-1 noise. The script name axis IS asked of libpcre2 — in PC-3's sweep — which is the question stage 3's PC-4 arm was for |
+| the D65 `built` column flips for what ships | NO FLIP IS DUE, and that is the honest answer rather than an omission: `\p{...}`/`\P{...}` are ONE registry row each and both read `built` since stage 3. Scripts add names to a table, not rows to the registry, so the tally stays `138 = 110 + 12 + 16` — verified unmoved, not assumed |
+| targeted suites green locally (uprops, utf8, encchk-250, codegen) | §7 |
+| byte-encoding answer identity (scripts clamp exactly as categories do) | DONE and measured in both directions: `uprops_names.py` asserts exactly seventeen scripts have a Latin-1 member, and the empty-engine manifest (§5.4) is the same fact reaching a structural check |
+| K53 counted and filed with the same shape | §3(d) — two refusing sets, four blocks |
 
 ---
 
@@ -232,7 +240,32 @@ is why the accessors exist and say so at their definition.
 
 ## 7. Validation
 
-*(filled below)*
+**Every number below was measured on this branch's tree. The box carried a
+concurrent `make test` (the 2d acceptance runs) for most of the lane's working
+period, so the two long sections are marked with what that costs.**
+
+| section | result |
+|---|---|
+| `make strict` (CC=gcc-16) | **clean** — whole tree, `-Werror -Wshadow` |
+| `generate.py --check` | clean: the committed `.inc` is exactly what the generator produces from the vendored UCD |
+| `tests/utf8/axis12_scripts.rxt` | **60 passed / 0 failed on the first run**, against the 10.46 reference's own answers |
+| `tests/reject/` | **615 checks / 0 failed**; census re-pinned 286 / 108 / 0 / 93 |
+| `registry_check.c` | **225 / 0** |
+| PC-3 (`pcre2_check.c`) | **194 PASS / 119 FAIL** — the 119 are the PRE-EXISTING U13/U15 set (the `(?a)`/`(?r)` option-run family and the verb differential against this box's 10.42), unchanged in count and identity from the branch point. The uprops arm is wholly green: `1,053 shipped names asked of the oracle`, 1,002 accepted by both, 51 SCRIPT names this Unicode-14.0.0 oracle does not have and **no category drifted**; `118 probes, libpcre2 accepted 28 / rejected 90, pcrec accepted 28; 12 real-but-unshipped names refused` |
+| `tests/codegen/run_dfa_stamps.sh` | **31 / 0** with the empty-engine manifest re-pinned 16 → 26 |
+| `tests/rxtsource/` | census **PASS** at 211 / 3936 / 28943 (re-pinned). The section's other reds are the PRE-EXISTING BSD `xargs -a` and `wc -l`-padding failures `bat4triage` catalogued; not this lane's and unchanged |
+| known-fail ratchet | **2 still failing / 0 now passing** — the legitimate state; K53's file is 16 distinct compile failures now (12 + this stage's 4) |
+| compliance page | `--check`, `--names`, `--check-annotations` all PASS after the script row moved `REJECTED` → `OK-GATED` and its annotation was rewritten |
+
+**OWED, and named with the exact command rather than described:**
+
+| owed | why |
+|---|---|
+| `bash tests/harness/run.sh tests/utf8/` (clean) and `ENC=byte bash tests/uprops/run_uprops_tests.sh` and `make test-codegen` and `make test-encoding-checks` | launched as ONE background run at hand-off — `bash <scratch>/s5_validate.sh`, log path in the handback, completion line `=== S5-VALIDATE COMPLETE ===`. The box has been carrying a concurrent `make test` all afternoon and stage 4's own report records the harness UNDER-COUNTING cases on a loaded box (its §3.14), so these are deliberately not read off a contended run |
+| S-U12's `SAB_DOC_FIGURE` | the row ships with the figure marked OWED for the same reason; its sabotaged run was still going at hand-off |
+| `make test-uprops-utf8` (the whole-space arm) | opt-in and long even on a quiet box; it is the arm that sweeps all 171 values × 2 sets rather than the byte arm's 17 + controls |
+| the 10.46 EXACT arm | `uprops_compare.py`'s tier (1) — exact agreement, no drift budget — runs only where the oracle IS the pin, i.e. on the Linux reference. That is the run that turns this stage's "51 names and 28,263 code points attributed to drift" into zeroes, and it is the executor channel's, with the same shape stage 3 owed |
+| `make test` / `make san` / `make mech` | the manager's at merge, per BOILERPLATE. The four sabotage rows this stage touches were not run through the matrix |
 
 ---
 
