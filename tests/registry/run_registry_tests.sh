@@ -162,21 +162,38 @@ if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --check-annotati
 PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --tension
 
 # PC-3: the same table against libpcre2, which is the one authority none of the
-# above is. It links the same library and includes the same header, then dlopens
-# libpcre2 at runtime — and SKIPS LOUDLY if that library is absent, so a clone
-# on a box without libpcre2-8-0 still gets a green suite. `-ldl` is the only
-# extra link requirement.
+# above is. It links the same library and includes the same header — DIRECT
+# LINKING since [ORACLE-LINK] (D98, 2026-09-09; was a runtime dlopen through
+# the same header before) — and SKIPS LOUDLY if libpcre2 is not resolvable, so
+# a clone on a box without it still gets a green suite. The skip decision
+# moved from pcre2_check.c's own main() to HERE, at build time: a link failure
+# can't be caught inside the binary the way a missing dlopen symbol could, so
+# tests/lib/resolve_pcre2.sh is probed BEFORE the compile is even attempted.
 PC3BIN="$WORKDIR/pcre2_check"
-if ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
-        -o "$PC3BIN" "$SCRIPT_DIR/pcre2_check.c" "$LIB" -ldl; then
+PC3OUT="$WORKDIR/pc3.out"
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    {
+        echo "SKIP: pcre2_check (PC-3): libpcre2 not resolvable (pkg-config"
+        echo "SKIP: libpcre2-8 absent or its .pc file not on PKG_CONFIG_PATH,"
+        echo "SKIP: and a bare '-lpcre2-8' compile+link probe with \$CC also"
+        echo "SKIP: failed)."
+        echo "SKIP: the registry's EXTERNAL checks did not run. Everything "
+        echo "SKIP: else in \`make test\` compares pcrec with pcrec."
+        echo "SKIP: install the PCRE2 8-bit runtime + headers (Debian/Ubuntu"
+        echo "SKIP: packages 'libpcre2-8-0 libpcre2-dev', Homebrew 'pcre2')"
+        echo "SKIP: to enable them."
+    } | tee "$PC3OUT"
+elif ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $PCRE2_CFLAGS $SANFLAGS \
+        -o "$PC3BIN" "$SCRIPT_DIR/pcre2_check.c" "$LIB" $PCRE2_LIBS; then
     echo "registry: FAILED TO BUILD pcre2_check.c (PC-3)" >&2
     exit 1
+else
+    echo
+    if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
+    [ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
 fi
-echo
-PC3OUT="$WORKDIR/pc3.out"
-if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
-[ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
 
 # ---- COVERAGE GUARD (R9/C1-7) -------------------------------------------
 #
@@ -242,7 +259,21 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     # a count when it is not — so the arm contributes exactly one PASS line
     # either way. MEASURED on this box: 194 passing with the SAME 119
     # failures as the branch point, i.e. 193 + 1.
-    if [ "$pc3n" -ne 208 ]; then
+    # [ORACLE-LINK] 208 -> 209 (D98, 2026-09-09): ONE `ok()`/`bad()` line, the
+    # new U15b exclusion's own liveness guard (pcre2_check.c, beside K15's
+    # identical shape) — exactly one of its three branches fires per run
+    # (fired on 10.47+ / correctly inert on 10.46 / a version mismatch, which
+    # would itself be a `bad()`), so it contributes exactly one PASS-or-FAIL
+    # line regardless of which resolved library version this box has. This is
+    # the FIRST TIME this count is not a property of pcrec's OWN table alone
+    # — it also depends on `tests/registry/pcre2_check.c` now reading the
+    # resolved library's version, which direct linking made possible.
+    # MEASURED on this box (darwin, Homebrew 10.48): 209 passing, 0 failing —
+    # a real re-baseline from the 194-passing/119-failing pre-[ORACLE-LINK]
+    # figure above, not a regression: those 119 were ALWAYS U13/U15(b) (the
+    # old dlopen shim resolving darwin's system 10.42), and direct linking
+    # retires the shim rather than the divergence class it measured.
+    if [ "$pc3n" -ne 209 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -251,14 +282,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 208." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 209." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (208 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (209 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 208 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 209 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
@@ -318,6 +349,7 @@ option runs: both verdict buckets|Q2: a sweep where every run is invalid agrees 
 tail sweep (?P|SR-9: (?P= vs (?P< was invisible to every one-byte sweep in this repo (named in tests/registry/CLAUDE.md since R5)
 tail sweeps: 2 of 4 prefixes|SR-9: (?< answers alike for every tail, so its split is pinned in tests/reject/ and this counter is what stops the whole sweep becoming that
 K15 exclusion: fired|K15 (2026-08-12): the exclusion is a dead branch reading as coverage unless it actually fires on the hostile-alphabet pool; a regressed pool or a closed K15 must be investigated, not silently pass
+U15b exclusion|[ORACLE-LINK]/D98 (2026-09-09): the same "must actually fire, or it is dead" shape as K15's needle above, one library version over — a truncated alpha-assertion near-miss answers rc=114 on 10.47+ instead of 10.46's rc=195, and this exclusion's own liveness is checked in BOTH directions (must fire on 10.47+, must NOT fire on the 10.46 reference)
 uprops differential: pcrec matched libpcre2|MOD-0.6 slice 4: the \p/\P shape-space differential, obligation-mapped against a LIVE oracle per cell; its 52-letter axis is the independent drift guard on mod_uprops.c's hand-written 14-of-52 short-name table (manager ruling 2) — measured to fail 20/20 when the table drops a letter
 gated[modifiers] recognition (OPTRUN-B3)|R20/OPTRUN-B3 (MOD-0.8c slice 2): every other differential in this file runs at the DEFAULT (empty) enabled set, so all 48.7M probes of the (? doorway measure recognition and never acceptance. SPEC-1 was a gate-open-only miscompile — a(?i)* accepted, libpcre2 err 109, matcher really matching — and no closed-gate sweep could see it. Reverting the fix in a scratch build fires this check 672 times while registry_check and cli stay green (2026-08-12). The set is FOCUSED per docs/testing.md's differential gate principle -- one module per pass; a second producing module at this doorway gets its own call and its own needle here
 gated[modifiers] liveness: pcrec ACCEPTED|the gated pass's own vacuity guard: if pcrec accepts nothing with the gate open, the producers never ran and T1 cannot fail, so the pass reads as coverage while measuring the closed-gate space twice — OPTRUN-B3's defect reproduced by the check written to close it

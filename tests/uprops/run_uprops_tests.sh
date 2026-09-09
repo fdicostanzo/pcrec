@@ -132,13 +132,21 @@ done
 [ "$fail" = "0" ] && ok "all $script_n script values compile in all three namespaces (bare, sc=, scx=)"
 
 echo "== §3 the membership differential =="
-if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror -I "$ROOT_DIR/tests/fuzz" \
-        -o "$WORKDIR/uprops_oracle" "$SCRIPT_DIR/uprops_oracle.c"; then
+# [ORACLE-LINK] (D98, 2026-09-09): direct-links libpcre2 now, so the probe
+# moves to BUILD time — tests/lib/resolve_pcre2.sh, before the compile is
+# even attempted, rather than uprops_oracle.c's old runtime dlopen check.
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    echo "SKIP: uprops: libpcre2 not resolvable (pkg-config libpcre2-8 absent"
+    echo "SKIP: uprops: or its .pc file not on PKG_CONFIG_PATH, and a bare"
+    echo "SKIP: uprops: '-lpcre2-8' compile+link probe with \$CC also failed)"
+    echo "SKIP: uprops: — the \\p membership differential (44 properties x"
+    echo "SKIP: uprops: both encodings x the whole code-point space) did not"
+    echo "SKIP: uprops: run. §1/§2/§4 still ran."
+elif ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror -I "$ROOT_DIR/tests/fuzz" \
+        $PCRE2_CFLAGS -o "$WORKDIR/uprops_oracle" "$SCRIPT_DIR/uprops_oracle.c" \
+        $PCRE2_LIBS; then
     bad "uprops_oracle.c does not build"
-elif ! "$WORKDIR/uprops_oracle" --probe 2>/dev/null; then
-    echo "SKIP: uprops: libpcre2-8 runtime not found — the \\p membership"
-    echo "SKIP: uprops: differential (44 properties x both encodings x the whole"
-    echo "SKIP: uprops: code-point space) did not run. §1/§2/§4 still ran."
 else
     ver_line=$("$WORKDIR/uprops_oracle" --version)
     lib_ver=$(printf '%s' "$ver_line" | cut -f1)

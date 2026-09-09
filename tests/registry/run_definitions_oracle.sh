@@ -10,9 +10,20 @@
 # and a comparator that also drives libpcre2 directly (definitions_oracle_
 # check.c, pc4_check.c's own shape).
 #
-# SKIPS LOUDLY without libpcre2 (probed FIRST, PC-3/PC-4's own convention)
-# for the A==C leg ONLY -- A==B needs no external oracle and is not
-# skippable; a box with no libpcre2 still gets the self-consistency half.
+# SKIPS LOUDLY without libpcre2 (probed FIRST via tests/lib/resolve_pcre2.sh,
+# PC-3/PC-4's own convention). [ORACLE-LINK] (D98, 2026-09-09) NARROWED WHAT
+# CAN RUN WITHOUT LIBPCRE2, and says so here rather than silently: before
+# direct linking, definitions_oracle_check.c built via dlopen regardless of
+# whether libpcre2 was present (no header/lib needed to declare its own
+# prototypes), so a box with no libpcre2 still got the A==B self-consistency
+# leg and only A==C (the external oracle comparison) skipped at runtime. That
+# binary now #includes <pcre2.h> and links -lpcre2-8 unconditionally (the
+# same header every other converted oracle check uses), so on a box where
+# libpcre2 is not resolvable the binary cannot be BUILT at all -- A==B is
+# bundled into the same comparator as A==C and skips WITH it. This is a real,
+# disclosed narrowing (docs/dev/lanes/oralink_report.md), not an oversight:
+# splitting the comparator into two binaries to keep A==B header-free was
+# judged not worth the duplication for one self-consistency leg.
 #
 # cells.tsv is FIVE fields since the r43-third-round follow-up (2026-08-29,
 # the DEFK_TEXTFN rows and the POSIX class-name family joining the sweep):
@@ -55,19 +66,25 @@ if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
     echo "FAIL: definitions-oracle: definitions_oracle_gen.c does not build" >&2
     exit 1
 fi
-if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
-        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" $SANFLAGS \
-        -o "$WORKDIR/check" "$SCRIPT_DIR/definitions_oracle_check.c" -ldl; then
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
+have_oracle=1
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    have_oracle=0
+    echo "SKIP: definitions-oracle: libpcre2 not resolvable (pkg-config" >&2
+    echo "SKIP: definitions-oracle: libpcre2-8 absent or its .pc file not on" >&2
+    echo "SKIP: definitions-oracle: PKG_CONFIG_PATH, and a bare '-lpcre2-8'" >&2
+    echo "SKIP: definitions-oracle: compile+link probe with \$CC also failed)." >&2
+    echo "SKIP: definitions-oracle: the whole comparator did not run — see" >&2
+    echo "SKIP: definitions-oracle: this script's own header for why A==B" >&2
+    echo "SKIP: definitions-oracle: (no external oracle needed) is bundled" >&2
+    echo "SKIP: definitions-oracle: with A==C now, since [ORACLE-LINK]." >&2
+    echo "definitions-oracle: 0 cells generated (oracle: unavailable)"
+    exit 0
+elif ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
+        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" $PCRE2_CFLAGS $SANFLAGS \
+        -o "$WORKDIR/check" "$SCRIPT_DIR/definitions_oracle_check.c" $PCRE2_LIBS; then
     echo "FAIL: definitions-oracle: definitions_oracle_check.c does not build" >&2
     exit 1
-fi
-have_oracle=1
-if ! "$WORKDIR/check" --probe-oracle; then
-    have_oracle=0
-    echo "SKIP: definitions-oracle: libpcre2-8 runtime not found — the A==C" >&2
-    echo "SKIP: definitions-oracle: leg (pcrec's own construct vs libpcre2)" >&2
-    echo "SKIP: definitions-oracle: did not run. A==B (the table's own" >&2
-    echo "SKIP: definitions-oracle: self-consistency) still does." >&2
 fi
 
 # ---- generate the cells ---------------------------------------------------

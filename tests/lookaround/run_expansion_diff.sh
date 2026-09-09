@@ -105,6 +105,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"   # [ORACLE-LINK] D98: exports PCREC_PCRE2_PATH for the python ctypes oracle this script invokes
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 KEEP="${KEEP:-0}"

@@ -7,10 +7,13 @@
 # reused — the fuzzer's template trick), runs each matcher over the shared
 # subject set, then hands everything to pc4_check (the libpcre2 side).
 #
-# SKIPS LOUDLY without libpcre2 — probed FIRST via `pc4_check
-# --probe-oracle`, before any of the gcc sweep is paid for — exactly like
-# PC-3: a stranger's clone stays green, and the skip lines say what stopped
-# being checked.
+# SKIPS LOUDLY without libpcre2 — probed FIRST via tests/lib/resolve_pcre2.sh,
+# before any of the gcc sweep is paid for — exactly like PC-3: a stranger's
+# clone stays green, and the skip lines say what stopped being checked.
+# [ORACLE-LINK] (D98, 2026-09-09): pc4_check.c direct-links libpcre2 now, so
+# the probe moved to BUILD time (a link failure can't be caught at runtime
+# the way a missing dlopen symbol could) — the binary is not even attempted
+# without a resolved library.
 #
 # The pattern space and the exact population predictions live in
 # pc4_check.c's header; edit them TOGETHER or not at all.
@@ -55,18 +58,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ---- build the comparator first: it doubles as the oracle probe ----------
+# ---- resolve libpcre2 first, THEN build the comparator -------------------
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    echo "SKIP: pc4: libpcre2 not resolvable (pkg-config libpcre2-8 absent or" >&2
+    echo "SKIP: pc4: its .pc file not on PKG_CONFIG_PATH, and a bare" >&2
+    echo "SKIP: pc4: '-lpcre2-8' compile+link probe with \$CC also failed) —" >&2
+    echo "SKIP: pc4: the SEMANTIC differential (produced sets vs the live" >&2
+    echo "SKIP: pc4: oracle, match cells + the -i axis) did not run. Verdicts" >&2
+    echo "SKIP: pc4: rest on the corpus pins only." >&2
+    exit 0
+fi
 if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
-        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" $SANFLAGS \
-        -o "$WORKDIR/pc4_check" "$SCRIPT_DIR/pc4_check.c" -ldl; then
+        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" $PCRE2_CFLAGS $SANFLAGS \
+        -o "$WORKDIR/pc4_check" "$SCRIPT_DIR/pc4_check.c" $PCRE2_LIBS; then
     echo "FAIL: pc4: pc4_check.c does not build" >&2
     exit 1
-fi
-if ! "$WORKDIR/pc4_check" --probe-oracle; then
-    echo "SKIP: pc4: libpcre2-8 runtime not found — the SEMANTIC differential" >&2
-    echo "SKIP: pc4: (produced sets vs the live oracle, match cells + the -i" >&2
-    echo "SKIP: pc4: axis) did not run. Verdicts rest on the corpus pins only." >&2
-    exit 0
 fi
 
 # ---- the pattern space (deterministic; predictions in pc4_check.c) -------

@@ -14,8 +14,19 @@ corpus convention even though the assertions corpus does not lean on it).
 """
 import ctypes
 import ctypes.util
+import os
 
-_LIBPATH = "/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0"
+# [ORACLE-LINK] (D98, 2026-09-09): PCREC_PCRE2_PATH, consulted FIRST, is the
+# one-resolution-point override -- the harness/runner scripts that also
+# resolve libpcre2 for the DIRECT-LINKED C oracles (tests/lib/resolve_pcre2.sh)
+# export it from the SAME resolution, so this ctypes binding and every C
+# oracle in the tree read the SAME library rather than two independently
+# guessed paths (the exact U13/U15b skew [ORACLE-LINK] retired one level
+# over). Falls back to the pre-existing hardcoded Linux path when unset, so a
+# bare `python3 d27/oracle.py` invocation on ubuntubudu (where that path is
+# correct) is unchanged.
+_LIBPATH = os.environ.get(
+    "PCREC_PCRE2_PATH", "/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0")
 _lib = ctypes.CDLL(_LIBPATH)
 
 PCRE2_ZERO_TERMINATED = ctypes.c_size_t(-1)

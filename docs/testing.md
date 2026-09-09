@@ -109,13 +109,25 @@ caseless save/restore), because no code exists that can exercise either yet and
 a green run must not be mistaken for coverage of them.
 
 **And the first one.** `run_registry_tests.sh` builds
-and runs `tests/registry/pcre2_check.c` (PC-3), which dlopens libpcre2 at
-runtime — the only external authority in the suite. Without the PCRE2 8-bit
-runtime installed (Debian/Ubuntu `libpcre2-8-0`) it prints three `SKIP:` lines
-saying exactly what stopped being checked, and exits 0, because a stranger who
-clones this repo must still get a green `make test`. A green run on a box
-without libpcre2 is a WEAKER result than a green run with it; the skip lines
-are how you tell which one you got.
+and runs `tests/registry/pcre2_check.c` (PC-3), the only external authority
+in the suite. **[ORACLE-LINK] (D98, 2026-09-09) retired the dlopen binding
+every oracle check in this tree used to share**: `tests/fuzz/pcre2_abi.h`
+now `#include`s the real `<pcre2.h>` and links `-lpcre2-8` directly, resolved
+at BUILD time by `tests/lib/resolve_pcre2.sh` (pkg-config, with a bare
+compile+link fallback) — never a runtime dlopen of a hand-declared ABI slice
+against a candidate SONAME list. The reason is structural, not cosmetic: a
+dlopen candidate list can (and, measured, DID — U13/U15b) resolve a
+DIFFERENT libpcre2 than the one the box's own `pcre2.h` names, because
+dlopen's runtime search has no way to prefer "whichever library the build
+environment has a header for." Direct linking cannot have that skew — the
+compiler's header search and the linker's library search are the same
+resolution — so there is exactly one libpcre2 per box, by construction.
+Without libpcre2-8 dev headers/lib installed the BUILD fails to link (never
+the running binary), so `tests/lib/resolve_pcre2.sh` is probed BEFORE the
+compile is attempted and prints the three `SKIP:` lines itself, exits 0,
+because a stranger who clones this repo must still get a green `make test`.
+A green run on a box without libpcre2 is a WEAKER result than a green run
+with it; the skip lines are how you tell which one you got.
 
 With no arguments, `run.sh` discovers and runs every `*.rxt` file under
 `tests/` (recursively). Arguments may mix individual `.rxt` files and
