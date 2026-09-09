@@ -1,8 +1,10 @@
 # tests/fuzz — PCRE2-oracle differential fuzzer
 
 Random pattern/subject generator that differentially fuzzes `pcrec` against
-a real PCRE2 8-bit oracle (dlopen'd at runtime — no `-dev` package on this
-box). Plan step M2.5; promotes the R1 semantics critic's ad-hoc session
+a real PCRE2 8-bit oracle (direct-linked since [ORACLE-LINK]/D98,
+2026-09-09 — see `pcre2_abi.h`'s own entry below; historically dlopen'd at
+runtime, back when this box had no `-dev` package). Plan step M2.5;
+promotes the R1 semantics critic's ad-hoc session
 tooling into a committed, repeatable tool. The many-seed, many-pattern
 CAMPAIGN stays manual/checkpoint-only (`make fuzz`, `campaigns/`) — see
 README.md for why. **[M4.7e]** added a FIXED-seed slice that IS wired into
@@ -12,24 +14,35 @@ tree, which is what the manual-only reasoning below does not cover.
 
 ## Files
 
-- **pcre2_abi.h** — the hand-declared slice of the PCRE2 8-bit ABI and its
-  dlopen loader, shared. Extracted from pcre2_oracle.c by PC-3, when
-  tests/registry/pcre2_check.c became a second consumer and would otherwise
-  have copied it — two descriptions of somebody else's ABI is the shape of the
-  `\v` bug this project already paid for. The loader returns a status instead
-  of exiting, because the two consumers need opposite policies: the fuzz oracle
-  must fail hard, and pcre2_check.c (inside `make test`) must skip loudly.
-  **[M4.7d]** added `pcre2_pattern_info_8` and `pcre2_get_ovector_count_8` to
-  the resolved symbol set, plus `PCRE2_ABI_INFO_CAPTURECOUNT` (opcode `4`,
-  MEASURED — dlopen'd libpcre2 has no header here to read the constant off
-  of, so this project's standing discipline is to probe it: three patterns
-  with distinct group counts, one candidate opcode consistent with all
-  three; see the macro's own comment for the transcript). Both new symbols
-  are REQUIRED by `pcre2_abi_load()` now, same as every existing one — a box
-  whose libpcre2-8 lacks them fails the fuzz oracle hard (unchanged policy)
-  and makes `pcre2_check.c` skip louder (unchanged policy, wider trigger);
-  not expected on any box with a stock `libpcre2-8-0` package, confirmed
-  present on this one.
+- **pcre2_abi.h** — the shared PCRE2 8-bit binding, shared. Extracted from
+  pcre2_oracle.c by PC-3, when tests/registry/pcre2_check.c became a second
+  consumer and would otherwise have copied it — two descriptions of somebody
+  else's ABI is the shape of the `\v` bug this project already paid for.
+  **[ORACLE-LINK] (D98, 2026-09-09) RETIRED THE DLOPEN SHIM THIS FILE USED TO
+  BE**: it now `#include`s the real `<pcre2.h>` and every consumer links
+  `-lpcre2-8` directly (resolved at build time by `tests/lib/
+  resolve_pcre2.sh`), deleting the candidate-SONAME list, dlsym resolution
+  and the ELF-only `dlinfo(RTLD_DI_LINKMAP)` path — the structural fix for
+  U13/U15b (the dlopen shim could, and measurably did, resolve a DIFFERENT
+  libpcre2 than the one any `#include <pcre2.h>`-based tool on the same box
+  saw; direct linking cannot have that skew). The `Pcre2Abi` struct's field
+  names and `pcre2_abi_load`/`_version`/`_unicode_version`/`_path`'s
+  signatures are UNCHANGED, so this stays a one-home ABI description in the
+  sense that mattered originally — every consumer's call sites compile as
+  written. `pcre2_abi_load()` always succeeds now (a missing library is a
+  link-time failure, never a value this function returns), so the "fuzz
+  oracle fails hard, pcre2_check.c skips loudly" POLICY split moved from a
+  runtime branch inside this file to WHEN each caller's build script probes
+  `tests/lib/resolve_pcre2.sh` (before vs. never, matching each caller's
+  original policy). **[M4.7d]** added `pcre2_pattern_info_8` and
+  `pcre2_get_ovector_count_8` to the resolved symbol set, plus
+  `PCRE2_ABI_INFO_CAPTURECOUNT` — now just `PCRE2_INFO_CAPTURECOUNT`'s real
+  enumerator (both confirmed value 4; originally MEASURED by probe, back
+  when dlopen'd libpcre2 had no header here to read the constant off of, see
+  git history for that transcript). Every symbol this header uses now comes
+  from the real header, so a box's libpcre2-8 either has the full API and
+  links, or it doesn't and the build fails to link — there is no partial
+  "missing one new symbol" case dlsym used to distinguish.
 - **pcre2_oracle.c** — the PCRE2 8-bit CLI oracle, now built on pcre2_abi.h. `pcre2_oracle 'PATTERN'
   <subject-file> [startpos]` → `match S0 E0 [S1 E1 ...]` / `nomatch` /
   `cerr <code>` / `mlimit <code>` (PCRE2 match-limit safeguard tripped — not
@@ -148,9 +161,11 @@ tree, which is what the manual-only reasoning below does not cover.
   summary prints is still present in the output (no-silent-caps: a bucket
   vanishing from the summary text, not just its count going to zero, is
   itself a regression this gate catches). Probes libpcre2 presence itself
-  BEFORE calling fuzz.py (build `pcre2_oracle.c`, call its own `--version`,
-  which does the real dlopen attempt) and SKIPS loudly (PC-3's own pattern,
-  tests/registry/run_registry_tests.sh) rather than calling into fuzz.py's
+  BEFORE calling fuzz.py — since [ORACLE-LINK] via `tests/lib/
+  resolve_pcre2.sh` at build time (was: build `pcre2_oracle.c` unconditionally
+  and call its own `--version`, which did the real dlopen attempt) — and
+  SKIPS loudly (PC-3's own pattern, tests/registry/run_registry_tests.sh)
+  rather than calling into fuzz.py's
   oracle plumbing, which is deliberately fail-hard (see pcre2_abi.h's entry
   above) — right for a manual dev tool, wrong for a `make test` section on a
   libpcre2-less box. `make test-capturediff` is its Makefile target, part of

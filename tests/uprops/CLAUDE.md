@@ -15,9 +15,12 @@ is everything those corpora structurally cannot express.
 - **run_uprops_tests.sh** — four sections, and the reason there are four is
   that each sees something none of the others can. Read its own header for
   the per-section argument; the summary is below.
-- **uprops_oracle.c** — the libpcre2 side, through the shared dlopen shim
-  (`tests/fuzz/pcre2_abi.h`), so a clone without libpcre2 SKIPS loudly rather
-  than failing to load. Also the VERSION REPORTER the drift policy turns on.
+- **uprops_oracle.c** — the libpcre2 side, through the shared binding
+  (`tests/fuzz/pcre2_abi.h`, direct-linked since [ORACLE-LINK]/D98,
+  2026-09-09), so a clone without libpcre2 SKIPS loudly at BUILD time
+  (`run_uprops_tests.sh` probes `tests/lib/resolve_pcre2.sh` before
+  attempting the compile) rather than failing to load at runtime. Also the
+  VERSION REPORTER the drift policy turns on.
 - **uprops_sweep.c** — the pcrec side, compiled once per property against
   that property's own emitted artifact.
 - **uprops_compare.py** — the comparator, and the ONE place the
@@ -98,10 +101,15 @@ producer's construct IS its two-byte escape, so nothing had ever needed it.
 `uprops_compare.py`'s header is the authority. In short: pcrec's tables are
 pinned at one Unicode version and **no libpcre2 this project can reach is at
 the same one** — measured 2026-09-06, the Linux reference is 10.46 / Unicode
-16.0.0 (the pin), Homebrew on the Mac is 10.48 / 17.0.0, and the library the
-suite's own dlopen shim actually RESOLVES on the Mac is macOS's system
-libpcre2 10.42 / **14.0.0** (`upstream_issues.md` U15(b)). Demanding exact
-agreement would make this suite report the environment rather than the code.
+16.0.0 (the pin), Homebrew on the Mac is 10.48 / 17.0.0. **[ORACLE-LINK]
+(D98, 2026-09-09) retired the dlopen shim this paragraph used to describe a
+THIRD row for** — the Mac oracle used to be whatever the dlopen candidate
+list happened to resolve (macOS's own system libpcre2, 10.42 / **14.0.0**,
+`upstream_issues.md` U15(b)), a library nobody's toolchain otherwise saw;
+direct linking makes the Mac oracle the SAME 10.48/17.0.0 the header/pkg-
+config toolchain already names, so there are two rows now, not three.
+Demanding exact agreement would make this suite report the environment
+rather than the code.
 
 So: exact agreement when the versions match, and otherwise every disagreement
 must be EXPLAINED — the differing code point must be unassigned on one side or
@@ -125,7 +133,11 @@ a name pcrec invented still fails, naming its addresses.
 
 Measured at stage 3's landing: **byte 14/0 with ZERO code points attributed to
 drift; utf8 14/0 with 62,121 attributed and none unexplained**, against
-libpcre2 10.42 / Unicode 14.0.0. Re-measure from a run rather than reading
+libpcre2 10.42 / Unicode 14.0.0 (the pre-[ORACLE-LINK] dlopen shim's resolved
+library on that box). Re-measured post-[ORACLE-LINK] (2026-09-09, direct
+linking, this box's real Homebrew 10.48 / Unicode 17.0.0): `byte` arm **91
+properties compared, 0 code points attributed to drift** — still clean, on a
+materially different oracle. Re-measure from a run rather than reading
 these here.
 
 ## What is NOT here
