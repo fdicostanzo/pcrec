@@ -3994,6 +3994,19 @@ bool pcrec_registry_uprops_recognise(const char *at, size_t avail,
 ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
                                bool in_class, size_t at, size_t from);
 
+/* THE PROPERTY TABLE, READ-ONLY, FOR ONE CHECK ([M5.0] stage 5).
+ * `tests/registry/pcre2_check.c` sweeps every name pcrec ships and asks the
+ * LIVE libpcre2 whether it is real — the one arbiter that did not produce the
+ * table.  `ns` is the row's namespace mask (`PCREC_UPROP_NS_*`, defined by
+ * the generated `uprops_tables.inc`): a general-category row answers in the
+ * bare namespace only, a script row also in `sc=`/`scx=`.  Row ORDER is the
+ * generator's and is not a contract; nothing on the compile path calls
+ * these.  `pcrec_uprops_unicode_version` is the PIN, to be compared against
+ * `pcre2_abi_unicode_version`'s report of the oracle's. */
+size_t pcrec_uprops_row_count(void);
+const char *pcrec_uprops_row_name(size_t i, unsigned *ns);
+const char *pcrec_uprops_unicode_version(void);
+
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *
  * The other three doorways are decided by a BYTE and a RegRow can carry the

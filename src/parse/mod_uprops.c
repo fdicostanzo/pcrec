@@ -216,6 +216,41 @@ static unsigned uprops_namespace(const char *body, size_t sep)
     return 0;
 }
 
+/* THE TABLE, READ-ONLY, FOR THE ONE CHECK THAT MUST ASK THE ORACLE ABOUT
+ * EVERY NAME PCREC SHIPS.
+ *
+ * `tests/registry/pcre2_check.c`'s `check_gated_uprops_space` sweeps this
+ * table and asks the LIVE libpcre2 whether each name is real.  That question
+ * cannot be answered from a hand-written list (171 script values in four
+ * spellings each is not a list a human keeps right) and must not be answered
+ * from the vendored UCD, which is where the table came from — the whole point
+ * of the check is that its arbiter is a source the table did not come from.
+ *
+ * So these three accessors exist for a test, and say so.  They expose nothing
+ * a caller could depend on: `src/parse/internal.h` is internal, `lib/pcrec.h`
+ * gains nothing, and the row ORDER they iterate is the generator's, which is
+ * not a contract. */
+size_t pcrec_uprops_row_count(void)
+{
+    return pcrec_uprop_names_n;
+}
+
+const char *pcrec_uprops_row_name(size_t i, unsigned *ns)
+{
+    if (i >= pcrec_uprop_names_n) return NULL;
+    if (ns) *ns = pcrec_uprop_names[i].ns;
+    return pcrec_uprop_names[i].name;
+}
+
+/* The Unicode version pcrec's tables are PINNED at, beside
+ * `pcre2_abi_unicode_version()`'s report of the ORACLE's.  A check comparing
+ * the two decides whether it may demand EXACT agreement or must fall back to
+ * a drift budget — see `uprops_compare.py`'s header for the policy. */
+const char *pcrec_uprops_unicode_version(void)
+{
+    return PCREC_UPROPS_UNICODE_VERSION;
+}
+
 static int uprops_fold(int c)
 {
     return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;

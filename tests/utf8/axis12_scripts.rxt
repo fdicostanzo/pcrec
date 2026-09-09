@@ -280,3 +280,18 @@ pattern \p{sc=scx=Greek}
 encoding utf8
 features unicode-props
 perr
+
+# `Unknown` is DERIVED as the complement of every script in Scripts.txt, which
+# is `Cn`'s own shape one property over — so a private-use code point and an
+# unassigned one are members and a Greek letter is not.  Only the NEGATED form
+# is here: `\p{Unknown}` itself exceeds the emitted-source cap under `utf8` at
+# default axes and lives in tests/known_fail/k53_uprops_oversize.rxt with the
+# reference's answers.  (These three cells came from the same 10.46 reference
+# probe as the rest of this file, in its second batch.)
+# pcre2-only
+pattern \P{Unknown}
+encoding utf8
+features unicode-props
+n "\xee\x80\x80"
+m "\xce\xb1" 0 2
+n "\xcd\xb8"

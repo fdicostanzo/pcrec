@@ -188,3 +188,55 @@ m "!" 0 1
 n "\xcd\xb8"
 
 
+
+# ============================================================================
+# [M5.0] STAGE 5 ADDED FOUR MORE BLOCKS, and the population is smaller than
+# the stage-3 shape predicts: of the 171 script values in two distinct sets
+# (bare/`scx=` and `sc=`) x two polarities — 684 patterns, MEASURED at default
+# axes under `-e utf8` — exactly TWO refuse, and they are the same set under
+# two names.  `\p{Unknown}` is the DERIVED complement of every script
+# Scripts.txt lists (729 intervals, the largest set this module ships after
+# `\p{Any}`), so it is the one script property that pays `\p{C}`'s price;
+# every other script compiles, the largest at 358,339 bytes against the
+# 1,000,000 cap.  `\P{Unknown}` compiles and is a live block in
+# tests/utf8/axis12_scripts.rxt.
+#
+# The three namespaces and the four-letter alias are written out rather than
+# folded to one block on purpose: they are four different LOOKUPS reaching one
+# set, and a cure that fixed the bare spelling alone would leave three red.
+#
+# Every expectation is the 10.46 REFERENCE's own answer (Unicode 16.0.0, the
+# pin), read in the same probe that produced axis12_scripts.rxt.
+# ============================================================================
+
+# pcre2-only
+pattern \p{Unknown}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
+
+# pcre2-only
+pattern \p{sc=Unknown}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
+
+# pcre2-only
+pattern \p{scx=Unknown}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
+
+# pcre2-only
+pattern \p{Zzzz}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
