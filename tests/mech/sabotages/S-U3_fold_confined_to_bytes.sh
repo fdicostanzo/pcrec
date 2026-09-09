@@ -28,7 +28,11 @@ SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="ucd_partners drops every fold partner above 0xFF, the exact reach a fold applied after the byte lowering would have, so [a-z] under -i loses U+212A and U+017F while still folding to [A-Z]"
 SAB_DOC_FIGURE="MEASURED solo 2026-09-08 at the stage-4 landing: 207 passed / 30 FAILED over tests/utf8/fold.rxt + axis06_caseless_fold.rxt (237/0 clean); every ASCII cell stays green."
 SAB_REACH='"$PCREC" -i -e utf8 -p rx -o - -- "[a-z]"'
-SAB_REACH_EXPECT='Pattern:  */'
+# [mechreach fix, 2026-09-09] same defect as S-U1/S-U2: 'Pattern:  */' names
+# an empty pattern, which emit_pattern_comment never produces -- this
+# construct's real header reads 'Pattern: [a-z] */'. Never reachable since
+# authoring (a3ba7de7); see S-U1's note for the trace.
+SAB_REACH_EXPECT='Pattern: [a-z] */'
 SAB_REACH_POP='tests/utf8/fold.rxt|^pattern \[a-z\]|3'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

@@ -23,7 +23,11 @@ SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="ucd_partners adds one cycle step instead of closing the class, so a three-member fold class loses a member and (?i)k stops matching K"
 SAB_DOC_FIGURE="MEASURED solo 2026-09-08 at the stage-4 landing: 211 passed / 26 FAILED over tests/utf8/fold.rxt + axis06_caseless_fold.rxt (237/0 clean); two-member classes untouched."
 SAB_REACH='"$PCREC" -i -e utf8 -p rx -o - -- "k"'
-SAB_REACH_EXPECT='Pattern:  */'
+# [mechreach fix, 2026-09-09] same defect as S-U1/S-U3: 'Pattern:  */' names
+# an empty pattern, which emit_pattern_comment never produces -- this
+# construct's real header reads 'Pattern: k */'. Never reachable since
+# authoring (a3ba7de7); see S-U1's note for the trace.
+SAB_REACH_EXPECT='Pattern: k */'
 SAB_REACH_POP='tests/utf8/fold.rxt|^pattern|12'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

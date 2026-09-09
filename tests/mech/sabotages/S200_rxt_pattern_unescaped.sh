@@ -20,7 +20,23 @@ SAB_ID="S200-rxt-pattern-unescaped"
 SAB_FILE="src/parse/rxt_source.c"
 SAB_SUITES="rxtsource"
 SAB_DESC="--list-source emits a raw tab in the pattern column, so the three corpus blocks whose pattern contains a literal tab produce rows with 16 fields where the header declares 15, and every column after the pattern column shifts on exactly those rows"
-SAB_REACH='grep -cP "^pattern .*\\t" "$TREE/tests/base/bounded_repeats.rxt"' 
+# [mechreach fix, 2026-09-09] `grep -cP` needs libpcre-backed grep; the real
+# `/usr/bin/grep` this driver actually runs under on this box is BSD grep
+# 2.6.0-FreeBSD, which has no -P at all ("invalid option -- P", exit 2 --
+# exactly the exit code the battery's mech.log recorded for this row). Note
+# this is NOT the interactive shell's own `grep` (a Claude-Code function
+# shimming ugrep) -- a plain `bash -c` child process never inherits that
+# function, so it always sees the real binary. The driver's OWN internal
+# row-filter grep hit this identical trap and was fixed the same way
+# ([MACPORT], see this script's "was `grep -P` ... ERE + bash ANSI-C
+# quoting" comment near its results-table extraction): ERE (-E) instead of
+# PCRE (-P), and a portable way to get a literal tab into the pattern that
+# does not require nesting a single quote inside this already-single-quoted
+# field (this directory's own documented trap -- "Nested single quotes in
+# SAB_REACH break the assignment quietly"). `$(printf "\t")` reaches the
+# nested `bash -c "$SAB_REACH"` untouched and expands to a real tab there,
+# using only double quotes throughout.
+SAB_REACH='grep -cE "^pattern .*$(printf "\t")" "$TREE/tests/base/bounded_repeats.rxt"'
 SAB_REACH_EXPECT="2"
 SAB_REACH_POP="tests/modifiers/xxmode.rxt|^pattern .*	|1"
 SAB_COUNT=1

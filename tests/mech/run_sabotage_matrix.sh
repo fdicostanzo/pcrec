@@ -247,6 +247,20 @@
 #     "that suite is not wired into this matrix's dispatch today". S229 and
 #     S-U8 (whose header carries the identical unfulfilled claim about the
 #     clamp-stride probe) both gain it in the same change.
+#   pc4 — added 2026-09-09 (mechreach triage of S-U11). Builds
+#     tests/registry/pc4_check.c ALONE (no pattern-space sweep, no gcc
+#     fan-out — the full run_pc4.sh differential is deliberately still
+#     NOT an arm here) and runs it against /dev/null, which is enough to
+#     exercise `check_1n_fold()` in full: that function runs
+#     UNCONDITIONALLY before pc4_check.c ever opens its patterns.tsv
+#     argument. The exact-population assertions past that point (273
+#     patterns etc.) fire on this synthetic empty input regardless of any
+#     sabotage, so the fail count this arm reports is scoped to
+#     `FAIL: pc4: 1:n fold` lines only, never a bare total. S-U11 is the
+#     row this word exists for: its detector had no suite to run in at
+#     all before this (the `registry` arm builds registry_check.c, never
+#     pc4_check.c) and scored a real UNDETECTED once its [MECH-REACH]
+#     probe was separately fixed.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2004,6 +2018,64 @@ run_one() {
                         p="$(grep -m1 '^checks passed:' "$work/pc3.log" | grep -oE '[0-9]+')"
                         f="$(grep -m1 '^checks failed:' "$work/pc3.log" | grep -oE '[0-9]+')"
                         suite_bits+=("pc3:${f:-ERR}fail/${p:-?}pass")
+                        [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                        any_ran=1
+                    fi
+                fi
+                ;;
+            pc4)
+                # [mechreach, 2026-09-09] tests/registry/pc4_check.c's
+                # STANDING 1:n FOLD CHECK (`check_1n_fold`, S-U11's own
+                # detector) -- registered per this file's own long-standing
+                # note that PC-4 is "deliberately NOT wired... add it the
+                # day one is, with the sabotage that needs it": S-U11 is
+                # that day, and it is the row's ONLY possible detector (the
+                # SR-1 `registry` arm above builds registry_check.c, never
+                # pc4_check.c).
+                #
+                # THIS IS NOT THE FULL PC-4 DIFFERENTIAL. run_pc4.sh's own
+                # sweep needs a generated pattern space, a per-pattern gcc
+                # compile and a driver run -- infrastructure this matrix has
+                # no other reason to carry, and check_1n_fold()'s own
+                # doc-comment says it "has no dependency on any pcrec code
+                # and could (and should) have run from stage 1." pc4_check.c
+                # runs `check_1n_fold()` UNCONDITIONALLY, before it ever
+                # opens its patterns.tsv argument (main()'s own order:
+                # argc check -> abi load -> check_1n_fold() -> printf its
+                # summary -> THEN fopen(argv[1])) -- so pointing argv[1] at
+                # /dev/null (opens, reads as immediate EOF) is sufficient to
+                # exercise the fold check in full while the population loop
+                # after it never executes.
+                #
+                # THAT EMPTY-INPUT SHAPE ALSO MEANS pc4_check's OWN
+                # exact-population assertions (273 patterns / 41 refusal
+                # agreements / 232 accepted / N cells) FIRE UNCONDITIONALLY
+                # here -- they are not this arm's signal and are NEVER
+                # scored: the fail count below is scoped to lines this
+                # program's OWN fold-check `fail()` calls print
+                # ("1:n fold: cell ..." / "1:n fold: N assertions, 22
+                # owed..."), never to a bare failure total, which would
+                # read every synthetic-empty-input run as failing.
+                #
+                # No pcrec headers/library needed -- pc4_check.c only pulls
+                # in pcre2_abi.h (the dlopen shim) and its own subject
+                # header, same build line run_pc4.sh itself uses.
+                if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
+                        -I"$tree/tests/fuzz" -I"$tree/tests/registry" \
+                        -o "$work/pc4_check" \
+                        "$tree/tests/registry/pc4_check.c" -ldl \
+                        > "$work/pc4_build.log" 2>&1; then
+                    suite_bits+=("pc4:CHECK-BUILD-FAILED")
+                    any_anom=1
+                else
+                    "$work/pc4_check" /dev/null "$work" > "$work/pc4.log" 2>&1
+                    if grep -q '^SKIP:' "$work/pc4.log"; then
+                        suite_bits+=("pc4:SKIPPED-no-oracle")
+                        any_skip=1
+                        skipped_arms+=("pc4")
+                    else
+                        f="$(grep -c '^FAIL: pc4: 1:n fold' "$work/pc4.log" || true)"
+                        suite_bits+=("pc4:${f:-ERR}fail/1n-fold-only")
                         [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                         any_ran=1
                     fi
