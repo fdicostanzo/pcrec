@@ -22334,3 +22334,32 @@ hunks lane foldhunks (sonnet, docs-only) applying report §4's six
 hunks to utf8_design.md in parallel. PUSH DEFERRED to battery green
 (the standing rule). The 10.46 arm (I-61) goes to the executor after
 the push. tt4m3 (2c) held to construction until the battery trailer.
+
+## 2026-09-09 (EDT), fifty-seventh session part 5 — the stage-4 battery's verdict: ZERO merge regressions, FOUR infrastructure catches; K54 filed (darwin san unusable); main pushed
+
+**BATTERY DONE 07:56 (13.8h wall: test 38m rc=2 / strict 4s / axes
+5h37m rc=0 / san 0s rc=2 / lint 0s rc=0-vacuous / mech 7.5h rc=2)**,
+and every red decomposed to infrastructure, not the merge: (1) test's
+rc=2 = two check NEEDLES the fold refactor legitimately moved + the
+fold.rxt census pin (lane bat4triage; cpset re-verified 28/0;
+anchored's 26-pattern "failure" reproduced CLEAN solo 7/0 = load
+artifact; NEW BSD-wc padding finding routed to the MACPORT bundle);
+(2) san died at the first object because battery.sh NEVER GOT the
+Mac-move CC fix — bare gcc = Apple clang rejects -fsanitize=leak; the
+THIRD clang-as-gcc instance (K24, c480414c, now the battery driver),
+and lint has been a silent no-op on darwin the same way (lane
+santriage; battery.sh now sources cc_resolve.sh); (3) mech's rc=2 =
+FIVE UNREACHED-UNEXPECTED rows that were AUTHORING BUGS never working
+since written (lane mechreach): S-U1/2/3's empty-pattern
+SAB_REACH_EXPECT, S-U11's relative path + literal-vs-regex + the
+UNWIRED PC-4 suite (fixed generally — the new pc4 arm, MOD-0.8c's
+named day), S200's BSD-grep -P trap; all five now solo DETECTED at
+their own predicted counts (22/26/30/22/15), VALIDATE_ONLY 243/243.
+(4) THE ATTEMPTED REAL make san CC=gcc-16 (first darwin san ever)
+exposed K54: gcc libasan on arm64-darwin runs every instrumented
+invocation at minutes-per-trivial-compile; 0/35 scripts in 3.4h;
+safekilled; SAN IS A LINUX STAGE until the MACPORT investigation
+rules. Merges: bat4triage, santriage, mechreach (one CLAUDE.md
+conflict resolved keeping both entries), size log, K54. MAIN PUSHED
+after part 5's commit. Stage 4's remaining validation = the Linux
+executor arm (I-61: san + lint + the 10.46 fold arm + C3 pins).
