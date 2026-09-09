@@ -728,12 +728,89 @@ C3_FILES=179
 # here -- see above), and this lane could not run one. OWED to whoever runs
 # the 10.46/Linux arm next: re-pin C3_PASS/C3_SKIP/C3_SKIP_* from that run
 # at a commit including fold.rxt, alongside CENSUS_FILES=210 above.
-C3_PASS=13728
-C3_SKIP=14997
-C3_SKIP_PCRE2ONLY=2779
+# [arm61fix re-pin, 2026-09-09] -20 PASS / +77 SKIP (+93 pcre2-only, -16
+# no-python-expression), from the I-61 Linux executor run's authoritative
+# numbers (PASS 13708, SKIP 15074, pcre2-only 2872), discharging the OWED
+# note above. Derived per file against the two stage-4 commits bat4triage's
+# note names (83f7175b, lane utf8s4/foldhunks), NOT copied from the Linux
+# log -- confirmed by running verify_rxt.py in isolation against a
+# pre-image/post-image pair of each touched file on this box (python
+# version affects EXPRESSIBILITY counts elsewhere in the corpus, per the
+# BOX SENSITIVITY note above, but every construct this re-pin turns on is a
+# fixed compile-or-not fact under any python 3.x, so the isolated-file
+# deltas measured here equal the Linux run's):
+#
+#   tests/utf8/fold.rxt (ab5c9715's sibling commit a3ba7de7, NEW file,
+#   every one of its 18 blocks authored `# pcre2-only` from the start --
+#   the file's own header says why, U14): all 45 lines land in SKIP, all
+#   45 as pcre2-only, 0 as PASS, 0 moved out of any other reason.
+#   Measured in isolation (verify_rxt.py on the file alone):
+#   PASS=0, SKIP=45 (pcre2-only=45, all others 0).
+#   -> +0 PASS / +45 SKIP / +45 pcre2-only / +0 no-python-expression.
+#
+#   tests/utf8/axis06_caseless_fold.rxt (commit ab5c9715, "PROMOTED to its
+#   recorded oracle", 48 blocks both before and after -- no block count
+#   movement, so every line below is a RECLASSIFICATION or a same-block
+#   line-count change, never a new/removed block). Twelve of its 48 blocks
+#   were NOT marked `# pcre2-only` before this commit and ALL TWELVE
+#   gained the marker here (measured: `grep -c '^# pcre2-only'` 36 -> 48);
+#   the other 36 blocks were already marked and their value edits (the
+#   KELVIN/MICRO/LONGS/FINALSIGMA/closure-class families restoring the
+#   recorded PCRE2_UTF|PCRE2_CASELESS answers) move zero C3 lines, because
+#   a block already in the pcre2-only bucket stays there regardless of
+#   what its m/n lines say. Of the twelve newly-marked blocks:
+#     - 4 are `[^k]`/`[^K]`/`[^s]`/`[^S]` (bare-literal negated singleton,
+#       4 lines each = 16 lines): python's `re` compiles these fine (a
+#       plain ASCII class under IGNORECASE|ASCII), so pre-promotion they
+#       were PASS. Now pcre2-only. -16 PASS, +16 pcre2-only.
+#     - 4 are `[^\x{6b}]`/`[^\x{4b}]`/`[^\x{73}]`/`[^\x{53}]` (the SAME
+#       four codepoints spelled with PCRE's `\x{NN}` brace escape, 4 lines
+#       each = 16 lines): python's `re` has no brace form of `\x` (it wants
+#       exactly `\xHH`) and raises `bad escape` at compile time, so
+#       pre-promotion these were no-python-expression, not PASS. Now
+#       pcre2-only. -16 no-python-expression, +16 pcre2-only.
+#     - 4 are the `negate-neg-Ll{,-dup1,-dup2,-dup3}` blocks: `[^\p{Ll}]`,
+#       pre-promotion a single `perr` line each (4 lines total) that
+#       PASSED as an agreeing refusal (python's `re` also raises on `\p`,
+#       same reasoning as axis04's stage-3 `\p` `perr` population). The
+#       commit promotes each to 4 real m/n lines (16 lines total) and
+#       marks the block pcre2-only in the same edit (the recorded oracle
+#       was wrong on 2 of the 4 cells -- see the file's own inline
+#       correction -- which is irrelevant to this census/skip arithmetic
+#       since the whole block lands in pcre2-only either way). -4 PASS,
+#       +16 pcre2-only, and +12 net NEW lines (16 - 4), which is exactly
+#       this file's own line-count growth (180 -> 192, matches the
+#       existing CENSUS_LINES pin's derivation -- unaffected by this
+#       re-pin, see the [M5.0 utfprom]/[bat4triage] notes above).
+#   Net for this file, reason by reason: PASS loses the 16 bare-literal
+#   lines and the 4 perr lines (-20); no-python-expression loses its whole
+#   pre-existing population, the 16 brace-escape lines (-16); pcre2-only
+#   gains all of it back plus the Ll blocks' 12 net-new lines
+#   (16+16+16+12 = +48). SKIP is pcre2-only plus no-python-expression
+#   together, so its net is +48-16 = +32 -- the no-python-expression loss
+#   stays inside SKIP (it moves to a different SKIP reason, it does not
+#   leave SKIP), and only the PASS-to-SKIP crossing (-20 PASS) plus the
+#   Ll blocks' brand-new lines (+12) actually change the SKIP total,
+#   which is the same +32. Measured in isolation (verify_rxt.py on a
+#   pre-image/post-image pair of the file alone, at the two commits
+#   either side of ab5c9715) rather than trusted from the hand count:
+#   PASS 20 -> 0 (-20), SKIP 160 -> 192 (+32: pcre2-only 144 -> 192 = +48,
+#   no-python-expression 16 -> 0 = -16, every other reason unchanged at 0)
+#   -- agrees with the hand derivation above exactly.
+#
+#   Sum across both files: -20-0 = -20 PASS; +32+45 = +77 SKIP;
+#   +48+45 = +93 pcre2-only; -16+0 = -16 no-python-expression. Exactly the
+#   deltas below, and C3_PASS+C3_SKIP+C3_TIMEOUT_FILE_LINES =
+#   13708+15074+89 = 28871 = CENSUS_LINES, so the whole corpus still
+#   reconciles. giveup/composed/perr-python-accepts/own-oracle are
+#   untouched by either commit (measured 0 movement in both isolated
+#   runs) and are NOT re-pinned here.
+C3_PASS=13708
+C3_SKIP=15074
+C3_SKIP_PCRE2ONLY=2872
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1891
+C3_SKIP_NOPYTHON=1875
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=10290
 C3_TIMEOUT=1
