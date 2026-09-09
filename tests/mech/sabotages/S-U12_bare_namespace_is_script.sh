@@ -30,7 +30,7 @@ SAB_FILE="src/parse/mod_uprops.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="uprops_lookup ignores the namespace mask, so a bare \\p{Greek} answers the strict Script set instead of Script|Script_Extensions and a code point whose scx names Greek stops matching"
-SAB_DOC_FIGURE="MEASURED solo 2026-09-09 at the stage-5 landing: OWED -- see docs/dev/lanes/utf8s5_report.md, which carries the run's numbers over tests/utf8/ (clean baseline and sabotaged)."
+SAB_DOC_FIGURE="MEASURED solo 2026-09-09 at the stage-5 landing: 1763 passed / 10 FAILED over tests/utf8/ -- 1,773 cases total, so the clean run is 1773/0 (DERIVED from this run's own two numbers; the lane's separate clean run is in its report) -- and all ten failures are in axis12_scripts.rxt -- no other file in the directory can see it, which is the point of the row. Zero compile failures: the sabotage changes a LANGUAGE, not a refusal."
 # THE REACH QUESTION is whether the two namespaces can still DISAGREE at all:
 # a tree where every script's two sets were equal would make this sabotage a
 # no-op, and the probe asks the compiler directly rather than asserting it.
