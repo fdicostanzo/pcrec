@@ -22363,3 +22363,52 @@ rules. Merges: bat4triage, santriage, mechreach (one CLAUDE.md
 conflict resolved keeping both entries), size log, K54. MAIN PUSHED
 after part 5's commit. Stage 4's remaining validation = the Linux
 executor arm (I-61: san + lint + the 10.46 fold arm + C3 pins).
+
+## 2026-09-09 (EDT), fifty-seventh session part 6 — HARNESS_BATCH SHIPPED (2d gates passed); STAGE 5 DELIVERED + MERGED (scripts; the scx finding); the overnight battery over the day's three merges
+
+**[TT-4M] 2c+2d COMPLETE, MERGED, PUSHED**: HARNESS_BATCH=N ships
+opt-in. The 2d gates: counts hash IDENTICAL across four full make test
+runs (baseline / unset-in-worktree / the accidental unbatched-PROCS-8
+run / batched-64-PROCS-8) — the byte-identity and answer-identity
+gates both PASS, and the gate proved SELF-PROTECTING under load (an
+under-count would have broken the hash; it never did). Headline:
+batched 2067s vs unbatched-best 2269-2317s (~10% suite wall,
+UNDERSTATED — C2 carried a concurrent validate run) and 21.7%
+like-for-like at PROCS=8. The accidental run C1 (wrong cwd — the env
+var was a no-op on main) kept honestly as a K44 reconfirmation:
+unbatched PROCS=8 is 14-16% WORSE than PROCS=3. Evidence archived
+(docs/dev/tt4m_2d_evidence/, the r55-10 bar). The suite-level number
+is smaller than the prototype's 4.28x by construction (only per-case-
+exec sections batch); the axes stage (5.6h in the stage-4 battery) is
+the named next customer.
+
+**[M5.0] STAGE 5 DELIVERED + MERGED same day** (lane utf8s5, opus, 11
+commits; utf8s5_report.md): 171 script values × three namespaces. THE
+FINDING: bare \p{Greek} == Script|Script_Extensions (sc= == Script
+alone) on ALL THREE measurable libpcre2 versions, man-stated,
+U+0342-discriminated — the design's "one more file, nothing
+structural" budget REFUTED; the naive build would ship a smaller
+language on 151/171 values while passing every pre-existing check;
+S-U12 guards it (measured DETECTED 1763/10). PropertyValueAliases.txt
+vendored (the third file the design did not list). K53 expectation
+REFUTED by census (only \p{Unknown} refuses, 2 of 684). Caseless
+invariance EXHAUSTIVE via the fold-sweep argument. axis12 oracled from
+the REFERENCE 10.46 over the tailnet — catching the local system lib
+wrong on exactly 3 cells. PC-3's name axis now table-driven (207→208);
+U16 filed (Hrkt); BSD paste fix. Validate: utf8 1773/0 AT THE
+PREDICTED COUNT, uprops 26/0, encchk 11/0, reject 615/0. arm61fix
+merged earlier (C3 pins to I-61's authoritative numbers, derivation
+closing exactly; scanedge CWE-457 proven false-positive, K28 calloc).
+
+**PROCESS**: heartbeat test PASSED and codified (skill step 0, memory,
+bench I-62 — acked, their cron live). Two pre-existing codegen reds
+(inline_capability §3.13; scan_edge_dispatch's rx_forward_byte_class
+needle — suspect ccdiff1's uniform-fold DELETES folded accessors, a
+stale-needle class) chartered to the MACPORT admin bundle. battery.sh
+gains BATTERY_STAGES (K54: darwin san rides Linux; the trailer records
+the set so a reduced run cannot masquerade). **OVERNIGHT BATTERY
+DETACHED over the day's three merges** (tt4m3 + arm61fix + utf8s5) at
+BATTERY_STAGES="test strict axes lint mech",
+build/battery_20260909_s5/. Push HELD for its green; I-63 (stage-5
+10.46 exact arm + san + the new C3 read) goes to the executor on the
+pushed commit tomorrow.
