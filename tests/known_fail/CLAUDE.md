@@ -204,3 +204,19 @@ the subset-elems budget and not for this one.
 **So the file's own "does it start passing" signal is pointed at an engine
 change, not at module `unicode-props`.** A future reader seeing it go green
 should look for the emit-bytes retry, not for a table edit.
+
+**[M5.0] STAGE 5 ADDED FOUR MORE BLOCKS AND THE COUNT IS THE INTERESTING
+PART.** Of 684 script patterns measured at default axes under `-e utf8`,
+exactly TWO refuse — one SET under two names — and the four blocks are its four
+spellings: `\p{Unknown}`, `\p{sc=Unknown}`, `\p{scx=Unknown}`, `\p{Zzzz}`.
+They are written out rather than folded into one block because they are four
+different LOOKUPS reaching one set, and a cure that fixed the bare spelling
+alone would leave three red. `\P{Unknown}` compiles and is a live block in
+`tests/utf8/axis12_scripts.rxt`; every other script compiles too, the largest
+at a third of the cap. `\p{Unknown}` is the DERIVED complement of every listed
+script, so it is the one script property with `\p{C}`'s shape rather than a
+script's — which is why the prediction that scripts would be a large K53
+population is refuted rather than confirmed by this addition.
+
+Their expectations are the **10.46 reference's own answers**, from the same
+probe that produced `axis12_scripts.rxt`.
