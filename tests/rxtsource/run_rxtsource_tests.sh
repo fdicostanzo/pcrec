@@ -158,9 +158,19 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # by a DIFFERENT amount (+1 file, +5 blocks, +6 lines): the deleted file was
 # under known_fail and the new one is not, which is exactly the
 # opposite-directions case the k49fix comment above records.
-CENSUS_FILES=209
-CENSUS_BLOCKS=3888
-CENSUS_LINES=28814
+CENSUS_FILES=210
+CENSUS_BLOCKS=3906
+CENSUS_LINES=28871
+# 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
+# blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
+# (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
+# own report (docs/dev/lanes/utf8s4_report.md) measures the file at 18
+# blocks / 45 cells and does not mention this census. This pin's silent
+# drift is what made the first post-merge full battery's test-rxtsource
+# section red: `found 210/3906/28871, pinned 209/3888/28814` matches this
+# file's addition exactly (verified by hand against the awk census, not
+# re-derived from it). RUNSH_* below moves by the SAME amount: fold.rxt is
+# not under tests/known_fail/.
 # 2026-09-06 (lane utf8s3, [M5.0] stage 3) — +1 file, +0 blocks, +358 lines.
 # THE BLOCK COUNT NOT MOVING IS THE INFORMATIVE PART: the D27-blinded
 # `tests/utf8/axis04_p_categories.rxt` was PROMOTED (148 `perr` blocks became
@@ -177,9 +187,11 @@ CENSUS_LINES=28814
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
-RUNSH_FILES=207
-RUNSH_BLOCKS=3873
-RUNSH_LINES=28759
+RUNSH_FILES=208
+RUNSH_BLOCKS=3891
+RUNSH_LINES=28816
+# 2026-09-08 (bat4triage) — moved alongside CENSUS_* above, same cause:
+# +1/+18/+57, fold.rxt lands under tests/utf8/, not tests/known_fail/.
 # 2026-09-06 (lane utf8s3) — see CENSUS_* above: the promotion moved twelve
 # blocks OUT of run.sh's population and into known_fail's, so the file count
 # is unchanged here while the census's rose.
@@ -708,6 +720,14 @@ C3_FILES=179
 #   run (C3 is deliberately red on this box, see the BOX SENSITIVITY note
 #   above); the Linux re-validation OWED is the manager's, see
 #   docs/dev/lanes/ntriage_report.md.
+# 2026-09-08 (bat4triage): C3_PASS/C3_SKIP/etc. below are NOT re-pinned for
+# tests/utf8/fold.rxt (stage 4, 18 blocks / 45 cells, 19 `# pcre2-only`
+# comment lines counted in the file -- not all 45 cells are necessarily
+# python-PASS). Every prior re-pin of this block was taken from a Linux
+# reference run, never derived by hand on this box (C3 is deliberately red
+# here -- see above), and this lane could not run one. OWED to whoever runs
+# the 10.46/Linux arm next: re-pin C3_PASS/C3_SKIP/C3_SKIP_* from that run
+# at a commit including fold.rxt, alongside CENSUS_FILES=210 above.
 C3_PASS=13728
 C3_SKIP=14997
 C3_SKIP_PCRE2ONLY=2779

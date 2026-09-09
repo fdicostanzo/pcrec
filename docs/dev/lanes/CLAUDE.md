@@ -397,4 +397,29 @@ never edited afterwards.
   box reports 237/0, so a starved worker reduces the case COUNT rather than
   failing.
 
+- `bat4triage_report.md` — TRIAGE of the stage-4 merge battery's `test`-stage
+  red (2026-09-08, lane bat4triage, log-reading + code diagnosis only, no
+  suite runs — the battery was still running the axes/san/mech stages
+  throughout). Every failure in `build/battery_20260908_stage4/test.log`
+  enumerated and classified. TWO are real, stage-4-attributable, and FIXED
+  here: `tests/codegen/run_cpset_structure.sh`'s [1c]/[2d] needles are
+  literal source-text matches ([M5.0] stage 4's `parse.c`
+  `cls_universe`/`enc_byte.c` struct-literal edits legitimately moved the
+  text they grepped for — a check-staleness class, not a correctness
+  regression) and `tests/rxtsource/run_rxtsource_tests.sh`'s census pin was
+  never moved for the new `tests/utf8/fold.rxt` (+1 file/+18 blocks/+57
+  lines, re-pinned here; `C3_PASS`/etc. left explicitly OWED to a Linux
+  re-run). Everything else is PRE-EXISTING darwin/python noise, independently
+  reproduced rather than assumed: `xargs -a`'s BSD incompatibility
+  (catalogued since `76f9e85e`, predates stage 4), three genuine
+  python-3.9.6-vs-reference divergences in untouched corpus files
+  (`caseless.rxt`/`counterk.rxt`/`captures.rxt`, each reproduced with this
+  box's own python3), a NEW finding that BSD `wc -l`/`wc -c` padding breaks
+  several `[ = ]` string-equality checks in the same script (not fixed —
+  out of scope, flagged for the manager), and `tests/anchored/
+  run_anchored_diff.sh`'s "26 patterns fail to compile" reproduced CLEAN
+  with the battery's own `build/pcrec` binary, pointing at box-load/
+  watchdog contention during the concurrent `test` stage rather than a
+  real compiler defect. No `_log.md`: the investigation order is this
+  report's own section order.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
