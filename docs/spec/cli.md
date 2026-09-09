@@ -277,31 +277,64 @@ no module is split):
 | `extended-classes` | not built | nested/set-operation character classes |
 | `misc` | not built | scattered rarer constructs |
 | `quoting` | **built** | `\Q…\E` literal quoting, including inside a character class |
-| `unicode-props` | **built (partial)** | `\p{…}`/`\P{…}` — the Unicode GENERAL CATEGORIES and PCRE2's derived families ([M5.0] stage 3). See the note below for exactly which names |
+| `unicode-props` | **built (partial)** | `\p{…}`/`\P{…}` — the Unicode GENERAL CATEGORIES and PCRE2's derived families ([M5.0] stage 3) plus the SCRIPTS, bare and under `sc=`/`scx=` ([M5.0] stage 5). See the note below for exactly which names |
 | `verbs` | not built (per-name; the 12 alpha-spelled lookaround verbs are attributed to `lookaround`/`assertions` instead, D71 item 3) | `(*PRUNE)`/`(*COMMIT)`/etc. |
 
 **`unicode-props` is the first module in this table to ship a PROPER SUBSET
-of its own construct, so "built" needs a sentence.** 45 property names
-compile: the seven one-letter general categories (`C L M N P S Z`), all 30
-two-letter ones (`Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po Sm
-Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn`), the cased-letter set under both its
-spellings (`L&`, `Lc`), `Any`, and PCRE2's own `Xan Xps Xsp Xuc Xwd`. Every
-one works at both `--encoding=byte` and `--encoding=utf8`, negated as
-`\P{X}` or `\p{^X}` (the two compose: `\P{^X}` is `\p{X}`), and inside a
-character class.
+of its own construct, so "built" needs a sentence.** Two families compile.
 
-**Names libpcre2 has that this does not ship yet REFUSE, and refuse as the
-MODULE's gap rather than as unknown names** — scripts (`\p{Greek}`,
-`\p{Script=Greek}`, `\p{scx=…}`) are [M5.0] stage 5; the boolean-property
-and `Bidi_Class` families are declined by design. A name no libpcre2 has
-(`\p{Foo}`, block spellings like `\p{InGreek}`) refuses too, and on the
-one-letter axis — where pcrec's table is exhaustive — it says so as an
-unknown NAME with no module clause, because no module will ever implement
-it.
+**The GENERAL CATEGORIES, 45 names**: the seven one-letter codes
+(`C L M N P S Z`), all 30 two-letter ones (`Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No
+Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn`), the cased-letter
+set under both its spellings (`L&`, `Lc`), `Any`, and PCRE2's own
+`Xan Xps Xsp Xuc Xwd`.
+
+**The SCRIPTS, 171 values** — every `Script` value the Unicode Character
+Database declares at the pinned version except `Katakana_Or_Hiragana`, which
+is excluded because no libpcre2 this project can reach accepts it either.
+Each answers to its long name, its four-letter code and any deprecated alias
+the UCD lists (`\p{Greek}`, `\p{Grek}`; `\p{Inherited}`, `\p{Zinh}`,
+`\p{Qaai}`), in three namespaces:
+
+| spelling | denotes |
+|---|---|
+| `\p{Greek}` | `Script` **union** `Script_Extensions` |
+| `\p{sc=Greek}`, `\p{Script=Greek}` | `Script` alone |
+| `\p{scx=Greek}`, `\p{Script_Extensions=Greek}` | the same set as the bare spelling |
+
+**The bare spelling is NOT the `Script` property**, and that is PCRE2's
+behaviour rather than a choice pcrec made: U+0342 COMBINING GREEK
+PERISPOMENI has `Script=Inherited` and `Script_Extensions={Greek}`, and
+`\p{Greek}` matches it while `\p{sc=Greek}` does not — measured against
+libpcre2 10.42, 10.46 and 10.48, all three agreeing.
+
+Either separator works (`sc=Greek`, `sc:Greek`) and the prefix is
+case-insensitive and loosely matched exactly as the value is, so
+`\p{S c r i p t _ Extensions = G-r-e-e-k}` is the same property. There is no
+`gc=` namespace, because libpcre2 has none: a general category is spelled
+bare or not at all.
+
+Every name works at both `--encoding=byte` and `--encoding=utf8`, negated as
+`\P{X}` or `\p{^X}` (the two compose: `\P{^X}` is `\p{X}`), and inside a
+character class. Under `--encoding=byte` a property is clamped to the
+Latin-1 universe, which is PCRE2's own 8-bit non-UTF behaviour — for 154 of
+the 171 scripts that leaves the empty set, and a pattern whose class is
+empty compiles to a matcher that never matches.
+
+**Names libpcre2 has that this does not ship REFUSE, and refuse as the
+MODULE's gap rather than as unknown names** — the boolean-property
+(`\p{Alphabetic}`) and `Bidi_Class` (`\p{bc=L}`) families are declined by
+design. A name no libpcre2 has (`\p{Foo}`, block spellings like
+`\p{InGreek}`, `\p{Hrkt}`) refuses too, and on the one-letter axis — where
+pcrec's table is exhaustive — it says so as an unknown NAME with no module
+clause, because no module will ever implement it. A KNOWN axis with an
+unknown value (`\p{sc=Nosuch}`) takes the module's gap wording, since pcrec
+cannot tell a misspelling from a value it has not got.
 
 **Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}`** and every
-other property is unchanged — measured against libpcre2 over the whole
-code-point space, not inferred. That substitution IS the caseless rule for a
+other property is unchanged — including every script, measured exhaustively
+over the code points that participate in the case-fold relation at all,
+which is where a difference could only ever appear. That substitution IS the caseless rule for a
 property, and no fold is applied on top of it: [M5.0] stage 4's Unicode
 closure ships for literals, ranges and classes (see `-i` above) and a
 property set is deliberately not one of its customers. The discriminating
@@ -309,10 +342,11 @@ cell is U+0345, an `Mn` that folds with Greek iota — `(?i)[\p{Lu}x]` does not
 match it, while `(?i)[\p{Lu}k]` does match U+212A because the literal `k`
 beside the property is what folds.
 
-**Five names exceed the emitted-artifact size cap under `--encoding=utf8`
-at default settings** (`\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`,
-`\p{Xwd}`, and their `\P` forms) and refuse with the ordinary
-"pattern too large" diagnostic. `-fno-premul-table` compiles all of them;
+**Six names exceed the emitted-artifact size cap under `--encoding=utf8`
+at default settings** — `\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`, `\p{Xwd}`
+and (from stage 5) `\p{Unknown}` in all three of its namespaces — and refuse
+with the ordinary "pattern too large" diagnostic. Their `\P` forms compile;
+so does every other script, the largest at about a third of the cap. `-fno-premul-table` compiles all of them;
 `docs/dev/known_issues.md` K53 has the cause and the cure.
 
 **The property tables are pinned at Unicode 16.0.0** (`third_party/

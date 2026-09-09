@@ -4163,7 +4163,7 @@ K49's retirement alone would have left. That is a new bug filed, not K49's
 fix failing to land — K49's own cell is live and green in
 `tests/utf8/axis09_nextpos_findall.rxt`.
 
-## K53 — an OPTIONAL DFA machine's bytes can refuse a pattern that compiles without it (`\p{C}`, `\p{Cn}`, `\p{L}` under `-e utf8`; [M5.0] stage 3, 2026-09-06)
+## K53 — an OPTIONAL DFA machine's bytes can refuse a pattern that compiles without it (`\p{C}`, `\p{Cn}`, `\p{L}`, and from stage 5 `\p{Unknown}`, under `-e utf8`; [M5.0] stage 3, 2026-09-06)
 
 **Filed as an ENGINE issue, not a Unicode one.** `\p{L}` is where it was
 found and is not where it lives.
@@ -4181,6 +4181,23 @@ blocks because the D27 axis covers general categories only). **5 of the 45
 shipped property names** exceed the cap under `utf8`; all 45 compile
 comfortably under `byte` (the largest is 23,350 bytes), and 40 compile under
 `utf8`.
+
+**[M5.0] STAGE 5 ADDED THE SCRIPTS AND THE POPULATION BARELY MOVED — measured,
+and the number is the interesting part.** Of 684 script patterns at default
+axes under `-e utf8` (171 values x the two distinct sets x both polarities),
+exactly TWO refuse, and they are one set under two names: `\p{Unknown}` and
+`\p{sc=Unknown}` at 1,019,008 bytes. Add the other spellings of the same set
+(`\p{scx=Unknown}`, `\p{Zzzz}`) and the shipped refusal list is six names for
+one set. `\P{Unknown}` COMPILES, and so does every other script — the largest
+is `\P{Common}` at 358,339 bytes, a third of the cap.
+
+**Why `Unknown` and nothing else**: it is the DERIVED complement of every
+script `Scripts.txt` lists (729 intervals), so it is the one script property
+with `\p{C}`'s shape rather than a script's. Script sets are interval-heavy
+but not `Cn`-heavy: `Han` is 99,338 code points in 42 intervals. The
+prediction that scripts would be a large K53 population — the brief's own —
+is REFUTED by the census, and the reason is that the cap prices INTERVALS
+through the state count, not members.
 
 **The diagnosis, and it names a cure.** The artifact is three DFA tables —
 forward, reverse and ANCHORED — of `states x byte-equivalence-classes`

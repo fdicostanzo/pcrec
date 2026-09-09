@@ -80,7 +80,15 @@ THE FOUR FAMILIES THIS FILE DERIVES, and the source for each:
 
      THE BARE SPELLING IS NOT THE SCRIPT PROPERTY.  MEASURED 2026-09-09
      against 10.42, 10.46 (the reference) and 10.48, over the whole code-point
-     space, and it is the finding that decides this family's shape:
+     space — and, found after the measurement rather than before it, STATED
+     OUTRIGHT by `man pcre2pattern`'s own "Script properties for \\p and \\P":
+     *"If a script name is given without a property type, for example,
+     \\p{Adlam}, it is treated as \\p{scx:Adlam}. Perl changed to this
+     interpretation at release 5.26 and PCRE2 changed at release 10.40."*  The
+     same section defines the extended set as the union this file builds:
+     *"\\p{scx:Adlam} matches, IN ADDITION [to basic-script Adlam], characters
+     that have Adlam in their extensions list."*  Two independent sources
+     agreeing is what makes this a fact rather than a reading:
 
          \\p{Greek}     ==  \\p{scx=Greek}  ==  Script | Script_Extensions
          \\p{sc=Greek}                      ==  Script alone
