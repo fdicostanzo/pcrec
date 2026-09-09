@@ -284,4 +284,22 @@ pcrec (the Makefile owns that).
   `AXES_PROCS`/the trailer's load line use `tests/lib/ncpu.sh`/
   `loadavg.sh`; `date -Is` → `-Iseconds`.
 
+  **[SANTRIAGE] darwin's FIRST end-to-end run of this script (the stage-4
+  merge battery, `build/battery_20260908_stage4/`, 2026-09-08/09) found the
+  `san`/`lint` stages had never actually been exercised on the Mac: both
+  compile the COMPILER AXIS directly through top-level `make san`/`make
+  lint`, which use the Makefile's own `CC ?= gcc` default rather than any
+  test script's own CC resolution — unlike `tests/harness/run.sh` (fixed at
+  c480414c for the COMPILEE axis only). On this box bare `gcc`/`cc` is Apple
+  clang, which rejects `-fsanitize=leak` outright (a hard compile error, not
+  a silent no-op — `san` died on its FIRST object file, rc=2 in under a
+  second) and has no `-fanalyzer` (its own guard SKIPS cleanly, so `lint`
+  read rc=0 in under a second having run zero analysis on every prior Mac
+  battery — a legitimate documented skip shape hiding a real vacuity).
+  Fixed by sourcing `tests/lib/cc_resolve.sh` here too and passing the
+  resolved `CC` explicitly to those two stages' `make` invocations (verified
+  gcc-16 accepts both flags; `test`/`strict`/`axes`/`mech` are untouched —
+  they build fine under plain ISO C regardless of which compiler `$(CC)`
+  is). See `docs/dev/lanes/santriage_report.md`.
+
 Maintenance: update this file when scripts are added/removed or change role.

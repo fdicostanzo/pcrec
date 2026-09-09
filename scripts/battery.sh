@@ -67,6 +67,22 @@ fi
 # trailer's load line, below) instead of a silent 2/0.
 . "$ROOT_DIR/tests/lib/ncpu.sh"
 . "$ROOT_DIR/tests/lib/loadavg.sh"
+# [SANTRIAGE] tests/lib/cc_resolve.sh: the `san`/`lint` stages below compile
+# the COMPILER AXIS directly via top-level `make` rules ($(CC), the
+# Makefile's own `CC ?= gcc` default) rather than through any test script's
+# own CC resolution (tests/harness/run.sh's cc_resolve.sh use, fixed at
+# c480414c, covers only the COMPILEE axis inside the harness). On this box
+# bare `gcc`/`cc` is Apple clang, which REJECTS `-fsanitize=leak` outright
+# ("unsupported option ... for target arm64-apple-darwin") and has no
+# `-fanalyzer` at all — so `make san`/`make lint` failed/no-opped in zero
+# seconds under the [TT-12] battery's first-ever darwin run
+# (docs/dev/lanes/santriage_report.md). gcc-16 accepts both (verified: a
+# direct `gcc-16 -fsanitize=address,undefined,leak -c` on the exact failing
+# TU succeeds; `gcc-16 -fanalyzer -fsyntax-only` succeeds). Resolve once
+# here and pass it explicitly to those two stages only — `test`/`strict`/
+# `axes`/`mech` build fine under plain ISO C with whatever $(CC) already is
+# and are unaffected by this fix, so their result stays exactly what it was.
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"
 
 TS="$(date +%Y%m%d_%H%M%S)"
 LOGDIR="${1:-$ROOT_DIR/build/battery_$TS}"
@@ -117,10 +133,10 @@ run_battery() {
                 AXES_FULL=1 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
                 ;;
             san)
-                SAN_PROCS="$SAN_PROCS" make san > "$slog" 2>&1
+                SAN_PROCS="$SAN_PROCS" make CC="$CC" san > "$slog" 2>&1
                 ;;
             lint)
-                make lint > "$slog" 2>&1
+                make CC="$CC" lint > "$slog" 2>&1
                 ;;
             mech)
                 PROCS="$MECH_PROCS" make mech > "$slog" 2>&1
@@ -137,7 +153,7 @@ run_battery() {
 echo "battery.sh: logging to $LOGDIR (trailer: $TRAILER)"
 echo "battery.sh: poll the trailer for stage START/END/rc lines and the final '== BATTERY DONE rc=' line"
 
-_battery_setsid bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); run_battery" \
+_battery_setsid bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); CC=$(printf '%q' "$CC"); run_battery" \
     < /dev/null > "$LOGDIR/setsid.log" 2>&1 &
 echo $! > "$PIDFILE"
 disown
