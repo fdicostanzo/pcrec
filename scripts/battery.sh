@@ -111,7 +111,15 @@ run_battery() {
         echo "== shape: test -j$TEST_MAKE_J PROCS=$TEST_PROCS | axes PROCS=$AXES_PROCS (paired) | san -P$SAN_PROCS | mech PROCS=$MECH_PROCS"
     } >> "$TRAILER"
 
-    for stage in test strict axes san lint mech; do
+    # BATTERY_STAGES (added 2026-09-09, K54): space-separated stage subset,
+    # default all six. Exists because darwin san is K54-pathological (gcc
+    # libasan on arm64 — minutes per trivial compile); until that
+    # investigation rules, a Mac battery runs BATTERY_STAGES="test strict
+    # axes lint mech" and san rides the Linux executor channel. The trailer
+    # records the chosen set so a reduced run can never masquerade as full.
+    local stages="${BATTERY_STAGES:-test strict axes san lint mech}"
+    echo "== stages: $stages" >> "$TRAILER"
+    for stage in $stages; do
         local slog="$LOGDIR/$stage.log"
         echo "== stage $stage START $(date -Iseconds) load=$(load3)" >> "$TRAILER"
         case "$stage" in
