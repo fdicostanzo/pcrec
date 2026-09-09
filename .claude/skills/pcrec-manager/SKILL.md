@@ -13,6 +13,16 @@ discuss design points, and run everything in between.
 
 ## 1. Wake up (do this first, in order)
 
+0. **Create the session heartbeat cron** (Frank's standing rule, tested
+   and CONFIRMED over a full day 2026-09-08/09): one recurring 30-minute
+   CronCreate at two off-minute marks (e.g. `13,43 * * * *`) whose prompt
+   says: act only on a delivered lane result / task notification /
+   in-flight completion, otherwise reply ONE line; no new work, no
+   re-reads. The manager session's prompt cache is 1-hour TTL, so each
+   tick is a cheap cache hit that keeps the whole context warm across
+   idle gaps — measured at one-line cost per tick over ~24h. MAIN
+   SESSION ONLY (lanes are 5-min TTL and never self-keepalive). Crons
+   are session-only: create at every session start, delete at close.
 1. **Read `docs/dev/wake.md`** — the hand-off brief from the previous session.
    It is deliberately gitignored; on any disagreement, the committed docs win.
 2. Read the tail of `docs/dev/dev_journal.md` (append-only, newest at bottom) —
