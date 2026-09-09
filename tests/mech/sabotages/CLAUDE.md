@@ -36,7 +36,7 @@ directory's conventions and the traps that have actually been hit.
 |---|---|
 | `SAB_ID` | the row's identity in the matrix. Conventionally `S<NN>-<kebab-name>`; it is NOT the selector (see "Numbering" below) |
 | `SAB_FILE` | the file the edit lands in, repo-relative |
-| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `startbnd` ([K50], registered with the arm and before S232-S235, which name it); before it `vmframeless` ([OPT-VMFL] STEP 0, registered with the arm and before S224-S226, which name it); before it `searchpinned` ([OPT-5] STEP 2, registered with the arm and before S218-S222, which name it); before that `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207) and `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
+| `SAB_SUITES` | space-separated arm names. **The vocabulary is CLOSED** — an unrecognised word scores `UNKNOWN-SUITE`, which is "not measured", not "failed". Register a word BEFORE the rows that need it (R31 C11). Newest: `pc4` (mechreach triage, 2026-09-09, registered with the arm and re-pointing S-U11 at it — see `../CLAUDE.md`'s own `pc4` entry); before it `startbnd` ([K50], registered with the arm and before S232-S235, which name it); before it `vmframeless` ([OPT-VMFL] STEP 0, registered with the arm and before S224-S226, which name it); before it `searchpinned` ([OPT-5] STEP 2, registered with the arm and before S218-S222, which name it); before that `pfcollapse` ([OPT-4.1], registered with the arm and before S206-S207) and `rxtsource` ([DD-13b.W1.1], registered before S194-S203) |
 | `SAB_DESC` | one sentence: what the edit makes the compiler do wrong |
 | `SAB_BEFORE` / `SAB_AFTER` | the literal edit. `lib/replace.py` refuses unless BEFORE occurs exactly `SAB_COUNT` times and AFTER is present afterwards |
 
@@ -299,3 +299,47 @@ field reference and traps, not the row history. In brief:
   reach:ok(1/1),codegen:6fail/102pass,encoding:1fail/10pass`. Both
   DETECTED, with the new `encoding:1fail` line firing alongside the arm
   that already caught them.
+
+**Newest (mechreach, 2026-09-09):** triage of the stage-4 battery's five
+UNREACHED-UNEXPECTED rows (S-U1, S-U2, S-U3, S-U11, S200), all with DIFFERENT
+root causes, none of them the tree outgrowing a witness — every fix was
+verified with solo `run_sabotage_matrix.sh <row>` runs, `reach:ok(1/1)`
+followed by DETECTED, at `9a2170e00149e26d5c0be8dbdbcc1acd2b52a5ce`.
+
+- **S-U1/S-U2/S-U3** (`SAB_REACH_EXPECT='Pattern:  */'`, two spaces) named an
+  EMPTY pattern between the header comment's colon and its close.
+  `emit_pattern_comment` (src/gen/emit_dfa.c) never produces that — the real
+  headers read `Pattern: [^k] */`, `Pattern: k */`, `Pattern: [a-z] */`. Never
+  reachable since authoring (`a3ba7de7`, the same WIP commit that introduced
+  all three), not a later drift. Fixed by matching the real header text.
+- **S-U11** (`grep -c "check_1n_fold()" tests/registry/pc4_check.c`, a
+  RELATIVE path) ran with its cwd in `$REACH_TMP`, never the tree root — the
+  probe's own exit code (2, "No such file or directory") is exactly what the
+  battery's mech.log recorded. AND `SAB_REACH_EXPECT='^1$'` was matched as a
+  LITERAL SUBSTRING (this mechanism's own `grep -qF`), never as a regex, so
+  even the path fix alone would not have closed it. **AND a third, deeper
+  defect once both were fixed: `SAB_SUITES="registry"` never ran
+  `pc4_check.c` at all** — PC-4 was, by this file's and `../CLAUDE.md`'s own
+  long-standing documented decision, not wired into this matrix's suite
+  dispatch ("add it the day one is, with the sabotage that needs it"). S-U11
+  is that day: its detector, `check_1n_fold()`, lives nowhere else. Closed by
+  registering a new `pc4` arm (see `../CLAUDE.md`) and re-pointing
+  `SAB_SUITES` at it — `pc4:22fail/1n-fold-only`, matching the row's own
+  22-FAIL prediction exactly.
+- **S200** (`grep -cP "^pattern .*\\t"`) needs `-P`; the real `/usr/bin/grep`
+  this driver actually runs under on this Mac is BSD grep 2.6.0-FreeBSD,
+  which has no `-P` at all ("invalid option -- P", exit 2 — again exactly the
+  battery's recorded exit code). This is the SAME trap this driver's own
+  results-table extraction hit and fixed at [MACPORT] (see the "was
+  \`grep -P\`" comment near `run_sabotage_matrix.sh`'s tail) — never applied
+  to this one row. Fixed with `-E` and `$(printf "\t")` for the literal tab,
+  avoiding a nested single quote inside the already-single-quoted
+  `SAB_REACH` field (this file's own documented trap, two sections up).
+
+**Why none of these four fixes generalise into a single mechanism change,
+unlike S200's grep flavour**: `grep -P` is used nowhere else in
+`sabotages/` (checked by grep across the directory) — a five-row spelling
+bug would have argued for touching the shared driver, a one-row bug argues
+for fixing the row. S-U11's `pc4` arm IS a mechanism-level fix, because its
+gap (no suite runs `pc4_check.c`) was never row-local to begin with. Full
+account: `docs/dev/lanes/mechreach_report.md`.

@@ -66,11 +66,46 @@ the four residual entries carry UTF-8 bodies under their existing signatures,
 no `PcrecEncEntry` field was added, `pcrec_enc_ready` is untouched, both emit
 functions are untouched. `back_step` carries §5.2.1's declared-length repair
 (the line that makes a malformed run answer `BACK_STEP_NONE` rather than a
-position the forward parse disagrees with); the two `bref` compares are the
+position the forward parse disagrees with); the two `bref` compares were the
 byte backend's bodies verbatim (`utf8-exact`, UTF-8 being a prefix code) plus
-an ASCII-only fold (the non-ASCII closure is stage 4's). `tests/codegen/
+an ASCII-only fold — **the caseless one was replaced at stage 4, below**. `tests/codegen/
 run_encoding_checks.sh`'s DD12a(ii) is the second-backend validation that the
 signatures match across both backends.
+
+**[M5.0 STAGE 4] `PcrecEnc` GAINED A SECOND SCALAR — `fold` — AND IT IS A D58
+SEAM EVENT FOR `max_cp`'s REASON, recorded here for D58's revisit clause.** The
+entries table is again untouched (no `PcrecEncEntry` field, no signature
+change, `pcrec_enc_ready` untouched, both emit functions untouched); the
+third-encoding recipe below grows by one line — a backend now also names its
+CASE FOLD, and NULL is not an option (a backend with no case writes a relation
+that is empty, so `cls_casefold` has no branch and no encoding can silently opt
+out of a question every class asks).
+
+**IT IS PER-ENCODING BECAUSE THE TWO FOLDS DISAGREE, not because the encodings
+do**, and that is the thing to understand before reaching for a clamp: `byte`
+folds exactly the 52 ASCII letters and MUST NOT fold 0xE9 to 0xC9 (MEASURED
+against libpcre2's 8-bit non-UTF build, `utf8_design.md` §4.5), while `utf8`
+folds U+00E9 to U+00C9 and `[a-z]` to U+212A (§4.2c). The ASCII fold is
+therefore NOT the Unicode one restricted to `[0, max_cp]` — at `max_cp ==
+0xFF` that restriction would fold Latin-1 — and no function of `max_cp`
+produces both.
+
+**AND STAGE 4 REPLACED `enc_utf8.c`'s CASELESS BACKREFERENCE BODY, WHICH IS
+THE ONE PLACE THE FOLD REACHES AN ARTIFACT.** A caseless class folds at parse
+time and never survives into emitted C; a caseless BACKREFERENCE folds subject
+bytes read at match time, so its fold has to be TEXT (§4.6(b)). The body now
+decodes one character from each side, folds each through a sorted `{from, to}`
+map of the 1,484 non-identity simple folds (`utf8_fold_pairs.inc`, GENERATED
+beside the compiler-side relation in the same run, `#include`d in the middle of
+the residual's string-literal initialiser) and compares — about 26 KB of table
+text, in an artifact that has such a backreference and in no other. **The
+LENGTH-RETURN PROTOCOL is what let that land with the shared emitter unchanged**,
+exactly as `enc_byte.c`'s own comment predicted it would: `^(k)\1$` on "k" +
+U+212A is a match of length 4, one byte captured and three consumed. The two
+spellings of the Unicode fold are tied by
+`tests/backrefs/fold_agreement_utf8_check.c` (`run_backref_diff.sh` §9b) over
+all 2,938 members of the relation in both directions — the arrangement §9's
+byte check has always had, one encoding over.
 
 **[K49] `PcrecEnc` GAINED A SECOND SCALAR — `advance` — AND IT IS A THIRD KIND
 OF CONTRIBUTION, not a fifth entry.** D58's revisit clause asks for exactly
@@ -234,9 +269,9 @@ was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
   DECLARED-LENGTH-validated run per step (§5.2.1's repair — a malformed run
   answers `BACK_STEP_NONE`); the case-sensitive `bref_match` is `enc_byte.c`'s
   body verbatim (UTF-8 is a prefix code, so an exact compare is a byte
-  compare); the caseless one folds the 52 ASCII letters and nothing else (the
-  non-ASCII simple-fold closure is stage 4's, and the LENGTH-return protocol is
-  what will let that land without the shared emitter changing). [K49] added its
+  compare); the caseless one ([M5.0] stage 4) decodes a character from each side and folds
+  each through the generated `utf8_fold_pairs.inc` map — the LENGTH-return
+  protocol delivering exactly what it was designed for, with no emitter change. [K49] added its
   `advance`: `next_pos`' boundary rule written as an inline step, because an
   engine may not call the entry — the two are tied by the advance-agreement
   check named above rather than left to drift. Text, not

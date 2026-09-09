@@ -1720,7 +1720,54 @@ absorb and most expensive to discover late.
 §8.2 gives it sabotage row **S-U11** with the `SAB_REACH`/`SAB_REACH_POP`
 discipline every other row now carries, and §14 ASK 3 records the ruling.
 
+> **DISCHARGED (2026-09-08, stage 4, lane utf8s4, applied at merge).** §4.1's
+> 0-of-11 result now has the standing instrument this section asked for:
+> `tests/registry/pc4_check.c`'s `check_1n_fold`, **22 assertions** (11
+> cells × 2 option words), `pc4: 1:n fold` PASS, sabotage row **S-U11
+> DETECTED**. Landed at stage 4 rather than at stage 1 as this section
+> planned — see §9.2's stage-1 entry for what that delay cost.
+
 ### 4.2 It is a CLOSURE, not a pairing — and it reaches outside the range
+
+> **CORRECTED AT STAGE 4 (2026-09-08, lane utf8s4, applied at merge).** §4.2
+> and §4.3 as written describe folding **"the set"** — the accumulated union
+> of every class member, literal and produced alike. That is wrong the moment
+> a class holds a PRODUCED set (a `\p{L}` interval range, a POSIX class)
+> beside a literal or range contribution: folding the MERGED set is a
+> measurable divergence in **both directions at once**, oracle-backed:
+>
+> | cell | oracle | what folding the MERGED set gives |
+> |---|---|---|
+> | `(?i)[\p{Lu}x]` on U+0345 | no match | **match** — U+0345 is an `Mn` that folds with Greek iota, and `L&`'s span holds it |
+> | `(?i)[[:lower:]]` on U+212A | no match | **match** — a POSIX class would gain a Unicode partner |
+> | `(?i)[\p{Lu}k]` on U+212A | match (the literal `k`) | match, but for the wrong reason if the produced set were folded too |
+> | `(?i)[[:lower:]k]` on U+212A | match | match |
+>
+> The last two rows are why "fold nothing produced" is equally wrong: a
+> literal sitting BESIDE a produced set must still reach its own partner.
+>
+> **The rule, stated as this section should have stated it**: a class
+> constructor folds **PER CONTRIBUTION**, not the merged set.
+>
+> - a LITERAL or a RANGE written in the pattern folds by the encoding's own
+>   fold relation — §4.2(a)-(c)'s closure, §4.3's ordering — because it
+>   denotes code points in that encoding's repertoire;
+> - a NAMED BYTE SET (`\d`, `\w`, `\s`, a POSIX class) folds by
+>   `pcrec_fold_ascii` at **every** encoding (§4.5) — it is named in the
+>   ASCII alphabet, and PCRE2 widens it no further without `PCRE2_UCP`, which
+>   pcrec has no axis for;
+> - a PROPERTY set (`\p{...}`) folds **not at all** — §3.4's measured
+>   substitution (`\p{Lu}` under `-i` IS `\p{L&}`) already answers the
+>   caseless question, and folding on top of it is exactly the U+0345 error
+>   above.
+>
+> Implemented as: the fold takes the relation as an explicit parameter at each
+> of its call sites, and the class constructor accumulates PRODUCED members
+> into a SECOND set that is unioned in AFTER the fold and BEFORE the
+> negation §4.3 describes — §4.3's fold-before-negate order is otherwise
+> unchanged; what moved is that the union now happens between the two. See
+> `docs/dev/lanes/utf8s4_report.md` §3.1 for the full measured cell table and
+> the byte-identity argument that the restructure costs `byte` nothing.
 
 **MEASURED** (`out/caseless.txt` §3, §3b, §5). Three findings that constrain
 the implementation:
@@ -1757,6 +1804,13 @@ needed**; the fact is recorded because it is surprising and because §5.3 needs
 it.
 
 ### 4.3 Fold before negate, over UTF
+
+> **NOTE (2026-09-08, stage 4, lane utf8s4, applied at merge):** "the negation
+> is over the closed set" below is over the PER-CONTRIBUTION-folded set of
+> §4.2's correction above — the union of each contribution's own fold, not a
+> merged-then-folded set. The ordering claim itself (fold, then negate, then
+> lower) is unchanged; `tests/utf8/fold.rxt` section 4 is this finding as
+> cells (§9.2).
 
 **MEASURED** (`out/caseless.txt` §4). OS-1/D23's ordering rule holds under
 UTF, including across blocks:
@@ -1834,6 +1888,16 @@ must fold arbitrary code points, in the artifact's own residual text.**
 | the ~1,500 simple-fold pairs, as a sorted `{from, to}` table with a binary search | ~12 KB of table text | 1.2% of the total cap; **outside** the code cap, since D84 excludes table initializers by definition |
 | the pairs, restricted to code points the PATTERN's referenced groups can contain | pattern-dependent, usually 0 | free where it applies, and it does not apply to `(\w+)\1` |
 
+> **CORRECTED AT STAGE 4 (2026-09-08, lane utf8s4, applied at merge).** The
+> "~12 KB of table text" row's estimate assumed a tighter spelling than the
+> shipped `{0x41,0x61}, ` initializer form costs. MEASURED on the shipped
+> emitter: the pair table is **25,675 bytes**, 2.1x the estimate. Against D84
+> the conclusion below is unchanged — 2.6% of the 1,000,000-byte total cap
+> and none of the 500,000-byte code cap, since a table initializer is
+> excluded from the code cap by definition. A whole caseless-backref artifact
+> under `-e utf8` measures **55,053 bytes**. See
+> `docs/dev/lanes/utf8s4_report.md` §3.9.
+
 **So the design's answer is the middle row and it is a real constraint on the
 entry's body**: the UTF-8 `bref_match_caseless` decodes one character from
 each side, folds each through a sorted table with a binary search, and
@@ -1863,6 +1927,31 @@ interesting set — §4.2's cross-block pairs (K/U+212A, S/U+017F, ω/U+2126,
 which are the cells a naive `toupper`/`tolower` table gets wrong in both
 directions. **The full sweep becomes a version-bump ritual, not a suite
 member**, which is what ASK 3 is already asking about for §4.1's own result.
+
+> **SUPERSEDED AT STAGE 4 (2026-09-08, lane utf8s4, applied at merge).** The
+> sampled differential above is weaker than a full relation sweep, and a
+> sample is structurally one-directional: it can only ever name pairs that
+> DO fold, so it cannot see a residual that folds too MUCH — a decoder
+> losing its bounds, a binary search returning a neighbour. Sweeping the
+> whole vendored relation instead costs 2,938 residual calls (milliseconds)
+> and contains the sample's eight hand-picked pairs by construction. The
+> check ships as `tests/backrefs/fold_agreement_utf8_check.c`'s §9b:
+> **2,938 folding code points / 5,972 ordered pairs compare EQUAL**, plus
+> **63,486 adjacent-pair controls** a sample has no way to generate. See
+> `docs/dev/lanes/utf8s4_report.md` §3.6.
+>
+> **AND A THIRD ASSERTION WAS MISSING HERE (r54 SHOULD E9 named the two
+> consumers; it did not name this hazard, which the second fold object
+> creates).** §4.2's closure introduces a SECOND fold object beside
+> `pcrec_fold_ascii` (§3.2's per-encoding-object finding — no clamp derives
+> one from the other), which means a future vendored-data version bump
+> could silently move `--encoding=byte`'s answers, which are
+> `options=0`-family semantics that must not drift with a data file.
+> MEASURED: the vendored relation restricted to `[0, 0x7F]` is **exactly**
+> the 52 ASCII letters in 26 pairs, and no byte ≥ 0x80 has an ASCII fold
+> partner. `fold_agreement_utf8_check.c` part C asserts this directly,
+> naming the offending byte on failure and calling a break a D26
+> re-measurement event. See `docs/dev/lanes/utf8s4_report.md` §3.3.
 
 ---
 
@@ -3381,6 +3470,33 @@ about `minw`/`maxw` together, and §5.6.2 retires `pcrec_maxw`. The row is
 `minw`-only now, and `maxw`'s replacement is covered by S-U4 (the character
 pair's consumer) and S-U10 (its fixpoint).
 
+> **CORRECTED AT STAGE 4 (2026-09-08, lane utf8s4, applied at merge): S-U11's
+> `SAB_REACH_POP` as specified cannot be satisfied.** The table's floor above
+> reads `tests/registry/pc4_check.c | 1:n fold | 22`, in the `FILE|EREGEX|MIN`
+> shape every other row's floor uses — a grep-LINE-count floor. But 22 is a
+> count of ASSERTIONS, and in the shipped implementation the string
+> `1:n fold` appears **four** times; a line count is unrelated to an
+> assertion count in general. Resolved by moving the number to where it can
+> be true: `check_1n_fold` **asserts `asserted == 22` itself**, which sees a
+> lost UCP arm directly rather than through a grep proxy. The row's
+> `SAB_REACH_POP` floor is the grep-visible **11** (the cells table), with
+> the check's own assertion carrying the 22. See
+> `docs/dev/lanes/utf8s4_report.md` §3.7.
+>
+> **CORRECTED AT STAGE 4 (2026-09-08, lane utf8s4, applied at merge): S-U3's
+> sabotage as spelled ("move it after the byte lowering") is not expressible
+> as a text hunk.** The lowering is a separate pass (`src/opt/lower_enc.c`)
+> running after the parser has published the node, so "moving" the fold
+> there is a rewrite, not a hunk — a sabotage row that cannot itself be
+> applied as a diff is not a row this project's mech tooling can run. What
+> the row DEFENDS is an observable — can the fold reach a partner outside
+> the byte range — and a fold running after the lowering has exactly one
+> reach. **Built instead**: the shipped row clamps the added partners to
+> `0xFF`, which reproduces this section's own stated symptom verbatim —
+> `[a-z]` still folds to `[A-Z]`; only U+212A/U+017F are lost. Stated in the
+> row's own header rather than substituted quietly. See
+> `docs/dev/lanes/utf8s4_report.md` §3.8.
+
 **Every row above is `SAB_EXPECT=DETECTED` at birth except none** — there is no
 `UNREACHED` row in this plan, deliberately. Where `opt5i` had to ship S219
 `UNREACHED` with a derivation, every row here has a witness that exists once
@@ -3656,6 +3772,14 @@ libpcre2, not pcrec, so it depends on nothing stage 1 builds, and deferring it
 to stage 4 would leave the milestone's most load-bearing measured premise
 unwatched for three stages.
 
+> **LANDED AT STAGE 4, NOT STAGE 1 AS PLANNED (2026-09-08, lane utf8s4,
+> applied at merge).** Despite the ruling and reasoning above,
+> `tests/registry/pc4_check.c`'s `check_1n_fold` was not built until stage 4
+> — S-U11 DETECTED there. **The lesson is the one this paragraph's own
+> reasoning was written to avoid, and it happened anyway**: the milestone's
+> most load-bearing measured premise went unwatched for three stages. See
+> `docs/dev/lanes/utf8s4_report.md` §1-§2.
+
 **STAGE 2 — the utf8 backend.** `enc_utf8.c` (four residual bodies,
 `back_step` per §5.2.1), the byte-sequence lowering placed at
 `compile.c:1000` per §2.1.2 — and now GENUINELY REBUILDING (stage 1's byte
@@ -3723,6 +3847,15 @@ D65 `built` column flips for the `\p`/`\P` rows.
 **STAGE 4 — DD-1, the fold closure.** `CaseFolding.txt`, the closure in the
 one constructor, before negation. *Acceptance:* `out/caseless.txt`'s cells as
 a corpus; S-U1/2/3 detected; the `byte` encoding's ASCII fold byte-identical.
+
+> **`tests/utf8/fold.rxt` NOW EXISTS (2026-09-08, lane utf8s4, applied at
+> merge)** — 18 blocks / 45 cells, oracle-first, covering §4.2(c)'s
+> code-point-fold cell and the `byte`-arm discriminator (§3.2) that the D27
+> axis (§8.3.2) could not hold, since its 48 blocks are all single
+> characters. Acceptance additionally reads: `tests/utf8/fold.rxt` 45/45 on
+> first run; `tests/utf8/` whole directory 1,668/0; `run_pc4.sh`'s
+> `1:n fold` check 22 assertions, 0 matching (§4.1.1). See
+> `docs/dev/lanes/utf8s4_report.md` §3.5.
 
 **STAGE 5 — scripts and `Script_Extensions`.** Table weight only, no new
 mechanism. *Acceptance:* PC-3/PC-4 over the script population.

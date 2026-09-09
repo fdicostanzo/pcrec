@@ -662,6 +662,34 @@ else
     fi
 fi
 
+# ---- §9b THE utf8 HALF OF THE SAME OBLIGATION ([M5.0] stage 4, §4.6) ------
+# The fold exists twice under `utf8` too, and there it is a 1,454-class
+# Unicode relation rather than 26 ASCII pairs. §9 above cannot be widened to
+# cover it — its domain is byte pairs and the utf8 residual compares
+# CHARACTERS — so this is its sibling, not its replacement. It also carries
+# the check stage 4's own second fold object made necessary: the vendored
+# Unicode relation restricted to ASCII must be `pcrec_ascii_fold` exactly, or
+# a UCD version bump moves the `byte` encoding's answers silently. See
+# tests/backrefs/fold_agreement_utf8_check.c. Sabotage rows S-U2/S-U3 move the
+# compiler's side; S116 moves the byte residual's.
+FOLDU="$WORKDIR/foldu"; mkdir -p "$FOLDU"
+if ! pcrec_run "$PCREC" -p rx -e utf8 --features "$FEATS" -o "$FOLDU/gen.c" \
+        -- '(?i:(.))(?i:\1)' >/dev/null 2>"$FOLDU/pc.log"; then
+    bad "§9b: pcrec refused the caseless-backreference fixture under -e utf8: $(head -1 "$FOLDU/pc.log")"
+elif ! grep -q 'rx_bref_match_caseless' "$FOLDU/gen.h"; then
+    bad "§9b: the utf8 fixture artifact carries no rx_bref_match_caseless entry — this check has lost the thing it compares against"
+elif ! $CC $GENCFLAGS -I"$FOLDU" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
+        -o "$FOLDU/chk" "$SCRIPT_DIR/fold_agreement_utf8_check.c" \
+        "$FOLDU/gen.c" "$LIBA" 2>"$FOLDU/cc.log"; then
+    bad "§9b: the utf8 fold-agreement check did not compile: $(head -5 "$FOLDU/cc.log" | tr '\n' ' ')"
+else
+    if folduout=$("$FOLDU/chk" 2>&1); then
+        ok "§9b fold agreement (utf8): $folduout"
+    else
+        bad "§9b FOLD AGREEMENT (utf8): $(printf '%s' "$folduout" | head -5 | tr '\n' ' ')"
+    fi
+fi
+
 # ---- §10: THE EMPTY-ITERATION GUARD IS EMITTED, READ OFF THE ARTIFACT ------
 #
 # WHY THIS EXISTS, and it is the lane's own lesson turned into a check. Row

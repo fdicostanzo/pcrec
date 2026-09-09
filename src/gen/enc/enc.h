@@ -121,6 +121,27 @@ typedef struct {
      * special case of "what set does a complement complement within". That is
      * D77-recorded with its trigger, not built for. */
     unsigned    max_cp;
+    /* [M5.0 stage 4] THE ENCODING'S CASE FOLD (DD-1, utf8_design.md §4) — the
+     * relation `cls_casefold` closes a caseless class under, and the ONE
+     * question that reads it is "what else does `(?i)x` match here".
+     *
+     * IT IS A SECOND SCALAR AND THEREFORE A SECOND D58 SEAM EVENT, recorded
+     * for the reason `max_cp` above is: `PcrecEnc` gains a field, the ENTRIES
+     * TABLE does not change, and the third-encoding recipe grows by one line.
+     *
+     * IT IS PER-ENCODING BECAUSE THE TWO FOLDS DISAGREE, not because the
+     * encodings do — which is the thing to understand before reaching for a
+     * clamp instead. `byte` folds exactly the 52 ASCII letters and MUST NOT
+     * fold 0xE9 to 0xC9 (MEASURED against libpcre2's 8-bit non-UTF build,
+     * §4.5); `utf8` folds U+00E9 to U+00C9 and `[a-z]` to U+212A (§4.2c). So
+     * the ASCII fold is not the Unicode one restricted to `[0, max_cp]` — at
+     * `max_cp == 0xFF` that restriction would fold Latin-1 — and no function
+     * of `max_cp` can produce both. Each backend names its own.
+     *
+     * NEVER NULL. A backend with no case at all writes a fold whose relation
+     * is empty rather than a null pointer, so `cls_casefold` has no branch
+     * and no encoding can silently opt out of a question every class asks. */
+    const PcrecFold *fold;
     /* The backend's entries, terminated by a row with `decls == NULL`. An
      * EMPTY table (or none) is a NAME pcrec knows and an encoding it cannot
      * yet compile; `pcrec_enc_ready()` is that test, and the refusal reads the

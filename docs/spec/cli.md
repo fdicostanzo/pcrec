@@ -93,12 +93,55 @@ CLI spelling of. `-e byte` and the bare default are BYTE-IDENTICAL artifacts
 (`tests/cli/run_cli_tests.sh` case13), not merely equivalent-behaving ones —
 the default IS the explicit request.
 
-### `-i` — ASCII case-insensitivity
+### `-i` — case-insensitivity, and WHICH FOLD is the encoding's
 
 Folds case at PARSE time into the automaton (`opt.flags |= PCREC_CASELESS`,
-`cli/main.c:165`); no runtime cost, ASCII letters only (D23). Composes with
-`--` and with a pattern that itself looks like a flag
-(`tests/cli/run_cli_tests.sh` case9).
+`cli/main.c:165`); no runtime cost — no flag, no branch and no `tolower()` in
+the emitted matcher (D23). Composes with `--` and with a pattern that itself
+looks like a flag (`tests/cli/run_cli_tests.sh` case9).
+
+**WHICH characters fold is a property of `-e`** ([M5.0] stage 4, DD-1). The
+two relations DISAGREE rather than nest, so no clamp derives one from the
+other and each encoding names its own:
+
+| under | a literal or a range folds by | so `(?i)k` matches | and `(?i)\xe9` matches |
+|---|---|---|---|
+| `--encoding=byte` (default) | the 52 ASCII letters, and nothing else | `k`, `K` | `\xe9` only |
+| `--encoding=utf8` | Unicode DEFAULT SIMPLE case folding | `k`, `K`, U+212A KELVIN SIGN | U+00E9, U+00C9 |
+
+Both are libpcre2's own answers at the matching option word — `PCRE2_CASELESS`
+for `byte`, `PCRE2_UTF|PCRE2_CASELESS` for `utf8` — measured, not inferred.
+
+Four consequences worth stating because each one surprises:
+
+- **A caseless class can reach far outside what it wrote.** `(?i)[a-z]` under
+  `--encoding=utf8` matches U+212A and U+017F LATIN SMALL LETTER LONG S,
+  neither of which is anywhere near `a-z`. The fold is computed over CODE
+  POINTS before the byte lowering, so a partner's distance is irrelevant.
+- **A caseless single character can consume a variable number of bytes.**
+  Fold partners have different encoded lengths, so `(?i)k` matching U+212A is
+  a match of length 3. Nothing in the API changes; the span simply reports it.
+- **A NAMED byte set does not gain Unicode partners.** `\d`, `\w`, `\s` and
+  the POSIX brackets are ASCII-alphabet sets, so `(?i)[[:lower:]]` does NOT
+  match U+212A at either encoding, while `(?i)[[:lower:]k]` does — the literal
+  `k` beside it is what reaches. That is PCRE2's own split without
+  `PCRE2_UCP`, which pcrec has no axis for. Likewise `\p{...}`: under `-i`,
+  `\p{Lu}`/`\p{Ll}`/`\p{Lt}` are `\p{L&}` and every other property is
+  unchanged, so a property set is never folded on top of that substitution.
+- **A caseless BACKREFERENCE is the one place the fold reaches the artifact.**
+  Its operand is subject text, so it cannot fold at compile time; under `utf8`
+  the emitted matcher carries the ~1,500-entry fold map (about 26 KB of table
+  text, outside the emitted-CODE cap by D84's own definition, and present only
+  in an artifact that HAS a caseless backreference) and folds each character
+  through it. That entry is internal to the artifact — it is called from the
+  matcher, not by a caller — and carries its own contract comment in the
+  emitted `.c`; `docs/spec/match_api.md` §3.1.1 specifies `<prefix>_next_pos`,
+  the residual entry a caller does call.
+
+The fold data is pinned at Unicode 16.0.0 (`third_party/ucd-16.0.0/`), the
+reference oracle's version, exactly as the property tables are. A libpcre2 at
+a different Unicode version will disagree about recently-assigned code points;
+that is a re-measurement event under D26, not a defect.
 
 ### `--emit-main` — a runnable binary
 
@@ -258,8 +301,13 @@ it.
 
 **Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}`** and every
 other property is unchanged — measured against libpcre2 over the whole
-code-point space, not inferred. The Unicode case-fold CLOSURE that a
-caseless non-property construct would need is [M5.0] stage 4.
+code-point space, not inferred. That substitution IS the caseless rule for a
+property, and no fold is applied on top of it: [M5.0] stage 4's Unicode
+closure ships for literals, ranges and classes (see `-i` above) and a
+property set is deliberately not one of its customers. The discriminating
+cell is U+0345, an `Mn` that folds with Greek iota — `(?i)[\p{Lu}x]` does not
+match it, while `(?i)[\p{Lu}k]` does match U+212A because the literal `k`
+beside the property is what folds.
 
 **Five names exceed the emitted-artifact size cap under `--encoding=utf8`
 at default settings** (`\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`,

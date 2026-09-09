@@ -10,12 +10,14 @@
 | **Retrieved by** | lane `utf8s3`, [M5.0] stage 3 |
 | **Licence** | Unicode License v3 (see LICENSE below) |
 | **Modified?** | **No.** The files are byte-for-byte as retrieved. |
+| **Stage-4 addition** | `CaseFolding.txt` retrieved 2026-09-08 by lane `utf8s4`, [M5.0] stage 4, from the same directory at the same version. |
 
 ### Files, with the checksum each was retrieved at
 
 | file | SHA-256 | bytes |
 |---|---|---|
 | `UnicodeData.txt` | `ff58e5823bd095166564a006e47d111130813dcf8bf234ef79fa51a870edb48f` | 2,175,362 |
+| `CaseFolding.txt` | `6f1f9c588eb4a5c718d9e8f93b782685e5c7fec872cf05e8e6878053599e09bb` | 86,092 |
 
 Verify with `shasum -a 256 third_party/ucd-16.0.0/*.txt`.
 
@@ -27,6 +29,30 @@ audit both actually need — from the source outward.
 | derived artifact | produced by | consumed by |
 |---|---|---|
 | `src/parse/uprops_tables.inc` | `third_party/ucd-16.0.0/generate.py` | `src/parse/mod_uprops.c` — module `unicode-props`' `\p{...}` / `\P{...}` name lookup |
+| `src/core/fold_tables.inc` | the same generator, from `CaseFolding.txt` | `src/core/fold.c` — the `pcrec_fold_ucd_simple` relation the `utf8` encoding's caseless class constructor closes over ([M5.0] stage 4, DD-1) |
+| `src/gen/enc/utf8_fold_pairs.inc` | the same generator, from `CaseFolding.txt` | `src/gen/enc/enc_utf8.c` — **the one derived artifact that IS emitted**, as C source text inside the caseless-backreference residual (see below) |
+
+**THE THIRD ROW BREAKS THIS DIRECTORY'S OTHERWISE-UNIVERSAL RULE and the
+break is deliberate, ruled by the design rather than taken here.**
+`third_party/CLAUDE.md` says *"nothing here reaches a generated artifact"* —
+the data compiles to tables inside `libpcrec.a` and a user's matcher is an
+automaton over bytes. That holds for every property table and for the fold
+CLASS closure, both of which are applied at parse time and never survive into
+emitted C. It cannot hold for a caseless BACKREFERENCE: its operand is subject
+text nobody has seen at compile time, so the fold has to exist a second time
+as TEXT the artifact carries (`utf8_design.md` §4.6(b), which sizes it against
+D84's caps and rules out the direct-indexed alternative at 4.4 MB). About
+26 KB of table text, in an artifact that has such a backreference and in no
+other. The licence obligation is unchanged and is discharged the same way —
+the Unicode License v3 permits redistribution of the Data Files and of works
+derived from them, and `LICENSE.txt` ships here unmodified.
+
+**THE TWO FOLD ARTIFACTS ARE ONE RELATION IN TWO FORMS** — an orbit relation
+for the compiler and a sorted `{from, to}` map for the artifact — generated in
+one run from one file so they cannot drift, and tied by
+`tests/backrefs/fold_agreement_utf8_check.c`, which compares the SHIPPED
+residual against the compiler's own object over all 2,938 members of the
+relation.
 
 `generate.py`'s own docstring says which of the emitted properties come from
 the UCD and which are PCRE2 inventions read off `man pcre2pattern`; that split
@@ -38,8 +64,8 @@ third_party/ucd-16.0.0/generate.py`). `make test` runs the generator's
 
 ## Why this file set and no other
 
-**Only what stage 3 uses is vendored** (D77: no data ahead of a measured
-need). General categories and every derived family this stage ships —
+**Only what a landed stage uses is vendored** (D77: no data ahead of a
+measured need). General categories and every derived family this stage ships —
 `L&`, `Any`, `Xan`, `Xps`, `Xsp`, `Xuc`, `Xwd` — come out of
 `UnicodeData.txt` alone, and `Cn` is derivable as the complement of what that
 file lists, since it lists only ASSIGNED code points.
@@ -47,7 +73,9 @@ file lists, since it lists only ASSIGNED code points.
 The later stages bring their own files INTO THIS DIRECTORY, at this same
 version, and add their rows to the table above:
 
-- **[M5.0] stage 4** (the DD-1 fold closure) needs `CaseFolding.txt`.
+- ~~**[M5.0] stage 4** (the DD-1 fold closure) needs `CaseFolding.txt`.~~
+  **DONE 2026-09-08** — `CaseFolding.txt` is vendored above, at the same
+  version, and its two derived artifacts are in the table.
 - **[M5.0] stage 5** (scripts and `Script_Extensions`) needs `Scripts.txt`
   and `ScriptExtensions.txt`.
 

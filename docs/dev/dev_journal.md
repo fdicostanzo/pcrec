@@ -22301,3 +22301,65 @@ Sonnet/Haiku BY DEFAULT with opus on the table when needed (I-60
 addendum, both repos). Their ack: package adopted into their committed
 session_discipline.md (21fbbf7) same evening. Memory updated all
 three places.
+
+## 2026-09-08 (EDT), fifty-seventh session part 4 — STAGE 4 MERGED (fold closure; the per-contribution rule); battery detached overnight; TT-4M 2c building; r55 revision merged
+
+**[M5.0] STAGE 4 MERGED** (lane utf8s4, opus, 7 commits, merge on main;
+docs/dev/lanes/utf8s4_report.md): DD-1's fold closure — CaseFolding.txt
+16.0.0 vendored (generate.py emits three products, all in GEN_TABLES),
+two PcrecFold objects, PcrecEnc.fold (the second D58 seam event),
+cls_casefold parameterized, the caseless backref residual folding per
+character; (?i)k matches U+212A. THE STAGE'S REAL RESULT (§3.1): the
+fold applies PER CONTRIBUTION, not to a class's merged set — folding
+the merged set is wrong in BOTH directions at once, measured against
+libpcre2 cell by cell; p_class folds its own members and unions
+produced sets after; the byte-identity gate (0 differing / 3,120
+patterns, four axes, .abi 24 both sides) is the restructure's control.
+Acceptance measured: tests/utf8 1,668/0, fold.rxt 45/0 first run,
+axis06 promoted 178/178 zero divergences, encchk 11/0 after the
+DD12a(i) region-definition widening (§3.11 — the closed entry-name
+list couldn't see a residual's private helpers; the check was RIGHT to
+fire), backref_diff §9b (2,938 fold points/5,972 pairs/63,486
+controls/52 ASCII bytes), PC-4's 1:n arm PASS, S-U1/2/3/11 all
+DETECTED, S08/09/10 re-aimed at their own recorded counts. §3.4: a
+WRONG ORACLE in the D27 corpus (axis06's four [^\p{Ll}] blocks,
+perr-parked since authoring — a parked cell's carried oracle is an
+unchecked claim). §3.13: run_inline_capability.sh RED is PRE-EXISTING
+(A/B'd at the branch point) — triage owed. §3.14: a starved harness
+worker reduces case COUNT rather than failing (180/0 vs a quiet box's
+237/0) — a vacuity shape for the check-design ledger. **BATTERY
+DETACHED** at the merge commit (scripts/battery.sh →
+build/battery_20260908_stage4/, trailer-watched, zero-model). Design
+hunks lane foldhunks (sonnet, docs-only) applying report §4's six
+hunks to utf8_design.md in parallel. PUSH DEFERRED to battery green
+(the standing rule). The 10.46 arm (I-61) goes to the executor after
+the push. tt4m3 (2c) held to construction until the battery trailer.
+
+## 2026-09-09 (EDT), fifty-seventh session part 5 — the stage-4 battery's verdict: ZERO merge regressions, FOUR infrastructure catches; K54 filed (darwin san unusable); main pushed
+
+**BATTERY DONE 07:56 (13.8h wall: test 38m rc=2 / strict 4s / axes
+5h37m rc=0 / san 0s rc=2 / lint 0s rc=0-vacuous / mech 7.5h rc=2)**,
+and every red decomposed to infrastructure, not the merge: (1) test's
+rc=2 = two check NEEDLES the fold refactor legitimately moved + the
+fold.rxt census pin (lane bat4triage; cpset re-verified 28/0;
+anchored's 26-pattern "failure" reproduced CLEAN solo 7/0 = load
+artifact; NEW BSD-wc padding finding routed to the MACPORT bundle);
+(2) san died at the first object because battery.sh NEVER GOT the
+Mac-move CC fix — bare gcc = Apple clang rejects -fsanitize=leak; the
+THIRD clang-as-gcc instance (K24, c480414c, now the battery driver),
+and lint has been a silent no-op on darwin the same way (lane
+santriage; battery.sh now sources cc_resolve.sh); (3) mech's rc=2 =
+FIVE UNREACHED-UNEXPECTED rows that were AUTHORING BUGS never working
+since written (lane mechreach): S-U1/2/3's empty-pattern
+SAB_REACH_EXPECT, S-U11's relative path + literal-vs-regex + the
+UNWIRED PC-4 suite (fixed generally — the new pc4 arm, MOD-0.8c's
+named day), S200's BSD-grep -P trap; all five now solo DETECTED at
+their own predicted counts (22/26/30/22/15), VALIDATE_ONLY 243/243.
+(4) THE ATTEMPTED REAL make san CC=gcc-16 (first darwin san ever)
+exposed K54: gcc libasan on arm64-darwin runs every instrumented
+invocation at minutes-per-trivial-compile; 0/35 scripts in 3.4h;
+safekilled; SAN IS A LINUX STAGE until the MACPORT investigation
+rules. Merges: bat4triage, santriage, mechreach (one CLAUDE.md
+conflict resolved keeping both entries), size log, K54. MAIN PUSHED
+after part 5's commit. Stage 4's remaining validation = the Linux
+executor arm (I-61: san + lint + the 10.46 fold arm + C3 pins).

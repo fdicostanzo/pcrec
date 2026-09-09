@@ -380,4 +380,82 @@ never edited afterwards.
   a temporary since-removed corruption hook), NOT BATTERY-VALIDATED — the
   box was held by lane utf8s4 for this lane's whole working period; §"OWED
   to the manager's 2d" names the exact commands.
+- `utf8s4_report.md` — [M5.0] STAGE 4, DD-1's FOLD CLOSURE (2026-09-08, lane
+  utf8s4). `(?i)k` under `-e utf8` matches U+212A: `CaseFolding.txt` vendored,
+  the fold published as two `PcrecFold` objects the ENCODING chooses between,
+  the caseless backreference folding code points in the artifact, S-U11 (owed
+  since stage 1) live, and S-U1/2/3 DETECTED. Read it for five things.
+
+  **§3.1 is the stage's real result and it is not in the design at all**: the
+  fold applies PER CONTRIBUTION, not to a class's merged set. Folding the
+  merged set is wrong in BOTH directions at once — `(?i)[\p{Lu}x]` would match
+  U+0345 and `(?i)[[:lower:]]` would match U+212A, neither of which libpcre2
+  does, while `(?i)[\p{Lu}k]` and `(?i)[[:lower:]k]` must still reach U+212A
+  through the literal beside the produced set. So `p_class` folds its OWN
+  members and unions the produced ones after; `utf8_design.md` §4.2/§4.3 say
+  "the SET" and owe a hunk.
+
+  **§3.2 is the trap an implementer walks into**: one Unicode table clamped to
+  `max_cp` looks right and folds Latin-1 under `byte`. The two relations
+  DISAGREE rather than nest, so the fold is a per-encoding object.
+
+  **§3.4 is a WRONG ORACLE in the D27 corpus**, and the provenance explains it:
+  axis06's four `[^\p{Ll}]` blocks were `perr` from authoring until this stage,
+  so their recorded oracle had never been exercised against anything — and it
+  contradicts `utf8_design.md` §4.3's own measured table, which was right.
+  **A parked cell's carried oracle is an unchecked claim until the construct
+  compiles.**
+
+  **§3.11 is the seam check's own limit**: DD12a(i) excises encoding-owned
+  regions by a CLOSED LIST OF ENTRY NAMES, so an entry whose body needs a
+  helper grows the region without the check knowing — it reported "an encoding
+  conditional reached the hot path" for three private helpers of the caseless
+  compare. The check was right to fire; its region definition needed widening.
+
+  **§3.12/§3.14 are two process findings**: rewriting `cls_casefold` staled
+  S08/S09/S10, whose re-aim is verified by reproducing their own recorded
+  6/14/8 counts; and the harness reported `180 passed / 0 failed` where a quiet
+  box reports 237/0, so a starved worker reduces the case COUNT rather than
+  failing.
+
+- `bat4triage_report.md` — TRIAGE of the stage-4 merge battery's `test`-stage
+  red (2026-09-08, lane bat4triage, log-reading + code diagnosis only, no
+  suite runs — the battery was still running the axes/san/mech stages
+  throughout). Every failure in `build/battery_20260908_stage4/test.log`
+  enumerated and classified. TWO are real, stage-4-attributable, and FIXED
+  here: `tests/codegen/run_cpset_structure.sh`'s [1c]/[2d] needles are
+  literal source-text matches ([M5.0] stage 4's `parse.c`
+  `cls_universe`/`enc_byte.c` struct-literal edits legitimately moved the
+  text they grepped for — a check-staleness class, not a correctness
+  regression) and `tests/rxtsource/run_rxtsource_tests.sh`'s census pin was
+  never moved for the new `tests/utf8/fold.rxt` (+1 file/+18 blocks/+57
+  lines, re-pinned here; `C3_PASS`/etc. left explicitly OWED to a Linux
+  re-run). Everything else is PRE-EXISTING darwin/python noise, independently
+  reproduced rather than assumed: `xargs -a`'s BSD incompatibility
+  (catalogued since `76f9e85e`, predates stage 4), three genuine
+  python-3.9.6-vs-reference divergences in untouched corpus files
+  (`caseless.rxt`/`counterk.rxt`/`captures.rxt`, each reproduced with this
+  box's own python3), a NEW finding that BSD `wc -l`/`wc -c` padding breaks
+  several `[ = ]` string-equality checks in the same script (not fixed —
+  out of scope, flagged for the manager), and `tests/anchored/
+  run_anchored_diff.sh`'s "26 patterns fail to compile" reproduced CLEAN
+  with the battery's own `build/pcrec` binary, pointing at box-load/
+  watchdog contention during the concurrent `test` stage rather than a
+  real compiler defect. No `_log.md`: the investigation order is this
+  report's own section order.
+- `santriage_report.md` — the [TT-12] battery `san`/`lint` instant-exit
+  triage (2026-09-08/09, lane santriage): both stages compile the COMPILER
+  AXIS through the Makefile's own `CC ?= gcc` default, which on this Mac is
+  Apple clang — rejecting `-fsanitize=leak` outright (`san` died on its
+  first object file, rc=2 in under a second) and lacking `-fanalyzer`
+  entirely (`lint`'s own guard SKIPPED everything and read rc=0 in under a
+  second, a legitimate-shaped guard hiding a real vacuity since the Mac
+  move). Fixed by sourcing `tests/lib/cc_resolve.sh` in `scripts/battery.sh`
+  and passing the resolved `CC` to those two stages only. History check:
+  the only prior GREEN `san` in the journal predates the 2026-09-04 Mac
+  move; every post-move GREEN battery ran on `ubuntubudu` — this was the
+  first time `battery.sh`'s `san`/`lint` stages ever actually executed on
+  darwin. Validated by reproducing the exact failing compile line and the
+  `lint:` guard probe with `gcc-16` (both succeed) — no `san`/`lint`/battery
+  run was started, per the box hold in force at hand-off.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).

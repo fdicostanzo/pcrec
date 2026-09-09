@@ -256,6 +256,20 @@ is EXPECTED to time out"*, and neither would a separate arm.
   tests/registry/ MINUS its libpcre2 half — the pcrec-reading-pcrec net.
 - `pc3` → `tests/registry/pcre2_check.c`, the EXTERNAL check. Needs libpcre2 at
   run time and **skips loudly per row** when it is absent (see below).
+- `pc4` → `tests/registry/pc4_check.c` alone, added 2026-09-09 (mechreach
+  triage of S-U11). **NOT the full PC-4 differential** — `run_pc4.sh`'s
+  own pattern-space sweep is deliberately still not an arm here, per this
+  file's long-standing note that no sabotage's ONLY signal was a semantic
+  differential until S-U11 became exactly that. Builds `pc4_check.c` and
+  runs it against `/dev/null`, which is enough: `check_1n_fold()` (the
+  STANDING 1:n FOLD CHECK, S-U11's own detector) runs unconditionally
+  before `main()` ever opens its `patterns.tsv` argument, so the
+  population loop after it never executes and its own exact-count
+  assertions (273 patterns etc.) fire regardless — the arm's fail count is
+  therefore scoped to `FAIL: pc4: 1:n fold` lines specifically, never a
+  bare total. S-U11 had NO suite that ran `pc4_check.c` at all before this
+  (`registry` builds `registry_check.c`, never `pc4_check.c`) and scored a
+  real UNDETECTED once its separate [MECH-REACH] probe bugs were fixed.
 - `cli` → `tests/cli/run_cli_tests.sh`. Note the scrape: this script counts
   `cases`, like the corpus harness, not `checks` like every other arm.
 - `vmidentity` → `tests/codegen/run_vm_identity.sh`, the [M4.5b]
