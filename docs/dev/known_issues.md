@@ -11,6 +11,32 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K54 — gcc libasan on arm64-darwin makes every instrumented pcrec invocation pathologically slow; `make san` is UNUSABLE on the Mac pending investigation (INFRASTRUCTURE)
+
+Filed 2026-09-09 (fifty-seventh session). The stage-4 merge's `make san
+CC=gcc-16` on the Mac — THE FIRST san suite attempt ever on darwin
+(santriage: battery.sh's CC hole hid the stage since the Mac move) —
+built clean but ran pathologically: EVERY sanitized `build-san/pcrec`
+invocation burned ~99% CPU for minutes on trivial inputs (`-- a`
+featprobes at 103s+, `[\n\t]` and `[[:alpha:]]` at 33s+, a `\H`
+--probe-ask at 143s+; normal cost is milliseconds), zero of
+run_san_group's 35 scripts completed in 3.4 hours, and the projected
+completion was DAYS. Killed by safekill (audit in the session log).
+NOT a stage-4 finding per se — two variables changed at once (platform
+AND stage 4) — but Linux san at 2786497c (pre-stage-4) was 35/35 in
+~68 min, so the per-invocation slowness is darwin-shaped: suspect
+gcc-16's libasan runtime quality on arm64-darwin (interceptor
+performance), with the stage-3/4 tables (8,437 uprops intervals +
+fold tables) as a possible multiplier under instrumented startup.
+INVESTIGATION OWED (MACPORT family): (a) time ONE sanitized
+`pcrec -- a` under ASan-only, UBSan-only, LSan-only to isolate the
+axis; (b) compare a clang -fsanitize=address,undefined build (Apple
+clang supports asan+ubsan, not leak — a two-axis darwin arm may be
+viable); (c) if gcc libasan is unfixable here, the ruling is
+"san is a LINUX stage" recorded in battery.sh's own comments. Until
+then: stage-level sanitizer validation runs on ubuntubudu via the
+executor channel (working baseline; the stage-4 arm requested I-61).
+
 ## K1 — FIXED 2026-08-09 (R2)
 
 Zero-width `$` lost priority to a consuming alternative in a repeated group.
