@@ -1,0 +1,119 @@
+FAIL: (? byte differential: byte 0x5b ('[') — libpcre2 has NO a construct, pcrec promises a module. An over-promise here is Q2's defect returning; an under-promise is a construct pcrec has stopped recognising.
+FAIL: (? byte differential: byte 0x61 ('a') — libpcre2 has NO a construct, pcrec promises a module. An over-promise here is Q2's defect returning; an under-promise is a construct pcrec has stopped recognising.
+FAIL: (? byte differential: byte 0x72 ('r') — libpcre2 has NO a construct, pcrec promises a module. An over-promise here is Q2's defect returning; an under-promise is a construct pcrec has stopped recognising.
+FAIL: (? byte differential: libpcre2 now recognises 35 bytes and refuses 220 (expected 38 and 217). If a PCRE2 upgrade added a construct after `(?`, that is a TIER 2 finding: give it a row, do not relax this number.
+FAIL: GATED T1 [option runs]: '(?Ua)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?Ua:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?a:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aU)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aU:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aa)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aa:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?r)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?r:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?rU)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?rU:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: POSIX class names: 125494 probes, expected 149804. If you widened or trimmed a table on purpose, update this number in the same commit — if not, coverage was removed and every liveness assertion here would still pass
+FAIL: POSIX names: only 2 of 16 names pcrec claims came from an external source. The differential is degrading to pcrec checking itself
+FAIL: POSIX names: pcrec claims 'alnum' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'alpha' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'ascii' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'blank' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'cntrl' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'digit' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'graph' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'lower' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'print' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'punct' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: could not read '/usr/lib/libpcre2-8.0.dylib' to generate candidate verb names. The pool would fall back to pcrec's own table, which is exactly the circularity this part exists to break.
+FAIL: group (?[[a]]): libpcre2 REJECTS the probe '(?[[a]])' (error 111: unrecognized character after (? or (?-).
+FAIL: group (?a): libpcre2 REJECTS the probe '(?a)' (error 111: unrecognized character after (? or (?-).
+FAIL: group (?r): libpcre2 REJECTS the probe '(?r)' (error 111: unrecognized character after (? or (?-).
+FAIL: only 0 candidate names came from libpcre2's binary (floor 1000). The external source has stopped contributing and the differential is degrading to pcrec-checks-pcrec.
+FAIL: option run: '(?a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?a:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aJ)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aJ:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aU)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aU:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?r)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?r:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rJ)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rJ:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rU)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rU:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: tail sweep (?- [closed]: byte 0x61 ('a') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: tail sweep (?- [closed]: byte 0x72 ('r') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: tail sweep (?- [truncated]: byte 0x61 ('a') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: tail sweep (?- [truncated]: byte 0x72 ('r') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)b'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:)'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:x'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:x)'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=1)'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=4294967289)'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=4294967290)'
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=x)'
+FAIL: verb differential: '(*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)'
+FAIL: verb differential: '(*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:)'
+FAIL: verb differential: '(*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x)'
+FAIL: verb differential: '(*scan_substring:)'
+FAIL: verb differential: '(*scan_substring:x'
+FAIL: verb differential: '(*scan_substring:x)'
+FAIL: verb differential: 'a(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)'
+FAIL: verb differential: 'a(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:x)'
+FAIL: verb differential: 'a(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=1)'
+FAIL: verb differential: 'a(*scan_substring:x)'
+FAIL: verb name 'ACCEPT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'ANY' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'ANYCRLF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'BSR_ANYCRLF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'BSR_UNICODE' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'CASELESS_RESTRICT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'COMMIT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'CR' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'CRLF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'F' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'FAIL' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_DEPTH' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_HEAP' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_MATCH' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_RECURSION' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'MARK' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NOTEMPTY' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NOTEMPTY_ATSTART' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_AUTO_POSSESS' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_DOTSTAR_ANCHOR' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_JIT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_START_OPT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NUL' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'PRUNE' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'SKIP' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'THEN' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'TURKISH_CASING' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'UCP' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'UTF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'UTF8' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'asr' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'atomic' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'atomic_script_run' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'napla' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'naplb' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'negative_lookahead' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'negative_lookbehind' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'nla' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'nlb' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'non_atomic_positive_lookahead' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'non_atomic_positive_lookbehind' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'pla' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'plb' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'positive_lookahead' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'positive_lookbehind' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'scan_substring' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'script_run' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'scs' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'sr' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
