@@ -359,6 +359,27 @@ never edited afterwards.
   (`Lu`/`Ll`/`Lt` are `L&`, everything else invariant), which is why stage 4
   turned out not to be a precondition.
 
+- `tt4m3_report.md` — [TT-4M] STEP 2c (2026-09-08, lane tt4m3):
+  `HARNESS_BATCH=N` implemented in `tests/harness/run.sh` per the
+  r55-revised design note. Read it for two general (non-batching-specific)
+  bugs it found and fixed while building: `tests/lib/size_count.sh`'s
+  `size_count_row` hardcoded the literal `RX_*` macro names, silently
+  blank for any non-`rx` `-p` prefix (a first attempted fix, deriving the
+  prefix from the artifact's FILENAME instead, was itself wrong and broke
+  the unbatched case too — caught by re-running that leg, not assumed);
+  and bash's `read` collapses/strips TAB-delimited empty fields even under
+  a single-character `IFS=$'\t'`, corrupting batch member case data,
+  found via a live answer-identity mismatch and fixed by packing with
+  `\x01` instead. §"Findings" F4 is a suite-wiring gap the design's own
+  item-5-owed sabotage row runs into: `make mech`'s `harness` suite arm
+  never sets `HARNESS_BATCH`, so every line this lane added is
+  structurally unreached by `make mech` today regardless of what row is
+  written — the row is drafted, not committed, pending that decision.
+  Delivered BUILT AND SMOKE-VERIFIED (several small-slice byte-identical
+  diffs against the unbatched path, including a live degradation smoke via
+  a temporary since-removed corruption hook), NOT BATTERY-VALIDATED — the
+  box was held by lane utf8s4 for this lane's whole working period; §"OWED
+  to the manager's 2d" names the exact commands.
 - `utf8s4_report.md` — [M5.0] STAGE 4, DD-1's FOLD CLOSURE (2026-09-08, lane
   utf8s4). `(?i)k` under `-e utf8` matches U+212A: `CaseFolding.txt` vendored,
   the fold published as two `PcrecFold` objects the ENCODING chooses between,

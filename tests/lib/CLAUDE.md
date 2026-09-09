@@ -164,16 +164,26 @@ section targets depend on.
   census's depth-aware, function/table-tracking classifier exactly,
   because the census's own comment-detection rule is applied verbatim at
   every nesting depth with no depth-dependent variation (this file's own
-  header has the full argument). `size_count_row FILE_C FILE_H` is the
-  ONE-SUBPROCESS combination `tests/harness/run.sh`'s SIZELOG call site
+  header has the full argument). `size_count_row FILE_C FILE_H [PREFIX]` is
+  the ONE-SUBPROCESS combination `tests/harness/run.sh`'s SIZELOG call site
   actually uses: the same size scan PLUS the D46 stamp extraction
-  (`RX_ENGINE`/`RX_VM_RUNGS`/`RX_VM_PREFILTER`, same spellings
-  `census.py`'s `extract_stamps()` greps) in ONE `awk` invocation, because
-  the first cut of that call site (2x `awk` + 3x `sed` + 1x `awk` + 1x
-  `cut` + 1x `grep` — 8 spawns per compile) cost 20.4% of `test-corpus`'s
-  own wall time on a 712-artifact sample; consolidated to 1 spawn, MEASURED
-  1.79% (see this function's own header and docs/testing.md "The
-  artifact-size log" for both transcripts). Sourced by
+  (`<PREFIX>_ENGINE`/`<PREFIX>_VM_RUNGS`/`<PREFIX>_VM_PREFILTER`, uppercased,
+  same shapes `census.py`'s `extract_stamps()` greps under the default
+  prefix) in ONE `awk` invocation, because the first cut of that call site
+  (2x `awk` + 3x `sed` + 1x `awk` + 1x `cut` + 1x `grep` — 8 spawns per
+  compile) cost 20.4% of `test-corpus`'s own wall time on a 712-artifact
+  sample; consolidated to 1 spawn, MEASURED 1.79% (see this function's own
+  header and docs/testing.md "The artifact-size log" for both transcripts).
+  **[TT-4M] STEP 2c FIX, 2026-09-08:** `PREFIX` (default `"rx"`, unchanged
+  for every call site before this) is now an explicit third parameter —
+  the stamp grep used to hardcode the literal `RX_*` spellings, which are
+  only correct when the artifact's own `-p` prefix is exactly `rx`; every
+  caller used that prefix until `HARNESS_BATCH`'s per-member `-c`
+  sub-compiles (`hbNNNNNN` prefixes), which the old hardcoding silently
+  blanked all three stamp columns for. NOT derived from FILE_C/FILE_H's own
+  names (a first attempt did this and was wrong: `run.sh`'s unbatched path
+  always names its output `gen.c`/`gen.h` regardless of `-p`, so a
+  filename-derived guess blanked the UNBATCHED stamp too). Sourced by
   `tests/harness/run.sh` only — no other suite needs an artifact's byte
   count today.
 - **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md

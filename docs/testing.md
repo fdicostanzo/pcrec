@@ -4145,3 +4145,97 @@ POSITION.**
   (T1) can be asked.
 - **The answers themselves** — `tests/utf8/axis04_p_categories.rxt`, the
   D27-blinded corpus, promoted at this stage.
+
+## `HARNESS_BATCH` — batched compilation+dispatch ([TT-4M] STEP 2c, 2026-09-08)
+
+Opt-in batched compile shape for `tests/harness/run.sh`'s own corpus-compile
+pass: `HARNESS_BATCH=N` groups fixed-N chunks of consecutive ELIGIBLE
+`pattern` blocks WITHIN one `.rxt` file's own parse into ONE gcc invocation
+(N pcrec-emitted `.c` sources plus a generated `dispatch.c` selector,
+`tests/harness/dispatch_gen.sh`) producing ONE executable, run per case
+through an integer index instead of one executable per pattern. Design:
+`docs/design/tt4m_harness_batching.md` (as revised by the r55 panel,
+`docs/dev/reviews/2026-09-08-r55-tt4m-batching.md`); measurement behind the
+recommended N=64/P=8: `docs/dev/tt4m_darwin_validation.md` and
+`docs/dev/tt4m_step2a_parallel_sizing.md`. Implementation: lane tt4m3,
+`docs/dev/lanes/tt4m3_report.md`.
+
+**Unset or `0` is today's per-pattern path, BYTE-FOR-BYTE UNCHANGED** — the
+same house rule every other axis in this file states for itself (`RXTFLAGS`,
+`RXTROUTE`, `SIZELOG`, `CCACHE=1`, …), verified here directly: several
+small-slice diffs of a `HARNESS_BATCH`-unset run against a pre-change
+`tests/harness/run.sh` were byte-identical.
+
+**Three kinds of block never batch**, checked per-block right where
+`cur_route` is already computed, before the compile-time decision: a `perr`
+block (never reaches gcc at all — pcrec's own exit code is the whole
+check), an H11 target block (`--source --target` is a separate pcrec
+invocation from a different source file than the one that would join a
+batch), and any block carrying a routed cell (a `frames-buffer=` directive,
+or a non-`default`/non-empty `RXTROUTE` floor — this landing's `dispatch.c`
+only reproduces the DEFAULT route, `<prefix>_search`). An excluded block
+compiles and runs through the identical unbatched path regardless of
+`HARNESS_BATCH`, sharing the SAME per-case verification loop
+(`run_case_loop`, extracted once so the two paths cannot drift).
+
+**Compile shape**: each batch member's own `.c` is `-c`-compiled
+individually at `tests/lib/gen_timeout.sh`'s ordinary UNSCALED per-pattern
+D45 budget (the SAME budget every other compile in the tree gets — a batch
+is not diluted N-fold), then the generated `dispatch.c` is `-c`-compiled the
+same way, then ONE link. An N-scaled WALL-ONLY backstop wraps the whole
+sequence (rarely expected to fire; each step's own unscaled budget is what
+actually catches a pathological single compile). A member whose own `-c`
+compile fails is dropped from the link and reported in the IDENTICAL shape
+an unbatched compile failure is reported in — no stderr-parsing heuristic is
+needed, because the per-member split already isolates the failure to its
+own source file before any link is attempted (a stronger result than the
+design note's own item 6 anticipated, which was written against a single
+combined multi-source compile call). The rare case where the LINK itself
+fails despite every member's own `-c` succeeding (gcc's diagnostic there
+does not, in general, name one file) falls back to relinking each surviving
+member SOLO — reusing its already-compiled object, a fresh 1-member
+`dispatch.c` — to isolate the cause.
+
+**`SIZELOG` stays exact per pattern**: the per-member `-c` sub-compile IS
+the timed compile (same `bash time` wrapper trick, same `size_count_row`
+call), so a SIZELOG row under batching reads the SAME byte count and stamps
+as an unbatched row for the same pattern — with one honest caveat: the
+logged gcc CPU/wall number under batching measures the `-c` compile ALONE
+(no `driver.c`/link cost, which the unbatched number always included), so a
+`scripts/size_diff` comparison across the `HARNESS_BATCH` axis will show a
+systematic CPU/wall DROP for every pattern that reflects this shape change,
+not a real compiler speed improvement — named here so nobody reads it as
+one. The BYTE count is also not perfectly axis-invariant: it is a function
+of the artifact's OWN identifiers, which embed the `-p` prefix, so a longer
+generated prefix (`hb000042` vs `rx`) inflates the reported source-byte
+count by the prefix's own length times its occurrence count — small,
+mechanical, and worth knowing before comparing size logs across the axis.
+
+**Two findings surfaced and fixed by this landing, neither specific to
+batching once found**:
+- `tests/lib/size_count.sh`'s `size_count_row` hardcoded the LITERAL macro
+  names `RX_ENGINE`/`RX_VM_PREFILTER`/`RX_VM_RUNGS`, which only exist under
+  those spellings when the artifact's `-p` prefix is exactly `rx` — every
+  caller before HARNESS_BATCH's per-member sub-compiles used that prefix,
+  so the assumption never showed up as false. Fixed by taking the prefix as
+  an explicit parameter (default `rx`, unchanged for every pre-existing
+  call site).
+- Batch member case data is packed into one string per member for storage
+  across the parser's per-block array resets. The first attempt delimited
+  fields with a literal TAB (`IFS=$'\t'`) and MEASURED WRONG: bash's `read`
+  treats TAB (and space, and newline) as "IFS whitespace" and collapses/
+  strips consecutive occurrences even when IFS is set to nothing but that
+  one character — silently shifting every field after the first empty one,
+  which an `n`/`ns` case's always-empty `start`/`end` fields trigger on the
+  very first case. Fixed by using `\x01` (SOH) as the field delimiter
+  instead, which is not IFS-whitespace and delimits exactly like a comma
+  would. Found by an actual answer-identity mismatch on `nomatch` cases,
+  not assumed correct from reading the code.
+
+**Rollout**: opt-in first, per this file's own house style — the flip
+condition to default-on (a full `make test` answer-identical in every
+pass/fail/pattern-compile-failure/size-log-row count to a plain `make test`,
+on both darwin and the Linux executor arm, `make mech`'s sabotage matrix
+clean including the batch-link-fallback row) is the manager's STEP 2d
+acceptance battery, not yet run as of this section's writing — see
+`docs/dev/lanes/tt4m3_report.md` for exactly which commands are OWED.

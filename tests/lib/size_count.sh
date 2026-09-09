@@ -86,15 +86,21 @@ size_count_bytes() {
     printf '%d\n' "$total"
 }
 
-# size_count_row FILE_C FILE_H
+# size_count_row FILE_C FILE_H [PREFIX]
 #   ONE-SUBPROCESS combination of size_count_bytes(FILE_C, FILE_H) with the
-#   D46 stamp extraction (RX_ENGINE/RX_VM_RUNGS/RX_VM_PREFILTER, read from
-#   FILE_C the same way docs/dev/artifact_size_census/census.py's
-#   extract_stamps() does). Prints one TSV line: `engine<TAB>rungs<TAB>
+#   D46 stamp extraction (<PREFIX>_ENGINE/<PREFIX>_VM_RUNGS/
+#   <PREFIX>_VM_PREFILTER, uppercased, read from FILE_C the same way
+#   docs/dev/artifact_size_census/census.py's extract_stamps() does).
+#   PREFIX is the artifact's OWN `-p` prefix (default "rx", matching every
+#   caller before [TT-4M] STEP 2c — NEVER derived from FILE_C/FILE_H's
+#   names, which are independent of `-p`: run.sh's unbatched path always
+#   names its output "gen.c"/"gen.h" regardless of prefix, so a filename-
+#   derived guess is wrong for the very call site this function has always
+#   served). Prints one TSV line: `engine<TAB>rungs<TAB>
 #   prefilter<TAB>bytes` (a field is empty when the artifact has no such
-#   stamp — a DFA artifact carries no RX_VM_RUNGS/RX_VM_PREFILTER at all).
-#   This column ORDER (stamps, then the byte count) is what lets a caller
-#   splice this function's output straight into a wider row — see
+#   stamp — a DFA artifact carries no <PREFIX>_VM_RUNGS/<PREFIX>_VM_PREFILTER
+#   at all). This column ORDER (stamps, then the byte count) is what lets a
+#   caller splice this function's output straight into a wider row — see
 #   tests/harness/run.sh's SIZELOG call site.
 #
 #   WHY THIS EXISTS SEPARATELY FROM size_count_bytes ABOVE. The harness's
@@ -117,9 +123,37 @@ size_count_bytes() {
 #   with the decimal point stripped — see the call site's own comment).
 #   Net: 8 subprocess spawns per compile down to 1.
 size_count_row() {
-    local fc="$1" fh="$2"
-    LC_ALL=C awk -v FC="$fc" '
-        BEGIN { in_comment = 0; t = 0; prose = 0; engine = ""; rungs = ""; prefilter = "" }
+    local fc="$1" fh="$2" prefix="${3:-rx}"
+    # [TT-4M] STEP 2c FINDING, fixed here rather than worked around at the
+    # call site: the stamp grep below used to hardcode the LITERAL macro
+    # names `RX_ENGINE`/`RX_VM_PREFILTER`/`RX_VM_RUNGS`, which only exist
+    # under those exact spellings when the artifact's own `-p` prefix is
+    # "rx" — every caller in this tree until HARNESS_BATCH's per-member
+    # `-c` sub-compiles (tests/harness/run.sh) used exactly that prefix, so
+    # the assumption never showed up as false. A batch member compiled
+    # under `-p hb000001` emits `HB000001_ENGINE` etc, and the old hardcoded
+    # patterns matched nothing — SILENTLY, three empty stamp columns rather
+    # than a loud failure, on every single batched SIZELOG row (measured:
+    # `tests/base/dot.rxt:12` read `dfa` unbatched, `` (empty) batched,
+    # bytes unaffected). Fixed by taking the prefix as an explicit
+    # parameter (default "rx", unchanged for every existing caller) rather
+    # than guessing from FILE_C/FILE_H's own names — a first attempt at
+    # this fix derived it from FILE_H's basename instead, which is WRONG
+    # for the very call site this function has always served: run.sh's
+    # unbatched path names its output "gen.c"/"gen.h" always, independent
+    # of `-p`, so that guess silently produced "GEN" instead of "RX" and
+    # blanked the stamp on every unbatched row too — caught by re-running
+    # this smoke on the unbatched leg, not assumed fixed from the batched
+    # leg alone.
+    local upfx
+    upfx="$(printf '%s' "$prefix" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
+    LC_ALL=C awk -v FC="$fc" -v UPFX="$upfx" '
+        BEGIN {
+            in_comment = 0; t = 0; prose = 0; engine = ""; rungs = ""; prefilter = ""
+            eng_pat = "^#define " UPFX "_ENGINE \""
+            pf_pat  = "^#define " UPFX "_VM_PREFILTER \""
+            rg_pat  = "^#define " UPFX "_VM_RUNGS "
+        }
         FNR == 1 { in_comment = 0 }
         {
             lb = length($0) + 1
@@ -139,17 +173,17 @@ size_count_row() {
             }
             if (line ~ /^\/\//) { prose += lb; next }
             if (FILENAME == FC) {
-                if ($0 ~ /^#define RX_ENGINE "/) {
+                if ($0 ~ eng_pat) {
                     engine = $0
-                    sub(/^#define RX_ENGINE "/, "", engine)
+                    sub(eng_pat, "", engine)
                     sub(/"$/, "", engine)
-                } else if ($0 ~ /^#define RX_VM_PREFILTER "/) {
+                } else if ($0 ~ pf_pat) {
                     prefilter = $0
-                    sub(/^#define RX_VM_PREFILTER "/, "", prefilter)
+                    sub(pf_pat, "", prefilter)
                     sub(/"$/, "", prefilter)
-                } else if ($0 ~ /^#define RX_VM_RUNGS /) {
+                } else if ($0 ~ rg_pat) {
                     rungs = $0
-                    sub(/^#define RX_VM_RUNGS /, "", rungs)
+                    sub(rg_pat, "", rungs)
                     sub(/u$/, "", rungs)
                 }
             }
