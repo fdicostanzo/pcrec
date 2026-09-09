@@ -1,0 +1,3 @@
+header PCRE2_MAJOR.PCRE2_MINOR: 10.48
+runtime pcre2_config(VERSION):  10.48 2026-08-31
+MATCH: yes

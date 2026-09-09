@@ -1,0 +1,15 @@
+=== LINKED TWIN ===
+== registry vs libpcre2 (PC-3) ==
+  libpcre2 version: 10.48 2026-08-31
+  library path:     /opt/homebrew/Cellar/pcre2/10.48/lib/libpcre2-8.0.dylib
+  compile options:  0 (no PCRE2_UTF, no PCRE2_UCP, no PCRE2_CASELESS)
+PASS: esc \d
+PASS: esc \D
+
+=== DLOPEN BINARY ===
+== registry vs libpcre2 (PC-3) ==
+  libpcre2 version: 10.42 2022-12-11
+  library path:     /usr/lib/libpcre2-8.0.dylib
+  compile options:  0 (no PCRE2_UTF, no PCRE2_UCP, no PCRE2_CASELESS)
+PASS: esc \d
+PASS: esc \D

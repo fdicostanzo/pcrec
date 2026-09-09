@@ -1,0 +1,322 @@
+== registry vs libpcre2 (PC-3) ==
+  libpcre2 version: 10.48 2026-08-31
+  library path:     /opt/homebrew/Cellar/pcre2/10.48/lib/libpcre2-8.0.dylib
+  compile options:  0 (no PCRE2_UTF, no PCRE2_UCP, no PCRE2_CASELESS)
+PASS: esc \d
+PASS: esc \D
+PASS: esc \s
+PASS: esc \S
+PASS: esc \w
+PASS: esc \W
+PASS: esc \h
+PASS: esc \H
+PASS: esc \v
+PASS: esc \V
+PASS: esc \N
+PASS: esc \N{name}
+PASS: esc \N{U+0041} (libpcre2 recognises it and refuses the MODE: error 193)
+PASS: esc \b
+PASS: esc \B
+PASS: esc \A
+PASS: esc \Z
+PASS: esc \z
+PASS: esc \G
+PASS: esc \K
+PASS: esc \k<name>
+PASS: esc \g{-1}
+PASS: esc \g<1>
+PASS: esc \g'1'
+PASS: esc \g<0>
+PASS: esc \g<01>
+PASS: esc \g'0'
+PASS: esc \g'01'
+PASS: esc \p{L}
+PASS: esc \P{L}
+PASS: esc \Q
+PASS: esc \E
+PASS: esc \R
+PASS: esc \X
+PASS: esc \C
+PASS: esc \cX
+PASS: esc \o{101}
+PASS: esc \0
+PASS: esc \1
+PASS: esc \2
+PASS: esc \3
+PASS: esc \4
+PASS: esc \5
+PASS: esc \6
+PASS: esc \7
+PASS: esc \8
+PASS: esc \9
+PASS: esc \a
+PASS: esc \e
+PASS: esc \f
+PASS: esc \n
+PASS: esc \r
+PASS: esc \t
+PASS: esc \x41
+PASS: group (?:...)
+PASS: group (?=...)
+PASS: group (?!...)
+PASS: group (?<=...)
+PASS: group (?<!...)
+PASS: group (?<*a)
+PASS: group (?<name>a)
+PASS: group (?'name'...)
+PASS: group (?P<name>a)
+PASS: group (?P=n)
+PASS: group (?P>n)
+PASS: group (?PX)
+PASS: group (?>...)
+PASS: group (?*a)
+PASS: group (?#...)
+PASS: group (?C1)
+PASS: group (?|...)
+PASS: group (?(1)a|b)
+PASS: group (?(DEFINE)(?<w>a))
+PASS: group (?&name)
+PASS: group (?R)
+PASS: group (?0)
+PASS: group (?00)
+PASS: group (?1)
+PASS: group (?2)
+PASS: group (?3)
+PASS: group (?4)
+PASS: group (?5)
+PASS: group (?6)
+PASS: group (?7)
+PASS: group (?8)
+PASS: group (?9)
+PASS: group (?10)
+PASS: group (?01)
+PASS: group (?+1)(a)
+PASS: group (?+2)(a)(b)
+PASS: group (a)(?-01)
+PASS: group (a)(?-1)
+PASS: group (a)(a)(?-2)
+PASS: group (a)(a)(a)(?-3)
+PASS: group (a)(a)(a)(a)(?-4)
+PASS: group (a)(a)(a)(a)(a)(?-5)
+PASS: group (a)(a)(a)(a)(a)(a)(?-6)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(?-7)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(a)(?-8)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)
+PASS: group (?[[a]])
+PASS: group (?)
+PASS: group (?-i)
+PASS: group (?^)
+PASS: group (?J)
+PASS: group (?U)
+PASS: group (?a)
+PASS: group (?i)
+PASS: group (?m)
+PASS: group (?n)
+PASS: group (?r)
+PASS: group (?s)
+PASS: group (?x)
+PASS: group (?q)
+PASS: verb (*pla:a)
+PASS: verb (*positive_lookahead:a)
+PASS: verb (*nla:a)
+PASS: verb (*negative_lookahead:a)
+PASS: verb (*plb:a)
+PASS: verb (*positive_lookbehind:a)
+PASS: verb (*nlb:a)
+PASS: verb (*negative_lookbehind:a)
+PASS: verb (*napla:a)
+PASS: verb (*non_atomic_positive_lookahead:a)
+PASS: verb (*naplb:a)
+PASS: verb (*non_atomic_positive_lookbehind:a)
+PASS: verb (*ACCEPT)
+PASS: classbracket [[:alpha:]]
+PASS: classbracket [[.a.]]
+PASS: classbracket [[=a=]]
+PASS: quantsuffix a*+
+PASS: quantsuffix a++
+PASS: quantsuffix a?+
+PASS: quantsuffix a{1,2}+
+PASS: bare ^
+PASS: bare $
+PASS: bare (a)
+PASS: capability-refusal exemptions: exactly 1 row (libpcre2 names the construct and refuses the mode)
+  (30 of the probes needed a context wrapper; 30 wrappers defined)
+  candidate pool: 67818 ASCII runs in /opt/homebrew/Cellar/pcre2/10.48/lib/libpcre2-8.0.dylib, expanded to prefixes and suffixes
+FAIL: verb differential: '(*enla'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*non_atomic_mpositive_lookbehind'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*negative_Zlookbehind'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*nlPa'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*non_atomir_positive_lookahead'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*varlookbehi'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*non_atomic_posiQive_lookbehind'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*kNYCRLF'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*extr'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*tegative_lookahead'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*nonG_atomic_positive_lookbehind'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*naclb'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*manichaean'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*non_atomic_positive_lookbelhind'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*non_atomic_poGsitive_lookahead'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*atomiq_script_run'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*tern_length_8'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*abr'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*posihtive_lookahead'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*napqla'
+        libpcre2: 114 (missing closing parenthesis)
+        pcrec owed: a rejection naming a module ("... requires module '...'")
+        pcrec said: "(*alpha_assertion) not recognized"
+PASS: K15 exclusion: fired on the over-cap non-identifier cell and nowhere else (see docs/dev/known_issues.md K15)
+  K15 cells excluded (over-cap non-identifier verb names, category divergence ruled acceptable): 78
+  verb names probed: 93936 candidates x 13 forms = 1221168 probes
+  candidates dropped: 0 over the 256-byte cap, 0 for a full set
+  libpcre2 verdicts: 1576 compile, 692368 err160, 486595 err195, 23 err166, 1248 err109, 104 err148, 39254 other(recognised)
+  the recognised-but-refused bucket, by code:
+       114  n=38909  missing closing parenthesis
+       122  n=299    unmatched closing parenthesis
+       218  n=34     missing opening parenthesis
+       204  n=12     PCRE2_EXTRA_TURKISH_CASING require Unicode (UTF or UCP) mode
+  (only the first 20 of 38854 mismatches were printed)
+PASS: verb differential liveness: some candidate compiled
+PASS: verb differential liveness: some candidate was an unknown upper-table name
+PASS: verb differential liveness: some candidate was an unknown lower-table name
+PASS: verb differential liveness: some candidate was recognised and refused
+  candidates by source: 31657 from libpcre2's binary, 62048 from mutations of pcrec's table, 231 generated
+PASS: every verb name pcrec claims was produced INDEPENDENTLY by libpcre2's own binary
+PASS: libpcre2's binary supplied the bulk of the candidate pool
+  class-bracket doorway: 2772 generated patterns — 2755 agree, 17 deferred to a module
+PASS: class-bracket doorway: probe count intact (2772)
+PASS: class-bracket doorway: pattern set unchanged (0x69e3ddacf18fce3f)
+  of the 1201 both-refuse cases, 0 name a module wrongly, 4 name one for a construct PCRE2 has in a pattern that merely never closed
+PASS: class-bracket doorway: no module promised for a pattern PCRE2 will never accept
+PASS: class-bracket doorway: no over-acceptance and no over-rejection
+PASS: class-bracket sweep is live: it reaches the POSIX-class deferral
+PASS: class-bracket sweep is live in both directions: libpcre2 refuses some too
+  nested openers generated (4b/4a): ':'=112/161 '.'=112/161 '='=112/161
+PASS: class-bracket sweep generates a nested opener for every delimiter, in BOTH positions
+  class delimiter bytes: 1275 probes over 255 bytes x 5 shapes — 1274 agree, 1 deferred
+PASS: class delimiter byte sweep: probe count intact (1275)
+PASS: class delimiter byte sweep: pattern set unchanged (0x538673c9e76127f)
+PASS: class delimiter byte sweep: no over-acceptance and no over-rejection
+  bytes departing from ordinary-member behaviour: .:=\
+PASS: class delimiter byte sweep: exactly `:` `.` `=` (and the class escape) are live — no byte is recognised without a row
+  POSIX class names: 187872 probes — 34 real names (34 from libpcre2's own binary or the byte sweep, 0 from mutations of pcrec's table), 187838 libpcre2 does not have
+FAIL: POSIX class names: 187872 probes, expected 149804. If you widened or trimmed a table on purpose, update this number in the same commit — if not, coverage was removed and every liveness assertion here would still pass
+PASS: POSIX class names: every name deferred or refused as libpcre2 does
+PASS: POSIX name sweep reaches real class names
+PASS: POSIX name sweep reaches names libpcre2 does not have
+PASS: every POSIX class name pcrec claims was produced INDEPENDENTLY of pcrec's table
+  POSIX names pcrec claims: 16, of which 16 were produced by a source that is not a mutation of pcrec's own table
+PASS: every POSIX name pcrec claims has an external source behind it
+  POSIX name x position: 80 probes over 16 names x 5 shapes — 80 agree, 72 deferred, 2 names position-restricted
+PASS: POSIX name x position: probe count intact (80)
+PASS: POSIX name x position: pattern set unchanged (0xaf2c87f99da26e22)
+PASS: POSIX name x position: every name's position behaviour matches libpcre2
+PASS: POSIX name x position: libpcre2 restricts exactly 2 names, so the pool is live
+PASS: POSIX name x position: pcrec varies its own answer by position for exactly the names libpcre2 restricts
+PASS: a NUL inside a verb name is error 160, and pcrec's reachable truncation agrees
+PASS: (? byte differential: 7650 probes over 255 bytes — 38 bytes are constructs, 217 are not, and pcrec agrees on every one [RECOGNITION tier: default gate]
+PASS: (? byte differential: libpcre2's own populations are unchanged (38 constructs, 217 not)
+PASS: (? byte differential: pattern set unchanged (0x2cefbc6df53a8337)
+PASS: option runs: 19448 probes over runs of length 0-3 — 3678 are constructs libpcre2 has, 15770 are not, pcrec agrees on every one [RECOGNITION tier: default gate]
+PASS: option runs: both verdict buckets are well populated, so agreement is not vacuous
+PASS: option runs: pattern set unchanged (0xd502f808e522c30d)
+PASS: tail sweep (?P: 255 tails — closed 3/252 constructs/not, truncated 3/252 [RECOGNITION tier: default gate]
+PASS: tail sweep (?<: 255 tails — closed 255/0 constructs/not, truncated 255/0 [RECOGNITION tier: default gate]
+PASS: tail sweep (?+: 255 tails — closed 255/0 constructs/not, truncated 255/0 [RECOGNITION tier: default gate]
+PASS: tail sweep (?-: 255 tails — closed 22/233 constructs/not, truncated 22/233 [RECOGNITION tier: default gate]
+PASS: tail sweeps: 2 of 4 prefixes have both buckets populated (20400 probes)
+PASS: tail sweeps: pattern set unchanged (0x29c2e21e28d1bbc9)
+  uprops shape differential: 1976 probes over \p/\P x prefix x name x noise x shape x position, plus the 52-letter drift guard
+PASS: uprops differential: probe count intact (1976)
+PASS: uprops differential: pattern set unchanged (0x89762073cd5e48ac)
+PASS: uprops differential: pcrec matched libpcre2's live verdict (or its own no-lookup promise) on every generated cell
+PASS: uprops differential liveness: some single-letter name is a known short code
+PASS: uprops differential liveness: some single-letter name is NOT a known short code
+PASS: uprops differential liveness: some multi-letter name compiles under libpcre2 (Alpha/Alphabetic/Any)
+PASS: uprops differential liveness: some multi-letter name is unknown to libpcre2 (Foo)
+PASS: uprops differential liveness: the empty-name cell ran
+PASS: uprops differential liveness: all 5 positions (atom, class, class low/high endpoint, negated class) were generated
+PASS: uprops differential liveness: both \p and \P ran
+  gated[modifiers]: focused enabled set installed (feature mask 0x4000)
+PASS: gated[modifiers] option runs: pattern set unchanged (0xd502f808e522c30d)
+PASS: gated[modifiers] (? byte: pattern set unchanged (0x2cefbc6df53a8337)
+PASS: gated[modifiers] tail sweeps: pattern set unchanged (0x29c2e21e28d1bbc9)
+  gated[modifiers] quantifier cross [bare]: 757 spellings accepted by both engines, stride 7, 96 taken x 8 quantifiers = 768 cells (661 dropped by the stride, 0 too long to store, 0 over the collector's capacity)
+  gated[modifiers] quantifier cross [scoping]: 757 spellings accepted by both engines, stride 7, 96 taken x 8 quantifiers = 768 cells (661 dropped by the stride, 0 too long to store, 0 over the collector's capacity)
+PASS: gated[modifiers] quantifier cross: every generated cell reached the comparison
+PASS: gated[modifiers] quantifier cross: both spelling lists full (96 bare + 96 scoping x 8 quantifiers), so the bare-vs-scoping control is live
+PASS: gated[modifiers] recognition (OPTRUN-B3): 49034 cells with ONLY module 'modifiers' enabled — libpcre2 accepts 3769 and rejects 45265, pcrec accepts 2339, and pcrec accepts nothing libpcre2 rejects
+PASS: gated[modifiers] liveness: pcrec ACCEPTED 2339 cells with the gate open (floor 1000) — the producers really ran, so T1 had something to catch
+PASS: gated[modifiers] liveness: libpcre2 REJECTED 45265 cells (floor 1000), so T1 is asserted over a real population
+PASS: gated[modifiers]: the enabled set is restored to empty (this pass leaves no process-global behind, so the next focused pass really is focused)
+  gated[unicode-props]: focused enabled set installed (feature mask 0x8)
+PASS: gated[unicode-props]: every one of the 1053 property names pcrec ships compiles in pcrec AND in libpcre2 (oracle Unicode 17.0.0, pin 16.0.0)
+  gated[unicode-props]: 118 probes, libpcre2 accepted 28 / rejected 90, pcrec accepted 28; 12 real-but-unshipped names refused; 1053 shipped names asked of the oracle
+PASS: gated[unicode-props] T1: pcrec accepted no property name libpcre2 rejects
+PASS: gated[unicode-props] T3: every refusal emitted no C source
+PASS: gated[unicode-props]: every real-but-unshipped property is refused as the MODULE's gap, never as an unknown name
+PASS: gated[unicode-props] liveness: the producer really compiles property names with the gate open
+PASS: gated[unicode-props] liveness: real-but-unshipped names exist to check the wording against
+PASS: gated[unicode-props]: enabled set restored to empty
+
+== Summary (PC-3) ==
+checks passed: 206
+checks failed: 21

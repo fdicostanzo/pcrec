@@ -1,0 +1,417 @@
+== registry vs libpcre2 (PC-3) ==
+  libpcre2 version: 10.42 2022-12-11
+  library path:     /usr/lib/libpcre2-8.0.dylib
+  compile options:  0 (no PCRE2_UTF, no PCRE2_UCP, no PCRE2_CASELESS)
+PASS: esc \d
+PASS: esc \D
+PASS: esc \s
+PASS: esc \S
+PASS: esc \w
+PASS: esc \W
+PASS: esc \h
+PASS: esc \H
+PASS: esc \v
+PASS: esc \V
+PASS: esc \N
+PASS: esc \N{name}
+PASS: esc \N{U+0041} (libpcre2 recognises it and refuses the MODE: error 193)
+PASS: esc \b
+PASS: esc \B
+PASS: esc \A
+PASS: esc \Z
+PASS: esc \z
+PASS: esc \G
+PASS: esc \K
+PASS: esc \k<name>
+PASS: esc \g{-1}
+PASS: esc \g<1>
+PASS: esc \g'1'
+PASS: esc \g<0>
+PASS: esc \g<01>
+PASS: esc \g'0'
+PASS: esc \g'01'
+PASS: esc \p{L}
+PASS: esc \P{L}
+PASS: esc \Q
+PASS: esc \E
+PASS: esc \R
+PASS: esc \X
+PASS: esc \C
+PASS: esc \cX
+PASS: esc \o{101}
+PASS: esc \0
+PASS: esc \1
+PASS: esc \2
+PASS: esc \3
+PASS: esc \4
+PASS: esc \5
+PASS: esc \6
+PASS: esc \7
+PASS: esc \8
+PASS: esc \9
+PASS: esc \a
+PASS: esc \e
+PASS: esc \f
+PASS: esc \n
+PASS: esc \r
+PASS: esc \t
+PASS: esc \x41
+PASS: group (?:...)
+PASS: group (?=...)
+PASS: group (?!...)
+PASS: group (?<=...)
+PASS: group (?<!...)
+PASS: group (?<*a)
+PASS: group (?<name>a)
+PASS: group (?'name'...)
+PASS: group (?P<name>a)
+PASS: group (?P=n)
+PASS: group (?P>n)
+PASS: group (?PX)
+PASS: group (?>...)
+PASS: group (?*a)
+PASS: group (?#...)
+PASS: group (?C1)
+PASS: group (?|...)
+PASS: group (?(1)a|b)
+PASS: group (?(DEFINE)(?<w>a))
+PASS: group (?&name)
+PASS: group (?R)
+PASS: group (?0)
+PASS: group (?00)
+PASS: group (?1)
+PASS: group (?2)
+PASS: group (?3)
+PASS: group (?4)
+PASS: group (?5)
+PASS: group (?6)
+PASS: group (?7)
+PASS: group (?8)
+PASS: group (?9)
+PASS: group (?10)
+PASS: group (?01)
+PASS: group (?+1)(a)
+PASS: group (?+2)(a)(b)
+PASS: group (a)(?-01)
+PASS: group (a)(?-1)
+PASS: group (a)(a)(?-2)
+PASS: group (a)(a)(a)(?-3)
+PASS: group (a)(a)(a)(a)(?-4)
+PASS: group (a)(a)(a)(a)(a)(?-5)
+PASS: group (a)(a)(a)(a)(a)(a)(?-6)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(?-7)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(a)(?-8)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)
+PASS: group (a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)
+FAIL: group (?[[a]]): libpcre2 REJECTS the probe '(?[[a]])' (error 111: unrecognized character after (? or (?-).
+        An RS_MODULE row claims PCRE2 has this construct. Either the row names something PCRE2 does not have, or the probe needs a context wrapper in WRAPPERS[] here.
+PASS: group (?)
+PASS: group (?-i)
+PASS: group (?^)
+PASS: group (?J)
+PASS: group (?U)
+FAIL: group (?a): libpcre2 REJECTS the probe '(?a)' (error 111: unrecognized character after (? or (?-).
+        An RS_MODULE row claims PCRE2 has this construct. Either the row names something PCRE2 does not have, or the probe needs a context wrapper in WRAPPERS[] here.
+PASS: group (?i)
+PASS: group (?m)
+PASS: group (?n)
+FAIL: group (?r): libpcre2 REJECTS the probe '(?r)' (error 111: unrecognized character after (? or (?-).
+        An RS_MODULE row claims PCRE2 has this construct. Either the row names something PCRE2 does not have, or the probe needs a context wrapper in WRAPPERS[] here.
+PASS: group (?s)
+PASS: group (?x)
+PASS: group (?q)
+PASS: verb (*pla:a)
+PASS: verb (*positive_lookahead:a)
+PASS: verb (*nla:a)
+PASS: verb (*negative_lookahead:a)
+PASS: verb (*plb:a)
+PASS: verb (*positive_lookbehind:a)
+PASS: verb (*nlb:a)
+PASS: verb (*negative_lookbehind:a)
+PASS: verb (*napla:a)
+PASS: verb (*non_atomic_positive_lookahead:a)
+PASS: verb (*naplb:a)
+PASS: verb (*non_atomic_positive_lookbehind:a)
+PASS: verb (*ACCEPT)
+PASS: classbracket [[:alpha:]]
+PASS: classbracket [[.a.]]
+PASS: classbracket [[=a=]]
+PASS: quantsuffix a*+
+PASS: quantsuffix a++
+PASS: quantsuffix a?+
+PASS: quantsuffix a{1,2}+
+PASS: bare ^
+PASS: bare $
+PASS: bare (a)
+PASS: capability-refusal exemptions: exactly 1 row (libpcre2 names the construct and refuses the mode)
+  (30 of the probes needed a context wrapper; 30 wrappers defined)
+FAIL: could not read '/usr/lib/libpcre2-8.0.dylib' to generate candidate verb names. The pool would fall back to pcrec's own table, which is exactly the circularity this part exists to break.
+FAIL: verb differential: '(*scan_substring:x)'
+        libpcre2: 195 ((*alpha_assertion) not recognized)
+        pcrec owed: (*alpha_assertion) not recognized
+        pcrec said: "(*scan_substring) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)"
+FAIL: verb differential: '(*scan_substring:)'
+        libpcre2: 195 ((*alpha_assertion) not recognized)
+        pcrec owed: (*alpha_assertion) not recognized
+        pcrec said: "(*scan_substring) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)"
+FAIL: verb differential: 'a(*scan_substring:x)'
+        libpcre2: 195 ((*alpha_assertion) not recognized)
+        pcrec owed: (*alpha_assertion) not recognized
+        pcrec said: "(*scan_substring) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)"
+FAIL: verb differential: '(*scan_substring:x'
+        libpcre2: 195 ((*alpha_assertion) not recognized)
+        pcrec owed: (*alpha_assertion) not recognized
+        pcrec said: "(*scan_substring) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:x)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=1)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=x)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: 'a(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: 'a(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:x)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: 'a(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=1)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:x'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)b'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=4294967289)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=4294967290)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*VERB) not recognized or malformed"
+FAIL: verb differential: '(*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*alpha_assertion) not recognized"
+FAIL: verb differential: '(*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:)'
+        libpcre2: 148 (subpattern name is too long (maximum 32 code units))
+        pcrec owed: subpattern name is too long (maximum 128 code units)
+        pcrec said: "(*alpha_assertion) not recognized"
+PASS: K15 exclusion: fired on the over-cap non-identifier cell and nowhere else (see docs/dev/known_issues.md K15)
+  K15 cells excluded (over-cap non-identifier verb names, category divergence ruled acceptable): 78
+  verb names probed: 62747 candidates x 13 forms = 815711 probes
+  candidates dropped: 0 over the 256-byte cap, 0 for a full set
+  libpcre2 verdicts: 1572 compile, 436370 err160, 375892 err195, 23 err166, 1248 err109, 260 err148, 346 other(recognised)
+  the recognised-but-refused bucket, by code:
+       122  n=291    unmatched closing parenthesis
+       114  n=55     missing closing parenthesis
+  (only the first 20 of 214 mismatches were printed)
+PASS: verb differential liveness: some candidate compiled
+PASS: verb differential liveness: some candidate was an unknown upper-table name
+PASS: verb differential liveness: some candidate was an unknown lower-table name
+PASS: verb differential liveness: some candidate was recognised and refused
+  candidates by source: 0 from libpcre2's binary, 62514 from mutations of pcrec's table, 233 generated
+FAIL: verb name 'ACCEPT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'FAIL' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'F' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'COMMIT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'PRUNE' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'SKIP' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'THEN' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'MARK' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'UTF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'UTF8' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'UCP' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NOTEMPTY' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NOTEMPTY_ATSTART' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_AUTO_POSSESS' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_DOTSTAR_ANCHOR' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_JIT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NO_START_OPT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'CASELESS_RESTRICT' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'TURKISH_CASING' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'CR' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'CRLF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'ANYCRLF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'ANY' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'NUL' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'BSR_ANYCRLF' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'BSR_UNICODE' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_MATCH' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_DEPTH' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_HEAP' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'LIMIT_RECURSION' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'pla' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'plb' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'napla' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'naplb' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'nla' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'nlb' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'positive_lookahead' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'positive_lookbehind' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'non_atomic_positive_lookahead' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'non_atomic_positive_lookbehind' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'negative_lookahead' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'negative_lookbehind' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'atomic' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'sr' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'asr' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'script_run' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'atomic_script_run' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'scs' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: verb name 'scan_substring' was reached only by mutating pcrec's OWN table, not by libpcre2's binary. Deleting this row would be invisible: the candidate would vanish with it.
+FAIL: only 0 candidate names came from libpcre2's binary (floor 1000). The external source has stopped contributing and the differential is degrading to pcrec-checks-pcrec.
+  class-bracket doorway: 2772 generated patterns — 2755 agree, 17 deferred to a module
+PASS: class-bracket doorway: probe count intact (2772)
+PASS: class-bracket doorway: pattern set unchanged (0x69e3ddacf18fce3f)
+  of the 1201 both-refuse cases, 0 name a module wrongly, 4 name one for a construct PCRE2 has in a pattern that merely never closed
+PASS: class-bracket doorway: no module promised for a pattern PCRE2 will never accept
+PASS: class-bracket doorway: no over-acceptance and no over-rejection
+PASS: class-bracket sweep is live: it reaches the POSIX-class deferral
+PASS: class-bracket sweep is live in both directions: libpcre2 refuses some too
+  nested openers generated (4b/4a): ':'=112/161 '.'=112/161 '='=112/161
+PASS: class-bracket sweep generates a nested opener for every delimiter, in BOTH positions
+  class delimiter bytes: 1275 probes over 255 bytes x 5 shapes — 1274 agree, 1 deferred
+PASS: class delimiter byte sweep: probe count intact (1275)
+PASS: class delimiter byte sweep: pattern set unchanged (0x538673c9e76127f)
+PASS: class delimiter byte sweep: no over-acceptance and no over-rejection
+  bytes departing from ordinary-member behaviour: .:=\
+PASS: class delimiter byte sweep: exactly `:` `.` `=` (and the class escape) are live — no byte is recognised without a row
+  POSIX class names: 125494 probes — 6 real names (6 from libpcre2's own binary or the byte sweep, 0 from mutations of pcrec's table), 125488 libpcre2 does not have
+FAIL: POSIX class names: 125494 probes, expected 149804. If you widened or trimmed a table on purpose, update this number in the same commit — if not, coverage was removed and every liveness assertion here would still pass
+PASS: POSIX class names: every name deferred or refused as libpcre2 does
+PASS: POSIX name sweep reaches real class names
+PASS: POSIX name sweep reaches names libpcre2 does not have
+FAIL: POSIX names: pcrec claims 'alnum' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'alpha' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'ascii' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'blank' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'cntrl' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'digit' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'graph' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'lower' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'print' but no candidate pool produced it, so nothing external ever tested that claim
+FAIL: POSIX names: pcrec claims 'punct' but no candidate pool produced it, so nothing external ever tested that claim
+  POSIX names pcrec claims: 16, of which 2 were produced by a source that is not a mutation of pcrec's own table
+FAIL: POSIX names: only 2 of 16 names pcrec claims came from an external source. The differential is degrading to pcrec checking itself
+  POSIX name x position: 80 probes over 16 names x 5 shapes — 80 agree, 72 deferred, 2 names position-restricted
+PASS: POSIX name x position: probe count intact (80)
+PASS: POSIX name x position: pattern set unchanged (0xaf2c87f99da26e22)
+PASS: POSIX name x position: every name's position behaviour matches libpcre2
+PASS: POSIX name x position: libpcre2 restricts exactly 2 names, so the pool is live
+PASS: POSIX name x position: pcrec varies its own answer by position for exactly the names libpcre2 restricts
+PASS: a NUL inside a verb name is error 160, and pcrec's reachable truncation agrees
+FAIL: (? byte differential: byte 0x5b ('[') — libpcre2 has NO a construct, pcrec promises a module. An over-promise here is Q2's defect returning; an under-promise is a construct pcrec has stopped recognising.
+FAIL: (? byte differential: byte 0x61 ('a') — libpcre2 has NO a construct, pcrec promises a module. An over-promise here is Q2's defect returning; an under-promise is a construct pcrec has stopped recognising.
+FAIL: (? byte differential: byte 0x72 ('r') — libpcre2 has NO a construct, pcrec promises a module. An over-promise here is Q2's defect returning; an under-promise is a construct pcrec has stopped recognising.
+  (? byte differential: 7650 probes over 255 bytes — 35 bytes are constructs, 220 are not, and pcrec agrees on every one [RECOGNITION tier: default gate] (3 mismatches)
+FAIL: (? byte differential: libpcre2 now recognises 35 bytes and refuses 220 (expected 38 and 217). If a PCRE2 upgrade added a construct after `(?`, that is a TIER 2 finding: give it a row, do not relax this number.
+PASS: (? byte differential: pattern set unchanged (0x2cefbc6df53a8337)
+FAIL: option run: '(?a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?a:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?r)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?r:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aJ)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aJ:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rJ)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rJ:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aU)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?aU:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rU)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+FAIL: option run: '(?rU:a)' — libpcre2 has NO a construct, pcrec promises a module. The run is the construct; a row keyed on its first byte cannot see this.
+  option runs: 19448 probes over runs of length 0-3 — 2338 are constructs libpcre2 has, 17110 are not, pcrec agrees on every one [RECOGNITION tier: default gate] (1340 mismatches)
+PASS: option runs: both verdict buckets are well populated, so agreement is not vacuous
+PASS: option runs: pattern set unchanged (0xd502f808e522c30d)
+PASS: tail sweep (?P: 255 tails — closed 3/252 constructs/not, truncated 3/252 [RECOGNITION tier: default gate]
+PASS: tail sweep (?<: 255 tails — closed 255/0 constructs/not, truncated 255/0 [RECOGNITION tier: default gate]
+PASS: tail sweep (?+: 255 tails — closed 255/0 constructs/not, truncated 255/0 [RECOGNITION tier: default gate]
+FAIL: tail sweep (?- [closed]: byte 0x61 ('a') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: tail sweep (?- [truncated]: byte 0x61 ('a') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: tail sweep (?- [closed]: byte 0x72 ('r') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+FAIL: tail sweep (?- [truncated]: byte 0x72 ('r') — libpcre2 has NO a construct, pcrec promises a module. digits are subroutine calls, option letters are settings
+PASS: tail sweeps: 2 of 4 prefixes have both buckets populated (20400 probes)
+PASS: tail sweeps: pattern set unchanged (0x29c2e21e28d1bbc9)
+  uprops shape differential: 1976 probes over \p/\P x prefix x name x noise x shape x position, plus the 52-letter drift guard
+PASS: uprops differential: probe count intact (1976)
+PASS: uprops differential: pattern set unchanged (0x89762073cd5e48ac)
+PASS: uprops differential: pcrec matched libpcre2's live verdict (or its own no-lookup promise) on every generated cell
+PASS: uprops differential liveness: some single-letter name is a known short code
+PASS: uprops differential liveness: some single-letter name is NOT a known short code
+PASS: uprops differential liveness: some multi-letter name compiles under libpcre2 (Alpha/Alphabetic/Any)
+PASS: uprops differential liveness: some multi-letter name is unknown to libpcre2 (Foo)
+PASS: uprops differential liveness: the empty-name cell ran
+PASS: uprops differential liveness: all 5 positions (atom, class, class low/high endpoint, negated class) were generated
+PASS: uprops differential liveness: both \p and \P ran
+  gated[modifiers]: focused enabled set installed (feature mask 0x4000)
+FAIL: GATED T1 [option runs]: '(?a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?a:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?r)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?r:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aU)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aU:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?rU)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?rU:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?Ua)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?Ua:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aa)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+FAIL: GATED T1 [option runs]: '(?aa:a)' — libpcre2 REJECTS this (error 111) and pcrec ACCEPTS it with the gate open, emitting a matcher for a language PCRE2 never defined. This is SPEC-1's shape; the closed-gate sweeps cannot see it because the gate refuses first.
+PASS: gated[modifiers] option runs: pattern set unchanged (0xd502f808e522c30d)
+PASS: gated[modifiers] (? byte: pattern set unchanged (0x2cefbc6df53a8337)
+PASS: gated[modifiers] tail sweeps: pattern set unchanged (0x29c2e21e28d1bbc9)
+  gated[modifiers] quantifier cross [bare]: 309 spellings accepted by both engines, stride 3, 96 taken x 8 quantifiers = 768 cells (213 dropped by the stride, 0 too long to store, 0 over the collector's capacity)
+  gated[modifiers] quantifier cross [scoping]: 309 spellings accepted by both engines, stride 3, 96 taken x 8 quantifiers = 768 cells (213 dropped by the stride, 0 too long to store, 0 over the collector's capacity)
+PASS: gated[modifiers] quantifier cross: every generated cell reached the comparison
+PASS: gated[modifiers] quantifier cross: both spelling lists full (96 bare + 96 scoping x 8 quantifiers), so the bare-vs-scoping control is live
+  gated[modifiers] recognition (OPTRUN-B3): 49034 cells with ONLY module 'modifiers' enabled — libpcre2 accepts 2400 and rejects 46634, pcrec accepts 2339, and pcrec accepts nothing libpcre2 rejects (T1 934, T3 0)
+PASS: gated[modifiers] liveness: pcrec ACCEPTED 2339 cells with the gate open (floor 1000) — the producers really ran, so T1 had something to catch
+PASS: gated[modifiers] liveness: libpcre2 REJECTED 46634 cells (floor 1000), so T1 is asserted over a real population
+PASS: gated[modifiers]: the enabled set is restored to empty (this pass leaves no process-global behind, so the next focused pass really is focused)
+  gated[unicode-props]: focused enabled set installed (feature mask 0x8)
+  gated[unicode-props]: NOTE '\p{sc=GARA}' is a script name this oracle (Unicode 14.0.0) does not have and the pin (16.0.0) does — counted as name drift; tests/uprops is where its members are held to being unassigned here
+  gated[unicode-props]: NOTE '\p{GARA}' is a script name this oracle (Unicode 14.0.0) does not have and the pin (16.0.0) does — counted as name drift; tests/uprops is where its members are held to being unassigned here
+  gated[unicode-props]: NOTE '\p{scx=GARA}' is a script name this oracle (Unicode 14.0.0) does not have and the pin (16.0.0) does — counted as name drift; tests/uprops is where its members are held to being unassigned here
+  gated[unicode-props]: NOTE '\p{sc=GARAY}' is a script name this oracle (Unicode 14.0.0) does not have and the pin (16.0.0) does — counted as name drift; tests/uprops is where its members are held to being unassigned here
+  gated[unicode-props]: NOTE '\p{GARAY}' is a script name this oracle (Unicode 14.0.0) does not have and the pin (16.0.0) does — counted as name drift; tests/uprops is where its members are held to being unassigned here
+  gated[unicode-props]: NOTE '\p{scx=GARAY}' is a script name this oracle (Unicode 14.0.0) does not have and the pin (16.0.0) does — counted as name drift; tests/uprops is where its members are held to being unassigned here
+PASS: gated[unicode-props]: 1002 of the 1053 property names pcrec ships compile in libpcre2 too; the other 51 are SCRIPT names this oracle (Unicode 14.0.0) does not have, and no category drifted
+  gated[unicode-props]: 118 probes, libpcre2 accepted 28 / rejected 90, pcrec accepted 28; 12 real-but-unshipped names refused; 1053 shipped names asked of the oracle
+PASS: gated[unicode-props] T1: pcrec accepted no property name libpcre2 rejects
+PASS: gated[unicode-props] T3: every refusal emitted no C source
+PASS: gated[unicode-props]: every real-but-unshipped property is refused as the MODULE's gap, never as an unknown name
+PASS: gated[unicode-props] liveness: the producer really compiles property names with the gate open
+PASS: gated[unicode-props] liveness: real-but-unshipped names exist to check the wording against
+PASS: gated[unicode-props]: enabled set restored to empty
+
+== Summary (PC-3) ==
+checks passed: 194
+checks failed: 119
