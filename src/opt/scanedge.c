@@ -481,7 +481,37 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
     bool  *vtg   = malloc((size_t)n * sizeof(bool));
     bool  *stg   = malloc((size_t)n * sizeof(bool));
     bool  *drop  = calloc((size_t)n, sizeof(bool));
-    int   *exitv = malloc((size_t)n * sizeof(int));
+    /* CALLOC, NOT MALLOC — the one array here whose entries are written
+     * CONDITIONALLY (`shaped()` below sets `exitv[s]` only on its one
+     * return-true path, and `ok[s] = member_ok(...) && shaped(...)`
+     * short-circuits `shaped()` entirely when `member_ok` is false), where
+     * every other array above is either malloc'd-then-fully-overwritten in
+     * one unconditional pass (`indeg`/`vtg`/`stg` by `in_degrees()`,
+     * `ok` by the loop below) or, like `drop`, needs its rest-state to be a
+     * real value.
+     *
+     * `collect()`'s three reads of `exitv[]` (:325, :396, :432) are each
+     * gated by the matching `ok[]` entry, and that gate is sound: `ok[s]`
+     * is true iff `shaped()` returned true for `s`, which happens iff it
+     * reached its one write of `*exit` — there is no path back to a
+     * `return true` that skips it. So a read of an unwritten `exitv[s]` is
+     * unreachable, PROVEN over the two-function pair, not merely believed.
+     *
+     * gcc -fanalyzer 15 (Linux, the I-61 run, 2026-09-09) flags line :325's
+     * `exitv[p]` read as CWE-457 anyway: `ok`'s boolean content and
+     * `exitv`'s per-element written-ness are two different heap regions
+     * correlated only through `shaped()`'s side effect, and the analyzer's
+     * per-element tracking does not carry that correlation across the
+     * malloc'd array once state-widened over the building loop's own index
+     * — the same "table-driven code" shape CLAUDE.md's situation index
+     * already names as this tool's common false-positive class. MEASURED
+     * on the same box/compiler (gcc 15.2.0, Ubuntu): switching this one
+     * allocation to `calloc` — a pure defensive initialization, since the
+     * proof above already rules out a live read of the unwritten value —
+     * silences it with no other code change; every other array's shape
+     * (fully overwritten before any read, values never depended on for
+     * their identity) is unaffected and stays `malloc`. */
+    int   *exitv = calloc((size_t)n, sizeof(int));
     int   *remap = malloc((size_t)n * sizeof(int));
     Chain *found = malloc((size_t)(n + 1) * sizeof(Chain));
     if (!indeg || !ok || !hp || !vtg || !stg || !drop || !exitv || !remap || !found) {
