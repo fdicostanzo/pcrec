@@ -122,21 +122,19 @@ mechanism, and the measurement (`src/opt/scanedge.c:484`).
   with the fix removed, byte for byte. Not filed further (out of this
   task's scope; flagged for the manager).
 - The named answer-corpus slice (scanedge.c's own CLAUDE.md entry:
-  counterk, classes, bounded_repeats, possessify, k18_*) — **OWED,
-  running in the background** at the time of this report. Two prior
-  attempts were lost to a foreground `timeout`/pipe combination that
-  buffered all output until exit; this attempt is `nohup`'d and
-  `disown`'d, logging to `build/scanedge_slice_validation.log` inside
-  this worktree (gitignored, survives this session). Watch for
-  `scan-edge slice: N passed, M failed` or the harness's own per-file
-  `[OK]`/`[FAIL]` summary lines as the completion marker; as of hand-off
-  it had been running ~15 minutes with minimal parent CPU time, which is
-  this box's known process-dispatch spawn-tax shape ([TT-14]/[XARCH])
-  rather than a hang — no reason to expect a real failure, since the code
-  change is a no-op on every live path by the proof above, but the run is
-  the honest confirmation and is left for whoever next picks this up.
-  This is the one number in this report marked OWED per BOILERPLATE.md's
-  DO-THEN-FINISH rule.
+  counterk, classes, bounded_repeats, possessify, k18_*) —
+  **COMPLETE: 5,810 cases passed, 0 failed, 0 pattern-compile failures,
+  10 of 10 file workers reported** (`env PROCS=4 bash tests/harness/
+  run.sh ...`, log at `build/scanedge_slice_validation.log`, gitignored).
+  Two earlier attempts at `PROCS=1` (this box's default) were abandoned:
+  the first was lost to a foreground `timeout`/pipe combination that
+  buffers all output until exit, and the second, run serially in the
+  background, was still going after 5+ minutes with under a second of
+  parent CPU time — this box's known process-dispatch spawn-tax shape
+  ([TT-14]/[XARCH]) rather than a hang, but slower than this task
+  warranted given the fix is a proven no-op on every live path.
+  `PROCS=4` finished promptly. Confirms the `calloc` change changes
+  nothing observable.
 - `make strict CC=gcc-16 clean` (as literally listed in the brief) was
   not run as a single combined step; `clean` was not invoked separately
   since `build/` is gitignored and nothing here depends on a pristine
