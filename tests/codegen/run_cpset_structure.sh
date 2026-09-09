@@ -144,7 +144,13 @@ if [ "${NNEG:-0}" -ge 2 ]; then
 else
     bad "[1c] found ${NNEG:-0} negation site(s) complementing within cls_universe(cx), want 2 — a complement taken within a hard-coded universe is r54 E2, and under a wider encoding it silently narrows every negated class"
 fi
-if grep -q 'e->max_cp' "$SRC/parse/parse.c" && grep -q 'unsigned    max_cp;' "$SRC/gen/enc/enc.h"; then
+# The needle is `->max_cp`, not a specific LOCAL VARIABLE NAME: [M5.0]
+# stage 4 (bat4triage, 2026-09-08) collapsed `cls_universe`'s two-line body
+# (`PcrecEnc *e = cls_enc(cx); return e->max_cp;`) into a one-liner
+# (`return cls_enc(cx)->max_cp;`), which is the same claim with no local
+# named `e` to grep for — a legitimate refactor a variable-name needle
+# cannot survive.
+if grep -q '\->max_cp' "$SRC/parse/parse.c" && grep -q 'unsigned    max_cp;' "$SRC/gen/enc/enc.h"; then
     ok "[1c] the universe is read from PcrecEnc.max_cp, the backend's own scalar"
 else
     bad "[1c] the complement universe does not come from PcrecEnc.max_cp"
@@ -392,9 +398,18 @@ else
     # THE ONE EDIT: the byte backend claims Unicode's universe. Nothing else
     # moves, so what the witness demonstrates is the render site's own refusal
     # and not some second thing the edit broke.
-    sed -i.bak 's/PCREC_ENC_BYTE, "byte", 0xFFu, entries_byte/PCREC_ENC_BYTE, "byte", 0x10FFFFu, entries_byte/' \
+    #
+    # The needle is `"byte", 0xFFu,` alone, not the whole
+    # `..., 0xFFu, entries_byte` span: [M5.0] stage 4 (bat4triage,
+    # 2026-09-08) inserted PcrecEnc.fold (`&pcrec_fold_ascii,`) between
+    # `max_cp` and `entries_byte` in this struct literal (the second D58
+    # seam event, per docs/dev/lanes/utf8s4_report.md), which the old
+    # contiguous span could no longer match — a legitimate field addition a
+    # multi-field needle cannot survive. Matching only the field this
+    # witness actually widens is what stays robust to the next one.
+    sed -i.bak 's/"byte", 0xFFu,/"byte", 0x10FFFFu,/' \
         "$SCRATCH/src/gen/enc/enc_byte.c"
-    if ! grep -q '0x10FFFFu, entries_byte' "$SCRATCH/src/gen/enc/enc_byte.c"; then
+    if ! grep -q '"byte", 0x10FFFFu,' "$SCRATCH/src/gen/enc/enc_byte.c"; then
         bad "[2d] could not widen the scratch byte backend's max_cp — this witness has stopped being able to build itself"
     else
         # The LOWERING would refuse first, and correctly: its universe is the
