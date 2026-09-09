@@ -22412,3 +22412,45 @@ BATTERY_STAGES="test strict axes lint mech",
 build/battery_20260909_s5/. Push HELD for its green; I-63 (stage-5
 10.46 exact arm + san + the new C3 read) goes to the executor on the
 pushed commit tomorrow.
+
+## 2026-09-09 (EDT), fifty-seventh session part 7 — the s5 battery's test stage dispositioned (zero stage-5 regressions); Frank's ORACLE TRILOGY (retire dlopen if the test passes; cache answers; one interchangeable interface); next-session lanes approved
+
+**S5 BATTERY, test stage (rc=2, 42.6min) FULLY DISPOSITIONED (lane
+s5triage): ZERO stage-5 regressions** — all 159 FAILs bucketed
+pre-existing/expected: 119 registry (U13's system-10.42 + stage 5's
+new pool_from_library() surfacing the SAME root cause as an 85-fail
+cascade — the SIP dylib is not a readable file), 22 = BSD wc-padding
+in run_ir_listing (the class now measures 15% of stage fails — the
+tree-wide sweep Frank's 09-04 commit deferred is chartered), 14
+rxtsource (xargs/python/wc, all catalogued), plus inline_capability,
+sed-BRE, a missed grep -P site (run_capturediff_gate.sh:273),
+K33-by-design, and a gcc-16 ICE-under-CPU-rlimit quirk. CORRECTION:
+scan_edge_dispatch is a DRAFT in no make target — it never fired;
+part-4's "two codegen reds" was imprecise. 38/38 sections, no §3.14
+shape. Nothing blocks the push on trailer green.
+
+**FRANK'S ORACLE TRILOGY (tonight, in sequence):** (1) "should we be
+bothering with dlopen at all?" — ruled TEST-THEN-DECIDE: lane linktest
+(sonnet) is evaluating direct linking against five criteria (builds
+via probe with pcrec proper untouched; header/runtime version MATCH =
+skew impossible; result deltas fully attributable to 10.42→10.48
+drift; loud skip on absent lib; timing — Frank's quicker-on-Mac
+hypothesis, alternating trials). PASS = launch [ORACLE-LINK], the
+conversion + python find_library one-resolution-point, SUPERSEDING
+U15b. (2) "cache results and only consult for new questions" — the
+ORACLE ANSWER STORE: keyed (oracle-id, version, options,
+question-hash), reference-version store COMMITTED (computed on the
+10.46 box — darwin consults reference answers without owning the
+reference, dissolving the U13 class for cached questions), only the
+ORACLE side caches (pcrec computes fresh — the asymmetry is the
+safety property), local caches gitignored. (3) "all oracles follow
+one interface, interchangeable" — OracleId as outer key; Question = a
+closed kind-set ALIGNED WITH THE .rxt CELL VOCABULARY, canonical
+serialization, hash = key; batch-first adapter contract with
+capability declarations (the ssh stdin-payload method as the native
+shape); a differential becomes a store query; .rxt expectations gain
+formal provenance. All three folded into tomorrow's APPROVED admin
+lane (the utf8-libpcre2 differential instrument builds ON the
+interface + store). **NEXT-SESSION LANES FRANK-APPROVED**:
+[K53-SELRETRY] (opus-small) / axes-stage batching (sonnet) / the
+instrument-on-the-oracle-interface (sonnet); MACPORT bundle reserve.
