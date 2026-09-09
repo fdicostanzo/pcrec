@@ -397,4 +397,19 @@ never edited afterwards.
   box reports 237/0, so a starved worker reduces the case COUNT rather than
   failing.
 
+- `santriage_report.md` — the [TT-12] battery `san`/`lint` instant-exit
+  triage (2026-09-08/09, lane santriage): both stages compile the COMPILER
+  AXIS through the Makefile's own `CC ?= gcc` default, which on this Mac is
+  Apple clang — rejecting `-fsanitize=leak` outright (`san` died on its
+  first object file, rc=2 in under a second) and lacking `-fanalyzer`
+  entirely (`lint`'s own guard SKIPPED everything and read rc=0 in under a
+  second, a legitimate-shaped guard hiding a real vacuity since the Mac
+  move). Fixed by sourcing `tests/lib/cc_resolve.sh` in `scripts/battery.sh`
+  and passing the resolved `CC` to those two stages only. History check:
+  the only prior GREEN `san` in the journal predates the 2026-09-04 Mac
+  move; every post-move GREEN battery ran on `ubuntubudu` — this was the
+  first time `battery.sh`'s `san`/`lint` stages ever actually executed on
+  darwin. Validated by reproducing the exact failing compile line and the
+  `lint:` guard probe with `gcc-16` (both succeed) — no `san`/`lint`/battery
+  run was started, per the box hold in force at hand-off.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
