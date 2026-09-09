@@ -464,9 +464,20 @@ earliest.
 | `\p{L&}` `\p{Lc}` `\p{Any}` | `OK-GATED` | as above |
 | `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `OK-GATED` | as above |
 | `\p{<binary property>}` | `REJECTED` | — |
-| `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `REJECTED` | — |
+| `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `OK-GATED` | a code-point interval set, lowered per encoding; the bare and `scx` spellings are `Script \| Script_Extensions`, `sc` is `Script` alone |
 | `\p{Bidi_Class:..}` `\p{BC:..}` | `REJECTED` | — |
 | `\p{Assigned}` | `REJECTED` | — |
+
+**[M5.0] stage 5 (2026-09-09) built the SCRIPT row**, and it is not the
+"table weight only" row the staging predicted: MEASURED against 10.42, 10.46
+and 10.48 and stated by `man pcre2pattern`'s own "Script properties" section,
+a bare `\p{Greek}` is `Script | Script_Extensions` while `\p{sc=Greek}` is
+`Script` alone — U+0342 COMBINING GREEK PERISPOMENI is in the first and not
+the second. So the row shipped two sets per value, not one: 171 script values
+(every `sc` value the UCD declares except `Katakana_Or_Hiragana`, which no
+libpcre2 accepts either), each answering to its long name, four-letter code
+and deprecated aliases, in three namespaces. There is no `gc=` namespace
+because libpcre2 has none — measured error 147 on all three versions.
 
 **[M5.0] stage 3 (2026-09-06) built the first three rows** — 45 property names
 under `--features unicode-props`, at both encodings, negated as `\P{X}` or
@@ -481,9 +492,9 @@ but because the emitted DFA is `states x byte-equivalence-CLASSES`, and a
 multi-byte encoding makes the second factor ~100 where an ASCII pattern's is a
 handful.
 
-The three `REJECTED` rows are deliberate and staged, not blocked: scripts and
-`Script_Extensions` are [M5.0] stage 5, the binary-property and `Bidi_Class`
-families are declined by design (`utf8_design.md` §3.4, no measured demand),
+The remaining `REJECTED` rows are deliberate, not blocked: the binary-property
+and `Bidi_Class` families are declined by design (`utf8_design.md` §3.4, no
+measured demand),
 and `\p{Assigned}` is refused by every libpcre2 this project can reach
 (measured error 147 on 10.42, 10.46 and 10.48) although the design's own §3.1
 survey lists it as accepted — `\P{Cn}` is the same set on all three.
@@ -519,12 +530,23 @@ behavior, not oracle agreement, until then.
 
 M5.
 This annotation is keyed to `\p{L}` and covers the survey's general-
-category row (`\p{L}` `\p{Lu}` …); the four rows beneath it in the same
-table (`\p{Xan}` etc., binary properties, script names, `Bidi_Class`) carry
-no distinct content of their own — each reads only "same" in the
-source prose, pointing back to this one. See the [DOC-DRV] migration
-manifest: those four rows are disposition dropped-trivial, not silently
-omitted.
+category row (`\p{L}` `\p{Lu}` …). Three of the four rows beneath it in the
+same table (`\p{Xan}` etc., binary properties, `Bidi_Class`) carry no
+distinct content of their own — each reads only "same" in the source
+prose, pointing back to this one. See the [DOC-DRV] migration manifest:
+those rows are disposition dropped-trivial, not silently omitted.
+
+THE SCRIPT ROW IS NO LONGER ONE OF THEM ([M5.0] stage 5, 2026-09-09). It
+built, and it has content this row does not: a script value denotes TWO
+sets, because a bare `\p{Greek}` is `Script | Script_Extensions` while
+`\p{sc=Greek}` is `Script` alone — measured on 10.42, 10.46 and 10.48, and
+stated by `man pcre2pattern`'s "Script properties" section. 171 values,
+each answering to its long name, four-letter code and deprecated aliases,
+across three namespaces (bare, `sc=`, `scx=`; either separator). The one
+UCD `sc` value NOT shipped is `Katakana_Or_Hiragana`/`Hrkt`, refused by
+every libpcre2 reachable here. Under `--encoding=byte` a script clamps to
+Latin-1 and 154 of the 171 are empty there — the seventeen that are not
+are mostly U+00B7 MIDDLE DOT's fifteen-script Script_Extensions list.
 
 <!-- END GENERATED -->
 

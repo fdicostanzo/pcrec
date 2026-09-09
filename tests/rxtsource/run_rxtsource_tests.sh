@@ -158,9 +158,19 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # by a DIFFERENT amount (+1 file, +5 blocks, +6 lines): the deleted file was
 # under known_fail and the new one is not, which is exactly the
 # opposite-directions case the k49fix comment above records.
-CENSUS_FILES=210
-CENSUS_BLOCKS=3906
-CENSUS_LINES=28871
+# 2026-09-09 ([M5.0] stage 5, lane utf8s5) — +1 file, +30 blocks, +72 lines,
+# and the SPLIT between the two pins is the informative part this time. The
+# new file is `tests/utf8/axis12_scripts.rxt` (26 blocks, the SCRIPT
+# properties, oracled from the 10.46 reference); the other +4 blocks are four
+# `\p{Unknown}` spellings appended to `tests/known_fail/
+# k53_uprops_oversize.rxt`, which is under known_fail and therefore moves
+# CENSUS_* and NOT RUNSH_*. So RUNSH_* moves +1/+26/+66 where CENSUS_* moves
+# +1/+30/+72 (axis12 is 26 blocks / 60 lines, the K53 addition 4 / 12) — the
+# two are not the same delta and copying one into the other
+# is how this pin has gone stale before.
+CENSUS_FILES=211
+CENSUS_BLOCKS=3936
+CENSUS_LINES=28943
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
 # blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
 # (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
@@ -187,9 +197,9 @@ CENSUS_LINES=28871
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
-RUNSH_FILES=208
-RUNSH_BLOCKS=3891
-RUNSH_LINES=28816
+RUNSH_FILES=209
+RUNSH_BLOCKS=3917
+RUNSH_LINES=28876
 # 2026-09-08 (bat4triage) — moved alongside CENSUS_* above, same cause:
 # +1/+18/+57, fold.rxt lands under tests/utf8/, not tests/known_fail/.
 # 2026-09-06 (lane utf8s3) — see CENSUS_* above: the promotion moved twelve
