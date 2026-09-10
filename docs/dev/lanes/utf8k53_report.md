@@ -249,6 +249,18 @@ compared: **0 differing, 0 that stopped compiling, 0 that started** (the 416
 identical-and-refused are `perr` blocks). The rung is reached only from a
 refusal, so it cannot move an artifact that already existed.
 
+**THE SWEEP IS THE DEFAULT ENGINE AXIS, AND THE OTHERS FOLLOW BY ARGUMENT
+RATHER THAN BY MEASUREMENT — stated so a reviewer does not have to ask.**
+`--engine=vm` cannot reach the rung at all (`build_anchored_dfa` returns
+before anything under `fit.chosen != ENGM_DFA`, so `anchored_ok` is false on
+every VM artifact and the eligibility test can never hold). `--no-captures`
+and `--engine=dfa` route MORE patterns to the DFA and can therefore reach it
+MORE often — but still only from a refusal, so the same argument covers them:
+an artifact that compiled under any axis before compiles to the same bytes
+now. The three spot-checks in §3.1a exercise two of those axes directly.
+What no argument covers is a pattern that REFUSED under one of those axes and
+now compiles, which is the intended change and is what §4 counts.
+
 **The sweep found two of its own defects before it found none of mine**, and
 both are worth carrying:
 
