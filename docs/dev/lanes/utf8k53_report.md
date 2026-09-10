@@ -211,6 +211,36 @@ artifacts differ in the stamp and nothing else.
 | `-fprefilter` | REFUSES, unchanged | it is refused in `select_engine` ("requires the VM engine; this pattern compiles to the DFA engine"), above and before the rung — the flag never reaches it |
 | `-fno-anchored-dfa` | compiles, `ENGINE_SEL "selected"` | **the control that makes the stamp story real**: the caller asked, so no retry happened and the macro says so. Same artifact, different provenance, and `RX_ENGINE_SEL` is what tells them apart |
 
+### 3.1b The size tripwire is safe, and the HEADROOM is the number to worry about
+
+`tests/size/check_size_tripwire.sh` pins `MAX_SIZE_BYTES` 1,400,000 and
+`MAX_GCC_CPU_S` 8.0, and the corpus gained sixteen large artifacts, so both
+were measured rather than assumed (under load1 3.0, i.e. the CONSERVATIVE
+direction for an "is it under the pin" question):
+
+| pattern | comment-excluded bytes | gcc CPU at `-O1` |
+|---|---:|---:|
+| `\p{Xwd}` (largest of the fourteen; not in the corpus) | 992,257 | **0.19 s** |
+| `\p{L}` (largest corpus member) | 760,852 | **0.17 s** |
+
+Both pins have large margins — the gcc CPU one enormously so, which the
+[ART-SIZE] census already predicts (a data-table entry costs gcc ~0.905 µs
+against a VM node's 5.37 ms, and these artifacts are almost all table).
+
+**THE HEADROOM AGAINST THE CAP ITSELF IS THE FRAGILE NUMBER, AND IT IS
+0.7 %.** `\p{Xwd}` fits under `PCREC_MAX_EMIT_BYTES` (1,000,000) by **7,743
+bytes**. Any future change adding ~8 KB of scaffolding to a DFA artifact
+re-refuses it — and an `abi` bump adds lines to every artifact by definition.
+The drop rung buys these patterns a compile; it does not buy them room.
+`[CLS-TREE]` is the row that would, by emitting a huge class as DATA rather
+than as automaton structure, and this measurement is a direct argument for it:
+the rescue is a reprieve at single-digit-percent margin, not a solution.
+
+**A COST NOTE FOR THE BATTERY.** Sixteen blocks that previously did not
+compile now emit ~715-760 KB artifacts each, so `tests/utf8`'s harness section
+is measurably slower than before this change — the price of the patterns
+working. `make test`'s own timing is the manager's to re-read at the battery.
+
 ### 3.2 Byte-identity: 3,348 of 3,348
 
 Every distinct `(pattern, encoding, features)` triple in the corpus, compiled
