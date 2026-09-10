@@ -123,8 +123,11 @@ for pat in "${PATTERNS[@]}"; do
     grep -oE '^rx_L[0-9]+:' "$d/gen.c" | tr -d ':' | LC_ALL=C sort > "$d/c.labels"
     grep -oE '^  rx_L[0-9]+|^  L[0-9]+' "$d/ir" | sed 's/^ *//; s/^L/rx_L/' \
         | LC_ALL=C sort > "$d/ir.labels"
-    cdup="$(uniq -d < "$d/c.labels" | wc -l)"
-    idup="$(uniq -d < "$d/ir.labels" | wc -l)"
+    # BSD wc -l right-justifies/pads its count with leading spaces even
+    # through a pipe (docs/dev/lanes/macport_report.md S8); stripped so the
+    # string comparisons below don't compare "0" against "       0".
+    cdup="$(uniq -d < "$d/c.labels" | wc -l | tr -d ' ')"
+    idup="$(uniq -d < "$d/ir.labels" | wc -l | tr -d ' ')"
     if [ ! -s "$d/c.labels" ]; then
         bad "ir-listing[$pat]: no labels found in the emitted C — the extraction is vacuous"
     elif [ "$idup" != "0" ]; then
@@ -248,7 +251,7 @@ for pat in "${PATTERNS[@]}"; do
     # to stop sails through. The listing reports the pre-pass number; this
     # compares it to the `&&label` operands actually emitted.
     ir_rp="$(grep -oE '^; resume pts +[0-9]+' "$d/ir" | grep -oE '[0-9]+')"
-    c_rp="$(grep -oE '&&rx_L[0-9]+' "$d/gen.c" | wc -l)"
+    c_rp="$(grep -oE '&&rx_L[0-9]+' "$d/gen.c" | wc -l | tr -d ' ')"
     if [ -n "$ir_rp" ] && [ "$ir_rp" = "$c_rp" ]; then
         ok "ir-listing[$pat]: the cap's pre-pass count ($ir_rp resume points) equals the artifact's emitted RX_PUSH sites"
     else
