@@ -1,16 +1,17 @@
 # lane axbatch — HARNESS_BATCH adoption in the axes (test-axes) stage
 
-STATUS: BLOCKED on a real HARNESS_BATCH finding (see (3a) below) — the
-implementation/threading work (1)/(2)/(4) is done and green; the full sweep
-(5) is withheld pending the manager's direction, since launching it as
-specified would currently FATAL in minutes rather than produce acceptance
-evidence. See "Headline finding" immediately below.
+STATUS: FIX LANDED AND VERIFIED (c5b450a1) — the headline finding below is
+RESOLVED, not merely reported. Implementation/threading (1)/(2)/(4) done and
+green; the fix (3a fix, below) done and verified at three levels; the full
+sweep (5) is this lane's LAST act, launched in background after this report
+commits (do-then-finish).
 
-## Headline finding (3a): HARNESS_BATCH=64 makes the axes BASELINE itself fail
+## Headline finding (3a): HARNESS_BATCH=64 made the axes BASELINE itself fail — FIXED, manager's ruling (fix option d)
 
 Not an axes-stage-specific bug, and not a defect in this lane's threading
 change — a real gap in HARNESS_BATCH's own mechanism, found by this lane's
-targeted measurement and reported upstream (manager thread, 2026-09-10).
+targeted measurement, reported upstream (manager thread, 2026-09-10), and
+FIXED by this lane per the manager's ruling (below) in the same delivery.
 
 Under `HARNESS_BATCH=64`, `run_axes.sh`'s baseline pass (no `RXTFLAGS` at
 all) fails outright:
@@ -53,12 +54,79 @@ acceptance run's `make test` legs almost certainly predate
 session, 2026-09-09) — population drift, not a contradiction of 2d's own
 gate.
 
-**Consequence for this lane's charter**: `scripts/battery.sh`'s axes-stage
-HARNESS_BATCH=64 activation (prepared in (4) below) must NOT be flipped on
-until this is resolved — activating it today would make every
-`test-axes` run FATAL at the baseline step, before any axis is even
-compared. Likely also blocks activating HARNESS_BATCH for `make
-test`/`test-corpus` generally, pending confirmation.
+**The fix (manager's ruling, 2026-09-10, "fix option d"): pin batch member
+prefixes to EXACTLY 2 CHARACTERS**, the same length as the unbatched path's
+`rx`. Neither (a) raising the witness pattern's margin nor (c) excluding it
+is the right shape — the contract is that batching preserves the unbatched
+compile VERDICT, and emitted size is legitimately prefix-length-sensitive
+for ANY `-p` choice, not a batching defect to work around case by case.
+Uniqueness is only needed WITHIN one batch's own link (each batch is a
+separate executable), so a 2-character namespace comfortably covers any
+`HARNESS_BATCH` size this design recommends.
+
+Implemented in `tests/harness/run.sh` (commit c5b450a1): `batch_member_prefix
+<0-based index within THIS batch>` generates a 2-character code — FIRST
+character restricted to the 26 lowercase letters (a prefix becomes a C
+identifier prefix in the emitted source, so a leading digit would emit
+invalid C — caught before landing, not after), second character alnum (36
+options), 936 total codes, `rx` itself skipped via a fixed +1 offset (a
+runtime retry loop was considered and rejected: it would shift every later
+index and could re-collide with whatever index the shift lands on —
+verified this shape avoids it, see the function's own header comment).
+Keyed on `batch_n`'s pre-increment value, which was ALREADY the member's
+0-based position within its own batch (reset by `flush_batch` and by the
+per-file init) — no new counter introduced, `batch_seq` (the old run-wide
+counter) removed entirely.
+
+**Verified at three levels, all green:**
+1. Direct repro flip (isolated from the harness): `build/pcrec -p aa
+   --features unicode-props -e utf8 -- '\P{Unknown}'` and `-p zz` both emit
+   999,932 bytes — matching `-p rx`'s 999,933 (a 1-byte difference from the
+   letters themselves, not the length) — safely under the 1,000,000-byte
+   cap. Any 2-character prefix restores parity.
+2. Harness-level, the exact previously-FATAL file: `HARNESS_BATCH=1` and
+   `HARNESS_BATCH=64` (`PROCS=1`) on `tests/utf8/axis12_scripts.rxt` both
+   read 72/72 passed/0 failed — identical to the unbatched run (72/72).
+3. Broader smoke, `tests/base` (42 files): `HARNESS_BATCH=8 PROCS=2` = 3740
+   passed/0 failed; `HARNESS_BATCH=0 PROCS=2` = 3740 passed/0 failed —
+   identical.
+4. The two previously-queued targeted legs, re-run directly against the
+   fixed tree: `-fno-possessify` batched now reads `agree=65 mismatches=0`
+   (was the FATAL); `--engine=vm` batched still correctly reports its K55
+   documented refusal population (`refused_doc=15 refused_undoc=0`) — the
+   fix did not paper over a REAL refusal, only the spurious byte-cap one.
+   (That same run's `--engine=dfa` shows `FAIL` on its K35 corpus-wide
+   refusal floor, 8000 — expected: this is a 1-file `AXES=` slice, not the
+   whole corpus, the same shape utf8k53's own report notes for an identical
+   reason; not a regression.)
+
+`docs/testing.md`'s HARNESS_BATCH section's byte-count caveat ("worth
+knowing before comparing size logs") is DISSOLVED rather than documented
+around, per the ruling — SIZELOG's byte count is now parity-preserving by
+construction, not merely "small and mechanical to account for."
+`tests/harness/CLAUDE.md`'s own entry is updated with the same record.
+
+**Merge note**: `main` was merged into this branch (commit 9dd6437a) BEFORE
+this fix landed, per the manager's instruction — utf8k53's K53-SELRETRY
+(the size-cap retry rung: on an emitted-size REFUSAL with the optional
+anchored DFA machine present, drop it and re-emit rather than refuse)
+interacts directly with this exact pattern, and NOT for the better absent
+this lane's fix. `\P{Unknown}`'s DEFAULT-axis (`-p rx`) size is unaffected
+by K53-SELRETRY either side of the merge (999,932/999,933 bytes, the retry
+never fires because the first attempt already fits) — what K53-SELRETRY
+changes is the LONG-PREFIX case: pre-merge, `-p hb000001` hard REFUSED
+(1,000,586 bytes over the cap, this lane's original finding); post-merge,
+before this lane's fix, the SAME long prefix would have made K53-SELRETRY's
+retry fire instead — silently dropping the optional anchored DFA machine
+and emitting a SMALLER BUT STRUCTURALLY DIFFERENT artifact (measured:
+733,709 bytes, no optional machine) for the identical pattern the unbatched
+path compiles WITH that machine. That is a worse failure mode than the
+original hard refusal (a silent divergence in what got compiled, not a
+loud failure), and it is exactly what "batching must preserve the unbatched
+compile VERDICT" was ruled against — this lane's 2-character fix keeps the
+prefix short enough that NEITHER the pre-merge hard refusal NOR the
+post-merge silent-retry-divergence is ever triggered, on this pattern or
+any other sharing its shape.
 
 ## Charter
 
@@ -148,16 +216,30 @@ batched-refusal-reporting path at scale), `--engine=vm` (K55's newest
 entry, the one axis whose corpus population reaches a real refusal this
 sweep had never had a witness for before).
 
+**Pre-fix** (against the un-merged, pre-K53-SELRETRY tree — this is the
+evidence that surfaced the headline finding, superseded by the post-fix
+row below, kept for the record):
+
 | axis | unbatched | batched (HARNESS_BATCH=64) |
 |---|---|---|
 | `-fno-possessify` | rc=0, baseline 24194 keys/932s, axis agree=24194/0 mismatch/0 lost/0 gained, total 1972s | rc=1 — baseline itself FATAL (headline finding above), 280s |
-| `-fno-counter` | rc=0 (in progress at report time — baseline 24194 keys/1044s green; axis result pending) | not yet run — expected to FATAL identically at the baseline step |
-| `--engine=vm` | not yet run | not yet run — expected to FATAL identically at the baseline step |
+| `-fno-counter` | rc=0, baseline 24194 keys/1044s, axis agree=24194 (leg completed after the fix landed — see below) | superseded, not completed pre-fix |
 
-The two batched legs not yet run are queued (background) but are not
-expected to add information beyond confirming the headline finding, since
-the FATAL fires at the baseline step — before `AXES`/`RXTFLAGS` are even
-consulted — identically regardless of which axis the leg names.
+**Post-fix** (single-file targeted re-runs against `tests/utf8/
+axis12_scripts.rxt` — the exact witness file — after the merge + the
+2-character prefix fix; `SKIP_ORACLE=1 AXES="<axis>" HARNESS_BATCH=64
+PROCS=8`):
+
+| axis | result |
+|---|---|
+| `-fno-possessify` | `keys_base=65 keys_axis=65 agree=65 mismatches=0 lost=0 gained=0` — OK, was the FATAL |
+| `--engine=vm` | `keys_base=65 keys_axis=65 agree=50 refused_doc=15 refused_undoc=0 mismatches=0` — OK, K55's documented refusal population intact (`--engine=dfa` in the same run shows the EXPECTED single-file K35-floor `FAIL`, not a regression — see the headline finding's verification list, item 4) |
+
+A full-corpus per-axis before/after (matching this section's original
+charter exactly) is superseded by (5)'s full sweep below, which covers
+every axis at once rather than 2-3 individually — running the individual
+full-corpus legs again after already having (5)'s complete answer would be
+redundant given the box-time this lane has already spent on this row.
 
 ## (4) Battery wiring (prepared, not activated)
 
@@ -168,25 +250,53 @@ actually runs — per the standing "no merge mid-battery" lesson, activation
 is the manager's call at the START of a battery, not something this lane
 flips.
 
-## (5) Full before/after sweep
+## (5) Full before/after sweep — LAUNCHED, this lane's last act
 
-WITHHELD, not merely owed — launching `AXES_FULL=1 HARNESS_BATCH=64
-PROCS=8 make test-axes` as chartered would currently FATAL in minutes at
-the baseline step (headline finding above), not produce the hours-scale
-answer-identity evidence the row wants. Held pending the manager's
-direction (asked, 2026-09-10): fix the byte-cap issue first, or run the
-sweep anyway for the record, or confirm scope via a `make test-corpus`
-check first.
+`AXES_FULL=1 HARNESS_BATCH=64 PROCS=8 make test-axes` launched in the
+background (this is the do-then-finish "last act": report committed FIRST,
+then this launched, then END — see the boilerplate). Log path and expected
+completion shape are in the handback message to the manager sent alongside
+this commit.
+
+Expected shape, given everything measured above: every axis's own
+`agree`/`refused_doc`/`mismatches`/`lost`/`gained` counts identical to the
+existing unbatched-corpus precedent (K55's stage-5 battery,
+`build/battery_20260909_s5/axes.log`, rc=2 that day for unrelated reasons —
+docs/dev/dev_journal.md's own entry on it), including `--engine=vm`'s
+`refused_doc` population (the corpus-wide count, not this lane's 15-case
+single-file slice) and every other axis's `REFUSAL_FLOOR` met. Wall time:
+well under the 5h37m/5h45m unbatched precedent from the last two batteries
+— this lane has no quiet-box full-corpus batched number yet (the targeted
+legs above were single-file), so the exact multiple is this sweep's own
+finding, not a repeated prediction.
 
 ## Owed
 
-- Confirm the headline finding also reproduces under a plain `make
-  test-corpus HARNESS_BATCH=64` (not axes-specific — expected but not yet
-  run by this lane).
-- The two remaining batched targeted legs (`-fno-counter`, `--engine=vm`)
-  — running in background, expected to reproduce the headline finding
-  identically rather than add new information.
-- The full sweep (5), once unblocked.
+- The full sweep's own numbers (5) — launched, not yet returned as of this
+  commit; the manager or a fresh agent reads the log.
+- A full-corpus per-axis (not single-file) before/after for the 2-3
+  representative axes this charter named — SUPERSEDED by (5)'s complete
+  per-axis breakdown once it lands; not run separately given (5) answers
+  the same question for every axis at once.
+- Confirming the pre-fix finding would ALSO have hit `make test-corpus
+  HARNESS_BATCH=64` (not axes-specific) — argued from the code (the
+  byte-cap fires on the DEFAULT axis, independent of run_axes.sh) rather
+  than separately run; the fix removes the question either way.
+
+## Rulings received
+
+- **HOLD then LIFT on the full sweep** (manager, 2026-09-10): sibling lane
+  utf8k53 had the box for a sequential targeted validation batch; held the
+  full `AXES_FULL=1 HARNESS_BATCH=64` launch until its log went quiet, then
+  proceeded once the manager confirmed the box was free and utf8k53 merged.
+- **Fix ruling, "fix option d"** (manager, 2026-09-10, on the headline
+  finding): pin batch member prefixes to exactly 2 characters rather than
+  (a) raising the witness pattern's margin or (c) excluding it from
+  batching — see the headline finding section above for the full ruling
+  text and the implementation. Also directed: merge main first (K53-SELRETRY
+  interacts with the same pattern), verify the repro flips under `-p aa`,
+  re-run the previously-fatal legs, update `docs/testing.md`'s caveat in
+  the same commit, then the full sweep as the last act.
 
 ## Out of scope, flagged rather than built
 
