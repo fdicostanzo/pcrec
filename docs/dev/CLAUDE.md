@@ -372,3 +372,19 @@ change.
   (pattern, flags, features) -- 12 of 1,022 patterns misattributed,
   aggregate case count barely moved by coincidence, the 7.56
   cases/pattern density line unchanged after re-derivation).
+- `tt4m_batch_customers.md` — [TT-4M-TIME]'s ENUMERATION half (2026-09-10,
+  lane rpkg, read-only, nothing under `src/`/`tests/`): every place in the
+  tree that re-invokes `tests/harness/run.sh` (`HARNESS_BATCH`'s literal
+  customer set, found BY GREP and cited file:line, each row stating
+  whether it forwards the flag today) or runs its own per-pattern
+  `pcrec`+`gcc` compile loop outside `run.sh` entirely (a bash-only env
+  var cannot reach these, but the batching LEVER is the same one).
+  Chartered because a from-memory customer count was wrong once (the
+  `[TT-4M-TIME]` CORRECTION: `san`'s `run_san_group` re-invocation of
+  `run.sh` under `GENCFLAGS` was missed). Names `make mech`'s per-sabotage
+  `run_sabotage_matrix.sh:1952` as the highest-value unclaimed customer on
+  population/runtime alone (not measured here), and two found-but-not-
+  customers with their own reasons (`tests/bench/run_bench.sh`'s
+  GCC-TIME loop, whose per-pattern timing IS its measurement; the six
+  single-process differential drivers `tt4_measurement.md` already
+  attributed). No timing run, no recommendation beyond the enumeration.
