@@ -289,6 +289,55 @@ write time; see §8.
   this lane.
 * `tests/harness/run.sh tests/utf8/axis04_p_categories.rxt
   tests/utf8/axis12_scripts.rxt` — **578 / 0**.
+* `tests/harness/run.sh tests/utf8` (the whole directory) — **1,829 cases / 0
+  failed / 0 pattern-compile failures**.
+* `make test-uprops` — **26 / 0**.
+* `make test-codegen` — **7 of 8 scripts green**; the eighth is
+  PRE-EXISTING and is §3.4.
+
+### 3.4 The one red, A/B'd and characterised: `run_inline_capability.sh` has never run on this Mac
+
+`make test-codegen` fails on `tests/codegen/run_inline_capability.sh`
+([CC-DIFF] STEP 2's capability probe) with:
+
+> `FAIL: nm could not read arm_a.o (no rx_search symbol) — no verdict is
+> evidence here`
+
+**NOT MINE.** The same script produces the identical line, verbatim, when run
+from a tree built at the branch point `9e436d31`.
+
+**And the cause is confirmed rather than guessed: Mach-O symbol prefixing.**
+`nm` on this box lists the artifact's symbols with a leading underscore —
+
+```
+0000000000000204 T _rx_match
+00000000000000f0 T _rx_search
+```
+
+— while the script greps `' rx_search$'` (line 191) and matches
+`awk '$3 == "rx_search_run" || $3 == "rx_match_anchored"'` (line 172), both of
+which are the ELF spelling. Neither can match on darwin, so the guard fires
+every time.
+
+**The check is behaving correctly and is reporting a real vacuity**: its own
+message says "no verdict is evidence here", which is exactly the right refusal
+— it will not print REDUNDANT or NEEDED from a symbol table it could not read.
+What it means is that [CC-DIFF] STEP 2's capability probe **has never actually
+executed on this Mac**, so the non-vacuity its `tests/codegen/CLAUDE.md` entry
+records (gcc prints NEEDED, clang prints REDUNDANT) is a Linux measurement
+only. That is `santriage`'s finding one check over — a legitimate-shaped guard
+hiding a post-Mac-move gap — and it belongs to whoever owns [CC-DIFF], not to
+this row. **The fix is a symbol-name normalisation** (accept an optional
+leading `_`), not a change to what the probe asks.
+
+**One thing noticed in passing and NOT investigated**, recorded only so it is
+not lost: that same `nm` output contains `_rx_search.part.0`, i.e. gcc's
+partial-inlining clone, on a `--engine=vm --vm-entry-shape=4` artifact. K24's
+`noclone` attribute is emitted by the DFA emitter's `emit_search_head` and
+K24's own check (in `run_codegen_tests.sh`, which passed) exercises a DFA
+artifact. Whether the VM entry shapes should carry it too is [CC-DIFF]/K24
+territory and may be entirely correct as it stands; I did not look, and this
+line is an observation rather than a finding.
 
 ---
 
