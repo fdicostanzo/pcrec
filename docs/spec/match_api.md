@@ -2624,7 +2624,7 @@ neither is parsed to produce the other.
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
 | `"declined-nullable"` | `auto`, a [SEL-1] OR [OPT-4] retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter could never dismiss a position. No prefilter survives, and the artifact is the one this compile produced before that retry existed (`tuning.md` §2.17, [OPT-4.1]) |
-| `"size-cap-retry"` | [LIM-1] (2026-08-30) `auto`, an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact, and the [OPT-4] size rung rebuilt a smaller one whose count-collapsed prefilter SURVIVED (`tuning.md` §2.17). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the two rungs are offered under different conditions in `compile_driver`'s retry loop |
+| `"size-cap-retry"` | an emitted-SIZE cap (not a DFA state cap) REFUSED the exact artifact and a retry rebuilt a smaller one that SHIPPED. TWO rungs reach it, and they are mutually exclusive by ENGINE, so the artifact's own axis stamps say which: on a **VM hybrid** it is [LIM-1]/[OPT-4]'s rung and the count-collapsed prefilter survived (`tuning.md` §2.17, legible as `<PREFIX>_DFA_PREFILTER` with `<PREFIX>_PREFILTER_LANG_WHY "count-collapsed"`); on a **DFA artifact** it is [K53-SELRETRY]'s optional-contributor drop and the anchored match-here machine was dropped (`tuning.md` §2.15, legible as `<PREFIX>_DFA_MATCH "search-filter"`). Distinct from `"collapsed-prefilter"`, which is the [SEL-1] DFA-state-cap rung's own success — the rungs are offered under different conditions in `compile_driver`'s retry loop |
 
 **THE LAST FIVE ARE ALL "FELL BACK", AND THAT IS THE DISTINCTION `_ENGINE_WHY`
 CANNOT CARRY** — the first four share one prose string (`"dfa overflowed: …"`)
@@ -2670,6 +2670,22 @@ closed-value-set-losing-a-member shape K35 exists to name. A rescue that was
 refused (nullable) now reads `"declined-nullable"`; one that shipped now reads
 `"size-cap-retry"`; only a genuinely unremarkable compile still reads
 `"selected"`.
+
+**[K53-SELRETRY] (2026-09-10) A SECOND RUNG JOINED THAT VALUE RATHER THAN
+MINTING A THIRD.** The size-cap retry ladder gained a rung for DFA artifacts:
+an artifact carrying the OPTIONAL anchored match-here machine
+(`<PREFIX>_DFA_MATCH "unwrapped"`) that a size cap refuses is re-emitted
+without it (`docs/spec/limits.md` §8, "The optional-contributor drop"). It
+reads `"size-cap-retry"` because that is what the value means — an emitted-size
+cap forced a retry and the retry shipped — and the gap the paragraph above
+describes is the SAME gap: without it, `\p{L}` under `-e utf8` would stamp
+`"selected"` and nothing would say the artifact is slower than an
+unconstrained build's. **Which contributor a retry dropped is read off the
+artifact's own axis stamps, not off a second value here**, and the two rungs
+cannot both fire on one compile (the first requires a VM hybrid, the second a
+DFA artifact), so the pair is exact. Minting a second value would have put
+"a size cap forced a retry" in two homes, which is the drift this section's
+own history is about.
 
 **It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for the
 same reason: nothing measured reads one yet (D77), and the trigger to add one
@@ -2835,7 +2851,7 @@ names which of §3.2's two forms the artifact's `<prefix>_match` and
 | value | mechanism |
 |---|---|
 | `"unwrapped"` | the artifact carries a THIRD machine — the forward tables WITHOUT the start-anywhere self-loop — and runs it from `ctx->pos`: no later start to reject, no backwards pass, and a failing probe stops at the first byte that cannot continue a match beginning here |
-| `"search-filter"` | the entry runs `<prefix>_search` and rejects any match whose start is not `ctx->pos`. Four populations: `_DFA_SCAN "attempt"`, `_DFA_SCAN "empty"`, an anchored machine that exceeded a DFA cap (a SELECTION OUTCOME, never a refusal), and any build under `-fno-anchored-dfa` |
+| `"search-filter"` | the entry runs `<prefix>_search` and rejects any match whose start is not `ctx->pos`. FIVE populations: `_DFA_SCAN "attempt"`, `_DFA_SCAN "empty"`, an anchored machine that exceeded a DFA cap (a SELECTION OUTCOME, never a refusal), any build under `-fno-anchored-dfa`, and — [K53-SELRETRY], 2026-09-10 — an artifact whose anchored machine was DROPPED to fit under an emitted-size cap, which is the one population of the five that `<PREFIX>_ENGINE_SEL` distinguishes (it reads `"size-cap-retry"`; the other four read whatever their engine selection was, ordinarily `"selected"`) |
 
 **`<PREFIX>_DFA_SCAN_EDGE` ([OPT-5], `abi` 13) is on every artifact that
 CONTAINS a DFA scan** — DFA artifacts AND VM hybrids, the same iff the four

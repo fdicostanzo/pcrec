@@ -457,6 +457,56 @@ once instead of walking out its remaining rows.
 An overflowed anchored machine selects `search-filter`. **It is stamped, it
 is counted, and it is never a diagnostic** — see §9's pinned population.
 
+#### 5.2a THE PROMISE WAS KEPT IN ONE BUDGET AND BROKEN IN ANOTHER ([K53-SELRETRY], 2026-09-10)
+
+**Everything above is about the STATE-COUNT and SUBSET-ELEMENT budgets, and
+this section did not notice that the machine is also charged in a third unit
+it cannot decline in: BYTES.** `docs/spec/limits.md` §8's `PCREC_MAX_EMIT_
+BYTES` is applied to the whole artifact AFTER all three machines have been
+emitted, so the optional machine's own text was counted against a cap that
+refuses — and §5.2's headline is precisely that such a refusal must not
+exist. It did, and the population was not exotic: **six of the 45 property
+names module `unicode-props` ships refused under `--encoding=utf8` at default
+axes and compiled under `-fno-anchored-dfa`** (`\p{L}`: 1,076,640 bytes
+against the 1,000,000 cap, **772,412** with the flag). Filed as
+`docs/dev/known_issues.md` K53 by [M5.0] stage 3, from `\p{L}`, and filed as
+an ENGINE issue rather than a Unicode one for exactly the reason this section
+makes it one.
+
+**THE SHAPE OF THE MISS IS WORTH MORE THAN THE FIX.** §5.2 enumerated the
+budgets the machine is charged against by walking `pcrec_build_dfa`'s
+parameters — the caps the BUILD can cross — and every one of them is checked
+at a site the `optional` flag reaches. The emitted-bytes cap is not charged by
+the build at all; it is charged by the artifact's SIZE, at a site three
+machines downstream, where "which machine's bytes are these" is not a question
+anything can ask. So the enumeration was complete in the code it read and
+incomplete in the property it claimed. **The general lesson: "this component
+is optional" is a claim about every resource the component consumes, and the
+resources a component consumes are not all charged where it is built.**
+
+**THE CURE IS NOT AT THE BUILD SITE, AND CANNOT BE.** The bytes are not known
+until emission, so the decision has to be made after a refusal, which is what
+`compile_driver`'s retry loop is for: on a size-cap refusal with
+`Job.anchored_ok` set, the driver raises `Ctx.size_drop_rung`, the build gate
+skips the machine on exactly the line it already reads the deny flag on, and
+the artifact is re-emitted. **Three properties this inherits from §5.2's own
+argument rather than re-establishing:** the answers are identical (§3's
+identity argument is what makes dropping the machine an OPTIMIZATION and not a
+semantic change); the outcome is STAMPED (`RX_DFA_MATCH "search-filter"`, plus
+`RX_ENGINE_SEL "size-cap-retry"` so the drop is distinguishable from the four
+other ways to reach that form); and the emitter needs no second decision point,
+because not building leaves `anchored_ok` false and D82's single decision point
+selects the fallback on its own.
+
+**AND THE MECHANISM IS A LADDER WITH ONE RUNG, DELIBERATELY.** The
+generalisation — drop optional contributors, in order, until the artifact fits
+— is the right shape and is spelled as one (`SDR_*`, `src/core/internal.h`),
+but a second contributor would need its run-time cost measured before it could
+be ORDERED against this one, and this row had exactly one contributor and
+therefore nothing to order. A contributor may join only if dropping it is
+answer-preserving, observable in the artifact's own stamps, and smaller — the
+three properties this machine has.
+
 **WHY THE CEILING IS NOT OPTIONAL, MEASURED (r41 S1/S2).** Without it the
 optional machine was built for every DFA-routed pattern, however large, and
 `tests/resource`'s giant-repeat shapes paid for it in the two currencies §7
