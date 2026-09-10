@@ -289,7 +289,13 @@ BND_EOF
         mkdir -p "$WORKDIR/$m.d"
         cp "$WORKDIR/$m.c" "$WORKDIR/$m.d/gen.c"
         cp "$WORKDIR/$m.h" "$WORKDIR/$m.d/gen.h" 2>/dev/null || true
-        sed -i 's/#include "'"$m"'\.h"/#include "gen.h"/' "$WORKDIR/$m.d/gen.c"
+        # -i.bak (attached suffix) rather than bare -i: BSD sed reads a bare
+        # `-i EXPR FILE` as extension=EXPR script=FILE, so on darwin the
+        # include was never rewritten (tests/mrl/run_mrl_tests.sh's own
+        # comment on the identical idiom, [M5.0] stage 2's finding, applies
+        # verbatim here).
+        sed -i.bak 's/#include "'"$m"'\.h"/#include "gen.h"/' "$WORKDIR/$m.d/gen.c" \
+            && rm -f "$WORKDIR/$m.d/gen.c.bak"
         gen_cc "possessify boundary $m" "$CC" ${GENCFLAGS:-} -O1 -w \
                -I "$WORKDIR/$m.d" -o "$WORKDIR/$m.d/t" "$WORKDIR/bnd.c" \
                "$WORKDIR/$m.d/gen.c" || bnd_ok=0
@@ -337,6 +343,15 @@ BND_EOF
         else
             bad "the stamped ceiling $ceil is not a floor within $window bytes: denied gave '$b_below' at $below and did not part by $((ceil + window)) (parted at '${part:-never}'), possessified '$a_below'->'${a_part:-n/a}'"
         fi
+    else
+        # A build failure or an unparseable ceiling used to fall through this
+        # `if` silently: bnd_ok=0 or an empty/zero $ceil skipped BOTH boundary
+        # checks below it with no ok/bad call at all, so a broken gen_cc call
+        # here read as two checks quietly not existing rather than as a
+        # failure. Named loudly instead -- a gen_cc failure in this section is
+        # a real defect in the boundary instrument, not a shape this suite is
+        # allowed to shrug off.
+        bad "the possessify/deny boundary section could not run: bnd_ok=$bnd_ok, ceil='${ceil:-}' -- one of the two builds failed to compile or the denied artifact's subject_ceiling could not be read; the two checks this section carries did not execute"
     fi
 fi
 
