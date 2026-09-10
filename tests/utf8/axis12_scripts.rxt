@@ -283,10 +283,14 @@ perr
 
 # `Unknown` is DERIVED as the complement of every script in Scripts.txt, which
 # is `Cn`'s own shape one property over — so a private-use code point and an
-# unassigned one are members and a Greek letter is not.  Only the NEGATED form
-# is here: `\p{Unknown}` itself exceeds the emitted-source cap under `utf8` at
-# default axes and lives in tests/known_fail/k53_uprops_oversize.rxt with the
-# reference's answers.  (These three cells came from the same 10.46 reference
+# unassigned one are members and a Greek letter is not.  BOTH POLARITIES ARE HERE
+# AGAIN as of [K53-SELRETRY] (2026-09-10): `\p{Unknown}` and its three other
+# spellings exceed the emitted-source cap under `utf8` at default axes and spent
+# 2026-09-06..09-10 in tests/known_fail/k53_uprops_oversize.rxt, because the
+# OPTIONAL anchored DFA machine's bytes counted toward `max_emit_bytes`.  The
+# driver now drops that machine and re-emits (docs/dev/known_issues.md K53), so
+# the four spellings are live blocks at the end of this file, un-edited from the
+# same probe as the rest of it.  (These three cells came from the same 10.46 reference
 # probe as the rest of this file, in its second batch.)
 # pcre2-only
 pattern \P{Unknown}
@@ -295,3 +299,35 @@ features unicode-props
 n "\xee\x80\x80"
 m "\xce\xb1" 0 2
 n "\xcd\xb8"
+
+# pcre2-only
+pattern \p{Unknown}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
+
+# pcre2-only
+pattern \p{sc=Unknown}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
+
+# pcre2-only
+pattern \p{scx=Unknown}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2
+
+# pcre2-only
+pattern \p{Zzzz}
+encoding utf8
+features unicode-props
+m "\xee\x80\x80" 0 3
+n "\xce\xb1"
+m "\xcd\xb8" 0 2

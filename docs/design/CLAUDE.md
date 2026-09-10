@@ -1923,5 +1923,49 @@ append-only or historical records.
   absorbed more contention than the batched cells did, biasing 18.65x as
   a FAVORABLE overestimate, not a neutral one.
 
+- `oracle_interface.md` — **PROPOSED, NOT PANELED** (2026-09-10, lane
+  oraiface): the ORACLE INTERFACE + ANSWER STORE design, from Frank's two
+  2026-09-09-late directives ("cache results and only consult for new
+  questions"; "think of the interface so that all oracles can follow it and
+  be interchangeable"). Read-only survey first (§1): every oracle consumer
+  in the tree today — `verify_rxt.py`'s python-`re` tier, PC-3/PC-4
+  (`tests/registry/`), uprops' whole-code-point-space membership sweep (the
+  chartered first customer), the shared `pcre2_ctypes.py` → `br_oracle.py`
+  → `la_oracle.py`/`u8_oracle.py` borrowing chain behind backrefs/
+  lookaround/atomic-groups/recursion's differentials, the one UNBATCHED
+  shape (`tests/fuzz/pcre2_oracle`), the fuzzer, and `docs/design/
+  utf8_measurements/probes/bundle.py`'s ssh-stdin-payload remote transport
+  (the reference-oracle mechanism the adapter's batch shape generalizes,
+  named directly in the charter). Defines a five-member CLOSED question
+  kind-set aligned with (not equal to) the `.rxt` cell vocabulary
+  (`compile-accept`/`match-at`/`captures`/`name-accept`/`membership`,
+  the last two answering questions no `.rxt` cell asks), `OracleId =
+  (name, version, config)` with `config` scoped to answer-affecting fields
+  only (UTF/CASELESS in, the perf-only `PCRE2_NO_UTF_CHECK` and the
+  no-producer `PCRE2_UCP` explicitly out), a canonical tab-separated
+  serialization reusing `.rxt`'s OWN subject-escape vocabulary rather than
+  inventing a second one, a 16-hex-char question hash (`bundle.py`'s own
+  truncation, reused), kind-specific byte-stable answers, a batch-first
+  `capabilities()`+`answer(batch)` adapter contract with two concrete
+  shapes (local direct-link, remote ssh), a TSV-per-`(OracleId, kind)`
+  store format on the `third_party/`/`docs/dev/artifact_size_log.tsv`
+  house precedent (reference committed, local caches gitignored), a
+  three-claim staleness-impossibility argument (same key ⇒ same answer;
+  a version bump is a clean miss by construction; only the oracle side
+  caches, so a stale pcrec answer can never hide behind a cached oracle
+  one — `docs/dev/learnings.md` §3's "shared source" lesson applied to
+  cache design), and a four-step migration ladder (uprops byte+utf8
+  first, discharging the wake.md-owed 10.46 EXACT arm without darwin
+  owning the reference; then C3; then PC-3/PC-4; the shared-binding
+  family named but unscheduled). Explicitly rules
+  `docs/pcre2_compliance.md`'s independent survey OUT of scope (`[DOC-
+  DRV]`'s checked-tension architecture would be defeated by it). D77:
+  no store implementation lands from this lane — note + fixture-shaped
+  examples only (§12); the uprops instance builds after the D6 panel.
+  Five open questions for the panel in §13 (store location, hash length,
+  whether `name-accept` earns its own kind, whether `OracleId.config`
+  needs a non-answer-affecting provenance field, and the untested real
+  size of the utf8 membership table).
+
 Maintenance: update this file when files are added/removed or their roles
 change.

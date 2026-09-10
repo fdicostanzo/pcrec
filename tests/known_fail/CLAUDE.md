@@ -179,6 +179,35 @@ and true — at the same offset. Nothing else about the cell changed.
   disagreement is real** (cell 2). Discharging the named cause is not the same
   as closing the cell; re-measure before assuming the two coincide.
 
+## `k53_uprops_oversize.rxt` — GONE, 2026-09-10, by the front door ([M5.0] stage 3, 2026-09-06 .. [K53-SELRETRY], 2026-09-10)
+
+**Four days' residency, and the entry below is kept because the file did
+exactly what this directory is for.** Lane `utf8k53` fixed K53 — the driver
+drops the OPTIONAL anchored machine and re-emits when an emitted-size cap
+refuses an artifact carrying one — and all sixteen blocks went back to their
+authored positions: twelve to `tests/utf8/axis04_p_categories.rxt` and four to
+`tests/utf8/axis12_scripts.rxt`, running **590/0** there.
+
+**THE POSITIONS WERE RECOVERABLE WITHOUT A POINTER STANZA, and how is worth
+knowing before the next lift.** The stage-3 lift left none (unlike
+`axis12_scripts.rxt`, which carried one sentence). What made the twelve
+placeable is that `axis04` is written in the CANONICAL Unicode
+general-category order — one-letter `L M N P S Z C`, then `Lu..Co Cn` — so the
+gaps were exactly where `L`, `C` and `Cn` belong, and the file's own header
+count (148 blocks) said how many were missing. **A generated corpus's ORDER is
+a pointer stanza nobody has to write**; a hand-ordered one would have needed
+the stanza.
+
+**AND THE RUN THAT PUT THEM BACK WAS THE FIRST TIME THEIR ORACLES WERE
+EXERCISED.** Every expectation had been carried verbatim since the blinded
+authoring, through a park in which the patterns did not compile — so nothing
+had ever checked them against anything. All agreed. That is [M5.0] stage 4's
+§3.4 lesson read from the good side: *a parked cell's carried oracle is an
+unchecked claim until the construct compiles*, and the day it compiles is the
+day the claim is settled.
+
+The original entry, for the record:
+
 ## `k53_uprops_oversize.rxt` ([M5.0] stage 3, 2026-09-06)
 
 Twelve blocks lifted out of `tests/utf8/axis04_p_categories.rxt` at that

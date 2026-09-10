@@ -1812,9 +1812,26 @@ enum {
      * named the gap without a fix: "the SIZE rung's own decline is not this
      * value... the route stays `selected`" was true of the DECLINE only,
      * and was silently ALSO being read as true of the rung's SUCCESS,
-     * which this value corrects. Reachable ONLY from `collapse_reason ==
-     * CR_SIZECAP` (src/core/compile.c) with a prefilter that survived —
-     * tests/resource's `(a|b){1,30000}` cell is the standing witness. */
+     * which this value corrects.
+     *
+     * [K53-SELRETRY] (2026-09-10) THE REACHABILITY CLAUSE WIDENED, AND IT WAS
+     * NEVER PART OF THE MEANING. It used to read "Reachable ONLY from
+     * `collapse_reason == CR_SIZECAP` (src/core/compile.c) with a prefilter
+     * that survived", which described the one rung the driver had. The value
+     * means what its name says — an emitted-SIZE cap forced a retry and the
+     * retry succeeded — so the OPTIONAL-CONTRIBUTOR DROP rung
+     * (`Ctx.size_drop_rung != SDR_NONE`) reads it too, rather than minting a
+     * second home for one event. WHICH contributor a retry dropped is
+     * answered by the artifact's own axis stamps and the two rungs are
+     * mutually exclusive by ENGINE, so the pair is exact:
+     *
+     *   | rung | engine | what the artifact stamps |
+     *   |---|---|---|
+     *   | [OPT-4] prefilter collapse | VM hybrid | `_DFA_PREFILTER` set, `_PREFILTER_LANG_WHY "count-collapsed"` |
+     *   | [K53-SELRETRY] optional drop | DFA | `_DFA_MATCH "search-filter"` |
+     *
+     * Witnesses: tests/resource's `(a|b){1,30000}` cell for the first rung,
+     * `\p{L}` under `-e utf8 --features unicode-props` for the second. */
     ESEL_SIZE_CAP_RETRY       = 7
 };
 
@@ -1842,6 +1859,40 @@ enum {
     CR_NONE    = 0,
     CR_SEL1    = 1,   /* a DFA state cap overflowed ([SEL-1]'s rung) */
     CR_SIZECAP = 2    /* an emitted-size cap refused the exact artifact */
+};
+
+/* [K53-SELRETRY] `Ctx.size_drop_rung` — THE OPTIONAL-CONTRIBUTOR DROP LADDER.
+ *
+ * K53: a machine the design calls OPTIONAL was refusing patterns that compile
+ * without it. `docs/design/anchored_match_unwrapped.md` §2/§5.2 promises "an
+ * overflow is a selection outcome, never a diagnostic", and `build_anchored_
+ * dfa` (src/core/compile.c) keeps that promise for the SUBSET-ELEMS budget by
+ * saving and restoring `Ctx.dfa_overflowed` around the build. It could not
+ * keep it for the emitted-BYTES budget, because that cap is applied to the
+ * whole artifact AFTER all three machines have been emitted — at which point
+ * the only instrument that can act is the driver's retry loop, which is what
+ * this ordinal drives.
+ *
+ * A RUNG MEANS "EVERY CONTRIBUTOR UP TO AND INCLUDING THIS ONE IS DROPPED",
+ * so rungs compose. `SDR_MAX` is the ladder's own bound, and it is what makes
+ * the whole mechanism cost at most one extra attempt per rung however many
+ * caps a pattern manages to exceed.
+ *
+ * WHAT MAY JOIN IT. A contributor belongs here only if dropping it is
+ * ANSWER-PRESERVING (it is a form axis, not a language one), OBSERVABLE in
+ * the artifact's own stamps, and SMALLER — the three properties the anchored
+ * machine has and that make its loss strictly better than a refusal. The
+ * ORDER of a two-rung ladder is a measured question (what does dropping each
+ * cost at run time?) and is deliberately unanswered here: this row had one
+ * contributor and therefore nothing to order. */
+enum {
+    SDR_NONE        = 0,
+    /* [ENG-ABS]'s optional anchored match-here machine. Its loss costs
+     * `<prefix>_match` the [OPT-2] speed-up and no answer; `RX_DFA_MATCH`
+     * reads `search-filter` instead of `unwrapped`, and `RX_ENGINE_SEL`
+     * reads `size-cap-retry`. */
+    SDR_NO_ANCHORED = 1,
+    SDR_MAX         = 1
 };
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
@@ -2285,6 +2336,23 @@ struct Ctx {
     bool                 size_cap_refused;
     unsigned long long   size_cap_bytes;    /* what the artifact measured */
     unsigned long long   size_cap_limit;    /* what it exceeded */
+
+    /* [K53-SELRETRY] WHICH RUNG OF THE OPTIONAL-CONTRIBUTOR DROP LADDER THIS
+     * ATTEMPT IS (`SDR_*` below), and the retry's own INPUT in exactly
+     * `dfa_disabled`/`collapse_reason`'s sense: never derived from the
+     * pattern, only ever set by `compile_driver` on an attempt it decides to
+     * make after a size cap has already refused.
+     *
+     * IT IS AN ORDINAL AND NOT A BOOL BECAUSE THE MECHANISM IS A LADDER WITH
+     * ONE RUNG BUILT, not a switch for one machine. A rung's value means
+     * "every contributor up to and including this one is dropped", so a
+     * second rung composes with the first rather than replacing it. What the
+     * second rung's ARRIVAL owes — and this row deliberately does not decide,
+     * having nothing to decide it on (D77) — is the ORDER: rungs must be
+     * ordered by what dropping each costs the artifact at run time, cheapest
+     * first, and that is a measurement per contributor, not a property this
+     * enum can assert. */
+    unsigned char        size_drop_rung;    /* SDR_* */
 
     /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
      * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only

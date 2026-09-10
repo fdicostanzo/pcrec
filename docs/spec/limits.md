@@ -199,6 +199,18 @@ which is why it adds no ceiling of its own to the list above, and why the
 paragraph it follows still describes every way a state-count ceiling can
 refuse a pattern.
 
+**[K53-SELRETRY] (2026-09-10) THAT LAST SENTENCE WAS TRUE OF THE STATE-COUNT
+CEILINGS AND FALSE OF THE SIZE ONES, AND IT IS TRUE NOW.** The optional
+machine's own bytes are part of the artifact, so they counted toward the
+emitted-size caps in §8 below — which are applied to the whole artifact after
+every machine has been emitted, where nothing could act on them. Six shipped
+property names refused under `--encoding=utf8` at default axes and compiled
+under `-fno-anchored-dfa` (`\p{L}` at 1,076,640 bytes against the 1,000,000
+cap, 772,412 with the flag), so an OPTIONAL machine was deciding what pcrec
+accepts, which is exactly what this exception says it never does. The driver
+now DROPS it and re-emits before either size cap refuses — see §8's own
+"the optional-contributor drop" below. The claim above holds in both units.
+
 **[LIM-2] N1 (2026-09-04) A THIRD, PRE-EMPTIVE EXCEPTION, IN A NEW UNIT OF
 ITS OWN.** `PCREC_MAX_AUTO_DFA_ELEMS` (30,000,000) is a SMALLER budget on the
 exact same running count `PCREC_MAX_SUBSET_ELEMS` bounds — K7's subset-
@@ -528,6 +540,42 @@ worst is 283,083 code bytes and 651,415 total, on every optimization
 axis — and both are checked AFTER emission and BEFORE anything is
 written, so an over-limit compile produces a refusal and no file.
 
+### The optional-contributor drop, before either cap refuses ([K53-SELRETRY])
+
+**Before either limit refuses, pcrec drops what the artifact did not need
+and tries once more.** An artifact can contain an OPTIONAL contributor: a
+machine or a table pcrec emitted to make the artifact FASTER, whose absence
+changes no answer. Today there is exactly one, the anchored match-here
+automaton behind `<PREFIX>_DFA_MATCH "unwrapped"` (`docs/spec/tuning.md`
+§2.15). If a size cap is exceeded on an artifact carrying one, the compile
+re-runs without it rather than refusing.
+
+**What the caller sees.** An artifact instead of a diagnostic, matching
+identically, with `<PREFIX>_DFA_MATCH "search-filter"` where an unconstrained
+build would read `"unwrapped"`, and — **under `--engine=auto`, the default** —
+`<PREFIX>_ENGINE_SEL "size-cap-retry"` where it would read `"selected"`. Under
+an explicit `--engine=dfa` the drop still happens (it changes an entry-point
+FORM, not the engine the caller demanded, so honouring the request and dropping
+the machine are compatible) but that macro reads `"forced"` and does not name
+the retry — `match_api.md` §6.3 has the full account, and it is a pre-existing
+property of `"forced"`'s precedence rather than something this rescue
+introduced. The cost is `<prefix>_match`'s reverse pass
+(measured at ~50 % of the DFA's time on a matching subject), which is what
+the dropped machine existed to avoid. The caps themselves are unmoved: this
+is a smaller artifact, not a larger allowance.
+
+**Measured population.** Six of the 45 property names module `unicode-props`
+ships refused under `--encoding=utf8` at default axes before this landed —
+`\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`, `\p{Xwd}` (both polarities) and the
+one script set spelled `\p{Unknown}` / `\p{sc=Unknown}` /
+`\p{scx=Unknown}` / `\p{Zzzz}` — and every one compiles now. No pattern that
+compiled before changes by a byte: the retry is reached only from a refusal.
+
+**If it still does not fit**, the compile refuses as before, and the figures
+the diagnostic quotes are the SMALLER artifact's — the smallest pcrec could
+make without changing an answer, which is the honest number for a caller
+deciding how far to raise a cap.
+
 **Neither is deniable, both are overridable UPWARD.**
 `-fno-size-term` denies the unroll-ladder SELECTION and never reaches a
 limit: a safety refusal a flag turns off is not one. To accept a larger
@@ -588,6 +636,11 @@ three are TABLE-dominated, so `--unroll` will not shrink them: raise the
 cap or reduce the count. That is the deliberate trade (D84: "I'd rather
 it FAIL and document how to handle oversized results"), not an
 unintended narrowing.
+
+**pcrec has already tried the one thing that is free.** A refusal you are
+reading has passed the optional-contributor drop above — either the artifact
+carried no droppable contributor, or dropping it was not enough — so none of
+the options below is a repeat of something pcrec declined to do for you.
 
 Your options, in the order most callers want them:
 

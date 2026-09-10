@@ -2,7 +2,9 @@
  * differential ([M5.0] stage 3), and the version reporter the comparator's
  * whole drift policy turns on.
  *
- *     uprops_oracle --probe            exit 0 iff libpcre2 loaded (SKIP probe)
+ *     uprops_oracle --probe            exit 0 always (see below — dead since
+ *                                      [ORACLE-LINK]/D98; kept for argv
+ *                                      compatibility, never the SKIP signal)
  *     uprops_oracle --version          prints "<lib version>\t<unicode version>"
  *     uprops_oracle {byte|utf8} NAME...
  *
@@ -14,11 +16,19 @@
  * failure here: whether pcrec should ship a name libpcre2 does not have is the
  * comparator's question, and it has an answer (no).
  *
- * IT USES THE SHARED dlopen SHIM (`tests/fuzz/pcre2_abi.h`) rather than
- * linking `-lpcre2-8`, for that header's own stated reason and for one more
- * this check needs: `--probe` must be able to answer "no libpcre2 here"
- * WITHOUT the program failing to load, so a stranger's clone SKIPS LOUDLY and
- * stays green (PC-3/PC-4's shape).
+ * IT USES THE SHARED DIRECT-LINK BINDING (`tests/fuzz/pcre2_abi.h`,
+ * [ORACLE-LINK]/D98, 2026-09-09) — `#include <pcre2.h>` plus `-lpcre2-8`,
+ * resolved once via `tests/lib/resolve_pcre2.sh` — NOT the dlopen shim this
+ * paragraph used to describe. That shim is retired tree-wide; the header's
+ * own `pcre2_abi_load()` now just points at symbols the linker already
+ * bound and CANNOT FAIL (always returns `PCRE2_ABI_OK`), which makes THIS
+ * FILE'S OWN `--probe` MODE DEAD CODE — it always reports "loaded" and can
+ * no longer answer "no libpcre2 here" the way it once did. The loud-skip-
+ * on-a-stranger's-clone behaviour PC-3/PC-4's shape still needs moved to
+ * BUILD TIME instead: `run_uprops_tests.sh` sources `resolve_pcre2.sh` and
+ * checks `PCRE2_AVAILABLE` BEFORE attempting to compile this file at all,
+ * printing its own SKIP banner in that branch — the same shape every other
+ * direct-linked oracle in this tree now uses.
  *
  * IT SWEEPS BY FIND-ALL over one subject that is every code point in order,
  * the same construction the pcrec side uses and for the same reason (one pass
