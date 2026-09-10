@@ -436,6 +436,138 @@ else
 fi
 
 # =========================================================================
+# §6 THE OPTIONAL-CONTRIBUTOR DROP ([K53-SELRETRY])
+# =========================================================================
+# §5.2 of the design note promises the optional machine's overflow is "a
+# selection outcome, never a diagnostic". §4 tests that in the STATE-COUNT
+# unit. K53 is that the promise was broken in a unit §4 cannot see — BYTES —
+# because `docs/spec/limits.md` §8's emitted-size caps are applied to the
+# whole artifact after all three machines are emitted, and the optional
+# machine's own text is in it. Six shipped `\p` names refused because of it.
+#
+# The cure is a rung in `compile_driver`'s retry loop: drop the machine,
+# re-emit. This section drives that rung the way §4b drives its neighbour —
+# through a `-D`-capped reference compiler, so the witnesses are cheap and
+# the arm is proved a property of the CAP rather than of six huge patterns.
+#
+# THE THREE ROWS, and each has a failure this file could not otherwise see:
+#
+#   (a) POSITIVE. Over the cap WITH a contributor -> an artifact, not a
+#       diagnostic. Stamped `search-filter` + `size-cap-retry`, and BYTE-EQUAL
+#       to the same compiler's `-fno-anchored-dfa` build once the two lines
+#       that legitimately differ are normalised: the `#include` (the output
+#       filename, §4b's own normalisation) and `RX_ENGINE_SEL` (which is the
+#       whole point — the denied build says `"selected"` because the caller
+#       chose, this one says `"size-cap-retry"` because pcrec did).
+#   (b) BOUNDED. Over a cap the DROPPED artifact also exceeds -> still a
+#       refusal, and the figure it quotes is the DROPPED artifact's, which is
+#       limits.md's own claim and the number a caller raising a cap needs.
+#   (c) NO CONTRIBUTOR. An `attempt`-engine pattern over the cap refuses
+#       EXACTLY as its `-fno-anchored-dfa` build does — same byte figure —
+#       so the rung fires on the presence of a droppable machine and not on
+#       the refusal alone. Without this row a rung that retried every size
+#       refusal would pass (a), (b) and the whole census.
+#
+# THE CAPS ARE DERIVED, MEASURED 2026-09-10 (comment-excluded bytes, read out
+# of the refusal diagnostic of a `-DPCREC_MAX_EMIT_BYTES=1` build of each
+# compiler — one at this tip, one at the branch point, which is the only way
+# to see the "with machine" column at all once the rung exists):
+#
+#   pattern                  with machine   dropped   the machine's own bytes
+#   foobarbazqux                   23,716    19,184                     4,532
+#   abcdefghij[0-9]+               24,095    19,385                     4,710
+#   a[bc]d[ef]g[hi]j[kl]m          21,407    17,894                     3,513
+#   ab                             18,713    16,191                     2,522
+#   ^foobarbazqux                  16,098    16,098      0 (attempt engine)
+#
+# 20,000 separates the first three (over, then under) from `ab` (under from
+# the start — the control that the cap NARROWS rather than switching the form
+# off, §4b's own control one row over). 15,000 is below every dropped figure,
+# so it is (b)'s and (c)'s cap.
+#
+# THE FIGURES BELOW READ 4 BYTES HIGHER THAN THAT TABLE, and the reason is
+# worth knowing before anyone "corrects" one of them: the EFFECTIVE cap is
+# stamped into the artifact (`<PREFIX>_MAX_EMIT_BYTES`), so its own decimal
+# width is part of the size it bounds. The table is a `=1` build's (one
+# digit); §6b and §6c run a `=15000` build (five), hence 19,188 and 16,102.
+# The rows are therefore written as BOUNDS rather than as equalities.
+K53_CAP_HI=20000
+K53_CAP_LO=15000
+k53_build_ref() {   # $1 = cap, $2 = output path
+    $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -DPCREC_MAX_EMIT_BYTES="$1" \
+        -o "$2" "$ROOT_DIR"/cli/main.c $REF_SRCS 2>"$WORKDIR/k53build.log"
+}
+k53_bytes() {       # the figure a refusal quotes, or empty if it did not refuse
+    sed -n 's/.*too large: \([0-9]*\) bytes of emitted C source.*/\1/p' "$1" | head -1
+}
+if [ -z "${REF_SRCS:-}" ]; then
+    bad "§6 has no compiler sources to build its reference compilers from"
+elif ! k53_build_ref "$K53_CAP_HI" "$WORKDIR/pcrec_k53hi"; then
+    bad "§6 could not build the -DPCREC_MAX_EMIT_BYTES=$K53_CAP_HI reference compiler: $(head -3 "$WORKDIR/k53build.log")"
+elif ! k53_build_ref "$K53_CAP_LO" "$WORKDIR/pcrec_k53lo"; then
+    bad "§6 could not build the -DPCREC_MAX_EMIT_BYTES=$K53_CAP_LO reference compiler: $(head -3 "$WORKDIR/k53build.log")"
+else
+    HI="$WORKDIR/pcrec_k53hi"; LO="$WORKDIR/pcrec_k53lo"
+    norm() { sed -e 's/^#include "[^"]*\.h"$/#include "ART.h"/' \
+                 -e 's/^#define RX_ENGINE_SEL ".*"$/#define RX_ENGINE_SEL "SEL"/' "$1"; }
+
+    # ---- (a) the rung fires, and the artifact is the denied build's --------
+    dropped=0; kept=0; wrongsel=0; wrongbytes=0
+    for pat in 'foobarbazqux' 'abcdefghij[0-9]+' 'a[bc]d[ef]g[hi]j[kl]m' 'ab'; do
+        pcrec_run "$HI" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
+            -- "$pat" > "$WORKDIR/k.err" 2>&1 \
+            || { bad "§6a the capped compiler REFUSED '$pat' — an OPTIONAL machine's bytes must never be what refuses a pattern (K53): $(head -2 "$WORKDIR/k.err")"; continue; }
+        ks="$(stamp "$WORKDIR/k.c")"
+        sel="$(sed -n 's/^#define RX_ENGINE_SEL "\(.*\)"$/\1/p' "$WORKDIR/k.c" | head -1)"
+        if [ "$ks" = search-filter ]; then
+            dropped=$((dropped + 1))
+            has_anchored_tbl "$WORKDIR/k.c" && bad "§6a '$pat' dropped to search-filter but still emitted an anchored table"
+            [ "$sel" = size-cap-retry ] || { bad "§6a '$pat' took the drop rung but stamps RX_ENGINE_SEL \"$sel\" — a caller cannot tell this artifact from an unremarkable compile (docs/spec/match_api.md §6.3)"; wrongsel=$((wrongsel + 1)); }
+            pcrec_run "$HI" -p rx --no-captures --features all -fno-anchored-dfa \
+                -o "$WORKDIR/k_deny.c" -- "$pat" >/dev/null 2>&1 \
+                || bad "§6a the denied build of '$pat' did not compile under the same cap — the comparison below has no control"
+            norm "$WORKDIR/k.c" > "$WORKDIR/k.norm"
+            norm "$WORKDIR/k_deny.c" > "$WORKDIR/kd.norm"
+            cmp -s "$WORKDIR/k.norm" "$WORKDIR/kd.norm" \
+                || { bad "§6a '$pat' dropped to a THIRD artifact, not the -fno-anchored-dfa build's: $(diff "$WORKDIR/kd.norm" "$WORKDIR/k.norm" | head -4 | tr '\n' ' ')"; wrongbytes=$((wrongbytes + 1)); }
+        else
+            kept=$((kept + 1))
+            [ "$sel" = size-cap-retry ] && bad "§6a '$pat' kept the unwrapped form yet stamps \"size-cap-retry\" — the stamp is naming a retry that did not happen"
+        fi
+    done
+    [ "$dropped" -ge 3 ] && [ "$wrongsel" -eq 0 ] && [ "$wrongbytes" -eq 0 ] \
+        && ok "§6a $dropped patterns over a ${K53_CAP_HI}-byte cap took the DROP rung: an artifact rather than a refusal, stamped search-filter + size-cap-retry, byte-equal to the -fno-anchored-dfa build (modulo the output filename and that stamp)" \
+        || bad "§6a the drop rung's rows did not all hold: $dropped of 3 expected patterns took it, $wrongsel stamped the wrong RX_ENGINE_SEL, $wrongbytes produced an artifact that is not the denied build's"
+    [ "$kept" -ge 1 ] \
+        && ok "§6a the control held: 'ab' fits under the cap WITH its anchored machine and keeps the unwrapped form, so the cap narrows rather than disabling the axis" \
+        || bad "§6a NO pattern keeps the unwrapped form under the ${K53_CAP_HI}-byte cap — the rung is firing on everything and §6a compares a dead axis"
+
+    # ---- (b) the rung is BOUNDED, and the refusal quotes the smaller figure -
+    pcrec_run "$LO" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
+        -- 'foobarbazqux' > "$WORKDIR/k.err" 2>&1
+    lo_bytes="$(k53_bytes "$WORKDIR/k.err")"
+    if [ -z "$lo_bytes" ]; then
+        bad "§6b 'foobarbazqux' did NOT refuse under a ${K53_CAP_LO}-byte cap, which is below its dropped size (19,184 measured 2026-09-10) — the drop rung has become a way past the cap rather than a way to fit under it"
+    elif [ "$lo_bytes" -ge 23000 ]; then
+        bad "§6b 'foobarbazqux' refused quoting $lo_bytes bytes — that is the artifact WITH the optional machine (23,716 measured), so the refusal is reporting a size pcrec would not have shipped; limits.md §8 promises the figure is the smaller artifact's"
+    else
+        ok "§6b the rung is bounded: under a ${K53_CAP_LO}-byte cap 'foobarbazqux' still refuses, and quotes $lo_bytes bytes — the DROPPED artifact's size (19,184 measured at a =1 build, +4 for this cap's own stamped width), not the 23,716 it would have emitted with the machine"
+    fi
+
+    # ---- (c) no contributor, no retry ---------------------------------------
+    pcrec_run "$LO" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
+        -- '^foobarbazqux' > "$WORKDIR/k.err" 2>&1
+    c_plain="$(k53_bytes "$WORKDIR/k.err")"
+    pcrec_run "$LO" -p rx --no-captures --features all -fno-anchored-dfa \
+        -o "$WORKDIR/k.c" -- '^foobarbazqux' > "$WORKDIR/k2.err" 2>&1
+    c_deny="$(k53_bytes "$WORKDIR/k2.err")"
+    [ -n "$c_plain" ] && [ "$c_plain" = "$c_deny" ] \
+        && ok "§6c a pattern with NO optional contributor ('^foobarbazqux', RX_DFA_SCAN \"attempt\") refuses at $c_plain bytes with the axis live and at $c_deny with it denied — identical, so the rung is gated on a droppable machine being present and not on the refusal alone" \
+        || bad "§6c the no-contributor control failed: the live build refused at '${c_plain:-<did not refuse>}' and the denied build at '${c_deny:-<did not refuse>}'. Equal figures are what says the rung did nothing here; a live build that compiles where the denied one refuses would mean the retry is dropping something it has not accounted for"
+fi
+
+# =========================================================================
 # §5 THE CORPUS CENSUS, WITH EVERY POPULATION PINNED
 # =========================================================================
 # The population is every `pattern` line in every .rxt under tests/, so it
@@ -500,6 +632,20 @@ while IFS= read -r pat; do
     else
         [ "$mf" = search-filter ] || { echo MISMATCH; echo "BAD: stamps \"$mf\" with no anchored machine: $pat"; }
     fi
+    # [K53-SELRETRY] THE FIFTH BUCKET, AND IT EXISTS BECAUSE THE FOURTH WAS
+    # CLASSIFYING BY ELIMINATION. `DFA search-filter unanchored` meant "the
+    # anchored machine exceeded a DFA STATE cap" only because that was the
+    # last way left to reach the form on an ENG_UNANCH machine. The
+    # optional-contributor drop is a SIXTH way and lands there silently — the
+    # ceiling below would fire and blame the 4,096 state ceiling for a
+    # population that never went near it, which is a check reporting the wrong
+    # cause rather than a check that missed something. `RX_ENGINE_SEL` is what
+    # tells them apart (`"size-cap-retry"`; see docs/spec/match_api.md §6.3),
+    # so the worker reads it and the bucket is named rather than inferred.
+    if [ "$mf" = search-filter ] && [ "$sc" = unanchored ] \
+       && grep -q '^#define RX_ENGINE_SEL "size-cap-retry"$' "$art"; then
+        echo "DFA search-filter unanchored sizedrop"; continue
+    fi
     echo "DFA $mf $sc"
 done
 WORKER
@@ -515,11 +661,12 @@ WORKER
     n_attempt="$(cnt 'DFA search-filter attempt')"
     n_empty="$(cnt 'DFA search-filter empty')"
     n_ovf="$(cnt 'DFA search-filter unanchored')"
+    n_drop="$(cnt 'DFA search-filter unanchored sizedrop')"
     n_vm="$(cnt 'VM')"; n_ref="$(cnt 'REFUSED')"
     n_mis="$(grep -c '^MISMATCH$' "$WORKDIR/all.out" || true)"
     n_iff="$(grep -c '^IFFBAD$' "$WORKDIR/all.out" || true)"
-    echo "population: $npat corpus patterns — $n_vm vm, $n_ref refused, unwrapped $n_unwrapped, search-filter(attempt) $n_attempt, search-filter(empty) $n_empty, search-filter(overflow) $n_ovf"
-    [ "$n_mis" -eq 0 ] && ok "§5 stamp and mechanism agree on all $((n_unwrapped + n_attempt + n_empty + n_ovf)) DFA artifacts" \
+    echo "population: $npat corpus patterns — $n_vm vm, $n_ref refused, unwrapped $n_unwrapped, search-filter(attempt) $n_attempt, search-filter(empty) $n_empty, search-filter(overflow) $n_ovf, search-filter(size-drop) $n_drop"
+    [ "$n_mis" -eq 0 ] && ok "§5 stamp and mechanism agree on all $((n_unwrapped + n_attempt + n_empty + n_ovf + n_drop)) DFA artifacts" \
         || { bad "§5 $n_mis DFA artifacts stamp a value their emitted body contradicts"; grep -m5 '^BAD: ' "$WORKDIR/all.out" >&2; }
     [ "$n_iff" -eq 0 ] && ok "§5 the iff holds over the corpus: RX_DFA_MATCH on exactly the DFA artifacts, .match_form NULL on every VM artifact (hybrids included)" \
         || { bad "§5 $n_iff artifacts break the RX_DFA_MATCH iff (spec §6.3)"; grep -m5 '^BAD: ' "$WORKDIR/all.out" >&2; }
@@ -538,6 +685,34 @@ WORKER
     # re-pinning this line.
     [ "$n_ovf" -eq 0 ] && ok "§5 the corpus's overflow fallback population is 0 — the 4,096 ceiling is above the corpus's largest anchored machine (2,001 states) by 2.05x, so no .rxt artifact loses the form to it; §4a's four NAMED out-of-corpus shapes are the arm's real population" \
         || bad "§5 $n_ovf corpus artifacts now reach the OVERFLOW fallback, where the pin says 0 (measured 2026-08-29 against a corpus maximum of 2,001 anchored states). A corpus pattern has grown past the 4,096 ceiling: re-derive the ceiling from the new maximum, do not simply re-pin this line"
+    # [K53-SELRETRY] THE SIZE-DROP ARM'S POPULATION IS A FLOOR, NOT A CEILING,
+    # AND THAT IS THE OPPOSITE PIN TO THE ONE ABOVE IT ON PURPOSE. The
+    # overflow arm is asserted EMPTY in the corpus and tested out of corpus by
+    # §4; this arm's whole claim is that a refusal became an artifact, so an
+    # EMPTY population here means the mechanism is unreached and nothing in
+    # this tree would say so ([MECH-REACH]'s shape: every answer stays right,
+    # every axis sweep stays green, because a rung that never fires changes
+    # nothing).
+    #
+    # 8 MEASURED 2026-09-10 at this corpus, and the eight are a finding in
+    # themselves: every one is a WIDE LITERAL ALTERNATION from
+    # tests/rxtsource/fixtures/bench_altwide_0_2.rxtin, not one is a `\p`
+    # pattern, even though `\p{L}` under `-e utf8` is what found K53. This
+    # census compiles each corpus `pattern` line at DEFAULT axes with no
+    # encoding, so the six `\p` names that motivated the row are compiled
+    # under `byte` here (where a property set is clamped to Latin-1 and is
+    # tiny) and are NOT in this count. The floor is therefore pinned on a
+    # population that has nothing to do with the row's own witnesses, which is
+    # the stronger place for it to sit — and §1's named witnesses are where
+    # the `\p` half is held.
+    #
+    # FLOOR 6 rather than 8: `bench_altwide_0_2.rxtin` is a generated
+    # dogfood fixture whose alternation widths are the bench's to choose, so
+    # an exact pin would go red on a re-export that changed nothing about this
+    # mechanism. 6 is below today's 8 and far above the 0 that means "the rung
+    # stopped firing".
+    [ "$n_drop" -ge 6 ] && ok "§5 the size-cap drop arm's population is $n_drop (floor 6; 8 measured 2026-09-10, all of them wide literal alternations from bench_altwide_0_2.rxtin — the six \\p names that motivated K53 compile under \`byte\` here and are not in this count)" \
+        || bad "§5 only $n_drop corpus artifacts reach the size-cap DROP arm, below the floor of 6 (8 measured 2026-09-10). Either compile_driver's drop rung stopped firing — in which case those patterns are REFUSING again, which no answer check in this tree can see — or the wide-alternation fixture that is its whole corpus population shrank. Check which before re-pinning: a refusal that came back is a regression, a fixture that changed is a re-pin"
 fi
 
 echo
