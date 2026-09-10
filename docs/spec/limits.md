@@ -401,20 +401,34 @@ PASS: [TS-4/OPT-1] the call-bearing entry's OWN frame is 3184 B, inside one
 - **The entry's own frame is 3,184 bytes** — under one 4 KB page, which
   is the point of the tier (gcc's stack-clash protection probes per page
   of a frame on every call).
-- **The DEEP PATH is 134,400 bytes** — the entry's frame plus the
+- **The DEEP PATH needs 134,400 bytes** — the entry's frame plus the
   internal function's 131,216, which is what a call that escalates
-  actually needs. That is the quantity K33 is about, and it exceeds a
-  musl-default **128 KB (131,072-byte)** thread stack by 3,328 bytes.
-  (131,216 is the LINKED-call figure — a spliced call does not widen the
-  frame, `docs/spec/match_api.md` §10.2 — and is the number §5.3 and
-  §10.1 carry.)
+  actually needs. That is the quantity K33 is about.
 
-**SO THE DEFAULT ENTRIES NOW FIT A 128 KB THREAD FOR EVERY MATCH THE FAST
+**THE FIT CRITERION IS FREE STACK HEADROOM AT THE CALL SITE, NOT THREAD
+STACK SIZE.** A call's frame lands wherever the stack pointer already is
+when the call happens, so what has to be true is `entry + deep <=
+headroom remaining at the call site` — 134,400 bytes of headroom, for
+this artifact class, at the point `<prefix>_search` is entered. A
+thread's TOTAL stack size only equals that headroom at call depth ~0 (the
+call is the first thing the thread does); a caller ten frames deep, or on
+a thread that already spent part of its stack elsewhere before reaching
+this call, has less headroom than the thread's nominal size regardless of
+what that size is. The musl-default **128 KB (131,072-byte)** and glibc's
+**8 MB** default THREAD SIZES below are worked EXAMPLES of headroom at
+depth ~0 — the case this section measures directly because it is the one
+a fresh, otherwise-idle thread presents — not the criterion itself: at
+depth ~0, 131,072 bytes of headroom is 3,328 bytes short of the 134,400
+needed, and 8 MB is not.
+
+**SO THE DEFAULT ENTRIES NOW FIT A CALL SITE WITH AT LEAST 131,072 BYTES
+OF HEADROOM (e.g. a fresh musl-default thread) FOR EVERY MATCH THE FAST
 TIER HOLDS, and fault only on a subject deep enough to escalate.** This
 document previously said they "SIGSEGV on such a thread even on a subject
 well inside the 684-byte matching ceiling above", and that sentence is
 now FALSE: `make test-stackdepth`'s arm D matches a 2-byte subject
-through `<prefix>_search` on exactly that thread. `docs/dev/known_issues.md`
+through `<prefix>_search` on exactly that thread (headroom, at depth ~0).
+`docs/dev/known_issues.md`
 K33 is accordingly **OPEN, NARROWED** rather than open in full — still open
 because which subjects escalate is a property of the pattern and the
 subject, so a caller cannot bound it in advance, and because the deep
@@ -422,7 +436,8 @@ tier's storage still has no other legal home (a `static` fails the
 concurrency contract, a thread-local fails reentrancy, allocation is
 forbidden by construction). `[OPT-1]` changed WHEN that storage is
 reached, not how big it is. glibc's 8 MB default thread stack is
-unaffected either way.
+unaffected either way — 8 MB of headroom at depth ~0 clears 134,400 bytes
+with room to spare for whatever else that thread does.
 
 **Note:** `docs/dev/known_issues.md`'s K33 "Cause" paragraph read
 131,296 B when this document was written and was CORRECTED to 131,216 by

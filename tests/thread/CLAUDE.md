@@ -82,6 +82,18 @@ section target, `make test-thread`.
   one included" to "a subject deep enough to escalate" — and the narrowing is
   pinned BEHAVIOURALLY by arm D rather than only by a frame reading, so a tier
   that is real in `-fstack-usage` and not in practice is still red.
+  **[K33 DARWIN ADDENDUM], 2026-09-10: arm A's death assertion is now
+  LINUX-ONLY.** MEASURED on darwin/gcc-16/ARM64: the same driver on the same
+  artifact and thread size does NOT die — macOS's pthread implementation
+  grants 143,360 B for a 131,072 B request (12,288 B over), which covers this
+  artifact's 134,384 B deep-path headroom even though the ARM64 frame itself
+  is measured within 16 B of Linux's (the frame is not the reason). Arm A
+  RECORDS its observed outcome on darwin instead — a fourth, verdict-free
+  counter bucket alongside pass/fail/known/skipped, distinct from a SKIP
+  because the pthread toolchain genuinely works here; only the platform's
+  stack-size honoring differs. See docs/dev/known_issues.md's K33 DARWIN
+  ADDENDUM for both measured numbers and the full reasoning. Arms B, C and D
+  are unaffected and run identically on both platforms.
 - **ts4_driver.c** — the [TS-4] driver. Creates one thread with
   `pthread_attr_setstacksize(&a, 128*1024)` — musl's default — and calls
   either `<prefix>_search` or `<prefix>_search_in` on a^342 b^342, the largest
