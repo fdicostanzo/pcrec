@@ -22488,3 +22488,44 @@ STAGE-5's TIER-1 uprops-utf8 (the drift-zeroing run) + pc4 + the D98
 linked binding's first reference confirmation + the C3 read + S-U12
 solo. Green = [M5.0]'s build-phase validation CLOSES. The three
 Frank-approved lanes launch now.
+
+## 2026-09-10 (EDT), fifty-seventh session part 9 — the day after: s5 battery dispositioned, three approved lanes + oracle design all landed, CLS-TREE reframed
+
+Continuation of the same long session (heartbeat carried it across two
+nights). Since part 8:
+
+**MERGED + PUSHED (tip now past 013e5e03):** (1) the s5 battery's
+axes+mech reds dispositioned — axes = K55 (--engine=vm cap met
+\P{Unknown}, one-line REFUSAL_PATTERN fix), mech's 7 flags = the
+MANAGER'S mid-battery oralink merge exposing six missed D98 build
+sites (all fixed, all rows re-validated). (2) [K53-SELRETRY] — K53
+FIXED (15 lines, no abi bump; the size-cap retry rung; 16 known-fail
+blocks flipped; ratchet = K34 alone). (3) the ORACLE INTERFACE design
+(r56 panel → revision → verify pass → merge; six kinds, injective
+serialization, self-checking versioned store, uprops-first ladder).
+(4) [TT-4M] AXES-BATCH — batched axes sweep GREEN, answer-identical,
+WALL 99min vs the battery's 5h45m (~3.5x, PROCS 8-vs-10 caveat); the
+byte-cap FATAL the mechanism self-found (\P{Unknown} under the 8-char
+batch prefix) fixed via 2-CHAR member prefixes (byte-length parity).
+(5) arm61fix earlier (C3 pins + scanedge false-positive).
+
+**CHARTERED:** [CLS-TREE] REFRAMED (Frank) from "huge-class third form"
+to THE GENERAL per-section representation kit — a class matcher
+composed per-run from {uint64 mask, range compares, bound check,
+table/tree} statically selected by the dial, bespoke straight-line
+code, applies to BYTE classes too; folds in FORM-CHAR/FORM-CHAR2/
+OPT-CLSPACK; the study TESTS the algorithms (prototype-before-commit)
+incl. the sectioning rule as a measured output. [TT-4M-TIME]
+chartered (clean post-fix quiet-box make test timing) — CORRECTED to
+name san as a HARNESS_BATCH customer (run_san_group re-invokes run.sh
+under GENCFLAGS; likely the highest-value one; Linux-only per K54);
+the manager had wrongly said "only corpus+axes" by conflating
+per-case-exec with per-pattern-compile.
+
+**UNVALIDATED-BUT-PUSHED:** today's four merges rode targeted lane
+validation, NOT a battery — the belt-and-suspenders battery is the
+NEXT session's first act, run with the batched-axes line ACTIVATED
+(double duty: validates that line + times it clean for [TT-4M-TIME]).
+
+**OWED external:** I-63 with the bench's next session (closes M5.0
+build-phase validation).
