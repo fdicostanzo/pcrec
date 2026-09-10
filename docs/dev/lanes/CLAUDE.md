@@ -459,3 +459,49 @@ never edited afterwards.
   `lint:` guard probe with `gcc-16` (both succeed) — no `san`/`lint`/battery
   run was started, per the box hold in force at hand-off.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
+
+- `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
+  OPTIONAL-CONTRIBUTOR DROP LADDER. On an emitted-size cap refusal with the
+  optional anchored machine present, `compile_driver` drops it and re-emits;
+  `\p{L}` under `-e utf8` compiles at default axes and the sixteen parked
+  blocks are back in `tests/utf8/`. No new stamp, no `abi` bump. Read it for
+  four things.
+
+  **§4 is the finding the row did not predict**: the corpus population of the
+  fix is NOT the `\p` family. Eight patterns stop refusing and every one is a
+  wide literal alternation from `tests/rxtsource/fixtures/
+  bench_altwide_0_2.rxtin` — pcrec-bench's own `altwide` witnesses — because
+  the codegen census compiles corpus `pattern` lines with no encoding, so the
+  six `\p` names are `byte`-clamped and tiny there. That discharges K53's own
+  "filed as an ENGINE issue, not a Unicode one" rather than merely asserting
+  it, and it MOVES THE REFUSAL SET, which [LIM-2]'s charter ("the refusal set
+  moves NOT AT ALL", with the bench's altwide refusal table as its
+  before/after control) has to be re-based against.
+
+  **§5 is two checks going red for the right reason.**
+  `run_anchored_match.sh` §5's fourth bucket — "the anchored machine
+  overflowed a STATE cap" — was defined BY ELIMINATION, so the eight landed in
+  it and the check advised re-deriving a 4,096-state ceiling the population had
+  never approached: the right alarm with the wrong cause. And the
+  `tests/rxtsource` census caught a defect in the lane's OWN corpus move (the
+  splitter's last group ran to end-of-file, duplicating four blocks into
+  `axis04`) that NO test could see, because the duplicates compiled and
+  answered correctly. *A bucket reached by elimination is one that will one day
+  hold something else.*
+
+  **§6 is why the design promise broke.**
+  `anchored_match_unwrapped.md` §5.2 enumerated the budgets the optional
+  machine is charged against by walking `pcrec_build_dfa`'s PARAMETERS, and
+  the emitted-bytes cap is charged three machines downstream where "whose
+  bytes are these" is unanswerable — so the enumeration was complete in the
+  code it read and incomplete in the property it claimed. *"Optional" is a
+  claim about every resource a component consumes, and they are not all
+  charged where it is built.*
+
+  **§1.2 answers the brief's ladder question and §2 its stamp question**: the
+  general "drop optional contributors" shape IS right and ships as an ORDINAL
+  with one rung, because a second rung needs an ORDER and an order is a
+  measured run-time cost per contributor that a sample of one cannot supply;
+  and the event reuses `ESEL_SIZE_CAP_RETRY` rather than minting a value,
+  since the two rungs are mutually exclusive BY ENGINE and the artifact's own
+  axis stamps therefore say which fired.
