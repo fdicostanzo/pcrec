@@ -37,6 +37,35 @@ viable); (c) if gcc libasan is unfixable here, the ruling is
 then: stage-level sanitizer validation runs on ubuntubudu via the
 executor channel (working baseline; the stage-4 arm requested I-61).
 
+## K55 — INFRASTRUCTURE (2026-09-09, fifty-seventh session, found by lane axtriage triaging the stage-5 merge battery's `axes` stage, rc=2): `make test-axes` was RED on the just-merged tree — `--engine=vm` reported 3 UNDOCUMENTED refusals with zero answer mismatches
+
+**FIXED in the same lane.** `tests/utf8/axis12_scripts.rxt:295-297`'s
+`\P{Unknown}` block ([M5.0] stage 5's script-properties corpus) compiles
+fine under DEFAULT axes — the hybrid engine selector never builds a VM
+artifact for it — but `run_axes.sh`'s `--engine=vm` job forces exactly
+that, and the VM emission for this set (the derived complement of every
+named script, K53's own "one script property with `\p{C}`'s shape" —
+729 intervals) is 689,367 bytes against `PCREC_MAX_VM_EMIT_CODE_BYTES`'s
+500,000-byte cap (`src/core/limits.def:158`). This axis's own header
+comment in `run_axes.sh` already named this as possible ("`--engine=vm`
+in principle, though no corpus member is expected to exercise it") —
+stage 5 is simply the first corpus addition that does. **NOT K53**: K53
+is the DFA's OPTIONAL anchored machine breaking its own no-refusal
+promise; this is `--engine=vm` hitting its own MANDATORY, documented,
+no-fallback size cap, exactly as tuning.md §2.11 allows.
+
+FIX: one `REFUSAL_PATTERN["--engine=vm"]` entry added in `run_axes.sh`
+(substring `"bytes of emitted code (limit"`, shared verbatim with the
+existing `-fno-size-term` entry — same cap family, K45's precedent
+shape), documented in `tests/axes/CLAUDE.md`'s own "K55" section. No
+`REFUSAL_FLOOR` raised (K35: the only measurement is this one file's 3
+cells, not a corpus-wide sweep). Verified live (single-file, single-axis
+`AXES="--engine=vm" SKIP_ORACLE=1 bash tests/axes/run_axes.sh
+tests/utf8/axis12_scripts.rxt`): `--engine=vm` now reads
+`refused_doc=3 refused_undoc=0`, verdict OK. Full-corpus re-run is the
+manager's at the next battery (this lane's box was under a concurrent
+`mech` hold for its whole working period).
+
 ## K1 — FIXED 2026-08-09 (R2)
 
 Zero-width `$` lost priority to a consuming alternative in a repeated group.

@@ -409,6 +409,29 @@ declare -A REFUSAL_PATTERN=(
     # code-bytes ceiling directly ("pattern too large: N bytes of emitted
     # code (limit 500000)").
     ["-fno-size-term"]="bytes of emitted code (limit"
+    # K55 (2026-09-09, [M5.0] stage 5 merge battery): `--engine=vm` had NO
+    # entry at all before, and this axis's own header comment already
+    # anticipated one — "`--engine=vm` in principle, though no corpus
+    # member is expected to exercise it" — this is the first corpus member
+    # that does. Stage 5's `\P{Unknown}` (tests/utf8/axis12_scripts.rxt,
+    # the negated derived-complement script set — K53's own analysis of
+    # why `Unknown` is the one property with `\p{C}`'s interval-heavy
+    # shape) compiles under DEFAULT axes (the hybrid DFA path never builds
+    # a VM artifact for it at all), but forcing `--engine=vm` makes the VM
+    # emitter the only option, and its body is 689,367 bytes against
+    # PCREC_MAX_VM_EMIT_CODE_BYTES's 500,000 cap
+    # (src/core/limits.def:158) — a real, working, pre-existing cap this
+    # axis simply never had a witness for before. NOT K53: K53 is the
+    # DFA's OPTIONAL anchored machine breaking its own "overflow is a
+    # selection outcome, never a diagnostic" promise; this is `--engine=vm`
+    # FORCING a mandatory VM build past its own documented, no-fallback
+    # size cap, exactly as tuning.md §2.11 says this axis may. Verified
+    # live against the diagnostic text (`build/pcrec --engine=vm --features
+    # unicode-props -e utf8 -p rx -o /tmp/x.c -- '\P{Unknown}'`). Population
+    # measured on this file alone: 3 (axis12_scripts.rxt:295-297, the
+    # pattern's three cells); no floor raised (K35: this file's count is
+    # not a corpus-wide measurement, same as the two K45 entries above).
+    ["--engine=vm"]="bytes of emitted code (limit"
 )
 declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180

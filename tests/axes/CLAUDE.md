@@ -167,6 +167,40 @@ two is this one file's two cells, not a corpus-wide sweep. Verified live,
 `refused_doc` matching the pre-fix reference run plus exactly the two new
 tower cells, every other AGREE/BUDGET/REFUSED count byte-identical.
 
+## K55 — `--engine=vm`'s first-ever documented refusal (2026-09-09)
+
+The [M5.0] stage 5 merge battery's `axes` stage failed with THREE
+`UNDOCUMENTED refusal` lines, all on `--engine=vm`, all on
+`tests/utf8/axis12_scripts.rxt:295-297` — a single `\P{Unknown}` block
+(stage 5's script-properties corpus). `--engine=vm` had NO
+`REFUSAL_PATTERN` entry at all before this, and that was correct until
+now: this axis's own header comment already anticipated a refusal being
+*possible* ("`--engine=vm` in principle, though no corpus member is
+expected to exercise it") without ever having a witness.
+
+`\P{Unknown}` — the derived complement of every script `Scripts.txt`
+lists (K53's own finding: `Unknown` is the one script property with
+`\p{C}`'s interval-heavy shape, not a script's) — compiles fine under
+DEFAULT axes, because `auto` engine selection never needs a VM artifact
+for it. Forcing `--engine=vm` makes the VM emitter the ONLY option, and
+its body for this set is 689,367 bytes against
+`PCREC_MAX_VM_EMIT_CODE_BYTES`'s 500,000-byte cap
+(`src/core/limits.def:158`) — a real, pre-existing, working cap this
+axis had simply never been asked to reach before. **Not K53**: K53 is the
+DFA's OPTIONAL anchored machine refusing when it has no license to; this
+is `--engine=vm` hitting its own MANDATORY size ceiling exactly as
+documented.
+
+FIX, same shape as K45's: one entry,
+`["--engine=vm"]="bytes of emitted code (limit"` — the identical
+substring `-fno-size-term` already uses (same cap family). No
+`REFUSAL_FLOOR`: K35, the only measurement is this one file's 3 cells,
+not a corpus-wide sweep. Verified live (single-file, single-axis):
+`AXES="--engine=vm" SKIP_ORACLE=1 bash tests/axes/run_axes.sh
+tests/utf8/axis12_scripts.rxt` now reads `--engine=vm|OK|... refused_doc=3
+refused_undoc=0`. Full-corpus confirmation is the manager's, at the next
+battery.
+
 ## Conventions
 
 `RXTDUMP` (documented in `tests/harness/run.sh`'s own header) is the ONE
