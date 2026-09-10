@@ -147,9 +147,10 @@ run_battery() {
                 # one-line swap below is commented pending the manager's own
                 # timing (the standing "no merge mid-battery" rule: this
                 # activates at the START of a battery, never mid-run).
-                # Uncomment the line below and delete the one under it:
-                #     AXES_FULL=1 HARNESS_BATCH=64 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
-                AXES_FULL=1 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
+                # ACTIVATED 2026-09-10 (manager, at the post-s5 belt-and-
+                # suspenders battery — the double-duty run that validates
+                # this line and gives [TT-4M-TIME] its clean number).
+                AXES_FULL=1 HARNESS_BATCH=64 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
                 ;;
             san)
                 SAN_PROCS="$SAN_PROCS" make CC="$CC" san > "$slog" 2>&1
