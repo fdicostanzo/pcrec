@@ -59,16 +59,27 @@ parse_rxt = _vr.parse_rxt
 
 def build_oracle(workdir):
     """Build tests/fuzz/pcre2_oracle. Returns the path, or None if the
-    build fails for want of libpcre2 (the SKIP case)."""
+    build fails for want of libpcre2 (the SKIP case).
+
+    [ORACLE-LINK] D98 (2026-09-09): pcre2_oracle.c direct-links libpcre2 now
+    (`#include <pcre2.h>`), so it needs $PCRE2_CFLAGS/$PCRE2_LIBS from
+    tests/lib/resolve_pcre2.sh — the shape every other C oracle build site in
+    the tree converted to (see e.g. tests/atomic_groups/run_atomic_diff.sh).
+    This site was missed by both the original D98 conversion and lane
+    mechtri2's six-site follow-up fix; $PCRE2_AVAILABLE is the SKIP signal
+    now, since a bare `-ldl` build with no headers/libs on the link line no
+    longer has anything to probe at run time."""
+    if os.environ.get("PCRE2_AVAILABLE") != "1":
+        return None
     binpath = os.path.join(workdir, "pcre2_oracle")
     cc = os.environ.get("CC", "gcc")
+    cflags = os.environ.get("PCRE2_CFLAGS", "").split()
+    libs = os.environ.get("PCRE2_LIBS", "").split()
     r = subprocess.run([cc, "-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror",
-                        "-o", binpath, ORACLE_SRC, "-ldl"],
+                        *cflags, "-o", binpath, ORACLE_SRC, *libs],
                        capture_output=True, text=True, timeout=180)
     if r.returncode != 0:
         sys.exit("verify_pcre2: could not build the oracle:\n" + r.stderr)
-    # The oracle dlopens libpcre2 at RUN time, so a successful build proves
-    # nothing about availability — probe it.
     subj = os.path.join(workdir, "probe_subject")
     with open(subj, "wb") as f:
         f.write(b"a")
