@@ -447,14 +447,54 @@ assoc_new features_seen
 compile_fail_set=()   # distinct "file:line" pattern-compile failures
 block_counter=0
 
-# [TT-4M] STEP 2c HARNESS_BATCH state. batch_seq is a RUN-WIDE counter (not
-# per-file) so every staged member gets a globally unique `hbNNNNNN` prefix —
-# distinct C identifiers/symbols even though only one batch's members are
-# ever linked together at once. batch_dir_seq names each batch's own
+# [TT-4M] STEP 2c HARNESS_BATCH state. batch_dir_seq names each batch's own
 # directory under $WORKDIR. The bm_* arrays and batch_n/batch_bdir are reset
 # per FILE (batches never cross files) at the top of the per-file loop below.
-batch_seq=0
 batch_dir_seq=0
+
+# [AXBATCH FIX] 2026-09-10: batch member prefixes are EXACTLY 2 CHARACTERS,
+# the same length as the harness's own unbatched `-p rx`. This landed
+# because the ORIGINAL 8-character `hbNNNNNN` scheme (batch_seq, a RUN-WIDE
+# counter, zero-padded to 6 digits) is not merely a cosmetic choice: the
+# emitted-bytes REFUSAL CAP (`PCREC_MAX_EMIT_BYTES`) measures real source
+# bytes, and the artifact's own identifiers repeat the `-p` prefix at every
+# occurrence — a longer prefix genuinely inflates the byte count, exactly as
+# it would for any user's own `-p` choice. Found live (lane axbatch,
+# `docs/dev/lanes/axbatch_report.md`): `tests/utf8/axis12_scripts.rxt`'s
+# `\P{Unknown}` sits within ~70 bytes of the 1,000,000-byte cap under `rx`
+# (2 chars) and REFUSES under `hbNNNNNN` (8 chars) — a batching-caused
+# compile-verdict change on the DEFAULT axis, no RXTFLAGS involved. The
+# general fix restores BYTE-LENGTH PARITY with the unbatched path rather
+# than special-casing this one pattern (K35/general-mechanisms convention):
+# uniqueness is needed only WITHIN one batch's own link (each batch is a
+# separate executable), so a 2-character prefix comfortably covers any
+# HARNESS_BATCH size this design recommends (N=64). `batch_member_prefix`
+# below is the one place that generates it, keyed on `batch_n`'s own
+# PRE-INCREMENT value (already the member's 0-based position within the
+# CURRENT batch — reset to 0 by `flush_batch` and by the per-file init,
+# exactly the scope this needs), so no new counter is introduced.
+#
+# THE FIRST CHARACTER MUST BE A LETTER, NOT A DIGIT: the prefix becomes a C
+# identifier prefix in the emitted source (`<prefix>_search`,
+# `<PREFIX>_NCAPS`), and a leading digit is not a legal C identifier start —
+# a base-36-both-positions encoding would silently emit invalid C on every
+# index whose first digit is 0-9. So: 26 lowercase letters for the FIRST
+# character, 36 lowercase-alnum for the second (936 codes, comfortably above
+# any batch size this design recommends).
+_hb_c1='abcdefghijklmnopqrstuvwxyz'
+_hb_c2='0123456789abcdefghijklmnopqrstuvwxyz'
+# value of "rx" in this encoding (r=17th of 26, x=33rd of 36) — skipped by a
+# fixed +1 OFFSET rather than a runtime retry loop, which would shift every
+# later index and could re-collide with an index that lands on the shifted
+# value (verified live before choosing this shape).
+_hb_skip_rx=$((17 * 36 + 33))
+batch_member_prefix() {
+    # batch_member_prefix <0-based index within THIS batch>
+    local i="$1"
+    [ "$i" -ge "$_hb_skip_rx" ] && i=$((i + 1))
+    local d1=$((i / 36)) d2=$((i % 36))
+    printf '%s%s' "${_hb_c1:d1:1}" "${_hb_c2:d2:1}"
+}
 
 contains_fail() {
     local needle="$1" x
@@ -1083,8 +1123,7 @@ stage_block_for_batch() {
         batch_bdir="$WORKDIR/hb$(printf '%04d' "$batch_dir_seq")"
         mkdir -p "$batch_bdir"
     fi
-    batch_seq=$((batch_seq + 1))
-    local px; px="$(printf 'hb%06d' "$batch_seq")"
+    local px; px="$(batch_member_prefix "$batch_n")"
     local upx; upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
     local mc="$batch_bdir/$px.c"
     local pcrec_err pcrec_rc
