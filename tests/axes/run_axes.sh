@@ -137,6 +137,23 @@
 #   PCREC/CC/GENCFLAGS   forwarded to tests/harness/run.sh verbatim.
 #   PROCS       forwarded to tests/harness/run.sh (default: nproc, matching
 #               test-corpus's own default).
+#   HARNESS_BATCH   ([TT-4M] STEP 2c/axbatch lane, 2026-09-10) forwarded to
+#               EVERY tests/harness/run.sh invocation this script makes
+#               (baseline AND every axis run) verbatim — default 0, today's
+#               unbatched per-pattern path, byte-for-byte unchanged (the
+#               same house rule this file's every other forwarded var
+#               follows). Set to a positive N (2d's recommended N=64,
+#               docs/dev/tt4m_step2a_parallel_sizing.md) to batch this
+#               sweep's own corpus-compile pass too — INHERITED rather than
+#               defaulted to 64 here, deliberately: this script does not
+#               decide the axes stage's own batching policy, it only has to
+#               carry whatever value the caller (a developer's quick check,
+#               or scripts/battery.sh's axes stage) sets, same as PCREC/CC/
+#               GENCFLAGS above. Baseline and axis dumps are compiled under
+#               the IDENTICAL value (never split — an axis compiled batched
+#               against an unbatched baseline would be comparing two
+#               different compile shapes, not one optimization axis), so
+#               there is exactly one place this is read.
 #   KEEP=1      keep the per-axis RXTDUMP files (default: cleaned up).
 #   SKIP_ORACLE=1   skip the PC-4 cross-check (for a quick local run; the
 #               delivered `make test-axes` always runs it).
@@ -157,6 +174,9 @@ PROCS="${PROCS:-$(nproc 2>/dev/null || echo 1)}"
 KEEP="${KEEP:-0}"
 SKIP_ORACLE="${SKIP_ORACLE:-0}"
 AXES="${AXES:-}"
+# [TT-4M] STEP 2c / axbatch — see the header comment above for why this is
+# INHERITED (default 0) rather than given its own axes-stage default here.
+HARNESS_BATCH="${HARNESS_BATCH:-0}"
 
 if [ ! -x "$PCREC" ]; then
     echo "run_axes.sh: $PCREC not built — run 'make' first" >&2
@@ -445,11 +465,16 @@ declare -A REFUSAL_FLOOR=(
 
 BASE_DUMP="$WORKDIR/base.tsv"
 echo
+if [ "$HARNESS_BATCH" -ge 1 ]; then
+    echo "axes: HARNESS_BATCH=$HARNESS_BATCH — baseline AND every axis run below compile the corpus through the batched dispatch path (docs/testing.md's \"HARNESS_BATCH\" section); unset/0 is the unbatched per-pattern path this sweep has always used"
+else
+    echo "axes: HARNESS_BATCH unset (0) — unbatched per-pattern compile, this sweep's historical shape"
+fi
 echo "axes: baseline run (no extra flags)..."
 t0=$(date +%s)
 "$ROOT_DIR/scripts/watchdog" -l axes-baseline -S axes -s 3600 -- \
     env RXTDUMP="$BASE_DUMP" PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
-        PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" \
+        PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" HARNESS_BATCH="$HARNESS_BATCH" \
         bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/base.out" 2>"$WORKDIR/base.err"
 base_rc=$?
 t1=$(date +%s)
@@ -519,6 +544,7 @@ run_one_axis() {
     "$ROOT_DIR/scripts/watchdog" -l "axes-$label" -S axes -s 3600 -- \
         env RXTFLAGS="$flags" RXTDUMP="$dump" PCREC="$PCREC" CC="$CC" \
             GENCFLAGS="$GENCFLAGS" PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" \
+            HARNESS_BATCH="$HARNESS_BATCH" \
             bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$outlog" 2>"$errlog"
     local axis_rc=$?
     t1=$(date +%s)
@@ -860,6 +886,7 @@ for r in "${axis_results[@]}"; do
 done
 echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
+echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then
     echo "run_axes.sh: FAILED — see AXIS FAIL lines above" >&2
