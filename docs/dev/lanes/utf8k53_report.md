@@ -294,6 +294,36 @@ write time; see §8.
 * `make test-uprops` — **26 / 0**.
 * `make test-codegen` — **7 of 8 scripts green**; the eighth is
   PRE-EXISTING and is §3.4.
+* `make test-encoding-checks ENC_MAX_BLOCKS=250` — **11 / 0**.
+* The axes SLICE over the two flipped files, three axes — §3.5.
+
+### 3.5 The axes slice: answer-identity holds on the flipped population
+
+`AXES="--engine=vm --engine=dfa -fno-anchored-dfa" SKIP_ORACLE=1
+tests/axes/run_axes.sh tests/utf8/axis04_p_categories.rxt
+tests/utf8/axis12_scripts.rxt`, 571 keys, 377 s:
+
+| axis | agree | mismatches | lost | gained | refused (documented) |
+|---|---:|---:|---:|---:|---:|
+| `-fno-anchored-dfa` | 571 | **0** | 0 | 0 | 0 |
+| `--engine=vm` | 512 | **0** | 0 | 0 | 59 |
+| `--engine=dfa` | 571 | **0** | 0 | 0 | 0 |
+
+**Zero mismatches, zero lost, zero gained on all three.** The
+`-fno-anchored-dfa` row is the one this row most needed: the deny axis is
+answer-identical over exactly the population the drop rung created, which is
+the claim that makes dropping the machine an optimisation rather than a
+semantic change. `--engine=dfa` compiling all 571 confirms the §3.1a spot
+check at corpus scale.
+
+**The run's exit status is 1, and the reason is MY SLICING, not a finding.**
+`run_axes.sh` carries a K35 floor of 8,000 DOCUMENTED refusals for the
+`--engine=dfa` axis — a WHOLE-CORPUS number — and a two-file slice has 571
+keys and 0 documented refusals, so the floor is breached by construction. The
+floor did exactly what it is for (a population that collapsed is a check that
+cannot fail); it is simply the wrong instrument for a deliberately sliced run.
+**The full-corpus `make test-axes` is the manager's at the battery**, where
+that floor has its real population. No other assertion in the slice failed.
 
 ### 3.4 The one red, A/B'd and characterised: `run_inline_capability.sh` has never run on this Mac
 
@@ -471,7 +501,15 @@ rows **validated in the failing direction** (§9).
 **OWED to the manager**: the FULL BATTERY, which is the manager's at merge by
 standing policy. Nothing else.
 
-**OWED and marked as such at write time**: the targeted batch launched at the
+**THE TARGETED BATCH RAN AND IS NO LONGER OWED** — every number is in §3.3-§3.5
+above. Summary: `run_anchored_match.sh` 20/0, `tests/utf8` 1,829/0,
+`test-uprops` 26/0, `test-codegen` 7/8 (the eighth PRE-EXISTING, §3.4),
+`test-encoding-checks ENC_MAX_BLOCKS=250` 11/0, axes slice 0 mismatches on all
+three axes (its rc=1 is a whole-corpus K35 floor met by a two-file slice,
+§3.5). The paragraph below described the batch while it was still running and
+is kept for its log paths:
+
+the targeted batch launched at the
 end of this lane's working period — `run_anchored_match.sh` re-run on the
 corrected corpus, `tests/utf8` in full, `make test-uprops`, `make test-codegen`,
 `make test-encoding-checks ENC_MAX_BLOCKS=250`, and a 3-axis
