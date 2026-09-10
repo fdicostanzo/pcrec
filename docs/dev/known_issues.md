@@ -66,6 +66,66 @@ tests/utf8/axis12_scripts.rxt`): `--engine=vm` now reads
 manager's at the next battery (this lane's box was under a concurrent
 `mech` hold for its whole working period).
 
+## K56 — INFRASTRUCTURE (2026-09-10, lane rpkg): Homebrew GCC 16.2.0/ARM64-darwin SEGFAULTS in its own SIGXCPU reporting path, so a `gen_cc` CPU-budget kill exits 139 instead of the clean 152 Linux reports
+
+Filed 2026-09-10, found while scoping [K33/TS-4]'s darwin arm and confirmed
+red in `tests/lib/run_gen_timeout_tests.sh`'s CPU-fire positive control.
+**Reproduced STANDALONE, no pcrec involved**:
+
+    (ulimit -S -t 1; gcc-16 -O2 -c -o /dev/null <any .c file needing >1s
+     of cc1 CPU>)
+
+exits 139 (SIGSEGV) rather than a clean SIGXCPU status, printing:
+
+    gcc-16: internal compiler error: Cputime limit exceeded: 24 signal
+    terminated program cc1
+    bash: line 1: NNNNN Segmentation fault: 11    gcc-16 ...
+
+**Cause.** The underlying SIGXCPU delivery at the RLIMIT_CPU soft limit is
+identical on both platforms — this is not a wrong limit or a missed
+signal. The difference is `strsignal(SIGXCPU)`'s own TEXT: Linux glibc
+says "CPU time limit exceeded" (with a space), darwin's libc says
+"Cputime limit exceeded" (no space) — and Homebrew GCC 16.2.0's driver,
+while formatting that string into its own "internal compiler error: ...
+signal terminated program cc1" report, segfaults on ARM64-darwin before
+exiting cleanly, turning what would be a documented rc=152 into rc=139.
+16.2.0 is the latest Homebrew gcc available on this box at filing time; a
+Homebrew report draft exists (manager holds it — not filed upstream from
+this lane, per the scope mandate: bug reports to third parties are
+outside the two mandated repositories).
+
+**Product impact: NONE.** This is `gcc` misbehaving under a
+deliberately-tight `ulimit -t` this project's own test harness sets to
+provoke exactly this signal (`tests/lib/gen_timeout.sh`'s `gen_cc`,
+D45's CPU-primary budget) — no emitted matcher, no pcrec compile path,
+and no shipped artifact is affected. It is filed here rather than in
+`upstream_issues.md` because the affected component is the LOCAL
+toolchain (gcc-16 on this box), not another ENGINE pcrec compares itself
+against (K54's own precedent for that boundary).
+
+**Fix, scoped to the detector, not the platform.** `gen_cc`'s CPU-kill
+verdict (`tests/lib/gen_timeout.sh`) accepted `rc == 152` OR the Linux
+wording; it now accepts `rc == 152` OR EITHER wording ("CPU time limit
+exceeded" / "Cputime limit exceeded"), independent of `rc` — so a
+darwin-shaped rc=139-with-the-marker is claimed as a CPU-budget kill and
+gets the normal D45 diagnostic, exactly like Linux's clean rc=152 case,
+while a bare rc=139 crash with NEITHER wording present (an unrelated gcc
+crash) still falls through unclaimed and is reported as a crash, on
+every platform including Linux — the strict clean-exit shape there is
+unchanged, since gcc on Linux never emits this text for anything but a
+genuine SIGXCPU delivery. Verified: `bash tests/lib/run_gen_timeout_tests.sh`
+went from 17/18 (the CPU-fire control's own diagnostic-wording assertion
+red, "CPU control fired (rc=139) but the diagnostic is wrong") to 18/18
+on this box after the fix, with no change on the Linux side of the
+condition.
+
+**Milestone.** Infrastructure-only; no scheduled fix beyond the detector
+widening above (already landed). Re-open if a future Homebrew gcc release
+stops crashing here (K33's own "a check that quietly goes green on a
+closed defect" caution applies equally to an infrastructure workaround
+that outlives its cause) or if the Homebrew report is ever filed and
+tracked.
+
 ## K1 — FIXED 2026-08-09 (R2)
 
 Zero-width `$` lost priority to a consuming alternative in a repeated group.

@@ -393,11 +393,28 @@ gen_cc() {
     # makes a hit near-instant, so the sum comfortably fits, and a real
     # miss on every source is still bounded by the same numbers a plain
     # compile was bounded by.
+    #
+    # [INFRASTRUCTURE, 2026-09-10] darwin's SIGXCPU wording is SPELLED
+    # DIFFERENTLY, and on Homebrew GCC 16.2.0/ARM64 the driver additionally
+    # SEGFAULTS while reporting it: "internal compiler error: Cputime limit
+    # exceeded: 24 signal terminated program cc1", exit 139 (SIGSEGV) rather
+    # than the clean rc=152 Linux reports — reproduced standalone with no
+    # pcrec involved: `(ulimit -S -t 1; gcc-16 -O2 -c -o /dev/null
+    # <a slow-to-compile .c file>)`. Darwin libc's strsignal(SIGXCPU) is
+    # "Cputime limit exceeded" (no space) where Linux's is "CPU time limit
+    # exceeded" (with one) — the SAME underlying SIGXCPU delivery, a
+    # platform libc string table difference that gcc's own crash-while-
+    # reporting-it turns into a different exit code too. Both spellings are
+    # accepted below; this WIDENS what counts as a CPU-budget kill, it does
+    # not loosen rc=152's own strict check, and a genuine crash unrelated to
+    # the CPU limit (neither wording present, rc anything) still falls
+    # through unclaimed on every platform, Linux included.
     GEN_CC_LOG="$("$TIMEOUT_BIN" "$wall" bash -c \
         'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; _gen_cc_run "$@"' \
         _ "$cpu" "$@" 2>&1)"
     rc=$?
-    if [ "$rc" -eq 152 ] || printf '%s' "$GEN_CC_LOG" | grep -q 'CPU time limit exceeded'; then
+    if [ "$rc" -eq 152 ] \
+       || printf '%s' "$GEN_CC_LOG" | grep -q -e 'CPU time limit exceeded' -e 'Cputime limit exceeded'; then
         GEN_CC_LOG="D45 CPU BUDGET: compiling generated C for [$what] exceeded ${cpu}s of CPU time.
   This is a FAILURE, not a slow box (docs/dev/decisions.md D45): CPU time is
   load-independent, so this compile genuinely NEEDS more than ${cpu}s of work —
