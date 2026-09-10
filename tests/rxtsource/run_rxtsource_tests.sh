@@ -252,7 +252,7 @@ fi
 # as ignorable and silently drops entries.
 FILES="$WORKDIR/files.txt"
 find "$ROOT_DIR/tests" -name '*.rxt' | LC_ALL=C sort > "$FILES"
-nfiles=$(wc -l < "$FILES")
+nfiles=$(wc -l < "$FILES" | tr -d ' ')
 
 # ---------------------------------------------------------------------
 # CHECK 1 — the census, derived independently of all three parsers.
@@ -375,8 +375,8 @@ chmod +x "$WRAPDIR/pcrec"
 # reads a diff.
 DUMP_B="$WORKDIR/legB.tsv"
 tB0=$(date +%s.%N)
-if ! xargs -a "$FILES" "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
-        > "$DUMP_B" 2> "$WORKDIR/legB.err"; then
+if ! xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
+        < "$FILES" > "$DUMP_B" 2> "$WORKDIR/legB.err"; then
     fail "leg B: run.sh --dump failed
 $(head -20 "$WORKDIR/legB.err")"
 fi
@@ -385,19 +385,21 @@ tB1=$(date +%s.%N)
 # the same pass again, this time with the counting wrapper in PCREC, so
 # (a) above measures a run that exercised the real head-detection path
 : > "$CALLLOG"
-PCREC="$WRAPDIR/pcrec" xargs -a "$FILES" "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
-    > /dev/null 2>&1
+PCREC="$WRAPDIR/pcrec" xargs "$TIMEOUT_BIN" 900 bash "$RUNSH" --dump \
+    < "$FILES" > /dev/null 2>&1
 ls_calls=$(grep -c -- '--list-source' "$CALLLOG" || true)
 
 # (b) the independent census: a head-bearing file is one whose first
 # non-blank, non-comment line's first token is not `pattern`. Derived
 # here by awk over the raw bytes — no parser, no harness, no pcrec.
-head_files=$(xargs -a "$FILES" awk '
+# (xargs -a has no BSD spelling; < "$FILES" is the portable form this
+# script's own census derivation above already uses.)
+head_files=$(xargs awk < "$FILES" '
     FNR == 1 { done = 0 }
     done { next }
     /^[ \t]*$/ { next }
     /^#/ { next }
-    { done = 1; if ($1 != "pattern") { print FILENAME } }' | wc -l)
+    { done = 1; if ($1 != "pattern") { print FILENAME } }' | wc -l | tr -d ' ')
 
 if [ "$ls_calls" = "0" ] && [ "$head_files" = "0" ]; then
     pass "C0a: --list-source invoked 0 times over the corpus, and 0 head-bearing files exist (two sources, agreeing)"
@@ -509,8 +511,8 @@ fi
 # asserted twice — that on this corpus the head is empty.)
 DUMP_C="$WORKDIR/legC.tsv"
 tC0=$(date +%s.%N)
-if ! xargs -a "$FILES" "$TIMEOUT_BIN" 900 python3 "$VERIFY" --dump \
-        > "$DUMP_C" 2> "$WORKDIR/legC.err"; then
+if ! xargs "$TIMEOUT_BIN" 900 python3 "$VERIFY" --dump \
+        < "$FILES" > "$DUMP_C" 2> "$WORKDIR/legC.err"; then
     fail "leg C: verify_rxt.py --dump failed
 $(head -20 "$WORKDIR/legC.err")"
 fi
@@ -594,7 +596,7 @@ c_cases=$(awk -F'\t' '$1 == "case" { n++ } END { print n+0 }' "$DUMP_C")
 # the perr lines and the g/gp lines do not add back up to the census, one
 # of the two counts is wrong and neither is trusted.
 read -r kind_cases kind_perr kind_group <<EOF
-$(xargs -a "$FILES" awk '
+$(xargs awk < "$FILES" '
     /^(m|n|ms|ns|gu)([ \t]|$)/ { c++; next }
     /^perr([ \t]|$)/           { p++; next }
     /^(g|gp)([ \t]|$)/         { g++ }
@@ -1049,12 +1051,12 @@ collisions=""
 ncensus=0
 for w in $CENSUS_WORDS_32 $CENSUS_WORDS_W1; do
     ncensus=$((ncensus + 1))
-    c=$(xargs -a "$FILES" grep -h -c "^$w\\b" 2>/dev/null \
+    c=$(xargs grep -h -c "^$w\\b" < "$FILES" 2>/dev/null \
         | awk '{ n += $1 } END { print n+0 }')
     [ "$c" != "0" ] && collisions="$collisions $w=$c"
 done
 
-n32=$(printf '%s\n' $CENSUS_WORDS_32 | wc -l)
+n32=$(printf '%s\n' $CENSUS_WORDS_32 | wc -l | tr -d ' ')
 if [ "$n32" != "32" ]; then
     fail "keyword census: the pinned 32-word list has $n32 words.
   It is format_design §1.1's list verbatim; if it changed, say so there too."
@@ -1614,9 +1616,9 @@ TC="$FIXRUN/three_configs.rxt"
 # symbols needs to be able to say so.
 mkdir -p "$W12/dir"
 if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" -o "$W12/dir" 2>"$W12/dir.err"; then
-    w12_c=$(ls "$W12/dir"/*.c 2>/dev/null | wc -l)
-    w12_h=$(ls "$W12/dir"/*.h 2>/dev/null | wc -l)
-    w12_names=$(grep -h -m1 '^    \.name = ' "$W12/dir"/*.c 2>/dev/null | LC_ALL=C sort -u | wc -l)
+    w12_c=$(ls "$W12/dir"/*.c 2>/dev/null | wc -l | tr -d ' ')
+    w12_h=$(ls "$W12/dir"/*.h 2>/dev/null | wc -l | tr -d ' ')
+    w12_names=$(grep -h -m1 '^    \.name = ' "$W12/dir"/*.c 2>/dev/null | LC_ALL=C sort -u | wc -l | tr -d ' ')
     w12_name1=$(grep -h -m1 '^    \.name = ' "$W12/dir"/log_base.c 2>/dev/null)
     if [ "$w12_c" = "3" ] && [ "$w12_h" = "3" ] && \
        [ -f "$W12/dir/log_base.c" ] && [ -f "$W12/dir/log_strict.c" ] && \
@@ -2160,7 +2162,7 @@ else
 fi
 if "$TIMEOUT_BIN" 120 "$PCREC" --list-source "$AW" > "$W13/aw.tsv" 2>"$W13/aw.err"; then
     aw_rows=$(grep -vc '^#' "$W13/aw.tsv")
-    aw_dups=$(awk -F'\t' '$1 == "target" { print $3 }' "$W13/aw.tsv" | sort | uniq -d | wc -l)
+    aw_dups=$(awk -F'\t' '$1 == "target" { print $3 }' "$W13/aw.tsv" | sort | uniq -d | wc -l | tr -d ' ')
     if [ "$aw_rows" = "66" ] && [ "$aw_dups" = "0" ]; then
         pass "W1.3 dogfood: --list-source reads all 66 rows and the 33 derived prefixes are distinct"
     else
