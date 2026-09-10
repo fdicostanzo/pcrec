@@ -138,6 +138,17 @@ run_battery() {
                 # two extra corpus runs and the battery pays four. The battery
                 # is where the whole product belongs; the day's suite is where
                 # four permanent full-corpus runs were judged too much.
+                #
+                # [AXBATCH] (2026-09-10, lane axbatch, docs/dev/lanes/
+                # axbatch_report.md): HARNESS_BATCH=64 measured green here —
+                # identical answer-identity/refusal counts per axis, wall
+                # well under the 5h37m/5h45m unbatched precedent this stage
+                # has run at in the last two batteries. NOT ACTIVATED — the
+                # one-line swap below is commented pending the manager's own
+                # timing (the standing "no merge mid-battery" rule: this
+                # activates at the START of a battery, never mid-run).
+                # Uncomment the line below and delete the one under it:
+                #     AXES_FULL=1 HARNESS_BATCH=64 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
                 AXES_FULL=1 PROCS="$AXES_PROCS" make test-axes > "$slog" 2>&1
                 ;;
             san)
