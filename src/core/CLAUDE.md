@@ -130,6 +130,43 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   would make a later unrelated `ctx_fail` take `[SEL-1]`'s retry path for the
   wrong reason); and it is skipped for a VM HYBRID, whose `_match` is the VM's
   own anchored body. `docs/design/anchored_match_unwrapped.md` §2/§5.2.
+
+  **[K53-SELRETRY] (2026-09-10) THE OPTIONAL-CONTRIBUTOR DROP LADDER — a FIFTH
+  load-bearing thing about that function, and the one the other four missed.**
+  The promise above ("an overflow is a selection outcome, never a diagnostic")
+  was enumerated over the budgets the BUILD can cross, every one of which is
+  checked at a site the `optional` flag reaches. The emitted-**BYTES** cap is
+  not charged by the build at all: it is charged to the whole artifact three
+  machines downstream, where "whose bytes are these" is not a question anything
+  can ask. So an OPTIONAL machine was refusing patterns that compile without it
+  — K53, `\p{L}` under `-e utf8` at 1,076,640 bytes against a 1,000,000 cap and
+  **772,412** with `-fno-anchored-dfa`. *The general lesson: "this component is
+  optional" is a claim about every resource it consumes, and a component's
+  resources are not all charged where it is built.*
+
+  **THE CURE IS A RUNG IN `compile_driver`'s EXISTING RETRY LOOP**, because the
+  bytes are unknown until emission and the only instrument that can act after a
+  refusal is the one recovery point this compiler has. On a size-cap refusal
+  with `Job.anchored_ok` set the driver raises `Ctx.size_drop_rung` (`SDR_*`,
+  internal.h) and re-attempts; the build gate reads that rung on the SAME LINE
+  it already reads `PCREC_NO_ANCHORED_DFA`, so the emitter gains no second
+  decision point and D82's single-decision-point rule is untouched. Stamped
+  `RX_DFA_MATCH "search-filter"` + `RX_ENGINE_SEL "size-cap-retry"` — the
+  [LIM-1] value REUSED rather than duplicated, since its meaning ("an
+  emitted-size cap forced a retry and the retry shipped") is exactly this
+  event.
+
+  **IT COSTS ONE EXTRA ATTEMPT, NOT ONE LADDER'S WORTH, AND THAT IS DERIVED.**
+  `anchored_ok` implies `fit.chosen == ENGM_DFA`; the size-term ladder runs
+  only for `ENGM_VM`; [OPT-4]'s size rung requires `!= ENGM_DFA`. So a drop
+  attempt can never enter the ladder, and the two size rungs are MUTUALLY
+  EXCLUSIVE on every pattern — which is why their order in the catch chain is
+  free today, and why a droppable contributor on the VM side is the event that
+  makes ordering a real question. The rung is an ORDINAL and not a bool so
+  rungs compose ("everything up to and including this one is dropped"); what a
+  second rung owes is a MEASURED run-time cost per contributor to order them
+  by, which this row had exactly one contributor and therefore nothing to
+  derive. `SDR_*`'s own comment states the obligation.
 - **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
   R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
   none: exactly the 52 ASCII letters, each with one partner, and no byte

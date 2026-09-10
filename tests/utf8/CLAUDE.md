@@ -83,7 +83,7 @@ whole reason the utf8 encoding module needs to exist).
 | axis02_class_boundary_byte.rxt | 24 | 6 | 18 | 4 newly promoted; 4 still refuse (range), 2 still refuse (`\p`, unaffected) |
 | axis03_invalid_utf8.rxt | 27 | 0 | 27 | promoted clean |
 | axis03_invalid_utf8_byte.rxt | 27 | 0 | 27 | untouched (already fully real as authored) |
-| axis04_p_categories.rxt | 136 | 0 | 136 | **PROMOTED at [M5.0] stage 3** — 462 cases, ZERO semantic divergences against the oracle answers the blinded author carried in each block's comment. 12 blocks moved to `tests/known_fail/k53_uprops_oversize.rxt` (see below), so the file's own population went 148 -> 136 |
+| axis04_p_categories.rxt | 148 | 0 | 148 | **PROMOTED at [M5.0] stage 3** — 462 cases, ZERO semantic divergences against the oracle answers the blinded author carried in each block's comment. 12 blocks went to `tests/known_fail/k53_uprops_oversize.rxt` (148 -> 136) and came BACK at [K53-SELRETRY], 2026-09-10, restoring the generator's own stated 148 — see below |
 | axis05_p_refusals.rxt | 34 | 34 | 0 | untouched, and CONFIRMED at stage 3 rather than assumed: all 34 are permanent PCRE2 error-147 refusals and all 34 still refuse with the producer live |
 | axis06_caseless_fold.rxt | 48 | 4 | 44 | PINNED TO TODAY'S BEHAVIOUR, not promoted to the oracle — see below |
 | axis07_caseless_1ton.rxt | 11 | 0 | 11 | pinned to today's behaviour; agrees with the oracle on every cell |
@@ -104,6 +104,33 @@ the SAME compile-size refusal on six patterns** — no wrong span, no wrong
 membership, no wrong negation, on a corpus the implementation had never seen.
 The six went to `known_fail` as K53, which is an ENGINE issue (an OPTIONAL DFA
 machine's bytes refusing patterns that compile without it) and not a `\p` one.
+
+**AND K53 WAS FIXED 2026-09-10 ([K53-SELRETRY]), so the twelve blocks are back
+here at their authored positions and the 44 failures are 0.** The lift left no
+pointer stanzas, and what made the positions recoverable is that this file is
+written in the CANONICAL general-category order — `L M N P S Z C`, then
+`Lu..Co Cn` — so the gaps were exactly where `L`, `C` and `Cn` belong and the
+header's own block count said how many were missing. Their carried oracles
+were exercised for the FIRST time by that run (a parked block does not compile,
+so nothing had ever checked them) and all agreed. **The fix is in the DRIVER
+and not in this module**: on a size-cap refusal with the optional anchored
+machine present, `compile_driver` drops it and re-emits.
+
+**577 blocks here, MEASURED 2026-09-10** (`cat tests/utf8/*.rxt | grep -c
+'^pattern '`), of which 67 are `perr` (`grep -c '^perr'` over the same files).
+**+16 at [K53-SELRETRY]**, the twelve `\p` general-category blocks returning to
+`axis04_p_categories.rxt` and the four `Unknown` script spellings to
+`axis12_scripts.rxt`.
+
+**THE PRE-EXISTING SPLIT BELOW DOES NOT RECONCILE WITH EITHER MEASUREMENT AND
+IS LEFT AS WRITTEN RATHER THAN QUIETLY CORRECTED.** It reads 336 real / 219
+`perr` summing to 555, where the two commands above give 577 and 67 — a gap of
+22 blocks and 152 `perr` that [K53-SELRETRY]'s own +16 does not explain and
+this lane did not investigate, since nothing it touched could have caused it
+(the likeliest candidate is [M5.0] stage 4's `fold.rxt`, 18 blocks, plus the
+promotions that turned `perr` blocks into live ones without moving this
+sentence). Re-derive it from a run before citing it. The historical narrative
+that follows is unedited:
 
 **555 blocks here** (529 before [M5.0] stage 5's `axis12_scripts.rxt` added
 26). The authored population was 524; [K50] moved 2 out of
@@ -133,11 +160,13 @@ pcrec's own tables are NOT at. `tests/uprops/uprops_compare.py`'s
 The file's own point is one measured behaviour: **`\p{Greek}` is
 `Script | Script_Extensions` and `\p{sc=Greek}` is `Script` alone.** Its first
 two blocks are the same four subjects under the two spellings, and U+0342 and
-U+0300 are the ones that flip. `\p{Unknown}` is absent — it exceeds the
-emitted-source cap under `utf8` at default axes and lives in
-`tests/known_fail/k53_uprops_oversize.rxt` with the reference's answers —
-while `\P{Unknown}` is a live block, which is what exercises the derived
-complement.
+U+0300 are the ones that flip. `\p{Unknown}` and its three other spellings
+(`\p{sc=Unknown}`, `\p{scx=Unknown}`, `\p{Zzzz}`) spent 2026-09-06..09-10 in
+`tests/known_fail/k53_uprops_oversize.rxt` — they exceeded the emitted-source
+cap under `utf8` at default axes — and are LIVE BLOCKS at the end of this file
+since [K53-SELRETRY], un-edited from the same reference probe. `\P{Unknown}`
+was live throughout, which is what exercised the derived complement while its
+positive twin was parked.
 
 ## The one genuine divergence: K49 — FOUND, PARKED, AND FIXED (2026-09-05)
 

@@ -1322,3 +1322,34 @@ value sits adjacent to `ESEL_SELECTED` rather than appended after
 are the caller-facing contract. `tests/resource`'s `(a|b){0,30000}` cell and
 `tests/prefilter`'s `(a)*` witness are the two populations
 (size-cap-rescued-then-declined-anyway vs. never-capped-at-all).
+
+## [K53-SELRETRY] `ESEL_SIZE_CAP_RETRY` gains a SECOND RUNG, not a second value
+
+`select_engine.c`'s `fit.engine_sel` ladder had one arm meaning "an
+emitted-SIZE cap forced a retry and the retry shipped", reachable only from
+`collapse_reason == CR_SIZECAP` with a surviving prefilter. [K53-SELRETRY]
+adds a second rung to the same retry ladder in `compile_driver` — drop the
+OPTIONAL anchored machine and re-emit — and it reads the SAME value, through
+`cx->size_drop_rung != SDR_NONE`.
+
+**The value's stated reachability was a description, not part of its
+meaning**, and `internal.h`'s own comment now says so. What a consumer needs
+beyond "a size cap forced a retry" is WHICH contributor was dropped, and that
+is answered by the artifact's own axis stamps rather than by a second value
+here: the prefilter rung is legible as `_DFA_PREFILTER` with
+`_PREFILTER_LANG_WHY "count-collapsed"`, the drop rung as
+`_DFA_MATCH "search-filter"`. **The two rungs are MUTUALLY EXCLUSIVE BY
+ENGINE** — the first requires a VM hybrid, the second implies `ENGM_DFA`
+through `Job.anchored_ok` — so the pair is exact and no third fact is needed.
+
+**NO `fit.prefilter` CONJUNCT ON THE NEW HALF**, and the asymmetry is the
+point. That conjunct exists because a size-refused VM compile can end with no
+prefilter at all, and stamping "a prefilter survived" would name a decision
+the artifact did not take. A DFA-engine artifact has no prefilter to survive —
+`fit.prefilter` is false on every member of this rung's population — so
+requiring one would make the arm unreachable on exactly the patterns it exists
+for. Minting a second value instead would have put one event in two homes,
+which is the drift this macro's whole comment history is about.
+
+Sabotage S238 is the failing direction (the rung fires and stamps
+`"selected"`); S237 is its sibling one file over (the rung never fires at all).

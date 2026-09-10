@@ -266,11 +266,21 @@ static void job_cleanup(Ctx *cx)
  * NOT BUILT FOR A VM HYBRID. A hybrid inlines this file's DFA as a PREFILTER;
  * its `<prefix>_match` is the VM's own anchored body and has never had the
  * skim this machine removes. `fit.chosen == ENGM_DFA` is the predicate for
- * "the DFA emitter writes this artifact's `_match`". */
+ * "the DFA emitter writes this artifact's `_match`".
+ *
+ * [K53-SELRETRY] A FIFTH THING, AND IT IS THE ONE §5.2's PROMISE WAS MISSING.
+ * The drop-ladder rung (`Ctx.size_drop_rung`, internal.h) is read on the same
+ * line as the deny flag and for the same reason: an attempt the driver is
+ * making BECAUSE the emitted-bytes cap already refused this artifact once must
+ * not pay for the optional machine again. It reads exactly like the flag here
+ * — not building leaves `anchored_ok` false, which makes the emitter's axis-G
+ * `unwrapped` candidate inapplicable — so the retry needs no second decision
+ * point in the emitter and D82's single-decision-point rule is untouched. */
 static void build_anchored_dfa(Ctx *cx)
 {
     if (cx->job->fit.chosen != ENGM_DFA) return;
     if (cx->opt->flags & PCREC_NO_ANCHORED_DFA) return;
+    if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;
 
     bool  saved_overflowed = cx->dfa_overflowed;
     char  saved_why[sizeof cx->dfa_overflow_why];
@@ -378,7 +388,15 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * TWICE — once for the exact attempt and once after the collapse. `+1` for
  * that rung's own transition. Derived rather than typed, so adding a ladder
  * rung cannot silently truncate the search. */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 };
+/* [K53-SELRETRY] `+ SDR_MAX` for the optional-contributor drop ladder: one
+ * attempt per rung. It costs ONE and not one-ladder's-worth, and that is the
+ * exclusivity argument stated as arithmetic — a drop rung is offered only to
+ * an artifact whose engine is the DFA (`Job.anchored_ok` implies it), and the
+ * size-term ladder runs only for the VM, so a drop attempt can never enter
+ * the ladder and never doubles the ladder-bearing half the way [OPT-4]'s size
+ * rung does. Derived from `SDR_MAX` rather than typed, for the reason both
+ * paragraphs above give for their own terms. */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -528,6 +546,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* [OPT-4] the [SEL-1] ladder's middle rung (see `Ctx`'s field comment).
      * `volatile` for the same `-Wclobbered` reason `dfa_disabled` is. */
     volatile unsigned char collapse_reason = CR_NONE;
+    /* [K53-SELRETRY] the optional-contributor drop ladder's rung (see `Ctx`'s
+     * field comment and the `SDR_*` enum). `volatile` for `collapse_reason`'s
+     * reason. */
+    volatile unsigned char size_drop_rung = SDR_NONE;
     /* [OPT-4] the size refusal that triggered CR_SIZECAP, carried across the
      * retry the way `overflow_why` is: `job_cleanup` has already run on the
      * attempt that measured it. */
@@ -637,6 +659,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * default one). `CR_SEL1` is never set without `dfa_disabled`; the
          * ladder below sets them together. */
         cx.collapse_reason = collapse_reason;
+        /* [K53-SELRETRY] the drop ladder's rung, seeded from the OUTER retry
+         * state exactly as `collapse_reason` is — nothing this attempt
+         * discovers can raise it, and `build_anchored_dfa` is its one
+         * reader. */
+        cx.size_drop_rung = size_drop_rung;
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
@@ -855,6 +882,54 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 memset(st_total, 0, sizeof st_total);
                 memset(st_nodes, 0, sizeof st_nodes);
                 memset(st_whylen, 0, sizeof st_whylen);
+                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+                continue;
+            }
+            /* [K53-SELRETRY] THE OPTIONAL-CONTRIBUTOR DROP RUNG — the same
+             * ladder again, one budget over. K53: the artifact was refused by
+             * an emitted-size cap and it CONTAINS a machine whose own design
+             * says its cost is never allowed to become a diagnostic
+             * (`docs/design/anchored_match_unwrapped.md` §2/§5.2). Drop it and
+             * re-emit; the caller gets an artifact that answers identically
+             * and pays [OPT-2]'s reverse pass in `<prefix>_match`, which is
+             * strictly better than the refusal it gets today.
+             *
+             * OFFERED AT MOST ONCE PER RUNG (`size_drop_rung < SDR_MAX`), so
+             * a pattern still over the cap with everything droppable dropped
+             * refuses after one more attempt rather than looping.
+             *
+             * `anchored_ok` IS THE CONTRIBUTOR-PRESENT TEST, and it is exact
+             * rather than approximate: it is set only when this emitter writes
+             * the artifact's `_match` (`fit.chosen == ENGM_DFA`), the axis was
+             * not denied, and the machine BUILT — which is precisely the
+             * emitter's own axis-G `unwrapped` predicate less its empty-engine
+             * conjunct. That conjunct is left out deliberately: an
+             * empty-engine artifact is a handful of lines and cannot reach a
+             * size cap, so adding it would guard an unreachable case.
+             *
+             * IT DOES NOT NEED TO BE ORDERED AGAINST [OPT-4]'s SIZE RUNG
+             * ABOVE, AND THAT IS DERIVED RATHER THAN OBSERVED. That rung
+             * requires `fit.chosen != ENGM_DFA` (a VM hybrid's prefilter);
+             * this one requires `anchored_ok`, which implies `fit.chosen ==
+             * ENGM_DFA`. The two are mutually exclusive on every pattern, so
+             * no attempt can take both and their relative position in this
+             * chain is free. A future droppable contributor on the VM side
+             * would end that, and is the point at which the two rungs have to
+             * become an ordered ladder with a measured order (`SDR_*`'s own
+             * comment states the obligation).
+             *
+             * THE SIZE-TERM LADDER'S STATE IS NOT RESET, unlike the rung
+             * above, and the reason is the same exclusivity: that ladder runs
+             * only for `fit.chosen == ENGM_VM` (`run`'s own conjunct at the
+             * measurement below), so an attempt eligible here has never
+             * entered it and its record is still the untouched entry state. */
+            const bool drop_eligible =
+                cx.size_cap_refused &&
+                size_drop_rung < SDR_MAX &&
+                cx.job && cx.job->anchored_ok;
+            if (drop_eligible) {
+                job_cleanup(&cx);
+                size_drop_rung = SDR_NO_ANCHORED;
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 continue;
             }

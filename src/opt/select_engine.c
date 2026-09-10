@@ -992,7 +992,35 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
            * already `ESEL_SELECTED` — nothing about ITS route through a
            * cap is observable in any other stamp, so leaving it alone is
            * the conservative choice pending a named consumer (D77). */
-          (cx->collapse_reason == CR_SIZECAP && fit.prefilter)
+          /* [K53-SELRETRY] (2026-09-10) THE DROP LADDER'S RUNG JOINS THIS ARM
+           * RATHER THAN MINTING A VALUE, and internal.h's own comment on the
+           * value is what settles it: `ESEL_SIZE_CAP_RETRY` means "an
+           * emitted-SIZE cap forced a retry and the retry succeeded", which
+           * is exactly what happened. Its stated reachability ("ONLY from
+           * `collapse_reason == CR_SIZECAP`") described the one rung that
+           * existed when it was written; it was never part of the meaning,
+           * and it is corrected there.
+           *
+           * WHICH CONTRIBUTOR THE RETRY DROPPED IS ANSWERED BY THE
+           * ARTIFACT'S OWN AXIS STAMPS, not by a second value here: the
+           * prefilter rung is legible as `_DFA_PREFILTER` with `_LANG_WHY`
+           * "count-collapsed", the drop rung as `_DFA_MATCH "search-filter"`
+           * on a DFA-engine artifact. The two rungs are mutually exclusive
+           * by engine (the first requires a VM hybrid, the second implies
+           * `ENGM_DFA` through `Job.anchored_ok`), so the pair is exact and
+           * a consumer needs no third fact. A second value would be a second
+           * home for "a size cap forced a retry", which is the drift this
+           * macro's entire comment history is about.
+           *
+           * NO `fit.prefilter` CONJUNCT ON THIS HALF. That conjunct is there
+           * because a size-refused VM compile can end with no prefilter at
+           * all and stamping "a prefilter survived" would name a decision the
+           * artifact did not take. A DFA-engine artifact has no prefilter to
+           * survive — `fit.prefilter` is false on every member of this rung's
+           * population — so requiring one would make the arm unreachable on
+           * exactly the patterns it exists for. */
+          ((cx->collapse_reason == CR_SIZECAP && fit.prefilter) ||
+           cx->size_drop_rung != SDR_NONE)
                                                       ? ESEL_SIZE_CAP_RETRY
         : !cx->dfa_disabled                           ? ESEL_SELECTED
         : (cx->collapse_reason == CR_SEL1 && fit.prefilter)

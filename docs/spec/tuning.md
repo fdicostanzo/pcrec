@@ -834,6 +834,21 @@ comparison's control — a BYTE-IDENTITY claim against the older compiler
 would be false, which is D81 (selection facts are stamped
 unconditionally) rather than an oversight.
 
+**[K53-SELRETRY] (2026-09-10) PCREC NOW SETS THIS AXIS ITSELF WHEN THE
+ARTIFACT WILL NOT OTHERWISE FIT.** The machine this flag denies is
+OPTIONAL — it makes `<prefix>_match` faster and changes no answer — but its
+bytes counted toward `docs/spec/limits.md` §8's emitted-size caps, so it could
+refuse a pattern that compiles without it (six of module `unicode-props`'
+property names did, under `--encoding=utf8` at default axes). On a size-cap
+refusal with the machine present, `compile_driver` drops it and re-emits, and
+the resulting artifact is the one this flag would have produced — plus
+`<PREFIX>_ENGINE_SEL "size-cap-retry"`, which is how a reader tells "pcrec
+dropped it to fit" from "the caller passed the flag" (`"selected"`) and from
+"the machine exceeded a DFA state cap" (`"selected"` as well, the §5.2
+selection outcome). **The flag's meaning is unchanged**: passing it still
+denies the machine unconditionally, and passing it on one of those six
+patterns is the way to get the same artifact with the ordinary stamp.
+
 ### 2.16 `-fno-size-term` — `PCREC_NO_SIZE_TERM` (bit 18)
 
 

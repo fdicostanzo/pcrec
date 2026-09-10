@@ -4192,7 +4192,69 @@ K49's retirement alone would have left. That is a new bug filed, not K49's
 fix failing to land — K49's own cell is live and green in
 `tests/utf8/axis09_nextpos_findall.rxt`.
 
-## K53 — an OPTIONAL DFA machine's bytes can refuse a pattern that compiles without it (`\p{C}`, `\p{Cn}`, `\p{L}`, and from stage 5 `\p{Unknown}`, under `-e utf8`; [M5.0] stage 3, 2026-09-06)
+## K53 — FIXED 2026-09-10 by [K53-SELRETRY] (lane utf8k53) — an OPTIONAL DFA machine's bytes can refuse a pattern that compiles without it (`\p{C}`, `\p{Cn}`, `\p{L}`, and from stage 5 `\p{Unknown}`, under `-e utf8`; found [M5.0] stage 3, 2026-09-06)
+
+**THE FIX IS THE CURE THIS ENTRY NAMED, BUILT AS A LADDER RATHER THAN AS A
+CLAUSE.** `compile_driver`'s retry loop gains a rung
+(`Ctx.size_drop_rung`/`SDR_*`, `src/core/internal.h`): on an emitted-size cap
+refusal with `Job.anchored_ok` set, the driver drops the optional machine and
+re-emits. `build_anchored_dfa` reads the rung on the same line it already
+reads `-fno-anchored-dfa`, so the emitter needs no second decision point and
+D82's single-decision-point rule is untouched. The outcome is stamped
+`RX_DFA_MATCH "search-filter"` plus `RX_ENGINE_SEL "size-cap-retry"` — the
+[LIM-1] value, whose meaning ("an emitted-SIZE cap forced a retry and the
+retry shipped") is exactly this event and whose "reachable ONLY from
+`CR_SIZECAP`" clause was a description of the one rung that existed, not part
+of the meaning. No new macro; no `abi` bump (a stamp VALUE, [LIM-1]'s own
+precedent under D76).
+
+**ALL FOURTEEN SPELLINGS COMPILE**, measured at default axes under
+`--features unicode-props -e utf8`: `\p{L}` 772,418 raw bytes (was refused at
+1,076,638 comment-excluded), `\P{L}`, `\p{C}`, `\P{C}`, `\p{Cn}`, `\P{Cn}`,
+`\p{Xan}`, `\P{Xan}`, `\p{Xwd}`, `\P{Xwd}` and the four spellings of the
+`Unknown` script set. `tests/known_fail/k53_uprops_oversize.rxt` is GONE: its
+16 blocks went back to their authored positions in
+`tests/utf8/axis04_p_categories.rxt` (12, restoring that file's own stated
+148-block count) and `tests/utf8/axis12_scripts.rxt` (4), and run **590/0**
+there. **Their carried oracle answers were exercised for the first time by
+that run and all agreed** — stage 4 §3.4's lesson is that a parked cell's
+oracle is an unchecked claim until the construct compiles, and this is the
+check it was owed.
+
+**BYTE-IDENTITY: 3,348 of 3,348.** Every distinct (pattern, encoding,
+features) triple in the corpus, compiled by a branch-point compiler and by the
+fixed one, is byte-identical — 0 differing, 0 that stopped compiling. The rung
+is reached only from a refusal, so it cannot move an artifact that already
+existed.
+
+**AND THE CORPUS POPULATION IS NOT THE `\p` FAMILY, WHICH IS THE FINDING THIS
+ENTRY'S OWN "filed as an ENGINE issue, not a Unicode one" PREDICTED.** Eight
+corpus patterns that REFUSED at default axes now compile, and every one is a
+wide literal alternation from `tests/rxtsource/fixtures/bench_altwide_0_2.rxtin`
+— pcrec-bench's own `altwide` witnesses. Not one is a `\p` pattern: the
+codegen census compiles corpus `pattern` lines with no encoding, so the six
+`\p` names are `byte`-clamped and tiny there. `tests/codegen/run_anchored_
+match.sh` §5 pins that population with a FLOOR (6; 8 measured) and §6 drives
+the rung directly through two `-D`-capped reference compilers. **Two
+cross-lane consequences the manager owns**: the bench's altwide refusal table
+moves, and `[LIM-2]`'s charter — "the refusal set moves NOT AT ALL", with the
+altwide refusal table as its before/after control — must be re-based onto this
+tip rather than onto its own branch point.
+
+**THE CHECK THAT WENT RED WAS THE INTERESTING PART.** `run_anchored_match.sh`
+§5 bucketed DFA artifacts by `(RX_DFA_MATCH, RX_DFA_SCAN)` and its fourth
+bucket, "the anchored machine overflowed a STATE cap", was defined BY
+ELIMINATION. The eight rescued patterns landed in it and the check reported
+"a corpus pattern has grown past the 4,096 ceiling: re-derive the ceiling" —
+the right alarm with the wrong cause, on a population that never went near
+that ceiling. A fifth bucket keyed on `RX_ENGINE_SEL` fixes it. That is K35's
+shape in a classification rather than in a count, and it argues for the same
+rule: a bucket reached by elimination is a bucket that will one day hold
+something else.
+
+The original entry, unedited:
+
+---
 
 **Filed as an ENGINE issue, not a Unicode one.** `\p{L}` is where it was
 found and is not where it lives.

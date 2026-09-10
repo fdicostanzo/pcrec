@@ -168,7 +168,23 @@ fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
 # +1/+30/+72 (axis12 is 26 blocks / 60 lines, the K53 addition 4 / 12) — the
 # two are not the same delta and copying one into the other
 # is how this pin has gone stale before.
-CENSUS_FILES=211
+# 2026-09-10 ([K53-SELRETRY], lane utf8k53) — -1 file, +0 blocks, +0 lines,
+# and the TWO ZEROS are the informative part. K53 was fixed, so
+# `tests/known_fail/k53_uprops_oversize.rxt` was DELETED and its sixteen
+# blocks went back to their authored positions (twelve to
+# tests/utf8/axis04_p_categories.rxt, four to tests/utf8/axis12_scripts.rxt).
+# A block that MOVES between files moves neither pin; only the file count
+# sees it. RUNSH_* below moves by a COMPLETELY DIFFERENT amount for exactly
+# that reason (+0 files, +16 blocks, +56 lines): the sixteen ENTERED run.sh's
+# population from known_fail's, while the file that left was never in it.
+# **THIS PIN CAUGHT A REAL DEFECT IN THE MOVE ITSELF**, which is worth
+# recording as the pin earning its keep: the lane's first attempt reported
+# +4 blocks where the arithmetic said 0, because the splitter that cut the
+# known_fail file into groups let its LAST group run to end-of-file and
+# dragged the four `\p{Unknown}` script blocks into axis04 as duplicates.
+# No test failed — the duplicates compiled and answered correctly. Only the
+# census could see it.
+CENSUS_FILES=210
 CENSUS_BLOCKS=3936
 CENSUS_LINES=28943
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
@@ -198,8 +214,13 @@ CENSUS_LINES=28943
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
 RUNSH_FILES=209
-RUNSH_BLOCKS=3917
-RUNSH_LINES=28876
+RUNSH_BLOCKS=3933
+RUNSH_LINES=28932
+# 2026-09-10 ([K53-SELRETRY]) — +0/+16/+56 where CENSUS_* moved -1/+0/+0, the
+# widest divergence this pair has shown. A known_fail file being RETIRED moves
+# the two in different directions on every column: the census loses a file
+# run.sh never counted, and run.sh gains the blocks and lines that file was
+# holding. Deriving either from the other would have hidden both halves.
 # 2026-09-08 (bat4triage) — moved alongside CENSUS_* above, same cause:
 # +1/+18/+57, fold.rxt lands under tests/utf8/, not tests/known_fail/.
 # 2026-09-06 (lane utf8s3) — see CENSUS_* above: the promotion moved twelve

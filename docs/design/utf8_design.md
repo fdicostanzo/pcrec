@@ -1506,6 +1506,35 @@ automaton**, and §2.4 measures it: `\p{L}` is 283 DFA states. Against
 **So the "table-size problem" the charter names is, for the DFA route,
 measured not to be a problem.**
 
+> **REFUTED — [M5.0] stage 3 measured it, [K53-SELRETRY] annotates it here
+> (2026-09-10).** The sentence in bold above is false, and the state count it
+> rests on is right. **`\p{L}` under `-e utf8` at default axes emits 1,076,640
+> bytes against the 1,000,000 cap and REFUSED**, along with five other shipped
+> property names (`\p{C}`, `\p{Cn}`, `\p{Xan}`, `\p{Xwd}`, and the one script
+> set spelled `\p{Unknown}`/`\p{sc=Unknown}`/`\p{scx=Unknown}`/`\p{Zzzz}`) —
+> a refusal this section's conclusion says cannot happen.
+>
+> **The error is one factor of a three-factor product**, and it is a
+> transferable one. Emitted size is `states × byte-equivalence-CLASSES ×
+> digits-per-cell`, and this section measured STATES. Under a multi-byte
+> encoding the class count is ~100 where an ASCII pattern's is a handful, so
+> the same 283-state count that is "unremarkable" under `byte` is three
+> tables of 299×100, 299×100 and 453×100 five- and six-digit cells under
+> `utf8`. Nothing above is wrong about states; the step from states to bytes
+> is what was never taken. **A sizing argument must name every factor of the
+> product it is bounding, and this one named the factor that was easiest to
+> measure on the oracle.**
+>
+> The refusals are gone — the driver now drops the OPTIONAL third machine and
+> re-emits (`docs/dev/known_issues.md` K53,
+> `docs/design/anchored_match_unwrapped.md` §5.2a), which is an ENGINE fix and
+> not a Unicode one; `\p{L}` compiles at 772,412 bytes. **But that is a
+> reprieve, not a refutation of the refutation**: the surviving artifacts sit
+> at 72–100 % of the cap, so the charter's table-size concern was real and this
+> section's answer to it was wrong. `[CLS-TREE]` (docs/dev/plan.md) is the row
+> that answers it properly, by emitting a huge class as DATA rather than as
+> automaton STRUCTURE.
+
 It IS a problem in one place, and the design should say which: **pcrec's own
 binary** must contain the property data for every property it can compile.
 `\p{L}` at 677 intervals × 8 bytes is ~5.4 KB; the full general-category set
