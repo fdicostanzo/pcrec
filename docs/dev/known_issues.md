@@ -2778,6 +2778,47 @@ the same entry matching a 2-byte subject on the same thread.
 **Milestone.** Remedy: [DD-14.FB] code half, done. Narrowing: [OPT-1],
 done. Deep path: closed only by a future ruling that revisits D73.
 
+**K33 DARWIN ADDENDUM (2026-09-10, lane rpkg).** K33 DOES NOT REPRODUCE on
+this box (Apple M1, darwin, gcc-16, ARM64) — arm A's driver runs to a MATCH
+on the same 131,072 B thread stack that SIGSEGVs on Linux, measured live
+(`callbearing/ts4 default` exits 0, `rc=1 n=342 stack=131072`). Two numbers
+distinguish the two competing explanations ("the ARM64 frame is smaller"
+vs. "macOS grants more than requested"):
+
+  (a) `gcc-16 -fstack-usage` on the K33 witness (`^(a(?1)?b)$ --features
+      recursion --engine=vm`), same artifact Linux measures: `rx_search`
+      **3,184 B** (byte-identical to the Linux number above), `rx_search_deep`
+      **131,200 B** — 16 B SMALLER than Linux's 131,216 B. Deep-path headroom
+      needed: entry + deep = **134,384 B** on this box vs. Linux's
+      **134,400 B**. A 16 B difference cannot explain a 131,072 B thread
+      not overflowing by over 3 KB.
+
+  (b) A standalone `pthread_attr_setstacksize(&attr, 131072)` probe, reading
+      back the GRANTED size inside the created thread via
+      `pthread_get_stacksize_np`: `attr` reports 131,072 B was set, but the
+      thread that actually runs is handed **143,360 B** — 12,288 B (3 x 4096)
+      MORE than requested. 143,360 B comfortably covers this box's
+      134,384 B deep-path headroom (8,976 B to spare), which is why arm A
+      does not fault here.
+
+  **Conclusion: (b) is the cause, not (a).** The ARM64 frame is measured
+  negligibly smaller than the x86_64/Linux one (16 B out of ~131 KB); macOS's
+  pthread implementation silently over-provisions a requested stack size by
+  three pages, and that over-provision alone is what carries this artifact's
+  684-byte subject past the point Linux's musl-sized 131,072 B thread faults
+  on. K33 is therefore a LINUX-SPECIFIC reproduction of the underlying defect
+  (the deep path's storage still does not fit inside a musl-default 128 KB
+  thread — that arithmetic is unchanged and platform-independent), not a
+  claim about every small-stack thread everywhere; a darwin thread built with
+  `pthread_attr_setstacksize` to exactly 131,072 B happens not to fault only
+  because the platform does not honor that exact request.
+  `tests/thread/run_stackdepth_tests.sh` arm A is scoped to this: it asserts
+  the crash on Linux only, and on darwin it runs the same driver and RECORDS
+  the observed outcome without scoring it either way — see that script's own
+  header for why record-not-skip is the right shape (the pthread toolchain
+  IS present and working on darwin; what's absent is the platform's stack
+  under-grant, not a missing capability).
+
 ## K34 — RULED: DOCUMENTED DIVERGENCE (D74, Frank 2026-08-25; was OPEN 2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
 
 **Symptom.** `(a|(?1)a)b` on "a" / "aaa" / "": libpcre2 returns a clean
