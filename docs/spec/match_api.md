@@ -877,12 +877,20 @@ discard (the state-0 `memchr` skip keeps this a skim rather than a
 per-byte walk), where an anchored body fails at the first divergent
 byte. **A caller issuing many expected-to-fail `<prefix>_match` probes
 against long subjects is in this form's worst case, and can read off the
-artifact whether it is in it.** Four populations still take this form:
+artifact whether it is in it.** Five populations still take this form:
 an artifact whose engine is the per-start attempt loop
 (`<PREFIX>_DFA_SCAN "attempt"`, i.e. a `^`- or `\G`-bearing pattern), an
 artifact that matches nothing (`"empty"`), one whose anchored machine
-exceeded a DFA cap — a SELECTION OUTCOME, never a refusal — and any
-build under `-fno-anchored-dfa` (`docs/spec/tuning.md` §2.15).
+exceeded a DFA cap — a SELECTION OUTCOME, never a refusal — any
+build under `-fno-anchored-dfa` (`docs/spec/tuning.md` §2.15), and — since
+[K53-SELRETRY], 2026-09-10 — an artifact whose anchored machine pcrec
+DROPPED so the artifact would fit under an emitted-size cap
+(`docs/spec/limits.md` §8, "The optional-contributor drop"). **That last
+one is the population this cost note is most relevant to**, because it is
+the only one where a caller could have had the faster form and lost it to a
+size limit rather than to the pattern's own shape: it is identifiable by
+`<PREFIX>_ENGINE_SEL "size-cap-retry"`, and raising `--max-emit-bytes` is
+what gets the anchored machine back.
 
 Returns the matched
 length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no

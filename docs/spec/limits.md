@@ -552,8 +552,14 @@ re-runs without it rather than refusing.
 
 **What the caller sees.** An artifact instead of a diagnostic, matching
 identically, with `<PREFIX>_DFA_MATCH "search-filter"` where an unconstrained
-build would read `"unwrapped"` and `<PREFIX>_ENGINE_SEL "size-cap-retry"`
-where it would read `"selected"`. The cost is `<prefix>_match`'s reverse pass
+build would read `"unwrapped"`, and — **under `--engine=auto`, the default** —
+`<PREFIX>_ENGINE_SEL "size-cap-retry"` where it would read `"selected"`. Under
+an explicit `--engine=dfa` the drop still happens (it changes an entry-point
+FORM, not the engine the caller demanded, so honouring the request and dropping
+the machine are compatible) but that macro reads `"forced"` and does not name
+the retry — `match_api.md` §6.3 has the full account, and it is a pre-existing
+property of `"forced"`'s precedence rather than something this rescue
+introduced. The cost is `<prefix>_match`'s reverse pass
 (measured at ~50 % of the DFA's time on a matching subject), which is what
 the dropped machine existed to avoid. The caps themselves are unmoved: this
 is a smaller artifact, not a larger allowance.
