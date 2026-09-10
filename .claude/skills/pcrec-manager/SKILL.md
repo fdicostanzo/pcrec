@@ -134,6 +134,12 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   script header explains why), and keep the brief's disclosure requirement
   for residual spawn-time injections.
 - **Before `git worktree remove` on a delivered lane, check for straggling processes** whose cwd is under the worktree (read `/proc/*/cwd` by PID; never pkill) — a harness worker outlived tt12b's delivery by a minute and wrote into the deleted path (2026-09-03).
+- **NEVER MERGE TO MAIN WHILE A BATTERY IS IN FLIGHT** (2026-09-10:
+  mech re-archives HEAD per row, so oralink's mid-battery merge made the
+  run's tail measure a half-converted tree — 1 unexpected + 6 anomalies,
+  a full triage lane to disposition). Late-evening deliveries PARK on
+  their lane branch until the trailer; the battery's pinned commit and
+  main must stay identical for its whole run.
 - **Merges serialize through you, with the test battery between** (see
   wake.md §3 for the current battery shape and expected counts). Commit
   before battery runs that archive HEAD. A worker going idle uncommitted is

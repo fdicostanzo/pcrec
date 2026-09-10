@@ -22454,3 +22454,37 @@ lane (the utf8-libpcre2 differential instrument builds ON the
 interface + store). **NEXT-SESSION LANES FRANK-APPROVED**:
 [K53-SELRETRY] (opus-small) / axes-stage batching (sonnet) / the
 instrument-on-the-oracle-interface (sonnet); MACPORT bundle reserve.
+
+## 2026-09-10 (EDT), fifty-seventh session part 8 — the s5 battery fully dispositioned (axes=K55 one-liner; mech's 7 flags = MY mid-battery merge); [CLS-TREE] chartered; PUSHED 013e5e03; I-63 sent
+
+**THE S5 BATTERY (572b41bf, 14:30→04:21, rc=1) IS FULLY DISPOSITIONED
+— zero regressions from any of its three merges.** Axes rc=2 (lane
+axtriage): ONE finding — the --engine=vm axis met its documented
+500,000-byte emit-code cap on \P{Unknown} (689,367 bytes, 729
+intervals), the axis's own header's anticipated first witness; K55
+filed+fixed as one REFUSAL_PATTERN entry, before/after demonstrated;
+the full-corpus AXES_FULL confirmation rides the next battery. Lint's
+FIRST REAL darwin run: clean, 46s. Mech rc=2 (lane mechtri2): the 1
+unexpected + 6 anomalies shared ONE cause and it was THE MANAGER'S —
+oralink merged to main MID-BATTERY while mech re-archives HEAD per
+row, exposing SIX oracle build sites the D98 conversion missed (bare
+-ldl on files now including <pcre2.h>); fixed at all six with the
+resolve_pcre2.sh shape, all seven rows solo-validated at their exact
+predicted counts, post-merge sanity 8/0+8/0 on fresh main. LESSON
+CODIFIED in the manager skill: no merges to main while a battery is in
+flight — late deliveries PARK on their branch until the trailer.
+
+**[CLS-TREE] CHARTERED (Frank, overnight)**: huge classes as DATA —
+the third class-emission form; representation OPEN (tree-of-ranges the
+seed; staged page tables / interval-bitmap hybrid / Eytzinger
+candidates, measured over the real 312 script sets); the D77 trigger
+already measured (K53's six + K55); design pass questions enumerated
+on the row; opens after [K53-SELRETRY].
+
+**PUSHED 013e5e03** (the seven-merge day: utf8s5, arm61fix, tt4m3,
+linktest, oralink, axtriage, mechtri2 + charters/journals). **I-63
+SENT** (bench inbox 4ef7c60, their next session's wake): san +
+STAGE-5's TIER-1 uprops-utf8 (the drift-zeroing run) + pc4 + the D98
+linked binding's first reference confirmation + the C3 read + S-U12
+solo. Green = [M5.0]'s build-phase validation CLOSES. The three
+Frank-approved lanes launch now.
