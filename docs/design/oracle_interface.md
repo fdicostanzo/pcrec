@@ -35,8 +35,11 @@ reference-version store is COMMITTED, local-version caches are gitignored;
 first customers are the uprops whole-space sweeps (**R56-6, BLOCKING,
 corrected**: it is `S-U12`'s neighborhood — the STAGE-5 drift-zeroing 10.46
 `membership` arm — that rides this step; `S-U6`/`S-U9`'s own closing
-witnesses are a `match-at`-kind, ill-formed-subject population that rides a
-LATER ladder rung, §9 states the distinction in full), then the C3 python
+witnesses are `match-at`-kind cells riding a LATER ladder rung — S-U9's
+over an ILL-FORMED continuation run, S-U6's over a WELL-FORMED subject
+(the find-all/empty-match boundary defect; the two rows' populations are
+not the same axis, r56verify's correction) — §9 states the distinction in
+full), then the C3 python
 oracle, then the PC-3 probe families;
 `.rxt` expectations gain formal provenance as a dividend, not a requirement
 of this design.
