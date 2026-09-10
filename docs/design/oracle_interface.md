@@ -1,11 +1,16 @@
 # The oracle interface and the answer store — design note
 
-**PROPOSED, NOT PANELED.** Lane `oraiface`, 2026-09-10. Scope per Frank's
-directives (`docs/dev/wake.md`'s lane-3 spec, 2026-09-09 late) and D77: this
-note designs the interface and the store; **it builds neither**. No code
-lands from this lane. The manager runs a D6 panel on this note; the uprops
-instance (the store's first real customer) builds only after the panel's
-dispositions.
+**PROPOSED, PANELED (R56) AND REVISED.** Lane `oraiface`, 2026-09-10; revision
+lane `oraiface2`, 2026-09-10, applying R56-1..8 plus a stale-comment side fix
+against `docs/dev/reviews/2026-09-10-r56-oracle-interface.md` (two critics,
+r56cons + r56mech: the survey held exact under re-derivation, the mechanism
+had two deterministic-failure blockers and a ladder misattribution, all fixed
+in place below). Scope per Frank's directives (`docs/dev/wake.md`'s lane-3
+spec, 2026-09-09 late) and D77: this note designs the interface and the
+store; **it builds neither**. No code lands from this lane. A B13-contract
+completion-contract VERIFY PASS runs against this revision before merge; the
+uprops instance (the store's first real customer) builds only after that
+pass and the manager's merge.
 
 ## 0. The charter, verbatim
 
@@ -27,8 +32,12 @@ contract's own native shape); **only the oracle side caches** — pcrec
 computes fresh every run, which is the store's whole safety property
 (`docs/dev/learnings.md` §3: a store no check-under-test can write); the
 reference-version store is COMMITTED, local-version caches are gitignored;
-first customers are the uprops whole-space sweeps (the S-U6/S-U9 closing
-witnesses ride it), then the C3 python oracle, then the PC-3 probe families;
+first customers are the uprops whole-space sweeps (**R56-6, BLOCKING,
+corrected**: it is `S-U12`'s neighborhood — the STAGE-5 drift-zeroing 10.46
+`membership` arm — that rides this step; `S-U6`/`S-U9`'s own closing
+witnesses are a `match-at`-kind, ill-formed-subject population that rides a
+LATER ladder rung, §9 states the distinction in full), then the C3 python
+oracle, then the PC-3 probe families;
 `.rxt` expectations gain formal provenance as a dividend, not a requirement
 of this design.
 
@@ -200,14 +209,26 @@ independence the tension check exists to verify. §10 restates this.
 
 ## 2. The question kind-set
 
-Five kinds, aligned with `docs/spec/rxt_format.md`'s own directive
-vocabulary (`pattern`/`perr`, `m`/`n`/`ms`/`ns`, `g`/`gp`) but not a bare
-1:1 mapping onto it — two kinds below (`name-accept`, `membership`) answer
-questions no single `.rxt` cell asks, because their whole value is asking
-about a NAME or a WHOLE SPACE rather than one pattern text. Every kind's
+**Six kinds** (R56-7 added the sixth), aligned with `docs/spec/rxt_format.md`'s
+own directive vocabulary (`pattern`/`perr`, `m`/`n`/`ms`/`ns`, `g`/`gp`) but
+not a bare 1:1 mapping onto it — three kinds below (`name-accept`,
+`membership`, `pattern-info`) answer questions no single `.rxt` cell asks,
+because their whole value is asking about a NAME, a WHOLE SPACE, or a
+pattern's own STRUCTURE rather than one match. Every kind's
 fields are named exactly, because §4's hash needs a closed, ordered field
 list per kind — an open-ended "extra options" bag would make the
 serialization non-canonical by construction.
+
+**Extension rule (R56-7).** The kind-set is closed but not frozen: adding a
+seventh kind is a STORE-FORMAT MINOR VERSION BUMP (§8 Claim 4's version
+field, one number up) and touches nothing about the kinds already
+defined — no existing kind is ever re-keyed, re-fielded, or re-ordered to
+make room for a new one. A kind addition is additive by construction the
+same way `rx_info`'s own struct-append rule is (D76/D94's "append after
+`nentries`, no existing offset moves" precedent, one layer over): a store
+reader built against store-format version N reads every row a version-N+1
+writer produced for kinds 1..N unchanged, and simply does not recognise
+rows of the new kind until it is updated.
 
 1. **`compile-accept`** — "does this pattern text compile under this
    oracle's config?" Fields: `pattern` (raw bytes, PC-3/PC-4's own
@@ -258,6 +279,38 @@ serialization non-canonical by construction.
    kind's whole reason to exist is answering all 1,114,112 of them in one
    call.
 
+6. **`pattern-info`** — "compiled under this oracle's config, what are this
+   pattern's own STRUCTURAL properties?" (R56-7, cons-F2, MUST-FIX: a real,
+   oracle-consulted, pure-function-of-(pattern,config) question no earlier
+   kind expresses.) Fields: `pattern` (raw bytes) — no subject, no startpos;
+   this kind asks about the compiled pattern object itself, never a match
+   attempt against it. Answer: the capture count, the name count, and the
+   NAMETABLE as an ORDERED LIST of `(name, group-number)` pairs — and the
+   list's canonical form is not free to choose, because a producer and a
+   store reader must agree on ONE ordering byte for byte. It is the
+   ordering `docs/dev/decisions.md` D59 measured `PCRE2_INFO_NAMETABLE`
+   itself to use — the evidence `tests/probes/CLAUDE.md` also records, one
+   layer closer to the probe, as "the evidence behind... D59's sort-key
+   ruling" — and that pcrec's own `rx_info.groups` sort key adopts:
+   **name-ascending, byte-exact `strcmp`, case-sensitive**. D59's own
+   words, measured against libpcre2 10.46 via `tests/probes/
+   probe_named_groups.c`: "a 3-name pattern declared `zeta`/`alpha`/`mu`
+   by opening-paren order comes back `alpha`/`mu`/`zeta`." That
+   population — the same construct D59 already measured
+   to decide pcrec's own layout — is `pattern-info`'s citable evidence that
+   the kind answers a question this tree already asks and already has a
+   settled convention for, not a new one invented for this design. The
+   answer's wire form (§5.6) serializes the nametable in exactly that
+   order, so a `pattern-info` answer and `rx_info.groups`' own sort rule
+   are provably the same convention rather than two conventions that
+   happen to agree today. No `.rxt` cousin exists (a `.rxt` cell asserts a
+   match or a rejection, never a pattern's own reflection surface), which
+   is again "aligned with" rather than "equal to" the `.rxt` vocabulary. A
+   store customer for this kind is DEFERRED (nothing in §9's migration
+   ladder consumes it yet); the kind is defined now because §2's field-list
+   canonicality argument applies to it exactly as it does to the other
+   five, and defining it later would be a store-format bump either way.
+
 ## 3. `OracleId` — the store's outer key
 
 `OracleId = (name, version, config)`, exactly as chartered. Today there is
@@ -279,7 +332,44 @@ change.
   change an ANSWER, never ones that only change performance. Measured from
   the survey: `utf: bool` (PCRE2_UTF — every uprops/PC-4 use of it is
   compile-time-semantic), `caseless: bool` (PCRE2_CASELESS — PC-4's `-i`
-  block). **`PCRE2_NO_UTF_CHECK` is explicitly EXCLUDED from `config`**: it
+  block), and — **R56-2, BLOCKING** — the **limit triple**,
+  `match_limit`/`depth_limit`/`heap_limit`. These are ANSWER-AFFECTING, not
+  performance-only: this tree's own `docs/design/subroutines_measurements/
+  probes/sr_oracle.py` (the shared oracle behind the subroutines,
+  atomic-groups and left-recursion probes) exists specifically to vary them
+  and MEASURES the flip — `match_limits(r"^(a+)+$", "a"*24+"b", match=1000)`
+  (`sr_oracle.py:322`) answers `PCRE2_ERROR_MATCHLIMIT`, and its own
+  control cell one line down (`sr_oracle.py:331`, the SAME pattern under a
+  huge `match=100000000`) is required to reach a clean `nomatch`, "or the
+  row above proves nothing about the LIMIT" (`sr_oracle.py:329`'s own
+  comment) — the identical construct under two limit values answering two
+  different verdicts, asserted by the probe's own self-check. `depth_of()`'s
+  whole method (`sr_oracle.py:158-176`) is a bisection over
+  `depth_limit` for the SMALLEST value at which one fixed pair still matches
+  — a method with no content unless the limit is answer-affecting. The
+  design's own `giveup(code)` answer state (§5.2) anticipates exactly this
+  population and cannot be given a defensible cache key without it: a
+  `giveup` answer cached under a key that omits the limit that produced it
+  is a lie the moment a caller asks the identical question under a
+  different limit and gets a live PCRE2 call back with the opposite
+  verdict. FIX: `OracleId.config` gains all three fields, with EXPLICIT
+  DEFAULTS rather than "whatever the library ships with" — measured
+  2026-09-10 via `pcre2_config()` against this box's resolved binding
+  (Homebrew 10.48, `PCRE2_CONFIG_MATCHLIMIT`/`_DEPTHLIMIT`/`_HEAPLIMIT`):
+  `match_limit = 10000000`, `depth_limit = 10000000`, `heap_limit =
+  20000000` (KiB — PCRE2's own unit for this one field). These are PCRE2's
+  long-stable compiled-in defaults, not a 10.46-vs-10.48 drift figure — the
+  measurement pins the SOURCE (a real `pcre2_config()` call against a real
+  binding, not a value copied from memory or from documentation alone) and
+  every `config` record that does not name these three fields explicitly is
+  understood to mean exactly these three values, never "unset" or "whatever
+  ran". §8 Claim 1 is restated below over this widened key; **a `giveup`
+  answer is cacheable ONLY under a fully-keyed `config`** — a caller with no
+  opinion on the limit triple gets the defaults above, explicitly, never an
+  unkeyed wildcard.
+
+  **`PCRE2_NO_UTF_CHECK` is explicitly EXCLUDED from `config`** (verified
+  sound at R56 unchanged): it
   is a match-time performance flag whose semantic effect only diverges from
   its absence on ILL-FORMED UTF-8 input, and `uprops_oracle.c`'s own subject
   construction is always well-formed by design (surrogates excluded,
@@ -288,24 +378,101 @@ change.
   answers that can differ. A future kind whose subject can be ill-formed
   would need to reopen this, and should do so by measuring the divergence
   first (D77's own discipline), not by defensively widening `config` now.
-  `PCRE2_UCP` is not in `config` either: it has no producer anywhere in this
+  `PCRE2_UCP` is not in `config` either (verified sound at R56 unchanged):
+  it has no producer anywhere in this
   tree today (`utf8_design.md` ASK 4, declined) and adding it speculatively
   would be exactly the "build ahead of a measured need" `docs/dev/
   pcrec-build-under-measurement.md` rules against.
 
+  **R56-8 — two more axes are excluded, named rather than silently absent.**
+  Newline convention/BSR (PCRE2's `PCRE2_NEWLINE_*`/`PCRE2_BSR_*` option
+  words, DD-11's territory) and JIT-vs-interpreted execution are BOTH
+  excluded from `config` by the same measured-fact argument as
+  `PCRE2_UCP` above: no adapter surveyed in §1 varies either one — every
+  probe in this tree links `pcre2_compile`/`pcre2_match` at their default
+  newline/BSR settings, and the R56 panel's own adversarial verification
+  pass confirmed it directly ("no JIT anywhere in today's bindings",
+  `docs/dev/reviews/2026-09-10-r56-oracle-interface.md`'s "Survived
+  adversarial verification" record). Naming them here
+  rather than leaving them as two more things nobody asked about states the
+  rule an adapter author must follow the day either changes: **an adapter
+  that varies newline/BSR or that runs under JIT must widen `config`
+  FIRST**, measuring the divergence before adding the field, on the exact
+  discipline `PCRE2_UCP`'s own exclusion above already follows — not a new
+  rule, the same one applied to two more axes so a future reader does not
+  have to re-derive it.
+
 ## 4. Canonical serialization and the question hash
 
-Each `Question` serializes as a fixed, ordered, tab-separated record whose
-first field is the kind name, reusing the ONE escape vocabulary this tree
-already has for exactly this purpose — `.rxt`'s own subject escapes (`\"
-\\ \n \t \r \f \v \xHH`, `docs/spec/rxt_format.md`'s "`<subject>` is
-double-quoted text" table) — rather than inventing a second one. Any field
-that can contain an embedded tab or newline (`pattern`, `subject`) is
-escaped through it before joining; every other field (`startpos`, `encoding`,
-`namespace`, `name`, `property`) is already tab-and-newline-free by its own
-grammar (a decimal integer, or an identifier). This is the same principle
-`rxt_format.md` itself states for the `.rxt` format: "a `.rxt` author already
-knows this one."
+**R56-1, BLOCKING — corrected in full.** The first version of this section
+named the WRONG vocabulary and its own worked example in §12 was
+non-injective, deterministically, on ordinary patterns already in this
+corpus. The concrete collision: `rxt_format.md` itself records that a
+`pattern` line is rest-of-line VERBATIM and "the corpus contains three
+such blocks today" carrying a literal raw TAB byte (0x09) directly in the
+pattern text. Take a pattern whose raw source bytes are `a`, TAB, `b`
+(three bytes — a real, legal `.rxt` pattern line) beside a second,
+UNRELATED pattern whose raw source bytes are `a`, `\`, `t`, `b` (four
+bytes — an ordinary PCRE2 pattern spelling `a`, an ESCAPE SEQUENCE `\t`,
+then `b`; at the byte level this is just the ASCII characters backslash
+and lowercase `t`). Serializing the first pattern by escaping its one raw
+TAB the naive way produces the four characters `a`, `\`, `t`, `b` — BYTE-
+IDENTICAL to the second pattern's own raw, un-escaped text. Two different
+patterns, one serialized form, one hash: exactly the collision the review
+found, and it needed no adversarial input to reach, only two patterns this
+tree already has reason to hold side by side.
+
+**The canonical serialization is the `docs/spec/rxt_format.md`:458-474
+FIVE-ESCAPE TSV-FRAMING SUBSET, stated normatively, not the seven-escape
+quoted-context vocabulary that section explicitly calls out as a
+different, larger thing.** This tree has TWO escape vocabularies and they
+serve different jobs:
+
+- **The quoted-context vocabulary** (`rxt_format.md`'s "`<subject>` is
+  double-quoted text" table, seven escapes: `\" \\ \n \t \r \f \v \xHH`) —
+  for a `<subject>` literal written BETWEEN QUOTES inside a `.rxt` file,
+  where `\"` protects the closing delimiter. **This design REJECTS it
+  explicitly**: a `Question`'s serialized record has no quoted context and
+  no closing delimiter for `\"` to protect, so importing that vocabulary
+  wholesale would carry an escape with nothing to guard and would be one
+  more thing a reader has to know does nothing here.
+- **The TSV-framing subset** (`rxt_format.md`:458-474, five escapes: `\\
+  \t \n \r \xNN`) — the ones `pcrec --list-source`'s own dump already uses
+  to protect TSV FRAMING for exactly this reason: "the dump's five escapes
+  ... are the ones needed to protect TSV FRAMING, not the full seven-escape
+  subject vocabulary." `\f`/`\v` are not named escapes in this subset; a
+  literal form-feed or vertical-tab byte still round-trips correctly
+  through the `\xNN` form (`\f` as `\x0c`, `\v` as `\x0b`) exactly as
+  `rxt_format.md` states for the dump. **This is the vocabulary this
+  design adopts**, reused rather than re-decided, because a `Question`
+  record is TSV framing and nothing else — there is no quoted context to
+  protect and no reason to carry an escape that exists only for one.
+
+**The producer rule, stated normatively: BACKSLASH IS ESCAPED FIRST.** A
+producer serializing a field escapes every literal `\` byte to `\\` BEFORE
+applying any of the other four escapes (`\t`, `\n`, `\r`, `\xNN` for any
+other byte requiring protection). This is not a stylistic preference — it
+is what makes the five-escape subset INJECTIVE at all. Un-escaped, a raw
+TAB byte and a literal two-byte sequence `\` + `t` both serialize to the
+same two characters `\t`; escaping the backslash first turns the literal
+sequence into THREE characters, `\\t` (backslash, backslash, letter-t),
+which cannot be confused with the two-character escaped TAB. §12's
+`(a|b\1)+` example is corrected below to demonstrate this rule in a real
+pattern from this tree's own corpus.
+
+**The trailing-backslash test vector**, stated as its own edge case because
+it is the one place the rule's ORDER matters twice: a pattern whose raw
+bytes END in a literal backslash immediately before the TSV field boundary
+— say pattern text `a\` (two bytes: `a`, then a lone trailing `\`). Escaped
+backslash-first, this serializes as `a\\` (three characters: `a`, `\`,
+`\`), which the reader parses as one literal `a` followed by one escaped
+backslash — NOT as a dangling, incomplete escape reaching across the field
+boundary into whatever follows the row's real (unescaped) tab delimiter.
+Any implementation must be exercised against this exact vector before
+shipping: a producer or reader that escapes in the wrong order, or that
+treats a trailing `\\` as ambiguous with the start of a new escape, fails
+on this one pattern and no other, which is exactly the shape of bug this
+design's own injectivity claim exists to rule out.
 
 ```
 compile-accept  <pattern>
@@ -313,6 +480,7 @@ match-at        <pattern>\t<subject>\t<startpos>
 captures        <pattern>\t<subject>\t<startpos>\t<nslots>
 name-accept     <namespace>\t<name>
 membership      <property>\t<encoding>
+pattern-info    <pattern>
 ```
 
 `captures` carries `nslots` (how many capture pairs the caller wants back,
@@ -320,6 +488,13 @@ matching `bref_oracle.py`'s own `<ngroups>` field) because the answer's
 SHAPE — how many pairs come back, padded or not — depends on it; two callers
 asking for different slot counts over the identical match are, correctly,
 two different cached rows, since the padding differs.
+
+Every field that can contain an embedded tab, newline, or backslash
+(`pattern`, `subject`) is escaped through the five-escape subset above,
+backslash first, before joining; every other field (`startpos`, `encoding`,
+`namespace`, `name`, `property`) is already tab/newline/backslash-free by
+its own grammar (a decimal integer, or an identifier) and needs no
+escaping at all.
 
 **The question hash** is `sha256(serialized_question)`, truncated to the
 first 16 hex characters — the exact truncation `docs/design/
@@ -381,6 +556,25 @@ translation layer: the adapter for this kind IS this format, because it
 already round-trips through `uprops_compare.py` today with zero
 reinterpretation.
 
+### 5.6 `pattern-info` (R56-7, MUST-FIX)
+`<capturecount>\t<namecount>\t<name1>:<num1> <name2>:<num2> ... <nameN>:<numN>`
+— two leading integer fields (`PCRE2_INFO_CAPTURECOUNT`/`_NAMECOUNT`'s own
+values), then the nametable as a SPACE-SEPARATED ORDERED LIST, one
+`name:number` pair per named group, in the CANONICAL ORDER §2's kind
+definition states: name-ascending, byte-exact `strcmp`, case-sensitive —
+`PCRE2_INFO_NAMETABLE`'s own measured order (D59, `tests/probes/
+probe_named_groups.c`), which is also `rx_info.groups`' own sort key on the
+pcrec side. An unnamed group contributes no entry to the list (the list's
+length is `namecount`, never `capturecount`) and is otherwise invisible to
+this kind — a caller wanting the full 1..`capturecount` numbering without
+names is asking `capturecount` alone, already in the answer's first field.
+The delimiter choice deliberately avoids both TAB (the record's own field
+separator) and comma (a valid byte in a group NAME under some namespaces
+elsewhere in this tree); a space is safe here because `tests/probes/
+CLAUDE.md`'s own measured name grammar ("first byte letter/`_`, later bytes
+alnum/`_`") admits no space in a legal PCRE2 group name, so the list's own
+internal delimiter can never collide with a name it separates.
+
 ## 6. The adapter contract
 
 ```
@@ -407,8 +601,9 @@ imitate, not as a precedent.
   existing `pcre2_abi.h` binding. `answer()` is a C loop over the batch,
   `OracleId.version` read once via `pcre2_abi_version()`, `capabilities()`
   reporting every kind except none (a direct-linked library can answer all
-  five). `max_batch: none` — an in-process loop has no round-trip cost to
-  amortize.
+  six — `pattern-info` is a `pcre2_compile()` plus a `pcre2_pattern_info()`
+  call, the same primitive PC-3/PC-4 already use). `max_batch: none` — an
+  in-process loop has no round-trip cost to amortize.
 - **Remote reference adapter** (`libpcre2`, ssh): wraps §1.8's `bundle.py`
   mechanism generalized from one probe script to one Question-batch payload:
   the whole batch serializes to one stdin blob, the far end runs the SAME
@@ -425,7 +620,7 @@ imitate, not as a precedent.
   (`capabilities().max_batch`), not to hide it.
 
 **Interchangeability, concretely.** Any code that wants an oracle answer
-depends only on `capabilities()` + `answer()` + the five `Question`/`Answer`
+depends only on `capabilities()` + `answer()` + the six `Question`/`Answer`
 shapes above — never on whether the oracle is python's `re`, a direct-linked
 library, or a machine three thousand miles away. A differential that
 compares two oracles is: same `Question` batch, two `OracleId`s, two
@@ -450,11 +645,12 @@ than JSON or a binary format, for the same reasons those files give: a
 reviewer's own terminal, with no tool needed to read it.
 
 One file per `(OracleId, kind)` rather than one file per `OracleId` (all
-kinds together): the five kinds have genuinely different answer shapes
-(`membership`'s one field can be hundreds of bytes of interval list; every
-other kind's answer is a handful of short fields), and mixing them in one
-table would either force a ragged column count or a serialized-answer blob
-column that defeats the diffability this format exists for. Layout:
+kinds together): the six kinds have genuinely different answer shapes
+(`membership`'s one field can be hundreds of bytes of interval list;
+`pattern-info`'s nametable field is a variable-length ordered list too;
+every other kind's answer is a handful of short fields), and mixing them in
+one table would either force a ragged column count or a serialized-answer
+blob column that defeats the diffability this format exists for. Layout:
 
 ```
 <store-root>/<oracle-name>-<version>[-<config-tag>]/<kind>.tsv
@@ -462,13 +658,87 @@ column that defeats the diffability this format exists for. Layout:
 
 with `<config-tag>` present only when more than one `config` is exercised
 against the same `(name, version)` (today: PC-4's `caseless` block is the
-only non-default config in the whole survey, so most files carry no tag).
+only non-default config in the whole survey, so most files carry no tag —
+**R56-2 widens what a non-default tag can mean**: the limit-triple defaults
+stated in §3 are the UNTAGGED baseline, and a store row captured under any
+other `match_limit`/`depth_limit`/`heap_limit` value carries its own
+`<config-tag>` exactly as `caseless` does today).
+
+**R56-3, MUST-FIX — the serialization itself is versioned (§8 Claim 4).**
+Each file's header row carries, beside the column names, a
+`store_format_version` field naming the serialization-rule version this
+file's rows were written under — the escape vocabulary and producer rule
+of §4, and this document's own kind-set revision (the extension rule in
+§2). A reader that encounters a version it does not implement treats every
+row in the file as a CLEAN MISS, on exactly the argument `OracleId.version`
+already makes for a library bump (§8 Claim 2): there is no partial reading
+of a format a reader does not speak, so there is nothing to get subtly
+wrong.
+
+**R56-4, MUST-FIX — the store self-checks (the `artifact_size_log.tsv`
+precedent's ACTUAL shape, followed rather than merely cited).** That file's
+own header names the commit, the date, the load at start, AND "the row
+count the SAME run produced (so a truncated file is detectable by comparing
+the two)" — `docs/CLAUDE.md`'s own description of it. Each per-`(OracleId,
+kind)` file's header therefore carries its own ROW COUNT and PROVENANCE
+(the resolved `OracleId`, the capture date, the exact command that produced
+it — the same three facts §7.2's per-`OracleId` `PROVENANCE.md`-equivalent
+names, now ALSO stamped per file so a single truncated or corrupted
+`(OracleId, kind).tsv` is detectable without cross-referencing a sibling
+document) alongside the `store_format_version` field above. **And readers
+verify a fetched row's `question` column against the query's own
+serialization before trusting its answer column** — the cheap
+collision/corruption tripwire this design's whole hash-keyed lookup needs:
+`question_hash` alone is 16 hex characters of `sha256`, chosen in §4
+precisely because a collision is statistically irrelevant at any surveyed
+population, but a bit-flip in a committed file, a hand-edit gone wrong, or
+a future population large enough to make the birthday bound relevant are
+all cheaper to catch by re-comparing the stored `question` TEXT (already
+kept beside the hash for exactly this reason, §7.1's own "kept BESIDE the
+hash... so a reviewer reads what changed") than to leave undetected. A
+mismatch is a hard read failure, never a silently-returned wrong answer.
+
 Each file's header row names its columns by the table-contract convention
 (`question_hash`, `question` — the human-readable serialized form, kept
 BESIDE the hash rather than instead of it, so a reviewer reads what changed
 without recomputing a hash by hand — then the kind's own answer columns from
 §5), rows sorted by `question_hash` for a stable, minimal diff across
 re-generation.
+
+### 7.1a Store discipline (R56-5, MUST-FIX)
+
+**Regeneration is sorted-by-hash, with a DUPLICATE-HASH DETECTOR as a
+check** — the same MECH-1-class tripwire this design's own collision
+argument (§4, §7.1's row-verification above) demands: a regeneration run
+that writes two rows with the same `question_hash` and two different
+`question` texts is exactly the collision R56-1 fixed one layer down, and
+the detector's job is to make that fact loud rather than let the second
+row silently shadow or corrupt the first. The detector runs as part of
+whatever process WRITES a store file, not as a separate periodic audit —
+the same "the check rides the thing it guards" discipline `tests/size/`'s
+own SIZELOG ratchet already follows for `docs/dev/artifact_size_log.tsv`.
+
+**Regeneration ownership: the owning lane regenerates; appends never land
+unsorted in a committed store.** A store file is not a log a caller appends
+a line to — it is a SORTED SNAPSHOT (§7.1's own "rows sorted by
+`question_hash` for a stable, minimal diff"), so a new question joining the
+population is a REGENERATION of the whole file by whichever lane owns that
+`(OracleId, kind)`'s population (the migration-ladder step that introduced
+it, per §9), never an unsorted line appended by whichever caller happened
+to ask first. An appended, unsorted row would defeat the diffability §7.1
+exists for on the very next `git diff`.
+
+**Merge protocol: re-derive on conflict, never hand-merge rows.** Two
+branches that both regenerate the same `(OracleId, kind)` file produce two
+independently-sorted, independently-correct snapshots that a textual
+three-way merge cannot safely interleave — a hand-resolved merge conflict
+in a TSV store file is exactly the shape `docs/dev/plan.md`'s own git-merge
+situation-index row warns about for a different file ("a conflicted merge
+leaves MERGE_HEAD... resolve, then commit"), and the resolution here is
+narrower and safer than a text merge: RE-RUN the regenerating process
+against the post-merge tree and let it overwrite both sides. A merge that
+tries to interleave two sorted TSV files by hand is the one thing this
+protocol forbids outright.
 
 ### 7.2 Location: reference store committed, local caches gitignored
 
@@ -511,6 +781,7 @@ from a measured count (labelled). None are invented.
 | name-accept | uprops §2 gated space | 1,053 (measured, `tests/uprops/CLAUDE.md`) | ~20 |
 | membership | uprops byte arm | 91 properties (measured) | tens to low hundreds of bytes/property (short intervals) |
 | membership | uprops utf8 arm | ~387 properties (derived, §1.4 — NOT independently re-measured this lane) | up to several KB for a property with many disjoint ranges (e.g. `\p{L}`'s minimized-DFA state count of 283, `utf8_design.md`, suggests a comparably modest interval count, but this is an inference from a DIFFERENT measurement and should be confirmed, not assumed, at migration time) |
+| pattern-info | none (deferred store customer, §2 kind 6) | 0 — no store row is written for this kind by any step §9 schedules | n/a |
 
 The PC-3 table alone is comfortably under ten megabytes at these row-size
 estimates; the utf8 membership table is the one genuinely unmeasured
@@ -528,11 +799,19 @@ dependence beyond which library got resolved. The store's correctness
 argument is three short claims, each already implicit in the code above and
 now made explicit:
 
-1. **Same `OracleId` + same question hash ⇒ same `Answer`, always.** This
-   follows from the oracle being a pure function per (1): the library binary
-   named by `(name, version)` compiled/matched against fixed bytes under a
-   fixed `config` cannot answer two different things on two different days.
-   Nothing in this design WEAKENS that guarantee — it only writes the
+1. **Same `OracleId` + same question hash ⇒ same `Answer`, always — RESTATED
+   OVER THE WIDENED KEY (R56-2).** This follows from the oracle being a pure
+   function per (1): the library binary named by `(name, version)`
+   compiled/matched against fixed bytes under a fixed `config` — now
+   including the limit triple `match_limit`/`depth_limit`/`heap_limit`, §3
+   — cannot answer two different things on two different days. The claim
+   was never false for `utf`/`caseless` alone; it would have been false in
+   practice the moment a `giveup(code)` answer was cached against a key
+   that omitted the limit that produced it, because the identical
+   `(pattern, subject, startpos)` triple under a DIFFERENT limit is a
+   REAL, measured different answer (§3's `sr_oracle.py` citation) rather
+   than noise the pure-function argument could paper over. Nothing in
+   this design WEAKENS that guarantee — it only writes the
    already-true answer down once instead of recomputing it every run.
 
 2. **A version bump is a clean miss, never a stale hit.** `OracleId`
@@ -558,6 +837,20 @@ now made explicit:
    questions; nothing in this design defines a pcrec-side cache, and none
    should ever be added under this same mechanism.
 
+4. **A store-format or serialization-rule change is a clean miss, exactly
+   like an oracle version bump (R56-3).** §7.1's `store_format_version`
+   field makes this a structural fact about the FILE rather than a promise
+   a human keeps: a reader that speaks a different version treats every
+   row under the old one as unread, never as a row it partially
+   understands and partially guesses at. This is claim 2's own argument
+   ("there is no expiry policy to get wrong... the check is a structural
+   fact about the key") applied to the SERIALIZATION rather than to the
+   library — an encoding change (a new escape rule, a widened kind-set)
+   invalidates a store file's readability exactly as cleanly as
+   `OracleId.version` invalidates its content, and for the same reason:
+   both are facts a reader checks before trusting anything else in the
+   file.
+
 ## 9. Migration ladder
 
 **Step 1 — uprops (byte + utf8).** The local direct-link adapter answers the
@@ -568,10 +861,25 @@ batch call — every `membership` question for the whole shipped property set,
 in one ssh round trip, against the 10.46 reference — with the answers
 committed to `oracle_store/libpcre2-10.46/membership.tsv`. This is the exact
 mechanism that discharges wake.md's owed "STAGE-5 10.46 EXACT arm" without
-requiring darwin to own the reference, and it is what turns S-U6/S-U9's
-closing witnesses from a recurring manual measurement into a one-time
-capture followed by permanent, free, local `make test-uprops-utf8` runs
-against the committed table.
+requiring darwin to own the reference — **and it is `S-U12`'s neighborhood
+this discharges, not S-U6/S-U9 (R56-6, BLOCKING, corrected)**: the STAGE-5
+drift-zeroing arm is uprops' own script-namespace `membership` differential
+(`tests/utf8/axis12_scripts.rxt`, `S-U12`'s own "bare spelling vs. Script
+property" population) measured against whichever local library darwin
+resolves today rather than against the true 10.46 pin, which is precisely
+the `membership`-kind, whole-code-point-space question this step's remote
+adapter answers once and commits. `S-U6`/`S-U9`'s own closing witnesses are
+a DIFFERENT kind's population and a LATER ladder rung: both are `match-at`
+questions over an ILL-FORMED-UTF-8-SUBJECT population (`S-U6`'s find-all
+empty-match-at-a-multi-byte-boundary cell; `S-U9`'s ill-formed
+continuation-run cell under a negative lookbehind), and both rows' own
+headers name the SAME blocked instrument — "the same UTF8-vs-libpcre2
+instrument S-U6 names as blocked on a corpus follow-up in the admin queue
+(an ill-formed-subject axis..., axis03/axis10's own precedent)"
+(`S-U9_back_step_length_test_deleted.sh`) — which is a `match-at`
+differential over ill-formed subjects, not this step's `membership` sweep.
+That instrument rides Step 2 or a dedicated later rung once such a
+differential exists; nothing in Step 1 reaches it.
 
 **Step 2 — C3 (python `re`).** Wrap `verify_rxt.py`'s existing calls in the
 adapter shape (§1.1) for uniformity, not for caching value. The dividend is
@@ -653,17 +961,41 @@ this exact text — the fixture demonstrates the FIELD LAYOUT, not a captured
 number.)
 
 **match-at** + **captures** — the re-entry family `backrefs_design.md` names
-as the sharpest case for publish-at-close semantics:
+as the sharpest case for publish-at-close semantics, **corrected for R56-1's
+backslash-first rule**: the pattern's raw text is `(a|b\1)+`, whose one
+literal `\` byte MUST be escaped to `\\` before serializing, exactly as §4
+now states normatively — the note's first draft showed this Question
+UNESCAPED, which is the non-injective example the review found:
 ```
-Question (match-at):  match-at\t(a|b\1)+\tab\t0
+Question (match-at):  match-at\t(a|b\\1)+\tab\t0
 Answer:                match\t0\t2
 
-Question (captures):  captures\t(a|b\1)+\tab\t0\t2
+Question (captures):  captures\t(a|b\\1)+\tab\t0\t2
 Answer:                0\t2\t1\t2
 ```
 (slot 0 is the whole match, slot 1 is group 1 — libpcre2's PUBLISH-AT-CLOSE
 answer per `backrefs_design.md`'s own R32 finding, `(0,2)` overall with
 group 1 = `(1,2)`.)
+
+**compile-accept — the trailing-backslash test vector, from a REAL corpus
+pattern rather than a constructed one.** `tests/base/escapes.rxt:34`'s
+`pattern \\` compiles a PCRE2 pattern whose raw source bytes are TWO literal
+backslash characters (`\`, `\` — a pattern that matches one literal
+backslash, `tests/base/escapes.rxt:35`'s own `m "\\" 0 1` cell, which is
+itself a `.rxt` SUBJECT literal decoded through the SEVEN-escape
+quoted-context vocabulary — a different vocabulary, for a different field,
+per §4's own distinction). Serialized through this design's five-escape,
+backslash-first rule, EACH of the pattern's two raw backslash bytes is
+escaped independently and in sequence, producing FOUR characters in the
+`Question` record:
+```
+Question:  compile-accept\t\\\\
+Answer:    accept
+```
+This is exactly the shape §4's trailing-backslash test vector describes —
+a pattern's own bytes ending, and in this case consisting entirely of,
+literal backslashes — demonstrated on real, already-shipped corpus text
+rather than an invented one.
 
 **name-accept** — a uprops script name, and the PC-3-style refusal control
 a fabricated name would hit:
@@ -684,6 +1016,20 @@ Answer:    370-373 3B6 386 388-38A 38C 38E-3A1 3A3-3E1 ...
 (illustrative truncation — the real answer is `sc=Greek`'s full Latin-1-
 clamped interval set, exactly what `uprops_oracle.c`'s own sweep already
 prints for this property today.)
+
+**pattern-info** — D59's own opening-paren-order witness (R56-7's cited
+population, `tests/probes/probe_named_groups.c:159`), which is the real,
+already-measured pattern that motivated `rx_info.groups`' sort key in the
+first place:
+```
+Question:  pattern-info\t(?<zeta>a)(?<alpha>b)(?<mu>c)
+Answer:    3\t3\talpha:2 mu:3 zeta:1
+```
+(capture count 3, name count 3; the nametable comes back name-ascending —
+`alpha`, `mu`, `zeta` — NOT in opening-paren order, which is `zeta`(1),
+`alpha`(2), `mu`(3): D59's own measured fact, "a `zeta`/`alpha`/`mu`
+declaration order comes back `alpha`/`mu`/`zeta`," reproduced here as this
+kind's canonical answer shape rather than restated as prose.)
 
 ## 13. Open questions for the panel / for Frank
 

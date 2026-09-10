@@ -109,3 +109,60 @@ Status: COMPLETE for this lane's scope. The design note is committed on
 `lane/oraiface`, ready for the manager's D6 panel. No follow-up work is
 owed from this lane; the uprops instance is the next lane once the panel
 dispositions land, per the charter.
+
+## 2026-09-10 — r56 revision (lane `oraiface2`)
+
+Two critics (r56cons + r56mech) panelled the note above
+(`docs/dev/reviews/2026-09-10-r56-oracle-interface.md`). The survey held
+exact under re-derivation (every population number reproduced, DOC-DRV's
+exclusion structural, no wire-format impedance in the ssh transport); the
+mechanism had two deterministic-failure BLOCKERS and one ladder
+misattribution. All eight numbered dispositions plus the stale-comment side
+fix are applied in this commit, on top of `acde84d5`, directly to
+`docs/design/oracle_interface.md` (no store code lands — still D77-scoped).
+Disposition-by-disposition checklist:
+
+| id | disposition | hunk |
+|---|---|---|
+| R56-1 (BLOCKING) | serialization injectivity — canonical form is `rxt_format.md`:458-474's FIVE-escape TSV-framing subset (`\\ \t \n \r \xNN`), backslash escaped FIRST, stated normatively; both vocabularies named, the seven-escape quoted-context one explicitly rejected; trailing-backslash test vector stated | §4, rewritten in full (the injectivity refutation, the two-vocabulary comparison, the producer rule, the test vector) — §12's `(a|b\1)+` fixture corrected to `(a|b\\1)+` and a new real-corpus fixture added (`tests/base/escapes.rxt:34`'s `pattern \\`, the trailing/all-backslash case) |
+| R56-2 (BLOCKING) | limit triple (`match_limit`/`depth_limit`/`heap_limit`) joins `OracleId.config` with explicit defaults; §8 Claim 1 restated over the widened key; a giveup answer cacheable ONLY under a fully-keyed config; §3's NO_UTF_CHECK/UCP exclusion argument unchanged | §3's `config` bullet (new limit-triple paragraph, defaults measured via `pcre2_config()` against this box's resolved 10.48 binding: match=10000000, depth=10000000, heap=20000000 KiB, cited to `docs/design/subroutines_measurements/probes/sr_oracle.py`'s own answer-flip cells); §8 Claim 1 rewritten; §7.1's `<config-tag>` paragraph extended |
+| R56-3 (MUST-FIX) | store-format/serialization-rule version field per file header, so an encoding change is a clean miss like an oracle version bump; §8 gains Claim 4 | §7.1 new paragraph (`store_format_version` header field); §8 new Claim 4 |
+| R56-4 (MUST-FIX) | per-`(OracleId,kind)` file header carries its own row count + provenance (the `artifact_size_log.tsv` precedent's ACTUAL shape); readers verify a fetched row's question text equals the query's serialization before trusting the answer | §7.1 new paragraph (row count + provenance stamped per file; the question-text verification tripwire) |
+| R56-5 (MUST-FIX) | store discipline: regeneration sorted-by-hash with a duplicate-hash detector as a check; owning-lane regeneration, never an unsorted append; merge protocol (re-derive on conflict, never hand-merge) | new §7.1a "Store discipline" |
+| R56-6 (cons-F1, BLOCKING) | un-conflate the two owed items: S-U6/S-U9's closing witnesses are `match-at`-kind, ill-formed-subject cells riding a LATER ladder rung; what uprops-first (Step 1) discharges is the STAGE-5 drift-zeroing 10.46 arm, S-U12's neighborhood | §0 (the charter summary) and §9 Step 1, both corrected in place with the S-U6/S-U9-vs-S-U12 distinction spelled out and cited to each row's own `sabotages/*.sh` header |
+| R56-7 (cons-F2, MUST-FIX) | the sixth kind, `pattern-info` (a compiled pattern's structural properties — the NAMETABLE/NAMECOUNT ordering differential D59/`rx_info.groups` rests on); same rigor as the other kinds (canonical nametable form defined); kind-set gains an extension rule (kind addition = store-format minor bump, existing kinds never re-keyed) | §2 (sixth kind + extension rule), §4 (added to the serialization grammar), §5.6 (new answer-shape subsection), §7.3 (size table row, deferred customer), §12 (new fixture using `tests/probes/probe_named_groups.c:159`'s own zeta/alpha/mu witness, D59's exact population) |
+| R56-8 (MECH-8+9, required text) | newline/BSR and JIT-vs-interp named as excluded from `config` BY MEASURED FACT (no adapter varies them today), with the rule that an adapter varying either must widen config first | §3, new paragraph appended to the config bullet |
+| stale-comment (D98 residue) | `tests/uprops/uprops_oracle.c`'s header still described the retired dlopen shim | `tests/uprops/uprops_oracle.c` lines 5-31, comment-only (verified `gcc -fsyntax-only` clean against the resolved Homebrew 10.48 headers) — the direct-link binding is named correctly, `--probe`'s mode is flagged DEAD CODE (`pcre2_abi_load()` cannot fail post-[ORACLE-LINK]), and the real loud-skip mechanism (`run_uprops_tests.sh` sourcing `resolve_pcre2.sh` at BUILD time) is stated in its place |
+
+**Ratified-as-is items (16-hex hash, top-level `oracle_store/` lean,
+`name-accept` staying its own kind, the membership-table git-posture
+"measure before deciding") are UNCHANGED** — the review confirmed these
+without requiring a text move, and §13's open-questions list is left as
+written so the manager/Frank still see them as live questions rather than
+silently pre-answered.
+
+**One self-caught defect during this revision, worth recording**: an
+early edit to §5.5→§5.6 accidentally dropped the `## 6. The adapter
+contract` heading (the new §5.6 content was inserted immediately before
+it and the old heading line was consumed by the edit's own old_string).
+Found by a full section-header grep (`grep -n "^## [0-9]"`) before
+handback, which is now the check to re-run on any future revision of this
+file: 14 numbered sections, `0`..`13`, each exactly once.
+
+**Validation**: prose-only revision — the check is internal consistency,
+not a suite run (D77, same as the original lane). Verified: every §12
+example round-trips under the §4 rules as revised (the corrected
+`(a|b\\1)+` example and the two new backslash fixtures traced by hand
+against the backslash-first rule); grepped the note for every remaining
+occurrence of `S-U6`/`S-U9`/`S-U12` (two places, both corrected, matching
+R56-6's own "fix both places" instruction) and of "five kind"/kind-count
+language (all updated to six where the count was asserted, the five-escape
+vocabulary's own "five" left untouched since it names the escape
+vocabulary, not the kind-set); full `## [0-9]` section-header grep (14/14,
+no duplicates, no gaps); `gcc -fsyntax-only` on the touched `.c` file.
+
+**Handback**: COMPLETE. One revision commit on `lane/oraiface` (branch
+unchanged, no new worktree), this report appendix in the same commit. A
+fresh verify agent runs the B13-contract completion-contract pass against
+this delivery before merge, per the charter; nothing else is owed from
+this lane. Never merged to main by this lane.
