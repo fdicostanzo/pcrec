@@ -82,9 +82,23 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # ---- the oracle ----------------------------------------------------------
+# [ORACLE-LINK] D98: pcre2_oracle.c direct-links libpcre2 now (`#include
+# <pcre2.h>`), so it needs $PCRE2_CFLAGS/$PCRE2_LIBS from the resolve_pcre2.sh
+# already sourced above rather than the old dlopen-era bare `-ldl`. Missed at
+# the D98 landing (this site kept the pre-migration build line while
+# tests/fuzz/run_capturediff_gate.sh got the fix), which made the build fail
+# outright once libpcre2 was resolved via pkg-config but not on the default
+# include path — found by the s5 battery's mech stage misreading the
+# resulting build failure as S178 detecting something.
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    echo "SKIP: libpcre2 is not available at build time — this differential needs it (PC-3's pattern: a loud skip, never a silent pass)"
+    echo "checks passed: 0"
+    echo "checks failed: 0"
+    exit 0
+fi
 ORACLE="$WORKDIR/pcre2_oracle"
-if ! $CC -O1 -std=gnu11 -Wall -Wextra -Werror -o "$ORACLE" \
-        "$ROOT_DIR/tests/fuzz/pcre2_oracle.c" -ldl 2>"$WORKDIR/ob.log"; then
+if ! $CC -O1 -std=gnu11 -Wall -Wextra -Werror $PCRE2_CFLAGS -o "$ORACLE" \
+        "$ROOT_DIR/tests/fuzz/pcre2_oracle.c" $PCRE2_LIBS 2>"$WORKDIR/ob.log"; then
     echo "FAIL: could not build tests/fuzz/pcre2_oracle:" >&2
     cat "$WORKDIR/ob.log" >&2
     exit 1

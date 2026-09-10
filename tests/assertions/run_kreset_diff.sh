@@ -74,6 +74,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"   # [ORACLE-LINK] D98: pcre2_oracle.c direct-links now
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
@@ -91,9 +92,19 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # ---- the oracle ----------------------------------------------------------
+# [ORACLE-LINK] D98: pcre2_oracle.c direct-links libpcre2 now (`#include
+# <pcre2.h>`), so it needs $PCRE2_CFLAGS/$PCRE2_LIBS from resolve_pcre2.sh
+# rather than the old dlopen-era bare `-ldl` — missed at the D98 landing
+# (this site kept the pre-migration build line).
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    echo "SKIP: libpcre2 is not available at build time — this differential needs it (PC-3's pattern: a loud skip, never a silent pass)"
+    echo "checks passed: 0"
+    echo "checks failed: 0"
+    exit 0
+fi
 ORACLE="$WORKDIR/pcre2_oracle"
-if ! $CC -O1 -std=gnu11 -Wall -Wextra -Werror -o "$ORACLE" \
-        "$ROOT_DIR/tests/fuzz/pcre2_oracle.c" -ldl 2>"$WORKDIR/ob.log"; then
+if ! $CC -O1 -std=gnu11 -Wall -Wextra -Werror $PCRE2_CFLAGS -o "$ORACLE" \
+        "$ROOT_DIR/tests/fuzz/pcre2_oracle.c" $PCRE2_LIBS 2>"$WORKDIR/ob.log"; then
     echo "FAIL: could not build tests/fuzz/pcre2_oracle:" >&2
     cat "$WORKDIR/ob.log" >&2
     exit 1

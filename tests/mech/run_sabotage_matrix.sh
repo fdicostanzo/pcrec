@@ -310,6 +310,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "$ROOT_DIR/tests/lib/resolve_pcre2.sh"   # [ORACLE-LINK] D98: the pc3/pc4 arms build pcre2_check.c/pc4_check.c, which direct-link libpcre2 now
 KEEP="${KEEP:-0}"
 # [MECH-REACH] VALIDATE_ONLY=1 -- source every selected definition, run the
 # FIELD VALIDATIONS, and stop. It exists because those validations are FATALs
@@ -2002,9 +2003,21 @@ run_one() {
                 # missing" is the exact shape of a green run that means nothing
                 # — see the verdict block below, which refuses to call that
                 # UNDETECTED.
-                if ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
-                        -I"$tree/lib" -I"$tree/src" -o "$work/pcre2_check" \
-                        "$tree/tests/registry/pcre2_check.c" "$lib" -ldl \
+                #
+                # [ORACLE-LINK] D98: pcre2_check.c direct-links libpcre2 now
+                # (via pcre2_abi.h's `#include <pcre2.h>`), so it needs
+                # $PCRE2_CFLAGS/$PCRE2_LIBS from resolve_pcre2.sh rather than
+                # the old dlopen-era bare `-ldl` -- missed at the D98 landing.
+                # An unavailable oracle is a SKIP, not a build defect, so it
+                # is checked before the build is attempted rather than left
+                # to surface as CHECK-BUILD-FAILED/anomaly.
+                if [ "$PCRE2_AVAILABLE" != "1" ]; then
+                    suite_bits+=("pc3:SKIPPED-no-oracle")
+                    any_skip=1
+                    skipped_arms+=("pc3")
+                elif ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
+                        -I"$tree/lib" -I"$tree/src" $PCRE2_CFLAGS -o "$work/pcre2_check" \
+                        "$tree/tests/registry/pcre2_check.c" "$lib" $PCRE2_LIBS \
                         > "$work/pc3_build.log" 2>&1; then
                     suite_bits+=("pc3:CHECK-BUILD-FAILED")
                     any_anom=1
@@ -2058,12 +2071,23 @@ run_one() {
                 # read every synthetic-empty-input run as failing.
                 #
                 # No pcrec headers/library needed -- pc4_check.c only pulls
-                # in pcre2_abi.h (the dlopen shim) and its own subject
-                # header, same build line run_pc4.sh itself uses.
-                if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-                        -I"$tree/tests/fuzz" -I"$tree/tests/registry" \
+                # in pcre2_abi.h and its own subject header, same build line
+                # run_pc4.sh itself uses.
+                #
+                # [ORACLE-LINK] D98: pcre2_abi.h direct-links libpcre2 now
+                # (`#include <pcre2.h>`), so this needs $PCRE2_CFLAGS/
+                # $PCRE2_LIBS from resolve_pcre2.sh rather than the old
+                # dlopen-era bare `-ldl` -- missed at the D98 landing, and the
+                # same class of gap `pc3` above had. An unavailable oracle is
+                # a SKIP, not a build defect.
+                if [ "$PCRE2_AVAILABLE" != "1" ]; then
+                    suite_bits+=("pc4:SKIPPED-no-oracle")
+                    any_skip=1
+                    skipped_arms+=("pc4")
+                elif ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
+                        -I"$tree/tests/fuzz" -I"$tree/tests/registry" $PCRE2_CFLAGS \
                         -o "$work/pc4_check" \
-                        "$tree/tests/registry/pc4_check.c" -ldl \
+                        "$tree/tests/registry/pc4_check.c" $PCRE2_LIBS \
                         > "$work/pc4_build.log" 2>&1; then
                     suite_bits+=("pc4:CHECK-BUILD-FAILED")
                     any_anom=1
