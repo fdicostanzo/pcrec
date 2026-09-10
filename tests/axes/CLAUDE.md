@@ -201,6 +201,43 @@ tests/utf8/axis12_scripts.rxt` now reads `--engine=vm|OK|... refused_doc=3
 refused_undoc=0`. Full-corpus confirmation is the manager's, at the next
 battery.
 
+## `HARNESS_BATCH` adoption (2026-09-10, lane axbatch)
+
+`run_axes.sh` forwards `HARNESS_BATCH` to EVERY `tests/harness/run.sh`
+invocation it makes (the baseline pass and every axis pass), verbatim, the
+same shape `PCREC`/`CC`/`GENCFLAGS` already had — default 0, today's
+unbatched per-pattern path, byte-for-byte unchanged. **Deliberately
+INHERITED rather than given its own axes-stage default here**: this script
+does not decide the axes stage's batching policy, it only has to carry
+whatever value the caller (a developer's quick check, or
+`scripts/battery.sh`'s axes stage) sets. Baseline and axis are always
+compiled under the IDENTICAL value — never split, since an axis compiled
+batched against an unbatched baseline would be comparing two different
+compile shapes rather than one optimization axis.
+
+**Why this sweep is a clean fit for batching, verified rather than
+assumed**: every `.rxt` block the corpus contains is either an ordinary
+`pattern` block (batching-eligible, per `docs/testing.md`'s "HARNESS_BATCH"
+section) or one of the three kinds `tests/harness/run.sh` excludes from
+batching by construction (`perr`, H11, routed cells) — and this sweep's own
+mechanism (RXTDUMP, RXTFLAGS, the per-case verification loop) is
+UNAFFECTED by which path a block took, because `run_case_loop` is the same
+function either way and both `flush_block`'s standalone refusal-reporting
+and `stage_block_for_batch`'s batched refusal-reporting write the identical
+`REFUSED`-sentinel RXTDUMP row. K55's `--engine=vm` entry above is exactly
+this in practice: `\P{Unknown}`'s block is an ordinary (non-routed,
+non-perr, non-H11) block, so under `HARNESS_BATCH` it is batching-eligible,
+but its refusal happens at the PCREC compile step — before gcc, before the
+batch-vs-standalone fork matters at all — so it is reported in the
+identical shape regardless.
+
+Targeted before/after legs (2-3 representative axes,
+`docs/dev/lanes/axbatch_report.md` has the numbers) and the full-corpus
+before/after (this row's own delivery) are the acceptance evidence;
+`scripts/battery.sh`'s axes stage carries a commented one-line activation
+(`HARNESS_BATCH=64`) for the manager to flip at the next battery, per the
+"no merge mid-battery" rule.
+
 ## Conventions
 
 `RXTDUMP` (documented in `tests/harness/run.sh`'s own header) is the ONE
@@ -213,6 +250,8 @@ so a plain `tests/harness/run.sh` run is byte-for-byte unchanged.
 ubsan`), NOT part of `make test` — ~13 full corpus passes at roughly the
 runtime of one `test-corpus` pass each. `docs/testing.md`'s "Answer-identity
 sweep" section has the measured runtime and how to read a failure.
+`HARNESS_BATCH=N` (forwarded, see above) batches that per-pass corpus
+compile too.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

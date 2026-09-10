@@ -4217,11 +4217,31 @@ logged gcc CPU/wall number under batching measures the `-c` compile ALONE
 `scripts/size_diff` comparison across the `HARNESS_BATCH` axis will show a
 systematic CPU/wall DROP for every pattern that reflects this shape change,
 not a real compiler speed improvement — named here so nobody reads it as
-one. The BYTE count is also not perfectly axis-invariant: it is a function
-of the artifact's OWN identifiers, which embed the `-p` prefix, so a longer
-generated prefix (`hb000042` vs `rx`) inflates the reported source-byte
-count by the prefix's own length times its occurrence count — small,
-mechanical, and worth knowing before comparing size logs across the axis.
+one.
+
+**Batch member prefixes are EXACTLY 2 CHARACTERS, matching the harness's
+own unbatched `-p rx` (lane axbatch, 2026-09-10, `docs/dev/lanes/
+axbatch_report.md`) — a correctness fix, not a cosmetic one.** The
+artifact's own identifiers repeat the `-p` prefix at every occurrence, so
+prefix LENGTH is a real term in the emitted-byte count, which the
+`PCREC_MAX_EMIT_BYTES` REFUSAL CAP measures exactly (this is equally true
+of any user's own `-p` choice, not a batching-specific fact). The original
+scheme (`hbNNNNNN`, 8 characters, a run-wide counter) inflated that count
+enough to flip a real compile VERDICT: `tests/utf8/axis12_scripts.rxt`'s
+`\P{Unknown}` sits within ~70 bytes of the 1,000,000-byte cap under `rx`
+and REFUSED under `hbNNNNNN` — on the DEFAULT axis, no `RXTFLAGS` involved,
+so this was never an axes-stage-specific finding. Fixed generally by
+restoring BYTE-LENGTH PARITY with the unbatched path rather than
+special-casing the one witness pattern: `batch_member_prefix`
+(`tests/harness/run.sh`) generates a 2-character prefix (26 letters × 36
+alnum, `rx` itself skipped) keyed on the member's own 0-based position
+WITHIN its batch — uniqueness is needed only there, since each batch links
+to a separate executable. **The SIZELOG byte count is therefore no longer
+merely "not perfectly axis-invariant, small and mechanical" — parity is
+enforced by construction**, so a `scripts/size_diff` comparison across the
+`HARNESS_BATCH` axis reads the same byte count for the same pattern (up to
+the few bytes two different 2-character prefixes' own letters can move,
+same as choosing `rx` vs any other 2-character `-p` would).
 
 **Two findings surfaced and fixed by this landing, neither specific to
 batching once found**:
