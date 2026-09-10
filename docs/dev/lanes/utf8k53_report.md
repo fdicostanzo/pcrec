@@ -203,6 +203,14 @@ Each is **exactly 6 bytes** larger than the same pattern's
 That arithmetic agreeing is a small independent confirmation that the two
 artifacts differ in the stamp and nothing else.
 
+### 3.1a The three axes that could have interacted, spot-checked on `\p{L}` under `-e utf8`
+
+| axis | outcome | why it is the right one |
+|---|---|---|
+| `--no-captures` | compiles, `ENGINE_SEL "size-cap-retry"` | the flag routes MORE patterns to the DFA, so it can only widen this rung's population |
+| `-fprefilter` | REFUSES, unchanged | it is refused in `select_engine` ("requires the VM engine; this pattern compiles to the DFA engine"), above and before the rung — the flag never reaches it |
+| `-fno-anchored-dfa` | compiles, `ENGINE_SEL "selected"` | **the control that makes the stamp story real**: the caller asked, so no retry happened and the macro says so. Same artifact, different provenance, and `RX_ENGINE_SEL` is what tells them apart |
+
 ### 3.2 Byte-identity: 3,348 of 3,348
 
 Every distinct `(pattern, encoding, features)` triple in the corpus, compiled
