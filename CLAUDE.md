@@ -111,6 +111,13 @@ tier, and PCRE2 is a moving target with no specification.
 - `REFERENCES.md` — the repository's reference list for cited external
   publications. Cite a paper by its key (`[Author##]`); add a new paper's
   entry there in the same change that first cites it.
+- `oracle_store/` — the COMMITTED reference-oracle answer store
+  (`docs/design/oracle_interface.md`, lane `orstore`, 2026-09-10): one
+  directory per `OracleId`, one self-checking TSV per question kind,
+  `third_party/`'s own top-level/PROVENANCE shape applied to data derived
+  by RUNNING a reference library rather than by vendoring a file. The
+  implementation (adapters, the store format, the uprops instance that
+  populates it) is `tests/oracle/`; see both directories' own CLAUDE.md.
 
 ## Conventions
 
