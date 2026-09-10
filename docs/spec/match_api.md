@@ -2687,6 +2687,25 @@ DFA artifact), so the pair is exact. Minting a second value would have put
 "a size cap forced a retry" in two homes, which is the drift this section's
 own history is about.
 
+**UNDER A FORCE FORM THIS MACRO READS `"forced"` AND SAYS NOTHING ABOUT A
+RETRY, AND THAT IS PRE-EXISTING RATHER THAN NEW.** `"forced"` is tested first
+and wins outright, so `--engine=dfa` (or `--engine=vm`) on a pattern a size cap
+refused reads `"forced"` however the compile was rescued. MEASURED both ways at
+[K53-SELRETRY]: `--engine=dfa --features unicode-props -e utf8 -- '\p{L}'`
+compiles and stamps `"forced"` where the same pattern under `auto` stamps
+`"size-cap-retry"`, and the [OPT-4] rung has behaved identically since it
+landed (its own witness stamps `"forced"` under `--engine=vm`). **The retry
+itself is not gated on `auto`** — unlike [SEL-1]'s engine fallback, which must
+be, because it changes the ENGINE a caller demanded; a drop rung changes only
+an entry-point FORM inside the engine they asked for, and no flag lets a caller
+demand the dropped machine (`-fno-anchored-dfa` is deny-only), so honouring the
+request and dropping the machine are compatible. A consumer that needs the WHY
+on a forced compile reads `<PREFIX>_DFA_MATCH` and gets "this artifact has no
+anchored machine" without its cause; distinguishing the five populations of
+that value needs this macro, which a force form has spent. No consumer has
+asked (D77), and re-ordering the arms would move an existing stamp on every
+forced artifact that ever hit a cap.
+
 **It has no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for the
 same reason: nothing measured reads one yet (D77), and the trigger to add one
 is a named consumer rather than symmetry. `rx_info.engine_why` continues to

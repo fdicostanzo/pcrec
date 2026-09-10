@@ -133,6 +133,33 @@ take. A DFA-engine artifact has no prefilter to survive — `fit.prefilter` is
 false on **every** member of this rung's population — so requiring it would
 have made the arm unreachable on exactly the patterns it exists for.
 
+### 2.1 FINDING — a force form spends this macro, and it was already true
+
+**The rung is deliberately NOT gated on `--engine=auto`**, unlike [SEL-1]'s
+engine fallback. That one must be: it hands the caller a different ENGINE from
+the one they demanded. This one changes only an entry-point FORM *inside* the
+engine they asked for, and no flag lets a caller demand the dropped machine
+(`-fno-anchored-dfa` is deny-only, with no force counterpart), so honouring the
+request and dropping the machine are compatible. The payoff is concrete:
+`--engine=dfa --features unicode-props -e utf8 -- '\p{L}'` compiles too.
+
+**But it stamps `RX_ENGINE_SEL "forced"`, not `"size-cap-retry"`** — `ESEL_FORCED`
+is tested first and wins outright — so on a forced compile the drop is legible
+as `RX_DFA_MATCH "search-filter"` with **no** attribution.
+
+**I checked whether I introduced that and I did not.** MEASURED on a
+branch-point compiler: [OPT-4]'s own size rung has the same blind spot, and its
+witness `(a|b){1,30000}` stamps `"forced"` under `--engine=vm` where `auto`
+gives a value that names what happened. So this is a pre-existing property of
+`ESEL_FORCED`'s precedence that the new rung INHERITS.
+
+**Left as it stands, and recorded rather than fixed**, for two reasons: no
+consumer has asked (D77), and re-ordering the arms would move an existing stamp
+on every forced artifact that has ever hit a cap — a caller-observable change
+outside this row's charter that would need its own re-pin and its own battery.
+`docs/spec/match_api.md` §6.3 now states it so a reader of the new table row is
+not misled.
+
 **No stderr note.** [LIM-2] N1's precedent prints one, but its event is a NEW,
 lower, surprising limit. This one is fully stamped, strictly better than the
 refusal it replaces, and every artifact in its population is already over
