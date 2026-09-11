@@ -505,3 +505,26 @@ never edited afterwards.
   and the event reuses `ESEL_SIZE_CAP_RETRY` rather than minting a value,
   since the two rungs are mutually exclusive BY ENGINE and the artifact's own
   axis stamps therefore say which fired.
+
+- `clstudy_report.md` — [CLS-TREE] THE STUDY (2026-09-11, lane clstudy,
+  opus; study only, nothing under `src/`/`tests/`/`docs/spec/`). Delivers
+  `docs/dev/cls_tree_study.md` + `studies/cls_tree_study/`. Read it for
+  three things. **The general form covers TWICE the population the shipped
+  special case does**: 8 of the 41 distinct byte classes in the corpus take
+  a one-cube test and only FOUR are case-fold pairs — `{a,c}`, `{g,k}` and
+  `{A,B,a,b}` get 32-byte bitmap tables today because [FORM-CHAR]'s
+  `(lo^hi)==0x20`-and-both-letters classifier is structurally blind to
+  them, while the kit's O(k) `cube_of` reaches all eight without being told
+  what caselessness is. **The expensive half of the analysis did not pay**:
+  the exact Quine-McCluskey minimizer — Constraint 1's own textbook answer —
+  costs 4.9x the discovery time to change 10 of 126 sectionings for 0.36%
+  fewer ops, and was dropped. **And three bugs its own instruments caught**,
+  each recorded for the instrument rather than the bug: a cost model that
+  prices a form without materializing it is only safe if something
+  independently builds and checks; two implementations of one algorithm
+  disagreed on 12 of 36 cells while each stayed self-consistent; and a
+  Pareto point dominated on BOTH axes is a modelling error, not a result —
+  the sweep built to characterize a trade-off refuted the cost model that
+  generated it. Headline: `\p{L}` 227,409 object bytes today vs 4,359;
+  discovery 26.4 ms on the worst real set, so the D77 verdict is that
+  Constraint 2's pre-analysis cache is NOT triggered.
