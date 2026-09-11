@@ -43,6 +43,23 @@ tree, which is what the manual-only reasoning below does not cover.
   from the real header, so a box's libpcre2-8 either has the full API and
   links, or it doesn't and the build fails to link — there is no partial
   "missing one new symbol" case dlsym used to distinguish.
+  **[S5-ARM] (2026-09-11, lane abifix) FIXED A BUG [ORACLE-LINK] ITSELF
+  INTRODUCED INTO THIS HEADER'S OWN INTERNAL ORDERING**: the conversion's
+  `#include <pcre2.h>` landed ABOVE the `#define _GNU_SOURCE`/`#include
+  <dlfcn.h>` pair on the (false) claim that pcre2.h "does not touch
+  <features.h> itself" — it does, transitively, via its own `#include
+  <stdlib.h>` (a real glibc header). On the Linux reference box this
+  silently reintroduced the exact K-uprops-abi-order ordering hazard the
+  `a38ca912` guard below was built to catch, for every consumer regardless
+  of the consumer's own include order, invisible on darwin (which never
+  runs that branch) until this header was next built on Linux — two days
+  later. Fixed by moving `_GNU_SOURCE`/`<dlfcn.h>` back above `#include
+  <pcre2.h>`. A second, PORTABLE guard (`#ifdef NULL` at the very top,
+  before this header's own first `#include`) was added alongside the
+  original glibc-specific one so a genuine consumer-side ordering mistake
+  now fails at darwin build time too, not only on the Linux box — one
+  consumer, `tests/probes/probe_altcls_pcre2norm.c` (not part of `make
+  test`), had exactly that mistake and is fixed in the same change.
 - **pcre2_oracle.c** — the PCRE2 8-bit CLI oracle, now built on pcre2_abi.h. `pcre2_oracle 'PATTERN'
   <subject-file> [startpos]` → `match S0 E0 [S1 E1 ...]` / `nomatch` /
   `cerr <code>` / `mlimit <code>` (PCRE2 match-limit safeguard tripped — not

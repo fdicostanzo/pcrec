@@ -57,15 +57,20 @@
  *          tests/probes/probe_altcls_pcre2norm.c -ldl
  * Archive: scripts/measure.sh probe_altcls_pcre2norm
  */
-/* Must precede EVERY system header (glibc's feature-test-macro guards latch
- * on the FIRST one processed) — pcre2_abi.h's own dlinfo/RTLD_DI_LINKMAP use
- * needs it, and defining it only inside that header is too late once this
- * file's own <stdio.h>/<string.h> have already been processed without it. */
-#define _GNU_SOURCE
+/* [S5-ARM] (2026-09-11): pcre2_abi.h must be the FIRST #include in this
+ * file, before <stdio.h>/<string.h> etc. — it defines _GNU_SOURCE itself,
+ * before it includes anything that could lock glibc's feature-test-macro
+ * decision early (see pcre2_abi.h's own header comment for the mechanism
+ * and why this file used to duplicate the define here, which only worked
+ * by accident and is now redundant). This file previously included
+ * <stdio.h>/<string.h> before pcre2_abi.h with its own `#define
+ * _GNU_SOURCE` ahead of them — a real violation of the documented rule,
+ * caught by pcre2_abi.h's own #error guard (which fires unconditionally
+ * now, not only on Linux/glibc) the first time this probe was rebuilt
+ * after that guard was made portable. */
+#include "pcre2_abi.h"
 #include <stdio.h>
 #include <string.h>
-
-#include "pcre2_abi.h"
 
 /* PCRE2_INFO_* values from pcre2.h (stable across the 10.x series; this box
  * has no -dev package so the header is unavailable — see pcre2_abi.h's own
