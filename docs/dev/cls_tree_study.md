@@ -32,8 +32,9 @@ The brief asks four things. In one line each, before the evidence:
    identities as a free oracle, on arbitrary unreachable sets: 438 cells,
    1,114,112 code points each, zero mismatches (§7).
 
-And the headline the brief did not ask for: **`\p{L}` under `-e utf8` costs
-227,409 object bytes today and 4,359 as a kit matcher — 52×** (§3).
+And the headline the brief did not ask for: **all 312 property sets cost
+3,977,754 object bytes today and 85,613 as kit matchers — 46.5×**, with
+`\p{L}` alone going 227,409 → 4,359 (§3).
 
 ---
 
@@ -128,12 +129,13 @@ the kit by whatever the comments weigh.
 | set | intervals | **today** (obj) | **kit, `mid`** | ratio |
 |---|---:|---:|---:|---:|
 | `\p{Xwd}` | 930 | 294,153 | 5,326 | **55.2×** |
-| `\p{Xan}` | 770 | 267,541 | — | — |
-| `\p{C}` | 736 | 228,957 | — | — |
+| `\p{Xan}` | 770 | 267,541 | 4,959 | **53.9×** |
+| `\p{C}` | 736 | 228,957 | 4,667 | **49.1×** |
 | `\p{L}` | 677 | **227,409** | **4,359** | **52.2×** |
-| `\p{Unknown}` | 729 | 215,055 | — | — |
-| `\p{Ll}` | 662 | 70,529 | — | — |
-| all 312 sets | 10,961 | **3,977,754** | — | — |
+| `\p{Unknown}` | 729 | 215,055 | 4,684 | **45.9×** |
+| `\p{Ll}` | 662 | 70,529 | 1,635 | **43.1×** |
+| `\p{Lu}` | 651 | 63,024 | 1,508 | **41.8×** |
+| **all 312 sets** | **10,961** | **3,977,754** | **85,613** | **46.5×** |
 
 **`obj_text` is a constant 788 or 672 bytes across every row of the
 baseline.** Today's cost for a code-point class is not code at all — it is
@@ -173,32 +175,57 @@ cells**, always exactly once per matcher, and never at the speed end. It
 earns a place in the kit and it is nobody's main story. A design that built
 the seed alone would have built the least-used member.
 
-### 4.3 `CUBES` is a BYTE-tier member, and it rediscovers the case fold
+### 4.3 `CUBES` — where CONSTITUTIONAL CONSTRAINT 1 is discharged as a measurement
 
-`CUBES` is chosen **zero times** across all 72 K53 cells and all of the
-code-point populations. Its customer is the byte tier, and there it is the
-constitutional headline:
+The kit's cube member takes a section and asks one O(k) question: **do the
+members agree on every bit but a free set?** If they do, the section is one
+don't-care cube and the test is `(x & care) == val` — one AND, one compare,
+no table. It is never told what the set is for.
 
-`bc011` is the corpus byte class `{0x53, 0x73}` — `{'S','s'}`, a case-fold
-pair. Given nothing but the set, `cube_of` returns `care = 0x1F, val = 0`
-over `x = cp - 0x53`, i.e. **bit 5 is free** — which written absolutely is
-`(c | 0x20) == 's'`. That is [FORM-CHAR]'s shipped `ascii-fold` object,
-byte for byte, reached by a routine that was never told the class came from
-`(?i)` and contains no case-fold table, no letter test and no pair
-classifier.
+Constraint 1 named two customers for that question in advance. Both are
+confirmed, in the real data, and a third turned up.
+
+**(a) The `\p{Lu}` parity block — the constraint's own named non-caseless
+customer** ("`\p{Lu}` over adjacent-pair blocks (Latin Ext-A) = range +
+parity (m=0x01 fold)"). Measured, at the middle policy:
+
+| set | section | intervals | members | the one cube |
+|---|---|---:|---:|---|
+| `\p{Lu}` | U+1E00..U+1E7E | **64** | 64 | `(cp - 0x1E00) & 1 == 0` |
+| `\p{Lu}` | U+04D0..U+052E | 48 | 48 | `(cp - 0x04D0) & 1 == 0` |
+| `\p{Ll}` | U+1E01..U+1E7F | **64** | 64 | `(cp - 0x1E01) & 1 == 0` |
+| `\p{Ll}` | U+048B..U+04BF | 27 | 27 | `(cp - 0x048B) & 1 == 0` |
+| `\p{Lt}` | U+1F88..U+1FAF | 3 | 24 | `(cp - 0x1F88) & 8 == 0` — five free bits |
+
+Latin Extended Additional alternates upper and lower case code point by code
+point, so `\p{Lu}` there is **64 separate single-code-point intervals** — and
+it collapses to two instructions with no memory reference. The alternative in
+the kit is a 16-byte `BITMAP` plus a load, or a 64-term compare chain. The
+cube is found in O(k) from the endpoints, without enumerating a member.
+
+**(b) The ASCII case fold, rediscovered at the byte tier.** `bc011` is the
+corpus byte class `{0x53, 0x73}` — `{'S','s'}`. Given nothing but the set,
+`cube_of` returns `care = 0x1F, val = 0` over `x = cp - 0x53`, i.e. **bit 5 is
+free** — which written absolutely is `(c | 0x20) == 's'`. That is
+[FORM-CHAR]'s shipped `ascii-fold` object, byte for byte. The whole emitted
+matcher is:
+
+```c
+int cls_kit(unsigned cp)
+{
+    if ((unsigned)(cp - 83u) > 32u) return 0;
+    return (int)((((cp - 83u) & 0x1Fu) == 0x0u));
+}
+```
 
 Today pcrec reaches the same code through `vm_cls_shape`, a classifier that
-asks *"are these two bytes a case-fold pair"*. The kit reaches it by asking
-*"do the members agree on every bit but one"*. **The second question is
-strictly more general and no more expensive** — it is O(k) — and it answers
-for `{x, x^0x01}`, for a four-member set free in two bits, and for the
-`\p{Lu}`-over-adjacent-pairs parity block, none of which the fold-pair
-classifier can see. This is CONSTITUTIONAL CONSTRAINT 1 discharged as a
-measurement rather than as a principle.
+asks *"are these two bytes a case-fold pair"*. The kit asks *"do the members
+agree on every bit but one"*. **The second question is strictly more general
+and no more expensive.**
 
-**And the general form covers TWICE the population the special case does.**
-`CUBES` is chosen for 8 of the 41 corpus byte classes, and only four of those
-eight are case-fold pairs:
+**(c) And the general form covers TWICE the population the special case
+does.** `CUBES` is chosen for 8 of the 41 corpus byte classes, and only four
+of those eight are case-fold pairs:
 
 | set | members | the one cube, absolutely | today's `cls-fold` classifier |
 |---|---|---|---|
@@ -212,17 +239,23 @@ eight are case-fold pairs:
 | `bc024` | (2 sections) | `ALL` + one cube | **blind** |
 
 The four "blind" rows are emitted today as 32-byte bitmap tables plus a
-load-shift-and. The kit emits each as one AND and one compare with no table,
-and it reaches all eight through the same O(k) routine. **The shipped special
-case covers half of its own general form's population in this tree's own
-corpus** — which is the general-mechanisms rule (memory
+load-shift-and. **The shipped special case covers half of its own general
+form's population in this tree's own corpus**, which is the
+general-mechanisms rule (memory
 `pcrec-general-mechanisms-not-special-cases`) stated as a count rather than
 as a principle.
 
-The other byte-tier result is `MASK64`. `bc000` is `\w` (4 intervals, 63
-members, span 75): the kit emits **two sections, 56 bytes of `.text`, zero
-`.rodata`**, against the 32-byte bitmap table plus load that pcrec emits for
-a bitmap-class site today.
+Across the 312 property sets, `CUBES` is chosen **27 times in 19 cells over
+11 distinct sets** (`Lu`, `Ll`, `Lt`, `Z`, `Zs`, `Cyrl`, `Syrc`, `Glag`,
+`Hung`, `Tfng`, `Tutg`). It is a narrow member. It is also the one that
+turns a 64-interval section into two instructions, and the one whose
+existence is an argument about mechanism rather than about bytes.
+
+### 4.4 `MASK64`, and the byte tier's tables going to zero
+
+`bc000` is `\w` (4 intervals, 63 members, span 75): the kit emits **two
+sections, 56 bytes of `.text`, zero `.rodata`**, against the 32-byte bitmap
+table plus load that pcrec emits for a bitmap-class site today.
 
 **Across the whole byte-class population the tables disappear.** At the
 middle policy the 41 sets compile to **1,584 bytes of `.text` and exactly
@@ -495,13 +528,29 @@ Named, not hidden.
 
 ---
 
-## 10. Timing
+## 10. Verification totals
 
-*(See §10 below — filled by the bench run.)*
+Every matcher this study built was compared against an independently
+constructed reference on **all 1,114,112 code points**. Not a sample.
+
+| arm | cells | result |
+|---|---:|---|
+| `uprops` — 312 sets × 3 policies | 936 | **936 PASS, 0 FAIL** |
+| `k53` — 12 sets × 6 policies | 72 | **72 PASS, 0 FAIL** |
+| `byteclasses` — 41 sets × 6 policies | 246 | **246 PASS, 0 FAIL** |
+| composition property test (§7) | 438 | **438 PASS, 0 FAIL** |
+| C-vs-Python DP cross-check | 36 | **36 AGREE, 0 DIFFER** |
+
+**1,692 verification cells × 1,114,112 code points = 1.885 billion compared
+answers, zero mismatches.**
+
+## 11. Timing
+
+*(filled by the bench run — see §12 for what it does and does not cover.)*
 
 ---
 
-## 11. Disclosure
+## 12. Disclosure
 
 Nothing from injected context shaped a decision beyond the brief. The two
 constitutional constraints were supplied verbatim in the brief and are
