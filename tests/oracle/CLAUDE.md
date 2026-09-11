@@ -138,6 +138,19 @@ DATA this code produces and reads; this directory is the CODE.
   under two minutes across seven ssh round trips, well inside a light-probe
   budget.
 
+## Second consumer, 2026-09-10/11 (lane `pyrole`)
+
+`tests/rxtsource/build_c3_store.py` is a SECOND `LocalAdapter` consumer,
+outside this directory (`docs/design/c3_three_way.md`): the C3 python-tier
+redesign's own store-capture script, populating `oracle_store/
+libpcre2-10.48/{match-at,captures}.tsv` with seven hand-enumerated
+questions (not a sweep — see that script's own header). Uses this
+directory's `LocalAdapter`/`oracle_store` code unmodified, imported the
+same way `local_adapter.py` itself imports `oracle_store` (a `sys.path`
+insert to this directory). `tests/harness/verify_rxt.py` is the consumer
+of the resulting store data, via `oracle_store.lookup()` directly (not
+through `LocalAdapter` — check time never touches a live library).
+
 ## Validation OWED (not run by this lane; see the lane report for the exact
 commands)
 
