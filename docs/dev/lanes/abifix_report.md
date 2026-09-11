@@ -103,7 +103,13 @@ as every prior `[arm61fix]`/`[ntriage]`-era re-pin.
 ### 2c. atomic_diff
 
 `bash tests/atomic_groups/run_atomic_diff.sh` (`make test-atomic`'s
-script): **OWED — still running at report-commit time; see §5.**
+script): **checks passed: 8, checks failed: 0.** Every named population
+floor held (26 cut / 10 dead-cut / 13 carve-out / 4 control patterns;
+61,586 default-engine cells against libpcre2, exact agreement across
+`--engine=vm` and `-fno-possessify` arms too; the §3 discharge
+differential's 61,586 answer cells identical with/without
+`-fno-atomic-discharge`; §4's 19,292 consumed-length cells agree with
+libpcre2's `\G(?:PAT)` oracle).
 
 ### 2d. utf8 harness (the count confirmation)
 
