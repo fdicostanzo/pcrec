@@ -617,12 +617,26 @@ below 0.5 — the protocol `docs/dev/lanes/isl1_report.md` §12 established and
 `studies/form_char_twins` §8 reused, copied rather than re-invented so the
 numbers are comparable across studies.
 
-**It refused.** The box did not fall below the gate inside this lane's
-window — the sizing, verification, property-test and cross-check arms are
-this box's compute today, and other lanes are live. The harness does not
-caveat a noisy measurement, by construction; relaxing its own gate to
-produce a number would be the exact failure `studies/scan_edge_ladder`'s
-README already records as a refusal worth making.
+**It refused, and WHY it refused is itself a finding about the inherited
+protocol.** The harness polled `load1` for thirteen minutes after the last
+sweep finished and never saw it below 0.45; the readings sat between 1.12 and
+1.96. Checking what was actually consuming the box found **no compute at all**
+— the top processes were the user's editor, a music player, the window server
+and the Claude sessions themselves, none above 1.5% CPU.
+
+**`load1 < 0.5` is not a reachable gate on a Mac desktop in use.** The
+protocol this study copied verbatim (`isl1_report.md` §12, reused by
+`studies/form_char_twins` §8 and `scan_edge_ladder`) was calibrated on
+`ubuntubudu` — a headless Linux box whose idle load really is near zero. On
+this machine the same threshold encodes "nobody is logged in", which is not a
+state a dev box reaches during a working session. Every lane that inherits
+this protocol on darwin will hit the same wall, and the two obvious
+resolutions are different in kind: re-derive the threshold against this box's
+measured idle baseline, or send ns/char work to the Linux box. **That is a
+ruling, not a lane's call**, so the number stays owed rather than being
+bought by quietly loosening a gate the house wrote in order not to be
+loosened — `scan_edge_ladder`'s README already records refusing as the
+behaviour worth keeping.
 
 **No conclusion in this memo rests on a timing number**, and that is a
 property of what was asked rather than good luck: deliverable (1) is a form

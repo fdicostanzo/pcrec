@@ -160,9 +160,23 @@ One item, and it changes no conclusion:
   thing this lane launches, per DO-THEN-FINISH. **No conclusion in the memo
   rests on a timing number** — §4, §5 and §6 are size, form-choice and
   compile-time results, and §9 states explicitly that nothing here licenses
-  an end-to-end throughput claim. It is launched load-gated in the
-  background as this lane's final act; the log is
-  `<scratchpad>/bench.log` and the result lands at
+  an end-to-end throughput claim.
+
+  **It refused, and the reason needs a ruling.** The harness polled `load1`
+  for 13 minutes after the last sweep and never saw it under 0.45 (readings
+  1.12–1.96) — but nothing was computing: the top processes were the user's
+  editor, a music player, the window server and the Claude sessions, none
+  above 1.5% CPU. **`load1 < 0.5` is not reachable on a Mac desktop in use.**
+  The protocol was calibrated on headless `ubuntubudu`; on this box the same
+  threshold encodes "nobody is logged in". Every darwin lane inheriting it
+  (`isl1` §12 → `form_char_twins` §8 → `scan_edge_ladder` → this) hits the
+  same wall. Two resolutions, different in kind: re-derive the threshold
+  against this box's measured idle baseline, or route ns/char work to the
+  Linux box. I did not pick one — loosening a gate the house wrote
+  specifically so it could not be loosened is the manager's call.
+
+  To run it: `make bench` in `studies/cls_tree_study/`. Log from this
+  lane's attempt: `<scratchpad>/bench.log`; results would land at
   `studies/cls_tree_study/results/bench_k53.tsv`.
 
 ## Scope and disclosure
