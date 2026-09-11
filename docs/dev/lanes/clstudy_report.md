@@ -69,7 +69,7 @@ feasible" — costs 4.9× the discovery time to change 10 of 126 sectionings for
 0.36% fewer probe ops. Dropped, and `discover.c` never implemented it. The
 cheap O(k) tier is the one that finds the fold.
 
-## Three bugs the study's own instruments caught (memo §8)
+## Four bugs the study's own instruments caught (memo §8)
 
 Each is recorded because the instrument is reusable, not because the bug was
 interesting:
@@ -91,6 +91,16 @@ interesting:
    returned `\p{L}` at 9,672 bytes / 1,302 ops against the middle policy's
    4,311 / 111 — smaller and faster at once. `.text` was then measured two
    independent ways and fed back.
+4. **`CC ?= gcc-16` in the study's own Makefile silently built with Apple
+   clang**, because make defines `CC` itself so `?=` never fires — while
+   every number in the memo was taken with `gcc-16` invoked directly. Caught
+   by running `make discover` from clean at the very end and reading the
+   command line it printed. **This is `santriage_report.md`'s defect
+   reappearing in a new file three days later**, and it is invisible to every
+   check in the harness: both compilers produce correct matchers and all
+   1,692 verification cells would still have passed. Fixed with
+   `ifeq ($(origin CC),default)`; flagged here because the `?=`-on-`CC`
+   idiom is presumably in other study Makefiles too and nobody has grepped.
 
 ## Validation
 

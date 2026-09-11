@@ -514,7 +514,7 @@ structures — it is a property test, not a proof.
 
 ## 8. The checks that caught this study's own bugs
 
-Three defects were found by instruments inside the harness, and each is worth
+Four defects were found by instruments inside the harness, and each is worth
 more than the bug.
 
 **A cost model that prices without building is only safe if something builds
@@ -538,6 +538,21 @@ self-consistent throughout. Only the comparison could see either.
 **A frontier point dominated on both axes is a modelling error, not a
 result.** §5.2. The Pareto sweep was built to characterize a trade-off and
 its first output was a refutation of the cost model that generated it.
+
+**And the reproduction recipe was building with a different compiler than
+the measurements.** Every number above was taken with `gcc-16` invoked
+directly. The study's own `Makefile` said `CC ?= gcc-16` — which cannot
+work, because make defines `CC` itself, so `?=` never fires and every target
+silently built with `cc`, Apple clang on this box. Caught by running
+`make discover` from clean at the end and looking at the command line it
+printed. It is the same defect `docs/dev/lanes/santriage_report.md` records
+for `scripts/battery.sh`'s `san`/`lint` stages, reappearing in a new file
+three days later; the fix is `ifeq ($(origin CC),default)`, which overrides
+make's default while leaving `make CC=...` and an exported `CC` working. **A
+study whose numbers come from one compiler and whose `make` uses another is
+not reproducible, however green it looks** — and nothing in the harness
+would have said so, because both compilers produce correct matchers and
+every verification cell would still have passed.
 
 ---
 
