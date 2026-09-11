@@ -626,6 +626,10 @@ sweep finished and never saw it below 0.45; the readings sat between 1.12 and
 — the top processes were the user's editor, a music player, the window server
 and the Claude sessions themselves, none above 1.5% CPU.
 
+Nineteen samples over that window: **min 0.71, median 1.35, max 1.99** —
+`results/bench_refusal.tsv` carries them, because the refusal is the finding
+and a finding needs its data.
+
 **`load1 < 0.5` is not a reachable gate on a Mac desktop in use.** The
 protocol this study copied verbatim (`isl1_report.md` §12, reused by
 `studies/form_char_twins` §8 and `scan_edge_ladder`) was calibrated on

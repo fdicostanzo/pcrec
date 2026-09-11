@@ -1,0 +1,27 @@
+# bench.py's load gate REFUSED. Evidence: the 1-minute load average
+# sampled every 20 s for ~13 min on an otherwise-idle Mac dev box,
+# after every sweep had finished. Gate is load1 < 0.45.
+# Top processes during this window were the user's editor, a music
+# player, the window server and the Claude sessions — none above
+# 1.5%% CPU. NOTHING WAS COMPUTING; this is the desktop's baseline.
+# n=19 min=0.71 median=1.35 max=1.99
+sample	load1	under_gate
+0	1.35	no
+1	1.25	no
+2	1.12	no
+3	1.73	no
+4	1.53	no
+5	1.79	no
+6	1.43	no
+7	1.24	no
+8	1.99	no
+9	1.96	no
+10	1.81	no
+11	1.67	no
+12	1.40	no
+13	1.28	no
+14	1.13	no
+15	0.95	no
+16	0.96	no
+17	0.90	no
+18	0.71	no
