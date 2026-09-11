@@ -1,0 +1,33 @@
+# seed=1 cases=8 lams=16 cc=gcc-16 elapsed_s=13.1 date=2026-09-11T08:58:31
+# EVERY row compares 1114112 code points (0..0x10FFFF)
+# PASS=29 FAIL=0
+case	genA	genB	op	lam	nA	nB	nC	verdict	detail
+p000_union_l16	boundary	comb	union	16.0	8	482	490	PASS	0
+p000_diff_l16	boundary	comb	diff	16.0	8	482	8	PASS	0
+p000_compl_l16	boundary	comb	compl	16.0	8	482	7	PASS	0
+p001_union_l16	comb	orbit	union	16.0	105	320	425	PASS	0
+p001_diff_l16	comb	orbit	diff	16.0	105	320	105	PASS	0
+p001_compl_l16	comb	orbit	compl	16.0	105	320	106	PASS	0
+p002_union_l16	dense	sparse	union	16.0	12	85	81	PASS	0
+p002_inter_l16	dense	sparse	inter	16.0	12	85	16	PASS	0
+p002_diff_l16	dense	sparse	diff	16.0	12	85	28	PASS	0
+p002_compl_l16	dense	sparse	compl	16.0	12	85	13	PASS	0
+p003_union_l16	fold	dense	union	16.0	728	9	11	PASS	0
+p003_inter_l16	fold	dense	inter	16.0	728	9	726	PASS	0
+p003_diff_l16	fold	dense	diff	16.0	728	9	2	PASS	0
+p003_compl_l16	fold	dense	compl	16.0	728	9	729	PASS	0
+p004_union_l16	orbit	pathologic	union	16.0	2162	274	2403	PASS	0
+p004_inter_l16	orbit	pathologic	inter	16.0	2162	274	14	PASS	0
+p004_diff_l16	orbit	pathologic	diff	16.0	2162	274	2150	PASS	0
+p004_compl_l16	orbit	pathologic	compl	16.0	2162	274	2163	PASS	0
+p005_union_l16	pathologic	boundary	union	16.0	130	8	138	PASS	0
+p005_diff_l16	pathologic	boundary	diff	16.0	130	8	130	PASS	0
+p005_compl_l16	pathologic	boundary	compl	16.0	130	8	131	PASS	0
+p006_union_l16	random	fold	union	16.0	482	1144	1584	PASS	0
+p006_inter_l16	random	fold	inter	16.0	482	1144	42	PASS	0
+p006_diff_l16	random	fold	diff	16.0	482	1144	523	PASS	0
+p006_compl_l16	random	fold	compl	16.0	482	1144	483	PASS	0
+p007_union_l16	sparse	random	union	16.0	60	381	435	PASS	0
+p007_inter_l16	sparse	random	inter	16.0	60	381	6	PASS	0
+p007_diff_l16	sparse	random	diff	16.0	60	381	54	PASS	0
+p007_compl_l16	sparse	random	compl	16.0	60	381	61	PASS	0
