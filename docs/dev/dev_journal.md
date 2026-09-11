@@ -22589,3 +22589,44 @@ shortening (src/, TMPDIR truncation); bench wake AFTER 2026-09-11 08:00
 EDT (I-63 in their inbox closes M5.0 build-phase validation); [CLS-TREE]
 study (opus) when flush; [TT-4M-TIME]'s quiet-box timing half; the oracle
 store's migration-ladder wiring (design §9, unscheduled).
+
+## 2026-09-11 (EDT, overnight), fifty-eighth session part 2 — the battery-red residue retired: msgtrim + orwire + pyrole land, rxtsource green on darwin
+
+Three more sonnet lanes launched on Frank's word after the day's landing,
+all merged overnight:
+
+**msgtrim** — four .rxt-source refusal messages shortened (Frank's ruling:
+prose, never the buffer) so macOS's 49-byte TMPDIR can't truncate them;
+measured worst-case margins 32-49B; D94 audit clean; W1.2/W1.3 fixed
+(rxtsource 115/3→117/1). **orwire** — the oracle store WIRED (design §9
+Step 1 remainder): uprops utf8 arm checks EXACT agreement against the
+committed 10.46 pin on all 387 properties, provenance printed, coverage
+counted, StoreCorruption a loud FAIL (sabotage-verified). **pyrole** —
+C3's THREE-WAY VERDICT per Frank's python-narrowing ruling (python =
+transcription tripwire; PCRE2-confirmed divergence → counted INFO bucket,
+never a failure; store-uncovered → safe-fallback FAIL): the 7 red cells
+resolved VIA THE MECHANISM, U17 filed (both python divergence classes
+bisected across 3.9.6/3.10/3.11 — all close by 3.11), the colon-form
+pcre2-only vacuity found (64 lines that never skipped anything; reliance
+retired, parser deliberately unfixed), design note c3_three_way.md.
+§9 Step 2 landed hours after Step 1 — the store has two consumers on its
+first day.
+
+Set-validation `make test`: TWO fails — inline_capability (chartered,
+[CC-DIFF]) and the C3 population-pin skew pyrole's fix un-masked (pins =
+I-61's Linux numbers; darwin's older python classifies differently).
+Manager landing-bar: pins platform-scoped — assert on Linux, RECORD on
+darwin (counted; reconciliation stays hard everywhere). **rxtsource
+119/1-recorded/0-failed — first fully green run on darwin.** make test
+is now green-modulo-inline_capability on this box.
+
+Also this night (design conversation, recorded in wake.md): [CLS-TREE]
+charter amendment (Frank) — GENERAL-FORM BOTTLENECK (input = the bare
+set; provenance never determines form; caseless = the m=0x20 cube
+instance; \p{Lu} adjacent-pair blocks = the m=0x01 customer) + the
+D77-gated content-hash-keyed pre-analysis cache. Study lane (opus)
+launches at the token reset with both amendments verbatim.
+
+NEXT: push (this entry rides it); bench wake after 08:00 EDT (I-63);
+[CLS-TREE] study; oracle-store §9 Step 3 (PC-3/PC-4) unscheduled; C3
+store's Linux confirm (C3_INFO=0 there) owed to the next reference run.
