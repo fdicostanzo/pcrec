@@ -18,16 +18,18 @@ points, not on a sample.
 The brief asks four things. In one line each, before the evidence:
 
 1. **Which representation per set-structure class?** There is no per-class
-   answer, because the winning matcher is never one representation — the
-   populations want 17 to 36 sections of four or five different forms in one
-   matcher. The kit, not a pick from it, is the answer (§4).
+   answer, because the winning matcher is never one representation — the 312
+   property sets' 10,961 intervals resolve into 1,168 sections of four to six
+   different forms, and `\p{L}` alone is 27 sections of four. The kit, not a
+   pick from it, is the answer (§4).
 2. **The sectioning rule, as measured output?** Minimize
    `rodata + text + λ·probe-ops` over contiguous partitions by dynamic
    program; λ IS the dial. What that search picks, described rather than
    prescribed, is §5.
-3. **Discovery compile-time, and the D77 verdict on the cache?** 26.4 ms on
-   the worst real set, in C, single-threaded. **The cache is NOT triggered**
-   (§6).
+3. **Discovery compile-time, and the D77 verdict on the cache?** Mean 4.19 ms
+   / max 26.4 ms over the 60 largest sets, in C, single-threaded — the max
+   being under a fifth of what `build/pcrec` already spends compiling that
+   one pattern. **The cache is NOT triggered** (§6).
 4. **The property-testing exploit of provenance-blindness?** Composition
    identities as a free oracle, on arbitrary unreachable sets: 438 cells,
    1,114,112 code points each, zero mismatches (§7).
