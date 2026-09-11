@@ -1647,9 +1647,19 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         if (r->kind != RXT_DECL_PATTERN || !r->name) continue;
         for (size_t k = 0; k < cl->ndefs; k++)
             if (!strcmp(cl->defs[k].name, r->name))
+                /* THE WORST CASE OF THE FOUR: TWO full paths under one
+                 * `pcrec_error.msg`, `rxt_fail`'s own `<path>:<line>: `
+                 * prefix (this file) plus `cl->defs[k].file:line` (the
+                 * OTHER file) in the body — both grow with `TMPDIR`, so
+                 * this is the only one of the four paying the TMPDIR tax
+                 * TWICE and needs the tightest prose. "'%s' dup: %s:%zu"
+                 * is the two locations and nothing else; "is declared
+                 * twice in the lib closure" (the original wording) was
+                 * measured truncating the SECOND path's own extension on
+                 * this box's own TMPDIR, which is what W1.3's
+                 * `compose_dup_definition.rxt` needle exists to catch. */
                 return rxt_fail(&fp, r->line,
-                                "definition '%s' is declared twice in the lib "
-                                "closure: also at %s:%zu",
+                                "'%s' dup: %s:%zu",
                                 r->name, cl->defs[k].file, cl->defs[k].line);
         unsigned long long f = 0;
         char badc = 0;
@@ -1729,13 +1739,18 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * wrong search that reports "no readable file" for a reference that
          * was never meant to be one. It is refused as REAL AND NOT IN THIS
          * BUILD — the same tier the head grammar gives a wave-2 keyword,
-         * and for the same reason (DECIDED (1)). */
+         * and for the same reason (DECIDED (1)).
+         *
+         * TRIMMED to fit `pcrec_error.msg`'s 256-byte cap under a long
+         * `TMPDIR` (macOS default ~49 bytes): the explanatory clauses
+         * ("the spelling is real, not a typo", "The \"path\" form resolves
+         * today") are not part of what a caller needs to ACT — the store
+         * name and the two contract needles ("NOT IN THIS BUILD", "[LIB]")
+         * are. */
         if (rl >= 2 && ref[0] == '<')
             return rxt_fail(&p, r->line,
-                            "'lib %s' is a library-STORE reference, which is "
-                            "NOT IN THIS BUILD (the store scan arrives with "
-                            "[LIB]; the spelling is real, not a typo). The "
-                            "\"path\" form resolves today", ref);
+                            "'lib %s' is a STORE reference: NOT IN THIS "
+                            "BUILD (see [LIB]); use a \"path\" instead", ref);
         /* a quoted path-ref keeps its quotes in `value` (AS WRITTEN); the
          * reference itself is what is between them. */
         if (rl >= 2 && ref[0] == '"' && ref[rl - 1] == '"') {
@@ -1852,12 +1867,20 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * any input, and the truncation hid that rather than announcing it.
          * `rxt_fail`'s documented rule is that truncation keeps the file and
          * line, i.e. it eats the TAIL: so whatever the contract requires
-         * must come before whatever merely helps. */
+         * must come before whatever merely helps.
+         *
+         * STILL NOT ENOUGH on a long `TMPDIR` (macOS's per-user default is
+         * ~49 bytes, against Linux's flat `/tmp`): the reworded prose above
+         * was measured landing this refusal AT the 263-byte class-check
+         * limit on this box, still occasionally shedding its own tail. The
+         * words this trims (three of them: "names", "no pattern block here
+         * has that name", "(a lib's definitions need the composer,
+         * W1.3)") are commentary the contract does not require — §1.3 asks
+         * for the definition name and the chain searched, not for the
+         * shape of "pattern block" or a pointer to this milestone. */
         if (!blk)
             return rxt_fail(&p, tr->line,
-                            "'target %s' names no definition '%s': no pattern "
-                            "block here has that name; searched %s (a lib's "
-                            "definitions need the composer, W1.3)",
+                            "'target %s' -> no definition '%s'; searched %s",
                             tr->name, tr->value, chain);
 
         /* (4) UNDER WHICH SETTINGS — the two mechanisms, in order. */
