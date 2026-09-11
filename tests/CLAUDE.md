@@ -631,6 +631,17 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   has four rather than three: `esc_class_value` never advanced the cursor for
   a produced `EXT_MEMBERS`, which the membership differential structurally
   could not see because both its sides compile `\p{L}` at an ATOM.
+- **oracle/** — the ORACLE INTERFACE + ANSWER STORE implementation
+  (`docs/design/oracle_interface.md`, lane `orstore`): NOT a `.rxt`
+  corpus and not part of `make test` — the `Question`/`Answer` core,
+  question serialization/hashing, the self-checking TSV store format, a
+  local direct-link adapter and an ssh-stdin-payload remote adapter, and
+  the UPROPS INSTANCE (`build_uprops_store.py`) that populates
+  `oracle_store/` (top-level, own CLAUDE.md) — the committed 10.46
+  reference `membership` answers and a gitignored local-library cache
+  under `build/oracle_cache/`. See its own CLAUDE.md; other suites do not
+  read this store yet (wiring it in as an existing check's oracle is a
+  separate, un-scheduled migration step).
 - **utf8/** — the [M5.0] `utf8`-encoding corpus: D27-blinded (cell
   `utf8corpus`, authored against the pre-stage-2 tree) then PROMOTED (lane
   `utfprom`, 2026-09-05) against the merged stage-2 tree. 529 blocks / 14

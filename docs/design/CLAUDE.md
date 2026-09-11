@@ -1966,6 +1966,34 @@ append-only or historical records.
   whether `name-accept` earns its own kind, whether `OracleId.config`
   needs a non-answer-affecting provenance field, and the untested real
   size of the utf8 membership table).
+  **PANELED R56 (2026-09-10, `../dev/reviews/2026-09-10-r56-oracle-interface.md`)
+  AND REVISED (lane `oraiface2`); the survey HELD EXACT under re-derivation
+  and the mechanism had TWO deterministic-failure blockers, both fixed in
+  place.** R56-1: the serialization was non-injective (an un-escaped raw TAB
+  byte and the literal two-byte sequence `\`+`t` both serialized to the same
+  two characters) — fixed to the `rxt_format.md`:458-474 five-escape
+  TSV-framing subset, backslash escaped FIRST, stated normatively with a
+  trailing-backslash test vector. R56-2: `match_limit`/`depth_limit`/
+  `heap_limit` join `OracleId.config` (this tree's own `sr_oracle.py`
+  varies them to FLIP answers — a `giveup` answer keyed without them is a
+  lie). Five MUST-FIXes (store-format versioning as a fourth staleness
+  claim, per-file self-checking row counts + a question-text read-time
+  tripwire, write-time duplicate-hash detection + sorted-regeneration
+  discipline, the sixth `pattern-info` kind, and two more named-but-excluded
+  config axes) all applied; the kind-set is now six, not five. Ratified
+  as-is: 16-hex hash, top-level `oracle_store/`, `name-accept` its own kind.
+  Status is now DESIGN OF RECORD for the store's own implementation.
+  **BUILT 2026-09-10 (lane `orstore`)**: `tests/oracle/` (the store core,
+  a local direct-link adapter, a remote ssh-stdin-payload adapter
+  generalizing `bundle.py`, and the uprops instance) plus `oracle_store/`
+  (the committed store itself) — see both directories' own CLAUDE.md.
+  The `membership` kind's full utf8-arm population (387 properties) was
+  captured for real against the true 10.46 reference over one light ssh
+  session (seven ~60-property round trips, under two minutes total) and
+  committed to `oracle_store/libpcre2-10.46/membership.tsv`, discharging
+  §9 Step 1's own charter. Wiring the store into an EXISTING check as its
+  oracle (`uprops_compare.py`, the C3 python tier, PC-3/PC-4) is
+  unbuilt and un-scheduled, per the design's own migration-ladder framing.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
