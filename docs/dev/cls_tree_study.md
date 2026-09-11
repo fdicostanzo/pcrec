@@ -588,9 +588,34 @@ constructed reference on **all 1,114,112 code points**. Not a sample.
 answers, zero mismatches**, plus 96 cross-implementation sectioning
 comparisons, zero disagreements.
 
-## 11. Timing
+## 11. Timing — OWED, and deliberately not forced
 
-*(filled by the bench run — see §12 for what it does and does not cover.)*
+`bench.py` is written, committed and runnable: five arms per set (the flat
+`BSEARCH` reference — [CLS-TREE]'s seed; one whole-span `BITMAP`; and the kit
+at each policy), four subject regimes (`member` / `mixed` / `ascii` / `full`),
+11 rounds with **arms interleaved round by round**, every round's answer
+checksummed against the reference arm, and the 1-minute load average gated
+below 0.5 — the protocol `docs/dev/lanes/isl1_report.md` §12 established and
+`studies/form_char_twins` §8 reused, copied rather than re-invented so the
+numbers are comparable across studies.
+
+**It refused.** The box did not fall below the gate inside this lane's
+window — the sizing, verification, property-test and cross-check arms are
+this box's compute today, and other lanes are live. The harness does not
+caveat a noisy measurement, by construction; relaxing its own gate to
+produce a number would be the exact failure `studies/scan_edge_ladder`'s
+README already records as a refusal worth making.
+
+**No conclusion in this memo rests on a timing number**, and that is a
+property of what was asked rather than good luck: deliverable (1) is a form
+census, (2) is a search output, (3) is compile time, and (4) is answer
+identity. §9's first entry already states that nothing here licenses an
+end-to-end throughput claim, and the ns/char question it names — how these
+matchers behave *inside* the VM's per-position loop and the DFA's byte-wise
+walk — is the design pass's, not a rerun of this harness.
+
+To run it: `make bench` in `studies/cls_tree_study/` on a quiet box. Results
+land at `results/bench_k53.tsv`.
 
 ---
 
