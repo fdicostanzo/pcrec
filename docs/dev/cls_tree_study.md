@@ -193,10 +193,19 @@ Four things are legible in that table and none of them were assumed:
 
 ### 4.2 `BSEARCH` — the seed — is a marginal member
 
-[CLS-TREE]'s own seed representation is chosen **12 times across 72 K53
-cells**, always exactly once per matcher, and never at the speed end. It
-earns a place in the kit and it is nobody's main story. A design that built
-the seed alone would have built the least-used member.
+[CLS-TREE]'s own seed representation — a binary search over a section's
+interval table — is **2.7% of sections at the size policy, 2.6% at the
+middle, and ZERO at the speed policy** across all 312 property sets; on the
+12 K53 sets it is chosen 12 times in 72 cells, always exactly once per
+matcher. It earns a place in the kit and it is nobody's main story.
+
+This is worth separating carefully, because the seed's name is doing two
+jobs. **As a DISPATCH, binary search over ranges is the whole architecture**
+— every matcher here is one (§2), and `ALL`'s 72–79% share at the middle and
+speed policies is that dispatch answering without any leaf test at all. **As
+a LEAF FORM it is the least-used member in the kit.** A design that built
+"a binary tree of ranges" and stopped would have got the important half
+right by accident and the measured-least-valuable half on purpose.
 
 ### 4.3 `CUBES` — where CONSTITUTIONAL CONSTRAINT 1 is discharged as a measurement
 
@@ -356,10 +365,12 @@ is the honest statement of how good a `.text` model built this way gets.
 Over the real populations the answer has a stable shape, and this is the
 sectioning rule stated as an observation rather than as a prescription:
 
-1. **Sections break where DENSITY breaks, not where intervals are.** Section
-   counts (17–36) are an order of magnitude below interval counts (677–931).
-   The search is finding runs of similar local density and giving each one
-   the form that suits it.
+1. **Sections break where DENSITY breaks, not where intervals are.** On the
+   K53 sets, section counts of 17–36 sit an order of magnitude below interval
+   counts of 677–931; population-wide the 312 sets' 10,961 intervals resolve
+   into 1,168 sections at the middle policy, a **9.4× collapse**. The search
+   is finding runs of similar local density and giving each one the form that
+   suits it — which is why no per-class representation answers §4.
 2. **`ALL` absorbs the wide blocks and its share grows with λ** (1 section at
    λ=0, 16 at λ=16, 14 at λ=256 for `\p{L}`). A wide contiguous block is free
    once the dispatch has bounded it, so speed buys `ALL` sections by
