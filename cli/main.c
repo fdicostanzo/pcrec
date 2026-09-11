@@ -829,13 +829,19 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * or `-p`, which would silently overrule the target's own prefix —
          * is refused here, and a flag added to this CLI tomorrow is covered
          * without an edit because the check is over the whole tail of the
-         * struct rather than over a list of names. */
+         * struct rather than over a list of names.
+         *
+         * SHORTENED (msgtrim, 2026-09-10): this refusal joins `.rxt` source
+         * resolution's 256-byte-buffer messages on `tests/rxtsource/
+         * run_rxtsource_tests.sh`'s truncation CLASS check even though it
+         * has no fixed-size buffer of its own — `cli->source` grows with
+         * `TMPDIR` exactly as `rxt_fail`'s path prefix does, so the same
+         * "shorten the prose, keep the path and the raw line" rule applies. */
         if (!cli_extras_clean(&ts)) {
             free(ts.libdirs);   /* a config that reached for --lib-path */
             fprintf(stderr,
-                    "pcrec: %s:%zu: a `config` block's `pcrec` line may set "
-                    "compile options only — not an output path, a pattern, a "
-                    "prefix, a query mode or another source ('%s')\n",
+                    "pcrec: %s:%zu: `pcrec` line: compile options only, "
+                    "not output/pattern/prefix/query/source: '%s'\n",
                     cli->source, t->line, t->pcrec_raw);
             return 1;
         }
