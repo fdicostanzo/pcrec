@@ -528,3 +528,36 @@ never edited afterwards.
   generated it. Headline: `\p{L}` 227,409 object bytes today vs 4,359;
   discovery 26.4 ms on the worst real set, so the D77 verdict is that
   Constraint 2's pre-analysis cache is NOT triggered.
+
+- `abifix_report.md` — [S5-ARM] landing validation for lane abifix's fix
+  (2026-09-11, lane abifin: WIP commit d22ca9df already fixed
+  `tests/fuzz/pcre2_abi.h`, this lane finishes the owed validation +
+  disposition). The bug: [ORACLE-LINK]/D98's dlopen-to-direct-link
+  conversion moved `#include <pcre2.h>` ABOVE `#define _GNU_SOURCE`/
+  `#include <dlfcn.h>` on the false claim that `pcre2.h` "does not touch
+  `<features.h>`" — it does, transitively via its own `<stdlib.h>` —
+  silently reintroducing the `K-uprops-abi-order` hazard for every
+  consumer on glibc, invisible on darwin for two days until the header
+  was next built on the Linux reference box (S5-ARM), breaking
+  `dladdr`/`Dl_info` in six suite stages. Fixed by re-ordering plus a
+  new portable `#ifdef NULL #error` guard that fires on darwin too.
+  Read this report for two things. **§3 is the utf8-count disposition
+  (I-63: expected 1833, Linux printed 1829)**, derived from `git log`/
+  `git diff` over `tests/utf8/` between the pins, independent of any
+  live run: `[K53-SELRETRY]`'s own corpus-move fix (`880ba16d`) deletes
+  exactly 4 duplicate blocks a splitter bug had put in
+  `axis04_p_categories.rxt` on top of their correct home in
+  `axis12_scripts.rxt` — 1833 counted the duplicates once each, 1829 is
+  the correct post-dedup number and should replace 1833 anywhere else in
+  the tree that cites it. **§5 is the Linux executor's exact 6-command
+  re-run list** for the red stages (`make san`; `make test-registry`
+  covering both PC-3 and PC-4, which are sub-stages of the one script;
+  `ENC=byte`/`ENC=utf8 bash tests/uprops/run_uprops_tests.sh`, the utf8
+  arm being the one to watch for the `[STORE] 387/387` line;
+  `make test-atomic`). Darwin validation in §2 is all green and
+  live-confirmed (uprops byte 47/0, uprops utf8 26/0 with `[STORE]
+  387/387` exactly as expected, rxtsource 119/1/0, atomic_diff 8/0)
+  except the long `tests/harness/run.sh tests/utf8/` count-confirmation
+  run, launched last per BOILERPLATE's DO-THEN-FINISH and left OWED with
+  its log path — corroborating evidence only, since §3's arithmetic does
+  not depend on it.

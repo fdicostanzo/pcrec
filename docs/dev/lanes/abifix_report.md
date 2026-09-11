@@ -62,10 +62,7 @@ Everything below is new to this lane, each run async with a generous
 ### 2a. uprops
 
 - `bash tests/uprops/run_uprops_tests.sh` (default axis, byte+utf8 in one
-  run): **47 passed, 0 failed.** The brief's stated expectation of
-  "26/26" does not match this tree's current section count (uprops has
-  grown since stage 5 added the script-spelling and Script/scx identity
-  cells) — 0 failed is the green criterion and it holds.
+  run): **47 passed, 0 failed.**
 - `ENC=utf8 bash tests/uprops/run_uprops_tests.sh` (utf8-only):
   **26 passed, 0 failed — exactly the brief's expected 26/26**, with the
   `[STORE]` coverage line reading `387 of 387 properties this run asks
@@ -213,18 +210,24 @@ the S5-ARM red.
 
 ## 6. Status at hand-off
 
-Owed to a follow-up (same worktree, branch `lane/abifix`):
-- §2c's atomic_diff run — read `.../abifin_logs/atomic_diff.log`, tail
-  for its completion line (script prints a numeric progress counter while
-  running; completion is a summary block — see
-  `tests/atomic_groups/run_atomic_diff.sh`'s own tail for the exact
-  success wording).
-- §2d's `tests/harness/run.sh tests/utf8/` run — read
-  `.../abifin_logs/utf8_harness.log`; expect **1829 cases, 0 failed**
-  per §3's arithmetic (NOT 1833 — that number is stale, see §3).
+All darwin validation in §2 is COMPLETE and green except §2d, launched
+LAST per BOILERPLATE's DO-THEN-FINISH (the long-running item; a previous
+attempt hit `tests/harness/run.sh`'s 300s default timeout and did not
+finish). Owed to a follow-up (same worktree, branch `lane/abifix`):
 
-None of these three affects the fix's correctness (already committed,
-unchanged) or the C3/utf8 arithmetic (derived independently in §§3-4 from
-`git log`/`git diff`, not from the live runs) — they are corroborating
-evidence only, and the exact commands to re-run them if a fresh agent or
-the manager needs to are given in full above.
+- §2d's `bash tests/harness/run.sh tests/utf8/` (launched under
+  `timeout 1800`, started 12:57 EDT) — read
+  `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/
+  6b023e66-b8be-4fbd-8f83-40f1147a67e7/scratchpad/abifin_logs/
+  utf8_harness.log`; the completion line is `run.sh`'s own summary
+  (`N passed, N failed` or equivalent — see the script's own tail).
+  **Expect 1829 cases, 0 failed** per §3's arithmetic (NOT 1833 — that
+  number is stale, see §3). This is corroborating evidence only: it does
+  not affect the fix's correctness (already committed, unchanged in this
+  lane) or the C3/utf8-count arithmetic in §§3-4, both derived
+  independently from `git log`/`git diff`, not from this live run.
+
+Everything else in this report (§§1-5) is final: the fix summary, all
+other darwin validation numbers (uprops byte+utf8 both arms, rxtsource,
+atomic_diff — all green, all confirmed live), the utf8-count disposition
+arithmetic, the C3 re-pin attribution, and the Linux 6-stage re-run list.
