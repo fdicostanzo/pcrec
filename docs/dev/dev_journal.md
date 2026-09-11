@@ -22675,3 +22675,44 @@ recommendation: do NOT loosen; route ns/char to ubuntubudu post-S5-ARM.
 NEXT: S5-ARM quote-back → M5.0 close-out ritual; ns/char routing;
 [CLS-TREE] design note + panel (gated on ns/char + Frank's word);
 [TT-4M-TIME] quiet-box timing (box free now that clstudy ended).
+
+## 2026-09-11 (EDT), sixtieth session — abifix LANDED (d99b02d2, pushed); three rulings; I-65 next
+
+Restart wake ("finn again awake") at ~12:5x EDT. Baseline as wake.md
+left it (main clean 9bb3e973, lane/abifix parked at WIP d22ca9df).
+
+**ABIFIX LANDED**: lane abifin (sonnet, resuming from the committed WIP)
+finished the owed landing — darwin validation all green (uprops
+byte+utf8 47/0 with [STORE] 387/387; rxtsource 119/1/0 with the RECORD
+reading back the new SKIP=15146 pin; atomic_diff 8/0), the utf8 count
+DISPOSITIONED (1829 is correct; I-63's 1833 counted 4 duplicate blocks
+a splitter bug in e638afee added and 880ba16d's dedup removed — cite
+1829 going forward), report docs/dev/lanes/abifix_report.md incl. the
+Linux 6-stage re-run list. Merged d99b02d2, strict green, pushed;
+worktree/branch removed clean (straggler check empty). The long utf8
+harness corroboration completed post-merge: 1829/0 exactly as derived
+(addendum appended to the report). Lane closed at delivery per policy;
+zero-model watcher pattern worked (retargeted to the log at handoff).
+
+**RULINGS (Frank, this session)**: (1) [CC-ORIGIN] — option 1, the
+`ifeq ($(origin CC),default)` guard at every live `CC ?=` site, no
+export (propagation is by re-evaluation + make's own override rules;
+verified against the tree's actual recursion structure); queued on the
+admin short list, new plan row. (2) darwin timing gate — do NOT loosen;
+ns/char routes to ubuntubudu, riding the I-65 session (`make -C
+studies/cls_tree_study bench CC=gcc`); darwin timing never citable.
+(3) cls-fold dial placement — option B, SUBSUMED into the [CLS-TREE]
+design note (fold = the m=0x20 one-cube kit member; [FORM-CHAR2]'s
+(i)/(ii) become op-pricing calibration inputs, its timing half rides
+the same I-65 session). Ruling 4 ([B13] Q3 set-local bands) presented,
+Frank's word pending. Also answered his fold-speed question: the ci-256
+slowdown is single-witness/forced-VM/mostly-within-noise with the
+static evidence (register arithmetic vs table load) pointing the other
+way and a documented layout-artifact precedent ([CC-DIFF]'s 0.432
+non-reproduction) — general-vs-specific is exactly [FORM-CHAR2] (i)'s
+question.
+
+NEXT: I-65 to the bench inbox (6 red stages at d99b02d2 + the ns/char
+rider) + Frank's hand for the pcrecdev2 launch; green closes [M5.0]
+stage-5 validation → close-out ritual. Then [CC-ORIGIN] +
+[TT-4M-TIME] admin slots; [CLS-TREE] design note after ns/char.

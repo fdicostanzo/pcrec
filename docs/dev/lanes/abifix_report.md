@@ -231,3 +231,11 @@ Everything else in this report (§§1-5) is final: the fix summary, all
 other darwin validation numbers (uprops byte+utf8 both arms, rxtsource,
 atomic_diff — all green, all confirmed live), the utf8-count disposition
 arithmetic, the C3 re-pin attribution, and the Linux 6-stage re-run list.
+
+## Addendum (manager, 2026-09-11 ~13:2x EDT): §2d corroboration COMPLETE
+
+The owed `bash tests/harness/run.sh tests/utf8/` run finished under its
+1800s budget: **cases passed 1829, cases failed 0**, pattern-compile
+failures 0, pending-vm 0 — exactly §3's arithmetic (1829, not 1833).
+Every item in this report is now confirmed live; nothing remains owed on
+the darwin side. The Linux 6-stage re-run (§5) travels as I-65.
