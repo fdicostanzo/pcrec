@@ -24,7 +24,21 @@ is everything those corpora structurally cannot express.
 - **uprops_sweep.c** — the pcrec side, compiled once per property against
   that property's own emitted artifact.
 - **uprops_compare.py** — the comparator, and the ONE place the
-  Unicode-version drift policy is written down.
+  Unicode-version drift policy is written down. **[ORWIRE] (2026-09-10):**
+  the utf8 arm now ALSO consults the COMMITTED `oracle_store/
+  libpcre2-10.46/membership.tsv` reference store
+  (`docs/design/oracle_interface.md` §9 Step 1's migration wiring) as a
+  SECOND, INDEPENDENT comparison beside the live-oracle one — never a
+  replacement. Because the store IS the true pin (Unicode 16.0.0), every
+  property it covers is compared at EXACT agreement unconditionally, on
+  every box, with no drift budget at all — the mechanism that makes the
+  utf8 arm's comparison exact on darwin without darwin owning the
+  reference. A name the store does not (yet) cover falls back to the
+  live-oracle result and is reported as a COVERAGE SPLIT, never silently
+  dropped. Every run prints `[LIVE]`/`[STORE]` provenance lines naming
+  which oracle answered which population, and a store self-check failure
+  (`StoreCorruption`) is a loud, named FAIL, never absorbed. See
+  `tests/oracle/CLAUDE.md` and `docs/dev/lanes/orwire_report.md`.
 - **uprops_names.py** — [M5.0] stage 5: §2's PROMISE SIDE, re-derived from the
   vendored UCD and compared against the shipped table's rows in BOTH
   directions. It exists because the stage-3 shape — a hand-written list of
@@ -137,8 +151,15 @@ libpcre2 10.42 / Unicode 14.0.0 (the pre-[ORACLE-LINK] dlopen shim's resolved
 library on that box). Re-measured post-[ORACLE-LINK] (2026-09-09, direct
 linking, this box's real Homebrew 10.48 / Unicode 17.0.0): `byte` arm **91
 properties compared, 0 code points attributed to drift** — still clean, on a
-materially different oracle. Re-measure from a run rather than reading
-these here.
+materially different oracle. Re-measured again at [ORWIRE]'s landing
+(2026-09-10, same box/library): `utf8` arm's `[LIVE]` tier **387 properties
+compared, 47,542 code points attributed to drift** (10.48/17.0.0 is TWO
+Unicode versions ahead of the pin now, wider than the 62,121-at-14.0.0
+figure above only because the two libraries drifted in opposite
+directions), and its NEW `[STORE]` tier — the committed 10.46 capture,
+which IS the pin — **387 of 387 properties covered, compared EXACT, 0
+disagreements**: on darwin, wired for the first time, without darwin ever
+owning the reference. Re-measure from a run rather than reading these here.
 
 ## What is NOT here
 

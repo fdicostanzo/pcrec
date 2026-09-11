@@ -198,9 +198,20 @@ else
         done
         "$WORKDIR/uprops_oracle" "$enc" $NAMES > "$WORKDIR/oracle-$enc.txt" 2>/dev/null
         echo "  -- $enc --"
+        # [ORWIRE] docs/design/oracle_interface.md §9 Step 1's migration
+        # wiring: the utf8 arm ALSO consults the COMMITTED 10.46 reference
+        # store (oracle_store/libpcre2-10.46/membership.tsv), beside — never
+        # instead of — the live-oracle comparison above. The store holds only
+        # the utf8-arm capture (tests/oracle/CLAUDE.md), so the byte arm's
+        # comparison is unchanged. uprops_compare.py prints its own
+        # provenance ([LIVE]/[STORE]) and coverage split every run.
+        store_args=""
+        if [ "$enc" = "utf8" ] && [ -f "$ROOT_DIR/oracle_store/libpcre2-10.46/membership.tsv" ]; then
+            store_args="$ROOT_DIR/oracle_store libpcre2 10.46 utf8"
+        fi
         if python3 "$SCRIPT_DIR/uprops_compare.py" "$WORKDIR/pcrec-$enc.txt" \
-                "$WORKDIR/oracle-$enc.txt" "$pin" "$uni_ver"; then
-            ok "$enc: pcrec and libpcre2 agree on every shipped property over the whole code-point space (within the stated drift budget)"
+                "$WORKDIR/oracle-$enc.txt" "$pin" "$uni_ver" $store_args; then
+            ok "$enc: pcrec and libpcre2 agree on every shipped property over the whole code-point space (within the stated drift budget; utf8 additionally checked exact against the committed 10.46 store)"
         else
             bad "$enc: the membership differential found an unexplained disagreement"
         fi
