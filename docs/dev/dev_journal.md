@@ -22716,3 +22716,54 @@ NEXT: I-65 to the bench inbox (6 red stages at d99b02d2 + the ns/char
 rider) + Frank's hand for the pcrecdev2 launch; green closes [M5.0]
 stage-5 validation → close-out ritual. Then [CC-ORIGIN] +
 [TT-4M-TIME] admin slots; [CLS-TREE] design note after ns/char.
+
+## 2026-09-11 (EDT), sixtieth session part 2 — I-65 GREEN: [M5.0] stage-5 validation DISCHARGED; ns/char landed; [CC-ORIGIN] merged; timing run rescheduled to tonight
+
+**I-65 (pcrecdev2, self-launched 14:05 EDT — Frank installed the
+executor-launch permission ~12:20, no more hand launches)**: all six
+S5-ARM red stages GREEN at pin 616c2e49 in worktree build/wt_s5_rerun
+(their main checkout carries an uncommitted 2026-09-05
+artifact_size_log.tsv edit — deviation approved, dispositioned as a
+post-close-out item). Load-bearing three all confirmed: san 35/35,
+uprops_utf8 [STORE] 387/387 exact (the line whose absence WAS the bug),
+PC-4 62,872 cells 0 disagreements. uprops_byte read 47/0 not the
+expected 26 — my I-65 error, the bare invocation runs both encoding
+arms (21 byte + 26 utf8 = 47); 0-failed criterion met. The ns/char
+rider REFUSED once at load1 0.51 and ran on its single pre-declared
+retry at 0.10 — gate never loosened; results committed as
+studies/cls_tree_study/results/bench_ubuntubudu_20260911.tsv (2,641
+rows). [CLS-TREE]'s design-note gate now has both inputs (study +
+ns/char). M5.0 close-out ritual OWED and HELD (Frank: no new lanes just
+yet).
+
+**[CC-ORIGIN] merged c4be2c7f** (earlier this afternoon): six sites (a
+6th, studies/alt_dispatch, found by the lane's grep — whitespace);
+n1budget's guard set to gcc-16 per its own docs (flagged behavior
+change); origin cases verified by manager. Lane went idle-mute twice —
+landing finished by manager from its own logs.
+
+**[TT-4M-TIME] attempt 1 FAILED, rescheduled TONIGHT (Frank)**: the
+lane armed 3600s against the briefed 7200 — serial `make test` was
+killed at exactly 60min mid-suite (all green to that point; only the
+chartered inline_capability FAIL). Manager relaunched with 10800s;
+Frank then needed the box (kill anything timed >10min out) — killed
+clean via TaskStop + safekill, zero stragglers. The timing pair runs
+tonight. Worktree worktrees/tt4mtime kept (WIP 1dce6923 carries the
+memo skeleton + customer re-verification + san feasibility note).
+
+**[WORD-FOLD] chartered into the boonies** (Frank, three refinements
+same-day): word-wide cube compare; canonical form is the AND-mask
+(w & K) == T — past-end bytes are the degenerate all-free cube, so
+tails are the same 3-op test as full windows; only the subject-end
+bound survives as a guard. Measured baseline in the row: VM literal
+chains are one-instruction-per-byte both casings; the DFA offset-k
+skip degrades to nothing under (?i).
+
+Lessons: (1) a lane that goes idle without delivering is now the
+SESSION'S PATTERN (abifin benign, ccorigin mute twice, tt4mtime mute
+after its run was killed) — the manager landed all three from
+artifacts; watcher scripts also failed to fire twice (freshness checks
+defeated — needs a rethink, maybe watch ONLY the specific log file).
+(2) An executor quoting a discrepancy verbatim without diagnosing
+(uprops 47-vs-26) let the manager resolve it in one line — the
+quote-not-diagnose discipline works.
