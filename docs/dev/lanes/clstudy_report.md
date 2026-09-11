@@ -99,8 +99,39 @@ interesting:
    reappearing in a new file three days later**, and it is invisible to every
    check in the harness: both compilers produce correct matchers and all
    1,692 verification cells would still have passed. Fixed with
-   `ifeq ($(origin CC),default)`; flagged here because the `?=`-on-`CC`
-   idiom is presumably in other study Makefiles too and nobody has grepped.
+   `ifeq ($(origin CC),default)`.
+
+## FLAGGED FOR THE MANAGER: the `CC ?=` idiom is tree-wide and inert
+
+Not this lane's to fix (study scope), so it is reported rather than changed.
+Grepped, not guessed — `grep -rn '^CC[[:space:]]*?=' --include=Makefile`:
+
+| file | written fallback | what make actually uses |
+|---|---|---|
+| `Makefile` (pcrec's own, line 4) | `gcc` | `cc` |
+| `studies/alt_dispatch/Makefile:5` | `gcc` | `cc` |
+| `studies/lim2_m1/Makefile:1` | **`gcc-16`** | `cc` |
+| `studies/lim2_census/Makefile:1` | `cc` | `cc` |
+| `studies/simd1/Makefile:1` | `cc` | `cc` |
+| `studies/n1budget/Makefile:1` | `cc` | `cc` |
+
+`?=` assigns only when the variable is UNDEFINED, and make defines `CC`
+itself (`origin` = `default`), so **in all six the written fallback has never
+once been used.** The three that wrote `cc` are harmless by coincidence. The
+three that wrote `gcc`/`gcc-16` are asking for a compiler they do not get.
+
+Every one is mitigated *only* by callers passing `CC=` on the command line —
+`CLAUDE.md` documents `make -j4 CC=gcc-16`, and `studies/CLAUDE.md` documents
+`make CC=gcc-16` for `lim2_m1` and `n1budget`. **That mitigation is exactly
+the condition `santriage_report.md` found violated**: `scripts/battery.sh`
+did not pass it, so `san` and `lint` reached Apple clang and had never
+actually executed on darwin since the Mac move. The idiom is a standing trap
+whose only defence is that every caller remembers; one forgot, and it cost a
+lane.
+
+Cheap durable fix if the manager wants it: `ifeq ($(origin CC),default)` in
+each, which overrides make's default while leaving command line and
+environment working. This lane changed only its own.
 
 ## Validation
 

@@ -548,7 +548,10 @@ silently built with `cc`, Apple clang on this box. Caught by running
 printed. It is the same defect `docs/dev/lanes/santriage_report.md` records
 for `scripts/battery.sh`'s `san`/`lint` stages, reappearing in a new file
 three days later; the fix is `ifeq ($(origin CC),default)`, which overrides
-make's default while leaving `make CC=...` and an exported `CC` working. **A
+make's default while leaving `make CC=...` and an exported `CC` working.
+Grepping the tree found the same inert idiom in **six** Makefiles including
+pcrec's own — the lane report flags them for the manager and changed only
+this study's. **A
 study whose numbers come from one compiler and whose `make` uses another is
 not reproducible, however green it looks** — and nothing in the harness
 would have said so, because both compilers produce correct matchers and
