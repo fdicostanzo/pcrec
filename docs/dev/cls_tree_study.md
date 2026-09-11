@@ -406,6 +406,12 @@ ms**. The individual worst cases:
 | `Xwd` | 930 | **26.4 ms** | ~1.6 s |
 | `\p{L}` | 677 | **22.7 ms** | 1.55 s |
 
+[Manager note at merge, 2026-09-11: the committed
+`results/crosscheck_uprops.tsv` records max `c_discovery_ms` = 25.86 (`Xwd`);
+this table's 26.4/26.7 figures are from lane-side timing runs not captured in
+a committed TSV. The spread is repetition-level jitter (~3%); every figure
+supports the same verdict. Cite 25.86 ms — the committed number.]
+
 (The Python DP is the same algorithm producing the same answers — §8 — at a
 measured **mean 141×, max 472×** slower. It is an implementation cost, not a
 different algorithm, which is exactly why the compile-time question had to be

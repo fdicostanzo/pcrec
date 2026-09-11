@@ -421,8 +421,10 @@ change.
   end's; the extreme speed notch collapses to few huge bitmaps at a 5.6x
   size blow-up for 6 probe ops and the dial should stop before it).
   **DELIVERABLE (3): the D77 verdict is that CONSTRAINT 2's PRE-ANALYSIS
-  CACHE IS NOT TRIGGERED** — discovery on the worst real set (931 intervals)
-  is **26.4 ms** in C, single-threaded, less than a fifth of the 144 ms
+  CACHE IS NOT TRIGGERED** — discovery on the worst real set (930 intervals)
+  is **25.86 ms** in C, single-threaded (the committed
+  `crosscheck_uprops.tsv` number; the memo's 26.4/26.7 table figures are
+  jitter-level lane-side re-runs), less than a fifth of the 144 ms
   `build/pcrec` already spends compiling that one pattern today; the
   algorithm prices every kit member in O(1)/O(k) WITHOUT materializing
   tables, which is a property of the algorithm and survives a worse
