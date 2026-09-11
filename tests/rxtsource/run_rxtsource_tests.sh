@@ -838,6 +838,58 @@ C3_FILES=179
 #   reconciles. giveup/composed/perr-python-accepts/own-oracle are
 #   untouched by either commit (measured 0 movement in both isolated
 #   runs) and are NOT re-pinned here.
+# [pyrole re-pin, 2026-09-10/11] +0 PASS / +0 SKIP (every SKIP_* reason
+# unchanged) / NEW: C3_INFO=0, C3_STOREUNCOVERED=0 -- verify_rxt.py's C3
+# tier gained a THIRD verdict (docs/design/c3_three_way.md): a python-vs-
+# expectation disagreement the COMMITTED oracle store (`oracle_store/
+# libpcre2-10.48/`, `tests/rxtsource/build_c3_store.py`) CONFIRMS is right
+# is counted INFO, never FAIL. This box's default `python3` (3.9.6) found
+# SEVEN cells red before this change (tests/backrefs/d27/caseless.rxt:39,
+# tests/counterk/counterk.rxt:568/626/644/702, tests/lookaround/
+# captures.rxt:59/67) -- all seven CONFIRMED by the store (PCRE2 agrees
+# with the expectation; python alone was wrong), all seven now INFO, so
+# THIS BOX's own C3 run moves FAIL 7 -> 0, INFO 0 -> 7, with PASS/SKIP/
+# every SKIP_* reason UNCHANGED (measured: identical PASS=12729/
+# SKIP=16107 before and after, isolated per-file runs on the three touched
+# files agree with the whole-corpus run).
+#
+# THE PINS BELOW ARE UNCHANGED FROM THEIR PRIOR VALUES, and C3_INFO/
+# C3_STOREUNCOVERED are pinned at 0 -- NOT this box's own 7/0, and this is
+# a DERIVATION, not a guess: two of the three divergence mechanisms
+# (lazy-counted-alternation capture timing, negative-lookahead capture
+# retention) are CPython `re`-engine behaviour that changed between 3.9 and
+# 3.11 -- MEASURED directly on this box with `python3.10`/`python3.11`
+# installs also present here (miniconda's 3.11, homebrew's 3.10): under
+# EITHER, all six counterk/lookaround cells already agree with the
+# expectation with NO store consultation needed, and the seventh
+# (caseless.rxt:39, a non-leading global `(?i)`) compiles under 3.9's
+# DeprecationWarning-and-proceed behaviour but RAISES `re.error` under
+# 3.10/3.11 (`re.compile` treats it as a syntax error, "global flags not at
+# the start of the expression"), landing in skipped_no_python instead of a
+# comparison at all. This section's own BOX SENSITIVITY note above already
+# establishes the reference box runs python 3.14, strictly newer than
+# 3.11 -- so on the reference box this lane's whole seven-cell population
+# was NEVER a divergence to begin with: C3_INFO=0 there is the honest
+# reference-box number, and this box's own INFO=7 is a LOCAL, older-python
+# artifact the mechanism exists to absorb WITHOUT pinning a python version.
+# VERIFIED LOCALLY (darwin, all three python versions cited above); the
+# Linux/reference re-run to CONFIRM C3_INFO=0/C3_STOREUNCOVERED=0 there is
+# OWED to whoever runs it next (this section's own established pattern for
+# a box this lane cannot reach without a suite-scale run).
+#
+# A SEPARATE, PRE-EXISTING GAP THIS RE-PIN NEWLY EXPOSES RATHER THAN
+# CAUSES: the population-pin comparison below (PASS/SKIP/SKIP_* against
+# their Linux-reference pins) only RUNS when `verify_rxt.py` exits 0 (zero
+# FAILURES) -- before this lane, the seven-cell FAIL kept `c3rc != 0` on
+# this box, so that comparison was never reached and the box's own
+# ALREADY-DOCUMENTED python-version skip-count skew (this section's own
+# BOX SENSITIVITY note, PASS 12729/SKIP 16107 here against the Linux pins
+# below) was invisible. Fixing the seven cells makes `c3rc` 0 on this box
+# for the first time, which SURFACES that pre-existing mismatch as a new
+# population-pin FAIL here -- not a regression this lane introduced, and
+# not a gap this lane's brief scoped it to fix (box-sensitivity pin
+# management is wake.md's darwin admin territory). Named here so the next
+# reader does not mistake a newly-VISIBLE old gap for a new one.
 C3_PASS=13708
 C3_SKIP=15074
 C3_SKIP_PCRE2ONLY=2872
@@ -846,6 +898,8 @@ C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1875
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=10290
+C3_INFO=0
+C3_STOREUNCOVERED=0
 C3_TIMEOUT=1
 # [DD-13b.W1.1 r46chk finding 3 / r46sem finding 6] THE "89" NAMED, WITH
 # ITS OWN UPDATE PROCEDURE. This is `tests/base/d27_k23_ambiguous_
@@ -887,6 +941,17 @@ c3_files=$(awk -F= '/^FILES=/ { print $2 }' "$C3OUT")
 c3_pass=$(awk '/^PASS=/ { sub(/^PASS=/, "", $1); print $1 }' "$C3OUT")
 c3_skip=$(awk -F'[=( ]' '/^SKIP=/ { print $2 }' "$C3OUT")
 c3_timeout=$(awk -F'[=( ]' '/^TIMEOUT=/ { print $2 }' "$C3OUT")
+# [C3 THREE-WAY VERDICT] the fourth, always-printed bucket
+# (docs/design/c3_three_way.md): a python-vs-expectation disagreement the
+# committed C3 oracle store CONFIRMS is right anyway -- never a failure,
+# counted separately from PASS/SKIP so growing python's own blind spots
+# (a version regression, a corpus file exercising a new construct) is
+# visible rather than silently absorbed into PASS.
+c3_info=$(awk -F'[=( ]' '/^INFO=/ { print $2 }' "$C3OUT")
+# how many of c3's FAIL are a clean miss against the store (the mechanism
+# fell back to today's python-only verdict) rather than a real
+# store-confirmed disagreement -- see the design note's verdict table.
+c3_storeuncovered=$(awk -F'[=( ]' '/^STOREUNCOVERED=/ { print $2 }' "$C3OUT")
 c3_reason() { sed -n 's/.*[ (]'"$1"'=\([0-9]*\).*/\1/p' "$C3OUT" | head -1; }
 
 if [ "${c3_files:-}" = "$CENSUS_FILES" ]; then
@@ -896,17 +961,19 @@ else
 fi
 
 if [ "$c3rc" -eq 0 ]; then
-    pass "C3: verify_rxt.py verified $c3_pass expectation(s) with $c3_skip skip(s), 0 failures"
+    pass "C3: verify_rxt.py verified $c3_pass expectation(s) with $c3_skip skip(s) and $c3_info info (python-divergent, pcre2-confirmed), 0 failures"
 
     # THE TOTALS, AGAINST THEIR PINS. The verified count alone is not
     # enough: a skip predicate that WIDENS moves work out of PASS and
     # into SKIP while both totals stay explicable, so each reason is
-    # pinned separately. They also reconcile — pass + skip + the
+    # pinned separately. They also reconcile — pass + info + skip + the
     # timed-out file's own lines must be the whole census — which is
-    # what makes this an accounting rather than nine loose numbers.
+    # what makes this an accounting rather than eleven loose numbers.
     c3_bad=""
     for chk in "PASS:$c3_pass:$C3_PASS" \
                "SKIP:$c3_skip:$C3_SKIP" \
+               "INFO:$c3_info:$C3_INFO" \
+               "STOREUNCOVERED:$c3_storeuncovered:$C3_STOREUNCOVERED" \
                "TIMEOUT:${c3_timeout:-x}:$C3_TIMEOUT" \
                "pcre2-only:$(c3_reason pcre2-only):$C3_SKIP_PCRE2ONLY" \
                "giveup:$(c3_reason giveup):$C3_SKIP_GIVEUP" \
@@ -919,20 +986,23 @@ if [ "$c3rc" -eq 0 ]; then
     $nm: got ${got:-<absent>}, pinned $want"
     done
     if [ -z "$c3_bad" ]; then
-        pass "C3: all nine population pins hold (verified, skips by reason, timeouts)"
+        pass "C3: all eleven population pins hold (verified, informational, skips by reason, timeouts)"
     else
         fail "C3: population pin(s) MOVED:$c3_bad
   A skip reason that grows is coverage lost without a failing case to
-  show for it. If the move is legitimate — a corpus file added, a block
-  newly marked, a module landing that makes patterns python-expressible
-  — re-pin the C3_* values in this file in a reviewed commit saying which
-  and why."
+  show for it; an INFO count that grows is a NEW python-vs-expectation
+  divergence the store confirmed (fine, but re-pin so the population stays
+  visible); a STOREUNCOVERED count that grows names cells
+  tests/rxtsource/build_c3_store.py should capture next. If the move is
+  legitimate — a corpus file added, a block newly marked, a module landing
+  that makes patterns python-expressible, a new store capture — re-pin the
+  C3_* values in this file in a reviewed commit saying which and why."
     fi
 
-    if [ "$((c3_pass + c3_skip + C3_TIMEOUT_FILE_LINES))" = "$CENSUS_LINES" ]; then
-        pass "C3 reconciles: $c3_pass verified + $c3_skip skipped + $C3_TIMEOUT_FILE_LINES in the timed-out file = $CENSUS_LINES"
+    if [ "$((c3_pass + c3_info + c3_skip + C3_TIMEOUT_FILE_LINES))" = "$CENSUS_LINES" ]; then
+        pass "C3 reconciles: $c3_pass verified + $c3_info info + $c3_skip skipped + $C3_TIMEOUT_FILE_LINES in the timed-out file = $CENSUS_LINES"
     else
-        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_skip + $C3_TIMEOUT_FILE_LINES = $((c3_pass + c3_skip + C3_TIMEOUT_FILE_LINES)),
+        fail "C3 DOES NOT RECONCILE: $c3_pass + $c3_info + $c3_skip + $C3_TIMEOUT_FILE_LINES = $((c3_pass + c3_info + c3_skip + C3_TIMEOUT_FILE_LINES)),
   census $CENSUS_LINES. Expectations are going somewhere neither counted
   nor reported, which is the one outcome a skip total exists to prevent.
   If tests/base/d27_k23_ambiguous_decomposition.rxt legitimately changed

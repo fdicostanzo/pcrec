@@ -2002,9 +2002,45 @@ append-only or historical records.
   CAPTURE tool, are both unchanged (§9 Step 1's own "the local adapter
   answers the byte arm live today" framing — nothing is retired). A name
   the store does not cover falls back to the live result and is reported
-  as a counted coverage split, never silently dropped. The C3 python tier
-  and PC-3/PC-4 remain unwired — §9 Steps 2-3, later rungs. See
-  `docs/dev/lanes/orwire_report.md`.
+  as a counted coverage split, never silently dropped. PC-3/PC-4 remain
+  unwired (§9 Step 3, a later rung); the C3 python tier's Step 2 landed
+  the SAME NIGHT via lane `pyrole` — see `c3_three_way.md` immediately
+  below. See `docs/dev/lanes/orwire_report.md`.
+
+- `c3_three_way.md` — **BUILT** (2026-09-10/11, lane `pyrole`): narrows
+  `tests/harness/verify_rxt.py`'s C3 tier to `oracle_interface.md`'s own
+  migration-ladder Step 2, per Frank's ruling (2026-09-10) that python is
+  a TRANSCRIPTION-ERROR TRIPWIRE only — its one remaining actionable value
+  is INDEPENDENCE from the `.rxt` expectations (most of which were
+  themselves written FROM libpcre2 answers), not correctness against
+  PCRE2 (D26). A python-vs-expectation disagreement is no longer scored a
+  FAILURE by itself: it consults a COMMITTED store answer
+  (`oracle_store/libpcre2-10.48/`, `tests/rxtsource/build_c3_store.py`,
+  the LOCAL adapter) and lands in one of three places — CONFIRMED (an
+  always-printed, never-gated INFO bucket, modelled on `tests/thread/
+  run_stackdepth_tests.sh`'s `record()` bucket), a real FAILURE (the store
+  disagrees too — the transcription tripwire firing for real), or
+  STOREUNCOVERED (a clean miss, falls back to today's pre-lane FAILURE
+  verdict, counted so the gap is visible rather than silent). Resolves
+  seven previously-FAILING cells this way (`docs/dev/upstream_issues.md`
+  U17 has the full measured record — two genuinely PCRE2-DIVERGENT python
+  `re` bugs, both version-sensitive, bisected across three interpreters on
+  this box: one closes at python 3.11 by becoming a hard refusal instead
+  of a wrong answer, two more close between 3.9/3.10 and 3.11 outright).
+  §6 settles the brief's own open question — the corpus's existing
+  `# pcre2-only` markings come in TWO spellings the parser has always
+  treated differently (a BARE form, the only one the exact-match parser
+  ever recognized, unchanged; a COLON form, 64 lines / 7 files, that has
+  **never actually skipped anything** — pure prose masquerading as a
+  directive, found by this lane rather than assumed) — and RECOMMENDS
+  AGAINST ever fixing the parser to recognize the colon form, since doing
+  so would silently move currently-PASSING cells into SKIP for no
+  offsetting gain; the store mechanism already covers the one case the
+  colon form was trying to guard, more precisely. §7 records a
+  PRE-EXISTING, box-sensitivity population-pin mismatch this lane's fix
+  newly SURFACES on darwin (previously masked by the harder 7-cell
+  failure) rather than causes — named, not fixed, out of this lane's
+  scope.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

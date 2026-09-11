@@ -49,5 +49,24 @@ dev box) is a separate, gitignored cache under `build/oracle_cache/` — see
   differential's regeneration; this directory only makes the captured
   answers available.
 
+- `libpcre2-10.48/{match-at,captures}.tsv` — the C3 THREE-WAY VERDICT's
+  own store instance (`docs/design/c3_three_way.md`, lane `pyrole`,
+  2026-09-10/11; built by `tests/rxtsource/build_c3_store.py`). **A
+  deliberate DEVIATION from this file's own "only the reference version is
+  committed" rule above, directed by this lane's brief, not a mistake**:
+  the LOCAL Homebrew 10.48 answers to exactly seven `.rxt`-corpus-derived
+  questions (one `match-at`, six `captures` — `tests/harness/
+  verify_rxt.py`'s C3 tier's own known python-vs-expectation
+  divergences, cited file:line in `build_c3_store.py`'s own `QUESTIONS`
+  dict), captured over one local ctypes call (no ssh round trip — no
+  general remote match-at/captures adapter exists yet). Safe under the
+  design's own staleness-impossibility argument (`oracle_interface.md`
+  §8 Claim 2): `OracleId` carries `version`, so a box whose resolved
+  libpcre2 is NOT literally `10.48` gets a clean miss on every row here,
+  never a false confirmation — the same property that makes a version
+  BUMP safe protects a version MISMATCH across boxes identically. See
+  `c3_three_way.md` §4 for the full argument and §9 for what migrating to
+  a real 10.46 capture would need.
+
 Maintenance: update this file when an `OracleId` directory or a kind file is
 added, removed, or its capture population changes.

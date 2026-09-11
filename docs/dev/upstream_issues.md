@@ -803,3 +803,78 @@ lacks a name the UCD does have.
 re-swept — D26's re-measurement rule. `tests/registry/pcre2_check.c`'s
 shipped-name sweep is what would notice the day it starts accepting it: the
 name would appear as a real-but-unshipped property refused by the module.
+
+## U17 — python `re`: TWO capture-timing/parsing divergences from PCRE2, both
+now CI-actionable through the C3 oracle store (module-agnostic; found by
+lane pyrole, 2026-09-10/11, `docs/design/c3_three_way.md`)
+
+**Status: divergence-by-design.** Neither is a python bug in the
+`suspected-bug` sense — both are documented CPython `re` behaviour, one of
+them version-SENSITIVE in a way worth recording so a future python bump on
+this box does not silently repaint the same population.
+
+**(a) A non-leading global `(?i)` compiles under python <=3.10 (with a
+`DeprecationWarning`) and applies the flag to the WHOLE PATTERN, including
+text that PRECEDES it and any backreference that follows the group it sits
+in — where PCRE2 scopes `(?i)` to its ENCLOSING GROUP only.** Witness:
+`^((?i)a)\1$` on subject `"aA"`. PCRE2 (and pcrec): the group captures `a`
+case-insensitively, but `(?i)`'s scope ends at the group's close, so `\1`
+compares case-SENSITIVELY against the captured `a` — `"aA"` does not match.
+python `re` under 3.9/3.10 (measured on this box, and separately via a
+`python3.10` install): global-flag semantics win once ANY inline flag group
+appears anywhere in the pattern, so the whole match — `\1` included —
+runs case-insensitively and `"aA"` DOES match. **python 3.11+ closes this
+entirely** (measured via a `python3.11` install on the same box): a
+non-leading global `(?i)` is now a hard `re.error` ("global flags not at
+the start of the expression"), so the cell is simply python-inexpressible
+there (`skipped_no_python`, never a comparison) rather than a silent wrong
+answer. Corpus witness: `tests/backrefs/d27/caseless.rxt:37-41` (the
+`# pcre2-only: python refuses a non-leading global (?i)` block, whose
+comment already predicted the 3.11+ behaviour — it did not anticipate that
+an OLDER python would compile it wrong rather than refuse it).
+
+**(b) python's capture span for a repeated group's LAST slot inside a
+LAZY-quantified alternation changed between 3.9/3.10 and 3.11+, and the
+OLDER behaviour disagrees with PCRE2.** Witness:
+`((a)|ab){0,12}?c` on subject `"abc"` — PCRE2 (and pcrec) report group 1 as
+`(0,2)` (the group's span across its own iterations, matching the group's
+own re-entry semantics `backrefs_design.md` R32 measured as
+PUBLISH-AT-CLOSE); python <=3.10 (measured) reports `(1,2)` — only the LAST
+alternative's own contribution, discarding the earlier iteration's start.
+python 3.11+ (measured) reports `(0,2)`, matching PCRE2. The SAME shape
+recurs one construct over: **a negative lookahead's captured group is
+supposed to be DISCARDED when the assertion's body fails** (PCRE2's trail
+rewind on assertion failure, `lookaround_design.md`'s C2). python <=3.10
+RETAINS the group's value from the failed attempt (`(?!(a)x)ab` on `"ab"`:
+python reports group 1 as `(0,1)` where PCRE2/pcrec report it UNSET,
+`(-1,-1)`); python 3.11+ correctly discards it. Corpus witnesses:
+`tests/counterk/counterk.rxt:568/626/644/702` (the residue-12/17 lazy
+blocks) and `tests/lookaround/captures.rxt:59/67` (the C2 negative-lookahead
+block) — all four counterk cells and both lookaround cells measured
+CLEAN under python 3.10 AND 3.11 alike (this is NOT the same
+version-boundary as (a); it moved one release earlier, between 3.9 and
+3.10, as far as this box's three available interpreters can bisect it).
+
+**Why this entry exists, and what it changes.** Before this lane, a
+python-vs-expectation disagreement on any of these seven cells was scored a
+FAILURE by `tests/harness/verify_rxt.py`'s C3 tier, unconditionally — this
+box's own default `python3` (3.9.6) therefore failed C3 on all seven, every
+run, with no way to tell "python is wrong here" from "the .rxt expectation
+is a transcription error" apart from a human re-deriving each cell by hand.
+**C3 is redesigned** (`docs/design/c3_three_way.md`): a disagreement is
+checked against a COMMITTED libpcre2 answer (`oracle_store/
+libpcre2-10.48/`, captured via `tests/rxtsource/build_c3_store.py`) before
+being scored, and all seven of these cells are PCRE2-CONFIRMED (the
+expectation is right; python alone is what is behind) — so they are now
+counted in a separate, always-printed, never-failing INFO bucket. The
+mechanism is python-version-AGNOSTIC by construction: it does not know or
+care that these particular seven cells are a python-version artifact, only
+that the store confirms the expectation — so a future corpus cell hitting
+either divergence class needs no new code, only a new store capture.
+
+**Revisit when:** this box's `python3` (or `run_rxtsource_tests.sh`'s
+invoking interpreter anywhere it runs) moves to 3.11+ — the INFO count for
+these seven cells would then measure 0 there (python agrees with PCRE2
+directly, no store consultation reached), which is a LEGITIMATE pin move,
+not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
+`C3_INFO`/`C3_STOREUNCOVERED` re-pin comment for the box-by-box detail.

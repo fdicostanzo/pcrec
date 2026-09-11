@@ -11,12 +11,48 @@ against python re's `match.span(slot)`, identically for 'g' (live) and 'gp'
 (pending-VM) — pending-ness is a fact about what pcrec's CURRENT compiled
 artifact can deliver (RX_NCAPS), which this oracle has no notion of and does
 not need; it verifies the EXPECTATION itself, independent of whether
-tests/harness/run.sh can check it yet. See docs/testing.md."""
+tests/harness/run.sh can check it yet. See docs/testing.md.
+
+[C3 THREE-WAY VERDICT, 2026-09-10/11, lane pyrole] `docs/design/
+c3_three_way.md` is the design note; read it before touching any of the
+logic below. Python is narrowed to a TRANSCRIPTION-ERROR TRIPWIRE: its only
+remaining actionable value is INDEPENDENCE from the .rxt expectations (most
+of which were themselves written FROM libpcre2 answers), not correctness
+against PCRE2 (D26 is the compatibility target, not python `re`). So a
+python-vs-expectation disagreement is no longer scored a FAILURE by itself
+— it consults the COMMITTED oracle store (`tests/oracle/oracle_store.py`,
+`oracle_store/`, never a live library at check time) for a PCRE2 answer to
+the same question. Three outcomes, `_verdict_match_at`/`_verdict_captures`
+below: the store CONFIRMS the expectation (python was simply wrong, or
+python-version-sensitive, or genuinely inexpressive of PCRE2's semantics —
+counted in a separate, always-printed INFO bucket, never a failure, no gate
+on its count — modelled on `tests/thread/run_stackdepth_tests.sh`'s `record()`
+bucket); the store COVERS the question and DISAGREES TOO (neither oracle
+matches the expectation — a real transcription-tripwire FAILURE); or the
+store does not cover the question at all (a STORE-UNCOVERED clean miss —
+falls back to today's python-only verdict, i.e. FAILURE, counted in its own
+bucket so the population is visible rather than silently absorbed into an
+ordinary failure)."""
 import re
 import sys
 import os
 
-BASE_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "base"))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.normpath(os.path.join(_HERE, "..", "base"))
+_ROOT = os.path.normpath(os.path.join(_HERE, "..", ".."))
+sys.path.insert(0, os.path.join(_ROOT, "tests", "oracle"))
+import oracle_store as _ora  # noqa: E402
+
+# The C3 store instance this check consults (`tests/rxtsource/
+# build_c3_store.py`, `docs/design/c3_three_way.md`). A LOCAL Homebrew
+# capture, committed as a deliberate, briefed exception to `oracle_store/
+# CLAUDE.md`'s usual "only the reference version is committed" rule — see
+# that script's own header for why the exception is safe (OracleId.version
+# makes a box with a DIFFERENT local libpcre2 a clean miss, never a false
+# confirmation).
+C3_STORE_ROOT = os.path.join(_ROOT, "oracle_store")
+C3_STORE_ORACLE_NAME = "libpcre2"
+C3_STORE_ORACLE_VERSION = "10.48"
 
 def decode_subject(s):
     # s is the raw text between the outer quotes (quotes already stripped)
@@ -183,6 +219,88 @@ def declares_own_oracle(path):
     for x in seen:
         _OWN_ORACLE_CACHE[x] = hit
     return hit
+
+
+# ---------------------------------------------------------------------------
+# [C3 THREE-WAY VERDICT] the committed oracle store, consulted ONLY when
+# python's own verdict already disagrees with the corpus expectation — see
+# the module docstring and docs/design/c3_three_way.md. Never a live
+# library call (the store's whole point); a StoreCorruption from
+# oracle_store.lookup() is NOT caught here and propagates as a hard script
+# failure, per that module's own rule ("never silently absorbed").
+# ---------------------------------------------------------------------------
+
+def _c3_oracle_id(caseless):
+    return _ora.OracleId(C3_STORE_ORACLE_NAME, C3_STORE_ORACLE_VERSION,
+                          caseless=caseless)
+
+
+def _store_match_at(pattern, subject, startpos, caseless):
+    """Look up a `match-at` question. Returns `('match', (start, end))`,
+    `('nomatch', None)`, or `None` (a clean miss: no committed answer for
+    this exact question, i.e. STORE-UNCOVERED — includes a stored `giveup`
+    answer, which this check has no use for and cannot confirm anything
+    with)."""
+    ans = _ora.lookup(C3_STORE_ROOT, _c3_oracle_id(caseless), 'match-at',
+                       pattern=pattern, subject=subject, startpos=startpos)
+    if ans is None:
+        return None
+    verdict, start_s, end_s, _giveup_code = ans
+    if verdict == 'match':
+        return ('match', (int(start_s), int(end_s)))
+    if verdict == 'nomatch':
+        return ('nomatch', None)
+    return None
+
+
+def _store_captures(pattern, subject, startpos, nslots, caseless):
+    """Look up a `captures` question. Returns a list of `nslots` `(s, e)`
+    tuples (slot 0 is the whole match, matching `.rxt`'s own `g`/`gp` slot
+    numbering), or `None` (STORE-UNCOVERED)."""
+    ans = _ora.lookup(C3_STORE_ROOT, _c3_oracle_id(caseless), 'captures',
+                       pattern=pattern, subject=subject, startpos=startpos,
+                       nslots=nslots)
+    if ans is None:
+        return None
+    (pairs_str,) = ans
+    nums = [int(x) for x in pairs_str.split()] if pairs_str else []
+    return [(nums[2 * i], nums[2 * i + 1]) for i in range(len(nums) // 2)]
+
+
+def _verdict_match_at(pattern, subject, startpos, caseless, expect_match,
+                       expect_span):
+    """The three-way verdict for an `m`/`n`/`ms`/`ns` cell whose python
+    answer already disagrees with `expect_match`/`expect_span`. Returns one
+    of `'confirmed'` (INFO, not a failure), `'disagrees'` (a real FAILURE —
+    neither oracle matches the expectation) or `'uncovered'` (STORE-
+    UNCOVERED — falls back to a FAILURE, today's python-only verdict), plus
+    a short human-readable description of the store's own answer for the
+    message."""
+    looked_up = _store_match_at(pattern, subject, startpos, caseless)
+    if looked_up is None:
+        return 'uncovered', None
+    verdict, span = looked_up
+    if expect_match:
+        ok = (verdict == 'match' and span == expect_span)
+        desc = ("match %r" % (span,)) if verdict == 'match' else 'nomatch'
+    else:
+        ok = (verdict == 'nomatch')
+        desc = ("match %r" % (span,)) if verdict == 'match' else 'nomatch'
+    return ('confirmed' if ok else 'disagrees'), desc
+
+
+def _verdict_captures(pattern, subject, startpos, slot, caseless,
+                       expect_span):
+    """The three-way verdict for a `g`/`gp` cell. `nslots` is derived from
+    `slot` (`slot + 1` pairs — slot 0 is always the whole match, matching
+    the store's own `((a)|ab){0,12}?c` capture questions), not carried by
+    the caller, so every `.rxt` slot number maps onto exactly one store
+    question shape."""
+    pairs = _store_captures(pattern, subject, startpos, slot + 1, caseless)
+    if pairs is None:
+        return 'uncovered', None
+    got = pairs[slot]
+    return ('confirmed' if got == expect_span else 'disagrees'), got
 
 
 IDENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
@@ -657,7 +775,7 @@ def run_supervised(files, timeout, min_files, allow_timeouts=0):
 
     SKIP_KEYS = ('pcre2-only', 'giveup', 'composed', 'no-python-expression',
                  'perr-python-accepts', 'own-oracle')
-    tot_pass = tot_fail = tot_skip = 0
+    tot_pass = tot_fail = tot_skip = tot_info = tot_storeuncovered = 0
     tot_reason = {k: 0 for k in SKIP_KEYS}
     timed_out = []
     crashed = []
@@ -679,6 +797,12 @@ def run_supervised(files, timeout, min_files, allow_timeouts=0):
             if line.startswith('PASS=') and ' FAIL=' in line:
                 a, b = line.split(' FAIL=')
                 got['pass'] = int(a[len('PASS='):]); got['fail'] = int(b)
+            elif line.startswith('INFO='):
+                # "INFO=<n> (...)" -- take the leading integer only.
+                got['info'] = int(line[len('INFO='):].split(' ', 1)[0])
+            elif line.startswith('STOREUNCOVERED='):
+                got['storeuncovered'] = int(
+                    line[len('STOREUNCOVERED='):].split(' ', 1)[0])
             elif line.startswith('SKIP='):
                 head = line[len('SKIP='):].split(' ', 1)[0]
                 got['skip'] = int(head)
@@ -700,10 +824,15 @@ def run_supervised(files, timeout, min_files, allow_timeouts=0):
             continue
         tot_pass += got['pass']; tot_fail += got['fail']
         tot_skip += got.get('skip', 0)
+        tot_info += got.get('info', 0)
+        tot_storeuncovered += got.get('storeuncovered', 0)
         for key in SKIP_KEYS:
             tot_reason[key] += got.get(key, 0)
-        # a child's own failure detail is already on its stdout
-        if got['fail'] or r.returncode != 0:
+        # a child's own failure/info detail is already on its stdout.
+        # [C3 THREE-WAY VERDICT] an INFO cell must surface even on an
+        # otherwise-clean (returncode 0, fail 0) child — "always printed"
+        # cannot depend on whether the same file also happened to fail.
+        if got['fail'] or got.get('info', 0) or r.returncode != 0:
             for ln in out.splitlines():
                 if ln.startswith('===') or ln.startswith('  line '):
                     print(ln)
@@ -711,6 +840,8 @@ def run_supervised(files, timeout, min_files, allow_timeouts=0):
     print()
     print("=== Summary ===")
     print(f"PASS={tot_pass} FAIL={tot_fail}")
+    print(f"INFO={tot_info} (python-divergent, pcre2-confirmed; never a failure)")
+    print(f"STOREUNCOVERED={tot_storeuncovered} (of {tot_fail} FAIL above; the rest are real store-confirmed disagreements)")
     print(f"FILES={len(files)}")
     print("SKIP=%d (%s)" % (tot_skip, ' '.join(
         "%s=%d" % (k, tot_reason[k]) for k in SKIP_KEYS)))
@@ -820,6 +951,21 @@ def main():
 
     total_pass = 0
     total_fail = 0
+    # [C3 THREE-WAY VERDICT] a python-vs-expectation disagreement the C3
+    # oracle store CONFIRMS (i.e. PCRE2 agrees with the expectation, python
+    # alone was wrong) is counted here, separately from PASS/FAIL/SKIP —
+    # never a failure, always printed, no gate on its count. Modelled on
+    # tests/thread/run_stackdepth_tests.sh's `record()` bucket: a fourth
+    # verdict that is neither a pass, a fail, nor a skip.
+    total_info = 0
+    # Of the failures counted in total_fail, how many are STORE-UNCOVERED
+    # (the C3 store has no committed answer for this exact question, so the
+    # verdict fell back to today's python-only FAILURE) rather than a real
+    # transcription-tripwire disagreement (the store covers the question
+    # AND disagrees with the expectation too). Counted so the population is
+    # visible rather than silently folded into an ordinary failure — see
+    # docs/design/c3_three_way.md.
+    total_storeuncovered = 0
     # [DD-13b.W1.1 / r45chk F13(d)] THE SKIP TOTAL. Until now this script
     # printed a per-file skip line only `if skipped:` and no aggregate at
     # all, so "the same number of cases were skipped" -- which is the
@@ -878,6 +1024,7 @@ def main():
         # branch below and never read anywhere -- dead, removed with it.
         cur_reflags = 0
         file_failures = []
+        file_info = []
 
         for lineno, kind, data in entries:
             if kind == 'pattern':
@@ -1024,10 +1171,20 @@ def main():
                     continue
                 else:
                     mo = compiled.search(subj)
-                    if mo is None:
-                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected match [{start},{end}) but got no match"))
-                    elif mo.span() != (start, end):
-                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected span ({start},{end}) but got {mo.span()}"))
+                    if mo is None or mo.span() != (start, end):
+                        got_desc = "no match" if mo is None else f"span {mo.span()}"
+                        v, desc = _verdict_match_at(
+                            cur_pattern, subj, 0, bool(cur_reflags & re.IGNORECASE),
+                            True, (start, end))
+                        if v == 'confirmed':
+                            file_info.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: python got {got_desc} (expected match [{start},{end})); the C3 oracle store CONFIRMS the expectation ({desc}) -- informational, not a failure"))
+                            total_info += 1
+                            continue
+                        elif v == 'uncovered':
+                            total_storeuncovered += 1
+                            file_failures.append((lineno, f"STORE-UNCOVERED: pattern {cur_pattern!r} subject {subj!r}: expected match [{start},{end}) but python got {got_desc}"))
+                        else:
+                            file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected match [{start},{end}) but python got {got_desc} AND the C3 oracle store disagrees too ({desc})"))
                     else:
                         total_pass += 1
                         continue
@@ -1055,7 +1212,18 @@ def main():
                 else:
                     mo = compiled.search(subj)
                     if mo is not None:
-                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected no match but got {mo.span()}"))
+                        v, desc = _verdict_match_at(
+                            cur_pattern, subj, 0, bool(cur_reflags & re.IGNORECASE),
+                            False, None)
+                        if v == 'confirmed':
+                            file_info.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: python got match {mo.span()} (expected no match); the C3 oracle store CONFIRMS the expectation ({desc}) -- informational, not a failure"))
+                            total_info += 1
+                            continue
+                        elif v == 'uncovered':
+                            total_storeuncovered += 1
+                            file_failures.append((lineno, f"STORE-UNCOVERED: pattern {cur_pattern!r} subject {subj!r}: expected no match but python got {mo.span()}"))
+                        else:
+                            file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected no match but python got {mo.span()} AND the C3 oracle store disagrees too ({desc})"))
                     else:
                         total_pass += 1
                         continue
@@ -1082,10 +1250,20 @@ def main():
                     continue
                 else:
                     mo = compiled.search(subj, p)
-                    if mo is None:
-                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected match [{start},{end}) but got no match"))
-                    elif mo.span() != (start, end):
-                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected span ({start},{end}) but got {mo.span()}"))
+                    if mo is None or mo.span() != (start, end):
+                        got_desc = "no match" if mo is None else f"span {mo.span()}"
+                        v, desc = _verdict_match_at(
+                            cur_pattern, subj, p, bool(cur_reflags & re.IGNORECASE),
+                            True, (start, end))
+                        if v == 'confirmed':
+                            file_info.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: python got {got_desc} (expected match [{start},{end})); the C3 oracle store CONFIRMS the expectation ({desc}) -- informational, not a failure"))
+                            total_info += 1
+                            continue
+                        elif v == 'uncovered':
+                            total_storeuncovered += 1
+                            file_failures.append((lineno, f"STORE-UNCOVERED: pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected match [{start},{end}) but python got {got_desc}"))
+                        else:
+                            file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected match [{start},{end}) but python got {got_desc} AND the C3 oracle store disagrees too ({desc})"))
                     else:
                         total_pass += 1
                         continue
@@ -1113,7 +1291,18 @@ def main():
                 else:
                     mo = compiled.search(subj, p)
                     if mo is not None:
-                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected no match but got {mo.span()}"))
+                        v, desc = _verdict_match_at(
+                            cur_pattern, subj, p, bool(cur_reflags & re.IGNORECASE),
+                            False, None)
+                        if v == 'confirmed':
+                            file_info.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: python got match {mo.span()} (expected no match); the C3 oracle store CONFIRMS the expectation ({desc}) -- informational, not a failure"))
+                            total_info += 1
+                            continue
+                        elif v == 'uncovered':
+                            total_storeuncovered += 1
+                            file_failures.append((lineno, f"STORE-UNCOVERED: pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected no match but python got {mo.span()}"))
+                        else:
+                            file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected no match but python got {mo.span()} AND the C3 oracle store disagrees too ({desc})"))
                     else:
                         total_pass += 1
                         continue
@@ -1144,13 +1333,25 @@ def main():
                     else:
                         got = mo.span(slot)
                         if got != (start, end):
-                            file_failures.append((lineno, f"pattern {cur_pattern!r} subject {last_case_subj!r} startpos {last_case_pos}: group slot {slot} expected ({start},{end}) but got {got}"))
+                            v, store_got = _verdict_captures(
+                                cur_pattern, last_case_subj, last_case_pos,
+                                slot, bool(cur_reflags & re.IGNORECASE),
+                                (start, end))
+                            if v == 'confirmed':
+                                file_info.append((lineno, f"pattern {cur_pattern!r} subject {last_case_subj!r} startpos {last_case_pos}: group slot {slot} python got {got} (expected ({start},{end})); the C3 oracle store CONFIRMS the expectation ({store_got}) -- informational, not a failure"))
+                                total_info += 1
+                                continue
+                            elif v == 'uncovered':
+                                total_storeuncovered += 1
+                                file_failures.append((lineno, f"STORE-UNCOVERED: pattern {cur_pattern!r} subject {last_case_subj!r} startpos {last_case_pos}: group slot {slot} expected ({start},{end}) but python got {got}"))
+                            else:
+                                file_failures.append((lineno, f"pattern {cur_pattern!r} subject {last_case_subj!r} startpos {last_case_pos}: group slot {slot} expected ({start},{end}) but python got {got} AND the C3 oracle store disagrees too ({store_got})"))
                         else:
                             total_pass += 1
                             continue
             total_fail += 1
 
-        per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, len(file_failures))
+        per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, len(file_failures), len(file_info))
         total_skip += skipped
         total_skip_pcre2_only += skipped_pcre2_only
         total_skip_giveup += skipped_giveup
@@ -1164,6 +1365,14 @@ def main():
                   f"composed {skipped_composed}, no-python-expression "
                   f"{skipped_no_python}, perr-python-accepts "
                   f"{skipped_perr_accept}, own-oracle {skipped_own_oracle})")
+        # [C3 THREE-WAY VERDICT] ALWAYS PRINTED, per file, same shape as the
+        # FAILURES block below -- an informational cell that is silent by
+        # default is exactly the "quiet bucket" shape this project's own
+        # K35 lesson warns about (docs/dev/learnings.md §3).
+        if file_info:
+            print(f"=== {fname}: {len(file_info)} INFO (python-divergent, pcre2-confirmed by the C3 oracle store; NOT failures) ===")
+            for lineno, msg in file_info:
+                print(f"  line {lineno}: {msg}")
         if file_failures:
             print(f"=== {fname}: {len(file_failures)} FAILURES ===")
             for lineno, msg in file_failures:
@@ -1171,20 +1380,37 @@ def main():
 
     print()
     print("=== Summary ===")
-    grand_m = grand_n = grand_ms = grand_ns = grand_p = grand_g = grand_gp = grand_f = 0
+    grand_m = grand_n = grand_ms = grand_ns = grand_p = grand_g = grand_gp = grand_f = grand_i = 0
     for fname in sorted(per_file_counts):
-        m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, fails = per_file_counts[fname]
+        m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, fails, infos = per_file_counts[fname]
         grand_m += m_count; grand_n += n_count
         grand_ms += ms_count; grand_ns += ns_count
         grand_p += perr_count; grand_f += fails
         grand_g += g_count; grand_gp += gp_count
+        grand_i += infos
         total = m_count + n_count + ms_count + ns_count + perr_count + g_count + gp_count
         status = "OK" if fails == 0 else f"{fails} FAIL"
+        if infos:
+            status += f" ({infos} INFO)"
         print(f"  {fname:28s} m={m_count:3d} n={n_count:3d} ms={ms_count:3d} ns={ns_count:3d} perr={perr_count:3d} g={g_count:3d} gp={gp_count:3d} total={total:3d}  [{status}]")
     print()
     grand_total = grand_m + grand_n + grand_ms + grand_ns + grand_p + grand_g + grand_gp
     print(f"TOTAL: m={grand_m} n={grand_n} ms={grand_ms} ns={grand_ns} perr={grand_p} g={grand_g} gp={grand_gp} cases={grand_total}")
     print(f"PASS={total_pass} FAIL={total_fail}")
+    # [C3 THREE-WAY VERDICT] the fourth, always-printed, never-gated bucket
+    # (docs/design/c3_three_way.md): python disagreed with the corpus
+    # expectation and the committed C3 oracle store CONFIRMS the
+    # expectation is right anyway -- counted so the population is visible,
+    # never folded into PASS (python did not verify it) or FAIL (PCRE2, the
+    # compatibility target, agrees with pcrec).
+    print(f"INFO={total_info} (python-divergent, pcre2-confirmed; never a failure)")
+    # Of FAIL above, how many are a STORE-UNCOVERED clean miss (the C3 store
+    # has no committed answer for this exact question) rather than a real
+    # disagreement the store also confirms is wrong. A nonzero count here
+    # is not itself an alarm -- it is exactly today's python-only verdict,
+    # preserved as the safe fallback -- but a growing one names exactly
+    # which cells `tests/rxtsource/build_c3_store.py` should grow to cover.
+    print(f"STOREUNCOVERED={total_storeuncovered} (of {total_fail} FAIL above; the rest are real store-confirmed disagreements)")
     # the two numbers C3 pins. FILES is here for the same reason the skip
     # total is: a check that compares "the same verified count" against a
     # run that silently discovered fewer files is comparing two different

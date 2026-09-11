@@ -1,0 +1,8 @@
+# oracle_name=libpcre2 oracle_version=10.48 utf=0 caseless=0 match_limit=10000000 depth_limit=10000000 heap_limit=20000000 store_format_version=1 rows=6 captured_at=2026-09-11T03:27:21Z captured_by=Franks-MacBook-Pro.local command=tests/rxtsource/build_c3_store.py local (commit 179c6bae)
+# question_hash	question	pairs
+412e9f7e25216cc7	((a)|ab){0,17}?c	zabc	0	2	1 4 1 3
+5865c18da966be46	((a)|ab){0,12}?c	abc	0	2	0 3 0 2
+a3c635c54fab8d9b	((a)|ab){0,12}?c	zabc	0	2	1 4 1 3
+bcde8c75b70fed6a	(?!(a)x)ab	ab	0	2	0 2 -1 -1
+e3d24e6d13523b53	(?!(a)x)(a)	ab	0	2	0 1 -1 -1
+f4904c42af637fbe	((a)|ab){0,17}?c	abc	0	2	0 3 0 2
