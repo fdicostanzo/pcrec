@@ -280,7 +280,13 @@ for label in "patterns generated" "module construct patterns" "both accept" "bot
     # optimizer quirk (anchor in {0} group): 0" -- a naive "first number on
     # the line" grab would read the quirk-name's literal "0" forever and
     # never notice a real nonzero count).
-    actual="$(grep -ioP "${label}[^:]*:\s*\K[0-9]+" "$GATEOUT" | head -1)"
+    # BSD grep has no -P (Perl regex, needed for \K/\s) and errors outright
+    # ("invalid option -- P") rather than degrading -- every label read back
+    # MISSING. Rewritten in portable ERE: grab the whole "label...: NNN"
+    # match with -E, then pull the trailing digits off it, so no lookbehind
+    # is needed.
+    actual="$(grep -ioE "${label}[^:]*:[[:space:]]*[0-9]+" "$GATEOUT" \
+              | head -1 | grep -oE '[0-9]+$')"
     if [ -z "$actual" ]; then
         echo "  $label: expected=${EXPECT[$label]} actual=MISSING (label vanished from fuzz.py's summary)" >&2
         drift=1

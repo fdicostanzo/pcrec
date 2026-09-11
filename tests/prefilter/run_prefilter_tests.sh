@@ -250,7 +250,11 @@ build_run() {   # build_run <name>
     mkdir -p "$d"
     cp "$WORKDIR/$name.c" "$d/gen.c"
     [ -f "$WORKDIR/$name.h" ] && cp "$WORKDIR/$name.h" "$d/gen.h"
-    sed -i "s/#include \"$name\.h\"/#include \"gen.h\"/" "$d/gen.c"
+    # BSD sed -i requires a backup-suffix argument (even empty); without one
+    # it consumes the next argument as the suffix and fails outright rather
+    # than editing in place (tests/mrl/run_mrl_tests.sh's identical rewrite
+    # already uses this portable form).
+    sed -i.bak "s/#include \"$name\.h\"/#include \"gen.h\"/" "$d/gen.c" && rm -f "$d/gen.c.bak"
     # shellcheck disable=SC2086
     gen_cc "prefilter $name" "${CC:-gcc}" ${GENCFLAGS:-} -O1 -w -I "$d" \
            -o "$d/t" "$DRV" "$d/gen.c" >/dev/null 2>&1 || { echo "cc-fail"; return 9; }
