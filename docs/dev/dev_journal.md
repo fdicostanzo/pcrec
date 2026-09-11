@@ -22767,3 +22767,8 @@ defeated — needs a rethink, maybe watch ONLY the specific log file).
 (2) An executor quoting a discrepancy verbatim without diagnosing
 (uprops 47-vs-26) let the manager resolve it in one line — the
 quote-not-diagnose discipline works.
+
+**Session close ~16:0x EDT**: wake.md rewritten (close-out ritual +
+tonight's timing pair + design-note gate all queued there); heartbeat
+cron deleted; all lanes/watchers/background tasks stopped (verified);
+worktrees/tt4mtime deliberately kept for tonight's runs. Main pushed.
