@@ -38,7 +38,10 @@ import math
 import kit
 
 MAXK = 64                # max intervals a single section may hold
-DISP_BYTES = 12.0        # modelled .text bytes for one dispatch-tree node
+DISP_BYTES = 0.0         # the dispatch node's bytes are INSIDE the
+                         # measured per-section text slopes (each
+                         # synthetic arm grew its dispatch tree too),
+                         # so charging it again would double-count
 DISP_OPS = 1.0           # modelled marginal probe cost of one more section
 
 
@@ -81,12 +84,20 @@ class CostModel:
         best = None
 
         def offer(nm, ro, ops):
+            """BYTES ARE BYTES.  The objective counts `.rodata` AND `.text`:
+            the first cost model counted only `.rodata`, and the first full
+            Pareto sweep came back with the pure-size policy DOMINATED on
+            both axes by the middle one — 9,672 bytes / 1,302 ops against
+            4,311 / 111 on the same set.  Range-compare chains are free in
+            `.rodata` and 12 bytes an interval in `.text`, and a model that
+            cannot see that is not measuring size."""
             nonlocal best
             if not self._ok(nm):
                 return
-            v = ro + lam * ops
+            tot = ro + kit.text_cost(nm, k)
+            v = tot + lam * ops
             if best is None or v < best[3]:
-                best = (ro, ops, nm, v)
+                best = (tot, ops, nm, v)
 
         if k == 1:
             offer("ALL", 0, 0.0)

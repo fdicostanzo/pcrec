@@ -35,8 +35,20 @@
 #define OP_CMP  1.0
 #define OP_LOAD 3.0
 #define OP_DEP  5.0
-#define DISP_BYTES 12.0
+#define DISP_BYTES 0.0   /* inside the measured per-section text slopes */
 #define DISP_OPS   1.0
+
+/* MEASURED per-section `.text`, bytes — must equal kit.py's TEXT_BYTES /
+ * TEXT_PER_INTERVAL.  Recovered two ways (calibrate.py's OLS over real sweep
+ * rows, calibrate_direct.py's slope over synthetic single-form matchers); the
+ * direct slopes are adopted, see kit.py's comment for why. */
+#define TX_ALL     22.0
+#define TX_CUBES   24.0
+#define TX_MASK64  24.0
+#define TX_BITMAP  60.0
+#define TX_PAGE64  24.0
+#define TX_BSEARCH 104.0
+#define TX_RANGES(k) (12.0 + 12.0 * (double)(k))
 
 #define RANGES_MAXK  8
 #define CUBES_MAXW   256
@@ -186,32 +198,39 @@ static double sect_cost(int i, int j, double lam, int *pform,
     int k = j - i + 1;
     double bestv = 1e300; int bf = F_NONE; double bro = 0, bops = 0;
 
-#define OFFER(F, RO, OPS) do {                                  \
-        double v_ = (double)(RO) + lam * (double)(OPS);          \
-        if (v_ < bestv) { bestv = v_; bf = (F);                  \
-                          bro = (double)(RO); bops = (double)(OPS); } \
+/* BYTES ARE BYTES: the objective counts .rodata AND .text.  The first cost
+ * model counted only .rodata and the pure-size policy came out dominated on
+ * both axes; RANGES is free in .rodata and 12 bytes an interval in .text. */
+#define OFFER(F, RO, TX, OPS) do {                                      \
+        double tot_ = (double)(RO) + (double)(TX);                      \
+        double v_ = tot_ + lam * (double)(OPS);                         \
+        if (v_ < bestv) { bestv = v_; bf = (F);                         \
+                          bro = tot_; bops = (double)(OPS); }           \
     } while (0)
 
-    if (k == 1) OFFER(F_ALL, 0, 0.0);
-    if (k <= RANGES_MAXK) OFFER(F_RANGES, 0, k * (OP_ALU + OP_CMP));
-    if (w <= 64) OFFER(F_MASK64, 0, 2 * OP_ALU + OP_CMP);
+    if (k == 1) OFFER(F_ALL, 0, TX_ALL, 0.0);
+    if (k <= RANGES_MAXK) OFFER(F_RANGES, 0, TX_RANGES(k), k * (OP_ALU + OP_CMP));
+    if (w <= 64) OFFER(F_MASK64, 0, TX_MASK64, 2 * OP_ALU + OP_CMP);
     if (w <= CUBES_MAXW && k >= 2) {
         unsigned care, val;
-        if (cube_of(i, j, &care, &val)) OFFER(F_CUBES, 0, OP_ALU + OP_CMP);
+        if (cube_of(i, j, &care, &val))
+            OFFER(F_CUBES, 0, TX_CUBES, OP_ALU + OP_CMP);
     }
-    OFFER(F_BITMAP, (w + 7) / 8, OP_LOAD + 3 * OP_ALU);
+    OFFER(F_BITMAP, (w + 7) / 8, TX_BITMAP, OP_LOAD + 3 * OP_ALU);
     if (w >= 128) {
         unsigned np, nl;
         page_price(i, j, &np, &nl);
         unsigned idxw = (nl <= 256) ? 1 : 2;
-        OFFER(F_PAGE64, np * idxw + nl * 8, OP_LOAD + OP_DEP + 4 * OP_ALU);
+        OFFER(F_PAGE64, np * idxw + nl * 8, TX_PAGE64,
+              OP_LOAD + OP_DEP + 4 * OP_ALU);
     }
     if (k >= BSEARCH_MINK) {
         /* log2 must be the REAL log, not a floor: section.py uses
          * math.log2 and an integer floor here made the two implementations
          * disagree on `L` at lam=16 (27 sections vs 28) — the first thing
          * the cross-check caught. */
-        OFFER(F_BSEARCH, 8 * k, log2((double)k) * (OP_LOAD + 2 * OP_CMP));
+        OFFER(F_BSEARCH, 8 * k, TX_BSEARCH,
+              log2((double)k) * (OP_LOAD + 2 * OP_CMP));
     }
 #undef OFFER
     *pform = bf; *pro = bro; *pops = bops;

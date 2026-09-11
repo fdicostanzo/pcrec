@@ -51,6 +51,41 @@ only to generate candidates for the measurement to rank.
 
 import math
 
+# MEASURED per-section `.text` cost, bytes.  NOT chosen — recovered two ways
+# (`calibrate.py`, an OLS over 72 real sweep rows, R2 = 0.9996; and
+# `calibrate_direct.py`, a slope over synthetic single-form matchers) and the
+# disagreement between the two routes is itself reported in the memo: the
+# synthetic route's sections are structurally IDENTICAL, so gcc shares code
+# between them and the slope is a best case, while the OLS sees real
+# heterogeneous sections and reads roughly 2x higher.  The direct slopes are
+# adopted here because only they can price a form the population never
+# chooses (`CUBES`) and only they expose the per-interval scaling of
+# `RANGES`, which is the term whose absence made the pure-size policy come
+# out DOMINATED on both axes in the first sweep.
+TEXT_BYTES = {
+    "ALL": 22.0,
+    "RANGES": 12.0,        # base; RANGES is the one form LINEAR in k, below
+    "CUBES": 24.0,
+    "MASK64": 24.0,
+    "BITMAP": 60.0,
+    "PAGE64": 24.0,
+    "BSEARCH": 104.0,      # flat in k: a call to the one shared helper
+}
+TEXT_PER_INTERVAL = {"RANGES": 12.0}
+
+
+def text_cost(form, k):
+    """Modelled `.text` bytes for one section of `form` holding `k` intervals.
+
+    `discover.c`'s TX_* macros must match this exactly.  They did not, once:
+    an extra fixed term here made RANGES cost 24 bytes more in Python than in
+    C, and the two implementations then chose different sectionings on 12 of
+    36 cells — every one of them at the pure-size policy, where RANGES is the
+    form under contention.  `crosscheck.py` is what saw it."""
+    return (TEXT_BYTES.get(form, 24.0)
+            + TEXT_PER_INTERVAL.get(form, 0.0) * k)
+
+
 # Model weights.  Deliberately crude and deliberately NOT load-bearing: the
 # sectioning DP uses them to order candidates, the stopwatch ranks the result.
 # `LOAD` is charged above an ALU op because a leaf that reads memory is the

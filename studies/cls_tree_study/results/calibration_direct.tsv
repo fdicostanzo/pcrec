@@ -1,0 +1,10 @@
+# per-form .text measured as a SLOPE between N=8 and N=32
+# cc=gcc-16
+form	text_n8	text_n32	rodata_n32	text_per_section	ols_per_section	delta	note
+ALL	184	712	0	22.0	26.8	-4.8	
+RANGES	424	1672	0	52.0	117.3	-65.3	DISAGREE with OLS
+CUBES	196	772	0	24.0	0.0	+24.0	OLS UNIDENTIFIED (0 sections in the population)
+MASK64	232	808	0	24.0	85.9	-61.9	DISAGREE with OLS
+BITMAP	452	1892	3392	60.0	47.8	+12.2	
+PAGE64	200	776	0	24.0	57.3	-33.3	DISAGREE with OLS
+BSEARCH	844	3340	3840	104.0	86.1	+17.9	
