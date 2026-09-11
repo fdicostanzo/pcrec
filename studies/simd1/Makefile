@@ -1,4 +1,11 @@
-CC ?= cc
+# No `CC ?=` line: `cc` is also make's own built-in default, so the line
+# used to be an inert no-op (docs/dev/lanes/clstudy_report.md's tree-wide
+# table: "harmless by coincidence"). This study targets x86-64/AVX2 Linux
+# specifically (CLAUDE.md: "All numbers: Zen 1, GCC 15.2 -- re-measure
+# elsewhere") -- a box entirely outside this repo's own darwin/gcc-16
+# toolchain pin, and it does not even build here (no AVX2, no x86-64). Any
+# GCC or clang with -mavx2/gnu11 support works; there is no "this repo's
+# real compiler" to guard toward. See [CC-ORIGIN], docs/dev/plan.md.
 CFLAGS ?= -O3 -g -std=gnu11 -Wall -Wextra -mavx2
 
 ifeq ($(WERROR),1)

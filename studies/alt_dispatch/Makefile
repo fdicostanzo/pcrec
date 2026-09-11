@@ -2,7 +2,17 @@
 # no dependency on pcrec's own build (studies/CLAUDE.md's standing rule --
 # never built by the top-level `make`, never run by `make test`).
 
-CC      ?= gcc
+# `CC ?= gcc` DOES NOT WORK: make defines CC itself, so `?=` never fires and
+# this fallback has never once been used -- the 2026-09-03 timing sweep's
+# "gcc 15" (docs/design/alt_dispatch_study.md's machine/date line) worked
+# only because plain `cc` on that box's platform happened to resolve to real
+# gcc; on this Mac the same silent `?=` would build with Apple clang instead.
+# See [CC-ORIGIN], docs/dev/plan.md, and studies/cls_tree_study/Makefile's
+# own copy of this comment. Overriding only make's DEFAULT keeps
+# `make CC=clang` and an exported CC working.
+ifeq ($(origin CC),default)
+CC := gcc
+endif
 CFLAGS  ?= -O2 -std=c11 -D_POSIX_C_SOURCE=199309L -Wall -Wextra -g
 LDFLAGS ?= -lm
 

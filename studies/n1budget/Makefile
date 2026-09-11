@@ -1,4 +1,15 @@
-CC ?= cc
+# The written fallback here used to be `cc` -- a no-op guard, since `cc` is
+# also make's own built-in default. Set to gcc-16 instead: this study's own
+# CLAUDE.md documents "macOS arm64, gcc-16 16.2.0, measured" as what the
+# committed n1_data.tsv/n1_summary.txt were actually taken with (and its
+# README's reproduce recipe always passed `make CC=gcc-16` explicitly,
+# never relying on this fallback) -- so a bare `make` now gets the compiler
+# the numbers were measured with, not Apple clang. See [CC-ORIGIN],
+# docs/dev/plan.md, and studies/cls_tree_study/Makefile's own copy of this
+# comment.
+ifeq ($(origin CC),default)
+CC := gcc-16
+endif
 CFLAGS ?= -O1 -g -std=gnu11 -Wall -Wextra
 ROOT := ../..
 LIB  := $(ROOT)/build/libpcrec.a
