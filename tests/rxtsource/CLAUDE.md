@@ -363,3 +363,12 @@ shipped with nothing exercising them.
   compared against the bench's own `.rx` files, because a provenance header
   is a CLAIM and a claim nothing checks is a comment. `PCREC_BENCH_PATTERNS`
   overrides the path.
+
+- `record()` / the darwin pin RECORD (2026-09-11, manager landing-bar,
+  post-pyrole): the C3 population-pin comparison asserts only where its
+  pinned values are native (the Linux reference box, I-61's numbers);
+  on darwin the deltas print as a counted `RECORD:` line every run (the
+  tests/thread run_stackdepth_tests.sh shape) — the box skew stays
+  visible without fabricating a verdict, and the reconciliation check
+  (sums = census) stays HARD on every box, so a real local movement
+  still fails loudly. Summary gained a `checks recorded:` line.
