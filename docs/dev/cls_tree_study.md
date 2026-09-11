@@ -29,7 +29,7 @@ The brief asks four things. In one line each, before the evidence:
    the worst real set, in C, single-threaded. **The cache is NOT triggered**
    (§6).
 4. **The property-testing exploit of provenance-blindness?** Composition
-   identities as a free oracle, on arbitrary unreachable sets: 480 cells,
+   identities as a free oracle, on arbitrary unreachable sets: 438 cells,
    1,114,112 code points each, zero mismatches (§7).
 
 And the headline the brief did not ask for: **`\p{L}` under `-e utf8` costs
@@ -196,12 +196,40 @@ for `{x, x^0x01}`, for a four-member set free in two bits, and for the
 classifier can see. This is CONSTITUTIONAL CONSTRAINT 1 discharged as a
 measurement rather than as a principle.
 
+**And the general form covers TWICE the population the special case does.**
+`CUBES` is chosen for 8 of the 41 corpus byte classes, and only four of those
+eight are case-fold pairs:
+
+| set | members | the one cube, absolutely | today's `cls-fold` classifier |
+|---|---|---|---|
+| `bc017` | `{A,a}` | `(c \| 0x20) == 'a'` | **sees it** — `(lo^hi)==0x20`, both letters |
+| `bc011` | `{S,s}` | `(c \| 0x20) == 's'` | **sees it** |
+| `bc033` | `{Z,z}` | `(c \| 0x20) == 'z'` | **sees it** |
+| `bc035` | `{B,b}` | `(c \| 0x20) == 'b'` | **sees it** |
+| `bc018` | `{a,c}` | `(c & ~0x02) == 'a'` | **blind** — xor is 0x02, not 0x20 |
+| `bc032` | `{g,k}` | `(c & ~0x04) == 'g'` | **blind** — xor is 0x04 |
+| `bc019` | `{A,B,a,b}` | `(c & ~0x21) == 'A'` | **blind** — not a pair at all; two free bits |
+| `bc024` | (2 sections) | `ALL` + one cube | **blind** |
+
+The four "blind" rows are emitted today as 32-byte bitmap tables plus a
+load-shift-and. The kit emits each as one AND and one compare with no table,
+and it reaches all eight through the same O(k) routine. **The shipped special
+case covers half of its own general form's population in this tree's own
+corpus** — which is the general-mechanisms rule (memory
+`pcrec-general-mechanisms-not-special-cases`) stated as a count rather than
+as a principle.
+
 The other byte-tier result is `MASK64`. `bc000` is `\w` (4 intervals, 63
 members, span 75): the kit emits **two sections, 56 bytes of `.text`, zero
 `.rodata`**, against the 32-byte bitmap table plus load that pcrec emits for
-a bitmap-class site today. Across the 41 corpus byte classes the kit's
-matchers are **28–64 bytes of pure `.text` with no table at any policy** —
-the whole byte-class pool disappears.
+a bitmap-class site today.
+
+**Across the whole byte-class population the tables disappear.** At the
+middle policy the 41 sets compile to **1,584 bytes of `.text` and exactly
+ZERO bytes of `.rodata`**, 16–68 bytes per class, in 82 sections total (69
+`ALL`, 8 `CUBES`, 5 `MASK64`). The corpus carries **319 byte-class sites**
+across those 41 distinct sets; every one of them is a 32-byte table today.
+246 of 246 byte-class cells verify exhaustively.
 
 ---
 
@@ -395,8 +423,10 @@ dial read a "this came from `\p`" or "this came from caseless expansion" tag,
 `A ∪ B` and `kit(A) || kit(B)` would be entitled to differ and the identity
 would not be a law to test against. Constraint 1 buys the test.
 
-**Result: 480 cells, every one comparing all 1,114,112 code points, zero
-mismatches**, across 4 operators × 3 policies × 40 generated pairs.
+**Result: 438 cells, every one comparing all 1,114,112 code points — 488
+million compared answers — with ZERO mismatches**, across 4 operators × 3
+policies × 40 generated pairs (the shortfall from 480 is compositions that
+came out empty, which are skipped rather than counted).
 
 Two caveats stated rather than buried: the composed set `C` is normalized to
 pcrec's own sorted/disjoint/non-adjacent invariant before discovery (the kit

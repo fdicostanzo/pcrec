@@ -166,4 +166,28 @@ re-measure before load-bearing use.
   give-up codes). Backs `docs/dev/tt4m_darwin_validation.md`. See its own
   CLAUDE.md (`make check` is a smoke test, not the load-bearing sweep).
 
+- `cls_tree_study/` — [CLS-TREE]'s STUDY (lane clstudy, 2026-09-11; study
+  only, nothing under `src/`/`tests/`/`docs/spec/`): does a class matcher
+  COMPOSED PER-SECTION from a small kit of representations, statically
+  selected, beat today's byte-automaton — measured over the 312 generated
+  `unicode-props` sets, K53's six (with complements) and the 41 distinct
+  byte classes the shipped corpus actually contains. Backs
+  `docs/dev/cls_tree_study.md`. Carries the kit (`ALL`/`RANGES`/`CUBES`/
+  `MASK64`/`BITMAP`/`PAGE64`/`BSEARCH`), the sectioning DP in TWO
+  independent implementations (`section.py` and `discover.c`, compared by
+  `crosscheck.py`), an emitter, an exhaustive verifier (every matcher
+  checked against an independently built reference on all 1,114,112 code
+  points), the today-baseline (`build/pcrec` under `-e utf8`, sized as an
+  object), two separate `.text` calibration routes, and the
+  provenance-blindness property test. Headline: `\p{L}` costs 227,409
+  object bytes today and 4,359 as a kit matcher; the whole byte-class table
+  pool goes to ZERO `.rodata`; discovery on the worst real set is 26.4 ms
+  in C, so the study's own D77 verdict is that the pre-analysis cache is
+  NOT triggered. **Read its README for the three bugs its own instruments
+  caught** — a cost model that prices a form without building it (the
+  `PAGE64` price missed the all-empty leaf), two implementations of one
+  algorithm disagreeing where neither was self-inconsistent, and a Pareto
+  point dominated on BOTH axes, which is a modelling error and not a
+  result. Study code, never imported into `src/`.
+
 Maintenance: update this file when studies are added/removed.

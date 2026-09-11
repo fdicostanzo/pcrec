@@ -388,3 +388,73 @@ change.
   GCC-TIME loop, whose per-pattern timing IS its measurement; the six
   single-process differential drivers `tt4_measurement.md` already
   attributed). No timing run, no recommendation beyond the enumeration.
+- `cls_tree_study.md` — [CLS-TREE] THE STUDY (2026-09-11, lane clstudy,
+  opus, study only, nothing under `src/`/`tests/`/`docs/spec/`; no design
+  note, no panel — those are gated on this memo). Frank's reframing of
+  [CLS-TREE] from "a third form for huge classes" to THE GENERAL SHAPE — a
+  class matcher COMPOSED PER-SECTION from a small kit of representations,
+  STATICALLY SELECTED — prototyped and measured over the real populations
+  (the 312 distinct `unicode-props` sets / 10,961 intervals, K53's six sets
+  with their complements, and the 41 distinct byte classes the shipped
+  corpus actually contains). Reproduction harness `studies/cls_tree_study/`
+  (own CLAUDE.md/README.md). Every matcher built was verified EXHAUSTIVELY
+  against an independently constructed reference on all 1,114,112 code
+  points — never sampled.
+  **THE HEADLINE**: today a code-point class costs automaton TABLE bytes and
+  nothing else (`obj_text` is a constant 788/672 bytes across ALL 312
+  baseline rows, confirming K53's diagnosis as a property of the whole
+  population rather than of the six it examined); `\p{L}` under `-e utf8` is
+  **227,409 object bytes today against 4,359 as a kit matcher, 52x**, and
+  `\p{Xwd}` 294,153 against 5,326, 55x.
+  **DELIVERABLE (1) has no per-class answer and that IS the finding** — no
+  single representation wins any real code-point set; `\p{L}` at the middle
+  policy is 27 sections of four different forms, so the KIT is the answer and
+  a per-class dial setting would be choosing among matchers the search never
+  proposes. [CLS-TREE]'s own SEED (`BSEARCH`, "a binary tree of ranges") is
+  chosen 12 times across 72 cells and never at the speed end — it earns a
+  place and is nobody's main story.
+  **DELIVERABLE (2), the sectioning rule, is a DP** minimizing
+  `rodata + text + lambda*ops` over contiguous partitions, where lambda IS
+  [OPT-DIAL]'s dial arrived at from the algorithm rather than fitted to it;
+  what it PICKS is described (sections break where DENSITY breaks, not where
+  intervals are; `PAGE64` is the size end's workhorse and `BITMAP` the speed
+  end's; the extreme speed notch collapses to few huge bitmaps at a 5.6x
+  size blow-up for 6 probe ops and the dial should stop before it).
+  **DELIVERABLE (3): the D77 verdict is that CONSTRAINT 2's PRE-ANALYSIS
+  CACHE IS NOT TRIGGERED** — discovery on the worst real set (931 intervals)
+  is **26.4 ms** in C, single-threaded, less than a fifth of the 144 ms
+  `build/pcrec` already spends compiling that one pattern today; the
+  algorithm prices every kit member in O(1)/O(k) WITHOUT materializing
+  tables, which is a property of the algorithm and survives a worse
+  population. Its subsidiary measurement: the EXACT Quine-McCluskey
+  minimizer (tier 2) costs **4.9x the discovery time to change 10 of 126
+  sectionings for 0.36% fewer ops** and is dropped — the algebraically
+  impressive half of the analysis was the half that did not pay.
+  **DELIVERABLE (4)/CONSTRAINT 1 is discharged as a MEASUREMENT**: given
+  nothing but the set `{0x53,0x73}`, the O(k) `cube_of` returns "bit 5 is
+  free", i.e. `(c|0x20)=='s'` — [FORM-CHAR]'s shipped `ascii-fold` object
+  rediscovered with no fold table, no letter test and no pair classifier.
+  **And the general form covers TWICE the population the special case does**:
+  8 of the 41 corpus byte classes take a one-cube test and only FOUR are
+  case-fold pairs — `{a,c}` (xor 0x02), `{g,k}` (xor 0x04) and `{A,B,a,b}`
+  (two free bits) are emitted as 32-byte bitmap tables today and today's
+  `(lo^hi)==0x20`-and-both-letters classifier is structurally blind to them.
+  Across the whole byte-class population the kit is **1,584 bytes of `.text`
+  and ZERO `.rodata`** where the corpus carries 319 32-byte table sites.
+  Provenance-blindness is then used as a TESTING lever (composition
+  identities as a free oracle on arbitrary unreachable sets: 438 cells,
+  1,114,112 code points each, 0 mismatches) — a check a provenance-TAGGED
+  design could not have written.
+  **Read §8 for the three bugs the study's own instruments caught**, each
+  worth more than the bug: a cost model that prices a form without building
+  it is only safe if something independently builds and checks (the
+  `PAGE64` O(k) price double-counted a shared page and suppressed the
+  all-empty leaf); two implementations of one algorithm found an integer
+  floor `log2` and a duplicated fixed term that left them disagreeing on 12
+  of 36 cells while each stayed self-consistent; and a Pareto point
+  DOMINATED ON BOTH AXES is a modelling error, not a result — the first cost
+  model priced only `.rodata` and the sweep built to characterize a
+  trade-off refuted the model that generated it. §9 names what is NOT
+  settled, headed by: ns/char is a membership loop, NOT either engine, so
+  nothing here licenses an end-to-end throughput claim, and the plan row's
+  own DFA/hybrid-seam question is untouched.
