@@ -133,10 +133,16 @@ static void page_price(int i, int j, unsigned *pnpages, unsigned *pnleaf)
     unsigned bp[2 * MAXK];
     int nb = 0, full = 0;
     unsigned touched = 0;
+    long prev_last = -1;
     for (int t = i; t <= j; t++) {
         unsigned pl = lo[t] >> 6, ph = hi[t] >> 6;
         if (ph - pl >= 2) full = 1;
+        /* DISTINCT touched pages: two consecutive intervals can share the
+         * page between them.  Double-counting it suppressed the all-empty
+         * leaf and under-priced PAGE64 by 8 bytes on one section of \p{L}. */
         touched += ph - pl + 1;
+        if (prev_last >= 0 && (unsigned)prev_last == pl) touched--;
+        prev_last = ph;
         unsigned ps[2] = { pl, ph };
         for (int q = 0; q < 2; q++) {
             unsigned p = ps[q];

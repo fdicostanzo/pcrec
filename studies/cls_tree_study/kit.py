@@ -514,11 +514,21 @@ class FormPage64(Form):
         bmask = {}
         full = False
         touched = 0
+        prev_last = None
         for l, h in section:
             pl, ph = l >> 6, h >> 6
             if ph - pl >= 2:
                 full = True
+            # DISTINCT touched pages: consecutive intervals can SHARE the page
+            # between them, and double-counting it here made `touched` exceed
+            # the real count, which suppressed the all-empty leaf and
+            # under-priced PAGE64 by 8 bytes.  Found by comparing this price
+            # against the materialized table (memo: "pricing without
+            # materializing").
             touched += ph - pl + 1
+            if prev_last is not None and prev_last == pl:
+                touched -= 1
+            prev_last = ph
             for p in (pl, ph):
                 a, b = max(l, p << 6), min(h, (p << 6) + 63)
                 bmask[p] = bmask.get(p, 0) | \
