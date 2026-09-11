@@ -159,14 +159,37 @@ choosing among matchers none of which the search ever proposes.
 What the populations DO support is a ranking of members by whether they earn
 their place at all:
 
-### 4.1 Members that carry the code-point tier
+### 4.1 What the 312 sets actually choose
 
-`PAGE64` and `BITMAP` between them take 60–80% of sections on every `\p` set
-at every policy, and `ALL` takes most of the rest. That is the bursty
-structure of real script data doing exactly what candidate (c) of the plan
-row's list predicted ("interval/bitmap HYBRID … likely the size winner on
-real script data, which is bursty") — **confirmed, and it is the sectioning
-that produces the hybrid, not a hybrid representation**.
+Section shares across the whole property population, by policy:
+
+| policy | `ALL` | `MASK64` | `PAGE64` | `BITMAP` | `RANGES` | `BSEARCH` | `CUBES` | sections |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| size | 18.8% | **33.3%** | **24.0%** | 0% | 20.7% | 2.7% | 0.5% | 812 |
+| mid | **71.6%** | 10.4% | 5.5% | 8.6% | 0% | 2.6% | 1.3% | 1,168 |
+| speed | **78.7%** | 4.1% | 3.8% | **12.7%** | 0% | 0% | 0.7% | 1,161 |
+
+Four things are legible in that table and none of them were assumed:
+
+1. **`ALL` dominates once speed is priced at all** (72–79%). Most sections of
+   a real property set are a single wide interval, and the dispatch tree has
+   already bounded it — so most of the matcher is a binary search that
+   returns without testing anything. That is [CLS-TREE]'s seed shape winning
+   at the level of the *dispatch*, while losing as a *leaf* form (§4.2).
+2. **At the size end the biggest single form is `MASK64`** (33.3%) — a dense
+   span of ≤ 64 code points as a 64-bit immediate, **no memory reference at
+   all**. This is the plan row's own reframing hypothesis ("a dense ≤64-code-
+   point span → a single uint64 mask test (NO memory load)") confirmed as the
+   single most-chosen leaf form when bytes are what matters.
+3. **The two table forms swap ends.** `PAGE64` is 24.0% at the size end and
+   3.8% at the speed end; `BITMAP` is **absent entirely** at the size end and
+   12.7% at the speed end. They are not competitors at a crossover — they are
+   the size answer and the speed answer to the same question, and the dial
+   picks between them.
+4. **`RANGES` exists only at the size end** (20.7%, zero elsewhere), which is
+   the measured `.text` cost of §5.2 doing its job: 12 bytes an interval is
+   cheap in `.rodata` terms and is the first thing a speed-weighted objective
+   discards.
 
 ### 4.2 `BSEARCH` — the seed — is a marginal member
 
@@ -341,10 +364,12 @@ sectioning rule stated as an observation rather than as a prescription:
    λ=0, 16 at λ=16, 14 at λ=256 for `\p{L}`). A wide contiguous block is free
    once the dispatch has bounded it, so speed buys `ALL` sections by
    splitting sections that a byte-table would otherwise have covered.
-3. **`PAGE64` is the size end's workhorse and `BITMAP` is the speed end's.**
-   `\p{L}` goes from 12 `PAGE64` / 0 `BITMAP` at λ=0 to 1 / 10 at λ=256. The
-   dial's real content at the code-point tier is *how many dependent loads
-   will you pay to shrink the tables*.
+3. **`PAGE64` is the size end's workhorse and `BITMAP` is the speed end's**,
+   population-wide (§4.1's table: 24.0% → 3.8% and 0% → 12.7%) and on single
+   sets (`\p{L}` goes from 12 `PAGE64` / 0 `BITMAP` at λ=0 to 1 / 10 at
+   λ=256). The dial's real content at the code-point tier is *how many
+   dependent loads will you pay to shrink the tables* — `PAGE64`'s second
+   load is the whole trade.
 4. **The extreme speed end collapses to few, huge `BITMAP` sections** —
    `\p{L}` at λ=∞ is 11 sections and 24,308 bytes, a 5.6× size blow-up for
    the last 6 probe ops. That is a bad cell, and naming it is useful: the
