@@ -368,8 +368,10 @@ ms**. The individual worst cases:
 | `Xwd` | 930 | **26.4 ms** | ~1.6 s |
 | `\p{L}` | 677 | **22.7 ms** | 1.55 s |
 
-(The Python DP is a ~370× slower implementation of the same algorithm
-producing the same answers — §8 — not a different cost.)
+(The Python DP is the same algorithm producing the same answers — §8 — at a
+measured **mean 141×, max 472×** slower. It is an implementation cost, not a
+different algorithm, which is exactly why the compile-time question had to be
+answered in C and not in the prototype language.)
 
 Two properties of the algorithm, not of the data, are what make this hold:
 

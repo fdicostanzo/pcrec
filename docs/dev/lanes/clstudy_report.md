@@ -31,10 +31,9 @@ shows only `docs/dev/cls_tree_study.md`, `docs/dev/lanes/clstudy_report.md`,
    partitions. λ IS [OPT-DIAL]'s dial, reached from the algorithm rather than
    fitted to it. What it picks is described in §5.3 rather than prescribed.
 3. **Mean 4.19 ms / max 26.4 ms** over the 60 largest property sets, in C,
-   single-threaded —
-   under a fifth of the 144 ms `build/pcrec` already spends on that one
-   pattern. **CONSTITUTIONAL CONSTRAINT 2's pre-analysis cache is NOT
-   triggered.**
+   single-threaded. The max is under a fifth of the 144 ms `build/pcrec`
+   already spends compiling that one pattern today. **CONSTITUTIONAL
+   CONSTRAINT 2's pre-analysis cache is NOT triggered.**
 4. **438 cells × 1,114,112 code points, 0 mismatches**, checking
    `kit(A∘B) ≡ kit(A) ∘ kit(B)` on arbitrary unreachable sets — a check only
    a provenance-BLIND design can write.
@@ -95,8 +94,8 @@ interesting:
 
 ## Validation
 
-**COMPLETE for every number the memo cites**, with one scoped exception named
-below.
+**COMPLETE for every number the memo cites**, with one scoped exception
+(ns/char) named below.
 
 | arm | population | result |
 |---|---|---|
@@ -112,17 +111,18 @@ built by a different construction.
 
 ## Owed
 
-Nothing that changes a conclusion. Two items, both named in memo §9/§10:
+One item, and it changes no conclusion:
 
-* **ns/char (memo §10).** The bench harness is written and committed
+* **ns/char (memo §11).** The bench harness is written and committed
   (`bench.py`, house protocol: interleaved arms, `load1 < 0.5` gate that
   REFUSES rather than caveats, per-round answer checksums). It is the last
   thing this lane launches, per DO-THEN-FINISH. **No conclusion in the memo
   rests on a timing number** — §4, §5 and §6 are size, form-choice and
   compile-time results, and §9 states explicitly that nothing here licenses
-  an end-to-end throughput claim.
-Nothing else. The uprops arm completed (936/936) after this table's first
-draft and its numbers are in the memo.
+  an end-to-end throughput claim. It is launched load-gated in the
+  background as this lane's final act; the log is
+  `<scratchpad>/bench.log` and the result lands at
+  `studies/cls_tree_study/results/bench_k53.tsv`.
 
 ## Scope and disclosure
 
