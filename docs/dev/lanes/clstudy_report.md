@@ -30,7 +30,8 @@ shows only `docs/dev/cls_tree_study.md`, `docs/dev/lanes/clstudy_report.md`,
 2. **The rule is a DP** minimizing `rodata + text + λ·ops` over contiguous
    partitions. λ IS [OPT-DIAL]'s dial, reached from the algorithm rather than
    fitted to it. What it picks is described in §5.3 rather than prescribed.
-3. **26.4 ms** on the worst real set (931 intervals), in C, single-threaded —
+3. **Mean 4.19 ms / max 26.4 ms** over the 60 largest property sets, in C,
+   single-threaded —
    under a fifth of the 144 ms `build/pcrec` already spends on that one
    pattern. **CONSTITUTIONAL CONSTRAINT 2's pre-analysis cache is NOT
    triggered.**
@@ -40,8 +41,9 @@ shows only `docs/dev/cls_tree_study.md`, `docs/dev/lanes/clstudy_report.md`,
 
 ## Headline numbers
 
-* `\p{L}` under `-e utf8`: **227,409 object bytes today → 4,359 as a kit
-  matcher (52×)**. `\p{Xwd}`: 294,153 → 5,326 (55×).
+* **All 312 property sets: 3,977,754 object bytes today → 85,613 as kit
+  matchers, 46.5×.** `\p{L}` alone 227,409 → 4,359 (52×); `\p{Xwd}`
+  294,153 → 5,326 (55×).
 * Today's cost is **entirely tables**: `obj_text` is a constant 788 or 672
   bytes across all 312 baseline rows.
 * The 41 corpus byte classes compile to **1,584 bytes of `.text` and ZERO
@@ -100,9 +102,9 @@ below.
 |---|---|---|
 | exhaustive verification | K53 12 sets × 6 policies | 72/72 PASS, 0 mismatches |
 | exhaustive verification | 41 byte classes × 6 policies | 246/246 PASS, 0 mismatches |
-| exhaustive verification | 312 uprops sets × 3 policies | *(see §Owed)* |
+| exhaustive verification | 312 uprops sets × 3 policies | **936/936 PASS, 0 mismatches** |
 | composition property test | 40 generated pairs × 4 ops × 3 policies | 438 PASS / 0 FAIL |
-| C-vs-Python DP cross-check | K53 12 sets × 3 policies | 36/36 AGREE |
+| C-vs-Python DP cross-check | K53 12×3 policies + 60 largest uprops | **96/96 AGREE, 0 DIFFER** |
 | `.text` calibration (OLS) | 72 sweep rows | R² = 0.9996, worst residual 211 B |
 
 Every verification cell compares all 1,114,112 code points against a reference
@@ -119,9 +121,8 @@ Nothing that changes a conclusion. Two items, both named in memo §9/§10:
   rests on a timing number** — §4, §5 and §6 are size, form-choice and
   compile-time results, and §9 states explicitly that nothing here licenses
   an end-to-end throughput claim.
-* **The full 312-set uprops sweep's verification tally** — the K53 and
-  byte-class arms are complete and the uprops arm is the same code over more
-  sets.
+Nothing else. The uprops arm completed (936/936) after this table's first
+draft and its numbers are in the memo.
 
 ## Scope and disclosure
 

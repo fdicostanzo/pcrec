@@ -358,13 +358,18 @@ sectioning rule stated as an observation rather than as a prescription:
 ## 6. Deliverable (3): discovery compile-time, and the D77 verdict
 
 **The measurement.** `discover.c` is the same DP in C, timed over 10–20
-repetitions:
+repetitions. Over the **60 largest property sets** (every set with ≥ 46
+intervals), C discovery at the middle policy is **mean 4.19 ms, max 25.86
+ms**. The individual worst cases:
 
 | set | intervals | discovery, C | discovery, Python |
 |---|---:|---:|---:|
 | `^Xwd` | 931 | **26.7 ms** | ~1.6 s |
 | `Xwd` | 930 | **26.4 ms** | ~1.6 s |
 | `\p{L}` | 677 | **22.7 ms** | 1.55 s |
+
+(The Python DP is a ~370× slower implementation of the same algorithm
+producing the same answers — §8 — not a different cost.)
 
 Two properties of the algorithm, not of the data, are what make this hold:
 
@@ -539,10 +544,11 @@ constructed reference on **all 1,114,112 code points**. Not a sample.
 | `k53` — 12 sets × 6 policies | 72 | **72 PASS, 0 FAIL** |
 | `byteclasses` — 41 sets × 6 policies | 246 | **246 PASS, 0 FAIL** |
 | composition property test (§7) | 438 | **438 PASS, 0 FAIL** |
-| C-vs-Python DP cross-check | 36 | **36 AGREE, 0 DIFFER** |
+| C-vs-Python DP cross-check (K53 ×3 policies, 60 largest uprops ×1) | 96 | **96 AGREE, 0 DIFFER** |
 
 **1,692 verification cells × 1,114,112 code points = 1.885 billion compared
-answers, zero mismatches.**
+answers, zero mismatches**, plus 96 cross-implementation sectioning
+comparisons, zero disagreements.
 
 ## 11. Timing
 
