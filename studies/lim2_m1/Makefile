@@ -1,4 +1,11 @@
-CC ?= gcc-16
+# `CC ?= gcc-16` DOES NOT WORK: make defines CC itself, so `?=` never fires
+# and every target silently builds with `cc` -- see [CC-ORIGIN],
+# docs/dev/plan.md, and studies/cls_tree_study/Makefile's own copy of this
+# comment. Overriding only make's DEFAULT keeps `make CC=clang` and an
+# exported CC working.
+ifeq ($(origin CC),default)
+CC := gcc-16
+endif
 CFLAGS ?= -O1 -g -std=gnu11 -Wall -Wextra
 ROOT := ../..
 LIB  := $(ROOT)/build/libpcrec.a

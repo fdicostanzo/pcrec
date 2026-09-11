@@ -1,7 +1,17 @@
 # pcrec — GNU make build (see docs/dev/decisions.md D2).
 # Targets: all (default), test, strict, ubsan, asan, lint, mech, bench, fuzz, clean.
 
-CC      ?= gcc
+# `CC ?= gcc` DOES NOT WORK: GNU make predefines CC itself (as `cc`), so `?=`
+# only assigns when a variable is UNSET and CC never is -- this fallback has
+# never once fired. `origin` distinguishes make's own built-in default from a
+# caller's explicit `make CC=...`/`CC=... make`, so only the former is
+# overridden here; do not "simplify" this back to `?=`. See [CC-ORIGIN],
+# docs/dev/plan.md, and studies/cls_tree_study/Makefile's own copy of this
+# comment for the defect's history (found live three times: santriage's
+# scripts/battery.sh, clstudy's `make discover`, tt4m2's smoke pool).
+ifeq ($(origin CC),default)
+CC := gcc
+endif
 CFLAGS  ?= -O2 -g
 WARN     = -Wall -Wextra
 ALLFLAGS = $(CFLAGS) $(WARN) -std=gnu11 -Ilib -Isrc

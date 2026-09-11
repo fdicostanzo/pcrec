@@ -1,4 +1,10 @@
-CC ?= cc
+# No `CC ?=` line: `cc` is also make's own built-in default, so the line
+# used to be an inert no-op (docs/dev/lanes/clstudy_report.md's tree-wide
+# table: "harmless by coincidence"). Nothing in this study's own docs pins
+# a specific compiler the committed census_data.tsv/census_summary.txt were
+# measured with (unlike studies/n1budget or studies/lim2_m1, which name
+# gcc-16 explicitly) -- it only needs a C11 compiler that can link this
+# repo's own build/libpcrec.a. See [CC-ORIGIN], docs/dev/plan.md.
 CFLAGS ?= -O1 -g -std=gnu11 -Wall -Wextra
 ROOT := ../..
 LIB  := $(ROOT)/build/libpcrec.a
