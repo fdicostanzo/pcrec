@@ -22529,3 +22529,63 @@ NEXT session's first act, run with the batched-axes line ACTIVATED
 
 **OWED external:** I-63 with the bench's next session (closes M5.0
 build-phase validation).
+
+## 2026-09-10 (EDT), fifty-eighth session — the belt-and-suspenders battery, batched axes VALIDATED, K33's darwin answer, the oracle store lands
+
+Token-squeeze day (Frank: low fable, flush tomorrow 8am; bench wake HELD
+until then). The session's shape: one battery + three sonnet lanes, all
+merged post-trailer.
+
+**THE BATTERY (build/battery_20260910_115427, over 6edf8920):** the owed
+belt-and-suspenders run over yesterday's four post-s5 merges, run WITH
+battery.sh's batched-axes line ACTIVATED (flipped at battery start, the
+manager's act, committed+pushed before launch). RESULT: strict/axes/lint/
+mech ALL rc=0 — **axes GREEN BATCHED at 94.9 min vs the 5h45m unbatched
+precedent (~3.6x), [TT-4M-TIME]'s clean number + the line's battery-context
+validation in one run**; mech 244 rows green in 7h49m. test rc=2, and the
+triage lane (btriage) dispositioned EVERY red as pre-existing: five
+darwin/BSD portability bugs (wc -l padding, sed -i suffix, grep -P,
+xargs -a — the macport §8 class at sites the sweep missed), a 7TH
+[ORACLE-LINK]/D98 oracle-build site both prior sweeps missed
+(verify_pcre2.py), the chartered inline_capability red, and platform
+questions escalated to rulings. ZERO merge regressions — the four merges
+are validated.
+
+**RULED (Frank, in-session):** (1) K33/TS-4 — assert-crash Linux-only,
+darwin RECORDS (new 4th counter bucket); measurement settles the why:
+**macOS grants 143,360 B on a 131,072 B request (+3 pages) — over-grant is
+the cause; the ARM64 deep frame (131,200 B) is within 16 B of Linux's.**
+K33 DARWIN ADDENDUM filed. (2) The spec's deep-tier fit criterion
+rephrased to CALL-SITE HEADROOM (limits.md §5, match_api §5.3) — Frank's
+10 KB-deep-caller point; thread sizes stay as worked examples. (3)
+gen-timeout — K56 filed: darwin strsignal(SIGXCPU) is "Cputime limit
+exceeded" (no space) and Homebrew gcc-16 16.2.0/ARM64 segfaults reporting
+it; gen_cc accepts either spelling as the marker, bare rc=139 without a
+marker still fails; Homebrew-issue draft prepared (gccfb lane — channel is
+homebrew-core per the build's own --with-bugurl), NOT filed, Frank holds it.
+
+**MERGED (post-trailer, in order):** lane/btriage2 (the five fixes + 7th
+oracle site), lane/rpkg (the ruled package + possessify vacuous-skip fix +
+tt4m_batch_customers.md — 8 run.sh re-invokers by grep, only axes forwards
+HARNESS_BATCH today, mech's sabotage matrix the highest-value unclaimed
+customer), lane/orstore (**the ORACLE STORE on oracle_interface.md:
+tests/oracle/ four modules + oracle_store/libpcre2-10.46/membership.tsv,
+the REAL 387-property capture against the true 10.46 reference over the
+tailnet — [M5.0] stage 5's 10.46-exact drift-zeroing arm DISCHARGED
+without darwin owning the reference**). Post-merge: strict green; full
+make test green except the three ruling-pending rxtsource residuals (C3
+python divergences; W1.2/W1.3 TMPDIR truncation) + inline_capability —
+the expected steady state. Size log committed (K53-explained movement).
+
+**PARKED (Frank, deliberate — discussion topics, not to-dos):** the entry
+rename/promotion (_in primary; _auto/_easy for the self-contained one),
+runtime string variables (incl. the superwide-character DFA discussion —
+atomicity free, preference-under-lockstep the crux, marker-position
+construction bounded by #sites), ABI major.minor + options-struct. All
+recorded in wake.md with the analysis.
+
+**OWED/NEXT:** Frank's rulings on C3 divergences + refusal-message
+shortening (src/, TMPDIR truncation); bench wake AFTER 2026-09-11 08:00
+EDT (I-63 in their inbox closes M5.0 build-phase validation); [CLS-TREE]
+study (opus) when flush; [TT-4M-TIME]'s quiet-box timing half; the oracle
+store's migration-ladder wiring (design §9, unscheduled).
