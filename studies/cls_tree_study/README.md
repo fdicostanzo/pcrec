@@ -22,8 +22,18 @@ by `build/pcrec`) — and writes only under this directory.
     make bench               # ns/char — REFUSES unless load1 < 0.5
 
 `make all-sweeps` runs the sizing/verification arms in the order the memo
-reports them. `CC` defaults to `gcc-16` (this box's real gcc; bare `gcc` is
-Apple clang and `size -m` parsing assumes Mach-O either way).
+reports them. `CC` defaults to `gcc-16` (this box's real gcc; bare `cc`/`gcc`
+is Apple clang, and `size -m` parsing assumes Mach-O either way).
+
+**The Makefile spells that default `ifeq ($(origin CC),default)`, not
+`CC ?= gcc-16`.** `?=` cannot work here: make defines `CC` itself, so the
+assignment never fires and every target silently builds with Apple clang.
+This was caught when `make discover` produced a clang binary *after* every
+measurement in the memo had been taken with `gcc-16` invoked directly — the
+same defect `docs/dev/lanes/santriage_report.md` records for
+`scripts/battery.sh`'s `san`/`lint` stages, reappearing in a new file. A
+study whose numbers come from one compiler and whose `make` uses another is
+not reproducible, however green it looks.
 
 ## What the pieces are
 
