@@ -22630,3 +22630,48 @@ launches at the token reset with both amendments verbatim.
 NEXT: push (this entry rides it); bench wake after 08:00 EDT (I-63);
 [CLS-TREE] study; oracle-store §9 Step 3 (PC-3/PC-4) unscheduled; C3
 store's Linux confirm (C3_INFO=0 there) owed to the next reference run.
+
+## 2026-09-11 (EDT), fifty-ninth session — [CLS-TREE] study delivered and merged; S5-ARM running on the reference box
+
+Frank's "proceed with full dev" at the 08:2x reset. Baseline clean
+(build current, strict green at 13b56a12).
+
+**S5-ARM (I-63/I-64):** read the bench outbox (O-25, nothing asked),
+then committed I-64 to their inbox (81e74f3): pin update 013e5e03 →
+13b56a12 so the same run also delivers the two owed Linux confirms
+(the store-wired uprops utf8 arm's [STORE] 387/387; C3 pins asserting
++ C3_INFO=0). pcrecdev2's permission classifier blocked the wrapper
+launch (it correctly stopped and escalated — no laundering on either
+side); Frank unblocked and launched it himself 08:44 EDT. build+strict
+green; san in progress; quote-back expected ~10:20 EDT. Also: bench
+box root was 94% full — old claude scratchpads purged (~2G, /tmp
+tmpfs), Frank freed the rest (now 66%); docker there is Frank's OTHER
+project, never prune (memory ubuntubudu-disk-space); workspace drive
+coming ~Oct.
+
+**[CLS-TREE] STUDY (lane clstudy, opus, merged 039cfffb + note
+85ce7902, pushed):** the four charter deliverables answered — see
+docs/dev/cls_tree_study.md and the docs/dev/CLAUDE.md entry. The
+short form: no per-class representation exists (the KIT is the
+answer); sectioning = DP over rodata+text+λ·ops with λ = [OPT-DIAL]'s
+dial; D77 verdict — Constraint 2's cache NOT triggered (25.86 ms
+worst-set discovery vs 144 ms compile); provenance-blindness became a
+438/438 property test; 46.5x aggregate size collapse over all 312
+property sets; the general cube form covers 8 byte classes where the
+shipped caseless classifier sees 4. 1,692 exhaustive verification
+cells (all 1,114,112 code points each), zero mismatches. Landing-bar:
+manager reconciliation note on the discovery-max figure (committed
+TSV 25.86 vs jitter-level 26.4/26.7 in the memo table).
+
+**ESCALATIONS OPEN (Frank/manager rulings):** (1) the tree-wide inert
+`CC ?=` idiom — six Makefiles incl. pcrec's own, fallback never once
+used (make defines CC itself), the same defect class that cost
+santriage; fix candidate ifeq ($(origin CC),default), needs the
+R5-Q1/stranger's-make angle thought through before touching the root
+Makefile. (2) The darwin timing gate: load1<0.5 is unreachable on a
+desktop Mac (19 samples, min 0.71, nothing computing) — manager
+recommendation: do NOT loosen; route ns/char to ubuntubudu post-S5-ARM.
+
+NEXT: S5-ARM quote-back → M5.0 close-out ritual; ns/char routing;
+[CLS-TREE] design note + panel (gated on ns/char + Frank's word);
+[TT-4M-TIME] quiet-box timing (box free now that clstudy ended).
