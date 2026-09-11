@@ -138,14 +138,23 @@ DATA this code produces and reads; this directory is the CODE.
   under two minutes across seven ssh round trips, well inside a light-probe
   budget.
 
+## [ORWIRE] (2026-09-10): the wiring this lane left owed is DONE
+
+`tests/uprops/uprops_compare.py`'s utf8 arm now consults
+`oracle_store/libpcre2-10.46/membership.tsv` as a SECOND, EXACT-tier
+comparison beside the existing live-oracle one (never a replacement — the
+live comparison, and `build_uprops_store.py` as the CAPTURE tool, are both
+unchanged and still run). See `tests/uprops/CLAUDE.md` and
+`docs/dev/lanes/orwire_report.md` for the mechanism, the provenance output
+and the validation transcript. `tests/utf8/axis12_scripts.rxt` itself is a
+static `.rxt` corpus (baked-in expectations, not a runtime oracle
+consultation) and is unchanged — it was never a store *consumer* in the
+sense this ladder step wires; its population is the same `membership`
+differential this wiring now checks exact.
+
 ## Validation OWED (not run by this lane; see the lane report for the exact
 commands)
 
-- Wiring `oracle_store/libpcre2-10.46/membership.tsv` as
-  `tests/uprops/uprops_compare.py`'s or `tests/utf8/axis12_scripts.rxt`'s
-  actual EXACT-arm oracle (currently they still compare against whichever
-  local library resolves) — a separate migration step, not this lane's own
-  scope per the design's own §9 Step 1 text.
 - A general six-kind `RemoteAdapter` (embedding `br_oracle.py` too) if a
   future customer needs a reference `compile-accept`/`match-at` answer.
 - `LocalAdapter` support for a non-default `OracleId.config` (utf/caseless/

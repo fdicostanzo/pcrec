@@ -1994,6 +1994,17 @@ append-only or historical records.
   §9 Step 1's own charter. Wiring the store into an EXISTING check as its
   oracle (`uprops_compare.py`, the C3 python tier, PC-3/PC-4) is
   unbuilt and un-scheduled, per the design's own migration-ladder framing.
+  **WIRED 2026-09-10 (lane `orwire`)**: `tests/uprops/uprops_compare.py`'s
+  utf8 arm now consults the committed store as a SECOND, EXACT-tier
+  comparison beside the existing live-oracle one — the store IS the true
+  pin, so every property it covers needs no drift budget at all, on any
+  box. The live-oracle comparison, and `build_uprops_store.py` as the
+  CAPTURE tool, are both unchanged (§9 Step 1's own "the local adapter
+  answers the byte arm live today" framing — nothing is retired). A name
+  the store does not cover falls back to the live result and is reported
+  as a counted coverage split, never silently dropped. The C3 python tier
+  and PC-3/PC-4 remain unwired — §9 Steps 2-3, later rungs. See
+  `docs/dev/lanes/orwire_report.md`.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

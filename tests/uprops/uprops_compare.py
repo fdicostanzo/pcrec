@@ -3,7 +3,26 @@
 and the one place [M5.0] stage 3's Unicode-version-drift policy is written
 down.
 
-    uprops_compare.py PCREC.txt ORACLE.txt PINNED_VERSION ORACLE_VERSION
+    uprops_compare.py PCREC.txt ORACLE.txt PINNED_VERSION ORACLE_VERSION \\
+        [STORE_ROOT STORE_ORACLE_NAME STORE_ORACLE_VERSION STORE_ENCODING]
+
+The four trailing args are OPTIONAL and, when given, add a SECOND, INDEPENDENT
+comparison against `docs/design/oracle_interface.md`'s committed answer store
+([ORWIRE], `oracle_interface.md` §9 Step 1's own migration): `mine` (pcrec's
+own sweep) against the committed `oracle_store/<STORE_ORACLE_NAME>-
+<STORE_ORACLE_VERSION>/membership.tsv`'s answers for `STORE_ENCODING`. This
+does NOT replace the live-oracle comparison above — it runs beside it. The
+live oracle is whatever library this BOX resolves (drift-budgeted, tier 2 on
+every box but the reference itself); the store is the TRUE 10.46 capture
+(`docs/dev/lanes/orstore_report.md`), so a name the store covers is compared
+at EXACT agreement UNCONDITIONALLY, on every box, with no drift budget at
+all — that is the whole point of consulting a committed capture instead of
+re-resolving a local library. A name `mine` asks about that the store does
+not (yet) cover falls back to the live-oracle result above, reported as a
+COVERAGE SPLIT rather than silently dropped (`docs/dev/learnings.md` §3: a
+check must never narrow what it covers without saying so). Every run prints
+which oracle answered which population — PROVENANCE, not assumed: a reduced
+or absent store must never read as though the full one answered.
 
 Both input files are `NAME lo-hi lo-hi ...` lines, printed independently by
 `uprops_sweep.c` (pcrec's own emitted artifacts) and `uprops_oracle.c`
@@ -59,7 +78,11 @@ the whole point of stating a drift budget is that the residue after drift is
 still checked.
 """
 
+import os
 import sys
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_HERE, "..", "oracle"))
 
 # ---------------------------------------------------------------------------
 # THE RECLASSIFICATION EXCEPTIONS — one entry per code point whose PROPERTY
@@ -174,11 +197,70 @@ def load(path):
     return out
 
 
+# ---------------------------------------------------------------------------
+# [ORWIRE] the committed-store comparison -- oracle_interface.md §9 Step 1's
+# migration-ladder wiring.  A SEPARATE function, not a branch threaded through
+# the live-oracle loop above, because the two comparisons have different
+# failure shapes: the live one has a drift budget and a version to weigh, the
+# store one is either EXACT (the pin) or NOT COVERED (fall back to the live
+# result) -- conflating them would smuggle the drift budget into a comparison
+# that structurally cannot need one.
+# ---------------------------------------------------------------------------
+
+def compare_against_store(mine, store_root, oracle_name, oracle_version,
+                           encoding):
+    """`mine`: load()'s return shape.  Looks up each of `mine`'s own property
+    names in the committed store's `membership` kind via `oracle_store.lookup`
+    -- the self-checking read path (R56-4): a truncated file, a duplicate
+    hash, or a stored question that does not match the recomputed one is a
+    `StoreCorruption` raised HERE, at consult time, never absorbed into a
+    wrong answer (the brief's "corruption is a loud failure" requirement --
+    this function does not catch it; the caller decides how loud).
+
+    Returns (fails, checked, missing): `missing` is the COVERAGE SPLIT --
+    names `mine` asks about that this store file does not have a row for --
+    reported by the caller rather than silently compared against nothing.
+    A name IS covered with an EMPTY interval list (a real empty set, e.g. a
+    byte-arm control script under the utf8 population) and that is not
+    `missing`; only a `lookup()` miss (no row at all) is.
+    """
+    import oracle_store as os_  # local import: only needed on this path
+    oid = os_.OracleId(oracle_name, oracle_version)
+    fails = []
+    checked = 0
+    missing = []
+    for name, (kind, val) in sorted(mine.items()):
+        if kind == "ERR":
+            # pcrec's own compile failure for this property is already a
+            # FAIL from the live-oracle loop above; do not report it twice.
+            continue
+        afields = os_.lookup(store_root, oid, "membership",
+                              property=name, encoding=encoding)
+        if afields is None:
+            missing.append(name)
+            continue
+        checked += 1
+        store_members = set()
+        for tok in afields[0].split():
+            lo, hi = tok.split("-")
+            store_members.update(range(int(lo, 16), int(hi, 16) + 1))
+        diff = val ^ store_members
+        if diff:
+            fails.append(
+                "%s: %d code points differ from the COMMITTED %s-%s "
+                "reference store (exact agreement required -- this is the "
+                "true pin, not a drift-budgeted local library), first %s"
+                % (name, len(diff), oracle_name, oracle_version,
+                   [hex(c) for c in sorted(diff)[:8]]))
+    return fails, checked, missing
+
+
 def main():
-    if len(sys.argv) != 5:
+    if len(sys.argv) not in (5, 9):
         sys.stderr.write(__doc__)
         return 2
     pcrec_f, oracle_f, pinned, oracle_ver = sys.argv[1:5]
+    store_args = sys.argv[5:9] if len(sys.argv) == 9 else None
     mine = load(pcrec_f)
     theirs = load(oracle_f)
     # BOTH SIDES' OWN UNASSIGNED SET, out of the same sweep that produced
@@ -188,7 +270,7 @@ def main():
     unassigned = mine_cn | their_cn
 
     exact = (pinned == oracle_ver)
-    print("  pinned Unicode %s; oracle Unicode %s -> %s"
+    print("  [LIVE] pinned Unicode %s; oracle Unicode %s -> %s"
           % (pinned, oracle_ver,
              "EXACT agreement required" if exact else
              "drift budget: every disagreement must be a code "
@@ -280,11 +362,49 @@ def main():
                   "(declined by design §3.4 — the booleans and Bidi_Class)"
                   % name)
 
-    print("  compared %d properties; %d code points attributed to version "
-          "drift%s" % (checked, drifted,
+    print("  [LIVE] compared %d properties; %d code points attributed to "
+          "version drift%s" % (checked, drifted,
                        ("; %d property NAMES this oracle does not have, each "
                         "wholly inside its own unassigned space" % newer_names)
                        if newer_names else ""))
+
+    # [ORWIRE] the committed-store comparison, oracle_interface.md §9 Step 1's
+    # migration wiring -- a SECOND, INDEPENDENT check beside the live-oracle
+    # one above, never a replacement (BOILERPLATE's "nothing retires without
+    # the design saying it retires").  Only runs when the caller passed the
+    # four trailing store args; §3's byte arm does not (the committed store
+    # holds only the utf8-arm capture — see tests/oracle/CLAUDE.md).
+    if store_args is not None:
+        store_root, s_name, s_ver, s_enc = store_args
+        print("  [STORE] consulting the COMMITTED reference store "
+              "%s-%s (encoding=%s) — this IS the true pin (Unicode %s), so "
+              "every name it covers is compared at EXACT agreement "
+              "regardless of what library this box resolves live"
+              % (s_name, s_ver, s_enc, pinned))
+        try:
+            store_fails, store_checked, store_missing_names = \
+                compare_against_store(mine, store_root, s_name, s_ver, s_enc)
+        except Exception as e:
+            # A StoreCorruption (or any other read-time failure) is a LOUD
+            # failure naming itself, never a silently-skipped comparison —
+            # the brief's "corruption is a loud failure, not a wrong answer".
+            fails.append("[STORE] the committed store failed its own "
+                         "self-check and could not be consulted: %r" % (e,))
+            store_checked, store_missing_names = 0, []
+        else:
+            fails.extend("[STORE] " + f for f in store_fails)
+            n_asked = sum(1 for _n, (k, _v) in mine.items() if k != "ERR")
+            split = ""
+            if store_missing_names:
+                sample = store_missing_names[:8]
+                more = "..." if len(store_missing_names) > 8 else ""
+                split = ": %s%s" % (sample, more)
+            print("  [STORE] coverage: %d of %d properties this run asks "
+                  "about are in the committed store and were compared "
+                  "(exact); %d are NOT covered and fall back to the [LIVE] "
+                  "result above%s" % (store_checked, n_asked,
+                                       len(store_missing_names), split))
+
     for f in fails:
         print("FAIL: " + f)
     return 1 if fails else 0
