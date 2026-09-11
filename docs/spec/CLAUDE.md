@@ -193,6 +193,13 @@ spec and a design doc disagree, the spec is what the tool promises.
   has no producer yet. The field ships now because it rides this bump
   rather than costing a second one.
 
+  **2026-09-10 (Frank's ruling, lane rpkg, wording only, same pass as
+  `limits.md` above):** §5.3's K33 paragraph restates the fit criterion as
+  free stack HEADROOM AT THE CALL SITE rather than thread-stack SIZE —
+  the musl-128KB and glibc-8MB numbers now read as worked examples of
+  headroom at call depth ~0, not as the rule. No shipped-behaviour claim
+  changed.
+
 - `table_contract.md` — the ruled contract for every command that outputs
   a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table
   surface, which adopts it at birth): `#` comments, a header row naming
@@ -214,6 +221,18 @@ spec and a design doc disagree, the spec is what the tool promises.
   stale 131,296 B figure still standing in `docs/dev/known_issues.md`'s
   and D73's own prose, not corrected by this pass), and K34/D74's
   documented-divergence framing at spec depth.
+
+  **2026-09-10 (Frank's ruling, lane rpkg, wording only, no behaviour
+  changed):** §5's K33 fit criterion is restated as free STACK HEADROOM AT
+  THE CALL SITE (entry + deep >= 134,400 B for the witness artifact class)
+  rather than "against a musl-default 128 KB thread stack" — the earlier
+  wording named a thread's total SIZE where what actually decides fit is
+  headroom REMAINING at the point the call happens, and the two coincide
+  only at call depth ~0. The musl-128KB and glibc-8MB numbers stay as
+  worked EXAMPLES of headroom at depth ~0; `docs/dev/known_issues.md`'s new
+  K33 DARWIN ADDENDUM is the measured case where the two diverge (macOS
+  grants MORE than a requested size, so a nominal 131,072 B thread's actual
+  headroom exceeds its own stated size).
 
 - `cli.md` — **[SPEC-1.2], 2026-08-25.** The full `pcrec` command-line
   reference: compiling a pattern (`-o`/`-o -`, `-p`'s C-identifier prefix

@@ -26,18 +26,31 @@
 # FOUR ARMS ([OPT-1] added D). C is what makes A and B mean anything; D is
 # what makes A's scope honest:
 #
-#   A  DEFAULT ENTRY, CALL-BEARING — expected to die of SIGSEGV. This is K33
-#      (docs/dev/known_issues.md): a live defect against spec §5.3's
-#      concurrency contract, which promises that any number of threads may
-#      call an artifact's entry points concurrently given their own caps
-#      buffers. For this artifact class on a small-stack thread that promise
-#      is false, and the caps buffer has nothing to do with it. D73 KEEPS the
-#      stamped 2048/3072 that causes it, on the reasoning that the caller
-#      buffer is the path around it — so this arm is a PINNED KNOWN STATE, not
-#      a pass. It is reported as KNOWN and, if it ever stops dying, this script
-#      FAILS: the record would then be describing something that is no longer
-#      true, and a check that quietly went green on a fixed defect is how a
-#      known-issues file rots.
+#   A  DEFAULT ENTRY, CALL-BEARING — expected to die of SIGSEGV, ON LINUX.
+#      This is K33 (docs/dev/known_issues.md): a live defect against spec
+#      §5.3's concurrency contract, which promises that any number of
+#      threads may call an artifact's entry points concurrently given their
+#      own caps buffers. For this artifact class on a small-stack thread that
+#      promise is false, and the caps buffer has nothing to do with it. D73
+#      KEEPS the stamped 2048/3072 that causes it, on the reasoning that the
+#      caller buffer is the path around it — so this arm is a PINNED KNOWN
+#      STATE, not a pass. It is reported as KNOWN and, if it ever stops dying
+#      ON LINUX, this script FAILS: the record would then be describing
+#      something that is no longer true, and a check that quietly went green
+#      on a fixed defect is how a known-issues file rots.
+#
+#      [K33 DARWIN ADDENDUM, 2026-09-10] ON DARWIN THIS ARM DOES NOT DIE, and
+#      the assertion above is scoped to Linux because of it: macOS grants a
+#      requested-131,072-B thread stack MORE than it was asked for (measured
+#      143,360 B, +12,288 B), which covers this artifact's deep-path
+#      headroom with room to spare — the ARM64 frame itself is measured
+#      within 16 B of Linux's. K33's underlying defect is real and
+#      platform-independent; THIS particular reproduction (a thread sized to
+#      exactly musl's 128 KB default) is not, on this OS. Arm A therefore
+#      RECORDS its observed outcome on darwin rather than pinning or skipping
+#      it — see docs/dev/known_issues.md's K33 DARWIN ADDENDUM for the full
+#      measurement and the `record()` shape below for why this is neither a
+#      pass, a fail, nor a skip.
 #
 #   D  [OPT-1] DEFAULT ENTRY AGAIN, SAME ARTIFACT, SAME THREAD, a 2-BYTE
 #      SUBJECT — must MATCH. Before the tiered entry this died exactly as A
@@ -85,11 +98,20 @@ cleanup() {
 }
 trap cleanup EXIT
 
-pass=0; fail=0; known=0; skipped=0
-ok()    { echo "PASS: $*"; pass=$((pass + 1)); }
-bad()   { echo "FAIL: $*"; fail=$((fail + 1)); }
-pin()   { echo "KNOWN: $*"; known=$((known + 1)); }
-note()  { echo "NOTE: $*"; skipped=$((skipped + 1)); }
+pass=0; fail=0; known=0; skipped=0; recorded=0
+ok()     { echo "PASS: $*"; pass=$((pass + 1)); }
+bad()    { echo "FAIL: $*"; fail=$((fail + 1)); }
+pin()    { echo "KNOWN: $*"; known=$((known + 1)); }
+note()   { echo "NOTE: $*"; skipped=$((skipped + 1)); }
+# record() — [K33 DARWIN ADDENDUM], modelled on run_resource_tests.sh's
+# `uname -s = Darwin` SKIP shape (tests/resource/CLAUDE.md) but NOT a skip:
+# the pthread toolchain IS present and the driver DOES run on darwin (the
+# preflight above already gates that). This is a fourth, separately-counted
+# bucket for "ran, and neither PASS nor FAIL claims anything about it" —
+# never folded into pass/fail/known/skipped, which would either fabricate a
+# verdict on a platform-specific outcome or misreport a working toolchain as
+# missing.
+record() { echo "RECORD: $*"; recorded=$((recorded + 1)); }
 
 # PREFLIGHT: this suite needs pthreads, and a box without them should get a
 # LOUD SKIP rather than a hard failure -- the same shape run_thread_tests.sh
@@ -208,15 +230,43 @@ else
         bad "[TS-4] arm C (control) exited $c_rc ('$c_out'). The call-free artifact must survive this thread — if it does not, this script cannot attribute arm A's crash to the call-bearing frame and reports nothing about K33"
     fi
 
-    # ---- arm A: the K33 regression, PINNED --------------------------------
+    # ---- arm A: the K33 regression, PINNED ON LINUX; RECORDED ON DARWIN ---
     # K33 IS A STACK OVERFLOW, SO THE SIGNAL IS PART OF THE CLAIM. Accepting
     # death by ANY signal would let this arm stay green on an abort, a bus
     # error or a kill from outside and still report "K33 confirmed" -- three
     # different events wearing one verdict, which is the mislabelled-evidence
     # shape DD-2 exists to prevent. A stack overflow on this platform is
     # SIGSEGV (11), i.e. exit 139; anything else is named and refused.
+    #
+    # [K33 DARWIN ADDENDUM, 2026-09-10] (docs/dev/known_issues.md): this
+    # assertion is LINUX-ONLY. MEASURED on darwin/gcc-16/ARM64: the artifact's
+    # own frames are near-identical to Linux's (rx_search 3,184 B identical,
+    # rx_search_deep 131,200 B vs Linux's 131,216 B -- 16 B smaller, nowhere
+    # near enough to explain it), but macOS silently GRANTS MORE STACK THAN
+    # REQUESTED -- a standalone pthread_attr_setstacksize(131072) probe reads
+    # back 143,360 B actually handed to the thread, 12,288 B over the ask,
+    # which covers this artifact's 134,384 B deep-path headroom with room to
+    # spare. So on darwin the SAME driver on the SAME artifact and the SAME
+    # nominal 131,072 B thread does not fault: K33's underlying defect (the
+    # deep path's storage does not fit inside a musl-sized 128 KB thread) is
+    # real and platform-independent, but a darwin thread asked for exactly
+    # that size is not actually given it, so this PARTICULAR reproduction is
+    # Linux-specific. Recorded, not skipped: the pthread preflight above
+    # already established the toolchain works here, so this is not "the
+    # instrument is missing" (that shape's `note` above) -- it is "the
+    # instrument works and the platform answers differently," which gets its
+    # own verdict-free bucket rather than fabricating a pass or a fail either
+    # of which would misstate what actually ran.
     a_out="$("$TIMEOUT_BIN" 60 "$WORKDIR/callbearing/ts4" default 2>&1)"; a_rc=$?
-    if [ "$a_rc" -eq 139 ]; then
+    if [ "$(uname -s)" = "Darwin" ]; then
+        if [ "$a_rc" -eq 139 ]; then
+            record "[TS-4] arm A (K33, DARWIN): the call-bearing artifact's DEFAULT entry DIED of SIGSEGV (exit 139) on a $THREAD_STACK B thread here too -- docs/dev/known_issues.md K33 DARWIN ADDENDUM's stack-over-grant measurement no longer explains this box/OS build; re-measure the addendum's two numbers before relying on its conclusion"
+        elif [ "$a_rc" -eq 0 ] && printf '%s' "$a_out" | grep -q 'rc=1'; then
+            record "[TS-4] arm A (K33, DARWIN): the call-bearing artifact's DEFAULT entry MATCHED on a $THREAD_STACK B thread ('$a_out') rather than dying -- consistent with docs/dev/known_issues.md K33 DARWIN ADDENDUM (macOS grants 143,360 B against a 131,072 B request, which covers this artifact's 134,384 B deep-path headroom). K33 itself is unaffected: it is a real, platform-independent defect in the deep path's storage, pinned LINUX-side by this same arm; this box's pthread implementation just does not reproduce it at this thread-size request"
+        else
+            record "[TS-4] arm A (K33, DARWIN): the call-bearing artifact's DEFAULT entry exited $a_rc ('$a_out') on a $THREAD_STACK B thread -- neither the Linux SIGSEGV nor a clean match. Recorded as observed; docs/dev/known_issues.md K33 DARWIN ADDENDUM's two measured numbers are the place to start"
+        fi
+    elif [ "$a_rc" -eq 139 ]; then
         pin "[TS-4] arm A (K33, EXPECTED): the call-bearing artifact's DEFAULT entry dies of SIGSEGV (exit 139) on a $THREAD_STACK B thread with a 684-byte subject it would otherwise MATCH. [OPT-1]: it now dies INSIDE the deep tier — the subject is deep enough to exhaust the fast tier, so the entry escalates into the $cb_frame B deep path and that is what does not fit. This is docs/dev/known_issues.md K33, narrowed but open, and D73 keeps the stamped default that causes it; arm B is the remedy and arm D is the narrowing. Pinned, not passed"
     elif [ "$a_rc" -gt 128 ] && [ "$a_rc" -ne 124 ]; then
         bad "[TS-4] arm A died of SIG$(kill -l "$((a_rc - 128))" 2>/dev/null || echo "?$((a_rc - 128))") (exit $a_rc), NOT SIGSEGV. K33 is a stack overflow and a stack overflow is SIGSEGV here; a different signal is a different event and must not be reported as K33 reproducing. Output: '$a_out'"
@@ -260,7 +310,8 @@ echo "checks passed: $pass"
 echo "checks failed: $fail"
 echo "known states pinned: $known"
 echo "sections skipped: $skipped"
-if [ $((pass + fail + known)) -eq 0 ]; then
+echo "outcomes recorded (darwin, verdict-free): $recorded"
+if [ $((pass + fail + known + recorded)) -eq 0 ]; then
     echo "run_stackdepth_tests.sh: NO CHECKS RAN" >&2; exit 1
 fi
 [ "$fail" -eq 0 ] && exit 0

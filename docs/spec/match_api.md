@@ -1431,7 +1431,13 @@ limitation NARROWS rather than closing.** §10.9's tiered entry moves the
 stamped default storage off the entry's own frame and onto a
 non-inlined internal function only a `PCREC_ERR_FRAMES` give-up reaches. Re-MEASURED on the same
 build: `<prefix>_search`'s frame is **3,184 bytes** and the internal
-function's is 131,216. So on a musl-default 128 KB thread that artifact now
+function's is 131,216. **The fit criterion is free STACK HEADROOM AT THE
+CALL SITE (entry + deep, 134,400 bytes for this artifact class), not
+thread-stack size as such** — a call's frame lands wherever the stack
+pointer already sits, so a thread's nominal size only equals the headroom
+available to it when the call happens at depth ~0 (`docs/spec/limits.md`
+§5 states the general rule). At depth ~0 on a musl-default **128 KB**
+thread — the measured, worked example — that artifact now
 **matches every subject the fast tier holds** — the "faults on any subject,
 a 2-byte one included" sentence is no longer true — and faults only on one
 deep enough to escalate. **The remedy is still `_in`**, and it is still the
