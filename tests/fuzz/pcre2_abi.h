@@ -53,7 +53,12 @@
  *     specific link-map walk. `dladdr` is still a glibc/BSD extension
  *     gated behind `__USE_GNU` on Linux, so the ordering discipline this
  *     header's own comment used to warn about is NARROWED, not deleted —
- *     see the guard just below `#include <dlfcn.h>`.
+ *     see the two guards at the top of the include-guard body below (a
+ *     portable one and the glibc-specific one it stands in for; [S5-ARM],
+ *     2026-09-11, fixed this header's OWN internal ordering bug and added
+ *     the portable guard after the direct-link conversion above silently
+ *     reintroduced the ordering hazard for every consumer, caught only when
+ *     this header was first built on the Linux reference box again).
  *
  * WHAT DID NOT CHANGE: the `Pcre2Abi` struct's field names, and
  * `pcre2_abi_load`/`_version`/`_unicode_version`/`_path`'s names and
@@ -68,22 +73,61 @@
 #ifndef PCREC_TESTS_PCRE2_ABI_H
 #define PCREC_TESTS_PCRE2_ABI_H
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+/* [S5-ARM] (2026-09-11) TWO GUARDS, IN ORDER, BOTH BEFORE ANY #include OF
+ * OUR OWN. The first is portable (fires on darwin too); the second is the
+ * glibc-specific mechanism the first is a proxy for.
+ *
+ * GUARD 1 — PORTABLE, PLATFORM-INDEPENDENT: if the consumer's .c file already
+ * pulled in some other libc header (<stdio.h>, <stdlib.h>, <string.h>, ...)
+ * before this one, NULL is already defined — every C standard library header
+ * that plausibly precedes this one defines it. This does not depend on
+ * glibc's feature-test-macro mechanism at all, so — unlike GUARD 2 below —
+ * it actually fires on darwin, where an ordering mistake was invisible until
+ * now (see GUARD 2's own comment for why darwin never NEEDED the ordering
+ * discipline; this guard exists so a FUTURE violation is still caught here,
+ * at darwin build time, rather than only ever on the Linux reference box). */
+#ifdef NULL
+#error "pcre2_abi.h must be the FIRST #include in its .c file (before <stdio.h> etc.) — NULL is already defined, meaning some other header was processed first; see this file's own header comment"
+#endif
 
 #ifndef __APPLE__
-/* dladdr (used only by pcre2_abi_path(), below) is a GNU/BSD extension: on
- * glibc it is declared under __USE_GNU, which glibc's <features.h> unlocks
- * from _GNU_SOURCE — but only if _GNU_SOURCE reaches <features.h> BEFORE
+/* GUARD 2 — THE GLIBC MECHANISM GUARD 1 is a portable proxy for. dladdr
+ * (used only by pcre2_abi_path(), below) is a GNU/BSD extension: on glibc it
+ * is declared under __USE_GNU, which glibc's <features.h> unlocks from
+ * _GNU_SOURCE — but only if _GNU_SOURCE reaches <features.h> BEFORE
  * anything else pulls that header in, since the feature-test decision locks
  * for the rest of the translation unit at that point (K-uprops-abi-order:
  * this project has already been bitten by this exact ordering hazard once,
  * for <link.h>'s RTLD_DI_LINKMAP rather than dladdr, but the mechanism is
- * identical). `#include <pcre2.h>` above does not touch <features.h> itself
- * (pcre2.h is not a glibc header), so THIS header can still be the one that
- * wins the race — provided it is the FIRST #include in its .c file, before
- * <stdio.h> etc. macOS's libSystem declares dladdr unconditionally, no
- * feature-test gate, hence the #ifndef __APPLE__ scope. */
+ * identical).
+ *
+ * [S5-ARM] (2026-09-11): THIS DEFINE MUST COME BEFORE `#include <pcre2.h>`
+ * BELOW, NOT AFTER. It used to come after — [ORACLE-LINK]/D98 added the
+ * `#include <pcre2.h>` line ABOVE this block when it converted the header
+ * from the dlopen shim (whose own `#define _GNU_SOURCE` / `#include
+ * <dlfcn.h>` pair WAS the first thing in the file, nothing preceded it) to
+ * direct linking, and the accompanying comment claimed "`#include <pcre2.h>`
+ * does not touch <features.h> itself (pcre2.h is not a glibc header)" —
+ * which is FALSE: pcre2.h itself `#include`s <limits.h>/<stdlib.h>/
+ * <inttypes.h> (confirmed by reading pcre2.h directly), and <stdlib.h> IS a
+ * glibc header that pulls in <features.h> as its own first action. So the
+ * OLD ordering (pcre2.h first, _GNU_SOURCE second) locked the feature-test
+ * decision through pcre2.h's own <stdlib.h> before this file's _GNU_SOURCE
+ * define ever ran — silently reintroducing the exact K-uprops-abi-order
+ * hazard the a38ca912 guard below was built to catch, INSIDE THIS HEADER,
+ * for every consumer regardless of the consumer's own include order. This
+ * went undetected for two days (2026-09-09 to 2026-09-11) because darwin
+ * never runs this branch at all (the #ifndef __APPLE__ above) and nothing
+ * had built any consumer of this header on the Linux reference box since
+ * [ORACLE-LINK] landed until S5-ARM did. Moving `#define _GNU_SOURCE` /
+ * `#include <dlfcn.h>` back above `#include <pcre2.h>` restores the
+ * dlopen-shim-era ordering and makes this file's own internal correctness
+ * independent of what pcre2.h happens to include. This header must STILL be
+ * the FIRST #include in its .c file, before <stdio.h> etc. — GUARD 1 above
+ * and the #error below both exist for that remaining, genuinely
+ * includer-side half of the discipline. macOS's libSystem declares dladdr
+ * unconditionally, no feature-test gate, hence the #ifndef __APPLE__
+ * scope. */
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #ifndef __USE_GNU
@@ -92,6 +136,9 @@
 #else
 #include <dlfcn.h>
 #endif
+
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include <stdint.h>
 #include <stddef.h>

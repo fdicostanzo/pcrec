@@ -899,9 +899,62 @@ C3_FILES=179
 # not a gap this lane's brief scoped it to fix (box-sensitivity pin
 # management is wake.md's darwin admin territory). Named here so the next
 # reader does not mistake a newly-VISIBLE old gap for a new one.
+#
+# [S5-ARM re-pin, 2026-09-11, lane abifix] +0 PASS / +72 SKIP (+72
+# pcre2-only, every other SKIP_* reason unchanged), from the S5-ARM Linux
+# reference run (ubuntubudu, glibc, gcc-15.2, pin 13b56a12, build/
+# s5_arm_20260911) reading SKIP=15146/pcre2-only=2944 against this file's
+# prior I-61 pins (SKIP=15074/pcre2-only=2872) -- the tree moved past
+# I-61's measuring commit (38dec0c2) and nobody re-pinned C3's own
+# breakdown for it.
+#
+# THE MOVER IS NOT LANE PYROLE. The merge commit `db142b16` (lane pyrole,
+# the C3 three-way-verdict mechanism) touches zero `.rxt` files -- verified
+# directly (`git show db142b16 --stat | grep -c '\.rxt$'` = 0) -- and its
+# own report and this file's [pyrole re-pin] note above both already state
+# "every SKIP_* reason unchanged" for its landing. The two corpus changes
+# that DID land between I-61 and this run are [K53-SELRETRY] (lane
+# utf8k53, commits e638afee/880ba16d: the 16 blocks parked in
+# tests/known_fail/k53_uprops_oversize.rxt move back into
+# tests/utf8/axis04_p_categories.rxt at their canonical positions, that
+# file removed) and [M5.0] STAGE 5 script properties (lane utf8s5, merge
+# 0b21c32f: the NEW file tests/utf8/axis12_scripts.rxt, 333 lines/72
+# `# pcre2-only` cells -- non-ASCII script-name subjects, U14's standing
+# reason).
+#
+# ISOLATED, measured directly on this box (not copied from the Linux log,
+# same method the prior [arm61fix]/[ntriage] re-pins above used --
+# `verify_rxt.py` file-by-file, since `# pcre2-only` classification is a
+# per-block marker in the corpus text and does not depend on the
+# interpreter python version):
+#   axis04_p_categories.rxt @38dec0c2 (pre-K53-SELRETRY): SKIP=462, all
+#     pcre2-only.
+#   known_fail/k53_uprops_oversize.rxt @38dec0c2 (deleted at HEAD): SKIP=44,
+#     all pcre2-only.
+#   axis04_p_categories.rxt @HEAD (post-K53-SELRETRY, the 44 blocks
+#     restored): SKIP=506, all pcre2-only -- 462+44=506, exact wash, K53-
+#     SELRETRY's own corpus move contributes ZERO net C3 movement (its
+#     `[K53-SELRETRY] fix the corpus move's own defect`/`CENSUS_*` re-pin,
+#     880ba16d, already accounted for this correctly at the file/block/line
+#     level; it never touched C3's PASS/SKIP breakdown because there was
+#     nothing here for it to move).
+#   axis12_scripts.rxt @HEAD (new file, utf8s5): SKIP=72, all pcre2-only --
+#     THE ENTIRE +72 delta, on its own, with nothing else contributing.
+# (reproduction: `/tmp/c3repin/{old,new}/*.rxt` per the derivation above,
+# `python3 tests/harness/verify_rxt.py --file-timeout 10 --allow-timeouts 1
+# <file>` on each in isolation.)
+#
+# Reconciliation: C3_PASS + C3_SKIP + C3_TIMEOUT_FILE_LINES =
+# 13708+15146+89 = 28943 = CENSUS_LINES (unchanged, tests/rxtsource/
+# run_rxtsource_tests.sh:198 -- CENSUS_LINES was ALREADY re-pinned to
+# 28943 for axis12_scripts.rxt at commit 9bbdc0f9, 2026-09-09, a full day
+# before this file's own C3 breakdown was; that gap between the two pins
+# is exactly what this re-pin closes). giveup/composed/no-python-
+# expression/perr-python-accepts/own-oracle are untouched (measured 0
+# movement in all four isolated runs above) and are NOT re-pinned here.
 C3_PASS=13708
-C3_SKIP=15074
-C3_SKIP_PCRE2ONLY=2872
+C3_SKIP=15146
+C3_SKIP_PCRE2ONLY=2944
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1875
