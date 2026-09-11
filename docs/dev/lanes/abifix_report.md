@@ -67,11 +67,14 @@ Everything below is new to this lane, each run async with a generous
   grown since stage 5 added the script-spelling and Script/scx identity
   cells) — 0 failed is the green criterion and it holds.
 - `ENC=utf8 bash tests/uprops/run_uprops_tests.sh` (utf8-only):
-  **OWED — still running at report-commit time; see §5 for the live
-  status and how a follow-up reads it.** §3's `[STORE]` coverage line is
-  the thing to check (expected `387 of 387 properties ... compared
-  (exact)`, per `tests/uprops/CLAUDE.md`'s own last-measured figure at
-  [ORWIRE]'s landing).
+  **26 passed, 0 failed — exactly the brief's expected 26/26**, with the
+  `[STORE]` coverage line reading `387 of 387 properties this run asks
+  about are in the committed store and were compared (exact); 0 are NOT
+  covered` — the exact `[STORE] 387/387` line the brief named. (The
+  earlier default/combined run in the first bullet reports 47 passed
+  because it also runs the byte arm's own §1-§4 cells in the same
+  process; the brief's "26/26" was specifically the utf8-only
+  invocation, which matches.)
 
 ### 2b. rxtsource
 
@@ -205,11 +208,6 @@ the S5-ARM red.
 ## 6. Status at hand-off
 
 Owed to a follow-up (same worktree, branch `lane/abifix`):
-- §2a's `ENC=utf8` uprops run — read
-  `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/
-  6b023e66-b8be-4fbd-8f83-40f1147a67e7/scratchpad/abifin_logs/
-  uprops_utf8.log`, tail for `uprops: N passed, 0 failed` and confirm the
-  `[STORE] coverage: 387 of 387` line.
 - §2c's atomic_diff run — read `.../abifin_logs/atomic_diff.log`, tail
   for its completion line (script prints a numeric progress counter while
   running; completion is a summary block — see
