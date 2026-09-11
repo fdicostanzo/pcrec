@@ -15,6 +15,14 @@ building a `.rxt` source cannot be checked without building one.
   differential), C3 (the oracle re-run), C0a (the composer was never
   invoked), the arm-block hash pin, the keyword census, and the head-path
   witnesses.
+- **`build_c3_store.py`** — **[C3 THREE-WAY VERDICT, 2026-09-10/11, lane
+  `pyrole`]** the store-capture script behind C3's redesign (below):
+  populates `oracle_store/libpcre2-10.48/{match-at,captures}.tsv` (via
+  `tests/oracle/`'s `LocalAdapter`) with exactly the hand-enumerated,
+  cited questions C3's mechanism needs — not a corpus sweep. See
+  `docs/design/c3_three_way.md` §4 for why this instance deliberately
+  deviates from `oracle_store/CLAUDE.md`'s usual committed-reference-only
+  rule, and its own header for the full argument.
 - **`fixtures/*.rxtin`** — head-bearing `.rxt` files. **The extension is
   load-bearing**: `find tests -name '*.rxt'` must not see them, or they
   would join the corpus, move the pinned census, and be dispatched by
@@ -70,10 +78,37 @@ The runner asserts the SUBTRACTION, not just the two totals: add a
 |---|---|---|
 | C1 (three-way parse differential) | a directive read differently by any two parsers; a value silently changed | anything both dumps agree about — including a key they BOTH stopped emitting (which is what the field manifest is for) |
 | C1's field manifest | a column dropped from the declared header; a field containing a tab | a wrong VALUE in a correctly-shaped column |
-| C3 (oracle re-run) | what a subject's bytes decode to; a skip predicate that widened | anything outside its own discovery |
+| C3 (oracle re-run) | what a subject's bytes decode to; a skip predicate that widened; a genuine transcription error (checked against the C3 store even where python disagrees) | anything outside its own discovery; a divergence the store does not cover (falls back to today's verdict, counted STOREUNCOVERED rather than silently trusted) |
 | C0a | the harness calling `--list-source` when it should not; a corpus file growing a head | anything after the call is made |
 | the hash pin | any edit inside `run.sh`'s arm chain | an edit to an arm APPENDED after the END marker (correctly — that is the safe edit) |
 | the keyword census | a corpus line whose first token is a word the grown grammar wants | a collision that arrives with a new corpus file between runs (it runs every time for that reason) |
+
+## C3's THREE-WAY VERDICT (2026-09-10/11, lane `pyrole`)
+
+C3 used to score a python-vs-expectation disagreement a FAILURE
+unconditionally. It no longer does: per Frank's ruling (python is a
+TRANSCRIPTION-ERROR TRIPWIRE, its independence from the expectations is
+the only thing still worth checking, not its own correctness against
+PCRE2 — D26 stays the compatibility target), a disagreement is now checked
+against a COMMITTED oracle-store answer (`oracle_store/libpcre2-10.48/`,
+`build_c3_store.py` above) before being scored: the store CONFIRMING the
+expectation lands the cell in a new, always-printed, never-gated `INFO`
+bucket (python was simply wrong); the store disagreeing too is a real
+FAILURE; the store not covering the exact question at all is
+`STOREUNCOVERED`, a counted fallback to the pre-existing verdict. This
+resolved seven previously-red cells (`docs/dev/upstream_issues.md` U17 has
+the measured record — two python `re` divergences from PCRE2, both
+version-sensitive, closing entirely by python 3.11). **Full design:
+`docs/design/c3_three_way.md`** — read it before touching any of C3's
+verdict logic; it carries the verdict table, the `# pcre2-only` marking
+recommendation (retire reliance on the colon spelling; it has never
+actually worked — see that note's own §6), and a documented, pre-existing,
+NOW-VISIBLE box-sensitivity population-pin gap this redesign surfaces
+rather than causes (§7 there).
+
+`C3_INFO`/`C3_STOREUNCOVERED` join the pin block below as two more
+population pins (now eleven, not nine), checked and reconciled exactly
+like the pre-existing nine.
 
 ## Two sabotage rows are DEFERRED, and the reason is written here
 
