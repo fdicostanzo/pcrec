@@ -1,7 +1,17 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 2, post-panel and post-ruling. NO PARSER IS WRITTEN**
-(plan.md [DD-13]: "NO parser is written before (c) closes").
+**Status: REVISION 3 ([DD-13b.W23], 2026-09-12, lane w23design) — the
+[B42] absorption.** Revision 2 was post-panel (r44) and post-ruling
+(D87); revision 3 absorbs pcrec-bench's capability-set needs note
+(`bench_rxt_needs_v1.md`, received via outbox O-26) under Frank's two
+2026-09-12 rulings — **F-Q1**: the first delivery is Tier 1 AND Tier 2
+together, one **W23** delivery, no W2-only cut (§1.4 restructured);
+**F-Q2**: multi-line patterns are a MUST (`pattern-esc`, §2.19). W1 is
+BUILT (steps .1/.2/.3 landed; the wave table records what remains).
+§0.6 is the need-by-need revision record; §8 disposes the bench's nine
+P-Q questions; §9 maps their 41 acceptance checks. The W1-era text below
+is revised in place where a W23 production touches it and untouched
+elsewhere.
 
 This note designs the grammar and semantics of the unified
 pattern-source / test-carrier / bench-set file format, under the rulings
@@ -138,6 +148,79 @@ digit by an independent recognizer, four ambiguity attacks all failed);
 `(?J)` inside a DEFINE block not leaking; used-twice, self- and mutually
 recursive definitions compiling and agreeing on both oracles; the
 143-block reference census; and H4's python-`re` argument.
+
+### 0.6 Revision 3 record — the [B42] absorption, need by need
+
+The input is `bench_rxt_needs_v1.md` (50 needs N-1..N-53, six
+roadblocks, twelve production sketches, thirteen MEASURED facts at pin
+d34c9131, 41 acceptance checks, nine P-Q questions). The binding frame:
+**F-Q1** (Tier 1 + Tier 2 land as ONE W23 delivery), **F-Q2**
+(multi-line patterns are a MUST), and Option A (the set's truth lives in
+`.rxt`; any bench-side answer must be argued, §8's P-Q4 is the one place
+it was considered and the answer is still IN the format). The NUL and
+duplicate-`description` refusals are **STEP 0, lane rxtnul, landing
+now** — this revision designs against those refusals EXISTING and does
+not restate them as new productions (their M1/M5).
+
+**MEASURED for this revision** (probes run in this worktree; the census
+and refusal probes against `build/pcrec` at b9572c66, read-only):
+
+- The seventeen NEW first tokens this revision adds (`vocabulary`,
+  `provenance`, `pattern-esc`, `capable`, `under`, `configs`, and the
+  eleven sub-block attribute spellings) occur **0** times in first-token
+  position across the corpus — §1.1's 32-keyword census extended, same
+  method, same result. The sub-block attribute tokens additionally never
+  enter any dispatch context at all, because they only occur INDENTED.
+- `vocabulary` today is refused as **unknown** ("'vocabulary' is not a
+  file-level directive"), not with the later-wave sentence `tag` gets —
+  so the recognised-and-refused-by-name set (`rxt_format.md`'s "NOT IN
+  THIS BUILD" list) must grow the W23 keywords in the same change that
+  lands any partial build. Within one W23 delivery the interim state
+  never ships, but the spec rule is stated so a stranger's partial build
+  cannot regress it.
+- The three find-all counting rules were run head to head (python3, the
+  search-from-pos loop driven per rule): the bench's literal
+  `pos = max(end, pos+1)` **DOUBLE-COUNTS an empty match found beyond
+  the scan position** (`(?=a)` on `"xax"`: it reports `(1,1) (1,1)`
+  where `match_api.md` §3.1's protocol and `re.finditer` both report
+  one), and BOTH non-retry rules are a strict subset of `re.finditer`
+  on empty-preferring patterns (`a*?` on `"aaa"`: 4 spans vs 7 — the
+  NOTEMPTY class §3.1 already documents). §2.21 states the consequence:
+  `mc` counts the §3.1 protocol's matches, not the bench formula's and
+  not `finditer`'s.
+
+Where each need landed (no-ask rows N-29/N-51/N-53 omitted; N-6/N-31
+were BUILT already and are untouched):
+
+| need | landed |
+|---|---|
+| **N-1, N-3** | BUILT (W1), untouched — `pattern` stays rest-of-line verbatim |
+| **N-2** | §2.19 `pattern-esc` — the second spelling, same seven escapes, one line carrying a multi-line body (F-Q2). Roadblock #1 closed |
+| **N-4** | the raw-NUL refusal is STEP 0 (rxtnul). EXPRESSING a NUL via `pattern-esc \x00` is REFUSED BY NAME with K9 as the reason — the compile entry takes no pattern length — and parks on `rx_info.pattern_len`'s API half, a named trigger, not a silence (§2.19) |
+| **N-5** | `pattern-esc "\r"` expresses a trailing CR; the raw `pattern` trim is unchanged and documented |
+| **N-7** | BUILT (W1.3's widened name grammar), untouched |
+| **N-8** | the duplicate-`description` last-wins hazard is STEP 0's refusal (their M5); one-line rule unchanged, provenance carries the prose that never fit |
+| **N-9, N-45, N-48** | `tag` lands in W23 as designed (§4.5's mapping); N-48's regime mechanism is REPAIRED, not replaced — §4.5 item 4 rewritten on the derived-identifier call binding (§2.22) |
+| **N-10, N-20, N-21** | §2.15 `vocabulary` — per-key declared value sets, parser-enforced, undeclared keys stay free (compat). Roadblock #2 closed |
+| **N-11..N-19** | §2.14 `provenance` — a body SUB-BLOCK (§1.2's new mechanism), nine fields, four required, `adaptation` required iff `fidelity != verbatim`, `authored`'s agreement rule. Roadblock #3 closed |
+| **N-22, N-23** | §2.16 `capable` — per-config, repeatable, accumulating, **fail-closed** (absent = nothing satisfied); flagged to Frank with §2.20 (P-Q4's ratification) |
+| **N-24, N-28** | BUILT / as-designed; B7's raw-bytes promise gets its first verification at the delivery (§9) |
+| **N-25** | `@file:` lands in W23 as designed (§2.8) |
+| **N-26, N-27** | §2.18 — `@file:` gains `as <id>` (per-file subject namespace, functional binding, conflicts refused) and OPTIONAL `sha256 <hex64>` checked by whatever READS the subject. §2.8's no-hash paragraph is re-scoped: it was a default for committed subjects, not a principle (P-Q8). Roadblock #4 closed |
+| **N-30** | BUILT, untouched |
+| **N-32** | §2.21 — `mc`'s counting rule STATED: the `match_api.md` §3.1 protocol, with the measured three-rule comparison above and the bench formula's double-count named |
+| **N-33** | unchanged (COULD; `variant`'s `groups` map is where neutral capture checking lands when the bench opens OD-B9) |
+| **N-34** | `tag convention=` as designed, now closable by `vocabulary` |
+| **N-35** | §2.17 `under` — a case-line QUALIFIER carrying the second correct answer per convention. Roadblock #5 closed |
+| **N-36, N-38** | §2.9 widened: `oracle` takes an `engine-ref` with optional `/version`; `python`/`pcre2` keep their exact meanings; an absent oracle stays R-VG-3's labelled skip |
+| **N-37** | `tag method=` as designed (W23) |
+| **N-39, N-40, N-41** | §2.23 — `variant` becomes a body SUB-BLOCK: `kind` (closed via `vocabulary kind`), `text`, `groups`, `note` (prose), `unsupported`. The old one-line-plus-`groups`-continuation shape was a proto-sub-block; the general mechanism replaces it (house rule). N-41's three fields all have carriers |
+| **N-42** | `config … testee`/`option` land in W23 as designed |
+| **N-43, N-44** | §2.20 `configs describe` — the head declaration separating BUILD configs from DESCRIPTIVE ones, default `build` = today's semantics; plus the PERMANENCE sentence for a target-less, config-less file. Roadblock #6 closed; ratification flagged to Frank (D93 territory) |
+| **N-46, N-47** | BUILT (W1), untouched |
+| **N-49** | the regime -> subject-set mapping rides the repaired item 4 (§2.22): each regime block carries its own subject list |
+| **N-50** | `include` lands in W23 as designed (§2.5, §2.11) |
+| **N-52** | §2.24 — `--list-source` gains appended columns, **unconditional named sections** (`provenance`, `variants`, `cases`), and a spec-stated VALIDATES-vs-RECOGNISES table (their D4). The `m @file:… passes silently` observation is retired: case values are read |
 
 ---
 
@@ -297,21 +380,61 @@ Lexical rules, unchanged from today and binding on every new line kind:
   permitted and ignored"; Frank's `description` block scalar (r44, 15:1x)
   needs continuation to mean something, and one rule serving every head
   construct is better than a second mechanism beside it.
-- **A PATTERN BLOCK keeps today's shape: case lines are NOT indented**,
-  and a block ends at the next `pattern` line or end of file. This
-  asymmetry between head and body is deliberate and is the only one: the
-  body's shape is forced by R-COMPAT-1 (3,265 blocks depend on it) and
-  the head is new territory where indentation costs nothing. A generator
-  writing an included fragment writes pattern blocks only (§2.5), so it
-  never has to indent anything.
+- **A PATTERN BLOCK keeps today's shape: its DIRECT lines are NOT
+  indented**, and a block ends at the next `pattern` line or end of
+  file. **REVISED at W23** ([B42] P-Q1; this deliberately and NARROWLY
+  relaxes what revision 2 called "the only asymmetry"): a block-scoped
+  line kind may be declared a **SUB-BLOCK KIND** — this revision
+  declares exactly two, `provenance` (§2.14) and `variant` (§2.23) —
+  whose line is followed by INDENTED attribute lines, one attribute per
+  line, ending at the first non-indented line **including a blank one**
+  (the head's own r46sem-10 rule, reused rather than re-decided). The
+  rules that keep N-2's loud failure alive, each binding on ALL THREE
+  body readers (`src/parse/rxt_source.c`, `tests/harness/run.sh`,
+  `tests/harness/verify_rxt.py` — the C1 differential is what holds
+  them together):
+  1. **The indentation test PRECEDES token dispatch.** An indented line
+     is a sub-block attribute or a hard error; it is never dispatched on
+     its first token. Without this rule an indented `pattern` line would
+     start a new block in one reader and continue a sub-block in
+     another — the one defect this mechanism could introduce, closed by
+     ordering, and the reason the sub-block attribute vocabulary avoids
+     the token `pattern` anyway (`variant` carries `text`, §2.23).
+  2. **An indented line NOT under a sub-block keyword line stays a HARD
+     ERROR**, with today's diagnostic ("a pattern block's lines are not
+     indented" — `verify_rxt.py:426`, `run.sh:2065-2088`, and
+     `rxt_source.c`'s same refusal, the bench's own MEASURED M8). In
+     particular an indented continuation under `pattern` is refused
+     exactly as today: `pattern` is not a sub-block kind, and F-Q2 is
+     answered by `pattern-esc` (§2.19), never by continuation.
+  3. **A sub-block's attribute vocabulary is a fourth closed lexical
+     context** (§1.2's context rule, one more member): an unknown
+     attribute is a hard error naming the sub-block.
+  Two customers is what makes this a mechanism rather than a special
+  case: `provenance` needs a nine-field body no one-line form can hold,
+  and `variant` under N-41 needs `kind`/`text`/`groups`/`note` — and
+  revision 2's `variant` ALREADY had a one-off un-indented `groups`
+  continuation line, which this replaces (a proto-sub-block retired by
+  the general form). Regime grouping, the candidate third customer, does
+  NOT ride this mechanism — §2.22 repairs the wrapper mechanism instead,
+  and the reasons are recorded there.
+  A generator writing an included fragment still writes pattern blocks
+  only (§2.5); it indents exactly when it writes a sub-block.
+  MEASURED FREE: **0** indented lines exist in the corpus (§1.1), so no
+  existing file can reach any of this.
 - **One line, one value — with exactly ONE exception: the BLOCK SCALAR.**
   A line kind whose value is prose may write `<kind> |` and continue on
   indented lines, YAML's `|` form; newlines are preserved and the value
   ends at the first non-indented line. The one-line form
-  `<kind> <text>` stays. **Only `description` uses it today**, and the
-  exception is stated as a property of the VALUE production rather than
-  of `description`, so a second prose field would inherit it rather than
-  invent it. Nothing else in the format spans a line.
+  `<kind> <text>` stays. The exception is stated as a property of the
+  VALUE production (`prose-value`) rather than of any keyword, so a
+  second prose field inherits it rather than inventing it. **W23
+  extends WHERE the production is legal, not what it is**: `prose-value`
+  is a head form AND a sub-block-attribute form — inside a sub-block a
+  `|` scalar's continuation lines are indented DEEPER than the attribute
+  line, the same relative rule one level down. A pattern block's DIRECT
+  lines still cannot carry it (`description` at block scope stays
+  one-line; the W1.1 correction stands).
 
 ### 1.3 The productions
 
@@ -330,16 +453,24 @@ rest-of-line = ? every byte to the end of the line, verbatim ? ;
 subject     = quoted-subject | file-subject ;
 quoted-subject = '"' , { subject-char | escape } , '"' ;    (* today's, unchanged *)
 escape      = '\"' | "\\" | "\n" | "\t" | "\r" | "\f" | "\v" | "\x" , hex , hex ;
-file-subject = '@file:"' , path-chars , '"' ;                              (* W2 *)
+file-subject = '@file:"' , path-chars , '"' ,
+               [ ws , "as" , ws , defname ] ,                     (* W23 *)
+               [ ws , "sha256" , ws , hex64 ] ;                   (* W23 *)
 path-ref    = '"' , path-chars , '"'                    (* local, C's "" *)
             | "<" , store-name , ">" ;                  (* library path, C's <> *)
 config-list = ident , { "," , [ ws ] , ident } ;
-tag-item    = tag-label | tag-pair ;                              (* U1 *)
+tag-item    = tag-label | tag-pair | tag-prose ;                  (* U1; W23 *)
 tag-label   = ? a bare label: no whitespace, no '=' ? ;
 tag-pair    = tag-key , "=" , tag-value ;   (* tag-value: no whitespace, no '=' *)
+tag-prose   = tag-key , "=" , quoted-subject ;  (* W23: the seven escapes, ONE
+                 vocabulary — a value whose first byte after '=' is '"' is the
+                 quoted form and must terminate; whitespace legal inside *)
 prose-value = rest-of-line                        (* one-line form *)
             | "|" , eol , { INDENT , rest-of-line , eol } ;  (* block scalar *)
 INDENT      = ? one or more spaces at the start of the line ? ;
+defname     = ? the wide name grammar: [A-Za-z_] then [A-Za-z0-9_.-]
+                (rxt_source.c's defname_ok — one grammar, three readers) ? ;
+hex64       = ? exactly 64 lowercase hex digits ? ;
 
 (* ---------- file ---------- *)
 file          = head , body ;
@@ -356,11 +487,17 @@ decl-line =
     | "use"        , ws , config-list                              (* W3 *)
     | "oracle"     , ws , oracle-spec                              (* W3 *)
     | "tag"        , ws , tag-item , { ws , tag-item }             (* W2 *)
+    | "vocabulary" , ws , tag-key , ws , tag-value , { ws , tag-value }
+                                                                  (* W23 *)
+    | "configs"    , ws , ( "build" | "describe" )                (* W23 *)
     | "description", ws , prose-value ;                            (* W1 *)
 
 decl-attr   = "description" , ws , prose-value ;   (* attaches to decl-line *)
 
-oracle-spec = "python" | "pcre2" | "none" , ws , rest-of-line ;    (* W3 *)
+oracle-spec = "none" , ws , rest-of-line                          (* W3 *)
+            | engine-ref ;    (* W23 widening: ident [ "/" version ] — `python`
+                 and `pcre2` are engine-refs with no version and keep their
+                 exact meanings; any other engine is R-VG-3's labelled skip *)
 
 (* ---------- head: config block ---------- *)
 config-block = "config" , ws , ident , [ ws , "from" , ws , config-list ] , eol ,
@@ -374,7 +511,11 @@ config-line =
     | "budget"   , ws , budget-item           (* as a pattern block's   W1 *)
     | "analysis" , ws , data-kind , ws , ident  (* select a data block  W2 *)
     | "testee"   , ws , engine-ref            (* a non-pcrec engine     W3 *)
-    | "option"   , ws , tag-pair ;            (* that engine's options  W3 *)
+    | "option"   , ws , tag-pair              (* that engine's options  W3 *)
+    | "capable"  , ws , tag-value , { ws , tag-value } ;
+                    (* W23: the capability tags this config SATISFIES;
+                       repeatable, accumulating; ABSENT means NOTHING is
+                       satisfied — fail-closed (§2.16) *)
 
 engine-ref = ident , [ "/" , version-chars ] ;      (* e.g. pcre2/10.42 *)
 
@@ -393,7 +534,12 @@ data-line =
     | "row"      , ws , int , ws , int , { ws , int } ;  (* offset, then 16 counts *)
 
 (* ---------- body: a pattern block ---------- *)
-pattern-block = "pattern" , ws , rest-of-line , eol , { block-line } ;
+pattern-block = pattern-line , { block-line } ;
+pattern-line  = "pattern" , ws , rest-of-line , eol          (* today's *)
+              | "pattern-esc" , ws , quoted-pattern , eol ;       (* W23 *)
+quoted-pattern = '"' , { subject-char | escape } , '"' ;
+                    (* the SAME seven escapes; §2.19's rules — one of the two
+                       spellings per block, `\x00` refused by name (K9) *)
 block-line =
     (* --- today's, unchanged --- *)
       "flags"    , ws , letters
@@ -410,26 +556,62 @@ block-line =
     | "gp" , ws , slot , ws , span
     | "gu" , ws , giveup-code , ws , subject
     (* --- new --- *)
-    | "name"        , ws , ident                                   (* W1 *)
+    | "name"        , ws , defname            (* W1; widened at W1.3 *)
     | "description" , ws , rest-of-line       (* one-line form ONLY   W1 *)
     | "encoding"    , ws , ident        (* D58's per-pattern axis    W1 M16 *)
+    | "export"      , ws , config-list                          (* W1.3 *)
     | "tag"         , ws , tag-item , { ws , tag-item }            (* W2 *)
     | "mc"          , ws , subject , ws , int                      (* W2 *)
+    | "under"       , ws , tag-value , ws , under-case            (* W23 *)
     | "oracle"  , ws , oracle-spec                                 (* W3 *)
-    | "variant" , ws , ident , ws , variant-body ;                 (* W3 *)
+    | provenance-block                                            (* W23 *)
+    | variant-block ;                              (* W3, reshaped at W23 *)
 
-variant-body = "unsupported" , ws , rest-of-line          (* a declared refusal *)
-             | rest-of-line , [ eol , "groups" , ws , group-map ] ;
+under-case  = ( "m" | "n" | "ms" | "ns" | "mc" ) -case-line-as-above ;
+              (* the qualifier wraps a case line UNCHANGED; never g/gp/gu —
+                 §2.17 *)
+
+(* ---------- body: the two SUB-BLOCK kinds (§1.2) ---------- *)
+provenance-block = "provenance" , eol , { INDENT , prov-line , eol } ;
+prov-line =
+      "source"       , ws , defname       (* a registered slug,   REQUIRED *)
+    | "url"          , ws , rest-of-line  (* the exact URL fetched         *)
+    | "ref"          , ws , rest-of-line  (* file/rule/line inside it      *)
+    | "licence"      , ws , token         (* an SPDX id,          REQUIRED *)
+    | "licence-note" , ws , prose-value
+    | "retrieved"    , ws , iso-date      (* RFC 3339 date,       REQUIRED *)
+    | "fidelity"     , ws , ( "verbatim" | "adapted" | "inspired" )
+                                          (*                      REQUIRED *)
+    | "adaptation"   , ws , prose-value   (* REQUIRED iff fidelity is not
+                                             verbatim *)
+    | "attribution"  , ws , prose-value ; (* the field exists; the licence
+                                             policy is the consumer's *)
+
+variant-block = "variant" , ws , ident , eol ,
+                { INDENT , variant-attr , eol } ;
+variant-attr =
+      "text"        , ws , rest-of-line   (* the replacement pattern text *)
+    | "kind"        , ws , tag-value      (* closed via `vocabulary kind` *)
+    | "groups"      , ws , group-map
+    | "note"        , ws , prose-value    (* the reviewer's sentence      *)
+    | "unsupported" , ws , rest-of-line ; (* a declared refusal, reason   *)
 group-map    = ident , "=" , int , { "," , ident , "=" , int } ;
 ```
 
-**That is the whole grammar: seven file-level declarations, two head
-block kinds, seven new block-scoped lines** (`name`, `description`,
-`tag`, `mc`, `oracle`, `variant`, plus `encoding`; `features` gains an
-optional `only`). Sixteen additions against thirteen existing line
-kinds, plus §1.5's three pattern-level extensions — the format roughly
-doubles, once, and each addition answers a named consumer in
-`requirements.md` or a ruling.
+**That is the whole grammar.** Revision 2's count was sixteen additions
+(seven file-level declarations, two head block kinds, seven block-scoped
+lines) plus §1.5's three pattern-level extensions. Revision 3 adds, all
+W23 and all for the [B42] consumer: two head declarations (`vocabulary`,
+`configs`), one config-body line (`capable`), a second block starter
+(`pattern-esc`), one case-line qualifier (`under`), two body sub-block
+kinds (`provenance`; `variant` reshaped from its W3 one-line form), a
+`tag-item` third alternative (`tag-prose`), and two optional suffixes on
+`file-subject` (`as`, `sha256`). Every addition is ADDITIVE against the
+shipped corpus — a new first token measured at 0 occurrences (§0.6), an
+extension of a production the shipped build refuses by name, or new
+syntax at a position that is a hard error today (an indented body line;
+text after an `@file:` path) — so R-COMPAT-1 holds production by
+production, and §9's G1 row says how that is checked.
 
 **CORRECTION ([DD-13b.W1.1], 2026-08-30): a pattern block's
 `description` takes the ONE-LINE form only — the production above said
