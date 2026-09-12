@@ -432,6 +432,29 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     fclose(f);
     buf[got] = 0;
 
+    /* [RXTNUL] A NUL BYTE ANYWHERE IN THE FILE IS REFUSED BY NAME, BEFORE
+     * THE FILE IS SPLIT INTO LINES. Below this point every production
+     * reads a NUL-terminated C string handed out of `v[]`, so without
+     * this scan a NUL mid-line silently truncates whatever value it
+     * falls inside — `pattern ab<NUL>cd` parsed as `ab`, exit 0, no
+     * diagnostic (the bench's own M1 measurement,
+     * docs/design/dd13_format/bench_rxt_needs_v1.md §1.9/§2.7, ranked
+     * this refusal ABOVE `pattern-esc` itself: "a missing capability is
+     * a known limit, a silent truncation is a trap"). The format is
+     * line-oriented text and NUL has no representation in any production
+     * today — the scan costs one pass over bytes already in hand, and it
+     * runs BEFORE the line split rather than being caught line by line,
+     * because a per-line strlen() would already have thrown the true
+     * length away. A future `pattern-esc` escape production would carry
+     * a NUL as a DECODED escape value, never as a raw file byte, so this
+     * refusal does not narrow that grammar. */
+    for (size_t i = 0; i < got; i++) {
+        if (buf[i] != 0) continue;
+        size_t line = 1;
+        for (size_t j = 0; j < i; j++) if (buf[j] == '\n') line++;
+        return rxt_fail(p, line, "embedded NUL byte in .rxt source file");
+    }
+
     /* count lines first, then fill — one pass each, no realloc dance */
     size_t nl = 0;
     for (size_t i = 0; i < got; i++) if (buf[i] == '\n') nl++;
@@ -974,6 +997,12 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     src->path = arena_strdup(&src->arena, path);
 
     RxtRow *block = NULL;             /* the open pattern block, if any */
+    size_t block_desc_line = 0;       /* line of the open block's own
+                                        * 'description', 0 = none yet —
+                                        * [RXTDUP]'s duplicate-description
+                                        * refusal needs the FIRST line to
+                                        * name, and block->description
+                                        * alone cannot carry it */
     int in_body = 0;
 
     for (size_t i = 0; i < L.n; i++) {
@@ -1004,6 +1033,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             in_body = 1;
             if (!src->first_pattern_line) src->first_pattern_line = line;
             block = row_push(&p, src, RXT_DECL_PATTERN, line);
+            block_desc_line = 0;
             /* REST-OF-LINE, VERBATIM. `pattern` is the one production
              * whose value keeps every byte to the end of the line — no
              * trimming, no quoting, no escaping (rxt_format.md). Three
@@ -1076,6 +1106,26 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 continue;
             }
             if (tok_is(l, "description")) {
+                /* [RXTDUP] A SECOND FILE-LEVEL 'description' IS REFUSED,
+                 * NAMING BOTH LINES, for the SAME reason as the pattern
+                 * block's own duplicate-description refusal just below —
+                 * `docs/spec/rxt_format.md` calls this "a machine-readable
+                 * prose FIELD" (singular), and a second one is an author
+                 * mistake, not a second fact. It does not lose data today
+                 * (each `description` is its own row in file order, one
+                 * of the several kinds this dump has no scalar-field
+                 * cardinality for), but a second head description would
+                 * otherwise sail through silently with no way for a
+                 * reader — or `--list-source`'s own consumer — to tell
+                 * which one is THE file's description, so it is refused
+                 * here rather than left to accumulate. */
+                for (size_t k = 0; k < src->nrows; k++)
+                    if (src->rows[k].kind == RXT_DECL_DESCRIPTION) {
+                        rxt_fail(&p, line,
+                                 "a file has one 'description' (already "
+                                 "given on line %zu)", src->rows[k].line);
+                        goto fail;
+                    }
                 const char *text = NULL;
                 if (parse_prose(&p, &L, &i, line_value(l), &text) != 0) goto fail;
                 RxtRow *r = row_push(&p, src, RXT_DECL_DESCRIPTION, line);
@@ -1239,7 +1289,25 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                  * this line, only of one with nothing after the keyword
                  * at all — which does not reach this arm (see
                  * `vocab_find`'s tokenizer above). */
+                /* [RXTDUP] A SECOND 'description' LINE IN ONE BLOCK IS
+                 * REFUSED, NAMING BOTH LINES — before this fix the second
+                 * one silently won (`block->description` is a single
+                 * field, unconditionally overwritten), exit 0, no
+                 * diagnostic (bench note
+                 * docs/design/dd13_format/bench_rxt_needs_v1.md §1.9 M5).
+                 * The manager measured the shipped corpus clean (210
+                 * files, 0 blocks with >1 description line), so this is
+                 * compat-safe; the block-level duplicate-name refusal
+                 * above is the precedent for the wording and for citing
+                 * the earlier line. */
+                if (block_desc_line) {
+                    rxt_fail(&p, line,
+                             "a pattern block has one 'description' "
+                             "(already given on line %zu)", block_desc_line);
+                    goto fail;
+                }
                 block->description = arena_strdup(&src->arena, v);
+                block_desc_line = line;
                 continue;
             }
             if (parse_setting(&p, block, line, l, 1) != 0) goto fail;

@@ -1632,6 +1632,56 @@ check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident 'encoding name'
 # population every corpus file is in) — all three legs now refuse it.
 check_refusal_all3 dup_block_name.rxt dup-block-name 'duplicate block name'
 
+# --- [RXTDUP lane, sem24] a pattern block's SECOND 'description' line
+# is refused, naming both lines — the same discipline as sem20's
+# duplicate block name, one field over. Before this fix the second line
+# silently WON (M5, bench_rxt_needs_v1.md §1.9). Leg A only: legs B and
+# C each keep the LAST description silently today (the pre-fix shape,
+# just not yet fixed at those two legs — out of this lane's scope,
+# src/parse/rxt_source.c only).
+check_refusal dup_description.rxt dup-description "one 'description'"
+DD="$FIXRUN/single_description.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$DD" > /dev/null 2>"$WORKDIR/dd.err"; then
+    pass "dup-description: the accept control (ONE description line) is ACCEPTED — the refusal is isolated to the duplicate"
+else
+    fail "dup-description: the single-description accept control was refused:
+  $(cat "$WORKDIR/dd.err")"
+fi
+
+# --- [RXTDUP lane, sem25] a SECOND file-level 'description' is refused
+# the same way, naming the earlier line — docs/spec/rxt_format.md calls
+# this "a machine-readable prose FIELD" (singular). Head-only (legs B/C
+# never read the head). $HB (head_basic.rxt, sem's own earlier fixture)
+# is the accept control: it carries exactly one head-level description
+# and continues to pass every check above.
+check_refusal dup_head_description.rxt dup-head-description "one 'description'"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$HB" > /dev/null 2>"$WORKDIR/hbdd.err"; then
+    pass "dup-head-description: head_basic's single head description is still ACCEPTED"
+else
+    fail "dup-head-description: head_basic (one head description) was refused:
+  $(cat "$WORKDIR/hbdd.err")"
+fi
+
+# --- [RXTNUL lane, sem22] an EMBEDDED NUL BYTE anywhere in the file is
+# refused BY NAME (the file, the 1-based line, and that it is a NUL
+# byte), naming M1's own shape (bench_rxt_needs_v1.md §1.9/§2.7): before
+# this fix `pattern ab<NUL>cd` silently truncated to `ab`, exit 0, no
+# diagnostic. Leg A only, deliberately NOT check_refusal_all3 — legs B
+# and C each mishandle the byte a DIFFERENT way today (bash's own `read`
+# drops it silently, verify_rxt.py's decoder does not), which is a defect
+# in each leg's own body reader and out of this lane's scope
+# (src/parse/rxt_source.c only).
+check_refusal nul_byte.rxt nul-byte 'NUL byte'
+NB="$FIXRUN/nul_byte.rxt"
+NBOK="$WORKDIR/nul_byte_free.rxt"
+tr -d '\000' < "$NB" > "$NBOK"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$NBOK" > /dev/null 2>"$WORKDIR/nbok.err"; then
+    pass "nul-byte: the SAME file with the NUL stripped is ACCEPTED — the refusal is isolated to the byte, not the shape"
+else
+    fail "nul-byte: the NUL-free twin of the fixture was refused too:
+  $(cat "$WORKDIR/nbok.err")"
+fi
+
 # --- sem21: 'with'/'from' trailing whitespace is trimmed (head-only) --
 WT="$FIXRUN/with_trailing_ws.rxt"
 wt_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WT" 2>&1)"

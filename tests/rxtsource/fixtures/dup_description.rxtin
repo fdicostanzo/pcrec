@@ -1,0 +1,12 @@
+# [RXTDUP] rxtnul lane fixture: TWO 'description' LINES IN ONE PATTERN
+# BLOCK. Before this fix the second silently WON — `block->description`
+# is a single field, unconditionally overwritten, exit 0, no diagnostic
+# (M5, docs/design/dd13_format/bench_rxt_needs_v1.md §1.9). Now it
+# refuses BY NAME, naming both lines — the same discipline as
+# dup_block_name.rxtin's duplicate-name refusal, one field over. Headless
+# (the population every corpus file is in, that fixture's own reason).
+pattern a+
+name one
+description the first one
+description the second one
+m "aaa" 0 3

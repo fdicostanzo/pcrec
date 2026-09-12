@@ -1,0 +1,12 @@
+# [RXTDUP] rxtnul lane fixture: TWO FILE-LEVEL 'description' LINES.
+# docs/spec/rxt_format.md calls this "a machine-readable prose FIELD"
+# (singular). Before this fix each occurrence became its own dumped row
+# with no cardinality check at all — not the same silent-loss shape as
+# the pattern-block case (nothing is overwritten; a second row simply
+# appears), but the same author mistake, so it is refused the same way:
+# by name, naming the earlier line.
+description the first file-level description
+description the second file-level description
+pattern a+
+name one
+m "aaa" 0 3
