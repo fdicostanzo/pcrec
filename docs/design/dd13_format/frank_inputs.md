@@ -155,3 +155,50 @@ frequency cannot (equal means, different shapes; the [OPT-K] §7.4 model
 miss was exactly a per-byte mean standing in for a per-scan reality).
 No analysis is added on plausibility; each block names the question and
 the selection point that reads it.
+
+## 2026-09-12 — the internal-consistency ruling ([DD-13b.W23], on P-Q1 and the format's shape generally)
+
+Frank, sixty-first session, ruling on the bench's P-Q1 (the head/body
+indentation asymmetry vs the provenance sub-block), verbatim:
+
+> i'd really like the format to be internally consistent. consider a
+> breaking "version x" header line to signal if needed. i'd like a
+> schema rules validation. i sense the inconsistencies would cause
+> eventual confusion and problems. if we need subblocks, create syntax
+> to specify. the format should be structurally parseable without
+> context.
+
+→ Five consequences, superseding the manager's P-Q1 leaning (which was
+"relax the head/body asymmetry for a named set of body sub-block
+keywords" — that answer requires a keyword table to find structure,
+which is exactly the context-dependence ruled out here):
+
+1. **INTERNAL CONSISTENCY over accretion.** No per-keyword structural
+   exceptions; the head/body asymmetry is not extended, and where the
+   grown grammar needs what the asymmetry blocks, the grammar is FIXED
+   rather than excepted.
+2. **A breaking `version` header line is ON THE TABLE.** A file
+   declaring the new version gets the consistent grammar; a file
+   without one parses under today's rules byte-for-byte — R-COMPAT-1
+   is preserved by VERSIONING, not by freezing the grammar. Whether
+   the break is taken, and what exactly it unifies, is the design
+   lane's to work out and the panel's to attack.
+3. **SCHEMA RULES VALIDATION.** The format's structural rules — which
+   line kinds are legal in which scope, required and conditional
+   lines (provenance's REQUIRED-iff), closed value sets — are
+   DECLARED as a schema and VALIDATED, not implicit in parser control
+   flow. The bench's `vocabulary` production is the file-declared
+   half; the format-level half is pcrec's own rules, stated once and
+   enforced mechanically. This also strengthens the D4
+   validates-vs-recognises obligation on `--list-source`: with a
+   schema, validation coverage is a derivable fact instead of a prose
+   sentence.
+4. **SUB-BLOCKS GET EXPLICIT SYNTAX.** If the design needs sub-blocks
+   (provenance, regime grouping), it CREATES syntax that marks them —
+   never overloaded indentation whose meaning depends on which
+   keyword opened the line.
+5. **STRUCTURALLY PARSEABLE WITHOUT CONTEXT.** A generic reader must
+   be able to recover the file's structure — blocks, sub-blocks, line
+   membership — from syntax alone, with no keyword table. Keywords
+   and the schema then say what the structure MEANS and whether it is
+   valid; they never decide where structure begins or ends.
