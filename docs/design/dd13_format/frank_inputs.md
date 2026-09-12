@@ -202,3 +202,18 @@ which is exactly the context-dependence ruled out here):
    membership — from syntax alone, with no keyword table. Keywords
    and the schema then say what the structure MEANS and whether it is
    valid; they never decide where structure begins or ends.
+
+Same day, the OWNERSHIP framing (follows the internal-consistency
+ruling above, sharpens it): "these are capabilities that bench requires
+but syntax is yours and you're responsible for the long term life of
+the format. therefore, find the structure that is self-consistent,
+clear, and long term viable." → The bench's twelve §2 sketches are
+CAPABILITY REQUIREMENTS with illustrations, not draft grammar — the
+design derives the structure from the NEEDS (N-nn), free to redesign
+every spelling, and the selection criterion is LONG-TERM VIABILITY of
+the format, ranked above bench convenience and above
+minimal-diff-from-today. Consequence for the manager's own pre-rulings:
+each stands as a CAPABILITY accept (the semantic content — mc's
+counting rule, the optional subject hash, fail-closed capable, the
+validates-vs-recognises obligation); every SPELLING in them is the
+design's to settle inside the one consistent structure.
