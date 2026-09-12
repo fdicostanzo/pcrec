@@ -409,6 +409,17 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   the delivered value live after the cut — the same rule ordinary captures
   under a cut already follow.
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
+- `bench_rxt_needs_v1.md` — **[RECEIVED INPUT, 2026-09-12]**: verbatim
+  copy of pcrec-bench's `rxt_needs_v1.md` (their [B42] capability-survey
+  lane's feedback note, announced by outbox O-26), under a provenance
+  header carrying Frank's two attached rulings (F-Q1 no W2-only first
+  sample — Tier 1 AND Tier 2 in one delivery; F-Q2 multi-line patterns
+  are a MUST, pattern-esc + the NUL refusal first-delivery scope). Fifty
+  needs N-1..N-53, six roadblocks, twelve proposed productions, thirteen
+  MEASURED facts at pin d34c9131, a 41-check acceptance checklist the
+  bench will run at the restart, and nine P-Q design questions for pcrec.
+  The [DD-13b.W23] revision builds against THIS copy; never edit the
+  verbatim half — re-fetch and diff on any doubt.
 
 Maintenance: update this file when files are added/removed or change
 roles.
