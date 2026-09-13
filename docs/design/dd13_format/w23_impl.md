@@ -332,10 +332,10 @@ grep -rn -- "--list-source\|NF *[!=]= *[0-9]\|cut -f\|IFS=\$'\\\\t'\|awk -F'\\\\
 | R3 | `tests/harness/run.sh:1671-1675` | `IFS=$'\t' read -r _k _l _n _v _rest` over `grep -v '^#'`, keyed on `_k = "target"` | **YES** — appends land in `_rest` | **BY LUCK**, and it degrades SILENTLY: a section data row reaches the loop, fails the key test, and is skipped with no signal |
 | R4 | `tests/rxtsource/run_rxtsource_tests.sh:464-477` | `MANIFEST`, a hand-pinned literal of the column names, compared verbatim against the live header | **BREAKS LOUDLY AND CORRECTLY** — this is the intended gate for column growth, with its own "add it to MANIFEST" instruction at `:473-476` | yes |
 | **R5** | **`tests/rxtsource/run_rxtsource_tests.sh:479-494`** | **`awk -F'\t' -v want="$ncols" '$2 ~ /^#/ { next } NF != want + 1 { ... }'` — asserts EVERY non-comment row has exactly `ncols+1` fields, unconditionally of kind** | yes (`ncols` derives from `MANIFEST`, which moves in lockstep) | **NO. THIS IS THE `NF != 15` DEFECT, ALIVE, IN THIS REPO, FOUND BY GREP BEFORE LANDING** |
-| R6 | `tests/rxtsource/run_rxtsource_tests.sh:499-500` | kind-keyed counts (`$2 != "pattern"` / `$2 == "pattern"`) | YES | YES, by the same invariant as R2 |
+| **R6** | **`tests/rxtsource/run_rxtsource_tests.sh:499-505`** | **`awk -F'\t' '$2 !~ /^#/ && $2 != "pattern" { n++ }'` and its `== "pattern"` twin at `:500`, asserted ZERO at `:501-505` ("the corpus has no head")** | yes (`$2` is positional from the front) | **NO. IT IS R5'S DEFECT IN THE INEQUALITY DIRECTION, AND A GREEN W23-S4 WOULD PROVE IT BROKEN** |
 | R7 | `tests/rxtsource/run_rxtsource_tests.sh:561-568` | the leg A→B/C projection: explicit positional column selection, `print "block", $1, $3..$13, $17` | **YES for APPENDS** (reads 1-13 and 17); an INSERTED column breaks it silently — which is what `table_contract.md`'s append-only rule exists to forbid | YES (`$2 == "pattern"` filter) |
 | R8 | `docs/spec/rxt_format.md:418-499` | the prose column contract | needs its SW11/SW14 hunk | needs the section column lists |
-| R9 | `tests/mech/sabotages/S200,S201,S202,S203` | plants whose detectors ARE R4/R5 | — | — |
+| R9 | `tests/mech/sabotages/S200,S201,S202,S203` | plants whose detectors ARE R4/R5 (and, once repaired, R6) | — | — |
 | — | `tests/harness/verify_rxt.py` | **does NOT read the dump at all** — it refuses a head-bearing file by name (`:407-417`) per the seam ruling | — | — |
 | — | `cli/`, `tools/`, `scripts/` | **no hits** | — | — |
 | — | `src/parse/rxt_source.c:2085` | `pcrec_rxt_source_ncols()` — **ZERO callers anywhere in the tree**; the field-manifest check derives its own `ncols` from the `MANIFEST` string instead | — | — |
@@ -367,23 +367,68 @@ section's own declared column list, with the main table keeping its
 defaulting, because an extraction helper that defaults on missing input
 fails in the silent direction (learnings §3, the `[ABI-NS]` entry).
 
-**THE INVARIANT THAT MAKES R2, R3 AND R6 SAFE IS AN ACCIDENT UNTIL IT
-IS A CHECK.** Three readers key on field 1 being a main-table `kind`
-token. They survive sections only because every section's first column
-is `line`, an integer, which can never equal `pattern`, `target` or any
-other kind token. **DECIDED (4): that becomes an assertion in the C1
-differential** — *no `#section` row's field 1 may equal any main-table
-`kind` token* — walked over the dump's own header lines rather than a
-hand-written list of section names. It costs one awk arm and it is the
-difference between three readers that are safe and three readers that
-are lucky. §3.1 carries it as check **W23-S4**.
+**R6 IS THE SAME DEFECT ON THE OTHER SIDE OF THE COMPARISON, AND
+REVISION 1 MARKED IT SAFE** (r59-A1, and it is the sharpest single
+observation of the round). R6 counts every non-comment row whose `kind`
+field is **not** `pattern` and asserts the total is ZERO — *"the corpus
+has no head"*, a third view of C0a's zero. **An EQUALITY reader
+(`$1 == "pattern"`, `$2 == "pattern"`) is protected by the
+first-column-is-`line` invariant below: a section row's integer can
+never EQUAL a kind token, so the row is never selected and the reader
+survives. An INEQUALITY reader is broken by exactly the same fact**:
+every one of `#section cases`' thousands of rows has a field 2 that is
+not `pattern`, so every one of them is COUNTED, and the check fails
+with *"leg A emitted N head-declaration row(s); the corpus has no head"*
+at roughly the corpus's own case-line count.
+
+**And its misdirection is worse than R5's**, which is the argument for
+fixing both in one step rather than meeting them one at a time: R5's
+message names a TAB in a field, which at least points at the dump; R6's
+names a HEAD DECLARATION in a corpus that has none, which points at the
+parser. A lane that emitted `#section cases` and then read *"the corpus
+has no head"* would go looking for a head-detection bug that does not
+exist.
+
+**Its repair joins R5's, in W23.4's build order, BEFORE any section is
+emitted** (§6.4 item 3): both counters gain the section-aware scope —
+they count rows of the MAIN TABLE, identified by the section boundary
+the stream itself declares, not by "every non-comment row". The
+alternative (excluding rows whose field 2 is an integer) is rejected for
+the reason the taxonomy lesson gives: a filter defined by what a row is
+NOT will one day hold something else.
+
+**THE INVARIANT THAT MAKES R2 AND R3 SAFE IS AN ACCIDENT UNTIL IT IS A
+CHECK, AND IT PROTECTS EQUALITY READERS ONLY.** Two readers key on a
+field being EQUAL to a main-table `kind` token. They survive sections
+only because every section's first column is `line`, an integer, which
+can never equal `pattern`, `target` or any other kind token. **That is a
+statement about SELECTION BY EQUALITY and it does not extend to
+selection by inequality, exclusion or count** — R6 is the live proof,
+and revision 1's sentence said "R2, R3 and R6" and so certified a reader
+the same fact breaks. **DECIDED (4): the invariant becomes an assertion
+in the C1 differential** — *no `#section` row's field 1 may equal any
+main-table `kind` token* — walked over the dump's own header lines
+rather than a hand-written list of section names. It costs one awk arm
+and it is the difference between two readers that are safe and two
+readers that are lucky. §3.1 carries it as check **W23-S4**. **What it
+does NOT do is make an inequality reader safe, and saying so is the
+whole of A1's lesson**: this invariant is a licence to keep matching a
+kind token, never a licence to keep counting rows.
 
 **Ordering is also load-bearing and the design does not state it**:
 R2 takes the FIRST `$1 == "pattern"` row, so the MAIN TABLE must be
 emitted before any `#section` block. **DECIDED (5): sections follow the
 main table, always, and `#section cases`'s rows are not interleaved
 with it.** This is free today (nothing emits a section) and impossible
-to recover once a consumer has seen the other order.
+to recover once a consumer has seen the other order. **AND IT IS
+ASSERTED, not merely decided** (r59-A-N5): DECIDED (5) is load-bearing
+for R2 — it is the whole reason R2's "first `pattern` row" is the body
+boundary and not a `#section cases` row that happens to mention a
+pattern — and revision 1 left it stated and untested. **W23-S4 gains a
+second awk arm**: over the dump of a fixture that emits every section,
+the ordinal of the last main-table row is LESS than the ordinal of the
+first `#section` line. One arm, same walk, and it fails the day an
+emitter interleaves.
 
 ### 1.6 `--list-schema` — the seventh registry dump
 
@@ -422,7 +467,8 @@ skipped, and this note has now had that shape pointed out to it twice.
 | 2 | **the DIAGNOSTIC CLASS tag** — the four classes `structure-attachment`, `unknown-token-in-scope`, `schema-constraint`, `value-shape`. **This is the bigger of leg B's two jobs and the design says why**: leg B refuses every unrecognised line by catch-all fall-through (`:2105-2109`) with one sentence, so a VERDICT-only differential reads "all three legs refuse" for a rule leg B has never heard of (§2.25.5, r57 S-S8) | the same four classes on its `ValueError` catch-all (`:613-614`) |
 | 3 | **child CONSUMPTION for `provenance`, `variant`, `ext`, and any prose value.** `ext` is the CHEAPEST of the three: consuming a tree nobody validates is consumption with no dispatch at all | the same |
 | 4 | **the STEP 0 parity refusals** (§1.8) | the same |
-| 5 | the block-scoped W23 arms; `@file:` subjects; `mc`'s find-all; `under` as a counted, labelled SKIP (scoring is the consumer's, §2.17); cells; `include` discovery; `use` | the same, plus `mc` verified by the PROTOCOL loop in python and **never `finditer`** (§2.21) |
+| 5 | the block-scoped W23 arms; `@file:` subjects; `mc`'s find-all; `under` as a counted, labelled SKIP (scoring is the consumer's, §2.17); cells; `use` | the same, plus `mc` verified by the PROTOCOL loop in python and **never `finditer`** (§2.21) |
+| **6** | **`include` DISCOVERY, SUBTRACTION and SPLICE — §1.10, step W23.3a.** Revision 1 put "include discovery" in row 5 above while §1.1 said legs B and C gain no head arms, and the two sentences were never reconciled; the reconciliation is §1.1's first bullet (it is not a head arm — the fragment list is read off the `--list-source` call the leg already makes) and the mechanism is §1.10 | the same, through its own `discover` (`verify_rxt.py:715`) |
 
 **`under` is a counted, labelled skip and not a silent one**, because
 AR-3's failure mode is exactly a skip nobody counted. **`mc`'s rule is
@@ -450,6 +496,8 @@ rather than `check_refusal_all3` (`:1492-1507`), and the asymmetry is
 stated in that script's comments and in `tests/rxtsource/CLAUDE.md`.
 `dup_block_name.rxtin` is the contrast: both legs already detect it
 independently, so it uses `check_refusal_all3`.
+**Two of the three are HEADLESS and one is not**, which is the
+distinction item 5 below turns on and which revision 1 did not draw.
 
 **W23 SCHEDULES THE PARITY FIX, in step W23.2, and the reason it
 belongs THERE rather than anywhere else is structural**: the same step
@@ -472,26 +520,68 @@ What lands:
    agreement, which is the only property the differential asks for.
 2. **Leg C** refuses an embedded NUL rather than replacing it. Its
    decoder already reads bytes, so this is a test, not a redesign.
-3. **Both legs** refuse a second block-level `description` and a second
+3. **THE NUL RULE HAS ONE SCOPE IN ALL THREE LEGS: THE WHOLE FILE,
+   BEFORE THE LINE SPLIT** (r59-A-M5). Leg A already works this way —
+   its refusal is raised by `slurp_lines`' whole-file scan ahead of the
+   split, which `nul_byte.rxtin`'s own header records — and items 1 and
+   2 as revision 1 wrote them would have given leg B a file-wide
+   pre-pass and leg C a DECODER-scoped test, i.e. two scopes for one
+   rule. A decoder-scoped test in leg C sees a NUL inside a quoted
+   subject and never sees one in a `#` comment line, a blank line's
+   trailing bytes, or a head declaration the leg skips. **So: all three
+   legs scan the file's bytes before any line is interpreted**, which
+   is also the only scope at which the three can be COMPARED.
+   **`nul_in_comment.rxtin` is the fixture that makes the divergence
+   visible** (§3.2): the existing `nul_byte.rxtin` puts its NUL mid
+   `pattern` line, which every candidate scope catches, so it is
+   structurally incapable of discriminating between them.
+4. **Both legs** refuse a second block-level `description` and a second
    head-level `description`, naming the earlier line — the same
    discipline the shipped duplicate-block-name refusal uses.
-4. **The three fixtures are RE-AIMED from `check_refusal` to
-   `check_refusal_all3`** (`nul_byte.rxtin`, `dup_description.rxtin`,
-   `dup_head_description.rxtin`), and the scope note in
-   `tests/rxtsource/CLAUDE.md` and in the script's comments is deleted
-   in the same change. **A scope note that outlives its scope is the
-   staleness shape this tree keeps catching**; the re-aim and the note's
-   deletion are one edit.
-5. **`single_description.rxtin` and the NUL-free twin stay as the
+5. **TWO of the three fixtures are RE-AIMED from `check_refusal` to
+   `check_refusal_all3` — `nul_byte.rxtin` and `dup_description.rxtin`,
+   both HEADLESS. `dup_head_description.rxtin` STAYS SINGLE-LEG, and the
+   reason is the seam ruling itself** (r59-A2). **MEASURED**: that
+   fixture opens with two file-level `description` lines above its
+   `pattern` block, so it is HEAD-BEARING; and `verify_rxt.py:407-417`
+   refuses EVERY head-bearing file by name — *"a head-bearing .rxt file
+   is not verifiable by this script in this build"* — with `description`
+   itself in the `head_words` tuple at `:409-410`. Re-aiming it would
+   therefore have produced a check that goes GREEN with leg C refusing
+   for a reason that has nothing to do with duplicate descriptions, and
+   that is the BEST case: **the moment W23-S2's class comparison lands
+   (§3.1), the same re-aim goes RED**, because leg C's class is
+   `unknown-token-in-scope`-shaped where legs A and B raise
+   `schema-constraint`. Revision 1 scheduled both and they contradict.
+   The head's duplicate-`description` refusal is a HEAD rule, the head
+   has one parser, and a three-leg assertion on it is not available at
+   any point in W23 — so the fixture keeps `check_refusal` and the
+   script's comment says WHY in one sentence, rather than leaving the
+   asymmetry looking like an oversight nobody got to.
+6. **The `tests/rxtsource/CLAUDE.md` scope note is NARROWED, not
+   deleted.** Its "Leg A only, deliberately" section (`:320-332`) covers
+   three fixtures; two of them stop being leg-A-only at W23.2 and one
+   does not. The edit removes the NUL and block-`description` halves,
+   keeps the head-`description` half, and replaces the reason: today it
+   reads *"out of this lane's scope (`src/parse/rxt_source.c` only)"*,
+   which expires at W23.2; afterwards it reads that the head has one
+   parser by ruling, which does not. **A scope note that outlives its
+   scope is the staleness shape this tree keeps catching — and deleting
+   a note two thirds of which is still true is the same defect with the
+   sign flipped.**
+7. **`single_description.rxtin` and the NUL-free twin stay as the
    accept controls.** The twin is built FROM the refusing fixture at
    test time (`tr -d '\000' < fixture`), so the two are byte-identical
    except for the byte under test — which is why it is a control and not
-   a second fixture.
+   a second fixture. `head_basic.rxtin` stays `dup_head_description`'s.
 
 **Acceptance for the fold-in** (§6.2): `run_rxtsource_tests.sh`'s
-`sem22`/`sem24`/`sem25` blocks assert all three legs, the six
-`check_refusal` calls become three `check_refusal_all3` calls plus their
-accept controls, and the corpus census
+`sem22`/`sem24` blocks assert all three legs and `sem25` states its
+single-leg reason, **two of the three `check_refusal` calls become
+`check_refusal_all3`** (**MEASURED**: the three are `:1642`
+`dup_description`, `:1657` `dup_head_description`, `:1674` `nul_byte`;
+the middle one stays) with their accept controls unchanged, and the
+corpus census
 (**MEASURED**: `CENSUS_FILES=210` / `CENSUS_BLOCKS=3936` /
 `CENSUS_LINES=28943` at `:196-198`; leg B's own `RUNSH_FILES=209` /
 `3933` / `28932` at `:225-227`) does not move, because the shipped
@@ -527,6 +617,179 @@ bumping**: the abi number has six readers found by grep
 (`w1_impl.md` §8.7's command, re-run at the event), a bump re-pins the
 identity gate's (B) commit, and a W23 step doing that silently would
 contradict a design statement the r58 panel confirmed.
+
+### 1.10 FOLD-IN 5 — `include`'s HARNESS HALF (H5), and why it is its own merge
+
+**NEW AT REVISION 1.1. This is r59-B2, and it is the largest thing the
+fix round adds.** Revision 1 gave `include` a leg-A step (W23.3 item 4,
+among the head declarations) and gave the HARNESS nothing: no
+discovery change, no subtraction, no closure accounting, no fixture, no
+check, no acceptance bullet, and — the contradiction that hid it —
+§1.1 saying legs B and C gain no head arms while §1.7 row 5 handed them
+"include discovery" in a list of things they gain. **Under F-Q1 that is
+a Tier-1 capability deferred by staging: the smuggled cut, on the
+harness axis.** `include` that parses but never splices is `include`
+that does nothing a set can use.
+
+#### 1.10.1 What `include` MEANS for a leg that RUNS cases
+
+**CITED**, `format_design.md` §2.5: *"`include <path-ref>` splices the
+referenced file's **blocks** as if they had been written at that
+point"*, an included file may contain pattern blocks and nested
+`include` lines and nothing else, a second `include` of the same
+resolved real path in one closure is REFUSED naming both sites, and
+cycles are refused naming the cycle.
+
+Leg A's obligation is therefore a PARSE obligation and it is nearly a
+solved problem in the shipped tree: **MEASURED**, `lib`'s closure
+machinery already exists — `lib_resolve` (`rxt_source.c:1666`),
+`closure_walk`'s depth-first lib arm (`:1754-1781`) with
+`closure_seen`'s resolved-real-path dedupe at `:1763`, and a parse
+failure inside the closure reported against the REFERENCING line
+(`:1767-1768`). `include`'s resolution is that mechanism with a
+different row kind and a different body restriction, not a new one.
+
+**Legs B and C's obligation is a POPULATION obligation and they have no
+machinery for it at all.** Each one discovers `.rxt` files by a flat
+`find`/glob, runs one worker per file, and prints a per-file summary.
+An `include` changes three things at once for them:
+
+1. **Which files run.** A fragment must NOT be discovered as a file of
+   its own, or its blocks run twice and the population doubles.
+2. **What runs in an entry.** The fragment's blocks must run AS PART OF
+   the entry's own sequence, in the entry's own option scope.
+3. **What the summary says.** §2.11 rule 1 makes the accounting unit
+   the CLOSURE, reported under the entry's name.
+
+#### 1.10.2 The three legs, stated ONE way
+
+The rule is written once and each leg implements it; that single
+statement is what makes the C1 differential able to compare them at
+all. **The resolution happens in leg A, and legs B and C READ it** —
+they never parse an `include` line, which is why §1.1's "no head arms"
+survives this fold-in.
+
+| # | the rule | leg A | legs B and C |
+|---|---|---|---|
+| 1 | **RESOLVE**: a `path-ref` becomes a resolved REAL PATH, `"local"` against the referencing file's own directory and `<store>` on the library path | `lib_resolve`'s sibling, against `closure_seen`'s dedupe | — (they read the resolved path out of the dump) |
+| 2 | **REPORT**: an `include` head ROW carries the path AS WRITTEN in `value` (§2.24's existing head-row rule) **and the RESOLVED REAL PATH in its `name` column** | emits the row | read it off the `--list-source` call the leg ALREADY makes for the body boundary (`run.sh:1671-1675`'s H11 read, one key over) |
+| 3 | **ENTRY SET**: an entry file is a discovered file that is not included by any entry in the run (§2.11 rule 2) | — | resolve every discovered file's includes FIRST, subtract the union of the included sets, and run the remainder |
+| 4 | **SPLICE**: a fragment's blocks run inside the entry's own loop, at the `include` line's position | — | after the entry's own body is parsed, each fragment's blocks are parsed and appended in include order, depth first |
+| 5 | **CLOSURE TALLY**: the summary reports `entry files: N` and `fragments spliced: M` (§2.11 rule 2), and a failure still prints the FRAGMENT's own `file:line` | — | both new lines; the per-failure location is unchanged |
+| 6 | **NAMED-AND-ABSORBED**: a file both named on the command line and included by another entry in the same run is counted ONCE, under the includer, and the summary says `named, absorbed into <entry>` | — | the one case where the subtraction must REPORT rather than silently drop |
+| 7 | **FOURTH FAILURE CLASS**: an unresolved include, a duplicate include in one closure, and a cycle are RESOLUTION failures — reported separately in the summary, and scored as a pattern-compile failure for the block (§2.11) | raises it | reports it in the new class |
+
+**Rule 2 is the design decision of this fold-in and it needs its
+reason.** `--list-source` is deliberately AS-WRITTEN — **CITED**,
+`rxt_source.c:1388-1389`: *"resolution is a third thing only pcrec
+does, so a resolved dump would compare pcrec's resolver against no
+counterpart"*, which is why `--list-source --resolved` is named and
+unbuilt. **That objection does not reach INCLUDE resolution, and the
+difference is the counterpart**: definition/composition resolution is
+pcrec's alone, so a resolved dump has nothing to be differentiated
+against; file discovery is something ALL THREE legs must now do, so a
+resolved include path has two counterparts and becomes an ordinary C1
+column. The `--resolved` surface stays unbuilt and §2.24's third
+declared non-coverage row is untouched.
+
+**Rule 4's "depth first, in include order" is not a taste.** It is the
+order `closure_walk` already uses for `lib` (`:1754-1778`), and a
+differential whose three legs agree on the SET but not the ORDER would
+compare multisets — which `run.sh --dump`'s own serial mode
+(`:284-286`: *"the row order is the file order the caller gave and a
+differential can compare streams rather than sorted multisets"*)
+exists specifically to avoid.
+
+#### 1.10.3 The census consequences, which are the part that bites
+
+**The pinned corpus census is over FILES, and `include` makes "file"
+and "entry" two different words.** `run_rxtsource_tests.sh:196-198`
+pins `CENSUS_FILES=210` / `CENSUS_BLOCKS=3936` / `CENSUS_LINES=28943`
+and `:225-227` pins leg B's own `RUNSH_FILES=209` / `3933` / `28932`.
+Three facts follow, and all three are free TODAY:
+
+- **The shipped corpus has ZERO `include` lines** (it cannot — the
+  keyword is refused by name at this pin), so `entry files` equals
+  `CENSUS_FILES` and `fragments spliced` is 0 at the delivered pin.
+  **The pins do not move, and that is a prediction this step must
+  verify rather than assume.**
+- **The three §1.10.4 fixtures are `.rxtin` and therefore not corpus**
+  (`run_rxtsource_tests.sh:1234-1239` copies them under `.rxt` into a
+  WORKDIR), so they add no census rows either. **If the census moves at
+  W23.3a, a fixture has leaked into the corpus** — `utf8k53_report.md`
+  §5's own finding, one step over.
+- **The census becomes a THREE-number statement once a fragment
+  exists**: files discovered, files that are entries, blocks in the
+  closure. The step adds the second number to the script's pin block
+  with its derivation, so a later wave that adds a fragment to the
+  corpus moves a number somebody wrote down rather than discovering
+  that two counts disagree.
+
+#### 1.10.4 Fixtures, and the check with a counted population
+
+Three fixtures land at W23.3a (§3.2 carries their rows):
+`include_basic.rxtin` + its fragment, `include_nested.rxtin` + two
+fragments, and `include_dup_path.rxtin` (the same resolved real path
+reached by two spellings). The fragments themselves are named
+`*.rxtfrag` rather than `.rxtin` for one reason worth stating: a
+fragment must not be COPIED into the fixture workdir as a `.rxt` of its
+own, or it becomes a discoverable entry and the fixture tests the
+opposite of its own subject.
+
+**The check is W23-S7 (§3.1) and its population is COUNTED, not
+sampled.** The failure mode to design against is K35's: a splice check
+satisfied by a closure of zero. So W23-S7 asserts, for each fixture,
+**the three legs' block counts are equal AND the entry's count EXCEEDS
+its own file's block count by the fragments' own** — the second
+conjunct is what makes a leg that silently spliced nothing fail. It
+also asserts `fragments spliced` is the number the fixture declares in
+a comment, which is the population nobody would otherwise count.
+
+**And one assertion runs the other way**: over the SHIPPED corpus, at
+this delivery's pin, `fragments spliced` must be **0** and
+`entry files` must equal `CENSUS_FILES`. That is the control for the
+subtraction — a subtraction bug that removed real corpus files would
+otherwise show up only as a quieter suite.
+
+#### 1.10.5 What this owes the spec, and E7's pcrec-side path
+
+**The spec hunk is S3, and revision 1 asserted it had already landed.**
+**MEASURED, and it has not**: `format_design.md:5782` labels S3 *W1* —
+*"'How the harness evaluates a block' gains the **cell** notion and the
+`perr` one-cell rule; the summary's reported quantities grow (entry
+files, fragments, cells, resolution failures)"* — while
+`docs/spec/rxt_format.md`'s own "How the harness evaluates a block"
+(`:531-565`) has no cell notion, no entry/fragment counts and no
+resolution-failure class; its summary paragraph at `:562-565` reports
+cases passed/failed, the per-file breakdown, the compile-failure count
+and the pending-vm count, and nothing else. A grep of `docs/spec/` for
+`entry file`, `fragments spliced` and `resolution failure` returns
+**zero**. §4.1's *"the W1-era rows S1-S11 are already landed"* is true
+of the others and false of this one, which is how a spec obligation
+came to be booked as discharged.
+
+**SW20** (§4.1) carries it: the harness-evaluation section gains the
+entry/fragment distinction, the closure as the accounting unit, the two
+new summary lines, and the RESOLUTION failure class with its
+*"scored as a pattern-compile failure for the block"* rule — the clause
+that keeps `sr_refusals.rxt`'s four `perr` blocks correct whether the
+resolver or pcrec said no.
+
+**E7's pcrec-side path** (bench group E: *"the set's `content_hash`
+covers the `.rxt`, every `include`d fragment and every `@file:`
+subject"*). §5 books E6/E7 bench-side and that stays true of the HASH —
+but the bench cannot hash what it cannot enumerate, and the format's
+contribution is exactly the enumerability. It is discharged by rule 2
+above plus one sentence of guidance in the outbox message: **the
+closure is walked by calling `--list-source` on the entry and following
+each `include` row's resolved-path column, transitively** — one call
+per file, the fragments' own `include` rows carrying the next level —
+**and `@file:` subject paths come out of `#section cases`** (§2.24), so
+all three of E7's inputs are dump-derivable with no second parser. The
+alternative — emitting the whole closure in the entry's one dump —
+loses for the reason rule 2 gives: the dump is the file AS WRITTEN, and
+a dump carrying another file's rows would be a resolved dump wearing
+the as-written dump's name.
 
 ---
 
