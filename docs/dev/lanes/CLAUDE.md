@@ -560,6 +560,82 @@ never edited afterwards.
   section about something else — this round's own instance of the
   DISPOSITION-TEXT residue class the r58 panel named, which neither a
   grep nor an inverse mechanism walk reaches.
+- `w23impl_report.md` — [DD-13b.W23] THE IMPLEMENTATION NOTE (2026-09-13,
+  lane w23impl, opus; docs only, no runs). Delivers
+  `docs/design/dd13_format/w23_impl.md` — five merges, nineteen fixtures,
+  six sabotage rows S239-S245, SW1-SW19 distributed per step, and the
+  bench's 41-check bar mapped onto the staging. Read the report for five
+  things the plan surfaced that the brief did not anticipate.
+  **The headline is that the `NF != 15` defect is ALIVE in this repo**,
+  found by RUNNING the format-reader survey §2.24 obliges rather than by
+  inheriting its lesson: `tests/rxtsource/run_rxtsource_tests.sh:479-494`
+  asserts that every non-comment `--list-source` row has exactly
+  `ncols+1` fields, unconditionally of kind, which four `#section` blocks
+  violate on every row — **and its failure message names a TAB in a field
+  as the only possible cause**, so a lane meeting the red after emitting a
+  section goes and reads the escape function. The generalisation, third
+  instance in this house: *a check that asserts a SHAPE goes stale when
+  the shape gains a variant, and its FAILURE MESSAGE is a second,
+  undeclared claim about the space of causes that goes stale with it.*
+  Also: the other three dump readers survive sections only because every
+  section's first column is an integer and no main-table `kind` token is
+  one — an invariant written nowhere, now check W23-S4, with the ordering
+  rule it rests on (sections FOLLOW the main table) stated while it is
+  still free; why the STEP 0 legs-B/C parity fix belongs in the step that
+  builds the diagnostic-CLASS machinery rather than in any harness step
+  (*a refusal neither leg can produce is a refusal with no class*) and why
+  leg B DETECTS a NUL rather than carrying one; that
+  `pcrec_rxt_source_ncols()` has zero callers beside a comment still
+  reading "THE 15 COLUMNS" over a sixteen-entry array; and why
+  §2.27.3 clause 5's value-identity check gets **no sabotage row** — its
+  violation is a patch somebody writes on purpose, not a corruption of
+  shipped code, so the check is the detector and the review is the gate.
+  §4 discharges the standing constraints explicitly: **no abi event was
+  discovered** by the file-by-file plan (confirmed, not restated), and the
+  withdrawn mechanisms' absence is a per-step grep rather than a promise.
+  Nothing owed.
+- `w23implfix_report.md` — [DD-13b.W23] STEP 1.6 (2026-09-13, lane
+  w23implfix, opus; docs-only): the r59 FIX ROUND, `w23_impl.md`
+  revision **1.1**. The note's own §0.5 is the finding-by-finding
+  record; this report is what the fixes REVEALED, and it is worth
+  reading for six things.
+  **The sharpest is that the round's residue class was CITATION
+  PROVENANCE rather than disposition text**: TEN wrong `file:line`
+  ranges and four wrong counts, of which SW12's two comment sites came
+  from `format_design.md`'s own SW12 row (one of them, `:1126-1130`,
+  naming the file-level duplicate-`description` refusal — a different
+  production entirely, at a plausible-enough offset that a reader
+  following the citation would have found a comment about the wrong
+  rule with no signal anything was wrong), and `format_design.md`
+  §2.11's `run.sh:184-216` for the harness's per-file loop is wrong
+  too — which is where the r59 REVIEW itself got the range it cited
+  for the discovery site. A forward grep cannot see this class and an
+  inverse mechanism walk cannot either; the third pass sees it only
+  if the pass opens the FILE rather than comparing two documents to
+  each other.
+  **Second: the withdrawal-absence check grepped the wrong five
+  tokens.** `testee`/`option` are LIVE format spellings at three sites
+  (`rxt_source.c:149`'s two `config_vocab` rows,
+  `docs/spec/rxt_format.md:57-62`'s later-wave keyword list, and
+  `run_rxtsource_tests.sh:1188`'s `CENSUS_WORDS_32` whose length is
+  pinned at 32), so the withdrawal costs four sites and a deliberate
+  narrowing rather than "a diff and nothing else" — an absence check
+  is only as good as its token list, and a list derived from the
+  mechanisms somebody remembers withdrawing will miss the third.
+  **Third: spec row S3 has never landed** and its WAVE LABEL is what
+  made it look landed — a label says when a row was scheduled, never
+  whether it shipped.
+  Also: three of the four S200-S203 sabotage rows carry a stale count
+  in `SAB_DESC` (not one, as the review had it) — the same
+  pinned-number-in-prose class the survey those rows detect is about;
+  the review's own 22-arm split (18+5) is wrong where its total is
+  right (17 pinned + 5 appended, per `format_design.md` §0.7); and
+  `format_design.md` §9's A1 row carries the same unverified
+  block-scoped-`include` reading A2 did, which is r58-B1 recurring one
+  row up in the ruled record. Its §4 is the three one-line
+  `format_design.md` corrections the lane deliberately did NOT apply,
+  each with its evidence, since the brief scoped the drive-by to SW12.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
