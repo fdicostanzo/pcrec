@@ -802,7 +802,8 @@ the as-written dump's name.
 | **W23.1** | the SCHEMA table, its reader, `--list-schema`, leg A's dispatch as a table walk, S0-S3 in leg A, the diagnostic CLASS tag in leg A, the cardinality decisions, the taken narrowings (TAB indentation; the ragged head body) | **everything else is written against it.** The productions in W23.3 are schema ROWS; writing them before the table exists means writing them twice. And leg A is the only leg the table touches (§2.25.4's DECLINE), so this step is self-contained by construction | H16 |
 | **W23.2** | the ATTACHMENT arm in legs B and C, their diagnostic CLASS tags, child consumption, **and the STEP 0 parity fix** (§1.8) | the differential cannot compare a CLASS until two legs can produce one, and W23.3's productions are useless to check without it. It is also the only step that is pure harness, which makes its blast radius readable in a diff | H12 |
 | **W23.3** | the productions — `pattern-esc` + the CLI decode flag, `provenance`, `vocabulary`, `tag`, `oracle`, `variant`, `include`, `@file:` + `as`/`sha256`, `under`, `mc`, the `freq` data block + `analysis`, `use`, **`ext`**, and §2.22's derived-identifier repair with its two comment sites | the bulk, and it is one step rather than eight because every production is a row in W23.1's table and an arm in W23.2's two legs — splitting it would mean re-opening the same three files eight times | H13, H14, H15, H6-H10, D100 |
-| **W23.4** | `--list-source`'s appended columns, the new head row kinds, **the four `#section` blocks**, and **the FORMAT-READER SURVEY as a landing condition** (§1.5) | it must come AFTER the productions, because a section with no rows is not emitted (§2.24's unconditional-when-non-empty rule) and there would be nothing to survey against. It is its own step because R5's repair is a real change to the tree's most load-bearing differential | — |
+| **W23.3a** | **`include`'s HARNESS half** (§1.10): entry-set subtraction in both legs' discovery, the splice, the closure tally, the two summary lines, the fourth failure class, three fixtures, W23-S7 and S247 | **NEW at revision 1.1 (r59-B2).** It comes after W23.3 because a leg cannot read an `include` row out of a dump before the keyword parses, and it is its OWN merge rather than a W23.3 commit because it changes `run.sh`'s FILE DISCOVERY (`:293-307`) — the one loop every other section of `make test` inherits. A discovery bug is a population bug, and a population bug is quiet | — |
+| **W23.4** | `--list-source`'s appended columns, the new head row kinds, **the four `#section` blocks**, and **the FORMAT-READER SURVEY as a landing condition** (§1.5) | it must come AFTER the productions, because a section with no rows is not emitted (§2.24's unconditional-when-non-empty rule) and there would be nothing to survey against. It is its own step because **R5's AND R6's** repairs are a real change to the tree's most load-bearing differential | — |
 | **W23.5** | the remaining fixtures, the six sabotage rows, the spec hunks not already carried, and the BENCH ACCEPTANCE DRY RUN (§5) | the only work that is genuinely last: §3.3's population check needs every `all-readers` row to exist, and §5's 41 checks need the whole delivery | — |
 
 **Fixtures, sabotage rows and spec hunks travel with the step that
@@ -827,6 +828,10 @@ a five-merge rollout stops being five landable pieces:
   reported. **This is deliberate and it is the step boundary's whole
   value**: R5's repair and the section emission land together, so the
   differential is never red for two independent reasons at once.
+- **W23.3a touches no `src/`, no production and no dump SHAPE.** It is
+  the two harness legs' discovery and accounting only. If it finds
+  itself editing `rxt_source.c`, the `include` row it needs is missing
+  from W23.3 and the boundary is wrong.
 - **W23.4 adds no production and no refusal.**
 - **No step bumps `abi`** (§1.9).
 
@@ -899,7 +904,8 @@ it:
 | **W23-S2** | the three legs agree on the **DIAGNOSTIC CLASS** of every refusal in §3.2's table | the class TAG, not the exit code and not the sentence | a verdict-only comparison is satisfiable by accident on a population of one message, because leg B refuses everything identically (§2.25.5). D26 is untouched: the class is a tag the check reads, never a sentence a human reads |
 | **W23-S3** | `--list-schema` agrees with what leg A ENFORCES, column by column | the dump vs. a BEHAVIOURAL probe per row | it must not compare the dump to the table — that is the same source twice. S-R3 is the plant |
 | **W23-S4** | **no `#section` row's field 1 equals any main-table `kind` token** (§1.5's DECIDED (4)) | the dump's own header lines, walked | a hand-written list of section names would go stale the day a fifth section lands — the exact `NF != 15` shape one level up |
-| **W23-S5** | every `validated_by: all-readers` row HAS a three-leg fixture | `--list-schema`'s output, walked | §3.3 |
+| **W23-S5** | every `validated_by: all-readers` row is **REACHED BY A THREE-LEG INVOCATION** | `--list-schema`'s output walked against per-fixture RECEIPTS emitted by the three-leg helper itself | §3.3 — and it must NOT read a declared fixture NAME, which is [MECH-REACH] stated backwards |
+| **W23-S7** | `include`'s CLOSURE: the three legs run the same blocks, the entry's count EXCEEDS its own file's, and `fragments spliced` is the number the fixture declares | three independent runs plus the fixtures' own declared counts | leg B's subtraction is bash and leg C's is python; **the corpus arm (0 fragments, entries == `CENSUS_FILES`) is the control on the subtraction itself** (§1.10.4) |
 
 **W23-S2 is the delivery's load-bearing instrument and the one most
 likely to be built wrong.** The failure mode to design against: a class
@@ -908,6 +914,29 @@ leg A from a lookup — then the two agree because both are reading one
 implementation's opinion twice. The tag must be attached **at the rule
 that fired**, in each leg independently, and the fixture table (§3.2)
 is what makes disagreement observable.
+
+**W23-S3 NEEDS A DENOMINATOR IT DOES NOT GET FROM THE DUMP** (r59-A-M7).
+The check iterates `--list-schema`'s rows and probes each one's
+behaviour — so a row that is MISSING from the dump is invisible to it,
+and after W23.1 there is no third source to compare against: the
+parser's kind set IS the table. Two candidate denominators, and the
+first is the one to build:
+
+1. **A COMPILE-TIME TOTAL from the exhaustive switch.** `rxt_schema.c`'s
+   one `default:`-less switch (F3) already forces a compile error when a
+   constraint kind is added; the same file computes `PCREC_RXT_NROWS`
+   from the `.def` at compile time and `--list-schema` prints it in a
+   trailing comment line. W23-S3 asserts `rows printed == NROWS`. A
+   dropped row then fails the check rather than shrinking its
+   population, and nothing is hand-maintained.
+2. A PINNED count with a re-pin ritual — rejected, because it is a
+   number in a second place, and this delivery already has enough of
+   those.
+
+**The one thing it must not be** is "the number of rows the dump
+emitted", which is what an un-denominated iteration silently is: a
+check whose population is defined by the thing it checks agrees with a
+truncated table by construction.
 
 ### 3.2 FOLD-IN 2 + 4 — the A3/A4 fixture plan, with the r57 probe cells and the owed EXTENT fixture
 
@@ -923,7 +952,7 @@ compares DIAGNOSTIC CLASS, never exit code.**
 | `indent_under_m.rxtin` | W23.2 | an indented line under an `m` case line, mid-block | all three refuse, class `schema-constraint`, naming the PARENT (`m` declares `children: none`) | S-R1's detector: flipping `m`'s `children` makes leg A accept while B and C refuse, so only the DIFFERENTIAL sees it |
 | `prose_hash.rxtin` | W23.1 | an indented `#` inside a `description \|` body | all three ACCEPT; all three decode the `#` line AS PROSE | **r57 grammar-lens PROBE CELL**, reproduced at §0.8. §1.6.1a candidate (2), a narrowing AVOIDED by S3 — it pins the AVOIDANCE, which is what a decision needs and an accident does not |
 | `prose_ragged.rxtin` | W23.1 | prose lines at differing depths inside a `description \|` body | all three ACCEPT and agree on the decoded value, relative indentation preserved | §1.6.1a candidate (3); S-M1's owed fixture — no fixture carried a ragged prose body before |
-| `prose_dedent.rxtin` | W23.1 | a prose line indented LESS than the block's first continuation | **NOT an acceptance assertion — the K57 REPRO**, carried `known_fail`-style until K57 is fixed, then inverted to a three-way value agreement | the shipped strip is a BYTE COUNT, so content is lost silently at exit 0. A fixture asserting today's behaviour would PIN THE BUG |
+| `prose_dedent.rxtin` | W23.1 | a prose line indented LESS than the block's first continuation | **ASSERTS TODAY'S WRONG DECODED VALUE, with a comment naming K57 — so it goes RED the day K57 is fixed** (manager ruling **r59-R4**, §7.3). Three legs, agreeing on the truncated value | the shipped strip is a BYTE COUNT, so content is lost silently at exit 0 |
 | `config_tab_body.rxtin` | W23.1 | a TAB-indented `config` body | all three REFUSE, class `structure-attachment`, the diagnostic naming the tab | **r57 grammar-lens PROBE CELL.** §1.6.1a narrowing (4), TAKEN — accepted today at rc 0, so this fixture IS the narrowing's regression |
 | `config_mixed_indent.rxtin` | W23.1 | a `config` body mixing a 2-space line and a TAB line | all three REFUSE, same class | the case that shows the tab rule is not cosmetic: parses FLAT today at rc 0, and has no defined tree under any depth rule |
 | `comment_in_config_body.rxtin` | W23.1 | a column-1 `#` between two indented `config` body lines | all three REFUSE **at the line BELOW the comment**, class `structure-attachment` | the comment TERMINATES the body (r57 R2-F2), measured rc 1 today. Stops a future reader implementing the transparent reading |
@@ -940,7 +969,13 @@ compares DIAGNOSTIC CLASS, never exit code.**
 | `aux_malformed_body.rxtin` | W23.3 | an `ext bench` block one of whose body lines is mis-indented so it attaches to nothing, followed by an ordinary `pattern` block | all three REFUSE, class `structure-attachment`, naming the MIS-INDENTED LINE — **and the `pattern` block below is not implicated** | D99's parenthesis as a check. **The assertion that matters is the second half**: a refusal that names the right line proves the error is LOCAL, which is the entire argument for structural parsing over opaque bytes |
 | **`aux_subtree_extent.rxtin`** | **W23.3** | **an `ext bench` block whose body ends and is FOLLOWED, at indent 0, by an ordinary head declaration and then a `pattern` block whose own `m` line uses a key spelled identically to one inside the aux body** | **all three ACCEPT; the declaration after the block is a DECLARATION and not an aux row; the `pattern` block is a block; and `#section aux` contains exactly the body's own lines and no more** | **NEW, AND IT IS THE ONE §9.1 DOES NOT HAVE.** `w23fix3_report.md` §5 names it: *"§9.1's plan has no fixture for an open subtree's own EXTENT (where it ends). `aux_malformed_body` probes an attachment error INSIDE the subtree, not the boundary at its foot."* §5.2a item 5 lists it among the known-weak points, and item 9's sharpest attack is *"construct a file where the open subtree's extent under S1 differs from what `--list-source` reports"* — **this fixture IS that attack, run by the delivery on itself** |
 
-**The last row is the fold-in the brief asked for and it is worth one
+| **`nul_in_comment.rxtin`** | **W23.2** | **a NUL byte inside a `#` COMMENT line of an otherwise-valid headless file** | **all three REFUSE, class `value-shape`** — and the NUL-free twin (`tr -d '\000'`) is ACCEPTED, the existing fixture's own control shape | **NEW at revision 1.1 (r59-A-M5).** The shipped `nul_byte.rxtin` puts its NUL mid `pattern` line, which EVERY candidate scope catches — file-wide pre-parse, per-line, decoder-scoped — so it is structurally incapable of discriminating between them and cannot pin §1.8 item 3's one-scope rule. A comment line is the cheapest position no line-interpreting scope reaches |
+| **`include_basic.rxtin`** + `include_basic_frag.rxtfrag` | **W23.3a** | **an entry with one `include "…"` above its own `pattern` blocks** | **all three run the ENTRY's blocks AND the fragment's; the three block counts are EQUAL; the entry's count EXCEEDS its own file's by the fragment's; `fragments spliced: 1`; the fragment is NOT an entry** | **NEW at revision 1.1 (r59-B2).** The four assertions are separate on purpose: equal counts alone are satisfied by three legs that all splice nothing (K35), and a non-zero count alone is satisfied by a fragment discovered as its own entry — the defect the subtraction exists to prevent |
+| **`include_nested.rxtin`** + two `.rxtfrag` | **W23.3a** | **an `include` whose fragment `include`s a third file** | **depth-first, include order, all three legs agreeing on the ORDER and not merely the set; `fragments spliced: 2`** | order is asserted because `run.sh --dump`'s serial mode exists to compare STREAMS rather than sorted multisets (`run.sh:284-286`), and a closure walk is the first thing in W23 that can reorder one |
+| **`include_dup_path.rxtin`** | **W23.3a** | **the same resolved real path reached by two different spellings in one closure** | **all three REFUSE, class `schema-constraint`, naming BOTH sites** — §2.5's rule, and the RESOLUTION failure class (§2.11) is what it is reported under | the two alternatives §2.5 names — splice twice, or silently ignore — respectively DOUBLE a population and HIDE one, which is why this fixture asserts the refusal rather than a count |
+
+**`aux_subtree_extent.rxtin` is the fold-in the brief asked for and it
+is worth one
 more sentence, because its ABSENCE had a reason and the reason has
 expired.** The design's fix round declined to add it, correctly, on the
 ground that *"the fixture table is the implementation lane's to grow
@@ -963,8 +998,24 @@ fixture** in §3.2's table. Three properties earn it:
 1. It reads the same table the parser enforces, so a row added in a
    later wave fails the check the day it lands rather than the day
    somebody remembers.
-2. It cannot be satisfied by a fixture that stopped reaching its site,
-   because it counts ROWS against fixture NAMES declared per row.
+2. **WITHDRAWN AT REVISION 1.1 — it was [MECH-REACH] STATED BACKWARDS**
+   (r59-A-M1). Revision 1 claimed the check *"cannot be satisfied by a
+   fixture that stopped reaching its site, because it counts ROWS
+   against fixture NAMES declared per row"*. **A declared name is
+   exactly what a witness that stopped reaching its site still has**:
+   the fixture file exists, the row still names it, and the check is
+   green while the three-leg assertion it stands for has silently
+   stopped running — a call site commented out, a `.rxtin` that no
+   longer copies, a helper whose early return skips it. Counting names
+   measures the TABLE, not the RUN.
+   **What replaces it: the check reads the INVOCATION.** The three-leg
+   helper (`check_refusal_all3` and its accept-side sibling) emits one
+   RECEIPT line per fixture it actually ran, naming the fixture and
+   which legs answered; W23-S5 walks `--list-schema`'s `all-readers`
+   rows against the RECEIPTS and fails naming any row with none. The
+   receipt is written by the code path that does the work, so a
+   fixture that stopped being invoked stops producing one — which is
+   the property revision 1 claimed and did not have.
 3. It makes the honest fallback cheap: **a row whose fixture is not
    written yet takes `validated_by: pcrec`**, which is a true
    statement, instead of `all-readers`, which would be a claim about
@@ -997,6 +1048,51 @@ block, edit the aux body, and require **every pcrec output except
   byte-identical.
 - every diagnostic the file produces: byte-identical.
 
+**THREE THINGS REVISION 1 GOT WRONG ABOUT THIS CHECK** (r59-A-M2 +
+r59-B-M3), each of which would have shipped a check weaker than its own
+sentence:
+
+**(a) The BYTE-IDENTITY CLAIM IS UNSATISFIABLE AS SPECIFIED, because an
+aux edit moves LINE NUMBERS.** `--list-source`'s every row carries a
+`line` column and `#section cases`' rows carry `block_line` too, so
+adding one line to an aux body shifts every row below it — and the
+edit §3.4 demands is deliberately one that *"changes the number of aux
+lines"*. **The fixture constraint is therefore stated, not discovered:
+every `ext` block in `aux_identity.rxtin` sits at the FOOT of the file,
+below every `pattern` block and every declaration**, so no row's `line`
+is downstream of the edit. (The alternative — a line-normalised
+comparison — was rejected: it throws away the one column most likely to
+carry an accretion bug.) **And the line-number movement is a NAMED
+EXCEPTION to §2.27.3 clause 5, not a violation of it**: clause 5
+forbids pcrec taking a VALUE that changes when an aux body changes, and
+a row's own source line number is a property of the FILE's bytes rather
+than of the aux body's meaning — the same number moves when a comment
+is added. It is not a graduation event, because nothing has begun to
+read what the aux body SAYS. Stating it here is what stops a later
+reader treating the exception as precedent.
+
+**(b) TWO OF THE FOUR ARMS ARE ZERO-POPULATION UNLESS THE FIXTURE IS
+BUILT FOR THEM.** "The compiled artifact for every `pattern` block"
+asserts nothing if the fixture has no `pattern` block, and "every
+diagnostic the file produces" asserts nothing if the file is accepted
+silently. **The fixture therefore carries a COMPILING `pattern` block
+AND a refusing sibling file** (the same aux body, one block edited to a
+pattern pcrec rejects), so both arms have exactly one cell each — and
+the acceptance says so, rather than reporting four green arms two of
+which ran over nothing.
+
+**(c) IT GETS A SABOTAGE ROW AFTER ALL — S246 (§3.5).** Revision 1
+declined one on the ground that clause 5's violation *"is not a
+corruption of a mechanism, it is the arrival of a feature"*. **That
+reason is refuted by §3.4's own text two paragraphs down**, which names
+the two routes clause 5 exists for: an opener-row CARDINALITY and a
+derived COUNT. Both are one-line defects in shipped code — flip the
+`ext` rows' `cardinality` from `repeat` to `at-most-one`, or count aux
+openers into `a_blocks` — and neither is a feature anybody would write
+on purpose. The honest residual survives and is stated at §3.5: a plant
+that makes some output depend on an aux body's CONTENT is still a patch
+somebody writes deliberately, and no row covers that.
+
 **Why this is the right instrument and a reading of the code is not.**
 The graduation rule's failure mode is accretion — *a field everybody
 writes, that one tool reads "just this once", that becomes load-bearing
@@ -1018,7 +1114,8 @@ with an example.
 
 **MEASURED**: the highest existing S-id on main is **S238**
 (`tests/mech/sabotages/S238_size_drop_unstamped.sh`), by the procedure
-`tests/mech/CLAUDE.md:649-656` states. W23's rows are **S239-S245**.
+`tests/mech/CLAUDE.md:649-656` states. W23's rows are **S239-S247**
+(revision 1 had S239-S245; r59-A-M2(c) adds S246 and r59-B2 adds S247).
 Re-check the highest id ON MAIN before numbering at each step — that
 file records a past collision at S100/S101, and this delivery lands
 behind five merges.
@@ -1037,15 +1134,20 @@ on the tree it is planted into rather than on a later drift.**
 | S244 | S-R5 | **break `description`'s prose PAIR, in EITHER column**: (a) flip `value` from `prose` to `line`; (b) flip `children` from `prose` to `none` | the ragged-prose and prose-`#` fixtures. **Plant (b) is why parameter 2 reads the PAIR**: if the structure layer read `value` alone, (b) would change nothing observable anywhere — the region still opens, its lines are bytes, and bytes reach no validity check — so a normative column would carry a corruption with NO detector | W23.1 |
 | S245 | S-R6 | **make an `ext` body SCHEMA-CHECKED**: flip the `ext` rows' `children` from `tree` to a named scope (say `provenance`) | **three detectors, and the third arrived for free at 3.4.1.** `aux_arbitrary_keys.rxtin` (leg A refuses what it must accept) catches aux being NARROWED; `aux_deep_tree.rxtin` catches aux being INTERPRETED — the graduation rule's failure mode as a check rather than a sentence; and because `children` is now structure-layer parameter 3, the same flip RE-ARMS S2 and S3 inside the subtree, so `aux_literal_pipe.rxtin` sees it on a STRUCTURAL axis as well | W23.3 |
 
-**The row this plan does NOT write, and the reason is the honest one.**
-There is no sabotage row for §3.4's aux non-interpretation check
-(W23-S6), because the plant would be *"make some pcrec output depend on
-an aux body"* — which is not a corruption of a mechanism, it is the
-arrival of a feature. A `mech` row is a planted defect in shipped code;
-clause 5's violation is a patch somebody writes on purpose. **The check
-is the detector and the review is the gate**, and saying so is better
-than writing a row that plants an arbitrary dependency nobody would
-have written.
+| **S246** | **W23-S6** (§3.4) | **the AUX IDENTITY plant, TWO variants**: (a) flip the `ext` rows' `cardinality` from `repeat` to `at-most-one`, so a second `ext` block at one scope is refused; (b) count aux OPENER rows into `a_blocks` in `run_rxtsource_tests.sh:500`, so the block total moves with an aux edit | W23-S6's byte-identity arms. **(a)** moves the diagnostic arm (the refusing sibling file's stderr changes) and **(b)** moves a COUNT that reads an aux body's size. **NEW at revision 1.1** — revision 1 declined this row on a reason its own §3.4 refutes two paragraphs later, which is why it is written in BOTH variants: each is a one-line edit to shipped code, and they fail in different arms | **W23.4** |
+| **S247** | **§1.10 / W23-S7** | **DROP THE ENTRY-SET SUBTRACTION** in leg B's discovery (`run.sh:293-307`) — every discovered file, fragments included, becomes an entry | W23-S7's fixture arms: `include_basic`'s fragment runs TWICE (once as a fragment, once as an entry of its own), so the three legs' block counts diverge and `fragments spliced` disagrees with `entry files`. **The CORPUS arm is silent by construction and that is the point** — the shipped corpus has zero `include` lines, so nothing but the fixtures can see this plant, which is the argument for the fixtures having a COUNTED population rather than an example | **W23.3a** |
+
+**The row this plan does NOT write, and the reason is the NARROWED
+one** (r59-A-M2(c) took the broad version away). S246 covers clause 5's
+two named STRUCTURAL routes — an opener-row cardinality and a derived
+count — because both are one-line corruptions of shipped code. What
+stays uncovered is the CONTENT route: a plant that makes some pcrec
+output depend on what an aux body *says* is not a corruption of a
+mechanism, it is the arrival of a feature, and a `mech` row planting an
+arbitrary dependency nobody would have written measures the plant
+rather than the code. **For that route the check is the detector and
+the review is the gate**, and §6.3's reviewable question — *"does any
+pcrec output change when an aux body changes"* — is the form it takes.
 
 ### 3.6 What each check does not share a source with
 
@@ -1059,8 +1161,9 @@ edit away from being vacuous:
 | W23-S2 (diagnostic class) | a class tag derived in both legs from one implementation | the tag must be attached at the rule that fired, in each leg independently |
 | W23-S3 (dump vs behaviour) | a check that compared the dump to the TABLE | that is the same source twice. It must exercise the BEHAVIOUR the dump claims, per row |
 | W23-S4 (section field 1) | a hand-written list of section names | the list goes stale the day a fifth section lands — `NF != 15` one level up |
-| W23-S5 (population) | a fixture LIST maintained by hand | it walks the dump's rows and counts them against declared fixture NAMES |
-| W23-S6 (aux identity) | an edit chosen to be small | the edit must move line count, depth, key spellings and block count at once |
+| W23-S5 (population) | a fixture LIST maintained by hand — **and equally against declared fixture NAMES**, which is what revision 1 proposed | it walks the dump's rows against RECEIPTS the three-leg helper emits as it runs (§3.3 property 2) |
+| W23-S6 (aux identity) | an edit chosen to be small; **a fixture with no `pattern` block and no refusal, which makes two of its four arms vacuous** | the edit must move line count, depth, key spellings and block count at once, and the fixture must carry a compiling block and a refusing sibling |
+| W23-S7 (include closure) | a fixture pair whose counts are merely EQUAL across three legs | three legs that all splice nothing satisfy equality; the entry's count must EXCEED its own file's, and `fragments spliced` must equal a number the fixture DECLARES |
 | R5's repaired field-count assertion (§1.5) | a per-section count that DEFAULTS when a section is unknown | a detection helper that returns a default on missing input fails in the silent direction ([ABI-NS]). It hard-fails naming the section |
 
 ---
