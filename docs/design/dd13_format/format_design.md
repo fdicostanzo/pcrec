@@ -259,6 +259,17 @@ and refusal probes against `build/pcrec` at b9572c66, read-only):
   position across the corpus — §1.1's 32-keyword census extended, same
   method, same result. The sub-block attribute tokens additionally never
   enter any dispatch context at all, because they only occur INDENTED.
+  **(FROZEN MEASUREMENT, annotated at 3.4.1 — r58 B11, which found this
+  preamble un-annotated while six sibling rows in the table below had
+  been.** It is true at its own pin and stays true: `provides` and
+  `configs` have since been WITHDRAWN (3.4, D99) and the count of tokens
+  the DELIVERY adds is §1.3's, not this one — removing candidates from a
+  list of tokens measured ABSENT cannot make any of them present, which
+  is impact row S12's own rule. `ext`, the one token 3.4 adds, carries
+  its own freeness measurement at §0.9 and §1.3; `tag-prose` was never a
+  first token. Read §1.3's closing paragraphs for the current
+  addition/removal count — **five productions removed, one added** —
+  and this bullet for what was measured on 2026-09-12.**)**
 - `vocabulary` today is refused as **unknown** ("'vocabulary' is not a
   file-level directive"), not with the later-wave sentence `tag` gets —
   so the recognised-and-refused-by-name set (`rxt_format.md`'s "NOT IN
@@ -1198,10 +1209,11 @@ that turns other rules OFF, which is why its effects are written beside
 it rather than beside the rules it scopes.
 
 **Why S3 is a DEVICE and not a value rule.** The obvious objection is
-that `\|` is a value-form discriminator (§1.2.4 says so of `"` after
-`=` in a `tag-prose` item, and that remains true of `"`), so it should
+that `\|` is a value-form discriminator (§1.2.4 says so of the `"` that
+picks a `quoted-subject` out of the two `subject` forms, and that
+remains true of `"`), so it should
 live entirely in the schema layer. It cannot, and the difference is
-measurable: a `tag-prose` value is bounded by the line it is on, so a
+measurable: a quoted subject's value is bounded by the line it is on, so a
 reader that ignores the discriminator still gets the line's EXTENT
 right and only mis-reads its content. A `\|` value is bounded by
 SUBSEQUENT LINES, so a reader that ignores it gets the extent of
@@ -1528,9 +1540,9 @@ after it is treated, which is what "decides where a line attaches"
 means. It is now **S3**, declared in §1.2.1, and the distinction that
 survives is narrower and true:
 
-| | `\|` (a prose value) | `"` after `=` (a `tag-prose` item) |
+| | `\|` (a prose value) | `"` opening a `quoted-subject` |
 |---|---|---|
-| what it discriminates | the value's FORM — on this line, or on the lines below | the value's FORM — bare token, or quoted with whitespace |
+| what it discriminates | the value's FORM — on this line, or on the lines below | the value's FORM — a quoted subject, or an `@file:` reference |
 | where the value ENDS | on SUBSEQUENT lines, by S3's extent rule | on THIS line, by the closing quote |
 | a reader that ignores it | mis-parses the extent of everything after it | mis-reads one line's content |
 | layer | **structure (S3) + schema (the `value`/`children` PAIR, 3.3)** | schema only |
@@ -1540,6 +1552,12 @@ CONCLUSION: a discriminator that selects a multi-line form is a
 structural device wearing a value's clothes. §2.26 item 8's pairing of
 the two stands as a vocabulary observation and is re-worded there to
 stop implying they live in one layer.
+**(3.4.1, r58 R3: this table's right-hand column was `tag-prose`'s `"`
+after `=`. `tag-prose` is REMOVED — it never had a customer, §1.3 — so
+the column is re-based on the `"` that already discriminates the two
+`subject` forms. The CONTRAST is what the table is for and it is
+unaffected: a `"` bounded by its own line against a `\|` bounded by the
+lines below it.)**
 
 #### 1.2.5 The lexical rules, restated under the two layers
 
@@ -1689,12 +1707,23 @@ file-subject = '@file:"' , path-chars , '"' ,
 path-ref    = '"' , path-chars , '"'                    (* local, C's "" *)
             | "<" , store-name , ">" ;                  (* library path, C's <> *)
 config-list = ident , { "," , [ ws ] , ident } ;
-tag-item    = tag-label | tag-pair | tag-prose ;                  (* U1; W23 *)
+tag-item    = tag-label | tag-pair ;                              (* U1; W23 *)
 tag-label   = ? a bare label: no whitespace, no '=' ? ;
 tag-pair    = tag-key , "=" , tag-value ;   (* tag-value: no whitespace, no '=' *)
-tag-prose   = tag-key , "=" , quoted-subject ;  (* W23: the seven escapes, ONE
-                 vocabulary — a value whose first byte after '=' is '"' is the
-                 quoted form and must terminate; whitespace legal inside *)
+
+(* WITHDRAWN AT REVISION 3.4.1 (r58 ruling R3), kept here so a reader of
+   revision 3.4's grammar finds it rather than assuming a typo:
+       tag-item  = tag-label | tag-pair | tag-prose ;
+       tag-prose = tag-key , "=" , quoted-subject ;
+   Its ONE named customer — N-41's reviewer note — moved into `variant
+   note` (§2.23) in the SAME revision that added `tag-prose`, so the
+   alternative entered the grammar with no customer at all. §2.25.3's
+   MEMBERSHIP RULE ("admitted only when a production in THIS delivery
+   needs it") is applied one layer over, in the grammar, exactly as D99
+   applied it to `cross-scope` in the constraint vocabulary. It RETURNS
+   with its first real customer, priced in advance at one alternative
+   and one escape-vocabulary sentence — a restoration, not a
+   re-argument. *)
 prose-value = rest-of-line                        (* one-line form *)
             | "|" , { " " | tab } , eol , opaque-region ;
                  (* block scalar; §1.2.1 S3. The trailing whitespace is
@@ -1912,7 +1941,8 @@ W23 and all for the [B42] consumer: two head declarations (`vocabulary`,
 `configs`), one config-body line (`provides`), a second block starter
 (`pattern-esc`), one case-line qualifier (`under`), two child-admitting
 kinds (`provenance`; `variant` reshaped from its W3 one-line form), a
-`tag-item` third alternative (`tag-prose`), and two optional suffixes on
+`tag-item` third alternative (`tag-prose` — **REMOVED at 3.4.1, r58 R3,
+above**), and two optional suffixes on
 `file-subject` (`as`, `sha256`). Every addition is ADDITIVE against the
 shipped corpus — a new first token measured at 0 occurrences (§0.6,
 re-measured at 210 files in §0.7), an extension of a production the
@@ -1946,26 +1976,33 @@ declares one structure-layer device that was already shipped and
 undeclared (S3, §1.2.1) and makes explicit two rules the EBNF above now
 carries in its `opaque-region` and `INDENT` terminals.
 
-**REVISION 3.4 REMOVES FOUR PRODUCTIONS AND ADDS ONE** (D99). Out: the
+**REVISIONS 3.4 AND 3.4.1 REMOVE FIVE PRODUCTIONS AND ADD ONE.** At 3.4
+(D99), out: the
 head declaration `configs build`/`describe` (§2.20) and the three
 `config`-body lines `testee`, `option` and `provides` (§2.16, N-42).
+At 3.4.1 (r58 ruling R3), out: the `tag-item` third alternative
+`tag-prose`, whose only named customer moved into `variant note` in the
+same revision that added it — the membership rule applied in the
+grammar.
 In: `aux-block`, spelled **`ext <consumer>`** (§2.27), at file scope and
 block scope, one production at two parents on `provenance`'s own
 precedent. Net: revision 3's *"two head declarations, one config-body
 line"* becomes ONE head declaration (`vocabulary`) plus the aux
 production; a `config` body is W1's five pcrec-option lines plus
-`analysis` again.
+`analysis` again; and a `tag` item is a label or a pair, as it was
+before revision 3.
 
-**All four removals are FREE and none is a narrowing**, and the reason
+**All five removals are FREE and none is a narrowing**, and the reason
 is worth stating once because it recurs for every future withdrawal:
 **a production that has never shipped cannot be narrowed by being
-removed.** All four are refused BY NAME on today's binary — they are
-W23 keywords no build has ever accepted — so no file anywhere becomes
+removed.** All five are refused BY NAME on today's binary — they are
+W23 keywords and W23 value forms no build has ever accepted — so no file
+anywhere becomes
 refused, no file changes meaning, and §1.6.4's narrowing rule is not
 reached in any of its five cases. What the removals cost is a DIFF, and
 what they buy is §1.2's own criterion applied to semantics rather than
-to syntax: `config` has one mode again, and no production in the format
-is bimodal.
+to syntax: `config` has one mode again, no production in the format
+is bimodal, and no alternative in the grammar is there on speculation.
 
 **`ext` is FREE, measured at this revision**: 0 occurrences in
 first-token position across **210** corpus files and **49**
@@ -2013,7 +2050,7 @@ consumer is real and PARKED on it.
 | wave | productions | status / consumer |
 |---|---|---|
 | **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `export`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget`/`from`; AST composition with §1.5's extensions, the delivering calls and `--emit-composed`; `rx_info.name`/`nentries`; H11's target build path | **BUILT** — [DD-13b.W1.1] (2026-08-30), .2 (2026-08-31), .3 (2026-09-03). Owed, NOT blockers: **W1.3.1** (run.sh's composed-block path, `w13_runsh_composed_path.patch`) and **W1.4** (the in-pattern delivery follow-ons). W23 interacts with neither — no W23 production touches the composer except §2.22's derived-identifier LOOKUP, which is additive |
-| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `under`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, **the AUX production `ext <consumer>` (§2.27, NEW at 3.4)**, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3"). **NARROWED AT 3.4 (D99)**: `configs describe`, `provides` and `config … testee`/`option` leave this row — the first two withdrawn, the third removed from the wave plan as a roster that aux now carries |
+| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `under`, `as`/`sha256` on `@file:`, `oracle` at a version, ~~`tag-prose`~~ (REMOVED at 3.4.1, r58 R3 — no customer), the §2.22 regime repair, **the AUX production `ext <consumer>` (§2.27, NEW at 3.4)**, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3"). **NARROWED AT 3.4 (D99)**: `configs describe`, `provides` and `config … testee`/`option` leave this row — the first two withdrawn, the third removed from the wave plan as a roster that aux now carries |
 
 **What remains after W23, named so the wave table ends honestly:** the
 `gap` data-block member (unearned, D77), `--list-source --resolved`
@@ -4347,9 +4384,16 @@ variant tre
   the bench's two-value enum stays the bench's vocabulary, per AR-6.
 - **`note` is the reviewer's objective-preserved sentence** — N-41's
   third field, previously routed to `tag variant-note=…` where a
-  tag-value's no-whitespace rule made a sentence unspellable. With
-  `tag-prose` (§1.3) that route now also works for OTHER descriptive
-  keys; the variant's own note lives with the variant, one home.
+  tag-value's no-whitespace rule made a sentence unspellable. The
+  variant's own note lives with the variant, one home.
+  **(3.4.1, r58 R3: revision 3 added `tag-prose` so that route "would
+  also work for OTHER descriptive keys", and then routed N-41 here
+  instead — leaving the grammar alternative with no customer in the
+  delivery that introduced it. `tag-prose` is REMOVED under §2.25.3's
+  membership rule and RETURNS with its first real customer, priced at
+  one alternative plus one escape-vocabulary sentence, §1.3. Nothing
+  about `note` changes: it was always the answer to N-41's third
+  field.)**
 - **Why the reshape is free and right**: the W3 one-line form shipped
   nowhere (refused by name at every pin; 0 uses in either repo), so no
   compatibility cost exists; and revision 2's `variant` already needed a
@@ -5097,7 +5141,7 @@ right spelling, or moved now.**
 | 5 | `under <conv> <case-line>` | **CONFIRMED, and given a schema home.** The qualifier is a PREFIX so the case line after it is byte-identical to an unqualified one — which is what makes "the qualifier wraps a case line UNCHANGED" a checkable property rather than a hope, and a suffix form would not. Its one oddity — a line kind whose value CONTAINS another line kind — is now expressible as schema data (`value: qualified-line` over a closed kind set, §2.25.2) rather than as a parser special case |
 | 6 | ~~`configs build`/`describe`~~ | **MOOT AT 3.4 — the production is WITHDRAWN (D99 item 1, §2.20).** Kept as a record. *Original verdict:* **CONFIRMED.** It names the thing it governs (the file's `config` blocks) and takes a closed mode value, so a third mode is a `closed` set member and not a new keyword. `config-mode` was considered and declined as longer for no disambiguation. **And this row is the audit's own limit, stated plainly**: the spelling was right and the MECHANISM was the problem, so a sweep that asks only "is this the long-term right NAME?" confirms a production it should have questioned. §2.26's closing paragraph says the audit deliberately did not reopen semantics; that was the correct scope for an ownership ruling about syntax, and it is why a separate ruling was needed to reach this one |
 | 7 | `as <id>` / `sha256 <hex64>` | **CONFIRMED, and the reason is worth stating because "why not `hash`?" is the obvious question.** Naming the ALGORITHM in the keyword means a second algorithm arrives as a sibling (`sha512 <hex>`) rather than as a re-interpretation of an existing field's value — the failure mode every `hash:`-style field eventually has. `as` is the import-idiomatic binder |
-| 8 | `tag-prose` (`key="…"`) | **CONFIRMED — and the pairing with `\|` is RE-WORDED at 3.2** (r57 G-B1). The quoted form is discriminated by the first byte after `=`, as `\|` discriminates a prose value's two forms, and both are declared per line kind in the schema's `value` column. But revision 3.1's phrasing — *"value-form discriminators… never structural"* — is false of `\|`, which opens an S3 OPAQUE REGION whose EXTENT is structural (§1.2.1, §1.2.4's table). The surviving statement is the true half: **both are value-form discriminators; `"`'s value ends on its own line and `\|`'s ends on a later one, and a discriminator that selects a multi-line form is ALSO a structure device.** `tag-prose`'s own spelling is unaffected and stays confirmed — it is the single-line one |
+| 8 | ~~`tag-prose` (`key="…"`)~~ | **MOOT AT 3.4.1 — the alternative is REMOVED (r58 ruling R3, §1.3), so there is no spelling left to own.** Kept as a record, on item 4's and item 6's precedent. **The audit's own limit shows here for the third time and in its purest form**: this row swept `tag-prose` for whether the NAME was right, twice, across two revisions, and the name was fine — what was wrong is that the production had no customer, N-41's note having moved into `variant note` (§2.23) in the same revision that added the alternative. A sweep that asks "is this the long-term right spelling?" cannot ask "should this exist?", and the vocabulary observation below is what it produced instead. *Original verdict follows.* **CONFIRMED — and the pairing with `\|` is RE-WORDED at 3.2** (r57 G-B1). The quoted form is discriminated by the first byte after `=`, as `\|` discriminates a prose value's two forms, and both are declared per line kind in the schema's `value` column. But revision 3.1's phrasing — *"value-form discriminators… never structural"* — is false of `\|`, which opens an S3 OPAQUE REGION whose EXTENT is structural (§1.2.1, §1.2.4's table). The surviving statement is the true half: **both are value-form discriminators; `"`'s value ends on its own line and `\|`'s ends on a later one, and a discriminator that selects a multi-line form is ALSO a structure device.** `tag-prose`'s own spelling is unaffected and stays confirmed — it is the single-line one |
 | 9 | `variant`'s `text` | **CONFIRMED, REASON REPLACED** (§2.23). Revision 3's justification was a parser hazard §1.2.1 makes impossible in any reader implementing S1/S2 — **qualified at 3.2 (r57 S-S5): that is a property of the SPECIFICATION, and legs B and C implement it independently, so it is pinned by §9's A-group rather than inherited.** The surviving reason is a reader's and does not depend on the qualification: the field holds a replacement FOR the block's pattern, and reusing the format's most load-bearing token at a second scope for something adjacent-but-different is how a vocabulary stops being learnable |
 | 10 | `provenance`'s fields, and the `freq` block's | **MOVED — the audit's biggest finding.** Revision 3 shipped **two provenance vocabularies for one idea**: `exemplar`/`date`/`bytes`/`sha256`/`analyzer` on a data block, `source`/`url`/`ref`/`licence`/`retrieved`/`fidelity`/… on a pattern block, with `exemplar`≡`source` and `date`≡`retrieved` naming the same facts twice. Unified into ONE record used at two parents, its REQUIRED subset declared per parent by the schema (§2.10, §2.14). `analyzer` deliberately stays on the data block — it names the TOOL, not the origin. And `licence`/`licence-note` → **`license`/`license-note`**, because the value is an SPDX identifier and SPDX's own key is `License`. All free: 0 uses in either repo |
 | 11 | `mc` | **CONFIRMED.** Two letters, joining the `ms`/`ns` terse case-line family; a case line's kinds are the format's highest-frequency tokens and the family's brevity is deliberate |
@@ -5640,7 +5684,7 @@ delivery; these are the [B42] additions:
 | SW1 | `docs/spec/rxt_format.md` | `pattern-esc`: the second block starter, the seven-escape vocabulary shared with subjects, one-spelling-per-block, the `\x00` refusal naming K9 and its lifting trigger (§2.19); the CLI decode flag cross-reference | W23 |
 | SW2 | `docs/spec/rxt_format.md` | **REWRITTEN AT 3.1**: the LEXICAL RULES section becomes the TWO-LAYER statement — the STRUCTURE layer (S0 line classes, S1 attachment, S2 the two-member block-opener set) and the pointer to the schema for everything else. The head/body indentation asymmetry is DELETED rather than narrowed, the "only asymmetry" sentence goes, the bare-indented-line refusal survives in its two arms (attaches-to-nothing / parent-takes-no-children), and `prose-value` becomes legal wherever the schema declares a prose value, at any depth (§1.2) | W23 |
 | SW3 | `docs/spec/rxt_format.md` | `provenance`: the eleven fields, the per-parent required sets (a pattern block's four, a data block's four), the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-parent, and the `license`/`license-note` spelling (§2.14). **Also the `freq` data block's body (S6's row extended)**: its five one-off provenance fields are REPLACED by this same record (§2.10, §2.26 item 10) | W23 |
-| SW4 | `docs/spec/rxt_format.md` | `vocabulary` + `tag-prose`: declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind), and `vocabulary`'s nesting as the FILE-declared rows of §2.25's schema (§2.15). **NARROWED AT 3.4 (D99)**: `provides` and its fail-closed rule leave the hunk with the production, and **the RESERVED-KEY sentence for `requires` goes with them** — 3.2 added it (r57 G-B5) so a reader who greps `provides` finds `vocabulary requires` and vice versa, and with one end gone the sentence has nothing to pair. What the hunk SAYS about `requires` instead is the one-ended truth: it is an ordinary `tag` key like any other, closable by `vocabulary` like any other, with no reserved status and no second end in the format (§2.15) | W23 |
+| SW4 | `docs/spec/rxt_format.md` | `vocabulary` (**and NOT `tag-prose`, removed at 3.4.1 under r58 R3 — the hunk loses the quoted-tag-value paragraph with the production; a `tag` item is a bare label or a `key=value` with no whitespace, exactly as W2 shipped it**): declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind), and `vocabulary`'s nesting as the FILE-declared rows of §2.25's schema (§2.15). **NARROWED AT 3.4 (D99)**: `provides` and its fail-closed rule leave the hunk with the production, and **the RESERVED-KEY sentence for `requires` goes with them** — 3.2 added it (r57 G-B5) so a reader who greps `provides` finds `vocabulary requires` and vice versa, and with one end gone the sentence has nothing to pair. What the hunk SAYS about `requires` instead is the one-ended truth: it is an ordinary `tag` key like any other, closable by `vocabulary` like any other, with no reserved status and no second end in the format (§2.15) | W23 |
 | SW5 | `docs/spec/rxt_format.md` | **REWRITTEN AT 3.4 (D99 item 1) — the hunk is now ONE SENTENCE and it is the MUST-tier half.** The `configs build`/`describe` material (the four describe rules, the `target … with` refusal, `use` inert-and-counted, entry-file scope) is WITHDRAWN with §2.20. What survives, and what [B42] N-43 actually asked for, is the PERMANENCE sentence: **a file with no `target` and no `config` parses, builds nothing, and exits 0 — as a CONTRACT, permanently.** The behaviour is already shipped; the hunk makes it a promise rather than an observation, which is the whole of the ask. §9's F1 row is satisfied by this sentence exactly as it was before, because F1 was always the permanence check and never the mode check | W23 |
 | SW6 | `docs/spec/rxt_format.md` | the subject subsection (S4's row extended): `as <id>`/`sha256 <hex64>`, the per-file id namespace and functional-binding rules, WHO checks the hash (§2.18) | W23 |
 | SW7 | `docs/spec/rxt_format.md` + `docs/spec/match_api.md` | `mc` and its COUNTING RULE — one normative paragraph citing `match_api.md` §3.1 as the rule's single home, the empty-advance-from-reported-start clause, the finditer-divergence class named; match_api.md §3.1 gains one sentence naming `mc` as a consumer of the protocol. **PLUS, AT 3.2 (r57 C-S6): the ILL-FORMED-UTF-8 ADVANCE RULE, stated NORMATIVELY rather than left to `next_pos` by reference** — from `pos + 1`, skip bytes `0x80`-`0xBF` — because `match_api.md` §3.1.1 never defines "character boundary" on invalid input and a foreign adapter cannot derive the shipped behaviour from the prose. The hunk lands in match_api.md §3.1.1 (where the gap is) as well as in `rxt_format.md`'s `mc` paragraph (where `mc`'s consumer reads), and §9's E5 fixture becomes utf8-bearing so the rule has a cell | W23 |
@@ -5969,8 +6013,10 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    verification. **REVISED at W23**: the reviewer's statement is the
    variant sub-block's own `note` attribute (§2.23), which is
    whitespace-capable where the first routing (`tag variant-note=…`)
-   measurably was not ([B42] N-41); `tag-prose` now also exists for
-   other descriptive keys.
+   measurably was not ([B42] N-41). **(3.4.1, r58 R3: this bullet used
+   to close with "`tag-prose` now also exists for other descriptive
+   keys" — and it was the route history that made that alternative
+   customerless, since N-41 came HERE. `tag-prose` is removed, §1.3.)**
 4. **REGIME (§3)** — **REPLACED at W23 ([B42] N-48; the row's original
    text prescribed a mechanism MEASURED unusable for every bench
    pattern id, and §2.22 carries the repair).** Regime stays a property
@@ -7266,7 +7312,7 @@ every number it changes.**
 | A1 | SATISFIED — every keyword A1 names (`tag`, `mc`, `@file:`, `include` at head and block scope) lands in the one W23 delivery (F-Q1), so the probe exits 0 at the delivered pin. The BEFORE (refused by name with a wave) holds at today's pin, M10 |
 | A2 | **A bench CORRECTION, NOT a satisfaction — SPLIT FROM A1 AT 3.4.1 (r58 B1).** A2's fixture literally types `config … testee` and `config … option` (`bench_rxt_needs_v1.md:1010`), and 3.4 removed both productions (D99, N-42). **At the delivered pin A2's fixture exits 1, not 0** — its `oracle`, `variant` and `use` keywords land as designed, and the two `config` body lines are refused as unknown. **The fix is theirs and it is two deleted lines**: drop `config … testee` and `config … option` from the A2 fixture; whatever roster they want in that file goes in an `ext` block, where no keyword check applies. The row then reads exactly as A1 does. It joins the correction list above on **B6's own precedent** — a check whose PREMISE a ruling dissolved is rewritten with its reason, never quietly scored SATISFIED — and the reason it was scored SATISFIED at 3.4 is worth more than the row: **the token `testee` WAS hit by the lane's own grep** (§0.9's six-token sweep, in an in-scope file) **and was not read against the disposition that named it**, which is §5.2a item 7's amended method |
 | A3, A4 | SATISFIED, unchanged mechanism — unknown tokens stay hard errors naming their SCOPE; a child scope is declared like any other (§1.2.2, §2.25) and the count is no longer fixed at four; SW13 keeps the recognised-refusal list honest for partial builds and now derives it from the schema's `wave` column. **THE FIXTURE OBLIGATIONS THIS DELIVERY OWES ARE NAMED BELOW THE TABLE** (3.1 said "an INDENTED-LINE fixture in all three legs" and left the position, the assertion and the rest of the population unstated; r57 S-M2/S-M5 and the grammar lens's five pinned probe cells fix that) |
-| A5 | SATISFIED — `tag` accumulation and mixed labels/pairs are unchanged W2 design; `tag-prose` adds the third item kind (§1.3) |
+| A5 | SATISFIED — `tag` accumulation and mixed labels/pairs are unchanged W2 design, which is the whole of what A5 asserts. **(3.4.1, r58 R3: 3.4's row added "`tag-prose` adds the third item kind"; the alternative is removed for want of a customer, §1.3, and A5's own pass condition never referenced it — a bare label and a pair on two `tag` lines.)** |
 | B1, B2 | SATISFIED (regression guard) — `pattern` verbatim untouched (§2.19); the dump's escape round trip unchanged |
 | B3, B4 | SATISFIED BY STEP 0 (lane rxtnul) — the raw-NUL refusal with its control; independent of W23, as their P-Q7 asked |
 | B5 | **PARTIAL, stated**: `pattern-esc` round-trips `\n` and a trailing `\r`; **`\x00` is REFUSED BY NAME naming K9** (the compile entry takes no pattern length — a decoded NUL pattern would silently compile as its prefix, the very trap B3 closes). Lifts when `rx_info.pattern_len`'s API half lands; §2.19 |
@@ -7428,8 +7474,13 @@ bench is designing set files against a mechanism that no longer exists.
 > PATTERN needs is rx-defining content, which is exactly what this
 > format is for. So are `provenance`, `variant` (with `kind`, `groups`,
 > `note` and `unsupported`), `under`, `pattern-esc`, `mc`, subject
-> `as`/`sha256`, `tag-prose`, `include`, `@file:` and the `--list-source`
-> sections. **Your sixteen-config pcrec matrix stays yours** — it is
+> `as`/`sha256`, `include`, `@file:` and the `--list-source`
+> sections. (One small subtraction while we were in there: the quoted
+> `tag key="…"` form we sketched at revision 3 is NOT landing — your
+> N-41 reviewer note lives on `variant note`, which was always the
+> better home, and nothing else had asked for it. A `tag` item is a
+> bare label or `key=value` with no whitespace, as it is today. It
+> comes back the first time something needs it.) **Your sixteen-config pcrec matrix stays yours** — it is
 > your experimental design, cross-set by construction, and nothing in
 > the format ever needed to know about it. That was the hazard
 > roadblock #6 raised, and it is now dissolved rather than cured: with
