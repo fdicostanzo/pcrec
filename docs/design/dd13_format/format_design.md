@@ -1,7 +1,31 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 3.3 ([DD-13b.W23] STEP 1.3, 2026-09-12, lane
-w23fix2) — the r57 ROUND-2 FIX ROUND, and the last one before merge.**
+**Status: REVISION 3.4 ([DD-13b.W23] STEP 1.4, 2026-09-13, lane w23aux)
+— D99, and it is a NARROWING of what the format MEANS rather than a fix
+round.** Frank's ruling (`docs/dev/decisions.md` D99): *"the rxt file
+needs a clear purpose and ultimately that purpose is something along
+the lines of a file for defining rx, primarily for the use of pcrec.
+that the bench can use it is good but shouldn't distract from the
+primary purpose."* Three consequences land here. **§2.20 (`configs
+describe`) and §2.16 (`provides`) are WITHDRAWN** — both are marked in
+place rather than deleted, because the reasoning is the part worth
+keeping; W23-F1 and W23-F2 leave the Frank queue with them, and W23-F4
+stands alone. **§2.27 is NEW: the AUX production** (`ext <consumer>`),
+consumer-namespaced, structurally parsed under S0-S3 and semantically
+UNINTERPRETED — dumped faithfully by `--list-source`, read by no build,
+no check and no config resolution, with the GRADUATION RULE stated
+normatively (the day pcrec must ACT on something in an aux block, it
+graduates to a real production; aux never grows semantics in place).
+And **§0.9's SECOND-ORDER IMPACT TABLE** is the deliverable the ruling
+asked to see: every consequence of the two withdrawals, confirmed or
+refuted with a citation, including the ones the ruling did not
+anticipate — headed by `cross-scope`, a constraint kind admitted at 3.2
+whose ONLY customer was `provides`, so the vocabulary goes back from
+eight kinds to seven under §2.25.3's own membership rule.
+**§0.9 is where a reader of revision 3.3 starts.**
+
+**Revision 3.3** ([DD-13b.W23] STEP 1.3, 2026-09-12, lane
+w23fix2) — the r57 ROUND-2 FIX ROUND, and the last one before merge.
 The round-2 critic verified 3.2's three blocker fixes: two HOLD
 OUTRIGHT and the third (S3 OPAQUE REGIONS) held in DIRECTION and failed
 end to end on its own axis, which is what 3.3 closes. **Four rules of
@@ -267,7 +291,7 @@ were BUILT already and are untouched):
 | **N-9, N-45, N-48** | `tag` lands in W23 as designed (§4.5's mapping); N-48's regime mechanism is REPAIRED, not replaced — §4.5 item 4 rewritten on the derived-identifier call binding (§2.22) |
 | **N-10, N-20, N-21** | §2.15 `vocabulary` — per-key declared value sets, parser-enforced, undeclared keys stay free (compat). Roadblock #2 closed |
 | **N-11..N-19** | §2.14 `provenance` — a record attached under the pattern block (§1.2.6), nine fields, four required, `adaptation` required iff `fidelity != verbatim`, `authored`'s agreement rule. Roadblock #3 closed. **Revision 3.1**: eleven fields, the same record reused at a data block, required per parent (§2.26 item 10) |
-| **N-22, N-23** | §2.16 `provides` (spelled `capable` in their sketch; §2.26 item 4) — per-config, repeatable, accumulating, **fail-closed** (absent = nothing satisfied); flagged to Frank with §2.20 (P-Q4's ratification) |
+| **N-22, N-23** | ~~§2.16 `provides`~~ — **WITHDRAWN AT 3.4 (D99 item 2).** A capability list describes an ENGINE, and the format does not carry engine knowledge as semantics. The need is re-homed to §2.27's AUX production: a bench that wants a self-describing set writes its roster under `ext bench`, which pcrec dumps and never reads. The pattern-side `tag requires=…` STAYS — what a pattern NEEDS is rx-defining content (§2.15) |
 | **N-24, N-28** | BUILT / as-designed; B7's raw-bytes promise gets its first verification at the delivery (§9) |
 | **N-25** | `@file:` lands in W23 as designed (§2.8) |
 | **N-26, N-27** | §2.18 — `@file:` gains `as <id>` (per-file subject namespace, functional binding, conflicts refused) and OPTIONAL `sha256 <hex64>` checked by whatever READS the subject. §2.8's no-hash paragraph is re-scoped: it was a default for committed subjects, not a principle (P-Q8). Roadblock #4 closed |
@@ -279,8 +303,8 @@ were BUILT already and are untouched):
 | **N-36, N-38** | §2.9 widened: `oracle` takes an `engine-ref` with optional `/version`; `python`/`pcre2` keep their exact meanings; an absent oracle stays R-VG-3's labelled skip |
 | **N-37** | `tag method=` as designed (W23) |
 | **N-39, N-40, N-41** | §2.23 — `variant` becomes a record with attached attributes (§1.2.6): `kind` (closed via `vocabulary kind`), `text`, `groups`, `note` (prose), `unsupported`. The old one-line-plus-`groups`-continuation shape was a proto-sub-block; the general mechanism replaces it (house rule). N-41's three fields all have carriers |
-| **N-42** | `config … testee`/`option` land in W23 as designed |
-| **N-43, N-44** | §2.20 `configs describe` — the head declaration separating BUILD configs from DESCRIPTIVE ones, default `build` = today's semantics; plus the PERMANENCE sentence for a target-less, config-less file. Roadblock #6 closed; ratification flagged to Frank (D93 territory) |
+| **N-42** | ~~`config … testee`/`option` land in W23 as designed~~ — **REMOVED FROM THE WAVE PLAN AT 3.4 (D99).** N-42 is an OPTIONAL roster proposal (their own SHOULD, the one their note is "least sure of"), and the roster is engine description, not rx definition. `testee <engine-ref>` and `option <tag-pair>` leave `config`'s body; a testee roster is aux content (§2.27). `config` itself is unchanged and stays W1's build production |
+| **N-43, N-44** | **SPLIT AT 3.4 (D99 item 1), and the split is the ruling's point.** ~~§2.20 `configs describe`~~ is **WITHDRAWN**: it made one production (`config`, plus `use`) BIMODAL via a head-line mode switch — two uses smashed together — and the collision it resolved materializes only through the bench's OPTIONAL roster proposals. **N-43's MUST-tier half SURVIVES UNCHANGED and is one spec sentence**: a file with no `target` and no `config` parses, builds nothing, and exits 0, as a CONTRACT, permanently (SW5, rewritten to carry only that). N-44 has no carrier and needs none — with no roster in `config`, a set file has no `config pcrec` to PIN anything with, so D93 never reaches the bench (D99 item 5) |
 | **N-46, N-47** | BUILT (W1), untouched |
 | **N-49** | the regime -> subject-set mapping rides the repaired item 4 (§2.22): each regime block carries its own subject list |
 | **N-50** | `include` lands in W23 as designed (§2.5, §2.11) |
@@ -1523,8 +1547,14 @@ decl-line =
     | "tag"        , ws , tag-item , { ws , tag-item }             (* W2 *)
     | "vocabulary" , ws , tag-key , ws , tag-value , { ws , tag-value }
                     (* W23: the FILE-declared half of the schema (§2.25) *)
-    | "configs"    , ws , ( "build" | "describe" )                (* W23 *)
+    | aux-block                    (* W23: §2.27, the AUX production —
+                                      also legal at BLOCK scope, below *)
     | "description", ws , prose-value ;                            (* W1 *)
+
+(* WITHDRAWN AT REVISION 3.4 (D99 item 1), kept here so a reader of
+   revision 3.3's grammar finds it rather than assuming a typo:
+       | "configs"    , ws , ( "build" | "describe" )
+   The mode switch is gone; `config` has one mode again (§2.20). *)
 
 (* RESERVED, not a production: `version` is refused BY NAME in every
    build (§1.6). Its absence means version 1; it exists so a future
@@ -1547,16 +1577,17 @@ config-line =
     | "encoding" , ws , ident                 (* D58's per-pattern axis M16 *)
     | "engine"   , ws , ( "vm" | "dfa" )      (* as a pattern block's   W1 *)
     | "budget"   , ws , budget-item           (* as a pattern block's   W1 *)
-    | "analysis" , ws , data-kind , ws , ident  (* select a data block  W2 *)
-    | "testee"   , ws , engine-ref            (* a non-pcrec engine     W3 *)
-    | "option"   , ws , tag-pair              (* that engine's options  W3 *)
-    | "provides" , ws , tag-value , { ws , tag-value } ;
-                    (* W23: the capability tags this config SATISFIES;
-                       repeatable, accumulating; ABSENT means NOTHING is
-                       satisfied — fail-closed (§2.16). SPELLED `provides`
-                       at revision 3.1 (was `capable`) — §2.26 item 4:
-                       the pattern side's key is `requires`, and the two
-                       ends of one relation must read as a pair *)
+    | "analysis" , ws , data-kind , ws , ident ; (* select a data block W2 *)
+
+(* WITHDRAWN AT REVISION 3.4 (D99 items 1 and 2), kept for the same
+   reason as `configs` above — three config-body lines leave together
+   because all three describe an ENGINE rather than a pcrec build:
+       | "testee"   , ws , engine-ref            (* N-42, a SHOULD *)
+       | "option"   , ws , tag-pair              (* N-42, a SHOULD *)
+       | "provides" , ws , tag-value , { ws , tag-value }
+   A `config` body is pcrec build options again, which is what W1
+   shipped it as. An engine roster lives in an aux block (§2.27), and
+   `engine-ref` survives as `oracle`'s value shape (below). *)
 
 engine-ref = ident , [ "/" , version-chars ] ;      (* e.g. pcre2/10.42 *)
 
@@ -1616,6 +1647,8 @@ block-line =
     | "under"       , ws , tag-value , ws , under-case            (* W23 *)
     | "oracle"  , ws , oracle-spec                                 (* W3 *)
     | provenance-block                                            (* W23 *)
+    | aux-block                             (* W23: §2.27, same production
+                                               as at file scope *)
     | variant-block ;                              (* W3, reshaped at W23 *)
 
 under-case  = ( "m" | "n" | "ms" | "ns" | "mc" ) -case-line-as-above ;
@@ -1644,6 +1677,28 @@ prov-line =
                                              policy is the consumer's *)
     | "bytes"        , ws , int           (* integrity: the source's size  *)
     | "sha256"       , ws , hex64 ;       (* integrity: its digest         *)
+
+(* ---------- the AUX production (§2.27, NEW at revision 3.4) ---------- *)
+(* ONE production, legal at FILE scope and at BLOCK scope. Its body is
+   ordinary S1-attached records; what is new is that no line inside it
+   has a schema row, so no first token inside it is unknown. *)
+aux-block  = "ext" , ws , consumer , eol , { INDENT , aux-line , eol } ;
+consumer   = defname ;      (* the CONSUMER's namespace — the wide name
+                               grammar, so `pcrec-bench` is spellable.
+                               NOT resolved against anything: pcrec does
+                               not know who its consumers are *)
+aux-line   = aux-key , [ ws , ( prose-value | rest-of-line ) ] ,
+             { INDENT , aux-line , eol } ;
+aux-key    = ? any first token the LEXICAL rules admit — there is no
+               closed set here, and that is the production (§2.27). It
+               must still be a token: S0's line classes and S1's
+               attachment apply verbatim inside an aux body, which is
+               what makes a malformed aux block a LOCAL error ? ;
+(* A `|` block scalar IS legal inside an aux body (§2.27's decision 3):
+   an aux line's value shape is `prose` by declaration, so S3 opens on a
+   trimmed bare `|` exactly as it does under `description`. No new
+   machinery — structure-layer parameter 2 gains the aux scope's lines
+   as members, and that is the whole cost. *)
 
 variant-block = "variant" , ws , ident , eol ,
                 { INDENT , variant-attr , eol } ;
@@ -1696,6 +1751,36 @@ population is empty under §1.2.1's own opener rule (r57 S-BL2). It also
 declares one structure-layer device that was already shipped and
 undeclared (S3, §1.2.1) and makes explicit two rules the EBNF above now
 carries in its `opaque-region` and `INDENT` terminals.
+
+**REVISION 3.4 REMOVES FOUR PRODUCTIONS AND ADDS ONE** (D99). Out: the
+head declaration `configs build`/`describe` (§2.20) and the three
+`config`-body lines `testee`, `option` and `provides` (§2.16, N-42).
+In: `aux-block`, spelled **`ext <consumer>`** (§2.27), at file scope and
+block scope, one production at two parents on `provenance`'s own
+precedent. Net: revision 3's *"two head declarations, one config-body
+line"* becomes ONE head declaration (`vocabulary`) plus the aux
+production; a `config` body is W1's five pcrec-option lines plus
+`analysis` again.
+
+**All four removals are FREE and none is a narrowing**, and the reason
+is worth stating once because it recurs for every future withdrawal:
+**a production that has never shipped cannot be narrowed by being
+removed.** All four are refused BY NAME on today's binary — they are
+W23 keywords no build has ever accepted — so no file anywhere becomes
+refused, no file changes meaning, and §1.6.4's narrowing rule is not
+reached in any of its five cases. What the removals cost is a DIFF, and
+what they buy is §1.2's own criterion applied to semantics rather than
+to syntax: `config` has one mode again, and no production in the format
+is bimodal.
+
+**`ext` is FREE, measured at this revision**: 0 occurrences in
+first-token position across **210** corpus files and **49**
+`tests/rxtsource/fixtures/` files, indented or not; `pcrec-bench` holds
+**0** `.rxt`/`.rxtin` files (re-confirmed read-only at 3.4, as every
+revision since 3.2 has). The alternatives swept with it —
+`aux`, `extra`, `vendor`, `consumer`, `namespace`, `opaque` — are 0
+as well, so the choice is made on §2.26's criterion and not on
+availability (item 14).
 
 **CORRECTION ([DD-13b.W1.1], 2026-08-30) — SUPERSEDED AT REVISION 3.1,
 kept here because a reader of the shipped tree will meet its
