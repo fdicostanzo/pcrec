@@ -327,16 +327,19 @@ since the number revision 3 quotes was taken):
   **The count is 22, not revision 3.1's 24, and the derivation is
   given because the first number was a raw grep** (r57 C-S8): 24
   `^`-anchored `=~` tests occur in the file, of which **two are
-  pre-loop skips** and not dispatch arms at all (`^[[:space:]]*$` at
-  `run.sh:1692`, `^#` at `:1693` — the second is the one tolerant
-  regex, and it is a comment test rather than a blank-line skip as
-  3.1 said). The remaining 22 split **17 inside the hash-pinned arm
+  pre-loop skips** and not dispatch arms at all — `^[[:space:]]*$` at
+  `run.sh:1692` and `^#` at `:1693`, both `continue`ing before any
+  dispatch. The remaining 22 split **17 inside the hash-pinned arm
   region** (`:1713` BEGIN .. `:1967` END) and **5 appended after it**
-  (`:1984`-`:2092`). The CONCLUSION is unchanged and confirmed: no arm
-  tolerates leading whitespace. This is the stale-pinned-number shape
-  §1.1 was corrected for, reintroduced in the correcting revision's own
-  paragraph — which is why every count in §0.8 below carries its
-  derivation rather than its value alone.
+  (`:1984`-`:2092`). Revision 3.1's parenthetical that the blank-line
+  skip is the one tolerant regex **is correct and is kept** — it is
+  `^[[:space:]]*$`, and `^#` is column-1-anchored like every arm. The
+  CONCLUSION is unchanged and confirmed: no dispatch arm tolerates
+  leading whitespace. Only the count moved, and it moved because a
+  grep hit and a dispatch arm are different things. This is the
+  stale-pinned-number shape §1.1 was corrected for, reintroduced in the
+  correcting revision's own paragraph — which is why every count in
+  §0.8 below carries its derivation rather than its value alone.
   Only leg A (`src/parse/rxt_source.c:992`) tests indentation before
   dispatch. Every arm is a hard error, so nothing is mis-parsed today;
   what is false is the claim that a RULE holds in three places, and
