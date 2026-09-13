@@ -677,7 +677,7 @@ Five consequences, ruled together after the manager's dig into
 |---|---|---|
 | 1 | **W23-F1 (`configs describe`, §2.20) is WITHDRAWN, not ratified** — one production made BIMODAL by a head-line mode switch, resolving a collision that only materializes through the bench's OPTIONAL roster proposals. The MUST-tier need (N-43, a config-free file builds nothing permanently) is one spec sentence and survives | §2.20 (withdrawal marker + the reasoning), §2.6 (the mode paragraph REMOVED — this section describes the only mode again), SW5 (rewritten to the permanence sentence alone), §7.3 (F1 leaves the queue), §9 F1/F2/F3 |
 | 2 | **W23-F2 (`provides`, §2.16) is WITHDRAWN** — a capability list describes an ENGINE, and the format does not carry engine knowledge as semantics. The pattern-side `tag requires=…` STAYS | §2.16 (withdrawal marker), §2.15 (`vocabulary requires` keeps its pattern-side customer and becomes one-ended), §1.3 (the production out of the EBNF), §2.25.3 (`cross-scope` out with it), SW4, §7.3, §8 P-Q4 |
-| 3 | **The format gains an AUX production** — consumer-namespaced, structurally parsed (S0-S3, so a malformed aux block cannot corrupt what follows), semantically uninterpreted, dumped faithfully by `--list-source`, read by no build or check. The bench's roster and capability declarations can live there; their sixteen-config matrix stays bench-side. Spelling is the manager's | **§2.27** (the production, its three decisions, the schema row), §1.3 (`aux-block`, spelled `ext <consumer>`), §2.24 (`#section aux`), §2.25.2 (`children: tree`), §2.26 item 14 (the spelling defended), SW18, §3.2 S-R6, §9.1's five fixtures, §6.2 (the worked bench file rewritten) |
+| 3 | **The format gains an AUX production** — consumer-namespaced, structurally parsed (S0-S3, so a malformed aux block cannot corrupt what follows), semantically uninterpreted, dumped faithfully by `--list-source`, read by no build or check. The bench's roster and capability declarations can live there; their sixteen-config matrix stays bench-side. Spelling is the manager's | **§2.27** (the production, its three decisions, the schema row), §1.3 (`aux-block`, spelled `ext <consumer>`), §2.24 (`#section aux`), §2.25.2 (`children: tree`), §2.26 item 14 (the spelling defended), SW18, §3.2 S-R6, §9.1's **four** aux fixtures (3.4 wrote "five" and there are four — `aux_arbitrary_keys`, `aux_deep_tree`, `aux_literal_pipe`, `aux_malformed_body`; corrected at 3.4.1 while re-aiming the third, r58 R1), §6.2 (the worked bench file rewritten) |
 | 4 | **THE GRADUATION RULE** — the day something in an aux block needs pcrec to ACT on it, it must graduate to a real production; aux never grows semantics in place | **§2.27.3, stated NORMATIVELY** with four clauses and a falsifiable test for "act on" (**FIVE at 3.4.1** — r58 A5 added the VALUE rule, which closes the two routes that reach aux content without reading an aux body); SW18 carries it into the spec; S-R6's second fixture is the check behind it |
 | 5 | **D93 is untouched and DECOUPLED** — with no configs in set files, D93 never reaches the bench; its revisit-when clause stands on its own merits | §2.20 (the collision has no construction, so nothing about D93 is amended), §4.5 (the testee-roster hazard row reads DISSOLVED rather than cured), §9 F2 |
 
@@ -5682,7 +5682,7 @@ behaviour per constraint kind, and one of the kinds is gone.
 | S-R4a | **remove `pattern-esc` from `opens_group`** | the structure layer's own fixture: a `pattern-esc` line stops opening a block, so its case lines attach to the PRECEDING block and `--list-source`'s `#section cases` rows move `block_line`. The symptom is the moved `block_line`, and it is visible in the dump |
 | S-R4b | **add a THIRD member to `opens_group`** (say `m`) | **a different detector, and this is why the row is split (r57 S-S6)**: a case-bearing fixture whose `m` lines stop being cases of their block and become blocks of their own, caught by the block COUNT in `--list-source` and by `run.sh`'s own case totals. Revision 3.1 bundled this with S-R4a as "add `pattern` a second time, or remove `pattern-esc`" — and the first half is **silent**, because the opener set is consulted by first-match-wins membership and a duplicate `pattern` row changes no answer at all. A sabotage row that plants two things where one does nothing scores DETECTED on the strength of the other and reports the pair as covered. Two rows, two symptoms, two detectors |
 | S-R5 | **break `description`'s prose PAIR — in EITHER column**: plant (a) flips its `value` from `prose` to `line`; plant (b) flips its `children` from `prose` to `none`. Either removes the kind from the structure layer's SECOND parameter (§1.2.1) | the ragged-prose and prose-`#` fixtures (§9's A-group): with `description` no longer prose-region-opening, `description \|` opens no opaque region, so its continuation lines re-enter S1 and the indented `#` becomes a structure error and the ragged line an attachment error — all three legs must report the value, and leg A's changes. **NEW at 3.2**, because S3 gave the structure layer a second parameter and §1.2.1's own argument for S-R4 applies to it verbatim: it is a column the structure layer reads, so its corruption is invisible to every schema-VALIDITY check, which is exactly the class that needs a sabotage row rather than an assertion. **BOTH PLANTS NAMED AT 3.3 (r57 ROUND 2 R2-F4), and plant (b) is why the parameter reads the PAIR**: if the structure layer read `value` alone, (b) would change nothing observable anywhere — the region still opens, its lines are bytes, and bytes reach no validity check — so a normative column would carry a corruption with NO detector. Reading the pair makes (b) fail the same fixtures (a) does |
-| S-R6 | **make an `ext` body SCHEMA-CHECKED**: flip the `ext` rows' `children` from `tree` to a named scope (say `provenance`), so a first token inside an aux body that is not a `prov-line` becomes an unknown-token-in-scope error | **a two-fixture pair in §9's A-group, and the row exists because the DIRECTION of the failure is the dangerous one.** `aux_arbitrary_keys.rxtin` — an `ext bench` block whose keys are deliberately nothing pcrec has ever heard of — must be ACCEPTED by all three legs and must appear verbatim in `--list-source`'s `#section aux`; under the plant, leg A refuses it. The second fixture is the one that makes the row honest: `aux_deep_tree.rxtin`, an aux body three levels deep whose keys COLLIDE with real format keywords (`pattern`, `m`, `provenance`) and which must still be accepted, dumped, and — the assertion that matters — must **not** produce a block, a case, or a provenance record anywhere in the dump. A plant that merely narrows what aux accepts is caught by the first; a plant that makes pcrec START INTERPRETING an aux body is caught only by the second, and that is the graduation rule's failure mode (§2.27.3) expressed as a check rather than as a sentence. **NEW at 3.4** |
+| S-R6 | **make an `ext` body SCHEMA-CHECKED**: flip the `ext` rows' `children` from `tree` to a named scope (say `provenance`), so a first token inside an aux body that is not a `prov-line` becomes an unknown-token-in-scope error | **a two-fixture pair in §9's A-group, and the row exists because the DIRECTION of the failure is the dangerous one.** `aux_arbitrary_keys.rxtin` — an `ext bench` block whose keys are deliberately nothing pcrec has ever heard of — must be ACCEPTED by all three legs and must appear verbatim in `--list-source`'s `#section aux`; under the plant, leg A refuses it. The second fixture is the one that makes the row honest: `aux_deep_tree.rxtin`, an aux body three levels deep whose keys COLLIDE with real format keywords (`pattern`, `m`, `provenance`) and which must still be accepted, dumped, and — the assertion that matters — must **not** produce a block, a case, or a provenance record anywhere in the dump. A plant that merely narrows what aux accepts is caught by the first; a plant that makes pcrec START INTERPRETING an aux body is caught only by the second, and that is the graduation rule's failure mode (§2.27.3) expressed as a check rather than as a sentence. **NEW at 3.4. STRENGTHENED AT 3.4.1 (r58 R1) WITHOUT CHANGING THE PLANT**: `children` is now structure-layer parameter 3 as well as a schema column, so flipping `tree` to a named scope ALSO re-arms S2 and S3 inside the subtree — `aux_deep_tree.rxtin`'s `pattern` key becomes a block opener and a bare `\|` there becomes a prose region — which means the plant is caught on a STRUCTURAL axis as well as a validity one, by the same fixture, and `aux_literal_pipe.rxtin` becomes a third detector for it |
 
 **H4 deserves its own line in a brief**, because it is the one place a
 plausible implementation is silently wrong: handing python `re` the
@@ -5808,7 +5808,7 @@ delivery; these are the [B42] additions:
 
 | # | file | the hunk |
 |---|---|---|
-| SW16 | `docs/spec/rxt_format.md` | **THE THREE-DEVICE STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's **FIVE-CASE** standing rule for when a future change needs the line (3.2: the fourth case is a CHOSEN narrowing, r57 C-M1; 3.3: the fifth is measure-the-population-first, r57 ROUND 2 R2-C). **REWRITTEN AT 3.2 — it carries the WHOLE NARROWING CENSUS's spec sentences, not one** (§1.6.1a, r57 G-B2): (a) the ragged HEAD BODY, accepted and now refused because depth became meaningful; (b) **TAB indentation, accepted and now refused by name** — indentation is spaces, a leading tab is a structure error, a tab inside a VALUE is still data; (c) the two narrowings AVOIDED and the rule that avoids them — inside a `\|` prose region an indented `#` is PROSE and ragged indentation is legal, because S3's region has no line classifier, while OUTSIDE one the indented-`#` refusal is unchanged. (c) is spec text and not merely a design note because it settles a question `rxt_source.c:735-747` records as deliberately OPEN. (The fifth narrowing, the derived-identifier collision, is SW12's.) **EXTENDED AT 3.3 (r57 ROUND 2), and the census it carries is now the eleven-row one**: (d) the **FOUR LINE CLASSES and what each one does** — a BLANK line is the EMPTY line and closes attachment, a **COMMENT line closes attachment and ends a prose region exactly as a blank does**, a WHITESPACE-ONLY line is INERT outside a prose region and BYTES inside one (so an indented whitespace-only line is the paragraph break), and everything else is CONTENT; (e) **a prose region opens on a `\|` whose trailing whitespace is trimmed, and only for a kind the schema declares prose-region-opening** — the spec states both conditions, since without the first `description \| ` is a literal and without the second `pattern \|` is a refusal; (f) **the CARDINALITY rules for the settings kinds** (§2.25.2) — `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export` take at most one line per scope and a second is refused naming both, while `budget` ACCUMULATES over `{steps, frames}` and only a repeated FIELD is refused. (f) is the one a `.rxt` author is most likely to meet, because six of those seven kinds silently last-win today. The standing rule this row states is now **FIVE-CASE** (3.3 adds: measure the population before deciding, not after). (§1.6.1a rows (10) and (11), the NUL and duplicate-`description` refusals, already have their spec hunks — landed by STEP 0 — and this row cites rather than owes them.) **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5) |
+| SW16 | `docs/spec/rxt_format.md` | **THE THREE-DEVICE STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's **FIVE-CASE** standing rule for when a future change needs the line (3.2: the fourth case is a CHOSEN narrowing, r57 C-M1; 3.3: the fifth is measure-the-population-first, r57 ROUND 2 R2-C). **REWRITTEN AT 3.2 — it carries the WHOLE NARROWING CENSUS's spec sentences, not one** (§1.6.1a, r57 G-B2): (a) the ragged HEAD BODY, accepted and now refused because depth became meaningful; (b) **TAB indentation, accepted and now refused by name** — indentation is spaces, a leading tab is a structure error, a tab inside a VALUE is still data; (c) the two narrowings AVOIDED and the rule that avoids them — inside a `\|` prose region an indented `#` is PROSE and ragged indentation is legal, because S3's region has no line classifier, while OUTSIDE one the indented-`#` refusal is unchanged. (c) is spec text and not merely a design note because it settles a question `rxt_source.c:735-747` records as deliberately OPEN. (The fifth narrowing, the derived-identifier collision, is SW12's.) **EXTENDED AT 3.3 (r57 ROUND 2), and the census it carries is now the eleven-row one**: (d) the **FOUR LINE CLASSES and what each one does** — a BLANK line is the EMPTY line and closes attachment, a **COMMENT line closes attachment and ends a prose region exactly as a blank does**, a WHITESPACE-ONLY line is INERT outside a prose region and BYTES inside one (so an indented whitespace-only line is the paragraph break), and everything else is CONTENT; (e) **a prose region opens on a `\|` whose trailing whitespace is trimmed, and only for a kind the schema declares prose-region-opening** — the spec states both conditions, since without the first `description \| ` is a literal and without the second `pattern \|` is a refusal; (f) **the CARDINALITY rules for the settings kinds** (§2.25.2) — `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export` take at most one line per scope and a second is refused naming both, while `budget` ACCUMULATES over `{steps, frames}` and only a repeated FIELD is refused. (f) is the one a `.rxt` author is most likely to meet, because six of those seven kinds silently last-win today. The standing rule this row states is now **FIVE-CASE** (3.3 adds: measure the population before deciding, not after). (§1.6.1a rows (10) and (11), the NUL and duplicate-`description` refusals, already have their spec hunks — landed by STEP 0 — and this row cites rather than owes them.) **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5). **EXTENDED AT 3.4.1 (r58 R1)**: (g) **the structure layer takes THREE parameters, and the third is the OPEN SUBTREE** — a kind carrying `children: tree` roots a subtree inside which the block-opener set is EMPTY and no `\|` opens a prose region. The spec states it here, with the structure layer, rather than only in SW18's aux section, because it is a rule about the LAYER that a second `children: tree` production would inherit for free; SW18 states what it means for `ext` in particular |
 | SW17 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` + **`docs/spec/table_contract.md`** + `docs/spec/registry.md` | **THE SCHEMA AND ITS SURFACE** (§2.25). rxt_format.md gains the schema section: the columns (including `children: prose` and, at 3.4, `children: tree` with structure-layer parameter 3), the **SEVEN-kind** constraint vocabulary with its membership rule (**CORRECTED AT 3.4.1, r58 B2**: this row still committed EIGHT to the spec hunk after §2.25.3 went to seven at 3.4 — the one site in the note that would have SHIPPED the wrong count into `docs/spec/`, since every other eight was prose about a past revision), the one named parser-code exception (`under`'s key tuple), the deferred/DECLINED split, and the statement that the parser is the table's reader. cli.md gains `--list-schema` as the **SEVENTH** registry dump, in `--list-limits`' own entry shape. `docs/spec/registry.md` gains its row in the surface list — **and, since its own numbered sequence stops at the FIFTH surface while two dumps (`--list-limits`, `--list-source`) are undocumented there, the row is added with the sequence reconciled rather than appended to a gap.** **`docs/spec/table_contract.md` GAINS ITS SCOPE ROW, ADDED AT 3.2 (r57 S-M7)**: that document's Scope section enumerates every conforming table producer (seven rows today) and states *"Future tabular surfaces adopt this contract AT BIRTH — a new table command that does not conform is a defect, not a style choice."* `--list-schema` is a TSV table command, so it is a conforming producer by that sentence and a reader found BY GREP for the surface list — **the D94 failure verbatim** (a hand-enumerated site list that missed a reader in a spec document), which this note has now had pointed out to it in the same shape twice |
 
 **The revision-3.4 hunks** (D99), all W23, all landing in the same
@@ -6392,15 +6392,23 @@ claim a critic should try to break rather than as a defence.
    §2 rule that says "refused" and ask what it accepted yesterday.**
    The method that worked in both places was a probe on the shipped
    binary, never a reading.
-2. **§1.2.3's admission, in the other direction.** The claim is that
-   block grouping is the ONLY place structure needs a keyword — now
-   stated as TWO parameters rather than one (§1.2.1). A critic should
-   try to find a THIRD: the candidates are `under`'s qualified line
+2. **§1.2.3's admission, in the other direction. THIS ITEM HAS NOW HIT
+   TWICE AND THE COUNT IS THREE.** The claim is that
+   block grouping is the ONLY place structure needs a keyword — stated
+   as one parameter at 3.1, TWO at 3.2, and **THREE at 3.4.1** (§1.2.1),
+   the third being the OPEN-SUBTREE kinds, which r58 A2 found by
+   noticing that S2 fired where §2.27's own fixture said it must not.
+   A critic should
+   try to find a FOURTH: the surviving candidates are `under`'s
+   qualified line
    (does a reader need to know `under` to see where the case line
-   starts?), `@file:`'s optional suffixes, and — new at 3.2 —
+   starts?), `@file:`'s optional suffixes, and — from 3.2 —
    **S3's extent rule**, which reads no keyword but does read a
    VALUE (`|`), so the question is whether a reader can recognise an
-   opaque region without knowing which kinds may open one.
+   opaque region without knowing which kinds may open one. **The method
+   that found the third is the one to re-run**: take a rule stated over
+   "siblings" or "lines" with no scope qualifier and ask what happens to
+   it inside every OTHER production's body, fixture by fixture.
 3. **§2.26 item 10, the provenance unification.** The claim is that
    two records were one record all along. The attack is a fact a
    `freq` block must state that a pattern block's provenance has no
@@ -6424,9 +6432,10 @@ claim a critic should try to break rather than as a defence.
    one. The second is the dangerous outcome and the reason is
    unchanged: a partial declaration presenting itself as complete
    makes `--list-schema` a confident wrong answer.
-5. **NEW AT 3.2 — S3, and the structure layer's second parameter.
-   RE-AIMED AT 3.3, and this item HIT three times in round 2.**
-   The claim is that four line classes, three devices and two
+5. **NEW AT 3.2 — S3, and the structure layer's parameters.
+   RE-AIMED AT 3.3, and this item HIT three times in round 2; RE-AIMED
+   AGAIN AT 3.4.1, and it HIT a fourth time at r58 (A2).**
+   The claim is that four line classes, three devices and **three**
    parameters recover the file's tree, and that S3's extent rule
    matches what the shipped parser does. In 3.2 BOTH halves were
    falsifiable and were falsified: the extent rule read *"first line
@@ -6439,16 +6448,28 @@ claim a critic should try to break rather than as a defence.
    against `--list-source`, which is exactly the method this item
    prescribes, so **the attack is unchanged and should be run again**:
    find a file whose tree a generic S0-S3 reader recovers differently
-   from `--list-source`, or find a THIRD parameter the structure layer
-   secretly reads. The known-weak points, restated for 3.3: the
-   structure layer now reads THREE columns (`opens_group`, and
-   `value`+`children` as a pair) and `cardinality` is still not one of
+   from `--list-source`, or find a FURTHER parameter the structure layer
+   secretly reads. **The third one was found at r58 and by the second
+   route, not the first** (A2): S2 was stated over siblings at any depth
+   and therefore fired inside an aux body, which §2.27's own
+   `aux_deep_tree.rxtin` asserts it must not — a reader following S0-S3
+   and a reader following the fixture recover different trees, which is
+   exactly this item's first route reached from the specification side
+   instead of from a probe. The known-weak points, restated for 3.4.1:
+   the
+   structure layer reads THREE columns as THREE parameters
+   (`opens_group`; `value`+`children` as a pair; `children` alone) and
+   `cardinality` is still not one of
    them, so the claim that S2's grouping needs no cardinality
    information (a group ends at the next opener, never at a count)
-   remains unprobed against a file with a malformed group; and S3's
+   remains unprobed against a file with a malformed group; S3's
    extent rule is stated in its GENERAL form (indent ≤ the opener's)
    while leg A implements "indented at all", the two coinciding only
-   because no prose-valued kind exists at a nonzero indent today.
+   because no prose-valued kind exists at a nonzero indent today; **and
+   parameter 3's own extent — where an open subtree ENDS — is S1's
+   answer and has no fixture yet, since `aux_malformed_body.rxtin`
+   probes an attachment error inside the subtree rather than the
+   boundary at its foot.**
 
 6. **NEW AT 3.3 — the CARDINALITY decision, §2.25.2.** The claim is
    that seven settings kinds are `at-most-one` and `budget` is
@@ -7205,11 +7226,15 @@ two-customers argument:
   structural exception left to accrete onto.
 - **Structural parseability (consequence 5)**: §1.2.1's four line
   classes and three devices recover blocks, sub-blocks, line membership
-  and prose extents from syntax alone, with **two** declared parameters
+  and prose extents from syntax alone, with **three** declared
+  parameters
   (the two-member opener set; the prose-region-opening kinds, read off
-  the `value`/`children` pair), and §1.2.3 states where that is not yet
+  the `value`/`children` pair; the open-subtree kinds, `children: tree`),
+  and §1.2.3 states where that is not yet
   total without softening it. **(Corrected at 3.3: "two devices … one
-  parameter" was 3.1's count, stale since S3 landed at 3.2.)**
+  parameter" was 3.1's count, stale since S3 landed at 3.2. Corrected
+  again at 3.4.1, r58 R1: the third parameter, which scopes two devices
+  rather than adding one.)**
 - **Explicit sub-block syntax (consequence 4)**: designed as a visible
   marker and priced against bare indentation in §1.2.4; **indentation
   wins**, because a marker makes structure depend on two signals that
