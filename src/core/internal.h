@@ -4457,6 +4457,10 @@ const char *pcrec_rxt_constraint_name(RxtConstraintKind k);
 int pcrec_rxt_constraint_next(const char **cur, RxtConstraintKind *k,
                               const char **arg, size_t *arglen);
 
+/* `--list-schema` (src/parse/schema_dump.c): the table above as TSV, under
+ * docs/spec/table_contract.md. Caller frees. */
+char *pcrec_rxt_schema_tsv(void);
+
 /* ---- [DD-13b.W1] the `.rxt` SOURCE file (src/parse/rxt_source.c) -------
  *
  * THE ONE HEAD PARSER's types. `--source` must resolve `lib`/`name`/

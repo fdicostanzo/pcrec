@@ -207,6 +207,13 @@ static void usage(FILE *f)
           "                    line per limit, its value, unit, kind, whether\n"
           "                    a flag/-D/nothing overrides it, and a one-line\n"
           "                    description. No --flavour axis\n"
+          "  --list-schema     TSV of the .rxt FORMAT's own schema\n"
+          "                    ([DD-13b.W23.1]): one line per (scope, line\n"
+          "                    kind), with its value shape, what may be\n"
+          "                    indented under it, cardinality, constraints and\n"
+          "                    which readers validate it, plus a `surface`\n"
+          "                    section naming what it does NOT validate and\n"
+          "                    why. No --flavour axis\n"
           "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
           "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
           "                    exists today; a second one arrives with SR-7)\n"
@@ -306,6 +313,7 @@ typedef struct {
     int         list_families;
     int         list_axes;
     int         list_limits;
+    int         list_schema;
     int         count_groups;
     int         emit_ir;
     int         saw_prefix;
@@ -654,6 +662,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!no_more_opts && !strcmp(a, "--list-families")) st->list_families = 1;
         else if (!no_more_opts && !strcmp(a, "--list-axes"))   st->list_axes = 1;
         else if (!no_more_opts && !strcmp(a, "--list-limits")) st->list_limits = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-schema")) st->list_schema = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) st->count_groups = 1;
         /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
          * Takes its file as the option's VALUE, like --explain and
@@ -1100,6 +1109,7 @@ int main(int argc, char **argv)
     const int list_families  = st.list_families;
     const int list_axes      = st.list_axes;
     const int list_limits    = st.list_limits;
+    const int list_schema    = st.list_schema;
     const int count_groups   = st.count_groups;
     const int emit_ir        = st.emit_ir;
     const char *explain      = st.explain;
@@ -1148,8 +1158,8 @@ int main(int argc, char **argv)
      * would have counted the pattern's groups and ignored the file. The
      * test is one place, above all of them, and it names both surfaces. */
     if (st.source && (list_syntax || list_definitions || list_verbs ||
-                      list_families || list_axes || list_limits || explain ||
-                      count_groups || emit_ir || probe_want || list_source ||
+                      list_families || list_axes || list_limits || list_schema ||
+                      explain || count_groups || emit_ir || probe_want || list_source ||
                       flavour)) {
         fprintf(stderr, "pcrec: --source COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
@@ -1176,7 +1186,8 @@ int main(int argc, char **argv)
      * being able to tell those two apart. */
     if (list_source) {
         if (list_syntax || list_definitions || list_verbs || list_families ||
-            list_axes || list_limits || explain || count_groups || emit_ir ||
+            list_axes || list_limits || list_schema || explain ||
+            count_groups || emit_ir ||
             probe_want || st.source) {
             fprintf(stderr, "pcrec: --list-source is a separate query; use one "
                             "(--list-source READS a .rxt file, --source "
@@ -1222,7 +1233,7 @@ int main(int argc, char **argv)
      * not run at all exits nonzero, so the check can tell "measured a
      * refusal" from "measured nothing". */
     if (probe_want) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || explain || count_groups) {
+        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
             fprintf(stderr, "pcrec: --probe-ask is a separate query; use one\n");
             return 1;
         }
@@ -1268,7 +1279,7 @@ int main(int argc, char **argv)
      * prints, taking no -o and writing no C. A pattern pcrec refuses is
      * refused here with pcrec_compile's exact diagnostic. */
     if (emit_ir) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || explain || count_groups) {
+        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
             fprintf(stderr, "pcrec: --emit-ir is a separate query; use one\n");
             return 1;
         }
@@ -1296,7 +1307,7 @@ int main(int argc, char **argv)
     }
 
     if (count_groups) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || explain) {
+        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain) {
             fprintf(stderr, "pcrec: --count-groups is a separate query; use one\n");
             return 1;
         }
@@ -1327,11 +1338,11 @@ int main(int argc, char **argv)
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
      * half of it. */
-    if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes || list_limits) {
-        if (list_syntax + list_definitions + list_verbs + list_families + list_axes + list_limits + (explain != NULL) > 1) {
+    if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes || list_limits || list_schema) {
+        if (list_syntax + list_definitions + list_verbs + list_families + list_axes + list_limits + list_schema + (explain != NULL) > 1) {
             fprintf(stderr, "pcrec: --list-syntax, --list-definitions, --list-verbs, "
-                            "--list-families, --list-axes, --list-limits and --explain "
-                            "are separate queries; use one\n");
+                            "--list-families, --list-axes, --list-limits, --list-schema "
+                            "and --explain are separate queries; use one\n");
             return 1;
         }
         if (pattern || outpath) {
@@ -1341,7 +1352,8 @@ int main(int argc, char **argv)
                     list_verbs       ? "--list-verbs"  :
                     list_families    ? "--list-families" :
                     list_axes        ? "--list-axes" :
-                    list_limits      ? "--list-limits" : "--explain");
+                    list_limits      ? "--list-limits" :
+                    list_schema      ? "--list-schema" : "--explain");
             return 1;
         }
         /* --list-verbs has no flavour axis: the verb tables record what libpcre2
@@ -1372,7 +1384,8 @@ int main(int argc, char **argv)
          * reports what THIS BUILD's own limits.def says, never a claim
          * about a flavour's syntax — a numeric limit has no flavour axis
          * at all. */
-        if ((list_verbs || list_families || list_axes || list_limits) && flavour) {
+        if ((list_verbs || list_families || list_axes || list_limits ||
+             list_schema) && flavour) {
             fprintf(stderr, "pcrec: --flavour applies to --list-syntax, "
                             "--list-definitions and --explain only\n");
             return 1;
@@ -1397,6 +1410,18 @@ int main(int argc, char **argv)
         }
         if (list_limits) {
             char *v = pcrec_limits_tsv();
+            fputs(v, stdout);
+            free(v);
+            return 0;
+        }
+        /* [DD-13b.W23.1] --list-schema joins --list-axes'/--list-limits'
+         * no-flavour reason rather than a new one: it reports what THIS
+         * BUILD's own `rxt_schema.def` says about the `.rxt` FORMAT, which
+         * has no flavour axis at all — a flavour is a PATTERN-syntax
+         * dialect (SR-7), and the file format that carries a pattern is
+         * the same file format whichever dialect the pattern is in. */
+        if (list_schema) {
+            char *v = pcrec_rxt_schema_tsv();
             fputs(v, stdout);
             free(v);
             return 0;

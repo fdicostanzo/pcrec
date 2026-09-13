@@ -141,8 +141,8 @@ PCREC_RXT_SCHEMA(CONFIG, "analysis", LIST,  0, NONE, REPEAT,      "", FORMAT, PC
  * definitions and targets, and a compiler that started scoring `m` lines
  * would be a second harness. */
 
-PCREC_RXT_SCHEMA(BLOCK, "pattern",        RAW,   1, NONE,  REPEAT,      "", FORMAT, ALL_READERS, 1)
-PCREC_RXT_SCHEMA(BLOCK, "pattern-esc",    RAW,   1, NONE,  REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(BLOCK, "pattern",        RAW,   1, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "pattern-esc",    RAW,   1, NONE,  REPEAT,      "", FORMAT, NONE,       23)
 PCREC_RXT_SCHEMA(BLOCK, "name",           TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
 PCREC_RXT_SCHEMA(BLOCK, "description",    PROSE, 0, PROSE, AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
 PCREC_RXT_SCHEMA(BLOCK, "export",         LIST,  0, NONE,  AT_MOST_ONE, "", FORMAT, PCREC,       1)
@@ -153,17 +153,17 @@ PCREC_RXT_SCHEMA(BLOCK, "engine",         TOKEN, 0, NONE,  AT_MOST_ONE, "", FORM
 PCREC_RXT_SCHEMA(BLOCK, "budget",         PAIR,  0, NONE,  ACCUMULATE,  "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "frames-buffer=", INT,   0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "perr",           NONE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
-PCREC_RXT_SCHEMA(BLOCK, "m",              CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
-PCREC_RXT_SCHEMA(BLOCK, "n",              CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
-PCREC_RXT_SCHEMA(BLOCK, "ms",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
-PCREC_RXT_SCHEMA(BLOCK, "ns",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "m",              CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "n",              CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "ms",             CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "ns",             CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
 PCREC_RXT_SCHEMA(BLOCK, "g",              CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "gp",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "gu",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 
 /* W23's block lines — rows only at W23.1, arms at W23.3. */
 PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "",                     FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)
 PCREC_RXT_SCHEMA(BLOCK, "under",      QUALIFIED, 0, NONE,       REPEAT,      "unique-by under-key",  FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "oracle",     TOKEN,     0, NONE,       AT_MOST_ONE, "",                     FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "provenance", NONE,      0, PROVENANCE, AT_MOST_ONE, "",                     FORMAT, PCREC, 23)
