@@ -590,3 +590,201 @@ was pointed at the HEAD, and the fifth narrowing was in the composer's
 name lookup with no head line involved. **Walk every §2 rule that says
 "refused" and ask what it accepted yesterday** — that direction has had
 one pass and found one.
+
+---
+
+# ADDENDUM 3 — [DD-13b.W23] STEP 1.3: REVISION 3.3, the r57 ROUND-2 FIX ROUND (2026-09-12, lane w23fix2, opus)
+
+The r57 round-2 critic re-checked revision 3.2's three blocker fixes and
+ran Addendum 2's own new attack. **S-BL1 and S-BL2 HOLD OUTRIGHT; the
+S3 fix held in DIRECTION and failed end to end on its own axis.** Four
+must-fixes, two shoulds, one nit. Everything below landed; the note's
+§0.8 ROUND 2 block is the finding-by-finding table and this is the
+lane's voice on top of it. **The Frank queue is UNCHANGED: W23-F1,
+W23-F2, W23-F4.**
+
+## What moved
+
+Four of the seven findings are one section — §1.2.1, the structure
+layer — and that concentration is the round's real shape: **every one
+of them is a rule that was stated in prose and pinned by nothing.**
+
+1. **R2-F1 — S3's trigger is PARAMETERIZED and takes the TRIMMED
+   value.** 3.2 wrote *"a CONTENT line whose value is the single byte
+   `|`"*, which opens a region on `pattern |` — a legal pattern
+   (measured rc 0, the dump's pattern column is `|`) — and turns a
+   working file into a refusal. The EBNF had the kind condition right
+   all along; the normative sentence contradicted it. The trim half is
+   the shipped rule verbatim (`rxt_source.c:1222-1226`, r46sem finding
+   14, leg C's `v.strip() == '|'`, fixture
+   `desc_pipe_trailing_space.rxtin`), not a new invention.
+
+2. **R2-F2 — the COMMENT line terminates, and this one falsified a
+   claim.** S0 declared the class; S1 and S3 never said what it does.
+   Silence there is not neutral: it reads as "skip it and carry on",
+   which ACCEPTS two files the shipped binary refuses. Both measured
+   here, both rc 1 at line 4 with the same message: a column-1 `#` in
+   the middle of a `config` body, and one in the middle of a
+   `description |` region. The second is worse than a widening — under
+   the transparent reading the opener ends up with TWO disjoint prose
+   regions, a shape S3's single-extent rule cannot express at all. One
+   sentence in S1 and one in S3 close both, and §1.6.1's claim 2 ("no
+   file refused today is accepted") goes back to being true; the
+   correction is recorded at claim 2 rather than tidied away, because
+   the claim was shipped FALSE.
+
+3. **R2-F3 — BLANK narrows to the EMPTY line; WHITESPACE-ONLY becomes
+   its own class and is INERT.** See the pushback section: I took the
+   manager's direction and changed the outside-a-region half on
+   evidence.
+
+4. **R2-F4 — the structure layer's second parameter is the
+   `value`/`children` PAIR, said once.** Three sites disagreed (§1.2.1
+   and §1.2.2 said `value` alone; §2.25.2 said both things in one
+   subsection; §1.3's EBNF said the pair). The tiebreaker the finding
+   named is S-R5's detectability and it decides cleanly: **if the
+   structure layer read `value` alone, flipping a row's `children` from
+   `prose` to `none` would change nothing observable anywhere** — the
+   region still opens, its lines are bytes, and bytes reach no validity
+   check — so a normative column would carry a corruption with no
+   detector in the tree. S-R5 now names both plants.
+
+5. **R2-B — the census carries STEP 0's two refusals, and states its
+   SCOPE.** Rows (10) NUL and (11) duplicate `description`, each marked
+   *"landed by STEP 0 (lane `rxtnul`, `d4576c48`), not by this
+   revision"*. I took the carry rather than the scope-heading option
+   the finding offered as an alternative: somebody asking "what did W23
+   stop accepting" comes to this table, and a list calling itself
+   CLOSED while two accept→reject changes from the same plan row sit
+   outside it answers that question wrongly. §1.6.4's duty clause gains
+   the general form — **the sweep is over the FORMAT, not over the
+   lane's diff**.
+
+6. **R2-C — the cardinality decision, made after measuring.** §2.25.2
+   carries a per-kind table; H16 carries the choice; §1.6.1a rows (8)
+   and (9) carry the compatibility package. Two deviations from the
+   leaning, both forced by the measurement — see below.
+
+7. **R2-D — "expectation line" is defined at §1.1's floor**: eight
+   first-token kinds, `perr` INCLUDED, with 28,488 and 24,016 both
+   named so a reader who lands on either knows which reading produced
+   it.
+
+## MEASURED for this revision (every number re-derived here, none inherited)
+
+All against this worktree's `build/pcrec` at the lane's merge base,
+plus `run.sh --dump` and `verify_rxt.py --dump` where the leg can see
+the file. Fixtures lived in the session scratchpad.
+
+| probe | result |
+|---|---|
+| `pattern \|` | rc 0, dump's pattern column `\|` — R2-F1's witness |
+| column-1 `#` mid `config` body | **rc 1 at the line below**, *"indented line continues nothing"* |
+| column-1 `#` mid `description \|` region | **rc 1 at the line below**, same message |
+| whitespace-only line in a block scalar | rc 0, value `para one\n·\npara two` — it is IN the value |
+| TRULY empty line in the same place | **rc 1 at the line below** (r46sem-10, working as ruled) |
+| whitespace-only line in a `config` body | rc 0, body continues (`flags=i engine=vm`) |
+| whitespace-only line at file start / after a blank | rc 0 in **all three legs**, both positions |
+| 2nd `name` / `engine` / `encoding` / `features` / `flags` | rc 0, **last wins, no diagnostic** |
+| 2nd `budget` repeating a FIELD (`steps=50`, `steps=99`) | rc 0, 99 wins |
+| 2nd `budget` naming the OTHER field (`steps=50`, `frames=4096`) | rc 0, **both kept** |
+| 2nd `export` | **rc 1**, *"a block has one 'export' line…"* |
+| duplicate-line population, 258 files / 4,053 blocks / 19 configs | `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export`: **0 each**; `budget` LINE: **1**; `budget` FIELD: **0** |
+| pcrec-bench `.rxt`/`.rxtin` files | **0** (read-only `find`) |
+| census awk re-run | **210 / 3,936 / 28,943**, `perr` **455**, without `perr` **28,488**, six-kind reading **24,016** |
+
+## Two deviations from the manager's leanings, both on evidence
+
+**(a) R2-F3: "INERT", not "attachment-relevant".** The leaning was that
+a whitespace-only line become attachment-relevant — indent = its
+leading whitespace, value empty, schema-inert. That dissolves the same
+two narrowings, and it introduces a THIRD, because S1's own
+*"attaches to nothing is a structure error"* arm then fires on two
+shapes that are legal today: a whitespace-only line as a file's FIRST
+line, and one immediately after a blank. Measured rc 0 in all three
+legs for both. Declaring the line INERT outside a region — not CONTENT,
+not BLANK, simply stepped over — dissolves the two narrowings, takes no
+third, is what all three shipped legs already do at all four probed
+positions, and is the shorter rule. The direction (BLANK narrows to the
+empty line; whitespace-only is bytes inside a region) is the manager's
+and is taken unchanged.
+
+**(b) R2-C: `budget` is not a scalar kind, and `flags` is.** The
+finding named five kinds and the leaning was "scalar kinds REFUSE
+duplicates". Measuring first is what the brief required and it changed
+the answer twice:
+
+- **`budget` has a NON-ZERO population and the member is deliberate.**
+  `tests/harness/giveup.rxt:19-23` writes `budget steps=50` and
+  `budget frames=4096` in one block, and `parse_setting`
+  (`rxt_source.c:615-620`) routes them to two separate slots.
+  `cardinality: at-most-one` would have refused a corpus file
+  `make test` depends on. So `budget` is **`accumulate` over the field
+  set `{steps, frames}`** and the refusal lands on a repeated FIELD,
+  whose population is 0. **This is the flagged non-zero population the
+  brief asked me to report before taking anything**, and the report is
+  that the narrowing as proposed is not taken at all — a different,
+  narrower one is.
+- **`flags` was not on the list and is in the identical state.**
+  Measuring the shipped arms found it silently last-winning like the
+  other four, population 0. It is taken with them, because leaving one
+  scalar settings kind last-winning reproduces the inconsistency the
+  decision exists to remove, one kind smaller — and a `cardinality`
+  COLUMN whose answer is uniform where the kinds are uniform is the
+  whole argument for a column over six hand-written refusals.
+
+The general lesson, now §1.6.4 case 5: **a cardinality is a property of
+the VALUE SPACE a kind writes into, not of its spelling.** Six of these
+seven kinds own one slot and one owns two, and nothing in the line's
+syntax says which — only the population did.
+
+## What else moved, because a stale statement is a defect
+
+Not in the brief's section list, and changed because the round's own
+edits falsified them:
+
+- §1.2.4's "the `children` column is not a parameter the structure
+  layer reads" — false at 3.3; reworded, with the sigil's yield
+  re-derived against the pair.
+- §1.2.6's sub-block/region row now states the THREE terminators both
+  mechanisms share.
+- §5.2a item 5's "known-weak point" named `children` as unread; item 5
+  is re-aimed (it scored three times in round 2) and a new item 6
+  attacks the cardinality decision's counting claim, naming the one
+  shape the rule deliberately excludes (a duplicate that exists only
+  after `from`-composition — §2.25's cardinality is as-written, never
+  resolved).
+- §3.4's SW16 carries the four line classes and their effects, the
+  parameterized+trimmed prose trigger, and the cardinality rules;
+  the standing rule it states is now FIVE-CASE.
+- §9.1's A3/A4 plan gains **four fixtures** — the comment-terminates
+  pair, the paragraph break (asserting the decoded VALUE, not merely
+  acceptance, since a reader that ends the region there still
+  "accepts" the file and just loses the paragraph), and a four-position
+  whitespace-only inertness fixture whose last three positions are
+  exactly where the rejected formulation would have refused.
+
+## The one thing I would attack next
+
+§5.2a item 5 has now scored on three separate revisions, and the
+pattern across all three hits is the same: **a line class or a value
+form declared in one place and given its effect nowhere.** 3.1 declared
+`|` as a value discriminator and gave it no structural effect (G-B1).
+3.2 declared S3's region and gave the COMMENT class no effect inside or
+outside it (R2-F2), and wrote BLANK with a parenthesis that gave
+whitespace-only lines an effect nobody intended (R2-F3). The
+generalisable check is mechanical and nobody has run it: **enumerate
+S0's classes and S3's boundary conditions, and for each one point at
+the sentence in S1/S2/S3 that says what it does.** At 3.3 all four
+classes have such a sentence. That is a property a reviewer can verify
+in a minute and it has been false twice.
+
+## Validation
+
+Design-only. `git diff --stat main...HEAD` for this round touches
+`docs/design/dd13_format/format_design.md` and
+`docs/dev/lanes/w23design_report.md` only — nothing under `src/`,
+`tests/` or `docs/spec/`. The read-only probes used this worktree's
+already-built `build/pcrec` (gitignored) plus `run.sh --dump` and
+`verify_rxt.py --dump`; no suite was run and none is owed, since no
+buildable surface moved. **Validation for this round is COMPLETE.**
