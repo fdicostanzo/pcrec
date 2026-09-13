@@ -2249,6 +2249,16 @@ format, and each is named so a lane brief can be written from it.
 | H10 | **`use` / `variant` / `oracle` / testee configs** | W3 | `run.sh` + a non-pcrec adapter, which is pcrec-bench's, not pcrec's |
 | **H11** | **THE TARGET BUILD PATH — W1 ships with it, not without it** (r44-sem M9). Nothing in H1-H10 compiled or ran a `target … with <config>`: `driver.c` hard-codes the prefix `rx` and `run.sh` passes `-p rx`, so the central new build declaration would have had no test path at all. The harness must BUILD every declared target and assert two things per target — the emitted symbols carry its **prefix**, and `rx_info.name` is the definition's `name` — with the driver taking the prefix (a `-D` prefix macro or a generated shim). It is also the only path that exercises §2.7's output naming and §2.13's struct | W1 | `tests/harness/run.sh`, `tests/harness/driver.c` |
 
+**At revision 3 the H-table's W2/W3 labels all read W23** (§1.4 — one
+delivery), H1/H2-family/H11 are BUILT with W1, and four rows join:
+
+| # | change | wave | touches |
+|---|---|---|---|
+| H12 | **the body SUB-BLOCK arms** in all three readers: indentation test before dispatch, skip-into-sub-block for `provenance`/`variant`, the bare-indented refusal kept verbatim (§1.2) | W23 | `run.sh`, `verify_rxt.py` (pcrec's own arm rides SW2/SW3/SW10) |
+| H13 | **`pattern-esc`**: the pass-through arm + the CLI decode flag; `verify_rxt.py` decodes python-side; `\x00`'s K9 refusal surfaces through pcrec (§2.19) | W23 | `run.sh`, `verify_rxt.py`, `cli/` |
+| H14 | **`under` as a counted, labelled skip** in `run.sh` and `verify_rxt.py` (scoring is the consumer's, §2.17); `mc` verified by the PROTOCOL loop in python, never `finditer` (§2.21) | W23 | `run.sh`, `verify_rxt.py` |
+| H15 | **subject ids + hashes**: the per-file binding table, the read-time sha256 refusal on the driver path (§2.18); `configs describe`'s one-cell rule and its summary line (§2.20) | W23 | `run.sh`, `driver.c` |
+
 **H4 deserves its own line in a brief**, because it is the one place a
 plausible implementation is silently wrong: handing python `re` the
 *unexpanded* text would make it compile the primary alone (the `(?&n)`
@@ -3319,3 +3329,175 @@ library entry that legitimately needs an absolute reference or a
 colliding name.** If that never happens, the uncovered population is
 empty and the residual costs nothing — which is itself worth measuring
 at the [LIB] store's first ten entries.
+
+### 7.3 The W23 questions for Frank (revision 3)
+
+Syntax is settled under the 14:5x delegation; these are the genuine
+semantics/scope items, each presented ready-to-ratify:
+
+**W23-F1 — `configs describe` (§2.20).** This touches D93 (the
+composed-config-beats-command-line rule), which is why it is Frank's:
+the head declaration makes a file's configs DESCRIPTIVE — never
+composed into any build, `target … with` refused, `use` inert and
+counted, default `build` = today's semantics unchanged. The mechanism
+closes the bench's roadblock #6 by construction and adds a contract
+sentence (a target-less, config-less file parses and builds nothing,
+PERMANENTLY — their N-43). Recommended: ratify as designed.
+
+**W23-F2 — `capable` lives IN the format (§2.16).** The manager
+recommends IN (a `config … testee` already carries engine knowledge;
+the reason a pattern has no result for a testee belongs in the file a
+reader has); fail-closed; the one reserved key name `requires`. The
+alternative — bench-side capability files — is a partial return of the
+hybrid the 2026-09-12 ruling removed, and §8's P-Q4 records why it was
+considered and declined rather than defaulted. Recommended: ratify.
+
+**W23-F3 — the `mc` counting rule's home (§2.21).** The manager
+pre-ruled the bench's formula; measurement found it double-counts an
+empty match found beyond the scan position, so the design states
+`match_api.md` §3.1's shipped protocol instead and hands the bench one
+adapter edit. No semantics change to any shipped surface — flagged
+because a pre-ruling was deviated from on evidence, and because the
+outbox message to the bench should carry Frank's (or the manager's)
+confirmation.
+
+**Recorded as RULED, not asked again**: F-Q1 (Tier 1 + Tier 2, one W23
+delivery — §1.4), F-Q2 (`pattern-esc` — §2.19), Option A (the set's
+truth lives in `.rxt` — nothing in this revision answers a need
+bench-side; the one candidate, P-Q4, went in-format), and STEP 0's two
+refusals (lane rxtnul; designed against, not restated).
+
+---
+
+## 8. The [B42] P-Q dispositions (revision 3)
+
+All nine of `bench_rxt_needs_v1.md` §5.1, answered with the rationale
+beside each; the manager's pre-rulings verified where they asserted a
+checkable fact, and the two leanings worked to a confirmed answer.
+
+**P-Q1 — the head/body indentation asymmetry.** ANSWERED: a GENERAL
+declared body-sub-block mechanism (§1.2), the manager's leaning
+CONFIRMED. Two genuine customers (`provenance`; `variant`, whose
+revision-2 shape already carried a one-off un-indented `groups`
+continuation the general form retires), the relaxation narrow (only
+under declared sub-block kinds; the bare-indented-line refusal and its
+diagnostic survive verbatim — their M8 stays loud), and the one parser
+hazard it could introduce (an indented `pattern` starting a block in
+one reader and continuing a sub-block in another) closed by the
+indentation-test-precedes-dispatch rule binding all three body readers.
+The fallback (nine flat `prov-*` lines) was examined and declined: it
+answers provenance only, leaves `variant`'s continuation hack standing,
+and gives regime grouping no answer — whereas the confirmed design
+gives regimes a BETTER answer that is not this mechanism at all
+(§2.22). Moving provenance to the head keyed by block name was declined
+for the bench's own reason (a pattern's truth split across two places).
+
+**P-Q2 — is `vocabulary` the right closed-set mechanism?** YES
+(pre-ruling e, accepted): per-key declared sets, parser-enforced,
+undeclared keys free (§2.15). The alternative — validation left to
+consumers — silently downgrades four validated record-schema enums to
+free strings at the absorption boundary, which is a regression the
+format would be shipping.
+
+**P-Q3 — `mc`'s counting rule.** Non-overlapping, and the rule is
+`match_api.md` §3.1's protocol BY REFERENCE (§2.21): resume at the end
+of a non-empty match, one character past the REPORTED START of an empty
+one, no empty-retry. MEASURED against the pre-ruled formula and
+`finditer` (§0.6): the bench's `pos = max(end, pos+1)` double-counts an
+empty match found beyond the scan position; `finditer` over-counts both
+(the NOTEMPTY class pcrec's entries cannot express). The bench's
+adapter owes one edit; their note's own fallback ("the harness's rule,
+whatever it is — say that") is exactly what the spec paragraph does.
+
+**P-Q4 — does `capable` live in the format?** YES (§2.16, W23-F2 to
+Frank). The manager's recommendation confirmed on the bench's own
+counter-argument being weighed: a capability list IS engine knowledge —
+but `config … testee` already carries engine knowledge (a version
+string), the file's reader needs the reason a pattern has no result for
+a testee, and the bench-side alternative is one non-`.rxt` file, i.e.
+the hybrid's partial return. Fail-closed; `requires` reserved by name;
+the pre-compile policy stated once in the spec as the intended reading.
+
+**P-Q5 — what replaces §4.5 item 4's regime mechanism?** Nothing
+replaces it; it is REPAIRED (§2.22): the composer's definition lookup
+gains a derived-identifier key through `pcrec_rxt_prefix_from_name` —
+the mapping's ONE existing home — with the target-prefix collision
+refusal reproduced at the call (exact spelling does not win; the
+refusal names both definitions). Verified against the shipped composer
+(`rxt_compose.c:169/:176/:690/:788` — the lookup and re-resolution
+sites) and against the three-reader rule (the name GRAMMAR's three legs
+are untouched; only leg A's composer lookup, a single implementation,
+learns the map). §4.5 item 4 is then usable as designed, its two
+surviving caveats restated. The sub-block alternative (a `regime` case
+group) was worked and declined: it is a case scope by another name
+(Frank ruled "there is no case scope"), it puts case lines under
+indentation in the most load-bearing arms of all three readers, and it
+buys nothing the shipped composer does not already deliver.
+
+**P-Q6 — a W2-only first delivery?** MOOT BY RULING: F-Q1 makes the
+first delivery Tier 1 AND Tier 2, one W23 wave (§1.4). Recorded so the
+bench's §4.2 sequencing analysis is answered rather than orphaned.
+
+**P-Q7 — the NUL refusal as a standalone change?** YES, and it is not
+even waiting for W23: STEP 0 (lane rxtnul) lands it now, with the
+duplicate-`description` refusal beside it. This revision designs
+against both existing.
+
+**P-Q8 — the `@file:` hash against §2.8's "no content hash" ruling.**
+A DEFAULT, not a principle (pre-ruling b, applied): the ruling's own
+premise — committed, reviewed subject files — fails for a generated,
+gitignored tree, which is precisely the condition §2.8 says provenance
+IS required under. `sha256` is optional; pcrec's corpus writes none;
+the bench writes one per reference; §2.8 is re-scoped in place.
+
+**P-Q9 — the two silent shipped hazards (M1 NUL truncation, M5
+description last-wins).** Both become refusals at STEP 0. The design's
+own contribution is not repeating the shape: every W23 production with
+a duplicate case states refuse-by-name (a second `provenance`, a second
+`vocabulary` for one key, a conflicting subject-id binding, a second
+`configs` line, `pattern` + `pattern-esc` in one block, duplicate
+`under` lines).
+
+---
+
+## 9. The [B42] acceptance checklist, mapped (their §3, 41 checks)
+
+What the bench will run at the restart against the delivered pin. Each
+row: the design element that satisfies it, or the stated deviation with
+its reason. **Named deviations up front**: B5 is PARTIAL (NUL-in-pattern
+parked on K9, §2.19); C10's outcome is REFUSAL (STEP 0), which their row
+explicitly admits ("the check records the CHOICE"); D1/D5/G3 carry a
+PRECISION about appended header columns (below); E5's harness half is
+the bench's own, as their row itself states.
+
+| # | disposition |
+|---|---|
+| A1, A2 | SATISFIED — every named keyword lands in the one W23 delivery (F-Q1), so both probes exit 0 at the delivered pin. The BEFORE (refused by name with a wave) holds at today's pin, M10 |
+| A3, A4 | SATISFIED, unchanged mechanism — unknown tokens stay hard errors naming their context; the sub-block contexts join the context list (§1.2 rule 3); SW13 keeps the recognised-refusal list honest for partial builds |
+| A5 | SATISFIED — `tag` accumulation and mixed labels/pairs are unchanged W2 design; `tag-prose` adds the third item kind (§1.3) |
+| B1, B2 | SATISFIED (regression guard) — `pattern` verbatim untouched (§2.19); the dump's escape round trip unchanged |
+| B3, B4 | SATISFIED BY STEP 0 (lane rxtnul) — the raw-NUL refusal with its control; independent of W23, as their P-Q7 asked |
+| B5 | **PARTIAL, stated**: `pattern-esc` round-trips `\n` and a trailing `\r`; **`\x00` is REFUSED BY NAME naming K9** (the compile entry takes no pattern length — a decoded NUL pattern would silently compile as its prefix, the very trap B3 closes). Lifts when `rx_info.pattern_len`'s API half lands; §2.19 |
+| B6 | SATISFIED — both spellings in one block refused naming both lines (§2.19) |
+| B7 | SATISFIED BY DESIGN, and this delivery is where it gets its first live verification (their row: "nothing has ever verified it") — the driver's `@<path>` form reads bytes raw, NUL included (H6/S5) |
+| C1, C2, C3 | SATISFIED — `vocabulary` enforcement with its accept control and the free-key compatibility control (§2.15). C3 doubles as the R-COMPAT-1 guard for the corpus's zero tags |
+| C4, C5, C6 | SATISFIED — provenance's required-line and conditional-adaptation refusals with their controls (§2.14 rules 1-3) |
+| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14) |
+| C8, C9 | SATISFIED — the sha256 mismatch refusal (checked by the subject's READER, §2.18) and its matching control |
+| C10 | RESOLVED AS REFUSAL — STEP 0's duplicate-`description` refusal; the check records that choice, and G3's M5 row changes accordingly |
+| D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's nine keys in `#section provenance`, `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24) |
+| D2 | SATISFIED — the loader reads only the dump; the cases section is what makes that possible under Option A (expectations are in the file, so they must be at the seam) |
+| D3 | SATISFIED — one escape vocabulary, documented; NOTE for their loader: the dump escapes the FIVE TSV-framing escapes (`rxt_format.md`'s r46sem-22 paragraph), with `\f`/`\v` arriving as `\xNN` and a literal `"` unescaped — decode against the dump's table, not the subject table |
+| D4 | SATISFIED — the VALIDATES vs RECOGNISES table becomes NORMATIVE spec text (SW11; substance in §2.24), and the case-line silent-pass observation is retired |
+| D5 | SATISFIED WITH A PRECISION — a no-new-production file emits no `#section` line; its stream differs from the current pin ONLY in the header row's appended columns, which is `table_contract.md`'s own compatible evolution. Their pass criterion "output unchanged" should read "unchanged under name-resolved comparison"; a byte-diff will show the header. Same precision applies to G3 below |
+| E1, E2 | BENCH-SIDE (their id/slug containment; their M11 finding is theirs to fix) — the format's half is the wide name grammar, BUILT |
+| E3 | SATISFIED — `as <id>` gives every expectation and report row a line-number-independent key (§2.18) |
+| E4 | SATISFIED (regression guard) — duplicate block names stay refused |
+| E5 | FORMAT HALF SATISFIED (`under`, §2.17); the harness half is the bench's own, exactly as their row states (R5 B1); pcrec's harness counts `under` lines as labelled skips and their runner scores them |
+| E6, E7 | BENCH-SIDE — `make check-harness` enumeration and `content_hash` coverage are their gates; the format contributes the closure being enumerable (`--list-source` + include resolution) and nothing else is asked of it |
+| F1 | SATISFIED — the permanence SENTENCE lands (SW5); the parse already worked (their M12) |
+| F2 | SATISFIED — under `configs describe` a set's config cannot reach any pcrec build (refused for `target … with`, inert for everything else, §2.20): "the command line wins, or the file is refused" — the design delivers BOTH arms, by construction rather than by precedence |
+| F3, F4 | BENCH-SIDE gates (their no-build-directives `make check`, their AR-6 review); the format's contribution is that a planted `engine vm` in a `describe` file is still a legal line the gate must catch — their gate, unchanged |
+| G1 | SATISFIED — R-COMPAT-1 production by production (§1.3's closing paragraph): every addition is a fresh token (census 0, §0.6), an extension of a refused production, or new syntax at a today-hard-error position. pcrec's own `make test` green is the delivery bar as always |
+| G2 | SATISFIED — the five committed exports round-trip unchanged (no existing production moved); whether the exporter ADOPTS `as`/`sha256` is the bench's call |
+| G3 | AS THE CHARTER PREDICTS, WITH THE D5 PRECISION: **M1 changes** (STEP 0's refusal — their first-ranked item), **M5 changes** (STEP 0's refusal), **M10 changes** (the W23 keywords stop being refused). M2-M4, M6-M9, M11-M13: the FACTS are unchanged (byte-exactness, trims, acceptance, refusals, exit codes) — but any probe that archives a successful dump verbatim will show the header row's appended columns and, for case-bearing fixtures, the new `#section cases` rows. The probe script should diff name-resolved (or the archive is re-baselined once, at the delivery, with this paragraph as the cited reason). Any OTHER movement is a finding, exactly as they wrote |

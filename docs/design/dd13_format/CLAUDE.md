@@ -77,8 +77,29 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 2 (2026-08-29,
-  dd13b lane): post-panel (r44) and post-ruling (D87).** Grammar +
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3 (2026-09-12,
+  lane w23design, [DD-13b.W23] STEP 1): the [B42] absorption.** Under
+  Frank's F-Q1 (Tier 1 + Tier 2 as ONE W23 delivery — §1.4 restructured;
+  W1 is BUILT) and F-Q2 (multi-line patterns MUST — `pattern-esc`,
+  §2.19), absorbs the bench's fifty needs: the body SUB-BLOCK mechanism
+  (§1.2; customers `provenance` §2.14 and the reshaped `variant` §2.23),
+  `vocabulary` closed sets (§2.15), `capable` fail-closed (§2.16, Frank
+  ratifies), `under` convention-scoped expectations (§2.17), subject
+  `as`/`sha256` (§2.18), `configs describe` closing the D93 roadblock
+  (§2.20, Frank ratifies), the `mc` counting rule MEASURED three ways —
+  the pre-ruled bench formula double-counts an empty match found beyond
+  the scan position; the spec states `match_api.md` §3.1's protocol
+  instead (§2.21) — the §4.5-item-4 regime repair via the composer's
+  derived-identifier lookup (§2.22, `pcrec_rxt_prefix_from_name`'s one
+  home, collision refused at use), and `--list-source` sections +
+  case rows + the normative VALIDATES-vs-RECOGNISES table (§2.24). §0.6
+  is the need-keyed revision record, §3.4's SW1-SW15 the D80 spec-delta
+  plan (no abi event anywhere in W23), §7.3 the Frank queue (W23-F1/F2/
+  F3), §8 the nine P-Q dispositions, §9 the 41-check acceptance mapping
+  (G3: M1/M5/M10 change, everything else's FACTS unchanged, one named
+  header-column precision). Revision 2 (2026-08-29, dd13b lane,
+  post-r44, post-D87) is the base text and stands where W23 does not
+  touch it. Grammar +
   semantics of the grown format, under Frank's 2026-08-28 rulings
   (`usecases_and_outline.md` §5/§6.1-§6.5) and **D87**. §0.5 is a
   finding-by-finding disposition table for all of r44
