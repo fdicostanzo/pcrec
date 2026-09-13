@@ -702,7 +702,7 @@ Confirmed means the seed's prediction held; refuted means it did not.
 | F2 | **§2.20 rule 4's `lib`-contributes-DEFINITIONS-ONLY clause** | **FOUND by the seed's own instruction, and it is the most load-bearing re-home** | **INDEPENDENT of describe mode and RE-HOMED to §2.5**, the include model, where the question is asked. It answers "what crosses a `lib` edge?", which has an answer whether or not a mode line exists — `configs` was the occasion for writing it down, never its subject. Had it been deleted with its section, withdrawing a mechanism would have silently re-opened a closure question in a DIFFERENT production, which is exactly the second-order damage this sweep exists to prevent. §4.1 gains a pointer, since the clause is [LIB]'s as much as §2.5's | §2.5's new bullet, §4.1, §2.20's own note |
 | F3 | **`cardinality`'s and `unique-by`'s example lists** both named "a second `configs` line" as a customer | **FOUND** | Both updated. `unique-by` retains two of three customers and is unaffected as a KIND; the `cardinality` reconciliation paragraph (§2.25.3) and §9's C7 row each drop the example. **Recorded because the check is the point**: a kind losing one of three customers and a kind losing its only one are the same edit and opposite outcomes, and S2 above is what happens when it is the latter | §2.25.3's reconciliation paragraph, §9 C7 |
 | F4 | **`--list-source`'s config-row columns** `testee`, `options`, `provides` | **FOUND** | All three removed, and the `configs` head ROW KIND with them. **Not a `table_contract.md` event**: the dump has no config-row extension at today's pin, so no consumer resolves a name that stops existing. Stated explicitly, because "append-only, resolved by name" is a promise about SHIPPED columns and a designed-but-unshipped one is a different thing | §2.24's appended-columns block |
-| F5 | **§2.25.2's `children` column could not express an aux body** | **FOUND while designing §2.27, not while sweeping** | The column's `none`/`prose`/`<scope>` trichotomy has no member for "structurally parsed lines that no scope validates", and expressing it as a carve-out in §1.2.2's unknown-token rule would be the per-keyword structural exception consequence 1 forbids. **`children: tree` is the fourth value**, one enum member, the same price `prose` cost — and it deliberately does NOT touch structure-layer parameter 2, whose pair test it fails exactly as `children: none` does | §2.25.2, §2.27.2 decision 2 |
+| F5 | **§2.25.2's `children` column could not express an aux body** | **FOUND while designing §2.27, not while sweeping** | The column's `none`/`prose`/`<scope>` trichotomy has no member for "structurally parsed lines that no scope validates", and expressing it as a carve-out in §1.2.2's unknown-token rule would be the per-keyword structural exception consequence 1 forbids. **`children: tree` is the fourth value**, one enum member, the same price `prose` cost — and it deliberately does NOT touch structure-layer parameter 2, whose pair test it fails exactly as `children: none` does. **CORRECTED AT 3.4.1 (r58 A1/R1)**: 3.4's row went on to call `tree` "a SCHEMA fact and only a schema fact", which is false — the structure layer reads the column, and `children: tree` **IS structure-layer parameter 3**, scoping S2 and S3 inside the subtree. Both statements can be true at once and 3.4 stated only the convenient one: parameter 2 is untouched AND a new parameter arrived | §2.25.2, §2.27.2 decision 2, §1.2.1's parameter table |
 | F6 | **`validated_by` has no cell for "the body is never checked"** | **FOUND** | The brief asked for `validated_by: nothing`; there is no row to put it on, because **`validated_by` is a property of a ROW and an aux body has no rows**. That is r57 S-S3's finding verbatim, one production over — config RESOLUTION had the identical problem and the answer built for it was a **declared non-coverage `surface` row** in `--list-schema`. Aux takes the same mechanism unchanged, which is the sign the first repair was diagnosed correctly rather than patched. The `ext` OPENER's row keeps an ordinary `validated_by: all-readers`, so "the structure is checked by three legs, the content by nobody" stays two claims instead of one blurred cell | §2.27.4, §2.24's non-validated homes table (fourth row) |
 | F7 | **§2.26's audit could not have reached D99's answer** | **FOUND (an observation the sweep produced, not an edit)** | Item 4's 3.2 addendum diagnosed a real symptom — the `requires`/`provides` rename bought a READING symmetry the GRAMMAR did not have, two ends of one relation spelled as different kinds in different scopes — and treated it with a rename plus a constraint kind plus a pointer sentence. **The two ends did not fit together because one of them did not belong in the format at all.** An audit scoped to spellings (correctly, for an ownership ruling about syntax) is structurally unable to reach that, and item 6 is the same shape with the opposite sign: a CONFIRMED spelling on a mechanism that should have been questioned. Recorded in both items as the audit's own stated limit | §2.26 items 4 and 6 |
 | F8 | **`ext`'s own spelling needed an audit row** | **FOUND** | The audit sweeps every production revision 3 added; 3.4 adds one, so it gets item 14 on the same criterion — with the four alternatives priced and the one genuine objection to `ext` ("extension" suggests EXTENSIBILITY when the point is the opposite) answered by a spec sentence rather than waved at | §2.26 item 14 |
@@ -1871,18 +1871,19 @@ consumer   = defname ;      (* the CONSUMER's namespace — the wide name
                                grammar, so `pcrec-bench` is spellable.
                                NOT resolved against anything: pcrec does
                                not know who its consumers are *)
-aux-line   = aux-key , [ ws , ( prose-value | rest-of-line ) ] ,
+aux-line   = aux-key , [ ws , rest-of-line ] ,
              { INDENT , aux-line , eol } ;
 aux-key    = ? any first token the LEXICAL rules admit — there is no
                closed set here, and that is the production (§2.27). It
                must still be a token: S0's line classes and S1's
                attachment apply verbatim inside an aux body, which is
                what makes a malformed aux block a LOCAL error ? ;
-(* A `|` block scalar IS legal inside an aux body (§2.27's decision 3):
-   an aux line's value shape is `prose` by declaration, so S3 opens on a
-   trimmed bare `|` exactly as it does under `description`. No new
-   machinery — structure-layer parameter 2 gains the aux scope's lines
-   as members, and that is the whole cost. *)
+(* `ext` carries `children: tree`, so its body is an OPEN SUBTREE:
+   structure-layer parameter 3 (§1.2.1) makes S2's opener set EMPTY
+   there and stops S3 opening there at all. So an aux value is always
+   `rest-of-line` — a trimmed bare `|` inside an aux body is the
+   LITERAL value `|`, not a block scalar (§2.27.2 decision 3, RULED at
+   r58 for the one-line form). Parameter 2 keeps its five rows. *)
 
 variant-block = "variant" , ws , ident , eol ,
                 { INDENT , variant-attr , eol } ;
@@ -4737,19 +4738,35 @@ The reconciliation, and it is one sentence with one precedence rule:
 > schema-checked lines.
 
 **`children: tree` IS THE FOURTH VALUE, ADDED AT 3.4 FOR §2.27's AUX
-PRODUCTION, and it does not touch structure-layer parameter 2.** The
-pair test is unchanged and is unchanged in form: a kind opens a prose
-region iff `value: prose` AND `children: prose`. `children: tree` fails
-that test exactly as `children: none` does, so no reader has to learn a
-new rule to keep S3 right — the value's arrival cannot open a region by
-accident. What `tree` says is a SCHEMA fact and only a schema fact:
-the indented lines are lines (not bytes, so S1 attaches them and a
-malformed one is a local error), and there is no scope to look them up
-in (so §1.2.2's unknown-token-in-scope rule has nothing to fire on).
-**One enum member, the same price `prose` cost**, and the alternative —
-an exception in the unknown-token rule keyed on the token `ext` — is
-the per-keyword structural carve-out consequence 1 forbids (§2.27.2
-decision 2).
+PRODUCTION, and it does not touch structure-layer parameter 2** — it
+**IS structure-layer parameter 3** (CORRECTED AT 3.4.1, r58 A1/R1;
+revision 3.4 said `tree` was "a SCHEMA fact and only a schema fact" and
+that was FALSE, since the structure layer reads the column to scope S2
+and S3). The pair test is unchanged and is unchanged in form: a kind
+opens a prose region iff `value: prose` AND `children: prose`.
+`children: tree` fails that test exactly as `children: none` does, so
+parameter 2's five rows are five rows still and the value's arrival
+cannot open a region by accident.
+
+What `tree` says, stated honestly across both layers:
+
+- **To the SCHEMA layer**: the indented lines are lines (not bytes, so
+  S1 attaches them and a malformed one is a local error), and there is
+  no scope to look them up in — so §1.2.2's unknown-token-in-scope rule
+  is VACUOUS there rather than excepted, and no row exists for any line
+  below the opener.
+- **To the STRUCTURE layer**: the subtree rooted at the line is OPEN —
+  S2's opener set is empty inside it and S3 never opens inside it
+  (§1.2.1's parameter table is the normative statement and this bullet
+  points at it, per that paragraph's said-once rule).
+
+So the reconciliation sentence that covers the whole column is **three
+parameters over three columns, not two over three**: `opens_group` is
+parameter 1, `value`+`children` as a pair is parameter 2, and
+`children` alone is parameter 3. **One enum member, the same price
+`prose` cost**, and the alternative — an exception in the unknown-token
+rule keyed on the token `ext` — is the per-keyword structural carve-out
+consequence 1 forbids (§2.27.2 decision 2).
 
 `--list-schema` prints both columns, so H12's assumption — the one
 revision 3.1 made silently in the H-table and nowhere declared — is now
@@ -4761,8 +4778,9 @@ remembered. A three-valued column costs one enum member.
 
 `opens_group`, `value` (for `prose`), `children` and `scope` are what a
 generic reader needs; everything else is validity. **The structure
-layer reads exactly THREE of them as TWO parameters** — `opens_group`
-is parameter 1, and `value`+`children` READ AS A PAIR are parameter 2
+layer reads exactly THREE of them as THREE parameters** — `opens_group`
+is parameter 1, `value`+`children` READ AS A PAIR are parameter 2, and
+`children` ALONE (the value `tree`) is parameter 3
 — and §1.2.1's parameter table is the normative statement of which.
 **(3.3, r57 ROUND 2 R2-F4: revision 3.2 said "exactly two … `value =
 prose`" in this very paragraph while the reconciliation four paragraphs
@@ -4770,7 +4788,9 @@ above said the PAIR, and §1.2.1/§1.2.2 each picked one. The PAIR is the
 answer, on S-R5's detectability: with `value` alone read, flipping a
 row's `children` from `prose` to `none` changes nothing observable —
 the region still opens and its lines never reach a validity check — so
-a normative column would have no detector at all.)**
+a normative column would have no detector at all. 3.4.1, r58 R1: the
+third parameter joins them and the COLUMN count does not move, since it
+reads a column parameter 2 already reads.)**
 That they are columns of one table rather than separate mechanisms is
 the two-layer split made concrete.
 
@@ -5107,10 +5127,16 @@ ext bench
   testee re2/2024-07-02
   capabilities pcre2
     backrefs lookaround atomic-possessive recursion conditionals
-  matrix |
-    the sixteen-config pcrec sweep lives in the runner, not here; this
-    block records only which engines this SET expects to be run under.
+  matrix
+    note the sixteen-config pcrec sweep lives in the runner, not here.
+    note this block records which engines this SET expects to be run under.
 ```
+
+**Every value above is ONE LINE, and `matrix`'s two `note` children are
+why** (r58 R1, §2.27.2 decision 3): an aux body is an OPEN SUBTREE, so a
+bare `|` there is the literal value `|` and a paragraph is written as
+child lines the dump hands back in source order. Revision 3.4's version
+of this example wrote `matrix |` with a block scalar under it.
 
 #### 2.27.1 What it is, exactly
 
@@ -5125,10 +5151,23 @@ ext bench
   look alike. File scope carries what is true of the set; block scope
   carries what is true of one pattern.
 - **Body: ordinary S1-attached records with children**, arbitrarily
-  deep. Nothing about the body is new machinery: S0's line classes, S1's
-  attachment, S2's opener set (which has no member inside an aux body,
-  so no grouping happens there) and S3's opaque regions all apply
-  verbatim. An aux body is the same tree shape a `provenance` block is.
+  deep — an **OPEN SUBTREE** in §1.2.1's sense, because the `ext` row
+  carries `children: tree` (§2.25.2). Nothing about the body is new
+  machinery: S0's line classes and S1's attachment apply verbatim, and
+  the two things that do NOT apply are not exceptions for `ext` but
+  **structure-layer parameter 3's stated effects, derived rather than
+  asserted**: inside an open subtree S2's opener set is EMPTY (so no
+  first token there starts a group, `pattern` and `pattern-esc`
+  included) and S3 never opens (so a trimmed bare `\|` is the literal
+  value `\|`). Revision 3.4 wrote the first of those here, as a claim
+  about the opener set having "no member inside an aux body" — which was
+  **FALSE as S2 was written** (r58 blocker A2: S2 ranged over siblings
+  at any depth with no scope restriction, so `pattern <glob>` as an aux
+  key opened a group, against this note's own `aux_deep_tree.rxtin`
+  fixture). It is true now, and it is true as a CONSEQUENCE of a
+  parameter a generic reader fetches, which is the difference between a
+  rule and a hope. An aux body is otherwise the same tree shape a
+  `provenance` block is.
 - **Cardinality: ANY.** `cardinality: repeat`, at both scopes. Several
   `ext` blocks for one consumer are legal and several consumers are the
   point; nothing accumulates, nothing last-wins, and there is no
@@ -5174,27 +5213,54 @@ validated.** One enum member, the same price §2.25.2 paid for `prose`,
 and a generic reader that fetches the column gets the answer without
 knowing the token `ext`.
 
-**Decision 3 — a PROSE VALUE is legal inside an aux body. RECOMMENDED
-YES; flagged for the manager with the alternative priced.** An aux line
-may write `<key> |` and continue on indented lines, exactly as
-`description` does. *Why yes*: it reuses existing machinery end to end
-— S3 is already the extent rule, `prose-value` is already the decode,
-and the only schema fact required is that an aux line's value shape is
-`prose`, which is a declaration and not a code path. A consumer that
-cannot write a paragraph in its own namespace will write one anyway, as
-a run of single lines or an escaped blob, and the format will have
-taught it a workaround instead of a spelling. *What it costs, stated
-because it is the only cost*: structure-layer parameter 2 (§1.2.1) is
-the set of prose-region-opening kinds, and it now includes "any line in
-an aux scope" — a set that was five named rows and is now five rows plus
-a scope-level predicate. That is a real widening of a normative
-parameter and it is why the decision is flagged rather than assumed.
-*The alternative*: forbid `|` inside aux, making every aux value
-one-line. It is cheaper by exactly one clause in parameter 2 and is
-rejected because the clause is the honest description of a format that
-has one prose mechanism everywhere (§1.2.5) — carving aux out of it
-would make prose the thing whose rules depend on which keyword opened
-the line, which is the property §1.2 exists to remove.
+**Decision 3 — a prose value is NOT legal inside an aux body. RULED AT
+r58 (ruling R1) FOR THE ONE-LINE ALTERNATIVE**, reversing revision 3.4's
+recommendation. Every aux value is one line; a trimmed bare `|` inside
+an aux body is the LITERAL value `|`, because `ext` carries
+`children: tree` and S3 never opens inside an open subtree
+(structure-layer parameter 3, §1.2.1 — stated there, not restated
+here). A consumer wanting a paragraph writes CHILD LINES and
+reassembles them from the dump's own rows, which is the shape §2.24
+chose precisely so that a cell is never re-parsed.
+
+Revision 3.4 sent this question to the panel OPEN and recommended YES,
+and shipped the YES answer at three other sites while §1.2.1's normative
+parameter table still read five rows — which is r58 blocker A1, and is
+why §0.10 records the finding rather than only the fix. Three arguments
+decided it, the first two from critic A:
+
+1. **A literal `|` becomes unwritable in the one production whose key
+   space pcrec does not control** (A3). Under the YES answer, an aux
+   line `separator |` is a block-scalar opener, so a consumer whose data
+   genuinely has the value `|` — a column delimiter, an alternation
+   fragment, a table cell — has no spelling for it and no escape
+   vocabulary to reach for, since aux values are never decoded. That is
+   r57 R2-F1's own hazard class (the unparameterized `\|` trigger that
+   turned `pattern |` into a refusal) re-introduced one production over,
+   in the namespace pcrec is least entitled to constrain.
+2. **Aux body lines are OUTSIDE parameter 2's domain, not excepted from
+   it.** Parameter 2 is a predicate over SCHEMA ROWS (`value: prose` AND
+   `children: prose`), and an aux body line has no row and therefore no
+   declared `value` at all. Revision 3.4 described the YES answer as
+   widening parameter 2 with "a scope-level predicate"; there was
+   nothing to widen, because the parameter has no opinion about lines it
+   has no row for. So the NO answer does not carve aux out of a rule —
+   it observes that the rule never reached in.
+3. **The paragraph capability SURVIVES**, so the "a consumer will write
+   one anyway" argument does not bite. A consumer writes its paragraph
+   as child lines under its own key; `#section aux` emits one row per
+   line, in source order, with `parent_line` (§2.24), so reassembling it
+   is a walk over rows the loader already reads. It gains the line
+   structure it would have lost, and pcrec still never decides what the
+   bytes mean.
+
+*What the YES answer would have bought, kept here because the decision
+should be re-openable*: it reuses `prose-value`'s decode, and a
+multi-paragraph blob arrives as one string rather than as rows. If a
+consumer ever reports that reassembly is the wrong shape for real data,
+this is the trade to re-price — and it re-opens as a graduation-shaped
+question (a declared prose value inside aux is a schema fact about aux
+lines, which is a row, which is §2.27.3's own definition of growing).
 
 #### 2.27.3 THE GRADUATION RULE (D99 item 4, normative)
 
@@ -5244,9 +5310,9 @@ The `ext` kind's own rows (one per scope) are ordinary:
 |---|---|
 | `scope` | `file`, and `block` — two rows, one production |
 | `kind` | `ext` |
-| `value` | `token` (the consumer namespace) |
+| `value` | `token` (the consumer namespace). **Never `prose`** — and the same is true of every line INSIDE the body, which has no row at all: an aux value is its own line's token remainder, so a trimmed bare `\|` is the literal `\|` (§2.27.2 decision 3, RULED at r58; the mechanism is parameter 3, §1.2.1) |
 | `opens_group` | `false` — structure-layer parameter 1 is untouched; aux opens no group and a `pattern` line after an `ext` block starts a block exactly as it does today |
-| `children` | **`tree`** — §2.27.2 decision 2, the new fourth value |
+| `children` | **`tree`** — §2.27.2 decision 2, the new fourth value, **and structure-layer parameter 3** (§1.2.1): it is read by the SCHEMA layer to say the body has no scope, and by the STRUCTURE layer to switch S2 and S3 off inside the subtree |
 | `cardinality` | `repeat` |
 | `constraints` | none |
 | `source` | `format` |
@@ -5443,15 +5509,18 @@ everywhere.
   `docs/spec/cli.md:586` already gives `--list-limits` that ordinal):
   the format's own structural rules as a TSV, walked off the same table
   the parser enforces. It is the surface Frank's consequence 3 asks
-  for, and it is what makes §1.2.1's **two** keyword-dependent
-  parameters — the block-opener set and the prose-valued kind set — a
-  query rather than hard-coded facts. **OPEN AT 3.4, and flagged rather
-  than assumed away** (§5.2a attack 9): §2.27.2 decision 3 admits a
-  prose value inside an aux body, so parameter 2's answer becomes "these
-  five rows, PLUS every line in any `ext` scope" — a row set plus a
-  predicate. Whether the dump can return that in the form a generic
-  reader fetches is the decision's real price, and if it cannot, the
-  one-line alternative (no `\|` inside aux) wins. Same
+  for, and it is what makes §1.2.1's **three** keyword-dependent
+  parameters — the block-opener set, the prose-region-opening kind set
+  and the open-subtree kind set — a
+  query rather than hard-coded facts. **CLOSED AT 3.4.1 (r58 R1), and
+  3.4 flagged it OPEN for exactly the right reason**: revision 3.4 let
+  a prose value into an aux body, which would have made parameter 2's
+  answer "these five rows, PLUS every line in any `ext` scope" — a row
+  set plus a predicate, which is not a shape this dump can return.
+  Under R1 every one of the three parameters is a ROW SET selected by a
+  column value (`opens_group: true`; `value: prose` AND
+  `children: prose`; `children: tree`), so the fetch is three filters
+  over one TSV and no predicate escapes into a consumer. Same
   one-derivation-two-readers discipline as every dump beside it, and
   the same `table_contract.md` obligations as every table beside it
   (SW17's row there, r57 S-M7).
@@ -5526,7 +5595,7 @@ delivery:
 
 | # | file | the hunk |
 |---|---|---|
-| SW18 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` | **THE AUX PRODUCTION** (§2.27). rxt_format.md gains the section: `ext <consumer>` at file and block scope, the consumer namespace as a free `defname` resolved against nothing, the body as ordinary indented records under the SAME structure rules as everything else, `cardinality: repeat` at both scopes, a prose value legal inside (§2.27.2 decision 3), and — normatively, in its own paragraph — **the GRADUATION RULE** with its four clauses (§2.27.3) and the disambiguating sentence item 14 owes: *an `ext` block extends what a file CARRIES, never what the format MEANS.* It also states the non-coverage in the words a consumer needs: **pcrec parses the structure, dumps it faithfully, and interprets nothing — no build, no check, no config resolution, no diagnostic citing a value.** cli.md gains `#section aux`'s column list in `--list-source`'s entry. **This hunk is the one place the format promises something by promising NOT to do it**, which is why it is spec text and not a design note: a consumer who cannot cite a sentence saying "pcrec will not read this" has no basis for putting anything there |
+| SW18 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` | **THE AUX PRODUCTION** (§2.27). rxt_format.md gains the section: `ext <consumer>` at file and block scope, the consumer namespace as a free `defname` resolved against nothing, the body as ordinary indented records under the SAME structure rules as everything else, `cardinality: repeat` at both scopes, **`children: tree` and what it means for a reader — structure-layer parameter 3, so no line inside an `ext` body opens a group and no bare `\|` there opens a prose region; every aux value is one line (§2.27.2 decision 3, RULED at r58)** — and, normatively, in its own paragraph, **the GRADUATION RULE** with its FIVE clauses (§2.27.3) and the disambiguating sentence item 14 owes: *an `ext` block extends what a file CARRIES, never what the format MEANS.* It also states the non-coverage in the words a consumer needs: **pcrec parses the structure, dumps it faithfully, and interprets nothing — no build, no check, no config resolution, no diagnostic citing a value.** cli.md gains `#section aux`'s column list in `--list-source`'s entry. **This hunk is the one place the format promises something by promising NOT to do it**, which is why it is spec text and not a design note: a consumer who cannot cite a sentence saying "pcrec will not read this" has no basis for putting anything there |
 | SW19 | `docs/spec/rxt_format.md` + `docs/spec/table_contract.md` | **THE WITHDRAWALS' OWN SPEC CONSEQUENCE, which is mostly an ABSENCE and is named so the absence is checkable.** No `configs`, `testee`, `option` or `provides` text is written (verified at 3.4: `docs/spec/` contains **0** occurrences of any of the four today, so there is nothing to unwrite — the withdrawals land before the spec ever described them, which is the cheapest moment they could have happened). What IS written: SW4's narrowed `requires` paragraph, SW5's single permanence sentence, and — in `table_contract.md` — the `#section aux` row in the Scope table, on the same AT-BIRTH rule SW17 cites (r57 S-M7, D94's failure verbatim). **And the FORMAT-READER survey obligation §2.24 states is carried here as a landing condition**, not as advice: the implementation lane greps the tree for every site parsing `--list-source`'s SHAPE (field counts, positional splits, section-presence assumptions) before landing the fourth section, because the `built`-column landing swept content readers, missed two form readers hard-coding `NF != 15`, and was caught by the battery instead (`registry_built_status_memo.md`'s own CORRECTION) |
 
 **No `docs/spec/match_api.md` struct hunk and no abi bump anywhere in
@@ -6023,16 +6092,24 @@ below them are 3.3's and were scored by two panel rounds already.
    this paragraph and not in §2.27.3's four clauses, which is exactly
    the kind of gap clause 4 says every extension namespace eventually
    falls through.
-9. **THE AUX BODY'S PROSE DECISION** (§2.27.2 decision 3). The claim is
-   that admitting `|` inside an aux body costs one clause in
-   structure-layer parameter 2 and nothing else. Attack it by asking
-   what `--list-schema` PRINTS for parameter 2 once the answer is
-   "these five rows, plus every line in any `ext` scope": the parameter
-   is specified as a FETCH precisely so a generic reader need not
-   hard-code it (§1.2.1), and a fetch that returns a predicate rather
-   than a row set may not be fetchable in the form the dump has. If it
-   is not, decision 3 is more expensive than this section prices it and
-   the one-line alternative wins.
+9. **THE AUX BODY'S PROSE DECISION** (§2.27.2 decision 3). **RULED AT
+   r58 (R1) FOR THE ONE-LINE FORM, so this attack has been RUN and its
+   answer landed** — kept here because the attack it prescribed is the
+   one that produced the answer, and because the surviving claim is new
+   and unattacked. The 3.4 claim was that admitting `|` inside an aux
+   body costs one clause in structure-layer parameter 2 and nothing
+   else; the attack was to ask what `--list-schema` PRINTS for parameter
+   2 once the answer is "these five rows, plus every line in any `ext`
+   scope", since the parameter is specified as a FETCH precisely so a
+   generic reader need not hard-code it (§1.2.1). It does not print: a
+   row set plus a scope predicate is not a shape the dump returns.
+   **The claim to attack NOW** is the replacement: that all three
+   parameters are row sets selected by a column value, that parameter 3
+   (`children: tree`) turns S2 and S3 off inside a subtree without
+   giving the structure layer new power, and that a reader can find an
+   aux subtree's END without tokenising a line inside it. The sharpest
+   angle is the last one — construct a file where the open subtree's
+   extent under S1 differs from what `--list-source` reports.
 
 ---
 
@@ -6346,9 +6423,9 @@ ext bench
     provides free-spacing callouts span-reporting captures true-end-anchor
   testee re2/2024-07-02
     provides unicode-properties named-groups captures
-  policy |
-    REQUIRES(pattern) not-subset capabilities(testee) =>
-    unsupported-by-declaration, decided before any compile.
+  policy
+    rule REQUIRES(pattern) not-subset capabilities(testee) =>
+    rule unsupported-by-declaration, decided before any compile.
 
 include "gen/cases_search_short.rxt"    # 11 patterns x 112 subjects, generated
 include "gen/cases_throughput.rxt"      # the 16 KB - 1 MB sweep
@@ -6356,14 +6433,20 @@ include "gen/cases_throughput.rxt"      # the 16 KB - 1 MB sweep
 
 **Read that `ext bench` block twice, because everything about it is the
 bench's and nothing about it is pcrec's.** `testee`, `flags`,
-`provides` and `policy` are not format keywords at 3.4 — they are
+`provides`, `policy` and `rule` are not format keywords at 3.4 — they
+are
 whatever the bench chose to call things inside its own namespace, and
 pcrec neither knows nor checks that `provides` accumulates, that
-`pcre2/10.46` is an engine-ref, or that `policy` is prose. What pcrec
+`pcre2/10.46` is an engine-ref, or that `policy`'s children are a
+sentence. What pcrec
 does is parse the tree (so a mis-indented line is an error on ITS line
 and cannot leak into the `include` below), dump it in `#section aux`
 with `parent_line` pointers, and stop. The nesting is two levels deep
-and is ordinary S1; `policy |` is a prose value by §2.27.2 decision 3.
+and is ordinary S1. **`policy`'s two-line sentence is written as CHILD
+LINES and not as a `\|` block scalar** (r58 R1, §2.27.2 decision 3):
+an aux body is an open subtree, so S3 does not open there, and a
+paragraph is rows the loader reassembles in source order. Revision
+3.4's version of this file wrote `policy |`.
 **The bench's sixteen-config pcrec matrix is not here and was never
 going to be** — it is cross-set experimental design, and `testee pcrec`
 records only that this SET expects to be run under pcrec at all.
@@ -7139,8 +7222,8 @@ H12/H16 builds them.
 | `derived_call_collision.rxtin` | `(?&x_y)` with `x_y` and `x-y` both defined | refused, naming BOTH definitions and the shared identifier | §1.6.1a narrowing (5); accepted today with a byte-identical artifact (§0.8), so this fixture is that narrowing's regression. Leg A only — legs B and C resolve no calls (§2.22) |
 | `mc_illformed_utf8.rxtin` | an `mc` over an ill-formed UTF-8 subject under `-e utf8` | the driver's C loop, `verify_rxt.py`'s python loop and the count agree | SW7's newly-normative advance rule (r57 C-S6); §9's E5 group |
 | `aux_arbitrary_keys.rxtin` | an `ext bench` block at FILE scope whose keys are nothing pcrec has ever heard of | all three legs ACCEPT; leg A's `--list-source` reproduces every key and value verbatim in `#section aux` | **NEW AT 3.4.** §2.27's whole promise in one cell, and S-R6's first detector. It is an ACCEPTANCE fixture on purpose: aux's failure mode is pcrec deciding it understands something, which an acceptance fixture catches and a refusal fixture cannot |
-| `aux_deep_tree.rxtin` | an `ext bench` body three levels deep whose keys deliberately COLLIDE with real format keywords (`pattern`, `m`, `provenance`, `config`) | accepted; and **the dump contains NO extra block, NO extra case and NO provenance record** — the colliding keys appear only as `#section aux` rows | **NEW AT 3.4**, and it is the sharper of the pair. The first fixture catches aux being narrowed; this one catches aux being INTERPRETED, which is the graduation rule's failure mode (§2.27.3) and the only one that corrupts a file's meaning. Asserting the ABSENCE of rows in three other sections is what makes it work |
-| `aux_prose_value.rxtin` | an aux line with a `\|` block scalar, containing an indented `#` and a ragged line | accepted; the value decodes with the `#` as prose and relative indentation preserved, identically to the same body under `description` | **NEW AT 3.4.** §2.27.2 decision 3 — the one place that decision is falsifiable. If the prose-region-opening parameter does not in fact reach aux scopes, this fixture is where it shows |
+| `aux_deep_tree.rxtin` | an `ext bench` body three levels deep whose keys deliberately COLLIDE with real format keywords (`pattern`, `m`, `provenance`, `config`) | accepted; and **the dump contains NO extra block, NO extra case and NO provenance record** — the colliding keys appear only as `#section aux` rows | **NEW AT 3.4**, UNCHANGED AT 3.4.1, and it is the sharper of the pair. The first fixture catches aux being narrowed; this one catches aux being INTERPRETED, which is the graduation rule's failure mode (§2.27.3) and the only one that corrupts a file's meaning. Asserting the ABSENCE of rows in three other sections is what makes it work. **At 3.4 it asserted something the SPECIFICATION contradicted** — S2 ranged over siblings at any depth, so a `pattern` key inside the body DID open a group (r58 blocker A2); the fixture was right and the rule was wrong, and at 3.4.1 it is the regression for structure-layer parameter 3's first effect |
+| `aux_literal_pipe.rxtin` | an aux line whose value is a trimmed bare `\|` (`separator \|`), with an ordinary sibling key below it at the SAME indent | accepted; `#section aux` carries a row whose `value` is the single byte `\|`, and the sibling below it is a SIBLING ROW — not a continuation, not prose | **NEW AT 3.4.1** (r58 R1/A3), REPLACING 3.4's `aux_prose_value.rxtin`, which asserted the opposite. §2.27.2 decision 3 is falsifiable exactly here: if S3 still opens inside an open subtree, the `\|` row's value is empty and the sibling has been swallowed. It is also A3's own hazard cell — a consumer whose data IS `\|` has a spelling — so the fixture pins the argument that decided the ruling and not only the ruling |
 | `aux_malformed_body.rxtin` | an `ext bench` block one of whose body lines is mis-indented so it attaches to nothing, followed by an ordinary `pattern` block | all three REFUSE, class `structure-attachment`, naming the MIS-INDENTED LINE — and the `pattern` block below is not implicated | **NEW AT 3.4.** This is the D99 parenthesis (*"so a malformed aux block cannot corrupt what follows"*) as a check. The assertion that matters is the second half: a refusal that names the right line proves the error is LOCAL, which is the entire argument for structural parsing over the opaque-bytes alternative (§2.27.2 decision 1) |
 | `comment_in_config_body.rxtin` | a column-1 `#` between two indented `config` body lines | all three REFUSE at the line BELOW the comment, class `structure-attachment` | **NEW AT 3.3** (r57 ROUND 2 R2-F2). The comment TERMINATES the body, so the line after it continues nothing — measured rc 1 today, and the fixture is what stops a future reader implementing the transparent reading, which would silently accept it. Its pair with the next row is the whole of the comment rule |
 | `comment_in_prose_region.rxtin` | a column-1 `#` between two prose lines of a `description \|` body | all three REFUSE at the line BELOW, same class | **NEW AT 3.3**, and it is the sharper of the pair: under the transparent reading this file does not merely widen, it produces an opener with TWO disjoint prose regions, which S3's single-extent rule cannot express at all. A shape the specification cannot describe needs a fixture, not a sentence |
@@ -7216,8 +7299,11 @@ bench is designing set files against a mechanism that no longer exists.
 > **What REPLACES them: one new production, `ext <consumer>`.**
 > Structured data attachable at file level and block level,
 > namespaced to a consumer (`ext bench`), with a body of ordinary
-> indented records — arbitrarily deep, and a `|` block scalar is legal
-> inside. We parse its STRUCTURE (so a mis-indented line is an error on
+> indented records — arbitrarily deep, one line per value. (A bare `|`
+> inside an `ext` body is the literal value `|`, not a block scalar: a
+> paragraph is child lines, and `#section aux` hands them back to you in
+> source order with parent pointers.) We parse its STRUCTURE (so a
+> mis-indented line is an error on
 > its own line and cannot change how anything after it parses) and we
 > interpret NOTHING: no build reads it, no check reads it, no config
 > resolution touches it, and no diagnostic ever cites a value inside
