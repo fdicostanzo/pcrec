@@ -412,3 +412,168 @@ it is a union pretending to be a unification); and §2.25's scope (a
 constraint kind with a speculative customer, or a W23 refusal none of
 the five kinds can express — which would make the schema a partial
 declaration presenting itself as a complete one).
+
+---
+
+# ADDENDUM 2 — [DD-13b.W23] STEP 1.2: REVISION 3.2, the r57 FIX ROUND (2026-09-12, lane w23fix, opus)
+
+The r57 D6 panel (`docs/dev/reviews/2026-09-12-r57-w23-format.md`) ran
+three read-only critics against revisions 3 and 3.1 and returned **3
+blockers, 14 must-fixes, 12 shoulds and 4 nits, all dispositioned
+FIX-NOW**. This addendum records what moved, what I pushed back on with
+evidence, and the queue that goes to Frank. The note's own §0.8 is the
+finding-by-finding table; this is the lane's voice on top of it.
+
+## What moved — the five structural outcomes
+
+1. **The block scalar was a SECOND, undeclared structural device, and
+   it is now S3 OPAQUE REGIONS** (§1.2.1). Three critics arrived at it
+   from three directions (G-B1, S-M1, G-B2's N1/N2), which is the panel
+   working as designed. The measurement that settles it: inside a
+   `description |` body an indented `#` is PROSE and ragged indentation
+   is legal, both rc 0 on the shipped binary — neither recoverable from
+   S0 or S1 as revision 3.1 wrote them. **The structure layer now
+   states TWO schema parameters, not one** (`opens_group`, and
+   `value = prose`), and the second is the open-ended one: §1.2.5's own
+   "a second prose field inherits the block scalar" is a statement that
+   this parameter grows, which revision 3.1 wrote without noticing it
+   was describing a structure-layer input.
+2. **The narrowing census is a CLOSED LIST of five, three taken**
+   (§1.6.1a). Revision 3.1 said "ONE NARROWING" and wrote §1.6.4's
+   standing rule from that one case — and then did not run the rule
+   across its own delivery. Four more were one probe each.
+3. **The constraint vocabulary is EIGHT kinds, not five** (§2.25.3),
+   and the completeness claim is withdrawn. `cross-scope` was
+   DEFERRED in §2.25.4 with a trigger that a production one section
+   earlier already met.
+4. **The `pattern`/`pattern-esc` both-in-one-block refusal is DROPPED**
+   (§2.19) — empty population, because both spellings are block
+   openers and a second opener starts a new block.
+5. **§2.22 gained its length discipline, its real precedent and its
+   callability bound** (C-M3), and the loss it creates went to Frank as
+   W23-F4 rather than being absorbed here.
+
+## MEASURED for this revision (every number re-derived, none inherited)
+
+All read-only, `build/pcrec` built in this worktree at the merge base
+(`make -j4 CC=gcc-16`, green), fixtures in the session scratchpad,
+nothing committed outside `docs/`.
+
+| what | result |
+|---|---|
+| corpus census | **210 files / 3,936 blocks / 28,943 expectation lines** — the floor this change re-pins |
+| non-blank non-comment lines (the number §1.2.3 actually needs) | **35,961** — revision 3.1 wrote 28,943 there, which is a partition a generic reader cannot compute |
+| `prose_hash` | rc 0; the indented `#` is PROSE in the decoded value |
+| `prose_ragged` | rc 0; relative indentation preserved |
+| `prose_dedent` | rc 0 and **CONTENT SILENTLY LOST** — `  dedented-line-two` under a 4-space block decodes as `dented-line-two`. Filed **K57** |
+| `config_tab_body` | rc 0, `flags=i engine=vm` — tabs are indentation today |
+| `config_mixed_indent` (2 spaces then a TAB) | rc 0, parsed FLAT — the file that has no defined tree under any depth rule |
+| ragged `config` body (2 then 4 spaces) | rc 0, `--list-source` row byte-identical to the evenly-indented control (F6 reproduces exactly) |
+| two adjacent `pattern` lines | **two `pattern` rows, rc 0** — S-BL2's empty population |
+| `(?&x_y)` with `x-y` beside `x_y` | compiles; artifact **byte-identical** to the same file without the sibling |
+| collision population, both repos | **1** (the deliberate fixture `target_prefix_collision.rxtin`, `a-b`/`a.b`) over 96 `name` lines in 26 files; C-M1's own `x_y`-beside-`x-y` shape: **0**. pcrec-bench holds **0** `.rxt`/`.rxtin` files |
+| tab-indented content lines, both repos | **0** |
+| fixture head bodies | **20 across 13 of 45 files**, every indented CONTENT line width 2 |
+| `run.sh` dispatch arms | **22** (24 `^`-anchored `=~` hits minus two pre-loop skips), 17 inside the pinned region + 5 after |
+| `capable` in the bench's §3 checklist | **0** — revision 3.1's correction-list row cited an empty population |
+
+## Three things I pushed back on, with the evidence
+
+**(1) G-B2's N1 and N2 are NOT narrowings to be taken — they are
+narrowings AVOIDED, and taking them would be a second, worse
+decision.** The review's disposition reads "Each gets the full §1.6.4
+declared-narrowing package". Applied literally that would have declared
+"an indented `#` inside a block scalar is now refused" and "ragged
+prose is now refused" as deliberate tightenings. But G-B1's own fix —
+declaring S3 — dissolves both, and the panel's convergence note says so
+("One fix … discharges all"). So §1.6.1a lists all five candidates and
+marks (2) and (3) AVOIDED with the mechanism that avoids them, which I
+believe is what the convergence intends and is strictly more
+information than either alternative. **The reason for recording the
+avoidance rather than dropping the rows**: a later wave that removes or
+narrows S3 would re-create both narrowings silently, and the census is
+where it would have to look.
+
+Two things make me confident rather than merely willing here. First,
+N1's case is not a judgement call: `rxt_source.c:735-747` records the
+grammar decision as **deliberately OPEN** ("named rather than fixed …
+the grammar decision is left open"), so revision 3.1 closed an open
+question by side effect in the refusing direction. Reversing that
+silently in the other direction would repeat the mistake with the sign
+flipped, which is why SW16 now carries both halves — prose inside a
+region, refusal outside one — as spec text. Second, ragged prose is the
+one population where ragged indentation is not an error: a paragraph
+with an indented example in it.
+
+**(2) K57 is FILED, not deferred to the manager, and it is filed as a
+bug rather than as a narrowing.** The brief allowed either. I filed it
+(`docs/dev/known_issues.md` K57, the sole non-design file this lane
+touched) because the corruption is wrong under revision 3's rules,
+3.1's and 3.2's alike — no design decision fixes it by arriving — and
+because a silent wrong VALUE with exit 0 is the class this project
+treats as worst. The entry carries the three-line repro, the mechanism
+(`skip = len < indent ? len : indent` is a BYTE count applied without
+checking the bytes are whitespace), both candidate fixes with their
+trade-off, and the measured population (0, in both repos). §1.6.1a
+records it as explicitly NOT a narrowing, so the census stays a census.
+
+**(3) The `wave` column is KEPT, against S-S2's lean.** The finding is
+right that its only named consumer has an empty population at the
+delivered pin. It is kept because the consumer is real during the
+ROLLOUT: W23 is one wave but five merges (H12-H16), and every
+intermediate tree is a partial build where SW13's refuse-by-name list
+must be honest — which is the gap §0.6 measured, not a hypothetical.
+§2.25.2 states the decision AND its expiry condition, so a later reader
+can drop the column without re-deriving the argument.
+
+## The methodology note worth keeping
+
+Reproducing C-M1's byte-identity claim first reported a DIFFERENCE, and
+the difference was the `#include` line: emitting two sources to `a.c`
+and `b.c` makes every artifact differ on the header it includes. That
+is `opt4_impl/CLAUDE.md`'s own recorded trap and this is its **third**
+recorded instance in this house. The comparison that works is equal
+output basenames in separate directories. Recorded here because the
+first reading would have refuted a true finding.
+
+## What this revision does NOT change
+
+No ruling is reopened. No need N-nn changes its disposition. §1.4's
+wave table is untouched, W23 still carries no abi event, and §2.26's
+audit still changed no semantics — the correction to its COUNT (three
+moves, not four) is a framing fix, not a re-decision. The `description`
+widening stays; only its attribution moves, from the ownership audit to
+§1.2.5's consequence of the structure-layer re-factoring.
+
+## Frank queue after this round (§7.3)
+
+- **W23-F1** `configs describe` (D93) — unchanged, ready-to-ratify.
+- **W23-F2** `provides` in-format — unchanged in substance; the rename
+  from `capable` does not touch the question.
+- **W23-F4 (NEW)** — the derived-identifier repair removes the ability
+  to declare a deliberately NON-CALLABLE definition, a boundary
+  `src/parse/rxt_source.c:288-291` records as a FEATURE. Written
+  ready-to-ratify beside F1/F2: what is lost, the four reasons ACCEPT is
+  recommended (the replacement is better than the thing lost; `export`
+  already governs delivery; no current customer; reversible at a known
+  price), and what ACCEPT costs stated so the ratification is informed.
+- **W23-F3** stays RESOLVED, not a question.
+
+## Validation
+
+Design-only plus one `known_issues.md` entry. `git diff --stat
+main...HEAD` touches `docs/design/dd13_format/`, `docs/dev/lanes/` and
+`docs/dev/known_issues.md` only — nothing under `src/`, `tests/` or
+`docs/spec/`. `build/pcrec` was built in this worktree
+(`make -j4 CC=gcc-16`, rc 0) for the read-only probes above and is
+gitignored; no suite was run and none is owed, since no buildable
+surface moved. Every probe fixture lived in the session scratchpad.
+
+## For the panel, if there is another round
+
+§5.2a is re-aimed in the note itself and now has five items. The one
+worth starting from is item 1's re-aim: revision 3.1's narrowing sweep
+was pointed at the HEAD, and the fifth narrowing was in the composer's
+name lookup with no head line involved. **Walk every §2 rule that says
+"refused" and ask what it accepted yesterday** — that direction has had
+one pass and found one.
