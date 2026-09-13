@@ -2673,6 +2673,19 @@ variant tre
   keyword) — a one-off proto-sub-block the general mechanism replaces,
   which is the house rule (general mechanisms, not special cases)
   applied to this note's own earlier choice.
+- **`text` and not `pattern` — REVISION 3.1 REPLACES THE REASON, and
+  keeps the spelling** (§2.26 item 9). Revision 3 justified it as a
+  PARSER HAZARD: an indented `pattern` line might start a block in one
+  reader and continue a sub-block in another. **Under §1.2.1 that
+  hazard is structurally impossible** — a block opener applies among
+  SIBLINGS and a child is not a sibling, so an indented `pattern` can
+  never open a block in any conforming reader, whatever the attribute
+  is called. The surviving reason is a reader's, not a parser's: this
+  field holds a REPLACEMENT for the block's pattern, and calling it
+  `pattern` would put the format's most load-bearing token at a second
+  scope meaning something adjacent-but-different. An expired argument
+  is worse than no argument, so it is replaced here rather than left
+  standing.
 - Everything r44/T-2 established stands: block-scoped, beside the
   pattern, checked against the block's own expectations (as selected by
   the testee's convention, §2.17), no `name`, not a target, not
@@ -2736,7 +2749,7 @@ head-bearing files only, so `make test` pays nothing today.
 **The VALIDATES vs RECOGNISES table** (their D4, pre-ruled) becomes a
 NORMATIVE spec section (§3.4 SW11), production by production. The
 substance: the dump VALIDATES everything it emits — head grammar,
-block directives, sub-block completeness (provenance's required
+block directives, child-record completeness (provenance's required
 fields, variant's exactly-one rule), vocabulary membership, case-line
 syntax including `as`/`sha256` SPELLINGS and the subject-id binding
 rules — and it does NOT (a) read any subject file (the `sha256`
@@ -2746,6 +2759,172 @@ resolve configs (AS WRITTEN, unchanged; `--resolved` stays named and
 unbuilt). The bench's measured observation that a case line's refused
 `@file:` passed the dump silently is thereby retired — case values are
 read, and an ill-formed one is a hard error naming its line.
+
+**REVISION 3.1 UPGRADES THAT TABLE FROM PROSE TO A DERIVED FACT**
+(Frank's consequence 3: *"with a schema, validation coverage is a
+derivable fact instead of a prose sentence"*). The paragraph above is
+a claim a reader has to trust and a future wave has to remember to
+update; both are the failure mode this project has recorded under
+`[DOC-DRV]` one document over. So:
+
+- **Every schema row carries a `validated_by` column** (§2.25) with a
+  closed value set: `pcrec` (leg A validates it; legs B and C consume
+  the line and do not check it) or `all-readers` (every leg must
+  refuse a violation — the population C1's differential can actually
+  compare).
+- **The spec's D4 table is RENDERED from that column**, not written
+  beside it, exactly as `docs/pcre2_compliance.md`'s keyed annotations
+  are rendered into the page rather than maintained in it. A
+  production added without a `validated_by` value is a schema-table
+  error, so the table cannot go stale by omission — the one way prose
+  tables always go stale.
+- **`--list-schema` prints it**, so "does the dump check X?" is a
+  query rather than a reading. The three NOT-validated items above
+  (subject content, pattern text, config resolution) are rows with
+  `validated_by: none` and a `reason` string, which is why they stay
+  visible instead of becoming an absence nobody counts (K35).
+
+The prose above survives as the SUBSTANCE the rows must reproduce; if
+the rendered table and this paragraph ever disagree, the table is
+right and this paragraph is the bug.
+
+### 2.25 The SCHEMA — the format's rules as data (Frank's consequence 3)
+
+*"The format's structural rules — which line kinds are legal in which
+scope, required and conditional lines (provenance's REQUIRED-iff),
+closed value sets — are DECLARED as a schema and VALIDATED, not
+implicit in parser control flow."*
+
+#### 2.25.1 What it is, and the house shape it takes
+
+**One table, one reader, one dump** — `docs/spec/limits.md` /
+`--list-limits`'s own shape (D90/[LIM-1]), which is the precedent this
+design copies rather than a new idea:
+
+- **The table**: a `.def`-style declaration file compiled into the
+  parser (`src/parse/rxt_schema.def`, on `src/core/limits.def`'s model
+  — including its Makefile-prerequisite lesson, `ccd2_report.md` §6b:
+  a `.def` that is not a prerequisite lets an edit rebuild nothing).
+- **The reader/enforcer**: `src/parse/rxt_source.c`'s dispatch becomes
+  a walk over the table rather than a chain of arms that each remember
+  their own rules. Its shape is `src/parse/definitions.c`'s
+  `pcrec_def_tag_applies`: ONE exhaustive, `default:`-less switch over
+  the constraint enum, so a constraint kind added later is a compile
+  error at the one site that must handle it (`src/opt/mrl.c:18-24`'s
+  stated rule, the house's own).
+- **The surface**: `pcrec --list-schema`, a TSV, the SIXTH registry
+  dump beside `--list-syntax` / `--list-verbs` / `--list-families` /
+  `--list-axes` / `--list-limits` / `--list-definitions`. It walks the
+  same table the parser enforces — **one derivation, two readers**
+  (learnings §3) — so a dump that disagrees with the parser is not
+  expressible.
+
+#### 2.25.2 The columns
+
+One row per (scope, line-kind):
+
+| column | what it says |
+|---|---|
+| `scope` | `file`, `block`, or a named child scope (`config`, `data`, `provenance`, `variant`) |
+| `kind` | the first token |
+| `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `qualified-line`, … |
+| `opens_group` | **the structure layer's one parameter** (§1.2.1 S2). True for `pattern` and `pattern-esc` and nothing else |
+| `children` | `none`, or the child scope this kind admits |
+| `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` |
+| `constraints` | zero or more from §2.25.3's closed vocabulary |
+| `source` | `format` (pcrec declares it) or `file` (a `vocabulary` line declares it, §2.15) |
+| `validated_by` | `pcrec`, `all-readers`, or `none` + a reason (§2.24) |
+| `wave` | which delivery introduced it — so a partial build's "NOT IN THIS BUILD" list (SW13) is derived rather than hand-kept |
+
+`opens_group`, `children` and `scope` are what a generic reader needs;
+everything else is validity. That the first three are three columns of
+one table rather than three mechanisms is the two-layer split made
+concrete.
+
+#### 2.25.3 The constraint vocabulary, and its MEMBERSHIP RULE
+
+Five kinds, and — copying §2.10's own discipline for the data-block
+family, because the hazard is identical — **a constraint kind is
+admitted only when a production in this delivery needs it.** No kind is
+added on plausibility; each row below names its customer.
+
+| constraint | means | its W23 customer |
+|---|---|---|
+| `required` | the line must appear in its scope | `provenance`'s `source`/`retrieved` (+ `license`/`fidelity` under a pattern block); the data block's `question`/`reader`/`analyzer` |
+| `required-if <field> <op> <value>` | required when a sibling holds a value | `adaptation` REQUIRED iff `fidelity != verbatim` (§2.14 rule 3) — the conditional Frank's ruling names by example |
+| `exactly-one-of <a>|<b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23); `pattern` vs `pattern-esc` in one block (§2.19) |
+| `closed <set>` | the value must be a member | `fidelity`'s three (`source: format`); `kind`, `convention`, `provides`, any `vocabulary`-declared key (`source: file`) |
+| `unique-by <key…>` | at most one row per key tuple | `under` per (convention, subject, kind, startpos) (§2.17); a subject `as` id's functional binding (§2.18); a `vocabulary` key; a `configs` line |
+
+**Cardinality is a column and not a constraint** because every row has
+one; the constraints are the things most rows do not have. And the
+duplicate-refusal discipline §8's P-Q9 states production by production
+becomes ONE row kind here rather than six hand-written refusals —
+which is the clearest measure of what the schema buys: revision 3
+listed six places that refuse a duplicate, and each of them was a
+sentence somebody had to remember to write.
+
+#### 2.25.4 What is DEFERRED, with its trigger (D77)
+
+The schema ships at exactly the size W23's own productions enforce.
+Named, so the boundary is a decision rather than an omission:
+
+| deferred | trigger to build it |
+|---|---|
+| **A file-declared SCHEMA** (a file adding line kinds, not just values) | a second project wanting its own productions. `vocabulary` is the file-declared half that exists, and it declares VALUES only — the asymmetry is deliberate: values are data, line kinds are a grammar, and a format whose grammar varies per file is not one format |
+| **Constraint kinds beyond the five** (ordering, cross-scope, arithmetic) | the sixth W-something production that needs one. Adding a kind is one enum value plus one arm of an exhaustive switch, so waiting costs nothing |
+| **Generating legs B and C's arms from the table** | the C1 differential finding a leg-B/leg-C divergence the schema would have prevented. The table is pcrec's; legs B and C are independent implementations ON PURPOSE (§1.1's three-checks rule — a generated leg B would share a source with what it controls, which is the check-design failure this project has recorded most often). The schema makes them *comparable*, and must not make them *the same* |
+| **A machine-readable schema export for the bench's loader** | their asking. `--list-schema` is a TSV today; whether they consume it is theirs (D78) |
+
+#### 2.25.5 The honest limit
+
+**The schema is pcrec's, and pcrec is one of three readers.** It makes
+leg A's rules data; it does not make legs B and C's rules data, and
+the previous subsection says why that is deliberate rather than
+unfinished. What the schema adds to the three-reader problem is
+precisely one thing, and it is the thing that was missing: **a written,
+printable statement of what the three are supposed to agree about**, so
+C1's differential compares them against a specification instead of
+against each other. Revision 3's "the indentation test precedes
+dispatch in all three body readers" was exactly a rule with no such
+home, and it was false in two of the three (§0.7). That is the defect
+class this section exists to retire, and it is worth more than the
+refusals it tidies.
+
+### 2.26 The OWNERSHIP AUDIT — every W23 spelling, under long-term viability
+
+Frank's second 2026-09-12 ruling: *"these are capabilities that bench
+requires but syntax is yours and you're responsible for the long term
+life of the format. therefore, find the structure that is
+self-consistent, clear, and long term viable."* That makes long-term
+viability the criterion ABOVE bench convenience and above
+minimal-diff-from-today, and it makes this the cheapest moment a
+spelling will ever change. So every production revision 3 added is
+swept once: **confirmed with the one line of why it is the long-term
+right spelling, or moved now.**
+
+| # | production | verdict |
+|---|---|---|
+| 1 | `pattern-esc` | **CONFIRMED.** It is one of the block-opener set's two members (§1.2.1 S2), so its name is structure-layer vocabulary and must read as a sibling of `pattern`; the hyphenated compound does that where a flag on `pattern` (`pattern -e …`) would put a value shape inside the one production the format promises is rest-of-line verbatim. Hyphenated keywords are already the house spelling (`frames-buffer=`, `license-note`) |
+| 2 | `provenance` | **CONFIRMED.** The domain word, and it now names ONE record at two parents (item 10), which is what a general name has to earn |
+| 3 | `vocabulary` | **CONFIRMED AS A SPELLING, NESTED AS A CONCEPT** (§2.15). It is the FILE-declared rows of §2.25's schema, not a mechanism beside it; a second file-declarable schema fact joins it as a sibling declaration under that heading rather than as an unrelated head keyword, and `--list-schema`'s `source` column is where the nesting is visible. Renaming it to `values` was considered and declined: the bench's note, the acceptance checks and Frank's own ruling all use this word |
+| 4 | `capable` → **`provides`** | **MOVED** (§2.16). The pattern side of the relation is `tag requires=…`; `requires`/`provides` is one relation read from its two ends, and is the pairing every neighbouring ecosystem uses. `requires`/`capable` pairs a verb with an adjective and leaves the reader to infer they are halves of one thing. Free: 0 occurrences in any context. W23-F2's question to Frank is unaffected — it asks WHERE the capability model lives, not what the line is called |
+| 5 | `under <conv> <case-line>` | **CONFIRMED, and given a schema home.** The qualifier is a PREFIX so the case line after it is byte-identical to an unqualified one — which is what makes "the qualifier wraps a case line UNCHANGED" a checkable property rather than a hope, and a suffix form would not. Its one oddity — a line kind whose value CONTAINS another line kind — is now expressible as schema data (`value: qualified-line` over a closed kind set, §2.25.2) rather than as a parser special case |
+| 6 | `configs build`/`describe` | **CONFIRMED.** It names the thing it governs (the file's `config` blocks) and takes a closed mode value, so a third mode is a `closed` set member and not a new keyword. `config-mode` was considered and declined as longer for no disambiguation |
+| 7 | `as <id>` / `sha256 <hex64>` | **CONFIRMED, and the reason is worth stating because "why not `hash`?" is the obvious question.** Naming the ALGORITHM in the keyword means a second algorithm arrives as a sibling (`sha512 <hex>`) rather than as a re-interpretation of an existing field's value — the failure mode every `hash:`-style field eventually has. `as` is the import-idiomatic binder |
+| 8 | `tag-prose` (`key="…"`) | **CONFIRMED, and it is now one of a NAMED PAIR.** The quoted form is discriminated by the first byte after `=`, exactly as `\|` discriminates a prose value's two forms. §1.2.4 names both as **value-form discriminators** — schema-declared, per line kind, never structural — which turns two ad-hoc conventions into one stated concept |
+| 9 | `variant`'s `text` | **CONFIRMED, REASON REPLACED** (§2.23). Revision 3's justification was a parser hazard §1.2.1 makes structurally impossible. The surviving reason is a reader's: the field holds a replacement FOR the block's pattern, and reusing the format's most load-bearing token at a second scope for something adjacent-but-different is how a vocabulary stops being learnable |
+| 10 | `provenance`'s fields, and the `freq` block's | **MOVED — the audit's biggest finding.** Revision 3 shipped **two provenance vocabularies for one idea**: `exemplar`/`date`/`bytes`/`sha256`/`analyzer` on a data block, `source`/`url`/`ref`/`licence`/`retrieved`/`fidelity`/… on a pattern block, with `exemplar`≡`source` and `date`≡`retrieved` naming the same facts twice. Unified into ONE record used at two parents, its REQUIRED subset declared per parent by the schema (§2.10, §2.14). `analyzer` deliberately stays on the data block — it names the TOOL, not the origin. And `licence`/`licence-note` → **`license`/`license-note`**, because the value is an SPDX identifier and SPDX's own key is `License`. All free: 0 uses in either repo |
+| 11 | `mc` | **CONFIRMED.** Two letters, joining the `ms`/`ns` terse case-line family; a case line's kinds are the format's highest-frequency tokens and the family's brevity is deliberate |
+| 12 | `oracle <engine>[/<version>]` | **CONFIRMED.** `/` separates a name from a version everywhere a reader has met the idea, and it appears nowhere else in the token grammar, so it cannot be mistaken for anything |
+| 13 | inherited W2/W3 spellings (`include`, `use`, `tag`, `@file:`, `config … testee`/`option`, `freq`, `analysis`) | **CONFIRMED as a group.** Each was ruled or accepted before [B42] and none was moved by this revision's productions; the ownership ruling makes them mine to change, and sweeping them found no case where a name misleads. `@file:`'s sigil is the one worth naming: it marks a VALUE as a reference rather than literal bytes, which is a value-form discriminator in the §1.2.4 sense and therefore already has a home in the vocabulary this revision built |
+
+**What the audit did NOT change, deliberately.** Nothing in the
+SEMANTICS moved: every need's disposition, every refusal rule, every
+P-Q answer and the whole wave table are revision 3's. An ownership
+ruling about syntax is not a licence to reopen settled meaning, and a
+sweep that re-decided semantics would be the lane spending Frank's
+ruling on something it did not buy.
 
 ---
 
