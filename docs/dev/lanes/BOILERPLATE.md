@@ -75,6 +75,13 @@ of your branch point before claiming a red as yours or pre-existing.
   END. Do not idle waiting for review. If a follow-up round is plausible,
   the summary in your report is what a fresh agent resumes from — write it
   so that works.
+  **THE HANDBACK IS A SendMessage TOOL CALL (to "main"), MADE BEFORE YOUR
+  FINAL TURN ENDS.** Your final plain-text output is NOT visible to the
+  manager — a lane that "reports" in its closing prose and goes idle has
+  DELIVERED NOTHING and costs a round-trip ping every time (five lanes in
+  one night, 2026-09-12/13). The same applies mid-flight: if you are
+  waiting on a background run, SendMessage the interim state rather than
+  sitting silent — a quiet lane is indistinguishable from a dead one.
 - A handback message names its validation COMPLETE or says what is owed —
   never leave the manager to infer which.
 
