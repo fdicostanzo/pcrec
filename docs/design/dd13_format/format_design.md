@@ -309,8 +309,11 @@ Where each consequence of the internal-consistency ruling landed:
 | **1. Internal consistency over accretion** | §1.2 rewritten as two layers. The head/body indentation ASYMMETRY is not narrowed — it is **DELETED**: one attachment rule serves head continuation, `config` bodies, block scalars and body sub-blocks alike, and "which scope a keyword is legal in" becomes a schema fact with no structural consequence. §2.26's audit is the same criterion applied to spellings |
 | **2. A breaking `version` header is on the table** | §1.6: **the break is DECLINED and the keyword is RESERVED.** The consistent grammar is achievable additively (every rule change moves a hard error between arms; the one deliberate widening only accepts more), so "if needed" is answered NO — with the future change that WOULD trigger it named and priced (§1.2.3) |
 | **3. Schema rules validation** | §2.25: the format's structural rules become a DECLARED TABLE with five constraint kinds, the parser its reader/enforcer, and `--list-schema` its listable surface on `--list-limits`/`--list-axes`'s one-derivation precedent. §2.15's `vocabulary` is nested as the FILE-declared half (one table, a `source` column). §2.24's VALIDATES-vs-RECOGNISES statement is upgraded from prose to a column the surface prints |
-| **4. Sub-blocks get explicit syntax** | §1.2.4: the visible-marker alternative is designed and priced against bare indentation, and **bare indentation wins** — because the cure for "indentation whose meaning depends on which keyword opened the line" is the unified rule, not a second signal, and a marker would make structure depend on two signals that can disagree. The `|` block scalar is explained as what it is: a VALUE-form discriminator, not a structure marker |
+| **4. Sub-blocks get explicit syntax** | §1.2.4: the visible-marker alternative is designed and priced against bare indentation, and **bare indentation wins** — because the cure for "indentation whose meaning depends on which keyword opened the line" is the unified rule, not a second signal, and a marker would make structure depend on two signals that can disagree. The `\|` block scalar is explained as what it is: a VALUE-form discriminator, not a structure marker |
 | **5. Structurally parseable without context** | §1.2.1 states the structure layer with its ONE declared parameter (the two-member block-opener set) and §1.2.3 states, without softening, the one place today's shipped grammar fails the property and what fixing it would cost |
+
+**Where to attack revision 3.1 is §5.2a**, written before the panel
+rather than after, and pointed at from here so it is not missed.
 
 Where the ownership ruling landed: §2.26, the audit. Four spellings
 moved — `capable` → **`provides`**, `licence`/`licence-note` →
@@ -2864,7 +2867,7 @@ added on plausibility; each row below names its customer.
 |---|---|---|
 | `required` | the line must appear in its scope | `provenance`'s `source`/`retrieved` (+ `license`/`fidelity` under a pattern block); the data block's `question`/`reader`/`analyzer` |
 | `required-if <field> <op> <value>` | required when a sibling holds a value | `adaptation` REQUIRED iff `fidelity != verbatim` (§2.14 rule 3) — the conditional Frank's ruling names by example |
-| `exactly-one-of <a>|<b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23); `pattern` vs `pattern-esc` in one block (§2.19) |
+| `exactly-one-of <a> <b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23); `pattern` vs `pattern-esc` in one block (§2.19) |
 | `closed <set>` | the value must be a member | `fidelity`'s three (`source: format`); `kind`, `convention`, `provides`, any `vocabulary`-declared key (`source: file`) |
 | `unique-by <key…>` | at most one row per key tuple | `under` per (convention, subject, kind, startpos) (§2.17); a subject `as` id's functional binding (§2.18); a `vocabulary` key; a `configs` line |
 
