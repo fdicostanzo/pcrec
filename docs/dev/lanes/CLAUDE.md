@@ -575,3 +575,25 @@ never edited afterwards.
   run, launched last per BOILERPLATE's DO-THEN-FINISH and left OWED with
   its log path — corroborating evidence only, since §3's arithmetic does
   not depend on it.
+
+- `m5close_report.md` — [M5.0] CLOSE-OUT RITUAL (2026-09-12, lane
+  m5close, docs-only, nothing under `src/`/`tests/`). Runs the
+  `compliance-refresh` skill over the whole milestone's changes: finds
+  components 1 (generated construct index) and 3 (keyed annotations)
+  ALREADY MATCHED the tree — the last compliance touch (`9bbdc0f9`, part
+  of utf8s5's own lane work) already covered stage 5's script row, and
+  neither K53-SELRETRY's fix nor [ORACLE-LINK]'s dlopen retirement moves
+  anything `--list-syntax` reports (K53 is an engine/resource issue, not
+  a grammar-recognition one). Component 2 (hand-written survey prose) WAS
+  stale — the unicode-properties section still described K53 as an
+  unresolved, permanent five-of-45-names size blocker, unaware of the
+  2026-09-10 fix — corrected in place with the fix's mechanism and the
+  corpus-population finding (the fix's real customer was pcrec-bench's
+  `altwide` witnesses, not `\p`). `make test-registry` GREEN (PC-3 209/0,
+  PC-4 62,872 cells/0 disagreements, definitions-oracle 354 cells/0
+  disagreements) after a first foreground attempt timed out from box
+  contention with lane rxtnul's concurrent `make test` — re-run
+  backgrounded and polled via Monitor rather than blocking. Also moves
+  `[M5.0]` to `plan_completed.md` verbatim (STATE flip + one appended
+  completion stamp, no row content edited) and appends the
+  milestone-close journal entry citing every stage's merge commit.
