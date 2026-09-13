@@ -492,6 +492,21 @@ but because the emitted DFA is `states x byte-equivalence-CLASSES`, and a
 multi-byte encoding makes the second factor ~100 where an ASCII pattern's is a
 handful.
 
+**K53 is FIXED (2026-09-10, [K53-SELRETRY], lane utf8k53).** On an emitted-size
+cap refusal with the optional anchored DFA machine present, `compile_driver`
+drops that machine and re-emits (the size-cap retry rung, stamped
+`RX_ENGINE_SEL "size-cap-retry"`); no `abi` bump, since `ESEL_SIZE_CAP_RETRY`
+already named this outcome. All 14 previously-blocked `\p`/`\P` spellings now
+compile at default axes under `-e utf8` — `\p{L}` 772,418 raw bytes where it
+refused at 1,076,638 — with zero change to byte-encoding identity elsewhere
+(3,348/3,348 corpus artifacts unaffected). The corpus population the fix
+actually reaches was NOT the `\p` family (the codegen census compiles corpus
+`pattern` lines with no encoding, so the general-category/script rows are
+`byte`-clamped and tiny there); it was eight of pcrec-bench's own wide
+literal-alternation `altwide` witnesses. The sixteen `known_fail` blocks this
+parked are restored to their authored positions in `axis04_p_categories.rxt`
+and `axis12_scripts.rxt`.
+
 The remaining `REJECTED` rows are deliberate, not blocked: the binary-property
 and `Bidi_Class` families are declined by design (`utf8_design.md` §3.4, no
 measured demand),
