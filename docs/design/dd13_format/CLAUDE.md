@@ -655,6 +655,67 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   a delivering call under an atomic group or possessive quantifier leaves
   the delivered value live after the cut — the same rule ordinary captures
   under a cut already follow.
+- `w23_impl.md` — **[DD-13b.W23] IMPLEMENTATION note, REVISION 1 — WRITTEN,
+  NOT PANELLED. NO CODE IS WRITTEN** (2026-09-13, lane w23impl, opus;
+  docs-only). The build plan that opens the W23 implementation against
+  `format_design.md` **3.4.1**, in `w1_impl.md`'s shape (its §7/§8 step
+  briefs are §6 here). **Five merges in dependency order**: W23.1 the
+  SCHEMA table + `--list-schema` + leg A's dispatch as a table walk;
+  W23.2 the ATTACHMENT arm and the diagnostic CLASS tag in legs B and C;
+  W23.3 the productions (`pattern-esc`, `provenance`, `vocabulary`,
+  `tag`, `oracle`, `variant`, `include`, `@file:`+`as`/`sha256`, `under`,
+  `mc`, the `freq` data block, `use`, **`ext`**, and §2.22's
+  derived-identifier repair with its two comment sites); W23.4
+  `--list-source`'s four `#section` blocks; W23.5 the population check,
+  the remaining spec hunks and the bench acceptance dry run. §4 is
+  SW1-SW19 distributed per step (D80 is a per-change rule, so a table of
+  hunks deferred to the end is the rule's violation with extra steps);
+  §5 maps the bench's 41-check acceptance bar onto the staging; §3.5
+  numbers the six sabotage rows **S239-S245** (highest on main measured
+  at S238).
+  **Read §1.5 first. The FORMAT-READER SURVEY was RUN for this note and
+  found the `NF != 15` defect ALIVE, in this repo, before landing**:
+  `tests/rxtsource/run_rxtsource_tests.sh:479-494` asserts that EVERY
+  non-comment row of `--list-source` has exactly `ncols+1` fields,
+  unconditionally of kind — which four `#section` blocks violate on every
+  row of every section. The check is not wrong about today's stream; it is
+  unaware the stream can have more than one shape. W23.4's step brief
+  repairs it BEFORE emitting any section, rather than delivering a red
+  check that is right to fire. The same survey found the other three
+  dump readers (`run.sh:1651`, `:1671`, `run_rxtsource_tests.sh:499`)
+  safe **by luck** — every section's first column is `line`, an integer,
+  which can never equal a main-table `kind` token — so the note makes that
+  invariant an assertion (check W23-S4) and states the ordering rule it
+  rests on (sections FOLLOW the main table, never interleaved), both free
+  today and impossible to recover once a consumer has seen otherwise.
+  **Four mandated fold-ins, each cited to the ruled record**: §1.8
+  schedules the **legs B/C PARITY FIX** for STEP 0's two refusals into
+  W23.2 — `rxtnul_report.md:140-155` measured both legs still silently
+  lossy (bash's `read` DROPS a NUL, leg C's decoder REPLACES it with a
+  space, and both resolve a duplicate `description` last-wins), so the
+  three fixtures move from `check_refusal` to `check_refusal_all3` and
+  the scope note is deleted in the same commit; §3.2 is the A3/A4 fixture
+  table with the r57 grammar-lens probe cells marked as such; §4 is the
+  SW delta; and §3.2's last row is **`aux_subtree_extent.rxtin`**, the
+  open-subtree EXTENT fixture `w23fix3_report.md` §5 named as owed and
+  §5.2a item 5 lists among the known-weak points — it is §5.2a item 9's
+  sharpest attack ("construct a file where the open subtree's extent
+  under S1 differs from what `--list-source` reports") run by the
+  delivery on itself.
+  §1.9 CONFIRMS the standing no-abi constraint from the file-by-file plan
+  rather than assuming it (no file under `src/gen/`, `src/ir/`, `src/opt/`
+  or `lib/pcrec.h` is opened; `cli/main.c` emits no scaffolding and
+  `tests/harness/driver.c` links against a matcher rather than being part
+  of one) and instructs any step that believes otherwise to STOP and
+  escalate. §3.4 turns §2.27.3's fifth clause into an INSTRUMENT — edit an
+  aux body, and every pcrec output except `#section aux`'s rows must be
+  byte-identical — and §3.5 says honestly why that check gets no sabotage
+  row: its violation is a patch somebody writes on purpose, not a
+  corruption of shipped code. §7.2 collects six DECIDED points; §7.3 four
+  questions the documents could not settle (headed by whether the
+  diagnostic class is user-visible, and whether K57 is fixed in this
+  delivery — recommended NOT, so two reds do not share a step). §8 is the
+  seven-line checklist every step's brief carries.
 - `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
 - `bench_rxt_needs_v1.md` — **[RECEIVED INPUT, 2026-09-12]**: verbatim
   copy of pcrec-bench's `rxt_needs_v1.md` (their [B42] capability-survey
