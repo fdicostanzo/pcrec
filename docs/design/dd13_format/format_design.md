@@ -1,15 +1,37 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 3.2 ([DD-13b.W23] STEP 1.2, 2026-09-12, lane w23fix)
-— the r57 FIX ROUND.** Three read-only critics attacked revisions 3 and
-3.1 (`docs/dev/reviews/2026-09-12-r57-w23-format.md`: 3 blockers, 14
-must-fixes, 12 shoulds, 4 nits, all dispositioned FIX-NOW). **§0.8 is
-the finding-by-finding record and is where a reader of revision 3.1
-starts.** The five structural outcomes: the BLOCK SCALAR is declared as
+**Status: REVISION 3.3 ([DD-13b.W23] STEP 1.3, 2026-09-12, lane
+w23fix2) — the r57 ROUND-2 FIX ROUND, and the last one before merge.**
+The round-2 critic verified 3.2's three blocker fixes: two HOLD
+OUTRIGHT and the third (S3 OPAQUE REGIONS) held in DIRECTION and failed
+end to end on its own axis, which is what 3.3 closes. **Four rules of
+the structure layer moved and all four are in §1.2.1**: S3's trigger is
+PARAMETERIZED on the prose-region-opening kinds and takes the TRIMMED
+value (so `pattern |`, a legal pattern, stays one); the COMMENT line's
+structural effect is stated in S1 and S3 — it terminates, as a blank
+line does — which repairs two reject→accept widenings §1.6.1's claim 2
+had denied; S0's BLANK narrows to the EMPTY line and a WHITESPACE-ONLY
+line is declared INERT, dissolving two narrowings and saving the
+format's only paragraph break; and the structure layer's second
+parameter is stated ONCE as the `value`/`children` PAIR. Alongside
+them: the NARROWING CENSUS is re-scoped to the FORMAT and runs to
+eleven candidates, seven taken — two of them landed by STEP 0 and
+marked as such (§1.6.1a); the `cardinality` values for the settings
+kinds are DECIDED after measuring each population, which is what caught
+`budget` (§2.25.2); and the 28,943 floor gains the definition that
+makes it re-derivable (§1.1). **§0.8 is the finding-by-finding record
+for both rounds and is where a reader of revision 3.1 starts.**
+
+**Revision 3.2** ([DD-13b.W23] STEP 1.2, same day, lane w23fix) was the
+r57 FIX ROUND against three read-only critics
+(`docs/dev/reviews/2026-09-12-r57-w23-format.md`: 3 blockers, 14
+must-fixes, 12 shoulds, 4 nits, all dispositioned FIX-NOW). Its five
+structural outcomes: the BLOCK SCALAR is declared as
 the structure layer's third device (S3 OPAQUE REGIONS, §1.2.1) and the
 structure layer's schema parameters are stated as TWO rather than one;
 the NARROWING CENSUS is re-swept with §1.6.4's own rule and published as
-a CLOSED LIST of five (§1.6.1a); the constraint vocabulary grows from
+a CLOSED LIST (of five then; eleven at 3.3, §1.6.1a); the constraint
+vocabulary grows from
 five kinds to EIGHT because four W23 refusal rules did not fit the five
 (§2.25.3); the `pattern`/`pattern-esc` both-in-one-block refusal is
 DROPPED as an empty population (§2.19); and the derived-identifier
@@ -474,8 +496,8 @@ Where each finding landed:
 | **C-N10** | NIT | §2.24's column list marks the `pattern` column's `esc` dependency |
 | **C-N11** | NIT | The §2.26-four-moves framing corrected above; the outbox message inherits it |
 
-**What SURVIVED the panel** and is not re-argued below: F6's ragged-body
-method and result (reproduced byte-for-byte); the census at
+**What SURVIVED the first-round panel** and is not re-argued below:
+F6's ragged-body method and result (reproduced byte-for-byte); the census at
 210/3,936/28,943 including the 25.8% blank-preceded measurement and the
 inference from it; F1 in both legs; M8's refusal in both arms; the
 version decline and the `version` reservation; the provenance
@@ -487,6 +509,95 @@ marker-vs-indentation PRICING (as distinct from its count-1 wording);
 NEEDS COVERAGE exact at 36/9/5/3; the four renames orphaning nothing;
 the zero-reader-change claim at the GRAMMAR level; and roadblocks #1-#5
 closed as claimed.
+
+#### ROUND 2 — the focused re-check on revision 3.2 (revision 3.3)
+
+The input is the ROUND 2 section of the same review file: one read-only
+critic, two tasks — verify 3.2's three blocker fixes as landed, and run
+Addendum 2's own new attack (walk every §2 refusal rule and ask what it
+accepted yesterday). **VERDICT: S-BL1 and S-BL2 HOLD OUTRIGHT under
+attack; G-B1's S3 holds in DIRECTION and fails end to end on its own
+axis.** Four must-fixes, two shoulds, one nit, all FIX-NOW; no ruling
+reopened, no need re-dispositioned, §1.4's wave table untouched, and
+the Frank queue is UNCHANGED at W23-F1 / W23-F2 / W23-F4.
+
+**MEASURED FOR REVISION 3.3** (this worktree, `build/pcrec` at the
+lane's merge base, read-only; every probe re-run here rather than
+inherited from the critic's report):
+
+- **The COMMENT line terminates, at both sites, and both shapes are
+  REFUSED today.** `config c` / `··flags i` / `# column one` /
+  `··engine vm` — **rc 1, line 4**, *"indented line continues nothing
+  (the declaration above it takes no continuation)"*. `description |` /
+  `··line one` / `# column one` / `··line three` — **rc 1, line 4**,
+  the same message. The mechanism is the same in both: a column-1 `#`
+  is not `line_indented` (`rxt_source.c:109`), so it ends
+  `parse_config`'s body loop (`:727`) and `parse_prose`'s region loop
+  (`:511`) alike, and the indented line below reaches the file-level
+  loop with nothing to continue (`:992`). Under 3.2's silence both
+  become ACCEPTED — the second additionally as an opener with TWO
+  disjoint prose regions, which S3's single-extent rule cannot express.
+- **The WHITESPACE-ONLY line is a CONTINUATION in all four probed
+  positions, not a blank.** Inside a block scalar: **rc 0**, and it is
+  IN the value — `description |` / `··para one` / `···` / `··para two`
+  dumps `para one\n·\npara two` (the block indent of 2 stripped from a
+  3-space line leaves one space). Inside a `config` body: **rc 0**, and
+  the body CONTINUES past it (`flags=i engine=vm` both present). At
+  file start, and immediately after a blank line: **rc 0 in all three
+  legs** (A, `run.sh --dump`, `verify_rxt.py --dump`). The
+  TRULY-EMPTY line is the contrast that makes the class real: the same
+  block-scalar file with a zero-byte separator is **REFUSED at line 4**
+  — r46sem-10's ruling, working as ruled — so the indented
+  whitespace-only line is the format's ONLY paragraph break today.
+- **`pattern |` is a legal pattern**: rc 0, `--list-source` dumps the
+  pattern column as `|` (the alternation of two empties). It is R2-F1's
+  witness — 3.2's unparameterized S3 trigger would have opened an
+  opaque region on it and turned a working file into a refusal.
+- **The six settings kinds' shipped cardinality, one probe each.** A
+  second `name` (`n1`→`n2`), `engine`, `encoding` (`byte`→`utf8`),
+  `features` (`backrefs`→`classes`) or `flags` line: **ACCEPTED, last
+  wins, no diagnostic.** A second `budget` repeating a field
+  (`steps=50` then `steps=99`): **ACCEPTED, 99 wins.** A second
+  `budget` naming the OTHER field (`steps=50` then `frames=4096`):
+  **ACCEPTED, both kept** — two slots, not one. A second `export`:
+  **REFUSED by name** (`:1184`). One surface, two answers.
+- **The populations, both repos, before any narrowing was taken.** Over
+  258 `.rxt`/`.rxtin` files / 4,053 pattern blocks / 19 `config`
+  declarations: duplicate `name`/`engine`/`encoding`/`features`/
+  `flags`/`description`/`export` in one block or one config body —
+  **0 each**. Duplicate `budget` LINE in one block — **1**, and it is
+  `tests/harness/giveup.rxt:19-23`, two different FIELDS, deliberate
+  and depended on by `make test`. Duplicate `budget` FIELD — **0**.
+  `pcrec-bench` holds **0** `.rxt`/`.rxtin` files (re-confirmed
+  read-only). **The one non-zero number changed a decision**, which is
+  §1.6.4's new case 5.
+- **28,943 reproduces, and so does 28,488.** Re-running the census awk
+  (`run_rxtsource_tests.sh:281-285`) over `find tests -name '*.rxt'`:
+  **210 / 3,936 / 28,943**, of which **455** are `perr`, giving
+  **28,488** without them. The eight-kind list (`m n ms ns g gp gu
+  perr`) is the definition; the natural six-kind reading lands at
+  **24,016**, `ms`/`ns` being 4,927 lines.
+
+Where each ROUND 2 finding landed:
+
+| id | sev | landed |
+|---|---|---|
+| **R2-F1** | MUST | §1.2.1 S3's trigger names the PROSE-REGION-OPENING kind condition and the TRIMMED value, so `pattern \|` is untouched; §1.2.5 and §1.3's `prose-value`/`opaque-region` productions carry the same two clauses. The trim is not new — it is `rxt_source.c:1222-1226` (r46sem finding 14) and leg C's `v.strip() == '\|'`, pinned by `desc_pipe_trailing_space.rxtin` |
+| **R2-F2** | MUST | The COMMENT line's structural effect is stated in **S1** (it closes every open attachment, exactly as a BLANK does) and in **S3** (it ends an open region), with the two measured widenings and the reason transparency was rejected. §1.6.1 claim 2 carries the correction: the claim was FALSE as 3.2 shipped it, the cause was a line class declared in S0 with no effect stated anywhere, and it is true again with its single stated exception |
+| **R2-F3** | MUST | S0 narrows BLANK to the **EMPTY line** and gains WHITESPACE-ONLY as a fourth class, declared **INERT** outside a region and BYTES inside one. §1.6.1a rows (6) and (7) are the two narrowings that dissolves; §1.2.5 records the paragraph-break consequence. S3's self-contradiction is fixed by SCOPING: S0 does not run for dispatch or attachment inside a region, and the three-predicate boundary test is named as the one thing still computed per line. **PUSHBACK, argued rather than complied with**: the manager's "attachment-relevant, value empty, schema-inert" formulation introduces a THIRD narrowing (S1's attaches-to-nothing arm fires on a whitespace-only line at file start and after a blank — both measured rc 0 in all three legs today). "Inert" dissolves the same two, takes none, and is the shorter rule |
+| **R2-F4** | SHOULD | Said ONCE, in §1.2.1's parameter table: parameter 2 is the `value`/`children` **PAIR**. §1.2.2 and §2.25.2 are corrected to it; §1.3's EBNF already had it. **S-R5's detectability is the tiebreaker and is now spelled out in the row**: with `value` alone read, flipping `children` to `none` changes nothing observable anywhere — the region still opens and bytes reach no validity check — so the row gains plant (b) and the column gains a detector |
+| **R2-B** | MUST | §1.6.1a states its SCOPE (the format, not the lane's diff) and **carries STEP 0's two refusals as rows (10) and (11)**, marked "landed by STEP 0 (lane `rxtnul`, `d4576c48`), not by this revision", with the NUL row FORCED and the duplicate-`description` row CHOSEN on row (8)'s reasoning. §1.6.4's duty gains the sweep-the-format clause |
+| **R2-C** | SHOULD | **DECIDED in §2.25.2**, with a per-kind table and the populations measured FIRST: `at-most-one` for `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export`, and **`accumulate` over `{steps, frames}` for `budget`**, whose refusal is at the FIELD. Two deviations from the leaning, both measured: `budget` is NOT a scalar kind and `at-most-one` would have refused a shipped corpus file; and `flags`, which the finding's list did not name, is in the identical state and is taken with the rest. H16 carries the choice; §1.6.1a rows (8) and (9) carry the compatibility package |
+| **R2-D** | NIT | §1.1's floor block defines "expectation line" — the eight first-token kinds, `perr` INCLUDED, 28,488 without it, and the 24,016 a six-kind reading produces |
+
+**What ROUND 2 confirmed and is not re-argued**: the eight-kind
+constraint count honest at every site with each new kind's W23 customer
+verified in its home section; §2.25.4's self-contradiction genuinely
+fixed; every echo of the dropped `pattern`/`pattern-esc` refusal gone
+(*"the schema section is now the strongest part of the note"*); all
+three of Addendum 2's pushbacks endorsed; every population number from
+revision 3.2 re-derived and reproducing; K57 confirmed filed with its
+repro.
 
 ---
 
