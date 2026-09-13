@@ -23065,3 +23065,26 @@ manager sends. pcrecdev2's size-log brief still queued. D93 stands
 with its revisit-when clause intact; Frank's distaste for it is on
 record twice now — if a real CLI-override scenario surfaces, the
 likely shape remains a loud conflict-refusal, not a silent flip.
+
+## 2026-09-13 (EDT), sixty-second session CLOSE addendum — I-67 sent, pcrecdev2's checkout repaired, W23 implementation CLEARED for next session
+
+After the merge entry above: (1) the F2 echo in Appendix A caught at
+send review (the r58 disposition-text class recurring once more, in
+the round that named it) — fixed directly, aa983157. (2) **I-67
+committed to the bench inbox** (single-file [inbox] commit 0614622 on
+their side): the D99 reframe in Frank's words, the ext production +
+graduation rule, their one probe edit (A2 drops two `config` lines),
+D1 unmoved, F2 premise dissolved with the D93-unchanged note, and the
+process apology. Sent ahead of their restart so they stop designing
+against withdrawn mechanisms. (3) **pcrecdev2's size-log item CLOSED**
+— their permission classifier denied the `git checkout --`; they
+routed to Frank rather than to me (correct, anti-laundering), Frank
+ruled "handle the git work" — done over ssh: file discarded per D101's
+context, and the real pull blocker root-caused as a DETACHED HEAD at
+201e0b1c (why `--show-current` was empty and @{u} failed); main
+checked out, fast-forwarded to aa983157, upstream set. Consider
+granting pcrecdev2 read-only git-query permissions (branch/status/
+@{u}) so exact-command briefs stop tripping on trivia. (4) **Frank's
+closing ruling: W23 implementation GO** — "end session and build on
+restart." Plan row updated: next step is the impl note in w1_impl.md's
+shape, D6 panel, then code lanes. wake.md rewritten for it.
