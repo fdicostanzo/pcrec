@@ -1,8 +1,29 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 3.4 ([DD-13b.W23] STEP 1.4, 2026-09-13, lane w23aux)
+**Status: REVISION 3.4.1 ([DD-13b.W23] STEP 1.5, 2026-09-13, lane
+w23fix3) — the r58 FIX ROUND on revision 3.4.** The two-critic panel
+(`docs/dev/reviews/2026-09-13-r58-w23-aux.md`) found 3 blockers, 7
+must-fixes and the rest; **§0.10 is the finding-by-finding record and is
+where a reader of revision 3.4 starts.** Three things moved that a
+reader must not carry a memory of: **the structure layer takes THREE
+parameters, not two** — the OPEN-SUBTREE kinds (`children: tree`),
+inside whose subtrees S2's opener set is EMPTY and S3 NEVER OPENS,
+stated once at §1.2.1's parameter table and pointed at from everywhere
+else (ruling R1, repairing blockers A1 and A2, which two critics reached
+from opposite directions); **a prose value is NOT legal inside an aux
+body** (§2.27.2 decision 3 RULED for the one-line alternative, so a bare
+`|` there is the literal `|` and a paragraph is child lines); and
+**`tag-prose` is REMOVED** (ruling R3 — its one named customer moved
+into `variant note` in the same revision that added it, so §2.25.3's
+membership rule applies one layer over, in the grammar). What HELD under
+attack is recorded in the review: D99's structural promise survived
+every hostile shape, and critic B's inverse method over a 66-mechanism
+population found exactly ONE orphan, which §0.9's sweep had already
+caught itself.
+
+**Revision 3.4** ([DD-13b.W23] STEP 1.4, 2026-09-13, lane w23aux)
 — D99, and it is a NARROWING of what the format MEANS rather than a fix
-round.** Frank's ruling (`docs/dev/decisions.md` D99): *"the rxt file
+round. Frank's ruling (`docs/dev/decisions.md` D99): *"the rxt file
 needs a clear purpose and ultimately that purpose is something along
 the lines of a file for defining rx, primarily for the use of pcrec.
 that the bench can use it is good but shouldn't distract from the
@@ -731,7 +752,93 @@ table names its customer in the same row; a mechanism admitted for a
 withdrawn production whose text never types either token would have
 survived. The inverse method — walk every mechanism this delivery ADDED
 and ask what needs it — was not run, and it is the one that would catch
-the residue.
+the residue. **(IT WAS RUN AT r58, by critic B, and the result is in
+§0.10: 66 mechanisms, ONE orphan, and it was `cross-scope` — the one
+this sweep had already caught. The residue the two methods share is not
+mechanisms at all; it is DISPOSITION TEXT, and §5.2a item 7 now names
+it.)**
+
+### 0.10 Revision 3.4.1 record — the r58 panel, finding by finding
+
+The input is `docs/dev/reviews/2026-09-13-r58-w23-aux.md`: two opus
+critics, read-only, distinct lenses — A (grammar and internal
+consistency, plus a direct adversarial attack on the aux mechanism) and
+B (the INVERSE METHOD §0.9 declared owed, plus the fifty bench N-rows,
+the nine P-Qs, the impact table's citations and the drafted outbox
+message). 3 blockers, 7 must-fixes, 8 shoulds/nits, all FIX-NOW.
+
+**What the round did NOT find, stated first because it is the larger
+half.** D99's parenthesis — a malformed aux block cannot corrupt what
+follows — survived three hostile shapes and a swallow attempt. The
+inverse walk over a **66-mechanism population** (22 added at revision 3,
+24 at 3.1, 14 at 3.2, 6 at 3.3) found **exactly one fully orphaned
+mechanism, `cross-scope`, which §0.9's own sweep had already caught**;
+§0.9's stated weak direction — a mechanism admitted for a withdrawn
+production whose text types neither token — has NO instance, and that
+zero has a denominator. 45 of 50 bench N-rows are three-way consistent,
+all nine P-Q dispositions hold, §2.22/D100 is undisturbed, and the
+orphan sweep, the census, the impact table's arithmetic and the `ext`
+freeness measurement were all independently reproduced.
+
+**The four manager rulings at the review**, since three of them are why
+this revision is not a pure fix round:
+
+- **R1 — §2.27.2 decision 3 is ruled for the ONE-LINE ALTERNATIVE**, and
+  the panel's repair is adopted as ONE general structure-layer
+  parameter (the OPEN-SUBTREE kinds) rather than as either local patch.
+  One parameter repairs both blockers and dissolves two further
+  findings.
+- **R2 — the `ext <consumer>` spelling is CONFIRMED** (measured free by
+  the lane, independently reproduced by critic A: 0 first-token
+  occurrences over 210 corpus files + 49 fixtures). The text already
+  said so; nothing moved.
+- **R3 — `tag-prose` is REMOVED**, the membership rule applied in the
+  grammar.
+- **R4 — Appendix A is GATED on B1 and B6**, both false claims about the
+  bench's own documents, both fixed here.
+
+| id | sev | what landed |
+|---|---|---|
+| **A1** | BLOCKER | **The prose-in-aux widening is GONE and parameter 2 is back to its five rows at every site.** 3.4 shipped decision 3's YES answer at three sites (§1.3's EBNF, §2.27.4's fixture row, §9.1's `aux_prose_value.rxtin`) while §1.2.1's r57-designated NORMATIVE site still read five rows, and §2.25.2 stated the contrary as a positive claim. §2.27.2 decision 3 is rewritten as a RULED decision record carrying critic A's three arguments; §2.25.2's "a SCHEMA fact and only a schema fact" is corrected (it is false — the structure layer reads `children`), and impact row F5's repetition of it with it |
+| **A2** | BLOCKER | **S2 no longer fires inside an aux body, and it is a DERIVED fact.** S2 was stated over siblings at any depth with no scope restriction, so `pattern <glob>` as an aux key opened a group — against this note's own `aux_deep_tree.rxtin` fixture, which asserted the opposite. Under parameter 3 the opener set is EMPTY inside an open subtree; §2.27.1's bullet becomes a consequence citing the parameter instead of a claim, and the fixture is now that effect's regression |
+| **R1's own shape** | — | **The OPEN-SUBTREE parameter is stated ONCE, at §1.2.1's parameter table**, with its two effects, its today's-answer (`ext`, one row) and the CONTEXT-FREENESS argument the panel supplied: S1 already requires an attachment stack, so marking one frame `tree` adds no power, no lookahead and no unbounded memory, and a reader still finds every boundary without tokenising a line inside the subtree. §1.2.2, §1.2.3, §1.3's EBNF, §2.25.2 and §2.27 POINT at it — r57 R2-F4's said-once discipline, which is the finding class this repairs |
+| **A3** | MUST | DISSOLVED by R1, and recorded as the argument that decided it: under the YES answer a literal `\|` was unwritable as an aux value, in the one production whose key space pcrec does not control. §9.1's `aux_prose_value.rxtin` is REPLACED by `aux_literal_pipe.rxtin`, which asserts that cell as the rule |
+| **A4** | MUST | §2.24's aux section states three things it had left underspecified, all normative: **(a)** the OPENER LINE GETS A ROW and is the block identity for `parent_line` (without it, repeated same-consumer blocks at one scope are inseparable, which `cardinality: repeat` makes an expected shape); **(b)** ROW ORDER IS SOURCE ORDER, guaranteed — the only semantics an aux tree has that pcrec can preserve; **(c)** every aux row's `value` is its line's own token remainder, and the prose-interior question is MOOT under R1 rather than answered |
+| **A5** | MUST | **§2.27.3 gains a FIFTH clause, stated over VALUES rather than over readers**: nothing in pcrec may take a value that changes when an aux body changes, except `#section aux`'s own faithful rows. Clauses 1-4 enumerated READERS, and two routes reached aux content without being one — an opener-row cardinality or `unique-by`, and a derived count pinned in CI. It also closes §5.2a item 8's `--list-source` FILTER case by principle instead of by a paragraph |
+| **A6 + B3** | SHOULD/NIT | §5.2a item 4's "the section is now eight kinds plus one declared parser-code exception" → seven, with the 3.4 timestamp its §2.25.3 siblings carry. Present tense left behind inside a block claiming its items had moved with D99 |
+| **A7** | SHOULD | §0.8 and impact row S9 cited impact row "S14", which the table has never had — the P-Q9 echo is **F1**, and calling it an S row additionally mis-attributed it to the manager's seed list. Both corrected |
+| **A8** | SHOULD | §2.24's fourth non-validated-home row sat at indent 0 inside an indent-2 list-item table — the only such break in the file, and it carries the surface-row second-customer evidence. Joined to its table |
+| **A9** | NIT | §1.2.2's unknown-token rule has **NO exception**: an aux body is VACUOUS under it, not excepted from it (open subtree ⇒ no scope ⇒ no membership predicate to violate). 3.4 wrote "exactly ONE exception" and denied it was one in the next clause, which conceded the per-keyword carve-out `children: tree` exists to avoid |
+| **A10** | NIT | DISSOLVED by R1 — the three sites that shipped decision 3 as settled are edited under A1. The method note is r57's own, recurring: **a question deliberately sent to a panel OPEN must not ship as settled anywhere in the same revision**, and the open decision should carry the checklist of its contingent sites so the ruling has one |
+| **B1** | BLOCKER | **§9's A1/A2 row is SPLIT.** A1 is SATISFIED. **A2 is a bench CORRECTION**: its fixture literally types `config … testee` and `config … option`, both removed at 3.4, so A2 exits 1 at the delivered pin — their fix is two deleted lines. The row joins §9's head correction list, and **Appendix A's "no probe script needs an edit" is corrected to name A2's one edit** — a true two-token measurement generalized into a headline over all tokens. §5.2a item 7 is amended with B's method note: the owed attack includes reading every grep hit against every disposition that names it, and `testee` WAS hit, in an in-scope file |
+| **B2** | MUST | SW17 committed "the EIGHT-kind constraint vocabulary" to the D80 spec hunk — the one site that would have SHIPPED the wrong count into `docs/spec/`, every other eight being prose about a past revision. Seven |
+| **B4** | MUST | §1.3's `variant-block` took `ident` while §2.23's 3.4 rule validates a variant name as the wide `defname` — under which the bench's real testees (`pcre2-dfa`, `pcre2-interp`) are unspellable in the EBNF that admits them. Corrected, and impact row S5's citation column gains the §1.3 hunk it never scoped |
+| **B5** | MUST | §5.4's OD-3 still dispositioned "a bench testee is a `config` with `testee` + `option` lines" — a live disposition of a grammar 3.4 removed. **Re-dispositioned**: the two are NOT unified, because only one of them is the format's; a roster is aux content. Impact row S4's citation column, which named §5.4 in its text and not in its citations, is completed — which is where the discrepancy hid |
+| **B6** | MUST | §9's D1 row and Appendix A both claimed D1's `capable`/`config` half is answered by `#section aux`. **D1 has no such half**: it lists seven items and types neither token. The clause is deleted at both sites and the true statement substituted — D1's seven items are unchanged by 3.4, and `#section aux` is a new section D1 does not ask about |
+| **B7** | SHOULD | §9's F2 said "satisfied more completely" where B6 four rows up gets the honest word for the same situation. F2's SETUP is dissolved (a set file declaring `engine` in a config has no construction), and **D93 is unchanged**, so F2's literal pass condition still fails for every config-BEARING file — one sentence, stated |
+| **B8** | — | RECORDED as held: the inverse method's result (above). The method joins §5.2a item 7's text |
+| **B9** | SHOULD | R3: `tag-prose` REMOVED. §1.3's grammar lines go with a kept-for-findability comment; §2.26 item 8 and §4.5's N-41 route history take a one-line RULED-at-r58 annotation each; §1.2.1's and §1.2.4's `\|`-versus-`"` contrast is re-based on the `"` that already discriminates the two `subject` forms, because the CONTRAST is what those passages are for. §1.3's count becomes **five productions removed, one added** |
+| **B10** | NIT | Impact row S12's citation read "§1.6.1a–§1.6.4 (unchanged)" while row S7 four rows up ADDED the census re-run block to §1.6.1a in the same revision. Scoped to the reservation material (§1.6.2, §1.6.3) |
+| **B11** | NIT | §0.6's seventeen-token MEASURED preamble gains its frozen-measurement annotation, pointing at §1.3's corrected addition/removal count — six sibling rows had one and it did not |
+
+**Bookkeeping in the same change**: §0.9's impact rows F5, S4, S5 and
+S12 are annotated IN PLACE with a 3.4.1 marker rather than silently
+edited, on the house rule that a revision record which rewrites an
+earlier revision's findings without saying so is the staleness shape
+this note keeps catching one document over.
+
+**What this round says about the last one, which is the part worth
+keeping.** Two independent critics converged on ONE repair from opposite
+directions — A from the normative-site contradiction, B's lens-mate from
+the fixture — and the adopted answer is neither of their local patches
+but the general parameter both were describing. That is the third round
+running in which **every fix round's own instrument, swept across the
+whole delivery rather than the finding's section, found the next round's
+defect**: r57 ROUND 2 found 3.2's four §1.2.1 rules, 3.4's second-order
+sweep found F1's stale echo, and r58's inverse walk found that the
+residue is disposition TEXT — which no grep and no mechanism walk
+reaches, and which cost this revision three of its ten graded findings
+(B1, B5, B6).
 
 ---
 
