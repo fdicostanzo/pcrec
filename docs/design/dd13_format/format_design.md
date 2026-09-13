@@ -2982,6 +2982,18 @@ delivery), H1/H2-family/H11 are BUILT with W1, and four rows join:
 | H13 | **`pattern-esc`**: the pass-through arm + the CLI decode flag; `verify_rxt.py` decodes python-side; `\x00`'s K9 refusal surfaces through pcrec (§2.19) | W23 | `run.sh`, `verify_rxt.py`, `cli/` |
 | H14 | **`under` as a counted, labelled skip** in `run.sh` and `verify_rxt.py` (scoring is the consumer's, §2.17); `mc` verified by the PROTOCOL loop in python, never `finditer` (§2.21) | W23 | `run.sh`, `verify_rxt.py` |
 | H15 | **subject ids + hashes**: the per-file binding table, the read-time sha256 refusal on the driver path (§2.18); `configs describe`'s one-cell rule and its summary line (§2.20) | W23 | `run.sh`, `driver.c` |
+| H16 | **THE SCHEMA TABLE AND ITS SURFACE** (§2.25), NEW at revision 3.1: the `.def` declaration compiled into leg A, leg A's dispatch re-shaped as a walk over it with ONE exhaustive `default:`-less switch over the constraint enum, `--list-schema`, and the D4 table RENDERED from `validated_by` rather than hand-written. **It touches leg A only, deliberately** (§2.25.4): legs B and C stay independent implementations, because a generated leg B would share a source with what it controls — the check-design failure this tree has recorded most often | W23 | `src/parse/` (`rxt_schema.def`, `rxt_source.c`), `cli/`, the spec renderer |
+
+**Four sabotage rows revision 3.1 adds**, each naming the check that
+must catch it, because a rule stated in a table is a rule a table can
+be sabotaged in (`docs/dev/learnings.md` §3):
+
+| row | plant | must be caught by |
+|---|---|---|
+| S-R1 | flip one schema row's `children` from `none` to a scope (say `m` admits children) | the indented-line fixture (§9's A-group): an indented line under `m` stops being an error in leg A while legs B and C still refuse it, so the C1 differential goes red — **and the row is deliberately planted in the direction where only the DIFFERENTIAL can see it**, since leg A alone would simply accept more |
+| S-R2 | drop `provenance`'s `required-if` constraint for `adaptation` | C5/C6's own controls (§9), which is the point: the schema must not be able to silently loosen a rule the acceptance checks already assert |
+| S-R3 | make `--list-schema` print a hand-written table instead of walking the enforced one | a dump-vs-behaviour cross-check: for every row the dump claims is `closed`, plant a violating value and require a refusal. Without this row the surface is a CLAIM about the parser rather than a view of it — the one-derivation discipline asserted rather than checked |
+| S-R4 | add `pattern` to `opens_group` a second time, or remove `pattern-esc` from it | the structure layer's own fixture: a `pattern-esc` block's case lines attach to the preceding block instead, so `--list-source`'s `#section cases` rows move `block_line`. Named because `opens_group` is the ONE column the structure layer reads, so it is the one whose corruption is invisible to every schema-validity check |
 
 **H4 deserves its own line in a brief**, because it is the one place a
 plausible implementation is silently wrong: handing python `re` the
