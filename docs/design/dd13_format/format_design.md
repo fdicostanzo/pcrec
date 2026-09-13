@@ -4245,10 +4245,29 @@ explicitly admits ("the check records the CHOICE"); D1/D5/G3 carry a
 PRECISION about appended header columns (below); E5's harness half is
 the bench's own, as their row itself states.
 
+**REVISION 3.1 — THE CHECKS THAT HARD-CODE A SPELLING, listed once so
+the bench gets ONE correction list rather than a surprise per check.**
+Every check below is BEHAVIOURAL and every one still passes; what moves
+is the literal token some of them type. The manager's outbox message at
+delivery carries exactly this list (D78):
+
+| moved | affects |
+|---|---|
+| `capable` → **`provides`** (§2.26 item 4) | the C-group capability checks and any fixture writing a `config` body; the probe's assertion is unchanged, the keyword is not |
+| `licence`/`licence-note` → **`license`/`license-note`** (§2.26 item 10) | C4-C7's provenance fixtures |
+| the `freq` block's `exemplar`/`date`/`bytes`/`sha256` → a **`provenance` child** (§2.10) | only fixtures that write a data block; the bench's set files carry none today, so this is a spec-side move for them |
+| a pattern block's `description` accepts **`prose-value`** (§1.2.5) | C10's neighbourhood only as a widening; nothing they assert becomes false |
+
+And one check the bench should ADD, because revision 3.1 creates the
+surface for it: `--list-schema` is the query behind D4's
+VALIDATES-vs-RECOGNISES table (§2.24), so their D4 probe can compare
+the rendered spec table against the dump instead of against prose.
+Offered, not required — their gate, their call (D78).
+
 | # | disposition |
 |---|---|
 | A1, A2 | SATISFIED — every named keyword lands in the one W23 delivery (F-Q1), so both probes exit 0 at the delivered pin. The BEFORE (refused by name with a wave) holds at today's pin, M10 |
-| A3, A4 | SATISFIED, unchanged mechanism — unknown tokens stay hard errors naming their context; the sub-block contexts join the context list (§1.2 rule 3); SW13 keeps the recognised-refusal list honest for partial builds |
+| A3, A4 | SATISFIED, unchanged mechanism — unknown tokens stay hard errors naming their SCOPE; a child scope is declared like any other (§1.2.2, §2.25) and the count is no longer fixed at four; SW13 keeps the recognised-refusal list honest for partial builds and now derives it from the schema's `wave` column. **NEW at 3.1 and owed by this delivery**: an INDENTED-LINE fixture in all three legs, asserting attachment-then-dispatch — because that ordering was MEASURED to hold in only one of the three readers it was asserted of (§0.7), so it is a property to pin and not one to inherit |
 | A5 | SATISFIED — `tag` accumulation and mixed labels/pairs are unchanged W2 design; `tag-prose` adds the third item kind (§1.3) |
 | B1, B2 | SATISFIED (regression guard) — `pattern` verbatim untouched (§2.19); the dump's escape round trip unchanged |
 | B3, B4 | SATISFIED BY STEP 0 (lane rxtnul) — the raw-NUL refusal with its control; independent of W23, as their P-Q7 asked |
@@ -4256,14 +4275,14 @@ the bench's own, as their row itself states.
 | B6 | SATISFIED — both spellings in one block refused naming both lines (§2.19) |
 | B7 | SATISFIED BY DESIGN, and this delivery is where it gets its first live verification (their row: "nothing has ever verified it") — the driver's `@<path>` form reads bytes raw, NUL included (H6/S5) |
 | C1, C2, C3 | SATISFIED — `vocabulary` enforcement with its accept control and the free-key compatibility control (§2.15). C3 doubles as the R-COMPAT-1 guard for the corpus's zero tags |
-| C4, C5, C6 | SATISFIED — provenance's required-line and conditional-adaptation refusals with their controls (§2.14 rules 1-3) |
-| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14) |
+| C4, C5, C6 | SATISFIED — provenance's required-line and conditional-adaptation refusals with their controls (§2.14 rules 1-3). **3.1 SPELLING**: `licence`/`licence-note` are now `license`/`license-note`, and the required SET is declared per parent (a pattern block's is the four their fixtures use, unchanged) |
+| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14); at 3.1 that is one `unique-by` schema row rather than a hand-written refusal (§2.25.3), which is also what covers the other five duplicate cases P-Q9 lists |
 | C8, C9 | SATISFIED — the sha256 mismatch refusal (checked by the subject's READER, §2.18) and its matching control |
 | C10 | RESOLVED AS REFUSAL — STEP 0's duplicate-`description` refusal; the check records that choice, and G3's M5 row changes accordingly |
-| D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's nine keys in `#section provenance`, `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24) |
+| D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's fields in `#section provenance` (eleven at 3.1, and the section now also carries a data block's provenance — one section, one record shape, §2.26 item 10), `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24) |
 | D2 | SATISFIED — the loader reads only the dump; the cases section is what makes that possible under Option A (expectations are in the file, so they must be at the seam) |
 | D3 | SATISFIED — one escape vocabulary, documented; NOTE for their loader: the dump escapes the FIVE TSV-framing escapes (`rxt_format.md`'s r46sem-22 paragraph), with `\f`/`\v` arriving as `\xNN` and a literal `"` unescaped — decode against the dump's table, not the subject table |
-| D4 | SATISFIED — the VALIDATES vs RECOGNISES table becomes NORMATIVE spec text (SW11; substance in §2.24), and the case-line silent-pass observation is retired |
+| D4 | SATISFIED, AND STRENGTHENED AT 3.1 — the table is not only normative spec text (SW11) but **RENDERED from the schema's `validated_by` column** (§2.24, §2.25), so it cannot go stale by omission and their probe can compare it against `--list-schema` rather than against prose. The case-line silent-pass observation is retired |
 | D5 | SATISFIED WITH A PRECISION — a no-new-production file emits no `#section` line; its stream differs from the current pin ONLY in the header row's appended columns, which is `table_contract.md`'s own compatible evolution. Their pass criterion "output unchanged" should read "unchanged under name-resolved comparison"; a byte-diff will show the header. Same precision applies to G3 below |
 | E1, E2 | BENCH-SIDE (their id/slug containment; their M11 finding is theirs to fix) — the format's half is the wide name grammar, BUILT |
 | E3 | SATISFIED — `as <id>` gives every expectation and report row a line-number-independent key (§2.18) |
