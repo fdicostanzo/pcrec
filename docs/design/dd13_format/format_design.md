@@ -1292,8 +1292,14 @@ the boundary:
   reads exactly three columns, all closed-form, and never dispatches on
   a kind's identity.
 - **A first token unknown IN ITS SCOPE is a hard error naming the
-  scope** ("`testee` is not a pattern-block directive"). Nothing is a
-  keyword everywhere. Unchanged in force; now derived from a table.
+  scope** ("`vocabulary` is not a pattern-block directive"). Nothing is
+  a keyword everywhere. Unchanged in force; now derived from a table.
+  **(3.4: the example was `testee`, whose production is withdrawn —
+  an example keyword must be one that EXISTS, or the diagnostic it
+  illustrates is not the one a reader would ever see. The rule has
+  exactly ONE exception and it is §2.27's: inside an `ext` body no
+  first token is unknown, because there is no scope to be unknown in —
+  expressed as `children: tree` rather than as a carve-out, §2.25.2.)**
 
 #### 1.2.3 Where the format does NOT pass, stated plainly
 
@@ -5357,7 +5363,13 @@ everywhere.
   the parser enforces. It is the surface Frank's consequence 3 asks
   for, and it is what makes §1.2.1's **two** keyword-dependent
   parameters — the block-opener set and the prose-valued kind set — a
-  query rather than hard-coded facts. Same
+  query rather than hard-coded facts. **OPEN AT 3.4, and flagged rather
+  than assumed away** (§5.2a attack 9): §2.27.2 decision 3 admits a
+  prose value inside an aux body, so parameter 2's answer becomes "these
+  five rows, PLUS every line in any `ext` scope" — a row set plus a
+  predicate. Whether the dump can return that in the form a generic
+  reader fetches is the decision's real price, and if it cannot, the
+  one-line alternative (no `\|` inside aux) wins. Same
   one-derivation-two-readers discipline as every dump beside it, and
   the same `table_contract.md` obligations as every table beside it
   (SW17's row there, r57 S-M7).
