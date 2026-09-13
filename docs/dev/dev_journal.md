@@ -22904,3 +22904,100 @@ this session's work):
 - U16 (the one UCD `sc` value, `Katakana_Or_Hiragana`/`Hrkt`, no
   reachable libpcre2 accepts) and S-U12's matrix run remain on their own
   tracking, unaffected by this close-out.
+
+## 2026-09-12 (EDT), sixty-first session — [DD-13b.W23] chartered and DESIGN-COMPLETE in one day; [M5.0] CLOSED; STEP 0 merged; timing pair launched
+
+Frank's session directive: "focus on rxt file format development; bench
+has come up with additional requirements." The bench's O-26/[B42] input
+(their rxt_needs_v1.md: 50 needs, 6 roadblocks, 12 productions, a
+41-check acceptance list, 9 questions; Frank's F-Q1 no-W2-only and
+F-Q2 multi-line-MUST attached) became [DD-13b.W23], chartered b9572c66
+with the needs note committed as a received input.
+
+**THE ARC, four design lanes + two panel rounds, one evening**: rev 3
+(lane w23design — the twelve productions absorbed; ONE pre-ruling
+deviated from on measurement: the bench's find-all formula double-counts
+an empty match beyond the scan position, so mc's rule is match_api §3.1
+by reference — the bench independently CONFIRMED against libpcre2 same
+night and filed their KB-17). Rev 3.1 (lane w23recon) reconciled Frank's
+two mid-session rulings — internal consistency with a version-x header
+on the table, schema rules validation, explicit sub-block syntax,
+structure parseable without context; then the ownership framing (needs
+are the bench's, syntax is ours, criterion is long-term viability) —
+into the TWO-LAYER grammar: S0-S2 + declared schema, the head/body
+asymmetry DELETED, the version break PRICED AND DECLINED with the
+keyword reserved, §2.25's schema mechanism + --list-schema, the
+ownership audit's renames (capable→provides, licence→license, the freq
+provenance unification). r57 ROUND 1 (three opus critics): 3 blockers /
+12 must-fix — the BLOCK SCALAR a second undeclared structural device
+(two lenses converged), the constraint kinds missing four W23 rules,
+B6's refusal an EMPTY population (K35 caught at design time), the
+x_y-beside-x-y fifth narrowing. Rev 3.2 (lane w23fix): S3 OPAQUE
+REGIONS, eight constraint kinds, B6 dropped premise-dissolved, the
+narrowing census; three pushbacks ACCEPTED (N1/N2 avoided-not-taken;
+K57 FILED — the shipped dedent strip silently corrupts a dedented prose
+line; the wave column kept with its expiry). r57 ROUND 2 (focused
+re-check): blockers b/c HOLD outright, blocker a's fix failed ON ITS
+OWN AXIS — S0 declared three line classes and S1/S3 ruled two (COMMENT
+terminates in every shipped reader; WHITESPACE-ONLY is blank to the new
+rules and continuation to the shipped parser — and the indented
+whitespace-only separator is the format's ONLY paragraph-break
+spelling). Rev 3.3 (lane w23fix2): all four line classes given effects;
+TWO manager leanings overturned by measurement — whitespace-only is
+INERT (my "attachment-relevant" would itself have taken a third
+narrowing) and budget is ACCUMULATE-over-fields (at-most-one would have
+refused tests/harness/giveup.rxt, a shipped corpus file); census FINAL
+eleven candidates / seven taken / four avoided, STEP 0's two carried
+with attribution. MERGED 38289af7 + plan 46aa547a, pushed. Review
+record: docs/dev/reviews/2026-09-12-r57-w23-format.md (two rounds,
+dispositions). FRANK QUEUE OPEN: W23-F1 (configs describe / D93),
+W23-F2 (provides in-format), W23-F4 (the non-callable-definition loss;
+manager recommends ACCEPT). Implementation NOT cleared.
+
+**[DD-13b.W23] STEP 0 MERGED 0808279f** (lane rxtnul, sonnet): a NUL
+anywhere in a .rxt refuses by name (was: silent truncation, the bench's
+M1, ranked by them above every feature); a duplicate description
+refuses naming both lines, block AND head scope (was: silent last-wins,
+M5). rxtsource 119→125; full make test 38/38 sections with only the
+chartered inline_capability red; strict green. Lane flagged legs B/C
+(run.sh, verify_rxt.py) as still silently lossy on both shapes —
+folded into the W23 implementation (H12's family), not a separate lane.
+
+**[M5.0] CLOSED, merged 14364952** (lane m5close): compliance-refresh
+found components 1/3 already exact and component 2's prose stale on
+K53-SELRETRY (corrected); plan row archived verbatim with the I-65
+stamp; milestone journal entry (see above). pcrecdev2 released
+build/wt_s5_rerun (verified the rider TSV byte-identical to the kept
+log copy before removing); their artifact_size_log.tsv disposition
+stays queued for an exact-command brief.
+
+**[TT-4M-TIME] PAIR LAUNCHED ~23:1x** on Frank's "save the timings for
+when the rxt work is complete": worktrees/tt4mtime merged to main's
+tree first (so the measured pin is the shipped tree), then one
+background script, sequential — run 1 serial `timeout 10800
+/usr/bin/time -l make test`, run 2 `+ HARNESS_BATCH=64 PROCS=8` —
+load1 recorded before each (1.02 at launch), logs
+build/tt4m_run{1,2}_{serial,batch,time}.log in the worktree. The memo
+lane (docs/dev/tt4m_time.md from the two logs + the WIP skeleton)
+spawns on completion.
+
+**LESSONS, five, all process**: (1) BOTH ruling channels failed in one
+day — SendMessage to a busy lane delivered nothing twice (no ack = NOT
+DELIVERED; the missing ack was visible and I read past it; memory
+updated: both channels + ack-within-15-min, a reconciliation round was
+the price). (2) Subagents idling without a delivery message was the
+NIGHT'S PATTERN (five of five critics/lanes until the brief said "send
+me a summary BEFORE ending" — which fixed it in one lane; the line goes
+in BOILERPLATE next session). (3) Watcher scripts failed twice more and
+differently (bash-3.2 declare -A at launch; the second exited silently
+without printing its DONE line) — artifacts answered both times;
+watcher scripts need their own syntax check AND a positive-output test
+before trust. (4) The look-before-delete rule violated once at speed:
+worktrees/rxtnul held a modified artifact_size_log.tsv (the suite's own
+full-corpus regeneration, junk timing columns, never committable) and
+my chained status+remove saw and destroyed it in one command — no
+value lost, the slip is real. (5) The r57 arc's method note: three
+consecutive revisions were each caught by their own round's instrument
+SWEPT WIDER than the finding's section — the closing check ("every
+declared line class points at the sentence stating its effect") is the
+shape to bring to the next grammar change.
