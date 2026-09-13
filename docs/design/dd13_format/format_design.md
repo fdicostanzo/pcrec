@@ -1,17 +1,34 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 3 ([DD-13b.W23], 2026-09-12, lane w23design) — the
-[B42] absorption.** Revision 2 was post-panel (r44) and post-ruling
-(D87); revision 3 absorbs pcrec-bench's capability-set needs note
-(`bench_rxt_needs_v1.md`, received via outbox O-26) under Frank's two
-2026-09-12 rulings — **F-Q1**: the first delivery is Tier 1 AND Tier 2
-together, one **W23** delivery, no W2-only cut (§1.4 restructured);
-**F-Q2**: multi-line patterns are a MUST (`pattern-esc`, §2.19). W1 is
-BUILT (steps .1/.2/.3 landed; the wave table records what remains).
-§0.6 is the need-by-need revision record; §8 disposes the bench's nine
-P-Q questions; §9 maps their 41 acceptance checks. The W1-era text below
-is revised in place where a W23 production touches it and untouched
-elsewhere.
+**Status: REVISION 3.1 ([DD-13b.W23] STEP 1.1, 2026-09-12, lane
+w23recon) — the RECONCILIATION against Frank's internal-consistency and
+ownership rulings.** Revision 3 (lane w23design, same day) absorbed
+pcrec-bench's capability-set needs note (`bench_rxt_needs_v1.md`,
+received via outbox O-26) under **F-Q1** (Tier 1 AND Tier 2 as one
+**W23** delivery, §1.4) and **F-Q2** (multi-line patterns are a MUST,
+`pattern-esc`, §2.19). Two further rulings were issued while that lane
+ran and never reached it; revision 3.1 works them through the delivered
+text:
+
+- **The INTERNAL-CONSISTENCY ruling** (`frank_inputs.md` 2026-09-12,
+  five consequences): one structural rule, a declared schema, explicit
+  sub-block syntax, a `version` header if a break is needed, and
+  **structural parseability without context**. §1.2 is rewritten as an
+  explicit **two-layer grammar** — a context-free STRUCTURE layer and a
+  declared SCHEMA layer on top; §1.6 prices the version break and
+  declines it; §2.25 designs the schema and its listable surface.
+- **The OWNERSHIP ruling** (same day): the bench's sketches are
+  CAPABILITY requirements, the syntax is pcrec's, and **long-term
+  viability of the format outranks bench convenience and
+  minimal-diff-from-today**. §2.26 is the spelling audit that criterion
+  forces; four spellings moved under it.
+
+Revision 2 was post-panel (r44) and post-ruling (D87). W1 is BUILT
+(steps .1/.2/.3 landed; the wave table records what remains). §0.6 is
+the need-by-need revision record, **§0.7 the 3.1 record**; §8 disposes
+the bench's nine P-Q questions; §9 maps their 41 acceptance checks. The
+W1-era text below is revised in place where a W23 production touches it
+and untouched elsewhere.
 
 This note designs the grammar and semantics of the unified
 pattern-source / test-carrier / bench-set file format, under the rulings
@@ -221,6 +238,81 @@ were BUILT already and are untouched):
 | **N-49** | the regime -> subject-set mapping rides the repaired item 4 (§2.22): each regime block carries its own subject list |
 | **N-50** | `include` lands in W23 as designed (§2.5, §2.11) |
 | **N-52** | §2.24 — `--list-source` gains appended columns, **unconditional named sections** (`provenance`, `variants`, `cases`), and a spec-stated VALIDATES-vs-RECOGNISES table (their D4). The `m @file:… passes silently` observation is retired: case values are read |
+
+### 0.7 Revision 3.1 record — the two rulings, consequence by consequence
+
+The input is `frank_inputs.md`'s 2026-09-12 section: the
+internal-consistency ruling with its five numbered consequences, and
+the ownership framing that follows it. Revision 3 was written without
+them (a messaging failure, recorded in `w23design_report.md`
+§"Rulings received"), so this revision is a reconciliation rather than
+a new wave — **no need N-nn changes its disposition, no production is
+added or removed for the bench's sake, and §1.4's wave table is
+untouched.** What moves is how the grammar is FACTORED and how four
+things are SPELLED.
+
+**MEASURED for this revision** (re-run in this worktree at the merge
+base, read-only, so revision 3's own census is confirmed rather than
+inherited — and it needed re-running: the corpus has grown by 31 files
+since the number revision 3 quotes was taken):
+
+- **The corpus is now 210 files / 3,936 blocks / 28,943 expectation
+  lines**, not §1.1's 179 / 3,265 / 26,691 (those are r44-era, taken
+  before [M5.0]'s `tests/utf8/` corpora landed). §1.1's three checks
+  are stated against a pinned denominator, so the pin is now stale;
+  §1.1 carries the correction and the rule that the denominator is
+  DERIVED at check time and pinned as a FLOOR, never as a constant a
+  growing corpus silently invalidates.
+- **0 lines in the corpus are indented** (`grep -rhcE
+  '^[[:space:]]+[^[:space:]]'` summed over all 210 files → 0). This is
+  the load-bearing measurement for §1.2's unified attachment rule and
+  for §1.6's answer on the version break: it is what makes the
+  consistent grammar purely ADDITIVE.
+- **All 52 candidate keywords are 0 in first-token position** — §1.1's
+  32, revision 3's 17 W23 additions, plus `version` and `schema`, over
+  the current 210 files. `version` being free is what makes §1.6's
+  reservation cost one line.
+- **Only 1,016 of 3,936 `pattern` lines (26%) are immediately preceded
+  by a blank line.** A blank line is therefore NOT a block separator in
+  this corpus, which is what closes the one alternative to the keyword
+  in §1.2.3's account of where today's grammar fails structural
+  parseability.
+- **Leg C dispatches an indented PRE-BODY line on its first token**,
+  so revision 3 §1.2's claim that "the indentation test PRECEDES token
+  dispatch" holds "in all three body readers" is FALSE today.
+  `tests/harness/verify_rxt.py:407-419` splits the line (which strips
+  leading whitespace) and raises the head-word or
+  no-open-block diagnostic before reaching its indentation check at
+  `:424`; measured on three fixtures, an indented `m` line before the
+  first `pattern` reports *"'m' line before any pattern block"*.
+  **Leg B has no indentation test at all** — all 24 of `run.sh`'s
+  dispatch arms are anchored `^<keyword>` with no leading-whitespace
+  tolerance (its one tolerant regex is the blank-line skip), so an
+  indented line reaches the catch-all *"unparseable .rxt line (hard
+  error)"* by FALL-THROUGH rather than by a rule. Only leg A
+  (`src/parse/rxt_source.c:992`) tests indentation before dispatch.
+  Every arm is a hard error, so nothing is mis-parsed today; what is
+  false is the claim that a RULE holds in three places, and §1.2 now
+  states it where it can be enforced and §9's A-group says what pins it.
+
+Where each consequence of the internal-consistency ruling landed:
+
+| consequence | landed |
+|---|---|
+| **1. Internal consistency over accretion** | §1.2 rewritten as two layers. The head/body indentation ASYMMETRY is not narrowed — it is **DELETED**: one attachment rule serves head continuation, `config` bodies, block scalars and body sub-blocks alike, and "which scope a keyword is legal in" becomes a schema fact with no structural consequence. §2.26's audit is the same criterion applied to spellings |
+| **2. A breaking `version` header is on the table** | §1.6: **the break is DECLINED and the keyword is RESERVED.** The consistent grammar is achievable additively (every rule change moves a hard error between arms; the one deliberate widening only accepts more), so "if needed" is answered NO — with the future change that WOULD trigger it named and priced (§1.2.3) |
+| **3. Schema rules validation** | §2.25: the format's structural rules become a DECLARED TABLE with five constraint kinds, the parser its reader/enforcer, and `--list-schema` its listable surface on `--list-limits`/`--list-axes`'s one-derivation precedent. §2.15's `vocabulary` is nested as the FILE-declared half (one table, a `source` column). §2.24's VALIDATES-vs-RECOGNISES statement is upgraded from prose to a column the surface prints |
+| **4. Sub-blocks get explicit syntax** | §1.2.4: the visible-marker alternative is designed and priced against bare indentation, and **bare indentation wins** — because the cure for "indentation whose meaning depends on which keyword opened the line" is the unified rule, not a second signal, and a marker would make structure depend on two signals that can disagree. The `|` block scalar is explained as what it is: a VALUE-form discriminator, not a structure marker |
+| **5. Structurally parseable without context** | §1.2.1 states the structure layer with its ONE declared parameter (the two-member block-opener set) and §1.2.3 states, without softening, the one place today's shipped grammar fails the property and what fixing it would cost |
+
+Where the ownership ruling landed: §2.26, the audit. Four spellings
+moved — `capable` → **`provides`**, `licence`/`licence-note` →
+**`license`/`license-note`**, the `freq` data block's five provenance
+fields → **the same `provenance` sub-block a pattern block uses**, and
+`variant`'s `text` KEPT with a different reason (its revision-3
+justification expires under the new structure layer). §9's C-group and
+D-group rows move with them, and the delivery's outbox message to the
+bench carries the list.
 
 ---
 
