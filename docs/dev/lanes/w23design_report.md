@@ -526,15 +526,28 @@ must be honest — which is the gap §0.6 measured, not a hypothetical.
 §2.25.2 states the decision AND its expiry condition, so a later reader
 can drop the column without re-deriving the argument.
 
-## The methodology note worth keeping
+## Two methodology notes worth keeping
 
-Reproducing C-M1's byte-identity claim first reported a DIFFERENCE, and
-the difference was the `#include` line: emitting two sources to `a.c`
-and `b.c` makes every artifact differ on the header it includes. That
-is `opt4_impl/CLAUDE.md`'s own recorded trap and this is its **third**
+**(a) The same-basename `-o` trap, third instance.** Reproducing
+C-M1's byte-identity claim first reported a DIFFERENCE, and the
+difference was the `#include` line: emitting two sources to `a.c` and
+`b.c` makes every artifact differ on the header it includes. That is
+`opt4_impl/CLAUDE.md`'s own recorded trap and this is its **third**
 recorded instance in this house. The comparison that works is equal
-output basenames in separate directories. Recorded here because the
-first reading would have refuted a true finding.
+output basenames in separate directories. Recorded because the first
+reading would have REFUTED a true finding.
+
+**(b) I got one of my own corrections wrong and the probe caught it.**
+Working C-S8 (the arm count), I wrote that revision 3.1's parenthetical
+— *"its one tolerant regex is the blank-line skip"* — was itself wrong
+and that the tolerant regex was the comment test. Reading
+`run.sh:1692-1693` settled it the other way: `^[[:space:]]*$` IS the
+blank-line skip and IS the tolerant one, `^#` is column-1-anchored like
+every arm, and 3.1 was right. Corrected in place before delivery.
+The shape is worth the line because it is the round's own subject one
+level up: **a correction is a claim, and it needs the same probe the
+thing it corrects needed.** I had the file open for the count and did
+not re-read it for the adjective.
 
 ## What this revision does NOT change
 
