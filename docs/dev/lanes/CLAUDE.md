@@ -500,6 +500,44 @@ never edited afterwards.
   deliberately (population measured 0 in both repos, and forced by
   two-level nesting), and it is why the note's standing rule for when a
   change needs a `version` line went from two cases to three.
+  **ADDENDUM 2 — REVISION 3.2, the r57 FIX ROUND** ([DD-13b.W23] STEP
+  1.2, 2026-09-12, lane w23fix, opus, same branch): the three-critic
+  panel's 3 blockers / 14 must-fixes / 12 shoulds / 4 nits worked
+  through. Read it for the three PUSHBACKS, each with its measurement,
+  because they are where the lane did not simply comply. **(1) Two of
+  the panel's four new narrowings are narrowings AVOIDED, not taken** —
+  declaring the block scalar as a structure device (S3 OPAQUE REGIONS,
+  the round's central fix: three critics converged on the block scalar
+  as the un-modeled object, and an indented `#` inside one is PROSE
+  today at rc 0) dissolves both, so the census lists five candidates and
+  marks two avoided WITH the mechanism, since a later wave that weakens
+  S3 re-creates them silently. **(2) K57 is filed rather than handed
+  back**: the `|` block scalar's dedent strip is a BYTE COUNT, so a
+  continuation line indented less than the block's first **silently
+  loses content** (`  dedented-line-two` under a 4-space block decodes
+  as `dented-line-two`, exit 0) — wrong under every revision of the
+  note, so no design decision fixes it by arriving. **(3) The `wave`
+  column is KEPT against the panel's lean**, because its consumer is
+  real during the five-merge ROLLOUT even though its population is
+  empty at the delivered pin — stated with its expiry condition.
+  Also worth reading: the structure layer now takes **TWO** schema
+  parameters rather than one, and the second (`value = prose`) is the
+  open-ended one the note was already describing without noticing; the
+  constraint vocabulary goes from five kinds to **eight** after four
+  W23 refusal rules failed to fit five, one of them needing precisely
+  the kind the same section DEFERRED with a trigger a production one
+  section earlier already met; the `pattern`/`pattern-esc`
+  both-in-one-block refusal is DROPPED as an EMPTY POPULATION (both are
+  block openers, so a second opener starts a new block — K35 caught at
+  design time, before the check existed); and the methodology note that
+  is this house's THIRD recorded instance of one trap — comparing two
+  emitted artifacts written to different `-o` basenames reports a false
+  difference on the `#include` line, which first read as REFUTING a
+  true byte-identity finding. New Frank queue item **W23-F4**
+  (ready-to-ratify, manager recommends ACCEPT): the derived-identifier
+  repair removes the ability to declare a deliberately NON-CALLABLE
+  definition, a boundary `src/parse/rxt_source.c:288-291` records as a
+  feature.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the

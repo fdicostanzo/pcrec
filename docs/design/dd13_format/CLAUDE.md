@@ -77,11 +77,53 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.1 (2026-09-12,
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.2
+  (2026-09-12, lane w23fix, [DD-13b.W23] STEP 1.2): the r57 FIX
+  ROUND.** **Read §0.8 first** — the finding-by-finding record for the
+  three-critic panel (`../../dev/reviews/2026-09-12-r57-w23-format.md`:
+  3 blockers, 14 must-fixes, 12 shoulds, 4 nits, all FIX-NOW). Five
+  structural outcomes. **(1) The BLOCK SCALAR was a second, undeclared
+  structural device and is now S3 OPAQUE REGIONS** (§1.2.1) — three
+  critics converged on it, and the measurement is that inside a
+  `description |` body an indented `#` is PROSE and ragged indentation
+  is legal (both rc 0 on the shipped binary), neither recoverable from
+  S0/S1 as revision 3.1 wrote them. With it, **the structure layer
+  states TWO schema parameters** (`opens_group`, `value = prose`), the
+  second open-ended by construction, and §1.2.4's marker comparison is
+  re-run against that baseline — the marker still loses, on a count-1
+  argument corrected from "the error class disappears" to "it
+  RELOCATES to the schema layer". **(2) §1.6.1a is THE NARROWING
+  CENSUS, a closed list of five, three taken** (the ragged head body,
+  TAB indentation refused by name, and the `x_y`-beside-`x-y` collision
+  in §2.22's semantics) **and two AVOIDED by S3** — each taken row
+  with population / forced-vs-chosen / spec sentence, and §1.6.4 grows
+  a FOURTH case for a CHOSEN narrowing plus the duty to sweep the whole
+  delivery. Revision 3.1 wrote that standing rule from one finding and
+  did not run it. **(3) §2.25.3 goes from five constraint kinds to
+  EIGHT** — `cross-scope` (whose deferral in §2.25.4 contradicted a
+  production one section earlier), `forbidden-if` (`authored`'s
+  must-be-absent half), and `functional-binding` (the subject-`as` id,
+  which `unique-by` would have REFUSED on its documented normal
+  spelling) — plus `under`'s key tuple given an honest home as parser
+  code with its reason, and the completeness claim withdrawn.
+  **(4) §2.19's `pattern`/`pattern-esc` both-in-one-block refusal is
+  DROPPED**: empty population, because both are block openers and a
+  second opener starts a new block (MEASURED). **(5) §2.22 gains the
+  `rxt_compose.c:854-864` precedent, the `def_by_name` misname fixed,
+  a refuse-before-mapping LENGTH rule (`pcrec_rxt_prefix_from_name`
+  truncates silently) and the 128-byte callability bound inherited
+  from PCRE2 under D26.** New Frank queue item **W23-F4** (§7.3,
+  ready-to-ratify, manager recommends ACCEPT): the repair removes the
+  ability to declare a deliberately non-callable definition. Filed
+  alongside: **`../../dev/known_issues.md` K57**, the block scalar's
+  dedent strip silently deleting content. Revision 3.1's own text
+  stands where 3.2 does not touch it, and §5.2a is re-aimed with a
+  fifth attack for S3.
+  **REVISION 3.1 (2026-09-12,
   lane w23recon, [DD-13b.W23] STEP 1.1): the RECONCILIATION against
   Frank's two 2026-09-12 rulings**, which were issued mid-flight and
-  never reached the authoring lane. **Read §0.7 first** — the
-  consequence-by-consequence revision record. The
+  never reached the authoring lane. **§0.7 is its own revision
+  record.** The
   internal-consistency ruling rewrites **§1.2 as TWO LAYERS**: a
   context-free STRUCTURE layer (S0 line classes, S1 indentation
   attaches a line to the line above it, S2 a declared two-member
@@ -101,29 +143,41 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   alternative is refuted by measurement (only 26% of `pattern` lines
   are blank-preceded). **§1.2.4 designs the visible-marker
   alternative and declines it** on three counts, naming `|` and
-  `tag-prose`'s `"` as VALUE-form discriminators rather than structure
-  markers. **§2.25 designs the SCHEMA** (one `.def` table, the parser
+  `tag-prose`'s `"` as VALUE-form discriminators — **the `|` half of
+  which revision 3.2 WITHDREW: a discriminator that selects a
+  multi-line form is also a structure device, and `|` is now S3.**
+  **§2.25 designs the SCHEMA** (one `.def` table, the parser
   as its reader through one exhaustive switch, `--list-schema` as the
-  sixth registry dump, five constraint kinds each with a named W23
-  customer under §2.10's own membership rule, `vocabulary` nested as
+  registry dump (**3.1 said the sixth; it is the SEVENTH**), five
+  constraint kinds each with a named W23
+  customer under §2.10's own membership rule (**3.2: EIGHT, and the
+  completeness claim withdrawn**), `vocabulary` nested as
   the FILE-declared rows via a `source` column, §2.24's
   VALIDATES-vs-RECOGNISES upgraded from prose to a rendered
-  `validated_by` column, four D77 deferrals with triggers, and the
-  honest limit that legs B and C stay independent ON PURPOSE).
+  `validated_by` column, four D77 deferrals with triggers (**3.2:
+  split into DEFERRED and DECLINED, since one of them had no possible
+  trigger**), and the honest limit that legs B and C stay independent
+  ON PURPOSE.
   **§2.26 is the OWNERSHIP AUDIT** the second ruling forces — all
-  thirteen W23 spellings swept, nine confirmed, **four moved**:
+  thirteen W23 spellings swept, nine confirmed, **THREE moved**
+  (3.1 counted four; the fourth, `description` → `prose-value`, is
+  §1.2.5's consequence of the structure-layer re-factoring and not an
+  audit move):
   `capable` → `provides` (the pattern side is `tag requires=`, so the
   two ends of one relation must read as a pair), `licence`/
   `licence-note` → `license`/`license-note` (SPDX's own key), the
   `freq` data block's five one-off provenance fields → **the same
   `provenance` record a pattern block uses** (the audit's biggest
   finding: revision 3 shipped TWO provenance vocabularies for one
-  idea, `exemplar`≡`source` and `date`≡`retrieved`), and a pattern
-  block's `description` → `prose-value`, superseding the W1.1
-  carve-out. Revision 3.1 adds NO production, no abi event, and no
-  question to the Frank queue; W23-F3 is RESOLVED. §3.2 gains H16 and
-  sabotage rows S-R1..S-R4; §3.4 gains SW16/SW17; §5.2a is the
-  panel's shortest attack path. **Revision 3 (lane w23design, same
+  idea, `exemplar`≡`source` and `date`≡`retrieved`). Alongside them, a
+  pattern block's `description` → `prose-value`, superseding the W1.1
+  carve-out (§1.2.5's, not the audit's). Revision 3.1 adds NO
+  production, no abi event, and no question to the Frank queue; W23-F3
+  is RESOLVED. §3.2 gains H16 and sabotage rows S-R1..S-R4 (**3.2:
+  six rows — S-R2 re-homed to a pcrec-side detector, S-R3 re-spelled
+  so it fails NOW, S-R4 split into two, and S-R5 added for S3**);
+  §3.4 gains SW16/SW17; §5.2a is the panel's shortest attack path
+  (**3.2: re-aimed, five items**). **Revision 3 (lane w23design, same
   day, [DD-13b.W23] STEP 1) is the base text: the [B42] absorption.**
   Under Frank's F-Q1 (Tier 1 + Tier 2 as ONE W23 delivery — §1.4 restructured;
   W1 is BUILT) and F-Q2 (multi-line patterns MUST — `pattern-esc`,
