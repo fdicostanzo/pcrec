@@ -6874,3 +6874,26 @@ bench_rxt_needs_v1.md §2.3/§2.6, the ownership ruling (2026-09-12) whose
 scope this narrows: "the set's truth lives in .rxt" covers test content
 (patterns, subjects, expectations, variants, conventions), not engine
 description.
+
+## D100 — W23-F4 RULED ACCEPT: THE DERIVED-IDENTIFIER REPAIR REMOVES FREE NON-CALLABILITY; `export` IS THE PRIVACY MECHANISM (Frank, 2026-09-13, sixty-second session)
+
+Decision: format_design.md §2.22's derived-identifier binding lands as
+designed — `(?&some_id)` reaches a definition named `some-id`, with the
+`x_y`-beside-`x-y` collision refused loudly. The capability this removes
+(a `-`/`.`-named definition being buildable-but-structurally-uncallable,
+recorded as a FEATURE at src/parse/rxt_source.c:288-291) is ACCEPTED as
+lost: a call should be explicit and named rather than blocked by an
+accident of PCRE2's name grammar; `export` is the format's actual
+privacy mechanism (a private helper is declared by not exporting it);
+the removed capability has zero current customers in either repo (D77);
+and restoration is priced (a `private` marker or `no-derived-call`
+schema row, one row and one arm) if a library ever wants it. The two
+rxt_source.c comment sites move in the same change as the repair (SW12)
+so the code never contradicts the behavior.
+
+Consequence: the Frank queue on [DD-13b.W23] is EMPTY (F1/F2 withdrawn
+by D99, F3 resolved at revision 3.1, F4 ruled here). W23 implementation
+is gated only on revision 3.4's merge and its critic panel.
+
+Cross-notes: D99, format_design.md §2.22/§7.3, r57 C-M2 (the finding
+that raised it).
