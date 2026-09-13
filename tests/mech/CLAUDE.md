@@ -2394,3 +2394,22 @@ encoding-conditional planted immediately before the VM's `_accept:` label,
 outside every named region the rebuilt check excises, caught on all 5
 VM-selected witnesses in a 10-pattern mixed set).
 
+## [DD-13b.W23.1] rows S241 and S244
+
+Both plant into the `.rxt` FORMAT SCHEMA rather than into the compiler,
+and both were validated to FAIL on the tree they are planted into rather
+than on a later drift.
+
+- **S241** makes `--list-schema` hand-write one row instead of walking the
+  enforced table, and the copy DISAGREES on one LIVE column. A faithful
+  hand-written copy would detect only drift, which is a row that passes on
+  the day it lands. Its detector is `tests/rxtsource/`'s W23-S3 arm 5,
+  which drives each row's declared cardinality in BOTH directions —
+  an arm asserting only "at-most-one rows refuse a second" would MISS this
+  plant entirely, because the plant moves a row OUT of that set.
+- **S244** breaks the prose PAIR in the `children` column ALONE. That
+  plant is the whole argument for reading a pair: with `value` read alone
+  it changes nothing observable anywhere — the region still opens, its
+  lines are still bytes, and bytes reach no validity check — so a
+  normative column would carry a corruption with NO DETECTOR. Its
+  detectors are the fixtures that assert a region's DECODED VALUE.

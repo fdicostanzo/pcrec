@@ -410,3 +410,48 @@ shipped with nothing exercising them.
   visible without fabricating a verdict, and the reconciliation check
   (sums = census) stays HARD on every box, so a real local movement
   still fails loudly. Summary gained a `checks recorded:` line.
+
+## [DD-13b.W23.1] the structure layer, its fixtures, and W23-S3
+
+Ten fixtures land with the two-layer grammar, and they divide into three
+kinds that are worth keeping apart when adding an eleventh.
+
+**REGRESSIONS FOR A NARROWING TAKEN.** `config_tab_body.rxtin` and
+`config_mixed_indent.rxtin` parse at **rc 0** on the pre-W23 binary. Each
+fixture IS its narrowing's regression rather than an assertion about
+something that never worked, which is the only form in which a narrowing
+can be checked at all.
+
+**PINS FOR A NARROWING AVOIDED.** `prose_hash.rxtin`,
+`prose_ragged.rxtin` and `prose_paragraph_break.rxtin` were accepted
+before and are accepted still. They exist because a later wave that
+weakens S3 would re-create three narrowings SILENTLY; an avoidance needs a
+cell exactly as much as a decision does, and an accident does not get one.
+
+**A DEFECT, PINNED AS A DEFECT.** `prose_dedent.rxtin` asserts TODAY'S
+WRONG decoded value — the dedent strip is a byte count, so a continuation
+line indented less than the block's first silently loses content — with
+K57 named beside it. `tests/rxtsource/` has no known-fail bucket, so the
+pin is the assertion itself: **the day K57 is fixed this fixture goes
+RED**, and that red is the signal to invert it. A pin that cannot outlive
+its defect is the cheapest form available here, because the fix breaks it.
+
+**EVERY PROSE CELL ASSERTS THE VALUE, NEVER THE VERDICT.** A reader that
+opens a region and throws its content away still "accepts" the file. The
+same logic makes `ws_only_line_positions.rxtin` assert PARSE IDENTITY with
+its own deletion rather than acceptance, and makes the two comment
+fixtures assert the LINE the refusal names rather than that one happened.
+
+**W23-S3 drives BEHAVIOUR, never the table.** Its six arms exercise what
+each schema row CLAIMS — the opener set with a non-opener control,
+the prose pair in both directions, the wave column, cardinality per row in
+both directions, `children` with its control — and it never compares
+`--list-schema` to `rxt_schema.def`, which is the same source twice. Its
+denominator is the COMPILE-TIME row total the dump prints, because a check
+that iterates the dump's rows cannot see a row that is missing.
+
+**THE FIXTURES ARE LEG A ONLY AT THIS PIN**, and that is the staging
+rather than the rule: legs B and C gain their attachment arm and their
+child consumption at W23.2. `block_scalar_in_body.rxtin` is the visible
+edge of it — a shipped refusal that changed DIRECTION (§1.2.5's widening)
+and is asserted against leg A alone until the other two legs are taught.

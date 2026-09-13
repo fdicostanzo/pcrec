@@ -1156,6 +1156,48 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `cx.mods = (ModState){...}` assignments are gone, and every Ctx that can
   reach a parser or a doorway port (including syntax_dump.c's two query
   surfaces, which can reach module `modifiers`' producing port) calls it.
+- **rxt_schema.def** — [DD-13b.W23.1] THE `.rxt` FORMAT'S SCHEMA: the
+  format's own rules as DATA (`docs/design/dd13_format/format_design.md`
+  §2.25, Frank's consequence 3). One row per (scope, line-kind), ten
+  columns, on `src/core/limits.def`'s X-macro model INCLUDING its
+  Makefile-prerequisite lesson (the `.def` is in the object rule's
+  prerequisite list — the fourth instance of that defect, forestalled
+  rather than found). Read its own header before adding a row: it is the
+  row shape AND the reasoning, and the three columns the STRUCTURE layer
+  reads (`opens_group`, the `value`+`children` PAIR, `children: tree`) are
+  normatively described at `format_design.md` §1.2.1 and nowhere else.
+  **A WITHDRAWN PRODUCTION HAS NO ROW HERE, AND THAT ABSENCE IS THE
+  MECHANISM**: no row means no `wave`, which means it cannot appear in the
+  derived "not in this build" list, which means it refuses as an unknown
+  token in its scope — the truth about it. `configs`, `provides` and a
+  `config` body's `testee`/`option` left the format that way (D99).
+  **`version` is the one row with a production nobody will ever write**: a
+  RESERVED sentinel wave, so the same derivation answers a third question
+  ("the format owns this word and no build parses it") with its own
+  sentence.
+- **rxt_schema.c** — the schema table's READER, and the only thing that
+  knows how to read it. The row lookup, the three structure-layer
+  parameter queries (each ONE column read, which is what makes them
+  `--list-schema` queries a generic reader can fetch rather than rules it
+  must remember), the scope renderings, and **the ONE exhaustive
+  `default:`-less switch over the SEVEN constraint kinds** —
+  `src/parse/definitions.c`'s `pcrec_def_tag_applies` shape, so an eighth
+  kind is a compile error at exactly the site that must name it
+  (`src/opt/mrl.c:39-45`'s house rule). `pcrec_rxt_schema_group_scope` is
+  the ONE fact the table does not carry (a group's member scope) and its
+  own comment states the D77 trigger for making it a column.
+- **schema_dump.c** — `pcrec --list-schema`, the SEVENTH registry dump and
+  the eighth conforming table producer (`docs/spec/table_contract.md`).
+  `limits_dump.c`'s shape with one deliberate difference: it `#include`s
+  the `.def` NOWHERE and walks the table through `pcrec_rxt_schema_rows()`
+  instead, the same entry the parser uses — one derivation, two readers.
+  TWO NAMED SECTIONS (`schema`, `surface`), the second being the DECLARED
+  NON-COVERAGE; the main table is named rather than anonymous because
+  `tests/lib/table.sh`'s Sections rule 4 makes an anonymous section in a
+  multi-section stream the one table no conforming consumer can address.
+  A trailing `# schema-rows:` comment carries the COMPILE-TIME row total,
+  which is the denominator a check iterating the dump's rows cannot get
+  from the rows themselves.
 - **rxt_source.c** — [DD-13b.W1.1] THE `.rxt` SOURCE FILE'S HEAD PARSER,
   and the ONLY one. `--source` must resolve `lib`/`name`/`target`/`config`
   before it can compile anything, so pcrec reads the file's head; the
@@ -1276,6 +1318,38 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   what keeps `--list-source` a pure function of the file's bytes — asserted
   in `tests/rxtsource/`, where the fixture whose `lib` does not resolve is
   DUMPED happily and REFUSED by `--source`.
+
+  **[DD-13b.W23.1] ITS DISPATCH IS A WALK OVER `rxt_schema.def` NOW, AND
+  THE THREE FLAT KEYWORD TABLES ARE GONE.** `head_vocab`, `config_vocab`,
+  `block_vocab` and `vocab_find` said which token was legal where, and a
+  chain of `tok_is()` arms below them each remembered its own cardinality,
+  its own continuation rule and its own idea of what might be indented
+  under it. The ruling is that those rules are DECLARED and VALIDATED, so
+  nothing in this file decides what is legal any more — it decides what a
+  legal line MEANS. What replaced them is the STRUCTURE LAYER
+  (`format_design.md` §1.2.1): S0's four line classes, S1's attachment
+  stack (arena-backed and grown, needing no limit of its own — each level
+  costs a leading space, so the depth is bounded by the line), S2's
+  grouping through a scope-free opener query, S3's opaque regions with a
+  PARAMETERIZED trigger, and the OPEN SUBTREE, inside which nothing is
+  dispatched at all.
+  **THE TRIGGER'S PARAMETERIZATION IS THE PART THAT IS EASY TO DROP**:
+  a region opens only when the KIND is prose-region-opening AND the
+  trimmed value is a bare `|` AND the line is not inside an open subtree.
+  Read without the first condition, `pattern |` — a legal pattern, the
+  alternation of two empties — becomes a refusal.
+  **EVERY DIAGNOSTIC CARRIES A CLASS TAG** (`[structure-attachment]`,
+  `[unknown-token-in-scope]`, `[schema-constraint]`, `[value-shape]`),
+  first and in brackets, because the three-leg differential has to compare
+  a RULE and not an exit code: a reader that refuses every unrecognised
+  line with one sentence agrees with pcrec on the verdict while having no
+  rule at all. D26 is untouched — the tag is what a check reads, the
+  sentence beside it is for a human, and D26 governs wording.
+  **CARDINALITY IS ENFORCED GENERICALLY FROM THE COLUMN**, one refusal
+  site, so six settings kinds that silently LAST-WON cannot acquire six
+  wordings between them.
+  MEASURED at the landing: `--list-source` byte-identical on all 210
+  corpus files against a scratch build of the branch point.
 
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
