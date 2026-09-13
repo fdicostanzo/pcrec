@@ -1,0 +1,16 @@
+# [DD-13b.W23.1] `version` IS RESERVED, AND THE REFUSAL MUST SAY SO.
+#
+# A keyword with NO schema row refuses as an unknown token in its scope,
+# which is the truth about a WITHDRAWN production and a LIE about a
+# reserved one: `version` is a word the format owns and no build parses.
+# So it has a row whose `wave` is the reserved sentinel, the same
+# derivation that produces the "not in this build" list produces this
+# too, and the refusal names the word rather than sending a reader
+# hunting a typo in it (K14's shape).
+#
+# The reservation is one line of insurance against the day a change to
+# this format is not additive. Nothing today is, which is why the keyword
+# has a row and no production.
+version 2
+pattern a+
+m "aaa" 0 3

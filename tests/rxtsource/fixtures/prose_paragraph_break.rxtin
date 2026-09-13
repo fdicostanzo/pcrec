@@ -1,0 +1,16 @@
+# [DD-13b.W23.1] AN INDENTED WHITESPACE-ONLY LINE INSIDE A PROSE REGION —
+# the format's ONLY paragraph break (§1.6.1a candidate (6)).
+#
+# S0's BLANK is the EMPTY line and nothing else, so a whitespace-only line
+# ends nothing and is BYTES inside a region. ASSERTING THE VALUE is what
+# catches the failure mode: a reader that ended the region at this line
+# still "accepts" the file — it just loses the second paragraph — so a
+# verdict-only assertion would pass on exactly the reader this fixture
+# exists to refuse.
+description |
+  first paragraph
+  
+  second paragraph
+
+pattern a+
+m "aaa" 0 3

@@ -4327,6 +4327,152 @@ const char *pcrec_enabled_set_modules(void);
  * constant before changing it. */
 extern const char *const PCREC_DEFAULT_FEATURES;
 
+/* ---- [DD-13b.W23.1] the `.rxt` format's SCHEMA (src/parse/rxt_schema.c)
+ *
+ * THE FORMAT'S RULES AS DATA. `src/parse/rxt_schema.def` is the table — one
+ * row per (scope, line-kind), the ten columns of
+ * docs/design/dd13_format/format_design.md §2.25.2 — and this is its type
+ * vocabulary. The parser WALKS it (rxt_source.c), `--list-schema` PRINTS it
+ * (schema_dump.c): ONE derivation, two readers, so a dump that disagrees
+ * with the parser is not expressible. Read the `.def`'s own header before
+ * adding a row; read format_design §1.2.1 before touching `opens_group`,
+ * `value`/`children` or the `tree` child value, which are the three
+ * STRUCTURE-LAYER PARAMETERS and whose effects are stated there and
+ * nowhere else. */
+typedef enum {
+    RXT_SCOPE_FILE,        /* the head's file-level declarations           */
+    RXT_SCOPE_BLOCK,       /* a pattern block's own lines                  */
+    RXT_SCOPE_CONFIG,      /* the indented body of `config <name>`         */
+    RXT_SCOPE_DATA,        /* the body of a `freq <name>` data block       */
+    RXT_SCOPE_PROVENANCE,  /* a `provenance` sub-block's attributes        */
+    RXT_SCOPE_VARIANT,     /* a `variant <testee>` sub-block's attributes  */
+    RXT_SCOPE_NSCOPES
+} RxtSchemaScope;
+
+typedef enum {
+    RXT_VAL_NONE, RXT_VAL_TOKEN, RXT_VAL_INT, RXT_VAL_LINE, RXT_VAL_PROSE,
+    RXT_VAL_LIST, RXT_VAL_PAIR, RXT_VAL_SUBJECT, RXT_VAL_CASE,
+    RXT_VAL_QUALIFIED, RXT_VAL_RAW
+} RxtValueShape;
+
+/* The four real cases: takes nothing indented; takes BYTES (the indented
+ * lines ARE this line's value); takes structurally-parsed lines with no
+ * scope and no rows (§2.27's `ext` — STRUCTURE-LAYER PARAMETER 3, the OPEN
+ * SUBTREE); takes schema-checked lines in a named scope. */
+typedef enum {
+    RXT_CH_NONE, RXT_CH_PROSE, RXT_CH_TREE,
+    RXT_CH_CONFIG, RXT_CH_DATA, RXT_CH_PROVENANCE, RXT_CH_VARIANT
+} RxtChildren;
+
+typedef enum {
+    RXT_CARD_ONE, RXT_CARD_AT_MOST_ONE, RXT_CARD_REPEAT, RXT_CARD_ACCUMULATE
+} RxtCardinality;
+
+typedef enum { RXT_SRC_FORMAT, RXT_SRC_FILE } RxtRowSource;
+typedef enum { RXT_VB_PCREC, RXT_VB_ALL_READERS, RXT_VB_NONE } RxtValidatedBy;
+
+/* §2.25.3's SEVEN kinds. `cross-scope` is NOT among them — its only
+ * customer left with D99's withdrawal of `provides`, and the membership
+ * rule that admits a kind only when a production needs it must drop one
+ * when no production does, or it is not a rule but a ratchet. Adding an
+ * eighth is one enumerator plus one arm of `pcrec_rxt_constraint_name`'s
+ * `default:`-less switch, which is a COMPILE ERROR at exactly the site
+ * that must handle it (`src/opt/mrl.c:39-45`'s stated house rule). */
+typedef enum {
+    RXT_C_REQUIRED,
+    RXT_C_REQUIRED_IF,
+    RXT_C_FORBIDDEN_IF,
+    RXT_C_EXACTLY_ONE_OF,
+    RXT_C_CLOSED,
+    RXT_C_UNIQUE_BY,
+    RXT_C_FUNCTIONAL_BINDING,
+    RXT_C_NKINDS
+} RxtConstraintKind;
+
+typedef struct {
+    RxtSchemaScope        scope;
+    const char     *kind;
+    RxtValueShape   value;
+    int             opens_group;
+    RxtChildren     children;
+    RxtCardinality  cardinality;
+    const char     *constraints;   /* `;`-separated, each `<kind> [arg…]` */
+    RxtRowSource    source;
+    RxtValidatedBy  validated_by;
+    int             wave;
+} RxtSchemaRow;
+
+/* THE WAVE THIS BUILD IMPLEMENTS. A row whose `wave` exceeds it is
+ * RECOGNISED and refused BY NAME as NOT IN THIS BUILD — never as an unknown
+ * token, which is K14's shape (sending a reader hunting a typo in a word
+ * that is in the spec). One home, so the "not in this build" list is
+ * derived rather than hand-kept. */
+#define PCREC_RXT_WAVE_BUILT 1
+
+/* RESERVED — a word the format OWNS with no production behind it in any
+ * build, which is a different answer from "a later wave builds it". It is
+ * spelled as a `wave` value rather than as an eleventh column because the
+ * two facts a reader wants are the same two: the keyword is real, and this
+ * build will not parse it. One line of insurance against the day a change
+ * to this format is not additive; nothing today is. */
+#define PCREC_RXT_WAVE_RESERVED 999
+
+/* The whole table, and its COMPILE-TIME row total. The total is what stops
+ * a check that iterates `--list-schema`'s rows from being satisfied by a
+ * truncated dump: a check whose population is defined by the thing it
+ * checks agrees with a dropped row by construction (w23_impl DECIDED (12)).
+ * `--list-schema` prints it and tests/rxtsource/ asserts rows == total. */
+const RxtSchemaRow *pcrec_rxt_schema_rows(size_t *n);
+size_t              pcrec_rxt_schema_nrows(void);
+
+/* The lookup the parser's dispatch walk IS. NULL when no row exists for
+ * (scope, kind) — which is the "unknown token in this scope" refusal, and
+ * is a different answer from a row whose wave is above this build's. */
+const RxtSchemaRow *pcrec_rxt_schema_row(RxtSchemaScope scope, const char *kind,
+                                         size_t klen);
+
+/* THE THREE STRUCTURE-LAYER PARAMETERS (format_design §1.2.1), each ONE
+ * column read and no predicate: a generic reader FETCHES them rather than
+ * hard-coding them, which is what `--list-schema`'s three row-set queries
+ * are. Parameter 2 is the PAIR — `value: prose` AND `children: prose` —
+ * because reading `value` alone would leave a corrupted `children` with no
+ * detector anywhere (S-R5's plant (b)). */
+int pcrec_rxt_schema_opens_group(const RxtSchemaRow *r);
+int pcrec_rxt_schema_prose_region(const RxtSchemaRow *r);
+int pcrec_rxt_schema_open_subtree(const RxtSchemaRow *r);
+
+/* The scope a row's CHILDREN live in, for `children: <a named scope>`.
+ * RXT_SCOPE_NSCOPES for `none`/`prose`/`tree`, none of which is a scope. */
+RxtSchemaScope pcrec_rxt_schema_child_scope(const RxtSchemaRow *r);
+/* The scope a GROUP's members live in — the one mapping the table does not
+ * carry, and the `.def`'s own header says why. */
+RxtSchemaScope pcrec_rxt_schema_group_scope(RxtSchemaScope opener_scope);
+
+/* Column renderings, shared by the dump and by every diagnostic that names
+ * a scope — so a refusal and the dump cannot disagree about what a scope is
+ * called. `pcrec_rxt_constraint_name` is the ONE exhaustive site. */
+const char *pcrec_rxt_scope_name(RxtSchemaScope s);
+const char *pcrec_rxt_scope_context(RxtSchemaScope s);
+const char *pcrec_rxt_scope_noun(RxtSchemaScope s);
+/* The opener set as a scope-free query — structure-layer parameter 1. */
+const RxtSchemaRow *pcrec_rxt_schema_opener(const char *kind, size_t klen);
+const char *pcrec_rxt_value_name(RxtValueShape v);
+const char *pcrec_rxt_children_name(RxtChildren c);
+const char *pcrec_rxt_cardinality_name(RxtCardinality c);
+const char *pcrec_rxt_row_source_name(RxtRowSource s);
+const char *pcrec_rxt_validated_by_name(RxtValidatedBy v);
+const char *pcrec_rxt_constraint_name(RxtConstraintKind k);
+
+/* Walks a row's `constraints` column. Returns 1 and fills `*k`/`*arg`/
+ * `*arglen` per clause, 0 at the end; a clause naming no kind in the switch
+ * above is an internal defect and returns -1 rather than being skipped. */
+int pcrec_rxt_constraint_next(const char **cur, RxtConstraintKind *k,
+                              const char **arg, size_t *arglen);
+
+/* `--list-schema` (src/parse/schema_dump.c): the table above as TSV, under
+ * docs/spec/table_contract.md. Caller frees. */
+char *pcrec_rxt_schema_tsv(void);
+
 /* ---- [DD-13b.W1] the `.rxt` SOURCE file (src/parse/rxt_source.c) -------
  *
  * THE ONE HEAD PARSER's types. `--source` must resolve `lib`/`name`/

@@ -1236,7 +1236,7 @@ deferred to the end is the rule's violation with extra steps.
 | **SW2** | `rxt_format.md` | the LEXICAL RULES section becomes **the TWO-LAYER statement** — the STRUCTURE layer (S0's four line classes, S1 attachment, S2's two-member opener set) and the pointer to the schema for everything else. The head/body indentation asymmetry is DELETED rather than narrowed; the bare-indented-line refusal survives in its two arms; `prose-value` becomes legal wherever the schema declares a prose value, at any depth | W23.1 |
 | **SW16** | `rxt_format.md` | **THE THREE-DEVICE STATEMENT, THE VERSION RULE, AND THE WHOLE NARROWING CENSUS.** (a) the ragged HEAD BODY; (b) **TAB indentation refused by name** — indentation is spaces, a tab inside a VALUE is still data; (c) the two narrowings AVOIDED and the rule that avoids them (inside a `\|` region an indented `#` is PROSE and ragged indentation is legal, while OUTSIDE one the indented-`#` refusal is unchanged); (d) the FOUR LINE CLASSES and what each does — BLANK is the EMPTY line and closes attachment, a COMMENT closes attachment and ends a prose region exactly as a blank does, a WHITESPACE-ONLY line is INERT outside a region and BYTES inside one; (e) a prose region opens on a `\|` whose trailing whitespace is TRIMMED and only for a kind the schema declares prose-region-opening — **both conditions, since without the first `description \| ` is a literal and without the second `pattern \|` is a refusal**; (f) the CARDINALITY rules for the settings kinds; **(g) THE STRUCTURE LAYER TAKES THREE PARAMETERS, and the third is the OPEN SUBTREE** — stated here, with the layer, because it is a rule a second `children: tree` production would inherit for free. Also carries `block_scalar_in_body.rxtin`'s re-aim: a shipped refusal changing DIRECTION is named in the spec, not left to a fixture diff | W23.1 |
 | **SW17** | `rxt_format.md` + `cli.md` + **`table_contract.md`** + `registry.md` | **THE SCHEMA AND ITS SURFACE.** The columns (including `children: prose` and `children: tree` with structure-layer parameter 3), **the SEVEN-kind constraint vocabulary** with its membership rule, the one named parser-code exception (`under`'s key tuple), the deferred/DECLINED split, and the statement that the parser is the table's reader. `cli.md` gains `--list-schema` as the **SEVENTH** registry dump. `registry.md` gains its row **with its own numbered sequence RECONCILED** — it stops at the fifth surface while two dumps are undocumented there, so the row is added to a reconciled list rather than appended to a gap. `table_contract.md` gains its Scope row **AT BIRTH** | W23.1 |
-| **SW13** | `rxt_format.md` | the "NOT IN THIS BUILD" recognised-keyword list, **DERIVED from the schema's `wave` column**, plus `version` RESERVED | W23.1 |
+| **SW13** | `rxt_format.md` | the "NOT IN THIS BUILD" recognised-keyword list, **DERIVED from the schema's `wave` column**, plus `version` RESERVED — **built at W23.1 as a REAL schema row carrying the RESERVED sentinel wave** (ratified 2026-09-13: a spec claim needs a producer, so the reserved word is a row the same derivation reads, refusing BY NAME as RESERVED rather than as NOT IN THIS BUILD) | W23.1 |
 | **SW1** | `rxt_format.md` | `pattern-esc`: the second block starter, the seven-escape vocabulary shared with subjects, **the `\x00` refusal naming K9 and its lifting trigger**, and the CLI decode-flag cross-reference | W23.3 |
 | **SW3** | `rxt_format.md` | `provenance`: the eleven fields, the per-parent required sets, the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-parent, the `license`/`license-note` spelling. **Also the `freq` data block's body**: its five one-off provenance fields are REPLACED by this same record |  W23.3 |
 | **SW4** | `rxt_format.md` | `vocabulary` — **and NOT `tag-prose`, REMOVED at 3.4.1 under r58 R3**: the hunk loses the quoted-tag-value paragraph with the production, so a `tag` item is a bare label or a `key=value` with no whitespace, exactly as W2 shipped it. Declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind), and `vocabulary`'s nesting as the FILE-declared rows of the schema. `requires` is stated as the ONE-ENDED truth: an ordinary `tag` key, closable like any other, **with no reserved status and no second end in the format** | W23.3 |
@@ -1492,13 +1492,15 @@ risk worth naming before starting.
   dispatches, **verified by W23-S3's per-row behavioural probe**, not by
   comparing two renderings of one table.
 - **The three structure-layer parameters are each ONE query**:
-  `opens_group: true` returns exactly `pattern` (one row at this step —
-  `pattern-esc` arrives at W23.3); the `value`+`children` PAIR returns
-  exactly five rows; `children: tree` returns **zero** rows at this
-  step and that is correct, because `ext` has not landed. **A parameter
-  whose row set is legitimately empty must be distinguishable from a
-  parameter that is not implemented** — the query returns an empty set,
-  never an error.
+  `opens_group: true` returns 2 rows, the `value`+`children` PAIR 6,
+  `children: tree` 2 — the full populations, because later-wave rows
+  EXIST wave-marked at this step (**corrected at the W23.1 merge**: this
+  brief originally said one/five/zero on §6.1's rows-arrive-with-their-
+  wave reading, and §2.2's rows-exist-wave-marked reading WINS, ratified
+  2026-09-13 — the derived not-in-this-build list needs rows to derive
+  from, K14's gap). **A parameter whose row set is legitimately empty
+  must be distinguishable from a parameter that is not implemented** —
+  the query returns an empty set, never an error.
 - `make strict` clean.
 - S241 and S244 each turn their NAMED check red; **S244 must be run in
   BOTH its plants** (a) and (b), since (b) is the one that would be

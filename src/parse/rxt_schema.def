@@ -1,0 +1,221 @@
+/* src/parse/rxt_schema.def — [DD-13b.W23.1] THE `.rxt` FORMAT'S SCHEMA:
+ * the format's own rules as DATA (docs/design/dd13_format/format_design.md
+ * §2.25, Frank's consequence 3; the build plan is `w23_impl.md` §1.4/§6.1).
+ *
+ * WHY THIS FILE EXISTS. Until W23.1 the format's structural rules lived in
+ * `src/parse/rxt_source.c`'s control flow — three flat keyword tables and a
+ * chain of `tok_is()` arms, each remembering its own cardinality, its own
+ * continuation rule and its own idea of what may be indented under it. The
+ * ruling is that those rules are DECLARED and VALIDATED instead. So: ONE
+ * table (this file), ONE reader/enforcer (`rxt_schema.c` + the parser's walk
+ * over it), ONE dump (`pcrec --list-schema`, src/parse/schema_dump.c) — the
+ * `src/core/limits.def` / `--list-limits` shape (D90/[LIM-1]), copied rather
+ * than reinvented, INCLUDING its Makefile-prerequisite lesson: a `.def` that
+ * is not a prerequisite of the object rule lets an edit rebuild nothing
+ * (`docs/dev/lanes/ccd2_report.md` §6b — the same defect this tree has now
+ * recorded three times, Makefile:118-146).
+ *
+ * THE ROW SHAPE, one line per (scope, line-kind) — the ten columns of
+ * format_design §2.25.2:
+ *
+ *   PCREC_RXT_SCHEMA(scope, kind, value, opens_group, children,
+ *                    cardinality, constraints, source, validated_by, wave)
+ *
+ *   scope        FILE | BLOCK | CONFIG | DATA | PROVENANCE | VARIANT — the
+ *                lexical context the kind is legal in. A bare token, pasted
+ *                into `RXT_SCOPE_##scope`; the dump lowercases it.
+ *   kind         the line's FIRST TOKEN, as an author types it. `frames-
+ *                buffer=` keeps its `=` because the token ends there
+ *                (rxt_source.c's `tok_len`).
+ *   value        the value SHAPE: NONE | TOKEN | INT | LINE | PROSE | LIST |
+ *                PAIR | SUBJECT | CASE | QUALIFIED | RAW. `PROSE` is half of
+ *                structure-layer parameter 2 (below). `RAW` is rest-of-line
+ *                verbatim, kept byte for byte (`pattern`, `pcrec`).
+ *                `CASE` is an expectation line's subject-plus-spans, which
+ *                THIS parser recognises and never reads — a `.rxt`
+ *                expectation is the harness's business.
+ *   opens_group  STRUCTURE-LAYER PARAMETER 1 (format_design §1.2.1 S2): a
+ *                line whose first token is a member of the opener set starts
+ *                a group that absorbs the following SIBLINGS. Exactly two
+ *                rows carry it, `pattern` and `pattern-esc`.
+ *   children     NONE | PROSE | TREE | <a named scope>. Four real cases:
+ *                takes nothing indented; takes BYTES (the indented lines are
+ *                this line's own VALUE); takes structurally-parsed lines
+ *                with NO scope and no rows (§2.27's `ext`); takes
+ *                schema-checked lines in the named scope. `PROSE` is the
+ *                other half of parameter 2 and `TREE` IS STRUCTURE-LAYER
+ *                PARAMETER 3 (the OPEN SUBTREE, r58 ruling R1) — see
+ *                format_design §1.2.1's parameter table, which is the
+ *                normative statement of both and which this comment points
+ *                at rather than restating.
+ *   cardinality  ONE | AT_MOST_ONE | REPEAT | ACCUMULATE. Normative on every
+ *                row; §2.25.2's ruled table is where the settings kinds' own
+ *                values are decided (and why `budget` is ACCUMULATE: the
+ *                corpus writes `budget steps=` and `budget frames=` in one
+ *                block on purpose, tests/harness/giveup.rxt:19-23).
+ *   constraints  zero or more of §2.25.3's SEVEN kinds, `;`-separated, each
+ *                optionally carrying its own parameter text
+ *                (`unique-by under-key`). Resolved against the ONE exhaustive
+ *                `default:`-less switch in rxt_schema.c, so an eighth kind
+ *                added later is a compile error at exactly the site that must
+ *                handle it (`src/opt/mrl.c:39-45`'s stated house rule).
+ *   source       FORMAT (pcrec declares this row) | FILE (a `vocabulary`
+ *                line declares it, §2.15). Every row below is FORMAT; the
+ *                FILE half arrives with `vocabulary`'s production.
+ *   validated_by PCREC (pcrec checks it; the harness legs do not) |
+ *                ALL_READERS (all three legs check it, and a fixture in
+ *                tests/rxtsource/fixtures/ proves they agree) | NONE (with
+ *                its reason in the `surface` section of `--list-schema`).
+ *                §3.3's rule for this lane: a row whose fixture is not
+ *                written yet takes PCREC, which is a TRUE statement, rather
+ *                than ALL_READERS, which would be a claim about two parsers
+ *                nothing tests.
+ *   wave         which delivery introduces the kind. A row whose wave is
+ *                above this build's refuses BY NAME as NOT IN THIS BUILD —
+ *                so SW13's "not in this build" list is DERIVED from this
+ *                column rather than hand-kept, and a withdrawn production
+ *                cannot be forgotten in a hand-kept list because there is no
+ *                hand-kept list. `PCREC_RXT_WAVE_BUILT` (rxt_schema.c) is
+ *                the one place this build's own number lives.
+ *
+ * THE CONSUMERS ARE THREE, AND A FOURTH DELIBERATELY IS NOT.
+ *   1. the parser's dispatch WALK (`rxt_source.c`),
+ *   2. the dump (`schema_dump.c`),
+ *   3. the spec's rendered tables (docs/spec/rxt_format.md).
+ * The `all-readers` POPULATION check (w23_impl §3.3) reads the DUMP and not
+ * this table, deliberately: a check that read the table would share a source
+ * with the parser it is checking (docs/dev/learnings.md §3).
+ *
+ * WITHDRAWN PRODUCTIONS HAVE NO ROW HERE, and that absence is the mechanism
+ * rather than a note: `configs build`/`configs describe` (D99 item 1),
+ * `provides` (D99 item 2) and a `config` body's `testee`/`option` (N-42) are
+ * not kinds, so they have no `wave`, so they cannot appear in a derived
+ * "not in this build" list. w23_impl §4.3 is the three-arm landing check on
+ * that claim.
+ *
+ * THE ONE THING THIS TABLE DOES NOT CARRY, named so it is a decision: a
+ * GROUP's member scope. `pattern` opens a group whose members are BLOCK-scope
+ * lines, and `opens_group` is a boolean (§2.25.2) while `children` means
+ * something else on an opener row (nothing may be INDENTED under a `pattern`
+ * line — that is still a structure error). So `rxt_schema.c`'s
+ * `pcrec_rxt_schema_group_scope` holds the one mapping FILE -> BLOCK, with a
+ * D77 trigger stated at the function: a second group opener at a different
+ * scope is what turns it into a column.
+ */
+
+/* ---- FILE scope — the head's declarations ---------------------------- */
+
+PCREC_RXT_SCHEMA(FILE, "lib",         TOKEN, 0, NONE,       REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(FILE, "target",      LINE,  0, NONE,       REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(FILE, "config",      LINE,  0, CONFIG,     REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(FILE, "description", PROSE, 0, PROSE,      AT_MOST_ONE, "", FORMAT, PCREC,       1)
+
+/* W23's head declarations. ROWS ONLY at W23.1 (w23_impl §2.2): leg A gains
+ * no arm for any of them in this step, and each therefore refuses BY NAME
+ * with its wave — which is the gap §2.3 measured (`vocabulary` reads "not a
+ * file-level directive" on the pre-W23 binary, the K14 shape). */
+PCREC_RXT_SCHEMA(FILE, "include",     TOKEN, 0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "vocabulary",  LIST,  0, PROSE,      REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "oracle",      TOKEN, 0, NONE,       AT_MOST_ONE, "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "tag",         LIST,  0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "use",         LIST,  0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "freq",        TOKEN, 0, DATA,       REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "ext",         TOKEN, 0, TREE,       REPEAT,      "", FORMAT, PCREC,      23)
+
+/* RESERVED, and the row exists PRECISELY so the refusal is by name. A
+ * keyword with no row refuses as an unknown token, which is the truth
+ * about a WITHDRAWN production and a lie about a reserved one: `version`
+ * is a word this format owns and will not parse. Its `wave` is the
+ * reserved sentinel, so the derivation that produces the "not in this
+ * build" list produces this too, with its own sentence. */
+PCREC_RXT_SCHEMA(FILE, "version",     TOKEN, 0, NONE,       AT_MOST_ONE, "", FORMAT, PCREC,
+                 PCREC_RXT_WAVE_RESERVED)
+
+/* ---- CONFIG scope — the indented body of a `config <name>` line ------- */
+
+PCREC_RXT_SCHEMA(CONFIG, "pcrec",    RAW,   0, NONE, ACCUMULATE,  "", FORMAT, PCREC, 1)
+PCREC_RXT_SCHEMA(CONFIG, "flags",    TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
+PCREC_RXT_SCHEMA(CONFIG, "features", LIST,  0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
+PCREC_RXT_SCHEMA(CONFIG, "encoding", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
+PCREC_RXT_SCHEMA(CONFIG, "engine",   TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
+PCREC_RXT_SCHEMA(CONFIG, "budget",   PAIR,  0, NONE, ACCUMULATE,  "", FORMAT, PCREC, 1)
+PCREC_RXT_SCHEMA(CONFIG, "analysis", LIST,  0, NONE, REPEAT,      "", FORMAT, PCREC, 23)
+
+/* ---- BLOCK scope — a pattern block's own lines ------------------------
+ *
+ * `pattern` is structure-layer parameter 1's one member in this build;
+ * `pattern-esc` is the second and arrives with its production at W23.3.
+ * The expectation kinds (`m`/`n`/`ms`/`ns`/`g`/`gp`/`gu`/`perr`) are
+ * RECOGNISED here and never read: this parser reads a file to find its
+ * definitions and targets, and a compiler that started scoring `m` lines
+ * would be a second harness. */
+
+PCREC_RXT_SCHEMA(BLOCK, "pattern",        RAW,   1, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "pattern-esc",    RAW,   1, NONE,  REPEAT,      "", FORMAT, NONE,       23)
+PCREC_RXT_SCHEMA(BLOCK, "name",           TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
+PCREC_RXT_SCHEMA(BLOCK, "description",    PROSE, 0, PROSE, AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
+PCREC_RXT_SCHEMA(BLOCK, "export",         LIST,  0, NONE,  AT_MOST_ONE, "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "flags",          TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
+PCREC_RXT_SCHEMA(BLOCK, "features",       LIST,  0, NONE,  AT_MOST_ONE, "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "encoding",       TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
+PCREC_RXT_SCHEMA(BLOCK, "engine",         TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
+PCREC_RXT_SCHEMA(BLOCK, "budget",         PAIR,  0, NONE,  ACCUMULATE,  "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "frames-buffer=", INT,   0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "perr",           NONE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "m",              CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "n",              CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "ms",             CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "ns",             CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
+PCREC_RXT_SCHEMA(BLOCK, "g",              CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "gp",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "gu",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+
+/* W23's block lines — rows only at W23.1, arms at W23.3. */
+PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)
+PCREC_RXT_SCHEMA(BLOCK, "under",      QUALIFIED, 0, NONE,       REPEAT,      "unique-by under-key",  FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "oracle",     TOKEN,     0, NONE,       AT_MOST_ONE, "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "provenance", NONE,      0, PROVENANCE, AT_MOST_ONE, "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "variant",    TOKEN,     0, VARIANT,    REPEAT,      "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "ext",        TOKEN,     0, TREE,       REPEAT,      "",                     FORMAT, PCREC, 23)
+
+/* ---- PROVENANCE scope — §2.14's ELEVEN fields, ONE record at TWO parents
+ *
+ * What differs by parent is the REQUIRED SUBSET, and that is this table's
+ * business rather than a second production: a pattern block requires
+ * `source`/`license`/`retrieved`/`fidelity`, a data block requires
+ * `source`/`retrieved`/`bytes`/`sha256` (§2.10 gives the reason an
+ * exemplar owes neither `license` nor `fidelity`). The per-parent split is
+ * spelled in the `required-if` parameter text rather than by duplicating
+ * the scope, which would be two records that rhyme — the audit's own
+ * finding (§2.26 item 10). */
+
+PCREC_RXT_SCHEMA(PROVENANCE, "source",       TOKEN, 0, NONE,  AT_MOST_ONE, "required",                                              FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "url",          TOKEN, 0, NONE,  AT_MOST_ONE, "required-if source != authored;forbidden-if source == authored", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "ref",          TOKEN, 0, NONE,  AT_MOST_ONE, "required-if source != authored;forbidden-if source == authored", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "retrieved",    TOKEN, 0, NONE,  AT_MOST_ONE, "required",                                              FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "license",      TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block",                           FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "license-note", PROSE, 0, PROSE, AT_MOST_ONE, "",                                                      FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "fidelity",     TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block;closed verbatim adapted synthesized", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "adaptation",   PROSE, 0, PROSE, AT_MOST_ONE, "required-if fidelity != verbatim",                      FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "attribution",  PROSE, 0, PROSE, AT_MOST_ONE, "",                                                      FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "bytes",        INT,   0, NONE,  AT_MOST_ONE, "required-if parent == data",                            FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "sha256",       TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == data",                            FORMAT, PCREC, 23)
+
+/* ---- VARIANT scope — §2.23's five attributes ------------------------- */
+
+PCREC_RXT_SCHEMA(VARIANT, "text",        RAW,   0, NONE,  AT_MOST_ONE, "exactly-one-of text unsupported", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(VARIANT, "unsupported", LINE,  0, NONE,  AT_MOST_ONE, "exactly-one-of text unsupported", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(VARIANT, "kind",        TOKEN, 0, NONE,  AT_MOST_ONE, "closed kind",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(VARIANT, "groups",      LIST,  0, NONE,  AT_MOST_ONE, "",                                FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(VARIANT, "note",        PROSE, 0, PROSE, AT_MOST_ONE, "",                                FORMAT, PCREC, 23)
+
+/* ---- DATA scope — the `freq <name>` block's body (§2.10) -------------- */
+
+PCREC_RXT_SCHEMA(DATA, "question",   LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "reader",     LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "analyzer",   LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "row",        LIST,  0, NONE,       REPEAT,      "",         FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "provenance", NONE,  0, PROVENANCE, AT_MOST_ONE, "",         FORMAT, PCREC, 23)
+
+#undef PCREC_RXT_SCHEMA

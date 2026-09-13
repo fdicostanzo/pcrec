@@ -1185,24 +1185,36 @@ fi
 # word graduates ONLY with its arm demonstrably landed and the collision
 # population being that arm's own legitimate uses — say so here, dated,
 # as this note does.
-CENSUS_WORDS_32="name target lib include config use variant oracle tag mc freq gap def with from testee option repl s sg serr unsupported analysis question reader exemplar bytes sha256 analyzer date row groups"
+# [DD-13b.W23.1] `testee` AND `option` LEFT THE LIST, 32 -> 30, AND THE
+# REASON IS A WITHDRAWAL RATHER THAN A GRADUATION. D99 (N-42) takes the
+# `config`-body roster lines out of the format: a testee roster is engine
+# DESCRIPTION, not rx definition, and it is aux content now (§2.27). A
+# withdrawn production has no schema row, therefore no `wave`, therefore
+# no entry in any derived "not in this build" list — which is the whole
+# mechanism, and it is why this list shrinks instead of a keyword being
+# marked somewhere as retired. The other direction (a word GRADUATES only
+# with its arm demonstrably landed) is unchanged and is the note above.
+CENSUS_WORDS_30="name target lib include config use variant oracle tag mc freq gap def with from repl s sg serr unsupported analysis question reader exemplar bytes sha256 analyzer date row groups"
 CENSUS_WORDS_W1="description only pcrec"
 
 collisions=""
 ncensus=0
-for w in $CENSUS_WORDS_32 $CENSUS_WORDS_W1; do
+for w in $CENSUS_WORDS_30 $CENSUS_WORDS_W1; do
     ncensus=$((ncensus + 1))
     c=$(xargs grep -h -c "^$w\\b" < "$FILES" 2>/dev/null \
         | awk '{ n += $1 } END { print n+0 }')
     [ "$c" != "0" ] && collisions="$collisions $w=$c"
 done
 
-n32=$(printf '%s\n' $CENSUS_WORDS_32 | wc -l | tr -d ' ')
-if [ "$n32" != "32" ]; then
-    fail "keyword census: the pinned 32-word list has $n32 words.
-  It is format_design §1.1's list verbatim; if it changed, say so there too."
+n30=$(printf '%s\n' $CENSUS_WORDS_30 | wc -l | tr -d ' ')
+if [ "$n30" != "30" ]; then
+    fail "keyword census: the pinned 30-word list has $n30 words.
+  It is the format's candidate-keyword set; if it changed, say WHY here —
+  a word leaves by WITHDRAWAL (no schema row, so no derived refusal list
+  can name it) or by GRADUATION (its arm landed, and the note above says
+  what that costs). Neither is a silent edit."
 else
-    pass "keyword census: the pinned list is 32 words (format_design §1.1) plus W1's 3 still-candidate words (encoding graduated 2026-09-05)"
+    pass "keyword census: the pinned list is 30 words plus W1's 3 still-candidate words (testee/option withdrawn 2026-09-13, D99/N-42; encoding graduated 2026-09-05)"
 fi
 
 if [ -z "$collisions" ]; then
@@ -1388,23 +1400,47 @@ check_refusal() {
 check_refusal head_after_pattern.rxt boundary   'lib' 'head'
 check_refusal from_cycle.rxt          cycle      'cycle' 'a' 'b'
 check_refusal wave2_keyword.rxt       wave       'include' 'NOT IN THIS BUILD'
+# [DD-13b.W23.1] RESERVED is a THIRD answer beside 'built' and 'a later
+# wave builds it', and the refusal has to distinguish it: a reader told
+# 'unknown' hunts a typo, and a reader told 'not in this build' waits for
+# a wave that is never coming.
+check_refusal version_reserved.rxt reserved 'version' 'RESERVED' 'no build parses it'
 check_refusal dup_config.rxt          duplicate  'duplicate' 'dev'
-check_refusal block_scalar_in_body.rxt blockscalar 'one-line form'
 
-# THE BLOCK-SCALAR REFUSAL IS THE ONE ALL THREE PARSERS MUST SHARE.
-# It is where format_design's prose-value production and the body's
-# no-indent rule contradict each other, so it is resolved the same way in
-# every parser or the differential finds it later and calls it a bug.
+# [DD-13b.W23.1] THE BLOCK SCALAR IN A PATTERN BLOCK: A SHIPPED REFUSAL
+# THAT CHANGED DIRECTION, and it is asserted on the DECODED VALUE rather
+# than on a verdict, because a three-way agreement on a value catches more
+# than one on a rejection.
+#
+# Until the grammar became two layers, "a pattern block's lines are NOT
+# indented" was a LEXICAL rule and the prose-value production said a
+# `description` takes a `|` block scalar; the two contradicted each other
+# and the body's rule won. Under S1 there is ONE attachment rule
+# everywhere and a prose region's extent is S3's, so the contradiction
+# DISSOLVES rather than being arbitrated: a block `description` takes the
+# full prose value, at any depth, wherever the schema declares one
+# (format_design §1.2.5, spec hunk SW16).
+#
+# LEG A ONLY AT THIS PIN, and the reason is the staging rather than the
+# rule: legs B and C gain their ATTACHMENT ARM and their child
+# CONSUMPTION at W23.2, so today they still refuse every indented line.
+# The three-leg form of this assertion belongs to that step, and asserting
+# it here would be asserting a claim about two parsers that have not been
+# taught yet — §3.3's rule for `all-readers`, applied to a fixture.
 bs="$FIXRUN/block_scalar_in_body.rxt"
-if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$bs" > /dev/null 2>&1; then
-    fail "head/blockscalar: run.sh ACCEPTED a '|' block scalar in a pattern block"
+bs_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$bs" 2>&1)"; bs_rc=$?
+bs_desc="$(printf '%s\n' "$bs_out" | awk -F'\t' '$1 == "pattern" { print $4; exit }')"
+if [ "$bs_rc" != "0" ]; then
+    fail "head/blockscalar: --list-source REFUSED a block '|' description; the
+  two-layer grammar makes a prose value legal wherever the schema declares
+  one (format_design §1.2.5). got: $bs_out"
+elif [ "$bs_desc" = "this cannot work here" ]; then
+    pass "head/blockscalar: leg A accepts a block '|' description and decodes it (the §1.2.5 widening)"
 else
-    pass "head/blockscalar: run.sh refuses it too"
-fi
-if "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$bs" > /dev/null 2>&1; then
-    fail "head/blockscalar: verify_rxt.py ACCEPTED a '|' block scalar in a pattern block"
-else
-    pass "head/blockscalar: verify_rxt.py refuses it too — all three parsers agree"
+    fail "head/blockscalar: leg A accepted the block '|' description but decoded
+  it as '$bs_desc', not the region's own text. The value is what this
+  fixture asserts — a verdict would pass on a reader that opened the
+  region and threw its content away."
 fi
 
 # --- the two rows that would otherwise have NO population ------------
@@ -1587,8 +1623,15 @@ fi
 
 # --- sem14: 'description | ' (trailing space) — REFUSED by all three,
 # matching the exact 'description |' spelling's own refusal.
+# [DD-13b.W23.1] THE REASON MOVED AND THE VERDICT DID NOT. `description |`
+# with one trailing space is still refused in all three legs — the TRIM
+# rule (r46sem finding 14) is untouched, so the trimmed value is the bare
+# `|` and the block form is what was written. What changed is WHY: the
+# block form is now legal (§1.2.5), so leg A refuses this file for the
+# region being EMPTY rather than for the form being a head-only one. The
+# fixture is the same three-leg agreement; the needle follows the rule.
 check_refusal_all3 desc_pipe_trailing_space.rxt desc-pipe-trailing-ws \
-    'one-line form only'
+    'no indented continuation'
 
 # --- sem15: a whitespace-only line between cases is ACCEPTED (ignored)
 # by all three, matching the spec's "blank lines are ignored" with no
@@ -2404,7 +2447,411 @@ else
     echo "SKIP: W1.3 dogfood byte-for-byte arm: $BENCH_PAT not present (pcrec-bench is a sibling repo, not a dependency)"
 fi
 
+# =====================================================================
+# [DD-13b.W23.1] THE STRUCTURE LAYER, AND THE SCHEMA'S OWN SURFACE
+# =====================================================================
+#
+# format_design.md §1.2.1 states the layer a reader with NO keyword table
+# sees — four line classes, one attachment rule, one grouping rule, one
+# opaque-region rule — parameterized by exactly THREE schema columns. The
+# cells below are §9.1's / w23_impl §3.2's fixture table for the rows this
+# step lands. Every one is LEG A ONLY and that is the staging rather than
+# the rule: legs B and C gain their attachment arm and their child
+# consumption at W23.2, and asserting three legs here would be asserting a
+# claim about two parsers that have not been taught yet.
+#
+# THE TWO NARROWINGS ARE REGRESSIONS, NOT ASSERTIONS. `config_tab_body`
+# and `config_mixed_indent` are ACCEPTED at rc 0 on the pre-W23 binary, so
+# each fixture pins a reject that did not exist; the three AVOIDED
+# narrowings (`prose_hash`, `prose_ragged`, `prose_paragraph_break`) were
+# accepted before and are accepted still, which is what an avoidance
+# needs and an accident does not.
+
+# accept_value FIXTURE LABEL KIND COLUMN WANT — the file is accepted and
+# the named row's column holds exactly WANT. Asserting the VALUE rather
+# than the verdict is the point in every prose cell: a reader that opened
+# a region and threw its content away still "accepts" the file.
+accept_value() {
+    local fixture=$1 label=$2 kind=$3 col=$4 want=$5
+    local out rc got
+    out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/$fixture" 2>&1)"
+    rc=$?
+    if [ "$rc" != "0" ]; then
+        fail "w23s1/$label: --list-source REFUSED $fixture, which must be accepted.
+  got: $out"
+        return
+    fi
+    got="$(printf '%s\n' "$out" | awk -F'\t' -v k="$kind" -v c="$col" \
+             '$1 == k { print $c; exit }')"
+    if [ "$got" = "$want" ]; then
+        pass "w23s1/$label: accepted, and the $kind row's column $c is exactly the expected value"
+    else
+        fail "w23s1/$label: accepted, but the $kind row's column $c reads
+  got:  $got
+  want: $want"
+    fi
+}
+
+# S3: an indented `#` inside a region is PROSE (§1.6.1a candidate (2), a
+# narrowing AVOIDED — pinning the avoidance is what a decision needs).
+accept_value prose_hash.rxt prose-hash description 4 \
+    'first prose line\n# this is prose, not a comment\nthird prose line'
+
+# S3: ragged prose is legal and RELATIVE indentation survives the dedent.
+accept_value prose_ragged.rxt prose-ragged description 4 \
+    'level one\n  level two, deeper\nlevel one again'
+
+# S0: a whitespace-only line inside a region ends NOTHING and is bytes —
+# the format's only paragraph break, asserted on the VALUE because a
+# reader that ended the region there still accepts the file.
+accept_value prose_paragraph_break.rxt prose-para description 4 \
+    'first paragraph\n\nsecond paragraph'
+
+# K57, PINNED AS A DEFECT AND NOT AS A PROMISE (manager ruling r59-R4).
+# The dedent strip is a BYTE COUNT, so a continuation line indented LESS
+# than the block's first silently loses content at exit 0: `  line two at
+# two` under a four-space block decodes as `ne two at two`. That is the
+# value asserted here. THE DAY K57 IS FIXED THIS CHECK GOES RED, and the
+# red is the signal to invert it to the correct value — the cheapest form
+# of a pinned bug in a suite with no known-fail bucket, because the fix
+# breaks the pin rather than outliving it silently.
+accept_value prose_dedent.rxt prose-dedent-K57 description 4 \
+    'line one at four\nne two at two\nline three at four'
+
+# S0: whitespace-only lines are INERT at every position, asserted as "the
+# parse is IDENTICAL to the same file with them deleted" rather than as
+# "the file is accepted" — the rejected attachment-relevant reading would
+# have refused a whitespace-only FIRST line and one after a blank, and an
+# acceptance-only check cannot see the difference.
+WSP="$FIXRUN/ws_only_line_positions.rxt"
+WSPD="$WORKDIR/ws_only_deleted.rxt"
+grep -v '^[[:space:]][[:space:]]*$' "$WSP" > "$WSPD"
+wsp_a="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WSP" 2>&1)"; wsp_ra=$?
+wsp_b="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WSPD" 2>&1)"; wsp_rb=$?
+if [ "$wsp_ra" != "0" ] || [ "$wsp_rb" != "0" ]; then
+    fail "w23s1/ws-positions: a file with whitespace-only lines at four positions
+  was refused (rc $wsp_ra / twin $wsp_rb). They are INERT: no indent is read
+  off one, it attaches to nothing and nothing attaches to it."
+elif [ "$(printf '%s\n' "$wsp_a" | awk -F'\t' '$1 !~ /^#/ { $2 = "-"; print }')" = \
+       "$(printf '%s\n' "$wsp_b" | awk -F'\t' '$1 !~ /^#/ { $2 = "-"; print }')" ]; then
+    pass "w23s1/ws-positions: whitespace-only lines at four positions parse IDENTICALLY to their own deletion"
+else
+    fail "w23s1/ws-positions: the parse differs from the same file with the
+  whitespace-only lines deleted — one of them had a structural effect.
+  (Line numbers are excluded from the comparison; nothing else is.)"
+fi
+
+# §1.6.1a narrowing (4), TAKEN: indentation is SPACES, and a tab in the
+# indentation is refused BY NAME. Both fixtures parse at rc 0 on the
+# pre-W23 binary, so each IS its narrowing's regression.
+check_refusal config_tab_body.rxt tab-indent 'TAB' 'indentation is spaces'
+check_refusal config_mixed_indent.rxt mixed-indent 'TAB'
+
+# S1: a COMMENT closes every open attachment exactly as a BLANK does, so
+# the line BELOW one continues nothing. THE POSITION IS THE ASSERTION —
+# both fixtures put a real body line under the comment, and the refusal
+# must name THAT line rather than the comment.
+for pair in "comment_in_config_body.rxt:14:comment-ends-config" \
+            "comment_in_prose_region.rxt:12:comment-ends-region"; do
+    cf="${pair%%:*}"; rest="${pair#*:}"; cl="${rest%%:*}"; cn="${rest#*:}"
+    cout="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/$cf" 2>&1)"
+    if [ $? = "0" ]; then
+        fail "w23s1/$cn: --list-source ACCEPTED $cf. A comment TERMINATES an
+  attachment; under the transparent reading the line below it re-attaches
+  and the file parses, which is a reject->accept widening."
+    elif printf '%s' "$cout" | grep -q ":$cl:"; then
+        pass "w23s1/$cn: refused at line $cl — the line BELOW the comment, not the comment"
+    else
+        fail "w23s1/$cn: refused, but not at line $cl. The position is the check:
+  a refusal naming the comment would pass a reader that ended the
+  attachment one line too early.
+  got: $cout"
+    fi
+done
+
 # ---------------------------------------------------------------------
+# W23-S3 — `--list-schema` AGAINST WHAT LEG A ENFORCES
+#
+# It must NOT compare the dump to the table: that is the same source
+# twice (docs/dev/learnings.md §3). Each arm below drives a BEHAVIOUR the
+# dump claims and compares the result, so a hand-written dump that
+# disagreed with the enforced table on one row fails here (sabotage S241).
+#
+# AND IT NEEDS A DENOMINATOR IT DOES NOT GET FROM THE DUMP. A check that
+# iterates the dump's rows cannot see a row that is MISSING — its
+# population is defined by the thing it checks, so a truncated table
+# agrees with it by construction. The dump prints a COMPILE-TIME total
+# from the `.def`'s own expansion (`# schema-rows:`), and the first arm
+# asserts the printed rows against it.
+SCHEMA="$WORKDIR/schema.tsv"
+"$TIMEOUT_BIN" 30 "$PCREC" --list-schema > "$SCHEMA" 2>"$WORKDIR/schema.err" || \
+    fail "W23-S3: --list-schema failed: $(cat "$WORKDIR/schema.err")"
+
+sc_total=$(awk '/^# schema-rows:/ { print $3 }' "$SCHEMA")
+sc_printed=$(awk -F'\t' 'BEGIN{s=0} /^#section schema/{s=1;next} /^#section /{s=0} s && $1 !~ /^#/ && NF>1 {n++} END{print n+0}' "$SCHEMA")
+if [ -n "$sc_total" ] && [ "$sc_printed" = "$sc_total" ]; then
+    pass "W23-S3 denominator: --list-schema printed all $sc_total rows the compiled table holds"
+else
+    fail "W23-S3 denominator: --list-schema printed $sc_printed row(s); the
+  compiled table holds ${sc_total:-<no '# schema-rows:' line>}. A dropped row
+  must FAIL this check rather than shrink the population every other arm
+  below iterates."
+fi
+
+# The table contract, on BOTH sections — `--list-schema` is a conforming
+# producer and its own structural check routes through tests/lib/table.sh
+# rather than hand-rolling a positional read, which is the half of the
+# contract the `NF != 15` incident was in.
+for sect in schema surface; do
+    if bash "$ROOT_DIR/tests/lib/table.sh" table-check "$SCHEMA" "$sect" 2>"$WORKDIR/tc.err"; then
+        pass "W23-S3 contract: --list-schema's #section $sect satisfies HEADER TRUTHFULNESS"
+    else
+        fail "W23-S3 contract: --list-schema's #section $sect disagrees with its own
+  header's declared field count: $(cat "$WORKDIR/tc.err")"
+    fi
+done
+
+# ARM 1 — the OPENER SET (structure-layer parameter 1) is what actually
+# opens a group. For every row the dump calls an opener, a second line of
+# that kind must start a NEW block; for a row it does not, it must not.
+sc_openers=$(awk -F'\t' 'BEGIN{s=0} /^#section schema/{s=1;next} /^#section /{s=0} s && $1 !~ /^#/ && $4 == "true" { print $2 }' "$SCHEMA" | tr '\n' ' ')
+op_bad=0; op_seen=0
+for k in $sc_openers; do
+    op_seen=$((op_seen + 1))
+    of="$WORKDIR/opener_$op_seen.rxt"
+    printf '%s a\nm "a" 0 1\n%s b\nm "b" 0 1\n' "$k" "$k" > "$of"
+    nb=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$of" 2>/dev/null | \
+         awk -F'\t' '$1 !~ /^#/ && $1 != "" { n++ } END { print n+0 }')
+    # a kind of a LATER wave is refused by name, which is a different
+    # claim and is arm 4's; only a row this build implements can open.
+    w=$(awk -F'\t' -v kk="$k" 'BEGIN{s=0} /^#section schema/{s=1;next} /^#section /{s=0} s && $2 == kk { print $10; exit }' "$SCHEMA")
+    if [ "$w" != "1" ]; then continue; fi
+    [ "$nb" = "2" ] || { op_bad=$((op_bad + 1)); echo "  opener '$k' produced $nb row(s), want 2" >&2; }
+done
+if [ "$op_seen" -ge 1 ] && [ "$op_bad" = "0" ]; then
+    pass "W23-S3 arm 1: every row the dump calls an opener ($op_seen) starts a new block when a second one appears"
+else
+    fail "W23-S3 arm 1: $op_bad of $op_seen declared openers did not start a block.
+  `opens_group` is structure-layer parameter 1 and a generic reader FETCHES
+  it; a row that claims it and does not do it is a confident wrong answer."
+fi
+
+# ARM 2 — a NON-opener must not open a group. The control on arm 1: if
+# every kind started a block, arm 1 would pass vacuously.
+printf 'pattern a\nm "a" 0 1\nname one\nm "aa" 0 1\n' > "$WORKDIR/nonopener.rxt"
+nb=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/nonopener.rxt" 2>/dev/null | \
+     awk -F'\t' '$1 == "pattern" { n++ } END { print n+0 }')
+if [ "$nb" = "1" ]; then
+    pass "W23-S3 arm 2: a kind the dump does NOT call an opener starts no block (arm 1's control)"
+else
+    fail "W23-S3 arm 2: a non-opener produced $nb block rows, want 1"
+fi
+
+# ARM 3 — the PROSE PAIR (parameter 2). Every row the dump reports with
+# `value = prose` AND `children = prose` must open a region on a trimmed
+# bare `|`; and `pattern |`, whose row is NOT in that set, must stay a
+# legal pattern rather than becoming a refusal. The second half is the
+# one that fails if the trigger is read as "any bare `|` value".
+printf 'pattern |\nm "" 0 0\n' > "$WORKDIR/pat_pipe.rxt"
+pp=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/pat_pipe.rxt" 2>/dev/null | \
+     awk -F'\t' '$1 == "pattern" { print $5; exit }')
+if [ "$pp" = "|" ]; then
+    pass "W23-S3 arm 3a: 'pattern |' is a pattern, not a prose region — the trigger reads the KIND"
+else
+    fail "W23-S3 arm 3a: 'pattern |' dumped its pattern column as '$pp'.
+  Read literally, 'a line whose value is a bare |' opens a region on any
+  such line, which turns a working file into a refusal."
+fi
+printf 'description |\n  prose\n\npattern a\nm "a" 0 1\n' > "$WORKDIR/desc_pipe.rxt"
+dp=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/desc_pipe.rxt" 2>/dev/null | \
+     awk -F'\t' '$1 == "description" { print $4; exit }')
+if [ "$dp" = "prose" ]; then
+    pass "W23-S3 arm 3b: a row the dump reports as the prose PAIR does open a region"
+else
+    fail "W23-S3 arm 3b: a declared prose-pair row decoded '$dp', not its region"
+fi
+
+# ARM 4 — the `wave` column. Every row above this build's wave must refuse
+# BY NAME as NOT IN THIS BUILD (never as an unknown token: K14's shape),
+# and every row AT it must not. That is what makes SW13's "not in this
+# build" list DERIVED rather than hand-kept.
+#
+# THE RESERVED SENTINEL IS ITS OWN SUB-POPULATION (arm 4b), not a member
+# of this one: a reserved keyword (`version`, SW13) has NO delivery behind
+# it, so "NOT IN THIS BUILD" — which promises a wave that will bring it —
+# would be a lie about it, and its required shape is the RESERVED refusal
+# by name. Both sentinels come from the dump's own trailer comments, never
+# from a copy of internal.h's constants. (Whether the reserved refusal's
+# CLASS tag should stay [unknown-token-in-scope] or gain its own class is
+# W23.2's question — the class vocabulary is decided there, not here.)
+sc_built=$(awk '/^# wave-built:/ { print $3 }' "$SCHEMA")
+sc_reserved=$(awk '/^# wave-reserved:/ { print $3 }' "$SCHEMA")
+if [ -z "$sc_reserved" ]; then
+    fail "W23-S3 arm 4: the dump carries no '# wave-reserved:' trailer —
+  arm 4b's population boundary is gone and a reserved row would be swept
+  into the NOT-IN-THIS-BUILD population it cannot satisfy."
+fi
+wv_bad=0; wv_seen=0
+# THE ROW LIST IS BUILT BY awk AND NOT BY `read`, and that is not a style
+# choice: bash's `read` COLLAPSES TAB-delimited EMPTY fields even under a
+# single-character IFS (the defect `docs/dev/lanes/tt4m3_report.md`
+# records), and most schema rows have an empty `constraints` cell — so a
+# `while IFS=$'\t' read` over this dump shifts every later column left and
+# the `wave` field it lands on is somebody else's. Measured here: the arm
+# read 0 rows out of a population of 7 and reported 0/0, which is a green
+# vacuity rather than a failure.
+wv_rows="$(awk -F'\t' -v built="${sc_built:-1}" -v rsv="${sc_reserved:-999}" '
+    BEGIN { s = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "file" && $10 + 0 > built + 0 && $10 + 0 < rsv + 0 { print $2 }' "$SCHEMA")"
+for kind in $wv_rows; do
+    wv_seen=$((wv_seen + 1))
+    printf '%s x\npattern a\nm "a" 0 1\n' "$kind" > "$WORKDIR/wave.rxt"
+    wout=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/wave.rxt" 2>&1)
+    case $wout in
+        *"NOT IN THIS BUILD"*) ;;
+        *) wv_bad=$((wv_bad + 1)); echo "  '$kind' refused as: $wout" >&2 ;;
+    esac
+done
+if [ "$wv_seen" -ge 1 ] && [ "$wv_bad" = "0" ]; then
+    pass "W23-S3 arm 4: all $wv_seen file-scope rows above wave $sc_built refuse BY NAME as NOT IN THIS BUILD"
+else
+    fail "W23-S3 arm 4: $wv_bad of $wv_seen later-wave file-scope rows did not
+  refuse by name. A reader told 'unknown' goes hunting a typo in a word
+  that is in the format's own spec (K14's shape). A population of ZERO is
+  also a failure here: it means this arm is measuring nothing."
+fi
+
+# ARM 4b — the RESERVED sentinel's rows. A reserved keyword refuses BY
+# NAME as RESERVED: the word is the format's, no build parses it, and no
+# wave is coming (SW13). A population of ZERO fails for arm 4's reason —
+# the spec claims `version` is reserved, and a claim needs a producer.
+rv_bad=0; rv_seen=0
+rv_rows="$(awk -F'\t' -v rsv="${sc_reserved:-999}" '
+    BEGIN { s = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "file" && $10 + 0 == rsv + 0 { print $2 }' "$SCHEMA")"
+for kind in $rv_rows; do
+    rv_seen=$((rv_seen + 1))
+    printf '%s x\npattern a\nm "a" 0 1\n' "$kind" > "$WORKDIR/rsv.rxt"
+    rout=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/rsv.rxt" 2>&1)
+    case $rout in
+        *RESERVED*) ;;
+        *) rv_bad=$((rv_bad + 1)); echo "  '$kind' refused as: $rout" >&2 ;;
+    esac
+done
+if [ "$rv_seen" -ge 1 ] && [ "$rv_bad" = "0" ]; then
+    pass "W23-S3 arm 4b: all $rv_seen reserved-sentinel file-scope rows refuse BY NAME as RESERVED"
+else
+    fail "W23-S3 arm 4b: $rv_bad of $rv_seen reserved-sentinel rows did not
+  refuse by name as RESERVED. A population of ZERO is also a failure:
+  SW13's 'version is reserved' is a spec claim, and this arm is its
+  producer-side check."
+fi
+
+# ARM 5 — CARDINALITY, DRIVEN FROM THE DUMP'S OWN CLAIM PER ROW.
+#
+# Six settings kinds silently LAST-WON before this step while a seventh in
+# the same family refused, so any value the schema writes is a
+# compatibility decision. This arm is what makes the column one pcrec
+# actually keeps: for every BLOCK row this build implements, it reads what
+# the DUMP says and drives the corresponding behaviour — a second
+# occurrence must be REFUSED where the dump says `at-most-one` and
+# ACCEPTED where it says `repeat`. Both directions, per row, so a dump
+# that mislabels one row fails here whichever way it lies (sabotage S241).
+#
+# THE PROBE VALUES ARE A TABLE AND THE TABLE IS CHECKED. A kind needs a
+# line that is VALID for it or the probe measures the value grammar
+# instead of the cardinality, and a kind with no entry must FAIL rather
+# than be skipped — a skipped row is exactly the population nobody counts.
+probe_line() {
+    case $1 in
+        name)            echo 'name one' ;;
+        description)     echo 'description some text' ;;
+        export)          echo 'export g1' ;;
+        flags)           echo 'flags i' ;;
+        features)        echo 'features classes' ;;
+        encoding)        echo 'encoding byte' ;;
+        engine)          echo 'engine vm' ;;
+        perr)            echo 'perr' ;;
+        m)               echo 'm "a" 0 1' ;;
+        ms)              echo 'ms "a" 0 0 1' ;;
+        n)               echo 'n "b"' ;;
+        ns)              echo 'ns "b" 0' ;;
+        g)               echo 'g 1 0 1' ;;
+        gp)              echo 'gp 1 0 1' ;;
+        gu)              echo 'gu steps "a"' ;;
+        frames-buffer=)  echo 'frames-buffer=64' ;;
+        *)               return 1 ;;
+    esac
+}
+card_bad=0; card_seen=0; card_noprobe=""
+card_rows="$(awk -F'\t' '
+    BEGIN { s = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "block" && $10 == "1" && $4 != "true" && $6 != "accumulate" \
+        { print $2 "|" $6 }' "$SCHEMA")"
+for row in $card_rows; do
+    k="${row%%|*}"; card="${row##*|}"
+    ln="$(probe_line "$k")" || { card_noprobe="$card_noprobe $k"; continue; }
+    card_seen=$((card_seen + 1))
+    { echo 'pattern a'; echo "$ln"; echo "$ln"; } > "$WORKDIR/card.rxt"
+    if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/card.rxt" >/dev/null 2>&1
+    then accepted=1; else accepted=0; fi
+    case $card in
+        at-most-one) [ "$accepted" = "0" ] || { card_bad=$((card_bad + 1)); echo "  '$k': dump says at-most-one, a second one was ACCEPTED" >&2; } ;;
+        repeat)      [ "$accepted" = "1" ] || { card_bad=$((card_bad + 1)); echo "  '$k': dump says repeat, a second one was REFUSED" >&2; } ;;
+        *)           card_bad=$((card_bad + 1)); echo "  '$k': unhandled cardinality '$card'" >&2 ;;
+    esac
+done
+if [ -n "$card_noprobe" ]; then
+    fail "W23-S3 arm 5: no probe line for:$card_noprobe
+  A row with no probe is a row this arm SKIPS, and a skipped row is the
+  population nobody counts. Add its line to probe_line() above."
+elif [ "$card_seen" -ge 6 ] && [ "$card_bad" = "0" ]; then
+    pass "W23-S3 arm 5: all $card_seen block rows behave as the dump's cardinality column says, in BOTH directions"
+else
+    fail "W23-S3 arm 5: $card_bad of $card_seen block rows disagree with the
+  dump's own cardinality column (or the population fell below 6, which
+  would mean this arm stopped reaching its rows)."
+fi
+
+# `budget` is the one ACCUMULATE row and it is excluded from the sweep
+# above on purpose: its unit is the FIELD, not the line, so "the same line
+# twice" is the wrong probe. The corpus writes both fields in one block
+# deliberately (tests/harness/giveup.rxt), which is the measurement that
+# kept it off the at-most-one list.
+printf 'pattern a\nbudget steps=50\nbudget frames=4096\nm "a" 0 1\n' > "$WORKDIR/card_acc.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/card_acc.rxt" >/dev/null 2>&1; then
+    pass "W23-S3 arm 5c: 'budget' accumulates over its field set — two FIELDS in one block are legal"
+else
+    fail "W23-S3 arm 5c: two 'budget' FIELDS in one block were refused; the
+  dump calls the row accumulate and a shipped corpus file writes exactly
+  this shape"
+fi
+
+# ARM 6 — `children`. A row the dump calls `children: none` must refuse an
+# indented line under it, naming the PARENT; a row naming a scope must
+# accept one. Without the control, a parser that refused every indented
+# line would pass the first half.
+printf 'pattern a\nm "a" 0 1\n  indented\n' > "$WORKDIR/ch_none.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/ch_none.rxt" >/dev/null 2>&1; then
+    fail "W23-S3 arm 6a: an indented line under a children:none row was ACCEPTED"
+else
+    pass "W23-S3 arm 6a: an indented line under a children:none row is refused"
+fi
+printf 'config c\n  flags i\n\npattern a\nm "a" 0 1\n' > "$WORKDIR/ch_scope.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/ch_scope.rxt" >/dev/null 2>&1; then
+    pass "W23-S3 arm 6b: an indented line under a row naming a scope is accepted (arm 6a's control)"
+else
+    fail "W23-S3 arm 6b: a legal 'config' body was refused"
+fi
+
+# ---------------------------------------------------------------------
+# =====================================================================
 echo
 echo "== Summary =="
 echo "checks passed: $checks_passed"

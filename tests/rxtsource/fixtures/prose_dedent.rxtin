@@ -1,0 +1,22 @@
+# [DD-13b.W23.1] A CONTINUATION LINE INDENTED LESS THAN THE BLOCK'S FIRST.
+#
+# THIS FIXTURE ASSERTS A DEFECT, NOT A PROMISE. The dedent strip is a BYTE
+# COUNT, so a line indented less than the first silently LOSES content and
+# the file still exits 0 — filed as K57 (docs/dev/known_issues.md), wrong
+# under every revision of the design, and deliberately NOT fixed in this
+# step: two independent reds must not share a step, and a step whose
+# acceptance is the structure layer would then have two unrelated causes
+# behind one failure (w23_impl §7.3, manager ruling R4).
+#
+# `tests/rxtsource/` has no known-fail bucket, so the pin is the
+# assertion itself: the check asserts TODAY'S WRONG VALUE, and the day K57
+# is fixed this fixture goes RED. That red is the signal to invert it to
+# the correct value — the pin cannot outlive the defect silently, because
+# the fix breaks it.
+description |
+    line one at four
+  line two at two
+    line three at four
+
+pattern a+
+m "aaa" 0 3

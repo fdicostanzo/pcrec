@@ -106,73 +106,80 @@ static const char *line_value(const char *line)
     return skip_ws(line + tok_len(line));
 }
 
-static int line_indented(const char *s)
-{
-    return *s == ' ' || *s == '\t';
-}
-
-static int line_blank_or_comment(const char *s)
-{
-    const char *p = s;
-    while (*p == ' ' || *p == '\t') p++;
-    return *p == '\0' || *s == '#';
-}
-
-/* ------------------------------------------------------- the vocabularies
+/* ---------------------------------------------- THE STRUCTURE LAYER
  *
- * THREE CONTEXTS, EACH A CLOSED VOCABULARY (format_design §1.2). A first
- * token unknown IN ITS CONTEXT is a hard error that NAMES the context —
- * "nothing is a keyword everywhere". A token that is real but belongs to
- * a later wave is refused as NOT IN THIS BUILD, never as unknown
- * (w1_impl DECIDED (1)): sending a reader hunting a typo in a word that
- * is in the spec is K14's shape.
+ * [DD-13b.W23.1] THE THREE FLAT KEYWORD TABLES ARE GONE. Until this step
+ * the format's rules lived HERE, in control flow: `head_vocab`,
+ * `config_vocab` and `block_vocab` said which token was legal where, and a
+ * chain of `tok_is()` arms below remembered each kind's own cardinality,
+ * its own continuation rule and its own idea of what might be indented
+ * under it. The ruling (format_design §2.25, Frank's consequence 3) is that
+ * those rules are DECLARED and VALIDATED, so the tables are now
+ * `src/parse/rxt_schema.def` and this file WALKS them. Nothing here decides
+ * what is legal; it decides what a legal line MEANS.
  *
- * These tables are also the 32-keyword census's subject (§3.1's F12):
- * the census asserts that no corpus line's first token is any of these
- * NEW words, which is what makes appending arms to run.sh safe. */
-typedef struct { const char *kw; int wave; } RxtKeyword;
+ * THE LAYER A READER WITH NO KEYWORD TABLE SEES (format_design §1.2.1) is
+ * four line classes (S0), one attachment rule (S1), one grouping rule (S2)
+ * and one opaque-region rule (S3), parameterized by exactly THREE schema
+ * columns — the block-opener set, the `value`+`children` prose PAIR, and
+ * `children: tree`, the OPEN SUBTREE. Every one of those is a
+ * `--list-schema` query, so a generic reader FETCHES the parameters rather
+ * than hard-coding them, and this parser reads them from the same table.
+ */
 
-/* head — file-level declarations (format_design §1.3's decl-line, plus
- * the two head block kinds `config` and `freq`). */
-static const RxtKeyword head_vocab[] = {
-    { "lib",         1 }, { "target",  1 }, { "description", 1 },
-    { "config",      1 },
-    { "include",     2 }, { "tag",     2 }, { "freq",        2 },
-    { "use",         3 }, { "oracle",  3 },
-};
+typedef enum { LC_BLANK, LC_WS, LC_COMMENT, LC_CONTENT } RxtLineClass;
 
-/* config body — the indented lines under a `config <name>` line. */
-static const RxtKeyword config_vocab[] = {
-    { "pcrec",    1 }, { "flags",  1 }, { "features", 1 },
-    { "encoding", 1 }, { "engine", 1 }, { "budget",   1 },
-    { "analysis", 2 },
-    { "testee",   3 }, { "option", 3 },
-};
-
-/* pattern block — today's thirteen line kinds plus W1's three. The
- * expectation kinds are listed because this parser must RECOGNISE them
- * to refuse an unknown neighbour; it reads none of their values (a
- * `.rxt` expectation is the harness's business, never the compiler's). */
-static const RxtKeyword block_vocab[] = {
-    { "pattern",        1 },
-    { "flags",          1 }, { "features", 1 }, { "engine",  1 },
-    { "budget",         1 }, { "frames-buffer=", 1 },
-    { "perr",           1 }, { "m",        1 }, { "n",       1 },
-    { "ms",             1 }, { "ns",       1 }, { "g",       1 },
-    { "gp",             1 }, { "gu",       1 },
-    { "name",           1 }, { "description", 1 }, { "encoding", 1 },
-    { "export",         1 },
-    { "tag",            2 }, { "mc",       2 },
-    { "oracle",         3 }, { "variant",  3 },
-};
-
-static const RxtKeyword *vocab_find(const RxtKeyword *v, size_t n,
-                                    const char *line)
+/* S0 — THE FOUR LINE CLASSES, and the narrow definitions matter:
+ *
+ *   BLANK is the EMPTY line and nothing else. It closes attachment.
+ *   WHITESPACE-ONLY is INERT — no indent is read off it, it attaches to
+ *     nothing and nothing attaches to it, no first token is dispatched. A
+ *     reader steps over it. (Inside an S3 region it is BYTES like every
+ *     other line there, which is what makes it the format's only paragraph
+ *     break.) Writing BLANK as "empty or whitespace-only" would have made
+ *     every whitespace-only line close attachments and end prose regions,
+ *     which all three legs measurably do not do.
+ *   A COMMENT is `#` in COLUMN 1. A `#` anywhere else is data. It closes
+ *     attachment exactly as a blank does — one rule a reader can remember,
+ *     rather than a carve-out.
+ *   Everything else is CONTENT, and its INDENT is its count of leading
+ *     SPACES. A leading TAB does not open an indent: the caller refuses it
+ *     BY NAME (§1.6.1a narrowing (4), TAKEN — a tab inside a VALUE is
+ *     still data).
+ */
+static RxtLineClass line_class(const char *s, size_t *indent)
 {
-    for (size_t i = 0; i < n; i++)
-        if (tok_is(line, v[i].kw)) return &v[i];
-    return NULL;
+    if (!*s)       { *indent = 0; return LC_BLANK; }
+    if (*s == '#') { *indent = 0; return LC_COMMENT; }
+    size_t i = 0;
+    while (s[i] == ' ') i++;
+    *indent = i;
+    const char *q = s + i;
+    while (*q == ' ' || *q == '\t') q++;
+    if (!*q) return LC_WS;
+    return LC_CONTENT;
 }
+
+/* ONE FRAME PER OPEN ATTACHMENT LEVEL. S1 already required a stack — a
+ * reader must know which enclosing level a lesser indent closes back to,
+ * which is the one piece of state this layer has always carried — so the
+ * OPEN SUBTREE (parameter 3) costs one BIT per frame and no lookahead.
+ *
+ * `scope` is the scope of the lines AT this level and `base` is what it was
+ * before a group opened here: S2 switches a FILE level to BLOCK at the
+ * first `pattern`, and the head boundary is exactly that switch, so the two
+ * have to be kept apart or a second `pattern` could not re-open a group.
+ * `seen` is the cardinality bookkeeping, one entry per schema row holding
+ * the line of that kind's first occurrence AT THIS LEVEL IN THIS GROUP —
+ * which is why a new group clears it and a new frame allocates a fresh one. */
+typedef struct {
+    size_t          indent;
+    RxtSchemaScope  scope;
+    RxtSchemaScope  base;
+    int             tree;     /* inside an OPEN SUBTREE: no dispatch at all */
+    RxtRow         *row;      /* the RxtRow this level's lines write into */
+    size_t         *seen;
+} RxtFrame;
 
 /* ------------------------------------------------------------ the parser */
 
@@ -190,10 +197,57 @@ typedef struct {
  * author can act on, and inventing a byte offset into a file for a field
  * whose every other reader means "offset into the pattern" would be a
  * second meaning for one field. */
-static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
-    __attribute__((format(printf, 3, 4)));
+/* [DD-13b.W23.1] THE DIAGNOSTIC CLASS — WHICH RULE WAS VIOLATED, as a
+ * machine-read TAG beside the D26-free wording.
+ *
+ * WHY A TAG AND NOT A SENTENCE. The three-leg differential compares legs
+ * A, B and C on every refusal, and leg B refuses EVERY unrecognised line
+ * by catch-all fall-through with one sentence — so a VERDICT-only
+ * comparison reads "all three legs refuse" for a rule leg B has never
+ * heard of, and the one live check on the `all-readers` column would be
+ * satisfiable by accident on a population of one message. The class is
+ * what gives the differential a RULE to compare instead of an exit code.
+ *
+ * D26 IS UNTOUCHED AND THE BOUNDARY IS EXACT: the class is a tag a CHECK
+ * reads, the sentence beside it is for a human, and D26 governs wording.
+ * The tag's POSITION is stable and its SET is closed; `docs/spec/cli.md`
+ * states both as the CLI's output contract, which is where it belongs —
+ * a machine-parseable stderr field is the CLI's promise and not the
+ * format's grammar.
+ *
+ * FOUR CLASSES, and each names a LAYER rather than a symptom:
+ *   structure-attachment  S0/S1/S2/S3 — where a line attaches, or may not
+ *   unknown-token-in-scope  the kind has no schema row in this scope, or
+ *                           has one whose wave is above this build's
+ *   schema-constraint     a declared rule over lines: cardinality, a
+ *                         closed set, a uniqueness or resolution rule
+ *   value-shape           the line attached and is legal here; its VALUE
+ *                         does not parse
+ */
+typedef enum {
+    RXTD_STRUCTURE,
+    RXTD_UNKNOWN_TOKEN,
+    RXTD_SCHEMA_CONSTRAINT,
+    RXTD_VALUE_SHAPE
+} RxtDiagClass;
 
-static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
+static const char *rxt_diag_class_name(RxtDiagClass c)
+{
+    switch (c) {
+        case RXTD_STRUCTURE:          return "structure-attachment";
+        case RXTD_UNKNOWN_TOKEN:      return "unknown-token-in-scope";
+        case RXTD_SCHEMA_CONSTRAINT:  return "schema-constraint";
+        case RXTD_VALUE_SHAPE:        return "value-shape";
+    }
+    return "?";
+}
+
+static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
+                    const char *fmt, ...)
+    __attribute__((format(printf, 4, 5)));
+
+static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
+                    const char *fmt, ...)
 {
     /* The prefix is written FIRST and the body straight after it, rather
      * than formatting the body into a scratch buffer and splicing the two.
@@ -205,7 +259,12 @@ static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
      * than losing them to a long sentence. */
     char *out = p->err->msg;
     size_t cap = sizeof p->err->msg;
-    int n = snprintf(out, cap, "%s:%zu: ", p->path, line);
+    /* THE TAG LEADS, which is the whole of "a stable, machine-parseable
+     * position": a reader takes the bracketed word at the front and stops
+     * caring about the rest, and the file:line an author acts on is still
+     * the next thing they see. */
+    int n = snprintf(out, cap, "[%s] %s:%zu: ",
+                     rxt_diag_class_name(cls), p->path, line);
     size_t at = (n < 0) ? 0 : (size_t)n;
     if (at > cap - 1) at = cap - 1;
     va_list ap;
@@ -414,21 +473,21 @@ static int slurp_lines(RxtP *p, RxtLines *out)
      * not a portable guarantee to lean on for the primary check). */
     struct stat st;
     if (stat(p->path, &st) != 0)
-        return rxt_fail(p, 0, "cannot stat .rxt source file");
+        return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot stat .rxt source file");
     if (!S_ISREG(st.st_mode))
-        return rxt_fail(p, 0,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, 0,
                         "not a regular file (a directory or special file "
                         "cannot be a .rxt source)");
     FILE *f = fopen(p->path, "rb");
     if (!f)
-        return rxt_fail(p, 0, "cannot open .rxt source file");
-    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return rxt_fail(p, 0, "cannot seek .rxt source file"); }
+        return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot open .rxt source file");
+    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot seek .rxt source file"); }
     long sz = ftell(f);
-    if (sz < 0) { fclose(f); return rxt_fail(p, 0, "cannot size .rxt source file"); }
+    if (sz < 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot size .rxt source file"); }
     rewind(f);
     char *buf = arena_alloc(p->arena, (size_t)sz + 2);
     size_t got = fread(buf, 1, (size_t)sz, f);
-    if (ferror(f)) { fclose(f); return rxt_fail(p, 0, "error reading .rxt source file"); }
+    if (ferror(f)) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "error reading .rxt source file"); }
     fclose(f);
     buf[got] = 0;
 
@@ -452,7 +511,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
         if (buf[i] != 0) continue;
         size_t line = 1;
         for (size_t j = 0; j < i; j++) if (buf[j] == '\n') line++;
-        return rxt_fail(p, line, "embedded NUL byte in .rxt source file");
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line, "embedded NUL byte in .rxt source file");
     }
 
     /* count lines first, then fill — one pass each, no realloc dance */
@@ -500,41 +559,45 @@ static RxtRow *row_push(RxtP *p, RxtSource *src, RxtDeclKind kind, size_t line)
     return r;
 }
 
-/* A PROSE VALUE: the one-line form, or the block scalar (`|` then
- * indented lines). The exception is a property of the VALUE production,
- * not of `description` (format_design §1.2), so it lives here and a
- * second prose field would inherit it rather than invent it.
+/* S3 — AN OPAQUE REGION (format_design §1.2.1). Reads the region a
+ * prose-region-opening line introduces; `*i` enters at the opener and
+ * leaves at the last line of the region, so the caller's loop `++` lands
+ * on the first line after it.
  *
- * The block scalar's indentation rule is YAML's: the FIRST continuation
- * line's indent is the block's, and that many leading bytes are stripped
- * from every line, so relative indentation inside the prose survives.
- * `*i` enters at the `|` line and leaves at the first line that is not
- * part of the value. */
-static int parse_prose(RxtP *p, RxtLines *L, size_t *i, const char *val,
-                       const char **out)
+ * THE EXTENT IS STRUCTURAL AND IS THE ONLY STRUCTURAL FACT ABOUT THE
+ * REGION: it runs from the next line up to, and not including, the FIRST
+ * of a CONTENT line whose indent is <= the opener's, a BLANK line, or a
+ * COMMENT line. A whitespace-only line ends nothing and is bytes. Every
+ * line inside is BYTES — S0 does not classify it for dispatch, S1 does not
+ * attach it, S2 does not test it — so a reader can find a region's end
+ * without tokenising a single line inside it, which is the falsifiable
+ * form of the rule.
+ *
+ * THE COMMENT AND BLANK BOUNDARIES ARE LOAD-BEARING rather than tidy: the
+ * transparent reading (a comment is skipped and the region continues) can
+ * produce an opener with TWO DISJOINT prose regions, a shape the
+ * single-extent rule cannot express at all.
+ *
+ * THE DEDENT IS A BYTE COUNT AND THAT IS K57 (docs/dev/known_issues.md),
+ * kept DELIBERATELY: a continuation line indented less than the block's
+ * first silently loses content. It is not fixed here — two independent
+ * reds must not share a step, and `prose_dedent.rxtin` asserts today's
+ * wrong value with K57 named beside it, so the day K57 is fixed that
+ * fixture goes red and says so. */
+static int read_prose_region(RxtP *p, RxtLines *L, size_t *i,
+                             size_t opener_indent, const char **out)
 {
-    if (strcmp(val, "|") != 0) {
-        *out = arena_strdup(p->arena, val);
-        return 0;
-    }
-    /* [DD-13b.W1.1 r46sem finding 10, RULED by the manager 2026-08-30] A
-     * BLANK LINE ENDS THE CONTINUATION — for a block scalar exactly as it
-     * already did for a `config` body (`parse_config`'s own `if
-     * (!line_indented(nx)) break;`, unchanged): the body IS the indented
-     * continuation, a blank line is not indented, so it terminates like
-     * any other non-indented line. This used to stop at the first
-     * NON-indented, NON-blank line, treating an INTERIOR blank line as
-     * part of the value (only trailing blanks were trimmed) — a second,
-     * disagreeing answer to the same question format_design.md calls
-     * "the same rule". A directive after the blank line belongs to the
-     * FILE, not to whatever the blank line's continuation would have
-     * been. */
     size_t start = *i + 1;
     size_t end = start;
-    while (end < L->n && line_indented(L->v[end]))
-        end++;
+    while (end < L->n) {
+        size_t ind = 0;
+        RxtLineClass c = line_class(L->v[end], &ind);
+        if (c == LC_BLANK || c == LC_COMMENT) break;
+        if (c == LC_CONTENT && ind <= opener_indent) break;
+        end++;                       /* CONTENT deeper than the opener, or WS */
+    }
     if (end == start)
-        return rxt_fail(p, *i + 1,
+        return rxt_fail(p, RXTD_STRUCTURE, *i + 1,
                         "block scalar '|' has no indented continuation lines "
                         "(a '|' value is the indented lines below it)");
 
@@ -563,6 +626,35 @@ static int parse_prose(RxtP *p, RxtLines *L, size_t *i, const char *val,
     return 0;
 }
 
+/* A PROSE VALUE, and the TRIGGER IS PARAMETERIZED — which is the whole of
+ * what makes S3 a declared device rather than a value rule this file
+ * remembers. A region opens only when ALL THREE hold: the line's KIND is
+ * prose-region-opening (`value: prose` AND `children: prose`, read as a
+ * PAIR off the schema), its value with trailing spaces and tabs TRIMMED is
+ * exactly the single byte `|`, and it is not inside an OPEN SUBTREE.
+ *
+ * Without the FIRST condition `pattern |` — a legal pattern, the
+ * alternation of two empties — becomes a refusal. Without the SECOND,
+ * `description | ` (one trailing space) is a literal where all three legs
+ * make it the block form. Without the THIRD, an aux body's `separator |`
+ * swallows its own siblings.
+ *
+ * The one-line form stores the value AS WRITTEN, untrimmed: `description`
+ * is a rest-of-line production and its trailing space is data. Only the
+ * `|` TEST trims. */
+static int prose_value(RxtP *p, RxtLines *L, size_t *i,
+                       const RxtSchemaRow *row, size_t indent, int in_tree,
+                       const char **out)
+{
+    const char *v = line_value(L->v[*i]);
+    size_t n = strlen(v);
+    while (n && (v[n - 1] == ' ' || v[n - 1] == '\t')) n--;
+    if (!in_tree && pcrec_rxt_schema_prose_region(row) && n == 1 && v[0] == '|')
+        return read_prose_region(p, L, i, indent, out);
+    *out = arena_strdup(p->arena, v);
+    return 0;
+}
+
 /* A SETTINGS LINE — `flags`/`features`/`encoding`/`engine`/`budget`.
  * ONE implementation, used by both the `config` body and a pattern
  * block, because they are the same production in format_design §1.3
@@ -582,9 +674,9 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * `flags xmz` dump `flags=xmz` here while leg B hard-errors it,
          * the exact "three parsers, three answers, on a line the spec
          * rules" class this step's remedy targets. */
-        if (!*v) return rxt_fail(p, line, "'flags' needs its letters");
+        if (!*v) return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'flags' needs its letters");
         if (strcmp(v, "i") != 0)
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "unknown flag letter(s) '%s' (only 'i' is "
                             "defined)", v);
         r->flags = arena_strdup(p->arena, v);
@@ -602,11 +694,11 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
                 v = skip_ws(v + 4);
             }
         }
-        if (!*v) return rxt_fail(p, line, "'features' needs a module list");
+        if (!*v) return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'features' needs a module list");
         for (const char *q = v; *q; q++)
             if (!isalnum((unsigned char)*q) && *q != ',' && *q != '_' &&
                 *q != '-')
-                return rxt_fail(p, line,
+                return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                                 "'features' takes a comma-separated module "
                                 "list (got '%s')", v);
         r->features = arena_strdup(p->arena, v);
@@ -614,7 +706,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
     }
     if (tok_is(l, "encoding")) {
         if (!ident_ok(v))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'encoding' needs an encoding name (got '%s')", v);
         r->encoding = arena_strdup(p->arena, v);
         return 0;
@@ -629,7 +721,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * favor — only the `--list-source` COLUMN TABLE contradicted it,
          * fixed in the same change as this. */
         if (strcmp(v, "vm"))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "unknown 'engine' value '%s' (only vm is "
                             "defined)", v);
         r->engine = arena_strdup(p->arena, v);
@@ -641,7 +733,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
         if (!strncmp(v, "steps=", 6))       { slot = &r->budget_steps;  num = v + 6; }
         else if (!strncmp(v, "frames=", 7)) { slot = &r->budget_frames; num = v + 7; }
         else
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "unknown 'budget' spec '%s' (want steps=<n> or "
                             "frames=<n>)", v);
         /* [DD-13b.W1.1 r46sem finding 12] LEG B's ALPHABET IS `[0-9]+`
@@ -655,44 +747,73 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * skip and its `+`/`-` prefix are both non-digit first bytes);
          * checking `errno == ERANGE` closes the overflow. */
         if (!isdigit((unsigned char)*num))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'budget' wants a non-negative integer with no "
                             "sign or leading space (got '%s')", num);
         errno = 0;
         char *end = NULL;
         long n = strtol(num, &end, 10);
         if (!end || *end || end == num || n < 0 || errno == ERANGE)
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'budget' wants a non-negative integer (got '%s')",
                             num);
         *slot = n;
         return 0;
     }
-    return rxt_fail(p, line, "internal: '%s' is not a settings line", l);
+    return rxt_fail(p, RXTD_VALUE_SHAPE, line, "internal: '%s' is not a settings line", l);
 }
 
-/* WAVE REFUSAL — the DECIDED (1) shape. The keyword is REAL and in the
- * spec; what it is not is built. Saying "unknown" here sends a reader
- * hunting a typo in a word they just read in the format design. */
-static int refuse_wave(RxtP *p, size_t line, const RxtKeyword *kw,
-                       const char *ctx)
+/* WAVE REFUSAL, RE-BASED ON THE SCHEMA'S `wave` COLUMN. The keyword is
+ * REAL and in the spec; what it is not is built. Saying "unknown" here
+ * sends a reader hunting a typo in a word they just read in the format
+ * design — K14's shape, and MEASURED on the pre-W23 binary, where
+ * `vocabulary` read "not a file-level directive".
+ *
+ * The LIST of such keywords is now DERIVED rather than hand-kept: a row
+ * whose `wave` exceeds `PCREC_RXT_WAVE_BUILT` refuses here, so a withdrawn
+ * production cannot be forgotten in a hand-kept list because there is no
+ * hand-kept list. */
+static int refuse_wave(RxtP *p, size_t line, const RxtSchemaRow *row,
+                       RxtSchemaScope scope)
 {
-    return rxt_fail(p, line,
+    if (row->wave == PCREC_RXT_WAVE_RESERVED)
+        return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line,
+                        "'%s' is a RESERVED %s keyword: the format owns the "
+                        "word and no build parses it (the keyword is real, "
+                        "not a typo)",
+                        row->kind, pcrec_rxt_scope_context(scope));
+    return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line,
                     "'%s' is a wave-%d %s declaration and is NOT IN THIS "
-                    "BUILD (this pcrec implements wave 1 of the .rxt format; "
+                    "BUILD (this pcrec implements wave %d of the .rxt format; "
                     "the keyword is real, not a typo)",
-                    kw->kw, kw->wave, ctx);
+                    row->kind, row->wave, pcrec_rxt_scope_context(scope),
+                    PCREC_RXT_WAVE_BUILT);
 }
 
-static int unknown_token(RxtP *p, size_t line, const char *l, const char *ctx)
+static int unknown_token(RxtP *p, size_t line, const char *l,
+                         RxtSchemaScope scope)
 {
     size_t n = tok_len(l);
-    return rxt_fail(p, line, "'%.*s' is not a %s directive",
-                    (int)n, l, ctx);
+    return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line, "'%.*s' is not a %s directive",
+                    (int)n, l, pcrec_rxt_scope_context(scope));
+}
+
+/* CARDINALITY, ENFORCED GENERICALLY FROM THE COLUMN. Six settings kinds
+ * silently LAST-WON on the pre-W23 binary while a seventh in the same
+ * family refused, so any value the schema writes is a compatibility
+ * decision and writing none was the worst of the three available outcomes
+ * (§2.25.2's ruled table; corpus + bench population of every refusal: 0).
+ * ONE refusal site, so the six cannot acquire six wordings. */
+static int refuse_cardinality(RxtP *p, size_t line, const RxtSchemaRow *row,
+                              RxtSchemaScope scope, size_t first)
+{
+    return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line, "a %s has one '%s' (already given on line %zu)",
+                    pcrec_rxt_scope_noun(scope), row->kind, first);
 }
 
 /* `config <name> [from a,b]` and its indented body. */
-static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
+static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i,
+                        RxtRow **out)
 {
     size_t line = *i + 1;
     const char *v = line_value(L->v[*i]);
@@ -701,7 +822,7 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     while (*e && !isspace((unsigned char)*e)) e++;
     size_t nlen = (size_t)(e - v);
     if (!nlen)
-        return rxt_fail(p, line, "'config' needs a name");
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'config' needs a name");
     /* [DD-13b.W1.1 r46sem finding 8] A DISTINCT DIAGNOSTIC NAMING THE CAP.
      * This used to fall into the SAME "needs a name" message a genuinely
      * missing name gets — which tells an author with a too-long name a
@@ -709,12 +830,12 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
      * than no message at all. docs/spec/limits.md carries the 128-byte
      * identifier cap this and the two `target` fields below share. */
     if (nlen >= sizeof name)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'config' name is too long (%zu bytes, max %zu)",
                         nlen, sizeof name - 1);
     memcpy(name, v, nlen); name[nlen] = 0;
     if (!ident_ok(name))
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'config' name '%s' is not an identifier", name);
 
     RxtRow *r = row_push(p, src, RXT_DECL_CONFIG, line);
@@ -723,12 +844,12 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *rest = skip_ws(e);
     if (*rest) {
         if (strncmp(rest, "from", 4) || !isspace((unsigned char)rest[4]))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "'config %s' takes only 'from <list>' after its "
                             "name (got '%s')", name, rest);
         const char *list = skip_ws(rest + 4);
         if (!config_list_ok(list))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "'config %s from' needs a comma-separated config "
                             "list (got '%s')", name, list);
         r->from_list = rtrim_ws(p->arena, list);
@@ -740,53 +861,18 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     for (size_t k = 0; k + 1 < src->nrows; k++)
         if (src->rows[k].kind == RXT_DECL_CONFIG &&
             !strcmp(src->rows[k].name, name))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "duplicate config name '%s' (already declared "
                             "on line %zu)", name, src->rows[k].line);
 
-    /* the body: indented lines, closed vocabulary, own context */
-    while (*i + 1 < L->n) {
-        const char *nx = L->v[*i + 1];
-        if (!line_indented(nx)) break;
-        (*i)++;
-        if (line_blank_or_comment(nx)) continue;
-        const char *body = skip_ws(nx);
-        size_t bline = *i + 1;
-        const RxtKeyword *kw = vocab_find(config_vocab,
-                                          sizeof config_vocab / sizeof *config_vocab,
-                                          body);
-        if (!kw) {
-            /* [DD-13b.W1.1 r46sem finding 11] `line_blank_or_comment`
-             * tests the RAW first byte for '#' (above), so it can never
-             * fire here — `body` is always indented (the caller already
-             * checked `line_indented(nx)`), so its first byte after
-             * `skip_ws` is never a space. An indented `# note` therefore
-             * reaches this catch-all and, without this arm, is reported
-             * as "'#' is not a config-block directive" — spec-conformant
-             * (a `#` anywhere but column 1 is data) but confusing in the
-             * one region where indentation is structural. Named rather
-             * than fixed: the grammar decision (allow a column-1-relative
-             * comment inside a head continuation) is left open (sem10's
-             * sibling), but the diagnostic at least says what happened. */
-            if (*body == '#')
-                return rxt_fail(p, bline,
-                                "a comment must start in column 1 (this '#' "
-                                "is indented, and indentation inside a "
-                                "'config' body is continuation, not "
-                                "commentary — format_design.md's lexical "
-                                "rule)");
-            return unknown_token(p, bline, body, "config-block");
-        }
-        if (kw->wave > 1) return refuse_wave(p, bline, kw, "config-block");
-        if (tok_is(body, "pcrec")) {
-            const char *raw = line_value(body);
-            if (!*raw)
-                return rxt_fail(p, bline, "'pcrec' needs at least one flag");
-            r->pcrec_raw = arena_strdup(p->arena, raw);
-            continue;
-        }
-        if (parse_setting(p, r, bline, body, 0) != 0) return -1;
-    }
+    /* THE BODY IS NO LONGER READ HERE. Until W23.1 this function
+     * consumed its own indented continuation, with its own idea of what a
+     * body line may be and its own vocabulary table; now S1 ATTACHES those
+     * lines and the schema says which are legal in the `config` scope. The
+     * function's job shrank to the HEADER, which is what "the schema
+     * decides where structure begins and ends" costs a production that
+     * used to decide for itself. `*i` is left ON the header line. */
+    *out = r;
     return 0;
 }
 
@@ -801,7 +887,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *v = line_value(L->v[*i]);
     const char *eq = strchr(v, '=');
     if (!eq)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target' wants '<prefix> = <definition>' (no '=' on "
                         "the line)");
     char prefix[RXT_TARGET_PREFIX_MAX + 1];
@@ -826,12 +912,12 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
          * distinct diagnostic naming the cap, not the "needs a prefix"
          * message a genuinely missing prefix gets. */
         if (plen >= sizeof prefix)
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target' prefix is too long (%zu bytes, max %zu)",
                             plen, sizeof prefix - 1);
         memcpy(prefix, v, plen); prefix[plen] = 0;
         if (!ident_ok(prefix))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target' prefix '%s' is not an identifier (it "
                             "becomes the generated symbols' prefix)", prefix);
     }
@@ -842,11 +928,11 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     while (*de && !isspace((unsigned char)*de)) de++;
     size_t dlen = (size_t)(de - rest);
     if (!dlen)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target %s =' needs a definition name", prefix);
     /* [DD-13b.W1.1 r46sem finding 8] see the two twins above. */
     if (dlen >= sizeof def)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target %s =' definition name is too long (%zu "
                         "bytes, max %zu)", prefix, dlen, sizeof def - 1);
     memcpy(def, rest, dlen); def[dlen] = 0;
@@ -854,7 +940,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
      * file-namespace name and may carry `-`/`.`. The PREFIX above stays an
      * identifier — it is what the emitted symbols are built from. */
     if (!defname_ok(def))
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target %s' definition name '%s' is not a definition "
                         "name (a letter or '_' then letters, digits, '_', '-' "
                         "or '.')",
@@ -862,7 +948,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     if (derived) {
         pcrec_rxt_prefix_from_name(def, prefix, sizeof prefix);
         if (!ident_ok(prefix))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target = %s' cannot derive a prefix: '%s' is not "
                             "an identifier even with '-' and '.' mapped to "
                             "'_'", def, prefix);
@@ -875,12 +961,12 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *tail = skip_ws(de);
     if (*tail) {
         if (strncmp(tail, "with", 4) || !isspace((unsigned char)tail[4]))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target %s' takes only 'with <list>' after the "
                             "definition (got '%s')", prefix, tail);
         const char *list = skip_ws(tail + 4);
         if (!config_list_ok(list))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target %s with' needs a comma-separated config "
                             "list (got '%s')", prefix, list);
         r->with_list = rtrim_ws(p->arena, list);
@@ -905,13 +991,13 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         if (src->rows[k].kind == RXT_DECL_TARGET &&
             !strcmp(src->rows[k].name, prefix)) {
             if (strcmp(src->rows[k].value, def) != 0)
-                return rxt_fail(p, line,
+                return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                                 "definitions '%s' and '%s' (line %zu) both map "
                                 "to target prefix '%s'; a name's '-'/'.' "
                                 "become '_', so give one an explicit prefix",
                                 def, src->rows[k].value, src->rows[k].line,
                                 prefix);
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "duplicate target prefix '%s' (already declared "
                             "on line %zu)", prefix, src->rows[k].line);
         }
@@ -952,11 +1038,11 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
             if (at >= sizeof members) { at = sizeof members - 1; break; }
         }
         snprintf(members + at, sizeof members - at, "%s", r->name);
-        return rxt_fail(p, r->line,
+        return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, r->line,
                         "'config %s from' is a cycle: %s", r->name, members);
     }
     if (depth >= RXT_FROM_NEST_MAX)
-        return rxt_fail(p, r->line,
+        return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, r->line,
                         "'config %s from' nests more than %d deep",
                         r->name, RXT_FROM_NEST_MAX);
     stack[depth] = r;
@@ -968,7 +1054,7 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
         while (*s && *s != ',' && !isspace((unsigned char)*s)) s++;
         RxtRow *dep = config_by_name(src, start, (size_t)(s - start));
         if (!dep)
-            return rxt_fail(p, r->line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, r->line,
                             "'config %s from' names '%.*s', which is not a "
                             "config declared in this file", r->name,
                             (int)(s - start), start);
@@ -997,322 +1083,365 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     src->path = arena_strdup(&src->arena, path);
 
     RxtRow *block = NULL;             /* the open pattern block, if any */
-    size_t block_desc_line = 0;       /* line of the open block's own
-                                        * 'description', 0 = none yet —
-                                        * [RXTDUP]'s duplicate-description
-                                        * refusal needs the FIRST line to
-                                        * name, and block->description
-                                        * alone cannot carry it */
-    int in_body = 0;
+
+    /* THE ATTACHMENT STACK, arena-backed and grown rather than capped. S1
+     * already required one — a reader must know which enclosing level a
+     * lesser indent closes back to — so the OPEN SUBTREE marks one frame
+     * and adds no memory the layer did not already carry. It needs no
+     * limit of its own: each level costs at least one more leading space,
+     * so the depth is bounded by the line it is reached on. */
+    RxtFrame *st = NULL;
+    size_t ndepth = 0, depthcap = 0;
+    size_t nrows = pcrec_rxt_schema_nrows();
+    const RxtSchemaRow *rowbase = pcrec_rxt_schema_rows(NULL);
+
+#define RXT_PUSH_FRAME(IND, SCOPE, BASE, TREE, ROW)                        \
+    do {                                                                   \
+        if (ndepth == depthcap) {                                          \
+            size_t nc = depthcap ? depthcap * 2 : 8;                       \
+            RxtFrame *nv = arena_alloc(&src->arena, nc * sizeof *nv);      \
+            if (ndepth) memcpy(nv, st, ndepth * sizeof *nv);               \
+            st = nv; depthcap = nc;                                        \
+        }                                                                  \
+        st[ndepth].indent = (IND);                                         \
+        st[ndepth].scope  = (SCOPE);                                       \
+        st[ndepth].base   = (BASE);                                        \
+        st[ndepth].tree   = (TREE);                                        \
+        st[ndepth].row    = (ROW);                                         \
+        st[ndepth].seen   = arena_alloc(&src->arena, nrows * sizeof(size_t)); \
+        ndepth++;                                                          \
+    } while (0)
+
+    RXT_PUSH_FRAME(0, RXT_SCOPE_FILE, RXT_SCOPE_FILE, 0, NULL);
+
+    /* the immediately preceding CONTENT line, which is the only line a
+     * deeper one may attach to (S1) */
+    size_t last_indent = 0;
+    int last_was_content = 0;
+    const RxtSchemaRow *last_row = NULL;
+    RxtRow *last_rxtrow = NULL;
 
     for (size_t i = 0; i < L.n; i++) {
         const char *l = L.v[i];
         size_t line = i + 1;
-        if (line_blank_or_comment(l)) continue;
+        size_t indent = 0;
+        RxtLineClass lc = line_class(l, &indent);
 
-        /* INDENTATION IS CONTINUATION IN THE HEAD ONLY (format_design
-         * §1.2), and every head construct that HAS continuation lines
-         * consumes them itself, above. So an indented line reaching here
-         * continues nothing — and in the body it is the asymmetry the
-         * format states outright, which is worth saying rather than
-         * letting it fall into "unknown token". MEASURED, 0 corpus lines
-         * begin with whitespace (w1_impl §5), so no existing file can
-         * reach either arm. */
-        if (line_indented(l)) {
-            rxt_fail(&p, line, "%s",
-                     in_body ? "a pattern block's lines are NOT indented "
-                               "(indentation is continuation in the head "
-                               "only)"
-                             : "indented line continues nothing (the "
-                               "declaration above it takes no continuation)");
-            pcrec_rxt_source_free(src);
-            return NULL;
-        }
-
-        if (tok_is(l, "pattern")) {
-            in_body = 1;
-            if (!src->first_pattern_line) src->first_pattern_line = line;
-            block = row_push(&p, src, RXT_DECL_PATTERN, line);
-            block_desc_line = 0;
-            /* REST-OF-LINE, VERBATIM. `pattern` is the one production
-             * whose value keeps every byte to the end of the line — no
-             * trimming, no quoting, no escaping (rxt_format.md). Three
-             * corpus blocks carry a literal TAB here and in all three the
-             * tab IS the thing under test, which is why the dump escapes
-             * this column rather than the parser normalising it. */
-            {
-                /* THE SEPARATOR IS A SPACE, NOT "whitespace", and that is
-                 * agreement with the other parser rather than pedantry:
-                 * run.sh's arm is `^pattern\ (.*)$` — a LITERAL space —
-                 * so `pattern<TAB>abc` is a hard error there. Accepting
-                 * it here would make the two parsers disagree about a
-                 * line, which is exactly what the differential exists to
-                 * find, and it would find it in a file somebody wrote
-                 * rather than in this comment. MEASURED: 0 of the 3,265
-                 * pattern lines use a tab separator. */
-                const char *after = l + tok_len(l);
-                if (*after != ' ') {
-                    rxt_fail(&p, line,
-                             "'pattern' wants a single space before its "
-                             "regex (the pattern text is rest-of-line "
-                             "verbatim from there, so the separator cannot "
-                             "be part of it)");
-                    goto fail;
-                }
-                after++;
-                block->value = arena_strdup(&src->arena, after);
-            }
+        /* S0: a WHITESPACE-ONLY line is INERT, a BLANK and a COMMENT each
+         * close every open attachment and return to indent 0. */
+        if (lc == LC_WS) continue;
+        if (lc == LC_BLANK || lc == LC_COMMENT) {
+            ndepth = 1;
+            last_was_content = 0;
+            last_row = NULL;
+            last_rxtrow = NULL;
             continue;
         }
 
-        if (!in_body) {
-            /* ---- HEAD ---- */
-            const RxtKeyword *kw = vocab_find(head_vocab,
-                                              sizeof head_vocab / sizeof *head_vocab,
-                                              l);
-            if (!kw) { unknown_token(&p, line, l, "file-level"); goto fail; }
-            if (kw->wave > 1) { refuse_wave(&p, line, kw, "file-level"); goto fail; }
+        /* §1.6.1a narrowing (4), TAKEN: indentation is SPACES. A tab in
+         * the indentation region is refused BY NAME rather than silently
+         * counted, because the two spellings have no agreed depth and a
+         * file mixing them has no defined tree under any depth rule. A tab
+         * inside a VALUE is still data and is untouched. */
+        if (l[indent] == '\t') {
+            rxt_fail(&p, RXTD_STRUCTURE, line,
+                     "indentation is spaces; this line is indented with a "
+                     "TAB (a tab inside a value is still data, but a tab "
+                     "in the indentation has no agreed depth)");
+            goto fail;
+        }
 
-            if (tok_is(l, "config")) {
-                if (parse_config(&p, src, &L, &i) != 0) goto fail;
+        /* ---- S1: ATTACHMENT ---- */
+        if (last_was_content && indent > last_indent) {
+            /* a CHILD of the line above. What may be indented under a
+             * kind is the `children` column and nothing else. */
+            if (st[ndepth - 1].tree) {
+                RXT_PUSH_FRAME(indent, RXT_SCOPE_NSCOPES, RXT_SCOPE_NSCOPES,
+                               1, NULL);
+            } else if (last_row && pcrec_rxt_schema_open_subtree(last_row)) {
+                RXT_PUSH_FRAME(indent, RXT_SCOPE_NSCOPES, RXT_SCOPE_NSCOPES,
+                               1, last_rxtrow);
+            } else {
+                RxtSchemaScope cs = pcrec_rxt_schema_child_scope(last_row);
+                if (cs == RXT_SCOPE_NSCOPES) {
+                    if (last_row)
+                        rxt_fail(&p, RXTD_STRUCTURE, line,
+                                 "indented line continues nothing ('%s' "
+                                 "takes no continuation)", last_row->kind);
+                    else
+                        rxt_fail(&p, RXTD_STRUCTURE, line,
+                                 "indented line continues nothing (the "
+                                 "declaration above it takes no "
+                                 "continuation)");
+                    goto fail;
+                }
+                RXT_PUSH_FRAME(indent, cs, cs, 0, last_rxtrow);
+            }
+        } else {
+            while (ndepth > 1 && indent < st[ndepth - 1].indent) ndepth--;
+            if (indent != st[ndepth - 1].indent) {
+                rxt_fail(&p, RXTD_STRUCTURE, line,
+                         "indented line continues nothing (the declaration "
+                         "above it takes no continuation)");
+                goto fail;
+            }
+        }
+
+        RxtFrame *f = &st[ndepth - 1];
+        last_indent = indent;
+        last_was_content = 1;
+        last_row = NULL;
+        last_rxtrow = f->row;
+
+        /* Inside an OPEN SUBTREE nothing is dispatched: S2's opener set is
+         * empty there, S3 never opens there, no schema row exists for any
+         * line below the opener, and the unknown-token rule is VACUOUS
+         * rather than excepted. pcrec parses the structure, dumps it
+         * faithfully, and interprets nothing. */
+        if (f->tree) continue;
+
+        const char *tok = l + indent;
+        size_t tlen = tok_len(tok);
+
+        /* ---- S2: GROUPING. The opener set is a scope-free query. ---- */
+        const RxtSchemaRow *row = NULL;
+        const RxtSchemaRow *op = pcrec_rxt_schema_opener(tok, tlen);
+        RxtSchemaScope gscope = pcrec_rxt_schema_group_scope(f->base);
+        if (op && gscope != RXT_SCOPE_NSCOPES) {
+            if (op->wave > PCREC_RXT_WAVE_BUILT) {
+                refuse_wave(&p, line, op, f->scope);
+                goto fail;
+            }
+            f->scope = gscope;
+            memset(f->seen, 0, nrows * sizeof *f->seen);
+            row = op;
+        } else {
+            row = pcrec_rxt_schema_row(f->scope, tok, tlen);
+        }
+
+        if (!row) {
+            /* An indented `#` is a structure error naming the RULE, not
+             * "'#' is not a directive": indentation is what makes the
+             * difference, and a reader in the one region where it is
+             * structural needs to be told which rule they met. */
+            if (*tok == '#') {
+                rxt_fail(&p, RXTD_STRUCTURE, line,
+                         "a comment must start in column 1 (this '#' is "
+                         "indented, and indentation inside a '%s' body is "
+                         "continuation, not commentary — "
+                         "format_design.md's lexical rule)",
+                         pcrec_rxt_scope_name(f->scope));
+                goto fail;
+            }
+            /* THE HEAD BOUNDARY, named. A head keyword down here is not an
+             * unknown token — it is a real declaration in the wrong place,
+             * and the reader needs to be told about the boundary rather
+             * than about their spelling. */
+            if (f->base == RXT_SCOPE_FILE && f->scope != RXT_SCOPE_FILE &&
+                pcrec_rxt_schema_row(RXT_SCOPE_FILE, tok, tlen)) {
+                rxt_fail(&p, RXTD_STRUCTURE, line,
+                         "'%.*s' is a file-level declaration and the head "
+                         "ENDED at the first 'pattern' line (line %zu); "
+                         "nothing file-level may appear after it",
+                         (int)tlen, tok, src->first_pattern_line);
+                goto fail;
+            }
+            unknown_token(&p, line, tok, f->scope);
+            goto fail;
+        }
+
+        if (row->wave > PCREC_RXT_WAVE_BUILT) {
+            refuse_wave(&p, line, row, f->scope);
+            goto fail;
+        }
+
+        /* ---- CARDINALITY, from the column ---- */
+        size_t ridx = (size_t)(row - rowbase);
+        if (row->cardinality == RXT_CARD_AT_MOST_ONE && f->seen[ridx]) {
+            refuse_cardinality(&p, line, row, f->scope, f->seen[ridx]);
+            goto fail;
+        }
+        if (!f->seen[ridx]) f->seen[ridx] = line;
+        last_row = row;
+
+        /* ---- the VALUE, which is the only thing left for code ---- */
+        if (f->scope == RXT_SCOPE_FILE) {
+            if (row == pcrec_rxt_schema_row(RXT_SCOPE_FILE, "config", 6)) {
+                RxtRow *cr = NULL;
+                if (parse_config(&p, src, &L, &i, &cr) != 0) goto fail;
+                last_rxtrow = cr;
                 continue;
             }
-            if (tok_is(l, "target")) {
+            if (tok_is(tok, "target")) {
                 if (parse_target(&p, src, &L, &i) != 0) goto fail;
                 continue;
             }
-            if (tok_is(l, "lib")) {
-                const char *v = value_trimmed(&p, l);
+            if (tok_is(tok, "lib")) {
+                const char *v = value_trimmed(&p, tok);
                 /* a `path-ref` is C's own two spellings: "local" or
                  * <store>. Both are RECORDED here and neither is opened:
                  * this parser touches no filesystem at all, which is what
                  * keeps `--list-source` a pure function of the file's
-                 * bytes. [DD-13b.W1.2]'s `pcrec_rxt_source_resolve` is
-                 * where the "local" form's path is RESOLVED (existence
-                 * only, against the source's own directory and the
-                 * --lib-path list) and where the <store> form is refused as
-                 * not in this build; a library's CONTENTS are the
-                 * composer's, and the store SCAN is [LIB]'s. */
+                 * bytes. */
                 size_t n = strlen(v);
                 if (n < 2 || !((v[0] == '"' && v[n - 1] == '"') ||
                                (v[0] == '<' && v[n - 1] == '>'))) {
-                    rxt_fail(&p, line,
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line,
                              "'lib' wants a path reference, either \"local\" "
                              "or <store-name> (got '%s')", v);
                     goto fail;
                 }
                 RxtRow *r = row_push(&p, src, RXT_DECL_LIB, line);
                 r->value = arena_strdup(&src->arena, v);
+                last_rxtrow = r;
                 continue;
             }
-            if (tok_is(l, "description")) {
-                /* [RXTDUP] A SECOND FILE-LEVEL 'description' IS REFUSED,
-                 * NAMING BOTH LINES, for the SAME reason as the pattern
-                 * block's own duplicate-description refusal just below —
-                 * `docs/spec/rxt_format.md` calls this "a machine-readable
-                 * prose FIELD" (singular), and a second one is an author
-                 * mistake, not a second fact. It does not lose data today
-                 * (each `description` is its own row in file order, one
-                 * of the several kinds this dump has no scalar-field
-                 * cardinality for), but a second head description would
-                 * otherwise sail through silently with no way for a
-                 * reader — or `--list-source`'s own consumer — to tell
-                 * which one is THE file's description, so it is refused
-                 * here rather than left to accumulate. */
-                for (size_t k = 0; k < src->nrows; k++)
-                    if (src->rows[k].kind == RXT_DECL_DESCRIPTION) {
-                        rxt_fail(&p, line,
-                                 "a file has one 'description' (already "
-                                 "given on line %zu)", src->rows[k].line);
-                        goto fail;
-                    }
+            if (tok_is(tok, "description")) {
                 const char *text = NULL;
-                if (parse_prose(&p, &L, &i, line_value(l), &text) != 0) goto fail;
+                if (prose_value(&p, &L, &i, row, indent, 0, &text) != 0)
+                    goto fail;
                 RxtRow *r = row_push(&p, src, RXT_DECL_DESCRIPTION, line);
                 r->value = text;
+                last_rxtrow = r;
                 continue;
             }
-            unknown_token(&p, line, l, "file-level");
+            unknown_token(&p, line, tok, f->scope);
             goto fail;
         }
 
-        /* ---- BODY: a pattern block's directive lines ---- */
-        {
-            const RxtKeyword *kw = vocab_find(block_vocab,
-                                              sizeof block_vocab / sizeof *block_vocab,
-                                              l);
-            if (!kw) {
-                /* THE HEAD BOUNDARY, named. A head keyword down here is
-                 * not an unknown token — it is a real declaration in the
-                 * wrong place, and the reader needs to be told about the
-                 * boundary rather than about their spelling (§1.3). */
-                const RxtKeyword *hk = vocab_find(head_vocab,
-                                                  sizeof head_vocab / sizeof *head_vocab,
-                                                  l);
-                if (hk)
-                    rxt_fail(&p, line,
-                             "'%s' is a file-level declaration and the head "
-                             "ENDED at the first 'pattern' line (line %zu); "
-                             "nothing file-level may appear after it",
-                             hk->kw, src->first_pattern_line);
-                else
-                    unknown_token(&p, line, l, "pattern-block");
+        if (f->scope == RXT_SCOPE_CONFIG) {
+            RxtRow *cr = f->row;
+            if (tok_is(tok, "pcrec")) {
+                const char *raw = line_value(tok);
+                if (!*raw) {
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'pcrec' needs at least one flag");
+                    goto fail;
+                }
+                /* ACCUMULATE, and it JOINS rather than replacing — the
+                 * same rule `cfg_merge` already applies ACROSS configs,
+                 * applied within one body so there is one answer to "what
+                 * does a second `pcrec` line mean" instead of two. */
+                if (cr->pcrec_raw) {
+                    size_t n = strlen(cr->pcrec_raw) + 1 + strlen(raw) + 1;
+                    char *j = arena_alloc(&src->arena, n);
+                    snprintf(j, n, "%s %s", cr->pcrec_raw, raw);
+                    cr->pcrec_raw = j;
+                } else {
+                    cr->pcrec_raw = arena_strdup(&src->arena, raw);
+                }
+                continue;
+            }
+            if (parse_setting(&p, cr, line, tok, 0) != 0) goto fail;
+            continue;
+        }
+
+        /* ---- BLOCK scope ---- */
+        if (op) {
+            if (!src->first_pattern_line) src->first_pattern_line = line;
+            block = row_push(&p, src, RXT_DECL_PATTERN, line);
+            f->row = block;
+            last_rxtrow = block;
+            /* REST-OF-LINE, VERBATIM. `pattern` is the one production
+             * whose value keeps every byte to the end of the line — no
+             * trimming, no quoting, no escaping. Three corpus blocks carry
+             * a literal TAB here and in all three the tab IS the thing
+             * under test, which is why the dump escapes this column rather
+             * than the parser normalising it.
+             *
+             * THE SEPARATOR IS A SPACE, NOT "whitespace", and that is
+             * agreement with the other parser rather than pedantry:
+             * run.sh's arm is `^pattern\ (.*)$` — a LITERAL space — so
+             * `pattern<TAB>abc` is a hard error there. */
+            const char *after = tok + tlen;
+            if (*after != ' ') {
+                rxt_fail(&p, RXTD_STRUCTURE, line,
+                         "'pattern' wants a single space before its regex "
+                         "(the pattern text is rest-of-line verbatim from "
+                         "there, so the separator cannot be part of it)");
                 goto fail;
             }
-            if (kw->wave > 1) { refuse_wave(&p, line, kw, "pattern-block"); goto fail; }
-
-            /* The EXPECTATION kinds are recognised and skipped whole. A
-             * `.rxt` expectation is the harness's business: this parser
-             * reads a file to find its definitions and targets, and a
-             * compiler that started scoring `m` lines would be a second
-             * harness. */
-            if (tok_is(l, "m") || tok_is(l, "n") || tok_is(l, "ms") ||
-                tok_is(l, "ns") || tok_is(l, "g") || tok_is(l, "gp") ||
-                tok_is(l, "gu") || tok_is(l, "perr") ||
-                tok_is(l, "frames-buffer="))
-                continue;
-
-            if (tok_is(l, "name")) {
-                const char *v = value_trimmed(&p, l);
-                /* [DD-13b.W1.3] `defname_ok`, not `ident_ok`: see that
-                 * function's header for the ruling and for the one
-                 * boundary it draws (buildable as a target, not callable
-                 * from a pattern). */
-                if (!defname_ok(v)) {
-                    rxt_fail(&p, line,
-                             "'name' wants a definition name — a letter or "
-                             "'_' then letters, digits, '_', '-' or '.' "
-                             "(got '%s')", v);
-                    goto fail;
-                }
-                /* A BLOCK'S `name` IS IN THE FILE NAMESPACE (w1_impl
-                 * DECIDED (7), the manager's ruling on r45sem S3) — not
-                 * in the pattern's group namespace — so this collision
-                 * check is against other blocks and nothing else. */
-                for (size_t k = 0; k < src->nrows; k++)
-                    if (src->rows[k].kind == RXT_DECL_PATTERN &&
-                        &src->rows[k] != block && src->rows[k].name &&
-                        !strcmp(src->rows[k].name, v)) {
-                        rxt_fail(&p, line,
-                                 "duplicate block name '%s' (already named on "
-                                 "line %zu)", v, src->rows[k].line);
-                        goto fail;
-                    }
-                block->name = arena_strdup(&src->arena, v);
-                continue;
-            }
-            if (tok_is(l, "export")) {
-                /* [DD-13b.W1.3, D89 addendum point 2] THE LIBRARY'S OWN
-                 * INTERFACE, DECLARED. Frank: "for library use, the library
-                 * explicitly provides the names it intends to export."
-                 * Delivery stopped being "every named group" — the default
-                 * is now NOTHING exported, and a definition says what it
-                 * offers.
-                 *
-                 * THE `config-list` SHAPE, because `with`/`use`/`from`
-                 * already use it and a fourth list syntax would be a fourth
-                 * thing to get wrong. `config_list_ok` is the SAME validator
-                 * those three run, so a tab or a malformed element is
-                 * refused here in the words it is refused there.
-                 *
-                 * WHAT IS *NOT* CHECKED HERE: whether the definition
-                 * actually declares a group by each name. That is a question
-                 * about the PATTERN, and this parser does not parse
-                 * patterns — the composer answers it at bind time, where the
-                 * sub-parse's own `named_groups` list is in hand, and
-                 * refuses naming both the export and the definition. Asking
-                 * it here would need a second regex parser in the head
-                 * reader, which is the one thing the seam ruling forbids. */
-                const char *v = value_trimmed(&p, l);
-                if (!config_list_ok(v)) {
-                    rxt_fail(&p, line,
-                             "'export' wants a comma-separated list of "
-                             "group names (got '%s')", v);
-                    goto fail;
-                }
-                if (block->exports) {
-                    rxt_fail(&p, line,
-                             "a block has one 'export' line; this one already "
-                             "declared '%s'", block->exports);
-                    goto fail;
-                }
-                block->exports = rtrim_ws(&src->arena, v);
-                continue;
-            }
-            if (tok_is(l, "description")) {
-                /* THE ONE-LINE FORM ONLY, IN A BLOCK. format_design §1.3
-                 * gives a block-line `description` the same `prose-value`
-                 * the head's takes, which includes the `|` block scalar —
-                 * but §1.2's lexical rule says a PATTERN BLOCK's lines are
-                 * NOT indented, and a block scalar is defined as indented
-                 * continuation. The two cannot both hold in the body, and
-                 * the body's rule is the one 3,265 blocks depend on
-                 * (R-COMPAT-1), so it wins: `|` is a HEAD form.
-                 *
-                 * This also keeps the seam honest. run.sh's per-line loop
-                 * has no continuation mechanism, and giving the body one
-                 * would put head-shaped parsing back into the harness —
-                 * the exact thing §1.1's ruling removed. MEASURED free: 0
-                 * corpus lines are indented and 0 blocks carry a
-                 * `description`, so no existing file can reach either
-                 * reading. Raised for the manager rather than settled
-                 * silently; see the lane report. */
-                const char *v = line_value(l);
-                /* [DD-13b.W1.1 r46sem finding 14] COMPARE THE TRIMMED
-                 * VALUE, not the exact one — ruled: a `|` with trailing
-                 * whitespace is nobody's intended literal, so `description
-                 * | ` (one trailing space) is refused as the block-scalar
-                 * spelling exactly like bare `description |`, matching
-                 * `tests/harness/verify_rxt.py`'s `v.strip() == '|'`
-                 * (which already trims). Before this fix the exact
-                 * `strcmp` let the trailing-space form fall through and be
-                 * accepted as the literal text `"| "` — the one place leg
-                 * C was STRICTER than legs A/B rather than in step with
-                 * them. */
-                size_t vlen = strlen(v);
-                while (vlen && (v[vlen - 1] == ' ' || v[vlen - 1] == '\t'))
-                    vlen--;
-                if (vlen == 1 && v[0] == '|') {
-                    rxt_fail(&p, line,
-                             "a pattern block's 'description' takes the "
-                             "one-line form only: the '|' block scalar is "
-                             "continuation, and a pattern block's lines are "
-                             "not indented (the head is where '|' belongs)");
-                    goto fail;
-                }
-                /* [DD-13b.W1.1 r46sem finding 13] AN EMPTY DESCRIPTION IS
-                 * ACCEPTED, matching legs B and C — `description ` (one
-                 * trailing space, no text) used to hard-error here while
-                 * both other parsers accept it with an empty value. There
-                 * is nothing wrong with a block declaring it has no
-                 * description text; "needs its text" was never true of
-                 * this line, only of one with nothing after the keyword
-                 * at all — which does not reach this arm (see
-                 * `vocab_find`'s tokenizer above). */
-                /* [RXTDUP] A SECOND 'description' LINE IN ONE BLOCK IS
-                 * REFUSED, NAMING BOTH LINES — before this fix the second
-                 * one silently won (`block->description` is a single
-                 * field, unconditionally overwritten), exit 0, no
-                 * diagnostic (bench note
-                 * docs/design/dd13_format/bench_rxt_needs_v1.md §1.9 M5).
-                 * The manager measured the shipped corpus clean (210
-                 * files, 0 blocks with >1 description line), so this is
-                 * compat-safe; the block-level duplicate-name refusal
-                 * above is the precedent for the wording and for citing
-                 * the earlier line. */
-                if (block_desc_line) {
-                    rxt_fail(&p, line,
-                             "a pattern block has one 'description' "
-                             "(already given on line %zu)", block_desc_line);
-                    goto fail;
-                }
-                block->description = arena_strdup(&src->arena, v);
-                block_desc_line = line;
-                continue;
-            }
-            if (parse_setting(&p, block, line, l, 1) != 0) goto fail;
+            block->value = arena_strdup(&src->arena, after + 1);
+            continue;
         }
+
+        if (!block) {
+            /* a block-scope line with no block above it cannot happen:
+             * the scope only becomes BLOCK when an opener switched it. */
+            rxt_fail(&p, RXTD_VALUE_SHAPE, line, "internal: block-scope line with no block");
+            goto fail;
+        }
+        last_rxtrow = block;
+
+        /* The EXPECTATION kinds are recognised and skipped whole. A `.rxt`
+         * expectation is the harness's business: this parser reads a file
+         * to find its definitions and targets, and a compiler that started
+         * scoring `m` lines would be a second harness. */
+        if (row->value == RXT_VAL_CASE || tok_is(tok, "perr") ||
+            tok_is(tok, "frames-buffer="))
+            continue;
+
+        if (tok_is(tok, "name")) {
+            const char *v = value_trimmed(&p, tok);
+            /* [DD-13b.W1.3] `defname_ok`, not `ident_ok`: see that
+             * function's header for the ruling and for the one boundary it
+             * draws (buildable as a target, not callable from a pattern). */
+            if (!defname_ok(v)) {
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line,
+                         "'name' wants a definition name — a letter or '_' "
+                         "then letters, digits, '_', '-' or '.' (got '%s')",
+                         v);
+                goto fail;
+            }
+            /* A BLOCK'S `name` IS IN THE FILE NAMESPACE (w1_impl DECIDED
+             * (7)) — not in the pattern's group namespace — so this
+             * collision check is against other blocks and nothing else. */
+            for (size_t k = 0; k < src->nrows; k++)
+                if (src->rows[k].kind == RXT_DECL_PATTERN &&
+                    &src->rows[k] != block && src->rows[k].name &&
+                    !strcmp(src->rows[k].name, v)) {
+                    rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
+                             "duplicate block name '%s' (already named on "
+                             "line %zu)", v, src->rows[k].line);
+                    goto fail;
+                }
+            block->name = arena_strdup(&src->arena, v);
+            continue;
+        }
+        if (tok_is(tok, "export")) {
+            /* [DD-13b.W1.3, D89 addendum point 2] THE LIBRARY'S OWN
+             * INTERFACE, DECLARED, in the `config-list` shape `with`/`use`/
+             * `from` already use. WHAT IS NOT CHECKED HERE: whether the
+             * definition declares a group by each name — that is a question
+             * about the PATTERN, answered by the composer at bind time. */
+            const char *v = value_trimmed(&p, tok);
+            if (!config_list_ok(v)) {
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line,
+                         "'export' wants a comma-separated list of group "
+                         "names (got '%s')", v);
+                goto fail;
+            }
+            block->exports = rtrim_ws(&src->arena, v);
+            continue;
+        }
+        if (tok_is(tok, "description")) {
+            /* A BLOCK'S `description` TAKES THE FULL PROSE VALUE SINCE
+             * W23.1, INCLUDING THE `|` REGION — the widening §1.2.5 rules
+             * and SW16 names in the spec. Until the two layers were split,
+             * "a pattern block's lines are NOT indented" was a LEXICAL rule
+             * that contradicted the prose production; under S1 there is one
+             * attachment rule everywhere and a prose region's extent is
+             * S3's, so the contradiction dissolves rather than being
+             * arbitrated. An EMPTY description is accepted, matching legs B
+             * and C. */
+            const char *text = NULL;
+            if (prose_value(&p, &L, &i, row, indent, 0, &text) != 0)
+                goto fail;
+            block->description = text;
+            continue;
+        }
+        if (parse_setting(&p, block, line, tok, 1) != 0) goto fail;
     }
+#undef RXT_PUSH_FRAME
 
     /* the `from` cycle check, once every config is known — a `from` may
      * name a config declared later in the file, so this cannot run inline */
@@ -1342,7 +1471,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             const char *start = s;
             while (*s && *s != ',' && !isspace((unsigned char)*s)) s++;
             if (!config_by_name(src, start, (size_t)(s - start))) {
-                rxt_fail(&p, r->line,
+                rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                          "'target %s with' names '%.*s', which is not a "
                          "config declared in this file", r->name,
                          (int)(s - start), start);
@@ -1726,13 +1855,13 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
                  * measured truncating the SECOND path's own extension on
                  * this box's own TMPDIR, which is what W1.3's
                  * `compose_dup_definition.rxt` needle exists to catch. */
-                return rxt_fail(&fp, r->line,
+                return rxt_fail(&fp, RXTD_SCHEMA_CONSTRAINT, r->line,
                                 "'%s' dup: %s:%zu",
                                 r->name, cl->defs[k].file, cl->defs[k].line);
         unsigned long long f = 0;
         char badc = 0;
         if (pcrec_rxt_flags_from_letters(r->flags, &f, &badc) != 0)
-            return rxt_fail(&fp, r->line,
+            return rxt_fail(&fp, RXTD_VALUE_SHAPE, r->line,
                             "unknown flag letter '%c' in `flags %s` on "
                             "definition '%s'", badc, r->flags, r->name);
         if (cl->ndefs == cl->defcap) {
@@ -1764,13 +1893,13 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         pcrec_error kerr = { 0 };
         RxtSource *kid = pcrec_rxt_source_parse(rp, &kerr);
         if (!kid)
-            return rxt_fail(&fp, r->line,
+            return rxt_fail(&fp, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' does not parse: %s", r->value, kerr.msg);
         if (cl->root->nkids == cl->root->kidcap) {
             size_t nc = cl->root->kidcap ? cl->root->kidcap * 2 : 4;
             RxtSource **nv = realloc(cl->root->kids, nc * sizeof *nv);
             if (!nv) { pcrec_rxt_source_free(kid);
-                       return rxt_fail(&fp, r->line, "out of memory reading "
+                       return rxt_fail(&fp, RXTD_VALUE_SHAPE, r->line, "out of memory reading "
                                        "'lib %s'", r->value); }
             cl->root->kids = nv; cl->root->kidcap = nc;
         }
@@ -1816,7 +1945,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * name and the two contract needles ("NOT IN THIS BUILD", "[LIB]")
          * are. */
         if (rl >= 2 && ref[0] == '<')
-            return rxt_fail(&p, r->line,
+            return rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' is a STORE reference: NOT IN THIS "
                             "BUILD (see [LIB]); use a \"path\" instead", ref);
         /* a quoted path-ref keeps its quotes in `value` (AS WRITTEN); the
@@ -1835,7 +1964,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                 found = path_is_file(join_path(&src->arena, libdirs[d], ref));
         }
         if (!found)
-            return rxt_fail(&p, r->line,
+            return rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' names no readable file; searched %s",
                             r->value, chain);
     }
@@ -1947,7 +2076,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * for the definition name and the chain searched, not for the
          * shape of "pattern block" or a pointer to this milestone. */
         if (!blk)
-            return rxt_fail(&p, tr->line,
+            return rxt_fail(&p, RXTD_VALUE_SHAPE, tr->line,
                             "'target %s' -> no definition '%s'; searched %s",
                             tr->name, tr->value, chain);
 

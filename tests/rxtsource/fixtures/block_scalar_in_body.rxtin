@@ -1,8 +1,17 @@
-# A BLOCK SCALAR IN A PATTERN BLOCK. format_design gives a block's
-# `description` the full prose-value production, which includes `|`; the
-# lexical rules say a pattern block's lines are not indented, and a block
-# scalar IS indented continuation. Both cannot hold, and the body's rule
-# wins. Refused by name, in every parser, with the reason stated.
+# A BLOCK SCALAR IN A PATTERN BLOCK — RE-AIMED AT [DD-13b.W23.1], and the
+# direction changed. Until the grammar became two layers this file was
+# REFUSED: format_design gave a block's `description` the full prose-value
+# production, which includes `|`, while the lexical rules said a pattern
+# block's lines are not indented, and the body's rule won.
+#
+# Under S1 there is ONE attachment rule everywhere and a prose region's
+# extent is S3's, so the contradiction dissolves rather than being
+# arbitrated (format_design §1.2.5, spec hunk SW16). The file is ACCEPTED
+# and its `description` decodes to the region's own text — which is what
+# the check asserts, because a three-way agreement on a VALUE catches more
+# than one on a rejection.
+#
+# LEG A ONLY at this pin: legs B and C gain their attachment arm at W23.2.
 pattern a+
 description |
   this cannot work here

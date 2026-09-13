@@ -270,3 +270,13 @@ represent would be a lever whose number the artifact cannot honour. See
 `--max-emit-*` block, in the same style. None of the six flags is
 data-driven at the `--help` text level — only the PARSING dispatch is
 generalized, per this file's own "one general shape" convention.
+
+## [DD-13b.W23.1] `--list-schema`, the SEVENTH registry dump
+
+One more no-flavour listing surface, joining `--list-axes`/`--list-limits`
+in the exclusion list and in the mutually-exclusive-queries guard: it
+reports what THIS BUILD's `src/parse/rxt_schema.def` says about the `.rxt`
+FILE FORMAT, which has no flavour axis at all — a flavour is a
+PATTERN-syntax dialect (SR-7), and the file format that carries a pattern
+is the same format whichever dialect the pattern is in. Contract:
+`docs/spec/cli.md` §2 and `docs/spec/rxt_format.md`'s schema section.

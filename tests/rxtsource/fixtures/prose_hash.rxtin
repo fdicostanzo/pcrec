@@ -1,0 +1,16 @@
+# [DD-13b.W23.1] AN INDENTED `#` INSIDE A PROSE REGION IS PROSE.
+# r57 grammar-lens PROBE CELL, and §1.6.1a candidate (2): a narrowing
+# AVOIDED rather than one taken, which is what this fixture PINS. Inside
+# an S3 opaque region S0 does not run for dispatch or attachment, so the
+# `#` is bytes like every other byte there; OUTSIDE a region an indented
+# `#` is still the structure error it has always been
+# (indented_comment_in_config.rxtin is that half). A later wave that
+# weakens S3 would re-create the narrowing silently, and this cell is
+# what makes it loud.
+description |
+  first prose line
+  # this is prose, not a comment
+  third prose line
+
+pattern a+
+m "aaa" 0 3

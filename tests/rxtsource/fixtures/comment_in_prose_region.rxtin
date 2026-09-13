@@ -1,0 +1,15 @@
+# [DD-13b.W23.1] A COLUMN-1 `#` BETWEEN TWO PROSE LINES OF A REGION, and
+# it is the SHARPER of the pair with comment_in_config_body.rxtin.
+#
+# Under the transparent reading this file produces an opener carrying TWO
+# DISJOINT PROSE REGIONS — a shape S3's single-extent rule cannot express
+# at all. A shape the specification cannot describe needs a fixture, not a
+# sentence. The comment ends the region, the line below it continues
+# nothing, and the refusal names THAT line.
+description |
+  first prose line
+# a column-one comment
+  this line continues nothing
+
+pattern a+
+m "aaa" 0 3
