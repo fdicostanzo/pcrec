@@ -366,6 +366,24 @@ source with what it controls — learnings §3):**
 check fails if it saw fewer than 179 files, 3,265 blocks or 26,691
 expectations. A check that runs on an empty corpus must be red.
 
+**CORRECTED AT REVISION 3.1 — those three numbers are STALE, and the
+way they went stale is the durable part.** Re-measured at this
+revision's merge base by the same method, the corpus is **210 files /
+3,936 blocks / 28,943 expectation lines** (§0.7); the r44-era figures
+quoted throughout this section predate [M5.0]'s `tests/utf8/` corpora.
+Nothing in the design depends on the values — INV-COMPAT is a
+*relation* between two parses, not a count — but a check written
+against a constant that a growing corpus outruns is a check whose
+denominator assertion silently stops meaning what it was written to
+mean, which is one step from the vacuity the assertion exists to
+prevent. **So the rule, not the number, is what the spec states:** the
+denominator is DERIVED at check time from the same `find` the check
+dispatches over, compared against the OTHER parser's count for equality
+(that is the real assertion), and pinned separately as a FLOOR that a
+corpus may only grow past. The floor's value is re-pinned in the
+delivering change like every other pin (§9's G1), and the three numbers
+above are read as "the floor at r44" rather than as facts about today.
+
 **Sabotage rows for INV-COMPAT** (each must turn the corresponding check
 red, and the check that must catch it is named — a row no check catches is
 a finding about the check set):
@@ -732,6 +750,17 @@ ship W1 alone and reject W2/W3 keywords with "not in this build"; the
 grammar is designed so that is a *subset*, never a *dialect of a
 dialect*.
 
+**How to read this grammar after revision 3.1.** The EBNF below is the
+two layers written together, the way a reader wants them; §1.2.1 and
+§2.25 are the two layers written apart, the way a parser is built from
+them. Specifically: every `{ INDENT , … }` below is ONE rule, S1, not a
+per-production choice — the productions show WHERE children are legal
+(a schema fact) over a structure that admits them uniformly. A
+production's scope (`file` / `block` / a named child scope) is likewise
+a schema column here written as grammatical position. Nothing in the
+EBNF grants a keyword structural power; where it looks like it does,
+§2.25's table is the normative statement.
+
 ```ebnf
 (* ---------- terminals ---------- *)
 ident       = ( "A".."Z" | "a".."z" | "_" ) , { "A".."Z" | "a".."z" | "0".."9" | "_" } ;
@@ -776,9 +805,13 @@ decl-line =
     | "oracle"     , ws , oracle-spec                              (* W3 *)
     | "tag"        , ws , tag-item , { ws , tag-item }             (* W2 *)
     | "vocabulary" , ws , tag-key , ws , tag-value , { ws , tag-value }
-                                                                  (* W23 *)
+                    (* W23: the FILE-declared half of the schema (§2.25) *)
     | "configs"    , ws , ( "build" | "describe" )                (* W23 *)
     | "description", ws , prose-value ;                            (* W1 *)
+
+(* RESERVED, not a production: `version` is refused BY NAME in every
+   build (§1.6). Its absence means version 1; it exists so a future
+   structural break has a spelling nobody can already have used. *)
 
 decl-attr   = "description" , ws , prose-value ;   (* attaches to decl-line *)
 
@@ -800,10 +833,13 @@ config-line =
     | "analysis" , ws , data-kind , ws , ident  (* select a data block  W2 *)
     | "testee"   , ws , engine-ref            (* a non-pcrec engine     W3 *)
     | "option"   , ws , tag-pair              (* that engine's options  W3 *)
-    | "capable"  , ws , tag-value , { ws , tag-value } ;
+    | "provides" , ws , tag-value , { ws , tag-value } ;
                     (* W23: the capability tags this config SATISFIES;
                        repeatable, accumulating; ABSENT means NOTHING is
-                       satisfied — fail-closed (§2.16) *)
+                       satisfied — fail-closed (§2.16). SPELLED `provides`
+                       at revision 3.1 (was `capable`) — §2.26 item 4:
+                       the pattern side's key is `requires`, and the two
+                       ends of one relation must read as a pair *)
 
 engine-ref = ident , [ "/" , version-chars ] ;      (* e.g. pcre2/10.42 *)
 
@@ -814,11 +850,15 @@ data-line =
       "description" , ws , prose-value   (* the summarizing script's field *)
     | "question" , ws , rest-of-line     (* what this answers, required *)
     | "reader"   , ws , rest-of-line     (* the selection point, required *)
-    | "exemplar" , ws , rest-of-line     (* provenance, required *)
-    | "bytes"    , ws , int              (* provenance, required *)
-    | "sha256"   , ws , hex64            (* provenance, required *)
-    | "analyzer" , ws , rest-of-line     (* provenance, required *)
-    | "date"     , ws , iso-date         (* provenance, required *)
+    | "analyzer" , ws , rest-of-line     (* the TOOL that produced it,
+                                            required — not provenance *)
+    | provenance-block                   (* WHERE it came from: the SAME
+                                            sub-block a pattern block takes
+                                            (§2.26 item 10). At revision 3.1
+                                            this replaces the five one-off
+                                            fields `exemplar`/`bytes`/
+                                            `sha256`/`date` this production
+                                            used to carry beside `analyzer` *)
     | "row"      , ws , int , ws , int , { ws , int } ;  (* offset, then 16 counts *)
 
 (* ---------- body: a pattern block ---------- *)
@@ -845,7 +885,8 @@ block-line =
     | "gu" , ws , giveup-code , ws , subject
     (* --- new --- *)
     | "name"        , ws , defname            (* W1; widened at W1.3 *)
-    | "description" , ws , rest-of-line       (* one-line form ONLY   W1 *)
+    | "description" , ws , prose-value        (* W1; the one-line-ONLY
+                       carve-out is SUPERSEDED at revision 3.1 — §1.2.5 *)
     | "encoding"    , ws , ident        (* D58's per-pattern axis    W1 M16 *)
     | "export"      , ws , config-list                          (* W1.3 *)
     | "tag"         , ws , tag-item , { ws , tag-item }            (* W2 *)
@@ -859,21 +900,28 @@ under-case  = ( "m" | "n" | "ms" | "ns" | "mc" ) -case-line-as-above ;
               (* the qualifier wraps a case line UNCHANGED; never g/gp/gu —
                  §2.17 *)
 
-(* ---------- body: the two SUB-BLOCK kinds (§1.2) ---------- *)
+(* ---------- the two kinds that ADMIT CHILDREN (§1.2.6) ---------- *)
+(* `provenance` is ONE record shape used at TWO parents — a pattern block
+   and a data block (§2.26 item 10). Its REQUIRED subset differs by
+   parent and is a schema row, not a second production. *)
 provenance-block = "provenance" , eol , { INDENT , prov-line , eol } ;
 prov-line =
-      "source"       , ws , defname       (* a registered slug,   REQUIRED *)
+      "source"       , ws , rest-of-line  (* a registered slug, or the
+                                             exemplar's name — REQUIRED *)
     | "url"          , ws , rest-of-line  (* the exact URL fetched         *)
     | "ref"          , ws , rest-of-line  (* file/rule/line inside it      *)
-    | "licence"      , ws , token         (* an SPDX id,          REQUIRED *)
-    | "licence-note" , ws , prose-value
+    | "license"      , ws , token         (* an SPDX id. REQUIRED under a
+                                             pattern block (§2.26 item 10) *)
+    | "license-note" , ws , prose-value
     | "retrieved"    , ws , iso-date      (* RFC 3339 date,       REQUIRED *)
     | "fidelity"     , ws , ( "verbatim" | "adapted" | "inspired" )
-                                          (*                      REQUIRED *)
+                                          (* REQUIRED under a pattern block *)
     | "adaptation"   , ws , prose-value   (* REQUIRED iff fidelity is not
                                              verbatim *)
-    | "attribution"  , ws , prose-value ; (* the field exists; the licence
+    | "attribution"  , ws , prose-value   (* the field exists; the license
                                              policy is the consumer's *)
+    | "bytes"        , ws , int           (* integrity: the source's size  *)
+    | "sha256"       , ws , hex64 ;       (* integrity: its digest         *)
 
 variant-block = "variant" , ws , ident , eol ,
                 { INDENT , variant-attr , eol } ;
@@ -890,34 +938,43 @@ group-map    = ident , "=" , int , { "," , ident , "=" , int } ;
 (seven file-level declarations, two head block kinds, seven block-scoped
 lines) plus §1.5's three pattern-level extensions. Revision 3 adds, all
 W23 and all for the [B42] consumer: two head declarations (`vocabulary`,
-`configs`), one config-body line (`capable`), a second block starter
-(`pattern-esc`), one case-line qualifier (`under`), two body sub-block
+`configs`), one config-body line (`provides`), a second block starter
+(`pattern-esc`), one case-line qualifier (`under`), two child-admitting
 kinds (`provenance`; `variant` reshaped from its W3 one-line form), a
 `tag-item` third alternative (`tag-prose`), and two optional suffixes on
 `file-subject` (`as`, `sha256`). Every addition is ADDITIVE against the
-shipped corpus — a new first token measured at 0 occurrences (§0.6), an
-extension of a production the shipped build refuses by name, or new
-syntax at a position that is a hard error today (an indented body line;
-text after an `@file:` path) — so R-COMPAT-1 holds production by
-production, and §9's G1 row says how that is checked.
+shipped corpus — a new first token measured at 0 occurrences (§0.6,
+re-measured at 210 files in §0.7), an extension of a production the
+shipped build refuses by name, or new syntax at a position that is a
+hard error today (an indented body line; text after an `@file:` path) —
+so R-COMPAT-1 holds production by production, and §9's G1 row says how
+that is checked.
 
-**CORRECTION ([DD-13b.W1.1], 2026-08-30): a pattern block's
-`description` takes the ONE-LINE form only — the production above said
-`prose-value`, which includes the `|` block scalar, and that cannot
-hold.** §1.2's lexical rules say a block scalar IS indented continuation
-and that a PATTERN BLOCK's lines are NOT indented; both cannot be true in
-the body. The body's rule wins: it is the one R-COMPAT-1 and 3,265
-existing blocks depend on, and §1.2 calls the head/body asymmetry "the
-only one". A block scalar in the body would also need continuation
-parsing inside `run.sh`'s per-line loop — head-shaped parsing back in the
-harness, which is exactly what the seam ruling removed. `|` remains a
-HEAD form (a file-level `description`, a `config` body) — extended at
-W23 to sub-block ATTRIBUTES, whose lines are indented, which is the
-precondition this correction was about (§1.2). MEASURED FREE:
-**0** corpus lines are indented and **0** blocks carry a `description`,
-so no existing file can reach either reading. Refused by name in all
-three parsers, and `tests/rxtsource/fixtures/block_scalar_in_body.rxtin`
-asserts all three agree.
+**Revision 3.1 adds NO production.** It re-FACTORS the rules (§1.2),
+reserves one keyword without giving it a production (`version`, §1.6),
+and moves four spellings (§2.26): `capable` → `provides`, `licence`/
+`licence-note` → `license`/`license-note`, the `freq` data block's five
+one-off provenance fields → the shared `provenance` sub-block, and a
+pattern block's `description` from `rest-of-line` to `prose-value`. The
+first three were never shipped anywhere and have zero uses in either
+repo, so they cost a diff and nothing else; the fourth is a widening of
+a shipped refusal, priced at §1.2.5.
+
+**CORRECTION ([DD-13b.W1.1], 2026-08-30) — SUPERSEDED AT REVISION 3.1,
+kept here because a reader of the shipped tree will meet its
+consequence.** It made a pattern block's `description` one-line-only,
+on the ground that *"§1.2's lexical rules say a block scalar IS
+indented continuation and that a PATTERN BLOCK's lines are NOT
+indented; both cannot be true in the body"*, and on the ground that a
+body block scalar would need continuation parsing inside `run.sh`'s
+per-line loop. **Both grounds expire at revision 3.1**: §1.2.1 deletes
+the asymmetry the first rests on, and W23 gives all three readers the
+child-consumption the second says they must not have — for
+`provenance` and `variant`, independently of `description`. §1.2.5
+carries the full argument, the measurement (0 blocks carry a
+`description`, 0 lines are indented, so nothing moves), and the
+`block_scalar_in_body.rxtin` re-aim. Until W23 lands, the shipped
+behaviour is the correction's: refused by name in all three parsers.
 
 **`description` is a FIELD, not a comment** (Frank, r44 15:0x): *"we may
 want to summarize via script what a library or other rxt file has:
@@ -1102,6 +1159,109 @@ collision error is about, B2 and B3 are how a definition reaches outside
 itself and how a caller reaches inside. B2's multi-level `^.^.` and B3's
 refusal cases are the parts with no consumer yet, and they are grammar,
 not machinery.
+
+### 1.6 The `version` header — the break PRICED, DECLINED, the keyword RESERVED
+
+Frank's consequence 2: *"A breaking `version` header line is ON THE
+TABLE. A file declaring the new version gets the consistent grammar; a
+file without one parses under today's rules byte-for-byte — R-COMPAT-1
+is preserved by VERSIONING, not by freezing the grammar. Whether the
+break is taken, and what exactly it unifies, is the design lane's to
+work out and the panel's to attack."*
+
+**The answer is NO, and it is not a soft no.** The version line is
+DECLINED because the consistent grammar does not need it; the keyword
+is RESERVED because the one change that WOULD need it is real, named
+and priced below.
+
+#### 1.6.1 Why §1.2's consistency is achievable ADDITIVELY
+
+The version line exists to gate a change that makes an existing file
+mean something different. §1.2 contains no such change. Three claims,
+each falsifiable:
+
+1. **No file that parses today parses differently.** The only rule
+   whose *domain* changed is indentation, and **0 of the corpus's
+   lines are indented** (re-measured at 210 files, §0.7). More
+   strongly, the claim does not rest on the corpus: today's grammar has
+   no legal indented line ANYWHERE outside a head continuation, and S1
+   reproduces head continuation exactly — a `config` body, a block
+   scalar and a `description` under a `target` attach under S1 to the
+   same parent they continue today.
+2. **No file that is REFUSED today is accepted, with one deliberate
+   exception in the widening direction.** Deleting the head/body
+   asymmetry moves some refusals from a structure arm to a schema arm
+   and changes their wording; it accepts nothing new, because a parent
+   that took no children still takes none (`m` declares
+   `children: none`). The exception is §1.2.5's `description |` at
+   block scope, which goes from refused to accepted — and an
+   acceptance-widening is by definition not a compatibility break for
+   any file that exists.
+3. **Every new production is a fresh token.** All 52 candidates measure
+   0 in first-token position at today's 210 files (§0.7).
+
+Diagnostic wording is the whole residue, and D26 puts it in the tier
+this project does not spend effort on. **A version line whose only
+content is "refusals are worded differently now" would be a permanent
+mechanism bought with a transient inconvenience.**
+
+#### 1.6.2 What WOULD trigger it, and what it would cost
+
+Exactly one thing on today's horizon: **making BLOCK GROUPING
+structural** (§1.2.3), by indenting a block's case lines under their
+`pattern` line and emptying S2's opener set. That is the change a
+version line is for — every existing file means something different
+under it (its case lines would attach to nothing), so it cannot be
+additive by any spelling.
+
+Priced honestly, because the panel will attack whichever way this goes:
+
+| | |
+|---|---|
+| **What it buys** | structure recovery with a genuinely EMPTY keyword table — the literal reading of consequence 5 |
+| **Corpus cost** | 210 files, 28,943 expectation lines re-indented. Mechanical, and a one-line script; but it is a diff touching every test file in the repo, and AR-1 forbids forcing re-verification of the corpus |
+| **External cost** | every producer of `.rxt` text forks: pcrec-bench's five committed exports, the D27 blinded-author corpora, the possessify/rungselect/counterk generators, `--emit-composed`. Each must emit two dialects or flag-day |
+| **Reader cost** | a file's most-read region (the case lines) gains a level of indentation forever, to remove one token from a table nobody reads by hand |
+| **R-COMPAT-1** | survives only in the versioned sense — old files parse under old rules — which means TWO grammars in three readers, permanently, which is the thing consequence 1 is about one level up |
+
+**DECLINED.** The benefit is a property of a hypothetical generic
+reader; the cost is paid by every real one. §1.2.3 states the shortfall
+plainly instead, which is the honest form of the answer.
+
+#### 1.6.3 The reservation, and why it is cheap insurance
+
+`version` is **refused BY NAME in every build**, with the "NOT IN THIS
+BUILD" sentence SW13's list already owns — never as an unknown token
+(K14's shape: sending a reader hunting a typo in a word that is in the
+spec). Its absence means **version 1**, stated in the spec so the
+default is a contract rather than an accident, and its position is
+fixed in advance: **the first CONTENT line of the file**, so a reader
+can dispatch on it before parsing anything else.
+
+- **Cost: one row in the schema and one line in the spec.** MEASURED,
+  `version` occurs 0 times in first-token position across 210 files
+  (§0.7), so reserving it takes nothing away.
+- **What it buys: the one thing reservation ever buys** — that the day
+  a break is justified, the spelling for announcing it is not already
+  in use by somebody's file. The format has no other way to say "read
+  me under different rules", and inventing one under pressure is how a
+  format acquires `#!`-style warts.
+- **`schema` was considered and NOT reserved.** A file-declared
+  format-level schema is not the design — §2.25 makes the schema
+  pcrec's, and `vocabulary` is the file-declared half with its own
+  spelling. Reserving a word against a future nobody has named is the
+  D77 failure in its cheapest disguise, and one reservation with a
+  named trigger is a different act from two on principle.
+
+#### 1.6.4 The standing rule this leaves
+
+For the next person who asks: **a change that only widens acceptance,
+only re-words a refusal, or only adds a token measured free needs no
+version line; a change that makes an existing file mean something
+different needs one and may not ship without it.** §2.25's schema is
+what makes the first clause checkable — a schema diff between two
+builds shows exactly which rows moved and in which direction, so
+"additive" stops being a claim a lane makes about its own change.
 
 ---
 
