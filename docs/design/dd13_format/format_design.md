@@ -4146,6 +4146,35 @@ variant tre
   the testee's convention, §2.17), no `name`, not a target, not
   composable. `unsupported` remains the declared, counted refusal
   (R-BENCH-3; AR-3).
+- **`variant <testee>` and `variant <testee>` + `unsupported <reason>`
+  STAY — they are MUST-tier rx content** (D99 leaves them untouched,
+  and §0.6's N-39/N-40/N-41 dispositions are unchanged). A variant is
+  the SPELLING a pattern takes for one testee, and a declared
+  `unsupported` is the recorded reason a pattern has no answer there —
+  both are facts about the pattern, which is what this format defines.
+  That is the line D99 draws, and `variant` sits on the rx side of it
+  while `provides` sat on the engine side.
+- **THE RESOLUTION RULE CHANGES AT 3.4, and the change is worth stating
+  because it moves an obligation between repos.** A variant's testee
+  name is now a **FREE IDENTIFIER pcrec does not resolve**. Under
+  revision 3.3 it COULD have been resolved — `config … testee` declared
+  the roster in the same file, so `variant re2` naming no declared
+  testee was a checkable error, and a future wave would very likely
+  have made it one. With `testee` withdrawn (N-42's disposition) there
+  is no roster in the format to resolve against, and pcrec does not
+  know what engines exist. So: **the name is validated as an IDENTIFIER
+  (the wide `defname` grammar) and as UNIQUE within its block — two
+  `variant re2` sub-blocks are a duplicate refusal — and against
+  nothing else.** Cross-checking a variant's testee against a roster is
+  **the consumer's tooling's job**, and a consumer that keeps its
+  roster in an `ext` block (§2.27) has both halves in the one file its
+  own tools read. **This is a deliberate non-check, not an omission**,
+  and it is the shape D99 produces generally: pcrec keeps the rx fact
+  (this pattern has this spelling for something called `re2`) and
+  declines the engine fact (whether `re2` is a thing, and what it can
+  do). The schema row says so — `variant`'s name value carries no
+  `closed` and no `cross-scope` constraint, which is now a statement
+  a reader can fetch rather than an absence.
 
 ### 2.24 `--list-source` at W23: columns, SECTIONS, and what the dump
 VALIDATES ([B42] N-52, pre-ruling g)
@@ -4776,16 +4805,60 @@ right spelling, or moved now.**
 | 1 | `pattern-esc` | **CONFIRMED.** It is one of the block-opener set's two members (§1.2.1 S2), so its name is structure-layer vocabulary and must read as a sibling of `pattern`; the hyphenated compound does that where a flag on `pattern` (`pattern -e …`) would put a value shape inside the one production the format promises is rest-of-line verbatim. Hyphenated keywords are already the house spelling (`frames-buffer=`, `license-note`) |
 | 2 | `provenance` | **CONFIRMED.** The domain word, and it now names ONE record at two parents (item 10), which is what a general name has to earn |
 | 3 | `vocabulary` | **CONFIRMED AS A SPELLING, NESTED AS A CONCEPT** (§2.15). It is the FILE-declared rows of §2.25's schema, not a mechanism beside it; a second file-declarable schema fact joins it as a sibling declaration under that heading rather than as an unrelated head keyword, and `--list-schema`'s `source` column is where the nesting is visible. Renaming it to `values` was considered and declined: the bench's note, the acceptance checks and Frank's own ruling all use this word |
-| 4 | `capable` → **`provides`** | **MOVED** (§2.16). The pattern side of the relation is `tag requires=…`; `requires`/`provides` is one relation read from its two ends, and is the pairing every neighbouring ecosystem uses. `requires`/`capable` pairs a verb with an adjective and leaves the reader to infer they are halves of one thing. Free: 0 occurrences in any context. W23-F2's question to Frank is unaffected — it asks WHERE the capability model lives, not what the line is called. **AND WHAT HALF IT DELIVERS, stated at 3.2 (r57 G-B5): the rename buys a READING symmetry the GRAMMAR does not have, and that is all it buys.** The two ends are different kinds — `provides` is a line kind in a `config` body, `requires` is a tag KEY in a `tag` item — and the closed set constraining `provides` is declared under the other end's name at file scope (`vocabulary requires …`). So a reader who learns `provides` has no syntactic path to its value set. The rename makes the RELATION legible; §2.16's new pointer sentence and §2.25.3's `cross-scope` row make it FINDABLE. Neither alone is enough, and revision 3.1 claimed the first and shipped neither |
+| 4 | ~~`capable` → **`provides`**~~ | **MOOT AT 3.4 — the production is WITHDRAWN (D99 item 2, §2.16), so there is no spelling left to own.** The row is kept because the audit is a record of decisions and because the reasoning below is a good worked example of the criterion; it is no longer a live verdict, and §9's correction list drops its outbox row (a rename the bench never has to make is not a correction). **One thing in it is worth carrying forward rather than losing with the row**: the 3.2 addendum found that the rename bought a READING symmetry the GRAMMAR did not have — two ends of one relation spelled as different KINDS, in different scopes, with the constraining set declared under the other end's name. That was a symptom, correctly diagnosed and wrongly treated: the two ends did not fit together because **one of them did not belong in the format at all**, which is what D99 says one level up. An audit that can only rename could not reach that answer. *Original verdict follows.* **MOVED** (§2.16). The pattern side of the relation is `tag requires=…`; `requires`/`provides` is one relation read from its two ends, and is the pairing every neighbouring ecosystem uses. `requires`/`capable` pairs a verb with an adjective and leaves the reader to infer they are halves of one thing. Free: 0 occurrences in any context. W23-F2's question to Frank is unaffected — it asks WHERE the capability model lives, not what the line is called. **AND WHAT HALF IT DELIVERS, stated at 3.2 (r57 G-B5): the rename buys a READING symmetry the GRAMMAR does not have, and that is all it buys.** The two ends are different kinds — `provides` is a line kind in a `config` body, `requires` is a tag KEY in a `tag` item — and the closed set constraining `provides` is declared under the other end's name at file scope (`vocabulary requires …`). So a reader who learns `provides` has no syntactic path to its value set. The rename makes the RELATION legible; §2.16's new pointer sentence and §2.25.3's `cross-scope` row make it FINDABLE. Neither alone is enough, and revision 3.1 claimed the first and shipped neither |
 | 5 | `under <conv> <case-line>` | **CONFIRMED, and given a schema home.** The qualifier is a PREFIX so the case line after it is byte-identical to an unqualified one — which is what makes "the qualifier wraps a case line UNCHANGED" a checkable property rather than a hope, and a suffix form would not. Its one oddity — a line kind whose value CONTAINS another line kind — is now expressible as schema data (`value: qualified-line` over a closed kind set, §2.25.2) rather than as a parser special case |
-| 6 | `configs build`/`describe` | **CONFIRMED.** It names the thing it governs (the file's `config` blocks) and takes a closed mode value, so a third mode is a `closed` set member and not a new keyword. `config-mode` was considered and declined as longer for no disambiguation |
+| 6 | ~~`configs build`/`describe`~~ | **MOOT AT 3.4 — the production is WITHDRAWN (D99 item 1, §2.20).** Kept as a record. *Original verdict:* **CONFIRMED.** It names the thing it governs (the file's `config` blocks) and takes a closed mode value, so a third mode is a `closed` set member and not a new keyword. `config-mode` was considered and declined as longer for no disambiguation. **And this row is the audit's own limit, stated plainly**: the spelling was right and the MECHANISM was the problem, so a sweep that asks only "is this the long-term right NAME?" confirms a production it should have questioned. §2.26's closing paragraph says the audit deliberately did not reopen semantics; that was the correct scope for an ownership ruling about syntax, and it is why a separate ruling was needed to reach this one |
 | 7 | `as <id>` / `sha256 <hex64>` | **CONFIRMED, and the reason is worth stating because "why not `hash`?" is the obvious question.** Naming the ALGORITHM in the keyword means a second algorithm arrives as a sibling (`sha512 <hex>`) rather than as a re-interpretation of an existing field's value — the failure mode every `hash:`-style field eventually has. `as` is the import-idiomatic binder |
 | 8 | `tag-prose` (`key="…"`) | **CONFIRMED — and the pairing with `\|` is RE-WORDED at 3.2** (r57 G-B1). The quoted form is discriminated by the first byte after `=`, as `\|` discriminates a prose value's two forms, and both are declared per line kind in the schema's `value` column. But revision 3.1's phrasing — *"value-form discriminators… never structural"* — is false of `\|`, which opens an S3 OPAQUE REGION whose EXTENT is structural (§1.2.1, §1.2.4's table). The surviving statement is the true half: **both are value-form discriminators; `"`'s value ends on its own line and `\|`'s ends on a later one, and a discriminator that selects a multi-line form is ALSO a structure device.** `tag-prose`'s own spelling is unaffected and stays confirmed — it is the single-line one |
 | 9 | `variant`'s `text` | **CONFIRMED, REASON REPLACED** (§2.23). Revision 3's justification was a parser hazard §1.2.1 makes impossible in any reader implementing S1/S2 — **qualified at 3.2 (r57 S-S5): that is a property of the SPECIFICATION, and legs B and C implement it independently, so it is pinned by §9's A-group rather than inherited.** The surviving reason is a reader's and does not depend on the qualification: the field holds a replacement FOR the block's pattern, and reusing the format's most load-bearing token at a second scope for something adjacent-but-different is how a vocabulary stops being learnable |
 | 10 | `provenance`'s fields, and the `freq` block's | **MOVED — the audit's biggest finding.** Revision 3 shipped **two provenance vocabularies for one idea**: `exemplar`/`date`/`bytes`/`sha256`/`analyzer` on a data block, `source`/`url`/`ref`/`licence`/`retrieved`/`fidelity`/… on a pattern block, with `exemplar`≡`source` and `date`≡`retrieved` naming the same facts twice. Unified into ONE record used at two parents, its REQUIRED subset declared per parent by the schema (§2.10, §2.14). `analyzer` deliberately stays on the data block — it names the TOOL, not the origin. And `licence`/`licence-note` → **`license`/`license-note`**, because the value is an SPDX identifier and SPDX's own key is `License`. All free: 0 uses in either repo |
 | 11 | `mc` | **CONFIRMED.** Two letters, joining the `ms`/`ns` terse case-line family; a case line's kinds are the format's highest-frequency tokens and the family's brevity is deliberate |
 | 12 | `oracle <engine>[/<version>]` | **CONFIRMED.** `/` separates a name from a version everywhere a reader has met the idea, and it appears nowhere else in the token grammar, so it cannot be mistaken for anything |
-| 13 | inherited W2/W3 spellings (`include`, `use`, `tag`, `@file:`, `config … testee`/`option`, `freq`, `analysis`) | **CONFIRMED as a group.** Each was ruled or accepted before [B42] and none was moved by this revision's productions; the ownership ruling makes them mine to change, and sweeping them found no case where a name misleads. `@file:`'s sigil is the one worth naming: it marks a VALUE as a reference rather than literal bytes, which is a value-form discriminator in the §1.2.4 sense and therefore already has a home in the vocabulary this revision built |
+| 13 | inherited W2/W3 spellings (`include`, `use`, `tag`, `@file:`, ~~`config … testee`/`option`~~, `freq`, `analysis`) | **CONFIRMED as a group** — less `testee`/`option`, which leave the wave plan at 3.4 (D99, N-42's disposition) and so have no spelling left to confirm. Each of the rest was ruled or accepted before [B42] and none was moved by this revision's productions; the ownership ruling makes them mine to change, and sweeping them found no case where a name misleads. `@file:`'s sigil is the one worth naming: it marks a VALUE as a reference rather than literal bytes, which is a value-form discriminator in the §1.2.4 sense and therefore already has a home in the vocabulary this revision built |
+
+**ITEM 14 — `ext <consumer>`, the AUX production (NEW at 3.4, §2.27).**
+It is the one spelling this revision adds, so it is swept on the same
+criterion as the thirteen above, and the sweep is stated rather than
+assumed because a keyword that means "not ours" will be read by people
+who never read this note.
+
+**PROPOSED: `ext <consumer>`. RECOMMENDED, and FLAGGED for the manager**
+— the 14:5x delegation makes it the manager's call, and this row is the
+argument rather than the decision.
+
+*Why `ext`.* It reads as *extension*, and what follows it is whose. The
+two facts a reader needs at the line are "this is not core format" and
+"this belongs to X", and `ext bench` delivers both in eight characters
+at the position a first token is read. It is also the idiom a reader
+has already met — `X-`/`ext` namespaces are how HTTP headers, vCard,
+iCalendar and a dozen other line-oriented formats spell exactly this —
+so the convention is borrowed rather than invented, which is §2.26's
+own standard (item 3's reason for keeping `vocabulary`, item 12's for
+`/` before a version).
+
+*The alternatives, priced.* **`aux <consumer>`** — "auxiliary" says
+SECONDARY where the load-bearing property is FOREIGN; a `provenance`
+block is auxiliary to a pattern and is fully pcrec's, so the word does
+not draw the line the ruling draws. **`vendor <consumer>`** — accurate
+in the ecosystem sense and wrong in this one, since pcrec-bench is not
+a vendor of pcrec and the word imports a commercial framing nothing
+here has. **`x <consumer>`** — shortest, and a one-letter keyword in a
+format whose case lines are one and two letters (`m`, `n`, `ms`) would
+put a HEAD declaration in the case-line register. **`opaque`** —
+describes pcrec's treatment rather than the data's owner, which is the
+wrong end: the block is not opaque to its consumer. All five
+candidates are measured free (0 occurrences, §1.3), so availability
+decides nothing and the criterion does all the work.
+
+*The one genuine objection to `ext`, and why it is taken anyway.*
+"Extension" suggests EXTENSIBILITY — that writing an `ext` block
+extends the format — when the point is the opposite: it extends the
+FILE with data the format does not know. §2.27.3's graduation rule is
+what disposes of it, and the spec sentence says so directly (SW18):
+*an `ext` block extends what a file CARRIES, never what the format
+MEANS.* A spelling that needs one sentence of disambiguation in the
+spec is a fair trade for one that needs a paragraph of explanation
+every time it is read.
 
 **What the audit did NOT change, deliberately.** Nothing in the
 SEMANTICS moved: every need's disposition, every refusal rule, every
