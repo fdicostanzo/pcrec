@@ -472,6 +472,27 @@ never edited afterwards.
   collision refused at use, zero name-grammar-reader changes). Frank
   queue: W23-F1 `configs describe` (D93), W23-F2 `capable` in-format,
   W23-F3 the mc deviation.
+  **ADDENDUM — REVISION 3.1** ([DD-13b.W23] STEP 1.1, 2026-09-12, lane
+  w23recon, opus, same branch): the RECONCILIATION against Frank's two
+  2026-09-12 rulings, which were issued mid-flight and never reached the
+  authoring lane. §1.2 becomes a two-layer grammar (a context-free
+  STRUCTURE layer + a declared SCHEMA), the head/body indentation
+  asymmetry is DELETED rather than narrowed, the `version` break is
+  priced and DECLINED with the keyword reserved, §2.25 designs the
+  schema and `--list-schema`, and §2.26's ownership audit moves four
+  spellings. Read the addendum for **F1**, the sharpest: revision 3's
+  own load-bearing parser rule — "the indentation test PRECEDES token
+  dispatch, in all three body readers" — is MEASURED FALSE in two of
+  the three (leg B has no indentation test at all and reaches its
+  catch-all by fall-through; leg C dispatches an indented pre-body line
+  on its first token), so P-Q1's one parser hazard was closed by a rule
+  that mostly did not exist; the two-layer split makes the hazard
+  structurally impossible instead. Also **F2**, the corpus census the
+  note is written against went stale with [M5.0]'s corpora (179/3,265/
+  26,691 → 210/3,936/28,943), which is why §1.1 now states the
+  denominator RULE instead of the numbers; and **F3**, only 26% of
+  `pattern` lines are blank-preceded, which is what closes the one
+  alternative to a keyword for block grouping.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the

@@ -77,13 +77,60 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3 (2026-09-12,
-  lane w23design, [DD-13b.W23] STEP 1): the [B42] absorption.** Under
-  Frank's F-Q1 (Tier 1 + Tier 2 as ONE W23 delivery — §1.4 restructured;
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.1 (2026-09-12,
+  lane w23recon, [DD-13b.W23] STEP 1.1): the RECONCILIATION against
+  Frank's two 2026-09-12 rulings**, which were issued mid-flight and
+  never reached the authoring lane. **Read §0.7 first** — the
+  consequence-by-consequence revision record. The
+  internal-consistency ruling rewrites **§1.2 as TWO LAYERS**: a
+  context-free STRUCTURE layer (S0 line classes, S1 indentation
+  attaches a line to the line above it, S2 a declared two-member
+  BLOCK-OPENER set) and a declared SCHEMA layer on top — which
+  **DELETES the head/body indentation asymmetry** rather than
+  narrowing it (the answer revision 3 gave, and the one the ruling
+  names as wrong "because that answer requires a keyword table to find
+  structure"). **§1.6 prices the `version` break and DECLINES it**:
+  the re-factoring is additive (0 indented lines; every rule change
+  moves a hard error between arms; the one widening only accepts
+  more), so "if needed" is NO — with the change that WOULD need it
+  named and priced (making block grouping structural = re-indenting
+  28,943 case lines across 210 files and forking every `.rxt`
+  producer), and the keyword RESERVED as one-line insurance. **§1.2.3
+  states plainly where today's shipped grammar fails structural
+  parseability** — block grouping needs one keyword fact, and the
+  alternative is refuted by measurement (only 26% of `pattern` lines
+  are blank-preceded). **§1.2.4 designs the visible-marker
+  alternative and declines it** on three counts, naming `|` and
+  `tag-prose`'s `"` as VALUE-form discriminators rather than structure
+  markers. **§2.25 designs the SCHEMA** (one `.def` table, the parser
+  as its reader through one exhaustive switch, `--list-schema` as the
+  sixth registry dump, five constraint kinds each with a named W23
+  customer under §2.10's own membership rule, `vocabulary` nested as
+  the FILE-declared rows via a `source` column, §2.24's
+  VALIDATES-vs-RECOGNISES upgraded from prose to a rendered
+  `validated_by` column, four D77 deferrals with triggers, and the
+  honest limit that legs B and C stay independent ON PURPOSE).
+  **§2.26 is the OWNERSHIP AUDIT** the second ruling forces — all
+  thirteen W23 spellings swept, nine confirmed, **four moved**:
+  `capable` → `provides` (the pattern side is `tag requires=`, so the
+  two ends of one relation must read as a pair), `licence`/
+  `licence-note` → `license`/`license-note` (SPDX's own key), the
+  `freq` data block's five one-off provenance fields → **the same
+  `provenance` record a pattern block uses** (the audit's biggest
+  finding: revision 3 shipped TWO provenance vocabularies for one
+  idea, `exemplar`≡`source` and `date`≡`retrieved`), and a pattern
+  block's `description` → `prose-value`, superseding the W1.1
+  carve-out. Revision 3.1 adds NO production, no abi event, and no
+  question to the Frank queue; W23-F3 is RESOLVED. §3.2 gains H16 and
+  sabotage rows S-R1..S-R4; §3.4 gains SW16/SW17; §5.2a is the
+  panel's shortest attack path. **Revision 3 (lane w23design, same
+  day, [DD-13b.W23] STEP 1) is the base text: the [B42] absorption.**
+  Under Frank's F-Q1 (Tier 1 + Tier 2 as ONE W23 delivery — §1.4 restructured;
   W1 is BUILT) and F-Q2 (multi-line patterns MUST — `pattern-esc`,
-  §2.19), absorbs the bench's fifty needs: the body SUB-BLOCK mechanism
-  (§1.2; customers `provenance` §2.14 and the reshaped `variant` §2.23),
-  `vocabulary` closed sets (§2.15), `capable` fail-closed (§2.16, Frank
+  §2.19), absorbs the bench's fifty needs: records with attached
+  children (§1.2.6; customers `provenance` §2.14 and the reshaped
+  `variant` §2.23),
+  `vocabulary` closed sets (§2.15), `provides` fail-closed (§2.16, Frank
   ratifies), `under` convention-scoped expectations (§2.17), subject
   `as`/`sha256` (§2.18), `configs describe` closing the D93 roadblock
   (§2.20, Frank ratifies), the `mc` counting rule MEASURED three ways —
