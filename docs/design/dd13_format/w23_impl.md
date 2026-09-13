@@ -1474,12 +1474,13 @@ across that pair is the real acceptance, and it is cheap because
 
 | # | build | why here |
 |---|---|---|
-| 1 | **the STEP 0 PARITY FIX** (§1.8) in both legs, and the three fixtures re-aimed to `check_refusal_all3` with the scope notes deleted | it is the smallest complete three-leg agreement in the delivery, it retires an owed item, and it exercises the classification machinery item 2 builds — on a rule both legs already understand the shape of |
-| 2 | **the diagnostic CLASS tag** in both legs: the four classes attached AT THE RULE THAT FIRED | leg B's catch-all at `:2105-2109` today refuses a W23 production it has never heard of, an indented line, a schema violation and a typo with the same verdict and the same sentence |
-| 3 | **the ATTACHMENT arm** in both legs: parent from indent BEFORE first-token dispatch; the two refusal arms | leg B has no indentation test at all; leg C's is a rejection, not an attachment rule |
-| 4 | **child CONSUMPTION** for a kind that admits children, and for a prose value | `ext`'s arrives at W23.3, but the MECHANISM is here |
-| 5 | **W23-S1, W23-S2**; **S-R1 (S239)**; `indent_pre_body.rxtin`, `indent_under_m.rxtin` | S239 is planted in the direction only the differential sees |
-| 6 | the SW rows this step makes true (none new — SW2/SW16 landed at W23.1 and describe rules all three legs now implement) | **a step with no spec hunk states so explicitly**, because "no hunk" and "forgot the hunk" look identical in a diff |
+| 1 | **REWRITE `check_refusal_all3` TO COMPARE CLASS** (`run_rxtsource_tests.sh:1492-1507`) **and give its SEVEN existing call sites their classes** | **r59-A-M6, and nothing in revision 1 scheduled it.** §3.2's *"every three-leg assertion compares DIAGNOSTIC CLASS, never exit code"* is a rule about a helper that is **MEASURED verdict-only**: legs B and C are run as `… > /dev/null 2>&1` and only their exit status is read (`:1497`, `:1502`), while leg A's message IS checked through the `check_refusal` it delegates to. The helper grows a class argument; the existing seven sites (`:1538` `bad_flags`, `:1541` `bad_engine`, `:1590` `desc_pipe_trailing_space`, `:1614` `directive_before_pattern`, `:1628` `bad_name_ident`, `:1629` `bad_encoding_ident`, `:1633` `dup_block_name`) each name theirs. **They are not left on the old signature**: a helper with two modes is a helper whose weaker mode is what a hurried author reaches for |
+| 2 | **the diagnostic CLASS tag** in both legs: the four classes attached AT THE RULE THAT FIRED | leg B's catch-all at `:2105-2109` today refuses a W23 production it has never heard of, an indented line, a schema violation and a typo with the same verdict and the same sentence. Item 1 is what makes this observable; this is what gives it something to observe |
+| 3 | **the STEP 0 PARITY FIX** (§1.8) in both legs: **TWO fixtures re-aimed to `check_refusal_all3`** (`nul_byte`, `dup_description` — both headless), `dup_head_description` keeping `check_refusal` with its seam reason stated in the script, the `tests/rxtsource/CLAUDE.md` scope note NARROWED, and `nul_in_comment.rxtin` added | it is the smallest complete three-leg agreement in the delivery and it retires an owed item. **It moves BELOW the class work rather than above it** (revision 1 had it first): the re-aim's whole value is that the two new refusals *"get their class from the mechanism rather than from a special case"*, and a re-aim landing before the mechanism has no class to get |
+| 4 | **the ATTACHMENT arm** in both legs: parent from indent BEFORE first-token dispatch; the two refusal arms | leg B has no indentation test at all (its 22 `^`-anchored arms reach the catch-all by fall-through); leg C's `:424-427` is a rejection, not an attachment rule |
+| 5 | **child CONSUMPTION** for a kind that admits children, and for a prose value | `ext`'s arrives at W23.3, but the MECHANISM is here |
+| 6 | **W23-S1, W23-S2**; **S-R1 (S239)**; `indent_pre_body.rxtin`, `indent_under_m.rxtin`, `nul_in_comment.rxtin` | S239 is planted in the direction only the differential sees |
+| 7 | the SW rows this step makes true (none new — SW2/SW16 landed at W23.1 and describe rules all three legs now implement; SW21's diagnostic-class hunk landed with the tag at W23.1) | **a step with no spec hunk states so explicitly**, because "no hunk" and "forgot the hunk" look identical in a diff |
 
 **Acceptance**
 
@@ -1492,10 +1493,24 @@ across that pair is the real acceptance, and it is cheap because
   position.** The position is the acceptance, not a detail: leg C's
   `:424` check is unconditional once a block is open, so a post-body
   fixture would report GREEN against the defect.
-- `nul_byte.rxtin`, `dup_description.rxtin`, `dup_head_description.rxtin`
-  all move from `check_refusal` to `check_refusal_all3` and pass;
-  `tests/rxtsource/CLAUDE.md`'s leg-A-only scope section is DELETED in
-  the same commit.
+- **`check_refusal_all3` compares CLASS at all SEVEN existing call
+  sites and at every new one**, and no call site remains on a
+  verdict-only signature.
+- **`nul_byte.rxtin` and `dup_description.rxtin` move from
+  `check_refusal` to `check_refusal_all3` and pass.
+  `dup_head_description.rxtin` DOES NOT MOVE** — it is head-bearing, so
+  `verify_rxt.py:407-417` refuses it for being head-bearing rather than
+  for its duplicate, and a class comparison would go red for a reason
+  that is the seam ruling working correctly. The script's comment states
+  that in one sentence.
+- **`tests/rxtsource/CLAUDE.md`'s leg-A-only scope section (`:320-332`)
+  is NARROWED in the same commit, not deleted**: the NUL and
+  block-`description` halves go, the head-`description` half stays, and
+  its reason changes from *"out of this lane's scope"* (which expires
+  here) to the seam ruling (which does not).
+- **`nul_in_comment.rxtin` refuses in all three legs** — the fixture
+  that discriminates between a file-wide pre-parse scan and a
+  line-interpreting one, which `nul_byte.rxtin` structurally cannot.
 - S239 turns C1 red and leg A alone green — **both halves asserted**,
   because a row that only proves "something went red" does not prove it
   went red for its reason.
@@ -1523,8 +1538,8 @@ order in which a reviewer can read them:
 | 3 | **`ext`** — the AUX production, `children: tree`, `cardinality: repeat`, at both scopes | it is the CHEAPEST of the three for legs B and C (consumption with no dispatch) and the one whose correctness is a property of what pcrec does NOT do |
 | 4 | **the head declarations**: `vocabulary`, `include`, `oracle` at a version, `tag`, `use`, the `freq` data block + `analysis` | leg A only — they are above the seam |
 | 5 | **the case-line work**: `under` (H14), `mc` (H14, H7), `@file:` + `as`/`sha256` (H15, H6), and `driver.c`'s `@<path>` argument and find-all loop | `mc` is verified by the PROTOCOL loop in both C and python, **never `finditer`** |
-| 6 | **§2.22's derived-identifier repair** (F11) **and its two comment sites** (F12) | D100. The comment sites move in the same change or the code contradicts the behaviour |
-| 7 | the fixtures marked W23.3 in §3.2 — **including `aux_subtree_extent.rxtin`** — and **S-R2 (S240), S-R6 (S245)** | |
+| 6 | **§2.22's derived-identifier repair** (F11) **and its two comment sites** (F12): **`rxt_source.c:269-297` and `:1177-1180`, READ BEFORE EDITING** | D100. The comment sites move in the same change or the code contradicts the behaviour. **Both ranges were wrong in revision 1 and in the design's SW12 row**, so the step's first action here is to open the file at `defname_ok` and at the `name` arm and confirm the spans |
+| 7 | the fixtures marked W23.3 in §3.2 — **including `aux_subtree_extent.rxtin` and B7's `@file:` NUL+invalid-UTF-8 subject fixture** (§5's B7 row: a FIRST live verification, not a regression guard) — and **S-R2 (S240), S-R6 (S245)** | |
 | 8 | **SW1, SW3, SW4, SW5, SW6, SW7, SW8, SW9, SW10, SW12, SW15, SW18's rule half, SW14's flag half** | D80, and it is the largest spec landing in the delivery |
 
 **Acceptance**
@@ -1545,12 +1560,17 @@ order in which a reviewer can read them:
 - `derived_call_collision.rxtin` refuses **naming BOTH definitions and
   the shared identifier** — a refusal naming only the prefix is a RED.
 - **The over-long definition name is refused BEFORE the mapping runs.**
-  `pcrec_rxt_prefix_from_name` silently TRUNCATES at `dstsz` (its loop
-  condition is `j + 1 < dstsz` with no over-length return), so two long
-  names differing only past the buffer would bind silently. The existing
-  consumer is safe only because `parse_target` refuses first
-  (`:826-830`) and maps second (`:840`) — **an ordering nobody had
-  written down as a rule.** The second consumer reproduces it, and the
+  `pcrec_rxt_prefix_from_name` (`rxt_source.c:337-343`) silently
+  TRUNCATES at `dstsz` — its loop condition is `j + 1 < dstsz` with no
+  over-length return — so two long names differing only past the buffer
+  would bind silently. **The existing consumer is safe only by an
+  ORDERING nobody had written down as a rule, and revision 1 cited the
+  wrong lines for it** (r59-C): `parse_target` refuses the definition
+  name's LENGTH at **`:848-851`**, refuses its GRAMMAR at
+  **`:856-861`**, and only then maps at **`:863`**. Revision 1's
+  `:826-830`/`:840` are the `target` PREFIX's own length cap and a local
+  declaration — a different name, in the same function, two refusals
+  earlier. The second consumer reproduces the ordering, and the
   acceptance is a fixture with two names colliding only past the bound.
 - S240 and S245 each turn their named fixtures red; **S245 is asserted
   on all THREE of its detectors**, since parameter 3 gave it a
@@ -1576,6 +1596,63 @@ yet reported. That is the boundary's value.
   discipline is the review's. **The reviewable question is not "does
   this read an aux body" but "does any pcrec output change when an aux
   body changes".**
+
+### 6.3a [DD-13b.W23.3a] — `include`'s harness half
+
+**NEW AT REVISION 1.1 (r59-B2). §1.10 is the mechanism; this is the
+build order.**
+
+**Build order**
+
+| # | build | why here |
+|---|---|---|
+| 1 | **the `include` head ROW's RESOLVED-PATH column** in leg A's dump (§1.10.2 rule 2) | legs B and C read the closure off this column, so nothing else in the step can start without it. It is the one `src/` touch in a step that is otherwise pure harness, and it is a COLUMN on a row W23.3 already emits — not a new row kind |
+| 2 | **leg B's ENTRY-SET SUBTRACTION** at `run.sh:293-307`: resolve every discovered file's includes, subtract the union, run the remainder; the `named, absorbed into <entry>` report for a file that is both | the subtraction has to land before the splice, or the fragment's blocks run twice and the population doubles — the failure the whole step exists to prevent |
+| 3 | **leg B's SPLICE**: after the entry's own body, each fragment's blocks appended in include order, depth first | |
+| 4 | **leg C's same two** through its own `discover` (`verify_rxt.py:715`) | its head-bearing refusal (`:407-417`) is UNCHANGED and untouched |
+| 5 | **the CLOSURE TALLY and the FOURTH FAILURE CLASS**: `entry files: N`, `fragments spliced: M`, and RESOLUTION failures reported separately and scored as a pattern-compile failure for the block | the summary lines are what make a silently-unspliced set VISIBLE rather than merely smaller (K35, §2.11 rule 2) |
+| 6 | **the three fixtures** (`include_basic`, `include_nested`, `include_dup_path` + their `.rxtfrag` files), **W23-S7**, and **S247** | |
+| 7 | **the census pin block gains its second number** (§1.10.3): files discovered vs files that are entries, with the derivation beside it |
+| 8 | **SW20** — the harness-evaluation spec hunk, which is W1-era row S3 and has never landed | D80, and §4.1 now says so |
+
+**Acceptance**
+
+- **The CORPUS control, and it is the one that matters**: over the
+  shipped corpus at this pin, `fragments spliced` is **0** and
+  `entry files` equals `CENSUS_FILES` = **210**. A subtraction bug that
+  removed real files would otherwise surface only as a quieter suite.
+- **The pinned census does not move**: 210 / 3,936 / 28,943 and leg B's
+  209 / 3,933 / 28,932. The fixtures are `.rxtin`/`.rxtfrag` and
+  therefore not corpus; **if the census moves, a fixture has leaked**
+  (`utf8k53_report.md` §5's own finding).
+- **W23-S7 green on all three fixtures**, with all four conjuncts
+  asserted separately: equal counts across three legs, the entry's
+  count EXCEEDING its own file's, `fragments spliced` equalling the
+  number the fixture declares, and the fragment NOT appearing as an
+  entry.
+- `include_nested` agrees across three legs on the ORDER, not only the
+  set.
+- `include_dup_path` refuses in all three legs, class
+  `schema-constraint`, **naming BOTH sites** — a refusal naming one is
+  a RED, because §2.5's rule is about a collision and a collision has
+  two ends.
+- **S247 turns W23-S7 red on the FIXTURE arm and leaves the corpus arm
+  green**, both asserted — a plant whose only evidence is "something
+  went red" does not prove it went red for its reason.
+- `make test` green; `make strict` clean.
+
+**Must not touch**: `rxt_source.c`'s grammar (W23.3 landed the
+production); the dump's SHAPE beyond item 1's column; any other leg
+behaviour.
+
+**The risk worth naming**: **this step edits the file-discovery loop
+that every other section of `make test` inherits.** `run.sh:293-307` is
+not `include`'s code, it is the harness's own population, and a
+subtraction with an off-by-one in its path comparison silently drops
+corpus files — which reads as a FASTER, GREENER suite. That is why the
+corpus control above is an acceptance line rather than a side effect,
+and why this is a separate merge: its diff should be readable as
+"discovery changed" and nothing else.
 
 ### 6.4 [DD-13b.W23.4] — `--list-source`'s sections, and the survey
 
