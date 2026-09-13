@@ -761,3 +761,32 @@ never edited afterwards.
   `[M5.0]` to `plan_completed.md` verbatim (STATE flip + one appended
   completion stamp, no row content edited) and appends the
   milestone-close journal entry citing every stage's merge commit.
+
+- `w231_report.md` — [DD-13b.W23.1] (2026-09-13, lane w231, opus): the
+  SCHEMA TABLE and its surface. `rxt_schema.def` (66 rows), its reader,
+  `--list-schema` as the seventh registry dump, leg A's dispatch rewritten
+  as a WALK over the table (S0-S3 and the OPEN SUBTREE), the diagnostic
+  CLASS tag at 62 call sites, ten structure-layer fixtures, W23-S3's six
+  arms, S241/S244, five spec hunks and the `testee`/`option` withdrawal.
+  Read §3 first: it is **four places the implementation note contradicts
+  itself or the design**, each with the resolution taken — headed by §2.2
+  and §6.1 disagreeing about whether W23 ROWS exist at this pin (resolved
+  in §2.2's favour, because §2.3 is a contract the step signs and a
+  DERIVED "not in this build" list needs rows), and by SW13 promising
+  `version` is RESERVED with nothing implementing it (a keyword with no
+  row refuses as UNKNOWN, which is the truth about a withdrawn production
+  and a lie about a reserved one — so `version` got a row with a reserved
+  sentinel wave and a third refusal sentence).
+  §4 is what the build found: `RxtScope` was already taken by a
+  file-local typedef in `rxt_compose.c`; the old hand tables' `wave`
+  values had been STALE since F-Q1 collapsed W2/W3 and nothing saw it
+  because every fixture greped the phrase and never the number; and
+  **W23-S3's wave arm first read 0 rows out of a population of 7 and
+  printed `0 of 0`** — bash's `read` collapsing the dump's empty TAB
+  fields, `tt4m3_report.md`'s trap — whose transferable half is not the
+  bash defect but that *an arm deriving its population from the data it
+  checks must fail on an EMPTY population, or the first thing that breaks
+  its extraction turns it green.* The cardinality arm likewise had to
+  become dump-driven and TWO-DIRECTIONAL before S241 had a detector at
+  all: the plant moves a row OUT of the at-most-one set, so an arm
+  checking only that set passes under it completely.

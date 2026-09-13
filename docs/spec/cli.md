@@ -504,9 +504,12 @@ with `FILE:LINE`, then the target, then `pcrec`'s own pattern offset.
 
 ## 2. Listing surfaces
 
-Seven TSV dumps, each a query taking no pattern and no `-o` (mixing either
-in is refused). Six answer from pcrec's own registries; the seventh,
-`--list-source`, reads a FILE named by its own value. The column CONTRACT itself — `#`
+**EIGHT** TSV dumps, each a query taking no pattern and no `-o` (mixing
+either in is refused). Seven answer from what THIS BUILD of pcrec knows —
+six about pattern SYNTAX and its machinery, and `--list-schema` about the
+`.rxt` FILE FORMAT — while the eighth, `--list-source`, reads a FILE named
+by its own value. ([DD-13b.W23.1] moved this count; `docs/spec/registry.md`
+§10 is the reconciled numbering every document here agrees with.) The column CONTRACT itself — `#`
 comments, a header row naming every column, append-only columns, resolve
 by header name never position — is `docs/spec/table_contract.md`,
 adopted by every table surface at birth; this section states only what
