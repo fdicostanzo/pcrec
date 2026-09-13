@@ -4444,6 +4444,10 @@ RxtSchemaScope pcrec_rxt_schema_group_scope(RxtSchemaScope opener_scope);
  * a scope — so a refusal and the dump cannot disagree about what a scope is
  * called. `pcrec_rxt_constraint_name` is the ONE exhaustive site. */
 const char *pcrec_rxt_scope_name(RxtSchemaScope s);
+const char *pcrec_rxt_scope_context(RxtSchemaScope s);
+const char *pcrec_rxt_scope_noun(RxtSchemaScope s);
+/* The opener set as a scope-free query — structure-layer parameter 1. */
+const RxtSchemaRow *pcrec_rxt_schema_opener(const char *kind, size_t klen);
 const char *pcrec_rxt_value_name(RxtValueShape v);
 const char *pcrec_rxt_children_name(RxtChildren c);
 const char *pcrec_rxt_cardinality_name(RxtCardinality c);

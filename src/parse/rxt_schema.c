@@ -277,3 +277,59 @@ int pcrec_rxt_constraint_next(const char **cur, RxtConstraintKind *k,
     *arglen = alen;
     return 1;
 }
+
+/* THE OPENER SET (structure-layer parameter 1) AS A SCOPE-FREE QUERY.
+ * S2 reads "a line whose first token is a member of the BLOCK-OPENER SET",
+ * and that set is not scoped: the opener's own row lives in the scope of
+ * the group it opens (BLOCK), while the line itself sits among the head's
+ * siblings. So a reader asks "is this token an opener" of the whole table
+ * and gets the row back, which is also what makes the set a one-column
+ * `--list-schema` query rather than a per-scope lookup a consumer would
+ * have to repeat. */
+const RxtSchemaRow *pcrec_rxt_schema_opener(const char *kind, size_t klen)
+{
+    for (size_t i = 0; i < sizeof g_rows / sizeof *g_rows; i++) {
+        const RxtSchemaRow *r = &g_rows[i];
+        if (!r->opens_group) continue;
+        if (strlen(r->kind) == klen && !strncmp(r->kind, kind, klen))
+            return r;
+    }
+    return NULL;
+}
+
+/* The diagnostic's name for a scope, beside the DUMP's name for it — two
+ * renderings of one enum in one switch each, so a refusal ("'%s' is not a
+ * %s directive") and `--list-schema`'s `scope` column cannot drift into two
+ * vocabularies. They differ because they answer different questions: the
+ * column is the scope's ADDRESS and the context is what a reader of a
+ * diagnostic calls the region they are standing in. */
+const char *pcrec_rxt_scope_context(RxtSchemaScope s)
+{
+    switch (s) {
+        case RXT_SCOPE_FILE:       return "file-level";
+        case RXT_SCOPE_BLOCK:      return "pattern-block";
+        case RXT_SCOPE_CONFIG:     return "config-block";
+        case RXT_SCOPE_DATA:       return "data-block";
+        case RXT_SCOPE_PROVENANCE: return "provenance";
+        case RXT_SCOPE_VARIANT:    return "variant";
+        case RXT_SCOPE_NSCOPES:    break;
+    }
+    return "?";
+}
+
+/* The NOUN a cardinality refusal uses for the thing that may hold one of
+ * something ("a pattern block has one 'description'"). Third rendering,
+ * same enum, same file — never a literal at the refusal site. */
+const char *pcrec_rxt_scope_noun(RxtSchemaScope s)
+{
+    switch (s) {
+        case RXT_SCOPE_FILE:       return "file";
+        case RXT_SCOPE_BLOCK:      return "pattern block";
+        case RXT_SCOPE_CONFIG:     return "config body";
+        case RXT_SCOPE_DATA:       return "data block";
+        case RXT_SCOPE_PROVENANCE: return "provenance record";
+        case RXT_SCOPE_VARIANT:    return "variant";
+        case RXT_SCOPE_NSCOPES:    break;
+    }
+    return "?";
+}
