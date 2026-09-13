@@ -77,9 +77,41 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.2
-  (2026-09-12, lane w23fix, [DD-13b.W23] STEP 1.2): the r57 FIX
-  ROUND.** **Read §0.8 first** — the finding-by-finding record for the
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.3
+  (2026-09-12, lane w23fix2, [DD-13b.W23] STEP 1.3): the r57 ROUND-2
+  FIX ROUND, the last before merge.** The round-2 critic found 3.2's
+  two schema blockers HOLDING OUTRIGHT and the S3 blocker fix holding
+  in DIRECTION while failing end to end on its own axis. **Four of the
+  seven findings are one section — §1.2.1 — and each is a rule that
+  was stated in prose and pinned by nothing**: S3's trigger gains the
+  prose-region-opening kind condition and the TRIMMED value (without
+  it, `pattern |`, a legal pattern, becomes a refusal); the COMMENT
+  line's structural effect is stated in S1 and S3 — it TERMINATES, as a
+  blank does — repairing two measured reject→accept widenings that
+  falsified §1.6.1's claim 2, one of which produced an opener with two
+  disjoint prose regions that S3's extent rule cannot express; S0's
+  BLANK narrows to the EMPTY line and a WHITESPACE-ONLY line is
+  declared INERT (dissolving two narrowings and saving the format's
+  ONLY paragraph break, the indented whitespace-only separator, since
+  r46sem-10 closed the empty-line one); and the structure layer's
+  second parameter is stated ONCE as the `value`/`children` PAIR, on
+  S-R5's detectability — reading `value` alone would leave a `children`
+  corruption with no detector anywhere. Alongside: the NARROWING CENSUS
+  is re-scoped to the FORMAT rather than the lane's diff and runs to
+  **eleven candidates, seven taken**, two of them marked as landed by
+  STEP 0 (lane `rxtnul`); the `cardinality` values for the settings
+  kinds are DECIDED in §2.25.2 after measuring each population, which
+  is what caught **`budget`** — its one duplicate-line use
+  (`tests/harness/giveup.rxt:19-23`) is two different FIELDS and
+  deliberate, so it is `accumulate` and not `at-most-one`, while
+  `flags`, which the finding's list did not name, joins the six that
+  refuse; and §1.1's floor gains the definition that makes 28,943
+  re-derivable (eight first-token kinds, `perr` INCLUDED; 28,488
+  without it). §9.1 gains four fixtures for the rules that moved.
+  **Read §0.8's ROUND 2 block first**, then the 3.2 record below it.
+  **Revision 3.2**
+  (lane w23fix, [DD-13b.W23] STEP 1.2) was the r57 FIX
+  ROUND, and §0.8's main table is its finding-by-finding record for the
   three-critic panel (`../../dev/reviews/2026-09-12-r57-w23-format.md`:
   3 blockers, 14 must-fixes, 12 shoulds, 4 nits, all FIX-NOW). Five
   structural outcomes. **(1) The BLOCK SCALAR was a second, undeclared

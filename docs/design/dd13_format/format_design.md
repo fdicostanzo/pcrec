@@ -463,7 +463,7 @@ Where each finding landed:
 | **G-B1** | BLOCKER | §1.2.1 gains **S3 OPAQUE REGIONS** as the structure layer's third device, and the layer's schema parameters are stated as **TWO** (`opens_group`, `value = prose`), both fetched from `--list-schema`. §1.2.4's marker comparison is re-run against the two-parameter baseline and the sentence "`\|` … neither decides where a line attaches" is WITHDRAWN and replaced. **(3.3, R2-F4: still two parameters, but the second is the `value`/`children` PAIR — three columns read, not two.)** |
 | **S-BL1** | BLOCKER | §2.25.3 grows from five constraint kinds to **EIGHT** — `cross-scope` ADMITTED (its W23 customer meets the section's own membership rule; §2.25.4's deferral of it contradicted a production one section away), `forbidden-if` ADMITTED (`authored`'s must-be-absent half, which no negated `required-if` reaches), and `functional-binding` ADMITTED (subject-`as`, which `unique-by` would have REFUSED on its own documented normal spelling); `under`'s duplicate key gets an honest home as **parser code with its reason and a D77 trigger** rather than a ninth kind. §2.25.3's completeness claim is deleted |
 | **S-BL2** | BLOCKER | §2.19's "one block carries `pattern` or `pattern-esc`, never both" is **DROPPED** — measured empty population; a second opener starts a new block (S2). §9's B6 row flips from SATISFIED-by-refusal to a bench CORRECTION (premise dissolved), and the correction list carries it |
-| **G-B2** | MUST | The narrowing census is re-swept and published as a CLOSED LIST of five (§1.6.1a), each with population / forced-vs-chosen / spec sentence. N3 (tabs) is **REFUSED BY NAME** as the manager leaned; the lane did not overturn it and §1.6.1a records why. N2's shipped dedent corruption is K57 |
+| **G-B2** | MUST | The narrowing census is re-swept and published as a CLOSED LIST of five (§1.6.1a), each with population / forced-vs-chosen / spec sentence. N3 (tabs) is **REFUSED BY NAME** as the manager leaned; the lane did not overturn it and §1.6.1a records why. N2's shipped dedent corruption is K57. **(3.3, R2-B/R2-C/R2-F3: re-swept again to ELEVEN candidates, seven taken — the list of five was scoped to this lane's diff and missed STEP 0's two.)** |
 | **G-B3** | MUST | §2.25.2's `children` column gains a **`prose`** member and the precedence is stated: a `value: prose` kind's children are its VALUE, not schema-checked lines. H12 already assumed this reading and now cites it |
 | **G-B4** | SHOULD | §1.2.4 count 1 reworded: the disagreement-state error class RELOCATES to the schema layer rather than disappearing, and `\|`'s own no-continuation refusal (`rxt_source.c:514`) is an instance of it. The DECISION stands; count 2 is the strongest |
 | **G-B5** | SHOULD | §2.26 item 4 states which half of the `requires`/`provides` pairing it delivers; §2.16 gains the pointer sentence from `provides` to `vocabulary requires` |
@@ -786,8 +786,9 @@ place the format does not fully pass it and what passing would cost.
 
 #### 1.2.1 The STRUCTURE layer
 
-A reader at this layer knows **three devices and two schema
-parameters**. It knows no other keyword, no scopes, no value shapes.
+A reader at this layer knows **four line classes, three devices and
+two schema parameters**. It knows no other keyword, no scopes, no value
+shapes.
 
 **CORRECTED AT REVISION 3.2 (r57 G-B1, a BLOCKER; S-M1 and G-B2's N1/N2
 converged on the same object from two other directions).** Revision
@@ -976,7 +977,8 @@ therefore blocks, sub-blocks and line membership — with no knowledge of
 `config`, `provenance`, `variant`, `m`, `lib` or any other keyword.
 
 **THE STRUCTURE LAYER TAKES TWO PARAMETERS FROM THE SCHEMA, and
-revision 3.2 states both rather than one.** Neither is the thing the
+revision 3.2 states both rather than one** (3.3: the second is read off
+TWO columns, below)**.** Neither is the thing the
 ruling forbids — that is a per-keyword structural EXCEPTION decided by
 an open-ended table — but both are keyword facts, both are stated as
 such, and §1.2.3 prices removing them:
@@ -1060,7 +1062,9 @@ region's own strip rule is a separate, shipped defect and is K57.
    loud for a reason a reader can look up.
 
 **WHAT IT COSTS: one diagnostic tier, and A CENSUS OF NARROWINGS —
-§1.6.1a, five candidates, three taken.** No file changes meaning. A
+§1.6.1a, eleven candidates, seven taken** (five at 3.2; re-swept at
+3.3, and two of the seven landed by STEP 0 rather than here)**.** No
+file changes meaning. A
 file legal today is legal, byte for byte (0 corpus lines are indented,
 re-measured at 210 files, §0.7). Most refusals that move only change
 WHICH message they carry, which D26 puts in the tier this project does
@@ -1188,8 +1192,9 @@ Three things about that, each measured rather than argued:
 
 - **It is TODAY'S SHIPPED GRAMMAR's failure, not W23's.** Version 1 of
   this format has exactly this property and always has; nothing
-  revision 3 or 3.1 adds makes it worse, and §1.2.1's two devices make
-  everything else pass.
+  revision 3 or 3.1 adds makes it worse, and §1.2.1's three devices
+  make everything else pass. **(Corrected at 3.3: "two" was stale from
+  3.1 — S3 is the third, §1.2.1.)**
 - **No cheaper structural device is available in the corpus.** The
   obvious candidate — a blank line separates blocks — is refuted:
   **1,016 of 3,936 `pattern` lines (26%) are immediately preceded by a
@@ -5974,10 +5979,13 @@ two-customers argument:
 - **Internal consistency (consequence 1)**: indentation means exactly
   one thing everywhere in the file, so there is no per-keyword
   structural exception left to accrete onto.
-- **Structural parseability (consequence 5)**: §1.2.1's two devices
-  recover blocks, sub-blocks and line membership from syntax alone,
-  with one declared two-member parameter, and §1.2.3 states where that
-  is not yet total without softening it.
+- **Structural parseability (consequence 5)**: §1.2.1's four line
+  classes and three devices recover blocks, sub-blocks, line membership
+  and prose extents from syntax alone, with **two** declared parameters
+  (the two-member opener set; the prose-region-opening kinds, read off
+  the `value`/`children` pair), and §1.2.3 states where that is not yet
+  total without softening it. **(Corrected at 3.3: "two devices … one
+  parameter" was 3.1's count, stale since S3 landed at 3.2.)**
 - **Explicit sub-block syntax (consequence 4)**: designed as a visible
   marker and priced against bare indentation in §1.2.4; **indentation
   wins**, because a marker makes structure depend on two signals that
