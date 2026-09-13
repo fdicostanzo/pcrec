@@ -23162,3 +23162,42 @@ untouched; Frank queue EMPTY; no battery owed (docs-only day so far).
 + leg A table walk; opus). Steps in order after it. The D78 outbox
 message goes at the implementation delivery, carrying §9's full list
 by reference. pcrecdev2 idle; bench restart later this week.
+
+## 2026-09-13 (EDT), sixty-third session CLOSE addendum — W23.1 DELIVERED AND PARKED
+
+Lane w231 delivered [DD-13b.W23.1] (branch lane/w231, 9 commits from
+3127cf62): the schema table (66 rows), --list-schema as the seventh
+registry dump (both #section blocks passing table_contract
+truthfulness), leg A's dispatch as a table walk — --list-source
+BYTE-IDENTICAL over 210/210 corpus files against a scratch build of
+the branch point, census unmoved, strict clean, CENSUS_WORDS_32→_30
+re-pinned with testee/option's departure. Two note contradictions
+resolved by the lane and RATIFIED by the manager: (1) §2.2 wins over
+§6.1 — later-wave rows EXIST wave-marked (2/6/2 across the three
+structure parameters), because the derived not-in-this-build list
+needs rows (K14's gap); (2) SW13's reserved `version` got a real row
+with a reserved-sentinel wave — a spec claim needs a producer. The
+note takes both as one-line corrections at the merge.
+
+Full `make test` (the lane's DO-THEN-FINISH last act, manager-watched
+by log script): exit 2, 38/38 sections, TWO reds — inline_capability
+(chartered [CC-DIFF] pre-existing; not the lane's) and **W23-S3 arm 4,
+the lane's own new check catching the lane's own new special row**:
+the reserved `version` row falls in arm 4's later-wave file-scope
+population but refuses with class `[unknown-token-in-scope]` +
+RESERVED wording where the arm requires the by-name later-wave shape.
+Manager's read: the WORDING is right, the CLASS TAG on a reserved
+keyword is the wrong half — but the class vocabulary is W23.2's
+territory, so the fix (arm 4 gains a reserved-row case, or `version`
+gets its own class) is the MERGE REVIEW's first item, not a
+session-end edit. Notably test-anchored-match was GREEN this run
+(tt4m_time's red did not reproduce under MACPORT CC resolution).
+
+**PARKED**: lane/w231 stays unmerged (worktree kept, no stragglers);
+merge next session = fix arm 4 → re-run test-rxtsource → full battery
+→ merge. Lesson worth its line: a check failing on the delivery that
+built it, for a row the same delivery invented, is the check WORKING —
+the red is a disagreement between two of the lane's own decisions that
+nothing else would have caught before the bench did.
+
+Session close: heartbeat cron deleted, no live agents, main pushed.
