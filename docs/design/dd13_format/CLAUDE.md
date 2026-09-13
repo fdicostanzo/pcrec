@@ -77,8 +77,162 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 2 (2026-08-29,
-  dd13b lane): post-panel (r44) and post-ruling (D87).** Grammar +
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.3
+  (2026-09-12, lane w23fix2, [DD-13b.W23] STEP 1.3): the r57 ROUND-2
+  FIX ROUND, the last before merge.** The round-2 critic found 3.2's
+  two schema blockers HOLDING OUTRIGHT and the S3 blocker fix holding
+  in DIRECTION while failing end to end on its own axis. **Four of the
+  seven findings are one section — §1.2.1 — and each is a rule that
+  was stated in prose and pinned by nothing**: S3's trigger gains the
+  prose-region-opening kind condition and the TRIMMED value (without
+  it, `pattern |`, a legal pattern, becomes a refusal); the COMMENT
+  line's structural effect is stated in S1 and S3 — it TERMINATES, as a
+  blank does — repairing two measured reject→accept widenings that
+  falsified §1.6.1's claim 2, one of which produced an opener with two
+  disjoint prose regions that S3's extent rule cannot express; S0's
+  BLANK narrows to the EMPTY line and a WHITESPACE-ONLY line is
+  declared INERT (dissolving two narrowings and saving the format's
+  ONLY paragraph break, the indented whitespace-only separator, since
+  r46sem-10 closed the empty-line one); and the structure layer's
+  second parameter is stated ONCE as the `value`/`children` PAIR, on
+  S-R5's detectability — reading `value` alone would leave a `children`
+  corruption with no detector anywhere. Alongside: the NARROWING CENSUS
+  is re-scoped to the FORMAT rather than the lane's diff and runs to
+  **eleven candidates, seven taken**, two of them marked as landed by
+  STEP 0 (lane `rxtnul`); the `cardinality` values for the settings
+  kinds are DECIDED in §2.25.2 after measuring each population, which
+  is what caught **`budget`** — its one duplicate-line use
+  (`tests/harness/giveup.rxt:19-23`) is two different FIELDS and
+  deliberate, so it is `accumulate` and not `at-most-one`, while
+  `flags`, which the finding's list did not name, joins the six that
+  refuse; and §1.1's floor gains the definition that makes 28,943
+  re-derivable (eight first-token kinds, `perr` INCLUDED; 28,488
+  without it). §9.1 gains four fixtures for the rules that moved.
+  **Read §0.8's ROUND 2 block first**, then the 3.2 record below it.
+  **Revision 3.2**
+  (lane w23fix, [DD-13b.W23] STEP 1.2) was the r57 FIX
+  ROUND, and §0.8's main table is its finding-by-finding record for the
+  three-critic panel (`../../dev/reviews/2026-09-12-r57-w23-format.md`:
+  3 blockers, 14 must-fixes, 12 shoulds, 4 nits, all FIX-NOW). Five
+  structural outcomes. **(1) The BLOCK SCALAR was a second, undeclared
+  structural device and is now S3 OPAQUE REGIONS** (§1.2.1) — three
+  critics converged on it, and the measurement is that inside a
+  `description |` body an indented `#` is PROSE and ragged indentation
+  is legal (both rc 0 on the shipped binary), neither recoverable from
+  S0/S1 as revision 3.1 wrote them. With it, **the structure layer
+  states TWO schema parameters** (`opens_group`, `value = prose`), the
+  second open-ended by construction, and §1.2.4's marker comparison is
+  re-run against that baseline — the marker still loses, on a count-1
+  argument corrected from "the error class disappears" to "it
+  RELOCATES to the schema layer". **(2) §1.6.1a is THE NARROWING
+  CENSUS, a closed list of five, three taken** (the ragged head body,
+  TAB indentation refused by name, and the `x_y`-beside-`x-y` collision
+  in §2.22's semantics) **and two AVOIDED by S3** — each taken row
+  with population / forced-vs-chosen / spec sentence, and §1.6.4 grows
+  a FOURTH case for a CHOSEN narrowing plus the duty to sweep the whole
+  delivery. Revision 3.1 wrote that standing rule from one finding and
+  did not run it. **(3) §2.25.3 goes from five constraint kinds to
+  EIGHT** — `cross-scope` (whose deferral in §2.25.4 contradicted a
+  production one section earlier), `forbidden-if` (`authored`'s
+  must-be-absent half), and `functional-binding` (the subject-`as` id,
+  which `unique-by` would have REFUSED on its documented normal
+  spelling) — plus `under`'s key tuple given an honest home as parser
+  code with its reason, and the completeness claim withdrawn.
+  **(4) §2.19's `pattern`/`pattern-esc` both-in-one-block refusal is
+  DROPPED**: empty population, because both are block openers and a
+  second opener starts a new block (MEASURED). **(5) §2.22 gains the
+  `rxt_compose.c:854-864` precedent, the `def_by_name` misname fixed,
+  a refuse-before-mapping LENGTH rule (`pcrec_rxt_prefix_from_name`
+  truncates silently) and the 128-byte callability bound inherited
+  from PCRE2 under D26.** New Frank queue item **W23-F4** (§7.3,
+  ready-to-ratify, manager recommends ACCEPT): the repair removes the
+  ability to declare a deliberately non-callable definition. Filed
+  alongside: **`../../dev/known_issues.md` K57**, the block scalar's
+  dedent strip silently deleting content. Revision 3.1's own text
+  stands where 3.2 does not touch it, and §5.2a is re-aimed with a
+  fifth attack for S3.
+  **REVISION 3.1 (2026-09-12,
+  lane w23recon, [DD-13b.W23] STEP 1.1): the RECONCILIATION against
+  Frank's two 2026-09-12 rulings**, which were issued mid-flight and
+  never reached the authoring lane. **§0.7 is its own revision
+  record.** The
+  internal-consistency ruling rewrites **§1.2 as TWO LAYERS**: a
+  context-free STRUCTURE layer (S0 line classes, S1 indentation
+  attaches a line to the line above it, S2 a declared two-member
+  BLOCK-OPENER set) and a declared SCHEMA layer on top — which
+  **DELETES the head/body indentation asymmetry** rather than
+  narrowing it (the answer revision 3 gave, and the one the ruling
+  names as wrong "because that answer requires a keyword table to find
+  structure"). **§1.6 prices the `version` break and DECLINES it**:
+  the re-factoring is additive (0 indented lines; every rule change
+  moves a hard error between arms; the one widening only accepts
+  more), so "if needed" is NO — with the change that WOULD need it
+  named and priced (making block grouping structural = re-indenting
+  28,943 case lines across 210 files and forking every `.rxt`
+  producer), and the keyword RESERVED as one-line insurance. **§1.2.3
+  states plainly where today's shipped grammar fails structural
+  parseability** — block grouping needs one keyword fact, and the
+  alternative is refuted by measurement (only 26% of `pattern` lines
+  are blank-preceded). **§1.2.4 designs the visible-marker
+  alternative and declines it** on three counts, naming `|` and
+  `tag-prose`'s `"` as VALUE-form discriminators — **the `|` half of
+  which revision 3.2 WITHDREW: a discriminator that selects a
+  multi-line form is also a structure device, and `|` is now S3.**
+  **§2.25 designs the SCHEMA** (one `.def` table, the parser
+  as its reader through one exhaustive switch, `--list-schema` as the
+  registry dump (**3.1 said the sixth; it is the SEVENTH**), five
+  constraint kinds each with a named W23
+  customer under §2.10's own membership rule (**3.2: EIGHT, and the
+  completeness claim withdrawn**), `vocabulary` nested as
+  the FILE-declared rows via a `source` column, §2.24's
+  VALIDATES-vs-RECOGNISES upgraded from prose to a rendered
+  `validated_by` column, four D77 deferrals with triggers (**3.2:
+  split into DEFERRED and DECLINED, since one of them had no possible
+  trigger**), and the honest limit that legs B and C stay independent
+  ON PURPOSE.
+  **§2.26 is the OWNERSHIP AUDIT** the second ruling forces — all
+  thirteen W23 spellings swept, nine confirmed, **THREE moved**
+  (3.1 counted four; the fourth, `description` → `prose-value`, is
+  §1.2.5's consequence of the structure-layer re-factoring and not an
+  audit move):
+  `capable` → `provides` (the pattern side is `tag requires=`, so the
+  two ends of one relation must read as a pair), `licence`/
+  `licence-note` → `license`/`license-note` (SPDX's own key), the
+  `freq` data block's five one-off provenance fields → **the same
+  `provenance` record a pattern block uses** (the audit's biggest
+  finding: revision 3 shipped TWO provenance vocabularies for one
+  idea, `exemplar`≡`source` and `date`≡`retrieved`). Alongside them, a
+  pattern block's `description` → `prose-value`, superseding the W1.1
+  carve-out (§1.2.5's, not the audit's). Revision 3.1 adds NO
+  production, no abi event, and no question to the Frank queue; W23-F3
+  is RESOLVED. §3.2 gains H16 and sabotage rows S-R1..S-R4 (**3.2:
+  six rows — S-R2 re-homed to a pcrec-side detector, S-R3 re-spelled
+  so it fails NOW, S-R4 split into two, and S-R5 added for S3**);
+  §3.4 gains SW16/SW17; §5.2a is the panel's shortest attack path
+  (**3.2: re-aimed, five items**). **Revision 3 (lane w23design, same
+  day, [DD-13b.W23] STEP 1) is the base text: the [B42] absorption.**
+  Under Frank's F-Q1 (Tier 1 + Tier 2 as ONE W23 delivery — §1.4 restructured;
+  W1 is BUILT) and F-Q2 (multi-line patterns MUST — `pattern-esc`,
+  §2.19), absorbs the bench's fifty needs: records with attached
+  children (§1.2.6; customers `provenance` §2.14 and the reshaped
+  `variant` §2.23),
+  `vocabulary` closed sets (§2.15), `provides` fail-closed (§2.16, Frank
+  ratifies), `under` convention-scoped expectations (§2.17), subject
+  `as`/`sha256` (§2.18), `configs describe` closing the D93 roadblock
+  (§2.20, Frank ratifies), the `mc` counting rule MEASURED three ways —
+  the pre-ruled bench formula double-counts an empty match found beyond
+  the scan position; the spec states `match_api.md` §3.1's protocol
+  instead (§2.21) — the §4.5-item-4 regime repair via the composer's
+  derived-identifier lookup (§2.22, `pcrec_rxt_prefix_from_name`'s one
+  home, collision refused at use), and `--list-source` sections +
+  case rows + the normative VALIDATES-vs-RECOGNISES table (§2.24). §0.6
+  is the need-keyed revision record, §3.4's SW1-SW15 the D80 spec-delta
+  plan (no abi event anywhere in W23), §7.3 the Frank queue (W23-F1/F2/
+  F3), §8 the nine P-Q dispositions, §9 the 41-check acceptance mapping
+  (G3: M1/M5/M10 change, everything else's FACTS unchanged, one named
+  header-column precision). Revision 2 (2026-08-29, dd13b lane,
+  post-r44, post-D87) is the base text and stands where W23 does not
+  touch it. Grammar +
   semantics of the grown format, under Frank's 2026-08-28 rulings
   (`usecases_and_outline.md` §5/§6.1-§6.5) and **D87**. §0.5 is a
   finding-by-finding disposition table for all of r44

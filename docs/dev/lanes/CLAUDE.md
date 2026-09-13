@@ -458,6 +458,86 @@ never edited afterwards.
   darwin. Validated by reproducing the exact failing compile line and the
   `lint:` guard probe with `gcc-16` (both succeed) — no `san`/`lint`/battery
   run was started, per the box hold in force at hand-off.
+- `w23design_report.md` — [DD-13b.W23] STEP 1 (2026-09-12, lane
+  w23design, opus; design only): `format_design.md` REVISION 3, the
+  [B42] absorption under F-Q1/F-Q2. Read it for the one pre-ruling
+  deviated from on measurement — the bench's find-all formula
+  `pos = max(end, pos+1)` DOUBLE-COUNTS an empty match found beyond the
+  scan position (`(?=a)` on `"xax"`: 2 vs 1), so `mc`'s spec rule is
+  `match_api.md` §3.1's shipped protocol by reference — and for the two
+  leanings worked to answers: the body SUB-BLOCK mechanism (customers
+  `provenance` + the reshaped `variant`; regime grouping deliberately
+  NOT among them) and the §4.5-item-4 regime repair via the composer's
+  derived-identifier lookup (`pcrec_rxt_prefix_from_name`'s one home,
+  collision refused at use, zero name-grammar-reader changes). Frank
+  queue: W23-F1 `configs describe` (D93), W23-F2 `capable` in-format,
+  W23-F3 the mc deviation.
+  **ADDENDUM — REVISION 3.1** ([DD-13b.W23] STEP 1.1, 2026-09-12, lane
+  w23recon, opus, same branch): the RECONCILIATION against Frank's two
+  2026-09-12 rulings, which were issued mid-flight and never reached the
+  authoring lane. §1.2 becomes a two-layer grammar (a context-free
+  STRUCTURE layer + a declared SCHEMA), the head/body indentation
+  asymmetry is DELETED rather than narrowed, the `version` break is
+  priced and DECLINED with the keyword reserved, §2.25 designs the
+  schema and `--list-schema`, and §2.26's ownership audit moves four
+  spellings. Read the addendum for **F1**, the sharpest: revision 3's
+  own load-bearing parser rule — "the indentation test PRECEDES token
+  dispatch, in all three body readers" — is MEASURED FALSE in two of
+  the three (leg B has no indentation test at all and reaches its
+  catch-all by fall-through; leg C dispatches an indented pre-body line
+  on its first token), so P-Q1's one parser hazard was closed by a rule
+  that mostly did not exist; the two-layer split makes the hazard
+  structurally impossible instead. Also **F2**, the corpus census the
+  note is written against went stale with [M5.0]'s corpora (179/3,265/
+  26,691 → 210/3,936/28,943), which is why §1.1 now states the
+  denominator RULE instead of the numbers; and **F3**, only 26% of
+  `pattern` lines are blank-preceded, which is what closes the one
+  alternative to a keyword for block grouping. And **F6**, the lane's
+  own additivity claim was wrong once and a PROBE found it: the new
+  attachment rule is depth-sensitive where today's head rule is not, so
+  a RAGGED head body (lines at differing depths) goes from accepted to
+  refused — measured byte-identical on the shipped binary today. Taken
+  deliberately (population measured 0 in both repos, and forced by
+  two-level nesting), and it is why the note's standing rule for when a
+  change needs a `version` line went from two cases to three.
+  **ADDENDUM 2 — REVISION 3.2, the r57 FIX ROUND** ([DD-13b.W23] STEP
+  1.2, 2026-09-12, lane w23fix, opus, same branch): the three-critic
+  panel's 3 blockers / 14 must-fixes / 12 shoulds / 4 nits worked
+  through. Read it for the three PUSHBACKS, each with its measurement,
+  because they are where the lane did not simply comply. **(1) Two of
+  the panel's four new narrowings are narrowings AVOIDED, not taken** —
+  declaring the block scalar as a structure device (S3 OPAQUE REGIONS,
+  the round's central fix: three critics converged on the block scalar
+  as the un-modeled object, and an indented `#` inside one is PROSE
+  today at rc 0) dissolves both, so the census lists five candidates and
+  marks two avoided WITH the mechanism, since a later wave that weakens
+  S3 re-creates them silently. **(2) K57 is filed rather than handed
+  back**: the `|` block scalar's dedent strip is a BYTE COUNT, so a
+  continuation line indented less than the block's first **silently
+  loses content** (`  dedented-line-two` under a 4-space block decodes
+  as `dented-line-two`, exit 0) — wrong under every revision of the
+  note, so no design decision fixes it by arriving. **(3) The `wave`
+  column is KEPT against the panel's lean**, because its consumer is
+  real during the five-merge ROLLOUT even though its population is
+  empty at the delivered pin — stated with its expiry condition.
+  Also worth reading: the structure layer now takes **TWO** schema
+  parameters rather than one, and the second (`value = prose`) is the
+  open-ended one the note was already describing without noticing; the
+  constraint vocabulary goes from five kinds to **eight** after four
+  W23 refusal rules failed to fit five, one of them needing precisely
+  the kind the same section DEFERRED with a trigger a production one
+  section earlier already met; the `pattern`/`pattern-esc`
+  both-in-one-block refusal is DROPPED as an EMPTY POPULATION (both are
+  block openers, so a second opener starts a new block — K35 caught at
+  design time, before the check existed); and the methodology note that
+  is this house's THIRD recorded instance of one trap — comparing two
+  emitted artifacts written to different `-o` basenames reports a false
+  difference on the `#include` line, which first read as REFUTING a
+  true byte-identity finding. New Frank queue item **W23-F4**
+  (ready-to-ratify, manager recommends ACCEPT): the derived-identifier
+  repair removes the ability to declare a deliberately NON-CALLABLE
+  definition, a boundary `src/parse/rxt_source.c:288-291` records as a
+  feature.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
