@@ -638,35 +638,34 @@ back to being operational notes only. This **overturns §7 Q1's
 recommendation in the first version** — `NOTES.md` is no longer where a
 library's or a sub-bench's prose lives.
 
-### 1.4 Which production earns which wave, and who is waiting
+### 1.4 The waves after F-Q1: W1 (built) and ONE W23 delivery
 
-| wave | productions | the consumer that earns it | blocked row |
-|---|---|---|---|
-| **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget` **and `from`** (G3); AST composition (§2.3) with §1.5's three pattern-level extensions and `--emit-composed`; `rx_info.name`; **H11's target build path** (M9) | a file carrying several patterns that reference each other; a shipped library a user `lib`s and builds three targets from | **[LIB]** (all three parts), [DD-14]'s multi-pattern files |
-| **W2** | `include`, `@file:` subjects, `mc`, `tag`, the `freq` data block and `config`'s `analysis` line | a generated 1,364-row expectation set; a 1 MB subject; an exemplar findings file | **[ENG-PGO]** (the findings file — its plan row says "blocks on [DD-13b] wave 2/3"), the first in-format sub-bench |
-| **W3** | `use`, `oracle`, `variant`, `config`'s `testee`/`option` | a second engine in one file | **pcrec-bench** sub-benches with a non-pcrec testee |
+**RESTRUCTURED at revision 3** (Frank's F-Q1, 2026-09-12): there is no
+W2-only cut. The former W2 and W3 rows, plus every [B42] extension,
+land as **ONE delivery, W23**, whose consumer is the bench's [B42]
+capability survey set — the consumer that earns it, by ruling. D77 is
+still honoured at the wave granularity: W23 ships because its named
+consumer is real and PARKED on it.
 
-**W1 is a departure from the position paper's wave assignment for
-`config`, and the reason is a shipped promise** (D-b in §0.3):
-`docs/spec/limits.md`, "Handling an oversized artifact", already
-instructs callers to "put the override in the pattern-source file's
-`config` block rather than on the command line". A spec that ships an
-instruction owes the mechanism. `config`'s wave-3 half (`testee`,
-`option`) stays wave 3 — it has no consumer until a second engine does.
+| wave | productions | status / consumer |
+|---|---|---|
+| **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `export`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget`/`from`; AST composition with §1.5's extensions, the delivering calls and `--emit-composed`; `rx_info.name`/`nentries`; H11's target build path | **BUILT** — [DD-13b.W1.1] (2026-08-30), .2 (2026-08-31), .3 (2026-09-03). Owed, NOT blockers: **W1.3.1** (run.sh's composed-block path, `w13_runsh_composed_path.patch`) and **W1.4** (the in-pattern delivery follow-ons). W23 interacts with neither — no W23 production touches the composer except §2.22's derived-identifier LOOKUP, which is additive |
+| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`, `config … testee`/`option`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `capable`, `under`, `configs describe`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3") |
 
-**`from` is W1** (r44-grammar G3): it was in the W1 production and
-unassigned in this table. It is unexercised (0 uses), but it is the only
-cascade the format has and `config … from` is how a build variant is
-spelled, so splitting it out of W1 would leave `config` half-built.
+**What remains after W23, named so the wave table ends honestly:** the
+`gap` data-block member (unearned, D77), `--list-source --resolved`
+(named and unbuilt), [V-E]'s multi-pattern unit, `(?&site.group)` (free,
+measured, not built — w1_impl §9.4), iterated capture (D87 rule 5's
+explicit exclusion), the [M4-SUBST] `repl`/`s`/`sg`/`serr` slots (that
+row's own), expressing a NUL **in a pattern** (parked on K9's
+`pattern_len` API half, §2.19), and W1.3.1/W1.4 above. After W23 the
+format has no designed-but-unbuilt production a real consumer is waiting
+on.
 
-**H11 is part of W1, not an afterthought** (r44-sem M9): the first
-version's H1-H10 never compiled or ran a `target … with <config>`, so
-the central new build declaration would have shipped with no test path.
-`target` and the thing that builds it land together (§3.2).
-
-D77 is honoured at the wave granularity, not the production granularity:
-each wave ships when its named consumer is real, and nothing in W2 or W3
-is built to be ready.
+**W23 carries NO abi event.** Every W23 production is format-, harness-
+or CLI-side; nothing changes emitted scaffolding, so D76's ritual is not
+triggered and the identity gate's pin does not move. Stated here because
+every prior wave's landing note had to answer this question late.
 
 ### 1.5 The PATTERN-level extensions, and the one constraint they all obey
 
@@ -1281,6 +1280,12 @@ which is a real way to weaken a suite silently. `features only` is the
 answer to it — the narrowing exists, and it is a thing an author wrote
 rather than a thing precedence did.
 
+**W23 adds one head declaration ABOVE this whole table: `configs
+describe` (§2.20).** Under it, no `config` in the file composes into any
+build at all, so everything in this section describes the DEFAULT
+(`configs build`) mode only. This is roadblock #6's resolution and D93
+territory; §2.20 carries the mechanism and the Frank ratification flag.
+
 ### 2.7 Targets, `rx_info.name`, and how many `.c` files come out
 
 > **D88 (2026-08-29, after this note landed):** one artifact per emitted file, ALWAYS — N targets are N files (`-o <dir>`), composition of artifacts is linking, never a multi-pattern translation unit; [V-E]/[EMIT-SET]'s "emission set" is a directory of per-artifact files plus a manifest header. This section's M10 rule is the general one.
@@ -1382,16 +1387,39 @@ target <prefix> = <name> [with <config>[,<config>…]]
 - **The format imposes no size limit.** §3 records the driver-protocol
   change this forces — today a subject travels as an `argv` string, which
   can carry neither a NUL nor a megabyte.
-- **No content hash on a subject reference.** ARGUED, and it is the
-  principle §2.10 turns on: **provenance is required exactly where the
-  source is not committed.** A subject file sits in the repo beside the
-  `.rxt` and is covered by the same review and the same history; an
-  exemplar deliberately is not.
+- **W23: a reference may carry `as <id>` and `sha256 <hex64>`** —
+  §2.18's rules (the id namespace, the functional binding, who checks
+  the hash).
+- **No content hash on a COMMITTED subject reference — RE-SCOPED at
+  W23** ([B42] P-Q8, ruled): revision 2's "no content hash" was a
+  DEFAULT for the case its own argument covers — a subject file
+  committed beside the `.rxt`, covered by the same review and history —
+  not a principle. The argument's own premise fails for a GENERATED,
+  gitignored subject tree (the bench's), which is exactly the condition
+  this section says provenance IS required under. So the hash is
+  OPTIONAL: pcrec's corpus writes none and changes nothing; a generated
+  set writes one on every reference; neither has to argue. §2.10's
+  principle ("provenance is required exactly where the source is not
+  committed") is unchanged — it now cuts in both directions instead of
+  one.
 
 ### 2.9 The oracle declaration
 
-`oracle python` (the default) | `oracle pcre2` | `oracle none <reason>`,
-file-level or block-scoped, block wins.
+`oracle <engine-ref>` | `oracle none <reason>`, file-level or
+block-scoped, block wins. **W23 widens the engine enum to an
+`engine-ref` with an optional `/version`** ([B42] N-36/N-38, the
+manager's pre-ruling): `oracle python` and `oracle pcre2` are
+engine-refs with no version and keep their EXACT current meanings, so
+nothing in pcrec's corpus moves; `oracle pcre2/10.46` pins the version a
+correctness claim was checked against; `oracle tre/0.8.0` names an
+engine this repository has no binding for, and that is already handled —
+**an absent oracle degrades to R-VG-3's labelled skip**, counted and
+printed, never a silent pass and never a hard failure, which is the rule
+that makes widening the enum safe rather than a portability hazard. The
+version is part of the DECLARATION, not a dispatch key: a consumer that
+has the engine at another version reports the mismatch as its own
+finding (the bench's re-checkable-exclusion case; `docs/testing.md`'s
+"Oracle exclusions" is the pcrec-side analogue).
 
 - **`# pcre2-only` immediately before a `pattern` line stays valid and
   means `oracle pcre2` for that block.** MEASURED: **636** occurrences
@@ -1676,6 +1704,508 @@ What [V-I] still owns: the C-keyword MANGLING rule its own row already
 flags (`(?<int>…)`, `(?<return>…)` are valid group names and invalid
 member names), the copier's signature, and whether the struct is an
 optional emission unit ([EMIT-SET] names it as one).
+
+### 2.14 `provenance` — per-pattern origin, structural ([B42] N-11..N-19)
+
+A body SUB-BLOCK (§1.2), at most ONE per pattern block — a second is
+**refused by name**, never last-wins (the shape STEP 0's
+duplicate-`description` refusal closes one production over; the bench's
+MEASURED M5 is why this rule is stated rather than assumed). The
+precedent is the `freq` data block's own required-provenance discipline
+(§2.10): a wild pattern's source is absent from the repo by exactly the
+logic an exemplar is, so its origin is REQUIRED fields, not prose.
+
+Rules, each parser-enforced:
+
+1. `source`, `licence`, `retrieved`, `fidelity` are **REQUIRED**; a
+   `provenance` block missing one is refused naming the missing line —
+   the `freq` block's `question`/`reader` rule, reused.
+2. `url` and `ref` are **REQUIRED unless `source` is the reserved slug
+   `authored`**, and an `authored` block that writes either is refused:
+   the slug and the fields must agree or `authored` stops meaning
+   anything. (The bench's own rule, adopted verbatim.)
+3. `adaptation` is **REQUIRED iff `fidelity` is not `verbatim`** — the
+   one conditional the format enforces, and the whole value of making
+   the record structural: a mechanically-changed pattern with no stated
+   change is the failure a reviewer cannot catch by reading.
+4. `fidelity`'s three values are CLOSED **in the grammar**, not via
+   `vocabulary`: the conditional in rule 3 requires the parser to know
+   them, so a declaration mechanism would be a second home for a fact
+   the parser already owns.
+5. `attribution` exists as a field; whether a licence demands one is a
+   POLICY the format does not know (SPDX is an open set) — the consuming
+   project's gate enforces it. The field must exist so a CC BY-SA
+   pattern has somewhere to put what its licence requires.
+6. Prose fields (`licence-note`, `adaptation`, `attribution`) take
+   `prose-value` — one line, or a `|` scalar indented deeper than the
+   attribute line (§1.2). ONE prose mechanism, everywhere.
+
+What pcrec's own harness gets (the both-repos test §2's every
+production passes): the corpus's imported material — the D27 corpora's
+generator provenance, the Fowler-derived cases, `# pcre2-only`
+justifications — gains a machine-readable origin, and "where did this
+block come from" becomes a `--list-source` section (§2.24) rather than
+a grep through comments. Nothing REQUIRES pcrec's corpus to adopt it;
+the production is block-scoped and absent-by-default.
+
+The harness readers RECOGNISE and skip it (`run.sh`, `verify_rxt.py`
+consume the indented body without reading it); pcrec VALIDATES it —
+§2.24's D4 table is where that split is published.
+
+### 2.15 `vocabulary` — file-declared closed sets ([B42] N-10/N-21, pre-ruled)
+
+`vocabulary <key> <v1> <v2> …`, head-only, wrapping by the head's own
+indentation-continuation. Declares that `tag <key>=<value>` (and every
+other production the spec names as vocabulary-checked: `under`'s
+convention, `variant`'s `kind`, `capable`'s values) may only take a
+listed value; a violating value is **refused by name**, naming the key,
+the offending value and the declared set.
+
+- **A key with NO `vocabulary` line keeps free-vocabulary behaviour
+  exactly** — the compatibility rule that makes this purely additive,
+  and the answer to r44's own concern that §4.5's absorption silently
+  downgraded four validated record-schema enums to free strings: the
+  file that carries those tags declares their sets, and the format
+  enforces without knowing what any value MEANS (AR-6 held — the format
+  checks membership, never meaning).
+- **A second `vocabulary` line for the same key is refused** — §2.2's
+  duplicate-declaration rule, fifth namespace's sibling (the key space
+  is small and a split declaration is a reader hazard, not a
+  convenience).
+- A `vocabulary` line for a key nothing uses is legal (a declaration,
+  not an assertion); `--list-source` reports it and a consumer may warn.
+- BARE tag labels are keyless and therefore never vocabulary-checked;
+  say it so nobody expects otherwise.
+- Enforcement covers BOTH scopes (file-level and block `tag` lines) and
+  the include closure: a fragment's `tag` is checked against the ENTRY
+  file's declarations, which is the AR-4-compatible direction (the
+  fragment cannot declare head lines, so its meaning still depends on
+  exactly one bounded place).
+
+`requires` stays a `tag` key rather than its own production, for the
+bench's own stated reason (a dedicated production would make the
+capability model a FORMAT concept, which AR-6 forbids); with
+`vocabulary`, the closed-set discipline reaches every key at once.
+
+### 2.16 `capable` — what a config's engine satisfies ([B42] N-22/N-23)
+
+A `config`-body line, repeatable and accumulating like `tag`: the
+vocabulary values this config SATISFIES. **Absent means NOTHING is
+satisfied — fail-closed, deliberately**, so a new adapter cannot claim
+capabilities by omission (the bench's own rule, adopted).
+
+- **The key name `requires` is RESERVED by one spec sentence**: when a
+  `vocabulary requires …` declaration exists, every `capable` value must
+  be a member of it (refused naming value and set); with no such
+  declaration, `capable` values are free. The format thereby knows ONE
+  NAME — that the key `requires` is where capability tags live — and
+  still nothing about what any tag means. The precedent for reserving a
+  name is `# pcre2-only` and the `oracle` engine names; AR-6 is about
+  MEANING, not spelling.
+- The pre-compile policy — `REQUIRES(pattern) ⊄ capabilities(config) ⇒
+  unsupported-by-declaration`, decided before any compile — is the
+  CONSUMER's rule. The format carries the declaration (`capable`), the
+  per-pattern requirement (`tag requires=…`) and the outcome production
+  (`variant <testee>` + `unsupported`, §2.23); the spec states the
+  intended reading so two consumers cannot invent two policies, and
+  R-BENCH-3/AR-3's counted-never-silent rule covers the outcome.
+- pcrec's OWN harness ignores `capable` operationally (its one testee is
+  pcrec); the dump carries it (§2.24), which is what a reader of the
+  file needs — the reason a pattern has no result for a testee lives in
+  the same file as the pattern (§8 P-Q4's argument for IN-the-format).
+
+**Flagged for Frank's ratification beside §2.20** — the manager
+recommends IN the format; a "keep it bench-side" answer is a partial
+return of the hybrid and was argued against, not defaulted (§8 P-Q4).
+
+### 2.17 `under` — the second correct answer, per convention ([B42] N-35)
+
+`under <convention> <case-line>` where `<case-line>` is an UNCHANGED
+`m`/`n`/`ms`/`ns`/`mc` line. The deepest of the bench's six roadblocks:
+one pattern, one subject, two engines answering DIFFERENTLY AND
+CORRECTLY (`a|ab` on `"ab"` is `0 1` leftmost-first and `0 2`
+leftmost-longest), and a case line today is one answer with no
+qualifier.
+
+- An UNQUALIFIED case line means what it means today: the expectation
+  under the block's (or file's) declared canonical convention
+  (`tag convention=…`).
+- `under <conv> m "s" a b` states the answer a testee tagged with THAT
+  convention is scored against, same (pattern, subject). A testee whose
+  convention has no `under` line for a case falls back to the
+  unqualified line — a set declaring no conventions behaves exactly as
+  today, so the production is additive.
+- `<convention>` is a `tag-value`, closable by `vocabulary convention`.
+  The format does not know what `posix-leftmost-longest` means — AR-6's
+  line held; scoring against the right expectation is the consumer's
+  act.
+- Two `under` lines for one (convention, subject, kind, startpos) are
+  **refused as a duplicate**, not last-wins.
+- **`under` never wraps `g`/`gp`/`gu`**, and `g`/`gp` lines attach only
+  to UNQUALIFIED `m`/`ms` cases: a capture expectation under a foreign
+  convention has no consumer (the bench's expectations carry no capture
+  columns — MEASURED, §5.1 attack 3), so admitting it would be building
+  ahead of need (D77) and would force the attachment rule to answer a
+  question nobody asked. Named trigger: the bench's OD-B9.
+- **pcrec's own harness treats every `under` line as a COUNTED, LABELLED
+  skip** (AR-3's shape, a new summary line), because scoring one would
+  require `run.sh` to know pcrec's convention BY NAME — engine knowledge
+  the harness must not hold. `verify_rxt.py` the same. The bench's
+  runner is the scorer; its own R5-B1 harness half is theirs and §9's E5
+  row says so.
+- `variant` and `under` stay orthogonal on the axis r44 already ruled:
+  a variant is about SPELLING, a convention about SEMANTICS, and a
+  testee's variant is still checked against the expectations its
+  convention selects — first the convention picks the answer set
+  (`under` or unqualified), then the variant supplies the text.
+
+### 2.18 Subject identity and integrity ([B42] N-26/N-27, pre-ruled)
+
+`@file:"path" as <id> sha256 <hex64>` — both suffixes optional,
+independently.
+
+- **`as <id>` names the subject.** The id is in a **per-FILE subject
+  namespace** (the physical file that writes the line — a fragment's ids
+  are the fragment's), spelled in the wide `defname` grammar since the
+  bench's ids are hyphenated. The binding is FUNCTIONAL: one id maps to
+  one (path, sha256); re-stating the same binding on many case lines is
+  the normal spelling (every case line naming the subject carries it);
+  a CONFLICTING re-binding — same id, different path or different hash —
+  is refused naming both lines. Two ids for one path are legal
+  (pointless, harmless, and refusing them would require the parser to
+  canonicalise paths).
+- **A case is then citable as (pattern, subject-id)** — the stable key
+  every bench expectation, report row and interpreter fact needs —
+  and a failure line prints the id beside `file:line`, which pcrec's own
+  generated corpora benefit from identically (a regenerated fragment's
+  line numbers move; its ids do not). Roadblock #4 closed.
+- **`sha256` is checked by whatever READS the subject** — the harness's
+  driver path and the bench's loader — refusing on mismatch naming the
+  path and both digests. `--list-source` validates the SYNTAX (exactly
+  64 hex digits) and reports the value; it performs no file I/O on
+  subjects (it is parse-only and stays so), and §2.24's D4 table states
+  that split so nobody reads the dump as an integrity check.
+- An INLINE quoted subject takes neither suffix — no consumer asked
+  (D77), and the id's whole value is naming bytes that live elsewhere.
+
+### 2.19 `pattern-esc` — the second pattern spelling ([B42] N-2, F-Q2)
+
+`pattern-esc "<quoted>"` starts a block exactly as `pattern` does; its
+pattern text is the DECODED bytes, using the format's own seven-escape
+subject vocabulary and no second vocabulary. Because the escape table
+already includes `\n`, `\xHH` and `\\`, a `(?x)` body authored across
+lines, raw high bytes and a trailing CR all become expressible with
+nothing new invented — **multi-line CAPABILITY without multi-line
+SYNTAX**, which is what keeps every reader's line-oriented loop intact
+and is why this form was chosen over continuation (continuation under
+`pattern` would also have destroyed N-2's loud refusal, §1.2 rule 2).
+
+- **A block carries `pattern` or `pattern-esc`, never both** — both is
+  refused naming both lines.
+- **`pattern` itself is UNTOUCHED** — rest-of-line, verbatim, no
+  escaping, byte-exact (the bench's M3/M4 round-trip facts must not
+  move, and every existing exporter depends on the verbatim rule).
+- **`\x00` inside `pattern-esc` is REFUSED BY NAME, and the reason is
+  K9**: the compile entry takes no pattern length
+  (`docs/dev/known_issues.md` K9), so a NUL-bearing pattern would
+  compile as its prefix and report success — the exact silent-wrong
+  -artifact trap the STEP 0 raw-NUL refusal closes for `pattern` lines.
+  The refusal names K9 and the lifting trigger (`rx_info.pattern_len`'s
+  API half landing). Expressing a NUL pattern is thereby a KNOWN LIMIT
+  with a named owner, not a silence — the bench's own N-4 priority split
+  ("SHOULD to express, MUST to refuse") honoured in both halves.
+- **Who decodes: pcrec, once.** The CLI gains a flag (working name
+  `--pattern-esc`; `cli.md`'s hunk owns the spelling) under which the
+  pattern OPERAND is taken in the quoted-escape form and decoded by the
+  format's own decoder — the same decoder `--source` and `--list-source`
+  use on these blocks. `run.sh`'s arm passes the still-encoded text
+  through with the flag; `verify_rxt.py` decodes with its existing
+  python-side table. No bash decoding anywhere (a `printf %b`
+  approximation would be a SECOND decoder with its own escape set — the
+  drift hazard by construction).
+- `--list-source` reports the block with the DECODED bytes in the
+  `pattern` column (escaped back in the dump's own vocabulary — a
+  byte-exact round trip by construction, same table both directions)
+  plus an `esc` column marking the source spelling, so an exporter can
+  reproduce the file as written.
+
+### 2.20 `configs describe` — build configs vs descriptive configs
+([B42] N-43/N-44, roadblock #6; **READY FOR FRANK'S RATIFICATION** — D93 territory)
+
+**The collision, restated**: D93 makes a `.rxt` source's composed
+config WIN over a command-line flag on the same axis. §6.2's worked
+bench file carries `config pcrec` — and the bench's entire
+sixteen-config pcrec testee matrix is command-line flags, so a set file
+that describes its testees would silently PIN them. Both rules are
+right alone and collide when the file is a bench set.
+
+**The mechanism**: one head declaration, `configs build` (the default,
+today's semantics, spellable explicitly) or `configs describe`. Under
+`describe`:
+
+1. **No `config` in the file composes into ANY build.** `pcrec
+   --source` applies none of them; the harness applies none to its
+   compiles; the D93 precedence question never arises because nothing
+   composes. The configs are DATA — read via `--list-source` by whatever
+   runs the testees (the bench's runner), applied by IT through its own
+   adapters' command lines, which therefore always win because they are
+   all there is.
+2. **`target … with <config>` is REFUSED**, naming the target line and
+   the `configs describe` line — a build declaration referencing a
+   descriptive config is a contradiction the author should hear about,
+   not a precedence question. A bare `target` (no `with`) stays legal:
+   `describe` scopes CONFIGS, and the exporter writes bare
+   `target =` rows today.
+3. **`use` is legal and INERT for the harness**, which runs each block
+   in exactly ONE cell (its own directives plus file defaults) and
+   reports `configs: descriptive (N declared, 0 applied)` — declared
+   inapplicability as a counted, printed state (AR-3), never a dropped
+   directive.
+4. **The declaration is the ENTRY file's** and governs the include
+   closure — a fragment cannot carry head lines (§2.5), so a block's
+   config semantics still depend on exactly one bounded place (AR-4).
+5. A second `configs` line is refused (duplicate declaration, §2.2).
+
+**And the PERMANENCE sentence** ([B42] N-43, check F1): a file with no
+`target` and no `config` **parses, builds nothing, and exits 0 — as a
+CONTRACT, permanently**. The behaviour is shipped (`rxt_format.md`:
+"No `target` and anything else builds NOTHING… It is not an error");
+what the bench asked for is the sentence in the spec that it STAYS
+true, and the spec hunk (§3.4 SW5) adds it.
+
+**Why resolution 1 and not the alternatives** (the bench's §2.6): their
+resolution 2 ("a config naming a foreign `testee` is descriptive")
+leaves `config pcrec` in §6.2 still winning — the actual hazard; their
+resolution 3 is the hybrid Frank removed, recorded as the null option.
+A PER-CONFIG marking was also considered and declined: the only real
+customer is a whole file that is a set (the bench's), a mixed
+build/descriptive file has no named consumer (D77), and a per-config
+mark would re-open the reader's question ("which configs does this
+build honour?") that a single head line answers at a glance.
+
+### 2.21 `mc` — the counting rule, stated and MEASURED ([B42] N-32,
+P-Q3; **deviates from the pre-ruled formula on measured evidence**)
+
+`mc "<subject>" <n>` / `mc @file:"…" <n>` asserts that the find-all
+protocol over the subject reports exactly `<n>` matches. **The rule is
+`docs/spec/match_api.md` §3.1's shipped protocol, by reference**:
+non-overlapping; after a non-empty match the search resumes at its END
+(`caps[0][1]`); after an EMPTY match it resumes one CHARACTER past the
+match's REPORTED START (`<prefix>_next_pos(caps[0][0])` — one byte under
+`-e byte`); no empty-match retry.
+
+Three rules were measured head to head before this paragraph was
+written (§0.6), because the manager's pre-ruling spelled the rule as
+the bench's `pos = max(end, pos+1)` and the two are NOT the same:
+
+| rule | `(?=a)` on `"xax"` | `a*?` on `"aaa"` |
+|---|---|---|
+| §3.1's protocol | 1 match | 4 |
+| `pos = max(end, pos+1)` (bench `adapters.py`) | **2 — the empty match at offset 1 is found twice**, once from pos 0 and again from pos 1 | 4 |
+| python `re.finditer` / PCRE2's NOTEMPTY loop | 1 | **7** |
+
+The bench formula DOUBLE-COUNTS an empty match found beyond the scan
+position (its `max` returns the match's own position when the match
+lies ahead of `pos`); the protocol advances past the reported start and
+cannot. And BOTH non-retry rules undercount `finditer` on
+empty-preferring patterns — the NOTEMPTY class §3.1 already documents,
+spans a strict subset, **which pcrec's entry points cannot express**.
+So the spec paragraph states the §3.1 protocol: it is already shipped,
+already suite-checked (`tests/encseam/findall_cases.txt`), and the one
+rule all of pcrec's own artifacts can actually implement. The bench's
+own note anticipated this outcome ("if the intended answer is 'the
+harness's rule', say that") and their adapter owes one edit —
+empty-match advance from the reported start, not `max` — which §9's E5
+group and the outbox summary carry to them.
+
+Consequences stated so nobody re-derives them: an `mc` over an
+empty-preferring lazy pattern will NOT agree with a `finditer` count —
+an author gets the number from the protocol; `verify_rxt.py` verifies
+`mc` lines by RUNNING THE PROTOCOL LOOP in python (search-from-pos,
+the two-arm advance), **never `finditer`**; and the driver's find-all
+mode (H7) is the same loop in C, which is the loop `match_api.md` §3.1
+prints. One rule, three implementations, one cross-check (C1's case
+rows plus the E5 fixture).
+
+### 2.22 Regime membership: §4.5 item 4 REPAIRED, not replaced
+([B42] N-48, P-Q5, roadblock in their §2.11)
+
+§4.5 item 4's mechanism — the canonical pattern once as a `name`d
+definition, one block per regime whose pattern is a subroutine call —
+was MEASURED UNUSABLE for every bench pattern id: a call goes through
+PCRE2's own group-name grammar, which refuses `-`/`.`, and every id in
+all five bench sets is a hyphenated slug. The name grammar was widened
+FOR those ids; the call grammar cannot be (D26 — it is PCRE2's).
+
+**The repair is the DERIVED-IDENTIFIER CALL BINDING** (the bench's
+option 3, confirmed): a by-name call binds to a definition whose name,
+mapped through `pcrec_rxt_prefix_from_name` (`src/parse/rxt_source.c:337`
+— the ONE existing home of the `-`/`.` → `_` rule, already what
+`target = <name>` derives a prefix with), equals the call's identifier.
+`(?&cls_upto_1024)` reaches `name cls-upto-1024`.
+
+- **WHERE it happens, verified against the shipped composer**: the
+  binding is `src/parse/rxt_compose.c`'s definition-set lookup — the
+  exact-`strcmp` sites at `rxt_compose.c:169` (`def_find`) and `:176`
+  (`bound_by_name`), consumed by the re-resolution at `:690`/`:788`
+  that binds each DEFERRED by-name call. The composer resolves a file
+  reference AFTER the pattern's own groups (a call to a same-pattern
+  group never defers, `:260`), so PCRE2's in-pattern semantics are
+  untouched; the derived index is a second key on the SAME set, built
+  with the same function, consulted by the same lookup. No new pass, no
+  new namespace.
+- **The collision rule is the target-prefix rule, re-used at the second
+  consumer**: the mapping is deliberately not injective, and the refusal
+  is where that is paid for. Two definitions in scope whose mapped names
+  are equal make a call to that identifier a **refusal naming both
+  definitions and the shared identifier** — including the case where one
+  of them IS spelled as the identifier (`x_y` beside `x-y`): exact
+  spelling does NOT win, because "exact" is only the identity case of
+  the same mapping, and a silent tie-break would make the
+  non-injectivity free exactly where it bites. Nothing is refused at
+  DECLARATION time — two colliding definitions coexist while nothing
+  calls the shared identifier, just as two hyphenated definitions
+  coexist while neither is a `target =`.
+- **The three-reader rule is NOT touched, and that is the design's
+  cheapness**: the NAME grammar's three readers
+  (`rxt_source.c:298 defname_ok`, `run.sh:2015`, `verify_rxt.py:331`)
+  keep their one shared grammar unchanged — the call's spelling stays
+  PCRE2's, the definition's stays the wide grammar, and only the
+  composer's LOOKUP (leg A's semantics, single implementation) learns
+  the map. Legs B and C never resolve calls, so there is nothing for
+  them to disagree about; C1's differential covers the dump, not the
+  binding, and the binding's check is W1.3-C's family with a hyphenated
+  fixture (§9's A-group note).
+
+**§4.5 item 4 is then usable AS DESIGNED**, with its surviving caveats
+restated rather than lost: the wrapper is free exactly while the
+expectations carry no capture columns (Q6's trigger, unchanged); a
+composed block's oracle is necessarily `pcre2` (§2.9/H4) — for the
+bench a non-question, since python was never their oracle; and a plain
+call is capture-transparent, which is all a regime wrapper needs.
+
+**Why regime grouping does NOT ride §1.2's sub-block mechanism** (the
+alternative the manager asked weighed): a `regime` sub-block holding
+case lines would (a) be a CASE SCOPE, which Frank ruled out by name
+("there is no case scope") — an attribute over a group of cases is that
+ruling's own definition; (b) put case lines under indentation, forcing
+all three body readers to re-parse their most load-bearing arms
+(`run.sh`'s case dispatch) for a shape one consumer needs; and (c) buy
+nothing the repaired wrapper does not already deliver with machinery
+that SHIPPED in W1.3. The sub-block mechanism's customers are
+attribute records (provenance, variant) — bounded, non-case,
+skip-safe; case lines stay flat.
+
+### 2.23 `variant` — reshaped as a sub-block, and `kind` ([B42]
+N-39/N-40/N-41, pre-ruling f)
+
+`variant <testee>` becomes a SUB-BLOCK (§1.2) with attributes `text`,
+`kind`, `groups`, `note`, `unsupported`:
+
+```
+variant re2
+  kind syntax-only
+  text ^a{1,4}$
+  groups num=1
+  note |
+    the possessive suffix dropped; RE2 has no backtracking for it to
+    prune, so the objective (a bounded scan) is preserved.
+
+variant tre
+  unsupported no per-engine spelling preserves the objective
+```
+
+- **Exactly one of `text` / `unsupported`** — neither is a refusal
+  naming the variant; both is too. `kind`/`groups`/`note` are legal only
+  beside `text` (a declared refusal has no replacement text to
+  classify).
+- **`kind` is closed via `vocabulary kind`** when declared (§2.15) —
+  the bench's two-value enum stays the bench's vocabulary, per AR-6.
+- **`note` is the reviewer's objective-preserved sentence** — N-41's
+  third field, previously routed to `tag variant-note=…` where a
+  tag-value's no-whitespace rule made a sentence unspellable. With
+  `tag-prose` (§1.3) that route now also works for OTHER descriptive
+  keys; the variant's own note lives with the variant, one home.
+- **Why the reshape is free and right**: the W3 one-line form shipped
+  nowhere (refused by name at every pin; 0 uses in either repo), so no
+  compatibility cost exists; and revision 2's `variant` already needed a
+  SECOND line (`groups`, an un-indented continuation recognised by
+  keyword) — a one-off proto-sub-block the general mechanism replaces,
+  which is the house rule (general mechanisms, not special cases)
+  applied to this note's own earlier choice.
+- Everything r44/T-2 established stands: block-scoped, beside the
+  pattern, checked against the block's own expectations (as selected by
+  the testee's convention, §2.17), no `name`, not a target, not
+  composable. `unsupported` remains the declared, counted refusal
+  (R-BENCH-3; AR-3).
+
+### 2.24 `--list-source` at W23: columns, SECTIONS, and what the dump
+VALIDATES ([B42] N-52, pre-ruling g)
+
+The dump is THE SEAM, and the bench loader reads ONLY it (their D2) —
+so everything W23 adds must come out of it, case lines included, or the
+bench writes the second parser the seam exists to prevent.
+
+**Appended columns** (table_contract.md: append-only, consumers resolve
+by NAME): on pattern rows `tags` (accumulated, escaped), `oracle`,
+`esc` (§2.19); on config rows `testee`, `options` (accumulated),
+`capable` (accumulated). New head ROW kinds (the existing "`kind`
+carries the declaration name" rule): `vocabulary` (name = the key,
+value = the escaped list), `configs` (value = `build`/`describe`),
+`include`, `oracle`, `tag`, `use`.
+
+**Three named SECTIONS, emitted UNCONDITIONALLY when non-empty**, under
+`docs/spec/table_contract.md`'s `#section` mechanism — the trigger
+`rxt_format.md` itself named ("a data block whose rows cannot be
+columns of this table under any reading") is met by `provenance`, and
+the same argument covers the other two:
+
+- `#section provenance` — one row per provenance block: `line`,
+  `block_line`, `block_name`, then the nine fields as columns, prose
+  escaped.
+- `#section variants` — one row per variant: `line`, `block_line`,
+  `block_name`, `testee`, `kind`, `text`, `groups`, `note`,
+  `unsupported`.
+- `#section cases` — **one row per case line, and this is the biggest
+  single extension**: `line`, `block_line`, `block_name`, `kind`
+  (`m`/`n`/`ms`/`ns`/`mc`/`gu`/`g`/`gp`), `under`, `startpos`,
+  `subject_form` (`inline`/`file`), `subject` (escaped text or path),
+  `subject_id`, `sha256`, `start`, `end`, `count`, `giveup`, `slot`,
+  `route` (the positional `frames-buffer=` state the case runs under —
+  the dump is complete or it is not the seam). Today the dump has no
+  case column AT ALL, and the head parser's own comment says it reads
+  none of their values; under Option A the expectations ARE the set's
+  truth, so they must be readable at the seam.
+
+**Emission is unconditional, not flagged and not content-conditional**,
+and the compatibility story is stated rather than hoped: a section is
+emitted only when it has rows, so a file using no W23 production emits
+NO `#section` line and its stream differs from today's ONLY in the
+header row's appended columns — which is `table_contract.md`'s own
+compatible evolution, resolved by name. An existing corpus file's dump
+therefore GROWS a `cases` section (its `m`/`n` lines), which moves the
+`tests/rxtsource` pinned fixtures (re-pinned in the same change, the
+normal ritual) and every name-resolving consumer not at all. A flagged
+or content-conditional cases section was considered and declined: two
+shapes of one dump is two consumer populations, and a section that
+appears only when some OTHER production is present is a
+population-nobody-counts trap (K35). The cost is size (a corpus file's
+dump grows ~10x in rows); the dump's one harness call sites are
+head-bearing files only, so `make test` pays nothing today.
+
+**The VALIDATES vs RECOGNISES table** (their D4, pre-ruled) becomes a
+NORMATIVE spec section (§3.4 SW11), production by production. The
+substance: the dump VALIDATES everything it emits — head grammar,
+block directives, sub-block completeness (provenance's required
+fields, variant's exactly-one rule), vocabulary membership, case-line
+syntax including `as`/`sha256` SPELLINGS and the subject-id binding
+rules — and it does NOT (a) read any subject file (the `sha256`
+CONTENT check belongs to whatever reads the subject, §2.18), (b)
+compile any pattern (pattern TEXT is never validated here), or (c)
+resolve configs (AS WRITTEN, unchanged; `--resolved` stays named and
+unbuilt). The bench's measured observation that a case line's refused
+`@file:` passed the dump silently is thereby retired — case values are
+read, and an ill-formed one is a hard error naming its line.
 
 ---
 
