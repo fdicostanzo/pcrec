@@ -183,7 +183,7 @@ not restate them as new productions (their M1/M5).
 and refusal probes against `build/pcrec` at b9572c66, read-only):
 
 - The seventeen NEW first tokens this revision adds (`vocabulary`,
-  `provenance`, `pattern-esc`, `capable`, `under`, `configs`, and the
+  `provenance`, `pattern-esc`, `provides`, `under`, `configs`, and the
   eleven sub-block attribute spellings) occur **0** times in first-token
   position across the corpus — §1.1's 32-keyword census extended, same
   method, same result. The sub-block attribute tokens additionally never
@@ -220,7 +220,7 @@ were BUILT already and are untouched):
 | **N-9, N-45, N-48** | `tag` lands in W23 as designed (§4.5's mapping); N-48's regime mechanism is REPAIRED, not replaced — §4.5 item 4 rewritten on the derived-identifier call binding (§2.22) |
 | **N-10, N-20, N-21** | §2.15 `vocabulary` — per-key declared value sets, parser-enforced, undeclared keys stay free (compat). Roadblock #2 closed |
 | **N-11..N-19** | §2.14 `provenance` — a body SUB-BLOCK (§1.2's new mechanism), nine fields, four required, `adaptation` required iff `fidelity != verbatim`, `authored`'s agreement rule. Roadblock #3 closed |
-| **N-22, N-23** | §2.16 `capable` — per-config, repeatable, accumulating, **fail-closed** (absent = nothing satisfied); flagged to Frank with §2.20 (P-Q4's ratification) |
+| **N-22, N-23** | §2.16 `provides` (spelled `capable` in their sketch; §2.26 item 4) — per-config, repeatable, accumulating, **fail-closed** (absent = nothing satisfied); flagged to Frank with §2.20 (P-Q4's ratification) |
 | **N-24, N-28** | BUILT / as-designed; B7's raw-bytes promise gets its first verification at the delivery (§9) |
 | **N-25** | `@file:` lands in W23 as designed (§2.8) |
 | **N-26, N-27** | §2.18 — `@file:` gains `as <id>` (per-file subject namespace, functional binding, conflicts refused) and OPTIONAL `sha256 <hex64>` checked by whatever READS the subject. §2.8's no-hash paragraph is re-scoped: it was a default for committed subjects, not a principle (P-Q8). Roadblock #4 closed |
@@ -997,7 +997,7 @@ consumer is real and PARKED on it.
 | wave | productions | status / consumer |
 |---|---|---|
 | **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `export`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget`/`from`; AST composition with §1.5's extensions, the delivering calls and `--emit-composed`; `rx_info.name`/`nentries`; H11's target build path | **BUILT** — [DD-13b.W1.1] (2026-08-30), .2 (2026-08-31), .3 (2026-09-03). Owed, NOT blockers: **W1.3.1** (run.sh's composed-block path, `w13_runsh_composed_path.patch`) and **W1.4** (the in-pattern delivery follow-ons). W23 interacts with neither — no W23 production touches the composer except §2.22's derived-identifier LOOKUP, which is additive |
-| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`, `config … testee`/`option`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `capable`, `under`, `configs describe`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3") |
+| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`, `config … testee`/`option`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `provides`, `under`, `configs describe`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3") |
 
 **What remains after W23, named so the wave table ends honestly:** the
 `gap` data-block member (unearned, D77), `--list-source --resolved`
@@ -1929,13 +1929,46 @@ block's `analysis freq <name>` line names a data block and nothing else,
 so there is no ambiguity to resolve and no reason to make `config prod`
 and `freq prod` collide.
 
-**Provenance is required** — `exemplar`, `bytes`, `sha256`, `analyzer`,
-`date` — because the exemplar is absent by design (proprietary, secret,
-or too large). The table can then be re-derived when the exemplar is at
-hand and **reads honestly when it is not**. A byte histogram is 256
-counts and effectively non-reversible, so committing it leaks
-essentially nothing; committing it *without* provenance would be the
-population-nobody-counted hazard one file over.
+**Provenance is required**, because the exemplar is absent by design
+(proprietary, secret, or too large). The table can then be re-derived
+when the exemplar is at hand and **reads honestly when it is not**. A
+byte histogram is 256 counts and effectively non-reversible, so
+committing it leaks essentially nothing; committing it *without*
+provenance would be the population-nobody-counted hazard one file over.
+
+**HOW it is required changed at revision 3.1 (§2.26 item 10): it is the
+SAME `provenance` sub-block a pattern block takes**, not five one-off
+fields of this block's own. Revision 3 had this production carrying
+`exemplar`/`bytes`/`sha256`/`analyzer`/`date` while §2.14 carried
+`source`/`url`/`ref`/`license`/`retrieved`/`fidelity`/… — **two
+vocabularies for one idea**, with `exemplar`/`source` and `date`/
+`retrieved` naming the same facts twice. That is precisely the
+"inconsistencies would cause eventual confusion" the
+internal-consistency ruling names, it was free to fix (this production
+has never shipped and has 0 uses in either repo), and §1.2.1's
+attachment rule is what makes it expressible — a data block admits
+children, one of which itself admits children, with no new mechanism.
+
+So a `freq` block's body is `question`, `reader`, `analyzer`, a
+`provenance` child and its `row` lines. The mapping:
+
+| revision 3 field | revision 3.1 |
+|---|---|
+| `exemplar <name>` | `provenance` → `source <name>` — the exemplar IS the source, named as the user wishes to name it (Frank's own 2026-08-29 wording) |
+| `date <iso>` | `provenance` → `retrieved <iso>` |
+| `bytes <n>`, `sha256 <hex>` | `provenance` → `bytes`/`sha256`, the two integrity fields, now available to a pattern block's provenance too |
+| `analyzer <text>` | **stays on the data block.** It names the TOOL that produced the table, not where the data came from — a different fact, and folding it into provenance would be the unification overreaching |
+
+**The REQUIRED SET differs by parent, and that is a schema row rather
+than a second production** (§2.25): under a pattern block
+`{source, license, retrieved, fidelity}`; under a data block
+`{source, retrieved, bytes, sha256}`. A `license` is not required of an
+exemplar (a user's own log file has none to state) and `fidelity` is
+meaningless for a byte histogram (nothing was adapted). This is the
+schema's first real question and it answers it without a carve-out —
+which is the argument for having one.
+
+§6.4's worked findings file moves with this; nothing else does.
 
 **`gap` — the illustrated second member — is NOT specified here.** Frank
 named it as an illustration ("I'm just illustrating that there may be
@@ -2157,19 +2190,29 @@ optional emission unit ([EMIT-SET] names it as one).
 
 ### 2.14 `provenance` — per-pattern origin, structural ([B42] N-11..N-19)
 
-A body SUB-BLOCK (§1.2), at most ONE per pattern block — a second is
-**refused by name**, never last-wins (the shape STEP 0's
+A kind that ADMITS CHILDREN (§1.2.6), at most ONE per parent — a second
+is **refused by name**, never last-wins (the shape STEP 0's
 duplicate-`description` refusal closes one production over; the bench's
-MEASURED M5 is why this rule is stated rather than assumed). The
-precedent is the `freq` data block's own required-provenance discipline
-(§2.10): a wild pattern's source is absent from the repo by exactly the
-logic an exemplar is, so its origin is REQUIRED fields, not prose.
+MEASURED M5 is why this rule is stated rather than assumed).
+
+**REVISION 3.1: this is ONE record shape at TWO parents**, a pattern
+block and a `freq` data block. Revision 3 noted the `freq` block's
+required-provenance discipline as the PRECEDENT for this section; the
+audit (§2.26 item 10) found the two had grown different field names for
+the same facts and unified them — a wild pattern's source is absent
+from the repo by exactly the logic an exemplar is, which is an argument
+for one record, not for two that rhyme. What differs by parent is the
+REQUIRED SUBSET, and that is a schema row (§2.25), not a second
+production.
 
 Rules, each parser-enforced:
 
-1. `source`, `licence`, `retrieved`, `fidelity` are **REQUIRED**; a
-   `provenance` block missing one is refused naming the missing line —
-   the `freq` block's `question`/`reader` rule, reused.
+1. **REQUIRED fields are declared per parent.** Under a pattern block:
+   `source`, `license`, `retrieved`, `fidelity`. Under a data block:
+   `source`, `retrieved`, `bytes`, `sha256` (§2.10 gives the reason
+   `license`/`fidelity` are not required of an exemplar). A block
+   missing one is refused naming the missing line — the `freq` block's
+   `question`/`reader` rule, reused and now shared.
 2. `url` and `ref` are **REQUIRED unless `source` is the reserved slug
    `authored`**, and an `authored` block that writes either is refused:
    the slug and the fields must agree or `authored` stops meaning
@@ -2178,17 +2221,29 @@ Rules, each parser-enforced:
    one conditional the format enforces, and the whole value of making
    the record structural: a mechanically-changed pattern with no stated
    change is the failure a reviewer cannot catch by reading.
-4. `fidelity`'s three values are CLOSED **in the grammar**, not via
-   `vocabulary`: the conditional in rule 3 requires the parser to know
-   them, so a declaration mechanism would be a second home for a fact
-   the parser already owns.
-5. `attribution` exists as a field; whether a licence demands one is a
+4. `fidelity`'s three values are CLOSED **by the format's own schema**,
+   not via `vocabulary`: the conditional in rule 3 requires the parser
+   to know them, so a file-declared set would be a second home for a
+   fact the parser already owns. At revision 3.1 that is no longer a
+   distinction between "grammar" and "declaration" — both are schema
+   rows — and the real statement is the `source` column §2.25 gives
+   every row: `fidelity`'s closed set is `source: format`, a `tag`
+   key's is `source: file`. Same mechanism, two origins, one table.
+5. `attribution` exists as a field; whether a license demands one is a
    POLICY the format does not know (SPDX is an open set) — the consuming
    project's gate enforces it. The field must exist so a CC BY-SA
-   pattern has somewhere to put what its licence requires.
-6. Prose fields (`licence-note`, `adaptation`, `attribution`) take
+   pattern has somewhere to put what its license requires.
+6. Prose fields (`license-note`, `adaptation`, `attribution`) take
    `prose-value` — one line, or a `|` scalar indented deeper than the
-   attribute line (§1.2). ONE prose mechanism, everywhere.
+   attribute line (§1.2.5). ONE prose mechanism, everywhere — and at
+   revision 3.1 that sentence is finally true without exception, since
+   §1.2.5 retired the block-scope `description` carve-out that was the
+   one place it was not.
+7. **`licence`/`licence-note` are spelled `license`/`license-note`**
+   (§2.26 item 10): the VALUE is an SPDX identifier and SPDX's own key
+   is `License`, so the British spelling put a gratuitous translation
+   step on the one field that crosses an ecosystem boundary. Free: 0
+   uses anywhere.
 
 What pcrec's own harness gets (the both-repos test §2's every
 production passes): the corpus's imported material — the D27 corpora's
@@ -2204,12 +2259,34 @@ consume the indented body without reading it); pcrec VALIDATES it —
 
 ### 2.15 `vocabulary` — file-declared closed sets ([B42] N-10/N-21, pre-ruled)
 
-`vocabulary <key> <v1> <v2> …`, head-only, wrapping by the head's own
-indentation-continuation. Declares that `tag <key>=<value>` (and every
-other production the spec names as vocabulary-checked: `under`'s
-convention, `variant`'s `kind`, `capable`'s values) may only take a
-listed value; a violating value is **refused by name**, naming the key,
-the offending value and the declared set.
+`vocabulary <key> <v1> <v2> …`, file scope, wrapping by S1 attachment
+(§1.2.1) like every other continuation. Declares that
+`tag <key>=<value>` (and every other production the spec names as
+vocabulary-checked: `under`'s convention, `variant`'s `kind`,
+`provides`' values) may only take a listed value; a violating value is
+**refused by name**, naming the key, the offending value and the
+declared set.
+
+**REVISION 3.1 NESTS THIS, AND IT IS THE PRODUCTION THE SCHEMA RULING
+WAS ALREADY HALF-ANSWERED BY.** Frank's consequence 3 names it
+directly: *"The bench's `vocabulary` production is the file-declared
+half; the format-level half is pcrec's own rules, stated once and
+enforced mechanically."* So `vocabulary` is not a mechanism beside
+§2.25's schema — it is **one row-source within it**. Concretely
+(§2.25): the schema table carries a `source` column, `format` for rows
+pcrec declares and `file` for rows a `vocabulary` line declares; the
+`closed <set>` constraint is ONE constraint kind whose members may come
+from either; `--list-schema` prints both, with `source` distinguishing
+them; and the enforcement path is one walk, not a format check plus a
+vocabulary check. A reader asking "what values may this key take?" gets
+one answer from one place regardless of who declared it.
+
+That nesting is what keeps the two from drifting into two enforcement
+orders — and it is why `fidelity`'s closed set (§2.14 rule 4) needs no
+argument about why it is "in the grammar rather than via `vocabulary`":
+both are `closed` rows, they differ in `source`, and the parser's
+knowledge of `fidelity`'s three values is a consequence of the row
+being `source: format` rather than a separate fact.
 
 - **A key with NO `vocabulary` line keeps free-vocabulary behaviour
   exactly** — the compatibility rule that makes this purely additive,
@@ -2237,7 +2314,20 @@ bench's own stated reason (a dedicated production would make the
 capability model a FORMAT concept, which AR-6 forbids); with
 `vocabulary`, the closed-set discipline reaches every key at once.
 
-### 2.16 `capable` — what a config's engine satisfies ([B42] N-22/N-23)
+### 2.16 `provides` — what a config's engine satisfies ([B42] N-22/N-23)
+
+**SPELLED `provides` at revision 3.1; the bench's sketch and revision 3
+said `capable`** (§2.26 item 4). The semantics below are unchanged, and
+so is W23-F2's question to Frank, which is about WHERE the capability
+model lives and not what the line is called (syntax is the manager's
+under the 14:5x delegation). The reason for the move: the pattern side
+of this relation is `tag requires=…`, and `requires` / `provides` is
+one relation read from its two ends — the pairing every neighbouring
+ecosystem uses (SPDX, pkg-config, package manifests) — where
+`requires` / `capable` is a verb beside an adjective and leaves a
+reader to work out that they are halves of the same thing. Free: a
+`config` body is a W1 production with **0 occurrences in the corpus**,
+and `provides` is 0 in every context (§0.7's 52-candidate census).
 
 A `config`-body line, repeatable and accumulating like `tag`: the
 vocabulary values this config SATISFIES. **Absent means NOTHING is
@@ -2245,21 +2335,21 @@ satisfied — fail-closed, deliberately**, so a new adapter cannot claim
 capabilities by omission (the bench's own rule, adopted).
 
 - **The key name `requires` is RESERVED by one spec sentence**: when a
-  `vocabulary requires …` declaration exists, every `capable` value must
+  `vocabulary requires …` declaration exists, every `provides` value must
   be a member of it (refused naming value and set); with no such
-  declaration, `capable` values are free. The format thereby knows ONE
+  declaration, `provides` values are free. The format thereby knows ONE
   NAME — that the key `requires` is where capability tags live — and
   still nothing about what any tag means. The precedent for reserving a
   name is `# pcre2-only` and the `oracle` engine names; AR-6 is about
   MEANING, not spelling.
 - The pre-compile policy — `REQUIRES(pattern) ⊄ capabilities(config) ⇒
   unsupported-by-declaration`, decided before any compile — is the
-  CONSUMER's rule. The format carries the declaration (`capable`), the
+  CONSUMER's rule. The format carries the declaration (`provides`), the
   per-pattern requirement (`tag requires=…`) and the outcome production
   (`variant <testee>` + `unsupported`, §2.23); the spec states the
   intended reading so two consumers cannot invent two policies, and
   R-BENCH-3/AR-3's counted-never-silent rule covers the outcome.
-- pcrec's OWN harness ignores `capable` operationally (its one testee is
+- pcrec's OWN harness ignores `provides` operationally (its one testee is
   pcrec); the dump carries it (§2.24), which is what a reader of the
   file needs — the reason a pattern has no result for a testee lives in
   the same file as the pattern (§8 P-Q4's argument for IN-the-format).
@@ -2599,7 +2689,7 @@ bench writes the second parser the seam exists to prevent.
 **Appended columns** (table_contract.md: append-only, consumers resolve
 by NAME): on pattern rows `tags` (accumulated, escaped), `oracle`,
 `esc` (§2.19); on config rows `testee`, `options` (accumulated),
-`capable` (accumulated). New head ROW kinds (the existing "`kind`
+`provides` (accumulated). New head ROW kinds (the existing "`kind`
 carries the declaration name" rule): `vocabulary` (name = the key,
 value = the escaped list), `configs` (value = `build`/`describe`),
 `include`, `oracle`, `tag`, `use`.
@@ -2796,7 +2886,7 @@ delivery; these are the [B42] additions:
 | SW1 | `docs/spec/rxt_format.md` | `pattern-esc`: the second block starter, the seven-escape vocabulary shared with subjects, one-spelling-per-block, the `\x00` refusal naming K9 and its lifting trigger (§2.19); the CLI decode flag cross-reference | W23 |
 | SW2 | `docs/spec/rxt_format.md` | the LEXICAL RULES section: the body SUB-BLOCK mechanism — declared kinds (`provenance`, `variant`), indentation-precedes-dispatch, blank-line termination, the bare-indented-line refusal UNCHANGED, `prose-value` legal inside a sub-block; the "only asymmetry" sentence rewritten to the narrow relaxation (§1.2) | W23 |
 | SW3 | `docs/spec/rxt_format.md` | `provenance`: the nine fields, the four required, the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-block (§2.14) | W23 |
-| SW4 | `docs/spec/rxt_format.md` | `vocabulary` + `tag-prose` + `capable`: declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind, `capable`), the RESERVED-KEY sentence for `requires`, fail-closed `capable` (§2.15, §2.16) | W23 |
+| SW4 | `docs/spec/rxt_format.md` | `vocabulary` + `tag-prose` + `provides`: declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind, `provides`), the RESERVED-KEY sentence for `requires`, fail-closed `provides`, and `vocabulary`'s nesting as the FILE-declared rows of §2.25's schema (§2.15, §2.16) | W23 |
 | SW5 | `docs/spec/rxt_format.md` | `configs build`/`describe`: the four describe rules, the `target … with` refusal, `use` inert-and-counted, entry-file scope — and the PERMANENCE sentence for a target-less config-less file (§2.20) | W23 |
 | SW6 | `docs/spec/rxt_format.md` | the subject subsection (S4's row extended): `as <id>`/`sha256 <hex64>`, the per-file id namespace and functional-binding rules, WHO checks the hash (§2.18) | W23 |
 | SW7 | `docs/spec/rxt_format.md` + `docs/spec/match_api.md` | `mc` and its COUNTING RULE — one normative paragraph citing `match_api.md` §3.1 as the rule's single home, the empty-advance-from-reported-start clause, the finditer-divergence class named; match_api.md §3.1 gains one sentence naming `mc` as a consumer of the protocol | W23 |
@@ -3053,7 +3143,7 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
 | an `expectations.tsv` row | `m @file:"subjects/s-000.bin" as s-000 sha256 <hex64> 234 258` / `n @file:"…" as …` / `mc @file:"…" as … <n>` — the id and hash per §2.18, so the expectation key `(pattern, subject-id, regime)` survives the sidecar's death |
 | **[B42]** the capability set's provenance record (their §4.1) | the `provenance` sub-block, field for field (§2.14) |
 | **[B42]** `REQUIRES` tags + the closed vocabulary (their §5.1) | `tag requires=…` + `vocabulary requires …` (§2.15) |
-| **[B42]** per-config capabilities (their §5.3) | `capable` lines in the testee's `config` (§2.16, Frank ratifies) |
+| **[B42]** per-config capabilities (their §5.3) | `provides` lines in the testee's `config` (§2.16, Frank ratifies) |
 | **[B42]** the second-convention expectation (their family 11) | `under <convention> <case-line>` (§2.17) |
 | **[B42]** `variant_kind` / `objective_preserved` / `capture_map` | the variant sub-block's `kind` / `note` / `groups` (§2.23) |
 | **[B42]** the testee-roster scoping hazard (D93) | `configs describe` (§2.20, Frank ratifies) |
@@ -3419,7 +3509,7 @@ and no tool reads it as a schema.
 **REPAIRED at revision 3** ([B42]): the file now carries the six W23
 mechanisms its first version could not — `configs describe` (without
 which its own `config pcrec` block would PIN the bench's testee matrix
-under D93, roadblock #6), `vocabulary`, `capable`, subject ids + hashes,
+under D93, roadblock #6), `vocabulary`, `provides`, subject ids + hashes,
 a `provenance` sub-block, the variant sub-block, and an `under` case.
 
 ```
@@ -3449,12 +3539,12 @@ config pcrec
   pcrec --features all
 config pcre2
   testee pcre2/10.46
-  capable backrefs lookaround atomic-possessive recursion conditionals
-  capable k-reset control-verbs unicode-properties named-groups
-  capable free-spacing callouts span-reporting captures true-end-anchor
+  provides backrefs lookaround atomic-possessive recursion conditionals
+  provides k-reset control-verbs unicode-properties named-groups
+  provides free-spacing callouts span-reporting captures true-end-anchor
 config re2
   testee re2/2024-07-02
-  capable unicode-properties named-groups captures
+  provides unicode-properties named-groups captures
 use pcrec, pcre2, re2
 
 include "gen/cases_search_short.rxt"    # 11 patterns x 112 subjects, generated
@@ -3473,7 +3563,7 @@ tag regime=search_short tier=base hazard=none size=medium
 tag convention=perl-leftmost-first role=member
 provenance
   source    authored
-  licence   CC0-1.0
+  license   CC0-1.0
   retrieved 2026-09-12
   fidelity  inspired
   adaptation |
@@ -3516,7 +3606,7 @@ reads the roster off `--list-source` and applies it through its own
 adapters — whose command lines therefore always win, closing the D93
 collision by construction (§2.20). The `vocabulary` lines close six tag
 keys (a typo in `hazard=` is now a refusal naming the set; the
-`requires` line wraps by head continuation); the two `capable` stanzas
+`requires` line wraps by head continuation); the two `provides` stanzas
 are checked against `vocabulary requires` and are what the bench's
 pre-compile policy reads — `re2`'s short list is why a
 `tag requires=backrefs` pattern would produce
@@ -3587,11 +3677,12 @@ freq loglines
   description Byte histogram of one month of production nginx access logs.
   question which byte is rarest in this exemplar
   reader OPT-A rarest-byte candidate-scan selection
-  exemplar prod-web-01 nginx access log, 2026-08 (not committed)
-  bytes 4187336614
-  sha256 9f2c0b1e7a4d38c5be6109f7d2a4c83b5e0d7f61a9c2b48e35d7061fa8c3b92d
   analyzer scripts/exemplar_freq.py 0.1
-  date 2026-08-29
+  provenance
+    source    prod-web-01 nginx access log, 2026-08 (not committed)
+    retrieved 2026-08-29
+    bytes     4187336614
+    sha256    9f2c0b1e7a4d38c5be6109f7d2a4c83b5e0d7f61a9c2b48e35d7061fa8c3b92d
   row 0    412 0 0 0 0 0 0 0 0 118344 4192011 0 0 91 0 0
   row 16   0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   row 32   681240119 3341 24 88190 4412 33 991 62204 41180 41180 8823 6 2201947 774310 2119883 1884420
@@ -3611,9 +3702,14 @@ config prod
 target email_prod = email with prod
 ```
 
-**Hand-trace.** The findings file's head is one data block, its body
-lines indented under it (§1.2); the file's body is empty — a legal file
-with zero pattern blocks, which the grammar admits
+**Hand-trace.** The findings file's head is one data block, its lines
+attached under it by S1 (§1.2.1) — **and the `provenance` record is
+attached one level deeper, which is the same rule applied twice and no
+new mechanism at all**; that two-level nesting is what the revision-3.1
+unification buys (§2.10, §2.26 item 10), and it is the shape a reader
+already knows from a pattern block's own `provenance`. The file's body
+is empty — a legal file with zero pattern blocks, which the grammar
+admits
 (`body = { pattern-block }`, possibly none) and which is the point: this
 is data, not tests. `question` and `reader` are required, which is
 §2.10's membership rule made structural; `description` is the field a
@@ -3795,7 +3891,7 @@ closes the bench's roadblock #6 by construction and adds a contract
 sentence (a target-less, config-less file parses and builds nothing,
 PERMANENTLY — their N-43). Recommended: ratify as designed.
 
-**W23-F2 — `capable` lives IN the format (§2.16).** The manager
+**W23-F2 — `provides` (revision 3's `capable`) lives IN the format (§2.16).** The manager
 recommends IN (a `config … testee` already carries engine knowledge;
 the reason a pattern has no result for a testee belongs in the file a
 reader has); fail-closed; the one reserved key name `requires`. The
@@ -3860,7 +3956,8 @@ empty match found beyond the scan position; `finditer` over-counts both
 adapter owes one edit; their note's own fallback ("the harness's rule,
 whatever it is — say that") is exactly what the spec paragraph does.
 
-**P-Q4 — does `capable` live in the format?** YES (§2.16, W23-F2 to
+**P-Q4 — does the capability declaration live in the format?** YES —
+as `provides` (§2.16, W23-F2 to
 Frank). The manager's recommendation confirmed on the bench's own
 counter-argument being weighed: a capability list IS engine knowledge —
 but `config … testee` already carries engine knowledge (a version
