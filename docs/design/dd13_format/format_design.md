@@ -575,6 +575,22 @@ floor at r44" rather than as facts about today.
 > sides shrink together and the comparison stays true on a truncated
 > corpus. Only the floor sees that, which is why it is a separate pin
 > and not a derived one.
+>
+> **AND "EXPECTATION LINE" IS DEFINED HERE, because the next person
+> cannot re-derive 28,943 without it (3.3, r57 ROUND 2 R2-D).** An
+> expectation line is a line whose FIRST TOKEN is one of **eight**
+> kinds — `m`, `n`, `ms`, `ns`, `g`, `gp`, `gu`, `perr` — counted over
+> `find tests -name '*.rxt'`; that is the awk at
+> `tests/rxtsource/run_rxtsource_tests.sh:281-285`, which is the pass
+> this floor is compared against. **`perr` IS INCLUDED, and it is the
+> whole of the ambiguity**: `perr` is a BLOCK field rather than a case
+> row — the same script's own reconciliation (`:607`) separates it out
+> for exactly that reason — so a reader who reasonably excludes it
+> counts **28,488** and reports a 455-line drift where nothing has
+> moved. Both numbers are re-derived at this revision. The eight-kind
+> list is load-bearing too: the natural `m/n/g/gp/gu/perr` reading
+> lands at **24,016**, because `ms` and `ns` are 4,927 lines nobody
+> remembers are in it.
 
 **Sabotage rows for INV-COMPAT** (each must turn the corresponding check
 red, and the check that must catch it is named — a row no check catches is
@@ -1346,14 +1362,20 @@ tag-prose   = tag-key , "=" , quoted-subject ;  (* W23: the seven escapes, ONE
                  vocabulary — a value whose first byte after '=' is '"' is the
                  quoted form and must terminate; whitespace legal inside *)
 prose-value = rest-of-line                        (* one-line form *)
-            | "|" , eol , opaque-region ;  (* block scalar; §1.2.1 S3 *)
-opaque-region = ? every line until the first line indented no more than
-                the opener, or the first BLANK line — S3. Its interior is
-                BYTES: not line-classified (an indented '#' is prose), not
-                attached (ragged depth is legal), not dispatched. The EXTENT
-                is the only structural fact; the decode is `prose-value`'s.
+            | "|" , { " " | tab } , eol , opaque-region ;
+                 (* block scalar; §1.2.1 S3. The trailing whitespace is
+                    TRIMMED before the test — rxt_source.c:1222-1226,
+                    r46sem finding 14, and leg C's own v.strip() == '|' *)
+opaque-region = ? every line until the FIRST of: a CONTENT line indented no
+                more than the opener, a BLANK (empty) line, or a column-1
+                COMMENT line — S3. A WHITESPACE-ONLY line ends nothing and is
+                bytes. Its interior is BYTES: not line-classified (an
+                indented '#' is prose), not attached (ragged depth is legal),
+                not dispatched. The EXTENT is the only structural fact; the
+                decode is `prose-value`'s.
                 A kind may open one iff its schema `value` is `prose` and
-                its `children` is `prose` — structure-layer parameter 2 ? ;
+                its `children` is `prose` — structure-layer parameter 2,
+                read as a PAIR (§1.2.1) ? ;
 INDENT      = ? one or more SPACES at the start of the line. A leading TAB
                 does not open an indent and is refused by name
                 (§1.6.1a narrowing (4)) ? ;
@@ -4115,7 +4137,7 @@ One row per (scope, line-kind):
 | `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `qualified-line`, … |
 | `opens_group` | **structure-layer parameter 1** (§1.2.1 S2). True for `pattern` and `pattern-esc` and nothing else |
 | `children` | `none`, `prose`, or the child scope this kind admits |
-| `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` |
+| `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` — **and its values for the settings kinds are stated below (3.3), not left to the implementer** |
 | `constraints` | zero or more from §2.25.3's closed vocabulary |
 | `source` | `format` (pcrec declares it) or `file` (a `vocabulary` line declares it, §2.15) |
 | `validated_by` | `pcrec`, `all-readers`, or `none` + a reason (§2.24) |
@@ -4182,10 +4204,61 @@ remembered. A three-valued column costs one enum member.
 
 `opens_group`, `value` (for `prose`), `children` and `scope` are what a
 generic reader needs; everything else is validity. **The structure
-layer reads exactly two of them** — `opens_group`, and `value = prose`
+layer reads exactly THREE of them as TWO parameters** — `opens_group`
+is parameter 1, and `value`+`children` READ AS A PAIR are parameter 2
 — and §1.2.1's parameter table is the normative statement of which.
+**(3.3, r57 ROUND 2 R2-F4: revision 3.2 said "exactly two … `value =
+prose`" in this very paragraph while the reconciliation four paragraphs
+above said the PAIR, and §1.2.1/§1.2.2 each picked one. The PAIR is the
+answer, on S-R5's detectability: with `value` alone read, flipping a
+row's `children` from `prose` to `none` changes nothing observable —
+the region still opens and its lines never reach a validity check — so
+a normative column would have no detector at all.)**
 That they are columns of one table rather than separate mechanisms is
 the two-layer split made concrete.
+
+**THE CARDINALITY VALUES FOR THE SETTINGS KINDS, DECIDED HERE** (NEW at
+3.3, r57 ROUND 2 R2-C, a SHOULD the manager escalated because leaving
+it open makes it an accept→reject taken by accident). `cardinality` is
+normative on every row, and six kinds silently LAST-WIN on the shipped
+binary today while a seventh in the same family refuses — so any value
+H16 writes is a compatibility decision, and writing none is the worst
+of the three available outcomes.
+
+| kind | scope(s) | shipped today | `cardinality` at W23 | corpus + bench population of the refusal |
+|---|---|---|---|---|
+| `name` | block | silent last-wins | `at-most-one` | 0 |
+| `engine` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `encoding` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `features` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `flags` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `description` | file, block | silent last-wins (block) | `at-most-one` | 0 — **already landed by STEP 0**, §1.6.1a (11) |
+| `export` | block | **already REFUSES** (`rxt_source.c:1184`) | `at-most-one` | 0 — no change |
+| `budget` | block, `config` | silent last-wins PER FIELD | **`accumulate`** over the field set `{steps, frames}`, with a repeated FIELD refused | 1 block repeats the LINE legitimately; 0 repeat a FIELD |
+
+Three things about that table are worth more than the values in it.
+
+**(a) `budget` is the row the measurement changed.** R2-C's proposal
+grouped it with the scalars; `tests/harness/giveup.rxt:19-23` writes
+`budget steps=50` and `budget frames=4096` in one block on purpose, and
+`parse_setting` (`rxt_source.c:615-620`) routes the two to separate
+slots. `at-most-one` would have refused a shipped corpus file. So the
+cardinality attaches to the VALUE SPACE the kind writes into, not to
+its spelling, and `budget`'s refusal is at the field.
+
+**(b) `flags` was not on the panel's list and is on this one.** R2-C
+named five; measuring the shipped arms found `flags` in identical
+state. Leaving it as the one scalar settings kind that still last-wins
+would reproduce the inconsistency this decision exists to remove, one
+kind smaller — and the point of a `cardinality` COLUMN over six
+hand-written refusals is precisely that the answer is uniform where the
+kinds are uniform.
+
+**(c) The precedent is internal, twice.** `export` refuses a duplicate
+today and STEP 0 made `description` do the same; the five remaining
+last-wins kinds are the outliers, not the rule. §1.6.1a rows (8) and
+(9) carry the population, the forced-vs-chosen verdict and the spec
+sentence, per §1.6.4 case 4.
 
 #### 2.25.3 The constraint vocabulary, and its MEMBERSHIP RULE
 
@@ -4450,7 +4523,7 @@ delivery), H1/H2-family/H11 are BUILT with W1, and four rows join:
 | H13 | **`pattern-esc`**: the pass-through arm + the CLI decode flag; `verify_rxt.py` decodes python-side; `\x00`'s K9 refusal surfaces through pcrec (§2.19) | W23 | `run.sh`, `verify_rxt.py`, `cli/` |
 | H14 | **`under` as a counted, labelled skip** in `run.sh` and `verify_rxt.py` (scoring is the consumer's, §2.17); `mc` verified by the PROTOCOL loop in python, never `finditer` (§2.21) | W23 | `run.sh`, `verify_rxt.py` |
 | H15 | **subject ids + hashes**: the per-file binding table, the read-time sha256 refusal on the driver path (§2.18); `configs describe`'s one-cell rule and its summary line (§2.20) | W23 | `run.sh`, `driver.c` |
-| H16 | **THE SCHEMA TABLE AND ITS SURFACE** (§2.25), NEW at revision 3.1: the `.def` declaration compiled into leg A, leg A's dispatch re-shaped as a walk over it with ONE exhaustive `default:`-less switch over the constraint enum, `--list-schema`, and the D4 table RENDERED from `validated_by` rather than hand-written. **It touches leg A only, deliberately** (§2.25.4): legs B and C stay independent implementations, because a generated leg B would share a source with what it controls — the check-design failure this tree has recorded most often | W23 | `src/parse/` (`rxt_schema.def`, `rxt_source.c`), `cli/`, the spec renderer |
+| H16 | **THE SCHEMA TABLE AND ITS SURFACE** (§2.25), NEW at revision 3.1: the `.def` declaration compiled into leg A, leg A's dispatch re-shaped as a walk over it with ONE exhaustive `default:`-less switch over the constraint enum, `--list-schema`, and the D4 table RENDERED from `validated_by` rather than hand-written. **It touches leg A only, deliberately** (§2.25.4): legs B and C stay independent implementations, because a generated leg B would share a source with what it controls — the check-design failure this tree has recorded most often. **H16 CARRIES THE CARDINALITY DECISION EXPLICITLY (3.3, r57 ROUND 2 R2-C)**: the `.def` writes `at-most-one` for `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export` and `accumulate` (field set `{steps, frames}`) for `budget`, per §2.25.2's table, so six settings kinds stop silently last-winning in the same change that declares them. The refusal names BOTH lines, `export`'s shipped diagnostic being the wording precedent, and §1.6.1a rows (8)/(9) are its compatibility record | W23 | `src/parse/` (`rxt_schema.def`, `rxt_source.c`), `cli/`, the spec renderer |
 
 **SIX sabotage rows** (four at revision 3.1, re-spelled and split at
 3.2 per r57 S-M3/S-M4/S-S6, plus one new for S3), each naming the
@@ -4467,7 +4540,7 @@ on the tree it is planted into rather than on a later drift.
 | S-R3 | make `--list-schema` print a hand-written table instead of walking the enforced one — **and the hand-written copy DISAGREES on exactly one row**: it reports `provenance.fidelity` as `closed`, and the parser's own row is edited to `source: file` with no set | **a dump-vs-behaviour cross-check, widened past `closed` (r57 S-M4)**: for each row, the check exercises the BEHAVIOUR the dump claims and requires agreement — a violating value for `closed`/`cross-scope`, a missing line for `required`, a present-when-forbidden line for `forbidden-if`, a conflicting re-binding for `functional-binding`, a duplicate tuple for `unique-by`, an indented line for `children`, a second opener for `opens_group`. **REWRITTEN AT 3.2**: revision 3.1's plant was "a hand-written table" with no stated divergence, which PASSES whenever the copy is faithful — it detects DRIFT, and a sabotage row must fail NOW, on the tree the matrix runs against. The disagreeing row is what makes it fail immediately. The widening matters independently: seven of the eight columns were unchecked against behaviour, so a dump could claim any `children`, `cardinality` or `validated_by` value and nothing would notice |
 | S-R4a | **remove `pattern-esc` from `opens_group`** | the structure layer's own fixture: a `pattern-esc` line stops opening a block, so its case lines attach to the PRECEDING block and `--list-source`'s `#section cases` rows move `block_line`. The symptom is the moved `block_line`, and it is visible in the dump |
 | S-R4b | **add a THIRD member to `opens_group`** (say `m`) | **a different detector, and this is why the row is split (r57 S-S6)**: a case-bearing fixture whose `m` lines stop being cases of their block and become blocks of their own, caught by the block COUNT in `--list-source` and by `run.sh`'s own case totals. Revision 3.1 bundled this with S-R4a as "add `pattern` a second time, or remove `pattern-esc`" — and the first half is **silent**, because the opener set is consulted by first-match-wins membership and a duplicate `pattern` row changes no answer at all. A sabotage row that plants two things where one does nothing scores DETECTED on the strength of the other and reports the pair as covered. Two rows, two symptoms, two detectors |
-| S-R5 | **flip `description`'s `value` from `prose` to `line`** — i.e. remove a kind from the structure layer's SECOND parameter (§1.2.1) | the ragged-prose and prose-`#` fixtures (§9's A-group): with `description` no longer prose-valued, `description \|` opens no opaque region, so its continuation lines re-enter S1 and the indented `#` becomes a structure error and the ragged line an attachment error — all three legs must report the value, and leg A's changes. **NEW at 3.2**, because S3 gave the structure layer a second parameter and §1.2.1's own argument for S-R4 applies to it verbatim: it is a column the structure layer reads, so its corruption is invisible to every schema-VALIDITY check, which is exactly the class that needs a sabotage row rather than an assertion |
+| S-R5 | **break `description`'s prose PAIR — in EITHER column**: plant (a) flips its `value` from `prose` to `line`; plant (b) flips its `children` from `prose` to `none`. Either removes the kind from the structure layer's SECOND parameter (§1.2.1) | the ragged-prose and prose-`#` fixtures (§9's A-group): with `description` no longer prose-region-opening, `description \|` opens no opaque region, so its continuation lines re-enter S1 and the indented `#` becomes a structure error and the ragged line an attachment error — all three legs must report the value, and leg A's changes. **NEW at 3.2**, because S3 gave the structure layer a second parameter and §1.2.1's own argument for S-R4 applies to it verbatim: it is a column the structure layer reads, so its corruption is invisible to every schema-VALIDITY check, which is exactly the class that needs a sabotage row rather than an assertion. **BOTH PLANTS NAMED AT 3.3 (r57 ROUND 2 R2-F4), and plant (b) is why the parameter reads the PAIR**: if the structure layer read `value` alone, (b) would change nothing observable anywhere — the region still opens, its lines are bytes, and bytes reach no validity check — so a normative column would carry a corruption with NO detector. Reading the pair makes (b) fail the same fixtures (a) does |
 
 **H4 deserves its own line in a brief**, because it is the one place a
 plausible implementation is silently wrong: handing python `re` the
