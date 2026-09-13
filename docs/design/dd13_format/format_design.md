@@ -623,9 +623,12 @@ three of Addendum 2's pushbacks endorsed; every population number from
 revision 3.2 re-derived and reproducing; K57 confirmed filed with its
 repro. **(3.4 CORRECTION to the third of those: one echo SURVIVED, in
 §8's P-Q9 duplicate-refusal list, two sections from anywhere the 3.2
-sweep looked. Found and fixed at 3.4; it is impact-table row S14 and
+sweep looked. Found and fixed at 3.4; it is impact-table row **F1** and
 its lesson is §1.6.4's sixth clause recurring inside the revision that
-wrote the clause.)**
+wrote the clause. **3.4.1, r58 A7: both citations read "S14", a row id
+the table has never had — the P-Q9 echo is F1, a FOUND row, and calling
+it an S row additionally mis-attributed it to the manager's seed
+list.**)**
 
 ### 0.9 Revision 3.4 record — D99, and the SECOND-ORDER SWEEP
 
@@ -643,7 +646,7 @@ Five consequences, ruled together after the manager's dig into
 | 1 | **W23-F1 (`configs describe`, §2.20) is WITHDRAWN, not ratified** — one production made BIMODAL by a head-line mode switch, resolving a collision that only materializes through the bench's OPTIONAL roster proposals. The MUST-tier need (N-43, a config-free file builds nothing permanently) is one spec sentence and survives | §2.20 (withdrawal marker + the reasoning), §2.6 (the mode paragraph REMOVED — this section describes the only mode again), SW5 (rewritten to the permanence sentence alone), §7.3 (F1 leaves the queue), §9 F1/F2/F3 |
 | 2 | **W23-F2 (`provides`, §2.16) is WITHDRAWN** — a capability list describes an ENGINE, and the format does not carry engine knowledge as semantics. The pattern-side `tag requires=…` STAYS | §2.16 (withdrawal marker), §2.15 (`vocabulary requires` keeps its pattern-side customer and becomes one-ended), §1.3 (the production out of the EBNF), §2.25.3 (`cross-scope` out with it), SW4, §7.3, §8 P-Q4 |
 | 3 | **The format gains an AUX production** — consumer-namespaced, structurally parsed (S0-S3, so a malformed aux block cannot corrupt what follows), semantically uninterpreted, dumped faithfully by `--list-source`, read by no build or check. The bench's roster and capability declarations can live there; their sixteen-config matrix stays bench-side. Spelling is the manager's | **§2.27** (the production, its three decisions, the schema row), §1.3 (`aux-block`, spelled `ext <consumer>`), §2.24 (`#section aux`), §2.25.2 (`children: tree`), §2.26 item 14 (the spelling defended), SW18, §3.2 S-R6, §9.1's five fixtures, §6.2 (the worked bench file rewritten) |
-| 4 | **THE GRADUATION RULE** — the day something in an aux block needs pcrec to ACT on it, it must graduate to a real production; aux never grows semantics in place | **§2.27.3, stated NORMATIVELY** with four clauses and a falsifiable test for "act on"; SW18 carries it into the spec; S-R6's second fixture is the check behind it |
+| 4 | **THE GRADUATION RULE** — the day something in an aux block needs pcrec to ACT on it, it must graduate to a real production; aux never grows semantics in place | **§2.27.3, stated NORMATIVELY** with four clauses and a falsifiable test for "act on" (**FIVE at 3.4.1** — r58 A5 added the VALUE rule, which closes the two routes that reach aux content without reading an aux body); SW18 carries it into the spec; S-R6's second fixture is the check behind it |
 | 5 | **D93 is untouched and DECOUPLED** — with no configs in set files, D93 never reaches the bench; its revisit-when clause stands on its own merits | §2.20 (the collision has no construction, so nothing about D93 is amended), §4.5 (the testee-roster hazard row reads DISSOLVED rather than cured), §9 F2 |
 
 **MEASURED FOR THIS REVISION** (this worktree, read-only, at the lane's
@@ -688,15 +691,15 @@ Confirmed means the seed's prediction held; refuted means it did not.
 | S1 | §2.6's closing "W23 adds one head declaration ABOVE this whole table" paragraph | seed (a) | **CONFIRMED — REMOVED.** It made every rule in the precedence table conditional on a mode line; §2.6 describes the only mode again | §2.6, final paragraph |
 | S2 | §2.25.3's `cross-scope` constraint kind — other customers? | seed (b) | **CONFIRMED, and it is the sharpest row in the table. NO other customer exists**, so the kind is REMOVED under §2.25.3's own membership rule and the count goes **EIGHT → SEVEN** at every site that states it. The deferred row takes it back with a sharpened trigger | §2.25.3 (table + the round-trip paragraph), §2.25.4, §3.2 S-R3's list, §0.8's S-BL1 row (historical, left as the record of 3.2) |
 | S3 | §2.15 `vocabulary` — does `vocabulary requires` keep a customer? | seed (c) | **CONFIRMED — it keeps its PATTERN-side customer** (`tag requires=…`) and is untouched as a production. What changes: it becomes a ONE-ENDED declaration, its enforcement-point list drops `provides`' values, and the closing `requires`-stays-a-tag-key paragraph gains the note that D99 makes that sentence load-bearing rather than incidental | §2.15 |
-| S4 | W3's `config`-body roster lines (`testee`, `option`) | seed (d) | **CONFIRMED — REMOVED from the wave plan** (N-42, a bench SHOULD). All W3 references swept: §1.3's EBNF (removed with a kept-for-findability comment), §1.4's wave row, §2.26 item 13's group, §4.5's two `[testees.*]` rows, §5.4's OD-3 row, §6.2's worked file, §3.2's H10 row (which names them as a later-wave item and is W3-era text left as history) | §1.3, §1.4, §2.26 item 13, §4.5, §6.2 |
-| S5 | `variant <testee>` and `variant … unsupported` | seed (e) | **CONFIRMED — both STAY (MUST-tier rx content), and the RESOLUTION RULE CHANGES.** A variant's testee name is now a FREE IDENTIFIER pcrec does not resolve: validated as an identifier and as unique within its block, and against nothing else, because no roster exists in the format to resolve against. Cross-checking is the consumer's tooling's job. Stated as a deliberate non-check | §2.23 (the new bullet), §9's D1 |
+| S4 | W3's `config`-body roster lines (`testee`, `option`) | seed (d) | **CONFIRMED — REMOVED from the wave plan** (N-42, a bench SHOULD). All W3 references swept: §1.3's EBNF (removed with a kept-for-findability comment), §1.4's wave row, §2.26 item 13's group, §4.5's two `[testees.*]` rows, §5.4's OD-3 row, §6.2's worked file, §3.2's H10 row (which names them as a later-wave item and is W3-era text left as history). **(3.4.1, r58 B5: the disposition text named §5.4's OD-3 row among the swept sites and the CITATION COLUMN did not list it, which is exactly where the discrepancy hid — OD-3 still read "a bench testee is a `config` with `testee` + `option` lines", a live disposition of a grammar that no longer supports it. Re-dispositioned to aux; the citation column is completed below.)** | §1.3, §1.4, §2.26 item 13, §4.5, **§5.4 OD-3**, §6.2, §3.2 H10 |
+| S5 | `variant <testee>` and `variant … unsupported` | seed (e) | **CONFIRMED — both STAY (MUST-tier rx content), and the RESOLUTION RULE CHANGES.** A variant's testee name is now a FREE IDENTIFIER pcrec does not resolve: validated as an identifier and as unique within its block, and against nothing else, because no roster exists in the format to resolve against. Cross-checking is the consumer's tooling's job. Stated as a deliberate non-check. **(3.4.1, r58 B4: the citation column never scoped the GRAMMAR, and §1.3's `variant-block` still read `ident` while §2.23's new rule says the wide `defname` — so the bench's own `pcre2-dfa`/`pcre2-interp` were unspellable in the EBNF that admits them. The §1.3 hunk is added below.)** | §2.23 (the new bullet), **§1.3's `variant-block` production**, §9's D1 |
 | S6 | §6's worked bench file | seed (f) | **CONFIRMED — REWRITTEN** with one `ext bench` block replacing three `config` blocks and the `configs describe` line, plus a rewritten hand-trace. The file now declares no `config` and no `target` at all | §6.2 |
 | S7 | The narrowing census §1.6.1a — does any row move? | seed (g) | **CONFIRMED that the question was worth asking, and the ANSWER IS NO — no row moves**, re-derived candidate by candidate rather than asserted. The general rule extracted: *a production that has never shipped cannot be narrowed by being removed*, and the aux production adds no candidate either (new token measured 0; body at a today-hard-error position) | §1.6.1a's new re-run block |
 | S8 | §7.3's Frank queue — F1/F2 withdrawn, F4 stands | seed (h) | **CONFIRMED.** F1 and F2 marked WITHDRAWN with one-line reasons; F4 stands unchanged and is now the whole queue. **Extended beyond the seed**: the queue's own SHAPE gets a paragraph, because D99 attaches a standing process lesson to it — both withdrawn items were presented ready-to-ratify while the needs underneath were tentative at SOURCE | §7.3 |
-| S9 | §8's P-Q dispositions — P-Q4 changes; re-check the other eight | seed (i) | **CONFIRMED for P-Q4, which INVERTS** into a NO-for-semantics / YES-for-the-file answer, with a recorded account of why revision 3's reasoning (sound in both its grounds) reached the other answer: it posed a two-way choice when the third answer had not been invented. **The other eight re-checked**: P-Q1, P-Q2, P-Q3, P-Q5, P-Q6, P-Q7, P-Q8 are untouched; P-Q9 is row S14 below | §8 |
+| S9 | §8's P-Q dispositions — P-Q4 changes; re-check the other eight | seed (i) | **CONFIRMED for P-Q4, which INVERTS** into a NO-for-semantics / YES-for-the-file answer, with a recorded account of why revision 3's reasoning (sound in both its grounds) reached the other answer: it posed a two-way choice when the third answer had not been invented. **The other eight re-checked**: P-Q1, P-Q2, P-Q3, P-Q5, P-Q6, P-Q7, P-Q8 are untouched; P-Q9 is row **F1** below (3.4.1, r58 A7: 3.4 wrote "S14" here and at §0.8, and no such row exists) | §8 |
 | S10 | §9's acceptance-checklist mapping + the bench correction list | seed (j) | **CONFIRMED, and the capable→provides row is DELETED rather than updated** — a rename the bench never has to make is not a correction. Three NEW correction rows replace it (the two withdrawals + the `testee`/`option` removal), F1/F2/F3/F4 and D1 re-dispositioned, and **the outbox message body is DRAFTED as Appendix A** — not written to the bench repo, per the lane's scope and D78 | §9's correction list, §9's F/D rows, **Appendix A** |
 | S11 | §3.4's SW rows — which covered §2.16/§2.20? | seed (k) | **CONFIRMED and re-derived. SW5 SURVIVES as the N-43 permanence sentence** (the seed predicted this and it holds — F1 was always the permanence check). SW4 NARROWED (loses `provides`, fail-closed, and the reserved-key sentence). SW13's membership moves for free, which is the `wave` column's first real service. **NEW: SW18** (the aux production + the graduation rule) and **SW19** (the withdrawals' spec consequence, mostly an absence). **The DUMP-SHAPE obligation is named**: `--list-source` gains a row kind and a section, so the implementation lane owes a FORMAT-reader survey by grep — field counts, positional splits, section-presence assumptions — per `registry_built_status_memo.md`'s own CORRECTION, where a content-only survey missed two readers hard-coding `NF != 15` | §3.4 SW4/SW5/SW13/SW18/SW19, §2.24's survey-obligation block |
-| S12 | The `configs` head keyword in §1.6's reserved-keyword / version-break material | seed (l) | **REFUTED, and this is the one seed row whose prediction did not hold.** `configs` appears NOWHERE in §1.6's reservation material. §1.6.3 reserves `version` and declines `schema`, and names neither; §1.6.2's version-break pricing is about indenting case lines. The only §1.6-adjacent mention is §0.7's 52-candidate freeness census, which is a HISTORICAL MEASUREMENT (52 tokens were 0 at that pin) and stays true — removing candidates from a list of tokens measured absent cannot make any of them present. **No edit was needed and none was made** | §1.6.1a–§1.6.4 (unchanged); §0.7's census (unchanged) |
+| S12 | The `configs` head keyword in §1.6's reserved-keyword / version-break material | seed (l) | **REFUTED, and this is the one seed row whose prediction did not hold.** `configs` appears NOWHERE in §1.6's reservation material. §1.6.3 reserves `version` and declines `schema`, and names neither; §1.6.2's version-break pricing is about indenting case lines. The only §1.6-adjacent mention is §0.7's 52-candidate freeness census, which is a HISTORICAL MEASUREMENT (52 tokens were 0 at that pin) and stays true — removing candidates from a list of tokens measured absent cannot make any of them present. **No edit was needed and none was made** | **§1.6.2 and §1.6.3, the RESERVATION material (unchanged)**; §0.7's census (unchanged). **(3.4.1, r58 B10: the citation read "§1.6.1a–§1.6.4 (unchanged)", which contradicts impact row S7 four rows up — S7 ADDED the census re-run block to §1.6.1a in this same revision. This row's finding is about the reservation material and its citation is now scoped to it; §1.6.1a's own movement is S7's to report.)** |
 | S13 | Sabotage rows / checks targeting describe-mode or provides | seed (m) | **REFUTED IN THE SEED'S DIRECTION, and the refutation is the useful part: there is nothing to retire.** No S-R row plants into `configs` or `provides`; all six plant into the SCHEMA MECHANISM, which D99 does not touch. One edit only — S-R3's widened detector list enumerated a behaviour per constraint kind and drops `cross-scope`'s. **r57 C-S5's use-resolution rule IS recorded as DISSOLVED** (as the seed asked): with one mode, "resolved in both modes" has no referent, and the general lesson it carried — *a mode switch must say what it does NOT change, or the silent arm is the dangerous one* — is kept beside the dissolution. A new row **S-R6** is added FOR aux, with two fixtures, because the plant that matters is aux being INTERPRETED rather than aux being narrowed | §3.2's sweep paragraph + S-R3 + **S-R6**; §2.20's dissolution paragraph |
 | F1 | **§8 P-Q9 still listed "`pattern` + `pattern-esc` in one block"** among W23's refuse-by-name productions | **FOUND** | **A STALE ECHO of a refusal DROPPED AT REVISION 3.2** (r57 S-BL2, empty population), surviving into 3.3 despite the ROUND 2 critic recording that every echo was gone. Fixed, and replaced with a real refusal (`a second variant for one testee`). **Worth more than the edit**: it is §1.6.4's sixth clause — a sweep bounded by where the change was made finds what the change touched, not what the change invalidated — occurring inside the revision that wrote the clause down | §8 P-Q9's correction block |
 | F2 | **§2.20 rule 4's `lib`-contributes-DEFINITIONS-ONLY clause** | **FOUND by the seed's own instruction, and it is the most load-bearing re-home** | **INDEPENDENT of describe mode and RE-HOMED to §2.5**, the include model, where the question is asked. It answers "what crosses a `lib` edge?", which has an answer whether or not a mode line exists — `configs` was the occasion for writing it down, never its subject. Had it been deleted with its section, withdrawing a mechanism would have silently re-opened a closure question in a DIFFERENT production, which is exactly the second-order damage this sweep exists to prevent. §4.1 gains a pointer, since the clause is [LIB]'s as much as §2.5's | §2.5's new bullet, §4.1, §2.20's own note |
@@ -1885,8 +1888,14 @@ aux-key    = ? any first token the LEXICAL rules admit — there is no
    LITERAL value `|`, not a block scalar (§2.27.2 decision 3, RULED at
    r58 for the one-line form). Parameter 2 keeps its five rows. *)
 
-variant-block = "variant" , ws , ident , eol ,
+variant-block = "variant" , ws , defname , eol ,
                 { INDENT , variant-attr , eol } ;
+                 (* `defname`, NOT `ident` — CORRECTED at 3.4.1 (r58
+                    B4). §2.23's 3.4 rule validates a variant's testee
+                    name as the WIDE grammar, and the bench's real
+                    testees (`pcre2-dfa`, `pcre2-interp`) are
+                    unspellable under `ident`. It is a free identifier
+                    pcrec resolves against nothing (§2.23). *)
 variant-attr =
       "text"        , ws , rest-of-line   (* the replacement pattern text *)
     | "kind"        , ws , tag-value      (* closed via `vocabulary kind` *)
@@ -4483,6 +4492,40 @@ the same argument covers the others:
   it repeats. A `value` is escaped bytes; pcrec never interprets it,
   including never deciding it is a number, a list or a boolean.
 
+  > **THREE THINGS "ONE ROW PER LINE" LEFT UNDERSPECIFIED, STATED AT
+  > 3.4.1** (r58 A4). Revision 3.4 gave the column list and stopped, and
+  > a consumer cannot reconstruct its own data from it. All three are
+  > normative:
+  >
+  > **(a) THE OPENER LINE GETS A ROW, AND IT IS THE BLOCK'S IDENTITY.**
+  > The `ext <consumer>` line itself emits a row — `depth` 0, `key`
+  > `ext`, `value` the consumer token, `parent_line` empty — and every
+  > top-level body line's `parent_line` is that row's `line`. Without
+  > it, **two `ext bench` blocks at one scope are INSEPARABLE**: their
+  > top-level lines would all carry an empty `parent_line` and the same
+  > `consumer`, and `cardinality: repeat` (§2.27.1) makes that shape
+  > legal and expected. The opener row is what makes "several `ext`
+  > blocks for one consumer" a statement about distinguishable blocks.
+  >
+  > **(b) ROW ORDER IS SOURCE ORDER, GUARANTEED.** Rows within
+  > `#section aux` appear in increasing `line`, which is the order the
+  > lines appear in the file. This is a promise and not an observation,
+  > because aux is the one production whose CONTENT pcrec assigns no
+  > meaning to: order is the only semantics an aux tree has that pcrec
+  > can preserve, and a consumer reassembling a paragraph from child
+  > lines (§2.27.2 decision 3) depends on exactly this. A dump that
+  > grouped or sorted rows would destroy information it also refuses to
+  > interpret, which is the worst available combination.
+  >
+  > **(c) EVERY AUX ROW'S `value` IS ITS LINE'S TOKEN REMAINDER.** The
+  > `key` is the line's first token; the `value` is everything after the
+  > separating whitespace, verbatim, to end of line, escaped in the
+  > dump's own vocabulary — empty if the line is a bare key. There is no
+  > second form: an aux body is an open subtree, so S3 never opens there
+  > and no aux value is ever a multi-line region (§1.2.1's parameter 3,
+  > §2.27.2 decision 3). 3.4's prose-interior question is therefore
+  > moot rather than answered.
+
 **Emission is unconditional, not flagged and not content-conditional**,
 and the compatibility story is stated rather than hoped: a section is
 emitted only when it has rows, so a file using no W23 production emits
@@ -4569,7 +4612,7 @@ update; both are the failure mode this project has recorded under
   | **subject CONTENT** (the `sha256` digest against the file's bytes) | the `m`/`n`/`ms`/`ns`/`mc` rows' own `validated_by: none` **with the reason "the dump performs no file I/O"** | it IS a (scope, line-kind) fact — the case line is where a subject reference appears, so the row exists and carries the value. The SYNTAX (64 hex digits) is validated on the same row; the two are distinguished by the reason string, not by two rows |
   | **pattern TEXT** (never compiled here) | the `pattern` and `pattern-esc` rows' `validated_by: none`, reason "the dump is parse-only; pattern text is the compiler's" | also a genuine (scope, line-kind) fact |
   | **config RESOLUTION** (the `with`/`from` cascades, composed) | **NOT a line-kind row at all** — it is the ABSENCE of `--list-source --resolved`, a surface that is named and unbuilt (§3.4 S11's neighbourhood). It gets a **named sibling surface row** in `--list-schema`'s output: a `surface` section listing the dump's declared NON-coverage, one row, reason "`--resolved` is named and unbuilt; the dump is AS-WRITTEN", with `--list-source`'s own header comment as the prose that already says it |
-| **an `ext` tree's CONTENTS** (§2.27) — **NEW at 3.4** | **also NOT a line-kind row**, and for the same reason one row up: `validated_by` is a property of a ROW and an aux body has NO rows. Same mechanism, second customer — a `surface` row reading *"the contents of an `ext` tree are never schema-checked and never interpreted; reason: semantically uninterpreted by design (the graduation rule, §2.27.3)"*. The `ext` OPENER's own row is ordinary and carries `validated_by: all-readers` (§2.27.4), so the two claims stay separate: the structure is checked by three legs, the content by nobody |
+  | **an `ext` tree's CONTENTS** (§2.27) — **NEW at 3.4** | **also NOT a line-kind row**, and for the same reason one row up: `validated_by` is a property of a ROW and an aux body has NO rows. Same mechanism, second customer — a `surface` row reading *"the contents of an `ext` tree are never schema-checked and never interpreted; reason: semantically uninterpreted by design (the graduation rule, §2.27.3)"*. The `ext` OPENER's own row is ordinary and carries `validated_by: all-readers` (§2.27.4), so the two claims stay separate: the structure is checked by three legs, the content by nobody |
 
   The third is the one worth the paragraph: revision 3.1 called all
   three "rows with `validated_by: none`", and for config resolution
@@ -5293,6 +5336,33 @@ shape is broken by accretion rather than by decision:
    load-bearing without ever being specified — after which the format
    has a production it did not design, cannot change, and does not
    document. D99 writes the rule now, while the population is zero.
+5. **AND THE VALUE RULE, WHICH IS WHAT CLAUSES 1-4 POLICE THE BODY WITH
+   AND DO NOT POLICE THE ROUTES AROUND IT** (NEW at 3.4.1, r58 A5,
+   critic A's fifth clause adopted in substance). Clause 1 enumerates
+   READERS of an aux body; two routes reach the same place without
+   reading one. **Smuggle A**: a schema constraint on the `ext` OPENER
+   — a cardinality, a `unique-by` over the consumer token — makes a
+   refusal depend on how many aux blocks a file has, which is a fact
+   about aux content that pcrec acted on without any of clause 1's six
+   arms firing. **Smuggle B**: a derived COUNT — an aux-row total in a
+   dump summary, a check pinning it in CI — makes an aux edit turn a
+   tree red, after which the aux body is load-bearing and nobody
+   decided it. So the clause is stated over VALUES rather than over
+   readers:
+   > **Nothing in pcrec — no test, no dump summary or count, no
+   > refusal, no diagnostic, no selection — may take a value that
+   > CHANGES when an aux body changes, except the faithful per-line
+   > rows of `#section aux` themselves.**
+
+   That is a property of pcrec's outputs, so it holds however the
+   reading is spelled, and it is checkable in the direction that
+   matters: edit an aux body, and every pcrec output except those rows
+   must be byte-identical. It closes §5.2a item 8's `--list-source
+   --ext=bench` FILTER case by principle rather than by adjudication —
+   a filter on the CONSUMER token returns a different SUBSET of the same
+   faithful rows and takes no value, while a filter on anything INSIDE
+   the tree computes one, and the line falls where clause 5 puts it
+   instead of where a paragraph in the attack list put it.
 
 **The revisit-when for aux itself, since it is a production like any
 other**: if the aux population grows and NOTHING ever graduates, that is
@@ -5588,7 +5658,7 @@ delivery; these are the [B42] additions:
 | # | file | the hunk |
 |---|---|---|
 | SW16 | `docs/spec/rxt_format.md` | **THE THREE-DEVICE STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's **FIVE-CASE** standing rule for when a future change needs the line (3.2: the fourth case is a CHOSEN narrowing, r57 C-M1; 3.3: the fifth is measure-the-population-first, r57 ROUND 2 R2-C). **REWRITTEN AT 3.2 — it carries the WHOLE NARROWING CENSUS's spec sentences, not one** (§1.6.1a, r57 G-B2): (a) the ragged HEAD BODY, accepted and now refused because depth became meaningful; (b) **TAB indentation, accepted and now refused by name** — indentation is spaces, a leading tab is a structure error, a tab inside a VALUE is still data; (c) the two narrowings AVOIDED and the rule that avoids them — inside a `\|` prose region an indented `#` is PROSE and ragged indentation is legal, because S3's region has no line classifier, while OUTSIDE one the indented-`#` refusal is unchanged. (c) is spec text and not merely a design note because it settles a question `rxt_source.c:735-747` records as deliberately OPEN. (The fifth narrowing, the derived-identifier collision, is SW12's.) **EXTENDED AT 3.3 (r57 ROUND 2), and the census it carries is now the eleven-row one**: (d) the **FOUR LINE CLASSES and what each one does** — a BLANK line is the EMPTY line and closes attachment, a **COMMENT line closes attachment and ends a prose region exactly as a blank does**, a WHITESPACE-ONLY line is INERT outside a prose region and BYTES inside one (so an indented whitespace-only line is the paragraph break), and everything else is CONTENT; (e) **a prose region opens on a `\|` whose trailing whitespace is trimmed, and only for a kind the schema declares prose-region-opening** — the spec states both conditions, since without the first `description \| ` is a literal and without the second `pattern \|` is a refusal; (f) **the CARDINALITY rules for the settings kinds** (§2.25.2) — `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export` take at most one line per scope and a second is refused naming both, while `budget` ACCUMULATES over `{steps, frames}` and only a repeated FIELD is refused. (f) is the one a `.rxt` author is most likely to meet, because six of those seven kinds silently last-win today. The standing rule this row states is now **FIVE-CASE** (3.3 adds: measure the population before deciding, not after). (§1.6.1a rows (10) and (11), the NUL and duplicate-`description` refusals, already have their spec hunks — landed by STEP 0 — and this row cites rather than owes them.) **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5) |
-| SW17 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` + **`docs/spec/table_contract.md`** + `docs/spec/registry.md` | **THE SCHEMA AND ITS SURFACE** (§2.25). rxt_format.md gains the schema section: the columns (including `children: prose`), the **EIGHT-kind** constraint vocabulary with its membership rule, the one named parser-code exception (`under`'s key tuple), the deferred/DECLINED split, and the statement that the parser is the table's reader. cli.md gains `--list-schema` as the **SEVENTH** registry dump, in `--list-limits`' own entry shape. `docs/spec/registry.md` gains its row in the surface list — **and, since its own numbered sequence stops at the FIFTH surface while two dumps (`--list-limits`, `--list-source`) are undocumented there, the row is added with the sequence reconciled rather than appended to a gap.** **`docs/spec/table_contract.md` GAINS ITS SCOPE ROW, ADDED AT 3.2 (r57 S-M7)**: that document's Scope section enumerates every conforming table producer (seven rows today) and states *"Future tabular surfaces adopt this contract AT BIRTH — a new table command that does not conform is a defect, not a style choice."* `--list-schema` is a TSV table command, so it is a conforming producer by that sentence and a reader found BY GREP for the surface list — **the D94 failure verbatim** (a hand-enumerated site list that missed a reader in a spec document), which this note has now had pointed out to it in the same shape twice |
+| SW17 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` + **`docs/spec/table_contract.md`** + `docs/spec/registry.md` | **THE SCHEMA AND ITS SURFACE** (§2.25). rxt_format.md gains the schema section: the columns (including `children: prose` and, at 3.4, `children: tree` with structure-layer parameter 3), the **SEVEN-kind** constraint vocabulary with its membership rule (**CORRECTED AT 3.4.1, r58 B2**: this row still committed EIGHT to the spec hunk after §2.25.3 went to seven at 3.4 — the one site in the note that would have SHIPPED the wrong count into `docs/spec/`, since every other eight was prose about a past revision), the one named parser-code exception (`under`'s key tuple), the deferred/DECLINED split, and the statement that the parser is the table's reader. cli.md gains `--list-schema` as the **SEVENTH** registry dump, in `--list-limits`' own entry shape. `docs/spec/registry.md` gains its row in the surface list — **and, since its own numbered sequence stops at the FIFTH surface while two dumps (`--list-limits`, `--list-source`) are undocumented there, the row is added with the sequence reconciled rather than appended to a gap.** **`docs/spec/table_contract.md` GAINS ITS SCOPE ROW, ADDED AT 3.2 (r57 S-M7)**: that document's Scope section enumerates every conforming table producer (seven rows today) and states *"Future tabular surfaces adopt this contract AT BIRTH — a new table command that does not conform is a defect, not a style choice."* `--list-schema` is a TSV table command, so it is a conforming producer by that sentence and a reader found BY GREP for the surface list — **the D94 failure verbatim** (a hand-enumerated site list that missed a reader in a spec document), which this note has now had pointed out to it in the same shape twice |
 
 **The revision-3.4 hunks** (D99), all W23, all landing in the same
 delivery:
@@ -6088,10 +6158,19 @@ below them are 3.3's and were scored by two panel rounds already.
    --ext=bench`), which is arguably the dump repeating itself and
    arguably pcrec understanding a namespace. **The lane's own answer is
    that a filter on the CONSUMER token is fine and a filter on
-   anything INSIDE the tree is graduation**, but that line is drawn in
-   this paragraph and not in §2.27.3's four clauses, which is exactly
-   the kind of gap clause 4 says every extension namespace eventually
-   falls through.
+   anything INSIDE the tree is graduation**, but at 3.4 that line was
+   drawn in this paragraph and not in §2.27.3's clauses, which is
+   exactly the kind of gap clause 4 says every extension namespace
+   eventually falls through. **PARTLY CLOSED AT 3.4.1** (r58 A5):
+   §2.27.3 gains a FIFTH clause stated over VALUES rather than over
+   readers — nothing in pcrec may take a value that changes when an aux
+   body changes, except `#section aux`'s own faithful rows — which puts
+   the filter line where a rule can find it and also closes the two
+   routes the enumeration missed entirely (an opener-row cardinality;
+   a derived count pinned in CI). **Attack it again from the same
+   direction**, since the clause is one round old: find an output whose
+   value moves with an aux body and that clause 5's "faithful per-line
+   rows" exception can be argued to cover.
 9. **THE AUX BODY'S PROSE DECISION** (§2.27.2 decision 3). **RULED AT
    r58 (R1) FOR THE ONE-LINE FORM, so this attack has been RUN and its
    answer landed** — kept here because the attack it prescribed is the
@@ -6163,8 +6242,12 @@ claim a critic should try to break rather than as a defence.
    need. **In 3.1 that claim was FALSE in the second direction this
    item names** — four W23 refusal rules that the five kinds could not
    express, one of them needing precisely the kind §2.25.4 deferred —
-   so the section is now eight kinds plus one declared parser-code
-   exception. Attack it again from both ends: a kind whose only
+   so the section became eight kinds plus one declared parser-code
+   exception. **It is SEVEN kinds plus that exception since revision 3.4
+   (2026-09-13, D99): `cross-scope`'s only customer was `provides`, so
+   the membership rule removed it, and this item's own present tense was
+   left behind inside a block claiming its items had moved with D99 —
+   r58 A6/B3.** Attack it again from both ends: a kind whose only
    customer is speculative (it fails the membership rule), or a
    refusal rule still living in control flow WITHOUT being named as
    one. The second is the dangerous outcome and the reason is
@@ -6233,7 +6316,7 @@ claim a critic should try to break rather than as a defence.
 | **OD-1** where per-engine options live, and composition across includes | **file and block scope only** (Frank's ruling 4). Composition is the **per-option-kind** table in §2.6 — `features` unions, everything else is more-specific-wins, size caps are raise-only at every scope. The cascade Frank asked for lives in `config … from`, ordered, last wins; `include` stays pure splice, because making an include's *position* change a later block's meaning is the cross-file context AR-4 forbids |
 | **OD-2** the declared-tweak mechanism | the `variant` sub-block — `text`/`kind`/`groups`/`note`, or `unsupported <reason>` — block-scoped (§4.5, reshaped at W23 §2.23) |
 | **OD-6** the data block's spelling and namespace | **inline values, own namespace** (§2.10). This is OD-6, named — the first version presented it as departure "D-e" without citing the open decision it disposes of (r44-consumers U10) |
-| **OD-3** config syntax unifying testees and build variants | **one block kind.** A build variant is a `config` with `pcrec` lines; a bench testee is a `config` with `testee` + `option` lines. R-BENCH-9's "one concept, two uses" is literal here — the same `config` grammar, differing only in which of its line kinds appear |
+| **OD-3** config syntax unifying testees and build variants | **RE-DISPOSITIONED AT 3.4.1 (r58 B5, carrying D99 forward): THE TWO ARE NOT UNIFIED, BECAUSE ONLY ONE OF THEM IS THE FORMAT'S.** A build variant is a `config` with `pcrec` lines, unchanged and W1's. A bench testee roster is **aux content** (`ext <consumer>`, §2.27) — `testee` and `option` left `config`'s body with D99 — so there is no second use of `config` to unify with the first. R-BENCH-9's "one concept, two uses" reading is REFUSED rather than satisfied: the two uses were a pcrec build and an engine description, and the ruling is that the second is not semantics this format carries. **(This row was left at its revision-3 disposition through 3.4 while §1.3 removed the productions it names — a live disposition of a grammar that no longer exists, found by the r58 panel and invisible to the sweep because impact row S4's citation column never listed §5.4.)** |
 | **OD-4** interface/reference-only marking; a test-only surface | **no marking, no surface** — T-1 |
 | **OD-5** PCRE2 desugar vs own spelling | **PCRE2's `(?&name)` — and, after D87, a deliberate, minimal DIALECT around it.** The spelling stays PCRE2's; what is pcrec's own is the number ASSIGNMENT (rule 7), the scope prefix and the delivering declaration (§1.5), each measured to be a spelling PCRE2 refuses. OD-5's two feared consequences are corrected: subroutine calls are **backtrackable**, not atomic, on 10.46 (§2.3.5), and the numbering is now an assigned property, not a positional accident. The item's own tag — "measured, never read from docs" — is honoured twice over: §2.3.3's semantics and §1.5's free-ness are both runs, on both oracles |
 
