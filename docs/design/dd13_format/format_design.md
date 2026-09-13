@@ -2921,6 +2921,20 @@ capabilities by omission (the bench's own rule, adopted).
   still nothing about what any tag means. The precedent for reserving a
   name is `# pcre2-only` and the `oracle` engine names; AR-6 is about
   MEANING, not spelling.
+  **THE POINTER, added at 3.2 (r57 G-B5).** The sentence above is the
+  ONLY syntactic path from `provides` to the set that constrains it,
+  and a reader meeting a `provides` line has no way to find it: the
+  governing declaration is spelled under the OTHER end's name
+  (`vocabulary requires …`), in a different scope, with no occurrence
+  of the token `provides` anywhere near it. The rename to `provides`
+  (§2.26 item 4) buys a reading symmetry the grammar does not have, and
+  pretending otherwise would be the rename doing work it cannot do. So
+  the schema states the link as DATA — `provides` carries
+  **`cross-scope file vocabulary requires`** (§2.25.3's new kind), which
+  is exactly this pointer in a form `--list-schema` prints — and the
+  spec paragraph (SW4) names `vocabulary requires` in the same sentence
+  as `provides`, in both directions, so a grep for either finds the
+  other.
 - The pre-compile policy — `REQUIRES(pattern) ⊄ capabilities(config) ⇒
   unsupported-by-declaration`, decided before any compile — is the
   CONSUMER's rule. The format carries the declaration (`provides`), the
@@ -3006,6 +3020,40 @@ independently.
   that split so nobody reads the dump as an integrity check.
 - An INLINE quoted subject takes neither suffix — no consumer asked
   (D77), and the id's whole value is naming bytes that live elsewhere.
+
+**N-27's NON-ID SLICE, carried or refused by name** (NEW at 3.2, r57
+C-S7 — the one genuine gap in the panel's 53-row needs walk). N-27 is a
+Tier 1 MUST and revision 3 answered its BLOCKING half (`as <id>`) while
+its other three fields went unmentioned, which under Option A reads as
+silently bench-side. Each gets an answer here:
+
+- **A subject's BYTE LENGTH is DERIVABLE and is not carried.** The
+  format already names the file (`@file:"path"`) and optionally its
+  digest; length is `stat` on the same path, available to every reader
+  that opens the subject at all, and a carried length is a second
+  source of truth that can disagree with the bytes. If the need is
+  integrity, `sha256` is the field and it is strictly stronger; if the
+  need is a report column, the reader computes it. **Refused as a
+  field, with the reason, rather than omitted.**
+- **A per-subject DESCRIPTION and `periodic` are REFUSED, in the D77
+  shape, and NAMED bench-side manifest data.** Neither is a property
+  the format can check or a consumer in this repo reads: a subject's
+  prose and its "generate this periodically" flag are facts about the
+  bench's own corpus-production pipeline, not about the pattern, the
+  expectation or the file's parse. Putting them in `.rxt` would give
+  the format two fields nothing in either repo validates — the
+  free-string regression §2.15 exists to prevent, arriving from the
+  other side. **The trigger that would move them**: a subject
+  description becomes a format field the day a `--list-source` consumer
+  in THIS repo reads one (the same bar `description` itself had to
+  meet, Frank's r44 summarize-via-script ruling); `periodic` becomes
+  one the day regeneration is driven from the `.rxt` file rather than
+  from the bench's own manifest, which is a change to who owns the
+  pipeline and is theirs to propose (D78).
+- **Why this is stated and not left as an omission**: Option A says the
+  set's truth lives in `.rxt`, so every need answered bench-side is an
+  exception to a ruling and owes its argument. Three of N-27's four
+  fields are answered here; one is BUILT.
 
 ### 2.19 `pattern-esc` — the second pattern spelling ([B42] N-2, F-Q2)
 
@@ -3107,9 +3155,43 @@ today's semantics, spellable explicitly) or `configs describe`. Under
    reports `configs: descriptive (N declared, 0 applied)` — declared
    inapplicability as a counted, printed state (AR-3), never a dropped
    directive.
+   **AND ITS REFERENT STILL RESOLVES — in BOTH modes** (NEW at 3.2, r57
+   C-S5). "Legal and inert" left open whether `use dev` in a `describe`
+   file is checked against the file's `config` declarations at all, and
+   the wrong answer is the dangerous one: a typo (`use dve`) caught in
+   build mode would go SILENT in describe mode, which is AR-3's
+   forbidden shape — a file that looks like it declares something and
+   declares nothing. **The rule: `use` names are RESOLVED in both
+   modes, and an unresolvable name is REFUSED in both.** What `describe`
+   changes is whether a resolved config composes into a build, not
+   whether it exists. Same for `target … with` (refused outright under
+   `describe`, rule 2) and for `from` inside a `config` body, whose
+   cascade is a declaration-time resolution and is unaffected by the
+   mode.
 4. **The declaration is the ENTRY file's** and governs the include
    closure — a fragment cannot carry head lines (§2.5), so a block's
    config semantics still depend on exactly one bounded place (AR-4).
+   **AND `lib` CONTRIBUTES DEFINITIONS ONLY — the closure clause, made
+   explicit** (NEW at 3.2, r57 C-S4). Roadblock #6 is closed by
+   construction for `include`, because §2.5 restricts a fragment to
+   pattern blocks and a fragment therefore has no head lines to
+   contradict the entry's mode. `lib` is different: a `lib`'d file is
+   an ORDINARY `.rxt` and may carry a full head, including its own
+   `configs describe`, so "what does a build-mode file see when it
+   `lib`s a describe-mode file?" had no stated answer. **The answer is
+   that it sees nothing but definitions**: `lib` contributes the
+   library's named definitions and its `description`s to the composer's
+   lookup, and NOTHING ELSE crosses the boundary — not its `config`
+   blocks, not its `configs` mode, not its `target` rows, not its
+   `use`/`oracle`/`tag` lines, not its cases. This is not a new rule so
+   much as the already-stated one written down at the place it is
+   asked: §4.1 already says a library's TESTS do not run in a file that
+   `lib`s it, and a config that cannot reach a build in the library's
+   own file certainly cannot reach one through a `lib` edge. Stating it
+   makes the mode question answer itself — a library's `configs` mode
+   governs the library's own file when that file is under test, and is
+   invisible to every file that `lib`s it — and it keeps AR-4 exact,
+   since a block's meaning still depends on ONE head, its own entry's.
 5. A second `configs` line is refused (duplicate declaration, §2.2).
 
 **And the PERMANENCE sentence** ([B42] N-43, check F1): a file with no
@@ -3172,6 +3254,42 @@ the two-arm advance), **never `finditer`**; and the driver's find-all
 mode (H7) is the same loop in C, which is the loop `match_api.md` §3.1
 prints. One rule, three implementations, one cross-check (C1's case
 rows plus the E5 fixture).
+
+**THE RULE IS INSUFFICIENT ON ILL-FORMED UTF-8, AND 3.2 SAYS SO
+NORMATIVELY** (r57 C-S6). "One character past the reported start" is
+`<prefix>_next_pos` by REFERENCE, which is exact for a byte subject and
+for well-formed UTF-8 and is **underspecified for an ill-formed one** —
+`match_api.md` §3.1.1 never defines "character boundary" there, and a
+foreign adapter reading the prose cannot derive what pcrec's artifacts
+do. That is not hypothetical: the bench's own corpora carry
+hazard-tagged ill-formed subjects, and `mc` is a count they will
+compare against.
+
+So **SW7 states the shipped rule as normative text** rather than
+leaving it to the reference: *from `pos + 1`, skip bytes in the range
+`0x80`-`0xBF`* — i.e. advance one byte and then past any continuation
+bytes, which lands on the next lead byte or on the end. It is adopted
+because it is what the emitted artifacts already do (it is
+`next_pos`'s own rule, the encoding seam's, `[K49]`'s advance), not
+because it is the most principled reading of UTF-8; a reader who wants
+the principle gets the byte rule anyway, which is the point of writing
+it down. **E5's fixture becomes utf8-bearing and says so** — the
+find-all cross-check runs at least one `mc` over an ill-formed subject
+under `-e utf8`, because a rule stated for a case no fixture reaches is
+a sentence (§9's E5 row).
+
+**And the tension this creates is acknowledged rather than argued
+away.** The python arm REIMPLEMENTS the advance — `verify_rxt.py`
+cannot call `next_pos`, so it carries the skip rule in python — which
+is the second-implementation shape §2.19 argues against one production
+over, when it refuses a `printf %b` decoder in bash. The difference,
+and it is the honest one: the bash case had no cross-check available
+and would have drifted silently, while here the three implementations
+are compared cell for cell by C1's case rows plus E5's fixture, on a
+population that includes the ill-formed subjects the rule is about.
+**A second implementation with a differential is a cost; a second
+implementation without one is a defect.** This is the first kind, and
+the differential is what is being paid for.
 
 ### 2.22 Regime membership: §4.5 item 4 REPAIRED, not replaced
 ([B42] N-48, P-Q5, roadblock in their §2.11)
