@@ -526,7 +526,10 @@ about it.
 
 **`version` is RESERVED** — recognised as a word the format owns, with no
 production behind it in any build. It is one line of insurance against the
-day a change to this format is not additive; nothing today is.
+day a change to this format is not additive; nothing today is. Its schema
+row carries the RESERVED sentinel wave (`--list-schema`'s `# wave-reserved:`
+trailer names the value), and it refuses BY NAME as RESERVED — not as NOT
+IN THIS BUILD, which would promise a wave that is not coming.
 
 ### Example
 

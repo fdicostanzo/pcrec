@@ -2675,7 +2675,22 @@ fi
 # BY NAME as NOT IN THIS BUILD (never as an unknown token: K14's shape),
 # and every row AT it must not. That is what makes SW13's "not in this
 # build" list DERIVED rather than hand-kept.
+#
+# THE RESERVED SENTINEL IS ITS OWN SUB-POPULATION (arm 4b), not a member
+# of this one: a reserved keyword (`version`, SW13) has NO delivery behind
+# it, so "NOT IN THIS BUILD" — which promises a wave that will bring it —
+# would be a lie about it, and its required shape is the RESERVED refusal
+# by name. Both sentinels come from the dump's own trailer comments, never
+# from a copy of internal.h's constants. (Whether the reserved refusal's
+# CLASS tag should stay [unknown-token-in-scope] or gain its own class is
+# W23.2's question — the class vocabulary is decided there, not here.)
 sc_built=$(awk '/^# wave-built:/ { print $3 }' "$SCHEMA")
+sc_reserved=$(awk '/^# wave-reserved:/ { print $3 }' "$SCHEMA")
+if [ -z "$sc_reserved" ]; then
+    fail "W23-S3 arm 4: the dump carries no '# wave-reserved:' trailer —
+  arm 4b's population boundary is gone and a reserved row would be swept
+  into the NOT-IN-THIS-BUILD population it cannot satisfy."
+fi
 wv_bad=0; wv_seen=0
 # THE ROW LIST IS BUILT BY awk AND NOT BY `read`, and that is not a style
 # choice: bash's `read` COLLAPSES TAB-delimited EMPTY fields even under a
@@ -2685,11 +2700,11 @@ wv_bad=0; wv_seen=0
 # the `wave` field it lands on is somebody else's. Measured here: the arm
 # read 0 rows out of a population of 7 and reported 0/0, which is a green
 # vacuity rather than a failure.
-wv_rows="$(awk -F'\t' -v built="${sc_built:-1}" '
+wv_rows="$(awk -F'\t' -v built="${sc_built:-1}" -v rsv="${sc_reserved:-999}" '
     BEGIN { s = 0 }
     /^#section schema/ { s = 1; next }
     /^#section /       { s = 0 }
-    s && $1 == "file" && $10 + 0 > built + 0 { print $2 }' "$SCHEMA")"
+    s && $1 == "file" && $10 + 0 > built + 0 && $10 + 0 < rsv + 0 { print $2 }' "$SCHEMA")"
 for kind in $wv_rows; do
     wv_seen=$((wv_seen + 1))
     printf '%s x\npattern a\nm "a" 0 1\n' "$kind" > "$WORKDIR/wave.rxt"
@@ -2706,6 +2721,34 @@ else
   refuse by name. A reader told 'unknown' goes hunting a typo in a word
   that is in the format's own spec (K14's shape). A population of ZERO is
   also a failure here: it means this arm is measuring nothing."
+fi
+
+# ARM 4b — the RESERVED sentinel's rows. A reserved keyword refuses BY
+# NAME as RESERVED: the word is the format's, no build parses it, and no
+# wave is coming (SW13). A population of ZERO fails for arm 4's reason —
+# the spec claims `version` is reserved, and a claim needs a producer.
+rv_bad=0; rv_seen=0
+rv_rows="$(awk -F'\t' -v rsv="${sc_reserved:-999}" '
+    BEGIN { s = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "file" && $10 + 0 == rsv + 0 { print $2 }' "$SCHEMA")"
+for kind in $rv_rows; do
+    rv_seen=$((rv_seen + 1))
+    printf '%s x\npattern a\nm "a" 0 1\n' "$kind" > "$WORKDIR/rsv.rxt"
+    rout=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/rsv.rxt" 2>&1)
+    case $rout in
+        *RESERVED*) ;;
+        *) rv_bad=$((rv_bad + 1)); echo "  '$kind' refused as: $rout" >&2 ;;
+    esac
+done
+if [ "$rv_seen" -ge 1 ] && [ "$rv_bad" = "0" ]; then
+    pass "W23-S3 arm 4b: all $rv_seen reserved-sentinel file-scope rows refuse BY NAME as RESERVED"
+else
+    fail "W23-S3 arm 4b: $rv_bad of $rv_seen reserved-sentinel rows did not
+  refuse by name as RESERVED. A population of ZERO is also a failure:
+  SW13's 'version is reserved' is a spec claim, and this arm is its
+  producer-side check."
 fi
 
 # ARM 5 — CARDINALITY, DRIVEN FROM THE DUMP'S OWN CLAIM PER ROW.

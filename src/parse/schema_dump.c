@@ -113,7 +113,9 @@ char *pcrec_rxt_schema_tsv(void)
         "#   agree) | none (see #section surface for the reason).\n"
         "# wave: which delivery introduces the kind. A row whose wave is\n"
         "#   above this build's is RECOGNISED and refused BY NAME as NOT IN\n"
-        "#   THIS BUILD, never as an unknown token.\n"
+        "#   THIS BUILD, never as an unknown token. The one exception is the\n"
+        "#   RESERVED sentinel (`# wave-reserved:` below): no delivery\n"
+        "#   introduces such a kind, and it refuses BY NAME as RESERVED.\n"
         "#section schema\n"
         "#scope\tkind\tvalue\topens_group\tchildren\tcardinality"
         "\tconstraints\tsource\tvalidated_by\twave\n");
@@ -163,6 +165,11 @@ char *pcrec_rxt_schema_tsv(void)
      * those. */
     sb_printf(&sb, "# schema-rows: %zu\n", pcrec_rxt_schema_nrows());
     sb_printf(&sb, "# wave-built: %d\n", PCREC_RXT_WAVE_BUILT);
+    /* The RESERVED sentinel is printed for the same reason wave-built is:
+     * a check that partitions the rows by wave needs both boundaries from
+     * the dump itself, or it hardcodes a copy of internal.h's constant —
+     * the control-sharing-a-source shape one number over. */
+    sb_printf(&sb, "# wave-reserved: %d\n", PCREC_RXT_WAVE_RESERVED);
 
     return sb_take(&sb);
 }

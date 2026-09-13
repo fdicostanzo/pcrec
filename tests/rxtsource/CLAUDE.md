@@ -442,9 +442,13 @@ same logic makes `ws_only_line_positions.rxtin` assert PARSE IDENTITY with
 its own deletion rather than acceptance, and makes the two comment
 fixtures assert the LINE the refusal names rather than that one happened.
 
-**W23-S3 drives BEHAVIOUR, never the table.** Its six arms exercise what
+**W23-S3 drives BEHAVIOUR, never the table.** Its arms exercise what
 each schema row CLAIMS — the opener set with a non-opener control,
-the prose pair in both directions, the wave column, cardinality per row in
+the prose pair in both directions, the wave column IN TWO POPULATIONS
+(arm 4: later-wave rows refuse BY NAME as NOT IN THIS BUILD; arm 4b:
+RESERVED-sentinel rows refuse BY NAME as RESERVED, both boundaries read
+from the dump's own `# wave-built:`/`# wave-reserved:` trailers, both
+populations required non-empty), cardinality per row in
 both directions, `children` with its control — and it never compares
 `--list-schema` to `rxt_schema.def`, which is the same source twice. Its
 denominator is the COMPILE-TIME row total the dump prints, because a check

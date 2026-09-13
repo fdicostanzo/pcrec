@@ -628,7 +628,13 @@ dump to the table, which would be the same source twice.
 A trailing `# schema-rows: N` comment carries the table's COMPILE-TIME row
 total, so a consumer iterating the rows has a denominator it does not get
 from the rows themselves: a check whose population is defined by the thing
-it checks agrees with a truncated table by construction.
+it checks agrees with a truncated table by construction. Two more trailer
+comments carry the `wave` column's boundaries — `# wave-built: N` (the
+wave this build implements) and `# wave-reserved: N` (the RESERVED
+sentinel; a row at it is a word the format owns with no delivery behind
+it, refused BY NAME as RESERVED rather than as NOT IN THIS BUILD) — so a
+consumer partitioning rows by wave reads both boundaries from the dump
+instead of copying a constant.
 
 Takes no `--flavour`, and for `--list-axes`' reason rather than a new one:
 a flavour is a PATTERN-syntax dialect, and the file format that carries a

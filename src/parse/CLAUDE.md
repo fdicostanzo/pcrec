@@ -1195,7 +1195,11 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   NON-COVERAGE; the main table is named rather than anonymous because
   `tests/lib/table.sh`'s Sections rule 4 makes an anonymous section in a
   multi-section stream the one table no conforming consumer can address.
-  A trailing `# schema-rows:` comment carries the COMPILE-TIME row total,
+  Three trailing comments carry what a consumer cannot get from the rows:
+  `# wave-built:` and `# wave-reserved:` are the `wave` column's two
+  boundaries (W23-S3 partitions its arm-4/4b populations on them rather
+  than copying internal.h's constants), and
+  `# schema-rows:` carries the COMPILE-TIME row total,
   which is the denominator a check iterating the dump's rows cannot get
   from the rows themselves.
 - **rxt_source.c** — [DD-13b.W1.1] THE `.rxt` SOURCE FILE'S HEAD PARSER,
