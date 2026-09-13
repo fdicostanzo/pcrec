@@ -674,25 +674,109 @@ to know to do so is by reading `\|` and the parent's declared value
 form. So the third device is DECLARED rather than left to be
 discovered, and the parameter count is stated as two.
 
-**S0 — LINE CLASSES (lexical, unchanged).** A line is BLANK (empty or
-whitespace only), a COMMENT (`#` in **column 1** — a `#` anywhere else
-is data, R-RXT-2), or CONTENT. A line's INDENT is its count of leading
-SPACES; **a leading TAB does not open an indent and is refused by
-name** (§1.6.1a narrowing (4), TAKEN). An indented `#` is a structure
-error naming the rule (*"comments must start in column 1"*,
+**S0 — LINE CLASSES (lexical).** **FOUR classes at revision 3.3, not
+three** (r57 ROUND 2, R2-F3): a line is BLANK (**the EMPTY line — zero
+bytes — and nothing else**), WHITESPACE-ONLY (nothing but spaces and
+tabs, at least one), a COMMENT (`#` in **column 1** — a `#` anywhere
+else is data, R-RXT-2), or CONTENT. A line's INDENT is its count of
+leading SPACES; **a leading TAB does not open an indent and is refused
+by name** (§1.6.1a narrowing (4), TAKEN). An indented `#` is a
+structure error naming the rule (*"comments must start in column 1"*,
 `rxt_source.c`'s shipped diagnostic, unchanged) — **outside an S3
-region; inside one, S0 does not apply at all**, which is what keeps
+region; inside one, S0 does not run at all**, which is what keeps
 §1.6.1a candidate (2) a narrowing AVOIDED rather than one taken.
+
+> **WHY BLANK NARROWED TO THE EMPTY LINE, and it is the opposite of a
+> narrowing in effect.** Revision 3.2 wrote BLANK as "empty or
+> whitespace only", and S1/S3 give a BLANK line a TERMINATING effect —
+> so that one parenthesis made every whitespace-only line close
+> attachments and end prose regions. MEASURED on the shipped binary,
+> all three legs do the opposite: `line_indented` (`rxt_source.c:109`)
+> tests only whether byte 0 is a space or a tab, so a whitespace-only
+> line is *indented*, stays inside a `config` body and stays inside a
+> block scalar as BYTES, while `line_blank_or_comment` (`:114`) skips
+> it everywhere else. The committed check `sem15`
+> (`tests/rxtsource/run_rxtsource_tests.sh:1592`) pins exactly that —
+> *"a whitespace-only line is ACCEPTED (ignored) by all three"* — and
+> the fixture `whitespace_only_line.rxtin` exists because leg C once
+> mis-classified it. Writing BLANK as the empty line restores the
+> shipped reading; §1.6.1a's candidates (6) and (7) are the two
+> narrowings it dissolves.
+
+**WHITESPACE-ONLY IS INERT, AND THAT IS THE WHOLE RULE.** Outside an S3
+region a whitespace-only line has **no structural effect of any kind**:
+it is not CONTENT (no indent is read off it, it attaches to nothing and
+nothing attaches to it, no first token is dispatched, no schema row is
+consulted) and it is not BLANK (it closes no attachment). A reader steps
+over it. Inside an S3 region it is BYTES like every other line there,
+which is what makes it today's paragraph break (§1.2.5).
+
+> **This is a DEVIATION from the manager's leaning and the measurement
+> is why.** The leaning was that a whitespace-only line become
+> *attachment-relevant* — indent = its leading whitespace, value empty,
+> schema-inert. That formulation dissolves the same two narrowings, but
+> it introduces a THIRD one, because S1's own "attaches to nothing" arm
+> then fires on two shapes that are legal today: a whitespace-only line
+> as the FIRST line of a file, and one immediately after a blank.
+> MEASURED, both are accepted by all three legs today (`   \npattern
+> a\nm "a" 0 1` and the same shape after an empty line: leg A rc 0, leg
+> B rc 0, leg C rc 0). "Inert" is also the shorter sentence and the one
+> a generic reader can implement without a special case, so it is taken
+> on both grounds. §0.8's ROUND 2 block records it as pushback.
 
 **S1 — ATTACHMENT.** A CONTENT line whose indent is GREATER than the
 nearest preceding CONTENT line's **attaches to it as a CHILD**. Equal
 indent makes them SIBLINGS. Lesser indent closes back to the nearest
 enclosing level with that indent; an indent matching no enclosing level
-is a structure error. A BLANK line closes every open attachment,
-returning to indent 0 (the head's own r46sem-10 rule, now the general
-one). A CONTENT line at indent 0 with nothing before it, or an indented
-line following a blank, attaches to nothing and is a structure error
+is a structure error. **A BLANK line and a COMMENT line each close
+every open attachment, returning to indent 0** (the head's own
+r46sem-10 rule for the blank, now the general one; the comment is NEW
+at 3.3, below). A WHITESPACE-ONLY line does nothing at all. A CONTENT
+line at indent 0 with nothing before it, or an indented line following
+a blank or a comment, attaches to nothing and is a structure error
 (*"indented line attaches to nothing"*).
+
+> **THE COMMENT LINE IS A STRUCTURAL DEVICE AND REVISION 3.2 NEVER SAID
+> SO** (r57 ROUND 2, R2-F2, a MUST-FIX). S0 declared the class and
+> neither S1 nor S3 stated its EFFECT, and silence there is not
+> neutral — it reads as "a comment is skipped and the structure around
+> it continues", which is a reject→accept WIDENING in two measured
+> places and falsifies §1.6.1's claim 2. MEASURED on the shipped
+> binary, both are refused today and the refusal is the same one:
+> - `config c` / `  flags i` / `# column one` / `  engine vm` —
+>   **REFUSED at line 4**, *"indented line continues nothing (the
+>   declaration above it takes no continuation)"*. The column-1 `#` is
+>   not indented, so `parse_config`'s `if (!line_indented(nx)) break;`
+>   (`:727`) ENDS the body, and the `engine vm` line below reaches the
+>   file-level loop as an indented line with nothing to continue.
+>   Without the terminating rule, S1 would re-attach it to `config c`
+>   and accept the file.
+> - `description |` / `  line one` / `# column one` / `  line three` —
+>   **REFUSED at line 4**, the same message, because `parse_prose`'s
+>   `while (line_indented(...))` (`:511`) ends the region there. Without
+>   the terminating rule, S3's extent test alone is the indent test, the
+>   region would reopen below the comment, and the opener would carry
+>   **two disjoint prose regions** — a shape S3's single-extent rule
+>   cannot express at all, so the widening is not merely unwanted but
+>   unrepresentable.
+>
+> One sentence in S1 and one in S3 close both. The rule is not a
+> carve-out for comments: a comment and a blank line have the SAME
+> structural effect, which is the one a reader can remember.
+
+**Why a comment terminates rather than being transparent.** The
+alternative — a comment is skipped and the structure around it
+continues — is defensible in the abstract and is what most indented
+formats do. It is rejected on two grounds, and the second is the
+decisive one. (a) It is not what any shipped reader does, and §1.6.1's
+claim 2 is a promise about files, not about elegance. (b) Transparency
+requires the reader to hold the pre-comment attachment state across an
+unbounded run of comment lines and then decide whether the next line
+resumes it — which is exactly the "structure depends on what you
+remember" property the two-layer split exists to remove. A terminating
+comment is a local rule: the reader's state after a COMMENT line is the
+same as its state after a BLANK, and neither depends on what preceded
+it.
 
 **S2 — GROUPING.** Among SIBLINGS, a line whose first token is a member
 of the **BLOCK-OPENER SET** starts a group that absorbs the following
@@ -700,15 +784,64 @@ siblings until the next opener at that level or the end of the
 enclosing scope. The opener set is closed, declared, and has **exactly
 two members: `pattern` and `pattern-esc`** (§2.19).
 
-**S3 — OPAQUE REGIONS (NEW at revision 3.2).** A CONTENT line whose
-value is the single byte `|` **opens an OPAQUE REGION**. Its EXTENT is
-structural and is the only structural fact about it: the region runs
-from the next line to (exclusive) **the first line whose indent is
-less than or equal to the opener's, or the first BLANK line, whichever
-comes first**. Every line inside the region is BYTES — not classified
-by S0, not attached by S1, not tested against S2. The region's content
-is the opener line's VALUE; what it decodes to is a schema question
-(§1.2.5's `prose-value`), not a structural one.
+**S3 — OPAQUE REGIONS (NEW at revision 3.2; its trigger and its
+boundary test both CORRECTED at 3.3).** A CONTENT line **whose kind is
+PROSE-REGION-OPENING** — structure-layer parameter 2 below — and whose
+value, **after trailing spaces and tabs are trimmed, is exactly the
+single byte `|`**, opens an OPAQUE REGION. Its EXTENT is structural and
+is the only structural fact about it: the region runs from the next
+line up to, and not including, **the first of**
+
+- a CONTENT line whose indent is less than or equal to the opener's,
+- a BLANK line (S0's, i.e. the empty line),
+- a COMMENT line (a `#` in column 1).
+
+A WHITESPACE-ONLY line ends nothing and is bytes. Every line inside the
+region is BYTES — **S0 does not run on it, S1 does not attach it, S2
+does not test it**. The region's content is the opener line's VALUE;
+what it decodes to is a schema question (§1.2.5's `prose-value`), not a
+structural one.
+
+**THE TRIGGER IS PARAMETERIZED, and revision 3.2's was not** (r57 ROUND
+2, R2-F1, a MUST-FIX). Read literally, 3.2's *"a CONTENT line whose
+value is the single byte `|`"* opens a region on **any** such line —
+and `pattern |` is a legal pattern today (the alternation of two
+empties; MEASURED rc 0, `--list-source` dumps the pattern column as
+`|`), so the literal reading turns a working file into a refusal. The
+EBNF had the rule right all along (`prose-value`'s own production and
+`opaque-region`'s side condition, §1.3) and the normative sentence
+contradicted it; the sentence is what moved. The TRIM half is not new
+either — it is the shipped rule at `rxt_source.c:1222-1226`, ruled at
+W1.1 as r46sem finding 14 (*"a `|` with trailing whitespace is nobody's
+intended literal"*), matching leg C's own `v.strip() == '|'`, and pinned
+by the committed fixture `desc_pipe_trailing_space.rxtin` (`sem14`,
+refused by all three). S3 states the shipped rule rather than a second
+one.
+
+**THE BOUNDARY TEST NO LONGER CONTRADICTS ITSELF.** Revision 3.2 said
+the region ends at *"the first BLANK line"* while also saying its
+interior is *"not classified by S0"* — and BLANK is an S0 class, so the
+rule asked a classifier it had just disabled. The scoping is stated
+instead of implied: **S0 does not run for DISPATCH or ATTACHMENT inside
+the region; the three-way boundary test above is the ONE thing a reader
+still computes per line**, and it needs exactly three predicates — is
+the line empty, does it begin with a column-1 `#`, and (for a CONTENT
+line) what is its indent. Nothing else about a region line is ever
+asked. Stated the falsifiable way: *a reader can find a region's end
+without tokenising a single line inside it.*
+
+**The extent rule and the shipped loop coincide on today's whole
+population, and the reason is worth checking rather than assuming.**
+Leg A's region loop is `while (line_indented(...))` — "indented at
+all", not "indented more than the opener" — so the two rules could
+differ for an opener at indent > 0. They cannot today: `description` is
+the only prose-valued kind that exists, and it appears at FILE scope
+and (since revision 3.1) at BLOCK scope, both of which are indent 0,
+where "indent ≤ 0" and "not indented" are the same test. `config_vocab`
+(`rxt_source.c:145`) has no prose-valued member at all. So the general
+rule is stated now, at zero cost, rather than being discovered to
+disagree with the implementation the day a prose field lands inside a
+sub-block.
 
 That is the whole layer. From S0-S3 a reader recovers: every line's
 parent, every group's extent, every opaque region's extent, and
@@ -721,12 +854,28 @@ ruling forbids — that is a per-keyword structural EXCEPTION decided by
 an open-ended table — but both are keyword facts, both are stated as
 such, and §1.2.3 prices removing them:
 
-| parameter | schema column | what a generic reader does with it | today's answer |
+| parameter | schema column(s) | what a generic reader does with it | today's answer |
 |---|---|---|---|
 | the BLOCK-OPENER set (S2) | `opens_group` | decides where a group starts | two rows: `pattern`, `pattern-esc` |
-| the PROSE-VALUED kinds (S3) | `value = prose` | decides whether a bare `\|` value opens an opaque region | today: `description`, `license-note`, `adaptation`, `attribution`, `note` — five rows, and the set GROWS whenever a prose field is added |
+| the PROSE-REGION-OPENING kinds (S3) | **`value` AND `children`, read as a PAIR** — the kind qualifies iff `value: prose` *and* `children: prose` | decides whether a trimmed bare `\|` value opens an opaque region | today: `description`, `license-note`, `adaptation`, `attribution`, `note` — five rows, and the set GROWS whenever a prose field is added |
 
-Both are **one `--list-schema` query** (§2.25), so a generic reader
+**PARAMETER 2 IS ONE PARAMETER READ OFF TWO COLUMNS, stated once here
+and nowhere contradicted** (r57 ROUND 2, R2-F4). Revision 3.2 said
+`value = prose` in §1.2.1 and §1.2.2, said the PAIR in §2.25.2's
+reconciliation and in §1.3's EBNF, and left a reader to guess; three
+sites disagreed about a normative fact. **The PAIR wins, and S-R5's
+detectability is the tiebreaker.** If the structure layer read `value`
+alone, then flipping a row's `children` from `prose` to `none` while
+leaving `value: prose` would change NOTHING a reader can observe: the
+region still opens, its lines are still bytes, so they never reach a
+schema-validity check either — a corrupted normative column with no
+detector anywhere, which is the K35 shape the sabotage row exists to
+prevent. Reading the pair makes either flip a structural change that
+§9's A-group fixtures see, which is why S-R5 (§3.2) now names both
+plants. The count of PARAMETERS is unchanged at two; the count of
+COLUMNS the structure layer reads is three.
+
+Both parameters are **one `--list-schema` query** (§2.25), so a generic reader
 FETCHES them rather than hard-coding them, and both are visible in the
 same dump a validity reader already reads. The second is the more
 load-bearing of the two and revision 3.1 hid it: the opener set is
@@ -877,12 +1026,17 @@ the boundary:
   group, whether it admits children and in which scope, its
   cardinality, its required/conditional status, and whether its value
   is drawn from a closed set.
-- **Two of those columns are READ BY THE STRUCTURE LAYER** and the rest
-  are validity (§1.2.1's parameter table): `opens_group` and
-  `value = prose`. The boundary between the layers is therefore not
-  "the schema knows nothing structural" — it is that the structure
-  layer reads exactly two columns, both closed-form, and never
-  dispatches on a kind's identity.
+- **THREE of those columns are READ BY THE STRUCTURE LAYER, as TWO
+  parameters**, and the rest are validity (§1.2.1's parameter table,
+  which is normative): `opens_group` is parameter 1; `value` and
+  `children` together are parameter 2, a kind opening a prose region
+  iff it carries `value: prose` AND `children: prose`. **(3.3, r57
+  ROUND 2 R2-F4: revision 3.2 wrote "two columns … `value = prose`"
+  here and the PAIR in §2.25.2 — one normative fact with two
+  spellings.)** The boundary between the layers is therefore not "the
+  schema knows nothing structural" — it is that the structure layer
+  reads exactly three columns, all closed-form, and never dispatches on
+  a kind's identity.
 - **A first token unknown IN ITS SCOPE is a hard error naming the
   scope** ("`testee` is not a pattern-block directive"). Nothing is a
   keyword everywhere. Unchanged in force; now derived from a table.
@@ -921,8 +1075,9 @@ Three things about that, each measured rather than argued:
 Stated the other way round, so the claim is falsifiable — **and
 RESTATED AT 3.2 against the two-parameter baseline, because revision
 3.1's version of this sentence counted one parameter and there are
-two**: *with a two-row opener table AND the prose-valued kind set,
-structure recovery is complete and context-free.* Both are one
+two**: *with a two-row opener table AND the prose-region-opening kind
+set (the `value`/`children` pair, 3.3), structure recovery is complete
+and context-free.* Both are one
 `--list-schema` query, and together they are the entire residue of
 "keywords decide structure" in the format. The honest reading of the
 second: the opener set is closed at two and can be quoted in a
@@ -1040,16 +1195,24 @@ stop implying they live in one layer.
 
 - Whole-line `#` comments only, column 1 (S0). The one comment with
   meaning — `# pcre2-only` immediately before a `pattern` line — keeps
-  it, and is defined in §2.9 as an alias.
-- Blank lines close attachment (S1) and carry no other meaning.
+  it, and is defined in §2.9 as an alias. **A comment line also CLOSES
+  ATTACHMENT and ends an open prose region, exactly as a blank line
+  does (3.3, S1/S3)** — the only structural effect a comment has, and
+  the reason §1.6.1's claim 2 survives.
+- Blank lines close attachment (S1) and carry no other meaning. **A
+  BLANK line is the EMPTY line (3.3); a WHITESPACE-ONLY line is inert
+  outside a prose region and bytes inside one.**
 - A line kind is its first whitespace-delimited token, dispatched
   **within the scope its attachment put it in** (S1 then schema).
 - **One line, one value — with exactly one exception, the BLOCK
-  SCALAR.** A line kind whose schema `value` is `prose` may write
-  `<kind> |` and continue on lines indented under it; newlines are
-  preserved and **the value ends where S3 says the OPAQUE REGION
-  ends** — at the first line indented no more than the opener, or at
-  the first blank line. The one-line form `<kind> <text>` stays. The
+  SCALAR.** A line kind whose schema row carries `value: prose` AND
+  `children: prose` may write `<kind> |` — trailing spaces and tabs
+  after the `|` are trimmed before the test, the shipped rule
+  (`rxt_source.c:1222-1226`, r46sem finding 14) — and continue on lines
+  indented under it; newlines are preserved and **the value ends where
+  S3 says the OPAQUE REGION ends** — at the first CONTENT line indented
+  no more than the opener, the first BLANK (empty) line, or the first
+  column-1 COMMENT line. The one-line form `<kind> <text>` stays. The
   exception is a property of the VALUE production (`prose-value`), not
   of any keyword, so a second prose field inherits it rather than
   inventing it — and inheriting it grows the structure layer's second
@@ -1064,6 +1227,20 @@ stop implying they live in one layer.
 - **Inside the region, nothing is a line kind.** A prose line whose
   first token happens to spell `pattern`, `m` or `provenance` is prose.
   This is not a carve-out; it is S3 having no dispatch step.
+- **MULTI-PARAGRAPH PROSE, and the one spelling that carries it**
+  (3.3). An INDENTED WHITESPACE-ONLY line is the paragraph break: it is
+  inside the region, it is bytes, and after the block's indent is
+  stripped it decodes to an empty line in the value. MEASURED on the
+  shipped binary — `description |` / `  para one` / three spaces /
+  `  para two` dumps the value `para one\n \npara two`, rc 0. It is the
+  ONLY spelling available, because r46sem-10 ruled that a truly empty
+  line ENDS the continuation, and it does: the same file with a
+  zero-byte separator is **REFUSED** at the line below it (*"indented
+  line continues nothing"*). That is why S0's BLANK class had to narrow
+  to the empty line rather than S1/S3 growing an exception — the
+  whitespace-only line is not an oddity the format tolerates, it is the
+  only way the format can currently say "new paragraph", and revision
+  3.2's parenthesis would have deleted it.
 - **`prose-value` is legal wherever the schema declares a prose value,
   at any depth** — file level, a `config` body, a sub-block attribute,
   and (NEW at 3.1, see below) a pattern block's own `description`.
