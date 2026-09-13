@@ -1,8 +1,23 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 3.1 ([DD-13b.W23] STEP 1.1, 2026-09-12, lane
-w23recon) — the RECONCILIATION against Frank's internal-consistency and
-ownership rulings.** Revision 3 (lane w23design, same day) absorbed
+**Status: REVISION 3.2 ([DD-13b.W23] STEP 1.2, 2026-09-12, lane w23fix)
+— the r57 FIX ROUND.** Three read-only critics attacked revisions 3 and
+3.1 (`docs/dev/reviews/2026-09-12-r57-w23-format.md`: 3 blockers, 14
+must-fixes, 12 shoulds, 4 nits, all dispositioned FIX-NOW). **§0.8 is
+the finding-by-finding record and is where a reader of revision 3.1
+starts.** The five structural outcomes: the BLOCK SCALAR is declared as
+the structure layer's third device (S3 OPAQUE REGIONS, §1.2.1) and the
+structure layer's schema parameters are stated as TWO rather than one;
+the NARROWING CENSUS is re-swept with §1.6.4's own rule and published as
+a CLOSED LIST of five (§1.6.1a); the constraint vocabulary grows from
+five kinds to seven because four W23 refusal rules did not fit the five
+(§2.25.3); the `pattern`/`pattern-esc` both-in-one-block refusal is
+DROPPED as an empty population (§2.19); and the derived-identifier
+repair gains its length discipline and its callability bound (§2.22).
+
+**Revision 3.1** ([DD-13b.W23] STEP 1.1, 2026-09-12, lane
+w23recon) was the RECONCILIATION against Frank's internal-consistency and
+ownership rulings. Revision 3 (lane w23design, same day) absorbed
 pcrec-bench's capability-set needs note (`bench_rxt_needs_v1.md`,
 received via outbox O-26) under **F-Q1** (Tier 1 AND Tier 2 as one
 **W23** delivery, §1.4) and **F-Q2** (multi-line patterns are a MUST,
@@ -21,7 +36,10 @@ text:
   CAPABILITY requirements, the syntax is pcrec's, and **long-term
   viability of the format outranks bench convenience and
   minimal-diff-from-today**. §2.26 is the spelling audit that criterion
-  forces; four spellings moved under it.
+  forces; THREE spellings moved under it (corrected at 3.2, r57
+  C-N11 — the fourth item revision 3.1 listed, a pattern block's
+  `description` taking `prose-value`, is §1.2.5's consequence of the
+  structure-layer re-factoring and not an ownership-audit move).
 
 Revision 2 was post-panel (r44) and post-ruling (D87). W1 is BUILT
 (steps .1/.2/.3 landed; the wave table records what remains). §0.6 is
@@ -287,20 +305,43 @@ since the number revision 3 quotes was taken):
 - **Leg C dispatches an indented PRE-BODY line on its first token**,
   so revision 3 §1.2's claim that "the indentation test PRECEDES token
   dispatch" holds "in all three body readers" is FALSE today.
-  `tests/harness/verify_rxt.py:407-419` splits the line (which strips
+  `tests/harness/verify_rxt.py:407-423` splits the line (which strips
   leading whitespace) and raises the head-word or
   no-open-block diagnostic before reaching its indentation check at
   `:424`; measured on three fixtures, an indented `m` line before the
   first `pattern` reports *"'m' line before any pattern block"*.
-  **Leg B has no indentation test at all** — all 24 of `run.sh`'s
+  **CORRECTED AT REVISION 3.2 (r57 C-N9) — the defect is PRE-BODY
+  ONLY, and revision 3.1's wording over-read it.** `:424`'s
+  indentation check is UNCONDITIONAL for every line once a block is
+  open: the `if not seen_pattern:` guard at `:407` closes at `:423`,
+  so an indented line INSIDE a block reaches `:424` and is refused
+  with *"a pattern block's lines are not indented"* before any token
+  dispatch. Leg C therefore has the ordering right for body lines and
+  wrong only for the pre-body region — which is precisely why §9's
+  A-group fixture must sit at the PRE-BODY position (S-M5) or it
+  cannot reach the defect at all.
+  **Leg B has no indentation test at all** — **22** of `run.sh`'s
   dispatch arms are anchored `^<keyword>` with no leading-whitespace
-  tolerance (its one tolerant regex is the blank-line skip), so an
-  indented line reaches the catch-all *"unparseable .rxt line (hard
-  error)"* by FALL-THROUGH rather than by a rule. Only leg A
-  (`src/parse/rxt_source.c:992`) tests indentation before dispatch.
-  Every arm is a hard error, so nothing is mis-parsed today; what is
-  false is the claim that a RULE holds in three places, and §1.2 now
-  states it where it can be enforced and §9's A-group says what pins it.
+  tolerance, so an indented line reaches the catch-all *"unparseable
+  .rxt line (hard error)"* by FALL-THROUGH rather than by a rule.
+  **The count is 22, not revision 3.1's 24, and the derivation is
+  given because the first number was a raw grep** (r57 C-S8): 24
+  `^`-anchored `=~` tests occur in the file, of which **two are
+  pre-loop skips** and not dispatch arms at all (`^[[:space:]]*$` at
+  `run.sh:1692`, `^#` at `:1693` — the second is the one tolerant
+  regex, and it is a comment test rather than a blank-line skip as
+  3.1 said). The remaining 22 split **17 inside the hash-pinned arm
+  region** (`:1713` BEGIN .. `:1967` END) and **5 appended after it**
+  (`:1984`-`:2092`). The CONCLUSION is unchanged and confirmed: no arm
+  tolerates leading whitespace. This is the stale-pinned-number shape
+  §1.1 was corrected for, reintroduced in the correcting revision's own
+  paragraph — which is why every count in §0.8 below carries its
+  derivation rather than its value alone.
+  Only leg A (`src/parse/rxt_source.c:992`) tests indentation before
+  dispatch. Every arm is a hard error, so nothing is mis-parsed today;
+  what is false is the claim that a RULE holds in three places, and
+  §1.2 now states it where it can be enforced and §9's A-group says
+  what pins it.
 
 Where each consequence of the internal-consistency ruling landed:
 
@@ -315,14 +356,134 @@ Where each consequence of the internal-consistency ruling landed:
 **Where to attack revision 3.1 is §5.2a**, written before the panel
 rather than after, and pointed at from here so it is not missed.
 
-Where the ownership ruling landed: §2.26, the audit. Four spellings
-moved — `capable` → **`provides`**, `licence`/`licence-note` →
-**`license`/`license-note`**, the `freq` data block's five provenance
-fields → **the same `provenance` sub-block a pattern block uses**, and
-`variant`'s `text` KEPT with a different reason (its revision-3
-justification expires under the new structure layer). §9's C-group and
-D-group rows move with them, and the delivery's outbox message to the
-bench carries the list.
+Where the ownership ruling landed: §2.26, the audit. **THREE spellings
+moved** — `capable` → **`provides`**, `licence`/`licence-note` →
+**`license`/`license-note`**, and the `freq` data block's five
+provenance fields → **the same `provenance` sub-block a pattern block
+uses** — and `variant`'s `text` was KEPT with a different reason (its
+revision-3 justification expires under the new structure layer). §9's
+C-group and D-group rows move with them, and the delivery's outbox
+message to the bench carries the list. **CORRECTED AT 3.2 (r57
+C-N11)**: revision 3.1 counted four moves by including a pattern
+block's `description` taking `prose-value`. That is not a spelling
+move and not the audit's — it is §1.2.5's consequence of §1.2.1's
+re-factoring, arrived at from the internal-consistency ruling rather
+than the ownership one, and it is a WIDENING rather than a rename. The
+outbox message inherits the corrected framing (§9's correction list
+keeps the row, under its true cause).
+
+### 0.8 Revision 3.2 record — the r57 panel, finding by finding
+
+The input is `docs/dev/reviews/2026-09-12-r57-w23-format.md`: three
+read-only critics (grammar/structure, schema/checks, consumer/needs),
+all opus, every measured claim a real `build/pcrec` probe. **Three
+blockers, fourteen must-fixes, twelve shoulds, four nits; the manager
+dispositioned every one FIX-NOW.** No ruling is reopened, no need
+changes its disposition, and §1.4's wave table is untouched.
+
+**MEASURED FOR THIS REVISION** (this worktree, `build/pcrec` built at
+the lane's own merge base, read-only — every number below carries its
+derivation, because §0.7's own "24 arms" was a raw grep that meant
+something else):
+
+- **The five grammar-lens probe cells all reproduce**, and they are the
+  narrowing census's evidence (§1.6.1a). `description |` with an
+  indented `#` in its body: **rc 0, the `#` line is PROSE**
+  (`--list-source` value `line one\n# this looks like a comment\nline
+  three`). Ragged prose inside a block scalar: **rc 0**, relative
+  indentation preserved. A tab-indented `config` body: **rc 0**,
+  `flags=i engine=vm`. A `config` body mixing a 2-space line and a TAB
+  line: **rc 0**, parsed flat.
+- **AND ONE OF THE FIVE IS A SHIPPED DEFECT, not a narrowing** (r57
+  G-B2 N2's independent finding, reproduced here): a block scalar whose
+  first continuation line is indented 4 and whose second is indented 2
+  yields the value `line one\ndented-line-two` — **`parse_prose`
+  (`rxt_source.c:520-533`) strips the block's indent as a BYTE COUNT
+  (`skip = len < indent ? len : indent`) rather than as whitespace, so
+  a dedented line silently loses two characters of CONTENT**. Filed as
+  `docs/dev/known_issues.md` **K57**; it is independent of this
+  revision's direction (it is wrong under revision 3's rules, revision
+  3.1's, and 3.2's alike).
+- **The C-M1 collision narrowing reproduces and its population is
+  measured.** `x_y` beside `x-y` with the call spelled `(?&x_y)`
+  compiles today and its artifact is **byte-identical** to the same
+  file without the `x-y` sibling — with a methodology note that is this
+  house's THIRD recorded instance of the same trap: emitting the two to
+  `a.c` and `b.c` reports them as differing on the `#include` line
+  alone (`opt4_impl/CLAUDE.md`'s own trap), so the comparison is run
+  with equal basenames in different directories. Population of the
+  general collision shape across both repos: **1** — the deliberate
+  fixture `tests/rxtsource/fixtures/target_prefix_collision.rxtin`
+  (`a-b` beside `a.b`), over 96 `name` lines in 26 files; **pcrec-bench
+  contains no `.rxt`/`.rxtin` file at all** (0 files, read-only check).
+  Population of C-M1's own `x_y`-beside-`x-y` shape: **0** in both.
+- **The corpus census re-confirms at 210 / 3,936 / 28,943**, and the
+  non-blank non-comment line count — the number a GENERIC reader sees,
+  which is what §1.2.3's argument is about — is **35,961**, not the
+  28,943 expectation lines revision 3.1 quoted there (r57 G-B6).
+- **20 head declarations carry an indented body, across 13 of the 45
+  `tests/rxtsource/fixtures/` files, and every indented CONTENT line is
+  width 2** (r57 G-B7; revision 3.1 said 19). The apparent 21st and the
+  one width-3 line are the same line: `whitespace_only_line.rxtin:9`, a
+  line of pure whitespace, which S0 classifies BLANK and not CONTENT.
+  Tab-indented content lines in either repo: **0**.
+- **Two adjacent `pattern` lines are two blocks, rc 0** (`--list-source`
+  prints two `pattern` rows) — the measurement that empties §2.19's
+  both-spellings refusal (r57 S-BL2).
+
+Where each finding landed:
+
+| id | sev | landed |
+|---|---|---|
+| **G-B1** | BLOCKER | §1.2.1 gains **S3 OPAQUE REGIONS** as the structure layer's third device, and the layer's schema parameters are stated as **TWO** (`opens_group`, `value = prose`), both fetched from `--list-schema`. §1.2.4's marker comparison is re-run against the two-parameter baseline and the sentence "`\|` … neither decides where a line attaches" is WITHDRAWN and replaced |
+| **S-BL1** | BLOCKER | §2.25.3 grows from five constraint kinds to **seven** — `cross-scope` ADMITTED (its W23 customer meets the section's own membership rule; §2.25.4's deferral of it contradicted a production one section away) and `forbidden-if` ADMITTED; subject-`as`'s mapping is corrected from `unique-by` to the new `functional-binding` reading of `unique-by` stated explicitly; `under`'s duplicate key gets an honest home as **parser code with its reason** rather than a sixth kind. §2.25.3's completeness claim is deleted |
+| **S-BL2** | BLOCKER | §2.19's "one block carries `pattern` or `pattern-esc`, never both" is **DROPPED** — measured empty population; a second opener starts a new block (S2). §9's B6 row flips from SATISFIED-by-refusal to a bench CORRECTION (premise dissolved), and the correction list carries it |
+| **G-B2** | MUST | The narrowing census is re-swept and published as a CLOSED LIST of five (§1.6.1a), each with population / forced-vs-chosen / spec sentence. N3 (tabs) is **REFUSED BY NAME** as the manager leaned; the lane did not overturn it and §1.6.1a records why. N2's shipped dedent corruption is K57 |
+| **G-B3** | MUST | §2.25.2's `children` column gains a **`prose`** member and the precedence is stated: a `value: prose` kind's children are its VALUE, not schema-checked lines. H12 already assumed this reading and now cites it |
+| **G-B4** | SHOULD | §1.2.4 count 1 reworded: the disagreement-state error class RELOCATES to the schema layer rather than disappearing, and `\|`'s own no-continuation refusal (`rxt_source.c:514`) is an instance of it. The DECISION stands; count 2 is the strongest |
+| **G-B5** | SHOULD | §2.26 item 4 states which half of the `requires`/`provides` pairing it delivers; §2.16 gains the pointer sentence from `provides` to `vocabulary requires` |
+| **G-B6**, **G-B7** | NIT | 35,961 (§1.2.3); 20 blocks / 13 of 45 fixtures / uniform width 2 (§1.2.1) |
+| **S-M1** | MUST | Folded into G-B1's S3 + G-B2's package; §9's A-group names the ragged-prose fixture |
+| **S-M2** | MUST | Every `validated_by: all-readers` row owes a three-leg fixture, NAMED in §9's A-group; "the fixture population covers every such row" becomes its own check (§9 A3/A4) |
+| **S-M3** | MUST | S-R2's detector is re-named as a **pcrec-side fixture pair**; the bench's C5/C6 are corroboration (§3.2) |
+| **S-M4** | MUST | S-R3 re-spelled as a hand-written dump **disagreeing on one row**, and the cross-check widened past `closed` (§3.2) |
+| **S-M5** | MUST | §9's A-group fixture is pinned at the **PRE-BODY** position and asserts diagnostic CLASS, not exit code |
+| **S-M6** | MUST | §9's correction list gains **D1** (nine → eleven provenance keys plus two renames) and the `provides` row's empty population citation is corrected to the checks that actually type a moved token |
+| **S-M7** | MUST | SW17 gains `docs/spec/table_contract.md` — its Scope table enumerates every conforming producer and says new tables adopt AT BIRTH (D94's failure verbatim) |
+| **S-S1** | SHOULD | §2.25.4's legs-B/C row is restated as a **DECLINE**, not a deferral |
+| **S-S2** | SHOULD | The `wave` column is KEPT, with its real consumer stated (§2.25.2) |
+| **S-S3** | SHOULD | The three `validated_by: none` items are given stated homes (§2.24) |
+| **S-S4** | SHOULD | §1.1's floor re-pinned at **210 / 3,936 / 28,943** with the mover NAMED ([M5.0]'s `tests/utf8/` corpora) |
+| **S-S5** | SHOULD | "structurally impossible" qualified to leg A wherever it was unconditional (§1.2.6, §2.23, §8 P-Q1) |
+| **S-S6** | SHOULD | S-R4 SPLIT into two rows with two detectors (§3.2) |
+| **S-S7** | SHOULD | At-most-one-per-parent is ONE mechanism — the `cardinality` column — and §9's C7 and §2.25.3 are reconciled on it |
+| **S-S8** | SHOULD | C1's differential compares **diagnostic CLASS** for `all-readers` rows (§2.25.5, §9 A3/A4) |
+| **S-N1** | NIT | `--list-schema` is the **SEVENTH** registry dump, corrected at all three sites (§2.25.1, §3.3, SW17) |
+| **C-M1** | MUST | The `x_y`-beside-`x-y` collision is narrowing **(5)** in §1.6.1a's closed list, with its measured population and its forced-vs-CHOSEN verdict; §1.6.4 gains a **fourth case** for a chosen narrowing, and §5.2a attack 1 is re-aimed |
+| **C-M2** | MUST | SW12 gains the two `rxt_source.c` comment sites (`:288`, `:1129`); the non-callable-definition loss goes to Frank as **W23-F4** (§7.3), manager recommendation ACCEPT |
+| **C-M3** | MUST | §2.22 cites `rxt_compose.c:854-864` (the qualified-rowname synthesis), fixes the `def_find` misname to `def_by_name`, states the **refuse-before-mapping length rule**, and carries the **128-byte callability bound** |
+| **C-S4** | SHOULD | §2.20 rule 4 gains the `lib` closure clause |
+| **C-S5** | SHOULD | §2.20 rule 3 states that `use` RESOLVES in both modes |
+| **C-S6** | SHOULD | SW7 states the ill-formed-UTF-8 advance rule normatively; E5 becomes utf8-bearing; the second-implementation tension is acknowledged with C1 as the paid-for answer (§2.21) |
+| **C-S7** | SHOULD | §2.18 carries N-27's non-ID slice — byte length DERIVABLE, description and `periodic` refused with the D77 shape and their trigger |
+| **C-S8** | NIT | 22 arms with its derivation (§0.7) |
+| **C-N9** | NIT | The leg-C scoping clause (§0.7) |
+| **C-N10** | NIT | §2.24's column list marks the `pattern` column's `esc` dependency |
+| **C-N11** | NIT | The §2.26-four-moves framing corrected above; the outbox message inherits it |
+
+**What SURVIVED the panel** and is not re-argued below: F6's ragged-body
+method and result (reproduced byte-for-byte); the census at
+210/3,936/28,943 including the 25.8% blank-preceded measurement and the
+inference from it; F1 in both legs; M8's refusal in both arms; the
+version decline and the `version` reservation; the provenance
+unification including the `analyzer` keep; the one-derivation claim for
+leg A; the `vocabulary`-as-`source: file` nesting; required /
+required-if / closed correctly mapped for §2.14's rules 1/3/4; the
+checklist mapping behaviourally right on 39 of 41; §1.2.4's
+marker-vs-indentation PRICING (as distinct from its count-1 wording);
+NEEDS COVERAGE exact at 36/9/5/3; the four renames orphaning nothing;
+the zero-reader-change claim at the GRAMMAR level; and roadblocks #1-#5
+closed as claimed.
 
 ---
 
