@@ -460,3 +460,33 @@ change.
   settled, headed by: ns/char is a membership loop, NOT either engine, so
   nothing here licenses an end-to-end throughput claim, and the plan row's
   own DFA/hybrid-seam question is untouched.
+- `tt4m_time.md` — [TT-4M-TIME]'s TIMING memo (2026-09-12/13, lane
+  tt4mtime, measurement only, nothing under `src/`/`tests/`): the clean,
+  post-`a2c89c06`-fix, quiet-box `make test` timing pair at `HARNESS_BATCH`
+  unset vs `=64 PROCS=8`, at pin `99d2b6fe`. Headline: ~9.5% wall / ~8-10%
+  CPU saving, an order of magnitude below [TT-4M]'s own isolated-corpus
+  prototype ratios (4.28x/18.65x) because `HARNESS_BATCH` reaches at most
+  3 of `make test`'s 38 sections (`test-corpus`, `test-rxtsource`,
+  negligibly `test-known-fail`) — the other ~35 (single-process
+  differential drivers, fixed-scenario CLI/codegen compiles, python fuzz)
+  never call `tests/harness/run.sh` and pay their full unbatched cost
+  either way; attribution is structural (no per-section timestamps survive
+  in either log) not measured per-section. Full count identity confirmed
+  (checks passed/failed, corpus counts, `sections ran: 38/38` byte-
+  identical both runs). **Finding, not chartered before this memo**: the
+  suite is NOT green-except-`inline_capability` on this tree —
+  `test-anchored-match`'s `run_anchored_diff.sh` FAILS identically in both
+  runs (26 patterns whose emitted C does not compile under the harness's
+  own `-Werror` flags), invisible to prior partial runs that were killed
+  before reaching that section. Also names two un-held-constant confounds
+  (run 2's `PROCS=8` vs run 1's default 10; run 2's higher residual load1)
+  — both biasing AGAINST the measured saving, not inflating it — and
+  states the flip decision's residuals (SIZELOG's `-c`-only CPU/wall
+  caveat under batching; `make mech`'s harness arm never sets
+  `HARNESS_BATCH`, tt4m3_report.md F4) without recommending the flip
+  itself. Re-verifies `tt4m_batch_customers.md` current at the new pin
+  (sabotage-subtree growth is comment-only, no new customer) and completes
+  the san-arm feasibility note (batching's `GENCFLAGS` threading confirmed
+  by static read; the actual Linux-side sanitizer probe is owed, K54 blocks
+  it on this box). Docs `docs/dev/artifact_size_log.tsv`'s regeneration by
+  both runs as NOT to be committed (batch-mode SIZELOG caveats, warm box).
