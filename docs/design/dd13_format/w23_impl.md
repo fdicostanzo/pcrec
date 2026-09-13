@@ -1,10 +1,14 @@
 # [DD-13b.W23] Implementation note — the one W23 delivery
 
-**Status: REVISION 1 — WRITTEN, NOT PANELLED. NO CODE IS WRITTEN.**
+**Status: REVISION 1.1 — the r59 FIX ROUND. NO CODE IS WRITTEN.**
 The design is `format_design.md` **REVISION 3.4.1**, panel-gated at r58
 (`docs/dev/reviews/2026-09-13-r58-w23-aux.md`) with the Frank queue
 EMPTY (D99 withdrew W23-F1/F2, D100 ruled W23-F4 ACCEPT, W23-F3 was
-resolved at revision 3.1). This note is the build plan that opens the
+resolved at revision 3.1). Revision 1 of THIS note was panelled at r59
+(`docs/dev/reviews/2026-09-13-r59-w23-impl.md`: 4 blockers, 13 must-fix
+groups, all FIX-NOW, plus manager rulings R1-R4) — **§0.5 is the
+finding-by-finding record and is where a reader of revision 1 starts.**
+This note is the build plan that opens the
 implementation: what lands where, in what order, behind which merges,
 with which checks, and what each step owes the spec. It is
 `w1_impl.md`'s shape — §6's per-step briefs are §7/§8's there — and
@@ -45,7 +49,9 @@ merely that the site exists.
 
 ### 0.2 The delivery in one paragraph
 
-W23 is one delivery and five merges. The **STRUCTURE LAYER** (S0-S3 and
+W23 is one delivery and **SIX merges** (revision 1 said five; r59-B2's
+`include` harness half is a sixth, W23.3a — §1.10). The
+**STRUCTURE LAYER** (S0-S3 and
 three schema parameters, `format_design.md` §1.2.1) stops being a
 property of leg A's control flow and becomes a declared table,
 `src/parse/rxt_schema.def`, that leg A WALKS and `--list-schema`
@@ -139,6 +145,20 @@ it precisely is what keeps the staging honest:
   (`include`, `vocabulary`, `oracle`, `tag`, `use`, `ext`, the `freq`
   data block) is above the first `pattern` line and is therefore inside
   the byte range legs B and C never read. They gain **no head arms**.
+  **`include` IS THE ONE HEAD DECLARATION WITH A CONSEQUENCE FOR LEGS B
+  AND C, AND IT IS NOT A HEAD ARM** (r59-B2 — revision 1 stated this
+  bullet and §1.7 row 5's *"include discovery"* two sections apart and
+  never reconciled them, which is how the harness half of H5 came to
+  have no step at all). The distinction that makes both sentences true:
+  legs B and C never PARSE an `include` line — they read the resolved
+  fragment list off the SAME `--list-source` call they already make for
+  the body boundary, exactly as `w1_impl.md` §1.2's H11 target
+  inventory does (**MEASURED**, `run.sh:1671-1675` is that read) — and
+  then they SPLICE each fragment's blocks into the entry's own run.
+  Reading a list of paths out of a TSV column is not a head arm; it is
+  the seam working. **§1.10 is the whole mechanism**, and it is a
+  separate merge because it changes `run.sh`'s FILE DISCOVERY, which is
+  the most load-bearing loop in the tree.
 - **The BODY has three parsers, and W23 grows all three.** `tag`, `mc`,
   `under`, `provenance`, `variant`, `ext` at block scope, `pattern-esc`
   and `@file:`'s suffixes are all block-scoped, so leg B's arm chain and
@@ -146,11 +166,22 @@ it precisely is what keeps the staging honest:
   control (`w1_impl.md` §1.1's r45chk F2 correction) and it is why the
   three-leg differential is the delivery's central instrument.
 - **The ATTACHMENT arm is new in two legs and re-shaped in one.**
-  **MEASURED**: leg B has no indentation test at all — its arm chain
-  (`run.sh:1713-1967` pinned region, `:1984-2104` appended arms) is
-  seventeen `^`-anchored `[[ =~ ]]` arms none of which tolerates leading
-  whitespace, so an indented line reaches the catch-all at `:2105-2109`
-  by fall-through. Leg C has a dedicated refusal
+  **MEASURED**: leg B has no indentation test at all — its arm chain is
+  **TWENTY-TWO** `^`-anchored `[[ =~ ]]` arms, none of which tolerates
+  leading whitespace, so an indented line reaches the catch-all at
+  `:2105-2109` by fall-through. **The derivation, because revision 1
+  said "seventeen" and that is the PINNED REGION's count read as the
+  chain's** (r59-B-M7): 17 arms inside the hash-pinned region
+  (`run.sh:1713` BEGIN .. `:1967` END, arms at `:1714`, `:1742`,
+  `:1759`, `:1767`, `:1778`, `:1781`, `:1792`, `:1798`, `:1801`,
+  `:1827`, `:1843`, `:1859`, `:1875`, `:1891`, `:1907`, `:1918`,
+  `:1942`) plus **5 appended after it** (`:1984`, `:2000`, `:2015`,
+  `:2057`, `:2092`). That is `format_design.md` §0.6's own ruled
+  derivation, re-run against the file for this revision; the note's
+  own §2.25.5 and §1.1 both state 22. The substance is unchanged — no
+  arm tolerates leading whitespace either way — but the number a code
+  lane sizes its rewrite from must match the ruled record. Leg C has a
+  dedicated refusal
   (`verify_rxt.py:424-427`) that is a REJECTION of indentation, not an
   attachment rule. Leg A has the only real test
   (`rxt_source.c:1021-1030`). §1.7 is what each must become.
@@ -164,24 +195,26 @@ duplication.
 | # | file | lang | change | step |
 |---|---|---|---|---|
 | F1 | `src/parse/rxt_schema.def` (**new**) | C (X-macro) | THE SCHEMA TABLE. One row per (scope, kind) with `format_design.md` §2.25.2's ten columns. `src/core/limits.def`'s shape (**MEASURED**: 393 lines, header `:1-77` documents the X-macro row and the home-dispatch idiom) | W23.1 |
-| F2 | `Makefile` | make | `rxt_schema.def` joins the object prerequisite list. **MEASURED**: `Makefile:150` is the rule, and `:121-137` is the comment recording that `limits.def` was NOT a prerequisite twice — once at `[LIM-1]` and again after `[CC-DIFF]` STEP 2 — so `touch` + `make` printed "Nothing to be done". A `.def` that is not a prerequisite lets an edit rebuild nothing (`ccd2_report.md` §6b) | W23.1 |
+| F2 | `Makefile` | make | `rxt_schema.def` joins the object prerequisite list. **MEASURED**: `Makefile:150` is the rule, and `:118-146` is the comment recording the same defect **THREE** times — `limits.def` at `[LIM-1]`, `limits.def` again at `[CC-DIFF]` STEP 2, and `uprops_tables.inc` at `[M5.0]` stage 3 — each found the same way, by `touch` + `make` printing "Nothing to be done" (revision 1 cited `:121-137` and said "twice"; the third instance is in the same comment and is the one that made `gen-tables` a LIST). A `.def` that is not a prerequisite lets an edit rebuild nothing (`ccd2_report.md` §6b) | W23.1 |
 | F3 | `src/parse/rxt_schema.c` (**new**) | C | the table's READER: `pcrec_rxt_schema_row(scope, kind)`, the three structure-layer parameter queries (`opens_group`, the `value`+`children` PAIR, `children == tree`), and ONE exhaustive `default:`-less switch over the constraint enum — `src/parse/definitions.c`'s `pcrec_def_tag_applies` shape, so a kind added later is a compile error at the one site that must handle it | W23.1 |
-| F4 | `src/parse/rxt_source.c` | C | leg A's dispatch becomes a WALK over F1 rather than three `vocab_find` tables. **MEASURED, what is displaced**: `head_vocab :137-142`, `config_vocab :145-150`, `block_vocab :156-167`, `vocab_find :169-174`, and the per-line dispatch inside `pcrec_rxt_source_parse :984-1365` (head branch `:1068-1136`, body branch `:1139-1314`). S1 attachment replaces the flat `line_indented` test at `:1021-1030`; S3's extent rule replaces `parse_prose`'s `:513-564` loop condition; the diagnostic CLASS tag joins `rxt_fail :196-219` (**MEASURED: 63 call sites**) | W23.1 |
-| F5 | `src/parse/schema_dump.c` (**new**) | C | `--list-schema`, `src/parse/limits_dump.c`'s shape (**MEASURED**: 89 lines, `pcrec_limits_tsv :57-89`, and it `#include`s the `.def` directly with the macro defined at the call site). Plus the `surface` section: the declared NON-coverage rows (§2.24's table, four rows at 3.4.1) | W23.1 |
-| F6 | `cli/main.c` | C | `--list-schema` joins the registry-dump guard. **MEASURED**: the six existing dumps dispatch at `:651-656`, `--list-source` separately at `:664` with its own branch `:1177-1230`, and the shared guard block is `:1330-1379`. `--list-schema` is the **SEVENTH registry dump** and the eighth conforming table producer (§2.25.1, corrected at r57 S-N1 — `docs/spec/cli.md:586` already gives `--list-limits` the sixth ordinal) | W23.1 |
-| F7 | `tests/harness/run.sh` | bash | leg B: the ATTACHMENT arm; the diagnostic CLASS tag it has never had; the STEP 0 parity refusals (§1.8); the block-scoped W23 arms (`tag`, `mc`, `under`, `pattern-esc`, `provenance`, `variant`, `ext`); `@file:` subjects; cells; `include` discovery; `use` | W23.2, .3 |
+| F4 | `src/parse/rxt_source.c` | C | leg A's dispatch becomes a WALK over F1 rather than three `vocab_find` tables. **MEASURED, what is displaced**: `head_vocab :137-142`, `config_vocab :145-150`, `block_vocab :156-167`, `vocab_find :169-174`, and the per-line dispatch inside `pcrec_rxt_source_parse :984-1365` (head branch `:1068-1136`, body branch `:1139-1314`). S1 attachment replaces the flat `line_indented` test at `:1021-1030`; S3's extent rule replaces `parse_prose`'s `:513-564` loop condition; the diagnostic CLASS tag joins `rxt_fail :196-219` (**MEASURED: 61 CALL SITES** — `grep -c 'rxt_fail('` returns 63 and two of those are the prototype at `:193` and the definition at `:196`, r59-B-N3). **Also displaced: `config_vocab`'s two WITHDRAWN rows** `{ "testee", 3 }, { "option", 3 }` at `:149` — see §4.3, which is where revision 1's absence claim was wrong | W23.1 |
+| F5 | `src/parse/schema_dump.c` (**new**) | C | `--list-schema`, `src/parse/limits_dump.c`'s shape (**MEASURED**: 89 lines, `pcrec_limits_tsv :55-89` (revision 1 said `:57`; the function opens at `:55`, r59-C), and it `#include`s the `.def` directly with the macro defined at the call site). Plus the `surface` section: the declared NON-coverage rows (§2.24's table, four rows at 3.4.1) | W23.1 |
+| F6 | `cli/main.c` | C | `--list-schema` joins the registry-dump guard. **MEASURED**: the six existing dumps dispatch at `:651-656`, `--list-source` separately at `:664` with its own branch `:1177-1216` (revision 1 said `:1230`; the branch's closing brace is `:1216` and `--probe-ask`'s comment opens at `:1218`, r59-C), and the shared guard block is `:1330-1379`. `--list-schema` is the **SEVENTH registry dump** and the eighth conforming table producer (§2.25.1, corrected at r57 S-N1 — `docs/spec/cli.md:586` already gives `--list-limits` the sixth ordinal) | W23.1 |
+| F7 | `tests/harness/run.sh` | bash | leg B: the ATTACHMENT arm; the diagnostic CLASS tag it has never had; the STEP 0 parity refusals (§1.8); the block-scoped W23 arms (`tag`, `mc`, `under`, `pattern-esc`, `provenance`, `variant`, `ext`); `@file:` subjects; cells; `use` | W23.2, .3 |
+| **F7a** | `tests/harness/run.sh` | bash | **leg B's `include` half (§1.10, NEW at revision 1.1 — r59-B2).** Entry-set SUBTRACTION at discovery (**MEASURED**: discovery is `:293-307` — the no-arg `find … -not -path "*/known_fail/*"` at `:296-297` and the directory-argument `find` at `:302`. Revision 1 named no site at all and `format_design.md` §2.11 cites `run.sh:184-216`, which is the `tests/lib` shim sourcing and the `CC` resolution — §1.10's first finding); the fragment SPLICE into the entry's own per-file loop; the CLOSURE tally; the fourth failure class; the two new summary lines | **W23.3a** |
 | F8 | `tests/harness/verify_rxt.py` | python3 | leg C: the same three lists. **MEASURED**: `parse_rxt :343-615`, eighteen kinds, catch-all `:613-614`; the head-bearing refusal `:407-417` stays (the seam ruling); `dump_file :649-712` gains the new kinds | W23.2, .3 |
+| **F8a** | `tests/harness/verify_rxt.py` | python3 | **leg C's `include` half (§1.10).** Its `discover` (`:715`) does the same subtraction; its own walk splices the fragment's cases. **Its head-bearing refusal (`:407-417`) is UNCHANGED, and that is exactly why leg C reads the fragment list off `--list-source` rather than parsing the `include` line** — the seam ruling survives the fold-in intact | **W23.3a** |
 | F9 | `cli/main.c` | C | the `pattern-esc` DECODE flag (working name `--pattern-esc`; `cli.md`'s hunk owns the spelling, §2.19). The pattern OPERAND is taken in the quoted-escape form and decoded by the format's OWN decoder — the one `--source`/`--list-source` use. **No bash decoding anywhere** | W23.3 |
 | F10 | `src/parse/rxt_source.c` | C | the productions: `pattern-esc` (with `\x00` refused by name citing K9), `provenance`, `vocabulary`, `tag`, `mc`, `under`, `oracle` at a version, `variant` as a sub-block, `include`, `@file:`'s `as`/`sha256`, the `freq` data block + `analysis`, `use`, and **`ext`** | W23.3 |
 | F11 | `src/parse/rxt_compose.c` | C | §2.22's DERIVED-IDENTIFIER lookup: a second key on the SAME definition set, built with `pcrec_rxt_prefix_from_name` (**MEASURED**, its one home, `rxt_source.c:337-343`), consulted by the existing lookup. The at-use collision refusal naming BOTH definitions. **REFUSE BEFORE MAPPING** — the over-long name is refused first, because the mapping silently TRUNCATES at `dstsz` | W23.3 |
-| F12 | `src/parse/rxt_source.c`'s TWO comment sites | C | SW12/D100: `:280-291` (`defname_ok`'s header) and `:1126-1130` (the `name` arm's pointer to it) record the repealed "buildable and NOT callable" boundary AS A RULING. They move in the same change as F11 or the code contradicts the behaviour | W23.3 |
+| F12 | `src/parse/rxt_source.c`'s TWO comment sites | C | SW12/D100: **`:269-297`** (`defname_ok`'s header — the function itself opens at `:298`) and **`:1177-1180`** (the `name` arm's pointer to it, inside the arm that opens at `:1175`) record the repealed "buildable and NOT callable" boundary AS A RULING. They move in the same change as F11 or the code contradicts the behaviour. **BOTH RANGES WERE WRONG AT REVISION 1 AND ARE WRONG IN `format_design.md`'s SW12 ROW, WHICH IS WHERE THEY WERE INHERITED FROM** (r59-B-M2): `:280-291` is the middle of `defname_ok`'s header rather than its extent, and **`:1126-1130` is the file-level duplicate-`description` refusal — a different production entirely**. The design's row is corrected as a drive-by in this same change (`w23implfix_report.md` §3). Read the file; do not carry a range | W23.3 |
 | F13 | `tests/harness/driver.c` | C | H6's `@<path>` subject argument (byte-exact, additive — every existing invocation is untouched) and H7's find-all loop for `mc`, written to `match_api.md` §3.1's restart protocol | W23.3 |
 | F14 | `src/parse/rxt_source.c` | C | `--list-source` at W23: the appended columns (`tags`, `oracle`, `esc`), the new head ROW kinds, and the **four `#section` blocks**. **MEASURED, what moves**: `rxt_columns[] :2074-2082` (sixteen columns today), the header comment `:2091-2107` — which states outright at `:2105-2107` that the stream is SECTIONLESS — `put_escaped :2035-2054` applied to columns 4/5/15 at `:2131`/`:2133`/`:2153`, and the row emitter `:2116-2157` | W23.4 |
 | F15 | `tests/rxtsource/run_rxtsource_tests.sh` | bash | the C1 differential extended to W23; the MANIFEST re-pinned; **the field-count assertion repaired for sections** (§1.5 — this is a FINDING, not bookkeeping); the census re-pinned; the `all-readers` POPULATION check | W23.1..W23.5 |
-| F16 | `tests/rxtsource/fixtures/*.rxtin` | data | §3.2's nineteen fixtures | each step |
-| F17 | `tests/mech/sabotages/S239..` | bash | §3.5's six rows. **MEASURED**: the highest existing id on main is **S238** (`tests/mech/sabotages/S238_size_drop_unstamped.sh`), by the procedure `tests/mech/CLAUDE.md:649-656` names | each step |
+| F16 | `tests/rxtsource/fixtures/*.rxtin` | data | §3.2's fixture table: **twenty-three ROWS naming twenty-six FILES** at revision 1.1 (one row names a pair, one row re-aims an existing file rather than adding one, and revision 1.1 adds four — §1.10's three and §1.8's NUL-in-comment). Revision 1 said "nineteen fixtures" without saying whether that counted rows or files, and it was neither (r59-C#3) | each step |
+| F17 | `tests/mech/sabotages/S239..` | bash | §3.5's **EIGHT** rows (revision 1 had six; r59-A-M2(a) adds S246 and r59-B2 adds S247). **MEASURED**: the highest existing id on main is **S238** (`tests/mech/sabotages/S238_size_drop_unstamped.sh`), by the procedure `tests/mech/CLAUDE.md:649-656` names | each step |
 | F18 | `docs/spec/*` | md | §4's SW1-SW19, distributed per step (D80) | each step |
-| F19 | `docs/dev/known_issues.md` | md | K57's entry (the block-scalar dedent strip), if it is not already filed at the step that lands `prose_dedent.rxtin` | W23.1 |
+| F19 | `docs/dev/known_issues.md` | md | **NO-OP — a POINTER, not a change** (r59-B-N5). K57 (the block-scalar dedent strip) was FILED by lane `w23fix` at revision 3.2 and the entry exists; `prose_dedent.rxtin` CITES it (§3.2, and R4 in §7.3 defines the fixture's waiting state). The row stays in this table only so a lane does not go looking for an unfiled issue. Revision 1's conditional wording ("if it is not already filed") read as work that might be owed | — |
 
 **Not opened by any step, and it is worth naming what is NOT touched**:
 `src/ir/`, `src/opt/`, `src/gen/`, `lib/pcrec.h`. That is the file-level
