@@ -424,109 +424,305 @@ position (it is the argument of `name`, of `target … = <name>`, or the
 body of a `(?&name)` inside a pattern), and it cannot arise from the new
 *keywords* because none of them occurs today.
 
-### 1.2 The file shape
+### 1.2 The file shape — TWO LAYERS
 
-```ebnf
-file        = head , body ;
-head        = { head-item } ;
-body        = { pattern-block } ;
+**REWRITTEN AT REVISION 3.1** (Frank's internal-consistency ruling,
+consequences 1, 4 and 5). Revision 3 stated the file's shape as one
+tangle of rules in which *where structure begins and ends* sometimes
+depended on *which keyword opened the line* — the head/body asymmetry,
+and the "an indented line is legal only under a declared sub-block
+kind" rule. The ruling forbids exactly that. So the grammar is stated
+as two layers with a thin, declared interface between them:
 
-head-item   = file-decl | config-block | data-block ;
-pattern-block = pattern-line , { block-line } ;
+- **§1.2.1 the STRUCTURE layer** — how a reader with NO keyword table
+  recovers the file's tree from syntax alone.
+- **§1.2.2 the SCHEMA layer** — which keywords exist, in which scope,
+  what they take, and whether a recovered tree is VALID. Designed in
+  full at §2.25.
+
+The test the split has to pass is Frank's own: *"a generic reader must
+be able to recover the file's structure — blocks, sub-blocks, line
+membership — from syntax alone… Keywords and the schema then say what
+the structure MEANS and whether it is valid; they never decide where
+structure begins or ends."* §1.2.3 states, without softening, the one
+place the format does not fully pass it and what passing would cost.
+
+#### 1.2.1 The STRUCTURE layer
+
+A reader at this layer knows **two devices and one two-member set**. It
+knows no other keyword, no scopes, no value shapes.
+
+**S0 — LINE CLASSES (lexical, unchanged).** A line is BLANK (empty or
+whitespace only), a COMMENT (`#` in **column 1** — a `#` anywhere else
+is data, R-RXT-2), or CONTENT. A line's INDENT is its count of leading
+spaces; an indented `#` is a structure error naming the rule
+(*"comments must start in column 1"*, `rxt_source.c`'s shipped
+diagnostic, unchanged).
+
+**S1 — ATTACHMENT.** A CONTENT line whose indent is GREATER than the
+nearest preceding CONTENT line's **attaches to it as a CHILD**. Equal
+indent makes them SIBLINGS. Lesser indent closes back to the nearest
+enclosing level with that indent; an indent matching no enclosing level
+is a structure error. A BLANK line closes every open attachment,
+returning to indent 0 (the head's own r46sem-10 rule, now the general
+one). A CONTENT line at indent 0 with nothing before it, or an indented
+line following a blank, attaches to nothing and is a structure error
+(*"indented line attaches to nothing"*).
+
+**S2 — GROUPING.** Among SIBLINGS, a line whose first token is a member
+of the **BLOCK-OPENER SET** starts a group that absorbs the following
+siblings until the next opener at that level or the end of the
+enclosing scope. The opener set is closed, declared, and has **exactly
+two members: `pattern` and `pattern-esc`** (§2.19).
+
+That is the whole layer. From S0-S2 a reader recovers: every line's
+parent, every group's extent, and therefore blocks, sub-blocks and line
+membership — with no knowledge of `config`, `provenance`, `variant`,
+`m`, `lib` or any other keyword.
+
+**S2's opener set is the ONE parameter the structure layer takes from
+the schema, and revision 3.1 does not pretend otherwise.** It is not
+the thing the ruling forbids — that is a per-keyword structural
+EXCEPTION decided by an open-ended table — but it is a keyword fact,
+it is stated as one, and §1.2.3 prices removing it. It is declared as
+one schema column (`opens_group`), printed by `--list-schema` (§2.25),
+so a generic reader FETCHES it rather than hard-coding it; today the
+fetch returns two rows.
+
+**WHAT THIS DELETES.** Three rules in revision 3 stop existing:
+
+1. **"In the HEAD, indentation means CONTINUATION; a pattern block's
+   lines are NOT indented."** There is one attachment rule now and it
+   is the same rule in both places. A `config` body, a data-block body,
+   a `description` attached to a `target`, a block scalar's own lines
+   and a `provenance` sub-block's attributes are all S1, and none of
+   them is a second mechanism.
+2. **"The head ends at the first `pattern` line, and nothing file-level
+   may appear after it"** as a STRUCTURAL rule. It survives as a SCHEMA
+   rule with the same force and the same diagnostic: `lib`, `target`,
+   `config` and friends declare scope `file`, and one appearing inside
+   a group is a schema error naming the scope. **AR-4 is discharged
+   exactly as before** — a D27-blinded author reading a block still
+   looks in exactly one other bounded place — and it is now discharged
+   by a declaration a reader can print rather than by a parser's
+   control flow.
+3. **"An indented line NOT under a sub-block keyword is a hard error."**
+   Under S1 an indented line always attaches to something; whether its
+   parent ADMITS children is a schema question (`m` declares
+   `children: none`). **The loud refusal the bench's M8 measured
+   survives in both arms** — a structure error when it attaches to
+   nothing, a schema error naming the parent when the parent takes no
+   attributes — so N-2's failure is as loud as it was, and it is now
+   loud for a reason a reader can look up.
+
+**WHAT IT COSTS: exactly one diagnostic tier, and nothing else.** No
+file changes meaning. A file legal today is legal, byte for byte (0
+corpus lines are indented, re-measured at 210 files, §0.7). A file
+refused today is still refused; what moves is WHICH message some
+refusals carry, which D26 puts in the tier this project does not spend
+effort on. §1.6 is the version-break argument that rests on this.
+
+**AND IT MAKES A RULE THE THREE READERS CAN ACTUALLY BE HELD TO.**
+Revision 3 asserted "the indentation test PRECEDES token dispatch" in
+all three body readers. MEASURED (§0.7), that was true of ONE of them:
+leg A tests indentation first (`rxt_source.c:992`), leg B has no
+indentation test at all (an indented line reaches `run.sh`'s catch-all
+by fall-through), and leg C dispatches an indented PRE-BODY line on its
+first token before reaching its own check. Under S1 the ordering is not
+an extra rule to remember — **indent determines the parent, and only
+then does the parent's schema decide what the first token may be** — so
+"dispatch after attachment" is the layering itself, and §9's A-group
+pins it with an indented-line fixture in all three legs rather than
+trusting three independent implementations to have got an ordering
+right.
+
+#### 1.2.2 The SCHEMA layer
+
+Everything else is schema, and §2.25 designs it. Stated here only as
+the boundary:
+
+- **Scopes.** `file` (indent-0 lines before the first group), `block`
+  (indent-0 lines inside a group), and one scope per parent kind that
+  admits children (`config`, `data`, `provenance`, `variant`). A scope
+  is a set of legal line kinds — the "closed lexical context" rule
+  revision 2 stated, now a schema column rather than a parser fact, and
+  no longer capped at four: a scope is created by declaring one.
+- **Per line kind**: its scope, its value shape, whether it opens a
+  group, whether it admits children and in which scope, its
+  cardinality, its required/conditional status, and whether its value
+  is drawn from a closed set.
+- **A first token unknown IN ITS SCOPE is a hard error naming the
+  scope** ("`testee` is not a pattern-block directive"). Nothing is a
+  keyword everywhere. Unchanged in force; now derived from a table.
+
+#### 1.2.3 Where the format does NOT pass, stated plainly
+
+**Block GROUPING is not recoverable from syntax alone, and no wording
+makes it so.** A `pattern` line and its `m`/`n`/`g` lines are all at
+indent 0 and are siblings by S1; what makes the case lines BELONG to
+the pattern is S2's opener set, which is a keyword fact. A reader given
+nothing but the bytes sees 28,943 flat sibling lines.
+
+Three things about that, each measured rather than argued:
+
+- **It is TODAY'S SHIPPED GRAMMAR's failure, not W23's.** Version 1 of
+  this format has exactly this property and always has; nothing
+  revision 3 or 3.1 adds makes it worse, and §1.2.1's two devices make
+  everything else pass.
+- **No cheaper structural device is available in the corpus.** The
+  obvious candidate — a blank line separates blocks — is refuted:
+  **1,016 of 3,936 `pattern` lines (26%) are immediately preceded by a
+  blank line** (§0.7). A rule the corpus obeys 26% of the time is not
+  a rule.
+- **The only fix is to INDENT case lines under their `pattern` line**,
+  making grouping S1's job and emptying the opener set. That is a
+  break, and §1.6 prices it and declines it.
+
+Stated the other way round, so the claim is falsifiable: *with a
+two-row opener table, structure recovery is complete and
+context-free.* That table is one `--list-schema` query, and it is the
+entire residue of "keywords decide structure" in the format.
+
+#### 1.2.4 Bare indentation vs a visible sub-block MARKER
+
+Frank's consequence 4 — *"if the design needs sub-blocks, it CREATES
+syntax that marks them — never overloaded indentation whose meaning
+depends on which keyword opened the line"* — was read two ways and both
+were designed before one was chosen.
+
+**The marker alternative, designed.** A sub-block opener carries a
+trailing sigil and its children are indented as now:
+
+```
+provenance:
+  source fowler
+variant re2:
+  text ^a{1,4}$
 ```
 
-**The head ends at the first `pattern` line, and nothing file-level may
-appear after it.** This is AR-4 discharged mechanically: a D27-blinded
-author reading any block needs to look in exactly one other place — the
-top of the file — and that place is bounded. It is also what makes a
-one-block file with no head behave exactly like `pcrec 'pattern'`
-(AR-2/AR-7).
+(The sibling variants — a leading sigil on each child, `- source
+fowler`; or brace delimiters — were considered together with it: they
+differ in spelling and not in what follows, because all three make the
+parent's intent explicit at the cost below.)
 
-Lexical rules, unchanged from today and binding on every new line kind:
+**Priced against long-term viability, the marker LOSES on three
+counts.**
 
-- Whole-line `#` comments only (R-RXT-2). A `#` anywhere but column 1 is
-  data. The one comment with meaning — `# pcre2-only` immediately before
-  a `pattern` line — keeps it, and is defined in §2.9 as an alias.
-- Blank lines ignored.
-- A line kind is its first whitespace-delimited token. An unknown first
-  token is a **hard error** (R-RXT-6's discipline generalised): never a
-  silent no-op, never a comment.
-- **Four lexical CONTEXTS, each with a closed vocabulary.** The format
-  already has two — the file's own directives and a pattern block's
-  case vocabulary (`m`/`n`/`g`/…). This design adds two more (`config`
-  body, data-block body). A first token unknown *in its context* is a
-  hard error that names the context ("`testee` is not a pattern-block
-  directive"). Nothing is a keyword everywhere.
-- **IN THE HEAD, INDENTATION MEANS CONTINUATION.** A line indented by
-  one or more spaces continues the head declaration or block above it: a
-  `config` body, a data-block body, a `description` attached to a
-  `target` or a `lib`, and a block-scalar value's own lines are all the
-  same rule. A head construct therefore ends at the first non-indented
-  line, and a typo inside a `config` body is a hard error naming the
-  block rather than a silent block-ending.
-  **MEASURED, and this is what makes it free:** **0** lines in the
-  179-file corpus begin with whitespace
-  (`grep -rhcE '^[[:space:]]+[^[:space:]]'` → 0; independently reproduced
-  by r44-grammar's own recognizer run, G1), so no existing line's meaning
-  can change. This REPLACES the first version's "leading whitespace is
-  permitted and ignored"; Frank's `description` block scalar (r44, 15:1x)
-  needs continuation to mean something, and one rule serving every head
-  construct is better than a second mechanism beside it.
-- **A PATTERN BLOCK keeps today's shape: its DIRECT lines are NOT
-  indented**, and a block ends at the next `pattern` line or end of
-  file. **REVISED at W23** ([B42] P-Q1; this deliberately and NARROWLY
-  relaxes what revision 2 called "the only asymmetry"): a block-scoped
-  line kind may be declared a **SUB-BLOCK KIND** — this revision
-  declares exactly two, `provenance` (§2.14) and `variant` (§2.23) —
-  whose line is followed by INDENTED attribute lines, one attribute per
-  line, ending at the first non-indented line **including a blank one**
-  (the head's own r46sem-10 rule, reused rather than re-decided). The
-  rules that keep N-2's loud failure alive, each binding on ALL THREE
-  body readers (`src/parse/rxt_source.c`, `tests/harness/run.sh`,
-  `tests/harness/verify_rxt.py` — the C1 differential is what holds
-  them together):
-  1. **The indentation test PRECEDES token dispatch.** An indented line
-     is a sub-block attribute or a hard error; it is never dispatched on
-     its first token. Without this rule an indented `pattern` line would
-     start a new block in one reader and continue a sub-block in
-     another — the one defect this mechanism could introduce, closed by
-     ordering, and the reason the sub-block attribute vocabulary avoids
-     the token `pattern` anyway (`variant` carries `text`, §2.23).
-  2. **An indented line NOT under a sub-block keyword line stays a HARD
-     ERROR**, with today's diagnostic ("a pattern block's lines are not
-     indented" — `verify_rxt.py:426`, `run.sh:2065-2088`, and
-     `rxt_source.c`'s same refusal, the bench's own MEASURED M8). In
-     particular an indented continuation under `pattern` is refused
-     exactly as today: `pattern` is not a sub-block kind, and F-Q2 is
-     answered by `pattern-esc` (§2.19), never by continuation.
-  3. **A sub-block's attribute vocabulary is a fourth closed lexical
-     context** (§1.2's context rule, one more member): an unknown
-     attribute is a hard error naming the sub-block.
-  Two customers is what makes this a mechanism rather than a special
-  case: `provenance` needs a nine-field body no one-line form can hold,
-  and `variant` under N-41 needs `kind`/`text`/`groups`/`note` — and
-  revision 2's `variant` ALREADY had a one-off un-indented `groups`
-  continuation line, which this replaces (a proto-sub-block retired by
-  the general form). Regime grouping, the candidate third customer, does
-  NOT ride this mechanism — §2.22 repairs the wrapper mechanism instead,
-  and the reasons are recorded there.
-  A generator writing an included fragment still writes pattern blocks
-  only (§2.5); it indents exactly when it writes a sub-block.
-  MEASURED FREE: **0** indented lines exist in the corpus (§1.1), so no
-  existing file can reach any of this.
-- **One line, one value — with exactly ONE exception: the BLOCK SCALAR.**
-  A line kind whose value is prose may write `<kind> |` and continue on
-  indented lines, YAML's `|` form; newlines are preserved and the value
-  ends at the first non-indented line. The one-line form
-  `<kind> <text>` stays. The exception is stated as a property of the
-  VALUE production (`prose-value`) rather than of any keyword, so a
-  second prose field inherits it rather than inventing it. **W23
-  extends WHERE the production is legal, not what it is**: `prose-value`
-  is a head form AND a sub-block-attribute form — inside a sub-block a
-  `|` scalar's continuation lines are indented DEEPER than the attribute
-  line, the same relative rule one level down. A pattern block's DIRECT
-  lines still cannot carry it (`description` at block scope stays
-  one-line; the W1.1 correction stands).
+1. **It makes structure depend on two signals that can disagree**, and
+   every disagreement is a new error class with an arbitrary
+   resolution: a marker with no indented children, and indented
+   children under an unmarked line. Under bare indentation neither
+   state is expressible. The ruling's own target is *indentation whose
+   meaning depends on which keyword opened the line*; the cure for that
+   is making indentation mean ONE thing everywhere (§1.2.1 S1), and a
+   second signal does not add to that cure — it gives the reader a
+   second thing to reconcile.
+2. **The format already ships indentation-attachment, unmarked**, in
+   the head: `config` bodies and `description |` block scalars have
+   been parsed that way since W1.1 by all three readers. Adding a
+   marker means either a second mechanism beside the shipped one (the
+   accretion consequence 1 forbids) or a breaking change to a shipped
+   production for no capability.
+3. **"This kind admits children" is a SCHEMA fact, and a marker spells
+   it once per occurrence.** That is the schema restated in every file
+   that uses the production — the duplication §2.25 exists to remove,
+   and the thing that goes stale when the schema changes and old files
+   do not.
+
+**DECISION: bare indentation, no new marker.** The consequence-4
+obligation is met by §1.2.1's unified rule plus §2.25's declared,
+printable schema: *which kinds open a scope* is answerable exactly, by
+`--list-schema`, once, rather than by a sigil a file may or may not
+carry.
+
+**The `|` block scalar is not a counter-example, and the distinction is
+worth stating** because "you already use a marker" is the obvious
+attack. `|` discriminates between two forms of ONE production's VALUE —
+`description <text>` (value on this line) and `description |` (value on
+the lines below) — which no amount of structure can decide, since both
+shapes are structurally identical. `"` after `=` in a `tag-prose` item
+(§1.3) is the same kind of thing. Both are **value-form
+discriminators**, declared per line kind in the schema's `value` column;
+neither decides where a line attaches. A structure marker would.
+
+#### 1.2.5 The lexical rules, restated under the two layers
+
+- Whole-line `#` comments only, column 1 (S0). The one comment with
+  meaning — `# pcre2-only` immediately before a `pattern` line — keeps
+  it, and is defined in §2.9 as an alias.
+- Blank lines close attachment (S1) and carry no other meaning.
+- A line kind is its first whitespace-delimited token, dispatched
+  **within the scope its attachment put it in** (S1 then schema).
+- **One line, one value — with exactly one exception, the BLOCK
+  SCALAR.** A line kind whose schema `value` is `prose` may write
+  `<kind> |` and continue on lines indented under it; newlines are
+  preserved and the value ends where S1 says the attachment ends. The
+  one-line form `<kind> <text>` stays. The exception is a property of
+  the VALUE production (`prose-value`), not of any keyword, so a second
+  prose field inherits it rather than inventing it.
+- **`prose-value` is legal wherever the schema declares a prose value,
+  at any depth** — file level, a `config` body, a sub-block attribute,
+  and (NEW at 3.1, see below) a pattern block's own `description`.
+  Continuation lines are indented deeper than the line they continue,
+  which is S1 and not a second rule.
+
+**REVISION 3.1 SUPERSEDES THE W1.1 `description` CORRECTION, and says
+so rather than quietly widening a refusal.** That correction made a
+pattern block's `description` one-line-only, and BOTH of its reasons
+have expired:
+
+- Its stated reason was *"§1.2 says a pattern block's lines are NOT
+  indented and a block scalar IS indented continuation; both cannot be
+  true in the body"*. Under §1.2.1 there is no such asymmetry, so the
+  contradiction it resolved does not arise.
+- Its implementation reason was *"a block scalar in the body would need
+  continuation parsing inside `run.sh`'s per-line loop — head-shaped
+  parsing back in the harness"*. **W23 requires legs B and C to consume
+  indented children anyway**, for `provenance` and `variant`; a block
+  scalar needs the SAME consumption and no more, because a reader that
+  does not READ the value still only has to consume its children. That
+  is §2.24's VALIDATES-vs-RECOGNISES split doing its job: pcrec reads
+  the prose, the harness skips it.
+
+So `description` takes `prose-value` in every scope — **one prose
+mechanism, everywhere**, which is what §2.14 rule 6 already promised and
+what the surviving carve-out contradicted. **This is the ONE shipped
+refusal revision 3.1 changes, and it changes it in the widening
+direction only**: MEASURED, 0 corpus blocks carry a `description` and 0
+corpus lines are indented, so no existing file moves. The committed
+fixture `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` asserts
+the refusal in all three legs and must be **re-aimed, not deleted** —
+inverted to assert all three ACCEPT it and agree on the decoded value,
+which is a strictly better fixture because a three-way agreement on a
+value catches more than a three-way agreement on a rejection. §3.4
+SW16 carries it and §9's A-group names it.
+
+#### 1.2.6 Sub-blocks under the two layers
+
+With S1 doing the structural work, a **sub-block is no longer a
+mechanism** — it is a schema declaration that a kind admits children.
+Revision 3's two customers are unchanged: `provenance` (§2.14) and
+`variant` (§2.23), and `provenance` is now used at two different
+parents (a pattern block and a data block, §2.26's unification), which
+is the general form earning its keep rather than a special case with
+two instances.
+
+What survives from revision 3's rules, and where each now lives:
+
+| revision 3 rule | revision 3.1 |
+|---|---|
+| indentation test precedes dispatch | **the layering itself** (S1 then schema); pinned in all three legs by §9's A-group rather than asserted of three implementations |
+| a bare indented line is a hard error | **still a hard error**, in one of two arms (attaches to nothing → structure; parent takes no children → schema). M8 stays loud |
+| a sub-block's vocabulary is a fourth closed context | **a scope**, declared like every other; the count is not fixed at four |
+| sub-block ends at the first non-indented line including a blank one | **S1**, unchanged in effect |
+| the attribute vocabulary avoids the token `pattern` | still true, for a NEW reason — §2.26 item 9. The old reason (an indented `pattern` might start a block in one reader) is structurally impossible now: an opener applies among SIBLINGS, and a child is not a sibling |
+
+Regime grouping is still NOT a sub-block customer — §2.22 repairs the
+wrapper mechanism instead, and the reasons there are unchanged by this
+revision (a case scope is ruled out by Frank by name, independently of
+how indentation is spelled). A generator writing an included fragment
+still writes pattern blocks only (§2.5); it indents exactly when it
+writes children.
 
 ### 1.3 The productions
 
