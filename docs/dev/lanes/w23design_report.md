@@ -321,6 +321,38 @@ removing it, and §2.25 makes it a declared, printable column rather than
 parser knowledge — which is the strongest available form of "the schema
 never decides where structure begins" short of the break.
 
+**F6. The lane's own additivity claim was WRONG once, and a probe is
+what found it.** The first draft of §1.6.1 said S1 "reproduces head
+continuation exactly". It does not: **S1 is DEPTH-sensitive and today's
+head rule is not.** Today's parser asks only "is this line indented?",
+so a `config` body whose lines sit at different depths parses as a flat
+body — MEASURED on the shipped binary, a `config c` with `flags i` at
+two spaces and `engine vm` at FOUR produces a `--list-source` row
+byte-identical to the evenly-indented file. Under S1 the four-space
+line attaches to `flags` as a child, `flags` admits none, and the file
+is refused. **That is accept → reject on a construct legal today** — a
+narrowing, not a re-wording, and not additive.
+
+Taken deliberately, with the population measured in BOTH repos rather
+than assumed: 0 `config` blocks in the 210-file corpus, 0 ragged bodies
+among the 19 head blocks with bodies in `tests/rxtsource/fixtures/`, and
+0 `.rxt`/`.rxtin` files in `pcrec-bench` at all (read-only check). It is
+also FORCED rather than chosen — depth has to mean something once a
+record can contain a record, which §2.10's unified `provenance` under a
+data block is — and it turns a silent authoring hazard into an error.
+
+Three things moved because of it: §1.6.1's claim 1 is corrected and
+gains a claim 2a; **§1.6.4's standing rule went from two cases to
+three**, because a narrowing fell between "widens acceptance" and
+"makes a file mean something different" and the rule as first written
+had no answer for it; and SW16 gained the spec sentence a narrowing
+owes. The general lesson is the method, not the case: *the claim was
+checked by running the shipped binary on a hand-made file, and reading
+the code had already produced the wrong answer* — which is also the
+concrete argument for §2.25's schema being DATA, since a
+machine-diffable declaration is how the next one gets found without the
+hand-made file.
+
 **F5 (in the design's favour). The unification found a place the general
 mechanism was already earning its keep.** Because a data block admits
 children and `provenance` itself admits children, the unified record is

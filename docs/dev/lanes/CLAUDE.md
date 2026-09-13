@@ -492,7 +492,14 @@ never edited afterwards.
   26,691 → 210/3,936/28,943), which is why §1.1 now states the
   denominator RULE instead of the numbers; and **F3**, only 26% of
   `pattern` lines are blank-preceded, which is what closes the one
-  alternative to a keyword for block grouping.
+  alternative to a keyword for block grouping. And **F6**, the lane's
+  own additivity claim was wrong once and a PROBE found it: the new
+  attachment rule is depth-sensitive where today's head rule is not, so
+  a RAGGED head body (lines at differing depths) goes from accepted to
+  refused — measured byte-identical on the shipped binary today. Taken
+  deliberately (population measured 0 in both repos, and forced by
+  two-level nesting), and it is why the note's standing rule for when a
+  change needs a `version` line went from two cases to three.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
