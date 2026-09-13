@@ -460,7 +460,7 @@ Where each finding landed:
 
 | id | sev | landed |
 |---|---|---|
-| **G-B1** | BLOCKER | §1.2.1 gains **S3 OPAQUE REGIONS** as the structure layer's third device, and the layer's schema parameters are stated as **TWO** (`opens_group`, `value = prose`), both fetched from `--list-schema`. §1.2.4's marker comparison is re-run against the two-parameter baseline and the sentence "`\|` … neither decides where a line attaches" is WITHDRAWN and replaced |
+| **G-B1** | BLOCKER | §1.2.1 gains **S3 OPAQUE REGIONS** as the structure layer's third device, and the layer's schema parameters are stated as **TWO** (`opens_group`, `value = prose`), both fetched from `--list-schema`. §1.2.4's marker comparison is re-run against the two-parameter baseline and the sentence "`\|` … neither decides where a line attaches" is WITHDRAWN and replaced. **(3.3, R2-F4: still two parameters, but the second is the `value`/`children` PAIR — three columns read, not two.)** |
 | **S-BL1** | BLOCKER | §2.25.3 grows from five constraint kinds to **EIGHT** — `cross-scope` ADMITTED (its W23 customer meets the section's own membership rule; §2.25.4's deferral of it contradicted a production one section away), `forbidden-if` ADMITTED (`authored`'s must-be-absent half, which no negated `required-if` reaches), and `functional-binding` ADMITTED (subject-`as`, which `unique-by` would have REFUSED on its own documented normal spelling); `under`'s duplicate key gets an honest home as **parser code with its reason and a D77 trigger** rather than a ninth kind. §2.25.3's completeness claim is deleted |
 | **S-BL2** | BLOCKER | §2.19's "one block carries `pattern` or `pattern-esc`, never both" is **DROPPED** — measured empty population; a second opener starts a new block (S2). §9's B6 row flips from SATISFIED-by-refusal to a bench CORRECTION (premise dissolved), and the correction list carries it |
 | **G-B2** | MUST | The narrowing census is re-swept and published as a CLOSED LIST of five (§1.6.1a), each with population / forced-vs-chosen / spec sentence. N3 (tabs) is **REFUSED BY NAME** as the manager leaned; the lane did not overturn it and §1.6.1a records why. N2's shipped dedent corruption is K57 |
@@ -1275,15 +1275,19 @@ which was overstated, and it names what the marker genuinely buys.
 
 **What the marker WOULD buy, stated because the two-parameter baseline
 makes it real.** A trailing sigil would let a generic reader answer
-"does this line admit children?" without the `children` column — which
-is not a parameter the structure layer reads anyway (§1.2.2), so it
-buys nothing there. It would NOT remove either parameter the structure
+"does this line admit children?" without consulting the schema — which
+is a VALIDITY question for every kind except the prose ones (§1.2.2),
+so it buys nothing the structure layer needs. It would NOT remove
+either parameter the structure
 layer actually reads: `opens_group` would still be needed for block
 grouping (a marker on `pattern` would be the §1.6.2 break by another
-spelling, since it changes every existing file), and the prose-valued
-set would still be needed for S3, because `\|`'s own region is opened by
-a VALUE and a sigil on the opener line does not tell a reader where the
-region ENDS. **So the marker's price is three error classes and a
+spelling, since it changes every existing file), and the
+prose-region-opening set would still be needed for S3, because `\|`'s
+own region is opened by a VALUE and a sigil on the opener line does not
+tell a reader where the region ENDS. **(3.3: a sigil meaning "takes
+prose below" would express `children: prose` alone, which is half of
+parameter 2 — the half that says a region MAY open, never the half that
+says one DID; `\|`'s presence on the line is still what opens it.)** **So the marker's price is three error classes and a
 per-occurrence restatement of the schema, and its yield against the
 stated baseline is zero parameters removed.** That is a stronger
 decision than revision 3.1 could make, because 3.1 was comparing
@@ -1310,7 +1314,7 @@ survives is narrower and true:
 | what it discriminates | the value's FORM — on this line, or on the lines below | the value's FORM — bare token, or quoted with whitespace |
 | where the value ENDS | on SUBSEQUENT lines, by S3's extent rule | on THIS line, by the closing quote |
 | a reader that ignores it | mis-parses the extent of everything after it | mis-reads one line's content |
-| layer | **structure (S3) + schema (the `value` column)** | schema only |
+| layer | **structure (S3) + schema (the `value`/`children` PAIR, 3.3)** | schema only |
 
 "Value-form discriminator" was the right CONCEPT and the wrong
 CONCLUSION: a discriminator that selects a multi-line form is a
@@ -1422,7 +1426,7 @@ What survives from revision 3's rules, and where each now lives:
 | indentation test precedes dispatch | **the layering itself** (S1 then schema); pinned in all three legs by §9's A-group rather than asserted of three implementations |
 | a bare indented line is a hard error | **still a hard error**, in one of two arms (attaches to nothing → structure; parent takes no children → schema). M8 stays loud |
 | a sub-block's vocabulary is a fourth closed context | **a scope**, declared like every other; the count is not fixed at four |
-| sub-block ends at the first non-indented line including a blank one | **S1**, unchanged in effect — and S3 for a prose region, whose extent rule is the same shape stated once more (3.2) |
+| sub-block ends at the first non-indented line including a blank one | **S1**, unchanged in effect — and S3 for a prose region, whose extent rule is the same shape stated once more (3.2). **At 3.3 both terminate on THREE things, and the same three**: a CONTENT line at or below the opener's indent, a BLANK (empty) line, and a column-1 COMMENT line; a whitespace-only line terminates neither, which is the shipped behaviour of all three legs |
 | the attribute vocabulary avoids the token `pattern` | still true, for a NEW reason — §2.26 item 9. The old reason (an indented `pattern` might start a block in one reader) is **impossible in any reader that implements S1/S2**, since an opener applies among SIBLINGS and a child is not a sibling. **Qualified at 3.2 (r57 S-S5)**: "structurally impossible" is a statement about the SPECIFICATION, and legs B and C are independent implementations of it (§2.25.5) — leg B has no attachment step today at all. It is impossible by construction in leg A once H16 lands and it is a property legs B and C must be PINNED to, which is §9's A-group's job, not an inheritance |
 
 Regime grouping is still NOT a sub-block customer — §2.22 repairs the
@@ -5214,14 +5218,17 @@ files parse and never the meaning of the 179.
 | **T-5** byte-exact subjects by reference | §2.8: bytes are the subject, no decoding, NUL-safe, local paths only. It forces a **driver-protocol change** (H6/S5) rather than being free, and this note says so rather than assuming `argv` will carry a megabyte with a NUL in it |
 | **T-6** per-file accounting vs includes | §2.11's three rules: closure is the unit, entry-set subtraction with **both counts reported**, cells counted. Plus a fourth failure taxonomy (resolution) that is *reported* separately but *scored* as a compile failure, which is what preserves the 384 `perr` blocks |
 
-### 5.2a Where to attack REVISION 3.2 (the panel's shortest path)
+### 5.2a Where to attack REVISION 3.3 (the panel's shortest path)
 
 Revision 3's own "for the panel" list stands. **RE-AIMED AT 3.2 after
 the r57 panel scored the 3.1 version**: of the four attacks below,
 items 1 and 4 both HIT — and item 1 hit **in a place its own wording
 pointed away from**, which is the correction worth carrying forward.
-Each is written as the claim a critic should try to break rather than
-as a defence.
+**RE-AIMED AGAIN AT 3.3**: round 2 scored item 5 three times (§0.8's
+ROUND 2 block) and item 1 once more — R2-B's census-scope hole is a
+narrowing sweep that swept a BRANCH instead of a GRAMMAR — and a sixth
+item is added for the cardinality decision. Each is written as the
+claim a critic should try to break rather than as a defence.
 
 1. **THE NARROWING SWEEP.** The claim is that §1.6.1a's five-candidate
    census is CLOSED: no other construct legal on the shipped binary is
@@ -5267,18 +5274,49 @@ as a defence.
    one. The second is the dangerous outcome and the reason is
    unchanged: a partial declaration presenting itself as complete
    makes `--list-schema` a confident wrong answer.
-5. **NEW AT 3.2 — S3, and the structure layer's second parameter.**
-   The claim is that three devices and two parameters recover the
-   file's tree, and that S3's extent rule (*first line at indent ≤ the
-   opener's, or the first blank*) matches what the shipped parser
-   does. Both halves are attackable by probe: find a file whose tree a
-   generic S0-S3 reader recovers differently from `--list-source`, or
-   find a THIRD parameter the structure layer secretly reads. The
-   known-weak point, stated: `cardinality` and `children` are NOT
-   read by the structure layer, and the claim that S2's grouping needs
-   no cardinality information (a group ends at the next opener, never
-   at a count) has not been probed against a file with a malformed
-   group.
+5. **NEW AT 3.2 — S3, and the structure layer's second parameter.
+   RE-AIMED AT 3.3, and this item HIT three times in round 2.**
+   The claim is that four line classes, three devices and two
+   parameters recover the file's tree, and that S3's extent rule
+   matches what the shipped parser does. In 3.2 BOTH halves were
+   falsifiable and were falsified: the extent rule read *"first line
+   at indent ≤ the opener's, or the first blank"* and (a) its TRIGGER
+   was unparameterized, so `pattern |` opened a region; (b) the
+   COMMENT class had no stated effect, so a generic reader carried
+   structure across a column-1 `#` where every shipped leg terminates;
+   (c) "the first BLANK line" meant whitespace-only lines too, which
+   deletes the format's paragraph break. All three were found by probe
+   against `--list-source`, which is exactly the method this item
+   prescribes, so **the attack is unchanged and should be run again**:
+   find a file whose tree a generic S0-S3 reader recovers differently
+   from `--list-source`, or find a THIRD parameter the structure layer
+   secretly reads. The known-weak points, restated for 3.3: the
+   structure layer now reads THREE columns (`opens_group`, and
+   `value`+`children` as a pair) and `cardinality` is still not one of
+   them, so the claim that S2's grouping needs no cardinality
+   information (a group ends at the next opener, never at a count)
+   remains unprobed against a file with a malformed group; and S3's
+   extent rule is stated in its GENERAL form (indent ≤ the opener's)
+   while leg A implements "indented at all", the two coinciding only
+   because no prose-valued kind exists at a nonzero indent today.
+
+6. **NEW AT 3.3 — the CARDINALITY decision, §2.25.2.** The claim is
+   that seven settings kinds are `at-most-one` and `budget` is
+   `accumulate` over `{steps, frames}`, and that the population of
+   every refusal this creates is ZERO in both repos. That is a
+   counting claim over a moving corpus and it is the cheapest thing in
+   this revision to falsify: re-run the duplicate-line census and look
+   for a block that repeats a settings line on purpose. **One was
+   found already** — `tests/harness/giveup.rxt:19-23`, which is why
+   `budget` is not a scalar kind — so the honest question is whether
+   there is a SECOND, in a shape the census's per-block grouping
+   misses (a `config` body reached through `from`-composition, say,
+   where two configs each contribute a different `encoding` and the
+   duplicate exists only after resolution). **That last shape is
+   deliberately out of the rule's scope** — §2.25's cardinality is a
+   property of one SCOPE's lines AS WRITTEN, never of a resolved
+   cascade (§1.8's as-written discipline) — and a critic who can show
+   the two cannot be kept apart has found something real.
 
 ### 5.3 The anti-requirements
 
