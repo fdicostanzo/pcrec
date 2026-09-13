@@ -1819,7 +1819,7 @@ consumer is real and PARKED on it.
 | wave | productions | status / consumer |
 |---|---|---|
 | **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `export`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget`/`from`; AST composition with §1.5's extensions, the delivering calls and `--emit-composed`; `rx_info.name`/`nentries`; H11's target build path | **BUILT** — [DD-13b.W1.1] (2026-08-30), .2 (2026-08-31), .3 (2026-09-03). Owed, NOT blockers: **W1.3.1** (run.sh's composed-block path, `w13_runsh_composed_path.patch`) and **W1.4** (the in-pattern delivery follow-ons). W23 interacts with neither — no W23 production touches the composer except §2.22's derived-identifier LOOKUP, which is additive |
-| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`, `config … testee`/`option`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `provides`, `under`, `configs describe`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3") |
+| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `under`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, **the AUX production `ext <consumer>` (§2.27, NEW at 3.4)**, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3"). **NARROWED AT 3.4 (D99)**: `configs describe`, `provides` and `config … testee`/`option` leave this row — the first two withdrawn, the third removed from the wave plan as a roster that aux now carries |
 
 **What remains after W23, named so the wave table ends honestly:** the
 `gap` data-block member (unearned, D77), `--list-source --resolved`
@@ -2863,6 +2863,28 @@ had been written at that point.
   statically analysable).
 - **A fragment is not an entry file.** §2.11 states the rule and why it
   has to be a rule rather than a directory convention.
+- **`lib` CONTRIBUTES DEFINITIONS ONLY — the closure clause.**
+  **RE-HOMED HERE AT REVISION 3.4** from §2.20 rule 4, where it landed
+  at 3.2 (r57 C-S4) attached to `configs describe`. **It is independent
+  of that mechanism and survives its withdrawal on its own merits**,
+  because the question it answers is asked here and would be asked here
+  if `configs` had never existed: `include` is restricted to pattern
+  blocks by the bullet above, so a fragment has no head lines at all —
+  but a `lib`'d file is an ORDINARY `.rxt` that may carry a FULL head,
+  and nothing said what a file sees across a `lib` edge.
+  **The answer is that it sees nothing but definitions**: `lib`
+  contributes the library's named definitions and their `description`s
+  to the composer's lookup, and NOTHING ELSE crosses the boundary — not
+  its `config` blocks, not its `target` rows, not its `use`/`oracle`/
+  `tag` lines, not its `ext` blocks (§2.27), not its cases. This is
+  less a new rule than the already-stated one written down where it is
+  asked: §4.1 already says a library's TESTS do not run in a file that
+  `lib`s it, and a `config` that cannot reach a build in the library's
+  own file certainly cannot reach one through a `lib` edge. It keeps
+  AR-4 exact — a block's meaning still depends on ONE head, its own
+  entry's — and it is why withdrawing `configs describe` re-opened no
+  closure question: the clause was doing the closure work, and the mode
+  line was only the occasion for writing it down.
 
 ### 2.6 Config scoping and precedence
 
@@ -2907,11 +2929,16 @@ which is a real way to weaken a suite silently. `features only` is the
 answer to it — the narrowing exists, and it is a thing an author wrote
 rather than a thing precedence did.
 
-**W23 adds one head declaration ABOVE this whole table: `configs
-describe` (§2.20).** Under it, no `config` in the file composes into any
-build at all, so everything in this section describes the DEFAULT
-(`configs build`) mode only. This is roadblock #6's resolution and D93
-territory; §2.20 carries the mechanism and the Frank ratification flag.
+**AT REVISION 3.4 THIS SECTION DESCRIBES THE ONLY MODE AGAIN** (D99
+item 1). Revision 3 closed §2.6 with a paragraph putting one head
+declaration ABOVE this whole table — *"W23 adds `configs describe`
+(§2.20); under it, no `config` in the file composes into any build at
+all, so everything in this section describes the DEFAULT (`configs
+build`) mode only"* — which made every rule above conditional on a mode
+line. The paragraph is REMOVED with the mechanism. `config` has one
+mode, this table is unconditional, and a reader of §2.6 no longer has
+to hold a second reading of it in mind. §2.20 keeps the withdrawal
+marker and the reasoning.
 
 ### 2.7 Targets, `rx_info.name`, and how many `.c` files come out
 
@@ -3448,10 +3475,25 @@ consume the indented body without reading it); pcrec VALIDATES it —
 `vocabulary <key> <v1> <v2> …`, file scope, wrapping by S1 attachment
 (§1.2.1) like every other continuation. Declares that
 `tag <key>=<value>` (and every other production the spec names as
-vocabulary-checked: `under`'s convention, `variant`'s `kind`,
-`provides`' values) may only take a listed value; a violating value is
-**refused by name**, naming the key, the offending value and the
-declared set.
+vocabulary-checked: `under`'s convention, `variant`'s `kind`) may only
+take a listed value; a violating value is **refused by name**, naming
+the key, the offending value and the declared set.
+
+**`provides`' values LEAVE that list at revision 3.4** (D99 item 2,
+§2.16 withdrawn), and the section survives the withdrawal intact
+because its enforcement points are all pattern-side. **`vocabulary
+requires` in particular keeps a real customer and is NOT orphaned**:
+the `requires` KEY is a `tag` key on a pattern block (`tag
+requires=backrefs`), and closing that key's value set is exactly what
+`vocabulary` is for — what a PATTERN needs is rx-defining content, and
+D99 keeps it by name. What is gone is the other END of the relation: no
+`provides` line exists to be checked against the set, so the
+`cross-scope` constraint kind that carried the link loses its only
+customer and is removed (§2.25.3). **`vocabulary requires` is a
+one-ended declaration now and that is the correct shape** — the set is
+the vocabulary a pattern may draw on, and who SATISFIES a member of it
+is the consumer's question, asked of its own roster (which may live in
+an `ext` block, §2.27, where pcrec will not check it either).
 
 **REVISION 3.1 NESTS THIS, AND IT IS THE PRODUCTION THE SCHEMA RULING
 WAS ALREADY HALF-ANSWERED BY.** Frank's consequence 3 names it
@@ -3499,64 +3541,64 @@ being `source: format` rather than a separate fact.
 bench's own stated reason (a dedicated production would make the
 capability model a FORMAT concept, which AR-6 forbids); with
 `vocabulary`, the closed-set discipline reaches every key at once.
+**D99 makes that sentence load-bearing rather than incidental**: it is
+the same argument the ruling applies one level up, and `provides`
+was the place revision 3 let the capability model become a format
+concept after all — a dedicated production, in the grammar, with a
+constraint kind minted for it.
 
-### 2.16 `provides` — what a config's engine satisfies ([B42] N-22/N-23)
+### 2.16 `provides` — WITHDRAWN AT REVISION 3.4 (D99 item 2)
 
-**SPELLED `provides` at revision 3.1; the bench's sketch and revision 3
-said `capable`** (§2.26 item 4). The semantics below are unchanged, and
-so is W23-F2's question to Frank, which is about WHERE the capability
-model lives and not what the line is called (syntax is the manager's
-under the 14:5x delegation). The reason for the move: the pattern side
-of this relation is `tag requires=…`, and `requires` / `provides` is
-one relation read from its two ends — the pairing every neighbouring
-ecosystem uses (SPDX, pkg-config, package manifests) — where
-`requires` / `capable` is a verb beside an adjective and leaves a
-reader to work out that they are halves of the same thing. Free: a
-`config` body is a W1 production with **0 occurrences in the corpus**,
-and `provides` is 0 in every context (§0.7's 52-candidate census).
+**WITHDRAWN, not deleted.** The production is gone; this marker stays so
+the reasoning is findable and so a reader of revision 3.3 — or of the
+bench's own note, which proposed it as `capable` (N-22/N-23) — lands
+here rather than on a silent absence.
 
-A `config`-body line, repeatable and accumulating like `tag`: the
-vocabulary values this config SATISFIES. **Absent means NOTHING is
-satisfied — fail-closed, deliberately**, so a new adapter cannot claim
-capabilities by omission (the bench's own rule, adopted).
+**What it was.** A `config`-body line, repeatable and accumulating, the
+vocabulary values a config's engine SATISFIES, fail-closed (absent
+meant nothing satisfied), with the key name `requires` reserved by one
+spec sentence so that `provides` values were checked against a
+file-scope `vocabulary requires …` declaration. Revision 3.1 renamed it
+from the bench's `capable` under §2.26's ownership audit; revision 3.2
+gave it the `cross-scope` constraint kind and a pointer sentence
+because the rename bought a reading symmetry the grammar did not have.
 
-- **The key name `requires` is RESERVED by one spec sentence**: when a
-  `vocabulary requires …` declaration exists, every `provides` value must
-  be a member of it (refused naming value and set); with no such
-  declaration, `provides` values are free. The format thereby knows ONE
-  NAME — that the key `requires` is where capability tags live — and
-  still nothing about what any tag means. The precedent for reserving a
-  name is `# pcre2-only` and the `oracle` engine names; AR-6 is about
-  MEANING, not spelling.
-  **THE POINTER, added at 3.2 (r57 G-B5).** The sentence above is the
-  ONLY syntactic path from `provides` to the set that constrains it,
-  and a reader meeting a `provides` line has no way to find it: the
-  governing declaration is spelled under the OTHER end's name
-  (`vocabulary requires …`), in a different scope, with no occurrence
-  of the token `provides` anywhere near it. The rename to `provides`
-  (§2.26 item 4) buys a reading symmetry the grammar does not have, and
-  pretending otherwise would be the rename doing work it cannot do. So
-  the schema states the link as DATA — `provides` carries
-  **`cross-scope file vocabulary requires`** (§2.25.3's new kind), which
-  is exactly this pointer in a form `--list-schema` prints — and the
-  spec paragraph (SW4) names `vocabulary requires` in the same sentence
-  as `provides`, in both directions, so a grep for either finds the
-  other.
-- The pre-compile policy — `REQUIRES(pattern) ⊄ capabilities(config) ⇒
-  unsupported-by-declaration`, decided before any compile — is the
-  CONSUMER's rule. The format carries the declaration (`provides`), the
-  per-pattern requirement (`tag requires=…`) and the outcome production
-  (`variant <testee>` + `unsupported`, §2.23); the spec states the
-  intended reading so two consumers cannot invent two policies, and
-  R-BENCH-3/AR-3's counted-never-silent rule covers the outcome.
-- pcrec's OWN harness ignores `provides` operationally (its one testee is
-  pcrec); the dump carries it (§2.24), which is what a reader of the
-  file needs — the reason a pattern has no result for a testee lives in
-  the same file as the pattern (§8 P-Q4's argument for IN-the-format).
+**Why it is withdrawn** (`docs/dev/decisions.md` D99 item 2, and the
+sentence is the whole argument): **a capability list describes an
+ENGINE, and the format does not carry engine knowledge as semantics.**
+The primary purpose of a `.rxt` file is defining rx for pcrec; that the
+bench can use it is good and must not distract from the purpose. The
+pattern side of the relation — `tag requires=…`, what a PATTERN needs —
+is rx-defining content and STAYS (§2.15). The engine side is a
+description of a testee, and testees are the bench's experimental
+design.
 
-**Flagged for Frank's ratification beside §2.20** — the manager
-recommends IN the format; a "keep it bench-side" answer is a partial
-return of the hybrid and was argued against, not defaulted (§8 P-Q4).
+**Where the need goes**: §2.27's AUX production. A bench that wants a
+self-describing set writes its roster and its per-engine capability
+lists under `ext bench`, where pcrec parses the structure, dumps it
+faithfully through `--list-source`, and interprets nothing. The bench's
+pre-compile policy (`REQUIRES(pattern) ⊄ capabilities(config) ⇒
+unsupported-by-declaration`) was always the CONSUMER's rule — revision
+3 said so in this section — and it now reads its own data from its own
+namespace instead of from a production pcrec had to define, enforce,
+document, constrain and check.
+
+**What went with it, and this is the part a withdrawal usually
+misses.** Three things were built for `provides` alone and leave with
+it, each verified to have no other customer (§0.9's impact table):
+the **`cross-scope` constraint kind** (§2.25.3 — its ONLY named
+customer was `provides` ⊆ `vocabulary requires`, so the vocabulary
+returns to seven kinds under the section's own membership rule), the
+**`provides` column** on `--list-source`'s config rows (§2.24), and
+**SW4's reserved-key sentence** in both directions (§3.4). The
+`requires` KEY is not among them: it is a `tag` key with a pattern-side
+customer and is untouched.
+
+**W23-F2 leaves the Frank queue** (§7.3). It asked whether the
+capability model lives IN the format; D99 answers no, at a level above
+the question — the format does not carry engine knowledge as semantics
+at all, so the question does not arise for the next such production
+either. §8's P-Q4 disposition is re-answered with it.
 
 ### 2.17 `under` — the second correct answer, per convention ([B42] N-35)
 
@@ -3755,93 +3797,78 @@ line under it is a schema error naming it).
   plus an `esc` column marking the source spelling, so an exporter can
   reproduce the file as written.
 
-### 2.20 `configs describe` — build configs vs descriptive configs
-([B42] N-43/N-44, roadblock #6; **READY FOR FRANK'S RATIFICATION** — D93 territory)
+### 2.20 `configs describe` — WITHDRAWN AT REVISION 3.4 (D99 item 1)
 
-**The collision, restated**: D93 makes a `.rxt` source's composed
-config WIN over a command-line flag on the same axis. §6.2's worked
-bench file carries `config pcrec` — and the bench's entire
-sixteen-config pcrec testee matrix is command-line flags, so a set file
-that describes its testees would silently PIN them. Both rules are
-right alone and collide when the file is a bench set.
+**WITHDRAWN, not deleted**, on the same terms as §2.16: the mechanism
+is gone and the reasoning stays, because the collision it addressed is
+real and the next person to meet it should find what was tried.
 
-**The mechanism**: one head declaration, `configs build` (the default,
+**What it was.** One head declaration, `configs build` (the default,
 today's semantics, spellable explicitly) or `configs describe`. Under
-`describe`:
+`describe`: no `config` in the file composed into any build; `target …
+with <config>` was refused naming both lines; `use` was legal and INERT
+with a counted summary line; `use` names still RESOLVED in both modes
+(added at 3.2, r57 C-S5); the declaration was the ENTRY file's and
+governed the include closure; a second `configs` line was refused.
 
-1. **No `config` in the file composes into ANY build.** `pcrec
-   --source` applies none of them; the harness applies none to its
-   compiles; the D93 precedence question never arises because nothing
-   composes. The configs are DATA — read via `--list-source` by whatever
-   runs the testees (the bench's runner), applied by IT through its own
-   adapters' command lines, which therefore always win because they are
-   all there is.
-2. **`target … with <config>` is REFUSED**, naming the target line and
-   the `configs describe` line — a build declaration referencing a
-   descriptive config is a contradiction the author should hear about,
-   not a precedence question. A bare `target` (no `with`) stays legal:
-   `describe` scopes CONFIGS, and the exporter writes bare
-   `target =` rows today.
-3. **`use` is legal and INERT for the harness**, which runs each block
-   in exactly ONE cell (its own directives plus file defaults) and
-   reports `configs: descriptive (N declared, 0 applied)` — declared
-   inapplicability as a counted, printed state (AR-3), never a dropped
-   directive.
-   **AND ITS REFERENT STILL RESOLVES — in BOTH modes** (NEW at 3.2, r57
-   C-S5). "Legal and inert" left open whether `use dev` in a `describe`
-   file is checked against the file's `config` declarations at all, and
-   the wrong answer is the dangerous one: a typo (`use dve`) caught in
-   build mode would go SILENT in describe mode, which is AR-3's
-   forbidden shape — a file that looks like it declares something and
-   declares nothing. **The rule: `use` names are RESOLVED in both
-   modes, and an unresolvable name is REFUSED in both.** What `describe`
-   changes is whether a resolved config composes into a build, not
-   whether it exists. Same for `target … with` (refused outright under
-   `describe`, rule 2) and for `from` inside a `config` body, whose
-   cascade is a declaration-time resolution and is unaffected by the
-   mode.
-4. **The declaration is the ENTRY file's** and governs the include
-   closure — a fragment cannot carry head lines (§2.5), so a block's
-   config semantics still depend on exactly one bounded place (AR-4).
-   **AND `lib` CONTRIBUTES DEFINITIONS ONLY — the closure clause, made
-   explicit** (NEW at 3.2, r57 C-S4). Roadblock #6 is closed by
-   construction for `include`, because §2.5 restricts a fragment to
-   pattern blocks and a fragment therefore has no head lines to
-   contradict the entry's mode. `lib` is different: a `lib`'d file is
-   an ORDINARY `.rxt` and may carry a full head, including its own
-   `configs describe`, so "what does a build-mode file see when it
-   `lib`s a describe-mode file?" had no stated answer. **The answer is
-   that it sees nothing but definitions**: `lib` contributes the
-   library's named definitions and its `description`s to the composer's
-   lookup, and NOTHING ELSE crosses the boundary — not its `config`
-   blocks, not its `configs` mode, not its `target` rows, not its
-   `use`/`oracle`/`tag` lines, not its cases. This is not a new rule so
-   much as the already-stated one written down at the place it is
-   asked: §4.1 already says a library's TESTS do not run in a file that
-   `lib`s it, and a config that cannot reach a build in the library's
-   own file certainly cannot reach one through a `lib` edge. Stating it
-   makes the mode question answer itself — a library's `configs` mode
-   governs the library's own file when that file is under test, and is
-   invisible to every file that `lib`s it — and it keeps AR-4 exact,
-   since a block's meaning still depends on ONE head, its own entry's.
-5. A second `configs` line is refused (duplicate declaration, §2.2).
+**The collision it resolved, restated so the withdrawal is informed.**
+D93 makes a `.rxt` source's composed config WIN over a command-line
+flag on the same axis. Revision 3's §6.2 worked bench file carried a
+`config pcrec` block — and the bench's sixteen-config pcrec testee
+matrix is command-line flags, so a set file that described its testees
+would silently PIN them. Both rules were right alone and collided when
+the file was a bench set.
 
-**And the PERMANENCE sentence** ([B42] N-43, check F1): a file with no
-`target` and no `config` **parses, builds nothing, and exits 0 — as a
-CONTRACT, permanently**. The behaviour is shipped (`rxt_format.md`:
-"No `target` and anything else builds NOTHING… It is not an error");
-what the bench asked for is the sentence in the spec that it STAYS
-true, and the spec hunk (§3.4 SW5) adds it.
+**Why it is withdrawn** (D99 item 1). Two reasons, and the second
+dissolves the collision rather than resolving it:
 
-**Why resolution 1 and not the alternatives** (the bench's §2.6): their
-resolution 2 ("a config naming a foreign `testee` is descriptive")
-leaves `config pcrec` in §6.2 still winning — the actual hazard; their
-resolution 3 is the hybrid Frank removed, recorded as the null option.
-A PER-CONFIG marking was also considered and declined: the only real
-customer is a whole file that is a set (the bench's), a mixed
-build/descriptive file has no named consumer (D77), and a per-config
-mark would re-open the reader's question ("which configs does this
-build honour?") that a single head line answers at a glance.
+1. **The mechanism made one production BIMODAL via a head-line mode
+   switch** — `config`, and `use` with it, meaning two different things
+   depending on a line elsewhere in the file. That is two uses smashed
+   together, and it is the shape §1.2's whole internal-consistency
+   argument exists to refuse one level down. It also put a conditional
+   over §2.6's entire precedence table (the paragraph §2.6 now records
+   as removed).
+2. **The collision only materializes through the bench's OPTIONAL
+   roster proposals** — N-42 (SHOULD) and N-22 (SHOULD), the latter the
+   one their own note is "least sure of", offered as P-Q4, an open
+   choice rather than a demand. With `testee`/`option`/`provides` out
+   of `config`'s body (§2.16, N-42's disposition), **a set file has no
+   `config pcrec` block to pin anything with**, so D93 never reaches
+   the bench at all. **D93 is untouched and DECOUPLED** (D99 item 5):
+   its revisit-when clause stands on its own merits, and it no longer
+   has a bench-shaped customer to be amended for.
+
+**What SURVIVES, and it is the whole MUST-tier need.** [B42] N-43's
+real ask is one sentence, not a mechanism: **a file with no `target`
+and no `config` parses, builds nothing, and exits 0 — as a CONTRACT,
+permanently.** The behaviour is already shipped (`rxt_format.md`: "No
+`target` and anything else builds NOTHING… It is not an error"); what
+the bench asked for is the spec sentence that it STAYS true. **SW5 is
+rewritten to carry exactly that and nothing else** (§3.4), and §9's F1
+row is unchanged — it was always the permanence check.
+
+**The `lib` closure clause is NOT withdrawn with this section.** Rule
+4's second half — *"`lib` contributes DEFINITIONS ONLY; nothing else
+crosses the boundary"* (added at 3.2, r57 C-S4) — is **independent of
+describe mode and is RE-HOMED to §2.5**, the include model, which is
+where the question is asked. It answers "what does a file see across a
+`lib` edge?", which has an answer whether or not a mode line exists;
+`configs` was the occasion for writing it down, never its subject.
+
+**What DISSOLVES with the mechanism, rather than moving.** Rule 3's
+use-resolution clause (r57 C-S5: *"`use` names are RESOLVED in both
+modes, and an unresolvable name is REFUSED in both"*) is **moot** —
+there is one mode, so "in both modes" has no referent and `use`
+resolves and refuses exactly as W3 designed it. The clause is recorded
+as dissolved rather than deleted silently because it was a real
+finding: it caught a shape where a typo caught in one mode would go
+SILENT in the other, and the general lesson (a mode switch must say
+what it does NOT change, or the silent arm is the dangerous one) is
+worth keeping even though its instance is gone.
+
+**W23-F1 leaves the Frank queue** (§7.3), and §8's P-Q-adjacent
+material moves with it.
 
 ### 2.21 `mc` — the counting rule, stated and MEASURED ([B42] N-32,
 P-Q3; **deviates from the pre-ruled formula on measured evidence**)
