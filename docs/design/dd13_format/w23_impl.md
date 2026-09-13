@@ -458,6 +458,16 @@ because the design says so and one because the tree does:
 It is a conforming table producer, so it takes `table_contract.md`'s
 Scope row AT BIRTH (SW17, r57 S-M7) — the D94 failure verbatim if
 skipped, and this note has now had that shape pointed out to it twice.
+**And the Scope row is not the whole of it** (r59-B-N6): the contract
+has ONE IMPLEMENTATION in the tree, `tests/lib/table.sh`, whose own
+header names the `NF != 15` incident as the reason it exists — *"each
+had hand-rolled its own copy of 'resolve this dump's shape' rather than
+sharing one"*. **So `--list-schema`'s own structural check routes
+through `table_col_index`/`table_check_truthfulness` rather than
+hand-rolling a positional read**, and the spec row and the shared
+helper land together. A producer that adopts the contract in prose and
+hand-rolls its consumer in awk has adopted half of it — which is
+precisely the half the incident was in.
 
 ### 1.7 What the harness gains (legs B and C)
 
@@ -1580,6 +1590,18 @@ order in which a reviewer can read them:
 **Must not touch**: the dump's SHAPE. New productions parse and are not
 yet reported. That is the boundary's value.
 
+**The caveat that makes the intermediate pin landable, stated rather
+than left latent** (r59-B-N7): between W23.3 and W23.4 a file can carry
+a `pattern-esc` block whose dump row has **no `esc` column** — the
+column appends at W23.4 — so the dump says "pattern" for a block whose
+bytes were decoded. **Its population at this pin is ZERO**: the corpus
+has no `pattern-esc` line and the fixtures are `.rxtin`, outside the
+dump census. The pin is therefore landable as written, and the caveat
+is recorded here so a reader of the intermediate tree does not read an
+undecorated row as a claim that no decoding happened. Moving the column
+earlier was considered and rejected: it would put a dump-shape change
+in the step whose whole boundary is "no dump-shape change".
+
 **Two risks worth naming**
 
 - **`mc` is where a plausible implementation is silently wrong.** The
@@ -1771,6 +1793,19 @@ a correction list for the manager, not a fix inside W23.5.
 4. **The step boundaries are only real if the diffs respect them.**
    §2.2 is written as a negative for that reason, and `git diff --stat`
    at each merge is the check.
+5. **W23.3a EDITS THE HARNESS'S OWN FILE DISCOVERY** (§1.10, §6.3a),
+   which every section of `make test` inherits. A subtraction bug there
+   does not fail — it makes the suite quieter. The corpus control
+   (`fragments spliced: 0`, `entry files == CENSUS_FILES`) is an
+   acceptance line for that reason.
+6. **A CITATION CARRIED FROM A RULED DOCUMENT IS STILL A CLAIM ABOUT
+   THE TREE.** Revision 1 inherited SW12's two comment ranges from
+   `format_design.md` and both were wrong; it inherited
+   `run.sh:184-216` for the harness's per-file loop from §2.11 and that
+   is wrong too; and it booked spec row S3 as landed on the strength of
+   its wave LABEL. **A wave label says when a row was scheduled, never
+   whether it shipped**, and every `file:line` in a design document is
+   a measurement with a date on it. Re-read; do not carry.
 
 ### 7.2 The DECIDED points, collected
 
@@ -1782,61 +1817,101 @@ a correction list for the manager, not a fix inside W23.5.
 | 4 | **no `#section` row's field 1 may equal a main-table `kind` token**, asserted | §1.5 | leaving three readers safe by luck. The invariant holds today and nothing states it |
 | 5 | **sections FOLLOW the main table, never interleaved** | §1.5 | free today, impossible to recover once a consumer has seen the other order |
 | 6 | leg B DETECTS a NUL rather than carrying one | §1.8 | rewriting the arm chain to carry bytes bash cannot hold, for a population of zero |
+| **7** | **the NUL rule has ONE scope in all three legs: the whole file, before the line split** | §1.8 item 3 | a decoder-scoped test in leg C, which revision 1 specified — it never sees a NUL in a comment line, and two scopes for one rule cannot be differentiated |
+| **8** | **`dup_head_description.rxtin` stays SINGLE-LEG, with its reason stated** | §1.8 item 5 | re-aiming it to `check_refusal_all3`, which goes green today for the wrong reason and RED the moment W23-S2 compares class |
+| **9** | **`include`'s resolved real path is a DUMP COLUMN, and legs B/C read it rather than parsing `include`** | §1.10.2 rule 2 | a fourth head parser in each harness leg — which the seam ruling forbids — or `--list-source --resolved`, which stays unbuilt |
+| **10** | **W23.3a is its OWN merge** | §1.10, §2.1 | folding it into W23.3, where a discovery change would land inside a diff about eight productions |
+| **11** | **SW21 (the diagnostic class) lands in `cli.md`, not as an extension of SW2** | §4.1 | SW2 is `rxt_format.md`'s lexical rules — the FORMAT's grammar; a machine-parseable stderr tag is the CLI's output contract, and folding it into SW2 leaves `cli.md` silent about a channel callers parse |
+| **12** | **W23-S3's denominator is a COMPILE-TIME total from the `.def`, printed by the dump** | §3.1 | a pinned count (a number in a second place) or an un-denominated iteration (a check whose population is defined by the thing it checks) |
 
-### 7.3 What this note could not settle from the documents
+### 7.3 The four open questions — RULED at r59 (R1-R4)
+
+**All four were ruled by the manager at r59 and none returns to
+Frank** (critic B's classification — all four manager-ruleable —
+confirmed). The questions are kept with their answers because a
+reader who meets the implementation wants to know what was chosen and
+what was rejected, not only what shipped.
 
 - **Q-W23.1 — does the diagnostic CLASS tag surface to a USER, or only
-  to the differential?** §2.25.5 says it is *"a stable tag beside the
-  D26-free wording"*, which reads as "emitted", but no spec hunk states
-  a user-visible format and D26 governs wording rather than structure.
-  **Implemented as: emitted on stderr in a stable, machine-parseable
-  position** (the differential needs it and a second channel would be a
-  second mechanism), **and the spec sentence lands with SW2.** If the
-  manager prefers a debug-only channel, the change is one function and
-  one hunk.
-- **Q-W23.2 — where does `#section cases` put a `route`?** §2.24's
-  column list includes `route` ("the positional `frames-buffer=` state
-  the case runs under"), which is a BLOCK-scoped directive in today's
-  grammar, not a per-case one. Implemented as: the block's route,
-  repeated on each of its case rows, because the column's own gloss says
-  *the state the case runs under*. It is a denormalisation and it is the
-  shape a consumer wants; the alternative (an empty column except where
-  a route line precedes the case) is more faithful to the source and
-  harder to use.
+  to the differential? RULED R1: ACCEPT the implemented default.** The
+  tag is **emitted on stderr in a stable, machine-parseable position,
+  one channel** — the differential needs it and a second channel would
+  be a second mechanism. **AND IT GAINS A SPEC HUNK THAT REVISION 1 DID
+  NOT PLAN**: a machine-readable diagnostic structure is a
+  caller-observable CLI surface, so D80 applies. **That hunk is SW21
+  (§4.1) and it lands in `docs/spec/cli.md`, not in SW2.** The choice
+  between a new row and an extension of SW2 is DECIDED (11): SW2's hunk
+  is `rxt_format.md`'s LEXICAL RULES, which is the format's grammar,
+  while the tag is the CLI's output contract — an extension of SW2
+  would put a CLI surface in the format spec and leave `cli.md` silent
+  about a channel callers parse. D26 is untouched either way: the hunk
+  fixes the tag's POSITION and its closed SET, and says in terms that
+  the sentence beside it is not a contract.
+- **Q-W23.2 — where does `#section cases` put a `route`? RULED R2:
+  ACCEPT.** The `route` is DENORMALISED onto each case row — the
+  block's route, repeated — because §2.24's own gloss is *"the
+  positional `frames-buffer=` state the case runs under"*, which is
+  per-case by meaning even though the directive is block-scoped. The
+  alternative (an empty column except where a route line precedes the
+  case) is more faithful to the source and harder to use, and the
+  consumer that reads this column is reading per case.
 - **Q-W23.3 — does `--list-schema` print the `surface` rows in the same
-  stream or behind a flag?** Implemented as: the same stream, as a
-  `#section surface` block, because §2.24 calls them *"a named sibling
-  surface row in `--list-schema`'s output"* and a flag would make the
-  declared non-coverage something a consumer has to know to ask for —
-  which is the absence the mechanism exists to prevent.
-- **Q-W23.4 — is K57 fixed in this delivery?** `prose_dedent.rxtin`
-  ships as a `known_fail`-style cell either way. K57 (the block
-  scalar's dedent strip is a BYTE COUNT, so a continuation line
-  indented less than the block's first silently loses content at exit
-  0) is *"wrong under every revision of the note, so no design decision
-  fixes it by arriving"*. **Not scheduled here**, because it is a
-  shipped defect with its own entry and fixing it inside a step whose
-  acceptance is the structure layer would confuse two reds. Named so
-  the manager can charter it as a sixth step or a separate row.
+  stream or behind a flag? RULED R3: ACCEPT the same stream**, as a
+  `#section surface` block. §2.24 calls them *"a named sibling surface
+  row in `--list-schema`'s output"*, and **a flag would hide exactly
+  the absence the mechanism exists to surface**: declared non-coverage
+  behind an opt-in is something a consumer has to already suspect
+  before they can ask about it.
+- **Q-W23.4 — is K57 fixed in this delivery? RULED R4: NO**, and the
+  recommendation is accepted as written. K57 has its own
+  `known_issues.md` entry, its corpus population is ZERO, and two
+  independent reds must not share a step — fixing it inside a step
+  whose acceptance is the structure layer would put two unrelated
+  causes behind one failure.
+  **R4 ALSO SETTLES WHAT REVISION 1 LEFT VAGUE: `prose_dedent.rxtin`'s
+  WAITING STATE.** Revision 1 called it *"carried `known_fail`-style"*,
+  which is not a thing `tests/rxtsource/` has — **there is no
+  known-fail mechanism in that suite at all**; its fixtures either
+  assert an acceptance or assert a refusal. So the fixture **asserts
+  the CURRENT, WRONG decoded value** — the dedent strip's byte-count
+  truncation, three legs agreeing on the truncated string — **with a
+  comment naming K57 and saying in one line that this assertion is a
+  RECORD OF A DEFECT, not a promise.** Its expiry event is therefore
+  built in: **the day K57 is fixed, this fixture goes RED**, and the
+  red is the signal to invert it to the three-way agreement on the
+  CORRECT value. That is the cheapest available form of a pinned bug in
+  a suite with no known-fail bucket: the pin cannot outlive the defect
+  silently, because the fix breaks it.
 
-### 7.4 What a fresh agent needs to know
+### 7.4 What this revision could not settle
+
+Nothing new. Revision 1's four questions are ruled above; the r59 panel
+raised no fifth, and revision 1.1 adds no question to the Frank queue —
+the W23 queue stays EMPTY.
+
+### 7.5 What a fresh agent needs to know
 
 - The note is `docs/design/dd13_format/w23_impl.md` on branch
-  `lane/w23impl`. It is DOCS-ONLY: nothing under `src/`, `tests/` or
-  `docs/spec/` moved, no `make` was run.
+  `lane/w23implfix` (revision 1 was written on `lane/w23impl`, which
+  this branches from). It is DOCS-ONLY: nothing under `src/`, `tests/`
+  or `docs/spec/` moved, no `make` was run.
 - The design it implements is `format_design.md` **3.4.1**. On any
   disagreement the design note wins and this one is the bug.
-- **The next step is the D6 panel on this note**, then the W23.1
-  charter.
+- **Revision 1 was panelled at r59**; §0.5 is the finding-by-finding
+  record. **The next step is the W23.1 charter** — the delivery is
+  **SIX** merges (W23.1, .2, .3, .3a, .4, .5), not five.
 - Nothing is owed by this lane. Every number in §6's acceptance
-  sections is a target for its step, not a measurement this lane took.
+  sections is a target for its step, not a measurement this lane took;
+  every `file:line` in this revision was re-read against the tree at
+  this branch's merge base rather than carried from revision 1.
 
 ---
 
 ## 8. The one-page checklist a step lane types into its brief
 
-Every W23 step's brief carries these seven lines. They are the rules
-this delivery has already paid for once each.
+Every W23 step's brief carries these **nine** lines. They are the rules
+this delivery has already paid for once each — the last two added at
+revision 1.1, each for a defect r59 found in revision 1.
 
 1. **Spec hunk in the same change** (D80) — or an explicit "this step
    has no hunk", because "none" and "forgot" look identical in a diff.
@@ -1848,7 +1923,16 @@ this delivery has already paid for once each.
 5. **Re-pin every manifest, census and count the change moves**, in the
    same delivery — post-merge manager cleanup of a lane's pins is a
    delivery failure.
-6. **The withdrawals' absence grep returns 0** over `docs/spec/`,
-   `src/`, `tests/`, `cli/` (§4.3).
+6. **The withdrawals' absence check passes on its THREE arms** — the
+   data arm and the parser arm as greps, the spec arm as a READ (§4.3).
+   Not "a grep returns 0": that version was unsatisfiable on the
+   untouched tree and its token list was missing two of the four
+   withdrawn spellings.
 7. **No abi bump.** If the step believes it needs one, it STOPS and
    escalates (§1.9).
+8. **RE-READ EVERY `file:line` THE STEP RELIES ON, from the tree, at
+   the step's own pin** — including ones this note and
+   `format_design.md` supply. Revision 1 carried eight wrong ranges out
+   of two ruled documents (§7.1 item 6).
+9. **Every three-leg assertion names its CLASS**, and a helper that can
+   be called without one does not exist after W23.2 (§6.2 item 1).
