@@ -4156,11 +4156,18 @@ bench writes the second parser the seam exists to prevent.
 
 **Appended columns** (table_contract.md: append-only, consumers resolve
 by NAME): on pattern rows `tags` (accumulated, escaped), `oracle`,
-`esc` (§2.19); on config rows `testee`, `options` (accumulated),
-`provides` (accumulated). New head ROW kinds (the existing "`kind`
-carries the declaration name" rule): `vocabulary` (name = the key,
-value = the escaped list), `configs` (value = `build`/`describe`),
-`include`, `oracle`, `tag`, `use`.
+`esc` (§2.19). New head ROW kinds (the existing "`kind` carries the
+declaration name" rule): `vocabulary` (name = the key, value = the
+escaped list), `include`, `oracle`, `tag`, `use`.
+
+> **REVISION 3.4 (D99) REMOVES THREE CONFIG-ROW COLUMNS AND ONE HEAD
+> ROW KIND, AND ADDS A SECTION.** Out: `testee`, `options` and
+> `provides` on config rows (their productions are withdrawn, §2.16 /
+> N-42), and the `configs` head row kind (§2.20). In: **`#section aux`**
+> below. Since none of the three columns ever shipped — the dump has no
+> config-row extension at today's pin — this is a design-time removal
+> and not a `table_contract.md` event: no consumer resolves a name that
+> stops existing, because no consumer has ever seen one.
 
 > **THE EXISTING `pattern` COLUMN NOW MEANS TWO THINGS, AND THE
 > DEPENDENCY IS MARKED HERE WHERE CONSUMERS LOOK** (NEW at 3.2, r57
@@ -4180,11 +4187,12 @@ value = the escaped list), `configs` (value = `build`/`describe`),
 > every existing row — the shape that goes stale the first time one of
 > them is written and the other is not.
 
-**Three named SECTIONS, emitted UNCONDITIONALLY when non-empty**, under
+**FOUR named SECTIONS at revision 3.4** (three at revision 3; `aux`
+joins them), **emitted UNCONDITIONALLY when non-empty**, under
 `docs/spec/table_contract.md`'s `#section` mechanism — the trigger
 `rxt_format.md` itself named ("a data block whose rows cannot be
 columns of this table under any reading") is met by `provenance`, and
-the same argument covers the other two:
+the same argument covers the others:
 
 - `#section provenance` — one row per provenance block: `line`,
   `block_line`, `block_name`, then the record's fields as columns
@@ -4204,6 +4212,21 @@ the same argument covers the other two:
   case column AT ALL, and the head parser's own comment says it reads
   none of their values; under Option A the expectations ARE the set's
   truth, so they must be readable at the seam.
+- **`#section aux` — NEW at revision 3.4 (§2.27)**, one row per LINE of
+  every aux tree, not one row per block: `line`, `block_line` (empty at
+  file scope), `block_name`, `consumer`, `depth`, `key`, `value`
+  (escaped), and `parent_line`. **The shape is a flattened tree with an
+  explicit parent pointer, deliberately**, because the alternative — one
+  row per `ext` block carrying a nested blob — would make the consumer
+  re-parse its own data out of a cell, which is the second parser the
+  seam exists to prevent (their D2). A row-per-line dump with
+  `parent_line` reconstructs the tree exactly, in the dump's own
+  escape vocabulary, with no aux-specific decoding anywhere.
+  **This section is where "dumped FAITHFULLY" (D99 item 3) is
+  discharged and is the only obligation aux places on pcrec**: the dump
+  is the one surface that reads an aux block at all, and what it reads
+  it repeats. A `value` is escaped bytes; pcrec never interprets it,
+  including never deciding it is a number, a list or a boolean.
 
 **Emission is unconditional, not flagged and not content-conditional**,
 and the compatibility story is stated rather than hoped: a section is
@@ -4220,6 +4243,28 @@ appears only when some OTHER production is present is a
 population-nobody-counts trap (K35). The cost is size (a corpus file's
 dump grows ~10x in rows); the dump's only harness call sites are
 head-bearing files only, so `make test` pays nothing today.
+
+> **THE DUMP-SHAPE CHANGE CARRIES A FORMAT-READER SURVEY OBLIGATION,
+> NAMED HERE AT 3.4 BECAUSE THIS TREE HAS PAID FOR IT ONCE.**
+> `--list-source` gaining a row kind, a section or a column is a change
+> to the table's SHAPE, and `docs/design/registry_built_status_memo.md`'s
+> own CORRECTION records what a shape change costs when only CONTENT
+> readers are surveyed: the `built` column's landing swept every reader
+> of the dump's MEANING (module names, gate wording) and missed two
+> readers of its FORM — `tests/reject/`'s row iterator and `tests/cli`'s
+> case 10, both hard-coding **`NF != 15`** — which broke the moment a
+> sixteenth column landed, and were caught by the union battery rather
+> than by the survey. **The obligation the implementation lane inherits
+> is therefore the CONTENT-vs-FORMAT distinction that survey needed and
+> did not draw**: sweep the tree BY GREP for every site that parses
+> `--list-source`'s shape — field counts, positional `cut`/`awk`
+> splits, assumptions about which `#section` lines appear or how many —
+> not only for sites that read a particular column's value. It applies
+> to all four sections and to every appended column, and it applies at
+> 3.4 specifically because `#section aux` is the first section whose
+> presence is driven by data pcrec does not understand, so "which
+> sections can appear" stops being derivable from the productions a
+> reader knows.
 
 **The VALIDATES vs RECOGNISES table** (their D4, pre-ruled) becomes a
 NORMATIVE spec section (§3.4 SW11), production by production. The
@@ -4269,6 +4314,7 @@ update; both are the failure mode this project has recorded under
   | **subject CONTENT** (the `sha256` digest against the file's bytes) | the `m`/`n`/`ms`/`ns`/`mc` rows' own `validated_by: none` **with the reason "the dump performs no file I/O"** | it IS a (scope, line-kind) fact — the case line is where a subject reference appears, so the row exists and carries the value. The SYNTAX (64 hex digits) is validated on the same row; the two are distinguished by the reason string, not by two rows |
   | **pattern TEXT** (never compiled here) | the `pattern` and `pattern-esc` rows' `validated_by: none`, reason "the dump is parse-only; pattern text is the compiler's" | also a genuine (scope, line-kind) fact |
   | **config RESOLUTION** (the `with`/`from` cascades, composed) | **NOT a line-kind row at all** — it is the ABSENCE of `--list-source --resolved`, a surface that is named and unbuilt (§3.4 S11's neighbourhood). It gets a **named sibling surface row** in `--list-schema`'s output: a `surface` section listing the dump's declared NON-coverage, one row, reason "`--resolved` is named and unbuilt; the dump is AS-WRITTEN", with `--list-source`'s own header comment as the prose that already says it |
+| **an `ext` tree's CONTENTS** (§2.27) — **NEW at 3.4** | **also NOT a line-kind row**, and for the same reason one row up: `validated_by` is a property of a ROW and an aux body has NO rows. Same mechanism, second customer — a `surface` row reading *"the contents of an `ext` tree are never schema-checked and never interpreted; reason: semantically uninterpreted by design (the graduation rule, §2.27.3)"*. The `ext` OPENER's own row is ordinary and carries `validated_by: all-readers` (§2.27.4), so the two claims stay separate: the structure is checked by three legs, the content by nobody |
 
   The third is the one worth the paragraph: revision 3.1 called all
   three "rows with `validated_by: none`", and for config resolution
@@ -4278,7 +4324,13 @@ update; both are the failure mode this project has recorded under
   there or (worse) conclude the table is incomplete. A declared
   non-coverage section is one more thing `--list-schema` prints and it
   keeps the rendered D4 table complete by construction, which is the
-  whole reason the column exists.
+  whole reason the column exists. **And the fourth row, added at 3.4,
+  is what turns that from a one-off repair into a MECHANISM**: aux's
+  body hit the identical wall from a completely different direction —
+  a production designed a revision later, for an unrelated purpose —
+  and the `surface` section absorbed it without a new idea. A repair
+  that fits its second customer unchanged is the sign the first one was
+  diagnosed correctly.
 
 **`all-readers` IS A CLAIM ABOUT TWO PARSERS THE SCHEMA DOES NOT
 DRIVE, AND AT 3.2 IT OWES A FIXTURE PER ROW** (r57 S-M2, a MUST-FIX).
@@ -4371,7 +4423,7 @@ One row per (scope, line-kind):
 | `kind` | the first token |
 | `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `qualified-line`, … |
 | `opens_group` | **structure-layer parameter 1** (§1.2.1 S2). True for `pattern` and `pattern-esc` and nothing else |
-| `children` | `none`, `prose`, or the child scope this kind admits |
+| `children` | `none`, `prose`, **`tree` (NEW at 3.4)**, or the child scope this kind admits — the four real cases: takes nothing indented, takes BYTES, takes structurally-parsed lines with NO scope and no rows (§2.27's `ext`), takes schema-checked lines in a named scope |
 | `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` — **and its values for the settings kinds are stated below (3.3), not left to the implementer** |
 | `constraints` | zero or more from §2.25.3's closed vocabulary |
 | `source` | `format` (pcrec declares it) or `file` (a `vocabulary` line declares it, §2.15) |
@@ -4425,9 +4477,25 @@ The reconciliation, and it is one sentence with one precedence rule:
 > with `children: prose`, and the pair is what a generic reader reads
 > as "this kind can open an S3 opaque region". There is no precedence
 > question left, because the two columns no longer say different
-> things about one row — the `none`/`prose`/`<scope>` trichotomy
-> covers the three real cases: takes nothing indented, takes bytes,
-> takes lines.
+> things about one row — the `none`/`prose`/**`tree`**/`<scope>`
+> vocabulary covers the four real cases: takes nothing indented, takes
+> bytes, takes structurally-parsed lines nothing validates, takes
+> schema-checked lines.
+
+**`children: tree` IS THE FOURTH VALUE, ADDED AT 3.4 FOR §2.27's AUX
+PRODUCTION, and it does not touch structure-layer parameter 2.** The
+pair test is unchanged and is unchanged in form: a kind opens a prose
+region iff `value: prose` AND `children: prose`. `children: tree` fails
+that test exactly as `children: none` does, so no reader has to learn a
+new rule to keep S3 right — the value's arrival cannot open a region by
+accident. What `tree` says is a SCHEMA fact and only a schema fact:
+the indented lines are lines (not bytes, so S1 attaches them and a
+malformed one is a local error), and there is no scope to look them up
+in (so §1.2.2's unknown-token-in-scope rule has nothing to fire on).
+**One enum member, the same price `prose` cost**, and the alternative —
+an exception in the unknown-token rule keyed on the token `ext` — is
+the per-keyword structural carve-out consequence 1 forbids (§2.27.2
+decision 2).
 
 `--list-schema` prints both columns, so H12's assumption — the one
 revision 3.1 made silently in the H-table and nowhere declared — is now
@@ -4497,20 +4565,31 @@ sentence, per §1.6.4 case 4.
 
 #### 2.25.3 The constraint vocabulary, and its MEMBERSHIP RULE
 
-**EIGHT kinds at revision 3.2, and the count moved for the right
-reason** (r57 S-BL1, a BLOCKER). Revision 3.1 declared five and claimed
-they cover the delivery; the panel tested four W23 refusal rules
-against them and **all four fail** — one needing precisely the kind
-§2.25.4 deferred, one with no expressible form at all, one mapped to a
-kind whose semantics would refuse the production's own normal
-spelling, and one ranging over fields inside a value. **The
-completeness claim is withdrawn and three kinds are admitted**, each
-under the section's own membership rule — copying §2.10's discipline
-for the data-block family, because the hazard is identical: **a
-constraint kind is admitted only when a production in THIS delivery
-needs it.** No kind is added on plausibility; each row names its
-customer, and all three new rows name customers that were already in
-the text.
+**SEVEN kinds at revision 3.4** — eight at 3.2, and one leaves because
+its only customer did. Revision 3.1 declared five and claimed they
+cover the delivery; the r57 panel (S-BL1, a BLOCKER) tested four W23
+refusal rules against them and **all four fail** — one needing
+precisely the kind §2.25.4 deferred, one with no expressible form at
+all, one mapped to a kind whose semantics would refuse the production's
+own normal spelling, and one ranging over fields inside a value. **The
+completeness claim was withdrawn and three kinds admitted**, each under
+the section's own membership rule — copying §2.10's discipline for the
+data-block family, because the hazard is identical: **a constraint kind
+is admitted only when a production in THIS delivery needs it.** No kind
+is added on plausibility; each row names its customer.
+
+**AND THE MEMBERSHIP RULE CUTS BOTH WAYS — `cross-scope` IS REMOVED AT
+3.4** (D99 item 2, §2.16 withdrawn). Its one named customer was
+`provides` ⊆ `vocabulary requires`; with `provides` withdrawn, the kind
+has **no customer in this delivery**, and a rule that admits a kind only
+when a production needs it must drop a kind when no production does — or
+it is not a rule, it is a ratchet. The kind returns to §2.25.4's
+deferred row, where 3.1 had it, with its trigger restored and one
+sentence of history so the next lane knows the trigger has fired once
+already and been withdrawn. **This is the clean confirmation of the
+lesson §2.25.3 wrote at 3.2**: a deferral with a trigger has to be
+checked against the delivery it ships with — and, it turns out,
+re-checked against the delivery it ends up with.
 
 | constraint | means | its W23 customer |
 |---|---|---|
@@ -4519,25 +4598,27 @@ the text.
 | **`forbidden-if <field> <op> <value>`** | **refused when a sibling holds a value** (NEW at 3.2) | `provenance`'s `authored` rule (§2.14 rule 2): `url` and `ref` are required unless `source` is `authored`, **and refused when it is**. `required-if` expresses the first half and cannot express the second |
 | `exactly-one-of <a> <b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23) |
 | `closed <set>` | the value must be a member of a set declared IN THIS ROW's own scope | `fidelity`'s three (`source: format`); `kind`, `convention`, any `vocabulary`-declared key checked at its own `tag` site (`source: file`) |
-| **`cross-scope <scope> <kind> <selector>`** | **the value must satisfy a declaration resolved in a DIFFERENT scope** (NEW at 3.2) | `provides` ⊆ `vocabulary requires` (§2.16): a `config`-body line whose legal values are fixed by a FILE-scope `vocabulary` declaration under a DIFFERENT key name (`requires`). Neither end can state this alone — `closed` resolves in its own scope, and the `vocabulary` row does not know `provides` exists |
-| `unique-by <key…>` | at most one row per key tuple, **the tuple being the WHOLE row's identity** | `under` per (convention, subject, kind, startpos) (§2.17); a `vocabulary` key; a `configs` line |
+| ~~`cross-scope <scope> <kind> <selector>`~~ | ~~the value must satisfy a declaration resolved in a DIFFERENT scope~~ (added 3.2) | **REMOVED AT 3.4.** Its only customer was `provides` ⊆ `vocabulary requires` (§2.16, WITHDRAWN by D99), so no production in this delivery needs it. Deferred again, §2.25.4 |
+| `unique-by <key…>` | at most one row per key tuple, **the tuple being the WHOLE row's identity** | `under` per (convention, subject, kind, startpos) (§2.17); a `vocabulary` key. **(3.4: the third customer, "a `configs` line", leaves with §2.20. Two remain, so the kind is unaffected — checked rather than assumed, because a kind losing one of three customers and a kind losing its only one are the same edit and opposite outcomes.)** |
 | **`functional-binding <key…> -> <value…>`** | **equal keys must carry equal values; unequal values with equal keys are refused naming both lines** (NEW at 3.2) | a subject `as` id (§2.18): one id maps to one (path, sha256), **re-stating the same binding on many case lines is the NORMAL spelling** |
 
-**Why `cross-scope` is admitted NOW and not deferred, and the deferral
-it replaces was a CONTRADICTION rather than a judgement.** Revision
-3.1's §2.25.4 deferred "constraint kinds beyond the five (ordering,
-cross-scope, arithmetic)" with the trigger *"the sixth W-something
-production that needs one"* — and §2.16, one section earlier in the
-same revision, states exactly such a production: *"when a
-`vocabulary requires …` declaration exists, every `provides` value must
-be a member of it"*. A W23 production met the deferral's own trigger
-before the deferral was written, so the two sentences contradict inside
-one document. The membership rule's bar is met and the kind is
-admitted; what stays deferred is ordering and arithmetic, which have no
-customer. **The general lesson this section keeps**: a deferral with a
-trigger has to be checked against the delivery it ships with, not only
-against the future — the whole point of a named trigger is that
-somebody looks to see whether it has already fired.
+**~~Why `cross-scope` is admitted NOW and not deferred~~ — the
+paragraph is kept as HISTORY because its general lesson survives its
+instance.** At 3.2 the argument was that revision 3.1's §2.25.4
+deferred "constraint kinds beyond the five (ordering, cross-scope,
+arithmetic)" with the trigger *"the sixth W-something production that
+needs one"* — while §2.16, one section earlier in the same revision,
+stated exactly such a production (*"when a `vocabulary requires …`
+declaration exists, every `provides` value must be a member of it"*), so
+the two sentences contradicted inside one document. **At 3.4 that
+production is withdrawn and the kind goes back to the deferred row**,
+which makes the episode a complete round trip and sharpens the lesson
+rather than retiring it: **a deferral with a trigger has to be checked
+against the delivery it ships with — in BOTH directions, and at every
+revision, not once.** A trigger that fires can un-fire, and a
+vocabulary that only ever grows is a vocabulary whose membership rule
+has stopped being applied. What stays deferred is ordering, arithmetic
+and now `cross-scope` again; none has a customer.
 
 **Why `forbidden-if` is a kind and not a `required-if` with a negated
 operator.** It was tried that way first and it does not type-check
@@ -4594,11 +4675,17 @@ customer. One fact, one mechanism. The duplicate-refusal discipline
 than six hand-written refusals — `cardinality` for "at most one of
 these", `unique-by` for "at most one per key" — which is still the
 clearest measure of what the schema buys, at an honest count.
+**(3.4: "a second `configs` line" leaves the `cardinality` example list
+with §2.20, and §2.27's `ext` is the first row in the format to take
+`cardinality: repeat` deliberately rather than by default — the one
+production for which "at most one" would have been a judgement about
+what the data means.)**
 
 **The completeness claim is WITHDRAWN.** Revision 3.1 said the five
-kinds cover the delivery. Eight cover it plus one rule that is
-deliberately parser code with its reason stated, and that sentence —
-"eight kinds and one named exception" — is what §2.25 claims now. The
+kinds cover the delivery. **SEVEN cover it at 3.4** (eight at 3.2, less
+`cross-scope` with its customer) plus one rule that is deliberately
+parser code with its reason stated, and that sentence — "seven kinds
+and one named exception" — is what §2.25 claims now. The
 difference matters beyond the arithmetic: a schema presenting itself as
 a complete declaration while a refusal rule lives in control flow is
 the worst of the three outcomes §5.2a item 4 names, because a reader
@@ -4618,7 +4705,7 @@ had already fired beside it** (r57 S-S1, S-BL1(a)).
 | deferred | trigger to build it |
 |---|---|
 | **A file-declared SCHEMA** (a file adding line kinds, not just values) | a second project wanting its own productions. `vocabulary` is the file-declared half that exists, and it declares VALUES only — the asymmetry is deliberate: values are data, line kinds are a grammar, and a format whose grammar varies per file is not one format |
-| **ORDERING and ARITHMETIC constraint kinds** | the W-something production that needs one. No W23 production does. Adding a kind is one enum value plus one arm of an exhaustive switch, so waiting costs nothing. **(3.2: `cross-scope` left this row — its trigger had already fired inside this delivery, §2.25.3.)** |
+| **ORDERING, ARITHMETIC and `cross-scope` constraint kinds** | the W-something production that needs one. No W23 production does. Adding a kind is one enum value plus one arm of an exhaustive switch, so waiting costs nothing. **(3.2: `cross-scope` left this row — its trigger had already fired inside this delivery, §2.25.3. 3.4: it is BACK, because D99 withdrew the production that fired it — `provides` ⊆ `vocabulary requires` was its only customer. The trigger for `cross-scope` specifically, stated sharply now that we have met it once: a production whose legal values are declared in a DIFFERENT scope under a DIFFERENT key name. Nothing in W23 has that shape any more.)** |
 | **A declarative value-shape FIELD EXTRACTOR** (so `under`'s key tuple could be a schema row rather than parser code) | a SECOND `qualified-line` production with a different key. One customer does not pay for a declaration mechanism; two would, because at two the extraction rule stops being the parser's own decomposition and starts being a thing two sites must agree about |
 | **A machine-readable schema export for the bench's loader** | their asking. `--list-schema` is a TSV today; whether they consume it is theirs (D78) |
 
