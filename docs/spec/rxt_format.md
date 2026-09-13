@@ -55,11 +55,22 @@ productions a pattern block's own directives use, so the two cannot
 disagree about what `budget frames=` means.
 
 Keywords belonging to a later wave of this format (`include`, `tag`,
-`freq`, `use`, `oracle`, `analysis`, `testee`, `option`, `mc`, `variant`)
+`freq`, `use`, `oracle`, `analysis`, `mc`, `variant`, `vocabulary`,
+`under`, `provenance`, `ext`, `pattern-esc`)
 are recognised and refused **by name, as NOT IN THIS BUILD** — never as
 unknown. They are real, spelled correctly, and simply not implemented
 here; reporting them as unknown would send a reader hunting a typo in a
 word they just read in the format's own documentation.
+
+**THE LIST IS DERIVED, NOT HAND-KEPT** ([DD-13b.W23.1]): every line kind
+the format has is a row in a declared schema (`pcrec --list-schema`), and
+a row whose `wave` column is above the one this build implements refuses
+by name. So a keyword cannot be forgotten in a list, and a WITHDRAWN
+production cannot linger in one — it has no row, so it has no wave, so it
+refuses as an unknown token in its scope, which is the truth about it.
+`config … testee` and `config … option` left the format that way (D99):
+they were named here as later-wave keywords and are not keywords at all
+any more.
 
 ### The delivering call — reaching a definition's exported groups
 

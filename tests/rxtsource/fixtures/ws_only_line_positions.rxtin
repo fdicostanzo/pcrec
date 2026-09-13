@@ -1,0 +1,26 @@
+# [DD-13b.W23.1] WHITESPACE-ONLY LINES AT FOUR POSITIONS — the INERT half
+# of S0's rule, and the three positions the existing
+# whitespace_only_line.rxtin (sem15) does not reach.
+#
+# Position 1 is between case lines (sem15's own). Positions 2, 3 and 4 —
+# inside a `config` body, as the file's FIRST line, and immediately after a
+# blank — are where the REJECTED "attachment-relevant" reading would have
+# refused: under it S1's "attaches to nothing" arm fires on a
+# whitespace-only first line and on one following a blank, both of which
+# all three legs accept today.
+#
+# THE ASSERTION IS THAT THE PARSE IS IDENTICAL to the same file with these
+# lines deleted, not merely that the file is accepted.
+   
+config dev
+  flags i
+   
+  engine vm
+
+   
+description a file with whitespace-only lines in four places
+
+pattern a+
+m "aaa" 0 3
+   
+n "b"

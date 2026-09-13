@@ -1,0 +1,12 @@
+# [DD-13b.W23.1] RAGGED PROSE INSIDE A REGION IS LEGAL, and its RELATIVE
+# indentation survives. §1.6.1a candidate (3), the second narrowing S3
+# avoids, and the fixture S-M1 named as owed: no fixture carried a ragged
+# prose body before. The dedent strips the FIRST continuation line's
+# indent from every line, so a deeper line keeps the difference.
+description |
+  level one
+    level two, deeper
+  level one again
+
+pattern a+
+m "aaa" 0 3

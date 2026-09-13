@@ -1,0 +1,10 @@
+# [DD-13b.W23.1] A TAB-INDENTED `config` BODY IS REFUSED BY NAME.
+# r57 grammar-lens PROBE CELL; §1.6.1a narrowing (4), TAKEN — this file is
+# ACCEPTED at rc 0 on the pre-W23 binary, so this fixture IS the
+# narrowing's regression rather than an assertion about something that
+# never worked. Indentation is SPACES; a tab inside a VALUE is still data.
+config dev
+	flags i
+
+pattern a+
+m "aaa" 0 3

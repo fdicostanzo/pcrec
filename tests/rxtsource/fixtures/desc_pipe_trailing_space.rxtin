@@ -5,6 +5,13 @@
 # string-compare that the trailing space slipped past); leg C already
 # refused it (`v.strip() == '|'`), which was the one place leg C was
 # STRICTER than its siblings rather than in step with them.
+#
+# [DD-13b.W23.1] THE VERDICT IS UNCHANGED AND THE REASON MOVED. The block
+# `|` form is legal now (§1.2.5), so leg A no longer refuses this for being
+# a head-only spelling — it refuses because the region it opens is EMPTY,
+# the next line being at the opener's own indent. All three legs still
+# refuse, which is what the fixture is for; the TRIM rule it pins (a `|`
+# with trailing whitespace is nobody's intended literal) is untouched.
 pattern a+
 description | 
 m "aaa" 0 3

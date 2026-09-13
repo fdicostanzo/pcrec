@@ -1,0 +1,11 @@
+# [DD-13b.W23.1] A `config` BODY MIXING A 2-SPACE LINE AND A TAB LINE.
+# §1.6.1a narrowing (4)'s sharper half: this parses FLAT at rc 0 on the
+# pre-W23 binary, and it has NO DEFINED TREE under any depth rule — two
+# spellings of indentation with no agreed depth between them. That is why
+# the tab rule is not cosmetic.
+config dev
+  flags i
+	engine vm
+
+pattern a+
+m "aaa" 0 3
