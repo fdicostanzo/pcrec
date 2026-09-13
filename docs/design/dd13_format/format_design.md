@@ -3467,10 +3467,16 @@ variant tre
   keeps the spelling** (§2.26 item 9). Revision 3 justified it as a
   PARSER HAZARD: an indented `pattern` line might start a block in one
   reader and continue a sub-block in another. **Under §1.2.1 that
-  hazard is structurally impossible** — a block opener applies among
-  SIBLINGS and a child is not a sibling, so an indented `pattern` can
-  never open a block in any conforming reader, whatever the attribute
-  is called. The surviving reason is a reader's, not a parser's: this
+  hazard is impossible IN ANY READER THAT IMPLEMENTS S1/S2** — a block
+  opener applies among SIBLINGS and a child is not a sibling, so an
+  indented `pattern` can never open a block in a conforming reader,
+  whatever the attribute is called. **Qualified at 3.2 (r57 S-S5)**:
+  "conforming" is the load-bearing word and revision 3.1 dropped it.
+  Leg A gets the property by construction once H16 lands; legs B and C
+  are independent implementations and get it by being PINNED (§9's
+  A-group), which is the same distinction §2.25.5 draws about every
+  three-leg claim in this note. The surviving reason is a reader's,
+  not a parser's, and it holds either way: this
   field holds a REPLACEMENT for the block's pattern, and calling it
   `pattern` would put the format's most load-bearing token at a second
   scope meaning something adjacent-but-different. An expired argument
@@ -3496,6 +3502,24 @@ by NAME): on pattern rows `tags` (accumulated, escaped), `oracle`,
 carries the declaration name" rule): `vocabulary` (name = the key,
 value = the escaped list), `configs` (value = `build`/`describe`),
 `include`, `oracle`, `tag`, `use`.
+
+> **THE EXISTING `pattern` COLUMN NOW MEANS TWO THINGS, AND THE
+> DEPENDENCY IS MARKED HERE WHERE CONSUMERS LOOK** (NEW at 3.2, r57
+> C-N10). For a `pattern` block the column is the line's bytes
+> VERBATIM; for a `pattern-esc` block it is the DECODED bytes,
+> re-escaped in the dump's own vocabulary (§2.19). Both are the
+> pattern text and the round trip is byte-exact either way, so nothing
+> is ambiguous once a reader knows — but §2.19 is where the fact was
+> disclosed and §2.24's column list is where a consumer building a
+> loader reads. **The `esc` column is what disambiguates them**, and
+> the rule is stated as a pair: *read `pattern` together with `esc`; an
+> exporter reproducing the source file needs both, and a consumer that
+> only wants the pattern's BYTES needs neither, because both spellings
+> deliver the same bytes.* Named as a documented same-column widening
+> rather than a second column, because a `pattern_decoded` column
+> beside `pattern` would give every consumer two fields that agree on
+> every existing row — the shape that goes stale the first time one of
+> them is written and the other is not.
 
 **Three named SECTIONS, emitted UNCONDITIONALLY when non-empty**, under
 `docs/spec/table_contract.md`'s `#section` mechanism — the trigger
@@ -3572,9 +3596,64 @@ update; both are the failure mode this project has recorded under
   tables always go stale.
 - **`--list-schema` prints it**, so "does the dump check X?" is a
   query rather than a reading. The three NOT-validated items above
-  (subject content, pattern text, config resolution) are rows with
+  (subject content, pattern text, config resolution) carry
   `validated_by: none` and a `reason` string, which is why they stay
   visible instead of becoming an absence nobody counts (K35).
+
+  **WHERE THOSE THREE ROWS ACTUALLY LIVE, because two of them are not
+  (scope, line-kind) pairs and the table is keyed on (scope,
+  line-kind)** (NEW at 3.2, r57 S-S3 — and these are the items most
+  likely to fall back to prose, which is the D4 probe's whole subject):
+
+  | not validated | its home | why there |
+  |---|---|---|
+  | **subject CONTENT** (the `sha256` digest against the file's bytes) | the `m`/`n`/`ms`/`ns`/`mc` rows' own `validated_by: none` **with the reason "the dump performs no file I/O"** | it IS a (scope, line-kind) fact — the case line is where a subject reference appears, so the row exists and carries the value. The SYNTAX (64 hex digits) is validated on the same row; the two are distinguished by the reason string, not by two rows |
+  | **pattern TEXT** (never compiled here) | the `pattern` and `pattern-esc` rows' `validated_by: none`, reason "the dump is parse-only; pattern text is the compiler's" | also a genuine (scope, line-kind) fact |
+  | **config RESOLUTION** (the `with`/`from` cascades, composed) | **NOT a line-kind row at all** — it is the ABSENCE of `--list-source --resolved`, a surface that is named and unbuilt (§3.4 S11's neighbourhood). It gets a **named sibling surface row** in `--list-schema`'s output: a `surface` section listing the dump's declared NON-coverage, one row, reason "`--resolved` is named and unbuilt; the dump is AS-WRITTEN", with `--list-source`'s own header comment as the prose that already says it |
+
+  The third is the one worth the paragraph: revision 3.1 called all
+  three "rows with `validated_by: none`", and for config resolution
+  there is no row to put the value on — the fact is about the dump's
+  MODE, not about any line kind. Left as written, the D4 probe would
+  look for a row, not find one, and either report a gap that is not
+  there or (worse) conclude the table is incomplete. A declared
+  non-coverage section is one more thing `--list-schema` prints and it
+  keeps the rendered D4 table complete by construction, which is the
+  whole reason the column exists.
+
+**`all-readers` IS A CLAIM ABOUT TWO PARSERS THE SCHEMA DOES NOT
+DRIVE, AND AT 3.2 IT OWES A FIXTURE PER ROW** (r57 S-M2, a MUST-FIX).
+The value says *every leg must refuse a violation of this row* — but
+the schema table is leg A's (§2.25.5, and deliberately so), legs B and
+C never read it, and **the corpus population is EMPTY by construction**:
+0 files use any W23 production, so no existing `.rxt` exercises a
+single `all-readers` row in any leg. Revision 3.1's defence for the
+column was that a row added without a `validated_by` value is a
+schema-table error — which is true and addresses OMISSION, while the
+live risk here is WRONGNESS: a row marked `all-readers` that legs B and
+C do not in fact enforce, shipping as a printed, rendered, normative
+claim that nothing tests.
+
+So the obligation is stated as a rule with a check behind it:
+
+1. **Every `validated_by: all-readers` row owes a THREE-LEG FIXTURE** —
+   a `.rxtin` cell violating that row, asserted refused by leg A, leg B
+   and leg C, compared on **diagnostic CLASS** and not exit code
+   (§2.25.5's rule, because leg B refuses everything identically).
+2. **"The fixture population covers every `all-readers` row" is ITSELF
+   A CHECK**, not a discipline: it walks `--list-schema`'s own output,
+   selects the `all-readers` rows, and fails naming any row with no
+   fixture. That is the same one-derivation shape the dump already has
+   — the check reads the table the parser enforces, so a row added
+   later fails the check the day it lands rather than the day somebody
+   remembers.
+3. **A row whose fixture is not written yet takes `validated_by:
+   pcrec`**, not `all-readers`. The honest value is the cheap one, and
+   a row can be promoted later; the failure this rule exists to stop is
+   a row claiming three legs on the strength of one.
+
+§9's A3/A4 name the fixtures; §3.2's S-R1 is the sabotage row that
+proves the differential can see a divergence at all.
 
 The prose above survives as the SUBSTANCE the rows must reproduce; if
 the rendered table and this paragraph ever disagree, the table is
@@ -3872,12 +3951,12 @@ right spelling, or moved now.**
 | 1 | `pattern-esc` | **CONFIRMED.** It is one of the block-opener set's two members (§1.2.1 S2), so its name is structure-layer vocabulary and must read as a sibling of `pattern`; the hyphenated compound does that where a flag on `pattern` (`pattern -e …`) would put a value shape inside the one production the format promises is rest-of-line verbatim. Hyphenated keywords are already the house spelling (`frames-buffer=`, `license-note`) |
 | 2 | `provenance` | **CONFIRMED.** The domain word, and it now names ONE record at two parents (item 10), which is what a general name has to earn |
 | 3 | `vocabulary` | **CONFIRMED AS A SPELLING, NESTED AS A CONCEPT** (§2.15). It is the FILE-declared rows of §2.25's schema, not a mechanism beside it; a second file-declarable schema fact joins it as a sibling declaration under that heading rather than as an unrelated head keyword, and `--list-schema`'s `source` column is where the nesting is visible. Renaming it to `values` was considered and declined: the bench's note, the acceptance checks and Frank's own ruling all use this word |
-| 4 | `capable` → **`provides`** | **MOVED** (§2.16). The pattern side of the relation is `tag requires=…`; `requires`/`provides` is one relation read from its two ends, and is the pairing every neighbouring ecosystem uses. `requires`/`capable` pairs a verb with an adjective and leaves the reader to infer they are halves of one thing. Free: 0 occurrences in any context. W23-F2's question to Frank is unaffected — it asks WHERE the capability model lives, not what the line is called |
+| 4 | `capable` → **`provides`** | **MOVED** (§2.16). The pattern side of the relation is `tag requires=…`; `requires`/`provides` is one relation read from its two ends, and is the pairing every neighbouring ecosystem uses. `requires`/`capable` pairs a verb with an adjective and leaves the reader to infer they are halves of one thing. Free: 0 occurrences in any context. W23-F2's question to Frank is unaffected — it asks WHERE the capability model lives, not what the line is called. **AND WHAT HALF IT DELIVERS, stated at 3.2 (r57 G-B5): the rename buys a READING symmetry the GRAMMAR does not have, and that is all it buys.** The two ends are different kinds — `provides` is a line kind in a `config` body, `requires` is a tag KEY in a `tag` item — and the closed set constraining `provides` is declared under the other end's name at file scope (`vocabulary requires …`). So a reader who learns `provides` has no syntactic path to its value set. The rename makes the RELATION legible; §2.16's new pointer sentence and §2.25.3's `cross-scope` row make it FINDABLE. Neither alone is enough, and revision 3.1 claimed the first and shipped neither |
 | 5 | `under <conv> <case-line>` | **CONFIRMED, and given a schema home.** The qualifier is a PREFIX so the case line after it is byte-identical to an unqualified one — which is what makes "the qualifier wraps a case line UNCHANGED" a checkable property rather than a hope, and a suffix form would not. Its one oddity — a line kind whose value CONTAINS another line kind — is now expressible as schema data (`value: qualified-line` over a closed kind set, §2.25.2) rather than as a parser special case |
 | 6 | `configs build`/`describe` | **CONFIRMED.** It names the thing it governs (the file's `config` blocks) and takes a closed mode value, so a third mode is a `closed` set member and not a new keyword. `config-mode` was considered and declined as longer for no disambiguation |
 | 7 | `as <id>` / `sha256 <hex64>` | **CONFIRMED, and the reason is worth stating because "why not `hash`?" is the obvious question.** Naming the ALGORITHM in the keyword means a second algorithm arrives as a sibling (`sha512 <hex>`) rather than as a re-interpretation of an existing field's value — the failure mode every `hash:`-style field eventually has. `as` is the import-idiomatic binder |
-| 8 | `tag-prose` (`key="…"`) | **CONFIRMED, and it is now one of a NAMED PAIR.** The quoted form is discriminated by the first byte after `=`, exactly as `\|` discriminates a prose value's two forms. §1.2.4 names both as **value-form discriminators** — schema-declared, per line kind, never structural — which turns two ad-hoc conventions into one stated concept |
-| 9 | `variant`'s `text` | **CONFIRMED, REASON REPLACED** (§2.23). Revision 3's justification was a parser hazard §1.2.1 makes structurally impossible. The surviving reason is a reader's: the field holds a replacement FOR the block's pattern, and reusing the format's most load-bearing token at a second scope for something adjacent-but-different is how a vocabulary stops being learnable |
+| 8 | `tag-prose` (`key="…"`) | **CONFIRMED — and the pairing with `\|` is RE-WORDED at 3.2** (r57 G-B1). The quoted form is discriminated by the first byte after `=`, as `\|` discriminates a prose value's two forms, and both are declared per line kind in the schema's `value` column. But revision 3.1's phrasing — *"value-form discriminators… never structural"* — is false of `\|`, which opens an S3 OPAQUE REGION whose EXTENT is structural (§1.2.1, §1.2.4's table). The surviving statement is the true half: **both are value-form discriminators; `"`'s value ends on its own line and `\|`'s ends on a later one, and a discriminator that selects a multi-line form is ALSO a structure device.** `tag-prose`'s own spelling is unaffected and stays confirmed — it is the single-line one |
+| 9 | `variant`'s `text` | **CONFIRMED, REASON REPLACED** (§2.23). Revision 3's justification was a parser hazard §1.2.1 makes impossible in any reader implementing S1/S2 — **qualified at 3.2 (r57 S-S5): that is a property of the SPECIFICATION, and legs B and C implement it independently, so it is pinned by §9's A-group rather than inherited.** The surviving reason is a reader's and does not depend on the qualification: the field holds a replacement FOR the block's pattern, and reusing the format's most load-bearing token at a second scope for something adjacent-but-different is how a vocabulary stops being learnable |
 | 10 | `provenance`'s fields, and the `freq` block's | **MOVED — the audit's biggest finding.** Revision 3 shipped **two provenance vocabularies for one idea**: `exemplar`/`date`/`bytes`/`sha256`/`analyzer` on a data block, `source`/`url`/`ref`/`licence`/`retrieved`/`fidelity`/… on a pattern block, with `exemplar`≡`source` and `date`≡`retrieved` naming the same facts twice. Unified into ONE record used at two parents, its REQUIRED subset declared per parent by the schema (§2.10, §2.14). `analyzer` deliberately stays on the data block — it names the TOOL, not the origin. And `licence`/`licence-note` → **`license`/`license-note`**, because the value is an SPDX identifier and SPDX's own key is `License`. All free: 0 uses in either repo |
 | 11 | `mc` | **CONFIRMED.** Two letters, joining the `ms`/`ns` terse case-line family; a case line's kinds are the format's highest-frequency tokens and the family's brevity is deliberate |
 | 12 | `oracle <engine>[/<version>]` | **CONFIRMED.** `/` separates a name from a version everywhere a reader has met the idea, and it appears nowhere else in the token grammar, so it cannot be mistaken for anything |
@@ -5187,10 +5266,16 @@ fallback answers provenance only and leaves `variant`'s continuation
 hack standing; moving provenance to the head keyed by block name splits
 a pattern's truth across two places (the bench's own reason). And the
 parser hazard revision 3 closed by an ordering rule is now
-**structurally impossible** rather than closed by discipline — a block
-opener applies among siblings, and a child is not a sibling — which
-matters, because that ordering rule was MEASURED to hold in only one of
-the three readers it was asserted of (§0.7).
+**impossible in any reader that implements S1/S2** rather than closed by
+discipline — a block opener applies among siblings, and a child is not
+a sibling — which matters, because that ordering rule was MEASURED to
+hold in only one of the three readers it was asserted of (§0.7).
+**Qualified at 3.2 (r57 S-S5)**: that is a property of the
+SPECIFICATION, so it is exactly as strong as the legs' conformance to
+it. Leg A gets it by construction; legs B and C get it by being pinned
+(§9's A-group), and saying "structurally impossible" unconditionally
+would repeat the very move — asserting a rule of three implementations
+— that this bullet exists to correct.
 
 **P-Q2 — is `vocabulary` the right closed-set mechanism?** YES
 (pre-ruling e, accepted): per-key declared sets, parser-enforced,
