@@ -560,6 +560,40 @@ never edited afterwards.
   section about something else — this round's own instance of the
   DISPOSITION-TEXT residue class the r58 panel named, which neither a
   grep nor an inverse mechanism walk reaches.
+- `w23impl_report.md` — [DD-13b.W23] THE IMPLEMENTATION NOTE (2026-09-13,
+  lane w23impl, opus; docs only, no runs). Delivers
+  `docs/design/dd13_format/w23_impl.md` — five merges, nineteen fixtures,
+  six sabotage rows S239-S245, SW1-SW19 distributed per step, and the
+  bench's 41-check bar mapped onto the staging. Read the report for five
+  things the plan surfaced that the brief did not anticipate.
+  **The headline is that the `NF != 15` defect is ALIVE in this repo**,
+  found by RUNNING the format-reader survey §2.24 obliges rather than by
+  inheriting its lesson: `tests/rxtsource/run_rxtsource_tests.sh:479-494`
+  asserts that every non-comment `--list-source` row has exactly
+  `ncols+1` fields, unconditionally of kind, which four `#section` blocks
+  violate on every row — **and its failure message names a TAB in a field
+  as the only possible cause**, so a lane meeting the red after emitting a
+  section goes and reads the escape function. The generalisation, third
+  instance in this house: *a check that asserts a SHAPE goes stale when
+  the shape gains a variant, and its FAILURE MESSAGE is a second,
+  undeclared claim about the space of causes that goes stale with it.*
+  Also: the other three dump readers survive sections only because every
+  section's first column is an integer and no main-table `kind` token is
+  one — an invariant written nowhere, now check W23-S4, with the ordering
+  rule it rests on (sections FOLLOW the main table) stated while it is
+  still free; why the STEP 0 legs-B/C parity fix belongs in the step that
+  builds the diagnostic-CLASS machinery rather than in any harness step
+  (*a refusal neither leg can produce is a refusal with no class*) and why
+  leg B DETECTS a NUL rather than carrying one; that
+  `pcrec_rxt_source_ncols()` has zero callers beside a comment still
+  reading "THE 15 COLUMNS" over a sixteen-entry array; and why
+  §2.27.3 clause 5's value-identity check gets **no sabotage row** — its
+  violation is a patch somebody writes on purpose, not a corruption of
+  shipped code, so the check is the detector and the review is the gate.
+  §4 discharges the standing constraints explicitly: **no abi event was
+  discovered** by the file-by-file plan (confirmed, not restated), and the
+  withdrawn mechanisms' absence is a per-step grep rather than a promise.
+  Nothing owed.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
