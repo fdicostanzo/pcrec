@@ -4707,6 +4707,228 @@ ruling about syntax is not a licence to reopen settled meaning, and a
 sweep that re-decided semantics would be the lane spending Frank's
 ruling on something it did not buy.
 
+### 2.27 The AUX production — `ext <consumer>` (NEW at revision 3.4, D99 item 3)
+
+**The format gains one production whose defining property is that pcrec
+does not understand it.** D99 item 3: *"structured data attachable at
+file and block level, consumer-namespaced, STRUCTURALLY parsed (S0-S3,
+so a malformed aux block cannot corrupt what follows) and SEMANTICALLY
+uninterpreted — dumped faithfully by `--list-source`, never read by any
+pcrec build or check."*
+
+```
+ext bench
+  testee pcre2/10.46
+  testee re2/2024-07-02
+  capabilities pcre2
+    backrefs lookaround atomic-possessive recursion conditionals
+  matrix |
+    the sixteen-config pcrec sweep lives in the runner, not here; this
+    block records only which engines this SET expects to be run under.
+```
+
+#### 2.27.1 What it is, exactly
+
+- **Spelling: `ext <consumer>`.** `<consumer>` is a `defname` (the wide
+  name grammar, so `pcrec-bench` is spellable). It is the consumer's
+  NAMESPACE and **pcrec resolves it against nothing** — there is no
+  registry of consumers, no refusal for an unknown one, and adding one
+  is not a format change. §2.26 item 14 defends the spelling.
+- **Two parents: FILE scope and BLOCK scope**, one production at both,
+  on `provenance`'s own precedent (§2.26 item 2) — which is the general
+  mechanism earning its keep rather than two productions that happen to
+  look alike. File scope carries what is true of the set; block scope
+  carries what is true of one pattern.
+- **Body: ordinary S1-attached records with children**, arbitrarily
+  deep. Nothing about the body is new machinery: S0's line classes, S1's
+  attachment, S2's opener set (which has no member inside an aux body,
+  so no grouping happens there) and S3's opaque regions all apply
+  verbatim. An aux body is the same tree shape a `provenance` block is.
+- **Cardinality: ANY.** `cardinality: repeat`, at both scopes. Several
+  `ext` blocks for one consumer are legal and several consumers are the
+  point; nothing accumulates, nothing last-wins, and there is no
+  duplicate refusal — because a duplicate refusal is a judgement about
+  what the data MEANS, which is exactly what this production declines to
+  make. **This is the one place in the format where "at most one" would
+  have been wrong**, and it is worth naming beside §2.25.2's table,
+  where seven kinds go the other way.
+- **Semantically UNINTERPRETED.** No pcrec build reads it, no check
+  reads it, no config resolution reads it, `--source` compiles nothing
+  from it, the composer never looks in it, and no diagnostic ever cites
+  a line inside it except a STRUCTURE error on that line itself.
+
+#### 2.27.2 The three decisions this section makes, each with its alternative
+
+**Decision 1 — a malformed aux block is a LOCAL error, and that is what
+"structurally parsed" buys.** The alternative is to skip an aux body as
+opaque BYTES (S3's treatment, one level up: read to the first line at
+or below the opener's indent and never look inside). It is refused, and
+the reason is the ruling's own parenthesis: under the bytes reading, an
+aux body containing a line that is not indented under the opener — a
+typo, a lost space, a generator's off-by-one — silently ENDS the block
+and the following lines re-enter the file's own grammar, where they are
+either a hard error blamed on the wrong line or, worse, legal. Under
+structural parsing the same typo is an attachment error naming its own
+line, and **nothing after the aux block can be reached differently
+because of what is inside it**. A consumer's data cannot corrupt
+pcrec's file.
+
+**Decision 2 — no first token inside an aux body is ever unknown, and
+this needs one schema value rather than an exception.** §1.2.2's rule is
+that *"a first token unknown IN ITS SCOPE is a hard error naming the
+scope"*, and every scope in the format today is a CLOSED set of declared
+kinds. An aux scope is open by construction. Expressing that as a
+carve-out ("the schema's unknown-token rule does not apply under `ext`")
+would be precisely the per-keyword structural exception Frank's
+consequence 1 forbids, so it is expressed as **a fourth value of the
+`children` column: `tree`** (§2.25.2). The column already says WHAT a
+kind's indented lines are — `none` (nothing), `prose` (bytes, an S3
+region), `<scope>` (schema-checked lines) — and `tree` is the fourth
+real case: **structurally parsed lines, no scope, no rows, never
+validated.** One enum member, the same price §2.25.2 paid for `prose`,
+and a generic reader that fetches the column gets the answer without
+knowing the token `ext`.
+
+**Decision 3 — a PROSE VALUE is legal inside an aux body. RECOMMENDED
+YES; flagged for the manager with the alternative priced.** An aux line
+may write `<key> |` and continue on indented lines, exactly as
+`description` does. *Why yes*: it reuses existing machinery end to end
+— S3 is already the extent rule, `prose-value` is already the decode,
+and the only schema fact required is that an aux line's value shape is
+`prose`, which is a declaration and not a code path. A consumer that
+cannot write a paragraph in its own namespace will write one anyway, as
+a run of single lines or an escaped blob, and the format will have
+taught it a workaround instead of a spelling. *What it costs, stated
+because it is the only cost*: structure-layer parameter 2 (§1.2.1) is
+the set of prose-region-opening kinds, and it now includes "any line in
+an aux scope" — a set that was five named rows and is now five rows plus
+a scope-level predicate. That is a real widening of a normative
+parameter and it is why the decision is flagged rather than assumed.
+*The alternative*: forbid `|` inside aux, making every aux value
+one-line. It is cheaper by exactly one clause in parameter 2 and is
+rejected because the clause is the honest description of a format that
+has one prose mechanism everywhere (§1.2.5) — carving aux out of it
+would make prose the thing whose rules depend on which keyword opened
+the line, which is the property §1.2 exists to remove.
+
+#### 2.27.3 THE GRADUATION RULE (D99 item 4, normative)
+
+> **The day something in an aux block needs pcrec to ACT on it, it must
+> GRADUATE to a real production. Aux never grows semantics in place.**
+
+Stated as an obligation with a falsifiable test, because a rule of this
+shape is broken by accretion rather than by decision:
+
+1. **"Act on" means any of**: a build reads it, a check reads it, a
+   diagnostic cites its VALUE (as opposed to a structure error on its
+   line), a config resolution consults it, the composer looks in it, or
+   any pcrec surface other than `--list-source`'s faithful dump reports
+   it. If a patch makes any of those true of an aux body, the patch is
+   the graduation event and is refused as an aux change.
+2. **Graduating means the ordinary cost**: a production in §1.3, a
+   schema row in §2.25 with its scope, value shape, cardinality,
+   constraints and `validated_by`, a `docs/spec/rxt_format.md` hunk
+   under D80, and a place in the wave table. That cost is the POINT —
+   it is what a format-level commitment is, and aux exists so a
+   consumer's experiment does not have to pay it before anyone knows
+   whether the idea survives.
+3. **A graduated spelling need not keep its aux spelling**, and usually
+   should not: `ext bench` / `testee` graduating would become whatever
+   §2.26's ownership audit says it should be called, since the audit's
+   criterion is long-term viability and an aux key was never held to it.
+4. **The failure mode this rule names** is the one every
+   extension namespace in every format has eventually had: a field
+   everybody writes, that one tool reads "just this once", that becomes
+   load-bearing without ever being specified — after which the format
+   has a production it did not design, cannot change, and does not
+   document. D99 writes the rule now, while the population is zero.
+
+**The revisit-when for aux itself, since it is a production like any
+other**: if the aux population grows and NOTHING ever graduates, that is
+evidence the format's real boundary is drawn correctly and aux is doing
+its job. If several consumers independently write the same key, that is
+the trigger to look at whether the key is rx-defining after all — which
+is a graduation question asked by a measurement rather than by a
+request.
+
+#### 2.27.4 The schema row, and why `validated_by` has nowhere to say "nothing"
+
+The `ext` kind's own rows (one per scope) are ordinary:
+
+| column | value |
+|---|---|
+| `scope` | `file`, and `block` — two rows, one production |
+| `kind` | `ext` |
+| `value` | `token` (the consumer namespace) |
+| `opens_group` | `false` — structure-layer parameter 1 is untouched; aux opens no group and a `pattern` line after an `ext` block starts a block exactly as it does today |
+| `children` | **`tree`** — §2.27.2 decision 2, the new fourth value |
+| `cardinality` | `repeat` |
+| `constraints` | none |
+| `source` | `format` |
+| `validated_by` | `all-readers` — see below, this is about the OPENER |
+| `wave` | W23 |
+
+**`validated_by: all-readers` on the `ext` row is a claim about the
+OPENER and the SHAPE, and it is a true one**: every leg must recognise
+`ext` as a known kind in its scope, must read a consumer token, and
+must CONSUME the children rather than dispatching them — which is
+precisely the three-leg agreement H12 is already building for
+`provenance` and `variant`, at no extra cost, and is the only thing
+about aux the three readers can meaningfully agree on. §9's A-group owes
+it a fixture on the same terms as every other `all-readers` row (§2.24's
+rule 1).
+
+**THE BODY'S NON-VALIDATION CANNOT BE A CELL VALUE, and the note has
+already solved this exact shape once.** The natural spelling for "the
+contents are never checked" is `validated_by: nothing` — and there is
+no row to put it on, because **`validated_by` is a property of a ROW and
+an aux body has no rows.** That is r57 S-S3's finding verbatim, one
+production over: §2.24's third non-validated item (config RESOLUTION)
+had the same problem — *"NOT a line-kind row at all… it is the ABSENCE
+of `--list-source --resolved`"* — and the answer built for it was a
+**named sibling `surface` row in `--list-schema`'s output, declaring the
+non-coverage explicitly.** Aux takes the same mechanism:
+
+> `surface` row: *the contents of an `ext` tree are never schema-checked
+> and never interpreted; reason: "semantically uninterpreted by design —
+> see the graduation rule, §2.27.3".*
+
+**This is a deliberate property and not an omission, and the surface row
+is what makes the difference legible**: an absence in a table reads as
+something nobody got to, while a declared non-coverage row reads as
+something somebody decided, with the reason attached. §2.24's D4
+VALIDATES-vs-RECOGNISES table renders it, so "does pcrec check my aux
+block?" is a query with a printed answer rather than a thing a consumer
+infers from silence. It is also the honest statement of what pcrec
+promises: the STRUCTURE is validated by all three legs, the CONTENT by
+nobody, and those are two different claims that a single cell would
+have blurred.
+
+#### 2.27.5 What aux does NOT do, stated so the boundary is a decision
+
+- **It is not a config.** Nothing in an aux block reaches a compile, a
+  flag, a limit or an axis, in any mode. There is no mode.
+- **It does not cross a `lib` edge** (§2.5's re-homed clause) and it
+  cannot appear in an included FRAGMENT's head, because a fragment has
+  no head at all (§2.5). Block-scoped `ext` inside a fragment's pattern
+  block IS legal — it is a block line, exactly as a block-scoped `tag`
+  or `description` is, and for the same reason: it travels with the
+  block a generator wrote.
+- **It has no vocabulary hook.** `vocabulary` (§2.15) closes `tag` keys,
+  `under`'s convention and `variant`'s `kind`; it does not reach inside
+  an aux body, and a `vocabulary` line naming an aux key constrains
+  nothing. Checking an aux key's values would be interpreting them.
+- **It is not a second `tag`.** `tag` is a pattern-level classification
+  pcrec's own harness reads, validates the SHAPE of, and reports; aux is
+  a consumer's tree pcrec repeats. They differ in who the data is for,
+  which is the only distinction the ruling draws and the only one that
+  needed drawing.
+- **It buys no obligation on the bench.** The bench's sixteen-config
+  pcrec matrix stays bench-side — it is their experimental design,
+  cross-set by construction (D99 item 3) — and whether they put their
+  roster in an `ext bench` block at all is theirs (D78). Aux is a place
+  to put it, not a request to.
+
 ---
 
 ## 3. Migration
