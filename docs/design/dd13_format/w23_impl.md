@@ -121,7 +121,47 @@ And two mechanisms are **WITHDRAWN and have no implementation in any
 step of this plan**: the head declaration `configs build`/`describe`
 and the `config`-body lines `testee`/`option`/`provides`. §4.3 makes
 that absence a *checkable* landing condition rather than a promise,
-on SW19's own model.
+on SW19's own model — **and at revision 1.1 §4.3 also records that
+`testee`/`option` are NOT design-note-only: leg A recognises both
+today, the spec names both, and a test's word census lists both.**
+
+### 0.5 REVISION 1.1 — the r59 fix round, finding by finding
+
+**The review of record is `docs/dev/reviews/2026-09-13-r59-w23-impl.md`
+(three read-only critics: A checks/sabotage, B design fidelity, C
+citations): 4 blockers, 13 must-fix groups, all FIX-NOW, plus manager
+rulings R1-R4 on §7.3.** The panel's verdict was that the SPINE holds —
+the five-merge staging (now six), the R5/`NF != 15` catch which all
+three critics independently reproduced, the no-abi §1.9 argument, the
+S238/S239 numbering, the F-Q1 production mapping and the forward
+residue sweep. What fell is on three axes, and the table is the record.
+
+| finding | what it was | what revision 1.1 does |
+|---|---|---|
+| **r59-A1** (blocker) | **R6 is an INEQUALITY reader and §1.5 marked it safe; a green W23-S4 would PROVE it broken.** `run_rxtsource_tests.sh:499` counts every non-comment row whose kind is not `pattern` and asserts ZERO, so every `#section cases` row is a "head declaration" | R6's row reads **BREAKS LOUDLY**; its repair joins R5's in W23.4's build order **before any section is emitted**; §1.5's invariant sentence narrows to **EQUALITY readers only**, with why the same fact that protects them breaks R6. §6.4 item 3 carries both repairs |
+| **r59-A2** (blocker) | **§1.8's head-level parity fix is unbuildable in leg C and its re-aim passes vacuously.** `dup_head_description.rxtin` is HEAD-BEARING and `verify_rxt.py:407-417` refuses every head-bearing file, so `check_refusal_all3` goes green with leg C refusing for the wrong reason — and goes RED once W23-S2 compares class | **Only the two HEADLESS fixtures move** (`nul_byte`, `dup_description`); `dup_head_description` stays single-leg with its seam reason stated in the script; `tests/rxtsource/CLAUDE.md`'s scope note is **NARROWED, not deleted** (two thirds of it survives, and its reason changes from a lane's scope to the seam ruling). DECIDED (8) |
+| **r59-B1** (blocker) | **§5's three-row correction list contradicts the RULED list.** §9's table carries nine live rows; revision 1 re-derived three and generalised §9's DELETED-row note onto `licence` → `license`, which the bench must make | §5's correction paragraph and §6.5 item 4b **restate §9's list BY REFERENCE and stop re-deriving it**, with the standing lesson recorded: a correction list that exists in a ruled document travels by reference |
+| **r59-B2** (blocker) | **H5 has no step: `include`'s HARNESS half is not in the delivery, and §4.1 falsely asserts its spec row S3 already landed.** The §1.1-vs-§1.7 contradiction hid it | **NEW §1.10** (the mechanism, all three legs stated one way), **NEW §6.3a** (its own merge, W23.3a), three fixtures + **W23-S7** + **S247**, the census consequences, **SW20** (S3, measured unlanded), E7's pcrec-side path, and §1.1/§1.7 reconciled explicitly |
+| **A-M1** | W23-S5's property 2 is [MECH-REACH] stated backwards — a declared fixture NAME is exactly what a dead witness still has | Property 2 **WITHDRAWN and replaced**: the check reads per-fixture **RECEIPTS** the three-leg helper emits as it runs |
+| **A-M2 + B-M3** | W23-S6: the no-sabotage reason is refuted by §3.4's own text; two of four arms are zero-population; the byte-identity claim is unsatisfiable (an aux edit shifts `line`) | §3.4 gains three lettered corrections; **S246** is written in two variants; the fixture carries a compiling block and a refusing sibling; the aux blocks sit at the file's FOOT and the line-number movement is named as an exception to clause 5 with its reason |
+| **A-M3** | R5's repair lands with both arms at zero population; the positive control's width must differ from 16 | §6.4 **item 3b**: a synthetic stream in the repair's own commit, at `#section aux`'s EIGHT columns, with `cases`' own 16 counted off §2.24 to show why it would mask |
+| **A-M4** | Repairing R5 changes S200-S203's detector; S200's `SAB_DESC` is already stale | §6.4 **item 6**: re-run all four, each failing for its own reason — and **three** of the four carry a stale count, not one (S200, S202, S203) |
+| **A-M5** | The NUL rule is specified at two scopes; the existing fixture cannot see the divergence | §1.8 **item 3**: ONE scope, whole file, pre-parse, in all three legs; **`nul_in_comment.rxtin`** added. DECIDED (7) |
+| **A-M6** | §3.2's class rule requires rewriting `check_refusal_all3`, which is verdict-only today, and nothing schedules it | §6.2 **item 1**, with the **seven** existing call sites enumerated by line and no verdict-only signature surviving |
+| **A-M7** | W23-S3 iterates the dump, so a missing row is invisible | §3.1: a **compile-time total** from the exhaustive switch, printed by the dump and asserted. DECIDED (12) |
+| **B-M1** | §4.3's grep is mis-measured and its landing condition unsatisfiable | §4.3 **re-measured and re-scoped into three arms** — and extended by this round's own finding: revision 1 grepped the wrong FIVE tokens, and `testee`/`option` are live at three sites |
+| **B-M2 + C** | SW12's two comment sites are wrong ranges, inherited from `format_design.md` | Both corrected to **`:269-297`** and **`:1177-1180`**, read from the file; **the design's SW12 row is corrected as a drive-by** in this same change |
+| **B-M4** | B7 is booked "must not regress" where the ruled disposition is FIRST LIVE VERIFICATION | §5's B7 row split out, its fixture scheduled at W23.3 item 7 |
+| **B-M5** | Bench A1's "include at head AND block scope" does not parse against §1.3 | Verified against the EBNF (`include` is `decl-line` only); A1 split out as a **bench correction** joining §9's list |
+| **B-M6** | §6.5's "run the 41 checks ourselves" is ~25/41 executable | §6.5 item 4 scoped to the runnable set, the missing tools named, three populations reported |
+| **B-M7** | Leg B's arm chain is 22 arms, not seventeen | §1.1 carries the ruled derivation (17 pinned + 5 appended), re-run against the file |
+| **A-N4, A-N5, B-N5, B-N6, B-N7** | folded in: the control width (into A-M3); DECIDED (5)'s ordering asserted as a second W23-S4 arm; F19 reworded as a pointer (K57 is filed); `--list-schema` routed through `tests/lib/table.sh`; the `pattern-esc`-without-`esc` caveat stated with its zero population |
+| **R1-R4** | the four §7.3 questions | **RULED and recorded in §7.3**, with R1's `cli.md` hunk as **SW21** (a new row, not an SW2 extension — DECIDED (11)) and R4's `prose_dedent.rxtin` waiting state defined: it asserts the CURRENT wrong value with a comment naming K57, so it goes RED the day K57 is fixed |
+
+**What this round's own sweep found that the review did not** is in
+`docs/dev/lanes/w23implfix_report.md`; the two that change what a step
+must do are §4.3's live `testee`/`option` sites and §1.10.5's measured
+confirmation that spec row S3 never landed.
 
 ---
 
