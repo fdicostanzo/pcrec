@@ -23001,3 +23001,67 @@ consecutive revisions were each caught by their own round's instrument
 SWEPT WIDER than the finding's section — the closing check ("every
 declared line class points at the sentence stating its effect") is the
 shape to bring to the next grammar change.
+
+## 2026-09-13 (EDT), sixty-second session — the open-questions session: D99/D100/D101 ruled, [DD-13b.W23] revision 3.4/3.4.1 designed-paneled-merged in one day; the Frank queue is EMPTY
+
+Frank's directive: "lets go over open questions one at a time." Four
+were queued (wake.md items 1 and 4); all four are ruled and recorded.
+
+**D99 — the biggest, and it began as a ratification that FAILED.**
+W23-F1 (`configs describe`) was presented ready-to-ratify; Frank pushed
+on its D93 dependency, then on WHY the bench needs command-line configs
+at all if the format exists. The dig into bench_rxt_needs_v1.md found
+the load-bearing fact the ratification packet had not surfaced: the
+collision only materializes through the bench's OPTIONAL roster
+proposals (N-42/N-22, SHOULD-tier, "least sure of", offered as P-Q4 an
+open choice) — the MUST-tier need is one spec sentence (N-43). Frank's
+ruling: the .rxt format's purpose is DEFINING RX, primarily for pcrec;
+engine-roster data leaves the format's semantics for an OPAQUE AUX
+production (his own proposal — "a structure of data that is more or
+less a comment to pcrec"); F1 AND F2 WITHDRAWN; the graduation rule;
+D93 untouched and decoupled. PROCESS LESSON recorded in D99 itself:
+when a design absorbs a need its source marked tentative, the
+ratification ask must say so. D100: W23-F4 ACCEPT (derived-identifier
+repair; export is the privacy mechanism). D101: HARNESS_BATCH stays
+OPT-IN ("10% is not enough win for the cost"); revisit on reach growth
+or a Linux measurement.
+
+**The aux revision, one day, two lanes + two critics + one fix lane:**
+w23aux (opus) delivered revision 3.4 — §2.16/§2.20 withdrawn in place,
+§2.27 `ext <consumer>` added, the 23-row second-order impact table
+(13 manager-seeded / 10 lane-found; sharpest: `cross-scope`'s only
+customer was `provides`, so the schema's kinds go eight→seven under
+their own membership rule). r58 panel (reviews/2026-09-13-r58-w23-aux
+.md): critic A broke the aux prose decision BOTH ways (the widening
+absent from the normative site AND stated-as-opposite at §2.25.2; S2
+firing inside aux bodies against the note's own fixture) and critic B
+ran the inverse method the lane had declared owed — 66 mechanisms,
+exactly ONE orphan, the one already caught — while finding the real
+residue class: DISPOSITION TEXT, including two false claims about the
+bench's own documents in the drafted outbox message. Manager rulings
+R1-R4: the one-line alternative (no `|` in aux) + ONE general
+structure-layer parameter (open subtree, `children: tree`) repairing
+both blockers; ext confirmed; tag-prose removed; outbox gated. w23fix3
+applied everything as 3.4.1 and found six more things the review did
+not anticipate (two worked examples falsified by the ruling that no
+critic cited — a fix round must grep the rule's SPELLING through
+fenced blocks; and §1.6.1a's re-run block asserting the reversed
+decision — this round's own instance of the disposition-text class).
+MERGED to main, worktree removed clean.
+
+**Method notes (r58's, worth keeping):** a forward grep finds
+spellings, the inverse method finds mechanisms, NEITHER finds
+disposition text — the complete sweep is all three plus reading every
+grep hit against every disposition that names it. A question sent to a
+panel OPEN must not ship as settled anywhere in the same revision.
+Two critics converging on one repair from opposite directions is the
+round's strongest signal — adopt the general repair, not either patch.
+
+**Open/next:** W23 implementation now gated on nothing but its own
+impl-note process (Frank queue EMPTY). The bench outbox message
+(Appendix A, corrected: their A2 fixture drops two lines; D1 unmoved;
+F2 premise dissolved with the D93-unchanged note) is owed over D78 —
+manager sends. pcrecdev2's size-log brief still queued. D93 stands
+with its revisit-when clause intact; Frank's distaste for it is on
+record twice now — if a real CLI-override scenario surfaces, the
+likely shape remains a loud conflict-refusal, not a silent flip.
