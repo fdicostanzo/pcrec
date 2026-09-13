@@ -1166,8 +1166,17 @@ tag-prose   = tag-key , "=" , quoted-subject ;  (* W23: the seven escapes, ONE
                  vocabulary — a value whose first byte after '=' is '"' is the
                  quoted form and must terminate; whitespace legal inside *)
 prose-value = rest-of-line                        (* one-line form *)
-            | "|" , eol , { INDENT , rest-of-line , eol } ;  (* block scalar *)
-INDENT      = ? one or more spaces at the start of the line ? ;
+            | "|" , eol , opaque-region ;  (* block scalar; §1.2.1 S3 *)
+opaque-region = ? every line until the first line indented no more than
+                the opener, or the first BLANK line — S3. Its interior is
+                BYTES: not line-classified (an indented '#' is prose), not
+                attached (ragged depth is legal), not dispatched. The EXTENT
+                is the only structural fact; the decode is `prose-value`'s.
+                A kind may open one iff its schema `value` is `prose` and
+                its `children` is `prose` — structure-layer parameter 2 ? ;
+INDENT      = ? one or more SPACES at the start of the line. A leading TAB
+                does not open an indent and is refused by name
+                (§1.6.1a narrowing (4)) ? ;
 defname     = ? the wide name grammar: [A-Za-z_] then [A-Za-z0-9_.-]
                 (rxt_source.c's defname_ok — one grammar, three readers) ? ;
 hex64       = ? exactly 64 lowercase hex digits ? ;
@@ -1249,8 +1258,13 @@ pattern-block = pattern-line , { block-line } ;
 pattern-line  = "pattern" , ws , rest-of-line , eol          (* today's *)
               | "pattern-esc" , ws , quoted-pattern , eol ;       (* W23 *)
 quoted-pattern = '"' , { subject-char | escape } , '"' ;
-                    (* the SAME seven escapes; §2.19's rules — one of the two
-                       spellings per block, `\x00` refused by name (K9) *)
+                    (* the SAME seven escapes; §2.19's rules; `\x00` refused
+                       by name (K9). A block carries exactly ONE pattern line
+                       because a block IS what one opener starts — both
+                       spellings are members of S2's opener set, so a second
+                       one is the NEXT BLOCK, not a second line in this one.
+                       Revision 3's "never both, refused naming both lines"
+                       is DROPPED at 3.2: empty population, §2.19 *)
 block-line =
     (* --- today's, unchanged --- *)
       "flags"    , ws , letters
@@ -1335,13 +1349,28 @@ that is checked.
 
 **Revision 3.1 adds NO production.** It re-FACTORS the rules (§1.2),
 reserves one keyword without giving it a production (`version`, §1.6),
-and moves four spellings (§2.26): `capable` → `provides`, `licence`/
-`licence-note` → `license`/`license-note`, the `freq` data block's five
-one-off provenance fields → the shared `provenance` sub-block, and a
-pattern block's `description` from `rest-of-line` to `prose-value`. The
-first three were never shipped anywhere and have zero uses in either
-repo, so they cost a diff and nothing else; the fourth is a widening of
-a shipped refusal, priced at §1.2.5.
+and **moves THREE spellings under §2.26's ownership audit**: `capable` →
+`provides`, `licence`/`licence-note` → `license`/`license-note`, and
+the `freq` data block's five one-off provenance fields → the shared
+`provenance` sub-block. All three were never shipped anywhere and have
+zero uses in either repo, so they cost a diff and nothing else.
+A FOURTH change moves in the same delivery and is **not** one of the
+audit's: a pattern block's `description` goes from `rest-of-line` to
+`prose-value`, which is §1.2.5's consequence of the structure-layer
+re-factoring — a WIDENING of a shipped refusal, arrived at from the
+internal-consistency ruling rather than the ownership one, priced at
+§1.2.5. (**Corrected at 3.2, r57 C-N11**: revision 3.1 counted all four
+as §2.26 moves here and as "four spellings moved" in §0.7, which
+attributed a widening to an audit that changed no semantics by
+construction. The outbox message to the bench inherits the corrected
+framing; §9's correction list keeps the row under its true cause.)
+
+**Revision 3.2 adds no production either, and REMOVES one refusal**:
+§2.19's "a block carries `pattern` or `pattern-esc`, never both", whose
+population is empty under §1.2.1's own opener rule (r57 S-BL2). It also
+declares one structure-layer device that was already shipped and
+undeclared (S3, §1.2.1) and makes explicit two rules the EBNF above now
+carries in its `opaque-region` and `INDENT` terminals.
 
 **CORRECTION ([DD-13b.W1.1], 2026-08-30) — SUPERSEDED AT REVISION 3.1,
 kept here because a reader of the shipped tree will meet its
@@ -3718,6 +3747,34 @@ One row per (scope, line-kind):
 | `source` | `format` (pcrec declares it) or `file` (a `vocabulary` line declares it, §2.15) |
 | `validated_by` | `pcrec`, `all-readers`, or `none` + a reason (§2.24) |
 | `wave` | which delivery introduced it — so a partial build's "NOT IN THIS BUILD" list (SW13) is derived rather than hand-kept |
+
+**THE `wave` COLUMN IS KEPT, and the decision is stated rather than
+assumed** (3.2, r57 S-S2). The challenge is fair: its only named
+consumer is SW13's partial-build refusal list, and **at the delivered
+pin that consumer has an empty population** — W23 lands as one wave, so
+no shipped build ever refuses a W23 keyword for being in a later wave.
+A column whose consumer is empty at delivery is normally the D77
+decline.
+
+It is kept because **the consumer is real DURING the rollout, which is
+when SW13's own rule matters**. W23 is one delivery but it is not one
+commit: H12, H13, H14, H15 and H16 land as separate steps behind
+separate merges (§3.2's table is written as a dependency order for
+exactly that reason), and every intermediate tree is a partial build in
+which some W23 keywords parse and others must refuse BY NAME rather
+than as unknown tokens — which is SW13's whole point, measured against
+the gap §0.6 found (`vocabulary` reads "not a file-level directive"
+today, the K14 shape: sending a reader hunting a typo in a word that is
+in the spec). Deriving that list from a column the same table carries
+is what keeps the intermediate trees honest without anyone hand-editing
+a list five times.
+
+The honest limit, so a later reader can re-decide: **after W23 lands,
+the column's population is one value and its consumer is dormant until
+the next wave.** It is one enum per row and it costs a column in a TSV;
+if a future wave finds it has stayed a single value through two
+deliveries, dropping it is a one-line change and this paragraph is the
+permission.
 
 **`value: prose` IS structure-layer parameter 2, and `children: prose`
 is how the two columns are reconciled** (NEW at 3.2 — r57 G-B3, a
