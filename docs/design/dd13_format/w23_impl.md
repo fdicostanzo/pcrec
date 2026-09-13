@@ -216,7 +216,7 @@ it precisely is what keeps the staging honest:
   `:1759`, `:1767`, `:1778`, `:1781`, `:1792`, `:1798`, `:1801`,
   `:1827`, `:1843`, `:1859`, `:1875`, `:1891`, `:1907`, `:1918`,
   `:1942`) plus **5 appended after it** (`:1984`, `:2000`, `:2015`,
-  `:2057`, `:2092`). That is `format_design.md` §0.6's own ruled
+  `:2057`, `:2092`). That is `format_design.md` §0.7's own ruled
   derivation, re-run against the file for this revision; the note's
   own §2.25.5 and §1.1 both state 22. The substance is unchanged — no
   arm tolerates leading whitespace either way — but the number a code
@@ -280,7 +280,7 @@ goes to two members), `tag`, `mc`, `under`, `oracle`, `provenance`,
 DERIVED from the schema's `wave` column rather than hand-kept):
 `version` (RESERVED, §1.6.3 — reserved without a production), and
 nothing else from this delivery. The list's membership is what makes
-the `wave` column earn its keep during the five-merge rollout: at every
+the `wave` column earn its keep during the SIX-merge rollout: at every
 intermediate tree some W23 keywords parse and the rest must refuse BY
 NAME rather than as unknown tokens. **This is the column's only
 consumer and its population is empty at the FINAL pin** (§2.25.2 states
@@ -314,7 +314,7 @@ is the one exhaustive site.** `format_design.md` §2.25.1 names
 `src/parse/definitions.c`'s `pcrec_def_tag_applies` as the shape: ONE
 `default:`-less switch, so an eighth constraint kind added later is a
 compile error at exactly the site that must handle it
-(`src/opt/mrl.c:18-24`'s stated house rule). The seven kinds are
+(`src/opt/mrl.c:39-45`'s stated house rule — *"A node kind added after this file is written must be a COMPILE ERROR here"*; revision 1 cited `:18-24`, which is that file's two-units-two-functions paragraph, r59-C/B-N2). The seven kinds are
 `required`, `required-if`, `forbidden-if`, `exactly-one-of`, `closed`,
 `unique-by`, `functional-binding`. **SEVEN. `cross-scope` is NOT among
 them** — its only customer left with D99 and it is back on §2.25.4's
@@ -843,7 +843,7 @@ the as-written dump's name.
 
 ---
 
-## 2. The staging — five merges, in dependency order
+## 2. The staging — SIX merges, in dependency order
 
 ### 2.1 The steps
 
@@ -864,7 +864,7 @@ what is genuinely cross-cutting. §3.2 and §3.5 name the step per row.
 ### 2.2 What each step must NOT touch
 
 Stated as a negative because a step that quietly reaches forward is how
-a five-merge rollout stops being five landable pieces:
+a six-merge rollout stops being six landable pieces:
 
 - **W23.1 touches no leg but A**, and no production. It may not add
   `tag` or `ext` arms — only their ROWS, marked with their `wave`, so
@@ -940,13 +940,15 @@ deliberately NOT corpus (the `.rxtin` extension is why — **MEASURED**,
 so `find tests -name '*.rxt'` never picks them up). So the census should
 NOT move on fixtures alone, and **if it does, that is a finding about a
 fixture that leaked into the corpus** — which is exactly the defect
-`utf8k53_report.md` §5 records the rxtsource census catching once
+`utf8k53_report.md` §5.2 records the rxtsource census catching once
 before.
 
 ### 3.1 The three-leg differential at W23 — and CLASS, never verdict
 
-C1 extends. Five new assertions, each named so a sabotage row can cite
-it:
+C1 extends. **SIX** new assertions here, each named so a sabotage row
+can cite it (revision 1 had five; **W23-S7** is r59-B2's), plus
+**W23-S6**, which lives in §3.4 because its subject is the aux
+non-interpretation rule rather than the three-leg differential:
 
 | id | what it proves | its source | what it must NOT share |
 |---|---|---|---|
@@ -993,7 +995,7 @@ truncated table by construction.
 **Every row is `format_design.md` §9.1's, verbatim in substance**, plus
 one the design's own fix round named as owed and deliberately did not
 add. Every fixture lands in `tests/rxtsource/fixtures/` as `.rxtin`
-(**MEASURED**: 46 files there today). **Every three-leg assertion
+(**MEASURED**: **49** files there today — revision 1 said 46, r59-C). **Every three-leg assertion
 compares DIAGNOSTIC CLASS, never exit code.**
 
 | fixture | step | position | asserts | provenance |
@@ -1168,7 +1170,7 @@ with an example.
 (revision 1 had S239-S245; r59-A-M2(c) adds S246 and r59-B2 adds S247).
 Re-check the highest id ON MAIN before numbering at each step — that
 file records a past collision at S100/S101, and this delivery lands
-behind five merges.
+behind six merges.
 
 Two rules the design applied to every row and that these inherit: **a
 row's detector must live in THIS repo's matrix**, and **a row must fail
@@ -1393,7 +1395,7 @@ satisfies.
 | group | checks | satisfied by | notes |
 |---|---|---|---|
 | **A** (the productions parse) | A5 | W23.3 | `tag` accumulation and mixed labels/pairs, unchanged W2 design |
-| | **A1** | W23.3 + W23.3a, **with a bench-side CORRECTION** | A1's BEFORE is "refused by name with its wave", which SW13 keeps true at every intermediate pin. **But A1's fixture types `include` at head AND BLOCK scope, and `include` is a DECL-LINE ONLY** — **CITED**, `format_design.md` §1.3's EBNF: `decl-line = … \| "include" , ws , path-ref …`, with no `include` alternative anywhere in `block-line`. A block-scoped `include` is an unknown token in block scope at the delivered pin, so A1's probe exits 1. **This is A2's shape a second time** (r59-B-M5): the verbatim need was read, the keyword list was checked against the delivery, and the SCOPE the fixture types was not. Their fix is one line — move the `include` to the head — and it joins §9's correction list NOW rather than at their restart |
+| | **A1** | W23.3 + W23.3a, **with a bench-side CORRECTION** | A1's BEFORE is "refused by name with its wave", which SW13 keeps true at every intermediate pin. **But A1's fixture types `include` at head AND BLOCK scope, and `include` is a DECL-LINE ONLY** — **CITED**, `format_design.md` §1.3's EBNF: `decl-line = … \| "include" , ws , path-ref …`, with no `include` alternative anywhere in `block-line`. A block-scoped `include` is an unknown token in block scope at the delivered pin, so A1's probe exits 1. **This is A2's shape a second time** (r59-B-M5): the verbatim need was read, the keyword list was checked against the delivery, and the SCOPE the fixture types was not. Their fix is one line — move the `include` to the head — and it joins §9's correction list NOW rather than at their restart. **THIS IS ALSO A FINDING AGAINST THE RULED RECORD AND THIS NOTE DOES NOT EDIT IT**: `format_design.md` §9's own A1 row reads SATISFIED and enumerates *"`include` at head and block scope"* as landing, so the design carries the same unverified reading. The correction is the manager's to apply there (`w23implfix_report.md` §4); this row states the measurement |
 | | **A2** | W23.3, **with a bench-side CORRECTION** | **A2's fixture literally types `config … testee` and `config … option`, both removed at 3.4, so A2 exits 1 at the delivered pin. Their fix is TWO DELETED LINES.** This is r58 B1 and it is why Appendix A was gated: a true two-token measurement had been generalised into "no probe script needs an edit". One does |
 | | A3, A4 | W23.1 (the unknown-token and wrong-scope refusals are schema facts) | A3 wants the diagnostic to name the CONTEXT — which is what `unknown-token-in-scope` is |
 | **B** (raw bytes round-trip) | B1, B2 | W23.3/.4 (existing behaviour, **must not regress**) | B1/B2 already pass; a regression is a delivery failure |
@@ -1686,7 +1688,7 @@ build order.**
 - **The pinned census does not move**: 210 / 3,936 / 28,943 and leg B's
   209 / 3,933 / 28,932. The fixtures are `.rxtin`/`.rxtfrag` and
   therefore not corpus; **if the census moves, a fixture has leaked**
-  (`utf8k53_report.md` §5's own finding).
+  (`utf8k53_report.md` §5.2's own finding).
 - **W23-S7 green on all three fixtures**, with all four conjuncts
   asserted separately: equal counts across three legs, the entry's
   count EXCEEDING its own file's, `fragments spliced` equalling the
@@ -1839,11 +1841,14 @@ a correction list for the manager, not a fix inside W23.5.
    (`fragments spliced: 0`, `entry files == CENSUS_FILES`) is an
    acceptance line for that reason.
 6. **A CITATION CARRIED FROM A RULED DOCUMENT IS STILL A CLAIM ABOUT
-   THE TREE.** Revision 1 inherited SW12's two comment ranges from
-   `format_design.md` and both were wrong; it inherited
-   `run.sh:184-216` for the harness's per-file loop from §2.11 and that
-   is wrong too; and it booked spec row S3 as landed on the strength of
-   its wave LABEL. **A wave label says when a row was scheduled, never
+   THE TREE.** Revision 1.1 corrected **TEN wrong `file:line` ranges
+   and four wrong counts** in revision 1, and the provenance matters
+   more than the arithmetic: SW12's two comment ranges came from
+   `format_design.md`'s own SW12 row (both wrong, one naming a
+   different production entirely); `format_design.md` §2.11's
+   `run.sh:184-216` for the harness's per-file loop is wrong and is
+   what the r59 review itself cited for the discovery site; and spec
+   row S3 was booked LANDED on the strength of its wave LABEL. **A wave label says when a row was scheduled, never
    whether it shipped**, and every `file:line` in a design document is
    a measurement with a date on it. Re-read; do not carry.
 
@@ -1852,7 +1857,7 @@ a correction list for the manager, not a fix inside W23.5.
 | # | decision | where | the alternative, and why it lost |
 |---|---|---|---|
 | 1 | `rxt_schema.def` is an X-macro with HOME DISPATCH | §1.4 | a generated table; `limits.def`'s precedent is in the tree and its Makefile lesson is already paid for |
-| 2 | ONE exhaustive `default:`-less switch over the constraint enum | §1.4 | a dispatch table; a compile error at the one site that must handle a new kind is the house rule (`src/opt/mrl.c:18-24`) |
+| 2 | ONE exhaustive `default:`-less switch over the constraint enum | §1.4 | a dispatch table; a compile error at the one site that must handle a new kind is the house rule (`src/opt/mrl.c:39-45`) |
 | 3 | `under`'s key tuple is PARSER CODE, and the schema SAYS SO | §1.4 | a declarative field extractor, which is §2.25.4's deferred item with a trigger (a SECOND `qualified-line` production) that has not fired |
 | 4 | **no `#section` row's field 1 may equal a main-table `kind` token**, asserted | §1.5 | leaving three readers safe by luck. The invariant holds today and nothing states it |
 | 5 | **sections FOLLOW the main table, never interleaved** | §1.5 | free today, impossible to recover once a consumer has seen the other order |
