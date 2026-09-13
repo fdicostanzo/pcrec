@@ -1,7 +1,74 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 2, post-panel and post-ruling. NO PARSER IS WRITTEN**
-(plan.md [DD-13]: "NO parser is written before (c) closes").
+**Status: REVISION 3.3 ([DD-13b.W23] STEP 1.3, 2026-09-12, lane
+w23fix2) — the r57 ROUND-2 FIX ROUND, and the last one before merge.**
+The round-2 critic verified 3.2's three blocker fixes: two HOLD
+OUTRIGHT and the third (S3 OPAQUE REGIONS) held in DIRECTION and failed
+end to end on its own axis, which is what 3.3 closes. **Four rules of
+the structure layer moved and all four are in §1.2.1**: S3's trigger is
+PARAMETERIZED on the prose-region-opening kinds and takes the TRIMMED
+value (so `pattern |`, a legal pattern, stays one); the COMMENT line's
+structural effect is stated in S1 and S3 — it terminates, as a blank
+line does — which repairs two reject→accept widenings §1.6.1's claim 2
+had denied; S0's BLANK narrows to the EMPTY line and a WHITESPACE-ONLY
+line is declared INERT, dissolving two narrowings and saving the
+format's only paragraph break; and the structure layer's second
+parameter is stated ONCE as the `value`/`children` PAIR. Alongside
+them: the NARROWING CENSUS is re-scoped to the FORMAT and runs to
+eleven candidates, seven taken — two of them landed by STEP 0 and
+marked as such (§1.6.1a); the `cardinality` values for the settings
+kinds are DECIDED after measuring each population, which is what caught
+`budget` (§2.25.2); and the 28,943 floor gains the definition that
+makes it re-derivable (§1.1). **§0.8 is the finding-by-finding record
+for both rounds and is where a reader of revision 3.1 starts.**
+
+**Revision 3.2** ([DD-13b.W23] STEP 1.2, same day, lane w23fix) was the
+r57 FIX ROUND against three read-only critics
+(`docs/dev/reviews/2026-09-12-r57-w23-format.md`: 3 blockers, 14
+must-fixes, 12 shoulds, 4 nits, all dispositioned FIX-NOW). Its five
+structural outcomes: the BLOCK SCALAR is declared as
+the structure layer's third device (S3 OPAQUE REGIONS, §1.2.1) and the
+structure layer's schema parameters are stated as TWO rather than one;
+the NARROWING CENSUS is re-swept with §1.6.4's own rule and published as
+a CLOSED LIST (of five then; eleven at 3.3, §1.6.1a); the constraint
+vocabulary grows from
+five kinds to EIGHT because four W23 refusal rules did not fit the five
+(§2.25.3); the `pattern`/`pattern-esc` both-in-one-block refusal is
+DROPPED as an empty population (§2.19); and the derived-identifier
+repair gains its length discipline and its callability bound (§2.22).
+
+**Revision 3.1** ([DD-13b.W23] STEP 1.1, 2026-09-12, lane
+w23recon) was the RECONCILIATION against Frank's internal-consistency and
+ownership rulings. Revision 3 (lane w23design, same day) absorbed
+pcrec-bench's capability-set needs note (`bench_rxt_needs_v1.md`,
+received via outbox O-26) under **F-Q1** (Tier 1 AND Tier 2 as one
+**W23** delivery, §1.4) and **F-Q2** (multi-line patterns are a MUST,
+`pattern-esc`, §2.19). Two further rulings were issued while that lane
+ran and never reached it; revision 3.1 works them through the delivered
+text:
+
+- **The INTERNAL-CONSISTENCY ruling** (`frank_inputs.md` 2026-09-12,
+  five consequences): one structural rule, a declared schema, explicit
+  sub-block syntax, a `version` header if a break is needed, and
+  **structural parseability without context**. §1.2 is rewritten as an
+  explicit **two-layer grammar** — a context-free STRUCTURE layer and a
+  declared SCHEMA layer on top; §1.6 prices the version break and
+  declines it; §2.25 designs the schema and its listable surface.
+- **The OWNERSHIP ruling** (same day): the bench's sketches are
+  CAPABILITY requirements, the syntax is pcrec's, and **long-term
+  viability of the format outranks bench convenience and
+  minimal-diff-from-today**. §2.26 is the spelling audit that criterion
+  forces; THREE spellings moved under it (corrected at 3.2, r57
+  C-N11 — the fourth item revision 3.1 listed, a pattern block's
+  `description` taking `prose-value`, is §1.2.5's consequence of the
+  structure-layer re-factoring and not an ownership-audit move).
+
+Revision 2 was post-panel (r44) and post-ruling (D87). W1 is BUILT
+(steps .1/.2/.3 landed; the wave table records what remains). §0.6 is
+the need-by-need revision record, **§0.7 the 3.1 record**; §8 disposes
+the bench's nine P-Q questions; §9 maps their 41 acceptance checks. The
+W1-era text below is revised in place where a W23 production touches it
+and untouched elsewhere.
 
 This note designs the grammar and semantics of the unified
 pattern-source / test-carrier / bench-set file format, under the rulings
@@ -36,8 +103,15 @@ Every load-bearing claim in this note is one of three kinds, marked:
 
 ### 0.2 The design in one paragraph
 
-A `.rxt` file gains a **HEAD** (file-level declarations and `config` /
-data blocks, everything before the first `pattern` line) above the
+**The grammar is TWO LAYERS** (§1.2, rewritten at revision 3.1): a
+context-free STRUCTURE layer — indentation attaches a line to the line
+above it, and a two-member declared opener set groups pattern blocks —
+and a declared SCHEMA on top (§2.25) saying which keywords are legal in
+which scope, what they take, and whether a recovered tree is valid.
+Nothing else lets a keyword decide where structure begins or ends.
+On that footing, a `.rxt` file gains a **HEAD** (file-level declarations
+and `config` / data blocks, everything before the first `pattern` line —
+now a SCOPE rule rather than a structural one) above the
 **BODY** it already has (pattern blocks, unchanged). Sixteen line-kind
 additions live there — seven file-level declarations, two head block
 kinds, seven block-scoped lines — and today's thirteen line kinds and
@@ -139,6 +213,392 @@ digit by an independent recognizer, four ambiguity attacks all failed);
 recursive definitions compiling and agreeing on both oracles; the
 143-block reference census; and H4's python-`re` argument.
 
+### 0.6 Revision 3 record — the [B42] absorption, need by need
+
+The input is `bench_rxt_needs_v1.md` (50 needs N-1..N-53, six
+roadblocks, twelve production sketches, thirteen MEASURED facts at pin
+d34c9131, 41 acceptance checks, nine P-Q questions). The binding frame:
+**F-Q1** (Tier 1 + Tier 2 land as ONE W23 delivery), **F-Q2**
+(multi-line patterns are a MUST), and Option A (the set's truth lives in
+`.rxt`; any bench-side answer must be argued, §8's P-Q4 is the one place
+it was considered and the answer is still IN the format). The NUL and
+duplicate-`description` refusals are **STEP 0, lane rxtnul, landing
+now** — this revision designs against those refusals EXISTING and does
+not restate them as new productions (their M1/M5).
+
+**MEASURED for this revision** (probes run in this worktree; the census
+and refusal probes against `build/pcrec` at b9572c66, read-only):
+
+- The seventeen NEW first tokens this revision adds (`vocabulary`,
+  `provenance`, `pattern-esc`, `provides`, `under`, `configs`, and the
+  eleven sub-block attribute spellings) occur **0** times in first-token
+  position across the corpus — §1.1's 32-keyword census extended, same
+  method, same result. The sub-block attribute tokens additionally never
+  enter any dispatch context at all, because they only occur INDENTED.
+- `vocabulary` today is refused as **unknown** ("'vocabulary' is not a
+  file-level directive"), not with the later-wave sentence `tag` gets —
+  so the recognised-and-refused-by-name set (`rxt_format.md`'s "NOT IN
+  THIS BUILD" list) must grow the W23 keywords in the same change that
+  lands any partial build. Within one W23 delivery the interim state
+  never ships, but the spec rule is stated so a stranger's partial build
+  cannot regress it.
+- The three find-all counting rules were run head to head (python3, the
+  search-from-pos loop driven per rule): the bench's literal
+  `pos = max(end, pos+1)` **DOUBLE-COUNTS an empty match found beyond
+  the scan position** (`(?=a)` on `"xax"`: it reports `(1,1) (1,1)`
+  where `match_api.md` §3.1's protocol and `re.finditer` both report
+  one), and BOTH non-retry rules are a strict subset of `re.finditer`
+  on empty-preferring patterns (`a*?` on `"aaa"`: 4 spans vs 7 — the
+  NOTEMPTY class §3.1 already documents). §2.21 states the consequence:
+  `mc` counts the §3.1 protocol's matches, not the bench formula's and
+  not `finditer`'s.
+
+Where each need landed (no-ask rows N-29/N-51/N-53 omitted; N-6/N-31
+were BUILT already and are untouched):
+
+| need | landed |
+|---|---|
+| **N-1, N-3** | BUILT (W1), untouched — `pattern` stays rest-of-line verbatim |
+| **N-2** | §2.19 `pattern-esc` — the second spelling, same seven escapes, one line carrying a multi-line body (F-Q2). Roadblock #1 closed |
+| **N-4** | the raw-NUL refusal is STEP 0 (rxtnul). EXPRESSING a NUL via `pattern-esc \x00` is REFUSED BY NAME with K9 as the reason — the compile entry takes no pattern length — and parks on `rx_info.pattern_len`'s API half, a named trigger, not a silence (§2.19) |
+| **N-5** | `pattern-esc "\r"` expresses a trailing CR; the raw `pattern` trim is unchanged and documented |
+| **N-7** | BUILT (W1.3's widened name grammar), untouched |
+| **N-8** | the duplicate-`description` last-wins hazard is STEP 0's refusal (their M5); one-line rule unchanged, provenance carries the prose that never fit |
+| **N-9, N-45, N-48** | `tag` lands in W23 as designed (§4.5's mapping); N-48's regime mechanism is REPAIRED, not replaced — §4.5 item 4 rewritten on the derived-identifier call binding (§2.22) |
+| **N-10, N-20, N-21** | §2.15 `vocabulary` — per-key declared value sets, parser-enforced, undeclared keys stay free (compat). Roadblock #2 closed |
+| **N-11..N-19** | §2.14 `provenance` — a record attached under the pattern block (§1.2.6), nine fields, four required, `adaptation` required iff `fidelity != verbatim`, `authored`'s agreement rule. Roadblock #3 closed. **Revision 3.1**: eleven fields, the same record reused at a data block, required per parent (§2.26 item 10) |
+| **N-22, N-23** | §2.16 `provides` (spelled `capable` in their sketch; §2.26 item 4) — per-config, repeatable, accumulating, **fail-closed** (absent = nothing satisfied); flagged to Frank with §2.20 (P-Q4's ratification) |
+| **N-24, N-28** | BUILT / as-designed; B7's raw-bytes promise gets its first verification at the delivery (§9) |
+| **N-25** | `@file:` lands in W23 as designed (§2.8) |
+| **N-26, N-27** | §2.18 — `@file:` gains `as <id>` (per-file subject namespace, functional binding, conflicts refused) and OPTIONAL `sha256 <hex64>` checked by whatever READS the subject. §2.8's no-hash paragraph is re-scoped: it was a default for committed subjects, not a principle (P-Q8). Roadblock #4 closed |
+| **N-30** | BUILT, untouched |
+| **N-32** | §2.21 — `mc`'s counting rule STATED: the `match_api.md` §3.1 protocol, with the measured three-rule comparison above and the bench formula's double-count named |
+| **N-33** | unchanged (COULD; `variant`'s `groups` map is where neutral capture checking lands when the bench opens OD-B9) |
+| **N-34** | `tag convention=` as designed, now closable by `vocabulary` |
+| **N-35** | §2.17 `under` — a case-line QUALIFIER carrying the second correct answer per convention. Roadblock #5 closed |
+| **N-36, N-38** | §2.9 widened: `oracle` takes an `engine-ref` with optional `/version`; `python`/`pcre2` keep their exact meanings; an absent oracle stays R-VG-3's labelled skip |
+| **N-37** | `tag method=` as designed (W23) |
+| **N-39, N-40, N-41** | §2.23 — `variant` becomes a record with attached attributes (§1.2.6): `kind` (closed via `vocabulary kind`), `text`, `groups`, `note` (prose), `unsupported`. The old one-line-plus-`groups`-continuation shape was a proto-sub-block; the general mechanism replaces it (house rule). N-41's three fields all have carriers |
+| **N-42** | `config … testee`/`option` land in W23 as designed |
+| **N-43, N-44** | §2.20 `configs describe` — the head declaration separating BUILD configs from DESCRIPTIVE ones, default `build` = today's semantics; plus the PERMANENCE sentence for a target-less, config-less file. Roadblock #6 closed; ratification flagged to Frank (D93 territory) |
+| **N-46, N-47** | BUILT (W1), untouched |
+| **N-49** | the regime -> subject-set mapping rides the repaired item 4 (§2.22): each regime block carries its own subject list |
+| **N-50** | `include` lands in W23 as designed (§2.5, §2.11) |
+| **N-52** | §2.24 — `--list-source` gains appended columns, **unconditional named sections** (`provenance`, `variants`, `cases`), and a spec-stated VALIDATES-vs-RECOGNISES table (their D4). The `m @file:… passes silently` observation is retired: case values are read |
+
+### 0.7 Revision 3.1 record — the two rulings, consequence by consequence
+
+The input is `frank_inputs.md`'s 2026-09-12 section: the
+internal-consistency ruling with its five numbered consequences, and
+the ownership framing that follows it. Revision 3 was written without
+them (a messaging failure, recorded in `w23design_report.md`
+§"Rulings received"), so this revision is a reconciliation rather than
+a new wave — **no need N-nn changes its disposition, no production is
+added or removed for the bench's sake, and §1.4's wave table is
+untouched.** What moves is how the grammar is FACTORED and how four
+things are SPELLED.
+
+**MEASURED for this revision** (re-run in this worktree at the merge
+base, read-only, so revision 3's own census is confirmed rather than
+inherited — and it needed re-running: the corpus has grown by 31 files
+since the number revision 3 quotes was taken):
+
+- **The corpus is now 210 files / 3,936 blocks / 28,943 expectation
+  lines**, not §1.1's 179 / 3,265 / 26,691 (those are r44-era, taken
+  before [M5.0]'s `tests/utf8/` corpora landed). §1.1's three checks
+  are stated against a pinned denominator, so the pin is now stale;
+  §1.1 carries the correction and the rule that the denominator is
+  DERIVED at check time and pinned as a FLOOR, never as a constant a
+  growing corpus silently invalidates.
+- **0 lines in the corpus are indented** (`grep -rhcE
+  '^[[:space:]]+[^[:space:]]'` summed over all 210 files → 0). This is
+  the load-bearing measurement for §1.2's unified attachment rule and
+  for §1.6's answer on the version break: it is what makes the
+  consistent grammar purely ADDITIVE.
+- **All 52 candidate keywords are 0 in first-token position** — §1.1's
+  32, revision 3's 17 W23 additions, plus `version` and `schema`, over
+  the current 210 files. `version` being free is what makes §1.6's
+  reservation cost one line.
+- **Only 1,016 of 3,936 `pattern` lines (26%) are immediately preceded
+  by a blank line.** A blank line is therefore NOT a block separator in
+  this corpus, which is what closes the one alternative to the keyword
+  in §1.2.3's account of where today's grammar fails structural
+  parseability.
+- **Leg C dispatches an indented PRE-BODY line on its first token**,
+  so revision 3 §1.2's claim that "the indentation test PRECEDES token
+  dispatch" holds "in all three body readers" is FALSE today.
+  `tests/harness/verify_rxt.py:407-423` splits the line (which strips
+  leading whitespace) and raises the head-word or
+  no-open-block diagnostic before reaching its indentation check at
+  `:424`; measured on three fixtures, an indented `m` line before the
+  first `pattern` reports *"'m' line before any pattern block"*.
+  **CORRECTED AT REVISION 3.2 (r57 C-N9) — the defect is PRE-BODY
+  ONLY, and revision 3.1's wording over-read it.** `:424`'s
+  indentation check is UNCONDITIONAL for every line once a block is
+  open: the `if not seen_pattern:` guard at `:407` closes at `:423`,
+  so an indented line INSIDE a block reaches `:424` and is refused
+  with *"a pattern block's lines are not indented"* before any token
+  dispatch. Leg C therefore has the ordering right for body lines and
+  wrong only for the pre-body region — which is precisely why §9's
+  A-group fixture must sit at the PRE-BODY position (S-M5) or it
+  cannot reach the defect at all.
+  **Leg B has no indentation test at all** — **22** of `run.sh`'s
+  dispatch arms are anchored `^<keyword>` with no leading-whitespace
+  tolerance, so an indented line reaches the catch-all *"unparseable
+  .rxt line (hard error)"* by FALL-THROUGH rather than by a rule.
+  **The count is 22, not revision 3.1's 24, and the derivation is
+  given because the first number was a raw grep** (r57 C-S8): 24
+  `^`-anchored `=~` tests occur in the file, of which **two are
+  pre-loop skips** and not dispatch arms at all — `^[[:space:]]*$` at
+  `run.sh:1692` and `^#` at `:1693`, both `continue`ing before any
+  dispatch. The remaining 22 split **17 inside the hash-pinned arm
+  region** (`:1713` BEGIN .. `:1967` END) and **5 appended after it**
+  (`:1984`-`:2092`). Revision 3.1's parenthetical that the blank-line
+  skip is the one tolerant regex **is correct and is kept** — it is
+  `^[[:space:]]*$`, and `^#` is column-1-anchored like every arm. The
+  CONCLUSION is unchanged and confirmed: no dispatch arm tolerates
+  leading whitespace. Only the count moved, and it moved because a
+  grep hit and a dispatch arm are different things. This is the
+  stale-pinned-number shape §1.1 was corrected for, reintroduced in the
+  correcting revision's own paragraph — which is why every count in
+  §0.8 below carries its derivation rather than its value alone.
+  Only leg A (`src/parse/rxt_source.c:992`) tests indentation before
+  dispatch. Every arm is a hard error, so nothing is mis-parsed today;
+  what is false is the claim that a RULE holds in three places, and
+  §1.2 now states it where it can be enforced and §9's A-group says
+  what pins it.
+
+Where each consequence of the internal-consistency ruling landed:
+
+| consequence | landed |
+|---|---|
+| **1. Internal consistency over accretion** | §1.2 rewritten as two layers. The head/body indentation ASYMMETRY is not narrowed — it is **DELETED**: one attachment rule serves head continuation, `config` bodies, block scalars and body sub-blocks alike, and "which scope a keyword is legal in" becomes a schema fact with no structural consequence. §2.26's audit is the same criterion applied to spellings |
+| **2. A breaking `version` header is on the table** | §1.6: **the break is DECLINED and the keyword is RESERVED.** The consistent grammar is achievable additively (every rule change moves a hard error between arms; the one deliberate widening only accepts more), so "if needed" is answered NO — with the future change that WOULD trigger it named and priced (§1.2.3) |
+| **3. Schema rules validation** | §2.25: the format's structural rules become a DECLARED TABLE with five constraint kinds (**EIGHT at 3.2, r57 S-BL1**), the parser its reader/enforcer, and `--list-schema` its listable surface on `--list-limits`/`--list-axes`'s one-derivation precedent. §2.15's `vocabulary` is nested as the FILE-declared half (one table, a `source` column). §2.24's VALIDATES-vs-RECOGNISES statement is upgraded from prose to a column the surface prints |
+| **4. Sub-blocks get explicit syntax** | §1.2.4: the visible-marker alternative is designed and priced against bare indentation, and **bare indentation wins** — because the cure for "indentation whose meaning depends on which keyword opened the line" is the unified rule, not a second signal, and a marker would make structure depend on two signals that can disagree. The `\|` block scalar is explained as what it is: a VALUE-form discriminator, not a structure marker |
+| **5. Structurally parseable without context** | §1.2.1 states the structure layer with its ONE declared parameter (the two-member block-opener set) and §1.2.3 states, without softening, the one place today's shipped grammar fails the property and what fixing it would cost |
+
+**Where to attack revision 3.1 is §5.2a**, written before the panel
+rather than after, and pointed at from here so it is not missed.
+
+Where the ownership ruling landed: §2.26, the audit. **THREE spellings
+moved** — `capable` → **`provides`**, `licence`/`licence-note` →
+**`license`/`license-note`**, and the `freq` data block's five
+provenance fields → **the same `provenance` sub-block a pattern block
+uses** — and `variant`'s `text` was KEPT with a different reason (its
+revision-3 justification expires under the new structure layer). §9's
+C-group and D-group rows move with them, and the delivery's outbox
+message to the bench carries the list. **CORRECTED AT 3.2 (r57
+C-N11)**: revision 3.1 counted four moves by including a pattern
+block's `description` taking `prose-value`. That is not a spelling
+move and not the audit's — it is §1.2.5's consequence of §1.2.1's
+re-factoring, arrived at from the internal-consistency ruling rather
+than the ownership one, and it is a WIDENING rather than a rename. The
+outbox message inherits the corrected framing (§9's correction list
+keeps the row, under its true cause).
+
+### 0.8 Revision 3.2 record — the r57 panel, finding by finding
+
+The input is `docs/dev/reviews/2026-09-12-r57-w23-format.md`: three
+read-only critics (grammar/structure, schema/checks, consumer/needs),
+all opus, every measured claim a real `build/pcrec` probe. **Three
+blockers, fourteen must-fixes, twelve shoulds, four nits; the manager
+dispositioned every one FIX-NOW.** No ruling is reopened, no need
+changes its disposition, and §1.4's wave table is untouched.
+
+**MEASURED FOR THIS REVISION** (this worktree, `build/pcrec` built at
+the lane's own merge base, read-only — every number below carries its
+derivation, because §0.7's own "24 arms" was a raw grep that meant
+something else):
+
+- **The five grammar-lens probe cells all reproduce**, and they are the
+  narrowing census's evidence (§1.6.1a). `description |` with an
+  indented `#` in its body: **rc 0, the `#` line is PROSE**
+  (`--list-source` value `line one\n# this looks like a comment\nline
+  three`). Ragged prose inside a block scalar: **rc 0**, relative
+  indentation preserved. A tab-indented `config` body: **rc 0**,
+  `flags=i engine=vm`. A `config` body mixing a 2-space line and a TAB
+  line: **rc 0**, parsed flat.
+- **AND ONE OF THE FIVE IS A SHIPPED DEFECT, not a narrowing** (r57
+  G-B2 N2's independent finding, reproduced here): a block scalar whose
+  first continuation line is indented 4 and whose second is indented 2
+  yields the value `line one\ndented-line-two` — **`parse_prose`
+  (`rxt_source.c:520-533`) strips the block's indent as a BYTE COUNT
+  (`skip = len < indent ? len : indent`) rather than as whitespace, so
+  a dedented line silently loses two characters of CONTENT**. Filed as
+  `docs/dev/known_issues.md` **K57**; it is independent of this
+  revision's direction (it is wrong under revision 3's rules, revision
+  3.1's, and 3.2's alike).
+- **The C-M1 collision narrowing reproduces and its population is
+  measured.** `x_y` beside `x-y` with the call spelled `(?&x_y)`
+  compiles today and its artifact is **byte-identical** to the same
+  file without the `x-y` sibling — with a methodology note that is this
+  house's THIRD recorded instance of the same trap: emitting the two to
+  `a.c` and `b.c` reports them as differing on the `#include` line
+  alone (`opt4_impl/CLAUDE.md`'s own trap), so the comparison is run
+  with equal basenames in different directories. Population of the
+  general collision shape across both repos: **1** — the deliberate
+  fixture `tests/rxtsource/fixtures/target_prefix_collision.rxtin`
+  (`a-b` beside `a.b`), over 96 `name` lines in 26 files; **pcrec-bench
+  contains no `.rxt`/`.rxtin` file at all** (0 files, read-only check).
+  Population of C-M1's own `x_y`-beside-`x-y` shape: **0** in both.
+- **The corpus census re-confirms at 210 / 3,936 / 28,943**, and the
+  non-blank non-comment line count — the number a GENERIC reader sees,
+  which is what §1.2.3's argument is about — is **35,961**, not the
+  28,943 expectation lines revision 3.1 quoted there (r57 G-B6).
+- **20 head declarations carry an indented body, across 13 of the 45
+  `tests/rxtsource/fixtures/` files, and every indented CONTENT line is
+  width 2** (r57 G-B7; revision 3.1 said 19). The apparent 21st and the
+  one width-3 line are the same line: `whitespace_only_line.rxtin:9`, a
+  line of pure whitespace, which S0 classifies BLANK and not CONTENT.
+  Tab-indented content lines in either repo: **0**.
+- **Two adjacent `pattern` lines are two blocks, rc 0** (`--list-source`
+  prints two `pattern` rows) — the measurement that empties §2.19's
+  both-spellings refusal (r57 S-BL2).
+
+Where each finding landed:
+
+| id | sev | landed |
+|---|---|---|
+| **G-B1** | BLOCKER | §1.2.1 gains **S3 OPAQUE REGIONS** as the structure layer's third device, and the layer's schema parameters are stated as **TWO** (`opens_group`, `value = prose`), both fetched from `--list-schema`. §1.2.4's marker comparison is re-run against the two-parameter baseline and the sentence "`\|` … neither decides where a line attaches" is WITHDRAWN and replaced. **(3.3, R2-F4: still two parameters, but the second is the `value`/`children` PAIR — three columns read, not two.)** |
+| **S-BL1** | BLOCKER | §2.25.3 grows from five constraint kinds to **EIGHT** — `cross-scope` ADMITTED (its W23 customer meets the section's own membership rule; §2.25.4's deferral of it contradicted a production one section away), `forbidden-if` ADMITTED (`authored`'s must-be-absent half, which no negated `required-if` reaches), and `functional-binding` ADMITTED (subject-`as`, which `unique-by` would have REFUSED on its own documented normal spelling); `under`'s duplicate key gets an honest home as **parser code with its reason and a D77 trigger** rather than a ninth kind. §2.25.3's completeness claim is deleted |
+| **S-BL2** | BLOCKER | §2.19's "one block carries `pattern` or `pattern-esc`, never both" is **DROPPED** — measured empty population; a second opener starts a new block (S2). §9's B6 row flips from SATISFIED-by-refusal to a bench CORRECTION (premise dissolved), and the correction list carries it |
+| **G-B2** | MUST | The narrowing census is re-swept and published as a CLOSED LIST of five (§1.6.1a), each with population / forced-vs-chosen / spec sentence. N3 (tabs) is **REFUSED BY NAME** as the manager leaned; the lane did not overturn it and §1.6.1a records why. N2's shipped dedent corruption is K57. **(3.3, R2-B/R2-C/R2-F3: re-swept again to ELEVEN candidates, seven taken — the list of five was scoped to this lane's diff and missed STEP 0's two.)** |
+| **G-B3** | MUST | §2.25.2's `children` column gains a **`prose`** member and the precedence is stated: a `value: prose` kind's children are its VALUE, not schema-checked lines. H12 already assumed this reading and now cites it |
+| **G-B4** | SHOULD | §1.2.4 count 1 reworded: the disagreement-state error class RELOCATES to the schema layer rather than disappearing, and `\|`'s own no-continuation refusal (`rxt_source.c:514`) is an instance of it. The DECISION stands; count 2 is the strongest |
+| **G-B5** | SHOULD | §2.26 item 4 states which half of the `requires`/`provides` pairing it delivers; §2.16 gains the pointer sentence from `provides` to `vocabulary requires` |
+| **G-B6**, **G-B7** | NIT | 35,961 (§1.2.3); 20 blocks / 13 of 45 fixtures / uniform width 2 (§1.2.1) |
+| **S-M1** | MUST | Folded into G-B1's S3 + G-B2's package; §9's A-group names the ragged-prose fixture |
+| **S-M2** | MUST | Every `validated_by: all-readers` row owes a three-leg fixture, NAMED in §9's A-group; "the fixture population covers every such row" becomes its own check (§9 A3/A4) |
+| **S-M3** | MUST | S-R2's detector is re-named as a **pcrec-side fixture pair**; the bench's C5/C6 are corroboration (§3.2) |
+| **S-M4** | MUST | S-R3 re-spelled as a hand-written dump **disagreeing on one row**, and the cross-check widened past `closed` (§3.2) |
+| **S-M5** | MUST | §9's A-group fixture is pinned at the **PRE-BODY** position and asserts diagnostic CLASS, not exit code |
+| **S-M6** | MUST | §9's correction list gains **D1** (nine → eleven provenance keys plus two renames) and the `provides` row's empty population citation is corrected to the checks that actually type a moved token |
+| **S-M7** | MUST | SW17 gains `docs/spec/table_contract.md` — its Scope table enumerates every conforming producer and says new tables adopt AT BIRTH (D94's failure verbatim) |
+| **S-S1** | SHOULD | §2.25.4's legs-B/C row is restated as a **DECLINE**, not a deferral |
+| **S-S2** | SHOULD | The `wave` column is KEPT, with its real consumer stated (§2.25.2) |
+| **S-S3** | SHOULD | The three `validated_by: none` items are given stated homes (§2.24) |
+| **S-S4** | SHOULD | §1.1's floor re-pinned at **210 / 3,936 / 28,943** with the mover NAMED ([M5.0]'s `tests/utf8/` corpora) |
+| **S-S5** | SHOULD | "structurally impossible" qualified to leg A wherever it was unconditional (§1.2.6, §2.23, §8 P-Q1) |
+| **S-S6** | SHOULD | S-R4 SPLIT into two rows with two detectors (§3.2) |
+| **S-S7** | SHOULD | At-most-one-per-parent is ONE mechanism — the `cardinality` column — and §9's C7 and §2.25.3 are reconciled on it |
+| **S-S8** | SHOULD | C1's differential compares **diagnostic CLASS** for `all-readers` rows (§2.25.5, §9 A3/A4) |
+| **S-N1** | NIT | `--list-schema` is the **SEVENTH** registry dump, corrected at all three sites (§2.25.1, §3.3, SW17) |
+| **C-M1** | MUST | The `x_y`-beside-`x-y` collision is narrowing **(5)** in §1.6.1a's closed list, with its measured population and its forced-vs-CHOSEN verdict; §1.6.4 gains a **fourth case** for a chosen narrowing, and §5.2a attack 1 is re-aimed |
+| **C-M2** | MUST | SW12 gains the two `rxt_source.c` comment sites (`:288`, `:1129`); the non-callable-definition loss goes to Frank as **W23-F4** (§7.3), manager recommendation ACCEPT |
+| **C-M3** | MUST | §2.22 cites `rxt_compose.c:854-864` (the qualified-rowname synthesis), fixes the `def_find` misname to `def_by_name`, states the **refuse-before-mapping length rule**, and carries the **128-byte callability bound** |
+| **C-S4** | SHOULD | §2.20 rule 4 gains the `lib` closure clause |
+| **C-S5** | SHOULD | §2.20 rule 3 states that `use` RESOLVES in both modes |
+| **C-S6** | SHOULD | SW7 states the ill-formed-UTF-8 advance rule normatively; E5 becomes utf8-bearing; the second-implementation tension is acknowledged with C1 as the paid-for answer (§2.21) |
+| **C-S7** | SHOULD | §2.18 carries N-27's non-ID slice — byte length DERIVABLE, description and `periodic` refused with the D77 shape and their trigger |
+| **C-S8** | NIT | 22 arms with its derivation (§0.7) |
+| **C-N9** | NIT | The leg-C scoping clause (§0.7) |
+| **C-N10** | NIT | §2.24's column list marks the `pattern` column's `esc` dependency |
+| **C-N11** | NIT | The §2.26-four-moves framing corrected above; the outbox message inherits it |
+
+**What SURVIVED the first-round panel** and is not re-argued below:
+F6's ragged-body method and result (reproduced byte-for-byte); the census at
+210/3,936/28,943 including the 25.8% blank-preceded measurement and the
+inference from it; F1 in both legs; M8's refusal in both arms; the
+version decline and the `version` reservation; the provenance
+unification including the `analyzer` keep; the one-derivation claim for
+leg A; the `vocabulary`-as-`source: file` nesting; required /
+required-if / closed correctly mapped for §2.14's rules 1/3/4; the
+checklist mapping behaviourally right on 39 of 41; §1.2.4's
+marker-vs-indentation PRICING (as distinct from its count-1 wording);
+NEEDS COVERAGE exact at 36/9/5/3; the four renames orphaning nothing;
+the zero-reader-change claim at the GRAMMAR level; and roadblocks #1-#5
+closed as claimed.
+
+#### ROUND 2 — the focused re-check on revision 3.2 (revision 3.3)
+
+The input is the ROUND 2 section of the same review file: one read-only
+critic, two tasks — verify 3.2's three blocker fixes as landed, and run
+Addendum 2's own new attack (walk every §2 refusal rule and ask what it
+accepted yesterday). **VERDICT: S-BL1 and S-BL2 HOLD OUTRIGHT under
+attack; G-B1's S3 holds in DIRECTION and fails end to end on its own
+axis.** Four must-fixes, two shoulds, one nit, all FIX-NOW; no ruling
+reopened, no need re-dispositioned, §1.4's wave table untouched, and
+the Frank queue is UNCHANGED at W23-F1 / W23-F2 / W23-F4.
+
+**MEASURED FOR REVISION 3.3** (this worktree, `build/pcrec` at the
+lane's merge base, read-only; every probe re-run here rather than
+inherited from the critic's report):
+
+- **The COMMENT line terminates, at both sites, and both shapes are
+  REFUSED today.** `config c` / `··flags i` / `# column one` /
+  `··engine vm` — **rc 1, line 4**, *"indented line continues nothing
+  (the declaration above it takes no continuation)"*. `description |` /
+  `··line one` / `# column one` / `··line three` — **rc 1, line 4**,
+  the same message. The mechanism is the same in both: a column-1 `#`
+  is not `line_indented` (`rxt_source.c:109`), so it ends
+  `parse_config`'s body loop (`:727`) and `parse_prose`'s region loop
+  (`:511`) alike, and the indented line below reaches the file-level
+  loop with nothing to continue (`:992`). Under 3.2's silence both
+  become ACCEPTED — the second additionally as an opener with TWO
+  disjoint prose regions, which S3's single-extent rule cannot express.
+- **The WHITESPACE-ONLY line is a CONTINUATION in all four probed
+  positions, not a blank.** Inside a block scalar: **rc 0**, and it is
+  IN the value — `description |` / `··para one` / `···` / `··para two`
+  dumps `para one\n·\npara two` (the block indent of 2 stripped from a
+  3-space line leaves one space). Inside a `config` body: **rc 0**, and
+  the body CONTINUES past it (`flags=i engine=vm` both present). At
+  file start, and immediately after a blank line: **rc 0 in all three
+  legs** (A, `run.sh --dump`, `verify_rxt.py --dump`). The
+  TRULY-EMPTY line is the contrast that makes the class real: the same
+  block-scalar file with a zero-byte separator is **REFUSED at line 4**
+  — r46sem-10's ruling, working as ruled — so the indented
+  whitespace-only line is the format's ONLY paragraph break today.
+- **`pattern |` is a legal pattern**: rc 0, `--list-source` dumps the
+  pattern column as `|` (the alternation of two empties). It is R2-F1's
+  witness — 3.2's unparameterized S3 trigger would have opened an
+  opaque region on it and turned a working file into a refusal.
+- **The six settings kinds' shipped cardinality, one probe each.** A
+  second `name` (`n1`→`n2`), `engine`, `encoding` (`byte`→`utf8`),
+  `features` (`backrefs`→`classes`) or `flags` line: **ACCEPTED, last
+  wins, no diagnostic.** A second `budget` repeating a field
+  (`steps=50` then `steps=99`): **ACCEPTED, 99 wins.** A second
+  `budget` naming the OTHER field (`steps=50` then `frames=4096`):
+  **ACCEPTED, both kept** — two slots, not one. A second `export`:
+  **REFUSED by name** (`:1184`). One surface, two answers.
+- **The populations, both repos, before any narrowing was taken.** Over
+  258 `.rxt`/`.rxtin` files / 4,053 pattern blocks / 19 `config`
+  declarations: duplicate `name`/`engine`/`encoding`/`features`/
+  `flags`/`description`/`export` in one block or one config body —
+  **0 each**. Duplicate `budget` LINE in one block — **1**, and it is
+  `tests/harness/giveup.rxt:19-23`, two different FIELDS, deliberate
+  and depended on by `make test`. Duplicate `budget` FIELD — **0**.
+  `pcrec-bench` holds **0** `.rxt`/`.rxtin` files (re-confirmed
+  read-only). **The one non-zero number changed a decision**, which is
+  §1.6.4's new case 5.
+- **28,943 reproduces, and so does 28,488.** Re-running the census awk
+  (`run_rxtsource_tests.sh:281-285`) over `find tests -name '*.rxt'`:
+  **210 / 3,936 / 28,943**, of which **455** are `perr`, giving
+  **28,488** without them. The eight-kind list (`m n ms ns g gp gu
+  perr`) is the definition; the natural six-kind reading lands at
+  **24,016**, `ms`/`ns` being 4,927 lines.
+
+Where each ROUND 2 finding landed:
+
+| id | sev | landed |
+|---|---|---|
+| **R2-F1** | MUST | §1.2.1 S3's trigger names the PROSE-REGION-OPENING kind condition and the TRIMMED value, so `pattern \|` is untouched; §1.2.5 and §1.3's `prose-value`/`opaque-region` productions carry the same two clauses. The trim is not new — it is `rxt_source.c:1222-1226` (r46sem finding 14) and leg C's `v.strip() == '\|'`, pinned by `desc_pipe_trailing_space.rxtin` |
+| **R2-F2** | MUST | The COMMENT line's structural effect is stated in **S1** (it closes every open attachment, exactly as a BLANK does) and in **S3** (it ends an open region), with the two measured widenings and the reason transparency was rejected. §1.6.1 claim 2 carries the correction: the claim was FALSE as 3.2 shipped it, the cause was a line class declared in S0 with no effect stated anywhere, and it is true again with its single stated exception |
+| **R2-F3** | MUST | S0 narrows BLANK to the **EMPTY line** and gains WHITESPACE-ONLY as a fourth class, declared **INERT** outside a region and BYTES inside one. §1.6.1a rows (6) and (7) are the two narrowings that dissolves; §1.2.5 records the paragraph-break consequence. S3's self-contradiction is fixed by SCOPING: S0 does not run for dispatch or attachment inside a region, and the three-predicate boundary test is named as the one thing still computed per line. **PUSHBACK, argued rather than complied with**: the manager's "attachment-relevant, value empty, schema-inert" formulation introduces a THIRD narrowing (S1's attaches-to-nothing arm fires on a whitespace-only line at file start and after a blank — both measured rc 0 in all three legs today). "Inert" dissolves the same two, takes none, and is the shorter rule |
+| **R2-F4** | SHOULD | Said ONCE, in §1.2.1's parameter table: parameter 2 is the `value`/`children` **PAIR**. §1.2.2 and §2.25.2 are corrected to it; §1.3's EBNF already had it. **S-R5's detectability is the tiebreaker and is now spelled out in the row**: with `value` alone read, flipping `children` to `none` changes nothing observable anywhere — the region still opens and bytes reach no validity check — so the row gains plant (b) and the column gains a detector |
+| **R2-B** | MUST | §1.6.1a states its SCOPE (the format, not the lane's diff) and **carries STEP 0's two refusals as rows (10) and (11)**, marked "landed by STEP 0 (lane `rxtnul`, `d4576c48`), not by this revision", with the NUL row FORCED and the duplicate-`description` row CHOSEN on row (8)'s reasoning. §1.6.4's duty gains the sweep-the-format clause |
+| **R2-C** | SHOULD | **DECIDED in §2.25.2**, with a per-kind table and the populations measured FIRST: `at-most-one` for `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export`, and **`accumulate` over `{steps, frames}` for `budget`**, whose refusal is at the FIELD. Two deviations from the leaning, both measured: `budget` is NOT a scalar kind and `at-most-one` would have refused a shipped corpus file; and `flags`, which the finding's list did not name, is in the identical state and is taken with the rest. H16 carries the choice; §1.6.1a rows (8) and (9) carry the compatibility package |
+| **R2-D** | NIT | §1.1's floor block defines "expectation line" — the eight first-token kinds, `perr` INCLUDED, 28,488 without it, and the 24,016 a six-kind reading produces |
+
+**What ROUND 2 confirmed and is not re-argued**: the eight-kind
+constraint count honest at every site with each new kind's W23 customer
+verified in its home section; §2.25.4's self-contradiction genuinely
+fixed; every echo of the dropped `pattern`/`pattern-esc` refusal gone
+(*"the schema section is now the strongest part of the note"*); all
+three of Addendum 2's pushbacks endorsed; every population number from
+revision 3.2 re-derived and reproducing; K57 confirmed filed with its
+repro.
+
 ---
 
 ## 1. Grammar
@@ -190,6 +650,58 @@ source with what it controls — learnings §3):**
 "without them the value comparison would have been vacuously true"): each
 check fails if it saw fewer than 179 files, 3,265 blocks or 26,691
 expectations. A check that runs on an empty corpus must be red.
+
+**CORRECTED AT REVISION 3.1 — those three numbers are STALE, and the
+way they went stale is the durable part.** Re-measured at this
+revision's merge base by the same method, the corpus is **210 files /
+3,936 blocks / 28,943 expectation lines** (§0.7); the r44-era figures
+quoted throughout this section predate [M5.0]'s `tests/utf8/` corpora.
+Nothing in the design depends on the values — INV-COMPAT is a
+*relation* between two parses, not a count — but a check written
+against a constant that a growing corpus outruns is a check whose
+denominator assertion silently stops meaning what it was written to
+mean, which is one step from the vacuity the assertion exists to
+prevent. **So the rule, not the number, is what the spec states:** the
+denominator is DERIVED at check time from the same `find` the check
+dispatches over, compared against the OTHER parser's count for equality
+(that is the real assertion), and pinned separately as a FLOOR that a
+corpus may only grow past. The three numbers above are read as "the
+floor at r44" rather than as facts about today.
+
+> **THE FLOOR, RE-PINNED IN THIS CHANGE (revision 3.2, r57 S-S4).**
+> **210 files / 3,936 blocks / 28,943 expectation lines**, re-derived in
+> this worktree at the lane's merge base (§0.8), and this is the value
+> the delivering change writes — **not** the r44 numbers, which
+> revision 3.1 corrected in its prose while leaving the pin sentence
+> pointing at them. A floor left at 179/3,265/26,691 lets a **31-file /
+> 671-block / 2,252-line regression pass green**, which is the exact
+> vacuity the denominator assertion exists to prevent, one level up.
+> **THE MOVER IS NAMED**: [M5.0]'s `tests/utf8/` corpora (stages 3-5,
+> 2026-09-06..09-11), plus `[K53-SELRETRY]`'s dedup of four duplicated
+> blocks in `axis04_p_categories.rxt` — so the movement is accounted
+> for rather than merely observed, and a future gap between the floor
+> and the live count has a place to start. And the control that CANNOT
+> rescue a stale floor is named too: check (1)'s parser-vs-parser
+> equality shares the same `find` with the thing it counts, so both
+> sides shrink together and the comparison stays true on a truncated
+> corpus. Only the floor sees that, which is why it is a separate pin
+> and not a derived one.
+>
+> **AND "EXPECTATION LINE" IS DEFINED HERE, because the next person
+> cannot re-derive 28,943 without it (3.3, r57 ROUND 2 R2-D).** An
+> expectation line is a line whose FIRST TOKEN is one of **eight**
+> kinds — `m`, `n`, `ms`, `ns`, `g`, `gp`, `gu`, `perr` — counted over
+> `find tests -name '*.rxt'`; that is the awk at
+> `tests/rxtsource/run_rxtsource_tests.sh:281-285`, which is the pass
+> this floor is compared against. **`perr` IS INCLUDED, and it is the
+> whole of the ambiguity**: `perr` is a BLOCK field rather than a case
+> row — the same script's own reconciliation (`:607`) separates it out
+> for exactly that reason — so a reader who reasonably excludes it
+> counts **28,488** and reports a 455-line drift where nothing has
+> moved. Both numbers are re-derived at this revision. The eight-kind
+> list is load-bearing too: the natural `m/n/g/gp/gu/perr` reading
+> lands at **24,016**, because `ms` and `ns` are 4,927 lines nobody
+> remembers are in it.
 
 **Sabotage rows for INV-COMPAT** (each must turn the corresponding check
 red, and the check that must catch it is named — a row no check catches is
@@ -249,69 +761,688 @@ position (it is the argument of `name`, of `target … = <name>`, or the
 body of a `(?&name)` inside a pattern), and it cannot arise from the new
 *keywords* because none of them occurs today.
 
-### 1.2 The file shape
+### 1.2 The file shape — TWO LAYERS
 
-```ebnf
-file        = head , body ;
-head        = { head-item } ;
-body        = { pattern-block } ;
+**REWRITTEN AT REVISION 3.1** (Frank's internal-consistency ruling,
+consequences 1, 4 and 5). Revision 3 stated the file's shape as one
+tangle of rules in which *where structure begins and ends* sometimes
+depended on *which keyword opened the line* — the head/body asymmetry,
+and the "an indented line is legal only under a declared sub-block
+kind" rule. The ruling forbids exactly that. So the grammar is stated
+as two layers with a thin, declared interface between them:
 
-head-item   = file-decl | config-block | data-block ;
-pattern-block = pattern-line , { block-line } ;
+- **§1.2.1 the STRUCTURE layer** — how a reader with NO keyword table
+  recovers the file's tree from syntax alone.
+- **§1.2.2 the SCHEMA layer** — which keywords exist, in which scope,
+  what they take, and whether a recovered tree is VALID. Designed in
+  full at §2.25.
+
+The test the split has to pass is Frank's own: *"a generic reader must
+be able to recover the file's structure — blocks, sub-blocks, line
+membership — from syntax alone… Keywords and the schema then say what
+the structure MEANS and whether it is valid; they never decide where
+structure begins or ends."* §1.2.3 states, without softening, the one
+place the format does not fully pass it and what passing would cost.
+
+#### 1.2.1 The STRUCTURE layer
+
+A reader at this layer knows **four line classes, three devices and
+two schema parameters**. It knows no other keyword, no scopes, no value
+shapes.
+
+**CORRECTED AT REVISION 3.2 (r57 G-B1, a BLOCKER; S-M1 and G-B2's N1/N2
+converged on the same object from two other directions).** Revision
+3.1 stated the layer as two devices and one parameter, and the block
+scalar refutes that: inside a `description |` body an indented `#` is
+PROSE and ragged indentation is LEGAL PROSE SHAPE — both measured rc 0
+on the shipped binary (§0.8) — neither of which S0 or S1 as written
+can produce. A reader that knew only S0-S2 would have to suspend those
+rules exactly where the format needs them suspended, and the only way
+to know to do so is by reading `\|` and the parent's declared value
+form. So the third device is DECLARED rather than left to be
+discovered, and the parameter count is stated as two.
+
+**S0 — LINE CLASSES (lexical).** **FOUR classes at revision 3.3, not
+three** (r57 ROUND 2, R2-F3): a line is BLANK (**the EMPTY line — zero
+bytes — and nothing else**), WHITESPACE-ONLY (nothing but spaces and
+tabs, at least one), a COMMENT (`#` in **column 1** — a `#` anywhere
+else is data, R-RXT-2), or CONTENT. A line's INDENT is its count of
+leading SPACES; **a leading TAB does not open an indent and is refused
+by name** (§1.6.1a narrowing (4), TAKEN). An indented `#` is a
+structure error naming the rule (*"comments must start in column 1"*,
+`rxt_source.c`'s shipped diagnostic, unchanged) — **outside an S3
+region; inside one, S0 does not run at all**, which is what keeps
+§1.6.1a candidate (2) a narrowing AVOIDED rather than one taken.
+
+> **WHY BLANK NARROWED TO THE EMPTY LINE, and it is the opposite of a
+> narrowing in effect.** Revision 3.2 wrote BLANK as "empty or
+> whitespace only", and S1/S3 give a BLANK line a TERMINATING effect —
+> so that one parenthesis made every whitespace-only line close
+> attachments and end prose regions. MEASURED on the shipped binary,
+> all three legs do the opposite: `line_indented` (`rxt_source.c:109`)
+> tests only whether byte 0 is a space or a tab, so a whitespace-only
+> line is *indented*, stays inside a `config` body and stays inside a
+> block scalar as BYTES, while `line_blank_or_comment` (`:114`) skips
+> it everywhere else. The committed check `sem15`
+> (`tests/rxtsource/run_rxtsource_tests.sh:1592`) pins exactly that —
+> *"a whitespace-only line is ACCEPTED (ignored) by all three"* — and
+> the fixture `whitespace_only_line.rxtin` exists because leg C once
+> mis-classified it. Writing BLANK as the empty line restores the
+> shipped reading; §1.6.1a's candidates (6) and (7) are the two
+> narrowings it dissolves.
+
+**WHITESPACE-ONLY IS INERT, AND THAT IS THE WHOLE RULE.** Outside an S3
+region a whitespace-only line has **no structural effect of any kind**:
+it is not CONTENT (no indent is read off it, it attaches to nothing and
+nothing attaches to it, no first token is dispatched, no schema row is
+consulted) and it is not BLANK (it closes no attachment). A reader steps
+over it. Inside an S3 region it is BYTES like every other line there,
+which is what makes it today's paragraph break (§1.2.5).
+
+> **This is a DEVIATION from the manager's leaning and the measurement
+> is why.** The leaning was that a whitespace-only line become
+> *attachment-relevant* — indent = its leading whitespace, value empty,
+> schema-inert. That formulation dissolves the same two narrowings, but
+> it introduces a THIRD one, because S1's own "attaches to nothing" arm
+> then fires on two shapes that are legal today: a whitespace-only line
+> as the FIRST line of a file, and one immediately after a blank.
+> MEASURED, both are accepted by all three legs today (`   \npattern
+> a\nm "a" 0 1` and the same shape after an empty line: leg A rc 0, leg
+> B rc 0, leg C rc 0). "Inert" is also the shorter sentence and the one
+> a generic reader can implement without a special case, so it is taken
+> on both grounds. §0.8's ROUND 2 block records it as pushback.
+
+**S1 — ATTACHMENT.** A CONTENT line whose indent is GREATER than the
+nearest preceding CONTENT line's **attaches to it as a CHILD**. Equal
+indent makes them SIBLINGS. Lesser indent closes back to the nearest
+enclosing level with that indent; an indent matching no enclosing level
+is a structure error. **A BLANK line and a COMMENT line each close
+every open attachment, returning to indent 0** (the head's own
+r46sem-10 rule for the blank, now the general one; the comment is NEW
+at 3.3, below). A WHITESPACE-ONLY line does nothing at all. A CONTENT
+line at indent 0 with nothing before it, or an indented line following
+a blank or a comment, attaches to nothing and is a structure error
+(*"indented line attaches to nothing"*).
+
+> **THE COMMENT LINE IS A STRUCTURAL DEVICE AND REVISION 3.2 NEVER SAID
+> SO** (r57 ROUND 2, R2-F2, a MUST-FIX). S0 declared the class and
+> neither S1 nor S3 stated its EFFECT, and silence there is not
+> neutral — it reads as "a comment is skipped and the structure around
+> it continues", which is a reject→accept WIDENING in two measured
+> places and falsifies §1.6.1's claim 2. MEASURED on the shipped
+> binary, both are refused today and the refusal is the same one:
+> - `config c` / `  flags i` / `# column one` / `  engine vm` —
+>   **REFUSED at line 4**, *"indented line continues nothing (the
+>   declaration above it takes no continuation)"*. The column-1 `#` is
+>   not indented, so `parse_config`'s `if (!line_indented(nx)) break;`
+>   (`:727`) ENDS the body, and the `engine vm` line below reaches the
+>   file-level loop as an indented line with nothing to continue.
+>   Without the terminating rule, S1 would re-attach it to `config c`
+>   and accept the file.
+> - `description |` / `  line one` / `# column one` / `  line three` —
+>   **REFUSED at line 4**, the same message, because `parse_prose`'s
+>   `while (line_indented(...))` (`:511`) ends the region there. Without
+>   the terminating rule, S3's extent test alone is the indent test, the
+>   region would reopen below the comment, and the opener would carry
+>   **two disjoint prose regions** — a shape S3's single-extent rule
+>   cannot express at all, so the widening is not merely unwanted but
+>   unrepresentable.
+>
+> One sentence in S1 and one in S3 close both. The rule is not a
+> carve-out for comments: a comment and a blank line have the SAME
+> structural effect, which is the one a reader can remember.
+
+**Why a comment terminates rather than being transparent.** The
+alternative — a comment is skipped and the structure around it
+continues — is defensible in the abstract and is what most indented
+formats do. It is rejected on two grounds, and the second is the
+decisive one. (a) It is not what any shipped reader does, and §1.6.1's
+claim 2 is a promise about files, not about elegance. (b) Transparency
+requires the reader to hold the pre-comment attachment state across an
+unbounded run of comment lines and then decide whether the next line
+resumes it — which is exactly the "structure depends on what you
+remember" property the two-layer split exists to remove. A terminating
+comment is a local rule: the reader's state after a COMMENT line is the
+same as its state after a BLANK, and neither depends on what preceded
+it.
+
+**S2 — GROUPING.** Among SIBLINGS, a line whose first token is a member
+of the **BLOCK-OPENER SET** starts a group that absorbs the following
+siblings until the next opener at that level or the end of the
+enclosing scope. The opener set is closed, declared, and has **exactly
+two members: `pattern` and `pattern-esc`** (§2.19).
+
+**S3 — OPAQUE REGIONS (NEW at revision 3.2; its trigger and its
+boundary test both CORRECTED at 3.3).** A CONTENT line **whose kind is
+PROSE-REGION-OPENING** — structure-layer parameter 2 below — and whose
+value, **after trailing spaces and tabs are trimmed, is exactly the
+single byte `|`**, opens an OPAQUE REGION. Its EXTENT is structural and
+is the only structural fact about it: the region runs from the next
+line up to, and not including, **the first of**
+
+- a CONTENT line whose indent is less than or equal to the opener's,
+- a BLANK line (S0's, i.e. the empty line),
+- a COMMENT line (a `#` in column 1).
+
+A WHITESPACE-ONLY line ends nothing and is bytes. Every line inside the
+region is BYTES — **S0 does not run on it, S1 does not attach it, S2
+does not test it**. The region's content is the opener line's VALUE;
+what it decodes to is a schema question (§1.2.5's `prose-value`), not a
+structural one.
+
+**THE TRIGGER IS PARAMETERIZED, and revision 3.2's was not** (r57 ROUND
+2, R2-F1, a MUST-FIX). Read literally, 3.2's *"a CONTENT line whose
+value is the single byte `|`"* opens a region on **any** such line —
+and `pattern |` is a legal pattern today (the alternation of two
+empties; MEASURED rc 0, `--list-source` dumps the pattern column as
+`|`), so the literal reading turns a working file into a refusal. The
+EBNF had the rule right all along (`prose-value`'s own production and
+`opaque-region`'s side condition, §1.3) and the normative sentence
+contradicted it; the sentence is what moved. The TRIM half is not new
+either — it is the shipped rule at `rxt_source.c:1222-1226`, ruled at
+W1.1 as r46sem finding 14 (*"a `|` with trailing whitespace is nobody's
+intended literal"*), matching leg C's own `v.strip() == '|'`, and pinned
+by the committed fixture `desc_pipe_trailing_space.rxtin` (`sem14`,
+refused by all three). S3 states the shipped rule rather than a second
+one.
+
+**THE BOUNDARY TEST NO LONGER CONTRADICTS ITSELF.** Revision 3.2 said
+the region ends at *"the first BLANK line"* while also saying its
+interior is *"not classified by S0"* — and BLANK is an S0 class, so the
+rule asked a classifier it had just disabled. The scoping is stated
+instead of implied: **S0 does not run for DISPATCH or ATTACHMENT inside
+the region; the three-way boundary test above is the ONE thing a reader
+still computes per line**, and it needs exactly three predicates — is
+the line empty, does it begin with a column-1 `#`, and (for a CONTENT
+line) what is its indent. Nothing else about a region line is ever
+asked. Stated the falsifiable way: *a reader can find a region's end
+without tokenising a single line inside it.*
+
+**The extent rule and the shipped loop coincide on today's whole
+population, and the reason is worth checking rather than assuming.**
+Leg A's region loop is `while (line_indented(...))` — "indented at
+all", not "indented more than the opener" — so the two rules could
+differ for an opener at indent > 0. They cannot today: `description` is
+the only prose-valued kind that exists, and it appears at FILE scope
+and (since revision 3.1) at BLOCK scope, both of which are indent 0,
+where "indent ≤ 0" and "not indented" are the same test. `config_vocab`
+(`rxt_source.c:145`) has no prose-valued member at all. So the general
+rule is stated now, at zero cost, rather than being discovered to
+disagree with the implementation the day a prose field lands inside a
+sub-block.
+
+That is the whole layer. From S0-S3 a reader recovers: every line's
+parent, every group's extent, every opaque region's extent, and
+therefore blocks, sub-blocks and line membership — with no knowledge of
+`config`, `provenance`, `variant`, `m`, `lib` or any other keyword.
+
+**THE STRUCTURE LAYER TAKES TWO PARAMETERS FROM THE SCHEMA, and
+revision 3.2 states both rather than one** — and at 3.3 the second is
+read off TWO columns, below. Neither is the thing the
+ruling forbids — that is a per-keyword structural EXCEPTION decided by
+an open-ended table — but both are keyword facts, both are stated as
+such, and §1.2.3 prices removing them:
+
+| parameter | schema column(s) | what a generic reader does with it | today's answer |
+|---|---|---|---|
+| the BLOCK-OPENER set (S2) | `opens_group` | decides where a group starts | two rows: `pattern`, `pattern-esc` |
+| the PROSE-REGION-OPENING kinds (S3) | **`value` AND `children`, read as a PAIR** — the kind qualifies iff `value: prose` *and* `children: prose` | decides whether a trimmed bare `\|` value opens an opaque region | today: `description`, `license-note`, `adaptation`, `attribution`, `note` — five rows, and the set GROWS whenever a prose field is added |
+
+**PARAMETER 2 IS ONE PARAMETER READ OFF TWO COLUMNS, stated once here
+and nowhere contradicted** (r57 ROUND 2, R2-F4). Revision 3.2 said
+`value = prose` in §1.2.1 and §1.2.2, said the PAIR in §2.25.2's
+reconciliation and in §1.3's EBNF, and left a reader to guess; three
+sites disagreed about a normative fact. **The PAIR wins, and S-R5's
+detectability is the tiebreaker.** If the structure layer read `value`
+alone, then flipping a row's `children` from `prose` to `none` while
+leaving `value: prose` would change NOTHING a reader can observe: the
+region still opens, its lines are still bytes, so they never reach a
+schema-validity check either — a corrupted normative column with no
+detector anywhere, which is the K35 shape the sabotage row exists to
+prevent. Reading the pair makes either flip a structural change that
+§9's A-group fixtures see, which is why S-R5 (§3.2) now names both
+plants. The count of PARAMETERS is unchanged at two; the count of
+COLUMNS the structure layer reads is three.
+
+Both parameters are **one `--list-schema` query** (§2.25), so a generic reader
+FETCHES them rather than hard-coding them, and both are visible in the
+same dump a validity reader already reads. The second is the more
+load-bearing of the two and revision 3.1 hid it: the opener set is
+closed and two-member, while the prose set is open-ended by
+construction — §1.2.5's whole point is that a second prose field
+inherits the block scalar rather than inventing it, which is exactly a
+statement that this parameter grows.
+
+**Why S3 is a DEVICE and not a value rule.** The obvious objection is
+that `\|` is a value-form discriminator (§1.2.4 says so of `"` after
+`=` in a `tag-prose` item, and that remains true of `"`), so it should
+live entirely in the schema layer. It cannot, and the difference is
+measurable: a `tag-prose` value is bounded by the line it is on, so a
+reader that ignores the discriminator still gets the line's EXTENT
+right and only mis-reads its content. A `\|` value is bounded by
+SUBSEQUENT LINES, so a reader that ignores it gets the extent of
+everything after it wrong — it will attach prose lines as children,
+dispatch their first tokens as line kinds, and classify an indented `#`
+as a structure error. **Extent is structure.** That is the test, and
+`\|` passes it where `"` does not.
+
+**What S3 costs, stated with the rest of the census.** Declaring the
+region does not make its INTERIOR unconstrained by accident — it makes
+it unconstrained by decision, and **three** things that are legal today
+stay legal because of it: an indented `#` inside a block scalar (prose,
+not a comment error), ragged prose inside one, and — once S0's BLANK
+narrowed at 3.3 — **an indented whitespace-only line inside one, which
+is the format's only paragraph break**. All three were on their way to
+becoming narrowings under revision 3.1's and 3.2's silences, and
+§1.6.1a records them as narrowings AVOIDED (rows (2), (3), (6)) rather
+than as narrowings taken. The
+region's own strip rule is a separate, shipped defect and is K57.
+
+**WHAT THIS DELETES.** Three rules in revision 3 stop existing:
+
+1. **"In the HEAD, indentation means CONTINUATION; a pattern block's
+   lines are NOT indented."** There is one attachment rule now and it
+   is the same rule in both places. A `config` body, a data-block body,
+   a `description` attached to a `target`, a block scalar's own lines
+   and a `provenance` sub-block's attributes are all S1, and none of
+   them is a second mechanism.
+2. **"The head ends at the first `pattern` line, and nothing file-level
+   may appear after it"** as a STRUCTURAL rule. It survives as a SCHEMA
+   rule with the same force and the same diagnostic: `lib`, `target`,
+   `config` and friends declare scope `file`, and one appearing inside
+   a group is a schema error naming the scope. **AR-4 is discharged
+   exactly as before** — a D27-blinded author reading a block still
+   looks in exactly one other bounded place — and it is now discharged
+   by a declaration a reader can print rather than by a parser's
+   control flow.
+3. **"An indented line NOT under a sub-block keyword is a hard error."**
+   Under S1 an indented line always attaches to something; whether its
+   parent ADMITS children is a schema question (`m` declares
+   `children: none`). **The loud refusal the bench's M8 measured
+   survives in both arms** — a structure error when it attaches to
+   nothing, a schema error naming the parent when the parent takes no
+   attributes — so N-2's failure is as loud as it was, and it is now
+   loud for a reason a reader can look up.
+
+**WHAT IT COSTS: one diagnostic tier, and A CENSUS OF NARROWINGS —
+§1.6.1a, eleven candidates, seven taken** — five candidates at 3.2,
+re-swept at 3.3, and two of the seven landed by STEP 0 rather than
+here. No file changes meaning. A
+file legal today is legal, byte for byte (0 corpus lines are indented,
+re-measured at 210 files, §0.7). Most refusals that move only change
+WHICH message they carry, which D26 puts in the tier this project does
+not spend effort on.
+
+**CORRECTED AT 3.2 (r57 G-B2, C-M1; convergence 3).** Revision 3.1 said
+"ONE MEASURED NARROWING" and the sentence was wrong twice over: three
+more narrowings live in the structure layer's own change and a fifth
+lives in §2.22's semantics, and revision 3.1's instrument for finding
+them — §1.6.4's own standing rule — was written and then not swept
+across the delivery. **§1.6.1a is that sweep, published as a CLOSED
+LIST**; this subsection keeps the first candidate because it is the one
+the structure layer forces and the one the rule was written from. But
+S1 is DEPTH-SENSITIVE and today's head continuation is not, and that
+difference is real:
+
+> **THE RAGGED-BODY NARROWING, found by probing rather than by reading
+> the code.** Today's parser asks only "is this line indented?", so a
+> `config` body whose lines sit at DIFFERENT depths parses as a flat
+> body. MEASURED on the shipped binary — a `config c` with `flags i` at
+> two spaces and `engine vm` at FOUR produces a `--list-source` row
+> **byte-identical** to the evenly-indented file (`flags=i`,
+> `engine=vm`, rc 0). Under S1 the four-space line attaches to the
+> two-space `flags` line as a CHILD, `flags` admits no children, and
+> the file is refused. **That is accept → reject on a construct that is
+> legal today**, which is a narrowing and not a re-wording, and §1.6.1
+> is corrected to say so rather than counting it as additive.
+
+It is admitted deliberately, on three grounds, each measured:
+
+1. **The population is provably empty, in both repos.** `config`
+   occurs 0 times in the 210-file corpus; the **20** head declarations
+   carrying an indented body in `tests/rxtsource/fixtures/` — across
+   **13 of the 45** files — are every one uniformly indented, at width
+   2 without exception; and `pcrec-bench` contains no `.rxt`/`.rxtin`
+   file at all today (read-only check). Nothing anywhere is narrowed
+   in fact. **(Corrected at 3.2, r57 G-B7: revision 3.1 said 19. The
+   21st candidate a naive scan finds and the one width-3 line are the
+   SAME line — `whitespace_only_line.rxtin:9`, pure whitespace, which
+   S0 classifies BLANK and not CONTENT, so it is neither a body line
+   nor a counter-example to uniformity. The fixture exists precisely
+   because leg C once mis-classified it, which is why it is worth
+   naming rather than silently excluding.)**
+2. **It is FORCED by the feature, not gratuitous.** Depth has to become
+   meaningful the moment a record can contain a record — which §2.10's
+   `provenance`-under-a-data-block is, two levels of S1 — so a
+   depth-insensitive rule is not available to choose. Ragged
+   indentation cannot both be tolerated and mean something.
+3. **It converts a silent authoring hazard into an error.** A body
+   whose lines drift in depth reads as nesting and parses as a flat
+   list; under the old rule the author is never told. This is the
+   direction a tightening should go.
+
+§1.6 is the version-break argument, and §1.6.4's standing rule is
+amended to cover the narrowing case that this finding exposed as a gap
+in it.
+
+**AND IT MAKES A RULE THE THREE READERS CAN ACTUALLY BE HELD TO.**
+Revision 3 asserted "the indentation test PRECEDES token dispatch" in
+all three body readers. MEASURED (§0.7), that was true of ONE of them:
+leg A tests indentation first (`rxt_source.c:992`), leg B has no
+indentation test at all (an indented line reaches `run.sh`'s catch-all
+by fall-through through 22 arms none of which tolerates leading
+whitespace), and leg C dispatches an indented PRE-BODY line on its
+first token before reaching its own check — **pre-body only: `:424`'s
+check is unconditional once a block is open** (§0.7, r57 C-N9). Under
+S1 the ordering is not an extra rule to remember — **indent determines
+the parent, and only then does the parent's schema decide what the
+first token may be** — so "dispatch after attachment" is the layering
+itself, and §9's A-group pins it with an indented-line fixture in all
+three legs, **at the PRE-BODY position**, rather than trusting three
+independent implementations to have got an ordering right. The position
+is load-bearing and is named in the check rather than left to whoever
+writes the fixture: a post-body fixture reaches `:424` in leg C and
+would report GREEN against the very defect it exists to pin
+([MECH-REACH]'s shape, r57 S-M5).
+
+#### 1.2.2 The SCHEMA layer
+
+Everything else is schema, and §2.25 designs it. Stated here only as
+the boundary:
+
+- **Scopes.** `file` (indent-0 lines before the first group), `block`
+  (indent-0 lines inside a group), and one scope per parent kind that
+  admits children (`config`, `data`, `provenance`, `variant`). A scope
+  is a set of legal line kinds — the "closed lexical context" rule
+  revision 2 stated, now a schema column rather than a parser fact, and
+  no longer capped at four: a scope is created by declaring one.
+- **Per line kind**: its scope, its value shape, whether it opens a
+  group, whether it admits children and in which scope, its
+  cardinality, its required/conditional status, and whether its value
+  is drawn from a closed set.
+- **THREE of those columns are READ BY THE STRUCTURE LAYER, as TWO
+  parameters**, and the rest are validity (§1.2.1's parameter table,
+  which is normative): `opens_group` is parameter 1; `value` and
+  `children` together are parameter 2, a kind opening a prose region
+  iff it carries `value: prose` AND `children: prose`. **(3.3, r57
+  ROUND 2 R2-F4: revision 3.2 wrote "two columns … `value = prose`"
+  here and the PAIR in §2.25.2 — one normative fact with two
+  spellings.)** The boundary between the layers is therefore not "the
+  schema knows nothing structural" — it is that the structure layer
+  reads exactly three columns, all closed-form, and never dispatches on
+  a kind's identity.
+- **A first token unknown IN ITS SCOPE is a hard error naming the
+  scope** ("`testee` is not a pattern-block directive"). Nothing is a
+  keyword everywhere. Unchanged in force; now derived from a table.
+
+#### 1.2.3 Where the format does NOT pass, stated plainly
+
+**Block GROUPING is not recoverable from syntax alone, and no wording
+makes it so.** A `pattern` line and its `m`/`n`/`g` lines are all at
+indent 0 and are siblings by S1; what makes the case lines BELONG to
+the pattern is S2's opener set, which is a keyword fact. A reader given
+nothing but the bytes sees **35,961** flat sibling lines.
+
+**(Corrected at 3.2, r57 G-B6: revision 3.1 wrote 28,943 here, which is
+the EXPECTATION-line count — a partition a generic reader cannot
+compute, since computing it requires knowing which first tokens are
+case kinds. The number this sentence needs is every non-blank,
+non-comment line, which is 35,961 over the 210 files. The point gets
+stronger, not weaker: a quarter more lines sit in the undifferentiated
+heap than the first figure admitted.)**
+
+Three things about that, each measured rather than argued:
+
+- **It is TODAY'S SHIPPED GRAMMAR's failure, not W23's.** Version 1 of
+  this format has exactly this property and always has; nothing
+  revision 3 or 3.1 adds makes it worse, and §1.2.1's three devices
+  make everything else pass. **(Corrected at 3.3: "two" was stale from
+  3.1 — S3 is the third, §1.2.1.)**
+- **No cheaper structural device is available in the corpus.** The
+  obvious candidate — a blank line separates blocks — is refuted:
+  **1,016 of 3,936 `pattern` lines (26%) are immediately preceded by a
+  blank line** (§0.7). A rule the corpus obeys 26% of the time is not
+  a rule.
+- **The only fix is to INDENT case lines under their `pattern` line**,
+  making grouping S1's job and emptying the opener set. That is a
+  break, and §1.6 prices it and declines it.
+
+Stated the other way round, so the claim is falsifiable — **and
+RESTATED AT 3.2 against the two-parameter baseline, because revision
+3.1's version of this sentence counted one parameter and there are
+two**: *with a two-row opener table AND the prose-region-opening kind
+set (the `value`/`children` pair, 3.3), structure recovery is complete
+and context-free.* Both are one
+`--list-schema` query, and together they are the entire residue of
+"keywords decide structure" in the format. The honest reading of the
+second: the opener set is closed at two and can be quoted in a
+sentence; the prose set grows, so a reader who hard-codes today's five
+rows will be wrong the day a sixth prose field lands, which is exactly
+why the fetch is specified and the values are not.
+
+#### 1.2.4 Bare indentation vs a visible sub-block MARKER
+
+Frank's consequence 4 — *"if the design needs sub-blocks, it CREATES
+syntax that marks them — never overloaded indentation whose meaning
+depends on which keyword opened the line"* — was read two ways and both
+were designed before one was chosen.
+
+**The marker alternative, designed.** A sub-block opener carries a
+trailing sigil and its children are indented as now:
+
+```
+provenance:
+  source fowler
+variant re2:
+  text ^a{1,4}$
 ```
 
-**The head ends at the first `pattern` line, and nothing file-level may
-appear after it.** This is AR-4 discharged mechanically: a D27-blinded
-author reading any block needs to look in exactly one other place — the
-top of the file — and that place is bounded. It is also what makes a
-one-block file with no head behave exactly like `pcrec 'pattern'`
-(AR-2/AR-7).
+(The sibling variants — a leading sigil on each child, `- source
+fowler`; or brace delimiters — were considered together with it: they
+differ in spelling and not in what follows, because all three make the
+parent's intent explicit at the cost below.)
 
-Lexical rules, unchanged from today and binding on every new line kind:
+**Priced against long-term viability, the marker LOSES on three
+counts** — **and revision 3.2 re-runs the comparison against §1.2.1's
+TWO-PARAMETER baseline rather than 3.1's one-parameter one (r57 G-B1),
+because the marker's case is strongest exactly where the baseline is
+weakest.** The re-run does not change the decision; it changes count 1,
+which was overstated, and it names what the marker genuinely buys.
 
-- Whole-line `#` comments only (R-RXT-2). A `#` anywhere but column 1 is
-  data. The one comment with meaning — `# pcre2-only` immediately before
-  a `pattern` line — keeps it, and is defined in §2.9 as an alias.
-- Blank lines ignored.
-- A line kind is its first whitespace-delimited token. An unknown first
-  token is a **hard error** (R-RXT-6's discipline generalised): never a
-  silent no-op, never a comment.
-- **Four lexical CONTEXTS, each with a closed vocabulary.** The format
-  already has two — the file's own directives and a pattern block's
-  case vocabulary (`m`/`n`/`g`/…). This design adds two more (`config`
-  body, data-block body). A first token unknown *in its context* is a
-  hard error that names the context ("`testee` is not a pattern-block
-  directive"). Nothing is a keyword everywhere.
-- **IN THE HEAD, INDENTATION MEANS CONTINUATION.** A line indented by
-  one or more spaces continues the head declaration or block above it: a
-  `config` body, a data-block body, a `description` attached to a
-  `target` or a `lib`, and a block-scalar value's own lines are all the
-  same rule. A head construct therefore ends at the first non-indented
-  line, and a typo inside a `config` body is a hard error naming the
-  block rather than a silent block-ending.
-  **MEASURED, and this is what makes it free:** **0** lines in the
-  179-file corpus begin with whitespace
-  (`grep -rhcE '^[[:space:]]+[^[:space:]]'` → 0; independently reproduced
-  by r44-grammar's own recognizer run, G1), so no existing line's meaning
-  can change. This REPLACES the first version's "leading whitespace is
-  permitted and ignored"; Frank's `description` block scalar (r44, 15:1x)
-  needs continuation to mean something, and one rule serving every head
-  construct is better than a second mechanism beside it.
-- **A PATTERN BLOCK keeps today's shape: case lines are NOT indented**,
-  and a block ends at the next `pattern` line or end of file. This
-  asymmetry between head and body is deliberate and is the only one: the
-  body's shape is forced by R-COMPAT-1 (3,265 blocks depend on it) and
-  the head is new territory where indentation costs nothing. A generator
-  writing an included fragment writes pattern blocks only (§2.5), so it
-  never has to indent anything.
-- **One line, one value — with exactly ONE exception: the BLOCK SCALAR.**
-  A line kind whose value is prose may write `<kind> |` and continue on
-  indented lines, YAML's `|` form; newlines are preserved and the value
-  ends at the first non-indented line. The one-line form
-  `<kind> <text>` stays. **Only `description` uses it today**, and the
-  exception is stated as a property of the VALUE production rather than
-  of `description`, so a second prose field would inherit it rather than
-  invent it. Nothing else in the format spans a line.
+1. **It makes structure depend on two signals that can disagree** — and
+   **CORRECTED AT 3.2 (r57 G-B4): the resulting error class does not
+   DISAPPEAR under bare indentation, it RELOCATES to the schema
+   layer.** Revision 3.1 said neither disagreement state is
+   expressible; that is true of the state as a STRUCTURE error and
+   false of the state itself. "Indented children under an unmarked
+   line" is expressible today and is refused — as a schema error naming
+   the parent (`m` declares `children: none`, §1.2.1's deletion 3). And
+   "a marker with no indented children" has a live shipped analogue in
+   the very construct 3.1 cited as the counter-example: `description |`
+   with nothing indented under it is **refused by name today**
+   (`rxt_source.c:514`, *"block scalar '\|' has no indented
+   continuation lines"*), which is precisely the disagreement state
+   count 1 called inexpressible. So the honest form of the count is:
+   the marker moves two error classes from the schema layer to the
+   structure layer and adds a third (marker-plus-wrong-depth), where
+   bare indentation keeps them all in the layer that can name the
+   offending PARENT. That is a smaller claim than 3.1's and it still
+   points the same way, because a structure error cannot say which
+   declaration the author got wrong and a schema error can.
+2. **The format already ships indentation-attachment, unmarked**, in
+   the head: `config` bodies and `description |` block scalars have
+   been parsed that way since W1.1 by all three readers. Adding a
+   marker means either a second mechanism beside the shipped one (the
+   accretion consequence 1 forbids) or a breaking change to a shipped
+   production for no capability.
+3. **"This kind admits children" is a SCHEMA fact, and a marker spells
+   it once per occurrence.** That is the schema restated in every file
+   that uses the production — the duplication §2.25 exists to remove,
+   and the thing that goes stale when the schema changes and old files
+   do not.
+
+**What the marker WOULD buy, stated because the two-parameter baseline
+makes it real.** A trailing sigil would let a generic reader answer
+"does this line admit children?" without consulting the schema — which
+is a VALIDITY question for every kind except the prose ones (§1.2.2),
+so it buys nothing the structure layer needs. It would NOT remove
+either parameter the structure
+layer actually reads: `opens_group` would still be needed for block
+grouping (a marker on `pattern` would be the §1.6.2 break by another
+spelling, since it changes every existing file), and the
+prose-region-opening set would still be needed for S3, because `\|`'s
+own region is opened by a VALUE and a sigil on the opener line does not
+tell a reader where the region ENDS. **(3.3: a sigil meaning "takes
+prose below" would express `children: prose` alone, which is half of
+parameter 2 — the half that says a region MAY open, never the half that
+says one DID; `\|`'s presence on the line is still what opens it.)** **So the marker's price is three error classes and a
+per-occurrence restatement of the schema, and its yield against the
+stated baseline is zero parameters removed.** That is a stronger
+decision than revision 3.1 could make, because 3.1 was comparing
+against a baseline that undercounted its own cost.
+
+**DECISION: bare indentation, no new marker.** The consequence-4
+obligation is met by §1.2.1's unified rule, S3's declared region, and
+§2.25's printable schema: *which kinds open a scope* and *which kinds
+take a prose value* are both answerable exactly, by `--list-schema`,
+once, rather than by a sigil a file may or may not carry.
+
+**The `|` block scalar IS a structural device, and revision 3.2
+withdraws the sentence that said otherwise** (r57 G-B1). Revision 3.1
+wrote: *"Both are value-form discriminators… neither decides where a
+line attaches."* Measurably false of `|` — inside a `description |`
+body an indented `#` is prose and ragged indentation is legal (§0.8),
+neither of which S0/S1 can produce — so `|` decides how every line
+after it is treated, which is what "decides where a line attaches"
+means. It is now **S3**, declared in §1.2.1, and the distinction that
+survives is narrower and true:
+
+| | `\|` (a prose value) | `"` after `=` (a `tag-prose` item) |
+|---|---|---|
+| what it discriminates | the value's FORM — on this line, or on the lines below | the value's FORM — bare token, or quoted with whitespace |
+| where the value ENDS | on SUBSEQUENT lines, by S3's extent rule | on THIS line, by the closing quote |
+| a reader that ignores it | mis-parses the extent of everything after it | mis-reads one line's content |
+| layer | **structure (S3) + schema (the `value`/`children` PAIR, 3.3)** | schema only |
+
+"Value-form discriminator" was the right CONCEPT and the wrong
+CONCLUSION: a discriminator that selects a multi-line form is a
+structural device wearing a value's clothes. §2.26 item 8's pairing of
+the two stands as a vocabulary observation and is re-worded there to
+stop implying they live in one layer.
+
+#### 1.2.5 The lexical rules, restated under the two layers
+
+- Whole-line `#` comments only, column 1 (S0). The one comment with
+  meaning — `# pcre2-only` immediately before a `pattern` line — keeps
+  it, and is defined in §2.9 as an alias. **A comment line also CLOSES
+  ATTACHMENT and ends an open prose region, exactly as a blank line
+  does (3.3, S1/S3)** — the only structural effect a comment has, and
+  the reason §1.6.1's claim 2 survives.
+- Blank lines close attachment (S1) and carry no other meaning. **A
+  BLANK line is the EMPTY line (3.3); a WHITESPACE-ONLY line is inert
+  outside a prose region and bytes inside one.**
+- A line kind is its first whitespace-delimited token, dispatched
+  **within the scope its attachment put it in** (S1 then schema).
+- **One line, one value — with exactly one exception, the BLOCK
+  SCALAR.** A line kind whose schema row carries `value: prose` AND
+  `children: prose` may write `<kind> |` — trailing spaces and tabs
+  after the `|` are trimmed before the test, the shipped rule
+  (`rxt_source.c:1222-1226`, r46sem finding 14) — and continue on lines
+  indented under it; newlines are preserved and **the value ends where
+  S3 says the OPAQUE REGION ends** — at the first CONTENT line indented
+  no more than the opener, the first BLANK (empty) line, or the first
+  column-1 COMMENT line. The one-line form `<kind> <text>` stays. The
+  exception is a property of the VALUE production (`prose-value`), not
+  of any keyword, so a second prose field inherits it rather than
+  inventing it — and inheriting it grows the structure layer's second
+  parameter (§1.2.1), which is the cost of the generality and is worth
+  naming where the generality is claimed.
+  **CORRECTED AT 3.2 (r57 G-B1):** revision 3.1 said the value ends
+  "where S1 says the attachment ends", which put a prose region under
+  the attachment rule. It is not under it — S1 does not run inside the
+  region at all, which is exactly why an indented `#` there is prose
+  and ragged prose there is legal (both MEASURED, §0.8). S3 is the rule
+  that carries this sentence.
+- **Inside the region, nothing is a line kind.** A prose line whose
+  first token happens to spell `pattern`, `m` or `provenance` is prose.
+  This is not a carve-out; it is S3 having no dispatch step.
+- **MULTI-PARAGRAPH PROSE, and the one spelling that carries it**
+  (3.3). An INDENTED WHITESPACE-ONLY line is the paragraph break: it is
+  inside the region, it is bytes, and after the block's indent is
+  stripped it decodes to an empty line in the value. MEASURED on the
+  shipped binary — `description |` / `  para one` / three spaces /
+  `  para two` dumps the value `para one\n \npara two`, rc 0. It is the
+  ONLY spelling available, because r46sem-10 ruled that a truly empty
+  line ENDS the continuation, and it does: the same file with a
+  zero-byte separator is **REFUSED** at the line below it (*"indented
+  line continues nothing"*). That is why S0's BLANK class had to narrow
+  to the empty line rather than S1/S3 growing an exception — the
+  whitespace-only line is not an oddity the format tolerates, it is the
+  only way the format can currently say "new paragraph", and revision
+  3.2's parenthesis would have deleted it.
+- **`prose-value` is legal wherever the schema declares a prose value,
+  at any depth** — file level, a `config` body, a sub-block attribute,
+  and (NEW at 3.1, see below) a pattern block's own `description`.
+  Continuation lines are indented deeper than the line they continue,
+  which is S1 and not a second rule.
+
+**REVISION 3.1 SUPERSEDES THE W1.1 `description` CORRECTION, and says
+so rather than quietly widening a refusal.** That correction made a
+pattern block's `description` one-line-only, and BOTH of its reasons
+have expired:
+
+- Its stated reason was *"§1.2 says a pattern block's lines are NOT
+  indented and a block scalar IS indented continuation; both cannot be
+  true in the body"*. Under §1.2.1 there is no such asymmetry, so the
+  contradiction it resolved does not arise.
+- Its implementation reason was *"a block scalar in the body would need
+  continuation parsing inside `run.sh`'s per-line loop — head-shaped
+  parsing back in the harness"*. **W23 requires legs B and C to consume
+  indented children anyway**, for `provenance` and `variant`; a block
+  scalar needs the SAME consumption and no more, because a reader that
+  does not READ the value still only has to consume its children. That
+  is §2.24's VALIDATES-vs-RECOGNISES split doing its job: pcrec reads
+  the prose, the harness skips it.
+
+So `description` takes `prose-value` in every scope — **one prose
+mechanism, everywhere**, which is what §2.14 rule 6 already promised and
+what the surviving carve-out contradicted. **This is the ONE shipped
+refusal revision 3.1 changes, and it changes it in the widening
+direction only**: MEASURED, 0 corpus blocks carry a `description` and 0
+corpus lines are indented, so no existing file moves. The committed
+fixture `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` asserts
+the refusal in all three legs and must be **re-aimed, not deleted** —
+inverted to assert all three ACCEPT it and agree on the decoded value,
+which is a strictly better fixture because a three-way agreement on a
+value catches more than a three-way agreement on a rejection. §3.4
+SW16 carries it and §9's A-group names it.
+
+#### 1.2.6 Sub-blocks under the two layers
+
+With S1 doing the structural work, a **sub-block is no longer a
+mechanism** — it is a schema declaration that a kind admits children.
+Revision 3's two customers are unchanged: `provenance` (§2.14) and
+`variant` (§2.23), and `provenance` is now used at two different
+parents (a pattern block and a data block, §2.26's unification), which
+is the general form earning its keep rather than a special case with
+two instances.
+
+What survives from revision 3's rules, and where each now lives:
+
+| revision 3 rule | revision 3.1 |
+|---|---|
+| indentation test precedes dispatch | **the layering itself** (S1 then schema); pinned in all three legs by §9's A-group rather than asserted of three implementations |
+| a bare indented line is a hard error | **still a hard error**, in one of two arms (attaches to nothing → structure; parent takes no children → schema). M8 stays loud |
+| a sub-block's vocabulary is a fourth closed context | **a scope**, declared like every other; the count is not fixed at four |
+| sub-block ends at the first non-indented line including a blank one | **S1**, unchanged in effect — and S3 for a prose region, whose extent rule is the same shape stated once more (3.2). **At 3.3 both terminate on THREE things, and the same three**: a CONTENT line at or below the opener's indent, a BLANK (empty) line, and a column-1 COMMENT line; a whitespace-only line terminates neither, which is the shipped behaviour of all three legs |
+| the attribute vocabulary avoids the token `pattern` | still true, for a NEW reason — §2.26 item 9. The old reason (an indented `pattern` might start a block in one reader) is **impossible in any reader that implements S1/S2**, since an opener applies among SIBLINGS and a child is not a sibling. **Qualified at 3.2 (r57 S-S5)**: "structurally impossible" is a statement about the SPECIFICATION, and legs B and C are independent implementations of it (§2.25.5) — leg B has no attachment step today at all. It is impossible by construction in leg A once H16 lands and it is a property legs B and C must be PINNED to, which is §9's A-group's job, not an inheritance |
+
+Regime grouping is still NOT a sub-block customer — §2.22 repairs the
+wrapper mechanism instead, and the reasons there are unchanged by this
+revision (a case scope is ruled out by Frank by name, independently of
+how indentation is spelled). A generator writing an included fragment
+still writes pattern blocks only (§2.5); it indents exactly when it
+writes children.
 
 ### 1.3 The productions
 
@@ -320,6 +1451,17 @@ generated sets, **W3** per-engine / per-config application. A parser may
 ship W1 alone and reject W2/W3 keywords with "not in this build"; the
 grammar is designed so that is a *subset*, never a *dialect of a
 dialect*.
+
+**How to read this grammar after revision 3.1.** The EBNF below is the
+two layers written together, the way a reader wants them; §1.2.1 and
+§2.25 are the two layers written apart, the way a parser is built from
+them. Specifically: every `{ INDENT , … }` below is ONE rule, S1, not a
+per-production choice — the productions show WHERE children are legal
+(a schema fact) over a structure that admits them uniformly. A
+production's scope (`file` / `block` / a named child scope) is likewise
+a schema column here written as grammatical position. Nothing in the
+EBNF grants a keyword structural power; where it looks like it does,
+§2.25's table is the normative statement.
 
 ```ebnf
 (* ---------- terminals ---------- *)
@@ -330,16 +1472,39 @@ rest-of-line = ? every byte to the end of the line, verbatim ? ;
 subject     = quoted-subject | file-subject ;
 quoted-subject = '"' , { subject-char | escape } , '"' ;    (* today's, unchanged *)
 escape      = '\"' | "\\" | "\n" | "\t" | "\r" | "\f" | "\v" | "\x" , hex , hex ;
-file-subject = '@file:"' , path-chars , '"' ;                              (* W2 *)
+file-subject = '@file:"' , path-chars , '"' ,
+               [ ws , "as" , ws , defname ] ,                     (* W23 *)
+               [ ws , "sha256" , ws , hex64 ] ;                   (* W23 *)
 path-ref    = '"' , path-chars , '"'                    (* local, C's "" *)
             | "<" , store-name , ">" ;                  (* library path, C's <> *)
 config-list = ident , { "," , [ ws ] , ident } ;
-tag-item    = tag-label | tag-pair ;                              (* U1 *)
+tag-item    = tag-label | tag-pair | tag-prose ;                  (* U1; W23 *)
 tag-label   = ? a bare label: no whitespace, no '=' ? ;
 tag-pair    = tag-key , "=" , tag-value ;   (* tag-value: no whitespace, no '=' *)
+tag-prose   = tag-key , "=" , quoted-subject ;  (* W23: the seven escapes, ONE
+                 vocabulary — a value whose first byte after '=' is '"' is the
+                 quoted form and must terminate; whitespace legal inside *)
 prose-value = rest-of-line                        (* one-line form *)
-            | "|" , eol , { INDENT , rest-of-line , eol } ;  (* block scalar *)
-INDENT      = ? one or more spaces at the start of the line ? ;
+            | "|" , { " " | tab } , eol , opaque-region ;
+                 (* block scalar; §1.2.1 S3. The trailing whitespace is
+                    TRIMMED before the test — rxt_source.c:1222-1226,
+                    r46sem finding 14, and leg C's own v.strip() == '|' *)
+opaque-region = ? every line until the FIRST of: a CONTENT line indented no
+                more than the opener, a BLANK (empty) line, or a column-1
+                COMMENT line — S3. A WHITESPACE-ONLY line ends nothing and is
+                bytes. Its interior is BYTES: not line-classified (an
+                indented '#' is prose), not attached (ragged depth is legal),
+                not dispatched. The EXTENT is the only structural fact; the
+                decode is `prose-value`'s.
+                A kind may open one iff its schema `value` is `prose` and
+                its `children` is `prose` — structure-layer parameter 2,
+                read as a PAIR (§1.2.1) ? ;
+INDENT      = ? one or more SPACES at the start of the line. A leading TAB
+                does not open an indent and is refused by name
+                (§1.6.1a narrowing (4)) ? ;
+defname     = ? the wide name grammar: [A-Za-z_] then [A-Za-z0-9_.-]
+                (rxt_source.c's defname_ok — one grammar, three readers) ? ;
+hex64       = ? exactly 64 lowercase hex digits ? ;
 
 (* ---------- file ---------- *)
 file          = head , body ;
@@ -356,11 +1521,21 @@ decl-line =
     | "use"        , ws , config-list                              (* W3 *)
     | "oracle"     , ws , oracle-spec                              (* W3 *)
     | "tag"        , ws , tag-item , { ws , tag-item }             (* W2 *)
+    | "vocabulary" , ws , tag-key , ws , tag-value , { ws , tag-value }
+                    (* W23: the FILE-declared half of the schema (§2.25) *)
+    | "configs"    , ws , ( "build" | "describe" )                (* W23 *)
     | "description", ws , prose-value ;                            (* W1 *)
+
+(* RESERVED, not a production: `version` is refused BY NAME in every
+   build (§1.6). Its absence means version 1; it exists so a future
+   structural break has a spelling nobody can already have used. *)
 
 decl-attr   = "description" , ws , prose-value ;   (* attaches to decl-line *)
 
-oracle-spec = "python" | "pcre2" | "none" , ws , rest-of-line ;    (* W3 *)
+oracle-spec = "none" , ws , rest-of-line                          (* W3 *)
+            | engine-ref ;    (* W23 widening: ident [ "/" version ] — `python`
+                 and `pcre2` are engine-refs with no version and keep their
+                 exact meanings; any other engine is R-VG-3's labelled skip *)
 
 (* ---------- head: config block ---------- *)
 config-block = "config" , ws , ident , [ ws , "from" , ws , config-list ] , eol ,
@@ -374,7 +1549,14 @@ config-line =
     | "budget"   , ws , budget-item           (* as a pattern block's   W1 *)
     | "analysis" , ws , data-kind , ws , ident  (* select a data block  W2 *)
     | "testee"   , ws , engine-ref            (* a non-pcrec engine     W3 *)
-    | "option"   , ws , tag-pair ;            (* that engine's options  W3 *)
+    | "option"   , ws , tag-pair              (* that engine's options  W3 *)
+    | "provides" , ws , tag-value , { ws , tag-value } ;
+                    (* W23: the capability tags this config SATISFIES;
+                       repeatable, accumulating; ABSENT means NOTHING is
+                       satisfied — fail-closed (§2.16). SPELLED `provides`
+                       at revision 3.1 (was `capable`) — §2.26 item 4:
+                       the pattern side's key is `requires`, and the two
+                       ends of one relation must read as a pair *)
 
 engine-ref = ident , [ "/" , version-chars ] ;      (* e.g. pcre2/10.42 *)
 
@@ -385,15 +1567,29 @@ data-line =
       "description" , ws , prose-value   (* the summarizing script's field *)
     | "question" , ws , rest-of-line     (* what this answers, required *)
     | "reader"   , ws , rest-of-line     (* the selection point, required *)
-    | "exemplar" , ws , rest-of-line     (* provenance, required *)
-    | "bytes"    , ws , int              (* provenance, required *)
-    | "sha256"   , ws , hex64            (* provenance, required *)
-    | "analyzer" , ws , rest-of-line     (* provenance, required *)
-    | "date"     , ws , iso-date         (* provenance, required *)
+    | "analyzer" , ws , rest-of-line     (* the TOOL that produced it,
+                                            required — not provenance *)
+    | provenance-block                   (* WHERE it came from: the SAME
+                                            sub-block a pattern block takes
+                                            (§2.26 item 10). At revision 3.1
+                                            this replaces the five one-off
+                                            fields `exemplar`/`bytes`/
+                                            `sha256`/`date` this production
+                                            used to carry beside `analyzer` *)
     | "row"      , ws , int , ws , int , { ws , int } ;  (* offset, then 16 counts *)
 
 (* ---------- body: a pattern block ---------- *)
-pattern-block = "pattern" , ws , rest-of-line , eol , { block-line } ;
+pattern-block = pattern-line , { block-line } ;
+pattern-line  = "pattern" , ws , rest-of-line , eol          (* today's *)
+              | "pattern-esc" , ws , quoted-pattern , eol ;       (* W23 *)
+quoted-pattern = '"' , { subject-char | escape } , '"' ;
+                    (* the SAME seven escapes; §2.19's rules; `\x00` refused
+                       by name (K9). A block carries exactly ONE pattern line
+                       because a block IS what one opener starts — both
+                       spellings are members of S2's opener set, so a second
+                       one is the NEXT BLOCK, not a second line in this one.
+                       Revision 3's "never both, refused naming both lines"
+                       is DROPPED at 3.2: empty population, §2.19 *)
 block-line =
     (* --- today's, unchanged --- *)
       "flags"    , ws , letters
@@ -410,42 +1606,112 @@ block-line =
     | "gp" , ws , slot , ws , span
     | "gu" , ws , giveup-code , ws , subject
     (* --- new --- *)
-    | "name"        , ws , ident                                   (* W1 *)
-    | "description" , ws , rest-of-line       (* one-line form ONLY   W1 *)
+    | "name"        , ws , defname            (* W1; widened at W1.3 *)
+    | "description" , ws , prose-value        (* W1; the one-line-ONLY
+                       carve-out is SUPERSEDED at revision 3.1 — §1.2.5 *)
     | "encoding"    , ws , ident        (* D58's per-pattern axis    W1 M16 *)
+    | "export"      , ws , config-list                          (* W1.3 *)
     | "tag"         , ws , tag-item , { ws , tag-item }            (* W2 *)
     | "mc"          , ws , subject , ws , int                      (* W2 *)
+    | "under"       , ws , tag-value , ws , under-case            (* W23 *)
     | "oracle"  , ws , oracle-spec                                 (* W3 *)
-    | "variant" , ws , ident , ws , variant-body ;                 (* W3 *)
+    | provenance-block                                            (* W23 *)
+    | variant-block ;                              (* W3, reshaped at W23 *)
 
-variant-body = "unsupported" , ws , rest-of-line          (* a declared refusal *)
-             | rest-of-line , [ eol , "groups" , ws , group-map ] ;
+under-case  = ( "m" | "n" | "ms" | "ns" | "mc" ) -case-line-as-above ;
+              (* the qualifier wraps a case line UNCHANGED; never g/gp/gu —
+                 §2.17 *)
+
+(* ---------- the two kinds that ADMIT CHILDREN (§1.2.6) ---------- *)
+(* `provenance` is ONE record shape used at TWO parents — a pattern block
+   and a data block (§2.26 item 10). Its REQUIRED subset differs by
+   parent and is a schema row, not a second production. *)
+provenance-block = "provenance" , eol , { INDENT , prov-line , eol } ;
+prov-line =
+      "source"       , ws , rest-of-line  (* a registered slug, or the
+                                             exemplar's name — REQUIRED *)
+    | "url"          , ws , rest-of-line  (* the exact URL fetched         *)
+    | "ref"          , ws , rest-of-line  (* file/rule/line inside it      *)
+    | "license"      , ws , token         (* an SPDX id. REQUIRED under a
+                                             pattern block (§2.26 item 10) *)
+    | "license-note" , ws , prose-value
+    | "retrieved"    , ws , iso-date      (* RFC 3339 date,       REQUIRED *)
+    | "fidelity"     , ws , ( "verbatim" | "adapted" | "inspired" )
+                                          (* REQUIRED under a pattern block *)
+    | "adaptation"   , ws , prose-value   (* REQUIRED iff fidelity is not
+                                             verbatim *)
+    | "attribution"  , ws , prose-value   (* the field exists; the license
+                                             policy is the consumer's *)
+    | "bytes"        , ws , int           (* integrity: the source's size  *)
+    | "sha256"       , ws , hex64 ;       (* integrity: its digest         *)
+
+variant-block = "variant" , ws , ident , eol ,
+                { INDENT , variant-attr , eol } ;
+variant-attr =
+      "text"        , ws , rest-of-line   (* the replacement pattern text *)
+    | "kind"        , ws , tag-value      (* closed via `vocabulary kind` *)
+    | "groups"      , ws , group-map
+    | "note"        , ws , prose-value    (* the reviewer's sentence      *)
+    | "unsupported" , ws , rest-of-line ; (* a declared refusal, reason   *)
 group-map    = ident , "=" , int , { "," , ident , "=" , int } ;
 ```
 
-**That is the whole grammar: seven file-level declarations, two head
-block kinds, seven new block-scoped lines** (`name`, `description`,
-`tag`, `mc`, `oracle`, `variant`, plus `encoding`; `features` gains an
-optional `only`). Sixteen additions against thirteen existing line
-kinds, plus §1.5's three pattern-level extensions — the format roughly
-doubles, once, and each addition answers a named consumer in
-`requirements.md` or a ruling.
+**That is the whole grammar.** Revision 2's count was sixteen additions
+(seven file-level declarations, two head block kinds, seven block-scoped
+lines) plus §1.5's three pattern-level extensions. Revision 3 adds, all
+W23 and all for the [B42] consumer: two head declarations (`vocabulary`,
+`configs`), one config-body line (`provides`), a second block starter
+(`pattern-esc`), one case-line qualifier (`under`), two child-admitting
+kinds (`provenance`; `variant` reshaped from its W3 one-line form), a
+`tag-item` third alternative (`tag-prose`), and two optional suffixes on
+`file-subject` (`as`, `sha256`). Every addition is ADDITIVE against the
+shipped corpus — a new first token measured at 0 occurrences (§0.6,
+re-measured at 210 files in §0.7), an extension of a production the
+shipped build refuses by name, or new syntax at a position that is a
+hard error today (an indented body line; text after an `@file:` path) —
+so R-COMPAT-1 holds production by production, and §9's G1 row says how
+that is checked.
 
-**CORRECTION ([DD-13b.W1.1], 2026-08-30): a pattern block's
-`description` takes the ONE-LINE form only — the production above said
-`prose-value`, which includes the `|` block scalar, and that cannot
-hold.** §1.2's lexical rules say a block scalar IS indented continuation
-and that a PATTERN BLOCK's lines are NOT indented; both cannot be true in
-the body. The body's rule wins: it is the one R-COMPAT-1 and 3,265
-existing blocks depend on, and §1.2 calls the head/body asymmetry "the
-only one". A block scalar in the body would also need continuation
-parsing inside `run.sh`'s per-line loop — head-shaped parsing back in the
-harness, which is exactly what the seam ruling removed. `|` remains a
-HEAD form (a file-level `description`, a `config` body). MEASURED FREE:
-**0** corpus lines are indented and **0** blocks carry a `description`,
-so no existing file can reach either reading. Refused by name in all
-three parsers, and `tests/rxtsource/fixtures/block_scalar_in_body.rxtin`
-asserts all three agree.
+**Revision 3.1 adds NO production.** It re-FACTORS the rules (§1.2),
+reserves one keyword without giving it a production (`version`, §1.6),
+and **moves THREE spellings under §2.26's ownership audit**: `capable` →
+`provides`, `licence`/`licence-note` → `license`/`license-note`, and
+the `freq` data block's five one-off provenance fields → the shared
+`provenance` sub-block. All three were never shipped anywhere and have
+zero uses in either repo, so they cost a diff and nothing else.
+A FOURTH change moves in the same delivery and is **not** one of the
+audit's: a pattern block's `description` goes from `rest-of-line` to
+`prose-value`, which is §1.2.5's consequence of the structure-layer
+re-factoring — a WIDENING of a shipped refusal, arrived at from the
+internal-consistency ruling rather than the ownership one, priced at
+§1.2.5. (**Corrected at 3.2, r57 C-N11**: revision 3.1 counted all four
+as §2.26 moves here and as "four spellings moved" in §0.7, which
+attributed a widening to an audit that changed no semantics by
+construction. The outbox message to the bench inherits the corrected
+framing; §9's correction list keeps the row under its true cause.)
+
+**Revision 3.2 adds no production either, and REMOVES one refusal**:
+§2.19's "a block carries `pattern` or `pattern-esc`, never both", whose
+population is empty under §1.2.1's own opener rule (r57 S-BL2). It also
+declares one structure-layer device that was already shipped and
+undeclared (S3, §1.2.1) and makes explicit two rules the EBNF above now
+carries in its `opaque-region` and `INDENT` terminals.
+
+**CORRECTION ([DD-13b.W1.1], 2026-08-30) — SUPERSEDED AT REVISION 3.1,
+kept here because a reader of the shipped tree will meet its
+consequence.** It made a pattern block's `description` one-line-only,
+on the ground that *"§1.2's lexical rules say a block scalar IS
+indented continuation and that a PATTERN BLOCK's lines are NOT
+indented; both cannot be true in the body"*, and on the ground that a
+body block scalar would need continuation parsing inside `run.sh`'s
+per-line loop. **Both grounds expire at revision 3.1**: §1.2.1 deletes
+the asymmetry the first rests on, and W23 gives all three readers the
+child-consumption the second says they must not have — for
+`provenance` and `variant`, independently of `description`. §1.2.5
+carries the full argument, the measurement (0 blocks carry a
+`description`, 0 lines are indented, so nothing moves), and the
+`block_scalar_in_body.rxtin` re-aim. Until W23 lands, the shipped
+behaviour is the correction's: refused by name in all three parsers.
 
 **`description` is a FIELD, not a comment** (Frank, r44 15:0x): *"we may
 want to summarize via script what a library or other rxt file has:
@@ -456,35 +1722,34 @@ back to being operational notes only. This **overturns §7 Q1's
 recommendation in the first version** — `NOTES.md` is no longer where a
 library's or a sub-bench's prose lives.
 
-### 1.4 Which production earns which wave, and who is waiting
+### 1.4 The waves after F-Q1: W1 (built) and ONE W23 delivery
 
-| wave | productions | the consumer that earns it | blocked row |
-|---|---|---|---|
-| **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget` **and `from`** (G3); AST composition (§2.3) with §1.5's three pattern-level extensions and `--emit-composed`; `rx_info.name`; **H11's target build path** (M9) | a file carrying several patterns that reference each other; a shipped library a user `lib`s and builds three targets from | **[LIB]** (all three parts), [DD-14]'s multi-pattern files |
-| **W2** | `include`, `@file:` subjects, `mc`, `tag`, the `freq` data block and `config`'s `analysis` line | a generated 1,364-row expectation set; a 1 MB subject; an exemplar findings file | **[ENG-PGO]** (the findings file — its plan row says "blocks on [DD-13b] wave 2/3"), the first in-format sub-bench |
-| **W3** | `use`, `oracle`, `variant`, `config`'s `testee`/`option` | a second engine in one file | **pcrec-bench** sub-benches with a non-pcrec testee |
+**RESTRUCTURED at revision 3** (Frank's F-Q1, 2026-09-12): there is no
+W2-only cut. The former W2 and W3 rows, plus every [B42] extension,
+land as **ONE delivery, W23**, whose consumer is the bench's [B42]
+capability survey set — the consumer that earns it, by ruling. D77 is
+still honoured at the wave granularity: W23 ships because its named
+consumer is real and PARKED on it.
 
-**W1 is a departure from the position paper's wave assignment for
-`config`, and the reason is a shipped promise** (D-b in §0.3):
-`docs/spec/limits.md`, "Handling an oversized artifact", already
-instructs callers to "put the override in the pattern-source file's
-`config` block rather than on the command line". A spec that ships an
-instruction owes the mechanism. `config`'s wave-3 half (`testee`,
-`option`) stays wave 3 — it has no consumer until a second engine does.
+| wave | productions | status / consumer |
+|---|---|---|
+| **W1** | `name`, `description` (both forms), `lib`, `target … [with]`, `encoding`, `features only`, `export`, `config` with `pcrec`/`flags`/`features`/`encoding`/`engine`/`budget`/`from`; AST composition with §1.5's extensions, the delivering calls and `--emit-composed`; `rx_info.name`/`nentries`; H11's target build path | **BUILT** — [DD-13b.W1.1] (2026-08-30), .2 (2026-08-31), .3 (2026-09-03). Owed, NOT blockers: **W1.3.1** (run.sh's composed-block path, `w13_runsh_composed_path.patch`) and **W1.4** (the in-pattern delivery follow-ons). W23 interacts with neither — no W23 production touches the composer except §2.22's derived-identifier LOOKUP, which is additive |
+| **W23** | the former W2: `include`, `@file:`, `mc`, `tag`, the `freq` data block + `analysis`; the former W3: `use`, `oracle`, `variant`, `config … testee`/`option`; the [B42] extensions: `pattern-esc`, `provenance`, `vocabulary`, `provides`, `under`, `configs describe`, `as`/`sha256` on `@file:`, `oracle` at a version, `tag-prose`, the §2.22 regime repair, and `--list-source` emitting ALL of it (§2.24) | **THIS revision's delivery.** Consumer: the [B42] capability survey set (Frank's ruling); [ENG-PGO]'s findings file rides the same landing (its row said "blocks on wave 2/3") |
 
-**`from` is W1** (r44-grammar G3): it was in the W1 production and
-unassigned in this table. It is unexercised (0 uses), but it is the only
-cascade the format has and `config … from` is how a build variant is
-spelled, so splitting it out of W1 would leave `config` half-built.
+**What remains after W23, named so the wave table ends honestly:** the
+`gap` data-block member (unearned, D77), `--list-source --resolved`
+(named and unbuilt), [V-E]'s multi-pattern unit, `(?&site.group)` (free,
+measured, not built — w1_impl §9.4), iterated capture (D87 rule 5's
+explicit exclusion), the [M4-SUBST] `repl`/`s`/`sg`/`serr` slots (that
+row's own), expressing a NUL **in a pattern** (parked on K9's
+`pattern_len` API half, §2.19), and W1.3.1/W1.4 above. After W23 the
+format has no designed-but-unbuilt production a real consumer is waiting
+on.
 
-**H11 is part of W1, not an afterthought** (r44-sem M9): the first
-version's H1-H10 never compiled or ran a `target … with <config>`, so
-the central new build declaration would have shipped with no test path.
-`target` and the thing that builds it land together (§3.2).
-
-D77 is honoured at the wave granularity, not the production granularity:
-each wave ships when its named consumer is real, and nothing in W2 or W3
-is built to be ready.
+**W23 carries NO abi event.** Every W23 production is format-, harness-
+or CLI-side; nothing changes emitted scaffolding, so D76's ritual is not
+triggered and the identity gate's pin does not move. Stated here because
+every prior wave's landing note had to answer this question late.
 
 ### 1.5 The PATTERN-level extensions, and the one constraint they all obey
 
@@ -631,6 +1896,464 @@ collision error is about, B2 and B3 are how a definition reaches outside
 itself and how a caller reaches inside. B2's multi-level `^.^.` and B3's
 refusal cases are the parts with no consumer yet, and they are grammar,
 not machinery.
+
+### 1.6 The `version` header — the break PRICED, DECLINED, the keyword RESERVED
+
+Frank's consequence 2: *"A breaking `version` header line is ON THE
+TABLE. A file declaring the new version gets the consistent grammar; a
+file without one parses under today's rules byte-for-byte — R-COMPAT-1
+is preserved by VERSIONING, not by freezing the grammar. Whether the
+break is taken, and what exactly it unifies, is the design lane's to
+work out and the panel's to attack."*
+
+**The answer is NO, and it is not a soft no.** The version line is
+DECLINED because the consistent grammar does not need it; the keyword
+is RESERVED because the one change that WOULD need it is real, named
+and priced below.
+
+#### 1.6.1 Why §1.2's consistency is achievable ADDITIVELY
+
+The version line exists to gate a change that makes an existing file
+mean something different. §1.2 contains no such change. Three claims,
+each falsifiable:
+
+1. **No file that parses today parses differently.** The only rule
+   whose *domain* changed is indentation, and **0 of the corpus's
+   lines are indented** (re-measured at 210 files, §0.7). Beyond the
+   corpus: today's grammar has no legal indented line ANYWHERE outside
+   a head continuation, and S1 attaches a UNIFORMLY-indented `config`
+   body, block scalar or `target` `description` to the same parent it
+   continues today. **CORRECTED — the first draft of this claim said
+   S1 reproduces head continuation "exactly", and a probe refuted it:**
+   S1 is depth-sensitive where today's rule is not, so a RAGGED body
+   (lines at differing depths) goes from accepted to refused. §1.2.1
+   carries the finding, the empty population measured in both repos,
+   and the three grounds for taking it. Claim 1 therefore reads: no
+   file with UNIFORM indentation parses differently, and the ragged
+   case is a narrowing declared under claim 2a below rather than
+   counted as additive.
+2. **No file that is REFUSED today is accepted, with one deliberate
+   exception in the widening direction.** Deleting the head/body
+   asymmetry moves some refusals from a structure arm to a schema arm
+   and changes their wording; it accepts nothing new, because a parent
+   that took no children still takes none (`m` declares
+   `children: none`). The exception is §1.2.5's `description |` at
+   block scope, which goes from refused to accepted — and an
+   acceptance-widening is by definition not a compatibility break for
+   any file that exists.
+
+   **CORRECTED AT 3.3 (r57 ROUND 2, R2-F2): this claim was FALSE as
+   revision 3.2 shipped it, in two measured places, and the cause was a
+   SILENCE rather than a rule.** S0 declared the COMMENT class and
+   neither S1 nor S3 stated its structural effect, so a reader
+   implementing 3.2 literally would skip a column-1 `#` and carry the
+   surrounding structure across it — accepting two files the shipped
+   binary refuses at line 4 (a `config` body with a column-1 comment in
+   the middle; a `description |` region with one, which additionally
+   produces the two-disjoint-regions shape S3 cannot express). Both are
+   reproduced in §0.8's ROUND 2 block. **The repair is one sentence in
+   S1 and one in S3 — a comment terminates attachment and ends a
+   region, exactly as a blank line does — after which claim 2 is true
+   again with its single stated exception.** The general lesson is the
+   one the panel drew twice in two rounds: *a line class declared in S0
+   and given no effect in S1/S2/S3 is not a neutral line class, it is
+   an undeclared structural decision*, and it will be read in whichever
+   direction the reader's habits supply. S0's four classes now each
+   have their effect stated where the effect lives.
+
+2a. **THE NARROWINGS, declared, and the list is CLOSED**: §1.6.1a is
+   the census. **CORRECTED AT 3.2 (r57 G-B2, C-M1; convergence 3):
+   revision 3.1 wrote "ONE NARROWING" here, and the number is three
+   taken out of five candidates.** The correction matters more than the
+   count: revision 3.1 wrote §1.6.4's standing rule FROM the ragged-body
+   finding and then did not run that rule across the rest of its own
+   delivery, so three more narrowings in the structure layer and one in
+   §2.22's semantics went undeclared. **An instrument built from one
+   finding and not swept is the failure this revision records against
+   itself**, and §1.6.1a is the sweep. **RE-SWEPT AT 3.3 (r57 ROUND 2,
+   R2-B and R2-C): eleven candidates, seven taken — two of them landed
+   by STEP 0 rather than by this revision, and the census says which.**
+3. **Every new production is a fresh token.** All 52 candidates measure
+   0 in first-token position at today's 210 files (§0.7).
+
+Diagnostic wording is the whole residue, and D26 puts it in the tier
+this project does not spend effort on. **A version line whose only
+content is "refusals are worded differently now" would be a permanent
+mechanism bought with a transient inconvenience.**
+
+#### 1.6.1a THE NARROWING CENSUS — the closed list, eleven candidates
+
+**NEW AT REVISION 3.2** (r57 G-B2 N1/N2/N3, C-M1, S-M1 — the panel's
+convergence 3); **RE-SWEPT AT 3.3** (r57 ROUND 2 R2-B, R2-C, R2-F3).
+The method is §1.6.4's own rule applied to the WHOLE delivery rather
+than to the one case that produced it: for every rule this revision
+states, ask whether some file legal on the shipped binary becomes
+refused. Eleven candidates were found by PROBE (§0.8), not by reading;
+**seven are TAKEN and four are AVOIDED**. Each taken row carries the
+full package the rule demands — population measured in both repos,
+forced-vs-chosen stated, and a spec sentence named — and each avoided
+row says what avoids it, because a narrowing avoided by a DECISION
+needs recording exactly as much as one taken (the decision is what a
+later wave could undo without noticing).
+
+**SCOPE — the census is the .rxt format's, not this lane's** (3.3, r57
+ROUND 2 R2-B). Two of the taken rows, (10) and (11), landed in
+`[DD-13b.W23]` **STEP 0** (lane `rxtnul`, commit `d4576c48`) rather
+than in this design revision, and they are carried here anyway with
+their provenance marked. The reason is where a reader looks: somebody
+asking *"what did W23 stop accepting"* comes to this table, and a list
+that calls itself CLOSED while two accept→reject changes from the same
+plan row sit outside it is a list that answers the question wrongly. A
+census scoped to one lane's diff is a diff; a census scoped to the
+FORMAT is a compatibility story.
+
+| # | the construct | today | under 3.2/3.3 | verdict |
+|---|---|---|---|---|
+| (1) | a head body whose lines sit at DIFFERING depths (`config c` / `flags i` at 2 / `engine vm` at 4) | ACCEPTED, parsed flat — `--list-source` row byte-identical to the evenly-indented file (rc 0) | REFUSED: the deeper line attaches to `flags`, which admits no children | **TAKEN, FORCED** |
+| (2) | an indented `#` inside a `description \|` body | ACCEPTED as PROSE (rc 0; the value carries the `#` line verbatim) | ACCEPTED as PROSE — S3 says S0 does not run inside the region | **AVOIDED by S3** |
+| (3) | ragged indentation inside a `description \|` body | ACCEPTED (rc 0), relative indentation preserved | ACCEPTED — S1 does not run inside an S3 region | **AVOIDED by S3** |
+| (4) | TAB indentation (`config c` / `\tflags i`) | ACCEPTED (rc 0, `flags=i engine=vm`); `line_indented` (`rxt_source.c:109`) tests space OR tab | REFUSED by name: S0 counts leading SPACES, and a leading tab is a structure error naming the rule | **TAKEN, CHOSEN** |
+| (5) | a call `(?&x_y)` where `x_y` and `x-y` are both definitions in scope | ACCEPTED — binds to the exact-spelled `x_y`, the sibling inert; artifact byte-identical to the file without the sibling | REFUSED: §2.22's collision rule, exact spelling does not win | **TAKEN, CHOSEN** |
+| (6) | a WHITESPACE-ONLY line inside a `description \|` body — today's only paragraph break | ACCEPTED, and it is IN the value (rc 0; `para one\n \npara two`) | ACCEPTED — S0's BLANK is the EMPTY line, so a whitespace-only line ends nothing and is bytes | **AVOIDED at 3.3** |
+| (7) | a WHITESPACE-ONLY line in a `config` body, between case lines, at file start, or after a blank | ACCEPTED (ignored) by all three legs, pinned by `sem15` | ACCEPTED — a whitespace-only line is INERT to the structure layer | **AVOIDED at 3.3** |
+| (8) | a second `name` / `engine` / `encoding` / `features` / `flags` line in one block or one `config` body | ACCEPTED, SILENTLY LAST-WINS (measured on all five) | REFUSED naming both lines: `cardinality: at-most-one` (§2.25.2) | **TAKEN, CHOSEN** |
+| (9) | a second `budget` line repeating the SAME field (`steps=` twice) | ACCEPTED, silently last-wins (50 then 99 dumps 99) | REFUSED naming both lines — but a second `budget` line naming the OTHER field stays legal, because `budget`'s cardinality is `accumulate` | **TAKEN, CHOSEN** |
+| (10) | an embedded NUL byte anywhere in a `.rxt` file | ACCEPTED and SILENTLY TRUNCATING (`pattern ab<NUL>cd` compiled as `ab`, exit 0) | REFUSED by name | **TAKEN, FORCED — landed by STEP 0 (lane `rxtnul`), not by this revision** |
+| (11) | a second `description` line in one block, or a second at file level | ACCEPTED, silently last-wins in the block case | REFUSED naming both lines | **TAKEN, CHOSEN — landed by STEP 0 (lane `rxtnul`), not by this revision** |
+
+**(1) THE RAGGED HEAD BODY — taken, FORCED.**
+*Population*: 0. `config` occurs 0 times in the 210-file corpus; the 20
+fixture head bodies are uniformly indented at width 2 without
+exception; pcrec-bench holds no `.rxt`/`.rxtin` file.
+*Forced, not chosen*: §1.2.1's three grounds — depth must become
+meaningful the moment a record can contain a record (§2.10's
+`provenance` under a data block is two levels of S1), so a
+depth-insensitive rule is not available to choose.
+*Spec sentence*: SW16.
+
+**(2) AN INDENTED `#` INSIDE A BLOCK SCALAR — AVOIDED, and it was one
+probe away from being taken silently.** Revision 3.1's S0 said "an
+indented `#` is a structure error" with no region carve-out, which
+would have made this a narrowing nobody declared. It is avoided by S3,
+not by luck.
+*Why it matters beyond the case*: the shipped parser's own comment
+(`rxt_source.c:735-747`) says the grammar decision here — whether a
+column-1-relative comment is legal inside a head continuation — is
+**deliberately LEFT OPEN** ("named rather than fixed… the grammar
+decision is left open (sem10's sibling)"). Revision 3.1 closed an open
+question by side effect, in the refusing direction, without noticing it
+was open. **S3 closes it the other way and says so**: inside a prose
+region a `#` is prose, because the region has no line classifier.
+Outside one — in a `config` body — the indented-`#` refusal is
+UNCHANGED and keeps its improved wording
+(`tests/rxtsource/fixtures/indented_comment_in_config.rxtin` pins it).
+*Spec sentence*: SW16 states both halves, because the pair is the rule.
+
+**(3) RAGGED PROSE INSIDE A BLOCK SCALAR — AVOIDED by S3**, same
+mechanism as (2): S1 does not run inside the region, so prose may sit
+at any depth greater than the opener's and relative indentation
+survives into the value. Without S3 this would have been (1)'s narrowing
+applied to prose, whose population is the one place ragged indentation
+is not a mistake — a paragraph with an indented example in it.
+*Note, and it is NOT a narrowing*: the shipped strip rule corrupts a
+DEDENTED prose line (`  ab…` under a 4-space block loses two bytes of
+content, MEASURED §0.8). That is wrong today and wrong under every
+revision of this note; it is filed as `docs/dev/known_issues.md` **K57**
+and fixed there, not here. S3's extent rule is deliberately silent
+about it: extent is structure, the strip is a value decoding, and K57
+lives in the second.
+
+**(4) TAB INDENTATION — taken, CHOSEN, and the choice is stated as
+one.**
+*Population*: 0 tab-indented content lines in either repo (210 corpus
+files + 48 fixtures; pcrec-bench has no files of this kind).
+*Chosen, not forced*: a depth rule CAN be defined over mixed tabs and
+spaces — pick a tab width, or compare prefixes bytewise. Neither is
+available honestly. A tab width is a convention the file cannot
+declare, so two readers with different conventions would recover
+different TREES from the same bytes, which is the one failure the
+structure layer exists to prevent; a bytewise prefix comparison makes
+`"\t"` and `"        "` incomparable, so a body mixing them has no
+defined parent chain and the rule would have to refuse at the first
+disagreement anyway — the same refusal, arrived at later and worded
+worse. MEASURED, the shipped parser is in exactly this position today:
+a `config` body whose first line is indented 2 spaces and whose second
+is indented by a TAB parses FLAT (rc 0), because `line_indented` asks
+only "is byte 0 a space or a tab" and never compares depths at all. The
+moment depth means something, that file has no answer.
+So the rule is: **indentation is SPACES; a leading tab is refused by
+name**, with a diagnostic that says so rather than reporting a
+mysterious attachment failure. Long-term viability is the criterion
+(Frank's ownership ruling), and a format whose tree depends on an
+undeclared tab width is not viable.
+*What it does NOT touch*: a tab INSIDE a value is data and stays data —
+`pattern` is rest-of-line verbatim and three corpus blocks carry a
+literal tab in their pattern text (w1_impl's own measurement). The
+narrowing is about leading whitespace only.
+*Spec sentence*: SW16.
+
+**(5) THE DERIVED-IDENTIFIER COLLISION — taken, CHOSEN, and it is the
+one that is not in the grammar at all.**
+This is §2.22's rule "exact spelling does NOT win", and the panel found
+it by looking where revision 3.1's own instrument had not: in the
+SEMANTICS, after the head. That is why §5.2a attack 1 is re-aimed (it
+pointed the panel at the head).
+*Population*: **0** for this exact shape in both repos — no file
+anywhere holds a definition spelled `x_y` beside one spelled `x-y` or
+`x.y`. The nearest neighbour is the general collision shape (two
+definitions whose mapped identifiers are equal, neither of them spelled
+as the identifier), whose population is **1**: the deliberate fixture
+`tests/rxtsource/fixtures/target_prefix_collision.rxtin` (`a-b` beside
+`a.b`), which is already a refusal fixture and whose behaviour this rule
+does not change. Measured over 96 `name` lines in 26 files;
+pcrec-bench contributes 0 because it holds no `.rxt`/`.rxtin` file.
+*MEASURED, the accept side*: `(?&x_y)` with only `x_y` defined
+compiles; with `x-y` added beside it, the artifact is **byte-identical**
+(equal output basenames in separate directories — comparing `a.c`
+against `b.c` reports a false difference on the `#include` line, this
+house's third recorded instance of that trap). So the sibling is inert
+today and the call resolves; under §2.22 the same file is refused.
+*CHOSEN, not forced, and §1.6.4 gains a fourth case for it*: the
+derived-identifier lookup could tie-break on exact spelling and it
+would be well-defined. It is refused instead because the mapping is
+deliberately non-injective and a silent tie-break makes the
+non-injectivity free exactly where it bites — a file that adds a
+hyphenated definition would silently change which definition an
+unrelated call binds to, and nothing would say so. **The
+forced-vs-chosen distinction is honest here and revision 3.1's §1.6.4
+had no slot for it**, because its case 3 assumes every narrowing is
+forced.
+*Spec sentence*: SW12 (the `name`-grammar section's amended paragraph),
+which is where the mapping and its refusal already live.
+
+**(6) AND (7) THE WHITESPACE-ONLY LINE — AVOIDED at 3.3, and revision
+3.2 was one parenthesis away from taking both.** 3.2's S0 read
+*"BLANK (empty or whitespace only)"*, and S1/S3 give BLANK a
+TERMINATING effect, so every whitespace-only line in the corpus would
+have closed an attachment or ended a prose region. (6) is the sharp
+one: it is not an oddity but **the only paragraph break the format
+has**, since r46sem-10 ruled the empty line ENDS a block scalar
+(MEASURED both ways — the whitespace-separated file dumps
+`para one\n \npara two` at rc 0, the empty-separated one is refused at
+the line below it). (7) is the wider population: a whitespace-only line
+between case lines, at file start, and after a blank, each accepted by
+all three legs today and pinned for the first of those by the committed
+check `sem15`.
+*What avoids them*: S0's BLANK narrows to the EMPTY line and a
+whitespace-only line is stated INERT outside a region, bytes inside one
+(§1.2.1). *This is the decision a later wave could undo without
+noticing*, which is why it is a census row and not a footnote: widening
+BLANK back to "empty or whitespace" is a one-word edit that silently
+refuses every multi-paragraph description in the tree.
+
+**(8) DUPLICATE SCALAR SETTINGS LINES — taken, CHOSEN, and the
+inconsistency being fixed is the shipped surface's own.** R2-C's
+observation is that `cardinality` is normative on every schema row
+(§2.25.2), so whatever H16 assigns to a kind that silently last-wins
+today IS an accept→reject decision, made implicitly if it is not made
+explicitly.
+*MEASURED, the shipped binary's five answers, one probe each*: a second
+`name` (`n1`→`n2`), `engine`, `encoding` (`byte`→`utf8`), `features`
+(`backrefs`→`classes`) or `flags` line is ACCEPTED and the LAST one
+wins, with no diagnostic — while a second `export` line is REFUSED by
+name (*"a block has one 'export' line; this one already declared
+'yes'"*, `rxt_source.c:1184`). One surface, two answers to one
+question.
+*Population*: **0** in both repos — 0 blocks of 4,053 and 0 of 19
+`config` bodies carry a duplicate of any of the five, over 258
+`.rxt`/`.rxtin` files; pcrec-bench holds no file of either kind
+(re-confirmed read-only at this revision). *`flags` is the panel's list
+plus one*: R2-C named `name`/`engine`/`encoding`/`features`/`budget`,
+and measuring the shipped arms found `flags` in exactly the same state.
+It is taken with them rather than left as the one scalar kind that
+still last-wins, which would reproduce the inconsistency one kind
+smaller.
+*Chosen, not forced*: last-wins is well-defined and is what most
+configuration formats do. It is refused because this format's own
+precedent already went the other way twice — `export` at W1.3 and
+`description` at STEP 0, row (11) — and because the failure mode is
+silent: a file with two `encoding` lines is a file whose author
+believes something false about it, and nothing tells them. *What it
+would cost to revisit*: one `cardinality` value per row, no mechanism.
+*Spec sentence*: SW16, beside the structure rules, with the
+`cardinality` column as the citable declaration.
+
+**(9) A DUPLICATE `budget` FIELD — taken, CHOSEN, and it is the row
+where the measurement CHANGED THE DECISION.** `budget` is the one kind
+on R2-C's list whose population is NOT zero, and the non-zero member is
+deliberate: `tests/harness/giveup.rxt:19-23` writes
+`budget steps=50` and `budget frames=4096` as two lines of one block,
+and `parse_setting` (`rxt_source.c:615-620`) routes them to two
+separate slots. So `budget` is not a scalar kind at all — **it is
+ACCUMULATE over a two-member field set**, and `cardinality:
+at-most-one` would have refused a corpus file that the same `make test`
+run depends on.
+*Population*: duplicate `budget` LINE in one block: **1** (the file
+above, legal and intended). Duplicate `budget` FIELD — the same
+`steps=` or the same `frames=` twice, which IS silent last-wins
+(MEASURED: `steps=50` then `steps=99` dumps 99): **0** in both repos.
+*So the narrowing taken is the field-level one, population 0*, and the
+line-level one is not taken at all.
+*The general lesson, and it is the reason the brief required the
+measurement first*: a cardinality is a property of the VALUE SPACE a
+kind writes into, not of the kind's spelling. Four of these six kinds
+own one slot and one owns two, and nothing in the line's syntax says
+which — only the population did.
+*Spec sentence*: SW16, with `budget`'s field set named, since
+"accumulate over these two fields" is not derivable from the row's
+`value` shape alone.
+
+**(10) AND (11) STEP 0's TWO REFUSALS — taken, landed by lane
+`rxtnul` (`d4576c48`), carried here for scope.** (10), the embedded
+NUL, is **FORCED**: `slurp_lines` hands out NUL-terminated C strings,
+so without a pre-scan a NUL mid-line truncates whatever value it falls
+inside, and `pattern ab<NUL>cd` compiled as `ab` at exit 0 — a silent
+wrong answer, which is not a rule the format may choose to keep. Its
+population is 0 files in both repos, and pcrec-bench's own M1 is what
+raised it. (11), the duplicate `description`, is **CHOSEN** on exactly
+row (8)'s reasoning one kind earlier, and STEP 0 took it for the block
+case (where `block->description` is a single field and the first line
+silently lost) and extended it to the file case for consistency even
+though the file case never lost data. Population 0 in both repos.
+*Spec sentence*: `docs/spec/rxt_format.md`'s own STEP 0 hunks, already
+landed — these two rows cite rather than owe.
+
+**What the census does NOT contain, and why the absence is checked
+rather than assumed.** Every other rule this revision states either
+widens (§1.2.5's `description |` at block scope), re-words a refusal
+that stays a refusal (the head/body asymmetry's two arms), or adds a
+token measured free (the 52-candidate census). The productions were
+swept one at a time against the shipped binary; the sweep's own limit
+is stated in §5.2a — a critic looking for a TWELFTH should look where
+this one did not, which is now the value layer rather than the head.
+**And the census records what it is not**: it lists NARROWINGS. The two
+WIDENINGS revision 3.2 shipped by silence — a column-1 comment carrying
+structure across itself, in a `config` body and in a prose region — are
+claim 2's business, not this table's, and are recorded at §1.6.1 claim
+2 with their repair.
+
+#### 1.6.2 What WOULD trigger it, and what it would cost
+
+Exactly one thing on today's horizon: **making BLOCK GROUPING
+structural** (§1.2.3), by indenting a block's case lines under their
+`pattern` line and emptying S2's opener set. That is the change a
+version line is for — every existing file means something different
+under it (its case lines would attach to nothing), so it cannot be
+additive by any spelling.
+
+Priced honestly, because the panel will attack whichever way this goes:
+
+| | |
+|---|---|
+| **What it buys** | structure recovery with a genuinely EMPTY keyword table — the literal reading of consequence 5 |
+| **Corpus cost** | 210 files, 28,943 expectation lines re-indented. Mechanical, and a one-line script; but it is a diff touching every test file in the repo, and AR-1 forbids forcing re-verification of the corpus |
+| **External cost** | every producer of `.rxt` text forks: pcrec-bench's five committed exports, the D27 blinded-author corpora, the possessify/rungselect/counterk generators, `--emit-composed`. Each must emit two dialects or flag-day |
+| **Reader cost** | a file's most-read region (the case lines) gains a level of indentation forever, to remove one token from a table nobody reads by hand |
+| **R-COMPAT-1** | survives only in the versioned sense — old files parse under old rules — which means TWO grammars in three readers, permanently, which is the thing consequence 1 is about one level up |
+
+**DECLINED.** The benefit is a property of a hypothetical generic
+reader; the cost is paid by every real one. §1.2.3 states the shortfall
+plainly instead, which is the honest form of the answer.
+
+#### 1.6.3 The reservation, and why it is cheap insurance
+
+`version` is **refused BY NAME in every build**, with the "NOT IN THIS
+BUILD" sentence SW13's list already owns — never as an unknown token
+(K14's shape: sending a reader hunting a typo in a word that is in the
+spec). Its absence means **version 1**, stated in the spec so the
+default is a contract rather than an accident, and its position is
+fixed in advance: **the first CONTENT line of the file**, so a reader
+can dispatch on it before parsing anything else.
+
+- **Cost: one row in the schema and one line in the spec.** MEASURED,
+  `version` occurs 0 times in first-token position across 210 files
+  (§0.7), so reserving it takes nothing away.
+- **What it buys: the one thing reservation ever buys** — that the day
+  a break is justified, the spelling for announcing it is not already
+  in use by somebody's file. The format has no other way to say "read
+  me under different rules", and inventing one under pressure is how a
+  format acquires `#!`-style warts.
+- **`schema` was considered and NOT reserved.** A file-declared
+  format-level schema is not the design — §2.25 makes the schema
+  pcrec's, and `vocabulary` is the file-declared half with its own
+  spelling. Reserving a word against a future nobody has named is the
+  D77 failure in its cheapest disguise, and one reservation with a
+  named trigger is a different act from two on principle.
+
+#### 1.6.4 The standing rule this leaves
+
+For the next person who asks, in three cases rather than two — **the
+third was added because revision 3.1's own change fell between the
+first two and the gap was found by a probe, not by reading the rule**:
+
+1. **No version line**: a change that only widens acceptance, only
+   re-words a refusal, or only adds a token measured free.
+2. **A version line, mandatory**: a change that makes an existing file
+   MEAN something different. It may not ship without one.
+3. **A FORCED NARROWING (accept → reject, where no other rule was
+   available) needs no version line, but needs three things in the
+   change that lands it**: the population MEASURED rather than assumed
+   (in this repo and in pcrec-bench, since a format has two users), a
+   stated argument that no alternative rule exists, and a sentence in
+   the spec so a file refused tomorrow that parsed yesterday has a
+   citable answer. §1.6.1a's case (1) is the worked example and the
+   reason this clause exists.
+4. **A CHOSEN NARROWING — the same three, PLUS the alternative named
+   and priced.** NEW AT 3.2 (r57 C-M1), because revision 3.1's case 3
+   assumed every narrowing is forced and two of this delivery's three
+   are not. When a well-defined alternative rule exists — tolerate
+   tabs under a declared width; tie-break the collision on exact
+   spelling — the change must say what the alternative would be, why it
+   was rejected, and what it would cost to revisit. A narrowing
+   defended as "forced" when it was chosen is worse than one defended
+   as chosen, because it forecloses the revisit: the next reader has no
+   way to tell that a decision was made at all. §1.6.1a's cases (4),
+   (5), (8), (9) and (11) are the worked examples — **five of the seven
+   taken rows are CHOSEN, which is itself the measurement that made
+   this case necessary.**
+
+5. **MEASURE THE POPULATION BEFORE DECIDING, not after** (NEW at 3.3,
+   from §1.6.1a case (9)). Cases 3 and 4 both require the population;
+   3.3 is where that requirement earned its keep in the deciding
+   direction rather than the documenting one. R2-C proposed one
+   cardinality for six settings kinds on an internal-consistency
+   argument, and the argument was right for five of them — the sixth,
+   `budget`, has a non-zero population whose single member is a
+   DELIBERATE corpus file, and taking the narrowing as proposed would
+   have refused it. The population is not evidence that a decision is
+   safe; **it is an input to what the decision should be.**
+
+**And a sixth thing the census made explicit, which is not a case but a
+DUTY**: the rule above is an instrument, and an instrument that is
+written from one finding and then not swept across the delivery finds
+exactly that one finding. Revision 3.1 wrote case 3 out of the
+ragged-body probe and declared "ONE NARROWING"; there were five
+candidates and the other four were one probe each. **A change landing
+under this rule sweeps its whole delivery and publishes the result as a
+CLOSED LIST**, including the narrowings AVOIDED and what avoids them —
+so a later wave that removes the avoiding mechanism can see what it is
+removing. **And the sweep is over the FORMAT, not over the lane's own
+diff** (3.3): revision 3.2 swept its own sections honestly and still
+published a "closed" list missing two accept→reject changes that landed
+in the same plan row one step earlier, because the sweep's boundary was
+a branch rather than a grammar. A census whose scope is a diff answers
+a question nobody asks.
+
+§2.25's schema is what makes all of it checkable — a schema diff
+between two builds shows exactly which rows moved and in which
+direction, so "additive" stops being a claim a lane makes about its own
+change. **That is the concrete argument for the schema being data**:
+every one of §1.6.1a's eleven candidates was found by running the
+shipped binary on a hand-made file, and a machine-diffable declaration
+is how the next one gets found without the hand-made file. **Cases (8)
+and (9) are the argument at its strongest**: they are nothing but a
+`cardinality` value, so the change from last-wins to refused IS a
+one-column schema diff, and the day somebody proposes a twelfth the
+diff will show it before any file is written. Note the honest limit,
+though: case (5) is a SEMANTIC narrowing in the composer's name lookup,
+which no schema row describes, and case (10)'s NUL refusal is a lexical
+pre-scan below the schema entirely — so the schema diff would have
+caught nine of eleven, and §5.2a says where the other two kinds live.
 
 ---
 
@@ -1099,6 +2822,12 @@ which is a real way to weaken a suite silently. `features only` is the
 answer to it — the narrowing exists, and it is a thing an author wrote
 rather than a thing precedence did.
 
+**W23 adds one head declaration ABOVE this whole table: `configs
+describe` (§2.20).** Under it, no `config` in the file composes into any
+build at all, so everything in this section describes the DEFAULT
+(`configs build`) mode only. This is roadblock #6's resolution and D93
+territory; §2.20 carries the mechanism and the Frank ratification flag.
+
 ### 2.7 Targets, `rx_info.name`, and how many `.c` files come out
 
 > **D88 (2026-08-29, after this note landed):** one artifact per emitted file, ALWAYS — N targets are N files (`-o <dir>`), composition of artifacts is linking, never a multi-pattern translation unit; [V-E]/[EMIT-SET]'s "emission set" is a directory of per-artifact files plus a manifest header. This section's M10 rule is the general one.
@@ -1200,16 +2929,39 @@ target <prefix> = <name> [with <config>[,<config>…]]
 - **The format imposes no size limit.** §3 records the driver-protocol
   change this forces — today a subject travels as an `argv` string, which
   can carry neither a NUL nor a megabyte.
-- **No content hash on a subject reference.** ARGUED, and it is the
-  principle §2.10 turns on: **provenance is required exactly where the
-  source is not committed.** A subject file sits in the repo beside the
-  `.rxt` and is covered by the same review and the same history; an
-  exemplar deliberately is not.
+- **W23: a reference may carry `as <id>` and `sha256 <hex64>`** —
+  §2.18's rules (the id namespace, the functional binding, who checks
+  the hash).
+- **No content hash on a COMMITTED subject reference — RE-SCOPED at
+  W23** ([B42] P-Q8, ruled): revision 2's "no content hash" was a
+  DEFAULT for the case its own argument covers — a subject file
+  committed beside the `.rxt`, covered by the same review and history —
+  not a principle. The argument's own premise fails for a GENERATED,
+  gitignored subject tree (the bench's), which is exactly the condition
+  this section says provenance IS required under. So the hash is
+  OPTIONAL: pcrec's corpus writes none and changes nothing; a generated
+  set writes one on every reference; neither has to argue. §2.10's
+  principle ("provenance is required exactly where the source is not
+  committed") is unchanged — it now cuts in both directions instead of
+  one.
 
 ### 2.9 The oracle declaration
 
-`oracle python` (the default) | `oracle pcre2` | `oracle none <reason>`,
-file-level or block-scoped, block wins.
+`oracle <engine-ref>` | `oracle none <reason>`, file-level or
+block-scoped, block wins. **W23 widens the engine enum to an
+`engine-ref` with an optional `/version`** ([B42] N-36/N-38, the
+manager's pre-ruling): `oracle python` and `oracle pcre2` are
+engine-refs with no version and keep their EXACT current meanings, so
+nothing in pcrec's corpus moves; `oracle pcre2/10.46` pins the version a
+correctness claim was checked against; `oracle tre/0.8.0` names an
+engine this repository has no binding for, and that is already handled —
+**an absent oracle degrades to R-VG-3's labelled skip**, counted and
+printed, never a silent pass and never a hard failure, which is the rule
+that makes widening the enum safe rather than a portability hazard. The
+version is part of the DECLARATION, not a dispatch key: a consumer that
+has the engine at another version reports the mismatch as its own
+finding (the bench's re-checkable-exclusion case; `docs/testing.md`'s
+"Oracle exclusions" is the pcrec-side analogue).
 
 - **`# pcre2-only` immediately before a `pattern` line stays valid and
   means `oracle pcre2` for that block.** MEASURED: **636** occurrences
@@ -1269,13 +3021,46 @@ block's `analysis freq <name>` line names a data block and nothing else,
 so there is no ambiguity to resolve and no reason to make `config prod`
 and `freq prod` collide.
 
-**Provenance is required** — `exemplar`, `bytes`, `sha256`, `analyzer`,
-`date` — because the exemplar is absent by design (proprietary, secret,
-or too large). The table can then be re-derived when the exemplar is at
-hand and **reads honestly when it is not**. A byte histogram is 256
-counts and effectively non-reversible, so committing it leaks
-essentially nothing; committing it *without* provenance would be the
-population-nobody-counted hazard one file over.
+**Provenance is required**, because the exemplar is absent by design
+(proprietary, secret, or too large). The table can then be re-derived
+when the exemplar is at hand and **reads honestly when it is not**. A
+byte histogram is 256 counts and effectively non-reversible, so
+committing it leaks essentially nothing; committing it *without*
+provenance would be the population-nobody-counted hazard one file over.
+
+**HOW it is required changed at revision 3.1 (§2.26 item 10): it is the
+SAME `provenance` sub-block a pattern block takes**, not five one-off
+fields of this block's own. Revision 3 had this production carrying
+`exemplar`/`bytes`/`sha256`/`analyzer`/`date` while §2.14 carried
+`source`/`url`/`ref`/`license`/`retrieved`/`fidelity`/… — **two
+vocabularies for one idea**, with `exemplar`/`source` and `date`/
+`retrieved` naming the same facts twice. That is precisely the
+"inconsistencies would cause eventual confusion" the
+internal-consistency ruling names, it was free to fix (this production
+has never shipped and has 0 uses in either repo), and §1.2.1's
+attachment rule is what makes it expressible — a data block admits
+children, one of which itself admits children, with no new mechanism.
+
+So a `freq` block's body is `question`, `reader`, `analyzer`, a
+`provenance` child and its `row` lines. The mapping:
+
+| revision 3 field | revision 3.1 |
+|---|---|
+| `exemplar <name>` | `provenance` → `source <name>` — the exemplar IS the source, named as the user wishes to name it (Frank's own 2026-08-29 wording) |
+| `date <iso>` | `provenance` → `retrieved <iso>` |
+| `bytes <n>`, `sha256 <hex>` | `provenance` → `bytes`/`sha256`, the two integrity fields, now available to a pattern block's provenance too |
+| `analyzer <text>` | **stays on the data block.** It names the TOOL that produced the table, not where the data came from — a different fact, and folding it into provenance would be the unification overreaching |
+
+**The REQUIRED SET differs by parent, and that is a schema row rather
+than a second production** (§2.25): under a pattern block
+`{source, license, retrieved, fidelity}`; under a data block
+`{source, retrieved, bytes, sha256}`. A `license` is not required of an
+exemplar (a user's own log file has none to state) and `fidelity` is
+meaningless for a byte histogram (nothing was adapted). This is the
+schema's first real question and it answers it without a carve-out —
+which is the argument for having one.
+
+§6.4's worked findings file moves with this; nothing else does.
 
 **`gap` — the illustrated second member — is NOT specified here.** Frank
 named it as an illustration ("I'm just illustrating that there may be
@@ -1495,6 +3280,1321 @@ flags (`(?<int>…)`, `(?<return>…)` are valid group names and invalid
 member names), the copier's signature, and whether the struct is an
 optional emission unit ([EMIT-SET] names it as one).
 
+### 2.14 `provenance` — per-pattern origin, structural ([B42] N-11..N-19)
+
+A kind that ADMITS CHILDREN (§1.2.6), at most ONE per parent — a second
+is **refused by name**, never last-wins (the shape STEP 0's
+duplicate-`description` refusal closes one production over; the bench's
+MEASURED M5 is why this rule is stated rather than assumed).
+
+**REVISION 3.1: this is ONE record shape at TWO parents**, a pattern
+block and a `freq` data block. Revision 3 noted the `freq` block's
+required-provenance discipline as the PRECEDENT for this section; the
+audit (§2.26 item 10) found the two had grown different field names for
+the same facts and unified them — a wild pattern's source is absent
+from the repo by exactly the logic an exemplar is, which is an argument
+for one record, not for two that rhyme. What differs by parent is the
+REQUIRED SUBSET, and that is a schema row (§2.25), not a second
+production.
+
+Rules, each parser-enforced:
+
+1. **REQUIRED fields are declared per parent.** Under a pattern block:
+   `source`, `license`, `retrieved`, `fidelity`. Under a data block:
+   `source`, `retrieved`, `bytes`, `sha256` (§2.10 gives the reason
+   `license`/`fidelity` are not required of an exemplar). A block
+   missing one is refused naming the missing line — the `freq` block's
+   `question`/`reader` rule, reused and now shared.
+2. `url` and `ref` are **REQUIRED unless `source` is the reserved slug
+   `authored`**, and an `authored` block that writes either is refused:
+   the slug and the fields must agree or `authored` stops meaning
+   anything. (The bench's own rule, adopted verbatim.)
+   **The rule is TWO schema rows and revision 3.1 had a kind for only
+   one of them** (3.2, r57 S-BL1(b)): the first half is
+   `required-if source != authored`, and the second — *refused WHEN
+   `source` IS `authored`* — is `forbidden-if source == authored`, a
+   kind §2.25.3 now carries. Negating `required-if`'s operator does not
+   reach it: that yields "required when the condition does not hold",
+   which is the first half again. The two halves govern opposite
+   outcomes under complementary conditions, which is why they are two
+   rows and not one.
+3. `adaptation` is **REQUIRED iff `fidelity` is not `verbatim`** — the
+   one conditional the format enforces, and the whole value of making
+   the record structural: a mechanically-changed pattern with no stated
+   change is the failure a reviewer cannot catch by reading.
+4. `fidelity`'s three values are CLOSED **by the format's own schema**,
+   not via `vocabulary`: the conditional in rule 3 requires the parser
+   to know them, so a file-declared set would be a second home for a
+   fact the parser already owns. At revision 3.1 that is no longer a
+   distinction between "grammar" and "declaration" — both are schema
+   rows — and the real statement is the `source` column §2.25 gives
+   every row: `fidelity`'s closed set is `source: format`, a `tag`
+   key's is `source: file`. Same mechanism, two origins, one table.
+5. `attribution` exists as a field; whether a license demands one is a
+   POLICY the format does not know (SPDX is an open set) — the consuming
+   project's gate enforces it. The field must exist so a CC BY-SA
+   pattern has somewhere to put what its license requires.
+6. Prose fields (`license-note`, `adaptation`, `attribution`) take
+   `prose-value` — one line, or a `|` scalar indented deeper than the
+   attribute line (§1.2.5). ONE prose mechanism, everywhere — and at
+   revision 3.1 that sentence is finally true without exception, since
+   §1.2.5 retired the block-scope `description` carve-out that was the
+   one place it was not.
+7. **`licence`/`licence-note` are spelled `license`/`license-note`**
+   (§2.26 item 10): the VALUE is an SPDX identifier and SPDX's own key
+   is `License`, so the British spelling put a gratuitous translation
+   step on the one field that crosses an ecosystem boundary. Free: 0
+   uses anywhere.
+
+What pcrec's own harness gets (the both-repos test §2's every
+production passes): the corpus's imported material — the D27 corpora's
+generator provenance, the Fowler-derived cases, `# pcre2-only`
+justifications — gains a machine-readable origin, and "where did this
+block come from" becomes a `--list-source` section (§2.24) rather than
+a grep through comments. Nothing REQUIRES pcrec's corpus to adopt it;
+the production is block-scoped and absent-by-default.
+
+The harness readers RECOGNISE and skip it (`run.sh`, `verify_rxt.py`
+consume the indented body without reading it); pcrec VALIDATES it —
+§2.24's D4 table is where that split is published.
+
+### 2.15 `vocabulary` — file-declared closed sets ([B42] N-10/N-21, pre-ruled)
+
+`vocabulary <key> <v1> <v2> …`, file scope, wrapping by S1 attachment
+(§1.2.1) like every other continuation. Declares that
+`tag <key>=<value>` (and every other production the spec names as
+vocabulary-checked: `under`'s convention, `variant`'s `kind`,
+`provides`' values) may only take a listed value; a violating value is
+**refused by name**, naming the key, the offending value and the
+declared set.
+
+**REVISION 3.1 NESTS THIS, AND IT IS THE PRODUCTION THE SCHEMA RULING
+WAS ALREADY HALF-ANSWERED BY.** Frank's consequence 3 names it
+directly: *"The bench's `vocabulary` production is the file-declared
+half; the format-level half is pcrec's own rules, stated once and
+enforced mechanically."* So `vocabulary` is not a mechanism beside
+§2.25's schema — it is **one row-source within it**. Concretely
+(§2.25): the schema table carries a `source` column, `format` for rows
+pcrec declares and `file` for rows a `vocabulary` line declares; the
+`closed <set>` constraint is ONE constraint kind whose members may come
+from either; `--list-schema` prints both, with `source` distinguishing
+them; and the enforcement path is one walk, not a format check plus a
+vocabulary check. A reader asking "what values may this key take?" gets
+one answer from one place regardless of who declared it.
+
+That nesting is what keeps the two from drifting into two enforcement
+orders — and it is why `fidelity`'s closed set (§2.14 rule 4) needs no
+argument about why it is "in the grammar rather than via `vocabulary`":
+both are `closed` rows, they differ in `source`, and the parser's
+knowledge of `fidelity`'s three values is a consequence of the row
+being `source: format` rather than a separate fact.
+
+- **A key with NO `vocabulary` line keeps free-vocabulary behaviour
+  exactly** — the compatibility rule that makes this purely additive,
+  and the answer to r44's own concern that §4.5's absorption silently
+  downgraded four validated record-schema enums to free strings: the
+  file that carries those tags declares their sets, and the format
+  enforces without knowing what any value MEANS (AR-6 held — the format
+  checks membership, never meaning).
+- **A second `vocabulary` line for the same key is refused** — §2.2's
+  duplicate-declaration rule, fifth namespace's sibling (the key space
+  is small and a split declaration is a reader hazard, not a
+  convenience).
+- A `vocabulary` line for a key nothing uses is legal (a declaration,
+  not an assertion); `--list-source` reports it and a consumer may warn.
+- BARE tag labels are keyless and therefore never vocabulary-checked;
+  say it so nobody expects otherwise.
+- Enforcement covers BOTH scopes (file-level and block `tag` lines) and
+  the include closure: a fragment's `tag` is checked against the ENTRY
+  file's declarations, which is the AR-4-compatible direction (the
+  fragment cannot declare head lines, so its meaning still depends on
+  exactly one bounded place).
+
+`requires` stays a `tag` key rather than its own production, for the
+bench's own stated reason (a dedicated production would make the
+capability model a FORMAT concept, which AR-6 forbids); with
+`vocabulary`, the closed-set discipline reaches every key at once.
+
+### 2.16 `provides` — what a config's engine satisfies ([B42] N-22/N-23)
+
+**SPELLED `provides` at revision 3.1; the bench's sketch and revision 3
+said `capable`** (§2.26 item 4). The semantics below are unchanged, and
+so is W23-F2's question to Frank, which is about WHERE the capability
+model lives and not what the line is called (syntax is the manager's
+under the 14:5x delegation). The reason for the move: the pattern side
+of this relation is `tag requires=…`, and `requires` / `provides` is
+one relation read from its two ends — the pairing every neighbouring
+ecosystem uses (SPDX, pkg-config, package manifests) — where
+`requires` / `capable` is a verb beside an adjective and leaves a
+reader to work out that they are halves of the same thing. Free: a
+`config` body is a W1 production with **0 occurrences in the corpus**,
+and `provides` is 0 in every context (§0.7's 52-candidate census).
+
+A `config`-body line, repeatable and accumulating like `tag`: the
+vocabulary values this config SATISFIES. **Absent means NOTHING is
+satisfied — fail-closed, deliberately**, so a new adapter cannot claim
+capabilities by omission (the bench's own rule, adopted).
+
+- **The key name `requires` is RESERVED by one spec sentence**: when a
+  `vocabulary requires …` declaration exists, every `provides` value must
+  be a member of it (refused naming value and set); with no such
+  declaration, `provides` values are free. The format thereby knows ONE
+  NAME — that the key `requires` is where capability tags live — and
+  still nothing about what any tag means. The precedent for reserving a
+  name is `# pcre2-only` and the `oracle` engine names; AR-6 is about
+  MEANING, not spelling.
+  **THE POINTER, added at 3.2 (r57 G-B5).** The sentence above is the
+  ONLY syntactic path from `provides` to the set that constrains it,
+  and a reader meeting a `provides` line has no way to find it: the
+  governing declaration is spelled under the OTHER end's name
+  (`vocabulary requires …`), in a different scope, with no occurrence
+  of the token `provides` anywhere near it. The rename to `provides`
+  (§2.26 item 4) buys a reading symmetry the grammar does not have, and
+  pretending otherwise would be the rename doing work it cannot do. So
+  the schema states the link as DATA — `provides` carries
+  **`cross-scope file vocabulary requires`** (§2.25.3's new kind), which
+  is exactly this pointer in a form `--list-schema` prints — and the
+  spec paragraph (SW4) names `vocabulary requires` in the same sentence
+  as `provides`, in both directions, so a grep for either finds the
+  other.
+- The pre-compile policy — `REQUIRES(pattern) ⊄ capabilities(config) ⇒
+  unsupported-by-declaration`, decided before any compile — is the
+  CONSUMER's rule. The format carries the declaration (`provides`), the
+  per-pattern requirement (`tag requires=…`) and the outcome production
+  (`variant <testee>` + `unsupported`, §2.23); the spec states the
+  intended reading so two consumers cannot invent two policies, and
+  R-BENCH-3/AR-3's counted-never-silent rule covers the outcome.
+- pcrec's OWN harness ignores `provides` operationally (its one testee is
+  pcrec); the dump carries it (§2.24), which is what a reader of the
+  file needs — the reason a pattern has no result for a testee lives in
+  the same file as the pattern (§8 P-Q4's argument for IN-the-format).
+
+**Flagged for Frank's ratification beside §2.20** — the manager
+recommends IN the format; a "keep it bench-side" answer is a partial
+return of the hybrid and was argued against, not defaulted (§8 P-Q4).
+
+### 2.17 `under` — the second correct answer, per convention ([B42] N-35)
+
+`under <convention> <case-line>` where `<case-line>` is an UNCHANGED
+`m`/`n`/`ms`/`ns`/`mc` line. The deepest of the bench's six roadblocks:
+one pattern, one subject, two engines answering DIFFERENTLY AND
+CORRECTLY (`a|ab` on `"ab"` is `0 1` leftmost-first and `0 2`
+leftmost-longest), and a case line today is one answer with no
+qualifier.
+
+- An UNQUALIFIED case line means what it means today: the expectation
+  under the block's (or file's) declared canonical convention
+  (`tag convention=…`).
+- `under <conv> m "s" a b` states the answer a testee tagged with THAT
+  convention is scored against, same (pattern, subject). A testee whose
+  convention has no `under` line for a case falls back to the
+  unqualified line — a set declaring no conventions behaves exactly as
+  today, so the production is additive.
+- `<convention>` is a `tag-value`, closable by `vocabulary convention`.
+  The format does not know what `posix-leftmost-longest` means — AR-6's
+  line held; scoring against the right expectation is the consumer's
+  act.
+- Two `under` lines for one (convention, subject, kind, startpos) are
+  **refused as a duplicate**, not last-wins.
+  **Where that rule LIVES is stated at 3.2** (r57 S-BL1(d)): the key
+  tuple ranges over fields INSIDE the `qualified-line` value — three
+  of the four are components of the wrapped case line, not sibling
+  lines — so `unique-by` can hold the tuple but something must extract
+  it. **The extraction is PARSER CODE, by decision, with its reason
+  recorded**: `value: qualified-line` already means the parser
+  decomposes this value into a case line (that is what the value shape
+  IS), so the components are in hand at the site that already has
+  them, and a declared field extractor would be a second description of
+  a decomposition the parser performs anyway. The schema row carries
+  `unique-by under-key` and SW8 names the four components; the arm that
+  builds the tuple is code. A SECOND `qualified-line` production with a
+  different key is the D77 trigger to make the extractor declarative,
+  and §2.25.4 carries it as a deferral rather than leaving this as an
+  unexplained exception.
+- **`under` never wraps `g`/`gp`/`gu`**, and `g`/`gp` lines attach only
+  to UNQUALIFIED `m`/`ms` cases: a capture expectation under a foreign
+  convention has no consumer (the bench's expectations carry no capture
+  columns — MEASURED, §5.1 attack 3), so admitting it would be building
+  ahead of need (D77) and would force the attachment rule to answer a
+  question nobody asked. Named trigger: the bench's OD-B9.
+- **pcrec's own harness treats every `under` line as a COUNTED, LABELLED
+  skip** (AR-3's shape, a new summary line), because scoring one would
+  require `run.sh` to know pcrec's convention BY NAME — engine knowledge
+  the harness must not hold. `verify_rxt.py` the same. The bench's
+  runner is the scorer; its own R5-B1 harness half is theirs and §9's E5
+  row says so.
+- `variant` and `under` stay orthogonal on the axis r44 already ruled:
+  a variant is about SPELLING, a convention about SEMANTICS, and a
+  testee's variant is still checked against the expectations its
+  convention selects — first the convention picks the answer set
+  (`under` or unqualified), then the variant supplies the text.
+
+### 2.18 Subject identity and integrity ([B42] N-26/N-27, pre-ruled)
+
+`@file:"path" as <id> sha256 <hex64>` — both suffixes optional,
+independently.
+
+- **`as <id>` names the subject.** The id is in a **per-FILE subject
+  namespace** (the physical file that writes the line — a fragment's ids
+  are the fragment's), spelled in the wide `defname` grammar since the
+  bench's ids are hyphenated. The binding is FUNCTIONAL: one id maps to
+  one (path, sha256); re-stating the same binding on many case lines is
+  the normal spelling (every case line naming the subject carries it);
+  a CONFLICTING re-binding — same id, different path or different hash —
+  is refused naming both lines. Two ids for one path are legal
+  (pointless, harmless, and refusing them would require the parser to
+  canonicalise paths).
+  **Its schema row is `functional-binding id -> (path, sha256)`, NOT
+  `unique-by id`, and the correction is load-bearing** (3.2, r57
+  S-BL1(c)). Revision 3.1's §2.25.3 mapped this rule to `unique-by`,
+  which means *at most one row per key* — and would therefore **refuse
+  this production's own documented normal spelling on its second
+  occurrence**, since the whole point is that the binding is restated
+  on every case line naming the subject. A functional dependency is not
+  a uniqueness key; equal keys with equal values is the common case
+  here and the refusal is only for equal keys with UNEQUAL values.
+  §2.25.3 carries the kind.
+- **A case is then citable as (pattern, subject-id)** — the stable key
+  every bench expectation, report row and interpreter fact needs —
+  and a failure line prints the id beside `file:line`, which pcrec's own
+  generated corpora benefit from identically (a regenerated fragment's
+  line numbers move; its ids do not). Roadblock #4 closed.
+- **`sha256` is checked by whatever READS the subject** — the harness's
+  driver path and the bench's loader — refusing on mismatch naming the
+  path and both digests. `--list-source` validates the SYNTAX (exactly
+  64 hex digits) and reports the value; it performs no file I/O on
+  subjects (it is parse-only and stays so), and §2.24's D4 table states
+  that split so nobody reads the dump as an integrity check.
+- An INLINE quoted subject takes neither suffix — no consumer asked
+  (D77), and the id's whole value is naming bytes that live elsewhere.
+
+**N-27's NON-ID SLICE, carried or refused by name** (NEW at 3.2, r57
+C-S7 — the one genuine gap in the panel's 53-row needs walk). N-27 is a
+Tier 1 MUST and revision 3 answered its BLOCKING half (`as <id>`) while
+its other three fields went unmentioned, which under Option A reads as
+silently bench-side. Each gets an answer here:
+
+- **A subject's BYTE LENGTH is DERIVABLE and is not carried.** The
+  format already names the file (`@file:"path"`) and optionally its
+  digest; length is `stat` on the same path, available to every reader
+  that opens the subject at all, and a carried length is a second
+  source of truth that can disagree with the bytes. If the need is
+  integrity, `sha256` is the field and it is strictly stronger; if the
+  need is a report column, the reader computes it. **Refused as a
+  field, with the reason, rather than omitted.**
+- **A per-subject DESCRIPTION and `periodic` are REFUSED, in the D77
+  shape, and NAMED bench-side manifest data.** Neither is a property
+  the format can check or a consumer in this repo reads: a subject's
+  prose and its "generate this periodically" flag are facts about the
+  bench's own corpus-production pipeline, not about the pattern, the
+  expectation or the file's parse. Putting them in `.rxt` would give
+  the format two fields nothing in either repo validates — the
+  free-string regression §2.15 exists to prevent, arriving from the
+  other side. **The trigger that would move them**: a subject
+  description becomes a format field the day a `--list-source` consumer
+  in THIS repo reads one (the same bar `description` itself had to
+  meet, Frank's r44 summarize-via-script ruling); `periodic` becomes
+  one the day regeneration is driven from the `.rxt` file rather than
+  from the bench's own manifest, which is a change to who owns the
+  pipeline and is theirs to propose (D78).
+- **Why this is stated and not left as an omission**: Option A says the
+  set's truth lives in `.rxt`, so every need answered bench-side is an
+  exception to a ruling and owes its argument. Three of N-27's four
+  fields are answered here; one is BUILT.
+
+### 2.19 `pattern-esc` — the second pattern spelling ([B42] N-2, F-Q2)
+
+`pattern-esc "<quoted>"` starts a block exactly as `pattern` does; its
+pattern text is the DECODED bytes, using the format's own seven-escape
+subject vocabulary and no second vocabulary. Because the escape table
+already includes `\n`, `\xHH` and `\\`, a `(?x)` body authored across
+lines, raw high bytes and a trailing CR all become expressible with
+nothing new invented — **multi-line CAPABILITY without multi-line
+SYNTAX**, which is what keeps every reader's line-oriented loop intact
+and is why this form was chosen over continuation (continuation under
+`pattern` would also have destroyed N-2's loud refusal — which at
+revision 3.1 is §1.2.6's second table row rather than a numbered rule,
+and still holds: `pattern` declares `children: none`, so an indented
+line under it is a schema error naming it).
+
+- **~~A block carries `pattern` or `pattern-esc`, never both — both is
+  refused naming both lines.~~ DROPPED AT REVISION 3.2 (r57 S-BL2, a
+  BLOCKER), and the reason is that the refusal has an EMPTY
+  POPULATION under §1.2.1's own structure layer.** Both spellings are
+  members of S2's BLOCK-OPENER set, and S2 says an opener among
+  siblings STARTS A GROUP. So a `pattern-esc` line following a
+  `pattern` line is not a second spelling inside one block — it is the
+  next block. MEASURED on the shipped binary: two adjacent `pattern`
+  lines produce **two `pattern` rows in `--list-source`, rc 0** (§0.8);
+  nothing in the parser ever holds a state in which one block carries
+  both, so there is no state for the refusal to fire from.
+  **Recovering the refusal would cost the format its structure layer**:
+  it would need a rule saying that one particular opener, following
+  one particular other opener, does NOT open a group — a
+  keyword-dependent structural exception, which is exactly what
+  consequence 1 forbids and what §1.2.1 was rewritten to delete. The
+  rule is therefore dropped rather than rescued, and the answer a
+  reader gets is the plain one: **a second opener starts a new
+  block.**
+  *Consequence for the bench*: their acceptance check B6 is written
+  against the refusal. It does not become a failure — its PREMISE
+  dissolved — and §9's B6 row and the correction list carry it as a
+  bench-side correction rather than as a deviation.
+  *What survives*: a block still has exactly ONE pattern line, because
+  a block IS what one opener starts. That is `cardinality: one` on the
+  group's own opener, not a refusal anybody writes.
+- **`pattern` itself is UNTOUCHED** — rest-of-line, verbatim, no
+  escaping, byte-exact (the bench's M3/M4 round-trip facts must not
+  move, and every existing exporter depends on the verbatim rule).
+- **`\x00` inside `pattern-esc` is REFUSED BY NAME, and the reason is
+  K9**: the compile entry takes no pattern length
+  (`docs/dev/known_issues.md` K9), so a NUL-bearing pattern would
+  compile as its prefix and report success — the exact silent-wrong
+  -artifact trap the STEP 0 raw-NUL refusal closes for `pattern` lines.
+  The refusal names K9 and the lifting trigger (`rx_info.pattern_len`'s
+  API half landing). Expressing a NUL pattern is thereby a KNOWN LIMIT
+  with a named owner, not a silence — the bench's own N-4 priority split
+  ("SHOULD to express, MUST to refuse") honoured in both halves.
+- **Who decodes: pcrec, once.** The CLI gains a flag (working name
+  `--pattern-esc`; `cli.md`'s hunk owns the spelling) under which the
+  pattern OPERAND is taken in the quoted-escape form and decoded by the
+  format's own decoder — the same decoder `--source` and `--list-source`
+  use on these blocks. `run.sh`'s arm passes the still-encoded text
+  through with the flag; `verify_rxt.py` decodes with its existing
+  python-side table. No bash decoding anywhere (a `printf %b`
+  approximation would be a SECOND decoder with its own escape set — the
+  drift hazard by construction).
+- `--list-source` reports the block with the DECODED bytes in the
+  `pattern` column (escaped back in the dump's own vocabulary — a
+  byte-exact round trip by construction, same table both directions)
+  plus an `esc` column marking the source spelling, so an exporter can
+  reproduce the file as written.
+
+### 2.20 `configs describe` — build configs vs descriptive configs
+([B42] N-43/N-44, roadblock #6; **READY FOR FRANK'S RATIFICATION** — D93 territory)
+
+**The collision, restated**: D93 makes a `.rxt` source's composed
+config WIN over a command-line flag on the same axis. §6.2's worked
+bench file carries `config pcrec` — and the bench's entire
+sixteen-config pcrec testee matrix is command-line flags, so a set file
+that describes its testees would silently PIN them. Both rules are
+right alone and collide when the file is a bench set.
+
+**The mechanism**: one head declaration, `configs build` (the default,
+today's semantics, spellable explicitly) or `configs describe`. Under
+`describe`:
+
+1. **No `config` in the file composes into ANY build.** `pcrec
+   --source` applies none of them; the harness applies none to its
+   compiles; the D93 precedence question never arises because nothing
+   composes. The configs are DATA — read via `--list-source` by whatever
+   runs the testees (the bench's runner), applied by IT through its own
+   adapters' command lines, which therefore always win because they are
+   all there is.
+2. **`target … with <config>` is REFUSED**, naming the target line and
+   the `configs describe` line — a build declaration referencing a
+   descriptive config is a contradiction the author should hear about,
+   not a precedence question. A bare `target` (no `with`) stays legal:
+   `describe` scopes CONFIGS, and the exporter writes bare
+   `target =` rows today.
+3. **`use` is legal and INERT for the harness**, which runs each block
+   in exactly ONE cell (its own directives plus file defaults) and
+   reports `configs: descriptive (N declared, 0 applied)` — declared
+   inapplicability as a counted, printed state (AR-3), never a dropped
+   directive.
+   **AND ITS REFERENT STILL RESOLVES — in BOTH modes** (NEW at 3.2, r57
+   C-S5). "Legal and inert" left open whether `use dev` in a `describe`
+   file is checked against the file's `config` declarations at all, and
+   the wrong answer is the dangerous one: a typo (`use dve`) caught in
+   build mode would go SILENT in describe mode, which is AR-3's
+   forbidden shape — a file that looks like it declares something and
+   declares nothing. **The rule: `use` names are RESOLVED in both
+   modes, and an unresolvable name is REFUSED in both.** What `describe`
+   changes is whether a resolved config composes into a build, not
+   whether it exists. Same for `target … with` (refused outright under
+   `describe`, rule 2) and for `from` inside a `config` body, whose
+   cascade is a declaration-time resolution and is unaffected by the
+   mode.
+4. **The declaration is the ENTRY file's** and governs the include
+   closure — a fragment cannot carry head lines (§2.5), so a block's
+   config semantics still depend on exactly one bounded place (AR-4).
+   **AND `lib` CONTRIBUTES DEFINITIONS ONLY — the closure clause, made
+   explicit** (NEW at 3.2, r57 C-S4). Roadblock #6 is closed by
+   construction for `include`, because §2.5 restricts a fragment to
+   pattern blocks and a fragment therefore has no head lines to
+   contradict the entry's mode. `lib` is different: a `lib`'d file is
+   an ORDINARY `.rxt` and may carry a full head, including its own
+   `configs describe`, so "what does a build-mode file see when it
+   `lib`s a describe-mode file?" had no stated answer. **The answer is
+   that it sees nothing but definitions**: `lib` contributes the
+   library's named definitions and its `description`s to the composer's
+   lookup, and NOTHING ELSE crosses the boundary — not its `config`
+   blocks, not its `configs` mode, not its `target` rows, not its
+   `use`/`oracle`/`tag` lines, not its cases. This is not a new rule so
+   much as the already-stated one written down at the place it is
+   asked: §4.1 already says a library's TESTS do not run in a file that
+   `lib`s it, and a config that cannot reach a build in the library's
+   own file certainly cannot reach one through a `lib` edge. Stating it
+   makes the mode question answer itself — a library's `configs` mode
+   governs the library's own file when that file is under test, and is
+   invisible to every file that `lib`s it — and it keeps AR-4 exact,
+   since a block's meaning still depends on ONE head, its own entry's.
+5. A second `configs` line is refused (duplicate declaration, §2.2).
+
+**And the PERMANENCE sentence** ([B42] N-43, check F1): a file with no
+`target` and no `config` **parses, builds nothing, and exits 0 — as a
+CONTRACT, permanently**. The behaviour is shipped (`rxt_format.md`:
+"No `target` and anything else builds NOTHING… It is not an error");
+what the bench asked for is the sentence in the spec that it STAYS
+true, and the spec hunk (§3.4 SW5) adds it.
+
+**Why resolution 1 and not the alternatives** (the bench's §2.6): their
+resolution 2 ("a config naming a foreign `testee` is descriptive")
+leaves `config pcrec` in §6.2 still winning — the actual hazard; their
+resolution 3 is the hybrid Frank removed, recorded as the null option.
+A PER-CONFIG marking was also considered and declined: the only real
+customer is a whole file that is a set (the bench's), a mixed
+build/descriptive file has no named consumer (D77), and a per-config
+mark would re-open the reader's question ("which configs does this
+build honour?") that a single head line answers at a glance.
+
+### 2.21 `mc` — the counting rule, stated and MEASURED ([B42] N-32,
+P-Q3; **deviates from the pre-ruled formula on measured evidence**)
+
+`mc "<subject>" <n>` / `mc @file:"…" <n>` asserts that the find-all
+protocol over the subject reports exactly `<n>` matches. **The rule is
+`docs/spec/match_api.md` §3.1's shipped protocol, by reference**:
+non-overlapping; after a non-empty match the search resumes at its END
+(`caps[0][1]`); after an EMPTY match it resumes one CHARACTER past the
+match's REPORTED START (`<prefix>_next_pos(caps[0][0])` — one byte under
+`-e byte`); no empty-match retry.
+
+Three rules were measured head to head before this paragraph was
+written (§0.6), because the manager's pre-ruling spelled the rule as
+the bench's `pos = max(end, pos+1)` and the two are NOT the same:
+
+| rule | `(?=a)` on `"xax"` | `a*?` on `"aaa"` |
+|---|---|---|
+| §3.1's protocol | 1 match | 4 |
+| `pos = max(end, pos+1)` (bench `adapters.py`) | **2 — the empty match at offset 1 is found twice**, once from pos 0 and again from pos 1 | 4 |
+| python `re.finditer` / PCRE2's NOTEMPTY loop | 1 | **7** |
+
+The bench formula DOUBLE-COUNTS an empty match found beyond the scan
+position (its `max` returns the match's own position when the match
+lies ahead of `pos`); the protocol advances past the reported start and
+cannot. And BOTH non-retry rules undercount `finditer` on
+empty-preferring patterns — the NOTEMPTY class §3.1 already documents,
+spans a strict subset, **which pcrec's entry points cannot express**.
+So the spec paragraph states the §3.1 protocol: it is already shipped,
+already suite-checked (`tests/encseam/findall_cases.txt`), and the one
+rule all of pcrec's own artifacts can actually implement. The bench's
+own note anticipated this outcome ("if the intended answer is 'the
+harness's rule', say that") and their adapter owes one edit —
+empty-match advance from the reported start, not `max` — which §9's E5
+group and the outbox summary carry to them.
+
+Consequences stated so nobody re-derives them: an `mc` over an
+empty-preferring lazy pattern will NOT agree with a `finditer` count —
+an author gets the number from the protocol; `verify_rxt.py` verifies
+`mc` lines by RUNNING THE PROTOCOL LOOP in python (search-from-pos,
+the two-arm advance), **never `finditer`**; and the driver's find-all
+mode (H7) is the same loop in C, which is the loop `match_api.md` §3.1
+prints. One rule, three implementations, one cross-check (C1's case
+rows plus the E5 fixture).
+
+**THE RULE IS INSUFFICIENT ON ILL-FORMED UTF-8, AND 3.2 SAYS SO
+NORMATIVELY** (r57 C-S6). "One character past the reported start" is
+`<prefix>_next_pos` by REFERENCE, which is exact for a byte subject and
+for well-formed UTF-8 and is **underspecified for an ill-formed one** —
+`match_api.md` §3.1.1 never defines "character boundary" there, and a
+foreign adapter reading the prose cannot derive what pcrec's artifacts
+do. That is not hypothetical: the bench's own corpora carry
+hazard-tagged ill-formed subjects, and `mc` is a count they will
+compare against.
+
+So **SW7 states the shipped rule as normative text** rather than
+leaving it to the reference: *from `pos + 1`, skip bytes in the range
+`0x80`-`0xBF`* — i.e. advance one byte and then past any continuation
+bytes, which lands on the next lead byte or on the end. It is adopted
+because it is what the emitted artifacts already do (it is
+`next_pos`'s own rule, the encoding seam's, `[K49]`'s advance), not
+because it is the most principled reading of UTF-8; a reader who wants
+the principle gets the byte rule anyway, which is the point of writing
+it down. **E5's fixture becomes utf8-bearing and says so** — the
+find-all cross-check runs at least one `mc` over an ill-formed subject
+under `-e utf8`, because a rule stated for a case no fixture reaches is
+a sentence (§9's E5 row).
+
+**And the tension this creates is acknowledged rather than argued
+away.** The python arm REIMPLEMENTS the advance — `verify_rxt.py`
+cannot call `next_pos`, so it carries the skip rule in python — which
+is the second-implementation shape §2.19 argues against one production
+over, when it refuses a `printf %b` decoder in bash. The difference,
+and it is the honest one: the bash case had no cross-check available
+and would have drifted silently, while here the three implementations
+are compared cell for cell by C1's case rows plus E5's fixture, on a
+population that includes the ill-formed subjects the rule is about.
+**A second implementation with a differential is a cost; a second
+implementation without one is a defect.** This is the first kind, and
+the differential is what is being paid for.
+
+### 2.22 Regime membership: §4.5 item 4 REPAIRED, not replaced
+([B42] N-48, P-Q5, roadblock in their §2.11)
+
+§4.5 item 4's mechanism — the canonical pattern once as a `name`d
+definition, one block per regime whose pattern is a subroutine call —
+was MEASURED UNUSABLE for every bench pattern id: a call goes through
+PCRE2's own group-name grammar, which refuses `-`/`.`, and every id in
+all five bench sets is a hyphenated slug. The name grammar was widened
+FOR those ids; the call grammar cannot be (D26 — it is PCRE2's).
+
+**The repair is the DERIVED-IDENTIFIER CALL BINDING** (the bench's
+option 3, confirmed): a by-name call binds to a definition whose name,
+mapped through `pcrec_rxt_prefix_from_name` (`src/parse/rxt_source.c:337`
+— the ONE existing home of the `-`/`.` → `_` rule, already what
+`target = <name>` derives a prefix with), equals the call's identifier.
+`(?&cls_upto_1024)` reaches `name cls-upto-1024`.
+
+- **WHERE it happens, verified against the shipped composer**: the
+  binding is `src/parse/rxt_compose.c`'s definition-set lookup — the
+  exact-`strcmp` sites at `rxt_compose.c:169` (inside **`def_by_name`**)
+  and `:176` (inside `bound_by_name`), consumed by the re-resolution at
+  `:690`/`:788` that binds each DEFERRED by-name call.
+  **(3.2, r57 C-M3: revision 3.1 called the first function `def_find`;
+  there is no such function. It is `def_by_name`, declared at `:166`.
+  A misnamed citation is worse than no citation — a reader greps, finds
+  nothing, and cannot tell whether the function moved or the claim is
+  wrong.)**
+  The composer resolves a file reference AFTER the pattern's own groups
+  (a call to a same-pattern group never defers, `:260`), so PCRE2's
+  in-pattern semantics are untouched; the derived index is a second key
+  on the SAME set, built with the same function, consulted by the same
+  lookup. No new pass, no new namespace.
+- **THE PRECEDENT IS `rxt_compose.c:854-864`, not the two `strcmp`
+  sites** (3.2, r57 C-M3). The sites above are where the change LANDS;
+  they are generic plumbing and they justify nothing on their own. The
+  design precedent — a composed identifier SYNTHESIZED from two parts
+  and then checked for collision against everything already in scope —
+  is the qualified-rowname synthesis at `:854-864`: a delivering call's
+  row name is `site` + `.` + the exported group's name, built into arena
+  memory, and `:865-877` then refuses by name if any existing
+  `cx->named_groups` entry already carries it, with the comment stating
+  the reason a silent tie-break is not available (*"a row name is a
+  caller's whole handle on a delivered group, so two rows sharing one
+  would make `match_api.md` §6's bsearch return whichever the sort
+  happened to put first"*). §2.22's rule is that shape one derivation
+  over: synthesize, then refuse the tie. Citing it matters because it
+  shows the refusal is the house pattern rather than this section's
+  invention — and because it is the one place in the composer where the
+  length question below was already faced.
+- **THE COLLISION RULE, and its LENGTH DISCIPLINE** — the target-prefix
+  rule re-used at the second consumer. The mapping is deliberately not
+  injective, and the refusal is where that is paid for. Two definitions
+  in scope whose mapped names are equal make a call to that identifier a
+  **refusal naming both definitions and the shared identifier** —
+  including the case where one of them IS spelled as the identifier
+  (`x_y` beside `x-y`): exact spelling does NOT win, because "exact" is
+  only the identity case of the same mapping, and a silent tie-break
+  would make the non-injectivity free exactly where it bites. Nothing is
+  refused at DECLARATION time — two colliding definitions coexist while
+  nothing calls the shared identifier, just as two hyphenated
+  definitions coexist while neither is a `target =`.
+
+  **NEW AT 3.2 (r57 C-M3): REFUSE BEFORE MAPPING.**
+  `pcrec_rxt_prefix_from_name` (`rxt_source.c:337`) **silently
+  TRUNCATES** at `dstsz` — its loop condition is `j + 1 < dstsz` and
+  there is no over-length return — so two long names differing only past
+  the buffer map to the SAME identifier and would bind silently. The
+  existing consumer never meets this, and the reason is an ordering
+  nobody wrote down as a rule: `parse_target` refuses an over-long
+  definition name FIRST (`rxt_source.c:826-830`, `dlen >= sizeof def`
+  against `RXT_TARGET_DEF_MAX` = 127) and only then calls the mapping
+  (`:840`). **The second consumer must reproduce that order, and this
+  is where it is stated**: the composer refuses an over-long definition
+  name by name before deriving anything from it, so truncation is
+  unreachable rather than merely unobserved. The alternative — making
+  the mapping itself report over-length — was considered and declined:
+  it has one existing caller that has already handled the case, and
+  changing a shipped signature to defend a caller that can defend itself
+  is the wrong direction. What the format owes is the ORDER, written
+  down, because "the existing consumer happens to check first" is not a
+  property the next consumer inherits.
+
+  **AND THE CALLABILITY BOUND: 128 bytes** (r57 C-M3). A definition's
+  `name` has **no length cap at all** today — `rxt_source.c:1124-1137`
+  validates the grammar with `defname_ok` and stores it — while a
+  `(?&…)` call goes through PCRE2's own name grammar, capped at
+  `PCREC_MAX_GROUP_NAME` = 128 (`src/core/limits.def:151`, measured
+  against libpcre2 10.46's error 148). So a definition longer than 128
+  bytes is **buildable and not callable**, which is the same boundary
+  SW12's paragraph already draws for a hyphenated spelling, arriving by
+  a different route. This is stated as **inherited from PCRE2 under
+  D26** rather than re-declared as a pcrec limit: the number is PCRE2's,
+  the format does not get to widen it, and a `name` cap of its own would
+  be a second answer to a question PCRE2 already answers. The spec
+  sentence is SW12's; the schema's `constraints` column carries no
+  length row, and §2.25 says why (a limit whose value is another
+  project's is not schema data — `--list-limits` is where it lives, and
+  `PCREC_MAX_GROUP_NAME` is already a row there).
+
+  **AND IT IS A NARROWING, declared**: `(?&x_y)` beside a definition
+  `x-y` compiles today and is refused under this rule — §1.6.1a case
+  (5), with its measured population (0 for this shape, 1 for the general
+  collision shape, both repos), its forced-vs-**CHOSEN** verdict, and
+  its spec sentence. Revision 3.1 stated this rule without noticing it
+  narrows, which is what §1.6.4's new case 4 exists to stop.
+- **The three-reader rule is NOT touched, and that is the design's
+  cheapness**: the NAME grammar's three readers
+  (`rxt_source.c:298 defname_ok`, `run.sh:2015`, `verify_rxt.py:331`)
+  keep their one shared grammar unchanged — the call's spelling stays
+  PCRE2's, the definition's stays the wide grammar, and only the
+  composer's LOOKUP (leg A's semantics, single implementation) learns
+  the map. Legs B and C never resolve calls, so there is nothing for
+  them to disagree about; C1's differential covers the dump, not the
+  binding, and the binding's check is W1.3-C's family with a hyphenated
+  fixture (§9's A-group note).
+
+**§4.5 item 4 is then usable AS DESIGNED**, with its surviving caveats
+restated rather than lost: the wrapper is free exactly while the
+expectations carry no capture columns (Q6's trigger, unchanged); a
+composed block's oracle is necessarily `pcre2` (§2.9/H4) — for the
+bench a non-question, since python was never their oracle; and a plain
+call is capture-transparent, which is all a regime wrapper needs.
+
+**Why regime grouping does NOT admit children** (the
+alternative the manager asked weighed): a `regime` sub-block holding
+case lines would (a) be a CASE SCOPE, which Frank ruled out by name
+("there is no case scope") — an attribute over a group of cases is that
+ruling's own definition; (b) put case lines under indentation, forcing
+all three body readers to re-parse their most load-bearing arms
+(`run.sh`'s case dispatch) for a shape one consumer needs; and (c) buy
+nothing the repaired wrapper does not already deliver with machinery
+that SHIPPED in W1.3. The child-admitting kinds are
+attribute records (provenance, variant) — bounded, non-case,
+skip-safe; case lines stay flat.
+
+### 2.23 `variant` — reshaped as a sub-block, and `kind` ([B42]
+N-39/N-40/N-41, pre-ruling f)
+
+`variant <testee>` becomes a SUB-BLOCK (§1.2) with attributes `text`,
+`kind`, `groups`, `note`, `unsupported`:
+
+```
+variant re2
+  kind syntax-only
+  text ^a{1,4}$
+  groups num=1
+  note |
+    the possessive suffix dropped; RE2 has no backtracking for it to
+    prune, so the objective (a bounded scan) is preserved.
+
+variant tre
+  unsupported no per-engine spelling preserves the objective
+```
+
+- **Exactly one of `text` / `unsupported`** — neither is a refusal
+  naming the variant; both is too. `kind`/`groups`/`note` are legal only
+  beside `text` (a declared refusal has no replacement text to
+  classify).
+- **`kind` is closed via `vocabulary kind`** when declared (§2.15) —
+  the bench's two-value enum stays the bench's vocabulary, per AR-6.
+- **`note` is the reviewer's objective-preserved sentence** — N-41's
+  third field, previously routed to `tag variant-note=…` where a
+  tag-value's no-whitespace rule made a sentence unspellable. With
+  `tag-prose` (§1.3) that route now also works for OTHER descriptive
+  keys; the variant's own note lives with the variant, one home.
+- **Why the reshape is free and right**: the W3 one-line form shipped
+  nowhere (refused by name at every pin; 0 uses in either repo), so no
+  compatibility cost exists; and revision 2's `variant` already needed a
+  SECOND line (`groups`, an un-indented continuation recognised by
+  keyword) — a one-off proto-sub-block the general mechanism replaces,
+  which is the house rule (general mechanisms, not special cases)
+  applied to this note's own earlier choice.
+- **`text` and not `pattern` — REVISION 3.1 REPLACES THE REASON, and
+  keeps the spelling** (§2.26 item 9). Revision 3 justified it as a
+  PARSER HAZARD: an indented `pattern` line might start a block in one
+  reader and continue a sub-block in another. **Under §1.2.1 that
+  hazard is impossible IN ANY READER THAT IMPLEMENTS S1/S2** — a block
+  opener applies among SIBLINGS and a child is not a sibling, so an
+  indented `pattern` can never open a block in a conforming reader,
+  whatever the attribute is called. **Qualified at 3.2 (r57 S-S5)**:
+  "conforming" is the load-bearing word and revision 3.1 dropped it.
+  Leg A gets the property by construction once H16 lands; legs B and C
+  are independent implementations and get it by being PINNED (§9's
+  A-group), which is the same distinction §2.25.5 draws about every
+  three-leg claim in this note. The surviving reason is a reader's,
+  not a parser's, and it holds either way: this
+  field holds a REPLACEMENT for the block's pattern, and calling it
+  `pattern` would put the format's most load-bearing token at a second
+  scope meaning something adjacent-but-different. An expired argument
+  is worse than no argument, so it is replaced here rather than left
+  standing.
+- Everything r44/T-2 established stands: block-scoped, beside the
+  pattern, checked against the block's own expectations (as selected by
+  the testee's convention, §2.17), no `name`, not a target, not
+  composable. `unsupported` remains the declared, counted refusal
+  (R-BENCH-3; AR-3).
+
+### 2.24 `--list-source` at W23: columns, SECTIONS, and what the dump
+VALIDATES ([B42] N-52, pre-ruling g)
+
+The dump is THE SEAM, and the bench loader reads ONLY it (their D2) —
+so everything W23 adds must come out of it, case lines included, or the
+bench writes the second parser the seam exists to prevent.
+
+**Appended columns** (table_contract.md: append-only, consumers resolve
+by NAME): on pattern rows `tags` (accumulated, escaped), `oracle`,
+`esc` (§2.19); on config rows `testee`, `options` (accumulated),
+`provides` (accumulated). New head ROW kinds (the existing "`kind`
+carries the declaration name" rule): `vocabulary` (name = the key,
+value = the escaped list), `configs` (value = `build`/`describe`),
+`include`, `oracle`, `tag`, `use`.
+
+> **THE EXISTING `pattern` COLUMN NOW MEANS TWO THINGS, AND THE
+> DEPENDENCY IS MARKED HERE WHERE CONSUMERS LOOK** (NEW at 3.2, r57
+> C-N10). For a `pattern` block the column is the line's bytes
+> VERBATIM; for a `pattern-esc` block it is the DECODED bytes,
+> re-escaped in the dump's own vocabulary (§2.19). Both are the
+> pattern text and the round trip is byte-exact either way, so nothing
+> is ambiguous once a reader knows — but §2.19 is where the fact was
+> disclosed and §2.24's column list is where a consumer building a
+> loader reads. **The `esc` column is what disambiguates them**, and
+> the rule is stated as a pair: *read `pattern` together with `esc`; an
+> exporter reproducing the source file needs both, and a consumer that
+> only wants the pattern's BYTES needs neither, because both spellings
+> deliver the same bytes.* Named as a documented same-column widening
+> rather than a second column, because a `pattern_decoded` column
+> beside `pattern` would give every consumer two fields that agree on
+> every existing row — the shape that goes stale the first time one of
+> them is written and the other is not.
+
+**Three named SECTIONS, emitted UNCONDITIONALLY when non-empty**, under
+`docs/spec/table_contract.md`'s `#section` mechanism — the trigger
+`rxt_format.md` itself named ("a data block whose rows cannot be
+columns of this table under any reading") is met by `provenance`, and
+the same argument covers the other two:
+
+- `#section provenance` — one row per provenance block: `line`,
+  `block_line`, `block_name`, then the record's fields as columns
+  (eleven at revision 3.1, and the section carries a data block's
+  provenance on the same rows — one record, one section), prose
+  escaped.
+- `#section variants` — one row per variant: `line`, `block_line`,
+  `block_name`, `testee`, `kind`, `text`, `groups`, `note`,
+  `unsupported`.
+- `#section cases` — **one row per case line, and this is the biggest
+  single extension**: `line`, `block_line`, `block_name`, `kind`
+  (`m`/`n`/`ms`/`ns`/`mc`/`gu`/`g`/`gp`), `under`, `startpos`,
+  `subject_form` (`inline`/`file`), `subject` (escaped text or path),
+  `subject_id`, `sha256`, `start`, `end`, `count`, `giveup`, `slot`,
+  `route` (the positional `frames-buffer=` state the case runs under —
+  the dump is complete or it is not the seam). Today the dump has no
+  case column AT ALL, and the head parser's own comment says it reads
+  none of their values; under Option A the expectations ARE the set's
+  truth, so they must be readable at the seam.
+
+**Emission is unconditional, not flagged and not content-conditional**,
+and the compatibility story is stated rather than hoped: a section is
+emitted only when it has rows, so a file using no W23 production emits
+NO `#section` line and its stream differs from today's ONLY in the
+header row's appended columns — which is `table_contract.md`'s own
+compatible evolution, resolved by name. An existing corpus file's dump
+therefore GROWS a `cases` section (its `m`/`n` lines), which moves the
+`tests/rxtsource` pinned fixtures (re-pinned in the same change, the
+normal ritual) and every name-resolving consumer not at all. A flagged
+or content-conditional cases section was considered and declined: two
+shapes of one dump is two consumer populations, and a section that
+appears only when some OTHER production is present is a
+population-nobody-counts trap (K35). The cost is size (a corpus file's
+dump grows ~10x in rows); the dump's only harness call sites are
+head-bearing files only, so `make test` pays nothing today.
+
+**The VALIDATES vs RECOGNISES table** (their D4, pre-ruled) becomes a
+NORMATIVE spec section (§3.4 SW11), production by production. The
+substance: the dump VALIDATES everything it emits — head grammar,
+block directives, child-record completeness (provenance's required
+fields, variant's exactly-one rule), vocabulary membership, case-line
+syntax including `as`/`sha256` SPELLINGS and the subject-id binding
+rules — and it does NOT (a) read any subject file (the `sha256`
+CONTENT check belongs to whatever reads the subject, §2.18), (b)
+compile any pattern (pattern TEXT is never validated here), or (c)
+resolve configs (AS WRITTEN, unchanged; `--resolved` stays named and
+unbuilt). The bench's measured observation that a case line's refused
+`@file:` passed the dump silently is thereby retired — case values are
+read, and an ill-formed one is a hard error naming its line.
+
+**REVISION 3.1 UPGRADES THAT TABLE FROM PROSE TO A DERIVED FACT**
+(Frank's consequence 3: *"with a schema, validation coverage is a
+derivable fact instead of a prose sentence"*). The paragraph above is
+a claim a reader has to trust and a future wave has to remember to
+update; both are the failure mode this project has recorded under
+`[DOC-DRV]` one document over. So:
+
+- **Every schema row carries a `validated_by` column** (§2.25) with a
+  closed value set: `pcrec` (leg A validates it; legs B and C consume
+  the line and do not check it) or `all-readers` (every leg must
+  refuse a violation — the population C1's differential can actually
+  compare).
+- **The spec's D4 table is RENDERED from that column**, not written
+  beside it, exactly as `docs/pcre2_compliance.md`'s keyed annotations
+  are rendered into the page rather than maintained in it. A
+  production added without a `validated_by` value is a schema-table
+  error, so the table cannot go stale by omission — the one way prose
+  tables always go stale.
+- **`--list-schema` prints it**, so "does the dump check X?" is a
+  query rather than a reading. The three NOT-validated items above
+  (subject content, pattern text, config resolution) carry
+  `validated_by: none` and a `reason` string, which is why they stay
+  visible instead of becoming an absence nobody counts (K35).
+
+  **WHERE THOSE THREE ROWS ACTUALLY LIVE, because two of them are not
+  (scope, line-kind) pairs and the table is keyed on (scope,
+  line-kind)** (NEW at 3.2, r57 S-S3 — and these are the items most
+  likely to fall back to prose, which is the D4 probe's whole subject):
+
+  | not validated | its home | why there |
+  |---|---|---|
+  | **subject CONTENT** (the `sha256` digest against the file's bytes) | the `m`/`n`/`ms`/`ns`/`mc` rows' own `validated_by: none` **with the reason "the dump performs no file I/O"** | it IS a (scope, line-kind) fact — the case line is where a subject reference appears, so the row exists and carries the value. The SYNTAX (64 hex digits) is validated on the same row; the two are distinguished by the reason string, not by two rows |
+  | **pattern TEXT** (never compiled here) | the `pattern` and `pattern-esc` rows' `validated_by: none`, reason "the dump is parse-only; pattern text is the compiler's" | also a genuine (scope, line-kind) fact |
+  | **config RESOLUTION** (the `with`/`from` cascades, composed) | **NOT a line-kind row at all** — it is the ABSENCE of `--list-source --resolved`, a surface that is named and unbuilt (§3.4 S11's neighbourhood). It gets a **named sibling surface row** in `--list-schema`'s output: a `surface` section listing the dump's declared NON-coverage, one row, reason "`--resolved` is named and unbuilt; the dump is AS-WRITTEN", with `--list-source`'s own header comment as the prose that already says it |
+
+  The third is the one worth the paragraph: revision 3.1 called all
+  three "rows with `validated_by: none`", and for config resolution
+  there is no row to put the value on — the fact is about the dump's
+  MODE, not about any line kind. Left as written, the D4 probe would
+  look for a row, not find one, and either report a gap that is not
+  there or (worse) conclude the table is incomplete. A declared
+  non-coverage section is one more thing `--list-schema` prints and it
+  keeps the rendered D4 table complete by construction, which is the
+  whole reason the column exists.
+
+**`all-readers` IS A CLAIM ABOUT TWO PARSERS THE SCHEMA DOES NOT
+DRIVE, AND AT 3.2 IT OWES A FIXTURE PER ROW** (r57 S-M2, a MUST-FIX).
+The value says *every leg must refuse a violation of this row* — but
+the schema table is leg A's (§2.25.5, and deliberately so), legs B and
+C never read it, and **the corpus population is EMPTY by construction**:
+0 files use any W23 production, so no existing `.rxt` exercises a
+single `all-readers` row in any leg. Revision 3.1's defence for the
+column was that a row added without a `validated_by` value is a
+schema-table error — which is true and addresses OMISSION, while the
+live risk here is WRONGNESS: a row marked `all-readers` that legs B and
+C do not in fact enforce, shipping as a printed, rendered, normative
+claim that nothing tests.
+
+So the obligation is stated as a rule with a check behind it:
+
+1. **Every `validated_by: all-readers` row owes a THREE-LEG FIXTURE** —
+   a `.rxtin` cell violating that row, asserted refused by leg A, leg B
+   and leg C, compared on **diagnostic CLASS** and not exit code
+   (§2.25.5's rule, because leg B refuses everything identically).
+2. **"The fixture population covers every `all-readers` row" is ITSELF
+   A CHECK**, not a discipline: it walks `--list-schema`'s own output,
+   selects the `all-readers` rows, and fails naming any row with no
+   fixture. That is the same one-derivation shape the dump already has
+   — the check reads the table the parser enforces, so a row added
+   later fails the check the day it lands rather than the day somebody
+   remembers.
+3. **A row whose fixture is not written yet takes `validated_by:
+   pcrec`**, not `all-readers`. The honest value is the cheap one, and
+   a row can be promoted later; the failure this rule exists to stop is
+   a row claiming three legs on the strength of one.
+
+§9's A3/A4 name the fixtures; §3.2's S-R1 is the sabotage row that
+proves the differential can see a divergence at all.
+
+The prose above survives as the SUBSTANCE the rows must reproduce; if
+the rendered table and this paragraph ever disagree, the table is
+right and this paragraph is the bug.
+
+### 2.25 The SCHEMA — the format's rules as data (Frank's consequence 3)
+
+*"The format's structural rules — which line kinds are legal in which
+scope, required and conditional lines (provenance's REQUIRED-iff),
+closed value sets — are DECLARED as a schema and VALIDATED, not
+implicit in parser control flow."*
+
+#### 2.25.1 What it is, and the house shape it takes
+
+**One table, one reader, one dump** — `docs/spec/limits.md` /
+`--list-limits`'s own shape (D90/[LIM-1]), which is the precedent this
+design copies rather than a new idea:
+
+- **The table**: a `.def`-style declaration file compiled into the
+  parser (`src/parse/rxt_schema.def`, on `src/core/limits.def`'s model
+  — including its Makefile-prerequisite lesson, `ccd2_report.md` §6b:
+  a `.def` that is not a prerequisite lets an edit rebuild nothing).
+- **The reader/enforcer**: `src/parse/rxt_source.c`'s dispatch becomes
+  a walk over the table rather than a chain of arms that each remember
+  their own rules. Its shape is `src/parse/definitions.c`'s
+  `pcrec_def_tag_applies`: ONE exhaustive, `default:`-less switch over
+  the constraint enum, so a constraint kind added later is a compile
+  error at the one site that must handle it (`src/opt/mrl.c:18-24`'s
+  stated rule, the house's own).
+- **The surface**: `pcrec --list-schema`, a TSV, the **SEVENTH**
+  registry dump beside `--list-syntax` / `--list-verbs` /
+  `--list-families` / `--list-axes` / `--list-limits` /
+  `--list-definitions`. It walks the same table the parser enforces —
+  **one derivation, two readers** (learnings §3) — so a dump that
+  disagrees with the parser is not expressible.
+  **(3.2, r57 S-N1: revision 3.1 wrote SIXTH in the same sentence that
+  lists six existing dumps. `docs/spec/cli.md:586` already calls
+  `--list-limits` "the SIXTH"; `--list-source` makes seven producers in
+  `table_contract.md`'s Scope table, of which `--list-schema` would be
+  the eighth conforming table and the seventh REGISTRY dump. The
+  ordinal is corrected at all three sites — here, §3.3 and SW17 — and
+  `docs/spec/registry.md`, whose own numbered sequence stops at the
+  FIFTH surface because it documents neither `--list-limits` nor
+  `--list-source`, gains both the row and the reconciliation. An
+  ordinal that is wrong in the sentence that enumerates its own
+  predecessors is the cheapest possible instance of a number nobody
+  re-derived.)**
+
+#### 2.25.2 The columns
+
+One row per (scope, line-kind):
+
+| column | what it says |
+|---|---|
+| `scope` | `file`, `block`, or a named child scope (`config`, `data`, `provenance`, `variant`) |
+| `kind` | the first token |
+| `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `qualified-line`, … |
+| `opens_group` | **structure-layer parameter 1** (§1.2.1 S2). True for `pattern` and `pattern-esc` and nothing else |
+| `children` | `none`, `prose`, or the child scope this kind admits |
+| `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` — **and its values for the settings kinds are stated below (3.3), not left to the implementer** |
+| `constraints` | zero or more from §2.25.3's closed vocabulary |
+| `source` | `format` (pcrec declares it) or `file` (a `vocabulary` line declares it, §2.15) |
+| `validated_by` | `pcrec`, `all-readers`, or `none` + a reason (§2.24) |
+| `wave` | which delivery introduced it — so a partial build's "NOT IN THIS BUILD" list (SW13) is derived rather than hand-kept |
+
+**THE `wave` COLUMN IS KEPT, and the decision is stated rather than
+assumed** (3.2, r57 S-S2). The challenge is fair: its only named
+consumer is SW13's partial-build refusal list, and **at the delivered
+pin that consumer has an empty population** — W23 lands as one wave, so
+no shipped build ever refuses a W23 keyword for being in a later wave.
+A column whose consumer is empty at delivery is normally the D77
+decline.
+
+It is kept because **the consumer is real DURING the rollout, which is
+when SW13's own rule matters**. W23 is one delivery but it is not one
+commit: H12, H13, H14, H15 and H16 land as separate steps behind
+separate merges (§3.2's table is written as a dependency order for
+exactly that reason), and every intermediate tree is a partial build in
+which some W23 keywords parse and others must refuse BY NAME rather
+than as unknown tokens — which is SW13's whole point, measured against
+the gap §0.6 found (`vocabulary` reads "not a file-level directive"
+today, the K14 shape: sending a reader hunting a typo in a word that is
+in the spec). Deriving that list from a column the same table carries
+is what keeps the intermediate trees honest without anyone hand-editing
+a list five times.
+
+The honest limit, so a later reader can re-decide: **after W23 lands,
+the column's population is one value and its consumer is dormant until
+the next wave.** It is one enum per row and it costs a column in a TSV;
+if a future wave finds it has stayed a single value through two
+deliveries, dropping it is a one-line change and this paragraph is the
+permission.
+
+**`value: prose` IS structure-layer parameter 2, and `children: prose`
+is how the two columns are reconciled** (NEW at 3.2 — r57 G-B3, a
+MUST-FIX, and it was a genuine contradiction rather than an omission).
+Revision 3.1 gave `description` both `value: prose` and — by the
+`children` column's only available spelling — `children: none`. Read as
+written, that makes every block-scalar continuation line a schema error
+against its own parent: the line attaches (S1 had no carve-out), the
+parent admits no children, refusal. The construct §1.2.5 deliberately
+widens would be **unrepresentable in the table §2.25 calls normative**,
+which is the worst of the three available outcomes for a declared
+schema.
+
+The reconciliation, and it is one sentence with one precedence rule:
+
+> **`children: prose` means the kind's indented lines are its VALUE,
+> not lines in a scope.** A row may carry `value: prose` only together
+> with `children: prose`, and the pair is what a generic reader reads
+> as "this kind can open an S3 opaque region". There is no precedence
+> question left, because the two columns no longer say different
+> things about one row — the `none`/`prose`/`<scope>` trichotomy
+> covers the three real cases: takes nothing indented, takes bytes,
+> takes lines.
+
+`--list-schema` prints both columns, so H12's assumption — the one
+revision 3.1 made silently in the H-table and nowhere declared — is now
+a row a reader can fetch. The alternative (keep `children: none` and
+state that `value: prose` OVERRIDES it for attachment) was considered
+and declined: an override is a precedence rule, precedence rules are
+remembered rather than read, and this table exists to stop rules being
+remembered. A three-valued column costs one enum member.
+
+`opens_group`, `value` (for `prose`), `children` and `scope` are what a
+generic reader needs; everything else is validity. **The structure
+layer reads exactly THREE of them as TWO parameters** — `opens_group`
+is parameter 1, and `value`+`children` READ AS A PAIR are parameter 2
+— and §1.2.1's parameter table is the normative statement of which.
+**(3.3, r57 ROUND 2 R2-F4: revision 3.2 said "exactly two … `value =
+prose`" in this very paragraph while the reconciliation four paragraphs
+above said the PAIR, and §1.2.1/§1.2.2 each picked one. The PAIR is the
+answer, on S-R5's detectability: with `value` alone read, flipping a
+row's `children` from `prose` to `none` changes nothing observable —
+the region still opens and its lines never reach a validity check — so
+a normative column would have no detector at all.)**
+That they are columns of one table rather than separate mechanisms is
+the two-layer split made concrete.
+
+**THE CARDINALITY VALUES FOR THE SETTINGS KINDS, DECIDED HERE** (NEW at
+3.3, r57 ROUND 2 R2-C, a SHOULD the manager escalated because leaving
+it open makes it an accept→reject taken by accident). `cardinality` is
+normative on every row, and six kinds silently LAST-WIN on the shipped
+binary today while a seventh in the same family refuses — so any value
+H16 writes is a compatibility decision, and writing none is the worst
+of the three available outcomes.
+
+| kind | scope(s) | shipped today | `cardinality` at W23 | corpus + bench population of the refusal |
+|---|---|---|---|---|
+| `name` | block | silent last-wins | `at-most-one` | 0 |
+| `engine` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `encoding` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `features` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `flags` | block, `config` | silent last-wins | `at-most-one` | 0 |
+| `description` | file, block | silent last-wins (block) | `at-most-one` | 0 — **already landed by STEP 0**, §1.6.1a (11) |
+| `export` | block | **already REFUSES** (`rxt_source.c:1184`) | `at-most-one` | 0 — no change |
+| `budget` | block, `config` | silent last-wins PER FIELD | **`accumulate`** over the field set `{steps, frames}`, with a repeated FIELD refused | 1 block repeats the LINE legitimately; 0 repeat a FIELD |
+
+Three things about that table are worth more than the values in it.
+
+**(a) `budget` is the row the measurement changed.** R2-C's proposal
+grouped it with the scalars; `tests/harness/giveup.rxt:19-23` writes
+`budget steps=50` and `budget frames=4096` in one block on purpose, and
+`parse_setting` (`rxt_source.c:615-620`) routes the two to separate
+slots. `at-most-one` would have refused a shipped corpus file. So the
+cardinality attaches to the VALUE SPACE the kind writes into, not to
+its spelling, and `budget`'s refusal is at the field.
+
+**(b) `flags` was not on the panel's list and is on this one.** R2-C
+named five; measuring the shipped arms found `flags` in identical
+state. Leaving it as the one scalar settings kind that still last-wins
+would reproduce the inconsistency this decision exists to remove, one
+kind smaller — and the point of a `cardinality` COLUMN over six
+hand-written refusals is precisely that the answer is uniform where the
+kinds are uniform.
+
+**(c) The precedent is internal, twice.** `export` refuses a duplicate
+today and STEP 0 made `description` do the same; the five remaining
+last-wins kinds are the outliers, not the rule. §1.6.1a rows (8) and
+(9) carry the population, the forced-vs-chosen verdict and the spec
+sentence, per §1.6.4 case 4.
+
+#### 2.25.3 The constraint vocabulary, and its MEMBERSHIP RULE
+
+**EIGHT kinds at revision 3.2, and the count moved for the right
+reason** (r57 S-BL1, a BLOCKER). Revision 3.1 declared five and claimed
+they cover the delivery; the panel tested four W23 refusal rules
+against them and **all four fail** — one needing precisely the kind
+§2.25.4 deferred, one with no expressible form at all, one mapped to a
+kind whose semantics would refuse the production's own normal
+spelling, and one ranging over fields inside a value. **The
+completeness claim is withdrawn and three kinds are admitted**, each
+under the section's own membership rule — copying §2.10's discipline
+for the data-block family, because the hazard is identical: **a
+constraint kind is admitted only when a production in THIS delivery
+needs it.** No kind is added on plausibility; each row names its
+customer, and all three new rows name customers that were already in
+the text.
+
+| constraint | means | its W23 customer |
+|---|---|---|
+| `required` | the line must appear in its scope | `provenance`'s `source`/`retrieved` (+ `license`/`fidelity` under a pattern block); the data block's `question`/`reader`/`analyzer` |
+| `required-if <field> <op> <value>` | required when a sibling holds a value | `adaptation` REQUIRED iff `fidelity != verbatim` (§2.14 rule 3) — the conditional Frank's ruling names by example |
+| **`forbidden-if <field> <op> <value>`** | **refused when a sibling holds a value** (NEW at 3.2) | `provenance`'s `authored` rule (§2.14 rule 2): `url` and `ref` are required unless `source` is `authored`, **and refused when it is**. `required-if` expresses the first half and cannot express the second |
+| `exactly-one-of <a> <b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23) |
+| `closed <set>` | the value must be a member of a set declared IN THIS ROW's own scope | `fidelity`'s three (`source: format`); `kind`, `convention`, any `vocabulary`-declared key checked at its own `tag` site (`source: file`) |
+| **`cross-scope <scope> <kind> <selector>`** | **the value must satisfy a declaration resolved in a DIFFERENT scope** (NEW at 3.2) | `provides` ⊆ `vocabulary requires` (§2.16): a `config`-body line whose legal values are fixed by a FILE-scope `vocabulary` declaration under a DIFFERENT key name (`requires`). Neither end can state this alone — `closed` resolves in its own scope, and the `vocabulary` row does not know `provides` exists |
+| `unique-by <key…>` | at most one row per key tuple, **the tuple being the WHOLE row's identity** | `under` per (convention, subject, kind, startpos) (§2.17); a `vocabulary` key; a `configs` line |
+| **`functional-binding <key…> -> <value…>`** | **equal keys must carry equal values; unequal values with equal keys are refused naming both lines** (NEW at 3.2) | a subject `as` id (§2.18): one id maps to one (path, sha256), **re-stating the same binding on many case lines is the NORMAL spelling** |
+
+**Why `cross-scope` is admitted NOW and not deferred, and the deferral
+it replaces was a CONTRADICTION rather than a judgement.** Revision
+3.1's §2.25.4 deferred "constraint kinds beyond the five (ordering,
+cross-scope, arithmetic)" with the trigger *"the sixth W-something
+production that needs one"* — and §2.16, one section earlier in the
+same revision, states exactly such a production: *"when a
+`vocabulary requires …` declaration exists, every `provides` value must
+be a member of it"*. A W23 production met the deferral's own trigger
+before the deferral was written, so the two sentences contradict inside
+one document. The membership rule's bar is met and the kind is
+admitted; what stays deferred is ordering and arithmetic, which have no
+customer. **The general lesson this section keeps**: a deferral with a
+trigger has to be checked against the delivery it ships with, not only
+against the future — the whole point of a named trigger is that
+somebody looks to see whether it has already fired.
+
+**Why `forbidden-if` is a kind and not a `required-if` with a negated
+operator.** It was tried that way first and it does not type-check
+against the rule it has to express: `required-if` says *a line must be
+PRESENT when a condition holds*, and negating its operator gives *must
+be present when the condition does NOT hold* — which is `url`'s
+ordinary case, not `authored`'s refusal. The two rules govern
+opposite outcomes for the same field under complementary conditions,
+and the format needs to state both, so there are two kinds. They share
+a condition grammar and one arm of the exhaustive switch each.
+
+**Why `functional-binding` is a kind and not `unique-by`, and this one
+is a REAL BUG revision 3.1 shipped.** §2.18's rule is that re-stating
+the same `as <id>` binding on many case lines is the normal spelling —
+the id travels with every case line that names the subject — and only a
+CONFLICTING re-binding is refused. `unique-by <id>` says *at most one
+row per id*, which would refuse §2.18's own documented normal spelling
+on its second occurrence. **A functional dependency is not a uniqueness
+key**, and mapping one to the other inverts the production. The new kind
+states the dependency directly: the id is the key, `(path, sha256)` is
+the value, equal keys with unequal values is the refusal, equal keys
+with equal values is legal and unremarkable.
+
+**What is NOT admitted, and each says where it lives instead.**
+
+- **`under`'s duplicate key ranges over fields INSIDE a value**, not
+  over sibling lines: the tuple is (convention, subject, kind,
+  startpos), and three of those four are components of the
+  `qualified-line` value rather than lines of their own. `unique-by`
+  can hold the tuple, but something has to EXTRACT it, and a
+  value-shape field extractor is a mechanism this delivery has exactly
+  one customer for. **So the extraction is PARSER CODE, with its
+  reason recorded here rather than left as an unexplained exception**:
+  `value: qualified-line` already means the parser decomposes this
+  value into a case line (that is what the value shape IS), so the
+  components are in hand at the site that already has them, and a
+  declared extractor would be a second description of a decomposition
+  the parser performs anyway. The schema row carries
+  `unique-by under-key` and the spec names the four components; the
+  arm that builds the tuple is code. A SECOND `qualified-line`
+  production with a different key is the trigger to make the extractor
+  declarative (D77), and at that point it is one kind plus one arm.
+- **Ordering and arithmetic constraints** stay deferred with their
+  trigger (§2.25.4), unchanged: no W23 production needs either.
+
+**Cardinality is a column and not a constraint** because every row has
+one; the constraints are the things most rows do not have. **This is
+also where §9's C7 and this section are reconciled** (r57 S-S7):
+"at most one `provenance` per parent" is `cardinality: at-most-one`
+and NOT a `unique-by` row, and revision 3.1 called it both — inflating
+`unique-by`'s earned-ness by counting a cardinality fact as its
+customer. One fact, one mechanism. The duplicate-refusal discipline
+§8's P-Q9 states production by production is then TWO mechanisms rather
+than six hand-written refusals — `cardinality` for "at most one of
+these", `unique-by` for "at most one per key" — which is still the
+clearest measure of what the schema buys, at an honest count.
+
+**The completeness claim is WITHDRAWN.** Revision 3.1 said the five
+kinds cover the delivery. Eight cover it plus one rule that is
+deliberately parser code with its reason stated, and that sentence —
+"eight kinds and one named exception" — is what §2.25 claims now. The
+difference matters beyond the arithmetic: a schema presenting itself as
+a complete declaration while a refusal rule lives in control flow is
+the worst of the three outcomes §5.2a item 4 names, because a reader
+consulting `--list-schema` would get a confident wrong answer about
+what the parser enforces.
+
+#### 2.25.4 What is DEFERRED (with its trigger, D77), and what is DECLINED
+
+The schema ships at exactly the size W23's own productions enforce.
+Named, so the boundary is a decision rather than an omission —
+**and separated at 3.2 into two lists, because revision 3.1 put a
+permanent decision in the deferral table and a deferral whose trigger
+had already fired beside it** (r57 S-S1, S-BL1(a)).
+
+**DEFERRED — a named trigger, not yet fired:**
+
+| deferred | trigger to build it |
+|---|---|
+| **A file-declared SCHEMA** (a file adding line kinds, not just values) | a second project wanting its own productions. `vocabulary` is the file-declared half that exists, and it declares VALUES only — the asymmetry is deliberate: values are data, line kinds are a grammar, and a format whose grammar varies per file is not one format |
+| **ORDERING and ARITHMETIC constraint kinds** | the W-something production that needs one. No W23 production does. Adding a kind is one enum value plus one arm of an exhaustive switch, so waiting costs nothing. **(3.2: `cross-scope` left this row — its trigger had already fired inside this delivery, §2.25.3.)** |
+| **A declarative value-shape FIELD EXTRACTOR** (so `under`'s key tuple could be a schema row rather than parser code) | a SECOND `qualified-line` production with a different key. One customer does not pay for a declaration mechanism; two would, because at two the extraction rule stops being the parser's own decomposition and starts being a thing two sites must agree about |
+| **A machine-readable schema export for the bench's loader** | their asking. `--list-schema` is a TSV today; whether they consume it is theirs (D78) |
+
+**DECLINED — no trigger, because the reason is architectural and
+permanent:**
+
+| declined | why it is a decline and not a deferral |
+|---|---|
+| **Generating legs B and C's arms from the table** | The table is pcrec's; **legs B and C are independent implementations ON PURPOSE** (§1.1's three-checks rule — a generated leg B would share a source with what it controls, which is the check-design failure this project has recorded most often). The schema makes the three legs *comparable* and must not make them *the same*. **Restated as a DECLINE at 3.2 (r57 S-S1)**: revision 3.1 filed this with the trigger *"the C1 differential finding a leg-B/leg-C divergence the schema would have prevented"*, which reads as "we will do it when it pays" — but that event is precisely the differential DOING ITS JOB, and generating leg B in response would delete the instrument that found the divergence in order to fix the divergence. There is no measurement that makes this right, so there is no trigger, and calling it deferred invited a future lane to fire it |
+
+#### 2.25.5 The honest limit
+
+**The schema is pcrec's, and pcrec is one of three readers.** It makes
+leg A's rules data; it does not make legs B and C's rules data, and
+the previous subsection says why that is deliberate rather than
+unfinished. What the schema adds to the three-reader problem is
+precisely one thing, and it is the thing that was missing: **a written,
+printable statement of what the three are supposed to agree about**, so
+C1's differential compares them against a specification instead of
+against each other. Revision 3's "the indentation test precedes
+dispatch in all three body readers" was exactly a rule with no such
+home, and it was false in two of the three (§0.7). That is the defect
+class this section exists to retire, and it is worth more than the
+refusals it tidies.
+
+**AND THE DIFFERENTIAL MUST COMPARE DIAGNOSTIC CLASS, NOT VERDICT**
+(NEW at 3.2, r57 S-S8, and it is the limit that makes the paragraph
+above honest). Leg B refuses every unrecognised line by CATCH-ALL
+fall-through — 22 arms, none tolerant of leading whitespace, then
+*"unparseable .rxt line (hard error)"* — so leg B refuses a W23
+production it has never heard of, an indented line, a schema violation
+and a typo with **the same verdict and the same sentence**. A
+verdict-only C1 differential therefore reads "all three legs refuse"
+and goes green for a `validated_by: all-readers` row **while leg B has
+no rule for it at all**: the one live check on the `all-readers` claim
+would be satisfiable by accident, on a population of one message.
+
+So C1 compares a DIAGNOSTIC CLASS per refusal, not an exit code: which
+rule was violated (structure-attachment / unknown-token-in-scope /
+schema-constraint / value-shape), carried as a stable tag beside the
+D26-free wording. That is a real obligation on legs B and C — leg B
+must grow the classification it does not have today, which is part of
+H12 — and it is the price of the `all-readers` column meaning anything.
+D26 is not in tension with this: the classification is a TAG the check
+reads, not a sentence a human reads, and D26 governs wording.
+
+**What that leaves genuinely unresolved, stated rather than tidied**:
+three independent implementations of a written specification can still
+all three be wrong in the same way, and nothing here fixes that. The
+schema narrows the failure from "three implementations disagree and
+none is authoritative" to "three implementations agree against a
+printed rule", which is strictly better and is not the same as correct.
+
+### 2.26 The OWNERSHIP AUDIT — every W23 spelling, under long-term viability
+
+Frank's second 2026-09-12 ruling: *"these are capabilities that bench
+requires but syntax is yours and you're responsible for the long term
+life of the format. therefore, find the structure that is
+self-consistent, clear, and long term viable."* That makes long-term
+viability the criterion ABOVE bench convenience and above
+minimal-diff-from-today, and it makes this the cheapest moment a
+spelling will ever change. So every production revision 3 added is
+swept once: **confirmed with the one line of why it is the long-term
+right spelling, or moved now.**
+
+| # | production | verdict |
+|---|---|---|
+| 1 | `pattern-esc` | **CONFIRMED.** It is one of the block-opener set's two members (§1.2.1 S2), so its name is structure-layer vocabulary and must read as a sibling of `pattern`; the hyphenated compound does that where a flag on `pattern` (`pattern -e …`) would put a value shape inside the one production the format promises is rest-of-line verbatim. Hyphenated keywords are already the house spelling (`frames-buffer=`, `license-note`) |
+| 2 | `provenance` | **CONFIRMED.** The domain word, and it now names ONE record at two parents (item 10), which is what a general name has to earn |
+| 3 | `vocabulary` | **CONFIRMED AS A SPELLING, NESTED AS A CONCEPT** (§2.15). It is the FILE-declared rows of §2.25's schema, not a mechanism beside it; a second file-declarable schema fact joins it as a sibling declaration under that heading rather than as an unrelated head keyword, and `--list-schema`'s `source` column is where the nesting is visible. Renaming it to `values` was considered and declined: the bench's note, the acceptance checks and Frank's own ruling all use this word |
+| 4 | `capable` → **`provides`** | **MOVED** (§2.16). The pattern side of the relation is `tag requires=…`; `requires`/`provides` is one relation read from its two ends, and is the pairing every neighbouring ecosystem uses. `requires`/`capable` pairs a verb with an adjective and leaves the reader to infer they are halves of one thing. Free: 0 occurrences in any context. W23-F2's question to Frank is unaffected — it asks WHERE the capability model lives, not what the line is called. **AND WHAT HALF IT DELIVERS, stated at 3.2 (r57 G-B5): the rename buys a READING symmetry the GRAMMAR does not have, and that is all it buys.** The two ends are different kinds — `provides` is a line kind in a `config` body, `requires` is a tag KEY in a `tag` item — and the closed set constraining `provides` is declared under the other end's name at file scope (`vocabulary requires …`). So a reader who learns `provides` has no syntactic path to its value set. The rename makes the RELATION legible; §2.16's new pointer sentence and §2.25.3's `cross-scope` row make it FINDABLE. Neither alone is enough, and revision 3.1 claimed the first and shipped neither |
+| 5 | `under <conv> <case-line>` | **CONFIRMED, and given a schema home.** The qualifier is a PREFIX so the case line after it is byte-identical to an unqualified one — which is what makes "the qualifier wraps a case line UNCHANGED" a checkable property rather than a hope, and a suffix form would not. Its one oddity — a line kind whose value CONTAINS another line kind — is now expressible as schema data (`value: qualified-line` over a closed kind set, §2.25.2) rather than as a parser special case |
+| 6 | `configs build`/`describe` | **CONFIRMED.** It names the thing it governs (the file's `config` blocks) and takes a closed mode value, so a third mode is a `closed` set member and not a new keyword. `config-mode` was considered and declined as longer for no disambiguation |
+| 7 | `as <id>` / `sha256 <hex64>` | **CONFIRMED, and the reason is worth stating because "why not `hash`?" is the obvious question.** Naming the ALGORITHM in the keyword means a second algorithm arrives as a sibling (`sha512 <hex>`) rather than as a re-interpretation of an existing field's value — the failure mode every `hash:`-style field eventually has. `as` is the import-idiomatic binder |
+| 8 | `tag-prose` (`key="…"`) | **CONFIRMED — and the pairing with `\|` is RE-WORDED at 3.2** (r57 G-B1). The quoted form is discriminated by the first byte after `=`, as `\|` discriminates a prose value's two forms, and both are declared per line kind in the schema's `value` column. But revision 3.1's phrasing — *"value-form discriminators… never structural"* — is false of `\|`, which opens an S3 OPAQUE REGION whose EXTENT is structural (§1.2.1, §1.2.4's table). The surviving statement is the true half: **both are value-form discriminators; `"`'s value ends on its own line and `\|`'s ends on a later one, and a discriminator that selects a multi-line form is ALSO a structure device.** `tag-prose`'s own spelling is unaffected and stays confirmed — it is the single-line one |
+| 9 | `variant`'s `text` | **CONFIRMED, REASON REPLACED** (§2.23). Revision 3's justification was a parser hazard §1.2.1 makes impossible in any reader implementing S1/S2 — **qualified at 3.2 (r57 S-S5): that is a property of the SPECIFICATION, and legs B and C implement it independently, so it is pinned by §9's A-group rather than inherited.** The surviving reason is a reader's and does not depend on the qualification: the field holds a replacement FOR the block's pattern, and reusing the format's most load-bearing token at a second scope for something adjacent-but-different is how a vocabulary stops being learnable |
+| 10 | `provenance`'s fields, and the `freq` block's | **MOVED — the audit's biggest finding.** Revision 3 shipped **two provenance vocabularies for one idea**: `exemplar`/`date`/`bytes`/`sha256`/`analyzer` on a data block, `source`/`url`/`ref`/`licence`/`retrieved`/`fidelity`/… on a pattern block, with `exemplar`≡`source` and `date`≡`retrieved` naming the same facts twice. Unified into ONE record used at two parents, its REQUIRED subset declared per parent by the schema (§2.10, §2.14). `analyzer` deliberately stays on the data block — it names the TOOL, not the origin. And `licence`/`licence-note` → **`license`/`license-note`**, because the value is an SPDX identifier and SPDX's own key is `License`. All free: 0 uses in either repo |
+| 11 | `mc` | **CONFIRMED.** Two letters, joining the `ms`/`ns` terse case-line family; a case line's kinds are the format's highest-frequency tokens and the family's brevity is deliberate |
+| 12 | `oracle <engine>[/<version>]` | **CONFIRMED.** `/` separates a name from a version everywhere a reader has met the idea, and it appears nowhere else in the token grammar, so it cannot be mistaken for anything |
+| 13 | inherited W2/W3 spellings (`include`, `use`, `tag`, `@file:`, `config … testee`/`option`, `freq`, `analysis`) | **CONFIRMED as a group.** Each was ruled or accepted before [B42] and none was moved by this revision's productions; the ownership ruling makes them mine to change, and sweeping them found no case where a name misleads. `@file:`'s sigil is the one worth naming: it marks a VALUE as a reference rather than literal bytes, which is a value-form discriminator in the §1.2.4 sense and therefore already has a home in the vocabulary this revision built |
+
+**What the audit did NOT change, deliberately.** Nothing in the
+SEMANTICS moved: every need's disposition, every refusal rule, every
+P-Q answer and the whole wave table are revision 3's. An ownership
+ruling about syntax is not a licence to reopen settled meaning, and a
+sweep that re-decided semantics would be the lane spending Frank's
+ruling on something it did not buy.
+
 ---
 
 ## 3. Migration
@@ -1537,6 +4637,34 @@ format, and each is named so a lane brief can be written from it.
 | H10 | **`use` / `variant` / `oracle` / testee configs** | W3 | `run.sh` + a non-pcrec adapter, which is pcrec-bench's, not pcrec's |
 | **H11** | **THE TARGET BUILD PATH — W1 ships with it, not without it** (r44-sem M9). Nothing in H1-H10 compiled or ran a `target … with <config>`: `driver.c` hard-codes the prefix `rx` and `run.sh` passes `-p rx`, so the central new build declaration would have had no test path at all. The harness must BUILD every declared target and assert two things per target — the emitted symbols carry its **prefix**, and `rx_info.name` is the definition's `name` — with the driver taking the prefix (a `-D` prefix macro or a generated shim). It is also the only path that exercises §2.7's output naming and §2.13's struct | W1 | `tests/harness/run.sh`, `tests/harness/driver.c` |
 
+**At revision 3 the H-table's W2/W3 labels all read W23** (§1.4 — one
+delivery), H1/H2-family/H11 are BUILT with W1, and four rows join:
+
+| # | change | wave | touches |
+|---|---|---|---|
+| H12 | **the ATTACHMENT arm** in all three readers (§1.2.1 S1): compute a line's parent from its indent BEFORE dispatching its first token, consume children for a kind that admits them (`provenance`, `variant`, and any `prose-value`), and raise the two refusal arms (attaches-to-nothing; parent takes no children). **REVISION 3.1 makes this bigger and simpler at once**: bigger because leg B has no indentation test at all today and leg C's is below its pre-body dispatch (MEASURED, §0.7), so this is a rule to BUILD in two legs rather than to extend in three; simpler because it is one mechanism serving children AND block scalars AND head continuation, where revision 3 had a sub-block arm beside them | W23 | `run.sh`, `verify_rxt.py` (pcrec's own arm rides SW2/SW16) |
+| H13 | **`pattern-esc`**: the pass-through arm + the CLI decode flag; `verify_rxt.py` decodes python-side; `\x00`'s K9 refusal surfaces through pcrec (§2.19) | W23 | `run.sh`, `verify_rxt.py`, `cli/` |
+| H14 | **`under` as a counted, labelled skip** in `run.sh` and `verify_rxt.py` (scoring is the consumer's, §2.17); `mc` verified by the PROTOCOL loop in python, never `finditer` (§2.21) | W23 | `run.sh`, `verify_rxt.py` |
+| H15 | **subject ids + hashes**: the per-file binding table, the read-time sha256 refusal on the driver path (§2.18); `configs describe`'s one-cell rule and its summary line (§2.20) | W23 | `run.sh`, `driver.c` |
+| H16 | **THE SCHEMA TABLE AND ITS SURFACE** (§2.25), NEW at revision 3.1: the `.def` declaration compiled into leg A, leg A's dispatch re-shaped as a walk over it with ONE exhaustive `default:`-less switch over the constraint enum, `--list-schema`, and the D4 table RENDERED from `validated_by` rather than hand-written. **It touches leg A only, deliberately** (§2.25.4): legs B and C stay independent implementations, because a generated leg B would share a source with what it controls — the check-design failure this tree has recorded most often. **H16 CARRIES THE CARDINALITY DECISION EXPLICITLY (3.3, r57 ROUND 2 R2-C)**: the `.def` writes `at-most-one` for `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export` and `accumulate` (field set `{steps, frames}`) for `budget`, per §2.25.2's table, so six settings kinds stop silently last-winning in the same change that declares them. The refusal names BOTH lines, `export`'s shipped diagnostic being the wording precedent, and §1.6.1a rows (8)/(9) are its compatibility record | W23 | `src/parse/` (`rxt_schema.def`, `rxt_source.c`), `cli/`, the spec renderer |
+
+**SIX sabotage rows** (four at revision 3.1, re-spelled and split at
+3.2 per r57 S-M3/S-M4/S-S6, plus one new for S3), each naming the
+check that must catch it, because a rule stated in a table is a rule a
+table can be sabotaged in (`docs/dev/learnings.md` §3). **Two rules the
+3.2 pass applied to every row and that a future row should inherit**:
+a row's detector must live in THIS repo's matrix, and a row must fail
+on the tree it is planted into rather than on a later drift.
+
+| row | plant | must be caught by |
+|---|---|---|
+| S-R1 | flip one schema row's `children` from `none` to a scope (say `m` admits children) | the indented-line fixture (§9's A-group): an indented line under `m` stops being an error in leg A while legs B and C still refuse it, so the C1 differential goes red — **and the row is deliberately planted in the direction where only the DIFFERENTIAL can see it**, since leg A alone would simply accept more |
+| S-R2 | drop `provenance`'s `required-if` constraint for `adaptation` | **a PCREC-SIDE fixture pair** — `tests/rxtsource/fixtures/` gains `prov_adapted_no_adaptation.rxtin` (must be refused) beside `prov_verbatim_no_adaptation.rxtin` (must be accepted), and the sabotage must flip the first to accepted. **RE-HOMED AT 3.2 (r57 S-M3)**: revision 3.1 named the bench's C5/C6 as the detector, and they live in the OTHER REPO — planting this row turns nothing red in pcrec's own battery, so `make mech` would score it UNDETECTED and be right to. The bench's C5/C6 are CORROBORATION, and valuable as an independent second reading; they cannot be the detector for a row in this repo's matrix |
+| S-R3 | make `--list-schema` print a hand-written table instead of walking the enforced one — **and the hand-written copy DISAGREES on exactly one row**: it reports `provenance.fidelity` as `closed`, and the parser's own row is edited to `source: file` with no set | **a dump-vs-behaviour cross-check, widened past `closed` (r57 S-M4)**: for each row, the check exercises the BEHAVIOUR the dump claims and requires agreement — a violating value for `closed`/`cross-scope`, a missing line for `required`, a present-when-forbidden line for `forbidden-if`, a conflicting re-binding for `functional-binding`, a duplicate tuple for `unique-by`, an indented line for `children`, a second opener for `opens_group`. **REWRITTEN AT 3.2**: revision 3.1's plant was "a hand-written table" with no stated divergence, which PASSES whenever the copy is faithful — it detects DRIFT, and a sabotage row must fail NOW, on the tree the matrix runs against. The disagreeing row is what makes it fail immediately. The widening matters independently: seven of the eight columns were unchecked against behaviour, so a dump could claim any `children`, `cardinality` or `validated_by` value and nothing would notice |
+| S-R4a | **remove `pattern-esc` from `opens_group`** | the structure layer's own fixture: a `pattern-esc` line stops opening a block, so its case lines attach to the PRECEDING block and `--list-source`'s `#section cases` rows move `block_line`. The symptom is the moved `block_line`, and it is visible in the dump |
+| S-R4b | **add a THIRD member to `opens_group`** (say `m`) | **a different detector, and this is why the row is split (r57 S-S6)**: a case-bearing fixture whose `m` lines stop being cases of their block and become blocks of their own, caught by the block COUNT in `--list-source` and by `run.sh`'s own case totals. Revision 3.1 bundled this with S-R4a as "add `pattern` a second time, or remove `pattern-esc`" — and the first half is **silent**, because the opener set is consulted by first-match-wins membership and a duplicate `pattern` row changes no answer at all. A sabotage row that plants two things where one does nothing scores DETECTED on the strength of the other and reports the pair as covered. Two rows, two symptoms, two detectors |
+| S-R5 | **break `description`'s prose PAIR — in EITHER column**: plant (a) flips its `value` from `prose` to `line`; plant (b) flips its `children` from `prose` to `none`. Either removes the kind from the structure layer's SECOND parameter (§1.2.1) | the ragged-prose and prose-`#` fixtures (§9's A-group): with `description` no longer prose-region-opening, `description \|` opens no opaque region, so its continuation lines re-enter S1 and the indented `#` becomes a structure error and the ragged line an attachment error — all three legs must report the value, and leg A's changes. **NEW at 3.2**, because S3 gave the structure layer a second parameter and §1.2.1's own argument for S-R4 applies to it verbatim: it is a column the structure layer reads, so its corruption is invisible to every schema-VALIDITY check, which is exactly the class that needs a sabotage row rather than an assertion. **BOTH PLANTS NAMED AT 3.3 (r57 ROUND 2 R2-F4), and plant (b) is why the parameter reads the PAIR**: if the structure layer read `value` alone, (b) would change nothing observable anywhere — the region still opens, its lines are bytes, and bytes reach no validity check — so a normative column would carry a corruption with NO detector. Reading the pair makes (b) fail the same fixtures (a) does |
+
 **H4 deserves its own line in a brief**, because it is the one place a
 plausible implementation is silently wrong: handing python `re` the
 *unexpanded* text would make it compile the primary alone (the `(?&n)`
@@ -1578,6 +4706,17 @@ everywhere.
 - **`--list-definitions` is [DD-11]'s fifth registry surface** (D85), and
   the format is one of its two readers, not its author. §4.2 states the
   interface.
+- **`--list-schema` is NEW at revision 3.1 and is the SEVENTH** (§2.25;
+  3.1 said SIXTH — r57 S-N1, corrected at all three sites, and
+  `docs/spec/cli.md:586` already gives `--list-limits` that ordinal):
+  the format's own structural rules as a TSV, walked off the same table
+  the parser enforces. It is the surface Frank's consequence 3 asks
+  for, and it is what makes §1.2.1's **two** keyword-dependent
+  parameters — the block-opener set and the prose-valued kind set — a
+  query rather than hard-coded facts. Same
+  one-derivation-two-readers discipline as every dump beside it, and
+  the same `table_contract.md` obligations as every table beside it
+  (SW17's row there, r57 S-M7).
 - **New, and owed by this row when W1 lands**: a way to ask a *file* what
   it declares — the targets, their prefixes, their configs and their
   definitions — because a build system needs it and because a person
@@ -1613,6 +4752,42 @@ The hunks, named so a reviewer can check them off:
 | S9b | `docs/spec/match_api.md` §2/§5: **D61 made concrete by its first producer.** `ngroups`/`nnames` are the PRIMARY's own on a composed artifact; the composition's delivered slots occupy `ngroups+1 ..`; `RX_NCAPS` is an artifact constant a caller sizes from the header and **may move across library versions** while every index in `1..ngroups` holds still (r44-sem M4/M5). Also the difference between `--source` composition and handing a composed TEXT to plain `-p`, which counts every group | W1 |
 | S10 | `docs/spec/limits.md` "Handling an oversized artifact" item 1 already promises the `config` block; when W1 lands, that sentence stops being a forward reference and gains a pointer to S1 | W1 |
 | S11 | `docs/spec/cli.md`: `--source`, `--target <prefix>`, `--lib-path DIR`, **`--emit-composed`**, and §2.7's **output-naming rule** (`-o <dir>` per target; `-o <file>` with N > 1 refused) | W1 |
+
+**The W23 hunks** (revision 3; every one lands with the implementation
+that makes it true, D80 — a reviewer rejects the change without them).
+S1-S11's W2/W3 rows above are unchanged and land in the same W23
+delivery; these are the [B42] additions:
+
+| # | file | the hunk | wave |
+|---|---|---|---|
+| SW1 | `docs/spec/rxt_format.md` | `pattern-esc`: the second block starter, the seven-escape vocabulary shared with subjects, one-spelling-per-block, the `\x00` refusal naming K9 and its lifting trigger (§2.19); the CLI decode flag cross-reference | W23 |
+| SW2 | `docs/spec/rxt_format.md` | **REWRITTEN AT 3.1**: the LEXICAL RULES section becomes the TWO-LAYER statement — the STRUCTURE layer (S0 line classes, S1 attachment, S2 the two-member block-opener set) and the pointer to the schema for everything else. The head/body indentation asymmetry is DELETED rather than narrowed, the "only asymmetry" sentence goes, the bare-indented-line refusal survives in its two arms (attaches-to-nothing / parent-takes-no-children), and `prose-value` becomes legal wherever the schema declares a prose value, at any depth (§1.2) | W23 |
+| SW3 | `docs/spec/rxt_format.md` | `provenance`: the eleven fields, the per-parent required sets (a pattern block's four, a data block's four), the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-parent, and the `license`/`license-note` spelling (§2.14). **Also the `freq` data block's body (S6's row extended)**: its five one-off provenance fields are REPLACED by this same record (§2.10, §2.26 item 10) | W23 |
+| SW4 | `docs/spec/rxt_format.md` | `vocabulary` + `tag-prose` + `provides`: declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind, `provides`), the RESERVED-KEY sentence for `requires`, fail-closed `provides`, and `vocabulary`'s nesting as the FILE-declared rows of §2.25's schema (§2.15, §2.16). **At 3.2 (r57 G-B5) the RESERVED-KEY sentence names both ends in one sentence, in both directions**, so a reader who greps `provides` finds `vocabulary requires` and vice versa — the rename buys a reading symmetry the grammar lacks, and the spec is where the missing path is supplied | W23 |
+| SW5 | `docs/spec/rxt_format.md` | `configs build`/`describe`: the four describe rules, the `target … with` refusal, `use` inert-and-counted, entry-file scope — and the PERMANENCE sentence for a target-less config-less file (§2.20) | W23 |
+| SW6 | `docs/spec/rxt_format.md` | the subject subsection (S4's row extended): `as <id>`/`sha256 <hex64>`, the per-file id namespace and functional-binding rules, WHO checks the hash (§2.18) | W23 |
+| SW7 | `docs/spec/rxt_format.md` + `docs/spec/match_api.md` | `mc` and its COUNTING RULE — one normative paragraph citing `match_api.md` §3.1 as the rule's single home, the empty-advance-from-reported-start clause, the finditer-divergence class named; match_api.md §3.1 gains one sentence naming `mc` as a consumer of the protocol. **PLUS, AT 3.2 (r57 C-S6): the ILL-FORMED-UTF-8 ADVANCE RULE, stated NORMATIVELY rather than left to `next_pos` by reference** — from `pos + 1`, skip bytes `0x80`-`0xBF` — because `match_api.md` §3.1.1 never defines "character boundary" on invalid input and a foreign adapter cannot derive the shipped behaviour from the prose. The hunk lands in match_api.md §3.1.1 (where the gap is) as well as in `rxt_format.md`'s `mc` paragraph (where `mc`'s consumer reads), and §9's E5 fixture becomes utf8-bearing so the rule has a cell | W23 |
+| SW8 | `docs/spec/rxt_format.md` | `under`: qualifier semantics, fallback, duplicate refusal, the no-`g`/`gp` rule, the harness's counted-skip treatment (§2.17) | W23 |
+| SW9 | `docs/spec/rxt_format.md` | `oracle` widened to `engine-ref [/version]`; `python`/`pcre2` meanings unchanged; absent-oracle = labelled skip (§2.9) | W23 |
+| SW10 | `docs/spec/rxt_format.md` | `variant` as a sub-block: the five attributes, exactly-one-of-text/unsupported, kind's vocabulary hook (§2.23); supersedes S8's one-line shape | W23 |
+| SW11 | `docs/spec/rxt_format.md` | `--list-source`: the appended columns, the three `#section`s with their column lists, the **VALIDATES vs RECOGNISES table as normative text — RENDERED from the schema's `validated_by` column at 3.1, not hand-written beside it** (§2.24, §2.25), and the SECTIONLESS paragraph rewritten — its own named trigger fired. `table_contract.md` needs NO hunk (sections were already its mechanism) | W23 |
+| SW12 | `docs/spec/rxt_format.md` **+ `src/parse/rxt_source.c`'s TWO comment sites** | the `name` grammar section's "cannot be called from a pattern" paragraph AMENDED: still true of the hyphenated SPELLING (PCRE2's grammar, D26), and the definition is now reachable through its DERIVED identifier — the mapping, the at-use collision refusal naming both definitions, exact-spelling-does-not-win (§2.22). Plus the **refuse-before-mapping LENGTH rule** and the **128-byte callability bound** stated as inherited from PCRE2 under D26 (§2.22, r57 C-M3). **The three-reader note**: legs A/B/C's shared name grammar is UNCHANGED; the derivation lives only in the composer's lookup, so no reader gains an arm. **AND THE TWO SHIPPED COMMENT SITES, ADDED AT 3.2 (r57 C-M2)**: `rxt_source.c:280-291` (`defname_ok`'s header) and `:1126-1130` (the `name` arm's pointer to it) state the repealed boundary **AS A RULING** — *"A `-`/`.` definition is therefore BUILDABLE as a target and NOT CALLABLE from a pattern — exactly what a bench set needs, since its patterns never call each other"* — and the first invokes **D94 by name** two paragraphs down (*"THREE PARSERS READ THIS GRAMMAR AND THEY MOVE TOGETHER (D94's rule applied to a grammar rather than to a number)"*). A comment that records a ruling is a reader of that ruling, and D94's own lesson is that the site list is EVERY READER FOUND BY GREP. Both sites move in the same change; leaving them would put a shipped comment in direct contradiction with the shipped behaviour, which is the `nnames` staleness shape one file over | W23 |
+| SW13 | `docs/spec/rxt_format.md` | the "NOT IN THIS BUILD" recognised-keyword list grows the W23 keywords, so any future partial build refuses them by name rather than as unknown (MEASURED gap, §0.6: `vocabulary` is "not a file-level directive" today). **At 3.1 the list is DERIVED from the schema's `wave` column** rather than hand-kept, and it gains one entry that is not a production at all: **`version`, RESERVED** (§1.6.3) | W23 |
+| SW14 | `docs/spec/cli.md` | the `pattern-esc` decode flag; `--list-source`'s section output named in its entry | W23 |
+| SW15 | `docs/spec/rxt_format.md` | the driver protocol: the find-all mode H7 lands (the §3.1 loop in C), the `@<path>` subject form's byte-exactness (S5's row, unchanged, referenced), the sha256 mismatch refusal | W23 |
+
+**The revision-3.1 hunks**, all W23, all landing in the same delivery:
+
+| # | file | the hunk |
+|---|---|---|
+| SW16 | `docs/spec/rxt_format.md` | **THE THREE-DEVICE STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's **FIVE-CASE** standing rule for when a future change needs the line (3.2: the fourth case is a CHOSEN narrowing, r57 C-M1; 3.3: the fifth is measure-the-population-first, r57 ROUND 2 R2-C). **REWRITTEN AT 3.2 — it carries the WHOLE NARROWING CENSUS's spec sentences, not one** (§1.6.1a, r57 G-B2): (a) the ragged HEAD BODY, accepted and now refused because depth became meaningful; (b) **TAB indentation, accepted and now refused by name** — indentation is spaces, a leading tab is a structure error, a tab inside a VALUE is still data; (c) the two narrowings AVOIDED and the rule that avoids them — inside a `\|` prose region an indented `#` is PROSE and ragged indentation is legal, because S3's region has no line classifier, while OUTSIDE one the indented-`#` refusal is unchanged. (c) is spec text and not merely a design note because it settles a question `rxt_source.c:735-747` records as deliberately OPEN. (The fifth narrowing, the derived-identifier collision, is SW12's.) **EXTENDED AT 3.3 (r57 ROUND 2), and the census it carries is now the eleven-row one**: (d) the **FOUR LINE CLASSES and what each one does** — a BLANK line is the EMPTY line and closes attachment, a **COMMENT line closes attachment and ends a prose region exactly as a blank does**, a WHITESPACE-ONLY line is INERT outside a prose region and BYTES inside one (so an indented whitespace-only line is the paragraph break), and everything else is CONTENT; (e) **a prose region opens on a `\|` whose trailing whitespace is trimmed, and only for a kind the schema declares prose-region-opening** — the spec states both conditions, since without the first `description \| ` is a literal and without the second `pattern \|` is a refusal; (f) **the CARDINALITY rules for the settings kinds** (§2.25.2) — `name`/`engine`/`encoding`/`features`/`flags`/`description`/`export` take at most one line per scope and a second is refused naming both, while `budget` ACCUMULATES over `{steps, frames}` and only a repeated FIELD is refused. (f) is the one a `.rxt` author is most likely to meet, because six of those seven kinds silently last-win today. The standing rule this row states is now **FIVE-CASE** (3.3 adds: measure the population before deciding, not after). (§1.6.1a rows (10) and (11), the NUL and duplicate-`description` refusals, already have their spec hunks — landed by STEP 0 — and this row cites rather than owes them.) **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5) |
+| SW17 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` + **`docs/spec/table_contract.md`** + `docs/spec/registry.md` | **THE SCHEMA AND ITS SURFACE** (§2.25). rxt_format.md gains the schema section: the columns (including `children: prose`), the **EIGHT-kind** constraint vocabulary with its membership rule, the one named parser-code exception (`under`'s key tuple), the deferred/DECLINED split, and the statement that the parser is the table's reader. cli.md gains `--list-schema` as the **SEVENTH** registry dump, in `--list-limits`' own entry shape. `docs/spec/registry.md` gains its row in the surface list — **and, since its own numbered sequence stops at the FIFTH surface while two dumps (`--list-limits`, `--list-source`) are undocumented there, the row is added with the sequence reconciled rather than appended to a gap.** **`docs/spec/table_contract.md` GAINS ITS SCOPE ROW, ADDED AT 3.2 (r57 S-M7)**: that document's Scope section enumerates every conforming table producer (seven rows today) and states *"Future tabular surfaces adopt this contract AT BIRTH — a new table command that does not conform is a defect, not a style choice."* `--list-schema` is a TSV table command, so it is a conforming producer by that sentence and a reader found BY GREP for the surface list — **the D94 failure verbatim** (a hand-enumerated site list that missed a reader in a spec document), which this note has now had pointed out to it in the same shape twice |
+
+**No `docs/spec/match_api.md` struct hunk and no abi bump anywhere in
+W23** (§1.4), and revision 3.1 adds none — the schema is a parser-side
+table and a CLI dump; nothing it touches is emitted scaffolding, so
+D76's ritual is still not triggered. SW7's match_api sentence is prose
+naming a new consumer of an existing contract.
 
 `docs/guide/` is the human tier and points at these; it never restates
 them (D80).
@@ -1758,8 +4933,9 @@ absent provenance).
 **What [ENG-PGO] owns**: the analyzer, D83's `--exemplar FILE`-shaped
 flag, the built-in static fallback table when no findings file is given,
 and — under D77 — whether any *second* family member is ever earned.
-Its plan row says it blocks on "wave 2/3"; on this design it blocks on
-**W2** alone.
+Its plan row says it blocks on "wave 2/3"; under F-Q1 there is no W2/W3
+split left, so it blocks on the **one W23 delivery** and rides it
+(§1.4).
 
 ### 4.4 [V-E] — the manifest, the finder, and compilation units
 
@@ -1850,8 +5026,14 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
 | `[expectations].default_method` | **TWO fields, not one** (r44-consumers U3): `oracle pcre2` names the ENGINE that checks, and `tag method=libpcre2-differential` names the VERIFICATION METHOD. R-BENCH-1's methods include non-oracle ones — "derived-law-plus-induction" is a real, already-used method (the K23 closed form) with no engine behind it — so folding method into the oracle enum would make those unspellable and would put a pcrec-shaped enum where AR-6 requires engine-neutrality. The first version conflated them |
 | `[testees.pcre2].options` | `config pcre2` with `testee pcre2/10.46` + `option k=v` lines |
 | `[testees.pcrec].options` | `config pcrec` with `pcrec --features all` |
-| `patterns[].variant = null` | the **absence** of a `variant` line |
-| an `expectations.tsv` row | `m @file:"subjects/s-000.bin" 234 258` / `n @file:"…"` / `mc @file:"…" <n>` |
+| `patterns[].variant = null` | the **absence** of a `variant` sub-block |
+| an `expectations.tsv` row | `m @file:"subjects/s-000.bin" as s-000 sha256 <hex64> 234 258` / `n @file:"…" as …` / `mc @file:"…" as … <n>` — the id and hash per §2.18, so the expectation key `(pattern, subject-id, regime)` survives the sidecar's death |
+| **[B42]** the capability set's provenance record (their §4.1) | the `provenance` sub-block, field for field (§2.14) |
+| **[B42]** `REQUIRES` tags + the closed vocabulary (their §5.1) | `tag requires=…` + `vocabulary requires …` (§2.15) |
+| **[B42]** per-config capabilities (their §5.3) | `provides` lines in the testee's `config` (§2.16, Frank ratifies) |
+| **[B42]** the second-convention expectation (their family 11) | `under <convention> <case-line>` (§2.17) |
+| **[B42]** `variant_kind` / `objective_preserved` / `capture_map` | the variant sub-block's `kind` / `note` / `groups` (§2.23) |
+| **[B42]** the testee-roster scoping hazard (D93) | `configs describe` (§2.20, Frank ratifies) |
 
 **The four bench requirements that needed a decision, decided:**
 
@@ -1870,8 +5052,9 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    `.rxt` line kind could produce that number for a foreign engine. It
    stays **bench-side**, and this note names the gap rather than leaving
    the reader to find it. Per testee: `did-not-compile` is `perr`;
-   `unsupported-by-declaration` is `variant <testee> unsupported
-   <reason>` — one line kind for both halves of the variant axis;
+   `unsupported-by-declaration` is the `variant` sub-block's
+   `unsupported` attribute (§2.23 at W23) — one construct for both
+   halves of the variant axis;
    `crashed` / `timed-out` are the harness's; **`compiled` is the
    ABSENCE of the other four**, a record-side default with nothing for
    the format to say. Two of twelve are bench-side by nature; ten map.
@@ -1884,21 +5067,29 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    preserved" — is **a review obligation the format records and does not
    check**, and it must say so. The format's contribution is visibility
    (T-2/AR-5: a variant is beside the pattern or it is a fork), not
-   verification. A `tag variant-note=…` carries the reviewer's statement.
-4. **REGIME (§3)** is a property of the **subject set**, not of a case,
-   and there is no case scope (Frank's ruling 4). So a sub-bench writes
-   the canonical pattern **once** as a `name`d definition and one block
-   per (pattern, regime), each `pattern (?&<name>)` with its own
-   `tag regime=search_short` (the bench's own spelling, underscored —
-   r44-consumers U4 caught the first version writing `search-short`) and
-   its own subject set. **MEASURED, the wrapper is
-   free here**: `expectations.tsv`'s columns are
-   `pattern subject regime expected start end nmatches method oracle` —
-   **no capture columns at all** — and a subroutine wrapper is
-   span-identical, differing only in capture visibility (§2.3). When
-   bench adds capture checking (its OD-B9, [DD-13a] T-3), the wrapper
-   stops being free and those blocks must carry the pattern text
-   directly; §7 Q6 records that trigger.
+   verification. **REVISED at W23**: the reviewer's statement is the
+   variant sub-block's own `note` attribute (§2.23), which is
+   whitespace-capable where the first routing (`tag variant-note=…`)
+   measurably was not ([B42] N-41); `tag-prose` now also exists for
+   other descriptive keys.
+4. **REGIME (§3)** — **REPLACED at W23 ([B42] N-48; the row's original
+   text prescribed a mechanism MEASURED unusable for every bench
+   pattern id, and §2.22 carries the repair).** Regime stays a property
+   of the SUBJECT SET, not of a case, and there is still no case scope
+   (Frank's ruling 4). A sub-bench writes the canonical pattern once as
+   a `name`d definition — under its own hyphenated id, unmapped — and
+   one block per (pattern, regime), each
+   `pattern (?&<derived-identifier>)` with its own
+   `tag regime=search_short` and its own subject set:
+   `(?&cls_upto_1024)` binds to `name cls-upto-1024` through the
+   composer's derived-identifier lookup (§2.22 — the `-`/`.` → `_` map
+   `target =` already uses, with the same at-use collision refusal).
+   The caveats that survive the repair, unchanged: the wrapper is free
+   exactly while `expectations.tsv` carries no capture columns
+   (MEASURED — none, all 1,364 rows), so when the bench adds capture
+   checking (OD-B9) those blocks must carry the pattern text directly
+   (§7 Q6's trigger); and a composed block's oracle is necessarily
+   `pcre2` (§2.9), which for the bench changes nothing.
 
 **What the bench must still own** (D78 — this is a durable interface
 statement, not a ruling into their repo): the record and its keys, the
@@ -2029,17 +5220,117 @@ files parse and never the meaning of the 179.
 | | resolution |
 |---|---|
 | **T-1** interface-vs-reference-only vs every-part-testable | **No new concept.** Target-ness and testability are **independent bits**: the harness compiles every block that has cases, as a **test** artifact, exactly as today; `target` is a file-level, build-only declaration that no pattern block carries. A reference-only definition with cases is therefore fully testable and ships nothing. No test-only surface is invented, so AR-2's no-dispatch rule is not even reached |
-| **T-2** canonical pattern vs declared per-library tweak | `variant <testee> <text>` is block-scoped, sits **beside** the pattern, and is checked against **the block's own expectations**. Structurally it cannot become a second pattern: a variant has no `name`, so it cannot be referenced, cannot be a target, and cannot be composed into anything. Constraint 1 is mechanical; constraint 2 is a recorded review obligation the format does not pretend to check (§4.5) |
+| **T-2** canonical pattern vs declared per-library tweak | `variant` (a sub-block at W23, §2.23) is block-scoped, sits **beside** the pattern, and is checked against **the block's own expectations**. Structurally it cannot become a second pattern: a variant has no `name`, so it cannot be referenced, cannot be a target, and cannot be composed into anything. Constraint 1 is mechanical; constraint 2 is a recorded review obligation the format does not pretend to check (§4.5) |
 | **T-3** appended numbering vs engine-neutral expectations | see Attack 3. Not live (MEASURED: the bench's 1,364 expectation rows carry no capture column). **D87 changes the answer's basis, not the answer**: the numbering is no longer "PCRE2's own by position" but pcrec's own by ASSIGNMENT, which makes T-3's worry *more* pointed on its face — except that the assignment rule is stated, printable (`--emit-composed`) and stable, where a positional accident was neither. Group correspondence for a foreign engine stays engine-neutral and by NAME (`groups <name>=<n>`); a bench expectation still adjudicates on spans and counts, never on a pcrec slot number (AR-6) |
 | **T-4** non-carrying block state vs cascading options | **Two different constructs, so neither has to become the other.** Block reset is the default and is untouched; the cascade exists only inside `config … from`. MEASURED: `config` occurs 0 times in the corpus, so no existing file opts in |
 | **T-5** byte-exact subjects by reference | §2.8: bytes are the subject, no decoding, NUL-safe, local paths only. It forces a **driver-protocol change** (H6/S5) rather than being free, and this note says so rather than assuming `argv` will carry a megabyte with a NUL in it |
 | **T-6** per-file accounting vs includes | §2.11's three rules: closure is the unit, entry-set subtraction with **both counts reported**, cells counted. Plus a fourth failure taxonomy (resolution) that is *reported* separately but *scored* as a compile failure, which is what preserves the 384 `perr` blocks |
 
+### 5.2a Where to attack REVISION 3.3 (the panel's shortest path)
+
+Revision 3's own "for the panel" list stands. **RE-AIMED AT 3.2 after
+the r57 panel scored the 3.1 version**: of the four attacks below,
+items 1 and 4 both HIT — and item 1 hit **in a place its own wording
+pointed away from**, which is the correction worth carrying forward.
+**RE-AIMED AGAIN AT 3.3**: round 2 scored item 5 three times (§0.8's
+ROUND 2 block) and item 1 once more — R2-B's census-scope hole is a
+narrowing sweep that swept a BRANCH instead of a GRAMMAR — and a sixth
+item is added for the cardinality decision. Each is written as the
+claim a critic should try to break rather than as a defence.
+
+1. **THE NARROWING SWEEP.** The claim is that §1.6.1a's five-candidate
+   census is CLOSED: no other construct legal on the shipped binary is
+   refused by this revision.
+   **RE-AIMED, and the re-aim is the finding.** Revision 3.1 wrote this
+   attack and pointed it at *"the HEAD and the shipped implementations
+   of its continuation (`parse_prose`, `parse_config`)"*. The panel
+   found three more narrowings THERE (the prose-`#`, prose-ragged and
+   tab cases) — so the aim was productive — **and it found a fifth
+   somewhere the aim excluded by construction: §2.22's SEMANTICS, in
+   the composer's name lookup, with no head line involved at all.** A
+   sweep aimed at the grammar cannot find a narrowing in a binding
+   rule. So the aim is now BOTH: re-probe the head continuation for a
+   sixth, and — the newer and less-worked direction — **walk every
+   §2 rule that says "refused" and ask what it accepted yesterday.**
+   The method that worked in both places was a probe on the shipped
+   binary, never a reading.
+2. **§1.2.3's admission, in the other direction.** The claim is that
+   block grouping is the ONLY place structure needs a keyword — now
+   stated as TWO parameters rather than one (§1.2.1). A critic should
+   try to find a THIRD: the candidates are `under`'s qualified line
+   (does a reader need to know `under` to see where the case line
+   starts?), `@file:`'s optional suffixes, and — new at 3.2 —
+   **S3's extent rule**, which reads no keyword but does read a
+   VALUE (`|`), so the question is whether a reader can recognise an
+   opaque region without knowing which kinds may open one.
+3. **§2.26 item 10, the provenance unification.** The claim is that
+   two records were one record all along. The attack is a fact a
+   `freq` block must state that a pattern block's provenance has no
+   field for, or vice versa — in which case the union is a union and
+   not a unification, and the per-parent required set is hiding a
+   second record inside one production. **(r57 hunted this and it
+   HELD, including the `analyzer` keep.)**
+4. **§2.25's scope, and it is the attack that drew the most blood.**
+   The claim is that the schema is exactly as big as W23's productions
+   need. **In 3.1 that claim was FALSE in the second direction this
+   item names** — four W23 refusal rules that the five kinds could not
+   express, one of them needing precisely the kind §2.25.4 deferred —
+   so the section is now eight kinds plus one declared parser-code
+   exception. Attack it again from both ends: a kind whose only
+   customer is speculative (it fails the membership rule), or a
+   refusal rule still living in control flow WITHOUT being named as
+   one. The second is the dangerous outcome and the reason is
+   unchanged: a partial declaration presenting itself as complete
+   makes `--list-schema` a confident wrong answer.
+5. **NEW AT 3.2 — S3, and the structure layer's second parameter.
+   RE-AIMED AT 3.3, and this item HIT three times in round 2.**
+   The claim is that four line classes, three devices and two
+   parameters recover the file's tree, and that S3's extent rule
+   matches what the shipped parser does. In 3.2 BOTH halves were
+   falsifiable and were falsified: the extent rule read *"first line
+   at indent ≤ the opener's, or the first blank"* and (a) its TRIGGER
+   was unparameterized, so `pattern |` opened a region; (b) the
+   COMMENT class had no stated effect, so a generic reader carried
+   structure across a column-1 `#` where every shipped leg terminates;
+   (c) "the first BLANK line" meant whitespace-only lines too, which
+   deletes the format's paragraph break. All three were found by probe
+   against `--list-source`, which is exactly the method this item
+   prescribes, so **the attack is unchanged and should be run again**:
+   find a file whose tree a generic S0-S3 reader recovers differently
+   from `--list-source`, or find a THIRD parameter the structure layer
+   secretly reads. The known-weak points, restated for 3.3: the
+   structure layer now reads THREE columns (`opens_group`, and
+   `value`+`children` as a pair) and `cardinality` is still not one of
+   them, so the claim that S2's grouping needs no cardinality
+   information (a group ends at the next opener, never at a count)
+   remains unprobed against a file with a malformed group; and S3's
+   extent rule is stated in its GENERAL form (indent ≤ the opener's)
+   while leg A implements "indented at all", the two coinciding only
+   because no prose-valued kind exists at a nonzero indent today.
+
+6. **NEW AT 3.3 — the CARDINALITY decision, §2.25.2.** The claim is
+   that seven settings kinds are `at-most-one` and `budget` is
+   `accumulate` over `{steps, frames}`, and that the population of
+   every refusal this creates is ZERO in both repos. That is a
+   counting claim over a moving corpus and it is the cheapest thing in
+   this revision to falsify: re-run the duplicate-line census and look
+   for a block that repeats a settings line on purpose. **One was
+   found already** — `tests/harness/giveup.rxt:19-23`, which is why
+   `budget` is not a scalar kind — so the honest question is whether
+   there is a SECOND, in a shape the census's per-block grouping
+   misses (a `config` body reached through `from`-composition, say,
+   where two configs each contribute a different `encoding` and the
+   duplicate exists only after resolution). **That last shape is
+   deliberately out of the rule's scope** — §2.25's cardinality is a
+   property of one SCOPE's lines AS WRITTEN, never of a resolved
+   cascade (§1.8's as-written discipline) — and a critic who can show
+   the two cannot be kept apart has found something real.
+
 ### 5.3 The anti-requirements
 
 | | how it is honoured |
 |---|---|
-| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, and no file reference to bind in any non-`perr` block. r44-grammar reproduced all three with its own recognizer (G1, G5, G6) |
+| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, and no file reference to bind in any non-`perr` block. r44-grammar reproduced all three with its own recognizer (G1, G5, G6). **REVISION 3.1 re-measured all of it at the current 210-file corpus** — 0 collisions over 52 candidates, 0 indented lines — and corrected the denominators, which had gone stale with [M5.0]'s corpora (§0.7, §1.1). The re-factoring itself is what AR-1 turns on and §1.6.1 is the argument that it is additive |
 | **AR-2** no dispatch in the common case | a pattern with no file references binds nothing, so the AST is the one the compiler builds today. §2.7's default: one unnamed block, no head → `target rx`, byte-for-byte today's output. The format cannot add dispatch because in that case it adds nothing. **D87 strengthens this**: an UNDECLARED call stays capture-transparent at zero cost (rule 5), so even a composing file pays only for the deliveries it declares |
 | **AR-3** declared inapplicability ≠ failure ≠ silent pass | four separate, counted, printed states: `oracle none <reason>`, `variant … unsupported <reason>`, `gp`'s pending-vm bucket, and the resolution-failure taxonomy — each reported on its own line in the summary (§2.11) |
 | **AR-4** must not make D27 harder | the head is **bounded and above the first `pattern` line**, so a blinded author reading a block looks in exactly one other place; a fragment **may not declare file scope**, so a spliced block's meaning never depends on which file spliced it; and the one genuine cross-block dependency — a name a pattern references — is visible at the top of the file by construction |
@@ -2052,7 +5343,7 @@ files parse and never the meaning of the 179.
 | | disposition |
 |---|---|
 | **OD-1** where per-engine options live, and composition across includes | **file and block scope only** (Frank's ruling 4). Composition is the **per-option-kind** table in §2.6 — `features` unions, everything else is more-specific-wins, size caps are raise-only at every scope. The cascade Frank asked for lives in `config … from`, ordered, last wins; `include` stays pure splice, because making an include's *position* change a later block's meaning is the cross-file context AR-4 forbids |
-| **OD-2** the declared-tweak mechanism | `variant <testee> <text>` / `variant <testee> unsupported <reason>`, block-scoped (§4.5) |
+| **OD-2** the declared-tweak mechanism | the `variant` sub-block — `text`/`kind`/`groups`/`note`, or `unsupported <reason>` — block-scoped (§4.5, reshaped at W23 §2.23) |
 | **OD-6** the data block's spelling and namespace | **inline values, own namespace** (§2.10). This is OD-6, named — the first version presented it as departure "D-e" without citing the open decision it disposes of (r44-consumers U10) |
 | **OD-3** config syntax unifying testees and build variants | **one block kind.** A build variant is a `config` with `pcrec` lines; a bench testee is a `config` with `testee` + `option` lines. R-BENCH-9's "one concept, two uses" is literal here — the same `config` grammar, differing only in which of its line kinds appear |
 | **OD-4** interface/reference-only marking; a test-only surface | **no marking, no surface** — T-1 |
@@ -2202,6 +5493,12 @@ a field now**, not a `NOTES.md` paragraph (Frank's r44 ruling); the
 generator still stays beside its output; the directory stays a directory
 and no tool reads it as a schema.
 
+**REPAIRED at revision 3** ([B42]): the file now carries the six W23
+mechanisms its first version could not — `configs describe` (without
+which its own `config pcrec` block would PIN the bench's testee matrix
+under D93, roadblock #6), `vocabulary`, `provides`, subject ids + hashes,
+a `provenance` sub-block, the variant sub-block, and an `under` case.
+
 ```
 # Operational: regenerate subjects with gen_subjects.py before editing.
 description |
@@ -2209,20 +5506,32 @@ description |
   establish that a chunk of log lines does NOT contain the shape an
   operator is grepping for, at the sizes a log shipper hands a matcher
   (256 B - 4 KB) and across a size sweep to 1 MB.
-  The set contains both cases the answer turns on: patterns whose match
-  requires a literal byte, and patterns built only from classes, which
-  no required-byte precheck can help.
-tag id=loglines version=0.1 objective=realworld
+tag id=loglines version=0.2 objective=realworld
 tag short-search-max-bytes=4096
-oracle pcre2
+oracle pcre2/10.46
 tag method=libpcre2-differential
+configs describe
+
+vocabulary hazard   none exponential-backtracking large-count wide-alternation
+vocabulary size     tiny small medium large
+vocabulary role     member floor
+vocabulary kind     syntax-only restructured
+vocabulary convention perl-leftmost-first posix-leftmost-longest
+vocabulary requires backrefs lookaround lookbehind-variable atomic-possessive
+  recursion conditionals k-reset control-verbs unicode-properties
+  named-groups free-spacing callouts span-reporting non-utf8-subject
+  captures true-end-anchor
 
 config pcrec
   pcrec --features all
 config pcre2
   testee pcre2/10.46
+  provides backrefs lookaround atomic-possessive recursion conditionals
+  provides k-reset control-verbs unicode-properties named-groups
+  provides free-spacing callouts span-reporting captures true-end-anchor
 config re2
   testee re2/2024-07-02
+  provides unicode-properties named-groups captures
 use pcrec, pcre2, re2
 
 include "gen/cases_search_short.rxt"    # 11 patterns x 112 subjects, generated
@@ -2234,53 +5543,86 @@ only, no head** (§2.5):
 
 ```
 pattern \d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?
-name iso_ts
+name iso-ts
 description ISO-8601 timestamp with optional fraction and zone.
-tag logs timestamp iso8601 tier-base
+tag logs timestamp iso8601
 tag regime=search_short tier=base hazard=none size=medium
 tag convention=perl-leftmost-first role=member
-variant re2 unsupported no per-engine spelling preserves the objective
-m @file:"../subjects/s-000.bin" 234 258
-n @file:"../subjects/s-001.bin"
-m @file:"../subjects/s-002.bin" 0 24
-… 109 more
+provenance
+  source    authored
+  license   CC0-1.0
+  retrieved 2026-09-12
+  fidelity  inspired
+  adaptation |
+    written from the ISO-8601 grammar's own production list; no source
+    regex was consulted.
+variant re2
+  kind restructured
+  text \d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}([.,]\d{1,6})?(Z|[+-]\d{2}:?\d{2})?
+  note |
+    the non-capturing groups opened: RE2 prices them identically, and
+    the objective (a class-heavy scan) is untouched.
+m @file:"../subjects/s-000.bin" as s-000 sha256 3f2a09c1d47e58b6a2f0e9d1c8b7a6f5e4d3c2b1a0918273645546372819aabb 234 258
+n @file:"../subjects/s-001.bin" as s-001 sha256 91c04e7f2a3b5c6d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d
+… 110 more
+
+pattern a|ab
+name sem-alt-order
+description The leftmost-first / leftmost-longest separator case.
+tag semantics control
+tag regime=search_short role=member hazard=none size=tiny
+tag convention=perl-leftmost-first
+m "ab" 0 1
+under posix-leftmost-longest m "ab" 0 2
 
 pattern :
 name floor
 description The floor control: one literal byte, structural in every log format here.
 tag floor control one-literal
 tag regime=search_short role=floor hazard=none size=tiny
-m @file:"../subjects/s-000.bin" 24 25
+m @file:"../subjects/s-000.bin" as s-000 24 25
 … 111 more
 ```
 
-**Hand-trace.** The entry file's head carries a `description` block
-scalar (six indented lines, ending at the non-indented `tag`),
-file-level `tag`s, an `oracle` naming the ENGINE and a separate
-`tag method=…` naming the VERIFICATION METHOD (§4.5, r44-consumers U3),
-three `config` blocks (one with a `pcrec` line, two with `testee`
-lines), a `use` naming all three, and two `include`s. The fragments
-carry pattern blocks only; their `@file:` paths are relative **to the
-fragment** (§2.8), hence `../subjects/`. Each member block carries a
-`tag` line of **bare labels** — the sidecar's free `tags` list (U1) —
-beside a `tag` line of pairs, both accumulating. Each block runs as
-three cells (`use` enumerates, §2.6); the `variant … unsupported` line
-makes `re2`'s cell for `iso_ts` a declared, counted non-result rather
-than a wrong answer (bench §4.4). The tally is reported under
-`loglines.rxt` with `entry files: 1  fragments spliced: 2` (§2.11), and
-each failure still prints the fragment's own `file:line`.
+**Hand-trace, the W23 half only** (the W1 mechanics are the previous
+revision's and unchanged). `configs describe` makes every `config`
+block DATA: `pcrec --source loglines.rxt` builds nothing from them, the
+harness runs each block in ONE cell and prints
+`configs: descriptive (3 declared, 0 applied)`, and the bench's runner
+reads the roster off `--list-source` and applies it through its own
+adapters — whose command lines therefore always win, closing the D93
+collision by construction (§2.20). The `vocabulary` lines close six tag
+keys (a typo in `hazard=` is now a refusal naming the set; the
+`requires` line wraps by head continuation); the two `provides` stanzas
+are checked against `vocabulary requires` and are what the bench's
+pre-compile policy reads — `re2`'s short list is why a
+`tag requires=backrefs` pattern would produce
+`unsupported-by-declaration` there, decided before any compile (§2.16).
+`iso-ts` keeps its HYPHENATED id (no name map anywhere — §2.22); its
+`provenance` sub-block is the charter's requirement (1) with
+`authored`'s no-url rule live; its `variant re2` sub-block carries
+`kind` + `text` + the reviewer's `note` (§2.23). `sem-alt-order` is
+family 11's separator case: one unqualified expectation under the
+canonical convention, one `under` line carrying the second correct
+answer (§2.17) — pcrec's own harness counts the `under` line as a
+labelled skip; the bench scores it against its
+`posix-leftmost-longest`-tagged testees. Subject references carry
+`as`/`sha256` (§2.18), so every report row keys on `(pattern, s-000)`
+and a regenerated tree that drifts is refused at read time naming both
+digests.
 
-**Note what this file does NOT do: it composes nothing.** No block
-references a definition, so §2.3's machinery never runs and the textual
-control is not needed. A bench sub-bench is a flat corpus with a rich
-head — which is why it earns W2/W3 and not W1.
+**Note what this file still does NOT do: it composes nothing.** No
+block references a definition, so §2.3's machinery never runs. A bench
+sub-bench is a flat corpus with a rich head. (A set that DOES use the
+per-regime wrapper writes `pattern (?&iso_ts)` and binds through the
+derived-identifier lookup — §4.5 item 4 as repaired, §2.22.)
 
 **What this replaces**: `subbench.toml` (183 lines),
-`expectations.tsv` (1,364 rows), and eleven `patterns/*.rx` files —
-three file kinds and two grammars become one file kind and one grammar,
-with the case's identity being `file:line` in one file rather than a
-`(pattern, subject, regime)` key joined across two (§4's
-"identity of a case" row).
+`expectations.tsv` (1,364 rows), eleven `patterns/*.rx` files AND the
+sidecar's provenance/capability/variant fields — three file kinds and
+two grammars become one file kind and one grammar, with a case's
+identity being `(pattern, subject-id)` plus its `file:line` (§2.18),
+never a key joined across files.
 
 ### 6.3 Two build configurations from one source ([V-E], U6, W1)
 
@@ -2322,11 +5664,12 @@ freq loglines
   description Byte histogram of one month of production nginx access logs.
   question which byte is rarest in this exemplar
   reader OPT-A rarest-byte candidate-scan selection
-  exemplar prod-web-01 nginx access log, 2026-08 (not committed)
-  bytes 4187336614
-  sha256 9f2c0b1e7a4d38c5be6109f7d2a4c83b5e0d7f61a9c2b48e35d7061fa8c3b92d
   analyzer scripts/exemplar_freq.py 0.1
-  date 2026-08-29
+  provenance
+    source    prod-web-01 nginx access log, 2026-08 (not committed)
+    retrieved 2026-08-29
+    bytes     4187336614
+    sha256    9f2c0b1e7a4d38c5be6109f7d2a4c83b5e0d7f61a9c2b48e35d7061fa8c3b92d
   row 0    412 0 0 0 0 0 0 0 0 118344 4192011 0 0 91 0 0
   row 16   0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   row 32   681240119 3341 24 88190 4412 33 991 62204 41180 41180 8823 6 2201947 774310 2119883 1884420
@@ -2346,9 +5689,14 @@ config prod
 target email_prod = email with prod
 ```
 
-**Hand-trace.** The findings file's head is one data block, its body
-lines indented under it (§1.2); the file's body is empty — a legal file
-with zero pattern blocks, which the grammar admits
+**Hand-trace.** The findings file's head is one data block, its lines
+attached under it by S1 (§1.2.1) — **and the `provenance` record is
+attached one level deeper, which is the same rule applied twice and no
+new mechanism at all**; that two-level nesting is what the revision-3.1
+unification buys (§2.10, §2.26 item 10), and it is the shape a reader
+already knows from a pattern block's own `provenance`. The file's body
+is empty — a legal file with zero pattern blocks, which the grammar
+admits
 (`body = { pattern-block }`, possibly none) and which is the point: this
 is data, not tests. `question` and `reader` are required, which is
 §2.10's membership rule made structural; `description` is the field a
@@ -2515,3 +5863,366 @@ library entry that legitimately needs an absolute reference or a
 colliding name.** If that never happens, the uncovered population is
 empty and the residual costs nothing — which is itself worth measuring
 at the [LIB] store's first ten entries.
+
+### 7.3 The W23 questions for Frank (revision 3)
+
+Syntax is settled under the 14:5x delegation; these are the genuine
+semantics/scope items, each presented ready-to-ratify:
+
+**W23-F1 — `configs describe` (§2.20).** This touches D93 (the
+composed-config-beats-command-line rule), which is why it is Frank's:
+the head declaration makes a file's configs DESCRIPTIVE — never
+composed into any build, `target … with` refused, `use` inert and
+counted, default `build` = today's semantics unchanged. The mechanism
+closes the bench's roadblock #6 by construction and adds a contract
+sentence (a target-less, config-less file parses and builds nothing,
+PERMANENTLY — their N-43). Recommended: ratify as designed.
+
+**W23-F2 — `provides` (revision 3's `capable`) lives IN the format (§2.16).** The manager
+recommends IN (a `config … testee` already carries engine knowledge;
+the reason a pattern has no result for a testee belongs in the file a
+reader has); fail-closed; the one reserved key name `requires`. The
+alternative — bench-side capability files — is a partial return of the
+hybrid the 2026-09-12 ruling removed, and §8's P-Q4 records why it was
+considered and declined rather than defaulted. Recommended: ratify.
+
+**W23-F3 — the `mc` counting rule's home (§2.21). RESOLVED at revision
+3.1; NOT a question for Frank.** The manager pre-ruled the bench's
+formula; measurement found it double-counts an empty match found beyond
+the scan position, so the design states `match_api.md` §3.1's shipped
+protocol instead. **The manager has ACCEPTED the deviation** — it is
+the only rule pcrec's own entry points can implement, the bench's note
+pre-authorized exactly this answer (*"the harness's rule, whatever it
+is — say that"*), and no shipped surface changes. It stays listed here
+because the outbox message owes the bench their one adapter edit
+(empty-match advance from the reported START, not `max`), which §9's E5
+group carries. Nothing is owed to Frank.
+
+**W23-F4 — the derived-identifier repair REMOVES the ability to declare
+a deliberately NON-CALLABLE definition (§2.22). NEW at revision 3.2,
+from the r57 consumer lens (C-M2); the manager recommends ACCEPT.**
+
+*What is being lost.* Today a definition named with a `-` or `.` is
+**buildable as a target and not callable from a pattern**, because
+`(?&some-id)` goes through PCRE2's own group-name grammar. Under
+§2.22's derived-identifier binding, `(?&some_id)` reaches it. The
+shipped tree does not record that boundary as an accident — it records
+it as a FEATURE, in a comment written when the wide name grammar
+landed: *"A `-`/`.` definition is therefore BUILDABLE as a target and
+NOT CALLABLE from a pattern — exactly what a bench set needs, since its
+patterns never call each other, and exactly what a library meant to be
+composed must avoid"* (`src/parse/rxt_source.c:288-291`). So this is a
+design consequence with a shipped ruling behind it, not a comment edit,
+and it goes to Frank rather than being absorbed in the fix round.
+
+*Why ACCEPT is recommended, in four lines.* (1) **The replacement is
+better than the thing lost**: after §2.22 a call is explicit and named,
+and the collision refusal makes an ambiguous one loud — where today
+"not callable" is enforced by an accident of PCRE2's name grammar that
+says nothing about intent. (2) **Delivery is governed separately and
+already is**: `export` (W1.3, D89 addendum) is a definition's own
+statement of its interface, and a library that wants a private helper
+declares it by not exporting it — which is the mechanism for this that
+the format actually has. (3) **No current customer**: the bench's
+patterns never call each other (the comment's own stated customer), and
+no file in either repo declares a definition it wants unreachable —
+D77 says wait for a measured need, and the need here is for the
+CAPABILITY that is being removed, which has none. (4) **The loss is
+reversible at a known price**: a `private` marker or a
+`no-derived-call` schema row would restore it, one row and one arm, the
+day a library wants it.
+
+*What ACCEPT costs, stated so the ratification is informed*: a library
+author who today gets non-callability for free by naming a helper
+`helper-impl` will, after W23, have to say so with `export`. That is a
+real change in what a spelling means, and it is why the two comment
+sites move in the same change (SW12) rather than being left to
+contradict the behaviour.
+
+**Beyond W23-F4, revision 3.2 adds NO question to this queue**, and
+that is deliberate: the two 2026-09-12 rulings delegate syntax to the
+manager (the 14:5x delegation, restated by the ownership ruling), so
+§2.26's three spelling moves, §1.6's declined version break, §1.6.1a's
+narrowing choices (including the tab refusal) and §2.25's eight
+constraint kinds are the manager's calls, made and defended here rather
+than escalated. The panel is the check on them.
+
+**Recorded as RULED, not asked again**: F-Q1 (Tier 1 + Tier 2, one W23
+delivery — §1.4), F-Q2 (`pattern-esc` — §2.19), Option A (the set's
+truth lives in `.rxt` — nothing in this revision answers a need
+bench-side; the one candidate, P-Q4, went in-format), STEP 0's two
+refusals (lane rxtnul; designed against, not restated), and the two
+2026-09-12 rulings this revision exists to work through — internal
+consistency (§1.2, §1.6, §2.25) and ownership (§2.26).
+
+---
+
+## 8. The [B42] P-Q dispositions (revision 3)
+
+All nine of `bench_rxt_needs_v1.md` §5.1, answered with the rationale
+beside each; the manager's pre-rulings verified where they asserted a
+checkable fact, and the two leanings worked to a confirmed answer.
+
+**P-Q1 — the head/body indentation asymmetry. RE-ANSWERED AT REVISION
+3.1 ON FRANK'S RULING, which arrived after revision 3 was written and
+which supersedes the manager's leaning by name.** The ruling
+(`frank_inputs.md`, 2026-09-12) is explicit that the leaning — *"relax
+the head/body asymmetry for a named set of body sub-block keywords"* —
+is the wrong answer, *"because that answer requires a keyword table to
+find structure, which is exactly the context-dependence ruled out
+here"*. Revision 3's §1.2 was that answer.
+
+So the asymmetry is not relaxed, it is **DELETED** (§1.2.1): ONE
+attachment rule serves head continuation, `config` bodies, block
+scalars and body child-records alike, and "which scope a keyword is
+legal in" becomes a schema fact with no structural consequence. The
+answer now rests on the ruling's own criteria rather than on the
+two-customers argument:
+
+- **Internal consistency (consequence 1)**: indentation means exactly
+  one thing everywhere in the file, so there is no per-keyword
+  structural exception left to accrete onto.
+- **Structural parseability (consequence 5)**: §1.2.1's four line
+  classes and three devices recover blocks, sub-blocks, line membership
+  and prose extents from syntax alone, with **two** declared parameters
+  (the two-member opener set; the prose-region-opening kinds, read off
+  the `value`/`children` pair), and §1.2.3 states where that is not yet
+  total without softening it. **(Corrected at 3.3: "two devices … one
+  parameter" was 3.1's count, stale since S3 landed at 3.2.)**
+- **Explicit sub-block syntax (consequence 4)**: designed as a visible
+  marker and priced against bare indentation in §1.2.4; **indentation
+  wins**, because a marker makes structure depend on two signals that
+  can disagree, duplicates a schema fact per occurrence, and would
+  require either a second mechanism beside the shipped head or a
+  break — and the obligation is met instead by `--list-schema`
+  answering "which kinds open a scope" exactly, once.
+- **Schema validation (consequence 3)**: the rules the relaxation used
+  to carry in parser control flow are now §2.25's declared rows.
+
+The TWO-CUSTOMERS argument survives as corroboration rather than as the
+case: `provenance` and `variant` still need children, and `provenance`
+is now used at TWO PARENTS (§2.26 item 10), which is a general
+mechanism earning its keep rather than a special case with two
+instances. **M8 stays loud** — a bare indented line is still a hard
+error, in one of two arms (attaches to nothing → structure; parent
+takes no children → schema, naming the parent). The alternatives are
+declined for their revision-3 reasons, unchanged: the flat `prov-*`
+fallback answers provenance only and leaves `variant`'s continuation
+hack standing; moving provenance to the head keyed by block name splits
+a pattern's truth across two places (the bench's own reason). And the
+parser hazard revision 3 closed by an ordering rule is now
+**impossible in any reader that implements S1/S2** rather than closed by
+discipline — a block opener applies among siblings, and a child is not
+a sibling — which matters, because that ordering rule was MEASURED to
+hold in only one of the three readers it was asserted of (§0.7).
+**Qualified at 3.2 (r57 S-S5)**: that is a property of the
+SPECIFICATION, so it is exactly as strong as the legs' conformance to
+it. Leg A gets it by construction; legs B and C get it by being pinned
+(§9's A-group), and saying "structurally impossible" unconditionally
+would repeat the very move — asserting a rule of three implementations
+— that this bullet exists to correct.
+
+**P-Q2 — is `vocabulary` the right closed-set mechanism?** YES
+(pre-ruling e, accepted): per-key declared sets, parser-enforced,
+undeclared keys free (§2.15). The alternative — validation left to
+consumers — silently downgrades four validated record-schema enums to
+free strings at the absorption boundary, which is a regression the
+format would be shipping.
+
+**P-Q3 — `mc`'s counting rule.** Non-overlapping, and the rule is
+`match_api.md` §3.1's protocol BY REFERENCE (§2.21): resume at the end
+of a non-empty match, one character past the REPORTED START of an empty
+one, no empty-retry. MEASURED against the pre-ruled formula and
+`finditer` (§0.6): the bench's `pos = max(end, pos+1)` double-counts an
+empty match found beyond the scan position; `finditer` over-counts both
+(the NOTEMPTY class pcrec's entries cannot express). The bench's
+adapter owes one edit; their note's own fallback ("the harness's rule,
+whatever it is — say that") is exactly what the spec paragraph does.
+
+**P-Q4 — does the capability declaration live in the format?** YES —
+as `provides` (§2.16, W23-F2 to
+Frank). The manager's recommendation confirmed on the bench's own
+counter-argument being weighed: a capability list IS engine knowledge —
+but `config … testee` already carries engine knowledge (a version
+string), the file's reader needs the reason a pattern has no result for
+a testee, and the bench-side alternative is one non-`.rxt` file, i.e.
+the hybrid's partial return. Fail-closed; `requires` reserved by name;
+the pre-compile policy stated once in the spec as the intended reading.
+
+**P-Q5 — what replaces §4.5 item 4's regime mechanism?** Nothing
+replaces it; it is REPAIRED (§2.22): the composer's definition lookup
+gains a derived-identifier key through `pcrec_rxt_prefix_from_name` —
+the mapping's ONE existing home — with the target-prefix collision
+refusal reproduced at the call (exact spelling does not win; the
+refusal names both definitions). Verified against the shipped composer
+(`rxt_compose.c:169/:176/:690/:788` — the lookup and re-resolution
+sites) and against the three-reader rule (the name GRAMMAR's three legs
+are untouched; only leg A's composer lookup, a single implementation,
+learns the map). §4.5 item 4 is then usable as designed, its two
+surviving caveats restated. The sub-block alternative (a `regime` case
+group) was worked and declined: it is a case scope by another name
+(Frank ruled "there is no case scope"), it puts case lines under
+indentation in the most load-bearing arms of all three readers, and it
+buys nothing the shipped composer does not already deliver.
+
+**P-Q6 — a W2-only first delivery?** MOOT BY RULING: F-Q1 makes the
+first delivery Tier 1 AND Tier 2, one W23 wave (§1.4). Recorded so the
+bench's §4.2 sequencing analysis is answered rather than orphaned.
+
+**P-Q7 — the NUL refusal as a standalone change?** YES, and it is not
+even waiting for W23: STEP 0 (lane rxtnul) lands it now, with the
+duplicate-`description` refusal beside it. This revision designs
+against both existing.
+
+**P-Q8 — the `@file:` hash against §2.8's "no content hash" ruling.**
+A DEFAULT, not a principle (pre-ruling b, applied): the ruling's own
+premise — committed, reviewed subject files — fails for a generated,
+gitignored tree, which is precisely the condition §2.8 says provenance
+IS required under. `sha256` is optional; pcrec's corpus writes none;
+the bench writes one per reference; §2.8 is re-scoped in place.
+
+**P-Q9 — the two silent shipped hazards (M1 NUL truncation, M5
+description last-wins).** Both become refusals at STEP 0. The design's
+own contribution is not repeating the shape: every W23 production with
+a duplicate case states refuse-by-name (a second `provenance`, a second
+`vocabulary` for one key, a conflicting subject-id binding, a second
+`configs` line, `pattern` + `pattern-esc` in one block, duplicate
+`under` lines).
+
+---
+
+## 9. The [B42] acceptance checklist, mapped (their §3, 41 checks)
+
+What the bench will run at the restart against the delivered pin. Each
+row: the design element that satisfies it, or the stated deviation with
+its reason. **Named deviations up front**: B5 is PARTIAL (NUL-in-pattern
+parked on K9, §2.19); C10's outcome is REFUSAL (STEP 0), which their row
+explicitly admits ("the check records the CHOICE"); **B6's PREMISE
+DISSOLVED at revision 3.2** — the refusal it tests has an empty
+population under §1.2.1's opener rule, so the row is REWRITTEN rather
+than satisfied or deviated from (§2.19, r57 S-BL2); D1/D5/G3 carry a
+PRECISION about appended header columns (below); E5's harness half is
+the bench's own, as their row itself states, and at 3.2 it also
+becomes utf8-bearing (r57 C-S6).
+
+**THE CHECKS THAT HARD-CODE A SPELLING OR A COUNT, listed once so
+the bench gets ONE correction list rather than a surprise per check**
+(revision 3.1's list, corrected and extended at 3.2 — r57 S-M6, S-BL2).
+Every check below is BEHAVIOURAL and every one still passes or is
+rewritten with its reason; what moves
+is the literal token some of them type. The manager's outbox message at
+delivery carries exactly this list (D78):
+
+| moved | affects |
+|---|---|
+| `capable` → **`provides`** (§2.26 item 4) | **NO acceptance check types this token** — MEASURED at 3.2 (r57 S-M6): `capable` occurs 0 times in their §3 checklist (7 times elsewhere in the note, all in prose and production sketches). It affects the SET FILE their C-group checks run against, and any fixture that writes a `config` body — the probes' assertions are unchanged, and none of their scripts needs an edit for this row. **Revision 3.1 cited "the C-group capability checks", which is an EMPTY POPULATION**, and a correction list that over-warns teaches its reader to skim it |
+| `licence`/`licence-note` → **`license`/`license-note`** (§2.26 item 10) | **C4 — the one check that types the token** (`drop \`licence\``, their §3 row C4), plus the provenance fixture the C4-C7 group shares. 3.1 said "C4-C7's provenance fixtures"; C5/C6/C7 assert the conditional, the control and the duplicate refusal and type no license field |
+| the `freq` block's `exemplar`/`date`/`bytes`/`sha256` → a **`provenance` child** (§2.10) | only fixtures that write a data block; the bench's set files carry none today, so this is a spec-side move for them |
+| **D1's provenance key count: NINE → ELEVEN, plus the two renames** (§2.14, §2.24) — **ADDED AT 3.2 (r57 S-M6)** | their D1 row asserts *"a row or column for each of: … `provenance`'s **nine keys** …"*. The record is ELEVEN fields at 3.1 (`source`, `url`, `ref`, `license`, `license-note`, `retrieved`, `fidelity`, `adaptation`, `attribution`, `bytes`, `sha256`), two of them under new spellings. **§9's own D1 row below has known this since 3.1 and the CORRECTION LIST did not carry it** — which is the whole failure mode this list exists to prevent, occurring inside the list itself: a correction stated in one place and not in the place the bench reads. Their D1 probe's column enumeration needs the two renames and the two added keys |
+| a pattern block's `description` accepts **`prose-value`** (§1.2.5) | C10's neighbourhood only as a widening; nothing they assert becomes false. **(3.2: this row stays in the list because the bench needs it, but its CAUSE is corrected — it is §1.2.5's consequence of the structure-layer re-factoring, not one of §2.26's spelling moves, r57 C-N11. The audit moved three spellings; this is a fourth change with a different origin, and the outbox message says so)** |
+| **B6's premise DISSOLVED** (§2.19) — **ADDED AT 3.2 (r57 S-BL2)** | their B6 asserts that `pattern` and `pattern-esc` in one block are refused naming both lines. **There is no such refusal, because there is no such block**: both are block openers, so the second line starts a new block (MEASURED — two adjacent `pattern` lines produce two `--list-source` rows, rc 0). B6 is not a failure and not a deviation — the state it tests cannot be constructed. **Their row should be rewritten** to assert what is true and worth pinning: that a `pattern-esc` line following a `pattern` line opens a SECOND BLOCK, with the two blocks' own cases attached correctly. That is a better check than the one it replaces, because it pins the structure layer's own rule rather than a refusal |
+
+And one check the bench should ADD, because revision 3.1 creates the
+surface for it: `--list-schema` is the query behind D4's
+VALIDATES-vs-RECOGNISES table (§2.24), so their D4 probe can compare
+the rendered spec table against the dump instead of against prose.
+Offered, not required — their gate, their call (D78).
+
+**A note on how this list is now derived, because it went wrong twice
+in one revision** (r57 S-M6): a moved spelling's affected checks are
+found by GREPPING THEIR §3 CHECKLIST for the token, not by reasoning
+about which check-group the production belongs to. Revision 3.1 did the
+second and produced one row with an empty population (`capable`) and
+one over-broad row (`licence` at C4-C7 where only C4 types it), while
+missing a row entirely (D1's key count, which is a COUNT rather than a
+spelling and so did not look like a rename). The rule that catches all
+three: **sweep the checklist for every token this revision moves AND
+every number it changes.**
+
+| # | disposition |
+|---|---|
+| A1, A2 | SATISFIED — every named keyword lands in the one W23 delivery (F-Q1), so both probes exit 0 at the delivered pin. The BEFORE (refused by name with a wave) holds at today's pin, M10 |
+| A3, A4 | SATISFIED, unchanged mechanism — unknown tokens stay hard errors naming their SCOPE; a child scope is declared like any other (§1.2.2, §2.25) and the count is no longer fixed at four; SW13 keeps the recognised-refusal list honest for partial builds and now derives it from the schema's `wave` column. **THE FIXTURE OBLIGATIONS THIS DELIVERY OWES ARE NAMED BELOW THE TABLE** (3.1 said "an INDENTED-LINE fixture in all three legs" and left the position, the assertion and the rest of the population unstated; r57 S-M2/S-M5 and the grammar lens's five pinned probe cells fix that) |
+| A5 | SATISFIED — `tag` accumulation and mixed labels/pairs are unchanged W2 design; `tag-prose` adds the third item kind (§1.3) |
+| B1, B2 | SATISFIED (regression guard) — `pattern` verbatim untouched (§2.19); the dump's escape round trip unchanged |
+| B3, B4 | SATISFIED BY STEP 0 (lane rxtnul) — the raw-NUL refusal with its control; independent of W23, as their P-Q7 asked |
+| B5 | **PARTIAL, stated**: `pattern-esc` round-trips `\n` and a trailing `\r`; **`\x00` is REFUSED BY NAME naming K9** (the compile entry takes no pattern length — a decoded NUL pattern would silently compile as its prefix, the very trap B3 closes). Lifts when `rx_info.pattern_len`'s API half lands; §2.19 |
+| B6 | **PREMISE DISSOLVED — a bench CORRECTION, not a deviation** (3.2, r57 S-BL2). B6 asserts that a block carrying both `pattern` and `pattern-esc` is refused naming both lines. **No parse state holds both**: `pattern-esc` is a member of S2's block-opener set, so a second opener among siblings starts a SECOND BLOCK (MEASURED — two adjacent `pattern` lines produce two `--list-source` rows, rc 0, §0.8), and the refusal revision 3 designed had an EMPTY POPULATION from the moment §1.2.1 made both spellings openers. The rule is dropped rather than rescued — rescuing it would need a keyword-dependent structural exception, which consequence 1 forbids. Their row is rewritten to pin what IS true: a `pattern-esc` line after a `pattern` line opens a second block, and each block's cases attach to their own. **This is K35 caught at DESIGN time** — a check mapped SATISFIED by a refusal nobody had counted the population of — which is why it is listed among the corrections rather than quietly re-worded |
+| B7 | SATISFIED BY DESIGN, and this delivery is where it gets its first live verification (their row: "nothing has ever verified it") — the driver's `@<path>` form reads bytes raw, NUL included (H6/S5) |
+| C1, C2, C3 | SATISFIED — `vocabulary` enforcement with its accept control and the free-key compatibility control (§2.15). C3 doubles as the R-COMPAT-1 guard for the corpus's zero tags |
+| C4, C5, C6 | SATISFIED — provenance's required-line and conditional-adaptation refusals with their controls (§2.14 rules 1-3). **3.1 SPELLING**: `licence`/`licence-note` are now `license`/`license-note`, and the required SET is declared per parent (a pattern block's is the four their fixtures use, unchanged) |
+| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14). **CORRECTED AT 3.2 (r57 S-S7): that is `cardinality: at-most-one`, not a `unique-by` row.** Revision 3.1 called it a `unique-by` row here and a CARDINALITY value in §2.25.3 — one fact claimed by two mechanisms, which inflated `unique-by`'s earned-ness under §2.25.3's own membership rule. The duplicate-refusal discipline P-Q9 lists is therefore TWO mechanisms, not one: `cardinality` for "at most one of these in this scope" (a second `provenance`, a second `configs` line), `unique-by` for "at most one per key tuple" (`under`, a `vocabulary` key), and `functional-binding` for the subject-id case that is neither. The check the bench runs is unchanged either way |
+| C8, C9 | SATISFIED — the sha256 mismatch refusal (checked by the subject's READER, §2.18) and its matching control |
+| C10 | RESOLVED AS REFUSAL — STEP 0's duplicate-`description` refusal; the check records that choice, and G3's M5 row changes accordingly |
+| D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's fields in `#section provenance` (eleven at 3.1, and the section now also carries a data block's provenance — one section, one record shape, §2.26 item 10), `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24) |
+| D2 | SATISFIED — the loader reads only the dump; the cases section is what makes that possible under Option A (expectations are in the file, so they must be at the seam) |
+| D3 | SATISFIED — one escape vocabulary, documented; NOTE for their loader: the dump escapes the FIVE TSV-framing escapes (`rxt_format.md`'s r46sem-22 paragraph), with `\f`/`\v` arriving as `\xNN` and a literal `"` unescaped — decode against the dump's table, not the subject table |
+| D4 | SATISFIED, AND STRENGTHENED AT 3.1 — the table is not only normative spec text (SW11) but **RENDERED from the schema's `validated_by` column** (§2.24, §2.25), so it cannot go stale by omission and their probe can compare it against `--list-schema` rather than against prose. The case-line silent-pass observation is retired |
+| D5 | SATISFIED WITH A PRECISION — a no-new-production file emits no `#section` line; its stream differs from the current pin ONLY in the header row's appended columns, which is `table_contract.md`'s own compatible evolution. Their pass criterion "output unchanged" should read "unchanged under name-resolved comparison"; a byte-diff will show the header. Same precision applies to G3 below |
+| E1, E2 | BENCH-SIDE (their id/slug containment; their M11 finding is theirs to fix) — the format's half is the wide name grammar, BUILT |
+| E3 | SATISFIED — `as <id>` gives every expectation and report row a line-number-independent key (§2.18) |
+| E4 | SATISFIED (regression guard) — duplicate block names stay refused |
+| E5 | FORMAT HALF SATISFIED (`under`, §2.17); the harness half is the bench's own, exactly as their row states (R5 B1); pcrec's harness counts `under` lines as labelled skips and their runner scores them. **At 3.2 this group also carries the `mc` COUNTING cross-check and it becomes UTF8-BEARING** (r57 C-S6): the fixture runs at least one `mc` over an ILL-FORMED UTF-8 subject under `-e utf8`, because SW7 now states the empty-match advance rule for invalid input normatively (from `pos+1`, skip `0x80`-`0xBF`) and a rule whose only cell is well-formed is a rule with no cell. The three implementations compared are the driver's C loop, `verify_rxt.py`'s python loop and `match_api.md` §3.1's printed protocol — and the python arm is a deliberate SECOND implementation of the advance, paid for by exactly this differential (§2.21) |
+| E6, E7 | BENCH-SIDE — `make check-harness` enumeration and `content_hash` coverage are their gates; the format contributes the closure being enumerable (`--list-source` + include resolution) and nothing else is asked of it |
+| F1 | SATISFIED — the permanence SENTENCE lands (SW5); the parse already worked (their M12) |
+| F2 | SATISFIED — under `configs describe` a set's config cannot reach any pcrec build (refused for `target … with`, inert for everything else, §2.20): "the command line wins, or the file is refused" — the design delivers BOTH arms, by construction rather than by precedence |
+| F3, F4 | BENCH-SIDE gates (their no-build-directives `make check`, their AR-6 review); the format's contribution is that a planted `engine vm` in a `describe` file is still a legal line the gate must catch — their gate, unchanged |
+| G1 | SATISFIED — R-COMPAT-1 production by production (§1.3's closing paragraph): every addition is a fresh token (census 0, §0.6), an extension of a refused production, or new syntax at a today-hard-error position. pcrec's own `make test` green is the delivery bar as always |
+| G2 | SATISFIED — the five committed exports round-trip unchanged (no existing production moved); whether the exporter ADOPTS `as`/`sha256` is the bench's call |
+| G3 | AS THE CHARTER PREDICTS, WITH THE D5 PRECISION: **M1 changes** (STEP 0's refusal — their first-ranked item), **M5 changes** (STEP 0's refusal), **M10 changes** (the W23 keywords stop being refused). M2-M4, M6-M9, M11-M13: the FACTS are unchanged (byte-exactness, trims, acceptance, refusals, exit codes) — but any probe that archives a successful dump verbatim will show the header row's appended columns and, for case-bearing fixtures, the new `#section cases` rows. The probe script should diff name-resolved (or the archive is re-baselined once, at the delivery, with this paragraph as the cited reason). Any OTHER movement is a finding, exactly as they wrote |
+
+### 9.1 The A3/A4 CHECK PLAN — the named fixtures this delivery owes
+
+**NEW AT REVISION 3.2** (r57 S-M2, S-M5, and the grammar lens's five
+pinned probe cells, which arrive ready-made); **FOUR ROWS ADDED AT 3.3**
+(r57 ROUND 2 R2-F2/R2-F3 — every rule those two findings moved gets a
+fixture, because a structure rule stated in prose and pinned by nothing
+is how both of them got written wrongly in the first place). Revision
+3.1's A3/A4 row
+owed "an indented-line fixture in all three legs" and left everything
+about it unstated. A fixture obligation with no name, no position and
+no stated assertion is a fixture nobody writes, so the plan is a table.
+
+Every row lands in `tests/rxtsource/fixtures/` (the `.rxtin` shape the
+three-leg differential already dispatches over); **none is built by
+this lane** — these are PLANNED, and the implementation lane that lands
+H12/H16 builds them.
+
+| fixture | position | what it asserts | why it exists |
+|---|---|---|---|
+| `indent_pre_body.rxtin` | **an indented `m` line BEFORE the first `pattern`** | all three legs refuse, and the DIAGNOSTIC CLASS is `structure-attachment` in all three — not merely exit 1 | **THE POSITION IS THE CHECK** (r57 S-M5). Leg C's `:424` indentation test is unconditional once a block is open; its pre-body block (`:407-423`) dispatches on the first token first, and that is the only place the ordering defect is reachable. A post-body fixture reports GREEN against the defect it exists to pin — [MECH-REACH]'s shape. Leg B has no attachment step at all and must grow one |
+| `indent_under_m.rxtin` | an indented line under an `m` case line, mid-block | all three refuse, class `schema-constraint`, naming the PARENT (`m` declares `children: none`) | the second arm of §1.2.1's deletion 3, and S-R1's detector: flipping `m`'s `children` makes leg A accept while B and C refuse, so only the differential sees it |
+| `prose_hash.rxtin` | an indented `#` inside a `description \|` body | all three ACCEPT, and all three decode the value with the `#` line as PROSE | §1.6.1a candidate (2), a narrowing AVOIDED by S3. It pins the avoidance, which is what a decision needs and an accident does not. Grammar-lens probe cell, reproduced §0.8 |
+| `prose_ragged.rxtin` | prose lines at differing depths inside a `description \|` body | all three ACCEPT and agree on the decoded value, relative indentation preserved | §1.6.1a candidate (3). Also S-M1's owed fixture — no fixture carried a ragged prose body before |
+| `prose_dedent.rxtin` | a prose line indented LESS than the block's first continuation | **NOT an acceptance assertion — the K57 repro**, carried as a `known_fail`-style cell until K57 is fixed, then inverted to a three-way value agreement | the shipped strip corrupts content silently (§0.8). A fixture that asserts today's behaviour would PIN THE BUG; one that asserts the right answer is red until the bug is fixed, which is what `tests/known_fail/` is for |
+| `config_tab_body.rxtin` | a TAB-indented `config` body | all three REFUSE, class `structure-attachment`, the diagnostic naming the tab | §1.6.1a narrowing (4), TAKEN. Grammar-lens probe cell; accepted today (rc 0), so this fixture is the narrowing's own regression |
+| `config_mixed_indent.rxtin` | a `config` body mixing a 2-space line and a TAB line | all three REFUSE, same class | the case that shows the tab rule is not cosmetic: this file parses FLAT today (rc 0) and has no defined tree under any depth rule |
+| `block_scalar_in_body.rxtin` | **EXISTING — re-aimed, not deleted** | inverted from "all three refuse" to "all three accept and agree on the decoded value" | §1.2.5's widening; SW16 carries it. A three-way agreement on a VALUE catches more than a three-way agreement on a rejection |
+| `prov_adapted_no_adaptation.rxtin` + `prov_verbatim_no_adaptation.rxtin` | a `provenance` sub-block under a pattern block | the first refused (class `schema-constraint`), the second accepted | S-R2's **pcrec-side** detector (r57 S-M3) — the bench's C5/C6 test the same rule in the other repo and cannot turn this repo's matrix red |
+| `derived_call_collision.rxtin` | `(?&x_y)` with `x_y` and `x-y` both defined | refused, naming BOTH definitions and the shared identifier | §1.6.1a narrowing (5); accepted today with a byte-identical artifact (§0.8), so this fixture is that narrowing's regression. Leg A only — legs B and C resolve no calls (§2.22) |
+| `mc_illformed_utf8.rxtin` | an `mc` over an ill-formed UTF-8 subject under `-e utf8` | the driver's C loop, `verify_rxt.py`'s python loop and the count agree | SW7's newly-normative advance rule (r57 C-S6); §9's E5 group |
+| `comment_in_config_body.rxtin` | a column-1 `#` between two indented `config` body lines | all three REFUSE at the line BELOW the comment, class `structure-attachment` | **NEW AT 3.3** (r57 ROUND 2 R2-F2). The comment TERMINATES the body, so the line after it continues nothing — measured rc 1 today, and the fixture is what stops a future reader implementing the transparent reading, which would silently accept it. Its pair with the next row is the whole of the comment rule |
+| `comment_in_prose_region.rxtin` | a column-1 `#` between two prose lines of a `description \|` body | all three REFUSE at the line BELOW, same class | **NEW AT 3.3**, and it is the sharper of the pair: under the transparent reading this file does not merely widen, it produces an opener with TWO disjoint prose regions, which S3's single-extent rule cannot express at all. A shape the specification cannot describe needs a fixture, not a sentence |
+| `prose_paragraph_break.rxtin` | an indented WHITESPACE-ONLY line between two prose paragraphs of a `description \|` body | all three ACCEPT and agree on the decoded value, **which contains the empty paragraph-break line** | **NEW AT 3.3** (r57 ROUND 2 R2-F3). §1.6.1a candidate (6): the format's ONLY paragraph break, and revision 3.2's BLANK parenthesis would have deleted it. Asserting the VALUE and not just acceptance is what makes it catch the failure mode — a reader that ends the region there still "accepts" the file, it just loses the second paragraph |
+| `ws_only_line_positions.rxtin` | whitespace-only lines at FOUR positions: between case lines, in a `config` body, as the file's first line, and immediately after a blank | all three ACCEPT, and the parse is identical to the same file with those lines deleted | **NEW AT 3.3**. §1.6.1a candidate (7), and the fixture that pins the INERT half of the rule. The existing `whitespace_only_line.rxtin` (`sem15`) covers the first position only; the other three are where the manager's rejected "attachment-relevant" reading would have refused, so they are the ones a later revision could break without noticing |
+
+**AND THE POPULATION CHECK, which is the part that does not go stale**
+(r57 S-M2): a check walks `--list-schema`'s own output, selects every
+row with `validated_by: all-readers`, and **fails naming any row with
+no fixture above**. Three properties make it worth more than the
+fixtures it guards: it reads the same table the parser enforces, so a
+row added in a later wave fails the check the day it lands rather than
+the day somebody remembers; it cannot be satisfied by a fixture that
+stopped reaching its site, because it counts rows against fixture
+NAMES declared per row; and it makes the honest fallback cheap — a row
+whose fixture is not written yet takes `validated_by: pcrec`, which is
+a true statement, instead of `all-readers`, which would be a claim
+about two parsers nothing tests.
+
+**Every three-leg assertion above compares DIAGNOSTIC CLASS, never exit
+code** (§2.25.5, r57 S-S8). Leg B refuses everything through one
+catch-all sentence, so a verdict-only comparison reads "all three
+refuse" for a rule leg B has never heard of. The classes are the four
+§2.25.5 names: `structure-attachment`, `unknown-token-in-scope`,
+`schema-constraint`, `value-shape`. D26 is untouched — the class is a
+tag the check reads, not a sentence a human reads.

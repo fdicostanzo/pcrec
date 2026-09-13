@@ -22716,3 +22716,191 @@ NEXT: I-65 to the bench inbox (6 red stages at d99b02d2 + the ns/char
 rider) + Frank's hand for the pcrecdev2 launch; green closes [M5.0]
 stage-5 validation → close-out ritual. Then [CC-ORIGIN] +
 [TT-4M-TIME] admin slots; [CLS-TREE] design note after ns/char.
+
+## 2026-09-11 (EDT), sixtieth session part 2 — I-65 GREEN: [M5.0] stage-5 validation DISCHARGED; ns/char landed; [CC-ORIGIN] merged; timing run rescheduled to tonight
+
+**I-65 (pcrecdev2, self-launched 14:05 EDT — Frank installed the
+executor-launch permission ~12:20, no more hand launches)**: all six
+S5-ARM red stages GREEN at pin 616c2e49 in worktree build/wt_s5_rerun
+(their main checkout carries an uncommitted 2026-09-05
+artifact_size_log.tsv edit — deviation approved, dispositioned as a
+post-close-out item). Load-bearing three all confirmed: san 35/35,
+uprops_utf8 [STORE] 387/387 exact (the line whose absence WAS the bug),
+PC-4 62,872 cells 0 disagreements. uprops_byte read 47/0 not the
+expected 26 — my I-65 error, the bare invocation runs both encoding
+arms (21 byte + 26 utf8 = 47); 0-failed criterion met. The ns/char
+rider REFUSED once at load1 0.51 and ran on its single pre-declared
+retry at 0.10 — gate never loosened; results committed as
+studies/cls_tree_study/results/bench_ubuntubudu_20260911.tsv (2,641
+rows). [CLS-TREE]'s design-note gate now has both inputs (study +
+ns/char). M5.0 close-out ritual OWED and HELD (Frank: no new lanes just
+yet).
+
+**[CC-ORIGIN] merged c4be2c7f** (earlier this afternoon): six sites (a
+6th, studies/alt_dispatch, found by the lane's grep — whitespace);
+n1budget's guard set to gcc-16 per its own docs (flagged behavior
+change); origin cases verified by manager. Lane went idle-mute twice —
+landing finished by manager from its own logs.
+
+**[TT-4M-TIME] attempt 1 FAILED, rescheduled TONIGHT (Frank)**: the
+lane armed 3600s against the briefed 7200 — serial `make test` was
+killed at exactly 60min mid-suite (all green to that point; only the
+chartered inline_capability FAIL). Manager relaunched with 10800s;
+Frank then needed the box (kill anything timed >10min out) — killed
+clean via TaskStop + safekill, zero stragglers. The timing pair runs
+tonight. Worktree worktrees/tt4mtime kept (WIP 1dce6923 carries the
+memo skeleton + customer re-verification + san feasibility note).
+
+**[WORD-FOLD] chartered into the boonies** (Frank, three refinements
+same-day): word-wide cube compare; canonical form is the AND-mask
+(w & K) == T — past-end bytes are the degenerate all-free cube, so
+tails are the same 3-op test as full windows; only the subject-end
+bound survives as a guard. Measured baseline in the row: VM literal
+chains are one-instruction-per-byte both casings; the DFA offset-k
+skip degrades to nothing under (?i).
+
+Lessons: (1) a lane that goes idle without delivering is now the
+SESSION'S PATTERN (abifin benign, ccorigin mute twice, tt4mtime mute
+after its run was killed) — the manager landed all three from
+artifacts; watcher scripts also failed to fire twice (freshness checks
+defeated — needs a rethink, maybe watch ONLY the specific log file).
+(2) An executor quoting a discrepancy verbatim without diagnosing
+(uprops 47-vs-26) let the manager resolve it in one line — the
+quote-not-diagnose discipline works.
+
+**Session close ~16:0x EDT**: wake.md rewritten (close-out ritual +
+tonight's timing pair + design-note gate all queued there); heartbeat
+cron deleted; all lanes/watchers/background tasks stopped (verified);
+worktrees/tt4mtime deliberately kept for tonight's runs. Main pushed.
+
+## 2026-09-12 — [M5.0] MILESTONE CLOSED (lane m5close, close-out ritual)
+
+The UTF-8 milestone is STATE:completed (docs/dev/plan_completed.md,
+moved verbatim from plan.md with a completion stamp; the row had run
+STATE:started since the 2026-09-06 standing go). This entry is the
+milestone-close record the close-out ritual owed; nothing under
+`src/`/`tests/` changed in this session — compliance-refresh, the plan
+move, and this entry are the whole delivery.
+
+**What shipped.** Five sequential stages plus two cross-cutting engine
+fixes the milestone's own boundary-correctness work forced open:
+
+- **Stage 1** (f22b65c4, 2026-09-05, lane utf8s1) — the interval-payload
+  refactor: `A_CLASS` carries sorted code-point intervals, `pcrec_lower_enc`
+  splices in place at its derived position (constraint 2 corrected to a
+  node-identity property after the lane's own refutation of the design
+  text), `pcrec_cls_bits` the sole bitmap reader, `PcrecEnc.max_cp` added.
+  Identity gate 14/14, no abi bump.
+- **Stage 2** (05b2fe8a, 2026-09-05, lane utf8s2) — the utf8 backend:
+  `src/gen/enc/enc_utf8.c`, `lower_enc.c` as a `LowerOps` instance table
+  doing range-to-byte-sequence decomposition, `u.rep.revbody` resolved
+  (413/413 corpus classes keep the revdet rung by identity), the width
+  chain re-aimed to characters (`pcrec_maxw` retired to `cwmin`/`cwmax`),
+  `\x{...}` now base grammar. Byte-path identity unchanged at abi 22.
+- **Stage 3** (819ec889, 2026-09-06, lane utf8s3) — module `unicode-props`
+  PRODUCES: 45 property names (general categories, `L&`/`Lc`/`Any`/`Xan`
+  family) at both encodings, both polarities, in a class, under `-i`;
+  `third_party/ucd-16.0.0/` vendored (UnicodeData.txt) behind the generic
+  `make gen-tables`; the D27-blinded `axis04_p_categories.rxt` corpus
+  promoted 462/506 green with zero semantic divergences. Found and filed
+  K53 (an emitted-size-cap engine issue, not a Unicode one) and U15
+  (the dlopen shim's macOS-system-libpcre2 resolution, later resolved by
+  [ORACLE-LINK]'s direct-link retirement of dlopen entirely).
+- **Stage 4** (83f7175b, 2026-09-08, lane utf8s4) — DD-1's fold closure:
+  `CaseFolding.txt` vendored beside the other UCD files; two `PcrecFold`
+  objects the encoding chooses between; `(?i)k` matches U+212A. Headline
+  finding: the fold applies PER CONTRIBUTION (a class folds its own
+  literal/range members and unions produced sets after), not to a class's
+  merged set — folding the merged set is wrong in both directions at once.
+  Byte identity 0/3,120 movers at abi 24 unchanged; PC-4's 1:n fold arm
+  PASS.
+- **Stage 5** (0b21c32f, 2026-09-08/09, lane utf8s5) — script properties:
+  171 `sc` values across three namespaces (bare/`sc=`/`scx=`), vendoring
+  `Scripts.txt`/`ScriptExtensions.txt`/`PropertyValueAliases.txt`. THE
+  FINDING: a bare `\p{Greek}` is `Script | Script_Extensions` on all three
+  measurable libpcre2 versions, not `Script` alone (man-stated,
+  U+0342-discriminated) — refuting the design's "one more file" budget.
+  K53's predicted script-population blast radius REFUTED by census (only
+  `\p{Unknown}` refuses). `tests/utf8` 1,773/0 exactly as predicted.
+
+Two engine fixes the milestone's own boundary semantics forced, sequenced
+around stage 3 per the 2026-09-05 ruling:
+
+- **K49/K50-BNDSTART** (9d37356d / 8e0fe77f, 2026-09-05/06) — candidate
+  starts are character boundaries on BOTH backends: the VM's unanchored
+  retry advance moved off a hard-coded `pos++` onto the encoding seam
+  (`PcrecEnc.advance`), and the DFA gained a default-on O(1) startpos
+  boundary guard (`PCREC_ERR_STARTPOS=-7`, Frank-ratified) with a deny-arm
+  escape hatch. Both refuted `utf8_design.md`'s own claim that a
+  mid-character start "cannot produce a wrong answer" (true only for
+  positive patterns). abi 23→24.
+- **K53-SELRETRY** (6effd93a, 2026-09-10, lane utf8k53) — the
+  optional-contributor drop ladder: on an emitted-size-cap refusal with
+  the optional anchored DFA machine present, `compile_driver` drops it
+  and re-emits (`RX_ENGINE_SEL "size-cap-retry"`, no abi bump —
+  `ESEL_SIZE_CAP_RETRY` already named the outcome). All 14 previously
+  refused `\p`/`\P` spellings compile at default axes under `-e utf8`;
+  K53 marked FIXED; the sixteen parked `known_fail` blocks restored to
+  their authored positions. The corpus population the fix actually
+  reached was pcrec-bench's own wide-alternation `altwide` witnesses, not
+  the `\p` family — the census that compiles corpus `pattern` lines with
+  no encoding clamps the `\p` rows to Latin-1 and small.
+
+Also landed alongside the milestone, load-bearing for its validation:
+[ORACLE-LINK] (D98) retired the dlopen libpcre2 binding for direct
+linking, re-baselining PC-3/PC-4 to the true 10.48 and resolving U15b;
+[S5-ARM]'s abifix lane fixed a glibc include-order regression
+([ORACLE-LINK] had reintroduced the `_GNU_SOURCE`/`pcre2.h` hazard) that
+was the actual cause behind all six Linux-side red stages.
+
+**The validation record.** The six-stage S5-ARM red-to-green history
+(chartered when stage 5's merge first exposed Linux-only failures) ran
+to ground 2026-09-11 via **I-65** (pcrecdev2, self-launched under Frank's
+new executor permission, pin 616c2e49, logs `build/s5_rerun_20260911` on
+ubuntubudu): all six stages GREEN — `san` 35/35 (69m11s); registry PC-3
+209 + POSIX 34-real-names + PC-4 62,872 cells 0 disagreements +
+definitions-oracle 202,488 comparisons 0; `uprops` byte+utf8 47/0 and
+26/0 with **`[STORE] 387/387` exact** + `[LIVE]` 0 drift; `atomic` 8/0;
+the known-fail ratchet at K34 alone. The ns/char rider ran on its single
+pre-declared retry (gate never loosened) and landed
+`studies/cls_tree_study/results/bench_ubuntubudu_20260911.tsv` (2,641
+rows) — the [CLS-TREE] design gate's last required input.
+
+**This session's own work.** Ran the `compliance-refresh` skill's
+procedure over the milestone's changes: components 1 (the generated
+`--list-syntax` construct index, 138 rows) and 3 (the keyed annotation
+store, 91 records / 21 blocks) already matched the current tree — no
+edit needed, confirmed by `--check`/`--check-annotations`/`--names`/
+`--tension` all passing before any edit. Component 2 (the hand-written
+survey prose) was the stale half: the unicode-properties section's
+narrative still described K53 as an open, permanent five-of-45-names
+size blocker, unaware K53-SELRETRY fixed it 2026-09-10 — corrected in
+place (`docs/pcre2_compliance.md`, the "Unicode properties" section) to
+record the fix, its mechanism, and the corpus-population finding.
+`make test-registry` re-run clean (rc 0) after the edit. Moved the
+[M5.0] plan row to `docs/dev/plan_completed.md` verbatim under
+`STATE:completed` with a completion stamp citing I-65 and this ritual;
+no row content edited beyond the STATE flip and the appended stamp.
+
+**What the milestone leaves open** (pointers only — none of these are
+this session's work):
+
+- **[CLS-TREE]** — the third class-emission form (now reframed as a
+  general per-section-composed kit, not a special case); the study
+  (`docs/dev/cls_tree_study.md`) delivered 2026-09-11 with both required
+  inputs now in hand, but the design note and D6 panel have not run.
+- **[UTF-PAT]** (STATE:not-started, unscheduled) — UTF-8 as the
+  pattern-TEXT encoding's own contract, validation sweep, and D27 corpus
+  arm; Frank's chartering guess measured correct but the row's
+  deliverables are unbuilt.
+- **[UTF-RW]** (STATE:not-started, sequenced after M5.0) — the
+  real-world non-English-locale UTF regex harvest and the class-shape
+  census that decides whether a cluster-bitmap VM form is a real rung.
+- **[K50-NULLGATE]** (STATE:started) — narrowing the K50 boundary gate
+  to machines that can observe it; already in flight, not part of this
+  close-out.
+- **[XARCH]** (STATE:deferred) — the architecture-specific optimization
+  round Frank tabled; its step-0 memo stands as scratch-tier seed.
+- U16 (the one UCD `sc` value, `Katakana_Or_Hiragana`/`Hrkt`, no
+  reachable libpcre2 accepts) and S-U12's matrix run remain on their own
+  tracking, unaffected by this close-out.

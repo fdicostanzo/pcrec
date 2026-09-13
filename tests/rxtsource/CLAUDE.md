@@ -300,6 +300,44 @@ downstream starts reading the declarations it carries.**
 | `lib_store` | `lib <store>` refused as NOT IN THIS BUILD, never searched for as a filename |
 | `config_pcrec_escape` | a `config`'s `pcrec -p …`, the one escape that would otherwise be SILENT (an artifact under the wrong prefix compiles perfectly) |
 
+## [RXTNUL lane, 2026-09-12] two more silent-loss refusals, same shape
+
+Chartered by pcrec-bench's `rxt_needs_v1.md` (`docs/design/dd13_format/
+bench_rxt_needs_v1.md` §1.9 M1/M5, §2.7): two productions in
+`src/parse/rxt_source.c` used to lose data silently, exit 0, no
+diagnostic — a NUL byte mid-`pattern`-line TRUNCATED the pattern
+(`slurp_lines`'s whole-file NUL-terminated-string split), and a pattern
+block's second `description` line silently WON over the first
+(`block->description` is a single field, unconditionally overwritten).
+Both now refuse by name, naming the file, the line(s), and (for the NUL
+case) that it is a NUL byte. A THIRD gap the bench note asked about —
+whether the HEAD's own `description` should refuse a duplicate too — is
+answered yes for consistency (`docs/spec/rxt_format.md`'s "a machine-
+readable prose FIELD" is singular), even though the head's mechanism was
+never the same silent-overwrite shape: a second head-level `description`
+just became its own row with no cardinality check, never lost data.
+
+**Leg A only, deliberately.** All three fixtures below are checked with
+the single-leg `check_refusal`, not `check_refusal_all3` — unlike
+`dup_block_name.rxtin` (which legs B and C already detect
+independently), neither NUL handling nor duplicate-description detection
+exists in `tests/harness/run.sh`'s arm chain or `verify_rxt.py`'s
+`parse_rxt` today. Measured directly: on a headless NUL fixture, `run.sh`
+silently DROPS the byte (bash's own `read` behaviour) and `verify_rxt.py`
+silently REPLACES it with a space (its own decoder), each a different
+wrong answer; on a headless duplicate-description fixture, both legs
+silently keep the LAST line, the exact pre-fix pcrec behaviour. Fixing
+those two legs is out of this lane's scope
+(`src/parse/rxt_source.c` only, per its own brief) and is named here so
+it is not mistaken for done.
+
+| new fixture | what it makes reachable |
+|---|---|
+| `nul_byte` | M1: a NUL byte mid `pattern` line, refused naming the file/line/byte kind |
+| `dup_description` | M5: a pattern block's second `description` line, refused naming both lines |
+| `single_description` | the accept control for `dup_description` — byte-identical shape, one line |
+| `dup_head_description` | the head's own duplicate `description`, refused for consistency (`head_basic.rxt` is its accept control — it already carries exactly one) |
+
 ## Maintenance
 
 - The census is a **PIN**, not a derivation. When a corpus file is added

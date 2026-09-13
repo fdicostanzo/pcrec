@@ -1,0 +1,8 @@
+# THE ACCEPT CONTROL for dup_description.rxtin: byte-identical shape,
+# with ONE 'description' line rather than two, so the refusal fixture's
+# needle is isolated to the duplicate and not to anything else about the
+# file (block name, pattern text, case line).
+pattern a+
+name one
+description the first one
+m "aaa" 0 3

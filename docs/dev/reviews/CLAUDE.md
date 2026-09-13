@@ -424,3 +424,25 @@ Maintenance: add a file per checkpoint and list it here.
 - `2026-08-30-r46-w11-impl.md` — panel on the [DD-13b.W1.1] MERGE (r46sem opus / r46chk sonnet, during battery 4): 1 BLOCKER (leg B's escape emits the table index, not the byte), 8 must-fixes, the 'agree on the corpus, diverge outside it' class; triage table → fix lane w11f.
 - `2026-08-30-r47-opt41.md` — one-critic review of [OPT-4.1] (r47sel, sonnet, during the lane's Phase 2): 1 must-fix (the declined-nullable flag's missing collapsible-rep conjunct — reproduced, fixed, pair-checked), 1 benign note; the minw predicate survived structural induction.
 - `2026-09-02-r51-opt5-step2-impl.md` — the D6 panel on the [OPT-5] STEP 2 IMPLEMENTATION (merged da4fe60, abi 16), run read-only beside the union battery: soundness HELD under live witnesses on six attack surfaces (r51sound); six weaknesses in the shipped CHECKS, none in the emitter (r51check) — three of the learnings-§3 shape (a grep-for-identifier wiring check, a copied population floor, a check with no sabotage row) — to fix lane r51fix after the battery.
+- `2026-09-12-r57-w23-format.md` — TWO-ROUND panel on the [DD-13b.W23]
+  format design revision (rev 3 + 3.1 + 3.2 on lane/w23design). Round 1:
+  three opus critics (grammar/schema/consumer), 3 blockers / 12 must-fix
+  / 14 should, all FIX-NOW — the central catch reached independently by
+  two lenses: the BLOCK SCALAR was a second, undeclared structural
+  device, so the structure layer took two schema parameters while
+  claiming one. Also: the constraint-kind set missing four of W23's own
+  refusal rules (one needing the cross-scope kind the same section
+  deferred), a bench check satisfied by a refusal with an EMPTY
+  population (K35 caught at design time), and a fifth accept→reject
+  narrowing found by probing the shipped binary (`x_y` beside `x-y`).
+  Round 2 (focused re-check on rev 3.2): blockers b/c HOLD outright;
+  blocker a's fix failed on its own axis — S0 declares three line
+  classes and S1/S3 ruled two (the COMMENT line and the WHITESPACE-ONLY
+  line each have shipped structural effects the layers couldn't
+  produce; one of them is multi-paragraph prose's only spelling) — plus
+  a census scope hole and a latent cardinality narrowing-generator.
+  Fix rounds: w23fix (rev 3.2, three accepted pushbacks incl. K57 filed
+  and narrowings-AVOIDED-not-taken), w23fix2 (rev 3.3). The method note
+  worth keeping: every fix round's own instrument, swept across the
+  whole delivery rather than the finding's section, found the next
+  round's defect.

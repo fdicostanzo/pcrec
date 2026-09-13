@@ -47,7 +47,7 @@ Four file-level declarations exist in this build:
 | `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **The `"path"` form is RESOLVED as far as existence** (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name if it names no readable file; its CONTENTS are not read, so no pattern can call a definition that lives in it. `<store-name>` is refused as NOT IN THIS BUILD |
 | `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
-| `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes |
+| `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes. **At most ONE per file**: a second file-level `description` is refused by name, naming the earlier line |
 
 A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
 `features`, `encoding`, `engine` and `budget` lines — the same
@@ -209,7 +209,12 @@ These bind on every line kind, old and new:
   parser never guesses where data ends and commentary begins).
 - `pattern <regex>` — starts a new block. `<regex>` is everything after the
   first space on the line, taken verbatim to the end of the line (no
-  quoting, no escaping).
+  quoting, no escaping). **A NUL byte anywhere in the file is refused**, by
+  name, naming the file and the 1-based line it falls on — never silently
+  truncated. The format is line-oriented text and NUL has no
+  representation in any production today; a future escaped-pattern
+  spelling would carry a NUL as a DECODED escape value, never as a raw
+  file byte, so this refusal does not narrow that grammar when it lands.
 - `flags <letters>` — compile options for the current block, block-scoped
   (does not carry to the next block). Only `i` is defined (case-insensitive,
   `pcrec -i`). An unknown letter is a hard error, not a silent no-op.
@@ -295,7 +300,9 @@ These bind on every line kind, old and new:
     would force every such export to carry a name map beside it — a
     second place a pattern's identity is written.
 - `description <text>` — block-scoped: a machine-readable prose field for
-  this block. One-line form only (see "Lexical rules" above).
+  this block. One-line form only (see "Lexical rules" above). **At most
+  ONE per block**: a second `description` line in the same pattern block
+  is refused by name, naming the block and both lines.
 - `encoding <ident>` — block-scoped: the subject encoding for this
   block's compile, passed as `--encoding=<ident>`. Per-block, never
   global, exactly as the CLI option is per-compile: two blocks in one file
