@@ -219,7 +219,7 @@ were BUILT already and are untouched):
 | **N-8** | the duplicate-`description` last-wins hazard is STEP 0's refusal (their M5); one-line rule unchanged, provenance carries the prose that never fit |
 | **N-9, N-45, N-48** | `tag` lands in W23 as designed (§4.5's mapping); N-48's regime mechanism is REPAIRED, not replaced — §4.5 item 4 rewritten on the derived-identifier call binding (§2.22) |
 | **N-10, N-20, N-21** | §2.15 `vocabulary` — per-key declared value sets, parser-enforced, undeclared keys stay free (compat). Roadblock #2 closed |
-| **N-11..N-19** | §2.14 `provenance` — a body SUB-BLOCK (§1.2's new mechanism), nine fields, four required, `adaptation` required iff `fidelity != verbatim`, `authored`'s agreement rule. Roadblock #3 closed |
+| **N-11..N-19** | §2.14 `provenance` — a record attached under the pattern block (§1.2.6), nine fields, four required, `adaptation` required iff `fidelity != verbatim`, `authored`'s agreement rule. Roadblock #3 closed. **Revision 3.1**: eleven fields, the same record reused at a data block, required per parent (§2.26 item 10) |
 | **N-22, N-23** | §2.16 `provides` (spelled `capable` in their sketch; §2.26 item 4) — per-config, repeatable, accumulating, **fail-closed** (absent = nothing satisfied); flagged to Frank with §2.20 (P-Q4's ratification) |
 | **N-24, N-28** | BUILT / as-designed; B7's raw-bytes promise gets its first verification at the delivery (§9) |
 | **N-25** | `@file:` lands in W23 as designed (§2.8) |
@@ -231,7 +231,7 @@ were BUILT already and are untouched):
 | **N-35** | §2.17 `under` — a case-line QUALIFIER carrying the second correct answer per convention. Roadblock #5 closed |
 | **N-36, N-38** | §2.9 widened: `oracle` takes an `engine-ref` with optional `/version`; `python`/`pcre2` keep their exact meanings; an absent oracle stays R-VG-3's labelled skip |
 | **N-37** | `tag method=` as designed (W23) |
-| **N-39, N-40, N-41** | §2.23 — `variant` becomes a body SUB-BLOCK: `kind` (closed via `vocabulary kind`), `text`, `groups`, `note` (prose), `unsupported`. The old one-line-plus-`groups`-continuation shape was a proto-sub-block; the general mechanism replaces it (house rule). N-41's three fields all have carriers |
+| **N-39, N-40, N-41** | §2.23 — `variant` becomes a record with attached attributes (§1.2.6): `kind` (closed via `vocabulary kind`), `text`, `groups`, `note` (prose), `unsupported`. The old one-line-plus-`groups`-continuation shape was a proto-sub-block; the general mechanism replaces it (house rule). N-41's three fields all have carriers |
 | **N-42** | `config … testee`/`option` land in W23 as designed |
 | **N-43, N-44** | §2.20 `configs describe` — the head declaration separating BUILD configs from DESCRIPTIVE ones, default `build` = today's semantics; plus the PERMANENCE sentence for a target-less, config-less file. Roadblock #6 closed; ratification flagged to Frank (D93 territory) |
 | **N-46, N-47** | BUILT (W1), untouched |
@@ -2438,7 +2438,10 @@ lines, raw high bytes and a trailing CR all become expressible with
 nothing new invented — **multi-line CAPABILITY without multi-line
 SYNTAX**, which is what keeps every reader's line-oriented loop intact
 and is why this form was chosen over continuation (continuation under
-`pattern` would also have destroyed N-2's loud refusal, §1.2 rule 2).
+`pattern` would also have destroyed N-2's loud refusal — which at
+revision 3.1 is §1.2.6's second table row rather than a numbered rule,
+and still holds: `pattern` declares `children: none`, so an indented
+line under it is a schema error naming it).
 
 - **A block carries `pattern` or `pattern-esc`, never both** — both is
   refused naming both lines.
@@ -2624,7 +2627,7 @@ composed block's oracle is necessarily `pcre2` (§2.9/H4) — for the
 bench a non-question, since python was never their oracle; and a plain
 call is capture-transparent, which is all a regime wrapper needs.
 
-**Why regime grouping does NOT ride §1.2's sub-block mechanism** (the
+**Why regime grouping does NOT admit children** (the
 alternative the manager asked weighed): a `regime` sub-block holding
 case lines would (a) be a CASE SCOPE, which Frank ruled out by name
 ("there is no case scope") — an attribute over a group of cases is that
@@ -2632,7 +2635,7 @@ ruling's own definition; (b) put case lines under indentation, forcing
 all three body readers to re-parse their most load-bearing arms
 (`run.sh`'s case dispatch) for a shape one consumer needs; and (c) buy
 nothing the repaired wrapper does not already deliver with machinery
-that SHIPPED in W1.3. The sub-block mechanism's customers are
+that SHIPPED in W1.3. The child-admitting kinds are
 attribute records (provenance, variant) — bounded, non-case,
 skip-safe; case lines stay flat.
 
@@ -2714,7 +2717,9 @@ columns of this table under any reading") is met by `provenance`, and
 the same argument covers the other two:
 
 - `#section provenance` — one row per provenance block: `line`,
-  `block_line`, `block_name`, then the nine fields as columns, prose
+  `block_line`, `block_name`, then the record's fields as columns
+  (eleven at revision 3.1, and the section carries a data block's
+  provenance on the same rows — one record, one section), prose
   escaped.
 - `#section variants` — one row per variant: `line`, `block_line`,
   `block_name`, `testee`, `kind`, `text`, `groups`, `note`,
@@ -2973,7 +2978,7 @@ delivery), H1/H2-family/H11 are BUILT with W1, and four rows join:
 
 | # | change | wave | touches |
 |---|---|---|---|
-| H12 | **the body SUB-BLOCK arms** in all three readers: indentation test before dispatch, skip-into-sub-block for `provenance`/`variant`, the bare-indented refusal kept verbatim (§1.2) | W23 | `run.sh`, `verify_rxt.py` (pcrec's own arm rides SW2/SW3/SW10) |
+| H12 | **the ATTACHMENT arm** in all three readers (§1.2.1 S1): compute a line's parent from its indent BEFORE dispatching its first token, consume children for a kind that admits them (`provenance`, `variant`, and any `prose-value`), and raise the two refusal arms (attaches-to-nothing; parent takes no children). **REVISION 3.1 makes this bigger and simpler at once**: bigger because leg B has no indentation test at all today and leg C's is below its pre-body dispatch (MEASURED, §0.7), so this is a rule to BUILD in two legs rather than to extend in three; simpler because it is one mechanism serving children AND block scalars AND head continuation, where revision 3 had a sub-block arm beside them | W23 | `run.sh`, `verify_rxt.py` (pcrec's own arm rides SW2/SW16) |
 | H13 | **`pattern-esc`**: the pass-through arm + the CLI decode flag; `verify_rxt.py` decodes python-side; `\x00`'s K9 refusal surfaces through pcrec (§2.19) | W23 | `run.sh`, `verify_rxt.py`, `cli/` |
 | H14 | **`under` as a counted, labelled skip** in `run.sh` and `verify_rxt.py` (scoring is the consumer's, §2.17); `mc` verified by the PROTOCOL loop in python, never `finditer` (§2.21) | W23 | `run.sh`, `verify_rxt.py` |
 | H15 | **subject ids + hashes**: the per-file binding table, the read-time sha256 refusal on the driver path (§2.18); `configs describe`'s one-cell rule and its summary line (§2.20) | W23 | `run.sh`, `driver.c` |
@@ -3241,8 +3246,9 @@ absent provenance).
 **What [ENG-PGO] owns**: the analyzer, D83's `--exemplar FILE`-shaped
 flag, the built-in static fallback table when no findings file is given,
 and — under D77 — whether any *second* family member is ever earned.
-Its plan row says it blocks on "wave 2/3"; on this design it blocks on
-**W2** alone.
+Its plan row says it blocks on "wave 2/3"; under F-Q1 there is no W2/W3
+split left, so it blocks on the **one W23 delivery** and rides it
+(§1.4).
 
 ### 4.4 [V-E] — the manifest, the finder, and compilation units
 
@@ -3532,6 +3538,41 @@ files parse and never the meaning of the 179.
 | **T-4** non-carrying block state vs cascading options | **Two different constructs, so neither has to become the other.** Block reset is the default and is untouched; the cascade exists only inside `config … from`. MEASURED: `config` occurs 0 times in the corpus, so no existing file opts in |
 | **T-5** byte-exact subjects by reference | §2.8: bytes are the subject, no decoding, NUL-safe, local paths only. It forces a **driver-protocol change** (H6/S5) rather than being free, and this note says so rather than assuming `argv` will carry a megabyte with a NUL in it |
 | **T-6** per-file accounting vs includes | §2.11's three rules: closure is the unit, entry-set subtraction with **both counts reported**, cells counted. Plus a fourth failure taxonomy (resolution) that is *reported* separately but *scored* as a compile failure, which is what preserves the 384 `perr` blocks |
+
+### 5.2a Where to attack REVISION 3.1 (the panel's shortest path)
+
+Revision 3's own "for the panel" list stands. These four are new, and
+each is written as the claim a critic should try to break rather than
+as a defence:
+
+1. **§1.6's version answer.** The claim is that §1.2's re-factoring is
+   purely additive. The sharpest attack is a FILE — legal today, and
+   parsing differently or being refused differently in a way that
+   matters — that §1.6.1's three claims miss. The place to look is the
+   HEAD, not the body: S1 is asserted to reproduce today's head
+   continuation exactly, and the shipped implementations of that
+   (`rxt_source.c`'s `parse_prose` and `parse_config`, including the
+   r46sem-10 blank-line fix) are where an asymmetry could still be
+   hiding.
+2. **§1.2.3's admission, in the other direction.** The claim is that
+   block grouping is the ONLY place structure needs a keyword. A
+   critic should try to find a second — the candidates are `under`'s
+   qualified line (does a reader need to know `under` to see where the
+   case line starts?) and `@file:`'s optional suffixes.
+3. **§2.26 item 10, the provenance unification.** The claim is that
+   two records were one record all along. The attack is a fact a
+   `freq` block must state that a pattern block's provenance has no
+   field for, or vice versa — in which case the union is a union and
+   not a unification, and the per-parent required set is hiding a
+   second record inside one production.
+4. **§2.25's scope.** The claim is that the schema is exactly as big
+   as W23's productions need. Attack it from both ends: a constraint
+   kind in §2.25.3 whose only customer is speculative (it would fail
+   the section's own membership rule), or a W23 refusal rule that none
+   of the five kinds can express and that therefore still lives in
+   parser control flow — which would mean the schema is a partial
+   declaration presenting itself as a complete one, the worst of the
+   three available outcomes.
 
 ### 5.3 The anti-requirements
 
@@ -4093,20 +4134,32 @@ alternative — bench-side capability files — is a partial return of the
 hybrid the 2026-09-12 ruling removed, and §8's P-Q4 records why it was
 considered and declined rather than defaulted. Recommended: ratify.
 
-**W23-F3 — the `mc` counting rule's home (§2.21).** The manager
-pre-ruled the bench's formula; measurement found it double-counts an
-empty match found beyond the scan position, so the design states
-`match_api.md` §3.1's shipped protocol instead and hands the bench one
-adapter edit. No semantics change to any shipped surface — flagged
-because a pre-ruling was deviated from on evidence, and because the
-outbox message to the bench should carry Frank's (or the manager's)
-confirmation.
+**W23-F3 — the `mc` counting rule's home (§2.21). RESOLVED at revision
+3.1; NOT a question for Frank.** The manager pre-ruled the bench's
+formula; measurement found it double-counts an empty match found beyond
+the scan position, so the design states `match_api.md` §3.1's shipped
+protocol instead. **The manager has ACCEPTED the deviation** — it is
+the only rule pcrec's own entry points can implement, the bench's note
+pre-authorized exactly this answer (*"the harness's rule, whatever it
+is — say that"*), and no shipped surface changes. It stays listed here
+because the outbox message owes the bench their one adapter edit
+(empty-match advance from the reported START, not `max`), which §9's E5
+group carries. Nothing is owed to Frank.
+
+**Revision 3.1 adds NO question to this queue**, and that is
+deliberate: the two rulings it works through delegate syntax to the
+manager (the 14:5x delegation, restated by the ownership ruling), so
+§2.26's four spelling moves and §1.6's declined version break are the
+manager's calls, made and defended here rather than escalated. The
+panel is the check on them.
 
 **Recorded as RULED, not asked again**: F-Q1 (Tier 1 + Tier 2, one W23
 delivery — §1.4), F-Q2 (`pattern-esc` — §2.19), Option A (the set's
 truth lives in `.rxt` — nothing in this revision answers a need
-bench-side; the one candidate, P-Q4, went in-format), and STEP 0's two
-refusals (lane rxtnul; designed against, not restated).
+bench-side; the one candidate, P-Q4, went in-format), STEP 0's two
+refusals (lane rxtnul; designed against, not restated), and the two
+2026-09-12 rulings this revision exists to work through — internal
+consistency (§1.2, §1.6, §2.25) and ownership (§2.26).
 
 ---
 
