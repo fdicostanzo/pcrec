@@ -638,15 +638,30 @@ place the format does not fully pass it and what passing would cost.
 
 #### 1.2.1 The STRUCTURE layer
 
-A reader at this layer knows **two devices and one two-member set**. It
-knows no other keyword, no scopes, no value shapes.
+A reader at this layer knows **three devices and two schema
+parameters**. It knows no other keyword, no scopes, no value shapes.
+
+**CORRECTED AT REVISION 3.2 (r57 G-B1, a BLOCKER; S-M1 and G-B2's N1/N2
+converged on the same object from two other directions).** Revision
+3.1 stated the layer as two devices and one parameter, and the block
+scalar refutes that: inside a `description |` body an indented `#` is
+PROSE and ragged indentation is LEGAL PROSE SHAPE — both measured rc 0
+on the shipped binary (§0.8) — neither of which S0 or S1 as written
+can produce. A reader that knew only S0-S2 would have to suspend those
+rules exactly where the format needs them suspended, and the only way
+to know to do so is by reading `\|` and the parent's declared value
+form. So the third device is DECLARED rather than left to be
+discovered, and the parameter count is stated as two.
 
 **S0 — LINE CLASSES (lexical, unchanged).** A line is BLANK (empty or
 whitespace only), a COMMENT (`#` in **column 1** — a `#` anywhere else
 is data, R-RXT-2), or CONTENT. A line's INDENT is its count of leading
-spaces; an indented `#` is a structure error naming the rule
-(*"comments must start in column 1"*, `rxt_source.c`'s shipped
-diagnostic, unchanged).
+SPACES; **a leading TAB does not open an indent and is refused by
+name** (§1.6.1a narrowing (4), TAKEN). An indented `#` is a structure
+error naming the rule (*"comments must start in column 1"*,
+`rxt_source.c`'s shipped diagnostic, unchanged) — **outside an S3
+region; inside one, S0 does not apply at all**, which is what keeps
+§1.6.1a candidate (2) a narrowing AVOIDED rather than one taken.
 
 **S1 — ATTACHMENT.** A CONTENT line whose indent is GREATER than the
 nearest preceding CONTENT line's **attaches to it as a CHILD**. Equal
@@ -664,19 +679,62 @@ siblings until the next opener at that level or the end of the
 enclosing scope. The opener set is closed, declared, and has **exactly
 two members: `pattern` and `pattern-esc`** (§2.19).
 
-That is the whole layer. From S0-S2 a reader recovers: every line's
-parent, every group's extent, and therefore blocks, sub-blocks and line
-membership — with no knowledge of `config`, `provenance`, `variant`,
-`m`, `lib` or any other keyword.
+**S3 — OPAQUE REGIONS (NEW at revision 3.2).** A CONTENT line whose
+value is the single byte `|` **opens an OPAQUE REGION**. Its EXTENT is
+structural and is the only structural fact about it: the region runs
+from the next line to (exclusive) **the first line whose indent is
+less than or equal to the opener's, or the first BLANK line, whichever
+comes first**. Every line inside the region is BYTES — not classified
+by S0, not attached by S1, not tested against S2. The region's content
+is the opener line's VALUE; what it decodes to is a schema question
+(§1.2.5's `prose-value`), not a structural one.
 
-**S2's opener set is the ONE parameter the structure layer takes from
-the schema, and revision 3.1 does not pretend otherwise.** It is not
-the thing the ruling forbids — that is a per-keyword structural
-EXCEPTION decided by an open-ended table — but it is a keyword fact,
-it is stated as one, and §1.2.3 prices removing it. It is declared as
-one schema column (`opens_group`), printed by `--list-schema` (§2.25),
-so a generic reader FETCHES it rather than hard-coding it; today the
-fetch returns two rows.
+That is the whole layer. From S0-S3 a reader recovers: every line's
+parent, every group's extent, every opaque region's extent, and
+therefore blocks, sub-blocks and line membership — with no knowledge of
+`config`, `provenance`, `variant`, `m`, `lib` or any other keyword.
+
+**THE STRUCTURE LAYER TAKES TWO PARAMETERS FROM THE SCHEMA, and
+revision 3.2 states both rather than one.** Neither is the thing the
+ruling forbids — that is a per-keyword structural EXCEPTION decided by
+an open-ended table — but both are keyword facts, both are stated as
+such, and §1.2.3 prices removing them:
+
+| parameter | schema column | what a generic reader does with it | today's answer |
+|---|---|---|---|
+| the BLOCK-OPENER set (S2) | `opens_group` | decides where a group starts | two rows: `pattern`, `pattern-esc` |
+| the PROSE-VALUED kinds (S3) | `value = prose` | decides whether a bare `\|` value opens an opaque region | today: `description`, `license-note`, `adaptation`, `attribution`, `note` — five rows, and the set GROWS whenever a prose field is added |
+
+Both are **one `--list-schema` query** (§2.25), so a generic reader
+FETCHES them rather than hard-coding them, and both are visible in the
+same dump a validity reader already reads. The second is the more
+load-bearing of the two and revision 3.1 hid it: the opener set is
+closed and two-member, while the prose set is open-ended by
+construction — §1.2.5's whole point is that a second prose field
+inherits the block scalar rather than inventing it, which is exactly a
+statement that this parameter grows.
+
+**Why S3 is a DEVICE and not a value rule.** The obvious objection is
+that `\|` is a value-form discriminator (§1.2.4 says so of `"` after
+`=` in a `tag-prose` item, and that remains true of `"`), so it should
+live entirely in the schema layer. It cannot, and the difference is
+measurable: a `tag-prose` value is bounded by the line it is on, so a
+reader that ignores the discriminator still gets the line's EXTENT
+right and only mis-reads its content. A `\|` value is bounded by
+SUBSEQUENT LINES, so a reader that ignores it gets the extent of
+everything after it wrong — it will attach prose lines as children,
+dispatch their first tokens as line kinds, and classify an indented `#`
+as a structure error. **Extent is structure.** That is the test, and
+`\|` passes it where `"` does not.
+
+**What S3 costs, stated with the rest of the census.** Declaring the
+region does not make its INTERIOR unconstrained by accident — it makes
+it unconstrained by decision, and two things that are legal today stay
+legal because of it: an indented `#` inside a block scalar (prose, not
+a comment error) and ragged prose inside one. Both were on their way to
+becoming narrowings under revision 3.1's silence, and §1.6.1a records
+them as narrowings AVOIDED rather than as narrowings taken. The
+region's own strip rule is a separate, shipped defect and is K57.
 
 **WHAT THIS DELETES.** Three rules in revision 3 stop existing:
 
@@ -704,12 +762,22 @@ fetch returns two rows.
    attributes — so N-2's failure is as loud as it was, and it is now
    loud for a reason a reader can look up.
 
-**WHAT IT COSTS: one diagnostic tier, and ONE MEASURED NARROWING.** No
-file changes meaning. A file legal today is legal, byte for byte (0
-corpus lines are indented, re-measured at 210 files, §0.7). Most
-refusals that move only change WHICH message they carry, which D26 puts
-in the tier this project does not spend effort on. But S1 is
-DEPTH-SENSITIVE and today's head continuation is not, and that
+**WHAT IT COSTS: one diagnostic tier, and A CENSUS OF NARROWINGS —
+§1.6.1a, five candidates, three taken.** No file changes meaning. A
+file legal today is legal, byte for byte (0 corpus lines are indented,
+re-measured at 210 files, §0.7). Most refusals that move only change
+WHICH message they carry, which D26 puts in the tier this project does
+not spend effort on.
+
+**CORRECTED AT 3.2 (r57 G-B2, C-M1; convergence 3).** Revision 3.1 said
+"ONE MEASURED NARROWING" and the sentence was wrong twice over: three
+more narrowings live in the structure layer's own change and a fifth
+lives in §2.22's semantics, and revision 3.1's instrument for finding
+them — §1.6.4's own standing rule — was written and then not swept
+across the delivery. **§1.6.1a is that sweep, published as a CLOSED
+LIST**; this subsection keeps the first candidate because it is the one
+the structure layer forces and the one the rule was written from. But
+S1 is DEPTH-SENSITIVE and today's head continuation is not, and that
 difference is real:
 
 > **THE RAGGED-BODY NARROWING, found by probing rather than by reading
@@ -727,10 +795,18 @@ difference is real:
 It is admitted deliberately, on three grounds, each measured:
 
 1. **The population is provably empty, in both repos.** `config`
-   occurs 0 times in the 210-file corpus; the 19 head blocks with
-   bodies in `tests/rxtsource/fixtures/` are every one uniformly
-   indented; and `pcrec-bench` contains no `.rxt`/`.rxtin` file at all
-   today (read-only check). Nothing anywhere is narrowed in fact.
+   occurs 0 times in the 210-file corpus; the **20** head declarations
+   carrying an indented body in `tests/rxtsource/fixtures/` — across
+   **13 of the 45** files — are every one uniformly indented, at width
+   2 without exception; and `pcrec-bench` contains no `.rxt`/`.rxtin`
+   file at all today (read-only check). Nothing anywhere is narrowed
+   in fact. **(Corrected at 3.2, r57 G-B7: revision 3.1 said 19. The
+   21st candidate a naive scan finds and the one width-3 line are the
+   SAME line — `whitespace_only_line.rxtin:9`, pure whitespace, which
+   S0 classifies BLANK and not CONTENT, so it is neither a body line
+   nor a counter-example to uniformity. The fixture exists precisely
+   because leg C once mis-classified it, which is why it is worth
+   naming rather than silently excluding.)**
 2. **It is FORCED by the feature, not gratuitous.** Depth has to become
    meaningful the moment a record can contain a record — which §2.10's
    `provenance`-under-a-data-block is, two levels of S1 — so a
@@ -750,14 +826,20 @@ Revision 3 asserted "the indentation test PRECEDES token dispatch" in
 all three body readers. MEASURED (§0.7), that was true of ONE of them:
 leg A tests indentation first (`rxt_source.c:992`), leg B has no
 indentation test at all (an indented line reaches `run.sh`'s catch-all
-by fall-through), and leg C dispatches an indented PRE-BODY line on its
-first token before reaching its own check. Under S1 the ordering is not
-an extra rule to remember — **indent determines the parent, and only
-then does the parent's schema decide what the first token may be** — so
-"dispatch after attachment" is the layering itself, and §9's A-group
-pins it with an indented-line fixture in all three legs rather than
-trusting three independent implementations to have got an ordering
-right.
+by fall-through through 22 arms none of which tolerates leading
+whitespace), and leg C dispatches an indented PRE-BODY line on its
+first token before reaching its own check — **pre-body only: `:424`'s
+check is unconditional once a block is open** (§0.7, r57 C-N9). Under
+S1 the ordering is not an extra rule to remember — **indent determines
+the parent, and only then does the parent's schema decide what the
+first token may be** — so "dispatch after attachment" is the layering
+itself, and §9's A-group pins it with an indented-line fixture in all
+three legs, **at the PRE-BODY position**, rather than trusting three
+independent implementations to have got an ordering right. The position
+is load-bearing and is named in the check rather than left to whoever
+writes the fixture: a post-body fixture reaches `:424` in leg C and
+would report GREEN against the very defect it exists to pin
+([MECH-REACH]'s shape, r57 S-M5).
 
 #### 1.2.2 The SCHEMA layer
 
@@ -774,6 +856,12 @@ the boundary:
   group, whether it admits children and in which scope, its
   cardinality, its required/conditional status, and whether its value
   is drawn from a closed set.
+- **Two of those columns are READ BY THE STRUCTURE LAYER** and the rest
+  are validity (§1.2.1's parameter table): `opens_group` and
+  `value = prose`. The boundary between the layers is therefore not
+  "the schema knows nothing structural" — it is that the structure
+  layer reads exactly two columns, both closed-form, and never
+  dispatches on a kind's identity.
 - **A first token unknown IN ITS SCOPE is a hard error naming the
   scope** ("`testee` is not a pattern-block directive"). Nothing is a
   keyword everywhere. Unchanged in force; now derived from a table.
@@ -784,7 +872,15 @@ the boundary:
 makes it so.** A `pattern` line and its `m`/`n`/`g` lines are all at
 indent 0 and are siblings by S1; what makes the case lines BELONG to
 the pattern is S2's opener set, which is a keyword fact. A reader given
-nothing but the bytes sees 28,943 flat sibling lines.
+nothing but the bytes sees **35,961** flat sibling lines.
+
+**(Corrected at 3.2, r57 G-B6: revision 3.1 wrote 28,943 here, which is
+the EXPECTATION-line count — a partition a generic reader cannot
+compute, since computing it requires knowing which first tokens are
+case kinds. The number this sentence needs is every non-blank,
+non-comment line, which is 35,961 over the 210 files. The point gets
+stronger, not weaker: a quarter more lines sit in the undifferentiated
+heap than the first figure admitted.)**
 
 Three things about that, each measured rather than argued:
 
@@ -801,10 +897,17 @@ Three things about that, each measured rather than argued:
   making grouping S1's job and emptying the opener set. That is a
   break, and §1.6 prices it and declines it.
 
-Stated the other way round, so the claim is falsifiable: *with a
-two-row opener table, structure recovery is complete and
-context-free.* That table is one `--list-schema` query, and it is the
-entire residue of "keywords decide structure" in the format.
+Stated the other way round, so the claim is falsifiable — **and
+RESTATED AT 3.2 against the two-parameter baseline, because revision
+3.1's version of this sentence counted one parameter and there are
+two**: *with a two-row opener table AND the prose-valued kind set,
+structure recovery is complete and context-free.* Both are one
+`--list-schema` query, and together they are the entire residue of
+"keywords decide structure" in the format. The honest reading of the
+second: the opener set is closed at two and can be quoted in a
+sentence; the prose set grows, so a reader who hard-codes today's five
+rows will be wrong the day a sixth prose field lands, which is exactly
+why the fetch is specified and the values are not.
 
 #### 1.2.4 Bare indentation vs a visible sub-block MARKER
 
@@ -829,17 +932,32 @@ differ in spelling and not in what follows, because all three make the
 parent's intent explicit at the cost below.)
 
 **Priced against long-term viability, the marker LOSES on three
-counts.**
+counts** — **and revision 3.2 re-runs the comparison against §1.2.1's
+TWO-PARAMETER baseline rather than 3.1's one-parameter one (r57 G-B1),
+because the marker's case is strongest exactly where the baseline is
+weakest.** The re-run does not change the decision; it changes count 1,
+which was overstated, and it names what the marker genuinely buys.
 
-1. **It makes structure depend on two signals that can disagree**, and
-   every disagreement is a new error class with an arbitrary
-   resolution: a marker with no indented children, and indented
-   children under an unmarked line. Under bare indentation neither
-   state is expressible. The ruling's own target is *indentation whose
-   meaning depends on which keyword opened the line*; the cure for that
-   is making indentation mean ONE thing everywhere (§1.2.1 S1), and a
-   second signal does not add to that cure — it gives the reader a
-   second thing to reconcile.
+1. **It makes structure depend on two signals that can disagree** — and
+   **CORRECTED AT 3.2 (r57 G-B4): the resulting error class does not
+   DISAPPEAR under bare indentation, it RELOCATES to the schema
+   layer.** Revision 3.1 said neither disagreement state is
+   expressible; that is true of the state as a STRUCTURE error and
+   false of the state itself. "Indented children under an unmarked
+   line" is expressible today and is refused — as a schema error naming
+   the parent (`m` declares `children: none`, §1.2.1's deletion 3). And
+   "a marker with no indented children" has a live shipped analogue in
+   the very construct 3.1 cited as the counter-example: `description |`
+   with nothing indented under it is **refused by name today**
+   (`rxt_source.c:514`, *"block scalar '\|' has no indented
+   continuation lines"*), which is precisely the disagreement state
+   count 1 called inexpressible. So the honest form of the count is:
+   the marker moves two error classes from the schema layer to the
+   structure layer and adds a third (marker-plus-wrong-depth), where
+   bare indentation keeps them all in the layer that can name the
+   offending PARENT. That is a smaller claim than 3.1's and it still
+   points the same way, because a structure error cannot say which
+   declaration the author got wrong and a schema error can.
 2. **The format already ships indentation-attachment, unmarked**, in
    the head: `config` bodies and `description |` block scalars have
    been parsed that way since W1.1 by all three readers. Adding a
@@ -852,21 +970,50 @@ counts.**
    and the thing that goes stale when the schema changes and old files
    do not.
 
-**DECISION: bare indentation, no new marker.** The consequence-4
-obligation is met by §1.2.1's unified rule plus §2.25's declared,
-printable schema: *which kinds open a scope* is answerable exactly, by
-`--list-schema`, once, rather than by a sigil a file may or may not
-carry.
+**What the marker WOULD buy, stated because the two-parameter baseline
+makes it real.** A trailing sigil would let a generic reader answer
+"does this line admit children?" without the `children` column — which
+is not a parameter the structure layer reads anyway (§1.2.2), so it
+buys nothing there. It would NOT remove either parameter the structure
+layer actually reads: `opens_group` would still be needed for block
+grouping (a marker on `pattern` would be the §1.6.2 break by another
+spelling, since it changes every existing file), and the prose-valued
+set would still be needed for S3, because `\|`'s own region is opened by
+a VALUE and a sigil on the opener line does not tell a reader where the
+region ENDS. **So the marker's price is three error classes and a
+per-occurrence restatement of the schema, and its yield against the
+stated baseline is zero parameters removed.** That is a stronger
+decision than revision 3.1 could make, because 3.1 was comparing
+against a baseline that undercounted its own cost.
 
-**The `|` block scalar is not a counter-example, and the distinction is
-worth stating** because "you already use a marker" is the obvious
-attack. `|` discriminates between two forms of ONE production's VALUE —
-`description <text>` (value on this line) and `description |` (value on
-the lines below) — which no amount of structure can decide, since both
-shapes are structurally identical. `"` after `=` in a `tag-prose` item
-(§1.3) is the same kind of thing. Both are **value-form
-discriminators**, declared per line kind in the schema's `value` column;
-neither decides where a line attaches. A structure marker would.
+**DECISION: bare indentation, no new marker.** The consequence-4
+obligation is met by §1.2.1's unified rule, S3's declared region, and
+§2.25's printable schema: *which kinds open a scope* and *which kinds
+take a prose value* are both answerable exactly, by `--list-schema`,
+once, rather than by a sigil a file may or may not carry.
+
+**The `|` block scalar IS a structural device, and revision 3.2
+withdraws the sentence that said otherwise** (r57 G-B1). Revision 3.1
+wrote: *"Both are value-form discriminators… neither decides where a
+line attaches."* Measurably false of `|` — inside a `description |`
+body an indented `#` is prose and ragged indentation is legal (§0.8),
+neither of which S0/S1 can produce — so `|` decides how every line
+after it is treated, which is what "decides where a line attaches"
+means. It is now **S3**, declared in §1.2.1, and the distinction that
+survives is narrower and true:
+
+| | `\|` (a prose value) | `"` after `=` (a `tag-prose` item) |
+|---|---|---|
+| what it discriminates | the value's FORM — on this line, or on the lines below | the value's FORM — bare token, or quoted with whitespace |
+| where the value ENDS | on SUBSEQUENT lines, by S3's extent rule | on THIS line, by the closing quote |
+| a reader that ignores it | mis-parses the extent of everything after it | mis-reads one line's content |
+| layer | **structure (S3) + schema (the `value` column)** | schema only |
+
+"Value-form discriminator" was the right CONCEPT and the wrong
+CONCLUSION: a discriminator that selects a multi-line form is a
+structural device wearing a value's clothes. §2.26 item 8's pairing of
+the two stands as a vocabulary observation and is re-worded there to
+stop implying they live in one layer.
 
 #### 1.2.5 The lexical rules, restated under the two layers
 
