@@ -77,7 +77,46 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.4
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.4.1
+  (2026-09-13, lane w23fix3, [DD-13b.W23] STEP 1.5): the r58 FIX
+  ROUND on revision 3.4** (`../../dev/reviews/2026-09-13-r58-w23-aux.md`
+  — two opus critics, 3 blockers / 7 must-fixes, all FIX-NOW; **§0.10 is
+  the finding-by-finding record and is where a reader of 3.4 starts**).
+  **The structure layer takes THREE parameters, not two**: the
+  OPEN-SUBTREE kinds (`children: tree`), inside whose subtrees S2's
+  opener set is EMPTY and S3 NEVER OPENS — one general parameter
+  adopted (manager ruling R1) in place of two local patches, repairing
+  both blockers, which two critics reached from opposite directions
+  (A from the normative-site contradiction, B's lens-mate from the
+  note's own `aux_deep_tree.rxtin` fixture, which asserted the opposite
+  of what S2 said). Its two other consequences: **a prose value is NOT
+  legal inside an aux body** (§2.27.2 decision 3 RULED for the one-line
+  alternative — a bare `|` there is the LITERAL `|`, a paragraph is
+  child lines the dump returns in source order, and a literal `|` stays
+  writable in the one production whose key space pcrec does not
+  control), and **`tag-prose` is REMOVED** (ruling R3 — its one named
+  customer moved into `variant note` in the same revision that added
+  it, so §2.25.3's membership rule applies one layer over, in the
+  grammar; it returns priced at one alternative plus one sentence).
+  §1.3's count is now **five productions removed, one added**. Also:
+  §2.24's aux dump gains three normative facts it had left
+  underspecified (the opener line GETS a row and is the block identity;
+  row order IS source order, guaranteed; every aux value is its line's
+  token remainder), §2.27.3's graduation rule gains a FIFTH clause
+  stated over VALUES rather than readers (nothing in pcrec may take a
+  value that changes when an aux body changes, except `#section aux`'s
+  own rows — closing two routes the reader-enumeration missed), and
+  three bench-facing corrections land: **their A2 fixture needs two
+  lines deleted** (it types `config … testee`/`option`, so it exits 1
+  at the delivered pin — Appendix A's "no probe script needs an edit"
+  was a two-token measurement generalized into a headline), §9's D1 row
+  and Appendix A lose a false claim about an enumeration D1 does not
+  contain, and §5.4's OD-3 is re-dispositioned off a grammar that no
+  longer exists. **What HELD**: D99's structural promise survived three
+  hostile shapes, and critic B's inverse method over a 66-mechanism
+  population found exactly ONE orphan — `cross-scope`, which 3.4's own
+  sweep had already caught. The residue both methods miss is
+  **DISPOSITION TEXT**, now named in §5.2a item 7. **Revision 3.4**
   (2026-09-13, lane w23aux, [DD-13b.W23] STEP 1.4): D99, and it is a
   NARROWING OF WHAT THE FORMAT MEANS rather than a fix round.**
   Frank's ruling (`../../dev/decisions.md` D99) is that the `.rxt`
