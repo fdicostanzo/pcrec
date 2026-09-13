@@ -977,8 +977,8 @@ therefore blocks, sub-blocks and line membership — with no knowledge of
 `config`, `provenance`, `variant`, `m`, `lib` or any other keyword.
 
 **THE STRUCTURE LAYER TAKES TWO PARAMETERS FROM THE SCHEMA, and
-revision 3.2 states both rather than one** (3.3: the second is read off
-TWO columns, below)**.** Neither is the thing the
+revision 3.2 states both rather than one** — and at 3.3 the second is
+read off TWO columns, below. Neither is the thing the
 ruling forbids — that is a per-keyword structural EXCEPTION decided by
 an open-ended table — but both are keyword facts, both are stated as
 such, and §1.2.3 prices removing them:
@@ -1028,11 +1028,14 @@ as a structure error. **Extent is structure.** That is the test, and
 
 **What S3 costs, stated with the rest of the census.** Declaring the
 region does not make its INTERIOR unconstrained by accident — it makes
-it unconstrained by decision, and two things that are legal today stay
-legal because of it: an indented `#` inside a block scalar (prose, not
-a comment error) and ragged prose inside one. Both were on their way to
-becoming narrowings under revision 3.1's silence, and §1.6.1a records
-them as narrowings AVOIDED rather than as narrowings taken. The
+it unconstrained by decision, and **three** things that are legal today
+stay legal because of it: an indented `#` inside a block scalar (prose,
+not a comment error), ragged prose inside one, and — once S0's BLANK
+narrowed at 3.3 — **an indented whitespace-only line inside one, which
+is the format's only paragraph break**. All three were on their way to
+becoming narrowings under revision 3.1's and 3.2's silences, and
+§1.6.1a records them as narrowings AVOIDED (rows (2), (3), (6)) rather
+than as narrowings taken. The
 region's own strip rule is a separate, shipped defect and is K57.
 
 **WHAT THIS DELETES.** Three rules in revision 3 stop existing:
@@ -1062,9 +1065,9 @@ region's own strip rule is a separate, shipped defect and is K57.
    loud for a reason a reader can look up.
 
 **WHAT IT COSTS: one diagnostic tier, and A CENSUS OF NARROWINGS —
-§1.6.1a, eleven candidates, seven taken** (five at 3.2; re-swept at
-3.3, and two of the seven landed by STEP 0 rather than here)**.** No
-file changes meaning. A
+§1.6.1a, eleven candidates, seven taken** — five candidates at 3.2,
+re-swept at 3.3, and two of the seven landed by STEP 0 rather than
+here. No file changes meaning. A
 file legal today is legal, byte for byte (0 corpus lines are indented,
 re-measured at 210 files, §0.7). Most refusals that move only change
 WHICH message they carry, which D26 puts in the tier this project does
