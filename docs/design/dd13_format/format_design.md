@@ -1026,10 +1026,23 @@ stop implying they live in one layer.
 - **One line, one value — with exactly one exception, the BLOCK
   SCALAR.** A line kind whose schema `value` is `prose` may write
   `<kind> |` and continue on lines indented under it; newlines are
-  preserved and the value ends where S1 says the attachment ends. The
-  one-line form `<kind> <text>` stays. The exception is a property of
-  the VALUE production (`prose-value`), not of any keyword, so a second
-  prose field inherits it rather than inventing it.
+  preserved and **the value ends where S3 says the OPAQUE REGION
+  ends** — at the first line indented no more than the opener, or at
+  the first blank line. The one-line form `<kind> <text>` stays. The
+  exception is a property of the VALUE production (`prose-value`), not
+  of any keyword, so a second prose field inherits it rather than
+  inventing it — and inheriting it grows the structure layer's second
+  parameter (§1.2.1), which is the cost of the generality and is worth
+  naming where the generality is claimed.
+  **CORRECTED AT 3.2 (r57 G-B1):** revision 3.1 said the value ends
+  "where S1 says the attachment ends", which put a prose region under
+  the attachment rule. It is not under it — S1 does not run inside the
+  region at all, which is exactly why an indented `#` there is prose
+  and ragged prose there is legal (both MEASURED, §0.8). S3 is the rule
+  that carries this sentence.
+- **Inside the region, nothing is a line kind.** A prose line whose
+  first token happens to spell `pattern`, `m` or `provenance` is prose.
+  This is not a carve-out; it is S3 having no dispatch step.
 - **`prose-value` is legal wherever the schema declares a prose value,
   at any depth** — file level, a `config` body, a sub-block attribute,
   and (NEW at 3.1, see below) a pattern block's own `description`.
@@ -1084,8 +1097,8 @@ What survives from revision 3's rules, and where each now lives:
 | indentation test precedes dispatch | **the layering itself** (S1 then schema); pinned in all three legs by §9's A-group rather than asserted of three implementations |
 | a bare indented line is a hard error | **still a hard error**, in one of two arms (attaches to nothing → structure; parent takes no children → schema). M8 stays loud |
 | a sub-block's vocabulary is a fourth closed context | **a scope**, declared like every other; the count is not fixed at four |
-| sub-block ends at the first non-indented line including a blank one | **S1**, unchanged in effect |
-| the attribute vocabulary avoids the token `pattern` | still true, for a NEW reason — §2.26 item 9. The old reason (an indented `pattern` might start a block in one reader) is structurally impossible now: an opener applies among SIBLINGS, and a child is not a sibling |
+| sub-block ends at the first non-indented line including a blank one | **S1**, unchanged in effect — and S3 for a prose region, whose extent rule is the same shape stated once more (3.2) |
+| the attribute vocabulary avoids the token `pattern` | still true, for a NEW reason — §2.26 item 9. The old reason (an indented `pattern` might start a block in one reader) is **impossible in any reader that implements S1/S2**, since an opener applies among SIBLINGS and a child is not a sibling. **Qualified at 3.2 (r57 S-S5)**: "structurally impossible" is a statement about the SPECIFICATION, and legs B and C are independent implementations of it (§2.25.5) — leg B has no attachment step today at all. It is impossible by construction in leg A once H16 lands and it is a property legs B and C must be PINNED to, which is §9's A-group's job, not an inheritance |
 
 Regime grouping is still NOT a sub-block customer — §2.22 repairs the
 wrapper mechanism instead, and the reasons there are unchanged by this
@@ -1557,12 +1570,16 @@ each falsifiable:
    acceptance-widening is by definition not a compatibility break for
    any file that exists.
 
-2a. **ONE NARROWING, declared and measured empty**: the ragged-body
-   case above. It is the only accept → reject in the re-factoring, its
-   population is 0 in the corpus, 0 in the 19 fixture head bodies and
-   0 in pcrec-bench, and §1.6.4's standing rule is amended to say what
-   a narrowing needs — because the first version of that rule had only
-   two cases and this one fell between them.
+2a. **THE NARROWINGS, declared, and the list is CLOSED**: §1.6.1a is
+   the census. **CORRECTED AT 3.2 (r57 G-B2, C-M1; convergence 3):
+   revision 3.1 wrote "ONE NARROWING" here, and the number is three
+   taken out of five candidates.** The correction matters more than the
+   count: revision 3.1 wrote §1.6.4's standing rule FROM the ragged-body
+   finding and then did not run that rule across the rest of its own
+   delivery, so three more narrowings in the structure layer and one in
+   §2.22's semantics went undeclared. **An instrument built from one
+   finding and not swept is the failure this revision records against
+   itself**, and §1.6.1a is the sweep.
 3. **Every new production is a fresh token.** All 52 candidates measure
    0 in first-token position at today's 210 files (§0.7).
 
@@ -1570,6 +1587,142 @@ Diagnostic wording is the whole residue, and D26 puts it in the tier
 this project does not spend effort on. **A version line whose only
 content is "refusals are worded differently now" would be a permanent
 mechanism bought with a transient inconvenience.**
+
+#### 1.6.1a THE NARROWING CENSUS — the closed list, five candidates
+
+**NEW AT REVISION 3.2** (r57 G-B2 N1/N2/N3, C-M1, S-M1 — the panel's
+convergence 3). The method is §1.6.4's own rule applied to the WHOLE
+delivery rather than to the one case that produced it: for every rule
+this revision states, ask whether some file legal on the shipped binary
+becomes refused. Five candidates were found by PROBE (§0.8), not by
+reading; three are TAKEN and two are AVOIDED by S3. Each taken row
+carries the full package the rule demands — population measured in both
+repos, forced-vs-chosen stated, and a spec sentence named — and each
+avoided row says what avoids it, because a narrowing avoided by a
+DECISION needs recording exactly as much as one taken (the decision is
+what a later wave could undo without noticing).
+
+| # | the construct | today | under 3.2 | verdict |
+|---|---|---|---|---|
+| (1) | a head body whose lines sit at DIFFERING depths (`config c` / `flags i` at 2 / `engine vm` at 4) | ACCEPTED, parsed flat — `--list-source` row byte-identical to the evenly-indented file (rc 0) | REFUSED: the deeper line attaches to `flags`, which admits no children | **TAKEN, FORCED** |
+| (2) | an indented `#` inside a `description \|` body | ACCEPTED as PROSE (rc 0; the value carries the `#` line verbatim) | ACCEPTED as PROSE — S3 says S0 does not run inside the region | **AVOIDED by S3** |
+| (3) | ragged indentation inside a `description \|` body | ACCEPTED (rc 0), relative indentation preserved | ACCEPTED — S1 does not run inside an S3 region | **AVOIDED by S3** |
+| (4) | TAB indentation (`config c` / `\tflags i`) | ACCEPTED (rc 0, `flags=i engine=vm`); `line_indented` (`rxt_source.c:109`) tests space OR tab | REFUSED by name: S0 counts leading SPACES, and a leading tab is a structure error naming the rule | **TAKEN, CHOSEN** |
+| (5) | a call `(?&x_y)` where `x_y` and `x-y` are both definitions in scope | ACCEPTED — binds to the exact-spelled `x_y`, the sibling inert; artifact byte-identical to the file without the sibling | REFUSED: §2.22's collision rule, exact spelling does not win | **TAKEN, CHOSEN** |
+
+**(1) THE RAGGED HEAD BODY — taken, FORCED.**
+*Population*: 0. `config` occurs 0 times in the 210-file corpus; the 20
+fixture head bodies are uniformly indented at width 2 without
+exception; pcrec-bench holds no `.rxt`/`.rxtin` file.
+*Forced, not chosen*: §1.2.1's three grounds — depth must become
+meaningful the moment a record can contain a record (§2.10's
+`provenance` under a data block is two levels of S1), so a
+depth-insensitive rule is not available to choose.
+*Spec sentence*: SW16.
+
+**(2) AN INDENTED `#` INSIDE A BLOCK SCALAR — AVOIDED, and it was one
+probe away from being taken silently.** Revision 3.1's S0 said "an
+indented `#` is a structure error" with no region carve-out, which
+would have made this a narrowing nobody declared. It is avoided by S3,
+not by luck.
+*Why it matters beyond the case*: the shipped parser's own comment
+(`rxt_source.c:735-747`) says the grammar decision here — whether a
+column-1-relative comment is legal inside a head continuation — is
+**deliberately LEFT OPEN** ("named rather than fixed… the grammar
+decision is left open (sem10's sibling)"). Revision 3.1 closed an open
+question by side effect, in the refusing direction, without noticing it
+was open. **S3 closes it the other way and says so**: inside a prose
+region a `#` is prose, because the region has no line classifier.
+Outside one — in a `config` body — the indented-`#` refusal is
+UNCHANGED and keeps its improved wording
+(`tests/rxtsource/fixtures/indented_comment_in_config.rxtin` pins it).
+*Spec sentence*: SW16 states both halves, because the pair is the rule.
+
+**(3) RAGGED PROSE INSIDE A BLOCK SCALAR — AVOIDED by S3**, same
+mechanism as (2): S1 does not run inside the region, so prose may sit
+at any depth greater than the opener's and relative indentation
+survives into the value. Without S3 this would have been (1)'s narrowing
+applied to prose, whose population is the one place ragged indentation
+is not a mistake — a paragraph with an indented example in it.
+*Note, and it is NOT a narrowing*: the shipped strip rule corrupts a
+DEDENTED prose line (`  ab…` under a 4-space block loses two bytes of
+content, MEASURED §0.8). That is wrong today and wrong under every
+revision of this note; it is filed as `docs/dev/known_issues.md` **K57**
+and fixed there, not here. S3's extent rule is deliberately silent
+about it: extent is structure, the strip is a value decoding, and K57
+lives in the second.
+
+**(4) TAB INDENTATION — taken, CHOSEN, and the choice is stated as
+one.**
+*Population*: 0 tab-indented content lines in either repo (210 corpus
+files + 48 fixtures; pcrec-bench has no files of this kind).
+*Chosen, not forced*: a depth rule CAN be defined over mixed tabs and
+spaces — pick a tab width, or compare prefixes bytewise. Neither is
+available honestly. A tab width is a convention the file cannot
+declare, so two readers with different conventions would recover
+different TREES from the same bytes, which is the one failure the
+structure layer exists to prevent; a bytewise prefix comparison makes
+`"\t"` and `"        "` incomparable, so a body mixing them has no
+defined parent chain and the rule would have to refuse at the first
+disagreement anyway — the same refusal, arrived at later and worded
+worse. MEASURED, the shipped parser is in exactly this position today:
+a `config` body whose first line is indented 2 spaces and whose second
+is indented by a TAB parses FLAT (rc 0), because `line_indented` asks
+only "is byte 0 a space or a tab" and never compares depths at all. The
+moment depth means something, that file has no answer.
+So the rule is: **indentation is SPACES; a leading tab is refused by
+name**, with a diagnostic that says so rather than reporting a
+mysterious attachment failure. Long-term viability is the criterion
+(Frank's ownership ruling), and a format whose tree depends on an
+undeclared tab width is not viable.
+*What it does NOT touch*: a tab INSIDE a value is data and stays data —
+`pattern` is rest-of-line verbatim and three corpus blocks carry a
+literal tab in their pattern text (w1_impl's own measurement). The
+narrowing is about leading whitespace only.
+*Spec sentence*: SW16.
+
+**(5) THE DERIVED-IDENTIFIER COLLISION — taken, CHOSEN, and it is the
+one that is not in the grammar at all.**
+This is §2.22's rule "exact spelling does NOT win", and the panel found
+it by looking where revision 3.1's own instrument had not: in the
+SEMANTICS, after the head. That is why §5.2a attack 1 is re-aimed (it
+pointed the panel at the head).
+*Population*: **0** for this exact shape in both repos — no file
+anywhere holds a definition spelled `x_y` beside one spelled `x-y` or
+`x.y`. The nearest neighbour is the general collision shape (two
+definitions whose mapped identifiers are equal, neither of them spelled
+as the identifier), whose population is **1**: the deliberate fixture
+`tests/rxtsource/fixtures/target_prefix_collision.rxtin` (`a-b` beside
+`a.b`), which is already a refusal fixture and whose behaviour this rule
+does not change. Measured over 96 `name` lines in 26 files;
+pcrec-bench contributes 0 because it holds no `.rxt`/`.rxtin` file.
+*MEASURED, the accept side*: `(?&x_y)` with only `x_y` defined
+compiles; with `x-y` added beside it, the artifact is **byte-identical**
+(equal output basenames in separate directories — comparing `a.c`
+against `b.c` reports a false difference on the `#include` line, this
+house's third recorded instance of that trap). So the sibling is inert
+today and the call resolves; under §2.22 the same file is refused.
+*CHOSEN, not forced, and §1.6.4 gains a fourth case for it*: the
+derived-identifier lookup could tie-break on exact spelling and it
+would be well-defined. It is refused instead because the mapping is
+deliberately non-injective and a silent tie-break makes the
+non-injectivity free exactly where it bites — a file that adds a
+hyphenated definition would silently change which definition an
+unrelated call binds to, and nothing would say so. **The
+forced-vs-chosen distinction is honest here and revision 3.1's §1.6.4
+had no slot for it**, because its case 3 assumes every narrowing is
+forced.
+*Spec sentence*: SW12 (the `name`-grammar section's amended paragraph),
+which is where the mapping and its refusal already live.
+
+**What the census does NOT contain, and why the absence is checked
+rather than assumed.** Every other rule this revision states either
+widens (§1.2.5's `description |` at block scope), re-words a refusal
+that stays a refusal (the head/body asymmetry's two arms), or adds a
+token measured free (the 52-candidate census). The productions were
+swept one at a time against the shipped binary; the sweep's own limit
+is stated in §5.2a — a critic looking for a SIXTH should look where
+this one did not, which is now the value layer rather than the head.
 
 #### 1.6.2 What WOULD trigger it, and what it would cost
 
@@ -1629,21 +1782,47 @@ first two and the gap was found by a probe, not by reading the rule**:
    re-words a refusal, or only adds a token measured free.
 2. **A version line, mandatory**: a change that makes an existing file
    MEAN something different. It may not ship without one.
-3. **A NARROWING (accept → reject) needs no version line, but needs
-   three things in the change that lands it**: the population MEASURED
-   rather than assumed (in this repo and in pcrec-bench, since a format
-   has two users), a stated reason the narrowing is forced rather than
-   chosen, and a sentence in the spec so a file refused tomorrow that
-   parsed yesterday has a citable answer. §1.2.1's ragged-body case is
-   the worked example and the reason this clause exists.
+3. **A FORCED NARROWING (accept → reject, where no other rule was
+   available) needs no version line, but needs three things in the
+   change that lands it**: the population MEASURED rather than assumed
+   (in this repo and in pcrec-bench, since a format has two users), a
+   stated argument that no alternative rule exists, and a sentence in
+   the spec so a file refused tomorrow that parsed yesterday has a
+   citable answer. §1.6.1a's case (1) is the worked example and the
+   reason this clause exists.
+4. **A CHOSEN NARROWING — the same three, PLUS the alternative named
+   and priced.** NEW AT 3.2 (r57 C-M1), because revision 3.1's case 3
+   assumed every narrowing is forced and two of this delivery's three
+   are not. When a well-defined alternative rule exists — tolerate
+   tabs under a declared width; tie-break the collision on exact
+   spelling — the change must say what the alternative would be, why it
+   was rejected, and what it would cost to revisit. A narrowing
+   defended as "forced" when it was chosen is worse than one defended
+   as chosen, because it forecloses the revisit: the next reader has no
+   way to tell that a decision was made at all. §1.6.1a's cases (4) and
+   (5) are the worked examples.
 
-§2.25's schema is what makes all three checkable — a schema diff
+**And a fifth thing the census made explicit, which is not a case but a
+DUTY**: the rule above is an instrument, and an instrument that is
+written from one finding and then not swept across the delivery finds
+exactly that one finding. Revision 3.1 wrote case 3 out of the
+ragged-body probe and declared "ONE NARROWING"; there were five
+candidates and the other four were one probe each. **A change landing
+under this rule sweeps its whole delivery and publishes the result as a
+CLOSED LIST**, including the narrowings AVOIDED and what avoids them —
+so a later wave that removes the avoiding mechanism can see what it is
+removing.
+
+§2.25's schema is what makes all of it checkable — a schema diff
 between two builds shows exactly which rows moved and in which
 direction, so "additive" stops being a claim a lane makes about its own
 change. **That is the concrete argument for the schema being data**:
-this narrowing was found by running the shipped binary on a hand-made
-file, and a machine-diffable declaration is how the next one gets found
-without the hand-made file.
+every one of §1.6.1a's five candidates was found by running the shipped
+binary on a hand-made file, and a machine-diffable declaration is how
+the next one gets found without the hand-made file. Note the honest
+limit, though: case (5) is a SEMANTIC narrowing in the composer's name
+lookup, which no schema row describes — so the schema diff would have
+caught four of five, and §5.2a says where the fifth kind lives.
 
 ---
 
