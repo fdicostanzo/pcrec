@@ -3019,6 +3019,12 @@ everywhere.
 - **`--list-definitions` is [DD-11]'s fifth registry surface** (D85), and
   the format is one of its two readers, not its author. §4.2 states the
   interface.
+- **`--list-schema` is NEW at revision 3.1 and is the SIXTH** (§2.25):
+  the format's own structural rules as a TSV, walked off the same table
+  the parser enforces. It is the surface Frank's consequence 3 asks
+  for, and it is what makes §1.2.1's one keyword-dependent parameter (the
+  block-opener set) a query rather than a hard-coded fact. Same
+  one-derivation-two-readers discipline as every dump beside it.
 - **New, and owed by this row when W1 lands**: a way to ask a *file* what
   it declares — the targets, their prefixes, their configs and their
   definitions — because a build system needs it and because a person
@@ -3063,8 +3069,8 @@ delivery; these are the [B42] additions:
 | # | file | the hunk | wave |
 |---|---|---|---|
 | SW1 | `docs/spec/rxt_format.md` | `pattern-esc`: the second block starter, the seven-escape vocabulary shared with subjects, one-spelling-per-block, the `\x00` refusal naming K9 and its lifting trigger (§2.19); the CLI decode flag cross-reference | W23 |
-| SW2 | `docs/spec/rxt_format.md` | the LEXICAL RULES section: the body SUB-BLOCK mechanism — declared kinds (`provenance`, `variant`), indentation-precedes-dispatch, blank-line termination, the bare-indented-line refusal UNCHANGED, `prose-value` legal inside a sub-block; the "only asymmetry" sentence rewritten to the narrow relaxation (§1.2) | W23 |
-| SW3 | `docs/spec/rxt_format.md` | `provenance`: the nine fields, the four required, the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-block (§2.14) | W23 |
+| SW2 | `docs/spec/rxt_format.md` | **REWRITTEN AT 3.1**: the LEXICAL RULES section becomes the TWO-LAYER statement — the STRUCTURE layer (S0 line classes, S1 attachment, S2 the two-member block-opener set) and the pointer to the schema for everything else. The head/body indentation asymmetry is DELETED rather than narrowed, the "only asymmetry" sentence goes, the bare-indented-line refusal survives in its two arms (attaches-to-nothing / parent-takes-no-children), and `prose-value` becomes legal wherever the schema declares a prose value, at any depth (§1.2) | W23 |
+| SW3 | `docs/spec/rxt_format.md` | `provenance`: the eleven fields, the per-parent required sets (a pattern block's four, a data block's four), the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-parent, and the `license`/`license-note` spelling (§2.14). **Also the `freq` data block's body (S6's row extended)**: its five one-off provenance fields are REPLACED by this same record (§2.10, §2.26 item 10) | W23 |
 | SW4 | `docs/spec/rxt_format.md` | `vocabulary` + `tag-prose` + `provides`: declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind, `provides`), the RESERVED-KEY sentence for `requires`, fail-closed `provides`, and `vocabulary`'s nesting as the FILE-declared rows of §2.25's schema (§2.15, §2.16) | W23 |
 | SW5 | `docs/spec/rxt_format.md` | `configs build`/`describe`: the four describe rules, the `target … with` refusal, `use` inert-and-counted, entry-file scope — and the PERMANENCE sentence for a target-less config-less file (§2.20) | W23 |
 | SW6 | `docs/spec/rxt_format.md` | the subject subsection (S4's row extended): `as <id>`/`sha256 <hex64>`, the per-file id namespace and functional-binding rules, WHO checks the hash (§2.18) | W23 |
@@ -3072,15 +3078,24 @@ delivery; these are the [B42] additions:
 | SW8 | `docs/spec/rxt_format.md` | `under`: qualifier semantics, fallback, duplicate refusal, the no-`g`/`gp` rule, the harness's counted-skip treatment (§2.17) | W23 |
 | SW9 | `docs/spec/rxt_format.md` | `oracle` widened to `engine-ref [/version]`; `python`/`pcre2` meanings unchanged; absent-oracle = labelled skip (§2.9) | W23 |
 | SW10 | `docs/spec/rxt_format.md` | `variant` as a sub-block: the five attributes, exactly-one-of-text/unsupported, kind's vocabulary hook (§2.23); supersedes S8's one-line shape | W23 |
-| SW11 | `docs/spec/rxt_format.md` | `--list-source`: the appended columns, the three `#section`s with their column lists, the **VALIDATES vs RECOGNISES table as normative text**, and the SECTIONLESS paragraph rewritten — its own named trigger fired (§2.24). `table_contract.md` needs NO hunk (sections were already its mechanism) | W23 |
+| SW11 | `docs/spec/rxt_format.md` | `--list-source`: the appended columns, the three `#section`s with their column lists, the **VALIDATES vs RECOGNISES table as normative text — RENDERED from the schema's `validated_by` column at 3.1, not hand-written beside it** (§2.24, §2.25), and the SECTIONLESS paragraph rewritten — its own named trigger fired. `table_contract.md` needs NO hunk (sections were already its mechanism) | W23 |
 | SW12 | `docs/spec/rxt_format.md` | the `name` grammar section's "cannot be called from a pattern" paragraph AMENDED: still true of the hyphenated SPELLING (PCRE2's grammar, D26), and the definition is now reachable through its DERIVED identifier — the mapping, the at-use collision refusal naming both definitions, exact-spelling-does-not-win (§2.22). **The three-reader note**: legs A/B/C's shared name grammar is UNCHANGED; the derivation lives only in the composer's lookup, so no reader gains an arm | W23 |
-| SW13 | `docs/spec/rxt_format.md` | the "NOT IN THIS BUILD" recognised-keyword list grows the W23 keywords, so any future partial build refuses them by name rather than as unknown (MEASURED gap, §0.6: `vocabulary` is "not a file-level directive" today) | W23 |
+| SW13 | `docs/spec/rxt_format.md` | the "NOT IN THIS BUILD" recognised-keyword list grows the W23 keywords, so any future partial build refuses them by name rather than as unknown (MEASURED gap, §0.6: `vocabulary` is "not a file-level directive" today). **At 3.1 the list is DERIVED from the schema's `wave` column** rather than hand-kept, and it gains one entry that is not a production at all: **`version`, RESERVED** (§1.6.3) | W23 |
 | SW14 | `docs/spec/cli.md` | the `pattern-esc` decode flag; `--list-source`'s section output named in its entry | W23 |
 | SW15 | `docs/spec/rxt_format.md` | the driver protocol: the find-all mode H7 lands (the §3.1 loop in C), the `@<path>` subject form's byte-exactness (S5's row, unchanged, referenced), the sha256 mismatch refusal | W23 |
 
+**The revision-3.1 hunks**, all W23, all landing in the same delivery:
+
+| # | file | the hunk |
+|---|---|---|
+| SW16 | `docs/spec/rxt_format.md` | **THE TWO-LAYER STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's standing rule for when a future change needs the line. **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5) |
+| SW17 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` | **THE SCHEMA AND ITS SURFACE** (§2.25). rxt_format.md gains the schema section: the columns, the five-kind constraint vocabulary with its membership rule, and the statement that the parser is the table's reader. cli.md gains `--list-schema` as the sixth registry dump, in `--list-limits`' own entry shape. `docs/spec/registry.md` gains its row in the surface list |
+
 **No `docs/spec/match_api.md` struct hunk and no abi bump anywhere in
-W23** (§1.4) — SW7's match_api sentence is prose naming a new consumer
-of an existing contract.
+W23** (§1.4), and revision 3.1 adds none — the schema is a parser-side
+table and a CLI dump; nothing it touches is emitted scaffolding, so
+D76's ritual is still not triggered. SW7's match_api sentence is prose
+naming a new consumer of an existing contract.
 
 `docs/guide/` is the human tier and points at these; it never restates
 them (D80).
@@ -4101,22 +4116,55 @@ All nine of `bench_rxt_needs_v1.md` §5.1, answered with the rationale
 beside each; the manager's pre-rulings verified where they asserted a
 checkable fact, and the two leanings worked to a confirmed answer.
 
-**P-Q1 — the head/body indentation asymmetry.** ANSWERED: a GENERAL
-declared body-sub-block mechanism (§1.2), the manager's leaning
-CONFIRMED. Two genuine customers (`provenance`; `variant`, whose
-revision-2 shape already carried a one-off un-indented `groups`
-continuation the general form retires), the relaxation narrow (only
-under declared sub-block kinds; the bare-indented-line refusal and its
-diagnostic survive verbatim — their M8 stays loud), and the one parser
-hazard it could introduce (an indented `pattern` starting a block in
-one reader and continuing a sub-block in another) closed by the
-indentation-test-precedes-dispatch rule binding all three body readers.
-The fallback (nine flat `prov-*` lines) was examined and declined: it
-answers provenance only, leaves `variant`'s continuation hack standing,
-and gives regime grouping no answer — whereas the confirmed design
-gives regimes a BETTER answer that is not this mechanism at all
-(§2.22). Moving provenance to the head keyed by block name was declined
-for the bench's own reason (a pattern's truth split across two places).
+**P-Q1 — the head/body indentation asymmetry. RE-ANSWERED AT REVISION
+3.1 ON FRANK'S RULING, which arrived after revision 3 was written and
+which supersedes the manager's leaning by name.** The ruling
+(`frank_inputs.md`, 2026-09-12) is explicit that the leaning — *"relax
+the head/body asymmetry for a named set of body sub-block keywords"* —
+is the wrong answer, *"because that answer requires a keyword table to
+find structure, which is exactly the context-dependence ruled out
+here"*. Revision 3's §1.2 was that answer.
+
+So the asymmetry is not relaxed, it is **DELETED** (§1.2.1): ONE
+attachment rule serves head continuation, `config` bodies, block
+scalars and body child-records alike, and "which scope a keyword is
+legal in" becomes a schema fact with no structural consequence. The
+answer now rests on the ruling's own criteria rather than on the
+two-customers argument:
+
+- **Internal consistency (consequence 1)**: indentation means exactly
+  one thing everywhere in the file, so there is no per-keyword
+  structural exception left to accrete onto.
+- **Structural parseability (consequence 5)**: §1.2.1's two devices
+  recover blocks, sub-blocks and line membership from syntax alone,
+  with one declared two-member parameter, and §1.2.3 states where that
+  is not yet total without softening it.
+- **Explicit sub-block syntax (consequence 4)**: designed as a visible
+  marker and priced against bare indentation in §1.2.4; **indentation
+  wins**, because a marker makes structure depend on two signals that
+  can disagree, duplicates a schema fact per occurrence, and would
+  require either a second mechanism beside the shipped head or a
+  break — and the obligation is met instead by `--list-schema`
+  answering "which kinds open a scope" exactly, once.
+- **Schema validation (consequence 3)**: the rules the relaxation used
+  to carry in parser control flow are now §2.25's declared rows.
+
+The TWO-CUSTOMERS argument survives as corroboration rather than as the
+case: `provenance` and `variant` still need children, and `provenance`
+is now used at TWO PARENTS (§2.26 item 10), which is a general
+mechanism earning its keep rather than a special case with two
+instances. **M8 stays loud** — a bare indented line is still a hard
+error, in one of two arms (attaches to nothing → structure; parent
+takes no children → schema, naming the parent). The alternatives are
+declined for their revision-3 reasons, unchanged: the flat `prov-*`
+fallback answers provenance only and leaves `variant`'s continuation
+hack standing; moving provenance to the head keyed by block name splits
+a pattern's truth across two places (the bench's own reason). And the
+parser hazard revision 3 closed by an ordering rule is now
+**structurally impossible** rather than closed by discipline — a block
+opener applies among siblings, and a child is not a sibling — which
+matters, because that ordering rule was MEASURED to hold in only one of
+the three readers it was asserted of (§0.7).
 
 **P-Q2 — is `vocabulary` the right closed-set mechanism?** YES
 (pre-ruling e, accepted): per-key declared sets, parser-enforced,
