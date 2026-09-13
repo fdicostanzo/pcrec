@@ -1662,11 +1662,13 @@ and why this is a separate merge: its diff should be readable as
 |---|---|---|
 | 1 | **RE-RUN the format-reader survey** (§1.5) at this step's own pin, and record its output in the commit | the table in §1.5 is stale by construction: three steps of checks have landed since. `w1_impl.md` §8.7's rule — **the command is the contract, not the list** |
 | 2 | **the appended COLUMNS** on pattern rows (`tags`, `oracle`, `esc`) and the new head ROW kinds (`vocabulary`, `include`, `oracle`, `tag`, `use`), and the MANIFEST re-pinned | the MANIFEST check (`run_rxtsource_tests.sh:464-477`) fails loudly and correctly, with its own instruction — that is the gate working |
-| 3 | **REPAIR the field-count assertion for sections** (`:479-494`) **and its failure message** (`:484-492`) before emitting any section | **it asserts one uniform column shape for every non-`#` row**, and its message names a TAB in a field as the only possible cause. Emitting a section first means delivering a red check that is right to fire, under a diagnostic pointing at the escape function. The repair is section-aware counts derived from each section's declared column list, with the unknown-section arm HARD-FAILING |
+| 3 | **REPAIR *BOTH* SECTION-BLIND ASSERTIONS, R5 AND R6, BEFORE EMITTING ANY SECTION** — R5's field count (`:479-494`) with its failure message (`:487-492`), and **R6's head-declaration counters (`:499-505`)** | **R5 asserts one uniform column shape for every non-`#` row** and its message names a TAB as the only possible cause; **R6 counts every non-comment row whose kind is NOT `pattern` and asserts ZERO**, so every `#section cases` row is counted as a head declaration in a corpus that has none. Emitting a section first means delivering two red checks that are right to fire, under diagnostics pointing at the escape function and at a head-detection bug. The repair is the same shape for both: **the main table's rows are identified by the section boundary the stream DECLARES**, with the unknown-section arm HARD-FAILING rather than defaulting. R6 was marked safe at revision 1 — see §1.5 |
+| 3b | **A SYNTHETIC STREAM EXERCISING BOTH REPAIRED ARMS, IN THE REPAIR'S OWN COMMIT** | **r59-A-M3**, and it is the only enforcement of item 3's "before emitting" ordering that exists. At the repair's commit NO section is emitted yet, so both new arms have population ZERO and the repair lands unexercised — a check nobody can distinguish from a check that was not written. The commit therefore carries a hand-written `--list-source`-shaped stream through the repaired awk. **The positive control's section must have a width that DIFFERS from the main table's 16** (**MEASURED**, `rxt_columns[]` at `rxt_source.c:2074-2082`), **and `#section cases` is ALSO 16** — counted off §2.24's own list: `line`, `block_line`, `block_name`, `kind`, `under`, `startpos`, `subject_form`, `subject`, `subject_id`, `sha256`, `start`, `end`, `count`, `giveup`, `slot`, `route`. A width-blind repair would pass a `cases`-only control by coincidence. **`#section aux` at EIGHT** (`line`, `block_line`, `block_name`, `consumer`, `depth`, `key`, `value`, `parent_line`) is the width to use. Note also that this check reads `DUMP_A_RAW`, which carries a leading FILENAME field — hence today's `NF != ncols + 1` — so every per-section expectation is *declared width + 1* and the `+ 1` belongs in one place, not per section |
 | 4 | **the four `#section` blocks**: `provenance`, `variants`, `cases`, `aux` — emitted unconditionally when non-empty, **after the main table, never interleaved** | |
 | 5 | **W23-S4** (no section row's field 1 equals a main-table kind token) and **W23-S6** (the aux value-identity check) | §1.5's invariant and §2.27.3 clause 5 |
-| 6 | **S-R4a (S242), S-R4b (S243)** | they detect `opens_group` through `#section cases`'s `block_line` and the block count |
-| 7 | **SW11, SW19, SW18's section half, SW14's section half** | |
+| 6 | **RE-RUN S200-S203 AGAINST THE REPAIRED ASSERTIONS** and confirm each still fails for ITS OWN reason | **r59-A-M4.** R4/R5/R6 ARE those four rows' detectors (§1.5's R9 row), so item 3 changes the detector under four existing plants — the [MECH-REACH] shape, arriving through a repair rather than through a rename. **And three of the four carry a STALE COUNT in their `SAB_DESC` today**, which is the same class one layer over: S200 says *"16 fields where the header declares 15"* (the header declares 16), S202 says *"14 columns … 15 fields"* (15 and 16), S203 says *"all 179 corpus files"* (210). The re-run re-states all three |
+| 7 | **S-R4a (S242), S-R4b (S243)** | they detect `opens_group` through `#section cases`'s `block_line` and the block count |
+| 8 | **SW11, SW19, SW18's section half, SW14's section half** | |
 
 **Acceptance**
 
@@ -1687,6 +1689,13 @@ and why this is a separate merge: its diff should be readable as
 - S242 and S243 turn their named detectors red, **and they are
   different detectors** — S242's symptom is a moved `block_line`,
   S243's is a changed block count.
+- **S200-S203 each still fail, and each still fails for its own
+  reason**, re-run against the repaired R5/R6 — asserted per row, not
+  as an aggregate "mech is still green". Their three stale `SAB_DESC`
+  counts are re-stated in the same commit.
+- **The synthetic-stream control (item 3b) exercises BOTH repaired arms
+  at a section width that is not 16**, and it is in the repair's own
+  commit rather than in the section-emitting one.
 
 **Must not touch**: any production, any refusal.
 
@@ -1709,13 +1718,20 @@ spelling. That is r58 B1's own method note applied one document over:
 | 1 | every fixture in §3.2 not yet landed, and the **`all-readers` POPULATION check** (§3.3) — which can only run once every row exists |
 | 2 | **promote `validated_by: pcrec` rows to `all-readers`** where their fixture now exists, one row at a time, each with its fixture named in the same commit |
 | 3 | the SW rows not yet carried, and the §4.3 absence grep as a committed check rather than a manual step |
-| 4 | **the bench acceptance DRY RUN** (§5): run the 41 checks against the delivered pin ourselves, and produce the three-row correction list (A2, B6, F2) |
+| 4 | **the bench acceptance DRY RUN** (§5) — **scoped to the RUNNABLE subset, and the split is named in the brief rather than discovered by the lane** (r59-B-M6). Roughly **25 of the 41** checks are executable here: groups A, B, C, D, F1/F2 and G are probes over `pcrec` and a fixture file, and we can write the fixtures from their own stated setups. **Group E's six and F3/F4 are NOT** — they invoke `pcrecbench` (`python3 -m pcrecbench run --subbench capability`), `make check-harness`, `Subbench.content_hash()` and their own `check` gate, none of which exists in this checkout. The acceptance bullet is scoped to the runnable set; the rest are marked NOT-RUN-HERE with the tool that is missing, never marked passed |
+| 4b | **the CORRECTION LIST, read out of `format_design.md` §9 and Appendix A — NEVER re-derived from §5** (r59-B1). §5's own paragraph is a pointer for exactly this reason: the delivery-time list is whatever §9 holds at the delivered pin, plus anything the dry run finds |
 | 5 | the D78 outbox message (Appendix A's body) — **the MANAGER sends it**, not the lane |
 
 **Acceptance**
 
-- **No `all-readers` row without a fixture**, asserted by the check and
-  not by a reading.
+- **No `all-readers` row without a RECEIPT** — W23-S5 reads the
+  three-leg helper's own invocation receipts, never a declared fixture
+  name (§3.3 property 2), and the assertion is the check's, not a
+  reading's.
+- **The 41-check dry run reports three populations, not one**: passed,
+  failed (each with its correction), and NOT-RUN-HERE with the missing
+  tool named. A run that reports "25 passed" without its denominator is
+  the shape this delivery has already corrected twice.
 - The §4.3 grep returns 0 over `docs/spec/`, `src/`, `tests/`, `cli/`.
 - The full battery: `make test`, `make strict`, `make test-axes`,
   `make san`, `make lint`, `make mech`. **All OWED to the merging
