@@ -2703,23 +2703,86 @@ else
   also a failure here: it means this arm is measuring nothing."
 fi
 
-# ARM 5 — CARDINALITY. Every row the dump calls `at-most-one` must refuse
-# a second occurrence in one scope, and a `repeat` row in the same scope
-# must not. Six settings kinds silently LAST-WON before this step while a
-# seventh in the same family refused, so the column is a compatibility
-# decision and this arm is what makes it one pcrec actually keeps.
-printf 'pattern a\nname one\nname two\nm "a" 0 1\n' > "$WORKDIR/card_amo.rxt"
-if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/card_amo.rxt" >/dev/null 2>&1; then
-    fail "W23-S3 arm 5a: a second 'name' in one block was ACCEPTED; the dump
-  reports it at-most-one, so it silently last-wins and the column lies"
+# ARM 5 — CARDINALITY, DRIVEN FROM THE DUMP'S OWN CLAIM PER ROW.
+#
+# Six settings kinds silently LAST-WON before this step while a seventh in
+# the same family refused, so any value the schema writes is a
+# compatibility decision. This arm is what makes the column one pcrec
+# actually keeps: for every BLOCK row this build implements, it reads what
+# the DUMP says and drives the corresponding behaviour — a second
+# occurrence must be REFUSED where the dump says `at-most-one` and
+# ACCEPTED where it says `repeat`. Both directions, per row, so a dump
+# that mislabels one row fails here whichever way it lies (sabotage S241).
+#
+# THE PROBE VALUES ARE A TABLE AND THE TABLE IS CHECKED. A kind needs a
+# line that is VALID for it or the probe measures the value grammar
+# instead of the cardinality, and a kind with no entry must FAIL rather
+# than be skipped — a skipped row is exactly the population nobody counts.
+probe_line() {
+    case $1 in
+        name)            echo 'name one' ;;
+        description)     echo 'description some text' ;;
+        export)          echo 'export g1' ;;
+        flags)           echo 'flags i' ;;
+        features)        echo 'features classes' ;;
+        encoding)        echo 'encoding byte' ;;
+        engine)          echo 'engine vm' ;;
+        perr)            echo 'perr' ;;
+        m)               echo 'm "a" 0 1' ;;
+        ms)              echo 'ms "a" 0 0 1' ;;
+        n)               echo 'n "b"' ;;
+        ns)              echo 'ns "b" 0' ;;
+        g)               echo 'g 1 0 1' ;;
+        gp)              echo 'gp 1 0 1' ;;
+        gu)              echo 'gu steps "a"' ;;
+        frames-buffer=)  echo 'frames-buffer=64' ;;
+        *)               return 1 ;;
+    esac
+}
+card_bad=0; card_seen=0; card_noprobe=""
+card_rows="$(awk -F'\t' '
+    BEGIN { s = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "block" && $10 == "1" && $4 != "true" && $6 != "accumulate" \
+        { print $2 "|" $6 }' "$SCHEMA")"
+for row in $card_rows; do
+    k="${row%%|*}"; card="${row##*|}"
+    ln="$(probe_line "$k")" || { card_noprobe="$card_noprobe $k"; continue; }
+    card_seen=$((card_seen + 1))
+    { echo 'pattern a'; echo "$ln"; echo "$ln"; } > "$WORKDIR/card.rxt"
+    if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/card.rxt" >/dev/null 2>&1
+    then accepted=1; else accepted=0; fi
+    case $card in
+        at-most-one) [ "$accepted" = "0" ] || { card_bad=$((card_bad + 1)); echo "  '$k': dump says at-most-one, a second one was ACCEPTED" >&2; } ;;
+        repeat)      [ "$accepted" = "1" ] || { card_bad=$((card_bad + 1)); echo "  '$k': dump says repeat, a second one was REFUSED" >&2; } ;;
+        *)           card_bad=$((card_bad + 1)); echo "  '$k': unhandled cardinality '$card'" >&2 ;;
+    esac
+done
+if [ -n "$card_noprobe" ]; then
+    fail "W23-S3 arm 5: no probe line for:$card_noprobe
+  A row with no probe is a row this arm SKIPS, and a skipped row is the
+  population nobody counts. Add its line to probe_line() above."
+elif [ "$card_seen" -ge 6 ] && [ "$card_bad" = "0" ]; then
+    pass "W23-S3 arm 5: all $card_seen block rows behave as the dump's cardinality column says, in BOTH directions"
 else
-    pass "W23-S3 arm 5a: a second occurrence of an at-most-one kind is refused"
+    fail "W23-S3 arm 5: $card_bad of $card_seen block rows disagree with the
+  dump's own cardinality column (or the population fell below 6, which
+  would mean this arm stopped reaching its rows)."
 fi
-printf 'pattern a\nm "a" 0 1\nm "aa" 0 1\n' > "$WORKDIR/card_rep.rxt"
-if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/card_rep.rxt" >/dev/null 2>&1; then
-    pass "W23-S3 arm 5b: a repeat kind repeats (arm 5a's control)"
+
+# `budget` is the one ACCUMULATE row and it is excluded from the sweep
+# above on purpose: its unit is the FIELD, not the line, so "the same line
+# twice" is the wrong probe. The corpus writes both fields in one block
+# deliberately (tests/harness/giveup.rxt), which is the measurement that
+# kept it off the at-most-one list.
+printf 'pattern a\nbudget steps=50\nbudget frames=4096\nm "a" 0 1\n' > "$WORKDIR/card_acc.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/card_acc.rxt" >/dev/null 2>&1; then
+    pass "W23-S3 arm 5c: 'budget' accumulates over its field set — two FIELDS in one block are legal"
 else
-    fail "W23-S3 arm 5b: a second 'm' line was refused; the dump calls it repeat"
+    fail "W23-S3 arm 5c: two 'budget' FIELDS in one block were refused; the
+  dump calls the row accumulate and a shipped corpus file writes exactly
+  this shape"
 fi
 
 # ARM 6 — `children`. A row the dump calls `children: none` must refuse an
