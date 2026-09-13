@@ -623,7 +623,9 @@ existing blocks depend on, and §1.2 calls the head/body asymmetry "the
 only one". A block scalar in the body would also need continuation
 parsing inside `run.sh`'s per-line loop — head-shaped parsing back in the
 harness, which is exactly what the seam ruling removed. `|` remains a
-HEAD form (a file-level `description`, a `config` body). MEASURED FREE:
+HEAD form (a file-level `description`, a `config` body) — extended at
+W23 to sub-block ATTRIBUTES, whose lines are indented, which is the
+precondition this correction was about (§1.2). MEASURED FREE:
 **0** corpus lines are indented and **0** blocks carry a `description`,
 so no existing file can reach either reading. Refused by name in all
 three parsers, and `tests/rxtsource/fixtures/block_scalar_in_body.rxtin`
@@ -2190,7 +2192,7 @@ or content-conditional cases section was considered and declined: two
 shapes of one dump is two consumer populations, and a section that
 appears only when some OTHER production is present is a
 population-nobody-counts trap (K35). The cost is size (a corpus file's
-dump grows ~10x in rows); the dump's one harness call sites are
+dump grows ~10x in rows); the dump's only harness call sites are
 head-bearing files only, so `make test` pays nothing today.
 
 **The VALIDATES vs RECOGNISES table** (their D4, pre-ruled) becomes a
@@ -2625,8 +2627,9 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    `.rxt` line kind could produce that number for a foreign engine. It
    stays **bench-side**, and this note names the gap rather than leaving
    the reader to find it. Per testee: `did-not-compile` is `perr`;
-   `unsupported-by-declaration` is `variant <testee> unsupported
-   <reason>` — one line kind for both halves of the variant axis;
+   `unsupported-by-declaration` is the `variant` sub-block's
+   `unsupported` attribute (§2.23 at W23) — one construct for both
+   halves of the variant axis;
    `crashed` / `timed-out` are the harness's; **`compiled` is the
    ABSENCE of the other four**, a record-side default with nothing for
    the format to say. Two of twelve are bench-side by nature; ten map.
@@ -2792,7 +2795,7 @@ files parse and never the meaning of the 179.
 | | resolution |
 |---|---|
 | **T-1** interface-vs-reference-only vs every-part-testable | **No new concept.** Target-ness and testability are **independent bits**: the harness compiles every block that has cases, as a **test** artifact, exactly as today; `target` is a file-level, build-only declaration that no pattern block carries. A reference-only definition with cases is therefore fully testable and ships nothing. No test-only surface is invented, so AR-2's no-dispatch rule is not even reached |
-| **T-2** canonical pattern vs declared per-library tweak | `variant <testee> <text>` is block-scoped, sits **beside** the pattern, and is checked against **the block's own expectations**. Structurally it cannot become a second pattern: a variant has no `name`, so it cannot be referenced, cannot be a target, and cannot be composed into anything. Constraint 1 is mechanical; constraint 2 is a recorded review obligation the format does not pretend to check (§4.5) |
+| **T-2** canonical pattern vs declared per-library tweak | `variant` (a sub-block at W23, §2.23) is block-scoped, sits **beside** the pattern, and is checked against **the block's own expectations**. Structurally it cannot become a second pattern: a variant has no `name`, so it cannot be referenced, cannot be a target, and cannot be composed into anything. Constraint 1 is mechanical; constraint 2 is a recorded review obligation the format does not pretend to check (§4.5) |
 | **T-3** appended numbering vs engine-neutral expectations | see Attack 3. Not live (MEASURED: the bench's 1,364 expectation rows carry no capture column). **D87 changes the answer's basis, not the answer**: the numbering is no longer "PCRE2's own by position" but pcrec's own by ASSIGNMENT, which makes T-3's worry *more* pointed on its face — except that the assignment rule is stated, printable (`--emit-composed`) and stable, where a positional accident was neither. Group correspondence for a foreign engine stays engine-neutral and by NAME (`groups <name>=<n>`); a bench expectation still adjudicates on spans and counts, never on a pcrec slot number (AR-6) |
 | **T-4** non-carrying block state vs cascading options | **Two different constructs, so neither has to become the other.** Block reset is the default and is untouched; the cascade exists only inside `config … from`. MEASURED: `config` occurs 0 times in the corpus, so no existing file opts in |
 | **T-5** byte-exact subjects by reference | §2.8: bytes are the subject, no decoding, NUL-safe, local paths only. It forces a **driver-protocol change** (H6/S5) rather than being free, and this note says so rather than assuming `argv` will carry a megabyte with a NUL in it |
@@ -2815,7 +2818,7 @@ files parse and never the meaning of the 179.
 | | disposition |
 |---|---|
 | **OD-1** where per-engine options live, and composition across includes | **file and block scope only** (Frank's ruling 4). Composition is the **per-option-kind** table in §2.6 — `features` unions, everything else is more-specific-wins, size caps are raise-only at every scope. The cascade Frank asked for lives in `config … from`, ordered, last wins; `include` stays pure splice, because making an include's *position* change a later block's meaning is the cross-file context AR-4 forbids |
-| **OD-2** the declared-tweak mechanism | `variant <testee> <text>` / `variant <testee> unsupported <reason>`, block-scoped (§4.5) |
+| **OD-2** the declared-tweak mechanism | the `variant` sub-block — `text`/`kind`/`groups`/`note`, or `unsupported <reason>` — block-scoped (§4.5, reshaped at W23 §2.23) |
 | **OD-6** the data block's spelling and namespace | **inline values, own namespace** (§2.10). This is OD-6, named — the first version presented it as departure "D-e" without citing the open decision it disposes of (r44-consumers U10) |
 | **OD-3** config syntax unifying testees and build variants | **one block kind.** A build variant is a `config` with `pcrec` lines; a bench testee is a `config` with `testee` + `option` lines. R-BENCH-9's "one concept, two uses" is literal here — the same `config` grammar, differing only in which of its line kinds appear |
 | **OD-4** interface/reference-only marking; a test-only surface | **no marking, no surface** — T-1 |

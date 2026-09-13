@@ -458,6 +458,20 @@ never edited afterwards.
   darwin. Validated by reproducing the exact failing compile line and the
   `lint:` guard probe with `gcc-16` (both succeed) — no `san`/`lint`/battery
   run was started, per the box hold in force at hand-off.
+- `w23design_report.md` — [DD-13b.W23] STEP 1 (2026-09-12, lane
+  w23design, opus; design only): `format_design.md` REVISION 3, the
+  [B42] absorption under F-Q1/F-Q2. Read it for the one pre-ruling
+  deviated from on measurement — the bench's find-all formula
+  `pos = max(end, pos+1)` DOUBLE-COUNTS an empty match found beyond the
+  scan position (`(?=a)` on `"xax"`: 2 vs 1), so `mc`'s spec rule is
+  `match_api.md` §3.1's shipped protocol by reference — and for the two
+  leanings worked to answers: the body SUB-BLOCK mechanism (customers
+  `provenance` + the reshaped `variant`; regime grouping deliberately
+  NOT among them) and the §4.5-item-4 regime repair via the composer's
+  derived-identifier lookup (`pcrec_rxt_prefix_from_name`'s one home,
+  collision refused at use, zero name-grammar-reader changes). Frank
+  queue: W23-F1 `configs describe` (D93), W23-F2 `capable` in-format,
+  W23-F3 the mc deviation.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
