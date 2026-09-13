@@ -3486,12 +3486,24 @@ design copies rather than a new idea:
   the constraint enum, so a constraint kind added later is a compile
   error at the one site that must handle it (`src/opt/mrl.c:18-24`'s
   stated rule, the house's own).
-- **The surface**: `pcrec --list-schema`, a TSV, the SIXTH registry
-  dump beside `--list-syntax` / `--list-verbs` / `--list-families` /
-  `--list-axes` / `--list-limits` / `--list-definitions`. It walks the
-  same table the parser enforces — **one derivation, two readers**
-  (learnings §3) — so a dump that disagrees with the parser is not
-  expressible.
+- **The surface**: `pcrec --list-schema`, a TSV, the **SEVENTH**
+  registry dump beside `--list-syntax` / `--list-verbs` /
+  `--list-families` / `--list-axes` / `--list-limits` /
+  `--list-definitions`. It walks the same table the parser enforces —
+  **one derivation, two readers** (learnings §3) — so a dump that
+  disagrees with the parser is not expressible.
+  **(3.2, r57 S-N1: revision 3.1 wrote SIXTH in the same sentence that
+  lists six existing dumps. `docs/spec/cli.md:586` already calls
+  `--list-limits` "the SIXTH"; `--list-source` makes seven producers in
+  `table_contract.md`'s Scope table, of which `--list-schema` would be
+  the eighth conforming table and the seventh REGISTRY dump. The
+  ordinal is corrected at all three sites — here, §3.3 and SW17 — and
+  `docs/spec/registry.md`, whose own numbered sequence stops at the
+  FIFTH surface because it documents neither `--list-limits` nor
+  `--list-source`, gains both the row and the reconciliation. An
+  ordinal that is wrong in the sentence that enumerates its own
+  predecessors is the cheapest possible instance of a number nobody
+  re-derived.)**
 
 #### 2.25.2 The columns
 
@@ -3502,53 +3514,185 @@ One row per (scope, line-kind):
 | `scope` | `file`, `block`, or a named child scope (`config`, `data`, `provenance`, `variant`) |
 | `kind` | the first token |
 | `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `qualified-line`, … |
-| `opens_group` | **the structure layer's one parameter** (§1.2.1 S2). True for `pattern` and `pattern-esc` and nothing else |
-| `children` | `none`, or the child scope this kind admits |
+| `opens_group` | **structure-layer parameter 1** (§1.2.1 S2). True for `pattern` and `pattern-esc` and nothing else |
+| `children` | `none`, `prose`, or the child scope this kind admits |
 | `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` |
 | `constraints` | zero or more from §2.25.3's closed vocabulary |
 | `source` | `format` (pcrec declares it) or `file` (a `vocabulary` line declares it, §2.15) |
 | `validated_by` | `pcrec`, `all-readers`, or `none` + a reason (§2.24) |
 | `wave` | which delivery introduced it — so a partial build's "NOT IN THIS BUILD" list (SW13) is derived rather than hand-kept |
 
-`opens_group`, `children` and `scope` are what a generic reader needs;
-everything else is validity. That the first three are three columns of
-one table rather than three mechanisms is the two-layer split made
-concrete.
+**`value: prose` IS structure-layer parameter 2, and `children: prose`
+is how the two columns are reconciled** (NEW at 3.2 — r57 G-B3, a
+MUST-FIX, and it was a genuine contradiction rather than an omission).
+Revision 3.1 gave `description` both `value: prose` and — by the
+`children` column's only available spelling — `children: none`. Read as
+written, that makes every block-scalar continuation line a schema error
+against its own parent: the line attaches (S1 had no carve-out), the
+parent admits no children, refusal. The construct §1.2.5 deliberately
+widens would be **unrepresentable in the table §2.25 calls normative**,
+which is the worst of the three available outcomes for a declared
+schema.
+
+The reconciliation, and it is one sentence with one precedence rule:
+
+> **`children: prose` means the kind's indented lines are its VALUE,
+> not lines in a scope.** A row may carry `value: prose` only together
+> with `children: prose`, and the pair is what a generic reader reads
+> as "this kind can open an S3 opaque region". There is no precedence
+> question left, because the two columns no longer say different
+> things about one row — the `none`/`prose`/`<scope>` trichotomy
+> covers the three real cases: takes nothing indented, takes bytes,
+> takes lines.
+
+`--list-schema` prints both columns, so H12's assumption — the one
+revision 3.1 made silently in the H-table and nowhere declared — is now
+a row a reader can fetch. The alternative (keep `children: none` and
+state that `value: prose` OVERRIDES it for attachment) was considered
+and declined: an override is a precedence rule, precedence rules are
+remembered rather than read, and this table exists to stop rules being
+remembered. A three-valued column costs one enum member.
+
+`opens_group`, `value` (for `prose`), `children` and `scope` are what a
+generic reader needs; everything else is validity. **The structure
+layer reads exactly two of them** — `opens_group`, and `value = prose`
+— and §1.2.1's parameter table is the normative statement of which.
+That they are columns of one table rather than separate mechanisms is
+the two-layer split made concrete.
 
 #### 2.25.3 The constraint vocabulary, and its MEMBERSHIP RULE
 
-Five kinds, and — copying §2.10's own discipline for the data-block
-family, because the hazard is identical — **a constraint kind is
-admitted only when a production in this delivery needs it.** No kind is
-added on plausibility; each row below names its customer.
+**EIGHT kinds at revision 3.2, and the count moved for the right
+reason** (r57 S-BL1, a BLOCKER). Revision 3.1 declared five and claimed
+they cover the delivery; the panel tested four W23 refusal rules
+against them and **all four fail** — one needing precisely the kind
+§2.25.4 deferred, one with no expressible form at all, one mapped to a
+kind whose semantics would refuse the production's own normal
+spelling, and one ranging over fields inside a value. **The
+completeness claim is withdrawn and three kinds are admitted**, each
+under the section's own membership rule — copying §2.10's discipline
+for the data-block family, because the hazard is identical: **a
+constraint kind is admitted only when a production in THIS delivery
+needs it.** No kind is added on plausibility; each row names its
+customer, and all three new rows name customers that were already in
+the text.
 
 | constraint | means | its W23 customer |
 |---|---|---|
 | `required` | the line must appear in its scope | `provenance`'s `source`/`retrieved` (+ `license`/`fidelity` under a pattern block); the data block's `question`/`reader`/`analyzer` |
 | `required-if <field> <op> <value>` | required when a sibling holds a value | `adaptation` REQUIRED iff `fidelity != verbatim` (§2.14 rule 3) — the conditional Frank's ruling names by example |
-| `exactly-one-of <a> <b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23); `pattern` vs `pattern-esc` in one block (§2.19) |
-| `closed <set>` | the value must be a member | `fidelity`'s three (`source: format`); `kind`, `convention`, `provides`, any `vocabulary`-declared key (`source: file`) |
-| `unique-by <key…>` | at most one row per key tuple | `under` per (convention, subject, kind, startpos) (§2.17); a subject `as` id's functional binding (§2.18); a `vocabulary` key; a `configs` line |
+| **`forbidden-if <field> <op> <value>`** | **refused when a sibling holds a value** (NEW at 3.2) | `provenance`'s `authored` rule (§2.14 rule 2): `url` and `ref` are required unless `source` is `authored`, **and refused when it is**. `required-if` expresses the first half and cannot express the second |
+| `exactly-one-of <a> <b>` | exactly one of a sibling set | `variant`'s `text` vs `unsupported` (§2.23) |
+| `closed <set>` | the value must be a member of a set declared IN THIS ROW's own scope | `fidelity`'s three (`source: format`); `kind`, `convention`, any `vocabulary`-declared key checked at its own `tag` site (`source: file`) |
+| **`cross-scope <scope> <kind> <selector>`** | **the value must satisfy a declaration resolved in a DIFFERENT scope** (NEW at 3.2) | `provides` ⊆ `vocabulary requires` (§2.16): a `config`-body line whose legal values are fixed by a FILE-scope `vocabulary` declaration under a DIFFERENT key name (`requires`). Neither end can state this alone — `closed` resolves in its own scope, and the `vocabulary` row does not know `provides` exists |
+| `unique-by <key…>` | at most one row per key tuple, **the tuple being the WHOLE row's identity** | `under` per (convention, subject, kind, startpos) (§2.17); a `vocabulary` key; a `configs` line |
+| **`functional-binding <key…> -> <value…>`** | **equal keys must carry equal values; unequal values with equal keys are refused naming both lines** (NEW at 3.2) | a subject `as` id (§2.18): one id maps to one (path, sha256), **re-stating the same binding on many case lines is the NORMAL spelling** |
+
+**Why `cross-scope` is admitted NOW and not deferred, and the deferral
+it replaces was a CONTRADICTION rather than a judgement.** Revision
+3.1's §2.25.4 deferred "constraint kinds beyond the five (ordering,
+cross-scope, arithmetic)" with the trigger *"the sixth W-something
+production that needs one"* — and §2.16, one section earlier in the
+same revision, states exactly such a production: *"when a
+`vocabulary requires …` declaration exists, every `provides` value must
+be a member of it"*. A W23 production met the deferral's own trigger
+before the deferral was written, so the two sentences contradict inside
+one document. The membership rule's bar is met and the kind is
+admitted; what stays deferred is ordering and arithmetic, which have no
+customer. **The general lesson this section keeps**: a deferral with a
+trigger has to be checked against the delivery it ships with, not only
+against the future — the whole point of a named trigger is that
+somebody looks to see whether it has already fired.
+
+**Why `forbidden-if` is a kind and not a `required-if` with a negated
+operator.** It was tried that way first and it does not type-check
+against the rule it has to express: `required-if` says *a line must be
+PRESENT when a condition holds*, and negating its operator gives *must
+be present when the condition does NOT hold* — which is `url`'s
+ordinary case, not `authored`'s refusal. The two rules govern
+opposite outcomes for the same field under complementary conditions,
+and the format needs to state both, so there are two kinds. They share
+a condition grammar and one arm of the exhaustive switch each.
+
+**Why `functional-binding` is a kind and not `unique-by`, and this one
+is a REAL BUG revision 3.1 shipped.** §2.18's rule is that re-stating
+the same `as <id>` binding on many case lines is the normal spelling —
+the id travels with every case line that names the subject — and only a
+CONFLICTING re-binding is refused. `unique-by <id>` says *at most one
+row per id*, which would refuse §2.18's own documented normal spelling
+on its second occurrence. **A functional dependency is not a uniqueness
+key**, and mapping one to the other inverts the production. The new kind
+states the dependency directly: the id is the key, `(path, sha256)` is
+the value, equal keys with unequal values is the refusal, equal keys
+with equal values is legal and unremarkable.
+
+**What is NOT admitted, and each says where it lives instead.**
+
+- **`under`'s duplicate key ranges over fields INSIDE a value**, not
+  over sibling lines: the tuple is (convention, subject, kind,
+  startpos), and three of those four are components of the
+  `qualified-line` value rather than lines of their own. `unique-by`
+  can hold the tuple, but something has to EXTRACT it, and a
+  value-shape field extractor is a mechanism this delivery has exactly
+  one customer for. **So the extraction is PARSER CODE, with its
+  reason recorded here rather than left as an unexplained exception**:
+  `value: qualified-line` already means the parser decomposes this
+  value into a case line (that is what the value shape IS), so the
+  components are in hand at the site that already has them, and a
+  declared extractor would be a second description of a decomposition
+  the parser performs anyway. The schema row carries
+  `unique-by under-key` and the spec names the four components; the
+  arm that builds the tuple is code. A SECOND `qualified-line`
+  production with a different key is the trigger to make the extractor
+  declarative (D77), and at that point it is one kind plus one arm.
+- **Ordering and arithmetic constraints** stay deferred with their
+  trigger (§2.25.4), unchanged: no W23 production needs either.
 
 **Cardinality is a column and not a constraint** because every row has
-one; the constraints are the things most rows do not have. And the
-duplicate-refusal discipline §8's P-Q9 states production by production
-becomes ONE row kind here rather than six hand-written refusals —
-which is the clearest measure of what the schema buys: revision 3
-listed six places that refuse a duplicate, and each of them was a
-sentence somebody had to remember to write.
+one; the constraints are the things most rows do not have. **This is
+also where §9's C7 and this section are reconciled** (r57 S-S7):
+"at most one `provenance` per parent" is `cardinality: at-most-one`
+and NOT a `unique-by` row, and revision 3.1 called it both — inflating
+`unique-by`'s earned-ness by counting a cardinality fact as its
+customer. One fact, one mechanism. The duplicate-refusal discipline
+§8's P-Q9 states production by production is then TWO mechanisms rather
+than six hand-written refusals — `cardinality` for "at most one of
+these", `unique-by` for "at most one per key" — which is still the
+clearest measure of what the schema buys, at an honest count.
 
-#### 2.25.4 What is DEFERRED, with its trigger (D77)
+**The completeness claim is WITHDRAWN.** Revision 3.1 said the five
+kinds cover the delivery. Eight cover it plus one rule that is
+deliberately parser code with its reason stated, and that sentence —
+"eight kinds and one named exception" — is what §2.25 claims now. The
+difference matters beyond the arithmetic: a schema presenting itself as
+a complete declaration while a refusal rule lives in control flow is
+the worst of the three outcomes §5.2a item 4 names, because a reader
+consulting `--list-schema` would get a confident wrong answer about
+what the parser enforces.
+
+#### 2.25.4 What is DEFERRED (with its trigger, D77), and what is DECLINED
 
 The schema ships at exactly the size W23's own productions enforce.
-Named, so the boundary is a decision rather than an omission:
+Named, so the boundary is a decision rather than an omission —
+**and separated at 3.2 into two lists, because revision 3.1 put a
+permanent decision in the deferral table and a deferral whose trigger
+had already fired beside it** (r57 S-S1, S-BL1(a)).
+
+**DEFERRED — a named trigger, not yet fired:**
 
 | deferred | trigger to build it |
 |---|---|
 | **A file-declared SCHEMA** (a file adding line kinds, not just values) | a second project wanting its own productions. `vocabulary` is the file-declared half that exists, and it declares VALUES only — the asymmetry is deliberate: values are data, line kinds are a grammar, and a format whose grammar varies per file is not one format |
-| **Constraint kinds beyond the five** (ordering, cross-scope, arithmetic) | the sixth W-something production that needs one. Adding a kind is one enum value plus one arm of an exhaustive switch, so waiting costs nothing |
-| **Generating legs B and C's arms from the table** | the C1 differential finding a leg-B/leg-C divergence the schema would have prevented. The table is pcrec's; legs B and C are independent implementations ON PURPOSE (§1.1's three-checks rule — a generated leg B would share a source with what it controls, which is the check-design failure this project has recorded most often). The schema makes them *comparable*, and must not make them *the same* |
+| **ORDERING and ARITHMETIC constraint kinds** | the W-something production that needs one. No W23 production does. Adding a kind is one enum value plus one arm of an exhaustive switch, so waiting costs nothing. **(3.2: `cross-scope` left this row — its trigger had already fired inside this delivery, §2.25.3.)** |
+| **A declarative value-shape FIELD EXTRACTOR** (so `under`'s key tuple could be a schema row rather than parser code) | a SECOND `qualified-line` production with a different key. One customer does not pay for a declaration mechanism; two would, because at two the extraction rule stops being the parser's own decomposition and starts being a thing two sites must agree about |
 | **A machine-readable schema export for the bench's loader** | their asking. `--list-schema` is a TSV today; whether they consume it is theirs (D78) |
+
+**DECLINED — no trigger, because the reason is architectural and
+permanent:**
+
+| declined | why it is a decline and not a deferral |
+|---|---|
+| **Generating legs B and C's arms from the table** | The table is pcrec's; **legs B and C are independent implementations ON PURPOSE** (§1.1's three-checks rule — a generated leg B would share a source with what it controls, which is the check-design failure this project has recorded most often). The schema makes the three legs *comparable* and must not make them *the same*. **Restated as a DECLINE at 3.2 (r57 S-S1)**: revision 3.1 filed this with the trigger *"the C1 differential finding a leg-B/leg-C divergence the schema would have prevented"*, which reads as "we will do it when it pays" — but that event is precisely the differential DOING ITS JOB, and generating leg B in response would delete the instrument that found the divergence in order to fix the divergence. There is no measurement that makes this right, so there is no trigger, and calling it deferred invited a future lane to fire it |
 
 #### 2.25.5 The honest limit
 
@@ -3564,6 +3708,34 @@ dispatch in all three body readers" was exactly a rule with no such
 home, and it was false in two of the three (§0.7). That is the defect
 class this section exists to retire, and it is worth more than the
 refusals it tidies.
+
+**AND THE DIFFERENTIAL MUST COMPARE DIAGNOSTIC CLASS, NOT VERDICT**
+(NEW at 3.2, r57 S-S8, and it is the limit that makes the paragraph
+above honest). Leg B refuses every unrecognised line by CATCH-ALL
+fall-through — 22 arms, none tolerant of leading whitespace, then
+*"unparseable .rxt line (hard error)"* — so leg B refuses a W23
+production it has never heard of, an indented line, a schema violation
+and a typo with **the same verdict and the same sentence**. A
+verdict-only C1 differential therefore reads "all three legs refuse"
+and goes green for a `validated_by: all-readers` row **while leg B has
+no rule for it at all**: the one live check on the `all-readers` claim
+would be satisfiable by accident, on a population of one message.
+
+So C1 compares a DIAGNOSTIC CLASS per refusal, not an exit code: which
+rule was violated (structure-attachment / unknown-token-in-scope /
+schema-constraint / value-shape), carried as a stable tag beside the
+D26-free wording. That is a real obligation on legs B and C — leg B
+must grow the classification it does not have today, which is part of
+H12 — and it is the price of the `all-readers` column meaning anything.
+D26 is not in tension with this: the classification is a TAG the check
+reads, not a sentence a human reads, and D26 governs wording.
+
+**What that leaves genuinely unresolved, stated rather than tidied**:
+three independent implementations of a written specification can still
+all three be wrong in the same way, and nothing here fixes that. The
+schema narrows the failure from "three implementations disagree and
+none is authoritative" to "three implementations agree against a
+printed rule", which is strictly better and is not the same as correct.
 
 ### 2.26 The OWNERSHIP AUDIT — every W23 spelling, under long-term viability
 
