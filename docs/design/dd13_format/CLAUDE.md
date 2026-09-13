@@ -655,24 +655,90 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   a delivering call under an atomic group or possessive quantifier leaves
   the delivered value live after the cut — the same rule ordinary captures
   under a cut already follow.
-- `w23_impl.md` — **[DD-13b.W23] IMPLEMENTATION note, REVISION 1 — WRITTEN,
-  NOT PANELLED. NO CODE IS WRITTEN** (2026-09-13, lane w23impl, opus;
-  docs-only). The build plan that opens the W23 implementation against
+- `w23_impl.md` — **[DD-13b.W23] IMPLEMENTATION note, REVISION 1.1 — the
+  r59 FIX ROUND. NO CODE IS WRITTEN** (revision 1: 2026-09-13, lane
+  w23impl; revision 1.1: 2026-09-13, lane w23implfix, opus; docs-only).
+  **§0.5 is the finding-by-finding record for r59
+  (`../../dev/reviews/2026-09-13-r59-w23-impl.md`: three read-only
+  critics, 4 blockers / 13 must-fix groups, all FIX-NOW, plus manager
+  rulings R1-R4) and is where a reader of revision 1 starts.** The
+  panel affirmed the SPINE — the staging, the `NF != 15` catch (all
+  three critics reproduced it independently), the no-abi argument, the
+  S238/S239 numbering and the F-Q1 production mapping — and drew blood
+  on three axes.
+  **THE FOUR BLOCKERS.** **A1**: `run_rxtsource_tests.sh:499`'s
+  head-declaration counter is an INEQUALITY reader that §1.5 marked
+  safe, so a GREEN W23-S4 would have proved it broken — the
+  first-column-is-`line` invariant protects readers that select by
+  EQUALITY and breaks every reader that counts by exclusion; R6 now
+  reads BREAKS LOUDLY and its repair joins R5's before any section is
+  emitted. **A2**: `dup_head_description.rxtin` is HEAD-BEARING and
+  `verify_rxt.py:407-417` refuses every head-bearing file, so the
+  planned three-leg re-aim passes VACUOUSLY today and goes RED the
+  moment W23-S2 compares class — only the two headless fixtures move,
+  and `tests/rxtsource/CLAUDE.md`'s scope note is NARROWED rather than
+  deleted. **B1**: §5 re-derived a three-row bench correction list
+  where `format_design.md` §9's ruled table holds nine, and
+  generalised §9's note about a DELETED row onto `licence` → `license`,
+  which the bench does have to make — the list now travels BY
+  REFERENCE, with the standing lesson that re-derivation is how the
+  disposition-text class propagates. **B2, the largest**: `include`'s
+  HARNESS half had no step at all — no discovery change, no entry-set
+  subtraction, no closure accounting, no fixture, no check — hidden by
+  §1.1 ("legs B and C gain no head arms") contradicting §1.7 row 5
+  ("include discovery"). **NEW §1.10** is the mechanism for all three
+  legs, **NEW §6.3a** is its own merge (W23.3a), and the delivery is
+  now **SIX merges, not five**.
+  **Two findings this round made that the panel did not reach.**
+  §4.3's withdrawal-absence check was wrong in BOTH directions: its
+  grep can never return 0 (`provides`/`capable` occur seventeen times
+  as ordinary English in `src/` and `tests/`), **and it grepped the
+  wrong five tokens** — `testee`/`option` are LIVE FORMAT SPELLINGS at
+  three sites (`rxt_source.c:149`'s two `config_vocab` rows,
+  `docs/spec/rxt_format.md:57-62`'s later-wave keyword list, and
+  `run_rxtsource_tests.sh:1188`'s `CENSUS_WORDS_32` whose length is
+  pinned at 32), so the withdrawal costs four sites and a deliberate
+  narrowing rather than "a diff and nothing else"; the check is now
+  three arms, the third of which is a READ and not a grep, because
+  `rxt_format.md:130`'s *"configs are three artifacts"* is legitimate
+  English no pattern separates. And **spec row S3 has never landed** —
+  `format_design.md:5782` labels it W1 while
+  `docs/spec/rxt_format.md:531-565` has no cell notion, no
+  entry/fragment counts and no resolution-failure class — which is
+  SW20 and the general lesson that *a wave label says when a row was
+  scheduled, never whether it shipped*.
+  **TEN wrong `file:line` ranges and four wrong counts were corrected**,
+  and the provenance is the point: SW12's two comment sites came from
+  this file's own SW12 row (both wrong; `:1126-1130` names an unrelated
+  production, corrected there as a drive-by), and §2.11's
+  `run.sh:184-216` for the harness's per-file loop is wrong too — the
+  discovery is `:293-307`. **Manager rulings R1-R4 are recorded in
+  §7.3**, R1 adding a `docs/spec/cli.md` hunk as **SW21** (a new row,
+  not an SW2 extension, because a machine-parseable stderr tag is the
+  CLI's output contract and not the format's grammar) and R4 defining
+  `prose_dedent.rxtin`'s waiting state: `tests/rxtsource/` has no
+  known-fail mechanism, so the fixture asserts the CURRENT wrong value
+  with a comment naming K57 and goes RED the day K57 is fixed. Lane
+  report: `../../dev/lanes/w23implfix_report.md`.
+  **Revision 1's own summary, retained** — the build plan against
   `format_design.md` **3.4.1**, in `w1_impl.md`'s shape (its §7/§8 step
-  briefs are §6 here). **Five merges in dependency order**: W23.1 the
+  briefs are §6 here). **The merges in dependency order**: W23.1 the
   SCHEMA table + `--list-schema` + leg A's dispatch as a table walk;
   W23.2 the ATTACHMENT arm and the diagnostic CLASS tag in legs B and C;
   W23.3 the productions (`pattern-esc`, `provenance`, `vocabulary`,
   `tag`, `oracle`, `variant`, `include`, `@file:`+`as`/`sha256`, `under`,
   `mc`, the `freq` data block, `use`, **`ext`**, and §2.22's
-  derived-identifier repair with its two comment sites); W23.4
+  derived-identifier repair with its two comment sites); **W23.3a
+  `include`'s HARNESS half — entry-set subtraction, the splice, the
+  closure tally and the fourth failure class (NEW at revision 1.1)**;
+  W23.4
   `--list-source`'s four `#section` blocks; W23.5 the population check,
   the remaining spec hunks and the bench acceptance dry run. §4 is
   SW1-SW19 distributed per step (D80 is a per-change rule, so a table of
   hunks deferred to the end is the rule's violation with extra steps);
   §5 maps the bench's 41-check acceptance bar onto the staging; §3.5
-  numbers the six sabotage rows **S239-S245** (highest on main measured
-  at S238).
+  numbers the sabotage rows **S239-S247** (eight at revision 1.1;
+  highest on main measured at S238).
   **Read §1.5 first. The FORMAT-READER SURVEY was RUN for this note and
   found the `NF != 15` defect ALIVE, in this repo, before landing**:
   `tests/rxtsource/run_rxtsource_tests.sh:479-494` asserts that EVERY
