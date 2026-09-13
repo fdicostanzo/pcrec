@@ -432,7 +432,7 @@ Where each consequence of the internal-consistency ruling landed:
 | **2. A breaking `version` header is on the table** | §1.6: **the break is DECLINED and the keyword is RESERVED.** The consistent grammar is achievable additively (every rule change moves a hard error between arms; the one deliberate widening only accepts more), so "if needed" is answered NO — with the future change that WOULD trigger it named and priced (§1.2.3) |
 | **3. Schema rules validation** | §2.25: the format's structural rules become a DECLARED TABLE with five constraint kinds (**EIGHT at 3.2, r57 S-BL1**), the parser its reader/enforcer, and `--list-schema` its listable surface on `--list-limits`/`--list-axes`'s one-derivation precedent. §2.15's `vocabulary` is nested as the FILE-declared half (one table, a `source` column). §2.24's VALIDATES-vs-RECOGNISES statement is upgraded from prose to a column the surface prints |
 | **4. Sub-blocks get explicit syntax** | §1.2.4: the visible-marker alternative is designed and priced against bare indentation, and **bare indentation wins** — because the cure for "indentation whose meaning depends on which keyword opened the line" is the unified rule, not a second signal, and a marker would make structure depend on two signals that can disagree. The `\|` block scalar is explained as what it is: a VALUE-form discriminator, not a structure marker |
-| **5. Structurally parseable without context** | §1.2.1 states the structure layer with its ONE declared parameter (the two-member block-opener set) and §1.2.3 states, without softening, the one place today's shipped grammar fails the property and what fixing it would cost |
+| **5. Structurally parseable without context** | §1.2.1 states the structure layer with its ONE declared parameter (the two-member block-opener set) — **TWO at 3.2 (r57 G-B1, the prose-region-opening kinds), THREE at 3.4.1 (r58 R1, the open-subtree kinds)** — and §1.2.3 states, without softening, the one place today's shipped grammar fails the property and what fixing it would cost |
 
 **Where to attack revision 3.1 is §5.2a**, written before the panel
 rather than after, and pointed at from here so it is not missed.
@@ -2658,13 +2658,22 @@ worth anything when the check is stated):
   (10) and (11) are STEP 0's and are below the schema entirely.
 - **Rows (2), (3), (6), (7) — the four AVOIDED — are untouched**, and
   the mechanism that avoids them (S3, and S0's narrowed BLANK) is
-  untouched. §2.27.2 decision 3 puts aux lines INSIDE that mechanism's
-  population rather than beside it, which is the point of the decision.
+  untouched. **(3.4's text read "§2.27.2 decision 3 puts aux lines
+  INSIDE that mechanism's population rather than beside it, which is
+  the point of the decision"; decision 3 was RULED the other way at r58
+  (R1), so aux lines are outside S3 entirely — and the four avoided
+  rows are unaffected either way, because every one of them is about
+  what happens INSIDE a `description \|` region and aux has no
+  regions. No candidate is added by the reversal: an aux body is a
+  today-hard-error position, so nothing legal becomes refused, which is
+  the same argument the `ext` token itself takes below.)**
 - **The withdrawals ADD no candidate, and the reason is general enough
   to state as a rule**: **a production that has never shipped cannot be
-  narrowed by being removed.** All four removed productions (`configs`,
-  `testee`, `option`, `provides`) are refused BY NAME on today's
-  binary — they are W23 keywords no build has ever accepted — so no
+  narrowed by being removed.** All five removed productions (`configs`,
+  `testee`, `option`, `provides`, and — at 3.4.1 — the `tag-prose`
+  alternative, r58 R3) are refused BY NAME on today's
+  binary — they are W23 keywords and W23 value forms no build has ever
+  accepted — so no
   file anywhere becomes refused and no file changes meaning. §1.6.4's
   five cases are not reached in any direction.
 - **The aux production ADDS no candidate either**: `ext` is a new first
@@ -7185,9 +7194,20 @@ is entirely on the rx-defining side of the ruling's line). The three
 decisions 3.4 makes that could have been escalated are the manager's
 under the same delegation and are made here: the `ext` spelling (§2.26
 item 14, flagged for the manager as a recommendation rather than a
-fait accompli), the prose-inside-aux decision (§2.27.2 decision 3,
-likewise flagged), and the removal of `cross-scope` (§2.25.3, which is
-the section's own membership rule applied, not a judgement call).
+fait accompli — **CONFIRMED at r58, ruling R2, with critic A
+independently reproducing the freeness measurement**), the
+prose-inside-aux decision (§2.27.2 decision 3,
+likewise flagged — **RULED AT r58 for the ONE-LINE alternative, ruling
+R1; the flag was the right call and the recommendation was the wrong
+one**), and the removal of `cross-scope` (§2.25.3, which is
+the section's own membership rule applied, not a judgement call —
+**and the same rule was applied a second time at r58, ruling R3, to
+`tag-prose`**). **A FOURTH manager decision lands at 3.4.1 and is the
+same shape as the third**: the OPEN-SUBTREE parameter (§1.2.1) is the
+panel's own repair adopted as ONE general mechanism in place of two
+local patches, which is an architecture call the delegation covers and
+which changes no answer Frank has given. **The Frank queue is still
+W23-F4 alone.**
 
 **Recorded as RULED, not asked again**: F-Q1 (Tier 1 + Tier 2, one W23
 delivery — §1.4), F-Q2 (`pattern-esc` — §2.19), Option A (the set's
