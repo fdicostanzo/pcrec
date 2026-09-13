@@ -11,6 +11,60 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K57 — a `|` block scalar's dedent strip is a BYTE COUNT, so a continuation line indented LESS than the block's first line silently loses content
+
+Filed 2026-09-12 (sixty-first session), lane w23fix, found by the r57
+panel's grammar critic (G-B2 N2) and reproduced here on `build/pcrec`
+at `04ec3942`. Status: **deferred** — it is a `docs/spec/rxt_format.md`
+production's decoding bug, and [DD-13b.W23]'s H12/SW16 work is the wave
+that touches this code.
+
+**The repro** (three lines, no build required beyond `build/pcrec`):
+
+```
+$ printf 'description |\n    line one\n  dedented-line-two\n\npattern a\n' > d.rxt
+$ build/pcrec --list-source d.rxt | grep '^description'
+description	1		line one\ndented-line-two
+```
+
+The value's second line reads `dented-line-two`. The author wrote
+`dedented-line-two`; **two bytes of CONTENT were deleted**, with no
+diagnostic and exit 0.
+
+**The mechanism**, `src/parse/rxt_source.c`'s `parse_prose`: the block's
+indent is taken from the FIRST continuation line
+(`while (L->v[start][indent] == ' ' || L->v[start][indent] == '\t')
+indent++;` — here 4), and every line is then stripped by
+`size_t skip = len < indent ? len : indent;` — a BYTE COUNT, applied
+without checking that the bytes being removed are whitespace. On a line
+indented 2, the 4 bytes removed are two spaces plus `de`.
+
+**Why it is worth an entry rather than a fix in place.** It is a silent
+wrong VALUE, not a refusal — the class this project treats as the worst
+outcome — and it is invisible to every existing check, because no
+fixture carries a dedented prose line (the 20 head bodies in
+`tests/rxtsource/fixtures/` are uniformly indented at width 2 without
+exception, MEASURED). It is also independent of [DD-13b]'s revision
+history: the line is wrong under revision 3's rules, revision 3.1's and
+revision 3.2's alike, so no design decision fixes it by arriving.
+
+**The fix, when the wave takes it**, is one of two and the choice is the
+implementer's: REFUSE a continuation line indented less than the
+block's first (a narrowing — population 0, and it would join
+`format_design.md` §1.6.1a's census as case (6) with the full package),
+or strip only the whitespace prefix actually present and keep the rest
+(a widening of the decoded value, no refusal). The second is the
+smaller change and preserves more files; the first makes a genuinely
+ambiguous shape loud. Either way the fixture is the repro above, run in
+all three legs (leg C decodes prose python-side and must agree).
+
+**Population today: 0.** No corpus file and no fixture carries a
+`description` at all, and pcrec-bench holds no `.rxt`/`.rxtin` file.
+The entry exists so the wave that grows prose fields does not grow them
+on top of this.
+
+---
+
 ## K54 — gcc libasan on arm64-darwin makes every instrumented pcrec invocation pathologically slow; `make san` is UNUSABLE on the Mac pending investigation (INFRASTRUCTURE)
 
 Filed 2026-09-09 (fifty-seventh session). The stage-4 merge's `make san

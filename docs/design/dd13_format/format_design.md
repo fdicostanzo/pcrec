@@ -551,9 +551,27 @@ prevent. **So the rule, not the number, is what the spec states:** the
 denominator is DERIVED at check time from the same `find` the check
 dispatches over, compared against the OTHER parser's count for equality
 (that is the real assertion), and pinned separately as a FLOOR that a
-corpus may only grow past. The floor's value is re-pinned in the
-delivering change like every other pin (§9's G1), and the three numbers
-above are read as "the floor at r44" rather than as facts about today.
+corpus may only grow past. The three numbers above are read as "the
+floor at r44" rather than as facts about today.
+
+> **THE FLOOR, RE-PINNED IN THIS CHANGE (revision 3.2, r57 S-S4).**
+> **210 files / 3,936 blocks / 28,943 expectation lines**, re-derived in
+> this worktree at the lane's merge base (§0.8), and this is the value
+> the delivering change writes — **not** the r44 numbers, which
+> revision 3.1 corrected in its prose while leaving the pin sentence
+> pointing at them. A floor left at 179/3,265/26,691 lets a **31-file /
+> 671-block / 2,252-line regression pass green**, which is the exact
+> vacuity the denominator assertion exists to prevent, one level up.
+> **THE MOVER IS NAMED**: [M5.0]'s `tests/utf8/` corpora (stages 3-5,
+> 2026-09-06..09-11), plus `[K53-SELRETRY]`'s dedup of four duplicated
+> blocks in `axis04_p_categories.rxt` — so the movement is accounted
+> for rather than merely observed, and a future gap between the floor
+> and the live count has a place to start. And the control that CANNOT
+> rescue a stale floor is named too: check (1)'s parser-vs-parser
+> equality shares the same `find` with the thing it counts, so both
+> sides shrink together and the comparison stays true on a truncated
+> corpus. Only the floor sees that, which is why it is a separate pin
+> and not a derived one.
 
 **Sabotage rows for INV-COMPAT** (each must turn the corresponding check
 red, and the check that must catch it is named — a row no check catches is
@@ -3004,8 +3022,32 @@ revision 3.1 is §1.2.6's second table row rather than a numbered rule,
 and still holds: `pattern` declares `children: none`, so an indented
 line under it is a schema error naming it).
 
-- **A block carries `pattern` or `pattern-esc`, never both** — both is
-  refused naming both lines.
+- **~~A block carries `pattern` or `pattern-esc`, never both — both is
+  refused naming both lines.~~ DROPPED AT REVISION 3.2 (r57 S-BL2, a
+  BLOCKER), and the reason is that the refusal has an EMPTY
+  POPULATION under §1.2.1's own structure layer.** Both spellings are
+  members of S2's BLOCK-OPENER set, and S2 says an opener among
+  siblings STARTS A GROUP. So a `pattern-esc` line following a
+  `pattern` line is not a second spelling inside one block — it is the
+  next block. MEASURED on the shipped binary: two adjacent `pattern`
+  lines produce **two `pattern` rows in `--list-source`, rc 0** (§0.8);
+  nothing in the parser ever holds a state in which one block carries
+  both, so there is no state for the refusal to fire from.
+  **Recovering the refusal would cost the format its structure layer**:
+  it would need a rule saying that one particular opener, following
+  one particular other opener, does NOT open a group — a
+  keyword-dependent structural exception, which is exactly what
+  consequence 1 forbids and what §1.2.1 was rewritten to delete. The
+  rule is therefore dropped rather than rescued, and the answer a
+  reader gets is the plain one: **a second opener starts a new
+  block.**
+  *Consequence for the bench*: their acceptance check B6 is written
+  against the refusal. It does not become a failure — its PREMISE
+  dissolved — and §9's B6 row and the correction list carry it as a
+  bench-side correction rather than as a deviation.
+  *What survives*: a block still has exactly ONE pattern line, because
+  a block IS what one opener starts. That is `cardinality: one` on the
+  group's own opener, not a refusal anybody writes.
 - **`pattern` itself is UNTOUCHED** — rest-of-line, verbatim, no
   escaping, byte-exact (the bench's M3/M4 round-trip facts must not
   move, and every existing exporter depends on the verbatim rule).
@@ -3150,26 +3192,92 @@ mapped through `pcrec_rxt_prefix_from_name` (`src/parse/rxt_source.c:337`
 
 - **WHERE it happens, verified against the shipped composer**: the
   binding is `src/parse/rxt_compose.c`'s definition-set lookup — the
-  exact-`strcmp` sites at `rxt_compose.c:169` (`def_find`) and `:176`
-  (`bound_by_name`), consumed by the re-resolution at `:690`/`:788`
-  that binds each DEFERRED by-name call. The composer resolves a file
-  reference AFTER the pattern's own groups (a call to a same-pattern
-  group never defers, `:260`), so PCRE2's in-pattern semantics are
-  untouched; the derived index is a second key on the SAME set, built
-  with the same function, consulted by the same lookup. No new pass, no
-  new namespace.
-- **The collision rule is the target-prefix rule, re-used at the second
-  consumer**: the mapping is deliberately not injective, and the refusal
-  is where that is paid for. Two definitions in scope whose mapped names
-  are equal make a call to that identifier a **refusal naming both
-  definitions and the shared identifier** — including the case where one
-  of them IS spelled as the identifier (`x_y` beside `x-y`): exact
-  spelling does NOT win, because "exact" is only the identity case of
-  the same mapping, and a silent tie-break would make the
-  non-injectivity free exactly where it bites. Nothing is refused at
-  DECLARATION time — two colliding definitions coexist while nothing
-  calls the shared identifier, just as two hyphenated definitions
-  coexist while neither is a `target =`.
+  exact-`strcmp` sites at `rxt_compose.c:169` (inside **`def_by_name`**)
+  and `:176` (inside `bound_by_name`), consumed by the re-resolution at
+  `:690`/`:788` that binds each DEFERRED by-name call.
+  **(3.2, r57 C-M3: revision 3.1 called the first function `def_find`;
+  there is no such function. It is `def_by_name`, declared at `:166`.
+  A misnamed citation is worse than no citation — a reader greps, finds
+  nothing, and cannot tell whether the function moved or the claim is
+  wrong.)**
+  The composer resolves a file reference AFTER the pattern's own groups
+  (a call to a same-pattern group never defers, `:260`), so PCRE2's
+  in-pattern semantics are untouched; the derived index is a second key
+  on the SAME set, built with the same function, consulted by the same
+  lookup. No new pass, no new namespace.
+- **THE PRECEDENT IS `rxt_compose.c:854-864`, not the two `strcmp`
+  sites** (3.2, r57 C-M3). The sites above are where the change LANDS;
+  they are generic plumbing and they justify nothing on their own. The
+  design precedent — a composed identifier SYNTHESIZED from two parts
+  and then checked for collision against everything already in scope —
+  is the qualified-rowname synthesis at `:854-864`: a delivering call's
+  row name is `site` + `.` + the exported group's name, built into arena
+  memory, and `:865-877` then refuses by name if any existing
+  `cx->named_groups` entry already carries it, with the comment stating
+  the reason a silent tie-break is not available (*"a row name is a
+  caller's whole handle on a delivered group, so two rows sharing one
+  would make `match_api.md` §6's bsearch return whichever the sort
+  happened to put first"*). §2.22's rule is that shape one derivation
+  over: synthesize, then refuse the tie. Citing it matters because it
+  shows the refusal is the house pattern rather than this section's
+  invention — and because it is the one place in the composer where the
+  length question below was already faced.
+- **THE COLLISION RULE, and its LENGTH DISCIPLINE** — the target-prefix
+  rule re-used at the second consumer. The mapping is deliberately not
+  injective, and the refusal is where that is paid for. Two definitions
+  in scope whose mapped names are equal make a call to that identifier a
+  **refusal naming both definitions and the shared identifier** —
+  including the case where one of them IS spelled as the identifier
+  (`x_y` beside `x-y`): exact spelling does NOT win, because "exact" is
+  only the identity case of the same mapping, and a silent tie-break
+  would make the non-injectivity free exactly where it bites. Nothing is
+  refused at DECLARATION time — two colliding definitions coexist while
+  nothing calls the shared identifier, just as two hyphenated
+  definitions coexist while neither is a `target =`.
+
+  **NEW AT 3.2 (r57 C-M3): REFUSE BEFORE MAPPING.**
+  `pcrec_rxt_prefix_from_name` (`rxt_source.c:337`) **silently
+  TRUNCATES** at `dstsz` — its loop condition is `j + 1 < dstsz` and
+  there is no over-length return — so two long names differing only past
+  the buffer map to the SAME identifier and would bind silently. The
+  existing consumer never meets this, and the reason is an ordering
+  nobody wrote down as a rule: `parse_target` refuses an over-long
+  definition name FIRST (`rxt_source.c:826-830`, `dlen >= sizeof def`
+  against `RXT_TARGET_DEF_MAX` = 127) and only then calls the mapping
+  (`:840`). **The second consumer must reproduce that order, and this
+  is where it is stated**: the composer refuses an over-long definition
+  name by name before deriving anything from it, so truncation is
+  unreachable rather than merely unobserved. The alternative — making
+  the mapping itself report over-length — was considered and declined:
+  it has one existing caller that has already handled the case, and
+  changing a shipped signature to defend a caller that can defend itself
+  is the wrong direction. What the format owes is the ORDER, written
+  down, because "the existing consumer happens to check first" is not a
+  property the next consumer inherits.
+
+  **AND THE CALLABILITY BOUND: 128 bytes** (r57 C-M3). A definition's
+  `name` has **no length cap at all** today — `rxt_source.c:1124-1137`
+  validates the grammar with `defname_ok` and stores it — while a
+  `(?&…)` call goes through PCRE2's own name grammar, capped at
+  `PCREC_MAX_GROUP_NAME` = 128 (`src/core/limits.def:151`, measured
+  against libpcre2 10.46's error 148). So a definition longer than 128
+  bytes is **buildable and not callable**, which is the same boundary
+  SW12's paragraph already draws for a hyphenated spelling, arriving by
+  a different route. This is stated as **inherited from PCRE2 under
+  D26** rather than re-declared as a pcrec limit: the number is PCRE2's,
+  the format does not get to widen it, and a `name` cap of its own would
+  be a second answer to a question PCRE2 already answers. The spec
+  sentence is SW12's; the schema's `constraints` column carries no
+  length row, and §2.25 says why (a limit whose value is another
+  project's is not schema data — `--list-limits` is where it lives, and
+  `PCREC_MAX_GROUP_NAME` is already a row there).
+
+  **AND IT IS A NARROWING, declared**: `(?&x_y)` beside a definition
+  `x-y` compiles today and is refused under this rule — §1.6.1a case
+  (5), with its measured population (0 for this shape, 1 for the general
+  collision shape, both repos), its forced-vs-**CHOSEN** verdict, and
+  its spec sentence. Revision 3.1 stated this rule without noticing it
+  narrows, which is what §1.6.4's new case 4 exists to stop.
 - **The three-reader rule is NOT touched, and that is the design's
   cheapness**: the NAME grammar's three readers
   (`rxt_source.c:298 defname_ok`, `run.sh:2015`, `verify_rxt.py:331`)
