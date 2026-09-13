@@ -6824,3 +6824,53 @@ recompiling) that a `PKG_CONFIG_PATH`/`--prefix`-rebuilt libpcre2 cannot
 serve — direct linking pins one library per BUILD, which the old dlopen
 shape could in principle avoid (in practice it never did: the shim always
 resolved whatever ONE library its candidate list found first).
+
+## D99 — THE `.rxt` FORMAT'S PRIMARY PURPOSE IS DEFINING RX FOR PCREC; ENGINE-ROSTER DATA LEAVES THE FORMAT'S SEMANTICS FOR AN OPAQUE AUX PRODUCTION (Frank, 2026-09-13, sixty-second session — W23-F1 and W23-F2 WITHDRAWN)
+
+Decision, in Frank's framing: "the rxt file needs a clear purpose and
+ultimately that purpose is something along the lines of a file for
+defining rx, primarily for the use of pcrec. that the bench can use it
+is good but shouldn't distract from the primary purpose." Consequences,
+ruled together after the manager's dig into bench_rxt_needs_v1.md:
+
+1. **W23-F1 (`configs describe`, format_design.md §2.20) is WITHDRAWN,
+   not ratified.** The mechanism made one production (`config`, plus
+   `use`) bimodal via a head-line mode switch — two uses smashed
+   together. The collision it resolved only materializes through the
+   bench's OPTIONAL roster proposals (N-42 SHOULD / N-22 SHOULD, the
+   one their own note is "least sure of", offered as P-Q4 — an open
+   choice, not a demand). The MUST-tier need (N-43, a config-free file
+   builds nothing permanently) is one spec sentence and survives.
+2. **W23-F2 (`provides` in-format, §2.16) is WITHDRAWN** — a capability
+   list describes an engine, and the format does not carry engine
+   knowledge as semantics. The pattern-side `tag requires=…` STAYS
+   (what a pattern needs is rx-defining content).
+3. **The format gains an AUX production**: structured data attachable at
+   file and block level, consumer-namespaced, STRUCTURALLY parsed
+   (S0-S3, so a malformed aux block cannot corrupt what follows) and
+   SEMANTICALLY uninterpreted — dumped faithfully by `--list-source`,
+   never read by any pcrec build or check. The bench's testee roster
+   and capability declarations can live there if the bench wants
+   self-describing sets; their sixteen-config pcrec matrix stays
+   bench-side (it is the bench's experimental design, cross-set by
+   construction). Spelling is the manager's under the 14:5x delegation.
+4. **THE GRADUATION RULE**: the day something in an aux block needs
+   pcrec to ACT on it, it must graduate to a real production — aux
+   never grows semantics in place.
+5. **D93 is untouched and decoupled**: with no configs in set files,
+   D93 never reaches the bench. Its revisit-when clause stands on its
+   own merits.
+
+Why (the record Frank asked for): the F1 ratification packet presented
+the mechanism ready-to-ratify without surfacing that the need underneath
+was tentative — "this is the result of a simple understanding running
+into the truth on the ground... i'd rather that this came back to me
+during design." PROCESS LESSON, standing: when a design absorbs a need
+whose SOURCE marked it tentative/least-sure, the ratification ask must
+say so explicitly.
+
+Cross-notes: format_design.md (revision 3.4 charters this), D93,
+bench_rxt_needs_v1.md §2.3/§2.6, the ownership ruling (2026-09-12) whose
+scope this narrows: "the set's truth lives in .rxt" covers test content
+(patterns, subjects, expectations, variants, conventions), not engine
+description.
