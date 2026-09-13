@@ -1797,6 +1797,25 @@ each falsifiable:
    acceptance-widening is by definition not a compatibility break for
    any file that exists.
 
+   **CORRECTED AT 3.3 (r57 ROUND 2, R2-F2): this claim was FALSE as
+   revision 3.2 shipped it, in two measured places, and the cause was a
+   SILENCE rather than a rule.** S0 declared the COMMENT class and
+   neither S1 nor S3 stated its structural effect, so a reader
+   implementing 3.2 literally would skip a column-1 `#` and carry the
+   surrounding structure across it — accepting two files the shipped
+   binary refuses at line 4 (a `config` body with a column-1 comment in
+   the middle; a `description |` region with one, which additionally
+   produces the two-disjoint-regions shape S3 cannot express). Both are
+   reproduced in §0.8's ROUND 2 block. **The repair is one sentence in
+   S1 and one in S3 — a comment terminates attachment and ends a
+   region, exactly as a blank line does — after which claim 2 is true
+   again with its single stated exception.** The general lesson is the
+   one the panel drew twice in two rounds: *a line class declared in S0
+   and given no effect in S1/S2/S3 is not a neutral line class, it is
+   an undeclared structural decision*, and it will be read in whichever
+   direction the reader's habits supply. S0's four classes now each
+   have their effect stated where the effect lives.
+
 2a. **THE NARROWINGS, declared, and the list is CLOSED**: §1.6.1a is
    the census. **CORRECTED AT 3.2 (r57 G-B2, C-M1; convergence 3):
    revision 3.1 wrote "ONE NARROWING" here, and the number is three
@@ -1806,7 +1825,9 @@ each falsifiable:
    delivery, so three more narrowings in the structure layer and one in
    §2.22's semantics went undeclared. **An instrument built from one
    finding and not swept is the failure this revision records against
-   itself**, and §1.6.1a is the sweep.
+   itself**, and §1.6.1a is the sweep. **RE-SWEPT AT 3.3 (r57 ROUND 2,
+   R2-B and R2-C): eleven candidates, seven taken — two of them landed
+   by STEP 0 rather than by this revision, and the census says which.**
 3. **Every new production is a fresh token.** All 52 candidates measure
    0 in first-token position at today's 210 files (§0.7).
 
@@ -1815,27 +1836,45 @@ this project does not spend effort on. **A version line whose only
 content is "refusals are worded differently now" would be a permanent
 mechanism bought with a transient inconvenience.**
 
-#### 1.6.1a THE NARROWING CENSUS — the closed list, five candidates
+#### 1.6.1a THE NARROWING CENSUS — the closed list, eleven candidates
 
 **NEW AT REVISION 3.2** (r57 G-B2 N1/N2/N3, C-M1, S-M1 — the panel's
-convergence 3). The method is §1.6.4's own rule applied to the WHOLE
-delivery rather than to the one case that produced it: for every rule
-this revision states, ask whether some file legal on the shipped binary
-becomes refused. Five candidates were found by PROBE (§0.8), not by
-reading; three are TAKEN and two are AVOIDED by S3. Each taken row
-carries the full package the rule demands — population measured in both
-repos, forced-vs-chosen stated, and a spec sentence named — and each
-avoided row says what avoids it, because a narrowing avoided by a
-DECISION needs recording exactly as much as one taken (the decision is
-what a later wave could undo without noticing).
+convergence 3); **RE-SWEPT AT 3.3** (r57 ROUND 2 R2-B, R2-C, R2-F3).
+The method is §1.6.4's own rule applied to the WHOLE delivery rather
+than to the one case that produced it: for every rule this revision
+states, ask whether some file legal on the shipped binary becomes
+refused. Eleven candidates were found by PROBE (§0.8), not by reading;
+**seven are TAKEN and four are AVOIDED**. Each taken row carries the
+full package the rule demands — population measured in both repos,
+forced-vs-chosen stated, and a spec sentence named — and each avoided
+row says what avoids it, because a narrowing avoided by a DECISION
+needs recording exactly as much as one taken (the decision is what a
+later wave could undo without noticing).
 
-| # | the construct | today | under 3.2 | verdict |
+**SCOPE — the census is the .rxt format's, not this lane's** (3.3, r57
+ROUND 2 R2-B). Two of the taken rows, (10) and (11), landed in
+`[DD-13b.W23]` **STEP 0** (lane `rxtnul`, commit `d4576c48`) rather
+than in this design revision, and they are carried here anyway with
+their provenance marked. The reason is where a reader looks: somebody
+asking *"what did W23 stop accepting"* comes to this table, and a list
+that calls itself CLOSED while two accept→reject changes from the same
+plan row sit outside it is a list that answers the question wrongly. A
+census scoped to one lane's diff is a diff; a census scoped to the
+FORMAT is a compatibility story.
+
+| # | the construct | today | under 3.2/3.3 | verdict |
 |---|---|---|---|---|
 | (1) | a head body whose lines sit at DIFFERING depths (`config c` / `flags i` at 2 / `engine vm` at 4) | ACCEPTED, parsed flat — `--list-source` row byte-identical to the evenly-indented file (rc 0) | REFUSED: the deeper line attaches to `flags`, which admits no children | **TAKEN, FORCED** |
 | (2) | an indented `#` inside a `description \|` body | ACCEPTED as PROSE (rc 0; the value carries the `#` line verbatim) | ACCEPTED as PROSE — S3 says S0 does not run inside the region | **AVOIDED by S3** |
 | (3) | ragged indentation inside a `description \|` body | ACCEPTED (rc 0), relative indentation preserved | ACCEPTED — S1 does not run inside an S3 region | **AVOIDED by S3** |
 | (4) | TAB indentation (`config c` / `\tflags i`) | ACCEPTED (rc 0, `flags=i engine=vm`); `line_indented` (`rxt_source.c:109`) tests space OR tab | REFUSED by name: S0 counts leading SPACES, and a leading tab is a structure error naming the rule | **TAKEN, CHOSEN** |
 | (5) | a call `(?&x_y)` where `x_y` and `x-y` are both definitions in scope | ACCEPTED — binds to the exact-spelled `x_y`, the sibling inert; artifact byte-identical to the file without the sibling | REFUSED: §2.22's collision rule, exact spelling does not win | **TAKEN, CHOSEN** |
+| (6) | a WHITESPACE-ONLY line inside a `description \|` body — today's only paragraph break | ACCEPTED, and it is IN the value (rc 0; `para one\n \npara two`) | ACCEPTED — S0's BLANK is the EMPTY line, so a whitespace-only line ends nothing and is bytes | **AVOIDED at 3.3** |
+| (7) | a WHITESPACE-ONLY line in a `config` body, between case lines, at file start, or after a blank | ACCEPTED (ignored) by all three legs, pinned by `sem15` | ACCEPTED — a whitespace-only line is INERT to the structure layer | **AVOIDED at 3.3** |
+| (8) | a second `name` / `engine` / `encoding` / `features` / `flags` line in one block or one `config` body | ACCEPTED, SILENTLY LAST-WINS (measured on all five) | REFUSED naming both lines: `cardinality: at-most-one` (§2.25.2) | **TAKEN, CHOSEN** |
+| (9) | a second `budget` line repeating the SAME field (`steps=` twice) | ACCEPTED, silently last-wins (50 then 99 dumps 99) | REFUSED naming both lines — but a second `budget` line naming the OTHER field stays legal, because `budget`'s cardinality is `accumulate` | **TAKEN, CHOSEN** |
+| (10) | an embedded NUL byte anywhere in a `.rxt` file | ACCEPTED and SILENTLY TRUNCATING (`pattern ab<NUL>cd` compiled as `ab`, exit 0) | REFUSED by name | **TAKEN, FORCED — landed by STEP 0 (lane `rxtnul`), not by this revision** |
+| (11) | a second `description` line in one block, or a second at file level | ACCEPTED, silently last-wins in the block case | REFUSED naming both lines | **TAKEN, CHOSEN — landed by STEP 0 (lane `rxtnul`), not by this revision** |
 
 **(1) THE RAGGED HEAD BODY — taken, FORCED.**
 *Population*: 0. `config` occurs 0 times in the 210-file corpus; the 20
@@ -1942,14 +1981,111 @@ forced.
 *Spec sentence*: SW12 (the `name`-grammar section's amended paragraph),
 which is where the mapping and its refusal already live.
 
+**(6) AND (7) THE WHITESPACE-ONLY LINE — AVOIDED at 3.3, and revision
+3.2 was one parenthesis away from taking both.** 3.2's S0 read
+*"BLANK (empty or whitespace only)"*, and S1/S3 give BLANK a
+TERMINATING effect, so every whitespace-only line in the corpus would
+have closed an attachment or ended a prose region. (6) is the sharp
+one: it is not an oddity but **the only paragraph break the format
+has**, since r46sem-10 ruled the empty line ENDS a block scalar
+(MEASURED both ways — the whitespace-separated file dumps
+`para one\n \npara two` at rc 0, the empty-separated one is refused at
+the line below it). (7) is the wider population: a whitespace-only line
+between case lines, at file start, and after a blank, each accepted by
+all three legs today and pinned for the first of those by the committed
+check `sem15`.
+*What avoids them*: S0's BLANK narrows to the EMPTY line and a
+whitespace-only line is stated INERT outside a region, bytes inside one
+(§1.2.1). *This is the decision a later wave could undo without
+noticing*, which is why it is a census row and not a footnote: widening
+BLANK back to "empty or whitespace" is a one-word edit that silently
+refuses every multi-paragraph description in the tree.
+
+**(8) DUPLICATE SCALAR SETTINGS LINES — taken, CHOSEN, and the
+inconsistency being fixed is the shipped surface's own.** R2-C's
+observation is that `cardinality` is normative on every schema row
+(§2.25.2), so whatever H16 assigns to a kind that silently last-wins
+today IS an accept→reject decision, made implicitly if it is not made
+explicitly.
+*MEASURED, the shipped binary's five answers, one probe each*: a second
+`name` (`n1`→`n2`), `engine`, `encoding` (`byte`→`utf8`), `features`
+(`backrefs`→`classes`) or `flags` line is ACCEPTED and the LAST one
+wins, with no diagnostic — while a second `export` line is REFUSED by
+name (*"a block has one 'export' line; this one already declared
+'yes'"*, `rxt_source.c:1184`). One surface, two answers to one
+question.
+*Population*: **0** in both repos — 0 blocks of 4,053 and 0 of 19
+`config` bodies carry a duplicate of any of the five, over 258
+`.rxt`/`.rxtin` files; pcrec-bench holds no file of either kind
+(re-confirmed read-only at this revision). *`flags` is the panel's list
+plus one*: R2-C named `name`/`engine`/`encoding`/`features`/`budget`,
+and measuring the shipped arms found `flags` in exactly the same state.
+It is taken with them rather than left as the one scalar kind that
+still last-wins, which would reproduce the inconsistency one kind
+smaller.
+*Chosen, not forced*: last-wins is well-defined and is what most
+configuration formats do. It is refused because this format's own
+precedent already went the other way twice — `export` at W1.3 and
+`description` at STEP 0, row (11) — and because the failure mode is
+silent: a file with two `encoding` lines is a file whose author
+believes something false about it, and nothing tells them. *What it
+would cost to revisit*: one `cardinality` value per row, no mechanism.
+*Spec sentence*: SW16, beside the structure rules, with the
+`cardinality` column as the citable declaration.
+
+**(9) A DUPLICATE `budget` FIELD — taken, CHOSEN, and it is the row
+where the measurement CHANGED THE DECISION.** `budget` is the one kind
+on R2-C's list whose population is NOT zero, and the non-zero member is
+deliberate: `tests/harness/giveup.rxt:19-23` writes
+`budget steps=50` and `budget frames=4096` as two lines of one block,
+and `parse_setting` (`rxt_source.c:615-620`) routes them to two
+separate slots. So `budget` is not a scalar kind at all — **it is
+ACCUMULATE over a two-member field set**, and `cardinality:
+at-most-one` would have refused a corpus file that the same `make test`
+run depends on.
+*Population*: duplicate `budget` LINE in one block: **1** (the file
+above, legal and intended). Duplicate `budget` FIELD — the same
+`steps=` or the same `frames=` twice, which IS silent last-wins
+(MEASURED: `steps=50` then `steps=99` dumps 99): **0** in both repos.
+*So the narrowing taken is the field-level one, population 0*, and the
+line-level one is not taken at all.
+*The general lesson, and it is the reason the brief required the
+measurement first*: a cardinality is a property of the VALUE SPACE a
+kind writes into, not of the kind's spelling. Four of these six kinds
+own one slot and one owns two, and nothing in the line's syntax says
+which — only the population did.
+*Spec sentence*: SW16, with `budget`'s field set named, since
+"accumulate over these two fields" is not derivable from the row's
+`value` shape alone.
+
+**(10) AND (11) STEP 0's TWO REFUSALS — taken, landed by lane
+`rxtnul` (`d4576c48`), carried here for scope.** (10), the embedded
+NUL, is **FORCED**: `slurp_lines` hands out NUL-terminated C strings,
+so without a pre-scan a NUL mid-line truncates whatever value it falls
+inside, and `pattern ab<NUL>cd` compiled as `ab` at exit 0 — a silent
+wrong answer, which is not a rule the format may choose to keep. Its
+population is 0 files in both repos, and pcrec-bench's own M1 is what
+raised it. (11), the duplicate `description`, is **CHOSEN** on exactly
+row (8)'s reasoning one kind earlier, and STEP 0 took it for the block
+case (where `block->description` is a single field and the first line
+silently lost) and extended it to the file case for consistency even
+though the file case never lost data. Population 0 in both repos.
+*Spec sentence*: `docs/spec/rxt_format.md`'s own STEP 0 hunks, already
+landed — these two rows cite rather than owe.
+
 **What the census does NOT contain, and why the absence is checked
 rather than assumed.** Every other rule this revision states either
 widens (§1.2.5's `description |` at block scope), re-words a refusal
 that stays a refusal (the head/body asymmetry's two arms), or adds a
 token measured free (the 52-candidate census). The productions were
 swept one at a time against the shipped binary; the sweep's own limit
-is stated in §5.2a — a critic looking for a SIXTH should look where
+is stated in §5.2a — a critic looking for a TWELFTH should look where
 this one did not, which is now the value layer rather than the head.
+**And the census records what it is not**: it lists NARROWINGS. The two
+WIDENINGS revision 3.2 shipped by silence — a column-1 comment carrying
+structure across itself, in a `config` body and in a prose region — are
+claim 2's business, not this table's, and are recorded at §1.6.1 claim
+2 with their repair.
 
 #### 1.6.2 What WOULD trigger it, and what it would cost
 
@@ -2026,10 +2162,23 @@ first two and the gap was found by a probe, not by reading the rule**:
    was rejected, and what it would cost to revisit. A narrowing
    defended as "forced" when it was chosen is worse than one defended
    as chosen, because it forecloses the revisit: the next reader has no
-   way to tell that a decision was made at all. §1.6.1a's cases (4) and
-   (5) are the worked examples.
+   way to tell that a decision was made at all. §1.6.1a's cases (4),
+   (5), (8), (9) and (11) are the worked examples — **five of the seven
+   taken rows are CHOSEN, which is itself the measurement that made
+   this case necessary.**
 
-**And a fifth thing the census made explicit, which is not a case but a
+5. **MEASURE THE POPULATION BEFORE DECIDING, not after** (NEW at 3.3,
+   from §1.6.1a case (9)). Cases 3 and 4 both require the population;
+   3.3 is where that requirement earned its keep in the deciding
+   direction rather than the documenting one. R2-C proposed one
+   cardinality for six settings kinds on an internal-consistency
+   argument, and the argument was right for five of them — the sixth,
+   `budget`, has a non-zero population whose single member is a
+   DELIBERATE corpus file, and taking the narrowing as proposed would
+   have refused it. The population is not evidence that a decision is
+   safe; **it is an input to what the decision should be.**
+
+**And a sixth thing the census made explicit, which is not a case but a
 DUTY**: the rule above is an instrument, and an instrument that is
 written from one finding and then not swept across the delivery finds
 exactly that one finding. Revision 3.1 wrote case 3 out of the
@@ -2038,18 +2187,28 @@ candidates and the other four were one probe each. **A change landing
 under this rule sweeps its whole delivery and publishes the result as a
 CLOSED LIST**, including the narrowings AVOIDED and what avoids them —
 so a later wave that removes the avoiding mechanism can see what it is
-removing.
+removing. **And the sweep is over the FORMAT, not over the lane's own
+diff** (3.3): revision 3.2 swept its own sections honestly and still
+published a "closed" list missing two accept→reject changes that landed
+in the same plan row one step earlier, because the sweep's boundary was
+a branch rather than a grammar. A census whose scope is a diff answers
+a question nobody asks.
 
 §2.25's schema is what makes all of it checkable — a schema diff
 between two builds shows exactly which rows moved and in which
 direction, so "additive" stops being a claim a lane makes about its own
 change. **That is the concrete argument for the schema being data**:
-every one of §1.6.1a's five candidates was found by running the shipped
-binary on a hand-made file, and a machine-diffable declaration is how
-the next one gets found without the hand-made file. Note the honest
-limit, though: case (5) is a SEMANTIC narrowing in the composer's name
-lookup, which no schema row describes — so the schema diff would have
-caught four of five, and §5.2a says where the fifth kind lives.
+every one of §1.6.1a's eleven candidates was found by running the
+shipped binary on a hand-made file, and a machine-diffable declaration
+is how the next one gets found without the hand-made file. **Cases (8)
+and (9) are the argument at its strongest**: they are nothing but a
+`cardinality` value, so the change from last-wins to refused IS a
+one-column schema diff, and the day somebody proposes a twelfth the
+diff will show it before any file is written. Note the honest limit,
+though: case (5) is a SEMANTIC narrowing in the composer's name lookup,
+which no schema row describes, and case (10)'s NUL refusal is a lexical
+pre-scan below the schema entirely — so the schema diff would have
+caught nine of eleven, and §5.2a says where the other two kinds live.
 
 ---
 
