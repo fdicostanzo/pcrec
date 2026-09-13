@@ -6897,3 +6897,28 @@ is gated only on revision 3.4's merge and its critic panel.
 
 Cross-notes: D99, format_design.md §2.22/§7.3, r57 C-M2 (the finding
 that raised it).
+
+## D101 — HARNESS_BATCH STAYS OPT-IN: THE MEASURED FULL-SUITE WIN DOES NOT JUSTIFY DEFAULT-ON (Frank, 2026-09-13, sixty-second session — the [TT-4M-TIME] flip decision, ruled HOLD)
+
+Decision: `HARNESS_BATCH` is NOT made `make test`'s default. It remains
+the opt-in axis tt4m_harness_batching.md landed (`HARNESS_BATCH=N`,
+2a's recommended N=64/P=8).
+
+Why (Frank's framing): the preliminary numbers ([TT-4M]'s isolated-
+corpus prototype ratios, 4.28x wall / 18.65x end-to-end) anticipated a
+much larger saving; the measured full-suite reality is ~9.5% wall /
+~8-10% CPU (docs/dev/tt4m_time.md, quiet-box pair at pin 99d2b6fe),
+because the axis reaches at most 3 of `make test`'s 38 sections. "10%
+is not enough win for the cost" — the cost being the flip's residuals:
+SIZELOG's per-pattern CPU/wall columns silently changing meaning to
+compile-only in a committed metrics log, `make mech`'s harness arm
+never setting the variable, and Linux unmeasured.
+
+Revisit-when: batching's REACH grows materially — more sections route
+through tests/harness/run.sh, or `make mech`'s per-sabotage arm (the
+highest-value unclaimed customer, tt4m_batch_customers.md) adopts the
+lever and the combined saving is re-measured; or a Linux measurement
+shows a substantially larger win there.
+
+Cross-notes: docs/dev/tt4m_time.md, tt4m_batch_customers.md,
+tt4m_harness_batching.md, [TT-4M] rows in plan.md.
