@@ -600,6 +600,37 @@ prove `docs/spec/limits.md` still states that value correctly —
 `--flavour` (the same reason `--list-axes` doesn't: a numeric limit has
 no flavour axis).
 
+### `--list-schema`
+
+The `.rxt` FORMAT's own schema, [DD-13b.W23.1] — the **SEVENTH** registry
+surface and the eighth conforming table producer. One row per (scope,
+line-kind), in two named sections:
+
+- **`#section schema`**, ten columns: `scope`, `kind`, `value`,
+  `opens_group`, `children`, `cardinality`, `constraints`, `source`,
+  `validated_by`, `wave`. `docs/spec/rxt_format.md`'s "The schema and its
+  surface" is the column contract itself.
+- **`#section surface`**, four columns (`surface`, `scope`, `kind`,
+  `reason`): the DECLARED NON-COVERAGE — what the schema does not claim to
+  validate, and why. It is a section rather than a wider `validated_by`
+  cell because two of its rows are not (scope, line-kind) facts at all.
+
+The dump walks the SAME table the parser enforces — one derivation, two
+readers — so a dump that disagrees with the parser about which rows exist
+is not expressible. It does not by itself prove the parser ENFORCES what a
+row declares; `tests/rxtsource/`'s W23-S3 is the independent side of that
+claim, and it drives each row's own BEHAVIOUR rather than comparing the
+dump to the table, which would be the same source twice.
+
+A trailing `# schema-rows: N` comment carries the table's COMPILE-TIME row
+total, so a consumer iterating the rows has a denominator it does not get
+from the rows themselves: a check whose population is defined by the thing
+it checks agrees with a truncated table by construction.
+
+Takes no `--flavour`, and for `--list-axes`' reason rather than a new one:
+a flavour is a PATTERN-syntax dialect, and the file format that carries a
+pattern is the same file format whichever dialect the pattern is in.
+
 ### `--list-source FILE`
 
 The `.rxt` SOURCE file named by the option's own value, AS WRITTEN: one
@@ -670,6 +701,35 @@ program, not on `pcrec` itself) and separate again from a give-up CODE
 value from a generated function) — three numbering schemes that happen to
 share small integers and nothing else. A caller scripting against `pcrec`
 should not confuse any of the three.
+
+### The diagnostic CLASS tag (`.rxt` source diagnostics)
+
+**[DD-13b.W23.1]** Every diagnostic pcrec emits while reading a `.rxt`
+SOURCE file (`--source`, `--list-source`) carries a machine-read CLASS tag
+naming WHICH RULE was violated, ahead of the message:
+
+```
+pcrec: [structure-attachment] path/to/file.rxt:12: indented line continues nothing (...)
+```
+
+**The tag's POSITION is stable** — first, in square brackets, before the
+`file:line:` an author acts on — **and its SET is CLOSED**, four values:
+
+| class | what was violated |
+|---|---|
+| `structure-attachment` | S0/S1/S2/S3: where a line attaches, or may not |
+| `unknown-token-in-scope` | the kind has no schema row in this scope, or has one whose wave is above this build's |
+| `schema-constraint` | a declared rule over lines: cardinality, a closed set, a uniqueness or resolution rule |
+| `value-shape` | the line attached and is legal here; its VALUE does not parse |
+
+**The SENTENCE beside the tag is not a contract** (D26). The tag exists so
+a consumer — in particular the three-way `.rxt` parser differential — can
+compare WHICH RULE fired rather than an exit code: a reader that refuses
+every unrecognised line with one sentence agrees with pcrec on the verdict
+while having no rule at all, and only the class can tell the two apart.
+
+One channel, on stderr, beside the message. There is no second, structured
+output mode: a second channel would be a second mechanism to keep in step.
 
 ### The D26 tiers, stated caller-side
 

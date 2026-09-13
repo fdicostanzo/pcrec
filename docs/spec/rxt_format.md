@@ -153,35 +153,111 @@ author writes no expectation per target, and a config that changed an
 ANSWER — rather than only how one is found — would make that control red
 rather than pass silently.
 
-### Lexical rules
+### Lexical rules — the file's shape, in TWO LAYERS
 
-These bind on every line kind, old and new:
+**[DD-13b.W23.1]** The format's shape is stated as two layers with a thin,
+declared interface between them:
 
-- **Whole-line `#` comments only.** A `#` anywhere but column 1 is data.
-  The one comment with meaning is `# pcre2-only` immediately before a
-  `pattern` line (see "Oracle verification").
-- Blank lines are ignored.
-- **A line kind is its first whitespace-delimited token**, and an unknown
-  first token is a HARD ERROR — never a silent no-op, never a comment.
-- **Each CONTEXT has its own closed vocabulary**, and a token unknown *in
-  its context* is a hard error that NAMES the context. There are three:
-  the head, a `config` body, and a pattern block. Nothing is a keyword
-  everywhere — `pcrec` is a `config`-body line and not a block one;
-  `perr` is a block line and not a head one.
-- **IN THE HEAD, INDENTATION MEANS CONTINUATION.** A line indented by one
-  or more spaces or tabs continues the declaration above it: a `config`
-  body and a block scalar's own lines are the same rule. A head
-  construct ends at the first non-indented line — **including a blank
-  one** (r46sem finding 10, RULED): a blank line is not indented, so it
-  terminates a `config` body or a block scalar's continuation exactly as
-  any other non-indented line does, and a directive after it belongs to
-  the file, not to whatever the blank line's continuation would have
-  been.
-- **A PATTERN BLOCK's lines are NOT indented**, and a block ends at the
-  next `pattern` line or end of file. This asymmetry between head and
-  body is deliberate and is the only one: the body's shape is fixed by
-  compatibility with every existing file, and the head is new territory
-  where indentation costs nothing.
+- **the STRUCTURE layer** — how a reader with NO keyword table recovers the
+  file's tree from syntax alone: blocks, sub-blocks, line membership.
+- **the SCHEMA layer** — which line kinds exist, in which scope, what each
+  takes, and whether a recovered tree is VALID. It is a declared table
+  (`pcrec --list-schema`, below), not a set of rules this document lists.
+
+**The split's test, and it is the whole point:** keywords and the schema say
+what the structure MEANS and whether it is valid; they NEVER decide where
+structure begins or ends. The structure layer takes exactly THREE
+parameters from the schema, and all three are one `--list-schema` query, so
+a generic reader FETCHES them instead of hard-coding them.
+
+#### S0 — the four line classes
+
+| class | what it is | what it does |
+|---|---|---|
+| **BLANK** | the EMPTY line — zero bytes — and nothing else | closes every open attachment, returning to indent 0 |
+| **WHITESPACE-ONLY** | nothing but spaces and tabs, at least one | **INERT**: no indent is read off it, it attaches to nothing and nothing attaches to it, no first token is dispatched. A reader steps over it. Inside an opaque region it is BYTES, which makes it the format's only paragraph break |
+| **COMMENT** | `#` in **column 1**. A `#` anywhere else is data | closes attachment exactly as a BLANK does — the same rule, not a carve-out |
+| **CONTENT** | everything else | its INDENT is its count of leading **SPACES** |
+
+**INDENTATION IS SPACES.** A leading TAB does not open an indent and is
+refused BY NAME. A tab inside a VALUE is still data and is untouched. Two
+spellings of indentation have no agreed depth between them, so a file
+mixing them has no defined tree under any depth rule.
+
+The one comment with meaning is `# pcre2-only` immediately before a
+`pattern` line (see "Oracle verification").
+
+#### S1 — attachment
+
+A CONTENT line whose indent is GREATER than the immediately preceding
+CONTENT line's **attaches to it as a CHILD**. Equal indent makes them
+SIBLINGS. Lesser indent closes back to the nearest enclosing level with
+that indent; an indent matching no enclosing level is a structure error, as
+is an indented line following a blank or a comment, or one with nothing
+before it.
+
+**What may be indented under a kind is the schema's `children` column and
+nothing else.** There is ONE attachment rule and it is the same rule in the
+head and in a block: a `config` body, a block scalar's own lines and a
+sub-block's attributes are all S1. The head/body indentation asymmetry
+earlier versions of this document stated is DELETED, not narrowed.
+
+#### S2 — grouping
+
+Among SIBLINGS, a line whose first token is a member of the **BLOCK-OPENER
+SET** starts a group that absorbs the following siblings until the next
+opener at that level or the end of the enclosing scope. The opener set is
+closed and declared: it is **structure-layer parameter 1**, the schema rows
+with `opens_group: true`, today `pattern` and `pattern-esc`.
+
+#### S3 — opaque regions
+
+A CONTENT line opens an **OPAQUE REGION** when all three hold: its KIND is
+prose-region-opening (**structure-layer parameter 2**, the schema rows
+carrying `value: prose` AND `children: prose`, read as a PAIR); its value,
+after trailing spaces and tabs are TRIMMED, is exactly the single byte `|`;
+and it is not inside an open subtree.
+
+Its EXTENT is structural and is the only structural fact about it: the
+region runs from the next line up to, and not including, the FIRST of a
+CONTENT line whose indent is <= the opener's, a BLANK line, or a COMMENT
+line. Every line inside is BYTES — S0 does not classify it for dispatch, S1
+does not attach it, S2 does not test it — so **a reader can find a region's
+end without tokenising a single line inside it**.
+
+Inside a region an indented `#` is PROSE and ragged indentation is legal
+prose shape; outside one the indented-`#` refusal is unchanged.
+
+#### The OPEN SUBTREE — structure-layer parameter 3
+
+A CONTENT line whose kind carries `children: tree` roots an **open
+subtree**: itself and every line S1 attaches below it, transitively, to any
+depth. Inside that subtree, and only there, **S2's opener set is EMPTY** (no
+line starts a group, whatever its first token) and **S3 NEVER OPENS** (a
+trimmed bare `|` there is the literal value `|`). Both are properties of the
+SUBTREE and never of a keyword: a reader fetches `children` for the line it
+is attaching under, and the value `tree` is what switches the two devices
+off.
+
+#### The SCHEMA layer
+
+- **A line kind is its first whitespace-delimited token**, and a token with
+  no schema row IN ITS SCOPE is a HARD ERROR that NAMES the scope — never a
+  silent no-op, never a comment. Nothing is a keyword everywhere: `pcrec` is
+  a `config`-body line and not a block one; `perr` is a block line and not a
+  head one.
+- **Cardinality is declared per row.** `at-most-one` refuses a second
+  occurrence in its scope, naming the earlier line; `repeat` permits one;
+  `accumulate` joins (`budget` accumulates over its FIELD set, which is why
+  `budget steps=` and `budget frames=` are legal in one block and a repeated
+  FIELD is not).
+- **Constraints** are drawn from a closed vocabulary of SEVEN kinds:
+  `required`, `required-if`, `forbidden-if`, `exactly-one-of`, `closed`,
+  `unique-by`, `functional-binding`.
+- The whole table is printed by `pcrec --list-schema` (see "The schema and
+  its surface" below), and the parser is its reader: one derivation, two
+  readers, so a dump that disagrees with the parser is not expressible.
+
 - **TRAILING WHITESPACE after a directive's value is ignored.** A
   directive whose value is a token or a list (`flags`, `features`,
   `engine`, `budget`, `encoding`, `name`, `lib`, and the `config`/`target`
@@ -401,6 +477,56 @@ others:
 | `\f`   | form feed |
 | `\v`   | vertical tab |
 | `\xHH` | byte `0xHH` (exactly two hex digits) |
+
+### The schema and its surface — `pcrec --list-schema`
+
+**[DD-13b.W23.1]** The format's rules are DECLARED as data rather than
+implied by a parser's control flow. One table, one reader, one dump:
+
+- **the table** is compiled into pcrec, one row per (scope, line-kind);
+- **the reader** is the parser itself, which walks it;
+- **the dump** is `pcrec --list-schema`, a TSV under
+  `docs/spec/table_contract.md` and the **SEVENTH** registry surface.
+
+The dump walks the same table the parser enforces, so a dump that
+disagrees with the parser about which rows exist is not expressible. What
+it does NOT prove is that the parser ENFORCES what a row declares; that is
+an independent check's job (`tests/rxtsource/`'s W23-S3, which drives each
+row's own behaviour and compares the result against this output — never
+the output against the table, which would be the same source twice).
+
+Ten columns, in two named sections.
+
+| column | what it says |
+|---|---|
+| `scope` | `file`, `block`, or a named child scope (`config`, `data`, `provenance`, `variant`) |
+| `kind` | the line's first token, as an author types it |
+| `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `case`, `qualified-line`, `raw` |
+| `opens_group` | **structure-layer parameter 1** (S2) |
+| `children` | `none`, `prose`, `tree`, or the child scope this kind admits — the four real cases: takes nothing indented, takes BYTES, takes structurally-parsed lines with no scope and no rows, takes schema-checked lines in a named scope. With `value` it is **parameter 2**; alone, the value `tree` is **parameter 3** |
+| `cardinality` | `one`, `at-most-one`, `repeat`, `accumulate` |
+| `constraints` | zero or more of the seven kinds, `;`-separated, each with its own argument text |
+| `source` | `format` (pcrec declares the row) or `file` (a `vocabulary` line declares it) |
+| `validated_by` | `pcrec`, `all-readers` (pcrec, `tests/harness/run.sh` and `tests/harness/verify_rxt.py`, with a fixture proving the three agree), or `none` |
+| `wave` | which delivery introduces the kind |
+
+`#section surface` is the second section: the **declared non-coverage**,
+one row per thing the schema deliberately does not validate, with its
+reason. An absence in a table reads as something nobody got to; a declared
+non-coverage row reads as something somebody decided.
+
+**A keyword this build does not implement is refused BY NAME**, as NOT IN
+THIS BUILD, with its wave — never as an unknown token, which would send a
+reader hunting a typo in a word that is in this document. That list is
+DERIVED from the `wave` column and is not kept by hand anywhere, so a
+keyword cannot be forgotten in it and a WITHDRAWN production cannot linger
+in one: a withdrawn production has no row, therefore no wave, therefore no
+entry, and it refuses as an unknown token in its scope, which is the truth
+about it.
+
+**`version` is RESERVED** — recognised as a word the format owns, with no
+production behind it in any build. It is one line of insurance against the
+day a change to this format is not additive; nothing today is.
 
 ### Example
 

@@ -4409,6 +4409,14 @@ typedef struct {
  * derived rather than hand-kept. */
 #define PCREC_RXT_WAVE_BUILT 1
 
+/* RESERVED — a word the format OWNS with no production behind it in any
+ * build, which is a different answer from "a later wave builds it". It is
+ * spelled as a `wave` value rather than as an eleventh column because the
+ * two facts a reader wants are the same two: the keyword is real, and this
+ * build will not parse it. One line of insurance against the day a change
+ * to this format is not additive; nothing today is. */
+#define PCREC_RXT_WAVE_RESERVED 999
+
 /* The whole table, and its COMPILE-TIME row total. The total is what stops
  * a check that iterates `--list-schema`'s rows from being satisfied by a
  * truncated dump: a check whose population is defined by the thing it

@@ -1400,6 +1400,11 @@ check_refusal() {
 check_refusal head_after_pattern.rxt boundary   'lib' 'head'
 check_refusal from_cycle.rxt          cycle      'cycle' 'a' 'b'
 check_refusal wave2_keyword.rxt       wave       'include' 'NOT IN THIS BUILD'
+# [DD-13b.W23.1] RESERVED is a THIRD answer beside 'built' and 'a later
+# wave builds it', and the refusal has to distinguish it: a reader told
+# 'unknown' hunts a typo, and a reader told 'not in this build' waits for
+# a wave that is never coming.
+check_refusal version_reserved.rxt reserved 'version' 'RESERVED' 'no build parses it'
 check_refusal dup_config.rxt          duplicate  'duplicate' 'dev'
 
 # [DD-13b.W23.1] THE BLOCK SCALAR IN A PATTERN BLOCK: A SHIPPED REFUSAL

@@ -776,6 +776,12 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
 static int refuse_wave(RxtP *p, size_t line, const RxtSchemaRow *row,
                        RxtSchemaScope scope)
 {
+    if (row->wave == PCREC_RXT_WAVE_RESERVED)
+        return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line,
+                        "'%s' is a RESERVED %s keyword: the format owns the "
+                        "word and no build parses it (the keyword is real, "
+                        "not a typo)",
+                        row->kind, pcrec_rxt_scope_context(scope));
     return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line,
                     "'%s' is a wave-%d %s declaration and is NOT IN THIS "
                     "BUILD (this pcrec implements wave %d of the .rxt format; "

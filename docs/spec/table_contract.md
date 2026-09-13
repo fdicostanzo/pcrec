@@ -24,6 +24,7 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-axes` | the optimization-axis registry ([CHK-2] piece 1) | conforming producer today |
 | `--list-limits` | the numeric-limits table (D90/[LIM-1]) | conforming producer today |
 | `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today |
+| `--list-schema` | the `.rxt` FORMAT's own schema ([DD-13b.W23.1], `docs/spec/rxt_format.md`) | conforming producer today, and the FIRST to use the Sections mechanism below |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.
@@ -107,6 +108,14 @@ mechanism rather than forcing one flat schema.
 `--emit-ir` remains [DD-8]'s adoption decision; this section exists so
 that when it (or an enriched [V-H] trace table) adopts, the mechanism is
 already ruled and no flat-schema contortion is needed.
+
+**[DD-13b.W23.1] `--list-schema` IS THE MECHANISM'S FIRST PRODUCER**, and
+it names BOTH its sections (`schema`, `surface`) rather than leaving the
+first anonymous. Rule 2's backwards-compatible-by-absence shape means a
+single-table dump may stay anonymous, but a multi-section one may not
+leave one section unnameable: consumer rule 4 requires a reader to SELECT
+its section by name, and an anonymous first section is the one table no
+conforming consumer can ask for.
 
 ## The checks ([SR-11] lands these)
 

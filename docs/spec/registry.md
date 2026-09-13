@@ -549,3 +549,36 @@ worktree's own HEAD; `bash tests/registry/run_registry_tests.sh` and
 `tests/registry/run_definitions_tests.sh` both green (the latter still
 standalone — see tests/registry/CLAUDE.md's note — pending the table's
 population settling); `make strict` clean.
+
+---
+
+## 10. The numbered sequence, RECONCILED — and `--list-schema`
+
+**[DD-13b.W23.1]** This document's own numbered sequence stopped at the
+FIFTH surface while two surfaces were undocumented here, so a reader
+counting sections and a reader counting the CLI's dumps got different
+answers. The reconciled list, which is the one `docs/spec/cli.md` §2 and
+`docs/spec/table_contract.md`'s Scope table both agree with:
+
+| # | surface | documented |
+|---|---|---|
+| 1 | `--list-syntax` | §2 |
+| 2 | `--list-verbs` | §4 |
+| 3 | `--list-families` | §5 |
+| 4 | `--list-axes` | §6 |
+| 5 | `--list-definitions` | §9 |
+| 6 | `--list-limits` | `docs/spec/limits.md` §3 + `cli.md` §2 |
+| 7 | **`--list-schema`** | `docs/spec/rxt_format.md`'s "The schema and its surface" + `cli.md` §2 |
+
+The row is added to a RECONCILED list rather than appended to a gap,
+because an ordinal that is wrong in the document that enumerates its own
+predecessors is the cheapest possible instance of a number nobody
+re-derived — and this document had two such gaps before the seventh
+surface arrived to expose them.
+
+**`--list-schema` is documented ELSEWHERE on purpose**, unlike the five
+above. The other surfaces describe pcrec's own construct registry, which
+is this document's subject; the schema describes the `.rxt` FILE FORMAT,
+whose contract lives with the format. Duplicating its column table here
+would be a second home for it — the drift shape this whole document
+exists to make checkable.

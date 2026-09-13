@@ -122,6 +122,15 @@ PCREC_RXT_SCHEMA(FILE, "use",         LIST,  0, NONE,       REPEAT,      "", FOR
 PCREC_RXT_SCHEMA(FILE, "freq",        TOKEN, 0, DATA,       REPEAT,      "", FORMAT, PCREC,      23)
 PCREC_RXT_SCHEMA(FILE, "ext",         TOKEN, 0, TREE,       REPEAT,      "", FORMAT, PCREC,      23)
 
+/* RESERVED, and the row exists PRECISELY so the refusal is by name. A
+ * keyword with no row refuses as an unknown token, which is the truth
+ * about a WITHDRAWN production and a lie about a reserved one: `version`
+ * is a word this format owns and will not parse. Its `wave` is the
+ * reserved sentinel, so the derivation that produces the "not in this
+ * build" list produces this too, with its own sentence. */
+PCREC_RXT_SCHEMA(FILE, "version",     TOKEN, 0, NONE,       AT_MOST_ONE, "", FORMAT, PCREC,
+                 PCREC_RXT_WAVE_RESERVED)
+
 /* ---- CONFIG scope — the indented body of a `config <name>` line ------- */
 
 PCREC_RXT_SCHEMA(CONFIG, "pcrec",    RAW,   0, NONE, ACCUMULATE,  "", FORMAT, PCREC, 1)
