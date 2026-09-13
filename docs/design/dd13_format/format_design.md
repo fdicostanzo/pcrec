@@ -6163,7 +6163,11 @@ every number it changes.**
 ### 9.1 The A3/A4 CHECK PLAN — the named fixtures this delivery owes
 
 **NEW AT REVISION 3.2** (r57 S-M2, S-M5, and the grammar lens's five
-pinned probe cells, which arrive ready-made). Revision 3.1's A3/A4 row
+pinned probe cells, which arrive ready-made); **FOUR ROWS ADDED AT 3.3**
+(r57 ROUND 2 R2-F2/R2-F3 — every rule those two findings moved gets a
+fixture, because a structure rule stated in prose and pinned by nothing
+is how both of them got written wrongly in the first place). Revision
+3.1's A3/A4 row
 owed "an indented-line fixture in all three legs" and left everything
 about it unstated. A fixture obligation with no name, no position and
 no stated assertion is a fixture nobody writes, so the plan is a table.
@@ -6186,6 +6190,10 @@ H12/H16 builds them.
 | `prov_adapted_no_adaptation.rxtin` + `prov_verbatim_no_adaptation.rxtin` | a `provenance` sub-block under a pattern block | the first refused (class `schema-constraint`), the second accepted | S-R2's **pcrec-side** detector (r57 S-M3) — the bench's C5/C6 test the same rule in the other repo and cannot turn this repo's matrix red |
 | `derived_call_collision.rxtin` | `(?&x_y)` with `x_y` and `x-y` both defined | refused, naming BOTH definitions and the shared identifier | §1.6.1a narrowing (5); accepted today with a byte-identical artifact (§0.8), so this fixture is that narrowing's regression. Leg A only — legs B and C resolve no calls (§2.22) |
 | `mc_illformed_utf8.rxtin` | an `mc` over an ill-formed UTF-8 subject under `-e utf8` | the driver's C loop, `verify_rxt.py`'s python loop and the count agree | SW7's newly-normative advance rule (r57 C-S6); §9's E5 group |
+| `comment_in_config_body.rxtin` | a column-1 `#` between two indented `config` body lines | all three REFUSE at the line BELOW the comment, class `structure-attachment` | **NEW AT 3.3** (r57 ROUND 2 R2-F2). The comment TERMINATES the body, so the line after it continues nothing — measured rc 1 today, and the fixture is what stops a future reader implementing the transparent reading, which would silently accept it. Its pair with the next row is the whole of the comment rule |
+| `comment_in_prose_region.rxtin` | a column-1 `#` between two prose lines of a `description \|` body | all three REFUSE at the line BELOW, same class | **NEW AT 3.3**, and it is the sharper of the pair: under the transparent reading this file does not merely widen, it produces an opener with TWO disjoint prose regions, which S3's single-extent rule cannot express at all. A shape the specification cannot describe needs a fixture, not a sentence |
+| `prose_paragraph_break.rxtin` | an indented WHITESPACE-ONLY line between two prose paragraphs of a `description \|` body | all three ACCEPT and agree on the decoded value, **which contains the empty paragraph-break line** | **NEW AT 3.3** (r57 ROUND 2 R2-F3). §1.6.1a candidate (6): the format's ONLY paragraph break, and revision 3.2's BLANK parenthesis would have deleted it. Asserting the VALUE and not just acceptance is what makes it catch the failure mode — a reader that ends the region there still "accepts" the file, it just loses the second paragraph |
+| `ws_only_line_positions.rxtin` | whitespace-only lines at FOUR positions: between case lines, in a `config` body, as the file's first line, and immediately after a blank | all three ACCEPT, and the parse is identical to the same file with those lines deleted | **NEW AT 3.3**. §1.6.1a candidate (7), and the fixture that pins the INERT half of the rule. The existing `whitespace_only_line.rxtin` (`sem15`) covers the first position only; the other three are where the manager's rejected "attachment-relevant" reading would have refused, so they are the ones a later revision could break without noticing |
 
 **AND THE POPULATION CHECK, which is the part that does not go stale**
 (r57 S-M2): a check walks `--list-schema`'s own output, selects every
