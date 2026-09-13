@@ -6818,7 +6818,10 @@ delivery carries exactly this list (D78):
 
 | moved | affects |
 |---|---|
-| `capable` → **`provides`** (§2.26 item 4) | **NO acceptance check types this token** — MEASURED at 3.2 (r57 S-M6): `capable` occurs 0 times in their §3 checklist (7 times elsewhere in the note, all in prose and production sketches). It affects the SET FILE their C-group checks run against, and any fixture that writes a `config` body — the probes' assertions are unchanged, and none of their scripts needs an edit for this row. **Revision 3.1 cited "the C-group capability checks", which is an EMPTY POPULATION**, and a correction list that over-warns teaches its reader to skim it |
+| ~~`capable` → **`provides`**~~ — **ROW DELETED AT 3.4 (D99 item 2)** | **A rename the bench never has to make is not a correction.** `provides` is withdrawn (§2.16); the bench's `capable` sketch is not renamed, it is **re-homed** — into an `ext bench` block where the bench picks its own spelling and pcrec never sees it. The row is replaced by the two WITHDRAWAL rows below, which say something the bench must act on. (The 3.2 measurement behind the deleted row stands and is why it was low-stakes either way: `capable` occurs 0 times in their §3 checklist.) |
+| **`provides` WITHDRAWN — the capability declaration moves to an `ext` block** (§2.16, §2.27) — **NEW AT 3.4** | **Their C-group SET FILE changes shape; no C-group PROBE changes.** MEASURED (3.2, re-confirmed): neither `capable` nor `provides` is typed by any check in their §3 checklist, so no script needs an edit. What changes is the file those checks run against: per-testee capability lists move out of `config` bodies and into `ext <consumer>`, whose internal spelling is **theirs to choose and ours not to constrain** — they may keep `capable` verbatim if they like it, which is the point of a namespace. The format-side consequence they should know: pcrec will not check those values against `vocabulary requires` any more, and will not check them against anything. Their pre-compile policy is unchanged; it was always theirs (§2.16's own last bullet) |
+| **`configs describe` WITHDRAWN; a set file declares no `config` at all** (§2.20) — **NEW AT 3.4** | **F2's mechanism changes and F2's OUTCOME does not** — see the F2 row in the disposition table. Their §6.2-shaped set file loses its `configs describe` line AND its `config pcrec`/`config pcre2`/`config re2` blocks together; the roster is aux content. **Their no-build-directives gate (F3) gets EASIER, not harder**: it no longer has to distinguish a legal `config` under a mode line from an illegal one, because a `config` in a set file is simply not written. The D93 hazard their roadblock #6 raised is DISSOLVED rather than cured — with no config, there is nothing to pin the sixteen-config matrix with |
+| **`testee` / `option` leave `config`'s body** (N-42, §2.16) — **NEW AT 3.4** | Their N-42 was a SHOULD and is answered by aux rather than by a production. Same shape as the `provides` row: the DATA is welcome in the file, the SEMANTICS are not pcrec's. Worth flagging explicitly because N-42 is one of the two needs whose tentativeness at source is what D99's process lesson is about (§7.3) |
 | `licence`/`licence-note` → **`license`/`license-note`** (§2.26 item 10) | **C4 — the one check that types the token** (`drop \`licence\``, their §3 row C4), plus the provenance fixture the C4-C7 group shares. 3.1 said "C4-C7's provenance fixtures"; C5/C6/C7 assert the conditional, the control and the duplicate refusal and type no license field |
 | the `freq` block's `exemplar`/`date`/`bytes`/`sha256` → a **`provenance` child** (§2.10) | only fixtures that write a data block; the bench's set files carry none today, so this is a spec-side move for them |
 | **D1's provenance key count: NINE → ELEVEN, plus the two renames** (§2.14, §2.24) — **ADDED AT 3.2 (r57 S-M6)** | their D1 row asserts *"a row or column for each of: … `provenance`'s **nine keys** …"*. The record is ELEVEN fields at 3.1 (`source`, `url`, `ref`, `license`, `license-note`, `retrieved`, `fidelity`, `adaptation`, `attribution`, `bytes`, `sha256`), two of them under new spellings. **§9's own D1 row below has known this since 3.1 and the CORRECTION LIST did not carry it** — which is the whole failure mode this list exists to prevent, occurring inside the list itself: a correction stated in one place and not in the place the bench reads. Their D1 probe's column enumeration needs the two renames and the two added keys |
@@ -6854,10 +6857,10 @@ every number it changes.**
 | B7 | SATISFIED BY DESIGN, and this delivery is where it gets its first live verification (their row: "nothing has ever verified it") — the driver's `@<path>` form reads bytes raw, NUL included (H6/S5) |
 | C1, C2, C3 | SATISFIED — `vocabulary` enforcement with its accept control and the free-key compatibility control (§2.15). C3 doubles as the R-COMPAT-1 guard for the corpus's zero tags |
 | C4, C5, C6 | SATISFIED — provenance's required-line and conditional-adaptation refusals with their controls (§2.14 rules 1-3). **3.1 SPELLING**: `licence`/`licence-note` are now `license`/`license-note`, and the required SET is declared per parent (a pattern block's is the four their fixtures use, unchanged) |
-| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14). **CORRECTED AT 3.2 (r57 S-S7): that is `cardinality: at-most-one`, not a `unique-by` row.** Revision 3.1 called it a `unique-by` row here and a CARDINALITY value in §2.25.3 — one fact claimed by two mechanisms, which inflated `unique-by`'s earned-ness under §2.25.3's own membership rule. The duplicate-refusal discipline P-Q9 lists is therefore TWO mechanisms, not one: `cardinality` for "at most one of these in this scope" (a second `provenance`, a second `configs` line), `unique-by` for "at most one per key tuple" (`under`, a `vocabulary` key), and `functional-binding` for the subject-id case that is neither. The check the bench runs is unchanged either way |
+| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14). **CORRECTED AT 3.2 (r57 S-S7): that is `cardinality: at-most-one`, not a `unique-by` row.** Revision 3.1 called it a `unique-by` row here and a CARDINALITY value in §2.25.3 — one fact claimed by two mechanisms, which inflated `unique-by`'s earned-ness under §2.25.3's own membership rule. The duplicate-refusal discipline P-Q9 lists is therefore TWO mechanisms, not one: `cardinality` for "at most one of these in this scope" (a second `provenance`; **3.4: "a second `configs` line" leaves this example with §2.20**), `unique-by` for "at most one per key tuple" (`under`, a `vocabulary` key), and `functional-binding` for the subject-id case that is neither. The check the bench runs is unchanged either way |
 | C8, C9 | SATISFIED — the sha256 mismatch refusal (checked by the subject's READER, §2.18) and its matching control |
 | C10 | RESOLVED AS REFUSAL — STEP 0's duplicate-`description` refusal; the check records that choice, and G3's M5 row changes accordingly |
-| D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's fields in `#section provenance` (eleven at 3.1, and the section now also carries a data block's provenance — one section, one record shape, §2.26 item 10), `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24) |
+| D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's fields in `#section provenance` (eleven at 3.1, and the section now also carries a data block's provenance — one section, one record shape, §2.26 item 10), `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24). **AT 3.4 the `capable`/`config` half of their D1 enumeration is answered by `#section aux` instead of by config-row columns** — which satisfies D1's own criterion (*"a row or column for each of…"*) more directly than the withdrawn columns did, since an aux row carries the consumer's own key names rather than pcrec's translation of them |
 | D2 | SATISFIED — the loader reads only the dump; the cases section is what makes that possible under Option A (expectations are in the file, so they must be at the seam) |
 | D3 | SATISFIED — one escape vocabulary, documented; NOTE for their loader: the dump escapes the FIVE TSV-framing escapes (`rxt_format.md`'s r46sem-22 paragraph), with `\f`/`\v` arriving as `\xNN` and a literal `"` unescaped — decode against the dump's table, not the subject table |
 | D4 | SATISFIED, AND STRENGTHENED AT 3.1 — the table is not only normative spec text (SW11) but **RENDERED from the schema's `validated_by` column** (§2.24, §2.25), so it cannot go stale by omission and their probe can compare it against `--list-schema` rather than against prose. The case-line silent-pass observation is retired |
@@ -6867,9 +6870,9 @@ every number it changes.**
 | E4 | SATISFIED (regression guard) — duplicate block names stay refused |
 | E5 | FORMAT HALF SATISFIED (`under`, §2.17); the harness half is the bench's own, exactly as their row states (R5 B1); pcrec's harness counts `under` lines as labelled skips and their runner scores them. **At 3.2 this group also carries the `mc` COUNTING cross-check and it becomes UTF8-BEARING** (r57 C-S6): the fixture runs at least one `mc` over an ILL-FORMED UTF-8 subject under `-e utf8`, because SW7 now states the empty-match advance rule for invalid input normatively (from `pos+1`, skip `0x80`-`0xBF`) and a rule whose only cell is well-formed is a rule with no cell. The three implementations compared are the driver's C loop, `verify_rxt.py`'s python loop and `match_api.md` §3.1's printed protocol — and the python arm is a deliberate SECOND implementation of the advance, paid for by exactly this differential (§2.21) |
 | E6, E7 | BENCH-SIDE — `make check-harness` enumeration and `content_hash` coverage are their gates; the format contributes the closure being enumerable (`--list-source` + include resolution) and nothing else is asked of it |
-| F1 | SATISFIED — the permanence SENTENCE lands (SW5); the parse already worked (their M12) |
-| F2 | SATISFIED — under `configs describe` a set's config cannot reach any pcrec build (refused for `target … with`, inert for everything else, §2.20): "the command line wins, or the file is refused" — the design delivers BOTH arms, by construction rather than by precedence |
-| F3, F4 | BENCH-SIDE gates (their no-build-directives `make check`, their AR-6 review); the format's contribution is that a planted `engine vm` in a `describe` file is still a legal line the gate must catch — their gate, unchanged |
+| F1 | SATISFIED, and **UNCHANGED AT 3.4** — the permanence SENTENCE lands (SW5, now the whole of that hunk); the parse already worked (their M12). F1 was always the permanence check and never the mode check, which is why §2.20's withdrawal does not reach it |
+| F2 | **SATISFIED BY A DIFFERENT MECHANISM AT 3.4, and more completely** (D99 items 1 and 5). Their F2 asks that a set's config cannot reach a pcrec build: *"the command line wins, or the file is refused."* Revision 3 delivered both arms through `configs describe`. **3.4 delivers the first arm by construction and makes the second unnecessary**: a set file declares no `config`, so there is nothing to reach a build, nothing to refuse, and no precedence question — the command line wins because it is all there is. **This is a stronger satisfaction than the mechanism gave**, since a mode-line mechanism can be defeated by forgetting the mode line and an absent production cannot be. Their check passes either way; if it probes for the `configs` KEYWORD it needs a rewrite, and if it probes for the BEHAVIOUR (a flag on the command line surviving a compile) it is unchanged |
+| F3, F4 | BENCH-SIDE gates (their no-build-directives `make check`, their AR-6 review), unchanged as gates. **The format's contribution CHANGES AT 3.4 and gets simpler**: revision 3's was "a planted `engine vm` in a `describe` file is still a legal line your gate must catch". With no mode and no config in a set file, their gate's job is the plain one — a build directive in a set file is a build directive, with no mode to argue about. Note for their reviewer: a build directive planted INSIDE an `ext` block is not a build directive at all (pcrec reads nothing there, §2.27), so their gate should scan the file's own productions and may ignore aux bodies — or scan them anyway, which costs nothing and catches an author who thought aux was a config |
 | G1 | SATISFIED — R-COMPAT-1 production by production (§1.3's closing paragraph): every addition is a fresh token (census 0, §0.6), an extension of a refused production, or new syntax at a today-hard-error position. pcrec's own `make test` green is the delivery bar as always |
 | G2 | SATISFIED — the five committed exports round-trip unchanged (no existing production moved); whether the exporter ADOPTS `as`/`sha256` is the bench's call |
 | G3 | AS THE CHARTER PREDICTS, WITH THE D5 PRECISION: **M1 changes** (STEP 0's refusal — their first-ranked item), **M5 changes** (STEP 0's refusal), **M10 changes** (the W23 keywords stop being refused). M2-M4, M6-M9, M11-M13: the FACTS are unchanged (byte-exactness, trims, acceptance, refusals, exit codes) — but any probe that archives a successful dump verbatim will show the header row's appended columns and, for case-bearing fixtures, the new `#section cases` rows. The probe script should diff name-resolved (or the archive is re-baselined once, at the delivery, with this paragraph as the cited reason). Any OTHER movement is a finding, exactly as they wrote |
@@ -6904,6 +6907,10 @@ H12/H16 builds them.
 | `prov_adapted_no_adaptation.rxtin` + `prov_verbatim_no_adaptation.rxtin` | a `provenance` sub-block under a pattern block | the first refused (class `schema-constraint`), the second accepted | S-R2's **pcrec-side** detector (r57 S-M3) — the bench's C5/C6 test the same rule in the other repo and cannot turn this repo's matrix red |
 | `derived_call_collision.rxtin` | `(?&x_y)` with `x_y` and `x-y` both defined | refused, naming BOTH definitions and the shared identifier | §1.6.1a narrowing (5); accepted today with a byte-identical artifact (§0.8), so this fixture is that narrowing's regression. Leg A only — legs B and C resolve no calls (§2.22) |
 | `mc_illformed_utf8.rxtin` | an `mc` over an ill-formed UTF-8 subject under `-e utf8` | the driver's C loop, `verify_rxt.py`'s python loop and the count agree | SW7's newly-normative advance rule (r57 C-S6); §9's E5 group |
+| `aux_arbitrary_keys.rxtin` | an `ext bench` block at FILE scope whose keys are nothing pcrec has ever heard of | all three legs ACCEPT; leg A's `--list-source` reproduces every key and value verbatim in `#section aux` | **NEW AT 3.4.** §2.27's whole promise in one cell, and S-R6's first detector. It is an ACCEPTANCE fixture on purpose: aux's failure mode is pcrec deciding it understands something, which an acceptance fixture catches and a refusal fixture cannot |
+| `aux_deep_tree.rxtin` | an `ext bench` body three levels deep whose keys deliberately COLLIDE with real format keywords (`pattern`, `m`, `provenance`, `config`) | accepted; and **the dump contains NO extra block, NO extra case and NO provenance record** — the colliding keys appear only as `#section aux` rows | **NEW AT 3.4**, and it is the sharper of the pair. The first fixture catches aux being narrowed; this one catches aux being INTERPRETED, which is the graduation rule's failure mode (§2.27.3) and the only one that corrupts a file's meaning. Asserting the ABSENCE of rows in three other sections is what makes it work |
+| `aux_prose_value.rxtin` | an aux line with a `\|` block scalar, containing an indented `#` and a ragged line | accepted; the value decodes with the `#` as prose and relative indentation preserved, identically to the same body under `description` | **NEW AT 3.4.** §2.27.2 decision 3 — the one place that decision is falsifiable. If the prose-region-opening parameter does not in fact reach aux scopes, this fixture is where it shows |
+| `aux_malformed_body.rxtin` | an `ext bench` block one of whose body lines is mis-indented so it attaches to nothing, followed by an ordinary `pattern` block | all three REFUSE, class `structure-attachment`, naming the MIS-INDENTED LINE — and the `pattern` block below is not implicated | **NEW AT 3.4.** This is the D99 parenthesis (*"so a malformed aux block cannot corrupt what follows"*) as a check. The assertion that matters is the second half: a refusal that names the right line proves the error is LOCAL, which is the entire argument for structural parsing over the opaque-bytes alternative (§2.27.2 decision 1) |
 | `comment_in_config_body.rxtin` | a column-1 `#` between two indented `config` body lines | all three REFUSE at the line BELOW the comment, class `structure-attachment` | **NEW AT 3.3** (r57 ROUND 2 R2-F2). The comment TERMINATES the body, so the line after it continues nothing — measured rc 1 today, and the fixture is what stops a future reader implementing the transparent reading, which would silently accept it. Its pair with the next row is the whole of the comment rule |
 | `comment_in_prose_region.rxtin` | a column-1 `#` between two prose lines of a `description \|` body | all three REFUSE at the line BELOW, same class | **NEW AT 3.3**, and it is the sharper of the pair: under the transparent reading this file does not merely widen, it produces an opener with TWO disjoint prose regions, which S3's single-extent rule cannot express at all. A shape the specification cannot describe needs a fixture, not a sentence |
 | `prose_paragraph_break.rxtin` | an indented WHITESPACE-ONLY line between two prose paragraphs of a `description \|` body | all three ACCEPT and agree on the decoded value, **which contains the empty paragraph-break line** | **NEW AT 3.3** (r57 ROUND 2 R2-F3). §1.6.1a candidate (6): the format's ONLY paragraph break, and revision 3.2's BLANK parenthesis would have deleted it. Asserting the VALUE and not just acceptance is what makes it catch the failure mode — a reader that ends the region there still "accepts" the file, it just loses the second paragraph |
@@ -6929,3 +6936,128 @@ refuse" for a rule leg B has never heard of. The classes are the four
 §2.25.5 names: `structure-attachment`, `unknown-token-in-scope`,
 `schema-constraint`, `value-shape`. D26 is untouched — the class is a
 tag the check reads, not a sentence a human reads.
+
+---
+
+## Appendix A — DRAFT outbox message to pcrec-bench (revision 3.4)
+
+**NOT SENT, and NOT WRITTEN TO THE BENCH REPO BY THIS LANE.** This is a
+draft body for the manager to review, time and send as a single-file
+`[inbox]` commit to `/home/duxevents/pcrec-bench/docs/dev/
+inbox_from_pcrec.md` (D78: one writer each way, and that file is the
+only file pcrec writes there). It is drafted here because §9's
+correction list is the thing the bench acts on and a list is easier to
+check against a message than against a table. The manager owns the
+timing — O-26 §7 puts the correction list at the IMPLEMENTATION
+delivery, and D99 arguably moves the withdrawal half earlier, since the
+bench is designing set files against a mechanism that no longer exists.
+
+---
+
+> **[inbox] W23 revision 3.4 — two mechanisms WITHDRAWN, one production
+> added; your sixteen-config matrix stays yours**
+>
+> Frank ruled on 2026-09-13 (our `docs/dev/decisions.md` D99) on what
+> the `.rxt` format is FOR, and it changes two of the answers we gave
+> your [B42] note. Sending now rather than at the implementation
+> delivery, because you would otherwise keep designing against
+> mechanisms that are gone.
+>
+> **The ruling, in Frank's words**: *"the rxt file needs a clear
+> purpose and ultimately that purpose is something along the lines of a
+> file for defining rx, primarily for the use of pcrec. that the bench
+> can use it is good but shouldn't distract from the primary
+> purpose."*
+>
+> **What is WITHDRAWN.**
+>
+> 1. **`capable`/`provides` (our §2.16, your N-22/N-23).** A capability
+>    list describes an ENGINE, and the format does not carry engine
+>    knowledge as semantics. It is not renamed and not moved
+>    bench-side; see "what replaces them" below.
+> 2. **`configs describe` (our §2.20, your N-43/N-44, roadblock #6).**
+>    The mechanism made `config` and `use` bimodal via a head-line mode
+>    switch to resolve a collision that only arises through the roster
+>    proposals in (1) and (3). Withdrawing those removes the collision.
+> 3. **`testee` and `option` in a `config` body (your N-42).** Same
+>    reason as (1): an engine roster and its flags describe engines.
+>
+> **What REPLACES them: one new production, `ext <consumer>`.**
+> Structured data attachable at file level and block level,
+> namespaced to a consumer (`ext bench`), with a body of ordinary
+> indented records — arbitrarily deep, and a `|` block scalar is legal
+> inside. We parse its STRUCTURE (so a mis-indented line is an error on
+> its own line and cannot change how anything after it parses) and we
+> interpret NOTHING: no build reads it, no check reads it, no config
+> resolution touches it, and no diagnostic ever cites a value inside
+> it. `--list-source` dumps it faithfully in a new `#section aux`, one
+> row per line with a `parent_line` pointer, so your loader
+> reconstructs the tree without a second parser.
+>
+> **Concretely, your loglines set file**: the three `config` blocks and
+> the `configs describe` line become one `ext bench` block holding the
+> roster and the per-testee capability lists. **The key names inside it
+> are yours** — keep `capable` if you prefer it; we will not see the
+> difference. Your pre-compile policy
+> (`REQUIRES(pattern) ⊄ capabilities(testee) ⇒
+> unsupported-by-declaration`) is unchanged and was always yours; it
+> now reads its data from your own namespace.
+>
+> **What STAYS, and it is everything on the pattern side.**
+> `tag requires=…` and `vocabulary requires …` are untouched — what a
+> PATTERN needs is rx-defining content, which is exactly what this
+> format is for. So are `provenance`, `variant` (with `kind`, `groups`,
+> `note` and `unsupported`), `under`, `pattern-esc`, `mc`, subject
+> `as`/`sha256`, `tag-prose`, `include`, `@file:` and the `--list-source`
+> sections. **Your sixteen-config pcrec matrix stays yours** — it is
+> your experimental design, cross-set by construction, and nothing in
+> the format ever needed to know about it. That was the hazard
+> roadblock #6 raised, and it is now dissolved rather than cured: with
+> no `config` block in a set file, there is nothing to pin it with.
+>
+> **THE ONE RULE WE ASK YOU TO HOLD US TO — the GRADUATION RULE.** The
+> day something in an aux block needs pcrec to ACT on it, it must
+> graduate to a real production, with a grammar rule, a schema row and
+> a spec hunk. Aux never grows semantics in place. If you find yourself
+> wanting us to validate, default, or reason about something in your
+> `ext` block, that is a graduation request and we would rather have it
+> as one than as a small favour — the failure mode this rule exists to
+> prevent is a field everybody writes that one tool reads "just this
+> once" and that becomes load-bearing without ever being designed.
+>
+> **Your acceptance checklist — what moves.** The full list is our §9;
+> the short version: **no probe script needs an edit for the
+> withdrawals** (we measured — neither `capable` nor `provides` is
+> typed by any check in your §3). What changes is the SET FILE your
+> C-group checks run against. **F2 is satisfied more completely than
+> before** (a set file has no config, so the command line wins by
+> construction rather than by precedence) — rewrite it only if it
+> probes for the `configs` keyword rather than for the behaviour.
+> **F3's gate gets easier** (a build directive in a set file is just a
+> build directive, no mode to argue about); note that anything inside
+> an `ext` block is not a directive at all, so you may skip aux bodies
+> or scan them anyway, your call. **D1's `capable` enumeration** is
+> answered by `#section aux` rather than by config-row columns.
+> Everything else in the correction list we sent shape for is unchanged
+> — `licence` → `license` at your C4, the `freq` block's provenance
+> fields, D1's nine → eleven provenance keys, B6's dissolved premise,
+> and the `mc` adapter edit (empty-match advance from the reported
+> START, not `max`).
+>
+> **And one thing we owe you plainly.** Our revision 3 presented both
+> withdrawn mechanisms as ready-to-ratify, and the needs underneath
+> them were marked tentative in YOUR note — N-22 is the one you said
+> you were least sure of, offered as P-Q4, and N-42 is a SHOULD. We
+> absorbed them without surfacing that, and Frank's ruling names it as
+> a standing process lesson on our side: when a design absorbs a need
+> whose source marked it tentative, the ratification ask must say so.
+> Your note was appropriately hedged; our packet was not.
+
+---
+
+**A note for the manager on what this draft does NOT do**: it does not
+ask the bench to adopt `ext bench`, does not prescribe the shape of
+what goes inside it, and does not set a date. All three are theirs
+(D78). It also deliberately does not re-open P-Q4 as a question — D99
+answered it, and presenting a ruled item as open would invite a reply
+that has nowhere to go.
