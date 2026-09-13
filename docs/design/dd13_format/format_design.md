@@ -2326,6 +2326,33 @@ The hunks, named so a reviewer can check them off:
 | S10 | `docs/spec/limits.md` "Handling an oversized artifact" item 1 already promises the `config` block; when W1 lands, that sentence stops being a forward reference and gains a pointer to S1 | W1 |
 | S11 | `docs/spec/cli.md`: `--source`, `--target <prefix>`, `--lib-path DIR`, **`--emit-composed`**, and §2.7's **output-naming rule** (`-o <dir>` per target; `-o <file>` with N > 1 refused) | W1 |
 
+**The W23 hunks** (revision 3; every one lands with the implementation
+that makes it true, D80 — a reviewer rejects the change without them).
+S1-S11's W2/W3 rows above are unchanged and land in the same W23
+delivery; these are the [B42] additions:
+
+| # | file | the hunk | wave |
+|---|---|---|---|
+| SW1 | `docs/spec/rxt_format.md` | `pattern-esc`: the second block starter, the seven-escape vocabulary shared with subjects, one-spelling-per-block, the `\x00` refusal naming K9 and its lifting trigger (§2.19); the CLI decode flag cross-reference | W23 |
+| SW2 | `docs/spec/rxt_format.md` | the LEXICAL RULES section: the body SUB-BLOCK mechanism — declared kinds (`provenance`, `variant`), indentation-precedes-dispatch, blank-line termination, the bare-indented-line refusal UNCHANGED, `prose-value` legal inside a sub-block; the "only asymmetry" sentence rewritten to the narrow relaxation (§1.2) | W23 |
+| SW3 | `docs/spec/rxt_format.md` | `provenance`: the nine fields, the four required, the `authored` agreement rule, adaptation-iff-not-verbatim, one-per-block (§2.14) | W23 |
+| SW4 | `docs/spec/rxt_format.md` | `vocabulary` + `tag-prose` + `capable`: declaration, enforcement points (tag both scopes, `under`'s convention, `variant`'s kind, `capable`), the RESERVED-KEY sentence for `requires`, fail-closed `capable` (§2.15, §2.16) | W23 |
+| SW5 | `docs/spec/rxt_format.md` | `configs build`/`describe`: the four describe rules, the `target … with` refusal, `use` inert-and-counted, entry-file scope — and the PERMANENCE sentence for a target-less config-less file (§2.20) | W23 |
+| SW6 | `docs/spec/rxt_format.md` | the subject subsection (S4's row extended): `as <id>`/`sha256 <hex64>`, the per-file id namespace and functional-binding rules, WHO checks the hash (§2.18) | W23 |
+| SW7 | `docs/spec/rxt_format.md` + `docs/spec/match_api.md` | `mc` and its COUNTING RULE — one normative paragraph citing `match_api.md` §3.1 as the rule's single home, the empty-advance-from-reported-start clause, the finditer-divergence class named; match_api.md §3.1 gains one sentence naming `mc` as a consumer of the protocol | W23 |
+| SW8 | `docs/spec/rxt_format.md` | `under`: qualifier semantics, fallback, duplicate refusal, the no-`g`/`gp` rule, the harness's counted-skip treatment (§2.17) | W23 |
+| SW9 | `docs/spec/rxt_format.md` | `oracle` widened to `engine-ref [/version]`; `python`/`pcre2` meanings unchanged; absent-oracle = labelled skip (§2.9) | W23 |
+| SW10 | `docs/spec/rxt_format.md` | `variant` as a sub-block: the five attributes, exactly-one-of-text/unsupported, kind's vocabulary hook (§2.23); supersedes S8's one-line shape | W23 |
+| SW11 | `docs/spec/rxt_format.md` | `--list-source`: the appended columns, the three `#section`s with their column lists, the **VALIDATES vs RECOGNISES table as normative text**, and the SECTIONLESS paragraph rewritten — its own named trigger fired (§2.24). `table_contract.md` needs NO hunk (sections were already its mechanism) | W23 |
+| SW12 | `docs/spec/rxt_format.md` | the `name` grammar section's "cannot be called from a pattern" paragraph AMENDED: still true of the hyphenated SPELLING (PCRE2's grammar, D26), and the definition is now reachable through its DERIVED identifier — the mapping, the at-use collision refusal naming both definitions, exact-spelling-does-not-win (§2.22). **The three-reader note**: legs A/B/C's shared name grammar is UNCHANGED; the derivation lives only in the composer's lookup, so no reader gains an arm | W23 |
+| SW13 | `docs/spec/rxt_format.md` | the "NOT IN THIS BUILD" recognised-keyword list grows the W23 keywords, so any future partial build refuses them by name rather than as unknown (MEASURED gap, §0.6: `vocabulary` is "not a file-level directive" today) | W23 |
+| SW14 | `docs/spec/cli.md` | the `pattern-esc` decode flag; `--list-source`'s section output named in its entry | W23 |
+| SW15 | `docs/spec/rxt_format.md` | the driver protocol: the find-all mode H7 lands (the §3.1 loop in C), the `@<path>` subject form's byte-exactness (S5's row, unchanged, referenced), the sha256 mismatch refusal | W23 |
+
+**No `docs/spec/match_api.md` struct hunk and no abi bump anywhere in
+W23** (§1.4) — SW7's match_api sentence is prose naming a new consumer
+of an existing contract.
+
 `docs/guide/` is the human tier and points at these; it never restates
 them (D80).
 
@@ -2562,8 +2589,14 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
 | `[expectations].default_method` | **TWO fields, not one** (r44-consumers U3): `oracle pcre2` names the ENGINE that checks, and `tag method=libpcre2-differential` names the VERIFICATION METHOD. R-BENCH-1's methods include non-oracle ones — "derived-law-plus-induction" is a real, already-used method (the K23 closed form) with no engine behind it — so folding method into the oracle enum would make those unspellable and would put a pcrec-shaped enum where AR-6 requires engine-neutrality. The first version conflated them |
 | `[testees.pcre2].options` | `config pcre2` with `testee pcre2/10.46` + `option k=v` lines |
 | `[testees.pcrec].options` | `config pcrec` with `pcrec --features all` |
-| `patterns[].variant = null` | the **absence** of a `variant` line |
-| an `expectations.tsv` row | `m @file:"subjects/s-000.bin" 234 258` / `n @file:"…"` / `mc @file:"…" <n>` |
+| `patterns[].variant = null` | the **absence** of a `variant` sub-block |
+| an `expectations.tsv` row | `m @file:"subjects/s-000.bin" as s-000 sha256 <hex64> 234 258` / `n @file:"…" as …` / `mc @file:"…" as … <n>` — the id and hash per §2.18, so the expectation key `(pattern, subject-id, regime)` survives the sidecar's death |
+| **[B42]** the capability set's provenance record (their §4.1) | the `provenance` sub-block, field for field (§2.14) |
+| **[B42]** `REQUIRES` tags + the closed vocabulary (their §5.1) | `tag requires=…` + `vocabulary requires …` (§2.15) |
+| **[B42]** per-config capabilities (their §5.3) | `capable` lines in the testee's `config` (§2.16, Frank ratifies) |
+| **[B42]** the second-convention expectation (their family 11) | `under <convention> <case-line>` (§2.17) |
+| **[B42]** `variant_kind` / `objective_preserved` / `capture_map` | the variant sub-block's `kind` / `note` / `groups` (§2.23) |
+| **[B42]** the testee-roster scoping hazard (D93) | `configs describe` (§2.20, Frank ratifies) |
 
 **The four bench requirements that needed a decision, decided:**
 
@@ -2596,21 +2629,29 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    preserved" — is **a review obligation the format records and does not
    check**, and it must say so. The format's contribution is visibility
    (T-2/AR-5: a variant is beside the pattern or it is a fork), not
-   verification. A `tag variant-note=…` carries the reviewer's statement.
-4. **REGIME (§3)** is a property of the **subject set**, not of a case,
-   and there is no case scope (Frank's ruling 4). So a sub-bench writes
-   the canonical pattern **once** as a `name`d definition and one block
-   per (pattern, regime), each `pattern (?&<name>)` with its own
-   `tag regime=search_short` (the bench's own spelling, underscored —
-   r44-consumers U4 caught the first version writing `search-short`) and
-   its own subject set. **MEASURED, the wrapper is
-   free here**: `expectations.tsv`'s columns are
-   `pattern subject regime expected start end nmatches method oracle` —
-   **no capture columns at all** — and a subroutine wrapper is
-   span-identical, differing only in capture visibility (§2.3). When
-   bench adds capture checking (its OD-B9, [DD-13a] T-3), the wrapper
-   stops being free and those blocks must carry the pattern text
-   directly; §7 Q6 records that trigger.
+   verification. **REVISED at W23**: the reviewer's statement is the
+   variant sub-block's own `note` attribute (§2.23), which is
+   whitespace-capable where the first routing (`tag variant-note=…`)
+   measurably was not ([B42] N-41); `tag-prose` now also exists for
+   other descriptive keys.
+4. **REGIME (§3)** — **REPLACED at W23 ([B42] N-48; the row's original
+   text prescribed a mechanism MEASURED unusable for every bench
+   pattern id, and §2.22 carries the repair).** Regime stays a property
+   of the SUBJECT SET, not of a case, and there is still no case scope
+   (Frank's ruling 4). A sub-bench writes the canonical pattern once as
+   a `name`d definition — under its own hyphenated id, unmapped — and
+   one block per (pattern, regime), each
+   `pattern (?&<derived-identifier>)` with its own
+   `tag regime=search_short` and its own subject set:
+   `(?&cls_upto_1024)` binds to `name cls-upto-1024` through the
+   composer's derived-identifier lookup (§2.22 — the `-`/`.` → `_` map
+   `target =` already uses, with the same at-use collision refusal).
+   The caveats that survive the repair, unchanged: the wrapper is free
+   exactly while `expectations.tsv` carries no capture columns
+   (MEASURED — none, all 1,364 rows), so when the bench adds capture
+   checking (OD-B9) those blocks must carry the pattern text directly
+   (§7 Q6's trigger); and a composed block's oracle is necessarily
+   `pcre2` (§2.9), which for the bench changes nothing.
 
 **What the bench must still own** (D78 — this is a durable interface
 statement, not a ruling into their repo): the record and its keys, the
@@ -2914,6 +2955,12 @@ a field now**, not a `NOTES.md` paragraph (Frank's r44 ruling); the
 generator still stays beside its output; the directory stays a directory
 and no tool reads it as a schema.
 
+**REPAIRED at revision 3** ([B42]): the file now carries the six W23
+mechanisms its first version could not — `configs describe` (without
+which its own `config pcrec` block would PIN the bench's testee matrix
+under D93, roadblock #6), `vocabulary`, `capable`, subject ids + hashes,
+a `provenance` sub-block, the variant sub-block, and an `under` case.
+
 ```
 # Operational: regenerate subjects with gen_subjects.py before editing.
 description |
@@ -2921,20 +2968,32 @@ description |
   establish that a chunk of log lines does NOT contain the shape an
   operator is grepping for, at the sizes a log shipper hands a matcher
   (256 B - 4 KB) and across a size sweep to 1 MB.
-  The set contains both cases the answer turns on: patterns whose match
-  requires a literal byte, and patterns built only from classes, which
-  no required-byte precheck can help.
-tag id=loglines version=0.1 objective=realworld
+tag id=loglines version=0.2 objective=realworld
 tag short-search-max-bytes=4096
-oracle pcre2
+oracle pcre2/10.46
 tag method=libpcre2-differential
+configs describe
+
+vocabulary hazard   none exponential-backtracking large-count wide-alternation
+vocabulary size     tiny small medium large
+vocabulary role     member floor
+vocabulary kind     syntax-only restructured
+vocabulary convention perl-leftmost-first posix-leftmost-longest
+vocabulary requires backrefs lookaround lookbehind-variable atomic-possessive
+  recursion conditionals k-reset control-verbs unicode-properties
+  named-groups free-spacing callouts span-reporting non-utf8-subject
+  captures true-end-anchor
 
 config pcrec
   pcrec --features all
 config pcre2
   testee pcre2/10.46
+  capable backrefs lookaround atomic-possessive recursion conditionals
+  capable k-reset control-verbs unicode-properties named-groups
+  capable free-spacing callouts span-reporting captures true-end-anchor
 config re2
   testee re2/2024-07-02
+  capable unicode-properties named-groups captures
 use pcrec, pcre2, re2
 
 include "gen/cases_search_short.rxt"    # 11 patterns x 112 subjects, generated
@@ -2946,53 +3005,86 @@ only, no head** (§2.5):
 
 ```
 pattern \d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?
-name iso_ts
+name iso-ts
 description ISO-8601 timestamp with optional fraction and zone.
-tag logs timestamp iso8601 tier-base
+tag logs timestamp iso8601
 tag regime=search_short tier=base hazard=none size=medium
 tag convention=perl-leftmost-first role=member
-variant re2 unsupported no per-engine spelling preserves the objective
-m @file:"../subjects/s-000.bin" 234 258
-n @file:"../subjects/s-001.bin"
-m @file:"../subjects/s-002.bin" 0 24
-… 109 more
+provenance
+  source    authored
+  licence   CC0-1.0
+  retrieved 2026-09-12
+  fidelity  inspired
+  adaptation |
+    written from the ISO-8601 grammar's own production list; no source
+    regex was consulted.
+variant re2
+  kind restructured
+  text \d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}([.,]\d{1,6})?(Z|[+-]\d{2}:?\d{2})?
+  note |
+    the non-capturing groups opened: RE2 prices them identically, and
+    the objective (a class-heavy scan) is untouched.
+m @file:"../subjects/s-000.bin" as s-000 sha256 3f2a09c1d47e58b6a2f0e9d1c8b7a6f5e4d3c2b1a0918273645546372819aabb 234 258
+n @file:"../subjects/s-001.bin" as s-001 sha256 91c04e7f2a3b5c6d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d
+… 110 more
+
+pattern a|ab
+name sem-alt-order
+description The leftmost-first / leftmost-longest separator case.
+tag semantics control
+tag regime=search_short role=member hazard=none size=tiny
+tag convention=perl-leftmost-first
+m "ab" 0 1
+under posix-leftmost-longest m "ab" 0 2
 
 pattern :
 name floor
 description The floor control: one literal byte, structural in every log format here.
 tag floor control one-literal
 tag regime=search_short role=floor hazard=none size=tiny
-m @file:"../subjects/s-000.bin" 24 25
+m @file:"../subjects/s-000.bin" as s-000 24 25
 … 111 more
 ```
 
-**Hand-trace.** The entry file's head carries a `description` block
-scalar (six indented lines, ending at the non-indented `tag`),
-file-level `tag`s, an `oracle` naming the ENGINE and a separate
-`tag method=…` naming the VERIFICATION METHOD (§4.5, r44-consumers U3),
-three `config` blocks (one with a `pcrec` line, two with `testee`
-lines), a `use` naming all three, and two `include`s. The fragments
-carry pattern blocks only; their `@file:` paths are relative **to the
-fragment** (§2.8), hence `../subjects/`. Each member block carries a
-`tag` line of **bare labels** — the sidecar's free `tags` list (U1) —
-beside a `tag` line of pairs, both accumulating. Each block runs as
-three cells (`use` enumerates, §2.6); the `variant … unsupported` line
-makes `re2`'s cell for `iso_ts` a declared, counted non-result rather
-than a wrong answer (bench §4.4). The tally is reported under
-`loglines.rxt` with `entry files: 1  fragments spliced: 2` (§2.11), and
-each failure still prints the fragment's own `file:line`.
+**Hand-trace, the W23 half only** (the W1 mechanics are the previous
+revision's and unchanged). `configs describe` makes every `config`
+block DATA: `pcrec --source loglines.rxt` builds nothing from them, the
+harness runs each block in ONE cell and prints
+`configs: descriptive (3 declared, 0 applied)`, and the bench's runner
+reads the roster off `--list-source` and applies it through its own
+adapters — whose command lines therefore always win, closing the D93
+collision by construction (§2.20). The `vocabulary` lines close six tag
+keys (a typo in `hazard=` is now a refusal naming the set; the
+`requires` line wraps by head continuation); the two `capable` stanzas
+are checked against `vocabulary requires` and are what the bench's
+pre-compile policy reads — `re2`'s short list is why a
+`tag requires=backrefs` pattern would produce
+`unsupported-by-declaration` there, decided before any compile (§2.16).
+`iso-ts` keeps its HYPHENATED id (no name map anywhere — §2.22); its
+`provenance` sub-block is the charter's requirement (1) with
+`authored`'s no-url rule live; its `variant re2` sub-block carries
+`kind` + `text` + the reviewer's `note` (§2.23). `sem-alt-order` is
+family 11's separator case: one unqualified expectation under the
+canonical convention, one `under` line carrying the second correct
+answer (§2.17) — pcrec's own harness counts the `under` line as a
+labelled skip; the bench scores it against its
+`posix-leftmost-longest`-tagged testees. Subject references carry
+`as`/`sha256` (§2.18), so every report row keys on `(pattern, s-000)`
+and a regenerated tree that drifts is refused at read time naming both
+digests.
 
-**Note what this file does NOT do: it composes nothing.** No block
-references a definition, so §2.3's machinery never runs and the textual
-control is not needed. A bench sub-bench is a flat corpus with a rich
-head — which is why it earns W2/W3 and not W1.
+**Note what this file still does NOT do: it composes nothing.** No
+block references a definition, so §2.3's machinery never runs. A bench
+sub-bench is a flat corpus with a rich head. (A set that DOES use the
+per-regime wrapper writes `pattern (?&iso_ts)` and binds through the
+derived-identifier lookup — §4.5 item 4 as repaired, §2.22.)
 
 **What this replaces**: `subbench.toml` (183 lines),
-`expectations.tsv` (1,364 rows), and eleven `patterns/*.rx` files —
-three file kinds and two grammars become one file kind and one grammar,
-with the case's identity being `file:line` in one file rather than a
-`(pattern, subject, regime)` key joined across two (§4's
-"identity of a case" row).
+`expectations.tsv` (1,364 rows), eleven `patterns/*.rx` files AND the
+sidecar's provenance/capability/variant fields — three file kinds and
+two grammars become one file kind and one grammar, with a case's
+identity being `(pattern, subject-id)` plus its `file:line` (§2.18),
+never a key joined across files.
 
 ### 6.3 Two build configurations from one source ([V-E], U6, W1)
 
