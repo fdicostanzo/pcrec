@@ -1342,10 +1342,12 @@ satisfies.
 
 | group | checks | satisfied by | notes |
 |---|---|---|---|
-| **A** (the productions parse) | A1, A5 | W23.3 | A1's BEFORE is "refused by name with its wave", which SW13 keeps true at every intermediate pin |
+| **A** (the productions parse) | A5 | W23.3 | `tag` accumulation and mixed labels/pairs, unchanged W2 design |
+| | **A1** | W23.3 + W23.3a, **with a bench-side CORRECTION** | A1's BEFORE is "refused by name with its wave", which SW13 keeps true at every intermediate pin. **But A1's fixture types `include` at head AND BLOCK scope, and `include` is a DECL-LINE ONLY** — **CITED**, `format_design.md` §1.3's EBNF: `decl-line = … \| "include" , ws , path-ref …`, with no `include` alternative anywhere in `block-line`. A block-scoped `include` is an unknown token in block scope at the delivered pin, so A1's probe exits 1. **This is A2's shape a second time** (r59-B-M5): the verbatim need was read, the keyword list was checked against the delivery, and the SCOPE the fixture types was not. Their fix is one line — move the `include` to the head — and it joins §9's correction list NOW rather than at their restart |
 | | **A2** | W23.3, **with a bench-side CORRECTION** | **A2's fixture literally types `config … testee` and `config … option`, both removed at 3.4, so A2 exits 1 at the delivered pin. Their fix is TWO DELETED LINES.** This is r58 B1 and it is why Appendix A was gated: a true two-token measurement had been generalised into "no probe script needs an edit". One does |
 | | A3, A4 | W23.1 (the unknown-token and wrong-scope refusals are schema facts) | A3 wants the diagnostic to name the CONTEXT — which is what `unknown-token-in-scope` is |
-| **B** (raw bytes round-trip) | B1, B2, B7 | W23.3/.4 (existing behaviour, **must not regress**) | B1/B2 already pass; a regression is a delivery failure |
+| **B** (raw bytes round-trip) | B1, B2 | W23.3/.4 (existing behaviour, **must not regress**) | B1/B2 already pass; a regression is a delivery failure |
+| | **B7** | W23.3, **and it is a FIRST LIVE VERIFICATION, not a regression guard** | revision 1 booked B7 with B1/B2 as *"existing behaviour, must not regress"*. **The ruled disposition is the opposite** — **CITED**, `format_design.md` §9's B7 row: *"SATISFIED BY DESIGN, and this delivery is where it gets its first live verification"*, quoting their own row's *"nothing has ever verified it"*. **So it owes a FIXTURE and revision 1 scheduled none**: a `@file:` subject whose file is the three bytes `\x00\xff\x41`, reaching the matcher WHOLE through `driver.c`'s `@<path>` argument form (H6/S5), asserted on the engine's own answer rather than on the file being read. Booking a never-run promise as a regression guard is how a thing stays unverified through the delivery that was supposed to verify it |
 | | **B3, B4** | **ALREADY LANDED by STEP 0** (lane `rxtnul`) | the NUL refusal — *"the single highest-value item in the checklist"*. Leg A is done; §1.8 brings legs B and C to parity |
 | | **B5** | W23.3, **PARTIAL and the deviation is named** | `pattern-esc` round-trips a newline and a trailing CR; **`\x00` is REFUSED BY NAME, parked on K9** (the compile entry takes no pattern length, so a NUL-bearing pattern would compile as its prefix and report success). Their own N-4 split — *"SHOULD to express, MUST to refuse"* — is honoured in both halves |
 | | **B6** | **PREMISE DISSOLVED** | the refusal it tests has an EMPTY POPULATION: both spellings are S2 openers, so a `pattern-esc` line after a `pattern` line is the NEXT BLOCK, not a second line in one block. **Not a deviation and not a failure** — a bench-side rewrite |
@@ -1356,7 +1358,8 @@ satisfies.
 | **D** (`--list-source` columns) | **D1** | W23.4 | **D1 lists SEVEN items and types neither `capable` nor `config`** — r58 B6. `#section aux` is a new section D1 does not ask about, and claiming it "answers half of D1" was false at two sites |
 | | D2, D3, D5 | W23.4 | D5 (a stream with no `#section` reads as one anonymous section) is satisfied by the unconditional-when-non-empty rule: a file using no W23 production emits NO `#section` line |
 | | D4 | W23.1 + W23.4 | the VALIDATES-vs-RECOGNISES table, **RENDERED from `validated_by`** |
-| **E** (the set loads and measures) | E1-E4, E6, E7 | bench-side, on our delivered pin | |
+| **E** (the set loads and measures) | E1-E4, E6 | bench-side, on our delivered pin | |
+| | **E7** | bench-side HASH, **pcrec-side ENUMERABILITY — §1.10.5** | E7 wants `content_hash` to cover the `.rxt`, every `include`d fragment and every `@file:` subject. The hash is theirs; **the bench cannot hash what it cannot enumerate**, and the format's contribution is that the closure is walkable from the dump alone: `--list-source` on the entry, follow each `include` row's RESOLVED-path column transitively, and read `@file:` paths out of `#section cases`. Revision 1 booked E7 "bench-side" with no pcrec-side path at all, which is the same omission as §1.10's |
 | | **E5** | W23.3 (`under`) **plus a bench-side harness change they name themselves** | *"This check cannot pass on the format alone"* — their `harness.outcome_for()` has no convention parameter. Our half is `under` as a counted, labelled skip |
 | **F** (D93 and engine neutrality) | **F1** | **SW5's ONE SENTENCE** | the parse already works; the CONTRACT is the ask, and SW5 is exactly that sentence |
 | | **F2** | **PREMISE DISSOLVED, and D93 is UNCHANGED** | its setup — a set file declaring `engine` in a `config` — has no construction in a set file with no configs. **Its literal pass condition still fails for every config-BEARING file**, because D93 is untouched and decoupled (D99 item 5). This is r58 B7: B6 four rows up gets the honest word for the same situation and F2 had been given "satisfied more completely" |
@@ -1365,13 +1368,47 @@ satisfies.
 | | G2 | W23.4 (their five committed exports round-trip) | the dump's escape vocabulary is unchanged; the columns append |
 | | **G3** | W23.5 | **M1 MUST change** (the NUL refusal — already true at STEP 0). **M10 changes by design** (the W2/W3 keywords stop being refused). **M5 changes** (C10 accepted). **M2-M4, M6-M9, M11-M13 must be UNCHANGED; any other movement is a FINDING** |
 
-**Three rows above are corrections the bench must act on rather than
-checks we pass**, and they go out over the D78 channel as one list at
-delivery (Appendix A's body, whose gate r58 R4 set and `w23fix3`
-discharged): **A2's two deleted fixture lines**, **B6's dissolved
-premise**, and **F2's dissolved premise with the D93-unchanged note**.
-A rename the bench never has to make is not a correction and is not on
-the list.
+**THE CORRECTION LIST IS `format_design.md` §9's, BY REFERENCE. THIS
+NOTE DOES NOT RE-DERIVE IT** (r59-B1 — and the re-derivation is the r58
+disposition-text class, fifth recurrence).
+
+Revision 1 named three rows — A2, B6, F2 — and called that "the
+correction list". **It is not**: §9's own table (whose header says the
+D78 outbox message *"carries exactly this list"*) holds nine live rows,
+and Appendix A's drafted message enumerates them. Revision 1 reached
+three by reasoning about which rows THIS note discusses, which is the
+exact derivation error §9's own closing note records going wrong twice
+already — *"a moved spelling's affected checks are found by GREPPING
+THEIR §3 CHECKLIST for the token, not by reasoning about which
+check-group the production belongs to."* It also generalised §9's note
+about a DELETED row (`capable` → `provides`, deleted because the bench
+never has to make that rename) onto `licence` → `license`, **which the
+bench does have to make: their C4 row literally types `drop \`licence\``
+and exits 1 at the delivered pin.**
+
+**So: the list lives in `format_design.md` §9 and in Appendix A's
+drafted body, and W23.5 item 4 produces the DELIVERY-TIME list by
+reading §9 — never by reading this section.** For a reader's
+orientation only, §9's live rows at 3.4.1 are: the `provides`
+withdrawal (their C-group SET FILE changes shape), the
+`configs describe` withdrawal, `testee`/`option` leaving `config`'s
+body, **A2's two deleted fixture lines**, `licence`/`licence-note` →
+`license`/`license-note` (**C4**), the `freq` block's four one-off
+provenance fields becoming a `provenance` child, **D1's provenance key
+count NINE → ELEVEN plus the two renames**, `description` accepting
+`prose-value`, and **B6's dissolved premise** — plus **F2's dissolved
+premise with the D93-unchanged note** from the disposition table, and
+**the `mc` adapter edit** (empty-match advance from the reported START,
+not `max`) which Appendix A carries. **Revision 1.1 adds one: A1's
+block-scoped `include`** (the A1 row above), which is A2's shape and
+belongs on the same list.
+
+**STANDING LESSON, and it is why this paragraph is a pointer and not a
+table** (r59-B1's disposition, recorded for the journal): *a correction
+list that exists in a ruled document travels BY REFERENCE and is never
+re-derived. Re-derivation is how the disposition-text class
+propagates* — the second copy is right on the day it is written and
+wrong on the day the first one moves, and nothing compares them.
 
 ---
 
