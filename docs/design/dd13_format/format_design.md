@@ -907,8 +907,8 @@ place the format does not fully pass it and what passing would cost.
 #### 1.2.1 The STRUCTURE layer
 
 A reader at this layer knows **four line classes, three devices and
-two schema parameters**. It knows no other keyword, no scopes, no value
-shapes.
+three schema parameters**. It knows no other keyword, no scopes, no
+value shapes.
 
 **CORRECTED AT REVISION 3.2 (r57 G-B1, a BLOCKER; S-M1 and G-B2's N1/N2
 converged on the same object from two other directions).** Revision
@@ -920,7 +920,9 @@ can produce. A reader that knew only S0-S2 would have to suspend those
 rules exactly where the format needs them suspended, and the only way
 to know to do so is by reading `\|` and the parent's declared value
 form. So the third device is DECLARED rather than left to be
-discovered, and the parameter count is stated as two.
+discovered, and the parameter count is stated as two. **(THREE at
+revision 3.4.1: the OPEN-SUBTREE parameter joins them, r58 ruling R1 —
+the parameter table below is where it is stated.)**
 
 **S0 — LINE CLASSES (lexical).** **FOUR classes at revision 3.3, not
 three** (r57 ROUND 2, R2-F3): a line is BLANK (**the EMPTY line — zero
@@ -1030,11 +1032,15 @@ it.
 of the **BLOCK-OPENER SET** starts a group that absorbs the following
 siblings until the next opener at that level or the end of the
 enclosing scope. The opener set is closed, declared, and has **exactly
-two members: `pattern` and `pattern-esc`** (§2.19).
+two members: `pattern` and `pattern-esc`** (§2.19) — **and it is EMPTY
+inside an OPEN SUBTREE (parameter 3 below), which is the whole of the
+scoping and is stated at the parameter rather than here.**
 
 **S3 — OPAQUE REGIONS (NEW at revision 3.2; its trigger and its
 boundary test both CORRECTED at 3.3).** A CONTENT line **whose kind is
-PROSE-REGION-OPENING** — structure-layer parameter 2 below — and whose
+PROSE-REGION-OPENING** — structure-layer parameter 2 below — **and which
+is not inside an OPEN SUBTREE, where S3 never opens at all (parameter
+3)** — and whose
 value, **after trailing spaces and tabs are trimmed, is exactly the
 single byte `|`**, opens an OPAQUE REGION. Its EXTENT is structural and
 is the only structural fact about it: the region runs from the next
@@ -1096,17 +1102,65 @@ parent, every group's extent, every opaque region's extent, and
 therefore blocks, sub-blocks and line membership — with no knowledge of
 `config`, `provenance`, `variant`, `m`, `lib` or any other keyword.
 
-**THE STRUCTURE LAYER TAKES TWO PARAMETERS FROM THE SCHEMA, and
-revision 3.2 states both rather than one** — and at 3.3 the second is
-read off TWO columns, below. Neither is the thing the
+**THE STRUCTURE LAYER TAKES THREE PARAMETERS FROM THE SCHEMA** — two
+stated at revision 3.2 (3.1 claimed one), the third added at 3.4.1 —
+and the second is read off TWO columns, below. None is the thing the
 ruling forbids — that is a per-keyword structural EXCEPTION decided by
-an open-ended table — but both are keyword facts, both are stated as
-such, and §1.2.3 prices removing them:
+an open-ended table — but all three are keyword facts, all three are
+stated as such, and §1.2.3 prices removing them:
 
 | parameter | schema column(s) | what a generic reader does with it | today's answer |
 |---|---|---|---|
 | the BLOCK-OPENER set (S2) | `opens_group` | decides where a group starts | two rows: `pattern`, `pattern-esc` |
 | the PROSE-REGION-OPENING kinds (S3) | **`value` AND `children`, read as a PAIR** — the kind qualifies iff `value: prose` *and* `children: prose` | decides whether a trimmed bare `\|` value opens an opaque region | today: `description`, `license-note`, `adaptation`, `attribution`, `note` — five rows, and the set GROWS whenever a prose field is added |
+| **the OPEN-SUBTREE kinds (S2 and S3), NEW at 3.4.1** | **`children`** — the kind qualifies iff `children: tree` | decides, for the subtree S1 attaches below such a line, that **S2's opener set is EMPTY there and S3 NEVER OPENS there** | today: `ext` — ONE row (§2.27), and the set grows only when a second production declares `children: tree` |
+
+**PARAMETER 3 IS THE OPEN SUBTREE, AND ITS TWO EFFECTS ARE STATED HERE
+AND NOWHERE ELSE** (NEW at revision 3.4.1, r58 ruling R1 — the repair
+for blockers A1 and A2, which two critics reached from opposite
+directions and which one general parameter closes). A CONTENT line
+whose kind carries `children: tree` roots an **OPEN SUBTREE**: itself
+and every line S1 attaches below it, transitively, to any depth. Inside
+that subtree, and only there:
+
+- **S2's opener set is EMPTY.** No line inside an open subtree starts a
+  group, whatever its first token. An `ext bench` body may use
+  `pattern` or `pattern-esc` as a key and it is a key — the aux
+  fixture `aux_deep_tree.rxtin` (§9.1) is exactly this cell, and
+  before 3.4.1 it asserted the opposite of what S2 said.
+- **S3 NEVER OPENS.** A trimmed bare `|` inside an open subtree is the
+  LITERAL value `|`, never a prose region. Every line in the subtree is
+  an ordinary CONTENT line and every value is its own line's token
+  remainder.
+
+Both are properties of the SUBTREE, never of the keyword `ext`: a
+generic reader fetches `children` for the line it is attaching under and
+the value `tree` is what switches the two devices off. The subtree ends
+exactly where S1 already says it does, so the rule's scope is an
+attachment the layer computes anyway.
+
+**Why this adds no power to the structure layer, which is the test it
+has to pass.** S1 already requires an ATTACHMENT STACK — a reader must
+know which enclosing level a lesser indent closes back to, which is the
+one piece of state this layer has always carried. Parameter 3 marks one
+frame of that stack `tree`. It adds no lookahead (the mark is set by the
+opener line, which the reader has already read and attached), no
+unbounded memory (one bit per open frame, and the frames existed
+before), and no tokenisation inside the subtree — **a reader still finds
+every boundary in the file, the subtree's own end included, without
+dispatching a single first token below the opener.** The layer is
+context-free before and after; what changed is that two of its rules are
+now scoped by a stack frame instead of being global, which is strictly
+less structural power than a per-keyword exception and strictly more
+honest than S2 firing where §2.27's own fixture says it must not.
+
+**And it is stated ONCE, here, because that is the discipline the
+finding class demands.** r57 R2-F4 was parameter 2 written in four
+places with three of them disagreeing; r58 A1 was the same shape one
+revision later, with the prose-in-aux widening shipped at three sites
+while the normative site said five rows. So §1.2.2, §1.2.3, §1.3's EBNF,
+§2.25.2 and §2.27 all POINT at this paragraph and none restates its
+effects.
 
 **PARAMETER 2 IS ONE PARAMETER READ OFF TWO COLUMNS, stated once here
 and nowhere contradicted** (r57 ROUND 2, R2-F4). Revision 3.2 said
@@ -1122,16 +1176,23 @@ detector anywhere, which is the K35 shape the sabotage row exists to
 prevent. Reading the pair makes either flip a structural change that
 §9's A-group fixtures see, which is why S-R5 (§3.2) now names both
 plants. The count of PARAMETERS is unchanged at two; the count of
-COLUMNS the structure layer reads is three.
+COLUMNS the structure layer reads is three. **(3.4.1: THREE parameters
+and still three columns — parameter 3 reads `children`, which parameter
+2 already read, so a parameter arrived without the structure layer
+reaching into the table any further.)**
 
-Both parameters are **one `--list-schema` query** (§2.25), so a generic reader
-FETCHES them rather than hard-coding them, and both are visible in the
-same dump a validity reader already reads. The second is the more
-load-bearing of the two and revision 3.1 hid it: the opener set is
+All three parameters are **one `--list-schema` query** (§2.25), so a generic reader
+FETCHES them rather than hard-coding them, and all three are visible in
+the same dump a validity reader already reads. The second is the more
+load-bearing and revision 3.1 hid it: the opener set is
 closed and two-member, while the prose set is open-ended by
 construction — §1.2.5's whole point is that a second prose field
 inherits the block scalar rather than inventing it, which is exactly a
-statement that this parameter grows.
+statement that this parameter grows. The third is the narrowest of the
+three — one row today, and a second arrives only if a second production
+declares a subtree pcrec does not interpret — but it is the only one
+that turns other rules OFF, which is why its effects are written beside
+it rather than beside the rules it scopes.
 
 **Why S3 is a DEVICE and not a value rule.** The obvious objection is
 that `\|` is a value-form discriminator (§1.2.4 says so of `"` after
@@ -1280,14 +1341,20 @@ the boundary:
   group, whether it admits children and in which scope, its
   cardinality, its required/conditional status, and whether its value
   is drawn from a closed set.
-- **THREE of those columns are READ BY THE STRUCTURE LAYER, as TWO
+- **THREE of those columns are READ BY THE STRUCTURE LAYER, as THREE
   parameters**, and the rest are validity (§1.2.1's parameter table,
   which is normative): `opens_group` is parameter 1; `value` and
   `children` together are parameter 2, a kind opening a prose region
-  iff it carries `value: prose` AND `children: prose`. **(3.3, r57
+  iff it carries `value: prose` AND `children: prose`; **`children`
+  alone is parameter 3, a kind rooting an OPEN SUBTREE iff it carries
+  `children: tree` — whose two effects (S2's opener set empty there,
+  S3 never opening there) are stated at §1.2.1's parameter and are not
+  restated here.** **(3.3, r57
   ROUND 2 R2-F4: revision 3.2 wrote "two columns … `value = prose`"
   here and the PAIR in §2.25.2 — one normative fact with two
-  spellings.)** The boundary between the layers is therefore not "the
+  spellings. 3.4.1, r58 R1: the third parameter; the column count does
+  not move, because parameter 3 reads a column parameter 2 already
+  read.)** The boundary between the layers is therefore not "the
   schema knows nothing structural" — it is that the structure layer
   reads exactly three columns, all closed-form, and never dispatches on
   a kind's identity.
@@ -1296,10 +1363,16 @@ the boundary:
   a keyword everywhere. Unchanged in force; now derived from a table.
   **(3.4: the example was `testee`, whose production is withdrawn —
   an example keyword must be one that EXISTS, or the diagnostic it
-  illustrates is not the one a reader would ever see. The rule has
-  exactly ONE exception and it is §2.27's: inside an `ext` body no
-  first token is unknown, because there is no scope to be unknown in —
-  expressed as `children: tree` rather than as a carve-out, §2.25.2.)**
+  illustrates is not the one a reader would ever see. 3.4.1, r58 A9:
+  the rule has NO exception, and §2.27's aux body is VACUOUS under it
+  rather than excepted from it — the rule fires on a first token
+  unknown IN ITS SCOPE, an open subtree (parameter 3) has no scope, and
+  a predicate over the members of a set that does not exist is not an
+  exception to the predicate. 3.4 wrote "exactly ONE exception" and
+  then denied it was one in the next clause; the vacuity is what
+  §2.27.2 decision 2's `children: tree` buys, and calling it an
+  exception was conceding the per-keyword carve-out the value exists to
+  avoid.)**
 
 #### 1.2.3 Where the format does NOT pass, stated plainly
 
@@ -1336,15 +1409,24 @@ Three things about that, each measured rather than argued:
 Stated the other way round, so the claim is falsifiable — **and
 RESTATED AT 3.2 against the two-parameter baseline, because revision
 3.1's version of this sentence counted one parameter and there are
-two**: *with a two-row opener table AND the prose-region-opening kind
-set (the `value`/`children` pair, 3.3), structure recovery is complete
-and context-free.* Both are one
+two; RESTATED AGAIN AT 3.4.1, because there are now THREE** (r58 R1):
+*with a two-row opener table, the prose-region-opening kind set (the
+`value`/`children` pair, 3.3) AND the open-subtree kind set
+(`children: tree`, 3.4.1), structure recovery is complete
+and context-free.* All three are one
 `--list-schema` query, and together they are the entire residue of
 "keywords decide structure" in the format. The honest reading of the
 second: the opener set is closed at two and can be quoted in a
 sentence; the prose set grows, so a reader who hard-codes today's five
 rows will be wrong the day a sixth prose field lands, which is exactly
-why the fetch is specified and the values are not.
+why the fetch is specified and the values are not. **The honest reading
+of the third: it is the only parameter that SUBTRACTS — it turns the
+other two off inside one subtree — so a reader that ignores it does not
+mis-read a value, it recovers a different tree, which is the same test
+§1.2.1 applies to `\|` ("extent is structure") applied one level up.
+Context-freeness survives it for the reason stated at the parameter: S1
+already carries an attachment stack and parameter 3 marks a frame of
+it.**
 
 #### 1.2.4 Bare indentation vs a visible sub-block MARKER
 
