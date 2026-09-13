@@ -2825,6 +2825,15 @@ Rules, each parser-enforced:
    `authored`**, and an `authored` block that writes either is refused:
    the slug and the fields must agree or `authored` stops meaning
    anything. (The bench's own rule, adopted verbatim.)
+   **The rule is TWO schema rows and revision 3.1 had a kind for only
+   one of them** (3.2, r57 S-BL1(b)): the first half is
+   `required-if source != authored`, and the second — *refused WHEN
+   `source` IS `authored`* — is `forbidden-if source == authored`, a
+   kind §2.25.3 now carries. Negating `required-if`'s operator does not
+   reach it: that yields "required when the condition does not hold",
+   which is the first half again. The two halves govern opposite
+   outcomes under complementary conditions, which is why they are two
+   rows and not one.
 3. `adaptation` is **REQUIRED iff `fidelity` is not `verbatim`** — the
    one conditional the format enforces, and the whole value of making
    the record structural: a mechanically-changed pattern with no stated
@@ -3003,6 +3012,21 @@ qualifier.
   act.
 - Two `under` lines for one (convention, subject, kind, startpos) are
   **refused as a duplicate**, not last-wins.
+  **Where that rule LIVES is stated at 3.2** (r57 S-BL1(d)): the key
+  tuple ranges over fields INSIDE the `qualified-line` value — three
+  of the four are components of the wrapped case line, not sibling
+  lines — so `unique-by` can hold the tuple but something must extract
+  it. **The extraction is PARSER CODE, by decision, with its reason
+  recorded**: `value: qualified-line` already means the parser
+  decomposes this value into a case line (that is what the value shape
+  IS), so the components are in hand at the site that already has
+  them, and a declared field extractor would be a second description of
+  a decomposition the parser performs anyway. The schema row carries
+  `unique-by under-key` and SW8 names the four components; the arm that
+  builds the tuple is code. A SECOND `qualified-line` production with a
+  different key is the D77 trigger to make the extractor declarative,
+  and §2.25.4 carries it as a deferral rather than leaving this as an
+  unexplained exception.
 - **`under` never wraps `g`/`gp`/`gu`**, and `g`/`gp` lines attach only
   to UNQUALIFIED `m`/`ms` cases: a capture expectation under a foreign
   convention has no consumer (the bench's expectations carry no capture
@@ -3036,6 +3060,16 @@ independently.
   is refused naming both lines. Two ids for one path are legal
   (pointless, harmless, and refusing them would require the parser to
   canonicalise paths).
+  **Its schema row is `functional-binding id -> (path, sha256)`, NOT
+  `unique-by id`, and the correction is load-bearing** (3.2, r57
+  S-BL1(c)). Revision 3.1's §2.25.3 mapped this rule to `unique-by`,
+  which means *at most one row per key* — and would therefore **refuse
+  this production's own documented normal spelling on its second
+  occurrence**, since the whole point is that the binding is restated
+  on every case line naming the subject. A functional dependency is not
+  a uniqueness key; equal keys with equal values is the common case
+  here and the refusal is only for equal keys with UNEQUAL values.
+  §2.25.3 carries the kind.
 - **A case is then citable as (pattern, subject-id)** — the stable key
   every bench expectation, report row and interpreter fact needs —
   and a failure line prints the id beside `file:line`, which pcrec's own
@@ -5491,13 +5525,19 @@ What the bench will run at the restart against the delivered pin. Each
 row: the design element that satisfies it, or the stated deviation with
 its reason. **Named deviations up front**: B5 is PARTIAL (NUL-in-pattern
 parked on K9, §2.19); C10's outcome is REFUSAL (STEP 0), which their row
-explicitly admits ("the check records the CHOICE"); D1/D5/G3 carry a
+explicitly admits ("the check records the CHOICE"); **B6's PREMISE
+DISSOLVED at revision 3.2** — the refusal it tests has an empty
+population under §1.2.1's opener rule, so the row is REWRITTEN rather
+than satisfied or deviated from (§2.19, r57 S-BL2); D1/D5/G3 carry a
 PRECISION about appended header columns (below); E5's harness half is
-the bench's own, as their row itself states.
+the bench's own, as their row itself states, and at 3.2 it also
+becomes utf8-bearing (r57 C-S6).
 
-**REVISION 3.1 — THE CHECKS THAT HARD-CODE A SPELLING, listed once so
-the bench gets ONE correction list rather than a surprise per check.**
-Every check below is BEHAVIOURAL and every one still passes; what moves
+**THE CHECKS THAT HARD-CODE A SPELLING OR A COUNT, listed once so
+the bench gets ONE correction list rather than a surprise per check**
+(revision 3.1's list, corrected and extended at 3.2 — r57 S-M6, S-BL2).
+Every check below is BEHAVIOURAL and every one still passes or is
+rewritten with its reason; what moves
 is the literal token some of them type. The manager's outbox message at
 delivery carries exactly this list (D78):
 
@@ -5539,7 +5579,7 @@ every number it changes.**
 | B7 | SATISFIED BY DESIGN, and this delivery is where it gets its first live verification (their row: "nothing has ever verified it") — the driver's `@<path>` form reads bytes raw, NUL included (H6/S5) |
 | C1, C2, C3 | SATISFIED — `vocabulary` enforcement with its accept control and the free-key compatibility control (§2.15). C3 doubles as the R-COMPAT-1 guard for the corpus's zero tags |
 | C4, C5, C6 | SATISFIED — provenance's required-line and conditional-adaptation refusals with their controls (§2.14 rules 1-3). **3.1 SPELLING**: `licence`/`licence-note` are now `license`/`license-note`, and the required SET is declared per parent (a pattern block's is the four their fixtures use, unchanged) |
-| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14); at 3.1 that is one `unique-by` schema row rather than a hand-written refusal (§2.25.3), which is also what covers the other five duplicate cases P-Q9 lists |
+| C7 | SATISFIED — a second `provenance` refused by name, never last-wins (§2.14). **CORRECTED AT 3.2 (r57 S-S7): that is `cardinality: at-most-one`, not a `unique-by` row.** Revision 3.1 called it a `unique-by` row here and a CARDINALITY value in §2.25.3 — one fact claimed by two mechanisms, which inflated `unique-by`'s earned-ness under §2.25.3's own membership rule. The duplicate-refusal discipline P-Q9 lists is therefore TWO mechanisms, not one: `cardinality` for "at most one of these in this scope" (a second `provenance`, a second `configs` line), `unique-by` for "at most one per key tuple" (`under`, a `vocabulary` key), and `functional-binding` for the subject-id case that is neither. The check the bench runs is unchanged either way |
 | C8, C9 | SATISFIED — the sha256 mismatch refusal (checked by the subject's READER, §2.18) and its matching control |
 | C10 | RESOLVED AS REFUSAL — STEP 0's duplicate-`description` refusal; the check records that choice, and G3's M5 row changes accordingly |
 | D1 | SATISFIED — every listed production appears in the dump: `tag`/`oracle` as columns or rows, provenance's fields in `#section provenance` (eleven at 3.1, and the section now also carries a data block's provenance — one section, one record shape, §2.26 item 10), `variant` in `#section variants`, `mc`/`under`/subject id + hash in `#section cases` (§2.24) |
