@@ -7659,10 +7659,17 @@ bench is designing set files against a mechanism that no longer exists.
 > specifically (neither is typed by any check in your §3), and A2 is the
 > case that measurement did not cover. What also changes, without
 > touching a script, is the SET FILE your
-> C-group checks run against. **F2 is satisfied more completely than
-> before** (a set file has no config, so the command line wins by
-> construction rather than by precedence) — rewrite it only if it
-> probes for the `configs` keyword rather than for the behaviour.
+> C-group checks run against. **F2's premise is DISSOLVED** (B6's own
+> precedent): its setup is a set file declaring `engine` in a `config`,
+> and a set file now declares no `config` at all — nothing to reach a
+> build, nothing to refuse, no precedence question. That is not a
+> stronger satisfaction of F2; it is F2 having no subject. Keep its
+> behavioural half (a command-line flag surviving a compile against a
+> config-free set file) and rewrite the literal condition to that
+> state. One sentence of residual honesty: **D93 is unchanged** — a
+> `config` in a file that is NOT a set file still pins what it pins,
+> exactly as before; what changed is that a set file is no longer one
+> of them.
 > **F3's gate gets easier** (a build directive in a set file is just a
 > build directive, no mode to argue about); note that anything inside
 > an `ext` block is not a directive at all, so you may skip aux bodies
