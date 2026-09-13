@@ -543,12 +543,46 @@ fetch returns two rows.
    attributes — so N-2's failure is as loud as it was, and it is now
    loud for a reason a reader can look up.
 
-**WHAT IT COSTS: exactly one diagnostic tier, and nothing else.** No
+**WHAT IT COSTS: one diagnostic tier, and ONE MEASURED NARROWING.** No
 file changes meaning. A file legal today is legal, byte for byte (0
-corpus lines are indented, re-measured at 210 files, §0.7). A file
-refused today is still refused; what moves is WHICH message some
-refusals carry, which D26 puts in the tier this project does not spend
-effort on. §1.6 is the version-break argument that rests on this.
+corpus lines are indented, re-measured at 210 files, §0.7). Most
+refusals that move only change WHICH message they carry, which D26 puts
+in the tier this project does not spend effort on. But S1 is
+DEPTH-SENSITIVE and today's head continuation is not, and that
+difference is real:
+
+> **THE RAGGED-BODY NARROWING, found by probing rather than by reading
+> the code.** Today's parser asks only "is this line indented?", so a
+> `config` body whose lines sit at DIFFERENT depths parses as a flat
+> body. MEASURED on the shipped binary — a `config c` with `flags i` at
+> two spaces and `engine vm` at FOUR produces a `--list-source` row
+> **byte-identical** to the evenly-indented file (`flags=i`,
+> `engine=vm`, rc 0). Under S1 the four-space line attaches to the
+> two-space `flags` line as a CHILD, `flags` admits no children, and
+> the file is refused. **That is accept → reject on a construct that is
+> legal today**, which is a narrowing and not a re-wording, and §1.6.1
+> is corrected to say so rather than counting it as additive.
+
+It is admitted deliberately, on three grounds, each measured:
+
+1. **The population is provably empty, in both repos.** `config`
+   occurs 0 times in the 210-file corpus; the 19 head blocks with
+   bodies in `tests/rxtsource/fixtures/` are every one uniformly
+   indented; and `pcrec-bench` contains no `.rxt`/`.rxtin` file at all
+   today (read-only check). Nothing anywhere is narrowed in fact.
+2. **It is FORCED by the feature, not gratuitous.** Depth has to become
+   meaningful the moment a record can contain a record — which §2.10's
+   `provenance`-under-a-data-block is, two levels of S1 — so a
+   depth-insensitive rule is not available to choose. Ragged
+   indentation cannot both be tolerated and mean something.
+3. **It converts a silent authoring hazard into an error.** A body
+   whose lines drift in depth reads as nesting and parses as a flat
+   list; under the old rule the author is never told. This is the
+   direction a tightening should go.
+
+§1.6 is the version-break argument, and §1.6.4's standing rule is
+amended to cover the narrowing case that this finding exposed as a gap
+in it.
 
 **AND IT MAKES A RULE THE THREE READERS CAN ACTUALLY BE HELD TO.**
 Revision 3 asserted "the indentation test PRECEDES token dispatch" in
@@ -1192,12 +1226,19 @@ each falsifiable:
 
 1. **No file that parses today parses differently.** The only rule
    whose *domain* changed is indentation, and **0 of the corpus's
-   lines are indented** (re-measured at 210 files, §0.7). More
-   strongly, the claim does not rest on the corpus: today's grammar has
-   no legal indented line ANYWHERE outside a head continuation, and S1
-   reproduces head continuation exactly — a `config` body, a block
-   scalar and a `description` under a `target` attach under S1 to the
-   same parent they continue today.
+   lines are indented** (re-measured at 210 files, §0.7). Beyond the
+   corpus: today's grammar has no legal indented line ANYWHERE outside
+   a head continuation, and S1 attaches a UNIFORMLY-indented `config`
+   body, block scalar or `target` `description` to the same parent it
+   continues today. **CORRECTED — the first draft of this claim said
+   S1 reproduces head continuation "exactly", and a probe refuted it:**
+   S1 is depth-sensitive where today's rule is not, so a RAGGED body
+   (lines at differing depths) goes from accepted to refused. §1.2.1
+   carries the finding, the empty population measured in both repos,
+   and the three grounds for taking it. Claim 1 therefore reads: no
+   file with UNIFORM indentation parses differently, and the ragged
+   case is a narrowing declared under claim 2a below rather than
+   counted as additive.
 2. **No file that is REFUSED today is accepted, with one deliberate
    exception in the widening direction.** Deleting the head/body
    asymmetry moves some refusals from a structure arm to a schema arm
@@ -1207,6 +1248,13 @@ each falsifiable:
    block scope, which goes from refused to accepted — and an
    acceptance-widening is by definition not a compatibility break for
    any file that exists.
+
+2a. **ONE NARROWING, declared and measured empty**: the ragged-body
+   case above. It is the only accept → reject in the re-factoring, its
+   population is 0 in the corpus, 0 in the 19 fixture head bodies and
+   0 in pcrec-bench, and §1.6.4's standing rule is amended to say what
+   a narrowing needs — because the first version of that rule had only
+   two cases and this one fell between them.
 3. **Every new production is a fresh token.** All 52 candidates measure
    0 in first-token position at today's 210 files (§0.7).
 
@@ -1265,13 +1313,29 @@ can dispatch on it before parsing anything else.
 
 #### 1.6.4 The standing rule this leaves
 
-For the next person who asks: **a change that only widens acceptance,
-only re-words a refusal, or only adds a token measured free needs no
-version line; a change that makes an existing file mean something
-different needs one and may not ship without it.** §2.25's schema is
-what makes the first clause checkable — a schema diff between two
-builds shows exactly which rows moved and in which direction, so
-"additive" stops being a claim a lane makes about its own change.
+For the next person who asks, in three cases rather than two — **the
+third was added because revision 3.1's own change fell between the
+first two and the gap was found by a probe, not by reading the rule**:
+
+1. **No version line**: a change that only widens acceptance, only
+   re-words a refusal, or only adds a token measured free.
+2. **A version line, mandatory**: a change that makes an existing file
+   MEAN something different. It may not ship without one.
+3. **A NARROWING (accept → reject) needs no version line, but needs
+   three things in the change that lands it**: the population MEASURED
+   rather than assumed (in this repo and in pcrec-bench, since a format
+   has two users), a stated reason the narrowing is forced rather than
+   chosen, and a sentence in the spec so a file refused tomorrow that
+   parsed yesterday has a citable answer. §1.2.1's ragged-body case is
+   the worked example and the reason this clause exists.
+
+§2.25's schema is what makes all three checkable — a schema diff
+between two builds shows exactly which rows moved and in which
+direction, so "additive" stops being a claim a lane makes about its own
+change. **That is the concrete argument for the schema being data**:
+this narrowing was found by running the shipped binary on a hand-made
+file, and a machine-diffable declaration is how the next one gets found
+without the hand-made file.
 
 ---
 
@@ -3115,7 +3179,7 @@ delivery; these are the [B42] additions:
 
 | # | file | the hunk |
 |---|---|---|
-| SW16 | `docs/spec/rxt_format.md` | **THE TWO-LAYER STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's standing rule for when a future change needs the line. **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5) |
+| SW16 | `docs/spec/rxt_format.md` | **THE TWO-LAYER STATEMENT AND THE VERSION RULE.** SW2 carries the structure layer; this row carries what goes with it: that a scope is a schema fact with no structural consequence (so "the head ends at the first `pattern` line" is stated as a scope rule and AR-4 is discharged by a declaration, §1.2.1), that `version` is RESERVED with absence meaning version 1 and its position fixed at the file's first content line (§1.6.3), and §1.6.4's THREE-CASE standing rule for when a future change needs the line. **It also carries the RAGGED-BODY NARROWING's own spec sentence** — a head body whose lines sit at differing depths was accepted and is now refused, because depth became meaningful (§1.2.1) — which is case 3 of that rule applied to the change introducing it, so a file refused tomorrow that parsed yesterday has a citable answer. **It also carries the `description` widening**: a pattern block's `description` takes `prose-value`, superseding the W1.1 correction, with `tests/rxtsource/fixtures/block_scalar_in_body.rxtin` RE-AIMED (inverted to a three-way agreement on the decoded value) in the same change — a shipped refusal changing direction, so it is named in the spec rather than left to a fixture diff (§1.2.5) |
 | SW17 | `docs/spec/rxt_format.md` + `docs/spec/cli.md` | **THE SCHEMA AND ITS SURFACE** (§2.25). rxt_format.md gains the schema section: the columns, the five-kind constraint vocabulary with its membership rule, and the statement that the parser is the table's reader. cli.md gains `--list-schema` as the sixth registry dump, in `--list-limits`' own entry shape. `docs/spec/registry.md` gains its row in the surface list |
 
 **No `docs/spec/match_api.md` struct hunk and no abi bump anywhere in
@@ -3568,14 +3632,16 @@ each is written as the claim a critic should try to break rather than
 as a defence:
 
 1. **§1.6's version answer.** The claim is that §1.2's re-factoring is
-   purely additive. The sharpest attack is a FILE — legal today, and
-   parsing differently or being refused differently in a way that
-   matters — that §1.6.1's three claims miss. The place to look is the
-   HEAD, not the body: S1 is asserted to reproduce today's head
-   continuation exactly, and the shipped implementations of that
-   (`rxt_source.c`'s `parse_prose` and `parse_config`, including the
-   r46sem-10 blank-line fix) are where an asymmetry could still be
-   hiding.
+   additive apart from one declared narrowing. **This lane ran that
+   attack on itself and it HIT once** — the ragged-body case (§1.2.1),
+   found by running the shipped binary on a hand-made file rather than
+   by reading the code, which is why the claim now has a 2a and the
+   standing rule has a third case. So the attack is known to be
+   productive: look for a SECOND file, legal today, that the corrected
+   claims still miss. The place to look is the HEAD and the shipped
+   implementations of its continuation (`rxt_source.c`'s `parse_prose`
+   and `parse_config`, including the r46sem-10 blank-line fix), and the
+   method that worked was a probe, not a reading.
 2. **§1.2.3's admission, in the other direction.** The claim is that
    block grouping is the ONLY place structure needs a keyword. A
    critic should try to find a second — the candidates are `under`'s
