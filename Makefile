@@ -144,10 +144,19 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # prevented it, which is the argument for the `gen-tables` rule below being a
 # LIST rather than another hand-maintained line: a fourth generated table will
 # join `GEN_TABLES` and this prerequisite in one edit.
+# src/parse/rxt_schema.def joined at [DD-13b.W23.1], WITH the file rather
+# than after it — the fourth instance of the class above, forestalled rather
+# than found: it is a `.def` X-macro table `#include`d by two translation
+# units (rxt_schema.c and schema_dump.c), so without this line editing a
+# schema row would rebuild nothing and `--list-schema` would print the old
+# table while the parser enforced it (the shape ccd2_report.md §6b names,
+# one binary carrying two values of one fact). It is NOT in GEN_TABLES:
+# that list is for tables a `generate.py` DERIVES from a vendored data
+# source, and this one is hand-authored design.
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/gen/enc/utf8_fold_pairs.inc
 
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/parse/rxt_schema.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
