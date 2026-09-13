@@ -197,10 +197,57 @@ typedef struct {
  * author can act on, and inventing a byte offset into a file for a field
  * whose every other reader means "offset into the pattern" would be a
  * second meaning for one field. */
-static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
-    __attribute__((format(printf, 3, 4)));
+/* [DD-13b.W23.1] THE DIAGNOSTIC CLASS — WHICH RULE WAS VIOLATED, as a
+ * machine-read TAG beside the D26-free wording.
+ *
+ * WHY A TAG AND NOT A SENTENCE. The three-leg differential compares legs
+ * A, B and C on every refusal, and leg B refuses EVERY unrecognised line
+ * by catch-all fall-through with one sentence — so a VERDICT-only
+ * comparison reads "all three legs refuse" for a rule leg B has never
+ * heard of, and the one live check on the `all-readers` column would be
+ * satisfiable by accident on a population of one message. The class is
+ * what gives the differential a RULE to compare instead of an exit code.
+ *
+ * D26 IS UNTOUCHED AND THE BOUNDARY IS EXACT: the class is a tag a CHECK
+ * reads, the sentence beside it is for a human, and D26 governs wording.
+ * The tag's POSITION is stable and its SET is closed; `docs/spec/cli.md`
+ * states both as the CLI's output contract, which is where it belongs —
+ * a machine-parseable stderr field is the CLI's promise and not the
+ * format's grammar.
+ *
+ * FOUR CLASSES, and each names a LAYER rather than a symptom:
+ *   structure-attachment  S0/S1/S2/S3 — where a line attaches, or may not
+ *   unknown-token-in-scope  the kind has no schema row in this scope, or
+ *                           has one whose wave is above this build's
+ *   schema-constraint     a declared rule over lines: cardinality, a
+ *                         closed set, a uniqueness or resolution rule
+ *   value-shape           the line attached and is legal here; its VALUE
+ *                         does not parse
+ */
+typedef enum {
+    RXTD_STRUCTURE,
+    RXTD_UNKNOWN_TOKEN,
+    RXTD_SCHEMA_CONSTRAINT,
+    RXTD_VALUE_SHAPE
+} RxtDiagClass;
 
-static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
+static const char *rxt_diag_class_name(RxtDiagClass c)
+{
+    switch (c) {
+        case RXTD_STRUCTURE:          return "structure-attachment";
+        case RXTD_UNKNOWN_TOKEN:      return "unknown-token-in-scope";
+        case RXTD_SCHEMA_CONSTRAINT:  return "schema-constraint";
+        case RXTD_VALUE_SHAPE:        return "value-shape";
+    }
+    return "?";
+}
+
+static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
+                    const char *fmt, ...)
+    __attribute__((format(printf, 4, 5)));
+
+static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
+                    const char *fmt, ...)
 {
     /* The prefix is written FIRST and the body straight after it, rather
      * than formatting the body into a scratch buffer and splicing the two.
@@ -212,7 +259,12 @@ static int rxt_fail(RxtP *p, size_t line, const char *fmt, ...)
      * than losing them to a long sentence. */
     char *out = p->err->msg;
     size_t cap = sizeof p->err->msg;
-    int n = snprintf(out, cap, "%s:%zu: ", p->path, line);
+    /* THE TAG LEADS, which is the whole of "a stable, machine-parseable
+     * position": a reader takes the bracketed word at the front and stops
+     * caring about the rest, and the file:line an author acts on is still
+     * the next thing they see. */
+    int n = snprintf(out, cap, "[%s] %s:%zu: ",
+                     rxt_diag_class_name(cls), p->path, line);
     size_t at = (n < 0) ? 0 : (size_t)n;
     if (at > cap - 1) at = cap - 1;
     va_list ap;
@@ -421,21 +473,21 @@ static int slurp_lines(RxtP *p, RxtLines *out)
      * not a portable guarantee to lean on for the primary check). */
     struct stat st;
     if (stat(p->path, &st) != 0)
-        return rxt_fail(p, 0, "cannot stat .rxt source file");
+        return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot stat .rxt source file");
     if (!S_ISREG(st.st_mode))
-        return rxt_fail(p, 0,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, 0,
                         "not a regular file (a directory or special file "
                         "cannot be a .rxt source)");
     FILE *f = fopen(p->path, "rb");
     if (!f)
-        return rxt_fail(p, 0, "cannot open .rxt source file");
-    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return rxt_fail(p, 0, "cannot seek .rxt source file"); }
+        return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot open .rxt source file");
+    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot seek .rxt source file"); }
     long sz = ftell(f);
-    if (sz < 0) { fclose(f); return rxt_fail(p, 0, "cannot size .rxt source file"); }
+    if (sz < 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot size .rxt source file"); }
     rewind(f);
     char *buf = arena_alloc(p->arena, (size_t)sz + 2);
     size_t got = fread(buf, 1, (size_t)sz, f);
-    if (ferror(f)) { fclose(f); return rxt_fail(p, 0, "error reading .rxt source file"); }
+    if (ferror(f)) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "error reading .rxt source file"); }
     fclose(f);
     buf[got] = 0;
 
@@ -459,7 +511,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
         if (buf[i] != 0) continue;
         size_t line = 1;
         for (size_t j = 0; j < i; j++) if (buf[j] == '\n') line++;
-        return rxt_fail(p, line, "embedded NUL byte in .rxt source file");
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line, "embedded NUL byte in .rxt source file");
     }
 
     /* count lines first, then fill — one pass each, no realloc dance */
@@ -545,7 +597,7 @@ static int read_prose_region(RxtP *p, RxtLines *L, size_t *i,
         end++;                       /* CONTENT deeper than the opener, or WS */
     }
     if (end == start)
-        return rxt_fail(p, *i + 1,
+        return rxt_fail(p, RXTD_STRUCTURE, *i + 1,
                         "block scalar '|' has no indented continuation lines "
                         "(a '|' value is the indented lines below it)");
 
@@ -622,9 +674,9 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * `flags xmz` dump `flags=xmz` here while leg B hard-errors it,
          * the exact "three parsers, three answers, on a line the spec
          * rules" class this step's remedy targets. */
-        if (!*v) return rxt_fail(p, line, "'flags' needs its letters");
+        if (!*v) return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'flags' needs its letters");
         if (strcmp(v, "i") != 0)
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "unknown flag letter(s) '%s' (only 'i' is "
                             "defined)", v);
         r->flags = arena_strdup(p->arena, v);
@@ -642,11 +694,11 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
                 v = skip_ws(v + 4);
             }
         }
-        if (!*v) return rxt_fail(p, line, "'features' needs a module list");
+        if (!*v) return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'features' needs a module list");
         for (const char *q = v; *q; q++)
             if (!isalnum((unsigned char)*q) && *q != ',' && *q != '_' &&
                 *q != '-')
-                return rxt_fail(p, line,
+                return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                                 "'features' takes a comma-separated module "
                                 "list (got '%s')", v);
         r->features = arena_strdup(p->arena, v);
@@ -654,7 +706,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
     }
     if (tok_is(l, "encoding")) {
         if (!ident_ok(v))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'encoding' needs an encoding name (got '%s')", v);
         r->encoding = arena_strdup(p->arena, v);
         return 0;
@@ -669,7 +721,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * favor — only the `--list-source` COLUMN TABLE contradicted it,
          * fixed in the same change as this. */
         if (strcmp(v, "vm"))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "unknown 'engine' value '%s' (only vm is "
                             "defined)", v);
         r->engine = arena_strdup(p->arena, v);
@@ -681,7 +733,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
         if (!strncmp(v, "steps=", 6))       { slot = &r->budget_steps;  num = v + 6; }
         else if (!strncmp(v, "frames=", 7)) { slot = &r->budget_frames; num = v + 7; }
         else
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "unknown 'budget' spec '%s' (want steps=<n> or "
                             "frames=<n>)", v);
         /* [DD-13b.W1.1 r46sem finding 12] LEG B's ALPHABET IS `[0-9]+`
@@ -695,20 +747,20 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
          * skip and its `+`/`-` prefix are both non-digit first bytes);
          * checking `errno == ERANGE` closes the overflow. */
         if (!isdigit((unsigned char)*num))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'budget' wants a non-negative integer with no "
                             "sign or leading space (got '%s')", num);
         errno = 0;
         char *end = NULL;
         long n = strtol(num, &end, 10);
         if (!end || *end || end == num || n < 0 || errno == ERANGE)
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'budget' wants a non-negative integer (got '%s')",
                             num);
         *slot = n;
         return 0;
     }
-    return rxt_fail(p, line, "internal: '%s' is not a settings line", l);
+    return rxt_fail(p, RXTD_VALUE_SHAPE, line, "internal: '%s' is not a settings line", l);
 }
 
 /* WAVE REFUSAL, RE-BASED ON THE SCHEMA'S `wave` COLUMN. The keyword is
@@ -724,7 +776,7 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
 static int refuse_wave(RxtP *p, size_t line, const RxtSchemaRow *row,
                        RxtSchemaScope scope)
 {
-    return rxt_fail(p, line,
+    return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line,
                     "'%s' is a wave-%d %s declaration and is NOT IN THIS "
                     "BUILD (this pcrec implements wave %d of the .rxt format; "
                     "the keyword is real, not a typo)",
@@ -736,7 +788,7 @@ static int unknown_token(RxtP *p, size_t line, const char *l,
                          RxtSchemaScope scope)
 {
     size_t n = tok_len(l);
-    return rxt_fail(p, line, "'%.*s' is not a %s directive",
+    return rxt_fail(p, RXTD_UNKNOWN_TOKEN, line, "'%.*s' is not a %s directive",
                     (int)n, l, pcrec_rxt_scope_context(scope));
 }
 
@@ -749,7 +801,7 @@ static int unknown_token(RxtP *p, size_t line, const char *l,
 static int refuse_cardinality(RxtP *p, size_t line, const RxtSchemaRow *row,
                               RxtSchemaScope scope, size_t first)
 {
-    return rxt_fail(p, line, "a %s has one '%s' (already given on line %zu)",
+    return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line, "a %s has one '%s' (already given on line %zu)",
                     pcrec_rxt_scope_noun(scope), row->kind, first);
 }
 
@@ -764,7 +816,7 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i,
     while (*e && !isspace((unsigned char)*e)) e++;
     size_t nlen = (size_t)(e - v);
     if (!nlen)
-        return rxt_fail(p, line, "'config' needs a name");
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line, "'config' needs a name");
     /* [DD-13b.W1.1 r46sem finding 8] A DISTINCT DIAGNOSTIC NAMING THE CAP.
      * This used to fall into the SAME "needs a name" message a genuinely
      * missing name gets — which tells an author with a too-long name a
@@ -772,12 +824,12 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i,
      * than no message at all. docs/spec/limits.md carries the 128-byte
      * identifier cap this and the two `target` fields below share. */
     if (nlen >= sizeof name)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'config' name is too long (%zu bytes, max %zu)",
                         nlen, sizeof name - 1);
     memcpy(name, v, nlen); name[nlen] = 0;
     if (!ident_ok(name))
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'config' name '%s' is not an identifier", name);
 
     RxtRow *r = row_push(p, src, RXT_DECL_CONFIG, line);
@@ -786,12 +838,12 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i,
     const char *rest = skip_ws(e);
     if (*rest) {
         if (strncmp(rest, "from", 4) || !isspace((unsigned char)rest[4]))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "'config %s' takes only 'from <list>' after its "
                             "name (got '%s')", name, rest);
         const char *list = skip_ws(rest + 4);
         if (!config_list_ok(list))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "'config %s from' needs a comma-separated config "
                             "list (got '%s')", name, list);
         r->from_list = rtrim_ws(p->arena, list);
@@ -803,7 +855,7 @@ static int parse_config(RxtP *p, RxtSource *src, RxtLines *L, size_t *i,
     for (size_t k = 0; k + 1 < src->nrows; k++)
         if (src->rows[k].kind == RXT_DECL_CONFIG &&
             !strcmp(src->rows[k].name, name))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "duplicate config name '%s' (already declared "
                             "on line %zu)", name, src->rows[k].line);
 
@@ -829,7 +881,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *v = line_value(L->v[*i]);
     const char *eq = strchr(v, '=');
     if (!eq)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target' wants '<prefix> = <definition>' (no '=' on "
                         "the line)");
     char prefix[RXT_TARGET_PREFIX_MAX + 1];
@@ -854,12 +906,12 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
          * distinct diagnostic naming the cap, not the "needs a prefix"
          * message a genuinely missing prefix gets. */
         if (plen >= sizeof prefix)
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target' prefix is too long (%zu bytes, max %zu)",
                             plen, sizeof prefix - 1);
         memcpy(prefix, v, plen); prefix[plen] = 0;
         if (!ident_ok(prefix))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target' prefix '%s' is not an identifier (it "
                             "becomes the generated symbols' prefix)", prefix);
     }
@@ -870,11 +922,11 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     while (*de && !isspace((unsigned char)*de)) de++;
     size_t dlen = (size_t)(de - rest);
     if (!dlen)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target %s =' needs a definition name", prefix);
     /* [DD-13b.W1.1 r46sem finding 8] see the two twins above. */
     if (dlen >= sizeof def)
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target %s =' definition name is too long (%zu "
                         "bytes, max %zu)", prefix, dlen, sizeof def - 1);
     memcpy(def, rest, dlen); def[dlen] = 0;
@@ -882,7 +934,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
      * file-namespace name and may carry `-`/`.`. The PREFIX above stays an
      * identifier — it is what the emitted symbols are built from. */
     if (!defname_ok(def))
-        return rxt_fail(p, line,
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'target %s' definition name '%s' is not a definition "
                         "name (a letter or '_' then letters, digits, '_', '-' "
                         "or '.')",
@@ -890,7 +942,7 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     if (derived) {
         pcrec_rxt_prefix_from_name(def, prefix, sizeof prefix);
         if (!ident_ok(prefix))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target = %s' cannot derive a prefix: '%s' is not "
                             "an identifier even with '-' and '.' mapped to "
                             "'_'", def, prefix);
@@ -903,12 +955,12 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
     const char *tail = skip_ws(de);
     if (*tail) {
         if (strncmp(tail, "with", 4) || !isspace((unsigned char)tail[4]))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target %s' takes only 'with <list>' after the "
                             "definition (got '%s')", prefix, tail);
         const char *list = skip_ws(tail + 4);
         if (!config_list_ok(list))
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'target %s with' needs a comma-separated config "
                             "list (got '%s')", prefix, list);
         r->with_list = rtrim_ws(p->arena, list);
@@ -933,13 +985,13 @@ static int parse_target(RxtP *p, RxtSource *src, RxtLines *L, size_t *i)
         if (src->rows[k].kind == RXT_DECL_TARGET &&
             !strcmp(src->rows[k].name, prefix)) {
             if (strcmp(src->rows[k].value, def) != 0)
-                return rxt_fail(p, line,
+                return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                                 "definitions '%s' and '%s' (line %zu) both map "
                                 "to target prefix '%s'; a name's '-'/'.' "
                                 "become '_', so give one an explicit prefix",
                                 def, src->rows[k].value, src->rows[k].line,
                                 prefix);
-            return rxt_fail(p, line,
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                             "duplicate target prefix '%s' (already declared "
                             "on line %zu)", prefix, src->rows[k].line);
         }
@@ -980,11 +1032,11 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
             if (at >= sizeof members) { at = sizeof members - 1; break; }
         }
         snprintf(members + at, sizeof members - at, "%s", r->name);
-        return rxt_fail(p, r->line,
+        return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, r->line,
                         "'config %s from' is a cycle: %s", r->name, members);
     }
     if (depth >= RXT_FROM_NEST_MAX)
-        return rxt_fail(p, r->line,
+        return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, r->line,
                         "'config %s from' nests more than %d deep",
                         r->name, RXT_FROM_NEST_MAX);
     stack[depth] = r;
@@ -996,7 +1048,7 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
         while (*s && *s != ',' && !isspace((unsigned char)*s)) s++;
         RxtRow *dep = config_by_name(src, start, (size_t)(s - start));
         if (!dep)
-            return rxt_fail(p, r->line,
+            return rxt_fail(p, RXTD_VALUE_SHAPE, r->line,
                             "'config %s from' names '%.*s', which is not a "
                             "config declared in this file", r->name,
                             (int)(s - start), start);
@@ -1086,7 +1138,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
          * file mixing them has no defined tree under any depth rule. A tab
          * inside a VALUE is still data and is untouched. */
         if (l[indent] == '\t') {
-            rxt_fail(&p, line,
+            rxt_fail(&p, RXTD_STRUCTURE, line,
                      "indentation is spaces; this line is indented with a "
                      "TAB (a tab inside a value is still data, but a tab "
                      "in the indentation has no agreed depth)");
@@ -1107,11 +1159,11 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 RxtSchemaScope cs = pcrec_rxt_schema_child_scope(last_row);
                 if (cs == RXT_SCOPE_NSCOPES) {
                     if (last_row)
-                        rxt_fail(&p, line,
+                        rxt_fail(&p, RXTD_STRUCTURE, line,
                                  "indented line continues nothing ('%s' "
                                  "takes no continuation)", last_row->kind);
                     else
-                        rxt_fail(&p, line,
+                        rxt_fail(&p, RXTD_STRUCTURE, line,
                                  "indented line continues nothing (the "
                                  "declaration above it takes no "
                                  "continuation)");
@@ -1122,7 +1174,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
         } else {
             while (ndepth > 1 && indent < st[ndepth - 1].indent) ndepth--;
             if (indent != st[ndepth - 1].indent) {
-                rxt_fail(&p, line,
+                rxt_fail(&p, RXTD_STRUCTURE, line,
                          "indented line continues nothing (the declaration "
                          "above it takes no continuation)");
                 goto fail;
@@ -1167,7 +1219,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * difference, and a reader in the one region where it is
              * structural needs to be told which rule they met. */
             if (*tok == '#') {
-                rxt_fail(&p, line,
+                rxt_fail(&p, RXTD_STRUCTURE, line,
                          "a comment must start in column 1 (this '#' is "
                          "indented, and indentation inside a '%s' body is "
                          "continuation, not commentary — "
@@ -1181,7 +1233,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * than about their spelling. */
             if (f->base == RXT_SCOPE_FILE && f->scope != RXT_SCOPE_FILE &&
                 pcrec_rxt_schema_row(RXT_SCOPE_FILE, tok, tlen)) {
-                rxt_fail(&p, line,
+                rxt_fail(&p, RXTD_STRUCTURE, line,
                          "'%.*s' is a file-level declaration and the head "
                          "ENDED at the first 'pattern' line (line %zu); "
                          "nothing file-level may appear after it",
@@ -1228,7 +1280,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 size_t n = strlen(v);
                 if (n < 2 || !((v[0] == '"' && v[n - 1] == '"') ||
                                (v[0] == '<' && v[n - 1] == '>'))) {
-                    rxt_fail(&p, line,
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line,
                              "'lib' wants a path reference, either \"local\" "
                              "or <store-name> (got '%s')", v);
                     goto fail;
@@ -1256,7 +1308,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             if (tok_is(tok, "pcrec")) {
                 const char *raw = line_value(tok);
                 if (!*raw) {
-                    rxt_fail(&p, line, "'pcrec' needs at least one flag");
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'pcrec' needs at least one flag");
                     goto fail;
                 }
                 /* ACCUMULATE, and it JOINS rather than replacing — the
@@ -1296,7 +1348,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * `pattern<TAB>abc` is a hard error there. */
             const char *after = tok + tlen;
             if (*after != ' ') {
-                rxt_fail(&p, line,
+                rxt_fail(&p, RXTD_STRUCTURE, line,
                          "'pattern' wants a single space before its regex "
                          "(the pattern text is rest-of-line verbatim from "
                          "there, so the separator cannot be part of it)");
@@ -1309,7 +1361,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
         if (!block) {
             /* a block-scope line with no block above it cannot happen:
              * the scope only becomes BLOCK when an opener switched it. */
-            rxt_fail(&p, line, "internal: block-scope line with no block");
+            rxt_fail(&p, RXTD_VALUE_SHAPE, line, "internal: block-scope line with no block");
             goto fail;
         }
         last_rxtrow = block;
@@ -1328,7 +1380,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * function's header for the ruling and for the one boundary it
              * draws (buildable as a target, not callable from a pattern). */
             if (!defname_ok(v)) {
-                rxt_fail(&p, line,
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line,
                          "'name' wants a definition name — a letter or '_' "
                          "then letters, digits, '_', '-' or '.' (got '%s')",
                          v);
@@ -1341,7 +1393,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 if (src->rows[k].kind == RXT_DECL_PATTERN &&
                     &src->rows[k] != block && src->rows[k].name &&
                     !strcmp(src->rows[k].name, v)) {
-                    rxt_fail(&p, line,
+                    rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
                              "duplicate block name '%s' (already named on "
                              "line %zu)", v, src->rows[k].line);
                     goto fail;
@@ -1357,7 +1409,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * about the PATTERN, answered by the composer at bind time. */
             const char *v = value_trimmed(&p, tok);
             if (!config_list_ok(v)) {
-                rxt_fail(&p, line,
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line,
                          "'export' wants a comma-separated list of group "
                          "names (got '%s')", v);
                 goto fail;
@@ -1413,7 +1465,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             const char *start = s;
             while (*s && *s != ',' && !isspace((unsigned char)*s)) s++;
             if (!config_by_name(src, start, (size_t)(s - start))) {
-                rxt_fail(&p, r->line,
+                rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                          "'target %s with' names '%.*s', which is not a "
                          "config declared in this file", r->name,
                          (int)(s - start), start);
@@ -1797,13 +1849,13 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
                  * measured truncating the SECOND path's own extension on
                  * this box's own TMPDIR, which is what W1.3's
                  * `compose_dup_definition.rxt` needle exists to catch. */
-                return rxt_fail(&fp, r->line,
+                return rxt_fail(&fp, RXTD_SCHEMA_CONSTRAINT, r->line,
                                 "'%s' dup: %s:%zu",
                                 r->name, cl->defs[k].file, cl->defs[k].line);
         unsigned long long f = 0;
         char badc = 0;
         if (pcrec_rxt_flags_from_letters(r->flags, &f, &badc) != 0)
-            return rxt_fail(&fp, r->line,
+            return rxt_fail(&fp, RXTD_VALUE_SHAPE, r->line,
                             "unknown flag letter '%c' in `flags %s` on "
                             "definition '%s'", badc, r->flags, r->name);
         if (cl->ndefs == cl->defcap) {
@@ -1835,13 +1887,13 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         pcrec_error kerr = { 0 };
         RxtSource *kid = pcrec_rxt_source_parse(rp, &kerr);
         if (!kid)
-            return rxt_fail(&fp, r->line,
+            return rxt_fail(&fp, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' does not parse: %s", r->value, kerr.msg);
         if (cl->root->nkids == cl->root->kidcap) {
             size_t nc = cl->root->kidcap ? cl->root->kidcap * 2 : 4;
             RxtSource **nv = realloc(cl->root->kids, nc * sizeof *nv);
             if (!nv) { pcrec_rxt_source_free(kid);
-                       return rxt_fail(&fp, r->line, "out of memory reading "
+                       return rxt_fail(&fp, RXTD_VALUE_SHAPE, r->line, "out of memory reading "
                                        "'lib %s'", r->value); }
             cl->root->kids = nv; cl->root->kidcap = nc;
         }
@@ -1887,7 +1939,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * name and the two contract needles ("NOT IN THIS BUILD", "[LIB]")
          * are. */
         if (rl >= 2 && ref[0] == '<')
-            return rxt_fail(&p, r->line,
+            return rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' is a STORE reference: NOT IN THIS "
                             "BUILD (see [LIB]); use a \"path\" instead", ref);
         /* a quoted path-ref keeps its quotes in `value` (AS WRITTEN); the
@@ -1906,7 +1958,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                 found = path_is_file(join_path(&src->arena, libdirs[d], ref));
         }
         if (!found)
-            return rxt_fail(&p, r->line,
+            return rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' names no readable file; searched %s",
                             r->value, chain);
     }
@@ -2018,7 +2070,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * for the definition name and the chain searched, not for the
          * shape of "pattern block" or a pointer to this milestone. */
         if (!blk)
-            return rxt_fail(&p, tr->line,
+            return rxt_fail(&p, RXTD_VALUE_SHAPE, tr->line,
                             "'target %s' -> no definition '%s'; searched %s",
                             tr->name, tr->value, chain);
 
