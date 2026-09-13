@@ -538,6 +538,28 @@ never edited afterwards.
   repair removes the ability to declare a deliberately NON-CALLABLE
   definition, a boundary `src/parse/rxt_source.c:288-291` records as a
   feature.
+- `w23fix3_report.md` — [DD-13b.W23] STEP 1.5 (2026-09-13, lane
+  w23fix3, opus; docs only): the r58 FIX ROUND, `format_design.md`
+  revision **3.4.1**. §0.10 of the note is the finding-by-finding
+  record; this report is what the fixes REVEALED and is worth reading
+  for six things the review did not anticipate. The sharpest: **the
+  ruling that removed prose values from aux bodies falsified two worked
+  EXAMPLES** (§2.27's own `matrix |` and §6.2's `policy |`), which no
+  critic cited because a critic cites the rule and not its
+  illustrations — so a fix round's sweep must include every fenced
+  block the ruling touches, found by grepping the rule's SPELLING and
+  not its NAME. Also: the open-subtree parameter costs no extra SCHEMA
+  COLUMN (it reads `children`, which parameter 2 already read, so the
+  note says three parameters over three columns); the parameter
+  incidentally CLOSES §3.3's own flagged-open `--list-schema`
+  fetchability item, because all three parameters become row sets
+  selected by a column value rather than a row set plus a predicate;
+  sabotage row S-R6's plant gained a structural blast radius for free;
+  an aux-fixture count was wrong at 3.4 and nobody had counted it; and
+  §1.6.1a carried a positive assertion of the reversed decision in a
+  section about something else — this round's own instance of the
+  DISPOSITION-TEXT residue class the r58 panel named, which neither a
+  grep nor an inverse mechanism walk reaches.
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
