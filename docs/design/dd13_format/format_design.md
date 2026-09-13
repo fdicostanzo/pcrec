@@ -1,6 +1,8 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: REVISION 3.4.1 ([DD-13b.W23] STEP 1.5, 2026-09-13, lane
+**Status: REVISION 3.4.2 (2026-09-13, manager, at the w23implfix merge —
+three point corrections, §0.11; the design content is 3.4.1's). REVISION
+3.4.1 ([DD-13b.W23] STEP 1.5, 2026-09-13, lane
 w23fix3) — the r58 FIX ROUND on revision 3.4.** The two-critic panel
 (`docs/dev/reviews/2026-09-13-r58-w23-aux.md`) found 3 blockers, 7
 must-fixes and the rest; **§0.10 is the finding-by-finding record and is
@@ -839,6 +841,32 @@ sweep found F1's stale echo, and r58's inverse walk found that the
 residue is disposition TEXT — which no grep and no mechanism walk
 reaches, and which cost this revision three of its ten graded findings
 (B1, B5, B6).
+
+### 0.11 Revision 3.4.2 record — three point corrections at the r59 merge
+
+Applied by the manager at the w23implfix merge (2026-09-13, review
+`docs/dev/reviews/2026-09-13-r59-w23-impl.md`; the lane's report §4
+names each with its evidence, and the lane's brief scoped its own
+drive-by to SW12 — these three were owed to the manager and ruled
+applied):
+
+1. **SW12's two comment sites corrected** (r59 B-M2, the lane's own
+   drive-by): `rxt_source.c:269-297` (the `defname_ok` header) and
+   `:1177-1180` (the `name` arm's pointer) — the previous `:280-291` /
+   `:1126-1130` pointed a code lane at a mid-comment slice and at the
+   duplicate-`description` refusal, a different production.
+2. **§2.11's opening citation corrected**: run.sh discovery is
+   `:293-307` / dispatch `:309`+, not `:184-216` (the shim-sourcing
+   block). The wrong range had already been inherited once (by the r59
+   review itself) — left in place it re-seeds.
+3. **§9's A1 row and the head correction list gain the conditional
+   `include` block-scope correction** (r59 B-M5): the phrase names a
+   state §1.3's grammar does not have. See the A1 row for the two
+   readings and which one costs the bench an edit.
+
+No production, no count, no parameter moves at 3.4.2. The impl note
+(`w23_impl.md`, revision 1.1) is the companion delivery of the same
+merge.
 
 ---
 
@@ -3576,7 +3604,11 @@ this note adds no production for it.
 T-6 is the tension the requirements note flagged and no requirement
 anticipated: today the accounting unit is the FILE, because
 `tests/harness/run.sh` runs one worker per file
-(`tests/harness/run.sh:184-216`) and each worker prints its own summary.
+(discovery at `tests/harness/run.sh:293-307`, the per-file worker
+dispatch from `:309`; the range this section cited before 3.4.2 —
+`:184-216` — is the tests/lib shim sourcing and CC resolution, a
+citation error found by lane w23implfix and corrected here) and each
+worker prints its own summary.
 Includes break that, and configs break it a second way.
 
 **Three rules, each stated so a check can fail:**
@@ -7440,6 +7472,7 @@ delivery carries exactly this list (D78):
 | the `freq` block's `exemplar`/`date`/`bytes`/`sha256` → a **`provenance` child** (§2.10) | only fixtures that write a data block; the bench's set files carry none today, so this is a spec-side move for them |
 | **D1's provenance key count: NINE → ELEVEN, plus the two renames** (§2.14, §2.24) — **ADDED AT 3.2 (r57 S-M6)** | their D1 row asserts *"a row or column for each of: … `provenance`'s **nine keys** …"*. The record is ELEVEN fields at 3.1 (`source`, `url`, `ref`, `license`, `license-note`, `retrieved`, `fidelity`, `adaptation`, `attribution`, `bytes`, `sha256`), two of them under new spellings. **§9's own D1 row below has known this since 3.1 and the CORRECTION LIST did not carry it** — which is the whole failure mode this list exists to prevent, occurring inside the list itself: a correction stated in one place and not in the place the bench reads. Their D1 probe's column enumeration needs the two renames and the two added keys |
 | a pattern block's `description` accepts **`prose-value`** (§1.2.5) | C10's neighbourhood only as a widening; nothing they assert becomes false. **(3.2: this row stays in the list because the bench needs it, but its CAUSE is corrected — it is §1.2.5's consequence of the structure-layer re-factoring, not one of §2.26's spelling moves, r57 C-N11. The audit moved three spellings; this is a fourth change with a different origin, and the outbox message says so)** |
+| **A1's "`include` at head and block scope" — block scope does not exist; conditional edit** (§9's A1 row) — **NEW AT 3.4.2 (r59 B-M5)** | `include` is a decl-line (HEAD) only under §1.3; `block-line` has no `include` alternative. If A1's phrase attaches to `tag` (both scopes genuinely), nothing changes; if their fixture types a block-scope `include`, it exits 1 at the delivered pin and the fix is to move it to head scope. Flagged now so the ambiguity resolves before their restart — the A2 lesson applied one row up |
 | **B6's premise DISSOLVED** (§2.19) — **ADDED AT 3.2 (r57 S-BL2)** | their B6 asserts that `pattern` and `pattern-esc` in one block are refused naming both lines. **There is no such refusal, because there is no such block**: both are block openers, so the second line starts a new block (MEASURED — two adjacent `pattern` lines produce two `--list-source` rows, rc 0). B6 is not a failure and not a deviation — the state it tests cannot be constructed. **Their row should be rewritten** to assert what is true and worth pinning: that a `pattern-esc` line following a `pattern` line opens a SECOND BLOCK, with the two blocks' own cases attached correctly. That is a better check than the one it replaces, because it pins the structure layer's own rule rather than a refusal |
 
 And one check the bench should ADD, because revision 3.1 creates the
@@ -7461,7 +7494,7 @@ every number it changes.**
 
 | # | disposition |
 |---|---|
-| A1 | SATISFIED — every keyword A1 names (`tag`, `mc`, `@file:`, `include` at head and block scope) lands in the one W23 delivery (F-Q1), so the probe exits 0 at the delivered pin. The BEFORE (refused by name with a wave) holds at today's pin, M10 |
+| A1 | **SATISFIED WITH ONE CONDITIONAL CORRECTION — the "block scope" phrase does not parse against §1.3 (r59 B-M5, applied at 3.4.2)**. Every keyword A1 names (`tag`, `mc`, `@file:`, `include`) lands in the one W23 delivery (F-Q1). But A1's phrase *"`include` at head and block scope"* names a state the grammar does not have: `include` is a decl-line (HEAD) only — `block-line` has no `include` alternative, and §2.5 restricts what an INCLUDED file may contain rather than granting block scope. TWO readings: if the phrase attaches to `tag` (genuinely both scopes), A1 needs no edit and exits 0; if their fixture types a block-scope `include`, it exits 1 at the delivered pin and the fix is theirs — move the `include` to head scope. Joined to the correction list above so the ambiguity is resolved at their desk before the restart, not discovered by it. The BEFORE (refused by name with a wave) holds at today's pin, M10. **This row previously read plain SATISFIED while enumerating the unverified block-scope phrase — r58 B1's disposition-text class recurring one row above the A2 row that names it (found by lane w23implfix, report §2.6)** |
 | A2 | **A bench CORRECTION, NOT a satisfaction — SPLIT FROM A1 AT 3.4.1 (r58 B1).** A2's fixture literally types `config … testee` and `config … option` (`bench_rxt_needs_v1.md:1010`), and 3.4 removed both productions (D99, N-42). **At the delivered pin A2's fixture exits 1, not 0** — its `oracle`, `variant` and `use` keywords land as designed, and the two `config` body lines are refused as unknown. **The fix is theirs and it is two deleted lines**: drop `config … testee` and `config … option` from the A2 fixture; whatever roster they want in that file goes in an `ext` block, where no keyword check applies. The row then reads exactly as A1 does. It joins the correction list above on **B6's own precedent** — a check whose PREMISE a ruling dissolved is rewritten with its reason, never quietly scored SATISFIED — and the reason it was scored SATISFIED at 3.4 is worth more than the row: **the token `testee` WAS hit by the lane's own grep** (§0.9's six-token sweep, in an in-scope file) **and was not read against the disposition that named it**, which is §5.2a item 7's amended method |
 | A3, A4 | SATISFIED, unchanged mechanism — unknown tokens stay hard errors naming their SCOPE; a child scope is declared like any other (§1.2.2, §2.25) and the count is no longer fixed at four; SW13 keeps the recognised-refusal list honest for partial builds and now derives it from the schema's `wave` column. **THE FIXTURE OBLIGATIONS THIS DELIVERY OWES ARE NAMED BELOW THE TABLE** (3.1 said "an INDENTED-LINE fixture in all three legs" and left the position, the assertion and the rest of the population unstated; r57 S-M2/S-M5 and the grammar lens's five pinned probe cells fix that) |
 | A5 | SATISFIED — `tag` accumulation and mixed labels/pairs are unchanged W2 design, which is the whole of what A5 asserts. **(3.4.1, r58 R3: 3.4's row added "`tag-prose` adds the third item kind"; the alternative is removed for want of a customer, §1.3, and A5's own pass condition never referenced it — a bare label and a pair on two `tag` lines.)** |

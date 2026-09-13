@@ -23088,3 +23088,77 @@ granting pcrecdev2 read-only git-query permissions (branch/status/
 closing ruling: W23 implementation GO** — "end session and build on
 restart." Plan row updated: next step is the impl note in w1_impl.md's
 shape, D6 panel, then code lanes. wake.md rewritten for it.
+
+## 2026-09-13 (EDT), sixty-third session — the W23 BUILD OPENS: impl note rev 1 → r59 panel → rev 1.1 MERGED; format_design 3.4.2
+
+Frank's standing order from the sixty-second close ("build on
+restart") executed. One lane wrote, three critics attacked, one lane
+fixed, the manager merged — the W23 implementation note is the plan
+of record and the first code lane (W23.1, the schema table) is next.
+
+**The note** (lane w23impl, opus, docs-only): w23_impl.md rev 1,
+1,240 lines in w1_impl.md's shape — five merges, nineteen fixtures,
+six sabotage rows, SW1-SW19 per step. Its headline was earned the
+right way: it RAN §2.24's format-reader survey instead of inheriting
+the lesson, and found the `NF != 15` defect class ALIVE in this repo
+— run_rxtsource_tests.sh:479-494 asserts a single row shape over
+every non-comment `--list-source` row, with a fail message naming a
+TAB as the only possible cause. All three r59 critics independently
+reproduced it.
+
+**The r59 panel** (reviews/2026-09-13-r59-w23-impl.md; critics A
+checks/opus, B fidelity/opus, C citations/sonnet): 4 blockers, 13
+must-fix groups, all FIX-NOW. The sharpest findings: (A1) R6 at
+:499 is an INEQUALITY reader — the survey's first-column-is-`line`
+invariant protects equality readers only, and the note's own new
+check going green would have PROVED R6 broken; (A2) the head-bearing
+STEP 0 fixture cannot move to a three-leg assertion while leg C
+refuses all head-bearing files at the seam — vacuous pass, and the
+scheduled class comparison would contradict it; (B-1) §5 re-derived
+the bench correction list down to three rows where the ruled §9 list
+has nine — the r58 DISPOSITION-TEXT class, FIFTH recurrence; (B-2)
+`include`'s HARNESS half (H5) had no step at all — a Tier-1 cut
+under F-Q1, smuggled on the harness axis, hidden by a §1.1-vs-§1.7
+internal contradiction.
+
+**The fix round** (lane w23implfix, opus): rev 1.1, 1,983 lines, all
+dispositions + rulings R1-R4 applied; the delivery is now SIX merges
+(W23.3a is the include-harness step). Six findings the review did
+not anticipate, the best being that §4.3's absence grep had the
+WRONG TOKEN LIST (`testee`/`option` are LIVE at three sites incl.
+the pinned CENSUS_WORDS_32 — the withdrawal costs four sites, not
+zero) and that spec row S3 NEVER LANDED despite its W1 label (now
+SW20). It also corrected the r59 review's own inherited citation
+(run.sh discovery is :293-307, not :184-216) and the review's 18+5
+arm split (17+5, total 22 right).
+
+**Merged clean** (75a13ba6 the review; the fix branch; then 3.4.2):
+format_design.md took three point corrections at the merge (§0.11):
+SW12's comment sites, §2.11's run.sh citation, and the conditional
+A1 `include` block-scope correction joining §9's outbox list. abi 24
+untouched; Frank queue EMPTY; no battery owed (docs-only day so far).
+
+**Lessons:**
+1. **The residue class MUTATED: citation provenance.** The fix
+   lane's sweep names it — a file:line correct when written, carried
+   through two documents, read by a third as a fact about today's
+   tree. No forward grep and no mechanism walk reaches it; only a
+   third pass that OPENS THE FILE does. Ten wrong ranges and four
+   wrong counts corrected in one revision, one of them inherited by
+   the r59 review itself.
+2. **A correction list that exists in a ruled document travels BY
+   REFERENCE, never re-derived** (r59-B1's disposition, now standing;
+   re-derivation is how the disposition-text class propagates).
+3. **An invariant protects the reader class it was derived from**:
+   first-column-is-`line` saves equality readers and BREAKS
+   inequality readers by the same fact. A survey's safe/unsafe
+   verdict is per reader SHAPE, not per reader.
+4. **The delivery-acceptance closure gap recurred once** (critic B
+   sat alive after its handback while the review was compiled;
+   caught at its idle echo). Check for live agents AT the moment of
+   accepting any delivery, not after.
+
+**Open/next:** charter [DD-13b.W23.1] (schema table + --list-schema
++ leg A table walk; opus). Steps in order after it. The D78 outbox
+message goes at the implementation delivery, carrying §9's full list
+by reference. pcrecdev2 idle; bench restart later this week.

@@ -77,7 +77,11 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
-- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.4.1
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 3.4.2
+  (2026-09-13, manager, at the w23implfix merge: three point
+  corrections — SW12's comment sites, §2.11's run.sh citation, §9's
+  conditional A1 `include` correction; §0.11 is the record; design
+  content is 3.4.1's). REVISION 3.4.1
   (2026-09-13, lane w23fix3, [DD-13b.W23] STEP 1.5): the r58 FIX
   ROUND on revision 3.4** (`../../dev/reviews/2026-09-13-r58-w23-aux.md`
   — two opus critics, 3 blockers / 7 must-fixes, all FIX-NOW; **§0.10 is
