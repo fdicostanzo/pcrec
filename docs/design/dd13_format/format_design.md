@@ -5755,7 +5755,58 @@ files parse and never the meaning of the 179.
 | **T-5** byte-exact subjects by reference | §2.8: bytes are the subject, no decoding, NUL-safe, local paths only. It forces a **driver-protocol change** (H6/S5) rather than being free, and this note says so rather than assuming `argv` will carry a megabyte with a NUL in it |
 | **T-6** per-file accounting vs includes | §2.11's three rules: closure is the unit, entry-set subtraction with **both counts reported**, cells counted. Plus a fourth failure taxonomy (resolution) that is *reported* separately but *scored* as a compile failure, which is what preserves the 384 `perr` blocks |
 
-### 5.2a Where to attack REVISION 3.3 (the panel's shortest path)
+### 5.2a Where to attack REVISION 3.4 (the panel's shortest path)
+
+**NEW AT 3.4 — items 7, 8 and 9, which are the only places this
+revision can be wrong**, and they are listed first because the six
+below them are 3.3's and were scored by two panel rounds already.
+
+7. **THE SECOND-ORDER SWEEP'S COMPLETENESS** (§0.9's impact table).
+   The claim is that every consequence of withdrawing §2.16 and §2.20
+   has been found and dispositioned. **This is the attack with the best
+   prior**: the sweep's own method was a grep for six tokens
+   (`provides`, `capable`, `configs`, `describe`, `testee`, `use`)
+   plus the manager's seed list, and **a grep finds SPELLINGS, not
+   DEPENDENCIES.** `cross-scope` was found that way and is the proof
+   the method works; the question is what has the same shape and a
+   different spelling. The known-weak direction, stated so a critic
+   does not have to find it: a mechanism built for a withdrawn
+   production but named after something else. `cross-scope` was named
+   after its GENERAL form and found only because §2.25.3's table names
+   its customer in the same row — a kind, column, section or check
+   admitted for `provides`/`configs` whose text never types either
+   token would have survived the sweep. **The method that would catch
+   it is the inverse of the one used**: walk every mechanism this
+   delivery ADDED since revision 3 and ask what needs it, rather than
+   walking the withdrawn productions and asking what they touched.
+8. **THE GRADUATION RULE'S ENFORCEABILITY** (§2.27.3). The claim is
+   that "aux never grows semantics in place" is a rule with a
+   falsifiable test rather than an intention. Attack it by constructing
+   the case it does not cover: something that reads an aux value
+   without being a build, a check, a diagnostic, a config resolution or
+   the composer — a `--list-source` FILTER, say (`--list-source
+   --ext=bench`), which is arguably the dump repeating itself and
+   arguably pcrec understanding a namespace. **The lane's own answer is
+   that a filter on the CONSUMER token is fine and a filter on
+   anything INSIDE the tree is graduation**, but that line is drawn in
+   this paragraph and not in §2.27.3's four clauses, which is exactly
+   the kind of gap clause 4 says every extension namespace eventually
+   falls through.
+9. **THE AUX BODY'S PROSE DECISION** (§2.27.2 decision 3). The claim is
+   that admitting `|` inside an aux body costs one clause in
+   structure-layer parameter 2 and nothing else. Attack it by asking
+   what `--list-schema` PRINTS for parameter 2 once the answer is
+   "these five rows, plus every line in any `ext` scope": the parameter
+   is specified as a FETCH precisely so a generic reader need not
+   hard-code it (§1.2.1), and a fetch that returns a predicate rather
+   than a row set may not be fetchable in the form the dump has. If it
+   is not, decision 3 is more expensive than this section prices it and
+   the one-line alternative wins.
+
+---
+
+**The 3.3 attack list follows, unchanged except where an item's target
+moved with D99.**
 
 Revision 3's own "for the panel" list stands. **RE-AIMED AT 3.2 after
 the r57 panel scored the 3.1 version**: of the four attacks below,
@@ -6434,22 +6485,45 @@ at the [LIB] store's first ten entries.
 Syntax is settled under the 14:5x delegation; these are the genuine
 semantics/scope items, each presented ready-to-ratify:
 
-**W23-F1 — `configs describe` (§2.20).** This touches D93 (the
-composed-config-beats-command-line rule), which is why it is Frank's:
-the head declaration makes a file's configs DESCRIPTIVE — never
-composed into any build, `target … with` refused, `use` inert and
-counted, default `build` = today's semantics unchanged. The mechanism
-closes the bench's roadblock #6 by construction and adds a contract
-sentence (a target-less, config-less file parses and builds nothing,
-PERMANENTLY — their N-43). Recommended: ratify as designed.
+**W23-F1 — `configs describe` (§2.20). WITHDRAWN (D99 item 1,
+2026-09-13). Not ratified, not declined — the mechanism it asked Frank
+to ratify no longer exists.** The one-line reason: the head declaration
+made `config` and `use` BIMODAL to resolve a collision that only
+materializes through the bench's OPTIONAL roster proposals, and with
+the roster out of `config` (N-42's disposition) the collision has no
+construction. D93 is untouched and DECOUPLED — with no configs in set
+files, it never reaches the bench, and its revisit-when clause stands
+on its own merits (D99 item 5). The MUST-tier half of the need it
+carried — N-43's permanence contract — survives as one spec sentence
+(SW5) and needed no ratification at all, because it promises the
+behaviour pcrec already has.
 
-**W23-F2 — `provides` (revision 3's `capable`) lives IN the format (§2.16).** The manager
-recommends IN (a `config … testee` already carries engine knowledge;
-the reason a pattern has no result for a testee belongs in the file a
-reader has); fail-closed; the one reserved key name `requires`. The
-alternative — bench-side capability files — is a partial return of the
-hybrid the 2026-09-12 ruling removed, and §8's P-Q4 records why it was
-considered and declined rather than defaulted. Recommended: ratify.
+**W23-F2 — `provides` in the format (§2.16). WITHDRAWN (D99 item 2,
+2026-09-13).** The one-line reason: a capability list describes an
+ENGINE, and the format does not carry engine knowledge as semantics —
+which answers the question at a level above where it was asked, so the
+IN-vs-bench-side framing does not arise for the next such production
+either. The pattern-side `tag requires=…` STAYS (what a pattern needs
+is rx-defining content). The need is re-homed to §2.27's aux
+production, where the bench can keep exactly the declaration it
+proposed, in its own namespace, unread by pcrec.
+
+**THE QUEUE'S SHAPE AT 3.4, stated because it is the process finding
+D99 attaches to this note.** Both withdrawn items were presented in
+revision 3 as **ready-to-ratify**, with "Recommended: ratify as
+designed" beside each — and the need underneath both was tentative at
+its SOURCE: N-22 and N-42 are the bench's own SHOULDs, N-22 the one
+their note says it is "least sure of", offered as P-Q4, an open choice
+rather than a demand. The ratification packet did not say so. Frank's
+words, recorded as the reason this is in the design note and not only
+in the decision log: *"this is the result of a simple understanding
+running into the truth on the ground... i'd rather that this came back
+to me during design."* **The standing process lesson (D99): when a
+design absorbs a need whose SOURCE marked it tentative or least-sure,
+the ratification ask must say so explicitly.** A packet that presents a
+mechanism as ready-to-ratify without surfacing the tentativeness of its
+driver is asking for a ruling on the mechanism when the live question
+was whether to build anything.
 
 **W23-F3 — the `mc` counting rule's home (§2.21). RESOLVED at revision
 3.1; NOT a question for Frank.** The manager pre-ruled the bench's
@@ -6508,9 +6582,23 @@ contradict the behaviour.
 that is deliberate: the two 2026-09-12 rulings delegate syntax to the
 manager (the 14:5x delegation, restated by the ownership ruling), so
 §2.26's three spelling moves, §1.6's declined version break, §1.6.1a's
-narrowing choices (including the tab refusal) and §2.25's eight
-constraint kinds are the manager's calls, made and defended here rather
-than escalated. The panel is the check on them.
+narrowing choices (including the tab refusal) and §2.25's constraint
+kinds are the manager's calls, made and defended here rather than
+escalated. The panel is the check on them.
+
+**REVISION 3.4 ADDS NO QUESTION EITHER, and W23-F4 is now the whole
+queue.** D99 answers F1 and F2 by withdrawal; F3 was resolved at 3.1;
+**W23-F4 STANDS UNCHANGED** — the derived-identifier repair removing
+the ability to declare a deliberately non-callable definition (§2.22),
+manager recommendation ACCEPT, its four-line argument and its stated
+cost above, none of which D99 touches (§2.22 is composer semantics and
+is entirely on the rx-defining side of the ruling's line). The three
+decisions 3.4 makes that could have been escalated are the manager's
+under the same delegation and are made here: the `ext` spelling (§2.26
+item 14, flagged for the manager as a recommendation rather than a
+fait accompli), the prose-inside-aux decision (§2.27.2 decision 3,
+likewise flagged), and the removal of `cross-scope` (§2.25.3, which is
+the section's own membership rule applied, not a judgement call).
 
 **Recorded as RULED, not asked again**: F-Q1 (Tier 1 + Tier 2, one W23
 delivery — §1.4), F-Q2 (`pattern-esc` — §2.19), Option A (the set's
@@ -6604,15 +6692,47 @@ empty match found beyond the scan position; `finditer` over-counts both
 adapter owes one edit; their note's own fallback ("the harness's rule,
 whatever it is — say that") is exactly what the spec paragraph does.
 
-**P-Q4 — does the capability declaration live in the format?** YES —
-as `provides` (§2.16, W23-F2 to
-Frank). The manager's recommendation confirmed on the bench's own
-counter-argument being weighed: a capability list IS engine knowledge —
-but `config … testee` already carries engine knowledge (a version
-string), the file's reader needs the reason a pattern has no result for
-a testee, and the bench-side alternative is one non-`.rxt` file, i.e.
-the hybrid's partial return. Fail-closed; `requires` reserved by name;
-the pre-compile policy stated once in the spec as the intended reading.
+**P-Q4 — does the capability declaration live in the format?
+RE-ANSWERED AT REVISION 3.4 ON D99, and the answer INVERTS.** Revision
+3 answered YES — as `provides` (§2.16), a `config`-body line, with
+W23-F2 flagged to Frank for ratification. **The answer is now NO for
+the SEMANTICS and YES for the FILE**, which is a distinction revision 3
+did not have and is the one the ruling supplies:
+
+- **NO, the capability declaration is not a production the format
+  defines, constrains, enforces or documents.** D99 item 2: a
+  capability list describes an ENGINE, and the format does not carry
+  engine knowledge as semantics. `provides` is withdrawn; the
+  `cross-scope` constraint kind minted for it goes back to the deferred
+  list; SW4's reserved-key sentence goes with both.
+- **YES, it may live in the FILE** — in an `ext bench` block (§2.27),
+  consumer-namespaced, structurally parsed and semantically
+  uninterpreted. So the bench keeps what it actually asked for in the
+  argument revision 3 accepted (*"the reason a pattern has no result
+  for a testee lives in the same file as the pattern"*), and pcrec
+  keeps what D99 protects: no engine knowledge in its semantics.
+
+**Why revision 3's reasoning reached the other answer, recorded because
+the reasoning was not careless.** It weighed the bench's own
+counter-argument — that a capability list IS engine knowledge — and set
+it aside on two grounds: that `config … testee` already carried engine
+knowledge (a version string), and that the bench-side alternative was
+one non-`.rxt` file, i.e. a partial return of the hybrid Frank had just
+removed. **Both grounds were sound and both were answers to the wrong
+question.** The first is true and is a reason to doubt `testee`, not a
+licence for `provides` — and N-42's disposition at 3.4 does exactly
+that, removing `testee` and `option` with it. The second posed a false
+choice between IN-THE-FORMAT and IN-ANOTHER-FILE when the third option
+— in the same file, outside the format's semantics — had not been
+invented yet. **A question with two answers, both bad, is usually a
+question with a missing third answer**, and that is what the aux
+production is.
+
+The pre-compile policy (`REQUIRES(pattern) ⊄ capabilities(config) ⇒
+unsupported-by-declaration`) was always the CONSUMER's rule; revision 3
+said so in §2.16's own text. It now reads its own data from its own
+namespace, and the one thing the format still states about it is
+nothing.
 
 **P-Q5 — what replaces §4.5 item 4's regime mechanism?** Nothing
 replaces it; it is REPAIRED (§2.22): the composer's definition lookup
@@ -6650,9 +6770,27 @@ the bench writes one per reference; §2.8 is re-scoped in place.
 description last-wins).** Both become refusals at STEP 0. The design's
 own contribution is not repeating the shape: every W23 production with
 a duplicate case states refuse-by-name (a second `provenance`, a second
-`vocabulary` for one key, a conflicting subject-id binding, a second
-`configs` line, `pattern` + `pattern-esc` in one block, duplicate
-`under` lines).
+`vocabulary` for one key, a conflicting subject-id binding, duplicate
+`under` lines, a second `variant` for one testee).
+
+> **TWO CORRECTIONS TO THAT LIST AT 3.4, one of them a STALE ECHO this
+> lane found rather than inherited.** (a) "a second `configs` line"
+> leaves it with §2.20 — ordinary, and expected. (b) **"`pattern` +
+> `pattern-esc` in one block" should not have been in it since revision
+> 3.2**, which DROPPED that refusal as an empty population (r57 S-BL2:
+> both spellings are block openers, so a second opener starts a new
+> block and no parse state holds both). Revision 3.2 rewrote §2.19,
+> §1.3's EBNF comment, §9's B6 row and the bench correction list, and
+> the r57 ROUND 2 critic recorded *"every echo of the dropped
+> `pattern`/`pattern-esc` refusal gone"* — **and this one survived in
+> §8, two sections away from anywhere the sweep looked.** It is worth
+> more than the edit it costs, because it is the same failure the
+> census's own scope lesson names (§1.6.4's sixth clause: a sweep
+> bounded by where the change was made finds what the change touched,
+> not what the change invalidated) occurring in the revision that wrote
+> the lesson down. The entry replacing it, "a second `variant` for one
+> testee", is a real refusal with a live production (§2.23's 3.4
+> uniqueness rule).
 
 ---
 
