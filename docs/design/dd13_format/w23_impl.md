@@ -314,7 +314,19 @@ rows are narrower (`#section aux` has eight columns against the main
 table's sixteen-plus) violate it on every row of every section, so
 W23.4 would deliver a red check that is *right to fire* — the check is
 not wrong about today's stream, it is unaware that the stream can have
-more than one shape. **The repair is stated as part of the step and not
+more than one shape.
+
+**And its failure message would MISDIRECT, which is what turns a bad
+afternoon into a wrong fix.** The `fail` branch at `:484-492` names
+exactly one cause — *"A field contained a TAB, which is what the
+rxt-escape on columns 4, 5 and 15 exists to prevent"* — and goes on to
+name the three corpus blocks that carry a literal tab. A lane meeting
+that red after emitting a section would go looking at the escape
+function. The message was true when it was written, because a field
+count could only go wrong one way; a second row shape is a second way,
+and the message has to gain it in the same change.
+
+**The repair is stated as part of the step and not
 left to whoever meets the red** (§6.4 item 3): the assertion becomes
 section-aware — one expected field count per section, derived from that
 section's own declared column list, with the main table keeping its
@@ -1052,7 +1064,7 @@ yet reported. That is the boundary's value.
 |---|---|---|
 | 1 | **RE-RUN the format-reader survey** (§1.5) at this step's own pin, and record its output in the commit | the table in §1.5 is stale by construction: three steps of checks have landed since. `w1_impl.md` §8.7's rule — **the command is the contract, not the list** |
 | 2 | **the appended COLUMNS** on pattern rows (`tags`, `oracle`, `esc`) and the new head ROW kinds (`vocabulary`, `include`, `oracle`, `tag`, `use`), and the MANIFEST re-pinned | the MANIFEST check (`run_rxtsource_tests.sh:464-477`) fails loudly and correctly, with its own instruction — that is the gate working |
-| 3 | **REPAIR the field-count assertion for sections** (`:479-494`) before emitting any section | **it asserts one uniform column shape for every non-`#` row.** Emitting a section first means delivering a red check that is right to fire, and diagnosing it under time pressure. The repair is section-aware counts derived from each section's declared column list, with the unknown-section arm HARD-FAILING |
+| 3 | **REPAIR the field-count assertion for sections** (`:479-494`) **and its failure message** (`:484-492`) before emitting any section | **it asserts one uniform column shape for every non-`#` row**, and its message names a TAB in a field as the only possible cause. Emitting a section first means delivering a red check that is right to fire, under a diagnostic pointing at the escape function. The repair is section-aware counts derived from each section's declared column list, with the unknown-section arm HARD-FAILING |
 | 4 | **the four `#section` blocks**: `provenance`, `variants`, `cases`, `aux` — emitted unconditionally when non-empty, **after the main table, never interleaved** | |
 | 5 | **W23-S4** (no section row's field 1 equals a main-table kind token) and **W23-S6** (the aux value-identity check) | §1.5's invariant and §2.27.3 clause 5 |
 | 6 | **S-R4a (S242), S-R4b (S243)** | they detect `opens_group` through `#section cases`'s `block_line` and the block count |
