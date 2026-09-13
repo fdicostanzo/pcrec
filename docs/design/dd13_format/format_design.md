@@ -5336,6 +5336,19 @@ run** in a file that `lib`s it (they run when the library file is itself
 under test — which is what makes the store's "each entry oracle-verified"
 discipline mean something).
 
+**And what crosses the `lib` edge is stated exactly, in §2.5**
+(re-homed there at revision 3.4 from §2.20 rule 4, where it landed at
+3.2 as r57 C-S4 and was attached to a mechanism D99 has since
+withdrawn): **DEFINITIONS ONLY.** The library's named definitions and
+their `description`s reach the composer's lookup; its `config` blocks,
+`target` rows, `use`/`oracle`/`tag` lines, `ext` blocks and cases do
+not. The clause is [LIB]'s as much as §2.5's — it is the precise
+statement of "a library is self-contained" on the FILE axis, beside the
+mechanism two paragraphs down that states it on the NAME axis — and it
+is stated in the include model because that is where a reader asks the
+question. Nothing about it depended on `configs describe`; the mode
+line was the occasion for writing it down, not its subject.
+
 **A library is self-contained, and after r44 that is a mechanism rather
 than an assertion.** The first version said "a user cannot accidentally
 satisfy a library's reference from their own file"; r44-sem M2 MEASURED
@@ -5540,16 +5553,16 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
 | `[subjects].short_search_max_bytes` | `tag short-search-max-bytes=4096` |
 | `[expectations].file` | `include "gen/expectations.rxt"` |
 | `[expectations].default_method` | **TWO fields, not one** (r44-consumers U3): `oracle pcre2` names the ENGINE that checks, and `tag method=libpcre2-differential` names the VERIFICATION METHOD. R-BENCH-1's methods include non-oracle ones — "derived-law-plus-induction" is a real, already-used method (the K23 closed form) with no engine behind it — so folding method into the oracle enum would make those unspellable and would put a pcrec-shaped enum where AR-6 requires engine-neutrality. The first version conflated them |
-| `[testees.pcre2].options` | `config pcre2` with `testee pcre2/10.46` + `option k=v` lines |
-| `[testees.pcrec].options` | `config pcrec` with `pcrec --features all` |
+| `[testees.pcre2].options` | **CHANGED AT 3.4 (D99)**: an `ext bench` block (§2.27), whose shape is the bench's. Revision 3 routed it to `config pcre2` with `testee pcre2/10.46` + `option k=v` lines; a testee roster and its per-engine flags describe ENGINES, which the format does not carry as semantics, and the three config-body lines that carried them are withdrawn |
+| `[testees.pcrec].options` | **CHANGED AT 3.4**: same — `ext bench`. Revision 3 wrote `config pcrec` with `pcrec --features all`, and that block is exactly what would have PINNED the bench's sixteen-config matrix under D93, which is why §2.20 existed. With the roster in aux there is no `config pcrec` in a set file at all, so the collision does not arise and D93 never reaches the bench (D99 item 5) |
 | `patterns[].variant = null` | the **absence** of a `variant` sub-block |
 | an `expectations.tsv` row | `m @file:"subjects/s-000.bin" as s-000 sha256 <hex64> 234 258` / `n @file:"…" as …` / `mc @file:"…" as … <n>` — the id and hash per §2.18, so the expectation key `(pattern, subject-id, regime)` survives the sidecar's death |
 | **[B42]** the capability set's provenance record (their §4.1) | the `provenance` sub-block, field for field (§2.14) |
 | **[B42]** `REQUIRES` tags + the closed vocabulary (their §5.1) | `tag requires=…` + `vocabulary requires …` (§2.15) |
-| **[B42]** per-config capabilities (their §5.3) | `provides` lines in the testee's `config` (§2.16, Frank ratifies) |
+| **[B42]** per-config capabilities (their §5.3) | **CHANGED AT 3.4 (D99 item 2)**: an `ext bench` block (§2.27). ~~`provides` lines in the testee's `config` (§2.16)~~ — withdrawn; a capability list describes an engine. The PATTERN side, `tag requires=…` + `vocabulary requires …`, is unchanged and is the row above |
 | **[B42]** the second-convention expectation (their family 11) | `under <convention> <case-line>` (§2.17) |
 | **[B42]** `variant_kind` / `objective_preserved` / `capture_map` | the variant sub-block's `kind` / `note` / `groups` (§2.23) |
-| **[B42]** the testee-roster scoping hazard (D93) | `configs describe` (§2.20, Frank ratifies) |
+| **[B42]** the testee-roster scoping hazard (D93) | **DISSOLVED AT 3.4 (D99 items 1 and 5)**, rather than mechanised. ~~`configs describe` (§2.20)~~ — withdrawn. The hazard was that a set file's `config pcrec` block would PIN the bench's command-line testee matrix under D93; with the roster in an `ext` block there is no `config` in a set file to pin with, so **the hazard has no construction** and D93 is untouched and decoupled. This is the row where the ruling's shape is clearest: the mechanism resolved a collision between two productions, and withdrawing one of the two removed the collision instead |
 
 **The four bench requirements that needed a decision, decided:**
 
@@ -6009,11 +6022,16 @@ a field now**, not a `NOTES.md` paragraph (Frank's r44 ruling); the
 generator still stays beside its output; the directory stays a directory
 and no tool reads it as a schema.
 
-**REPAIRED at revision 3** ([B42]): the file now carries the six W23
-mechanisms its first version could not — `configs describe` (without
-which its own `config pcrec` block would PIN the bench's testee matrix
-under D93, roadblock #6), `vocabulary`, `provides`, subject ids + hashes,
-a `provenance` sub-block, the variant sub-block, and an `under` case.
+**REPAIRED at revision 3** ([B42]) and **REWRITTEN AT 3.4** (D99).
+Revision 3's version carried `configs describe` (without which its own
+`config pcrec` block would PIN the bench's testee matrix under D93,
+roadblock #6) and `provides` stanzas inside per-testee `config` blocks.
+Both are withdrawn, and **the file below is the concrete answer to what
+that costs a real set**: the engine roster moves into one `ext bench`
+block, the file declares NO configs at all, and the D93 hazard has no
+construction rather than a cure. What it keeps unchanged: `vocabulary`,
+subject ids + hashes, the `provenance` sub-block, the variant sub-block,
+and the `under` case — every one of which is rx-defining content.
 
 ```
 # Operational: regenerate subjects with gen_subjects.py before editing.
@@ -6026,7 +6044,6 @@ tag id=loglines version=0.2 objective=realworld
 tag short-search-max-bytes=4096
 oracle pcre2/10.46
 tag method=libpcre2-differential
-configs describe
 
 vocabulary hazard   none exponential-backtracking large-count wide-alternation
 vocabulary size     tiny small medium large
@@ -6038,21 +6055,36 @@ vocabulary requires backrefs lookaround lookbehind-variable atomic-possessive
   named-groups free-spacing callouts span-reporting non-utf8-subject
   captures true-end-anchor
 
-config pcrec
-  pcrec --features all
-config pcre2
+ext bench
+  testee pcrec
+    flags --features all
   testee pcre2/10.46
-  provides backrefs lookaround atomic-possessive recursion conditionals
-  provides k-reset control-verbs unicode-properties named-groups
-  provides free-spacing callouts span-reporting captures true-end-anchor
-config re2
+    provides backrefs lookaround atomic-possessive recursion conditionals
+    provides k-reset control-verbs unicode-properties named-groups
+    provides free-spacing callouts span-reporting captures true-end-anchor
   testee re2/2024-07-02
-  provides unicode-properties named-groups captures
-use pcrec, pcre2, re2
+    provides unicode-properties named-groups captures
+  policy |
+    REQUIRES(pattern) not-subset capabilities(testee) =>
+    unsupported-by-declaration, decided before any compile.
 
 include "gen/cases_search_short.rxt"    # 11 patterns x 112 subjects, generated
 include "gen/cases_throughput.rxt"      # the 16 KB - 1 MB sweep
 ```
+
+**Read that `ext bench` block twice, because everything about it is the
+bench's and nothing about it is pcrec's.** `testee`, `flags`,
+`provides` and `policy` are not format keywords at 3.4 — they are
+whatever the bench chose to call things inside its own namespace, and
+pcrec neither knows nor checks that `provides` accumulates, that
+`pcre2/10.46` is an engine-ref, or that `policy` is prose. What pcrec
+does is parse the tree (so a mis-indented line is an error on ITS line
+and cannot leak into the `include` below), dump it in `#section aux`
+with `parent_line` pointers, and stop. The nesting is two levels deep
+and is ordinary S1; `policy |` is a prose value by §2.27.2 decision 3.
+**The bench's sixteen-config pcrec matrix is not here and was never
+going to be** — it is cross-set experimental design, and `testee pcrec`
+records only that this SET expects to be run under pcrec at all.
 
 and a fragment `gen/cases_search_short.rxt`, machine-written — **blocks
 only, no head** (§2.5):
@@ -6101,31 +6133,48 @@ m @file:"../subjects/s-000.bin" as s-000 24 25
 ```
 
 **Hand-trace, the W23 half only** (the W1 mechanics are the previous
-revision's and unchanged). `configs describe` makes every `config`
-block DATA: `pcrec --source loglines.rxt` builds nothing from them, the
-harness runs each block in ONE cell and prints
-`configs: descriptive (3 declared, 0 applied)`, and the bench's runner
-reads the roster off `--list-source` and applies it through its own
-adapters — whose command lines therefore always win, closing the D93
-collision by construction (§2.20). The `vocabulary` lines close six tag
-keys (a typo in `hazard=` is now a refusal naming the set; the
-`requires` line wraps by head continuation); the two `provides` stanzas
-are checked against `vocabulary requires` and are what the bench's
-pre-compile policy reads — `re2`'s short list is why a
-`tag requires=backrefs` pattern would produce
-`unsupported-by-declaration` there, decided before any compile (§2.16).
-`iso-ts` keeps its HYPHENATED id (no name map anywhere — §2.22); its
-`provenance` sub-block is the charter's requirement (1) with
-`authored`'s no-url rule live; its `variant re2` sub-block carries
-`kind` + `text` + the reviewer's `note` (§2.23). `sem-alt-order` is
-family 11's separator case: one unqualified expectation under the
-canonical convention, one `under` line carrying the second correct
-answer (§2.17) — pcrec's own harness counts the `under` line as a
-labelled skip; the bench scores it against its
-`posix-leftmost-longest`-tagged testees. Subject references carry
+revision's and unchanged). **REWRITTEN AT 3.4 with the withdrawals.**
+The file declares **no `config` and no `target`**, so
+`pcrec --source loglines.rxt` builds nothing and exits 0 — which is
+N-43's permanence contract doing the work `configs describe` was
+invented to do, at no cost, because a file with nothing to compose
+needs no rule about what composing means (§2.20, SW5). The harness runs
+each block in ONE cell, as it does for every file today, with no mode
+line and no "descriptive (N declared, 0 applied)" summary because there
+is nothing declared to report. The bench's runner reads the roster out
+of `--list-source`'s `#section aux` and applies it through its own
+adapters — whose command lines always win, not by a precedence rule but
+because **they are the only thing that reaches a compile at all** (§2.27).
+The `vocabulary` lines close six tag keys (a typo in `hazard=` is a
+refusal naming the set; the `requires` line wraps by S1 attachment), and
+`vocabulary requires` is now ONE-ENDED: it closes what a PATTERN may ask
+for, and which testee satisfies which member is inside the aux block,
+where pcrec does not look (§2.15). `iso-ts` keeps its HYPHENATED id (no
+name map anywhere — §2.22); its `provenance` sub-block is the charter's
+requirement (1) with `authored`'s no-url rule live; its `variant re2`
+sub-block carries `kind` + `text` + the reviewer's `note` (§2.23), and
+**the testee name `re2` is resolved against nothing** — pcrec checks it
+is an identifier and unique in its block, and whether `re2` appears in
+the aux roster is the bench's own cross-check (§2.23, the 3.4
+resolution rule). `sem-alt-order` is family 11's separator case: one
+unqualified expectation under the canonical convention, one `under`
+line carrying the second correct answer (§2.17) — pcrec's own harness
+counts the `under` line as a labelled skip; the bench scores it against
+its `posix-leftmost-longest`-tagged testees. Subject references carry
 `as`/`sha256` (§2.18), so every report row keys on `(pattern, s-000)`
 and a regenerated tree that drifts is refused at read time naming both
 digests.
+
+**What the rewrite demonstrates, and it is the reason §6.2 is worth
+re-running rather than patching**: the withdrawals cost this file
+NOTHING it needed. Every line that moved into `ext bench` was already
+data the bench's own runner had to read and pcrec's harness had to
+ignore — revision 3's §2.16 said so in its own last bullet (*"pcrec's
+OWN harness ignores `provides` operationally"*) and §2.20 said so of
+every `config` under `describe`. The mechanisms existed to make pcrec
+carry data it had already declared it would not use, and the aux
+production is what that observation looks like when it is taken
+seriously.
 
 **Note what this file still does NOT do: it composes nothing.** No
 block references a definition, so §2.3's machinery never runs. A bench
