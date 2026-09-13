@@ -1194,18 +1194,30 @@ deferred to the end is the rule's violation with extra steps.
 | **SW8** | `rxt_format.md` | `under`: qualifier semantics, fallback, duplicate refusal, the no-`g`/`gp` rule, the harness's COUNTED-SKIP treatment | W23.3 |
 | **SW9** | `rxt_format.md` | `oracle` widened to `engine-ref [/version]`; `python`/`pcre2` meanings unchanged; absent-oracle = labelled skip | W23.3 |
 | **SW10** | `rxt_format.md` | `variant` as a SUB-BLOCK: the five attributes, exactly-one-of-text/unsupported, `kind`'s vocabulary hook. **Its name is a `defname`, not an `ident`** (r58 B4 — the bench's real testees `pcre2-dfa` and `pcre2-interp` are unspellable under `ident`), validated as an identifier and as unique within its block, **and against nothing else**: cross-checking is the consumer's tooling's job, stated as a deliberate non-check | W23.3 |
-| **SW12** | `rxt_format.md` **+ `rxt_source.c`'s TWO comment sites** | the `name` grammar's "cannot be called from a pattern" paragraph AMENDED: still true of the hyphenated SPELLING (D26), and the definition is now reachable through its DERIVED identifier — the mapping, the at-use collision refusal naming BOTH definitions, exact-spelling-does-NOT-win. Plus the **refuse-before-mapping LENGTH rule** and the 128-byte callability bound. **The two comment sites move in the SAME change** (`:280-291`, `:1126-1130`): they state the repealed boundary AS A RULING, and D100 accepts the loss, so leaving them would put a shipped comment in direct contradiction with shipped behaviour | W23.3 |
+| **SW12** | `rxt_format.md` **+ `rxt_source.c`'s TWO comment sites** | the `name` grammar's "cannot be called from a pattern" paragraph AMENDED: still true of the hyphenated SPELLING (D26), and the definition is now reachable through its DERIVED identifier — the mapping, the at-use collision refusal naming BOTH definitions, exact-spelling-does-NOT-win. Plus the **refuse-before-mapping LENGTH rule** and the 128-byte callability bound. **The two comment sites move in the SAME change** — **`:269-297`** (`defname_ok`'s header, the function opening at `:298`) and **`:1177-1180`** (the `name` arm's pointer, the arm opening at `:1175`), **CORRECTED at revision 1.1 from `:280-291`/`:1126-1130`, which this note inherited from the design's own SW12 row and which name a mid-comment offset and an unrelated production respectively** (r59-B-M2; `format_design.md`'s row is corrected in the same change). They state the repealed boundary AS A RULING, and D100 accepts the loss, so leaving them would put a shipped comment in direct contradiction with shipped behaviour | W23.3 |
 | **SW15** | `rxt_format.md` | the driver protocol: the find-all mode, the `@<path>` subject form's byte-exactness, the sha256 mismatch refusal | W23.3 |
 | **SW11** | `rxt_format.md` | `--list-source`: the appended columns, **the FOUR `#section`s with their column lists**, and the **VALIDATES vs RECOGNISES table as normative text, RENDERED from the schema's `validated_by` column rather than hand-written beside it**. `table_contract.md` needs no hunk for sections — they were already its mechanism | W23.4 |
 | **SW14** | `cli.md` | the `pattern-esc` decode flag; `--list-source`'s section output named in its entry | W23.3/.4 |
 | **SW18** | `rxt_format.md` + `cli.md` | **THE AUX PRODUCTION.** `ext <consumer>` at file and block scope, the consumer namespace as a free `defname` resolved against nothing, the body as ordinary indented records under the SAME structure rules as everything else, `cardinality: repeat` at both scopes, **`children: tree` and what it means for a reader — structure-layer parameter 3, so no line inside an `ext` body opens a group and no bare `\|` there opens a prose region; every aux value is one line** — and, normatively, in its own paragraph, **the GRADUATION RULE with its FIVE clauses**, plus the disambiguating sentence: *an `ext` block extends what a file CARRIES, never what the format MEANS.* It states the non-coverage in the words a consumer needs: **pcrec parses the structure, dumps it faithfully, and interprets nothing.** `cli.md` gains `#section aux`'s column list. **This hunk is the one place the format promises something by promising NOT to do it**, which is why it is spec text: a consumer who cannot cite a sentence saying "pcrec will not read this" has no basis for putting anything there | W23.3 (rule) / W23.4 (section) |
 | **SW19** | `rxt_format.md` + `table_contract.md` | **THE WITHDRAWALS' SPEC CONSEQUENCE, which is mostly an ABSENCE and is named so the absence is CHECKABLE** (§4.3). Plus `table_contract.md`'s `#section aux` Scope row, and **the FORMAT-READER SURVEY as a landing condition** | W23.4 |
 
-**The W1-era rows S1-S11 are already landed**; S4/S5/S6/S7/S8 were
+| **SW20** | `rxt_format.md` | **`include`'s HARNESS CONTRACT — this is the W1-era row S3, WHICH HAS NOT LANDED** (§1.10.5, r59-B2). "How the harness evaluates a block" (`:531-565`) gains: the ENTRY/FRAGMENT distinction and the rule that an entry is a discovered file no entry includes; the CLOSURE as the accounting unit, reported under the entry's name, with a failure still printing the FRAGMENT's own `file:line`; the two new summary lines (`entry files: N`, `fragments spliced: M`) and the `named, absorbed into <entry>` line; and **the FOURTH FAILURE CLASS, RESOLUTION failure** — reported separately and scored as a pattern-compile failure for the block, which is the clause that keeps `sr_refusals.rxt`'s four `perr` blocks correct whether the resolver or pcrec said no. Also: the `include` head row's RESOLVED-path column, and why it is not `--list-source --resolved` (§1.10.2 rule 2) | **W23.3a** |
+| **SW21** | `cli.md` | **THE DIAGNOSTIC CLASS STRUCTURE, under manager ruling r59-R1.** A NEW ROW rather than an extension of SW2, and the reason is which document it lands in: SW2's hunk is `rxt_format.md`'s LEXICAL RULES — the format's own grammar — while a diagnostic emitted on stderr in a stable machine-parseable position is a property of the **CLI's output contract**, which is `cli.md`'s. Folding it into SW2 would have put a CLI surface in the format spec and left `cli.md` silent about a channel callers parse. The hunk states: the four class tags (`structure-attachment`, `unknown-token-in-scope`, `schema-constraint`, `value-shape`), that the tag's POSITION is stable and its SET is closed, and — D26 explicitly — that the sentence beside it is not a contract | W23.1 |
+
+**The W1-era rows S1-S11 are MOSTLY already landed, and revision 1's
+"already landed" was a claim about the set that was false of one
+member** (r59-B2): **S3 has NOT landed** and is SW20 above —
+`format_design.md:5782` labels it W1 and `docs/spec/rxt_format.md`'s
+harness-evaluation section has none of what it promises (**MEASURED**:
+`docs/spec/` contains zero occurrences of "entry file",
+"fragments spliced" or "resolution failure"). S4/S5/S6/S7/S8 were
 labelled W2/W3 and land in this delivery inside SW6/SW15/SW3/SW9/SW10
 above rather than as separate rows, because their productions are the
 same productions. **Two rows have no W23 work**: S9/S9b (`match_api.md`
 §6) — W23 carries no abi event and changes nothing about `rx_info`.
+**The general lesson, and it is this round's cheapest**: a row's WAVE
+LABEL says when it was scheduled, never whether it shipped; the only
+way to book a spec row discharged is to read the spec.
 
 ### 4.2 SW18/SW19 carry the dump-shape obligation, and it is a LANDING CONDITION
 
@@ -1222,24 +1234,97 @@ cannot contain. That is `w1_impl.md` §8.7's discipline applied to a
 shape instead of to a number: **the command is the contract, not the
 list.**
 
-### 4.3 The withdrawals' absence, made checkable
+### 4.3 The withdrawals' absence, made checkable — RE-MEASURED AT 1.1
 
 SW19's shape, and this note adopts it rather than writing disposition
-prose about two mechanisms that do not exist. **MEASURED at revision
-3.4**, and re-measurable in one command: `docs/spec/` contains **0**
-occurrences of `configs describe`, `configs build`, `provides`,
-`capable` or `cross-scope`; `src/` and `tests/` contain **0** of the
-same. Both mechanisms are design-note-only at this pin, which is why
-the withdrawal costs a diff and nothing else.
+prose about mechanisms that do not exist.
 
-**The landing condition, at EVERY step**: that grep returns 0 over
-`docs/spec/`, `src/`, `tests/` and `cli/`. It is one line in the step's
-own checklist and it is the difference between "we did not build the
-withdrawn thing" and a claim nobody can check. **It also catches the
-r58 residue class in the only place a grep can**: a step that
-re-introduces the spelling is caught; a step that writes a SENTENCE
-describing a withdrawn production as current is not, and §7.1 names
-that as the standing risk rather than pretending the grep closes it.
+**REVISION 1'S MEASUREMENT WAS WRONG IN BOTH DIRECTIONS AND ITS LANDING
+CONDITION WAS UNSATISFIABLE** (r59-B-M1, extended by this round's own
+re-measurement). It claimed a naive grep for `configs describe`,
+`configs build`, `provides`, `capable` and `cross-scope` returns **0**
+over `docs/spec/`, `src/` and `tests/`, and made "that grep returns 0"
+the landing condition at every step. **MEASURED, at this revision's
+pin, on the untouched tree:**
+
+| token | `docs/spec/` | `src/` | `tests/` | `cli/` |
+|---|---|---|---|---|
+| `configs describe` / `configs build` | 0 | 0 | 0 | 0 |
+| `provides` | 0 | **2** | **1** | 0 |
+| `capable` | 0 | **2** | **12** | 0 |
+| `cross-scope` | 0 | 0 | 0 | 0 |
+
+Every one of the seventeen hits is ORDINARY ENGLISH — *"structurally
+incapable of moving"*, *"a UCP-capable surface"*, *"provides the names
+it intends to export"* — so the grep as written can never return 0 and
+a step signing the checklist line would be signing a falsehood or
+deleting prose to satisfy a check.
+
+**AND THE ERROR RUNS THE OTHER WAY TOO, WHICH IS THE PART THE REVIEW
+DID NOT REACH: revision 1 grepped the wrong five tokens.** The
+withdrawals are FOUR productions — `configs build`/`describe`,
+`provides`, and `config`-body `testee`/`option` (N-42) — and
+`testee`/`option` were never in the grep. **They are LIVE FORMAT
+SPELLINGS in the shipped tree, at three sites:**
+
+1. **`src/parse/rxt_source.c:149`** — `config_vocab` carries
+   `{ "testee", 3 }, { "option", 3 }`, so leg A RECOGNISES both today
+   and refuses them by name with their wave.
+2. **`docs/spec/rxt_format.md:57-62`** — the later-wave keyword
+   paragraph names `testee` and `option` among the keywords that are
+   *"recognised and refused by name, as NOT IN THIS BUILD"*. The
+   withdrawal is therefore a SPEC EDIT, not merely an absence.
+3. **`tests/rxtsource/run_rxtsource_tests.sh:1188`** —
+   `CENSUS_WORDS_32` lists both, and the list's LENGTH is asserted
+   against the literal `32` at `:1200-1206` with a failure message
+   reading *"It is format_design §1.1's list verbatim; if it changed,
+   say so there too."* So removing them moves a word list, a count pin,
+   and the design section the pin cites.
+
+**So the withdrawal does NOT cost "a diff and nothing else".** For
+`configs` and `provides` it does — neither ever shipped. For
+`testee`/`option` it costs four sites (parser row, spec sentence,
+census word list, census count `32 → 30`) plus the §1.1 list the census
+cites, **and it carries a deliberate narrowing that needs its own
+sentence**: a `.rxt` file writing `testee` in a `config` body goes from
+*"NOT IN THIS BUILD, the keyword is real"* to *"not a config
+directive"*. That is correct — the keyword is no longer real — but it
+is the K14 shape running in reverse, and SW19's hunk says so. **W23.1
+carries the parser row and the census; SW19 carries the spec
+sentence.** MEASURED: no `.rxt` or `.rxtin` file in the tree writes
+either word in first-token position (0 over 262 files), so no corpus
+file changes meaning.
+
+**The landing condition, restated as something a step can actually
+satisfy.** Three arms, and the third is deliberately not a grep:
+
+- **(a) THE DATA ARM** — no `.rxt`/`.rxtin` file has a line whose first
+  token is `configs`, `testee`, `option`, `provides` or `capable`:
+  `grep -lE '^[[:space:]]*(configs|testee|option|provides|capable)([[:space:]]|$)'`
+  over `git ls-files '*.rxt' '*.rxtin'`. **MEASURED 0 of 262 today**,
+  and it stays 0 because these are not productions any more. No English
+  hazard: a first token is a keyword position.
+- **(b) THE PARSER ARM** — none of the three legs' keyword tables or
+  dispatch arms names one, spelled as each leg spells a keyword (a
+  quoted token in `rxt_source.c`, a `^`-anchored `=~` in `run.sh`, a
+  `startswith`/tuple member in `verify_rxt.py`), plus `cli/main.c`.
+  **MEASURED 1 today — `rxt_source.c:149`, the two rows above** — and
+  the arm's landing value is exactly that it reads 1 now and must read
+  **0** after W23.1. A check whose baseline is zero from the start
+  proves nothing about the change that was made.
+- **(c) THE SPEC ARM IS NOT A GREP AND SAYING SO IS THE POINT.**
+  `rxt_format.md:130` already reads *"configs are three artifacts with
+  three prefixes and ONE …"* — legitimate English in which `configs` is
+  a plural noun — so no pattern separates a withdrawn production's
+  spelling from prose about configurations. The obligation is the third
+  pass: **read every hit against the claim that names it.** §7.1 keeps
+  it as the standing risk rather than pretending a grep closes it.
+
+**The general lesson this section now carries, because it cost two
+revisions**: an absence check is only as good as its TOKEN LIST, and a
+token list derived from the two mechanisms somebody remembers withdrawing
+will miss the third. Derive it from the ruling's own enumeration — D99
+items 1, 2 and N-42 — not from the section that discusses them.
 
 ---
 
