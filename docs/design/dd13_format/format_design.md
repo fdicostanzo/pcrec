@@ -63,8 +63,15 @@ Every load-bearing claim in this note is one of three kinds, marked:
 
 ### 0.2 The design in one paragraph
 
-A `.rxt` file gains a **HEAD** (file-level declarations and `config` /
-data blocks, everything before the first `pattern` line) above the
+**The grammar is TWO LAYERS** (§1.2, rewritten at revision 3.1): a
+context-free STRUCTURE layer — indentation attaches a line to the line
+above it, and a two-member declared opener set groups pattern blocks —
+and a declared SCHEMA on top (§2.25) saying which keywords are legal in
+which scope, what they take, and whether a recovered tree is valid.
+Nothing else lets a keyword decide where structure begins or ends.
+On that footing, a `.rxt` file gains a **HEAD** (file-level declarations
+and `config` / data blocks, everything before the first `pattern` line —
+now a SCOPE rule rather than a structural one) above the
 **BODY** it already has (pattern blocks, unchanged). Sixteen line-kind
 additions live there — seven file-level declarations, two head block
 kinds, seven block-scoped lines — and today's thirteen line kinds and
@@ -3590,7 +3597,7 @@ as a defence:
 
 | | how it is honoured |
 |---|---|
-| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, and no file reference to bind in any non-`perr` block. r44-grammar reproduced all three with its own recognizer (G1, G5, G6) |
+| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, and no file reference to bind in any non-`perr` block. r44-grammar reproduced all three with its own recognizer (G1, G5, G6). **REVISION 3.1 re-measured all of it at the current 210-file corpus** — 0 collisions over 52 candidates, 0 indented lines — and corrected the denominators, which had gone stale with [M5.0]'s corpora (§0.7, §1.1). The re-factoring itself is what AR-1 turns on and §1.6.1 is the argument that it is additive |
 | **AR-2** no dispatch in the common case | a pattern with no file references binds nothing, so the AST is the one the compiler builds today. §2.7's default: one unnamed block, no head → `target rx`, byte-for-byte today's output. The format cannot add dispatch because in that case it adds nothing. **D87 strengthens this**: an UNDECLARED call stays capture-transparent at zero cost (rule 5), so even a composing file pays only for the deliveries it declares |
 | **AR-3** declared inapplicability ≠ failure ≠ silent pass | four separate, counted, printed states: `oracle none <reason>`, `variant … unsupported <reason>`, `gp`'s pending-vm bucket, and the resolution-failure taxonomy — each reported on its own line in the summary (§2.11) |
 | **AR-4** must not make D27 harder | the head is **bounded and above the first `pattern` line**, so a blinded author reading a block looks in exactly one other place; a fragment **may not declare file scope**, so a spliced block's meaning never depends on which file spliced it; and the one genuine cross-block dependency — a name a pattern references — is visible at the top of the file by construction |
