@@ -91,6 +91,37 @@ viable); (c) if gcc libasan is unfixable here, the ruling is
 then: stage-level sanitizer validation runs on ubuntubudu via the
 executor channel (working baseline; the stage-4 arm requested I-61).
 
+**ROOT-CAUSED 2026-09-14 (lane santriage2, docs/dev/lanes/
+santriage2_report.md; found at the W23.1 merge battery's san stage,
+which RECURRED this entry — killed at 5h with 1/35 scripts complete,
+the 2026-09-09 shape exactly).** Owed item (a)'s answer: the axis is
+LSAN — `ASAN_OPTIONS="detect_leaks=1"` makes every gcc-16-sanitized
+process on arm64-darwin HANG AT EXIT burning ~100% CPU (240s+ observed,
+never returns; user+sys≈wall, so watchdog CPU budgets trip "reliably"),
+and the IDENTICAL call returns in 0.07s at `detect_leaks=0`. Verified
+independent of pattern content and on BOTH axes (compiler and a
+GENCFLAGS-built generated matcher; manager re-measured both at the
+merge review: 0.075s / 0.379s). It is NOT interceptor slowness and NOT
+the stage-3/4 tables. Every downstream red in both killed batteries is
+this one mechanism: the reject stage's 614× exit-124 → rows missing →
+"irreplaceable checks are gone" (a budget-kill artifact, NOT a
+regression — the same suites are green in the battery's un-sanitized
+`test` stage), and the cli watchdog CPU kills. FIX LANDED (Makefile,
+same change): `SAN_DETECT_LEAKS` — 0 on Darwin, 1 elsewhere — one
+derivation consumed by ASAN_ENV and SAN_ENV both; Linux behavior
+unchanged. NOTE the two-box irony this entry now records: the leak
+tier is a measured no-op on the Linux box (K26) and a hang on the Mac,
+so no box has ever run a WORKING LSan tier; K26's canary obligation is
+unchanged and now covers both. RESIDUE: (1) the ~39% vs 100% hit-rate
+discrepancy in the cli log's visible slice is unexplained (mechanism
+confirmed, nondeterminism driver not); (2) 3.out (registry) printed a
+complete-looking 225/0 summary but no rc file — most likely killed
+between its summary and its trailing sub-checks; NOT trusted as green,
+re-runs with the fixed env; (3) whether darwin `make san` is now
+FEASIBLE end-to-end is being measured (first fixed-env battery run,
+2026-09-14) — if still infeasible, option (c)'s "san is a LINUX stage"
+ruling returns to Frank. Fix awaits Frank's morning ratification.
+
 ## K55 — INFRASTRUCTURE (2026-09-09, fifty-seventh session, found by lane axtriage triaging the stage-5 merge battery's `axes` stage, rc=2): `make test-axes` was RED on the just-merged tree — `--engine=vm` reported 3 UNDOCUMENTED refusals with zero answer mismatches
 
 **FIXED in the same lane.** `tests/utf8/axis12_scripts.rxt:295-297`'s

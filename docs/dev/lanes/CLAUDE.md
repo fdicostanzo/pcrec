@@ -458,6 +458,20 @@ never edited afterwards.
   darwin. Validated by reproducing the exact failing compile line and the
   `lint:` guard probe with `gcc-16` (both succeed) — no `san`/`lint`/battery
   run was started, per the box hold in force at hand-off.
+- `santriage2_report.md` — K54's ROOT CAUSE (2026-09-14, lane santriage2,
+  sonnet, read-only triage of the W23.1 merge battery's killed san stage):
+  `ASAN_OPTIONS="detect_leaks=1"` makes every gcc-16-sanitized process on
+  arm64-darwin HANG AT EXIT at ~100% CPU (240s+ observed, never returns;
+  0.07s at `detect_leaks=0`) — pattern-independent, both axes, reproduced
+  on trivial patterns / `--list-schema` / `--probe-ask` / a generated
+  matcher. Explains BOTH killed darwin batteries end to end (the reject
+  stage's 614× exit-124 "irreplaceable checks are gone" = budget-kill
+  artifact; the cli watchdog CPU kills; the harness's 0-bytes-in-5h pace,
+  floor-estimated ~227 CPU-hours WITH the hang). Two named residues: the
+  cli log's ~39%-vs-100% hit-rate discrepancy, and the registry buffer's
+  summary-but-no-rc (killed mid-tail, not trusted green). Fix (the
+  Makefile `SAN_DETECT_LEAKS` derivation) landed by the manager in the
+  same change; known_issues.md K54 carries the resolution addendum.
 - `w23design_report.md` — [DD-13b.W23] STEP 1 (2026-09-12, lane
   w23design, opus; design only): `format_design.md` REVISION 3, the
   [B42] absorption under F-Q1/F-Q2. Read it for the one pre-ruling

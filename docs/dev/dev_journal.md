@@ -23201,3 +23201,70 @@ the red is a disagreement between two of the lane's own decisions that
 nothing else would have caught before the bench did.
 
 Session close: heartbeat cron deleted, no live agents, main pushed.
+
+## 2026-09-14 (EDT, overnight autonomous), sixty-fourth session — W23.1 LANDING: arm-4 fix + merge; the battery's san stage RECURRED K54 and got its ROOT CAUSE
+
+Frank absent (overnight). Executed wake.md's landing sequence for the
+parked W23.1.
+
+**The arm-4 fix (manager-direct, one-site as chartered)**: ruled the
+reserved sentinel its own population — "NOT IN THIS BUILD" promises a
+wave that is not coming, so W23-S3 arm 4 now excludes sentinel rows and
+a new arm 4b requires every one to refuse BY NAME as RESERVED, both
+populations non-empty, both wave boundaries read from the dump's new
+`# wave-reserved:` trailer (never a copy of internal.h's constant).
+D80 hunks in cli.md + rxt_format.md; the CLASS-tag question deferred to
+W23.2 (owns the vocabulary) and written into its draft brief. Both
+RATIFIED note corrections applied (§6.1 one/five/zero -> 2/6/2, checked
+live against the dump; SW13's `version` recorded as built). rxtsource
+146/1/0; strict clean. One trap: the lane's earlier `make test` left a
+regenerated artifact_size_log.tsv dirty in the worktree and `git add
+-A` swept it into the fix commit — caught at the diffstat, reverted,
+amended (the standing never-commit rule almost lost to a reflex).
+
+**Merged** lane/w231 into main (0b7f4d62, no-ff, clean) and launched
+the full battery on that pin. test rc=2 = the single chartered
+inline_capability red ONLY (verified in the log, 38/38 sections);
+strict rc=0; axes rc=0 (1h34m).
+
+**The san stage recurred K54** — and tonight's difference is it left
+with a root cause instead of a suspicion. Killed at 5h with 1/35
+scripts complete (safekill, 23 processes, zero stragglers; per-script
+buffer dir copied out BEFORE the kill — run_san_group replays output
+only when the whole group ends, so san.log is structurally silent
+mid-run, a false-stall my first two watchers fired on). Triage lane
+santriage2 (sonnet, read-only): `ASAN_OPTIONS="detect_leaks=1"` makes
+every gcc-16-sanitized process on arm64-darwin HANG AT EXIT at ~100%
+CPU; identical call 0.07s at `=0`; pattern-independent, both axes.
+Every downstream red is that one mechanism (reject's 614× exit-124
+"irreplaceable checks are gone" = budget-kill artifact; the cli
+watchdog CPU kills; the harness's 227-CPU-hour floor estimate WITH the
+hang). Manager re-measured both axes at review (0.075s/0.379s). FIX
+LANDED: Makefile `SAN_DETECT_LEAKS` (0 on Darwin, 1 elsewhere), one
+derivation for ASAN_ENV + SAN_ENV; K54 addendum; testing.md box note;
+santriage2_report.md + lanes/CLAUDE.md row.
+
+**OWED TO FRANK (morning queue, in order):**
+1. RATIFY (or revert — one line) the darwin detect_leaks=0 fix.
+2. ACCEPT the carried verdicts: test/strict/axes ran green on
+   0b7f4d62; the fix commit's delta is a SAN_ENV-only Makefile hunk +
+   docs, which those stages do not read — or demand the full re-run.
+3. RE-RULE where W23.1's battery standard lives: testing.md still says
+   "full validation goes to ubuntubudu by slot"; travel-month practice
+   has been Mac-local (tt4m_time, this battery). Tonight ALSO
+   contradicted K54's own interim "sanitizer validation runs on
+   ubuntubudu" hold — the battery driver has no K54 guard and the
+   manager didn't grep known_issues before launching. Lesson below.
+4. The re-run's verdict (san+lint+mech on the fixed tree) — in flight
+   at close of this entry; merge stays LOCAL-UNPUSHED until green or
+   Frank rules.
+
+**Lessons:** (1) BEFORE launching any battery/heavy suite, grep
+known_issues.md for open INFRASTRUCTURE entries naming its stages —
+K54 said "san is unusable on the Mac" in plain text and 5h of box time
+re-derived it. (2) A stall watcher over a buffered-replay runner
+(run_san_group) must key on WORKER liveness, not log mtimes. (3) `ps`
+snapshots of short-lived workers oversample the slow tail — a
+15s-per-call read of a 76ms-per-call population. (4) A `git add -A`
+commit in a worktree that ran the full suite picks up regenerated
+logs; diff-stat every commit before accepting it.

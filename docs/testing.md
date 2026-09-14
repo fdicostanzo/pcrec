@@ -4027,6 +4027,15 @@ are never compared).
   pass here; quiet-box timing floors stay on ubuntubudu. Frank's rule:
   light/targeted testing locally, never the whole suite — full validation
   goes to ubuntubudu by slot ([TT-15] PARKED is the chartered exit).
+  **SANITIZERS ON THIS BOX (K54, root-caused 2026-09-14)**: gcc-16's
+  Darwin LSan hangs every sanitized process AT EXIT under
+  `detect_leaks=1` (~100% CPU, never returns; 0.07s at `=0`) — the
+  mechanism behind both killed darwin san batteries (2026-09-09,
+  2026-09-14). The Makefile's `SAN_DETECT_LEAKS` derivation disables the
+  leak tier on Darwin only; `known_issues.md` K54 and
+  `docs/dev/lanes/santriage2_report.md` carry the full record. No box
+  currently runs a WORKING leak tier (K26 = Linux no-op), so K26's
+  canary obligation now covers both boxes.
 
 ### The `sed` binary itself — GNU-only constructs SILENTLY NO-OP on this box
 

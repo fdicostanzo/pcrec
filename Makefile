@@ -1224,6 +1224,25 @@ ubsan:
 	done
 	@echo "ubsan: suite green under -fsanitize=undefined, both axes"
 
+# [K54 RESOLUTION, 2026-09-14] gcc's Darwin LSan (Homebrew gcc-16 16.2.0,
+# arm64) HANGS every sanitized process AT EXIT under detect_leaks=1 —
+# near-100% CPU, never returns (240s+ measured on a trivial pattern; the
+# IDENTICAL call returns in 0.07s at detect_leaks=0). That hang, not
+# interceptor slowness, was K54's "pathologically slow" — root-caused by
+# lane santriage2 (build/battery_20260913_183914/triage/, now
+# docs/dev/lanes/santriage2_report.md) after two multi-hour battery kills
+# (2026-09-09, 2026-09-14). So the leak tier is disabled ON DARWIN ONLY,
+# one derivation consumed by ASAN_ENV and SAN_ENV both (never two
+# hand-copies). Linux keeps detect_leaks=1 unchanged (K26 records it as a
+# measured no-op there, but that is LSan's own defect to keep visible).
+# Revisit when a gcc release's Darwin LSan survives `int main(){}` at exit.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+SAN_DETECT_LEAKS := 0
+else
+SAN_DETECT_LEAKS := 1
+endif
+
 ASAN_DIR    := build-asan
 ASAN_CFLAGS := -O1 -g -fsanitize=address,leak
 ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
@@ -1231,7 +1250,7 @@ ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
                LIBA=$(CURDIR)/$(ASAN_DIR)/libpcrec.a \
                GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(ASAN_CFLAGS)" \
                SANFLAGS="$(ASAN_CFLAGS)" \
-               ASAN_OPTIONS="detect_leaks=1" \
+               ASAN_OPTIONS="detect_leaks=$(SAN_DETECT_LEAKS)" \
                LSAN_OPTIONS="" \
                PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
 
@@ -1292,7 +1311,7 @@ SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
                GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(SAN_CFLAGS)" \
                SANFLAGS="$(SAN_CFLAGS)" \
                UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
-               ASAN_OPTIONS="detect_leaks=1" \
+               ASAN_OPTIONS="detect_leaks=$(SAN_DETECT_LEAKS)" \
                LSAN_OPTIONS="" \
                PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
 
