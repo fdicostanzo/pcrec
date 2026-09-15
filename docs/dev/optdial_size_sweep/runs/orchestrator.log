@@ -58,3 +58,15 @@ entry files: 209
 fragments spliced: 0
 parallel: 209 of 209 file workers reported (PROCS=8)
 run_sweep.sh: === pass altcls_factor finished rc=0, 1001s,     3478 size rows ===
+run_sweep.sh: WIP-committed altcls_factor
+
+run_sweep.sh: === pass tiered_entry (RXTFLAGS="-fno-tiered-entry") starting 20:57:17 ===
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 3478
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 209
+fragments spliced: 0
+parallel: 209 of 209 file workers reported (PROCS=8)
+run_sweep.sh: === pass tiered_entry finished rc=0, 981s,     3478 size rows ===
