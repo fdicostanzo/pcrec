@@ -70,3 +70,15 @@ entry files: 209
 fragments spliced: 0
 parallel: 209 of 209 file workers reported (PROCS=8)
 run_sweep.sh: === pass tiered_entry finished rc=0, 981s,     3478 size rows ===
+run_sweep.sh: WIP-committed tiered_entry
+
+run_sweep.sh: === pass offset_skip (RXTFLAGS="-fno-offset-skip") starting 21:13:38 ===
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 3478
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 209
+fragments spliced: 0
+parallel: 209 of 209 file workers reported (PROCS=8)
+run_sweep.sh: === pass offset_skip finished rc=0, 956s,     3478 size rows ===
